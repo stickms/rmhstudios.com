@@ -1,7 +1,7 @@
 "use client";
 
-import { motion, useMotionValue, useTransform, useSpring } from "framer-motion";
-import { useEffect } from "react";
+import { motion, useTransform, useSpring } from "framer-motion";
+import { useEffect, useState } from "react";
 import { FloatingElement } from "@/components/ui/FloatingElement";
 import { GlitchText } from "@/components/ui/GlitchText";
 import { NeonButton } from "@/components/ui/NeonButton";
@@ -9,23 +9,27 @@ import { PulsatingOrb } from "@/components/ui/PulsatingOrb";
 import { FloatingShapes } from "@/components/effects/FloatingShapes";
 import { ProximityText } from "@/components/ui/ProximityText";
 import { ScrollButton } from "@/components/ui/ScrollButton";
+import { useMousePosition } from "@/contexts/MouseContext";
 
 export function HeroSection() {
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
-
-  const springConfig = { damping: 25, stiffness: 100 };
-  const rotateX = useSpring(useTransform(mouseY, [0, 1], [5, -5]), springConfig);
-  const rotateY = useSpring(useTransform(mouseX, [0, 1], [-5, 5]), springConfig);
+  const { mouseX, mouseY } = useMousePosition();
+  const [windowSize, setWindowSize] = useState({ width: 1, height: 1 });
 
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      mouseX.set(e.clientX / window.innerWidth);
-      mouseY.set(e.clientY / window.innerHeight);
+    setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    const handleResize = () => {
+      setWindowSize({ width: window.innerWidth, height: window.innerHeight });
     };
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, [mouseX, mouseY]);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const springConfig = { damping: 25, stiffness: 100 };
+  // Transform absolute mouse position to normalized 0-1 range for rotation
+  const normalizedX = useTransform(mouseX, [0, windowSize.width], [0, 1]);
+  const normalizedY = useTransform(mouseY, [0, windowSize.height], [0, 1]);
+  const rotateX = useSpring(useTransform(normalizedY, [0, 1], [5, -5]), springConfig);
+  const rotateY = useSpring(useTransform(normalizedX, [0, 1], [-5, 5]), springConfig);
 
   return (
     <section id="home" className="relative h-screen flex items-center justify-center overflow-hidden scanlines">
@@ -63,18 +67,37 @@ export function HeroSection() {
 
         <FloatingElement intensity={40}>
           <motion.h1
-            className="text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-black tracking-tighter"
+            className="text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-black tracking-tighter"
             initial={{ opacity: 0, y: 50, scale: 0.8 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
           >
-            <ProximityText
-              className="text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-black"
-              maxScale={1.4}
-              proximity={200}
-            >
-              RMH STUDIOS
-            </ProximityText>
+            <span className="block sm:hidden">
+              <ProximityText
+                className="text-5xl font-black"
+                maxScale={1.3}
+                proximity={150}
+              >
+                RMH
+              </ProximityText>
+              <br />
+              <ProximityText
+                className="text-5xl font-black"
+                maxScale={1.3}
+                proximity={150}
+              >
+                STUDIOS
+              </ProximityText>
+            </span>
+            <span className="hidden sm:inline">
+              <ProximityText
+                className="sm:text-7xl md:text-8xl lg:text-9xl font-black"
+                maxScale={1.4}
+                proximity={200}
+              >
+                RMH STUDIOS
+              </ProximityText>
+            </span>
           </motion.h1>
         </FloatingElement>
 
@@ -158,7 +181,7 @@ export function HeroSection() {
       />
 
       {/* Scroll to next section */}
-      <div className="absolute bottom-12 left-1/2 -translate-x-1/2">
+      <div className="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2">
         <ScrollButton targetId="projects" label="Our Games" />
       </div>
     </section>

@@ -34,7 +34,7 @@ const projects = [
 
 export function ProjectsSection() {
   return (
-    <section id="projects" className="relative min-h-screen flex flex-col justify-center px-4 py-20">
+    <section id="projects" className="relative min-h-screen flex flex-col justify-center px-4 py-20 pb-28 md:pb-20">
       <div className="max-w-6xl mx-auto w-full">
         {/* Section header */}
         <motion.div
@@ -95,7 +95,7 @@ export function ProjectsSection() {
       </div>
 
       {/* Navigation buttons */}
-      <div className="absolute bottom-12 left-1/2 -translate-x-1/2">
+      <div className="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2">
         <ScrollButton targetId="about" label="About Us" />
       </div>
     </section>

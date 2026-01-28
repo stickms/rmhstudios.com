@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useMousePosition } from "@/contexts/MouseContext";
 
 interface Particle {
   x: number;
@@ -27,6 +28,21 @@ export function ParticleField() {
   const particlesRef = useRef<Particle[]>([]);
   const mouseRef = useRef({ x: 0, y: 0 });
   const animationRef = useRef<number | null>(null);
+  const { mouseX, mouseY } = useMousePosition();
+
+  // Sync motion values to ref for use in animation loop
+  useEffect(() => {
+    const unsubX = mouseX.on("change", (x) => {
+      mouseRef.current.x = x;
+    });
+    const unsubY = mouseY.on("change", (y) => {
+      mouseRef.current.y = y;
+    });
+    return () => {
+      unsubX();
+      unsubY();
+    };
+  }, [mouseX, mouseY]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -41,11 +57,6 @@ export function ParticleField() {
     };
     resize();
     window.addEventListener("resize", resize);
-
-    const handleMouseMove = (e: MouseEvent) => {
-      mouseRef.current = { x: e.clientX, y: e.clientY };
-    };
-    window.addEventListener("mousemove", handleMouseMove);
 
     // Initialize particles
     const particleCount = 80;
@@ -150,7 +161,6 @@ export function ParticleField() {
 
     return () => {
       window.removeEventListener("resize", resize);
-      window.removeEventListener("mousemove", handleMouseMove);
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }

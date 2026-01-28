@@ -8,7 +8,7 @@ import { ScrollButton } from "@/components/ui/ScrollButton";
 
 export function AboutSection() {
   return (
-    <section id="about" className="relative min-h-screen flex flex-col justify-center px-4 py-20 overflow-hidden">
+    <section id="about" className="relative min-h-screen flex flex-col justify-center px-4 py-20 pb-28 md:pb-20 overflow-hidden">
       {/* Background orbs */}
       <PulsatingOrb
         className="absolute top-1/4 right-0 translate-x-1/2"
@@ -29,10 +29,21 @@ export function AboutSection() {
           transition={{ duration: 0.6 }}
         >
           <FloatingElement intensity={10}>
-            <h2 className="text-4xl md:text-5xl lg:text-6xl font-black mb-8 text-center">
-              <ProximityText maxScale={1.3} proximity={150}>
-                About RMH Studios
-              </ProximityText>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-8 text-center">
+              <span className="block sm:hidden">
+                <ProximityText maxScale={1.2} proximity={120}>
+                  About
+                </ProximityText>
+                <br />
+                <ProximityText maxScale={1.2} proximity={120}>
+                  RMH Studios
+                </ProximityText>
+              </span>
+              <span className="hidden sm:inline">
+                <ProximityText maxScale={1.3} proximity={150}>
+                  About RMH Studios
+                </ProximityText>
+              </span>
             </h2>
           </FloatingElement>
         </motion.div>
@@ -58,7 +69,7 @@ export function AboutSection() {
 
           <div className="pt-8 grid grid-cols-2 md:grid-cols-3 gap-6">
             {[
-              { label: "Founded", value: "2024" },
+              { label: "Founded", value: "2026" },
               { label: "Projects", value: "3+" },
               { label: "Passion", value: "100%" },
             ].map((stat, index) => (
@@ -70,8 +81,10 @@ export function AboutSection() {
                 viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: 0.3 + index * 0.1 }}
               >
-                <div className="text-3xl md:text-4xl font-black rainbow-text">
-                  {stat.value}
+                <div className="text-3xl md:text-4xl font-black">
+                  <ProximityText maxScale={1.2} proximity={100}>
+                    {stat.value}
+                  </ProximityText>
                 </div>
                 <div className="text-white/50 text-sm mt-1">{stat.label}</div>
               </motion.div>
@@ -81,7 +94,7 @@ export function AboutSection() {
       </div>
 
       {/* Navigation button */}
-      <div className="absolute bottom-12 left-1/2 -translate-x-1/2">
+      <div className="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2">
         <ScrollButton targetId="contact" label="Contact" />
       </div>
     </section>

@@ -37,6 +37,7 @@
   --color-neon-blue: var(--neon-blue);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --breakpoint-xs: 480px;
 }
 
 /* ==================== HIGH ENERGY ANIMATIONS ==================== */
@@ -431,39 +432,95 @@
   animation: rainbow-glow 2s linear infinite !important;
 }
 
-/* Inner rainbow glow for cards */
+/* Inner rainbow glow for cards - white base with rainbow fade */
 @keyframes rainbow-glow-inner {
   0% {
-    border-color: #ff0000 !important;
-    box-shadow: 0 0 20px #ff0000, 0 0 40px #ff0000, 0 0 60px #ff7f00, 0 0 80px #fff, inset 0 0 20px rgba(255, 255, 255, 0.15) !important;
+    border-color: rgba(255, 255, 255, 0.6) !important;
+    box-shadow:
+      0 0 10px rgba(255, 255, 255, 0.8),
+      0 0 20px rgba(255, 255, 255, 0.6),
+      0 0 30px rgba(255, 255, 255, 0.4),
+      0 0 40px rgba(255, 0, 0, 0.6),
+      0 0 60px rgba(255, 127, 0, 0.4),
+      0 0 80px rgba(255, 255, 0, 0.2),
+      inset 0 0 15px rgba(255, 255, 255, 0.1) !important;
   }
   14% {
-    border-color: #ff7f00 !important;
-    box-shadow: 0 0 20px #ff7f00, 0 0 40px #ff7f00, 0 0 60px #ffff00, 0 0 80px #fff, inset 0 0 20px rgba(255, 255, 255, 0.15) !important;
+    border-color: rgba(255, 255, 255, 0.6) !important;
+    box-shadow:
+      0 0 10px rgba(255, 255, 255, 0.8),
+      0 0 20px rgba(255, 255, 255, 0.6),
+      0 0 30px rgba(255, 255, 255, 0.4),
+      0 0 40px rgba(255, 127, 0, 0.6),
+      0 0 60px rgba(255, 255, 0, 0.4),
+      0 0 80px rgba(0, 255, 0, 0.2),
+      inset 0 0 15px rgba(255, 255, 255, 0.1) !important;
   }
   28% {
-    border-color: #ffff00 !important;
-    box-shadow: 0 0 20px #ffff00, 0 0 40px #ffff00, 0 0 60px #00ff00, 0 0 80px #fff, inset 0 0 20px rgba(255, 255, 255, 0.15) !important;
+    border-color: rgba(255, 255, 255, 0.6) !important;
+    box-shadow:
+      0 0 10px rgba(255, 255, 255, 0.8),
+      0 0 20px rgba(255, 255, 255, 0.6),
+      0 0 30px rgba(255, 255, 255, 0.4),
+      0 0 40px rgba(255, 255, 0, 0.6),
+      0 0 60px rgba(0, 255, 0, 0.4),
+      0 0 80px rgba(0, 255, 255, 0.2),
+      inset 0 0 15px rgba(255, 255, 255, 0.1) !important;
   }
   42% {
-    border-color: #00ff00 !important;
-    box-shadow: 0 0 20px #00ff00, 0 0 40px #00ff00, 0 0 60px #00ffff, 0 0 80px #fff, inset 0 0 20px rgba(255, 255, 255, 0.15) !important;
+    border-color: rgba(255, 255, 255, 0.6) !important;
+    box-shadow:
+      0 0 10px rgba(255, 255, 255, 0.8),
+      0 0 20px rgba(255, 255, 255, 0.6),
+      0 0 30px rgba(255, 255, 255, 0.4),
+      0 0 40px rgba(0, 255, 0, 0.6),
+      0 0 60px rgba(0, 255, 255, 0.4),
+      0 0 80px rgba(0, 0, 255, 0.2),
+      inset 0 0 15px rgba(255, 255, 255, 0.1) !important;
   }
   57% {
-    border-color: #00ffff !important;
-    box-shadow: 0 0 20px #00ffff, 0 0 40px #00ffff, 0 0 60px #0000ff, 0 0 80px #fff, inset 0 0 20px rgba(255, 255, 255, 0.15) !important;
+    border-color: rgba(255, 255, 255, 0.6) !important;
+    box-shadow:
+      0 0 10px rgba(255, 255, 255, 0.8),
+      0 0 20px rgba(255, 255, 255, 0.6),
+      0 0 30px rgba(255, 255, 255, 0.4),
+      0 0 40px rgba(0, 255, 255, 0.6),
+      0 0 60px rgba(0, 0, 255, 0.4),
+      0 0 80px rgba(148, 0, 211, 0.2),
+      inset 0 0 15px rgba(255, 255, 255, 0.1) !important;
   }
   71% {
-    border-color: #0000ff !important;
-    box-shadow: 0 0 20px #0000ff, 0 0 40px #0000ff, 0 0 60px #9400d3, 0 0 80px #fff, inset 0 0 20px rgba(255, 255, 255, 0.15) !important;
+    border-color: rgba(255, 255, 255, 0.6) !important;
+    box-shadow:
+      0 0 10px rgba(255, 255, 255, 0.8),
+      0 0 20px rgba(255, 255, 255, 0.6),
+      0 0 30px rgba(255, 255, 255, 0.4),
+      0 0 40px rgba(0, 0, 255, 0.6),
+      0 0 60px rgba(148, 0, 211, 0.4),
+      0 0 80px rgba(255, 0, 0, 0.2),
+      inset 0 0 15px rgba(255, 255, 255, 0.1) !important;
   }
   85% {
-    border-color: #9400d3 !important;
-    box-shadow: 0 0 20px #9400d3, 0 0 40px #9400d3, 0 0 60px #ff0000, 0 0 80px #fff, inset 0 0 20px rgba(255, 255, 255, 0.15) !important;
+    border-color: rgba(255, 255, 255, 0.6) !important;
+    box-shadow:
+      0 0 10px rgba(255, 255, 255, 0.8),
+      0 0 20px rgba(255, 255, 255, 0.6),
+      0 0 30px rgba(255, 255, 255, 0.4),
+      0 0 40px rgba(148, 0, 211, 0.6),
+      0 0 60px rgba(255, 0, 0, 0.4),
+      0 0 80px rgba(255, 127, 0, 0.2),
+      inset 0 0 15px rgba(255, 255, 255, 0.1) !important;
   }
   100% {
-    border-color: #ff0000 !important;
-    box-shadow: 0 0 20px #ff0000, 0 0 40px #ff0000, 0 0 60px #ff7f00, 0 0 80px #fff, inset 0 0 20px rgba(255, 255, 255, 0.15) !important;
+    border-color: rgba(255, 255, 255, 0.6) !important;
+    box-shadow:
+      0 0 10px rgba(255, 255, 255, 0.8),
+      0 0 20px rgba(255, 255, 255, 0.6),
+      0 0 30px rgba(255, 255, 255, 0.4),
+      0 0 40px rgba(255, 0, 0, 0.6),
+      0 0 60px rgba(255, 127, 0, 0.4),
+      0 0 80px rgba(255, 255, 0, 0.2),
+      inset 0 0 15px rgba(255, 255, 255, 0.1) !important;
   }
 }
 

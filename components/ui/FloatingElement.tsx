@@ -1,7 +1,8 @@
 "use client";
 
-import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
-import { useEffect, useRef } from "react";
+import { motion, useSpring, useTransform } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
+import { useMousePosition } from "@/contexts/MouseContext";
 
 interface FloatingElementProps {
   children: React.ReactNode;
@@ -15,42 +16,43 @@ export function FloatingElement({
   intensity = 20,
 }: FloatingElementProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
+  const { mouseX: globalMouseX, mouseY: globalMouseY } = useMousePosition();
+  const [windowSize, setWindowSize] = useState({ width: 1, height: 1 });
+
+  useEffect(() => {
+    setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    const handleResize = () => {
+      setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Transform absolute mouse position to normalized -1 to 1 range
+  const normalizedX = useTransform(globalMouseX, [0, windowSize.width], [-1, 1]);
+  const normalizedY = useTransform(globalMouseY, [0, windowSize.height], [-1, 1]);
 
   // BOUNCY spring config - low damping = more bounce!
   const springConfig = { damping: 12, stiffness: 200, mass: 0.8 };
 
   const x = useSpring(
-    useTransform(mouseX, [-1, 1], [-intensity, intensity]),
+    useTransform(normalizedX, [-1, 1], [-intensity, intensity]),
     springConfig
   );
   const y = useSpring(
-    useTransform(mouseY, [-1, 1], [-intensity, intensity]),
+    useTransform(normalizedY, [-1, 1], [-intensity, intensity]),
     springConfig
   );
 
   // Add rotation based on mouse position for extra energy
   const rotateZ = useSpring(
-    useTransform(mouseX, [-1, 1], [-3, 3]),
+    useTransform(normalizedX, [-1, 1], [-3, 3]),
     springConfig
   );
   const scale = useSpring(
-    useTransform(mouseX, [-1, 0, 1], [0.98, 1, 0.98]),
+    useTransform(normalizedX, [-1, 0, 1], [0.98, 1, 0.98]),
     springConfig
   );
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      const normalizedX = (e.clientX / window.innerWidth) * 2 - 1;
-      const normalizedY = (e.clientY / window.innerHeight) * 2 - 1;
-      mouseX.set(normalizedX);
-      mouseY.set(normalizedY);
-    };
-
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, [mouseX, mouseY]);
 
   return (
     <motion.div

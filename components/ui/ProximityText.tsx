@@ -1,7 +1,8 @@
 "use client";
 
-import { motion, useMotionValue, useSpring, useTransform, MotionValue } from "framer-motion";
+import { motion, useSpring, useTransform, MotionValue } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
+import { useMousePosition } from "@/contexts/MouseContext";
 
 interface ProximityTextProps {
   children: string;
@@ -151,19 +152,7 @@ export function ProximityText({
   maxScale = 1.3,
   proximity = 150,
 }: ProximityTextProps) {
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      mouseX.set(e.clientX);
-      mouseY.set(e.clientY);
-    };
-
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, [mouseX, mouseY]);
-
+  const { mouseX, mouseY } = useMousePosition();
   const letters = children.split("");
 
   return (
