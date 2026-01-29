@@ -6,9 +6,10 @@ import { useRef, useState, MouseEvent } from "react";
 interface BouncyCardProps {
   children: React.ReactNode;
   className?: string;
+  delay?: number;
 }
 
-export function BouncyCard({ children, className = "" }: BouncyCardProps) {
+export function BouncyCard({ children, className = "", delay = 0 }: BouncyCardProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
 
@@ -65,12 +66,16 @@ export function BouncyCard({ children, className = "" }: BouncyCardProps) {
 
   return (
     // Outer wrapper stays stationary - handles mouse events with stable bounds
-    <div
+    <motion.div
       ref={ref}
       className={`relative ${className}`}
       onMouseEnter={handleMouseEnter}
       onMouseMove={handleMouse}
       onMouseLeave={handleMouseLeave}
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ delay, duration: 0.5 }}
     >
       {/* Inner card transforms based on mouse position */}
       <motion.div
@@ -91,6 +96,6 @@ export function BouncyCard({ children, className = "" }: BouncyCardProps) {
         />
         <div className="relative z-10">{children}</div>
       </motion.div>
-    </div>
+    </motion.div>
   );
 }
