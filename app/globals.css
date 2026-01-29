@@ -40,6 +40,20 @@
   --breakpoint-xs: 480px;
 }
 
+@layer utilities {
+  .min-h-screen {
+    min-height: 100vh; /* Fallback */
+    min-height: 100dvh;
+  }
+  .h-screen {
+    height: 100vh; /* Fallback */
+    height: 100dvh;
+  }
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
 /* ==================== HIGH ENERGY ANIMATIONS ==================== */
 
 /* FAST Rainbow text animation */

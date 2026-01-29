@@ -94,7 +94,7 @@ export function BouncyCard({ children, className = "", delay = 0 }: BouncyCardPr
           className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/5 to-white/10 pointer-events-none"
           style={{ opacity: glowOpacity }}
         />
-        <div className="relative z-10">{children}</div>
+        <div className="relative z-10 h-full flex flex-col">{children}</div>
       </motion.div>
     </motion.div>
   );

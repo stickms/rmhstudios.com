@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { BouncyCard } from "@/components/ui/BouncyCard";
 import { ProximityText } from "@/components/ui/ProximityText";
 import { NeonButton } from "@/components/ui/NeonButton";
+import { ArrowRight } from "lucide-react";
 
 import Image from "next/image";
 
@@ -30,13 +31,12 @@ const merchItems = [
 
 export function MerchSection() {
   return (
-    <section id="merch" className="min-h-screen relative flex flex-col items-center justify-center py-20 px-4 overflow-hidden">
+    <section id="merch" className="min-h-screen relative flex flex-col items-center justify-center py-20 px-4 overflow-hidden bg-gradient-to-b from-[var(--neon-purple)]/20 to-[var(--neon-blue)]/20">
+      {/* Subtle Divider */}
+      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-[var(--neon-blue)]/50 to-transparent opacity-50" />
       
       {/* Background Ambience */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/80 to-[var(--neon-purple)]/10 pointer-events-none" />
-      {/* Moved top line up to avoid text intersection */}
-      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-[var(--neon-cyan)]/30 to-transparent" />
-      <div className="absolute bottom-1/4 left-0 w-full h-px bg-gradient-to-r from-transparent via-[var(--neon-pink)]/30 to-transparent" />
+      <div className="absolute inset-0 pointer-events-none" />
 
       <div className="container mx-auto max-w-6xl relative z-10">
         <motion.div
@@ -53,42 +53,41 @@ export function MerchSection() {
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16 justify-items-center">
           {merchItems.map((item, index) => (
-            <BouncyCard key={item.id} delay={index * 0.1}>
-              <div className="aspect-square bg-black/40 rounded-xl mb-6 relative overflow-hidden group">
-                
-                {/* Image Container */}
-                <div className="w-full h-full relative z-10 transition-transform duration-500 group-hover:scale-105">
-                    <Image 
-                        src={item.image} 
-                        alt={item.title} 
-                        fill 
-                        className="object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-500"
-                    />
-                </div>
+            <div key={item.id} className="w-full max-w-sm mx-auto h-full">
+                <BouncyCard delay={index * 0.1} className="h-full">
+                <div className="aspect-square bg-black/40 rounded-xl mb-4 relative overflow-hidden group">
+                    
+                    {/* Image Container */}
+                    <div className="w-full h-full relative z-10 transition-transform duration-500 group-hover:scale-105">
+                        <Image 
+                            src={item.image} 
+                            alt={item.title} 
+                            fill 
+                            className="object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-500"
+                        />
+                    </div>
 
-                {/* Hover Glow Effect */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60 pointer-events-none" />
-                <div className="absolute inset-0 bg-[var(--neon-cyan)]/0 group-hover:bg-[var(--neon-cyan)]/10 transition-colors duration-500 pointer-events-none" />
-              </div>
-              
-              <div className="flex justify-between items-end">
-                <div>
-                  <h3 className="text-2xl font-bold mb-1">{item.title}</h3>
-                  <p className="text-[var(--neon-pink)] font-mono text-lg">{item.price}</p>
+                    {/* Hover Glow Effect */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60 pointer-events-none" />
+                    <div className="absolute inset-0 bg-[var(--neon-cyan)]/0 group-hover:bg-[var(--neon-cyan)]/10 transition-colors duration-500 pointer-events-none" />
                 </div>
-                <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
-                >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M5 12h14M12 5l7 7-7 7" />
-                    </svg>
-                </motion.button>
-              </div>
-            </BouncyCard>
+                
+                <h3 className="text-2xl font-bold mb-2">{item.title}</h3>
+
+                <div className="flex justify-between items-end mt-auto">
+                    <p className="text-[var(--neon-pink)] font-mono text-lg">{item.price}</p>
+                    <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
+                    >
+                        <ArrowRight className="w-5 h-5 text-white" />
+                    </motion.button>
+                </div>
+                </BouncyCard>
+            </div>
           ))}
         </div>
 

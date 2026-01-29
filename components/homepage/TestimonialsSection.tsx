@@ -32,11 +32,13 @@ export function TestimonialsSection() {
   return (
     <section
       id="testimonials"
-      className="relative min-h-screen flex flex-col pt-20"
+      className="relative min-h-screen flex flex-col pt-20 overflow-hidden bg-gradient-to-b from-[var(--neon-cyan)]/20 to-[var(--neon-pink)]/20"
     >
+      {/* Subtle Divider */}
+      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-[var(--neon-cyan)]/50 to-transparent opacity-50" />
+
       {/* Background Ambience */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/80 to-[var(--neon-pink)]/10 pointer-events-none" />
-      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-[var(--neon-pink)]/30 to-transparent" />
+      <div className="absolute inset-0 pointer-events-none" />
 
       <div className="flex-grow flex flex-col justify-center px-4 py-20 relative z-10">
         <div className="max-w-6xl mx-auto w-full">

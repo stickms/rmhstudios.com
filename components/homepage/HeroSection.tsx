@@ -48,7 +48,7 @@ export function HeroSection() {
       <PulsatingOrb className="absolute bottom-[10%] right-[30%]" color="purple" size="sm" />
 
       {/* Main content with perspective */}
-      <div className="flex-grow flex flex-col items-center justify-center w-full relative z-10 px-4">
+      <div className="flex-grow flex flex-col items-center justify-center w-full relative z-10 px-4 pb-32">
         <motion.div
           className="text-center"
           style={{
@@ -183,6 +183,9 @@ export function HeroSection() {
 
       {/* Scroll to next section */}
       {/* Scroll to next section - REMOVED for Global Button */}
+      
+      {/* Bottom Fade to Black for smooth transition to next section */}
+      <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-b from-transparent to-black pointer-events-none z-20" />
     </section>
   );
 }

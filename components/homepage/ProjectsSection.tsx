@@ -2,68 +2,55 @@
 
 import { motion } from "framer-motion";
 import { BouncyCard } from "@/components/ui/BouncyCard";
+import { FlipCard } from "@/components/ui/FlipCard";
 import { ProximityText } from "@/components/ui/ProximityText";
+import { SiSteam } from "react-icons/si";
+import { Rocket, BookOpen, Brain, X } from "lucide-react";
 
 const projects = [
+  {
+    id: 2,
+    title: "Satan's Library",
+    description:
+      "A survival horror where you 'lock in' to gain Knowledge and Aura while escaping succubi.",
+    longDescription:
+      "A survival horror where you play as an underdog in a library overrun by succubi and chadlites. Your goal: 'lock in' and build your Knowledge and Aura stats to escape. Resist temptation, survive beatdowns, and outsmart Satan (Rish) himself in this high-stakes test of willpower.",
+    status: "In Development",
+    gradient: "from-red-900 to-red-600",
+    icon: <BookOpen className="w-20 h-20 text-white/80" strokeWidth={1} />
+  },
   {
     id: 1,
     title: "Project Nova",
     description:
       "An expansive sci-fi adventure that pushes the boundaries of exploration and discovery.",
-    status: "In Development",
-    gradient: "from-[var(--neon-pink)] to-[var(--neon-purple)]",
-    svg: (
-        <svg viewBox="0 0 200 200" className="w-full h-full opacity-80 group-hover:scale-110 transition-transform duration-500">
-            <circle cx="100" cy="100" r="40" fill="none" stroke="white" strokeWidth="2" />
-            <path d="M60 100 Q100 60 140 100 T220 100" fill="none" stroke="white" strokeWidth="2" opacity="0.5" />
-            <circle cx="150" cy="50" r="10" fill="white" opacity="0.8" />
-            <path d="M100 20 L100 40M100 160 L100 180M20 100 L40 100M160 100 L180 100" stroke="white" strokeWidth="2" opacity="0.3" />
-        </svg>
-    )
-  },
-  {
-    id: 2,
-    title: "Neon Rush",
-    description:
-      "High-octane racing through cyberpunk cityscapes with dynamic weather and day/night cycles.",
+    longDescription: 
+      "An expansive sci-fi adventure that pushes the boundaries of exploration and discovery. Chart unknown galaxies, trade with alien civilizations, and build your legacy in a universe that reacts to your every decision. Experience seamless ground-to-space transitions and a deep, player-driven economy.",
     status: "Coming Soon",
-    gradient: "from-[var(--neon-cyan)] to-[var(--neon-blue)]",
-    svg: (
-        <svg viewBox="0 0 200 200" className="w-full h-full opacity-80 group-hover:scale-110 transition-transform duration-500">
-             <path d="M50 120 L150 120 L140 100 L60 100 Z" fill="none" stroke="white" strokeWidth="3" />
-             <circle cx="70" cy="120" r="12" fill="none" stroke="white" strokeWidth="3" />
-             <circle cx="130" cy="120" r="12" fill="none" stroke="white" strokeWidth="3" />
-             {/* Speed lines */}
-             <path d="M20 100 L40 100" stroke="white" strokeWidth="2" opacity="0.6" />
-             <path d="M10 110 L30 110" stroke="white" strokeWidth="2" opacity="0.6" />
-             <path d="M30 90 L50 90" stroke="white" strokeWidth="2" opacity="0.6" />
-        </svg>
-    )
+    gradient: "from-[var(--neon-pink)] to-[var(--neon-purple)]",
+    icon: <Rocket className="w-20 h-20 text-white/80" strokeWidth={1} />
   },
   {
     id: 3,
     title: "Echoes",
     description:
       "A narrative-driven puzzle game exploring memory, identity, and the nature of reality.",
-    status: "In Development",
+    longDescription:
+      "Dive into a fragmented reality where memories are currency. Solve complex narrative puzzles to piece together the truth of your existence before the entropy of the void dissolves everything you know. Features non-linear storytelling, adaptive audio landscapes, and choices that ripple across timelines.",
+    status: "Coming Soon",
     gradient: "from-[var(--neon-purple)] to-[var(--neon-pink)]",
-    svg: (
-        <svg viewBox="0 0 200 200" className="w-full h-full opacity-80 group-hover:scale-110 transition-transform duration-500">
-             <rect x="70" y="70" width="60" height="60" rx="10" fill="none" stroke="white" strokeWidth="3" transform="rotate(45 100 100)" />
-             <path d="M100 70 L100 130 M70 100 L130 100" stroke="white" strokeWidth="2" />
-             <circle cx="100" cy="100" r="15" fill="none" stroke="white" strokeWidth="2" />
-             <path d="M100 40 L100 50" stroke="white" strokeWidth="2" opacity="0.5" />
-        </svg>
-    )
+    icon: <Brain className="w-20 h-20 text-white/80" strokeWidth={1} />
   },
 ];
 
 export function ProjectsSection() {
   return (
-    <section id="projects" className="relative min-h-screen flex flex-col pt-20">
+    <section id="projects" className="relative min-h-screen flex flex-col pt-20 overflow-hidden bg-gradient-to-b from-black via-[var(--neon-cyan)]/10 to-black">
+      {/* Subtle Divider */}
+      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-[var(--neon-cyan)]/50 to-transparent opacity-50" />
+      
       {/* Background Ambience */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/80 to-[var(--neon-cyan)]/10 pointer-events-none" />
-      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-[var(--neon-cyan)]/30 to-transparent" />
+      <div className="absolute inset-0 to-[var(--neon-cyan)]/10 pointer-events-none" />
 
       <div className="flex-grow flex flex-col justify-center px-4 py-20 relative z-10">
         <div className="max-w-6xl mx-auto w-full">
@@ -86,48 +73,96 @@ export function ProjectsSection() {
           </motion.div>
 
           {/* Project grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-            {projects.map((project, index) => (
-              <motion.div
-                key={project.id}
-                initial={{ opacity: 0, y: 40 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: index * 0.15 }}
-              >
-                <BouncyCard className="h-full group">
-                  {/* Styled Thumbnail Container with SVG */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 justify-items-center">
+            {projects.map((project, index) => {
+              // Standard Card Content (Front) for all cards
+              const CardContent = (
+                <>
                   <div
                     className={`h-40 rounded-lg bg-gradient-to-br ${project.gradient} mb-4 flex items-center justify-center relative overflow-hidden`}
                   >
-                     <div className="absolute inset-0 bg-black/20" /> {/* Overlay for better SVG visibility */}
-                     <div className="w-full h-full p-4 relative z-10">
-                        {project.svg}
-                     </div>
+                    <div className="absolute inset-0 bg-black/20" />
+                    <div className="w-full h-full p-4 relative z-10 flex items-center justify-center">
+                      {project.icon}
+                    </div>
                   </div>
 
-                  {/* Status badge */}
                   <span className="inline-block px-3 py-1 text-xs font-bold rounded-full bg-[var(--neon-pink)]/20 text-[var(--neon-pink)] border border-[var(--neon-pink)]/30 badge-pulse">
                     {project.status}
                   </span>
 
-                  {/* Title */}
                   <h3 className="text-xl md:text-2xl font-bold text-white mt-3">
                     {project.title}
                   </h3>
 
-                  {/* Description */}
                   <p className="text-white/60 mt-2 text-sm md:text-base">
                     {project.description}
                   </p>
-                </BouncyCard>
-              </motion.div>
-            ))}
+                </>
+              );
+
+              // Render FlipCard for ALL projects
+              return (
+                <motion.div
+                    key={project.id}
+                    initial={{ opacity: 0, y: 40 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.6, delay: index * 0.15 }}
+                    className="h-full w-full max-w-md mx-auto"
+                >
+                    {/* Perspective wrapper */}
+                    <div className="h-full relative group perspective-1000">
+                            <FlipCard 
+                            className="h-full"
+                            front={
+                                <div className="rounded-2xl bg-white/5 p-6 pb-12 backdrop-blur-sm border-2 border-white/10 h-full group-hover:border-[var(--neon-pink)] transition-colors">
+                                    {CardContent}
+                                    <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity text-xs text-[var(--neon-pink)] font-bold uppercase tracking-widest">
+                                        Click to Flip ↻
+                                    </div>
+                                </div>
+                            }
+                            back={
+                                <div className="rounded-2xl bg-black border-2 border-[var(--neon-purple)] h-full overflow-hidden flex flex-col shadow-[0_0_30px_rgba(153,0,255,0.5)]">
+                                    {/* Header */}
+                                    <div className="flex justify-between items-center p-4 border-b border-white/10 bg-white/5 backdrop-blur-md shrink-0">
+                                        <h3 className="text-xl font-bold text-white">{project.title}</h3>
+                                        <div className="cursor-pointer" title="Close">
+                                            <X className="w-5 h-5 text-white/60 hover:text-white transition-colors" />
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Content */}
+                                    <div className="flex-1 overflow-y-auto custom-scrollbar p-6 flex flex-col">
+                                        <h4 className="text-[var(--neon-purple)] font-bold uppercase tracking-wider text-xs mb-3">About the Game</h4>
+                                        <p className="text-sm text-white/80 leading-relaxed font-light mb-6">
+                                            {project.longDescription}
+                                        </p>
+
+                                        <div className="mt-auto">
+                                            <a 
+                                                href="#" 
+                                                className="w-full py-3 bg-gradient-to-r from-[#1b2838] to-[#2a475e] hover:from-[#2a475e] hover:to-[#1b2838] text-[#66c0f4] font-bold text-center rounded-lg transition-all shadow-lg hover:shadow-[#66c0f4]/20 flex items-center justify-center gap-2 text-sm group/btn"
+                                                onClick={(e) => e.stopPropagation()} // Prevent flip when clicking button
+                                            >
+                                                <span className="flex items-center pb-[1px]">
+                                                    <SiSteam className="w-5 h-5" />
+                                                </span>
+                                                Wishlist on Steam
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                            />
+                    </div>
+                </motion.div>
+                );
+            })}
           </div>
         </div>
       </div>
-
-      {/* Navigation buttons - REMOVED for Global Button */}
     </section>
   );
 }

@@ -6,8 +6,12 @@ import { MerchSection } from "@/components/homepage/MerchSection";
 import { FooterSection } from "@/components/homepage/FooterSection";
 import { ParticleField } from "@/components/effects/ParticleField";
 import { GlobalSmartScroll } from "@/components/ui/GlobalSmartScroll";
+import { BlogSection } from "@/components/homepage/BlogSection";
+import { getAllPosts } from "@/lib/blog";
 
 export default function Home() {
+  const posts = getAllPosts(["title", "date", "slug", "description", "image"]).slice(0, 8);
+
   return (
     <main className="min-h-screen bg-background noise">
       {/* Interactive particle background */}
@@ -15,8 +19,9 @@ export default function Home() {
 
       <HeroSection />
       <ProjectsSection />
-      <TestimonialsSection />
       <AboutSection />
+      <TestimonialsSection />
+      <BlogSection posts={posts} />
       <MerchSection />
       <FooterSection />
       <GlobalSmartScroll />
