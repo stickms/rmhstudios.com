@@ -1,36 +1,112 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# rmhstudios.com
 
-## Getting Started
+**Digital Portfolio & Studio Website**
 
-First, run the development server:
+rmhstudios.com is a modern, high-performance web application designed to showcase a digital portfolio, blog (devlog), and studio projects. Built with the latest web technologies, it features a dynamic, animated user interface with a premium aesthetic.
+
+## 🚀 Features
+
+-   **Modern UI/UX**: Built with **Tailwind CSS v4** and **Framer Motion** for smooth, complex animations and transitions.
+-   **Interactive Components**:
+    -   **Hero Section**: Engaging entry point with proximity-aware text effects.
+    -   **Carousel System**: Powered by `embla-carousel-react` for browsing blog posts and projects.
+    -   **Blog / Devlog**: MDX-powered blog system allowing rich content authoring with Markdown.
+    -   **Glitch & Neon Effects**: Custom UI components like `GlitchText`, `NeonButton`, and `ProximityText`.
+-   **Responsive Design**: Fully responsive layouts optimized for mobile, tablet, and desktop.
+-   **Performance**: Server-Side Rendering (SSR) and Static Site Generation (SSG) via Next.js 16.
+
+## 🛠 Tech Stack
+
+-   **Framework**: [Next.js 16 (App Router)](https://nextjs.org/)
+-   **Language**: [TypeScript](https://www.typescriptlang.org/)
+-   **Styling**: [Tailwind CSS v4](https://tailwindcss.com/)
+-   **Animations**: [Framer Motion](https://www.framer.com/motion/)
+-   **Icons**: [Lucide React](https://lucide.dev/)
+-   **Content Management**: MDX (`next-mdx-remote`, `gray-matter`)
+-   **Carousel**: [Embla Carousel](https://www.embla-carousel.com/)
+-   **Deployment**: Vercel
+
+## 📂 Project Structure
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+├── app/                  # Next.js App Router pages and layouts
+│   ├── blog/             # Blog post details and listing pages
+│   ├── globals.css       # Global styles and Tailwind directives
+│   ├── layout.tsx        # Root layout
+│   └── page.tsx          # Homepage composition
+├── components/           # React components
+│   ├── blog/             # Blog-specific components (lists, preview, etc.)
+│   ├── homepage/         # Sections for the homepage (Hero, About, Projects, etc.)
+│   └── ui/               # Reusable UI primitives (buttons, text effects, cards)
+├── content/              # Markdown/MDX content files
+│   └── blog/             # Blog posts source files
+├── contexts/             # React Context definitions
+├── hooks/                # Custom React hooks (e.g., useIsMobile)
+├── lib/                  # Utility functions and shared logic (e.g., blog data fetching)
+└── public/               # Static assets (images, fonts, icons)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## ⚡ Getting Started
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Prerequisites
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+-   **Node.js**: v18 or higher recommended.
+-   **Package Manager**: `pnpm` (recommended), `npm`, or `yarn`.
 
-## Learn More
+### Installation
 
-To learn more about Next.js, take a look at the following resources:
+1.  Clone the repository:
+    ```bash
+    git clone https://github.com/your-username/rmhstudios.com.git
+    cd rmhstudios.com
+    ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+2.  Install dependencies:
+    ```bash
+    pnpm install
+    # or
+    npm install
+    ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+3.  Run the development server:
+    ```bash
+    pnpm dev
+    # or
+    npm run dev
+    ```
 
-## Deploy on Vercel
+4.  Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 📦 Build & Deployment
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+To create a production build:
+
+```bash
+pnpm build
+# or
+npm run build
+```
+
+This project is optimized for deployment on **Vercel**.
+1.  Push your code to a Git repository (GitHub, GitLab, Bitbucket).
+2.  Import the project into Vercel.
+3.  Vercel will automatically detect the Next.js configuration and deploy.
+
+## 📝 Content Management (Blog)
+
+Blog posts are stored in `content/blog` as `.mdx` files.
+Each file follows this frontmatter format:
+
+```markdown
+---
+title: "Your Post Title"
+date: "2024-03-20"
+description: "A brief summary of the post."
+image: "/images/blog/your-image.jpg"
+tags: ["Next.js", "Design"]
+---
+
+Your content goes here...
+```
+
+The application automatically reads and renders these files using `lib/blog.ts`.

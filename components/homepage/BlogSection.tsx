@@ -79,7 +79,7 @@ export function BlogSection({ posts }: BlogSectionProps) {
   }, [emblaApi, onInit, onSelect]);
 
   return (
-    <section id="blog" ref={containerRef} className="relative py-20 overflow-hidden bg-gradient-to-b from-[var(--neon-pink)]/20 to-[var(--neon-purple)]/20">
+    <section id="blog" ref={containerRef} className="relative py-20 overflow-hidden bg-gradient-to-b from-[var(--neon-pink)]/20 to-[var(--neon-purple)]/20 min-h-screen flex flex-col justify-center">
       {/* Subtle Divider */}
       <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-[var(--neon-pink)]/50 to-transparent opacity-50" />
       
@@ -160,14 +160,14 @@ export function BlogSection({ posts }: BlogSectionProps) {
           {/* Custom Navigation Controls */}
           <button 
               onClick={scrollPrev} 
-              className="absolute left-8 top-1/2 -translate-y-1/2 z-30 p-3 rounded-full bg-black/50 border border-white/10 text-white hover:bg-[var(--neon-pink)] hover:border-[var(--neon-pink)] transition-all hidden md:flex backdrop-blur-md"
+              className="absolute left-8 md:left-[15%] lg:left-[32%] top-1/2 -translate-y-1/2 z-30 p-3 rounded-full bg-black/50 border border-white/10 text-white hover:bg-[var(--neon-pink)] hover:border-[var(--neon-pink)] transition-all hidden md:flex backdrop-blur-md"
               aria-label="Previous Slide"
           >
               <ChevronLeft className="w-6 h-6" />
           </button>
           <button 
               onClick={scrollNext} 
-              className="absolute right-8 top-1/2 -translate-y-1/2 z-30 p-3 rounded-full bg-black/50 border border-white/10 text-white hover:bg-[var(--neon-pink)] hover:border-[var(--neon-pink)] transition-all hidden md:flex backdrop-blur-md"
+              className="absolute right-8 md:right-[15%] lg:right-[32%] top-1/2 -translate-y-1/2 z-30 p-3 rounded-full bg-black/50 border border-white/10 text-white hover:bg-[var(--neon-pink)] hover:border-[var(--neon-pink)] transition-all hidden md:flex backdrop-blur-md"
               aria-label="Next Slide"
           >
               <ChevronRight className="w-6 h-6" />
