@@ -2,7 +2,6 @@
 
 import { motion } from "framer-motion";
 import { ProximityText } from "@/components/ui/ProximityText";
-import { ScrollButton } from "@/components/ui/ScrollButton";
 
 // SVG icons for social links
 const TwitterIcon = () => (
@@ -58,22 +57,9 @@ export function FooterSection() {
           </p>
         </motion.div>
 
-        <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-          {/* Logo */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-          >
-            <span className="text-2xl font-black">
-              <ProximityText maxScale={1.15} proximity={80}>
-                RMH STUDIOS
-              </ProximityText>
-            </span>
-          </motion.div>
-
+        <div className="flex flex-col items-center gap-12">
           {/* Social links */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6">
             {socialLinks.map((link, index) => {
               const IconComponent = link.icon;
               return (
@@ -95,22 +81,38 @@ export function FooterSection() {
             })}
           </div>
 
-          {/* Contact */}
-          <motion.div
-            className="text-center md:text-right"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.3 }}
-          >
-            <a
-              href="mailto:hello@rmhstudios.com"
-              className="text-white/60 hover:text-white transition-colors relative group"
+          {/* Info Row: Logo and Contact */}
+          <div className="w-full max-w-4xl flex flex-col md:flex-row items-center justify-between gap-8 px-4">
+            {/* Logo */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
             >
-              hello@rmhstudios.com
-              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-[var(--neon-pink)] to-[var(--neon-cyan)] group-hover:w-full transition-all duration-300" />
-            </a>
-          </motion.div>
+              <span className="text-2xl font-black">
+                <ProximityText maxScale={1.15} proximity={80}>
+                  RMH STUDIOS
+                </ProximityText>
+              </span>
+            </motion.div>
+
+            {/* Contact */}
+            <motion.div
+              className="text-center md:text-right"
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.3 }}
+            >
+              <a
+                href="mailto:hello@rmhstudios.com"
+                className="text-white/60 hover:text-white transition-colors relative group"
+              >
+                hello@rmhstudios.com
+                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-[var(--neon-pink)] to-[var(--neon-cyan)] group-hover:w-full transition-all duration-300" />
+              </a>
+            </motion.div>
+          </div>
         </div>
 
         {/* Copyright */}
@@ -133,10 +135,7 @@ export function FooterSection() {
         </motion.div>
       </div>
 
-      {/* Back to top button */}
-      <div className="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2">
-        <ScrollButton targetId="home" label="Back to Top" direction="up" />
-      </div>
+      {/* Back to top button - REMOVED for Global Button */}
     </footer>
   );
 }

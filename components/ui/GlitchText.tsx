@@ -10,7 +10,7 @@ interface GlitchTextProps {
 export function GlitchText({ children, className = "" }: GlitchTextProps) {
   return (
     <motion.span
-      className={`glitch-text inline-block ${className}`}
+      className={`glitch-text inline-block select-none ${className}`}
       whileHover={{
         scale: 1.02,
         transition: { type: "spring", stiffness: 400, damping: 10 },

@@ -80,7 +80,7 @@ export function PulsatingText({
   const letters = children.split("");
 
   return (
-    <span className={className}>
+    <span className={`select-none ${className}`}>
       {letters.map((letter, index) => (
         <PulsatingLetter
           key={index}

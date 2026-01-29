@@ -15,7 +15,7 @@ export function RainbowText({
 }: RainbowTextProps) {
   return (
     <motion.span
-      className={`rainbow-text inline-block font-bold ${className}`}
+      className={`rainbow-text inline-block font-bold select-none ${className}`}
       whileHover={{ scale: 1.05 }}
       transition={{ type: "spring", stiffness: 400, damping: 10 }}
     >

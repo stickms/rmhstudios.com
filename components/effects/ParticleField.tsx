@@ -44,6 +44,7 @@ export function ParticleField() {
     };
   }, [mouseX, mouseY]);
 
+  // No changes to logic above this, just re-implementing useEffect content
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -51,15 +52,22 @@ export function ParticleField() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    // Mobile detection without hook inside useEffect (since hook is top-level, we can check width here or pass it in)
+    // We can rely on window.innerWidth in the resize checking, but for init we want to know too.
+    let isMobile = window.innerWidth < 768;
+
     const resize = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
+      isMobile = window.innerWidth < 768;
     };
     resize();
     window.addEventListener("resize", resize);
 
     // Initialize particles
-    const particleCount = 80;
+    // OPTIMIZATION: Reduce particle count on mobile
+    const particleCount = isMobile ? 30 : 80;
+    particlesRef.current = []; // Clear existing
     for (let i = 0; i < particleCount; i++) {
       particlesRef.current.push(createParticle(canvas.width, canvas.height));
     }
@@ -122,9 +130,11 @@ export function ParticleField() {
         ctx.save();
         ctx.globalAlpha = alpha;
 
-        // Glow effect
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = p.color;
+        // OPTIMIZATION: Disable expensive shadowBlur on mobile
+        if (!isMobile) {
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = p.color;
+        }
 
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
@@ -134,15 +144,18 @@ export function ParticleField() {
         ctx.restore();
 
         // Draw connections
+        // OPTIMIZATION: Reduce connection check distance on mobile
+        const connectionDist = isMobile ? 60 : 100;
+        
         particlesRef.current.forEach((p2, j) => {
           if (j <= i) return;
           const dx = p.x - p2.x;
           const dy = p.y - p2.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
 
-          if (dist < 100) {
+          if (dist < connectionDist) {
             ctx.save();
-            ctx.globalAlpha = (1 - dist / 100) * 0.3 * alpha;
+            ctx.globalAlpha = (1 - dist / connectionDist) * 0.3 * alpha;
             ctx.strokeStyle = p.color;
             ctx.lineWidth = 0.5;
             ctx.beginPath();
