@@ -66,6 +66,35 @@ export function GameCanvas() {
     }
   };
 
+  useEffect(() => {
+      const handleKeyDown = (e: KeyboardEvent) => {
+          if (e.code === 'Space') {
+              e.preventDefault(); // Prevent scrolling
+              handleInput();
+          }
+      };
+
+      const handleGlobalClick = (e: Event) => {
+          // Check if target is not a button/interactive element to avoid conflicts?
+          // User asked for "anywhere", so we'll just trigger it.
+          // But maybe avoid triggering if clicking a specific UI control?
+          // For now, raw implementation as requested.
+          if ((e.target as HTMLElement).tagName !== 'BUTTON') {
+             handleInput();
+          }
+      };
+
+      window.addEventListener('keydown', handleKeyDown);
+      window.addEventListener('mousedown', handleGlobalClick);
+      window.addEventListener('touchstart', handleGlobalClick);
+
+      return () => {
+          window.removeEventListener('keydown', handleKeyDown);
+          window.removeEventListener('mousedown', handleGlobalClick);
+          window.removeEventListener('touchstart', handleGlobalClick);
+      };
+  }, [engine]);
+
   const render = (ctx: CanvasRenderingContext2D, engine: GameEngine) => {
       const width = ctx.canvas.width;
       const height = ctx.canvas.height;
