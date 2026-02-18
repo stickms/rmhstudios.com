@@ -12,8 +12,10 @@ interface Enemy {
     hp: number; maxHp: number;
     speed: number; radius: number;
     xpValue: number; color: string; flashTimer: number;
-    type: 'basic' | 'elite' | 'boss';
+    type: 'basic' | 'elite' | 'boss' | 'mini_boss' | 'swarm' | 'sniper' | 'blinker' | 'spawner';
+    shape: 'circle' | 'square' | 'triangle' | 'diamond' | 'hexagon' | 'star';
     shootTimer: number; dashTimer: number; dashVx: number; dashVy: number;
+    specialTimer: number; // for unique behaviors like blinking or summoning
     nav: EnemyNav;
 }
 interface Bullet {
@@ -21,6 +23,7 @@ interface Bullet {
     damage: number; pierceLeft: number; chainLeft: number;
     isCrit: boolean; hitEnemyIds: Set<number>; aoeRadius: number;
     distanceTraveled: number; isEnemy?: boolean;
+    color?: string;
 }
 interface XPOrb { id: number; x: number; y: number; value: number; radius: number; }
 interface Pickup { id: number; x: number; y: number; type: 'health' | 'xp_boost' | 'shield' | 'speed'; collected: boolean; }
@@ -29,20 +32,23 @@ interface Particle { id: number; x: number; y: number; vx: number; vy: number; l
 
 // ─── Difficulty ───────────────────────────────────────────────────────────────
 function getDifficulty(wave: number) {
-    const scale = Math.pow(1.18, wave - 1);
+    const scale = Math.pow(1.25, wave - 1);
     return {
-        basicHp: Math.floor(12 * scale), basicSpeed: Math.min(220, 65 + wave * 9), basicDamage: 8 + wave * 2,
-        eliteHp: Math.floor(80 * scale), eliteSpeed: Math.min(180, 55 + wave * 7), eliteDamage: 18 + wave * 4,
-        bossHp: Math.floor(600 * scale), bossSpeed: Math.min(120, 40 + wave * 4), bossDamage: 35 + wave * 6,
-        spawnInterval: Math.max(0.15, 1.5 - wave * 0.08),
-        spawnCount: Math.min(8, 1 + Math.floor(wave / 2)),
-        eliteChance: Math.min(0.45, 0.05 + wave * 0.04),
+        basicHp: Math.floor(15 * scale), basicSpeed: Math.min(300, 70 + wave * 12), basicDamage: 8 + wave * 3,
+        eliteHp: Math.floor(120 * scale), eliteSpeed: Math.min(240, 60 + wave * 10), eliteDamage: 20 + wave * 6,
+        miniBossHp: Math.floor(500 * scale), miniBossSpeed: 120, miniBossDamage: 40 + wave * 8,
+        bossHp: Math.floor(1500 * scale), bossSpeed: Math.min(150, 60 + wave * 6), bossDamage: 60 + wave * 12,
+        swarmHp: Math.floor(10 * scale), swarmSpeed: 300,
+        spawnInterval: Math.max(0.08, 1.4 - wave * 0.1),
+        spawnCount: 1 + Math.floor(wave * 1.5), // No hard cap, scales with wave
+        eliteChance: Math.min(0.6, 0.05 + wave * 0.06),
+        miniBossChance: Math.min(0.3, wave * 0.04),
         bossWave: wave % 5 === 0,
     };
 }
 
 // ─── World ────────────────────────────────────────────────────────────────────
-const WORLD_W = 3200, WORLD_H = 3200, MAX_ENEMIES = 200;
+const WORLD_W = 3200, WORLD_H = 3200, MAX_ENEMIES = 450;
 let nextId = 1;
 const uid = () => nextId++;
 
@@ -278,7 +284,7 @@ export default function EchoesGame({
                 const len = Math.sqrt(dx * dx + dy * dy) || 1;
                 let bx = g.player.x + (dx / len) * effect.distance;
                 let by = g.player.y + (dy / len) * effect.distance;
-                if (!isBlocked(bx, by)) { g.player.x = Math.max(60, Math.min(WORLD_W - 60, bx)); g.player.y = Math.max(60, Math.min(WORLD_H - 60, by)); }
+                if (!isBlocked(bx, by, 14)) { g.player.x = Math.max(60, Math.min(WORLD_W - 60, bx)); g.player.y = Math.max(60, Math.min(WORLD_H - 60, by)); }
                 for (let i = 0; i < 12; i++) { const a = Math.random() * Math.PI * 2; g.particles.push({ id: uid(), x: g.player.x, y: g.player.y, vx: Math.cos(a) * 100, vy: Math.sin(a) * 100, life: 0.4, maxLife: 0.4, color: '#cc44ff', radius: 3 }); }
                 break;
             }
@@ -309,18 +315,33 @@ export default function EchoesGame({
         let x = Math.max(60, Math.min(WORLD_W - 60, px + Math.cos(angle) * spawnDist));
         let y = Math.max(60, Math.min(WORLD_H - 60, py + Math.sin(angle) * spawnDist));
         for (let attempt = 0; attempt < 10; attempt++) {
-            if (!isBlocked(x, y)) break;
+            if (!isBlocked(x, y, 14)) break;
             const a2 = Math.random() * Math.PI * 2, d2 = 200 + Math.random() * 400;
             x = Math.max(60, Math.min(WORLD_W - 60, px + Math.cos(a2) * d2));
             y = Math.max(60, Math.min(WORLD_H - 60, py + Math.sin(a2) * d2));
         }
         const diff = getDifficulty(wave);
-        const cfg = {
-            basic: { hp: diff.basicHp, speed: diff.basicSpeed, radius: 12, xpValue: 1, color: '#ff0066' },
-            elite: { hp: diff.eliteHp, speed: diff.eliteSpeed, radius: 18, xpValue: 8, color: '#ff8800' },
-            boss: { hp: diff.bossHp, speed: diff.bossSpeed, radius: 36, xpValue: 30, color: '#cc00ff' }
-        }[type];
-        g.enemies.push({ id: uid(), x, y, hp: cfg.hp, maxHp: cfg.hp, speed: cfg.speed, radius: cfg.radius, xpValue: cfg.xpValue, color: cfg.color, flashTimer: 0, type, shootTimer: 1, dashTimer: 2, dashVx: 0, dashVy: 0, nav: { path: [], timer: 0 } });
+        const cfgMap: Record<string, Partial<Enemy>> = {
+            basic: { hp: diff.basicHp, speed: diff.basicSpeed, radius: 14, xpValue: 1, color: '#ff0066', shape: 'circle' },
+            elite: { hp: diff.eliteHp, speed: diff.eliteSpeed, radius: 22, xpValue: 10, color: '#ff8800', shape: 'circle' },
+            mini_boss: { hp: diff.miniBossHp, speed: diff.miniBossSpeed, radius: 32, xpValue: 35, color: '#ff4400', shape: 'square' },
+            boss: { hp: diff.bossHp, speed: diff.bossSpeed, radius: 50, xpValue: 150, color: '#cc00ff', shape: 'hexagon' },
+            swarm: { hp: 1, speed: 300, radius: 8, xpValue: 1, color: '#ff00ff', shape: 'circle' },
+            sniper: { hp: diff.basicHp * 1.5, speed: 100, radius: 16, xpValue: 5, color: '#00ffff', shape: 'diamond' },
+            blinker: { hp: diff.basicHp * 2, speed: 150, radius: 18, xpValue: 8, color: '#cc44ff', shape: 'triangle' },
+            spawner: { hp: diff.eliteHp * 1.2, speed: 40, radius: 28, xpValue: 20, color: '#44ff44', shape: 'star' }
+        };
+        const cfg = cfgMap[type] || cfgMap.basic;
+        g.enemies.push({ 
+            id: uid(), x, y, 
+            hp: cfg.hp!, maxHp: cfg.hp!, 
+            speed: cfg.speed!, radius: cfg.radius!, 
+            xpValue: cfg.xpValue!, color: cfg.color!, 
+            flashTimer: 0, type, shape: cfg.shape!,
+            shootTimer: 2, dashTimer: 0, dashVx: 0, dashVy: 0,
+            specialTimer: 2 + Math.random() * 2,
+            nav: { path: [], timer: 0 } 
+        });
     }, []);
 
     // ── Particles ─────────────────────────────────────────────────────────────
@@ -419,6 +440,7 @@ export default function EchoesGame({
             let nx = g.player.x + (dx / len) * effectiveSpeed * delta;
             let ny = g.player.y + (dy / len) * effectiveSpeed * delta;
             for (const obs of obstacles) { if (circleVsRect(nx, ny, 14, obs.x, obs.y, obs.w, obs.h)) { const r = resolveCircleRect(nx, ny, 14, obs.x, obs.y, obs.w, obs.h); nx += r.nx; ny += r.ny; } }
+            if (isBlocked(nx, ny, 14)) { nx = g.player.x; ny = g.player.y; } // Secondary check for narrow gaps
             g.player.x = Math.max(60, Math.min(WORLD_W - 60, nx));
             g.player.y = Math.max(60, Math.min(WORLD_H - 60, ny));
         }
@@ -454,8 +476,17 @@ export default function EchoesGame({
         if (g.spawnTimer <= 0) {
             const diff = getDifficulty(s.wave);
             if (diff.bossWave && !g.enemies.some(e => e.type === 'boss')) spawnEnemy(s.wave, 'boss');
-            for (let i = 0; i < diff.spawnCount; i++) spawnEnemy(s.wave, Math.random() < diff.eliteChance ? 'elite' : 'basic');
-            g.spawnTimer = getDifficulty(s.wave).spawnInterval;
+            for (let i = 0; i < diff.spawnCount; i++) {
+                const rng = Math.random();
+                if (rng < 0.05) spawnEnemy(s.wave, 'spawner');
+                else if (rng < 0.15) spawnEnemy(s.wave, 'sniper');
+                else if (rng < 0.25) spawnEnemy(s.wave, 'blinker');
+                else if (rng < diff.miniBossChance) spawnEnemy(s.wave, 'mini_boss');
+                else if (rng < diff.eliteChance) spawnEnemy(s.wave, 'elite');
+                else if (rng < 0.8) spawnEnemy(s.wave, 'basic');
+                else spawnEnemy(s.wave, 'swarm');
+            }
+            g.spawnTimer = diff.spawnInterval;
         }
 
         // Update bullets
@@ -490,54 +521,63 @@ export default function EchoesGame({
             if (e.hp <= 0) { dead.push(e); return false; }
             const diff = getDifficulty(s.wave);
             const dx = g.player.x - e.x, dy = g.player.y - e.y, dist = Math.sqrt(dx * dx + dy * dy) || 1;
+            
+            // Unique Behaviors
             if (e.type === 'boss') {
                 e.dashTimer -= delta;
                 if (e.dashTimer <= 0) {
-                    // Start charging dash
                     e.dashTimer = 4 + Math.random() * 2;
                     e.dashVx = (dx / dist) * 500;
                     e.dashVy = (dy / dist) * 500;
                     spawnParticles(e.x, e.y, '#ff0000', 15);
                 }
-                const isDashing = e.dashTimer > 3.5; // Dash lasts 0.5s
-                if (isDashing) {
-                    e.x += e.dashVx * delta;
-                    e.y += e.dashVy * delta;
-                    if (Math.random() > 0.4) spawnParticles(e.x, e.y, '#ff4400', 1);
-                } else {
-                    e.dashVx *= 0.95; e.dashVy *= 0.95;
-                    e.x += e.dashVx * delta; e.y += e.dashVy * delta;
-                }
+                const isDashing = e.dashTimer > 3.5;
+                if (isDashing) { e.x += e.dashVx * delta; e.y += e.dashVy * delta; if (Math.random() > 0.4) spawnParticles(e.x, e.y, '#ff4400', 1); }
+                else { e.dashVx *= 0.95; e.dashVy *= 0.95; e.x += e.dashVx * delta; e.y += e.dashVy * delta; }
             }
-            if (e.type === 'elite') {
+            if (e.type === 'mini_boss') {
                 e.dashTimer -= delta;
-                if (e.dashTimer <= 0 && dist < 350) {
-                    e.dashVx = (dx / dist) * 320; e.dashVy = (dy / dist) * 320;
-                    e.dashTimer = 2 + Math.random();
-                }
-                e.x += e.dashVx * delta; e.y += e.dashVy * delta;
-                e.dashVx *= 0.9; e.dashVy *= 0.9;
+                if (e.dashTimer <= 0) { e.dashTimer = 3; e.dashVx = (dx / dist) * 400; e.dashVy = (dy / dist) * 400; spawnParticles(e.x, e.y, '#ff4400', 8); }
+                e.x += e.dashVx * delta; e.y += e.dashVy * delta; e.dashVx *= 0.96; e.dashVy *= 0.96;
             }
-            const st = steerToward(e.x, e.y, g.player.x, g.player.y, e.nav, delta); 
+            if (e.type === 'blinker') {
+                e.specialTimer -= delta;
+                if (e.specialTimer <= 0 && dist < 400) {
+                    e.specialTimer = 2 + Math.random() * 1.5;
+                    const bx = e.x + (dx/dist) * 120, by = e.y + (dy/dist) * 120;
+                    if (!isBlocked(bx, by, e.radius)) { e.x = bx; e.y = by; spawnParticles(e.x, e.y, e.color, 10); }
+                }
+            }
+            if (e.type === 'spawner') {
+                e.specialTimer -= delta;
+                if (e.specialTimer <= 0 && g.enemies.length < MAX_ENEMIES) {
+                    e.specialTimer = 4;
+                    for(let i=0; i<3; i++) spawnEnemy(s.wave, 'swarm'); 
+                    spawnParticles(e.x, e.y, '#44ff44', 12);
+                }
+            }
+
+            const canMove = e.type !== 'sniper' || dist > 300;
+            const st = steerToward(e.x, e.y, g.player.x, g.player.y, e.nav, delta, e.radius); 
             const steerDx = st.dx, steerDy = st.dy;
 
-            let nx = e.x + steerDx * e.speed * delta, ny = e.y + steerDy * e.speed * delta;
-            for (const obs of obstacles) { if (circleVsRect(nx, ny, e.radius, obs.x, obs.y, obs.w, obs.h)) { const r = resolveCircleRect(nx, ny, e.radius, obs.x, obs.y, obs.w, obs.h); nx += r.nx; ny += r.ny; } }
-            // Applied normal movement if not in high-speed dash
-            if (e.type === 'basic' || (e.type === 'elite' && Math.abs(e.dashVx) < 50) || (e.type === 'boss' && e.dashTimer < 3.5)) {
-                e.x = nx; e.y = ny;
+            if (canMove) {
+                let nx = e.x + steerDx * e.speed * delta, ny = e.y + steerDy * e.speed * delta;
+                for (const obs of obstacles) { if (circleVsRect(nx, ny, e.radius, obs.x, obs.y, obs.w, obs.h)) { const r = resolveCircleRect(nx, ny, e.radius, obs.x, obs.y, obs.w, obs.h); nx += r.nx; ny += r.ny; } }
+                if (e.type === 'basic' || e.type === 'swarm' || (e.type === 'elite' && Math.abs(e.dashVx) < 50) || (e.type === 'boss' && e.dashTimer < 3.5)) {
+                    e.x = nx; e.y = ny;
+                }
             }
 
-            if (e.type === 'elite' || e.type === 'boss') {
+            if (e.type === 'elite' || e.type === 'boss' || e.type === 'mini_boss' || e.type === 'sniper') {
                 e.shootTimer -= delta;
-                const si = e.type === 'boss' ? 0.8 : 1.8;
-                if (e.shootTimer <= 0 && dist < 500) {
+                const si = (e.type === 'boss' || e.type === 'mini_boss') ? 0.8 : e.type === 'sniper' ? 1.2 : 1.8;
+                if (e.shootTimer <= 0 && dist < 600) {
                     e.shootTimer = si;
-                    const bc = e.type === 'boss' ? 8 : 1;
+                    const bc = e.type === 'boss' ? 12 : e.type === 'mini_boss' ? 6 : 1;
                     for (let i = 0; i < bc; i++) {
-                        const a = e.type === 'boss' ? (i / bc) * Math.PI * 2 : Math.atan2(g.player.y - e.y, g.player.x - e.x);
-                        const spd = e.type === 'boss' ? 200 : 250;
-                        g.bullets.push({ id: uid(), x: e.x, y: e.y, vx: Math.cos(a) * spd, vy: Math.sin(a) * spd, damage: e.type === 'boss' ? diff.bossDamage : diff.eliteDamage, pierceLeft: 99, chainLeft: 0, isCrit: false, hitEnemyIds: new Set(), aoeRadius: 0, distanceTraveled: 0, isEnemy: true });
+                        const a = (e.type === 'boss' || e.type === 'mini_boss') ? (i / bc) * Math.PI * 2 : Math.atan2(g.player.y - e.y, g.player.x - e.x);
+                        g.bullets.push({ id: uid(), x: e.x, y: e.y, vx: Math.cos(a) * 250, vy: Math.sin(a) * 250, damage: e.type === 'boss' ? diff.bossDamage : diff.eliteDamage, pierceLeft: 99, chainLeft: 0, isCrit: false, hitEnemyIds: new Set(), aoeRadius: 0, distanceTraveled: 0, isEnemy: true, color: e.color });
                     }
                 }
             }
@@ -591,16 +631,73 @@ export default function EchoesGame({
         for (const e of g.enemies) {
             const ex = wx(e.x), ey = wy(e.y);
             if (ex < -50 || ex > w + 50 || ey < -50 || ey > h + 50) continue;
-            ctx.beginPath(); ctx.arc(ex, ey, e.radius, 0, Math.PI * 2);
-            ctx.fillStyle = e.flashTimer > 0 ? '#ffffff' : e.color; ctx.shadowColor = e.color; ctx.shadowBlur = 12; ctx.fill(); ctx.shadowBlur = 0;
-            if (e.hp < e.maxHp) { const bw = e.radius * 2; ctx.fillStyle = '#333'; ctx.fillRect(ex - e.radius, ey - e.radius - 8, bw, 4); ctx.fillStyle = '#ff4444'; ctx.fillRect(ex - e.radius, ey - e.radius - 8, bw * (e.hp / e.maxHp), 4); }
+            
+            ctx.shadowBlur = (e.type === 'boss' || e.type === 'mini_boss') ? 15 : 6;
+            ctx.shadowColor = e.color;
+            ctx.fillStyle = e.flashTimer > 0 ? '#ffffff' : e.color;
+            ctx.beginPath();
+            const r = e.radius;
+            
+            switch (e.shape) {
+                case 'square':
+                    ctx.rect(ex - r, ey - r, r * 2, r * 2);
+                    break;
+                case 'triangle':
+                    ctx.moveTo(ex, ey - r);
+                    ctx.lineTo(ex + r, ey + r);
+                    ctx.lineTo(ex - r, ey + r);
+                    ctx.closePath();
+                    break;
+                case 'diamond':
+                    ctx.moveTo(ex, ey - r);
+                    ctx.lineTo(ex + r, ey);
+                    ctx.lineTo(ex, ey + r);
+                    ctx.lineTo(ex - r, ey);
+                    ctx.closePath();
+                    break;
+                case 'hexagon':
+                    for (let i = 0; i < 6; i++) {
+                        const a = (i / 6) * Math.PI * 2;
+                        ctx.lineTo(ex + Math.cos(a) * r, ey + Math.sin(a) * r);
+                    }
+                    ctx.closePath();
+                    break;
+                case 'star':
+                    for (let i = 0; i < 10; i++) {
+                        const a = (i / 10) * Math.PI * 2, rr = i % 2 === 0 ? r : r * 0.5;
+                        ctx.lineTo(ex + Math.cos(a) * rr, ey + Math.sin(a) * rr);
+                    }
+                    ctx.closePath();
+                    break;
+                default:
+                    ctx.arc(ex, ey, r, 0, Math.PI * 2);
+            }
+            ctx.fill();
+            ctx.strokeStyle = '#ffffffaa'; ctx.lineWidth = 1.5; ctx.stroke();
+            ctx.shadowBlur = 0;
+
+            if (e.hp < e.maxHp || e.type === 'boss' || e.type === 'mini_boss' || e.type === 'elite') { 
+                const bw = e.radius * 2, bh = 4; 
+                ctx.fillStyle = '#111'; ctx.fillRect(ex - e.radius, ey - e.radius - 10, bw, bh); 
+                ctx.fillStyle = (e.type === 'boss' || e.type === 'mini_boss') ? '#ffdd00' : '#00ff66'; 
+                ctx.fillRect(ex - e.radius, ey - e.radius - 10, bw * (e.hp / e.maxHp), bh); 
+            }
         }
         // Bullets
         for (const b of g.bullets) {
             const bx = wx(b.x), by = wy(b.y);
             if (bx < -20 || bx > w + 20 || by < -20 || by > h + 20) continue;
-            if (b.isEnemy) { ctx.beginPath(); ctx.arc(bx, by, 5, 0, Math.PI * 2); ctx.fillStyle = '#ff3300'; ctx.shadowColor = '#ff6600'; ctx.shadowBlur = 10; ctx.fill(); ctx.shadowBlur = 0; }
-            else { ctx.beginPath(); ctx.arc(bx, by, b.isCrit ? 6 : 4, 0, Math.PI * 2); ctx.fillStyle = b.isCrit ? '#ffff00' : '#ffcc00'; ctx.shadowColor = b.isCrit ? '#ffff00' : '#ff8800'; ctx.shadowBlur = b.isCrit ? 16 : 8; ctx.fill(); ctx.shadowBlur = 0; }
+            ctx.beginPath();
+            if (b.isEnemy) { 
+                ctx.arc(bx, by, 5, 0, Math.PI * 2); ctx.fillStyle = b.color || '#ff3300'; 
+                ctx.shadowColor = b.color || '#ff6600'; ctx.shadowBlur = 8; ctx.fill(); 
+            } else { 
+                ctx.arc(bx, by, b.isCrit ? 6 : 4, 0, Math.PI * 2); 
+                const col = b.color || (s.selectedClass?.id === 'phantom' ? '#cc44ff' : '#44ccff');
+                ctx.fillStyle = b.isCrit ? '#ffffff' : col; 
+                ctx.shadowColor = col; ctx.shadowBlur = b.isCrit ? 15 : 8; ctx.fill(); 
+            }
+            ctx.shadowBlur = 0;
         }
         // Particles
         for (const p of g.particles) {

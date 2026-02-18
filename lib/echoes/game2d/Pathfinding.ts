@@ -20,11 +20,11 @@ export function buildGrid(
     grid = new Uint8Array(gridW * gridH); // 0 = walkable, 1 = blocked
 
     for (const obs of obstacles) {
-        // Expand by 1 cell so enemies don't clip corners
-        const x0 = Math.max(0, Math.floor((obs.x - CELL_SIZE) / CELL_SIZE));
-        const y0 = Math.max(0, Math.floor((obs.y - CELL_SIZE) / CELL_SIZE));
-        const x1 = Math.min(gridW - 1, Math.ceil((obs.x + obs.w + CELL_SIZE) / CELL_SIZE));
-        const y1 = Math.min(gridH - 1, Math.ceil((obs.y + obs.h + CELL_SIZE) / CELL_SIZE));
+        // Mark cells covered by obstacles
+        const x0 = Math.max(0, Math.floor(obs.x / CELL_SIZE));
+        const y0 = Math.max(0, Math.floor(obs.y / CELL_SIZE));
+        const x1 = Math.min(gridW - 1, Math.floor((obs.x + obs.w) / CELL_SIZE));
+        const y1 = Math.min(gridH - 1, Math.floor((obs.y + obs.h) / CELL_SIZE));
         for (let gx = x0; gx <= x1; gx++) {
             for (let gy = y0; gy <= y1; gy++) {
                 grid[gy * gridW + gx] = 1;
@@ -33,13 +33,38 @@ export function buildGrid(
     }
 }
 
-/** Returns true if world-space point (wx, wy) is inside an obstacle cell */
-export function isBlocked(wx: number, wy: number): boolean {
+/** Returns true if world-space point (wx, wy) is inside an obstacle cell, considering actor radius */
+export function isBlocked(wx: number, wy: number, radius: number = 0): boolean {
     if (!grid) return false;
+    
+    // Check center
     const gx = Math.floor(wx / CELL_SIZE);
     const gy = Math.floor(wy / CELL_SIZE);
     if (gx < 0 || gx >= gridW || gy < 0 || gy >= gridH) return true;
-    return grid[gy * gridW + gx] === 1;
+    if (grid[gy * gridW + gx] === 1) return true;
+
+    if (radius <= 0) return false;
+
+    // Check cells overlap by radius (simple bounding box check)
+    const span = Math.ceil(radius / CELL_SIZE);
+    for (let dx = -span; dx <= span; dx++) {
+        for (let dy = -span; dy <= span; dy++) {
+            const nx = gx + dx;
+            const ny = gy + dy;
+            if (nx < 0 || nx >= gridW || ny < 0 || ny >= gridH) continue;
+            if (grid[ny * gridW + nx] === 1) {
+                // Precise check: is circle center close enough to this cell?
+                // For simplicity on a grid, we check if the nearest point in the cell is within radius
+                const cellX = nx * CELL_SIZE;
+                const cellY = ny * CELL_SIZE;
+                const closestX = Math.max(cellX, Math.min(wx, cellX + CELL_SIZE));
+                const closestY = Math.max(cellY, Math.min(wy, cellY + CELL_SIZE));
+                const distSq = (wx - closestX) ** 2 + (wy - closestY) ** 2;
+                if (distSq < radius * radius) return true;
+            }
+        }
+    }
+    return false;
 }
 
 const DIRS = [
@@ -56,6 +81,7 @@ function cellKey(x: number, y: number) { return y * gridW + x; }
 export function findPath(
     sx: number, sy: number,
     tx: number, ty: number,
+    radius: number = 14,
     maxNodes = 1200
 ): { x: number; y: number }[] {
     if (!grid) return [];
@@ -72,13 +98,15 @@ export function findPath(
     goalGy = Math.max(0, Math.min(gridH - 1, goalGy));
 
     // If goal is blocked, find nearest walkable cell
-    if (grid[goalGy * gridW + goalGx] === 1) {
+    if (isBlocked(tx, ty, radius)) {
         let found = false;
-        outer: for (let r = 1; r <= 4; r++) {
+        outer: for (let r = 1; r <= 5; r++) {
             for (let dx = -r; dx <= r; dx++) {
                 for (let dy = -r; dy <= r; dy++) {
                     const nx = goalGx + dx, ny = goalGy + dy;
-                    if (nx >= 0 && nx < gridW && ny >= 0 && ny < gridH && grid[ny * gridW + nx] === 0) {
+                    const wx = nx * CELL_SIZE + CELL_SIZE / 2;
+                    const wy = ny * CELL_SIZE + CELL_SIZE / 2;
+                    if (nx >= 0 && nx < gridW && ny >= 0 && ny < gridH && !isBlocked(wx, wy, radius)) {
                         goalGx = nx; goalGy = ny; found = true; break outer;
                     }
                 }
@@ -141,7 +169,11 @@ export function findPath(
         for (const [dx, dy, cost] of DIRS) {
             const nx = cx + dx, ny = cy + dy;
             if (nx < 0 || nx >= gridW || ny < 0 || ny >= gridH) continue;
-            if (grid[ny * gridW + nx] === 1) continue;
+            
+            const wx = nx * CELL_SIZE + CELL_SIZE / 2;
+            const wy = ny * CELL_SIZE + CELL_SIZE / 2;
+            if (isBlocked(wx, wy, radius)) continue;
+            
             const nk = cellKey(nx, ny);
             if (closedSet.has(nk)) continue;
 
@@ -171,13 +203,14 @@ export function steerToward(
     ex: number, ey: number,
     tx: number, ty: number,
     nav: EnemyNav,
-    delta: number
+    delta: number,
+    radius: number = 14
 ): { dx: number; dy: number } {
     nav.timer -= delta;
 
     // Re-pathfind periodically or when path is exhausted
     if (nav.timer <= 0 || nav.path.length === 0) {
-        nav.path = findPath(ex, ey, tx, ty);
+        nav.path = findPath(ex, ey, tx, ty, radius);
         nav.timer = 0.45 + Math.random() * 0.1; // stagger updates
     }
 
@@ -199,11 +232,11 @@ export function steerToward(
     let sdx = dx / dist, sdy = dy / dist;
 
     // If direct path is blocked, try to slide
-    if (isBlocked(ex + sdx * 20, ey + sdy * 20)) {
+    if (isBlocked(ex + sdx * 20, ey + sdy * 20, radius)) {
         // Try horizontal only
-        if (!isBlocked(ex + sdx * 20, ey)) sdy = 0;
+        if (!isBlocked(ex + sdx * 20, ey, radius)) sdy = 0;
         // Try vertical only
-        else if (!isBlocked(ex, ey + sdy * 20)) sdx = 0;
+        else if (!isBlocked(ex, ey + sdy * 20, radius)) sdx = 0;
     }
 
     const finalLen = Math.sqrt(sdx * sdx + sdy * sdy) || 1;
