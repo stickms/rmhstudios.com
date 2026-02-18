@@ -63,6 +63,7 @@ interface GameState {
     upgradeChoices: Upgrade[];
     wave: number;
     selectedClass: GameClass | null;
+    userName: string;
 
     showClassSelect: () => void;
     startGame: (cls: GameClass) => void;
@@ -74,6 +75,7 @@ interface GameState {
     pickUpgrade: (upgrade: Upgrade) => void;
     setPhase: (phase: GameState['phase']) => void;
     togglePause: () => void;
+    setUserName: (name: string) => void;
     xpToNextLevel: () => number;
 }
 
@@ -86,6 +88,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     hp: 100, maxHp: 100, xp: 0, level: 1, kills: 0, timeSurvived: 0,
     stats: { ...DEFAULT_STATS }, upgradeCount: {},
     phase: 'menu', upgradeChoices: [], wave: 1, selectedClass: null,
+    userName: 'Unknown',
 
     showClassSelect: () => set({ phase: 'class_select' }),
 
@@ -141,5 +144,6 @@ export const useGameStore = create<GameState>((set, get) => ({
     togglePause: () => set(s => ({
         phase: s.phase === 'playing' ? 'paused' : s.phase === 'paused' ? 'playing' : s.phase,
     })),
+    setUserName: (userName) => set({ userName }),
     xpToNextLevel: () => XP_PER_LEVEL(get().level),
 }));

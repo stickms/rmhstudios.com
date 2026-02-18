@@ -15,10 +15,12 @@ export function UsernamePrompt({ onSet }: { onSet: (name: string) => void }) {
     const inputRef = useRef<HTMLInputElement>(null);
     useEffect(() => { inputRef.current?.focus(); }, []);
 
+    const { setUserName } = useGameStore();
     const submit = () => {
         const clean = value.trim().replace(/[^a-zA-Z0-9_\-. ]/g, '').slice(0, 32);
         if (clean.length < 2) { setError('At least 2 characters'); return; }
         setStoredUsername(clean);
+        setUserName(clean);
         onSet(clean);
     };
 
@@ -123,17 +125,24 @@ export function LeaderboardPanel({ username }: { username: string }) {
 
 // ─── Start Screen ─────────────────────────────────────────────────────────────
 export function StartScreen() {
-    const { phase, showClassSelect } = useGameStore();
+    const { phase, showClassSelect, userName: storeUserName, setUserName } = useGameStore();
     const [username, setUsername] = useState<string | null>(null);
     const [showPrompt, setShowPrompt] = useState(false);
 
     useEffect(() => {
         const stored = getStoredUsername();
-        if (stored) setUsername(stored);
-        else setShowPrompt(true);
-    }, []);
+        if (stored) {
+            setUsername(stored);
+            setUserName(stored);
+        } else {
+            setShowPrompt(true);
+        }
+    }, [setUserName]);
 
-    const handleSetUsername = (name: string) => { setUsername(name); setShowPrompt(false); };
+    const handleSetUsername = (name: string) => { 
+        setUsername(name); 
+        setShowPrompt(false); 
+    };
 
     return (
         <AnimatePresence>
@@ -188,8 +197,7 @@ export function StartScreen() {
 
 // ─── Game Over Screen ─────────────────────────────────────────────────────────
 export function GameOverScreen() {
-    const { phase, kills, timeSurvived, level, xp, showClassSelect } = useGameStore();
-    const [username] = useState(() => getStoredUsername() ?? 'Unknown');
+    const { phase, kills, timeSurvived, level, xp, showClassSelect, userName } = useGameStore();
     const [submitted, setSubmitted] = useState(false);
     const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
 
@@ -203,12 +211,12 @@ export function GameOverScreen() {
         fetch('/api/echoes/score', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, timeSurvived, kills, totalXP }),
+            body: JSON.stringify({ username: userName, timeSurvived, kills, totalXP }),
         }).then(() => {
             setSubmitted(true);
             fetchLeaderboard('time').then(setEntries);
         }).catch(() => setSubmitted(true));
-    }, [phase, username, timeSurvived, kills, totalXP]);
+    }, [phase, userName, timeSurvived, kills, totalXP]);
 
     const mins = Math.floor(timeSurvived / 60).toString().padStart(2, '0');
     const secs = Math.floor(timeSurvived % 60).toString().padStart(2, '0');
@@ -235,7 +243,7 @@ export function GameOverScreen() {
                             ))}
                         </div>
                         <div className="text-white/30 text-xs font-mono mb-6">
-                            {submitted ? `Score saved for ${username}` : 'Saving score...'}
+                            {submitted ? `Score saved for ${userName}` : 'Saving score...'}
                         </div>
                         <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}
                             onClick={showClassSelect}
@@ -245,7 +253,7 @@ export function GameOverScreen() {
                     </div>
                     {/* Right: leaderboard */}
                     <div className="w-80 border-l border-white/10 p-6 flex flex-col justify-center">
-                        <LeaderboardPanel username={username} />
+                        <LeaderboardPanel username={userName} />
                     </div>
                 </motion.div>
             )}
