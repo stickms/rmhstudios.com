@@ -1,9 +1,21 @@
 import { GameCanvas } from '@/components/game/GameCanvas';
 import { LeaderboardSidebar } from '@/components/game/LeaderboardSidebar';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
 
 export default function SliceItPage() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-4 bg-background text-foreground overflow-hidden">
+    <main className="flex min-h-screen flex-col items-center justify-center p-4 bg-black text-foreground overflow-hidden relative">
+      <div className="absolute top-4 left-4 z-50">
+          <Link href="/">
+              <Button variant="ghost" className="text-zinc-500 hover:text-white flex items-center gap-2 bg-black/50 backdrop-blur-sm border border-zinc-800">
+                  <ArrowLeft className="w-4 h-4" />
+                  RMH Studios
+              </Button>
+          </Link>
+      </div>
+
       <h1 className="text-4xl font-black mb-8 rainbow-text tracking-tighter italic glitch-text">
         SLICE IT!
       </h1>

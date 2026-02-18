@@ -1,0 +1,25 @@
+---
+title: "Infinite Content: Auto-Beatmapping"
+date: "2026-02-15"
+description: "How we use audio frequency analysis to generate levels from any song."
+image: "/images/blog/slice-it-automap.jpg"
+tags: ["Engineering", "Algorithms", "Audio"]
+---
+
+One of the biggest challenges in rhythm games is content. Hand-crafting levels takes hours.
+
+So we taught the computer to do it for us.
+
+## The Algorithm
+
+Our new **BeatMapGenerator** analyzes the raw audio buffer of any uploaded track to detect peaks and rhythmic onsets.
+
+### Stereo Awareness
+But we didn't just want random notes. The generator analyzes the **Left** and **Right** audio channels independently.
+- Loud signal on Left? Note goes to **Top Lane**.
+- Loud signal on Right? Note goes to **Bottom Lane**.
+- Balanced signal? It alternates or creates a double hit.
+
+This means if you upload a track with distinct stereo separation (like old Beatles tracks or modern EDM), the gameplay actually reflects the spatial audio. 
+
+Try uploading your own `.mp3` or `.wav` file in the main menu today!

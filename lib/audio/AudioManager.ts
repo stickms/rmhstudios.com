@@ -84,10 +84,15 @@ export class AudioManager {
     if (!this.source || !this.isPlaying || !this.audioContext) return;
     
     this.source.stop();
-    // Calculate where we stopped
+    // Calculate and store exact pause time
     this.pauseTime = this.getCurrentTime();
     this.isPlaying = false;
     this.source = null;
+  }
+  
+  public resume() {
+     if (this.isPlaying) return;
+     this.play(); // Play handles using pauseTime offset
   }
 
   public stop() {
@@ -138,6 +143,31 @@ export class AudioManager {
     return this.offsetAtLastRateChange + (now - this.timeAtLastRateChange) * this.playbackRate;
   }
   
+  public playSfX(freq: number, type: OscillatorType = 'sine', duration: number = 0.1) {
+    if (!this.audioContext) this.initialize();
+    if (!this.audioContext) return;
+    
+    // Resume if suspended (user interaction requirement)
+    if (this.audioContext.state === 'suspended') {
+        this.audioContext.resume();
+    }
+
+    const osc = this.audioContext.createOscillator();
+    const gain = this.audioContext.createGain();
+    
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, this.audioContext.currentTime);
+    
+    gain.gain.setValueAtTime(0.1, this.audioContext.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + duration);
+    
+    osc.connect(gain);
+    gain.connect(this.audioContext.destination);
+    
+    osc.start();
+    osc.stop(this.audioContext.currentTime + duration);
+  }
+
   public getDuration(): number {
     return this.buffer ? this.buffer.duration : 0;
   }

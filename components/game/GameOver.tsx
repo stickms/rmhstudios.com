@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { AudioManager } from '@/lib/audio/AudioManager';
 
 export function GameOver() {
-  const { score, multiplier, reset, userName } = useGameStore();
+  const { score, multiplier, reset, userName, status } = useGameStore();
 
   useEffect(() => {
     // Play sound
@@ -13,23 +13,23 @@ export function GameOver() {
     // audio.playSound('gameover'); 
 
     // Submit Score
-    if (userName && score > 0) {
+    if (userName && score > 0 && status === 'FINISHED') {
         fetch('/api/slice-it/score', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username: userName, score }),
         }).catch(err => console.error("Failed to submit score", err));
     }
-  }, [score, userName]);
+  }, [score, userName, status]);
 
   return (
     <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-      <Card className="w-full max-w-md border-neon-pink bg-black/90 text-white shadow-[0_0_50px_rgba(255,0,255,0.3)] neon-border relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-neon-pink/10 pointer-events-none" />
+      <Card className={`w-full max-w-md ${status === 'FAILED' ? 'border-red-500 shadow-[0_0_50px_rgba(255,0,0,0.3)]' : 'border-neon-pink shadow-[0_0_50px_rgba(255,0,255,0.3)]'} bg-black/90 text-white neon-border relative overflow-hidden`}>
+        <div className={`absolute inset-0 bg-gradient-to-b from-transparent via-transparent ${status === 'FAILED' ? 'to-red-900/10' : 'to-neon-pink/10'} pointer-events-none`} />
         
         <CardHeader className="text-center pb-2">
-          <CardTitle className="text-5xl font-black italic text-neon-pink glitch-text tracking-tighter">
-            GAME OVER
+          <CardTitle className={`text-5xl font-black italic ${status === 'FAILED' ? 'text-red-500' : 'text-neon-pink'} glitch-text tracking-tighter`}>
+            {status === 'FAILED' ? 'SYSTEM FAILURE' : 'LEVEL COMPLETE'}
           </CardTitle>
         </CardHeader>
         
