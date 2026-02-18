@@ -5,9 +5,21 @@ import { BouncyCard } from "@/components/ui/BouncyCard";
 import { FlipCard } from "@/components/ui/FlipCard";
 import { ProximityText } from "@/components/ui/ProximityText";
 import { SiSteam } from "react-icons/si";
-import { Rocket, BookOpen, Brain, X } from "lucide-react";
+import { Rocket, BookOpen, Brain, X, Music, Play } from "lucide-react";
 
 const projects = [
+  {
+    id: 4,
+    title: "Slice It!",
+    description: "A high-octane rhythm game where you slice beats to the music.",
+    longDescription: "Test your reflexes in this neon-soaked rhythm game. Slice through beats, dodge obstacles, and aim for the high score in a world that pulses to the music. Upload your own tracks or play the demo.",
+    status: "Playable Demo",
+    gradient: "from-[var(--neon-cyan)] to-[var(--neon-blue)]",
+    icon: <Music className="w-20 h-20 text-white/80" strokeWidth={1} />,
+    cta: "Play Now",
+    link: "/slice-it",
+    isSteam: false
+  },
   {
     id: 2,
     title: "Satan's Library",
@@ -17,7 +29,10 @@ const projects = [
       "A survival horror where you play as an underdog in a library overrun by succubi and chadlites. Your goal: 'lock in' and build your Knowledge and Aura stats to escape. Resist temptation, survive beatdowns, and outsmart Satan (Rish) himself in this high-stakes test of willpower.",
     status: "In Development",
     gradient: "from-red-900 to-red-600",
-    icon: <BookOpen className="w-20 h-20 text-white/80" strokeWidth={1} />
+    icon: <BookOpen className="w-20 h-20 text-white/80" strokeWidth={1} />,
+    cta: "Wishlist on Steam",
+    link: "#",
+    isSteam: true
   },
   {
     id: 1,
@@ -28,7 +43,10 @@ const projects = [
       "An expansive sci-fi adventure that pushes the boundaries of exploration and discovery. Chart unknown galaxies, trade with alien civilizations, and build your legacy in a universe that reacts to your every decision. Experience seamless ground-to-space transitions and a deep, player-driven economy.",
     status: "Coming Soon",
     gradient: "from-[var(--neon-pink)] to-[var(--neon-purple)]",
-    icon: <Rocket className="w-20 h-20 text-white/80" strokeWidth={1} />
+    icon: <Rocket className="w-20 h-20 text-white/80" strokeWidth={1} />,
+    cta: "Wishlist on Steam",
+    link: "#",
+    isSteam: true
   },
   {
     id: 3,
@@ -39,7 +57,10 @@ const projects = [
       "Dive into a fragmented reality where memories are currency. Solve complex narrative puzzles to piece together the truth of your existence before the entropy of the void dissolves everything you know. Features non-linear storytelling, adaptive audio landscapes, and choices that ripple across timelines.",
     status: "Coming Soon",
     gradient: "from-[var(--neon-purple)] to-[var(--neon-pink)]",
-    icon: <Brain className="w-20 h-20 text-white/80" strokeWidth={1} />
+    icon: <Brain className="w-20 h-20 text-white/80" strokeWidth={1} />,
+    cta: "Wishlist on Steam",
+    link: "#",
+    isSteam: true
   },
 ];
 
@@ -141,16 +162,29 @@ export function ProjectsSection() {
                                         </p>
 
                                         <div className="mt-auto">
-                                            <a 
-                                                href="#" 
-                                                className="w-full py-3 bg-gradient-to-r from-[#1b2838] to-[#2a475e] hover:from-[#2a475e] hover:to-[#1b2838] text-[#66c0f4] font-bold text-center rounded-lg transition-all shadow-lg hover:shadow-[#66c0f4]/20 flex items-center justify-center gap-2 text-sm group/btn"
-                                                onClick={(e) => e.stopPropagation()} // Prevent flip when clicking button
-                                            >
-                                                <span className="flex items-center pb-[1px]">
-                                                    <SiSteam className="w-5 h-5" />
-                                                </span>
-                                                Wishlist on Steam
-                                            </a>
+                                            {project.isSteam ? (
+                                                <a 
+                                                    href={project.link}
+                                                    className="w-full py-3 bg-gradient-to-r from-[#1b2838] to-[#2a475e] hover:from-[#2a475e] hover:to-[#1b2838] text-[#66c0f4] font-bold text-center rounded-lg transition-all shadow-lg hover:shadow-[#66c0f4]/20 flex items-center justify-center gap-2 text-sm group/btn"
+                                                    onClick={(e) => e.stopPropagation()} 
+                                                >
+                                                    <span className="flex items-center pb-[1px]">
+                                                        <SiSteam className="w-5 h-5" />
+                                                    </span>
+                                                    {project.cta}
+                                                </a>
+                                            ) : (
+                                                 <a 
+                                                    href={project.link}
+                                                    className="w-full py-3 bg-[var(--neon-cyan)] hover:bg-[var(--neon-blue)] text-black font-bold text-center rounded-lg transition-all shadow-lg hover:shadow-[var(--neon-cyan)]/50 flex items-center justify-center gap-2 text-sm group/btn"
+                                                    onClick={(e) => e.stopPropagation()} 
+                                                >
+                                                    <span className="flex items-center pb-[1px]">
+                                                        <Play className="w-5 h-5" />
+                                                    </span>
+                                                    {project.cta}
+                                                </a>
+                                            )}
                                         </div>
                                     </div>
                                 </div>

@@ -1,0 +1,144 @@
+export class AudioManager {
+  private static instance: AudioManager;
+  private audioContext: AudioContext | null = null;
+  private source: AudioBufferSourceNode | null = null;
+  private gainNode: GainNode | null = null;
+  private buffer: AudioBuffer | null = null;
+  private startTime: number = 0;
+  private pauseTime: number = 0;
+  private isPlaying: boolean = false;
+  private playbackRate: number = 1.0;
+  private volume: number = 1.0;
+  
+  // Track position logic
+  private offsetAtLastRateChange: number = 0;
+  private timeAtLastRateChange: number = 0;
+
+  private constructor() {}
+
+  public static getInstance(): AudioManager {
+    if (!AudioManager.instance) {
+      AudioManager.instance = new AudioManager();
+    }
+    return AudioManager.instance;
+  }
+
+  public initialize() {
+    if (!this.audioContext) {
+      this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      this.gainNode = this.audioContext.createGain();
+      this.gainNode.connect(this.audioContext.destination);
+      this.gainNode.gain.value = this.volume;
+    }
+  }
+
+  public getContext(): AudioContext | null {
+    return this.audioContext;
+  }
+
+  public async loadTrack(url: string): Promise<AudioBuffer> {
+    if (!this.audioContext) this.initialize();
+    
+    const response = await fetch(url);
+    const arrayBuffer = await response.arrayBuffer();
+    this.buffer = await this.audioContext!.decodeAudioData(arrayBuffer);
+    return this.buffer;
+  }
+
+  public play() {
+    if (!this.audioContext || !this.buffer) return;
+    if (this.audioContext.state === 'suspended') {
+      this.audioContext.resume();
+    }
+
+    if (this.isPlaying) this.stop();
+
+    this.source = this.audioContext.createBufferSource();
+    this.source.buffer = this.buffer;
+    this.source.playbackRate.value = this.playbackRate;
+    
+    // Connect source -> gain -> destination
+    if (!this.gainNode) this.initialize();
+    this.source.connect(this.gainNode!);
+
+    // Calculate start time
+    const now = this.audioContext.currentTime;
+    // If we were paused, resume from pauseTime. Else from 0.
+    const offset = this.pauseTime;
+    
+    this.source.start(now, offset);
+    
+    this.startTime = now - (offset / this.playbackRate);
+    this.timeAtLastRateChange = now;
+    this.offsetAtLastRateChange = offset;
+    
+    this.isPlaying = true;
+    
+    this.source.onended = () => {
+      // Handle natural end vs stop
+      // if (this.isPlaying) this.isPlaying = false; 
+    };
+  }
+
+  public pause() {
+    if (!this.source || !this.isPlaying || !this.audioContext) return;
+    
+    this.source.stop();
+    // Calculate where we stopped
+    this.pauseTime = this.getCurrentTime();
+    this.isPlaying = false;
+    this.source = null;
+  }
+
+  public stop() {
+    if (this.source) {
+      try { this.source.stop(); } catch(e) {}
+      this.source = null;
+    }
+    this.pauseTime = 0;
+    this.isPlaying = false;
+    this.startTime = 0;
+    this.offsetAtLastRateChange = 0;
+    this.timeAtLastRateChange = 0;
+  }
+
+  public setPlaybackRate(rate: number) {
+    if (rate === this.playbackRate) return;
+
+    if (this.isPlaying && this.audioContext) {
+        // Capture current position before changing rate
+        const currentPos = this.getCurrentTime();
+        const now = this.audioContext.currentTime;
+        
+        if (this.source) {
+            this.source.playbackRate.setValueAtTime(rate, now);
+        }
+        
+        // Update tracking for getCurrentTime
+        this.offsetAtLastRateChange = currentPos;
+        this.timeAtLastRateChange = now;
+    }
+    
+    this.playbackRate = rate;
+  }
+  
+  public setVolume(volume: number) {
+      this.volume = Math.max(0, Math.min(1, volume));
+      if (this.gainNode) {
+          this.gainNode.gain.value = this.volume;
+      }
+  }
+
+  public getCurrentTime(): number {
+    if (!this.audioContext) return 0;
+    if (!this.isPlaying) return this.pauseTime;
+    
+    const now = this.audioContext.currentTime;
+    // Time passed since last rate change * rate + offset at that time
+    return this.offsetAtLastRateChange + (now - this.timeAtLastRateChange) * this.playbackRate;
+  }
+  
+  public getDuration(): number {
+    return this.buffer ? this.buffer.duration : 0;
+  }
+}

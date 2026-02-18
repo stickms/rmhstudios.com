@@ -1,0 +1,96 @@
+export class BPMDetector {
+    /**
+     * Detects BPM from an AudioBuffer.
+     * Uses a simplified algorithm:
+     * 1. Low-pass filter to isolate beats (kick/bass).
+     * 2. Find peaks in signal.
+     * 3. Calculate intervals between peaks.
+     * 4. Find most common interval.
+     */
+    static async detect(buffer: AudioBuffer): Promise<number> {
+        try {
+            const offlineContext = new OfflineAudioContext(1, buffer.length, buffer.sampleRate);
+            const source = offlineContext.createBufferSource();
+            source.buffer = buffer;
+
+            // Lowpass filter to isolate bass/kick
+            const filter = offlineContext.createBiquadFilter();
+            filter.type = "lowpass";
+            filter.frequency.value = 150;
+            source.connect(filter);
+            filter.connect(offlineContext.destination);
+
+            source.start(0);
+            const renderedBuffer = await offlineContext.startRendering();
+            
+            const peaks = this.getPeaks([renderedBuffer.getChannelData(0)]);
+            const groups = this.getIntervals(peaks, buffer.sampleRate);
+
+            const top = groups.sort((a, b) => b.count - a.count).slice(0, 5);
+            if (top.length === 0) return 120; // Default fallback
+
+            // Weighted average of top guesses? Or just take top?
+            // Usually the top one is correct or off by 2x.
+            let bpm = top[0].tempo;
+            
+            // Constrain to reasonable 60-180 range
+            while (bpm < 60) bpm *= 2;
+            while (bpm > 180) bpm /= 2;
+
+            return Math.round(bpm);
+        } catch (e) {
+            console.error("BPM Detection failed", e);
+            return 120;
+        }
+    }
+
+    private static getPeaks(data: Float32Array[]): number[] {
+        const partSize = 22050;
+        const parts = data[0].length / partSize;
+        let peaks: number[] = [];
+
+        for (let i = 0; i < parts; i++) {
+            let max = 0;
+            for (let j = i * partSize; j < (i + 1) * partSize; j++) {
+                const vol = Math.abs(data[0][j]);
+                if (!max || (vol > max)) {
+                    max = vol;
+                }
+            }
+            // Threshold
+            for (let j = i * partSize; j < (i + 1) * partSize; j++) {
+                const vol = Math.abs(data[0][j]);
+                if (vol > max * 0.9) { // Only very high peaks
+                     // Add index
+                     peaks.push(j);
+                     // Skip a bit to avoid double counting same peak
+                     j += 10000;
+                }
+            }
+        }
+        return peaks;
+    }
+
+    private static getIntervals(peaks: number[], sampleRate: number): { tempo: number, count: number }[] {
+        const groups: { tempo: number, count: number }[] = [];
+        
+        peaks.forEach((peak, index) => {
+            for (let i = 1; i < 10; i++) {
+                const interval = peaks[index + i] - peak;
+                const theoreticalBPM = 60 / (interval / sampleRate);
+                
+                // Round to integer BPM
+                const bpm = Math.round(theoreticalBPM);
+                if (bpm < 40 || bpm > 220) continue;
+
+                const found = groups.find(p => p.tempo === bpm);
+                if (found) {
+                    found.count++;
+                } else {
+                    groups.push({ tempo: bpm, count: 1 });
+                }
+            }
+        });
+        return groups;
+    }
+}

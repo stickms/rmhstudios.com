@@ -42,3 +42,5 @@ next-env.d.ts
 
 # claude
 .claude
+
+/lib/generated/prisma
