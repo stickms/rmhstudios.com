@@ -98,6 +98,8 @@ function circleVsRect(cx: number, cy: number, r: number, rx: number, ry: number,
     const dx = cx - nx, dy = cy - ny;
     return dx * dx + dy * dy < r * r;
 }
+
+
 function resolveCircleRect(cx: number, cy: number, r: number, rx: number, ry: number, rw: number, rh: number) {
     const nx = Math.max(rx, Math.min(cx, rx + rw)), ny = Math.max(ry, Math.min(cy, ry + rh));
     const dx = cx - nx, dy = cy - ny;
@@ -313,8 +315,12 @@ export default function EchoesGame({
             y = Math.max(60, Math.min(WORLD_H - 60, py + Math.sin(a2) * d2));
         }
         const diff = getDifficulty(wave);
-        const cfg = { basic: { hp: diff.basicHp, speed: diff.basicSpeed, radius: 12, xpValue: 1, color: '#ff0066' }, elite: { hp: diff.eliteHp, speed: diff.eliteSpeed, radius: 18, xpValue: 8, color: '#ff8800' }, boss: { hp: diff.bossHp, speed: diff.bossSpeed, radius: 36, xpValue: 30, color: '#cc00ff' } }[type];
-        g.enemies.push({ id: uid(), x, y, hp: cfg.hp, maxHp: cfg.hp, speed: cfg.speed, radius: cfg.radius, xpValue: cfg.xpValue, color: cfg.color, flashTimer: 0, type, shootTimer: 0, dashTimer: 0, dashVx: 0, dashVy: 0, nav: { path: [], timer: 0 } });
+        const cfg = {
+            basic: { hp: diff.basicHp, speed: diff.basicSpeed, radius: 12, xpValue: 1, color: '#ff0066' },
+            elite: { hp: diff.eliteHp, speed: diff.eliteSpeed, radius: 18, xpValue: 8, color: '#ff8800' },
+            boss: { hp: diff.bossHp, speed: diff.bossSpeed, radius: 36, xpValue: 30, color: '#cc00ff' }
+        }[type];
+        g.enemies.push({ id: uid(), x, y, hp: cfg.hp, maxHp: cfg.hp, speed: cfg.speed, radius: cfg.radius, xpValue: cfg.xpValue, color: cfg.color, flashTimer: 0, type, shootTimer: 1, dashTimer: 2, dashVx: 0, dashVy: 0, nav: { path: [], timer: 0 } });
     }, []);
 
     // ── Particles ─────────────────────────────────────────────────────────────
@@ -486,20 +492,42 @@ export default function EchoesGame({
             const dx = g.player.x - e.x, dy = g.player.y - e.y, dist = Math.sqrt(dx * dx + dy * dy) || 1;
             if (e.type === 'boss') {
                 e.dashTimer -= delta;
-                if (e.dashTimer <= 0) { e.dashVx = (dx / dist) * 350; e.dashVy = (dy / dist) * 350; e.dashTimer = 3 + Math.random() * 2; }
-                e.x += e.dashVx * delta * 0.3; e.y += e.dashVy * delta * 0.3; e.dashVx *= 0.92; e.dashVy *= 0.92;
+                if (e.dashTimer <= 0) {
+                    // Start charging dash
+                    e.dashTimer = 4 + Math.random() * 2;
+                    e.dashVx = (dx / dist) * 500;
+                    e.dashVy = (dy / dist) * 500;
+                    spawnParticles(e.x, e.y, '#ff0000', 15);
+                }
+                const isDashing = e.dashTimer > 3.5; // Dash lasts 0.5s
+                if (isDashing) {
+                    e.x += e.dashVx * delta;
+                    e.y += e.dashVy * delta;
+                    if (Math.random() > 0.4) spawnParticles(e.x, e.y, '#ff4400', 1);
+                } else {
+                    e.dashVx *= 0.95; e.dashVy *= 0.95;
+                    e.x += e.dashVx * delta; e.y += e.dashVy * delta;
+                }
             }
             if (e.type === 'elite') {
                 e.dashTimer -= delta;
-                if (e.dashTimer <= 0 && dist < 300) { e.dashVx = (dx / dist) * 280; e.dashVy = (dy / dist) * 280; e.dashTimer = 2 + Math.random(); }
-                e.x += e.dashVx * delta; e.y += e.dashVy * delta; e.dashVx *= 0.85; e.dashVy *= 0.85;
+                if (e.dashTimer <= 0 && dist < 350) {
+                    e.dashVx = (dx / dist) * 320; e.dashVy = (dy / dist) * 320;
+                    e.dashTimer = 2 + Math.random();
+                }
+                e.x += e.dashVx * delta; e.y += e.dashVy * delta;
+                e.dashVx *= 0.9; e.dashVy *= 0.9;
             }
-            let steerDx: number, steerDy: number;
-            if (e.type === 'basic') { const st = steerToward(e.x, e.y, g.player.x, g.player.y, e.nav, delta); steerDx = st.dx; steerDy = st.dy; }
-            else { steerDx = dx / dist; steerDy = dy / dist; }
+            const st = steerToward(e.x, e.y, g.player.x, g.player.y, e.nav, delta); 
+            const steerDx = st.dx, steerDy = st.dy;
+
             let nx = e.x + steerDx * e.speed * delta, ny = e.y + steerDy * e.speed * delta;
             for (const obs of obstacles) { if (circleVsRect(nx, ny, e.radius, obs.x, obs.y, obs.w, obs.h)) { const r = resolveCircleRect(nx, ny, e.radius, obs.x, obs.y, obs.w, obs.h); nx += r.nx; ny += r.ny; } }
-            if (e.type !== 'boss' && e.type !== 'elite') { e.x = nx; e.y = ny; }
+            // Applied normal movement if not in high-speed dash
+            if (e.type === 'basic' || (e.type === 'elite' && Math.abs(e.dashVx) < 50) || (e.type === 'boss' && e.dashTimer < 3.5)) {
+                e.x = nx; e.y = ny;
+            }
+
             if (e.type === 'elite' || e.type === 'boss') {
                 e.shootTimer -= delta;
                 const si = e.type === 'boss' ? 0.8 : 1.8;

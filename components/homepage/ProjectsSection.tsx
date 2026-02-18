@@ -48,6 +48,30 @@ const projects = [
     link: "/echoes",
     isSteam: false
   },
+  {
+    id: 5,
+    title: "RMHdle",
+    description: "The daily word game for the RMH community.",
+    longDescription: "A daily word challenge where you guess a 5-letter word in 6 tries. Part of the RMH Discord integration, featuring community-specific words and global competition.",
+    status: "Discord Game",
+    gradient: "from-[#5865F2] to-[#404EED]",
+    icon: <Brain className="w-20 h-20 text-white/80" strokeWidth={1} />,
+    cta: "Play on Discord",
+    link: "https://discord.gg/rmh",
+    isSteam: false
+  },
+  {
+    id: 6,
+    title: "RMHConnections",
+    description: "Find the common threads between RMH community terms.",
+    longDescription: "Group sixteen items into four categories of four. Each daily puzzle features references, history, and characters from the RMH community. Stay local or compete globally.",
+    status: "Discord Game",
+    gradient: "from-[#7289da] to-[#5865F2]",
+    icon: <Rocket className="w-20 h-20 text-white/80" strokeWidth={1} />,
+    cta: "Play on Discord",
+    link: "https://discord.gg/rmh",
+    isSteam: false
+  },
 ];
 
 export function ProjectsSection() {

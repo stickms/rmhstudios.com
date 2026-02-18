@@ -56,7 +56,7 @@ function cellKey(x: number, y: number) { return y * gridW + x; }
 export function findPath(
     sx: number, sy: number,
     tx: number, ty: number,
-    maxNodes = 600
+    maxNodes = 1200
 ): { x: number; y: number }[] {
     if (!grid) return [];
 
@@ -193,8 +193,19 @@ export function steerToward(
         }
     }
 
-    // Direct fallback when no path
+    // Direct fallback with wall-sliding logic
     const dx = tx - ex, dy = ty - ey;
-    const d = Math.sqrt(dx * dx + dy * dy) || 1;
-    return { dx: dx / d, dy: dy / d };
+    const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+    let sdx = dx / dist, sdy = dy / dist;
+
+    // If direct path is blocked, try to slide
+    if (isBlocked(ex + sdx * 20, ey + sdy * 20)) {
+        // Try horizontal only
+        if (!isBlocked(ex + sdx * 20, ey)) sdy = 0;
+        // Try vertical only
+        else if (!isBlocked(ex, ey + sdy * 20)) sdx = 0;
+    }
+
+    const finalLen = Math.sqrt(sdx * sdx + sdy * sdy) || 1;
+    return { dx: sdx / finalLen, dy: sdy / finalLen };
 }

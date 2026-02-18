@@ -16,7 +16,7 @@ export async function POST(req: Request) {
         const body = await req.json();
         const { username, timeSurvived, kills, totalXP } = body;
 
-        if (!username || typeof username !== 'string' || username.length > 24 || username.length < 2) {
+        if (!username || typeof username !== 'string' || username.length > 32 || username.length < 2) {
             return NextResponse.json({ error: 'Invalid username' }, { status: 400 });
         }
         if (typeof timeSurvived !== 'number' || timeSurvived < 0 || timeSurvived > 86400) {
@@ -29,7 +29,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Invalid XP' }, { status: 400 });
         }
 
-        const cleanUsername = username.trim().replace(/[^a-zA-Z0-9_\-. ]/g, '').slice(0, 24);
+        const cleanUsername = username.trim().replace(/[^a-zA-Z0-9_\-. ]/g, '').slice(0, 32);
 
         const client = await pool.connect();
         try {

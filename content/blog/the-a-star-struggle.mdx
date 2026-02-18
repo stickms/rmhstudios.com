@@ -1,0 +1,20 @@
+---
+title: "The A* Struggle: Navigation in a Grid World"
+date: "2026-02-18"
+description: "Solving the complexities of enemy pathfinding in a React-based game engine."
+image: "/images/blog/pathfinding-debug.jpg"
+---
+
+# Grid vs. Reality
+
+One of the greatest challenges in the *Echoes* 2D refactor was enemy navigation. In a world full of static obstacles and dynamic players, how do you make enemies feel smart?
+
+## The Challenges
+- **Node Costs**: Standard A* works well for static maps, but enemies need to react to player movement in real-time.
+- **Corner Cutting**: Enemies often get stuck on the "corners" of obstacles. We solved this by expanding the collision grid by one cell.
+- **Wall Sliding**: When A* fails (due to path depth limits), we implemented a vector-projection fallback that lets enemies "slide" along walls toward the player.
+
+## Optimization
+We staggered the pathfinding updates across enemies to prevent CPU spikes. Instead of every enemy calculating a path every frame, they update their intent every 0.5 seconds, using linear interpolation to fill the gaps.
+
+Better navigation means more pressure on the player—and a better game.

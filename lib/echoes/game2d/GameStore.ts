@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { GameClass } from './ClassStore';
+import { getStoredUsername } from './UserStore';
 
 export interface Upgrade {
     id: string;
@@ -88,7 +89,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     hp: 100, maxHp: 100, xp: 0, level: 1, kills: 0, timeSurvived: 0,
     stats: { ...DEFAULT_STATS }, upgradeCount: {},
     phase: 'menu', upgradeChoices: [], wave: 1, selectedClass: null,
-    userName: 'Unknown',
+    userName: getStoredUsername() ?? 'Unknown',
 
     showClassSelect: () => set({ phase: 'class_select' }),
 
