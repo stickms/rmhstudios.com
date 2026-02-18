@@ -27,23 +27,23 @@ export default function ClassSelect({ onSelect }: ClassSelectProps) {
     return (
         <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            className="absolute inset-0 z-50 bg-black flex flex-col items-center justify-center p-6 gap-6"
+            className="absolute inset-0 z-50 bg-black flex flex-col items-center justify-center p-4 md:p-6 gap-6 overflow-y-auto"
         >
             {/* Back button */}
             <button
                 onClick={() => setPhase('menu')}
-                className="absolute top-5 left-5 flex items-center gap-2 text-white/40 hover:text-white text-sm font-mono transition-colors"
+                className="absolute top-5 left-5 flex items-center gap-2 text-white/40 hover:text-white text-sm font-mono transition-colors z-10"
             >
                 ← Back
             </button>
 
-            <div className="text-center">
+            <div className="text-center shrink-0 mt-12 md:mt-0">
                 <div className="text-white/30 text-xs font-mono tracking-[0.4em] uppercase mb-2">Choose Your Path</div>
-                <h2 className="text-4xl font-black text-white">Select Class</h2>
+                <h2 className="text-3xl md:text-4xl font-black text-white">Select Class</h2>
             </div>
 
             {/* Class cards */}
-            <div className="flex gap-3 flex-wrap justify-center">
+            <div className="flex gap-3 flex-wrap justify-center shrink-0">
                 {CLASSES.map(cls => (
                     <motion.button
                         key={cls.id}
@@ -51,16 +51,16 @@ export default function ClassSelect({ onSelect }: ClassSelectProps) {
                         whileTap={{ scale: 0.97 }}
                         onClick={() => { setSelected(cls); setHovered(cls); }}
                         onMouseEnter={() => setHovered(cls)}
-                        className={`relative w-36 h-44 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 transition-all cursor-pointer ${
+                        className={`relative w-28 h-36 md:w-36 md:h-44 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 transition-all cursor-pointer ${
                             selected?.id === cls.id
                                 ? 'border-white/60 bg-white/10'
                                 : 'border-white/10 bg-white/5 hover:border-white/30'
                         }`}
                         style={selected?.id === cls.id ? { borderColor: cls.color, boxShadow: `0 0 20px ${cls.color}44` } : {}}
                     >
-                        <span className="text-4xl">{cls.icon}</span>
-                        <span className="text-white font-bold text-sm">{cls.name}</span>
-                        <span className={`text-xs font-mono ${DIFFICULTY_COLOR[cls.difficulty]}`}>{cls.difficulty}</span>
+                        <span className="text-3xl md:text-4xl">{cls.icon}</span>
+                        <span className="text-white font-bold text-xs md:text-sm">{cls.name}</span>
+                        <span className={`text-[10px] md:text-xs font-mono ${DIFFICULTY_COLOR[cls.difficulty]}`}>{cls.difficulty}</span>
                         {selected?.id === cls.id && (
                             <motion.div
                                 layoutId="selected-ring"
@@ -77,7 +77,7 @@ export default function ClassSelect({ onSelect }: ClassSelectProps) {
                 <motion.div
                     key={hovered.id}
                     initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                    className="w-full max-w-2xl bg-white/5 border border-white/10 rounded-2xl p-5 flex gap-6"
+                    className="w-full max-w-2xl bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col md:flex-row gap-6 shrink-0 mb-8"
                 >
                     {/* Left: stats */}
                     <div className="flex-1">
@@ -133,7 +133,7 @@ export default function ClassSelect({ onSelect }: ClassSelectProps) {
                 whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}
                 onClick={handleConfirm}
                 disabled={!selected}
-                className="px-12 py-3 font-bold text-white rounded-lg tracking-widest uppercase transition-all disabled:opacity-30"
+                className="px-12 py-3 font-bold text-white rounded-lg tracking-widest uppercase transition-all disabled:opacity-30 shrink-0 mb-8"
                 style={selected ? { backgroundColor: selected.color } : { backgroundColor: '#555' }}
             >
                 {selected ? `Play as ${selected.name}` : 'Select a Class'}

@@ -148,23 +148,23 @@ export function StartScreen() {
         <AnimatePresence>
             {phase === 'menu' && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                    className="absolute inset-0 flex z-50 bg-black">
+                    className="absolute inset-0 flex flex-col lg:flex-row z-50 bg-black overflow-y-auto">
                     {/* Main Site Back Button */}
-                    <div className="absolute top-8 left-8 z-50">
+                    <div className="absolute top-4 left-4 lg:top-8 lg:left-8 z-50">
                         <Link href="/">
-                            <Button variant="ghost" className="text-white/20 hover:text-white flex items-center gap-2 bg-white/5 shadow-xl border border-white/10 backdrop-blur-md px-6 py-6 rounded-full transition-all hover:bg-white/10">
+                            <Button variant="ghost" className="text-white/20 hover:text-white flex items-center gap-2 bg-white/5 shadow-xl border border-white/10 backdrop-blur-md px-4 py-4 lg:px-6 lg:py-6 rounded-full transition-all hover:bg-white/10">
                                 <ArrowLeft className="w-5 h-5" />
-                                <span className="font-mono text-xs tracking-widest uppercase">System Exit</span>
+                                <span className="font-mono text-xs tracking-widest uppercase hidden md:inline">System Exit</span>
                             </Button>
                         </Link>
                     </div>
 
                     {/* Left: title */}
-                    <div className="flex-1 flex flex-col items-center justify-center p-8">
+                    <div className="flex-1 flex flex-col items-center justify-center p-8 shrink-0 min-h-[500px]">
                         <div className="text-white/30 text-xs font-mono tracking-[0.5em] uppercase mb-4">Project Biohazard</div>
-                        <h1 className="text-7xl font-black text-white mb-2 tracking-tight">ECHOES</h1>
+                        <h1 className="text-5xl lg:text-7xl font-black text-white mb-2 tracking-tight text-center">ECHOES</h1>
                         <p className="text-purple-400 text-sm tracking-[0.3em] uppercase mb-8">Survive the Void</p>
-                        <div className="flex flex-col items-center gap-1 mb-10 text-white/40 text-sm font-mono">
+                        <div className="flex flex-col items-center gap-1 mb-10 text-white/40 text-sm font-mono text-center">
                             <div>WASD — Move · Auto-aim shoots nearest visible enemy</div>
                             <div>Kill enemies → XP → Level up → Choose upgrades</div>
                             <div>Q / E / R — Activate class abilities</div>
@@ -179,12 +179,12 @@ export function StartScreen() {
                         )}
                         <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}
                             onClick={showClassSelect} disabled={!username}
-                            className="px-12 py-4 bg-purple-600 hover:bg-purple-500 disabled:opacity-40 text-white font-bold text-lg rounded-lg tracking-widest uppercase transition-colors">
+                            className="px-8 lg:px-12 py-3 lg:py-4 bg-purple-600 hover:bg-purple-500 disabled:opacity-40 text-white font-bold text-lg rounded-lg tracking-widest uppercase transition-colors">
                             Select Class
                         </motion.button>
                     </div>
                     {/* Right: leaderboard */}
-                    <div className="w-80 border-l border-white/10 p-6 flex flex-col justify-center">
+                    <div className="w-full lg:w-96 border-t lg:border-t-0 lg:border-l border-white/10 p-6 flex flex-col justify-center bg-white/5 lg:bg-transparent shrink-0">
                         {username && <LeaderboardPanel username={username} />}
                     </div>
                     {showPrompt && <UsernamePrompt onSet={handleSetUsername} />}
@@ -225,12 +225,12 @@ export function GameOverScreen() {
         <AnimatePresence>
             {phase === 'dead' && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                    className="absolute inset-0 flex z-50 bg-black/90 backdrop-blur-md">
+                    className="absolute inset-0 flex flex-col lg:flex-row z-50 bg-black/95 backdrop-blur-md overflow-y-auto">
                     {/* Left: stats */}
-                    <div className="flex-1 flex flex-col items-center justify-center p-8">
+                    <div className="flex-1 flex flex-col items-center justify-center p-8 shrink-0 min-h-[400px]">
                         <div className="text-red-500 text-xs font-mono tracking-[0.4em] uppercase mb-3">Signal Lost</div>
-                        <h2 className="text-5xl font-black text-white mb-8">GAME OVER</h2>
-                        <div className="grid grid-cols-3 gap-8 mb-8 text-center">
+                        <h2 className="text-5xl font-black text-white mb-8 text-center">GAME OVER</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8 text-center">
                             {[
                                 { label: 'Survived', value: `${mins}:${secs}` },
                                 { label: 'Kills', value: kills.toLocaleString() },
@@ -252,7 +252,7 @@ export function GameOverScreen() {
                         </motion.button>
                     </div>
                     {/* Right: leaderboard */}
-                    <div className="w-80 border-l border-white/10 p-6 flex flex-col justify-center">
+                    <div className="w-full lg:w-96 border-t lg:border-t-0 lg:border-l border-white/10 p-6 flex flex-col justify-center bg-white/5 lg:bg-transparent shrink-0">
                         <LeaderboardPanel username={userName} />
                     </div>
                 </motion.div>
