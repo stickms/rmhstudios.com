@@ -140,7 +140,11 @@ export class GameEngine {
                 
                 // If time passed window + slice time, it's a miss
                 if (currentTime > slice.time + HIT_WINDOWS.GOOD) {
-                    this.handleHit(slice, 'MISS');
+                    if (slice.type === 'BOMB') {
+                         this.processedSliceIds.add(slice.id); // Just mark as processed, no penalty
+                    } else {
+                         this.handleHit(slice, 'MISS');
+                    }
                 }
             });
         }

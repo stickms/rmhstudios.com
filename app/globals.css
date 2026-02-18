@@ -106,7 +106,14 @@
   --radius-xl: calc(var(--radius) + 4px);
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
+
+  /* Echoes Specific */
+  --color-neon-glow: #d8b4fe;
+  --animate-pulse-slow: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --shadow-neon: 0 0 10px var(--neon-purple), 0 0 20px var(--neon-purple);
 }
 
 @layer utilities {

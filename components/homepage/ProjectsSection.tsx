@@ -35,32 +35,18 @@ const projects = [
     isSteam: true
   },
   {
-    id: 1,
-    title: "Project Nova",
-    description:
-      "An expansive sci-fi adventure that pushes the boundaries of exploration and discovery.",
-    longDescription: 
-      "An expansive sci-fi adventure that pushes the boundaries of exploration and discovery. Chart unknown galaxies, trade with alien civilizations, and build your legacy in a universe that reacts to your every decision. Experience seamless ground-to-space transitions and a deep, player-driven economy.",
-    status: "Coming Soon",
-    gradient: "from-[var(--neon-pink)] to-[var(--neon-purple)]",
-    icon: <Rocket className="w-20 h-20 text-white/80" strokeWidth={1} />,
-    cta: "Wishlist on Steam",
-    link: "#",
-    isSteam: true
-  },
-  {
     id: 3,
     title: "Echoes",
     description:
       "A narrative-driven puzzle game exploring memory, identity, and the nature of reality.",
     longDescription:
       "Dive into a fragmented reality where memories are currency. Solve complex narrative puzzles to piece together the truth of your existence before the entropy of the void dissolves everything you know. Features non-linear storytelling, adaptive audio landscapes, and choices that ripple across timelines.",
-    status: "Coming Soon",
+    status: "Playable",
     gradient: "from-[var(--neon-purple)] to-[var(--neon-pink)]",
     icon: <Brain className="w-20 h-20 text-white/80" strokeWidth={1} />,
-    cta: "Wishlist on Steam",
-    link: "#",
-    isSteam: true
+    cta: "Play Now",
+    link: "/echoes",
+    isSteam: false
   },
 ];
 

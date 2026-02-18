@@ -57,9 +57,29 @@ export class AudioManager {
     this.source.buffer = this.buffer;
     this.source.playbackRate.value = this.playbackRate;
     
+    // Normalize Buffer Logic
+    // Find peak amplitude
+    let peak = 0;
+    const channelData = this.buffer.getChannelData(0); // Check first channel
+    // Checking every sample is expensive, check every 100th
+    for (let i = 0; i < channelData.length; i += 100) {
+        const val = Math.abs(channelData[i]);
+        if (val > peak) peak = val;
+    }
+    
+    // Target peak is ~0.8 to leave headroom
+    const normalizationGain = peak > 0 ? 0.8 / peak : 1.0;
+    
     // Connect source -> gain -> destination
     if (!this.gainNode) this.initialize();
-    this.source.connect(this.gainNode!);
+    
+    // Apply normalization gain via a separate node or just adjust existing gain?
+    // Better to have a separate node for normalization so user volume control is independent.
+    const normNode = this.audioContext.createGain();
+    normNode.gain.value = normalizationGain;
+    
+    this.source.connect(normNode);
+    normNode.connect(this.gainNode!); // Connect to user volume gain
 
     // Calculate start time
     const now = this.audioContext.currentTime;
