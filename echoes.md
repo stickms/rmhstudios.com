@@ -1,188 +1,175 @@
-Here is a comprehensive project plan tailored for an AI coding assistant (like Antigravity) to implement the game "Echoes" into an existing Next.js application.
+This is a comprehensive **Architecture & Implementation Master Plan** designed specifically for you to feed into Antigravity (your AI coding assistant).
 
-This plan focuses on a web-based React implementation using **Next.js**, **Tailwind CSS**, and **Framer Motion** for the visual effects.
-
----
-
-# Project Echoes: Game Implementation Plan
-
-## 1. Project Overview & Tech Stack
-
-**Objective:** Create a browser-based, narrative puzzle game titled "Echoes" where players manage "Memory" resources to navigate a non-linear story graph while fighting against a decaying "Entropy" mechanic.
-
-**Stack:**
-
-* **Framework:** Next.js (App Router preferred)
-* **Language:** TypeScript
-* **State Management:** Zustand (for lightweight, reactive game state)
-* **Styling:** Tailwind CSS + CSS Modules (for specific glitch effects)
-* **Animation:** Framer Motion (for "void" effects and transitions)
-* **Audio:** Howler.js (for adaptive audio landscapes)
-* **Persistence:** LocalStorage (for saving progress/timelines)
+It breaks the development of **"Echoes: Reforged"** down into modular, logical steps. This plan assumes a **Next.js (Frontend/UI)** + **Phaser 3 (Game Engine)** hybrid architecture.
 
 ---
 
-## 2. Core Data Structures (TypeScript Interfaces)
+# 1. Architectural Blueprint
 
-*Ask Antigravity to define these types first in `src/types/echoes.d.ts`.*
+Before coding, Antigravity needs to understand the "Brain" of the application.
 
-```typescript
-// The Node Graph System for Non-Linear Storytelling
-export type NodeType = 'memory' | 'puzzle' | 'void' | 'ending';
+### The Hybrid Stack
 
-export interface StoryNode {
-  id: string;
-  title: string;
-  content: string; // Markdown or Text
-  type: NodeType;
-  cost: number; // Memory cost to unlock
-  entropy: number; // How much this node contributes to entropy
-  requirements: string[]; // IDs of nodes that must be unlocked first
-  choices: Choice[];
-}
+* **The Game Loop (Phaser 3):** Handles 60FPS rendering, physics (Arcade Physics), collision detection, enemy spawning, and bullet hell mechanics.
+* **The UI Layer (React/Next.js):** Handles the HUD (Heads Up Display), Evolution Selection Screens, Inventory, Pause Menus, and Metagame persistence.
+* **The Bridge (Zustand):** A state management store that syncs data between the two.
+* *Example:* Player gets hit in Phaser  Updates `hp` in Zustand  React Health Bar updates.
 
-export interface Choice {
-  id: string;
-  text: string;
-  nextNodeId: string;
-  cost?: number;
-  effect?: (state: GameState) => void; // e.g., 'restore_memory'
-}
 
-export interface GameState {
-  memories: number; // The currency
-  entropy: number; // The decay meter (0-100)
-  unlockedNodes: string[]; // History of visited nodes
-  currentTimeline: string; // Tracking the "branch" the player is on
-  isGameOver: boolean;
-}
-
-```
 
 ---
 
-## 3. Implementation Phases
+# 2. Detailed Implementation Walkthrough
 
-### Phase 1: Game State Management (Zustand Store)
+Feed these phases to Antigravity one by one to avoid context overload.
 
-**File:** `src/store/useEchoesStore.ts`
+## Phase 1: The Engine Scaffold (The "Void")
 
-**Logic to Implement:**
+**Goal:** Initialize a hardware-accelerated 2D canvas inside Next.js that handles window resizing and asset loading.
 
-1. **Memory Currency:** Actions to `spendMemory(amount)` and `gainMemory(amount)`.
-2. **Entropy Ticker:** A `useEffect` loop that increments `entropy` slowly over time (simulating the "void dissolving everything").
-* *Mechanic:* If Entropy reaches 100%, the game ends (Game Over screen).
-* *Mechanic:* Solving puzzles reduces Entropy.
-
-
-3. **Timeline Tracking:** Methods to `unlockNode(id)` and validate if a player has the required `memories` to proceed.
-
-### Phase 2: The Narrative Engine (Data Layer)
-
-**File:** `src/data/story-nodes.ts`
-
-Create a JSON/Object graph representing the "Fragmented Reality."
-
-* **Root Node:** "The Awakening" (Free cost).
-* **Branching Paths:**
-* *Path A:* High memory cost, reveals lore about the "Void."
-* *Path B:* High puzzle difficulty, rewards high memory currency.
+1. **Dynamic Import:** Since Next.js is server-side rendered (SSR) and Phaser requires the `window` object, instruct Antigravity to create a `GameComponent` that uses `next/dynamic` with `ssr: false`.
+2. **Scene Setup:** Create three distinct Scenes:
+* `BootScene`: Loads assets (sprites, audio).
+* `MenuScene`: The start screen.
+* `DungeonScene`: The main gameplay loop.
 
 
-* **The Void:** Randomly lock previously visited nodes (make them inaccessible) if Entropy gets too high.
+3. **The Asset Loader:** Set up a system to load "placeholder" assets programmatically (drawing colored rectangles/circles via `graphics`) so you can test gameplay immediately without waiting for art files.
 
-### Phase 3: UI Components
+## Phase 2: The "Risk of Rain" Controller (Movement & Combat)
 
-#### A. The Game Container (HUD)
+**Goal:** Create the tight, fast-paced game feel.
 
-**File:** `src/components/echoes/GameInterface.tsx`
-
-* **Layout:** A dashboard style view.
-* **Top Bar:**
-* **Memory Counter:** Displayed as glowing text (Currency).
-* **Entropy Meter:** A progress bar that pulses purple/red as it fills.
+1. **Player Prefab:** Create a `Player.js` class extending `Phaser.Physics.Arcade.Sprite`.
+2. **Input Handling:**
+* **WASD:** Apply **Velocity** (Acceleration/Drag), not direct coordinate manipulation. This gives the movement "weight."
+* **Mouse Aim:** The player sprite must calculate the angle between itself and the mouse pointer (`Phaser.Math.Angle.Between`) and rotate accordingly.
 
 
-* **Main View:** Renders the `CurrentNode`.
-
-#### B. The Node Viewer (Card Component)
-
-**File:** `src/components/echoes/NodeCard.tsx`
-
-* **Visual Style:** Dark glassmorphism (backdrop-blur), neon purple borders (`border-purple-500`), and glitch text effects.
-* **Interaction:**
-* Display narrative text.
-* Render `ChoiceButtons`.
-* **Puzzle Component:** If the node is a 'puzzle', render a mini-game (e.g., pattern matching or cipher text) that must be solved to unlock the `Choice` buttons.
+3. **The Shooting Mechanic:**
+* Create a `ProjectileGroup` (Object Pooling). This is crucial for performance. Instead of creating/destroying bullets, recycle them.
+* **Fire Rate:** Implement a `lastFired` timestamp to control attack speed.
+* **Recoil:** Apply a small reverse velocity to the player when shooting for tactile feedback.
 
 
 
-#### C. The Void Effect (Overlay)
+## Phase 3: The "Binding of Isaac" World (Procedural Generation)
 
-**File:** `src/components/echoes/VoidOverlay.tsx`
+**Goal:** Generate a grid-based dungeon with distinct rooms.
 
-* **Visuals:** A Framer Motion component that overlays the screen with "static" or "fog" based on the current `Entropy` level.
-* **Logic:** As `entropy` increases, `opacity` of the overlay increases, making the text harder to read.
+1. **The Grid System:**
+* Define a global grid (e.g., 10x10).
+* Implement a **Random Walker Algorithm**. It starts at [5,5], takes X steps in random cardinal directions, and marks those grids as "Active Rooms."
 
-### Phase 4: Audio System (Adaptive Landscapes)
 
-**File:** `src/hooks/useAdaptiveAudio.ts`
+2. **Room Templates:**
+* Create a generic `Room` class.
+* **Walls:** Automate wall placement on the boundaries of the screen (colliders).
+* **Doors:** Logic to check neighbors. If `Grid[x+1][y]` exists, place a "Door" object on the East wall.
 
-**Logic:**
 
-1. **Base Layer:** Deep, ambient drone (Space/Sci-fi).
-2. **Entropy Layer:** High-pitched, dissonant strings or static that fades in as `entropy` rises > 50%.
-3. **Memory Layer:** Melodic chimes when `memories` are gained.
+3. **Camera Transitions:**
+* When Player touches a Door  Pause Physics  Pan Camera to next grid coordinate  Resume Physics.
 
-* *Implementation:* Use `Howler` to crossfade between tracks based on store state.
+
+
+## Phase 4: The "Pokémon" Evolution System
+
+**Goal:** The core hook. Dynamic character mutation.
+
+1. **The Genome Structure:**
+* Instruct Antigravity to create a `EvolutionConfig` object.
+* **Base Form:** "Echo" (Balanced).
+* **Tier 1 Evolutions:**
+* *Type A (Tank):* "Goliath" - Scale sprite 1.5x, Speed -20%, HP +100%, Weapon: Shotgun.
+* *Type B (Rogue):* "Wraith" - Scale sprite 0.8x, Speed +40%, HP -20%, Weapon: Piercing Railgun.
+
+
+
+
+2. **The XP Loop:**
+* Enemies drop "Data Shards" (XP).
+* When XP fills: Pause Game (Phaser)  Open Modal (React).
+
+
+3. **The Hot-Swap Logic:**
+* Upon selecting an evolution in React, pass the ID back to Phaser.
+* The `Player` class must have a `morph(evolutionId)` method that:
+* Destroys the old sprite texture.
+* Applies the new texture.
+* Updates physics body size (hitbox).
+* Swaps the weapon logic.
+
+
+
+
+
+## Phase 5: The "Entropy" Difficulty Director
+
+**Goal:** Scaling difficulty like *Risk of Rain*.
+
+1. **The Director:** A background class that doesn't render anything.
+2. **The Credits System:**
+* The Director receives "Credits" every second.
+* Credits increase based on the **Entropy Meter** (Time played).
+* Spawning an enemy costs credits.
+* *Early Game:* Director has 10 credits (Spawns 5 weak enemies).
+* *Late Game:* Director has 1000 credits (Spawns 2 Bosses + 20 weak enemies).
+
+
+3. **The Mob Spawner:** Logic to spawn enemies *off-screen* or at specific "Vents" within the current room so they don't pop in on top of the player.
 
 ---
 
-## 4. Prompting Guide for Antigravity
+# 3. Prompt Chain for Antigravity
 
-*Copy and paste these specific prompts into your AI coding assistant to build the modules one by one.*
+Copy-paste these blocks sequentially to your assistant to build the game.
 
-**Prompt 1 (Setup & Types):**
+### Prompt 1: The Setup
 
-> "Create a TypeScript definitions file `src/types/echoes.d.ts` for a narrative game. I need interfaces for StoryNode, Choice, and GameState. The game involves 'memories' as currency and an 'entropy' meter. Also, set up a basic Zustand store in `src/store/useEchoesStore.ts` to manage these values."
+> "Initialize a Next.js project with TypeScript. Set up a directory structure for a game called 'Echoes'. I need a component `GameCanvas.tsx` that dynamically imports `phaser` (no SSR). Create a custom Hook `useGameStore` using Zustand to manage: `playerHealth`, `currentLevel`, `evolutionStage`, and `entropyLevel`."
 
-**Prompt 2 (The Story Data):**
+### Prompt 2: The Player & Physics
 
-> "Generate a mock data file `src/data/echoes-narrative.ts` with 5 linked story nodes. Include branching paths where choices cost 'memories'. The theme is a sci-fi fragmented reality."
+> "Create a Phaser Scene called `MainScene`. Inside it, implement a Player class using Arcade Physics.
+> 1. Use WASD for movement with acceleration/drag physics (so it feels slippery/smooth).
+> 2. Make the player sprite rotate to face the mouse cursor.
+> 3. Implement a shooting mechanic: Left Click fires a projectile towards the mouse. Use an Object Pool for bullets to optimize performance."
+> 
+> 
 
-**Prompt 3 (The Component Shell):**
+### Prompt 3: The Map Generation
 
-> "Build a `GameInterface` component using Tailwind CSS. It should have a dark theme (black background), a HUD showing 'Memories' and an 'Entropy' bar at the top, and a main content area. Use a neon purple accent color (#a855f7)."
+> "Implement a 'RoomManager' class. It should use a Random Walker algorithm to generate a layout of 8-12 linked rooms on a grid.
+> 1. Each room is one screen size (1280x720).
+> 2. Auto-generate wall colliders around the edges.
+> 3. Place 'Door' triggers. When the player hits a door, slide the camera to the next room."
+> 
+> 
 
-**Prompt 4 (Game Logic - The Entropy Mechanic):**
+### Prompt 4: The Evolution System
 
-> "Update the Zustand store to include a game loop. Every 1 second, increase 'Entropy' by 1. If 'Entropy' hits 100, set a 'isGameOver' flag. Create a hook `useEntropy` that manages this timer."
+> "Create a `EvolutionManager`. Define a config object with 3 distinct forms (Base, Heavy, Fast).
+> 1. Track XP. When XP hits 100, emit a 'LEVEL_UP' event to the Zustand store.
+> 2. In the React layer, create a generic Modal that listens for 'LEVEL_UP' and displays 3 cards.
+> 3. When a card is clicked, fire a function in Phaser that changes the Player's stats (speed, fire rate) and changes their color/tint to represent the new form."
+> 
+> 
 
-**Prompt 5 (The Landing Modal - From Image):**
+### Prompt 5: The Entropy & Enemies
 
-> "Create a 'AboutEchoes' modal component that matches the attached image style. Dark background, purple glow border, 'About the Game' header in purple, description text, and a 'Wishlist on Steam' button at the bottom."
+> "Create an `EnemyDirector` class.
+> 1. It runs a timer. Every minute, the 'Entropy' multiplier increases by 0.5x.
+> 2. Spawn enemies (Red Squares) that follow the player.
+> 3. Enemy Health and Damage = Base * Entropy Multiplier.
+> 4. Ensure enemies only spawn in the active room, not in the whole dungeon at once."
+> 
+> 
 
 ---
 
-## 5. Visual Style Guide (Tailwind Config)
+# 4. Critical Logic for Antigravity to Know
 
-To match the uploaded image, ensure your `tailwind.config.js` includes:
-
-```javascript
-theme: {
-  extend: {
-    colors: {
-      void: '#0a0a0a',
-      neon: '#bf00ff', // The purple from the image
-      'neon-glow': '#d8b4fe',
-    },
-    boxShadow: {
-      'neon': '0 0 10px #bf00ff, 0 0 20px #bf00ff',
-    },
-    animation: {
-      'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-    }
-  }
-}
-
-```
+* **Collision Layers:** Tell Antigravity to use Phaser's `Collision Bitmasks`. Player Bullets should hit Enemies, but not other Player Bullets. Enemy Bullets should hit Player, but not other Enemies.
+* **State Sync:** Do not update React every frame (60 times a second). Only update React on *events* (Damage taken, Level up, Room change) to prevent lag.
+* **Resiliency:** Ensure the `GameCanvas` handles cleanup (`game.destroy(true)`) on unmount, or you will have multiple game instances running in the background while coding hot-reloads.

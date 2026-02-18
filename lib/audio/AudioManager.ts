@@ -163,7 +163,7 @@ export class AudioManager {
     return this.offsetAtLastRateChange + (now - this.timeAtLastRateChange) * this.playbackRate;
   }
   
-  public playSfX(freq: number, type: OscillatorType = 'sine', duration: number = 0.1) {
+  public playSfX(freq: number, type: OscillatorType = 'sine', duration: number = 0.1, volume: number = 0.1) {
     if (!this.audioContext) this.initialize();
     if (!this.audioContext) return;
     

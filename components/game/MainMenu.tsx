@@ -215,8 +215,8 @@ export function MainMenu({ engine }: MainMenuProps) {
         const bpm = customFile ? customFile.bpm : selectedTrack?.bpm;
 
         return (
-             <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-                <Card className="w-full max-w-2xl border-neon-cyan bg-black/90 text-white shadow-[0_0_50px_rgba(0,255,255,0.2)] relative overflow-hidden neon-border">
+             <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto">
+                <Card className="w-full max-w-2xl border-neon-cyan bg-black/90 text-white shadow-[0_0_50px_rgba(0,255,255,0.2)] relative overflow-hidden neon-border my-auto">
                     <CardHeader>
                         <CardTitle className="text-3xl font-black italic text-center tracking-tighter text-neon-cyan">
                             GAME SETUP
@@ -307,8 +307,8 @@ export function MainMenu({ engine }: MainMenuProps) {
     // ... (Keep existing Settings/TrackList render, but remove Modifiers from Settings)
 
      return (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-4xl border-neon-purple bg-black/90 text-white shadow-[0_0_50px_rgba(153,0,255,0.3)] relative overflow-hidden neon-border">
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto">
+            <Card className="w-full max-w-4xl border-neon-purple bg-black/90 text-white shadow-[0_0_50px_rgba(153,0,255,0.3)] relative overflow-hidden neon-border my-auto">
                 {isLoading && (
                     <div className="absolute inset-0 z-50 bg-black/80 flex items-center justify-center flex-col gap-4">
                         <div className="w-8 h-8 border-4 border-neon-cyan border-t-transparent rounded-full animate-spin" />
@@ -320,7 +320,7 @@ export function MainMenu({ engine }: MainMenuProps) {
                         SLICE IT!
                     </CardTitle>
                 </CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6 h-[500px]">
+                <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6 max-h-[70vh] overflow-y-auto">
                     {/* Username Prompt Overlay */}
                     {!userName && (
                         <div className="absolute inset-0 z-[60] bg-black/95 flex items-center justify-center p-8 backdrop-blur-md">
@@ -330,6 +330,7 @@ export function MainMenu({ engine }: MainMenuProps) {
                                     type="text" 
                                     className="w-full bg-zinc-900 border-2 border-zinc-700 rounded-lg p-3 text-white text-center text-lg focus:outline-none focus:border-neon-cyan transition-all"
                                     placeholder="ENTER USERNAME"
+                                    maxLength={32}
                                     autoFocus
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter' && e.currentTarget.value.trim()) {
@@ -359,6 +360,7 @@ export function MainMenu({ engine }: MainMenuProps) {
                                         type="text" 
                                         className="w-full bg-zinc-900 border border-zinc-800 rounded p-2 text-white focus:outline-none focus:border-cyan-500 transition-colors"
                                         placeholder="Enter your name"
+                                        maxLength={32}
                                         value={userName}
                                         onChange={(e) => setUserName(e.target.value)}
                                     />
@@ -379,9 +381,9 @@ export function MainMenu({ engine }: MainMenuProps) {
 
                                 {/* Removed Modifiers from here */}
 
-                                <div className="space-y-2">
+                                 <div className="space-y-2">
                                      <div className="flex justify-between items-center text-xs text-zinc-500 uppercase tracking-widest font-bold">
-                                         <span>Volume</span>
+                                         <span>Music Volume</span>
                                          <span>{volume}%</span>
                                      </div>
                                      <Slider 
@@ -390,6 +392,19 @@ export function MainMenu({ engine }: MainMenuProps) {
                                         step={1}
                                         className="cursor-pointer py-1"
                                         onValueChange={handleVolumeChange} 
+                                     />
+                                </div>
+                                <div className="space-y-2">
+                                     <div className="flex justify-between items-center text-xs text-zinc-500 uppercase tracking-widest font-bold">
+                                         <span>SFX Volume</span>
+                                         <span>{useGameStore.getState().sfxVolume}%</span>
+                                     </div>
+                                     <Slider 
+                                        value={[useGameStore.getState().sfxVolume]} 
+                                        max={100} 
+                                        step={1}
+                                        className="cursor-pointer py-1"
+                                        onValueChange={(vals) => useGameStore.getState().setSfxVolume(vals[0])} 
                                      />
                                 </div>
                             </div>

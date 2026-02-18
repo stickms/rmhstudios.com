@@ -174,8 +174,8 @@ export class GameEngine {
             if (!this.processedSliceIds.has(bomb.id)) {
                  this.processedSliceIds.add(bomb.id);
                  
-                 // Penalty
-                 this.health = Math.max(0, this.health - 20); // Big chunk damage
+                 // Penalty — bombs deal significant damage
+                 this.health = Math.max(0, this.health - 40); // 40 HP chunk
                  this.combo = 0;
                  this.score = Math.max(0, this.score - 500);
                  
@@ -187,7 +187,7 @@ export class GameEngine {
                     time: performance.now(),
                     color: '#ff0000'
                 });
-                this.audioManager.playSfX(150, 'sawtooth', 0.2); // Low buzz
+                this.audioManager.playSfX(150, 'sawtooth', 0.3, useGameStore.getState().sfxVolume / 100);
                 
                 if (this.health <= 0) {
                     useGameStore.getState().setStatus('FAILED'); // Changed from this.status
@@ -297,8 +297,9 @@ export class GameEngine {
             if (this.feedbackQueue.length > 10) this.feedbackQueue.shift();
 
             // SFX
-            const freq = (result === 'MARVELOUS' || result === 'PERFECT') ? 880 : 440; 
-            this.audioManager.playSfX(freq, 'triangle', 0.1);
+            const freq = (result === 'MARVELOUS' || result === 'PERFECT') ? 880 : 440;
+            const sfxVol = useGameStore.getState().sfxVolume / 100;
+            this.audioManager.playSfX(freq, 'triangle', 0.1, sfxVol);
         }
         
         // Update store

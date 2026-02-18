@@ -1,42 +1,42 @@
 import { GameCanvas } from '@/components/game/GameCanvas';
-import { LeaderboardSidebar } from '@/components/game/LeaderboardSidebar';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 
 export default function SliceItPage() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-4 bg-black text-foreground overflow-hidden relative">
-      <div className="absolute top-4 left-4 z-50">
-          <Link href="/">
-              <Button variant="ghost" className="text-zinc-500 hover:text-white flex items-center gap-2 bg-black/50 backdrop-blur-sm border border-zinc-800">
-                  <ArrowLeft className="w-4 h-4" />
-                  RMH Studios
-              </Button>
-          </Link>
+    <main className="fixed inset-0 bg-black flex flex-col overflow-hidden">
+      {/* Back button */}
+      <div className="absolute top-3 left-3 z-50">
+        <Link href="/">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-zinc-500 hover:text-white flex items-center gap-1.5 bg-black/50 backdrop-blur-sm border border-zinc-800 text-xs sm:text-sm"
+          >
+            <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span className="hidden sm:inline">RMH Studios</span>
+          </Button>
+        </Link>
       </div>
 
-      <h1 className="text-4xl font-black mb-8 rainbow-text tracking-tighter italic glitch-text">
-        SLICE IT!
-      </h1>
-      
-      <div className="flex flex-col lg:flex-row gap-8 w-full max-w-[1600px] items-start px-8 h-[80vh]">
-          <div className="flex-1 w-full h-full relative flex flex-col">
-             <div className="neon-border rounded-xl bg-black/50 p-4 border border-neon-purple shadow-lg backdrop-blur-sm flex-1 relative min-h-0">
-                <GameCanvas />
-             </div>
-            
-            <div className="mt-4 text-muted-foreground text-sm text-center font-mono">
-                <p>Instructions: Click or Tap in time with the beat.</p>
-                <p>Blue Dot = You. White Bars = Beats. Magenta Bars = Speed Up.</p>
-            </div>
-          </div>
-          
-          <div className="w-full lg:w-80 hidden md:block h-full">
-              <div className="neon-border rounded-xl bg-black/50 p-4 border border-zinc-800 shadow-lg backdrop-blur-sm h-full overflow-hidden">
-                <LeaderboardSidebar />
-              </div>
-          </div>
+      {/* Title */}
+      <div className="text-center pt-3 pb-1 shrink-0">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-black rainbow-text tracking-tighter italic glitch-text leading-none">
+          SLICE IT!
+        </h1>
+      </div>
+
+      {/* Game area — fills remaining space */}
+      <div className="flex-1 min-h-0 px-2 pb-2 sm:px-4 sm:pb-4">
+        <div className="neon-border rounded-xl bg-black/50 border border-neon-purple shadow-lg backdrop-blur-sm w-full h-full overflow-hidden">
+          <GameCanvas />
+        </div>
+      </div>
+
+      {/* Instructions — compact, hidden on very small screens */}
+      <div className="shrink-0 pb-2 text-center text-zinc-600 text-[10px] sm:text-xs font-mono hidden sm:block">
+        Click/Tap top half → Top Lane &nbsp;·&nbsp; Click/Tap bottom half → Bottom Lane &nbsp;·&nbsp; [Esc] Pause
       </div>
     </main>
   );

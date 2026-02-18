@@ -29,6 +29,7 @@ interface GameState {
   modifiers: Modifiers;
   isPaused: boolean;
   volume: number;
+  sfxVolume: number;
   
   setHealth: (health: number) => void;
   setScore: (score: number, combo: number, multiplier?: number) => void;
@@ -38,6 +39,7 @@ interface GameState {
   setModifiers: (modifiers: Modifiers) => void;
   setIsPaused: (isPaused: boolean) => void;
   setVolume: (volume: number) => void;
+  setSfxVolume: (sfxVolume: number) => void;
   reset: () => void;
 }
 
@@ -67,6 +69,7 @@ export const useGameStore = create<GameState>()(
       },
       isPaused: false,
       volume: 100,
+      sfxVolume: 80,
       
       setHealth: (health) => set({ health }),
       setScore: (score, combo, multiplier) => set({ score, combo, multiplier }),
@@ -76,11 +79,12 @@ export const useGameStore = create<GameState>()(
       setModifiers: (modifiers) => set({ modifiers }),
       setIsPaused: (isPaused) => set({ isPaused }),
       setVolume: (volume) => set({ volume }),
+      setSfxVolume: (sfxVolume) => set({ sfxVolume }),
       reset: () => set({ health: 100, score: 0, combo: 0, accuracy: 0, multiplier: 1, status: 'MENU', isPaused: false }),
     }),
     {
       name: 'slice-it-storage',
-      partialize: (state) => ({ userName: state.userName, keybinds: state.keybinds, volume: state.volume }), // Persist settings only (not modifiers or game state)
+      partialize: (state) => ({ userName: state.userName, keybinds: state.keybinds, volume: state.volume, sfxVolume: state.sfxVolume }), // Persist settings only (not modifiers or game state)
     }
   )
 );
