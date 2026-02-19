@@ -1369,8 +1369,12 @@ export function SignalForgeGame() {
       for (const enemy of enemiesClonedForBleed) {
         const bleed = enemy.statusEffects.find(s => s.type === 'bleed');
         if (bleed && bleed.stacks > 0) {
-          enemy.hp = Math.max(0, enemy.hp - bleed.stacks);
-          log.push(`${enemy.name} takes ${bleed.stacks} bleed damage.`);
+          // Relic: Bleed Catalyst (+2 damage per stack)
+          const bleedDamage = hasRelic(prev.ownedRelics, 'bleed_catalyst')
+            ? bleed.stacks + 2 * bleed.stacks
+            : bleed.stacks;
+          enemy.hp = Math.max(0, enemy.hp - bleedDamage);
+          log.push(`${enemy.name} takes ${bleedDamage} bleed damage.`);
         }
       }
 
@@ -1456,7 +1460,11 @@ export function SignalForgeGame() {
             const marked = e.statusEffects.find(s => s.type === 'marked');
             let finalDmg = dmg;
             if (marked) finalDmg += 5;
-            if (vulnerable) finalDmg = Math.floor(finalDmg * 1.5);
+            if (vulnerable) {
+              // Relic: Vulnerable Lens (+75% instead of +50%)
+              const vulnMultiplier = hasRelic(prev.ownedRelics, 'vulnerable_lens') ? 1.75 : 1.5;
+              finalDmg = Math.floor(finalDmg * vulnMultiplier);
+            }
             
             // Cursed Relic: Shattered Mirror (2x all damage)
             if (hasRelic(prev.ownedRelics, 'shattered_mirror')) {
@@ -1470,7 +1478,11 @@ export function SignalForgeGame() {
             
             // Apply status effects from card
             if (card.bleed) e.statusEffects = applyStatus(e.statusEffects, 'bleed', card.bleed, 2);
-            if (card.freeze) e.statusEffects = applyStatus(e.statusEffects, 'freeze', 1, 1);
+            if (card.freeze) {
+              // Relic: Freeze Amplifier (2 turns instead of 1)
+              const freezeDuration = hasRelic(prev.ownedRelics, 'freeze_amplifier') ? 2 : 1;
+              e.statusEffects = applyStatus(e.statusEffects, 'freeze', 1, freezeDuration);
+            }
             if (card.vulnerable) e.statusEffects = applyStatus(e.statusEffects, 'vulnerable', 1, card.vulnerable);
             if (card.weak) e.statusEffects = applyStatus(e.statusEffects, 'weak', 1, card.weak);
           });
@@ -1488,7 +1500,11 @@ export function SignalForgeGame() {
               const marked = target.statusEffects.find(s => s.type === 'marked');
               let finalDmg = dmg;
               if (marked) finalDmg += 5;
-              if (vulnerable) finalDmg = Math.floor(finalDmg * 1.5);
+              if (vulnerable) {
+                // Relic: Vulnerable Lens (+75% instead of +50%)
+                const vulnMultiplier = hasRelic(prev.ownedRelics, 'vulnerable_lens') ? 1.75 : 1.5;
+                finalDmg = Math.floor(finalDmg * vulnMultiplier);
+              }
               
               // Cursed Relic: Shattered Mirror (2x all damage)
               if (hasRelic(prev.ownedRelics, 'shattered_mirror')) {
@@ -1502,7 +1518,11 @@ export function SignalForgeGame() {
               
               // Apply status effects from card
               if (card.bleed) target.statusEffects = applyStatus(target.statusEffects, 'bleed', card.bleed, 2);
-              if (card.freeze) target.statusEffects = applyStatus(target.statusEffects, 'freeze', 1, 1);
+              if (card.freeze) {
+                // Relic: Freeze Amplifier (2 turns instead of 1)
+                const freezeDuration = hasRelic(prev.ownedRelics, 'freeze_amplifier') ? 2 : 1;
+                target.statusEffects = applyStatus(target.statusEffects, 'freeze', 1, freezeDuration);
+              }
               if (card.vulnerable) target.statusEffects = applyStatus(target.statusEffects, 'vulnerable', 1, card.vulnerable);
               if (card.weak) target.statusEffects = applyStatus(target.statusEffects, 'weak', 1, card.weak);
               
@@ -1532,7 +1552,11 @@ export function SignalForgeGame() {
           const marked = target.statusEffects.find(s => s.type === 'marked');
           let bonusDmg = matchBonus + resonatorBonus;
           if (marked) bonusDmg += 5;
-          if (vulnerable) bonusDmg = Math.floor(bonusDmg * 1.5);
+          if (vulnerable) {
+            // Relic: Vulnerable Lens (+75% instead of +50%)
+            const vulnMultiplier = hasRelic(prev.ownedRelics, 'vulnerable_lens') ? 1.75 : 1.5;
+            bonusDmg = Math.floor(bonusDmg * vulnMultiplier);
+          }
           
           // Cursed Relic: Shattered Mirror (2x all damage)
           if (hasRelic(prev.ownedRelics, 'shattered_mirror')) {
@@ -1617,7 +1641,6 @@ export function SignalForgeGame() {
         // Check for Freeze status - skip this enemy's attack
         const frozen = e.statusEffects.find(s => s.type === 'freeze');
         if (frozen) {
-          e.statusEffects = e.statusEffects.filter(s => s.type !== 'freeze');
           log.push(`${e.name} is frozen and cannot attack!`);
           return sum;
         }
