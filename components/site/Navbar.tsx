@@ -18,6 +18,7 @@ export function Navbar() {
   const links = [
     { href: '/', label: 'Home' },
     { href: '/games', label: 'Games' },
+    { href: '/roadmap', label: 'Roadmap' },
     { href: '/blog', label: 'Blog' },
   ];
 
