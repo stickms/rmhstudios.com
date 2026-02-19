@@ -460,6 +460,32 @@ export function SignalForgeGame() {
       }
     };
 
+    // === RESPONSIVE LAYOUT ===
+    // Scale middle zone (between HUD/enemies and end-turn button) to fit any canvas height
+    const middleTop = 135;
+    const middleBot = H - 60;
+    const mScale = Math.max(0.4, (middleBot - middleTop) / 560); // 560 = ref middle height at H=755
+
+    const seqY = middleTop + Math.round(15 * mScale);
+    const seqPanelH = Math.round(130 * mScale);
+    const seqBoxH = Math.round(30 * mScale);
+
+    const dmgBoxY = middleTop + Math.round(160 * mScale);
+    const dmgBoxH = Math.round(24 * mScale);
+
+    const tempoY = middleTop + Math.round(200 * mScale);
+    const tempoBarH = Math.round(28 * mScale);
+
+    const playedPanelY = middleTop + Math.round(255 * mScale);
+    const panelH = Math.round(105 * mScale);
+
+    const handPanelY = playedPanelY + panelH + Math.round(28 * mScale);
+
+    const cardH = Math.round(80 * mScale);
+    const cardW = Math.round(65 * mScale);
+    const cardPadY = Math.round(16 * mScale);
+    const cardGapX = cardW + 10;
+
     // Reset tooltip zones
     tooltipZones.current = [];
 
@@ -614,15 +640,14 @@ export function SignalForgeGame() {
     }
 
     // === SEQUENCES DISPLAY ===
-    const seqY = 150;
-    drawPanel(W / 2 - 200, seqY, 400, 130, 'PATTERN');
+    drawPanel(W / 2 - 200, seqY, 400, seqPanelH, 'PATTERN');
     tooltipZones.current.push({ x: W / 2 - 200, y: seqY, w: 400, h: 20, text: ['Pattern: Match the target sequence', 'Play cards in order to fill CURRENT', 'A full match = Forge Burst (+12 bonus dmg)', '★ slots accept any waveform type', 'Wildcard cards match any slot'] });
     
     // Target sequence
     ctx.fillStyle = '#00ffc8';
     ctx.font = 'bold 11px monospace';
     ctx.textAlign = 'center';
-    ctx.fillText('TARGET', W / 2, seqY + 20);
+    ctx.fillText('TARGET', W / 2, seqY + Math.round(20 * mScale));
     
     const tLen = gameState.targetSequence.length;
     const boxW = 36;
@@ -634,25 +659,25 @@ export function SignalForgeGame() {
       const isWild = type === '*';
       const typeColor = isWild ? '#ffcc00' : ({ 'Pulse': '#ff4444', 'Sine': '#4488ff', 'Saw': '#44ff44', 'Noise': '#ff88ff' }[type] || '#cccccc');
       
-      const grad = ctx.createLinearGradient(x - boxW / 2, seqY + 25, x - boxW / 2, seqY + 55);
+      const grad = ctx.createLinearGradient(x - boxW / 2, seqY + Math.round(25 * mScale), x - boxW / 2, seqY + Math.round(55 * mScale));
       grad.addColorStop(0, typeColor + '44');
       grad.addColorStop(1, typeColor + '11');
       ctx.fillStyle = grad;
-      ctx.fillRect(x - boxW / 2, seqY + 25, boxW, 30);
+      ctx.fillRect(x - boxW / 2, seqY + Math.round(25 * mScale), boxW, seqBoxH);
       
       ctx.strokeStyle = typeColor;
       ctx.lineWidth = 2;
-      ctx.strokeRect(x - boxW / 2, seqY + 25, boxW, 30);
+      ctx.strokeRect(x - boxW / 2, seqY + Math.round(25 * mScale), boxW, seqBoxH);
       
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 10px monospace';
-      ctx.fillText(isWild ? '★' : type.substring(0, 2), x, seqY + 45);
+      ctx.fillText(isWild ? '★' : type.substring(0, 2), x, seqY + Math.round(45 * mScale));
     });
     
     // Current sequence
     ctx.fillStyle = '#00ffc8';
     ctx.font = 'bold 11px monospace';
-    ctx.fillText('CURRENT', W / 2, seqY + 75);
+    ctx.fillText('CURRENT', W / 2, seqY + Math.round(75 * mScale));
     
     if (gameState.currentSequence.length > 0) {
       const cLen = gameState.currentSequence.length;
@@ -664,19 +689,19 @@ export function SignalForgeGame() {
         const isMatch = targetType === '*' || type === targetType;
         const matchColor = isMatch ? '#44ff44' : '#ff8844';
         
-        const grad = ctx.createLinearGradient(x - boxW / 2, seqY + 80, x - boxW / 2, seqY + 110);
+        const grad = ctx.createLinearGradient(x - boxW / 2, seqY + Math.round(80 * mScale), x - boxW / 2, seqY + Math.round(110 * mScale));
         grad.addColorStop(0, matchColor + '44');
         grad.addColorStop(1, matchColor + '11');
         ctx.fillStyle = grad;
-        ctx.fillRect(x - boxW / 2, seqY + 80, boxW, 30);
+        ctx.fillRect(x - boxW / 2, seqY + Math.round(80 * mScale), boxW, seqBoxH);
         
         ctx.strokeStyle = matchColor;
         ctx.lineWidth = isMatch ? 3 : 2;
-        ctx.strokeRect(x - boxW / 2, seqY + 80, boxW, 30);
+        ctx.strokeRect(x - boxW / 2, seqY + Math.round(80 * mScale), boxW, seqBoxH);
         
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 10px monospace';
-        ctx.fillText(type.substring(0, 2), x, seqY + 100);
+        ctx.fillText(type.substring(0, 2), x, seqY + Math.round(100 * mScale));
       });
     }
 
@@ -701,17 +726,16 @@ export function SignalForgeGame() {
       const totalDamage = baseDamage + matchBonus + resonatorBonus + mirrorBonus;
       const hasAoe = gameState.playedThisTurn.some(c => c.aoe);
       
-      const dmgBoxY = 295;
-      const dmgGrad = ctx.createLinearGradient(W / 2 - 120, dmgBoxY, W / 2 + 120, dmgBoxY + 24);
+      const dmgGrad = ctx.createLinearGradient(W / 2 - 120, dmgBoxY, W / 2 + 120, dmgBoxY + dmgBoxH);
       dmgGrad.addColorStop(0, 'rgba(255, 200, 0, 0.25)');
       dmgGrad.addColorStop(0.5, 'rgba(255, 200, 0, 0.15)');
       dmgGrad.addColorStop(1, 'rgba(255, 200, 0, 0.25)');
       ctx.fillStyle = dmgGrad;
-      ctx.fillRect(W / 2 - 120, dmgBoxY, 240, 24);
+      ctx.fillRect(W / 2 - 120, dmgBoxY, 240, dmgBoxH);
       
       ctx.strokeStyle = '#ffc800';
       ctx.lineWidth = 2;
-      ctx.strokeRect(W / 2 - 120, dmgBoxY, 240, 24);
+      ctx.strokeRect(W / 2 - 120, dmgBoxY, 240, dmgBoxH);
       
       ctx.fillStyle = '#ffc800';
       ctx.font = 'bold 14px monospace';
@@ -725,7 +749,7 @@ export function SignalForgeGame() {
       const equation = bonusParts.length > 0
         ? `DAMAGE: ${baseDamage}+${bonusParts.join('+')}=${totalDamage}${aoeMark}`
         : `DAMAGE: ${totalDamage}${aoeMark}`;
-      ctx.fillText(equation, W / 2, dmgBoxY + 17);
+      ctx.fillText(equation, W / 2, dmgBoxY + Math.round(dmgBoxH * 0.7));
 
       // Damage preview tooltip with breakdown
       const dmgTipLines = ['Damage Preview (applied on End Turn)'];
@@ -735,43 +759,40 @@ export function SignalForgeGame() {
       if (mirrorBonus > 0) dmgTipLines.push(`Signal Mirror: +${mirrorBonus}`);
       if (hasAoe) dmgTipLines.push('AOE: Hits ALL enemies');
       dmgTipLines.push(`Total: ${totalDamage}`);
-      tooltipZones.current.push({ x: W / 2 - 120, y: dmgBoxY, w: 240, h: 24, text: dmgTipLines });
+      tooltipZones.current.push({ x: W / 2 - 120, y: dmgBoxY, w: 240, h: dmgBoxH, text: dmgTipLines });
     }
 
     // === TEMPO BAR ===
-    const tempoY = 335;
     const tempoW = 250;
-    tooltipZones.current.push({ x: W / 2 - tempoW / 2, y: tempoY, w: tempoW, h: 28, text: ['Tempo Bar: Builds as you play cards', 'Each card played adds +1 tempo', 'Some cards grant bonus tempo', 'Max 6 — resets each turn'] });
+    tooltipZones.current.push({ x: W / 2 - tempoW / 2, y: tempoY, w: tempoW, h: tempoBarH, text: ['Tempo Bar: Builds as you play cards', 'Each card played adds +1 tempo', 'Some cards grant bonus tempo', 'Max 6 — resets each turn'] });
     
     ctx.fillStyle = 'rgba(183, 142, 246, 0.1)';
-    ctx.fillRect(W / 2 - tempoW / 2, tempoY, tempoW, 28);
+    ctx.fillRect(W / 2 - tempoW / 2, tempoY, tempoW, tempoBarH);
     
     const tempoFill = (gameState.playerTempo / 6) * tempoW;
-    const tempoGrad = ctx.createLinearGradient(W / 2 - tempoW / 2, tempoY, W / 2 - tempoW / 2 + tempoFill, tempoY + 28);
+    const tempoGrad = ctx.createLinearGradient(W / 2 - tempoW / 2, tempoY, W / 2 - tempoW / 2 + tempoFill, tempoY + tempoBarH);
     tempoGrad.addColorStop(0, '#9966ff');
     tempoGrad.addColorStop(1, '#6b4fbb');
     ctx.fillStyle = tempoGrad;
-    ctx.fillRect(W / 2 - tempoW / 2, tempoY, tempoFill, 28);
+    ctx.fillRect(W / 2 - tempoW / 2, tempoY, tempoFill, tempoBarH);
     
     ctx.strokeStyle = '#b78ef6';
     ctx.lineWidth = 2;
-    ctx.strokeRect(W / 2 - tempoW / 2, tempoY, tempoW, 28);
+    ctx.strokeRect(W / 2 - tempoW / 2, tempoY, tempoW, tempoBarH);
     
-    drawOutlinedText(`TEMPO: ${gameState.playerTempo}/6`, W / 2, tempoY + 19, 'bold 12px monospace', '#ffffff', '#000000', 1);
+    drawOutlinedText(`TEMPO: ${gameState.playerTempo}/6`, W / 2, tempoY + Math.round(tempoBarH * 0.68), 'bold 12px monospace', '#ffffff', '#000000', 1);
 
-    // === PLAYED CARDS === (fixed position)
-    const panelH = 105;
-    const playedPanelY = 390;
+    // === PLAYED CARDS ===
     drawPanel(20, playedPanelY, W - 40, panelH, 'PLAYED (' + gameState.playedThisTurn.length + ')');
     tooltipZones.current.push({ x: 20, y: playedPanelY - 12, w: 120, h: 16, text: ['Played Cards: Cards used this turn', 'Click a played card to return it', 'to your hand and refund its cost', '🔒 = locked (irreversible effect)'] });
     
     cardRects.current = [];
     if (gameState.playedThisTurn.length > 0) {
-      const playedCardW = 65;
-      const playedCardH = 80;
+      const playedCardW = cardW;
+      const playedCardH = cardH;
       const playedStartX = 40;
-      const playedStartY = playedPanelY + 16;
-      const playedGapX = 75;
+      const playedStartY = playedPanelY + cardPadY;
+      const playedGapX = cardGapX;
       
       gameState.playedThisTurn.forEach((card, i) => {
         const cardX = playedStartX + i * playedGapX;
@@ -794,16 +815,15 @@ export function SignalForgeGame() {
       });
     }
 
-    // === HAND CARDS === (fixed position)
-    const handPanelY = playedPanelY + panelH + 28;
+    // === HAND CARDS ===
     drawPanel(20, handPanelY, W - 40, panelH, 'HAND (' + gameState.hand.length + ')');
     tooltipZones.current.push({ x: 20, y: handPanelY - 12, w: 120, h: 16, text: ['Your Hand: Available cards to play', 'Click a card to play it', 'Grayed = not enough energy'] });
     
-    const handCardW = 65;
-    const handCardH = 80;
+    const handCardW = cardW;
+    const handCardH = cardH;
     const handStartX = 40;
-    const handStartY = handPanelY + 16;
-    const handGapX = 75;
+    const handStartY = handPanelY + cardPadY;
+    const handGapX = cardGapX;
     const cardsPerRow = Math.floor((W - 60) / handGapX);
     
     gameState.hand.forEach((card, i) => {
@@ -811,8 +831,6 @@ export function SignalForgeGame() {
       const col = i % cardsPerRow;
       const cardX = handStartX + col * handGapX;
       const cardY = handStartY + row * (handCardH + 10);
-      
-      if (cardY + handCardH > H - 60) return;
       
       const canPlay = card.cost <= gameState.playerEnergy;
       drawCard(card, cardX, cardY, handCardW, handCardH);

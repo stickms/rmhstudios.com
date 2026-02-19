@@ -96,7 +96,7 @@ const projects = [
     isSteam: false
   },
   {
-    id: 8,
+    id: 10,
     title: "Cursed Logic",
     description: "A turn-based duel against an unstable Protocol. Commit actions in secret, resolve simultaneously.",
     longDescription: "Interface with a hostile, semi-sentient system that controls a shared reality. Each round you and the Protocol commit to one action in secret; resolution is simultaneous. The system is unstable—rules and modifiers shift between rounds. Outsmart chaos under severe resource constraint. Absurd, dark, and slightly comedic.",
@@ -120,7 +120,7 @@ const projects = [
     isSteam: false
   },
   {
-    id: 8,
+    id: 11,
     title: "House Always Wins",
     description: "A casino metroidvania where gambling is corruption.",
     longDescription: "A dark, narrative 2D exploration-platformer inside an old, abandoned casino. Inspired by Hollow Knight, Celeste, and Undertale. Gambling never blocks progress—it only changes difficulty, debt, NPC tone, and the world around you. The house always wins, but how you play changes everything.",
