@@ -272,7 +272,7 @@ const previewAfterShield = Math.max(0, previewEnemyDmg - this.state.playerShield
 These add mechanical vocabulary that every subsequent feature builds on.
 
 ### 2.1 — Status Effect System
-- [ ] **Implement Vulnerable, Weak, Bleed, and Freeze** (Proposals #176-180)
+- [x] **Implement Vulnerable, Weak, Bleed, and Freeze** (Proposals #176-180)
 
 **What:** A general-purpose status effect system that tracks buffs/debuffs on both player and enemies with turn-based duration.
 

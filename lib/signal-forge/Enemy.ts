@@ -1,3 +1,5 @@
+import { StatusEffect } from './StatusEffect';
+
 export interface EnemyData {
   id: number;
   name: string;
@@ -21,6 +23,7 @@ export interface EnemyData {
   phaseShift?: boolean;
   turnCounter?: number;
   description?: string;
+  statusEffects?: StatusEffect[];
 }
 
 // ---------------------------------------------------------------------------
@@ -190,6 +193,7 @@ export class Enemy implements EnemyData {
   phaseShift: boolean;
   turnCounter: number;
   description: string;
+  statusEffects: StatusEffect[];
 
   constructor(data: EnemyData) {
     this.id = data.id;
@@ -214,6 +218,7 @@ export class Enemy implements EnemyData {
     this.phaseShift = data.phaseShift ?? false;
     this.turnCounter = data.turnCounter ?? 0;
     this.description = data.description ?? '';
+    this.statusEffects = data.statusEffects ?? [];
   }
 
   /** Get damage accounting for Enrage (+50% below 50% HP) */
@@ -330,6 +335,7 @@ export class Enemy implements EnemyData {
       staticPulse: this.staticPulse, thorns: this.thorns, armored: this.armored,
       shieldAlly: this.shieldAlly, vampiric: this.vampiric, empowerAlly: this.empowerAlly,
       phaseShift: this.phaseShift, turnCounter: this.turnCounter, description: this.description,
+      statusEffects: [...this.statusEffects],
     };
   }
 }

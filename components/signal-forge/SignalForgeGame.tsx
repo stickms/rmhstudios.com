@@ -14,6 +14,10 @@ import {
   createEnemies,
   createShopRelics,
   createGlitchCard,
+  StatusEffect,
+  tickStatusEffects,
+  hasStatus,
+  applyStatus,
 } from '@/lib/signal-forge';
 
 interface ShopItem {
@@ -54,6 +58,7 @@ interface GameState {
   firstSawPlayedThisTurn: boolean;
   combatLog: string[];           // short messages shown in UI
   reshuffleCount: number;        // Track reshuffles per combat for fatigue damage
+  playerStatuses: StatusEffect[]; // Status effects on player
 }
 
 /** Check if the player owns a relic with a given key */
@@ -107,6 +112,7 @@ function serializeGameState(gs: GameState): Record<string, any> {
     firstSawPlayedThisTurn: gs.firstSawPlayedThisTurn,
     combatLog: gs.combatLog,
     reshuffleCount: gs.reshuffleCount,
+    playerStatuses: gs.playerStatuses,
   };
 }
 
@@ -154,6 +160,7 @@ function deserializeGameState(data: Record<string, any>): GameState {
     firstSawPlayedThisTurn: data.firstSawPlayedThisTurn ?? false,
     combatLog: data.combatLog || [],
     reshuffleCount: data.reshuffleCount ?? 0,
+    playerStatuses: data.playerStatuses || [],
   };
 }
 
@@ -248,7 +255,9 @@ export function SignalForgeGame() {
     firstPulsePlayedThisTurn: false,
     firstSawPlayedThisTurn: false,
     reshuffleCount: 0,
+    playerStatuses: [],
     combatLog: [],
+    playerStatuses: [],
   });
 
   // Helper: shuffle cards (Fisher-Yates)
@@ -1301,6 +1310,16 @@ export function SignalForgeGame() {
 
       const log: string[] = [];
 
+      // --- START OF TURN EFFECTS: Process bleed on enemies ---
+      const enemiesClonedForBleed = prev.enemies.map(e => e.clone());
+      for (const enemy of enemiesClonedForBleed) {
+        const bleed = enemy.statusEffects.find(s => s.type === 'bleed');
+        if (bleed && bleed.stacks > 0) {
+          enemy.hp = Math.max(0, enemy.hp - bleed.stacks);
+          log.push(`${enemy.name} takes ${bleed.stacks} bleed damage.`);
+        }
+      }
+
       // --- Sequence match check (supports '*' wildcard slots from Phase Shifter) ---
       const isMatch = prev.currentSequence.length === prev.targetSequence.length &&
         prev.targetSequence.every((t, i) => t === '*' || t === prev.currentSequence[i]);
@@ -1347,28 +1366,42 @@ export function SignalForgeGame() {
         return { card, dmg };
       });
 
-      // --- Apply damage to enemies ---
-      const enemiesCloned = prev.enemies.map(e => e.clone());
+      // --- Apply damage to enemies (with status effect modifiers) ---
+      const enemiesCloned = enemiesClonedForBleed;
       let thornsDamage = 0; // accumulated thorns reflection
       for (const { card, dmg } of cardDamages) {
         if (dmg <= 0) continue;
         if (card.aoe) {
           // AOE: damage all enemies
           enemiesCloned.forEach(e => {
-            const absorbed = e.takeDamage(dmg, prev.turn);
+            // Apply status effect modifiers
+            const vulnerable = e.statusEffects.find(s => s.type === 'vulnerable');
+            const marked = e.statusEffects.find(s => s.type === 'marked');
+            let finalDmg = dmg;
+            if (marked) finalDmg += 5;
+            if (vulnerable) finalDmg = Math.floor(finalDmg * 1.5);
+            
+            const absorbed = e.takeDamage(finalDmg, prev.turn);
             totalDamage += absorbed;
             if (card.leech) totalLeechDamage += absorbed;
-            if (e.thorns > 0 && dmg > 0) thornsDamage += e.thorns;
+            if (e.thorns > 0 && finalDmg > 0) thornsDamage += e.thorns;
           });
           log.push(`${card.name} (AOE) hits all for ${dmg}`);
         } else {
           // Single target: damage selected enemy only
           const target = enemiesCloned.find(e => e.id === prev.selectedEnemyId);
           if (target) {
-            const absorbed = target.takeDamage(dmg, prev.turn);
+            // Apply status effect modifiers
+            const vulnerable = target.statusEffects.find(s => s.type === 'vulnerable');
+            const marked = target.statusEffects.find(s => s.type === 'marked');
+            let finalDmg = dmg;
+            if (marked) finalDmg += 5;
+            if (vulnerable) finalDmg = Math.floor(finalDmg * 1.5);
+            
+            const absorbed = target.takeDamage(finalDmg, prev.turn);
             totalDamage += absorbed;
             if (card.leech) totalLeechDamage += absorbed;
-            if (target.thorns > 0 && dmg > 0) thornsDamage += target.thorns;
+            if (target.thorns > 0 && finalDmg > 0) thornsDamage += target.thorns;
           }
         }
       }
@@ -1377,11 +1410,17 @@ export function SignalForgeGame() {
         log.push(`Tempo +${tempoBonusDmg} per card (x${prev.playedThisTurn.length} cards = +${tempoBonusDmg * prev.playedThisTurn.length})`);
       }
 
-      // Apply match bonus + resonator bonus to selected enemy
+      // Apply match bonus + resonator bonus to selected enemy (with status modifiers)
       if (matchBonus + resonatorBonus > 0) {
         const target = enemiesCloned.find(e => e.id === prev.selectedEnemyId);
         if (target) {
-          const absorbed = target.takeDamage(matchBonus + resonatorBonus, prev.turn);
+          const vulnerable = target.statusEffects.find(s => s.type === 'vulnerable');
+          const marked = target.statusEffects.find(s => s.type === 'marked');
+          let bonusDmg = matchBonus + resonatorBonus;
+          if (marked) bonusDmg += 5;
+          if (vulnerable) bonusDmg = Math.floor(bonusDmg * 1.5);
+          
+          const absorbed = target.takeDamage(bonusDmg, prev.turn);
           totalDamage += absorbed;
           if (target.thorns > 0) thornsDamage += target.thorns;
         }
@@ -1405,13 +1444,28 @@ export function SignalForgeGame() {
         }
       }
 
-      // --- Enemy attacks & shield (with empowerAlly aura + thorns) ---
+      // --- Enemy attacks & shield (with empowerAlly aura + thorns + freeze/weak status) ---
       const empowerBonus = enemies.reduce((sum, e) => sum + e.empowerAlly, 0);
       const totalTakeDamage = enemies.reduce((sum, e) => {
+        // Check for Freeze status - skip this enemy's attack
+        const frozen = e.statusEffects.find(s => s.type === 'freeze');
+        if (frozen) {
+          e.statusEffects = e.statusEffects.filter(s => s.type !== 'freeze');
+          log.push(`${e.name} is frozen and cannot attack!`);
+          return sum;
+        }
+        
         let dmg = e.getDamage();
         // Empower aura from OTHER alive allies
         const allyEmpower = empowerBonus - e.empowerAlly;
         dmg += allyEmpower;
+        
+        // Check for Weak status - reduce damage by 25%
+        const weak = e.statusEffects.find(s => s.type === 'weak');
+        if (weak) {
+          dmg = Math.floor(dmg * 0.75);
+        }
+        
         return sum + dmg;
       }, 0) + thornsDamage;
       if (thornsDamage > 0) log.push(`Thorns reflected ${thornsDamage} damage`);
@@ -1601,6 +1655,11 @@ export function SignalForgeGame() {
         ? prev.selectedEnemyId
         : (enemies[0]?.id ?? prev.selectedEnemyId);
 
+      // --- END OF TURN: tick down status effect durations ---
+      enemies.forEach(e => {
+        e.statusEffects = tickStatusEffects(e.statusEffects);
+      });
+
       return {
         ...prev,
         deckList: newDeckList,
@@ -1709,6 +1768,8 @@ export function SignalForgeGame() {
       firstPulsePlayedThisTurn: false,
       firstSawPlayedThisTurn: false,
       reshuffleCount: 0,
+      playerStatuses: [],
+    playerStatuses: [],
       combatLog: [],
     });
   }, [clearSavedRun]);
@@ -1778,6 +1839,9 @@ export function SignalForgeGame() {
         firstPulsePlayedThisTurn: false,
         firstSawPlayedThisTurn: false,
         reshuffleCount: 0,
+        playerStatuses: [],
+      playerStatuses: [],
+    playerStatuses: [],
         combatLog: [],
       };
     });
@@ -1907,6 +1971,8 @@ export function SignalForgeGame() {
       firstPulsePlayedThisTurn: false,
       firstSawPlayedThisTurn: false,
       reshuffleCount: 0,
+      playerStatuses: [],
+    playerStatuses: [],
       combatLog: [],
     });
   }, []);
@@ -1980,6 +2046,9 @@ export function SignalForgeGame() {
         firstPulsePlayedThisTurn: false,
         firstSawPlayedThisTurn: false,
         reshuffleCount: 0,
+        playerStatuses: [],
+      playerStatuses: [],
+    playerStatuses: [],
         combatLog: [],
       };
     });
