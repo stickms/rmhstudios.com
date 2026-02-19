@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { NeonButton } from '@/components/ui/NeonButton';
-import { ArrowRight, Gamepad2, Layers, Scissors, BrainCircuit } from 'lucide-react';
+import { ArrowRight, Gamepad2, Layers, Scissors, BrainCircuit, BookOpen, Brain, Rocket } from 'lucide-react';
 
 const games = [
     {
@@ -38,6 +38,33 @@ const games = [
         icon: <BrainCircuit className="w-8 h-8 text-green-400" />,
         color: 'from-green-500/20 to-emerald-600/20 hover:border-green-500/50',
         tags: ['Tower Defense', 'Strategy', 'Experimental']
+    },
+    {
+        id: 'satans-library',
+        title: "Satan's Library",
+        description: "A survival horror where you 'lock in' to gain Knowledge and Aura while escaping succubi. Outsmart Satan himself.",
+        href: '#',
+        icon: <BookOpen className="w-8 h-8 text-red-500" />,
+        color: 'from-red-900/40 to-red-600/20 hover:border-red-500/50',
+        tags: ['Survival Horror', 'Steam', 'In Development']
+    },
+    {
+        id: 'rmhdle',
+        title: 'RMHdle',
+        description: 'The daily word game for the RMH community. Guess the 5-letter word in 6 tries.',
+        href: 'https://discord.gg/rmh',
+        icon: <Brain className="w-8 h-8 text-indigo-400" />,
+        color: 'from-indigo-500/20 to-blue-600/20 hover:border-indigo-500/50',
+        tags: ['Discord', 'Word Game', 'Daily']
+    },
+    {
+        id: 'rmh-connections',
+        title: 'RMHConnections',
+        description: 'Find the common threads between RMH community terms. Group items into categories.',
+        href: 'https://discord.gg/rmh',
+        icon: <Rocket className="w-8 h-8 text-violet-400" />,
+        color: 'from-violet-500/20 to-purple-600/20 hover:border-violet-500/50',
+        tags: ['Discord', 'Puzzle', 'Daily']
     }
 ];
 
