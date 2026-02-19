@@ -53,6 +53,7 @@ interface GameState {
   firstPulsePlayedThisTurn: boolean;
   firstSawPlayedThisTurn: boolean;
   combatLog: string[];           // short messages shown in UI
+  reshuffleCount: number;        // Track reshuffles per combat for fatigue damage
 }
 
 /** Check if the player owns a relic with a given key */
@@ -105,6 +106,7 @@ function serializeGameState(gs: GameState): Record<string, any> {
     firstPulsePlayedThisTurn: gs.firstPulsePlayedThisTurn,
     firstSawPlayedThisTurn: gs.firstSawPlayedThisTurn,
     combatLog: gs.combatLog,
+    reshuffleCount: gs.reshuffleCount,
   };
 }
 
@@ -151,6 +153,7 @@ function deserializeGameState(data: Record<string, any>): GameState {
     firstPulsePlayedThisTurn: data.firstPulsePlayedThisTurn ?? false,
     firstSawPlayedThisTurn: data.firstSawPlayedThisTurn ?? false,
     combatLog: data.combatLog || [],
+    reshuffleCount: data.reshuffleCount ?? 0,
   };
 }
 
@@ -244,6 +247,7 @@ export function SignalForgeGame() {
     glitchThreshold: 4,
     firstPulsePlayedThisTurn: false,
     firstSawPlayedThisTurn: false,
+    reshuffleCount: 0,
     combatLog: [],
   });
 
@@ -257,19 +261,71 @@ export function SignalForgeGame() {
     return shuffled;
   }, []);
 
+  // Helper: refill deck from discard with reshuffle fatigue
+  const refillDeckFromDiscard = useCallback((
+    currentDeck: Card[],
+    currentDiscard: Card[],
+    currentReshuffleCount: number,
+    combatLog: string[]
+  ): { deck: Card[]; discard: Card[]; reshuffleCount: number; fatigueDamage: number } => {
+    if (currentDeck.length === 0 && currentDiscard.length > 0) {
+      const newReshuffleCount = currentReshuffleCount + 1;
+      
+      // Reshuffle fatigue - first reshuffle is free, then ramping damage
+      let fatigueDamage = 0;
+      if (newReshuffleCount > 1) {
+        fatigueDamage = Math.floor(0.5 * newReshuffleCount * (newReshuffleCount - 1));
+        combatLog.push(`Reshuffle fatigue! Took ${fatigueDamage} damage. (Reshuffle #${newReshuffleCount})`);
+      }
+
+      // Fisher-Yates shuffle
+      const reshuffled = [...currentDiscard];
+      for (let i = reshuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [reshuffled[i], reshuffled[j]] = [reshuffled[j], reshuffled[i]];
+      }
+      
+      combatLog.push('Discard pile reshuffled into draw pile.');
+      
+      return {
+        deck: reshuffled,
+        discard: [],
+        reshuffleCount: newReshuffleCount,
+        fatigueDamage,
+      };
+    }
+    return {
+      deck: currentDeck,
+      discard: currentDiscard,
+      reshuffleCount: currentReshuffleCount,
+      fatigueDamage: 0,
+    };
+  }, []);
+
   // Helper: draw cards up to hand size (with Clean Room relic support)
   const drawHandCards = useCallback((
     currentDeck: Card[], currentDiscard: Card[], currentHand: Card[],
-    count: number = 5, relics: Relic[] = [],
-  ): { deck: Card[]; hand: Card[]; discard: Card[]; exhausted: Card[] } => {
+    count: number = 5, relics: Relic[] = [], currentReshuffleCount: number = 0, combatLog: string[] = [],
+  ): { deck: Card[]; hand: Card[]; discard: Card[]; exhausted: Card[]; reshuffleCount: number; fatigueDamage: number } => {
     let deck = [...currentDeck];
-    const discard = [...currentDiscard];
+    let discard = [...currentDiscard];
     let hand = [...currentHand];
     const exhausted: Card[] = [];
     const cleanRoom = hasRelic(relics, 'clean_room');
+    let reshuffleCount = currentReshuffleCount;
+    let totalFatigueDamage = 0;
 
     const needToDraw = Math.max(0, count - hand.length);
     for (let i = 0; i < needToDraw; i++) {
+      // Check if we need to reshuffle before drawing
+      if (deck.length === 0) {
+        const refillResult = refillDeckFromDiscard(deck, discard, reshuffleCount, combatLog);
+        deck = refillResult.deck;
+        discard = refillResult.discard;
+        reshuffleCount = refillResult.reshuffleCount;
+        totalFatigueDamage += refillResult.fatigueDamage;
+      }
+
       if (deck.length > 0) {
         const idx = Math.floor(Math.random() * deck.length);
         const card = deck[idx];
@@ -284,8 +340,8 @@ export function SignalForgeGame() {
       }
     }
 
-    return { deck, hand, discard, exhausted };
-  }, []);
+    return { deck, hand, discard, exhausted, reshuffleCount, fatigueDamage: totalFatigueDamage };
+  }, [refillDeckFromDiscard]);
 
 
   // Resize observer to track container size
@@ -1180,8 +1236,19 @@ export function SignalForgeGame() {
       }
 
       // Card-specific: draw extra cards
+      let reshuffleCount = prev.reshuffleCount;
+      const tempLog: string[] = [];
       if (card.draw && card.draw > 0) {
         for (let i = 0; i < card.draw; i++) {
+          // Check if we need to reshuffle before drawing
+          if (deck.length === 0) {
+            const refillResult = refillDeckFromDiscard(deck, discard, reshuffleCount, tempLog);
+            deck = refillResult.deck;
+            discard = refillResult.discard;
+            reshuffleCount = refillResult.reshuffleCount;
+            playerHp = Math.max(0, playerHp - refillResult.fatigueDamage);
+          }
+
           if (deck.length > 0) {
             const idx = Math.floor(Math.random() * deck.length);
             const drawn = deck[idx];
@@ -1215,11 +1282,13 @@ export function SignalForgeGame() {
         currency,
         firstPulsePlayedThisTurn,
         firstSawPlayedThisTurn,
+        reshuffleCount,
+        combatLog: [...prev.combatLog, ...tempLog],
         gameOver: playerHp <= 0,
         phase: playerHp <= 0 ? 'game-over' : prev.phase,
       };
     });
-  }, []);
+  }, [refillDeckFromDiscard]);
 
   // Select target enemy
   const selectEnemy = useCallback((enemyId: number) => {
@@ -1445,8 +1514,19 @@ export function SignalForgeGame() {
 
       // --- Draw new hand (sustain cards stay in hand) ---
       const handWithSustain = [...prev.hand, ...sustainHand];
-      const { deck: newDeck, hand: newHand, discard: newDiscard, exhausted } =
-        drawHandCards(prev.deck, discardAfterPlay, handWithSustain, getHandSize(prev.ownedRelics), prev.ownedRelics);
+      const drawResult = drawHandCards(
+        prev.deck, 
+        discardAfterPlay, 
+        handWithSustain, 
+        getHandSize(prev.ownedRelics), 
+        prev.ownedRelics,
+        prev.reshuffleCount,
+        log
+      );
+      let { deck: newDeck, hand: newHand, discard: newDiscard, exhausted, reshuffleCount, fatigueDamage } = drawResult;
+      
+      // Apply reshuffle fatigue damage
+      playerHp = Math.max(0, playerHp - fatigueDamage);
 
       // Cards exhausted via Clean Room are removed from deckList
       if (exhausted.length > 0) {
@@ -1461,10 +1541,20 @@ export function SignalForgeGame() {
       let finalDiscard = newDiscard;
       if (isMatch && countRelic(prev.ownedRelics, 'echo_node') > 0) {
         const echoDrawCount = countRelic(prev.ownedRelics, 'echo_node');
-        const extra = drawHandCards(finalDeck, finalDiscard, finalHand, finalHand.length + echoDrawCount, prev.ownedRelics);
+        const extra = drawHandCards(
+          finalDeck, 
+          finalDiscard, 
+          finalHand, 
+          finalHand.length + echoDrawCount, 
+          prev.ownedRelics,
+          reshuffleCount,
+          log
+        );
         finalDeck = extra.deck;
         finalHand = extra.hand;
         finalDiscard = extra.discard;
+        reshuffleCount = extra.reshuffleCount;
+        playerHp = Math.max(0, playerHp - extra.fatigueDamage);
         if (extra.exhausted.length > 0) {
           for (const ex of extra.exhausted) {
             newDeckList = newDeckList.filter(c => c.id !== ex.id);
@@ -1523,10 +1613,11 @@ export function SignalForgeGame() {
         selectedEnemyId: newSelectedEnemyId,
         firstPulsePlayedThisTurn: false,
         firstSawPlayedThisTurn: false,
+        reshuffleCount,
         combatLog: log,
       };
     });
-  }, [drawHandCards]);
+  }, [drawHandCards, refillDeckFromDiscard]);
 
   // --- Server-side persistence ---
   const [hasSavedRun, setHasSavedRun] = useState(false);
@@ -1604,6 +1695,7 @@ export function SignalForgeGame() {
       glitchThreshold: 4,
       firstPulsePlayedThisTurn: false,
       firstSawPlayedThisTurn: false,
+      reshuffleCount: 0,
       combatLog: [],
     });
   }, [clearSavedRun]);
@@ -1633,7 +1725,8 @@ export function SignalForgeGame() {
       // Shuffle the full deck list and start fresh
       const shuffledDeck = shuffleDeck(prev.deckList);
       const hs = getHandSize(prev.ownedRelics);
-      const { deck, hand, discard, exhausted } = drawHandCards(shuffledDeck, [], [], hs, prev.ownedRelics);
+      const tempLog: string[] = [];
+      const { deck, hand, discard, exhausted } = drawHandCards(shuffledDeck, [], [], hs, prev.ownedRelics, 0, tempLog);
 
       // Clean Room exhausted cards removed from deck list
       let newDeckList = [...prev.deckList];
@@ -1671,6 +1764,7 @@ export function SignalForgeGame() {
         glitchThreshold,
         firstPulsePlayedThisTurn: false,
         firstSawPlayedThisTurn: false,
+        reshuffleCount: 0,
         combatLog: [],
       };
     });
@@ -1799,6 +1893,7 @@ export function SignalForgeGame() {
       glitchThreshold: 4,
       firstPulsePlayedThisTurn: false,
       firstSawPlayedThisTurn: false,
+      reshuffleCount: 0,
       combatLog: [],
     });
   }, []);
@@ -1838,7 +1933,8 @@ export function SignalForgeGame() {
       // Reshuffle the full deck for the new floor
       const shuffledDeck = shuffleDeck(prev.deckList);
       const hs = getHandSize(prev.ownedRelics);
-      const { deck, hand, discard, exhausted } = drawHandCards(shuffledDeck, [], [], hs, prev.ownedRelics);
+      const tempLog: string[] = [];
+      const { deck, hand, discard, exhausted } = drawHandCards(shuffledDeck, [], [], hs, prev.ownedRelics, 0, tempLog);
 
       // Clean Room exhausted cards removed from deck list
       let newDeckList = [...prev.deckList];
@@ -1870,6 +1966,7 @@ export function SignalForgeGame() {
         glitchThreshold,
         firstPulsePlayedThisTurn: false,
         firstSawPlayedThisTurn: false,
+        reshuffleCount: 0,
         combatLog: [],
       };
     });

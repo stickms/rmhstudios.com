@@ -24,7 +24,7 @@ The changes below were chosen because they **interlock**:
 These fix bugs and fill gaps that currently break or limit the game.
 
 ### 1.1 — Deck Reshuffle ✦ CRITICAL
-- [ ] **Implement automatic silent reshuffle** (Proposal #4)
+- [x] **Implement automatic silent reshuffle** (Proposal #4)
 
 **What:** When draw pile is empty and player needs to draw, shuffle discard pile into draw pile automatically.
 
