@@ -80,7 +80,6 @@ export function LeaderboardPanel({ username }: { username: string }) {
         let mounted = true;
         
         (async () => {
-            setLoading(true);
             const data = await fetchLeaderboard(activeTab);
             if (mounted) {
                 setEntries(data);

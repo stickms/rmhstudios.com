@@ -20,14 +20,8 @@ interface KeybindSettingsProps {
 }
 
 export default function KeybindSettings({ open, onClose }: KeybindSettingsProps) {
-    const [binds, setBinds] = useState<Keybinds>(loadKeybinds);
+    const [binds, setBinds] = useState<Keybinds>(() => loadKeybinds());
     const [listening, setListening] = useState<keyof Keybinds | null>(null);
-
-    useEffect(() => { 
-        if (open) {
-            setBinds(loadKeybinds()); 
-        }
-    }, [open]);
 
     useEffect(() => {
         if (!listening) return;

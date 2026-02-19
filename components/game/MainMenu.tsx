@@ -20,6 +20,15 @@ interface MainMenuProps {
     engine: GameEngine | null;
 }
 
+// Helper to get AudioContext with proper typing
+const getAudioContext = (): AudioContext => {
+    const existing = AudioManager.getInstance().getContext();
+    if (existing) return existing;
+    
+    const windowWithWebkit = window as typeof window & { webkitAudioContext: typeof AudioContext };
+    return new (window.AudioContext || windowWithWebkit.webkitAudioContext)();
+};
+
 const KeybindInput = ({ label, value, onChange }: { label: string, value: string, onChange: (val: string) => void }) => {
     const [listening, setListening] = React.useState(false);
     
@@ -88,8 +97,7 @@ export function MainMenu({ engine }: MainMenuProps) {
              // We decode just to be sure we can play it, but valid logic is to setup first. 
              // Actually, to detect BPM if missing, we need to decode.
             
-            const audioContext = AudioManager.getInstance().getContext() 
-                || new (window.AudioContext || (window as any).webkitAudioContext)();
+            const audioContext = getAudioContext();
             const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
 
             let bpm = track.bpm;
@@ -119,8 +127,7 @@ export function MainMenu({ engine }: MainMenuProps) {
         setIsLoading(true);
         try {
             const arrayBuffer = await file.arrayBuffer();
-            const audioContext = AudioManager.getInstance().getContext() 
-                || new (window.AudioContext || (window as any).webkitAudioContext)();
+            const audioContext = getAudioContext();
             const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
             
             console.log("Detecting BPM...");

@@ -192,7 +192,8 @@ export default function EchoesGame({
     const keysRef = useRef<Set<string>>(new Set());
     const keybindsRef = useRef<Keybinds>(loadKeybinds());
     const sizeRef = useRef({ w: typeof window !== 'undefined' ? window.innerWidth : 800, h: typeof window !== 'undefined' ? window.innerHeight : 600 });
-    const [canvasSize, setCanvasSize] = useState(sizeRef.current);
+    const initialSize = typeof window !== 'undefined' ? { w: window.innerWidth, h: window.innerHeight } : { w: 800, h: 600 };
+    const [canvasSize, setCanvasSize] = useState(initialSize);
 
     const obstaclesRef = useRef<Obstacle[]>([]);
     const pickupsRef = useRef<Pickup[]>([]);
@@ -221,11 +222,15 @@ export default function EchoesGame({
 
     const store = useGameStore();
     const storeRef = useRef(store);
-    storeRef.current = store;
     const mobileRef = useRef(mobileInput);
-    mobileRef.current = mobileInput;
     const abilityTriggerRef = useRef(abilityTrigger);
-    abilityTriggerRef.current = abilityTrigger;
+
+    // Update refs when dependencies change
+    useEffect(() => {
+        storeRef.current = store;
+        mobileRef.current = mobileInput;
+        abilityTriggerRef.current = abilityTrigger;
+    }, [store, mobileInput, abilityTrigger]);
     
     const gameLoopRef = useRef<(timestamp: number) => void>(() => {});
 

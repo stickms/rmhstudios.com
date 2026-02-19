@@ -65,9 +65,8 @@ export function GameCanvas() {
     // ── Game engine init ───────────────────────────────────────────────────────
     useEffect(() => {
         const newEngine = new GameEngine();
-        setEngine(newEngine);
 
-        const loop = (timestamp: number) => {
+        const loop = (_timestamp: number) => {
             const canvas = canvasRef.current;
             if (!canvas) return;
             const ctx = canvas.getContext('2d');
@@ -78,7 +77,14 @@ export function GameCanvas() {
             }
             rafRef.current = requestAnimationFrame(loop);
         };
+        
+        // Initialize render ref if needed, start animation loop
         rafRef.current = requestAnimationFrame(loop);
+        
+        // Delay setState to after effect setup completes
+        Promise.resolve().then(() => {
+            setEngine(newEngine);
+        });
 
         return () => {
             if (rafRef.current) cancelAnimationFrame(rafRef.current);

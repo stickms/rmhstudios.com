@@ -11,7 +11,7 @@ export default function DialogueOverlay() {
 
     useEffect(() => {
         if (!currentDialogueId) {
-            setNode(null);
+            // Already null from initial state, no need to setState
             return;
         }
         
@@ -19,9 +19,14 @@ export default function DialogueOverlay() {
         // In real app, script would be a lookup map
         const foundNode = script[currentDialogueId];
         if (foundNode) {
-            setNode(foundNode);
+            Promise.resolve().then(() => {
+                setNode(foundNode);
+            });
         } else {
             console.warn(`Dialogue node ${currentDialogueId} not found`);
+            Promise.resolve().then(() => {
+                setNode(null);
+            });
             endDialogue();
         }
     }, [currentDialogueId, endDialogue]);

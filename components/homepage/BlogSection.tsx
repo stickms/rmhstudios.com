@@ -63,16 +63,18 @@ export function BlogSection({ posts }: BlogSectionProps) {
   useEffect(() => {
     if (!emblaApi) return;
     
-    // Initialize without synchronous setState
-    const initHandler = () => setScrollSnaps(emblaApi.scrollSnapList());
+    // Initialize and set up event handlers
+    const initHandler = () => {
+      setScrollSnaps(emblaApi.scrollSnapList());
+    };
     const selectHandler = () => {
       setSelectedIndex(emblaApi.selectedScrollSnap());
       setProgress(0);
     };
     
-    // Initial setup
-    setScrollSnaps(emblaApi.scrollSnapList());
-    setSelectedIndex(emblaApi.selectedScrollSnap());
+    // Call handlers initially to set up state
+    initHandler();
+    selectHandler();
     
     emblaApi.on("reInit", initHandler);
     emblaApi.on("select", selectHandler);

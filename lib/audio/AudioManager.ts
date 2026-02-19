@@ -25,10 +25,16 @@ export class AudioManager {
 
   public initialize() {
     if (!this.audioContext) {
-      this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      this.gainNode = this.audioContext.createGain();
-      this.gainNode.connect(this.audioContext.destination);
-      this.gainNode.gain.value = this.volume;
+      const windowWithWebkit = typeof window !== 'undefined' ? (window as typeof window & { webkitAudioContext: typeof AudioContext }) : null;
+      const AudioContextConstructor = window.AudioContext || (windowWithWebkit?.webkitAudioContext);
+      if (AudioContextConstructor) {
+        this.audioContext = new AudioContextConstructor();
+      }
+      if (this.audioContext) {
+        this.gainNode = this.audioContext.createGain();
+        this.gainNode.connect(this.audioContext.destination);
+        this.gainNode.gain.value = this.volume;
+      }
     }
   }
 

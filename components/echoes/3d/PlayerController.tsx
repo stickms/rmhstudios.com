@@ -18,6 +18,11 @@ const SLIDE_DECAY = 0.95;
 import WeaponSystem from './WeaponSystem';
 import InteractionController from './InteractionController';
 
+// Type for THREE.js Euler with order property
+interface EulerWithOrder extends THREE.Euler {
+    order: string;
+}
+
 export default function PlayerController() {
     return (
         <KeyboardControls
@@ -174,12 +179,16 @@ function PlayerBody() {
     });
     
     // Mouse Look — YXZ Euler order prevents camera roll  
+    const originalOrderRef = useRef<string>('');
+    
     useEffect(() => {
         if (!camera) return;
         // Set the rotation order once
-        const originalOrder = camera.rotation.order;
-        // @ts-expect-error - THREE.js Euler type doesn't expose 'order' as settable, but it is at runtime
-        camera.rotation.order = 'YXZ';
+        const rotation = camera.rotation as EulerWithOrder;
+        originalOrderRef.current = rotation.order;
+        // This is necessary for THREE.js camera setup to prevent gimbal lock
+        // eslint-disable-next-line react-hooks/immutability
+        rotation.order = 'YXZ';
         
         const onMouseMove = (e: MouseEvent) => {
             if (document.pointerLockElement) {
@@ -192,10 +201,12 @@ function PlayerBody() {
         return () => {
             document.removeEventListener('mousemove', onMouseMove);
             // Restore original order if component unmounts
-            // @ts-expect-error - THREE.js Euler type doesn't expose 'order' as settable, but it is at runtime
-            camera.rotation.order = originalOrder;
+            if (camera) {
+                 
+                (camera.rotation as EulerWithOrder).order = originalOrderRef.current;
+            }
         };
-    }, []);
+    }, [camera]);
 
     return (
         <RigidBody 
