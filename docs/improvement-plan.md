@@ -1659,7 +1659,7 @@ upgradesPurchased: number; // escalating cost tracker
 ---
 
 ### 6.4 — Escalating Card Removal Cost
-- [ ] **Card removal cost increases per use** (Proposal #52)
+- [x] **Card removal cost increases per use** (Proposal #52)
 
 **Current:** Flat 60 currency per removal.
 

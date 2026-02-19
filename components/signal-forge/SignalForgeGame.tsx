@@ -61,6 +61,7 @@ interface GameState {
   reshuffleCount: number;        // Track reshuffles per combat for fatigue damage
   playerStatuses: StatusEffect[]; // Status effects on player
   chainDiscount?: { type: WaveformType; amount: number }; // Chain keyword tracking
+  removalsUsed: number;          // Track card removals for escalating cost
 }
 
 /** Check if the player owns a relic with a given key */
@@ -115,6 +116,7 @@ function serializeGameState(gs: GameState): Record<string, any> {
     combatLog: gs.combatLog,
     reshuffleCount: gs.reshuffleCount,
     playerStatuses: gs.playerStatuses,
+    removalsUsed: gs.removalsUsed,
   };
 }
 
@@ -163,13 +165,14 @@ function deserializeGameState(data: Record<string, any>): GameState {
     combatLog: data.combatLog || [],
     reshuffleCount: data.reshuffleCount ?? 0,
     playerStatuses: data.playerStatuses || [],
+    removalsUsed: data.removalsUsed ?? 0,
   };
 }
 
 const STARTER_DECK = createStarterDeck();
 
 // Generate shop inventory for a floor
-const generateShopInventory = (floor: number): ShopItem[] => {
+const generateShopInventory = (floor: number, removalsUsed: number = 0): ShopItem[] => {
   const inventory: ShopItem[] = [];
   let itemId = 0;
 
@@ -199,12 +202,13 @@ const generateShopInventory = (floor: number): ShopItem[] => {
     });
   }
 
-  // Add one card removal option
+  // Add one card removal option with escalating cost
+  const removalPrice = 50 + removalsUsed * 25;
   inventory.push({
     id: 'removal',
     type: 'removal',
     item: null,
-    price: 60,
+    price: removalPrice,
   });
 
   return inventory;
@@ -258,8 +262,10 @@ export function SignalForgeGame() {
     firstSawPlayedThisTurn: false,
     reshuffleCount: 0,
     playerStatuses: [],
+    removalsUsed: 0,
     combatLog: [],
     playerStatuses: [],
+    removalsUsed: 0,
   });
 
   // Helper: shuffle cards (Fisher-Yates)
@@ -1771,7 +1777,9 @@ export function SignalForgeGame() {
       firstSawPlayedThisTurn: false,
       reshuffleCount: 0,
       playerStatuses: [],
+    removalsUsed: 0,
     playerStatuses: [],
+    removalsUsed: 0,
       combatLog: [],
     });
   }, [clearSavedRun]);
@@ -1842,8 +1850,11 @@ export function SignalForgeGame() {
         firstSawPlayedThisTurn: false,
         reshuffleCount: 0,
         playerStatuses: [],
+    removalsUsed: 0,
       playerStatuses: [],
+    removalsUsed: 0,
     playerStatuses: [],
+    removalsUsed: 0,
         combatLog: [],
       };
     });
@@ -1861,7 +1872,7 @@ export function SignalForgeGame() {
       const targetSequence = Array.from({ length: seqLength }, () => types[Math.floor(Math.random() * types.length)]);
       
       // Generate shop inventory
-      const shopInventory = generateShopInventory(newFloor);
+      const shopInventory = generateShopInventory(newFloor, prev.removalsUsed);
       
       // Heal player 25% of max HP
       const healthGain = Math.floor(prev.playerMaxHp * 0.25);
@@ -1925,7 +1936,8 @@ export function SignalForgeGame() {
   const removeCard = useCallback((cardId: number) => {
     setGameState(prev => {
       if (prev.phase !== 'shop') return prev;
-      if (prev.currency < 60) return prev;
+      const removalPrice = 50 + prev.removalsUsed * 25;
+      if (prev.currency < removalPrice) return prev;
       
       // Remove card from the full deck list
       const cardIndex = prev.deckList.findIndex(c => c.id === cardId);
@@ -1936,7 +1948,8 @@ export function SignalForgeGame() {
       return {
         ...prev,
         deckList: newDeckList,
-        currency: prev.currency - 60,
+        currency: prev.currency - removalPrice,
+        removalsUsed: prev.removalsUsed + 1,
       };
     });
   }, []);
@@ -1974,7 +1987,9 @@ export function SignalForgeGame() {
       firstSawPlayedThisTurn: false,
       reshuffleCount: 0,
       playerStatuses: [],
+    removalsUsed: 0,
     playerStatuses: [],
+    removalsUsed: 0,
       combatLog: [],
     });
   }, []);
@@ -2049,8 +2064,11 @@ export function SignalForgeGame() {
         firstSawPlayedThisTurn: false,
         reshuffleCount: 0,
         playerStatuses: [],
+    removalsUsed: 0,
       playerStatuses: [],
+    removalsUsed: 0,
     playerStatuses: [],
+    removalsUsed: 0,
         combatLog: [],
       };
     });
