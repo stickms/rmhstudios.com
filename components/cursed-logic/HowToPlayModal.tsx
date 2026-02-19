@@ -41,9 +41,9 @@ export function HowToPlayModal({ open, onClose }: HowToPlayModalProps) {
           <div>
             <h3 className="font-mono font-bold text-cyan-400 mb-2">Round flow</h3>
             <ol className="list-decimal list-inside space-y-1 text-white/80">
-              <li><strong>Stance</strong> — Commit (Strike +1), Guard (Block negates chip), or Read (Prepare can’t fail / Probe 2 rounds). Picks your risk before the modifier.</li>
+              <li><strong>Stance</strong> — Each round you get 3 random stances from a pool (e.g. Strike +1, Block negates chip, Prepare can’t fail). Pick one before the modifier.</li>
               <li><strong>Modifier</strong> — Rolled after stance; applies this round only.</li>
-              <li><strong>Commit</strong> — Pick an action. Optionally <strong>Reinforce</strong> (+1 Charge) to boost that action’s effect if you have 2+ Charge.</li>
+              <li><strong>Action</strong> — Pick an action. Optionally <strong>Reinforce</strong> (+1 Charge) to boost that action’s effect if you have 2+ Charge.</li>
               <li><strong>Reveal</strong> — Protocol’s move, then yours, then resolution.</li>
             </ol>
           </div>

@@ -4,17 +4,20 @@ import { useEffect, useRef, useState } from 'react';
 import { useCursedLogicStore } from '@/lib/cursed-logic/gameState';
 import { getProtocolAction } from '@/lib/cursed-logic/protocol';
 import { resolveRound, chargeAfterSpend } from '@/lib/cursed-logic/resolution';
+import { getMinigameForRound } from '@/lib/cursed-logic/minigame';
 import { rollMutation, getModifierLabel } from '@/lib/cursed-logic/mutations';
 import * as sounds from '@/lib/cursed-logic/sounds';
 import { useShopStore } from '@/lib/cursed-logic/shopState';
-import type { RoundState, ProtocolAction, Stance } from '@/lib/cursed-logic/types';
+import type { RoundState, ProtocolAction } from '@/lib/cursed-logic/types';
 import {
   PROTOCOL_VARIANT_NAMES,
   RUN_UPGRADE_LABELS,
-  STANCE_LABELS,
-  STANCE_HINT,
+  getStanceLabel,
+  getStanceHint,
+  getStanceEffect,
   PROTOCOL_MODE_LABELS,
 } from '@/lib/cursed-logic/types';
+import { MinigameOverlay } from './MinigameOverlay';
 
 function buildRoundState(s: ReturnType<typeof useCursedLogicStore.getState>): RoundState {
   return {
@@ -58,6 +61,33 @@ function buildNextRoundState(
   };
 }
 
+/** Build round state for the round after next (for Scan stance Probe). */
+function buildRoundStateAfterNext(
+  s: ReturnType<typeof useCursedLogicStore.getState>,
+  thisRoundProtocolAction: ProtocolAction,
+  nextRoundProtocolAction: ProtocolAction
+): RoundState {
+  const mode =
+    nextRoundProtocolAction === 'Strike'
+      ? 'pressuring'
+      : nextRoundProtocolAction === 'Block'
+        ? 'defensive'
+        : 'recovering';
+  return {
+    round: s.round + 2,
+    lastPlayerAction: 'Probe',
+    lastProtocolAction: nextRoundProtocolAction,
+    playerPrepared: false,
+    protocolPrepared: nextRoundProtocolAction === 'Prepare',
+    protocolHealth: s.protocolHealth,
+    currentModifier: null,
+    protocolVariant: s.protocolVariant,
+    chaosRun: s.runModifier === 'chaosRun',
+    doubleDown: s.runModifier === 'doubleDown',
+    protocolMode: mode,
+  };
+}
+
 const ACTION_LABELS: Record<string, string> = {
   Strike: 'Strike',
   Block: 'Block',
@@ -92,6 +122,8 @@ export function CursedLogicGame() {
     setRevealedProtocolIntent,
     setProbeRevealedNextIntent,
     applyResolution,
+    setMinigamePending,
+    completeMinigame,
     advanceToCommit,
     pickMilestone,
     resetGame,
@@ -100,13 +132,17 @@ export function CursedLogicGame() {
     runModifier,
     milestoneChoices,
     probeRevealedNextIntent,
+    probeRevealedRoundAfterNext,
     chooseStance,
     currentStance,
+    stanceChoices,
     reinforced,
     revealStep,
     protocolMode,
     playerCondition,
     protocolCondition,
+    minigameKind,
+    minigameChaosDistort,
   } = useCursedLogicStore();
 
   const [animationKey, setAnimationKey] = useState(0);
@@ -191,6 +227,14 @@ export function CursedLogicGame() {
     if (action === 'Probe') {
       const nextIntent = getProtocolAction(buildNextRoundState(s, protocolAction));
       store.setProbeRevealedNextIntent(nextIntent);
+      if (getStanceEffect(s.currentStance) === 'probe_two_rounds') {
+        const roundAfterNextIntent = getProtocolAction(buildRoundStateAfterNext(s, protocolAction, nextIntent));
+        store.setProbeRevealedRoundAfterNext(roundAfterNextIntent);
+      } else {
+        store.setProbeRevealedRoundAfterNext(null);
+      }
+    } else {
+      store.setProbeRevealedRoundAfterNext(null);
     }
   };
 
@@ -226,7 +270,24 @@ export function CursedLogicGame() {
         nextCharge = Math.min(s.chargeCap, nextCharge + 1);
       }
       const nextModifier = rollMutation(s.runModifier === 'chaosRun');
-      useCursedLogicStore.getState().applyResolution(lastRoundResult, nextCharge, nextModifier);
+      const minigame = getMinigameForRound(
+        playerAction,
+        protocolAction,
+        s.currentModifier,
+        lastRoundResult.playerDamage,
+        lastRoundResult.protocolDamage
+      );
+      if (minigame) {
+        useCursedLogicStore.getState().setMinigamePending(
+          lastRoundResult,
+          nextCharge,
+          nextModifier,
+          minigame.kind,
+          minigame.chaosDistort
+        );
+      } else {
+        useCursedLogicStore.getState().applyResolution(lastRoundResult, nextCharge, nextModifier);
+      }
       setAnimationKey((k) => k + 1);
     }, delay);
     return () => {
@@ -295,6 +356,17 @@ export function CursedLogicGame() {
   }
 
   return (
+    <>
+      {phase === 'minigame' && minigameKind && (
+        <MinigameOverlay
+          kind={minigameKind}
+          chaosDistort={minigameChaosDistort}
+          onComplete={(success) => {
+            completeMinigame(success);
+            setAnimationKey((k) => k + 1);
+          }}
+        />
+      )}
     <div className="flex flex-col h-full max-w-lg mx-auto p-4 gap-4">
       {/* Top stats row — large and clear */}
       <div className="grid grid-cols-4 gap-3 text-center font-mono shrink-0">
@@ -552,22 +624,28 @@ export function CursedLogicGame() {
         <div className="rounded bg-cyan-500/10 border border-cyan-500/40 px-3 py-2 text-center shrink-0">
           <p className="text-cyan-300 text-xs font-mono">Next round Protocol will</p>
           <p className="text-cyan-200 font-mono font-bold">{ACTION_LABELS[probeRevealedNextIntent]}</p>
+          {probeRevealedRoundAfterNext !== null && (
+            <>
+              <p className="text-cyan-300/80 text-xs font-mono mt-1">Round after that</p>
+              <p className="text-cyan-200/90 font-mono font-bold">{ACTION_LABELS[probeRevealedRoundAfterNext]}</p>
+            </>
+          )}
         </div>
       )}
 
-      {phase === 'stance' && (
+      {phase === 'stance' && stanceChoices && (
         <div className="flex flex-col gap-3 shrink-0">
           <p className="text-white/60 text-sm text-center">Choose your stance</p>
           <div className="grid grid-cols-3 gap-2">
-            {(['Commit', 'Guard', 'Read'] as const).map((stance: Stance) => (
+            {stanceChoices.map((stance) => (
               <button
                 key={stance}
                 type="button"
                 onClick={() => chooseStance(stance)}
                 className="rounded-lg border border-cyan-500/40 bg-cyan-500/10 py-3 px-2 font-mono font-bold text-cyan-200 hover:bg-cyan-500/20 transition-colors flex flex-col items-center gap-0.5"
               >
-                <span>{STANCE_LABELS[stance]}</span>
-                <span className="text-[10px] font-normal text-cyan-300/80">{STANCE_HINT[stance]}</span>
+                <span>{getStanceLabel(stance)}</span>
+                <span className="text-[10px] font-normal text-cyan-300/80">{getStanceHint(stance)}</span>
               </button>
             ))}
           </div>
@@ -578,7 +656,7 @@ export function CursedLogicGame() {
         <div className="flex flex-col gap-3 shrink-0">
           {currentStance && (
             <p className="text-cyan-400/90 text-xs text-center font-mono">
-              Stance: {STANCE_LABELS[currentStance]}
+              Stance: {getStanceLabel(currentStance)}
             </p>
           )}
           <p className="text-white/60 text-sm text-center">Choose an action</p>
@@ -672,5 +750,6 @@ export function CursedLogicGame() {
         </div>
       )}
     </div>
+    </>
   );
 }

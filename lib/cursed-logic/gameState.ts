@@ -11,13 +11,16 @@ import type {
   ProtocolMode,
   PlayerCondition,
   ProtocolCondition,
+  MinigameKind,
 } from './types';
+import { applyMinigameAdjustment } from './minigame';
 import {
   CHARGE_CAP,
   START_CHARGE,
   START_INTEGRITY,
   PROTOCOL_HEALTH,
 } from './types';
+import { pickRandomStances, getStanceEffect, INITIAL_STANCE_CHOICES } from './types';
 import { rollMutation } from './mutations';
 
 function nextProtocolMode(lastProtocolAction: ProtocolAction | null): ProtocolMode {
@@ -73,16 +76,21 @@ const initialState: GameStateShape = {
   result: null,
   revealedProtocolIntent: null,
   probeRevealedNextIntent: null,
+  probeRevealedRoundAfterNext: null,
   protocolVariant: 'default',
   runUpgrades: [],
   milestoneChoices: null,
   runModifier: null,
   currentStance: null,
+  stanceChoices: INITIAL_STANCE_CHOICES,
   reinforced: false,
   protocolMode: 'recovering',
   playerCondition: null,
   protocolCondition: null,
   revealStep: 0,
+  minigameKind: null,
+  minigameChaosDistort: false,
+  pendingMinigameResolution: null,
 };
 
 interface CursedLogicStore extends GameStateShape {
@@ -90,12 +98,15 @@ interface CursedLogicStore extends GameStateShape {
   commit: (action: PlayerAction, reinforced?: boolean) => void;
   setReveal: (protocolAction: ProtocolAction, probeRevealed?: ProtocolAction | null) => void;
   setRevealStep: (step: number) => void;
-  applyResolution: (lastRound: LastRound, nextCharge: number, nextModifier: RoundModifier | null) => void;
+  applyResolution: (lastRound: LastRound, nextCharge: number, nextModifier: RoundModifier | null, skipExposed?: boolean) => void;
+  setMinigamePending: (lastRound: LastRound, nextCharge: number, nextModifier: RoundModifier | null, kind: MinigameKind, chaosDistort: boolean) => void;
+  completeMinigame: (success: boolean) => void;
   advanceToCommit: () => void;
   pickMilestone: (choice: RunUpgradeId) => void;
   setGameOver: (result: 'win' | 'lose') => void;
   setRevealedProtocolIntent: (action: ProtocolAction | null) => void;
   setProbeRevealedNextIntent: (action: ProtocolAction | null) => void;
+  setProbeRevealedRoundAfterNext: (action: ProtocolAction | null) => void;
   resetGame: (overrides?: {
     startCharge?: number;
     startIntegrity?: number;
@@ -110,7 +121,8 @@ export const useCursedLogicStore = create<CursedLogicStore>()((set) => ({
 
   chooseStance: (stance) =>
     set((s) => {
-      if (s.phase !== 'stance' || s.result) return s;
+      if (s.phase !== 'stance' || s.result || !s.stanceChoices) return s;
+      if (!s.stanceChoices.includes(stance)) return s;
       const nextModifier = rollMutation(s.runModifier === 'chaosRun');
       return {
         currentStance: stance,
@@ -141,14 +153,33 @@ export const useCursedLogicStore = create<CursedLogicStore>()((set) => ({
 
   setRevealStep: (step) => set({ revealStep: step }),
 
-  applyResolution: (lastRound, nextCharge, nextModifier) =>
+  applyResolution: (lastRound, nextCharge, nextModifier, skipExposed = false) =>
     set((s) => {
       let newIntegrity = Math.max(0, s.integrity - lastRound.playerDamage);
+      const eff = getStanceEffect(s.currentStance);
+      const prepareImmune = eff === 'prepare_immune';
       const prepareSucceeded =
         s.pendingPlayerAction === 'Prepare' &&
-        (s.pendingProtocolAction !== 'Strike' || s.currentStance === 'Read');
+        (s.pendingProtocolAction !== 'Strike' || prepareImmune);
       if (prepareSucceeded && s.runUpgrades.includes('prepareHeal')) {
         newIntegrity = Math.min(10, newIntegrity + 1);
+      }
+      if (prepareSucceeded && eff === 'prepare_heal_one') {
+        newIntegrity = Math.min(10, newIntegrity + 1);
+      }
+      const blockHealOne = eff === 'block_heal_one' && s.pendingPlayerAction === 'Block' && s.pendingProtocolAction === 'Strike';
+      if (blockHealOne) {
+        newIntegrity = Math.min(10, newIntegrity + 1);
+      }
+      if (eff === 'rally' && lastRound.protocolDamage > 0) {
+        newIntegrity = Math.min(10, newIntegrity + 1);
+      }
+      let charge = nextCharge;
+      if (eff === 'charge_on_damage' && lastRound.protocolDamage > 0) {
+        charge = Math.min(s.chargeCap, charge + 1);
+      }
+      if (eff === 'second_wind' && s.pendingPlayerAction === 'Block') {
+        charge = Math.min(s.chargeCap, charge + 1);
       }
       const newProtocolHealth = Math.max(0, s.protocolHealth - lastRound.protocolDamage);
       const log = [lastRound, ...s.log].slice(0, 5);
@@ -160,12 +191,12 @@ export const useCursedLogicStore = create<CursedLogicStore>()((set) => ({
       const milestoneChoices = shouldMilestone ? pickTwoMilestoneChoices(s.runUpgrades) : null;
       const phase = result ? 'gameover' : shouldMilestone ? 'milestone' : 'resolved';
       const nextMode = nextProtocolMode(s.pendingProtocolAction);
-      const nextPlayerCond = nextPlayerCondition(s.pendingPlayerAction!, s.pendingProtocolAction!);
+      const nextPlayerCond = skipExposed ? null : nextPlayerCondition(s.pendingPlayerAction!, s.pendingProtocolAction!);
       const nextProtocolCond = nextProtocolCondition(s.pendingPlayerAction!, s.pendingProtocolAction!);
       return {
         lastRound,
         log,
-        charge: nextCharge,
+        charge,
         integrity: newIntegrity,
         protocolHealth: newProtocolHealth,
         currentModifier: nextModifier,
@@ -177,17 +208,47 @@ export const useCursedLogicStore = create<CursedLogicStore>()((set) => ({
         probeRevealedIntent: null,
         revealedProtocolIntent: null,
         probeRevealedNextIntent: null,
+        probeRevealedRoundAfterNext: null,
         currentStance: null,
         reinforced: false,
         protocolMode: nextMode,
         playerCondition: nextPlayerCond,
         protocolCondition: nextProtocolCond,
         revealStep: 0,
+        minigameKind: null,
+        minigameChaosDistort: false,
+        pendingMinigameResolution: null,
         milestoneChoices,
         phase,
         result: result ?? s.result,
       };
     }),
+
+  setMinigamePending: (lastRound, nextCharge, nextModifier, kind, chaosDistort) =>
+    set({
+      phase: 'minigame',
+      minigameKind: kind,
+      minigameChaosDistort: chaosDistort,
+      pendingMinigameResolution: { lastRound, nextCharge, nextModifier },
+    }),
+
+  completeMinigame: (success) => {
+    const s = useCursedLogicStore.getState();
+    const pending = s.pendingMinigameResolution;
+    if (s.phase !== 'minigame' || !pending || !s.minigameKind) return;
+    const { lastRound, skipExposed } = applyMinigameAdjustment(
+      pending.lastRound,
+      success,
+      s.minigameKind,
+      s.minigameChaosDistort
+    );
+    useCursedLogicStore.getState().applyResolution(
+      lastRound,
+      pending.nextCharge,
+      pending.nextModifier,
+      skipExposed
+    );
+  },
 
   pickMilestone: (choice) =>
     set((s) => ({
@@ -198,6 +259,7 @@ export const useCursedLogicStore = create<CursedLogicStore>()((set) => ({
 
   setRevealedProtocolIntent: (action) => set({ revealedProtocolIntent: action }),
   setProbeRevealedNextIntent: (action) => set({ probeRevealedNextIntent: action }),
+  setProbeRevealedRoundAfterNext: (action) => set({ probeRevealedRoundAfterNext: action }),
 
   advanceToCommit: () =>
     set((s) => {
@@ -208,6 +270,7 @@ export const useCursedLogicStore = create<CursedLogicStore>()((set) => ({
         phase: 'stance',
         round: s.round + 1,
         charge: nextCharge,
+        stanceChoices: pickRandomStances(3),
       };
     }),
 
@@ -221,8 +284,12 @@ export const useCursedLogicStore = create<CursedLogicStore>()((set) => ({
     set({
       ...initialState,
       phase: 'stance',
+      stanceChoices: pickRandomStances(3),
       runModifier: mod,
       runUpgrades: startUpgrades,
+      minigameKind: null,
+      minigameChaosDistort: false,
+      pendingMinigameResolution: null,
       ...(overrides && {
         charge: Math.min(overrides.startCharge ?? initialState.charge, overrides.runModifier === 'fortress' ? 6 : CHARGE_CAP),
         chargeCap: overrides.runModifier === 'fortress' ? 6 : CHARGE_CAP,
