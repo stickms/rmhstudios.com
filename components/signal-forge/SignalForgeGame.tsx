@@ -272,6 +272,8 @@ export function SignalForgeGame() {
       const newReshuffleCount = currentReshuffleCount + 1;
       
       // Reshuffle fatigue - first reshuffle is free, then ramping damage
+      // Formula uses triangular numbers: 0, 0, 2, 5, 9, 14, 20...
+      // This creates escalating cost: 1st free, 2nd=2, 3rd=5, 4th=9, etc.
       let fatigueDamage = 0;
       if (newReshuffleCount > 1) {
         fatigueDamage = Math.floor(0.5 * newReshuffleCount * (newReshuffleCount - 1));
