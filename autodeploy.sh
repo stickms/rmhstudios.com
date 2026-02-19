@@ -5,6 +5,7 @@ BRANCH="main"
 REPO_DIR="/home/rmhstudios/rmhstudios.com"
 LOG_FILE="/var/log/rmhstudios.deploy.log"
 APP_NAME="rmhstudios.com"
+PORT=7000
 
 LOCKFILE="/tmp/autodeploy.lock"
 
@@ -45,6 +46,10 @@ while true; do
     if git pull "$REMOTE_REPO" "$BRANCH"; then
       log "Pulled latest changes."
 
+      # Stop application before building to free up resources/avoid conflicts
+      log "Stopping application via PM2..."
+      pm2 stop "$APP_NAME" || log "Application was not running."
+
       # Install dependencies
       log "Installing dependencies..."
       pnpm install --frozen-lockfile --production=false
@@ -67,16 +72,19 @@ while true; do
       if pnpm run build; then
         log "Build successful."
 
-        # Restart via PM2
-        log "Restarting application via PM2..."
-        if pm2 restart "$APP_NAME"; then
-          log "Deployment complete."
+        # Start/Restart via PM2 on port 7000
+        log "Starting application on port $PORT via PM2..."
+        # We use 'pm2 start' with --name and -k (restart if exists) or just restart
+        if pm2 delete "$APP_NAME" > /dev/null 2>&1 || true; then
+             pm2 start pnpm --name "$APP_NAME" -- start -- -p "$PORT"
+             log "Deployment complete."
         else
-          log "Error: PM2 restart failed. Attempting to start..."
-          pm2 start pnpm --name "$APP_NAME" -- start
+             log "Error: Failed to start application."
         fi
       else
         log "Error: Build failed."
+        # Try to restart the old build if build fails? 
+        # For now, just log the error.
       fi
     else
       log "Error: Git pull failed."
