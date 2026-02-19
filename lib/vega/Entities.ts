@@ -90,7 +90,6 @@ export class Tower extends Entity {
   public isGhost: boolean = false;
   public isParadox: boolean = false;
   public loopOrigin: number = 1;
-  public totalInvested: number = 0;
 
   // Upgrade State
   public upgrades: {
@@ -152,10 +151,6 @@ export class Tower extends Entity {
 
   public getSellValue(): number {
     return Math.floor(this.totalInvested * 0.7);
-  }
-
-  public getSellValue(): number {
-      return Math.floor((this.totalInvested || 0) * 0.7);
   }
 }
 

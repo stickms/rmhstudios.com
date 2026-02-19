@@ -13,10 +13,6 @@ export async function GET(req: Request) {
         });
     }
 
-    if (!pool) {
-        return NextResponse.json([], { status: 200 });
-    }
-
     try {
         const leaderboard = await prisma.laundryPlayer.findMany({
             take: 10,
