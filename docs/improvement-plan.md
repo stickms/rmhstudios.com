@@ -62,10 +62,11 @@ Each time the discard pile is reshuffled into the draw pile during the same comb
 | 2nd | 2 |
 | 3rd | 5 |
 | 4th | 9 |
-| 5th+ | +5 per subsequent reshuffle |
+| 5th | 14 |
+| 6th | 20 |
 
-Formula: `reshuffleDamage = reshuffleCount <= 1 ? 0 : Math.floor(0.5 * reshuffleCount * (reshuffleCount - 1))`  
-(i.e., triangular scaling: 0, 0, 2, 5, 9, 14, 20, ...)
+Formula: `reshuffleDamage = reshuffleCount <= 1 ? 0 : Math.floor(((reshuffleCount + 2) * (reshuffleCount - 1)) / 2)`  
+(i.e., escalating sequence: 0, 2, 5, 9, 14, 20, 27, ...)
 
 **Add to GameState:**
 ```typescript
@@ -81,7 +82,7 @@ private refillDeckFromDiscard(): void {
     // Reshuffle fatigue — first reshuffle is free, then ramping damage
     if (this.state.reshuffleCount > 1) {
       const fatigueDmg = Math.floor(
-        0.5 * this.state.reshuffleCount * (this.state.reshuffleCount - 1)
+        ((this.state.reshuffleCount + 2) * (this.state.reshuffleCount - 1)) / 2
       );
       this.state.playerHp -= fatigueDmg;
       this.state.combatLog.push(
