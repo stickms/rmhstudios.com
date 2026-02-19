@@ -2,7 +2,7 @@
 
 REMOTE_REPO="origin"
 BRANCH="main"
-REPO_DIR="/var/www/rmhstudios.com"
+REPO_DIR="/home/rmhstudios/rmhstudios.com"
 LOG_FILE="/var/log/rmhstudios.deploy.log"
 APP_NAME="rmhstudios.com"
 
