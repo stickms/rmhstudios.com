@@ -87,6 +87,12 @@ export function ParticleField() {
 
     function animate() {
       if (!canvas || !ctx) return;
+      
+      // Skip animation when document is hidden for performance
+      if (document.hidden) {
+        animationRef.current = requestAnimationFrame(animate);
+        return;
+      }
 
       ctx.fillStyle = "rgba(10, 10, 10, 0.1)";
       ctx.fillRect(0, 0, canvas.width, canvas.height);

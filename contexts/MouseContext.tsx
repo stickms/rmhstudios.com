@@ -37,11 +37,17 @@ export function MouseProvider({ children }: MouseProviderProps) {
   const hasRealMouse = useRef(false);
   const lastMouseMove = useRef(0);
   const animationRef = useRef<number | null>(null);
+  const isDocumentHidden = useRef(false);
 
   useEffect(() => {
     // Initialize to center of screen
     mouseX.set(window.innerWidth / 2);
     mouseY.set(window.innerHeight / 2);
+
+    // Check if mobile/touch device
+    const isTouchDevice = window.matchMedia("(hover: none) and (pointer: coarse)").matches;
+    let lastTouchUpdate = 0;
+    const TOUCH_THROTTLE_MS = 50; // Throttle touch updates to every 50ms
 
     // Track real mouse movement
     const handleMouseMove = (e: MouseEvent) => {
@@ -52,20 +58,39 @@ export function MouseProvider({ children }: MouseProviderProps) {
       mouseY.set(e.clientY);
     };
 
-    // Track touch as mouse position
+    // Track touch as mouse position (throttled for performance)
     const handleTouchMove = (e: TouchEvent) => {
       if (e.touches.length > 0) {
+        const now = Date.now();
+        
+        // Throttle touch updates on mobile
+        if (isTouchDevice && now - lastTouchUpdate < TOUCH_THROTTLE_MS) {
+          return;
+        }
+        
+        lastTouchUpdate = now;
         hasRealMouse.current = true;
-        lastMouseMove.current = Date.now();
+        lastMouseMove.current = now;
         setIsVirtual(false);
         mouseX.set(e.touches[0].clientX);
         mouseY.set(e.touches[0].clientY);
       }
     };
 
+    // Handle visibility change - pause animations when tab is hidden
+    const handleVisibilityChange = () => {
+      isDocumentHidden.current = document.hidden;
+    };
+
     // Virtual cursor animation - smooth flowing movement
     let time = Math.random() * 1000;
     const animate = () => {
+      // Skip animation if document is hidden
+      if (isDocumentHidden.current) {
+        animationRef.current = requestAnimationFrame(animate);
+        return;
+      }
+
       const now = Date.now();
 
       // If no real mouse activity for 3 seconds, use virtual cursor
@@ -103,6 +128,7 @@ export function MouseProvider({ children }: MouseProviderProps) {
     // Add event listeners
     window.addEventListener("mousemove", handleMouseMove);
     window.addEventListener("touchmove", handleTouchMove, { passive: true });
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     // Check for mouse capability
     const mediaQuery = window.matchMedia("(hover: hover) and (pointer: fine)");
@@ -114,6 +140,7 @@ export function MouseProvider({ children }: MouseProviderProps) {
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("touchmove", handleTouchMove);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }

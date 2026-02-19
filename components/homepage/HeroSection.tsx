@@ -9,11 +9,13 @@ import { FloatingShapes } from "@/components/effects/FloatingShapes";
 import { ProximityText } from "@/components/ui/ProximityText";
 import { useMousePosition } from "@/contexts/MouseContext";
 import { useWindowSize } from "@/hooks/useWindowSize";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import { SPRING_CONFIGS } from "@/lib/animations/constants";
 
 export function HeroSection() {
   const { mouseX, mouseY } = useMousePosition();
   const windowSize = useWindowSize();
+  const isMobile = useIsMobile();
 
   // Transform absolute mouse position to normalized 0-1 range for rotation
   const normalizedX = useTransform(mouseX, [0, windowSize.width], [0, 1]);
@@ -29,14 +31,18 @@ export function HeroSection() {
       {/* Floating shapes */}
       <FloatingShapes />
 
-      {/* MANY Pulsating orbs */}
+      {/* MANY Pulsating orbs - reduced on mobile for performance */}
       <PulsatingOrb className="absolute top-10 left-[5%]" color="pink" size="lg" />
       <PulsatingOrb className="absolute top-[15%] right-[10%]" color="cyan" size="md" />
       <PulsatingOrb className="absolute bottom-[20%] left-[15%]" color="purple" size="lg" />
       <PulsatingOrb className="absolute bottom-[30%] right-[5%]" color="yellow" size="md" />
-      <PulsatingOrb className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" color="pink" size="lg" />
-      <PulsatingOrb className="absolute top-[30%] left-[30%]" color="cyan" size="sm" />
-      <PulsatingOrb className="absolute bottom-[10%] right-[30%]" color="purple" size="sm" />
+      {!isMobile && (
+        <>
+          <PulsatingOrb className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" color="pink" size="lg" />
+          <PulsatingOrb className="absolute top-[30%] left-[30%]" color="cyan" size="sm" />
+          <PulsatingOrb className="absolute bottom-[10%] right-[30%]" color="purple" size="sm" />
+        </>
+      )}
 
       {/* Main content with perspective */}
       <div className="flex-grow flex flex-col items-center justify-center w-full relative z-10 px-4 pb-32">
