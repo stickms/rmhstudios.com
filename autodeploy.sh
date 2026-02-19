@@ -19,8 +19,8 @@ PM2_BIN=$(which pm2)
 
 # Fallback paths if 'which' fails in limited systemd environment
 GIT_BIN=${GIT_BIN:-/usr/bin/git}
-PNPM_BIN=${PNPM_BIN:-/usr/local/bin/pnpm}
-PM2_BIN=${PM2_BIN:-/usr/local/bin/pm2}
+PNPM_BIN=${PNPM_BIN:-/home/rmhstudios/.nvm/versions/node/v25.6.1/bin/pnpm}
+PM2_BIN=${PM2_BIN:-/home/rmhstudios/.nvm/versions/node/v25.6.1/bin/pm2}
 
 # Ensure lockfile is removed on script exit
 cleanup() {
