@@ -12,10 +12,10 @@ log() {
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
 }
 
-# Resolve tool paths for systemd compatibility
-# Add the NVM node bin directory to PATH so 'node' is available for pnpm/pm2
+# Ensure the NVM node bin directory is in PATH so 'node' is available for pnpm/pm2
 export PATH="/home/rmhstudios/.nvm/versions/node/v25.6.1/bin:$PATH"
 
+# Resolve tool paths for systemd compatibility
 GIT_BIN=$(which git)
 PNPM_BIN=$(which pnpm)
 PM2_BIN=$(which pm2)
@@ -33,6 +33,26 @@ cleanup() {
 }
 trap cleanup EXIT
 
+# Function to check if the application is listening on the specified port
+check_port() {
+    local port=$1
+    local max_retries=30
+    local count=0
+
+    log "Verifying application is listening on port $port..."
+    while [ $count -lt $max_retries ]; do
+        if ss -tuln | grep -q ":$port "; then
+            log "Success: Application is listening on port $port."
+            return 0
+        fi
+        sleep 1
+        ((count++))
+    done
+
+    log "Error: Application failed to listen on port $port after $max_retries seconds."
+    return 1
+}
+
 # Reusable deployment function
 perform_deploy() {
     if [ -f "$LOCKFILE" ]; then
@@ -41,9 +61,6 @@ perform_deploy() {
     fi
     
     touch "$LOCKFILE"
-    
-    # Pull changes (only if called from detection loop, but safe to run regardless)
-    # Note: If called from initial check, we might not need a pull, but it's safer to ensure we are up to date.
     log "Starting deployment process..."
 
     # Stop application before building to free up resources/avoid conflicts
@@ -81,13 +98,25 @@ perform_deploy() {
     log "Starting application on port $PORT via PM2..."
     if "$PM2_BIN" delete "$APP_NAME" > /dev/null 2>&1 || true; then
          if "$PM2_BIN" start "$PNPM_BIN" --name "$APP_NAME" -- start -- -p "$PORT"; then
-             log "Deployment complete."
+             # Verify startup
+             if check_port "$PORT"; then
+                 log "Deployment complete and verified."
+             else
+                 log "--- PM2 ERROR LOGS (Last 50 lines) ---"
+                 "$PM2_BIN" logs "$APP_NAME" --lines 50 --nostream
+                 log "---------------------------------------"
+                 rm -f "$LOCKFILE"
+                 return 1
+             fi
          else
-             log "Error: Failed to start application."
+             log "Error: Failed to start application via PM2."
+             rm -f "$LOCKFILE"
+             return 1
          fi
     fi
     
     rm -f "$LOCKFILE"
+    return 0
 }
 
 cd "$REPO_DIR" || { echo "Failed to enter directory $REPO_DIR"; exit 1; }
@@ -96,19 +125,12 @@ log "Auto-deploy script started. Monitoring $REMOTE_REPO/$BRANCH..."
 
 # --- Initial Startup Check ---
 log "Performing initial status check..."
-# Check if PM2 manages the app and if it's 'online'
-if ! "$PM2_BIN" describe "$APP_NAME" > /dev/null 2>&1; then
-    log "Application $APP_NAME is not tracked by PM2. Triggering initial deployment..."
+# Check if PM2 manages the app and if it's actually listening
+if ! "$PM2_BIN" describe "$APP_NAME" > /dev/null 2>&1 || ! ss -tuln | grep -q ":$PORT "; then
+    log "Application $APP_NAME is not running on port $PORT. Triggering initial deployment..."
     perform_deploy
 else
-    # Check if it's online
-    STATUS=$("$PM2_BIN" jlist | "$GIT_BIN" grep -o "\"name\":\"$APP_NAME\",\"pm2_env\":{[^}]*\"status\":\"online\"")
-    if [ -z "$STATUS" ]; then
-        log "Application $APP_NAME is not online. Triggering startup deployment..."
-        perform_deploy
-    else
-        log "Application is already running."
-    fi
+    log "Application is already running on port $PORT."
 fi
 
 # --- Periodic Monitoring Loop ---
