@@ -1518,7 +1518,7 @@ const darkInsightCount = this.state.ownedRelics.filter(r => r.key === 'dark_insi
 ## Phase 6 — Starter Deck & Economy Rebalance
 
 ### 6.1 — Reduce Starter Deck Size
-- [ ] **Reduce from 20 to 15 cards** (Proposal #156)
+- [x] **Reduce from 20 to 15 cards** (Proposal #156)
 
 **Where:** `SignalForgeGame.tsx` → `createStarterDeck()` method.
 

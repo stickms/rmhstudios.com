@@ -343,12 +343,12 @@ export function createGlitchCard(id: number): Card {
 /** Create the curated 20-card starter deck */
 export function createStarterDeck(): Card[] {
   const recipe: Array<{ key: string; count: number }> = [
-    { key: 'pulse_strike', count: 4 },
-    { key: 'pulse_tap', count: 3 },
-    { key: 'sine_guard', count: 3 },
+    { key: 'pulse_strike', count: 3 },
+    { key: 'pulse_tap', count: 2 },
+    { key: 'sine_guard', count: 2 },
     { key: 'sine_bridge', count: 2 },
-    { key: 'saw_rush', count: 3 },
-    { key: 'saw_latch', count: 2 },
+    { key: 'saw_rush', count: 2 },
+    { key: 'saw_latch', count: 1 },
     { key: 'noise_spike', count: 2 },
     { key: 'noise_shard', count: 1 },
   ];
