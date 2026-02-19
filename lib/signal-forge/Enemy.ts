@@ -28,6 +28,11 @@ export interface EnemyData {
   tempoSiphon?: number;   // Steal N tempo from player each turn
   onDeathGlitch?: number; // Inject N glitch cards into player discard on death
   onDeathStatic?: number; // Add N static to player on death
+  // Phase 4.2 — Uncommon enemy abilities
+  auraEchoCanceled?: boolean;  // Suppresses Echo keyword while alive
+  auraDamageReduction?: number; // Reduces all player card damage by N while alive
+  splitOnDeath?: { hp: number; damage: number; count: number }; // Spawn N mini-enemies
+  immuneType?: string;   // Immune to this waveform type (changes each turn)
 }
 
 // ---------------------------------------------------------------------------
@@ -59,6 +64,11 @@ export interface EnemyTemplate {
   tempoSiphon?: number;
   onDeathGlitch?: number;
   onDeathStatic?: number;
+  // Phase 4.2 — Uncommon enemy abilities
+  auraEchoCanceled?: boolean;
+  auraDamageReduction?: number;
+  splitOnDeath?: { hp: number; damage: number; count: number };
+  immuneType?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -150,6 +160,37 @@ export const ENEMY_CATALOG: EnemyTemplate[] = [
     description: 'Drains life from damage dealt to you.',
     vampiric: 30,
   },
+  // Phase 4.2 — New uncommon enemies
+  {
+    name: 'Overclock Bot', baseHp: 16, baseDamage: 2,
+    archetype: 'brute', tier: 'uncommon', intent: 'Attack (Escalating)',
+    description: 'Gains +1 damage per turn permanently. Must kill fast!',
+    enrage: true, // Using enrage to increase damage over time
+  },
+  {
+    name: 'Echo Disruptor', baseHp: 18, baseDamage: 3,
+    archetype: 'disruptor', tier: 'uncommon', intent: 'Attack + Echo Cancel',
+    description: 'Aura: Echo keyword doesn\'t trigger on player cards.',
+    auraEchoCanceled: true,
+  },
+  {
+    name: 'Dampener', baseHp: 14, baseDamage: 2,
+    archetype: 'disruptor', tier: 'uncommon', intent: 'Attack + Damage Aura',
+    description: 'Aura: All player cards deal -2 damage.',
+    auraDamageReduction: 2,
+  },
+  {
+    name: 'Splitter', baseHp: 20, baseDamage: 3,
+    archetype: 'uncommon', tier: 'uncommon', intent: 'Attack (Splits)',
+    description: 'At ≤50% HP, dies and spawns 2 Half-Splitters.',
+    splitOnDeath: { hp: 8, damage: 2, count: 2 },
+  },
+  {
+    name: 'Waveform Guardian', baseHp: 22, baseDamage: 2,
+    archetype: 'uncommon', tier: 'uncommon', intent: 'Attack (Adaptive)',
+    description: 'Immune to 1 random waveform type each turn.',
+    immuneType: 'Pulse', // Will be randomized each turn
+  },
 
   // === ELITE (floor 2 rare, floor 3+ common) ===
   {
@@ -236,6 +277,11 @@ export class Enemy implements EnemyData {
   tempoSiphon: number;
   onDeathGlitch: number;
   onDeathStatic: number;
+  // Phase 4.2 — Uncommon enemy abilities
+  auraEchoCanceled: boolean;
+  auraDamageReduction: number;
+  splitOnDeath?: { hp: number; damage: number; count: number };
+  immuneType?: string;
 
   constructor(data: EnemyData) {
     this.id = data.id;
@@ -264,6 +310,10 @@ export class Enemy implements EnemyData {
     this.tempoSiphon = data.tempoSiphon ?? 0;
     this.onDeathGlitch = data.onDeathGlitch ?? 0;
     this.onDeathStatic = data.onDeathStatic ?? 0;
+    this.auraEchoCanceled = data.auraEchoCanceled ?? false;
+    this.auraDamageReduction = data.auraDamageReduction ?? 0;
+    this.splitOnDeath = data.splitOnDeath;
+    this.immuneType = data.immuneType;
   }
 
   /** Get damage accounting for Enrage (+50% below 50% HP) */
@@ -384,6 +434,10 @@ export class Enemy implements EnemyData {
       tempoSiphon: this.tempoSiphon,
       onDeathGlitch: this.onDeathGlitch,
       onDeathStatic: this.onDeathStatic,
+      auraEchoCanceled: this.auraEchoCanceled,
+      auraDamageReduction: this.auraDamageReduction,
+      splitOnDeath: this.splitOnDeath,
+      immuneType: this.immuneType,
     };
   }
 }

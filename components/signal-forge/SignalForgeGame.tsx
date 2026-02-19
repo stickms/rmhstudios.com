@@ -1381,14 +1381,31 @@ export function SignalForgeGame() {
       let totalDamage = matchBonus + resonatorBonus;
       let totalLeechDamage = 0; // damage dealt by leech cards, for healing calc
 
+      // Phase 4.2 — Check for enemy auras
+      const echoCanceled = enemiesClonedForBleed.some(e => e.auraEchoCanceled && e.hp > 0);
+      const auraDmgReduce = enemiesClonedForBleed
+        .filter(e => e.auraDamageReduction && e.auraDamageReduction > 0 && e.hp > 0)
+        .reduce((sum, e) => sum + (e.auraDamageReduction ?? 0), 0);
+
       const cardDamages: { card: Card; dmg: number }[] = prev.playedThisTurn.map((card, idx) => {
         let dmg = card.getEffectiveDamage();  // includes Echo 50% bonus
+        
+        // Phase 4.2 — Echo Disruptor: cancel Echo bonus
+        if (echoCanceled && card.echo) {
+          // Recalculate without echo bonus
+          dmg = card.damage + (card.growing ? card.growthCounter * (card.growing ?? 0) : 0);
+        }
+        
         // Signal Mirror: first Saw in the played list gets +3 per copy
         if (signalMirrorCount > 0 && card.type === 'Saw' && !prev.playedThisTurn.slice(0, idx).some(c => c.type === 'Saw')) {
           dmg += 3 * signalMirrorCount;
         }
         // Tempo bonus: each card gains +playerTempo damage
         dmg += tempoBonusDmg;
+        
+        // Phase 4.2 — Dampener: reduce all damage
+        dmg = Math.max(0, dmg - auraDmgReduce);
+        
         return { card, dmg };
       });
 
@@ -1400,6 +1417,12 @@ export function SignalForgeGame() {
         if (card.aoe) {
           // AOE: damage all enemies
           enemiesCloned.forEach(e => {
+            // Phase 4.2 — Waveform Guardian: immune to this card type
+            if (e.immuneType && card.type === e.immuneType) {
+              log.push(`${e.name} is immune to ${card.type}!`);
+              return; // Skip damage for this enemy
+            }
+            
             // Apply status effect modifiers
             const vulnerable = e.statusEffects.find(s => s.type === 'vulnerable');
             const marked = e.statusEffects.find(s => s.type === 'marked');
@@ -1423,31 +1446,36 @@ export function SignalForgeGame() {
           // Single target: damage selected enemy only
           const target = enemiesCloned.find(e => e.id === prev.selectedEnemyId);
           if (target) {
-            // Apply status effect modifiers
-            const vulnerable = target.statusEffects.find(s => s.type === 'vulnerable');
-            const marked = target.statusEffects.find(s => s.type === 'marked');
-            let finalDmg = dmg;
-            if (marked) finalDmg += 5;
-            if (vulnerable) finalDmg = Math.floor(finalDmg * 1.5);
-            
-            const absorbed = target.takeDamage(finalDmg, prev.turn);
-            totalDamage += absorbed;
-            if (card.leech) totalLeechDamage += absorbed;
-            if (target.thorns > 0 && finalDmg > 0) thornsDamage += target.thorns;
-            
-            // Apply status effects from card
-            if (card.bleed) target.statusEffects = applyStatus(target.statusEffects, 'bleed', card.bleed, 2);
-            if (card.freeze) target.statusEffects = applyStatus(target.statusEffects, 'freeze', 1, 1);
-            if (card.vulnerable) target.statusEffects = applyStatus(target.statusEffects, 'vulnerable', 1, card.vulnerable);
-            if (card.weak) target.statusEffects = applyStatus(target.statusEffects, 'weak', 1, card.weak);
-            
-            // Siphon: steal shield from target
-            if (card.siphon && card.siphon > 0) {
-              const stolen = Math.min(target.shield ?? 0, card.siphon);
-              if (stolen > 0) {
-                target.shield = (target.shield ?? 0) - stolen;
-                playerShield += stolen;
-                log.push(`Siphoned ${stolen} shield from ${target.name}!`);
+            // Phase 4.2 — Waveform Guardian: immune to this card type
+            if (target.immuneType && card.type === target.immuneType) {
+              log.push(`${target.name} is immune to ${card.type}!`);
+            } else {
+              // Apply status effect modifiers
+              const vulnerable = target.statusEffects.find(s => s.type === 'vulnerable');
+              const marked = target.statusEffects.find(s => s.type === 'marked');
+              let finalDmg = dmg;
+              if (marked) finalDmg += 5;
+              if (vulnerable) finalDmg = Math.floor(finalDmg * 1.5);
+              
+              const absorbed = target.takeDamage(finalDmg, prev.turn);
+              totalDamage += absorbed;
+              if (card.leech) totalLeechDamage += absorbed;
+              if (target.thorns > 0 && finalDmg > 0) thornsDamage += target.thorns;
+              
+              // Apply status effects from card
+              if (card.bleed) target.statusEffects = applyStatus(target.statusEffects, 'bleed', card.bleed, 2);
+              if (card.freeze) target.statusEffects = applyStatus(target.statusEffects, 'freeze', 1, 1);
+              if (card.vulnerable) target.statusEffects = applyStatus(target.statusEffects, 'vulnerable', 1, card.vulnerable);
+              if (card.weak) target.statusEffects = applyStatus(target.statusEffects, 'weak', 1, card.weak);
+              
+              // Siphon: steal shield from target
+              if (card.siphon && card.siphon > 0) {
+                const stolen = Math.min(target.shield ?? 0, card.siphon);
+                if (stolen > 0) {
+                  target.shield = (target.shield ?? 0) - stolen;
+                  playerShield += stolen;
+                  log.push(`Siphoned ${stolen} shield from ${target.name}!`);
+                }
               }
             }
           }
@@ -1480,6 +1508,7 @@ export function SignalForgeGame() {
       const defeated = enemiesCloned.filter(e => e.isDefeated());
       let newDiscard = prev.discard;
       let playerStatic = prev.playerStatic;
+      let splitterEnemies: Enemy[] = []; // Track new enemies from Splitter
       
       for (const e of defeated) {
         // On-death: inject Glitch cards
@@ -1495,11 +1524,29 @@ export function SignalForgeGame() {
           playerStatic += e.onDeathStatic;
           log.push(`${e.name} dies and releases ${e.onDeathStatic} static!`);
         }
+        // Phase 4.2 — Splitter: spawn mini-enemies
+        if (e.splitOnDeath) {
+          for (let i = 0; i < e.splitOnDeath.count; i++) {
+            const childId = Date.now() + Math.floor(Math.random() * 100000);
+            const child = new Enemy({
+              id: childId,
+              name: 'Half-Splitter',
+              hp: e.splitOnDeath.hp,
+              maxHp: e.splitOnDeath.hp,
+              damage: e.splitOnDeath.damage,
+              intent: 'Attack',
+              description: 'Spawned from Splitter',
+            });
+            splitterEnemies.push(child);
+          }
+          log.push(`${e.name} splits into ${e.splitOnDeath.count} Half-Splitters!`);
+        }
       }
       
-      // Remove defeated enemies
+      // Remove defeated enemies and add splitter children
       const defeatedCount = defeated.length;
-      const enemies = enemiesCloned.filter(e => !e.isDefeated());
+      let enemies = enemiesCloned.filter(e => !e.isDefeated());
+      enemies = [...enemies, ...splitterEnemies];
       const allDefeated = enemies.length === 0;
 
       // --- Leech healing ---
@@ -1619,6 +1666,11 @@ export function SignalForgeGame() {
             if (ally.id !== e.id) ally.shield += e.shieldAlly;
           });
           if (enemies.length > 1) log.push(`${e.name} shields allies for ${e.shieldAlly}`);
+        }
+        // Phase 4.2 — Waveform Guardian: randomize immune type
+        if (e.name === 'Waveform Guardian') {
+          const types = ['Pulse', 'Sine', 'Saw', 'Noise'];
+          e.immuneType = types[Math.floor(Math.random() * types.length)];
         }
         // Turn counter & Glitch Gen
         e.turnCounter++;

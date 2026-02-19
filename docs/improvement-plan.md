@@ -866,7 +866,7 @@ defeated.forEach(e => {
 ---
 
 ### 4.2 — 5 New Uncommon Enemies
-- [ ] **Add to `enemyTemplates` array in `Enemy.ts`**
+- [x] **Add to `enemyTemplates` array in `Enemy.ts`**
 
 | Name | HP | Dmg | Tier | Abilities | Design Intent |
 |------|-----|-----|------|-----------|---------------|
