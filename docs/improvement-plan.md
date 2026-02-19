@@ -982,7 +982,7 @@ this.state.enemies.forEach(e => {
 ---
 
 ### 4.4 — 2 New Bosses
-- [ ] **Add to `enemyTemplates` array in `Enemy.ts`**
+- [x] **Add to `enemyTemplates` array in `Enemy.ts`**
 
 #### The Debugger (Floor 5 Boss)
 | Stat | Value |
@@ -1364,7 +1364,7 @@ voidHarvesterDmgBonus: number; // cumulative +dmg from exhausting cards this com
 ---
 
 ### 5.4 — 3 Cursed Relics (Powerful with Drawbacks)
-- [ ] **Add to `relicTemplates` array in `Relic.ts`**
+- [x] **Add to `relicTemplates` array in `Relic.ts`**
 
 | Key | Name | Rarity | Price | Effect |
 |-----|------|--------|-------|--------|
@@ -1406,7 +1406,7 @@ glitchThreshold -= 2 * overclockedCount; // in endTurn glitch injection check
 ---
 
 ### 5.5 — Boss-Drop Relics
-- [ ] **Add boss-exclusive relics to `relicTemplates` in `Relic.ts`**
+- [x] **Add boss-exclusive relics to `relicTemplates` in `Relic.ts`**
 
 | Key | Name | Rarity | Source | Effect |
 |-----|------|--------|--------|--------|

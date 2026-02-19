@@ -33,6 +33,12 @@ export interface EnemyData {
   auraDamageReduction?: number; // Reduces all player card damage by N while alive
   splitOnDeath?: { hp: number; damage: number; count: number }; // Spawn N mini-enemies
   immuneType?: string;   // Immune to this waveform type (changes each turn)
+  // Phase 4.4 — Boss abilities
+  reviveCount?: number;        // For Infinite Loop boss revives
+  overwriteCards?: boolean;    // For Overwriter boss
+  adaptiveImmunity?: boolean;  // For Debugger boss (immune to most common type)
+  mimicType?: string;          // For Pulse Mimic (copies player's last waveform)
+  glitchScaling?: boolean;     // For Glitch Hound (damage scales with glitches)
 }
 
 // ---------------------------------------------------------------------------
@@ -69,6 +75,12 @@ export interface EnemyTemplate {
   auraDamageReduction?: number;
   splitOnDeath?: { hp: number; damage: number; count: number };
   immuneType?: string;
+  // Phase 4.4 — Boss abilities
+  reviveCount?: number;
+  overwriteCards?: boolean;
+  adaptiveImmunity?: boolean;
+  mimicType?: string;
+  glitchScaling?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -242,6 +254,20 @@ export const ENEMY_CATALOG: EnemyTemplate[] = [
     archetype: 'boss', tier: 'boss', intent: 'Corrupt',
     description: 'Floods you with corruption and drains life.',
     glitchGen: 2, glitchFreq: 1, staticPulse: 2, vampiric: 20,
+  },
+  // Phase 4.4 — New Bosses
+  {
+    name: 'The Debugger', baseHp: 70, baseDamage: 3,
+    archetype: 'boss', tier: 'boss', intent: 'Debug',
+    description: 'Analyzes your deck and adapts. Gains regen at low HP and becomes immune to your most common waveform.',
+    adaptiveImmunity: true,
+  },
+  {
+    name: 'The Overwriter', baseHp: 80, baseDamage: 4,
+    archetype: 'boss', tier: 'boss', intent: 'Overwrite',
+    description: 'Corrupts your hand by replacing cards with Glitches. Gets more aggressive at low HP.',
+    armored: 1,
+    overwriteCards: true,
   },
 ];
 

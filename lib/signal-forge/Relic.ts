@@ -259,6 +259,50 @@ export const RELIC_CATALOG: RelicTemplate[] = [
     description: 'Glitch cards transform into random uncommon cards when drawn.',
     rarity: 'rare',
   },
+  // Phase 5.4 — Cursed relics (powerful with drawbacks)
+  {
+    key: 'demon_core',
+    name: 'Demon Core',
+    description: '+2 energy per turn, but take 5 damage at start of each combat.',
+    rarity: 'rare',
+  },
+  {
+    key: 'shattered_mirror',
+    name: 'Shattered Mirror',
+    description: 'All card damage/shield values doubled, but enemy damage also doubled.',
+    rarity: 'rare',
+  },
+  {
+    key: 'overclocked_processor',
+    name: 'Overclocked Processor',
+    description: 'Draw 2 extra cards per turn, but Static threshold reduced by 2 (4→2).',
+    rarity: 'rare',
+  },
+  // Phase 5.5 — Boss-drop relics
+  {
+    key: 'modulators_core',
+    name: 'Modulator\'s Core',
+    description: 'Regen 1: Heal 1 HP per turn in all future combats.',
+    rarity: 'rare',
+  },
+  {
+    key: 'fault_line_crystal',
+    name: 'Fault Line Crystal',
+    description: 'Glitch cards in hand can be discarded for free (bypass Feedback Loop damage).',
+    rarity: 'rare',
+  },
+  {
+    key: 'debuggers_lens',
+    name: 'Debugger\'s Lens',
+    description: 'See the top 3 cards of your draw pile at all times.',
+    rarity: 'rare',
+  },
+  {
+    key: 'overwriters_pen',
+    name: 'Overwriter\'s Pen',
+    description: 'Once per combat, transform a card in hand into any card you\'ve owned this run.',
+    rarity: 'rare',
+  },
 ];
 
 // ═══════════════════════════════════════════════════════════════════════
