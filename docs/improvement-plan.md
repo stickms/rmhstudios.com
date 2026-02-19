@@ -2066,7 +2066,7 @@ private chooseShop(): void {
 ## Phase 8 — UX & Quality of Life
 
 ### 8.0 — Mulligan System
-- [ ] **Allow discarding and redrawing up to 2 cards at start of combat** (Proposal #34)
+- [x] **Allow discarding and redrawing up to 2 cards at start of combat** (Proposal #34)
 
 **What:** On the first turn of each combat, after drawing the opening hand, the player may select up to 2 cards to discard and redraw replacements. One-time per combat.
 

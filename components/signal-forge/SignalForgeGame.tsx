@@ -68,6 +68,8 @@ interface GameState {
   cardRewardChoices: Card[];     // Phase 6.2 — Card choices after combat
   defeatedBossName?: string;     // Track boss defeated this floor for relic award
   mostCommonWaveformType?: WaveformType; // For Debugger boss adaptive immunity
+  mulliganAvailable: boolean;    // Phase 8.1 — Allow redrawing cards at combat start
+  mulliganSelected: number[];    // Phase 8.1 — Indices of cards selected for mulligan
 }
 
 /** Check if the player owns a relic with a given key */
@@ -132,6 +134,8 @@ function serializeGameState(gs: GameState): Record<string, any> {
     cardRewardChoices: gs.cardRewardChoices.map(c => c.toData()),
     defeatedBossName: gs.defeatedBossName,
     mostCommonWaveformType: gs.mostCommonWaveformType,
+    mulliganAvailable: gs.mulliganAvailable,
+    mulliganSelected: gs.mulliganSelected,
   };
 }
 
@@ -185,6 +189,8 @@ function deserializeGameState(data: Record<string, any>): GameState {
     cardRewardChoices: (data.cardRewardChoices || []).map(deserializeCard),
     defeatedBossName: data.defeatedBossName,
     mostCommonWaveformType: data.mostCommonWaveformType,
+    mulliganAvailable: data.mulliganAvailable ?? false,
+    mulliganSelected: data.mulliganSelected || [],
   };
 }
 
@@ -294,6 +300,8 @@ export function SignalForgeGame() {
     upgradesPurchased: 0,
     combatLog: [],
     cardRewardChoices: [],
+    mulliganAvailable: false,
+    mulliganSelected: [],
   });
 
   // Helper: shuffle cards (Fisher-Yates)
@@ -2479,9 +2487,111 @@ export function SignalForgeGame() {
         playerStatuses: [],
         removalsUsed: 0,
         combatLog: tempLog,
+        mulliganAvailable: true,  // Phase 8.1 — Enable mulligan at combat start
+        mulliganSelected: [],
       };
     });
   }, [shuffleDeck, drawHandCards]);
+
+  // Phase 8.1 — Mulligan handlers
+  const toggleMulliganCard = useCallback((index: number) => {
+    setGameState(prev => {
+      if (!prev.mulliganAvailable || prev.phase !== 'combat') return prev;
+      const selected = [...prev.mulliganSelected];
+      const idx = selected.indexOf(index);
+      if (idx >= 0) {
+        selected.splice(idx, 1);
+      } else if (selected.length < 2) {
+        selected.push(index);
+      }
+      return { ...prev, mulliganSelected: selected };
+    });
+  }, []);
+
+  const confirmMulligan = useCallback(() => {
+    setGameState(prev => {
+      if (!prev.mulliganAvailable || prev.phase !== 'combat') return prev;
+      if (prev.mulliganSelected.length === 0) {
+        // Just close mulligan
+        return { ...prev, mulliganAvailable: false, mulliganSelected: [] };
+      }
+
+      const log = [...prev.combatLog];
+      // Sort indices descending to splice correctly
+      const indices = [...prev.mulliganSelected].sort((a, b) => b - a);
+      
+      // Remove selected cards from hand and add to deck
+      let newDeck = [...prev.deck];
+      let newHand = [...prev.hand];
+      const returned: Card[] = [];
+      
+      for (const idx of indices) {
+        if (idx < newHand.length) {
+          const card = newHand.splice(idx, 1)[0];
+          returned.push(card);
+        }
+      }
+      
+      // Add returned cards to deck and shuffle
+      newDeck.push(...returned);
+      for (let i = newDeck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [newDeck[i], newDeck[j]] = [newDeck[j], newDeck[i]];
+      }
+      
+      // Draw replacements
+      let reshuffleCount = prev.reshuffleCount;
+      let playerHp = prev.playerHp;
+      let newDiscard = [...prev.discard];
+      
+      for (let i = 0; i < returned.length; i++) {
+        // Refill from discard if needed
+        if (newDeck.length === 0 && newDiscard.length > 0) {
+          reshuffleCount++;
+          const fatigueDmg = reshuffleCount > 1 
+            ? Math.floor(0.5 * reshuffleCount * (reshuffleCount - 1))
+            : 0;
+          if (fatigueDmg > 0) {
+            playerHp = Math.max(0, playerHp - fatigueDmg);
+            log.push(`Reshuffle fatigue! -${fatigueDmg} HP`);
+          }
+          // Shuffle discard into deck
+          newDeck = [...newDiscard];
+          for (let j = newDeck.length - 1; j > 0; j--) {
+            const k = Math.floor(Math.random() * (j + 1));
+            [newDeck[j], newDeck[k]] = [newDeck[k], newDeck[j]];
+          }
+          newDiscard = [];
+          log.push('Discard reshuffled');
+        }
+        
+        if (newDeck.length > 0) {
+          newHand.push(newDeck.pop()!);
+        }
+      }
+      
+      log.push(`Mulliganed ${returned.length} card${returned.length > 1 ? 's' : ''}`);
+      
+      return {
+        ...prev,
+        hand: newHand,
+        deck: newDeck,
+        discard: newDiscard,
+        playerHp,
+        reshuffleCount,
+        mulliganAvailable: false,
+        mulliganSelected: [],
+        combatLog: log,
+      };
+    });
+  }, []);
+
+  const skipMulligan = useCallback(() => {
+    setGameState(prev => {
+      if (!prev.mulliganAvailable) return prev;
+      return { ...prev, mulliganAvailable: false, mulliganSelected: [] };
+    });
+  }, []);
 
   // Phase 6.2 — Card reward handlers
   const selectCardReward = useCallback((card: Card) => {
@@ -2607,6 +2717,9 @@ export function SignalForgeGame() {
         setShowPauseMenu={setShowPauseMenu}
         onSelectCardReward={selectCardReward}
         onSkipCardReward={skipCardReward}
+        onToggleMulliganCard={toggleMulliganCard}
+        onConfirmMulligan={confirmMulligan}
+        onSkipMulligan={skipMulligan}
       />
     </div>
   );

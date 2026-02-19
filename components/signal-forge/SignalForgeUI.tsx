@@ -66,6 +66,9 @@ interface SignalForgeUIProps {
   setShowPauseMenu?: (v: boolean) => void;
   onSelectCardReward?: (card: Card) => void;
   onSkipCardReward?: () => void;
+  onToggleMulliganCard?: (index: number) => void;
+  onConfirmMulligan?: () => void;
+  onSkipMulligan?: () => void;
 }
 
 /** Build a structured list of keyword/ability tags for a card */
@@ -135,6 +138,9 @@ export function SignalForgeUI({
   onAbandonRun,
   showPauseMenu: showPauseMenuProp,
   setShowPauseMenu: setShowPauseMenuProp,
+  onToggleMulliganCard,
+  onConfirmMulligan,
+  onSkipMulligan,
 }: SignalForgeUIProps) {
   const session = authClient.useSession();
   const router = useRouter();
@@ -642,6 +648,34 @@ export function SignalForgeUI({
           >
             Cancel
           </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Phase 8.1 — Mulligan UI Banner
+  if (gameState.phase === 'combat' && gameState.mulliganAvailable && onToggleMulliganCard && onConfirmMulligan && onSkipMulligan) {
+    return (
+      <div className="fixed top-4 left-1/2 -translate-x-1/2 bg-gradient-to-b from-purple-900 to-purple-950 border-2 border-purple-400 p-4 rounded-lg shadow-2xl z-40 max-w-md">
+        <div className="text-center mb-3">
+          <h3 className="text-xl font-bold text-purple-300 mb-1">♻️ Mulligan Phase</h3>
+          <p className="text-sm text-purple-200">
+            Click up to 2 cards to replace them (selected: {gameState.mulliganSelected.length}/2)
+          </p>
+        </div>
+        <div className="flex gap-3 justify-center">
+          <button
+            onClick={() => onConfirmMulligan()}
+            className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-lg transition"
+          >
+            {gameState.mulliganSelected.length > 0 ? `Redraw ${gameState.mulliganSelected.length}` : 'Keep Hand'}
+          </button>
+          <button
+            onClick={() => onSkipMulligan()}
+            className="bg-slate-700 hover:bg-slate-600 text-slate-300 font-bold py-2 px-6 rounded-lg transition"
+          >
+            Skip
+          </button>
         </div>
       </div>
     );
