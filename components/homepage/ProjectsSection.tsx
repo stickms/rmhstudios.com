@@ -1,11 +1,10 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { BouncyCard } from "@/components/ui/BouncyCard";
 import { FlipCard } from "@/components/ui/FlipCard";
 import { ProximityText } from "@/components/ui/ProximityText";
 import { SiSteam } from "react-icons/si";
-import { Rocket, BookOpen, Brain, X, Music, Play } from "lucide-react";
+import { Rocket, BookOpen, Brain, X, Music, Play, Zap } from "lucide-react";
 
 const projects = [
   {
@@ -18,6 +17,18 @@ const projects = [
     icon: <Music className="w-20 h-20 text-white/80" strokeWidth={1} />,
     cta: "Play Now",
     link: "/slice-it",
+    isSteam: false
+  },
+  {
+    id: 7,
+    title: "Laundry Sort",
+    description: "A physics-based game where gravity and color matching are everything.",
+    longDescription: "Sort falling laundry into color-matched bins using gravity and ragdoll physics. Watch as clothes tumble and bounce through the air. Earn points for correct sorts, but watch out—put a red shirt in the blue bin and you'll lose points! Features dynamic physics, vibrant colors, and addictive gameplay.",
+    status: "Playable Demo",
+    gradient: "from-[#ff6b6b] to-[#ee5a6f]",
+    icon: <Zap className="w-20 h-20 text-white/80" strokeWidth={1} />,
+    cta: "Play Now",
+    link: "/laundry-sort",
     isSteam: false
   },
   {
@@ -58,6 +69,18 @@ const projects = [
     icon: <Brain className="w-20 h-20 text-white/80" strokeWidth={1} />,
     cta: "Play on Discord",
     link: "https://discord.gg/rmh",
+    isSteam: false
+  },
+  {
+    id: 7,
+    title: "Project Vega",
+    description: "A Chrono-Loop Tower Defense where you defend against intrusive thoughts.",
+    longDescription: "Defend the Memory Core across 3 recursive timelines. Your towers from previous loops become 'Ghost Protocols' that assist you. Merging timelines creates Paradoxes. A clinical horror aesthetic inspired by Balatro and Pony Island.",
+    status: "Prototype",
+    gradient: "from-green-900 to-green-600",
+    icon: <Brain className="w-20 h-20 text-white/80" strokeWidth={1} />,
+    cta: "Initialize Loop",
+    link: "/vega",
     isSteam: false
   },
   {
