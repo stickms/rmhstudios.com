@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { BouncyCard } from "@/components/ui/BouncyCard";
 import { FlipCard } from "@/components/ui/FlipCard";
 import { ProximityText } from "@/components/ui/ProximityText";
 import { SiSteam } from "react-icons/si";
