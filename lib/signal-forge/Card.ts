@@ -233,6 +233,45 @@ export const COMMON_CARDS: Record<string, CardTemplate> = {
     effect: 'Deal 5, add Glitch', rarity: 'common',
     glitchGen: 1,
   },
+  // Phase 3.1 — New common cards
+  pulse_echo: {
+    name: 'Pulse Echo', cost: 1, type: 'Pulse', damage: 5, shield: 0,
+    effect: 'Deal 5 damage. Echo.', rarity: 'common',
+    echo: true, keywords: ['Echo'],
+  },
+  sine_pulse: {
+    name: 'Sine Pulse', cost: 0, type: 'Sine', damage: 0, shield: 4,
+    effect: 'Gain 4 shield. +1 Tempo.', rarity: 'common',
+    tempoGain: 1,
+  },
+  saw_blitz: {
+    name: 'Saw Blitz', cost: 1, type: 'Saw', damage: 4, shield: 0,
+    effect: 'Deal 4 damage. Draw 1. Chain.', rarity: 'common',
+    draw: 1, chain: true, keywords: ['Draw', 'Chain'],
+  },
+  noise_tap: {
+    name: 'Noise Tap', cost: 0, type: 'Noise', damage: 3, shield: 0,
+    effect: 'Deal 3 damage. +1 Static. +2 Tempo.', rarity: 'common',
+    staticGain: 1, tempoGain: 2,
+  },
+  pulse_guard: {
+    name: 'Pulse Guard', cost: 1, type: 'Pulse', damage: 3, shield: 5,
+    effect: 'Deal 3 damage. Gain 5 shield.', rarity: 'common',
+  },
+  sine_weave: {
+    name: 'Sine Weave', cost: 1, type: 'Sine', damage: 0, shield: 6,
+    effect: 'Gain 6 shield. Stabilize 1.', rarity: 'common',
+    stabilize: 1, keywords: ['Stabilize'],
+  },
+  saw_edge: {
+    name: 'Saw Edge', cost: 1, type: 'Saw', damage: 7, shield: 0,
+    effect: 'Deal 7 damage.', rarity: 'common',
+  },
+  noise_burst: {
+    name: 'Noise Burst', cost: 1, type: 'Noise', damage: 6, shield: 0,
+    effect: 'Deal 6 damage. +2 Static.', rarity: 'common',
+    staticGain: 2,
+  },
 };
 
 // ── UNCOMMON: synergy enablers and utility ──────────────────────────
@@ -295,6 +334,47 @@ export const UNCOMMON_CARDS: Record<string, CardTemplate> = {
     name: 'Signal Leech', cost: 2, type: 'Noise', damage: 6, shield: 0,
     effect: 'Deal 6, heal 50%', rarity: 'uncommon',
     leech: 50, keywords: ['Leech'],
+  },
+  // Phase 3.2 — New uncommon cards
+  resonant_strike: {
+    name: 'Resonant Strike', cost: 2, type: 'Pulse', damage: 10, shield: 0,
+    effect: 'Deal 10 damage. Growing (+2 per play).', rarity: 'uncommon',
+    growing: 2, keywords: ['Growing'],
+  },
+  frequency_lock: {
+    name: 'Frequency Lock', cost: 1, type: 'Sine', damage: 0, shield: 8,
+    effect: 'Gain 8 shield. Retain.', rarity: 'uncommon',
+    retain: true, keywords: ['Retain'],
+  },
+  phase_strike: {
+    name: 'Phase Strike', cost: 1, type: 'Pulse', damage: 7, shield: 0,
+    effect: 'Deal 7 damage. Piercing.', rarity: 'uncommon',
+    piercing: true, keywords: ['Piercing'],
+  },
+  buzzsaw: {
+    name: 'Buzzsaw', cost: 2, type: 'Saw', damage: 5, shield: 0,
+    effect: 'Deal 5 damage ×2 hits.', rarity: 'uncommon',
+    multihit: 2, keywords: ['Multihit'],
+  },
+  serrated_edge: {
+    name: 'Serrated Edge', cost: 1, type: 'Saw', damage: 6, shield: 0,
+    effect: 'Deal 6 damage. Apply 3 Bleed.', rarity: 'uncommon',
+    bleed: 3, keywords: ['Bleed'],
+  },
+  echo_cascade: {
+    name: 'Echo Cascade', cost: 2, type: 'Pulse', damage: 8, shield: 0,
+    effect: 'Deal 8 damage. Echo. +2 Tempo.', rarity: 'uncommon',
+    echo: true, tempoGain: 2, keywords: ['Echo'],
+  },
+  static_primer: {
+    name: 'Static Primer', cost: 1, type: 'Noise', damage: 4, shield: 0,
+    effect: 'Deal 4 damage. +3 Static. Draw 1.', rarity: 'uncommon',
+    staticGain: 3, draw: 1, keywords: ['Draw'],
+  },
+  shield_siphon: {
+    name: 'Shield Siphon', cost: 1, type: 'Sine', damage: 0, shield: 0,
+    effect: 'Steal up to 8 shield from target enemy.', rarity: 'uncommon',
+    siphon: 8, keywords: ['Siphon'],
   },
 };
 

@@ -544,7 +544,7 @@ Add to save/load serialization: `growthCounter` is per-combat, doesn't need to p
 These cards use the keywords from Phase 2 and fill gaps in the waveform identities.
 
 ### 3.1 — 8 New Common Cards
-- [ ] **Add to `cardTemplates` array in `Card.ts`**
+- [x] **Add to `cardTemplates` array in `Card.ts`**
 
 | Name | Type | Cost | Dmg | Shd | Keywords/Effects | Description |
 |------|------|------|-----|-----|-----------------|-------------|
@@ -578,7 +578,7 @@ These cards use the keywords from Phase 2 and fill gaps in the waveform identiti
 ---
 
 ### 3.2 — 10 New Uncommon Cards
-- [ ] **Add to `cardTemplates` array in `Card.ts`**
+- [x] **Add to `cardTemplates` array in `Card.ts`**
 
 | Name | Type | Cost | Dmg | Shd | Keywords/Effects | Description |
 |------|------|------|-----|-----|-----------------|-------------|
