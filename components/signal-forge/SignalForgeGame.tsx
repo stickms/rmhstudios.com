@@ -19,6 +19,8 @@ import {
   hasStatus,
   applyStatus,
   WaveformType,
+  RELIC_CATALOG,
+  CARD_CATALOG,
 } from '@/lib/signal-forge';
 
 interface ShopItem {
@@ -64,6 +66,8 @@ interface GameState {
   removalsUsed: number;          // Track card removals for escalating cost
   upgradesPurchased: number;     // Phase 6.3 — Track upgrades for escalating cost
   cardRewardChoices: Card[];     // Phase 6.2 — Card choices after combat
+  defeatedBossName?: string;     // Track boss defeated this floor for relic award
+  mostCommonWaveformType?: WaveformType; // For Debugger boss adaptive immunity
 }
 
 /** Check if the player owns a relic with a given key */
@@ -76,7 +80,12 @@ function countRelic(relics: Relic[], key: string): number {
 }
 
 function getHandSize(relics: Relic[]): number {
-  return 5 + countRelic(relics, 'expanded_buffer');
+  let size = 5 + countRelic(relics, 'expanded_buffer');
+  // Cursed Relic: Overclocked Processor (+2 draw per turn)
+  if (hasRelic(relics, 'overclocked_processor')) {
+    size += 2;
+  }
+  return size;
 }
 
 /** Serialize game state to a plain JSON-safe object */
@@ -121,6 +130,8 @@ function serializeGameState(gs: GameState): Record<string, any> {
     removalsUsed: gs.removalsUsed,
     upgradesPurchased: gs.upgradesPurchased,
     cardRewardChoices: gs.cardRewardChoices.map(c => c.toData()),
+    defeatedBossName: gs.defeatedBossName,
+    mostCommonWaveformType: gs.mostCommonWaveformType,
   };
 }
 
@@ -172,6 +183,8 @@ function deserializeGameState(data: Record<string, any>): GameState {
     removalsUsed: data.removalsUsed ?? 0,
     upgradesPurchased: data.upgradesPurchased ?? 0,
     cardRewardChoices: (data.cardRewardChoices || []).map(deserializeCard),
+    defeatedBossName: data.defeatedBossName,
+    mostCommonWaveformType: data.mostCommonWaveformType,
   };
 }
 
@@ -1445,6 +1458,11 @@ export function SignalForgeGame() {
             if (marked) finalDmg += 5;
             if (vulnerable) finalDmg = Math.floor(finalDmg * 1.5);
             
+            // Cursed Relic: Shattered Mirror (2x all damage)
+            if (hasRelic(prev.ownedRelics, 'shattered_mirror')) {
+              finalDmg = finalDmg * 2;
+            }
+            
             const absorbed = e.takeDamage(finalDmg, prev.turn);
             totalDamage += absorbed;
             if (card.leech) totalLeechDamage += absorbed;
@@ -1471,6 +1489,11 @@ export function SignalForgeGame() {
               let finalDmg = dmg;
               if (marked) finalDmg += 5;
               if (vulnerable) finalDmg = Math.floor(finalDmg * 1.5);
+              
+              // Cursed Relic: Shattered Mirror (2x all damage)
+              if (hasRelic(prev.ownedRelics, 'shattered_mirror')) {
+                finalDmg = finalDmg * 2;
+              }
               
               const absorbed = target.takeDamage(finalDmg, prev.turn);
               totalDamage += absorbed;
@@ -1511,6 +1534,11 @@ export function SignalForgeGame() {
           if (marked) bonusDmg += 5;
           if (vulnerable) bonusDmg = Math.floor(bonusDmg * 1.5);
           
+          // Cursed Relic: Shattered Mirror (2x all damage)
+          if (hasRelic(prev.ownedRelics, 'shattered_mirror')) {
+            bonusDmg = bonusDmg * 2;
+          }
+          
           const absorbed = target.takeDamage(bonusDmg, prev.turn);
           totalDamage += absorbed;
           if (target.thorns > 0) thornsDamage += target.thorns;
@@ -1524,8 +1552,15 @@ export function SignalForgeGame() {
       let newDiscard = prev.discard;
       let playerStatic = prev.playerStatic;
       let splitterEnemies: Enemy[] = []; // Track new enemies from Splitter
+      let defeatedBossName: string | undefined = undefined;
       
       for (const e of defeated) {
+        // Track boss defeats for relic rewards
+        if (e.name === 'The Modulator' || e.name === 'The Fault' || 
+            e.name === 'The Debugger' || e.name === 'The Overwriter') {
+          defeatedBossName = e.name;
+        }
+        
         // On-death: inject Glitch cards
         if (e.onDeathGlitch > 0) {
           for (let i = 0; i < e.onDeathGlitch; i++) {
@@ -1602,9 +1637,16 @@ export function SignalForgeGame() {
       }, 0) + thornsDamage;
       if (thornsDamage > 0) log.push(`Thorns reflected ${thornsDamage} damage`);
       if (empowerBonus > 0) log.push(`Empower aura: +${empowerBonus} enemy damage`);
+      
+      // Cursed Relic: Shattered Mirror (2x enemy damage)
+      let finalTakeDamage = totalTakeDamage;
+      if (hasRelic(prev.ownedRelics, 'shattered_mirror')) {
+        finalTakeDamage = totalTakeDamage * 2;
+      }
+      
       let playerShield = prev.playerShield;
-      const shieldUsed = Math.min(playerShield, totalTakeDamage);
-      const damageAfterShield = totalTakeDamage - shieldUsed;
+      const shieldUsed = Math.min(playerShield, finalTakeDamage);
+      const damageAfterShield = finalTakeDamage - shieldUsed;
       playerHp = Math.max(0, playerHp - damageAfterShield);
       playerShield -= shieldUsed;
 
@@ -1704,7 +1746,8 @@ export function SignalForgeGame() {
       }
 
       // --- Glitch injection from static threshold ---
-      const glitchThreshold = 4 + countRelic(prev.ownedRelics, 'stability_core') * 2;
+      const glitchThreshold = 4 + countRelic(prev.ownedRelics, 'stability_core') * 2 
+                              - (hasRelic(prev.ownedRelics, 'overclocked_processor') ? 2 : 0);
       if (playerStatic >= glitchThreshold) {
         const glitchCard = createGlitchCard(Date.now() + Math.floor(Math.random() * 100000));
         discardAfterPlay.push(glitchCard);
@@ -1727,6 +1770,10 @@ export function SignalForgeGame() {
       let playerEnergy = 3;
       // Relic: Energy Conduit (+1 energy per turn per copy)
       playerEnergy += countRelic(prev.ownedRelics, 'energy_conduit');
+      // Cursed Relic: Demon Core (+2 energy per turn)
+      if (hasRelic(prev.ownedRelics, 'demon_core')) {
+        playerEnergy += 2;
+      }
 
       // --- Draw new hand (sustain cards stay in hand) ---
       // Process unplayed cards in hand: Retain stays, Ethereal exhausts, others discard
@@ -1880,6 +1927,7 @@ export function SignalForgeGame() {
         reshuffleCount,
         combatLog: log,
         cardRewardChoices,
+        defeatedBossName: allDefeated ? defeatedBossName : undefined,
       };
     });
   }, [drawHandCards, refillDeckFromDiscard]);
@@ -2018,9 +2066,21 @@ export function SignalForgeGame() {
       // Relic: Coil Capacitor (+1 energy per copy at start of combat)
       let playerEnergy = 3;
       playerEnergy += countRelic(prev.ownedRelics, 'coil_capacitor');
+      // Cursed Relic: Demon Core (+2 energy per turn)
+      if (hasRelic(prev.ownedRelics, 'demon_core')) {
+        playerEnergy += 2;
+      }
 
       // Relic: Stability Core (raise glitch threshold +2 per copy)
-      const glitchThreshold = 4 + countRelic(prev.ownedRelics, 'stability_core') * 2;
+      // Cursed Relic: Overclocked Processor (lower glitch threshold -2)
+      const glitchThreshold = 4 + countRelic(prev.ownedRelics, 'stability_core') * 2
+                              - (hasRelic(prev.ownedRelics, 'overclocked_processor') ? 2 : 0);
+      
+      // Cursed Relic: Demon Core (-5 HP at start of combat)
+      let startingHp = prev.playerHp;
+      if (hasRelic(prev.ownedRelics, 'demon_core')) {
+        startingHp = Math.max(1, startingHp - 5);
+      }
 
       return {
         ...prev,
@@ -2031,6 +2091,7 @@ export function SignalForgeGame() {
         discard,
         enemies,
         playerEnergy,
+        playerHp: startingHp,
         playerShield: 0,
         playerTempo: 0,
         playerStatic: 0,
@@ -2042,11 +2103,6 @@ export function SignalForgeGame() {
         firstSawPlayedThisTurn: false,
         reshuffleCount: 0,
         playerStatuses: [],
-    removalsUsed: 0,
-      playerStatuses: [],
-    removalsUsed: 0,
-    playerStatuses: [],
-    removalsUsed: 0,
         combatLog: [],
       };
     });
@@ -2070,6 +2126,32 @@ export function SignalForgeGame() {
       const healthGain = Math.floor(prev.playerMaxHp * 0.25);
       const newHp = Math.min(prev.playerHp + healthGain, prev.playerMaxHp);
       
+      // Award boss-drop relic if a boss was defeated
+      let newRelics = [...prev.ownedRelics];
+      if (prev.defeatedBossName) {
+        const bossRelicMap: Record<string, string> = {
+          'The Modulator': 'modulators_core',
+          'The Fault': 'fault_line_crystal',
+          'The Debugger': 'debuggers_lens',
+          'The Overwriter': 'overwriters_pen',
+        };
+        const relicKey = bossRelicMap[prev.defeatedBossName];
+        if (relicKey && !hasRelic(newRelics, relicKey)) {
+          // Find relic template
+          const relicDef = RELIC_CATALOG.find(r => r.key === relicKey);
+          if (relicDef) {
+            const newRelic = new Relic({
+              id: Date.now() + Math.floor(Math.random() * 100000),
+              name: relicDef.name,
+              description: relicDef.description,
+              rarity: relicDef.rarity,
+              key: relicDef.key,
+            });
+            newRelics = [...newRelics, newRelic];
+          }
+        }
+      }
+      
       return {
         ...prev,
         floor: newFloor,
@@ -2086,6 +2168,8 @@ export function SignalForgeGame() {
         turn: 0,
         selectedEnemyId: newEnemies[0]?.id ?? prev.selectedEnemyId,
         shopInventory,
+        ownedRelics: newRelics,
+        defeatedBossName: undefined, // Clear after awarding relic
       };
     });
   }, []);
