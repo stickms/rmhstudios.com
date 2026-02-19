@@ -34,6 +34,10 @@ export async function GET(req: Request) {
         });
     }
 
+    if (!pool) {
+        return NextResponse.json([], { status: 200 });
+    }
+
     try {
         const client = await pool.connect();
         try {

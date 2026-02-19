@@ -31,6 +31,10 @@ export async function POST(req: Request) {
 
         const cleanUsername = username.trim().replace(/[^a-zA-Z0-9_\-. ]/g, '').slice(0, 32);
 
+        if (!pool) {
+            return NextResponse.json({ error: 'Service Unavailable' }, { status: 503 });
+        }
+
         const client = await pool.connect();
         try {
             await client.query(`

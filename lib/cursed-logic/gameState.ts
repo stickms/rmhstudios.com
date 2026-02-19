@@ -112,7 +112,7 @@ interface CursedLogicStore extends GameStateShape {
     startIntegrity?: number;
     protocolHealth?: number;
     protocolVariant?: ProtocolVariant;
-    runModifier?: string;
+    runModifier?: string | null;
   }) => void;
 }
 

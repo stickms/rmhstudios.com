@@ -44,6 +44,10 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Invalid score' }, { status: 400 });
         }
 
+        if (!pool) {
+            return NextResponse.json({ error: 'Service Unavailable' }, { status: 503 });
+        }
+
         const client = await pool.connect();
         try {
             await ensureLaundrySchema(client);

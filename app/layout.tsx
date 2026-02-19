@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   title: "RMH Studios | Game Development Studio",
   description: "RMH Studios - Crafting Digital Worlds. An indie game development studio with exciting projects in the works.",
   // Favicon: place favicon.svg in public/favicon.svg
-  icons: { icon: "/favicon.svg", type: "image/svg+xml" },
+  icons: { icon: "/favicon.svg" },
 };
 
 export default function RootLayout({

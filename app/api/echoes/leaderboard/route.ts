@@ -20,6 +20,10 @@ export async function GET(req: Request) {
         : sort === 'xp' ? '"totalXP"'
         : '"bestTime"';
 
+    if (!pool) {
+        return NextResponse.json([], { status: 200 });
+    }
+
     try {
         const client = await pool.connect();
         try {

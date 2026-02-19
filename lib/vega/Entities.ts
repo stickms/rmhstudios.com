@@ -68,7 +68,8 @@ export class Tower extends Entity {
   
   // Stats
   public damageDealt: number = 0;
-  
+  public totalInvested: number = 0;
+
   // Ghost Properties
   public isGhost: boolean = false;
   public loopOrigin: number = 1;
@@ -128,7 +129,11 @@ export class Tower extends Entity {
   public getUpgradeCost(stat: 'damage' | 'range' | 'rate'): number {
       const level = this.upgrades[stat] + 1;
       // Base cost scales with level
-      return 50 * level; 
+      return 50 * level;
+  }
+
+  public getSellValue(): number {
+    return Math.floor(this.totalInvested * 0.7);
   }
 }
 

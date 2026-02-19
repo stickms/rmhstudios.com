@@ -283,14 +283,15 @@ export class VegaGame {
         
         // 5. Add MVP Ghost
         if (mvpTower) {
-            const ghost = new Tower(mvpTower.x, mvpTower.y, mvpTower.type);
+            const t = mvpTower as Tower;
+            const ghost = new Tower(t.x, t.y, t.type);
             ghost.isGhost = true;
-            ghost.damageDealt = mvpTower.damageDealt; // Keep stats?
+            ghost.damageDealt = t.damageDealt; // Keep stats?
             // Apply upgrades?
-            ghost.upgrades = { ...mvpTower.upgrades };
-            ghost.damage = mvpTower.damage;
-            ghost.range = mvpTower.range;
-            ghost.fireRate = mvpTower.fireRate;
+            ghost.upgrades = { ...t.upgrades };
+            ghost.damage = t.damage;
+            ghost.range = t.range;
+            ghost.fireRate = t.fireRate;
             
             this.entityManager.addTower(ghost);
             this.gridManager.placeTower(ghost.x, ghost.y); // Mark occupied
