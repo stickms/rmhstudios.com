@@ -19,11 +19,12 @@ export interface BeatMap {
   slices: Slice[];
 }
 
-export type HitResult = 'MARVELOUS' | 'PERFECT' | 'GREAT' | 'GOOD' | 'MISS' | 'NONE';
+export type HitResult = 'MARVELOUS' | 'PERFECT' | 'GREAT' | 'GOOD' | 'BAD' | 'MISS' | 'NONE';
 
 export const HIT_WINDOWS = {
-  MARVELOUS: 0.045, // 45ms
-  PERFECT: 0.090,   // 90ms
-  GREAT: 0.160,     // 160ms
-  GOOD: 0.225,      // 225ms
+  MARVELOUS: 0.016667, // ~16ms
+  PERFECT: 0.033333,   // ~33ms
+  GREAT: 0.108333,     // ~108ms
+  GOOD: 0.158333,      // ~158ms
+  BAD: 0.191666,       // ~191ms
 };

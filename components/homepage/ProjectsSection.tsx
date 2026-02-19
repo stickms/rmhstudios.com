@@ -68,7 +68,7 @@ const projects = [
     gradient: "from-[#5865F2] to-[#404EED]",
     icon: <Brain className="w-20 h-20 text-white/80" strokeWidth={1} />,
     cta: "Play on Discord",
-    link: "https://discord.gg/rmh",
+    link: "https://discord.gg/ZdfhdAKVSf",
     isSteam: false
   },
   {
@@ -116,7 +116,7 @@ const projects = [
     gradient: "from-[#7289da] to-[#5865F2]",
     icon: <Rocket className="w-20 h-20 text-white/80" strokeWidth={1} />,
     cta: "Play on Discord",
-    link: "https://discord.gg/rmh",
+    link: "https://discord.gg/ZdfhdAKVSf",
     isSteam: false
   },
   {

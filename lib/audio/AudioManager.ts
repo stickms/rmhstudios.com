@@ -40,9 +40,18 @@ export class AudioManager {
     if (!this.audioContext) this.initialize();
     
     const response = await fetch(url);
+    if (!response.ok) throw new Error(`Failed to fetch audio: ${response.status} ${response.statusText}`);
     const arrayBuffer = await response.arrayBuffer();
     this.buffer = await this.audioContext!.decodeAudioData(arrayBuffer);
     return this.buffer;
+  }
+
+  /** Load a pre-decoded AudioBuffer directly, avoiding a network request. */
+  public loadFromBuffer(buffer: AudioBuffer): void {
+    if (!this.audioContext) this.initialize();
+    this.buffer = buffer;
+    this.pauseTime = 0;
+    this.isPlaying = false;
   }
 
   public play() {
@@ -163,29 +172,39 @@ export class AudioManager {
     return this.offsetAtLastRateChange + (now - this.timeAtLastRateChange) * this.playbackRate;
   }
   
-  public playSfX(freq: number, type: OscillatorType = 'sine', duration: number = 0.1, volume: number = 0.1) {
+  public playSfX(freq: number, type: OscillatorType = 'sine', duration: number = 0.1, volume: number = 0.5) {
     if (!this.audioContext) this.initialize();
     if (!this.audioContext) return;
     
-    // Resume if suspended (user interaction requirement)
+    // Resume if suspended
     if (this.audioContext.state === 'suspended') {
         this.audioContext.resume();
     }
 
+    const t = this.audioContext.currentTime;
     const osc = this.audioContext.createOscillator();
     const gain = this.audioContext.createGain();
     
-    osc.type = type;
-    osc.frequency.setValueAtTime(freq, this.audioContext.currentTime);
+    // SOFTER SFX LOGIC
+    // Use sine wave for less harshness
+    osc.type = 'sine'; 
     
-    gain.gain.setValueAtTime(0.1, this.audioContext.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + duration);
+    // Pitch Envelope
+    // Start slightly higher and drop quickly for a "tick" sound without being a hard click
+    osc.frequency.setValueAtTime(freq * 1.2, t);
+    osc.frequency.exponentialRampToValueAtTime(freq, t + 0.02);
+    
+    // Amplitude Envelope (ADSR - emphasis on Attack/Decay)
+    // Soft attack to avoid popping
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(volume, t + 0.005); 
+    gain.gain.exponentialRampToValueAtTime(0.01, t + duration);
     
     osc.connect(gain);
     gain.connect(this.audioContext.destination);
     
-    osc.start();
-    osc.stop(this.audioContext.currentTime + duration);
+    osc.start(t);
+    osc.stop(t + duration);
   }
 
   public getDuration(): number {

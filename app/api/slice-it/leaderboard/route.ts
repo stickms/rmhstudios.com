@@ -13,15 +13,50 @@ export async function GET(req: Request) {
         });
     }
 
+    const { searchParams } = new URL(req.url);
+    const songId = searchParams.get('songId');
+
     try {
-        const leaderboard = await prisma.player.findMany({
-            take: 10,
-            orderBy: { totalScore: 'desc' },
-            select: {
-                username: true,
-                totalScore: true
-            }
-        });
+        let leaderboard;
+
+        if (songId) {
+            // Song-specific leaderboard
+            const scores = await prisma.songLeaderboard.findMany({
+                where: { songId },
+                take: 10,
+                orderBy: { score: 'desc' },
+                include: {
+                    user: {
+                        select: {
+                            name: true,
+                            username: true
+                        }
+                    }
+                }
+            });
+
+            leaderboard = scores.map((s: any) => ({
+                username: s.user.name || s.user.username || "Unknown",
+                score: s.score,
+                accuracy: s.accuracy,
+                maxCombo: s.maxCombo,
+            }));
+        } else {
+            // Global leaderboard
+            const players = await prisma.player.findMany({
+                take: 10,
+                orderBy: { totalScore: 'desc' },
+                select: {
+                    username: true,
+                    totalScore: true
+                }
+            });
+
+            leaderboard = players.map((p: any) => ({
+                username: p.username,
+                score: p.totalScore
+            }));
+        }
 
         return NextResponse.json(leaderboard);
     } catch (e) {
