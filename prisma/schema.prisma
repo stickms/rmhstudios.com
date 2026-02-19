@@ -1,0 +1,144 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User Model (Better Auth)
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  username      String?   @unique // Added for username login
+  email         String?   @unique
+  emailVerified Boolean?
+  password      String?             // Added for password login
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  sessions      Session[]
+  accounts      Account[]
+
+  // Game Relations (Progression linked to User)
+  echoesProfile  EchoesPlayer?
+  laundryProfile LaundryPlayer?
+  sliceItProfile Player?
+  vegaProfile    VegaPlayer?
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  userId                String
+  accountId             String
+  providerId            String
+  accessToken           String?
+  refreshToken          String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  idToken               String?
+  expiresAt             DateTime? // Re-added for Better Auth compatibility
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime? @default(now())
+  updatedAt  DateTime? @updatedAt
+
+  @@map("verification")
+}
+
+// --- Game Models ---
+
+model EchoesPlayer {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  username      String   @unique
+  bestTime      Float    @default(0)
+  totalKills    Int      @default(0)
+  totalXP       Int      @default(0)
+  gamesPlayed   Int      @default(1)
+  updatedAt     DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  // Link to Auth User
+  userId        String?  @unique
+  user          User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([bestTime(sort: Desc)], map: "idx_echoes_best_time")
+  @@index([totalKills(sort: Desc)], map: "idx_echoes_kills")
+  @@index([totalXP(sort: Desc)], map: "idx_echoes_xp")
+}
+
+model LaundryPlayer {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  username      String   @unique
+  highScore     Int      @default(0)
+  gamesPlayed   Int      @default(1)
+  updatedAt     DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  // Link to Auth User
+  userId        String?  @unique
+  user          User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([highScore(sort: Desc)], map: "idx_laundry_high_score")
+}
+
+// Slice It Player Model
+model Player {
+  id          String   @id @default(cuid())
+  username    String   @unique
+  totalScore  Int      @default(0)
+  gamesPlayed Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Link to Auth User
+  userId        String?  @unique
+  user          User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VegaPlayer {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  username      String   @unique
+  highestLoop   Int      @default(1)
+  highestLevel  Int      @default(1)
+  gamesPlayed   Int      @default(0)
+  updatedAt     DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  // Link to Auth User
+  userId        String?  @unique
+  user          User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([highestLoop(sort: Desc)], map: "idx_vega_loop")
+  @@index([highestLevel(sort: Desc)], map: "idx_vega_level")
+}

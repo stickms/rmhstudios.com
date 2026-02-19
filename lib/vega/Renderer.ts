@@ -11,6 +11,7 @@ export class Renderer {
     BACKGROUND: '#0f172a', // Slate-900
     GRID: 'rgba(148, 163, 184, 0.1)', // Slate-400 equivalent with opacity
     TOWER: '#38bdf8', // Sky-400
+    PARADOX: '#a855f7', // Purple-500
     ENEMY: '#f43f5e', // Rose-500
     PROJECTILE: '#f0f9ff', // Sky-50
     TEXT: '#94a3b8', // Slate-400
@@ -77,15 +78,20 @@ export class Renderer {
     let drawY = tower.y * cellSize + 2;
     let size = cellSize - 4;
 
+    // Paradox Override
+    if (tower.isParadox) {
+        isGlitching = true;
+    }
+
     // Glitch Offset
     if (isGlitching && Math.random() > 0.8) {
       drawX += (Math.random() - 0.5) * 5;
       drawY += (Math.random() - 0.5) * 5;
     }
 
-    this.ctx.fillStyle = Renderer.COLORS.TOWER;
-    this.ctx.shadowColor = Renderer.COLORS.TOWER;
-    this.ctx.shadowBlur = 10;
+    this.ctx.fillStyle = tower.isParadox ? Renderer.COLORS.PARADOX : Renderer.COLORS.TOWER;
+    this.ctx.shadowColor = tower.isParadox ? Renderer.COLORS.PARADOX : Renderer.COLORS.TOWER;
+    this.ctx.shadowBlur = tower.isParadox ? 20 : 10;
     
     // Check if ghost
     if (tower.isGhost) {

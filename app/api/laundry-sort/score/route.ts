@@ -1,28 +1,8 @@
 import { NextResponse } from 'next/server';
-import { pool } from '@/lib/db';
+import { prisma } from '@/lib/prisma';
+import { auth } from '@/lib/auth';
+import { headers } from 'next/headers';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
-
-type DbClient = { query: (sql: string, params?: unknown[]) => Promise<unknown> };
-
-let schemaReady = false;
-
-async function ensureLaundrySchema(client: DbClient) {
-    if (schemaReady) return;
-
-    await client.query('CREATE EXTENSION IF NOT EXISTS pgcrypto');
-    await client.query(`
-        CREATE TABLE IF NOT EXISTS "LaundryPlayer" (
-            id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-            username      TEXT NOT NULL UNIQUE,
-            "highScore"   INTEGER NOT NULL DEFAULT 0,
-            "gamesPlayed" INTEGER NOT NULL DEFAULT 1,
-            "updatedAt"   TIMESTAMPTZ NOT NULL DEFAULT NOW()
-        )
-    `);
-    await client.query('CREATE INDEX IF NOT EXISTS idx_laundry_high_score ON "LaundryPlayer" ("highScore" DESC)');
-
-    schemaReady = true;
-}
 
 export async function POST(req: Request) {
     const ip = getClientIp(req);
@@ -44,23 +24,70 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Invalid score' }, { status: 400 });
         }
 
-        const client = await pool.connect();
-        try {
-            await ensureLaundrySchema(client);
-            await client.query(`
-                INSERT INTO "LaundryPlayer" (id, username, "highScore", "gamesPlayed", "updatedAt")
-                VALUES (gen_random_uuid(), $1, $2, 1, NOW())
-                ON CONFLICT (username) 
-                DO UPDATE SET 
-                    "highScore" = GREATEST("LaundryPlayer"."highScore", $2),
-                    "gamesPlayed" = "LaundryPlayer"."gamesPlayed" + 1,
-                    "updatedAt" = NOW()
-            `, [username, score]);
-        } finally {
-            client.release();
+        // Check Auth using headers
+        const session = await auth.api.getSession({
+            headers: await headers()
+        });
+
+        const userId = session?.user?.id;
+
+        // Logic:
+        // 1. If Logged In:
+        //    - Check if User has a profile (by userId).
+        //    - If yes -> Update it.
+        //    - If no -> Check if username exists.
+        //      - If user exists but is guest (no userId) -> Claim it (Update userId).
+        //      - If user exists and has userId -> Error (Username taken).
+        //      - If user doesn't exist -> Create.
+        // 2. If Guest:
+        //    - Check if username exists.
+        //    - If user exists and has userId -> Error (Username taken by registered user).
+        //    - If user exists and no userId -> Update.
+        //    - If user doesn't exist -> Create.
+
+        if (!userId) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        return NextResponse.json({ success: true });
+        // Check for existing profile linked to this user
+        const existingProfile = await prisma.laundryPlayer.findUnique({
+            where: { userId }
+        });
+
+        if (existingProfile) {
+            // Update existing profile
+            await prisma.laundryPlayer.update({
+                where: { id: existingProfile.id },
+                data: {
+                    highScore: Math.max(existingProfile.highScore, score),
+                    gamesPlayed: { increment: 1 },
+                    updatedAt: new Date(),
+                    username: username // Allow sync
+                }
+            });
+            return NextResponse.json({ success: true, linked: true });
+        } 
+        
+        // No profile yet, check username availablity
+        const usernameConfig = await prisma.laundryPlayer.findUnique({
+                where: { username }
+        });
+
+        if (usernameConfig) {
+            return NextResponse.json({ error: 'Username already taken.' }, { status: 409 });
+        }
+
+        // Create new linked profile
+        await prisma.laundryPlayer.create({
+            data: {
+                userId,
+                username,
+                highScore: score,
+                gamesPlayed: 1
+            }
+        });
+        return NextResponse.json({ success: true, created: true });
+
     } catch (e) {
         console.error('Failed to submit score:', e);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
