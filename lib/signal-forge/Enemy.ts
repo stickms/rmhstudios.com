@@ -7,6 +7,12 @@ export interface EnemyData {
   maxHp: number;
   intent: string;
   damage: number;
+  // Intent display for UI
+  intentDisplay?: {
+    type: 'attack' | 'shield' | 'heal' | 'special' | 'buff' | 'debuff';
+    value?: number;
+    label?: string;
+  };
   // Ability / meta fields (optional, default to inert values)
   archetype?: string;
   shield?: number;

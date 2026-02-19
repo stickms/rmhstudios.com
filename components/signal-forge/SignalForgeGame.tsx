@@ -1922,6 +1922,42 @@ export function SignalForgeGame() {
         e.statusEffects = tickStatusEffects(e.statusEffects);
       });
 
+      // --- Phase 1.5: Calculate enemy intents for next turn ---
+      enemies.forEach(enemy => {
+        // Skip intent calculation for dead or frozen enemies
+        if (enemy.hp <= 0) {
+          enemy.intentDisplay = undefined;
+          return;
+        }
+        
+        const frozen = enemy.statusEffects?.find(s => s.type === 'freeze' && s.duration > 0);
+        if (frozen) {
+          enemy.intentDisplay = { type: 'special', label: '❄️ Frozen' };
+          return;
+        }
+
+        // Calculate base damage with empower bonuses
+        const empowerBonus = enemies
+          .filter(e => e.id !== enemy.id && e.hp > 0)
+          .reduce((sum, e) => sum + (e.empowerAlly ?? 0), 0);
+        const baseDmg = enemy.damage + empowerBonus;
+
+        // Default: attack intent
+        enemy.intentDisplay = { type: 'attack', value: baseDmg };
+
+        // Override for special behaviors
+        if (enemy.shieldAlly && enemy.shieldAlly > 0 && enemies.length > 1) {
+          enemy.intentDisplay = { type: 'buff', value: enemy.shieldAlly, label: 'Shield Allies' };
+        } else if (enemy.regen && enemy.regen > 0 && enemy.hp < enemy.maxHp) {
+          // Show heal intent if enemy has regen and isn't at full HP
+          enemy.intentDisplay = { type: 'heal', value: enemy.regen };
+        } else if (enemy.vampiric && enemy.vampiric > 0) {
+          enemy.intentDisplay = { type: 'special', value: baseDmg, label: `💉 ${baseDmg}` };
+        } else if (enemy.tempoSiphon && enemy.tempoSiphon > 0) {
+          enemy.intentDisplay = { type: 'debuff', value: enemy.tempoSiphon, label: 'Steal Tempo' };
+        }
+      });
+
       return {
         ...prev,
         deckList: newDeckList,
@@ -2387,6 +2423,40 @@ export function SignalForgeGame() {
       // Relic: Stability Core (raise glitch threshold +2 per copy)
       const glitchThreshold = 4 + countRelic(prev.ownedRelics, 'stability_core') * 2;
       
+      // Relic: Demon Core (-5 HP at combat start)
+      let playerHp = prev.playerHp;
+      if (hasRelic(prev.ownedRelics, 'demon_core')) {
+        playerHp = Math.max(1, playerHp - 5);
+        tempLog.push('Demon Core: -5 HP');
+      }
+
+      // Phase 1.5: Calculate enemy intents at combat start
+      prev.enemies.forEach(enemy => {
+        if (enemy.hp <= 0) {
+          enemy.intentDisplay = undefined;
+          return;
+        }
+
+        const empowerBonus = prev.enemies
+          .filter(e => e.id !== enemy.id && e.hp > 0)
+          .reduce((sum, e) => sum + (e.empowerAlly ?? 0), 0);
+        const baseDmg = enemy.damage + empowerBonus;
+
+        // Default: attack intent
+        enemy.intentDisplay = { type: 'attack', value: baseDmg };
+
+        // Override for special behaviors
+        if (enemy.shieldAlly && enemy.shieldAlly > 0 && prev.enemies.length > 1) {
+          enemy.intentDisplay = { type: 'buff', value: enemy.shieldAlly, label: 'Shield Allies' };
+        } else if (enemy.regen && enemy.regen > 0 && enemy.hp < enemy.maxHp) {
+          enemy.intentDisplay = { type: 'heal', value: enemy.regen };
+        } else if (enemy.vampiric && enemy.vampiric > 0) {
+          enemy.intentDisplay = { type: 'special', value: baseDmg, label: `💉 ${baseDmg}` };
+        } else if (enemy.tempoSiphon && enemy.tempoSiphon > 0) {
+          enemy.intentDisplay = { type: 'debuff', value: enemy.tempoSiphon, label: 'Steal Tempo' };
+        }
+      });
+      
       return {
         ...prev,
         phase: 'combat',
@@ -2401,17 +2471,14 @@ export function SignalForgeGame() {
         playerTempo: 0,
         playerStatic: 0,
         playerShield: 0,
+        playerHp,
         glitchThreshold,
         firstPulsePlayedThisTurn: false,
         firstSawPlayedThisTurn: false,
         reshuffleCount: 0,
         playerStatuses: [],
-    removalsUsed: 0,
-      playerStatuses: [],
-    removalsUsed: 0,
-    playerStatuses: [],
-    removalsUsed: 0,
-        combatLog: [],
+        removalsUsed: 0,
+        combatLog: tempLog,
       };
     });
   }, [shuffleDeck, drawHandCards]);

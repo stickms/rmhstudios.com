@@ -184,7 +184,7 @@ this.state.score += totalDamageDealt * 5;
 ---
 
 ### 1.5 — Enemy Intent Display ✦ HIGH IMPACT UX
-- [ ] **Show what each enemy will do next turn** (Proposal #397)
+- [x] **Show what each enemy will do next turn** (Proposal #397)
 
 **What:** Display an icon + number above each enemy showing their next action: ⚔️ 8 (attack for 8), 🛡️ 4 (gain 4 shield), 💚 3 (regen 3), etc.
 
