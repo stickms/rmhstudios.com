@@ -27,6 +27,7 @@ model User {
   echoesProfile  EchoesPlayer?
   laundryProfile LaundryPlayer?
   sliceItProfile Player?
+  vegaProfile    VegaPlayer?
 
   @@map("user")
 }
@@ -124,4 +125,20 @@ model Player {
   // Link to Auth User
   userId        String?  @unique
   user          User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VegaPlayer {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  username      String   @unique
+  highestLoop   Int      @default(1)
+  highestLevel  Int      @default(1)
+  gamesPlayed   Int      @default(0)
+  updatedAt     DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  // Link to Auth User
+  userId        String?  @unique
+  user          User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([highestLoop(sort: Desc)], map: "idx_vega_loop")
+  @@index([highestLevel(sort: Desc)], map: "idx_vega_level")
 }

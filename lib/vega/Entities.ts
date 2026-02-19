@@ -3,7 +3,7 @@ export interface Point {
   y: number;
 }
 
-export type EnemyType = 'ANXIETY' | 'DEPRESSION' | 'MANIC';
+export type EnemyType = 'ANXIETY' | 'DEPRESSION' | 'MANIC' | 'DOUBT' | 'GUILT';
 export type TowerType = 'SYNAPSE' | 'SUPPRESSOR' | 'LOBOTOMIZER' | 'ECHO';
 
 export class Entity {
@@ -26,6 +26,9 @@ export class Enemy extends Entity {
   public speed: number;
   public pathIndex: number = 0;
   public progress: number = 0; // 0.0 to 1.0 between current path nodes
+  
+  // Special Properties
+  public isShielded: boolean = false; // DOUBT mechanic
 
   constructor(type: EnemyType, pathStart: Point) {
     super(pathStart.x, pathStart.y);
@@ -44,6 +47,15 @@ export class Enemy extends Entity {
         this.maxHealth = 50;
         this.speed = 5.0; // Very fast
         break;
+      case 'DOUBT':
+        this.maxHealth = 100;
+        this.speed = 1.5;
+        this.isShielded = true; // Takes reduced damage
+        break;
+      case 'GUILT':
+        this.maxHealth = 40;
+        this.speed = 2.5; 
+        break;
       default:
         this.maxHealth = 20;
         this.speed = 2.0;
@@ -52,6 +64,10 @@ export class Enemy extends Entity {
   }
   
   public takeDamage(amount: number) {
+    if (this.isShielded) {
+        amount *= 0.5; // 50% damage reduction
+    }
+    
     this.health -= amount;
     if (this.health <= 0) {
       this.active = false;
@@ -71,6 +87,7 @@ export class Tower extends Entity {
   
   // Ghost Properties
   public isGhost: boolean = false;
+  public isParadox: boolean = false;
   public loopOrigin: number = 1;
   public totalInvested: number = 0;
 
