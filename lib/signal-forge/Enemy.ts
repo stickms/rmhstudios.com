@@ -24,6 +24,10 @@ export interface EnemyData {
   turnCounter?: number;
   description?: string;
   statusEffects?: StatusEffect[];
+  // Phase 4 — New enemy abilities
+  tempoSiphon?: number;   // Steal N tempo from player each turn
+  onDeathGlitch?: number; // Inject N glitch cards into player discard on death
+  onDeathStatic?: number; // Add N static to player on death
 }
 
 // ---------------------------------------------------------------------------
@@ -51,6 +55,10 @@ export interface EnemyTemplate {
   vampiric?: number;
   empowerAlly?: number;
   phaseShift?: boolean;
+  // Phase 4 — New enemy abilities
+  tempoSiphon?: number;
+  onDeathGlitch?: number;
+  onDeathStatic?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -73,6 +81,36 @@ export const ENEMY_CATALOG: EnemyTemplate[] = [
     name: 'Saw Wasp', baseHp: 10, baseDamage: 3,
     archetype: 'common', tier: 'common', intent: 'Attack',
     description: 'Fast and aggressive. Low HP, high damage.',
+  },
+  // Phase 4.1 — New common enemies
+  {
+    name: 'Signal Rat', baseHp: 12, baseDamage: 2,
+    archetype: 'common', tier: 'common', intent: 'Attack',
+    description: 'On death: injects 1 Glitch into discard.',
+    onDeathGlitch: 1,
+  },
+  {
+    name: 'Tempo Leech', baseHp: 14, baseDamage: 2,
+    archetype: 'disruptor', tier: 'common', intent: 'Attack + Tempo Drain',
+    description: 'Steals 1 tempo each turn.',
+    tempoSiphon: 1,
+  },
+  {
+    name: 'Noise Imp', baseHp: 8, baseDamage: 4,
+    archetype: 'common', tier: 'common', intent: 'Heavy Attack',
+    description: 'Glass cannon. Low HP, high damage.',
+  },
+  {
+    name: 'Heal Sprite', baseHp: 10, baseDamage: 1,
+    archetype: 'shielder', tier: 'common', intent: 'Heal Allies',
+    description: 'Heals all allies for 3 each turn.',
+    regen: 3,
+  },
+  {
+    name: 'Static Mite', baseHp: 6, baseDamage: 1,
+    archetype: 'common', tier: 'common', intent: 'Attack',
+    description: 'On death: adds 3 static to player.',
+    onDeathStatic: 3,
   },
 
   // === UNCOMMON (floor 1 rare, floor 2+ common) ===
@@ -194,6 +232,10 @@ export class Enemy implements EnemyData {
   turnCounter: number;
   description: string;
   statusEffects: StatusEffect[];
+  // Phase 4 — New enemy abilities
+  tempoSiphon: number;
+  onDeathGlitch: number;
+  onDeathStatic: number;
 
   constructor(data: EnemyData) {
     this.id = data.id;
@@ -219,6 +261,9 @@ export class Enemy implements EnemyData {
     this.turnCounter = data.turnCounter ?? 0;
     this.description = data.description ?? '';
     this.statusEffects = data.statusEffects ?? [];
+    this.tempoSiphon = data.tempoSiphon ?? 0;
+    this.onDeathGlitch = data.onDeathGlitch ?? 0;
+    this.onDeathStatic = data.onDeathStatic ?? 0;
   }
 
   /** Get damage accounting for Enrage (+50% below 50% HP) */
@@ -336,6 +381,9 @@ export class Enemy implements EnemyData {
       shieldAlly: this.shieldAlly, vampiric: this.vampiric, empowerAlly: this.empowerAlly,
       phaseShift: this.phaseShift, turnCounter: this.turnCounter, description: this.description,
       statusEffects: [...this.statusEffects],
+      tempoSiphon: this.tempoSiphon,
+      onDeathGlitch: this.onDeathGlitch,
+      onDeathStatic: this.onDeathStatic,
     };
   }
 }

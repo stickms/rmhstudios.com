@@ -1475,8 +1475,30 @@ export function SignalForgeGame() {
       }
 
       if (totalDamage > 0) log.push(`Total damage dealt: ${totalDamage}`);
+      
+      // --- On-death effects (Phase 4) ---
+      const defeated = enemiesCloned.filter(e => e.isDefeated());
+      let newDiscard = prev.discard;
+      let playerStatic = prev.playerStatic;
+      
+      for (const e of defeated) {
+        // On-death: inject Glitch cards
+        if (e.onDeathGlitch > 0) {
+          for (let i = 0; i < e.onDeathGlitch; i++) {
+            const glitch = createGlitchCard(Date.now() + Math.floor(Math.random() * 100000));
+            newDiscard = [...newDiscard, glitch];
+          }
+          log.push(`${e.name} dies and corrupts your deck!`);
+        }
+        // On-death: add Static
+        if (e.onDeathStatic > 0) {
+          playerStatic += e.onDeathStatic;
+          log.push(`${e.name} dies and releases ${e.onDeathStatic} static!`);
+        }
+      }
+      
       // Remove defeated enemies
-      const defeatedCount = enemiesCloned.filter(e => e.isDefeated()).length;
+      const defeatedCount = defeated.length;
       const enemies = enemiesCloned.filter(e => !e.isDefeated());
       const allDefeated = enemies.length === 0;
 
@@ -1535,6 +1557,18 @@ export function SignalForgeGame() {
         }
       }
 
+      // --- Tempo siphon (Phase 4) ---
+      let playerTempo = prev.playerTempo;
+      for (const e of enemies) {
+        if (e.tempoSiphon > 0) {
+          const stolen = Math.min(playerTempo, e.tempoSiphon);
+          if (stolen > 0) {
+            playerTempo -= stolen;
+            log.push(`${e.name} steals ${stolen} tempo!`);
+          }
+        }
+      }
+
       // --- Shield reset (resets to 0 each turn, prevented by Sine Loom) ---
       if (!hasRelic(prev.ownedRelics, 'sine_loom')) {
         playerShield = 0;
@@ -1551,12 +1585,12 @@ export function SignalForgeGame() {
       const isGameOver = playerHp <= 0;
 
       // --- Initialize mutable state for end-of-turn ---
-      let playerStatic = prev.playerStatic;
+      // playerStatic already initialized in on-death effects processing
       let currency = prev.currency;
 
       // --- Card routing: Sustain / Exhaust / Discard ---
       let newDeckList = [...prev.deckList];
-      const discardAfterPlay = [...prev.discard];
+      const discardAfterPlay = [...newDiscard]; // Use newDiscard which may have on-death Glitches
       const sustainHand: Card[] = [];
 
       for (const card of prev.playedThisTurn) {

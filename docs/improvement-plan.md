@@ -813,7 +813,7 @@ if (card.name === 'Malware') {
 These use the status effects from Phase 2 and test the archetypes enabled by Phase 3 cards.
 
 ### 4.1 — 5 New Common Enemies
-- [ ] **Add to `enemyTemplates` array in `Enemy.ts`**
+- [x] **Add to `enemyTemplates` array in `Enemy.ts`**
 
 | Name | HP | Dmg | Tier | Abilities | Design Intent |
 |------|-----|-----|------|-----------|---------------|
