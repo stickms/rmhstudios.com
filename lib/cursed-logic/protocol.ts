@@ -1,11 +1,45 @@
-import type { ProtocolAction, RoundState } from './types';
+import type { ProtocolAction, RoundState, ProtocolVariant, ProtocolMode } from './types';
 
-const BASE_WEIGHTS: Record<ProtocolAction, number> = {
+const DEFAULT_WEIGHTS: Record<ProtocolAction, number> = {
   Strike: 40,
   Block: 30,
   Idle: 20,
   Prepare: 10,
 };
+
+const AGGRESSOR_WEIGHTS: Record<ProtocolAction, number> = {
+  Strike: 55,
+  Block: 20,
+  Idle: 15,
+  Prepare: 10,
+};
+
+const DEFENDER_WEIGHTS: Record<ProtocolAction, number> = {
+  Strike: 25,
+  Block: 50,
+  Idle: 15,
+  Prepare: 10,
+};
+
+const CHAOTIC_WEIGHTS: Record<ProtocolAction, number> = {
+  Strike: 25,
+  Block: 25,
+  Idle: 25,
+  Prepare: 25,
+};
+
+function getBaseWeights(variant: ProtocolVariant): Record<ProtocolAction, number> {
+  switch (variant) {
+    case 'aggressor':
+      return { ...AGGRESSOR_WEIGHTS };
+    case 'defender':
+      return { ...DEFENDER_WEIGHTS };
+    case 'chaotic':
+      return { ...CHAOTIC_WEIGHTS };
+    default:
+      return { ...DEFAULT_WEIGHTS };
+  }
+}
 
 function weightedPick(weights: Record<ProtocolAction, number>): ProtocolAction {
   const entries = Object.entries(weights) as [ProtocolAction, number][];
@@ -19,7 +53,17 @@ function weightedPick(weights: Record<ProtocolAction, number>): ProtocolAction {
 }
 
 export function getProtocolAction(state: RoundState): ProtocolAction {
-  const w = { ...BASE_WEIGHTS };
+  const w = getBaseWeights(state.protocolVariant);
+
+  const mode = state.protocolMode ?? 'recovering';
+  if (mode === 'pressuring') {
+    w.Strike += 20;
+    w.Block -= 5;
+  } else if (mode === 'defensive') {
+    w.Block += 20;
+    w.Strike -= 5;
+  }
+  // recovering: no shift
 
   if (state.protocolPrepared) {
     w.Strike = 80;
@@ -39,9 +83,11 @@ export function getProtocolAction(state: RoundState): ProtocolAction {
     w.Block += 10;
   }
 
+  let glitchChance = state.protocolVariant === 'chaotic' ? 0.25 : 0.1;
+  if (state.chaosRun) glitchChance *= 2;
   let action = weightedPick(w);
 
-  if (Math.random() < 0.1) {
+  if (Math.random() < glitchChance) {
     const glitch: ProtocolAction[] = ['Strike', 'Block', 'Idle', 'Prepare'];
     action = glitch[Math.floor(Math.random() * glitch.length)];
   }

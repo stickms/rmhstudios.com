@@ -782,3 +782,92 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(var(--neon-cyan), var(--neon-pink));
 }
+
+/* Cursed Logic duel animations */
+@keyframes cursed-damage {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.9); filter: brightness(1.8); }
+  40% { box-shadow: 0 0 30px 8px rgba(239, 68, 68, 0.7); filter: brightness(2.2); }
+  100% { box-shadow: 0 0 0 0 transparent; filter: brightness(1); }
+}
+@keyframes cursed-block {
+  0% { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.6); opacity: 1; }
+  50% { box-shadow: 0 0 24px 6px rgba(34, 211, 238, 0.5); opacity: 0.9; }
+  100% { box-shadow: 0 0 0 0 transparent; opacity: 1; }
+}
+@keyframes cursed-prepare {
+  0%, 100% { box-shadow: 0 0 8px 2px rgba(34, 211, 238, 0.3); }
+  50% { box-shadow: 0 0 20px 6px rgba(34, 211, 238, 0.5); }
+}
+@keyframes cursed-strike-line {
+  0% { transform: scaleX(0); opacity: 1; }
+  50% { opacity: 1; }
+  100% { transform: scaleX(1); opacity: 0; }
+}
+@keyframes cursed-reveal-in {
+  0% { opacity: 0; transform: scale(0.9); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes cursed-protocol-glitch {
+  0%, 100% { filter: none; }
+  25% { filter: hue-rotate(90deg); }
+  50% { filter: hue-rotate(-30deg); }
+  75% { filter: hue-rotate(60deg); }
+}
+
+/* Laser beam: thick glowing line */
+@keyframes cursed-laser-travel {
+  0% { transform: scaleX(0); opacity: 1; }
+  15% { opacity: 1; }
+  100% { transform: scaleX(1); opacity: 0.6; }
+}
+@keyframes cursed-laser-impact {
+  0% { transform: scale(0.3); opacity: 1; box-shadow: 0 0 30px 12px currentColor; }
+  100% { transform: scale(1.5); opacity: 0; box-shadow: 0 0 60px 20px transparent; }
+}
+
+/* Shield: appear and ripple */
+@keyframes cursed-shield-in {
+  0% { transform: scale(0.5); opacity: 0; }
+  30% { transform: scale(1.1); opacity: 0.95; }
+  100% { transform: scale(1); opacity: 0.85; }
+}
+@keyframes cursed-shield-ripple {
+  0% { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.5); }
+  50% { box-shadow: 0 0 25px 8px rgba(34, 211, 238, 0.4); }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+/* Impact burst when damage lands */
+@keyframes cursed-impact-burst {
+  0% { transform: scale(0); opacity: 0.9; }
+  50% { opacity: 0.8; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+
+/* Prepare (reveal): charging orb/ring */
+@keyframes cursed-prepare-reveal {
+  0% { transform: scale(0.6); opacity: 0; }
+  30% { transform: scale(1.15); opacity: 0.9; }
+  70% { transform: scale(1.2); opacity: 0.7; }
+  100% { transform: scale(1.3); opacity: 0; }
+}
+
+/* Probe (reveal): scan line across avatar */
+@keyframes cursed-probe-scan {
+  0% { transform: translateY(-100%); opacity: 0.8; }
+  50% { opacity: 1; }
+  100% { transform: translateY(100%); opacity: 0.8; }
+}
+
+/* Idle (protocol): subtle pulse */
+@keyframes cursed-idle-pulse {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.02); }
+}
+
+/* Block (reveal): shield appears during reveal */
+@keyframes cursed-block-reveal {
+  0% { transform: scale(0.3); opacity: 0; }
+  40% { transform: scale(1.05); opacity: 0.9; }
+  100% { transform: scale(1); opacity: 0.85; }
+}

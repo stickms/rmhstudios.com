@@ -1,6 +1,6 @@
 import type { RoundModifier } from './types';
 
-const MUTATION_CHANCE = 0.25;
+const MUTATION_CHANCE = 0.2;
 const MODIFIERS: RoundModifier[] = [
   'DoubleStrike',
   'NoBlock',
@@ -9,8 +9,9 @@ const MODIFIERS: RoundModifier[] = [
   'Reveal',
 ];
 
-export function rollMutation(): RoundModifier | null {
-  if (Math.random() > MUTATION_CHANCE) return null;
+export function rollMutation(chaosRun = false): RoundModifier | null {
+  const chance = chaosRun ? MUTATION_CHANCE * 2 : MUTATION_CHANCE;
+  if (Math.random() > chance) return null;
   return MODIFIERS[Math.floor(Math.random() * MODIFIERS.length)];
 }
 
