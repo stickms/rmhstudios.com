@@ -426,6 +426,22 @@ export const RARE_CARDS: Record<string, CardTemplate> = {
     effect: 'Deal 10, heal 50%. Exhaust.', rarity: 'rare',
     leech: 50, exhaust: true, keywords: ['Leech', 'Exhaust'],
   },
+  // Phase 3.3 — New rare cards
+  omega_pulse: {
+    name: 'Omega Pulse', cost: 3, type: 'Pulse', damage: 25, shield: 0,
+    effect: 'Deal 25 damage. Echo. Exhaust.', rarity: 'rare',
+    echo: true, exhaust: true, keywords: ['Echo', 'Exhaust'],
+  },
+  absolute_zero: {
+    name: 'Absolute Zero', cost: 3, type: 'Sine', damage: 0, shield: 30,
+    effect: 'Gain 30 shield. Freeze ALL enemies.', rarity: 'rare',
+    freeze: true, aoe: true, keywords: ['Freeze', 'AOE'],
+  },
+  perpetual_engine: {
+    name: 'Perpetual Engine', cost: 1, type: 'Pulse', damage: 4, shield: 0,
+    effect: 'Deal 4 damage. Draw 1. Sustain.', rarity: 'rare',
+    sustain: true, draw: 1, keywords: ['Sustain', 'Draw'],
+  },
 };
 
 // ── GLITCH CARDS — inserted by Static mechanic ─────────────────────
