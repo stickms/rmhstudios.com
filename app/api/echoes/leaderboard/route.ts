@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
-import { pool } from '@/lib/db';
+import { prisma } from '@/lib/prisma';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 
-// GET /api/echoes/leaderboard?sort=time|kills|xp
 export async function GET(req: Request) {
     const ip = getClientIp(req);
-    const { allowed, retryAfter } = rateLimit(ip, { limit: 30, windowMs: 60_000, prefix: 'echoes-lb' });
+    const { allowed, retryAfter } = rateLimit(ip, { limit: 20, windowMs: 60_000, prefix: 'echoes-leaderboard' });
+
     if (!allowed) {
         return NextResponse.json({ error: 'Too many requests' }, {
             status: 429,
@@ -13,30 +13,29 @@ export async function GET(req: Request) {
         });
     }
 
-    const url = new URL(req.url);
-    const sort = url.searchParams.get('sort') ?? 'time';
-
-    const sortColumn = sort === 'kills' ? '"totalKills"'
-        : sort === 'xp' ? '"totalXP"'
-        : '"bestTime"';
-
-    if (!pool) {
-        return NextResponse.json([], { status: 200 });
-    }
-
     try {
-        const client = await pool.connect();
-        try {
-            const result = await client.query(`
-                SELECT username, "bestTime", "totalKills", "totalXP", "gamesPlayed", "updatedAt"
-                FROM "EchoesPlayer"
-                ORDER BY ${sortColumn} DESC
-                LIMIT 20
-            `);
-            return NextResponse.json(result.rows);
-        } finally {
-            client.release();
+        const { searchParams } = new URL(req.url);
+        const type = searchParams.get('type') || 'time'; // time, kills, xp
+
+        let orderBy = {};
+        switch (type) {
+            case 'kills': orderBy = { totalKills: 'desc' }; break;
+            case 'xp': orderBy = { totalXP: 'desc' }; break;
+            case 'time': default: orderBy = { bestTime: 'desc' }; break;
         }
+
+        const leaderboard = await prisma.echoesPlayer.findMany({
+            take: 10,
+            orderBy: orderBy,
+            select: {
+                username: true,
+                bestTime: true,
+                totalKills: true,
+                totalXP: true
+            }
+        });
+
+        return NextResponse.json(leaderboard);
     } catch (e) {
         console.error('Echoes leaderboard fetch failed:', e);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

@@ -245,8 +245,13 @@ export default function GameCanvas() {
               </div>
           </div>
       )}
+
+      {/* Game Over Modal */}
+      {useGameStore(state => state.isGameOver) && <GameOverScreen />}
       
       </div>
+      
+
 
       {/* MOBILE CONTROLS (Below Canvas) */}
       <div className="md:hidden w-full flex flex-col gap-4">
@@ -401,4 +406,78 @@ const RecallButton = ({ level, focus, gameRef }: any) => {
            {canRecall ? `[INITIALIZE RECALL]` : `[RECALL: ${cost}F]`}
          </button>
     )
+}
+
+function GameOverScreen() {
+    const { currentLoop, level, resetGame } = useGameStore();
+    const [leaderboard, setLeaderboard] = useState<any[]>([]);
+    const [status, setStatus] = useState<'submitting' | 'success' | 'error'>('submitting');
+
+    useEffect(() => {
+        // Submit Score
+        fetch('/api/vega/score', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ highestLoop: currentLoop, highestLevel: level })
+        })
+        .then(() => {
+            setStatus('success');
+            // Fetch Leaderboard
+            return fetch('/api/vega/leaderboard');
+        })
+        .then(res => res.json())
+        .then(data => setLeaderboard(data))
+        .catch(() => setStatus('error'));
+    }, []);
+
+    return (
+        <div className="absolute inset-0 z-50 bg-red-950/90 backdrop-blur-md flex items-center justify-center p-4">
+              <div className="bg-slate-900 border-2 border-red-500/50 p-8 rounded-xl shadow-2xl text-center space-y-6 w-full max-w-md animate-in fade-in zoom-in duration-300">
+                  <div className="space-y-2">
+                    <h2 className="text-4xl font-bold text-red-500 tracking-[0.2em] glitch-text">SYSTEM FAILURE</h2>
+                    <p className="text-slate-400 text-sm">SANITY DEPLETED</p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 py-4 border-y border-white/10">
+                      <div>
+                          <p className="text-xs text-slate-500 uppercase">Loops Survived</p>
+                          <p className="text-2xl font-bold text-white">{currentLoop}</p>
+                      </div>
+                      <div>
+                          <p className="text-xs text-slate-500 uppercase">Max Level</p>
+                          <p className="text-2xl font-bold text-white">{level}</p>
+                      </div>
+                  </div>
+
+                  {/* Leaderboard Mini-View */}
+                  <div className="text-left bg-slate-950/50 p-4 rounded h-48 overflow-y-auto custom-scrollbar">
+                      <h3 className="text-xs font-bold text-blue-400 mb-2 sticky top-0 bg-slate-950/90 pb-2 border-b border-white/5 uppercase">Top Agents</h3>
+                      {leaderboard.length === 0 ? (
+                          <p className="text-xs text-slate-600 text-center py-4">
+                              {status === 'submitting' ? 'UPLOADING BLACK BOX DATA...' : 'NO DATA FOUND'}
+                          </p>
+                      ) : (
+                          <table className="w-full text-xs">
+                              <tbody>
+                                  {leaderboard.map((entry, i) => (
+                                      <tr key={i} className="border-b border-white/5 last:border-0 hover:bg-white/5">
+                                          <td className="py-1 w-6 text-slate-500">#{i + 1}</td>
+                                          <td className="py-1 text-slate-300">{entry.username}</td>
+                                          <td className="py-1 text-right text-yellow-500/80">L{entry.highestLoop}</td>
+                                      </tr>
+                                  ))}
+                              </tbody>
+                          </table>
+                      )}
+                  </div>
+
+                  <button 
+                    onClick={resetGame}
+                    className="w-full py-4 bg-red-600 hover:bg-red-500 text-white rounded font-bold uppercase tracking-[0.2em] transition-all shadow-lg hover:shadow-red-500/20"
+                  >
+                      Reboot System
+                  </button>
+              </div>
+        </div>
+    );
 }

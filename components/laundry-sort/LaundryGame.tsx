@@ -537,11 +537,12 @@ export function LaundryGame() {
         time={time} 
         gameActive={gameActive} 
         gameOver={gameOver} 
-        onStart={() => {
+        onStart={(username) => {
           setGameActive(true);
           setGameOver(false);
           setScore(0);
           setTime(60);
+          // Username handling logic can be added here if needed for saving scores later
         }} 
       />
     </div>
