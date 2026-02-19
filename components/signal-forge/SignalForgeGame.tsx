@@ -14,6 +14,8 @@ import {
   createEnemies,
   createShopRelics,
   createGlitchCard,
+  createNamedCard,
+  UNCOMMON_CARDS,
   StatusEffect,
   tickStatusEffects,
   hasStatus,
@@ -21,6 +23,13 @@ import {
   WaveformType,
   RELIC_CATALOG,
   CARD_CATALOG,
+  GameEvent,
+  eventTemplates,
+  CombatZone,
+  selectZone,
+  RelicData,
+  RelicTemplate,
+  getRelevantTooltips,
 } from '@/lib/signal-forge';
 
 interface ShopItem {
@@ -33,7 +42,7 @@ interface ShopItem {
 interface GameState {
   floor: number;
   node: number;
-  phase: 'landing' | 'deck-select' | 'combat' | 'card-reward' | 'reward' | 'shop' | 'game-over';
+  phase: 'landing' | 'deck-select' | 'combat' | 'card-reward' | 'reward' | 'shop' | 'game-over' | 'event' | 'starter-relic' | 'rest-or-shop';
   deckList: Card[];
   deck: Card[];
   hand: Card[];
@@ -70,6 +79,27 @@ interface GameState {
   mostCommonWaveformType?: WaveformType; // For Debugger boss adaptive immunity
   mulliganAvailable: boolean;    // Phase 8.1 — Allow redrawing cards at combat start
   mulliganSelected: number[];    // Phase 8.1 — Indices of cards selected for mulligan
+  // New state fields
+  damageTakenLastTurn: number;   // For Sine Reflection
+  waveformTypesPlayedThisTurn: string[]; // For Waveform Tuner relic
+  momentumCoreActive: boolean;   // Momentum Core flag
+  safeLandingUsed: boolean;      // Safe Landing once per combat
+  voidHarvesterDmgBonus: number; // Void Harvester cumulative bonus
+  voidShieldActive: boolean;     // Void Shield persist flag
+  floorDamageTaken: number;      // Performance bonus tracking
+  floorPatternsCompleted: number; // Performance bonus tracking
+  floorTurns: number;            // Performance bonus tracking
+  shopRefreshesUsed: number;     // Shop refresh tracking
+  currentEvent?: GameEvent;      // Active event
+  starterRelicChoices: RelicTemplate[]; // Starter relic options
+  currentZone?: CombatZone;      // Active combat zone
+  handSortMode: 'none' | 'cost' | 'type' | 'damage'; // Card sorting
+  viewingPile: 'deck' | 'discard' | null; // Deck viewer
+  overwriterPenUsed: boolean;    // Overwriter's Pen once per combat
+  overwriterPenTarget: number | null; // Index of hand card being transformed
+  relicBoughtThisShop: boolean;  // Only one relic per shop visit
+  shopRemovalsUsed: number;      // Removals THIS shop visit (doubles cost)
+  shopUpgradesUsed: number;      // Upgrades THIS shop visit (doubles cost)
 }
 
 /** Check if the player owns a relic with a given key */
@@ -136,6 +166,27 @@ function serializeGameState(gs: GameState): Record<string, any> {
     mostCommonWaveformType: gs.mostCommonWaveformType,
     mulliganAvailable: gs.mulliganAvailable,
     mulliganSelected: gs.mulliganSelected,
+    // New state fields
+    damageTakenLastTurn: gs.damageTakenLastTurn,
+    waveformTypesPlayedThisTurn: gs.waveformTypesPlayedThisTurn,
+    momentumCoreActive: gs.momentumCoreActive,
+    safeLandingUsed: gs.safeLandingUsed,
+    voidHarvesterDmgBonus: gs.voidHarvesterDmgBonus,
+    voidShieldActive: gs.voidShieldActive,
+    floorDamageTaken: gs.floorDamageTaken,
+    floorPatternsCompleted: gs.floorPatternsCompleted,
+    floorTurns: gs.floorTurns,
+    shopRefreshesUsed: gs.shopRefreshesUsed,
+    currentEvent: gs.currentEvent,
+    starterRelicChoices: gs.starterRelicChoices,
+    currentZone: gs.currentZone,
+    handSortMode: gs.handSortMode,
+    viewingPile: gs.viewingPile,
+    overwriterPenUsed: gs.overwriterPenUsed,
+    overwriterPenTarget: gs.overwriterPenTarget,
+    relicBoughtThisShop: gs.relicBoughtThisShop,
+    shopRemovalsUsed: gs.shopRemovalsUsed,
+    shopUpgradesUsed: gs.shopUpgradesUsed,
   };
 }
 
@@ -191,27 +242,50 @@ function deserializeGameState(data: Record<string, any>): GameState {
     mostCommonWaveformType: data.mostCommonWaveformType,
     mulliganAvailable: data.mulliganAvailable ?? false,
     mulliganSelected: data.mulliganSelected || [],
+    // New state fields
+    damageTakenLastTurn: data.damageTakenLastTurn ?? 0,
+    waveformTypesPlayedThisTurn: data.waveformTypesPlayedThisTurn || [],
+    momentumCoreActive: data.momentumCoreActive ?? false,
+    safeLandingUsed: data.safeLandingUsed ?? false,
+    voidHarvesterDmgBonus: data.voidHarvesterDmgBonus ?? 0,
+    voidShieldActive: data.voidShieldActive ?? false,
+    floorDamageTaken: data.floorDamageTaken ?? 0,
+    floorPatternsCompleted: data.floorPatternsCompleted ?? 0,
+    floorTurns: data.floorTurns ?? 0,
+    shopRefreshesUsed: data.shopRefreshesUsed ?? 0,
+    currentEvent: data.currentEvent,
+    starterRelicChoices: data.starterRelicChoices || [],
+    currentZone: data.currentZone,
+    handSortMode: data.handSortMode ?? 'none',
+    viewingPile: data.viewingPile ?? null,
+    overwriterPenUsed: data.overwriterPenUsed ?? false,
+    overwriterPenTarget: data.overwriterPenTarget ?? null,
+    relicBoughtThisShop: data.relicBoughtThisShop ?? false,
+    shopRemovalsUsed: data.shopRemovalsUsed ?? 0,
+    shopUpgradesUsed: data.shopUpgradesUsed ?? 0,
   };
 }
 
 const STARTER_DECK = createStarterDeck();
 
-// Generate shop inventory for a floor
-const generateShopInventory = (floor: number, removalsUsed: number = 0, upgradesPurchased: number = 0): ShopItem[] => {
+// Generate shop inventory for a floor — costs scale with floor
+const generateShopInventory = (floor: number, seedOffset: number = 0): ShopItem[] => {
   const inventory: ShopItem[] = [];
   let itemId = 0;
+  // Floor cost multiplier: ramps slower than income
+  const costScale = 1 + (floor - 1) * 0.08;
 
   // Add cards - more offerings at higher floors
   const cardCount = Math.min(3 + Math.floor((floor - 1) / 2), 6);
   const rarities: Array<'common' | 'uncommon' | 'rare'> = ['common', 'uncommon', 'rare'];
   for (let i = 0; i < cardCount; i++) {
-    const card = createShopCard(floor, floor * 1000 + 500 + i, rarities[i % rarities.length]);
-    const prices = { common: 40, uncommon: 70, rare: 110 };
+    const card = createShopCard(floor, floor * 1000 + 500 + i + seedOffset * 7919, rarities[i % rarities.length]);
+    const basePrices = { common: 40, uncommon: 70, rare: 110 };
     inventory.push({
       id: `card_${itemId++}`,
       type: 'card',
       item: card,
-      price: prices[card.rarity as keyof typeof prices] ?? 70,
+      price: Math.round((basePrices[card.rarity as keyof typeof basePrices] ?? 70) * costScale),
     });
   }
 
@@ -223,26 +297,23 @@ const generateShopInventory = (floor: number, removalsUsed: number = 0, upgrades
       id: `relic_${itemId++}`,
       type: 'relic',
       item: relic,
-      price: 120,
+      price: Math.round(120 * costScale),
     });
   }
 
-  // Phase 6.3 — Add card upgrade option with escalating cost
-  const upgradePrice = 50 + upgradesPurchased * 25;
+  // Upgrade and removal are always available — price computed dynamically based on shop uses
   inventory.push({
     id: 'upgrade',
     type: 'upgrade',
     item: null,
-    price: upgradePrice,
+    price: 0, // computed dynamically in UI
   });
 
-  // Phase 6.4 — Add one card removal option with escalating cost
-  const removalPrice = 50 + removalsUsed * 25;
   inventory.push({
     id: 'removal',
     type: 'removal',
     item: null,
-    price: removalPrice,
+    price: 0, // computed dynamically in UI
   });
 
   return inventory;
@@ -302,6 +373,24 @@ export function SignalForgeGame() {
     cardRewardChoices: [],
     mulliganAvailable: false,
     mulliganSelected: [],
+    damageTakenLastTurn: 0,
+    waveformTypesPlayedThisTurn: [],
+    momentumCoreActive: false,
+    safeLandingUsed: false,
+    voidHarvesterDmgBonus: 0,
+    voidShieldActive: false,
+    floorDamageTaken: 0,
+    floorPatternsCompleted: 0,
+    floorTurns: 0,
+    shopRefreshesUsed: 0,
+    starterRelicChoices: [],
+    handSortMode: 'none',
+    viewingPile: null,
+    overwriterPenUsed: false,
+    overwriterPenTarget: null,
+    relicBoughtThisShop: false,
+    shopRemovalsUsed: 0,
+    shopUpgradesUsed: 0,
   });
 
   // Helper: shuffle cards (Fisher-Yates)
@@ -389,6 +478,15 @@ export function SignalForgeGame() {
         // Clean Room: Glitch cards exhaust instead of going to hand
         if (cleanRoom && card.isGlitch) {
           exhausted.push(card);
+          continue;
+        }
+        // Glitch Forge: Transform glitch cards into random uncommon cards
+        if (hasRelic(relics, 'glitch_forge') && card.isGlitch) {
+          const uncommonKeys = Object.keys(UNCOMMON_CARDS);
+          const randomKey = uncommonKeys[Math.floor(Math.random() * uncommonKeys.length)];
+          const transformed = createNamedCard(randomKey, card.id);
+          combatLog.push(`Glitch Forge: transformed Glitch → ${transformed.name}`);
+          hand = [...hand, transformed];
           continue;
         }
         hand = [...hand, card];
@@ -586,13 +684,13 @@ export function SignalForgeGame() {
     const tempoY = middleTop + Math.round(200 * mScale);
     const tempoBarH = Math.round(28 * mScale);
 
-    const playedPanelY = middleTop + Math.round(255 * mScale);
-    const panelH = Math.round(105 * mScale);
+    const playedPanelY = middleTop + Math.round(235 * mScale);
+    const panelH = Math.round(145 * mScale);  // 15% taller than previous
 
     const handPanelY = playedPanelY + panelH + Math.round(28 * mScale);
 
-    const cardH = Math.round(80 * mScale);
-    const cardW = Math.round(65 * mScale);
+    const cardH = Math.round(110 * mScale);   // 15% bigger
+    const cardW = Math.round(90 * mScale);    // 15% bigger
     const cardPadY = Math.round(16 * mScale);
     const cardGapX = cardW + 10;
 
@@ -600,7 +698,8 @@ export function SignalForgeGame() {
     tooltipZones.current = [];
 
     // === TOP LEFT HUD ===
-    drawPanel(10, 10, 160, 100);
+    const hasZone = gameState.currentZone && gameState.currentZone.effect.type !== 'none';
+    drawPanel(10, 10, 160, hasZone ? 120 : 100);
     
     ctx.fillStyle = '#00ffc8';
     ctx.font = 'bold 12px monospace';
@@ -624,6 +723,14 @@ export function SignalForgeGame() {
     const currencyTip = ['Currency: Spend in the shop', 'Earn from defeating enemies'];
     if (hasRelic(gameState.ownedRelics, 'fault_lens')) currencyTip.push(`Fault Lens: +${10 * countRelic(gameState.ownedRelics, 'fault_lens')} per Glitch`);
     tooltipZones.current.push({ x: 15, y: 92, w: 150, h: 16, text: currencyTip });
+
+    // Zone modifier display
+    if (hasZone && gameState.currentZone) {
+      ctx.fillStyle = '#ff9900';
+      ctx.font = 'bold 10px monospace';
+      ctx.fillText('🌐 ' + gameState.currentZone.name, 20, 120);
+      tooltipZones.current.push({ x: 15, y: 110, w: 150, h: 14, text: [`Zone: ${gameState.currentZone.name}`, gameState.currentZone.description] });
+    }
 
     // === HAMBURGER MENU ICON (bottom-right corner) ===
     if (gameState.phase !== 'landing' && gameState.phase !== 'game-over') {
@@ -685,6 +792,24 @@ export function SignalForgeGame() {
     tooltipZones.current.push({ x: W - 165, y: 74, w: 150, h: 16, text: handTip });
     ctx.fillText('DSC: ' + gameState.discard.length, W - 20, 104);
     tooltipZones.current.push({ x: W - 165, y: 92, w: 150, h: 16, text: ['Discard Pile: Used cards', 'Cards stay here once played', 'Glitch cards may be injected here'] });
+
+    // === DEBUGGER'S LENS — Show top 3 draw pile cards ===
+    if (hasRelic(gameState.ownedRelics, 'debuggers_lens') && gameState.deck.length > 0) {
+      const lensY = 115;
+      drawPanel(W - 170, lensY, 160, 55);
+      ctx.fillStyle = '#ffcc44';
+      ctx.font = 'bold 9px monospace';
+      ctx.textAlign = 'right';
+      ctx.fillText('🔍 NEXT DRAWS:', W - 20, lensY + 14);
+      const top3 = gameState.deck.slice(0, 3);
+      top3.forEach((card, i) => {
+        const typeColors: Record<string, string> = { Pulse: '#ff6b6b', Sine: '#6bffb8', Saw: '#ff9f43', Noise: '#a78bfa' };
+        ctx.fillStyle = typeColors[card.type] || '#aaaaaa';
+        ctx.font = '9px monospace';
+        ctx.fillText(`${i + 1}. ${card.name}`, W - 20, lensY + 28 + i * 12);
+      });
+      tooltipZones.current.push({ x: W - 165, y: lensY, w: 150, h: 55, text: ['Debugger\'s Lens: See your next draws', ...top3.map((c, i) => `${i + 1}. ${c.name} (${c.type}, ${c.cost}⚡)`)] });
+    }
 
     // === ENEMIES ===
     if (gameState.enemies.length > 0) {
@@ -751,7 +876,7 @@ export function SignalForgeGame() {
 
     // === SEQUENCES DISPLAY ===
     drawPanel(W / 2 - 200, seqY, 400, seqPanelH, 'PATTERN');
-    tooltipZones.current.push({ x: W / 2 - 200, y: seqY, w: 400, h: 20, text: ['Pattern: Match the target sequence', 'Play cards in order to fill CURRENT', 'A full match = Forge Burst (+12 bonus dmg)', '★ slots accept any waveform type', 'Wildcard cards match any slot'] });
+    tooltipZones.current.push({ x: W / 2 - 200, y: seqY, w: 400, h: 20, text: ['Pattern: Match the target sequence', 'Play cards in order to fill CURRENT', `A full match = Forge Burst (+${gameState.currentZone?.effect.type === 'forge_burst_bonus' ? gameState.currentZone.effect.value : 12} bonus dmg)`, '★ slots accept any waveform type', 'Wildcard cards match any slot'] });
     
     // Target sequence
     ctx.fillStyle = '#00ffc8';
@@ -913,8 +1038,12 @@ export function SignalForgeGame() {
         // Lock overlay for cards with irreversible effects
         const isLocked = !!(card.draw || card.glitchGen || card.stabilize);
         if (isLocked) {
+          ctx.save();
+          drawRoundRect(cardX, playedStartY, playedCardW, playedCardH, 8);
+          ctx.clip();
           ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
           ctx.fillRect(cardX, playedStartY, playedCardW, playedCardH);
+          ctx.restore();
           ctx.fillStyle = '#ff8888';
           ctx.font = 'bold 10px monospace';
           ctx.textAlign = 'center';
@@ -929,6 +1058,43 @@ export function SignalForgeGame() {
     drawPanel(20, handPanelY, W - 40, panelH, 'HAND (' + gameState.hand.length + ')');
     tooltipZones.current.push({ x: 20, y: handPanelY - 12, w: 120, h: 16, text: ['Your Hand: Available cards to play', 'Click a card to play it', 'Grayed = not enough energy'] });
     
+    // 8.2 — Determine next needed sequence type for highlighting
+    const nextSlotIdx = gameState.currentSequence.length;
+    const neededType = nextSlotIdx < gameState.targetSequence.length
+      ? gameState.targetSequence[nextSlotIdx]
+      : null;
+
+    // 8.5 — Sort hand based on sort mode
+    let sortedHand = [...gameState.hand];
+    const handIndexMap: number[] = gameState.hand.map((_, i) => i); // original indices
+    switch (gameState.handSortMode) {
+      case 'cost': {
+        const sorted = sortedHand.map((c, i) => ({ card: c, origIdx: i }))
+          .sort((a, b) => a.card.cost - b.card.cost);
+        sortedHand = sorted.map(s => s.card);
+        const newMap = sorted.map(s => s.origIdx);
+        handIndexMap.splice(0, handIndexMap.length, ...newMap);
+        break;
+      }
+      case 'type': {
+        const typeOrder: Record<string, number> = { Pulse: 0, Sine: 1, Saw: 2, Noise: 3 };
+        const sorted = sortedHand.map((c, i) => ({ card: c, origIdx: i }))
+          .sort((a, b) => (typeOrder[a.card.type] ?? 4) - (typeOrder[b.card.type] ?? 4));
+        sortedHand = sorted.map(s => s.card);
+        const newMap = sorted.map(s => s.origIdx);
+        handIndexMap.splice(0, handIndexMap.length, ...newMap);
+        break;
+      }
+      case 'damage': {
+        const sorted = sortedHand.map((c, i) => ({ card: c, origIdx: i }))
+          .sort((a, b) => b.card.damage - a.card.damage);
+        sortedHand = sorted.map(s => s.card);
+        const newMap = sorted.map(s => s.origIdx);
+        handIndexMap.splice(0, handIndexMap.length, ...newMap);
+        break;
+      }
+    }
+
     const handCardW = cardW;
     const handCardH = cardH;
     const handStartX = 40;
@@ -936,18 +1102,53 @@ export function SignalForgeGame() {
     const handGapX = cardGapX;
     const cardsPerRow = Math.floor((W - 60) / handGapX);
     
-    gameState.hand.forEach((card, i) => {
+    sortedHand.forEach((card, i) => {
       const row = Math.floor(i / cardsPerRow);
       const col = i % cardsPerRow;
       const cardX = handStartX + col * handGapX;
       const cardY = handStartY + row * (handCardH + 10);
       
       const canPlay = card.cost <= gameState.playerEnergy;
+
+      // 8.2 — Sequence helper: golden glow for matching cards
+      const isSequenceMatch = neededType && (neededType === '*' || card.type === neededType || card.wildcard);
+      if (isSequenceMatch && canPlay) {
+        ctx.save();
+        ctx.shadowColor = '#eab308';
+        ctx.shadowBlur = 12;
+        ctx.strokeStyle = '#eab308';
+        ctx.lineWidth = 2;
+        drawRoundRect(cardX - 1, cardY - 1, handCardW + 2, handCardH + 2, 8);
+        ctx.stroke();
+        ctx.restore();
+      }
+
       drawCard(card, cardX, cardY, handCardW, handCardH);
       
-      if (!canPlay) {
+      // Mulligan highlight — show selected cards with red border
+      const origIdx = handIndexMap[i];
+      if (gameState.mulliganAvailable && gameState.mulliganSelected.includes(origIdx)) {
+        ctx.save();
+        ctx.shadowColor = '#ff4444';
+        ctx.shadowBlur = 14;
+        ctx.strokeStyle = '#ff4444';
+        ctx.lineWidth = 3;
+        drawRoundRect(cardX - 1, cardY - 1, handCardW + 2, handCardH + 2, 8);
+        ctx.stroke();
+        ctx.restore();
+        ctx.fillStyle = '#ff4444';
+        ctx.font = 'bold 9px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('MULLIGAN', cardX + handCardW / 2, cardY + handCardH - 4);
+      }
+
+      if (!canPlay && !gameState.mulliganAvailable) {
+        ctx.save();
+        drawRoundRect(cardX, cardY, handCardW, handCardH, 8);
+        ctx.clip();
         ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
         ctx.fillRect(cardX, cardY, handCardW, handCardH);
+        ctx.restore();
         ctx.fillStyle = '#888888';
         ctx.font = 'bold 8px monospace';
         ctx.textAlign = 'center';
@@ -955,7 +1156,8 @@ export function SignalForgeGame() {
         ctx.fillText('COST', cardX + handCardW / 2, cardY + handCardH / 2 + 8);
       }
       
-      cardRects.current.push({ index: i, x: cardX, y: cardY, w: handCardW, h: handCardH, type: 'hand' });
+      // Map back to original hand index for playCard
+      cardRects.current.push({ index: origIdx, x: cardX, y: cardY, w: handCardW, h: handCardH, type: 'hand' });
     });
 
     // === END TURN BUTTON ===
@@ -979,7 +1181,31 @@ export function SignalForgeGame() {
     drawOutlinedText('END TURN', btnX + btnW / 2, btnY + btnH / 2 + 5, 'bold 14px monospace', '#ffffff', '#000000', 2);
     
     endTurnRect.current = { x: btnX, y: btnY, w: btnW, h: btnH };
-    tooltipZones.current.push({ x: btnX, y: btnY, w: btnW, h: btnH, text: ['End Turn: Resolve combat', 'Calculates total damage (cards + bonuses)', 'AOE cards hit all enemies', 'Echo cards repeat at 50% power', 'Sustain cards return to hand', 'Exhaust cards are removed from deck', 'Enemies attack — shield absorbs first'] });
+
+    // 1.6 — Damage preview for End Turn tooltip
+    const pvDmgMult = gameState.currentZone?.effect.type === 'damage_mult' ? gameState.currentZone.effect.value : 1;
+    const previewPlayerDmg = Math.floor(gameState.playedThisTurn.reduce((sum, c) => {
+      let d = c.getEffectiveDamage();
+      d += gameState.playerTempo; // tempo bonus
+      if (c.echo) d = Math.floor(d * 1.5); // echo repeats at 50%
+      return sum + d;
+    }, 0) * pvDmgMult);
+    const previewEnemyDmg = Math.floor(gameState.enemies.reduce((sum, e) => {
+      if (e.hp <= 0) return sum;
+      const frozen = e.statusEffects?.find(s => s.type === 'freeze' && s.duration > 0);
+      if (frozen) return sum;
+      return sum + e.damage;
+    }, 0) * pvDmgMult);
+    const previewAfterShield = Math.max(0, previewEnemyDmg - gameState.playerShield);
+
+    tooltipZones.current.push({ x: btnX, y: btnY, w: btnW, h: btnH, text: [
+      'End Turn: Resolve combat',
+      `⚔️ You deal ~${previewPlayerDmg} damage`,
+      `🛡️ Enemies deal ~${previewEnemyDmg} (${previewAfterShield} after shield)`,
+      '',
+      'Q: End turn | 1-9: Play cards',
+      'S: Sort | D: Deck | F: Discard',
+    ] });
 
     // Draw player at bottom right
     const playerX = W - 70;
@@ -1052,7 +1278,26 @@ export function SignalForgeGame() {
         if (card.sustain) lines.push('Sustain: Returns to hand');
         if (card.exhaust) lines.push('Exhaust: Removed after use');
         if (card.wildcard) lines.push('Wildcard: Matches any type');
+        if (card.piercing) lines.push('Piercing: Ignores enemy shield/armor');
+        if (card.chain) lines.push(`Chain: Next ${card.type} costs ${card.chain} less`);
+        if (card.growing) lines.push(`Growing: +${card.growing} dmg each play (${card.growthCounter ?? 0} stacks)`);
+        if (card.retain) lines.push('Retain: Stays in hand between turns');
+        if (card.multihit) lines.push(`Multihit: Hits ${card.multihit} times`);
+        if (card.innate) lines.push('Innate: Always in opening hand');
+        if (card.ethereal) lines.push('Ethereal: Auto-exhausts if unplayed');
+        if (card.siphon) lines.push(`Siphon: Steal ${card.siphon} shield from enemy`);
+        if (card.bleed) lines.push(`Bleed: Apply ${card.bleed} bleed stacks`);
+        if (card.freeze) lines.push(`Freeze: Apply ${card.freeze} freeze`);
+        if (card.vulnerable) lines.push(`Vulnerable: Apply ${card.vulnerable} stacks`);
+        if (card.weak) lines.push(`Weak: Apply ${card.weak} stacks`);
+        if (card.upgraded) lines.push('★ UPGRADED (+25% stats)');
         lines.push(card.effect);
+        // 8.3 — Add keyword explanations from glossary
+        const keywordTips = getRelevantTooltips(card);
+        if (keywordTips.length > 0) {
+          lines.push('');
+          keywordTips.forEach(tip => lines.push(`• ${tip.term}: ${tip.explanation}`));
+        }
         tooltipZones.current.push({
           x: cr.x, y: cr.y, w: cr.w, h: cr.h,
           text: lines,
@@ -1063,7 +1308,8 @@ export function SignalForgeGame() {
     // === COMBAT LOG (last turn's events) ===
     if (gameState.combatLog.length > 0) {
       const logX = 10;
-      const logY = 120;
+      const hasZoneLog = gameState.currentZone && gameState.currentZone.effect.type !== 'none';
+      const logY = hasZoneLog ? 140 : 120;
       const logLineH = 14;
       const logLines = gameState.combatLog.slice(0, 5);
       ctx.font = '10px monospace';
@@ -1185,6 +1431,25 @@ export function SignalForgeGame() {
       const playerShield = prev.playerShield - card.getEffectiveShield();
       const playerHp = card.selfDamage ? Math.min(prev.playerMaxHp, prev.playerHp + card.selfDamage) : prev.playerHp;
 
+      // 8.6 — Undo chain discount if this card set one
+      let chainDiscount = prev.chainDiscount;
+      if (card.chain) {
+        // Remove chain discount this card might have applied
+        chainDiscount = undefined;
+      }
+
+      // 8.6 — Undo growing counter
+      if (card.growing && card.growthCounter && card.growthCounter > 0) {
+        card.growthCounter--;
+      }
+
+      // 8.6 — Remove this card's type from waveformTypesPlayedThisTurn (for waveform_tuner)
+      const waveformTypesPlayedThisTurn = [...prev.waveformTypesPlayedThisTurn];
+      const typeIdx = waveformTypesPlayedThisTurn.lastIndexOf(card.type);
+      if (typeIdx >= 0) {
+        waveformTypesPlayedThisTurn.splice(typeIdx, 1);
+      }
+
       return {
         ...prev,
         hand,
@@ -1195,6 +1460,8 @@ export function SignalForgeGame() {
         playerStatic,
         playerShield,
         playerHp,
+        chainDiscount,
+        waveformTypesPlayedThisTurn,
       };
     });
   }, []);
@@ -1215,6 +1482,14 @@ export function SignalForgeGame() {
       if (card.type === 'Pulse' && !prev.firstPulsePlayedThisTurn && hasRelic(prev.ownedRelics, 'oscillator_core')) {
         effectiveCost = 0;
       }
+      // Waveform Tuner relic: first card of each waveform type costs 1 less
+      if (hasRelic(prev.ownedRelics, 'waveform_tuner') && !prev.waveformTypesPlayedThisTurn.includes(card.type)) {
+        effectiveCost = Math.max(0, effectiveCost - 1);
+      }
+      // Momentum Core: all cards cost 1 less this turn
+      if (prev.momentumCoreActive) {
+        effectiveCost = Math.max(0, effectiveCost - 1);
+      }
       if (effectiveCost > prev.playerEnergy) return prev;
       // Glitch cards with cost 99 are unplayable
       if (card.isGlitch && card.cost >= 99) return prev;
@@ -1230,12 +1505,17 @@ export function SignalForgeGame() {
           seqType = prev.targetSequence[seqIdx] as typeof seqType;
         }
       }
-      const sequence = [...prev.currentSequence, seqType];
+      let sequence = [...prev.currentSequence, seqType];
 
       const playerEnergy = prev.playerEnergy - effectiveCost;
-      const playerTempo = Math.min(prev.playerTempo + 1 + (card.tempoGain ?? 0), 6);
+      // Zone: tempo cap override (default 6)
+      const tempoCap = prev.currentZone?.effect.type === 'tempo_cap' ? prev.currentZone.effect.value : 6;
+      const playerTempo = Math.min(prev.playerTempo + 1 + (card.tempoGain ?? 0), tempoCap);
       let playerStatic = prev.playerStatic;
-      const playerShield = prev.playerShield + card.getEffectiveShield();
+      // Zone: shield multiplier
+      const zoneShieldMult = prev.currentZone?.effect.type === 'shield_mult' ? prev.currentZone.effect.value : 1;
+      const shieldFromCard = zoneShieldMult !== 1 ? Math.floor(card.getEffectiveShield() * zoneShieldMult) : card.getEffectiveShield();
+      const playerShield = prev.playerShield + shieldFromCard;
       let playerHp = prev.playerHp;
       let deck = [...prev.deck];
       let discard = [...prev.discard];
@@ -1333,6 +1613,33 @@ export function SignalForgeGame() {
         chainDiscount = undefined;
       }
 
+      // Signal Boost: all Pulse cards in hand get +4 damage this turn
+      if (card.name === 'Signal Boost') {
+        played.forEach(c => { if (c.type === 'Pulse') c.damage += 4; });
+        hand.forEach(c => { if (c.type === 'Pulse') c.damage += 4; });
+        tempLog.push('Signal Boost: All Pulse cards deal +4 damage this turn!');
+      }
+
+      // Pattern Forge: fill next sequence slot automatically
+      if (card.name === 'Pattern Forge' && sequence.length < prev.targetSequence.length) {
+        sequence = [...sequence, prev.targetSequence[sequence.length]];
+        tempLog.push('Pattern Forge: Extra sequence slot filled!');
+      }
+
+      // Chaos Theory: draw 0–2 cards on play
+      if (card.name === 'Chaos Theory') {
+        const extraDraws = Math.floor(Math.random() * 3); // 0, 1, or 2
+        for (let i = 0; i < extraDraws; i++) {
+          if (deck.length > 0) {
+            const idx = Math.floor(Math.random() * deck.length);
+            const drawn = deck[idx];
+            deck = deck.filter((_, j) => j !== idx);
+            hand = [...hand, drawn];
+          }
+        }
+        if (extraDraws > 0) tempLog.push(`Chaos Theory: Drew ${extraDraws} cards!`);
+      }
+
       return {
         ...prev,
         hand,
@@ -1350,6 +1657,9 @@ export function SignalForgeGame() {
         firstSawPlayedThisTurn,
         reshuffleCount,
         chainDiscount,
+        waveformTypesPlayedThisTurn: prev.waveformTypesPlayedThisTurn.includes(card.type)
+          ? prev.waveformTypesPlayedThisTurn
+          : [...prev.waveformTypesPlayedThisTurn, card.type],
         combatLog: [...prev.combatLog, ...tempLog],
         gameOver: playerHp <= 0,
         phase: playerHp <= 0 ? 'game-over' : prev.phase,
@@ -1371,6 +1681,8 @@ export function SignalForgeGame() {
       if (prev.phase !== 'combat') return prev;
 
       const log: string[] = [];
+      let playerHp = prev.playerHp;
+      let playerShield = prev.playerShield;
 
       // --- START OF TURN EFFECTS: Process bleed on enemies ---
       const enemiesClonedForBleed = prev.enemies.map(e => e.clone());
@@ -1389,14 +1701,23 @@ export function SignalForgeGame() {
       // --- Sequence match check (supports '*' wildcard slots from Phase Shifter) ---
       const isMatch = prev.currentSequence.length === prev.targetSequence.length &&
         prev.targetSequence.every((t, i) => t === '*' || t === prev.currentSequence[i]);
-      const matchBonus = isMatch ? 12 : 0;
-      if (isMatch) log.push('Forge Burst! +12 bonus damage');
+      // Zone: Forge Burst bonus override (default 12)
+      const forgeBurstValue = prev.currentZone?.effect.type === 'forge_burst_bonus' ? prev.currentZone.effect.value : 12;
+      const matchBonus = isMatch ? forgeBurstValue : 0;
+      if (isMatch) log.push(`Forge Burst! +${forgeBurstValue} bonus damage`);
+
+      // Zone: damage multiplier (applies to all damage dealt)
+      const zoneDamageMult = prev.currentZone?.effect.type === 'damage_mult' ? prev.currentZone.effect.value : 1;
+      // Zone: shield multiplier (applies to all shield gained)
+      const zoneShieldMult = prev.currentZone?.effect.type === 'shield_mult' ? prev.currentZone.effect.value : 1;
 
       // --- Relic: Tempo Gear (+1 tempo per copy on sequence match) ---
       let playerTempo = prev.playerTempo;
       const tempoGearCount = countRelic(prev.ownedRelics, 'tempo_gear');
+      // Zone: tempo cap override (default 6)
+      const tempoCap = prev.currentZone?.effect.type === 'tempo_cap' ? prev.currentZone.effect.value : 6;
       if (isMatch && tempoGearCount > 0) {
-        playerTempo = Math.min(6, playerTempo + tempoGearCount);
+        playerTempo = Math.min(tempoCap, playerTempo + tempoGearCount);
         log.push(`Tempo Gear (x${tempoGearCount}): +${tempoGearCount} tempo from match`);
       }
 
@@ -1427,13 +1748,53 @@ export function SignalForgeGame() {
         .filter(e => e.auraDamageReduction && e.auraDamageReduction > 0 && e.hp > 0)
         .reduce((sum, e) => sum + (e.auraDamageReduction ?? 0), 0);
 
-      const cardDamages: { card: Card; dmg: number }[] = prev.playedThisTurn.map((card, idx) => {
+      const cardDamages: { card: Card; dmg: number; skipNormalDmg?: boolean }[] = prev.playedThisTurn.map((card, idx) => {
         let dmg = card.getEffectiveDamage();  // includes Echo 50% bonus
+        let skipNormalDmg = false;
+        
+        // Relic: Signal Amplifier (+1 damage per copy)
+        dmg += countRelic(prev.ownedRelics, 'signal_amplifier');
+        
+        // Relic: Void Harvester cumulative bonus
+        dmg += prev.voidHarvesterDmgBonus;
         
         // Phase 4.2 — Echo Disruptor: cancel Echo bonus
         if (echoCanceled && card.echo) {
           // Recalculate without echo bonus
           dmg = card.damage + (card.growing ? card.growthCounter * (card.growing ?? 0) : 0);
+        }
+        
+        // === Special card damage overrides ===
+        if (card.name === 'Final Cut') {
+          dmg = prev.playedThisTurn.length * 8;
+        } else if (card.name === 'Entropy Bomb') {
+          dmg = prev.playerStatic * 8;
+        } else if (card.name === 'White Noise') {
+          dmg = prev.playerStatic * 3;
+        } else if (card.name === 'Shield Nova') {
+          dmg = playerShield; // damage = current shield, keep shield
+        } else if (card.name === 'Harmonic Convergence') {
+          const uniqueTypes = new Set(prev.playedThisTurn.map(c => c.type));
+          dmg = uniqueTypes.size * 5;
+        } else if (card.name === 'System Crash') {
+          dmg = prev.playerStatic * 5;
+        } else if (card.name === 'Recursion') {
+          const lastPlayed = prev.playedThisTurn[idx - 1];
+          if (lastPlayed) {
+            dmg = lastPlayed.getEffectiveDamage();
+            // Copy shield too (handled below in shield processing)
+          }
+        } else if (card.name === 'Chaos Theory') {
+          dmg = 3 + Math.floor(Math.random() * 10); // 3–12
+        } else if (card.name === 'Barrier Shift') {
+          dmg = playerShield; // convert all shield to damage
+          playerShield = 6; // then gain 6 new shield (from card.shield)
+        } else if (card.name === 'Blade Storm') {
+          skipNormalDmg = true; // handled specially below
+        } else if (card.name === 'Chain Lightning') {
+          skipNormalDmg = true; // handled specially below
+        } else if (card.name === 'Glitch Exploit') {
+          skipNormalDmg = true; // handled specially below
         }
         
         // Signal Mirror: first Saw in the played list gets +3 per copy
@@ -1446,14 +1807,89 @@ export function SignalForgeGame() {
         // Phase 4.2 — Dampener: reduce all damage
         dmg = Math.max(0, dmg - auraDmgReduce);
         
-        return { card, dmg };
+        // Zone: damage multiplier
+        if (zoneDamageMult !== 1) dmg = Math.floor(dmg * zoneDamageMult);
+        
+        return { card, dmg, skipNormalDmg };
       });
 
       // --- Apply damage to enemies (with status effect modifiers) ---
       const enemiesCloned = enemiesClonedForBleed;
       let thornsDamage = 0; // accumulated thorns reflection
-      for (const { card, dmg } of cardDamages) {
-        if (dmg <= 0) continue;
+      for (const { card, dmg, skipNormalDmg } of cardDamages) {
+        // === Special cards with custom targeting ===
+        if (skipNormalDmg) {
+          const livingEnemies = enemiesCloned.filter(e => e.hp > 0);
+          if (card.name === 'Blade Storm') {
+            const hitCount = prev.playerTempo;
+            for (let h = 0; h < hitCount; h++) {
+              const randomTarget = livingEnemies[Math.floor(Math.random() * livingEnemies.length)];
+              if (randomTarget) {
+                const absorbed = randomTarget.takeDamage(4 + tempoBonusDmg, prev.turn);
+                totalDamage += absorbed;
+              }
+            }
+            log.push(`Blade Storm hits ${hitCount} times for ${4 + tempoBonusDmg} each!`);
+          } else if (card.name === 'Chain Lightning') {
+            const target = enemiesCloned.find(e => e.id === prev.selectedEnemyId);
+            const cascadeDmg = [12 + tempoBonusDmg, 8 + tempoBonusDmg, 4 + tempoBonusDmg];
+            const targetIdx = target ? livingEnemies.indexOf(target) : 0;
+            for (let i = 0; i < Math.min(3, livingEnemies.length); i++) {
+              const idx = (targetIdx + i) % livingEnemies.length;
+              const absorbed = livingEnemies[idx].takeDamage(cascadeDmg[i], prev.turn);
+              totalDamage += absorbed;
+            }
+            log.push(`Chain Lightning cascades for ${cascadeDmg.slice(0, livingEnemies.length).join(' → ')} damage!`);
+          } else if (card.name === 'Glitch Exploit') {
+            const glitchCards = [...prev.hand].filter(c => c.isGlitch);
+            const target = enemiesCloned.find(e => e.id === prev.selectedEnemyId);
+            if (target && glitchCards.length > 0) {
+              glitchCards.forEach(() => {
+                const absorbed = target.takeDamage(8, prev.turn);
+                totalDamage += absorbed;
+              });
+              log.push(`Glitch Exploit! ${glitchCards.length} Glitch cards deal ${glitchCards.length * 8} damage!`);
+            }
+          }
+          // Apply status effects from special cards too
+          if (card.bleed || card.freeze || card.vulnerable || card.weak) {
+            const target = enemiesCloned.find(e => e.id === prev.selectedEnemyId);
+            if (target) {
+              if (card.bleed) target.statusEffects = applyStatus(target.statusEffects, 'bleed', card.bleed, 2);
+              if (card.freeze) {
+                const freezeDuration = hasRelic(prev.ownedRelics, 'freeze_amplifier') ? 2 : 1;
+                target.statusEffects = applyStatus(target.statusEffects, 'freeze', 1, freezeDuration);
+              }
+              if (card.vulnerable) target.statusEffects = applyStatus(target.statusEffects, 'vulnerable', 1, card.vulnerable);
+              if (card.weak) target.statusEffects = applyStatus(target.statusEffects, 'weak', 1, card.weak);
+            }
+          }
+          continue;
+        }
+
+        // === Razor Cascade ricochet ===
+        if (card.name === 'Razor Cascade' && dmg > 0) {
+          const target = enemiesCloned.find(e => e.id === prev.selectedEnemyId);
+          if (target) {
+            const absorbed = target.takeDamage(dmg, prev.turn);
+            totalDamage += absorbed;
+            // 50% splash to random other enemy
+            const others = enemiesCloned.filter(e => e.id !== prev.selectedEnemyId && e.hp > 0);
+            if (others.length > 0) {
+              const splashTarget = others[Math.floor(Math.random() * others.length)];
+              const splashDmg = Math.floor(dmg * 0.5);
+              const splashAbsorbed = splashTarget.takeDamage(splashDmg, prev.turn);
+              totalDamage += splashAbsorbed;
+              log.push(`Razor Cascade: ${dmg} to ${target.name}, ${splashDmg} splash to ${splashTarget.name}`);
+            }
+            if (card.bleed) target.statusEffects = applyStatus(target.statusEffects, 'bleed', card.bleed, 2);
+          }
+          continue;
+        }
+
+        if (dmg <= 0 && !card.bleed && !card.freeze && !card.vulnerable && !card.weak && !card.siphon) continue;
+        const hits = card.multihit ?? 1;
+        const isPiercing = card.piercing || hasRelic(prev.ownedRelics, 'unstoppable_force');
         if (card.aoe) {
           // AOE: damage all enemies
           enemiesCloned.forEach(e => {
@@ -1479,9 +1915,14 @@ export function SignalForgeGame() {
               finalDmg = finalDmg * 2;
             }
             
-            const absorbed = e.takeDamage(finalDmg, prev.turn);
-            totalDamage += absorbed;
-            if (card.leech) totalLeechDamage += absorbed;
+            // Multihit: apply damage N times (each hit has armored applied separately)
+            for (let hit = 0; hit < hits; hit++) {
+              if (finalDmg > 0) {
+                const absorbed = e.takeDamage(finalDmg, prev.turn, isPiercing);
+                totalDamage += absorbed;
+                if (card.leech) totalLeechDamage += absorbed;
+              }
+            }
             if (e.thorns > 0 && finalDmg > 0) thornsDamage += e.thorns;
             
             // Apply status effects from card
@@ -1494,7 +1935,7 @@ export function SignalForgeGame() {
             if (card.vulnerable) e.statusEffects = applyStatus(e.statusEffects, 'vulnerable', 1, card.vulnerable);
             if (card.weak) e.statusEffects = applyStatus(e.statusEffects, 'weak', 1, card.weak);
           });
-          log.push(`${card.name} (AOE) hits all for ${dmg}`);
+          log.push(`${card.name} (AOE) hits all for ${dmg}${hits > 1 ? ` ×${hits}` : ''}`);
         } else {
           // Single target: damage selected enemy only
           const target = enemiesCloned.find(e => e.id === prev.selectedEnemyId);
@@ -1519,9 +1960,14 @@ export function SignalForgeGame() {
                 finalDmg = finalDmg * 2;
               }
               
-              const absorbed = target.takeDamage(finalDmg, prev.turn);
-              totalDamage += absorbed;
-              if (card.leech) totalLeechDamage += absorbed;
+              // Multihit: apply damage N times (each hit has armored applied separately)
+              for (let hit = 0; hit < hits; hit++) {
+                if (finalDmg > 0) {
+                  const absorbed = target.takeDamage(finalDmg, prev.turn, isPiercing);
+                  totalDamage += absorbed;
+                  if (card.leech) totalLeechDamage += absorbed;
+                }
+              }
               if (target.thorns > 0 && finalDmg > 0) thornsDamage += target.thorns;
               
               // Apply status effects from card
@@ -1545,6 +1991,15 @@ export function SignalForgeGame() {
               }
             }
           }
+        }
+      }
+
+      // === Post-damage special card effects ===
+      let playerStatic = prev.playerStatic;
+      for (const { card } of cardDamages) {
+        if (card.name === 'Entropy Bomb' || card.name === 'System Crash') {
+          playerStatic = 0;
+          log.push(`${card.name}: Static reset to 0!`);
         }
       }
 
@@ -1581,8 +2036,7 @@ export function SignalForgeGame() {
       
       // --- On-death effects (Phase 4) ---
       const defeated = enemiesCloned.filter(e => e.isDefeated());
-      let newDiscard = prev.discard;
-      let playerStatic = prev.playerStatic;
+      let onDeathDiscard = prev.discard;
       let splitterEnemies: Enemy[] = []; // Track new enemies from Splitter
       let defeatedBossName: string | undefined = undefined;
       
@@ -1597,7 +2051,7 @@ export function SignalForgeGame() {
         if (e.onDeathGlitch > 0) {
           for (let i = 0; i < e.onDeathGlitch; i++) {
             const glitch = createGlitchCard(Date.now() + Math.floor(Math.random() * 100000));
-            newDiscard = [...newDiscard, glitch];
+            onDeathDiscard = [...onDeathDiscard, glitch];
           }
           log.push(`${e.name} dies and corrupts your deck!`);
         }
@@ -1632,7 +2086,6 @@ export function SignalForgeGame() {
       const allDefeated = enemies.length === 0;
 
       // --- Leech healing ---
-      let playerHp = prev.playerHp;
       const leechCards = prev.playedThisTurn.filter(c => c.leech && c.leech > 0);
       if (leechCards.length > 0 && totalLeechDamage > 0) {
         const maxLeech = Math.max(...leechCards.map(c => c.leech ?? 0));
@@ -1645,6 +2098,10 @@ export function SignalForgeGame() {
 
       // --- Enemy attacks & shield (with empowerAlly aura + thorns + freeze/weak status) ---
       const empowerBonus = enemies.reduce((sum, e) => sum + e.empowerAlly, 0);
+      // Dark Insight relic: enemies deal +2 damage per copy
+      const darkInsightBonus = countRelic(prev.ownedRelics, 'dark_insight') * 2;
+      // Time Eater: if charged, +3 bonus damage
+      const timeEaterBonus = enemies.some(e => e.timeEaterCharged) ? 3 : 0;
       const totalTakeDamage = enemies.reduce((sum, e) => {
         // Check for Freeze status - skip this enemy's attack
         const frozen = e.statusEffects.find(s => s.type === 'freeze');
@@ -1657,6 +2114,19 @@ export function SignalForgeGame() {
         // Empower aura from OTHER alive allies
         const allyEmpower = empowerBonus - e.empowerAlly;
         dmg += allyEmpower;
+        // Dark Insight: enemies deal extra damage
+        dmg += darkInsightBonus;
+        // The Compiler: every 3rd turn, deals 15 instead of base
+        if (e.compileCounter !== undefined && e.compileCounter > 0 && e.compileCounter % 3 === 0) {
+          dmg = 15;
+        }
+        // Time Eater: charged bonus
+        if (e.timeEaterCharged) dmg += timeEaterBonus;
+        // Glitch Hound: +1 per glitch card in deck
+        if (e.glitchScaling) {
+          const glitchCount = prev.deckList.filter(c => c.isGlitch).length;
+          dmg += glitchCount;
+        }
         
         // Check for Weak status - reduce damage by 25%
         const weak = e.statusEffects.find(s => s.type === 'weak');
@@ -1674,12 +2144,24 @@ export function SignalForgeGame() {
       if (hasRelic(prev.ownedRelics, 'shattered_mirror')) {
         finalTakeDamage = totalTakeDamage * 2;
       }
+      // Zone: damage multiplier applies to enemy damage too
+      if (zoneDamageMult !== 1) finalTakeDamage = Math.floor(finalTakeDamage * zoneDamageMult);
       
-      let playerShield = prev.playerShield;
       const shieldUsed = Math.min(playerShield, finalTakeDamage);
       const damageAfterShield = finalTakeDamage - shieldUsed;
       playerHp = Math.max(0, playerHp - damageAfterShield);
       playerShield -= shieldUsed;
+
+      // Gravity Well: halve shield gained by player
+      if (enemies.some(e => e.gravityWell && e.hp > 0)) {
+        playerShield = Math.floor(playerShield / 2);
+      }
+
+      // Safe Landing: survive fatal blow once per combat
+      if (playerHp <= 0 && !prev.safeLandingUsed && hasRelic(prev.ownedRelics, 'safe_landing')) {
+        playerHp = 1;
+        log.push('Safe Landing: Survived fatal blow with 1 HP!');
+      }
 
       // --- Vampiric healing ---
       for (const e of enemies) {
@@ -1693,7 +2175,6 @@ export function SignalForgeGame() {
       }
 
       // --- Tempo siphon (Phase 4) ---
-      let playerTempo = prev.playerTempo;
       for (const e of enemies) {
         if (e.tempoSiphon > 0) {
           const stolen = Math.min(playerTempo, e.tempoSiphon);
@@ -1712,20 +2193,90 @@ export function SignalForgeGame() {
       // --- Relic: Shield Battery (+2 shield per turn per copy) ---
       const shieldBatteryCount = countRelic(prev.ownedRelics, 'shield_battery');
       if (shieldBatteryCount > 0) {
-        const shieldGain = 2 * shieldBatteryCount;
+        let shieldGain = 2 * shieldBatteryCount;
+        if (zoneShieldMult !== 1) shieldGain = Math.floor(shieldGain * zoneShieldMult);
         playerShield += shieldGain;
         log.push(`Shield Battery (x${shieldBatteryCount}): +${shieldGain} shield`);
       }
 
       const isGameOver = playerHp <= 0;
 
+      // --- Relic: HP Regenerator (heal 1 per copy per turn) ---
+      if (!isGameOver) {
+        const hpRegenCount = countRelic(prev.ownedRelics, 'hp_regen');
+        if (hpRegenCount > 0) {
+          const healed = Math.min(hpRegenCount, prev.playerMaxHp - playerHp);
+          if (healed > 0) {
+            playerHp += healed;
+            log.push(`HP Regenerator: +${healed} HP`);
+          }
+        }
+        // Relic: Modulator's Core (regen 1 HP/turn)
+        if (hasRelic(prev.ownedRelics, 'modulators_core')) {
+          const mc = Math.min(1, prev.playerMaxHp - playerHp);
+          if (mc > 0) { playerHp += mc; log.push(`Modulator's Core: +1 HP`); }
+        }
+      }
+
+      // --- Relic: Healing Pulse (heal 3 HP on Forge Burst) ---
+      if (isMatch && countRelic(prev.ownedRelics, 'healing_pulse') > 0) {
+        const healAmt = 3 * countRelic(prev.ownedRelics, 'healing_pulse');
+        playerHp = Math.min(prev.playerMaxHp, playerHp + healAmt);
+        log.push(`Healing Pulse: +${healAmt} HP from Forge Burst!`);
+      }
+
+      // --- Relic: Damage Echo (splash 5 on 15+ single-hit) ---
+      if (countRelic(prev.ownedRelics, 'damage_echo') > 0) {
+        for (const { card, dmg } of cardDamages) {
+          if (!card.aoe && dmg >= 15) {
+            const others = enemiesCloned.filter(e => e.id !== prev.selectedEnemyId && e.hp > 0);
+            others.forEach(e => { e.takeDamage(5, prev.turn); });
+            if (others.length > 0) log.push(`Damage Echo: 5 splash to ${others.length} enemies!`);
+          }
+        }
+      }
+
+      // --- Relic: Type Master (+1 energy if 3+ different types played) ---
+      const typeMasterCount = countRelic(prev.ownedRelics, 'type_master');
+      let typeMasterEnergyBonus = 0;
+      if (typeMasterCount > 0) {
+        const uniqueTypes = new Set(prev.playedThisTurn.map(c => c.type));
+        if (uniqueTypes.size >= 3) {
+          typeMasterEnergyBonus = typeMasterCount;
+          log.push(`Type Master: +${typeMasterEnergyBonus} energy from type diversity!`);
+        }
+      }
+
+      // --- Relic: Pattern Mastery (on match: +4 shield, draw 1 extra) ---
+      let patternMasteryDraw = 0;
+      if (isMatch && countRelic(prev.ownedRelics, 'pattern_mastery') > 0) {
+        playerShield += 4;
+        patternMasteryDraw = 1;
+        log.push('Pattern Mastery: +4 shield and extra draw from sequence match!');
+      }
+
       // --- Initialize mutable state for end-of-turn ---
       // playerStatic already initialized in on-death effects processing
       let currency = prev.currency;
 
+      // --- Zone: static_per_turn ---
+      if (prev.currentZone?.effect.type === 'static_per_turn') {
+        playerStatic += prev.currentZone.effect.value;
+        log.push(`${prev.currentZone.name}: +${prev.currentZone.effect.value} Static`);
+      }
+
+      // --- Zone: heal_per_turn ---
+      if (prev.currentZone?.effect.type === 'heal_per_turn' && !isGameOver) {
+        const zoneHeal = Math.min(prev.currentZone.effect.value, prev.playerMaxHp - playerHp);
+        if (zoneHeal > 0) {
+          playerHp += zoneHeal;
+          log.push(`${prev.currentZone.name}: +${zoneHeal} HP`);
+        }
+      }
+
       // --- Card routing: Sustain / Exhaust / Discard ---
       let newDeckList = [...prev.deckList];
-      const discardAfterPlay = [...newDiscard]; // Use newDiscard which may have on-death Glitches
+      const discardAfterPlay = [...onDeathDiscard]; // Use onDeathDiscard which may have on-death Glitches
       const sustainHand: Card[] = [];
 
       for (const card of prev.playedThisTurn) {
@@ -1804,6 +2355,80 @@ export function SignalForgeGame() {
       // Cursed Relic: Demon Core (+2 energy per turn)
       if (hasRelic(prev.ownedRelics, 'demon_core')) {
         playerEnergy += 2;
+      }
+      // Relic: Type Master bonus
+      playerEnergy += typeMasterEnergyBonus;
+      // Relic: Static Heart (convert Static to energy at 3:1)
+      if (hasRelic(prev.ownedRelics, 'static_heart') && playerStatic >= 3) {
+        const converted = Math.floor(playerStatic / 3);
+        playerStatic -= converted * 3;
+        playerEnergy += converted;
+        log.push(`Static Heart: Converted ${converted * 3} Static → +${converted} energy`);
+      }
+
+      // --- Relic: Temporal Anchor (tempo doesn't reset, but loses 2/turn) ---
+      if (hasRelic(prev.ownedRelics, 'temporal_anchor')) {
+        playerTempo = Math.max(0, playerTempo - 2);
+      } else {
+        // Normal tempo reset at end of turn
+        playerTempo = 0;
+      }
+
+      // --- Relic: Momentum Core (if 4+ cards played, cards cost 1 less next turn) ---
+      const momentumCoreActive = hasRelic(prev.ownedRelics, 'momentum_core') && prev.playedThisTurn.length >= 4;
+      if (momentumCoreActive) log.push('Momentum Core: All cards cost 1 less next turn!');
+
+      // --- Relic: Void Harvester (+2 permanent damage per exhausted card) ---
+      let voidHarvesterDmgBonus = prev.voidHarvesterDmgBonus;
+      if (hasRelic(prev.ownedRelics, 'void_harvester')) {
+        const exhaustedCount = prev.playedThisTurn.filter(c => c.exhaust).length;
+        if (exhaustedCount > 0) {
+          voidHarvesterDmgBonus += exhaustedCount * 2;
+          log.push(`Void Harvester: +${exhaustedCount * 2} permanent damage from exhausted cards`);
+        }
+      }
+
+      // --- Enemy: Time Eater charging (check if 5+ cards played) ---
+      for (const e of enemies) {
+        if (e.name === 'Time Eater') {
+          if (prev.playedThisTurn.length >= 5) {
+            e.timeEaterCharged = true;
+            e.shield = (e.shield ?? 0) + 10;
+            log.push('Time Eater charges up! Gained +10 shield and +3 next attack.');
+          } else {
+            e.timeEaterCharged = false;
+          }
+        }
+        // The Compiler: increment counter
+        if (e.compileCounter !== undefined && e.name === 'The Compiler') {
+          e.compileCounter = (e.compileCounter ?? 0) + 1;
+        }
+        // Curse Caster: inject curse card
+        if (e.curseCaster && e.hp > 0) {
+          const curseCard = createNamedCard('corrupted_signal', Date.now() + Math.floor(Math.random() * 100000));
+          discardAfterPlay.push(curseCard);
+          log.push(`${e.name} casts a Corrupted Signal into your deck!`);
+        }
+        // Pattern Lock: scramble one sequence slot
+        if (e.sequenceScramble && e.hp > 0) {
+          log.push(`${e.name} scrambles the sequence!`);
+          // Effect applied to next target sequence generation
+        }
+      }
+
+      // --- Enemy: Infinite Loop revive ---
+      for (const e of defeated) {
+        if (e.name === 'The Infinite Loop' && (e.reviveCount ?? 0) < 2) {
+          e.hp = 30;
+          e.reviveCount = (e.reviveCount ?? 0) + 1;
+          e.regen = 5 + (e.reviveCount ?? 0) * 2;
+          log.push(`The Infinite Loop revives! (${e.reviveCount}/2) Regen now ${e.regen}`);
+          // Remove from defeated, add back to living enemies
+        }
+        // Track Infinite Loop as defeated boss when truly dead
+        if (e.name === 'The Infinite Loop' && (e.reviveCount ?? 0) >= 2) {
+          defeatedBossName = e.name;
+        }
       }
 
       // --- Draw new hand (sustain cards stay in hand) ---
@@ -1966,6 +2591,27 @@ export function SignalForgeGame() {
         }
       });
 
+      // Performance bonuses on victory
+      let bonusCurrency = 0;
+      const finalFloorDmg = prev.floorDamageTaken + damageAfterShield;
+      const finalFloorPatterns = prev.floorPatternsCompleted + (isMatch ? 1 : 0);
+      const finalFloorTurns = prev.floorTurns + 1;
+      if (allDefeated) {
+        if (finalFloorDmg === 0) {
+          bonusCurrency += 25;
+          log.push('✨ No Damage bonus: +25💰');
+        }
+        if (finalFloorPatterns > 0) {
+          const patternBonus = finalFloorPatterns * 5;
+          bonusCurrency += patternBonus;
+          log.push(`✨ Pattern Master (×${finalFloorPatterns}): +${patternBonus}💰`);
+        }
+        if (finalFloorTurns <= 3) {
+          bonusCurrency += 15;
+          log.push('✨ Speed Clear: +15💰');
+        }
+      }
+
       return {
         ...prev,
         deckList: newDeckList,
@@ -1975,7 +2621,7 @@ export function SignalForgeGame() {
         playedThisTurn: [],
         currentSequence: [],
         playerEnergy,
-        playerTempo: 0,
+        playerTempo,
         playerStatic,
         playerShield,
         playerHp,
@@ -1987,7 +2633,7 @@ export function SignalForgeGame() {
         targetSequence,
         glitchThreshold,
         score: prev.score + totalDamage * 5 + (isMatch ? 50 : 0) + defeatedCount * 25,
-        currency: currency + (isMatch ? 15 : 0) + defeatedCount * (20 + prev.floor * 5) + (allDefeated ? (150 + prev.floor * 30) : 0),
+        currency: currency + (isMatch ? 15 : 0) + defeatedCount * (20 + prev.floor * 5) + (allDefeated ? (150 + prev.floor * 30) : 0) + bonusCurrency,
         selectedEnemyId: newSelectedEnemyId,
         firstPulsePlayedThisTurn: false,
         firstSawPlayedThisTurn: false,
@@ -1995,6 +2641,15 @@ export function SignalForgeGame() {
         combatLog: log,
         cardRewardChoices,
         defeatedBossName: allDefeated ? defeatedBossName : undefined,
+        // New state tracking
+        damageTakenLastTurn: damageAfterShield,
+        waveformTypesPlayedThisTurn: [],
+        momentumCoreActive,
+        safeLandingUsed: prev.safeLandingUsed || (playerHp <= 0 && !prev.safeLandingUsed && hasRelic(prev.ownedRelics, 'safe_landing')),
+        voidHarvesterDmgBonus,
+        floorDamageTaken: prev.floorDamageTaken + damageAfterShield,
+        floorPatternsCompleted: prev.floorPatternsCompleted + (isMatch ? 1 : 0),
+        floorTurns: prev.floorTurns + 1,
       };
     });
   }, [drawHandCards, refillDeckFromDiscard]);
@@ -2079,6 +2734,28 @@ export function SignalForgeGame() {
       playerStatuses: [],
       removalsUsed: 0,
       combatLog: [],
+      upgradesPurchased: 0,
+      cardRewardChoices: [],
+      mulliganAvailable: false,
+      mulliganSelected: [],
+      damageTakenLastTurn: 0,
+      waveformTypesPlayedThisTurn: [],
+      momentumCoreActive: false,
+      safeLandingUsed: false,
+      overwriterPenUsed: false,
+      overwriterPenTarget: null,
+      voidHarvesterDmgBonus: 0,
+      voidShieldActive: false,
+      floorDamageTaken: 0,
+      floorPatternsCompleted: 0,
+      floorTurns: 0,
+      shopRefreshesUsed: 0,
+      starterRelicChoices: [],
+      handSortMode: 'none',
+      viewingPile: null,
+      relicBoughtThisShop: false,
+      shopRemovalsUsed: 0,
+      shopUpgradesUsed: 0,
     });
   }, [clearSavedRun]);
 
@@ -2099,11 +2776,27 @@ export function SignalForgeGame() {
     checkSavedRun();
   }, []);
 
-  // Start game - draw initial hand (with relic support)
+  // Start game - show starter relic choice first
   const startGame = useCallback(() => {
     // Clear any existing saved run when starting fresh
     clearSavedRun();
+    // Generate 3 random common relics to choose from
+    const commons = RELIC_CATALOG.filter(r => r.rarity === 'common');
+    const shuffled = [...commons].sort(() => Math.random() - 0.5);
+    const choices = shuffled.slice(0, 3);
+    setGameState(prev => ({
+      ...prev,
+      phase: 'starter-relic',
+      starterRelicChoices: choices,
+    }));
+  }, [clearSavedRun]);
+
+  // Select starter relic and begin combat
+  const selectStarterRelic = useCallback((relic: RelicTemplate) => {
     setGameState(prev => {
+      const newRelic = new Relic({ ...relic, id: Date.now() + Math.floor(Math.random() * 100000) });
+      const ownedRelics = [...prev.ownedRelics, newRelic];
+
       // Separate Innate cards from the rest
       const innateCards = prev.deckList.filter(c => c.innate);
       const nonInnateCards = prev.deckList.filter(c => !c.innate);
@@ -2111,13 +2804,12 @@ export function SignalForgeGame() {
       // Shuffle non-innate cards
       const shuffledDeck = shuffleDeck(nonInnateCards);
       
-      const hs = getHandSize(prev.ownedRelics);
+      const hs = getHandSize(ownedRelics);
       const tempLog: string[] = [];
       
       // Start with innate cards in hand, then draw the rest
       const initialHand = [...innateCards];
-      const cardsToDrawCount = Math.max(0, hs - innateCards.length);
-      const { deck, hand, discard, exhausted } = drawHandCards(shuffledDeck, [], initialHand, hs, prev.ownedRelics, 0, tempLog);
+      const { deck, hand, discard, exhausted } = drawHandCards(shuffledDeck, [], initialHand, hs, ownedRelics, 0, tempLog);
 
       // Clean Room exhausted cards removed from deck list
       let newDeckList = [...prev.deckList];
@@ -2132,35 +2824,46 @@ export function SignalForgeGame() {
 
       // Relic: Coil Capacitor (+1 energy per copy at start of combat)
       let playerEnergy = 3;
-      playerEnergy += countRelic(prev.ownedRelics, 'coil_capacitor');
+      playerEnergy += countRelic(ownedRelics, 'coil_capacitor');
       // Cursed Relic: Demon Core (+2 energy per turn)
-      if (hasRelic(prev.ownedRelics, 'demon_core')) {
+      if (hasRelic(ownedRelics, 'demon_core')) {
         playerEnergy += 2;
       }
 
       // Relic: Stability Core (raise glitch threshold +2 per copy)
       // Cursed Relic: Overclocked Processor (lower glitch threshold -2)
-      const glitchThreshold = 4 + countRelic(prev.ownedRelics, 'stability_core') * 2
-                              - (hasRelic(prev.ownedRelics, 'overclocked_processor') ? 2 : 0);
+      const glitchThreshold = 4 + countRelic(ownedRelics, 'stability_core') * 2
+                              - (hasRelic(ownedRelics, 'overclocked_processor') ? 2 : 0);
       
       // Cursed Relic: Demon Core (-5 HP at start of combat)
       let startingHp = prev.playerHp;
-      if (hasRelic(prev.ownedRelics, 'demon_core')) {
+      if (hasRelic(ownedRelics, 'demon_core')) {
         startingHp = Math.max(1, startingHp - 5);
+      }
+
+      // Zone modifier
+      const zone = selectZone();
+      let finalDeck = deck;
+      const startLog = [`Starting relic: ${relic.name}`];
+      if (zone.effect.type !== 'none') startLog.push(`Zone: ${zone.name} — ${zone.description}`);
+      if (zone.effect.type === 'glitch_inject') {
+        for (let i = 0; i < zone.effect.value; i++) {
+          finalDeck = [...finalDeck, createGlitchCard(Date.now() + Math.floor(Math.random() * 100000) + i)];
+        }
       }
 
       return {
         ...prev,
         phase: 'combat',
         deckList: newDeckList,
-        deck,
+        deck: finalDeck,
         hand,
         discard,
         enemies,
         playerEnergy,
         playerHp: startingHp,
         playerShield: 0,
-        playerTempo: 0,
+        playerTempo: countRelic(ownedRelics, 'tempo_primer') * 2,
         playerStatic: 0,
         targetSequence,
         turn: 0,
@@ -2170,10 +2873,14 @@ export function SignalForgeGame() {
         firstSawPlayedThisTurn: false,
         reshuffleCount: 0,
         playerStatuses: [],
-        combatLog: [],
+        combatLog: startLog,
+        ownedRelics,
+        starterRelicChoices: [],
+        mulliganAvailable: true,
+        currentZone: zone,
       };
     });
-  }, [drawHandCards, shuffleDeck, clearSavedRun]);
+  }, [drawHandCards, shuffleDeck]);
 
   // Advance to next floor
   const nextFloor = useCallback(() => {
@@ -2187,7 +2894,7 @@ export function SignalForgeGame() {
       const targetSequence = Array.from({ length: seqLength }, () => types[Math.floor(Math.random() * types.length)]);
       
       // Generate shop inventory
-      const shopInventory = generateShopInventory(newFloor, prev.removalsUsed, prev.upgradesPurchased);
+      const shopInventory = generateShopInventory(newFloor);
       
       // Heal player 25% of max HP
       const healthGain = Math.floor(prev.playerMaxHp * 0.25);
@@ -2237,6 +2944,9 @@ export function SignalForgeGame() {
         shopInventory,
         ownedRelics: newRelics,
         defeatedBossName: undefined, // Clear after awarding relic
+        relicBoughtThisShop: false,
+        shopRemovalsUsed: 0,
+        shopUpgradesUsed: 0,
       };
     });
   }, []);
@@ -2251,15 +2961,19 @@ export function SignalForgeGame() {
       
       let newDeckList = [...prev.deckList];
       let newOwnedRelics = [...prev.ownedRelics];
+      let relicBought = false;
       
       if (item.type === 'card' && item.item && item.item instanceof Card) {
         // Add card to deck list with new ID
         const newCard = item.item.clone(Math.floor(Math.random() * 10000));
         newDeckList = [...newDeckList, newCard];
       } else if (item.type === 'relic' && item.item && item.item instanceof Relic) {
+        // Only one relic per shop visit
+        if (prev.relicBoughtThisShop) return prev;
         // Add relic to owned relics with new ID
         const newRelic = item.item.clone(Math.floor(Math.random() * 10000));
         newOwnedRelics = [...newOwnedRelics, newRelic];
+        relicBought = true;
       }
       
       // Remove from shop inventory
@@ -2271,15 +2985,17 @@ export function SignalForgeGame() {
         ownedRelics: newOwnedRelics,
         currency: prev.currency - item.price,
         shopInventory: newShopInventory,
+        relicBoughtThisShop: prev.relicBoughtThisShop || relicBought,
       };
     });
   }, []);
 
-  // Phase 6.3 — Upgrade card from deck
+  // Phase 6.3 — Upgrade card from deck (doubling cost per shop visit: 50, 100, 200...)
   const upgradeCard = useCallback((cardId: number) => {
     setGameState(prev => {
       if (prev.phase !== 'shop') return prev;
-      const upgradePrice = 50 + prev.upgradesPurchased * 25;
+      const costScale = 1 + (prev.floor - 1) * 0.08;
+      const upgradePrice = Math.round(50 * Math.pow(2, prev.shopUpgradesUsed) * costScale);
       if (prev.currency < upgradePrice) return prev;
       
       // Find the card in the deck list
@@ -2306,15 +3022,17 @@ export function SignalForgeGame() {
         deckList: newDeckList,
         currency: prev.currency - upgradePrice,
         upgradesPurchased: prev.upgradesPurchased + 1,
+        shopUpgradesUsed: prev.shopUpgradesUsed + 1,
       };
     });
   }, []);
 
-  // Remove card from deck
+  // Remove card from deck (doubling cost per shop visit: 50, 100, 200...)
   const removeCard = useCallback((cardId: number) => {
     setGameState(prev => {
       if (prev.phase !== 'shop') return prev;
-      const removalPrice = 50 + prev.removalsUsed * 25;
+      const costScale = 1 + (prev.floor - 1) * 0.08;
+      const removalPrice = Math.round(50 * Math.pow(2, prev.shopRemovalsUsed) * costScale);
       if (prev.currency < removalPrice) return prev;
       
       // Remove card from the full deck list
@@ -2328,6 +3046,7 @@ export function SignalForgeGame() {
         deckList: newDeckList,
         currency: prev.currency - removalPrice,
         removalsUsed: prev.removalsUsed + 1,
+        shopRemovalsUsed: prev.shopRemovalsUsed + 1,
       };
     });
   }, []);
@@ -2365,14 +3084,34 @@ export function SignalForgeGame() {
       firstSawPlayedThisTurn: false,
       reshuffleCount: 0,
       playerStatuses: [],
-    removalsUsed: 0,
-    playerStatuses: [],
-    removalsUsed: 0,
+      removalsUsed: 0,
       combatLog: [],
+      upgradesPurchased: 0,
+      cardRewardChoices: [],
+      mulliganAvailable: false,
+      mulliganSelected: [],
+      damageTakenLastTurn: 0,
+      waveformTypesPlayedThisTurn: [],
+      momentumCoreActive: false,
+      safeLandingUsed: false,
+      overwriterPenUsed: false,
+      overwriterPenTarget: null,
+      voidHarvesterDmgBonus: 0,
+      voidShieldActive: false,
+      floorDamageTaken: 0,
+      floorPatternsCompleted: 0,
+      floorTurns: 0,
+      shopRefreshesUsed: 0,
+      starterRelicChoices: [],
+      handSortMode: 'none',
+      viewingPile: null,
+      relicBoughtThisShop: false,
+      shopRemovalsUsed: 0,
+      shopUpgradesUsed: 0,
     });
   }, []);
 
-  // Auto-save when entering shop phase, after each turn, auto-clear when game ends
+  // Auto-save on every phase transition and after each combat turn; clear on game over
   const prevPhaseRef = useRef(gameState.phase);
   const prevTurnRef = useRef(gameState.turn);
   useEffect(() => {
@@ -2381,21 +3120,19 @@ export function SignalForgeGame() {
     const prevTurn = prevTurnRef.current;
     prevTurnRef.current = gameState.turn;
 
-    // Save when transitioning into shop (after floor clear)
-    if (gameState.phase === 'shop' && prevPhase !== 'shop' && prevPhase !== 'landing') {
-      saveRun(gameState);
-    }
-    // Save when transitioning into combat from shop (prevents shop save-scumming)
-    if (gameState.phase === 'combat' && prevPhase === 'shop') {
-      saveRun(gameState);
-    }
-    // Save after every turn (turn number incremented)
-    if (gameState.phase === 'combat' && gameState.turn > prevTurn) {
-      saveRun(gameState);
-    }
     // Clear save on game over
     if (gameState.phase === 'game-over' && prevPhase !== 'game-over') {
       clearSavedRun();
+      return;
+    }
+
+    // Save on any phase transition (except into landing or game-over)
+    if (gameState.phase !== prevPhase && gameState.phase !== 'landing' && gameState.phase !== 'game-over') {
+      saveRun(gameState);
+    }
+    // Also save after every combat turn (turn number incremented)
+    if (gameState.phase === 'combat' && gameState.turn > prevTurn) {
+      saveRun(gameState);
     }
   }, [gameState.phase, gameState.turn, gameState, saveRun, clearSavedRun]);
 
@@ -2438,6 +3175,16 @@ export function SignalForgeGame() {
         tempLog.push('Demon Core: -5 HP');
       }
 
+      // Zone modifier
+      const zone = selectZone();
+      let finalDeck = deck;
+      if (zone.effect.type !== 'none') tempLog.push(`Zone: ${zone.name} \u2014 ${zone.description}`);
+      if (zone.effect.type === 'glitch_inject') {
+        for (let i = 0; i < zone.effect.value; i++) {
+          finalDeck = [...finalDeck, createGlitchCard(Date.now() + Math.floor(Math.random() * 100000) + i)];
+        }
+      }
+
       // Phase 1.5: Calculate enemy intents at combat start
       prev.enemies.forEach(enemy => {
         if (enemy.hp <= 0) {
@@ -2470,13 +3217,13 @@ export function SignalForgeGame() {
         phase: 'combat',
         shopInventory: [],
         deckList: newDeckList,
-        deck,
+        deck: finalDeck,
         hand,
         discard,
         playedThisTurn: [],
         currentSequence: [],
         playerEnergy,
-        playerTempo: 0,
+        playerTempo: countRelic(prev.ownedRelics, 'tempo_primer') * 2,
         playerStatic: 0,
         playerShield: 0,
         playerHp,
@@ -2489,6 +3236,18 @@ export function SignalForgeGame() {
         combatLog: tempLog,
         mulliganAvailable: true,  // Phase 8.1 — Enable mulligan at combat start
         mulliganSelected: [],
+        damageTakenLastTurn: 0,
+        waveformTypesPlayedThisTurn: [],
+        momentumCoreActive: false,
+        safeLandingUsed: false,
+        overwriterPenUsed: false,
+        overwriterPenTarget: null,
+        voidShieldActive: false,
+        voidHarvesterDmgBonus: 0,
+        floorTurns: 0,
+        floorDamageTaken: 0,
+        floorPatternsCompleted: 0,
+        currentZone: zone,
       };
     });
   }, [shuffleDeck, drawHandCards]);
@@ -2593,30 +3352,426 @@ export function SignalForgeGame() {
     });
   }, []);
 
-  // Phase 6.2 — Card reward handlers
-  const selectCardReward = useCallback((card: Card) => {
+  // Overwriter's Pen — activate transform mode
+  const activateOverwriterPen = useCallback((handIndex: number) => {
     setGameState(prev => {
-      if (prev.phase !== 'card-reward') return prev;
+      if (prev.phase !== 'combat' || prev.overwriterPenUsed) return prev;
+      if (!hasRelic(prev.ownedRelics, 'overwriters_pen')) return prev;
+      if (handIndex < 0 || handIndex >= prev.hand.length) return prev;
+      return { ...prev, overwriterPenTarget: handIndex };
+    });
+  }, []);
+
+  const cancelOverwriterPen = useCallback(() => {
+    setGameState(prev => ({ ...prev, overwriterPenTarget: null }));
+  }, []);
+
+  const confirmOverwriterPen = useCallback((newCardKey: string) => {
+    setGameState(prev => {
+      if (prev.overwriterPenTarget === null) return prev;
+      const idx = prev.overwriterPenTarget;
+      if (idx < 0 || idx >= prev.hand.length) return { ...prev, overwriterPenTarget: null };
+      const newCard = createNamedCard(newCardKey, prev.hand[idx].id);
+      const newHand = [...prev.hand];
+      newHand[idx] = newCard;
+      // Also update deckList
+      const oldCardId = prev.hand[idx].id;
+      const newDeckList = prev.deckList.map(c => c.id === oldCardId ? newCard : c);
       return {
         ...prev,
-        deckList: [...prev.deckList, card],
-        phase: 'reward',
-        cardRewardChoices: [],
+        hand: newHand,
+        deckList: newDeckList,
+        overwriterPenUsed: true,
+        overwriterPenTarget: null,
+        combatLog: [...prev.combatLog, `Overwriter's Pen: transformed ${prev.hand[idx].name} → ${newCard.name}`],
       };
     });
   }, []);
 
+  // Phase 6.2 — Card reward handlers
+  const getNextPhaseAfterReward = useCallback((floor: number): { phase: GameState['phase']; event?: GameEvent } => {
+    // 40% chance of an event
+    if (Math.random() < 0.4) {
+      const eligible = eventTemplates.filter(e => floor >= e.minFloor);
+      if (eligible.length > 0) {
+        const event = eligible[Math.floor(Math.random() * eligible.length)];
+        return { phase: 'event', event };
+      }
+    }
+    // Every 3rd floor: rest-or-shop choice
+    if (floor % 3 === 0) {
+      return { phase: 'rest-or-shop' };
+    }
+    return { phase: 'reward' };
+  }, []);
+
+  const selectCardReward = useCallback((card: Card) => {
+    setGameState(prev => {
+      if (prev.phase !== 'card-reward') return prev;
+      const next = getNextPhaseAfterReward(prev.floor);
+      return {
+        ...prev,
+        deckList: [...prev.deckList, card],
+        phase: next.phase,
+        cardRewardChoices: [],
+        currentEvent: next.event,
+      };
+    });
+  }, [getNextPhaseAfterReward]);
+
   const skipCardReward = useCallback(() => {
     setGameState(prev => {
       if (prev.phase !== 'card-reward') return prev;
+      const next = getNextPhaseAfterReward(prev.floor);
       return {
         ...prev,
         currency: prev.currency + 20,
-        phase: 'reward',
+        phase: next.phase,
         cardRewardChoices: [],
+        currentEvent: next.event,
+      };
+    });
+  }, [getNextPhaseAfterReward]);
+
+  // 6.7 — Shop refresh
+  const refreshShop = useCallback(() => {
+    setGameState(prev => {
+      if (prev.phase !== 'shop') return prev;
+      if (prev.shopRefreshesUsed >= 2) return prev;
+      if (prev.currency < 20) return prev;
+      return {
+        ...prev,
+        currency: prev.currency - 20,
+        shopRefreshesUsed: prev.shopRefreshesUsed + 1,
+        shopInventory: generateShopInventory(prev.floor, prev.shopRefreshesUsed + 1),
       };
     });
   }, []);
+
+  // 7.1 — Event system
+  const resolveEventChoice = useCallback((choiceIndex: number) => {
+    setGameState(prev => {
+      if (!prev.currentEvent) return prev;
+      const event = prev.currentEvent;
+      const choice = event.choices[choiceIndex];
+      let playerHp = prev.playerHp;
+      let playerMaxHp = prev.playerMaxHp;
+      let currency = prev.currency;
+      let playerStatic = prev.playerStatic;
+      let deckList = [...prev.deckList];
+      const log = [...prev.combatLog];
+
+      switch (choice.effect) {
+        case 'heal': {
+          // Special: scrap_merchant costs 30 currency
+          if (event.id === 'scrap_merchant') {
+            if (currency < 30) {
+              log.push('Not enough currency!');
+              break;
+            }
+            currency -= 30;
+          }
+          const healAmt = choice.value <= 100
+            ? Math.floor(playerMaxHp * choice.value / 100)
+            : choice.value;
+          playerHp = Math.min(playerMaxHp, playerHp + healAmt);
+          log.push(`Healed ${healAmt} HP.`);
+          break;
+        }
+        case 'currency':
+          if (event.id === 'the_wager' && choiceIndex === 0) {
+            if (currency < 40) {
+              log.push('Not enough currency to wager!');
+              break;
+            }
+            currency -= 40;
+            if (Math.random() < 0.5) {
+              currency += 100;
+              log.push('Won the wager! +100💰');
+            } else {
+              log.push('Lost the wager! -40💰');
+            }
+          } else {
+            currency += choice.value;
+            if (choice.value > 0) log.push(`Gained ${choice.value}💰`);
+          }
+          break;
+        case 'removeCard': {
+          // Special: data_broker costs 50 currency + also upgrades a card
+          if (event.id === 'data_broker') {
+            if (currency < 50) {
+              log.push('Not enough currency!');
+              break;
+            }
+            currency -= 50;
+          }
+          const removable = deckList.filter(c => c.rarity !== 'common' || deckList.length > 5);
+          if (removable.length > 0) {
+            const toRemove = removable[Math.floor(Math.random() * removable.length)];
+            deckList = deckList.filter(c => c.id !== toRemove.id);
+            log.push(`Removed ${toRemove.name} from deck.`);
+          }
+          // data_broker also upgrades a random card
+          if (event.id === 'data_broker') {
+            const upgradable = deckList.filter(c => !c.upgraded);
+            if (upgradable.length > 0) {
+              const target = upgradable[Math.floor(Math.random() * upgradable.length)];
+              const idx = deckList.findIndex(c => c.id === target.id);
+              if (idx >= 0) {
+                const up = deckList[idx].clone(Date.now() + Math.floor(Math.random() * 100000));
+                up.upgraded = true;
+                up.damage = Math.ceil(up.damage * 1.25);
+                up.shield = Math.ceil(up.shield * 1.25);
+                up.name = up.name + '+';
+                deckList = [...deckList];
+                deckList[idx] = up;
+                log.push(`Upgraded ${target.name}!`);
+              }
+            }
+          }
+          break;
+        }
+        case 'addCard': {
+          const rarePool = CARD_CATALOG.filter(t => t.rarity === 'rare' && !t.isGlitch);
+          if (rarePool.length > 0) {
+            const template = rarePool[Math.floor(Math.random() * rarePool.length)];
+            const newId = Date.now() + Math.floor(Math.random() * 100000);
+            deckList = [...deckList, Card.fromTemplate(template, newId)];
+            log.push(`Added ${template.name} to deck.`);
+          }
+          // data_broker: stealing adds static instead of glitch
+          if (event.id === 'data_broker') {
+            playerStatic += 3;
+            log.push('+3 Static from stolen data.');
+          } else {
+            const glitch = createGlitchCard(Date.now() + Math.floor(Math.random() * 100000) + 99);
+            deckList = [...deckList, glitch];
+            log.push('Added a Glitch card to deck.');
+          }
+          break;
+        }
+        case 'upgradeCard': {
+          const upgradable = deckList.filter(c => !c.upgraded);
+          if (upgradable.length > 0) {
+            const target = upgradable[Math.floor(Math.random() * upgradable.length)];
+            const idx = deckList.findIndex(c => c.id === target.id);
+            if (idx >= 0) {
+              const upgraded = deckList[idx].clone(Date.now() + Math.floor(Math.random() * 100000));
+              upgraded.upgraded = true;
+              upgraded.damage = Math.ceil(upgraded.damage * 1.25);
+              upgraded.shield = Math.ceil(upgraded.shield * 1.25);
+              upgraded.name = upgraded.name + '+';
+              deckList = [...deckList];
+              deckList[idx] = upgraded;
+              log.push(`Upgraded ${target.name}!`);
+            }
+          }
+          // corrupted_forge: upgrading also adds a glitch card
+          if (event.id === 'corrupted_forge') {
+            const glitch = createGlitchCard(Date.now() + Math.floor(Math.random() * 100000) + 99);
+            deckList = [...deckList, glitch];
+            log.push('Corruption added a Glitch card to deck.');
+          }
+          break;
+        }
+        case 'maxHp':
+          playerMaxHp += choice.value;
+          playerHp += choice.value;
+          log.push(`+${choice.value} max HP!`);
+          break;
+        case 'loseHp':
+          playerHp = Math.max(1, playerHp - choice.value);
+          currency += 60;
+          log.push(`Lost ${choice.value} HP, gained 60💰.`);
+          break;
+        case 'reduceStatic':
+          playerStatic = 0;
+          log.push('Static reduced to 0.');
+          break;
+        case 'gainStatic':
+          playerStatic += choice.value;
+          currency += 35;
+          log.push(`+${choice.value} Static, +35💰.`);
+          break;
+      }
+
+      return {
+        ...prev,
+        playerHp,
+        playerMaxHp,
+        currency,
+        playerStatic,
+        deckList,
+        currentEvent: undefined,
+        phase: 'reward',
+        combatLog: log,
+      };
+    });
+  }, []);
+
+  // 7.2 — Rest vs Shop
+  const chooseRest = useCallback(() => {
+    setGameState(prev => {
+      const healAmt = Math.floor(prev.playerMaxHp * 0.5);
+      return {
+        ...prev,
+        playerHp: Math.min(prev.playerMaxHp, prev.playerHp + healAmt),
+        phase: 'landing', // skip shop, go to next floor combat setup
+        combatLog: [...prev.combatLog, `Rested and healed ${healAmt} HP.`],
+      };
+    });
+    // Proceed to next combat via nextFloor-like flow
+    setTimeout(() => {
+      setGameState(prev => {
+        const newFloor = prev.floor + 1;
+        const newEnemies = createEnemies(newFloor);
+        const types: Array<'Pulse' | 'Sine' | 'Saw' | 'Noise'> = ['Pulse', 'Sine', 'Saw', 'Noise'];
+        const seqLength = Math.min(2 + Math.floor((newFloor - 1) / 5), 3);
+        const targetSequence = Array.from({ length: seqLength }, () => types[Math.floor(Math.random() * types.length)]);
+        const zone = selectZone();
+        // Separate Innate cards from the rest
+        const innateCards = prev.deckList.filter(c => c.innate);
+        const nonInnateCards = prev.deckList.filter(c => !c.innate);
+        let shuffledDeck = shuffleDeck(nonInnateCards);
+        const restLog: string[] = [];
+        if (zone.effect.type !== 'none') restLog.push(`Zone: ${zone.name} — ${zone.description}`);
+        if (zone.effect.type === 'glitch_inject') {
+          for (let i = 0; i < zone.effect.value; i++) {
+            shuffledDeck = [...shuffledDeck, createGlitchCard(Date.now() + Math.floor(Math.random() * 100000) + i)];
+          }
+        }
+
+        const hs = getHandSize(prev.ownedRelics);
+        const tempLog: string[] = [];
+        const initialHand = [...innateCards];
+        const drawResult = drawHandCards(shuffledDeck, [], initialHand, hs, prev.ownedRelics, 0, tempLog);
+
+        // Clean Room exhausted cards removed from deck list
+        let newDeckList = [...prev.deckList];
+        for (const ex of drawResult.exhausted) {
+          newDeckList = newDeckList.filter(c => c.id !== ex.id);
+        }
+
+        return {
+          ...prev,
+          floor: newFloor,
+          node: prev.node + 1,
+          phase: 'combat',
+          enemies: newEnemies,
+          deck: drawResult.deck,
+          hand: drawResult.hand,
+          discard: drawResult.discard,
+          deckList: newDeckList,
+          playedThisTurn: [],
+          targetSequence,
+          currentSequence: [],
+          turn: 0,
+          selectedEnemyId: newEnemies[0]?.id ?? 0,
+          playerShield: 0,
+          playerTempo: countRelic(prev.ownedRelics, 'tempo_primer') * 2,
+          playerStatic: 0,
+          playerEnergy: 3 + countRelic(prev.ownedRelics, 'coil_capacitor') + (hasRelic(prev.ownedRelics, 'demon_core') ? 2 : 0),
+          glitchThreshold: 4 + countRelic(prev.ownedRelics, 'stability_core') * 2 - (hasRelic(prev.ownedRelics, 'overclocked_processor') ? 2 : 0),
+          firstPulsePlayedThisTurn: false,
+          firstSawPlayedThisTurn: false,
+          reshuffleCount: 0,
+          playerStatuses: [],
+          combatLog: restLog,
+          mulliganAvailable: true,
+          floorDamageTaken: 0,
+          floorPatternsCompleted: 0,
+          floorTurns: 0,
+          shopRefreshesUsed: 0,
+          voidHarvesterDmgBonus: 0,
+          safeLandingUsed: false,
+          overwriterPenUsed: false,
+          overwriterPenTarget: null,
+          currentZone: zone,
+        };
+      });
+    }, 100);
+  }, [shuffleDeck, drawHandCards]);
+
+  const chooseShop = useCallback(() => {
+    // Normal flow — go to next floor with shop
+    setGameState(prev => {
+      const newFloor = prev.floor + 1;
+      const newEnemies = createEnemies(newFloor);
+      const types: Array<'Pulse' | 'Sine' | 'Saw' | 'Noise'> = ['Pulse', 'Sine', 'Saw', 'Noise'];
+      const seqLength = Math.min(2 + Math.floor((newFloor - 1) / 5), 3);
+      const targetSequence = Array.from({ length: seqLength }, () => types[Math.floor(Math.random() * types.length)]);
+      const shopInventory = generateShopInventory(newFloor);
+      const healAmount = Math.floor(prev.playerMaxHp * 0.25);
+      return {
+        ...prev,
+        floor: newFloor,
+        node: prev.node + 1,
+        phase: 'shop',
+        enemies: newEnemies,
+        targetSequence,
+        shopInventory,
+        playerHp: Math.min(prev.playerMaxHp, prev.playerHp + healAmount),
+        floorDamageTaken: 0,
+        floorPatternsCompleted: 0,
+        floorTurns: 0,
+        shopRefreshesUsed: 0,
+        relicBoughtThisShop: false,
+        shopRemovalsUsed: 0,
+        shopUpgradesUsed: 0,
+      };
+    });
+  }, []);
+
+  // 8.1 — Deck/discard pile viewer toggle
+  const toggleViewPile = useCallback((pile: 'deck' | 'discard' | null) => {
+    setGameState(prev => ({
+      ...prev,
+      viewingPile: prev.viewingPile === pile ? null : pile,
+    }));
+  }, []);
+
+  // 8.5 — Card sort mode toggle
+  const cycleSortMode = useCallback(() => {
+    setGameState(prev => {
+      const modes: Array<'none' | 'cost' | 'type' | 'damage'> = ['none', 'cost', 'type', 'damage'];
+      const idx = modes.indexOf(prev.handSortMode);
+      return { ...prev, handSortMode: modes[(idx + 1) % modes.length] };
+    });
+  }, []);
+
+  // 8.4 — Keyboard shortcuts
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (gameState.phase !== 'combat') return;
+      // Ignore if typing in an input
+      if ((e.target as HTMLElement)?.tagName === 'INPUT' || (e.target as HTMLElement)?.tagName === 'TEXTAREA') return;
+
+      // Number keys 1-9 to play cards
+      if (e.key >= '1' && e.key <= '9') {
+        const idx = parseInt(e.key) - 1;
+        if (idx < gameState.hand.length) {
+          playCard(idx);
+        }
+      }
+      // Q to end turn
+      if (e.key === 'q' || e.key === 'Q') {
+        endTurn();
+      }
+      // S to cycle sort mode
+      if (e.key === 's' || e.key === 'S') {
+        cycleSortMode();
+      }
+      // D to view deck, F to view discard
+      if (e.key === 'd' || e.key === 'D') {
+        toggleViewPile('deck');
+      }
+      if (e.key === 'f' || e.key === 'F') {
+        toggleViewPile('discard');
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [gameState.phase, gameState.hand.length, playCard, endTurn, cycleSortMode, toggleViewPile]);
 
   return (
     <div ref={containerRef} className="w-full h-full relative bg-black overflow-hidden">
@@ -2669,7 +3824,11 @@ export function SignalForgeGame() {
           // Check if clicked on hand cards
           for (const cardRect of cardRects.current) {
             if (cardRect.type === 'hand' && x >= cardRect.x && x <= cardRect.x + cardRect.w && y >= cardRect.y && y <= cardRect.y + cardRect.h) {
-              playCard(cardRect.index);
+              if (gameState.mulliganAvailable) {
+                toggleMulliganCard(cardRect.index);
+              } else {
+                playCard(cardRect.index);
+              }
               return;
             }
           }
@@ -2720,6 +3879,16 @@ export function SignalForgeGame() {
         onToggleMulliganCard={toggleMulliganCard}
         onConfirmMulligan={confirmMulligan}
         onSkipMulligan={skipMulligan}
+        onSelectStarterRelic={selectStarterRelic}
+        onResolveEvent={resolveEventChoice}
+        onChooseRest={chooseRest}
+        onChooseShop={chooseShop}
+        onRefreshShop={refreshShop}
+        onToggleViewPile={toggleViewPile}
+        onCycleSortMode={cycleSortMode}
+        onActivateOverwriterPen={activateOverwriterPen}
+        onCancelOverwriterPen={cancelOverwriterPen}
+        onConfirmOverwriterPen={confirmOverwriterPen}
       />
     </div>
   );

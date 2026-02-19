@@ -45,6 +45,15 @@ export interface EnemyData {
   adaptiveImmunity?: boolean;  // For Debugger boss (immune to most common type)
   mimicType?: string;          // For Pulse Mimic (copies player's last waveform)
   glitchScaling?: boolean;     // For Glitch Hound (damage scales with glitches)
+  // Phase 4.8 — New enemy abilities
+  counterAttack?: number;      // Deals N damage back to player when hit
+  adaptiveArmor?: Record<string, number>; // Gains armor vs specific waveform types after being hit
+  healOnKill?: number;         // Heal % of dead ally's max HP when ally dies
+  compileCounter?: number;     // For The Compiler: tracks turns for big attack
+  timeEaterCharged?: boolean;  // For Time Eater: gained shield/dmg after player played 5+ cards
+  sequenceScramble?: boolean;  // Randomizes 1 slot of target sequence each turn
+  curseCaster?: boolean;       // Adds curse cards to player's hand each turn
+  gravityWell?: boolean;       // Halves all player shield values
 }
 
 // ---------------------------------------------------------------------------
@@ -87,6 +96,15 @@ export interface EnemyTemplate {
   adaptiveImmunity?: boolean;
   mimicType?: string;
   glitchScaling?: boolean;
+  // Phase 4.8 — New enemy abilities
+  counterAttack?: number;
+  adaptiveArmor?: Record<string, number>;
+  healOnKill?: number;
+  compileCounter?: number;
+  timeEaterCharged?: boolean;
+  sequenceScramble?: boolean;
+  curseCaster?: boolean;
+  gravityWell?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -275,6 +293,64 @@ export const ENEMY_CATALOG: EnemyTemplate[] = [
     armored: 1,
     overwriteCards: true,
   },
+  // Phase 4.3 — New Elite Enemies
+  {
+    name: 'The Compiler', baseHp: 30, baseDamage: 3,
+    archetype: 'elite', tier: 'elite', intent: 'Compile',
+    description: 'Every 3rd turn deals 15 damage instead of base. Telegraphed 1 turn before.',
+    compileCounter: 0,
+  },
+  {
+    name: 'Time Eater', baseHp: 24, baseDamage: 3,
+    archetype: 'elite', tier: 'elite', intent: 'Devour',
+    description: 'If player plays 5+ cards in one turn, gains +10 shield and +3 bonus damage next turn.',
+    timeEaterCharged: false,
+  },
+  {
+    name: 'Null Sentinel', baseHp: 35, baseDamage: 4,
+    archetype: 'elite', tier: 'elite', intent: 'Guard',
+    description: 'Heavily armored. Tests Piercing keyword; massive effective HP.',
+    armored: 3,
+  },
+  // Phase 4.5 — Additional Uncommon Enemies
+  {
+    name: 'Pulse Mimic', baseHp: 16, baseDamage: 3,
+    archetype: 'disruptor', tier: 'uncommon', intent: 'Mimic',
+    description: 'Copies waveform type of player\'s last played card — if matched, +2 bonus damage.',
+    mimicType: '',
+  },
+  {
+    name: 'Glitch Hound', baseHp: 20, baseDamage: 2,
+    archetype: 'disruptor', tier: 'uncommon', intent: 'Hunt',
+    description: '+1 damage per Glitch card in player\'s deck.',
+    glitchScaling: true,
+  },
+  {
+    name: 'Curse Caster', baseHp: 12, baseDamage: 2,
+    archetype: 'disruptor', tier: 'uncommon', intent: 'Curse',
+    description: 'Each turn, adds 1 unplayable Curse card to player\'s hand. Must-kill-first priority.',
+    curseCaster: true,
+  },
+  // Phase 4.6 — Additional Elite Enemies
+  {
+    name: 'Gravity Well', baseHp: 28, baseDamage: 2,
+    archetype: 'elite', tier: 'elite', intent: 'Warp',
+    description: 'Aura: all player shield values are halved while alive.',
+    gravityWell: true,
+  },
+  {
+    name: 'Pattern Lock', baseHp: 20, baseDamage: 2,
+    archetype: 'elite', tier: 'elite', intent: 'Lock',
+    description: 'On its turn, locks one slot of target sequence to a specific forced type.',
+    sequenceScramble: true,
+  },
+  // Phase 4.7 — Additional Boss: The Infinite Loop
+  {
+    name: 'The Infinite Loop', baseHp: 100, baseDamage: 4,
+    archetype: 'boss', tier: 'boss', intent: 'Loop',
+    description: 'Regenerates 5/turn. On death, revives at 30 HP (max 2 revives). Total effective HP: 160.',
+    regen: 5, reviveCount: 0,
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -288,6 +364,11 @@ export class Enemy implements EnemyData {
   maxHp: number;
   intent: string;
   damage: number;
+  intentDisplay?: {
+    type: 'attack' | 'shield' | 'heal' | 'special' | 'buff' | 'debuff';
+    value?: number;
+    label?: string;
+  };
   // Ability fields
   archetype: string;
   shield: number;
@@ -314,6 +395,20 @@ export class Enemy implements EnemyData {
   auraDamageReduction: number;
   splitOnDeath?: { hp: number; damage: number; count: number };
   immuneType?: string;
+  // Phase 4.8 — New enemy abilities
+  counterAttack: number;
+  adaptiveArmor: Record<string, number>;
+  healOnKill: number;
+  compileCounter: number;
+  timeEaterCharged: boolean;
+  sequenceScramble: boolean;
+  curseCaster: boolean;
+  gravityWell: boolean;
+  reviveCount: number;
+  overwriteCards: boolean;
+  adaptiveImmunity: boolean;
+  mimicType: string;
+  glitchScaling: boolean;
 
   constructor(data: EnemyData) {
     this.id = data.id;
@@ -346,6 +441,20 @@ export class Enemy implements EnemyData {
     this.auraDamageReduction = data.auraDamageReduction ?? 0;
     this.splitOnDeath = data.splitOnDeath;
     this.immuneType = data.immuneType;
+    // Phase 4.8
+    this.counterAttack = data.counterAttack ?? 0;
+    this.adaptiveArmor = data.adaptiveArmor ? { ...data.adaptiveArmor } : {};
+    this.healOnKill = data.healOnKill ?? 0;
+    this.compileCounter = data.compileCounter ?? 0;
+    this.timeEaterCharged = data.timeEaterCharged ?? false;
+    this.sequenceScramble = data.sequenceScramble ?? false;
+    this.curseCaster = data.curseCaster ?? false;
+    this.gravityWell = data.gravityWell ?? false;
+    this.reviveCount = data.reviveCount ?? 0;
+    this.overwriteCards = data.overwriteCards ?? false;
+    this.adaptiveImmunity = data.adaptiveImmunity ?? false;
+    this.mimicType = data.mimicType ?? '';
+    this.glitchScaling = data.glitchScaling ?? false;
   }
 
   /** Get damage accounting for Enrage (+50% below 50% HP) */
@@ -399,7 +508,7 @@ export class Enemy implements EnemyData {
    * Apply damage with armor, shield, and phase-shift reductions.
    * Returns the total effective damage absorbed (shield + HP).
    */
-  takeDamage(amount: number, turn?: number): number {
+  takeDamage(amount: number, turn?: number, piercing?: boolean): number {
     let dmg = amount;
 
     // Phase Shift: half damage on odd turns
@@ -407,8 +516,8 @@ export class Enemy implements EnemyData {
       dmg = Math.floor(dmg / 2);
     }
 
-    // Armored: flat damage reduction
-    if (this.armored > 0) {
+    // Armored: flat damage reduction (bypassed by Piercing)
+    if (this.armored > 0 && !piercing) {
       dmg = Math.max(0, dmg - this.armored);
     }
 
@@ -442,15 +551,7 @@ export class Enemy implements EnemyData {
   isDefeated(): boolean { return this.hp <= 0; }
 
   clone(): Enemy {
-    return new Enemy({
-      id: this.id, name: this.name, hp: this.hp, maxHp: this.maxHp,
-      intent: this.intent, damage: this.damage,
-      archetype: this.archetype, shield: this.shield, regen: this.regen,
-      enrage: this.enrage, glitchGen: this.glitchGen, glitchFreq: this.glitchFreq,
-      staticPulse: this.staticPulse, thorns: this.thorns, armored: this.armored,
-      shieldAlly: this.shieldAlly, vampiric: this.vampiric, empowerAlly: this.empowerAlly,
-      phaseShift: this.phaseShift, turnCounter: this.turnCounter, description: this.description,
-    });
+    return new Enemy(this.toData());
   }
 
   toData(): EnemyData {
@@ -470,6 +571,19 @@ export class Enemy implements EnemyData {
       auraDamageReduction: this.auraDamageReduction,
       splitOnDeath: this.splitOnDeath,
       immuneType: this.immuneType,
+      counterAttack: this.counterAttack,
+      adaptiveArmor: { ...this.adaptiveArmor },
+      healOnKill: this.healOnKill,
+      compileCounter: this.compileCounter,
+      timeEaterCharged: this.timeEaterCharged,
+      sequenceScramble: this.sequenceScramble,
+      curseCaster: this.curseCaster,
+      gravityWell: this.gravityWell,
+      reviveCount: this.reviveCount,
+      overwriteCards: this.overwriteCards,
+      adaptiveImmunity: this.adaptiveImmunity,
+      mimicType: this.mimicType,
+      glitchScaling: this.glitchScaling,
     };
   }
 }
@@ -510,6 +624,20 @@ function createEnemyFromTemplate(template: EnemyTemplate, floor: number, id: num
     phaseShift: template.phaseShift ?? false,
     turnCounter: 0,
     description: template.description,
+    // Phase 4.8
+    counterAttack: template.counterAttack ?? 0,
+    adaptiveArmor: template.adaptiveArmor ? { ...template.adaptiveArmor } : {},
+    healOnKill: template.healOnKill ?? 0,
+    compileCounter: template.compileCounter ?? 0,
+    timeEaterCharged: template.timeEaterCharged ?? false,
+    sequenceScramble: template.sequenceScramble ?? false,
+    curseCaster: template.curseCaster ?? false,
+    gravityWell: template.gravityWell ?? false,
+    reviveCount: template.reviveCount ?? 0,
+    overwriteCards: template.overwriteCards ?? false,
+    adaptiveImmunity: template.adaptiveImmunity ?? false,
+    mimicType: template.mimicType ?? '',
+    glitchScaling: template.glitchScaling ?? false,
   });
 }
 

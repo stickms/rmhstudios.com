@@ -241,7 +241,7 @@ if (intent) {
 ---
 
 ### 1.6 — Damage Preview on End Turn Hover
-- [ ] **Show total outgoing/incoming damage preview** (Proposal #396)
+- [x] **Show total outgoing/incoming damage preview** (Proposal #396)
 
 **What:** When hovering over the "End Turn" button, show a tooltip: "You deal ~X damage | Enemies deal ~Y damage".
 
@@ -633,7 +633,7 @@ if (card.name === 'Sine Reflection') {
 ---
 
 ### 3.3 — 10 New Rare Cards
-- [ ] **Add to `cardTemplates` array in `Card.ts`**
+- [x] **Add to `cardTemplates` array in `Card.ts`**
 
 | Name | Type | Cost | Dmg | Shd | Keywords/Effects | Description |
 |------|------|------|-----|-----|-----------------|-------------|
@@ -788,7 +788,7 @@ if (!this.state.ownedRelics.some(r => r.key === 'sine_loom')) {
 ---
 
 ### 3.4 — 3 New Curse/Negative Cards
-- [ ] **Add to `cardTemplates` in `Card.ts`**
+- [x] **Add to `cardTemplates` in `Card.ts`**
 
 | Name | Type | Cost | Effect | Source |
 |------|------|------|--------|--------|
@@ -940,7 +940,7 @@ if (enemy.immuneType && card.type === enemy.immuneType) {
 ---
 
 ### 4.3 — 3 New Elite Enemies
-- [ ] **Add to `enemyTemplates` array in `Enemy.ts`**
+- [x] **Add to `enemyTemplates` array in `Enemy.ts`**
 
 | Name | HP | Dmg | Tier | Abilities | Design Intent |
 |------|-----|-----|------|-----------|---------------|
@@ -1059,7 +1059,7 @@ if (enemy.name === 'The Overwriter' && enemy.hp > 0) {
 ---
 
 ### 4.5 — Additional Uncommon Enemies
-- [ ] **Add to `enemyTemplates` array in `Enemy.ts`**
+- [x] **Add to `enemyTemplates` array in `Enemy.ts`**
 
 | Name | HP | Dmg | Tier | Abilities | Design Intent |
 |------|-----|-----|------|-----------|---------------|
@@ -1092,7 +1092,7 @@ if (enemy.name === 'Glitch Hound') {
 ---
 
 ### 4.6 — Additional Elite Enemies
-- [ ] **Add to `enemyTemplates` array in `Enemy.ts`**
+- [x] **Add to `enemyTemplates` array in `Enemy.ts`**
 
 | Name | HP | Dmg | Tier | Abilities | Design Intent |
 |------|-----|-----|------|-----------|---------------|
@@ -1122,7 +1122,7 @@ if (enemy.name === 'Pattern Lock' && enemy.hp > 0) {
 ---
 
 ### 4.7 — Additional Boss: The Infinite Loop (Floor 15+)
-- [ ] **Add to `enemyTemplates` array in `Enemy.ts`**
+- [x] **Add to `enemyTemplates` array in `Enemy.ts`**
 
 | Stat | Value |
 |------|-------|
@@ -1151,7 +1151,7 @@ if (enemy.name === 'The Infinite Loop' && enemy.hp <= 0) {
 ---
 
 ### 4.8 — New Enemy Abilities
-- [ ] **Add new enemy ability types to `EnemyData` interface**
+- [x] **Add new enemy ability types to `EnemyData` interface**
 
 | Ability | Effect | Enemies That Use It |
 |---------|--------|--------------------|
@@ -1454,7 +1454,7 @@ if (hasLens) {
 ---
 
 ### 5.6 — Additional Relics
-- [ ] **Add to `relicTemplates` array in `Relic.ts`**
+- [x] **Add to `relicTemplates` array in `Relic.ts`**
 
 | Key | Name | Rarity | Price | Effect |
 |-----|------|--------|-------|--------|
@@ -1685,7 +1685,7 @@ removalsUsed: number;
 ---
 
 ### 6.5 — Starter Relic Choice
-- [ ] **Choose 1 of 3 common relics at the start of each run** (Proposal #160)
+- [x] **Choose 1 of 3 common relics at the start of each run** (Proposal #160)
 
 **What:** Before combat begins on floor 1, the player is presented with 3 random common relics and picks one for free. This sets the early strategic direction of the run.
 
@@ -1733,7 +1733,7 @@ private selectStarterRelic(relic: RelicData): void {
 ---
 
 ### 6.6 — Performance Bonuses
-- [ ] **Award bonus currency for skillful play** (Proposals #127-129)
+- [x] **Award bonus currency for skillful play** (Proposals #127-129)
 
 **What:** After each combat, award bonus currency based on performance:
 
@@ -1788,7 +1788,7 @@ this.state.currency += bonusCurrency;
 ---
 
 ### 6.7 — Shop Refresh
-- [ ] **Pay currency to re-roll shop inventory** (Proposal #134)
+- [x] **Pay currency to re-roll shop inventory** (Proposal #134)
 
 **What:** "Refresh" button in shop costs 20 currency, re-generates card/relic inventory. Max 2 refreshes per shop visit.
 
@@ -1814,7 +1814,7 @@ shopRefreshesUsed: number; // reset to 0 each shop visit
 ## Phase 7 — Events & Between-Floor Content
 
 ### 7.1 — Event System
-- [ ] **Random events between floors** (Proposals #421-440)
+- [x] **Random events between floors** (Proposals #421-440)
 
 **What:** After each floor (40% chance), before entering the shop, a random event appears with 2-3 choices.
 
@@ -2033,7 +2033,7 @@ currentEvent?: GameEvent;
 ---
 
 ### 7.2 — Rest vs. Shop Choice
-- [ ] **Every 3rd floor, choose REST (heal 50% HP, skip shop) or SHOP** (Proposal #49)
+- [x] **Every 3rd floor, choose REST (heal 50% HP, skip shop) or SHOP** (Proposal #49)
 
 **What:** On floors 3, 6, 9, 12..., after card reward, player chooses: "Rest" (heal 50% max HP, skip shop) or "Visit Shop" (normal 25% heal + shop). 
 
@@ -2118,7 +2118,7 @@ private skipMulligan(): void {
 ---
 
 ### 8.1 — Deck Viewer
-- [ ] **In-combat button to view full deck, discard, exhaust pile** (Proposal #399)
+- [x] **In-combat button to view full deck, discard, exhaust pile** (Proposal #399)
 
 **What:** A button (or clicking the deck/discard count in the HUD) opens an overlay showing all cards in the current draw pile, discard pile, and exhaust pile with counts.
 
@@ -2133,7 +2133,7 @@ private skipMulligan(): void {
 ---
 
 ### 8.2 — Sequence Helper
-- [ ] **Highlight cards in hand that match the next needed sequence slot** (Proposal #400)
+- [x] **Highlight cards in hand that match the next needed sequence slot** (Proposal #400)
 
 **What:** If the next slot in the target sequence is "Pulse", all Pulse cards in hand get a subtle highlight/glow.
 
@@ -2158,7 +2158,7 @@ if (isSequenceMatch && neededType) {
 ---
 
 ### 8.3 — Contextual Keyword & System Tooltips
-- [ ] **Add a shared tooltip dictionary that explains every keyword, status, and system inline when hovering over any card, relic, enemy, or stat — in combat, shop, and deck viewer**
+- [x] **Add a shared tooltip dictionary that explains every keyword, status, and system inline when hovering over any card, relic, enemy, or stat — in combat, shop, and deck viewer**
 
 The current tooltip system shows bare stats (`💢8 🛡️0`) and the `effect` string, but never explains *what keywords mean*. A player seeing "Echo" or "Sustain" for the first time has no idea what they do. Tooltips need to surface keyword explanations contextually — only the keywords relevant to that specific card — everywhere a card/relic/enemy is displayed.
 
@@ -2632,7 +2632,7 @@ wrappedLines.forEach((line, li) => {
 ---
 
 ### 8.4 — Keyboard Shortcuts
-- [ ] **Number keys 1-5 to play cards, Q to end turn** (Proposal #410)
+- [x] **Number keys 1-5 to play cards, Q to end turn** (Proposal #410)
 
 **Where:** `SignalForgeGame.tsx` → add `keydown` event listener.
 
@@ -2658,7 +2658,7 @@ useEffect(() => {
 ---
 
 ### 8.5 — Card Sorting
-- [ ] **Sort hand by cost, type, or damage** (Proposal #407)
+- [x] **Sort hand by cost, type, or damage** (Proposal #407)
 
 **What:** Toggle button or keyboard shortcut to re-order cards in hand. Modes: by Cost (ascending), by Type (Pulse→Sine→Saw→Noise), by Damage (descending).
 
@@ -2687,7 +2687,7 @@ switch (this.state.handSortMode) {
 ---
 
 ### 8.6 — Undo Improvements
-- [ ] **Extend `unplayCard()` to support the new keywords** (Proposal #404)
+- [x] **Extend `unplayCard()` to support the new keywords** (Proposal #404)
 
 **Current:** `unplayCard()` exists but may not handle all new keyword side-effects.
 
@@ -2703,7 +2703,7 @@ switch (this.state.handSortMode) {
 ## Phase 9 — Persistence & Wiring
 
 ### 9.1 — Update Save/Load for New State Fields
-- [ ] **Extend `savedRunState` serialization**
+- [x] **Extend `savedRunState` serialization**
 
 **What:** All new GameState fields must be serialized to JSON for save/load. Add:
 ```typescript
@@ -2731,7 +2731,7 @@ timeEaterCharged, bossPhase, immuneToType
 ---
 
 ### 9.1b — Zone/Terrain System
-- [ ] **Add random combat zone modifiers to each floor** (Proposals #204-214)
+- [x] **Add random combat zone modifiers to each floor** (Proposals #204-214)
 
 **What:** Each floor has a random "zone" that modifies combat for both sides. Displayed prominently at the top of the combat screen.
 
@@ -2817,7 +2817,7 @@ if (this.state.currentZone && this.state.currentZone.id !== 'neutral') {
 ---
 
 ### 9.2 — Update How-to-Play Modal
-- [ ] **Add new keywords, status effects, and mechanics to the How to Play modal**
+- [x] **Add new keywords, status effects, and mechanics to the How to Play modal**
 
 **Where:** `SignalForgeUI.tsx` → How to Play modal content.
 
@@ -2832,7 +2832,7 @@ if (this.state.currentZone && this.state.currentZone.id !== 'neutral') {
 ---
 
 ### 9.3 — Update Collection View
-- [ ] **Show new cards, relics, and keywords in the Collection viewer**
+- [x] **Show new cards, relics, and keywords in the Collection viewer**
 
 **Where:** `SignalForgeUI.tsx` → Collection modal.
 

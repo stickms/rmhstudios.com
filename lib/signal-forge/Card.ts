@@ -39,6 +39,7 @@ export interface CardData {
   innate?: boolean;        // Always in opening hand at start of combat
   ethereal?: boolean;      // If not played this turn, exhaust at end of turn
   siphon?: number;         // Steal N shield from target enemy and add to player
+  upgraded?: boolean;       // Whether this card has been upgraded (+25% stats)
 }
 
 /**
@@ -81,6 +82,7 @@ export class Card implements CardData {
   innate?: boolean;
   ethereal?: boolean;
   siphon?: number;
+  upgraded?: boolean;
   // Growing counter (tracks plays this combat)
   growthCounter: number = 0;
 
@@ -121,6 +123,7 @@ export class Card implements CardData {
     if (data.innate) this.innate = data.innate;
     if (data.ethereal) this.ethereal = data.ethereal;
     if (data.siphon !== undefined) this.siphon = data.siphon;
+    if (data.upgraded) this.upgraded = data.upgraded;
   }
 
   getDamage(): number {
@@ -150,7 +153,6 @@ export class Card implements CardData {
     if (this.echo) shd = Math.floor(shd * 1.5);
     return shd;
   }
-  }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onPlay(_gs: Record<string, unknown>): Record<string, unknown> { return {}; }
@@ -161,6 +163,10 @@ export class Card implements CardData {
 
   clone(newId: number): Card {
     return new Card({ ...this.toData(), id: newId });
+  }
+
+  static fromTemplate(template: Omit<CardData, 'id'>, id: number): Card {
+    return new Card({ ...template, id });
   }
 
   toData(): CardData {
@@ -183,6 +189,20 @@ export class Card implements CardData {
     if (this.echo) d.echo = true;
     if (this.wildcard) d.wildcard = true;
     if (this.leech !== undefined) d.leech = this.leech;
+    // Phase 2.2 keywords
+    if (this.piercing) d.piercing = true;
+    if (this.chain) d.chain = true;
+    if (this.growing !== undefined) d.growing = this.growing;
+    if (this.retain) d.retain = true;
+    if (this.multihit !== undefined) d.multihit = this.multihit;
+    if (this.bleed !== undefined) d.bleed = this.bleed;
+    if (this.freeze) d.freeze = true;
+    if (this.vulnerable !== undefined) d.vulnerable = this.vulnerable;
+    if (this.weak !== undefined) d.weak = this.weak;
+    if (this.innate) d.innate = true;
+    if (this.ethereal) d.ethereal = true;
+    if (this.siphon !== undefined) d.siphon = this.siphon;
+    if (this.upgraded) d.upgraded = true;
     return d;
   }
 }
@@ -191,7 +211,7 @@ export class Card implements CardData {
 // NAMED CARD CATALOG — all cards from the design spec
 // ═══════════════════════════════════════════════════════════════════════
 
-type CardTemplate = Omit<CardData, 'id'>;
+export type CardTemplate = Omit<CardData, 'id'>;
 
 // ── COMMON: core sequence builders ──────────────────────────────────
 
@@ -271,6 +291,27 @@ export const COMMON_CARDS: Record<string, CardTemplate> = {
     name: 'Noise Burst', cost: 1, type: 'Noise', damage: 6, shield: 0,
     effect: 'Deal 6 damage. +2 Static.', rarity: 'common',
     staticGain: 2,
+  },
+  // ── Synergy commons ──
+  saw_nick: {
+    name: 'Saw Nick', cost: 0, type: 'Saw', damage: 2, shield: 0,
+    effect: 'Deal 2 damage. Apply 2 Bleed.', rarity: 'common',
+    bleed: 2, keywords: ['Bleed'],
+  },
+  sine_chill: {
+    name: 'Sine Chill', cost: 1, type: 'Sine', damage: 0, shield: 5,
+    effect: 'Gain 5 shield. Apply 1 Weak.', rarity: 'common',
+    weak: 1, keywords: ['Weak'],
+  },
+  pulse_chain_strike: {
+    name: 'Pulse Chain Strike', cost: 1, type: 'Pulse', damage: 5, shield: 0,
+    effect: 'Deal 5 damage. Chain.', rarity: 'common',
+    chain: true, keywords: ['Chain'],
+  },
+  noise_catalyst: {
+    name: 'Noise Catalyst', cost: 0, type: 'Noise', damage: 0, shield: 0,
+    effect: '+3 Static. Draw 1. Exhaust.', rarity: 'common',
+    staticGain: 3, draw: 1, exhaust: true, keywords: ['Exhaust'],
   },
 };
 
@@ -376,6 +417,92 @@ export const UNCOMMON_CARDS: Record<string, CardTemplate> = {
     effect: 'Steal up to 8 shield from target enemy.', rarity: 'uncommon',
     siphon: 8, keywords: ['Siphon'],
   },
+  razor_cascade: {
+    name: 'Razor Cascade', cost: 2, type: 'Saw', damage: 6, shield: 0,
+    effect: 'Deal 6 damage. 50% splash to random other enemy.', rarity: 'uncommon',
+    keywords: ['Ricochet'],
+  },
+  white_noise: {
+    name: 'White Noise', cost: 2, type: 'Noise', damage: 0, shield: 0,
+    effect: 'Deal damage equal to Static ×3.', rarity: 'uncommon',
+    keywords: ['Special'],
+  },
+  sine_reflection: {
+    name: 'Sine Reflection', cost: 1, type: 'Sine', damage: 0, shield: 0,
+    effect: 'Gain shield equal to damage taken last turn (min 5).', rarity: 'uncommon',
+    keywords: ['Special'],
+  },
+  signal_boost: {
+    name: 'Signal Boost', cost: 1, type: 'Pulse', damage: 0, shield: 0,
+    effect: 'All Pulse cards in hand deal +4 damage this turn.', rarity: 'uncommon',
+    keywords: ['Special'],
+  },
+  barrier_shift: {
+    name: 'Barrier Shift', cost: 1, type: 'Sine', damage: 0, shield: 6,
+    effect: 'Convert all current shield to damage on target, then gain 6 new shield.', rarity: 'uncommon',
+    keywords: ['Special'],
+  },
+  chaos_theory: {
+    name: 'Chaos Theory', cost: 1, type: 'Noise', damage: 0, shield: 0,
+    effect: 'Volatile: deal 3–12 damage, draw 0–2 cards.', rarity: 'uncommon',
+    keywords: ['Volatile'],
+  },
+  // ── Synergy uncommons ──
+  hemorrhage: {
+    name: 'Hemorrhage', cost: 1, type: 'Saw', damage: 3, shield: 0,
+    effect: 'Deal 3 damage. Apply 5 Bleed. Chain.', rarity: 'uncommon',
+    bleed: 5, chain: true, keywords: ['Bleed', 'Chain'],
+  },
+  cold_snap: {
+    name: 'Cold Snap', cost: 1, type: 'Sine', damage: 3, shield: 0,
+    effect: 'Deal 3 damage. Freeze. Apply 2 Vulnerable.', rarity: 'uncommon',
+    freeze: true, vulnerable: 2, keywords: ['Freeze', 'Vulnerable'],
+  },
+  echo_amplifier: {
+    name: 'Echo Amplifier', cost: 2, type: 'Pulse', damage: 6, shield: 0,
+    effect: 'Deal 6 damage. Echo. Growing +1.', rarity: 'uncommon',
+    echo: true, growing: 1, keywords: ['Echo', 'Growing'],
+  },
+  static_engine: {
+    name: 'Static Engine', cost: 1, type: 'Noise', damage: 0, shield: 5,
+    effect: 'Gain 5 shield. +2 Static. Retain.', rarity: 'uncommon',
+    staticGain: 2, retain: true, keywords: ['Retain'],
+  },
+  bleed_burst: {
+    name: 'Bleed Burst', cost: 2, type: 'Saw', damage: 4, shield: 0,
+    effect: 'Deal 4 damage ×2 hits. Apply 3 Bleed.', rarity: 'uncommon',
+    multihit: 2, bleed: 3, keywords: ['Multihit', 'Bleed'],
+  },
+  frost_bite: {
+    name: 'Frost Bite', cost: 1, type: 'Sine', damage: 4, shield: 0,
+    effect: 'Deal 4 damage. Freeze. Piercing.', rarity: 'uncommon',
+    freeze: true, piercing: true, keywords: ['Freeze', 'Piercing'],
+  },
+  harmonic_rush: {
+    name: 'Harmonic Rush', cost: 1, type: 'Pulse', damage: 4, shield: 0,
+    effect: 'Deal 4 damage. Echo. Chain.', rarity: 'uncommon',
+    echo: true, chain: true, keywords: ['Echo', 'Chain'],
+  },
+  voltage_spike: {
+    name: 'Voltage Spike', cost: 2, type: 'Noise', damage: 12, shield: 0,
+    effect: 'Deal 12 damage. +3 Static. Ethereal.', rarity: 'uncommon',
+    staticGain: 3, ethereal: true, keywords: ['Ethereal'],
+  },
+  saw_lacerate: {
+    name: 'Saw Lacerate', cost: 1, type: 'Saw', damage: 5, shield: 0,
+    effect: 'Deal 5 damage. Apply 2 Bleed. Draw 1.', rarity: 'uncommon',
+    bleed: 2, draw: 1, keywords: ['Bleed', 'Draw'],
+  },
+  cryo_barrier: {
+    name: 'Cryo Barrier', cost: 2, type: 'Sine', damage: 0, shield: 10,
+    effect: 'Gain 10 shield. Freeze target. Sustain.', rarity: 'uncommon',
+    freeze: true, sustain: true, keywords: ['Freeze', 'Sustain'],
+  },
+  pulse_overclock: {
+    name: 'Pulse Overclock', cost: 0, type: 'Pulse', damage: 3, shield: 0,
+    effect: 'Deal 3 damage. Echo. Chain. Exhaust.', rarity: 'uncommon',
+    echo: true, chain: true, exhaust: true, keywords: ['Echo', 'Chain', 'Exhaust'],
+  },
 };
 
 // ── RARE: game-changing finishers ───────────────────────────────────
@@ -442,6 +569,112 @@ export const RARE_CARDS: Record<string, CardTemplate> = {
     effect: 'Deal 4 damage. Draw 1. Sustain.', rarity: 'rare',
     sustain: true, draw: 1, keywords: ['Sustain', 'Draw'],
   },
+  final_cut: {
+    name: 'Final Cut', cost: 2, type: 'Saw', damage: 0, shield: 0,
+    effect: 'Deal damage = (cards played this turn) × 8. Exhaust.', rarity: 'rare',
+    exhaust: true, keywords: ['Exhaust', 'Special'],
+  },
+  entropy_bomb: {
+    name: 'Entropy Bomb', cost: 3, type: 'Noise', damage: 0, shield: 0,
+    effect: 'Deal damage = Static × 8. Reset Static to 0. Exhaust.', rarity: 'rare',
+    exhaust: true, keywords: ['Exhaust', 'Special'],
+  },
+  void_shield: {
+    name: 'Void Shield', cost: 2, type: 'Sine', damage: 0, shield: 15,
+    effect: 'Gain 15 shield. If unbroken at end of turn, shield persists.', rarity: 'rare',
+    keywords: ['Special'],
+  },
+  chain_lightning: {
+    name: 'Chain Lightning', cost: 2, type: 'Saw', damage: 12, shield: 0,
+    effect: 'Deal 12 to target, 8 to next, 4 to third.', rarity: 'rare',
+    keywords: ['Special'],
+  },
+  glitch_exploit: {
+    name: 'Glitch Exploit', cost: 0, type: 'Noise', damage: 0, shield: 0,
+    effect: 'All Glitch cards in hand deal 8 damage each. Exhaust.', rarity: 'rare',
+    exhaust: true, keywords: ['Exhaust', 'Special'],
+  },
+  shield_nova: {
+    name: 'Shield Nova', cost: 3, type: 'Sine', damage: 0, shield: 0,
+    effect: 'Deal damage = current shield to ALL enemies. Keep shield.', rarity: 'rare',
+    aoe: true, keywords: ['AOE', 'Special'],
+  },
+  blade_storm: {
+    name: 'Blade Storm', cost: 3, type: 'Saw', damage: 4, shield: 0,
+    effect: 'Deal 4 damage × (current tempo) times to random enemies.', rarity: 'rare',
+    keywords: ['Special'],
+  },
+  pattern_forge: {
+    name: 'Pattern Forge', cost: 2, type: 'Noise', damage: 8, shield: 0,
+    effect: 'Wildcard. Deal 8. Fill current AND next sequence slot.', rarity: 'rare',
+    wildcard: true, keywords: ['Wildcard', 'Special'],
+  },
+  harmonic_convergence: {
+    name: 'Harmonic Convergence', cost: 3, type: 'Noise', damage: 0, shield: 0,
+    effect: 'Deal 5 damage per unique waveform type played this turn, AOE.', rarity: 'rare',
+    aoe: true, keywords: ['AOE', 'Special'],
+  },
+  recursion: {
+    name: 'Recursion', cost: 2, type: 'Pulse', damage: 0, shield: 0,
+    effect: 'Replay the last card you played this turn (copy its effects).', rarity: 'rare',
+    keywords: ['Special'],
+  },
+  system_crash: {
+    name: 'System Crash', cost: 2, type: 'Noise', damage: 0, shield: 0,
+    effect: 'Deal 5 damage per Static to ALL enemies. Reset Static. Draw 2. Exhaust.', rarity: 'rare',
+    aoe: true, exhaust: true, draw: 2, keywords: ['AOE', 'Exhaust', 'Special'],
+  },
+  adaptive_protocol: {
+    name: 'Adaptive Protocol', cost: 1, type: 'Noise', damage: 0, shield: 0,
+    effect: 'Choose: Deal 12 damage, Gain 14 shield, Draw 3, or Stabilize 3.', rarity: 'rare',
+    wildcard: true, keywords: ['Modal', 'Wildcard'],
+  },
+  time_warp: {
+    name: 'Time Warp', cost: 4, type: 'Noise', damage: 0, shield: 0,
+    effect: 'Take an extra turn after this one. Exhaust.', rarity: 'rare',
+    exhaust: true, keywords: ['Exhaust', 'Special'],
+  },
+  // ── Synergy rares ──
+  crimson_tide: {
+    name: 'Crimson Tide', cost: 2, type: 'Saw', damage: 0, shield: 0,
+    effect: 'Apply 8 Bleed to ALL enemies. Draw 1. Exhaust.', rarity: 'rare',
+    aoe: true, bleed: 8, draw: 1, exhaust: true, keywords: ['AOE', 'Bleed', 'Exhaust'],
+  },
+  cryogenic_burst: {
+    name: 'Cryogenic Burst', cost: 2, type: 'Sine', damage: 8, shield: 0,
+    effect: 'Deal 8 damage. Freeze. Apply 3 Vulnerable. Exhaust.', rarity: 'rare',
+    freeze: true, vulnerable: 3, exhaust: true, keywords: ['Freeze', 'Vulnerable', 'Exhaust'],
+  },
+  infinite_loop: {
+    name: 'Infinite Loop', cost: 2, type: 'Pulse', damage: 5, shield: 0,
+    effect: 'Deal 5 damage. Echo. Sustain. Growing +2.', rarity: 'rare',
+    echo: true, sustain: true, growing: 2, keywords: ['Echo', 'Sustain', 'Growing'],
+  },
+  chaos_engine: {
+    name: 'Chaos Engine', cost: 2, type: 'Noise', damage: 8, shield: 0,
+    effect: 'Deal 8 damage. +4 Static. Draw 2. Exhaust.', rarity: 'rare',
+    staticGain: 4, draw: 2, exhaust: true, keywords: ['Exhaust'],
+  },
+  waveform_mastery: {
+    name: 'Waveform Mastery', cost: 1, type: 'Noise', damage: 5, shield: 0,
+    effect: 'Wildcard. Deal 5 damage. Chain. Exhaust.', rarity: 'rare',
+    wildcard: true, chain: true, exhaust: true, keywords: ['Wildcard', 'Chain', 'Exhaust'],
+  },
+  blood_pact: {
+    name: 'Blood Pact', cost: 1, type: 'Saw', damage: 10, shield: 0,
+    effect: 'Deal 10 damage. Apply 4 Bleed. 5 self-damage.', rarity: 'rare',
+    bleed: 4, selfDamage: 5, keywords: ['Bleed'],
+  },
+  glacial_fortress: {
+    name: 'Glacial Fortress', cost: 3, type: 'Sine', damage: 0, shield: 20,
+    effect: 'Gain 20 shield. Apply 2 Weak + 2 Vulnerable to ALL enemies. Freeze ALL.', rarity: 'rare',
+    freeze: true, aoe: true, weak: 2, vulnerable: 2, keywords: ['Freeze', 'AOE', 'Weak', 'Vulnerable'],
+  },
+  resonance_overload: {
+    name: 'Resonance Overload', cost: 3, type: 'Pulse', damage: 8, shield: 0,
+    effect: 'Deal 8 damage ×3 hits. Echo. Exhaust.', rarity: 'rare',
+    multihit: 3, echo: true, exhaust: true, keywords: ['Multihit', 'Echo', 'Exhaust'],
+  },
 };
 
 // ── GLITCH CARDS — inserted by Static mechanic ─────────────────────
@@ -459,6 +692,41 @@ export const GLITCH_CARDS: Record<string, CardTemplate> = {
   },
 };
 
+// ── CURSE / NEGATIVE CARDS — injected by enemies or events ──────────
+
+export const CURSE_CARDS: Record<string, CardTemplate> = {
+  corrupted_signal: {
+    name: '⚠ Corrupted Signal', cost: 99, type: 'Noise', damage: 0, shield: 0,
+    effect: 'Unplayable. Wastes a hand slot. Exhausts at end of combat.',
+    rarity: 'common',
+    exhaust: true, keywords: ['Curse'],
+  },
+  malware: {
+    name: '⚠ Malware', cost: 0, type: 'Noise', damage: 0, shield: 0,
+    effect: 'When drawn, lose 1 energy this turn. Exhaust.',
+    rarity: 'common',
+    exhaust: true, ethereal: true, keywords: ['Curse', 'Exhaust'],
+  },
+  overheated_module: {
+    name: '⚠ Overheated Module', cost: 0, type: 'Noise', damage: 0, shield: 0,
+    effect: 'Ethereal: exhaust if not played. If played: +3 Static. If exhausted: 8 self-damage.',
+    rarity: 'common',
+    exhaust: true, ethereal: true, selfDamage: 8, keywords: ['Curse', 'Ethereal'],
+  },
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// COMBINED CATALOG — flat array of all playable card templates
+// ═══════════════════════════════════════════════════════════════════════
+
+export const CARD_CATALOG: (CardTemplate & { key: string })[] = [
+  ...Object.entries(COMMON_CARDS).map(([key, t]) => ({ ...t, key })),
+  ...Object.entries(UNCOMMON_CARDS).map(([key, t]) => ({ ...t, key })),
+  ...Object.entries(RARE_CARDS).map(([key, t]) => ({ ...t, key })),
+  ...Object.entries(GLITCH_CARDS).map(([key, t]) => ({ ...t, key })),
+  ...Object.entries(CURSE_CARDS).map(([key, t]) => ({ ...t, key })),
+];
+
 // ═══════════════════════════════════════════════════════════════════════
 // FACTORY FUNCTIONS
 // ═══════════════════════════════════════════════════════════════════════
@@ -471,7 +739,7 @@ function seededRandom(seed: number): number {
 /** Create a card from the named catalog */
 export function createNamedCard(key: string, id: number): Card {
   const allCards: Record<string, CardTemplate> = {
-    ...COMMON_CARDS, ...UNCOMMON_CARDS, ...RARE_CARDS, ...GLITCH_CARDS,
+    ...COMMON_CARDS, ...UNCOMMON_CARDS, ...RARE_CARDS, ...GLITCH_CARDS, ...CURSE_CARDS,
   };
   const template = allCards[key];
   if (!template) throw new Error(`Unknown card key: ${key}`);

@@ -135,6 +135,36 @@ export const RELIC_CATALOG: RelicTemplate[] = [
     description: 'When you deal 15+ damage to one enemy, deal 5 splash damage to all others.',
     rarity: 'common',
   },
+  {
+    key: 'signal_amplifier',
+    name: 'Signal Amplifier',
+    description: 'All cards deal +1 damage.',
+    rarity: 'common',
+  },
+  {
+    key: 'waveform_tuner',
+    name: 'Waveform Tuner',
+    description: 'First card of each waveform type per turn costs 1 less.',
+    rarity: 'common',
+  },
+  {
+    key: 'quick_draw',
+    name: 'Quick Draw Module',
+    description: 'Draw 1 extra card on first turn of each combat.',
+    rarity: 'common',
+  },
+  {
+    key: 'hp_regen',
+    name: 'HP Regenerator',
+    description: 'Heal 1 HP per turn during combat.',
+    rarity: 'common',
+  },
+  {
+    key: 'tempo_primer',
+    name: 'Tempo Primer',
+    description: 'Start each combat with 2 Tempo.',
+    rarity: 'common',
+  },
   // ── UNCOMMON ──────────────────────────────
   {
     key: 'coil_capacitor',
@@ -301,6 +331,43 @@ export const RELIC_CATALOG: RelicTemplate[] = [
     key: 'overwriters_pen',
     name: 'Overwriter\'s Pen',
     description: 'Once per combat, transform a card in hand into any card you\'ve owned this run.',
+    rarity: 'rare',
+  },
+  // Phase 5.6 — Additional Relics
+  {
+    key: 'echo_chamber',
+    name: 'Echo Chamber',
+    description: 'Echo triggers at 75% instead of 50%. Echo archetype boost.',
+    rarity: 'uncommon',
+  },
+  {
+    key: 'infinity_engine',
+    name: 'Infinity Engine',
+    description: 'Draw 2 extra cards on every deck reshuffle.',
+    rarity: 'rare',
+  },
+  {
+    key: 'pattern_mastery',
+    name: 'Pattern Mastery',
+    description: 'Completing a sequence draws 1 card and grants +4 shield on top of Forge Burst.',
+    rarity: 'rare',
+  },
+  {
+    key: 'static_heart',
+    name: 'Static Heart',
+    description: 'Convert Static to energy at 3:1 ratio at start of each turn (consuming the Static).',
+    rarity: 'rare',
+  },
+  {
+    key: 'unstoppable_force',
+    name: 'Unstoppable Force',
+    description: 'All your attacks ignore enemy Armored (global Piercing).',
+    rarity: 'rare',
+  },
+  {
+    key: 'dark_insight',
+    name: 'Dark Insight',
+    description: 'See all enemy intents with exact values, but enemies deal +2 damage.',
     rarity: 'rare',
   },
 ];

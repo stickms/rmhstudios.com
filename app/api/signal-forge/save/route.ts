@@ -28,16 +28,31 @@ export async function POST(req: Request) {
         const username = session.user.name || session.user.email || 'Anonymous';
 
         // Upsert the player profile with saved run state
+        // Also update leaderboard high score if this run's score is higher
+        const existing = await prisma.signalForgePlayer.findUnique({
+            where: { userId: session.user.id },
+            select: { highScore: true, floorReached: true },
+        });
+
+        const currentScore = typeof runState.score === 'number' ? runState.score : 0;
+        const currentFloor = typeof runState.floor === 'number' ? runState.floor : 1;
+        const newHighScore = existing ? Math.max(existing.highScore, currentScore) : currentScore;
+        const newFloorReached = existing ? Math.max(existing.floorReached, currentFloor) : currentFloor;
+
         await prisma.signalForgePlayer.upsert({
             where: { userId: session.user.id },
             update: {
                 savedRunState: runState,
                 username,
+                highScore: newHighScore,
+                floorReached: newFloorReached,
             },
             create: {
                 userId: session.user.id,
                 username,
                 savedRunState: runState,
+                highScore: currentScore,
+                floorReached: currentFloor,
             }
         });
 
