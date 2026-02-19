@@ -1,17 +1,8 @@
 import Link from 'next/link';
 import { NeonButton } from '@/components/ui/NeonButton';
-import { ArrowRight, Gamepad2, Layers, Scissors, BrainCircuit, BookOpen, Brain, Rocket, Swords } from 'lucide-react';
+import { ArrowRight, Gamepad2, Layers, Scissors, BrainCircuit, BookOpen, Brain, Rocket } from 'lucide-react';
 
 const games = [
-    {
-        id: 'cursed-logic',
-        title: 'Cursed Logic',
-        description: 'A turn-based duel against an unstable Protocol. Choose Strike, Block, or Prepare—then face minigames that twist the outcome. Stances, chaos, and one misstep away from overload.',
-        href: '/cursed-logic',
-        icon: <Swords className="w-8 h-8 text-amber-400" />,
-        color: 'from-amber-500/20 to-orange-600/20 hover:border-amber-500/50',
-        tags: ['Turn-based', 'Duel', 'Minigames']
-    },
     {
         id: 'echoes',
         title: 'Echoes of the Spire',
