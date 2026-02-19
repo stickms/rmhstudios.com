@@ -72,6 +72,18 @@ const projects = [
     isSteam: false
   },
   {
+    id: 7,
+    title: "Project Vega",
+    description: "A Chrono-Loop Tower Defense where you defend against intrusive thoughts.",
+    longDescription: "Defend the Memory Core across 3 recursive timelines. Your towers from previous loops become 'Ghost Protocols' that assist you. Merging timelines creates Paradoxes. A clinical horror aesthetic inspired by Balatro and Pony Island.",
+    status: "Prototype",
+    gradient: "from-green-900 to-green-600",
+    icon: <Brain className="w-20 h-20 text-white/80" strokeWidth={1} />,
+    cta: "Initialize Loop",
+    link: "/vega",
+    isSteam: false
+  },
+  {
     id: 6,
     title: "RMHConnections",
     description: "Find the common threads between RMH community terms.",
