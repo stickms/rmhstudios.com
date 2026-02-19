@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { FlipCard } from "@/components/ui/FlipCard";
 import { ProximityText } from "@/components/ui/ProximityText";
 import { SiSteam } from "react-icons/si";
-import { Rocket, BookOpen, Brain, X, Music, Play, Zap } from "lucide-react";
+import { Rocket, BookOpen, Brain, X, Music, Play, Zap, Crown } from "lucide-react";
 
 const projects = [
   {
@@ -93,6 +93,18 @@ const projects = [
     icon: <Rocket className="w-20 h-20 text-white/80" strokeWidth={1} />,
     cta: "Play on Discord",
     link: "https://discord.gg/rmh",
+    isSteam: false
+  },
+  {
+    id: 8,
+    title: "House Always Wins",
+    description: "A casino metroidvania where gambling is corruption.",
+    longDescription: "A dark, narrative 2D exploration-platformer inside an old, abandoned casino. Inspired by Hollow Knight, Celeste, and Undertale. Gambling never blocks progress—it only changes difficulty, debt, NPC tone, and the world around you. The house always wins, but how you play changes everything.",
+    status: "In Development",
+    gradient: "from-amber-950 to-neutral-900",
+    icon: <Crown className="w-20 h-20 text-white/80" strokeWidth={1} />,
+    cta: "Enter Casino",
+    link: "/house-always-wins",
     isSteam: false
   },
 ];
