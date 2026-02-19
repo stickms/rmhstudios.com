@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 import { TowerType } from './Entities'
 
 export const TOWER_COSTS: Record<TowerType, number> = {
-  'SYNAPSE': 20,
+  'SYNAPSE': 15,
   'SUPPRESSOR': 50,
   'LOBOTOMIZER': 150,
   'ECHO': 100
@@ -32,6 +32,7 @@ interface GameState {
   // UI State
   isPaused: boolean
   isTransitioning: boolean
+  isGameOver: boolean
   showTutorial: boolean
   logs: LogMessage[]
   
@@ -48,6 +49,7 @@ interface GameState {
   setSelectedTower: (tower: TowerType | null) => void
   setSelectedEntity: (entity: any | null) => void
   setTransitioning: (transitioning: boolean) => void
+  setGameOver: (gameOver: boolean) => void
   setShowTutorial: (show: boolean) => void
   addLog: (text: string, type?: 'info' | 'warning' | 'error' | 'success') => void
   resetGame: () => void
@@ -72,6 +74,7 @@ export const useGameStore = create<GameState>()(
       
       isPaused: false,
       isTransitioning: false,
+      isGameOver: false,
       showTutorial: true,
       logs: [{ id: 'init', text: 'SYSTEM INITIALIZED...', type: 'info' }],
 
@@ -87,6 +90,7 @@ export const useGameStore = create<GameState>()(
       setSelectedTower: (tower) => set({ selectedTower: tower, selectedEntity: null }),
       setSelectedEntity: (entity) => set({ selectedEntity: entity, selectedTower: null }),
       setTransitioning: (transitioning) => set({ isTransitioning: transitioning }),
+      setGameOver: (gameOver) => set({ isGameOver: gameOver }),
       setShowTutorial: (show) => set({ showTutorial: show }),
       addLog: (text, type = 'info') => set((state) => ({ 
         logs: [{ id: Math.random().toString(), text, type }, ...state.logs].slice(0, 5) 
@@ -105,6 +109,7 @@ export const useGameStore = create<GameState>()(
         unlockedTowers: ['SYNAPSE'],
         isPaused: false,
         isTransitioning: false,
+        isGameOver: false,
         showTutorial: true,
         logs: [{ id: 'reset', text: 'SYSTEM RESET...', type: 'info' }]
       })
