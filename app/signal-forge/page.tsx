@@ -6,8 +6,8 @@ import { SignalForgeGame } from '@/components/signal-forge/SignalForgeGame';
 export default function SignalForgePage() {
   return (
     <main className="fixed inset-0 bg-black flex flex-col overflow-hidden">
-      {/* Back button */}
-      <div className="absolute top-3 left-3 z-50">
+      {/* Top bar: back button | title | (pause button rendered by SignalForgeUI) */}
+      <div className="flex items-center justify-between px-3 pt-3 pb-1 shrink-0 relative z-40">
         <Link href="/">
           <Button
             variant="ghost"
@@ -18,17 +18,15 @@ export default function SignalForgePage() {
             <span className="hidden sm:inline">RMH Studios</span>
           </Button>
         </Link>
-      </div>
-
-      {/* Title */}
-      <div className="text-center pt-3 pb-1 shrink-0">
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-black rainbow-text tracking-tighter italic glitch-text leading-none">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-black rainbow-text tracking-tighter italic glitch-text leading-none absolute left-1/2 -translate-x-1/2">
           SIGNAL FORGE
         </h1>
+        {/* Right side spacer — pause button is rendered by SignalForgeUI */}
+        <div className="w-20" />
       </div>
 
       {/* Game area — fills remaining space */}
-      <div className="flex-grow relative min-h-0 overflow-hidden">
+      <div className="grow relative min-h-0 overflow-hidden">
         <SignalForgeGame />
       </div>
     </main>

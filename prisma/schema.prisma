@@ -150,6 +150,7 @@ model SignalForgePlayer {
   highScore     Int      @default(0)
   floorReached  Int      @default(1)
   gamesPlayed   Int      @default(1)
+  savedRunState Json?
   updatedAt     DateTime @default(now()) @updatedAt @db.Timestamptz(6)
 
   // Link to Auth User

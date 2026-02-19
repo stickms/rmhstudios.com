@@ -7,7 +7,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   
   // List of game routes where Navbar should be hidden
-  const gameRoutes = ['/vega', '/echoes', '/slice-it', '/laundry-sort'];
+  const gameRoutes = ['/vega', '/echoes', '/slice-it', '/laundry-sort', '/signal-forge'];
   
   const isGamePage = gameRoutes.some(route => pathname?.startsWith(route));
 

@@ -7,8 +7,12 @@ CREATE TABLE IF NOT EXISTS "SignalForgePlayer" (
     "highScore"   INTEGER NOT NULL DEFAULT 0,
     "gamesPlayed" INTEGER NOT NULL DEFAULT 1,
     "floorReached" INTEGER NOT NULL DEFAULT 1,
-    "updatedAt"   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    "updatedAt"   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    "userId"      TEXT UNIQUE REFERENCES "user"(id) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS idx_signal_forge_high_score ON "SignalForgePlayer" ("highScore" DESC);
 CREATE INDEX IF NOT EXISTS idx_signal_forge_floor ON "SignalForgePlayer" ("floorReached" DESC);
+
+-- Migration: Add userId column if table already exists without it
+ALTER TABLE "SignalForgePlayer" ADD COLUMN IF NOT EXISTS "userId" TEXT UNIQUE REFERENCES "user"(id) ON DELETE CASCADE;

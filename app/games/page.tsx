@@ -1,8 +1,17 @@
 import Link from 'next/link';
 import { NeonButton } from '@/components/ui/NeonButton';
-import { ArrowRight, Gamepad2, Layers, Scissors, BrainCircuit, BookOpen, Brain, Rocket } from 'lucide-react';
+import { ArrowRight, Gamepad2, Layers, Scissors, BrainCircuit, BookOpen, Brain, Rocket, Zap } from 'lucide-react';
 
 const games = [
+    {
+        id: 'signal-forge',
+        title: 'Signal Forge',
+        description: 'A roguelike deckbuilder where you forge waveform sequences, battle corrupted signals, and collect relics to amplify your power.',
+        href: '/signal-forge',
+        icon: <Zap className="w-8 h-8 text-amber-400" />,
+        color: 'from-amber-500/20 to-orange-600/20 hover:border-amber-500/50',
+        tags: ['Deckbuilder', 'Roguelike', 'Strategy']
+    },
     {
         id: 'echoes',
         title: 'Echoes of the Spire',
