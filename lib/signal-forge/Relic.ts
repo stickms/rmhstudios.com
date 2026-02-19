@@ -104,6 +104,37 @@ export const RELIC_CATALOG: RelicTemplate[] = [
     description: 'Glitch threshold raised from 4 to 6 Static.',
     rarity: 'common',
   },
+  // Phase 5.1 — New common relics
+  {
+    key: 'burn_fuel',
+    name: 'Burn Fuel',
+    description: 'Draw 1 card whenever you exhaust a card.',
+    rarity: 'common',
+  },
+  {
+    key: 'momentum_core',
+    name: 'Momentum Core',
+    description: 'If you play 4+ cards in a turn, all cards cost 1 less next turn.',
+    rarity: 'common',
+  },
+  {
+    key: 'healing_pulse',
+    name: 'Healing Pulse',
+    description: 'Heal 3 HP whenever you complete a Forge Burst.',
+    rarity: 'common',
+  },
+  {
+    key: 'type_master',
+    name: 'Type Master',
+    description: 'Gain +1 energy if you play 3+ different waveform types in one turn.',
+    rarity: 'common',
+  },
+  {
+    key: 'damage_echo',
+    name: 'Damage Echo',
+    description: 'When you deal 15+ damage to one enemy, deal 5 splash damage to all others.',
+    rarity: 'common',
+  },
   // ── UNCOMMON ──────────────────────────────
   {
     key: 'coil_capacitor',
@@ -141,6 +172,43 @@ export const RELIC_CATALOG: RelicTemplate[] = [
     description: '+1 Energy at the start of each turn.',
     rarity: 'uncommon',
   },
+  // Phase 5.2 — New uncommon relics
+  {
+    key: 'bleed_catalyst',
+    name: 'Bleed Catalyst',
+    description: 'All Bleed effects deal +2 extra damage per stack.',
+    rarity: 'uncommon',
+  },
+  {
+    key: 'freeze_amplifier',
+    name: 'Freeze Amplifier',
+    description: 'Frozen enemies skip 2 turns instead of 1.',
+    rarity: 'uncommon',
+  },
+  {
+    key: 'vulnerable_lens',
+    name: 'Vulnerable Lens',
+    description: 'Vulnerable increases damage taken by +75% instead of +50%.',
+    rarity: 'uncommon',
+  },
+  {
+    key: 'retention_matrix',
+    name: 'Retention Matrix',
+    description: 'Draw 1 extra card at start of turn for each Retain card in hand.',
+    rarity: 'uncommon',
+  },
+  {
+    key: 'piercing_edge',
+    name: 'Piercing Edge',
+    description: 'All cards gain Piercing (ignore armor).',
+    rarity: 'uncommon',
+  },
+  {
+    key: 'safe_landing',
+    name: 'Safe Landing',
+    description: 'Once per combat, survive a fatal blow with 1 HP.',
+    rarity: 'uncommon',
+  },
   // ── RARE ──────────────────────────────────
   {
     key: 'clean_room',
@@ -165,6 +233,31 @@ export const RELIC_CATALOG: RelicTemplate[] = [
     name: 'Expanded Buffer',
     description: 'Draw 1 extra card each turn (hand size 5 → 6).',
     rarity: 'uncommon',
+  },
+  // Phase 5.3 — New rare relics
+  {
+    key: 'temporal_anchor',
+    name: 'Temporal Anchor',
+    description: 'Tempo doesn\'t reset at end of turn. Instead, lose 2 tempo per turn (min 0).',
+    rarity: 'rare',
+  },
+  {
+    key: 'void_harvester',
+    name: 'Void Harvester',
+    description: 'Each exhausted card grants +2 permanent damage to ALL cards for rest of combat.',
+    rarity: 'rare',
+  },
+  {
+    key: 'dual_wield',
+    name: 'Dual Wield',
+    description: 'First card you play each turn triggers twice (same energy cost).',
+    rarity: 'rare',
+  },
+  {
+    key: 'glitch_forge',
+    name: 'Glitch Forge',
+    description: 'Glitch cards transform into random uncommon cards when drawn.',
+    rarity: 'rare',
   },
 ];
 

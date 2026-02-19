@@ -1175,7 +1175,7 @@ mimicType?: WaveformType;    // For Pulse Mimic
 These amplify the archetypes and interact with the new keywords/statuses.
 
 ### 5.1 — 5 New Common Relics
-- [ ] **Add to `relicTemplates` array in `Relic.ts`**
+- [x] **Add to `relicTemplates` array in `Relic.ts`**
 
 | Key | Name | Rarity | Price | Effect | Implementation |
 |-----|------|--------|-------|--------|----------------|
@@ -1209,7 +1209,7 @@ waveformTypesPlayedThisTurn: Set<WaveformType>; // for Waveform Tuner
 ---
 
 ### 5.2 — 6 New Uncommon Relics
-- [ ] **Add to `relicTemplates` array in `Relic.ts`**
+- [x] **Add to `relicTemplates` array in `Relic.ts`**
 
 | Key | Name | Rarity | Price | Effect |
 |-----|------|--------|-------|--------|
@@ -1298,7 +1298,7 @@ safeLandingUsed: boolean;      // Safe Landing once-per-combat flag
 ---
 
 ### 5.3 — 4 New Rare Relics
-- [ ] **Add to `relicTemplates` array in `Relic.ts`**
+- [x] **Add to `relicTemplates` array in `Relic.ts`**
 
 | Key | Name | Rarity | Price | Effect |
 |-----|------|--------|-------|--------|
