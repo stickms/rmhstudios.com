@@ -1975,3 +1975,4 @@ export function SignalForgeGame() {
     </div>
   );
 }
+
