@@ -104,13 +104,13 @@ perform_deploy() {
     # Start/Restart via PM2 on port 7000
     log "Starting application on port $PORT via PM2..."
     if "$PM2_BIN" delete "$APP_NAME" > /dev/null 2>&1 || true; then
-         # Use direct pnpm command string to avoid argument passing issues in PM2
-         if "$PM2_BIN" start "$PNPM_BIN" --name "$APP_NAME" -- start -- -p "$PORT"; then
+         # Use direct pnpm exec next start to bypass npm lifecycle and capture errors directly
+         if "$PM2_BIN" start "$PNPM_BIN" --name "$APP_NAME" -- exec -- next start -p "$PORT"; then
              # Verify startup
              if check_port "$PORT"; then
                  log "Deployment complete and verified."
              else
-                 log "--- PM2 ERROR LOGS (Last 50 lines) ---"
+                 log "--- PM2 ERROR LOGS (Last 100 lines) ---"
                  # Capture both stdout and stderr logs
                  "$PM2_BIN" logs "$APP_NAME" --lines 100 --nostream
                  log "---------------------------------------"
