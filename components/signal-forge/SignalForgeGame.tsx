@@ -362,7 +362,6 @@ export function SignalForgeGame() {
     return { deck, hand, discard, exhausted, reshuffleCount, fatigueDamage: totalFatigueDamage };
   }, [refillDeckFromDiscard]);
 
-
   // Resize observer to track container size
   useEffect(() => {
     const container = containerRef.current;
@@ -1172,6 +1171,10 @@ export function SignalForgeGame() {
 
       // Calculate effective cost
       let effectiveCost = card.getCost();
+      // Chain discount: if previous card set a discount for this type
+      if (prev.chainDiscount && card.type === prev.chainDiscount.type) {
+        effectiveCost = Math.max(0, effectiveCost - prev.chainDiscount.amount);
+      }
       // Oscillator Core relic: first Pulse each turn costs 0
       if (card.type === 'Pulse' && !prev.firstPulsePlayedThisTurn && hasRelic(prev.ownedRelics, 'oscillator_core')) {
         effectiveCost = 0;
@@ -1280,6 +1283,20 @@ export function SignalForgeGame() {
         }
       }
 
+      // Growing: increment counter for this card
+      if (card.growing) {
+        card.growthCounter = (card.growthCounter ?? 0) + 1;
+      }
+
+      // Chain: set discount for next card of same type
+      let chainDiscount = prev.chainDiscount;
+      if (card.chain) {
+        chainDiscount = { type: card.type, amount: 1 };
+      } else if (chainDiscount && card.type === chainDiscount.type) {
+        // Discount was consumed
+        chainDiscount = undefined;
+      }
+
       return {
         ...prev,
         hand,
@@ -1296,6 +1313,7 @@ export function SignalForgeGame() {
         firstPulsePlayedThisTurn,
         firstSawPlayedThisTurn,
         reshuffleCount,
+        chainDiscount,
         combatLog: [...prev.combatLog, ...tempLog],
         gameOver: playerHp <= 0,
         phase: playerHp <= 0 ? 'game-over' : prev.phase,
@@ -1393,6 +1411,12 @@ export function SignalForgeGame() {
             totalDamage += absorbed;
             if (card.leech) totalLeechDamage += absorbed;
             if (e.thorns > 0 && finalDmg > 0) thornsDamage += e.thorns;
+            
+            // Apply status effects from card
+            if (card.bleed) e.statusEffects = applyStatus(e.statusEffects, 'bleed', card.bleed, 2);
+            if (card.freeze) e.statusEffects = applyStatus(e.statusEffects, 'freeze', 1, 1);
+            if (card.vulnerable) e.statusEffects = applyStatus(e.statusEffects, 'vulnerable', 1, card.vulnerable);
+            if (card.weak) e.statusEffects = applyStatus(e.statusEffects, 'weak', 1, card.weak);
           });
           log.push(`${card.name} (AOE) hits all for ${dmg}`);
         } else {
@@ -1410,6 +1434,22 @@ export function SignalForgeGame() {
             totalDamage += absorbed;
             if (card.leech) totalLeechDamage += absorbed;
             if (target.thorns > 0 && finalDmg > 0) thornsDamage += target.thorns;
+            
+            // Apply status effects from card
+            if (card.bleed) target.statusEffects = applyStatus(target.statusEffects, 'bleed', card.bleed, 2);
+            if (card.freeze) target.statusEffects = applyStatus(target.statusEffects, 'freeze', 1, 1);
+            if (card.vulnerable) target.statusEffects = applyStatus(target.statusEffects, 'vulnerable', 1, card.vulnerable);
+            if (card.weak) target.statusEffects = applyStatus(target.statusEffects, 'weak', 1, card.weak);
+            
+            // Siphon: steal shield from target
+            if (card.siphon && card.siphon > 0) {
+              const stolen = Math.min(target.shield ?? 0, card.siphon);
+              if (stolen > 0) {
+                target.shield = (target.shield ?? 0) - stolen;
+                playerShield += stolen;
+                log.push(`Siphoned ${stolen} shield from ${target.name}!`);
+              }
+            }
           }
         }
       }
@@ -1588,7 +1628,22 @@ export function SignalForgeGame() {
       playerEnergy += countRelic(prev.ownedRelics, 'energy_conduit');
 
       // --- Draw new hand (sustain cards stay in hand) ---
-      const handWithSustain = [...prev.hand, ...sustainHand];
+      // Process unplayed cards in hand: Retain stays, Ethereal exhausts, others discard
+      const retainedCards: Card[] = [];
+      const exhaustedEthereal: Card[] = [];
+      for (const card of prev.hand) {
+        if (card.retain) {
+          retainedCards.push(card);
+        } else if (card.ethereal) {
+          exhaustedEthereal.push(card);
+          newDeckList = newDeckList.filter(c => c.id !== card.id);
+          log.push(`${card.name} fades away (Ethereal)`);
+        } else {
+          discardAfterPlay.push(card);
+        }
+      }
+      
+      const handWithSustain = [...retainedCards, ...sustainHand];
       const drawResult = drawHandCards(
         prev.deck, 
         discardAfterPlay, 
@@ -1777,9 +1832,7 @@ export function SignalForgeGame() {
       firstSawPlayedThisTurn: false,
       reshuffleCount: 0,
       playerStatuses: [],
-    removalsUsed: 0,
-    playerStatuses: [],
-    removalsUsed: 0,
+      removalsUsed: 0,
       combatLog: [],
     });
   }, [clearSavedRun]);
@@ -1806,11 +1859,20 @@ export function SignalForgeGame() {
     // Clear any existing saved run when starting fresh
     clearSavedRun();
     setGameState(prev => {
-      // Shuffle the full deck list and start fresh
-      const shuffledDeck = shuffleDeck(prev.deckList);
+      // Separate Innate cards from the rest
+      const innateCards = prev.deckList.filter(c => c.innate);
+      const nonInnateCards = prev.deckList.filter(c => !c.innate);
+      
+      // Shuffle non-innate cards
+      const shuffledDeck = shuffleDeck(nonInnateCards);
+      
       const hs = getHandSize(prev.ownedRelics);
       const tempLog: string[] = [];
-      const { deck, hand, discard, exhausted } = drawHandCards(shuffledDeck, [], [], hs, prev.ownedRelics, 0, tempLog);
+      
+      // Start with innate cards in hand, then draw the rest
+      const initialHand = [...innateCards];
+      const cardsToDrawCount = Math.max(0, hs - innateCards.length);
+      const { deck, hand, discard, exhausted } = drawHandCards(shuffledDeck, [], initialHand, hs, prev.ownedRelics, 0, tempLog);
 
       // Clean Room exhausted cards removed from deck list
       let newDeckList = [...prev.deckList];
@@ -2026,11 +2088,19 @@ export function SignalForgeGame() {
     setGameState(prev => {
       if (prev.phase !== 'shop') return prev;
       
-      // Reshuffle the full deck for the new floor
-      const shuffledDeck = shuffleDeck(prev.deckList);
+      // Separate Innate cards from the rest
+      const innateCards = prev.deckList.filter(c => c.innate);
+      const nonInnateCards = prev.deckList.filter(c => !c.innate);
+      
+      // Reshuffle non-innate cards for the new floor
+      const shuffledDeck = shuffleDeck(nonInnateCards);
+      
       const hs = getHandSize(prev.ownedRelics);
       const tempLog: string[] = [];
-      const { deck, hand, discard, exhausted } = drawHandCards(shuffledDeck, [], [], hs, prev.ownedRelics, 0, tempLog);
+      
+      // Start with innate cards in hand, then draw the rest
+      const initialHand = [...innateCards];
+      const { deck, hand, discard, exhausted } = drawHandCards(shuffledDeck, [], initialHand, hs, prev.ownedRelics, 0, tempLog);
 
       // Clean Room exhausted cards removed from deck list
       let newDeckList = [...prev.deckList];
