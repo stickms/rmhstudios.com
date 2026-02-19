@@ -23,7 +23,7 @@ import {
 
 interface ShopItem {
   id: string;
-  type: 'card' | 'relic' | 'removal';
+  type: 'card' | 'relic' | 'removal' | 'upgrade';
   item: Card | Relic | null;
   price: number;
 }
@@ -62,6 +62,7 @@ interface GameState {
   playerStatuses: StatusEffect[]; // Status effects on player
   chainDiscount?: { type: WaveformType; amount: number }; // Chain keyword tracking
   removalsUsed: number;          // Track card removals for escalating cost
+  upgradesPurchased: number;     // Phase 6.3 — Track upgrades for escalating cost
   cardRewardChoices: Card[];     // Phase 6.2 — Card choices after combat
 }
 
@@ -118,6 +119,7 @@ function serializeGameState(gs: GameState): Record<string, any> {
     reshuffleCount: gs.reshuffleCount,
     playerStatuses: gs.playerStatuses,
     removalsUsed: gs.removalsUsed,
+    upgradesPurchased: gs.upgradesPurchased,
     cardRewardChoices: gs.cardRewardChoices.map(c => c.toData()),
   };
 }
@@ -168,6 +170,7 @@ function deserializeGameState(data: Record<string, any>): GameState {
     reshuffleCount: data.reshuffleCount ?? 0,
     playerStatuses: data.playerStatuses || [],
     removalsUsed: data.removalsUsed ?? 0,
+    upgradesPurchased: data.upgradesPurchased ?? 0,
     cardRewardChoices: (data.cardRewardChoices || []).map(deserializeCard),
   };
 }
@@ -175,7 +178,7 @@ function deserializeGameState(data: Record<string, any>): GameState {
 const STARTER_DECK = createStarterDeck();
 
 // Generate shop inventory for a floor
-const generateShopInventory = (floor: number, removalsUsed: number = 0): ShopItem[] => {
+const generateShopInventory = (floor: number, removalsUsed: number = 0, upgradesPurchased: number = 0): ShopItem[] => {
   const inventory: ShopItem[] = [];
   let itemId = 0;
 
@@ -205,7 +208,16 @@ const generateShopInventory = (floor: number, removalsUsed: number = 0): ShopIte
     });
   }
 
-  // Add one card removal option with escalating cost
+  // Phase 6.3 — Add card upgrade option with escalating cost
+  const upgradePrice = 50 + upgradesPurchased * 25;
+  inventory.push({
+    id: 'upgrade',
+    type: 'upgrade',
+    item: null,
+    price: upgradePrice,
+  });
+
+  // Phase 6.4 — Add one card removal option with escalating cost
   const removalPrice = 50 + removalsUsed * 25;
   inventory.push({
     id: 'removal',
@@ -266,6 +278,7 @@ export function SignalForgeGame() {
     reshuffleCount: 0,
     playerStatuses: [],
     removalsUsed: 0,
+    upgradesPurchased: 0,
     combatLog: [],
     cardRewardChoices: [],
   });
@@ -2051,7 +2064,7 @@ export function SignalForgeGame() {
       const targetSequence = Array.from({ length: seqLength }, () => types[Math.floor(Math.random() * types.length)]);
       
       // Generate shop inventory
-      const shopInventory = generateShopInventory(newFloor, prev.removalsUsed);
+      const shopInventory = generateShopInventory(newFloor, prev.removalsUsed, prev.upgradesPurchased);
       
       // Heal player 25% of max HP
       const healthGain = Math.floor(prev.playerMaxHp * 0.25);
@@ -2107,6 +2120,41 @@ export function SignalForgeGame() {
         ownedRelics: newOwnedRelics,
         currency: prev.currency - item.price,
         shopInventory: newShopInventory,
+      };
+    });
+  }, []);
+
+  // Phase 6.3 — Upgrade card from deck
+  const upgradeCard = useCallback((cardId: number) => {
+    setGameState(prev => {
+      if (prev.phase !== 'shop') return prev;
+      const upgradePrice = 50 + prev.upgradesPurchased * 25;
+      if (prev.currency < upgradePrice) return prev;
+      
+      // Find the card in the deck list
+      const cardIndex = prev.deckList.findIndex(c => c.id === cardId);
+      if (cardIndex === -1) return prev;
+      const card = prev.deckList[cardIndex];
+      
+      // Check if already upgraded
+      if (card.upgraded) return prev;
+      
+      // Upgrade the card: +25% damage/shield, append "+"
+      const upgraded = card.clone(card.id);
+      upgraded.upgraded = true;
+      upgraded.name = card.name + '+';
+      upgraded.damage = Math.ceil(card.damage * 1.25);
+      upgraded.shield = Math.ceil(card.shield * 1.25);
+      
+      // Replace in deck list
+      const newDeckList = [...prev.deckList];
+      newDeckList[cardIndex] = upgraded;
+      
+      return {
+        ...prev,
+        deckList: newDeckList,
+        currency: prev.currency - upgradePrice,
+        upgradesPurchased: prev.upgradesPurchased + 1,
       };
     });
   }, []);
@@ -2375,6 +2423,7 @@ export function SignalForgeGame() {
         onSelectEnemy={selectEnemy}
         onBuyItem={buyItem}
         onRemoveCard={removeCard}
+        onUpgradeCard={upgradeCard}
         onProceedFromShop={proceedFromShop}
         onReturnToLanding={returnToLanding}
         hasSavedRun={hasSavedRun}

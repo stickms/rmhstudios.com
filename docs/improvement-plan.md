@@ -1614,7 +1614,7 @@ private skipCardReward(): void {
 ---
 
 ### 6.3 — Card Upgrade System
-- [ ] **Allow upgrading cards in the shop** (Proposal #121)
+- [x] **Allow upgrading cards in the shop** (Proposal #121)
 
 **What:** Each card can be upgraded once. Upgraded cards have "+25% damage/shield" and append "+" to their name.
 
