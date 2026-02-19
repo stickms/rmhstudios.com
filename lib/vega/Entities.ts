@@ -72,6 +72,7 @@ export class Tower extends Entity {
   // Ghost Properties
   public isGhost: boolean = false;
   public loopOrigin: number = 1;
+  public totalInvested: number = 0;
 
   // Upgrade State
   public upgrades: {
@@ -129,6 +130,10 @@ export class Tower extends Entity {
       const level = this.upgrades[stat] + 1;
       // Base cost scales with level
       return 50 * level; 
+  }
+
+  public getSellValue(): number {
+      return Math.floor((this.totalInvested || 0) * 0.7);
   }
 }
 

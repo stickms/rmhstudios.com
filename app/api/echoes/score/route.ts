@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
-import { pool } from '@/lib/db';
+import { prisma } from '@/lib/prisma';
+import { auth } from '@/lib/auth';
+import { headers } from 'next/headers';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 
 export async function POST(req: Request) {
@@ -31,24 +33,51 @@ export async function POST(req: Request) {
 
         const cleanUsername = username.trim().replace(/[^a-zA-Z0-9_\-. ]/g, '').slice(0, 32);
 
-        const client = await pool.connect();
-        try {
-            await client.query(`
-                INSERT INTO "EchoesPlayer" (id, username, "bestTime", "totalKills", "totalXP", "gamesPlayed", "updatedAt")
-                VALUES (gen_random_uuid(), $1, $2, $3, $4, 1, NOW())
-                ON CONFLICT (username)
-                DO UPDATE SET
-                    "bestTime"    = GREATEST("EchoesPlayer"."bestTime", $2),
-                    "totalKills"  = "EchoesPlayer"."totalKills" + $3,
-                    "totalXP"     = "EchoesPlayer"."totalXP" + $4,
-                    "gamesPlayed" = "EchoesPlayer"."gamesPlayed" + 1,
-                    "updatedAt"   = NOW()
-            `, [cleanUsername, timeSurvived, kills, totalXP]);
-        } finally {
-            client.release();
+        // Auth Check
+        const session = await auth.api.getSession({
+            headers: await headers()
+        });
+        const userId = session?.user?.id;
+
+        if (!userId) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        return NextResponse.json({ success: true });
+        const existingProfile = await prisma.echoesPlayer.findUnique({ where: { userId } });
+        
+        if (existingProfile) {
+            await prisma.echoesPlayer.update({
+                where: { id: existingProfile.id },
+                data: {
+                    bestTime: Math.max(existingProfile.bestTime, timeSurvived),
+                    totalKills: { increment: kills },
+                    totalXP: { increment: totalXP },
+                    gamesPlayed: { increment: 1 },
+                    updatedAt: new Date(),
+                    username: cleanUsername // Allow name update
+                }
+            });
+            return NextResponse.json({ success: true, linked: true });
+        }
+
+        // Check if username taken by another user
+        const usernameConfig = await prisma.echoesPlayer.findUnique({ where: { username: cleanUsername } });
+        if (usernameConfig) {
+             return NextResponse.json({ error: 'Username taken by another user.' }, { status: 409 });
+        }
+
+        // Create new
+        await prisma.echoesPlayer.create({
+            data: {
+                userId,
+                username: cleanUsername,
+                bestTime: timeSurvived,
+                totalKills: kills,
+                totalXP: totalXP,
+                gamesPlayed: 1
+            }
+        });
+        return NextResponse.json({ success: true, created: true });
     } catch (e) {
         console.error('Echoes score submit failed:', e);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

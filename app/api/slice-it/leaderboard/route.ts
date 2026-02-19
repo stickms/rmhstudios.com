@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
-import { pool } from '@/lib/db';
+import { prisma } from '@/lib/prisma';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 
 export async function GET(req: Request) {
     const ip = getClientIp(req);
-    const { allowed, retryAfter } = rateLimit(ip, { limit: 30, windowMs: 60_000, prefix: 'slice-lb' });
+    const { allowed, retryAfter } = rateLimit(ip, { limit: 20, windowMs: 60_000, prefix: 'slice-leaderboard' });
+
     if (!allowed) {
         return NextResponse.json({ error: 'Too many requests' }, {
             status: 429,
@@ -13,20 +14,18 @@ export async function GET(req: Request) {
     }
 
     try {
-        const client = await pool.connect();
-        try {
-            const result = await client.query(`
-                SELECT username, "totalScore", "gamesPlayed" 
-                FROM "Player" 
-                ORDER BY "totalScore" DESC 
-                LIMIT 10
-            `);
-            return NextResponse.json(result.rows);
-        } finally {
-            client.release();
-        }
+        const leaderboard = await prisma.player.findMany({
+            take: 10,
+            orderBy: { totalScore: 'desc' },
+            select: {
+                username: true,
+                totalScore: true
+            }
+        });
+
+        return NextResponse.json(leaderboard);
     } catch (e) {
-        console.error('Failed to fetch leaderboard:', e);
+        console.error('Slice leaderboard fetch failed:', e);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }

@@ -3,6 +3,8 @@
 import { useRef, ChangeEvent, useEffect, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Play, RotateCcw } from 'lucide-react';
+import { authClient } from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
 
 type LeaderboardEntry = {
   username: string;
@@ -22,12 +24,15 @@ export function LaundryUI({
   time: number;
   gameActive: boolean;
   gameOver: boolean;
-  onStart: () => void;
+  onStart: (username: string) => void;
 }) {
   const usernameRef = useRef<string>('');
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
   const [leaderboardError, setLeaderboardError] = useState<string | null>(null);
+  
+  const session = authClient.useSession();
+  const router = useRouter();
 
   const fetchLeaderboard = useCallback(async () => {
     setLeaderboardLoading(true);
@@ -55,17 +60,14 @@ export function LaundryUI({
     }
   }, [gameActive, gameOver, fetchLeaderboard]);
 
-  const handleSubmitScore = async () => {
-    if (!usernameRef.current || usernameRef.current.length < 2) {
-      alert('Please enter a valid username (2-24 characters)');
-      return;
-    }
+  const handleSubmitScore = async (username: string) => {
+    if (!username) return;
 
     try {
       const res = await fetch('/api/laundry-sort/score', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: usernameRef.current, score }),
+        body: JSON.stringify({ username, score }),
       });
 
       if (!res.ok) {
@@ -119,43 +121,54 @@ export function LaundryUI({
                   <h3 className="text-red-400 text-lg font-black mb-2">GAME OVER</h3>
                   <div className="text-white text-3xl font-black mb-4">{score.toString().padStart(6, '0')}</div>
 
-                  <input
-                    type="text"
-                    maxLength={24}
-                    placeholder="Enter username (2-24 chars)"
-                    onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                      usernameRef.current = e.currentTarget.value;
-                    }}
-                    className="w-full px-4 py-2 rounded bg-zinc-900 border border-zinc-700 text-white placeholder-gray-600 mb-3"
-                  />
-
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={handleSubmitScore}
-                      className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold"
-                    >
-                      Submit Score
-                    </Button>
-                    <Button
-                      onClick={onStart}
-                      variant="outline"
-                      className="flex-1 border-cyan-500 text-cyan-400 hover:bg-cyan-500/10"
-                    >
-                      <RotateCcw className="w-4 h-4" />
-                      Play Again
-                    </Button>
-                  </div>
+                  {!session.data ? (
+                      <div className="mb-4">
+                          <p className="text-xs text-red-300 mb-2">Sign in to save your score!</p>
+                          <Button
+                              onClick={() => router.push('/login')}
+                              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold"
+                          >
+                              Sign In to Submit
+                          </Button>
+                      </div>
+                  ) : (
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => handleSubmitScore(session.data?.user.name || (session.data?.user as any).username || 'User')}
+                          className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold"
+                        >
+                          Submit Score
+                        </Button>
+                        <Button
+                          onClick={() => onStart(session.data?.user.name || (session.data?.user as any).username || 'User')}
+                          variant="outline"
+                          className="flex-1 border-cyan-500 text-cyan-400 hover:bg-cyan-500/10"
+                        >
+                          <RotateCcw className="w-4 h-4" />
+                          Play Again
+                        </Button>
+                      </div>
+                  )}
                 </div>
               )}
 
               {!gameOver && (
-                <Button
-                  onClick={onStart}
-                  className="bg-linear-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-black font-bold px-8 py-3 rounded-lg flex items-center gap-2 text-lg mx-auto"
-                >
-                  <Play className="w-5 h-5" />
-                  Start Game
-                </Button>
+                !session.data ? (
+                     <Button
+                      onClick={() => router.push('/login')}
+                      className="bg-zinc-800 hover:bg-zinc-700 text-white font-bold px-8 py-3 rounded-lg flex items-center gap-2 text-lg mx-auto"
+                    >
+                      Sign In to Play
+                    </Button>
+                ) : (
+                    <Button
+                      onClick={() => onStart(session.data?.user.name || (session.data?.user as any).username || 'User')}
+                      className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-black font-bold px-8 py-3 rounded-lg flex items-center gap-2 text-lg mx-auto"
+                    >
+                      <Play className="w-5 h-5" />
+                      Start Game
+                    </Button>
+                )
               )}
             </div>
 

@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
-import { pool } from '@/lib/db';
+import { prisma } from '@/lib/prisma';
+import { auth } from '@/lib/auth';
+import { headers } from 'next/headers';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 
 export async function POST(req: Request) {
@@ -22,22 +24,46 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Invalid score' }, { status: 400 });
         }
 
-        const client = await pool.connect();
-        try {
-            await client.query(`
-                INSERT INTO "Player" (id, username, "totalScore", "gamesPlayed", "updatedAt")
-                VALUES (gen_random_uuid(), $1, $2, 1, NOW())
-                ON CONFLICT (username) 
-                DO UPDATE SET 
-                    "totalScore" = "Player"."totalScore" + $2,
-                    "gamesPlayed" = "Player"."gamesPlayed" + 1,
-                    "updatedAt" = NOW()
-            `, [username, score]);
-        } finally {
-            client.release();
+        // Auth Check
+        const session = await auth.api.getSession({
+            headers: await headers()
+        });
+        const userId = session?.user?.id;
+
+        if (!userId) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        return NextResponse.json({ success: true });
+        const existingProfile = await prisma.player.findUnique({ where: { userId } });
+
+        if (existingProfile) {
+            await prisma.player.update({
+                where: { id: existingProfile.id },
+                data: {
+                    totalScore: { increment: score },
+                    gamesPlayed: { increment: 1 },
+                    updatedAt: new Date(),
+                    username: username // Allow rename or keep sync
+                }
+            });
+            return NextResponse.json({ success: true, linked: true });
+        }
+
+        const usernameConfig = await prisma.player.findUnique({ where: { username } });
+        if (usernameConfig) {
+            return NextResponse.json({ error: 'Username taken.' }, { status: 409 });
+        }
+
+        // Create new
+        await prisma.player.create({
+            data: {
+                userId,
+                username,
+                totalScore: score,
+                gamesPlayed: 1
+            }
+        });
+        return NextResponse.json({ success: true, created: true });
     } catch (e) {
         console.error('Failed to submit score:', e);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

@@ -254,12 +254,12 @@ export class VegaGame {
         let mvpTower: Tower | null = null;
         let maxDamage = -1;
         
-        this.entityManager.towers.forEach(t => {
+        for (const t of this.entityManager.towers) {
             if (t.damageDealt > maxDamage && !t.isGhost) {
                 maxDamage = t.damageDealt;
                 mvpTower = t;
             }
-        });
+        }
         
         // 2. Clear Game
         this.entityManager = new EntityManager();
