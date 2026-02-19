@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation';
 import { Navbar } from './Navbar';
 
+
 export function Shell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   
