@@ -1,6 +1,5 @@
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["driverAdapters"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -83,13 +82,13 @@ model Verification {
 // --- Game Models ---
 
 model EchoesPlayer {
-  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id            String   @id @default(uuid())
   username      String   @unique
   bestTime      Float    @default(0)
   totalKills    Int      @default(0)
   totalXP       Int      @default(0)
   gamesPlayed   Int      @default(1)
-  updatedAt     DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  updatedAt     DateTime @default(now()) @updatedAt
 
   // Link to Auth User
   userId        String?  @unique
@@ -101,11 +100,11 @@ model EchoesPlayer {
 }
 
 model LaundryPlayer {
-  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id            String   @id @default(uuid())
   username      String   @unique
   highScore     Int      @default(0)
   gamesPlayed   Int      @default(1)
-  updatedAt     DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  updatedAt     DateTime @default(now()) @updatedAt
 
   // Link to Auth User
   userId        String?  @unique
@@ -129,12 +128,12 @@ model Player {
 }
 
 model VegaPlayer {
-  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id            String   @id @default(uuid())
   username      String   @unique
   highestLoop   Int      @default(1)
   highestLevel  Int      @default(1)
   gamesPlayed   Int      @default(0)
-  updatedAt     DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  updatedAt     DateTime @default(now()) @updatedAt
 
   // Link to Auth User
   userId        String?  @unique
