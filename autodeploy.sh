@@ -68,7 +68,7 @@ start_apps() {
         --restart-delay=3000 \
         --max-restarts=5 \
         -- \
-        node_modules/.bin/next start -p "$PORT_WEB"
+        node_modules/next/dist/bin/next start -p "$PORT_WEB"
 
     log "Starting Socket.IO server on port $PORT_SOCKET..."
     "$PM2_BIN" start "$NODE_BIN" \
