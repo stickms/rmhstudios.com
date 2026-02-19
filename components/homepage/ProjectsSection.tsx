@@ -72,7 +72,7 @@ const projects = [
     isSteam: false
   },
   {
-    id: 7,
+    id: 9,
     title: "Project Vega",
     description: "A Chrono-Loop Tower Defense where you defend against intrusive thoughts.",
     longDescription: "Defend the Memory Core across 3 recursive timelines. Your towers from previous loops become 'Ghost Protocols' that assist you. Merging timelines creates Paradoxes. A clinical horror aesthetic inspired by Balatro and Pony Island.",
