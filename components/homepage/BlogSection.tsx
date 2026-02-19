@@ -7,7 +7,7 @@ import Link from "next/link";
 import { ArrowRight, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { Post } from "@/lib/blog";
 import { NeonButton } from "@/components/ui/NeonButton";
-import useEmblaCarousel, { EmblaCarouselType } from "embla-carousel-react";
+import useEmblaCarousel from "embla-carousel-react";
 
 
 const EMBLA_OPTIONS = { 

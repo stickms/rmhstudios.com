@@ -32,7 +32,7 @@ export function GameCanvas() {
     const keybindsRef = useRef(keybinds);
     useEffect(() => { keybindsRef.current = keybinds; }, [keybinds]);
     
-    const renderRef = useRef<(ctx: CanvasRenderingContext2D, engine: GameEngine, currentKeybinds: { lane1: string; lane2: string }) => void>();
+    const renderRef = useRef<((ctx: CanvasRenderingContext2D, engine: GameEngine, currentKeybinds: { lane1: string; lane2: string }) => void) | undefined>(undefined);
 
     // ── Resize canvas to fill its wrapper ──────────────────────────────────────
     useEffect(() => {
@@ -156,7 +156,7 @@ export function GameCanvas() {
     useEffect(() => {
         const renderFunc = (
             ctx: CanvasRenderingContext2D,
-            gameEngine: GameEngine,
+            engine: GameEngine,
             currentKeybinds: { lane1: string; lane2: string }
         ) => {
             const W = ctx.canvas.width;

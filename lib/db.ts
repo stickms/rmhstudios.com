@@ -3,10 +3,9 @@ import { WebSocket } from 'ws';
 
 neonConfig.webSocketConstructor = WebSocket;
 
-if (!process.env.DATABASE_URL) {
-  throw new Error('DATABASE_URL is not defined');
-}
+// Make database optional for build time
+const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://dummy:dummy@localhost:5432/dummy';
 
 export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: DATABASE_URL,
 });
