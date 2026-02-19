@@ -13,6 +13,9 @@ log() {
 }
 
 # Resolve tool paths for systemd compatibility
+# Add the NVM node bin directory to PATH so 'node' is available for pnpm/pm2
+export PATH="/home/rmhstudios/.nvm/versions/node/v25.6.1/bin:$PATH"
+
 GIT_BIN=$(which git)
 PNPM_BIN=$(which pnpm)
 PM2_BIN=$(which pm2)
