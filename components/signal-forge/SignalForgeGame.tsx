@@ -1311,6 +1311,14 @@ export function SignalForgeGame() {
       const matchBonus = isMatch ? 12 : 0;
       if (isMatch) log.push('Forge Burst! +12 bonus damage');
 
+      // --- Relic: Tempo Gear (+1 tempo per copy on sequence match) ---
+      let playerTempo = prev.playerTempo;
+      const tempoGearCount = countRelic(prev.ownedRelics, 'tempo_gear');
+      if (isMatch && tempoGearCount > 0) {
+        playerTempo = Math.min(6, playerTempo + tempoGearCount);
+        log.push(`Tempo Gear (x${tempoGearCount}): +${tempoGearCount} tempo from match`);
+      }
+
       // --- Relic: Harmonic Resonator (+4 dmg for waveform pairs) ---
       let resonatorBonus = 0;
       const resonatorCount = countRelic(prev.ownedRelics, 'harmonic_resonator');
@@ -1325,6 +1333,9 @@ export function SignalForgeGame() {
       // --- Relic: Signal Mirror (+3 dmg to first Saw card per copy) ---
       const signalMirrorCount = countRelic(prev.ownedRelics, 'signal_mirror');
 
+      // --- Tempo damage bonus (snapshot before reset) ---
+      const tempoBonusDmg = playerTempo;
+
       // --- Compute per-card damage & total ---
       let totalDamage = matchBonus + resonatorBonus;
       let totalLeechDamage = 0; // damage dealt by leech cards, for healing calc
@@ -1335,6 +1346,8 @@ export function SignalForgeGame() {
         if (signalMirrorCount > 0 && card.type === 'Saw' && !prev.playedThisTurn.slice(0, idx).some(c => c.type === 'Saw')) {
           dmg += 3 * signalMirrorCount;
         }
+        // Tempo bonus: each card gains +playerTempo damage
+        dmg += tempoBonusDmg;
         return { card, dmg };
       });
 
@@ -1362,6 +1375,10 @@ export function SignalForgeGame() {
             if (target.thorns > 0 && dmg > 0) thornsDamage += target.thorns;
           }
         }
+      }
+
+      if (tempoBonusDmg > 0 && prev.playedThisTurn.length > 0) {
+        log.push(`Tempo +${tempoBonusDmg} per card (x${prev.playedThisTurn.length} cards = +${tempoBonusDmg * prev.playedThisTurn.length})`);
       }
 
       // Apply match bonus + resonator bonus to selected enemy

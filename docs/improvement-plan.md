@@ -110,7 +110,7 @@ Reset `reshuffleCount` to 0 at the start of each combat (in `proceedFromShop()` 
 ---
 
 ### 1.2 — Tempo Mechanical Effect ✦ CRITICAL
-- [ ] **Give tempo a damage bonus** (Proposal #10)
+- [x] **Give tempo a damage bonus** (Proposal #10)
 
 **What:** Each card played in `endTurn()` damage resolution gains `+playerTempo` bonus damage.
 
@@ -139,7 +139,7 @@ const totalCardDmg = cardDamage + tempoBonusDmg; // NEW
 ---
 
 ### 1.3 — Wire Up Tempo Gear Relic ✦ EASY FIX
-- [ ] **Implement the existing `tempo_gear` relic** (Proposal #9)
+- [x] **Implement the existing `tempo_gear` relic** (Proposal #9)
 
 **What:** The relic is already defined in `Relic.ts` with key `tempo_gear` and description "+1 bonus tempo on first sequence match each turn". It has **zero references** in `SignalForgeGame.tsx`.
 
