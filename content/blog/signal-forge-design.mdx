@@ -1,0 +1,155 @@
+---
+title: "Designing Signal Forge: Rhythm Meets Roguelike"
+date: "2024-01-25"
+excerpt: "An exploration of Signal Forge's design philosophy: how we blended deckbuilding depth with sequence-matching mechanics, and why roguelikes are the perfect format for experimentation."
+author: "RMH Studios"
+tags: ["Signal Forge", "Game Design", "Technical Design", "Decisions"]
+---
+
+# Designing Signal Forge: Rhythm Meets Roguelike
+
+Signal Forge emerged from a simple observation: **roguelike deckbuilders are the best framework for exploring new game mechanics**. Games like Slay the Spire proved players love:
+
+- Discovering card synergies
+- Making meaningful choices under pressure
+- The story of one amazing run
+- High replayability with emergent strategy
+
+But what if we added a timing/rhythm element? What if your deck had to *execute correctly*, not just exist optimally?
+
+## The Evolution: From Idea to MVP
+
+### Phase 1: "What If You Had to Perform Your Deck?"
+
+Initial concept: A game where you play cards from your hand in a specific sequence. If you misorder them, you get punished. This became our core insight: **imperfect execution creates interesting decisions**.
+
+### Phase 2: "What About Musical Patterns?"
+
+We'd been listening to a lot of synthwave and lo-fi beats. The idea hit: what if matching patterns *feels like conducting an orchestra*? Instead of "clicking a sequence," you're arranging your cards into a harmonic pattern.
+
+This is where *Pulse, Sine, Saw, and Noise* emerged. Not arbitrary names—each waveform has mechanical meaning:
+
+- **Pulse**: Direct, damage-focused. Like a metronome, reliable
+- **Sine**: Smooth, defensive, scaling. Like a sustained note
+- **Saw**: Chaotic, draw-focused. Like a sawtooth wave building
+- **Noise**: Random, chaotic, high-risk. Like white noise interference
+
+### Phase 3: "What Are the Failure States?"
+
+Early playtesting revealed:
+- If players always knew the pattern, it became rote (boring)
+- If sequences were random, they felt unfair (frustrating)
+- But if enemies *announced their intent and the player responded*, it felt like call-and-response music
+
+This is why every enemy turn shows their target sequence. It rewards attention and planning.
+
+---
+
+## Key Design Decisions
+
+### Decision 1: Why Tempo Decay?
+
+Early builds had infinite tempo scaling. A burst bonus at 10 tempo was insane—you'd one-shot bosses.
+
+**Solution**: Tempo naturally decays unless reinforced by successful matches. This creates rhythm:
+- You spike damage on a successful sequence
+- Tempo decays back down
+- You need to manage the timing of your sequences around the grace period
+
+It's like a *drummer fighting against entropy*, trying to maintain rhythm against the chaos of Static pressure.
+
+### Decision 2: Why Static Pressure?
+
+Without a risk system, the "Tempo Spam" strategy would dominate: play infinite cheap cards, build infinite tempo, win.
+
+Static adds **deck variety pressure**. If you only run Pulse cards, playing multiples corrupts your signal. You're incentivized to include cards of different types even if they're suboptimal.
+
+This prevents degenerate strategies while rewarding creative deckbuilding.
+
+### Decision 3: Why Not Direct Card Selection?
+
+In Slay the Spire, you always get offered choices when leveling up or in shops. We tried this in early Signal Forge.
+
+**Problem**: With 40 cards, the choice paralysis was real (Analysis paralysis). Players would spend minutes debating a single card replacement.
+
+**Solution**: Randomized shop pools with 4-card offerings. You can't optimize perfectly—you have to adapt. This returns agency to *player strategy*, not *menu optimization*.
+
+### Decision 4: Why Seeded Runs?
+
+We noticed that roguelikes create emergent narratives. Your "story" is the run: "I had an insane synergy with Glitch Catalyst and two copies of Pattern Recognition, and I won on floor 2 against odds."
+
+Seeded runs (same seed = same enemy/shop sequence) enable:
+- **Replayability**: "What if I'd made a different choice there?"
+- **Community**: Players can share seed numbers and discuss strategies
+- **Fairness**: Leaderboards can be verified (same seed = same game)
+
+---
+
+## Balance Philosophy
+
+Signal Forge uses **asymmetric balance**. We don't want all decks equally powerful. Instead:
+
+- **Beginner Decks** (~63% win rate floor 1): Shield Wall is stable, forgiving, straightforward
+- **Expert Decks** (~58% win rate floor 1): Glitch Abuse requires perfect relics, risky early
+
+The leaderboard will show which strategies *skilled players* can push furthest. But casual players can absolutely beat floor 1 with Shield Wall. The game scales from accessible to expert.
+
+---
+
+## The Enemy Design Philosophy
+
+Each enemy archetype teaches players something:
+
+| Enemy Type | Lesson | Counters |
+|--|--|--|
+| Disruptor Drone | Static is a real threat; you can't ignore it | Shield Wall or Static removal |
+| Static Leech | Some threats scale *with* your corruption | Tempo or burst strategies |
+| Rhythm Overlord | Simple patterns > complexity sometimes | Glitch Abuse (predictable) |
+| The Void | Adaptation is essential; nothing works forever | Diversified decks |
+
+Bosses on floor 3 change patterns mid-combat, forcing players to reorganize their entire strategy. It's hard. But that's the point.
+
+---
+
+## Why Canvas, Not WebGL?
+
+Signal Forge is built on HTML5 Canvas, rendering everything in 2D. This was a deliberate choice:
+
+- **Accessibility**: Works on 10-year-old laptops
+- **Performance**: No GPU required
+- **Portability**: Browser-native, no plugins
+- **Simplicity**: Focused development on mechanics, not visuals
+
+We learned this from Laundry Sort's early WebGL builds—3D on browser is amazing, but when it crashes, it crashes hard.
+
+---
+
+## What's Next?
+
+We're collecting player data on:
+
+1. **Win Rate Psychology**: Does 60% feel too easy? 35% feel fair? Should we adjust?
+2. **Card Popularity**: Which cards do players always ban from their deck? That's a signal to rebalance
+3. **Relic Discovery**: Are players finding hidden synergies we didn't anticipate? (We hope so!)
+4. **Feedback Loops**: Is the sequence matching satisfying or gimmicky in practice?
+
+The leaderboard and telemetry will guide post-launch balance patches.
+
+---
+
+## The Roguelike Renaissance
+
+We're in an amazing era for roguelikes:
+- Slay the Spire (2017): Deckbuilder roguelike becomes phenomenon
+- Hades (2020): Action roguelike with story
+- Balatro (2024): Poker roguelike explodes on Steam
+
+Each proves the same principle: **novelty + depth + iteration = magic**. Signal Forge adds sequence matching. It might not stick. But we're excited to find out.
+
+If you play Signal Forge, thank you. Your runs generate our next design decisions.
+
+---
+
+*Signal Forge is live at [rmhstudios.com/signal-forge](https://rmhstudios.com/signal-forge). Play a run and join the leaderboard.*
+
+*Follow [@rmhstudios_dev](https://twitter.com/rmhstudios_dev) for updates, balance patches, and new card reveals.*

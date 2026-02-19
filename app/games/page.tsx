@@ -1,8 +1,17 @@
 import Link from 'next/link';
 import { NeonButton } from '@/components/ui/NeonButton';
-import { ArrowRight, Gamepad2, Layers, Scissors, BrainCircuit, BookOpen, Brain, Rocket, Swords } from 'lucide-react';
+import { ArrowRight, Gamepad2, Layers, Scissors, BrainCircuit, BookOpen, Brain, Rocket, Swords, Zap } from 'lucide-react';
 
 const games = [
+    {
+        id: 'signal-forge',
+        title: 'Signal Forge',
+        description: 'A roguelike deckbuilder where you forge waveform sequences, battle corrupted signals, and collect relics to amplify your power.',
+        href: '/signal-forge',
+        icon: <Zap className="w-8 h-8 text-cyan-400" />,
+        color: 'from-cyan-500/20 to-blue-600/20 hover:border-cyan-500/50',
+        tags: ['Deckbuilder', 'Roguelike', 'Strategy']
+    },
     {
         id: 'cursed-logic',
         title: 'Cursed Logic',

@@ -72,6 +72,18 @@ const projects = [
     isSteam: false
   },
   {
+    id: 8,
+    title: "Signal Forge",
+    description: "A roguelike deckbuilder where you match waveform sequences to survive.",
+    longDescription: "Build your deck of waveforms and match sequences to defeat enemies. Every run is different as you navigate floors of increasing difficulty. Manage your tempo, control static corruption, and discover powerful synergies. A game about composing the perfect signal.",
+    status: "Playable Demo",
+    gradient: "from-cyan-600 to-blue-600",
+    icon: <Zap className="w-20 h-20 text-white/80" strokeWidth={1} />,
+    cta: "Play Now",
+    link: "/signal-forge",
+    isSteam: false
+  },
+  {
     id: 9,
     title: "Project Vega",
     description: "A Chrono-Loop Tower Defense where you defend against intrusive thoughts.",
