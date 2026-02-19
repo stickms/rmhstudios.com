@@ -109,7 +109,7 @@ export default function GameCanvas() {
           <button onClick={() => setShowTutorial(true)} className="underline">[HELP]</button>
       </div>
 
-      <div ref={containerRef} className="relative w-full max-w-[1200px] aspect-[3/2] bg-slate-900 border-2 border-slate-700 rounded-xl overflow-hidden shadow-2xl shadow-blue-900/20 flex items-center justify-center font-mono text-slate-100">
+      <div ref={containerRef} className="relative w-full max-w-[1200px] aspect-[3/2] max-h-[85vh] bg-slate-900 border-2 border-slate-700 rounded-xl overflow-hidden shadow-2xl shadow-blue-900/20 flex items-center justify-center font-mono text-slate-100">
       
       {/* CRT Overlay Effect */}
       <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(255,255,255,0)_50%,rgba(255,255,255,0.05)_50%),linear-gradient(90deg,rgba(0,0,0,0.02),rgba(255,255,255,0.01),rgba(0,0,0,0.02))] z-10 bg-[length:100%_2px,3px_100%] pointer-events-none opacity-50" />
@@ -334,7 +334,7 @@ const UpgradeUtils = ({ selectedEntity, focus, onSell }: any) => (
                 className="w-full py-2 bg-red-900/30 hover:bg-red-900/50 border border-red-500/30 text-red-300 text-xs font-bold rounded uppercase transition-all flex justify-between px-4"
             >
                 <span>SELL SYSTEM</span>
-                <span>+{selectedEntity.getSellValue ? selectedEntity.getSellValue() : 0} F</span>
+                <span>+{typeof selectedEntity.getSellValue === 'function' ? selectedEntity.getSellValue() : Math.floor((selectedEntity.totalInvested || 0) * 0.7)} F</span>
             </button>
         </div>
          <p className="text-[10px] text-center mt-2 text-slate-500">GHOSTS CANNOT BE UPGRADED</p> 
@@ -350,7 +350,7 @@ const AudioControls = ({ currentTrack, setCurrentTrack, volume, setVolume }: any
             <span className="text-[10px] text-blue-100 font-bold w-12 text-center">TRK {currentTrack}</span>
             <button onClick={() => setCurrentTrack((prev: number) => prev < 4 ? prev + 1 : 1)} className="text-xs text-blue-200 bg-slate-800 px-2 py-1 rounded border border-slate-600">Next</button>
         </div>
-        <input type="range" min="0" max="1" step="0.05" value={volume} onChange={(e) => setVolume(parseFloat(e.target.value))} className="w-20 h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer" />
+        <input type="range" min="0" max="1" step="0.05" value={volume} onChange={(e) => setVolume(parseFloat(e.target.value))} className="w-32 h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer" />
     </>
 );
 

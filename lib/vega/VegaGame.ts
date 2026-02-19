@@ -187,7 +187,10 @@ export class VegaGame {
   
   public sellTower(tower: Tower) {
       const state = useGameStore.getState();
-      const refund = tower.getSellValue();
+      // Handle potential prototype loss (safeguard)
+      const refund = typeof tower.getSellValue === 'function' 
+        ? tower.getSellValue() 
+        : Math.floor((tower.totalInvested || 0) * 0.7);
       
       // Remove from Entity Manager
       this.entityManager.towers = this.entityManager.towers.filter(t => t !== tower);
