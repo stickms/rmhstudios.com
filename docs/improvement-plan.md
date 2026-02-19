@@ -363,7 +363,7 @@ this.state.enemies.forEach(e => {
 ---
 
 ### 2.2 — New Keywords: Piercing, Chain, Growing, Retain, Multihit, Innate, Ethereal, Siphon
-- [ ] **Extend `CardData` interface with new keyword properties**
+- [x] **Extend `CardData` interface with new keyword properties**
 
 **Where:** `lib/signal-forge/Card.ts` — add to `CardData` interface:
 
@@ -518,7 +518,7 @@ Reset `growthCounter` to 0 for all cards at the start of each combat (in `procee
 ---
 
 ### 2.3 — Add `chainDiscount` and `growthCounter` to GameState
-- [ ] **Extend GameState to support new keyword state tracking**
+- [x] **Extend GameState to support new keyword state tracking**
 
 ```typescript
 // Add to GameState interface:

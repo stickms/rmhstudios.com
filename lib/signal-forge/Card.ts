@@ -26,6 +26,19 @@ export interface CardData {
   echo?: boolean;          // repeat damage/shield at 50%
   wildcard?: boolean;      // counts as ANY waveform for sequences
   leech?: number;          // heal for N% of damage dealt
+  // New keywords (Phase 2.2)
+  piercing?: boolean;      // Ignores enemy Armored reduction
+  chain?: boolean;         // Next card of same waveform type costs -1 energy
+  growing?: number;        // +N damage/shield each time played this combat
+  retain?: boolean;        // Stays in hand between turns
+  multihit?: number;       // Hits target N times
+  bleed?: number;          // Applies N stacks of Bleed to target
+  freeze?: boolean;        // Applies Freeze to target
+  vulnerable?: number;     // Applies N turns of Vulnerable to target
+  weak?: number;           // Applies N turns of Weak to target
+  innate?: boolean;        // Always in opening hand at start of combat
+  ethereal?: boolean;      // If not played this turn, exhaust at end of turn
+  siphon?: number;         // Steal N shield from target enemy and add to player
 }
 
 /**
@@ -55,6 +68,21 @@ export class Card implements CardData {
   echo?: boolean;
   wildcard?: boolean;
   leech?: number;
+  // New keywords
+  piercing?: boolean;
+  chain?: boolean;
+  growing?: number;
+  retain?: boolean;
+  multihit?: number;
+  bleed?: number;
+  freeze?: boolean;
+  vulnerable?: number;
+  weak?: number;
+  innate?: boolean;
+  ethereal?: boolean;
+  siphon?: number;
+  // Growing counter (tracks plays this combat)
+  growthCounter: number = 0;
 
   constructor(data: CardData) {
     this.id = data.id;
@@ -80,6 +108,19 @@ export class Card implements CardData {
     if (data.echo) this.echo = data.echo;
     if (data.wildcard) this.wildcard = data.wildcard;
     if (data.leech !== undefined) this.leech = data.leech;
+    // New keywords
+    if (data.piercing) this.piercing = data.piercing;
+    if (data.chain) this.chain = data.chain;
+    if (data.growing !== undefined) this.growing = data.growing;
+    if (data.retain) this.retain = data.retain;
+    if (data.multihit !== undefined) this.multihit = data.multihit;
+    if (data.bleed !== undefined) this.bleed = data.bleed;
+    if (data.freeze) this.freeze = data.freeze;
+    if (data.vulnerable !== undefined) this.vulnerable = data.vulnerable;
+    if (data.weak !== undefined) this.weak = data.weak;
+    if (data.innate) this.innate = data.innate;
+    if (data.ethereal) this.ethereal = data.ethereal;
+    if (data.siphon !== undefined) this.siphon = data.siphon;
   }
 
   getDamage(): number {
@@ -94,14 +135,21 @@ export class Card implements CardData {
     return this.cost;
   }
 
-  /** Total damage including Echo (50% repeat) */
+  /** Total damage including Echo (50% repeat) and Growing */
   getEffectiveDamage(): number {
-    return this.echo ? this.damage + Math.floor(this.damage * 0.5) : this.damage;
+    let dmg = this.damage;
+    if (this.growing) dmg += this.growthCounter * this.growing;
+    if (this.echo) dmg = Math.floor(dmg * 1.5);
+    return dmg;
   }
 
-  /** Total shield including Echo (50% repeat) */
+  /** Total shield including Echo (50% repeat) and Growing */
   getEffectiveShield(): number {
-    return this.echo ? this.shield + Math.floor(this.shield * 0.5) : this.shield;
+    let shd = this.shield;
+    if (this.growing) shd += this.growthCounter * this.growing;
+    if (this.echo) shd = Math.floor(shd * 1.5);
+    return shd;
+  }
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

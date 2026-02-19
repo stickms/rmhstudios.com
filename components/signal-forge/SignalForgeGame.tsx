@@ -18,6 +18,7 @@ import {
   tickStatusEffects,
   hasStatus,
   applyStatus,
+  WaveformType,
 } from '@/lib/signal-forge';
 
 interface ShopItem {
@@ -59,6 +60,7 @@ interface GameState {
   combatLog: string[];           // short messages shown in UI
   reshuffleCount: number;        // Track reshuffles per combat for fatigue damage
   playerStatuses: StatusEffect[]; // Status effects on player
+  chainDiscount?: { type: WaveformType; amount: number }; // Chain keyword tracking
 }
 
 /** Check if the player owns a relic with a given key */
