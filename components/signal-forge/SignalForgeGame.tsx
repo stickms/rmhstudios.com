@@ -1130,7 +1130,6 @@ export function SignalForgeGame() {
 
       const playerShield = prev.playerShield - card.getEffectiveShield();
       const playerHp = card.selfDamage ? Math.min(prev.playerMaxHp, prev.playerHp + card.selfDamage) : prev.playerHp;
-      const score = prev.score - card.damage * 5;
 
       return {
         ...prev,
@@ -1142,7 +1141,6 @@ export function SignalForgeGame() {
         playerStatic,
         playerShield,
         playerHp,
-        score,
       };
     });
   }, []);
@@ -1263,9 +1261,6 @@ export function SignalForgeGame() {
         }
       }
 
-      // Score from card played
-      const score = prev.score + card.damage * 5;
-
       return {
         ...prev,
         hand,
@@ -1278,7 +1273,6 @@ export function SignalForgeGame() {
         playerStatic,
         playerShield,
         playerHp,
-        score,
         currency,
         firstPulsePlayedThisTurn,
         firstSawPlayedThisTurn,
@@ -1625,7 +1619,7 @@ export function SignalForgeGame() {
         gameOver: isGameOver,
         targetSequence,
         glitchThreshold,
-        score: prev.score + (isMatch ? 50 : 0) + defeatedCount * 25,
+        score: prev.score + totalDamage * 5 + (isMatch ? 50 : 0) + defeatedCount * 25,
         currency: currency + (isMatch ? 15 : 0) + defeatedCount * (20 + prev.floor * 5) + (allDefeated ? (150 + prev.floor * 30) : 0),
         selectedEnemyId: newSelectedEnemyId,
         firstPulsePlayedThisTurn: false,

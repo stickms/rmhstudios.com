@@ -160,7 +160,7 @@ if (matched && tempoGearCount > 0) {
 ---
 
 ### 1.4 — Fix Score-on-Play Bug
-- [ ] **Only award damage-based score when damage actually connects** (Proposal #59)
+- [x] **Only award damage-based score when damage actually connects** (Proposal #59)
 
 **What:** Currently `playCard()` adds `card.damage * 5` to `score` immediately on play, even before `endTurn()` applies damage. If the enemy has shield or armor that absorbs everything, score is inflated.
 
