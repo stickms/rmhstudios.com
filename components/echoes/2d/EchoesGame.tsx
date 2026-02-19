@@ -226,6 +226,8 @@ export default function EchoesGame({
     mobileRef.current = mobileInput;
     const abilityTriggerRef = useRef(abilityTrigger);
     abilityTriggerRef.current = abilityTrigger;
+    
+    const gameLoopRef = useRef<(timestamp: number) => void>(() => {});
 
     // Reload keybinds when they change (settings panel saves to localStorage)
     useEffect(() => {
@@ -385,44 +387,50 @@ export default function EchoesGame({
     }, []);
 
     // ── Game loop ─────────────────────────────────────────────────────────────
-    const gameLoop = useCallback((timestamp: number) => {
-        const g = gameRef.current;
-        if (!g.running) return;
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-        const delta = Math.min((timestamp - g.lastTime) / 1000, 0.05);
-        g.lastTime = timestamp;
-        const s = storeRef.current;
-        if (s.phase !== 'playing') { requestAnimationFrame(gameLoop); return; }
-        const stats = s.stats;
-        s.tick(delta);
-        const { w, h } = sizeRef.current;
-        const obstacles = obstaclesRef.current;
-        const pickups = pickupsRef.current;
+    useEffect(() => {
+        const gameLoopImpl = (timestamp: number) => {
+            const g = gameRef.current;
+            if (!g.running) return;
+            const canvas = canvasRef.current;
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return;
+            const delta = Math.min((timestamp - g.lastTime) / 1000, 0.05);
+            g.lastTime = timestamp;
+            const s = storeRef.current;
+            if (s.phase !== 'playing') { requestAnimationFrame(gameLoopRef.current); return; }
+            const stats = s.stats;
+            s.tick(delta);
+            const { w, h } = sizeRef.current;
+            const obstacles = obstaclesRef.current;
+            const pickups = pickupsRef.current;
 
-        // Timers
-        g.shieldTimer = Math.max(0, g.shieldTimer - delta);
-        g.speedBoostTimer = Math.max(0, g.speedBoostTimer - delta);
-        g.regenBurstTimer = Math.max(0, g.regenBurstTimer - delta);
-        g.overdriveTimer = Math.max(0, g.overdriveTimer - delta);
-        g.fanHammerTimer = Math.max(0, g.fanHammerTimer - delta);
-        g.ricochetTimer = Math.max(0, g.ricochetTimer - delta);
-        g.deadEyeTimer = Math.max(0, g.deadEyeTimer - delta);
-        g.soulDrainTimer = Math.max(0, g.soulDrainTimer - delta);
-        if (g.regenBurstTimer <= 0) g.regenBurstRate = 0;
-        if (g.overdriveTimer <= 0) g.overdriveMultiplier = 1;
-        if (g.fanHammerTimer <= 0) g.fanHammerMultiplier = 1;
-        if (g.ricochetTimer <= 0) g.ricochetActive = false;
-        if (g.deadEyeTimer <= 0) g.deadEyeActive = false;
-        if (g.soulDrainTimer <= 0) g.soulDrainActive = false;
-        if (g.regenBurstRate > 0) s.heal(g.regenBurstRate * delta);
-        // Ability cooldowns
-        for (const as of g.abilityStates) {
-            if (as.cooldownRemaining > 0) { as.cooldownRemaining = Math.max(0, as.cooldownRemaining - delta); if (as.cooldownRemaining <= 0) as.active = false; }
-        }
-        onAbilityStatesChange?.([...g.abilityStates]);
+            // Timers
+            g.shieldTimer = Math.max(0, g.shieldTimer - delta);
+            g.speedBoostTimer = Math.max(0, g.speedBoostTimer - delta);
+            g.regenBurstTimer = Math.max(0, g.regenBurstTimer - delta);
+            g.overdriveTimer = Math.max(0, g.overdriveTimer - delta);
+            g.fanHammerTimer = Math.max(0, g.fanHammerTimer - delta);
+            g.ricochetTimer = Math.max(0, g.ricochetTimer - delta);
+            g.deadEyeTimer = Math.max(0, g.deadEyeTimer - delta);
+            g.soulDrainTimer = Math.max(0, g.soulDrainTimer - delta);
+            if (g.regenBurstTimer <= 0) g.regenBurstRate = 0;
+            if (g.overdriveTimer <= 0) g.overdriveMultiplier = 1;
+            if (g.fanHammerTimer <= 0) g.fanHammerMultiplier = 1;
+            if (g.ricochetTimer <= 0) g.ricochetActive = false;
+            if (g.deadEyeTimer <= 0) g.deadEyeActive = false;
+            if (g.soulDrainTimer <= 0) g.soulDrainActive = false;
+            if (g.regenBurstRate > 0) s.heal(g.regenBurstRate * delta);
+            // Ability cooldowns
+            const updatedAbilityStates = g.abilityStates.map(as => {
+                if (as.cooldownRemaining > 0) {
+                    const newCooldown = Math.max(0, as.cooldownRemaining - delta);
+                    return { ...as, cooldownRemaining: newCooldown, active: newCooldown > 0 ? as.active : false };
+                }
+                return as;
+            });
+            g.abilityStates = updatedAbilityStates;
+            onAbilityStatesChange?.([...g.abilityStates]);
 
         // Movement
         const keys = keysRef.current;
@@ -720,9 +728,12 @@ export default function EchoesGame({
         // Class icon
         if (cls) { ctx.font = '12px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(cls.icon, ppx, ppy); }
 
-        drawMinimap(ctx, g, w, h, pickups, obstacles);
-        requestAnimationFrame(gameLoop);
-    }, [fireBullet, spawnEnemy, spawnParticles, onAbilityStatesChange]);
+            drawMinimap(ctx, g, w, h, pickups, obstacles);
+            requestAnimationFrame(gameLoopRef.current);
+        };
+        
+        gameLoopRef.current = gameLoopImpl;
+    }, [onAbilityStatesChange]);
 
     // ── Start / stop ──────────────────────────────────────────────────────────
     const prevPhaseRef = useRef('');
@@ -743,13 +754,13 @@ export default function EchoesGame({
             g.deathMarkShots = 0; g.soulDrainActive = false; g.regenBurstRate = 0;
             g.overdriveMultiplier = 1; g.fanHammerMultiplier = 1; g.ricochetActive = false; g.deadEyeActive = false;
             g.running = true; g.lastTime = performance.now();
-            requestAnimationFrame(gameLoop);
+            requestAnimationFrame(gameLoopRef.current);
         } else if (s.phase === 'playing' && prev === 'upgrading') {
-            if (!g.running) { g.running = true; g.lastTime = performance.now(); requestAnimationFrame(gameLoop); }
+            if (!g.running) { g.running = true; g.lastTime = performance.now(); requestAnimationFrame(gameLoopRef.current); }
         } else if (s.phase === 'dead') {
             g.running = false;
         }
-    }, [store.phase, gameLoop]);
+    }, [store.phase]);
 
     // ── Keyboard ──────────────────────────────────────────────────────────────
     useEffect(() => {

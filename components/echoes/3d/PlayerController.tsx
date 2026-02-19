@@ -57,6 +57,7 @@ function PlayerBody() {
     const isJumping = useRef(false);
     const yaw = useRef(0);   // horizontal rotation
     const pitch = useRef(0); // vertical rotation
+    const slideVectorRef = useRef(new THREE.Vector3());
 
     useEffect(() => {
         // Lock cursor on canvas click
@@ -123,7 +124,7 @@ function PlayerBody() {
             setIsSliding(true);
             // Boost in current direction
             const slideDir = direction.length() > 0 ? direction : new THREE.Vector3(0, 0, -1).applyEuler(new THREE.Euler(0, camera.rotation.y, 0));
-            setSlideVector(slideDir.multiplyScalar(SLIDE_FORCE));
+            slideVectorRef.current = slideDir.multiplyScalar(SLIDE_FORCE);
         } else if (!crouch && isSliding) {
             setIsSliding(false);
         }
@@ -132,8 +133,8 @@ function PlayerBody() {
         
         if (isSliding) {
             // Sliding physics
-            moveForce = slideVector.clone();
-            setSlideVector(prev => prev.multiplyScalar(SLIDE_DECAY)); // Friction
+            moveForce = slideVectorRef.current.clone();
+            slideVectorRef.current.multiplyScalar(SLIDE_DECAY); // Friction
         } else {
              // Normal walking/sprinting
              const speed = sprint ? SPEED * SPRINT_mult : SPEED;
@@ -151,8 +152,8 @@ function PlayerBody() {
                  newVelX = moveForce.x;
                  newVelZ = moveForce.z;
              } else {
-                 newVelX = slideVector.x;
-                 newVelZ = slideVector.z;
+                 newVelX = slideVectorRef.current.x;
+                 newVelZ = slideVectorRef.current.z;
              }
         } else {
             // Air control (Physics based add)
@@ -172,9 +173,14 @@ function PlayerBody() {
 
     });
     
-    // Mouse Look — YXZ Euler order prevents camera roll
+    // Mouse Look — YXZ Euler order prevents camera roll  
     useEffect(() => {
+        if (!camera) return;
+        // Set the rotation order once
+        const originalOrder = camera.rotation.order;
+        // @ts-expect-error - THREE.js Euler type doesn't expose 'order' as settable, but it is at runtime
         camera.rotation.order = 'YXZ';
+        
         const onMouseMove = (e: MouseEvent) => {
             if (document.pointerLockElement) {
                 yaw.current -= e.movementX * 0.002;
@@ -183,8 +189,13 @@ function PlayerBody() {
             }
         };
         document.addEventListener('mousemove', onMouseMove);
-        return () => document.removeEventListener('mousemove', onMouseMove);
-    }, [camera]);
+        return () => {
+            document.removeEventListener('mousemove', onMouseMove);
+            // Restore original order if component unmounts
+            // @ts-expect-error - THREE.js Euler type doesn't expose 'order' as settable, but it is at runtime
+            camera.rotation.order = originalOrder;
+        };
+    }, []);
 
     return (
         <RigidBody 

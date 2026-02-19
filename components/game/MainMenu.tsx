@@ -11,6 +11,11 @@ import { BPMDetector } from '@/lib/audio/BPMDetector';
 import { BeatMapGenerator } from '@/lib/game/BeatMapGenerator';
 import { TRACKS, TrackMetadata } from '@/lib/game/tracks';
 
+interface LeaderboardEntry {
+    username: string;
+    totalScore: number;
+}
+
 interface MainMenuProps {
     engine: GameEngine | null;
 }
@@ -129,7 +134,7 @@ export function MainMenu({ engine }: MainMenuProps) {
         }
     };
 
-    const [leaderboard, setLeaderboard] = React.useState<any[]>([]);
+    const [leaderboard, setLeaderboard] = React.useState<LeaderboardEntry[]>([]);
 
     React.useEffect(() => {
         fetch('/api/slice-it/leaderboard')
@@ -419,7 +424,7 @@ export function MainMenu({ engine }: MainMenuProps) {
                                 {leaderboard.length === 0 ? (
                                     <div className="text-zinc-600 text-center py-4">No scores yet</div>
                                 ) : (
-                                    leaderboard.map((p: any, i: number) => (
+                                    leaderboard.map((p, i) => (
                                         <div key={i} className="flex justify-between items-center p-1 hover:bg-zinc-800 rounded cursor-default">
                                             <span className="text-zinc-400 w-4 text-center">{i+1}.</span>
                                             <span className="text-white font-bold truncate flex-1 px-2">{p.username}</span>

@@ -31,6 +31,8 @@ export function GameCanvas() {
     const { status, keybinds, isPaused, setIsPaused } = useGameStore();
     const keybindsRef = useRef(keybinds);
     useEffect(() => { keybindsRef.current = keybinds; }, [keybinds]);
+    
+    const renderRef = useRef<(ctx: CanvasRenderingContext2D, engine: GameEngine, currentKeybinds: { lane1: string; lane2: string }) => void>();
 
     // ── Resize canvas to fill its wrapper ──────────────────────────────────────
     useEffect(() => {
@@ -65,13 +67,15 @@ export function GameCanvas() {
         const newEngine = new GameEngine();
         setEngine(newEngine);
 
-        const loop = () => {
+        const loop = (timestamp: number) => {
             const canvas = canvasRef.current;
             if (!canvas) return;
             const ctx = canvas.getContext('2d');
             if (!ctx) return;
             newEngine.update();
-            render(ctx, newEngine, keybindsRef.current);
+            if (renderRef.current) {
+                renderRef.current(ctx, newEngine, keybindsRef.current);
+            }
             rafRef.current = requestAnimationFrame(loop);
         };
         rafRef.current = requestAnimationFrame(loop);
@@ -143,22 +147,23 @@ export function GameCanvas() {
     }, [status, engine]);
 
     // ── Render ─────────────────────────────────────────────────────────────────
-    const render = (
-        ctx: CanvasRenderingContext2D,
-        engine: GameEngine,
-        currentKeybinds: { lane1: string; lane2: string }
-    ) => {
-        const W = ctx.canvas.width;
-        const H = ctx.canvas.height;
-        const dpr = window.devicePixelRatio || 1;
+    useEffect(() => {
+        const renderFunc = (
+            ctx: CanvasRenderingContext2D,
+            gameEngine: GameEngine,
+            currentKeybinds: { lane1: string; lane2: string }
+        ) => {
+            const W = ctx.canvas.width;
+            const H = ctx.canvas.height;
+            const dpr = window.devicePixelRatio || 1;
 
-        // Scale so 1 unit = 1 CSS pixel
-        ctx.save();
-        ctx.scale(dpr, dpr);
-        const w = W / dpr;
-        const h = H / dpr;
+            // Scale so 1 unit = 1 CSS pixel
+            ctx.save();
+            ctx.scale(dpr, dpr);
+            const w = W / dpr;
+            const h = H / dpr;
 
-        const currentTime = AudioManager.getInstance().getCurrentTime();
+            const currentTime = AudioManager.getInstance().getCurrentTime();
 
         // Background
         ctx.fillStyle = '#0a0a0a';
@@ -315,7 +320,10 @@ export function GameCanvas() {
         });
 
         ctx.restore();
-    };
+        };
+        
+        renderRef.current = renderFunc;
+    }, []);
 
     return (
         <div ref={wrapperRef} className="relative w-full h-full">

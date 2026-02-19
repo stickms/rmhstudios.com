@@ -14,6 +14,12 @@ interface RoomData {
     doors: { top: boolean; bottom: boolean; left: boolean; right: boolean };
 }
 
+// Seed a simple random generator for consistent results
+function seededRandom(seed: number): number {
+    const x = Math.sin(seed) * 10000;
+    return x - Math.floor(x);
+}
+
 export default function DungeonGenerator() {
     // Procedural Generation Logic (Simplified for 3D)
     // Same Random Walker as before, but mapped to 3D coords
@@ -35,7 +41,7 @@ export default function DungeonGenerator() {
         addRoom(0, 0); // Start
 
         for (let i = 0; i < 15; i++) {
-            const dir = Math.floor(Math.random() * 4);
+            const dir = Math.floor(seededRandom(i * 7919) * 4); // Use fixed seed based on i
             if (dir === 0) cz -= 1;
             else if (dir === 1) cz += 1;
             else if (dir === 2) cx -= 1;
@@ -69,6 +75,9 @@ function Room({ data }: { data: RoomData }) {
     const wx = x * ROOM_SIZE;
     const wz = z * ROOM_SIZE;
     
+    // Determine light color based on room position (deterministic, not random)
+    const lightColor = (x + z) % 2 === 0 ? '#bf00ff' : '#00ffff';
+    
     // Floor
     // const floorGeo = new THREE.PlaneGeometry(ROOM_SIZE, ROOM_SIZE);
 
@@ -95,7 +104,7 @@ function Room({ data }: { data: RoomData }) {
             <Wall pos={[ROOM_SIZE / 2, WALL_HEIGHT / 2, 0]} rot={[0, Math.PI / 2, 0]} hasDoor={doors.right} />
             
             {/* Light */}
-             <pointLight position={[0, WALL_HEIGHT - 2, 0]} intensity={0.5} distance={15} color={Math.random() > 0.5 ? '#bf00ff' : '#00ffff'} />
+             <pointLight position={[0, WALL_HEIGHT - 2, 0]} intensity={0.5} distance={15} color={lightColor} />
         </group>
     );
 }

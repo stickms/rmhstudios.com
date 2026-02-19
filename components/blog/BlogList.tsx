@@ -136,7 +136,7 @@ export function BlogList({ initialPosts }: BlogListProps) {
               <span className="text-sm text-white/40">Sort by:</span>
               <select 
                 value={sortMode}
-                onChange={(e) => setSortMode(e.target.value as any)}
+                onChange={(e) => setSortMode(e.target.value as "newest" | "oldest" | "az" | "za")}
                 className="bg-black/40 border border-white/10 rounded-lg py-1 px-3 text-sm text-white focus:outline-none focus:border-[var(--neon-pink)]"
               >
                 <option value="newest">Newest</option>

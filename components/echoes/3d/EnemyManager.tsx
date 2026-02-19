@@ -2,7 +2,7 @@
 
 import { useFrame } from '@react-three/fiber';
 import { InstancedRigidBodies, RapierRigidBody, RigidBody, InstancedRigidBodyProps } from '@react-three/rapier';
-import { useMemo, useRef, useState, useEffect } from 'react';
+import { useMemo, useRef, useState, useEffect, useCallback } from 'react';
 import * as THREE from 'three';
 
 const MAX_ENEMIES = 100;
@@ -30,10 +30,38 @@ export default function EnemyManager() {
         return instances;
     }, []);
 
+    const spawnEnemyLocal = useCallback(() => {
+        // Find inactive slot
+        const index = enemies.findIndex(e => !e.active);
+        const slot = index === -1 ? enemies.length : index;
+        
+        if (slot >= MAX_ENEMIES) return;
+
+        // Random Spawn Position
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 20 + Math.random() * 10;
+        const x = playerPos.current.x + Math.cos(angle) * dist;
+        const z = playerPos.current.z + Math.sin(angle) * dist;
+
+        if (index === -1) {
+             setEnemies(prev => [...prev, { id: slot, active: true }]);
+        } else {
+             const newEnemies = [...enemies];
+             newEnemies[slot].active = true;
+             setEnemies(newEnemies);
+        }
+
+        // Teleport RB
+        if (rigidBodiesRef.current && rigidBodiesRef.current[slot]) {
+            rigidBodiesRef.current[slot].setTranslation({ x, y: 1, z }, true); // y:1 = ground level (half of 2-unit tall box)
+            rigidBodiesRef.current[slot].setLinvel({ x: 0, y: 0, z: 0 }, true);
+        }
+    }, [enemies]);
+
     useFrame((state, delta) => {
         // Spawning Logic
         if (state.clock.getElapsedTime() > lastSpawn.current + SPAWN_RATE) {
-            spawnEnemy();
+            spawnEnemyLocal();
             lastSpawn.current = state.clock.getElapsedTime();
         }
 
@@ -67,34 +95,6 @@ export default function EnemyManager() {
         }
     });
 
-    const spawnEnemy = () => {
-        // Find inactive slot
-        const index = enemies.findIndex(e => !e.active);
-        const slot = index === -1 ? enemies.length : index;
-        
-        if (slot >= MAX_ENEMIES) return;
-
-        // Random Spawn Position
-        const angle = Math.random() * Math.PI * 2;
-        const dist = 20 + Math.random() * 10;
-        const x = playerPos.current.x + Math.cos(angle) * dist;
-        const z = playerPos.current.z + Math.sin(angle) * dist;
-
-        if (index === -1) {
-             setEnemies(prev => [...prev, { id: slot, active: true }]);
-        } else {
-             const newEnemies = [...enemies];
-             newEnemies[slot].active = true;
-             setEnemies(newEnemies);
-        }
-
-        // Teleport RB
-        if (rigidBodiesRef.current && rigidBodiesRef.current[slot]) {
-            rigidBodiesRef.current[slot].setTranslation({ x, y: 1, z }, true); // y:1 = ground level (half of 2-unit tall box)
-            rigidBodiesRef.current[slot].setLinvel({ x: 0, y: 0, z: 0 }, true);
-        }
-    };
-    
     // Exposed method for weapon system to call
     useEffect(() => {
         // Global event listener for damage? Or pass prop?

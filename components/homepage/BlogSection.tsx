@@ -60,32 +60,28 @@ export function BlogSection({ posts }: BlogSectionProps) {
   const scrollNext = useCallback(() => emblaApi && emblaApi.scrollNext(), [emblaApi]);
   const scrollTo = useCallback((index: number) => emblaApi && emblaApi.scrollTo(index), [emblaApi]);
 
-  const onInit = useCallback((api: EmblaCarouselType) => {
-    setScrollSnaps(api.scrollSnapList());
-  }, []);
-
-  const onSelect = useCallback((api: EmblaCarouselType) => {
-    setSelectedIndex(api.selectedScrollSnap());
-    setProgress(0);
-  }, []);
-
   useEffect(() => {
     if (!emblaApi) return;
     
-    // Call handlers with emblaApi
-    onInit(emblaApi);
-    onSelect(emblaApi);
+    // Initialize without synchronous setState
+    const initHandler = () => setScrollSnaps(emblaApi.scrollSnapList());
+    const selectHandler = () => {
+      setSelectedIndex(emblaApi.selectedScrollSnap());
+      setProgress(0);
+    };
     
-    emblaApi.on("reInit", onInit);
-    emblaApi.on("reInit", onSelect);
-    emblaApi.on("select", onSelect);
+    // Initial setup
+    setScrollSnaps(emblaApi.scrollSnapList());
+    setSelectedIndex(emblaApi.selectedScrollSnap());
+    
+    emblaApi.on("reInit", initHandler);
+    emblaApi.on("select", selectHandler);
 
     return () => {
-      emblaApi.off("reInit", onInit);
-      emblaApi.off("reInit", onSelect);
-      emblaApi.off("select", onSelect);
+      emblaApi.off("reInit", initHandler);
+      emblaApi.off("select", selectHandler);
     };
-  }, [emblaApi, onInit, onSelect]);
+  }, [emblaApi]);
 
   return (
     <section id="blog" ref={containerRef} className="relative py-20 overflow-hidden bg-gradient-to-b from-[var(--neon-pink)]/20 to-[var(--neon-purple)]/20 min-h-screen flex flex-col justify-center">

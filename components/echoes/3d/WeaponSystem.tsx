@@ -1,7 +1,7 @@
 'use client';
 
 import { useThree, useFrame, createPortal } from '@react-three/fiber';
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import * as THREE from 'three';
 
 type WeaponState = 'idle' | 'firing' | 'reloading';
@@ -36,17 +36,7 @@ export default function WeaponSystem() {
         };
     }, []);
 
-    useFrame((state) => {
-        // Recoil recovery
-        recoil.current.lerp(new THREE.Vector2(0, 0), 0.1);
-
-        // Auto-fire while held
-        if (isFiring.current && state.clock.getElapsedTime() > lastFire.current + fireRate) {
-            fire(state.clock.getElapsedTime());
-        }
-    });
-
-    const fire = (time: number) => {
+    const fireShot = useCallback((time: number) => {
         lastFire.current = time;
 
         // Add recoil
@@ -73,7 +63,17 @@ export default function WeaponSystem() {
         const id = Date.now() + Math.random();
         setTracers(prev => [...prev, { id, start, end }]);
         setTimeout(() => setTracers(prev => prev.filter(t => t.id !== id)), 80);
-    };
+    }, [camera, scene, damage]);
+
+    useFrame((state) => {
+        // Recoil recovery
+        recoil.current.lerp(new THREE.Vector2(0, 0), 0.1);
+
+        // Auto-fire while held
+        if (isFiring.current && state.clock.getElapsedTime() > lastFire.current + fireRate) {
+            fireShot(state.clock.getElapsedTime());
+        }
+    });
 
     return (
         <group>

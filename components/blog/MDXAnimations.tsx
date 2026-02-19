@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import React from "react";
 
 const animationProps = {
   initial: { opacity: 0, y: 20 },
@@ -10,7 +11,18 @@ const animationProps = {
   transition: { duration: 0.5 }
 };
 
-export const AnimatedH1 = ({ className, ...props }: any) => (
+interface HTMLProps {
+  className?: string;
+  children?: React.ReactNode;
+  [key: string]: unknown;
+}
+
+interface ImgProps extends HTMLProps {
+  alt?: string;
+  src?: string;
+}
+
+export const AnimatedH1 = ({ className, ...props }: HTMLProps) => (
   <motion.h1 
     {...animationProps}
     className={cn("text-4xl font-black text-white mt-12 mb-6", className)} 
@@ -18,7 +30,7 @@ export const AnimatedH1 = ({ className, ...props }: any) => (
   />
 );
 
-export const AnimatedH2 = ({ className, ...props }: any) => (
+export const AnimatedH2 = ({ className, ...props }: HTMLProps) => (
   <motion.h2 
     {...animationProps}
     className={cn("text-3xl font-bold text-white mt-10 mb-5", className)} 
@@ -26,7 +38,7 @@ export const AnimatedH2 = ({ className, ...props }: any) => (
   />
 );
 
-export const AnimatedH3 = ({ className, ...props }: any) => (
+export const AnimatedH3 = ({ className, ...props }: HTMLProps) => (
   <motion.h3 
     {...animationProps}
     className={cn("text-2xl font-bold text-white mt-8 mb-4", className)} 
@@ -34,7 +46,7 @@ export const AnimatedH3 = ({ className, ...props }: any) => (
   />
 );
 
-export const AnimatedP = ({ className, ...props }: any) => (
+export const AnimatedP = ({ className, ...props }: HTMLProps) => (
   <motion.p 
     {...animationProps}
     className={cn("text-lg text-white/80 leading-relaxed mb-6", className)} 
@@ -42,7 +54,7 @@ export const AnimatedP = ({ className, ...props }: any) => (
   />
 );
 
-export const AnimatedUl = ({ className, ...props }: any) => (
+export const AnimatedUl = ({ className, ...props }: HTMLProps) => (
   <motion.ul 
     {...animationProps}
     className={cn("list-disc list-outside ml-6 mb-6 text-white/80 space-y-2", className)} 
@@ -50,7 +62,7 @@ export const AnimatedUl = ({ className, ...props }: any) => (
   />
 );
 
-export const AnimatedOl = ({ className, ...props }: any) => (
+export const AnimatedOl = ({ className, ...props }: HTMLProps) => (
   <motion.ol 
     {...animationProps}
     className={cn("list-decimal list-outside ml-6 mb-6 text-white/80 space-y-2", className)} 
@@ -58,7 +70,7 @@ export const AnimatedOl = ({ className, ...props }: any) => (
   />
 );
 
-export const AnimatedLi = ({ className, ...props }: any) => (
+export const AnimatedLi = ({ className, ...props }: HTMLProps) => (
   <motion.li 
     {...animationProps}
     className={cn("pl-2", className)} 
@@ -66,7 +78,7 @@ export const AnimatedLi = ({ className, ...props }: any) => (
   />
 );
 
-export const AnimatedBlockquote = ({ className, ...props }: any) => (
+export const AnimatedBlockquote = ({ className, ...props }: HTMLProps) => (
   <motion.blockquote 
     {...animationProps}
     className={cn("border-l-4 border-[var(--neon-pink)] pl-6 py-2 my-8 text-xl font-light italic text-white/90 bg-white/5 rounded-r-lg", className)} 
@@ -74,7 +86,7 @@ export const AnimatedBlockquote = ({ className, ...props }: any) => (
   />
 );
 
-export const AnimatedImg = ({ className, alt, ...props }: any) => (
+export const AnimatedImg = ({ className, alt, ...props }: ImgProps) => (
   <motion.div 
     {...animationProps}
     className="my-8 rounded-xl overflow-hidden border border-white/10 shadow-2xl bg-black/50"
@@ -88,7 +100,7 @@ export const AnimatedImg = ({ className, alt, ...props }: any) => (
   </motion.div>
 );
 
-export const AnimatedHr = ({ className, ...props }: any) => (
+export const AnimatedHr = ({ className, ...props }: HTMLProps) => (
   <motion.hr 
     {...animationProps}
     className={cn("my-12 border-white/10", className)} 
@@ -96,7 +108,7 @@ export const AnimatedHr = ({ className, ...props }: any) => (
   />
 );
 
-export const AnimatedPre = ({ className, ...props }: any) => (
+export const AnimatedPre = ({ className, ...props }: HTMLProps) => (
   <motion.pre 
     {...animationProps}
     className={cn("bg-black/50 border border-white/10 rounded-lg p-4 overflow-x-auto mb-6 custom-scrollbar", className)} 

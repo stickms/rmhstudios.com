@@ -79,16 +79,14 @@ export function LeaderboardPanel({ username }: { username: string }) {
     useEffect(() => {
         let mounted = true;
         
-        const loadData = async () => {
+        (async () => {
             setLoading(true);
             const data = await fetchLeaderboard(activeTab);
             if (mounted) {
                 setEntries(data);
                 setLoading(false);
             }
-        };
-        
-        loadData();
+        })();
         
         return () => {
             mounted = false;
