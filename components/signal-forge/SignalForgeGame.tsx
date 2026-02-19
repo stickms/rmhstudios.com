@@ -31,7 +31,7 @@ interface ShopItem {
 interface GameState {
   floor: number;
   node: number;
-  phase: 'landing' | 'deck-select' | 'combat' | 'reward' | 'shop' | 'game-over';
+  phase: 'landing' | 'deck-select' | 'combat' | 'card-reward' | 'reward' | 'shop' | 'game-over';
   deckList: Card[];
   deck: Card[];
   hand: Card[];
@@ -62,6 +62,7 @@ interface GameState {
   playerStatuses: StatusEffect[]; // Status effects on player
   chainDiscount?: { type: WaveformType; amount: number }; // Chain keyword tracking
   removalsUsed: number;          // Track card removals for escalating cost
+  cardRewardChoices: Card[];     // Phase 6.2 — Card choices after combat
 }
 
 /** Check if the player owns a relic with a given key */
@@ -117,6 +118,7 @@ function serializeGameState(gs: GameState): Record<string, any> {
     reshuffleCount: gs.reshuffleCount,
     playerStatuses: gs.playerStatuses,
     removalsUsed: gs.removalsUsed,
+    cardRewardChoices: gs.cardRewardChoices.map(c => c.toData()),
   };
 }
 
@@ -166,6 +168,7 @@ function deserializeGameState(data: Record<string, any>): GameState {
     reshuffleCount: data.reshuffleCount ?? 0,
     playerStatuses: data.playerStatuses || [],
     removalsUsed: data.removalsUsed ?? 0,
+    cardRewardChoices: (data.cardRewardChoices || []).map(deserializeCard),
   };
 }
 
@@ -264,8 +267,7 @@ export function SignalForgeGame() {
     playerStatuses: [],
     removalsUsed: 0,
     combatLog: [],
-    playerStatuses: [],
-    removalsUsed: 0,
+    cardRewardChoices: [],
   });
 
   // Helper: shuffle cards (Fisher-Yates)
@@ -1797,7 +1799,35 @@ export function SignalForgeGame() {
         log.push(`Phase Shifter: ${wildCount} slot${wildCount > 1 ? 's' : ''} wildcarded`);
       }
 
-      const newPhase = allDefeated ? 'reward' : (isGameOver ? 'game-over' : 'combat');
+      const newPhase = allDefeated ? 'card-reward' : (isGameOver ? 'game-over' : 'combat');
+
+      // Phase 6.2 — Generate card reward choices when combat is won
+      let cardRewardChoices = prev.cardRewardChoices;
+      if (allDefeated) {
+        const floor = prev.floor;
+        // Rarity weights scale with floor
+        const weights = floor < 4
+          ? { common: 0.65, uncommon: 0.30, rare: 0.05 }
+          : floor < 7
+          ? { common: 0.40, uncommon: 0.45, rare: 0.15 }
+          : { common: 0.20, uncommon: 0.50, rare: 0.30 };
+        
+        cardRewardChoices = [];
+        for (let i = 0; i < 3; i++) {
+          const roll = Math.random();
+          let rarity: 'common' | 'uncommon' | 'rare';
+          if (roll < weights.rare) rarity = 'rare';
+          else if (roll < weights.rare + weights.uncommon) rarity = 'uncommon';
+          else rarity = 'common';
+          
+          const pool = CARD_CATALOG.filter(t => t.rarity === rarity && !t.isGlitch);
+          if (pool.length > 0) {
+            const template = pool[Math.floor(Math.random() * pool.length)];
+            const newId = Date.now() + Math.floor(Math.random() * 100000) + i;
+            cardRewardChoices.push(Card.fromTemplate(template, newId));
+          }
+        }
+      }
 
       // Update selected enemy if they died
       const newSelectedEnemyId = enemies.some(e => e.id === prev.selectedEnemyId)
@@ -1836,6 +1866,7 @@ export function SignalForgeGame() {
         firstSawPlayedThisTurn: false,
         reshuffleCount,
         combatLog: log,
+        cardRewardChoices,
       };
     });
   }, [drawHandCards, refillDeckFromDiscard]);
@@ -2230,6 +2261,31 @@ export function SignalForgeGame() {
     });
   }, [shuffleDeck, drawHandCards]);
 
+  // Phase 6.2 — Card reward handlers
+  const selectCardReward = useCallback((card: Card) => {
+    setGameState(prev => {
+      if (prev.phase !== 'card-reward') return prev;
+      return {
+        ...prev,
+        deckList: [...prev.deckList, card],
+        phase: 'reward',
+        cardRewardChoices: [],
+      };
+    });
+  }, []);
+
+  const skipCardReward = useCallback(() => {
+    setGameState(prev => {
+      if (prev.phase !== 'card-reward') return prev;
+      return {
+        ...prev,
+        currency: prev.currency + 20,
+        phase: 'reward',
+        cardRewardChoices: [],
+      };
+    });
+  }, []);
+
   return (
     <div ref={containerRef} className="w-full h-full relative bg-black overflow-hidden">
       <canvas
@@ -2326,6 +2382,8 @@ export function SignalForgeGame() {
         onAbandonRun={abandonRun}
         showPauseMenu={showPauseMenu}
         setShowPauseMenu={setShowPauseMenu}
+        onSelectCardReward={selectCardReward}
+        onSkipCardReward={skipCardReward}
       />
     </div>
   );

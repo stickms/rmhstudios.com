@@ -1533,7 +1533,7 @@ const darkInsightCount = this.state.ownedRelics.filter(r => r.key === 'dark_insi
 ---
 
 ### 6.2 — Post-Combat Card Reward
-- [ ] **Add a card reward choice after each floor** (Proposal #165)
+- [x] **Add a card reward choice after each floor** (Proposal #165)
 
 **What:** After winning combat (before shop), the player chooses 1 card from 3 random options, or skips for +20 currency.
 
