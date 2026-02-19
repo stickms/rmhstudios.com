@@ -74,10 +74,10 @@ export default function LoginPage() {
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white p-4 font-sans">
-            <div className="bg-slate-900 border border-slate-700 p-8 rounded-2xl shadow-2xl max-w-md w-full space-y-8">
-                <div className="text-center space-y-2">
-                    <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">
-                        RX-9 Auth
+            <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-2xl p-8 shadow-xl">
+                <div className="text-center mb-8">
+                    <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-600 mb-2">
+                        RMH Auth
                     </h1>
                     <p className="text-slate-400 text-sm">
                         {isSignUp ? "Create an identity to access the network." : "Authenticate to access your profile."}
