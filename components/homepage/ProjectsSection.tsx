@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { FlipCard } from "@/components/ui/FlipCard";
 import { ProximityText } from "@/components/ui/ProximityText";
 import { SiSteam } from "react-icons/si";
-import { Rocket, BookOpen, Brain, X, Music, Play, Zap, Crown } from "lucide-react";
+import { Rocket, BookOpen, Brain, X, Music, Play, Zap, Swords, Crown } from "lucide-react";
 
 const projects = [
   {
@@ -72,7 +72,7 @@ const projects = [
     isSteam: false
   },
   {
-    id: 7,
+    id: 9,
     title: "Project Vega",
     description: "A Chrono-Loop Tower Defense where you defend against intrusive thoughts.",
     longDescription: "Defend the Memory Core across 3 recursive timelines. Your towers from previous loops become 'Ghost Protocols' that assist you. Merging timelines creates Paradoxes. A clinical horror aesthetic inspired by Balatro and Pony Island.",
@@ -81,6 +81,18 @@ const projects = [
     icon: <Brain className="w-20 h-20 text-white/80" strokeWidth={1} />,
     cta: "Initialize Loop",
     link: "/vega",
+    isSteam: false
+  },
+  {
+    id: 8,
+    title: "Cursed Logic",
+    description: "A turn-based duel against an unstable Protocol. Commit actions in secret, resolve simultaneously.",
+    longDescription: "Interface with a hostile, semi-sentient system that controls a shared reality. Each round you and the Protocol commit to one action in secret; resolution is simultaneous. The system is unstable—rules and modifiers shift between rounds. Outsmart chaos under severe resource constraint. Absurd, dark, and slightly comedic.",
+    status: "Playable Demo",
+    gradient: "from-cyan-900 to-amber-900",
+    icon: <Swords className="w-20 h-20 text-white/80" strokeWidth={1} />,
+    cta: "Duel the Protocol",
+    link: "/cursed-logic",
     isSteam: false
   },
   {

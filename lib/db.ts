@@ -3,10 +3,7 @@ import { WebSocket } from 'ws';
 
 neonConfig.webSocketConstructor = WebSocket;
 
-if (!process.env.DATABASE_URL) {
-  throw new Error('DATABASE_URL is not defined');
-}
-
-export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
+/** Only set when DATABASE_URL is defined (avoids throwing at build time). */
+export const pool: Pool | null = process.env.DATABASE_URL
+  ? new Pool({ connectionString: process.env.DATABASE_URL })
+  : null;

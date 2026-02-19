@@ -4,7 +4,7 @@ import { GridManager } from './GridManager';
 import { Renderer } from './Renderer';
 import { EntityManager } from './EntityManager';
 import { WaveManager } from './WaveManager';
-import { Tower } from './Entities';
+import { Tower, TowerType } from './Entities';
 
 export class VegaGame {
   private canvas: HTMLCanvasElement;
@@ -19,6 +19,7 @@ export class VegaGame {
   private animationId: number = 0;
   private lastTime: number = 0;
   private gameTime: number = 0; // Track game time for replay window
+  private shakeDuration: number = 0;
   
   // Logical Resolution
   private readonly LOGICAL_WIDTH = 1200;
@@ -130,26 +131,39 @@ export class VegaGame {
     
     const cell = this.gridManager.getCellFromScreen(logicalX, logicalY);
     
-    // 1. Check for existing tower (Selection)
+    // 1. Check for existing tower (Selection or Paradox)
     const existingTower = this.entityManager.getTowerAt(cell.x, cell.y);
     
     if (existingTower) {
+        // PARADOX CHECK: Placing a tower on a Ghost
+        if (state.selectedTower && existingTower.isGhost && !existingTower.isParadox) {
+            // Check costs
+             const { TOWER_COSTS } = require('./GameState');
+             const cost = TOWER_COSTS[state.selectedTower];
+             
+             if (state.focus < cost) {
+                 state.addLog('INSUFFICIENT FOCUS FOR PARADOX MERGE', 'warning');
+                 return;
+             }
+
+             // Execute Merge
+             this.createParadoxTower(existingTower, state.selectedTower);
+             state.modifyFocus(-cost);
+             state.setSelectedTower(null); // Clear selection
+             return;
+        }
+
         state.setSelectedEntity(existingTower);
         state.addLog(`SELECTED: ${existingTower.type}`, 'info');
         console.log('Selected tower:', existingTower);
         return;
     }
     
+    // ... rest of placement logic ...
+    
     // 2. If no tower and clicking empty space while having a selection, deselect?
     if (state.selectedEntity) {
         state.setSelectedEntity(null);
-        // Don't place immediately? Or allow placement?
-        // Let's allow placement if they have a tower selected in the shop.
-        // But wait, if they are in "Upgrade Mode", maybe clicking empty space just deselects?
-        // User flow: 
-        // - Click Tower -> Upgrades show.
-        // - Click Empty -> Upgrades hide.
-        // - Click Shop -> Upgrades hide, placement mode.
         return; 
     }
 
@@ -184,6 +198,26 @@ export class VegaGame {
         state.addLog('PLACEMENT BLOCKED', 'error');
     }
   }
+
+  private createParadoxTower(ghost: Tower, newType: TowerType) {
+      const state = useGameStore.getState();
+      
+      // Upgrade Ghost to Paradox status
+      ghost.isGhost = false; // It becomes real/anchored
+      ghost.isParadox = true;
+      ghost.type = newType; // Take the form of the new tower (or maybe a hybrid?) - Let's use new type but boosted
+      
+      // Paradox Buffs (2x Stats)
+      ghost.damage *= 2;
+      ghost.fireRate *= 0.8; // Faster
+      ghost.range *= 1.25;
+      
+      // Visual Feedback
+      state.addLog('PARADOX DETECTED: TIMELINE MERGED', 'warning');
+      
+      // Screen Shake
+      this.shakeDuration = 500; // 500ms shake
+  }
   
   public sellTower(tower: Tower) {
       const state = useGameStore.getState();
@@ -204,9 +238,6 @@ export class VegaGame {
       
       // Deselect
       state.setSelectedEntity(null);
-      
-      // Force redraw path (if tower was blocking/affecting path? currently towers don't block fully if we use grid pathfinding dynamics, 
-      // but removeTower should clear the grid cell)
   }
 
   public start() {
@@ -235,7 +266,7 @@ export class VegaGame {
     this.stop();
     
     const state = useGameStore.getState();
-    const cost = 1000 * state.level; // Simple scaling
+    const cost = 250 * state.level; // Lowered from 1000 for faster pacing
     
     if (state.focus < cost) {
         state.addLog(`INSUFFICIENT FOCUS FOR RECALL (REQ: ${cost})`, 'error');
@@ -283,14 +314,15 @@ export class VegaGame {
         
         // 5. Add MVP Ghost
         if (mvpTower) {
-            const ghost = new Tower(mvpTower.x, mvpTower.y, mvpTower.type);
+            const t = mvpTower as Tower;
+            const ghost = new Tower(t.x, t.y, t.type);
             ghost.isGhost = true;
-            ghost.damageDealt = mvpTower.damageDealt; // Keep stats?
+            ghost.damageDealt = t.damageDealt; // Keep stats?
             // Apply upgrades?
-            ghost.upgrades = { ...mvpTower.upgrades };
-            ghost.damage = mvpTower.damage;
-            ghost.range = mvpTower.range;
-            ghost.fireRate = mvpTower.fireRate;
+            ghost.upgrades = { ...t.upgrades };
+            ghost.damage = t.damage;
+            ghost.range = t.range;
+            ghost.fireRate = t.fireRate;
             
             this.entityManager.addTower(ghost);
             this.gridManager.placeTower(ghost.x, ghost.y); // Mark occupied
@@ -340,6 +372,17 @@ export class VegaGame {
     
     // Update Entities (Movement, Combat)
     this.entityManager.update(deltaTime, this.gridManager.getPath(), this.gridManager.cellSize);
+
+    // Screen Shake Logic
+    if (this.shakeDuration > 0) {
+        const intensity = 5;
+        const x = (Math.random() - 0.5) * intensity;
+        const y = (Math.random() - 0.5) * intensity;
+        this.canvas.style.transform = `translate(${x}px, ${y}px)`;
+        this.shakeDuration -= deltaTime;
+    } else {
+        this.canvas.style.transform = 'none';
+    }
   }
 
   private draw() {
