@@ -5,7 +5,7 @@ import { BouncyCard } from "@/components/ui/BouncyCard";
 import { FlipCard } from "@/components/ui/FlipCard";
 import { ProximityText } from "@/components/ui/ProximityText";
 import { SiSteam } from "react-icons/si";
-import { Rocket, BookOpen, Brain, X, Music, Play } from "lucide-react";
+import { Rocket, BookOpen, Brain, X, Music, Play, Zap } from "lucide-react";
 
 const projects = [
   {
@@ -18,6 +18,18 @@ const projects = [
     icon: <Music className="w-20 h-20 text-white/80" strokeWidth={1} />,
     cta: "Play Now",
     link: "/slice-it",
+    isSteam: false
+  },
+  {
+    id: 7,
+    title: "Laundry Sort",
+    description: "A physics-based game where gravity and color matching are everything.",
+    longDescription: "Sort falling laundry into color-matched bins using gravity and ragdoll physics. Watch as clothes tumble and bounce through the air. Earn points for correct sorts, but watch out—put a red shirt in the blue bin and you'll lose points! Features dynamic physics, vibrant colors, and addictive gameplay.",
+    status: "Playable Demo",
+    gradient: "from-[#ff6b6b] to-[#ee5a6f]",
+    icon: <Zap className="w-20 h-20 text-white/80" strokeWidth={1} />,
+    cta: "Play Now",
+    link: "/laundry-sort",
     isSteam: false
   },
   {
