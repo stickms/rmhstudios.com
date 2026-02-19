@@ -1,7 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { authClient } from '@/lib/auth-client';
 
 interface Card {
   id: number;
@@ -63,30 +65,35 @@ export function SignalForgeUI({
   onStartGame,
   onNextFloor,
 }: SignalForgeUIProps) {
-  const [username, setUsername] = useState('');
+  const session = authClient.useSession();
+  const router = useRouter();
   const [showLeaderboard, setShowLeaderboard] = useState(false);
-  const [leaderboard, setLeaderboard] = useState<Array<{ username: string; highScore: number }>>([]);
+  const [leaderboard, setLeaderboard] = useState<Array<{ username: string; highScore: number; floorReached: number }>>([]);
+  const [scoreSubmitted, setScoreSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const submitScore = async () => {
-    if (!username.trim()) return;
+    if (!session.data) return;
+    setIsSubmitting(true);
 
     try {
       const res = await fetch('/api/signal-forge/score', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          username: username.trim(),
           score: gameState.score,
           floorReached: gameState.floor,
         }),
       });
 
       if (res.ok) {
+        setScoreSubmitted(true);
         fetchLeaderboard();
-        setUsername('');
       }
     } catch (error) {
       console.error('Failed to submit score:', error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -111,12 +118,29 @@ export function SignalForgeUI({
           <p className="text-slate-300 mb-6 leading-relaxed">
             Match waveform sequences to defeat enemies. Manage your tempo, control static corruption, and build a deck powerful enough to survive.
           </p>
-          <Button
-            onClick={onStartGame}
-            className="w-full bg-linear-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold py-3 rounded-lg border border-cyan-400 shadow-lg"
-          >
-            Start Game
-          </Button>
+          {!session.data ? (
+            <div className="flex flex-col items-center gap-4">
+              <p className="text-red-400 font-mono text-sm uppercase tracking-widest">Authentication Required</p>
+              <Button
+                onClick={() => router.push('/login')}
+                className="w-full bg-white text-black hover:bg-zinc-200 font-bold py-3 rounded-lg"
+              >
+                Sign In to Play
+              </Button>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              <div className="text-green-400 text-sm font-mono text-center">
+                SIGNED IN: {session.data.user.name || (session.data.user as unknown as { username?: string }).username || 'OPERATOR'}
+              </div>
+              <Button
+                onClick={onStartGame}
+                className="w-full bg-linear-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold py-3 rounded-lg border border-cyan-400 shadow-lg"
+              >
+                Start Game
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -151,23 +175,34 @@ export function SignalForgeUI({
             <p>Score: <span className="text-red-400 font-bold text-lg">{gameState.score}</span></p>
             <p>Floor Reached: <span className="text-red-400 font-bold text-lg">{gameState.floor}</span></p>
           </div>
-          <div className="space-y-2 mb-4">
-            <input
-              type="text"
-              placeholder="Enter your name"
-              value={username}
-              onChange={e => setUsername(e.target.value)}
-              className="w-full bg-slate-800 border border-red-600 rounded px-3 py-2 text-white placeholder-slate-500"
-              maxLength={20}
-            />
-            <Button
-              onClick={submitScore}
-              disabled={!username.trim()}
-              className="w-full bg-red-600 hover:bg-red-700 disabled:bg-slate-700 text-white font-bold py-2 rounded-lg"
-            >
-              Submit Score
-            </Button>
-          </div>
+          {session.data && (
+            <div className="space-y-2 mb-4">
+              <div className="text-green-400 text-sm font-mono mb-2">
+                {session.data.user.name || (session.data.user as unknown as { username?: string }).username || 'OPERATOR'}
+              </div>
+              {scoreSubmitted ? (
+                <div className="text-green-400 text-sm font-mono text-center py-2">✓ Score Submitted</div>
+              ) : (
+                <Button
+                  onClick={submitScore}
+                  disabled={isSubmitting}
+                  className="w-full bg-red-600 hover:bg-red-700 disabled:bg-slate-700 text-white font-bold py-2 rounded-lg"
+                >
+                  {isSubmitting ? 'Submitting...' : 'Submit Score'}
+                </Button>
+              )}
+            </div>
+          )}
+          {!session.data && (
+            <div className="mb-4">
+              <Button
+                onClick={() => router.push('/login')}
+                className="w-full bg-white text-black hover:bg-zinc-200 font-bold py-2 rounded-lg"
+              >
+                Sign In to Submit Score
+              </Button>
+            </div>
+          )}
           <Button
             onClick={fetchLeaderboard}
             variant="outline"

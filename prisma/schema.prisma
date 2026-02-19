@@ -28,6 +28,7 @@ model User {
   laundryProfile LaundryPlayer?
   sliceItProfile Player?
   vegaProfile    VegaPlayer?
+  signalForgeProfile SignalForgePlayer?
 
   @@map("user")
 }
@@ -141,4 +142,20 @@ model VegaPlayer {
 
   @@index([highestLoop(sort: Desc)], map: "idx_vega_loop")
   @@index([highestLevel(sort: Desc)], map: "idx_vega_level")
+}
+
+model SignalForgePlayer {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  username      String   @unique
+  highScore     Int      @default(0)
+  floorReached  Int      @default(1)
+  gamesPlayed   Int      @default(1)
+  updatedAt     DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  // Link to Auth User
+  userId        String?  @unique
+  user          User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([highScore(sort: Desc)], map: "idx_signal_forge_high_score")
+  @@index([floorReached(sort: Desc)], map: "idx_signal_forge_floor")
 }
