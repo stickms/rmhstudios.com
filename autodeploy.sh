@@ -94,16 +94,25 @@ perform_deploy() {
         return 1
     fi
 
+    # Verify build directory exists
+    if [ ! -d ".next" ]; then
+        log "Error: .next build directory not found after build."
+        rm -f "$LOCKFILE"
+        return 1
+    fi
+
     # Start/Restart via PM2 on port 7000
     log "Starting application on port $PORT via PM2..."
     if "$PM2_BIN" delete "$APP_NAME" > /dev/null 2>&1 || true; then
+         # Use direct pnpm command string to avoid argument passing issues in PM2
          if "$PM2_BIN" start "$PNPM_BIN" --name "$APP_NAME" -- start -- -p "$PORT"; then
              # Verify startup
              if check_port "$PORT"; then
                  log "Deployment complete and verified."
              else
                  log "--- PM2 ERROR LOGS (Last 50 lines) ---"
-                 "$PM2_BIN" logs "$APP_NAME" --lines 50 --nostream
+                 # Capture both stdout and stderr logs
+                 "$PM2_BIN" logs "$APP_NAME" --lines 100 --nostream
                  log "---------------------------------------"
                  rm -f "$LOCKFILE"
                  return 1
@@ -120,6 +129,12 @@ perform_deploy() {
 }
 
 cd "$REPO_DIR" || { echo "Failed to enter directory $REPO_DIR"; exit 1; }
+
+# --- Environment Validation ---
+if [ ! -f ".env" ] && [ ! -f ".env.local" ] && [ ! -f ".env.production" ]; then
+    log "WARNING: No environment file (.env, .env.local, or .env.production) found in $REPO_DIR."
+    log "The application may fail to start if it requires environment variables."
+fi
 
 log "Auto-deploy script started. Monitoring $REMOTE_REPO/$BRANCH..."
 
