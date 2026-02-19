@@ -1,0 +1,13 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "outDir": "dist-server",
+        "noEmit": false,
+        "isolatedModules": false
+    },
+    "include": [
+        "server/socket-server.ts"
+    ]
+}

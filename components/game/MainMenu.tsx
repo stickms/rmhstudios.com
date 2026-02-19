@@ -8,10 +8,17 @@ import { GameEngine } from '@/lib/game/GameEngine';
 import { Slider } from '@/components/ui/slider';
 import { AudioManager } from '@/lib/audio/AudioManager';
 import { BPMDetector } from '@/lib/audio/BPMDetector';
-import { BeatMapGenerator } from '@/lib/game/BeatMapGenerator';
-import { TRACKS, TrackMetadata } from '@/lib/game/tracks';
+import { BeatDetector } from '@/lib/audio/BeatDetector'; // New Import
+import { MultiplayerFactory } from '@/lib/game/MultiplayerFactory';
+import { BeatMap } from '@/lib/game/types';
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
+import { SongLibrary } from '@/components/game/SongLibrary';
+import { CalibrationScreen } from '@/components/game/CalibrationScreen';
+import { MultiplayerLobby } from '@/components/game/MultiplayerLobby';
+import { Leaderboard } from '@/components/game/Leaderboard';
+import { SongComments } from '@/components/game/SongComments';
+import { SongDetailsPanel } from '@/components/game/SongDetailsPanel'; // New Import
 
 interface MainMenuProps {
     engine: GameEngine | null;
@@ -25,7 +32,6 @@ const KeybindInput = ({ label, value, onChange }: { label: string, value: string
         
         const handleDown = (e: KeyboardEvent) => {
             e.preventDefault();
-            // Store code (e.g. "KeyF", "ArrowLeft")
             onChange(e.code);
             setListening(false);
         };
@@ -35,12 +41,12 @@ const KeybindInput = ({ label, value, onChange }: { label: string, value: string
     }, [listening, onChange]);
 
     return (
-        <div className="flex justify-between items-center bg-zinc-900/50 p-2 rounded border border-zinc-800">
-            <span className="text-xs text-zinc-500 uppercase font-bold">{label}</span>
+        <div className="flex justify-between items-center bg-[#e0e5ec] p-3 rounded-xl shadow-[inset_3px_3px_6px_#a3b1c6,inset_-3px_-3px_6px_#ffffff]">
+            <span className="text-xs text-slate-500 uppercase font-bold">{label}</span>
             <Button 
-                variant="outline" 
+                variant="ghost" 
                 size="sm"
-                className={`font-mono text-xs w-32 ${listening ? 'border-neon-yellow text-neon-yellow animate-pulse' : 'border-zinc-700'}`}
+                className={`font-mono text-xs w-32 rounded-lg ${listening ? 'bg-blue-100 text-blue-600' : 'bg-[#e0e5ec] shadow-[3px_3px_6px_#a3b1c6,-3px_-3px_6px_#ffffff] text-slate-600'}`}
                 onClick={() => setListening(true)}
             >
                 {listening ? 'PRESS KEY...' : value.replace("Key", "").replace("Arrow", "")}
@@ -49,57 +55,134 @@ const KeybindInput = ({ label, value, onChange }: { label: string, value: string
     );
 };
 
-const ModifierToggle = ({ label, active, onClick, color }: { label: string, active: boolean, onClick: () => void, color: string }) => (
-    <div className="flex justify-between items-center bg-zinc-900/50 p-3 rounded border border-zinc-800 cursor-pointer hover:bg-zinc-900 transition-colors" onClick={onClick}>
-        <span className="text-sm text-white font-bold select-none">{label}</span>
-        <div 
-            className={`w-10 h-5 rounded-full transition-colors relative ${active ? '' : 'bg-zinc-700'}`}
-            style={{backgroundColor: active ? color : undefined}}
-        >
-            <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${active ? 'left-6' : 'left-1'}`} />
-        </div>
-    </div>
-);
 
 export function MainMenu({ engine }: MainMenuProps) {
-    const { setStatus, setUserName, userName, keybinds, setKeybinds, volume, setVolume } = useGameStore();
+    const { setStatus, setUserName, userName, keybinds, setKeybinds, volume, setVolume, setIsLoadingSong, setLoadingProgress, setIsMultiplayer } = useGameStore();
     const session = authClient.useSession();
     const router = useRouter();
     // Remove local state
     // const [volume, setVolume] = React.useState(100); 
     const [isLoading, setIsLoading] = React.useState(false);
     const [showSettings, setShowSettings] = React.useState(false);
+    const [showCalibration, setShowCalibration] = React.useState(false);
+    const [showMultiplayer, setShowMultiplayer] = React.useState(false);
     
     // Apply volume on mount
     React.useEffect(() => {
         AudioManager.getInstance().setVolume(volume / 100);
     }, [volume]);
 
-    const [selectedTrack, setSelectedTrack] = React.useState<TrackMetadata | null>(null);
-    const [customFile, setCustomFile] = React.useState<{file: File, buffer: AudioBuffer, bpm: number} | null>(null);
+    // Selected track (from library) or custom file
+    const [selectedSong, setSelectedSong] = React.useState<any | null>(null);
 
-    const handleTrackSelect = async (track: TrackMetadata) => {
+    const [highlightedSong, setHighlightedSong] = React.useState<any | null>(null); // For leaderboard/comments
+
+    // Side effect to set username
+    React.useEffect(() => {
+        if (session.data?.user && !userName) {
+             const name = session.data.user.name || (session.data.user as any).username || 'OPERATOR';
+             setUserName(name);
+        }
+    }, [session.data, userName, setUserName]);
+
+    // Load song metadata + buffer for sidebar preview (does NOT start game)
+    const handleSelectSong = async (song: any) => {
         setIsLoading(true);
         try {
-            console.log("Loading track info:", track.name);
-            const response = await fetch(track.audioUrl);
+            const streamUrl = `/api/slice-it/songs/stream/${song.id}`;
+            const response = await fetch(streamUrl);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
             const arrayBuffer = await response.arrayBuffer();
-             // We decode just to be sure we can play it, but valid logic is to setup first. 
-             // Actually, to detect BPM if missing, we need to decode.
-            
-            const audioContext = AudioManager.getInstance().getContext() 
-                || new (window.AudioContext || (window as any).webkitAudioContext)();
+
+            AudioManager.getInstance().initialize();
+            const audioContext = AudioManager.getInstance().getContext()!;
             const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
 
-            let bpm = track.bpm;
-            if (!bpm) {
-                console.log("Detecting BPM...");
+            let bpm = song.bpm;
+            if (!bpm || bpm === 0) {
                 bpm = await BPMDetector.detect(audioBuffer);
             }
-            
-            setSelectedTrack({...track, bpm}); // Update with detected BPM if needed
-        } catch(e) {
+
+            setSelectedSong({ ...song, bpm, buffer: audioBuffer, audioUrl: streamUrl });
+        } catch (e) {
             console.error("Failed to load track:", e);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Fetch audio, generate beatmap, and launch the game — single authoritative entry point
+    const handleStartGame = async (song: any) => {
+        if (!engine) return;
+
+        setIsLoading(true);
+        setIsLoadingSong(true);
+        setLoadingProgress(0);
+        setStatus('PLAYING');
+
+        try {
+            let audioBuffer: AudioBuffer | undefined;
+            let bpm: number = song.bpm || 0;
+            let audioUrl = '';
+            let map: BeatMap;
+
+            if (song.id === 'demo') {
+                // Offline / demo mode — generate a simple metronome beatmap with no audio
+                const demoBpm = 120;
+                const slices = Array.from({ length: 64 }, (_, i) => ({
+                    id: `demo-${i}`,
+                    time: i * (60 / demoBpm),
+                    type: 'STANDARD' as const,
+                    lane: i % 2,
+                }));
+                map = { id: 'demo', name: 'Demo', artist: 'System', audioUrl: '', bpm: demoBpm, slices };
+            } else {
+                audioUrl = `/api/slice-it/songs/stream/${song.id}`;
+
+                setLoadingProgress(10);
+                // Use pre-loaded buffer from selectedSong if it matches, else fetch fresh
+                let rawBuffer: AudioBuffer | null =
+                    selectedSong?.id === song.id && selectedSong?.buffer
+                        ? selectedSong.buffer
+                        : null;
+
+                if (!rawBuffer) {
+                    const response = await fetch(audioUrl);
+                    if (!response.ok) throw new Error(`Failed to fetch audio: ${response.status}`);
+                    const arrayBuffer = await response.arrayBuffer();
+
+                    AudioManager.getInstance().initialize();
+                    rawBuffer = await AudioManager.getInstance().getContext()!.decodeAudioData(arrayBuffer);
+                }
+
+                audioBuffer = rawBuffer;
+
+                if (!bpm || bpm === 0) {
+                    setLoadingProgress(25);
+                    bpm = await BPMDetector.detect(audioBuffer);
+                }
+
+                setLoadingProgress(40);
+                map = await BeatDetector.generateMap(audioBuffer, song.id, song.title, song.artist);
+                map.audioUrl = audioUrl;
+                map.bpm = bpm;
+            }
+
+            setLoadingProgress(80);
+            await engine.loadMap(map, audioBuffer);
+            setLoadingProgress(100);
+
+            const lobbyId = (engine as any).lobbyId;
+            if (lobbyId) {
+                MultiplayerFactory.getInstance().playerLoaded(lobbyId);
+            } else {
+                setIsLoadingSong(false);
+                engine.start();
+            }
+        } catch (e) {
+            console.error("Start Game Error", e);
+            setIsLoadingSong(false);
+            setStatus('MENU'); // Return to menu so the user isn't stuck on a broken loading screen
         } finally {
             setIsLoading(false);
         }
@@ -111,375 +194,226 @@ export function MainMenu({ engine }: MainMenuProps) {
         // useEffect will update AudioManager
     };
 
-    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file || !engine) return;
-
-        setIsLoading(true);
-        try {
-            const arrayBuffer = await file.arrayBuffer();
-            const audioContext = AudioManager.getInstance().getContext() 
-                || new (window.AudioContext || (window as any).webkitAudioContext)();
-            const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-            
-            console.log("Detecting BPM...");
-            const bpm = await BPMDetector.detect(audioBuffer);
-            
-            setCustomFile({ file, buffer: audioBuffer, bpm });
-        } catch (e) {
-            console.error("Failed to load map", e);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
     const [leaderboard, setLeaderboard] = React.useState<any[]>([]);
 
+    const handleMultiplayerStart = async (lobbyId: string) => {
+        if (!engine || !selectedSong) {
+            console.error("Cannot start multiplayer: No engine or song", { engine: !!engine, song: !!selectedSong });
+            return;
+        }
+        engine.setLobbyId(lobbyId);
+        setIsMultiplayer(true);
+        await handleStartGame(selectedSong);
+        setShowMultiplayer(false);
+    };
+
     React.useEffect(() => {
-        fetch('/api/slice-it/leaderboard')
-            .then(res => res.json())
-            .then(data => {
-                if (Array.isArray(data)) setLeaderboard(data);
-            })
-            .catch(err => console.error("Failed to load leaderboard:", err));
-    }, []);
+        const mp = MultiplayerFactory.getInstance();
+        const onInitLoading = (data: { song: any }) => {
+            console.log("Multiplayer Match Starting. Loading:", data.song);
+            if (data.song) {
+                handleStartGame(data.song);
+            }
+        };
+        mp.on('init_loading', onInitLoading);
+        return () => mp.off('init_loading', onInitLoading);
+    }, [setStatus]);
 
-    const startGame = async () => {
-       if (!engine) return;
-       setIsLoading(true);
-       
-       try {
-           let map;
-           if (customFile) {
-               const url = URL.createObjectURL(customFile.file);
-               map = BeatMapGenerator.generateFromBuffer(
-                    customFile.buffer,
-                    `custom-${Date.now()}`,
-                    customFile.file.name.replace(/\.[^/.]+$/, ""),
-                    'Custom Upload'
-               );
-               map.audioUrl = url;
-               map.bpm = customFile.bpm;
-           } else if (selectedTrack) {
-               // We need to fetch buffer again or cache it? 
-               // For now, let's just re-fetch in BeatMapGenerator or pass buffer if we want optimization.
-               // Existing flow uses url.
-               
-               // But wait, `loadTrack` logic above decoded it but didn't save buffer. 
-               // For strictly correct logic without re-fetching, we should pass buffer.
-               // However, `engine.loadMap` takes a map object which needs explicit slices.
-               // Let's just re-fetch for simplicity or better, modify logic to pass buffer.
-               // Re-fetching is safer for now to avoid refactoring BeatMapGenerator extensively.
-               
-               const response = await fetch(selectedTrack.audioUrl);
-               const arrayBuffer = await response.arrayBuffer();
-               const audioContext = AudioManager.getInstance().getContext() || new AudioContext();
-               const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-               
-               map = BeatMapGenerator.generateFromBuffer(
-                   audioBuffer,
-                   selectedTrack.id,
-                   selectedTrack.name,
-                   selectedTrack.artist
-               );
-               map.audioUrl = selectedTrack.audioUrl;
-               map.bpm = selectedTrack.bpm || 120;
-           }
-
-           if (map) {
-                await engine.loadMap(map);
-                setStatus('PLAYING');
-                engine.start();
-           }
-       } catch(e) {
-           console.error("Start Game Error", e);
-       } finally {
-           setIsLoading(false);
-       }
-    };
-
-    const getScoreMultiplier = () => {
-        const m = useGameStore.getState().modifiers;
-        let mult = 1.0;
-        if (m.invisible) mult += 0.2;
-        if (m.speed > 1.0) mult += (m.speed - 1.0) * 0.5;
-        if (m.suddenDeath) mult += 0.3;
-        if (m.bombs) mult += 0.15;
-        if (m.switching) mult += 0.15;
-        return mult;
-    };
-    
-    // Store updates trigger re-render
-    const modifiers = useGameStore(state => state.modifiers);
-
-    if (selectedTrack || customFile) {
-        // PRE-GAME SCREEN
-        const title = customFile ? customFile.file.name : selectedTrack?.name;
-        const artist = customFile ? 'Custom Upload' : selectedTrack?.artist;
-        const bpm = customFile ? customFile.bpm : selectedTrack?.bpm;
-
-        return (
-             <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto">
-                <Card className="w-full max-w-2xl border-neon-cyan bg-black/90 text-white shadow-[0_0_50px_rgba(0,255,255,0.2)] relative overflow-hidden neon-border my-auto">
-                    <CardHeader>
-                        <CardTitle className="text-3xl font-black italic text-center tracking-tighter text-neon-cyan">
-                            GAME SETUP
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        <div className="text-center space-y-1 bg-zinc-900/50 p-4 rounded border border-zinc-800">
-                            <div className="text-2xl font-bold text-white">{title}</div>
-                            <div className="text-zinc-400">{artist}</div>
-                            <div className="text-xs font-mono text-neon-purple">{Math.round(bpm || 0)} BPM</div>
-                        </div>
-
-                        {/* Modifiers UI (Moved from Settings) */}
-                        <div className="space-y-4">
-                            <div className="text-xs text-zinc-500 uppercase tracking-widest font-bold flex justify-between">
-                                <span>Modifiers</span>
-                                <span className="text-neon-yellow">Score Multiplier: x{getScoreMultiplier().toFixed(2)}</span>
-                            </div>
-                            
-                            <div className="grid grid-cols-2 gap-4">
-                                <ModifierToggle 
-                                    label="Invisible Notes" 
-                                    active={modifiers.invisible} 
-                                    onClick={() => useGameStore.getState().setModifiers({...modifiers, invisible: !modifiers.invisible})}
-                                    color="#bc13fe"
-                                />
-                                <ModifierToggle 
-                                    label="Sudden Death" 
-                                    active={modifiers.suddenDeath} 
-                                    onClick={() => useGameStore.getState().setModifiers({...modifiers, suddenDeath: !modifiers.suddenDeath})}
-                                    color="#ef4444"
-                                />
-                                <ModifierToggle 
-                                    label="Bombs" 
-                                    active={modifiers.bombs} 
-                                    onClick={() => useGameStore.getState().setModifiers({...modifiers, bombs: !modifiers.bombs})}
-                                    color="#f97316"
-                                />
-                                <ModifierToggle 
-                                    label="Switching Notes" 
-                                    active={modifiers.switching} 
-                                    onClick={() => useGameStore.getState().setModifiers({...modifiers, switching: !modifiers.switching})}
-                                    color="#3b82f6"
-                                />
-                                
-                                <div className="col-span-2 bg-zinc-900/50 p-3 rounded border border-zinc-800 space-y-2">
-                                     <div className="flex justify-between text-sm text-white font-bold">
-                                        <span>Speed</span>
-                                        <span className="font-mono text-neon-yellow">x{modifiers.speed.toFixed(1)}</span>
-                                     </div>
-                                     <Slider 
-                                        value={[modifiers.speed]} 
-                                        min={0.5} 
-                                        max={2.0} 
-                                        step={0.1}
-                                        className="cursor-pointer py-1"
-                                        onValueChange={(vals) => useGameStore.getState().setModifiers({...modifiers, speed: vals[0]})} 
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="flex gap-4 pt-4">
-                            <Button 
-                                variant="outline" 
-                                className="flex-1 border-zinc-700 hover:border-white h-12 text-lg"
-                                onClick={() => { setSelectedTrack(null); setCustomFile(null); }}
-                            >
-                                BACK
-                            </Button>
-                            <Button 
-                                className="flex-1 bg-neon-cyan hover:bg-cyan-400 text-black h-12 text-lg font-black italic tracking-wider"
-                                onClick={startGame}
-                                disabled={isLoading}
-                            >
-                                {isLoading ? 'LOADING...' : 'START GAME'}
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
-             </div>
-        );
+    if (showCalibration) {
+        return <CalibrationScreen onBack={() => setShowCalibration(false)} />;
     }
 
-    // MAIN MENU UI
-    // Include Leaderboard fetch logic ... same as before
-    
-    // ... (Keep existing Settings/TrackList render, but remove Modifiers from Settings)
+    if (showMultiplayer) {
+         return <MultiplayerLobby 
+            onBack={() => setShowMultiplayer(false)} 
+            onStart={handleMultiplayerStart} 
+            onSelectSong={handleSelectSong}
+         />;
+    }
 
-     return (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto">
-            <Card className="w-full max-w-4xl border-neon-purple bg-black/90 text-white shadow-[0_0_50px_rgba(153,0,255,0.3)] relative overflow-hidden neon-border my-auto">
-                {isLoading && (
-                    <div className="absolute inset-0 z-50 bg-black/80 flex items-center justify-center flex-col gap-4">
-                        <div className="w-8 h-8 border-4 border-neon-cyan border-t-transparent rounded-full animate-spin" />
-                        <div className="text-neon-cyan font-bold animate-pulse">LOADING TRACK...</div>
+    // Unified Main Menu View
+    return (
+        <div className="absolute inset-0 z-50 flex flex-col bg-[#e0e5ec] overflow-hidden">
+            {(isLoading || session.isPending) && (
+                <div className="absolute inset-0 z-[70] bg-[#e0e5ec]/80 flex items-center justify-center flex-col gap-4">
+                    <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                    <div className="text-blue-500 font-extrabold animate-pulse uppercase tracking-widest">{session.isPending ? 'Validating Session' : 'Initializing Track'}</div>
+                </div>
+            )}
+
+            {/* Header Bar */}
+            <div className="flex items-center justify-between shrink-0 bg-[#e0e5ec] px-4 py-3 border-b border-slate-300">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-slate-300 shadow-inner flex items-center justify-center text-slate-500 font-black text-xl">
+                        {userName ? userName.charAt(0).toUpperCase() : '?'}
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">System Operator</span>
+                        <div className="font-black text-slate-700 text-base uppercase tracking-tight">{userName || 'GUEST'}</div>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                    <Button
+                        variant="outline"
+                        className="h-10 bg-blue-500 text-slate-500 border-none hover:bg-blue-600 font-black px-4 rounded-lg transition-all uppercase tracking-wide text-xs"
+                        onClick={() => setShowMultiplayer(true)}
+                    >
+                        MULTIPLAYER
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-10 w-10 text-slate-500 hover:text-slate-700 hover:bg-slate-200 rounded-lg transition-all"
+                        onClick={() => setShowSettings(true)}
+                    >
+                        <span className="sr-only">Settings</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </Button>
+                </div>
+            </div>
+
+            <div className="flex-1 min-h-0 flex relative">
+                {/* Auth Overlay */}
+                {!session.data && !session.isPending && (
+                    <div className="absolute inset-0 z-[60] bg-[#e0e5ec]/90 flex items-center justify-center p-8 backdrop-blur-xl rounded-[4rem] shadow-[inset_15px_15px_40px_#a3b1c6,inset_-15px_-15px_40px_#ffffff]">
+                        <div className="w-full max-w-md space-y-10 text-center animate-in fade-in zoom-in duration-700">
+                             <h3 className="text-5xl font-black text-slate-700 tracking-tighter uppercase italic bg-gradient-to-br from-slate-700 to-slate-500 bg-clip-text text-transparent">Connect to Start</h3>
+                             <p className="text-slate-500 font-bold uppercase text-xs tracking-[0.5em] opacity-60">Authentication is required for leaderboard ranking</p>
+                             <div className="space-y-6">
+                                <Button
+                                    className="w-full py-12 text-3xl font-black tracking-widest bg-blue-500 hover:bg-blue-400 text-white shadow-[15px_15px_30px_rgba(59,130,246,0.4),-15px_-15px_30px_#ffffff] rounded-[2.5rem] transition-all transform hover:scale-[1.03] active:scale-95 uppercase"
+                                    onClick={() => handleStartGame({ id: 'demo', title: 'Demo', artist: 'System', bpm: 120 })}
+                                >
+                                    Play Offline
+                                </Button>
+
+                                <Button
+                                    className="w-full py-8 text-xl font-bold tracking-[0.2em] bg-[#e0e5ec] text-slate-600 hover:text-blue-500 shadow-[10px_10px_20px_#a3b1c6,-10px_-10px_20px_#ffffff] rounded-[2rem] transition-all active:shadow-[inset_5px_5px_10px_#a3b1c6,inset_-5px_-5px_10px_#ffffff] uppercase"
+                                    onClick={() => setShowMultiplayer(true)}
+                                >
+                                    Enter Lobby
+                                </Button>
+                             </div>
+                        </div>
                     </div>
                 )}
-                <CardHeader className="pb-2">
-                    <CardTitle className="text-4xl font-black italic text-center rainbow-text tracking-tighter">
-                        SLICE IT!
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6 max-h-[70vh] overflow-y-auto">
-                    {/* Auth Overlay */}
-                    {!session.data ? (
-                        <div className="absolute inset-0 z-[60] bg-black/95 flex items-center justify-center p-8 backdrop-blur-md">
-                            <div className="w-full max-w-sm space-y-6 text-center animate-in zoom-in duration-300">
-                                <h3 className="text-2xl font-black italic text-neon-cyan text-glow">AUTHENTICATION REQUIRED</h3>
-                                <p className="text-zinc-400 text-sm">IDENTIFY YOURSELF TO ENTER THE SIMULATION</p>
-                                <Button 
-                                    className="w-full bg-neon-cyan hover:bg-cyan-400 text-black font-black italic tracking-widest h-12 text-lg"
-                                    onClick={() => router.push('/login')}
+
+                {/* Song Library - Full Width */}
+                <div className="w-full flex flex-col overflow-hidden">
+                     <SongLibrary
+                        onSelect={handleStartGame}
+                        onHighlight={setSelectedSong}
+                        selectedSongId={selectedSong?.id}
+                     />
+                </div>
+
+                {/* Sidebar - Song Details */}
+                {selectedSong && (
+                    <>
+                        {/* Backdrop */}
+                        <div
+                            className="absolute inset-0 bg-black/20 z-[65] animate-in fade-in duration-200"
+                            onClick={() => setSelectedSong(null)}
+                        />
+
+                        {/* Sidebar Panel */}
+                        <div className="absolute top-0 right-0 bottom-0 w-full sm:max-w-2xl bg-white shadow-2xl z-[70] animate-in slide-in-from-right duration-300 flex flex-col overflow-hidden">
+                            {/* Sidebar Header */}
+                            <div className="flex items-center justify-between p-4 border-b border-slate-300 bg-slate-50">
+                                <h2 className="text-lg font-black text-slate-700">Song Details</h2>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-slate-500 hover:text-slate-700 hover:bg-slate-200 rounded-lg"
+                                    onClick={() => setSelectedSong(null)}
                                 >
-                                    SIGN IN / REGISTER
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                                 </Button>
                             </div>
-                        </div>
-                    ) : (
-                        // Auto-set username if missing
-                        !userName && (
-                            <div className="hidden">
-                                {(() => {
-                                    const name = session.data.user.name || (session.data.user as any).username || 'OPERATOR';
-                                    if (name) setUserName(name);
-                                    return null;
-                                })()}
-                            </div>
-                        )
-                    )}
 
-                    {/* Left Column: Profile & Settings */}
-                    <div className="space-y-6">
-                        <div className="flex items-center justify-between">
-                             <div className="text-xl font-bold text-white truncate max-w-[150px]">{userName}</div>
-                             <Button variant="ghost" size="sm" onClick={() => setShowSettings(!showSettings)} className="text-zinc-500 hover:text-white">
-                                {showSettings ? 'Back' : 'Settings'}
-                             </Button>
-                        </div>
-                        
-                        {showSettings ? (
-                            <div className="space-y-4 data-[state=open]:animate-in slide-in-from-left-5">
-                                <div className="space-y-2">
-                                    <label className="text-xs text-zinc-500 uppercase tracking-widest font-bold">Player Name</label>
-                                    <input 
-                                        type="text" 
-                                        className="w-full bg-zinc-900 border border-zinc-800 rounded p-2 text-white focus:outline-none focus:border-cyan-500 transition-colors"
-                                        placeholder="Enter your name"
-                                        maxLength={32}
-                                        value={userName}
-                                        onChange={(e) => setUserName(e.target.value)}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                     <div className="text-xs text-zinc-500 uppercase tracking-widest font-bold">Key Bindings</div>
-                                     <KeybindInput 
-                                        label="Top Lane" 
-                                        value={keybinds.lane1} 
-                                        onChange={(k) => setKeybinds({...keybinds, lane1: k})} 
-                                     />
-                                     <KeybindInput 
-                                        label="Bottom Lane" 
-                                        value={keybinds.lane2} 
-                                        onChange={(k) => setKeybinds({...keybinds, lane2: k})} 
-                                     />
-                                </div>
-
-                                {/* Removed Modifiers from here */}
-
-                                 <div className="space-y-2">
-                                     <div className="flex justify-between items-center text-xs text-zinc-500 uppercase tracking-widest font-bold">
-                                         <span>Music Volume</span>
-                                         <span>{volume}%</span>
-                                     </div>
-                                     <Slider 
-                                        value={[volume]} 
-                                        max={100} 
-                                        step={1}
-                                        className="cursor-pointer py-1"
-                                        onValueChange={handleVolumeChange} 
-                                     />
-                                </div>
-                                <div className="space-y-2">
-                                     <div className="flex justify-between items-center text-xs text-zinc-500 uppercase tracking-widest font-bold">
-                                         <span>SFX Volume</span>
-                                         <span>{useGameStore.getState().sfxVolume}%</span>
-                                     </div>
-                                     <Slider 
-                                        value={[useGameStore.getState().sfxVolume]} 
-                                        max={100} 
-                                        step={1}
-                                        className="cursor-pointer py-1"
-                                        onValueChange={(vals) => useGameStore.getState().setSfxVolume(vals[0])} 
-                                     />
-                                </div>
-                            </div>
-                        ) : (
-                            <>
-                         <div className="space-y-2 flex-1 overflow-auto">
-                            <label className="text-xs text-zinc-500 uppercase tracking-widest font-bold flex items-center gap-2">
-                                <span className="w-2 h-2 rounded-full bg-neon-yellow animate-pulse"/>
-                                Global Leaderboard
-                            </label>
-                            <div className="bg-zinc-900/50 rounded border border-zinc-800 p-2 text-xs space-y-1 h-[300px] overflow-y-auto">
-                                {leaderboard.length === 0 ? (
-                                    <div className="text-zinc-600 text-center py-4">No scores yet</div>
-                                ) : (
-                                    leaderboard.map((p: any, i: number) => (
-                                        <div key={i} className="flex justify-between items-center p-1 hover:bg-zinc-800 rounded cursor-default">
-                                            <span className="text-zinc-400 w-4 text-center">{i+1}.</span>
-                                            <span className="text-white font-bold truncate flex-1 px-2">{p.username}</span>
-                                            <span className="text-neon-cyan font-mono">{p.totalScore.toLocaleString()}</span>
-                                        </div>
-                                    ))
-                                )}
-                            </div>
-                        </div>
-                            </>
-                        )}
-                    </div>
-
-                    {/* Right Column: Tracks (Spans 2 cols) */}
-                    <div className="md:col-span-2 space-y-3 h-full flex flex-col">
-                        <label className="text-xs text-zinc-500 uppercase tracking-widest font-bold">Select Track</label>
-                        
-                        <div className="flex-1 space-y-2 overflow-y-auto pr-1">
-                            {/* Custom Upload */}
-                            <div className="relative p-3 border border-dashed border-zinc-700 rounded-lg bg-zinc-900/50 hover:bg-zinc-900 transition-colors cursor-pointer group">
-                                <input 
-                                    type="file" 
-                                    accept="audio/*"
-                                    className="absolute inset-0 opacity-0 cursor-pointer"
-                                    onChange={handleFileChange}
+                            {/* Sidebar Content */}
+                            <div className="flex-1 overflow-y-auto">
+                                <SongDetailsPanel
+                                    song={selectedSong}
+                                    onPlay={handleStartGame}
+                                    onSongUpdated={(updates) => setSelectedSong((s: any) => s ? { ...s, ...updates } : s)}
                                 />
-                                <div className="text-center">
-                                    <span className="font-bold text-sm text-cyan-500 group-hover:text-cyan-400">+ Upload Track</span>
-                                    <div className="text-[10px] text-zinc-500">Auto-BPM</div>
-                                </div>
                             </div>
-
-                            {TRACKS.map((track) => (
-                                <div 
-                                    key={track.id}
-                                    className="p-3 border border-zinc-800 rounded-lg bg-zinc-900 cursor-pointer hover:border-neon-cyan transition-colors flex justify-between items-center group"
-                                    onClick={() => handleTrackSelect(track)}
-                                >
-                                    <div>
-                                        <div className="font-bold text-sm group-hover:text-neon-cyan transition-colors">{track.name}</div>
-                                        <div className="text-xs text-zinc-500">{track.artist}</div>
-                                    </div>
-                                    <div className="text-xs font-mono bg-zinc-800 px-2 py-1 rounded text-zinc-400">
-                                        {track.bpm ? `${track.bpm} BPM` : 'Auto-BPM'}
-                                    </div>
-                                </div>
-                            ))}
                         </div>
+                    </>
+                )}
+            </div>
+            
+            {/* Settings Overlay remains as a full-screen drawer */}
+            {showSettings && (
+                <div className="absolute inset-0 z-[80] bg-[#e0e5ec] p-12 flex flex-col animate-in slide-in-from-right-10 overflow-y-auto">
+                    <div className="flex items-center justify-between mb-12">
+                        <h2 className="text-5xl font-black text-slate-700 tracking-tighter uppercase italic">System Configuration</h2>
+                        <Button 
+                            variant="ghost" 
+                            className="bg-[#e0e5ec] shadow-[5px_5px_12px_#a3b1c6,-5px_-5px_12px_#ffffff] active:shadow-inner text-slate-500 hover:text-slate-700 font-black uppercase tracking-[0.2em] px-10 h-16 rounded-2xl" 
+                            onClick={() => setShowSettings(false)}
+                        >
+                            CLOSE
+                        </Button>
                     </div>
-                </CardContent>
-             </Card>
+
+                    <div className="max-w-3xl mx-auto w-full space-y-12">
+                         {/* Settings content ... */}
+                         <div className="space-y-4">
+                            <label className="text-[10px] text-slate-400 uppercase tracking-[0.4em] font-black ml-4">Authorized Operator</label>
+                            <input 
+                                type="text" 
+                                className="w-full bg-[#e0e5ec] shadow-[inset_4px_4px_8px_#a3b1c6,inset_-4px_-4px_8px_#ffffff] rounded-2xl p-6 text-xl font-bold text-slate-700 focus:outline-none transition-shadow"
+                                placeholder="Enter name"
+                                maxLength={32}
+                                value={userName}
+                                onChange={(e) => setUserName(e.target.value)}
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-8">
+                             <div className="space-y-4">
+                                <label className="text-[10px] text-slate-400 uppercase tracking-[0.4em] font-black ml-4">Audio Output Level</label>
+                                <div className="bg-[#e0e5ec] p-8 rounded-3xl shadow-[inset_5px_5px_10px_#a3b1c6,inset_-5px_-5px_10px_#ffffff] space-y-6">
+                                     <div className="flex justify-between text-sm font-black text-slate-600">
+                                        <span>Master</span>
+                                        <span className="text-blue-500 font-mono">{volume}%</span>
+                                     </div>
+                                     <Slider value={[volume]} max={100} step={1} onValueChange={handleVolumeChange} />
+                                     
+                                     <div className="flex justify-between text-sm font-black text-slate-600 pt-4">
+                                        <span>Effects</span>
+                                        <span className="text-blue-500 font-mono">{useGameStore.getState().sfxVolume}%</span>
+                                     </div>
+                                     <Slider value={[useGameStore.getState().sfxVolume]} max={100} step={1} onValueChange={(vals) => useGameStore.getState().setSfxVolume(vals[0])} />
+                                </div>
+                             </div>
+
+                             <div className="space-y-4">
+                                <label className="text-[10px] text-slate-400 uppercase tracking-[0.4em] font-black ml-4">Input Mapping</label>
+                                <div className="space-y-4">
+                                    <KeybindInput label="Lane A" value={keybinds.lane1} onChange={(k) => setKeybinds({...keybinds, lane1: k})} />
+                                    <KeybindInput label="Lane B" value={keybinds.lane2} onChange={(k) => setKeybinds({...keybinds, lane2: k})} />
+                                </div>
+                             </div>
+                        </div>
+
+                         <div className="pt-8">
+                            <Button 
+                                className="w-full h-20 bg-[#e0e5ec] text-slate-600 shadow-[8px_8px_16px_#a3b1c6,-8px_-8px_16px_#ffffff] active:shadow-inner rounded-2xl font-black text-xl tracking-[0.1em] uppercase transition-all"
+                                onClick={() => setShowCalibration(true)}
+                            >
+                                Calibrate Synchronization
+                            </Button>
+                            <div className="text-center text-[10px] text-slate-400 font-mono mt-4 uppercase tracking-[0.2em]">
+                                Offset: {useGameStore.getState().audioOffset}ms
+                            </div>
+                         </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

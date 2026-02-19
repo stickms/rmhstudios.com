@@ -1,11 +1,15 @@
 'use client';
 
 import { authClient } from "@/lib/auth-client";
-import { useState } from "react";
+import { useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { FaDiscord } from "react-icons/fa";
 import { MdEmail, MdLock, MdPerson } from "react-icons/md";
 
-export default function LoginPage() {
+function LoginForm() {
+    const searchParams = useSearchParams();
+    const callbackURL = searchParams.get("callbackURL") || "/";
+
     const [isSignUp, setIsSignUp] = useState(false);
     const [loading, setLoading] = useState(false);
     
@@ -20,7 +24,7 @@ export default function LoginPage() {
         setLoading(true);
         await authClient.signIn.social({
             provider: "discord",
-            callbackURL: "/", 
+            callbackURL, 
         });
     };
 
@@ -36,13 +40,13 @@ export default function LoginPage() {
                     password,
                     name: name || username,
                     username,
-                    callbackURL: "/"
+                    callbackURL
                 } as any, { // Type assertion needed for custom fields until client types regenerate
                     onRequest: () => setLoading(true),
                     onSuccess: () => {
                         setLoading(false);
                         // Redirect handled by callbackURL usually, or we can push
-                        window.location.href = "/"; 
+                        window.location.href = callbackURL; 
                     },
                     onError: (ctx) => {
                         setLoading(false);
@@ -53,12 +57,12 @@ export default function LoginPage() {
                 await authClient.signIn.email({
                     email,
                     password,
-                    callbackURL: "/"
+                    callbackURL
                 }, {
                     onRequest: () => setLoading(true),
                     onSuccess: () => {
                         setLoading(false);
-                        window.location.href = "/";
+                        window.location.href = callbackURL;
                     },
                     onError: (ctx) => {
                         setLoading(false);
@@ -174,5 +178,13 @@ export default function LoginPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function LoginPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-slate-950 text-white">Loading...</div>}>
+            <LoginForm />
+        </Suspense>
     );
 }

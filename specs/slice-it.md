@@ -1,0 +1,31 @@
+Slice-It Updates:
+
+- Update the UI to use its own design system unique to Slice-It (distance itself from the other RMHStudios projects)
+    - Softer blues, pinkishres, whites, etc.
+    - Rounded corners, neumorphic design, etc.
+    - Soft edges and shadows
+    - Subtle animations
+- Add a public music library system, including:
+    - Users can upload their own songs (wav, mp3, etc) to the library
+    - Users can specify the song's metadata (artist, album, title, etc)
+    - Users can rate songs they've played
+    - Users can comment on songs they've played
+    - Each song has its own leaderboard
+    - Song uploaders can delete or edit their songs, or combine data with another song (in case multiple people uploaded the same song)
+- Add robust websocket system for multiplayer, including:
+    - Lobby system (play against or alongside up to 3 other players)
+    - Easily invite people with lobby links or codes
+    - Lobby members can select a queue of up to 4 different songs
+    - Lobby members can adjust their own song's settings and difficulty modifiers (which are only for them, but make it easier to compete)
+    - Websocket system should be universal to support other RMHStudios projects (use port 7001 for sockets)
+- Add a robust input/audio delay adjustment and calibration system, including:
+    - A calibration system that allows users to calibrate their input delay to their audio delay (using a ping-pong system)
+    - Save these calibrations using localStorage (aka per-device)
+- Change the feedback on note hits to be more dynamic, including:
+    - Better audio feedback for hits (use a soft "tap" sound for hits)
+    - Better visual feedback for hits (use a "glow" effect for hits, and a "shake" effect for misses)
+- Better automatic beatmap generation, including:
+    - Use a more advanced algorithm to generate beatmaps
+    - Parse the song's dynamic audio instead of depending on bpm metadata (which may be missing)
+    - Use the song's audio to automatically detect the beatmap's notes (including stereo/mono audio)
+

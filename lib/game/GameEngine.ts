@@ -1,6 +1,7 @@
 import { AudioManager } from '../audio/AudioManager';
 import { BeatMap, Slice, HIT_WINDOWS, HitResult } from './types';
 import { useGameStore } from '../store/useGameStore';
+import { MultiplayerFactory } from "./MultiplayerFactory";
 
 export class GameEngine {
     private audioManager: AudioManager;
@@ -8,7 +9,7 @@ export class GameEngine {
     private processedSliceIds: Set<string> = new Set();
     
     // Feedback Queue for Rendering
-    public feedbackQueue: { id: number, text: string, lane: number, time: number, color: string }[] = [];
+    public feedbackQueue: { id: number, text: string, lane: number, time: number, color: string, offset?: number }[] = [];
     private feedbackIdCounter = 0;
 
     // Game State
@@ -17,7 +18,12 @@ export class GameEngine {
     private maxCombo: number = 0;
     private health: number = 100;
     private maxHealth: number = 100;
-    private speedMultiplier: number = 1.0; // Global speed affecting playback
+    private speedMultiplier: number = 1.0;
+    private totalNotes: number = 0;   // non-bomb/silent notes resolved
+    private hitPoints: number = 0;    // weighted accuracy points earned
+    private songId: string = '';
+    private mp = MultiplayerFactory.getInstance();
+    private lobbyId: string | null = null;
     
     constructor() {
         this.audioManager = AudioManager.getInstance();
@@ -31,7 +37,7 @@ export class GameEngine {
         return this.processedSliceIds;
     }
 
-    public async loadMap(map: BeatMap) {
+    public async loadMap(map: BeatMap, preloadedBuffer?: AudioBuffer) {
         this.beatMap = map; // Initial assignment
         this.processedSliceIds.clear();
         this.reset();
@@ -75,7 +81,13 @@ export class GameEngine {
 
         // Apply Speed to audio
         this.beatMap = { ...map, slices }; // Update beatMap with modified slices
-        await this.audioManager.loadTrack(map.audioUrl);
+        this.songId = map.id;
+        useGameStore.getState().setSongId(map.id);
+        if (preloadedBuffer) {
+            this.audioManager.loadFromBuffer(preloadedBuffer);
+        } else {
+            await this.audioManager.loadTrack(map.audioUrl);
+        }
         this.audioManager.setPlaybackRate(speed);
     }
     
@@ -83,7 +95,10 @@ export class GameEngine {
         this.processedSliceIds.clear();
         this.score = 0;
         this.combo = 0;
+        this.maxCombo = 0;
         this.health = 100;
+        this.totalNotes = 0;
+        this.hitPoints = 0;
         
         // Load modifiers
         // We need to re-fetch from store because reset() is called on restart
@@ -91,18 +106,27 @@ export class GameEngine {
              const store = useGameStore.getState();
              const modifiers = store.modifiers;
              this.speedMultiplier = modifiers.speed || 1.0;
+
+             // Reset store except modifiers/settings
+             store.setScore(0, 0, 1);
+             store.setHealth(100);
+             store.setCombo(0);
+             store.setMaxCombo(0);
+             store.setAccuracy(0);
+             store.setIsPaused(false);
+             store.setIsMultiplayer(false);
+             // Do not call store.reset() here as it clears everything including status to MENU
         }
 
+        this.lobbyId = null;
         this.audioManager.stop();
         this.audioManager.setPlaybackRate(this.speedMultiplier);
-        
-        // Reset store except modifiers/settings
-        useGameStore.getState().setScore(0, 0, 1);
-        useGameStore.getState().setHealth(100);
-        useGameStore.getState().setIsPaused(false);
-        // Do not call store.reset() here as it clears everything including status to MENU
     }
     
+    public setLobbyId(id: string | null) {
+        this.lobbyId = id;
+    }
+
     public start() {
         this.audioManager.setPlaybackRate(this.speedMultiplier);
         this.audioManager.play();
@@ -125,13 +149,19 @@ export class GameEngine {
         // If not playing or paused, do nothing
         if (useGameStore.getState().status !== 'PLAYING' || useGameStore.getState().isPaused) return;
 
-        const currentTime = this.audioManager.getCurrentTime();
+        const offsetSeconds = (useGameStore.getState().audioOffset || 0) / 1000;
+        const rawTime = this.audioManager.getCurrentTime();
+        const currentTime = rawTime - offsetSeconds;
         const duration = this.audioManager.getDuration();
         
         // Complete check
         if (duration > 0 && currentTime >= duration) {
             useGameStore.getState().setStatus('FINISHED');
             this.audioManager.stop();
+            
+            if (this.lobbyId) {
+                this.mp.finishGame(this.lobbyId, this.score);
+            }
         }
         
         if (this.beatMap) {
@@ -139,7 +169,7 @@ export class GameEngine {
                 if (this.processedSliceIds.has(slice.id)) return;
                 
                 // If time passed window + slice time, it's a miss
-                if (currentTime > slice.time + HIT_WINDOWS.GOOD) {
+                if (currentTime > slice.time + HIT_WINDOWS.BAD) {
                     if (slice.type === 'BOMB') {
                          this.processedSliceIds.add(slice.id); // Just mark as processed, no penalty
                     } else {
@@ -147,6 +177,15 @@ export class GameEngine {
                     }
                 }
             });
+            
+            // Multiplayer Sync (Throttle)
+            if (this.lobbyId && Math.random() < 0.05) { // Approx every 20 frames (~3 times/sec)
+                this.mp.updateScore(this.lobbyId, {
+                    score: this.score,
+                    combo: this.combo,
+                    health: this.health
+                });
+            }
         }
     }
     
@@ -156,7 +195,8 @@ export class GameEngine {
          if (useGameStore.getState().isPaused) return;
          if (this.health <= 0) return;
         
-        const currentTime = this.audioManager.getCurrentTime();
+        const offsetSeconds = (useGameStore.getState().audioOffset || 0) / 1000;
+        const currentTime = this.audioManager.getCurrentTime() - offsetSeconds;
         const map = this.beatMap; // Changed from activeMap to this.beatMap
         if (!map) return;
         
@@ -165,7 +205,7 @@ export class GameEngine {
         const bombs = map.slices.filter(s => 
             s.type === 'BOMB' && 
             s.lane === lane && 
-            Math.abs(s.time - currentTime) <= HIT_WINDOWS.GOOD
+            Math.abs(s.time - currentTime) <= HIT_WINDOWS.BAD
         );
         
         if (bombs.length > 0) {
@@ -198,7 +238,7 @@ export class GameEngine {
         }
 
         // Find best hit ... (rest of logic)
-        const hitWindow = HIT_WINDOWS.GOOD;
+        const hitWindow = HIT_WINDOWS.BAD;
         const potentialHits = map.slices
             .filter(s => !this.processedSliceIds.has(s.id) && s.type !== 'SILENT' && s.type !== 'BOMB')
             .filter(s => s.lane === lane)
@@ -229,6 +269,7 @@ export class GameEngine {
         if (diff <= HIT_WINDOWS.PERFECT) return 'PERFECT';
         if (diff <= HIT_WINDOWS.GREAT) return 'GREAT';
         if (diff <= HIT_WINDOWS.GOOD) return 'GOOD';
+        if (diff <= HIT_WINDOWS.BAD) return 'BAD';
         return 'MISS';
     }
     
@@ -256,6 +297,11 @@ export class GameEngine {
         // Better: For miss click, we don't have a slice, but we know it's a MISS.
         
         if (result === 'MISS') {
+            // Only count real note misses against accuracy, not ghost taps
+            if (slice) {
+                this.totalNotes++;
+                // hitPoints += 0 (miss contributes nothing)
+            }
             this.combo = 0;
             const penalty = slice ? 15 : 5; // 15 damage for real miss, 5 for ghost tap
             this.health = Math.max(0, this.health - penalty); 
@@ -268,6 +314,9 @@ export class GameEngine {
             }
 
             if (this.health <= 0) {
+                if (this.lobbyId) {
+                    this.mp.finishGame(this.lobbyId, this.score);
+                }
                 useGameStore.getState().setStatus('FAILED');
                 this.audioManager.stop();
             }
@@ -275,16 +324,34 @@ export class GameEngine {
             // Successful Hit Logic ...
             let points = 50;
             let color = '#fff';
-            if (result === 'MARVELOUS') { points = 115; color = '#00ffff'; }
-            else if (result === 'PERFECT') { points = 100; color = '#00ff00'; }
-            else if (result === 'GREAT') { points = 75; color = '#ffff00'; }
-            else { color = '#aaaaaa'; }
+
+            // Accuracy tracking (weights: MARVELOUS/PERFECT=100, GREAT=75, GOOD=50, BAD=0)
+            this.totalNotes++;
+            if (result === 'MARVELOUS' || result === 'PERFECT') this.hitPoints += 100;
+            else if (result === 'GREAT') this.hitPoints += 75;
+            else if (result === 'GOOD') this.hitPoints += 50;
+            // BAD = 0, adds to totalNotes but no hitPoints
             
-            this.combo++;
-            this.health = Math.min(this.maxHealth, this.health + 2); 
-            this.maxCombo = Math.max(this.maxCombo, this.combo);
+            // Offset calculation for UI
+             const offset = (this.audioManager.getCurrentTime() - (useGameStore.getState().audioOffset || 0) / 1000) - slice.time;
+
+            if (result === 'MARVELOUS') { points = 115; color = '#00ffff'; } // Cyan
+            else if (result === 'PERFECT') { points = 100; color = '#ffd700'; } // Gold
+            else if (result === 'GREAT') { points = 75; color = '#00ff00'; } // Green
+            else if (result === 'GOOD') { points = 50; color = '#3b82f6'; } // Blue
+            else if (result === 'BAD') { points = 10; color = '#a855f7'; } // Purple
+            else { color = '#aaaaaa'; } // Miss falls through or handled above
             
-            this.score += Math.floor(points * this.combo * scoreMultiplier); 
+            if (result === 'BAD') {
+                 this.combo = 0; // Break combo on Bad
+                 this.health = Math.max(0, this.health - 2); // Small health penalty
+            } else {
+                this.combo++;
+                this.health = Math.min(this.maxHealth, this.health + 2); 
+                this.maxCombo = Math.max(this.maxCombo, this.combo);
+            }
+            
+            this.score += Math.floor(points * (this.combo > 0 ? this.combo : 1) * scoreMultiplier); 
             
             // Add Feedback
             this.feedbackQueue.push({
@@ -292,9 +359,10 @@ export class GameEngine {
                 text: result,
                 lane: slice.lane,
                 time: performance.now(),
-                color: color
+                color: color,
+                offset: offset
             });
-            if (this.feedbackQueue.length > 10) this.feedbackQueue.shift();
+            if (this.feedbackQueue.length > 20) this.feedbackQueue.shift(); // Increased buffer slightly
 
             // SFX
             const freq = (result === 'MARVELOUS' || result === 'PERFECT') ? 880 : 440;
@@ -303,8 +371,21 @@ export class GameEngine {
         }
         
         // Update store
+        const accuracy = this.totalNotes > 0 ? this.hitPoints / (this.totalNotes * 100) : 0;
         useGameStore.getState().setScore(this.score, this.combo, this.speedMultiplier);
         useGameStore.getState().setHealth(this.health);
+        useGameStore.getState().setAccuracy(accuracy);
+        useGameStore.getState().setMaxCombo(this.maxCombo);
+
+        // Multiplayer Sync
+        if (this.lobbyId) {
+             this.mp.updateScore(this.lobbyId, {
+                 score: this.score,
+                 combo: this.combo,
+                 health: this.health,
+                 isDead: this.health <= 0
+             });
+        }
     }    
     public submitRelease() {
         if (!this.beatMap) return;
