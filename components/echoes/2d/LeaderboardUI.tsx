@@ -77,8 +77,22 @@ export function LeaderboardPanel({ username }: { username: string }) {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        setLoading(true);
-        fetchLeaderboard(activeTab).then(data => { setEntries(data); setLoading(false); });
+        let mounted = true;
+        
+        const loadData = async () => {
+            setLoading(true);
+            const data = await fetchLeaderboard(activeTab);
+            if (mounted) {
+                setEntries(data);
+                setLoading(false);
+            }
+        };
+        
+        loadData();
+        
+        return () => {
+            mounted = false;
+        };
     }, [activeTab]);
 
     const tab = TABS.find(t => t.key === activeTab)!;
@@ -126,18 +140,15 @@ export function LeaderboardPanel({ username }: { username: string }) {
 // ─── Start Screen ─────────────────────────────────────────────────────────────
 export function StartScreen() {
     const { phase, showClassSelect, userName: storeUserName, setUserName } = useGameStore();
-    const [username, setUsername] = useState<string | null>(null);
-    const [showPrompt, setShowPrompt] = useState(false);
+    const [username, setUsername] = useState<string | null>(() => getStoredUsername());
+    const [showPrompt, setShowPrompt] = useState(() => !getStoredUsername());
 
     useEffect(() => {
         const stored = getStoredUsername();
-        if (stored) {
-            setUsername(stored);
+        if (stored && stored !== storeUserName) {
             setUserName(stored);
-        } else {
-            setShowPrompt(true);
         }
-    }, [setUserName]);
+    }, [setUserName, storeUserName]);
 
     const handleSetUsername = (name: string) => { 
         setUsername(name); 
@@ -199,24 +210,34 @@ export function StartScreen() {
 export function GameOverScreen() {
     const { phase, kills, timeSurvived, level, xp, showClassSelect, userName } = useGameStore();
     const [submitted, setSubmitted] = useState(false);
-    const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
 
     // Accumulate total XP across the run (level * xpToNextLevel is approximate — use kills*xpPerKill instead)
     // We track it via the store's xp + level as a proxy
     const totalXP = xp + (level - 1) * 50; // rough estimate; ideally tracked in store
 
     useEffect(() => {
-        if (phase !== 'dead') return;
-        setSubmitted(false);
+        if (phase !== 'dead' || submitted) return;
+        
+        let mounted = true;
+        
         fetch('/api/echoes/score', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username: userName, timeSurvived, kills, totalXP }),
         }).then(() => {
-            setSubmitted(true);
-            fetchLeaderboard('time').then(setEntries);
-        }).catch(() => setSubmitted(true));
-    }, [phase, userName, timeSurvived, kills, totalXP]);
+            if (mounted) {
+                setSubmitted(true);
+            }
+        }).catch(() => {
+            if (mounted) {
+                setSubmitted(true);
+            }
+        });
+        
+        return () => {
+            mounted = false;
+        };
+    }, [phase, userName, timeSurvived, kills, totalXP, submitted]);
 
     const mins = Math.floor(timeSurvived / 60).toString().padStart(2, '0');
     const secs = Math.floor(timeSurvived % 60).toString().padStart(2, '0');

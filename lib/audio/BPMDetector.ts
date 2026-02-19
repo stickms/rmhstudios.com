@@ -47,7 +47,7 @@ export class BPMDetector {
     private static getPeaks(data: Float32Array[]): number[] {
         const partSize = 22050;
         const parts = data[0].length / partSize;
-        let peaks: number[] = [];
+        const peaks: number[] = [];
 
         for (let i = 0; i < parts; i++) {
             let max = 0;

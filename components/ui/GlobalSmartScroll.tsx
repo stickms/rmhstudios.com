@@ -18,12 +18,9 @@ export function GlobalSmartScroll() {
   const [activeSectionId, setActiveSectionId] = useState<string>("");
   const [label, setLabel] = useState<string>("Our Games");
   const [mode, setMode] = useState<"scroll" | "next" | "top">("next");
-  const [isVisible, setIsVisible] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
-    // Initial check after mount
-    setIsVisible(true);
-
     const handleScroll = () => {
       const scrollY = window.scrollY;
       const viewportHeight = window.innerHeight;

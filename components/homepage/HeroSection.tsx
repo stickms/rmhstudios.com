@@ -1,7 +1,6 @@
 "use client";
 
 import { motion, useTransform, useSpring } from "framer-motion";
-import { useEffect, useState } from "react";
 import { FloatingElement } from "@/components/ui/FloatingElement";
 import { GlitchText } from "@/components/ui/GlitchText";
 import { NeonButton } from "@/components/ui/NeonButton";
@@ -9,26 +8,18 @@ import { PulsatingOrb } from "@/components/ui/PulsatingOrb";
 import { FloatingShapes } from "@/components/effects/FloatingShapes";
 import { ProximityText } from "@/components/ui/ProximityText";
 import { useMousePosition } from "@/contexts/MouseContext";
+import { useWindowSize } from "@/hooks/useWindowSize";
+import { SPRING_CONFIGS } from "@/lib/animations/constants";
 
 export function HeroSection() {
   const { mouseX, mouseY } = useMousePosition();
-  const [windowSize, setWindowSize] = useState({ width: 1, height: 1 });
+  const windowSize = useWindowSize();
 
-  useEffect(() => {
-    setWindowSize({ width: window.innerWidth, height: window.innerHeight });
-    const handleResize = () => {
-      setWindowSize({ width: window.innerWidth, height: window.innerHeight });
-    };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  const springConfig = { damping: 25, stiffness: 100 };
   // Transform absolute mouse position to normalized 0-1 range for rotation
   const normalizedX = useTransform(mouseX, [0, windowSize.width], [0, 1]);
   const normalizedY = useTransform(mouseY, [0, windowSize.height], [0, 1]);
-  const rotateX = useSpring(useTransform(normalizedY, [0, 1], [5, -5]), springConfig);
-  const rotateY = useSpring(useTransform(normalizedX, [0, 1], [-5, 5]), springConfig);
+  const rotateX = useSpring(useTransform(normalizedY, [0, 1], [5, -5]), SPRING_CONFIGS.default);
+  const rotateY = useSpring(useTransform(normalizedX, [0, 1], [-5, 5]), SPRING_CONFIGS.default);
 
   return (
     <section id="home" className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden scanlines pt-20">

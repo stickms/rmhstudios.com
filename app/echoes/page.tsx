@@ -26,7 +26,12 @@ const EchoesGame = dynamic(() => import('@/components/echoes/2d/EchoesGame'), {
 export default function EchoesPage() {
     const { phase, showClassSelect, startGame, togglePause } = useGameStore();
     const [mobileInput, setMobileInput] = useState({ dx: 0, dy: 0 });
-    const [showDPad, setShowDPad] = useState(false);
+    const [showDPad, setShowDPad] = useState(() => {
+        if (typeof window !== 'undefined') {
+            return window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+        }
+        return false;
+    });
     const [showSettings, setShowSettings] = useState(false);
     const [abilityStates, setAbilityStates] = useState<AbilityState[]>(makeAbilityStates());
     const [abilityTrigger, setAbilityTrigger] = useState<number | null>(null);
@@ -35,8 +40,6 @@ export default function EchoesPage() {
     const selectedClass = useGameStore(s => s.selectedClass);
 
     useEffect(() => {
-        const isTouchDevice = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
-        setShowDPad(isTouchDevice);
         const onTouch = () => setShowDPad(true);
         const onKey = (e: KeyboardEvent) => {
             if (e.code === 'Escape') { togglePause(); return; }

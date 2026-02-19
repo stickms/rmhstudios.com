@@ -248,13 +248,6 @@ export class GameEngine {
         if (m.bombs) scoreMultiplier += 0.15;
         if (m.switching) scoreMultiplier += 0.15;
 
-        // Visual Feedback Params
-        let feedbackLane = slice?.lane ?? 0; // Default to 0 if null, or pass it in? 
-        // Issue: We don't know the lane if slice is null. 
-        // Fix: `handleHit` needs lane if slice is missing.
-        // Actually, just skip feedback lane specific logic or let it default.
-        // Better: For miss click, we don't have a slice, but we know it's a MISS.
-        
         if (result === 'MISS') {
             this.combo = 0;
             const penalty = slice ? 15 : 5; // 15 damage for real miss, 5 for ghost tap

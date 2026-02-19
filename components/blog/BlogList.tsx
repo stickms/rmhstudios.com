@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { ArrowLeft, Search, Calendar, Tag, Filter, ArrowUpAZ, ArrowDownAZ, Clock } from "lucide-react";
+import { ArrowLeft, Search, Calendar, Filter } from "lucide-react";
 import { ShareButton } from "@/components/blog/ShareButton";
 import { Post } from "@/lib/blog";
 import { ProximityText } from "@/components/ui/ProximityText";

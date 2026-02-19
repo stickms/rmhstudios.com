@@ -7,7 +7,7 @@ import Link from "next/link";
 import { ArrowRight, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { Post } from "@/lib/blog";
 import { NeonButton } from "@/components/ui/NeonButton";
-import useEmblaCarousel from "embla-carousel-react";
+import useEmblaCarousel, { EmblaCarouselType } from "embla-carousel-react";
 
 
 const EMBLA_OPTIONS = { 
@@ -60,22 +60,31 @@ export function BlogSection({ posts }: BlogSectionProps) {
   const scrollNext = useCallback(() => emblaApi && emblaApi.scrollNext(), [emblaApi]);
   const scrollTo = useCallback((index: number) => emblaApi && emblaApi.scrollTo(index), [emblaApi]);
 
-  const onInit = useCallback((emblaApi: any) => {
-    setScrollSnaps(emblaApi.scrollSnapList());
+  const onInit = useCallback((api: EmblaCarouselType) => {
+    setScrollSnaps(api.scrollSnapList());
   }, []);
 
-  const onSelect = useCallback((emblaApi: any) => {
-    setSelectedIndex(emblaApi.selectedScrollSnap());
+  const onSelect = useCallback((api: EmblaCarouselType) => {
+    setSelectedIndex(api.selectedScrollSnap());
     setProgress(0);
   }, []);
 
   useEffect(() => {
     if (!emblaApi) return;
+    
+    // Call handlers with emblaApi
     onInit(emblaApi);
     onSelect(emblaApi);
+    
     emblaApi.on("reInit", onInit);
     emblaApi.on("reInit", onSelect);
     emblaApi.on("select", onSelect);
+
+    return () => {
+      emblaApi.off("reInit", onInit);
+      emblaApi.off("reInit", onSelect);
+      emblaApi.off("select", onSelect);
+    };
   }, [emblaApi, onInit, onSelect]);
 
   return (
@@ -94,7 +103,7 @@ export function BlogSection({ posts }: BlogSectionProps) {
             <ProximityText>Devlog</ProximityText>
           </h2>
           <p className="text-white/60 text-lg md:text-xl max-w-2xl mx-auto">
-            Behind the scenes of Satan's Library and more.
+            Behind the scenes of Satan&apos;s Library and more.
           </p>
         </motion.div>
       </div>

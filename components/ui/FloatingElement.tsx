@@ -1,8 +1,10 @@
 "use client";
 
 import { motion, useSpring, useTransform } from "framer-motion";
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import { useMousePosition } from "@/contexts/MouseContext";
+import { useWindowSize } from "@/hooks/useWindowSize";
+import { SPRING_CONFIGS } from "@/lib/animations/constants";
 
 interface FloatingElementProps {
   children: React.ReactNode;
@@ -17,41 +19,29 @@ export function FloatingElement({
 }: FloatingElementProps) {
   const ref = useRef<HTMLDivElement>(null);
   const { mouseX: globalMouseX, mouseY: globalMouseY } = useMousePosition();
-  const [windowSize, setWindowSize] = useState({ width: 1, height: 1 });
-
-  useEffect(() => {
-    setWindowSize({ width: window.innerWidth, height: window.innerHeight });
-    const handleResize = () => {
-      setWindowSize({ width: window.innerWidth, height: window.innerHeight });
-    };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+  const windowSize = useWindowSize();
 
   // Transform absolute mouse position to normalized -1 to 1 range
   const normalizedX = useTransform(globalMouseX, [0, windowSize.width], [-1, 1]);
   const normalizedY = useTransform(globalMouseY, [0, windowSize.height], [-1, 1]);
 
-  // BOUNCY spring config - low damping = more bounce!
-  const springConfig = { damping: 12, stiffness: 200, mass: 0.8 };
-
   const x = useSpring(
     useTransform(normalizedX, [-1, 1], [-intensity, intensity]),
-    springConfig
+    SPRING_CONFIGS.bouncy
   );
   const y = useSpring(
     useTransform(normalizedY, [-1, 1], [-intensity, intensity]),
-    springConfig
+    SPRING_CONFIGS.bouncy
   );
 
   // Add rotation based on mouse position for extra energy
   const rotateZ = useSpring(
     useTransform(normalizedX, [-1, 1], [-3, 3]),
-    springConfig
+    SPRING_CONFIGS.bouncy
   );
   const scale = useSpring(
     useTransform(normalizedX, [-1, 0, 1], [0.98, 1, 0.98]),
-    springConfig
+    SPRING_CONFIGS.bouncy
   );
 
   return (

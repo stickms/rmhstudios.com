@@ -13,11 +13,9 @@ export interface Opponent {
 const MOCK_NAMES = ['NeonRider', 'BeatSlayer', 'RhythmGod', 'SliceMaster', 'PixelPerfect'];
 
 export function useOpponents(count: number = 5) {
-  const [opponents, setOpponents] = useState<Opponent[]>([]);
-
-  useEffect(() => {
-    // Init mock opponents
-    const initial = Array.from({ length: count }).map((_, i) => ({
+  const [opponents, setOpponents] = useState<Opponent[]>(() => {
+    // Init mock opponents on first render
+    return Array.from({ length: count }).map((_, i) => ({
       id: `op-${i}`,
       name: MOCK_NAMES[i % MOCK_NAMES.length],
       progress: 0,
@@ -26,8 +24,9 @@ export function useOpponents(count: number = 5) {
       isAlive: true,
       avatarColor: `hsl(${Math.random() * 360}, 70%, 50%)`
     }));
-    setOpponents(initial);
+  });
 
+  useEffect(() => {
     const interval = setInterval(() => {
       setOpponents(prev => prev.map(op => {
         if (!op.isAlive || op.progress >= 100) return op;
