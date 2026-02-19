@@ -10,6 +10,8 @@ import { AudioManager } from '@/lib/audio/AudioManager';
 import { BPMDetector } from '@/lib/audio/BPMDetector';
 import { BeatMapGenerator } from '@/lib/game/BeatMapGenerator';
 import { TRACKS, TrackMetadata } from '@/lib/game/tracks';
+import { authClient } from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
 
 interface MainMenuProps {
     engine: GameEngine | null;
@@ -61,6 +63,8 @@ const ModifierToggle = ({ label, active, onClick, color }: { label: string, acti
 
 export function MainMenu({ engine }: MainMenuProps) {
     const { setStatus, setUserName, userName, keybinds, setKeybinds, volume, setVolume } = useGameStore();
+    const session = authClient.useSession();
+    const router = useRouter();
     // Remove local state
     // const [volume, setVolume] = React.useState(100); 
     const [isLoading, setIsLoading] = React.useState(false);
@@ -321,26 +325,31 @@ export function MainMenu({ engine }: MainMenuProps) {
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6 max-h-[70vh] overflow-y-auto">
-                    {/* Username Prompt Overlay */}
-                    {!userName && (
+                    {/* Auth Overlay */}
+                    {!session.data ? (
                         <div className="absolute inset-0 z-[60] bg-black/95 flex items-center justify-center p-8 backdrop-blur-md">
-                            <div className="w-full max-w-sm space-y-4 text-center animate-in zoom-in duration-300">
-                                <h3 className="text-2xl font-black italic text-neon-cyan mb-4">IDENTIFY YOURSELF</h3>
-                                <input 
-                                    type="text" 
-                                    className="w-full bg-zinc-900 border-2 border-zinc-700 rounded-lg p-3 text-white text-center text-lg focus:outline-none focus:border-neon-cyan transition-all"
-                                    placeholder="ENTER USERNAME"
-                                    maxLength={32}
-                                    autoFocus
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter' && e.currentTarget.value.trim()) {
-                                            setUserName(e.currentTarget.value.trim());
-                                        }
-                                    }}
-                                />
-                                <p className="text-xs text-zinc-500">PRESS ENTER TO CONFIRM</p>
+                            <div className="w-full max-w-sm space-y-6 text-center animate-in zoom-in duration-300">
+                                <h3 className="text-2xl font-black italic text-neon-cyan text-glow">AUTHENTICATION REQUIRED</h3>
+                                <p className="text-zinc-400 text-sm">IDENTIFY YOURSELF TO ENTER THE SIMULATION</p>
+                                <Button 
+                                    className="w-full bg-neon-cyan hover:bg-cyan-400 text-black font-black italic tracking-widest h-12 text-lg"
+                                    onClick={() => router.push('/login')}
+                                >
+                                    SIGN IN / REGISTER
+                                </Button>
                             </div>
                         </div>
+                    ) : (
+                        // Auto-set username if missing
+                        !userName && (
+                            <div className="hidden">
+                                {(() => {
+                                    const name = session.data.user.name || (session.data.user as any).username || 'OPERATOR';
+                                    if (name) setUserName(name);
+                                    return null;
+                                })()}
+                            </div>
+                        )
                     )}
 
                     {/* Left Column: Profile & Settings */}
