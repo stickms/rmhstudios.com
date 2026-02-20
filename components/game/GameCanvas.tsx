@@ -458,15 +458,13 @@ export function GameCanvas() {
         const w = W / dpr;
         const h = H / dpr;
 
-        // Spin modifier: deterministic chaotic rotation & translation based on song time
+        // Spin modifier: slowly slowly rotate counter-clockwise based on song time
         const isSpinMod = useGameStore.getState().modifiers.spin;
         if (isSpinMod) {
             const t = AudioManager.getInstance().getCurrentTime();
-            const rotation = t * 0.12
-                           + Math.sin(t * 0.7) * 0.25
-                           + Math.sin(t * 1.1) * 0.12
-                           + Math.sin(t * 1.8) * 0.06
-                           + Math.cos(t * 0.45 + 2.0) * 0.15;
+            // Slow counter-clockwise rotation based on seconds
+            const rotation = -t * 0.25; 
+            
             // Dynamic scale: shrink just enough so the rotated rectangle fits in the viewport
             // For a WxH rect rotated by θ, bounding box is:
             //   bw = |W·cosθ| + |H·sinθ|, bh = |W·sinθ| + |H·cosθ|
@@ -475,11 +473,9 @@ export function GameCanvas() {
             const boundW = w * abscos + h * absSin;
             const boundH = w * absSin + h * abscos;
             const spinScale = Math.min(w / boundW, h / boundH);
-            const translateX = Math.sin(t * 0.5) * w * 0.02
-                             + Math.cos(t * 0.9) * w * 0.012;
-            const translateY = Math.cos(t * 0.7) * h * 0.015
-                             + Math.sin(t * 1.2) * h * 0.01;
-            ctx.translate(w / 2 + translateX, h / 2 + translateY);
+            
+            // No translations, just rotation anchored exactly at the center
+            ctx.translate(w / 2, h / 2);
             ctx.scale(spinScale, spinScale);
             ctx.rotate(rotation);
             ctx.translate(-w / 2, -h / 2);
@@ -767,33 +763,31 @@ export function GameCanvas() {
 
         // 5. Cursors (Receptors)
         if (isOneTrack) {
-            // One-track mode: draw two receptors side-by-side on the single track
+            // One-track mode: draw a single white receptor
             const y = LANE_Y[0];
-            const spacing = CURSOR_R * 2;
-            [{ color: COLORS.lane1, bind: currentKeybinds.lane1, xOff: -spacing },
-             { color: COLORS.lane2, bind: currentKeybinds.lane2, xOff: spacing }].forEach(({ color, bind, xOff }) => {
-                const cx = CURSOR_X + xOff;
-                ctx.shadowColor = '#ffffff';
-                ctx.shadowBlur = 5;
-                ctx.shadowOffsetX = -2;
-                ctx.shadowOffsetY = -2;
-                ctx.strokeStyle = '#e0e5ec';
-                ctx.lineWidth = 4;
-                ctx.beginPath(); ctx.arc(cx, y, CURSOR_R * 1.5, 0, Math.PI * 2); ctx.stroke();
-                ctx.shadowColor = '#a3b1c6';
-                ctx.shadowBlur = 5;
-                ctx.shadowOffsetX = 2;
-                ctx.shadowOffsetY = 2;
-                ctx.stroke();
-                ctx.shadowColor = 'transparent';
-                ctx.strokeStyle = color;
-                ctx.lineWidth = 3;
-                ctx.beginPath(); ctx.arc(cx, y, CURSOR_R * 1.5, 0, Math.PI * 2); ctx.stroke();
-                ctx.fillStyle = '#64748b';
-                ctx.font = 'bold 12px sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText(bind.replace('Key','').replace('Arrow',''), cx, y + 4);
-            });
+            const cx = CURSOR_X;
+            ctx.shadowColor = '#ffffff';
+            ctx.shadowBlur = 5;
+            ctx.shadowOffsetX = -2;
+            ctx.shadowOffsetY = -2;
+            ctx.strokeStyle = '#e0e5ec';
+            ctx.lineWidth = 4;
+            ctx.beginPath(); ctx.arc(cx, y, CURSOR_R * 1.5, 0, Math.PI * 2); ctx.stroke();
+            ctx.shadowColor = '#a3b1c6';
+            ctx.shadowBlur = 5;
+            ctx.shadowOffsetX = 2;
+            ctx.shadowOffsetY = 2;
+            ctx.stroke();
+            ctx.shadowColor = 'transparent';
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.arc(cx, y, CURSOR_R * 1.5, 0, Math.PI * 2); ctx.stroke();
+            ctx.fillStyle = '#64748b';
+            ctx.font = 'bold 10px sans-serif';
+            ctx.textAlign = 'center';
+            const bind1 = currentKeybinds.lane1.replace('Key','').replace('Arrow','');
+            const bind2 = currentKeybinds.lane2.replace('Key','').replace('Arrow','');
+            ctx.fillText(`${bind1}/${bind2}`, cx, y + 4);
         } else {
             LANE_Y.forEach((y, i) => {
                 const color = i === 0 ? COLORS.lane1 : COLORS.lane2;
