@@ -14,6 +14,8 @@ interface Modifiers {
   suddenDeath: boolean;
   bombs: boolean;
   switching: boolean;
+  spin: boolean;
+  strictTiming: boolean;
   difficulty: Difficulty;
 }
 
@@ -33,6 +35,7 @@ interface GameState {
   isPaused: boolean;
   volume: number;
   sfxVolume: number;
+  hitSound: string;
   audioOffset: number;
   opponents: Record<string, { id: string, score: number, combo: number, name: string }>;
   
@@ -64,6 +67,7 @@ interface GameState {
   setIsPaused: (isPaused: boolean) => void;
   setVolume: (volume: number) => void;
   setSfxVolume: (sfxVolume: number) => void;
+  setHitSound: (hitSound: string) => void;
   setAudioOffset: (offset: number) => void;
   setOpponent: (id: string, data: Partial<{ id: string, score: number, combo: number, name: string }>) => void;
   removeOpponent: (id: string) => void;
@@ -94,11 +98,14 @@ export const useGameStore = create<GameState>()(
           suddenDeath: false,
           bombs: false,
           switching: false,
+          spin: false,
+          strictTiming: false,
           difficulty: 'normal' as Difficulty,
       },
       isPaused: false,
       volume: 100,
       sfxVolume: 80,
+      hitSound: 'default',
       audioOffset: 0, // Default 0ms offset
       opponents: {},
       isMultiplayer: false,
@@ -123,6 +130,7 @@ export const useGameStore = create<GameState>()(
       setIsPaused: (isPaused) => set({ isPaused }),
       setVolume: (volume) => set({ volume }),
       setSfxVolume: (sfxVolume) => set({ sfxVolume }),
+      setHitSound: (hitSound) => set({ hitSound }),
       setAudioOffset: (offset) => set({ audioOffset: offset }),
       setOpponent: (id, data) => set((state) => ({
           opponents: {
@@ -140,7 +148,7 @@ export const useGameStore = create<GameState>()(
     }),
     {
       name: 'slice-it-storage',
-      partialize: (state) => ({ userName: state.userName, keybinds: state.keybinds, volume: state.volume, sfxVolume: state.sfxVolume, audioOffset: state.audioOffset }), // Persist settings only (not modifiers or game state)
+      partialize: (state) => ({ userName: state.userName, keybinds: state.keybinds, volume: state.volume, sfxVolume: state.sfxVolume, hitSound: state.hitSound, audioOffset: state.audioOffset }), // Persist settings only (not modifiers or game state)
     }
   )
 );

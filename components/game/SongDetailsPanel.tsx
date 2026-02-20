@@ -140,6 +140,8 @@ export function SongDetailsPanel({ song, onPlay, onSongUpdated }: SongDetailsPan
         if (modifiers.speed > 1.0) mult += (modifiers.speed - 1.0) * 0.5;
         if (modifiers.bombs) mult += 0.15;
         if (modifiers.switching) mult += 0.15;
+        if (modifiers.spin) mult += 0.15;
+        if (modifiers.strictTiming) mult += 0.25;
         return mult;
     };
 
@@ -328,6 +330,18 @@ export function SongDetailsPanel({ song, onPlay, onSongUpdated }: SongDetailsPan
                         active={modifiers.switching}
                         onClick={() => setModifiers({...modifiers, switching: !modifiers.switching})}
                         color="#3b82f6"
+                    />
+                    <ModifierToggle
+                        label="Spin"
+                        active={modifiers.spin}
+                        onClick={() => setModifiers({...modifiers, spin: !modifiers.spin})}
+                        color="#06b6d4"
+                    />
+                    <ModifierToggle
+                        label="Strict Timing"
+                        active={modifiers.strictTiming}
+                        onClick={() => setModifiers({...modifiers, strictTiming: !modifiers.strictTiming})}
+                        color="#dc2626"
                     />
                 </div>
 

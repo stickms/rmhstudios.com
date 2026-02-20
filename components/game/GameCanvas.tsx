@@ -361,6 +361,33 @@ export function GameCanvas() {
         const w = W / dpr;
         const h = H / dpr;
 
+        // Spin modifier: deterministic chaotic rotation & translation based on song time
+        const isSpinMod = useGameStore.getState().modifiers.spin;
+        if (isSpinMod) {
+            const t = AudioManager.getInstance().getCurrentTime();
+            const rotation = t * 0.12
+                           + Math.sin(t * 0.7) * 0.25
+                           + Math.sin(t * 1.1) * 0.12
+                           + Math.sin(t * 1.8) * 0.06
+                           + Math.cos(t * 0.45 + 2.0) * 0.15;
+            // Dynamic scale: shrink just enough so the rotated rectangle fits in the viewport
+            // For a WxH rect rotated by θ, bounding box is:
+            //   bw = |W·cosθ| + |H·sinθ|, bh = |W·sinθ| + |H·cosθ|
+            const abscos = Math.abs(Math.cos(rotation));
+            const absSin = Math.abs(Math.sin(rotation));
+            const boundW = w * abscos + h * absSin;
+            const boundH = w * absSin + h * abscos;
+            const spinScale = Math.min(w / boundW, h / boundH);
+            const translateX = Math.sin(t * 0.5) * w * 0.02
+                             + Math.cos(t * 0.9) * w * 0.012;
+            const translateY = Math.cos(t * 0.7) * h * 0.015
+                             + Math.sin(t * 1.2) * h * 0.01;
+            ctx.translate(w / 2 + translateX, h / 2 + translateY);
+            ctx.scale(spinScale, spinScale);
+            ctx.rotate(rotation);
+            ctx.translate(-w / 2, -h / 2);
+        }
+
         // Constants - SCALING UPDATE
         // We want ~3 seconds visibility at 1.0x speed.
         // PPS = Width / 3.0, scaled by speed modifier so notes visually move faster/slower.
@@ -712,6 +739,15 @@ export function GameCanvas() {
                                             <span className="text-sm font-bold text-blue-500">{volume}%</span>
                                         </div>
                                         <Slider value={[volume]} min={0} max={100} step={1} onValueChange={([v]) => setVolume(v)} className="w-full" />
+                                    </div>
+
+                                    {/* SFX Volume */}
+                                    <div className="flex flex-col gap-1.5">
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Effects</span>
+                                            <span className="text-sm font-bold text-blue-500">{useGameStore.getState().sfxVolume}%</span>
+                                        </div>
+                                        <Slider value={[useGameStore.getState().sfxVolume]} min={0} max={100} step={1} onValueChange={([v]) => useGameStore.getState().setSfxVolume(v)} className="w-full" />
                                     </div>
 
                                     {/* Audio Offset */}

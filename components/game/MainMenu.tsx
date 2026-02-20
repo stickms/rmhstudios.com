@@ -57,7 +57,7 @@ const KeybindInput = ({ label, value, onChange }: { label: string, value: string
 
 
 export function MainMenu({ engine }: MainMenuProps) {
-    const { setStatus, setUserName, userName, keybinds, setKeybinds, volume, setVolume, setIsLoadingSong, setLoadingProgress, setIsMultiplayer, setCountdown } = useGameStore();
+    const { setStatus, setUserName, userName, keybinds, setKeybinds, volume, setVolume, hitSound, setHitSound, setIsLoadingSong, setLoadingProgress, setIsMultiplayer, setCountdown } = useGameStore();
     const session = authClient.useSession();
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -67,6 +67,62 @@ export function MainMenu({ engine }: MainMenuProps) {
     const [showSettings, setShowSettings] = React.useState(false);
     const [showCalibration, setShowCalibration] = React.useState(false);
     const [showMultiplayer, setShowMultiplayer] = React.useState(false);
+    const [previewingSound, setPreviewingSound] = React.useState<string | null>(null);
+    const [loadingSound, setLoadingSound] = React.useState<string | null>(null);
+
+    // Available hit sounds
+    const hitSoundOptions = React.useMemo(() => [
+        { id: 'default', label: 'Default (Synth)', category: 'System' },
+        { id: 'drum-hitclap.wav', label: 'Hit Clap', category: 'Drums' },
+        { id: 'drum-hitfinish.wav', label: 'Hit Finish', category: 'Drums' },
+        { id: 'drum-hitwhistle.wav', label: 'Hit Whistle', category: 'Drums' },
+        { id: 'soft-hitfinish.wav', label: 'Soft Finish', category: 'Drums' },
+        { id: 'soft-hitwhistle.wav', label: 'Soft Whistle', category: 'Drums' },
+        { id: 'all purpose clap.wav', label: 'All Purpose Clap', category: 'Drums' },
+        { id: 'snare_a.wav', label: 'Snare A', category: 'Snares' },
+        { id: 'snare_b.wav', label: 'Snare B', category: 'Snares' },
+        { id: 'snare_c.wav', label: 'Snare C', category: 'Snares' },
+        { id: 'snare_electronic_a.wav', label: 'E-Snare A', category: 'Snares' },
+        { id: 'snare_electronic_b.wav', label: 'E-Snare B', category: 'Snares' },
+        { id: 'snare_electronic_c.wav', label: 'E-Snare C', category: 'Snares' },
+        { id: 'kick_a.wav', label: 'Kick A', category: 'Kicks' },
+        { id: 'kick_b.wav', label: 'Kick B', category: 'Kicks' },
+        { id: 'kick_c.wav', label: 'Kick C', category: 'Kicks' },
+        { id: 'kick_electronic_a.wav', label: 'E-Kick A', category: 'Kicks' },
+        { id: 'kick_electronic_b.wav', label: 'E-Kick B', category: 'Kicks' },
+        { id: 'kick_electronic_c.wav', label: 'E-Kick C', category: 'Kicks' },
+        { id: 'cymbal_a.wav', label: 'Cymbal A', category: 'Cymbals' },
+        { id: 'cymbal_b.wav', label: 'Cymbal B', category: 'Cymbals' },
+        { id: 'cymbal_c.wav', label: 'Cymbal C', category: 'Cymbals' },
+        { id: 'tick.wav', label: 'Tick', category: 'Clock' },
+        { id: 'tock.wav', label: 'Tock', category: 'Clock' },
+    ], []);
+
+    const previewHitSound = React.useCallback(async (soundId: string) => {
+        const am = AudioManager.getInstance();
+        am.initialize();
+        const sfxVol = useGameStore.getState().sfxVolume / 100;
+        if (soundId === 'default') {
+            setPreviewingSound(soundId);
+            am.playSfX(880, 'triangle', 0.1, sfxVol);
+            setTimeout(() => setPreviewingSound(null), 300);
+        } else {
+            const url = `/music/slice-it/sounds/${soundId}`;
+            if (!am.isHitSoundCached(url)) {
+                setLoadingSound(soundId);
+                try {
+                    await am.preloadHitSound(url);
+                } catch {
+                    setLoadingSound(null);
+                    return;
+                }
+                setLoadingSound(null);
+            }
+            setPreviewingSound(soundId);
+            am.playHitSoundFile(url, sfxVol);
+            setTimeout(() => setPreviewingSound(null), 300);
+        }
+    }, []);
 
     // Auto-show multiplayer lobby when returning from a multiplayer match
     const { isMultiplayer } = useGameStore();
@@ -87,6 +143,15 @@ export function MainMenu({ engine }: MainMenuProps) {
     React.useEffect(() => {
         AudioManager.getInstance().setVolume(volume / 100);
     }, [volume]);
+
+    // Preload persisted hit sound on mount
+    React.useEffect(() => {
+        if (hitSound && hitSound !== 'default') {
+            const am = AudioManager.getInstance();
+            am.initialize();
+            am.preloadHitSound(`/music/slice-it/sounds/${hitSound}`).catch(() => {});
+        }
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Selected track (from library) or custom file
     const [selectedSong, setSelectedSong] = React.useState<any | null>(null);
@@ -276,9 +341,10 @@ export function MainMenu({ engine }: MainMenuProps) {
                 <div className="flex items-center gap-3">
                     <Button
                         variant="outline"
-                        className="h-10 bg-blue-500 text-slate-500 border-none hover:bg-blue-600 font-black px-4 rounded-lg transition-all uppercase tracking-wide text-xs"
+                        className="h-10 bg-gradient-to-r from-violet-500 to-blue-500 text-white border-none hover:from-violet-400 hover:to-blue-400 font-black px-5 rounded-lg transition-all uppercase tracking-wide text-xs shadow-[0_0_12px_rgba(139,92,246,0.5)] hover:shadow-[0_0_20px_rgba(139,92,246,0.7)] animate-pulse hover:animate-none"
                         onClick={() => setShowMultiplayer(true)}
                     >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mr-1.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                         MULTIPLAYER
                     </Button>
                     <Button
@@ -410,20 +476,76 @@ export function MainMenu({ engine }: MainMenuProps) {
                                     <KeybindInput label="Lane A" value={keybinds.lane1} onChange={(k) => setKeybinds({...keybinds, lane1: k})} />
                                     <KeybindInput label="Lane B" value={keybinds.lane2} onChange={(k) => setKeybinds({...keybinds, lane2: k})} />
                                 </div>
+
+                                <div className="pt-4">
+                                    <Button 
+                                        className="w-full h-16 bg-[#e0e5ec] text-slate-600 shadow-[8px_8px_16px_#a3b1c6,-8px_-8px_16px_#ffffff] active:shadow-inner rounded-2xl font-black text-sm tracking-[0.1em] uppercase transition-all"
+                                        onClick={() => setShowCalibration(true)}
+                                    >
+                                        Calibrate Synchronization
+                                    </Button>
+                                    <div className="text-center text-[10px] text-slate-400 font-mono mt-3 uppercase tracking-[0.2em]">
+                                        Offset: {useGameStore.getState().audioOffset}ms
+                                    </div>
+                                </div>
                              </div>
                         </div>
 
-                         <div className="pt-8">
-                            <Button 
-                                className="w-full h-20 bg-[#e0e5ec] text-slate-600 shadow-[8px_8px_16px_#a3b1c6,-8px_-8px_16px_#ffffff] active:shadow-inner rounded-2xl font-black text-xl tracking-[0.1em] uppercase transition-all"
-                                onClick={() => setShowCalibration(true)}
-                            >
-                                Calibrate Synchronization
-                            </Button>
-                            <div className="text-center text-[10px] text-slate-400 font-mono mt-4 uppercase tracking-[0.2em]">
-                                Offset: {useGameStore.getState().audioOffset}ms
+                        {/* Hit Sound Selector */}
+                        <div className="space-y-4">
+                            <label className="text-[10px] text-slate-400 uppercase tracking-[0.4em] font-black ml-4">Hit Sound Effect</label>
+                            <div className="bg-[#e0e5ec] p-6 rounded-3xl shadow-[inset_5px_5px_10px_#a3b1c6,inset_-5px_-5px_10px_#ffffff]">
+                                {(() => {
+                                    const categories = [...new Set(hitSoundOptions.map(s => s.category))];
+                                    return categories.map(category => (
+                                        <div key={category} className="mb-4 last:mb-0">
+                                            <div className="text-[9px] text-slate-400 uppercase tracking-[0.3em] font-black mb-2 ml-1">{category}</div>
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                                {hitSoundOptions.filter(s => s.category === category).map(sound => (
+                                                    <button
+                                                        key={sound.id}
+                                                        className={`group relative flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                                                            hitSound === sound.id
+                                                                ? 'bg-blue-500 text-white shadow-[3px_3px_8px_rgba(59,130,246,0.4),-3px_-3px_8px_#ffffff]'
+                                                                : 'bg-[#e0e5ec] text-slate-600 shadow-[3px_3px_6px_#a3b1c6,-3px_-3px_6px_#ffffff] hover:shadow-[1px_1px_3px_#a3b1c6,-1px_-1px_3px_#ffffff] active:shadow-[inset_3px_3px_6px_#a3b1c6,inset_-3px_-3px_6px_#ffffff]'
+                                                        }`}
+                                                        onClick={() => {
+                                                            setHitSound(sound.id);
+                                                            previewHitSound(sound.id);
+                                                        }}
+                                                    >
+                                                        <span className="truncate flex-1 text-left">{sound.label}</span>
+                                                        <span
+                                                            className={`shrink-0 w-6 h-6 flex items-center justify-center rounded-lg transition-all ${
+                                                                previewingSound === sound.id
+                                                                    ? 'scale-110'
+                                                                    : ''
+                                                            } ${
+                                                                hitSound === sound.id
+                                                                    ? 'bg-blue-400/40 text-white'
+                                                                    : 'bg-slate-200/60 text-slate-400 group-hover:text-slate-600'
+                                                            }`}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                previewHitSound(sound.id);
+                                                            }}
+                                                        >
+                                                            {loadingSound === sound.id ? (
+                                                                <svg className="animate-spin" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><circle cx="12" cy="12" r="10" opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" opacity="0.75"/></svg>
+                                                            ) : (
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                                            )}
+                                                        </span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ));
+                                })()}
                             </div>
-                         </div>
+                        </div>
+
+
                     </div>
                 </div>
             )}

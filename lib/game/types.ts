@@ -22,7 +22,7 @@ export interface BeatMap {
 export type HitResult = 'MARVELOUS' | 'PERFECT' | 'GREAT' | 'GOOD' | 'BAD' | 'MISS' | 'NONE';
 
 export const HIT_WINDOWS = {
-  MARVELOUS: 0.016667, // ~16ms
+  MARVELOUS: 0.020,    // 20ms
   PERFECT: 0.033333,   // ~33ms
   GREAT: 0.108333,     // ~108ms
   GOOD: 0.158333,      // ~158ms

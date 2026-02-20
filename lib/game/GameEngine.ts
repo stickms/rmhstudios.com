@@ -203,6 +203,12 @@ export class GameEngine {
             await this.audioManager.loadTrack(map.audioUrl);
         }
         this.audioManager.setPlaybackRate(speed);
+
+        // Pre-load selected hit sound so first hit is instant
+        const hitSound = useGameStore.getState().hitSound;
+        if (hitSound && hitSound !== 'default') {
+            this.audioManager.preloadHitSound(`/music/slice-it/sounds/${hitSound}`).catch(() => {});
+        }
     }
     
     public reset() {
@@ -296,7 +302,8 @@ export class GameEngine {
                 if (this.processedSliceIds.has(slice.id)) return;
                 
                 // If time passed window + slice time, it's a miss
-                if (currentTime > slice.time + HIT_WINDOWS.BAD) {
+                const strictFactor = useGameStore.getState().modifiers.strictTiming ? 0.7 : 1.0;
+                if (currentTime > slice.time + HIT_WINDOWS.BAD * strictFactor) {
                     if (slice.type === 'BOMB') {
                          this.processedSliceIds.add(slice.id); // Just mark as processed, no penalty
                     } else {
@@ -336,7 +343,7 @@ export class GameEngine {
         const bombs = map.slices.filter(s => 
             s.type === 'BOMB' && 
             this.getEffectiveLane(s, currentTime) === lane && 
-            Math.abs(s.time - currentTime) <= HIT_WINDOWS.BAD
+            Math.abs(s.time - currentTime) <= HIT_WINDOWS.BAD * (useGameStore.getState().modifiers.strictTiming ? 0.7 : 1.0)
         );
         
         if (bombs.length > 0) {
@@ -362,7 +369,7 @@ export class GameEngine {
         }
 
         // Find best hit ... (rest of logic)
-        const hitWindow = HIT_WINDOWS.BAD;
+        const hitWindow = HIT_WINDOWS.BAD * (useGameStore.getState().modifiers.strictTiming ? 0.7 : 1.0);
         const potentialHits = map.slices
             .filter(s => !this.processedSliceIds.has(s.id) && s.type !== 'SILENT' && s.type !== 'BOMB')
             .filter(s => this.getEffectiveLane(s, currentTime) === lane)
@@ -390,11 +397,14 @@ export class GameEngine {
     
     private getHitResult(sliceTime: number, currentTime: number): HitResult {
         const diff = Math.abs(sliceTime - currentTime);
-        if (diff <= HIT_WINDOWS.MARVELOUS) return 'MARVELOUS';
-        if (diff <= HIT_WINDOWS.PERFECT) return 'PERFECT';
-        if (diff <= HIT_WINDOWS.GREAT) return 'GREAT';
-        if (diff <= HIT_WINDOWS.GOOD) return 'GOOD';
-        if (diff <= HIT_WINDOWS.BAD) return 'BAD';
+        const strict = useGameStore.getState().modifiers.strictTiming;
+        // Strict timing shrinks all hit windows to 70%
+        const factor = strict ? 0.7 : 1.0;
+        if (diff <= HIT_WINDOWS.MARVELOUS * factor) return 'MARVELOUS';
+        if (diff <= HIT_WINDOWS.PERFECT * factor) return 'PERFECT';
+        if (diff <= HIT_WINDOWS.GREAT * factor) return 'GREAT';
+        if (diff <= HIT_WINDOWS.GOOD * factor) return 'GOOD';
+        if (diff <= HIT_WINDOWS.BAD * factor) return 'BAD';
         return 'MISS';
     }
     
@@ -418,6 +428,8 @@ export class GameEngine {
         if (m.speed > 1.0) scoreMultiplier += (m.speed - 1.0) * 0.5;
         if (m.bombs) scoreMultiplier += 0.15;
         if (m.switching) scoreMultiplier += 0.15;
+        if (m.spin) scoreMultiplier += 0.15;
+        if (m.strictTiming) scoreMultiplier += 0.25;
 
         // Visual Feedback Params
         let feedbackLane = slice?.lane ?? 0; // Default to 0 if null, or pass it in? 
@@ -476,9 +488,15 @@ export class GameEngine {
             if (this.feedbackQueue.length > 20) this.feedbackQueue.shift(); // Increased buffer slightly
 
             // SFX
-            const freq = (result === 'MARVELOUS' || result === 'PERFECT') ? 880 : 440;
             const sfxVol = useGameStore.getState().sfxVolume / 100;
-            this.audioManager.playSfX(freq, 'triangle', 0.1, sfxVol);
+            const hitSound = useGameStore.getState().hitSound;
+            if (hitSound && hitSound !== 'default') {
+                const pitch = (result === 'MARVELOUS' || result === 'PERFECT') ? 1.0 : 0.85;
+                this.audioManager.playHitSoundFile(`/music/slice-it/sounds/${hitSound}`, sfxVol, pitch);
+            } else {
+                const freq = (result === 'MARVELOUS' || result === 'PERFECT') ? 880 : 440;
+                this.audioManager.playSfX(freq, 'triangle', 0.1, sfxVol);
+            }
         }
         
         // Update store

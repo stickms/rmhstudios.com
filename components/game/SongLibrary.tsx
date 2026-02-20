@@ -312,7 +312,10 @@ export function SongLibrary({ onSelect, onHighlight, selectedSongId }: {
 
             {/* Song List */}
             <div className="flex-1 overflow-y-auto p-2">
-                {songs.filter(s => s.title.toLowerCase().includes(searchTerm.toLowerCase())).map(song => (
+                {songs.filter(s => {
+                    const term = searchTerm.toLowerCase();
+                    return s.title.toLowerCase().includes(term) || (s.artist && s.artist.toLowerCase().includes(term));
+                }).map(song => (
                     <div
                         key={song.id}
                         className={`p-2 flex items-center justify-between group hover:bg-slate-100 transition-all cursor-pointer border-l-4 ${selectedSongId === song.id ? 'bg-blue-50 border-l-blue-500' : 'bg-transparent border-l-transparent'}`}

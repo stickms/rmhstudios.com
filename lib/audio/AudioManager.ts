@@ -209,6 +209,78 @@ export class AudioManager {
     osc.stop(t + duration);
   }
 
+  // ── Hit Sound File Playback ──────────────────────────────────────────────
+  private hitSoundCache: Map<string, AudioBuffer> = new Map();
+  private hitSoundLoading: Map<string, Promise<AudioBuffer>> = new Map();
+
+  /**
+   * Check whether a hit sound is already decoded and cached.
+   */
+  public isHitSoundCached(url: string): boolean {
+    return this.hitSoundCache.has(url);
+  }
+
+  /**
+   * Pre-load a hit sound file into the cache so playback is instant.
+   */
+  public async preloadHitSound(url: string): Promise<AudioBuffer> {
+    if (this.hitSoundCache.has(url)) return this.hitSoundCache.get(url)!;
+    if (this.hitSoundLoading.has(url)) return this.hitSoundLoading.get(url)!;
+
+    if (!this.audioContext) this.initialize();
+
+    const loadPromise = fetch(url)
+      .then(res => {
+        if (!res.ok) throw new Error(`Failed to load hit sound: ${res.status}`);
+        return res.arrayBuffer();
+      })
+      .then(ab => this.audioContext!.decodeAudioData(ab))
+      .then(buf => {
+        this.hitSoundCache.set(url, buf);
+        this.hitSoundLoading.delete(url);
+        return buf;
+      })
+      .catch(err => {
+        this.hitSoundLoading.delete(url);
+        throw err;
+      });
+
+    this.hitSoundLoading.set(url, loadPromise);
+    return loadPromise;
+  }
+
+  /**
+   * Play a cached hit sound file at the given volume.
+   * Falls back to synthesised SFX if the buffer isn't cached yet.
+   */
+  public playHitSoundFile(url: string, volume: number = 0.5, pitch: number = 1.0) {
+    if (!this.audioContext) this.initialize();
+    if (!this.audioContext) return;
+
+    if (this.audioContext.state === 'suspended') {
+      this.audioContext.resume();
+    }
+
+    const buf = this.hitSoundCache.get(url);
+    if (!buf) {
+      // Buffer not ready — fire-and-forget preload for next time, play synth fallback now
+      this.preloadHitSound(url);
+      this.playSfX(880, 'triangle', 0.1, volume);
+      return;
+    }
+
+    const source = this.audioContext.createBufferSource();
+    source.buffer = buf;
+    source.playbackRate.value = pitch;
+
+    const gain = this.audioContext.createGain();
+    gain.gain.value = Math.max(0, Math.min(1, volume));
+
+    source.connect(gain);
+    gain.connect(this.audioContext.destination);
+    source.start();
+  }
+
   public getDuration(): number {
     return this.buffer ? this.buffer.duration : 0;
   }
