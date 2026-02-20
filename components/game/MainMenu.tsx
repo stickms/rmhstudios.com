@@ -68,6 +68,14 @@ export function MainMenu({ engine }: MainMenuProps) {
     const [showCalibration, setShowCalibration] = React.useState(false);
     const [showMultiplayer, setShowMultiplayer] = React.useState(false);
 
+    // Auto-show multiplayer lobby when returning from a multiplayer match
+    const { isMultiplayer } = useGameStore();
+    React.useEffect(() => {
+        if (isMultiplayer) {
+            setShowMultiplayer(true);
+        }
+    }, [isMultiplayer]);
+
     // Auto-open multiplayer lobby when joining via invite link
     React.useEffect(() => {
         if (searchParams.get('lobby')) {
@@ -234,7 +242,10 @@ export function MainMenu({ engine }: MainMenuProps) {
 
     if (showMultiplayer) {
          return <MultiplayerLobby 
-            onBack={() => setShowMultiplayer(false)} 
+            onBack={() => {
+                setShowMultiplayer(false);
+                setIsMultiplayer(false);
+            }} 
             onStart={handleMultiplayerStart} 
             onSelectSong={handleSelectSong}
          />;

@@ -270,6 +270,33 @@ io.on("connection", (socket: Socket) => {
       }
   });
 
+  // RETURN TO LOBBY (host triggers all players back to lobby)
+  socket.on("return_to_lobby", ({ lobbyId }: { lobbyId: string }) => {
+      const lobby = lobbies.get(lobbyId);
+      if (!lobby) return;
+      if (lobby.hostId !== socket.id) return; // Only host can trigger
+
+      lobby.status = 'WAITING';
+      // Reset player states for next round
+      lobby.players.forEach(p => {
+          p.score = 0;
+          p.combo = 0;
+          p.health = 100;
+          p.isReady = false;
+          p.isFinished = false;
+      });
+
+      // Notify all players to return to lobby
+      io.to(lobbyId).emit("return_to_lobby", { lobbyId });
+      io.to(lobbyId).emit("lobby_update", {
+          lobbyId,
+          players: Array.from(lobby.players.values()),
+          hostId: lobby.hostId,
+          status: lobby.status,
+          song: lobby.song
+      });
+  });
+
   // UPDATE DIFFICULTY
   socket.on("update_difficulty", ({ lobbyId, difficulty }: { lobbyId: string, difficulty: any }) => {
       const lobby = lobbies.get(lobbyId);

@@ -7,7 +7,7 @@ import { useGameStore } from "../store/useGameStore";
 // or a specific env variable.
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:7001";
 
-export type GameEvent = 'lobby_update' | 'game_starting' | 'game_started' | 'player_update' | 'player_finished' | 'song_selected' | 'init_loading' | 'start_countdown' | 'loading_update' | 'match_results';
+export type GameEvent = 'lobby_update' | 'game_starting' | 'game_started' | 'player_update' | 'player_finished' | 'song_selected' | 'init_loading' | 'start_countdown' | 'loading_update' | 'match_results' | 'return_to_lobby';
 
 class MultiplayerFactory {
     private static instance: MultiplayerFactory;
@@ -43,7 +43,7 @@ class MultiplayerFactory {
         });
 
         // Global Event Handling
-        const events = ['lobby_update', 'game_starting', 'game_started', 'player_update', 'player_finished', 'song_selected', 'match_results', 'init_loading', 'start_countdown', 'loading_update'];
+        const events = ['lobby_update', 'game_starting', 'game_started', 'player_update', 'player_finished', 'song_selected', 'match_results', 'init_loading', 'start_countdown', 'loading_update', 'return_to_lobby'];
         events.forEach(evt => {
             this.socket?.on(evt, (data: any) => {
                 this.emitLocal(evt, data);
@@ -114,6 +114,10 @@ class MultiplayerFactory {
 
     public updateDifficulty(lobbyId: string, difficulty: { speed: number; bombs: boolean; switching: boolean; suddenDeath: boolean; invisible: boolean }) {
         this.socket?.emit("update_difficulty", { lobbyId, difficulty });
+    }
+
+    public returnToLobby(lobbyId: string) {
+        this.socket?.emit("return_to_lobby", { lobbyId });
     }
 
     // Event System (Pub/Sub)

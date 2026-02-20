@@ -43,6 +43,10 @@ export function GameCanvas() {
 
     const { status, keybinds, isPaused, setIsPaused, isLoadingSong, loadingProgress, countdown, setCountdown, isMultiplayer, volume, setVolume, audioOffset, setAudioOffset, setKeybinds, multiplayerResults } = useGameStore();
 
+    // Multiplayer lobby tracking
+    const [multiplayerLobbyId, setMultiplayerLobbyId] = useState<string | null>(null);
+    const [multiplayerHostId, setMultiplayerHostId] = useState<string | null>(null);
+
     // Per-player loading state for multiplayer
     const [loadingPlayers, setLoadingPlayers] = useState<{ id: string; name: string; loaded: boolean }[]>([]);
     const keybindsRef = useRef(keybinds);
@@ -177,6 +181,23 @@ export function GameCanvas() {
         };
         mp.on('match_results', onMatchResults);
 
+        const onReturnToLobby = () => {
+            console.log("Return to lobby signaled");
+            // Reset game state but keep multiplayer connection alive
+            useGameStore.getState().setMultiplayerResults(null);
+            useGameStore.getState().setStatus('MENU');
+            // Keep isMultiplayer true — MainMenu will show the lobby
+            // The lobby_update that follows will re-trigger the MultiplayerLobby flow
+            engine?.reset();
+        };
+        mp.on('return_to_lobby', onReturnToLobby);
+
+        const onLobbyUpdate = (data: { lobbyId: string; hostId: string }) => {
+            setMultiplayerLobbyId(data.lobbyId);
+            setMultiplayerHostId(data.hostId);
+        };
+        mp.on('lobby_update', onLobbyUpdate);
+
         const onPlayerFinished = (data: { id: string; finalScore: number }) => {
             console.log("Player finished", data);
             // Update the player's score in the live results if we have them
@@ -194,6 +215,8 @@ export function GameCanvas() {
             mp.off('game_started', onGameStarted);
             mp.off('match_results', onMatchResults);
             mp.off('player_finished', onPlayerFinished);
+            mp.off('return_to_lobby', onReturnToLobby);
+            mp.off('lobby_update', onLobbyUpdate);
         };
     }, [engine, setCountdown]);
 
@@ -326,9 +349,10 @@ export function GameCanvas() {
         const h = H / dpr;
 
         // Constants - SCALING UPDATE
-        // We want ~3 seconds visibility.
-        // PPS = Width / 3.0
-        const PPS        = w / 3.0; 
+        // We want ~3 seconds visibility at 1.0x speed.
+        // PPS = Width / 3.0, scaled by speed modifier so notes visually move faster/slower.
+        const speedMod = useGameStore.getState().modifiers.speed || 1.0;
+        const PPS        = (w / 3.0) * speedMod; 
         
         const CURSOR_X   = w * 0.15; // Hit line at 15% width
         const LANE_Y     = [h * 0.3, h * 0.7];
@@ -800,13 +824,15 @@ export function GameCanvas() {
                     )}
                     
                     {(status === 'FINISHED' || status === 'FAILED') && isMultiplayer && (
-                        <MatchResults onBack={() => {
-                            useGameStore.getState().setMultiplayerResults(null);
-                            useGameStore.getState().setStatus('MENU');
-                            useGameStore.getState().setIsMultiplayer(false);
-                            engine?.setLobbyId(null);
-                            engine?.reset();
-                        }} />
+                        <MatchResults
+                            isHost={multiplayerHostId === MultiplayerFactory.getInstance().getSocketId()}
+                            lobbyId={multiplayerLobbyId}
+                            onBack={() => {
+                                useGameStore.getState().setMultiplayerResults(null);
+                                useGameStore.getState().setStatus('MENU');
+                                engine?.reset();
+                            }}
+                        />
                     )}
 
                     {(status === 'FINISHED' || status === 'FAILED') && !isMultiplayer && (

@@ -17,9 +17,10 @@ interface PlayerResult {
     difficulty?: { speed: number; bombs: boolean; switching: boolean; suddenDeath: boolean; invisible: boolean };
 }
 
-export function MatchResults({ onBack }: { onBack: () => void }) {
-    const { opponents, score, maxCombo, accuracy, multiplayerResults, userName } = useGameStore();
+export function MatchResults({ onBack, isHost, lobbyId }: { onBack: () => void; isHost: boolean; lobbyId: string | null }) {
+    const { opponents, score, maxCombo, accuracy, multiplayerResults, userName, songId } = useGameStore();
     const [results, setResults] = React.useState<PlayerResult[]>([]);
+    const [scoreSubmitted, setScoreSubmitted] = React.useState(false);
     const mp = MultiplayerFactory.getInstance();
     const mySocketId = mp.getSocketId();
 
@@ -104,6 +105,26 @@ export function MatchResults({ onBack }: { onBack: () => void }) {
 
     const sorted = [...results].sort((a, b) => b.score - a.score);
     const allFinished = sorted.every(r => r.isFinished);
+
+    // Submit score to leaderboard when match finishes (same logic as single-player GameOver)
+    React.useEffect(() => {
+        if (!allFinished || scoreSubmitted) return;
+        if (!userName || score <= 0) return;
+
+        setScoreSubmitted(true);
+        fetch('/api/slice-it/score', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: userName, score, accuracy, maxCombo, songId }),
+        })
+        .then(async (res) => {
+            if (!res.ok) {
+                const body = await res.json().catch(() => ({}));
+                console.error('Multiplayer score submission failed:', res.status, body);
+            }
+        })
+        .catch(err => console.error('Multiplayer score submission error:', err));
+    }, [allFinished, scoreSubmitted, userName, score, accuracy, maxCombo, songId]);
 
     const rankIcon = (i: number) => {
         if (i === 0) return <Crown className="w-6 h-6 text-yellow-500" />;
@@ -194,12 +215,22 @@ export function MatchResults({ onBack }: { onBack: () => void }) {
 
                 {/* Actions */}
                 <div className="px-6 py-5">
-                    <Button
-                        className="w-full py-5 bg-[#e0e5ec] hover:bg-slate-50 text-blue-500 font-black uppercase tracking-widest text-base rounded-xl shadow-[6px_6px_12px_#a3b1c6,-6px_-6px_12px_#ffffff] active:shadow-[inset_6px_6px_12px_#a3b1c6,inset_-6px_-6px_12px_#ffffff] transition-all border-none"
-                        onClick={onBack}
-                    >
-                        Return to Menu
-                    </Button>
+                    {isHost ? (
+                        <Button
+                            className="w-full py-5 bg-[#e0e5ec] hover:bg-slate-50 text-blue-500 font-black uppercase tracking-widest text-base rounded-xl shadow-[6px_6px_12px_#a3b1c6,-6px_-6px_12px_#ffffff] active:shadow-[inset_6px_6px_12px_#a3b1c6,inset_-6px_-6px_12px_#ffffff] transition-all border-none"
+                            onClick={() => {
+                                if (lobbyId) {
+                                    mp.returnToLobby(lobbyId);
+                                }
+                            }}
+                        >
+                            Return to Lobby
+                        </Button>
+                    ) : (
+                        <p className="text-center text-xs font-bold text-slate-400 uppercase tracking-widest py-3">
+                            Waiting for host to return to lobby...
+                        </p>
+                    )}
                 </div>
             </div>
         </div>

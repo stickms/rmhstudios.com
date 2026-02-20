@@ -68,6 +68,8 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
             mp.leaveLobby(lobbyData.lobbyId);
         }
         mp.disconnect();
+        // Clear multiplayer state in the store
+        useGameStore.getState().setIsMultiplayer(false);
         // Strip the ?lobby= param from the URL without a full navigation
         if (searchParams.get('lobby')) {
             const url = new URL(window.location.href);
@@ -85,6 +87,12 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
             console.log("Lobby Update:", data);
             setLobbyData(data);
             
+            // Reset hasStartedRef when lobby returns to WAITING (e.g. after return_to_lobby)
+            // so the next game start is properly detected.
+            if (data.status === 'WAITING') {
+                hasStartedRef.current = false;
+            }
+
             // If game started — always call through the ref so we use the
             // latest version of the callback even if the parent has re-rendered
             // since this listener was registered.
@@ -214,8 +222,8 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
         }
         
         return (
-            <div className="absolute inset-0 z-[60] flex items-center justify-center bg-[#e0e5ec] p-4 text-slate-700">
-                 <Card className="w-full max-w-lg bg-[#e0e5ec] shadow-[20px_20px_60px_#bebebe,-20px_-20px_60px_#ffffff] rounded-[2rem] border-none">
+            <div className="absolute inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-[#e0e5ec] p-4 text-slate-700">
+                 <Card className="w-full max-w-lg bg-[#e0e5ec] shadow-[20px_20px_60px_#bebebe,-20px_-20px_60px_#ffffff] rounded-[2rem] border-none my-auto">
                     <CardHeader>
                         <CardTitle className="text-2xl font-black text-center text-slate-600 flex flex-col items-center gap-2">
                             <span>LOBBY CODE</span>
@@ -238,6 +246,7 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
                     <CardContent className="space-y-6">
                          <div className="space-y-2">
                             <h3 className="font-bold text-sm text-slate-400 uppercase tracking-widest">Players</h3>
+                            <div className="max-h-48 overflow-y-auto space-y-2 pr-1">
                             {lobbyData.players.map(p => {
                                 const mult = calcMultiplierForPlayer(p);
                                 const isMe = p.id === mp.getSocketId();
@@ -272,6 +281,7 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
                                     </div>
                                 );
                             })}
+                            </div>
                          </div>
                          
                          <div className="space-y-2">
