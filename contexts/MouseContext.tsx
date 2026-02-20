@@ -37,11 +37,22 @@ export function MouseProvider({ children }: MouseProviderProps) {
   const hasRealMouse = useRef(false);
   const lastMouseMove = useRef(0);
   const animationRef = useRef<number | null>(null);
+  const isTabVisible = useRef(true);
 
   useEffect(() => {
     // Initialize to center of screen
     mouseX.set(window.innerWidth / 2);
     mouseY.set(window.innerHeight / 2);
+
+    // Track tab visibility — pause virtual cursor when hidden
+    const handleVisibility = () => {
+      isTabVisible.current = document.visibilityState === "visible";
+      if (isTabVisible.current && !hasRealMouse.current) {
+        // Restart animation when tab becomes visible
+        startAnimation();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
 
     // Track real mouse movement
     const handleMouseMove = (e: MouseEvent) => {
@@ -50,6 +61,12 @@ export function MouseProvider({ children }: MouseProviderProps) {
       setIsVirtual(false);
       mouseX.set(e.clientX);
       mouseY.set(e.clientY);
+
+      // Stop virtual cursor animation when real mouse is active
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
+      }
     };
 
     // Track touch as mouse position
@@ -63,57 +80,72 @@ export function MouseProvider({ children }: MouseProviderProps) {
       }
     };
 
-    // Virtual cursor animation - smooth flowing movement
+    // Virtual cursor animation — only runs when no real mouse
     let time = Math.random() * 1000;
     const animate = () => {
+      if (!isTabVisible.current) {
+        // Don't schedule next frame when tab is hidden
+        animationRef.current = null;
+        return;
+      }
+
       const now = Date.now();
 
-      // If no real mouse activity for 3 seconds, use virtual cursor
-      if (now - lastMouseMove.current > 3000 || !hasRealMouse.current) {
-        setIsVirtual(true);
-        time += 0.008; // Speed of movement
-
-        // Create smooth, organic movement using multiple sine waves
-        const centerX = window.innerWidth / 2;
-        const centerY = window.innerHeight / 2;
-
-        // Combine multiple frequencies for organic feel
-        const x =
-          centerX +
-          Math.sin(time * 0.7) * (window.innerWidth * 0.25) +
-          Math.sin(time * 1.3) * (window.innerWidth * 0.1) +
-          Math.sin(time * 2.1) * (window.innerWidth * 0.05);
-
-        const y =
-          centerY +
-          Math.cos(time * 0.5) * (window.innerHeight * 0.2) +
-          Math.cos(time * 1.1) * (window.innerHeight * 0.08) +
-          Math.sin(time * 1.7) * (window.innerHeight * 0.04);
-
-        mouseX.set(x);
-        mouseY.set(y);
+      // If real mouse recently active, pause virtual cursor
+      if (now - lastMouseMove.current < 3000 && hasRealMouse.current) {
+        // Check again in a second instead of every frame
+        animationRef.current = window.setTimeout(() => {
+          animationRef.current = requestAnimationFrame(animate);
+        }, 1000) as unknown as number;
+        return;
       }
+
+      setIsVirtual(true);
+      time += 0.008;
+
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight / 2;
+
+      // Simplified: 2 sine waves instead of 3
+      const x =
+        centerX +
+        Math.sin(time * 0.7) * (window.innerWidth * 0.25) +
+        Math.sin(time * 1.3) * (window.innerWidth * 0.1);
+
+      const y =
+        centerY +
+        Math.cos(time * 0.5) * (window.innerHeight * 0.2) +
+        Math.cos(time * 1.1) * (window.innerHeight * 0.08);
+
+      mouseX.set(x);
+      mouseY.set(y);
 
       animationRef.current = requestAnimationFrame(animate);
     };
 
-    // Start animation
-    animationRef.current = requestAnimationFrame(animate);
+    const startAnimation = () => {
+      if (animationRef.current) return;
+      animationRef.current = requestAnimationFrame(animate);
+    };
 
-    // Add event listeners
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("touchmove", handleTouchMove, { passive: true });
-
-    // Check for mouse capability
+    // Check for mouse capability — if no fine pointer, start virtual cursor
     const mediaQuery = window.matchMedia("(hover: hover) and (pointer: fine)");
     if (!mediaQuery.matches) {
-      // No fine pointer (likely mobile/touch device)
       hasRealMouse.current = false;
     }
+
+    // Only start virtual cursor if no real mouse detected
+    if (!hasRealMouse.current) {
+      startAnimation();
+    }
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("touchmove", handleTouchMove, { passive: true });
 
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("touchmove", handleTouchMove);
+      document.removeEventListener("visibilitychange", handleVisibility);
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }

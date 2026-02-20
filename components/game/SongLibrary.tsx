@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,10 +29,11 @@ interface Song {
     }
 }
 
-export function SongLibrary({ onSelect, onHighlight, selectedSongId }: { 
+export function SongLibrary({ onSelect, onHighlight, selectedSongId, onStopPreviewRef }: { 
     onSelect: (song: Song) => void;
     onHighlight: (song: Song) => void;
     selectedSongId: string | null;
+    onStopPreviewRef?: React.MutableRefObject<(() => void) | null>;
 }) {
     const [songs, setSongs] = useState<Song[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
@@ -53,9 +54,52 @@ export function SongLibrary({ onSelect, onHighlight, selectedSongId }: {
     
     const [previewAudio, setPreviewAudio] = useState<HTMLAudioElement | null>(null);
     const [previewId, setPreviewId] = useState<string | null>(null);
+    const previewAudioRef = useRef<HTMLAudioElement | null>(null);
     
     const session = authClient.useSession();
     const router = useRouter();
+
+    // Keep ref in sync with state for use in callbacks/cleanup
+    useEffect(() => {
+        previewAudioRef.current = previewAudio;
+    }, [previewAudio]);
+
+    // Stop preview helper
+    const stopPreview = useCallback(() => {
+        const audio = previewAudioRef.current;
+        if (audio) {
+            audio.pause();
+            audio.currentTime = 0;
+        }
+        setPreviewAudio(null);
+        setPreviewId(null);
+    }, []);
+
+    // Expose stopPreview to parent via ref
+    useEffect(() => {
+        if (onStopPreviewRef) {
+            onStopPreviewRef.current = stopPreview;
+        }
+        return () => {
+            if (onStopPreviewRef) onStopPreviewRef.current = null;
+        };
+    }, [stopPreview, onStopPreviewRef]);
+
+    // Stop preview when the browser tab becomes hidden
+    useEffect(() => {
+        const handleVisibility = () => {
+            if (document.hidden) stopPreview();
+        };
+        document.addEventListener('visibilitychange', handleVisibility);
+        return () => document.removeEventListener('visibilitychange', handleVisibility);
+    }, [stopPreview]);
+
+    // Cleanup on unmount
+    useEffect(() => {
+        return () => {
+            previewAudioRef.current?.pause();
+        };
+    }, []);
 
     useEffect(() => {
         fetchSongs();

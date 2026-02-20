@@ -34,12 +34,26 @@ const COLORS = {
 };
 
 
+// Gamepad button indices (Standard Gamepad mapping)
+const GAMEPAD_LANE0_BUTTONS = [2, 3, 4, 6, 12, 14]; // X, Y, LB, LT, D-Up, D-Left
+const GAMEPAD_LANE1_BUTTONS = [0, 1, 5, 7, 13, 15]; // A, B, RB, RT, D-Down, D-Right
+const GAMEPAD_PAUSE_BUTTON = 9; // Start/Menu
+
 export function GameCanvas() {
     const canvasRef  = useRef<HTMLCanvasElement>(null);
     const wrapperRef = useRef<HTMLDivElement>(null);
     const [engine, setEngine] = useState<GameEngine | null>(null);
     const rafRef = useRef<number | null>(null);
     const [showMobileButtons, setShowMobileButtons] = useState(false);
+
+    // Input device detection
+    // Assume keyboard exists on non-touch devices to avoid a flash of "no input" warning
+    const [hasKeyboard, setHasKeyboard] = useState(() => {
+        if (typeof window === 'undefined') return true;
+        return !window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+    });
+    const [hasGamepad, setHasGamepad] = useState(false);
+    const [hasTouch, setHasTouch] = useState(false);
 
     const { status, keybinds, isPaused, setIsPaused, isLoadingSong, loadingProgress, countdown, setCountdown, isMultiplayer, volume, setVolume, audioOffset, setAudioOffset, setKeybinds, multiplayerResults } = useGameStore();
 
@@ -85,12 +99,110 @@ export function GameCanvas() {
 
     // ── Detect touch device ────────────────────────────────────────────────────
     useEffect(() => {
-        const check = () => setShowMobileButtons(
-            window.matchMedia('(hover: none) and (pointer: coarse)').matches
-        );
+        const check = () => {
+            const isTouchDevice = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+            setShowMobileButtons(isTouchDevice);
+            if (isTouchDevice) setHasTouch(true);
+        };
         check();
-        window.addEventListener('touchstart', () => setShowMobileButtons(true), { once: true });
+        window.addEventListener('touchstart', () => { setShowMobileButtons(true); setHasTouch(true); }, { once: true });
     }, []);
+
+    // ── Detect keyboard ────────────────────────────────────────────────────────
+    useEffect(() => {
+        const onKey = () => { setHasKeyboard(true); };
+        window.addEventListener('keydown', onKey, { once: true });
+        return () => window.removeEventListener('keydown', onKey);
+    }, []);
+
+    // ── Detect gamepad ─────────────────────────────────────────────────────────
+    useEffect(() => {
+        // Check if any gamepads are already connected
+        const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+        for (const gp of gamepads) {
+            if (gp) { setHasGamepad(true); break; }
+        }
+
+        const onConnect = () => setHasGamepad(true);
+        const onDisconnect = () => {
+            const remaining = navigator.getGamepads ? navigator.getGamepads() : [];
+            const anyLeft = Array.from(remaining).some(gp => gp !== null);
+            setHasGamepad(anyLeft);
+        };
+
+        window.addEventListener('gamepadconnected', onConnect);
+        window.addEventListener('gamepaddisconnected', onDisconnect);
+        return () => {
+            window.removeEventListener('gamepadconnected', onConnect);
+            window.removeEventListener('gamepaddisconnected', onDisconnect);
+        };
+    }, []);
+
+    // ── Input ──────────────────────────────────────────────────────────────────
+    const handleInput = useCallback((lane: number) => {
+        if (!engine) return;
+        // Block input during countdown
+        if (useGameStore.getState().countdown > 0) return;
+        const audio = AudioManager.getInstance();
+        if (audio.getContext()?.state === 'suspended') {
+            audio.getContext()?.resume();
+            engine.start();
+        } else if (audio.getCurrentTime() === 0) {
+            engine.start();
+        }
+        engine.submitInput(lane);
+    }, [engine]);
+
+    // ── Gamepad polling for in-game input ───────────────────────────────────────
+    const gamepadPrevRef = useRef<Record<number, Set<number>>>({});
+    useEffect(() => {
+        if (!hasGamepad) return;
+
+        let animId: number;
+        const poll = () => {
+            const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+            const store = useGameStore.getState();
+
+            for (const gp of gamepads) {
+                if (!gp) continue;
+                const prev = gamepadPrevRef.current[gp.index] || new Set<number>();
+                const curr = new Set<number>();
+
+                gp.buttons.forEach((btn, i) => {
+                    if (btn.pressed) curr.add(i);
+                });
+
+                // Only fire on newly-pressed buttons (edge detection)
+                curr.forEach(btnIdx => {
+                    if (prev.has(btnIdx)) return; // already held
+
+                    // Handle pause toggle (Start button)
+                    if (btnIdx === GAMEPAD_PAUSE_BUTTON && store.status === 'PLAYING') {
+                        if (store.isMultiplayer) {
+                            setShowSettings(p => !p);
+                        } else {
+                            store.isPaused ? engine?.resume() : engine?.pause();
+                        }
+                        return;
+                    }
+
+                    // Gameplay input
+                    if (store.status !== 'PLAYING') return;
+                    if (store.isPaused) return;
+                    if (store.countdown > 0) return;
+
+                    if (GAMEPAD_LANE0_BUTTONS.includes(btnIdx)) handleInput(0);
+                    else if (GAMEPAD_LANE1_BUTTONS.includes(btnIdx)) handleInput(1);
+                });
+
+                gamepadPrevRef.current[gp.index] = curr;
+            }
+
+            animId = requestAnimationFrame(poll);
+        };
+        animId = requestAnimationFrame(poll);
+        return () => cancelAnimationFrame(animId);
+    }, [hasGamepad, engine, handleInput]);
 
     // ── Game engine init ───────────────────────────────────────────────────────
     const [debugInfo, setDebugInfo] = useState({ frames: 0, error: 'None' });
@@ -227,21 +339,6 @@ export function GameCanvas() {
             mp.off('lobby_update', onLobbyUpdate);
         };
     }, [engine, setCountdown]);
-
-    // ── Input ──────────────────────────────────────────────────────────────────
-    const handleInput = useCallback((lane: number) => {
-        if (!engine) return;
-        // Block input during countdown
-        if (useGameStore.getState().countdown > 0) return;
-        const audio = AudioManager.getInstance();
-        if (audio.getContext()?.state === 'suspended') {
-            audio.getContext()?.resume();
-            engine.start();
-        } else if (audio.getCurrentTime() === 0) {
-            engine.start();
-        }
-        engine.submitInput(lane);
-    }, [engine]);
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -449,6 +546,13 @@ export function GameCanvas() {
             ctx.shadowOffsetX = 4;
             ctx.shadowOffsetY = 4;
 
+            // Determine the targeted (next hittable) note per lane for glow
+            const targetedIds = new Set<string>();
+            const targeted0 = engine.getTargetedSlice(0);
+            const targeted1 = engine.getTargetedSlice(1);
+            if (targeted0) targetedIds.add(targeted0.id);
+            if (targeted1) targetedIds.add(targeted1.id);
+
             map.slices.forEach(slice => {
                 if (slice.hit) return;
 
@@ -510,6 +614,36 @@ export function GameCanvas() {
                 else color = COLORS.lane2;
 
                 ctx.fillStyle = color;
+
+                // Soft glow around the targeted (next hittable) note per lane
+                const isTargeted = targetedIds.has(slice.id);
+                if (isTargeted && slice.type !== 'BOMB') {
+                    ctx.save();
+                    ctx.shadowColor = color;
+                    ctx.shadowBlur = 18;
+                    ctx.shadowOffsetX = 0;
+                    ctx.shadowOffsetY = 0;
+                    // Draw a transparent filled shape at the note position to produce the glow
+                    ctx.globalAlpha = (ctx.globalAlpha || 1) * 0.45;
+                    ctx.beginPath();
+                    if (slice.type === 'LONG') {
+                        const len = (slice.duration || 0.5) * PPS;
+                        ctx.roundRect(sliceX - 2, y - BAR_H / 2 - 2, len + 4, BAR_H + 4, 12);
+                    } else if (slice.type === 'SWITCH') {
+                        ctx.arc(sliceX, y, BAR_H * 0.7, 0, Math.PI * 2);
+                    } else {
+                        ctx.arc(sliceX, y, BAR_H * 0.7, 0, Math.PI * 2);
+                    }
+                    ctx.fill();
+                    ctx.restore();
+                    // Re-set fillStyle after restore — the glow pass consumed it
+                    ctx.fillStyle = color;
+                    // Restore the normal note shadow
+                    ctx.shadowColor = 'rgba(163, 177, 198, 0.6)';
+                    ctx.shadowBlur = 8;
+                    ctx.shadowOffsetX = 4;
+                    ctx.shadowOffsetY = 4;
+                }
 
                 if (slice.type === 'BOMB') {
                     ctx.beginPath();
@@ -945,6 +1079,29 @@ export function GameCanvas() {
                     )}
                     
                     {status === 'MENU' && <MainMenu engine={engine} />}
+
+                    {/* No input device warning */}
+                    {!hasKeyboard && !hasGamepad && !hasTouch && (
+                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[90] max-w-md w-[90%] animate-in fade-in slide-in-from-bottom-4 duration-500">
+                            <div className="bg-amber-50 border-2 border-amber-400 rounded-2xl px-5 py-4 shadow-lg flex items-start gap-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-amber-500 shrink-0 mt-0.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                                <div>
+                                    <p className="text-sm font-black text-amber-800 uppercase tracking-wide">No Input Device Detected</p>
+                                    <p className="text-xs text-amber-700 mt-1 leading-relaxed">Connect a keyboard or controller to play. The game requires physical input to hit notes.</p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Gamepad connected indicator (brief) */}
+                    {hasGamepad && !hasKeyboard && !hasTouch && status === 'MENU' && (
+                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[90] animate-in fade-in slide-in-from-bottom-4 duration-500">
+                            <div className="bg-green-50 border-2 border-green-400 rounded-2xl px-5 py-3 shadow-lg flex items-center gap-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-green-600 shrink-0"><path d="M6 12h4m-2-2v4m5-3h.01M17 10h.01"/><path d="M2 15.24V7.5A2.5 2.5 0 0 1 4.5 5h15A2.5 2.5 0 0 1 22 7.5v7.74a2.5 2.5 0 0 1-1.26 2.17l-5.5 3.17a2.5 2.5 0 0 1-2.49 0H11.24a2.5 2.5 0 0 1-2.49 0l-5.5-3.17A2.5 2.5 0 0 1 2 15.24Z"/></svg>
+                                <p className="text-sm font-black text-green-800 uppercase tracking-wide">Controller Connected</p>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 

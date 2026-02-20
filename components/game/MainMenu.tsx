@@ -158,6 +158,9 @@ export function MainMenu({ engine }: MainMenuProps) {
 
     const [highlightedSong, setHighlightedSong] = React.useState<any | null>(null); // For leaderboard/comments
 
+    // Ref to stop SongLibrary preview audio from outside
+    const stopPreviewRef = React.useRef<(() => void) | null>(null);
+
     // Side effect to set username
     React.useEffect(() => {
         if (session.data?.user && !userName) {
@@ -168,6 +171,8 @@ export function MainMenu({ engine }: MainMenuProps) {
 
     // Load song metadata + buffer for sidebar preview (does NOT start game)
     const handleSelectSong = async (song: any) => {
+        // Stop any playing preview when opening the details sidebar
+        stopPreviewRef.current?.();
         setIsLoading(true);
         try {
             const streamUrl = `/api/slice-it/songs/stream/${song.id}`;
@@ -195,6 +200,9 @@ export function MainMenu({ engine }: MainMenuProps) {
     // Fetch audio, generate beatmap, and launch the game — single authoritative entry point
     const handleStartGame = async (song: any) => {
         if (!engine) return;
+
+        // Stop any playing song preview before launching the game
+        stopPreviewRef.current?.();
 
         setIsLoading(true);
         setIsLoadingSong(true);
@@ -384,6 +392,7 @@ export function MainMenu({ engine }: MainMenuProps) {
                         onSelect={handleStartGame}
                         onHighlight={setSelectedSong}
                         selectedSongId={selectedSong?.id}
+                        onStopPreviewRef={stopPreviewRef}
                      />
                 </div>
 

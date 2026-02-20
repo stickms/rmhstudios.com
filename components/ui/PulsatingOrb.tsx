@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { usePerformanceMode } from "@/hooks/usePerformanceMode";
 
 interface PulsatingOrbProps {
   className?: string;
@@ -21,28 +21,33 @@ const sizeMap = {
   lg: "w-64 h-64",
 };
 
+// Reduced sizes for perf modes — less GPU composite area
+const reducedSizeMap = {
+  sm: "w-20 h-20",
+  md: "w-32 h-32",
+  lg: "w-40 h-40",
+};
+
 export function PulsatingOrb({
   className = "",
   color = "pink",
   size = "md",
 }: PulsatingOrbProps) {
+  const perfMode = usePerformanceMode();
+
+  // Skip entirely in minimal mode
+  if (perfMode === "minimal") return null;
+
   const orbColor = colorMap[color];
-  const orbSize = sizeMap[size];
+  const orbSize = perfMode === "reduced" ? reducedSizeMap[size] : sizeMap[size];
+  // Use smaller blur in reduced mode
+  const blurClass = perfMode === "reduced" ? "blur-xl" : "blur-3xl";
 
   return (
-    <motion.div
-      className={`${orbSize} rounded-full blur-3xl pointer-events-none ${className}`}
+    <div
+      className={`${orbSize} rounded-full ${blurClass} pointer-events-none pulsating-orb ${className}`}
       style={{
         background: `radial-gradient(circle, ${orbColor} 0%, transparent 70%)`,
-      }}
-      animate={{
-        scale: [1, 1.2, 1],
-        opacity: [0.3, 0.6, 0.3],
-      }}
-      transition={{
-        duration: 4,
-        repeat: Infinity,
-        ease: "easeInOut",
       }}
     />
   );

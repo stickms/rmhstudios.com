@@ -368,31 +368,20 @@ export class GameEngine {
             return; // Stop processing normal hits if hitting bomb
         }
 
-        // Find best hit ... (rest of logic)
+        // Only the targeted (next sequential) note in this lane can be hit
         const hitWindow = HIT_WINDOWS.BAD * (useGameStore.getState().modifiers.strictTiming ? 0.7 : 1.0);
-        const potentialHits = map.slices
-            .filter(s => !this.processedSliceIds.has(s.id) && s.type !== 'SILENT' && s.type !== 'BOMB')
-            .filter(s => this.getEffectiveLane(s, currentTime) === lane)
-            .filter(s => Math.abs(s.time - currentTime) <= hitWindow);
-            
-        // ... (existing helper) ...
-        // Logic continues...
-        
-        if (potentialHits.length === 0) {
-            // Miss Click / Ghost Tap Penalty
-            this.handleHit(null, 'MISS', lane); // Treat as miss
-            return; 
+        const targeted = this.getTargetedSlice(lane);
+
+        if (!targeted || Math.abs(targeted.time - currentTime) > hitWindow) {
+            // No targetable note in window — ghost tap penalty
+            this.handleHit(null, 'MISS', lane);
+            return;
         }
 
-        // ... existing handleHit call ...
-        const bestSlice = potentialHits.reduce((prev, curr) => {
-            return Math.abs(curr.time - currentTime) < Math.abs(prev.time - currentTime) ? curr : prev;
-        });
-        
-        this.processedSliceIds.add(bestSlice.id);
-        const result = this.getHitResult(bestSlice.time, currentTime);
-        const effectiveLane = this.getEffectiveLane(bestSlice, currentTime);
-        this.handleHit(bestSlice, result, effectiveLane);
+        this.processedSliceIds.add(targeted.id);
+        const result = this.getHitResult(targeted.time, currentTime);
+        const effectiveLane = this.getEffectiveLane(targeted, currentTime);
+        this.handleHit(targeted, result, effectiveLane);
     }
     
     private getHitResult(sliceTime: number, currentTime: number): HitResult {
@@ -524,6 +513,45 @@ export class GameEngine {
         // Or if we release too early -> Miss/Break Combo.
         
         console.log("Release at", currentTime.toFixed(3));
+    }
+
+    /**
+     * Returns the next unhit note for a given lane — the "targeted" note.
+     * This is the earliest unprocessed, non-bomb, non-silent slice in the lane
+     * that hasn't fully passed the miss window yet.
+     *
+     * For SWITCH notes we use the **destination** (post-switch) lane so the
+     * glow and targeting always reflect where the player will actually need
+     * to press, even before the switch animation has finished.
+     */
+    public getTargetedSlice(lane: number): Slice | null {
+        if (!this.beatMap) return null;
+        const offsetSeconds = (useGameStore.getState().audioOffset || 0) / 1000;
+        const currentTime = this.audioManager.getCurrentTime() - offsetSeconds;
+        const strictFactor = useGameStore.getState().modifiers.strictTiming ? 0.7 : 1.0;
+        const missWindow = HIT_WINDOWS.BAD * strictFactor;
+
+        let best: Slice | null = null;
+        for (const slice of this.beatMap.slices) {
+            if (this.processedSliceIds.has(slice.id)) continue;
+            if (slice.type === 'BOMB' || slice.type === 'SILENT') continue;
+
+            // For SWITCH notes, always use the post-switch (destination) lane
+            // so the note is targeted in the lane the player will actually hit.
+            let sliceLane: number;
+            if (slice.type === 'SWITCH') {
+                sliceLane = slice.lane === 0 ? 1 : 0; // destination lane
+            } else {
+                sliceLane = this.getEffectiveLane(slice, currentTime);
+            }
+            if (sliceLane !== lane) continue;
+
+            // Skip notes that have already fully passed the miss window
+            if (currentTime > slice.time + missWindow) continue;
+            // Pick the earliest remaining note
+            if (!best || slice.time < best.time) best = slice;
+        }
+        return best;
     }
 
     public getState() {

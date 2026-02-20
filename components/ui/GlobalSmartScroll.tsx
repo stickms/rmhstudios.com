@@ -107,6 +107,8 @@ export function GlobalSmartScroll() {
          // Fallback if element not found for some reason
         window.scrollBy({ top: window.innerHeight * 0.7, behavior: "smooth" });
       }
+    } else if (mode === "top") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } else {
       const element = document.getElementById(targetId);
       if (element) {

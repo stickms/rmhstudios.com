@@ -94,7 +94,7 @@ export function BlogSection({ posts }: BlogSectionProps) {
             <ProximityText>Devlog</ProximityText>
           </h2>
           <p className="text-white/60 text-lg md:text-xl max-w-2xl mx-auto">
-            Behind the scenes of Satan's Library and more.
+            Updates, deep dives, and behind-the-scenes looks at what we&apos;re building.
           </p>
         </motion.div>
       </div>
@@ -160,17 +160,17 @@ export function BlogSection({ posts }: BlogSectionProps) {
           {/* Custom Navigation Controls */}
           <button 
               onClick={scrollPrev} 
-              className="absolute left-8 md:left-[15%] lg:left-[32%] top-1/2 -translate-y-1/2 z-30 p-3 rounded-full bg-black/50 border border-white/10 text-white hover:bg-[var(--neon-pink)] hover:border-[var(--neon-pink)] transition-all hidden md:flex backdrop-blur-md"
+              className="absolute left-2 sm:left-4 md:left-[10%] lg:left-[30%] top-1/2 -translate-y-1/2 z-30 p-2 sm:p-3 rounded-full bg-black/50 border border-white/10 text-white hover:bg-[var(--neon-pink)] hover:border-[var(--neon-pink)] transition-all flex backdrop-blur-md"
               aria-label="Previous Slide"
           >
-              <ChevronLeft className="w-6 h-6" />
+              <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
           <button 
               onClick={scrollNext} 
-              className="absolute right-8 md:right-[15%] lg:right-[32%] top-1/2 -translate-y-1/2 z-30 p-3 rounded-full bg-black/50 border border-white/10 text-white hover:bg-[var(--neon-pink)] hover:border-[var(--neon-pink)] transition-all hidden md:flex backdrop-blur-md"
+              className="absolute right-2 sm:right-4 md:right-[10%] lg:right-[30%] top-1/2 -translate-y-1/2 z-30 p-2 sm:p-3 rounded-full bg-black/50 border border-white/10 text-white hover:bg-[var(--neon-pink)] hover:border-[var(--neon-pink)] transition-all flex backdrop-blur-md"
               aria-label="Next Slide"
           >
-              <ChevronRight className="w-6 h-6" />
+              <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
       </div>
 

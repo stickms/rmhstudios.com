@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useMousePosition } from "@/contexts/MouseContext";
+import { usePerformanceMode } from "@/hooks/usePerformanceMode";
 
 interface Particle {
   x: number;
@@ -28,7 +29,9 @@ export function ParticleField() {
   const particlesRef = useRef<Particle[]>([]);
   const mouseRef = useRef({ x: 0, y: 0 });
   const animationRef = useRef<number | null>(null);
+  const isVisibleRef = useRef(true);
   const { mouseX, mouseY } = useMousePosition();
+  const perfMode = usePerformanceMode();
 
   // Sync motion values to ref for use in animation loop
   useEffect(() => {
@@ -44,147 +47,175 @@ export function ParticleField() {
     };
   }, [mouseX, mouseY]);
 
-  // No changes to logic above this, just re-implementing useEffect content
+  // Pause when tab is hidden
   useEffect(() => {
+    const handleVisibility = () => {
+      isVisibleRef.current = document.visibilityState === "visible";
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, []);
+
+  useEffect(() => {
+    // In minimal mode, don't render particles at all
+    if (perfMode === "minimal") return;
+
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { alpha: true });
     if (!ctx) return;
 
-    // Mobile detection without hook inside useEffect (since hook is top-level, we can check width here or pass it in)
-    // We can rely on window.innerWidth in the resize checking, but for init we want to know too.
     let isMobile = window.innerWidth < 768;
+    const isReduced = perfMode === "reduced";
 
     const resize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      // Use lower resolution canvas for better perf
+      const dpr = isReduced || isMobile ? 1 : Math.min(window.devicePixelRatio, 1.5);
+      canvas.width = Math.round(window.innerWidth * dpr);
+      canvas.height = Math.round(window.innerHeight * dpr);
+      canvas.style.width = window.innerWidth + "px";
+      canvas.style.height = window.innerHeight + "px";
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       isMobile = window.innerWidth < 768;
     };
     resize();
     window.addEventListener("resize", resize);
 
-    // Initialize particles
-    // OPTIMIZATION: Reduce particle count on mobile
-    const particleCount = isMobile ? 30 : 80;
-    particlesRef.current = []; // Clear existing
+    // Particle count scales with performance mode
+    const particleCount = isReduced ? 20 : isMobile ? 30 : 50;
+    particlesRef.current = [];
     for (let i = 0; i < particleCount; i++) {
-      particlesRef.current.push(createParticle(canvas.width, canvas.height));
+      particlesRef.current.push(createParticle(window.innerWidth, window.innerHeight));
     }
 
     function createParticle(width: number, height: number): Particle {
       return {
         x: Math.random() * width,
         y: Math.random() * height,
-        vx: (Math.random() - 0.5) * 2,
-        vy: (Math.random() - 0.5) * 2,
-        size: Math.random() * 4 + 1,
+        vx: (Math.random() - 0.5) * 1.5,
+        vy: (Math.random() - 0.5) * 1.5,
+        size: Math.random() * 3 + 1,
         color: COLORS[Math.floor(Math.random() * COLORS.length)],
         life: Math.random() * 100,
         maxLife: 100 + Math.random() * 100,
       };
     }
 
-    function animate() {
+    // Throttle loop: target 30fps in reduced mode, ~60fps in full
+    let lastFrameTime = 0;
+    const frameInterval = isReduced ? 1000 / 30 : 0;
+
+    function animate(timestamp: number) {
       if (!canvas || !ctx) return;
 
+      // Skip frames when tab hidden
+      if (!isVisibleRef.current) {
+        animationRef.current = requestAnimationFrame(animate);
+        return;
+      }
+
+      // Throttle in reduced mode
+      if (frameInterval > 0 && timestamp - lastFrameTime < frameInterval) {
+        animationRef.current = requestAnimationFrame(animate);
+        return;
+      }
+      lastFrameTime = timestamp;
+
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+
       ctx.fillStyle = "rgba(10, 10, 10, 0.1)";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillRect(0, 0, w, h);
 
       const mouse = mouseRef.current;
+      const particles = particlesRef.current;
+      const skipConnections = isReduced;
+      const connectionDist = isMobile ? 60 : 80;
 
-      particlesRef.current.forEach((p, i) => {
-        // Mouse attraction/repulsion
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+
+        // Mouse attraction (skip sqrt when far away using squared distance)
         const dx = mouse.x - p.x;
         const dy = mouse.y - p.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
+        const distSq = dx * dx + dy * dy;
 
-        if (dist < 200) {
+        if (distSq < 40000) { // 200^2
+          const dist = Math.sqrt(distSq);
           const force = (200 - dist) / 200;
           p.vx += (dx / dist) * force * 0.5;
           p.vy += (dy / dist) * force * 0.5;
         }
 
-        // Update position
         p.x += p.vx;
         p.y += p.vy;
-
-        // Friction
         p.vx *= 0.99;
         p.vy *= 0.99;
 
-        // Wrap around
-        if (p.x < 0) p.x = canvas.width;
-        if (p.x > canvas.width) p.x = 0;
-        if (p.y < 0) p.y = canvas.height;
-        if (p.y > canvas.height) p.y = 0;
+        // Wrap
+        if (p.x < 0) p.x = w;
+        if (p.x > w) p.x = 0;
+        if (p.y < 0) p.y = h;
+        if (p.y > h) p.y = 0;
 
-        // Life cycle
         p.life++;
         if (p.life > p.maxLife) {
-          particlesRef.current[i] = createParticle(canvas.width, canvas.height);
+          particles[i] = createParticle(w, h);
+          continue;
         }
 
-        // Draw particle with glow
+        // Draw particle — no shadowBlur (massive GPU cost)
         const alpha = 1 - p.life / p.maxLife;
-        ctx.save();
         ctx.globalAlpha = alpha;
-
-        // OPTIMIZATION: Disable expensive shadowBlur on mobile
-        if (!isMobile) {
-            ctx.shadowBlur = 15;
-            ctx.shadowColor = p.color;
-        }
-
+        ctx.fillStyle = p.color;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = p.color;
         ctx.fill();
 
-        ctx.restore();
+        // Draw connections (skip in reduced mode, use squared dist to avoid sqrt)
+        if (!skipConnections) {
+          const connDistSq = connectionDist * connectionDist;
+          for (let j = i + 1; j < particles.length; j++) {
+            const p2 = particles[j];
+            const cdx = p.x - p2.x;
+            const cdy = p.y - p2.y;
+            const cDistSq = cdx * cdx + cdy * cdy;
 
-        // Draw connections
-        // OPTIMIZATION: Reduce connection check distance on mobile
-        const connectionDist = isMobile ? 60 : 100;
-        
-        particlesRef.current.forEach((p2, j) => {
-          if (j <= i) return;
-          const dx = p.x - p2.x;
-          const dy = p.y - p2.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-
-          if (dist < connectionDist) {
-            ctx.save();
-            ctx.globalAlpha = (1 - dist / connectionDist) * 0.3 * alpha;
-            ctx.strokeStyle = p.color;
-            ctx.lineWidth = 0.5;
-            ctx.beginPath();
-            ctx.moveTo(p.x, p.y);
-            ctx.lineTo(p2.x, p2.y);
-            ctx.stroke();
-            ctx.restore();
+            if (cDistSq < connDistSq) {
+              const cDist = Math.sqrt(cDistSq);
+              ctx.globalAlpha = (1 - cDist / connectionDist) * 0.2 * alpha;
+              ctx.strokeStyle = p.color;
+              ctx.lineWidth = 0.5;
+              ctx.beginPath();
+              ctx.moveTo(p.x, p.y);
+              ctx.lineTo(p2.x, p2.y);
+              ctx.stroke();
+            }
           }
-        });
-      });
+        }
+      }
 
+      ctx.globalAlpha = 1;
       animationRef.current = requestAnimationFrame(animate);
     }
 
-    animate();
+    animationRef.current = requestAnimationFrame(animate);
 
     return () => {
       window.removeEventListener("resize", resize);
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
     };
-  }, []);
+  }, [perfMode]);
+
+  // Don't render canvas at all in minimal mode
+  if (perfMode === "minimal") return null;
 
   return (
     <canvas
       ref={canvasRef}
       className="fixed inset-0 pointer-events-none z-0"
-      style={{ opacity: 0.6 }}
+      style={{ opacity: 0.5, willChange: "auto" }}
     />
   );
 }

@@ -62,21 +62,22 @@ export function AboutSection() {
             transition={{ duration: 0.6, delay: 0.2 }}
           >
             <p className="text-lg md:text-xl text-white/80 leading-relaxed text-center">
-              We are an indie game development studio driven by passion and
-              creativity. Our mission is to craft immersive digital experiences
-              that push the boundaries of interactive entertainment.
+              RMH Studios is an indie game studio building playable experiences
+              right in your browser. No downloads, no installs—just games that
+              push the limits of what the web can do.
             </p>
 
             <p className="text-lg md:text-xl text-white/80 leading-relaxed text-center">
-              Every project we undertake is a labor of love, combining innovative
-              gameplay mechanics with stunning visuals and compelling narratives.
-              We believe games are more than entertainment—they&apos;re art.
+              From rhythm games to roguelikes, every project is handcrafted with
+              care. We obsess over feel, performance, and polish because we
+              believe great games deserve great craft—no matter the platform.
             </p>
 
-            <div className="pt-8 grid grid-cols-2 md:grid-cols-3 gap-6">
+            <div className="pt-8 grid grid-cols-2 md:grid-cols-4 gap-6">
               {[
                 { label: "Founded", value: "2026" },
-                { label: "Projects", value: "3+" },
+                { label: "Games", value: "5+" },
+                { label: "Platform", value: "Web" },
                 { label: "Passion", value: "100%" },
               ].map((stat, index) => (
                 <motion.div
