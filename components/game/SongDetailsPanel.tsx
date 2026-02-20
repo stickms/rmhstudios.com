@@ -348,7 +348,12 @@ export function SongDetailsPanel({ song, onPlay, onSongUpdated }: SongDetailsPan
                 <div className="space-y-2">
                     <div className="flex justify-between items-center">
                         <h3 className="text-xs font-bold text-slate-500 uppercase">Playback Speed</h3>
-                        <span className="text-blue-500 font-mono font-bold text-sm">x{modifiers.speed.toFixed(1)}</span>
+                        <div className="flex items-center gap-2">
+                            {modifiers.speed < 1.0 && (
+                                <span className="text-[9px] font-bold uppercase tracking-wide bg-orange-100 text-orange-500 px-1.5 py-0.5 rounded-full">Unranked</span>
+                            )}
+                            <span className="text-blue-500 font-mono font-bold text-sm">x{modifiers.speed.toFixed(1)}</span>
+                        </div>
                     </div>
                     <div className="bg-slate-100 p-3 rounded-lg border border-slate-300">
                         <Slider

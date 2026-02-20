@@ -102,15 +102,19 @@ export function MatchResults({ onBack, isHost, lobbyId }: { onBack: () => void; 
     const allFinished = sorted.every(r => r.isFinished);
 
     // Submit score to leaderboard when match finishes (same logic as single-player GameOver)
+    const { modifiers } = useGameStore();
+    const isUnranked = modifiers.speed < 1.0;
+
     React.useEffect(() => {
         if (!allFinished || scoreSubmitted) return;
         if (!userName || score <= 0) return;
+        if (isUnranked) return; // Speed below 1.0x is unranked
 
         setScoreSubmitted(true);
         fetch('/api/slice-it/score', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: userName, score, accuracy, maxCombo, songId }),
+            body: JSON.stringify({ username: userName, score, accuracy, maxCombo, songId, speed: modifiers.speed }),
         })
         .then(async (res) => {
             if (!res.ok) {
@@ -119,7 +123,7 @@ export function MatchResults({ onBack, isHost, lobbyId }: { onBack: () => void; 
             }
         })
         .catch(err => console.error('Multiplayer score submission error:', err));
-    }, [allFinished, scoreSubmitted, userName, score, accuracy, maxCombo, songId]);
+    }, [allFinished, scoreSubmitted, userName, score, accuracy, maxCombo, songId, isUnranked, modifiers.speed]);
 
     const rankIcon = (i: number) => {
         if (i === 0) return <Crown className="w-6 h-6 text-yellow-500" />;

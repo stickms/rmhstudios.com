@@ -15,13 +15,19 @@ export async function POST(req: Request) {
     }
 
     try {
-        const { username, score, accuracy, maxCombo, songId } = await req.json();
+        const { username, score, accuracy, maxCombo, songId, speed } = await req.json();
 
         if (!username || typeof username !== 'string' || username.length < 2 || username.length > 24) {
             return NextResponse.json({ error: 'Invalid username' }, { status: 400 });
         }
         if (typeof score !== 'number' || score < 0 || score > 1_000_000_000) {
             return NextResponse.json({ error: 'Invalid score' }, { status: 400 });
+        }
+
+        // Reject scores played at sub-1.0 speed (unranked)
+        const playSpeed = typeof speed === 'number' ? speed : 1.0;
+        if (playSpeed < 1.0) {
+            return NextResponse.json({ error: 'Scores at speeds below 1.0x are unranked' }, { status: 400 });
         }
 
         // Auth Check
@@ -67,7 +73,7 @@ export async function POST(req: Request) {
                         score: Math.round(score),
                         maxCombo: typeof maxCombo === 'number' ? Math.round(maxCombo) : 0,
                         accuracy: typeof accuracy === 'number' ? Math.max(0, Math.min(1, accuracy)) : null,
-                        speedMod: 1.0,
+                        speedMod: playSpeed,
                     }
                 });
             }

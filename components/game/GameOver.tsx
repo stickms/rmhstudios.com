@@ -4,14 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 export function GameOver() {
-  const { score, multiplier, maxCombo, accuracy, songId, reset, userName, status } = useGameStore();
+  const { score, multiplier, maxCombo, accuracy, songId, reset, userName, status, modifiers } = useGameStore();
+  const isUnranked = modifiers.speed < 1.0;
 
   useEffect(() => {
-    if (userName && score > 0 && status === 'FINISHED') {
+    if (userName && score > 0 && status === 'FINISHED' && !isUnranked) {
         fetch('/api/slice-it/score', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: userName, score, accuracy, maxCombo, songId }),
+            body: JSON.stringify({ username: userName, score, accuracy, maxCombo, songId, speed: modifiers.speed }),
         })
         .then(async (res) => {
             if (!res.ok) {
@@ -21,7 +22,7 @@ export function GameOver() {
         })
         .catch(err => console.error('Score submission network error:', err));
     }
-  }, [score, accuracy, maxCombo, songId, userName, status]);
+  }, [score, accuracy, maxCombo, songId, userName, status, isUnranked, modifiers.speed]);
 
   const accuracyPct = (accuracy * 100).toFixed(2);
   const isFC = accuracy >= 1.0;
@@ -39,6 +40,12 @@ export function GameOver() {
           <CardTitle className="text-5xl font-black tracking-tight text-blue-500">
             COMPLETE
           </CardTitle>
+          {isUnranked && (
+            <div className="mt-2 inline-flex items-center gap-1.5 bg-orange-100 text-orange-600 text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-full mx-auto">
+              <span>Unranked</span>
+              <span className="text-[9px] font-normal normal-case tracking-normal text-orange-400">Speed below 1.0x</span>
+            </div>
+          )}
         </CardHeader>
         
         <CardContent className="space-y-6 text-center relative z-10 p-8">
