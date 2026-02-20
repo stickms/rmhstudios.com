@@ -2,6 +2,8 @@
 
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { fmt } from '@/lib/temple-of-joy/numbers';
+import { computeBuildingHPS } from '@/lib/temple-of-joy/engine';
+import type { BuildingId } from '@/lib/temple-of-joy/types';
 import HedoTreadmillGraph from './HedoTreadmillGraph';
 
 function Row({
@@ -62,10 +64,21 @@ export default function StatsPanel() {
   const getHPC                 = useTempleStore(s => s.getHPC);
   const getCanTranscend        = useTempleStore(s => s.getCanTranscend);
   const getEffectiveSatisfaction = useTempleStore(s => s.getEffectiveSatisfaction);
+  const getGlobalHPSMultiplier = useTempleStore(s => s.getGlobalHPSMultiplier);
 
   const setShowTranscendenceModal = useTempleStore(s => s.setShowTranscendenceModal);
 
+  const state = useTempleStore(s => s);
+  
+  // Calculate base HPS (sum of all building HPS)
+  const baseHPS = Object.entries(state.buildings).reduce((sum, [buildingId, owned]) => {
+    if (owned === 0) return sum;
+    return sum + computeBuildingHPS(buildingId as BuildingId, state);
+  }, 0);
+
   const ritualReady = ritualCooldown <= 0;
+  const globalMult = getGlobalHPSMultiplier();
+  const totalHps = getHPS();
 
   return (
     <div
@@ -84,55 +97,71 @@ export default function StatsPanel() {
       </h2>
 
       <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-x-4">
-        <Row
-          label="Happiness"
-          value={fmt(happiness, numberFormat)}
-        />
-        <Row
-          label="Per Second"
-          value={`${fmt(getHPS(), numberFormat)}/s`}
-        />
-        <Row
-          label="Lifetime"
-          value={fmt(lifetimeHappiness, numberFormat)}
-          sub="total earned"
-        />
-        <Row
-          label="Per Click"
-          value={
-            <>
-              {fmt(getHPC(), numberFormat)}/click{' '}
-              {ritualReady && (
-                <span
-                  className="ml-1 text-[10px] font-bold uppercase"
-                  style={{ color: 'var(--temple-accent)' }}
-                >
-                  ✨ RITUAL READY!
-                </span>
-              )}
-            </>
-          }
-        />
-        <Row
-          label="Satisfaction"
-          value={fmt(getEffectiveSatisfaction(), numberFormat)}
-          sub="above baseline"
-        />
-        <Row
-          label="Karma"
-          value={`${karma.toFixed(1)} karma`}
-        />
-        <Row
-          label="Bliss Shards"
-          value={`${blissShards} 💎`}
-        />
-        {prestigeCount > 0 && (
+        {/* Left column */}
+        <div>
           <Row
-            label="Prestige"
-            value={`×${prestigeCount}`}
+            label="Happiness"
+            value={fmt(happiness, numberFormat)}
           />
-        )}
+          <Row
+            label="Satisfaction"
+            value={fmt(getEffectiveSatisfaction(), numberFormat)}
+            sub="above baseline"
+          />
+          <Row
+            label="Lifetime"
+            value={fmt(lifetimeHappiness, numberFormat)}
+            sub="total earned"
+          />
+          <Row
+            label="Bliss Shards"
+            value={`${blissShards} 💎`}
+          />
+        </div>
+
+        {/* Right column */}
+        <div>
+          <Row
+            label="Global Mult"
+            value={`×${globalMult.toFixed(2)}`}
+          />
+          <Row
+            label="HPS"
+            value={fmt(totalHps, numberFormat)}
+            sub={`${fmt(baseHPS, numberFormat)} × ${globalMult.toFixed(2)}`}
+            highlight={true}
+          />
+          <Row
+            label="HPC"
+            value={
+              <>
+                {fmt(getHPC(), numberFormat)}/click{' '}
+                {ritualReady && (
+                  <span
+                    className="ml-1 text-[10px] font-bold uppercase"
+                    style={{ color: 'var(--temple-accent)' }}
+                  >
+                    ✨ RITUAL READY!
+                  </span>
+                )}
+              </>
+            }
+          />
+          <Row
+            label="Karma"
+            value={`${karma.toFixed(1)} karma`}
+          />
+        </div>
       </div>
+
+      {prestigeCount > 0 && (
+        <div
+          className="mt-2 pt-2 text-xs"
+          style={{ borderTop: '1px solid var(--temple-border)', color: 'var(--temple-text)', opacity: 0.7 }}
+        >
+          Prestige: ×{prestigeCount}
+        </div>
+      )}
 
       {/* Transcendence teaser — clickable button */}
       {getCanTranscend() && (

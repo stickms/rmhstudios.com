@@ -182,6 +182,10 @@ export interface GameState {
   // ── Meta ──
   lastSaved: number;               // Unix ms timestamp
   totalPlaytime: number;           // seconds
+  totalClicks: number;             // total button clicks (for achievements)
+  totalPilgrimages: number;        // total pilgrimages completed
+  totalVibeChecks: number;         // total vibe checks passed
+  totalEventsResolved: number;     // total events resolved
   achievements: Set<string>;
   milestones: Set<string>;
 
@@ -198,6 +202,11 @@ export interface GameState {
   recentClickTimes: number[];      // timestamps (ms) of last 7 clicks for ritual detection
   eventTimer: number;              // seconds until next random event
   pendingEvent: string | null;     // ID of event waiting to be shown
+  lastEventEffect: {               // effect from last resolved event (for display)
+    title: string;
+    summary: string[];             // lines describing what happened
+    expiresAt: number;             // ms timestamp when to hide
+  } | null;
 
   // ── Timed Buffs ──
   activeBuffs: TimedBuff[];
@@ -251,6 +260,10 @@ export interface SaveData {
   samsaraGiftStacks: number;
   lastSaved: number;
   totalPlaytime: number;
+  totalClicks: number;
+  totalPilgrimages: number;
+  totalVibeChecks: number;
+  totalEventsResolved: number;
   achievements: string[];
   milestones: string[];
   baselineHappiness: number;

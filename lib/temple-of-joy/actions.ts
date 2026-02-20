@@ -39,6 +39,10 @@ function makeInitialState(
     samsaraGiftStacks: 0,
     lastSaved: now,
     totalPlaytime: 0,
+    totalClicks: 0,
+    totalPilgrimages: 0,
+    totalVibeChecks: 0,
+    totalEventsResolved: 0,
     achievements: new Set<string>(),
     milestones: new Set<string>(),
     baselineHappiness: 0,
@@ -49,8 +53,9 @@ function makeInitialState(
     pilgrimageCooldown: 0,
     ritualCooldown: 0,
     recentClickTimes: [],
-    eventTimer: Math.random() * 600 + 600,
+    eventTimer: Math.random() * 480 + 120,
     pendingEvent: null,
+    lastEventEffect: null,
     activeBuffs: [],
     permanentHPSBonus: 0,
     permanentHPCBonus: 0,
@@ -95,12 +100,14 @@ export function doClick(state: GameState): GameState {
   let happinessGained: number;
   let newRitualCooldown = state.ritualCooldown;
   let finalClickTimes = updatedClickTimes;
+  let ritualTriggered = false;
 
   if (updatedClickTimes.length >= ritualThreshold && state.ritualCooldown <= 0) {
     // Ritual triggered: bonus burst
     happinessGained = hpc * 7 * incenseBonus;
     newRitualCooldown = state.wheelPurchased.has('ritualMastery') ? 15 : 30;
     finalClickTimes = [];
+    ritualTriggered = true;
   } else {
     happinessGained = hpc * incenseBonus;
   }
@@ -117,11 +124,22 @@ export function doClick(state: GameState): GameState {
     lastClickTime: now,
     recentClickTimes: finalClickTimes,
     ritualCooldown: newRitualCooldown,
+    totalClicks: state.totalClicks + 1,
   };
 
   // Achievement: first click (proxy: lifetime was 0 before this click)
   if (state.lifetimeHappiness === 0 && happinessGained > 0) {
     newState = grantAchievement(newState, 'firstClick');
+  }
+
+  // Click count achievements
+  if (newState.totalClicks >= 100) newState = grantAchievement(newState, 'hundredClicks');
+  if (newState.totalClicks >= 1000) newState = grantAchievement(newState, 'thousandClicks');
+  if (newState.totalClicks >= 10000) newState = grantAchievement(newState, 'tenThousandClicks');
+
+  // Ritual trigger achievement
+  if (ritualTriggered && !state.achievements.has('ritual')) {
+    newState = grantAchievement(newState, 'ritual');
   }
 
   return newState;
@@ -142,8 +160,13 @@ export function doBuyBuilding(state: GameState, buildingId: BuildingId): GameSta
 
   // Building-specific achievements
   if (buildingId === 'moodCandle' && newOwned === 1) newState = grantAchievement(newState, 'firstCandle');
+  if (buildingId === 'moodCandle' && newOwned >= 1000) newState = grantAchievement(newState, 'candleObsession');
+  if (buildingId === 'therapy' && newOwned >= 100) newState = grantAchievement(newState, 'therapyRich');
   if (buildingId === 'goonCave' && newOwned === 1) newState = grantAchievement(newState, 'caveDweller');
   if (buildingId === 'blissSingularity' && newOwned === 1) newState = grantAchievement(newState, 'singularity');
+  if (buildingId === 'napPod' && newOwned >= 100) newState = grantAchievement(newState, 'napPodArmy');
+  if (buildingId === 'zenGarden' && newOwned === 1) newState = grantAchievement(newState, 'zenGardenUnlock');
+  if (buildingId === 'omniscientSpa' && newOwned === 1) newState = grantAchievement(newState, 'omniscientSpaUnlock');
 
   // allBuildings: every building type owned >= 1
   const allBuildings = Object.values(newState.buildings).every((count) => count >= 1);
@@ -155,6 +178,27 @@ export function doBuyBuilding(state: GameState, buildingId: BuildingId): GameSta
 
   // fiftyOfOne: any single building >= 50
   if (newOwned >= 50) newState = grantAchievement(newState, 'fiftyOfOne');
+
+  // hundredOfOne: any single building >= 100
+  if (newOwned >= 100) newState = grantAchievement(newState, 'hundredOfOne');
+
+  // twoHundredOfOne: any single building >= 200
+  if (newOwned >= 200) newState = grantAchievement(newState, 'twoHundredOfOne');
+
+  // fiveHundredOfOne: any single building >= 500
+  if (newOwned >= 500) newState = grantAchievement(newState, 'fiveHundredOfOne');
+
+  // thousandOfOne: any single building >= 1000
+  if (newOwned >= 1000) newState = grantAchievement(newState, 'thousandOfOne');
+
+  // allPostPrestige: every post-prestige building owned >= 1 (only if prestigeCount >= 1)
+  if (state.prestigeCount >= 1) {
+    const postPrestigeBuildings = ['zenGarden', 'omniscientSpa'];
+    const allPostPrestige = postPrestigeBuildings.every(
+      (id) => (newState.buildings[id as BuildingId] ?? 0) >= 1
+    );
+    if (allPostPrestige) newState = grantAchievement(newState, 'allPostPrestige');
+  }
 
   return newState;
 }
@@ -210,6 +254,17 @@ export function doEquipRelic(state: GameState, relicId: RelicId): GameState {
   };
 
   newState = grantAchievement(newState, 'firstRelic');
+
+  // Check if they have philosopher's stone
+  if (relicId === 'philosophersStone') {
+    newState = grantAchievement(newState, 'philosophersStone');
+  }
+
+  // Check if all slots are filled
+  if (newState.activeRelics.length >= newState.maxRelicSlots) {
+    newState = grantAchievement(newState, 'maxRelics');
+  }
+
   return newState;
 }
 
@@ -262,9 +317,11 @@ export function doPassVibeCheck(state: GameState): GameState {
     ...state,
     vibeBuff,
     vibeCheckTimer: newVibeCheckTimer,
+    totalVibeChecks: state.totalVibeChecks + 1,
   };
 
   newState = grantAchievement(newState, 'vibeCheck');
+  if (newState.totalVibeChecks >= 10) newState = grantAchievement(newState, 'vibeCheckTen');
   return newState;
 }
 
@@ -301,7 +358,7 @@ export function doTriggerTranscendence(state: GameState): GameState {
   // Karmically retained resources
   const retainedKarma = state.wheelPurchased.has('karmicVessel') ? state.karma : 0;
 
-  const newState = makeInitialState({
+  let newState = makeInitialState({
     blissShards: newBlissShards,
     wheelPurchased: new Set(state.wheelPurchased),
     achievements: new Set(state.achievements),
@@ -317,6 +374,14 @@ export function doTriggerTranscendence(state: GameState): GameState {
     soundEnabled: state.soundEnabled,
     soundVolume: state.soundVolume,
   });
+
+  // Grant prestige achievements
+  newState = grantAchievement(newState, 'firstPrestige');
+  if (newPrestigeCount >= 5) newState = grantAchievement(newState, 'fivePrestige');
+  if (newPrestigeCount >= 10) newState = grantAchievement(newState, 'tenPrestige');
+  if (newPrestigeCount >= 20) newState = grantAchievement(newState, 'twentyPrestige');
+  if (newPrestigeCount >= 30) newState = grantAchievement(newState, 'thirtyPrestige');
+  if (newPrestigeCount >= 50) newState = grantAchievement(newState, 'fiftyPrestige');
 
   return newState;
 }
@@ -335,11 +400,28 @@ export function doPurchaseWheelUpgrade(state: GameState, upgradeId: string): Gam
     if (!requirementsMet) return state;
   }
 
-  return {
+  const newWheelPurchased = new Set([...state.wheelPurchased, upgradeId]);
+  
+  let newState: GameState = {
     ...state,
     blissShards: state.blissShards - def.shardCost,
-    wheelPurchased: new Set([...state.wheelPurchased, upgradeId]),
+    wheelPurchased: newWheelPurchased,
   };
+
+  // Wheel achievements
+  newState = grantAchievement(newState, 'firstWheelUpgrade');
+
+  // Check if all tier 4 upgrades are purchased (fullWheel)
+  const tier4Upgrades = [
+    'templeEternal',
+    'infiniteWheel',
+    'enlightenedClicker',
+    'karmicDividend',
+  ];
+  const hasAllTier4 = tier4Upgrades.every((id) => newWheelPurchased.has(id));
+  if (hasAllTier4) newState = grantAchievement(newState, 'fullWheel');
+
+  return newState;
 }
 
 // ─── Events ───────────────────────────────────────────────────────────────────
@@ -363,7 +445,15 @@ export function doResolveEvent(
     return { ...state, pendingEvent: null, showEventModal: false };
   }
 
-  let newState: GameState = { ...state, pendingEvent: null, showEventModal: false };
+  // Build effect summary lines
+  const effectSummary: string[] = [];
+
+  let newState: GameState = { 
+    ...state, 
+    pendingEvent: null, 
+    showEventModal: false,
+    totalEventsResolved: state.totalEventsResolved + 1,
+  };
 
   // Apply happiness bonus
   if (effect.happinessBonus !== undefined) {
@@ -371,8 +461,10 @@ export function doResolveEvent(
     if (effect.happinessBonus > 0 && effect.happinessBonus < 10) {
       // Treat as "minutes of HPS"
       bonusHP = computeTotalHPS(state) * effect.happinessBonus * 60;
+      effectSummary.push(`+${Math.floor(bonusHP)} happiness (${effect.happinessBonus} min of income)`);
     } else {
       bonusHP = effect.happinessBonus;
+      effectSummary.push(`+${Math.floor(bonusHP)} happiness`);
     }
     newState = {
       ...newState,
@@ -387,6 +479,8 @@ export function doResolveEvent(
     effect.hpsMultiplier !== undefined &&
     effect.hpsMultiplierDuration !== undefined
   ) {
+    const durationMinutes = Math.round(effect.hpsMultiplierDuration / 60);
+    effectSummary.push(`×${effect.hpsMultiplier} HPS for ${durationMinutes} min`);
     const buff: TimedBuff = {
       id: `event_${eventId}_${Date.now()}`,
       hpsMultiplier: effect.hpsMultiplier,
@@ -397,11 +491,14 @@ export function doResolveEvent(
 
   // Apply karma bonus
   if (effect.karmaBonus !== undefined) {
+    effectSummary.push(`+${effect.karmaBonus} karma`);
     newState = { ...newState, karma: newState.karma + effect.karmaBonus };
   }
 
   // Apply permanent HPS %
   if (effect.permanentHPSPercent !== undefined) {
+    const percent = Math.round(effect.permanentHPSPercent * 100);
+    effectSummary.push(`+${percent}% permanent HPS`);
     newState = {
       ...newState,
       permanentHPSBonus: newState.permanentHPSBonus + effect.permanentHPSPercent,
@@ -410,6 +507,8 @@ export function doResolveEvent(
 
   // Apply permanent HPC %
   if (effect.permanentHPCPercent !== undefined) {
+    const percent = Math.round(effect.permanentHPCPercent * 100);
+    effectSummary.push(`+${percent}% permanent HPC`);
     newState = {
       ...newState,
       permanentHPCBonus: newState.permanentHPCBonus + effect.permanentHPCPercent,
@@ -417,6 +516,15 @@ export function doResolveEvent(
   }
 
   newState = grantAchievement(newState, 'eventResolved');
+  if (newState.totalEventsResolved >= 50) newState = grantAchievement(newState, 'eventsFifty');
+
+  // Store event effect for display (show for 5 seconds)
+  newState.lastEventEffect = {
+    title: eventDef.title,
+    summary: effectSummary,
+    expiresAt: Date.now() + 5000,
+  };
+
   return newState;
 }
 

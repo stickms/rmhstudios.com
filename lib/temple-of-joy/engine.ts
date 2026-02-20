@@ -122,7 +122,7 @@ export function computeTotalHPS(state: GameState): number {
     hps += computeBuildingHPS(building.id, state);
   }
 
-  // 2. Global upgrade multipliers
+  // 2. Apply global upgrade multipliers
   for (const upgrade of UPGRADES) {
     if (!state.upgrades.has(upgrade.id)) continue;
     if (upgrade.globalHPSMultiplier) hps *= upgrade.globalHPSMultiplier;
@@ -178,6 +178,53 @@ export function computeTotalHPS(state: GameState): number {
   }
 
   return hps;
+}
+
+export function computeGlobalHPSMultiplier(state: GameState): number {
+  let multiplier = 1.0;
+
+  // Global upgrade multipliers
+  for (const upgrade of UPGRADES) {
+    if (!state.upgrades.has(upgrade.id)) continue;
+    if (upgrade.globalHPSMultiplier) multiplier *= upgrade.globalHPSMultiplier;
+  }
+
+  // Idle multiplier
+  if (computeIsIdle(state)) {
+    for (const upgrade of UPGRADES) {
+      if (!state.upgrades.has(upgrade.id)) continue;
+      if (upgrade.idleHPSMultiplier) multiplier *= upgrade.idleHPSMultiplier;
+    }
+    if (state.activeRelics.includes('laurelCrown')) multiplier *= 2;
+  }
+
+  // Active timed buffs
+  for (const buff of state.activeBuffs) {
+    multiplier *= buff.hpsMultiplier;
+  }
+
+  // Vibe buff
+  if (state.vibeBuff) multiplier *= state.vibeBuff.hpsMultiplier;
+
+  // Permanent HPS bonus
+  multiplier *= 1 + state.permanentHPSBonus;
+
+  // Samsara's Gift
+  multiplier *= 1 + 0.05 * state.samsaraGiftStacks;
+
+  // Temple Eternal wheel
+  if (state.wheelPurchased.has('templeEternal')) multiplier *= 10;
+
+  // Sacred Ledger relic
+  if (state.activeRelics.includes('sacredLedger')) {
+    const minutesOpen = (Date.now() - state.pageOpenTime) / 60_000;
+    multiplier *= 1 + Math.min(minutesOpen * 0.1, 4.0);
+  }
+
+  // Note: Hymnal of Excess and Confession Booth add flat HPS, not multiplicative
+  // so we don't include them here
+
+  return multiplier;
 }
 
 // ─── HPC ──────────────────────────────────────────────────────────────────────
@@ -320,6 +367,10 @@ export function computeStartingHPSFromWheel(
       samsaraGiftStacks: 0,
       lastSaved: 0,
       totalPlaytime: 0,
+      totalClicks: 0,
+      totalPilgrimages: 0,
+      totalVibeChecks: 0,
+      totalEventsResolved: 0,
       achievements: new Set<string>(),
       milestones: new Set<string>(),
       baselineHappiness: 0,
@@ -332,6 +383,7 @@ export function computeStartingHPSFromWheel(
       recentClickTimes: [],
       eventTimer: 0,
       pendingEvent: null,
+      lastEventEffect: null,
       activeBuffs: [] as TimedBuff[],
       permanentHPSBonus: 0,
       permanentHPCBonus: 0,

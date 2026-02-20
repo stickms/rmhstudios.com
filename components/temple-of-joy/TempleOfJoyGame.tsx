@@ -16,6 +16,7 @@ import MilestonesPanel from '@/components/temple-of-joy/ui/MilestonesPanel';
 import VibeCheck from '@/components/temple-of-joy/ui/VibeCheck';
 import PilgrimageOverlay from '@/components/temple-of-joy/ui/PilgrimageOverlay';
 import EventModal from '@/components/temple-of-joy/ui/EventModal';
+import EventEffectSummary from '@/components/temple-of-joy/ui/EventEffectSummary';
 import TranscendenceModal from '@/components/temple-of-joy/ui/TranscendenceModal';
 import OfflineModal from '@/components/temple-of-joy/ui/OfflineModal';
 import AchievementToast from '@/components/temple-of-joy/ui/AchievementToast';
@@ -181,6 +182,7 @@ export function TempleOfJoyGame({ initialSaveData }: { initialSaveData?: SaveDat
       <VibeCheck />
       <PilgrimageOverlay />
       <EventModal />
+      <EventEffectSummary />
       <TranscendenceModal />
       <OfflineModal />
       <AchievementToast />

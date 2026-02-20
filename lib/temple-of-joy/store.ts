@@ -8,7 +8,7 @@ import * as Actions from './actions';
 import {
   computeTotalHPS, computeHPC, computeCanTranscend,
   computeBlissShards, computeEffectiveSatisfaction, computeIsIdle,
-  computeMaxAffordable,
+  computeMaxAffordable, computeGlobalHPSMultiplier,
 } from './engine';
 import { INITIAL_BUILDINGS } from './data/buildings';
 
@@ -32,6 +32,10 @@ export function createInitialState(): GameState {
     samsaraGiftStacks: 0,
     lastSaved: now,
     totalPlaytime: 0,
+    totalClicks: 0,
+    totalPilgrimages: 0,
+    totalVibeChecks: 0,
+    totalEventsResolved: 0,
     achievements: new Set<string>(),
     milestones: new Set<string>(),
     baselineHappiness: 0,
@@ -42,8 +46,9 @@ export function createInitialState(): GameState {
     pilgrimageCooldown: 0,
     ritualCooldown: 0,
     recentClickTimes: [],
-    eventTimer: Math.random() * 600 + 600,
+    eventTimer: Math.random() * 480 + 120,
     pendingEvent: null,
+    lastEventEffect: null,
     activeBuffs: [],
     permanentHPSBonus: 0,
     permanentHPCBonus: 0,
@@ -71,6 +76,7 @@ interface TempleStore extends GameState {
   // Derived (computed on demand from store)
   getHPS: () => number;
   getHPC: () => number;
+  getGlobalHPSMultiplier: () => number;
   getCanTranscend: () => boolean;
   getBlissShards: () => number;
   getEffectiveSatisfaction: () => number;
@@ -118,6 +124,7 @@ export const useTempleStore = create<TempleStore>()(
     // ── Derived getters ──
     getHPS: () => computeTotalHPS(get()),
     getHPC: () => computeHPC(get()),
+    getGlobalHPSMultiplier: () => computeGlobalHPSMultiplier(get()),
     getCanTranscend: () => computeCanTranscend(get()),
     getBlissShards: () => computeBlissShards(get().lifetimeHappiness, get().wheelPurchased),
     getEffectiveSatisfaction: () => computeEffectiveSatisfaction(get()),
