@@ -2,7 +2,7 @@
 
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
-import type { GameState, BuildingId, RelicId, UpgradePath } from './types';
+import type { GameState, SourceId, RelicId, UpgradePath } from './types';
 import { applyTick } from './tick';
 import * as Actions from './actions';
 import {
@@ -10,7 +10,7 @@ import {
   computeBlissShards, computeEffectiveSatisfaction, computeIsIdle,
   computeMaxAffordable, computeGlobalHPSMultiplier,
 } from './engine';
-import { INITIAL_BUILDINGS } from './data/buildings';
+import { INITIAL_SOURCES } from './data/sources';
 
 // ─── Initial State ────────────────────────────────────────────────────────────
 
@@ -23,10 +23,11 @@ export function createInitialState(): GameState {
     peakKarma: 0,
     karma: 0,
     blissShards: 0,
-    buildings: { ...INITIAL_BUILDINGS },
+    sources: { ...INITIAL_SOURCES },
     upgrades: new Set<string>(),
     activeRelics: [],
     maxRelicSlots: 5,
+    equippedRelicsHistory: [],
     prestigeCount: 0,
     wheelPurchased: new Set<string>(),
     samsaraGiftStacks: 0,
@@ -38,6 +39,8 @@ export function createInitialState(): GameState {
     totalEventsResolved: 0,
     achievements: new Set<string>(),
     milestones: new Set<string>(),
+    pilgrimageStreak: 0,
+    epicurusApprovedCount: 0,
     baselineHappiness: 0,
     vibeCheckTimer: Math.random() * 240 + 180,
     vibeBuff: null,
@@ -63,7 +66,7 @@ export function createInitialState(): GameState {
     soundVolume: 0.5,
     activeTab: 'temple',
     upgradePathFilter: 'all',
-    buildingBuyQty: 1,
+    sourceBuyQty: 1,
     showTranscendenceModal: false,
     showOfflineModal: false,
     showEventModal: false,
@@ -86,9 +89,9 @@ interface TempleStore extends GameState {
   // Actions
   tick: (deltaMs: number) => void;
   click: () => void;
-  buyBuilding: (id: BuildingId) => void;
-  buyBuildingN: (id: BuildingId, n: number) => void;
-  buyBuildingMax: (id: BuildingId) => void;
+  buySource: (id: SourceId) => void;
+  buySourceN: (id: SourceId, n: number) => void;
+  buySourceMax: (id: SourceId) => void;
   purchaseUpgrade: (id: string) => void;
   equipRelic: (id: RelicId) => void;
   unequipRelic: (id: RelicId) => void;
@@ -102,7 +105,7 @@ interface TempleStore extends GameState {
   // UI setters
   setActiveTab: (tab: GameState['activeTab']) => void;
   setUpgradePathFilter: (filter: UpgradePath | 'all') => void;
-  setBuildingBuyQty: (qty: 1 | 10 | 100 | 'max') => void;
+  setSourceBuyQty: (qty: 1 | 10 | 100 | 'max') => void;
   setTheme: (theme: 'light' | 'dark') => void;
   setNumberFormat: (fmt: 'abbreviated' | 'scientific') => void;
   setSoundEnabled: (enabled: boolean) => void;
@@ -127,16 +130,16 @@ export const useTempleStore = create<TempleStore>()(
     getHPC: () => computeHPC(get()),
     getGlobalHPSMultiplier: () => computeGlobalHPSMultiplier(get()),
     getCanTranscend: () => computeCanTranscend(get()),
-    getBlissShards: () => computeBlissShards(get().lifetimeHappiness, get().wheelPurchased),
+    getBlissShards: () => computeBlissShards(get()),
     getEffectiveSatisfaction: () => computeEffectiveSatisfaction(get()),
     getIsIdle: () => computeIsIdle(get()),
 
     // ── Actions ──
     tick: (deltaMs: number) => set(state => applyTick(state, deltaMs)),
     click: () => set(state => Actions.doClick(state)),
-    buyBuilding: (id: BuildingId) => set(state => Actions.doBuyBuilding(state, id)),
-    buyBuildingN: (id: BuildingId, n: number) => set(state => Actions.doBuyBuildingN(state, id, n)),
-    buyBuildingMax: (id: BuildingId) => set(state => Actions.doBuyBuildingN(state, id, computeMaxAffordable(id, state))),
+    buySource: (id: SourceId) => set(state => Actions.doBuySource(state, id)),
+    buySourceN: (id: SourceId, n: number) => set(state => Actions.doBuySourceN(state, id, n)),
+    buySourceMax: (id: SourceId) => set(state => Actions.doBuySourceN(state, id, computeMaxAffordable(id, state))),
     purchaseUpgrade: (id: string) => set(state => Actions.doPurchaseUpgrade(state, id)),
     equipRelic: (id: RelicId) => set(state => Actions.doEquipRelic(state, id)),
     unequipRelic: (id: RelicId) => set(state => Actions.doUnequipRelic(state, id)),
@@ -151,7 +154,7 @@ export const useTempleStore = create<TempleStore>()(
     // ── UI setters ──
     setActiveTab: (tab) => set({ activeTab: tab }),
     setUpgradePathFilter: (filter) => set({ upgradePathFilter: filter }),
-    setBuildingBuyQty: (qty) => set({ buildingBuyQty: qty }),
+    setSourceBuyQty: (qty) => set({ sourceBuyQty: qty }),
     setTheme: (theme) => set({ theme }),
     setNumberFormat: (fmt) => set({ numberFormat: fmt }),
     setSoundEnabled: (enabled) => set({ soundEnabled: enabled }),

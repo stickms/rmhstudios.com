@@ -4,7 +4,7 @@
 
 // ─── IDs ─────────────────────────────────────────────────────────────────────
 
-export type BuildingId =
+export type SourceId =
   | 'moodCandle' | 'napPod' | 'snackBar' | 'sweetTreat' | 'hotTub'
   | 'massageStudio' | 'retailTherapy' | 'gratitudeJournal' | 'goonCave' | 'joyCult'
   | 'spaSanctum' | 'soundBath' | 'therapy' | 'pleasurePalace' | 'dopamineLab'
@@ -29,8 +29,8 @@ export type WheelTier = 1 | 2 | 3 | 4 | 5;
 
 // ─── Data Definitions ────────────────────────────────────────────────────────
 
-export interface BuildingDef {
-  id: BuildingId;
+export interface SourceDef {
+  id: SourceId;
   name: string;
   tagline: string;
   icon: string;
@@ -50,10 +50,10 @@ export interface UpgradeDef {
   flavor: string;
   path: UpgradePath;
   cost: number;
-  /** Which buildings' HPS this boosts (undefined = all) */
-  targetBuildings?: BuildingId[];
-  /** Multiplier applied to targetBuildings HPS */
-  buildingMultiplier?: number;
+  /** Which sources' HPS this boosts (undefined = all) */
+  targetSources?: SourceId[];
+  /** Multiplier applied to targetSources HPS */
+  sourceMultiplier?: number;
   /** Flat HPC addition */
   hpcBonus?: number;
   /** HPC multiplier */
@@ -66,8 +66,8 @@ export interface UpgradeDef {
   karmaBonus?: number;
   /** Karma per second multiplier */
   karmaRateMultiplier?: number;
-  /** Requires this many of a building to unlock */
-  requiresBuilding?: Partial<Record<BuildingId, number>>;
+  /** Requires this many of a source to unlock */
+  requiresSource?: Partial<Record<SourceId, number>>;
   /** Requires prestige count >= value */
   requiresPrestige?: number;
   /** Requires specific upgrade purchased first */
@@ -80,8 +80,8 @@ export interface SynergyDef {
   id: string;
   name: string;
   flavor: string;
-  requirements: Partial<Record<BuildingId, number>>;
-  targetBuildings: BuildingId[];
+  requirements: Partial<Record<SourceId, number>>;
+  targetSources: SourceId[];
   multiplier: number;
 }
 
@@ -164,8 +164,8 @@ export interface GameState {
   karma: number;
   blissShards: number;
 
-  // ── Buildings ──
-  buildings: Record<BuildingId, number>;
+  // ── Sources ──
+  sources: Record<SourceId, number>;
 
   // ── Upgrades (purchased IDs) ──
   upgrades: Set<string>;
@@ -173,6 +173,7 @@ export interface GameState {
   // ── Relics ──
   activeRelics: RelicId[];
   maxRelicSlots: number;
+  equippedRelicsHistory: RelicId[]; // tracking for `allRelics` achievement
 
   // ── Prestige ──
   prestigeCount: number;
@@ -189,6 +190,8 @@ export interface GameState {
   totalEventsResolved: number;     // total events resolved
   achievements: Set<string>;
   milestones: Set<string>;
+  pilgrimageStreak: number;        // consecutive pilgrimages without clicking
+  epicurusApprovedCount: number;   // number of frugal philosophical choices made
 
   // ── Hedonic Treadmill ──
   baselineHappiness: number;
@@ -234,9 +237,9 @@ export interface GameState {
   soundVolume: number;
 
   // ── UI ──
-  activeTab: 'temple' | 'buildings' | 'upgrades' | 'relics' | 'wheel' | 'achievements' | 'settings';
+  activeTab: 'temple' | 'sources' | 'upgrades' | 'relics' | 'wheel' | 'achievements' | 'settings';
   upgradePathFilter: UpgradePath | 'all';
-  buildingBuyQty: 1 | 10 | 100 | 'max';
+  sourceBuyQty: 1 | 10 | 100 | 'max';
   showTranscendenceModal: boolean;
   showOfflineModal: boolean;
   showEventModal: boolean;
@@ -253,10 +256,11 @@ export interface SaveData {
   peakKarma: number;
   karma: number;
   blissShards: number;
-  buildings: Record<BuildingId, number>;
+  sources: Record<SourceId, number>;
   upgrades: string[];
   activeRelics: RelicId[];
   maxRelicSlots: number;
+  equippedRelicsHistory: RelicId[];
   prestigeCount: number;
   wheelPurchased: string[];
   samsaraGiftStacks: number;
@@ -268,14 +272,18 @@ export interface SaveData {
   totalEventsResolved: number;
   achievements: string[];
   milestones: string[];
+  pilgrimageStreak: number;
+  epicurusApprovedCount: number;
   baselineHappiness: number;
   pilgrimageCooldown: number;
+  pilgrimageActive: boolean;
+  pilgrimageTimer: number;
   autoBuyTimer: number;
   permanentHPSBonus: number;
   permanentHPCBonus: number;
   theme: 'light' | 'dark';
   numberFormat: 'abbreviated' | 'scientific';
-  buildingBuyQty: 1 | 10 | 100 | 'max';
+  sourceBuyQty: 1 | 10 | 100 | 'max';
   soundEnabled: boolean;
   soundVolume: number;
 }

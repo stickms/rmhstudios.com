@@ -22,10 +22,11 @@ export function stateToSaveData(state: GameState): SaveData {
     peakKarma: state.peakKarma,
     karma: state.karma,
     blissShards: state.blissShards,
-    buildings: { ...state.buildings },
+    sources: { ...state.sources },
     upgrades: [...state.upgrades],
     activeRelics: [...state.activeRelics],
     maxRelicSlots: state.maxRelicSlots,
+    equippedRelicsHistory: [...state.equippedRelicsHistory],
     prestigeCount: state.prestigeCount,
     wheelPurchased: [...state.wheelPurchased],
     samsaraGiftStacks: state.samsaraGiftStacks,
@@ -37,14 +38,18 @@ export function stateToSaveData(state: GameState): SaveData {
     totalEventsResolved: state.totalEventsResolved,
     achievements: [...state.achievements],
     milestones: [...state.milestones],
+    pilgrimageStreak: state.pilgrimageStreak,
+    epicurusApprovedCount: state.epicurusApprovedCount,
     baselineHappiness: state.baselineHappiness,
     pilgrimageCooldown: state.pilgrimageCooldown,
+    pilgrimageActive: state.pilgrimageActive,
+    pilgrimageTimer: state.pilgrimageTimer,
     autoBuyTimer: state.autoBuyTimer,
     permanentHPSBonus: state.permanentHPSBonus,
     permanentHPCBonus: state.permanentHPCBonus,
     theme: state.theme,
     numberFormat: state.numberFormat,
-    buildingBuyQty: state.buildingBuyQty,
+    sourceBuyQty: state.sourceBuyQty,
     soundEnabled: state.soundEnabled,
     soundVolume: state.soundVolume,
   };
@@ -58,10 +63,11 @@ export function saveDataToState(save: SaveData, baseState: GameState): Partial<G
     peakKarma: save.peakKarma ?? 0,
     karma: save.karma ?? 0,
     blissShards: save.blissShards ?? 0,
-    buildings: { ...baseState.buildings, ...(save.buildings ?? {}) },
+    sources: { ...baseState.sources, ...(save.sources ?? {}) },
     upgrades: new Set(save.upgrades ?? []),
     activeRelics: save.activeRelics ?? [],
     maxRelicSlots: save.maxRelicSlots ?? 5,
+    equippedRelicsHistory: save.equippedRelicsHistory ?? [],
     prestigeCount: save.prestigeCount ?? 0,
     wheelPurchased: new Set(save.wheelPurchased ?? []),
     samsaraGiftStacks: save.samsaraGiftStacks ?? 0,
@@ -73,14 +79,18 @@ export function saveDataToState(save: SaveData, baseState: GameState): Partial<G
     totalEventsResolved: save.totalEventsResolved ?? 0,
     achievements: new Set(save.achievements ?? []),
     milestones: new Set(save.milestones ?? []),
+    pilgrimageStreak: save.pilgrimageStreak ?? 0,
+    epicurusApprovedCount: save.epicurusApprovedCount ?? 0,
     baselineHappiness: save.baselineHappiness ?? 0,
     pilgrimageCooldown: save.pilgrimageCooldown ?? 0,
+    pilgrimageActive: save.pilgrimageActive ?? false,
+    pilgrimageTimer: save.pilgrimageTimer ?? 0,
     autoBuyTimer: save.autoBuyTimer ?? 30,
     permanentHPSBonus: save.permanentHPSBonus ?? 0,
     permanentHPCBonus: save.permanentHPCBonus ?? 0,
     theme: save.theme ?? 'dark',
     numberFormat: save.numberFormat ?? 'abbreviated',
-    buildingBuyQty: save.buildingBuyQty ?? 1,
+    sourceBuyQty: save.sourceBuyQty ?? 1,
     soundEnabled: save.soundEnabled ?? false,
     soundVolume: save.soundVolume ?? 0.5,
   };
@@ -114,18 +124,67 @@ export function loadFromLocalStorage(): SaveData | null {
 export function computeOfflineProgress(
   state: GameState,
   nowMs: number
-): { happiness: number; seconds: number } {
+): {
+  happiness: number;
+  seconds: number;
+  pilgrimageActive: boolean;
+  pilgrimageTimer: number;
+  pilgrimageCooldown: number;
+  pilgrimageBurstHP: number;
+  totalPilgrimages: number;
+} {
   const elapsedSecs = (nowMs - state.lastSaved) / 1000;
   const hasSaintWheel = state.wheelPurchased.has('saintsPatience');
   const capSecs = hasSaintWheel ? OFFLINE_CAP_WITH_SAINT : OFFLINE_CAP_SECONDS;
   const effectiveSecs = Math.min(elapsedSecs, capSecs);
-  if (effectiveSecs < 30) return { happiness: 0, seconds: 0 };
+
+  // Process pilgrimage timers offline
+  let pilgrimageActive = state.pilgrimageActive;
+  let pilgrimageTimer = state.pilgrimageTimer;
+  let pilgrimageCooldown = Math.max(0, state.pilgrimageCooldown - effectiveSecs);
+  let pilgrimageBurstHP = 0;
+  let totalPilgrimages = state.totalPilgrimages;
+
+  if (pilgrimageActive && effectiveSecs > 0) {
+    pilgrimageTimer -= effectiveSecs;
+    if (pilgrimageTimer <= 0) {
+      // Pilgrimage completed offline — grant burst
+      pilgrimageActive = false;
+      pilgrimageTimer = 0;
+      pilgrimageCooldown = Math.max(0, 900 - Math.abs(pilgrimageTimer)); // 15 min cooldown minus overshoot
+      totalPilgrimages += 1;
+      // Pilgrimage burst: 5 min × HPS × relic bonuses
+      const hps = computeTotalHPS(state);
+      const stuffedPillowBonus = state.activeRelics.includes('stuffedPillow') ? 1.5 : 1;
+      const nappingCatBonus = state.activeRelics.includes('nappingCat') ? 2 : 1;
+      pilgrimageBurstHP = 5 * 60 * hps * stuffedPillowBonus * nappingCatBonus;
+    }
+  }
+
+  if (effectiveSecs < 30) return {
+    happiness: 0, seconds: 0,
+    pilgrimageActive, pilgrimageTimer: Math.max(0, pilgrimageTimer),
+    pilgrimageCooldown, pilgrimageBurstHP, totalPilgrimages,
+  };
+
   const hps = computeTotalHPS(state);
-  // theLongView wheel: use sqrt formula for offline income (diminishing returns)
-  const happiness = state.wheelPurchased.has('theLongView')
-    ? hps * Math.sqrt(effectiveSecs) * OFFLINE_EFFICIENCY
-    : hps * effectiveSecs * OFFLINE_EFFICIENCY;
-  return { happiness, seconds: effectiveSecs };
+  // eternalNap relic: offline progress at 100% efficiency (as if actively playing)
+  const efficiency = state.activeRelics.includes('eternalNap') ? 1.0 : OFFLINE_EFFICIENCY;
+  // theLongView wheel: uncapped offline income with diminishing returns (no linear cap)
+  let happiness: number;
+  if (state.wheelPurchased.has('theLongView')) {
+    // Use full elapsed time (bypass cap) with pow(0.85) diminishing curve
+    const uncapped = elapsedSecs;
+    happiness = hps * Math.pow(uncapped, 0.85) * efficiency;
+  } else {
+    happiness = hps * effectiveSecs * efficiency;
+  }
+  return {
+    happiness: happiness + pilgrimageBurstHP,
+    seconds: effectiveSecs,
+    pilgrimageActive, pilgrimageTimer: Math.max(0, pilgrimageTimer),
+    pilgrimageCooldown, pilgrimageBurstHP, totalPilgrimages,
+  };
 }
 
 // ─── Import / Export ──────────────────────────────────────────────────────────

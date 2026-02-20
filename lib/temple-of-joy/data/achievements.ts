@@ -1,7 +1,7 @@
 import type { AchievementDef } from '@/lib/temple-of-joy/types';
 
 export const ACHIEVEMENTS: AchievementDef[] = [
-  // ─── Building Milestones ───────────────────────────────────────────────────
+  // ─── Source Milestones ───────────────────────────────────────────────────
 
   {
     id: 'firstCandle',
@@ -34,27 +34,27 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     flavor: 'Physics: concerned.',
   },
   {
-    id: 'allBuildings',
+    id: 'allSources',
     name: 'Full Temple',
-    description: 'Own at least 1 of every building.',
+    description: 'Own at least 1 of every source.',
     flavor: 'The temple is complete.',
   },
   {
     id: 'tenOfEach',
     name: 'Devout Builder',
-    description: 'Own 10 of every building.',
+    description: 'Own 10 of every source.',
     flavor: 'Committed.',
   },
   {
     id: 'fiftyOfOne',
     name: 'True Believer',
-    description: 'Own 50 of any one building.',
+    description: 'Own 50 of any one source.',
     flavor: 'Choose your idol wisely.',
   },
   {
     id: 'hundredOfOne',
     name: 'Zealot',
-    description: 'Own 100 of any one building.',
+    description: 'Own 100 of any one source.',
     flavor: 'No notes.',
   },
   {
@@ -333,24 +333,24 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     hidden: true,
   },
 
-  // ─── Extended Building Milestones ──────────────────────────────────────────
+  // ─── Extended Source Milestones ──────────────────────────────────────────
 
   {
     id: 'twoHundredOfOne',
     name: 'Surplus',
-    description: 'Own 200 of any one building.',
+    description: 'Own 200 of any one source.',
     flavor: 'Supply exceeds demand. Demand increases anyway.',
   },
   {
     id: 'fiveHundredOfOne',
     name: 'Industrial Devotion',
-    description: 'Own 500 of any one building.',
-    flavor: 'This building is your personality now.',
+    description: 'Own 500 of any one source.',
+    flavor: 'This source is your personality now.',
   },
   {
     id: 'thousandOfOne',
     name: 'Monomaniac',
-    description: 'Own 1,000 of any one building.',
+    description: 'Own 1,000 of any one source.',
     flavor: 'Obsession, but make it architecture.',
   },
   {
@@ -368,7 +368,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   {
     id: 'allPostPrestige',
     name: 'Beyond the Veil',
-    description: 'Own at least 1 of every post-prestige building.',
+    description: 'Own at least 1 of every post-prestige source.',
     flavor: 'The new world opens.',
   },
   {

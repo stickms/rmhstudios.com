@@ -3,9 +3,9 @@
 import { useEffect, useRef } from 'react';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { fmt } from '@/lib/temple-of-joy/numbers';
-import { BUILDINGS } from '@/lib/temple-of-joy/data/buildings';
-import { computeBuildingCost, computeBuildingCostN, computeBuildingHPS, computeMaxAffordable } from '@/lib/temple-of-joy/engine';
-import type { BuildingId } from '@/lib/temple-of-joy/types';
+import { SOURCES } from '@/lib/temple-of-joy/data/sources';
+import { computeSourceCost, computeSourceCostN, computeSourceHPS, computeMaxAffordable, computeSourcePrestigeReq } from '@/lib/temple-of-joy/engine';
+import type { SourceId, GameState } from '@/lib/temple-of-joy/types';
 
 type BuyQty = 1 | 10 | 100 | 'max';
 
@@ -15,36 +15,36 @@ function isUnlocked(
   lifetimeHPUnlock: number | undefined,
   peakHappiness: number,
   lifetimeHappiness: number,
-  requiresPrestige: number | undefined,
-  prestigeCount: number,
+  SourceId: SourceId,
+  state: GameState,
 ) {
-  if (requiresPrestige !== undefined && prestigeCount < requiresPrestige) return false;
+  const prestigeReq = computeSourcePrestigeReq(SourceId, state);
+  if (prestigeReq > 0 && state.prestigeCount < prestigeReq) return false;
   if (count > 0) return true;
   if (peakHappiness >= baseCost * 0.1) return true;
   if (lifetimeHPUnlock !== undefined && lifetimeHappiness >= lifetimeHPUnlock) return true;
   return false;
 }
 
-interface BuildingRowProps {
-  id: BuildingId;
+interface SourceRowProps {
+  id: SourceId;
   buyQty: BuyQty;
 }
 
-function BuildingRow({ id, buyQty }: BuildingRowProps) {
-  const state              = useTempleStore(s => s);
-  const peakHappiness      = useTempleStore(s => s.peakHappiness);
-  const lifetimeHappiness  = useTempleStore(s => s.lifetimeHappiness);
-  const buildings          = useTempleStore(s => s.buildings);
-  const numberFormat       = useTempleStore(s => s.numberFormat);
-  const buyBuilding        = useTempleStore(s => s.buyBuilding);
-  const buyBuildingN       = useTempleStore(s => s.buyBuildingN);
-  const buyBuildingMax     = useTempleStore(s => s.buyBuildingMax);
-  const prestigeCount      = useTempleStore(s => s.prestigeCount);
+function SourceRow({ id, buyQty }: SourceRowProps) {
+  const state = useTempleStore(s => s);
+  const peakHappiness = useTempleStore(s => s.peakHappiness);
+  const lifetimeHappiness = useTempleStore(s => s.lifetimeHappiness);
+  const sources = useTempleStore(s => s.sources);
+  const numberFormat = useTempleStore(s => s.numberFormat);
+  const buySource = useTempleStore(s => s.buySource);
+  const buySourceN = useTempleStore(s => s.buySourceN);
+  const buySourceMax = useTempleStore(s => s.buySourceMax);
 
   const pulseKeyRef = useRef(0);
   const prevCountRef = useRef<number | null>(null);
 
-  const count = buildings[id] ?? 0;
+  const count = sources[id] ?? 0;
 
   useEffect(() => {
     if (prevCountRef.current !== null && prevCountRef.current === 0 && count > 0) {
@@ -53,9 +53,13 @@ function BuildingRow({ id, buyQty }: BuildingRowProps) {
     prevCountRef.current = count;
   }, [count]);
 
-  const def    = BUILDINGS.find(b => b.id === id)!;
-  const totalHps = computeBuildingHPS(id, state);
-  const perBuildingHps = count > 0 ? totalHps / count : 0;
+  const def = SOURCES.find(b => b.id === id)!;
+  const totalHps = computeSourceHPS(id, state);
+
+  // If count is 0, compute hypothetical HPS for 1 source
+  const perSourceHps = count > 0
+    ? totalHps / count
+    : computeSourceHPS(id, { ...state, sources: { ...state.sources, [id]: 1 } });
 
   const unlocked = isUnlocked(
     def.baseCost,
@@ -63,8 +67,8 @@ function BuildingRow({ id, buyQty }: BuildingRowProps) {
     def.lifetimeHPUnlock,
     peakHappiness,
     lifetimeHappiness,
-    def.requiresPrestige,
-    prestigeCount,
+    id,
+    state,
   );
 
   // Cost / affordability based on selected quantity
@@ -74,20 +78,20 @@ function BuildingRow({ id, buyQty }: BuildingRowProps) {
 
   if (buyQty === 'max') {
     maxN = computeMaxAffordable(id, state);
-    displayCost = maxN > 0 ? computeBuildingCostN(id, count, maxN, state) : computeBuildingCost(id, count, state);
+    displayCost = maxN > 0 ? computeSourceCostN(id, count, maxN, state) : computeSourceCost(id, count, state);
     canAfford = maxN > 0;
   } else {
-    displayCost = computeBuildingCostN(id, count, buyQty, state);
+    displayCost = computeSourceCostN(id, count, buyQty, state);
     canAfford = state.happiness >= displayCost;
   }
 
   const handleBuy = () => {
     if (buyQty === 'max') {
-      buyBuildingMax(id);
+      buySourceMax(id);
     } else if (buyQty === 1) {
-      buyBuilding(id);
+      buySource(id);
     } else {
-      buyBuildingN(id, buyQty as number);
+      buySourceN(id, buyQty as number);
     }
   };
 
@@ -125,14 +129,14 @@ function BuildingRow({ id, buyQty }: BuildingRowProps) {
         >
           {def.tagline}
         </p>
-        {count > 0 && (
-          <p
-            className="text-[11px] tabular-nums mt-0.5"
-            style={{ color: 'var(--temple-text)', opacity: 0.65 }}
-          >
-            {fmt(perBuildingHps, numberFormat)}/s each · {fmt(totalHps, numberFormat)}/s total
-          </p>
-        )}
+        <p
+          className="text-[11px] tabular-nums mt-0.5"
+          style={{ color: 'var(--temple-text)', opacity: 0.65 }}
+        >
+          {count === 0
+            ? `${fmt(perSourceHps, numberFormat)}/s each`
+            : `${fmt(perSourceHps, numberFormat)}/s each · ${fmt(totalHps, numberFormat)}/s total`}
+        </p>
       </div>
 
       {/* Count */}
@@ -165,9 +169,9 @@ function BuildingRow({ id, buyQty }: BuildingRowProps) {
   );
 }
 
-export default function BuildingsPanel() {
-  const buyQty = useTempleStore(s => s.buildingBuyQty);
-  const setBuyQty = useTempleStore(s => s.setBuildingBuyQty);
+export default function SourcesPanel() {
+  const buyQty = useTempleStore(s => s.sourceBuyQty);
+  const setBuyQty = useTempleStore(s => s.setSourceBuyQty);
   const theme = useTempleStore(s => s.theme);
 
   const QTY_OPTIONS: BuyQty[] = [1, 10, 100, 'max'];
@@ -208,8 +212,8 @@ export default function BuildingsPanel() {
       </div>
 
       <div className="flex flex-1 min-h-0 flex-col gap-2 overflow-y-auto pr-1">
-        {BUILDINGS.map(b => (
-          <BuildingRow key={b.id} id={b.id} buyQty={buyQty} />
+        {SOURCES.map(b => (
+          <SourceRow key={b.id} id={b.id} buyQty={buyQty} />
         ))}
       </div>
     </div>

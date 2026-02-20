@@ -6,7 +6,7 @@ import type { SaveData } from '@/lib/temple-of-joy/types';
 import TabBar from '@/components/temple-of-joy/ui/TabBar';
 import SmileButton from '@/components/temple-of-joy/ui/SmileButton';
 import StatsPanel from '@/components/temple-of-joy/ui/StatsPanel';
-import BuildingsPanel from '@/components/temple-of-joy/ui/BuildingsPanel';
+import SourcesPanel from '@/components/temple-of-joy/ui/SourcesPanel';
 import UpgradesPanel from '@/components/temple-of-joy/ui/UpgradesPanel';
 import RelicsPanel from '@/components/temple-of-joy/ui/RelicsPanel';
 import WheelOfSamsara from '@/components/temple-of-joy/ui/WheelOfSamsara';
@@ -14,7 +14,6 @@ import AchievementsPanel from '@/components/temple-of-joy/ui/AchievementsPanel';
 import SettingsPanel from '@/components/temple-of-joy/ui/SettingsPanel';
 import MilestonesPanel from '@/components/temple-of-joy/ui/MilestonesPanel';
 import VibeCheck from '@/components/temple-of-joy/ui/VibeCheck';
-import PilgrimageOverlay from '@/components/temple-of-joy/ui/PilgrimageOverlay';
 import EventModal from '@/components/temple-of-joy/ui/EventModal';
 import EventEffectSummary from '@/components/temple-of-joy/ui/EventEffectSummary';
 import TranscendenceModal from '@/components/temple-of-joy/ui/TranscendenceModal';
@@ -39,6 +38,10 @@ export function TempleOfJoyGame({ initialSaveData }: { initialSaveData?: SaveDat
         offlineSecondsOnLoad: offline.seconds,
         happiness: mergedState.happiness + offline.happiness,
         lifetimeHappiness: mergedState.lifetimeHappiness + offline.happiness,
+        pilgrimageActive: offline.pilgrimageActive,
+        pilgrimageTimer: offline.pilgrimageTimer,
+        pilgrimageCooldown: offline.pilgrimageCooldown,
+        totalPilgrimages: offline.totalPilgrimages,
         showOfflineModal: offline.seconds > 30,
       });
     } else {
@@ -148,7 +151,7 @@ export function TempleOfJoyGame({ initialSaveData }: { initialSaveData?: SaveDat
             {/* Left: Sources panel */}
             <div className="hidden lg:flex lg:flex-col min-h-0">
               <div className="flex-1 min-h-0">
-                <BuildingsPanel />
+                <SourcesPanel />
               </div>
             </div>
             {/* Center: SmileButton + StatsPanel */}
@@ -165,7 +168,7 @@ export function TempleOfJoyGame({ initialSaveData }: { initialSaveData?: SaveDat
           </div>
         )}
 
-        {activeTab === 'buildings'    && <div className="overflow-y-auto p-4 pb-16 md:pb-4 h-full min-h-0"><BuildingsPanel /></div>}
+        {activeTab === 'sources'    && <div className="overflow-y-auto p-4 pb-16 md:pb-4 h-full min-h-0"><SourcesPanel /></div>}
         {activeTab === 'upgrades'     && <div className="overflow-y-auto p-4 pb-16 md:pb-4 h-full min-h-0"><UpgradesPanel /></div>}
         {activeTab === 'relics'       && <div className="overflow-y-auto p-4 pb-16 md:pb-4 h-full min-h-0"><RelicsPanel /></div>}
         {activeTab === 'wheel'        && <div className="overflow-y-auto p-4 pb-16 md:pb-4 h-full min-h-0"><WheelOfSamsara /></div>}
@@ -180,7 +183,6 @@ export function TempleOfJoyGame({ initialSaveData }: { initialSaveData?: SaveDat
 
       {/* Overlays */}
       <VibeCheck />
-      <PilgrimageOverlay />
       <EventModal />
       <EventEffectSummary />
       <TranscendenceModal />

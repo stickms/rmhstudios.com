@@ -74,7 +74,7 @@ export const RELICS: RelicDef[] = [
   {
     id: 'hymnalOfExcess',
     name: 'The Hymnal of Excess',
-    description: 'Each building type gains ×1.01^owned compound bonus (per type).',
+    description: 'Each source type gains ×1.01^owned compound bonus (per type).',
     flavorText: '"Sung louder with every verse. Verse count: increasing."',
     karmaCost: 1200,
   },
@@ -96,7 +96,7 @@ export const RELICS: RelicDef[] = [
   {
     id: 'lighthouseOfJoy',
     name: 'Lighthouse of Joy',
-    description: '×3 HPS for all post-prestige buildings.',
+    description: '×3 HPS for all post-prestige sources.',
     flavorText: '"A beacon visible across lifetimes. Check-in is eternal."',
     karmaCost: 6000,
   },

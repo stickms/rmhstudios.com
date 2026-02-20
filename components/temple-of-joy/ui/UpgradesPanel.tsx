@@ -42,8 +42,8 @@ function UpgradeRow({ upgradeId, purchased, affordable }: UpgradeRowProps) {
 
   const buildEffectSummary = () => {
     const parts: string[] = [];
-    if (def.buildingMultiplier && def.targetBuildings?.length) {
-      parts.push(`×${def.buildingMultiplier} ${def.targetBuildings.join(', ')} HPS`);
+    if (def.sourceMultiplier && def.targetSources?.length) {
+      parts.push(`×${def.sourceMultiplier} ${def.targetSources.join(', ')} HPS`);
     }
     if (def.globalHPSMultiplier) parts.push(`×${def.globalHPSMultiplier} global HPS`);
     if (def.hpcMultiplier) parts.push(`×${def.hpcMultiplier} HPC`);

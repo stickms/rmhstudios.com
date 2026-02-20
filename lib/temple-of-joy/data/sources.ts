@@ -1,6 +1,6 @@
-import type { BuildingDef, BuildingId } from '@/lib/temple-of-joy/types';
+import type { SourceDef, SourceId } from '@/lib/temple-of-joy/types';
 
-export const BUILDINGS: BuildingDef[] = [
+export const SOURCES: SourceDef[] = [
   {
     id: 'moodCandle',
     name: 'Mood Candle',
@@ -182,7 +182,7 @@ export const BUILDINGS: BuildingDef[] = [
     baseHPS: 3.9e12,
     lifetimeHPUnlock: 21000000000000,
   },
-  // ── Post-Prestige Buildings ────────────────────────────────────────────────
+  // ── Post-Prestige Sources ────────────────────────────────────────────────
   {
     id: 'zenGarden',
     name: 'Zen Garden',
@@ -239,10 +239,10 @@ export const BUILDINGS: BuildingDef[] = [
   },
 ];
 
-export const BUILDING_MAP: Record<BuildingId, BuildingDef> = Object.fromEntries(
-  BUILDINGS.map((b) => [b.id, b])
-) as Record<BuildingId, BuildingDef>;
+export const SOURCE_MAP: Record<SourceId, SourceDef> = Object.fromEntries(
+  SOURCES.map((b) => [b.id, b])
+) as Record<SourceId, SourceDef>;
 
-export const INITIAL_BUILDINGS: Record<BuildingId, number> = Object.fromEntries(
-  BUILDINGS.map((b) => [b.id, 0])
-) as Record<BuildingId, number>;
+export const INITIAL_SOURCES: Record<SourceId, number> = Object.fromEntries(
+  SOURCES.map((b) => [b.id, 0])
+) as Record<SourceId, number>;

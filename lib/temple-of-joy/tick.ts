@@ -2,11 +2,11 @@
  * Temple of Joy — Tick Engine
  * Called on every animation frame. Mutates state immutably.
  */
-import type { GameState, BuildingId } from './types';
-import { computeTotalHPS, computeKarmaRate, computeBuildingCost, computeMaxAffordable } from './engine';
+import type { GameState, SourceId } from './types';
+import { computeTotalHPS, computeKarmaRate, computeSourceCost, computeMaxAffordable, computeSourcePrestigeReq } from './engine';
 import { MILESTONES } from './data/milestones';
 import { EVENTS } from './data/events';
-import { BUILDINGS } from './data/buildings';
+import { SOURCES } from './data/sources';
 
 // ACHIEVEMENTS is imported for completeness; individual IDs are hardcoded
 // in the tick for performance.
@@ -61,14 +61,16 @@ export function applyTick(state: GameState, deltaMs: number): GameState {
     (state.happiness - state.baselineHappiness) * 0.00002 * deltaSeconds;
 
   // ── 10. Timed buffs ───────────────────────────────────────────────────────
+  // temporalComfort relic: buffs tick down at 2/3 speed (last 50% longer)
+  const buffTickRate = state.activeRelics.includes('temporalComfort') ? deltaSeconds * (2 / 3) : deltaSeconds;
   const newActiveBuffs = state.activeBuffs
-    .map((b) => ({ ...b, remainingSeconds: b.remainingSeconds - deltaSeconds }))
+    .map((b) => ({ ...b, remainingSeconds: b.remainingSeconds - buffTickRate }))
     .filter((b) => b.remainingSeconds > 0);
 
   // ── 11. Vibe buff ─────────────────────────────────────────────────────────
   let newVibeBuff = state.vibeBuff;
   if (newVibeBuff) {
-    const remaining = newVibeBuff.remainingSeconds - deltaSeconds;
+    const remaining = newVibeBuff.remainingSeconds - buffTickRate;
     newVibeBuff = remaining > 0 ? { ...newVibeBuff, remainingSeconds: remaining } : null;
   }
 
@@ -84,6 +86,10 @@ export function applyTick(state: GameState, deltaMs: number): GameState {
 
   const newRitualCooldown = Math.max(0, state.ritualCooldown - deltaSeconds);
   let newEventTimer = Math.max(0, state.eventTimer - deltaSeconds);
+  // temporalComfort relic: event frequency +25% (timer ticks 1.25× faster)
+  if (state.activeRelics.includes('temporalComfort')) {
+    newEventTimer = Math.max(0, state.eventTimer - deltaSeconds * 1.25);
+  }
 
   // ── 13. Pending event ─────────────────────────────────────────────────────
   let newPendingEvent = state.pendingEvent;
@@ -96,6 +102,8 @@ export function applyTick(state: GameState, deltaMs: number): GameState {
 
   // ── 14. Pilgrimage completion ─────────────────────────────────────────────
   let pilgrimeCompleted = false;
+  let newPilgrimageStreak = state.pilgrimageStreak;
+
   if (newPilgrimageActive && newPilgrimageTimer <= 0) {
     const burst = computePilgrimageBurst(state);
     newHappiness += burst;
@@ -104,6 +112,7 @@ export function applyTick(state: GameState, deltaMs: number): GameState {
     newPilgrimageActive = false;
     newPilgrimageCooldown = 900;
     pilgrimeCompleted = true;
+    newPilgrimageStreak += 1;
   }
 
   // ── 15. Milestones ────────────────────────────────────────────────────────
@@ -154,13 +163,21 @@ export function applyTick(state: GameState, deltaMs: number): GameState {
   if (newKarma >= 500) grantAchievement('goodKarma');
 
   // Pilgrimage achievements
+  if (pilgrimeCompleted) grantAchievement('pilgrimageFirst');
   if (pilgrimeCompleted && state.totalPilgrimages + 1 >= 10) grantAchievement('pilgrimageTen');
+  if (newPilgrimageStreak >= 5) grantAchievement('pilgrimageStreak');
+
+  // Hidden achievements
+  // noUpgrades: reach 1B happiness with zero upgrades
+  if (newLifetimeHappiness >= 1e9 && state.upgrades.size === 0) grantAchievement('noUpgrades');
+  // idleForever: let game run 1 hour without clicking
+  if (Date.now() - state.lastClickTime >= 3_600_000) grantAchievement('idleForever');
 
   // Prestige achievements are now tracked in actions.ts (doTriggerTranscendence)
 
   // ── 17. Auto-buy timer (autoBuyer wheel upgrades) ────────────────────────
   let newAutoBuyTimer = state.autoBuyTimer - deltaSeconds;
-  let autoBuyBuildings = state.buildings;
+  let autoBuySources = state.sources;
   let autoBuyHappiness = newHappiness;
 
   const hasAutoBuyer =
@@ -171,82 +188,85 @@ export function applyTick(state: GameState, deltaMs: number): GameState {
   if (hasAutoBuyer && newAutoBuyTimer <= 0) {
     newAutoBuyTimer = 30;
     // Work on mutable copies only when the timer fires
-    let workBuildings = { ...state.buildings };
+    let workSources = { ...state.sources };
     let workHappiness = newHappiness;
 
-    // Helper: build an ephemeral state with latest happiness/buildings
+    // Helper: build an ephemeral state with latest happiness/sources
     const tempState = (): GameState => ({
       ...state,
       happiness: workHappiness,
-      buildings: workBuildings,
+      sources: workSources,
     });
 
-    // Unlocked buildings sorted by baseCost descending
-    const unlocked = BUILDINGS.filter(
-      (b) => !b.requiresPrestige || b.requiresPrestige <= state.prestigeCount
+    // Unlocked sources sorted by baseCost descending
+    const unlocked = SOURCES.filter(
+      (b) => {
+        const req = computeSourcePrestigeReq(b.id as SourceId, state);
+        return req <= state.prestigeCount;
+      }
     ).sort((a, b) => b.baseCost - a.baseCost);
 
     if (state.wheelPurchased.has('autoBuyer3')) {
       // Cascade: buy max of most expensive, then next, etc.
-      for (const building of unlocked) {
+      for (const source of unlocked) {
         const ts = tempState();
-        const n = computeMaxAffordable(building.id as BuildingId, ts);
+        const n = computeMaxAffordable(source.id as SourceId, ts);
         if (n <= 0) continue;
         let cost = 0;
         for (let i = 0; i < n; i++) {
-          cost += computeBuildingCost(
-            building.id as BuildingId,
-            (workBuildings[building.id as BuildingId] ?? 0) + i,
+          cost += computeSourceCost(
+            source.id as SourceId,
+            (workSources[source.id as SourceId] ?? 0) + i,
             ts
           );
         }
         workHappiness -= cost;
-        workBuildings = {
-          ...workBuildings,
-          [building.id]: (workBuildings[building.id as BuildingId] ?? 0) + n,
+        workSources = {
+          ...workSources,
+          [source.id]: (workSources[source.id as SourceId] ?? 0) + n,
         };
       }
     } else if (state.wheelPurchased.has('autoBuyer2')) {
-      // Buy max of the single most expensive affordable building
-      for (const building of unlocked) {
+      // Buy max of the single most expensive affordable source
+      for (const source of unlocked) {
         const ts = tempState();
-        const n = computeMaxAffordable(building.id as BuildingId, ts);
+        const n = computeMaxAffordable(source.id as SourceId, ts);
         if (n <= 0) continue;
         let cost = 0;
         for (let i = 0; i < n; i++) {
-          cost += computeBuildingCost(
-            building.id as BuildingId,
-            (workBuildings[building.id as BuildingId] ?? 0) + i,
+          cost += computeSourceCost(
+            source.id as SourceId,
+            (workSources[source.id as SourceId] ?? 0) + i,
             ts
           );
         }
         workHappiness -= cost;
-        workBuildings = {
-          ...workBuildings,
-          [building.id]: (workBuildings[building.id as BuildingId] ?? 0) + n,
+        workSources = {
+          ...workSources,
+          [source.id]: (workSources[source.id as SourceId] ?? 0) + n,
         };
         break; // only most expensive
       }
     } else {
-      // autoBuyer1: buy 1 of most expensive affordable building
-      for (const building of unlocked) {
+      // autoBuyer1: buy 1 of most expensive affordable source
+      for (const source of unlocked) {
         const ts = tempState();
-        const cost = computeBuildingCost(
-          building.id as BuildingId,
-          workBuildings[building.id as BuildingId] ?? 0,
+        const cost = computeSourceCost(
+          source.id as SourceId,
+          workSources[source.id as SourceId] ?? 0,
           ts
         );
         if (workHappiness < cost) continue;
         workHappiness -= cost;
-        workBuildings = {
-          ...workBuildings,
-          [building.id]: (workBuildings[building.id as BuildingId] ?? 0) + 1,
+        workSources = {
+          ...workSources,
+          [source.id]: (workSources[source.id as SourceId] ?? 0) + 1,
         };
         break; // only most expensive
       }
     }
 
-    autoBuyBuildings = workBuildings;
+    autoBuySources = workSources;
     autoBuyHappiness = workHappiness;
   }
 
@@ -259,8 +279,8 @@ export function applyTick(state: GameState, deltaMs: number): GameState {
 
   return {
     ...state,
-    happiness: autoBuyBuildings !== state.buildings ? autoBuyHappiness : newHappiness,
-    buildings: autoBuyBuildings,
+    happiness: autoBuySources !== state.sources ? autoBuyHappiness : newHappiness,
+    sources: autoBuySources,
     lifetimeHappiness: newLifetimeHappiness,
     peakHappiness: newPeakHappiness,
     karma: newKarma,
@@ -274,6 +294,7 @@ export function applyTick(state: GameState, deltaMs: number): GameState {
     pilgrimageActive: newPilgrimageActive,
     pilgrimageTimer: newPilgrimageTimer,
     pilgrimageCooldown: newPilgrimageCooldown,
+    pilgrimageStreak: newPilgrimageStreak,
     ritualCooldown: newRitualCooldown,
     eventTimer: newEventTimer,
     pendingEvent: newPendingEvent,

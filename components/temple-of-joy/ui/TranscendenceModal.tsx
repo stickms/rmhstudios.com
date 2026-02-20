@@ -8,19 +8,19 @@ export default function TranscendenceModal() {
   const showTranscendenceModal = useTempleStore((s) => s.showTranscendenceModal);
   const setShowTranscendenceModal = useTempleStore((s) => s.setShowTranscendenceModal);
   const transcend = useTempleStore((s) => s.transcend);
-  const lifetimeHappiness = useTempleStore((s) => s.lifetimeHappiness);
   const wheelPurchased = useTempleStore((s) => s.wheelPurchased);
   const numberFormat = useTempleStore((s) => s.numberFormat);
   const theme = useTempleStore((s) => s.theme);
   const blissShards = useTempleStore((s) => s.blissShards);
   const prestigeCount = useTempleStore((s) => s.prestigeCount);
+  const state = useTempleStore((s) => s);
 
   const [dissolving, setDissolving] = useState(false);
 
   if (!showTranscendenceModal) return null;
 
   const dark = theme === 'dark';
-  const shardsEarned = computeBlissShards(lifetimeHappiness, wheelPurchased);
+  const shardsEarned = computeBlissShards(state);
   const threshold = computeTranscendenceThreshold(prestigeCount);
 
   // Determine upgrade retention based on wheel upgrades
@@ -102,15 +102,15 @@ export default function TranscendenceModal() {
         >
           <p className="font-semibold opacity-70 mb-1">Reset:</p>
           <ul className="space-y-0.5 opacity-80 text-xs">
-            <li>• Happiness</li>
-            <li>• Buildings</li>
-            <li>• Upgrades (most)</li>
+            <li>  Happiness</li>
+            <li>  Sources</li>
+            <li>  Upgrades (most)</li>
           </ul>
           <p className="font-semibold opacity-70 mt-2 mb-1">Kept:</p>
           <ul className="space-y-0.5 opacity-80 text-xs">
-            <li>• Bliss Shards</li>
-            <li>• Wheel Upgrades</li>
-            <li>• Achievements</li>
+            <li>  Bliss Shards</li>
+            <li>  Wheel Upgrades</li>
+            <li>  Achievements</li>
           </ul>
           {retentionNote && (
             <p

@@ -34,7 +34,7 @@ export const WHEEL_UPGRADES: WheelUpgradeDef[] = [
   {
     id: 'earlyWarmth',
     name: 'Early Warmth',
-    description: 'Building costs reduced by 5%.',
+    description: 'Source costs reduced by 5%.',
     shardCost: 3,
     tier: 1,
   },
@@ -59,7 +59,7 @@ export const WHEEL_UPGRADES: WheelUpgradeDef[] = [
   {
     id: 'deepRoots',
     name: 'The Deep Roots',
-    description: 'Buildings 1–5 start at 5 owned copies.',
+    description: 'Sources 1–5 start at 5 owned copies.',
     shardCost: 8,
     tier: 2,
     requires: ['beginnersBliss'],
@@ -107,7 +107,7 @@ export const WHEEL_UPGRADES: WheelUpgradeDef[] = [
   {
     id: 'karmaTithe',
     name: 'Karma Tithe',
-    description: 'Each building owned passively generates +0.001 karma/s.',
+    description: 'Each source owned passively generates +0.001 karma/s.',
     shardCost: 12,
     tier: 2,
     requires: ['karmicVessel'],
@@ -150,7 +150,7 @@ export const WHEEL_UPGRADES: WheelUpgradeDef[] = [
   {
     id: 'heavensInfrastructure',
     name: "Heaven's Infrastructure",
-    description: 'All buildings cost 10% less.',
+    description: 'All sources cost 10% less.',
     shardCost: 70,
     tier: 3,
     requires: ['earlyWarmth', 'samsarasGift', 'deepRoots'],
@@ -182,7 +182,7 @@ export const WHEEL_UPGRADES: WheelUpgradeDef[] = [
   {
     id: 'autoBuyer1',
     name: 'The Lazy Pilgrim',
-    description: 'Every 30 s, automatically buys 1 of the most expensive building you can afford.',
+    description: 'Every 30 s, automatically buys 1 of the most expensive source you can afford.',
     shardCost: 60,
     tier: 3,
     requires: ['deepRoots', 'reincarnatedWealthier'],
@@ -193,7 +193,7 @@ export const WHEEL_UPGRADES: WheelUpgradeDef[] = [
   {
     id: 'infiniteWheel',
     name: 'The Infinite Wheel',
-    description: 'Shards earned formula uses 1.1× exponent.',
+    description: 'Shards earned ×1.15.',
     shardCost: 250,
     tier: 4,
     requires: ['theLongView', 'enlightenedClicker', 'theSecondComing'],
@@ -225,7 +225,7 @@ export const WHEEL_UPGRADES: WheelUpgradeDef[] = [
   {
     id: 'autoBuyer2',
     name: 'Bulk Enlightenment',
-    description: 'Every 30 s, automatically buys max of the most expensive building you can afford.',
+    description: 'Every 30 s, automatically buys max of the most expensive source you can afford.',
     shardCost: 200,
     tier: 4,
     requires: ['autoBuyer1', 'heavensInfrastructure'],
@@ -236,7 +236,7 @@ export const WHEEL_UPGRADES: WheelUpgradeDef[] = [
   {
     id: 'eternalFoundation',
     name: 'Eternal Foundation',
-    description: 'All buildings start at level 5 each run. Post-prestige buildings unlock 1 prestige earlier.',
+    description: 'All sources start at level 5 each run. Post-prestige sources unlock 1 prestige earlier.',
     shardCost: 2000,
     tier: 5,
     requires: ['nirvanaBlueprint', 'divineMemory'],
@@ -268,7 +268,7 @@ export const WHEEL_UPGRADES: WheelUpgradeDef[] = [
   {
     id: 'autoBuyer3',
     name: 'Automatic Temple',
-    description: 'Every 30 s, buys max of the most expensive affordable building, then the next, and so on until nothing is affordable.',
+    description: 'Every 30 s, buys max of the most expensive affordable source, then the next, and so on until nothing is affordable.',
     shardCost: 1500,
     tier: 5,
     requires: ['autoBuyer2', 'eternalFoundation'],

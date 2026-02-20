@@ -2,8 +2,8 @@
 
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { fmt } from '@/lib/temple-of-joy/numbers';
-import { computeBuildingHPS } from '@/lib/temple-of-joy/engine';
-import type { BuildingId } from '@/lib/temple-of-joy/types';
+import { computeSourceHPS } from '@/lib/temple-of-joy/engine';
+import type { SourceId } from '@/lib/temple-of-joy/types';
 import HedoTreadmillGraph from './HedoTreadmillGraph';
 
 function Row({
@@ -70,10 +70,10 @@ export default function StatsPanel() {
 
   const state = useTempleStore(s => s);
   
-  // Calculate base HPS (sum of all building HPS)
-  const baseHPS = Object.entries(state.buildings).reduce((sum, [buildingId, owned]) => {
+  // Calculate base HPS (sum of all source HPS)
+  const baseHPS = Object.entries(state.sources).reduce((sum, [SourceId, owned]) => {
     if (owned === 0) return sum;
-    return sum + computeBuildingHPS(buildingId as BuildingId, state);
+    return sum + computeSourceHPS(SourceId as SourceId, state);
   }, 0);
 
   const ritualReady = ritualCooldown <= 0;
