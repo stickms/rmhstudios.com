@@ -4,13 +4,20 @@ import {
   V_MIN, V_MAX_NORMAL, V_MAX_BOOST, BOOST_MAX,
   STREAK_WINDOW_MS,
   roadLeft, roadRight, laneWidth,
+  CAR_WIDTH, CAR_HEIGHT,
 } from './constants';
+import { SpriteSheet, setPixelArt } from './sprites';
+import { VEHICLE_SPRITES, type VehicleSpriteKey } from './spriteAtlas';
+import type { RemoteCar } from './types';
 
 export class NeonDriftwayRenderer {
   private ctx: CanvasRenderingContext2D;
+  private sheet: SpriteSheet | null;
 
-  constructor(ctx: CanvasRenderingContext2D) {
+  constructor(ctx: CanvasRenderingContext2D, sheet?: SpriteSheet) {
     this.ctx = ctx;
+    this.sheet = sheet ?? null;
+    setPixelArt(ctx);
   }
 
   draw(game: NeonDriftwayEngine): void {
@@ -24,8 +31,19 @@ export class NeonDriftwayRenderer {
     this.drawRoad(game);
     this.drawObstacles(game);
     this.drawParticles(game);
+
+    // Remote players (behind local car)
+    if (game.isMultiplayer) {
+      this.drawRemotePlayers(game);
+    }
+
     this.drawCar(game);
     this.drawPopups(game);
+
+    // Slowdown overlay
+    if (game.isSlowed && (game.state === 'playing' || game.state === 'paused')) {
+      this.drawSlowdownOverlay();
+    }
 
     // Headlight overlay for Level 3
     if (game.level.headlightsEnabled && game.state === 'playing') {
@@ -37,6 +55,12 @@ export class NeonDriftwayRenderer {
     // HUD drawn without shake
     if (game.state === 'playing' || game.state === 'paused') {
       this.drawHUD(game);
+
+      // Multiplayer HUD additions
+      if (game.isMultiplayer) {
+        this.drawMultiplayerScoreboard(game);
+        this.drawAbilityHUD(game);
+      }
     }
 
     // Countdown
@@ -139,10 +163,15 @@ export class NeonDriftwayRenderer {
         this.drawHydroStrip(o.x, o.y, o.width, o.height);
       } else if (o.type === 'boost_pad') {
         this.drawBoostPad(o.x, o.y, o.width, o.height);
+      } else if (o.type === 'ability_slowdown') {
+        this.drawAbilityPickup(o.x, o.y, o.width, o.height);
       } else if (o.type === 'debris') {
         this.drawDebris(o.x, o.y, o.width, o.height, o.color);
       } else if (o.isTraffic) {
-        this.drawTrafficCar(o.x, o.y, o.width, o.height, o.color, o.signaling);
+        // Try sprite rendering for traffic vehicles (cars & trucks)
+        if (!this.tryDrawSprite(o.spriteKey, o.x, o.y, o.width, o.height)) {
+          this.drawTrafficCar(o.x, o.y, o.width, o.height, o.color, o.signaling);
+        }
       } else {
         // Barrier
         this.drawBarrier(o.x, o.y, o.width, o.height, o.color);
@@ -265,6 +294,13 @@ export class NeonDriftwayRenderer {
       ctx.fillRect(x - 6, y + h / 2, 12, flameH);
     }
 
+    // Try sprite rendering for player car
+    if (this.tryDrawSprite(car.spriteKey, x, y, w, h)) {
+      return; // Sprite drawn successfully
+    }
+
+    // ── Fallback: rectangle-based player car ──
+
     // Body
     ctx.fillStyle = '#00ccff';
     ctx.fillRect(x - w / 2, y - h / 2, w, h);
@@ -286,6 +322,26 @@ export class NeonDriftwayRenderer {
     ctx.fillStyle = '#ff0000';
     ctx.fillRect(x - w / 2 + 2, y + h / 2 - 4, 6, 3);
     ctx.fillRect(x + w / 2 - 8, y + h / 2 - 4, 6, 3);
+  }
+
+  /**
+   * Attempt to draw a vehicle sprite from the atlas.
+   * Returns true if sprite was drawn, false if fallback is needed.
+   */
+  private tryDrawSprite(
+    spriteKey: string | undefined,
+    x: number, y: number, w: number, h: number,
+  ): boolean {
+    if (!spriteKey || !this.sheet || !this.sheet.ready) return false;
+
+    const def = VEHICLE_SPRITES[spriteKey as VehicleSpriteKey];
+    if (!def) return false;
+
+    // Skip if rects are still placeholder (sw/sh = 1)
+    if (def.rect.sw <= 1 || def.rect.sh <= 1) return false;
+
+    this.sheet.draw(this.ctx, def, x, y, w, h);
+    return true;
   }
 
   // ── Headlight Overlay (Level 3) ──
@@ -468,6 +524,174 @@ export class NeonDriftwayRenderer {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(text, 0, 0);
+    ctx.restore();
+  }
+
+  // ── Ability Pickup ──
+
+  private drawAbilityPickup(x: number, y: number, w: number, h: number): void {
+    const ctx = this.ctx;
+    const t = Date.now() * 0.003;
+    const pulse = 0.8 + Math.sin(t) * 0.2;
+    const r = (w / 2) * pulse;
+
+    // Glow
+    const grad = ctx.createRadialGradient(x, y, r * 0.3, x, y, r * 1.5);
+    grad.addColorStop(0, 'rgba(176,64,255,0.6)');
+    grad.addColorStop(1, 'rgba(176,64,255,0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(x, y, r * 1.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Orb
+    ctx.fillStyle = '#b040ff';
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Inner highlight
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.beginPath();
+    ctx.arc(x - r * 0.25, y - r * 0.25, r * 0.4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // ── Remote Players ──
+
+  private drawRemotePlayers(game: NeonDriftwayEngine): void {
+    const ctx = this.ctx;
+    const now = Date.now();
+
+    for (const [, remote] of game.remotePlayers) {
+      // Interpolate x position
+      const elapsed = now - remote.lastUpdate;
+      const t = Math.min(elapsed / 100, 1); // 100ms interpolation window
+      const drawX = remote.prevX + (remote.targetX - remote.prevX) * t;
+      const drawY = game.car.y; // Same Y as local car (top-down view)
+
+      ctx.save();
+      ctx.globalAlpha = 0.5;
+
+      // Try sprite, fallback to ghost rect
+      if (!this.tryDrawSprite(remote.spriteKey, drawX, drawY, CAR_WIDTH, CAR_HEIGHT)) {
+        // Ghost rectangle
+        ctx.fillStyle = 'rgba(100,180,255,0.4)';
+        ctx.fillRect(drawX - CAR_WIDTH / 2, drawY - CAR_HEIGHT / 2, CAR_WIDTH, CAR_HEIGHT);
+        ctx.strokeStyle = 'rgba(100,180,255,0.6)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(drawX - CAR_WIDTH / 2, drawY - CAR_HEIGHT / 2, CAR_WIDTH, CAR_HEIGHT);
+      }
+
+      ctx.globalAlpha = 1;
+
+      // Name label
+      ctx.fillStyle = 'rgba(0,0,0,0.6)';
+      ctx.fillRect(drawX - 30, drawY - CAR_HEIGHT / 2 - 18, 60, 14);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '10px monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(remote.name.slice(0, 10), drawX, drawY - CAR_HEIGHT / 2 - 11);
+
+      ctx.restore();
+    }
+  }
+
+  // ── Multiplayer Scoreboard ──
+
+  private drawMultiplayerScoreboard(game: NeonDriftwayEngine): void {
+    const ctx = this.ctx;
+    const entries: { name: string; score: number; isSelf: boolean }[] = [];
+
+    // Add local player
+    entries.push({ name: 'You', score: Math.round(game.score), isSelf: true });
+
+    // Add remote players
+    for (const [, remote] of game.remotePlayers) {
+      entries.push({ name: remote.name, score: Math.round(remote.score), isSelf: false });
+    }
+
+    // Sort descending
+    entries.sort((a, b) => b.score - a.score);
+
+    const x = CANVAS_WIDTH - 10;
+    const startY = 68;
+    const lineH = 16;
+    const boxW = 160;
+    const boxH = 20 + entries.length * lineH;
+
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fillRect(x - boxW, startY, boxW, boxH);
+
+    ctx.font = 'bold 9px monospace';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = '#888888';
+    ctx.fillText('SCOREBOARD', x - boxW + 8, startY + 4);
+
+    for (let i = 0; i < entries.length; i++) {
+      const e = entries[i];
+      const ey = startY + 18 + i * lineH;
+      ctx.fillStyle = e.isSelf ? '#00ffff' : '#cccccc';
+      ctx.font = e.isSelf ? 'bold 11px monospace' : '11px monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText(`${i + 1}. ${e.name}`, x - boxW + 8, ey);
+      ctx.textAlign = 'right';
+      ctx.fillText(e.score.toLocaleString(), x - 8, ey);
+    }
+  }
+
+  // ── Ability HUD ──
+
+  private drawAbilityHUD(game: NeonDriftwayEngine): void {
+    const ctx = this.ctx;
+    const charges = game.car.abilityCharges;
+    const maxCharges = 3;
+
+    const x = 16;
+    const y = CANVAS_HEIGHT - 60;
+
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fillRect(x - 4, y - 4, 80, 28);
+
+    ctx.font = 'bold 9px monospace';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = '#b040ff';
+    ctx.fillText('ABILITY [E]', x, y);
+
+    // Charge dots
+    for (let i = 0; i < maxCharges; i++) {
+      const dx = x + 4 + i * 20;
+      const dy = y + 14;
+      ctx.beginPath();
+      ctx.arc(dx + 6, dy, 5, 0, Math.PI * 2);
+      if (i < charges) {
+        ctx.fillStyle = '#b040ff';
+        ctx.fill();
+      } else {
+        ctx.strokeStyle = '#555555';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+    }
+  }
+
+  // ── Slowdown Overlay ──
+
+  private drawSlowdownOverlay(): void {
+    const ctx = this.ctx;
+    ctx.save();
+    ctx.fillStyle = 'rgba(40,80,200,0.15)';
+    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+    // "SLOWED!" text
+    ctx.fillStyle = 'rgba(68,136,255,0.8)';
+    ctx.font = 'bold 24px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('SLOWED!', CANVAS_WIDTH / 2, 80);
     ctx.restore();
   }
 }
