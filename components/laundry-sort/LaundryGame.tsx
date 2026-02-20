@@ -67,6 +67,10 @@ export function LaundryGame() {
   const [time, setTime] = useState(60);
   const [gameActive, setGameActive] = useState(false);
   const [gameOver, setGameOver] = useState(false);
+  const [finalScore, setFinalScore] = useState(0);
+
+  // Ref that the spawn loop reads to know if it should keep spawning
+  const spawnActiveRef = useRef(false);
 
   const gameStateRef = useRef({
     clothing: [] as Clothing[],
@@ -82,6 +86,8 @@ export function LaundryGame() {
   useEffect(() => {
     if (!gameActive || gameOver) return;
 
+    spawnActiveRef.current = true;
+
     if (gameStateRef.current.gameStartTime === 0) {
       gameStateRef.current.gameStartTime = Date.now();
     }
@@ -91,14 +97,17 @@ export function LaundryGame() {
     const maxSpawnInterval = 2000; // Initial interval
 
     const spawn = () => {
+      // Stop spawning immediately when the flag is cleared
+      if (!spawnActiveRef.current) return;
+
       const now = Date.now();
-      
+
       // Calculate current spawn interval based on elapsed time
       const elapsedMs = now - gameStateRef.current.gameStartTime;
       const elapsedSeconds = Math.min(elapsedMs / 1000, 60);
       const progressRatio = elapsedSeconds / 60; // 0 to 1 as time progresses
       const currentInterval = maxSpawnInterval - (progressRatio * (maxSpawnInterval - minSpawnInterval));
-      
+
       if (now - lastSpawnTime > currentInterval) {
         lastSpawnTime = now;
 
@@ -135,13 +144,16 @@ export function LaundryGame() {
           }, 15000);
         }
       }
-      
+
       requestAnimationFrame(spawn);
     };
 
     const spawnAnimFrameId = requestAnimationFrame(spawn);
 
-    return () => cancelAnimationFrame(spawnAnimFrameId);
+    return () => {
+      spawnActiveRef.current = false;
+      cancelAnimationFrame(spawnAnimFrameId);
+    };
   }, [gameActive, gameOver]);
 
   // Game loop
@@ -152,6 +164,7 @@ export function LaundryGame() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    let animFrameId: number;
     const animate = () => {
       // Clear canvas
       ctx.fillStyle = '#0f0f1e';
@@ -274,23 +287,23 @@ export function LaundryGame() {
         if (clothing.type === 'shirt') {
           // Draw shirt with collar and sleeves
           ctx.fillStyle = clothing.color;
-          
+
           // Main body
           ctx.fillRect(-clothing.width / 2, -clothing.height / 2, clothing.width, clothing.height);
-          
+
           // Left sleeve
           ctx.fillRect(-clothing.width / 2 - 8, -clothing.height / 4, 8, clothing.height / 2);
-          
+
           // Right sleeve
           ctx.fillRect(clothing.width / 2, -clothing.height / 4, 8, clothing.height / 2);
-          
+
           // Collar triangle at top
           ctx.beginPath();
           ctx.moveTo(-clothing.width / 4, -clothing.height / 2);
           ctx.lineTo(clothing.width / 4, -clothing.height / 2);
           ctx.lineTo(0, -clothing.height / 2 + 8);
           ctx.fill();
-          
+
           // Button line down the middle
           ctx.strokeStyle = 'rgba(0,0,0,0.3)';
           ctx.lineWidth = 1;
@@ -298,7 +311,7 @@ export function LaundryGame() {
           ctx.moveTo(0, -clothing.height / 2 + 5);
           ctx.lineTo(0, clothing.height / 2 - 5);
           ctx.stroke();
-          
+
           // Buttons
           ctx.fillStyle = 'rgba(0,0,0,0.2)';
           for (let i = -2; i <= 2; i++) {
@@ -307,17 +320,17 @@ export function LaundryGame() {
         } else {
           // Draw pants
           ctx.fillStyle = clothing.color;
-          
+
           // Left leg
           ctx.fillRect(-clothing.width / 2, -clothing.height / 2, clothing.width / 2 - 2, clothing.height);
-          
+
           // Right leg
           ctx.fillRect(2, -clothing.height / 2, clothing.width / 2 - 2, clothing.height);
-          
+
           // Waistband at top
           ctx.fillStyle = 'rgba(0,0,0,0.2)';
           ctx.fillRect(-clothing.width / 2, -clothing.height / 2, clothing.width, 4);
-          
+
           // Seam down the middle
           ctx.strokeStyle = 'rgba(0,0,0,0.15)';
           ctx.lineWidth = 1;
@@ -340,10 +353,12 @@ export function LaundryGame() {
         ctx.restore();
       });
 
-      requestAnimationFrame(animate);
+      animFrameId = requestAnimationFrame(animate);
     };
 
-    animate();
+    animFrameId = requestAnimationFrame(animate);
+
+    return () => cancelAnimationFrame(animFrameId);
   }, [gameActive, gameOver]);
 
   // Timer
@@ -353,8 +368,15 @@ export function LaundryGame() {
     const interval = setInterval(() => {
       setTime(t => {
         if (t <= 1) {
+          // Stop spawning immediately
+          spawnActiveRef.current = false;
           setGameActive(false);
           setGameOver(true);
+          // Capture final score for auto-submit
+          setScore(currentScore => {
+            setFinalScore(currentScore);
+            return currentScore;
+          });
           gameStateRef.current.clothing = [];
           gameStateRef.current.draggedClothing = [];
           gameStateRef.current.isPointerDown = false;
@@ -532,18 +554,27 @@ export function LaundryGame() {
         onTouchEnd={handleTouchEnd}
       />
 
-      <LaundryUI 
-        score={score} 
-        time={time} 
-        gameActive={gameActive} 
-        gameOver={gameOver} 
+      <LaundryUI
+        score={score}
+        time={time}
+        gameActive={gameActive}
+        gameOver={gameOver}
+        finalScore={finalScore}
         onStart={(username) => {
-          setGameActive(true);
-          setGameOver(false);
+          // Fully reset all game state for a fresh game
+          gameStateRef.current.clothing = [];
+          gameStateRef.current.clothingId = 0;
+          gameStateRef.current.draggedClothing = [];
+          gameStateRef.current.dragOffsetX = 0;
+          gameStateRef.current.dragOffsetY = 0;
+          gameStateRef.current.gameStartTime = 0;
+          gameStateRef.current.isPointerDown = false;
           setScore(0);
+          setFinalScore(0);
           setTime(60);
-          // Username handling logic can be added here if needed for saving scores later
-        }} 
+          setGameOver(false);
+          setGameActive(true);
+        }}
       />
     </div>
   );

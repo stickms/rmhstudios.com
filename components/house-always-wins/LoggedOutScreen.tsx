@@ -42,7 +42,7 @@ export function LoggedOutScreen() {
         </Link>
 
         <Link
-          href="/"
+          href="/games"
           className="mt-6 flex items-center gap-2 text-neutral-600 hover:text-neutral-400 text-sm transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />

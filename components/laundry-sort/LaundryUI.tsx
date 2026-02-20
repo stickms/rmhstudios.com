@@ -18,19 +18,22 @@ export function LaundryUI({
   time,
   gameActive,
   gameOver,
+  finalScore,
   onStart,
 }: {
   score: number;
   time: number;
   gameActive: boolean;
   gameOver: boolean;
+  finalScore: number;
   onStart: (username: string) => void;
 }) {
   const usernameRef = useRef<string>('');
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
   const [leaderboardError, setLeaderboardError] = useState<string | null>(null);
-  
+  const [scoreSubmitted, setScoreSubmitted] = useState(false);
+
   const session = authClient.useSession();
   const router = useRouter();
 
@@ -60,6 +63,15 @@ export function LaundryUI({
     }
   }, [gameActive, gameOver, fetchLeaderboard]);
 
+  // Auto-submit score when game ends
+  useEffect(() => {
+    if (gameOver && !scoreSubmitted && session.data) {
+      const username = session.data.user.name || (session.data.user as any).username || 'User';
+      setScoreSubmitted(true);
+      handleSubmitScore(username);
+    }
+  }, [gameOver, scoreSubmitted, session.data]);
+
   const handleSubmitScore = async (username: string) => {
     if (!username) return;
 
@@ -67,18 +79,17 @@ export function LaundryUI({
       const res = await fetch('/api/laundry-sort/score', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, score }),
+        body: JSON.stringify({ username, score: finalScore }),
       });
 
       if (!res.ok) {
-        alert('Failed to submit score');
+        console.error('Failed to submit score');
         return;
       }
 
       await fetchLeaderboard();
     } catch (e) {
       console.error('Error submitting score:', e);
-      alert('Error submitting score');
     }
   };
 
@@ -119,55 +130,53 @@ export function LaundryUI({
               {gameOver && (
                 <div className="mt-4 rounded border border-red-500/40 bg-black/60 p-4">
                   <h3 className="text-red-400 text-lg font-black mb-2">GAME OVER</h3>
-                  <div className="text-white text-3xl font-black mb-4">{score.toString().padStart(6, '0')}</div>
+                  <div className="text-white text-3xl font-black mb-4">{finalScore.toString().padStart(6, '0')}</div>
 
                   {!session.data ? (
-                      <div className="mb-4">
-                          <p className="text-xs text-red-300 mb-2">Sign in to save your score!</p>
-                          <Button
-                              onClick={() => router.push('/login')}
-                              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold"
-                          >
-                              Sign In to Submit
-                          </Button>
-                      </div>
+                    <div className="mb-4">
+                      <p className="text-xs text-red-300 mb-2">Sign in to save your score!</p>
+                      <Button
+                        onClick={() => router.push('/login')}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold"
+                      >
+                        Sign In to Submit
+                      </Button>
+                    </div>
                   ) : (
-                      <div className="flex gap-2">
-                        <Button
-                          onClick={() => handleSubmitScore(session.data?.user.name || (session.data?.user as any).username || 'User')}
-                          className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold"
-                        >
-                          Submit Score
-                        </Button>
-                        <Button
-                          onClick={() => onStart(session.data?.user.name || (session.data?.user as any).username || 'User')}
-                          variant="outline"
-                          className="flex-1 border-cyan-500 text-cyan-400 hover:bg-cyan-500/10"
-                        >
-                          <RotateCcw className="w-4 h-4" />
-                          Play Again
-                        </Button>
-                      </div>
+                    <div className="flex flex-col gap-2">
+                      <p className="text-xs text-green-300">{scoreSubmitted ? '✓ Score submitted!' : 'Submitting score…'}</p>
+                      <Button
+                        onClick={() => {
+                          setScoreSubmitted(false);
+                          onStart(session.data?.user.name || (session.data?.user as any).username || 'User');
+                        }}
+                        variant="outline"
+                        className="w-full border-cyan-500 text-cyan-400 hover:bg-cyan-500/10"
+                      >
+                        <RotateCcw className="w-4 h-4" />
+                        Play Again
+                      </Button>
+                    </div>
                   )}
                 </div>
               )}
 
               {!gameOver && (
                 !session.data ? (
-                     <Button
-                      onClick={() => router.push('/login')}
-                      className="bg-zinc-800 hover:bg-zinc-700 text-white font-bold px-8 py-3 rounded-lg flex items-center gap-2 text-lg mx-auto"
-                    >
-                      Sign In to Play
-                    </Button>
+                  <Button
+                    onClick={() => router.push('/login')}
+                    className="bg-zinc-800 hover:bg-zinc-700 text-white font-bold px-8 py-3 rounded-lg flex items-center gap-2 text-lg mx-auto"
+                  >
+                    Sign In to Play
+                  </Button>
                 ) : (
-                    <Button
-                      onClick={() => onStart(session.data?.user.name || (session.data?.user as any).username || 'User')}
-                      className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-black font-bold px-8 py-3 rounded-lg flex items-center gap-2 text-lg mx-auto"
-                    >
-                      <Play className="w-5 h-5" />
-                      Start Game
-                    </Button>
+                  <Button
+                    onClick={() => onStart(session.data?.user.name || (session.data?.user as any).username || 'User')}
+                    className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-black font-bold px-8 py-3 rounded-lg flex items-center gap-2 text-lg mx-auto"
+                  >
+                    <Play className="w-5 h-5" />
+                    Start Game
+                  </Button>
                 )
               )}
             </div>

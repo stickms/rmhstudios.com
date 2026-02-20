@@ -17,7 +17,7 @@ export default function CursedLogicPage() {
   return (
     <main className="fixed inset-0 bg-[#0a0a0f] flex flex-col overflow-hidden">
       <div className="absolute top-3 left-3 z-50">
-        <Link href="/">
+        <Link href="/games">
           <Button
             variant="ghost"
             size="sm"

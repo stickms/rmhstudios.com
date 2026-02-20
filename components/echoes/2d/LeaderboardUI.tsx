@@ -89,9 +89,8 @@ export function LeaderboardPanel({ username }: { username: string }) {
             <div className="flex gap-1 bg-white/5 rounded-lg p-1">
                 {TABS.map(t => (
                     <button key={t.key} onClick={() => setActiveTab(t.key)}
-                        className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${
-                            activeTab === t.key ? 'bg-purple-600 text-white' : 'text-white/40 hover:text-white/70'
-                        }`}>
+                        className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${activeTab === t.key ? 'bg-purple-600 text-white' : 'text-white/40 hover:text-white/70'
+                            }`}>
                         {t.label}
                     </button>
                 ))}
@@ -106,12 +105,10 @@ export function LeaderboardPanel({ username }: { username: string }) {
                 <div className="space-y-1 max-h-80 overflow-y-auto pr-1">
                     {entries.map((e, i) => (
                         <div key={e.username}
-                            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${
-                                e.username === username ? 'bg-purple-500/20 border border-purple-500/30' : 'bg-white/5'
-                            }`}>
-                            <span className={`w-5 text-center font-bold font-mono text-xs shrink-0 ${
-                                i === 0 ? 'text-yellow-400' : i === 1 ? 'text-gray-300' : i === 2 ? 'text-amber-600' : 'text-white/30'
-                            }`}>{i + 1}</span>
+                            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${e.username === username ? 'bg-purple-500/20 border border-purple-500/30' : 'bg-white/5'
+                                }`}>
+                            <span className={`w-5 text-center font-bold font-mono text-xs shrink-0 ${i === 0 ? 'text-yellow-400' : i === 1 ? 'text-gray-300' : i === 2 ? 'text-amber-600' : 'text-white/30'
+                                }`}>{i + 1}</span>
                             <span className="flex-1 text-white font-mono text-xs truncate">{e.username}</span>
                             <span className="text-purple-300 font-mono font-bold text-sm">{tab.format(e)}</span>
                             <span className="text-white/30 text-xs font-mono shrink-0">{tab.sub(e)}</span>
@@ -139,9 +136,9 @@ export function StartScreen() {
         }
     }, [setUserName]);
 
-    const handleSetUsername = (name: string) => { 
-        setUsername(name); 
-        setShowPrompt(false); 
+    const handleSetUsername = (name: string) => {
+        setUsername(name);
+        setShowPrompt(false);
     };
 
     return (
@@ -151,7 +148,7 @@ export function StartScreen() {
                     className="absolute inset-0 flex flex-col lg:flex-row z-50 bg-black overflow-y-auto">
                     {/* Main Site Back Button */}
                     <div className="absolute top-4 left-4 lg:top-8 lg:left-8 z-50">
-                        <Link href="/">
+                        <Link href="/games">
                             <Button variant="ghost" className="text-white/20 hover:text-white flex items-center gap-2 bg-white/5 shadow-xl border border-white/10 backdrop-blur-md px-4 py-4 lg:px-6 lg:py-6 rounded-full transition-all hover:bg-white/10">
                                 <ArrowLeft className="w-5 h-5" />
                                 <span className="font-mono text-xs tracking-widest uppercase hidden md:inline">System Exit</span>
