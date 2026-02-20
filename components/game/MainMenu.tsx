@@ -12,7 +12,7 @@ import { BeatDetector } from '@/lib/audio/BeatDetector'; // New Import
 import { MultiplayerFactory } from '@/lib/game/MultiplayerFactory';
 import { BeatMap } from '@/lib/game/types';
 import { authClient } from "@/lib/auth-client";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { SongLibrary } from '@/components/game/SongLibrary';
 import { CalibrationScreen } from '@/components/game/CalibrationScreen';
 import { MultiplayerLobby } from '@/components/game/MultiplayerLobby';
@@ -60,12 +60,20 @@ export function MainMenu({ engine }: MainMenuProps) {
     const { setStatus, setUserName, userName, keybinds, setKeybinds, volume, setVolume, setIsLoadingSong, setLoadingProgress, setIsMultiplayer, setCountdown } = useGameStore();
     const session = authClient.useSession();
     const router = useRouter();
+    const searchParams = useSearchParams();
     // Remove local state
     // const [volume, setVolume] = React.useState(100); 
     const [isLoading, setIsLoading] = React.useState(false);
     const [showSettings, setShowSettings] = React.useState(false);
     const [showCalibration, setShowCalibration] = React.useState(false);
     const [showMultiplayer, setShowMultiplayer] = React.useState(false);
+
+    // Auto-open multiplayer lobby when joining via invite link
+    React.useEffect(() => {
+        if (searchParams.get('lobby')) {
+            setShowMultiplayer(true);
+        }
+    }, [searchParams]);
     
     // Apply volume on mount
     React.useEffect(() => {
@@ -203,28 +211,18 @@ export function MainMenu({ engine }: MainMenuProps) {
 
     const [leaderboard, setLeaderboard] = React.useState<any[]>([]);
 
-    const handleMultiplayerStart = async (lobbyId: string) => {
-        if (!engine || !selectedSong) {
-            console.error("Cannot start multiplayer: No engine or song", { engine: !!engine, song: !!selectedSong });
+    const handleMultiplayerStart = async (lobbyId: string, song: any) => {
+        if (!engine || !song) {
+            console.error("Cannot start multiplayer: No engine or song", { engine: !!engine, song: !!song });
             return;
         }
         engine.setLobbyId(lobbyId);
         setIsMultiplayer(true);
-        await handleStartGame(selectedSong);
         setShowMultiplayer(false);
+        await handleStartGame(song);
     };
 
-    React.useEffect(() => {
-        const mp = MultiplayerFactory.getInstance();
-        const onInitLoading = (data: { song: any }) => {
-            console.log("Multiplayer Match Starting. Loading:", data.song);
-            if (data.song) {
-                handleStartGame(data.song);
-            }
-        };
-        mp.on('init_loading', onInitLoading);
-        return () => mp.off('init_loading', onInitLoading);
-    }, [setStatus]);
+
 
     if (showCalibration) {
         return <CalibrationScreen onBack={() => setShowCalibration(false)} />;

@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MultiplayerFactory } from '@/lib/game/MultiplayerFactory'; // Named import
 import { useGameStore } from '@/lib/store/useGameStore';
 import { authClient } from "@/lib/auth-client";
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Copy, Share2, Check } from 'lucide-react';
 
@@ -29,7 +29,7 @@ interface LobbyData {
     song: any | null;
 }
 
-export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: () => void, onStart: (lobbyId: string) => void, onSelectSong: (song: any) => void }) {
+export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: () => void, onStart: (lobbyId: string, song: any) => void, onSelectSong: (song: any) => void }) {
     // const { userName, setUserName } = useGameStore(); // No longer used locally here
 
     const [lobbyIdInput, setLobbyIdInput] = React.useState('');
@@ -39,7 +39,19 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
     const [isCopied, setIsCopied] = React.useState(false);
     
     const searchParams = useSearchParams();
+    const router = useRouter();
     const mp = MultiplayerFactory.getInstance();
+
+    const handleLeave = () => {
+        mp.disconnect();
+        // Strip the ?lobby= param from the URL without a full navigation
+        if (searchParams.get('lobby')) {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('lobby');
+            router.replace(url.pathname + (url.search || ''));
+        }
+        onBack();
+    };
 
     React.useEffect(() => {
         mp.connect();
@@ -51,7 +63,7 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
             
             // If game started
             if (data.status === 'PLAYING') {
-                onStart(data.lobbyId);
+                onStart(data.lobbyId, data.song);
             }
         };
 
@@ -199,7 +211,7 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
                             <Button 
                                 variant="ghost"
                                 className="flex-1 text-slate-500 hover:text-red-500"
-                                onClick={() => { mp.disconnect(); onBack(); }}
+                                onClick={handleLeave}
                             >
                                 LEAVE
                             </Button>
@@ -240,7 +252,7 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
                     >
                         SIGN IN / SIGN UP
                     </Button>
-                    <Button variant="ghost" onClick={onBack} className="text-slate-400 hover:text-slate-600">
+                    <Button variant="ghost" onClick={handleLeave} className="text-slate-400 hover:text-slate-600">
                         CANCEL
                     </Button>
                  </Card>
@@ -292,7 +304,7 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
                     <Button 
                         variant="ghost"
                         className="w-full text-slate-400 hover:text-slate-600"
-                        onClick={onBack}
+                        onClick={handleLeave}
                     >
                         BACK TO MENU
                     </Button>

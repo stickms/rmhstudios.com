@@ -125,11 +125,11 @@ export class GameEngine {
              store.setMaxCombo(0);
              store.setAccuracy(0);
              store.setIsPaused(false);
-             store.setIsMultiplayer(false);
              // Do not call store.reset() here as it clears everything including status to MENU
         }
 
-        this.lobbyId = null;
+        // NOTE: lobbyId and isMultiplayer are NOT reset here — they are set before
+        // loadMap() and must survive through it. Clear them at exit-to-menu time instead.
         this.audioManager.stop();
         this.audioManager.setPlaybackRate(this.speedMultiplier);
     }

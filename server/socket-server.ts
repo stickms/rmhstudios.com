@@ -117,9 +117,26 @@ io.on("connection", (socket: Socket) => {
           p.health = 100;
           p.isReady = false; 
       });
+
+      // Broadcast updated lobby status so clients transition to the game screen
+      io.to(lobbyId).emit("lobby_update", {
+          lobbyId,
+          players: Array.from(lobby.players.values()),
+          hostId: lobby.hostId,
+          status: lobby.status,
+          song: lobby.song
+      });
       
       // Emit signal to start loading assets
       io.to(lobbyId).emit("init_loading", { song: lobby.song });
+
+      // Immediately broadcast loading status (all players unloaded)
+      const initialLoadingStatus = Array.from(lobby.players.values()).map(p => ({
+          id: p.id,
+          name: p.name,
+          loaded: false
+      }));
+      io.to(lobbyId).emit("loading_update", { players: initialLoadingStatus });
   });
 
   // PLAYER LOADED (Ready to start countdown)
@@ -131,6 +148,14 @@ io.on("connection", (socket: Socket) => {
       if (player) {
           player.isReady = true;
           console.log(`Player ${player.name} loaded in lobby ${lobbyId}`);
+
+          // Broadcast per-player loading status to everyone
+          const loadingStatus = Array.from(lobby.players.values()).map(p => ({
+              id: p.id,
+              name: p.name,
+              loaded: p.isReady
+          }));
+          io.to(lobbyId).emit("loading_update", { players: loadingStatus });
           
           // Check if all loaded
           const allLoaded = Array.from(lobby.players.values()).every(p => p.isReady);

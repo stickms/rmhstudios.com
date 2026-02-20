@@ -42,6 +42,9 @@ export function GameCanvas() {
     const [showMobileButtons, setShowMobileButtons] = useState(false);
 
     const { status, keybinds, isPaused, setIsPaused, isLoadingSong, loadingProgress, countdown, setCountdown, isMultiplayer, volume, setVolume, audioOffset, setAudioOffset, setKeybinds } = useGameStore();
+
+    // Per-player loading state for multiplayer
+    const [loadingPlayers, setLoadingPlayers] = useState<{ id: string; name: string; loaded: boolean }[]>([]);
     const keybindsRef = useRef(keybinds);
     useEffect(() => { keybindsRef.current = keybinds; }, [keybinds]);
 
@@ -149,14 +152,18 @@ export function GameCanvas() {
         };
 
         mp.on('start_countdown', onStartCountdown);
-        
+
         const onInitLoading = () => {
             console.log("Game initialization signaled by server");
-            // If we are already playing or in menu, this ensures we show the overlay
-            // Actually, we might need to trigger song loading if not already done.
-            // But MainMenu usually handles selection.
+            // Reset per-player loading status when a new loading round starts
+            setLoadingPlayers([]);
         };
         mp.on('init_loading', onInitLoading);
+
+        const onLoadingUpdate = (data: { players: { id: string; name: string; loaded: boolean }[] }) => {
+            setLoadingPlayers(data.players);
+        };
+        mp.on('loading_update', onLoadingUpdate);
 
         const onGameStarted = () => {
             const store = useGameStore.getState();
@@ -168,6 +175,7 @@ export function GameCanvas() {
         return () => {
             mp.off('start_countdown', onStartCountdown);
             mp.off('init_loading', onInitLoading);
+            mp.off('loading_update', onLoadingUpdate);
             mp.off('game_started', onGameStarted);
         };
     }, [engine, setCountdown]);
@@ -224,7 +232,9 @@ export function GameCanvas() {
         const handleGlobalClick = (e: MouseEvent | TouchEvent) => {
             if ((e.target as HTMLElement).closest('[data-mobile-btn]')) return;
             if ((e.target as HTMLElement).tagName === 'BUTTON') return;
+            if ((e.target as HTMLElement).closest('[data-settings-panel]')) return;
             if (useGameStore.getState().isPaused) return;
+            if (isMultiplayer && showSettings) return; // settings panel open — don't fire input
             if (status !== 'PLAYING') return;
             if (useGameStore.getState().countdown > 0) return;
 
@@ -249,7 +259,11 @@ export function GameCanvas() {
     }, [engine, keybinds, status, handleInput, isMultiplayer, setKeybinds]);
 
     useEffect(() => {
-        if (status === 'MENU' && engine) engine.reset();
+        if (status === 'MENU' && engine) {
+            engine.setLobbyId(null);
+            useGameStore.getState().setIsMultiplayer(false);
+            engine.reset();
+        }
     }, [status, engine]);
 
     // ── Render ─────────────────────────────────────────────────────────────────
@@ -564,6 +578,7 @@ export function GameCanvas() {
                                     setShowSettings(prev => !prev);
                                 } else {
                                     const store = useGameStore.getState();
+                                    // Never pause in multiplayer — only toggle settings panel
                                     store.isPaused ? engine?.resume() : engine?.pause();
                                 }
                             }}
@@ -627,70 +642,72 @@ export function GameCanvas() {
                                 <Button size="lg" variant="ghost" className="w-full text-slate-500 hover:text-slate-700 hover:bg-transparent shadow-[5px_5px_10px_#a3b1c6,-5px_-5px_10px_#ffffff] active:shadow-[inset_5px_5px_10px_#a3b1c6,inset_-5px_-5px_10px_#ffffff]"
                                     onClick={() => { setListeningForKey(null); engine?.reset(); engine?.start(); setIsPaused(false); }}>RETRY</Button>
                                 <Button size="lg" variant="ghost" className="w-full text-red-400 hover:text-red-500 hover:bg-transparent"
-                                    onClick={() => { setListeningForKey(null); useGameStore.getState().setStatus('MENU'); setIsPaused(false); engine?.reset(); }}>QUIT</Button>
+                                    onClick={() => { setListeningForKey(null); useGameStore.getState().setStatus('MENU'); useGameStore.getState().setIsMultiplayer(false); setIsPaused(false); engine?.reset(); engine?.setLobbyId(null); }}>QUIT</Button>
                             </div>
                         </div>
                     )}
 
-                    {/* Multiplayer Settings Overlay (game keeps running) */}
+                    {/* Multiplayer Settings Panel — slides in from top-right, no blur, game fully runs behind */}
                     {showSettings && status === 'PLAYING' && isMultiplayer && (
-                        <div className="absolute inset-0 z-50 bg-black/10 backdrop-blur-sm flex items-center justify-center">
-                            <div className="bg-[#e0e5ec] p-6 rounded-[30px] shadow-[9px_9px_16px_#a3b1c6,-9px_-9px_16px_#ffffff] flex flex-col gap-4 items-center w-full max-w-sm mx-4">
-                                <div className="flex w-full items-center justify-between">
-                                    <h2 className="text-2xl font-black text-slate-700">SETTINGS</h2>
-                                    <button className="w-8 h-8 rounded-full bg-[#e0e5ec] shadow-[3px_3px_6px_#a3b1c6,-3px_-3px_6px_#ffffff] flex items-center justify-center text-slate-500 hover:text-slate-700 active:shadow-[inset_3px_3px_6px_#a3b1c6,inset_-3px_-3px_6px_#ffffff]"
-                                        onClick={() => setShowSettings(false)}>
-                                        <X className="w-4 h-4" />
-                                    </button>
-                                </div>
-
-                                <div className="w-full bg-[#d1d9e6] rounded-2xl p-4 shadow-[inset_3px_3px_6px_#a3b1c6,inset_-3px_-3px_6px_#ffffff] flex flex-col gap-4">
-                                    {/* Volume */}
-                                    <div className="flex flex-col gap-1.5">
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Volume</span>
-                                            <span className="text-sm font-bold text-blue-500">{volume}%</span>
-                                        </div>
-                                        <Slider value={[volume]} min={0} max={100} step={1} onValueChange={([v]) => setVolume(v)} className="w-full" />
-                                    </div>
-
-                                    {/* Audio Offset */}
-                                    <div className="flex items-center justify-between gap-2">
-                                        <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Audio Offset</span>
-                                        <div className="flex items-center gap-2">
-                                            <button className="w-7 h-7 rounded-lg bg-[#e0e5ec] shadow-[3px_3px_6px_#a3b1c6,-3px_-3px_6px_#ffffff] text-slate-600 font-bold text-sm flex items-center justify-center active:shadow-[inset_3px_3px_6px_#a3b1c6,inset_-3px_-3px_6px_#ffffff]"
-                                                onClick={() => setAudioOffset(audioOffset - 5)}>−</button>
-                                            <span className="text-sm font-bold text-slate-600 w-16 text-center font-mono">{audioOffset > 0 ? '+' : ''}{audioOffset}ms</span>
-                                            <button className="w-7 h-7 rounded-lg bg-[#e0e5ec] shadow-[3px_3px_6px_#a3b1c6,-3px_-3px_6px_#ffffff] text-slate-600 font-bold text-sm flex items-center justify-center active:shadow-[inset_3px_3px_6px_#a3b1c6,inset_-3px_-3px_6px_#ffffff]"
-                                                onClick={() => setAudioOffset(audioOffset + 5)}>+</button>
-                                        </div>
-                                    </div>
-
-                                    {/* Keybinds */}
-                                    <div className="flex flex-col gap-2">
-                                        <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Keybinds</span>
-                                        {(['lane1', 'lane2'] as const).map((lane, i) => (
-                                            <div key={lane} className="flex items-center justify-between">
-                                                <span className="text-xs font-bold text-slate-500">Lane {i + 1}</span>
-                                                <button
-                                                    className={`px-3 py-1.5 rounded-lg text-xs font-black font-mono transition-all ${
-                                                        listeningForKey === lane
-                                                            ? 'bg-blue-500 text-white shadow-[inset_3px_3px_6px_rgba(0,0,0,0.2)] animate-pulse'
-                                                            : 'bg-[#e0e5ec] text-slate-700 shadow-[3px_3px_6px_#a3b1c6,-3px_-3px_6px_#ffffff]'
-                                                    }`}
-                                                    onClick={() => setListeningForKey(listeningForKey === lane ? null : lane)}
-                                                >
-                                                    {listeningForKey === lane ? 'press a key…' : keybinds[lane].replace('ArrowUp', '↑').replace('ArrowDown', '↓').replace('ArrowLeft', '←').replace('ArrowRight', '→').replace('Key', '')}
-                                                </button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                <p className="text-[11px] text-slate-400 font-bold">Game continues while settings are open.</p>
-                                <Button size="lg" variant="ghost" className="w-full text-red-400 hover:text-red-500 hover:bg-transparent"
-                                    onClick={() => { setShowSettings(false); useGameStore.getState().setStatus('MENU'); engine?.reset(); }}>EXIT GAME</Button>
+                        <div
+                            data-settings-panel
+                            className="absolute top-14 right-3 z-50 w-72 bg-[#e0e5ec] rounded-[20px] shadow-[9px_9px_16px_#a3b1c6,-9px_-9px_16px_#ffffff] flex flex-col gap-3 p-4 animate-in slide-in-from-top-2 fade-in duration-200"
+                            onMouseDown={e => e.stopPropagation()}
+                            onTouchStart={e => e.stopPropagation()}
+                        >
+                            <div className="flex items-center justify-between">
+                                <h2 className="text-sm font-black text-slate-600 uppercase tracking-widest">Settings</h2>
+                                <button className="w-7 h-7 rounded-full bg-[#e0e5ec] shadow-[3px_3px_6px_#a3b1c6,-3px_-3px_6px_#ffffff] flex items-center justify-center text-slate-500 hover:text-slate-700 active:shadow-[inset_3px_3px_6px_#a3b1c6,inset_-3px_-3px_6px_#ffffff]"
+                                    onClick={() => setShowSettings(false)}>
+                                    <X className="w-3.5 h-3.5" />
+                                </button>
                             </div>
+
+                            <div className="bg-[#d1d9e6] rounded-xl p-3 shadow-[inset_3px_3px_6px_#a3b1c6,inset_-3px_-3px_6px_#ffffff] flex flex-col gap-3">
+                                {/* Volume */}
+                                <div className="flex flex-col gap-1.5">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Volume</span>
+                                        <span className="text-xs font-bold text-blue-500">{volume}%</span>
+                                    </div>
+                                    <Slider value={[volume]} min={0} max={100} step={1} onValueChange={([v]) => setVolume(v)} className="w-full" />
+                                </div>
+
+                                {/* Audio Offset */}
+                                <div className="flex items-center justify-between gap-2">
+                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Audio Offset</span>
+                                    <div className="flex items-center gap-1.5">
+                                        <button className="w-6 h-6 rounded-md bg-[#e0e5ec] shadow-[3px_3px_6px_#a3b1c6,-3px_-3px_6px_#ffffff] text-slate-600 font-bold text-xs flex items-center justify-center active:shadow-[inset_3px_3px_6px_#a3b1c6,inset_-3px_-3px_6px_#ffffff]"
+                                            onClick={() => setAudioOffset(audioOffset - 5)}>−</button>
+                                        <span className="text-xs font-bold text-slate-600 w-14 text-center font-mono">{audioOffset > 0 ? '+' : ''}{audioOffset}ms</span>
+                                        <button className="w-6 h-6 rounded-md bg-[#e0e5ec] shadow-[3px_3px_6px_#a3b1c6,-3px_-3px_6px_#ffffff] text-slate-600 font-bold text-xs flex items-center justify-center active:shadow-[inset_3px_3px_6px_#a3b1c6,inset_-3px_-3px_6px_#ffffff]"
+                                            onClick={() => setAudioOffset(audioOffset + 5)}>+</button>
+                                    </div>
+                                </div>
+
+                                {/* Keybinds */}
+                                <div className="flex flex-col gap-1.5">
+                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Keybinds</span>
+                                    {(['lane1', 'lane2'] as const).map((lane, i) => (
+                                        <div key={lane} className="flex items-center justify-between">
+                                            <span className="text-[10px] font-bold text-slate-500">Lane {i + 1}</span>
+                                            <button
+                                                className={`px-2 py-1 rounded-md text-[10px] font-black font-mono transition-all ${
+                                                    listeningForKey === lane
+                                                        ? 'bg-blue-500 text-white shadow-[inset_3px_3px_6px_rgba(0,0,0,0.2)] animate-pulse'
+                                                        : 'bg-[#e0e5ec] text-slate-700 shadow-[3px_3px_6px_#a3b1c6,-3px_-3px_6px_#ffffff]'
+                                                }`}
+                                                onClick={() => setListeningForKey(listeningForKey === lane ? null : lane)}
+                                            >
+                                                {listeningForKey === lane ? 'press a key…' : keybinds[lane].replace('ArrowUp', '↑').replace('ArrowDown', '↓').replace('ArrowLeft', '←').replace('ArrowRight', '→').replace('Key', '')}
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <Button size="sm" variant="ghost" className="w-full text-red-400 hover:text-red-500 hover:bg-transparent text-xs font-black"
+                                onClick={() => { setShowSettings(false); useGameStore.getState().setStatus('MENU'); useGameStore.getState().setIsMultiplayer(false); engine?.setLobbyId(null); engine?.reset(); }}>EXIT GAME</Button>
                         </div>
                     )}
 
@@ -710,9 +727,46 @@ export function GameCanvas() {
                                         style={{ width: `${loadingProgress}%` }}
                                     />
                                 </div>
-                                <p className="text-center text-xs text-slate-400 font-bold uppercase tracking-tighter animate-pulse">
-                                    Synchronizing with group...
-                                </p>
+
+                                {/* Multiplayer: per-player loading status */}
+                                {isMultiplayer && loadingPlayers.length > 0 && (
+                                    <div className="space-y-2 pt-2">
+                                        <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest text-center">
+                                            Waiting for players...
+                                        </p>
+                                        {/* Overall bar: X / total loaded */}
+                                        <div className="h-2 bg-[#e0e5ec] rounded-full shadow-[inset_3px_3px_6px_#a3b1c6,inset_-3px_-3px_6px_#ffffff] overflow-hidden">
+                                            <div
+                                                className="h-full bg-green-400 rounded-full transition-all duration-500"
+                                                style={{ width: `${loadingPlayers.length === 0 ? 0 : (loadingPlayers.filter(p => p.loaded).length / loadingPlayers.length) * 100}%` }}
+                                            />
+                                        </div>
+                                        <div className="flex flex-col gap-1.5">
+                                            {loadingPlayers.map(p => (
+                                                <div
+                                                    key={p.id}
+                                                    className="flex items-center justify-between bg-[#e0e5ec] px-3 py-2 rounded-xl shadow-[inset_2px_2px_4px_#a3b1c6,inset_-2px_-2px_4px_#ffffff]"
+                                                >
+                                                    <span className="text-xs font-bold text-slate-600 truncate">{p.name}</span>
+                                                    {p.loaded ? (
+                                                        <span className="text-[11px] font-black text-green-500 uppercase tracking-wide">Ready ✓</span>
+                                                    ) : (
+                                                        <span className="flex items-center gap-1 text-[11px] font-bold text-slate-400">
+                                                            <span className="w-3 h-3 border-2 border-slate-400 border-t-blue-500 rounded-full animate-spin inline-block" />
+                                                            Loading
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {!isMultiplayer && (
+                                    <p className="text-center text-xs text-slate-400 font-bold uppercase tracking-tighter animate-pulse">
+                                        Synchronizing with group...
+                                    </p>
+                                )}
                             </div>
                         </div>
                     )}
