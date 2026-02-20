@@ -1,0 +1,131 @@
+---
+title: "Neumorphic Design in a Rhythm Game"
+date: "2025-07-08"
+description: "Why we chose neumorphism for Slice It! and how its soft aesthetic sets it apart."
+tags: ["Slice It!", "Design", "Neumorphism", "UI/UX", "Devlog"]
+---
+
+## Against the Grain
+
+Open any rhythm game and you'll see the same visual language: dark backgrounds, neon highlights, aggressive particle effects, high-contrast color schemes that scream "GAMER." It's a well-established aesthetic, and for good reason — it's energetic, it's exciting, and it pairs well with music.
+
+So naturally, I decided to do the exact opposite.
+
+Slice It! uses a **neumorphic design system** built on soft shadows, rounded corners, muted blues and pinks, and a predominantly light color palette. It looks nothing like a typical rhythm game. And that was entirely the point.
+
+## What Is Neumorphism?
+
+Neumorphism (a blend of "new" and "skeuomorphism") is a design style that creates the illusion of elements extruding from or pressing into a surface. Instead of flat UI elements sitting on a background, neumorphic elements appear to be part of the background — raised slightly or recessed slightly, with soft light and shadow creating the depth effect.
+
+The key ingredients are:
+
+- **A uniform background color** (typically a soft gray, cream, or pastel)
+- **Two shadows per element** — a lighter shadow on one side (simulating light hitting a raised edge) and a darker shadow on the opposite side (simulating the element casting a shadow)
+- **Rounded corners** everywhere
+- **Minimal use of borders** — depth is conveyed through shadow, not outlines
+- **Soft, muted color palette** — no harsh contrasts
+
+Here's how a typical neumorphic button looks in CSS:
+
+```css
+.neu-button {
+  background: #e8edf5;
+  border: none;
+  border-radius: 16px;
+  padding: 16px 32px;
+  color: #5a6e8a;
+  font-weight: 600;
+  box-shadow:
+    6px 6px 12px rgba(163, 177, 198, 0.6),
+    -6px -6px 12px rgba(255, 255, 255, 0.8);
+  transition: box-shadow 0.2s ease;
+}
+
+.neu-button:active {
+  box-shadow:
+    inset 4px 4px 8px rgba(163, 177, 198, 0.6),
+    inset -4px -4px 8px rgba(255, 255, 255, 0.8);
+}
+```
+
+When you press the button, the shadow shifts from outer to inner, creating the sensation that the element is being pressed *into* the surface. It's satisfying in a way that's hard to describe until you feel it.
+
+## Why Neumorphism for Slice It!
+
+The decision to use neumorphism came from a few converging motivations:
+
+### 1. Differentiation
+
+The rhythm game market is visually homogeneous. Neon-on-dark is the default. By going with a soft, light design, Slice It! immediately stands out. Players who see screenshots or videos think, "That doesn't look like any rhythm game I've seen before." That initial curiosity is invaluable for discoverability.
+
+### 2. Emotional Tone
+
+I wanted Slice It! to feel **approachable**. The neon aesthetic is exciting, but it can also be intimidating — it signals hardcore, competitive, sweaty-palms gaming. Neumorphism signals calm, polish, and warmth. It says, "This is a chill space to enjoy music." That doesn't mean the gameplay isn't challenging — it absolutely is — but the visual environment doesn't add stress to the challenge.
+
+### 3. Focus on Content
+
+In a neumorphic UI, the content is the star. The soft, uniform background recedes, letting song names, artwork, scores, and gameplay elements take center stage. There's no visual noise competing for attention. Everything you need to see is clear and prominent without needing to shout.
+
+### 4. Contrast with RMH Studios
+
+The main RMH Studios website uses a dark theme with neon accents — glowing borders, vibrant gradients, cyberpunk-inspired visuals. Slice It! deliberately breaks from that aesthetic. Each project at RMH Studios has its own visual identity, and Slice It!'s soft palette makes it instantly recognizable as its own thing while still feeling related to the broader portfolio.
+
+## The Color Palette
+
+The Slice It! palette centers on three families:
+
+- **Soft blues** (`#c5d5e8`, `#8aacd4`, `#5a8abf`) — primary interactive elements, selected states, progress indicators
+- **Soft pinks** (`#f0d4de`, `#e8a8c0`, `#d4799a`) — accent elements, highlights, important actions
+- **Whites and light grays** (`#f2f5f9`, `#e8edf5`, `#dde4ef`) — backgrounds, surfaces, card bodies
+
+These colors are deliberately desaturated. Nothing is vivid. Everything feels like it's been gently washed — as if you're looking at the UI through a soft-focus filter. The effect is calming and cohesive.
+
+For text, we use a muted navy (`#3a4a5e`) instead of true black. This reduces harsh contrast against the light background and contributes to the overall softness.
+
+## Neumorphism in Gameplay
+
+The neumorphic style extends beyond menus into the **gameplay canvas** itself. Notes approaching the hit zone have soft shadows and rounded shapes. The hit zone is a recessed neumorphic element at the bottom of the screen — notes seem to sink into it when you hit them.
+
+Hit feedback uses the same visual language. A "Perfect" hit produces a gentle radial glow in soft blue. A "Good" hit produces a softer, smaller glow. Misses produce a brief, subtle inward shadow — the surface dips where the note should have been caught.
+
+Even the score display, combo counter, and accuracy meter are neumorphic elements floating above the game canvas. They feel like physical instruments embedded in a dashboard rather than flat overlays.
+
+```css
+.score-display {
+  background: #e8edf5;
+  border-radius: 20px;
+  padding: 12px 24px;
+  box-shadow:
+    4px 4px 8px rgba(163, 177, 198, 0.5),
+    -4px -4px 8px rgba(255, 255, 255, 0.7);
+  font-variant-numeric: tabular-nums;
+}
+```
+
+## Challenges and Trade-offs
+
+Neumorphism isn't without its problems. I want to be honest about the trade-offs.
+
+### Accessibility Concerns
+
+The soft shadows and low-contrast color relationships that make neumorphism beautiful can also make it harder to perceive for some users. We address this with a **high-contrast mode** that adds subtle borders to interactive elements and increases the shadow intensity. It breaks the pure neumorphic aesthetic slightly, but inclusivity matters more than visual purity.
+
+### Readability at Small Sizes
+
+Neumorphic elements need a minimum size to read correctly. At small sizes, the shadows compress and the element loses its dimensional quality, becoming an indistinct blob. We enforced minimum sizing guidelines across the design system to prevent this.
+
+### Dark Mode Expectations
+
+Many players expect a dark mode. Neumorphism works in dark themes, but it requires a complete reskin — you can't just invert colors. Dark neumorphism uses lighter shadow on the top-left and deeper shadow on the bottom-right against a dark gray base. We plan to add a dark neumorphic theme eventually, but it's a significant design effort, not a simple toggle.
+
+### Performance on Low-End Devices
+
+Box shadows are more GPU-intensive than flat elements. On low-end devices, we reduce shadow complexity and disable transition animations. The neumorphic identity is preserved through rounded corners and color palette alone, even when shadows are simplified.
+
+## The Evolution
+
+The current design is far from where we started. Early iterations were *too* subtle — buttons didn't look clickable, active states were hard to distinguish from resting states, and the overall UI felt like a static image rather than an interactive application.
+
+Over months of iteration, we found the right balance. Interactive elements have slightly more pronounced shadows than decorative ones. Active and hover states produce noticeable depth changes. The pink accent color draws attention to primary actions without being garish.
+
+Design is never finished. But the neumorphic foundation of Slice It! gives us a visual identity that's unique, cohesive, and instantly recognizable. In a sea of neon rhythm games, we're the soft one — and that's exactly where we want to be.

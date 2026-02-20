@@ -1,0 +1,123 @@
+---
+title: "Tuning Difficulty: The 60-Second Challenge"
+date: "2025-06-12"
+description: "Why Laundry Sort uses a 60-second timer, how we tune difficulty curves, and the art of fair urgency."
+tags: ["Laundry Sort", "Game Design", "Difficulty", "Balance"]
+---
+
+## Why Sixty Seconds?
+
+The timer in Laundry Sort isn't an afterthought — it's the *engine* of the entire experience. Without time pressure, sorting colored laundry into matching bins is trivially easy. With too much time pressure, it becomes frustrating and unfair. Sixty seconds is the knife's edge where sorting becomes a sport.
+
+But how did we land on sixty? Like most things in game design, the answer is: **we tested everything else first.**
+
+## The Search for the Right Duration
+
+Early prototypes had no timer at all. The game spawned items endlessly, and you sorted until you missed too many. It was boring. Without a clear end state, there was no tension, no climax, no moment where you look at the clock and think *I can do this*.
+
+Then we tried three minutes. Way too long. By the 90-second mark, players were bored and checking their phones, which is deeply ironic for a phone game.
+
+Two minutes was better but still dragged. The middle section felt like a wasteland — you'd already established your rhythm but still had a minute to go.
+
+Thirty seconds was too frantic. Players couldn't establish a flow state before the game ended, and scores felt arbitrary. Good runs and bad runs blurred together because there wasn't enough time for skill to shine through variance.
+
+**Sixty seconds is the sweet spot.** Here's the arc it creates:
+
+### 0-15 seconds: The Build-Up
+
+Items spawn slowly. The player gets oriented, sorts a few pieces, finds their groove. This is the on-ramp — easy enough that nobody feels lost, active enough that nobody gets bored.
+
+### 15-35 seconds: The Groove
+
+Spawn rates increase. The player is now sorting at full speed, making snap decisions, occasionally flicking items across the screen in desperation. This is the skill expression zone — the better you are, the more you shine here.
+
+### 35-50 seconds: The Crunch
+
+Spawn rates hit maximum. Items pile up faster than most players can sort them. The screen fills with tumbling, bouncing laundry. You can hear your heartbeat. This is where scores are made — the gap between a good player and a great player opens up here.
+
+### 50-60 seconds: The Sprint
+
+The final ten seconds. The timer turns red. You're making desperate choices — which item is closest to its bin? Which sort is fastest? Do you go for the easy yellow shirt or the tricky blue pants on the far side? Every decision matters.
+
+That dramatic arc — build-up, groove, crunch, sprint — is only possible because sixty seconds is *just* long enough to contain all four phases.
+
+## The Spawn Rate Curve
+
+The spawn system is the heart of Laundry Sort's difficulty. Items spawn at the top of the screen at timed intervals, and the interval decreases as the game progresses.
+
+```typescript
+function getSpawnInterval(elapsedSeconds: number): number {
+  // Start: one item every 1.5 seconds
+  // End: one item every 0.4 seconds
+  const progress = elapsedSeconds / 60;
+  const eased = easeInQuad(progress);
+  return lerp(1500, 400, eased);
+}
+
+function easeInQuad(t: number): number {
+  return t * t;
+}
+
+function lerp(a: number, b: number, t: number): number {
+  return a + (b - a) * t;
+}
+```
+
+Notice the `easeInQuad` — the difficulty doesn't increase linearly. It starts slow and accelerates. The first 30 seconds feel gentle. The last 15 seconds feel relentless. This quadratic curve creates the perception that the game "speeds up" as you play, which is far more exciting than a steady, predictable increase.
+
+### Why Not Linear?
+
+We tried linear first. It felt flat. The problem with linear difficulty increase is that it's equally hard to adjust to at every point. With a quadratic curve, the early game gives you time to breathe, and the late game pushes you past your comfort zone. The *rate of change* itself accelerates, creating a sense of mounting pressure that linearity simply can't match.
+
+## Spawn Positions and Fair Play
+
+Where items spawn matters as much as when they spawn. We divide the top of the screen into zones and ensure items spawn somewhat evenly across them. Without this, random chance could dump five red shirts on the far left of the screen, creating an unfair cluster.
+
+```typescript
+function getSpawnX(): number {
+  // Divide into 4 zones, pick one, add randomness within that zone
+  const zone = Math.floor(Math.random() * 4);
+  const zoneWidth = CANVAS_WIDTH / 4;
+  return zone * zoneWidth + Math.random() * zoneWidth;
+}
+```
+
+We also implement a **color balancing** system. The spawn system tracks how many of each color have appeared and biases toward underrepresented colors. This prevents unlucky streaks where you get ten red items in a row and the red bin becomes an unmanageable pile while the other bins sit empty.
+
+This doesn't mean exact equal distribution — that would feel robotic. We use a soft bias: colors that haven't appeared recently have a slightly higher chance of spawning. The player doesn't notice the balancing, but they *would* notice its absence.
+
+## The Timer UI
+
+The timer itself needed careful design. It sits at the top center of the screen, large enough to read in peripheral vision. For the first 50 seconds, it's displayed in white. At 10 seconds, it turns red and starts pulsing — a gentle scale animation that draws the eye without being distracting.
+
+```typescript
+function drawTimer(ctx: CanvasRenderingContext2D, seconds: number) {
+  const isUrgent = seconds <= 10;
+  const scale = isUrgent ? 1 + Math.sin(Date.now() / 200) * 0.05 : 1;
+
+  ctx.save();
+  ctx.translate(CANVAS_WIDTH / 2, 30);
+  ctx.scale(scale, scale);
+  ctx.font = "bold 28px monospace";
+  ctx.fillStyle = isUrgent ? "#ff3333" : "#ffffff";
+  ctx.textAlign = "center";
+  ctx.fillText(seconds.toString(), 0, 0);
+  ctx.restore();
+}
+```
+
+The pulsing is subtle — just a 5% scale oscillation at 5Hz. It's enough to create urgency without inducing anxiety. We tested more aggressive effects (screen shake, flashing, sound effects) and they all felt obnoxious. The gentle pulse says "time is running out" without screaming it.
+
+## Making It Feel Fair
+
+The hardest part of difficulty design isn't making the game hard — it's making it feel **fair** when you lose. In Laundry Sort, every loss should feel like "I could do better next time," not "the game screwed me."
+
+We achieve this through several principles:
+
+- **Consistent physics.** Items always behave the same way. No random difficulty spikes from physics weirdness.
+- **Readable spawns.** Items always spawn fully visible at the top of the screen, giving players maximum reaction time.
+- **Color balancing.** No unlucky streaks of the same color.
+- **Gradual ramp.** The difficulty increase is smooth, never sudden. Players always have time to adapt.
+- **Clear scoring.** Points are awarded immediately and visually on each sort, so players always know how they're doing.
+
+When a player hits "Play Again" after a loss — that's the moment you know your difficulty tuning is right. That immediate impulse to try again means the game felt fair, the loss felt close, and the player believes they can improve. That's the magic number. That's why sixty seconds.

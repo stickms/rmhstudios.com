@@ -1,0 +1,122 @@
+---
+title: "Auth-Gating a Web Game: Why Login Matters"
+date: "2025-07-05"
+description: "How Better Auth, Discord OAuth, and persistent identity enable the narrative design of House Always Wins."
+tags: ["House Always Wins", "Auth", "Better Auth", "Web Development", "Devlog"]
+---
+
+## The Controversial Decision
+
+Let me address it upfront: **House Always Wins requires you to log in before you can play.** In 2025, when friction-free onboarding is gospel and every extra click bleeds users, I'm putting a login wall between people and my game.
+
+It sounds like a terrible idea. And if this were a different game, it would be. But House Always Wins isn't a casual browser game you play for five minutes and forget. It's a persistent narrative experience where the system tracks your choices across sessions, across resets, across time. Without authenticated identity, the game's central promise — *the casino remembers you* — falls apart completely.
+
+## Why Identity Is a Game Mechanic
+
+In most web games, authentication is an infrastructure concern. You log in because the server needs to know who you are for leaderboards, cloud saves, social features. The login is plumbing. It's invisible to the game's design.
+
+In House Always Wins, your identity *is* a design element. The game knows you. The casino recognizes your account. NPCs react to your history. The Debt system is tied to *you*, not to a save slot. When the game says "You've been here before," it's not a generic flavor text — it's a statement of fact, verified against a database.
+
+This means the login isn't plumbing. It's the **first interaction** between the player and the casino. Before you see a single pixel of the game world, you engage with the system that tracks you. You announce yourself. You tell the House who you are. And from that moment on, you're known.
+
+### The Ritual of Entry
+
+I've designed the login flow to lean into this thematic weight. The login page isn't a generic form. It's dark, minimal, with the same visual language as the game itself — deep blacks, muted gold accents, a faint flicker of light. The form fields are styled to feel like signing a ledger, not filling out a registration form.
+
+After authenticating, there's a brief transition — a loading state that isn't really about loading. The screen darkens, text appears: *"The House acknowledges you."* Then the coin flip. Then the game.
+
+This two-second ritual transforms a mundane login into a narrative beat. You're not logging into a website. You're checking into the casino.
+
+## The Tech: Better Auth
+
+House Always Wins uses **Better Auth** for authentication, and choosing it was one of the better decisions I've made on this project. Better Auth provides a clean, TypeScript-native auth solution that plays well with Next.js and Prisma.
+
+The setup supports two login methods:
+
+### Email/Password
+
+The straightforward path. Players create an account with an email and password, verify their email, and they're in. Better Auth handles password hashing, session management, and token refresh. I don't touch raw credentials. I don't want to.
+
+```typescript
+// Auth configuration (simplified)
+import { betterAuth } from 'better-auth';
+import { prismaAdapter } from 'better-auth/adapters/prisma';
+
+export const auth = betterAuth({
+  database: prismaAdapter(prisma, { provider: 'postgresql' }),
+  emailAndPassword: { enabled: true },
+  socialProviders: {
+    discord: {
+      clientId: process.env.DISCORD_CLIENT_ID!,
+      clientSecret: process.env.DISCORD_CLIENT_SECRET!,
+    },
+  },
+});
+```
+
+### Discord OAuth
+
+This is the path I expect most players to use. The game's target audience — indie game enthusiasts, narrative game fans, the kind of people who read devlogs — are heavily represented on Discord. Offering Discord login removes friction while still providing authenticated identity.
+
+Discord OAuth also opens future possibilities: linking game accounts to Discord servers, displaying game status as Discord Rich Presence, and building community features that bridge the game and Discord. None of that's built yet, but the foundation is there.
+
+## Prisma and Neon Postgres
+
+Behind the auth layer, player state is stored in **Neon Postgres** via **Prisma ORM**. The database schema links authenticated users to their game state:
+
+```typescript
+// Prisma schema (simplified)
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  gameState GameState?
+}
+
+model GameState {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id])
+  currentDebt     Int      @default(0)
+  peakDebt        Int      @default(0)
+  resetCount      Int      @default(0)
+  explorationData Json     @default("{}")
+  npcData         Json     @default("{}")
+  gamblingHistory Json     @default("[]")
+  updatedAt       DateTime @updatedAt
+}
+```
+
+Neon Postgres was chosen for its serverless architecture — it scales to zero when no one's playing and spins up instantly when someone logs in. For an indie web game that might have three players at 2 AM and three hundred at peak, that elasticity matters. I'm not paying for idle database compute.
+
+## The Login Gate Dilemma
+
+I'll be honest: I've lost sleep over the login requirement. Every game design resource says to reduce friction. Let players try before they commit. Offer a guest mode. Don't make them create an account before they've even seen gameplay.
+
+And there's merit in that advice. I've prototyped a guest mode — a limited experience where you can explore the casino's entrance and play the coin-flip tutorial. No persistent state, no Debt tracking, no NPC relationships. Just a taste.
+
+But here's the problem: the taste is incomplete. House Always Wins without persistence is like a movie without sound. You can *see* what's happening, but you can't *feel* it. The game's power comes from the weight of accumlated choices, and a guest mode can't demonstrate that. It can only show you surfaces.
+
+So for now, I'm holding the line. **Login required.** The guest mode might come later as a demo, but the core experience demands identity. The casino doesn't serve guests who won't sign the ledger.
+
+### Addressing Concerns
+
+A few common objections and my responses:
+
+**"What about privacy?"** — The game collects the minimum necessary data: an email (or Discord ID) and game state. No analytics tracking, no third-party data sharing, no ad networks. Your game state is yours. I just happen to store it for you.
+
+**"What if I want to start fresh?"** — You can reset your game from the settings menu. The game state clears, but your account persists. And as I've discussed in previous devlogs, the game *notices* resets. That's a feature, not a bug.
+
+**"What if the server goes down?"** — This is a real concern for any server-dependent game. I'm building with resilience in mind — Neon's infrastructure is reliable, and I maintain database backups. But yeah, if the server goes down, the casino closes. That's the trade-off of server-side persistence. I accept it because the alternative — client-side state that can be manipulated — undermines the game's core design.
+
+## The Broader Lesson
+
+Building House Always Wins has crystallized something I believe about web game development: **authentication isn't just an infrastructure layer. It's a design space.**
+
+When you know who your player is — really know, not just a cookie or a local storage key — you can design experiences that are *personal*. The game can say "you" and mean it. NPCs can recognize returning players. The world can remember what happened yesterday, last week, last month.
+
+Most web games treat auth as a necessary evil. I'm trying to treat it as a **narrative tool**. The login is the game's first statement about its relationship with the player: *I know you. I remember you. You can't hide from me.*
+
+That's a powerful foundation for the kind of game I'm building. A game about a casino that remembers everything, played by people who can't pretend they were never there.
+
+Welcome back. The House has been expecting you.

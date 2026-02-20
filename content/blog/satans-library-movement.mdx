@@ -1,0 +1,94 @@
+---
+title: "Movement Mechanics in Survival Horror"
+date: "2025-05-18"
+description: "Designing movement in Satan's Library — the balance between control and vulnerability, weight, commitment, and how locomotion creates fear."
+tags: ["Satan's Library", "Movement", "Game Design", "Mechanics", "Devlog"]
+---
+
+## Movement Is the First Promise You Make to the Player
+
+Before the first scare. Before the first enemy. Before the atmosphere, the lighting, the sound design — the player *moves*. And in that first movement, you've already told them what kind of game this is. Floaty and fast? This is an action game wearing horror clothes. Heavy and deliberate? Now we're talking. Movement in Satan's Library is designed to make you feel **capable but not powerful, mobile but not safe**.
+
+## The Tank Control Question
+
+Let's address the elephant in the room: tank controls. The original Resident Evil and Silent Hill games used tank controls — up moves the character forward relative to their facing, left and right rotate. This was partly a technical limitation, but it created an incredible sense of vulnerability. Turning was a commitment. Reversing direction took time. Every corridor was threatening because you couldn't just flick the analog stick and sprint away.
+
+I love tank controls. I also know they're a tough sell in 2025. So Satan's Library doesn't use them — but it *captures their spirit* through what I call **committed movement**.
+
+### Committed Movement
+
+In Satan's Library, directional changes aren't instant. When you push the analog stick in a new direction, the character doesn't snap to it. They **turn through an arc** that takes a fraction of a second — long enough to feel deliberate, short enough to not feel frustrating. The turn speed varies by context:
+
+- **Walking**: Moderate turn speed. Feels natural and responsive.
+- **Running**: Slower turn speed. Momentum carries you. Corners are commitments.
+- **High stress**: Turn speed decreases. Your character is struggling to maintain composure, and their physical responsiveness reflects it.
+
+This creates the tank control *feeling* — the weight, the commitment, the vulnerability of changing direction — without the binary, grid-based input that modern players find alienating.
+
+```
+// Pseudocode for committed movement turn rate
+function getTurnRate(movementState, stressLevel) {
+    let baseTurnRate = movementState == RUNNING ? 120 : 180  // degrees per second
+
+    // Stress reduces turn rate
+    let stressModifier = lerp(1.0, 0.6, 1.0 - (stressLevel / 100.0))
+    
+    // Apply acceleration curve for organic feel
+    let currentTurnSpeed = baseTurnRate * stressModifier
+    return smoothDamp(previousTurnRate, currentTurnSpeed, turnVelocity, 0.1)
+}
+```
+
+## Weight and Feel
+
+Every movement in Satan's Library has **weight**. Not sluggishness — weight. There's a difference. Sluggish movement feels unresponsive and frustrating. Weighted movement feels grounded and physical. The distinction is in the **animation and feedback**.
+
+When the character starts walking, there's a brief animation blend from idle to locomotion. Their foot plants, their weight shifts, and *then* they move. When they stop, they don't freeze — they decelerate, take a settling step, and come to rest. These details are subtle, but they make the character feel like a physical being occupying a physical space rather than a floating camera with a model attached.
+
+### Footsteps as Feedback
+
+Footstep audio is a critical part of the movement feel. Different surfaces produce different sounds — carpet is muffled, tile echoes, wood creaks. But beyond surface variation, footstep rhythm changes with stress. A calm character walks with even, measured steps. A stressed character's footsteps become slightly irregular — quicker, less rhythmic, with occasional hesitations. You can *hear* the fear in how your character moves.
+
+The footsteps also serve a gameplay function. Sound attracts attention. Running on hard surfaces is louder than walking on carpet. The player must consider not just where they move, but **how loudly** they move. Is it worth sprinting across that marble floor to reach the exit faster, or should you creep along the carpeted edge even though it takes longer?
+
+## Movement as Vulnerability
+
+In action games, movement is power. You dodge, you strafe, you outmaneuver enemies. In Satan's Library, movement is **exposure**. Every step takes you further from where you were and closer to where something might be. The design reinforces this through several mechanics:
+
+### Limited Sprint
+
+The character can sprint, but only in short bursts. Sprint duration is tied to the Aura system — a calm character can sprint longer, a stressed character barely manages a few seconds before they're gasping. Sprint recovery is slow. Using your sprint at the wrong time means you won't have it when you need it.
+
+### Movement Sound Profile
+
+As mentioned above, movement generates sound. But the system goes deeper than surface materials. The character's **breathing** also scales with exertion and stress. Sprint too much in a dangerous area, and your character will be audibly panting — potentially giving away your position to threats in adjacent rooms.
+
+### Positional Commitment
+
+Some actions in the game require you to be stationary — reading texts, solving puzzles, interacting with environmental objects. During these moments, you're rooted in place. The camera might be showing you a text you're reading, and you can hear something moving in the next room, and you have to decide: *Do I finish reading, or do I stop and prepare to move?*
+
+## The Sprint Decision
+
+One of the most interesting emergent behaviors in playtesting has been what I call the **sprint decision**. Players constantly weigh the benefits of speed against the costs:
+
+- Sprinting gets you through dangerous areas faster, reducing exposure time
+- But sprinting is loud, attracting threats
+- Sprinting drains your limited stamina, leaving you vulnerable afterward
+- At high stress, sprinting becomes unreliable and short-lived
+- Sprinting triggers faster, less smooth camera transitions, which can be disorienting
+
+There's no correct answer. Different situations demand different approaches. A player learning to *read the environment* and make movement decisions based on context — that's a core skill Satan's Library teaches, and it makes every corridor, every room, every threshold feel meaningful.
+
+## Interaction and Movement
+
+Movement doesn't stop when you interact with the world. In Satan's Library, the character can perform **moving interactions** — picking up a note while walking past, grabbing a key from a shelf without stopping. These flowing interactions reward confident, purposeful movement. But they're riskier than stopping to interact carefully, because moving interactions have a higher chance of making noise (bumping into something) or missing a detail.
+
+Static interactions are safer but leave you stationary and vulnerable. It's another layer of the movement-as-decision philosophy.
+
+## Lessons from the Prototype
+
+The movement system went through three major iterations. The first was too responsive — it felt like a third-person action game. The second was too heavy — testers described it as "walking through mud," which is never what you want to hear. The third iteration, the current one, found the sweet spot by focusing on **animation-driven movement** rather than pure physics.
+
+The character's movement speed and responsiveness are dictated by their animation state rather than by applying forces to a physics body. This means the character always looks and feels natural — their feet plant correctly, their weight transfer is visible, and the connection between input and response feels intentional rather than mechanical.
+
+Movement is the foundation of everything in Satan's Library. Before the scares can land, before the atmosphere can breathe, before the story can unfold — the player has to *inhabit* the character. And inhabiting them means moving like someone who is terrified, determined, and very much mortal.

@@ -1,0 +1,90 @@
+---
+title: "Rapid Prototyping a Horror Game"
+date: "2025-08-25"
+description: "The prototyping process behind Satan's Library — testing mechanics before polish, finding the fun in fear, and iterating fast."
+tags: ["Satan's Library", "Prototyping", "Game Development", "Indie Dev", "Devlog"]
+---
+
+## Prototype First, Pretty Later
+
+There's a dangerous trap in game development, especially for solo devs and small studios: **premature polish**. You start modeling beautiful bookshelves before you've figured out if your movement system is fun. You compose atmospheric music before you know if the game is scary. You write dialogue before you've proven the core loop works. I've fallen into this trap before, and with Satan's Library, I swore I wouldn't do it again.
+
+The first playable prototype of Satan's Library was **ugly**. Spectacularly ugly. Gray boxes for walls. Capsules for characters. Cubes for books. The Succubi were red spheres. And you know what? It told me everything I needed to know about whether the game's core mechanics worked. Because you can feel tension walking down a gray corridor if the movement, camera, and sound are right. You can't feel anything walking through a gorgeous library if the mechanics are wrong.
+
+## The Prototyping Philosophy
+
+My approach to prototyping Satan's Library follows three principles:
+
+### 1. One Mechanic at a Time
+
+Each prototype isolates a single system and tests it in the simplest possible environment. The movement prototype was literally a flat plane with some boxes. The camera prototype was a single room with varying dimensions. The Aura prototype was a corridor with triggers that increased and decreased stress. By isolating systems, I could evaluate each one on its own merits before dealing with the complexity of integration.
+
+### 2. Feel Over Function
+
+The question for each prototype isn't "does this work?" but "**does this feel right?**" A movement system can be technically correct — proper acceleration, deceleration, collision — and still feel terrible. Early testing always involves closing my eyes, moving around, and asking: **Does this feel like being a scared human in a library?** If the answer is no, the numbers don't matter.
+
+### 3. Kill Your Darlings Fast
+
+I've thrown away more prototype iterations than I've kept. That's not failure — that's the process. One early camera system used a completely procedurally generated shot selection algorithm that chose camera angles in real-time based on compositional rules. It was technically impressive and felt absolutely terrible. I spent two weeks building it and twenty minutes deciding to scrap it. Those twenty minutes saved the project.
+
+## The Greybox Timeline
+
+Here's what the prototyping progression actually looked like:
+
+**Week 1-2: Movement**
+Built the committed movement system on a flat testbed. Iterated through three versions of turn rate curves. Tested with both gamepad and keyboard/mouse. The gamepad version felt better almost immediately — the analog input suits committed movement naturally. Added weighted footstep audio using placeholder sounds. By end of week 2, walking around the gray boxes felt *good*.
+
+**Week 3-4: Camera**
+Added the dual-mode camera system. Started with hard cuts between fixed and OTS modes — terrible. Switched to interpolated transitions — better but floaty. Added the easing curves that account for room geometry — suddenly it clicked. The camera started feeling like it had intention. Added basic stress-driven shake using a sine wave — too mechanical. Switched to Perlin noise — immediately more organic.
+
+**Week 5-6: Aura System**
+Implemented the stress value and connected it to the camera and movement. First version was too aggressive — max stress in three minutes. Second version was too gentle — never felt threatened. Third version introduced the event-based spike system and nailed the feel. Connected stress to the camera's OTS proximity override and watched testers physically lean back from the screen when the camera pushed in during high stress moments. *That's* the reaction I was building toward.
+
+**Week 7-8: Integration and Enemy**
+Combined all systems into a single test environment — a simple library layout with three rooms and a connecting corridor. Added the first Succubus AI (the red sphere) with basic curiosity-driven behavior. The first time the full system came together — stressed movement, reactive camera, stress-driven audio, and an AI threat — it was genuinely unsettling. In a greybox. With cubes for books.
+
+```
+// My actual prototype testing checklist
+testSession: {
+    date: "Week 8, Day 3"
+    duration: "45 minutes"
+    build: "v0.8.3-greybox"
+    
+    // Questions to answer:
+    doesMovementFeelDeliberate: true
+    doesCameraTransitionSmoothly: true  
+    doesStressEscalateNaturally: true
+    isAIBehaviorUnpredictable: "mostly - needs more personality variation"
+    didTesterExpressGenuineUnease: true  // THE key metric
+    overallFeel: "closer than ever, needs pacing work"
+}
+```
+
+## Finding the Fun in Fear
+
+"Fun" is a complicated word in horror game design. Players don't play horror games to have *fun* in the traditional sense. They play to feel something — to experience controlled fear, to test their nerve, to inhabit a space where the stakes feel real even though they aren't. The "fun" of Satan's Library is the **mastery of fear management**. It's the satisfaction of reading the environment correctly, making the right movement decision, managing your Aura through a dangerous section, and reaching safety with your composure intact.
+
+During prototyping, I constantly ask testers: "Did you want to keep playing?" Not "Did you have fun?" but "Did you want to continue?" A good horror game creates compulsion — you're scared, but you need to see what's next. If a tester says "I was terrified but I didn't want to stop," the prototype is working.
+
+### The Moment It Clicked
+
+There was a specific moment during week 7 testing where I knew Satan's Library was going to work. A tester was in the greybox library, stress building, camera pushing in, and they reached a doorway. They stopped. They stood at the threshold for **eleven seconds**, just listening, before stepping through. Eleven seconds of voluntary stillness in a game where nothing was forcing them to wait. That's fear. That's atmosphere. That's the game working.
+
+## Iteration Speed
+
+As a small studio, our biggest advantage is **iteration speed**. We can test an idea in the morning, evaluate at lunch, and pivot by afternoon. Big studios spend weeks getting approval to change a mechanic. We spend minutes. This speed is crucial in horror design because horror is *subjective and fragile*. A mechanic that's terrifying in isolation might be annoying in context. A camera angle that looks great in screenshots might feel wrong in motion. The only way to find the truth is to test constantly and adapt ruthlessly.
+
+### The Tools
+
+For rapid prototyping, I lean heavily on:
+
+- **Modular greybox kits**: Standardized wall, floor, and shelf pieces that snap together to create test layouts in minutes
+- **Parameter tweaking in real-time**: Exposed variables for every tunable value (turn rates, stress multipliers, camera distances) that can be adjusted without stopping the game
+- **Session recording**: Every playtest session is recorded with telemetry — player position, stress values, camera state, AI position — for post-session analysis
+- **Quick iteration builds**: Automated build pipeline that produces a testable build in under two minutes
+
+## What Prototyping Has Taught Me
+
+The biggest lesson from this prototyping phase isn't about any specific mechanic — it's about **trust**. Trust the process. Trust that ugly-but-functional will teach you more than beautiful-but-untested. Trust that throwing away work that doesn't feel right is progress, not waste. Trust that the game knows what it wants to be, and your job is to listen.
+
+Satan's Library started as a feeling. Prototyping has turned that feeling into mechanics. The next phase — production — will turn those mechanics into an experience. And I can't wait to share more of that journey.

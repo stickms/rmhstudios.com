@@ -1,0 +1,153 @@
+---
+title: "UI Evolution: From Prototype to Polish"
+date: "2025-07-01"
+description: "How Signal Forge's UI evolved from grey boxes to a polished neon glitch aesthetic — design decisions, accessibility, and lessons learned."
+tags: ["Signal Forge", "UI Design", "Game Design", "Devlog"]
+---
+
+## The Grey Box Era
+
+Every game starts ugly. That's not a criticism — it's a necessary phase. When I first got Signal Forge running in the browser, the "UI" was a collection of grey rectangles with white text. Cards were flat divs with stat numbers. The enemy was a red circle. Health bars were progress elements with no styling. It looked like a homework assignment from a 2005 web development course.
+
+And it was *perfect* — for that phase.
+
+The Grey Box Era lasted about six weeks, and during those weeks I made more design progress than any other period. Without visual polish distracting me, I could focus entirely on *does this feel right?* Does playing a card feel responsive? Is the information hierarchy correct? Can I understand the game state at a glance? These UX questions are independent of aesthetics, and answering them with grey boxes ensures you're building on solid interaction foundations.
+
+## Finding the Aesthetic
+
+Signal Forge's visual identity didn't arrive fully formed. I explored several directions before landing on what I call "**dark neon glitch-wave**":
+
+1. **Military radar** — Green phosphor on black, very "War Games." Cool but too cold and impersonal.
+2. **Retro computing** — Amber CRT text, terminal-style UI. Interesting but limited the card art potential.
+3. **Clean modern** — White backgrounds, sans-serif typography, Material Design-inspired. Professional but *boring*. Signal Forge is about waveforms and corruption and chaos — a clean UI fights the theme.
+4. **Dark neon glitch-wave** — Dark backgrounds, electric neon accents (cyan, magenta, green), CRT scan lines, intentional visual glitches. *This was it.*
+
+The winning aesthetic worked because it **reinforced the game's themes at every level**. Waveform cards pulse with neon energy. Glitch cards visually corrupt. The battle arena flickers like an old oscilloscope. The UI isn't just displaying game state — it's *performing* it.
+
+### The Color System
+
+Signal Forge uses color systematically to communicate waveform identity:
+
+- **Pulse** — Electric cyan (#00FFFF). Sharp, bright, aggressive.
+- **Sine** — Soft violet (#A855F7). Smooth, calming, flowing.
+- **Saw** — Amber gold (#F59E0B). Warm, building, escalating.
+- **Noise** — Hot pink/magenta (#FF00FF). Chaotic, vivid, unpredictable.
+
+These colors appear on cards, UI elements, particle effects, and even the background ambiance. A player should be able to identify a card's waveform type from across the room just by its color signature. **Color as information, not decoration.**
+
+## The Card Design Journey
+
+Cards went through eight visual iterations. Here's the condensed journey:
+
+### Version 1: Text Only
+```
+┌──────────────┐
+│ Pulse Strike  │
+│ Cost: 1       │
+│ Damage: 8     │
+│ Piercing      │
+└──────────────┘
+```
+Functional. Readable. Soulless.
+
+### Version 4: Waveform Backgrounds
+Cards gained a subtle animated waveform visualization as their background — the actual waveform shape (pulse, sine, saw, noise) rendered as a translucent animation behind the card stats. This single addition transformed the cards from "data display" to "game artifact." Suddenly, holding a hand of cards felt like holding a collection of living signals.
+
+### Version 7: Glitch Effects
+Corrupted cards gained visual distortion — scanlines, color channel separation, pixel displacement. The distortion is procedurally generated using CSS transforms and custom shaders, meaning every Glitched card looks uniquely corrupted. This was a significant engineering effort, but the result is worth it: Glitch cards look *wrong* in exactly the right way.
+
+### Version 8: Current Polish
+The current cards feature:
+- Waveform-colored borders and glow effects
+- Animated waveform background
+- Keyword icons with tooltips
+- Rarity indicator (border brightness/pattern)
+- Upgrade indicator (subtle geometric embellishment)
+- Corruption overlay (for Glitched cards)
+
+```css
+/* Card glow effect for Pulse waveform */
+.card-pulse {
+  box-shadow: 
+    0 0 10px rgba(0, 255, 255, 0.3),
+    0 0 20px rgba(0, 255, 255, 0.1),
+    inset 0 0 15px rgba(0, 255, 255, 0.05);
+  border: 1px solid rgba(0, 255, 255, 0.6);
+}
+
+.card-pulse:hover {
+  box-shadow: 
+    0 0 15px rgba(0, 255, 255, 0.5),
+    0 0 30px rgba(0, 255, 255, 0.2),
+    inset 0 0 20px rgba(0, 255, 255, 0.1);
+  transform: translateY(-8px) scale(1.05);
+}
+```
+
+## The Battle Log
+
+One of the most important UI additions was the **battle log** — a scrolling feed of combat events that records exactly what happened each turn. This was originally added for debugging, but players loved it so much it became a permanent feature.
+
+The battle log answers the question: *"Wait, what just happened?"* In a game with 20+ keywords creating cascading effects, a single card play can trigger a chain of events: damage dealt → Bleed applied → Echo triggered → Echo deals damage → Leech heals player → Chain activated → next card plays automatically. Without a battle log, this chain is a confusing blur. With it, every step is narrated clearly.
+
+### Battle Log Formatting
+
+Each log entry is color-coded by type:
+
+- **Red** — Damage dealt or received
+- **Green** — Healing or shield gained
+- **Yellow** — Status effects applied
+- **Cyan** — Card-specific triggers (Echo, Chain, etc.)
+- **Purple** — Glitch effects
+- **White** — Turn structure (turn start, turn end, enemy action)
+
+The formatting took weeks to get right. Too much information and the log becomes unreadable noise. Too little and it fails its purpose. The sweet spot: log *every* mechanical event, but group related events visually and allow collapsing detail.
+
+## Tooltip System
+
+Signal Forge has a lot of keywords, and expecting players to memorize all of them is unrealistic. The tooltip system is the solution: **hover over any keyword on any card to see a clear, concise explanation** of what it does.
+
+Building a good tooltip system taught me several lessons:
+
+### Lesson 1: Position Matters
+
+Tooltips that cover the card they're explaining are useless. I implemented adaptive positioning that detects screen edges and card positions, placing tooltips adjacent to the card without overlapping it. Seemingly simple, surprisingly complex.
+
+### Lesson 2: Hierarchy of Information
+
+Each tooltip shows:
+1. **Keyword name** (bold, large)
+2. **One-sentence explanation** (plain text)
+3. **Interaction note** (italic, smaller — how this keyword works with other keywords on the same card)
+
+The interaction note was a late addition that dramatically improved comprehension. Instead of players wondering "how does Echo interact with Multihit?", the tooltip on a card with both keywords explicitly states: "Echo creates a copy that also Multihits."
+
+### Lesson 3: Touch-Friendly Alternatives
+
+Tooltips rely on hover, which doesn't exist on touch devices. For mobile play, I implemented long-press to show tooltip and a dedicated "inspect mode" that allows tapping cards to see their full details in a modal view. This is not just accessibility — it's a better experience for anyone who wants to study a card carefully.
+
+## Accessibility Considerations
+
+Building an accessible game with a dark neon aesthetic is a unique challenge. Neon colors on dark backgrounds can be either highly readable or completely illegible depending on implementation. My accessibility guidelines for Signal Forge:
+
+### Color Contrast
+
+All text elements meet **WCAG AA contrast requirements** (4.5:1 for normal text, 3:1 for large text). This required careful tuning — pure neon cyan (#00FFFF) on dark grey actually has excellent contrast, but neon magenta on medium-dark backgrounds needed adjustment.
+
+### Colorblind-Friendly Design
+
+Waveform types are communicated through **color AND shape**. Pulse cards have angular borders, Sine cards have rounded borders, Saw cards have asymmetric borders, and Noise cards have irregular borders. Even in complete grayscale, the waveform types are distinguishable.
+
+### Reduced Motion
+
+For players with vestibular disorders, a "Reduced Motion" toggle disables all particle effects, waveform animations, and screen shake. Glitch card distortion is replaced with a static overlay. The game is fully playable without any animation.
+
+### Screen Reader Support
+
+Card descriptions, tooltips, and the battle log are all accessible via semantic HTML and ARIA labels. A screen reader user can understand the full game state through the battle log alone. This was one of the hardest technical challenges — making a visual game accessible to non-visual players — but it was non-negotiable.
+
+## The Never-Ending Polish
+
+UI polish is fractal — the closer you look, the more you find to improve. I've spent more hours on hover states, transition curves, and padding values than I care to admit. But every one of those hours contributes to the feeling that Signal Forge is *crafted*, not just *built*.
+
+The UI is the player's window into the game world. If that window is clear and beautiful, the game world shines through. If it's cluttered and confusing, even the best game design underneath won't save the experience. Signal Forge's UI journey has reinforced a lesson I'll carry forward forever: **design how it works before you design how it looks — but never stop designing how it looks.**

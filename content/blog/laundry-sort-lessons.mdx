@@ -1,0 +1,123 @@
+---
+title: "What Laundry Sort Taught Us About Game Feel"
+date: "2025-10-25"
+description: "Lessons learned from building Laundry Sort — how physics tuning, juice, and feedback create unforgettable game feel."
+tags: ["Laundry Sort", "Game Feel", "Lessons Learned", "Indie Dev"]
+---
+
+## The Invisible Quality
+
+There's a quality that separates games you play once from games you play a hundred times. It's not graphics, it's not content, it's not even mechanics — it's *feel*. Game feel is the invisible force that makes a game satisfying to simply interact with, independent of its goals or rewards. It's why Super Mario Bros. is still fun even if you don't care about saving the princess. It's why a well-tuned Tetris is meditative rather than stressful.
+
+Building Laundry Sort taught us more about game feel than any other project at RMH Studios. Here are the lessons we'll carry forward.
+
+## Lesson 1: Physics Constants Are Design Decisions
+
+The four numbers that define Laundry Sort's physics — gravity (0.05), friction (0.98), bounce (0.3), and angular velocity dampening — aren't engineering constants. They're *design decisions*. They determine how the game feels more than any art asset or sound effect.
+
+I spent three weeks tuning these four numbers. Three weeks adjusting values by 0.01, playing for five minutes, adjusting again. It felt ridiculous. It felt like I was wasting time. And then one afternoon, I changed friction from 0.97 to 0.98, and the game went from "fine" to "I can't stop playing."
+
+**The lesson:** Don't treat physics parameters as implementation details. They are the game. Give them the design attention they deserve.
+
+### The Friction Epiphany
+
+The difference between 0.97 and 0.98 friction is this: at 0.97, items stop moving a fraction of a second sooner. That fraction means the difference between an item that *slides satisfyingly to a halt* and an item that *stops abruptly*. Players can feel that difference in their fingertips, even if they could never articulate it.
+
+This taught me that humans are extraordinarily sensitive to motion dynamics. We evolved to track moving objects for survival — our brains have incredibly fine-tuned motion processing. Even a 1% change in a velocity dampening coefficient creates a perceptible difference in how "alive" objects feel.
+
+## Lesson 2: Juice Is Not Optional
+
+"Juice" is the game design term for all the audiovisual feedback that accompanies player actions: screen shakes, particle effects, color flashes, sounds, haptic vibration. In Laundry Sort, juice turned a functional sorting exercise into an arcade experience.
+
+Here's a concrete example. Before juice, sorting a shirt looks like this:
+- Shirt enters bin
+- Shirt disappears
+- Score increases by 100
+
+After juice:
+- Shirt enters bin
+- Brief white flash on the bin border
+- Small burst of colored particles matching the item
+- Score number floats upward in green, growing as it fades
+- Combo counter ticks up with a subtle scale animation
+- A soft, satisfying "click" sound plays
+- If combo is high, additional glow effect pulses
+
+Same mechanic. Same score change. But the juiced version is **10x more satisfying**. Every sort feels like a tiny celebration, and that feeling of celebration is what keeps players coming back.
+
+**The lesson:** Juice is not polish you add at the end. It's a core design element that should be prototyped alongside the mechanics. The dopamine hit of a well-juiced action is the primary retention mechanism for casual games.
+
+### The Juice Layering Principle
+
+We discovered that juice elements are most effective when they *layer* — multiple small effects combining into a rich sensation rather than one big effect. A screen shake alone feels jarring. A sound alone feels empty. A particle burst alone feels decorative. But all three together, carefully timed, create something greater than the sum of their parts.
+
+```typescript
+function onCorrectSort(item: ClothingItem, bin: Bin) {
+  // Layer 1: Visual - bin flash
+  flashBin(bin, "#ffffff", 100);
+
+  // Layer 2: Particles - color-matched burst
+  spawnParticles(bin.x + bin.width / 2, bin.y, item.color, 8);
+
+  // Layer 3: Score - floating points
+  showPointsPopup(bin.x + bin.width / 2, bin.y, points);
+
+  // Layer 4: Audio - satisfying click
+  playSound("sort-correct", 0.6);
+
+  // Layer 5: Combo - escalating feedback
+  if (combo > 5) {
+    addScreenGlow(item.color, 200);
+  }
+}
+```
+
+Each layer is subtle. Together, they create a moment.
+
+## Lesson 3: Constraints Are Liberating
+
+Four colors. Sixty seconds. Two item types. No power-ups. No unlockables. No progression system. Laundry Sort is almost aggressively minimal, and that minimalism is its greatest strength.
+
+Every constraint we imposed forced us to find depth within simplicity rather than breadth through addition. We couldn't add a fifth color to create variety — we had to make four colors *enough*. We couldn't add power-ups to create excitement — we had to make the base mechanics *exciting enough* on their own.
+
+**The lesson:** When you can't add more features, you're forced to make existing features better. The polish depth you reach under constraints is far deeper than the surface breadth you cover without them.
+
+This doesn't mean constraints are easy. We had a whiteboard full of ideas we killed: special golden items worth double points, "laundry bomb" items that clear the screen, a machine that sorts items for you as a reward, different shaped bins, rotating bins, moving bins. All of these were fun ideas. None of them survived the question: "Does this make the core loop better, or just different?"
+
+## Lesson 4: Test on the Worst Device You Can Find
+
+Our performance optimization discipline would have been much weaker if we'd only tested on our development machines. The moment we loaded Laundry Sort on a budget Android phone, everything changed.
+
+Shadows dropped frames. Object allocation caused GC stutters. Touch events had unpredictable timing. The canvas resolution made text blurry. Every one of these issues was invisible on desktop but game-breaking on the target device.
+
+**The lesson:** Your game runs on your players' devices, not yours. Test on the worst hardware you plan to support, and test early. Performance problems are design problems — they affect game feel just as much as physics tuning.
+
+## Lesson 5: The First Second Matters Most
+
+We obsessed over the first second of gameplay. When a new player taps "Play," do they immediately understand what to do? Can they sort their first item without instruction?
+
+Our goal was zero-tutorial onboarding. The first clothing item drops slowly, directly above its matching-colored bin. The bin glows invitingly. The item's color is unmistakable. A player's natural instinct — tap the thing, drag it to the matching thing — is exactly correct.
+
+**The lesson:** Every second a player spends confused is a second they're not having fun. Design the first interaction to be self-evident, and let complexity emerge naturally through play.
+
+## Lesson 6: The Sound of Satisfaction
+
+Audio is the most underrated component of game feel. We spent more time on four sound effects — sort correct, sort wrong, timer warning, and game over — than we spent on the entire visual UI.
+
+The "sort correct" sound went through 23 iterations. It needed to be:
+- **Short** (under 200ms) so it doesn't overlap with rapid sorts
+- **Bright** so it feels rewarding
+- **Soft** so it doesn't become annoying after 50 plays
+- **Distinct** from the wrong-sort sound
+
+We settled on a crystalline "click" with a subtle upward pitch shift. It's the kind of sound you could hear a thousand times without fatigue. And that's exactly how often a returning player will hear it.
+
+## The Meta-Lesson: Feel Is Everything
+
+If Laundry Sort were stripped of all its juice, all its polish, all its sound and visual feedback — if it were just colored rectangles falling into boxes — the physics would still feel good. That's the foundation. Everything else amplifies it, but the foundation is what matters.
+
+Game feel lives in the gap between what the player expects and what happens. When a player flicks a shirt and it arcs through the air with exactly the right weight, spin, and trajectory — when it bounces once in the bin and settles perfectly — in that moment, the game is reading the player's mind. It does exactly what they *felt it should do*.
+
+That's game feel. It's invisible when it's working and catastrophic when it's not. And building Laundry Sort gave us a deep, visceral understanding of how to achieve it — through patient tuning, layered feedback, brave constraints, and an unwavering focus on how things *feel* rather than how they *look*.
+
+This is what indie game development is about. Not budgets or marketing or platform strategy. Just the pure, stubborn pursuit of making something that feels right.

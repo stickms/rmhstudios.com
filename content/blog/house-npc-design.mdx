@@ -1,0 +1,145 @@
+---
+title: "NPCs with Consequences: Designing Characters That React"
+date: "2025-09-08"
+description: "How NPCs in House Always Wins respond to Debt levels, remember your choices, and create Undertale-inspired narrative depth."
+tags: ["House Always Wins", "NPC Design", "Narrative Design", "Game Design", "Devlog"]
+---
+
+## Characters, Not Dispensers
+
+The most common NPC pattern in games is the quest dispenser. You walk up, they give you a task, you complete it, you come back, they give you a reward. They exist to serve a function. They're furniture with dialogue.
+
+In **House Always Wins**, NPCs are designed to be the opposite of that. They're characters with histories, opinions, fears, and memories. They react to your Debt level. They remember your choices. They change over time. And sometimes, they surprise you — not because I scripted a twist, but because the systems governing their behavior produce emergent moments that feel genuinely alive.
+
+The inspiration is obvious: **Undertale**. Toby Fox proved that NPCs in a small indie game could have more personality, more depth, and more emotional impact than characters in AAA titles with motion capture and Hollywood voice actors. The secret wasn't budget. It was *attention*. Every NPC in Undertale felt considered, from Papyrus's unearned confidence to Sans's knowing glances. That level of care is what I'm aiming for.
+
+## The Casino's Cast
+
+The abandoned casino is populated by a small but carefully designed cast of characters. Each NPC occupies a specific role in the casino's ecosystem and embodies a particular relationship with the concept of debt, luck, and gambling.
+
+### The Bartender — *Mara*
+
+Mara runs the bar that still, somehow, serves drinks. She's the closest thing to a friendly face in the casino. Warm, observant, and quietly sad. She's been here longer than she can remember and has watched countless people come through the casino's doors. She cares about you — genuinely — and that caring becomes painful as your Debt climbs.
+
+At low Debt, Mara is your ally. She offers advice, shares stories about the casino's history, and occasionally slips you a Casino Token "on the house." At high Debt, Mara can barely look at you. Her dialogue becomes clipped, her animations anxious. She still helps — she can't stop herself — but it hurts her.
+
+### The Pit Boss — *Harlan*
+
+Harlan embodies the casino's authority. He's sharp-dressed in decaying finery, speaks in clipped sentences, and watches everything. Where Mara is warmth, Harlan is order. He doesn't care about your well-being. He cares about the rules.
+
+At low Debt, Harlan is almost pleasant — professional, efficient, and willing to explain the casino's systems. At high Debt, he becomes your shadow. He appears in hallways you don't expect. His dialogue shifts from informational to interrogative: *"Where are you going? What are you planning?"* He never threatens you directly. He doesn't need to. His presence is the threat.
+
+### The Dealer — *Lux*
+
+Lux runs the gambling tables and is the most enigmatic character in the casino. She speaks in probabilities and odds, never in emotions. She's the only NPC who doesn't seem affected by Debt — at least not yours. She deals with the same calm precision whether you owe nothing or owe everything.
+
+But there are cracks. On subsequent playthroughs — especially after resets — Lux's dialogue develops hairline fractures. She references hands she hasn't dealt yet. She apologizes for outcomes that haven't happened. The persistence system is bleeding through her composure, and it's *unsettling*.
+
+### The Janitor — *Rem*
+
+Rem cleans the casino. That's his job, and he does it with methodical devotion despite the fact that the casino is far beyond cleaning. He sweeps dust into piles that reform behind him. He mops floors that stain again instantly. He's Sisyphus with a mop bucket, and he's the only NPC who seems at peace with the casino's nature.
+
+Rem is the game's philosophical voice. His dialogue is sparse but loaded. At low Debt: *"You're cleaner than most."* At high Debt: *"The floor remembers every step. You can't mop away footprints."* He's not affected by your Debt — he's *aware* of it, in a way that suggests he understands the casino better than anyone else.
+
+## The Dialogue System
+
+NPC dialogue in House Always Wins is driven by a **stateful dialogue engine** that considers multiple inputs when determining what a character says.
+
+### Input Variables
+
+Each dialogue query considers:
+
+- **Current Debt** — The primary modifier for behavioral tier
+- **Peak historical Debt** — Has this player ever been deep in Debt?
+- **Reset count** — How many times has the player started over?
+- **NPC relationship value** — Built through interactions, modified by choices
+- **Recent actions** — What the player did immediately before this conversation
+- **Event Room completions** — Has the player experienced this NPC's Event Room?
+- **Current room context** — Are we in the bar, the lobby, a hallway?
+
+```typescript
+interface DialogueContext {
+  currentDebt: number;
+  peakDebt: number;
+  resetCount: number;
+  relationship: number;
+  recentActions: string[];
+  completedEvents: Set<string>;
+  currentRoom: string;
+  timeOfSession: number; // minutes since login
+}
+
+function resolveDialogue(
+  npcId: string, 
+  context: DialogueContext
+): DialogueSequence {
+  const npc = getNpc(npcId);
+  const tier = npc.getBehaviorTier(context.currentDebt);
+  const pool = npc.getDialoguePool(tier, context);
+  
+  // Filter for context-relevant lines
+  const applicable = pool.filter(line => 
+    line.conditions.every(cond => cond.evaluate(context))
+  );
+  
+  // Priority sort: specific > general
+  applicable.sort((a, b) => b.specificity - a.specificity);
+  
+  return buildSequence(applicable);
+}
+```
+
+### Dialogue Layering
+
+Rather than writing entirely separate scripts for each Debt tier, I use a **layering system**. Each NPC has a base dialogue tree that covers most interactions. On top of this base, conditional layers add, remove, or replace specific lines based on context.
+
+For example, Mara's base dialogue for a first meeting includes a warm greeting and an offer of a drink. The high-Debt layer replaces the warm greeting with a nervous one and adds an internal aside: *"(She's smiling, but her hands are shaking.)"* The reset-awareness layer adds a line that fires only if the player has reset before: *"You look familiar. Have we... no. Never mind."*
+
+This layering approach means each NPC has a manageable amount of base content while allowing for hundreds of contextual variations. The combinatorial explosion of states (Debt × reset count × relationship × recent actions) would be unmanageable with fully branched scripts. Layers keep it tractable.
+
+## Consequences That Linger
+
+The deepest design principle in NPC behavior is **irreversibility of awareness**. Once an NPC has reacted to a high-Debt state, they don't fully revert if Debt decreases. Mara might warm up again if you reduce your Debt, but there's a residue. She's slightly more guarded. She pauses before speaking where she didn't before. She's seen what you can become, and that knowledge doesn't disappear.
+
+This is implemented through a **relationship hysteresis** system. NPC relationship values respond to Debt changes, but they lag — fast to decrease, slow to recover. If you spike to high Debt and then pay it all off, the NPC's internal state reflects the trauma of the spike even after the Debt is gone.
+
+```typescript
+function updateRelationship(
+  current: number, 
+  debtChange: number
+): number {
+  if (debtChange > 0) {
+    // Debt increase: relationship drops quickly
+    return current - (debtChange * 0.8);
+  } else {
+    // Debt decrease: relationship recovers slowly
+    return current - (debtChange * 0.3);
+  }
+}
+```
+
+This asymmetry creates a powerful emotional dynamic. It's easy to damage a relationship and hard to repair one. Just like real life. Just like a real casino, where winning doesn't undo the hours of losing that preceded it.
+
+## Writing for Reactivity
+
+Writing NPC dialogue for this system is a unique challenge. Traditional game writing is authoring a tree — branching paths with clear decision points. This dialogue system requires writing **pools of contextually aware fragments** that combine to feel like natural conversation.
+
+I've developed a few writing rules to keep the dialogue feeling human:
+
+**Rule 1: Specificity over generality.** A line that references a specific player action ("You spent a long time at the Wheel today") is always more powerful than a generic observation ("You seem tired"). The system should privilege specific lines when they're available.
+
+**Rule 2: Subtext over text.** NPCs rarely state their feelings directly. Mara doesn't say "I'm scared of you." She says "I should probably close up early tonight" while avoiding eye contact. The player infers the emotion. That inference makes it hit harder.
+
+**Rule 3: Silence is a response.** Sometimes the most powerful NPC reaction is no reaction at all. At very high Debt, some NPCs simply don't speak. They're present, they animate, they *exist* — but they won't engage. The absence of dialogue is itself a piece of dialogue, and it's devastating.
+
+**Rule 4: Humor persists.** Even at high Debt, NPCs retain glimmers of personality. Rem still makes dry observations. Lux still speaks in odds. The humor gets darker, more strained, more uncomfortable — but it's there. Characters without humor aren't characters. They're mood pieces.
+
+## The Undertale Debt
+
+I owe an enormous creative debt to Undertale, and I want to acknowledge it openly. That game proved that a small indie title could make players feel *guilty* about their choices in a way that AAA games with cinematic cutscenes never managed. The trick wasn't production value — it was specificity. Undertale's characters remembered specific things you did and responded to those specific things. Generic consequence is ignorable. Specific consequence is unforgettable.
+
+House Always Wins is trying to create that same specificity within a systemic framework. Where Undertale's characters were handcrafted for every route, my characters are driven by systems that produce contextual responses. It's a different approach to the same goal: making the player feel *known*.
+
+The casino's NPCs don't exist to give you quests. They exist to make you feel something about the choices you've made. Sometimes that feeling is warmth. Sometimes it's guilt. Sometimes it's the quiet horror of realizing that the person behind the bar used to smile at you, and you can't remember exactly when she stopped.
+
+That's the goal. Characters who react. Characters who remember. Characters who make you wish you'd played differently — not because the game punishes you, but because *they* deserved better.

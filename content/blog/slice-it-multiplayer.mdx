@@ -1,0 +1,149 @@
+---
+title: "Adding WebSocket Multiplayer to a Rhythm Game"
+date: "2025-04-02"
+description: "The technical journey of adding real-time WebSocket multiplayer to Slice It! with lobby support."
+tags: ["Slice It!", "Multiplayer", "WebSocket", "Devlog", "Technical"]
+---
+
+## The Loneliest Rhythm
+
+For the first few months, Slice It! was a solo experience. You picked a song, played it, and checked your score on the leaderboard. It was fun. But it was **lonely**.
+
+Rhythm games have always been social at their best. Think about the arcade — crowding around a DDR machine, cheering when someone nailed a tough section, the electric tension of a close match. I wanted to bring that energy to Slice It!, and that meant building real-time multiplayer.
+
+What I didn't realize was just how many hidden complexities lurk beneath the surface of "let multiple people play the same song at the same time."
+
+## Why WebSockets
+
+The choice of WebSockets over other real-time technologies was straightforward. We needed bidirectional, low-latency communication between the server and multiple clients simultaneously. HTTP polling would be too slow. Server-Sent Events are unidirectional. WebRTC is peer-to-peer and great for certain use cases, but we wanted a centralized server to act as the authority on game state.
+
+**Socket.IO** became our WebSocket layer, running on a Node.js server alongside the Next.js application. Socket.IO provides automatic reconnection, room management, and fallback to long-polling when WebSockets aren't available — crucial for reaching the widest possible audience.
+
+```typescript
+const io = new Server(httpServer, {
+  cors: { origin: process.env.CLIENT_URL },
+  pingInterval: 10000,
+  pingTimeout: 5000,
+});
+
+io.on('connection', (socket) => {
+  console.log(`Player connected: ${socket.id}`);
+  
+  socket.on('create-lobby', (data) => handleCreateLobby(socket, data));
+  socket.on('join-lobby', (data) => handleJoinLobby(socket, data));
+  socket.on('queue-song', (data) => handleQueueSong(socket, data));
+  socket.on('player-ready', () => handlePlayerReady(socket));
+  socket.on('score-update', (data) => handleScoreUpdate(socket, data));
+});
+```
+
+## The Lobby System
+
+Before anyone can play together, they need to find each other. We built a lobby system with two entry points:
+
+### Lobby Codes
+
+The host creates a lobby and receives a short, human-readable code (like `SLICE-7K2M`). They share this code with friends via text, Discord, or shouting across the room. Other players enter the code to join.
+
+We generate codes using a simple algorithm that avoids ambiguous characters (no 0/O, 1/I/L confusion) and checks against existing active lobbies to prevent collisions:
+
+```typescript
+function generateLobbyCode(): string {
+  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  let code = 'SLICE-';
+  for (let i = 0; i < 4; i++) {
+    code += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return code;
+}
+```
+
+### Shareable Links
+
+Even easier than codes, the host can copy a direct URL that includes the lobby ID. Clicking the link takes you straight into the lobby — no code entry required. This works brilliantly for sharing on social media or in group chats.
+
+## The Synchronization Problem
+
+Here's where things got **really** hard.
+
+In a single-player rhythm game, timing is between the player and their own audio playback. In multiplayer, you need all players to be playing the same song at the same time, seeing the same notes, and having their inputs evaluated against the same timeline.
+
+But the internet isn't instant. Player A might have a 20ms latency to the server. Player B might have 120ms. If the server says "start the song NOW," Player A hears the first beat 20ms later, and Player B hears it 120ms later. That 100ms difference is enough to make competitive scoring meaningless.
+
+### Our Solution: Scheduled Start
+
+Instead of saying "start now," the server says "start at timestamp X," where X is a moment in the near future (typically 2–3 seconds away). All clients receive this message, calculate the difference between the server's clock and their local clock, and schedule the audio playback to begin at the correct local time.
+
+```typescript
+socket.on('song-start', ({ serverStartTime }) => {
+  const clockOffset = estimatedServerTime() - Date.now();
+  const localStartTime = serverStartTime - clockOffset;
+  const delay = localStartTime - Date.now();
+  
+  setTimeout(() => {
+    audioEngine.playSong();
+    gameEngine.start();
+  }, Math.max(0, delay));
+});
+```
+
+Clock synchronization between client and server uses a simplified **NTP-style algorithm**. During the lobby phase, each client sends periodic pings and measures round-trip time. The server responds with its timestamp, and the client estimates the clock offset:
+
+```typescript
+function estimateClockOffset(
+  clientSendTime: number,
+  serverTime: number,
+  clientReceiveTime: number
+): number {
+  const roundTrip = clientReceiveTime - clientSendTime;
+  const oneWay = roundTrip / 2;
+  return serverTime - (clientSendTime + oneWay);
+}
+```
+
+It's not perfect — asymmetric network paths can introduce error — but with multiple samples averaged together, we consistently achieve synchronization within 10–20ms across players. For a rhythm game where hit windows are typically 50–100ms, that's good enough.
+
+## Score Broadcasting
+
+During gameplay, we broadcast score updates in real time. Every time a player hits a note (or misses one), their updated score, combo, and accuracy are sent to the server and relayed to all other players in the lobby.
+
+This creates a live competitive experience — you can see your opponents' scores climbing in real time via a sidebar overlay. The psychological effect is powerful. Watching someone pull ahead pushes you to play harder. Seeing them break their combo gives you a surge of hope.
+
+We throttle score updates to prevent network flooding. Instead of sending every individual hit, we batch updates at approximately 10Hz (every 100ms). This keeps bandwidth manageable while still feeling responsive to spectators.
+
+## Queued Songs and Playlists
+
+A multiplayer session isn't just one song — it's a series of songs. The lobby host (or any player, depending on lobby settings) can **queue songs** from the library. After each song, the results are displayed, and the next song in the queue automatically loads.
+
+The song queue is synchronized across all clients via the server. When a song is added, removed, or reordered, the server broadcasts the updated queue to everyone. This ensures all players see the same playlist at all times.
+
+```typescript
+interface Lobby {
+  code: string;
+  host: string;
+  players: Player[];
+  songQueue: QueuedSong[];
+  currentSongIndex: number;
+  state: 'waiting' | 'playing' | 'results';
+}
+```
+
+## Handling Disconnections
+
+Players disconnect. Browsers crash. WiFi drops. Networks hiccup. A robust multiplayer system needs to handle all of these gracefully.
+
+When a player disconnects during a song, we keep their slot in the lobby for 30 seconds. If they reconnect within that window, they rejoin seamlessly — their score from the current song is lost, but they're back in the lobby for the next one. If they don't reconnect, they're removed and the lobby continues.
+
+If the **host** disconnects, host privileges automatically transfer to the next player in the lobby. The game never stalls because one person had a network blip.
+
+## Up to Four Players
+
+We capped lobbies at **four players** after extensive testing. With four players, the sidebar showing live scores is readable and compelling. With five or more, the UI became cluttered, and the network traffic started noticeably increasing. Four feels like the sweet spot — enough for lively competition, manageable enough for clean presentation.
+
+## Reflections
+
+Building multiplayer was the hardest thing I've done on this project. The synchronization alone took three weeks of iteration. But the first time four people played Slice It! together — laughing, trash-talking, gasping at close scores — I knew every hour was worth it.
+
+The multiplayer system isn't just a feature. It's the **soul** of the competitive experience. It transforms Slice It! from a personal music toy into a shared arena where friends become rivals and every note matters a little bit more.
+
+Next up, I'll talk about the community features that make the multiplayer experience sustainable: user uploads, ratings, and the song discovery ecosystem.

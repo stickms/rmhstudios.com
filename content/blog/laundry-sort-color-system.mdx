@@ -1,0 +1,117 @@
+---
+title: "The Color Matching System: Simplicity as Depth"
+date: "2025-07-15"
+description: "Why Laundry Sort uses exactly four colors, and how constraints create more engaging gameplay."
+tags: ["Laundry Sort", "Game Design", "Color Theory", "Accessibility"]
+---
+
+## Four Colors. That's It.
+
+Red. Blue. Yellow. Green. Four colors, four bins, zero ambiguity. When we locked in this constraint early in Laundry Sort's development, it felt almost *too* simple. Surely a sorting game needs more variety? More colors, more item types, more complexity?
+
+No. Four colors is exactly right. And the journey to understanding *why* taught me more about game design than any complex system I've ever built.
+
+## The Psychology of Choice
+
+There's a concept in psychology called the **paradox of choice** — the more options you present, the harder each decision becomes, and the less satisfying each choice feels. In a fast-paced sorting game where decisions need to happen in fractions of a second, this effect is devastating.
+
+With 4 colors, the recognition-to-action pipeline is nearly instantaneous:
+1. See color → 0.1 seconds
+2. Identify matching bin → 0.1 seconds
+3. Begin drag action → immediate
+
+With 8 colors, step 2 becomes a bottleneck. "Is that teal or cyan? Which bin is teal?" The player's eyes have to scan more bins, compare more colors, and make more uncertain judgments. The sorting becomes a *reading comprehension test* rather than a *physical skill challenge*.
+
+Four colors keep the bottleneck where it belongs: in the physical execution (grabbing and dragging), not in the mental identification. The game should feel like a sport, not an exam.
+
+## Why These Four Colors?
+
+Red, blue, yellow, and green weren't chosen by accident. They're the four colors with the highest perceptual distinctiveness across the widest range of human vision. Let me break that down.
+
+### Maximum Perceptual Distance
+
+In color theory, we talk about "perceptual distance" — how different two colors *feel* to the human eye. Red, blue, yellow, and green sit at roughly equal intervals around the color wheel, maximizing the perceptual distance between any two colors. No pair of our four colors looks remotely similar.
+
+Compare this to a palette like red, orange, yellow, and salmon. Three of those colors live in the warm spectrum and could easily be confused at a glance — especially on a small phone screen, in direct sunlight, or at any angle where screen color shifts.
+
+### Cultural Universality
+
+These four colors have near-universal recognition across cultures and languages. The Berlin-Kay color term theory, which studied color naming across dozens of languages, found that red, blue, yellow, and green are among the earliest named colors in virtually every human language. They're the colors our species is most attuned to.
+
+### The Neon Advantage
+
+On our dark background, these four colors translate beautifully to neon accents:
+
+```typescript
+const COLORS = {
+  red: "#ff3b3b",
+  blue: "#3b8bff",
+  yellow: "#ffd93b",
+  green: "#3bff6e",
+};
+```
+
+Each of these hex values is a high-saturation, high-brightness variant that glows against black. They're vivid without being garish, distinct without being harsh. The dark arcade aesthetic amplifies their readability — on a white background, some of these would wash out, but on black, they sing.
+
+## Color Accessibility
+
+Approximately 8% of men and 0.5% of women have some form of color vision deficiency. For a game built entirely around color recognition, this isn't a niche concern — it's a core design responsibility.
+
+### Red-Green Color Blindness
+
+The most common type of color vision deficiency is red-green color blindness (deuteranopia and protanopia). For affected players, our red and green can appear very similar.
+
+We address this with **shape differentiation**. Shirts and pants have different silhouettes, and each color is *always* paired with the same item type in a predictable pattern. Additionally, each colored item has a small letter indicator rendered at low opacity — "R", "B", "Y", "G" — visible enough to help players who need it, subtle enough to be invisible to those who don't.
+
+```typescript
+function drawColorIndicator(
+  ctx: CanvasRenderingContext2D,
+  item: ClothingItem
+) {
+  ctx.font = "bold 10px monospace";
+  ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+  ctx.textAlign = "center";
+
+  const label = item.color[0].toUpperCase();
+  ctx.fillText(
+    label,
+    item.x + item.width / 2,
+    item.y + item.height / 2 + 3
+  );
+}
+```
+
+### Bin Labels
+
+The bins themselves also use both color and text. Each bin has its color name written underneath in the matching neon color. This redundant encoding ensures that even players who can't distinguish the colors can play effectively.
+
+We considered adding an explicit "colorblind mode" toggle, but decided against it. **Inclusive design shouldn't be opt-in.** Instead, we bake accessibility into the default experience so everyone benefits without anyone having to self-identify as needing help.
+
+## How Constraints Create Depth
+
+Here's the counterintuitive truth about Laundry Sort: **the four-color limit makes the game deeper, not shallower.**
+
+With only four colors, we have room to make each color *matter*. We can balance spawn rates per color. We can design bin layouts that create strategic movement patterns. We can create difficulty through *speed and chaos* rather than through *visual confusion*.
+
+Consider what happens with more colors:
+- Players spend more time identifying and less time sorting
+- The screen becomes visually noisy
+- Bins get smaller to fit more of them
+- Accidental wrong-sorts increase (unfair feeling)
+- The game becomes about color recognition skill rather than sorting skill
+
+With four colors, the identifying step is trivially easy, and all the skill expression lives in the physical act of sorting. *That's where the fun is.* The fun is in the frantic drag-and-drop, the close calls, the last-second saves. Not in squinting at colors.
+
+### Strategic Bin Layout
+
+With four bins arranged along the bottom of the screen, each bin position creates a different movement cost. Bins on the edges are farther from center-spawned items. Bins in the middle are closer together, making cross-sorts easier.
+
+This layout creates emergent strategy. Experienced players learn to position their finger centrally, minimizing maximum travel distance. They develop preferences for which items to sort first based on bin proximity. They learn to let physics carry items toward bins rather than fighting against gravity. None of this depth would exist if players were busy trying to distinguish between eight similar colors.
+
+## The Constraint Mindset
+
+Working on the color system changed how I think about game design at RMH Studios. The instinct is always to add more — more colors, more item types, more mechanics. But the best casual games are built on ruthless subtraction.
+
+Every element in Laundry Sort earns its place. Four colors is enough to create variety without creating confusion. It's enough to enable strategy without enabling frustration. It's enough.
+
+In game design, **enough** is a feature, not a compromise. The color matching system in Laundry Sort is simple — and that simplicity is the deepest design decision in the entire game.

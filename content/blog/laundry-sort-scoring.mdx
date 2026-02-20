@@ -1,0 +1,169 @@
+---
+title: "Designing a Satisfying Scoring System"
+date: "2025-09-10"
+description: "How we designed Laundry Sort's scoring, combo systems, and leaderboards to make every sort feel rewarding."
+tags: ["Laundry Sort", "Scoring", "Game Design", "Leaderboard"]
+---
+
+## The Moment of the Sort
+
+There's a micro-moment in Laundry Sort that everything hinges on: the instant a clothing item lands in the correct bin. That's the payoff. That's the reward. And if that moment doesn't feel *amazing*, the entire game falls apart.
+
+Scoring isn't just about numbers on a screen. It's about feedback, momentum, and the psychological loop that makes a player want to sort one more shirt. Getting this right was one of the most challenging and rewarding parts of building Laundry Sort at RMH Studios.
+
+## Base Points: Simple and Readable
+
+Every correct sort is worth **100 points**. We considered variable point values based on difficulty or item type, but ultimately rejected the idea. Why? Because *predictability enables strategy*.
+
+When a player knows every sort is worth 100 points, they can do mental math mid-game. "I've got 2,400 — that's 24 sorts with 30 seconds left. Can I beat 3,000?" This mental narrative keeps players engaged and goal-oriented. Variable scoring ("was that worth 80 or 120?") muddies the math and reduces the player's sense of agency.
+
+```typescript
+const BASE_POINTS = 100;
+
+function onCorrectSort(item: ClothingItem, bin: Bin) {
+  let points = BASE_POINTS;
+
+  // Apply combo multiplier
+  points *= getComboMultiplier();
+
+  // Apply speed bonus
+  points += getSpeedBonus(item);
+
+  addScore(points);
+  showPointsPopup(bin.x + bin.width / 2, bin.y, points);
+  incrementCombo();
+}
+```
+
+The base is always 100. Everything else is a bonus on top. This means every sort feels inherently valuable, and the combo and speed bonuses feel like *extra*.
+
+## The Combo System
+
+Combos are the engine of Laundry Sort's scoring depth. Every consecutive correct sort without a miss increases the combo counter, which applies a multiplier to point values:
+
+| Combo Count | Multiplier |
+|-------------|-----------|
+| 1-2 sorts   | 1x        |
+| 3-5 sorts   | 1.5x      |
+| 6-9 sorts   | 2x        |
+| 10-14 sorts | 3x        |
+| 15+ sorts   | 5x        |
+
+A wrong sort — dropping an item in the wrong-colored bin — resets the combo to zero.
+
+### Why Combos Work
+
+Combos create a **risk-reward tension** that the base scoring system lacks. With a 10-combo running, every sort is worth 300 points instead of 100. But the pressure of maintaining that combo makes you more careful, which slows you down, which risks time. Do you play safe to keep the combo, or rush and risk a miss?
+
+This tension is the difference between a scoring system and a *game*. Without combos, optimal play is just "sort as fast as possible." With combos, optimal play is "sort as fast as possible *without making mistakes*" — and that "without" is where all the skill expression lives.
+
+### Combo Feedback
+
+The combo counter is displayed prominently, and each combo tier triggers escalating visual feedback:
+
+```typescript
+function drawComboIndicator(ctx: CanvasRenderingContext2D, combo: number) {
+  if (combo < 3) return; // Don't show for low combos
+
+  const tier = getComboTier(combo);
+  const colors = ["#ffffff", "#ffd93b", "#ff8c3b", "#ff3b3b", "#ff3bff"];
+  const color = colors[Math.min(tier, colors.length - 1)];
+
+  const pulse = 1 + Math.sin(Date.now() / 150) * (0.02 * tier);
+
+  ctx.save();
+  ctx.translate(CANVAS_WIDTH / 2, 60);
+  ctx.scale(pulse, pulse);
+  ctx.font = `bold ${18 + tier * 4}px monospace`;
+  ctx.fillStyle = color;
+  ctx.textAlign = "center";
+  ctx.fillText(`${combo}x COMBO`, 0, 0);
+  ctx.restore();
+}
+```
+
+The combo indicator grows, changes color, and pulses faster as the combo increases. At 15+, it's pulsing magenta and fills a significant portion of the screen. It's *exciting* — you can feel that your combo is building even in your peripheral vision.
+
+## Speed Bonus
+
+Beyond combos, we award a speed bonus for sorts that happen quickly after the item spawns. If you grab and sort an item within 2 seconds of it appearing, you get a bonus:
+
+```typescript
+function getSpeedBonus(item: ClothingItem): number {
+  const sortTime = Date.now() - item.spawnTime;
+  if (sortTime < 1000) return 50; // Under 1 second: +50
+  if (sortTime < 2000) return 25; // Under 2 seconds: +25
+  return 0;
+}
+```
+
+Speed bonuses serve two design purposes. First, they reward aggressive play — players who grab items out of the air before they land score higher than players who wait for items to settle. Second, they create the visual language of urgency. When a player sees "+150" pop up from a fast combo-sort versus "+100" from a slow basic sort, they instinctively learn to play faster.
+
+## Wrong Sorts: The Cost of Mistakes
+
+Sorting an item into the wrong bin doesn't just reset the combo — it also deducts **50 points**. This penalty is deliberately smaller than the reward for a correct sort. We tested equal penalties (100 points lost per mistake), and it felt punishing. Players who made two mistakes in a row felt like the game was over. The 50-point penalty creates consequences without despair.
+
+The visual feedback for a wrong sort is also distinct: a brief red flash over the bin, a low buzz sound, and a "skull and crossbones" style indicator. It's immediately clear something went wrong, but it's not aggressive — it's informative.
+
+```typescript
+function onWrongSort(item: ClothingItem, bin: Bin) {
+  addScore(-50);
+  resetCombo();
+  showMissIndicator(bin.x + bin.width / 2, bin.y);
+  flashBinRed(bin);
+  playSound("wrong-sort");
+}
+```
+
+## Points Popup Animation
+
+Every score change shows a floating number that rises from the point of action and fades out. This is a classic "juicy" feedback mechanism borrowed from RPGs and action games:
+
+```typescript
+interface PointsPopup {
+  x: number;
+  y: number;
+  value: number;
+  age: number;
+  maxAge: number;
+}
+
+function updatePopup(popup: PointsPopup) {
+  popup.y -= 1.5; // Float upward
+  popup.age++;
+}
+
+function drawPopup(ctx: CanvasRenderingContext2D, popup: PointsPopup) {
+  const alpha = 1 - popup.age / popup.maxAge;
+  const scale = 1 + (popup.age / popup.maxAge) * 0.3;
+
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.translate(popup.x, popup.y);
+  ctx.scale(scale, scale);
+  ctx.font = "bold 16px monospace";
+  ctx.fillStyle = popup.value > 0 ? "#3bff6e" : "#ff3b3b";
+  ctx.textAlign = "center";
+  ctx.fillText(
+    `${popup.value > 0 ? "+" : ""}${popup.value}`,
+    0, 0
+  );
+  ctx.restore();
+}
+```
+
+The popup grows slightly as it fades, drawing the eye during the brief moment it's visible. Green for positive scores, red for negative. The combination of movement, scaling, opacity, and color creates a satisfying "score burst" that rewards each successful sort.
+
+## Leaderboard Integration
+
+At the end of each 60-second round, the player's score is submitted to a global leaderboard. This transforms Laundry Sort from a solo experience into a competitive one.
+
+We display the top 10 scores alongside the player's ranking. Seeing "You are #47 of 1,200 players" creates a very different feeling than just seeing "Score: 3,450." It contextualizes the score, gives the player something to aim for, and creates the "one more round" compulsion that keeps players coming back.
+
+The leaderboard also shows the player's personal best, their ranking trend (up or down since last session), and the score they need to reach the next tier. These small touches transform a static number into a dynamic narrative of improvement.
+
+## Making Every Sort Count
+
+The scoring system in Laundry Sort is ultimately about one thing: making every individual sort feel like it *matters*. A hundred points. A combo tick. A speed bonus. A floating green number. Every sort is a tiny victory, and sixty seconds of tiny victories add up to an experience that feels much bigger than colored rectangles falling into boxes.
+
+That's the magic of good scoring design — it doesn't just measure fun, it *creates* fun.

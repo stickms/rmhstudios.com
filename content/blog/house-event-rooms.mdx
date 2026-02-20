@@ -1,0 +1,111 @@
+---
+title: "Event Rooms: Compact Challenge Design"
+date: "2025-05-15"
+description: "Designing tight, meaningful 1-3 minute challenge rooms themed around NPCs for House Always Wins."
+tags: ["House Always Wins", "Game Design", "Level Design", "Devlog"]
+---
+
+## Small Rooms, Big Impact
+
+One of the core design pillars of **House Always Wins** is that nothing overstays its welcome. The casino is large — labyrinthine, even — but the individual experiences within it are compact. Nowhere is this more true than in the **Event Rooms**.
+
+Event Rooms are self-contained challenge spaces scattered throughout the casino. Each one takes between one and three minutes to complete. They're the backbone of the game's moment-to-moment engagement: quick, intense, themed, and *meaningful*. You step through a door, the world narrows, and for the next ninety seconds, nothing exists except you and the challenge.
+
+## The Celeste Influence
+
+I've talked before about how Celeste influenced this game, and Event Rooms are where that influence is most visible. Celeste's screen-by-screen design philosophy is one of the most elegant structures in modern platforming. Each screen is a self-contained puzzle: assess the obstacles, plan your approach, execute, move on. The instant respawn removes friction. The tight scope maintains focus.
+
+Event Rooms borrow this philosophy but wrap it in narrative context. Where Celeste's screens are abstract challenges connected by theme and difficulty curve, Event Rooms in House Always Wins are connected to **specific NPCs and story beats**. You don't just complete a challenge — you experience a compressed piece of someone's story.
+
+### The Structure
+
+Every Event Room follows a three-act structure within its brief runtime:
+
+1. **Introduction** (5-15 seconds) — The room establishes its visual theme and the NPC connection. A brief textbox or environmental detail sets the context.
+2. **Challenge** (45 seconds to 2.5 minutes) — The core gameplay. Platforming, puzzle-solving, or a combination. The mechanics reflect the NPC's personality and story.
+3. **Resolution** (5-15 seconds) — A moment of quiet. A reward, a story revelation, or simply a breath before re-entering the casino.
+
+This structure is rigid by design. I want players to *feel* the rhythm. Enter, engage, resolve. The consistency creates a cadence that makes the casino feel alive with purpose.
+
+## NPC-Themed Design
+
+What separates Event Rooms from generic challenge rooms is their connection to the casino's characters. Each Event Room is themed around a specific NPC, and the challenge reflects that character's personality, history, or emotional state.
+
+### Example: The Bartender's Room
+
+The Bartender is calm, methodical, and quietly sad. Her Event Room reflects this. The challenge is a precision platforming sequence through a tilted bar environment — bottles slide across shelves, liquid drips form temporary platforms, and the spacing demands patience over speed. The room's color palette is warm ambers and deep browns, and the soundtrack is a solo piano piece that plays slightly out of tune.
+
+At low Debt, the room is almost meditative. The platforms are generous, the timing forgiving. At high Debt, the room tilts more aggressively. Bottles shatter unpredictably. The piano misses notes. The Bartender's sadness has curdled into anxiety, and the room *feels* it.
+
+### Example: The Pit Boss's Room
+
+The Pit Boss is aggressive, controlling, and deeply suspicious. His Event Room is a gauntlet. Moving walls, falling ceilings, and surveillance cameras that trigger traps when they spot you. The room demands quick thinking and quicker reflexes. The color palette is harsh reds and chrome, and the soundtrack is a distorted bass line that pulses like a heartbeat.
+
+At high Debt, the Pit Boss's room becomes *personal*. The surveillance cameras track you more aggressively. The traps anticipate your patterns. The room's dialogue shifts from threats to something worse: disappointment. *"I expected more from someone who owes this much."*
+
+### Design Constraints
+
+Each NPC-themed room follows a set of constraints that keep the design focused:
+
+- **One core mechanic** — Every room introduces or emphasizes a single mechanic. The Bartender's room is about precision timing. The Pit Boss's room is about evasion. No room tries to do everything.
+- **Visual identity** — Each room has a distinct color palette and environmental style that immediately communicates which NPC it belongs to.
+- **Debt variation** — Every room has at least two versions: a low-Debt version and a high-Debt version. The challenge changes, but the core mechanic stays the same.
+- **No death penalties** — You restart the room instantly on failure. No loading screens, no lost progress outside the room. The friction is in the challenge itself, never in the meta-structure.
+
+```typescript
+// Event Room configuration structure
+interface EventRoom {
+  id: string;
+  npcId: string;
+  coreMechanic: 'precision' | 'evasion' | 'puzzle' | 'timing' | 'sequence';
+  durationTarget: { min: number; max: number }; // in seconds
+  debtVariations: {
+    low: RoomLayout;
+    medium: RoomLayout;
+    high: RoomLayout;
+  };
+  reward: EventReward;
+  narrativeBeat: string;
+}
+```
+
+## The One-Minute Sweet Spot
+
+Through prototyping, I've found that the ideal Event Room length is around **ninety seconds**. Short enough that failure doesn't feel punishing, long enough that completion feels earned. Rooms shorter than sixty seconds feel trivial — you barely register the theme before it's over. Rooms longer than three minutes start to feel like levels, not events, and they break the pacing of casino exploration.
+
+The ninety-second target also aligns with a psychological principle I've been leaning into: **flow state accessibility**. Studies suggest that it takes about twenty seconds to enter a focused state and about two minutes before fatigue begins to erode performance. A ninety-second challenge sits right in that productive window. You're engaged, you're performing, and you're done before execution errors pile up from tiredness.
+
+### Pacing in the Casino
+
+Event Rooms serve a critical pacing function in the broader game. Exploration in the casino is slow and atmospheric — you're navigating dark hallways, reading environmental clues, talking to NPCs. Event Rooms punctuate this with bursts of intensity. The rhythm of the game becomes: *explore, discover, challenge, breathe, explore.* Without Event Rooms, the casino would risk feeling aimless. Without the exploration between them, Event Rooms would feel like a disconnected level select.
+
+The placement of Event Rooms in the casino is deliberate. They're never more than five minutes of exploration apart, but they're also never adjacent. You always have time to decompress between challenges, to process what you just experienced, to let the casino's atmosphere settle back over you.
+
+## Rewards and Consequences
+
+Completing an Event Room always grants something — but what you get depends on context. Possible rewards include:
+
+- **Casino Tokens** — The game's currency, used to gamble and reduce Debt.
+- **Shortcuts** — Some Event Rooms unlock permanent shortcuts in the casino layout.
+- **NPC dialogue unlocks** — Completing a character's Event Room opens new conversation options with that NPC.
+- **Lore fragments** — Pieces of the casino's history, revealed through environmental storytelling within the room.
+
+Failing an Event Room has no consequence beyond the time spent. You can retry immediately and indefinitely. But here's the subtle layer: **the game tracks your attempts**. An NPC whose room took you forty tries might comment on your persistence. Or your stubbornness. Or your desperation. The casino notices effort, even failed effort.
+
+## The Design Challenge
+
+Building Event Rooms is simultaneously the most fun and most difficult part of development. Each room needs to:
+
+- Teach or test a mechanic in under three minutes
+- Reflect an NPC's personality through pure gameplay
+- Scale with the Debt system without becoming unfair
+- Feel complete and satisfying despite its brevity
+- Fit naturally into the casino's physical layout
+
+That's a lot of constraints for a ninety-second experience. But constraints breed creativity. Some of my best design moments have come from asking "How do I express this NPC's grief through platforming mechanics?" The answer is never obvious, and it's always interesting.
+
+I'm currently in the process of designing the first batch of six Event Rooms — one for each of the casino's primary NPCs. Each one is going through multiple iterations as I test timing, difficulty curves, and Debt variation. It's slow work, but the rooms that are coming together feel unlike anything I've designed before.
+
+Compact. Intense. Personal. That's the Event Room promise.
+
+Stay tuned — in future devlogs, I'll break down individual Event Room designs and share the iteration process behind them.

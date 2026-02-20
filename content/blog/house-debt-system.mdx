@@ -1,0 +1,101 @@
+---
+title: "The Debt System: Difficulty That Transforms the World"
+date: "2025-03-05"
+description: "How the Debt system in House Always Wins modifies NPC behavior, lighting, music, and atmosphere instead of blocking progression."
+tags: ["House Always Wins", "Game Design", "Debt System", "Devlog"]
+---
+
+## Rethinking Difficulty
+
+Most games treat difficulty as a slider. Easy, Medium, Hard. Maybe Nightmare if the devs are feeling spicy. But difficulty in those systems is usually just math — enemies hit harder, you have less health, checkpoints are farther apart. The world itself doesn't change. A forest on Easy looks exactly like a forest on Hard.
+
+I wanted something different for **House Always Wins**. I wanted difficulty to be *felt*, not just calculated. And that's where the Debt system was born.
+
+## What Is Debt?
+
+Debt is a persistent numerical value tied to your character. It goes up when you gamble and lose, when you make certain narrative choices, when you push deeper into the casino without paying your dues. It goes down — slowly — when you win, when you help NPCs, when you find and spend Casino Tokens.
+
+But here's the critical design rule: **Debt never blocks progression.** You can be drowning in Debt and still reach the final room of the casino. The doors don't lock. The paths don't close. Every player can finish the game regardless of their Debt level.
+
+So what does Debt actually *do*?
+
+It transforms the world.
+
+## The Four Pillars of Debt
+
+Debt affects four interconnected systems, and together they create a feeling of mounting psychological pressure without ever putting up a wall.
+
+### 1. NPC Behavior
+
+NPCs in the casino react to your Debt level in real-time. At low Debt, the bartender is warm — she cracks jokes, offers tips, maybe flirts a little. At medium Debt, she's cautious. She gives you shorter answers. She glances at the door more often. At high Debt, she barely speaks. She slides your drink across the counter without making eye contact. Her idle animation changes — she polishes the same glass obsessively, a nervous tic rendered in pixel art.
+
+This isn't just flavor text swapping. Every major NPC has **three behavioral tiers** mapped to Debt thresholds. Their dialogue, their animations, their willingness to help you — it all shifts. And because Debt changes gradually, you won't notice the exact moment things change. You'll just feel it. The casino used to feel friendlier. When did that stop?
+
+```typescript
+// Simplified NPC behavior tier resolution
+function getNpcBehaviorTier(debt: number): 'warm' | 'cautious' | 'fearful' {
+  if (debt < 30) return 'warm';
+  if (debt < 70) return 'cautious';
+  return 'fearful';
+}
+```
+
+### 2. Lighting
+
+The casino's lighting system is directly tied to Debt. At zero Debt, rooms have a certain glow to them — not bright, never bright, this is still an abandoned casino — but there's warmth in the flickering neon, pools of golden light from surviving fixtures. As Debt climbs, the light sources dim. Shadows deepen. Some lights go out entirely. At maximum Debt, you're navigating near-darkness, with only the persistent glow of slot machine screens to guide you.
+
+This is implemented through a dynamic lighting layer that adjusts color temperature, intensity, and flicker frequency based on the current Debt value. The changes are continuous, not stepped, so there's no jarring transition. The world just... darkens around you.
+
+### 3. Music and Sound
+
+The soundtrack of House Always Wins is designed with **distortion layers** that activate based on Debt. The base tracks are melancholic but listenable — lounge jazz with a minor key spine, piano that echoes through empty hallways. As Debt increases, the audio processing shifts. Reverb extends. A low-frequency hum creeps in beneath the melody. At high Debt, the music becomes almost unrecognizable — warped, stretched, like a record playing at the wrong speed in a room that's too large.
+
+Sound effects follow the same pattern. The *clink* of Casino Tokens at low Debt is clean and satisfying. At high Debt, it reverberates uncomfortably, like coins dropping into something deep and hollow.
+
+### 4. Atmospheric Details
+
+Beyond the big three systems, Debt influences dozens of small environmental details. At low Debt, you might see a playing card flutter across a hallway — a gentle reminder of the casino's nature. At high Debt, the cards are everywhere, plastered to walls, stuck to your shoes, forming drifts in corners. Slot machines that were silent start spinning on their own. Chips appear in places they shouldn't be. The casino is getting *excited*. You're feeding it.
+
+## Why Not Block Progression?
+
+This was the hardest design decision, and I almost went the other direction. Early prototypes had Debt locking doors — high Debt meant certain paths were closed until you paid it down. It felt *fair*. It felt like a reasonable consequence.
+
+But it felt wrong for the game's soul.
+
+House Always Wins is about the *experience* of being in a system designed to exploit you. If Debt locks doors, the player focuses on the obstacle: "How do I reduce my Debt to open this door?" That's a puzzle. It's solvable. It's *comfortable*.
+
+If Debt only changes the atmosphere, the player focuses on the feeling: "Why does everything feel wrong? Why won't the bartender look at me? Why is the music doing that?" That's not solvable. You can reduce Debt, sure, but you can't un-feel what the game made you feel. And that lingering discomfort — that's where the horror lives.
+
+### The Psychological Weight
+
+There's a concept in game design I think about a lot: **the difference between mechanical consequence and emotional consequence**. A locked door is a mechanical consequence. You deal with it and move on. But an NPC who used to be your friend now flinching when you approach — that's emotional. You carry that differently. It sits in your chest, not in your quest log.
+
+The Debt system is designed to live in your chest.
+
+## Implementation Challenges
+
+Building this system is not trivial. Every visual asset, every sound file, every line of NPC dialogue needs to account for Debt variation. It's essentially building three versions of the game world layered on top of each other, with smooth transitions between them.
+
+The architecture uses a central Debt store that broadcasts changes to all subscribed systems:
+
+```typescript
+// Debt change propagation
+function onDebtChanged(newDebt: number) {
+  lightingSystem.updateIntensity(newDebt);
+  audioSystem.updateDistortion(newDebt);
+  npcManager.updateBehaviorTiers(newDebt);
+  atmosphereSystem.updateDetails(newDebt);
+}
+```
+
+Each system handles its own interpolation and timing. The lighting system fades over two seconds. The audio system crossfades over five. NPCs update on the next interaction. The result is a world that feels organic in its transformation — no single moment where everything snaps to a new state, just a slow, creeping shift.
+
+## Lessons So Far
+
+The biggest lesson from designing the Debt system: **subtlety is harder than spectacle.** It's easy to make a dramatic change — a door slams shut, a boss appears, the screen goes red. It's much harder to make a change so gradual that the player only notices it in retrospect. But when you pull it off, the effect is profound.
+
+I'm still tuning thresholds and transition curves. Some changes happen too fast, breaking the illusion. Others are so subtle that playtesters miss them entirely. Finding that sweet spot — where the player *feels* something shifting without being able to point to the exact moment — that's the art of this system.
+
+The Debt system is the beating heart of House Always Wins. Everything else — the Event Rooms, the NPCs, the sound design — orbits around it. Get this right, and the game becomes something special. Get it wrong, and it's just another platformer with a darkness slider.
+
+No pressure.

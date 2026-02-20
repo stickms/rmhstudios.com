@@ -1,0 +1,105 @@
+---
+title: "Designing Enemies That Haunt Players"
+date: "2025-07-20"
+description: "Enemy design philosophy in Satan's Library — behavior patterns, the Succubi concept, unpredictability, and making encounters memorable."
+tags: ["Satan's Library", "Enemy Design", "AI", "Succubi", "Devlog"]
+---
+
+## The Best Enemy Is the One You Haven't Seen Yet
+
+Most survival horror games show you the monster too early. The first encounter reveals the design, the animations, the behavior patterns. After that, familiarity erodes fear. The tenth time you see the same shambling figure round a corner, you're not terrified — you're managing a threat. Satan's Library is designed so that **the enemy you imagine is always worse than the one you encounter**, because encounters are rare, varied, and never quite what you expect.
+
+## Design Philosophy: Less Is More
+
+The temptation in horror game design is to fill the world with threats. More enemies means more encounters means more scares, right? Wrong. Scarcity is the heart of horror. In Satan's Library, enemy encounters are **events**, not routine. You might explore for twenty minutes without seeing a threat. But you'll *feel* them. You'll hear them. You'll see evidence of their passage. And when you finally encounter one, it should be a moment that rewrites your understanding of safety.
+
+### The Rule of Implication
+
+For every enemy the player sees, they should **suspect three more they don't**. This is achieved through environmental cues:
+
+- Books knocked from shelves in a pattern suggesting something moved through quickly
+- A reading lamp still swinging when you enter a room
+- Wet footprints that end in the middle of a corridor — no door, no turn, just... ending
+- A sound from the next room that stops the moment you reach the door
+
+These implications cost nothing in terms of AI processing but create enormous psychological pressure. The player populates the library with threats in their own imagination, which is always more terrifying than anything I could render.
+
+## The Succubi
+
+The primary enemy type in Satan's Library is the **Succubi** — entities that feed on the psychic energy of those who delve too deep into forbidden knowledge. They are the library's immune system, the response to trespassers who read what they shouldn't.
+
+### Visual Design
+
+The Succubi are designed around the principle of **the almost-human**. They have humanoid proportions but wrong geometry. Limbs that are slightly too long. Joints that bend in additional directions. Movement that is fluid in a way that human bodies shouldn't be. The uncanny valley isn't a problem to avoid with the Succubi — it's the entire design goal.
+
+Their appearance is also tied to the player's stress level. At high composure, if you catch a glimpse of a Succubus, it looks *almost* like a person — a figure at the end of a corridor, a shape in peripheral vision. At low composure, their true form becomes visible: distorted, wrong, and deeply unsettling. The Aura system doesn't just affect the camera — it affects how you *perceive the threats*.
+
+### Behavior Patterns
+
+The Succubi don't follow traditional patrol routes. Instead, they operate on a **territory and curiosity** system:
+
+```
+// Pseudocode for Succubi behavior
+function updateSuccubiBehavior(entity, playerData, environmentData) {
+    // Succubi are drawn to signs of player activity
+    let curiosityTargets = getPlayerTraces(environmentData)
+    // Opened doors, moved objects, read books, light sources
+    
+    // They investigate disturbances rather than pursuing the player
+    if (curiosityTargets.length > 0) {
+        entity.investigateNearest(curiosityTargets)
+    }
+    
+    // Direct pursuit only triggers on line-of-sight or high noise
+    if (entity.canSeePlayer() || playerData.noiseLevel > DETECTION_THRESHOLD) {
+        entity.enterPursuitState()
+    }
+    
+    // In pursuit, behavior varies by individual
+    entity.pursuitBehavior = entity.personality.getPursuitStyle()
+    // Some stalk slowly, some rush, some try to cut off escape routes
+}
+```
+
+**Territory**: Each Succubus has a domain — a section of the library they inhabit. They don't wander the entire building. This means certain areas are "owned" by specific entities, and learning their territory is a survival skill. But territories can shift during certain game events, disrupting the player's hard-won knowledge.
+
+**Curiosity**: Rather than patrolling, Succubi are drawn to **signs of the player's presence**. Open doors, recently moved objects, activated light switches, and most importantly, *read books*. The act of gaining knowledge leaves a psychic trace that attracts them. This creates a beautiful mechanical tension: the more you explore and learn, the more attention you draw.
+
+## Making Enemies Unpredictable
+
+Predictable enemies become puzzles. You learn the pattern, you exploit it, and the fear evaporates. Satan's Library combats this through **behavioral variation**:
+
+### Personality System
+
+Each Succubus has a randomly assigned personality that determines its behavior tendencies:
+
+- **Stalkers** follow the player at a distance, staying just out of clear sight, creating paranoia rather than immediate danger
+- **Rushers** attack aggressively when they detect the player, creating moments of pure adrenaline
+- **Trappers** try to position themselves between the player and exits, cutting off escape routes
+- **Lurkers** hide in dark areas and wait for the player to come to them
+
+The player doesn't know which personality type they're dealing with until the behavior reveals itself. And even then, personalities influence *tendencies*, not absolute behaviors. A Stalker might occasionally rush. A Rusher might suddenly stop and watch.
+
+### Memory and Adaptation
+
+Succubi **remember** the player's behavior. If you always run right when spotted, they begin anticipating rightward movement. If you always hide in the same type of location, they start checking those locations first. The AI doesn't cheat — it doesn't know where you are unless it has information — but it *learns*, creating an arms race between player strategy and enemy adaptation.
+
+## The Encounter Arc
+
+Every enemy encounter in Satan's Library follows a three-act structure:
+
+**Act 1 — Awareness**: The player realizes something is nearby. This might be audio cues, environmental disturbance, or a distant visual. The Aura system starts responding. Stress begins to build.
+
+**Act 2 — Confrontation**: The player and the entity are in the same space. The player must decide: hide, flee, or endure. There is no combat in Satan's Library (at least not in the traditional sense). The player is never the predator.
+
+**Act 3 — Resolution**: The encounter ends. Either the player successfully evaded the threat, or they didn't. Successful evasion brings a flood of relief — and a small Aura recovery. Failed evasion has consequences I won't spoil here.
+
+### The Design of Powerlessness
+
+Not giving the player weapons was a deliberate choice, and I wrestled with it for weeks. Weapons change the psychological dynamic entirely. A player with a gun is a problem-solver. A player without one is a *survivor*. Satan's Library is about survival — about being in a place where you don't belong, where the inhabitants are more powerful than you, and where your only advantages are intelligence, caution, and the ability to manage your own fear.
+
+## What Haunts Players
+
+Through prototyping and playtesting, I've learned that what haunts players isn't the monster in front of them — it's the monster behind the closed door. The sound they heard but can't source. The shape that might have been a shadow and might have been something else. The Succubi are designed to spend most of their time in this liminal space — present but not visible, threatening but not attacking, *near* but never precisely located.
+
+That's the design of Satan's Library's enemies: not monsters to be defeated, but presences to be endured. And enduring them, moment by moment, room by room, is the essence of the game.

@@ -1,0 +1,144 @@
+---
+title: "Solving Audio Latency: The Calibration System"
+date: "2025-06-10"
+description: "How we built the input/audio delay calibration system in Slice It! and why it matters."
+tags: ["Slice It!", "Audio Latency", "Calibration", "Devlog", "Technical"]
+---
+
+## The Invisible Enemy
+
+Imagine this: you hear the beat, you press the key at exactly the right moment, and the game tells you it was a "Good" instead of a "Perfect." You try again, pressing earlier. Now it's a "Miss." You're frustrated, confused, and starting to wonder if the game is broken.
+
+It's not broken. It's **latency** — and it's the invisible enemy that every rhythm game must defeat.
+
+Audio latency is the delay between when your computer decides to play a sound and when that sound actually reaches your ears. Input latency is the delay between when you press a key and when the game registers it. In most games, these delays are negligible. In a rhythm game, where timing windows are measured in milliseconds, they're the difference between a game that feels magical and one that feels impossibly unfair.
+
+## Where Latency Comes From
+
+Understanding the problem requires understanding the pipeline that sound travels through:
+
+1. **Software rendering** — The Web Audio API schedules audio output
+2. **Audio buffer** — The browser maintains an output buffer (typically 256–4096 samples)
+3. **OS audio stack** — The operating system's audio subsystem adds its own buffering
+4. **DAC conversion** — Digital-to-analog conversion in your audio hardware
+5. **Physical propagation** — Sound travels from speakers to ears (negligible for headphones, noticeable for distant speakers)
+
+Similarly, input travels a pipeline in reverse:
+
+1. **Physical key press** — Your finger hits the key
+2. **Keyboard controller** — The keyboard's firmware processes the press
+3. **USB polling** — The OS polls the USB bus for input (typically 1–8ms intervals)
+4. **OS input stack** — The event propagates through the OS
+5. **Browser event loop** — JavaScript receives the keyboard event
+
+Each step adds milliseconds, and they compound. A typical setup might have 30–80ms of total audio output latency and 5–20ms of input latency. Wireless headphones can push audio latency to 150ms or more. Budget USB keyboards might add 15ms of input delay.
+
+The total offset between "when the player hears a beat" and "when the game processes their key press for that beat" can easily reach 50–200ms depending on hardware. Without calibration, this makes precise timing essentially a coin flip.
+
+## The Calibration Screen
+
+Slice It! includes a dedicated **calibration screen** that players can access from the settings menu. It's designed to measure both audio output latency and input latency separately, then combine them into a single offset value that the game engine uses to adjust note timing.
+
+### Audio Calibration
+
+The audio calibration test plays a steady metronome click at a known BPM. The player watches a visual indicator (a pulsing circle synchronized to the game clock) and listens to the audio. If the visual pulse and the audio click are perfectly synchronized, the audio latency is zero. If the click arrives after the visual pulse, there's positive latency.
+
+The player adjusts a slider until the click and the visual pulse feel simultaneous. The slider value represents the audio offset in milliseconds.
+
+```typescript
+interface CalibrationSettings {
+  audioOffset: number;   // ms - how far ahead to schedule audio
+  inputOffset: number;   // ms - how much to shift hit windows
+  combined: number;      // ms - total offset applied to note timing
+}
+```
+
+### Input Calibration
+
+The input calibration test plays a series of clicks and asks the player to tap a key in sync. The game records the difference between the expected hit time and the actual input time across multiple trials. After enough samples (we use 20), the median offset is calculated and stored.
+
+The median is more robust than the mean here — it ignores outlier taps where the player accidentally pressed too early or too late. We want the offset that represents their *intended* timing, not their mistakes.
+
+```typescript
+function calculateInputOffset(samples: number[]): number {
+  const sorted = [...samples].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  
+  if (sorted.length % 2 === 0) {
+    return (sorted[mid - 1] + sorted[mid]) / 2;
+  }
+  return sorted[mid];
+}
+```
+
+### Combined Offset
+
+The final calibration value is the sum of the audio and input offsets. This combined value tells the game engine: "shift all note timing by X milliseconds to account for this player's hardware."
+
+During gameplay, the engine applies this offset when evaluating hit accuracy:
+
+```typescript
+function evaluateHit(noteTime: number, inputTime: number, calibration: number): HitResult {
+  const adjustedDiff = Math.abs((inputTime - calibration) - noteTime);
+  
+  if (adjustedDiff < 20) return 'perfect';
+  if (adjustedDiff < 50) return 'great';
+  if (adjustedDiff < 80) return 'good';
+  if (adjustedDiff < 120) return 'ok';
+  return 'miss';
+}
+```
+
+## Persisting with localStorage
+
+Calibration is only useful if it persists between sessions. Nobody wants to recalibrate every time they open the game. We store the calibration settings in **localStorage**, keyed to a device identifier.
+
+```typescript
+function saveCalibration(settings: CalibrationSettings): void {
+  localStorage.setItem('sliceit-calibration', JSON.stringify(settings));
+}
+
+function loadCalibration(): CalibrationSettings {
+  const stored = localStorage.getItem('sliceit-calibration');
+  if (stored) {
+    return JSON.parse(stored);
+  }
+  return { audioOffset: 0, inputOffset: 0, combined: 0 };
+}
+```
+
+We chose localStorage over server-side storage deliberately. Calibration is **device-specific**, not account-specific. If a player uses Slice It! on their desktop at home and their laptop at a café, they need different calibration values for each. Storing it in the browser ensures the right settings are always used for the right hardware.
+
+When a player logs in on a new device for the first time, we detect the absence of calibration data and gently prompt them to run the calibration wizard. It's not forced — they can skip it — but we emphasize how much it improves the experience.
+
+## Why This Matters for Competitive Play
+
+In casual play, a 50ms offset is annoying but survivable. In competitive play — where leaderboard rankings hinge on accuracy percentages — it's devastating.
+
+Consider two players with identical skill. Player A has calibrated properly; their system has 3ms of effective timing error. Player B hasn't calibrated; their system has 60ms of offset. Player A will consistently hit "Perfect" on notes that Player B only gets "Good" or "Great." Over a full song, that difference translates to thousands of points and a significant accuracy gap.
+
+**Calibration is an equalizer.** It ensures that leaderboard rankings reflect player skill, not hardware quality. A player with $20 speakers who calibrates properly can compete fairly against a player with a $500 audio interface. That's the kind of fairness a competitive community needs.
+
+## Edge Cases and Workarounds
+
+Real-world usage surfaced several edge cases:
+
+### Bluetooth Audio
+
+Bluetooth headphones are notorious for high, variable latency. Some Bluetooth codecs add 150–300ms of delay, and it can fluctuate during a session. We added a warning in the settings: "Bluetooth audio may cause inconsistent latency. Wired headphones are recommended for the best experience."
+
+### Browser Tab Focus
+
+When a browser tab loses focus, audio scheduling can become erratic. We pause the game when the tab loses focus and resume when it regains focus, resynchronizing the audio clock to prevent drift.
+
+### System Load
+
+Heavy CPU or GPU usage from other applications can cause audio buffer underruns, creating audible glitches and timing shifts. We monitor frame rate during gameplay and display a subtle warning indicator if performance drops below acceptable levels.
+
+## Lessons Learned
+
+Building the calibration system taught me a profound lesson: **the gap between the developer's machine and the player's machine is vast.** On my development setup — a wired gaming keyboard, wired studio headphones, a powerful desktop — latency is barely noticeable. On a laptop with Bluetooth earbuds at a coffee shop, it's a completely different game. Literally.
+
+Testing on diverse hardware early and often would have saved me weeks of confusion. If I could give one piece of advice to anyone building a timing-critical web application, it's this: **test on the worst hardware you can find, and build calibration from day one.**
+
+The calibration system is invisible when it works. Players set it once and forget it. But that invisibility is exactly the point — it removes a barrier, letting the player focus entirely on the music and the game. And that's what Slice It! is all about.

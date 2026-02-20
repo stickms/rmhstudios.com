@@ -1,0 +1,97 @@
+---
+title: "Mobile-First Action Game Controls"
+date: "2025-07-22"
+description: "How we built responsive D-pad and ability controls for Echoes of the Spire on mobile devices."
+tags: ["Echoes of the Spire", "Mobile", "Controls", "Devlog"]
+---
+
+## Why Mobile Can't Be an Afterthought
+
+Here's a stat that changed how I think about web game development: **over 60% of web traffic is mobile**. If Echoes of the Spire only works well on desktop, I'm locking out the majority of potential players before they even try the game. Mobile can't be a "nice to have" — it has to be a first-class platform.
+
+But building an action game for mobile is *hard*. Touchscreens fundamentally lack the tactile feedback that makes keyboard and controller input intuitive. There are no physical buttons to find by feel, no analog sticks to push, no triggers to press. Every input is a flat glass surface, and your fingers are covering part of the screen while you use them.
+
+I spent months iterating on Echoes' mobile controls, and I want to share what I learned — the failures, the breakthroughs, and the design principles that emerged.
+
+## The D-Pad: Resurrection of a Classic
+
+For movement, I went with a **virtual D-pad** on the left side of the screen. I tested other options — joystick controls, swipe-to-move, tap-to-move — and the D-pad won by a wide margin. Here's why:
+
+**Joystick controls** require constant precise positioning. Your thumb has to find the center point, push in the right direction, and maintain that position while also paying attention to the game. It's workable for slower games but exhausting for fast-paced action.
+
+**Swipe-to-move** disconnects the input direction from the character's movement in a way that feels unnatural. You swipe north to move north, but your finger is at the bottom of the screen while your character is in the middle. The spatial mismatch creates cognitive load.
+
+**Tap-to-move** works for strategy and puzzle games but is fundamentally incompatible with real-time combat. You can't dodge incoming attacks when your movement system requires you to tap a destination and wait.
+
+The D-pad works because it maps neatly to the directional movement system already in the game. Eight directions (four cardinal, four diagonal), instant response, no dead zones, no precision requirements. Your thumb sits in one spot and you press in the direction you want to go.
+
+### Making It Feel Good
+
+The raw D-pad implementation was functional but felt terrible. Here's what made it feel good:
+
+**Generous hit zones.** The visual D-pad graphic is a certain size, but the actual touch target extends well beyond it. Players almost never actually press exactly where they think they're pressing. Expanding the hit zone by 30% eliminated most "I pressed the wrong direction" complaints.
+
+**Diagonal priority tuning.** When your thumb is between two cardinal directions, should the game register a diagonal or the nearest cardinal? I made this configurable, but the default favors diagonal input because combat movement frequently requires diagonal dodging.
+
+**Visual feedback.** When you press a direction, that segment of the D-pad highlights with a brief bloom effect. This confirms your input visually, compensating for the lack of tactile feedback. The highlight uses the game's purple/cyan color palette to stay aesthetically consistent.
+
+```typescript
+interface DPadConfig {
+  baseRadius: number;        // Visual size
+  touchRadius: number;       // Actual hit zone (larger)
+  deadZone: number;          // Center dead zone
+  diagonalThreshold: number; // Angle threshold for diagonal detection
+  hapticFeedback: boolean;   // Device vibration on press
+}
+```
+
+**Haptic feedback.** On devices that support it, I trigger a subtle vibration pulse when the player starts moving and a different pulse when they change direction. This partially replaces the tactile feedback of physical buttons. The vibrations are gentle — 10-15ms pulses — and can be disabled for players who find them annoying.
+
+## Ability Buttons: The Right Side
+
+The right side of the screen houses three ability buttons arranged in a comfortable arc that your right thumb can reach without stretching. Each button shows the ability icon and a cooldown indicator — a radial sweep that depletes as the cooldown ticks down.
+
+### Layout Iteration
+
+I went through seven different ability button layouts before landing on the current arc arrangement. Earlier versions tried:
+
+- **Horizontal row** — Buttons were too close together, causing misclicks.
+- **Vertical column** — Bottom button was too close to the screen edge.
+- **Triangle formation** — Worked but felt arbitrary, no natural thumb movement path.
+- **Grid (2x2 with attack)** — Too cramped, especially on smaller phones.
+
+The **arc layout** places the primary ability at the bottom (easiest to reach), secondary in the middle, and ultimate at the top. This maps nicely to usage frequency — you hit the primary most often, so it's in the most comfortable position. The ultimate is slightly harder to reach, which subtly prevents accidental activation of your most powerful ability.
+
+### Attack Button Placement
+
+The basic attack button is separate from the three ability buttons, positioned where a natural thumb rest falls. In combat, the player's right thumb alternates between the attack button and ability buttons, creating a physical input rhythm that mirrors the gameplay rhythm of weaving basic attacks between abilities.
+
+## Responsive Design Challenges
+
+Mobile devices come in an absurd variety of screen sizes, aspect ratios, and notch configurations. The control overlay needs to work on everything from a 5-inch phone to a 12-inch tablet, in both portrait and landscape orientations.
+
+I enforce **landscape orientation** for gameplay (portrait simply shows a "please rotate" message) and use responsive scaling based on the smaller screen dimension. On phones, the controls are proportionally larger relative to the screen. On tablets, they're absolutely smaller to avoid taking up too much screen real estate.
+
+The **safe area API** was essential for modern phones with notches and rounded corners. Control elements are inset from the edges of the physical screen, not the logical viewport surface, ensuring nothing gets clipped by hardware features.
+
+### The Small Screen Problem
+
+On smaller phones, the controls compete with the game view for screen space. The D-pad and ability buttons collectively cover about 25-30% of the screen area. This means the remaining visible play area is already constrained.
+
+My solution was to make the controls **semi-transparent** during gameplay, with opacity that increases when touched and decreases when released. The player can see through the controls to the game behind them, reducing the effective screen coverage without sacrificing usability.
+
+I also implemented an **auto-aim assist** for mobile players. On desktop, the player manually aims attacks at enemies. On mobile, attacks automatically target the nearest enemy in the player's facing direction. This compensates for the imprecision of touch input and the reduced visual area available for target selection. The assist is subtle — it adjusts aim by up to 15 degrees — but it's the difference between mobile combat feeling frustrating and feeling fair.
+
+## Performance Considerations
+
+Touch event handling on mobile needs special attention. The default browser behavior for touch events includes a 300ms delay (for double-tap detection) and can trigger unwanted scrolling, zooming, or context menus. I prevent all default touch behavior on the game canvas and handle raw touch events directly.
+
+Touch events are also more expensive than keyboard events because they include pressure, radius, and multi-touch data. I process only the fields I need and discard the rest immediately to minimize per-frame overhead.
+
+For multi-touch (moving with the D-pad while pressing an ability button), I track touch identifiers rather than positions. Each active touch gets a stable ID, allowing me to independently track left-thumb movement input and right-thumb ability input without them interfering with each other.
+
+## The Result
+
+After all of this iteration, Echoes of the Spire's mobile controls consistently surprise people. The most common feedback I get is "I forgot I was playing on my phone" — which is the highest compliment a mobile control scheme can receive. The game plays differently on mobile than on desktop — you're slightly less precise, the auto-aim does more work, the screen is more constrained — but it plays *well*, and that's what matters.
+
+Mobile-first web game development is a solved problem. It just requires treating mobile as a platform with its own design requirements, not a degraded desktop experience.

@@ -1,0 +1,173 @@
+---
+title: "Collision Detection Between Bins and Clothing"
+date: "2025-05-08"
+description: "The tricky world of collision detection in Laundry Sort — walls, bins, boundaries, and physics edge cases."
+tags: ["Laundry Sort", "Collision Detection", "Physics", "Game Dev"]
+---
+
+## Collisions Make the Game
+
+Physics without collision is just objects floating through each other. In Laundry Sort, collision detection is what transforms a bunch of falling rectangles into a *game*. Items need to land on surfaces, bounce off walls, settle into bins, and interact with each other in ways that feel physical and satisfying.
+
+But collision detection in a physics-based game is also where the bugs hide. Off-by-one errors that let items phase through walls. Tunneling at high speeds. Jittering objects that can't decide which side of a boundary they're on. I've fought every one of these bugs, and I'm here to share the war stories.
+
+## Wall Collision: Keeping Items In Bounds
+
+The simplest collision in Laundry Sort is wall collision — keeping items within the play area. Our game world has left and right boundaries (the edges of the canvas) and a floor (the bottom of the play area, above the bins).
+
+```typescript
+function handleWallCollision(item: ClothingItem) {
+  // Left wall
+  if (item.x < 0) {
+    item.x = 0;
+    item.vx = -item.vx * BOUNCE;
+    item.angularVelocity += item.vy * 0.005;
+  }
+
+  // Right wall
+  if (item.x + item.width > CANVAS_WIDTH) {
+    item.x = CANVAS_WIDTH - item.width;
+    item.vx = -item.vx * BOUNCE;
+    item.angularVelocity -= item.vy * 0.005;
+  }
+
+  // Floor
+  if (item.y + item.height > FLOOR_Y) {
+    item.y = FLOOR_Y - item.height;
+    item.vy = -item.vy * BOUNCE;
+    item.angularVelocity += item.vx * 0.01;
+  }
+}
+```
+
+The key detail here is the **position correction**. It's not enough to reverse the velocity — you also need to move the item *out* of the wall. Without that `item.x = 0` correction, an item could get stuck inside the wall, vibrating back and forth as its velocity flips every frame.
+
+The angular velocity nudge on wall collision is a small touch that adds realism. When a shirt slides into a wall, it picks up a little spin from the impact. It's subtle, but it makes collisions feel less robotic.
+
+## Bin Collision: The Heart of Gameplay
+
+Bin collision is where the game logic lives. Each bin has a rectangular area at the bottom of the screen, and each bin is associated with a color. When a clothing item enters a bin, we need to determine two things:
+
+1. **Did the item land in a bin?** (Position check)
+2. **Is it the right bin?** (Color match)
+
+The position check is straightforward AABB (Axis-Aligned Bounding Box) overlap detection:
+
+```typescript
+function isInBin(item: ClothingItem, bin: Bin): boolean {
+  return (
+    item.x + item.width > bin.x &&
+    item.x < bin.x + bin.width &&
+    item.y + item.height > bin.y &&
+    item.y < bin.y + bin.height
+  );
+}
+```
+
+But here's where it gets interesting. We don't want to register a "sort" the instant an item's corner touches a bin. That would feel twitchy and accidental. Instead, we require that the item's **center point** be within the bin and that the item has been released by the player (not still being dragged):
+
+```typescript
+function checkSort(item: ClothingItem, bins: Bin[]) {
+  if (item.isGrabbed) return;
+
+  const centerX = item.x + item.width / 2;
+  const centerY = item.y + item.height / 2;
+
+  for (const bin of bins) {
+    if (
+      centerX > bin.x &&
+      centerX < bin.x + bin.width &&
+      centerY > bin.y &&
+      centerY < bin.y + bin.height
+    ) {
+      if (item.color === bin.color) {
+        onCorrectSort(item, bin);
+      } else {
+        onWrongSort(item, bin);
+      }
+      return;
+    }
+  }
+}
+```
+
+Using the center point rather than any overlap creates a much fairer sorting mechanic. Players intuitively feel that the item is "in" the bin when most of it is inside, which corresponds nicely with the center-point check.
+
+## Wall Collision Between Bins
+
+This was one of the trickiest collision scenarios to get right. The bins sit side by side at the bottom of the screen, and the walls between adjacent bins need to act as physics barriers.
+
+Without bin-wall collision, items would visually overlap between two bins — a shirt could be half in the red bin and half in the blue bin, creating visual confusion and unfair sorting outcomes.
+
+```typescript
+function handleBinWallCollision(item: ClothingItem, bins: Bin[]) {
+  for (const bin of bins) {
+    // Left wall of this bin
+    if (isApproachingFromLeft(item, bin)) {
+      item.x = bin.x - item.width;
+      item.vx = -item.vx * BOUNCE;
+    }
+
+    // Right wall of this bin
+    if (isApproachingFromRight(item, bin)) {
+      item.x = bin.x + bin.width;
+      item.vx = -item.vx * BOUNCE;
+    }
+  }
+}
+```
+
+The `isApproachingFromLeft` and `isApproachingFromRight` functions are where the real complexity lives. We need to check not just whether the item overlaps the wall, but whether it's *moving toward* the wall. Without this directionality check, items resting against a wall would get pushed away every frame.
+
+### The Stacking Problem
+
+When multiple items land in the same bin, they pile up. This creates a stacking scenario where items need to collide with *each other*, not just with bin walls and floors.
+
+Item-to-item collision is the most computationally expensive part of our physics engine, because it's O(n²) — every item needs to be checked against every other item. For a game with 20-30 items on screen, this is manageable, but we still optimize with a broad phase that skips pairs too far apart to collide:
+
+```typescript
+function checkItemCollisions(items: ClothingItem[]) {
+  for (let i = 0; i < items.length; i++) {
+    for (let j = i + 1; j < items.length; j++) {
+      const a = items[i];
+      const b = items[j];
+
+      // Broad phase: skip if too far apart
+      const dx = a.x - b.x;
+      const dy = a.y - b.y;
+      const maxDist = a.width + b.width;
+
+      if (Math.abs(dx) > maxDist || Math.abs(dy) > maxDist) continue;
+
+      // Narrow phase: detailed AABB check
+      if (aabbOverlap(a, b)) {
+        resolveCollision(a, b);
+      }
+    }
+  }
+}
+```
+
+Collision resolution between two dynamic objects is significantly harder than wall collision. We use a simple separation and velocity exchange approach: push the items apart along the axis of least penetration, then swap a portion of their velocities scaled by the bounce coefficient.
+
+## Edge Cases That Broke Everything
+
+### The Tunneling Problem
+
+At high velocities, an item can move far enough in a single frame to pass completely through a wall or bin without ever triggering the overlap check. This is called *tunneling*, and it's the classic nightmare of discrete collision detection.
+
+Our solution is velocity capping. We limit the maximum velocity an item can have, ensuring it can never move more than half its width in a single frame. This guarantees that any overlap will be caught.
+
+### The Jitter Problem
+
+When an item is resting on a surface with nothing holding it up, gravity constantly pulls it into the surface, the collision pushes it back out, gravity pulls it in again — creating a visible jitter. We solve this with a **sleep threshold**: if an item's velocity drops below `0.1` and it's resting on a surface, we zero out its velocity entirely and mark it as sleeping. Sleeping items skip the physics update until something disturbs them.
+
+### Items Getting Stuck in Corners
+
+Where a wall meets the floor, or where two bin walls meet the bin floor, items can get trapped with conflicting collision responses pushing them in multiple directions. We resolve this with collision priority — vertical collisions are always resolved before horizontal ones, which eliminates most corner-sticking.
+
+## Collision Is Invisible Art
+
+Good collision detection is invisible. Players don't think "wow, these collisions are accurate." They just feel that items *exist* in the world, that bins are real containers, that walls are solid barriers. The moment collision breaks — when an item phases through a wall or jitters on a surface — the illusion shatters.
+
+Building this system was weeks of careful work for something players will never consciously notice. And honestly? That's exactly how it should be. The best game systems are the ones players take for granted, because they just *work*.

@@ -1,0 +1,131 @@
+---
+title: "Crafting Intelligent Enemies for Signal Forge"
+date: "2025-03-20"
+description: "How we designed enemy AI with distinct behavior modes to challenge every deck strategy in Signal Forge."
+tags: ["Signal Forge", "Game Design", "AI", "Enemy Design", "Devlog"]
+---
+
+## Enemies Are the Other Half of the Game
+
+Here's a truth that took me embarrassingly long to internalize: **your cards are only as interesting as the enemies they're played against.** You can design the most elegant keyword system in the world, but if every enemy is just a health bar that hits you for 6 damage each turn, none of that elegance matters. The enemy has to *respond* to what the player does, and different enemies have to demand different strategies.
+
+Signal Forge's enemy AI system went through four complete rewrites before I landed on something I'm proud of. Let me share what I learned along the way.
+
+## The Three Behavior Modes
+
+Every enemy in Signal Forge operates in one of three behavior modes, and they transition between them dynamically based on the state of the fight:
+
+### Pressuring Mode
+
+When an enemy is in Pressuring mode, they're on the offensive. They attack frequently, use abilities that disrupt the player's hand or deck, and generally try to end the fight quickly. An enemy enters Pressuring mode when:
+
+- Their health is above 70%
+- The player's health is below 40%
+- They have offensive buffs active
+
+Pressuring mode is designed to punish slow decks. If you're playing a Saw deck that needs 8 turns to ramp up, a Pressuring enemy will try to kill you before you get there. This forces Saw players to include defensive cards or find ways to accelerate their ramp — creating the kind of deckbuilding tension that makes roguelikes compelling.
+
+### Defensive Mode
+
+In Defensive mode, the enemy prioritizes survival over aggression. They generate shields, apply healing effects, and use abilities that stall the fight. An enemy enters Defensive mode when:
+
+- Their health drops below 40%
+- The player has significant offensive buffs active
+- They're charging up a powerful ability that needs time
+
+Defensive mode is the bane of Pulse decks. Pulse wants to burst enemies down quickly, but a Defensive enemy stacking shields can absorb those burst turns and waste the Pulse player's limited resources. This forces Pulse players to include Piercing cards or find other ways to deal with shields — again, healthy deckbuilding tension.
+
+### Recovering Mode
+
+Recovering mode is the most dangerous. When an enemy is Recovering, they're healing, removing debuffs, and preparing for a devastating counterattack. An enemy enters Recovering mode when:
+
+- They've been in Defensive mode for multiple turns
+- They have specific recovery abilities off cooldown
+- They've accumulated a threshold of debuffs to cleanse
+
+Recovering enemies teach players that *sustained pressure matters*. If you let an enemy Recover, you've potentially wasted several turns of chip damage. Bleed stacks get cleansed, Freeze wears off, and the enemy comes back hitting harder than before. This mode specifically punishes players who play safe and passively.
+
+## Enemy Archetypes
+
+Beyond behavior modes, Signal Forge has distinct enemy archetypes that create fundamentally different combat puzzles:
+
+### The Oscillator
+
+Oscillator enemies cycle between extreme offense and extreme defense on a predictable rhythm. They might hit for 20 damage one turn, then shield for 30 the next. The pattern is *visible to the player* — the UI shows their upcoming action — so the puzzle is timing your plays to exploit their vulnerable turns.
+
+Oscillators teach players to think about **tempo** and **timing**. Hold your big damage cards for the enemy's offensive turns (when they're not shielding), and play defensive cards during their attack turns.
+
+### The Filter
+
+Filter enemies have specific immunities or resistances. A "Low-Pass Filter" enemy might be immune to small hits but vulnerable to large single strikes. A "High-Pass Filter" might shrug off big hits but crumble to chip damage. These enemies force players to read the encounter and adapt their play accordingly.
+
+```typescript
+// Filter enemy damage calculation
+calculateDamageReceived(incomingDamage: number): number {
+  if (this.filterType === 'low-pass') {
+    // Only takes damage from hits above threshold
+    return incomingDamage > this.threshold ? incomingDamage : 0;
+  }
+  if (this.filterType === 'high-pass') {
+    // Only takes damage from hits below threshold
+    return incomingDamage < this.threshold ? incomingDamage : 0;
+  }
+  return incomingDamage;
+}
+```
+
+Filters are my favorite enemy type because they directly invert certain deck strategies. A Multihit deck that distributes damage across many small hits is *incredible* against High-Pass Filters but *useless* against Low-Pass Filters. This creates moments where the player has to think creatively about how to use their deck in unexpected ways.
+
+### The Resonator
+
+Resonator enemies amplify certain mechanics. They might double all Bleed damage they receive — but also double all damage they deal while Bleeding. They might reflect shield damage back at the player. They might copy the player's status effects onto themselves, both positive and negative.
+
+Resonators create risk-reward calculations on every turn. *Yes, I can Bleed this enemy for massive damage, but they'll also hit me harder while Bleeding. Is it worth it?*
+
+### The Noise Generator
+
+These enemies inject chaos into the fight. They might shuffle random Glitch cards into the player's deck, randomize their own attack patterns, or create effects that change the rules of combat mid-fight. Noise Generator enemies are the hardest to plan for, which makes them the perfect foil for highly optimized decks.
+
+## Intent Telegraphing
+
+One of the most important design decisions I made was **always showing the player what the enemy plans to do next turn**. An icon above the enemy shows whether they're going to attack, defend, buff, debuff, or use a special ability. The exact numbers are sometimes hidden, but the *type* of action is always visible.
+
+This is directly inspired by Slay the Spire, and for good reason: **it transforms the game from reaction to prediction.** Instead of hoping the enemy doesn't attack, you *know* they're going to attack, and you can plan your hand accordingly. This makes every turn feel like a genuine strategic decision rather than a dice roll.
+
+### Conditional Telegraphing
+
+Some enemies have conditional actions that make intent reading more nuanced. A "Signal Splitter" enemy might show: *"Attack 8 if player has shields, otherwise Shield 15."* Now the player faces a meta-decision: do I play shields knowing the enemy will attack harder, or do I skip shields and let the enemy turtle up?
+
+These conditional intents transform simple encounters into multi-layered puzzles. They're my favorite tool for creating difficulty without relying on inflated numbers.
+
+## AI Decision Framework
+
+Under the hood, each enemy evaluates their available actions using a scoring function that considers the current game state:
+
+```typescript
+interface ActionScore {
+  action: EnemyAction;
+  score: number;
+  reason: string;
+}
+
+function evaluateActions(enemy: Enemy, gameState: GameState): ActionScore[] {
+  return enemy.availableActions.map(action => ({
+    action,
+    score: calculateScore(action, enemy, gameState),
+    reason: explainScore(action, enemy, gameState),
+  })).sort((a, b) => b.score - a.score);
+}
+```
+
+The scoring function considers factors like player health percentage, shield amount, active status effects, cards in hand, enemy health percentage, and available abilities. This creates enemies that *feel* intelligent without requiring complex neural networks or machine learning. It's authored intelligence — hand-tuned heuristics that produce good-enough behavior reliably.
+
+## The Difficulty of Making Easy Enemies
+
+Paradoxically, the hardest enemies to design were the early-game ones. They need to be simple enough for new players to learn the game, but interesting enough that experienced players don't zone out. My solution: early enemies use a subset of the behavior modes (usually just Pressuring and Defensive, no Recovering) and have one clearly telegraphed pattern.
+
+The first enemy a player faces in Signal Forge alternates between attacking and defending with perfect regularity. It's a metronome — predictable, rhythmic, and easy to learn against. But even this simple enemy teaches a crucial lesson: *timing your damage for when the enemy isn't defending matters.* That lesson carries through the entire game.
+
+## Lessons Learned
+
+Building the enemy AI taught me that great game AI isn't about being smart — it's about being *interesting*. An AI that perfectly counters the player's strategy isn't fun — it's frustrating. An AI that presents unique challenges while still being readable and beatable? That's the sweet spot. Signal Forge's enemies are designed to make you think, not to make you lose. That's an important distinction, and one I'll carry into every game I design going forward.

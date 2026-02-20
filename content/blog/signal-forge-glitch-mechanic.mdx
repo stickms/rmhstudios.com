@@ -1,0 +1,116 @@
+---
+title: "The Glitch Mechanic: Corruption as Strategy"
+date: "2025-05-10"
+description: "How Signal Forge's Glitch system turns deck corruption into a strategic choice — dangerous, tempting, and deeply rewarding."
+tags: ["Signal Forge", "Game Design", "Mechanics", "Devlog"]
+---
+
+## Making Corruption Desirable
+
+Most deckbuilders treat deck pollution as purely negative. Curses in Slay the Spire, Junk cards in other games — they clog your deck, waste your draws, and generally make your life worse. When I started designing Signal Forge's corruption system, I wanted to subvert that expectation entirely.
+
+**What if corruption wasn't just a penalty — what if it was a strategy?**
+
+That question led to the Glitch mechanic, which has become one of Signal Forge's most distinctive and polarizing features. Some players love it. Some players fear it. The best players *weaponize* it.
+
+## What Is a Glitch Card?
+
+A Glitch card is a corrupted version of a normal card. When a card becomes "glitched," its stats are randomized within a range, its artwork visually distorts, and it gains unpredictable side effects. A Glitch card might be stronger than the original — or it might be catastrophically worse. You won't know until you play it.
+
+Here's what corruption looks like mechanically:
+
+```typescript
+function corruptCard(card: Card): GlitchedCard {
+  return {
+    ...card,
+    isCorrupted: true,
+    damage: randomizeInRange(card.damage, 0.5, 1.5),
+    shield: randomizeInRange(card.shield, 0.5, 1.5),
+    cost: Math.max(0, card.cost + randomInt(-1, 1)),
+    glitchEffect: rollGlitchEffect(), // Random side effect
+    visualCorruption: generateCorruptionLevel(),
+  };
+}
+```
+
+The `glitchEffect` is where things get interesting. Each Glitch card rolls a random side effect from a curated pool:
+
+- **Data Leak** — Draw an extra card after playing, but the enemy also heals 3 HP.
+- **Signal Overflow** — Deal +50% damage, but take 2 damage yourself.
+- **Frequency Drift** — Card cost fluctuates by ±1 each turn it's in your hand.
+- **Bit Rot** — Card loses 1 damage permanently each time it's played, but gains +2 shield.
+- **Phantom Echo** — Creates a temporary copy in your hand, but it Exhausts.
+- **Noise Injection** — Adds a random keyword to the card for this combat only.
+
+Some of these effects are net positive. Some are net negative. Most are *situationally* valuable — which is exactly the design intent.
+
+## The Static Resource Connection
+
+Glitch mechanics are deeply tied to Signal Forge's **Static** resource system. Static is your energy each turn — you spend it to play cards. But Static also has a secondary role: it represents the "cleanliness" of your signal.
+
+When you accumulate Glitch cards in your deck, your Static becomes unreliable. At the start of each turn, each Glitch card in your deck has a small chance of "interfering" with your Static generation, potentially giving you one fewer or one extra Static than expected. This creates a fascinating meta-game:
+
+- A deck with 0-2 Glitch cards? Stable. Predictable. Safe.
+- A deck with 3-5 Glitch cards? Occasionally volatile. Manageable with planning.
+- A deck with 6+ Glitch cards? Chaotic. Your Static count fluctuates wildly, and every turn requires improvisation.
+
+High-Glitch runs are *exhilarating*. You can't plan ahead because your resources are uncertain. You have to evaluate your hand each turn based on what you actually received, not what you expected. It's a fundamentally different way to play the game.
+
+## The Tempo System and Corruption
+
+**Tempo** is Signal Forge's secondary resource — a persistent counter that builds over the course of a fight and can be spent on powerful burst effects. Glitch cards interact with Tempo in a unique way: playing a Glitch card always generates +1 Tempo, regardless of its other effects.
+
+This means Glitch-heavy decks have access to **more Tempo than clean decks**. That's a real, tangible advantage. Tempo abilities — supercharged attacks, emergency heals, deck manipulation — are some of the most powerful effects in the game. A Glitch player who manages their corruption intelligently can access these abilities faster and more frequently than a "pure" player.
+
+This is the core of the risk/reward design: **Glitch cards make your deck less predictable, but they also give you access to resources that clean decks can't match.** The question isn't whether corruption is good or bad — it's whether you can handle the chaos in exchange for the power.
+
+## Voluntary Corruption Events
+
+During a run, players encounter events that offer voluntary corruption. These are some of the most interesting decisions in the game:
+
+### The Signal Distortion Shrine
+
+> *"The shrine pulses with corrupted energy. You can feel it reaching for your cards. Corrupt your strongest card in exchange for 50 gold and a Rare card reward."*
+
+Do you sacrifice the predictability of your best card for guaranteed Rare value? The answer depends on your deck, your strategy, and your risk tolerance. A Noise player might jump at this — they're already embracing chaos. A Sine player who depends on consistent sustain might refuse.
+
+### The Glitch Amplifier
+
+> *"A device that amplifies the corruption in your deck. All currently Glitched cards gain +3 damage, but you gain 2 additional Glitch cards."*
+
+This event is a trap for timid players and a goldmine for aggressive ones. If you already have several Glitch cards, amplifying them can create a devastating hand. If you're clean, taking on 2 Glitch cards just for a damage boost isn't worth the instability.
+
+### The Purification Station
+
+> *"Remove all corruption from one card, restoring it to its original form."*
+
+Sometimes you need an escape valve. A Glitch card that rolled a terrible side effect can be cleansed — but the Purification Station is rare, and using it means you can't use it on a different corrupted card. Scarcity creates value.
+
+## Designing for Danger
+
+The hardest part of designing the Glitch mechanic was making corruption feel **genuinely dangerous** without making it feel **unfair**. Players need to feel genuine tension when they decide to corrupt a card — but they should never feel like the game cheated them.
+
+My rules for fair corruption:
+
+1. **No instant kills.** A Glitch card should never directly kill the player through its side effect. Indirect damage (like Signal Overflow's self-damage) is fine, but it should never be enough to one-shot you.
+2. **Always visible.** Glitch cards are always visually distinct. You always know which cards in your hand are corrupted and what their side effects are. No hidden information.
+3. **Always voluntary.** The game never forces Glitch cards on you. Every corruption is the result of a player choice (even if that choice is accepting a reward that comes with corruption strings attached).
+4. **Always manageable.** Even in worst-case scenarios, a Glitch card should be *playable*. It might be bad, but it's never a complete dead card.
+
+## The Noise Waveform Synergy
+
+The Noise waveform archetype has a special relationship with Glitch cards. Several Noise cards directly benefit from corruption:
+
+- **Static Harvest**: Deal 2 damage for each Glitch card in your deck.
+- **Error Correction**: Remove a negative Glitch effect from one card and apply it as a debuff to an enemy.
+- **Corrupt Signal**: Deliberately Glitch a card in your hand to gain +3 Static this turn.
+
+These cards create a viable "Glitch archetype" where corruption isn't a side effect — it's the entire strategy. A player who goes all-in on Noise + Glitch plays a completely different game than someone building a clean Pulse deck. That strategic diversity is what keeps Signal Forge interesting across dozens of runs.
+
+## The Visual Language of Corruption
+
+When a card is Glitched, it doesn't just gain a "corrupted" tag — it *looks* corrupted. The card art distorts with scanline artifacts, the border flickers, the text occasionally scrambles. The more corrupted your deck, the more the entire game UI begins to show interference patterns.
+
+This visual feedback does double duty: it communicates game state instantly (how corrupted am I?), and it reinforces the *feeling* of playing with dangerous power. When your screen is dancing with glitch artifacts and you're still winning? That's the power fantasy the Glitch mechanic is designed to deliver.
+
+Corruption isn't punishment in Signal Forge — it's *transformation*. And the players who embrace it discover entirely new dimensions of the game that clean players never see.

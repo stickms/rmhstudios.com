@@ -1,0 +1,76 @@
+---
+title: "Designing a Class System That Feels Unique"
+date: "2025-02-15"
+description: "How we designed the class system in Echoes of the Spire to make every class feel fundamentally different."
+tags: ["Echoes of the Spire", "Game Design", "Class System", "Devlog"]
+---
+
+## The Problem with Most Class Systems
+
+Here's a controversial opinion: most action game class systems are just reskins. You pick "warrior" and you swing a big sword. You pick "mage" and you throw fireballs. The animations are different, the numbers are different, but the *play pattern* is identical — close the distance, press attack, avoid damage, repeat. I wanted Echoes of the Spire to do something genuinely different.
+
+When a player selects a class in Echoes, I want it to feel like they've loaded a different game. Not just a different weapon — a different *verb set*. The way you think about rooms, the way you approach enemies, the way you manage resources — all of it should shift based on your class choice.
+
+## Design Philosophy: Verbs, Not Stats
+
+Traditional RPG design differentiates classes through stats. Warriors get more HP, mages get more damage, rogues get more speed. That's fine for turn-based games where numbers are the primary interaction layer. But in an action game, the player's moment-to-moment experience is defined by **what they can do**, not how big their numbers are.
+
+So I designed each class around a set of **core verbs**:
+
+- **The Vanguard** — *Push, Hold, Shatter.* This is your frontline brawler, but instead of just "swing sword," the Vanguard is about spatial control. You push enemies into walls for bonus damage, hold positions with a shield stance, and shatter enemy defenses with charged attacks. Playing Vanguard means thinking about the geometry of each room.
+
+- **The Spectre** — *Phase, Mark, Execute.* The Spectre can briefly phase through enemies and obstacles, mark targets for amplified damage, and chain executions on marked enemies. Playing Spectre is about setup and payoff — you're always thinking two steps ahead.
+
+- **The Conduit** — *Channel, Surge, Overload.* The Conduit builds electrical charge through basic attacks, then releases it in devastating area attacks. The longer you sustain combat without getting hit, the more powerful you become. Playing Conduit is about maintaining flow state and risk management.
+
+### Why Three Abilities Per Class?
+
+I experimented with different numbers. Two abilities felt restrictive — players ran out of interesting decisions too quickly. Four or more abilities created cognitive overload, especially on mobile where each ability needs a dedicated button. Three hit the sweet spot: enough variety for meaningful moment-to-moment choices, few enough to master and internalize.
+
+Each class has a **primary ability** (short cooldown, bread-and-butter), a **secondary ability** (medium cooldown, situational power), and an **ultimate ability** (long cooldown, room-changing impact). This hierarchy creates a natural rhythm to combat that players internalize quickly.
+
+## Cooldown Balance: The Hidden Art
+
+Cooldowns are one of those systems that players rarely think about consciously but feel immediately when they're wrong. Too short, and abilities lose their weight. Too long, and players spend too much time just doing basic attacks, waiting for the fun button to recharge.
+
+My approach was to calibrate cooldowns against room clear times. A typical room encounter in Echoes lasts about 20-35 seconds. Primary abilities recharge every 3-4 seconds, so you'll use them 5-8 times per room. Secondary abilities recharge every 8-12 seconds, so you'll use them 2-3 times. Ultimates recharge every 25-30 seconds, meaning you'll usually get one per room — and it needs to count.
+
+```typescript
+interface AbilityCooldowns {
+  primary: number;    // 3-4 seconds — frequent, rhythmic
+  secondary: number;  // 8-12 seconds — tactical, situational
+  ultimate: number;   // 25-30 seconds — dramatic, room-defining
+}
+```
+
+The interesting design challenge is that cooldowns need to feel different for each class. The Conduit's primary ability charges faster when enemies are close, creating a risk-reward loop. The Spectre's mark ability resets partially on successful executions, encouraging aggressive play. The Vanguard's shield stance has a unique "recharge on block" mechanic rather than a traditional timer.
+
+### Lessons from Playtesting
+
+Early playtesting revealed a problem I hadn't anticipated: **players were hoarding their ultimates**. They'd save the big ability for emergencies that never came, then end rooms without ever using it. It felt wasteful and unfun.
+
+The fix was twofold. First, I added a visual and audio buildup when the ultimate is ready — a pulsing glow on the ability icon, a subtle ambient hum. This creates gentle psychological pressure to use it. Second, I added an "overflow" mechanic: if your ultimate has been ready for more than 10 seconds, you start gaining a small damage buff that resets when you use it. This reframes the decision from "should I save it?" to "I'm leaving power on the table by not using it."
+
+## Making Classes Feel Fundamentally Different
+
+The real test of a class system isn't whether each class has different abilities — it's whether each class teaches the player to **see the game differently**.
+
+When I watch someone play Vanguard, I want to see them scanning rooms for wall geometry, positioning enemies for maximum shatter damage. When I watch someone play Spectre, I want to see them dash *through* enemy groups, tagging targets, then turning around for a devastating execution chain. When I watch someone play Conduit, I want to see them dancing on the edge of danger, maintaining their charge meter while dodging attacks.
+
+This required more than just different ability designs. Each class has subtle differences in **base movement speed**, **attack range**, and **visual feedback**. The Vanguard feels weighty and impactful. The Spectre feels quick and precise. The Conduit feels fluid and electric. These micro-differences in game feel reinforce the macro-differences in playstyle.
+
+## The Animation Challenge
+
+One underappreciated aspect of class differentiation is animation. In a 2D Canvas renderer, every animation is hand-coded — there's no animation timeline editor, no skeletal rigging system. Each attack, each ability, each idle stance needs to be implemented frame by frame in code.
+
+For the 3D mode, the challenge is different but equally demanding. Each class needs distinct silhouettes, distinct weapon models, and distinct particle effects for their abilities. The Conduit leaves trails of electricity. The Spectre leaves afterimages when phasing. The Vanguard sends shockwaves through the ground on heavy attacks.
+
+Building these visual identities was some of the most time-consuming work on the project, but it's also what makes each class feel like its own character rather than a stat block with a different hat.
+
+## What's Next for the Class System
+
+I have plans for at least two more classes, but I'm holding off until the current three are thoroughly polished and balanced. It's tempting to add more variety, but each new class multiplies the balance testing surface area. I'd rather have three classes that all feel incredible than six classes where half of them feel half-baked.
+
+The upgrade system (which I'll cover in a future post) also interacts heavily with classes, creating another dimension of complexity. Some upgrades are class-specific, enhancing abilities in ways that deepen the class fantasy. Others are universal, creating interesting choices about whether to double down on your class strengths or shore up weaknesses.
+
+Building a class system that truly changes how you play has been one of the hardest and most rewarding design challenges of this project. Every time a playtester says "I tried Spectre and it felt like a completely different game," I know the philosophy is landing. That's the dream.

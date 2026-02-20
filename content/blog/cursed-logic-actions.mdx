@@ -1,0 +1,101 @@
+---
+title: "Strike, Block, Prepare, Probe: The Four-Action System"
+date: "2025-03-12"
+description: "How we designed Cursed Logic around just four actions and created surprising strategic depth from elegant simplicity."
+tags: ["Cursed Logic", "Game Design", "Strategy", "Indie Dev"]
+---
+
+## The Tyranny of Choice
+
+Most games give you more options as they progress. More abilities, more items, more buttons to press, more menus to navigate. There's a comfort in that — a feeling of growth and power. But there's also a cost. When you have twenty options, the weight of any single choice is diluted. You can always fall back on something else.
+
+Cursed Logic goes in the opposite direction. **You have four actions. That's it. Forever.** Strike, Block, Prepare, Probe. No unlockable fifth action. No secret techniques. Four choices, every round, for the rest of your time with the game.
+
+This was the scariest design decision I made, and also the best one.
+
+## The Four Pillars
+
+Let me break down each action and what it represents in the tactical ecosystem:
+
+### Strike
+
+Strike is damage. It's the sword swing, the bullet, the punch. When you Strike, you're committing to aggression. You're saying: "I believe you are not blocking, and I'm willing to bet my round on that."
+
+Strike is powerful against Prepare (catching the opponent in a vulnerable state) and against Probe (punishing information-gathering with direct damage). But Strike bounces harmlessly off a Block. A well-timed Block turns your aggression into wasted initiative.
+
+### Block
+
+Block is defense with teeth. When you Block successfully against a Strike, you negate the damage and gain a small positional advantage — the feeling of having "read" your opponent correctly. But Block against Prepare does nothing useful. You've played safe while your opponent powers up.
+
+Block is the action that teaches patience. New players either Block too much (and get overwhelmed by a Preparing opponent) or too little (and get shredded by Strikes). Finding the right Block frequency is one of the first skill curves in Cursed Logic.
+
+### Prepare
+
+Prepare is investment. When you Prepare, you're building up your stance — charging energy that makes your future actions more powerful. A Strike after a Prepare hits harder. A Block after a Prepare absorbs more effectively. Prepare is the action that says: "I'm willing to sacrifice this round to win the next one."
+
+The risk is enormous. Preparing leaves you vulnerable to Strikes. If the Protocol reads your Prepare and Strikes, you take damage *and* lose your initiative. Prepare is a gamble on the future, and it's where the deepest strategic decisions live.
+
+### Probe
+
+Probe is unique because **only the player has it.** The Protocol cannot Probe. This asymmetry is fundamental to the game's design. Probe lets you peek at the Protocol's projected state — its likely next actions, its current mode, its confidence level. It's information warfare.
+
+But Probe has a cost: you're spending a round not dealing damage, not defending, and not building stance. Every Probe is a round where the Protocol acts and you just... watch. The information you gain has to be *worth* more than the action you gave up.
+
+## The Interaction Matrix
+
+Here's where the four actions become a rich strategic system. The interactions between them create a web of decisions that's deeper than it appears:
+
+```
+              Strike    Block     Prepare   Probe
+Strike        Clash     Blocked   Hits!     Hits!
+Block         Blocks!   Nothing   Nothing   Nothing
+Prepare       Hit!      Builds    Both Prep N/A
+Probe         Hit!      Info      Info      N/A
+```
+
+This isn't a simple rock-paper-scissors triangle. It's a **four-node interaction graph** with asymmetric outcomes:
+
+- Strike beats Prepare and Probe but loses to Block
+- Block beats Strike but wastes against Prepare and Probe
+- Prepare loses to Strike but builds power against everything else
+- Probe sacrifices action for information regardless of opponent's choice
+
+The asymmetry of Probe — available only to the player — is what elevates this beyond a matching game. The Protocol has to play without information. You have the *option* of information, but at a cost. This creates a fundamental strategic tension: **do you play the game, or do you study the opponent?**
+
+## Depth Through Simplicity
+
+I studied a lot of competitive games while designing this system. Here's what I learned:
+
+**The best fighting games aren't decided by combo execution — they're decided by decisions.** A Street Fighter match at the highest level is about reading your opponent's tendencies and making split-second decisions based on spacing, meter, and psychological pressure. The buttons are just how you express those decisions.
+
+Cursed Logic strips away the execution entirely. There are no combos. No frame data. No spacing. Just the decision. This means that **every player, regardless of mechanical skill, is competing on the same axis: prediction and adaptation.**
+
+### Information Asymmetry Creates Drama
+
+One of the most important design principles in Cursed Logic is that the player always has *slightly* more information than the Protocol. You can Probe. You can see the Protocol's health. You know its current variant. You have tools the Protocol doesn't.
+
+But — and this is critical — the Protocol has something you don't: **consistency.** It doesn't get nervous. It doesn't tilt after three bad rounds. It doesn't make emotional decisions. The Protocol plays its strategy cleanly, every time. Your information advantage is balanced against its emotional stability.
+
+This creates a dynamic where skilled players win by leveraging their information tools effectively, while the Protocol wins against players who let frustration or overconfidence cloud their decision-making. Cursed Logic tests your ability to stay rational under pressure as much as it tests your ability to predict.
+
+## The Lesson of Constraints
+
+Working with only four actions taught me something profound about game design: **constraints breed creativity.** When I couldn't add a fifth action to solve a balance problem, I had to dig deeper into the interactions between the existing four. When a particular matchup felt stale, the solution wasn't "add more stuff" — it was "examine why the existing stuff isn't creating interesting choices."
+
+The mutation system (which modifies how actions work each round) emerged directly from this constraint. Instead of adding new actions, we change how the *existing* actions behave. Strike might deal double damage one round. Block might reflect damage. Prepare might grant extra stance charge. The four actions become a canvas, and mutations paint new pictures on that canvas every duel.
+
+### Playtest Revelations
+
+During early playtesting, I was terrified that four actions wouldn't be enough. Players would get bored, I thought. They'd solve the game in an hour and move on. What actually happened was the opposite.
+
+Players developed **personal styles.** Some became aggressive Strikers who relied on reading Block timing. Others became patient Preparers who built up devastating powered attacks. Some became Probe addicts, gathering information obsessively before committing to action. And a few became unpredictable wildcards who randomized their own play to prevent the Protocol from reading them.
+
+Four actions. Infinite strategies. That's the magic of Cursed Logic's core system.
+
+## Moving Forward
+
+The four-action system has proven more robust than I ever hoped. It supports the stance system, the mutation system, the Protocol variants, and the shop upgrades — all without needing to grow. Every new feature we add is a layer *on top of* the four actions, not a replacement for them.
+
+If Cursed Logic has taught me one thing as a designer, it's this: find your core. Make it small. Make it elegant. And then build everything else around it.
+
+*Four choices. Infinite outcomes. Duel the Protocol.*

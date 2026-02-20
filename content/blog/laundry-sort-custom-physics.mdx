@@ -1,0 +1,136 @@
+---
+title: "Building a Custom 2D Physics Engine from Scratch"
+date: "2025-02-18"
+description: "A deep technical dive into the gravity, friction, bounce, and rotation systems powering Laundry Sort's custom physics."
+tags: ["Laundry Sort", "Physics Engine", "TypeScript", "Game Dev"]
+---
+
+## Why Not Use a Library?
+
+When I started building Laundry Sort, the obvious question was: why not use Matter.js, or Box2D, or any of the dozen physics libraries available for the web? It's a fair question. And the honest answer is: **I wanted full control.**
+
+Physics libraries are incredible tools, but they come with opinions. They decide how objects sleep, how collisions resolve, how joints behave. For a game as focused as Laundry Sort — where every tumble, every bounce, every spin needs to feel *exactly right* — I needed to own every line of the simulation. When your entire game feel depends on how a shirt bounces off a bin wall, you can't afford to fight a library's defaults.
+
+Plus, Laundry Sort's physics are intentionally *unrealistic*. The gravity is gentle, the friction is forgiving, the bounce is exaggerated. This isn't a simulation — it's a toy. And toys need to be tuned by hand.
+
+## The Core Simulation Loop
+
+Every frame, each clothing item goes through the same update cycle:
+
+```typescript
+function updateItem(item: ClothingItem, dt: number) {
+  // Apply gravity
+  item.vy += GRAVITY; // 0.05
+
+  // Apply friction
+  item.vx *= FRICTION; // 0.98
+  item.vy *= FRICTION;
+
+  // Update position
+  item.x += item.vx;
+  item.y += item.vy;
+
+  // Update rotation
+  item.rotation += item.angularVelocity;
+  item.angularVelocity *= FRICTION;
+
+  // Handle collisions
+  handleWallCollision(item);
+  handleBinCollision(item);
+  handleFloorCollision(item);
+}
+```
+
+It looks deceptively simple. And that's the point — the magic isn't in complexity, it's in the *values*.
+
+## Gravity: The Gentle Pull
+
+Our gravity constant is `0.05`. In a realistic simulation, you'd use something like `9.8` scaled to your coordinate system. But we deliberately chose a much lower value. Here's why:
+
+At `0.05`, items float down with a dreamlike quality. They have enough speed to feel like they're falling, but enough hangtime that players can react, grab them, and sort them before they land. It creates a rhythm — items drift down like leaves, not like rocks.
+
+I tested gravity values from `0.01` to `0.2`. Below `0.03`, items felt like they were in space — no urgency. Above `0.1`, they slammed into the ground before you could blink. The sweet spot was `0.05` — gentle enough to be playable, strong enough to feel like gravity.
+
+## Friction: The Invisible Hand
+
+Friction in our engine is applied as a velocity multiplier every frame. At `0.98`, an object retains 98% of its velocity each frame. This means items gradually slow down rather than stopping abruptly.
+
+The effect is subtle but critical. When you flick a shirt across the screen, it doesn't stop dead — it *slides* to a halt. When items pile up on the floor, they slowly settle rather than jittering in place. Friction is the difference between physics that feel mechanical and physics that feel organic.
+
+```typescript
+// Without friction: items slide forever
+item.vx *= 1.0;
+
+// With our friction: items gradually settle
+item.vx *= 0.98;
+
+// Too much friction: items feel like they're in molasses
+item.vx *= 0.8;
+```
+
+We apply the same friction to angular velocity, so spinning items gradually stop rotating. This prevents the visual noise of items spinning forever and lets the screen settle into readable states between waves.
+
+## Bounce: The Satisfying Rebound
+
+The bounce coefficient of `0.3` means items retain 30% of their velocity when they hit a surface. This was one of the most fun values to tune.
+
+At `0.0`, items stick to whatever they hit — no life, no energy. At `1.0`, items bounce forever like superballs, creating chaos. At `0.3`, you get exactly one or two satisfying bounces before the item settles. It's enough to feel physical without creating unmanageable chaos.
+
+```typescript
+function handleFloorCollision(item: ClothingItem) {
+  if (item.y + item.height > FLOOR_Y) {
+    item.y = FLOOR_Y - item.height;
+    item.vy = -item.vy * BOUNCE; // 0.3
+    item.angularVelocity += item.vx * 0.01; // Transfer energy to spin
+  }
+}
+```
+
+Notice that last line — when an item hits the floor, some of its horizontal velocity transfers to angular velocity. This creates the wonderful effect of items tumbling when they land at an angle, just like real clothes tossed onto a surface.
+
+## Rotation and Angular Velocity
+
+Every clothing item has a `rotation` (current angle in radians) and an `angularVelocity` (how fast it's spinning). This is what gives the physics their personality.
+
+Items spawn with a small random angular velocity, so they're always gently spinning as they fall. When they collide with walls or bins, their angular velocity changes based on the collision angle. When a player grabs and releases an item, the flick gesture imparts angular velocity proportional to the mouse/touch movement speed.
+
+The result is items that feel like they have *weight and momentum*. A shirt you flick hard will spin wildly across the screen. One you gently place will barely rotate. This tactile feedback is crucial — it makes the drag-and-drop feel connected to the physics world rather than floating above it.
+
+### The Rotation Render
+
+Rendering a rotated item on canvas requires translating to the item's center, rotating, then drawing:
+
+```typescript
+ctx.save();
+ctx.translate(item.x + item.width / 2, item.y + item.height / 2);
+ctx.rotate(item.rotation);
+ctx.drawImage(
+  item.sprite,
+  -item.width / 2,
+  -item.height / 2,
+  item.width,
+  item.height
+);
+ctx.restore();
+```
+
+This `save/translate/rotate/restore` pattern runs for every item every frame. With 20+ items on screen, performance matters — which is why we pre-calculate sin/cos values and batch our draw calls where possible.
+
+## The Tuning Process
+
+Here's a secret about game physics: **the math is the easy part.** The hard part is tuning. I spent more time adjusting those four numbers — gravity, friction, bounce, and angular velocity dampening — than I spent writing the entire physics simulation.
+
+The process looked like this:
+
+1. Change a value by 0.01
+2. Play for 5 minutes
+3. Feel that something is slightly off
+4. Change it back
+5. Try a different value
+6. Repeat 200 times
+
+Game feel is subjective, nonlinear, and maddeningly imprecise. But when you finally nail it — when items fall, bounce, spin, and settle in a way that just *feels right* — there's nothing more satisfying in game development.
+
+## Lessons Learned
+
+Building a physics engine from scratch taught me that **simplicity is not the same as ease**. The code is simple. The math is straightforward. But finding the right constants to make simple physics feel magical? That's an art form. And it's one of the reasons I love building games at RMH Studios — the intersection of code and feel is where the real magic lives.

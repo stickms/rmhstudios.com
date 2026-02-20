@@ -1,0 +1,186 @@
+---
+title: "A* Pathfinding with Dynamic Tower Obstacles"
+date: "2025-04-18"
+description: "Implementing A* pathfinding that dynamically reroutes enemies around ghost towers and player-placed defenses."
+tags: ["Project Vega", "Technical", "Pathfinding", "Game Dev"]
+---
+
+## Why Pathfinding Matters More in Vega
+
+In most tower defense games, pathfinding is a solved problem. Enemies follow a fixed lane, or you place towers and they walk around them. Simple. But in Project Vega, the grid is a living, evolving thing. Ghost towers from previous loops appear on the map at specific timestamps. The player is placing new towers in real-time. The navigable space is **constantly shifting**, and enemies need to respond intelligently.
+
+If pathfinding breaks — if enemies get stuck, clip through towers, or take absurd routes — the entire game falls apart. This is the system where I couldn't afford any jank.
+
+## A* Fundamentals
+
+For those unfamiliar, **A*** (A-star) is a graph search algorithm that finds the shortest path between two points while respecting obstacles. It uses a heuristic function to estimate the distance to the goal, making it much faster than brute-force approaches like Dijkstra's algorithm.
+
+The core of A* is simple:
+
+```typescript
+function aStar(start: GridCell, goal: GridCell, grid: Grid): GridCell[] | null {
+  const openSet = new PriorityQueue<GridCell>();
+  const cameFrom = new Map<string, GridCell>();
+  const gScore = new Map<string, number>();   // cost from start
+  const fScore = new Map<string, number>();   // estimated total cost
+
+  gScore.set(key(start), 0);
+  fScore.set(key(start), heuristic(start, goal));
+  openSet.enqueue(start, fScore.get(key(start))!);
+
+  while (!openSet.isEmpty()) {
+    const current = openSet.dequeue()!;
+
+    if (current.x === goal.x && current.y === goal.y) {
+      return reconstructPath(cameFrom, current);
+    }
+
+    for (const neighbor of getNeighbors(current, grid)) {
+      const tentativeG = (gScore.get(key(current)) ?? Infinity) + 1;
+      if (tentativeG < (gScore.get(key(neighbor)) ?? Infinity)) {
+        cameFrom.set(key(neighbor), current);
+        gScore.set(key(neighbor), tentativeG);
+        fScore.set(key(neighbor), tentativeG + heuristic(neighbor, goal));
+        openSet.enqueue(neighbor, fScore.get(key(neighbor))!);
+      }
+    }
+  }
+
+  return null;  // no path found
+}
+```
+
+The heuristic I'm using is **Manhattan distance** — the sum of horizontal and vertical distances. Since enemies move on a grid without diagonal movement, Manhattan distance is admissible and consistent, guaranteeing optimal paths.
+
+## The Dynamic Grid Problem
+
+Here's where Vega gets interesting. The grid isn't static. It changes in three ways:
+
+1. **Player tower placement:** The player builds a tower, blocking a cell.
+2. **Ghost tower materialization:** A ghost from a previous loop "appears" at a specific timestamp.
+3. **Tower selling:** The player removes a tower, opening a cell.
+
+Each event potentially invalidates every enemy's current path. Naively, you'd recalculate paths for all enemies every time the grid changes. With 30+ enemies on screen and a 40x30 grid, that's a lot of A* calls per frame.
+
+### Solution: Dirty Flag + Batch Recalculation
+
+I use a **dirty flag system** combined with batched recalculation:
+
+```typescript
+class PathfindingManager {
+  private gridVersion: number = 0;
+  private cachedPaths: Map<string, { path: GridCell[]; version: number }> = new Map();
+
+  onGridChanged() {
+    this.gridVersion++;
+  }
+
+  getPath(enemy: Enemy): GridCell[] | null {
+    const cached = this.cachedPaths.get(enemy.id);
+    if (cached && cached.version === this.gridVersion) {
+      return cached.path;
+    }
+
+    const path = aStar(enemy.currentCell, this.goalCell, this.grid);
+    if (path) {
+      this.cachedPaths.set(enemy.id, { path, version: this.gridVersion });
+    }
+    return path;
+  }
+}
+```
+
+Paths are cached with a version number. When the grid changes, the version increments. Each enemy checks if its cached path is still valid before requesting a new one. This means only enemies that actually *need* new paths recalculate — enemies far from the changed cell often keep their existing routes.
+
+### Staggered Recalculation
+
+Even with dirty flags, a sudden grid change (like a ghost tower appearing) could trigger dozens of simultaneous A* calculations in a single frame. To prevent frame drops, I stagger recalculations across multiple frames:
+
+```typescript
+private recalcQueue: Enemy[] = [];
+private maxRecalcsPerFrame = 5;
+
+tick() {
+  let processed = 0;
+  while (this.recalcQueue.length > 0 && processed < this.maxRecalcsPerFrame) {
+    const enemy = this.recalcQueue.shift()!;
+    this.getPath(enemy);
+    processed++;
+  }
+}
+```
+
+At most 5 enemies recalculate their paths per frame. The rest continue on their current trajectories until their turn comes. In practice, the 1-2 frame delay is imperceptible, but it keeps the frame rate buttery smooth.
+
+## The "Always a Path" Guarantee
+
+This is the **most critical rule** in Vega's pathfinding: enemies must *always* have a valid path to the Memory Core. If the player (or ghost towers) completely block all routes, the game breaks.
+
+I enforce this with a **pre-validation check** on every tower placement:
+
+```typescript
+const canPlaceTower = (position: GridCell): boolean => {
+  // Temporarily mark cell as blocked
+  const testGrid = cloneGrid(currentGrid);
+  testGrid[position.y][position.x] = BLOCKED;
+
+  // Check if a path still exists from every spawn point to the core
+  for (const spawn of spawnPoints) {
+    if (!aStar(spawn, corePosition, testGrid)) {
+      return false;  // This placement would create a dead end
+    }
+  }
+  return true;
+};
+```
+
+Before confirming a tower placement, the system runs A* on a cloned grid with the proposed tower added. If any spawn point loses its path to the core, the placement is rejected. The UI shows the cell in red so the player understands why they can't build there.
+
+### Ghost Tower Pre-Validation
+
+Ghost towers are trickier because they're placed by the TimeManager, not the player. What if a combination of ghost towers and player towers creates a blockade that wasn't possible in the original loop?
+
+My solution: **ghost tower placement order is deterministic**. They always materialize in chronological order, and each one is validated against the current grid state at materialization time. If a ghost tower would create a path blockage (which shouldn't happen if the original loop was valid, but edge cases exist), it's skipped with a visual "corruption" effect — a nice recovery mechanism that also fits the glitch aesthetic.
+
+## Performance Optimizations
+
+### Jump Point Search
+
+For large open areas of the grid, standard A* explores too many nodes. I implemented a simplified **Jump Point Search (JPS)** optimization that skips over uniform rows/columns of open cells. This reduced average pathfinding time by about 40% on our 40x30 grid.
+
+### Hierarchical Pathfinding
+
+For the macro-level structure, I divide the grid into **8x8 sectors** and maintain a sector-level graph. Enemies first pathfind at the sector level (very fast — only ~20 nodes), then do fine-grained A* within each sector they traverse. This two-pass approach is significantly faster than a single grid-level A* for long paths.
+
+### Precomputed Flow Fields
+
+For common scenarios where many enemies share the same goal (the Memory Core), I precompute a **flow field** — a grid where each cell stores the direction toward the optimal next cell. All enemies simply follow the flow field instead of running individual A* calculations:
+
+```typescript
+const computeFlowField = (goal: GridCell, grid: Grid): Map<string, Direction> => {
+  const field = new Map<string, Direction>();
+  const distances = bfs(goal, grid);   // BFS from goal outward
+
+  for (const [cellKey, dist] of distances) {
+    const cell = parseKey(cellKey);
+    const bestNeighbor = getNeighbors(cell, grid)
+      .filter(n => distances.has(key(n)))
+      .sort((a, b) => distances.get(key(a))! - distances.get(key(b))!)[0];
+
+    if (bestNeighbor) {
+      field.set(cellKey, directionTo(cell, bestNeighbor));
+    }
+  }
+  return field;
+};
+```
+
+Flow fields are recomputed only when the grid changes, and they replace hundreds of individual A* calls with simple map lookups. This was the single biggest performance win in the game.
+
+## Watching It Come Together
+
+The first time I saw 30 enemies dynamically rerouting around a ghost tower that materialized mid-wave, I actually pumped my fist. It felt *alive*. The enemies flow like water around obstacles, finding cracks in your defense that you didn't anticipate.
+
+That emergent behavior — where the pathfinding creates surprising enemy movements that force you to adapt — is exactly what makes Vega's tower defense feel dynamic rather than scripted. Every loop plays slightly differently because the ghost tower configuration changes the enemy flow patterns in ways you can't fully predict.
+
+Pathfinding isn't glamorous work. Nobody plays a game and says "wow, great A* implementation." But when it's wrong, everyone notices. Getting it right — making it fast, reliable, and responsive to Vega's constantly shifting grid — was one of the most satisfying engineering challenges of this project.

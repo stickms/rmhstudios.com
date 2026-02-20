@@ -1,0 +1,77 @@
+---
+title: "Project Vega: Reinventing Tower Defense with Time Loops"
+date: "2025-01-25"
+description: "Introducing Project Vega — a chrono-loop tower defense game where your past decisions shape future battles."
+tags: ["Project Vega", "Game Design", "Tower Defense", "Devlog"]
+---
+
+## The Spark
+
+Every game starts with a question. For Project Vega, it was this: **what if your past mistakes in a tower defense game could become your greatest advantage?**
+
+I've been obsessed with tower defense games since the Flash era. Desktop TD, Bloons, Kingdom Rush — I've played them all. But there's always been something that bugged me about the genre. You build, you survive, you move on to the next wave. Each round is self-contained; your decisions exist in isolation. What if they didn't? What if every tower you placed echoed through time itself?
+
+That's the core of Project Vega: a **chrono-loop tower defense** game where players defend a "Memory Core" against waves of enemies across three time loops of the same five-minute timeline. Towers from previous loops persist as "Ghost Protocols" — spectral echoes of your past strategy that continue firing alongside your new placements.
+
+## Inspirations That Shaped the Vision
+
+Three games shaped Project Vega more than any others.
+
+### Balatro
+
+Balatro proved that you could take an established game format — in their case, poker — and twist it into something entirely fresh with smart mechanics and dripping aesthetic. The CRT glow, the feeling of building something increasingly powerful across rounds, the joy of watching systems compound — that's exactly the energy I wanted for Vega. Balatro showed me that **aesthetic commitment** can elevate a game from good to unforgettable.
+
+### Pony Island
+
+Pony Island demonstrated that games can be *about* games in deeply unsettling ways. The meta-horror, the glitchy interfaces, the sense that something is fundamentally wrong beneath the surface — I wanted Vega to carry that same creeping unease. Not jump scares. Not gore. Just the persistent feeling that the system you're interacting with is slightly *broken*.
+
+### Braid
+
+Braid is the gold standard for time manipulation in games. Jonathan Blow proved that time-based mechanics could be more than a gimmick — they could be the *entire language* of a game. For Vega, the time loop isn't a narrative wrapper. It's the core mechanical verb. Every decision you make in Loop 1 creates the foundation for Loop 2, and everything in Loop 2 compounds into Loop 3. It's Braid's philosophy applied to tower defense strategy.
+
+## Why Time Loops in Tower Defense?
+
+Traditional tower defense games are fundamentally about **spatial optimization**. You place towers in the best positions, upgrade them, and watch enemies melt. It's satisfying, but it's essentially a single-pass puzzle.
+
+Time loops transform that puzzle into something three-dimensional. Suddenly you're not just thinking about *where* to place towers — you're thinking about *when*. A Synapse tower placed in Loop 1 becomes a Ghost Protocol in Loop 2, still firing but no longer upgradeable. Do you place it in a position that's optimal for Loop 1's enemies, or do you future-proof it for the harder waves in Loop 3?
+
+This creates what I call **temporal strategy layering**. Each loop builds on the last, and the final loop is a symphony of three overlapping defense networks. Watching all three loops' worth of towers firing simultaneously in Loop 3 is genuinely spectacular — it's the payoff for all your planning.
+
+### The Five-Minute Timeline
+
+Each loop covers the same five-minute timeline. The same enemies spawn at the same times, following the same paths (modified by your tower placements). This means you can *learn* the timeline. You know that at the 2:30 mark, a swarm of Anxiety Sprites floods the eastern corridor. In Loop 1, maybe you barely survived it. In Loop 2, you can place towers specifically to counter that moment because you've already lived through it.
+
+It's the tower defense equivalent of *Groundhog Day*. You keep reliving the same battle, but each time you're wiser, stronger, and more prepared.
+
+## The Aesthetic Direction
+
+Vega's look is something I'm calling **"Clinical Glitch"** — a fusion of medical imagery, CRT horror, and terminal aesthetics. Think hospital monitors running corrupted software. Dark grid backgrounds with pulsing scanlines. Monospace terminal fonts in sickly green and amber. Towers that look like neural synapses and medical equipment gone wrong.
+
+The enemies aren't monsters in the traditional sense. They're abstract representations of mental health struggles — Anxiety Sprites that dart erratically, Depression Hulks that lumber forward absorbing punishment, Manic Spikes that surge with unpredictable speed. The Memory Core you're defending represents stability, clarity, mental health itself.
+
+It's a game about fighting your own mind, replaying the same battles until you find the strategy that works. There's a therapeutic metaphor baked into the mechanics, and I want to honor that without being preachy about it.
+
+## Technical Foundation
+
+I'm building Vega with **Next.js and TypeScript**, using **HTML5 Canvas** for rendering and **Zustand** for state management. The Canvas approach gives me complete control over the visual pipeline — I can layer scanline post-processing, chromatic aberration, and glitch effects directly onto the render output.
+
+The most complex technical challenge is what I'm calling the **TimeManager** — the system responsible for recording every player action in a loop and replaying those actions as Ghost Protocols in subsequent loops. It needs to be frame-perfect. A tower placed at timestamp 1:23.456 in Loop 1 needs to appear at exactly that moment when Loop 2 replays the timeline.
+
+```typescript
+interface LoopAction {
+  timestamp: number;
+  type: 'place_tower' | 'upgrade_tower' | 'sell_tower';
+  towerType: TowerType;
+  position: GridPosition;
+}
+```
+
+This action log becomes the DNA of each Ghost Protocol. It's deceptively simple in concept and fiendishly complex in execution.
+
+## What's Next
+
+Over the coming months, I'll be diving deep into every aspect of Vega's development — the tower design philosophy, the pathfinding system, the resource economy, the visual effects pipeline, and the delicate work of theming a game around mental health.
+
+I'm building this game because I believe tower defense has untapped potential. The genre deserves the same reinvention that Balatro brought to poker. And if I can make something that's both mechanically deep and thematically meaningful? That's the dream.
+
+Welcome to Project Vega. The first loop begins now.

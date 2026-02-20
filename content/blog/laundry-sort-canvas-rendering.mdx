@@ -1,0 +1,170 @@
+---
+title: "Canvas Rendering Techniques for Smooth Gameplay"
+date: "2025-03-15"
+description: "How we use HTML5 Canvas to render Laundry Sort at 60fps with smooth animations and crisp visuals."
+tags: ["Laundry Sort", "HTML5 Canvas", "Rendering", "Performance"]
+---
+
+## Choosing Canvas Over DOM
+
+When building a browser game in 2025, you have options: DOM elements with CSS transforms, SVG, WebGL, or the trusty HTML5 Canvas 2D API. For Laundry Sort, Canvas was the clear winner. Here's why.
+
+DOM-based rendering struggles when you have dozens of independently-moving, rotating objects updating every frame. The browser's layout engine wasn't designed for this — it wants to handle text reflow and button clicks, not simulate falling laundry. SVG has similar overhead. WebGL is overkill for a 2D sorting game and brings substantial complexity.
+
+Canvas 2D hits the sweet spot: **low overhead, direct pixel control, and a simple API** that lets us focus on the game rather than the rendering pipeline. At RMH Studios, we believe in using the right tool for the job — and for Laundry Sort, Canvas is exactly right.
+
+## The Render Loop
+
+The heart of any Canvas game is the render loop. Ours follows a standard `requestAnimationFrame` pattern with delta-time tracking:
+
+```typescript
+let lastTime = 0;
+
+function gameLoop(timestamp: number) {
+  const dt = timestamp - lastTime;
+  lastTime = timestamp;
+
+  update(dt);
+  render();
+
+  requestAnimationFrame(gameLoop);
+}
+
+requestAnimationFrame(gameLoop);
+```
+
+Using `requestAnimationFrame` instead of `setInterval` gives us two critical advantages. First, it syncs with the display's refresh rate, eliminating screen tearing. Second, the browser automatically pauses the loop when the tab is hidden, saving CPU and battery on mobile devices.
+
+### Delta Time: Why It Matters
+
+Without delta time, your physics runs at different speeds on different devices. A 144Hz monitor would simulate twice as fast as a 72Hz screen. By multiplying all physics updates by `dt`, we ensure consistent behavior regardless of frame rate.
+
+In practice, our physics simulation uses a fixed timestep internally while the render loop runs at whatever rate the browser provides. This gives us deterministic physics with smooth visual interpolation.
+
+## Drawing Clothing Items
+
+Each clothing item in Laundry Sort is drawn as a stylized shape — shirts have a distinctive T-shape silhouette, pants have a split-leg shape. We render these using Canvas path operations rather than sprite images, which gives us several advantages:
+
+- **Infinite resolution** — shapes look crisp at any zoom level
+- **Dynamic coloring** — we can tint items with any color using `fillStyle`
+- **Smaller bundle size** — no sprite sheets to load
+- **Easy rotation** — path-based rendering works seamlessly with canvas transforms
+
+Here's a simplified version of how we draw a shirt:
+
+```typescript
+function drawShirt(ctx: CanvasRenderingContext2D, color: string) {
+  ctx.fillStyle = color;
+  ctx.beginPath();
+
+  // Collar
+  ctx.moveTo(15, 0);
+  ctx.lineTo(25, 0);
+
+  // Right shoulder and sleeve
+  ctx.lineTo(40, 5);
+  ctx.lineTo(40, 15);
+  ctx.lineTo(30, 12);
+
+  // Right body
+  ctx.lineTo(30, 35);
+
+  // Bottom
+  ctx.lineTo(10, 35);
+
+  // Left body
+  ctx.lineTo(10, 12);
+
+  // Left sleeve
+  ctx.lineTo(0, 15);
+  ctx.lineTo(0, 5);
+
+  ctx.closePath();
+  ctx.fill();
+
+  // Add a subtle outline for definition
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
+  ctx.lineWidth = 1;
+  ctx.stroke();
+}
+```
+
+The white outline is a small detail that makes a huge difference on a dark background. It gives each item definition and prevents same-colored items from blending together when they overlap.
+
+## The Dark Arcade Aesthetic
+
+Laundry Sort's visual identity is built on contrast. The background is pure black (`#000000`), and everything on top of it glows with neon-accented color. This wasn't just an aesthetic choice — it's a **gameplay decision**.
+
+On a dark background, the four clothing colors (red, blue, yellow, green) pop with incredible clarity. Players can instantly identify colors even when items are tumbling and overlapping. The bins have matching neon borders that glow, creating an intuitive visual connection between items and their targets.
+
+We achieve the glow effect using Canvas shadow properties:
+
+```typescript
+ctx.shadowColor = binColor;
+ctx.shadowBlur = 15;
+ctx.strokeStyle = binColor;
+ctx.strokeRect(bin.x, bin.y, bin.width, bin.height);
+ctx.shadowBlur = 0; // Reset for other draws
+```
+
+This creates a beautiful neon halo around each bin without requiring any additional draw calls or compositing. It's one of those happy discoveries where the Canvas API gives you exactly what you need with minimal code.
+
+## Frame Rate Management
+
+Maintaining 60fps is non-negotiable. Any frame drops are immediately noticeable as stuttering physics and laggy drag interactions. Here are the techniques we use to keep things smooth:
+
+### Minimize State Changes
+
+Every time you change `fillStyle`, `strokeStyle`, `shadowBlur`, or other Canvas state, there's a small cost. We batch our draw calls by type — all shirts of the same color, then all pants of the same color, then bins, then UI — to minimize state changes.
+
+### Avoid Unnecessary Clears
+
+Instead of clearing the entire canvas every frame with `clearRect`, we could theoretically only clear and redraw dirty regions. In practice, for a game as dynamic as Laundry Sort where items are constantly moving, a full clear is actually more efficient than tracking dirty rectangles.
+
+### Offscreen Canvases for Static Elements
+
+The bin outlines, the score display background, and other static UI elements are drawn once to offscreen canvases and then composited with `drawImage`. This avoids re-executing complex path operations every frame for elements that don't change.
+
+```typescript
+const binCanvas = document.createElement("canvas");
+const binCtx = binCanvas.getContext("2d")!;
+// Draw bins once
+drawAllBins(binCtx);
+
+// In the main render loop, just blit the pre-rendered bins
+function render() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(binCanvas, 0, 0); // Fast!
+  drawClothingItems(ctx);
+  drawUI(ctx);
+}
+```
+
+### Object Pooling
+
+Creating and garbage-collecting clothing item objects every few seconds causes GC pauses that manifest as micro-stutters. We maintain an object pool of pre-allocated items and recycle them when they're sorted or fall off-screen.
+
+## Responsive Canvas Sizing
+
+Laundry Sort needs to play well on everything from a 4-inch phone to a 27-inch monitor. Our canvas sizing logic uses `devicePixelRatio` to render at native resolution while maintaining a consistent game-world coordinate system:
+
+```typescript
+function resizeCanvas(canvas: HTMLCanvasElement) {
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+
+  const ctx = canvas.getContext("2d")!;
+  ctx.scale(dpr, dpr);
+}
+```
+
+This gives us crisp rendering on Retina displays without changing any of our game logic coordinates. The game world is always the same size — only the pixel density changes.
+
+## The Joy of Canvas
+
+Working with HTML5 Canvas is like working with a really good pencil. It's not the most powerful tool in the shed, but it's direct, predictable, and gets out of your way. Every pixel on screen is there because you put it there. There's no CSS cascade to debug, no z-index wars, no mysterious layout shifts.
+
+For a game like Laundry Sort — where visual clarity and performance are everything — that directness is invaluable. The Canvas API may not be glamorous, but it's the backbone of our entire rendering pipeline, and I wouldn't trade it for anything.

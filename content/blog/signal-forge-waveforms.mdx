@@ -1,0 +1,98 @@
+---
+title: "Designing the Waveform System: Pulse, Sine, Saw, and Noise"
+date: "2025-02-05"
+description: "A deep dive into Signal Forge's four waveform types and how each creates a distinct gameplay identity and strategic feel."
+tags: ["Signal Forge", "Game Design", "Waveforms", "Devlog"]
+---
+
+## Four Waves, Four Identities
+
+The heart of Signal Forge lives in its four waveform types: **Pulse**, **Sine**, **Saw**, and **Noise**. These aren't just cosmetic labels slapped onto generic card archetypes — they're the foundational design pillars that inform every card's behavior, every synergy, and every strategic decision a player makes.
+
+When I set out to design these waveform identities, I had a guiding principle: *each waveform should feel like its real-world counterpart sounds.* If you've ever worked with a synthesizer or audio signal chain, you know that each waveform has a distinct character. That character should translate directly into gameplay feel.
+
+## Pulse: The Aggressive Binary
+
+A pulse wave is binary — it's either on or off, high or low. There's no gradual transition. It snaps. In audio, pulse waves produce sharp, biting tones with strong harmonics. That aggressive, decisive quality defines the Pulse archetype in Signal Forge.
+
+**Pulse cards hit hard and hit now.** They tend to have higher base damage, lower costs, and straightforward effects. A Pulse-heavy deck is the equivalent of a rush strategy — you're trying to overwhelm the enemy before they can establish their own rhythm.
+
+### Signature Pulse Behaviors
+
+- **Burst damage** — Pulse cards often deal their full damage in a single strike rather than spreading it across effects.
+- **Piercing** — Several Pulse cards carry the Piercing keyword, bypassing enemy shields entirely. Just like a pulse wave cuts through a mix.
+- **Exhaust synergies** — Pulse cards frequently Exhaust (remove themselves from the deck after use), reflecting the binary on/off nature. You get one powerful shot, then it's gone.
+- **Low sustain** — Pulse decks burn bright and fast. If the fight drags on, you'll run out of steam. This creates a natural tension: *can I end this before my signal degrades?*
+
+```
+// Pulse card example
+Pulse Strike: Cost 1 | 8 Damage | Piercing
+"A clean, unfiltered strike that bypasses all defenses."
+```
+
+Playing a Pulse deck feels like playing a drum machine — precise, punchy, rhythmic. Every card counts because you don't have the luxury of ramping up. You need to make each beat land.
+
+## Sine: The Sustain Controller
+
+Sine waves are the purest waveform — smooth, continuous, predictable. In audio, a sine wave is a single frequency with no harmonics. It's clean, calm, and endlessly cyclical. The Sine archetype embodies that flowing, self-sustaining energy.
+
+**Sine cards keep you alive and in control.** They heal, they shield, they cycle through your deck efficiently. A Sine player isn't trying to win fast — they're trying to build an impenetrable rhythm that the enemy can't disrupt.
+
+### Signature Sine Behaviors
+
+- **Sustain keyword** — Many Sine cards have the Sustain keyword, which triggers healing or shielding effects that persist across turns.
+- **Retain** — Sine cards often Retain (stay in your hand between turns), reflecting the continuous nature of a sine wave. Unlike Pulse cards that fire and vanish, Sine cards stick around.
+- **Shield generation** — Where Pulse bypasses shields, Sine builds them. A well-played Sine deck can stack shields high enough that enemy attacks become meaningless noise.
+- **Tempo manipulation** — Sine cards interact heavily with the Tempo resource, allowing you to spend less and do more over extended fights.
+
+The Sine playstyle rewards patience and planning. You're not going to one-shot any enemy with a Sine deck, but you might outlast them so thoroughly that victory becomes inevitable. It's the meditation of deckbuilding — finding your frequency and holding it steady.
+
+## Saw: The Escalating Ramp
+
+A sawtooth wave climbs linearly, then drops sharply back to zero. That ramp-and-reset pattern is one of the most recognizable shapes in synthesis. In Signal Forge, the Saw archetype captures that escalating energy — cards that get stronger the longer you hold them, combos that build over multiple turns, and payoffs that reward patience with devastating climaxes.
+
+**Saw cards scale.** They start modest and become monstrous. A Saw deck in the early game looks underwhelming, but by turn 8, you're dealing triple-digit damage per turn.
+
+### Signature Saw Behaviors
+
+- **Growing keyword** — Saw cards frequently carry Growing, which increases their stats each time they're played. A Growing Saw card played five times might have doubled its original damage.
+- **Chain effects** — Saw cards love to Chain — triggering additional effects when played in sequence. Play three Saw cards in a row and the third might hit like a freight train.
+- **Bleed synergies** — Saw's ascending ramp pairs naturally with the Bleed status effect. Apply Bleed early, watch it stack, and let the enemy's health drain away like a waveform decaying.
+- **Reset vulnerability** — Just like a sawtooth wave drops to zero, Saw decks are vulnerable to disruption. If an enemy can reset your stacks or force you to discard, you're back to square one.
+
+```
+// Saw card example
+Sawtooth Ramp: Cost 2 | 3 Damage | Growing, Chain
+"Each oscillation climbs higher. Played 1 time(s)."
+```
+
+Playing a Saw deck is like tuning an engine — it sputters at first but once it catches, it *roars*. The satisfaction of watching your damage numbers climb turn over turn is one of the most addictive feelings in Signal Forge.
+
+## Noise: The Beautiful Chaos
+
+Noise is random. White noise, pink noise, brown noise — all variations of randomized signal. In audio, noise is simultaneously the most unpredictable and the most versatile sound source. It can be filtered into anything. In Signal Forge, the Noise archetype embraces that chaos.
+
+**Noise cards are wildcards.** Their effects might vary each time you play them. They might help you enormously or hurt you unexpectedly. A Noise deck is a gamble — but it's a gamble with options.
+
+### Signature Noise Behaviors
+
+- **Wildcard keyword** — Noise cards with Wildcard produce random effects from a curated pool. You might get bonus damage, unexpected healing, or a free card draw. The variance is the feature.
+- **Glitch synergies** — Noise is the waveform most closely tied to the Glitch mechanic. Noise cards can *take advantage of* corruption that would cripple other archetypes. Where other waveforms fear Glitch cards, Noise decks can weaponize them.
+- **Siphon effects** — Noise cards often Siphon resources from enemies, stealing their strength to fuel your chaos.
+- **High ceiling, low floor** — A perfect Noise hand can be the most powerful thing in the game. A bad Noise hand can be nearly unplayable. That volatility is intentional — it's the cost of playing with randomness.
+
+The Noise playstyle is for players who love variance, who find joy in adapting to whatever the cards throw at them. It's jazz improv in a world of classical composition.
+
+## Mixing Waveforms: The Hybrid Strategy
+
+Here's where it gets really interesting: **you don't have to commit to one waveform type.** Signal Forge allows and encourages hybrid decks. Pulse/Saw decks that burst early while ramping for late game. Sine/Noise decks that sustain through chaos. The combination space is enormous.
+
+But mixing has trade-offs. Each waveform's synergy cards reward commitment. A card that says "deal 2 damage for each Pulse card in your discard pile" gets weaker in a hybrid deck. The decision of when to specialize and when to diversify is one of the deepest strategic layers in the game.
+
+### Designing for Feel
+
+The most important lesson I learned designing the waveform system: **mechanics should evoke feeling.** When a player says "I'm playing Pulse," they should *feel* aggressive and decisive. When they say "I'm on Saw," they should feel that slow, satisfying climb toward power. The numbers on the cards matter, but the *experience* of playing them matters more.
+
+Every waveform was playtested not just for balance but for *emotional resonance*. Does this feel like a sine wave? Does this feel like noise? If the answer was no, the card went back to the drawing board — no matter how balanced it was numerically.
+
+Signal processing gave me a design language that players intuit naturally. And that's the real power of thematic coherence — when your theme does the teaching for you.

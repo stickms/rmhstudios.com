@@ -1,0 +1,187 @@
+---
+title: "Optimizing for Mobile: Touch Controls and Performance"
+date: "2025-08-20"
+description: "How we designed Laundry Sort as a mobile-first experience with responsive touch controls and canvas optimization."
+tags: ["Laundry Sort", "Mobile", "Performance", "Touch Controls"]
+---
+
+## Mobile First, Desktop Second
+
+Laundry Sort was always going to be a phone game. The core mechanic — grabbing and dragging items with your fingers — is inherently tactile. A mouse can simulate it, but fingers *own* it. From day one at RMH Studios, we designed for thumbs, and let desktop be a bonus.
+
+This mobile-first mindset influenced every decision: the UI size, the bin layout, the spawn positions, the physics constants, and especially the performance budget. If it doesn't run at 60fps on a mid-range Android phone, it doesn't ship.
+
+## Touch Events vs. Mouse Events
+
+The web platform gives us two separate input systems, and they don't play nicely together. Here's what we learned about bridging them.
+
+### The Event Hierarchy
+
+On a touchscreen that also supports a mouse (like most laptops and some tablets), the browser fires events in this order for a single tap:
+
+1. `touchstart`
+2. `touchmove` (if finger moves)
+3. `touchend`
+4. `mousedown` (300ms delay!)
+5. `mousemove`
+6. `mouseup`
+7. `click`
+
+That 300ms delay between `touchend` and `mousedown` is the browser waiting to see if the tap is actually the first tap of a double-tap zoom gesture. It's there for a good reason, but it's fatal for game responsiveness.
+
+Our solution is to handle touch and mouse events separately, with touch taking priority:
+
+```typescript
+let usingTouch = false;
+
+canvas.addEventListener("touchstart", (e) => {
+  usingTouch = true;
+  e.preventDefault();
+  handleGrab(getTouchPositions(e));
+});
+
+canvas.addEventListener("mousedown", (e) => {
+  if (usingTouch) return; // Ignore mouse events on touch devices
+  handleGrab([getMousePosition(e)]);
+});
+```
+
+Once we detect a touch event, we set a flag and ignore all subsequent mouse events. This prevents the double-firing problem cleanly. We reset the flag on page visibility change, in case the user switches between input modes.
+
+### Touch Target Sizes
+
+On mobile, fingers are imprecise instruments — much less accurate than a mouse cursor. Apple's Human Interface Guidelines recommend a minimum touch target of 44x44 points. Our clothing items are at least 50x50 CSS pixels, and we add a generous hit area padding of 10 pixels around each item's bounding box.
+
+```typescript
+function hitTestWithPadding(
+  item: ClothingItem,
+  px: number,
+  py: number
+): boolean {
+  const padding = 10;
+  return (
+    px >= item.x - padding &&
+    px <= item.x + item.width + padding &&
+    py >= item.y - padding &&
+    py <= item.y + item.height + padding
+  );
+}
+```
+
+This padding is invisible — the drawn item is the same size — but the touchable area extends beyond it. Players don't notice the generous hit zones; they just feel like the game is responsive and "gets" what they're trying to tap.
+
+## Canvas Performance on Mobile
+
+HTML5 Canvas performance varies wildly across mobile devices. A flagship iPhone renders identically to desktop, but a three-year-old budget Android phone will choke on effects that run perfectly on a Pixel. Here's how we keep things smooth everywhere.
+
+### Resolution Scaling
+
+On high-DPI mobile screens, canvas rendering at native resolution can be extremely expensive. A modern phone might have a devicePixelRatio of 3, meaning a 400x800 CSS canvas becomes a 1200x2400 pixel canvas — that's 2.88 million pixels to fill every frame.
+
+We cap the effective DPI at 2:
+
+```typescript
+function getOptimalDpr(): number {
+  const dpr = window.devicePixelRatio || 1;
+  return Math.min(dpr, 2);
+}
+```
+
+The visual difference between 2x and 3x is nearly imperceptible on a phone-sized screen, but the performance difference is substantial — we're pushing 44% fewer pixels per frame.
+
+### Minimizing Draw Calls
+
+Every `fillRect`, `strokeRect`, `drawImage`, and `fill()` call is a draw call that the GPU has to process. On mobile GPUs, draw call overhead is significantly higher than on desktop.
+
+We minimize draw calls by batching. Instead of drawing each item individually with its own `beginPath/fill/stroke` cycle, we group items by color and draw all same-colored items in a single path:
+
+```typescript
+function drawItemsByColor(ctx: CanvasRenderingContext2D, items: ClothingItem[]) {
+  const byColor = groupBy(items, (i) => i.color);
+
+  for (const [color, colorItems] of Object.entries(byColor)) {
+    ctx.fillStyle = COLORS[color];
+    ctx.beginPath();
+
+    for (const item of colorItems) {
+      ctx.save();
+      ctx.translate(item.x + item.width / 2, item.y + item.height / 2);
+      ctx.rotate(item.rotation);
+      ctx.rect(-item.width / 2, -item.height / 2, item.width, item.height);
+      ctx.restore();
+    }
+
+    ctx.fill();
+  }
+}
+```
+
+This reduces our per-frame draw calls from O(n) to O(colors), which is a constant 4 calls for the items themselves.
+
+### Avoiding Shadow Effects on Low-End Devices
+
+Our neon glow effects use Canvas `shadowBlur`, which is one of the most expensive operations in the 2D API. On low-end devices, we detect performance issues and disable shadows:
+
+```typescript
+let enableShadows = true;
+let frameTimeHistory: number[] = [];
+
+function checkPerformance(frameTime: number) {
+  frameTimeHistory.push(frameTime);
+  if (frameTimeHistory.length > 60) {
+    const avg = frameTimeHistory.reduce((a, b) => a + b) / frameTimeHistory.length;
+    if (avg > 20) {
+      // Averaging more than 20ms per frame (below 50fps)
+      enableShadows = false;
+    }
+    frameTimeHistory = [];
+  }
+}
+```
+
+This adaptive quality system means the game looks gorgeous on devices that can handle it, and stays smooth on devices that can't. Players never have to dig through settings menus — the game just works.
+
+## Responsive Layout
+
+Laundry Sort needs to work in portrait mode on phones, landscape on tablets, and at any browser window size on desktop. Our layout system uses a virtual coordinate space and scales everything proportionally:
+
+```typescript
+function calculateLayout(canvasWidth: number, canvasHeight: number): Layout {
+  const isPortrait = canvasHeight > canvasWidth;
+  const binCount = 4;
+  const binGap = canvasWidth * 0.02;
+  const totalGap = binGap * (binCount + 1);
+  const binWidth = (canvasWidth - totalGap) / binCount;
+  const binHeight = canvasHeight * 0.2;
+
+  return {
+    bins: Array.from({ length: binCount }, (_, i) => ({
+      x: binGap + i * (binWidth + binGap),
+      y: canvasHeight - binHeight - binGap,
+      width: binWidth,
+      height: binHeight,
+    })),
+    spawnY: 0,
+    floorY: canvasHeight - binHeight - binGap,
+  };
+}
+```
+
+Every dimension is a proportion of the canvas size, not an absolute pixel value. This means the game layout adapts seamlessly to any screen size. The bins are always 20% of the canvas height. The gaps are always 2% of the canvas width. The proportions are consistent, even if the actual pixel values change.
+
+## Battery and Thermal Considerations
+
+Mobile games have a responsibility to not drain the battery or turn the phone into a hand warmer. We take several steps:
+
+- **`requestAnimationFrame` only** — no `setInterval` background processing
+- **Pause when hidden** — when the tab loses focus, we stop the game loop entirely
+- **No audio decode in the render loop** — sound effects are pre-decoded and cached
+- **Minimal object allocation** — object pooling prevents GC pressure that triggers CPU spikes
+
+These aren't glamorous optimizations, but they're the difference between a game players enjoy and a game that makes their phone uncomfortably warm after three rounds.
+
+## The Mobile Advantage
+
+Here's what surprised me: Laundry Sort is actually *better* on mobile than on desktop. The direct touch interaction, the ability to sort with two thumbs simultaneously, the intimate screen size that keeps everything within reach — it all adds up to a superior experience.
+
+Designing for mobile first wasn't a compromise. It was an amplification of everything that makes Laundry Sort fun.

@@ -1,0 +1,164 @@
+---
+title: "Sound Design for an Abandoned Casino"
+date: "2025-10-12"
+description: "Building the audio atmosphere of House Always Wins — from music distortion tied to Debt to the ritual coin-flip sound."
+tags: ["House Always Wins", "Sound Design", "Audio", "Game Dev", "Devlog"]
+---
+
+## Sound Is the Invisible Architecture
+
+If you mute House Always Wins, you lose half the game. Maybe more. The pixel art establishes the visual world — the crumbling walls, the flickering lights, the dark hallways. But it's the *sound* that makes you feel like you're actually standing in an abandoned casino. Sound fills in the details that 16x16 tiles can't convey: the weight of empty space, the suggestion of something lurking, the almost-living respiration of a building that shouldn't still be running.
+
+I've spent more hours on audio design than any other single system in the game, and I want to walk you through how it works — from the ambient soundscape to the Debt-driven music distortion to that coin-flip sound that opens every session.
+
+## The Ambient Layer
+
+The casino's ambient soundscape is built from layered audio loops that play continuously beneath everything else. These loops create the baseline atmosphere — the sound of *being there* before anything happens.
+
+### The Core Loops
+
+The ambient system runs four simultaneous loops:
+
+1. **Ventilation hum** — A low, constant drone that mimics an HVAC system running on its last legs. Slight pitch variation every 30-60 seconds, suggesting mechanical strain.
+2. **Spatial decay** — Distant creaks, groans, and settling sounds. The building breathing. These are spatialized to suggest vastness — the sounds come from far away, implying spaces beyond what the player can see.
+3. **Electronic ghosts** — Faint slot machine chimes, the buzz of a dying neon tube, the click of a roulette wheel spinning in an empty room. These are quiet, almost subliminal, and they sell the idea that the casino's machines are still active even where no one is playing.
+4. **Silence texture** — This sounds paradoxical, but "silence" in a room has a sound. It's the high-frequency hiss of air, the subtle resonance of enclosed space. Without this layer, the quieter moments feel artificially dead.
+
+```typescript
+// Ambient audio manager
+interface AmbientLayer {
+  id: string;
+  audioSource: string;
+  baseVolume: number;
+  debtModifier: (debt: number) => number;
+  spatialConfig?: {
+    direction: 'left' | 'right' | 'center';
+    distance: number;
+  };
+}
+
+const ambientLayers: AmbientLayer[] = [
+  {
+    id: 'ventilation',
+    audioSource: '/audio/ambient/vent-hum.ogg',
+    baseVolume: 0.15,
+    debtModifier: (debt) => 0.15 + (debt / 100) * 0.1,
+  },
+  {
+    id: 'spatial-decay',
+    audioSource: '/audio/ambient/building-creak.ogg',
+    baseVolume: 0.08,
+    debtModifier: (debt) => 0.08 + (debt / 100) * 0.15,
+  },
+  // ... additional layers
+];
+```
+
+### Debt Modulation
+
+Every ambient layer responds to Debt. At low Debt, the ambient sounds are quiet and gentle — background noise that you barely notice. At high Debt, the ventilation hum deepens and stutters. The spatial decay sounds become more frequent, more aggressive — louder creaks, closer thuds, occasional sharp bangs that make you flinch. The electronic ghosts crescendo: slot machines ring constantly, neon buzzes angrily, something mechanical churns in the walls.
+
+The casino is getting louder because it's getting *hungrier*.
+
+## The Music System
+
+The soundtrack of House Always Wins is not a playlist of tracks. It's a **dynamic, continuously modulated composition** that responds to the player's Debt level, location, and narrative state.
+
+### Base Compositions
+
+Each major area of the casino has a base musical composition:
+
+- **The Lobby** — A melancholy jazz waltz. Piano, upright bass, brushed snare. It evokes the ghost of a live band that used to play here, now reduced to an echo trapped in the walls.
+- **The Floor** — Where the gambling tables live. The music here is more percussive, driven by a restless rhythm. Think of a heartbeat that doesn't quite keep time.
+- **The Back Halls** — Stripped-back ambient piano. Single notes with long reverb, as if someone is playing a grand piano in a room far too large for it.
+- **Event Rooms** — Each has its own musical theme, reflecting the NPC it's tied to. These are the most composed, most "traditionally musical" tracks in the game.
+
+### Distortion Layers
+
+Here's where it gets interesting. Each base composition has **distortion layers** — pre-processed audio variations that are crossfaded in as Debt increases.
+
+At Debt 0, you hear the clean base composition. As Debt climbs:
+
+- **Debt 20-40:** Reverb extends. The music sounds like it's being played in a larger, emptier room. Notes linger longer than they should.
+- **Debt 40-60:** Pitch instability appears. Notes waver slightly, as if the recording medium is degrading. A low-frequency rumble enters beneath the bass line.
+- **Debt 60-80:** The composition starts to fragment. Beats skip. Phrases repeat abnormally. The piano sounds like it needs tuning — badly.
+- **Debt 80-100:** Near-complete distortion. The original composition is barely recognizable. It's been stretched, compressed, layered with static, and underscored by a resonant drone that vibrates in your chest. The music hasn't changed *songs*. It's the same piece. But it's been corrupted by Debt until it sounds like the memory of a song rather than the song itself.
+
+```typescript
+// Music distortion crossfading
+function updateMusicDistortion(debt: number) {
+  const layers = musicSystem.getDistortionLayers();
+  
+  layers.forEach((layer, index) => {
+    const threshold = (index + 1) * 20; // 20, 40, 60, 80
+    const intensity = Math.max(0, Math.min(1, 
+      (debt - threshold + 20) / 20
+    ));
+    layer.setVolume(intensity * layer.maxVolume);
+  });
+  
+  // Reduce clean layer as distortion increases
+  const cleanVolume = Math.max(0, 1 - (debt / 80));
+  musicSystem.cleanLayer.setVolume(cleanVolume);
+}
+```
+
+The crossfading happens over five seconds, so the player never hears a sudden shift. The music just... *slides* into wrongness. And because the changes are gradual, players often don't notice until they compare their current experience to a memory of what the music sounded like an hour ago.
+
+## The Coin Flip Sound
+
+Let me talk about one specific sound: the coin flip that opens every session.
+
+This is a two-second audio event, and I've iterated on it more than any other sound in the game. It needs to accomplish several things simultaneously:
+
+- **Tactile satisfaction** — The sound of a coin spinning should feel physical. You should "feel" the metal.
+- **Ritual weight** — This isn't a casual sound effect. It's the opening ceremony of the game. It needs gravitas.
+- **Isolation** — The coin flip happens in silence. No ambient sound, no music. Just the coin and the dark. The silence is as designed as the sound.
+
+The final sound is a layered construction:
+
+1. A sharp metallic *ping* for the initial flip
+2. A sustained, airy whistling as the coin spins — created by layering a pitch-shifted metallic ring with a filtered wind sound
+3. A weighty *thunk* for the landing, with a brief metallic rattle as the coin settles
+4. A half-second of resonant decay — the coin's vibration fading into silence
+
+After the coin lands, there's a deliberate 1.5-second pause before any text appears. That silence after the flip is where the game establishes its relationship with the player. It's a held breath. A moment of "what now?" And then: *"You've been here before."* The text sound — a soft, typewriter-like click for each character — breaks the silence gently, like someone whispering in the dark.
+
+## Sound Effects and Interaction
+
+Beyond ambient and music, the game has a catalog of **interaction sound effects** that respond to player actions and Debt state.
+
+### Footsteps
+
+The player's footstep sounds change based on surface type (carpet, tile, metal grating, wood) and Debt level. At low Debt, footsteps are clean and grounded — a confident walk through a quiet space. At high Debt, footsteps develop reverb and echo, suggesting the casino is becoming more cavernous, more empty, more *wrong*. The player's own footsteps start to sound like someone else walking behind them.
+
+### Gambling Sounds
+
+Every gambling interaction has a complete audio vocabulary. The coin flip at a gambling table uses a lighter, quicker version of the opening ritual flip. Card draws have a satisfying *snap*. The Wheel has a ratcheting spin that decelerates with physical accuracy. Win sounds are warm and bright — bells, chimes, a mini-fanfare. Loss sounds are muted and hollow — a dull tone, a closing *click*, silence.
+
+At high Debt, win sounds become muffled, as if heard through a wall. The casino is diminishing your victories *sonically*. Loss sounds, conversely, become clearer and more prominent. The acoustic space warps to emphasize failure and suppress success. It's subtle enough that most players won't consciously identify it, but they'll *feel* it.
+
+### NPC Audio
+
+NPCs don't have voice acting — this is a pixel art game, and spoken dialogue would create a tonal mismatch. Instead, each NPC has a **speech sound** — a short, repeating tonal blip that plays as their dialogue text appears. These sounds are characterful: Mara's speech sound is a warm, rounded tone. Harlan's is a sharp, clipped click. Lux's is a crystalline chime. Rem's is a soft scrape.
+
+These speech sounds also distort with Debt. At high Debt, Mara's warm tone develops a tremor. Harlan's click becomes harsh. Lux's chime rings too long, with an uncomfortable overtone. The characters' voices, such as they are, reflect the state of the world around them.
+
+## Technical Implementation
+
+Audio in web browsers has historically been painful, and even with modern Web Audio API improvements, there are challenges. A few technical decisions that have shaped the sound system:
+
+- **Web Audio API for processing** — All audio runs through Web Audio API nodes, which allows real-time routing, filtering, and volume control without re-processing source files.
+- **Audio sprite sheets** — Short sound effects are packed into single files to reduce HTTP requests and loading time.
+- **Progressive loading** — Music tracks load in segments. The clean layer loads first, enabling playback within seconds. Distortion layers load in the background and are available by the time Debt would typically trigger them.
+- **User interaction gate** — Browsers require a user gesture before playing audio. The login button serves as this gesture, so audio is fully enabled by the time the coin flip plays.
+
+## The Philosophy
+
+Sound design for House Always Wins follows one principle above all others: **audio should create the space that pixels suggest**. Pixel art is an abstraction. It asks the player's imagination to fill in detail. Audio provides the raw material for that imagination — the textures, the distances, the weights, the emptiness.
+
+When a player walks into a dark hallway in the casino, the pixel art shows them sixteen colors of darkness. But the sound tells them the hallway is long, the walls are concrete, the ceiling is high, and something mechanical is humming three rooms away. The sound is the truth that pixels approximate.
+
+That's what I'm building. Not a soundtrack. Not sound effects. A *space*, made of air and vibration, that exists behind the screen and between the pixels.
+
+Listen carefully. The casino is speaking.

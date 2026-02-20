@@ -1,0 +1,98 @@
+---
+title: "The Upgrade Picker: Meaningful Choices Between Rounds"
+date: "2025-06-15"
+description: "How we designed Echoes of the Spire's upgrade system to make every choice between rounds feel meaningful."
+tags: ["Echoes of the Spire", "Game Design", "Roguelike", "Devlog"]
+---
+
+## The Heart of Any Roguelike
+
+If combat is the body of a roguelike, the upgrade system is its heart. The moments between encounters — when you're choosing how to evolve your character — define whether a game has lasting appeal or becomes repetitive after a handful of runs. Get the upgrade system right, and players will spend hundreds of hours chasing new build combinations. Get it wrong, and they'll bounce after three runs because every path feels the same.
+
+Echoes of the Spire presents the player with an **upgrade pick screen** after clearing each floor. You're offered three randomly selected upgrades. You pick one. The others vanish. This simple format — borrowed from Slay the Spire, refined through iteration — creates a compressed decision space that forces genuinely interesting choices.
+
+## Design Principle: No Dead Picks
+
+My first rule for the upgrade system is that **every option must feel viable**. Nothing kills player engagement faster than being presented with three upgrades and thinking "none of these help me." If a player looks at their options and shrugs, I've failed.
+
+Achieving this requires two things: a well-designed upgrade pool and a smart selection algorithm.
+
+The upgrade pool is organized into **tiers and categories**. Universal upgrades (increased health, faster movement, damage reduction) are broadly useful regardless of class or build. Class-specific upgrades enhance specific abilities in ways that add new mechanics, not just bigger numbers. Synergy upgrades are deliberately designed to be powerful when combined with specific other upgrades the player might already have.
+
+The selection algorithm isn't purely random. It applies **soft weighting** based on the player's current state:
+
+```typescript
+function selectUpgradeOptions(
+  pool: Upgrade[], 
+  playerState: PlayerState, 
+  count: number
+): Upgrade[] {
+  const weighted = pool.map(upgrade => ({
+    upgrade,
+    weight: calculateWeight(upgrade, playerState),
+  }));
+  
+  // Ensure at least one class-relevant option
+  const classOptions = weighted.filter(w => 
+    w.upgrade.relevantClasses.includes(playerState.class)
+  );
+  
+  // Ensure at least one synergy option if applicable 
+  const synergyOptions = weighted.filter(w =>
+    hasSynergy(w.upgrade, playerState.currentUpgrades)
+  );
+  
+  return weightedSelection(weighted, count, {
+    guaranteeOne: classOptions,
+    preferOne: synergyOptions,
+  });
+}
+```
+
+This doesn't guarantee powerful picks — sometimes you get offered solid-but-unexciting utility upgrades. But it ensures that at least one option usually speaks to your build direction, and it occasionally dangles a synergy that makes your eyes light up.
+
+## Avoiding Power Creep
+
+Roguelike upgrades have a natural tendency toward exponential power scaling. If each upgrade gives +10% damage, by floor ten the player is doing three times their base damage, and by floor fifteen the game is trivially easy. This is the **power creep trap**, and falling into it turns the late game into a mindless steamroll.
+
+My approach is to design upgrades that **change what you can do** rather than just amplifying what you already do. Some examples:
+
+- **Ricochet** — Your basic attacks bounce to a nearby enemy after hitting the first target. This doesn't increase single-target damage but fundamentally changes how you approach groups.
+- **Phase Dash** — Your dodge becomes a short teleport that passes through enemies, briefly making you invulnerable. This changes spatial play without touching damage numbers.
+- **Well of Echoes** — Enemies you defeat in the first 5 seconds of entering a room drop double resources. This rewards aggressive play and changes your room entry strategy.
+
+These mechanical upgrades are more interesting than numerical ones because they create **new decision points**. The player with Ricochet changes who they target first. The player with Phase Dash takes different positioning risks. The player with Well of Echoes rushes rooms they would have approached cautiously.
+
+### When Numbers Are Necessary
+
+That said, some numerical upgrades are necessary for the game to feel good. Players want to see their damage go up. They want to feel more powerful as the run progresses. The trick is making numerical upgrades **conditional** rather than flat.
+
+Instead of "+15% damage," I offer "+30% damage to enemies above 80% health" (encouraging opening strikes) or "+25% damage while your cooldowns are active" (rewarding ability usage cadence) or "+20% damage in rooms with 5+ enemies" (scaling with difficulty). These are still numbers-go-up upgrades, but they come with implicit play pattern changes.
+
+## Synergies: The Reason Runs Feel Different
+
+The upgrade system's replay value lives or dies on **synergies** — combinations of upgrades that interact in powerful, sometimes unexpected ways. Designing deliberate synergies is an art, and I approach it with a spreadsheet and a lot of playtesting.
+
+Each upgrade has a set of **tags**: offensive, defensive, mobility, sustain, area, single-target, conditional, etc. When two upgrades share tags in specific combinations, they create compound effects. "Ricochet" (area, offensive) combines with "Spark Trail" (area, movement) to create bouncing projectiles that leave damaging trails. Neither upgrade is overpowered on its own, but together they turn the player into a room-clearing force of nature.
+
+I also deliberately design **cross-class synergies** that create unexpected builds. A Vanguard with mobility upgrades plays like a charging bull, slamming into enemies with combined momentum and shield damage. A Conduit with sustain upgrades becomes an unkillable lightning rod who heals proportional to charge meter. These build archetypes emerge naturally from the synergy system and give veteran players something to chase across hundreds of runs.
+
+## The Psychology of Choice
+
+Three options per pick was a deliberate choice informed by psychology research. **The paradox of choice** suggests that more options don't make people happier — they make decisions more stressful and outcomes less satisfying. With three options, the player can evaluate each one, feel confident in their choice, and move on without regret.
+
+I experimented with offering four and five options during development. Four felt fine but slowed the decision pace. Five was genuinely stressful — too many comparisons, too much evaluation, too much worry about what you didn't pick. Three keeps the pace brisk while still offering real choice.
+
+The **order of presentation** matters too. I randomize the position of the "best" option (as determined by internal power ranking) to prevent players from developing a positional bias. And I show brief descriptions that highlight synergies with existing upgrades, so the player isn't forced to remember their entire build to evaluate new options.
+
+## Rarity Without Frustration
+
+Upgrades come in three rarities: **standard**, **rare**, and **legendary**. Rarity affects both the power of the upgrade and its selection weight. Standard upgrades are solid fundamentals. Rare upgrades are build-defining additions. Legendary upgrades are game-changing powerhouses that appear infrequently enough to feel special.
+
+The rarity system uses a **pity timer** — if the player hasn't seen a rare upgrade in three picks, the next pick is guaranteed to include one. If they haven't seen a legendary in eight picks, one appears. This prevents long dry spells that make runs feel unrewarding without making powerful upgrades so common they lose their impact.
+
+## The Big Picture
+
+Every piece of the upgrade system serves the same goal: making each run feel like a story with its own character. Run one, you're a Vanguard with Ricochet and Phase Dash, charging through rooms like a bouncing ball of steel. Run two, you're a Spectre with conditional damage upgrades, setting up elaborate kill combos. Run three, you get offered a legendary early and it reshapes your entire strategy.
+
+That variety, that sense of discovery, is what keeps players coming back. Not bigger numbers — bigger *possibilities*.
