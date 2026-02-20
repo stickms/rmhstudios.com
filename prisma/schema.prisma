@@ -178,7 +178,8 @@ model Song {
   
   audioUrl    String
   coverUrl    String?
-  
+  fileSizeBytes Int?   // bytes of audio file (for 10 GB total storage cap)
+
   // Audio Analysis Data (JSON for beatmap generation)
   analysisData Json? 
 

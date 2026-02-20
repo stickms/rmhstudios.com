@@ -3,6 +3,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { headers } from "next/headers";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
+
+const MAX_COMMENT_LENGTH = 2000;
 
 export async function GET(
     req: NextRequest, 
@@ -50,17 +53,40 @@ export async function POST(
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
+        const ip = getClientIp(req);
+        const { allowed, retryAfter } = rateLimit(ip, {
+            limit: 10,
+            windowMs: 60_000,
+            prefix: "slice-comments",
+        });
+        if (!allowed) {
+            return NextResponse.json(
+                { error: "Too many requests" },
+                { status: 429, headers: { "Retry-After": String(retryAfter) } }
+            );
+        }
+
         const { id } = await params;
         const body = await req.json();
         const { content } = body;
 
-        if (!content || !content.trim()) {
+        if (!content || typeof content !== "string") {
             return NextResponse.json({ error: "Comment cannot be empty" }, { status: 400 });
+        }
+        const trimmed = content.trim();
+        if (!trimmed) {
+            return NextResponse.json({ error: "Comment cannot be empty" }, { status: 400 });
+        }
+        if (trimmed.length > MAX_COMMENT_LENGTH) {
+            return NextResponse.json(
+                { error: `Comment must be at most ${MAX_COMMENT_LENGTH} characters` },
+                { status: 400 }
+            );
         }
 
         const comment = await prisma.songComment.create({
             data: {
-                content,
+                content: trimmed,
                 songId: id,
                 userId: session.user.id
             },
