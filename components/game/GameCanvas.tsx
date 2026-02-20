@@ -606,7 +606,7 @@ export function GameCanvas() {
                 // Color mapping
                 let color = '#475569';
                 if (slice.type === 'BOMB') color = '#ef4444';
-                // @ts-ignore
+                // @ts-expect-error — COLORS.slice is typed loosely
                 else if (COLORS.slice[slice.type]) color = COLORS.slice[slice.type]; 
                 else if (slice.lane === 0) color = COLORS.lane1;
                 else color = COLORS.lane2;

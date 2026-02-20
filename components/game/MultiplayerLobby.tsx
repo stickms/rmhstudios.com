@@ -134,7 +134,7 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
              mp.off('song_selected', onSongSelected);
         };
     // mp is a singleton; omit onStart/onSelectSong — we use refs instead
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
     }, [mp]);
     
     const { data: session, isPending } = authClient.useSession();

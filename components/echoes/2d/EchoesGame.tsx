@@ -282,8 +282,8 @@ export default function EchoesGame({
             case 'blink': {
                 const { dx, dy } = g.moveDir;
                 const len = Math.sqrt(dx * dx + dy * dy) || 1;
-                let bx = g.player.x + (dx / len) * effect.distance;
-                let by = g.player.y + (dy / len) * effect.distance;
+                const bx = g.player.x + (dx / len) * effect.distance;
+                const by = g.player.y + (dy / len) * effect.distance;
                 if (!isBlocked(bx, by, 14)) { g.player.x = Math.max(60, Math.min(WORLD_W - 60, bx)); g.player.y = Math.max(60, Math.min(WORLD_H - 60, by)); }
                 for (let i = 0; i < 12; i++) { const a = Math.random() * Math.PI * 2; g.particles.push({ id: uid(), x: g.player.x, y: g.player.y, vx: Math.cos(a) * 100, vy: Math.sin(a) * 100, life: 0.4, maxLife: 0.4, color: '#cc44ff', radius: 3 }); }
                 break;
@@ -298,7 +298,7 @@ export default function EchoesGame({
                 break;
             }
             case 'chain_nova': {
-                let targets = g.enemies.filter(e => { const dx = e.x - g.player.x, dy = e.y - g.player.y; return Math.sqrt(dx * dx + dy * dy) < effect.radius; }).slice(0, effect.chains);
+                const targets = g.enemies.filter(e => { const dx = e.x - g.player.x, dy = e.y - g.player.y; return Math.sqrt(dx * dx + dy * dy) < effect.radius; }).slice(0, effect.chains);
                 for (const e of targets) { e.hp -= effect.damage; e.flashTimer = 0.15; g.particles.push({ id: uid(), x: e.x, y: e.y, vx: 0, vy: 0, life: 0.3, maxLife: 0.3, color: '#ffff00', radius: 8 }); }
                 break;
             }

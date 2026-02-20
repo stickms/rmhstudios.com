@@ -42,7 +42,7 @@ export function usePerformanceMode(): PerformanceMode {
 
     // 3. Frame rate sampling to detect software rendering / disabled GPU accel
     let frameCount = 0;
-    let startTime = performance.now();
+    const startTime = performance.now();
     let rafId: number;
     const sampleDuration = 500; // ms
 

@@ -24,6 +24,15 @@
   --rainbow-6: #0000ff;
   --rainbow-7: #9400d3;
 
+/* Temple of Joy — warm parchment / dark walnut theme */
+  --temple-bg: #f5f0e8;
+  --temple-surface: #ede7d9;
+  --temple-border: #c4a97a;
+  --temple-text: #3d2c1e;
+  --temple-text-muted: #7c5c3e;
+  --temple-accent: #8b6914;
+  --temple-accent-bright: #d4a847;
+
   /* Shadcn variables */
   --radius: 0.625rem;
   --card: oklch(1 0 0);
@@ -67,6 +76,16 @@
   --color-neon-orange: var(--neon-orange);
   --color-neon-purple: var(--neon-purple);
   --color-neon-blue: var(--neon-blue);
+
+  /* Temple of Joy color aliases */
+  --color-temple-bg: var(--temple-bg);
+  --color-temple-surface: var(--temple-surface);
+  --color-temple-border: var(--temple-border);
+  --color-temple-text: var(--temple-text);
+  --color-temple-muted: var(--temple-text-muted);
+  --color-temple-accent: var(--temple-accent);
+  --color-temple-accent-bright: var(--temple-accent-bright);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --breakpoint-xs: 480px;
@@ -115,6 +134,73 @@
   --animate-pulse-slow: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   --shadow-neon: 0 0 10px var(--neon-purple), 0 0 20px var(--neon-purple);
 }
+
+/* Temple of Joy — dark mode overrides */
+[data-theme="dark"] {
+  --temple-bg: #1a120b;
+  --temple-surface: #2c1d12;
+  --temple-border: #6b4c2a;
+  --temple-text: #e8d5b0;
+  --temple-text-muted: #a88b63;
+  --temple-accent: #d4a847;
+  --temple-accent-bright: #f0c84a;
+}
+
+/* ==================== TEMPLE OF JOY — IN-THEME CHROME ==================== */
+
+/* Scrollbars */
+[data-theme] ::-webkit-scrollbar          { width: 6px; height: 6px; }
+[data-theme] ::-webkit-scrollbar-track    { background: var(--temple-surface); }
+[data-theme] ::-webkit-scrollbar-thumb    { background: var(--temple-border); border-radius: 3px; }
+[data-theme] ::-webkit-scrollbar-thumb:hover { background: var(--temple-accent); }
+
+/* Text selection */
+[data-theme] ::selection { background: rgba(212, 168, 71, 0.28); color: var(--temple-text); }
+
+/* ==================== TEMPLE OF JOY ANIMATIONS ==================== */
+
+@keyframes templeCandle {
+  0%,  100% { opacity: 1;    transform: scaleY(1)    translateX(0);    }
+  15%        { opacity: 0.82; transform: scaleY(0.95) translateX(-1px); }
+  35%        { opacity: 0.95; transform: scaleY(1.05) translateX(0.5px);}
+  55%        { opacity: 0.87; transform: scaleY(0.97) translateX(1px);  }
+  75%        { opacity: 0.93; transform: scaleY(1.03) translateX(-0.5px);}
+}
+
+@keyframes templeUnlockPulse {
+  0%   { box-shadow: 0 0 0 0px  rgba(212, 168, 71, 0.75); }
+  45%  { box-shadow: 0 0 0 12px rgba(212, 168, 71, 0);   }
+  100% { box-shadow: 0 0 0 0px  rgba(212, 168, 71, 0);   }
+}
+
+@keyframes templeDissolve {
+  0%   { opacity: 1;   filter: blur(0px) brightness(1);   transform: scale(1);    }
+  60%  { opacity: 0.3; filter: blur(3px) brightness(1.4); transform: scale(1.025);}
+  100% { opacity: 0;   filter: blur(8px) brightness(2);   transform: scale(1.06); }
+}
+
+@keyframes templeAppear {
+  0%   { opacity: 0; filter: blur(5px); transform: scale(0.96); }
+  100% { opacity: 1; filter: blur(0px); transform: scale(1);    }
+}
+
+@keyframes templeToastFade {
+  0%   { opacity: 0; transform: translateX(12px); }
+  10%  { opacity: 1; transform: translateX(0); }
+  72%  { opacity: 1; transform: translateX(0); }
+  100% { opacity: 0; transform: translateX(8px); }
+}
+
+@keyframes templeNumberPop {
+  0%   { transform: scale(1);    color: var(--temple-accent-bright); }
+  30%  { transform: scale(1.18); color: var(--temple-accent-bright); }
+  100% { transform: scale(1);    }
+}
+
+/* Utility classes */
+.temple-number { transition: color 0.15s ease-out; }
+.temple-number-pop { animation: templeNumberPop 0.35s ease-out; }
+.temple-quote { font-family: var(--font-cormorant, Georgia, serif); font-style: italic; }
 
 @layer utilities {
   .min-h-screen {

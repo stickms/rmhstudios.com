@@ -76,7 +76,7 @@ export class Renderer {
   public drawTower(tower: Tower, cellSize: number, isGlitching: boolean = false) {
     let drawX = tower.x * cellSize + 2;
     let drawY = tower.y * cellSize + 2;
-    let size = cellSize - 4;
+    const size = cellSize - 4;
 
     // Paradox Override
     if (tower.isParadox) {

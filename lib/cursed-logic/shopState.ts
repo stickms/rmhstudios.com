@@ -133,7 +133,7 @@ export const useShopStore = create<ShopState>()(
         const { pendingRunModifier, unlockedVariants } = get();
         let startCharge = START_CHARGE;
         let startIntegrity = START_INTEGRITY;
-        let protocolHealth = PROTOCOL_HEALTH;
+        const protocolHealth = PROTOCOL_HEALTH;
         if (pendingRunModifier === 'glassCannon') {
           startIntegrity = 2;
         } else if (pendingRunModifier === 'fortress') {

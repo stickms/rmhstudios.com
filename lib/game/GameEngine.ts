@@ -409,7 +409,7 @@ export class GameEngine {
         const scoreMultiplier = calculateScoreMultiplier(m);
 
         // Visual Feedback Params
-        let feedbackLane = slice?.lane ?? 0; // Default to 0 if null, or pass it in? 
+        const feedbackLane = slice?.lane ?? 0; // Default to 0 if null, or pass it in? 
         // Issue: We don't know the lane if slice is null. 
         // Fix: `handleHit` needs lane if slice is missing.
         // Actually, just skip feedback lane specific logic or let it default.
