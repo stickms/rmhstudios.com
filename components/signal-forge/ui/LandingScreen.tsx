@@ -25,10 +25,13 @@ export function LandingScreen({ onStartGame, hasSavedRun, onLoadSavedRun }: Prop
   const router = useRouter();
   const [showHowToPlay, setShowHowToPlay] = useState(false);
 
+  // If how-to-play is open, render it fullscreen and return (don't render landing screen)
+  if (showHowToPlay) {
+    return <HowToPlayContent onClose={() => setShowHowToPlay(false)} />;
+  }
+
   return (
     <div className="w-full h-full bg-black bg-opacity-75 flex items-center justify-center z-50 p-6">
-      {showHowToPlay && <HowToPlayContent onClose={() => setShowHowToPlay(false)} />}
-
       <div className="bg-linear-to-b from-slate-900 to-black border-2 border-cyan-500 p-8 rounded-lg max-w-2xl w-full shadow-2xl max-h-full overflow-y-auto">
         <h1 className="text-4xl font-black text-transparent bg-clip-text bg-linear-to-r from-cyan-400 via-blue-400 to-purple-400 mb-4">
           SIGNAL FORGE
