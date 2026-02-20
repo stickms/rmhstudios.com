@@ -35,11 +35,11 @@ export default function GamesPage() {
                 </div>
 
                 {/* Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 md:gap-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
                     {games.map((game) => (
                         <Link key={game.id} href={game.href} className="group relative block h-full">
                             <div className={`
-                                h-full p-6 md:p-8 rounded-2xl border border-slate-800 bg-gradient-to-br ${game.color}
+                                h-full p-5 lg:p-6 rounded-2xl border border-slate-800 bg-gradient-to-br ${game.color}
                                 backdrop-blur-sm transition-all duration-300 group-hover:scale-[1.02] group-hover:shadow-2xl
                                 flex flex-col justify-between
                             `}>
@@ -48,9 +48,9 @@ export default function GamesPage() {
                                         <div className="p-3 bg-slate-900/50 rounded-xl border border-slate-700/50 group-hover:border-white/20 transition-colors">
                                             <GameIcon name={game.iconName} />
                                         </div>
-                                        <div className="flex gap-2">
+                                        <div className="flex flex-wrap gap-2">
                                             {game.tags.map(tag => (
-                                                <span key={tag} className="text-[10px] font-mono uppercase tracking-wider px-2 py-1 rounded-full bg-slate-900/40 border border-slate-700/30 text-slate-300">
+                                                <span key={tag} className="whitespace-nowrap text-[10px] font-mono uppercase tracking-wider px-2 py-1 rounded-full bg-slate-900/40 border border-slate-700/30 text-slate-300">
                                                     {tag}
                                                 </span>
                                             ))}
@@ -58,7 +58,7 @@ export default function GamesPage() {
                                     </div>
 
                                     <div>
-                                        <h2 className="text-2xl font-bold mb-2 group-hover:text-white transition-colors">
+                                        <h2 className="text-xl lg:text-2xl font-bold mb-2 group-hover:text-white transition-colors">
                                             {game.title}
                                         </h2>
                                         <p className="text-slate-400 text-sm leading-relaxed group-hover:text-slate-300 transition-colors">
@@ -67,7 +67,7 @@ export default function GamesPage() {
                                     </div>
                                 </div>
 
-                                <div className="mt-8 pt-6 border-t border-white/5 flex items-center justify-between">
+                                <div className="mt-6 pt-4 border-t border-white/5 flex items-center justify-between">
                                     <span className="text-sm font-mono text-slate-500 group-hover:text-white transition-colors flex items-center gap-2">
                                         INITIALIZE PROTOCOL <ArrowRight className="w-4 h-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
                                     </span>
