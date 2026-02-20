@@ -2,8 +2,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { readFile } from "fs/promises";
 import path from "path";
+import { resolvePathUnder } from "@/lib/slice-it/upload-validation";
 
-export const runtime = 'nodejs';
+export const runtime = "nodejs";
 
 export async function GET(
     request: NextRequest,
@@ -11,10 +12,12 @@ export async function GET(
 ) {
     try {
         const { filename } = await params;
-        
-        // Sanitize filename to prevent directory traversal
         const safeName = path.basename(filename);
-        const filePath = path.join(process.cwd(), "db", "music", "covers", safeName);
+        const coversDir = path.join(process.cwd(), "db", "music", "covers");
+        const filePath = resolvePathUnder(coversDir, safeName);
+        if (!filePath) {
+            return new NextResponse("Not Found", { status: 404 });
+        }
 
         const buffer = await readFile(filePath);
         

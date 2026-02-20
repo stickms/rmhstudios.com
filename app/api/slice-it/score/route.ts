@@ -17,7 +17,11 @@ export async function POST(req: Request) {
     try {
         const { username, score, accuracy, maxCombo, songId, speed } = await req.json();
 
-        if (!username || typeof username !== 'string' || username.length < 2 || username.length > 24) {
+        if (!username || typeof username !== 'string') {
+            return NextResponse.json({ error: 'Invalid username' }, { status: 400 });
+        }
+        const cleanUsername = username.trim().replace(/[^a-zA-Z0-9_\-. ]/g, '').slice(0, 24);
+        if (cleanUsername.length < 2) {
             return NextResponse.json({ error: 'Invalid username' }, { status: 400 });
         }
         if (typeof score !== 'number' || score < 0 || score > 1_000_000_000) {
@@ -49,16 +53,16 @@ export async function POST(req: Request) {
                     totalScore: { increment: score },
                     gamesPlayed: { increment: 1 },
                     updatedAt: new Date(),
-                    username: username
+                    username: cleanUsername
                 }
             });
         } else {
-            const usernameConfig = await prisma.player.findUnique({ where: { username } });
+            const usernameConfig = await prisma.player.findUnique({ where: { username: cleanUsername } });
             if (usernameConfig) {
                 return NextResponse.json({ error: 'Username taken.' }, { status: 409 });
             }
             await prisma.player.create({
-                data: { userId, username, totalScore: score, gamesPlayed: 1 }
+                data: { userId, username: cleanUsername, totalScore: score, gamesPlayed: 1 }
             });
         }
 

@@ -19,8 +19,9 @@ Slice It! allows authenticated users to upload audio files (MP3, WAV, OGG, FLAC)
 
 ### File size limits
 
-- **Audio**: 50 MB maximum.
-- **Cover images**: 5 MB maximum.
+- **Audio**: 50 MB maximum per file.
+- **Cover images**: 5 MB maximum per file.
+- **Total song storage**: 10 GB site-wide (sum of all uploaded audio file sizes). Rejection occurs before any file is written to disk.
 
 Rejection happens before any file is written to disk.
 
