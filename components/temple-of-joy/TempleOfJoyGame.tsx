@@ -151,17 +151,17 @@ export function TempleOfJoyGame({ initialSaveData }: { initialSaveData?: SaveDat
           </div>
         )}
 
-        {activeTab === 'buildings'    && <div className="p-4 pb-12 md:pb-0"><BuildingsPanel /></div>}
-        {activeTab === 'upgrades'     && <div className="p-4 pb-12 md:pb-0"><UpgradesPanel /></div>}
-        {activeTab === 'relics'       && <div className="p-4 pb-12 md:pb-0"><RelicsPanel /></div>}
-        {activeTab === 'wheel'        && <div className="p-4 pb-12 md:pb-0"><WheelOfSamsara /></div>}
+        {activeTab === 'buildings'    && <div className="overflow-y-auto p-4 pb-16 md:pb-4 h-full min-h-0"><BuildingsPanel /></div>}
+        {activeTab === 'upgrades'     && <div className="overflow-y-auto p-4 pb-16 md:pb-4 h-full min-h-0"><UpgradesPanel /></div>}
+        {activeTab === 'relics'       && <div className="overflow-y-auto p-4 pb-16 md:pb-4 h-full min-h-0"><RelicsPanel /></div>}
+        {activeTab === 'wheel'        && <div className="overflow-y-auto p-4 pb-16 md:pb-4 h-full min-h-0"><WheelOfSamsara /></div>}
         {activeTab === 'achievements' && (
-          <div className="p-4 pb-12 md:pb-0">
+          <div className="overflow-y-auto p-4 pb-16 md:pb-4 h-full min-h-0">
             <AchievementsPanel />
             <MilestonesPanel />
           </div>
         )}
-        {activeTab === 'settings'     && <div className="p-4 pb-12 md:pb-0"><SettingsPanel /></div>}
+        {activeTab === 'settings'     && <div className="overflow-y-auto p-4 pb-16 md:pb-4 h-full min-h-0"><SettingsPanel /></div>}
       </main>
 
       {/* Overlays */}
