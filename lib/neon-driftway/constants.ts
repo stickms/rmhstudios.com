@@ -2,6 +2,7 @@ import type { LevelConfig, LevelId } from './types';
 
 export const CANVAS_WIDTH = 960;
 export const CANVAS_HEIGHT = 540;
+export const CANVAS_DPI_SCALE = 2; // Render at 2x resolution for smoother visuals
 
 export const CAR_WIDTH = 36;
 export const CAR_HEIGHT = 72;
@@ -117,7 +118,7 @@ export const LEVELS: Record<LevelId, LevelConfig> = {
   },
 };
 
-// Level completion and unlock thresholds
-export const LEVEL_COMPLETE_TIME_MS = 120_000;
-export const LEVEL_2_UNLOCK_TIME_MS = LEVEL_COMPLETE_TIME_MS;
-export const LEVEL_3_UNLOCK_TIME_MS = LEVEL_COMPLETE_TIME_MS;
+// Level completion and unlock thresholds (distance-based in meters)
+export const LEVEL_COMPLETE_DISTANCE = 1500;
+export const LEVEL_2_UNLOCK_DISTANCE = LEVEL_COMPLETE_DISTANCE;
+export const LEVEL_3_UNLOCK_DISTANCE = LEVEL_COMPLETE_DISTANCE;

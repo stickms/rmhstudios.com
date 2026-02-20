@@ -3,7 +3,7 @@
 import { useRef, useEffect, useCallback, useState } from 'react';
 import { NeonDriftwayEngine } from '@/lib/neon-driftway/game';
 import { NeonDriftwayRenderer } from '@/lib/neon-driftway/renderer';
-import { CANVAS_WIDTH, CANVAS_HEIGHT, LEVELS, LEVEL_COMPLETE_TIME_MS, LEVEL_2_UNLOCK_TIME_MS, LEVEL_3_UNLOCK_TIME_MS } from '@/lib/neon-driftway/constants';
+import { CANVAS_WIDTH, CANVAS_HEIGHT, CANVAS_DPI_SCALE, LEVELS, LEVEL_COMPLETE_DISTANCE, LEVEL_2_UNLOCK_DISTANCE, LEVEL_3_UNLOCK_DISTANCE } from '@/lib/neon-driftway/constants';
 import type { InputState, LevelId, RunStats } from '@/lib/neon-driftway/types';
 import { NeonDriftwayUI } from './NeonDriftwayUI';
 
@@ -97,6 +97,14 @@ export function NeonDriftwayGame() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    // Set up DPI scaling for smoother rendering
+    const dpr = CANVAS_DPI_SCALE;
+    canvas.width = CANVAS_WIDTH * dpr;
+    canvas.height = CANVAS_HEIGHT * dpr;
+    canvas.style.width = `${CANVAS_WIDTH}px`;
+    canvas.style.height = `${CANVAS_HEIGHT}px`;
+    ctx.scale(dpr, dpr);
+
     if (!gameRef.current) {
       gameRef.current = new NeonDriftwayEngine();
     }
@@ -141,12 +149,12 @@ export function NeonDriftwayGame() {
               changed = true;
             }
           } else {
-            // Time-based unlock for gameOver (redundant now but kept for safety)
-            if (stats.level === 1 && stats.timeSurvivedMs >= LEVEL_2_UNLOCK_TIME_MS && !newUnlocks.has(2 as LevelId)) {
+            // Distance-based unlock for gameOver (redundant now but kept for safety)
+            if (stats.level === 1 && stats.distance >= LEVEL_2_UNLOCK_DISTANCE && !newUnlocks.has(2 as LevelId)) {
               newUnlocks.add(2 as LevelId);
               changed = true;
             }
-            if (stats.level === 2 && stats.timeSurvivedMs >= LEVEL_3_UNLOCK_TIME_MS && !newUnlocks.has(3 as LevelId)) {
+            if (stats.level === 2 && stats.distance >= LEVEL_3_UNLOCK_DISTANCE && !newUnlocks.has(3 as LevelId)) {
               newUnlocks.add(3 as LevelId);
               changed = true;
             }
@@ -194,10 +202,8 @@ export function NeonDriftwayGame() {
     <div className="w-full h-full relative bg-black flex flex-col items-center justify-center overflow-hidden">
       <canvas
         ref={canvasRef}
-        width={CANVAS_WIDTH}
-        height={CANVAS_HEIGHT}
         className="border-2 border-cyan-500/50 max-w-full max-h-full"
-        style={{ imageRendering: 'pixelated', aspectRatio: `${CANVAS_WIDTH}/${CANVAS_HEIGHT}` }}
+        style={{ imageRendering: 'auto', aspectRatio: `${CANVAS_WIDTH}/${CANVAS_HEIGHT}` }}
       />
 
       <NeonDriftwayUI

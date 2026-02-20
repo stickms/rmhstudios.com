@@ -10,7 +10,7 @@ import {
   HITBOX_INSET, CLOSE_CALL_BASE_RADIUS, INVINCIBILITY_MS,
   DISTANCE_MULTIPLIER, SPEED_BONUS_FACTOR, CLOSE_CALL_POINTS,
   STREAK_STEP, STREAK_CAP, STREAK_WINDOW_MS,
-  MAX_OBSTACLES, MAX_PARTICLES, LEVELS, LEVEL_COMPLETE_TIME_MS,
+  MAX_OBSTACLES, MAX_PARTICLES, LEVELS, LEVEL_COMPLETE_DISTANCE,
   roadLeft, roadRight, laneCenter, laneWidth,
 } from './constants';
 import { SeededRNG } from './rng';
@@ -70,34 +70,34 @@ const OBSTACLE_TEMPLATES: Record<string, ObstacleTemplate> = {
   boost_pad:          { type: 'boost_pad',          width: 40, height: 20, color: '#ff00ff', damage: 0, isTraffic: false, behavior: 'keep_lane', speedFactor: 0,    gripPenalty: 0,    driftImpulse: 0 },
 };
 
-// Per-level weighted obstacle pools
-const LEVEL_POOLS: Record<LevelId, { key: string; weight: number; minElapsed?: number }[]> = {
+// Per-level weighted obstacle pools (distance-based thresholds in meters)
+const LEVEL_POOLS: Record<LevelId, { key: string; weight: number; minDistance?: number }[]> = {
   1: [
     { key: 'cone', weight: 4 },
     { key: 'barrier', weight: 2 },
-    { key: 'traffic_slow', weight: 3 },
-    { key: 'traffic_lane_change', weight: 1, minElapsed: 30_000 },
-    { key: 'boost_pad', weight: 6, minElapsed: 5_000 },
+    { key: 'traffic_slow', weight: 5 },
+    { key: 'traffic_lane_change', weight: 2, minDistance: 200 },
+    { key: 'boost_pad', weight: 6, minDistance: 50 },
   ],
   2: [
     { key: 'cone', weight: 2 },
     { key: 'barrier', weight: 2 },
-    { key: 'traffic_slow', weight: 3 },
-    { key: 'traffic_lane_change', weight: 3 },
-    { key: 'puddle', weight: 3, minElapsed: 15_000 },
-    { key: 'hydro_strip', weight: 2, minElapsed: 25_000 },
-    { key: 'weave_barrier', weight: 2, minElapsed: 20_000 },
-    { key: 'boost_pad', weight: 6, minElapsed: 5_000 },
+    { key: 'traffic_slow', weight: 5 },
+    { key: 'traffic_lane_change', weight: 4 },
+    { key: 'puddle', weight: 3, minDistance: 100 },
+    { key: 'hydro_strip', weight: 2, minDistance: 200 },
+    { key: 'weave_barrier', weight: 2, minDistance: 150 },
+    { key: 'boost_pad', weight: 6, minDistance: 50 },
   ],
   3: [
     { key: 'cone', weight: 1 },
     { key: 'barrier', weight: 2 },
-    { key: 'traffic_slow', weight: 2 },
-    { key: 'traffic_lane_change', weight: 3 },
-    { key: 'traffic_aggressive', weight: 3, minElapsed: 35_000 },
+    { key: 'traffic_slow', weight: 4 },
+    { key: 'traffic_lane_change', weight: 5 },
+    { key: 'traffic_aggressive', weight: 4, minDistance: 250 },
     { key: 'debris', weight: 3 },
-    { key: 'weave_barrier', weight: 2, minElapsed: 15_000 },
-    { key: 'boost_pad', weight: 6, minElapsed: 5_000 },
+    { key: 'weave_barrier', weight: 2, minDistance: 100 },
+    { key: 'boost_pad', weight: 6, minDistance: 50 },
   ],
 };
 
@@ -242,13 +242,18 @@ export class NeonDriftwayEngine {
 
       this.elapsedMs += dt * 1000;
 
-      if (this.elapsedMs >= LEVEL_COMPLETE_TIME_MS && (this.state as string) === 'playing' && !this.continuedEndless) {
+      // Level complete check happens after distance update in updateCar
+      // Moved to after updateCar call
+
+      this.updateCar(dt, input);
+
+      // Check level completion (distance-based)
+      if (this.distance >= LEVEL_COMPLETE_DISTANCE && (this.state as string) === 'playing' && !this.continuedEndless) {
         this.state = 'levelComplete' as GameState;
         this.score = this.computeFinalScore();
         return;
       }
 
-      this.updateCar(dt, input);
       this.spawnObstacles(dt);
       this.updateObstacles(dt);
       this.checkCollisions();
@@ -346,10 +351,10 @@ export class NeonDriftwayEngine {
   // ── Spawning ──
 
   private difficultyProgress(): number {
-    if (this.elapsedMs <= LEVEL_COMPLETE_TIME_MS) {
-      return this.elapsedMs / LEVEL_COMPLETE_TIME_MS;
+    if (this.distance <= LEVEL_COMPLETE_DISTANCE) {
+      return this.distance / LEVEL_COMPLETE_DISTANCE;
     }
-    const extra = (this.elapsedMs - LEVEL_COMPLETE_TIME_MS) / 60_000;
+    const extra = (this.distance - LEVEL_COMPLETE_DISTANCE) / 1000; // Every 1000m beyond completion
     return 1 + extra * 0.5;
   }
 
@@ -361,9 +366,9 @@ export class NeonDriftwayEngine {
     return this.level.maxSpawnRate * (1 + (p - 1) * 0.4);
   }
 
-  private getAvailablePool(): { key: string; weight: number }[] {
+  private getAvailablePool(): { key: string; weight: number; minDistance?: number }[] {
     const pool = LEVEL_POOLS[this.levelId];
-    return pool.filter(e => !e.minElapsed || this.elapsedMs >= e.minElapsed);
+    return pool.filter(e => !e.minDistance || this.distance >= e.minDistance);
   }
 
   private spawnObstacles(dt: number): void {
@@ -376,8 +381,8 @@ export class NeonDriftwayEngine {
     const pool = this.getAvailablePool();
     if (pool.length === 0) return;
 
-    // Guaranteed boost pad spawn if timer exceeded
-    const forceBoost = this.elapsedMs > 5_000 && this.boostSpawnTimer >= 6.0;
+    // Guaranteed boost pad spawn if timer exceeded (distance-based)
+    const forceBoost = this.distance > 50 && this.boostSpawnTimer >= 6.0;
 
     const keys = pool.map(p => p.key);
     const weights = pool.map(p => p.weight);
