@@ -41,7 +41,7 @@ export function GameCanvas() {
     const rafRef = useRef<number | null>(null);
     const [showMobileButtons, setShowMobileButtons] = useState(false);
 
-    const { status, keybinds, isPaused, setIsPaused, isLoadingSong, loadingProgress, countdown, setCountdown, isMultiplayer, volume, setVolume, audioOffset, setAudioOffset, setKeybinds } = useGameStore();
+    const { status, keybinds, isPaused, setIsPaused, isLoadingSong, loadingProgress, countdown, setCountdown, isMultiplayer, volume, setVolume, audioOffset, setAudioOffset, setKeybinds, multiplayerResults } = useGameStore();
 
     // Per-player loading state for multiplayer
     const [loadingPlayers, setLoadingPlayers] = useState<{ id: string; name: string; loaded: boolean }[]>([]);
@@ -134,22 +134,20 @@ export function GameCanvas() {
     useEffect(() => {
         const mp = MultiplayerFactory.getInstance();
         
-        const onStartCountdown = ({ startTime }: { startTime: number }) => {
-            console.log("Countdown starting...", startTime);
-            const updateCount = () => {
-                const now = Date.now();
-                const diff = startTime - now;
-                if (diff <= 0) {
+        const onStartCountdown = ({ countdownSeconds }: { countdownSeconds: number }) => {
+            console.log("Countdown starting...", countdownSeconds);
+            let remaining = countdownSeconds;
+            setCountdown(remaining);
+            const interval = setInterval(() => {
+                remaining--;
+                if (remaining <= 0) {
+                    clearInterval(interval);
                     setCountdown(0);
                     engine?.start();
-                    return;
+                } else {
+                    setCountdown(remaining);
                 }
-                // Cap at 3 to guard against client/server clock skew
-                const seconds = Math.min(3, Math.ceil(diff / 1000));
-                setCountdown(seconds);
-                setTimeout(updateCount, 100);
-            };
-            updateCount();
+            }, 1000);
         };
 
         mp.on('start_countdown', onStartCountdown);
@@ -173,11 +171,29 @@ export function GameCanvas() {
         };
         mp.on('game_started', onGameStarted);
 
+        const onMatchResults = (data: { players: any[] }) => {
+            console.log("Match results received", data);
+            useGameStore.getState().setMultiplayerResults(data.players);
+        };
+        mp.on('match_results', onMatchResults);
+
+        const onPlayerFinished = (data: { id: string; finalScore: number }) => {
+            console.log("Player finished", data);
+            // Update the player's score in the live results if we have them
+            const store = useGameStore.getState();
+            if (data.id !== mp.getSocketId()) {
+                store.setOpponent(data.id, { score: data.finalScore, isDead: false });
+            }
+        };
+        mp.on('player_finished', onPlayerFinished);
+
         return () => {
             mp.off('start_countdown', onStartCountdown);
             mp.off('init_loading', onInitLoading);
             mp.off('loading_update', onLoadingUpdate);
             mp.off('game_started', onGameStarted);
+            mp.off('match_results', onMatchResults);
+            mp.off('player_finished', onPlayerFinished);
         };
     }, [engine, setCountdown]);
 
@@ -783,15 +799,17 @@ export function GameCanvas() {
                         </div>
                     )}
                     
-                    {(status === 'FINISHED' || status === 'FAILED') && (
-                        // If multiplayer logic exists to handle results:
-                        // For now, if we are in a lobby (checked via store or prop?), show MatchResults instead of GameOver?
-                        // Or maybe GameOver has a "View Results" button?
-                        // For simplicity, let's just assume we show GameOver which then leads to results?
-                        // Actually, let's Replace GameOver with standard results screen if it's multiplayer.
-                        // But we don't have isMultiplayer flag in store easily accessible here without check.
-                        // Let's just key off lobbyId existence in GameEngine but that's inside engine.
-                        // We'll rely on the parent or store.
+                    {(status === 'FINISHED' || status === 'FAILED') && isMultiplayer && (
+                        <MatchResults onBack={() => {
+                            useGameStore.getState().setMultiplayerResults(null);
+                            useGameStore.getState().setStatus('MENU');
+                            useGameStore.getState().setIsMultiplayer(false);
+                            engine?.setLobbyId(null);
+                            engine?.reset();
+                        }} />
+                    )}
+
+                    {(status === 'FINISHED' || status === 'FAILED') && !isMultiplayer && (
                         <GameOver />
                     )}
                     
@@ -800,7 +818,7 @@ export function GameCanvas() {
             </div>
 
             {/* Sidebar for Multiplayer Opponents — only shown in multiplayer */}
-            {status === 'PLAYING' && isMultiplayer && (
+            {(status === 'PLAYING' || ((status === 'FINISHED' || status === 'FAILED') && isMultiplayer)) && isMultiplayer && (
                 <MultiplayerSidebar />
             )}
         </div>

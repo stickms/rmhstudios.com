@@ -7,7 +7,7 @@ import { useGameStore } from "../store/useGameStore";
 // or a specific env variable.
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:7001";
 
-export type GameEvent = 'lobby_update' | 'game_starting' | 'game_started' | 'player_update' | 'player_finished' | 'song_selected' | 'init_loading' | 'start_countdown' | 'loading_update';
+export type GameEvent = 'lobby_update' | 'game_starting' | 'game_started' | 'player_update' | 'player_finished' | 'song_selected' | 'init_loading' | 'start_countdown' | 'loading_update' | 'match_results';
 
 class MultiplayerFactory {
     private static instance: MultiplayerFactory;
@@ -50,10 +50,19 @@ class MultiplayerFactory {
                 
                 // DATA SYNC
                 if (evt === 'lobby_update') {
-                    // Update all players in store
+                    // Sync opponents: add/update present players, remove absent ones
+                    const playerIds = new Set<string>();
                     data.players.forEach((p: any) => {
+                        playerIds.add(p.id);
                         if (p.id !== this.socket?.id) {
                             useGameStore.getState().setOpponent(p.id, { name: p.name, score: p.score ?? 0 });
+                        }
+                    });
+                    // Remove opponents no longer in the lobby
+                    const currentOpponents = useGameStore.getState().opponents;
+                    Object.keys(currentOpponents).forEach(id => {
+                        if (!playerIds.has(id)) {
+                            useGameStore.getState().removeOpponent(id);
                         }
                     });
                 }
@@ -97,6 +106,14 @@ class MultiplayerFactory {
     
     public finishGame(lobbyId: string, finalScore: number) {
         this.socket?.emit("player_finished", { lobbyId, finalScore });
+    }
+
+    public leaveLobby(lobbyId: string) {
+        this.socket?.emit("leave_lobby", { lobbyId });
+    }
+
+    public updateDifficulty(lobbyId: string, difficulty: { speed: number; bombs: boolean; switching: boolean; suddenDeath: boolean; invisible: boolean }) {
+        this.socket?.emit("update_difficulty", { lobbyId, difficulty });
     }
 
     // Event System (Pub/Sub)

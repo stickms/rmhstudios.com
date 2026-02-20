@@ -23,6 +23,8 @@ interface Player {
     combo: number;
     health: number;
     isReady: boolean;
+    isFinished: boolean;
+    difficulty: { speed: number; bombs: boolean; switching: boolean; suddenDeath: boolean; invisible: boolean };
 }
 
 interface Lobby {
@@ -64,7 +66,9 @@ io.on("connection", (socket: Socket) => {
         score: 0,
         combo: 0,
         health: 100,
-        isReady: false
+        isReady: false,
+        isFinished: false,
+        difficulty: { speed: 1.0, bombs: false, switching: false, suddenDeath: false, invisible: false },
     };
     
     lobby.players.set(socket.id, player);
@@ -115,7 +119,8 @@ io.on("connection", (socket: Socket) => {
           p.score = 0;
           p.combo = 0;
           p.health = 100;
-          p.isReady = false; 
+          p.isReady = false;
+          p.isFinished = false;
       });
 
       // Broadcast updated lobby status so clients transition to the game screen
@@ -163,10 +168,10 @@ io.on("connection", (socket: Socket) => {
           if (allLoaded) {
               console.log(`All players loaded in ${lobbyId}. Starting countdown...`);
               // Reset isReady for "finished" tracking later
-              lobby.players.forEach(p => p.isReady = false);
+              lobby.players.forEach(p => { p.isReady = false; p.isFinished = false; });
               
-              const startTime = Date.now() + 3000;
-              io.to(lobbyId).emit("start_countdown", { startTime });
+              // Send relative countdown duration (avoids clock skew issues)
+              io.to(lobbyId).emit("start_countdown", { countdownSeconds: 3 });
               
               setTimeout(() => {
                   io.to(lobbyId).emit("game_started");
@@ -212,27 +217,74 @@ io.on("connection", (socket: Socket) => {
        
        const player = lobby.players.get(socket.id);
        if (player) {
-           player.isReady = true; // Mark as finished using isReady flag
+           player.isFinished = true;
            player.score = finalScore;
            
            io.to(lobbyId).emit("player_finished", { id: socket.id, finalScore });
            
            // Check if all finished
-           // Note: "isReady" is reused here to mean "finished" during PLAYING state.
-           const allFinished = Array.from(lobby.players.values()).every(p => p.isReady || p.health <= 0);
+           const allFinished = Array.from(lobby.players.values()).every(p => p.isFinished);
            
            if (allFinished) {
-               lobby.status = 'FINISHED';
+               lobby.status = 'WAITING';
                io.to(lobbyId).emit("match_results", { 
                    players: Array.from(lobby.players.values()).sort((a,b) => b.score - a.score)
                });
                
-               // Reset status to waiting after a delay? Or keep as FINISHED until host returns to lobby.
-               // Let's set it to WAITING so they can pick next song, but UI handles showing results first.
-               lobby.status = 'WAITING';
-               lobby.players.forEach(p => p.isReady = false);
+               // Reset for next round
+               lobby.players.forEach(p => { p.isReady = false; p.isFinished = false; });
+
+               io.to(lobbyId).emit("lobby_update", {
+                   lobbyId,
+                   players: Array.from(lobby.players.values()),
+                   hostId: lobby.hostId,
+                   status: lobby.status,
+                   song: lobby.song
+               });
            }
        }
+  });
+
+  // LEAVE LOBBY (explicit)
+  socket.on("leave_lobby", ({ lobbyId }: { lobbyId: string }) => {
+      const lobby = lobbies.get(lobbyId);
+      if (!lobby) return;
+      if (!lobby.players.has(socket.id)) return;
+
+      lobby.players.delete(socket.id);
+      socket.leave(lobbyId);
+
+      if (lobby.players.size === 0) {
+          lobbies.delete(lobbyId);
+      } else {
+          if (lobby.hostId === socket.id) {
+              lobby.hostId = lobby.players.keys().next().value || '';
+          }
+          io.to(lobbyId).emit("lobby_update", {
+              lobbyId,
+              players: Array.from(lobby.players.values()),
+              hostId: lobby.hostId,
+              status: lobby.status,
+              song: lobby.song
+          });
+      }
+  });
+
+  // UPDATE DIFFICULTY
+  socket.on("update_difficulty", ({ lobbyId, difficulty }: { lobbyId: string, difficulty: any }) => {
+      const lobby = lobbies.get(lobbyId);
+      if (!lobby) return;
+      const player = lobby.players.get(socket.id);
+      if (player) {
+          player.difficulty = difficulty;
+          io.to(lobbyId).emit("lobby_update", {
+              lobbyId,
+              players: Array.from(lobby.players.values()),
+              hostId: lobby.hostId,
+              status: lobby.status,
+              song: lobby.song
+          });
+      }
   });
 
   // DISCONNECT

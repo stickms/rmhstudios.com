@@ -43,6 +43,9 @@ interface GameState {
   loadingProgress: number;
   countdown: number;
 
+  // Multiplayer results
+  multiplayerResults: { id: string; name: string; score: number; combo: number; health: number; isFinished: boolean; difficulty: any }[] | null;
+
   setIsMultiplayer: (v: boolean) => void;
   setIsLoadingSong: (loading: boolean) => void;
   setLoadingProgress: (progress: number) => void;
@@ -63,6 +66,8 @@ interface GameState {
   setSfxVolume: (sfxVolume: number) => void;
   setAudioOffset: (offset: number) => void;
   setOpponent: (id: string, data: Partial<{ id: string, score: number, combo: number, health: number, name: string, isDead?: boolean }>) => void;
+  removeOpponent: (id: string) => void;
+  setMultiplayerResults: (results: { id: string; name: string; score: number; combo: number; health: number; isFinished: boolean; difficulty: any }[] | null) => void;
   reset: () => void;
 }
 
@@ -101,6 +106,7 @@ export const useGameStore = create<GameState>()(
       isLoadingSong: false,
       loadingProgress: 0,
       countdown: 0,
+      multiplayerResults: null,
       
       setIsLoadingSong: (isLoadingSong) => set({ isLoadingSong }),
       setLoadingProgress: (loadingProgress) => set({ loadingProgress }),
@@ -126,8 +132,13 @@ export const useGameStore = create<GameState>()(
               [id]: { ...(state.opponents[id] || { id, score: 0, combo: 0, health: 100, name: 'Unknown' }), ...data }
           }
       })),
+      removeOpponent: (id) => set((state) => {
+          const { [id]: _, ...rest } = state.opponents;
+          return { opponents: rest };
+      }),
+      setMultiplayerResults: (results) => set({ multiplayerResults: results }),
       setIsMultiplayer: (isMultiplayer) => set({ isMultiplayer }),
-      reset: () => set({ health: 100, score: 0, combo: 0, maxCombo: 0, accuracy: 0, multiplier: 1, songId: '', status: 'MENU', isPaused: false, opponents: {}, isMultiplayer: false }),
+      reset: () => set({ health: 100, score: 0, combo: 0, maxCombo: 0, accuracy: 0, multiplier: 1, songId: '', status: 'MENU', isPaused: false, opponents: {}, isMultiplayer: false, multiplayerResults: null }),
     }),
     {
       name: 'slice-it-storage',

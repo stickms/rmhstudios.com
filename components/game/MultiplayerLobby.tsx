@@ -10,7 +10,7 @@ import { useGameStore } from '@/lib/store/useGameStore';
 import { authClient } from "@/lib/auth-client";
 import { useSearchParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Copy, Share2, Check } from 'lucide-react';
+import { Copy, Share2, Check, Zap, Bomb, Shuffle, EyeOff, Skull, Info, ChevronDown, ChevronUp } from 'lucide-react';
 
 import { SongLibrary } from '@/components/game/SongLibrary'; // Import SongLibrary
 
@@ -19,6 +19,7 @@ interface Player {
     name: string;
     score: number;
     isReady: boolean;
+    difficulty?: { speed: number; bombs: boolean; switching: boolean; suddenDeath: boolean; invisible: boolean };
 }
 
 interface LobbyData {
@@ -37,6 +38,14 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
     const [status, setStatus] = React.useState<string>('Disconnnected');
     const [showSongSelect, setShowSongSelect] = React.useState(false);
     const [isCopied, setIsCopied] = React.useState(false);
+    const [showDifficulty, setShowDifficulty] = React.useState(false);
+    const [myDifficulty, setMyDifficulty] = React.useState({
+        speed: 1.0,
+        bombs: false,
+        switching: false,
+        suddenDeath: false,
+        invisible: false,
+    });
     
     const searchParams = useSearchParams();
     const router = useRouter();
@@ -55,6 +64,9 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
     const hasStartedRef = React.useRef(false);
 
     const handleLeave = () => {
+        if (lobbyData) {
+            mp.leaveLobby(lobbyData.lobbyId);
+        }
         mp.disconnect();
         // Strip the ?lobby= param from the URL without a full navigation
         if (searchParams.get('lobby')) {
@@ -146,6 +158,34 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
         });
     };
 
+    const handleDifficultyChange = (updates: Partial<typeof myDifficulty>) => {
+        const newDiff = { ...myDifficulty, ...updates };
+        setMyDifficulty(newDiff);
+        if (lobbyData) {
+            mp.updateDifficulty(lobbyData.lobbyId, newDiff);
+        }
+        // Also sync to local game store modifiers
+        useGameStore.getState().setModifiers({
+            ...useGameStore.getState().modifiers,
+            ...newDiff,
+        });
+    };
+
+    const calcMultiplier = (d: typeof myDifficulty) => {
+        let m = 1.0;
+        m *= d.speed; // speed directly multiplies
+        if (d.bombs) m *= 1.1;
+        if (d.switching) m *= 1.1;
+        if (d.suddenDeath) m *= 1.3;
+        if (d.invisible) m *= 1.2;
+        return m;
+    };
+
+    const calcMultiplierForPlayer = (p: Player) => {
+        if (!p.difficulty) return 1.0;
+        return calcMultiplier(p.difficulty);
+    };
+
     if (lobbyData) {
         // INSIDE LOBBY
         const isHost = lobbyData.hostId === mp.getSocketId();
@@ -198,12 +238,40 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
                     <CardContent className="space-y-6">
                          <div className="space-y-2">
                             <h3 className="font-bold text-sm text-slate-400 uppercase tracking-widest">Players</h3>
-                            {lobbyData.players.map(p => (
-                                <div key={p.id} className="flex justify-between items-center bg-[#e0e5ec] p-3 rounded-xl shadow-[inset_3px_3px_6px_#a3b1c6,inset_-3px_-3px_6px_#ffffff]">
-                                    <span className="font-bold">{p.name}</span>
-                                    {p.id === lobbyData.hostId && <span className="text-xs bg-yellow-400 text-yellow-900 px-2 py-1 rounded-full font-bold">HOST</span>}
-                                </div>
-                            ))}
+                            {lobbyData.players.map(p => {
+                                const mult = calcMultiplierForPlayer(p);
+                                const isMe = p.id === mp.getSocketId();
+                                return (
+                                    <div key={p.id} className="flex justify-between items-center bg-[#e0e5ec] p-3 rounded-xl shadow-[inset_3px_3px_6px_#a3b1c6,inset_-3px_-3px_6px_#ffffff] group relative">
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-bold">{p.name}</span>
+                                            {isMe && <span className="text-[9px] font-black bg-blue-500 text-white px-1.5 py-0.5 rounded-full">YOU</span>}
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            {/* Difficulty indicators */}
+                                            {p.difficulty && (
+                                                <div className="flex items-center gap-1">
+                                                    {p.difficulty.speed !== 1.0 && (
+                                                        <span className="text-[9px] font-bold bg-purple-100 text-purple-600 px-1.5 py-0.5 rounded-full" title={`Speed: ${p.difficulty.speed.toFixed(1)}x`}>
+                                                            <Zap className="w-3 h-3 inline" />{p.difficulty.speed.toFixed(1)}x
+                                                        </span>
+                                                    )}
+                                                    {p.difficulty.bombs && <span title="Bombs enabled" className="text-[9px] bg-red-100 text-red-500 px-1 py-0.5 rounded-full"><Bomb className="w-3 h-3" /></span>}
+                                                    {p.difficulty.switching && <span title="Switching enabled" className="text-[9px] bg-blue-100 text-blue-500 px-1 py-0.5 rounded-full"><Shuffle className="w-3 h-3" /></span>}
+                                                    {p.difficulty.suddenDeath && <span title="Sudden Death" className="text-[9px] bg-red-100 text-red-600 px-1 py-0.5 rounded-full"><Skull className="w-3 h-3" /></span>}
+                                                    {p.difficulty.invisible && <span title="Invisible" className="text-[9px] bg-slate-200 text-slate-600 px-1 py-0.5 rounded-full"><EyeOff className="w-3 h-3" /></span>}
+                                                </div>
+                                            )}
+                                            {mult > 1.0 && (
+                                                <span className="text-[10px] font-black text-green-600 bg-green-100 px-2 py-0.5 rounded-full" title={`Score multiplier: ${mult.toFixed(2)}x`}>
+                                                    {mult.toFixed(2)}x
+                                                </span>
+                                            )}
+                                            {p.id === lobbyData.hostId && <span className="text-xs bg-yellow-400 text-yellow-900 px-2 py-1 rounded-full font-bold">HOST</span>}
+                                        </div>
+                                    </div>
+                                );
+                            })}
                          </div>
                          
                          <div className="space-y-2">
@@ -224,6 +292,76 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
                                     </Button>
                                 )}
                             </div>
+                         </div>
+
+                         {/* Difficulty Settings */}
+                         <div className="space-y-2">
+                            <button
+                                className="flex items-center gap-2 font-bold text-sm text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-colors w-full"
+                                onClick={() => setShowDifficulty(!showDifficulty)}
+                            >
+                                My Difficulty
+                                {showDifficulty ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                {calcMultiplier(myDifficulty) > 1.0 && (
+                                    <span className="text-[10px] font-black text-green-600 bg-green-100 px-2 py-0.5 rounded-full ml-auto">
+                                        {calcMultiplier(myDifficulty).toFixed(2)}x multiplier
+                                    </span>
+                                )}
+                            </button>
+                            {showDifficulty && (
+                                <div className="bg-[#e0e5ec] p-4 rounded-xl shadow-[inset_3px_3px_6px_#a3b1c6,inset_-3px_-3px_6px_#ffffff] space-y-3">
+                                    {/* Speed */}
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <Zap className="w-4 h-4 text-purple-500" />
+                                            <span className="text-xs font-bold text-slate-600">Speed</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                className="w-7 h-7 rounded-lg bg-[#e0e5ec] shadow-[3px_3px_6px_#a3b1c6,-3px_-3px_6px_#ffffff] text-slate-600 font-bold text-sm flex items-center justify-center active:shadow-[inset_3px_3px_6px_#a3b1c6,inset_-3px_-3px_6px_#ffffff]"
+                                                onClick={() => handleDifficultyChange({ speed: Math.max(0.5, +(myDifficulty.speed - 0.1).toFixed(1)) })}
+                                            >−</button>
+                                            <span className="text-sm font-bold text-purple-500 w-12 text-center">{myDifficulty.speed.toFixed(1)}x</span>
+                                            <button
+                                                className="w-7 h-7 rounded-lg bg-[#e0e5ec] shadow-[3px_3px_6px_#a3b1c6,-3px_-3px_6px_#ffffff] text-slate-600 font-bold text-sm flex items-center justify-center active:shadow-[inset_3px_3px_6px_#a3b1c6,inset_-3px_-3px_6px_#ffffff]"
+                                                onClick={() => handleDifficultyChange({ speed: Math.min(2.0, +(myDifficulty.speed + 0.1).toFixed(1)) })}
+                                            >+</button>
+                                        </div>
+                                    </div>
+                                    {/* Toggles */}
+                                    {[
+                                        { key: 'bombs' as const, label: 'Bombs', icon: <Bomb className="w-4 h-4 text-red-500" />, desc: 'Adds bomb notes to avoid' },
+                                        { key: 'switching' as const, label: 'Switching', icon: <Shuffle className="w-4 h-4 text-blue-500" />, desc: 'Adds lane-switch notes' },
+                                        { key: 'suddenDeath' as const, label: 'Sudden Death', icon: <Skull className="w-4 h-4 text-red-600" />, desc: 'One miss = game over' },
+                                        { key: 'invisible' as const, label: 'Invisible', icon: <EyeOff className="w-4 h-4 text-slate-500" />, desc: 'Notes fade before hit line' },
+                                    ].map(opt => (
+                                        <button
+                                            key={opt.key}
+                                            className={`flex items-center justify-between w-full p-2 rounded-lg transition-all ${
+                                                myDifficulty[opt.key]
+                                                    ? 'bg-blue-50 shadow-[inset_2px_2px_4px_#c5d0e6,inset_-2px_-2px_4px_#ffffff]'
+                                                    : 'bg-[#e0e5ec] shadow-[2px_2px_4px_#a3b1c6,-2px_-2px_4px_#ffffff] hover:bg-slate-50'
+                                            }`}
+                                            onClick={() => handleDifficultyChange({ [opt.key]: !myDifficulty[opt.key] })}
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                {opt.icon}
+                                                <span className="text-xs font-bold text-slate-600">{opt.label}</span>
+                                                <span className="text-[9px] text-slate-400" title={opt.desc}>
+                                                    <Info className="w-3 h-3" />
+                                                </span>
+                                            </div>
+                                            <div className={`w-8 h-5 rounded-full transition-colors ${
+                                                myDifficulty[opt.key] ? 'bg-blue-500' : 'bg-slate-300'
+                                            } relative`}>
+                                                <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${
+                                                    myDifficulty[opt.key] ? 'translate-x-3.5' : 'translate-x-0.5'
+                                                }`} />
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                          </div>
 
                          <div className="flex gap-4 pt-4">
