@@ -24,6 +24,7 @@ export interface EnemyData {
   thorns?: number;
   armored?: number;
   shieldAlly?: number;
+  healAlly?: number;
   vampiric?: number;
   empowerAlly?: number;
   phaseShift?: boolean;
@@ -78,6 +79,7 @@ export interface EnemyTemplate {
   thorns?: number;
   armored?: number;
   shieldAlly?: number;
+  healAlly?: number;
   vampiric?: number;
   empowerAlly?: number;
   phaseShift?: boolean;
@@ -150,7 +152,7 @@ export const ENEMY_CATALOG: EnemyTemplate[] = [
     name: 'Heal Sprite', baseHp: 10, baseDamage: 1,
     archetype: 'shielder', tier: 'common', intent: 'Heal Allies',
     description: 'Heals all allies for 3 each turn.',
-    regen: 3,
+    healAlly: 3,
   },
   {
     name: 'Static Mite', baseHp: 6, baseDamage: 1,
@@ -200,8 +202,8 @@ export const ENEMY_CATALOG: EnemyTemplate[] = [
   {
     name: 'Overclock Bot', baseHp: 16, baseDamage: 2,
     archetype: 'brute', tier: 'uncommon', intent: 'Attack (Escalating)',
-    description: 'Gains +1 damage per turn permanently. Must kill fast!',
-    enrage: true, // Using enrage to increase damage over time
+    description: 'Deals +50% damage when below 50% HP. Kill it fast!',
+    enrage: true, // +50% damage below 50% HP
   },
   {
     name: 'Echo Disruptor', baseHp: 18, baseDamage: 3,
@@ -380,6 +382,7 @@ export class Enemy implements EnemyData {
   thorns: number;
   armored: number;
   shieldAlly: number;
+  healAlly: number;
   vampiric: number;
   empowerAlly: number;
   phaseShift: boolean;
@@ -428,6 +431,7 @@ export class Enemy implements EnemyData {
     this.thorns = data.thorns ?? 0;
     this.armored = data.armored ?? 0;
     this.shieldAlly = data.shieldAlly ?? 0;
+    this.healAlly = data.healAlly ?? 0;
     this.vampiric = data.vampiric ?? 0;
     this.empowerAlly = data.empowerAlly ?? 0;
     this.phaseShift = data.phaseShift ?? false;
@@ -624,6 +628,19 @@ function createEnemyFromTemplate(template: EnemyTemplate, floor: number, id: num
     phaseShift: template.phaseShift ?? false,
     turnCounter: 0,
     description: template.description,
+    tempoSiphon: template.tempoSiphon ?? 0,
+    onDeathGlitch: template.onDeathGlitch ?? 0,
+    onDeathStatic: template.onDeathStatic ?? 0,
+    auraEchoCanceled: template.auraEchoCanceled ?? false,
+    auraDamageReduction: template.auraDamageReduction ?? 0,
+    splitOnDeath: template.splitOnDeath ? { ...template.splitOnDeath } : undefined,
+    immuneType: template.immuneType,
+    // Phase 4.4
+    reviveCount: template.reviveCount ?? 0,
+    overwriteCards: template.overwriteCards ?? false,
+    adaptiveImmunity: template.adaptiveImmunity ?? false,
+    mimicType: template.mimicType ?? '',
+    glitchScaling: template.glitchScaling ?? false,
     // Phase 4.8
     counterAttack: template.counterAttack ?? 0,
     adaptiveArmor: template.adaptiveArmor ? { ...template.adaptiveArmor } : {},
@@ -633,11 +650,6 @@ function createEnemyFromTemplate(template: EnemyTemplate, floor: number, id: num
     sequenceScramble: template.sequenceScramble ?? false,
     curseCaster: template.curseCaster ?? false,
     gravityWell: template.gravityWell ?? false,
-    reviveCount: template.reviveCount ?? 0,
-    overwriteCards: template.overwriteCards ?? false,
-    adaptiveImmunity: template.adaptiveImmunity ?? false,
-    mimicType: template.mimicType ?? '',
-    glitchScaling: template.glitchScaling ?? false,
   });
 }
 

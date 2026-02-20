@@ -711,7 +711,7 @@ export const CURSE_CARDS: Record<string, CardTemplate> = {
     name: '⚠ Overheated Module', cost: 0, type: 'Noise', damage: 0, shield: 0,
     effect: 'Ethereal: exhaust if not played. If played: +3 Static. If exhausted: 8 self-damage.',
     rarity: 'common',
-    exhaust: true, ethereal: true, selfDamage: 8, keywords: ['Curse', 'Ethereal'],
+    exhaust: true, ethereal: true, staticGain: 3, keywords: ['Curse', 'Ethereal'],
   },
 };
 

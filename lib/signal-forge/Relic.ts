@@ -397,13 +397,13 @@ export function createRandomRelic(floor: number, index: number, id: number): Rel
 }
 
 /** Create N relics for a shop floor */
-export function createShopRelics(floor: number, count: number = 2): Relic[] {
+export function createShopRelics(floor: number, count: number = 2, seedOffset: number = 0): Relic[] {
   const relics: Relic[] = [];
   const usedIndices = new Set<number>();
 
   for (let i = 0; i < count; i++) {
-    const id = floor * 2000 + i;
-    let seed = floor * 2000 + i * 211;
+    const id = floor * 2000 + i + seedOffset * 100;
+    let seed = floor * 2000 + i * 211 + seedOffset * 7919;
     let idx = Math.floor(seededRandom(seed) * RELIC_CATALOG.length);
 
     // Avoid offering duplicate relics in the same shop

@@ -37,7 +37,7 @@ export const KEYWORD_GLOSSARY: Record<string, string> = {
   'Shield':     'Absorbs damage before HP. Resets to 0 at start of your turn.',
   'Armored':    'Enemy passive — reduces all incoming damage by its Armored value.',
   'Regen':      'Enemy passive — heals this amount at the start of its turn.',
-  'Enrage':     'Enemy passive — gains bonus damage each turn it\'s alive.',
+  'Enrage':     'Enemy passive — deals +50% damage below 50% HP.',
   'Zone':       'Random combat modifier active this floor. Affects both sides.',
   'Ricochet':   'Splashes 50% of damage to a random other enemy.',
   'Special':    'Unique effect — see card description for details.',
