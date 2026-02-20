@@ -148,18 +148,8 @@ fi
 
 log "Auto-deploy started. Monitoring $REMOTE_REPO/$BRANCH..."
 
-# Check if both apps are already running; deploy if either is missing
-WEB_UP=0
-SOCK_UP=0
-"$PM2_BIN" describe "$APP_WEB"    > /dev/null 2>&1 && ss -tuln | grep -q ":$PORT_WEB "    && WEB_UP=1
-"$PM2_BIN" describe "$APP_SOCKET" > /dev/null 2>&1 && ss -tuln | grep -q ":$PORT_SOCKET " && SOCK_UP=1
-
-if [ $WEB_UP -eq 0 ] || [ $SOCK_UP -eq 0 ]; then
-    log "One or both services not running. Triggering initial deployment..."
-    perform_deploy
-else
-    log "Both services already running."
-fi
+log "Triggering initial deployment (restart any running services)..."
+perform_deploy
 
 # ── Polling loop ───────────────────────────────────────────────────────────────
 while true; do
