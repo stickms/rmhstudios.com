@@ -96,7 +96,7 @@ class MultiplayerFactory {
         this.socket?.emit("start_game", { lobbyId });
     }
 
-    public updateScore(lobbyId: string, stats: { score: number, combo: number, health: number, isDead?: boolean }) {
+    public updateScore(lobbyId: string, stats: { score: number, combo: number }) {
         this.socket?.emit("score_update", { lobbyId, ...stats });
     }
 
