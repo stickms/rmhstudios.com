@@ -1,11 +1,9 @@
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["driverAdapters"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // User Model (Better Auth)
@@ -29,6 +27,12 @@ model User {
   sliceItProfile Player?
   vegaProfile    VegaPlayer?
   signalForgeProfile SignalForgePlayer?
+  
+  // Slice-It Library Relations
+  uploadedSongs  Song[]
+  songRatings    SongRating[]
+  songComments   SongComment[]
+  songScores     SongLeaderboard[]
 
   @@map("user")
 }
@@ -83,13 +87,13 @@ model Verification {
 // --- Game Models ---
 
 model EchoesPlayer {
-  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id            String   @id @default(uuid())
   username      String   @unique
   bestTime      Float    @default(0)
   totalKills    Int      @default(0)
   totalXP       Int      @default(0)
   gamesPlayed   Int      @default(1)
-  updatedAt     DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  updatedAt     DateTime @default(now()) @updatedAt
 
   // Link to Auth User
   userId        String?  @unique
@@ -101,11 +105,11 @@ model EchoesPlayer {
 }
 
 model LaundryPlayer {
-  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id            String   @id @default(uuid())
   username      String   @unique
   highScore     Int      @default(0)
   gamesPlayed   Int      @default(1)
-  updatedAt     DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  updatedAt     DateTime @default(now()) @updatedAt
 
   // Link to Auth User
   userId        String?  @unique
@@ -129,12 +133,12 @@ model Player {
 }
 
 model VegaPlayer {
-  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id            String   @id @default(uuid())
   username      String   @unique
   highestLoop   Int      @default(1)
   highestLevel  Int      @default(1)
   gamesPlayed   Int      @default(0)
-  updatedAt     DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  updatedAt     DateTime @default(now()) @updatedAt
 
   // Link to Auth User
   userId        String?  @unique
@@ -160,3 +164,81 @@ model SignalForgePlayer {
   @@index([highScore(sort: Desc)], map: "idx_signal_forge_high_score")
   @@index([floorReached(sort: Desc)], map: "idx_signal_forge_floor")
 }
+
+// --- Slice-It Music Library Models ---
+
+model Song {
+  id          String   @id @default(cuid())
+  title       String
+  artist      String
+  album       String?
+  description String?
+  duration    Float
+  bpm         Float?
+  
+  audioUrl    String
+  coverUrl    String?
+  
+  // Audio Analysis Data (JSON for beatmap generation)
+  analysisData Json? 
+
+  uploadedBy  String
+  uploader    User     @relation(fields: [uploadedBy], references: [id])
+  
+  isPublic    Boolean  @default(true)
+  plays       Int      @default(0)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  ratings     SongRating[]
+  comments    SongComment[]
+  scores      SongLeaderboard[]
+
+  @@index([title])
+  @@index([artist])
+  @@index([uploadedBy])
+}
+
+model SongRating {
+  id        String   @id @default(cuid())
+  songId    String
+  userId    String
+  rating    Int      // 1-5
+  createdAt DateTime @default(now())
+
+  song      Song     @relation(fields: [songId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([songId, userId])
+}
+
+model SongComment {
+  id        String   @id @default(cuid())
+  songId    String
+  userId    String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  song      Song     @relation(fields: [songId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model SongLeaderboard {
+  id          String   @id @default(cuid())
+  songId      String
+  userId      String
+  score       Int
+  maxCombo    Int
+  accuracy    Float?
+  speedMod    Float    @default(1.0)
+  
+  createdAt   DateTime @default(now())
+
+  song        Song     @relation(fields: [songId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([songId, score(sort: Desc)])
+}
+

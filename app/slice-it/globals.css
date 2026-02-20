@@ -1,0 +1,50 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  .slice-theme {
+    --slice-bg: #e0e5ec;
+    --slice-text: #4a5568;
+    --slice-shadow-light: #ffffff;
+    --slice-shadow-dark: #a3b1c6;
+    --slice-primary: #3b82f6;
+    /* Soft blue */
+    --slice-accent: #f472b6;
+    /* Soft pink */
+
+    --slice-lane-top: #3b82f6;
+    --slice-lane-bottom: #f472b6;
+  }
+
+  .slice-theme.dark {
+    --slice-bg: #2d3748;
+    --slice-text: #cbd5e0;
+    --slice-shadow-light: #3a475c;
+    --slice-shadow-dark: #202733;
+  }
+}
+
+.slice-theme {
+  background-color: var(--slice-bg);
+  color: var(--slice-text);
+  font-family: 'Outfit', sans-serif;
+}
+
+.neumorphic {
+  background: var(--slice-bg);
+  box-shadow: 9px 9px 16px var(--slice-shadow-dark),
+    -9px -9px 16px var(--slice-shadow-light);
+  border-radius: 20px;
+}
+
+.neumorphic-inset {
+  background: var(--slice-bg);
+  box-shadow: inset 6px 6px 10px var(--slice-shadow-dark),
+    inset -6px -6px 10px var(--slice-shadow-light);
+  border-radius: 15px;
+}
+
+.soft-glow-text {
+  text-shadow: 0 0 10px currentColor;
+}

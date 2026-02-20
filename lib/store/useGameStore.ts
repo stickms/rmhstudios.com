@@ -19,8 +19,10 @@ interface GameState {
   maxHealth: number;
   score: number;
   combo: number;
+  maxCombo: number;
   accuracy: number;
   multiplier: number;
+  songId: string;
   status: 'MENU' | 'PLAYING' | 'FINISHED' | 'FAILED';
   userName: string;
   keybinds: Keybinds;
@@ -30,9 +32,28 @@ interface GameState {
   isPaused: boolean;
   volume: number;
   sfxVolume: number;
+  audioOffset: number;
+  opponents: Record<string, { id: string, score: number, combo: number, health: number, name: string, isDead?: boolean }>;
+  
+  // Multiplayer flag
+  isMultiplayer: boolean;
+
+  // Loading & Sync
+  isLoadingSong: boolean;
+  loadingProgress: number;
+  countdown: number;
+
+  setIsMultiplayer: (v: boolean) => void;
+  setIsLoadingSong: (loading: boolean) => void;
+  setLoadingProgress: (progress: number) => void;
+  setCountdown: (count: number) => void;
   
   setHealth: (health: number) => void;
   setScore: (score: number, combo: number, multiplier?: number) => void;
+  setCombo: (combo: number) => void;
+  setAccuracy: (accuracy: number) => void;
+  setMaxCombo: (maxCombo: number) => void;
+  setSongId: (songId: string) => void;
   setStatus: (status: 'MENU' | 'PLAYING' | 'FINISHED' | 'FAILED') => void;
   setUserName: (name: string) => void;
   setKeybinds: (keybinds: Keybinds) => void;
@@ -40,6 +61,8 @@ interface GameState {
   setIsPaused: (isPaused: boolean) => void;
   setVolume: (volume: number) => void;
   setSfxVolume: (sfxVolume: number) => void;
+  setAudioOffset: (offset: number) => void;
+  setOpponent: (id: string, data: Partial<{ id: string, score: number, combo: number, health: number, name: string, isDead?: boolean }>) => void;
   reset: () => void;
 }
 
@@ -50,8 +73,10 @@ export const useGameStore = create<GameState>()(
       maxHealth: 100,
       score: 0,
       combo: 0,
+      maxCombo: 0,
       accuracy: 0,
       multiplier: 1,
+      songId: '',
       
       status: 'MENU',
       userName: '', // Start empty to trigger prompt
@@ -70,9 +95,23 @@ export const useGameStore = create<GameState>()(
       isPaused: false,
       volume: 100,
       sfxVolume: 80,
+      audioOffset: 0, // Default 0ms offset
+      opponents: {},
+      isMultiplayer: false,
+      isLoadingSong: false,
+      loadingProgress: 0,
+      countdown: 0,
       
-      setHealth: (health) => set({ health }),
+      setIsLoadingSong: (isLoadingSong) => set({ isLoadingSong }),
+      setLoadingProgress: (loadingProgress) => set({ loadingProgress }),
+      setCountdown: (countdown) => set({ countdown }),
+
+      setHealth: (health) => set({ health: Math.max(0, Math.min(100, health)) }),
       setScore: (score, combo, multiplier) => set({ score, combo, multiplier }),
+      setCombo: (combo) => set({ combo }),
+      setAccuracy: (accuracy) => set({ accuracy }),
+      setMaxCombo: (maxCombo) => set({ maxCombo }),
+      setSongId: (songId) => set({ songId }),
       setStatus: (status) => set({ status }),
       setUserName: (name) => set({ userName: name }),
       setKeybinds: (keybinds) => set({ keybinds }),
@@ -80,11 +119,19 @@ export const useGameStore = create<GameState>()(
       setIsPaused: (isPaused) => set({ isPaused }),
       setVolume: (volume) => set({ volume }),
       setSfxVolume: (sfxVolume) => set({ sfxVolume }),
-      reset: () => set({ health: 100, score: 0, combo: 0, accuracy: 0, multiplier: 1, status: 'MENU', isPaused: false }),
+      setAudioOffset: (offset) => set({ audioOffset: offset }),
+      setOpponent: (id, data) => set((state) => ({
+          opponents: {
+              ...state.opponents,
+              [id]: { ...(state.opponents[id] || { id, score: 0, combo: 0, health: 100, name: 'Unknown' }), ...data }
+          }
+      })),
+      setIsMultiplayer: (isMultiplayer) => set({ isMultiplayer }),
+      reset: () => set({ health: 100, score: 0, combo: 0, maxCombo: 0, accuracy: 0, multiplier: 1, songId: '', status: 'MENU', isPaused: false, opponents: {}, isMultiplayer: false }),
     }),
     {
       name: 'slice-it-storage',
-      partialize: (state) => ({ userName: state.userName, keybinds: state.keybinds, volume: state.volume, sfxVolume: state.sfxVolume }), // Persist settings only (not modifiers or game state)
+      partialize: (state) => ({ userName: state.userName, keybinds: state.keybinds, volume: state.volume, sfxVolume: state.sfxVolume, audioOffset: state.audioOffset }), // Persist settings only (not modifiers or game state)
     }
   )
 );

@@ -70,7 +70,7 @@ const games = [
         id: 'rmhdle',
         title: 'RMHdle',
         description: 'The daily word game for the RMH community. Guess the 5-letter word in 6 tries.',
-        href: 'https://discord.gg/rmh',
+        href: 'https://discord.gg/ZdfhdAKVSf',
         icon: <Brain className="w-8 h-8 text-indigo-400" />,
         color: 'from-indigo-500/20 to-blue-600/20 hover:border-indigo-500/50',
         tags: ['Discord', 'Word Game', 'Daily']
@@ -79,7 +79,7 @@ const games = [
         id: 'rmh-connections',
         title: 'RMHConnections',
         description: 'Find the common threads between RMH community terms. Group items into categories.',
-        href: 'https://discord.gg/rmh',
+        href: 'https://discord.gg/ZdfhdAKVSf',
         icon: <Rocket className="w-8 h-8 text-violet-400" />,
         color: 'from-violet-500/20 to-purple-600/20 hover:border-violet-500/50',
         tags: ['Discord', 'Puzzle', 'Daily']

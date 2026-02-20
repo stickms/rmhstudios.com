@@ -44,3 +44,5 @@ next-env.d.ts
 .claude
 
 /lib/generated/prisma
+db/music/
+dist-server/

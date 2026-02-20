@@ -15,12 +15,12 @@ export async function POST(req: Request) {
     }
 
     try {
-        const { username, score } = await req.json();
+        const { username, score, accuracy, maxCombo, songId } = await req.json();
 
         if (!username || typeof username !== 'string' || username.length < 2 || username.length > 24) {
             return NextResponse.json({ error: 'Invalid username' }, { status: 400 });
         }
-        if (typeof score !== 'number' || score < 0 || score > 1_000_000) {
+        if (typeof score !== 'number' || score < 0 || score > 1_000_000_000) {
             return NextResponse.json({ error: 'Invalid score' }, { status: 400 });
         }
 
@@ -43,27 +43,37 @@ export async function POST(req: Request) {
                     totalScore: { increment: score },
                     gamesPlayed: { increment: 1 },
                     updatedAt: new Date(),
-                    username: username // Allow rename or keep sync
+                    username: username
                 }
             });
-            return NextResponse.json({ success: true, linked: true });
-        }
-
-        const usernameConfig = await prisma.player.findUnique({ where: { username } });
-        if (usernameConfig) {
-            return NextResponse.json({ error: 'Username taken.' }, { status: 409 });
-        }
-
-        // Create new
-        await prisma.player.create({
-            data: {
-                userId,
-                username,
-                totalScore: score,
-                gamesPlayed: 1
+        } else {
+            const usernameConfig = await prisma.player.findUnique({ where: { username } });
+            if (usernameConfig) {
+                return NextResponse.json({ error: 'Username taken.' }, { status: 409 });
             }
-        });
-        return NextResponse.json({ success: true, created: true });
+            await prisma.player.create({
+                data: { userId, username, totalScore: score, gamesPlayed: 1 }
+            });
+        }
+
+        // Save per-song leaderboard entry if songId is provided
+        if (songId && typeof songId === 'string') {
+            const songExists = await prisma.song.findUnique({ where: { id: songId }, select: { id: true } });
+            if (songExists) {
+                await prisma.songLeaderboard.create({
+                    data: {
+                        songId,
+                        userId,
+                        score: Math.round(score),
+                        maxCombo: typeof maxCombo === 'number' ? Math.round(maxCombo) : 0,
+                        accuracy: typeof accuracy === 'number' ? Math.max(0, Math.min(1, accuracy)) : null,
+                        speedMod: 1.0,
+                    }
+                });
+            }
+        }
+
+        return NextResponse.json({ success: true });
     } catch (e) {
         console.error('Failed to submit score:', e);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

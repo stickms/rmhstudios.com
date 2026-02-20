@@ -1,11 +1,15 @@
 'use client';
 
 import { authClient } from "@/lib/auth-client";
-import { useState } from "react";
+import { useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { FaDiscord } from "react-icons/fa";
 import { MdEmail, MdLock, MdPerson } from "react-icons/md";
 
-export default function LoginPage() {
+function LoginForm() {
+    const searchParams = useSearchParams();
+    const callbackURL = searchParams.get("callbackURL") || "/";
+
     const [isSignUp, setIsSignUp] = useState(false);
     const [loading, setLoading] = useState(false);
     
@@ -20,7 +24,7 @@ export default function LoginPage() {
         setLoading(true);
         await authClient.signIn.social({
             provider: "discord",
-            callbackURL: "/", 
+            callbackURL, 
         });
     };
 
@@ -36,13 +40,13 @@ export default function LoginPage() {
                     password,
                     name: name || username,
                     username,
-                    callbackURL: "/"
+                    callbackURL
                 } as any, { // Type assertion needed for custom fields until client types regenerate
                     onRequest: () => setLoading(true),
                     onSuccess: () => {
                         setLoading(false);
                         // Redirect handled by callbackURL usually, or we can push
-                        window.location.href = "/"; 
+                        window.location.href = callbackURL; 
                     },
                     onError: (ctx) => {
                         setLoading(false);
@@ -53,12 +57,12 @@ export default function LoginPage() {
                 await authClient.signIn.email({
                     email,
                     password,
-                    callbackURL: "/"
+                    callbackURL
                 }, {
                     onRequest: () => setLoading(true),
                     onSuccess: () => {
                         setLoading(false);
-                        window.location.href = "/";
+                        window.location.href = callbackURL;
                     },
                     onError: (ctx) => {
                         setLoading(false);
@@ -74,10 +78,10 @@ export default function LoginPage() {
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white p-4 font-sans">
-            <div className="bg-slate-900 border border-slate-700 p-8 rounded-2xl shadow-2xl max-w-md w-full space-y-8">
-                <div className="text-center space-y-2">
-                    <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">
-                        RX-9 Auth
+            <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-2xl p-8 shadow-xl">
+                <div className="text-center mb-8">
+                    <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-600 mb-2">
+                        RMH Auth
                     </h1>
                     <p className="text-slate-400 text-sm">
                         {isSignUp ? "Create an identity to access the network." : "Authenticate to access your profile."}
@@ -174,5 +178,13 @@ export default function LoginPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function LoginPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-slate-950 text-white">Loading...</div>}>
+            <LoginForm />
+        </Suspense>
     );
 }
