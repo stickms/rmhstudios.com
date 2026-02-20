@@ -6,6 +6,8 @@ import path from "path";
 import { headers } from "next/headers";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { validateAudioBuffer, validateImageBuffer } from "@/lib/slice-it/upload-validation";
+import decode from "audio-decode";
+import { BeatDetector } from "@/lib/audio/BeatDetector";
 
 export const runtime = "nodejs";
 
@@ -109,14 +111,26 @@ export async function POST(req: NextRequest) {
 
         const description = (formData.get("description") as string) || "";
         
-        let analysisData = null;
-        const analysisDataString = formData.get("analysisData") as string;
-        if (analysisDataString) {
-            try {
-                analysisData = JSON.parse(analysisDataString);
-            } catch (e) {
-                console.warn("Invalid analysisData JSON provided", e);
+        let analysisData: any = null;
+        let finalBpm = bpm;
+        
+        try {
+            console.log("Decoding audio on server...");
+            const audioBuffer = await decode(buffer);
+            console.log("Generating beatmap...");
+            analysisData = await BeatDetector.generateMap(
+                audioBuffer, 
+                uniqueSuffix, 
+                title || file.name, 
+                artist || "Unknown Artist", 
+                bpm
+            );
+            
+            if (analysisData && analysisData.bpm) {
+                finalBpm = analysisData.bpm;
             }
+        } catch (e) {
+            console.error("Failed to generate server-side beatmap", e);
         }
 
         const song = await prisma.song.create({
@@ -125,7 +139,7 @@ export async function POST(req: NextRequest) {
                 artist: artist || "Unknown Artist",
                 description,
                 duration,
-                bpm,
+                bpm: finalBpm,
                 audioUrl: fileName,
                 coverUrl,
                 fileSizeBytes: buffer.length,

@@ -49,6 +49,7 @@ interface GameState {
   // Loading & Sync
   isLoadingSong: boolean;
   loadingProgress: number;
+  loadingProgressText: string;
   countdown: number;
 
   // Multiplayer results
@@ -57,6 +58,7 @@ interface GameState {
   setIsMultiplayer: (v: boolean) => void;
   setIsLoadingSong: (loading: boolean) => void;
   setLoadingProgress: (progress: number) => void;
+  setLoadingProgressText: (text: string) => void;
   setCountdown: (count: number) => void;
   setIsDarkMode: (isDark: boolean) => void;
   
@@ -118,6 +120,7 @@ export const useGameStore = create<GameState>()(
       // Loading & Sync
       isLoadingSong: false,
       loadingProgress: 0,
+      loadingProgressText: '',
       countdown: 0,
       
       // UI State
@@ -128,6 +131,7 @@ export const useGameStore = create<GameState>()(
       
       setIsLoadingSong: (isLoadingSong) => set({ isLoadingSong }),
       setLoadingProgress: (loadingProgress) => set({ loadingProgress }),
+      setLoadingProgressText: (loadingProgressText) => set({ loadingProgressText }),
       setCountdown: (countdown) => set({ countdown }),
       setIsDarkMode: (isDark) => set({ isDarkMode: isDark }),
 

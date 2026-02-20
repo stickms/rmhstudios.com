@@ -1,29 +1,34 @@
+import { BiquadFilter } from "./BiquadFilter";
+
+export interface AudioBufferLike {
+    length: number;
+    duration: number;
+    sampleRate: number;
+    numberOfChannels: number;
+    getChannelData(channel: number): Float32Array;
+}
+
 export class BPMDetector {
     /**
-     * Detects BPM from an AudioBuffer.
+     * Detects BPM from an AudioBufferLike object.
      * Uses a simplified algorithm:
      * 1. Low-pass filter to isolate beats (kick/bass).
      * 2. Find peaks in signal.
      * 3. Calculate intervals between peaks.
      * 4. Find most common interval.
      */
-    static async detect(buffer: AudioBuffer): Promise<number> {
+    static async detect(buffer: AudioBufferLike): Promise<number> {
         try {
-            const offlineContext = new OfflineAudioContext(1, buffer.length, buffer.sampleRate);
-            const source = offlineContext.createBufferSource();
-            source.buffer = buffer;
-
             // Lowpass filter to isolate bass/kick
-            const filter = offlineContext.createBiquadFilter();
-            filter.type = "lowpass";
-            filter.frequency.value = 150;
-            source.connect(filter);
-            filter.connect(offlineContext.destination);
-
-            source.start(0);
-            const renderedBuffer = await offlineContext.startRendering();
+            const filter = new BiquadFilter('lowpass', 150, 1.0, buffer.sampleRate);
             
-            const peaks = this.getPeaks([renderedBuffer.getChannelData(0)]);
+            // We only need to analyze the first channel (mono) for timing
+            const channelData = buffer.getChannelData(0);
+            
+            // Manually process the full array
+            const filteredData = filter.process(channelData);
+            
+            const peaks = this.getPeaks([filteredData]);
             const groups = this.getIntervals(peaks, buffer.sampleRate);
 
             const top = groups.sort((a, b) => b.count - a.count).slice(0, 5);
@@ -45,8 +50,8 @@ export class BPMDetector {
     }
 
     private static getPeaks(data: Float32Array[]): number[] {
-        const partSize = 22050;
-        const parts = data[0].length / partSize;
+        const partSize = 22050; // Roughly half a second at 44.1kHz
+        const parts = Math.floor(data[0].length / partSize);
         const peaks: number[] = [];
 
         for (let i = 0; i < parts; i++) {
@@ -75,7 +80,7 @@ export class BPMDetector {
         const groups: { tempo: number, count: number }[] = [];
         
         peaks.forEach((peak, index) => {
-            for (let i = 1; i < 10; i++) {
+            for (let i = 1; i < 10 && (index + i) < peaks.length; i++) {
                 const interval = peaks[index + i] - peak;
                 const theoreticalBPM = 60 / (interval / sampleRate);
                 

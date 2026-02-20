@@ -26,6 +26,7 @@
     "@react-three/rapier": "^2.2.0",
     "@types/howler": "^2.2.12",
     "@types/three": "^0.182.0",
+    "audio-decode": "^2.2.3",
     "better-auth": "^1.4.18",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

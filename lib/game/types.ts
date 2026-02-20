@@ -11,13 +11,15 @@ export interface Slice {
   hitTime?: number; // performance.now() timestamp when hit, for fade-out
 }
 
+export type Difficulty = 'easy' | 'normal' | 'hard' | 'expert';
+
 export interface BeatMap {
   id: string;
   name: string;
   artist: string;
   audioUrl: string;
   bpm: number;
-  slices: Slice[];
+  slices: Slice[] | Record<Difficulty, Slice[]>;
 }
 
 export type HitResult = 'MARVELOUS' | 'PERFECT' | 'GREAT' | 'GOOD' | 'BAD' | 'MISS' | 'NONE';

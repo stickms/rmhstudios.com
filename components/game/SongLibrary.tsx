@@ -8,11 +8,10 @@ import { Input } from '@/components/ui/input';
 import { Search, Upload, Play, Pause } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { authClient } from '@/lib/auth-client';
+import { NeumorphicModal } from './NeumorphicModal';
 import { useRouter } from 'next/navigation';
 import { useGameStore } from '@/lib/store/useGameStore';
 import { GameEngine } from '@/lib/game/GameEngine';
-import { BeatDetector } from '@/lib/audio/BeatDetector';
-import { BPMDetector } from '@/lib/audio/BPMDetector';
 import * as metadata from 'music-metadata-browser';
 
 interface Song {
@@ -53,13 +52,16 @@ export function SongLibrary({ onSelect, onHighlight, selectedSongId, onStopPrevi
     const [uploadFile, setUploadFile] = useState<File | null>(null);
     const [uploadTitle, setUploadTitle] = useState("");
     const [uploadArtist, setUploadArtist] = useState("");
-    const [uploadBpm, setUploadBpm] = useState('120');
     const [uploadDuration, setUploadDuration] = useState(0);
     const [uploadDescription, setUploadDescription] = useState("");
     
     const [previewAudio, setPreviewAudio] = useState<HTMLAudioElement | null>(null);
     const [previewId, setPreviewId] = useState<string | null>(null);
     const previewAudioRef = useRef<HTMLAudioElement | null>(null);
+
+    // Delete Modal State
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [songToDelete, setSongToDelete] = useState<string | null>(null);
     
     const session = authClient.useSession();
     const router = useRouter();
@@ -160,7 +162,6 @@ export function SongLibrary({ onSelect, onHighlight, selectedSongId, onStopPrevi
             const tags = await metadata.parseBlob(file);
             if (tags.common.title) setUploadTitle(tags.common.title);
             if (tags.common.artist) setUploadArtist(tags.common.artist);
-            if (tags.common.bpm) setUploadBpm(Math.round(tags.common.bpm).toString());
         } catch (error) {
             console.log('Error reading tags:', error);
         }
@@ -175,38 +176,13 @@ export function SongLibrary({ onSelect, onHighlight, selectedSongId, onStopPrevi
         setUploadStatusText("Analyzing audio format...");
 
         try {
-            // 1. ArrayBuffer setup
-            const arrayBuffer = await uploadFile.arrayBuffer();
-            
-            setUploadStatusText("Decoding audio (this may take a few seconds)...");
-            // Standard AudioContext to decode for beatmap generator
-            const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-            const decodedBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-            
-            // Re-detect BPM if input is 0
-            let finalBpm = parseFloat(uploadBpm) || 0;
-            if (finalBpm === 0) {
-                setUploadStatusText("Detecting BPM...");
-                finalBpm = await BPMDetector.detect(decodedBuffer);
-                setUploadBpm(finalBpm.toString());
-            }
-
-            setUploadStatusText("Generating BeatMap...");
-            const tempSongId = Date.now().toString() + "-" + Math.round(Math.random() * 1000);
-            const beatMap = await BeatDetector.generateMap(decodedBuffer, tempSongId, uploadTitle, uploadArtist, finalBpm);
-            
-            audioCtx.close();
-
-            setUploadStatusText("Uploading track & map...");
+            setUploadStatusText("Uploading track & analyzing server-side...");
             const formData = new FormData();
-            // Need the original File to upload the MP3, not the decoded buffer
             formData.append('file', uploadFile);
             formData.append('title', uploadTitle);
             formData.append('artist', uploadArtist);
-            formData.append('bpm', finalBpm.toString());
             formData.append('duration', String(uploadDuration));
             formData.append('description', uploadDescription);
-            formData.append('analysisData', JSON.stringify(beatMap));
             
             const xhr = new XMLHttpRequest();
 
@@ -278,20 +254,28 @@ export function SongLibrary({ onSelect, onHighlight, selectedSongId, onStopPrevi
         audio.onended = () => setPreviewId(null);
     };
 
-    const handleDelete = async (id: string) => {
-        if (!confirm("Are you sure? This cannot be undone.")) return;
+    const handleDelete = (id: string) => {
+        setSongToDelete(id);
+        setIsDeleteModalOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!songToDelete) return;
         
         try {
-            const res = await fetch(`/api/slice-it/songs/${id}`, { method: 'DELETE' });
+            const res = await fetch(`/api/slice-it/songs/${songToDelete}`, { method: 'DELETE' });
             if (res.ok) {
                 fetchSongs();
-                toast.success("Song deleted");
+                toast.success("Track purged from system library");
             } else {
-                toast.error("Failed to delete song.");
+                toast.error("Failure: Could not delete track.");
             }
         } catch (e) {
             console.error(e);
-            toast.error("Error deleting song.");
+            toast.error("Error: System rejection during deletion.");
+        } finally {
+            setIsDeleteModalOpen(false);
+            setSongToDelete(null);
         }
     };
 
@@ -348,16 +332,6 @@ export function SongLibrary({ onSelect, onHighlight, selectedSongId, onStopPrevi
                                             <label className="text-xs font-bold text-slice-text-light uppercase">Artist</label>
                                             <Input value={uploadArtist} onChange={e => setUploadArtist(e.target.value)} className="bg-slice-card-bg text-slice-text placeholder:text-slice-text-light" />
                                         </div>
-                                    </div>
-
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-bold text-slice-text-light uppercase">BPM (Auto-detect if 0)</label>
-                                        <Input 
-                                            type="number" 
-                                            value={uploadBpm} 
-                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUploadBpm(e.target.value)}
-                                            className="bg-slice-card-bg text-slice-text placeholder:text-slice-text-light"
-                                        />
                                     </div>
 
                                     <div className="space-y-1">
@@ -463,6 +437,16 @@ export function SongLibrary({ onSelect, onHighlight, selectedSongId, onStopPrevi
                 ))}
             </div>
 
+            <NeumorphicModal
+                isOpen={isDeleteModalOpen}
+                onClose={() => setIsDeleteModalOpen(false)}
+                onConfirm={confirmDelete}
+                title="Wipe Track Data?"
+                description="This will permanently delete the song, analysis data, and leaderboard entries. This action is irreversible."
+                confirmText="PURGE"
+                cancelText="CANCEL"
+                variant="danger"
+            />
         </div>
     );
 }

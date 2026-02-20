@@ -20,78 +20,7 @@ function createSeededRandom(seed: string): () => number {
     };
 }
 
-/**
- * Deterministically adjust note density based on difficulty.
- * Uses song id + bpm + difficulty as seed so the same song always
- * produces the same note pattern for a given difficulty.
- *
- * Easy    70% of notes  (thin)
- * Normal 100% of notes  (baseline – no change)
- * Hard   150% of notes  (add 50% extra notes between existing ones)
- * Expert 200% of notes  (double – add 100% extra notes)
- */
-function applyDifficultyFilter(slices: Slice[], songId: string, bpm: number, difficulty: Difficulty): Slice[] {
-    if (difficulty === 'normal') return slices;
 
-    const rng = createSeededRandom(`${songId}-${bpm}-${difficulty}`);
-
-    // --- Easy: thin notes to ~70% ---
-    if (difficulty === 'easy') {
-        const keepRatio = 0.7;
-        const minGap = 0.35;
-        let lastKeptTime = -Infinity;
-
-        return slices.filter(slice => {
-            if (slice.type === 'BOMB' || slice.type === 'SWITCH') return true;
-            const roll = rng();
-            const timeSinceLast = slice.time - lastKeptTime;
-            const maxGap = 60 / bpm * 4;
-            if (timeSinceLast >= maxGap) { lastKeptTime = slice.time; return true; }
-            if (timeSinceLast < minGap) return false;
-            if (roll < keepRatio) { lastKeptTime = slice.time; return true; }
-            return false;
-        });
-    }
-
-    // --- Hard / Expert: densify by adding extra notes ---
-    // Hard adds ~50% extra notes, Expert adds ~100% extra notes
-    const extraRatio = difficulty === 'hard' ? 0.5 : 1.0;
-    const regularSlices = slices.filter(s => s.type !== 'BOMB' && s.type !== 'SWITCH');
-    const specialSlices = slices.filter(s => s.type === 'BOMB' || s.type === 'SWITCH');
-    const extraCount = Math.round(regularSlices.length * extraRatio);
-    const newNotes: Slice[] = [];
-
-    // Build a list of gaps between consecutive regular notes for insertion
-    const gaps: { time: number; lane: number; index: number }[] = [];
-    for (let i = 0; i < regularSlices.length - 1; i++) {
-        const gap = regularSlices[i + 1].time - regularSlices[i].time;
-        if (gap > 60 / bpm * 0.4) { // Only insert in gaps > ~0.4 beats
-            gaps.push({
-                time: regularSlices[i].time + gap * (0.3 + rng() * 0.4), // random position 30-70% through gap
-                lane: rng() < 0.5 ? 0 : 1,
-                index: i,
-            });
-        }
-    }
-
-    // Shuffle gaps deterministically and pick extraCount of them
-    for (let i = gaps.length - 1; i > 0; i--) {
-        const j = Math.floor(rng() * (i + 1));
-        [gaps[i], gaps[j]] = [gaps[j], gaps[i]];
-    }
-    const chosen = gaps.slice(0, Math.min(extraCount, gaps.length));
-
-    for (const g of chosen) {
-        newNotes.push({
-            id: `diff-${difficulty}-${g.index}-${Math.floor(g.time * 10000)}`,
-            time: g.time,
-            type: 'NORMAL' as any,
-            lane: g.lane,
-        });
-    }
-
-    return [...slices, ...newNotes].sort((a, b) => a.time - b.time);
-}
 
 export class GameEngine {
     private audioManager: AudioManager;
@@ -139,33 +68,36 @@ export class GameEngine {
         const m = useGameStore.getState().modifiers;
         const speed = m.speed || 1.0;
         
-        // Clone slices to avoid mutating original map ref if we reload
-        let slices = [...map.slices];
-
-        if (m.switching) {
-            // Convert ~15% of normal slices into SWITCH notes
-            slices = slices.map(slice => {
-                // Avoid converting BOMBs or LONGs to SWITCH if possible to preserve their mechanics
-                if (slice.type !== 'BOMB' && slice.type !== 'LONG' && Math.random() < 0.15) {
-                    return { ...slice, type: 'SWITCH', duration: undefined };
-                }
-                return slice;
-            });
-        }
-
-        if (m.bombs) {
-            // Convert ~5% of normal slices into bombs
-            slices = slices.map(slice => {
-                if (slice.type !== 'SWITCH' && Math.random() < 0.05) {
-                    return { ...slice, type: 'BOMB', duration: undefined };
-                }
-                return slice;
-            });
-        }
-
-        // Apply Difficulty Filter (deterministic thinning based on song+bpm+difficulty)
         const difficulty = m.difficulty || 'normal';
-        slices = applyDifficultyFilter(slices, map.id, map.bpm, difficulty);
+    
+    // Support legacy maps (flat array) alongside new Map dictionaries
+    let slices: Slice[] = [];
+    if (Array.isArray(map.slices)) {
+        slices = [...map.slices];
+    } else {
+        slices = [...((map.slices as Record<Difficulty, Slice[]>)[difficulty] || (map.slices as Record<Difficulty, Slice[]>).normal)];
+    }
+
+    if (m.switching) {
+        // Convert ~15% of normal slices into SWITCH notes
+        slices = slices.map(slice => {
+            // Avoid converting BOMBs or LONGs to SWITCH if possible to preserve their mechanics
+            if (slice.type !== 'BOMB' && slice.type !== 'LONG' && Math.random() < 0.15) {
+                return { ...slice, type: 'SWITCH', duration: undefined };
+            }
+            return slice;
+        });
+    }
+
+    if (m.bombs) {
+        // Convert ~5% of normal slices into bombs
+        slices = slices.map(slice => {
+            if (slice.type !== 'SWITCH' && Math.random() < 0.05) {
+                return { ...slice, type: 'BOMB', duration: undefined };
+            }
+            return slice;
+        });
+    }
 
         // Apply Speed to audio
         this.beatMap = { ...map, slices }; // Update beatMap with modified slices
@@ -304,7 +236,7 @@ export class GameEngine {
                 // the player is in the release window — just wait, don't accumulate or penalize
             });
 
-            this.beatMap.slices.forEach(slice => {
+            (this.beatMap.slices as Slice[]).forEach(slice => {
                 // If it's a LONG note, it might be in processedSliceIds but still being held.
                 // But MISS windows only apply when checking if it can be initially hit.
                 if (this.processedSliceIds.has(slice.id)) return;
@@ -560,7 +492,7 @@ export class GameEngine {
         const missWindow = HIT_WINDOWS.BAD * strictFactor * this.speedMultiplier;
 
         let best: Slice | null = null;
-        for (const slice of this.beatMap.slices) {
+        for (const slice of (this.beatMap.slices as Slice[])) {
             if (this.processedSliceIds.has(slice.id)) continue;
             if (slice.type === 'SILENT') continue;
 

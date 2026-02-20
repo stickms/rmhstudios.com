@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { GameEngine } from '@/lib/game/GameEngine';
 import { useGameStore } from '@/lib/store/useGameStore';
 import { AudioManager } from '@/lib/audio/AudioManager';
+import { Slice, Difficulty } from '@/lib/game/types';
 import { HUD } from './HUD';
 import { GameOver } from './GameOver';
 import { MainMenu } from './MainMenu';
@@ -23,7 +24,6 @@ const COLORS = {
     slice: {
         SPEED: '#a78bfa',
         MOVING: '#facc15',
-        LONG: '#34d399',
         SILENT: '#94a3b8',
         BOMB: '#ef4444',
         SWITCH: '#60a5fa',
@@ -53,7 +53,7 @@ export function GameCanvas() {
     const [hasGamepad, setHasGamepad] = useState(false);
     const [hasTouch, setHasTouch] = useState(false);
 
-    const { status, keybinds, isPaused, setIsPaused, isLoadingSong, loadingProgress, countdown, setCountdown, isMultiplayer, volume, setVolume, audioOffset, setAudioOffset, setKeybinds, multiplayerResults } = useGameStore();
+    const { status, keybinds, isPaused, setIsPaused, isLoadingSong, loadingProgress, loadingProgressText, countdown, setCountdown, isMultiplayer, volume, setVolume, audioOffset, setAudioOffset, setKeybinds, multiplayerResults } = useGameStore();
 
     // Multiplayer lobby tracking
     const [multiplayerLobbyId, setMultiplayerLobbyId] = useState<string | null>(null);
@@ -240,9 +240,10 @@ export function GameCanvas() {
 
             try {
                 const canvas = canvasRef.current;
-                if (!canvas) throw new Error("No Canvas Ref");
+                if (!canvas) return; // Gracefully exit loop if component unmounted
+                
                 const ctx = canvas.getContext('2d');
-                if (!ctx) throw new Error("No 2D Context");
+                if (!ctx) return;
                 
                 // RENDER FIRST (Even if update fails, we want to see something)
                 render(ctx, newEngine, keybindsRef.current);
@@ -696,7 +697,7 @@ export function GameCanvas() {
             if (targeted0) targetedIds.add(targeted0.id);
             if (targeted1) targetedIds.add(targeted1.id);
 
-            map.slices.forEach(slice => {
+            (map.slices as Slice[]).forEach(slice => {
                 // Determine X position (clamped to CURSOR_X if it's currently being held during its duration)
                 let sliceX = CURSOR_X + (slice.time - currentTime) * PPS;
                 // If this is a LONG note that has been hit and is active, left edge clamps to cursor
@@ -772,6 +773,8 @@ export function GameCanvas() {
                 // Color mapping
                 let color = '#475569';
                 if (slice.type === 'BOMB') color = '#ef4444';
+                // Hold notes and standard notes match their lane color
+                else if (slice.type === 'LONG') color = slice.lane === 0 ? COLORS.lane1 : COLORS.lane2;
                 // @ts-expect-error — COLORS.slice is typed loosely
                 else if (COLORS.slice[slice.type]) color = COLORS.slice[slice.type]; 
                 else if (slice.lane === 0) color = COLORS.lane1;
@@ -1255,7 +1258,9 @@ export function GameCanvas() {
                         <div className="absolute inset-0 z-[60] bg-slice-bg/90 backdrop-blur-md flex flex-col items-center justify-center p-10">
                             <div className="w-full max-w-md space-y-4">
                                 <div className="flex justify-between items-end mb-1">
-                                    <span className="text-sm font-black text-slice-text-muted uppercase tracking-widest">Loading Assets</span>
+                                    <span className="text-sm font-black text-slice-text-muted uppercase tracking-widest">
+                                        {loadingProgressText || 'Loading Assets'}
+                                    </span>
                                     <span className="text-2xl font-black text-blue-500">{Math.round(loadingProgress)}%</span>
                                 </div>
                                 <div className="h-4 bg-slice-bg rounded-full shadow-[inset_4px_4px_8px_var(--slice-shadow-dark),inset_-4px_-4px_8px_var(--slice-shadow-light)] p-1">

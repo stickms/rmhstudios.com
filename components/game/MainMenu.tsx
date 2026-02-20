@@ -85,7 +85,7 @@ const KeybindInput = ({ label, value, onChange }: { label: string, value: string
 
 
 export function MainMenu({ engine: propEngine }: MainMenuProps) {
-    const { setUserName, userName, keybinds, setKeybinds, volume, setVolume, hitSound, setHitSound, setIsLoadingSong, setLoadingProgress, setIsMultiplayer, setCountdown } = useGameStore();
+    const { setUserName, userName, keybinds, setKeybinds, volume, setVolume, hitSound, setHitSound, setIsLoadingSong, setLoadingProgress, setLoadingProgressText, setIsMultiplayer, setCountdown } = useGameStore();
     const setSongId = useGameStore(state => state.setSongId);
     const setStatus = useGameStore(state => state.setStatus);
     const updateMods = useGameStore(state => state.setModifiers);
@@ -283,6 +283,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                 if (song.analysisData) {
                     // Fast path: beatmap was pre-generated and stored on the server!
                     setLoadingProgress(40);
+                    setLoadingProgressText('RETRIEVING SPECTRAL ANALYSIS...');
                     map = typeof song.analysisData === 'string' ? JSON.parse(song.analysisData) : song.analysisData;
                     
                     // Fallback to ensuring song metadata is attached
@@ -293,19 +294,37 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                     // Legacy path: beatmap wasn't stored (e.g., uploaded before update)
                     if (!bpm || bpm === 0) {
                         setLoadingProgress(25);
+                        setLoadingProgressText('MEASURING BPM...');
                         bpm = await BPMDetector.detect(audioBuffer);
                     }
 
                     setLoadingProgress(40);
+                    setLoadingProgressText('ANALYZING SPECTRAL FLUX...');
                     map = await BeatDetector.generateMap(audioBuffer, song.id, song.title, song.artist, bpm);
                     map.audioUrl = audioUrl;
                     map.bpm = bpm;
+
+                    // PERSISTENCE: Backfill the analysis data to the server so it's only generated once ever.
+                    // We don't await this to avoid blocking the game start, but we fire and forget.
+                    (async () => {
+                        try {
+                            await fetch(`/api/slice-it/songs/${song.id}/patch-analysis`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ analysisData: map })
+                            });
+                        } catch (e) {
+                            console.warn("Failed to persist fallback analysis:", e);
+                        }
+                    })();
                 }
             }
 
             setLoadingProgress(80);
+            setLoadingProgressText('CALIBRATING GAME ENGINE...');
             await engine.loadMap(map, audioBuffer);
             setLoadingProgress(100);
+            setLoadingProgressText('SYNCHRONIZING...');
 
             const lobbyId = (engine as any).lobbyId;
             if (lobbyId) {
