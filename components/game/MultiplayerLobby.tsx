@@ -42,6 +42,18 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
     const router = useRouter();
     const mp = MultiplayerFactory.getInstance();
 
+    // Keep refs to the latest callbacks so the socket listener effect is stable
+    // and never tears down/re-registers when the parent re-renders, which would
+    // create a window where a lobby_update (PLAYING) could be missed.
+    const onStartRef = React.useRef(onStart);
+    const onSelectSongRef = React.useRef(onSelectSong);
+    React.useEffect(() => { onStartRef.current = onStart; }, [onStart]);
+    React.useEffect(() => { onSelectSongRef.current = onSelectSong; }, [onSelectSong]);
+    // Guard against calling onStart more than once per lobby session (the
+    // server emits a second lobby_update with status PLAYING after the
+    // countdown completes, which would re-trigger loading).
+    const hasStartedRef = React.useRef(false);
+
     const handleLeave = () => {
         mp.disconnect();
         // Strip the ?lobby= param from the URL without a full navigation
@@ -61,9 +73,14 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
             console.log("Lobby Update:", data);
             setLobbyData(data);
             
-            // If game started
-            if (data.status === 'PLAYING') {
-                onStart(data.lobbyId, data.song);
+            // If game started — always call through the ref so we use the
+            // latest version of the callback even if the parent has re-rendered
+            // since this listener was registered.
+            // hasStartedRef prevents a second lobby_update (PLAYING) — which the
+            // server sends after the countdown ends — from re-triggering loading.
+            if (data.status === 'PLAYING' && !hasStartedRef.current) {
+                hasStartedRef.current = true;
+                onStartRef.current(data.lobbyId, data.song);
             }
         };
 
@@ -76,8 +93,8 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
             console.log("Song Selected via Socket:", data.song);
             // Update local lobby data immediately for UI
             setLobbyData(prev => prev ? ({ ...prev, song: data.song }) : null);
-            // Load the song in MainMenu
-            onSelectSong(data.song);
+            // Load the song in MainMenu — use ref for the same stability reason
+            onSelectSongRef.current(data.song);
         };
 
         mp.on('lobby_update', onLobbyUpdate);
@@ -89,7 +106,9 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
              mp.off('game_starting', onGameStarting);
              mp.off('song_selected', onSongSelected);
         };
-    }, [mp, onStart, onSelectSong]);
+    // mp is a singleton; omit onStart/onSelectSong — we use refs instead
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [mp]);
     
     const { data: session, isPending } = authClient.useSession();
 

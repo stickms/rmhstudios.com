@@ -212,8 +212,12 @@ export function MainMenu({ engine }: MainMenuProps) {
     const [leaderboard, setLeaderboard] = React.useState<any[]>([]);
 
     const handleMultiplayerStart = async (lobbyId: string, song: any) => {
-        if (!engine || !song) {
-            console.error("Cannot start multiplayer: No engine or song", { engine: !!engine, song: !!song });
+        if (!song) {
+            console.error("Cannot start multiplayer: no song provided");
+            return;
+        }
+        if (!engine) {
+            console.error("Cannot start multiplayer: engine not initialised yet", { lobbyId });
             return;
         }
         engine.setLobbyId(lobbyId);
@@ -283,11 +287,11 @@ export function MainMenu({ engine }: MainMenuProps) {
                 {!session.data && !session.isPending && (
                     <div className="absolute inset-0 z-[60] bg-[#e0e5ec]/90 flex items-center justify-center p-8 backdrop-blur-xl rounded-[4rem] shadow-[inset_15px_15px_40px_#a3b1c6,inset_-15px_-15px_40px_#ffffff]">
                         <div className="w-full max-w-md space-y-10 text-center animate-in fade-in zoom-in duration-700">
-                             <h3 className="text-5xl font-black text-slate-700 tracking-tighter uppercase italic bg-gradient-to-br from-slate-700 to-slate-500 bg-clip-text text-transparent">Connect to Start</h3>
+                             <h3 className="text-3xl sm:text-5xl font-black text-slate-700 tracking-tighter uppercase italic bg-gradient-to-br from-slate-700 to-slate-500 bg-clip-text text-transparent">Connect to Start</h3>
                              <p className="text-slate-500 font-bold uppercase text-xs tracking-[0.5em] opacity-60">Authentication is required for leaderboard ranking</p>
                              <div className="space-y-6">
                                 <Button
-                                    className="w-full py-12 text-3xl font-black tracking-widest bg-blue-500 hover:bg-blue-400 text-white shadow-[15px_15px_30px_rgba(59,130,246,0.4),-15px_-15px_30px_#ffffff] rounded-[2.5rem] transition-all transform hover:scale-[1.03] active:scale-95 uppercase"
+                                    className="w-full py-6 sm:py-12 text-xl sm:text-3xl font-black tracking-widest bg-blue-500 hover:bg-blue-400 text-white shadow-[15px_15px_30px_rgba(59,130,246,0.4),-15px_-15px_30px_#ffffff] rounded-[2.5rem] transition-all transform hover:scale-[1.03] active:scale-95 uppercase"
                                     onClick={() => router.push('/login')}
                                 >
                                     Log In
@@ -345,19 +349,19 @@ export function MainMenu({ engine }: MainMenuProps) {
             
             {/* Settings Overlay remains as a full-screen drawer */}
             {showSettings && (
-                <div className="absolute inset-0 z-[80] bg-[#e0e5ec] p-12 flex flex-col animate-in slide-in-from-right-10 overflow-y-auto">
-                    <div className="flex items-center justify-between mb-12">
-                        <h2 className="text-5xl font-black text-slate-700 tracking-tighter uppercase italic">System Configuration</h2>
+                <div className="absolute inset-0 z-[80] bg-[#e0e5ec] p-5 sm:p-12 flex flex-col animate-in slide-in-from-right-10 overflow-y-auto">
+                    <div className="flex items-center justify-between mb-5 sm:mb-12">
+                        <h2 className="text-2xl sm:text-5xl font-black text-slate-700 tracking-tighter uppercase italic">System Configuration</h2>
                         <Button 
                             variant="ghost" 
-                            className="bg-[#e0e5ec] shadow-[5px_5px_12px_#a3b1c6,-5px_-5px_12px_#ffffff] active:shadow-inner text-slate-500 hover:text-slate-700 font-black uppercase tracking-[0.2em] px-10 h-16 rounded-2xl" 
+                            className="bg-[#e0e5ec] shadow-[5px_5px_12px_#a3b1c6,-5px_-5px_12px_#ffffff] active:shadow-inner text-slate-500 hover:text-slate-700 font-black uppercase tracking-[0.2em] px-5 sm:px-10 h-10 sm:h-16 rounded-2xl text-sm" 
                             onClick={() => setShowSettings(false)}
                         >
                             CLOSE
                         </Button>
                     </div>
 
-                    <div className="max-w-3xl mx-auto w-full space-y-12">
+                    <div className="max-w-3xl mx-auto w-full space-y-8 sm:space-y-12">
                          {/* Settings content ... */}
                          <div className="space-y-4">
                             <label className="text-[10px] text-slate-400 uppercase tracking-[0.4em] font-black ml-4">Authorized Operator</label>
@@ -371,7 +375,7 @@ export function MainMenu({ engine }: MainMenuProps) {
                             />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-8">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
                              <div className="space-y-4">
                                 <label className="text-[10px] text-slate-400 uppercase tracking-[0.4em] font-black ml-4">Audio Output Level</label>
                                 <div className="bg-[#e0e5ec] p-8 rounded-3xl shadow-[inset_5px_5px_10px_#a3b1c6,inset_-5px_-5px_10px_#ffffff] space-y-6">

@@ -539,7 +539,7 @@ export function GameCanvas() {
                 */}
                 <div 
                     ref={wrapperRef} 
-                    className="relative w-full max-w-[1400px] aspect-video bg-[#e0e5ec] rounded-[2rem] shadow-[20px_20px_60px_#b2b9c5,-20px_-20px_60px_#ffffff] overflow-hidden border-4 border-[#e0e5ec]"
+                    className="relative w-full aspect-video bg-[#e0e5ec] rounded-[2rem] shadow-[20px_20px_60px_#b2b9c5,-20px_-20px_60px_#ffffff] overflow-hidden border-4 border-[#e0e5ec] max-w-[min(1400px,calc((100vh-2rem)*16/9))]"
                 >
                     <canvas
                         ref={canvasRef}
