@@ -4,6 +4,8 @@
 **Scope:** rmhstudios.com codebase (Next.js App Router, API routes, Socket.IO server)  
 **Type:** Manual code review and inventory; no automated scanning.
 
+**Report revision:** This report was updated after merging latest main (multiplayer lobby enhancements). Socket.IO events and the `difficulty` payload are updated below. No new vulnerabilities were identified in the merged changes; prior findings (rate limits, comment length, Socket.IO CORS/validation) remain unfixed.
+
 ---
 
 ## Executive summary
@@ -120,7 +122,7 @@ Slice It! song and cover uploads are documented in [SECURITY.md](SECURITY.md). S
 
 - **Server:** [server/socket-server.ts](server/socket-server.ts); path `/socket/`; CORS `origin: "*"`.
 - **Authentication:** `join_lobby` receives `lobbyId`, `userName`, `userId` from the client. There is no server-side session or token check; identity is client-asserted and can be spoofed.
-- **Inputs:** `userName` and `lobbyId` are not sanitized or length-limited; `song` (host) and `difficulty` are passed through. Score/combo/health updates are numbers. **Recommendations:** Restrict CORS to allowed origins in production (e.g. env-based); sanitize and length-limit `userName` and `lobbyId`; consider validating or size-limiting `song`/`difficulty` to prevent abuse or log injection.
+- **Inputs:** `userName` and `lobbyId` are not sanitized or length-limited; `song` (host) and `difficulty` are passed through. The `difficulty` object includes `speed`, `bombs`, `switching`, `suddenDeath`, `invisible`, and `level` (string); it is accepted as `any` in `update_difficulty` and assigned directly to the player. Score/combo/health updates are numbers. A `toggle_ready` event (payload: `lobbyId`) allows clients to toggle ready state. **Recommendations:** Restrict CORS to allowed origins in production (e.g. env-based); sanitize and length-limit `userName` and `lobbyId`; consider validating or size-limiting `song`/`difficulty` (including `level`) to prevent abuse or log injection.
 
 ```mermaid
 sequenceDiagram
@@ -245,7 +247,8 @@ sequenceDiagram
 | `player_finished` | Client → Server | lobbyId, finalScore |
 | `leave_lobby` | Client → Server | lobbyId |
 | `return_to_lobby` | Client → Server | lobbyId |
-| `update_difficulty` | Client → Server | lobbyId, difficulty |
+| `toggle_ready` | Client → Server | lobbyId |
+| `update_difficulty` | Client → Server | lobbyId, difficulty (includes level) |
 | `disconnect` | — | — |
 
 ---
