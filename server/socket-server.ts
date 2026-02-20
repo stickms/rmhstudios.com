@@ -8,6 +8,7 @@ import { createServer } from "http";
 
 const httpServer = createServer();
 const io = new Server(httpServer, {
+  path: "/socket/",
   cors: {
     origin: "*", // Allow all origins for dev
     methods: ["GET", "POST"]

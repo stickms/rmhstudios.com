@@ -29,6 +29,7 @@ class MultiplayerFactory {
         if (this.socket?.connected) return;
         
         this.socket = io(SOCKET_URL, {
+            path: "/socket/",
             transports: ["websocket"],
             reconnectionAttempts: 5
         });

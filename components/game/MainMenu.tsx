@@ -290,16 +290,9 @@ export function MainMenu({ engine }: MainMenuProps) {
                              <div className="space-y-6">
                                 <Button
                                     className="w-full py-12 text-3xl font-black tracking-widest bg-blue-500 hover:bg-blue-400 text-white shadow-[15px_15px_30px_rgba(59,130,246,0.4),-15px_-15px_30px_#ffffff] rounded-[2.5rem] transition-all transform hover:scale-[1.03] active:scale-95 uppercase"
-                                    onClick={() => handleStartGame({ id: 'demo', title: 'Demo', artist: 'System', bpm: 120 })}
+                                    onClick={() => router.push('/login')}
                                 >
-                                    Play Offline
-                                </Button>
-
-                                <Button
-                                    className="w-full py-8 text-xl font-bold tracking-[0.2em] bg-[#e0e5ec] text-slate-600 hover:text-blue-500 shadow-[10px_10px_20px_#a3b1c6,-10px_-10px_20px_#ffffff] rounded-[2rem] transition-all active:shadow-[inset_5px_5px_10px_#a3b1c6,inset_-5px_-5px_10px_#ffffff] uppercase"
-                                    onClick={() => setShowMultiplayer(true)}
-                                >
-                                    Enter Lobby
+                                    Log In
                                 </Button>
                              </div>
                         </div>
