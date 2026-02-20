@@ -38,10 +38,18 @@ export async function PATCH(
         const formData = await req.formData();
         const title = formData.get('title') as string | null;
         const artist = formData.get('artist') as string | null;
+        const bpmRaw = formData.get('bpm') as string | null;
+        const bpm = bpmRaw ? parseFloat(bpmRaw) : null;
         const description = formData.get('description') as string | null;
         const coverFile = formData.get('cover') as File | null;
 
         let coverUrl: string | null = song.coverUrl ?? null;
+
+        // Validate cover image size (max 2.5 MB)
+        const MAX_COVER_SIZE = 2.5 * 1024 * 1024; // 2.5 MB
+        if (coverFile && coverFile.size > MAX_COVER_SIZE) {
+            return NextResponse.json({ error: "Cover image too large. Maximum size is 2.5 MB." }, { status: 413 });
+        }
 
         if (coverFile && coverFile.size > 0) {
             const safeCoverName = coverFile.name.replace(/[^a-zA-Z0-9.-]/g, "_");
@@ -60,6 +68,7 @@ export async function PATCH(
             data: {
                 title: title ?? song.title,
                 artist: artist ?? song.artist,
+                bpm: (bpm && bpm > 0) ? bpm : song.bpm,
                 description: description ?? song.description,
                 coverUrl,
             }

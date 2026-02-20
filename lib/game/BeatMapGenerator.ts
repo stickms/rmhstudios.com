@@ -1,5 +1,21 @@
 import { BeatMap, Slice } from './types';
 
+/**
+ * Simple seeded PRNG (mulberry32) for deterministic beatmap generation.
+ */
+function createSeededRandom(seed: string): () => number {
+    let h = 0;
+    for (let i = 0; i < seed.length; i++) {
+        h = Math.imul(31, h) + seed.charCodeAt(i) | 0;
+    }
+    return () => {
+        h |= 0; h = h + 0x6D2B79F5 | 0;
+        let t = Math.imul(h ^ h >>> 15, 1 | h);
+        t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+}
+
 export class BeatMapGenerator {
     /**
      * Analyze audio buffer to generate a beatmap
@@ -26,6 +42,9 @@ export class BeatMapGenerator {
         const windowSize = Math.floor(sampleRate / 10); // 0.1s windows
         
         let lastBeatTime = -minDistance;
+
+        // Seeded PRNG for deterministic lane assignments
+        const rng = createSeededRandom(`${id}-${120}`);
         
         // Stereo analysis: 
         // If L is significantly louder -> Top Lane (0)
@@ -58,8 +77,8 @@ export class BeatMapGenerator {
                     } else if (maxR > maxL * 1.2) {
                         lane = 1; // Bottom
                     } else {
-                        // Balanced: alternate or random
-                        lane = Math.random() > 0.5 ? 1 : 0;
+                        // Balanced: deterministic pseudo-random via seeded PRNG
+                        lane = rng() > 0.5 ? 1 : 0;
                     }
                     
                     slices.push({

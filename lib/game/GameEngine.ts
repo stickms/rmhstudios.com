@@ -1,7 +1,96 @@
 import { AudioManager } from '../audio/AudioManager';
 import { BeatMap, Slice, HIT_WINDOWS, HitResult } from './types';
-import { useGameStore } from '../store/useGameStore';
+import { useGameStore, Difficulty } from '../store/useGameStore';
 import { MultiplayerFactory } from "./MultiplayerFactory";
+
+/**
+ * Simple seeded PRNG (mulberry32) for deterministic difficulty filtering.
+ */
+function createSeededRandom(seed: string): () => number {
+    let h = 0;
+    for (let i = 0; i < seed.length; i++) {
+        h = Math.imul(31, h) + seed.charCodeAt(i) | 0;
+    }
+    return () => {
+        h |= 0; h = h + 0x6D2B79F5 | 0;
+        let t = Math.imul(h ^ h >>> 15, 1 | h);
+        t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+}
+
+/**
+ * Deterministically adjust note density based on difficulty.
+ * Uses song id + bpm + difficulty as seed so the same song always
+ * produces the same note pattern for a given difficulty.
+ *
+ * Easy    70% of notes  (thin)
+ * Normal 100% of notes  (baseline – no change)
+ * Hard   150% of notes  (add 50% extra notes between existing ones)
+ * Expert 200% of notes  (double – add 100% extra notes)
+ */
+function applyDifficultyFilter(slices: Slice[], songId: string, bpm: number, difficulty: Difficulty): Slice[] {
+    if (difficulty === 'normal') return slices;
+
+    const rng = createSeededRandom(`${songId}-${bpm}-${difficulty}`);
+
+    // --- Easy: thin notes to ~70% ---
+    if (difficulty === 'easy') {
+        const keepRatio = 0.7;
+        const minGap = 0.35;
+        let lastKeptTime = -Infinity;
+
+        return slices.filter(slice => {
+            if (slice.type === 'BOMB' || slice.type === 'SWITCH') return true;
+            const roll = rng();
+            const timeSinceLast = slice.time - lastKeptTime;
+            const maxGap = 60 / bpm * 4;
+            if (timeSinceLast >= maxGap) { lastKeptTime = slice.time; return true; }
+            if (timeSinceLast < minGap) return false;
+            if (roll < keepRatio) { lastKeptTime = slice.time; return true; }
+            return false;
+        });
+    }
+
+    // --- Hard / Expert: densify by adding extra notes ---
+    // Hard adds ~50% extra notes, Expert adds ~100% extra notes
+    const extraRatio = difficulty === 'hard' ? 0.5 : 1.0;
+    const regularSlices = slices.filter(s => s.type !== 'BOMB' && s.type !== 'SWITCH');
+    const specialSlices = slices.filter(s => s.type === 'BOMB' || s.type === 'SWITCH');
+    const extraCount = Math.round(regularSlices.length * extraRatio);
+    const newNotes: Slice[] = [];
+
+    // Build a list of gaps between consecutive regular notes for insertion
+    const gaps: { time: number; lane: number; index: number }[] = [];
+    for (let i = 0; i < regularSlices.length - 1; i++) {
+        const gap = regularSlices[i + 1].time - regularSlices[i].time;
+        if (gap > 60 / bpm * 0.4) { // Only insert in gaps > ~0.4 beats
+            gaps.push({
+                time: regularSlices[i].time + gap * (0.3 + rng() * 0.4), // random position 30-70% through gap
+                lane: rng() < 0.5 ? 0 : 1,
+                index: i,
+            });
+        }
+    }
+
+    // Shuffle gaps deterministically and pick extraCount of them
+    for (let i = gaps.length - 1; i > 0; i--) {
+        const j = Math.floor(rng() * (i + 1));
+        [gaps[i], gaps[j]] = [gaps[j], gaps[i]];
+    }
+    const chosen = gaps.slice(0, Math.min(extraCount, gaps.length));
+
+    for (const g of chosen) {
+        newNotes.push({
+            id: `diff-${difficulty}-${g.index}-${Math.floor(g.time * 10000)}`,
+            time: g.time,
+            type: 'NORMAL' as any,
+            lane: g.lane,
+        });
+    }
+
+    return [...slices, ...newNotes].sort((a, b) => a.time - b.time);
+}
 
 export class GameEngine {
     private audioManager: AudioManager;
@@ -90,6 +179,10 @@ export class GameEngine {
             slices = newSlices.sort((a, b) => a.time - b.time);
         }
 
+        // Apply Difficulty Filter (deterministic thinning based on song+bpm+difficulty)
+        const difficulty = m.difficulty || 'normal';
+        slices = applyDifficultyFilter(slices, map.id, map.bpm, difficulty);
+
         // Apply Speed to audio
         this.beatMap = { ...map, slices }; // Update beatMap with modified slices
         this.songId = map.id;
@@ -155,6 +248,20 @@ export class GameEngine {
         }
     }
 
+    // Get the effective lane for a slice at the given time
+    // SWITCH notes flip lane at a certain time before the hit time
+    public getEffectiveLane(slice: Slice, currentTime: number): number {
+        if (slice.type !== 'SWITCH') return slice.lane;
+        // Switch happens at switchTime seconds before the slice's hit time
+        // Faster speeds → switch sooner (less reaction time in real seconds)
+        const switchLeadTime = 0.8 / this.speedMultiplier; // 0.8s at 1x, 0.53s at 1.5x, 1.6s at 0.5x
+        const switchTime = slice.time - switchLeadTime;
+        if (currentTime >= switchTime) {
+            return slice.lane === 0 ? 1 : 0; // Flipped
+        }
+        return slice.lane; // Original lane
+    }
+
     public update() {
         // Called every frame by the Canvas loop
         // If not playing or paused, do nothing
@@ -215,7 +322,7 @@ export class GameEngine {
         // Bombs are active if they are within standard hit window
         const bombs = map.slices.filter(s => 
             s.type === 'BOMB' && 
-            s.lane === lane && 
+            this.getEffectiveLane(s, currentTime) === lane && 
             Math.abs(s.time - currentTime) <= HIT_WINDOWS.BAD
         );
         
@@ -252,7 +359,7 @@ export class GameEngine {
         const hitWindow = HIT_WINDOWS.BAD;
         const potentialHits = map.slices
             .filter(s => !this.processedSliceIds.has(s.id) && s.type !== 'SILENT' && s.type !== 'BOMB')
-            .filter(s => s.lane === lane)
+            .filter(s => this.getEffectiveLane(s, currentTime) === lane)
             .filter(s => Math.abs(s.time - currentTime) <= hitWindow);
             
         // ... (existing helper) ...
@@ -294,6 +401,12 @@ export class GameEngine {
         const m = useGameStore.getState().modifiers;
         let scoreMultiplier = 1.0;
         // ... (modifiers logic is same, fine to re-calc)
+        // Difficulty multiplier
+        if (m.difficulty === 'easy') scoreMultiplier *= 0.7;
+        else if (m.difficulty === 'normal') scoreMultiplier *= 1.0;
+        else if (m.difficulty === 'hard') scoreMultiplier *= 1.3;
+        else if (m.difficulty === 'expert') scoreMultiplier *= 1.5;
+
         if (m.invisible) scoreMultiplier += 0.2;
         if (m.speed > 1.0) scoreMultiplier += (m.speed - 1.0) * 0.5;
         if (m.suddenDeath) scoreMultiplier += 0.3;
@@ -346,12 +459,12 @@ export class GameEngine {
             // Offset calculation for UI
              const offset = (this.audioManager.getCurrentTime() - (useGameStore.getState().audioOffset || 0) / 1000) - slice.time;
 
-            if (result === 'MARVELOUS') { points = 115; color = '#00ffff'; } // Cyan
-            else if (result === 'PERFECT') { points = 100; color = '#ffd700'; } // Gold
-            else if (result === 'GREAT') { points = 75; color = '#00ff00'; } // Green
-            else if (result === 'GOOD') { points = 50; color = '#3b82f6'; } // Blue
-            else if (result === 'BAD') { points = 10; color = '#a855f7'; } // Purple
-            else { color = '#aaaaaa'; } // Miss falls through or handled above
+            if (result === 'MARVELOUS') { points = 115; color = '#0891b2'; } // Dark Cyan
+            else if (result === 'PERFECT') { points = 100; color = '#B4954A'; } // Dark Gold
+            else if (result === 'GREAT') { points = 75; color = '#15803d'; } // Dark Green
+            else if (result === 'GOOD') { points = 50; color = '#1d4ed8'; } // Dark Blue
+            else if (result === 'BAD') { points = 10; color = '#7e22ce'; } // Dark Purple
+            else { color = '#64748b'; } // Slate
             
             if (result === 'BAD') {
                  this.combo = 0; // Break combo on Bad

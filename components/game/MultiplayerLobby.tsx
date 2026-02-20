@@ -10,7 +10,7 @@ import { useGameStore } from '@/lib/store/useGameStore';
 import { authClient } from "@/lib/auth-client";
 import { useSearchParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Copy, Share2, Check, Zap, Bomb, Shuffle, EyeOff, Skull, Info, ChevronDown, ChevronUp } from 'lucide-react';
+import { Copy, Share2, Check, Zap, Bomb, Shuffle, EyeOff, Skull, Info, ChevronDown, ChevronUp, Settings } from 'lucide-react';
 
 import { SongLibrary } from '@/components/game/SongLibrary'; // Import SongLibrary
 
@@ -19,7 +19,7 @@ interface Player {
     name: string;
     score: number;
     isReady: boolean;
-    difficulty?: { speed: number; bombs: boolean; switching: boolean; suddenDeath: boolean; invisible: boolean };
+    difficulty?: { speed: number; bombs: boolean; switching: boolean; suddenDeath: boolean; invisible: boolean; level: string };
 }
 
 interface LobbyData {
@@ -45,6 +45,7 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
         switching: false,
         suddenDeath: false,
         invisible: false,
+        level: 'normal' as string,
     });
     
     const searchParams = useSearchParams();
@@ -173,19 +174,30 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
             mp.updateDifficulty(lobbyData.lobbyId, newDiff);
         }
         // Also sync to local game store modifiers
+        const store = useGameStore.getState();
         useGameStore.getState().setModifiers({
-            ...useGameStore.getState().modifiers,
-            ...newDiff,
+            ...store.modifiers,
+            speed: newDiff.speed,
+            bombs: newDiff.bombs,
+            switching: newDiff.switching,
+            suddenDeath: newDiff.suddenDeath,
+            invisible: newDiff.invisible,
+            difficulty: (newDiff.level as 'easy' | 'normal' | 'hard' | 'expert'),
         });
     };
 
     const calcMultiplier = (d: typeof myDifficulty) => {
         let m = 1.0;
-        m *= d.speed; // speed directly multiplies
-        if (d.bombs) m *= 1.1;
-        if (d.switching) m *= 1.1;
-        if (d.suddenDeath) m *= 1.3;
-        if (d.invisible) m *= 1.2;
+        // Difficulty level multiplier (must match GameEngine.ts / SongDetailsPanel.tsx)
+        if (d.level === 'easy') m *= 0.7;
+        else if (d.level === 'normal') m *= 1.0;
+        else if (d.level === 'hard') m *= 1.3;
+        else if (d.level === 'expert') m *= 1.5;
+        if (d.invisible) m += 0.2;
+        if (d.speed > 1.0) m += (d.speed - 1.0) * 0.5;
+        if (d.suddenDeath) m += 0.3;
+        if (d.bombs) m += 0.15;
+        if (d.switching) m += 0.15;
         return m;
     };
 
@@ -207,14 +219,14 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
                     </div>
                     <div className="flex-1 overflow-hidden rounded-2xl shadow-[inset_10px_10px_20px_#bebebe,inset_-10px_-10px_20px_#ffffff] p-4">
                          <SongLibrary 
-                             onSelect={(song) => {
+                             onSelect={() => {}}
+                             onHighlight={(song) => {
                              console.log("Host selected song:", song);
                              // Send to server
                              mp.selectSong(lobbyData.lobbyId, song);
                              setShowSongSelect(false);
                          }} 
-                         onHighlight={() => {}} 
-                         selectedSongId={null}
+                         selectedSongId={lobbyData.song?.id ?? null}
                          />
                     </div>
                 </div>
@@ -253,6 +265,8 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
                                 return (
                                     <div key={p.id} className="flex justify-between items-center bg-[#e0e5ec] p-3 rounded-xl shadow-[inset_3px_3px_6px_#a3b1c6,inset_-3px_-3px_6px_#ffffff] group relative">
                                         <div className="flex items-center gap-2">
+                                            {/* Ready indicator */}
+                                            <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${p.isReady ? 'bg-green-500' : 'bg-slate-300'}`} title={p.isReady ? 'Ready' : 'Not ready'} />
                                             <span className="font-bold">{p.name}</span>
                                             {isMe && <span className="text-[9px] font-black bg-blue-500 text-white px-1.5 py-0.5 rounded-full">YOU</span>}
                                         </div>
@@ -260,6 +274,17 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
                                             {/* Difficulty indicators */}
                                             {p.difficulty && (
                                                 <div className="flex items-center gap-1">
+                                                    {p.difficulty.level && p.difficulty.level !== 'normal' && (
+                                                        <span
+                                                            className="text-[9px] font-bold px-1.5 py-0.5 rounded-full text-white"
+                                                            style={{
+                                                                backgroundColor: p.difficulty.level === 'easy' ? '#22c55e' : p.difficulty.level === 'hard' ? '#f97316' : p.difficulty.level === 'expert' ? '#ef4444' : '#3b82f6'
+                                                            }}
+                                                            title={`${p.difficulty.level.charAt(0).toUpperCase() + p.difficulty.level.slice(1)} difficulty`}
+                                                        >
+                                                            {p.difficulty.level.toUpperCase()}
+                                                        </span>
+                                                    )}
                                                     {p.difficulty.speed !== 1.0 && (
                                                         <span className="text-[9px] font-bold bg-purple-100 text-purple-600 px-1.5 py-0.5 rounded-full" title={`Speed: ${p.difficulty.speed.toFixed(1)}x`}>
                                                             <Zap className="w-3 h-3 inline" />{p.difficulty.speed.toFixed(1)}x
@@ -304,22 +329,52 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
                             </div>
                          </div>
 
-                         {/* Difficulty Settings */}
+                         {/* Difficulty Settings - Always visible */}
                          <div className="space-y-2">
                             <button
-                                className="flex items-center gap-2 font-bold text-sm text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-colors w-full"
+                                className="flex items-center gap-2 font-bold text-sm text-slate-600 uppercase tracking-widest hover:text-blue-500 transition-colors w-full bg-[#e0e5ec] p-3 rounded-xl shadow-[3px_3px_6px_#a3b1c6,-3px_-3px_6px_#ffffff] active:shadow-[inset_3px_3px_6px_#a3b1c6,inset_-3px_-3px_6px_#ffffff]"
                                 onClick={() => setShowDifficulty(!showDifficulty)}
                             >
-                                My Difficulty
-                                {showDifficulty ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                                {calcMultiplier(myDifficulty) > 1.0 && (
-                                    <span className="text-[10px] font-black text-green-600 bg-green-100 px-2 py-0.5 rounded-full ml-auto">
-                                        {calcMultiplier(myDifficulty).toFixed(2)}x multiplier
+                                <Settings className="w-4 h-4" />
+                                My Difficulty & Modifiers
+                                {showDifficulty ? <ChevronUp className="w-4 h-4 ml-auto" /> : <ChevronDown className="w-4 h-4 ml-auto" />}
+                                {calcMultiplier(myDifficulty) !== 1.0 && (
+                                    <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${calcMultiplier(myDifficulty) > 1.0 ? 'text-green-600 bg-green-100' : 'text-orange-600 bg-orange-100'}`}>
+                                        {calcMultiplier(myDifficulty).toFixed(2)}x
                                     </span>
                                 )}
                             </button>
                             {showDifficulty && (
                                 <div className="bg-[#e0e5ec] p-4 rounded-xl shadow-[inset_3px_3px_6px_#a3b1c6,inset_-3px_-3px_6px_#ffffff] space-y-3">
+                                    {/* Difficulty Level */}
+                                    <div className="space-y-1.5">
+                                        <span className="text-xs font-bold text-slate-600">Note Density</span>
+                                        <div className="grid grid-cols-4 gap-1">
+                                            {([
+                                                { key: 'easy', label: 'Easy', notes: '70%', color: '#22c55e' },
+                                                { key: 'normal', label: 'Normal', notes: '100%', color: '#3b82f6' },
+                                                { key: 'hard', label: 'Hard', notes: '150%', color: '#f97316' },
+                                                { key: 'expert', label: 'Expert', notes: '200%', color: '#ef4444' },
+                                            ] as const).map(opt => {
+                                                const isActive = myDifficulty.level === opt.key;
+                                                return (
+                                                    <button
+                                                        key={opt.key}
+                                                        onClick={() => handleDifficultyChange({ level: opt.key })}
+                                                        className={`px-1.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wide transition-all border ${
+                                                            isActive
+                                                                ? 'text-white shadow-md scale-[1.02]'
+                                                                : 'bg-[#e0e5ec] text-slate-400 border-slate-300 shadow-[2px_2px_4px_#a3b1c6,-2px_-2px_4px_#ffffff] hover:bg-slate-50'
+                                                        }`}
+                                                        style={isActive ? { backgroundColor: opt.color, borderColor: opt.color } : undefined}
+                                                    >
+                                                        <div>{opt.label}</div>
+                                                        <div className={`text-[9px] font-normal mt-0.5 ${isActive ? 'text-white/80' : 'text-slate-300'}`}>{opt.notes}</div>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
                                     {/* Speed */}
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
@@ -382,14 +437,36 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
                             >
                                 LEAVE
                             </Button>
-                            {isHost && (
+                            {isHost ? (
                                 <Button 
-                                    className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold shadow-lg rounded-xl"
+                                    className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold shadow-lg rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
                                     onClick={handleStartGame}
-                                    disabled={!lobbyData.song}
+                                    disabled={!lobbyData.song || !lobbyData.players.every(p => p.id === lobbyData.hostId || p.isReady)}
                                 >
-                                    START GAME
+                                    {!lobbyData.song
+                                        ? 'SELECT A SONG'
+                                        : !lobbyData.players.every(p => p.id === lobbyData.hostId || p.isReady)
+                                            ? `WAITING (${lobbyData.players.filter(p => p.id !== lobbyData.hostId && p.isReady).length}/${lobbyData.players.filter(p => p.id !== lobbyData.hostId).length} READY)`
+                                            : 'START GAME'
+                                    }
                                 </Button>
+                            ) : (
+                                (() => {
+                                    const me = lobbyData.players.find(p => p.id === mp.getSocketId());
+                                    const amReady = me?.isReady ?? false;
+                                    return (
+                                        <Button
+                                            className={`flex-1 font-bold shadow-lg rounded-xl transition-all ${
+                                                amReady
+                                                    ? 'bg-green-500 hover:bg-green-600 text-white'
+                                                    : 'bg-orange-500 hover:bg-orange-600 text-white'
+                                            }`}
+                                            onClick={() => lobbyData && mp.toggleReady(lobbyData.lobbyId)}
+                                        >
+                                            {amReady ? '\u2714 READY' : 'READY UP'}
+                                        </Button>
+                                    );
+                                })()
                             )}
                         </div>
                     </CardContent>

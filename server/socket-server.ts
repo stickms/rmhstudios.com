@@ -24,7 +24,7 @@ interface Player {
     health: number;
     isReady: boolean;
     isFinished: boolean;
-    difficulty: { speed: number; bombs: boolean; switching: boolean; suddenDeath: boolean; invisible: boolean };
+    difficulty: { speed: number; bombs: boolean; switching: boolean; suddenDeath: boolean; invisible: boolean; level: string };
 }
 
 interface Lobby {
@@ -68,7 +68,7 @@ io.on("connection", (socket: Socket) => {
         health: 100,
         isReady: false,
         isFinished: false,
-        difficulty: { speed: 1.0, bombs: false, switching: false, suddenDeath: false, invisible: false },
+        difficulty: { speed: 1.0, bombs: false, switching: false, suddenDeath: false, invisible: false, level: 'normal' },
     };
     
     lobby.players.set(socket.id, player);
@@ -295,6 +295,23 @@ io.on("connection", (socket: Socket) => {
           status: lobby.status,
           song: lobby.song
       });
+  });
+
+  // TOGGLE READY
+  socket.on("toggle_ready", ({ lobbyId }: { lobbyId: string }) => {
+      const lobby = lobbies.get(lobbyId);
+      if (!lobby) return;
+      const player = lobby.players.get(socket.id);
+      if (player) {
+          player.isReady = !player.isReady;
+          io.to(lobbyId).emit("lobby_update", {
+              lobbyId,
+              players: Array.from(lobby.players.values()),
+              hostId: lobby.hostId,
+              status: lobby.status,
+              song: lobby.song
+          });
+      }
   });
 
   // UPDATE DIFFICULTY

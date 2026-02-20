@@ -11,7 +11,7 @@ function fmt(s: number) {
 }
 
 export function HUD() {
-  const { score, combo, multiplier, health, maxHealth, opponents } = useGameStore();
+  const { score, combo, multiplier, health, maxHealth, opponents, modifiers } = useGameStore();
   const [currentTime, setCurrentTime] = useState(0);
   const [prevCombo, setPrevCombo] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -55,7 +55,7 @@ export function HUD() {
             <div className="bg-[#e0e5ec] shadow-[5px_5px_10px_#a3b1c6,-5px_-5px_10px_#ffffff] rounded-2xl px-4 py-2 text-right">
                 <div className="text-[10px] sm:text-xs text-slate-500 uppercase tracking-wider font-bold leading-none mb-1">Speed</div>
                 <div className="text-xl sm:text-2xl font-bold text-slate-700 leading-tight">
-                    {multiplier.toFixed(2)}x
+                    {modifiers.speed.toFixed(1)}x
                 </div>
             </div>
 

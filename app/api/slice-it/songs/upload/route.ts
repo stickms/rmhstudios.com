@@ -36,6 +36,18 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Invalid file type. Only audio files are allowed." }, { status: 400 });
         }
 
+        // Validate audio file size (max 5 MB)
+        const MAX_AUDIO_SIZE = 10 * 1024 * 1024; // 10 MB
+        if (file.size > MAX_AUDIO_SIZE) {
+            return NextResponse.json({ error: "Audio file too large. Maximum size is 10 MB." }, { status: 413 });
+        }
+
+        // Validate cover image size (max 2.5 MB)
+        const MAX_COVER_SIZE = 2.5 * 1024 * 1024; // 2.5 MB
+        if (coverFile && coverFile.size > MAX_COVER_SIZE) {
+            return NextResponse.json({ error: "Cover image too large. Maximum size is 2.5 MB." }, { status: 413 });
+        }
+
         // Prepare storage path
         const buffer = Buffer.from(await file.arrayBuffer());
         // Clean filename to prevent path traversal or weird chars

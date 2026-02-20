@@ -14,7 +14,7 @@ interface PlayerResult {
     health: number;
     isFinished: boolean;
     isLocal: boolean;
-    difficulty?: { speed: number; bombs: boolean; switching: boolean; suddenDeath: boolean; invisible: boolean };
+    difficulty?: { speed: number; bombs: boolean; switching: boolean; suddenDeath: boolean; invisible: boolean; level: string };
 }
 
 export function MatchResults({ onBack, isHost, lobbyId }: { onBack: () => void; isHost: boolean; lobbyId: string | null }) {
@@ -183,6 +183,16 @@ export function MatchResults({ onBack, isHost, lobbyId }: { onBack: () => void; 
                                         </span>
                                     ) : (
                                         <span className="text-[10px] font-bold text-slate-400 animate-pulse">Still playing...</span>
+                                    )}
+                                    {p.difficulty && p.difficulty.level && p.difficulty.level !== 'normal' && (
+                                        <span
+                                            className="text-[9px] font-bold px-1.5 py-0.5 rounded-full text-white"
+                                            style={{
+                                                backgroundColor: p.difficulty.level === 'easy' ? '#22c55e' : p.difficulty.level === 'hard' ? '#f97316' : p.difficulty.level === 'expert' ? '#ef4444' : '#3b82f6'
+                                            }}
+                                        >
+                                            {p.difficulty.level.toUpperCase()}
+                                        </span>
                                     )}
                                     {p.difficulty && p.difficulty.speed !== 1.0 && (
                                         <span className="text-[9px] font-bold text-purple-500 bg-purple-100 px-1.5 py-0.5 rounded-full">

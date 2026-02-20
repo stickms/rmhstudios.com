@@ -1,7 +1,3 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 @layer base {
   .slice-theme {
     --slice-bg: #e0e5ec;

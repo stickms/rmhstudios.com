@@ -112,8 +112,12 @@ class MultiplayerFactory {
         this.socket?.emit("leave_lobby", { lobbyId });
     }
 
-    public updateDifficulty(lobbyId: string, difficulty: { speed: number; bombs: boolean; switching: boolean; suddenDeath: boolean; invisible: boolean }) {
+    public updateDifficulty(lobbyId: string, difficulty: { speed: number; bombs: boolean; switching: boolean; suddenDeath: boolean; invisible: boolean; level: string }) {
         this.socket?.emit("update_difficulty", { lobbyId, difficulty });
+    }
+
+    public toggleReady(lobbyId: string) {
+        this.socket?.emit("toggle_ready", { lobbyId });
     }
 
     public returnToLobby(lobbyId: string) {

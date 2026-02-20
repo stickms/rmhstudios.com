@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Play, Settings, X, Check, ImagePlus } from 'lucide-react';
 import { Leaderboard } from './Leaderboard';
 import { SongComments } from './SongComments';
-import { useGameStore } from '@/lib/store/useGameStore';
+import { useGameStore, Difficulty } from '@/lib/store/useGameStore';
 import { Slider } from '@/components/ui/slider';
 import { authClient } from '@/lib/auth-client';
 import { toast } from 'sonner';
@@ -54,6 +54,7 @@ export function SongDetailsPanel({ song, onPlay, onSongUpdated }: SongDetailsPan
     const [showEdit, setShowEdit] = React.useState(false);
     const [editTitle, setEditTitle] = React.useState('');
     const [editArtist, setEditArtist] = React.useState('');
+    const [editBpm, setEditBpm] = React.useState('');
     const [editDescription, setEditDescription] = React.useState('');
     const [editCoverFile, setEditCoverFile] = React.useState<File | null>(null);
     const [editCoverPreview, setEditCoverPreview] = React.useState<string | null>(null);
@@ -63,15 +64,23 @@ export function SongDetailsPanel({ song, onPlay, onSongUpdated }: SongDetailsPan
         if (!song) return;
         setEditTitle(song.title);
         setEditArtist(song.artist);
+        setEditBpm(String(Math.round(song.bpm)));
         setEditDescription(song.description ?? '');
         setEditCoverFile(null);
         setEditCoverPreview(null);
         setShowEdit(true);
     };
 
+    const MAX_COVER_SIZE = 2.5 * 1024 * 1024; // 2.5 MB
+
     const handleCoverSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
+        if (file.size > MAX_COVER_SIZE) {
+            toast.error(`Cover image too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum size is 2.5 MB.`);
+            e.target.value = '';
+            return;
+        }
         setEditCoverFile(file);
         const url = URL.createObjectURL(file);
         setEditCoverPreview(url);
@@ -84,6 +93,7 @@ export function SongDetailsPanel({ song, onPlay, onSongUpdated }: SongDetailsPan
             const formData = new FormData();
             formData.append('title', editTitle);
             formData.append('artist', editArtist);
+            formData.append('bpm', editBpm);
             formData.append('description', editDescription);
             if (editCoverFile) formData.append('cover', editCoverFile);
 
@@ -94,7 +104,8 @@ export function SongDetailsPanel({ song, onPlay, onSongUpdated }: SongDetailsPan
             if (!res.ok) throw new Error(await res.text());
             const data = await res.json();
             const newCoverUrl = data.song?.coverUrl ?? song.coverUrl;
-            onSongUpdated?.({ title: editTitle, artist: editArtist, description: editDescription, coverUrl: newCoverUrl });
+            const newBpm = parseFloat(editBpm) || song.bpm;
+            onSongUpdated?.({ title: editTitle, artist: editArtist, bpm: newBpm, description: editDescription, coverUrl: newCoverUrl });
             setShowEdit(false);
             if (editCoverPreview) URL.revokeObjectURL(editCoverPreview);
             setEditCoverFile(null);
@@ -120,6 +131,11 @@ export function SongDetailsPanel({ song, onPlay, onSongUpdated }: SongDetailsPan
 
     const getScoreMultiplier = () => {
         let mult = 1.0;
+        // Difficulty base multiplier
+        if (modifiers.difficulty === 'easy') mult *= 0.7;
+        else if (modifiers.difficulty === 'normal') mult *= 1.0;
+        else if (modifiers.difficulty === 'hard') mult *= 1.3;
+        else if (modifiers.difficulty === 'expert') mult *= 1.5;
         if (modifiers.invisible) mult += 0.2;
         if (modifiers.speed > 1.0) mult += (modifiers.speed - 1.0) * 0.5;
         if (modifiers.suddenDeath) mult += 0.3;
@@ -169,6 +185,10 @@ export function SongDetailsPanel({ song, onPlay, onSongUpdated }: SongDetailsPan
                             <div className="space-y-1">
                                 <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Artist</label>
                                 <Input value={editArtist} onChange={e => setEditArtist(e.target.value)} className="bg-slate-50 text-slate-700 border-slate-200" />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">BPM</label>
+                                <Input type="number" value={editBpm} onChange={e => setEditBpm(e.target.value)} className="bg-slate-50 text-slate-700 border-slate-200" placeholder="e.g. 120" />
                             </div>
                             <div className="space-y-1">
                                 <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Description</label>
@@ -227,7 +247,12 @@ export function SongDetailsPanel({ song, onPlay, onSongUpdated }: SongDetailsPan
                             </div>
                             <div className="flex flex-col">
                                 <span className="text-[10px] font-bold text-slate-400 uppercase">Difficulty</span>
-                                <span className="font-mono text-blue-500 font-bold text-sm">PRO</span>
+                                <span className={`font-mono font-bold text-sm ${
+                                    modifiers.difficulty === 'easy' ? 'text-green-500' :
+                                    modifiers.difficulty === 'normal' ? 'text-blue-500' :
+                                    modifiers.difficulty === 'hard' ? 'text-orange-500' :
+                                    'text-red-500'
+                                }`}>{modifiers.difficulty.toUpperCase()}</span>
                             </div>
                         </div>
                     </div>
@@ -251,6 +276,40 @@ export function SongDetailsPanel({ song, onPlay, onSongUpdated }: SongDetailsPan
 
             {/* Modifiers Section */}
             <div className="p-4 border-b border-slate-200">
+                <h3 className="text-sm font-bold text-slate-700 uppercase mb-3">Difficulty</h3>
+                <div className="grid grid-cols-4 gap-1.5 mb-4">
+                    {(['easy', 'normal', 'hard', 'expert'] as Difficulty[]).map(d => {
+                        const isActive = modifiers.difficulty === d;
+                        const colorMap: Record<Difficulty, string> = {
+                            easy: '#22c55e',
+                            normal: '#3b82f6',
+                            hard: '#f97316',
+                            expert: '#ef4444'
+                        };
+                        const noteMap: Record<Difficulty, string> = {
+                            easy: '70%',
+                            normal: '100%',
+                            hard: '150%',
+                            expert: '200%'
+                        };
+                        return (
+                            <button
+                                key={d}
+                                onClick={() => setModifiers({ ...modifiers, difficulty: d })}
+                                className={`px-2 py-2 rounded-lg text-xs font-bold uppercase tracking-wide transition-all border ${
+                                    isActive
+                                        ? 'text-white shadow-md scale-[1.02]'
+                                        : 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100'
+                                }`}
+                                style={isActive ? { backgroundColor: colorMap[d], borderColor: colorMap[d] } : undefined}
+                            >
+                                <div>{d}</div>
+                                <div className={`text-[10px] font-normal mt-0.5 ${isActive ? 'text-white/80' : 'text-slate-300'}`}>{noteMap[d]} notes</div>
+                            </button>
+                        );
+                    })}
+                </div>
+
                 <h3 className="text-sm font-bold text-slate-700 uppercase mb-3">Game Modifiers</h3>
                 <div className="grid grid-cols-2 gap-2 mb-4">
                     <ModifierToggle

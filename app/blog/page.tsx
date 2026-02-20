@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { getAllPosts } from "@/lib/blog";
 import { BlogList } from "@/components/blog/BlogList";
 
@@ -15,7 +16,13 @@ export default function BlogIndexPage() {
         <div className="absolute inset-0 noise opacity-50 pointer-events-none" />
         <div className="absolute top-0 left-1/4 w-1/2 h-[50vh] bg-[var(--neon-blue)]/5 blur-[100px] pointer-events-none" />
 
-        <BlogList initialPosts={posts} />
+        <Suspense fallback={
+          <div className="container mx-auto max-w-6xl relative z-10 text-center py-20">
+            <div className="text-white/30 animate-pulse">Loading archive...</div>
+          </div>
+        }>
+          <BlogList initialPosts={posts} />
+        </Suspense>
     </main>
   );
 }

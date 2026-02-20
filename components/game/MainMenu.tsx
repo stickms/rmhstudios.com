@@ -179,7 +179,7 @@ export function MainMenu({ engine }: MainMenuProps) {
                 }
 
                 setLoadingProgress(40);
-                map = await BeatDetector.generateMap(audioBuffer, song.id, song.title, song.artist);
+                map = await BeatDetector.generateMap(audioBuffer, song.id, song.title, song.artist, bpm);
                 map.audioUrl = audioUrl;
                 map.bpm = bpm;
             }

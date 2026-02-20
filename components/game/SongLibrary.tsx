@@ -37,6 +37,8 @@ export function SongLibrary({ onSelect, onHighlight, selectedSongId }: {
     const [songs, setSongs] = useState<Song[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [isUploading, setIsUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
+    const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
     
     // Global Volume
     const { volume } = useGameStore();
@@ -78,9 +80,17 @@ export function SongLibrary({ onSelect, onHighlight, selectedSongId }: {
         }
     };
 
+    const MAX_AUDIO_SIZE = 10 * 1024 * 1024; // 10 MB
+
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
+
+        if (file.size > MAX_AUDIO_SIZE) {
+            toast.error(`Audio file too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum size is 10 MB.`);
+            e.target.value = '';
+            return;
+        }
         
         setUploadFile(file);
         // Default values
@@ -112,6 +122,8 @@ export function SongLibrary({ onSelect, onHighlight, selectedSongId }: {
         if (!uploadFile || !session.data) return;
 
         setIsUploading(true);
+        setUploadProgress(0);
+
         const formData = new FormData();
         formData.append('file', uploadFile);
         formData.append('title', uploadTitle);
@@ -120,31 +132,43 @@ export function SongLibrary({ onSelect, onHighlight, selectedSongId }: {
         formData.append('duration', String(uploadDuration));
         formData.append('description', uploadDescription);
         
-        try {
-            const res = await fetch('/api/slice-it/songs/upload', {
-                method: 'POST',
-                body: formData,
-            });
-            
-            if (res.ok) {
-                const data = await res.json();
+        const xhr = new XMLHttpRequest();
+
+        xhr.upload.addEventListener('progress', (event) => {
+            if (event.lengthComputable) {
+                const percent = Math.round((event.loaded / event.total) * 100);
+                setUploadProgress(percent);
+            }
+        });
+
+        xhr.addEventListener('load', () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
                 setUploadFile(null);
                 setUploadDescription("");
-                // Close dialog logic would be nice, but simple refresh for now
-                fetchSongs(); 
-                // Maybe open details for the new song?
-                if(data.song) {
-                   // Optional: Expand new song details
-                }
+                setUploadProgress(100);
+                toast.success("Track uploaded successfully!");
+                fetchSongs();
+                // Auto-close dialog after a brief moment
+                setTimeout(() => {
+                    setUploadDialogOpen(false);
+                    setUploadProgress(0);
+                    setIsUploading(false);
+                }, 600);
             } else {
                 toast.error("Upload failed");
+                setIsUploading(false);
+                setUploadProgress(0);
             }
-        } catch (err) {
-            console.error(err);
+        });
+
+        xhr.addEventListener('error', () => {
             toast.error("Upload error");
-        } finally {
             setIsUploading(false);
-        }
+            setUploadProgress(0);
+        });
+
+        xhr.open('POST', '/api/slice-it/songs/upload');
+        xhr.send(formData);
     };
 
     const togglePreview = (song: Song) => {
@@ -200,7 +224,7 @@ export function SongLibrary({ onSelect, onHighlight, selectedSongId }: {
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
                     />
                 </div>
-                <Dialog>
+                <Dialog open={uploadDialogOpen} onOpenChange={(open) => { if (!isUploading) setUploadDialogOpen(open); }}>
                     <DialogTrigger asChild>
                          <Button className="h-9 w-9 rounded-lg bg-blue-500 text-white hover:bg-blue-600 p-0">
                             <Upload className="w-4 h-4" />
@@ -263,8 +287,23 @@ export function SongLibrary({ onSelect, onHighlight, selectedSongId }: {
                                 </div>
                             )}
 
+                            {isUploading && (
+                                <div className="space-y-2 mt-4">
+                                    <div className="flex justify-between text-xs font-bold text-slate-500">
+                                        <span>UPLOADING...</span>
+                                        <span>{uploadProgress}%</span>
+                                    </div>
+                                    <div className="w-full h-3 bg-slate-200 rounded-full overflow-hidden">
+                                        <div 
+                                            className="h-full bg-blue-500 rounded-full transition-all duration-300 ease-out"
+                                            style={{ width: `${uploadProgress}%` }}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
                             <Button type="submit" disabled={isUploading || !uploadFile} className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold h-12 rounded-xl mt-4">
-                                {isUploading ? 'UPLOADING...' : 'UPLOAD TRACK'}
+                                {isUploading ? `UPLOADING... ${uploadProgress}%` : 'UPLOAD TRACK'}
                             </Button>
                         </form>
                     </DialogContent>
@@ -323,7 +362,7 @@ export function SongLibrary({ onSelect, onHighlight, selectedSongId }: {
                                 </Button>
                             )}
                             <Button
-                                onClick={(e) => { e.stopPropagation(); onSelect(song); }}
+                                onClick={(e) => { e.stopPropagation(); onHighlight(song); }}
                                 className="bg-blue-500 hover:bg-blue-600 text-white font-bold px-3 h-8 rounded-lg text-xs"
                             >
                                 PLAY

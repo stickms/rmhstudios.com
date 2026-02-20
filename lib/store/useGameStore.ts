@@ -6,12 +6,15 @@ interface Keybinds {
   lane2: string;
 }
 
+export type Difficulty = 'easy' | 'normal' | 'hard' | 'expert';
+
 interface Modifiers {
   invisible: boolean;
   speed: number;
   suddenDeath: boolean;
   bombs: boolean;
   switching: boolean;
+  difficulty: Difficulty;
 }
 
 interface GameState {
@@ -95,7 +98,8 @@ export const useGameStore = create<GameState>()(
           speed: 1.0,
           suddenDeath: false,
           bombs: false,
-          switching: false
+          switching: false,
+          difficulty: 'normal' as Difficulty,
       },
       isPaused: false,
       volume: 100,

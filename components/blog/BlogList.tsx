@@ -1,43 +1,83 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { ArrowLeft, Search, Calendar, Tag, Filter, ArrowUpAZ, ArrowDownAZ, Clock } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { ArrowLeft, Search, Calendar, Filter, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, X } from "lucide-react";
 import { ShareButton } from "@/components/blog/ShareButton";
 import { Post } from "@/lib/blog";
 import { ProximityText } from "@/components/ui/ProximityText";
+
+const POSTS_PER_PAGE = 12;
+
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+  useEffect(() => {
+    const handler = setTimeout(() => setDebouncedValue(value), delay);
+    return () => clearTimeout(handler);
+  }, [value, delay]);
+  return debouncedValue;
+}
 
 interface BlogListProps {
   initialPosts: Partial<Post>[];
 }
 
 export function BlogList({ initialPosts }: BlogListProps) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedTag, setSelectedTag] = useState<string | null>(null);
-  const [sortMode, setSortMode] = useState<"newest" | "oldest" | "az" | "za">("newest");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Read initial state from URL params
+  const [searchInput, setSearchInput] = useState(searchParams.get("q") || "");
+  const debouncedSearch = useDebounce(searchInput, 250);
+  const [selectedTag, setSelectedTag] = useState<string | null>(searchParams.get("tag") || null);
+  const [sortMode, setSortMode] = useState<"newest" | "oldest" | "az" | "za">(
+    (searchParams.get("sort") as "newest" | "oldest" | "az" | "za") || "newest"
+  );
+  const [currentPage, setCurrentPage] = useState(Number(searchParams.get("page")) || 1);
   const [showAllTags, setShowAllTags] = useState(false);
+  const gridRef = useRef<HTMLDivElement>(null);
 
-
-  // Extract all unique tags
-  const allTags = useMemo(() => {
-    const tags = new Set<string>();
-    initialPosts.forEach(post => {
-      post.tags?.forEach(tag => tags.add(tag));
+  // Sync URL params when filters change
+  const updateURL = useCallback((params: Record<string, string | null>) => {
+    const url = new URLSearchParams(searchParams.toString());
+    Object.entries(params).forEach(([key, value]) => {
+      if (value && value !== "" && !(key === "page" && value === "1") && !(key === "sort" && value === "newest")) {
+        url.set(key, value);
+      } else {
+        url.delete(key);
+      }
     });
-    return Array.from(tags);
+    const qs = url.toString();
+    router.replace(`/blog${qs ? `?${qs}` : ""}`, { scroll: false });
+  }, [router, searchParams]);
+
+  // Extract all unique tags, sorted by frequency
+  const allTags = useMemo(() => {
+    const tagCounts = new Map<string, number>();
+    initialPosts.forEach(post => {
+      post.tags?.forEach(tag => tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1));
+    });
+    return Array.from(tagCounts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([tag]) => tag);
   }, [initialPosts]);
 
   // Filter and Sort
   const filteredPosts = useMemo(() => {
     let result = [...initialPosts];
 
-    // Search
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      result = result.filter(post => 
-        post.title?.toLowerCase().includes(q) || 
-        post.description?.toLowerCase().includes(q)
+    // Search (uses debounced value)
+    if (debouncedSearch) {
+      const q = debouncedSearch.toLowerCase();
+      const terms = q.split(/\s+/).filter(Boolean);
+      result = result.filter(post =>
+        terms.every(term =>
+          post.title?.toLowerCase().includes(term) ||
+          post.description?.toLowerCase().includes(term) ||
+          post.tags?.some(tag => tag.toLowerCase().includes(term))
+        )
       );
     }
 
@@ -56,9 +96,60 @@ export function BlogList({ initialPosts }: BlogListProps) {
     });
 
     return result;
-  }, [initialPosts, searchQuery, selectedTag, sortMode]);
+  }, [initialPosts, debouncedSearch, selectedTag, sortMode]);
 
+  // Pagination
+  const totalPages = Math.max(1, Math.ceil(filteredPosts.length / POSTS_PER_PAGE));
 
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+    updateURL({ q: debouncedSearch || null, tag: selectedTag, sort: sortMode, page: null });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch, selectedTag, sortMode]);
+
+  // Clamp page on filter changes
+  const safePage = Math.min(currentPage, totalPages);
+  useEffect(() => {
+    if (currentPage !== safePage) setCurrentPage(safePage);
+  }, [currentPage, safePage]);
+
+  const paginatedPosts = useMemo(() => {
+    const start = (safePage - 1) * POSTS_PER_PAGE;
+    return filteredPosts.slice(start, start + POSTS_PER_PAGE);
+  }, [filteredPosts, safePage]);
+
+  const goToPage = useCallback((page: number) => {
+    const p = Math.max(1, Math.min(page, totalPages));
+    setCurrentPage(p);
+    updateURL({ q: debouncedSearch || null, tag: selectedTag, sort: sortMode, page: p > 1 ? String(p) : null });
+    gridRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [totalPages, updateURL, debouncedSearch, selectedTag, sortMode]);
+
+  // Generate page numbers with ellipsis
+  const pageNumbers = useMemo(() => {
+    const pages: (number | "...")[] = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (safePage > 3) pages.push("...");
+      for (let i = Math.max(2, safePage - 1); i <= Math.min(totalPages - 1, safePage + 1); i++) {
+        pages.push(i);
+      }
+      if (safePage < totalPages - 2) pages.push("...");
+      pages.push(totalPages);
+    }
+    return pages;
+  }, [totalPages, safePage]);
+
+  const clearAllFilters = () => {
+    setSearchInput("");
+    setSelectedTag(null);
+    setSortMode("newest");
+  };
+
+  const hasActiveFilters = searchInput || selectedTag || sortMode !== "newest";
 
   return (
     <div className="container mx-auto max-w-6xl relative z-10">
@@ -79,7 +170,10 @@ export function BlogList({ initialPosts }: BlogListProps) {
               <ProximityText>The Archive</ProximityText>
             </h1>
             <p className="text-white/60 mt-2 text-lg">
-              {filteredPosts.length} entries found
+              {filteredPosts.length} {filteredPosts.length === 1 ? "entry" : "entries"} found
+              {filteredPosts.length !== initialPosts.length && (
+                <span className="text-white/30"> of {initialPosts.length} total</span>
+              )}
             </p>
           </div>
 
@@ -90,11 +184,19 @@ export function BlogList({ initialPosts }: BlogListProps) {
              </div>
              <input
                 type="text"
-                placeholder="Search logs..."
-                className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white placeholder-white/30 focus:outline-none focus:border-[var(--neon-pink)] focus:ring-1 focus:ring-[var(--neon-pink)] transition-all"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search titles, descriptions, tags..."
+                className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-10 text-white placeholder-white/30 focus:outline-none focus:border-[var(--neon-pink)] focus:ring-1 focus:ring-[var(--neon-pink)] transition-all"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
              />
+             {searchInput && (
+               <button
+                 onClick={() => setSearchInput("")}
+                 className="absolute inset-y-0 right-0 pr-3 flex items-center text-white/30 hover:text-white transition-colors"
+               >
+                 <X className="h-4 w-4" />
+               </button>
+             )}
           </div>
         </div>
 
@@ -129,14 +231,30 @@ export function BlogList({ initialPosts }: BlogListProps) {
                     (+ {allTags.length - 5} more)
                   </button>
               )}
+              {showAllTags && allTags.length > 5 && (
+                  <button
+                    onClick={() => setShowAllTags(false)}
+                    className="text-xs text-[var(--neon-cyan)] hover:text-white transition-colors ml-1 font-mono"
+                  >
+                    (show less)
+                  </button>
+              )}
            </div>
 
-           {/* Sort */}
+           {/* Sort + Clear */}
            <div className="flex items-center gap-3 whitespace-nowrap shrink-0">
+              {hasActiveFilters && (
+                <button
+                  onClick={clearAllFilters}
+                  className="text-xs text-[var(--neon-pink)] hover:text-white transition-colors font-mono flex items-center gap-1"
+                >
+                  <X className="w-3 h-3" /> Clear all
+                </button>
+              )}
               <span className="text-sm text-white/40">Sort by:</span>
               <select 
                 value={sortMode}
-                onChange={(e) => setSortMode(e.target.value as any)}
+                onChange={(e) => setSortMode(e.target.value as "newest" | "oldest" | "az" | "za")}
                 className="bg-black/40 border border-white/10 rounded-lg py-1 px-3 text-sm text-white focus:outline-none focus:border-[var(--neon-pink)]"
               >
                 <option value="newest">Newest</option>
@@ -146,12 +264,19 @@ export function BlogList({ initialPosts }: BlogListProps) {
               </select>
            </div>
         </div>
+
+        {/* Pagination Info */}
+        {totalPages > 1 && (
+          <div className="text-sm text-white/40 font-mono">
+            Showing {(safePage - 1) * POSTS_PER_PAGE + 1}-{Math.min(safePage * POSTS_PER_PAGE, filteredPosts.length)} of {filteredPosts.length}
+          </div>
+        )}
       </motion.div>
 
       {/* Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div ref={gridRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 scroll-mt-8">
         <AnimatePresence mode="popLayout">
-          {filteredPosts.map((post) => (
+          {paginatedPosts.map((post) => (
             <motion.div
               layout
               key={post.slug}
@@ -164,7 +289,6 @@ export function BlogList({ initialPosts }: BlogListProps) {
                   <Link href={`/blog/${post.slug}`} className="absolute inset-0 z-0" />
                   
                   {/* Share Button (Above Link Z-Index) */}
-
                   <ShareButton slug={post.slug!} className="absolute top-3 right-3 z-10" />
 
                   {/* Image Placeholder */}
@@ -211,16 +335,94 @@ export function BlogList({ initialPosts }: BlogListProps) {
         
         {filteredPosts.length === 0 && (
             <div className="col-span-full text-center py-20 text-white/30">
-                <p>No logs found matching your filters.</p>
+                <p className="text-lg">No logs found matching your filters.</p>
+                {debouncedSearch && (
+                  <p className="mt-2 text-sm">Try different search terms or fewer filters.</p>
+                )}
                 <button 
-                    onClick={() => {setSearchQuery(""); setSelectedTag(null);}}
+                    onClick={clearAllFilters}
                     className="mt-4 text-[var(--neon-pink)] hover:underline"
                 >
-                    Clear Filters
+                    Clear All Filters
                 </button>
             </div>
         )}
       </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <motion.div
+          className="mt-12 flex flex-col items-center gap-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+        >
+          <div className="flex items-center gap-1 sm:gap-2">
+            {/* First page */}
+            <button
+              onClick={() => goToPage(1)}
+              disabled={safePage === 1}
+              className="p-2 rounded-lg text-white/50 hover:text-white hover:bg-white/10 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+              aria-label="First page"
+            >
+              <ChevronsLeft className="w-4 h-4" />
+            </button>
+
+            {/* Previous */}
+            <button
+              onClick={() => goToPage(safePage - 1)}
+              disabled={safePage === 1}
+              className="p-2 rounded-lg text-white/50 hover:text-white hover:bg-white/10 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+              aria-label="Previous page"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+
+            {/* Page numbers */}
+            {pageNumbers.map((page, i) =>
+              page === "..." ? (
+                <span key={`ellipsis-${i}`} className="px-2 text-white/30 text-sm">...</span>
+              ) : (
+                <button
+                  key={page}
+                  onClick={() => goToPage(page as number)}
+                  className={`w-9 h-9 rounded-lg text-sm font-bold transition-all ${
+                    safePage === page
+                      ? "bg-[var(--neon-pink)] text-white shadow-lg shadow-[var(--neon-pink)]/25"
+                      : "text-white/50 hover:text-white hover:bg-white/10"
+                  }`}
+                >
+                  {page}
+                </button>
+              )
+            )}
+
+            {/* Next */}
+            <button
+              onClick={() => goToPage(safePage + 1)}
+              disabled={safePage === totalPages}
+              className="p-2 rounded-lg text-white/50 hover:text-white hover:bg-white/10 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+              aria-label="Next page"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+
+            {/* Last page */}
+            <button
+              onClick={() => goToPage(totalPages)}
+              disabled={safePage === totalPages}
+              className="p-2 rounded-lg text-white/50 hover:text-white hover:bg-white/10 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+              aria-label="Last page"
+            >
+              <ChevronsRight className="w-4 h-4" />
+            </button>
+          </div>
+
+          <p className="text-xs text-white/30 font-mono">
+            Page {safePage} of {totalPages}
+          </p>
+        </motion.div>
+      )}
     </div>
   );
 }

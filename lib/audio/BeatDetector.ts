@@ -2,18 +2,45 @@
 import { BeatMap, Slice } from '../game/types';
 import { BPMDetector } from './BPMDetector';
 
+/**
+ * Simple seeded PRNG (mulberry32) for deterministic beatmap generation.
+ * Seed is derived from songId + bpm so the same song/bpm always produces
+ * the same map.
+ */
+function createSeededRandom(seed: string): () => number {
+    let h = 0;
+    for (let i = 0; i < seed.length; i++) {
+        h = Math.imul(31, h) + seed.charCodeAt(i) | 0;
+    }
+    // mulberry32
+    return () => {
+        h |= 0; h = h + 0x6D2B79F5 | 0;
+        let t = Math.imul(h ^ h >>> 15, 1 | h);
+        t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+}
+
 export class BeatDetector {
     /**
      * Advanced Beat Detection and Map Generation
      * Uses Spectral Flux and Energy Variance to find onsets
      * Aligns notes to a grid based on detected BPM
+     *
+     * @param overrideBpm  If provided (> 0), skip auto-detection and use this value.
      */
-    public static async generateMap(buffer: AudioBuffer, id: string, name: string, artist: string): Promise<BeatMap> {
+    public static async generateMap(buffer: AudioBuffer, id: string, name: string, artist: string, overrideBpm?: number): Promise<BeatMap> {
         console.log(`BeatDetector: Generating map for ${name} (${id}). Buffer duration: ${buffer.duration}`);
-        // 1. Detect BPM
-        let bpm = await BPMDetector.detect(buffer);
-        console.log(`Detected BPM: ${bpm}`);
-        if (bpm <= 0) bpm = 120;
+        // 1. Detect or use override BPM
+        let bpm: number;
+        if (overrideBpm && overrideBpm > 0) {
+            bpm = overrideBpm;
+            console.log(`Using override BPM: ${bpm}`);
+        } else {
+            bpm = await BPMDetector.detect(buffer);
+            console.log(`Detected BPM: ${bpm}`);
+            if (bpm <= 0) bpm = 120;
+        }
 
         // 2. Prepare analysis
         const offlineCtx = new OfflineAudioContext(1, buffer.length, buffer.sampleRate);
@@ -102,12 +129,13 @@ export class BeatDetector {
             }
         });
         
+        // Create a deterministic PRNG seeded by songId + bpm
+        const rng = createSeededRandom(`${id}-${bpm}`);
+
         // Convert to Slices
         quantizedPeaks.forEach((p, index) => {
-            // Determine lane based on... Random for now or Stereo separation if we had it.
-            // Let's use simple logic: alternating or random.
-            // Improve: Use index parity?
-            const lane = Math.random() > 0.5 ? 1 : 0;
+            // Deterministic lane assignment based on seeded PRNG
+            const lane = rng() > 0.5 ? 1 : 0;
             
             slices.push({
                 id: `slice-${index}`,

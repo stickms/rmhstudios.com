@@ -142,14 +142,21 @@ export function GameCanvas() {
             console.log("Countdown starting...", countdownSeconds);
             let remaining = countdownSeconds;
             setCountdown(remaining);
+            // Play beep for the first tick
+            const sfxVol = useGameStore.getState().sfxVolume / 100;
+            AudioManager.getInstance().playSfX(660, 'sine', 0.12, sfxVol * 0.6);
             const interval = setInterval(() => {
                 remaining--;
                 if (remaining <= 0) {
                     clearInterval(interval);
                     setCountdown(0);
+                    // Higher-pitched beep for "Go!"
+                    AudioManager.getInstance().playSfX(880, 'sine', 0.15, sfxVol * 0.8);
                     engine?.start();
                 } else {
                     setCountdown(remaining);
+                    // Beep on each countdown second
+                    AudioManager.getInstance().playSfX(660, 'sine', 0.12, sfxVol * 0.6);
                 }
             }, 1000);
         };
@@ -416,7 +423,50 @@ export function GameCanvas() {
                 // Cull off-screen
                 if (sliceX < -100 || sliceX > w + 100) return;
 
-                const y = LANE_Y[slice.lane];
+                // Compute effective lane (SWITCH notes flip lanes near the hit line)
+                let effectiveLane = slice.lane;
+                let switchProgress = 0; // 0 = original lane, 1 = switched lane
+                if (slice.type === 'SWITCH') {
+                    const switchLeadTime = 0.8 / speedMod;
+                    const switchTime = slice.time - switchLeadTime;
+                    const timeUntilSwitch = switchTime - currentTime;
+                    const animDuration = 0.15 / speedMod; // animation duration in audio-seconds
+                    if (currentTime >= switchTime) {
+                        switchProgress = 1;
+                        effectiveLane = slice.lane === 0 ? 1 : 0;
+                    } else if (timeUntilSwitch < animDuration) {
+                        // Animating between lanes
+                        switchProgress = 1 - (timeUntilSwitch / animDuration);
+                        effectiveLane = slice.lane; // still in original for hit detection purposes
+                    }
+                }
+
+                // Interpolate Y position for switch animation
+                const origY = LANE_Y[slice.lane];
+                const destY = LANE_Y[slice.lane === 0 ? 1 : 0];
+                const y = slice.type === 'SWITCH'
+                    ? origY + (destY - origY) * switchProgress
+                    : LANE_Y[slice.lane];
+
+                // Invisible modifier: notes fade out as they approach the hit line
+                // Similar to osu! Hidden — notes appear, then fade to invisible
+                // Fade starts at ~60% of the visible distance, fully invisible at ~30%
+                const isInvisibleMod = useGameStore.getState().modifiers.invisible;
+                if (isInvisibleMod && slice.type !== 'BOMB') {
+                    const timeUntilHit = slice.time - currentTime; // audio-seconds until hit
+                    const visibleWindow = 3.0 / speedMod; // total visible window in audio-seconds
+                    const travelRatio = timeUntilHit / visibleWindow; // 1.0 = just spawned, 0.0 = at hit line
+                    // Fade: fully visible from 1.0 to 0.30, fade from 0.30 to 0.15, invisible below 0.15
+                    if (travelRatio < 0.15) {
+                        ctx.globalAlpha = 0;
+                        // Skip rendering entirely
+                        return;
+                    } else if (travelRatio < 0.30) {
+                        ctx.globalAlpha = (travelRatio - 0.15) / 0.15; // 0→1 over the fade range
+                    } else {
+                        ctx.globalAlpha = 1;
+                    }
+                }
                 
                 // Color mapping
                 let color = '#475569';
@@ -454,12 +504,15 @@ export function GameCanvas() {
                     ctx.roundRect(-size / 2, -size / 2, size, size, 4);
                     ctx.fill();
                     ctx.restore();
-                    // Arrow symbol
+                    // Arrow symbol pointing toward destination lane
                     ctx.fillStyle = 'rgba(255,255,255,0.85)';
                     ctx.font = `bold ${Math.round(size * 0.55)}px sans-serif`;
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
-                    ctx.fillText('⇄', sliceX, y);
+                    const arrow = switchProgress < 1
+                        ? (slice.lane === 0 ? '↓' : '↑')   // pre-switch: arrow pointing to destination
+                        : '⇄';                               // post-switch: settled
+                    ctx.fillText(arrow, sliceX, y);
                     ctx.textBaseline = 'alphabetic';
                 } else {
                     // Standard Note
@@ -474,6 +527,11 @@ export function GameCanvas() {
                     ctx.beginPath();
                     ctx.arc(sliceX - size*0.15, y - size*0.15, size/4, 0, Math.PI*2);
                     ctx.fill();
+                }
+
+                // Reset alpha after each note if invisible mod is active
+                if (isInvisibleMod) {
+                    ctx.globalAlpha = 1;
                 }
             });
             ctx.shadowColor = 'transparent'; // Reset
@@ -512,9 +570,15 @@ export function GameCanvas() {
             ctx.fillStyle = latestFeedback.color;
             ctx.font = '900 32px sans-serif';
             ctx.shadowColor = latestFeedback.color;
-            ctx.shadowBlur = 10;
-            ctx.fillText(latestFeedback.text, w / 2, h * 0.4);
+            ctx.shadowBlur = 6;
+            ctx.fillText(latestFeedback.text, w / 2, h * 0.5);
             
+            // Reset shadow completely before drawing offset text
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+
             // Milliseconds Offset
             if (latestFeedback.offset !== undefined) {
                  const ms = Math.round(latestFeedback.offset * 1000);
@@ -522,9 +586,8 @@ export function GameCanvas() {
                  const offsetText = `${sign}${ms}ms`;
                  
                  ctx.font = 'bold 16px monospace';
-                 ctx.fillStyle = Math.abs(ms) < 20 ? '#ffffff' : '#cbd5e0';
-                 ctx.shadowBlur = 0;
-                 ctx.fillText(offsetText, w / 2, h * 0.4 + 25);
+                 ctx.fillStyle = Math.abs(ms) < 20 ? '#334155' : '#64748b';
+                 ctx.fillText(offsetText, w / 2, h * 0.5 + 30);
             }
             
             ctx.restore();
