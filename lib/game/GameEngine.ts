@@ -2,6 +2,7 @@ import { AudioManager } from '../audio/AudioManager';
 import { BeatMap, Slice, HIT_WINDOWS, HitResult } from './types';
 import { useGameStore, Difficulty } from '../store/useGameStore';
 import { MultiplayerFactory } from "./MultiplayerFactory";
+import { calculateScoreMultiplier } from './score';
 
 /**
  * Simple seeded PRNG (mulberry32) for deterministic difficulty filtering.
@@ -405,22 +406,7 @@ export class GameEngine {
         
         // Calculate Score Multiplier
         const m = useGameStore.getState().modifiers;
-        let scoreMultiplier = 1.0;
-        // ... (modifiers logic is same, fine to re-calc)
-        // Difficulty multiplier
-        if (m.difficulty === 'easy') scoreMultiplier *= 0.7;
-        else if (m.difficulty === 'normal') scoreMultiplier *= 1.0;
-        else if (m.difficulty === 'hard') scoreMultiplier *= 1.3;
-        else if (m.difficulty === 'expert') scoreMultiplier *= 1.5;
-
-        if (m.oneTrack) scoreMultiplier -= 0.3;
-
-        if (m.invisible) scoreMultiplier += 0.2;
-        if (m.speed > 1.0) scoreMultiplier += (m.speed - 1.0) * 0.5;
-        if (m.bombs) scoreMultiplier += 0.15;
-        if (m.switching) scoreMultiplier += 0.15;
-        if (m.spin) scoreMultiplier += 0.15;
-        if (m.strictTiming) scoreMultiplier += 0.25;
+        const scoreMultiplier = calculateScoreMultiplier(m);
 
         // Visual Feedback Params
         let feedbackLane = slice?.lane ?? 0; // Default to 0 if null, or pass it in? 

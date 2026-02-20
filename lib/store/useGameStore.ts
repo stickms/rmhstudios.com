@@ -8,7 +8,7 @@ interface Keybinds {
 
 export type Difficulty = 'easy' | 'normal' | 'hard' | 'expert';
 
-interface Modifiers {
+export interface Modifiers {
   invisible: boolean;
   speed: number;
   suddenDeath: boolean;

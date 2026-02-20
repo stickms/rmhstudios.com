@@ -10,6 +10,7 @@ import { useGameStore, Difficulty } from '@/lib/store/useGameStore';
 import { Slider } from '@/components/ui/slider';
 import { authClient } from '@/lib/auth-client';
 import { toast } from 'sonner';
+import { calculateScoreMultiplier } from '@/lib/game/score';
 
 interface Song {
     id: string;
@@ -130,20 +131,7 @@ export function SongDetailsPanel({ song, onPlay, onSongUpdated }: SongDetailsPan
     }
 
     const getScoreMultiplier = () => {
-        let mult = 1.0;
-        // Difficulty base multiplier
-        if (modifiers.difficulty === 'easy') mult *= 0.7;
-        else if (modifiers.difficulty === 'normal') mult *= 1.0;
-        else if (modifiers.difficulty === 'hard') mult *= 1.3;
-        else if (modifiers.difficulty === 'expert') mult *= 1.5;
-        if (modifiers.oneTrack) mult -= 0.3;
-        if (modifiers.invisible) mult += 0.2;
-        if (modifiers.speed > 1.0) mult += (modifiers.speed - 1.0) * 0.5;
-        if (modifiers.bombs) mult += 0.15;
-        if (modifiers.switching) mult += 0.15;
-        if (modifiers.spin) mult += 0.15;
-        if (modifiers.strictTiming) mult += 0.25;
-        return mult;
+        return calculateScoreMultiplier(modifiers);
     };
 
     return (

@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { Copy, Share2, Check, Zap, Bomb, Shuffle, EyeOff, Skull, Info, ChevronDown, ChevronUp, Settings, RotateCw, Target, Minus } from 'lucide-react';
 
 import { SongLibrary } from '@/components/game/SongLibrary'; // Import SongLibrary
+import { calculateScoreMultiplier } from '@/lib/game/score';
 
 interface Player {
     id: string;
@@ -199,20 +200,8 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
     };
 
     const calcMultiplier = (d: typeof myDifficulty) => {
-        let m = 1.0;
-        // Difficulty level multiplier (must match GameEngine.ts / SongDetailsPanel.tsx)
-        if (d.level === 'easy') m *= 0.7;
-        else if (d.level === 'normal') m *= 1.0;
-        else if (d.level === 'hard') m *= 1.3;
-        else if (d.level === 'expert') m *= 1.5;
-        if (d.invisible) m += 0.2;
-        if (d.speed > 1.0) m += (d.speed - 1.0) * 0.5;
-        if (d.bombs) m += 0.15;
-        if (d.switching) m += 0.15;
-        if (d.spin) m += 0.15;
-        if (d.strictTiming) m += 0.25;
-        if (d.oneTrack) m -= 0.3;
-        return m;
+        // Map MyDifficulty 'level' to Modifiers 'difficulty'
+        return calculateScoreMultiplier({ ...d, difficulty: d.level });
     };
 
     const calcMultiplierForPlayer = (p: Player) => {
