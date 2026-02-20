@@ -341,6 +341,7 @@ export function computeStartingHPSFromWheel(
       offlineSecondsOnLoad: 0,
       theme: 'light',
       numberFormat: 'abbreviated',
+      buildingBuyQty: 1,
       soundEnabled: true,
       soundVolume: 1,
       activeTab: 'temple',

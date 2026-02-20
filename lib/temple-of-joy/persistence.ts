@@ -39,6 +39,7 @@ export function stateToSaveData(state: GameState): SaveData {
     permanentHPCBonus: state.permanentHPCBonus,
     theme: state.theme,
     numberFormat: state.numberFormat,
+    buildingBuyQty: state.buildingBuyQty,
     soundEnabled: state.soundEnabled,
     soundVolume: state.soundVolume,
   };
@@ -69,6 +70,7 @@ export function saveDataToState(save: SaveData, baseState: GameState): Partial<G
     permanentHPCBonus: save.permanentHPCBonus ?? 0,
     theme: save.theme ?? 'dark',
     numberFormat: save.numberFormat ?? 'abbreviated',
+    buildingBuyQty: save.buildingBuyQty ?? 1,
     soundEnabled: save.soundEnabled ?? false,
     soundVolume: save.soundVolume ?? 0.5,
   };

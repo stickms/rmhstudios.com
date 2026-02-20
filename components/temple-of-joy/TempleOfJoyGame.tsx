@@ -87,6 +87,19 @@ export function TempleOfJoyGame({ initialSaveData }: { initialSaveData?: SaveDat
       .finally(() => { window.location.href = '/games'; });
   }, []);
 
+  // ── beforeunload: confirm exit + auto-save ────────────────────────────────
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      // Fire auto-save in the background (best-effort)
+      saveToServer(useTempleStore.getState()).catch(() => {});
+      // Show browser confirmation dialog
+      e.preventDefault();
+      e.returnValue = ''; // Modern browsers ignore custom messages
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
+
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div

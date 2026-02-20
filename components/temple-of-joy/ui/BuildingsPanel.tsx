@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { fmt } from '@/lib/temple-of-joy/numbers';
 import { BUILDINGS } from '@/lib/temple-of-joy/data/buildings';
@@ -41,20 +41,21 @@ function BuildingRow({ id, buyQty }: BuildingRowProps) {
   const buyBuildingMax     = useTempleStore(s => s.buyBuildingMax);
   const prestigeCount      = useTempleStore(s => s.prestigeCount);
 
-  const [pulseKey, setPulseKey] = useState(0);
+  const pulseKeyRef = useRef(0);
   const prevCountRef = useRef<number | null>(null);
 
   const count = buildings[id] ?? 0;
 
   useEffect(() => {
     if (prevCountRef.current !== null && prevCountRef.current === 0 && count > 0) {
-      setPulseKey(k => k + 1);
+      pulseKeyRef.current++;
     }
     prevCountRef.current = count;
   }, [count]);
 
   const def    = BUILDINGS.find(b => b.id === id)!;
-  const hps    = computeBuildingHPS(id, state);
+  const totalHps = computeBuildingHPS(id, state);
+  const perBuildingHps = count > 0 ? totalHps / count : 0;
 
   const unlocked = isUnlocked(
     def.baseCost,
@@ -96,7 +97,7 @@ function BuildingRow({ id, buyQty }: BuildingRowProps) {
 
   return (
     <div
-      key={pulseKey}
+      key={pulseKeyRef.current}
       className="flex items-center gap-3 p-3 rounded-lg transition-all duration-150"
       style={{
         background: 'var(--temple-surface)',
@@ -104,7 +105,7 @@ function BuildingRow({ id, buyQty }: BuildingRowProps) {
           ? '1px solid var(--temple-accent)'
           : '1px solid var(--temple-border)',
         boxShadow: canAfford ? '0 0 8px rgba(212,168,71,0.2)' : undefined,
-        animation: pulseKey > 0 ? 'templeUnlockPulse 0.7s ease-out' : undefined,
+        animation: pulseKeyRef.current > 0 ? 'templeUnlockPulse 0.7s ease-out' : undefined,
       }}
     >
       {/* Icon */}
@@ -129,7 +130,7 @@ function BuildingRow({ id, buyQty }: BuildingRowProps) {
             className="text-[11px] tabular-nums mt-0.5"
             style={{ color: 'var(--temple-text)', opacity: 0.65 }}
           >
-            {fmt(hps, numberFormat)}/s total
+            {fmt(perBuildingHps, numberFormat)}/s each · {fmt(totalHps, numberFormat)}/s total
           </p>
         )}
       </div>
@@ -165,7 +166,8 @@ function BuildingRow({ id, buyQty }: BuildingRowProps) {
 }
 
 export default function BuildingsPanel() {
-  const [buyQty, setBuyQty] = useState<BuyQty>(1);
+  const buyQty = useTempleStore(s => s.buildingBuyQty);
+  const setBuyQty = useTempleStore(s => s.setBuildingBuyQty);
   const theme = useTempleStore(s => s.theme);
 
   const QTY_OPTIONS: BuyQty[] = [1, 10, 100, 'max'];

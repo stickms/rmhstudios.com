@@ -225,6 +225,7 @@ export interface GameState {
   // ── UI ──
   activeTab: 'temple' | 'buildings' | 'upgrades' | 'relics' | 'wheel' | 'achievements' | 'settings';
   upgradePathFilter: UpgradePath | 'all';
+  buildingBuyQty: 1 | 10 | 100 | 'max';
   showTranscendenceModal: boolean;
   showOfflineModal: boolean;
   showEventModal: boolean;
@@ -258,6 +259,7 @@ export interface SaveData {
   permanentHPCBonus: number;
   theme: 'light' | 'dark';
   numberFormat: 'abbreviated' | 'scientific';
+  buildingBuyQty: 1 | 10 | 100 | 'max';
   soundEnabled: boolean;
   soundVolume: number;
 }

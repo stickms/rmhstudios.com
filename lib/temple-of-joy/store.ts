@@ -57,6 +57,7 @@ export function createInitialState(): GameState {
     soundVolume: 0.5,
     activeTab: 'temple',
     upgradePathFilter: 'all',
+    buildingBuyQty: 1,
     showTranscendenceModal: false,
     showOfflineModal: false,
     showEventModal: false,
@@ -94,6 +95,7 @@ interface TempleStore extends GameState {
   // UI setters
   setActiveTab: (tab: GameState['activeTab']) => void;
   setUpgradePathFilter: (filter: UpgradePath | 'all') => void;
+  setBuildingBuyQty: (qty: 1 | 10 | 100 | 'max') => void;
   setTheme: (theme: 'light' | 'dark') => void;
   setNumberFormat: (fmt: 'abbreviated' | 'scientific') => void;
   setSoundEnabled: (enabled: boolean) => void;
@@ -141,6 +143,7 @@ export const useTempleStore = create<TempleStore>()(
     // ── UI setters ──
     setActiveTab: (tab) => set({ activeTab: tab }),
     setUpgradePathFilter: (filter) => set({ upgradePathFilter: filter }),
+    setBuildingBuyQty: (qty) => set({ buildingBuyQty: qty }),
     setTheme: (theme) => set({ theme }),
     setNumberFormat: (fmt) => set({ numberFormat: fmt }),
     setSoundEnabled: (enabled) => set({ soundEnabled: enabled }),
