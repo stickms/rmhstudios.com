@@ -10,7 +10,7 @@ import { useGameStore } from '@/lib/store/useGameStore';
 import { authClient } from "@/lib/auth-client";
 import { useSearchParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Copy, Share2, Check, Zap, Bomb, Shuffle, EyeOff, Skull, Info, ChevronDown, ChevronUp, Settings } from 'lucide-react';
+import { Copy, Share2, Check, Zap, Bomb, Shuffle, EyeOff, Skull, Info, ChevronDown, ChevronUp, Settings, RotateCw, Target } from 'lucide-react';
 
 import { SongLibrary } from '@/components/game/SongLibrary'; // Import SongLibrary
 
@@ -19,7 +19,7 @@ interface Player {
     name: string;
     score: number;
     isReady: boolean;
-    difficulty?: { speed: number; bombs: boolean; switching: boolean; suddenDeath: boolean; invisible: boolean; level: string };
+    difficulty?: { speed: number; bombs: boolean; switching: boolean; suddenDeath: boolean; invisible: boolean; spin: boolean; strictTiming: boolean; level: string };
 }
 
 interface LobbyData {
@@ -45,6 +45,8 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
         switching: false,
         suddenDeath: false,
         invisible: false,
+        spin: false,
+        strictTiming: false,
         level: 'normal' as string,
     });
     
@@ -182,6 +184,8 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
             switching: newDiff.switching,
             suddenDeath: newDiff.suddenDeath,
             invisible: newDiff.invisible,
+            spin: newDiff.spin,
+            strictTiming: newDiff.strictTiming,
             difficulty: (newDiff.level as 'easy' | 'normal' | 'hard' | 'expert'),
         });
     };
@@ -197,6 +201,8 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
         if (d.speed > 1.0) m += (d.speed - 1.0) * 0.5;
         if (d.bombs) m += 0.15;
         if (d.switching) m += 0.15;
+        if (d.spin) m += 0.15;
+        if (d.strictTiming) m += 0.25;
         return m;
     };
 
@@ -292,6 +298,8 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
                                                     {p.difficulty.bombs && <span title="Bombs enabled" className="text-[9px] bg-red-100 text-red-500 px-1 py-0.5 rounded-full"><Bomb className="w-3 h-3" /></span>}
                                                     {p.difficulty.switching && <span title="Switching enabled" className="text-[9px] bg-blue-100 text-blue-500 px-1 py-0.5 rounded-full"><Shuffle className="w-3 h-3" /></span>}
                                                     {p.difficulty.invisible && <span title="Invisible" className="text-[9px] bg-slate-200 text-slate-600 px-1 py-0.5 rounded-full"><EyeOff className="w-3 h-3" /></span>}
+                                                    {p.difficulty.spin && <span title="Spin" className="text-[9px] bg-cyan-100 text-cyan-600 px-1 py-0.5 rounded-full"><RotateCw className="w-3 h-3" /></span>}
+                                                    {p.difficulty.strictTiming && <span title="Strict Timing" className="text-[9px] bg-red-100 text-red-600 px-1 py-0.5 rounded-full"><Target className="w-3 h-3" /></span>}
                                                 </div>
                                             )}
                                             {mult > 1.0 && (
@@ -382,7 +390,7 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
                                         <div className="flex items-center gap-2">
                                             <button
                                                 className="w-7 h-7 rounded-lg bg-[#e0e5ec] shadow-[3px_3px_6px_#a3b1c6,-3px_-3px_6px_#ffffff] text-slate-600 font-bold text-sm flex items-center justify-center active:shadow-[inset_3px_3px_6px_#a3b1c6,inset_-3px_-3px_6px_#ffffff]"
-                                                onClick={() => handleDifficultyChange({ speed: Math.max(0.5, +(myDifficulty.speed - 0.1).toFixed(1)) })}
+                                                onClick={() => handleDifficultyChange({ speed: Math.max(1.0, +(myDifficulty.speed - 0.1).toFixed(1)) })}
                                             >−</button>
                                             <span className="text-sm font-bold text-purple-500 w-12 text-center">{myDifficulty.speed.toFixed(1)}x</span>
                                             <button
@@ -396,6 +404,8 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
                                         { key: 'bombs' as const, label: 'Bombs', icon: <Bomb className="w-4 h-4 text-red-500" />, desc: 'Adds bomb notes to avoid' },
                                         { key: 'switching' as const, label: 'Switching', icon: <Shuffle className="w-4 h-4 text-blue-500" />, desc: 'Adds lane-switch notes' },
                                         { key: 'invisible' as const, label: 'Invisible', icon: <EyeOff className="w-4 h-4 text-slate-500" />, desc: 'Notes fade before hit line' },
+                                        { key: 'spin' as const, label: 'Spin', icon: <RotateCw className="w-4 h-4 text-cyan-500" />, desc: 'Playfield rotates during gameplay' },
+                                        { key: 'strictTiming' as const, label: 'Strict Timing', icon: <Target className="w-4 h-4 text-red-600" />, desc: 'Tighter hit windows' },
                                     ].map(opt => (
                                         <button
                                             key={opt.key}
