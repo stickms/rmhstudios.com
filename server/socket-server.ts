@@ -10,10 +10,23 @@ const httpServer = createServer();
 const io = new Server(httpServer, {
   path: "/socket/",
   cors: {
-    origin: "*", // Allow all origins for dev
+    origin: process.env.SOCKET_CORS_ORIGIN || "*",
     methods: ["GET", "POST"]
   }
 });
+
+const MAX_LOBBY_ID_LENGTH = 64;
+const MAX_USER_NAME_LENGTH = 32;
+
+function sanitizeLobbyId(raw: unknown): string {
+  if (typeof raw !== "string") return "";
+  return raw.replace(/[^a-zA-Z0-9-]/g, "").slice(0, MAX_LOBBY_ID_LENGTH) || "default";
+}
+
+function sanitizeUserName(raw: unknown): string {
+  if (typeof raw !== "string") return "Player";
+  return raw.trim().replace(/[^a-zA-Z0-9_\-. ]/g, "").slice(0, MAX_USER_NAME_LENGTH) || "Player";
+}
 
 interface Player {
     id: string; // Socket ID
@@ -41,7 +54,11 @@ io.on("connection", (socket: Socket) => {
   console.log(`Player connected: ${socket.id}`);
 
   // JOIN LOBBY
-  socket.on("join_lobby", ({ lobbyId, userName, userId }: { lobbyId: string, userName: string, userId: string }) => {
+  socket.on("join_lobby", (payload: { lobbyId?: string; userName?: string; userId?: string }) => {
+    const lobbyId = sanitizeLobbyId(payload?.lobbyId);
+    const userName = sanitizeUserName(payload?.userName) || `Player ${Date.now().toString(36).slice(-4)}`;
+    const userId = typeof payload?.userId === "string" ? payload.userId : "guest";
+
     let lobby = lobbies.get(lobbyId);
     
     // Create if not exists
@@ -61,8 +78,8 @@ io.on("connection", (socket: Socket) => {
     // Create Player
     const player: Player = {
         id: socket.id,
-        userId: userId || 'guest',
-        name: userName || `Player ${lobby.players.size + 1}`,
+        userId,
+        name: userName,
         score: 0,
         combo: 0,
         health: 100,
@@ -87,13 +104,14 @@ io.on("connection", (socket: Socket) => {
   });
   
   // HOST SELECT SONG
-  socket.on("select_song", ({ lobbyId, song }: { lobbyId: string, song: any }) => {
+  socket.on("select_song", (payload: { lobbyId?: string; song?: unknown }) => {
+      const lobbyId = sanitizeLobbyId(payload?.lobbyId);
       const lobby = lobbies.get(lobbyId);
       if (!lobby) return;
       if (lobby.hostId !== socket.id) return;
       
-      lobby.song = song;
-      io.to(lobbyId).emit("song_selected", { song });
+      lobby.song = payload?.song ?? null;
+      io.to(lobbyId).emit("song_selected", { song: lobby.song });
       // Also update everyone with lobby status
       io.to(lobbyId).emit("lobby_update", {
         lobbyId,
@@ -105,7 +123,8 @@ io.on("connection", (socket: Socket) => {
   });
 
   // START GAME (Initiate Loading)
-  socket.on("start_game", ({ lobbyId }: { lobbyId: string }) => {
+  socket.on("start_game", (payload: { lobbyId?: string }) => {
+      const lobbyId = sanitizeLobbyId(payload?.lobbyId);
       const lobby = lobbies.get(lobbyId);
       if (!lobby) return;
       if (lobby.hostId !== socket.id) return;
@@ -145,7 +164,8 @@ io.on("connection", (socket: Socket) => {
   });
 
   // PLAYER LOADED (Ready to start countdown)
-  socket.on("player_loaded", ({ lobbyId }: { lobbyId: string }) => {
+  socket.on("player_loaded", (payload: { lobbyId?: string }) => {
+      const lobbyId = sanitizeLobbyId(payload?.lobbyId);
       const lobby = lobbies.get(lobbyId);
       if (!lobby) return;
       
@@ -188,19 +208,20 @@ io.on("connection", (socket: Socket) => {
   });
 
   // SCORE UPDATE (Real-time)
-  socket.on("score_update", ({ lobbyId, score, combo, health }: { lobbyId: string, score: number, combo: number, health: number }) => {
+  socket.on("score_update", (payload: { lobbyId?: string; score?: number; combo?: number; health?: number }) => {
+      const lobbyId = sanitizeLobbyId(payload?.lobbyId);
       const lobby = lobbies.get(lobbyId);
       if (!lobby) return;
       
       const player = lobby.players.get(socket.id);
       if (player) {
+          const score = typeof payload?.score === "number" ? payload.score : 0;
+          const combo = typeof payload?.combo === "number" ? payload.combo : 0;
+          const health = typeof payload?.health === "number" ? payload.health : 100;
           player.score = score;
           player.combo = combo;
           player.health = health;
           
-          // Broadcast to others (or everyone including self for consistent state)
-          // Optimized: throttle this? 
-          // For now, emit to everyone.
           io.to(lobbyId).emit("player_update", {
               id: socket.id,
               score,
@@ -211,12 +232,14 @@ io.on("connection", (socket: Socket) => {
   });
   
   // PLAYER COMPLETED / DIED
-  socket.on("player_finished", ({ lobbyId, finalScore }: { lobbyId: string, finalScore: number }) => {
+  socket.on("player_finished", (payload: { lobbyId?: string; finalScore?: number }) => {
+       const lobbyId = sanitizeLobbyId(payload?.lobbyId);
        const lobby = lobbies.get(lobbyId);
        if (!lobby) return;
        
        const player = lobby.players.get(socket.id);
        if (player) {
+           const finalScore = typeof payload?.finalScore === "number" ? payload.finalScore : 0;
            player.isFinished = true;
            player.score = finalScore;
            
@@ -246,7 +269,8 @@ io.on("connection", (socket: Socket) => {
   });
 
   // LEAVE LOBBY (explicit)
-  socket.on("leave_lobby", ({ lobbyId }: { lobbyId: string }) => {
+  socket.on("leave_lobby", (payload: { lobbyId?: string }) => {
+      const lobbyId = sanitizeLobbyId(payload?.lobbyId);
       const lobby = lobbies.get(lobbyId);
       if (!lobby) return;
       if (!lobby.players.has(socket.id)) return;
@@ -271,7 +295,8 @@ io.on("connection", (socket: Socket) => {
   });
 
   // RETURN TO LOBBY (host triggers all players back to lobby)
-  socket.on("return_to_lobby", ({ lobbyId }: { lobbyId: string }) => {
+  socket.on("return_to_lobby", (payload: { lobbyId?: string }) => {
+      const lobbyId = sanitizeLobbyId(payload?.lobbyId);
       const lobby = lobbies.get(lobbyId);
       if (!lobby) return;
       if (lobby.hostId !== socket.id) return; // Only host can trigger
@@ -298,7 +323,8 @@ io.on("connection", (socket: Socket) => {
   });
 
   // TOGGLE READY
-  socket.on("toggle_ready", ({ lobbyId }: { lobbyId: string }) => {
+  socket.on("toggle_ready", (payload: { lobbyId?: string }) => {
+      const lobbyId = sanitizeLobbyId(payload?.lobbyId);
       const lobby = lobbies.get(lobbyId);
       if (!lobby) return;
       const player = lobby.players.get(socket.id);
@@ -315,12 +341,23 @@ io.on("connection", (socket: Socket) => {
   });
 
   // UPDATE DIFFICULTY
-  socket.on("update_difficulty", ({ lobbyId, difficulty }: { lobbyId: string, difficulty: any }) => {
+  socket.on("update_difficulty", (payload: { lobbyId?: string; difficulty?: unknown }) => {
+      const lobbyId = sanitizeLobbyId(payload?.lobbyId);
       const lobby = lobbies.get(lobbyId);
       if (!lobby) return;
       const player = lobby.players.get(socket.id);
       if (player) {
-          player.difficulty = difficulty;
+          const d = payload?.difficulty;
+          player.difficulty = d && typeof d === "object" && !Array.isArray(d)
+            ? {
+                speed: typeof (d as { speed?: number }).speed === "number" ? (d as { speed: number }).speed : 1.0,
+                bombs: Boolean((d as { bombs?: boolean }).bombs),
+                switching: Boolean((d as { switching?: boolean }).switching),
+                suddenDeath: Boolean((d as { suddenDeath?: boolean }).suddenDeath),
+                invisible: Boolean((d as { invisible?: boolean }).invisible),
+                level: typeof (d as { level?: string }).level === "string" ? (d as { level: string }).level.slice(0, 32) : "normal",
+              }
+            : { speed: 1.0, bombs: false, switching: false, suddenDeath: false, invisible: false, level: "normal" };
           io.to(lobbyId).emit("lobby_update", {
               lobbyId,
               players: Array.from(lobby.players.values()),

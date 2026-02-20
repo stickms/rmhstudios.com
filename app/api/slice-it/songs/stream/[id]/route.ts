@@ -2,8 +2,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { readFile, stat } from "fs/promises";
-import path from "path";
 import { createReadStream } from "fs";
+import { resolvePathUnder } from "@/lib/slice-it/upload-validation";
+import path from "path";
 
 export async function GET(
   req: NextRequest,
@@ -21,7 +22,11 @@ export async function GET(
       return NextResponse.json({ error: "Song not found" }, { status: 404 });
     }
 
-    const filePath = path.join(process.cwd(), "db", "music", song.audioUrl);
+    const musicDir = path.join(process.cwd(), "db", "music");
+    const filePath = resolvePathUnder(musicDir, song.audioUrl);
+    if (!filePath) {
+      return NextResponse.json({ error: "Invalid path" }, { status: 400 });
+    }
 
     try {
         await stat(filePath);

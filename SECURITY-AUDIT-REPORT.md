@@ -6,6 +6,23 @@
 
 **Report revision:** This report was updated after merging latest main (multiplayer lobby enhancements). Socket.IO events and the `difficulty` payload are updated below. No new vulnerabilities were identified in the merged changes; prior findings (rate limits, comment length, Socket.IO CORS/validation) remain unfixed.
 
+### Remediation (branch: fix/security-audit-and-storage-cap)
+
+Findings F1–F10 have been addressed:
+
+- **F1** — Comments POST: per-IP rate limit (10/60s) added.
+- **F2** — Comments POST: max length 2000 characters enforced.
+- **F3** — Slice It! and Laundry Sort usernames: allowlist sanitization (same as Echoes) applied.
+- **F4** — Vega score: per-IP rate limit (5/60s) added.
+- **F5** — Signal Forge save/load/score/abandon: rate limits added (save 10/60s, load/abandon 20/60s, score 5/60s).
+- **F6** — Signal Forge save: max request body size 500 KB enforced via Content-Length check.
+- **F7** — Socket.IO CORS: configurable via `SOCKET_CORS_ORIGIN` (default `*` for dev).
+- **F8** — Socket.IO identity remains client-supplied; documented trade-off.
+- **F9** — Socket.IO: `userName` and `lobbyId` sanitized and length-limited (32 and 64 chars); `difficulty` validated.
+- **F10** — Slice It! PATCH: per-IP rate limit (10/60s) and cover magic-byte validation added.
+
+Additionally: 10 GB total song storage cap (audio only); upload route now uses magic-byte validation and path safety (`resolvePathUnder`) in stream, cover, and DELETE. F11 (Redis for rate limiter) remains an optional future improvement.
+
 ---
 
 ## Executive summary

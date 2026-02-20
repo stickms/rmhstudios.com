@@ -80,14 +80,14 @@ export function SongLibrary({ onSelect, onHighlight, selectedSongId }: {
         }
     };
 
-    const MAX_AUDIO_SIZE = 10 * 1024 * 1024; // 10 MB
+    const MAX_AUDIO_SIZE = 50 * 1024 * 1024; // 50 MB (matches server limit)
 
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
         if (file.size > MAX_AUDIO_SIZE) {
-            toast.error(`Audio file too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum size is 10 MB.`);
+            toast.error(`Audio file too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum size is 50 MB.`);
             e.target.value = '';
             return;
         }

@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { unlink, writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { headers } from "next/headers";
+import { resolvePathUnder, validateImageBuffer } from "@/lib/slice-it/upload-validation";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
 export const runtime = 'nodejs';
 
@@ -19,6 +21,19 @@ export async function PATCH(
         
         if (!session) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        const ip = getClientIp(req);
+        const { allowed, retryAfter } = rateLimit(ip, {
+            limit: 10,
+            windowMs: 60_000,
+            prefix: "slice-patch",
+        });
+        if (!allowed) {
+            return NextResponse.json(
+                { error: "Too many requests" },
+                { status: 429, headers: { "Retry-After": String(retryAfter) } }
+            );
         }
 
         const { id } = await params;
@@ -45,20 +60,21 @@ export async function PATCH(
 
         let coverUrl: string | null = song.coverUrl ?? null;
 
-        // Validate cover image size (max 2.5 MB)
-        const MAX_COVER_SIZE = 2.5 * 1024 * 1024; // 2.5 MB
-        if (coverFile && coverFile.size > MAX_COVER_SIZE) {
-            return NextResponse.json({ error: "Cover image too large. Maximum size is 2.5 MB." }, { status: 413 });
-        }
-
         if (coverFile && coverFile.size > 0) {
+            const coverBuffer = Buffer.from(await coverFile.arrayBuffer());
+            const coverValidation = validateImageBuffer(coverBuffer);
+            if (!coverValidation.ok) {
+                return NextResponse.json(
+                    { error: coverValidation.error },
+                    { status: 400 }
+                );
+            }
             const safeCoverName = coverFile.name.replace(/[^a-zA-Z0-9.-]/g, "_");
             const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
             const coverFileName = `${uniqueSuffix}-cover-${safeCoverName}`;
             const coverDir = path.join(process.cwd(), "db", "music", "covers");
             await mkdir(coverDir, { recursive: true });
             const coverPath = path.join(coverDir, coverFileName);
-            const coverBuffer = Buffer.from(await coverFile.arrayBuffer());
             await writeFile(coverPath, coverBuffer);
             coverUrl = `/api/slice-it/songs/cover/${coverFileName}`;
         }
@@ -108,8 +124,11 @@ export async function DELETE(
             return NextResponse.json({ error: "Forbidden" }, { status: 403 });
         }
 
-        // Delete file from disk
-        const filePath = path.join(process.cwd(), "db", "music", song.audioUrl);
+        const musicDir = path.join(process.cwd(), "db", "music");
+        const filePath = resolvePathUnder(musicDir, song.audioUrl);
+        if (!filePath) {
+            return NextResponse.json({ error: "Invalid path" }, { status: 400 });
+        }
         try {
             await unlink(filePath);
         } catch (e) {

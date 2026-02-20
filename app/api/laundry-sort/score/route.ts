@@ -17,7 +17,11 @@ export async function POST(req: Request) {
     try {
         const { username, score } = await req.json();
 
-        if (!username || typeof username !== 'string' || username.length < 2 || username.length > 24) {
+        if (!username || typeof username !== 'string') {
+            return NextResponse.json({ error: 'Invalid username' }, { status: 400 });
+        }
+        const cleanUsername = username.trim().replace(/[^a-zA-Z0-9_\-. ]/g, '').slice(0, 24);
+        if (cleanUsername.length < 2) {
             return NextResponse.json({ error: 'Invalid username' }, { status: 400 });
         }
         if (typeof score !== 'number' || score < 0 || score > 1_000_000) {
@@ -62,15 +66,15 @@ export async function POST(req: Request) {
                     highScore: Math.max(existingProfile.highScore, score),
                     gamesPlayed: { increment: 1 },
                     updatedAt: new Date(),
-                    username: username // Allow sync
+                    username: cleanUsername
                 }
             });
             return NextResponse.json({ success: true, linked: true });
         } 
         
-        // No profile yet, check username availablity
+        // No profile yet, check username availability
         const usernameConfig = await prisma.laundryPlayer.findUnique({
-                where: { username }
+                where: { username: cleanUsername }
         });
 
         if (usernameConfig) {
@@ -81,7 +85,7 @@ export async function POST(req: Request) {
         await prisma.laundryPlayer.create({
             data: {
                 userId,
-                username,
+                username: cleanUsername,
                 highScore: score,
                 gamesPlayed: 1
             }
