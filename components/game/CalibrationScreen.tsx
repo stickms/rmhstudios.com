@@ -116,19 +116,19 @@ export function CalibrationScreen({ onBack }: { onBack: () => void }) {
     };
 
     return (
-        <div className="absolute inset-0 z-[60] flex items-center justify-center bg-[#e0e5ec] p-4">
-             <Card className="w-full max-w-md bg-[#e0e5ec] text-slate-700 shadow-[20px_20px_60px_#bebebe,-20px_-20px_60px_#ffffff] rounded-[2rem] border-none">
+        <div className="absolute inset-0 z-[60] flex items-center justify-center bg-slice-bg p-4">
+             <Card className="w-full max-w-md bg-slice-bg text-slice-text shadow-[20px_20px_60px_var(--slice-shadow-dark),-20px_-20px_60px_var(--slice-shadow-light)] rounded-[2rem] border-none">
                 <CardHeader>
-                    <CardTitle className="text-2xl font-black text-center text-slate-600">AUDIO CALIBRATION</CardTitle>
+                    <CardTitle className="text-2xl font-black text-center text-slice-text-darker">AUDIO CALIBRATION</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6 text-center">
-                    <p className="text-slate-500 text-sm">
+                    <p className="text-slice-text-muted text-sm">
                         Listen to the beat and tap SPACE or the button exactly when you hear it.
                     </p>
                     
-                    <div className={`bg-[#e0e5ec] p-8 rounded-full w-48 h-48 mx-auto flex items-center justify-center transition-all duration-75 ${beatFlash ? 'shadow-[0_0_30px_rgba(59,130,246,0.8),inset_5px_5px_10px_#a3b1c6,inset_-5px_-5px_10px_#ffffff]' : 'shadow-[inset_5px_5px_10px_#a3b1c6,inset_-5px_-5px_10px_#ffffff]'}`}>
+                    <div className={`bg-slice-bg p-8 rounded-full w-48 h-48 mx-auto flex items-center justify-center transition-all duration-75 ${beatFlash ? 'shadow-[0_0_30px_rgba(59,130,246,0.8),inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)]' : 'shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)]'}`}>
                          <Button 
-                            className={`w-32 h-32 rounded-full font-bold text-xl shadow-[5px_5px_10px_#a3b1c6,-5px_-5px_10px_#ffffff] active:shadow-[inset_5px_5px_10px_#a3b1c6,inset_-5px_-5px_10px_#ffffff] transition-all ${isPlaying ? 'bg-blue-500 text-white' : 'bg-[#e0e5ec] text-slate-500'} ${beatFlash ? 'scale-95' : 'scale-100'}`}
+                            className={`w-32 h-32 rounded-full font-bold text-xl shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] active:shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)] transition-all ${isPlaying ? 'bg-blue-500 text-white' : 'bg-slice-bg text-slice-text-muted'} ${beatFlash ? 'scale-95' : 'scale-100'}`}
                             onClick={isPlaying ? handleTap : startMetronome}
                         >
                             {isPlaying ? 'TAP!' : 'START'}
@@ -136,14 +136,14 @@ export function CalibrationScreen({ onBack }: { onBack: () => void }) {
                     </div>
 
                     <div className="space-y-2">
-                        <div className="text-3xl font-mono font-bold text-slate-700">{tempOffset} ms</div>
-                        <div className="text-xs text-slate-400 font-bold uppercase">{message}</div>
+                        <div className="text-3xl font-mono font-bold text-slice-text">{tempOffset} ms</div>
+                        <div className="text-xs text-slice-text-light font-bold uppercase">{message}</div>
                     </div>
 
                     <div className="flex gap-4">
                          <Button 
                             variant="ghost"
-                            className="flex-1 bg-[#e0e5ec] text-slate-500 shadow-[5px_5px_10px_#a3b1c6,-5px_-5px_10px_#ffffff] active:shadow-[inset_5px_5px_10px_#a3b1c6,inset_-5px_-5px_10px_#ffffff] rounded-xl"
+                            className="flex-1 bg-slice-bg text-slice-text-muted shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] active:shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)] rounded-xl"
                             onClick={stopMetronome}
                             disabled={!isPlaying}
                         >
@@ -151,17 +151,17 @@ export function CalibrationScreen({ onBack }: { onBack: () => void }) {
                         </Button>
                          <Button 
                             variant="ghost"
-                            className="flex-1 bg-[#e0e5ec] text-slate-500 shadow-[5px_5px_10px_#a3b1c6,-5px_-5px_10px_#ffffff] active:shadow-[inset_5px_5px_10px_#a3b1c6,inset_-5px_-5px_10px_#ffffff] rounded-xl"
+                            className="flex-1 bg-slice-bg text-slice-text-muted shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] active:shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)] rounded-xl"
                             onClick={() => { setTempOffset(0); setBeats([]); }}
                         >
                             RESET
                         </Button>
                     </div>
 
-                     <div className="flex gap-4 pt-4 border-t border-slate-200">
+                     <div className="flex gap-4 pt-4 border-t border-slice-shadow-dark/30">
                         <Button 
                             variant="ghost"
-                            className="flex-1 text-slate-500"
+                            className="flex-1 text-slice-text-muted"
                             onClick={onBack}
                         >
                             CANCEL

@@ -8,6 +8,7 @@ export interface Slice {
   lane: number; // 0 = top, 1 = bottom (default 0)
   speedMultiplier?: number; // for SPEED slices
   hit?: boolean; // Runtime state
+  hitTime?: number; // performance.now() timestamp when hit, for fade-out
 }
 
 export interface BeatMap {

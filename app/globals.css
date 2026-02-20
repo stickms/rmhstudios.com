@@ -64,6 +64,34 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* Slice It Game UI - Light Mode Variables */
+  --slice-bg: #e0e5ec;
+  --slice-text: #334155;
+  /* slate-700 */
+  --slice-text-darker: #475569;
+  /* slate-600 */
+  --slice-text-muted: #64748b;
+  /* slate-500 */
+  --slice-text-light: #94a3b8;
+  /* slate-400 */
+
+  --slice-shadow-dark: #a3b1c6;
+  --slice-shadow-light: #ffffff;
+  --slice-card-bg: #e0e5ec;
+}
+
+.dark {
+  /* Slice It Game UI - Dark Mode Variables */
+  --slice-bg: #16161a;
+  --slice-text: #f0f0f0;
+  --slice-text-darker: #e4e4e7;
+  --slice-text-muted: #a1a1aa;
+  --slice-text-light: #71717a;
+
+  --slice-shadow-dark: #0b0b0d;
+  --slice-shadow-light: #222228;
+  --slice-card-bg: #1e1e24;
 }
 
 @theme inline {
@@ -125,9 +153,17 @@
   --radius-xl: calc(var(--radius) + 4px);
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
+
+  /* Slice It specific logic (Tailwind bindings) */
+  --color-slice-bg: var(--slice-bg);
+  --color-slice-text: var(--slice-text);
+  --color-slice-text-darker: var(--slice-text-darker);
+  --color-slice-text-muted: var(--slice-text-muted);
+  --color-slice-text-light: var(--slice-text-light);
+  --color-slice-shadow-dark: var(--slice-shadow-dark);
+  --color-slice-shadow-light: var(--slice-shadow-light);
+  --color-slice-card-bg: var(--slice-card-bg);
 
   /* Echoes Specific */
   --color-neon-glow: #d8b4fe;
@@ -385,10 +421,24 @@
 
 /* Lightweight CSS-only floating shapes (replaces framer-motion) */
 @keyframes floating-shape-drift {
-  0%, 100% { transform: translateY(0) translateX(0) rotate(0deg); opacity: 0.3; }
-  33% { transform: translateY(-20px) translateX(15px) rotate(120deg); opacity: 0.6; }
-  66% { transform: translateY(-10px) translateX(-10px) rotate(240deg); opacity: 0.4; }
+
+  0%,
+  100% {
+    transform: translateY(0) translateX(0) rotate(0deg);
+    opacity: 0.3;
+  }
+
+  33% {
+    transform: translateY(-20px) translateX(15px) rotate(120deg);
+    opacity: 0.6;
+  }
+
+  66% {
+    transform: translateY(-10px) translateX(-10px) rotate(240deg);
+    opacity: 0.4;
+  }
 }
+
 .floating-shape {
   animation: floating-shape-drift 10s ease-in-out infinite;
   will-change: transform, opacity;
@@ -396,9 +446,19 @@
 
 /* CSS-only pulsating orb (replaces framer-motion) */
 @keyframes pulsating-orb-pulse {
-  0%, 100% { transform: scale(1); opacity: 0.3; }
-  50% { transform: scale(1.15); opacity: 0.55; }
+
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.3;
+  }
+
+  50% {
+    transform: scale(1.15);
+    opacity: 0.55;
+  }
 }
+
 .pulsating-orb {
   animation: pulsating-orb-pulse 5s ease-in-out infinite;
   will-change: transform, opacity;
@@ -679,14 +739,18 @@
 
 /* RAINBOW GLOW - animated box shadow cycling through rainbow colors */
 @keyframes rainbow-glow {
-  0%, 100% {
+
+  0%,
+  100% {
     border-color: #ff0000 !important;
     box-shadow: 0 0 12px #ff0000, 0 0 30px #ff0000 !important;
   }
+
   33% {
     border-color: #00ff00 !important;
     box-shadow: 0 0 12px #00ff00, 0 0 30px #00ff00 !important;
   }
+
   66% {
     border-color: #0000ff !important;
     box-shadow: 0 0 12px #0000ff, 0 0 30px #0000ff !important;
@@ -699,13 +763,16 @@
 
 /* Inner rainbow glow for cards - simplified for performance */
 @keyframes rainbow-glow-inner {
-  0%, 100% {
+
+  0%,
+  100% {
     border-color: rgba(255, 255, 255, 0.6) !important;
     box-shadow:
       0 0 10px rgba(255, 255, 255, 0.6),
       0 0 25px rgba(255, 0, 0, 0.4),
       inset 0 0 10px rgba(255, 255, 255, 0.08) !important;
   }
+
   33% {
     border-color: rgba(255, 255, 255, 0.6) !important;
     box-shadow:
@@ -713,6 +780,7 @@
       0 0 25px rgba(0, 255, 255, 0.4),
       inset 0 0 10px rgba(255, 255, 255, 0.08) !important;
   }
+
   66% {
     border-color: rgba(255, 255, 255, 0.6) !important;
     box-shadow:
@@ -814,89 +882,248 @@ body {
 
 /* Cursed Logic duel animations */
 @keyframes cursed-damage {
-  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.9); filter: brightness(1.8); }
-  40% { box-shadow: 0 0 30px 8px rgba(239, 68, 68, 0.7); filter: brightness(2.2); }
-  100% { box-shadow: 0 0 0 0 transparent; filter: brightness(1); }
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.9);
+    filter: brightness(1.8);
+  }
+
+  40% {
+    box-shadow: 0 0 30px 8px rgba(239, 68, 68, 0.7);
+    filter: brightness(2.2);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+    filter: brightness(1);
+  }
 }
+
 @keyframes cursed-block {
-  0% { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.6); opacity: 1; }
-  50% { box-shadow: 0 0 24px 6px rgba(34, 211, 238, 0.5); opacity: 0.9; }
-  100% { box-shadow: 0 0 0 0 transparent; opacity: 1; }
+  0% {
+    box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.6);
+    opacity: 1;
+  }
+
+  50% {
+    box-shadow: 0 0 24px 6px rgba(34, 211, 238, 0.5);
+    opacity: 0.9;
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+    opacity: 1;
+  }
 }
+
 @keyframes cursed-prepare {
-  0%, 100% { box-shadow: 0 0 8px 2px rgba(34, 211, 238, 0.3); }
-  50% { box-shadow: 0 0 20px 6px rgba(34, 211, 238, 0.5); }
+
+  0%,
+  100% {
+    box-shadow: 0 0 8px 2px rgba(34, 211, 238, 0.3);
+  }
+
+  50% {
+    box-shadow: 0 0 20px 6px rgba(34, 211, 238, 0.5);
+  }
 }
+
 @keyframes cursed-strike-line {
-  0% { transform: scaleX(0); opacity: 1; }
-  50% { opacity: 1; }
-  100% { transform: scaleX(1); opacity: 0; }
+  0% {
+    transform: scaleX(0);
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: scaleX(1);
+    opacity: 0;
+  }
 }
+
 @keyframes cursed-reveal-in {
-  0% { opacity: 0; transform: scale(0.9); }
-  100% { opacity: 1; transform: scale(1); }
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
+
 @keyframes cursed-protocol-glitch {
-  0%, 100% { filter: none; }
-  25% { filter: hue-rotate(90deg); }
-  50% { filter: hue-rotate(-30deg); }
-  75% { filter: hue-rotate(60deg); }
+
+  0%,
+  100% {
+    filter: none;
+  }
+
+  25% {
+    filter: hue-rotate(90deg);
+  }
+
+  50% {
+    filter: hue-rotate(-30deg);
+  }
+
+  75% {
+    filter: hue-rotate(60deg);
+  }
 }
 
 /* Laser beam: thick glowing line */
 @keyframes cursed-laser-travel {
-  0% { transform: scaleX(0); opacity: 1; }
-  15% { opacity: 1; }
-  100% { transform: scaleX(1); opacity: 0.6; }
+  0% {
+    transform: scaleX(0);
+    opacity: 1;
+  }
+
+  15% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: scaleX(1);
+    opacity: 0.6;
+  }
 }
+
 @keyframes cursed-laser-impact {
-  0% { transform: scale(0.3); opacity: 1; box-shadow: 0 0 30px 12px currentColor; }
-  100% { transform: scale(1.5); opacity: 0; box-shadow: 0 0 60px 20px transparent; }
+  0% {
+    transform: scale(0.3);
+    opacity: 1;
+    box-shadow: 0 0 30px 12px currentColor;
+  }
+
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+    box-shadow: 0 0 60px 20px transparent;
+  }
 }
 
 /* Shield: appear and ripple */
 @keyframes cursed-shield-in {
-  0% { transform: scale(0.5); opacity: 0; }
-  30% { transform: scale(1.1); opacity: 0.95; }
-  100% { transform: scale(1); opacity: 0.85; }
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+
+  30% {
+    transform: scale(1.1);
+    opacity: 0.95;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 0.85;
+  }
 }
+
 @keyframes cursed-shield-ripple {
-  0% { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.5); }
-  50% { box-shadow: 0 0 25px 8px rgba(34, 211, 238, 0.4); }
-  100% { box-shadow: 0 0 0 0 transparent; }
+  0% {
+    box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.5);
+  }
+
+  50% {
+    box-shadow: 0 0 25px 8px rgba(34, 211, 238, 0.4);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
 }
 
 /* Impact burst when damage lands */
 @keyframes cursed-impact-burst {
-  0% { transform: scale(0); opacity: 0.9; }
-  50% { opacity: 0.8; }
-  100% { transform: scale(2.5); opacity: 0; }
+  0% {
+    transform: scale(0);
+    opacity: 0.9;
+  }
+
+  50% {
+    opacity: 0.8;
+  }
+
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
 }
 
 /* Prepare (reveal): charging orb/ring */
 @keyframes cursed-prepare-reveal {
-  0% { transform: scale(0.6); opacity: 0; }
-  30% { transform: scale(1.15); opacity: 0.9; }
-  70% { transform: scale(1.2); opacity: 0.7; }
-  100% { transform: scale(1.3); opacity: 0; }
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+
+  30% {
+    transform: scale(1.15);
+    opacity: 0.9;
+  }
+
+  70% {
+    transform: scale(1.2);
+    opacity: 0.7;
+  }
+
+  100% {
+    transform: scale(1.3);
+    opacity: 0;
+  }
 }
 
 /* Probe (reveal): scan line across avatar */
 @keyframes cursed-probe-scan {
-  0% { transform: translateY(-100%); opacity: 0.8; }
-  50% { opacity: 1; }
-  100% { transform: translateY(100%); opacity: 0.8; }
+  0% {
+    transform: translateY(-100%);
+    opacity: 0.8;
+  }
+
+  50% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(100%);
+    opacity: 0.8;
+  }
 }
 
 /* Idle (protocol): subtle pulse */
 @keyframes cursed-idle-pulse {
-  0%, 100% { opacity: 0.6; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.02); }
+
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.02);
+  }
 }
 
 /* Block (reveal): shield appears during reveal */
 @keyframes cursed-block-reveal {
-  0% { transform: scale(0.3); opacity: 0; }
-  40% { transform: scale(1.05); opacity: 0.9; }
-  100% { transform: scale(1); opacity: 0.85; }
+  0% {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+
+  40% {
+    transform: scale(1.05);
+    opacity: 0.9;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 0.85;
+  }
 }

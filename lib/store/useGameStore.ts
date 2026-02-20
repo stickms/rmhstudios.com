@@ -43,6 +43,9 @@ interface GameState {
   // Multiplayer flag
   isMultiplayer: boolean;
 
+  // UI state
+  isDarkMode: boolean;
+
   // Loading & Sync
   isLoadingSong: boolean;
   loadingProgress: number;
@@ -55,6 +58,7 @@ interface GameState {
   setIsLoadingSong: (loading: boolean) => void;
   setLoadingProgress: (progress: number) => void;
   setCountdown: (count: number) => void;
+  setIsDarkMode: (isDark: boolean) => void;
   
   setScore: (score: number, combo: number, multiplier?: number) => void;
   setCombo: (combo: number) => void;
@@ -110,15 +114,22 @@ export const useGameStore = create<GameState>()(
       hitSound: 'default',
       audioOffset: 0, // Default 0ms offset
       opponents: {},
-      isMultiplayer: false,
+      isMultiplayer: false, // Multiplayer flag
+      // Loading & Sync
       isLoadingSong: false,
       loadingProgress: 0,
       countdown: 0,
+      
+      // UI State
+      isDarkMode: true, // Default to dark mode for the cool factor
+
+      // Multiplayer results
       multiplayerResults: null,
       
       setIsLoadingSong: (isLoadingSong) => set({ isLoadingSong }),
       setLoadingProgress: (loadingProgress) => set({ loadingProgress }),
       setCountdown: (countdown) => set({ countdown }),
+      setIsDarkMode: (isDark) => set({ isDarkMode: isDark }),
 
       setScore: (score, combo, multiplier) => set({ score, combo, multiplier }),
       setCombo: (combo) => set({ combo }),
@@ -150,7 +161,7 @@ export const useGameStore = create<GameState>()(
     }),
     {
       name: 'slice-it-storage',
-      partialize: (state) => ({ userName: state.userName, keybinds: state.keybinds, volume: state.volume, sfxVolume: state.sfxVolume, hitSound: state.hitSound, audioOffset: state.audioOffset }), // Persist settings only (not modifiers or game state)
+      partialize: (state) => ({ userName: state.userName, keybinds: state.keybinds, volume: state.volume, sfxVolume: state.sfxVolume, hitSound: state.hitSound, audioOffset: state.audioOffset, isDarkMode: state.isDarkMode }), // Persist settings only
     }
   )
 );

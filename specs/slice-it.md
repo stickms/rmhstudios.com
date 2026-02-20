@@ -1,31 +1,18 @@
 Slice-It Updates:
 
-- Update the UI to use its own design system unique to Slice-It (distance itself from the other RMHStudios projects)
-    - Softer blues, pinkishres, whites, etc.
-    - Rounded corners, neumorphic design, etc.
-    - Soft edges and shadows
-    - Subtle animations
-- Add a public music library system, including:
-    - Users can upload their own songs (wav, mp3, etc) to the library
-    - Users can specify the song's metadata (artist, album, title, etc)
-    - Users can rate songs they've played
-    - Users can comment on songs they've played
-    - Each song has its own leaderboard
-    - Song uploaders can delete or edit their songs, or combine data with another song (in case multiple people uploaded the same song)
-- Add robust websocket system for multiplayer, including:
-    - Lobby system (play against or alongside up to 3 other players)
-    - Easily invite people with lobby links or codes
-    - Lobby members can select a queue of up to 4 different songs
-    - Lobby members can adjust their own song's settings and difficulty modifiers (which are only for them, but make it easier to compete)
-    - Websocket system should be universal to support other RMHStudios projects (use port 7001 for sockets)
-- Add a robust input/audio delay adjustment and calibration system, including:
-    - A calibration system that allows users to calibrate their input delay to their audio delay (using a ping-pong system)
-    - Save these calibrations using localStorage (aka per-device)
-- Change the feedback on note hits to be more dynamic, including:
-    - Better audio feedback for hits (use a soft "tap" sound for hits)
-    - Better visual feedback for hits (use a "glow" effect for hits, and a "shake" effect for misses)
-- Better automatic beatmap generation, including:
-    - Use a more advanced algorithm to generate beatmaps
-    - Parse the song's dynamic audio instead of depending on bpm metadata (which may be missing)
-    - Use the song's audio to automatically detect the beatmap's notes (including stereo/mono audio)
-
+-1. (important): dark mode setting should persist across refresh, and dark mode should be less blue and more of a dark gray, and make sure the entire screen is dark gray, not just the game area (so include header, sidebar and backgrounds). Give each element a color if its not specified, as some elements are still uncolored. Make sure to color shadows, highlights, hover selects, etc. Feel free to take the color scheme from other, accessible websites
+0. Fix games not starting on singleplayer or multiplayer
+1. In slice-it, the song and track plays befoer the countdown is over, and after the song ends, and doesnt end if i switch pages or tabs, i think something broke with that so fix it.
+2. Slice-it leaderboards should only save one score from an account (save the highest score)
+3. the slice-it speed multiplier in the multiplayer lobby should be a slider
+4. the slice-it "browse songs" button should open a similar page to the actual song list (so they can upload songs), allow for song previews and people to look at the sidebar comments and leaderboard, they just cant select the song
+5. add "Slice-It" to the header on the "/slice-it" page
+6. Different feedback levels should give different amounts of points, with the points rewarded being multiplied by the current combo:
+6.a: Marvelous: 250 points
+6.b: Perfect: 200 points
+6.c: Great: 125 points
+6.d: Good: 75 points
+6.e: Miss/Bad: 0 points
+7. remove clicking as a default input unless the user selects mouse 1/mouse 2 in settings for input keys (and disable context menu while in game)
+8. Add hold notes (long notes) that the player has to hold down for the duration of the note, and they progressively get more points the longer they hold (but if they hold for too long, it counts as a miss). The note duration should be represented by the length of the note on the track. (also keep it deterministic)
+9. add different particle effects based on how close you are to marvelous (which has the biggest, most responsive particle effect).

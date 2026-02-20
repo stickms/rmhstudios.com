@@ -13,11 +13,17 @@
     --slice-lane-bottom: #f472b6;
   }
 
-  .slice-theme.dark {
-    --slice-bg: #2d3748;
-    --slice-text: #cbd5e0;
-    --slice-shadow-light: #3a475c;
-    --slice-shadow-dark: #202733;
+  .dark .slice-theme {
+    --slice-bg: #16161a;
+    --slice-text: #f0f0f0;
+    --slice-text-darker: #e4e4e7;
+    --slice-text-muted: #a1a1aa;
+    --slice-text-light: #71717a;
+    --slice-shadow-light: #222228;
+    --slice-shadow-dark: #0b0b0d;
+    --slice-card-bg: #1e1e24;
+    --slice-primary: #60a5fa;
+    --slice-accent: #f472b6;
   }
 }
 

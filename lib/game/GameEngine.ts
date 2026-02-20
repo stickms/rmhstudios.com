@@ -97,6 +97,7 @@ export class GameEngine {
     private audioManager: AudioManager;
     private beatMap: BeatMap | null = null;
     private processedSliceIds: Set<string> = new Set();
+    private activeHolds: Map<number, Slice> = new Map(); // lane -> Slice being held
 
     // Per-lane input cooldown to ensure one input = one note
     private lastInputTime: Map<number, number> = new Map();
@@ -142,52 +143,24 @@ export class GameEngine {
         let slices = [...map.slices];
 
         if (m.switching) {
-            // Inject switching notes in gaps between existing slices
-            const newSlices: Slice[] = [];
-            for (let i = 0; i < slices.length - 1; i++) {
-                newSlices.push(slices[i]);
-                const gap = slices[i + 1].time - slices[i].time;
-                if (gap > 0.6 && Math.random() > 0.5) {
-                    // Place switch note in the opposite lane from the surrounding notes
-                    const oppositeLane = slices[i].lane === 0 ? 1 : 0;
-                    newSlices.push({
-                        id: `switch-${i}-${Math.floor(slices[i].time * 1000)}`,
-                        time: slices[i].time + gap / 2,
-                        type: 'SWITCH',
-                        lane: oppositeLane,
-                    });
+            // Convert ~15% of normal slices into SWITCH notes
+            slices = slices.map(slice => {
+                // Avoid converting BOMBs or LONGs to SWITCH if possible to preserve their mechanics
+                if (slice.type !== 'BOMB' && slice.type !== 'LONG' && Math.random() < 0.15) {
+                    return { ...slice, type: 'SWITCH', duration: undefined };
                 }
-            }
-            newSlices.push(slices[slices.length - 1]);
-            slices = newSlices.sort((a, b) => a.time - b.time);
+                return slice;
+            });
         }
 
         if (m.bombs) {
-            // Inject bombs in empty spaces, ensuring they don't overlap with any note
-            const BOMB_BUFFER = 0.35; // seconds — minimum distance from any note in any lane
-            const newSlices: Slice[] = [];
-            for (let i = 0; i < slices.length - 1; i++) {
-                newSlices.push(slices[i]);
-                const gap = slices[i+1].time - slices[i].time;
-                if (gap > 0.8 && Math.random() > 0.6) {
-                    const bombTime = slices[i].time + gap / 2;
-                    const bombLane = Math.random() > 0.5 ? 0 : 1;
-                    // Check that no existing note (any lane, any type) is within the buffer
-                    const tooClose = slices.some(s =>
-                        s.type !== 'BOMB' && Math.abs(s.time - bombTime) < BOMB_BUFFER
-                    );
-                    if (!tooClose) {
-                        newSlices.push({
-                            id: `bomb-${Date.now()}-${i}`,
-                            time: bombTime,
-                            type: 'BOMB',
-                            lane: bombLane
-                        });
-                    }
+            // Convert ~5% of normal slices into bombs
+            slices = slices.map(slice => {
+                if (slice.type !== 'SWITCH' && Math.random() < 0.05) {
+                    return { ...slice, type: 'BOMB', duration: undefined };
                 }
-            }
-            newSlices.push(slices[slices.length-1]);
-            slices = newSlices.sort((a,b) => a.time - b.time);
+                return slice;
+            });
         }
 
         // Apply Difficulty Filter (deterministic thinning based on song+bpm+difficulty)
@@ -214,6 +187,7 @@ export class GameEngine {
     
     public reset() {
         this.processedSliceIds.clear();
+        this.activeHolds.clear();
         this.lastInputTime.clear();
         this.score = 0;
         this.combo = 0;
@@ -299,11 +273,43 @@ export class GameEngine {
         }
         
         if (this.beatMap) {
+            // Process active holds
+            const m = useGameStore.getState().modifiers;
+            const scoreMultiplier = calculateScoreMultiplier(m);
+            const strictFactor = m.strictTiming ? 0.7 : 1.0;
+            // Overhold window: how long after the note ends before it counts as a miss
+            const HOLD_MISS_WINDOW = HIT_WINDOWS.BAD * (m.strictTiming ? 0.7 : 1.0);
+
+            this.activeHolds.forEach((slice, lane) => {
+                const holdEndTime = slice.time + (slice.duration || 0);
+
+                if (currentTime > holdEndTime + HOLD_MISS_WINDOW) {
+                    // Overhold — held too long past the end window, counts as a miss
+                    this.activeHolds.delete(lane);
+                    this.combo = 0;
+                    this.feedbackQueue.push({
+                        id: this.feedbackIdCounter++,
+                        text: 'MISS',
+                        lane: lane,
+                        time: performance.now(),
+                        color: '#64748b'
+                    });
+                    useGameStore.getState().setScore(this.score, this.combo, this.speedMultiplier);
+                    useGameStore.getState().setMaxCombo(this.maxCombo);
+                } else if (currentTime < holdEndTime) {
+                    // Actively holding within the duration — accumulate score per frame
+                    this.score += Math.floor(1 * (this.combo > 0 ? this.combo : 1) * scoreMultiplier);
+                }
+                // If currentTime is between holdEndTime and holdEndTime + HOLD_MISS_WINDOW,
+                // the player is in the release window — just wait, don't accumulate or penalize
+            });
+
             this.beatMap.slices.forEach(slice => {
+                // If it's a LONG note, it might be in processedSliceIds but still being held.
+                // But MISS windows only apply when checking if it can be initially hit.
                 if (this.processedSliceIds.has(slice.id)) return;
                 
                 // If time passed window + slice time, it's a miss
-                const strictFactor = useGameStore.getState().modifiers.strictTiming ? 0.7 : 1.0;
                 if (currentTime > slice.time + HIT_WINDOWS.BAD * strictFactor) {
                     if (slice.type === 'BOMB') {
                          this.processedSliceIds.add(slice.id); // Just mark as processed, no penalty
@@ -338,37 +344,6 @@ export class GameEngine {
         const currentTime = this.audioManager.getCurrentTime() - offsetSeconds;
         const map = this.beatMap; // Changed from activeMap to this.beatMap
         if (!map) return;
-        
-        // BOMB LOGIC: Check if hitting a bomb
-        // Bombs are active if they are within standard hit window
-        const bombs = map.slices.filter(s => 
-            s.type === 'BOMB' && 
-            this.getEffectiveLane(s, currentTime) === lane && 
-            Math.abs(s.time - currentTime) <= HIT_WINDOWS.BAD * (useGameStore.getState().modifiers.strictTiming ? 0.7 : 1.0)
-        );
-        
-        if (bombs.length > 0) {
-            // Hit a bomb — kills combo and deducts score
-            const bomb = bombs[0];
-            if (!this.processedSliceIds.has(bomb.id)) {
-                 this.processedSliceIds.add(bomb.id);
-                 
-                 this.combo = 0;
-                 this.score = Math.max(0, this.score - 500);
-                 
-                 // Feedback
-                 this.feedbackQueue.push({
-                    id: this.feedbackIdCounter++,
-                    text: 'BOMB!',
-                    lane: lane,
-                    time: performance.now(),
-                    color: '#ff0000'
-                });
-                this.audioManager.playSfX(150, 'sawtooth', 0.3, useGameStore.getState().sfxVolume / 100);
-            }
-            return; // Stop processing normal hits if hitting bomb
-        }
-
         // Only the targeted (next sequential) note in this lane can be hit
         const hitWindow = HIT_WINDOWS.BAD * (useGameStore.getState().modifiers.strictTiming ? 0.7 : 1.0);
         const targeted = this.getTargetedSlice(lane);
@@ -376,6 +351,25 @@ export class GameEngine {
         if (!targeted || Math.abs(targeted.time - currentTime) > hitWindow) {
             // No targetable note in window — ghost tap penalty
             this.handleHit(null, 'MISS', lane);
+            return;
+        }
+
+        // BOMB LOGIC: Check if hitting a bomb
+        if (targeted.type === 'BOMB') {
+            this.processedSliceIds.add(targeted.id);
+            
+            this.combo = 0;
+            this.score = Math.max(0, this.score - 500);
+            
+            // Feedback
+            this.feedbackQueue.push({
+                id: this.feedbackIdCounter++,
+                text: 'BOMB!',
+                lane: lane,
+                time: performance.now(),
+                color: '#ff0000'
+            });
+            this.audioManager.playSfX(150, 'sawtooth', 0.3, useGameStore.getState().sfxVolume / 100);
             return;
         }
 
@@ -402,6 +396,10 @@ export class GameEngine {
         if (slice) {
             this.processedSliceIds.add(slice.id);
             slice.hit = true;
+            slice.hitTime = performance.now();
+            if (slice.type === 'LONG') {
+                this.activeHolds.set(effectiveLane ?? slice.lane, slice);
+            }
         }
         
         // Calculate Score Multiplier
@@ -437,21 +435,23 @@ export class GameEngine {
             // Offset calculation for UI
              const offset = (this.audioManager.getCurrentTime() - (useGameStore.getState().audioOffset || 0) / 1000) - slice.time;
 
-            if (result === 'MARVELOUS') { points = 115; color = '#0891b2'; } // Dark Cyan
-            else if (result === 'PERFECT') { points = 100; color = '#B4954A'; } // Dark Gold
-            else if (result === 'GREAT') { points = 75; color = '#15803d'; } // Dark Green
-            else if (result === 'GOOD') { points = 50; color = '#1d4ed8'; } // Dark Blue
-            else if (result === 'BAD') { points = 10; color = '#7e22ce'; } // Dark Purple
+            if (result === 'MARVELOUS') { points = 250; color = '#0891b2'; } // Cyan
+            else if (result === 'PERFECT') { points = 200; color = '#B4954A'; } // Gold
+            else if (result === 'GREAT') { points = 125; color = '#15803d'; } // Green
+            else if (result === 'GOOD') { points = 75; color = '#1d4ed8'; } // Blue
+            else if (result === 'BAD') { points = 0; color = '#7e22ce'; } // Purple
             else { color = '#64748b'; } // Slate
             
             if (result === 'BAD') {
-                 this.combo = 0; // Break combo on Bad
+                this.combo = 0; // Break combo on Bad
             } else {
                 this.combo++;
                 this.maxCombo = Math.max(this.maxCombo, this.combo);
             }
-            
-            this.score += Math.floor(points * (this.combo > 0 ? this.combo : 1) * scoreMultiplier); 
+
+            // Multiply by combo (combo is already incremented above for non-BAD hits)
+            // For BAD: combo was reset to 0, use 1 as multiplier (but points are 0 anyway)
+            this.score += Math.floor(points * (this.combo > 0 ? this.combo : 1) * scoreMultiplier);
             
             // Add Feedback
             this.feedbackQueue.push({
@@ -490,17 +490,45 @@ export class GameEngine {
              });
         }
     }    
-    public submitRelease() {
+    public submitRelease(lane: number) {
         if (!this.beatMap) return;
-        const currentTime = this.audioManager.getCurrentTime();
-        
-        // Check if we were holding a LONG slice
-        // Needs state tracking for current holding slice.
-        // For simplicity in this milestone:
-        // logic would be: check if we are within the end window of a Long slice that was previously hit?
-        // Or if we release too early -> Miss/Break Combo.
-        
-        console.log("Release at", currentTime.toFixed(3));
+
+        const heldSlice = this.activeHolds.get(lane);
+        if (!heldSlice) return;
+
+        this.activeHolds.delete(lane);
+
+        const offsetSeconds = (useGameStore.getState().audioOffset || 0) / 1000;
+        const currentTime = this.audioManager.getCurrentTime() - offsetSeconds;
+        const holdEndTime = heldSlice.time + (heldSlice.duration || 0);
+        const m = useGameStore.getState().modifiers;
+        const scoreMultiplier = calculateScoreMultiplier(m);
+        const HOLD_MISS_WINDOW = HIT_WINDOWS.BAD * (m.strictTiming ? 0.7 : 1.0);
+
+        // Within the release window (from holdEndTime - HOLD_MISS_WINDOW to holdEndTime + HOLD_MISS_WINDOW)
+        const inWindow = currentTime >= holdEndTime - HOLD_MISS_WINDOW && currentTime <= holdEndTime + HOLD_MISS_WINDOW;
+
+        if (inWindow) {
+            // Perfect release — award completion bonus
+            this.score += Math.floor(100 * (this.combo > 0 ? this.combo : 1) * scoreMultiplier);
+            this.feedbackQueue.push({
+                id: this.feedbackIdCounter++,
+                text: 'HOLD OK',
+                lane: lane,
+                time: performance.now(),
+                color: '#0891b2'
+            });
+        } else {
+            // Early release — no bonus, combo continues (note was already hit)
+            this.feedbackQueue.push({
+                id: this.feedbackIdCounter++,
+                text: 'RELEASED',
+                lane: lane,
+                time: performance.now(),
+                color: '#64748b'
+            });
+        }
+        useGameStore.getState().setScore(this.score, this.combo, this.speedMultiplier);
     }
 
     /**
@@ -522,7 +550,7 @@ export class GameEngine {
         let best: Slice | null = null;
         for (const slice of this.beatMap.slices) {
             if (this.processedSliceIds.has(slice.id)) continue;
-            if (slice.type === 'BOMB' || slice.type === 'SILENT') continue;
+            if (slice.type === 'SILENT') continue;
 
             // For SWITCH notes, always use the post-switch (destination) lane
             // so the note is targeted in the lane the player will actually hit.

@@ -3,6 +3,7 @@ import * as React from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Play, Pause, FastForward, SkipBack, Share2, Heart, Download, Upload, Trash2, Info, Moon, Sun } from 'lucide-react';
 import { useGameStore } from '@/lib/store/useGameStore';
 import { GameEngine } from '@/lib/game/GameEngine';
 import { Slider } from '@/components/ui/slider';
@@ -24,40 +25,68 @@ interface MainMenuProps {
     engine: GameEngine | null;
 }
 
+const formatBind = (bind: string) =>
+    bind.replace('Mouse0', 'LMB').replace('Mouse1', 'MMB').replace('Mouse2', 'RMB')
+        .replace('ArrowUp', '↑').replace('ArrowDown', '↓').replace('ArrowLeft', '←').replace('ArrowRight', '→')
+        .replace('Key', '').replace('Arrow', '');
+
 const KeybindInput = ({ label, value, onChange }: { label: string, value: string, onChange: (val: string) => void }) => {
     const [listening, setListening] = React.useState(false);
-    
+    const btnRef = React.useRef<HTMLButtonElement>(null);
+
     React.useEffect(() => {
         if (!listening) return;
-        
-        const handleDown = (e: KeyboardEvent) => {
+
+        const handleKey = (e: KeyboardEvent) => {
             e.preventDefault();
-            onChange(e.code);
+            if (e.code !== 'Escape') onChange(e.code);
             setListening(false);
         };
-        
-        window.addEventListener('keydown', handleDown);
-        return () => window.removeEventListener('keydown', handleDown);
+
+        const handleMouseDown = (e: MouseEvent) => {
+            if (btnRef.current?.contains(e.target as Node)) return; // button click handled by onClick
+            e.preventDefault();
+            onChange(`Mouse${e.button}`);
+            setListening(false);
+        };
+
+        const suppressContextMenu = (e: MouseEvent) => { e.preventDefault(); };
+
+        window.addEventListener('keydown', handleKey);
+        window.addEventListener('mousedown', handleMouseDown);
+        window.addEventListener('contextmenu', suppressContextMenu);
+        return () => {
+            window.removeEventListener('keydown', handleKey);
+            window.removeEventListener('mousedown', handleMouseDown);
+            window.removeEventListener('contextmenu', suppressContextMenu);
+        };
     }, [listening, onChange]);
 
     return (
-        <div className="flex justify-between items-center bg-[#e0e5ec] p-3 rounded-xl shadow-[inset_3px_3px_6px_#a3b1c6,inset_-3px_-3px_6px_#ffffff]">
-            <span className="text-xs text-slate-500 uppercase font-bold">{label}</span>
-            <Button 
-                variant="ghost" 
+        <div className="flex justify-between items-center bg-slice-bg p-3 rounded-xl shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)]">
+            <span className="text-xs text-slice-text-muted uppercase font-bold">{label}</span>
+            <Button
+                ref={btnRef}
+                variant="ghost"
                 size="sm"
-                className={`font-mono text-xs w-32 rounded-lg ${listening ? 'bg-blue-100 text-blue-600' : 'bg-[#e0e5ec] shadow-[3px_3px_6px_#a3b1c6,-3px_-3px_6px_#ffffff] text-slate-600'}`}
-                onClick={() => setListening(true)}
+                className={`font-mono text-xs w-32 rounded-lg ${listening ? 'bg-blue-500/20 text-blue-400' : 'bg-slice-bg shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)] text-slice-text-darker'}`}
+                onClick={() => setListening(l => !l)}
             >
-                {listening ? 'PRESS KEY...' : value.replace("Key", "").replace("Arrow", "")}
+                {listening ? 'PRESS KEY/BTN...' : formatBind(value)}
             </Button>
         </div>
     );
 };
 
 
-export function MainMenu({ engine }: MainMenuProps) {
-    const { setStatus, setUserName, userName, keybinds, setKeybinds, volume, setVolume, hitSound, setHitSound, setIsLoadingSong, setLoadingProgress, setIsMultiplayer, setCountdown } = useGameStore();
+export function MainMenu({ engine: propEngine }: MainMenuProps) {
+    const { setUserName, userName, keybinds, setKeybinds, volume, setVolume, hitSound, setHitSound, setIsLoadingSong, setLoadingProgress, setIsMultiplayer, setCountdown } = useGameStore();
+    const setSongId = useGameStore(state => state.setSongId);
+    const setStatus = useGameStore(state => state.setStatus);
+    const updateMods = useGameStore(state => state.setModifiers);
+    const isDarkMode = useGameStore(state => state.isDarkMode);
+    const setIsDarkMode = useGameStore(state => state.setIsDarkMode);
+    const engine = propEngine;
     const session = authClient.useSession();
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -309,40 +338,41 @@ export function MainMenu({ engine }: MainMenuProps) {
 
 
 
-    if (showCalibration) {
-        return <CalibrationScreen onBack={() => setShowCalibration(false)} />;
-    }
-
-    if (showMultiplayer) {
-         return <MultiplayerLobby 
-            onBack={() => {
-                setShowMultiplayer(false);
-                setIsMultiplayer(false);
-            }} 
-            onStart={handleMultiplayerStart} 
-            onSelectSong={handleSelectSong}
-         />;
-    }
-
     // Unified Main Menu View
     return (
-        <div className="absolute inset-0 z-50 flex flex-col bg-[#e0e5ec] overflow-hidden">
-            {(isLoading || session.isPending) && (
-                <div className="absolute inset-0 z-[70] bg-[#e0e5ec]/80 flex items-center justify-center flex-col gap-4">
+        <div className="absolute inset-0 z-50 flex flex-col overflow-hidden bg-slice-bg text-slice-text">
+            {showCalibration && <CalibrationScreen onBack={() => setShowCalibration(false)} />}
+            
+            {showMultiplayer && !showCalibration && (
+                 <MultiplayerLobby 
+                    onBack={() => {
+                        setShowMultiplayer(false);
+                        setIsMultiplayer(false);
+                    }} 
+                    onStart={handleMultiplayerStart} 
+                    onSelectSong={handleSelectSong}
+                    onOpenSettings={() => setShowSettings(true)}
+                 />
+            )}
+
+            {(!showMultiplayer && !showCalibration) && (
+                <>
+                    {(isLoading || session.isPending) && (
+                <div className="absolute inset-0 z-[70] bg-slice-bg/80 flex items-center justify-center flex-col gap-4">
                     <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
                     <div className="text-blue-500 font-extrabold animate-pulse uppercase tracking-widest">{session.isPending ? 'Validating Session' : 'Initializing Track'}</div>
                 </div>
             )}
 
             {/* Header Bar */}
-            <div className="flex items-center justify-between shrink-0 bg-[#e0e5ec] px-4 py-3 border-b border-slate-300">
+            <div className="flex items-center justify-between shrink-0 bg-slice-bg px-4 py-3 border-b border-slice-shadow-dark/50">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-slate-300 shadow-inner flex items-center justify-center text-slate-500 font-black text-xl">
+                    <div className="w-10 h-10 rounded-full bg-slice-shadow-dark shadow-inner flex items-center justify-center text-slice-text-muted font-black text-xl">
                         {userName ? userName.charAt(0).toUpperCase() : '?'}
                     </div>
                     <div className="flex flex-col">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">System Operator</span>
-                        <div className="font-black text-slate-700 text-base uppercase tracking-tight">{userName || 'GUEST'}</div>
+                        <span className="text-[10px] font-black text-slice-text-light uppercase tracking-wider">System Operator</span>
+                        <div className="font-black text-slice-text text-base uppercase tracking-tight">{userName || 'GUEST'}</div>
                     </div>
                 </div>
 
@@ -358,7 +388,16 @@ export function MainMenu({ engine }: MainMenuProps) {
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="h-10 w-10 text-slate-500 hover:text-slate-700 hover:bg-slate-200 rounded-lg transition-all"
+                        className="h-10 w-10 text-slice-text-muted hover:text-slice-text hover:bg-slice-shadow-dark dark:text-slice-text-muted dark:hover:text-slice-text dark:hover:bg-slice-shadow-light rounded-lg transition-all"
+                        onClick={() => setIsDarkMode(!isDarkMode)}
+                        title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                    >
+                        {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-10 w-10 text-slice-text-muted hover:text-slice-text hover:bg-slice-shadow-dark dark:text-slice-text-muted dark:hover:text-slice-text dark:hover:bg-slice-shadow-light rounded-lg transition-all"
                         onClick={() => setShowSettings(true)}
                     >
                         <span className="sr-only">Settings</span>
@@ -370,13 +409,13 @@ export function MainMenu({ engine }: MainMenuProps) {
             <div className="flex-1 min-h-0 flex relative">
                 {/* Auth Overlay */}
                 {!session.data && !session.isPending && (
-                    <div className="absolute inset-0 z-[60] bg-[#e0e5ec]/90 flex items-center justify-center p-8 backdrop-blur-xl rounded-[4rem] shadow-[inset_15px_15px_40px_#a3b1c6,inset_-15px_-15px_40px_#ffffff]">
+                    <div className="absolute inset-0 z-[60] bg-slice-bg/90 flex items-center justify-center p-8 backdrop-blur-xl rounded-[4rem] shadow-[inset_15px_15px_40px_var(--slice-shadow-dark),inset_-15px_-15px_40px_var(--slice-shadow-light)]">
                         <div className="w-full max-w-md space-y-10 text-center animate-in fade-in zoom-in duration-700">
-                             <h3 className="text-3xl sm:text-5xl font-black text-slate-700 tracking-tighter uppercase italic bg-gradient-to-br from-slate-700 to-slate-500 bg-clip-text text-transparent">Connect to Start</h3>
-                             <p className="text-slate-500 font-bold uppercase text-xs tracking-[0.5em] opacity-60">Authentication is required for leaderboard ranking</p>
+                             <h3 className="text-3xl sm:text-5xl font-black tracking-tighter uppercase italic text-slice-text">Connect to Start</h3>
+                             <p className="text-slice-text-muted font-bold uppercase text-xs tracking-[0.5em] opacity-60">Authentication is required for leaderboard ranking</p>
                              <div className="space-y-6">
                                 <Button
-                                    className="w-full py-6 sm:py-12 text-xl sm:text-3xl font-black tracking-widest bg-blue-500 hover:bg-blue-400 text-white shadow-[15px_15px_30px_rgba(59,130,246,0.4),-15px_-15px_30px_#ffffff] rounded-[2.5rem] transition-all transform hover:scale-[1.03] active:scale-95 uppercase"
+                                    className="w-full py-6 sm:py-12 text-xl sm:text-3xl font-black tracking-widest bg-blue-500 hover:bg-blue-400 text-white shadow-[15px_15px_30px_rgba(59,130,246,0.4),-15px_-15px_30px_var(--slice-shadow-light)] rounded-[2.5rem] transition-all transform hover:scale-[1.03] active:scale-95 uppercase"
                                     onClick={() => router.push('/login')}
                                 >
                                     Log In
@@ -406,14 +445,14 @@ export function MainMenu({ engine }: MainMenuProps) {
                         />
 
                         {/* Sidebar Panel */}
-                        <div className="absolute top-0 right-0 bottom-0 w-full sm:max-w-2xl bg-white shadow-2xl z-[70] animate-in slide-in-from-right duration-300 flex flex-col overflow-hidden">
+                        <div className="absolute top-0 right-0 bottom-0 w-full sm:max-w-2xl bg-slice-bg shadow-2xl z-[70] animate-in slide-in-from-right duration-300 flex flex-col overflow-hidden">
                             {/* Sidebar Header */}
-                            <div className="flex items-center justify-between p-4 border-b border-slate-300 bg-slate-50">
-                                <h2 className="text-lg font-black text-slate-700">Song Details</h2>
+                            <div className="flex items-center justify-between p-4 border-b border-slice-shadow-dark/50 bg-slice-shadow-dark/20">
+                                <h2 className="text-lg font-black text-slice-text">Song Details</h2>
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-8 w-8 text-slate-500 hover:text-slate-700 hover:bg-slate-200 rounded-lg"
+                                    className="h-8 w-8 text-slice-text-muted hover:text-slice-text hover:bg-slice-shadow-dark rounded-lg"
                                     onClick={() => setSelectedSong(null)}
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -432,15 +471,17 @@ export function MainMenu({ engine }: MainMenuProps) {
                     </>
                 )}
             </div>
+            </>
+            )}
             
             {/* Settings Overlay remains as a full-screen drawer */}
             {showSettings && (
-                <div className="absolute inset-0 z-[80] bg-[#e0e5ec] p-5 sm:p-12 flex flex-col animate-in slide-in-from-right-10 overflow-y-auto">
+                <div className="absolute inset-0 z-[80] bg-slice-bg p-5 sm:p-12 flex flex-col animate-in slide-in-from-right-10 overflow-y-auto">
                     <div className="flex items-center justify-between mb-5 sm:mb-12">
-                        <h2 className="text-2xl sm:text-5xl font-black text-slate-700 tracking-tighter uppercase italic">System Configuration</h2>
+                        <h2 className="text-2xl sm:text-5xl font-black text-slice-text tracking-tighter uppercase italic">System Configuration</h2>
                         <Button 
                             variant="ghost" 
-                            className="bg-[#e0e5ec] shadow-[5px_5px_12px_#a3b1c6,-5px_-5px_12px_#ffffff] active:shadow-inner text-slate-500 hover:text-slate-700 font-black uppercase tracking-[0.2em] px-5 sm:px-10 h-10 sm:h-16 rounded-2xl text-sm" 
+                            className="bg-slice-bg shadow-[5px_5px_12px_var(--slice-shadow-dark),-5px_-5px_12px_var(--slice-shadow-light)] active:shadow-inner text-slice-text-muted hover:text-slice-text font-black uppercase tracking-[0.2em] px-5 sm:px-10 h-10 sm:h-16 rounded-2xl text-sm" 
                             onClick={() => setShowSettings(false)}
                         >
                             CLOSE
@@ -450,10 +491,10 @@ export function MainMenu({ engine }: MainMenuProps) {
                     <div className="max-w-3xl mx-auto w-full space-y-8 sm:space-y-12">
                          {/* Settings content ... */}
                          <div className="space-y-4">
-                            <label className="text-[10px] text-slate-400 uppercase tracking-[0.4em] font-black ml-4">Authorized Operator</label>
+                            <label className="text-[10px] text-slice-text-light uppercase tracking-[0.4em] font-black ml-4">Authorized Operator</label>
                             <input 
                                 type="text" 
-                                className="w-full bg-[#e0e5ec] shadow-[inset_4px_4px_8px_#a3b1c6,inset_-4px_-4px_8px_#ffffff] rounded-2xl p-6 text-xl font-bold text-slate-700 focus:outline-none transition-shadow"
+                                className="w-full bg-slice-bg shadow-[inset_4px_4px_8px_var(--slice-shadow-dark),inset_-4px_-4px_8px_var(--slice-shadow-light)] rounded-2xl p-6 text-xl font-bold text-slice-text focus:outline-none transition-shadow"
                                 placeholder="Enter name"
                                 maxLength={32}
                                 value={userName}
@@ -463,15 +504,15 @@ export function MainMenu({ engine }: MainMenuProps) {
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
                              <div className="space-y-4">
-                                <label className="text-[10px] text-slate-400 uppercase tracking-[0.4em] font-black ml-4">Audio Output Level</label>
-                                <div className="bg-[#e0e5ec] p-8 rounded-3xl shadow-[inset_5px_5px_10px_#a3b1c6,inset_-5px_-5px_10px_#ffffff] space-y-6">
-                                     <div className="flex justify-between text-sm font-black text-slate-600">
+                                <label className="text-[10px] text-slice-text-light uppercase tracking-[0.4em] font-black ml-4">Audio Output Level</label>
+                                <div className="bg-slice-bg p-8 rounded-3xl shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)] space-y-6">
+                                     <div className="flex justify-between text-sm font-black text-slice-text-darker">
                                         <span>Master</span>
                                         <span className="text-blue-500 font-mono">{volume}%</span>
                                      </div>
                                      <Slider value={[volume]} max={100} step={1} onValueChange={handleVolumeChange} />
                                      
-                                     <div className="flex justify-between text-sm font-black text-slate-600 pt-4">
+                                     <div className="flex justify-between text-sm font-black text-slice-text-darker pt-4">
                                         <span>Effects</span>
                                         <span className="text-blue-500 font-mono">{useGameStore.getState().sfxVolume}%</span>
                                      </div>
@@ -480,7 +521,7 @@ export function MainMenu({ engine }: MainMenuProps) {
                              </div>
 
                              <div className="space-y-4">
-                                <label className="text-[10px] text-slate-400 uppercase tracking-[0.4em] font-black ml-4">Input Mapping</label>
+                                <label className="text-[10px] text-slice-text-light uppercase tracking-[0.4em] font-black ml-4">Input Mapping</label>
                                 <div className="space-y-4">
                                     <KeybindInput label="Lane A" value={keybinds.lane1} onChange={(k) => setKeybinds({...keybinds, lane1: k})} />
                                     <KeybindInput label="Lane B" value={keybinds.lane2} onChange={(k) => setKeybinds({...keybinds, lane2: k})} />
@@ -488,12 +529,12 @@ export function MainMenu({ engine }: MainMenuProps) {
 
                                 <div className="pt-4">
                                     <Button 
-                                        className="w-full h-16 bg-[#e0e5ec] text-slate-600 shadow-[8px_8px_16px_#a3b1c6,-8px_-8px_16px_#ffffff] active:shadow-inner rounded-2xl font-black text-sm tracking-[0.1em] uppercase transition-all"
+                                        className="w-full h-16 bg-slice-bg text-slice-text-darker shadow-[8px_8px_16px_var(--slice-shadow-dark),-8px_-8px_16px_var(--slice-shadow-light)] active:shadow-inner rounded-2xl font-black text-sm tracking-[0.1em] uppercase transition-all"
                                         onClick={() => setShowCalibration(true)}
                                     >
                                         Calibrate Synchronization
                                     </Button>
-                                    <div className="text-center text-[10px] text-slate-400 font-mono mt-3 uppercase tracking-[0.2em]">
+                                    <div className="text-center text-[10px] text-slice-text-light font-mono mt-3 uppercase tracking-[0.2em]">
                                         Offset: {useGameStore.getState().audioOffset}ms
                                     </div>
                                 </div>
@@ -502,21 +543,21 @@ export function MainMenu({ engine }: MainMenuProps) {
 
                         {/* Hit Sound Selector */}
                         <div className="space-y-4">
-                            <label className="text-[10px] text-slate-400 uppercase tracking-[0.4em] font-black ml-4">Hit Sound Effect</label>
-                            <div className="bg-[#e0e5ec] p-6 rounded-3xl shadow-[inset_5px_5px_10px_#a3b1c6,inset_-5px_-5px_10px_#ffffff]">
+                            <label className="text-[10px] text-slice-text-light uppercase tracking-[0.4em] font-black ml-4">Hit Sound Effect</label>
+                            <div className="bg-slice-bg p-6 rounded-3xl shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)]">
                                 {(() => {
                                     const categories = [...new Set(hitSoundOptions.map(s => s.category))];
                                     return categories.map(category => (
                                         <div key={category} className="mb-4 last:mb-0">
-                                            <div className="text-[9px] text-slate-400 uppercase tracking-[0.3em] font-black mb-2 ml-1">{category}</div>
+                                            <div className="text-[9px] text-slice-text-light uppercase tracking-[0.3em] font-black mb-2 ml-1">{category}</div>
                                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                                                 {hitSoundOptions.filter(s => s.category === category).map(sound => (
                                                     <button
                                                         key={sound.id}
                                                         className={`group relative flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
                                                             hitSound === sound.id
-                                                                ? 'bg-blue-500 text-white shadow-[3px_3px_8px_rgba(59,130,246,0.4),-3px_-3px_8px_#ffffff]'
-                                                                : 'bg-[#e0e5ec] text-slate-600 shadow-[3px_3px_6px_#a3b1c6,-3px_-3px_6px_#ffffff] hover:shadow-[1px_1px_3px_#a3b1c6,-1px_-1px_3px_#ffffff] active:shadow-[inset_3px_3px_6px_#a3b1c6,inset_-3px_-3px_6px_#ffffff]'
+                                                                ? 'bg-blue-500 text-white shadow-[3px_3px_8px_rgba(59,130,246,0.4),-3px_-3px_8px_var(--slice-shadow-light)]'
+                                                                : 'bg-slice-bg text-slice-text-darker shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)] hover:shadow-[1px_1px_3px_var(--slice-shadow-dark),-1px_-1px_3px_var(--slice-shadow-light)] active:shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)]'
                                                         }`}
                                                         onClick={() => {
                                                             setHitSound(sound.id);
@@ -532,7 +573,7 @@ export function MainMenu({ engine }: MainMenuProps) {
                                                             } ${
                                                                 hitSound === sound.id
                                                                     ? 'bg-blue-400/40 text-white'
-                                                                    : 'bg-slate-200/60 text-slate-400 group-hover:text-slate-600'
+                                                                    : 'bg-slice-shadow-dark/60 text-slice-text-light group-hover:text-slice-text-darker'
                                                             }`}
                                                             onClick={(e) => {
                                                                 e.stopPropagation();

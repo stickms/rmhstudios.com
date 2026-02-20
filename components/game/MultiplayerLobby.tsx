@@ -10,8 +10,10 @@ import { authClient } from "@/lib/auth-client";
 import { useSearchParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Copy, Share2, Check, Zap, Bomb, Shuffle, EyeOff, Skull, Info, ChevronDown, ChevronUp, Settings, RotateCw, Target, Minus } from 'lucide-react';
+import { Slider } from '@/components/ui/slider';
 
 import { SongLibrary } from '@/components/game/SongLibrary'; // Import SongLibrary
+import { SongDetailsPanel } from '@/components/game/SongDetailsPanel';
 import { calculateScoreMultiplier } from '@/lib/game/score';
 
 interface Player {
@@ -30,15 +32,29 @@ interface LobbyData {
     song: any | null;
 }
 
-export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: () => void, onStart: (lobbyId: string, song: any) => void, onSelectSong: (song: any) => void }) {
+export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings }: { onBack: () => void, onStart: (lobbyId: string, song: any) => void, onSelectSong: (song: any) => void, onOpenSettings?: () => void }) {
     // const { userName, setUserName } = useGameStore(); // No longer used locally here
 
     const [lobbyIdInput, setLobbyIdInput] = React.useState('');
     const [lobbyData, setLobbyData] = React.useState<LobbyData | null>(null);
     const [status, setStatus] = React.useState<string>('Disconnnected');
     const [showSongSelect, setShowSongSelect] = React.useState(false);
+    const [showBrowseSongs, setShowBrowseSongs] = React.useState(false);
+    const [browsedSong, setBrowsedSong] = React.useState<any | null>(null);
     const [isCopied, setIsCopied] = React.useState(false);
     const [showDifficulty, setShowDifficulty] = React.useState(false);
+
+    // Auto-leave lobby if user closes tab
+    React.useEffect(() => {
+        const handleBeforeUnload = () => {
+            if (lobbyData) {
+                MultiplayerFactory.getInstance().leaveLobby(lobbyData.lobbyId);
+            }
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [lobbyData]);
+
     const [myDifficulty, setMyDifficulty] = React.useState(() => {
         const storeMods = useGameStore.getState().modifiers;
         return {
@@ -136,7 +152,7 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
     // mp is a singleton; omit onStart/onSelectSong — we use refs instead
      
     }, [mp]);
-    
+
     const { data: session, isPending } = authClient.useSession();
 
     // Auto-join from URL
@@ -215,61 +231,121 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
         
         if (showSongSelect && isHost) {
             return (
-                <div className="absolute inset-0 z-[60] bg-[#e0e5ec] p-4 flex flex-col">
+                <div className="absolute inset-0 z-[60] bg-slice-bg p-4 flex flex-col">
                     <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-xl font-bold text-slate-600">SELECT A SONG</h2>
+                        <h2 className="text-xl font-bold text-slice-text-darker">SELECT A SONG</h2>
                         <Button variant="ghost" onClick={() => setShowSongSelect(false)}>CANCEL</Button>
                     </div>
-                    <div className="flex-1 overflow-hidden rounded-2xl shadow-[inset_10px_10px_20px_#bebebe,inset_-10px_-10px_20px_#ffffff] p-4">
-                         <SongLibrary 
+                    <div className="flex-1 overflow-hidden rounded-2xl shadow-[inset_10px_10px_20px_var(--slice-shadow-dark),inset_-10px_-10px_20px_var(--slice-shadow-light)] p-4">
+                         <SongLibrary
                              onSelect={() => {}}
                              onHighlight={(song) => {
                              console.log("Host selected song:", song);
                              // Send to server
                              mp.selectSong(lobbyData.lobbyId, song);
                              setShowSongSelect(false);
-                         }} 
+                         }}
                          selectedSongId={lobbyData.song?.id ?? null}
                          />
                     </div>
                 </div>
             );
         }
+
+        // Browse Songs view (non-host): full song library + details panel in read-only mode
+        if (showBrowseSongs) {
+            return (
+                <div className="absolute inset-0 z-[60] bg-slice-bg flex flex-col">
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-slice-shadow-dark/30 bg-slice-bg shrink-0">
+                        <h2 className="text-xl font-bold text-slice-text-darker uppercase tracking-wide">Browse Songs</h2>
+                        <Button variant="ghost" onClick={() => { setShowBrowseSongs(false); setBrowsedSong(null); }}>← Back to Lobby</Button>
+                    </div>
+                    <div className="flex-1 min-h-0 flex relative">
+                        <div className="w-full flex flex-col overflow-hidden">
+                            <SongLibrary
+                                onSelect={() => {}} // No game start in browse mode
+                                onHighlight={setBrowsedSong}
+                                selectedSongId={browsedSong?.id ?? null}
+                            />
+                        </div>
+
+                        {/* Song details sidebar */}
+                        {browsedSong && (
+                            <>
+                                <div
+                                    className="absolute inset-0 bg-black/20 z-[65] animate-in fade-in duration-200"
+                                    onClick={() => setBrowsedSong(null)}
+                                />
+                                <div className="absolute top-0 right-0 bottom-0 w-full sm:max-w-2xl bg-slice-bg shadow-2xl z-[70] animate-in slide-in-from-right duration-300 flex flex-col overflow-hidden">
+                                    <div className="flex items-center justify-between p-4 border-b border-slice-shadow-dark/50 bg-slice-shadow-dark/20">
+                                        <h2 className="text-lg font-black text-slice-text">Song Details</h2>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-slice-text-muted hover:text-slice-text hover:bg-slice-shadow-dark rounded-lg"
+                                            onClick={() => setBrowsedSong(null)}>
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                        </Button>
+                                    </div>
+                                    <div className="flex-1 overflow-y-auto">
+                                        {/* readOnly=true: show leaderboard/comments but no play button */}
+                                        <SongDetailsPanel
+                                            song={browsedSong}
+                                            onPlay={() => {}} // disabled in browse mode
+                                            onSongUpdated={(updates) => setBrowsedSong((s: any) => s ? { ...s, ...updates } : s)}
+                                            readOnly
+                                        />
+                                    </div>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            );
+        }
         
         return (
-            <div className="absolute inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-[#e0e5ec] p-4 text-slate-700">
-                 <Card className="w-full max-w-lg bg-[#e0e5ec] shadow-[20px_20px_60px_#bebebe,-20px_-20px_60px_#ffffff] rounded-[2rem] border-none my-auto">
+            <div className="absolute inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-slice-bg p-4 text-slice-text">
+                 <Card className="w-full max-w-lg bg-slice-bg shadow-[20px_20px_60px_var(--slice-shadow-dark),-20px_-20px_60px_var(--slice-shadow-light)] rounded-[2rem] border-none my-auto">
                     <CardHeader>
-                        <CardTitle className="text-2xl font-black text-center text-slate-600 flex flex-col items-center gap-2">
+                        <CardTitle className="text-2xl font-black text-center text-slice-text-darker flex flex-col items-center gap-2 relative">
+                            {onOpenSettings && (
+                                <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="absolute right-0 top-0 h-10 w-10 sm:-mr-4 sm:-mt-2 rounded-2xl shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] active:shadow-[inset_2px_2px_5px_var(--slice-shadow-dark),inset_-2px_-2px_5px_var(--slice-shadow-light)] transition-all text-slice-text-muted hover:text-slice-text"
+                                    onClick={onOpenSettings}
+                                    title="Settings"
+                                >
+                                    <Settings className="w-5 h-5" />
+                                </Button>
+                            )}
                             <span>LOBBY CODE</span>
                             <div className="flex items-center gap-3">
-                                <span className="text-4xl tracking-widest text-blue-500 bg-[#e0e5ec] px-4 py-2 rounded-2xl shadow-[inset_5px_5px_10px_#bebebe,inset_-5px_-5px_10px_#ffffff]">
+                                <span className="text-4xl tracking-widest text-blue-500 bg-slice-bg px-4 py-2 rounded-2xl shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)]">
                                     {lobbyData.lobbyId}
                                 </span>
                                 <Button 
                                     size="icon" 
                                     variant="ghost" 
-                                    className="h-12 w-12 rounded-2xl shadow-[5px_5px_10px_#bebebe,-5px_-5px_10px_#ffffff] active:shadow-[inset_2px_2px_5px_#bebebe,inset_-2px_-2px_5px_#ffffff] transition-all"
+                                    className="h-12 w-12 rounded-2xl shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] active:shadow-[inset_2px_2px_5px_var(--slice-shadow-dark),inset_-2px_-2px_5px_var(--slice-shadow-light)] transition-all"
                                     onClick={handleCopyLink}
                                     title="Copy Invite Link"
                                 >
-                                    {isCopied ? <Check className="w-6 h-6 text-green-500" /> : <Share2 className="w-6 h-6 text-slate-600" />}
+                                    {isCopied ? <Check className="w-6 h-6 text-green-500" /> : <Share2 className="w-6 h-6 text-slice-text-darker" />}
                                 </Button>
                             </div>
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-6">
                          <div className="space-y-2">
-                            <h3 className="font-bold text-sm text-slate-400 uppercase tracking-widest">Players</h3>
+                            <h3 className="font-bold text-sm text-slice-text-light uppercase tracking-widest">Players</h3>
                             <div className="max-h-48 overflow-y-auto space-y-2 pr-1">
                             {lobbyData.players.map(p => {
                                 const mult = calcMultiplierForPlayer(p);
                                 const isMe = p.id === mp.getSocketId();
                                 return (
-                                    <div key={p.id} className="flex justify-between items-center bg-[#e0e5ec] p-3 rounded-xl shadow-[inset_3px_3px_6px_#a3b1c6,inset_-3px_-3px_6px_#ffffff] group relative">
+                                    <div key={p.id} className="flex justify-between items-center bg-slice-bg p-3 rounded-xl shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] group relative">
                                         <div className="flex items-center gap-2">
                                             {/* Ready indicator */}
-                                            <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${p.isReady ? 'bg-green-500' : 'bg-slate-300'}`} title={p.isReady ? 'Ready' : 'Not ready'} />
+                                            <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${p.isReady ? 'bg-green-500' : 'bg-slice-shadow-dark'}`} title={p.isReady ? 'Ready' : 'Not ready'} />
                                             <span className="font-bold">{p.name}</span>
                                             {isMe && <span className="text-[9px] font-black bg-blue-500 text-white px-1.5 py-0.5 rounded-full">YOU</span>}
                                         </div>
@@ -289,20 +365,20 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
                                                         </span>
                                                     )}
                                                     {p.difficulty.speed !== 1.0 && (
-                                                        <span className="text-[9px] font-bold bg-purple-100 text-purple-600 px-1.5 py-0.5 rounded-full" title={`Speed: ${p.difficulty.speed.toFixed(1)}x`}>
+                                                        <span className="text-[9px] font-bold bg-purple-500/20 text-purple-400 px-1.5 py-0.5 rounded-full" title={`Speed: ${p.difficulty.speed.toFixed(1)}x`}>
                                                             <Zap className="w-3 h-3 inline" />{p.difficulty.speed.toFixed(1)}x
                                                         </span>
                                                     )}
-                                                    {p.difficulty.bombs && <span title="Bombs enabled" className="text-[9px] bg-red-100 text-red-500 px-1 py-0.5 rounded-full"><Bomb className="w-3 h-3" /></span>}
-                                                    {p.difficulty.switching && <span title="Switching enabled" className="text-[9px] bg-blue-100 text-blue-500 px-1 py-0.5 rounded-full"><Shuffle className="w-3 h-3" /></span>}
-                                                    {p.difficulty.invisible && <span title="Invisible" className="text-[9px] bg-slate-200 text-slate-600 px-1 py-0.5 rounded-full"><EyeOff className="w-3 h-3" /></span>}
-                                                    {p.difficulty.spin && <span title="Spin enabled" className="text-[9px] bg-cyan-100 text-cyan-500 px-1 py-0.5 rounded-full"><RotateCw className="w-3 h-3" /></span>}
-                                                    {p.difficulty.strictTiming && <span title="Strict Timing" className="text-[9px] bg-red-100 text-red-600 px-1 py-0.5 rounded-full"><Target className="w-3 h-3" /></span>}
-                                                    {p.difficulty.oneTrack && <span title="One Track" className="text-[9px] bg-violet-100 text-violet-500 px-1 py-0.5 rounded-full"><Minus className="w-3 h-3" /></span>}
+                                                    {p.difficulty.bombs && <span title="Bombs enabled" className="text-[9px] bg-red-500/20 text-red-400 px-1 py-0.5 rounded-full"><Bomb className="w-3 h-3" /></span>}
+                                                    {p.difficulty.switching && <span title="Switching enabled" className="text-[9px] bg-blue-500/20 text-blue-400 px-1 py-0.5 rounded-full"><Shuffle className="w-3 h-3" /></span>}
+                                                    {p.difficulty.invisible && <span title="Invisible" className="text-[9px] bg-slice-shadow-dark text-slice-text-darker px-1 py-0.5 rounded-full"><EyeOff className="w-3 h-3" /></span>}
+                                                    {p.difficulty.spin && <span title="Spin enabled" className="text-[9px] bg-cyan-500/20 text-cyan-400 px-1 py-0.5 rounded-full"><RotateCw className="w-3 h-3" /></span>}
+                                                    {p.difficulty.strictTiming && <span title="Strict Timing" className="text-[9px] bg-red-500/20 text-red-400 px-1 py-0.5 rounded-full"><Target className="w-3 h-3" /></span>}
+                                                    {p.difficulty.oneTrack && <span title="One Track" className="text-[9px] bg-violet-500/20 text-violet-400 px-1 py-0.5 rounded-full"><Minus className="w-3 h-3" /></span>}
                                                 </div>
                                             )}
                                             {mult > 1.0 && (
-                                                <span className="text-[10px] font-black text-green-600 bg-green-100 px-2 py-0.5 rounded-full" title={`Score multiplier: ${mult.toFixed(2)}x`}>
+                                                <span className="text-[10px] font-black text-green-500 bg-green-500/20 px-2 py-0.5 rounded-full" title={`Score multiplier: ${mult.toFixed(2)}x`}>
                                                     {mult.toFixed(2)}x
                                                 </span>
                                             )}
@@ -315,20 +391,24 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
                          </div>
                          
                          <div className="space-y-2">
-                            <h3 className="font-bold text-sm text-slate-400 uppercase tracking-widest">Selected Song</h3>
-                            <div className="bg-[#e0e5ec] p-4 rounded-xl shadow-[inset_3px_3px_6px_#a3b1c6,inset_-3px_-3px_6px_#ffffff] flex justify-between items-center">
+                            <h3 className="font-bold text-sm text-slice-text-light uppercase tracking-widest">Selected Song</h3>
+                            <div className="bg-slice-bg p-4 rounded-xl shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] flex justify-between items-center">
                                 {lobbyData.song ? (
                                     <div>
                                         <div className="font-bold">{lobbyData.song.title}</div>
-                                        <div className="text-xs text-slate-500">{lobbyData.song.artist}</div>
+                                        <div className="text-xs text-slice-text-muted">{lobbyData.song.artist}</div>
                                     </div>
                                 ) : (
-                                    <span className="text-slate-400 italic">No song selected</span>
+                                    <span className="text-slice-text-light italic">No song selected</span>
                                 )}
                                 
-                                {isHost && (
+                                {isHost ? (
                                     <Button size="sm" onClick={() => setShowSongSelect(true)} className="ml-4">
                                         CHANGE
+                                    </Button>
+                                ) : (
+                                    <Button size="sm" variant="outline" onClick={() => setShowBrowseSongs(true)} className="ml-4 shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)]">
+                                        BROWSE SONGS
                                     </Button>
                                 )}
                             </div>
@@ -337,10 +417,10 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
                          {/* Difficulty Settings - Always visible */}
                          <div className="space-y-2">
                             <button
-                                className="flex items-center gap-2 font-bold text-sm text-slate-600 uppercase tracking-widest hover:text-blue-500 transition-colors w-full bg-[#e0e5ec] p-3 rounded-xl shadow-[3px_3px_6px_#a3b1c6,-3px_-3px_6px_#ffffff] active:shadow-[inset_3px_3px_6px_#a3b1c6,inset_-3px_-3px_6px_#ffffff]"
+                                className="flex items-center gap-2 font-bold text-sm text-slice-text-darker uppercase tracking-widest hover:text-blue-500 transition-colors w-full bg-slice-bg p-3 rounded-xl shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)] active:shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)]"
                                 onClick={() => setShowDifficulty(!showDifficulty)}
                             >
-                                <Settings className="w-4 h-4" />
+                                <Zap className="w-4 h-4" />
                                 My Difficulty & Modifiers
                                 {showDifficulty ? <ChevronUp className="w-4 h-4 ml-auto" /> : <ChevronDown className="w-4 h-4 ml-auto" />}
                                 {calcMultiplier(myDifficulty) !== 1.0 && (
@@ -350,10 +430,10 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
                                 )}
                             </button>
                             {showDifficulty && (
-                                <div className="bg-[#e0e5ec] p-4 rounded-xl shadow-[inset_3px_3px_6px_#a3b1c6,inset_-3px_-3px_6px_#ffffff] space-y-3">
+                                <div className="bg-slice-bg p-4 rounded-xl shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] space-y-3">
                                     {/* Difficulty Level */}
                                     <div className="space-y-1.5">
-                                        <span className="text-xs font-bold text-slate-600">Note Density</span>
+                                        <span className="text-xs font-bold text-slice-text-darker">Note Density</span>
                                         <div className="grid grid-cols-4 gap-1">
                                             {([
                                                 { key: 'easy', label: 'Easy', notes: '70%', color: '#22c55e' },
@@ -369,40 +449,43 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
                                                         className={`px-1.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wide transition-all border ${
                                                             isActive
                                                                 ? 'text-white shadow-md scale-[1.02]'
-                                                                : 'bg-[#e0e5ec] text-slate-400 border-slate-300 shadow-[2px_2px_4px_#a3b1c6,-2px_-2px_4px_#ffffff] hover:bg-slate-50'
+                                                                : 'bg-slice-bg text-slice-text-light border-slice-shadow-dark/50 shadow-[2px_2px_4px_var(--slice-shadow-dark),-2px_-2px_4px_var(--slice-shadow-light)] hover:bg-slice-shadow-dark/20'
                                                         }`}
                                                         style={isActive ? { backgroundColor: opt.color, borderColor: opt.color } : undefined}
                                                     >
                                                         <div>{opt.label}</div>
-                                                        <div className={`text-[9px] font-normal mt-0.5 ${isActive ? 'text-white/80' : 'text-slate-300'}`}>{opt.notes}</div>
+                                                        <div className={`text-[9px] font-normal mt-0.5 ${isActive ? 'text-white/80' : 'text-slice-text-muted'}`}>{opt.notes}</div>
                                                     </button>
                                                 );
                                             })}
                                         </div>
                                     </div>
                                     {/* Speed */}
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-2">
-                                            <Zap className="w-4 h-4 text-purple-500" />
-                                            <span className="text-xs font-bold text-slate-600">Speed</span>
+                                    <div className="space-y-1.5">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <Zap className="w-4 h-4 text-purple-500" />
+                                                <span className="text-xs font-bold text-slice-text-darker">Speed</span>
+                                            </div>
+                                            <span className="text-sm font-bold text-purple-500 w-12 text-right">{myDifficulty.speed.toFixed(1)}x</span>
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            <button
-                                                className="w-7 h-7 rounded-lg bg-[#e0e5ec] shadow-[3px_3px_6px_#a3b1c6,-3px_-3px_6px_#ffffff] text-slate-600 font-bold text-sm flex items-center justify-center active:shadow-[inset_3px_3px_6px_#a3b1c6,inset_-3px_-3px_6px_#ffffff]"
-                                                onClick={() => handleDifficultyChange({ speed: Math.max(1.0, +(myDifficulty.speed - 0.1).toFixed(1)) })}
-                                            >−</button>
-                                            <span className="text-sm font-bold text-purple-500 w-12 text-center">{myDifficulty.speed.toFixed(1)}x</span>
-                                            <button
-                                                className="w-7 h-7 rounded-lg bg-[#e0e5ec] shadow-[3px_3px_6px_#a3b1c6,-3px_-3px_6px_#ffffff] text-slate-600 font-bold text-sm flex items-center justify-center active:shadow-[inset_3px_3px_6px_#a3b1c6,inset_-3px_-3px_6px_#ffffff]"
-                                                onClick={() => handleDifficultyChange({ speed: Math.min(2.0, +(myDifficulty.speed + 0.1).toFixed(1)) })}
-                                            >+</button>
+                                        <Slider
+                                            value={[myDifficulty.speed]}
+                                            min={0.5}
+                                            max={3.0}
+                                            step={0.1}
+                                            onValueChange={([v]) => handleDifficultyChange({ speed: +v.toFixed(1) })}
+                                            className="w-full"
+                                        />
+                                        <div className="flex justify-between text-[9px] text-slice-text-light font-mono">
+                                            <span>0.5x</span><span>1.0x</span><span>2.0x</span><span>3.0x</span>
                                         </div>
                                     </div>
                                     {/* Toggles */}
                                     {[  
                                         { key: 'bombs' as const, label: 'Bombs', icon: <Bomb className="w-4 h-4 text-red-500" />, desc: 'Adds bomb notes to avoid' },
                                         { key: 'switching' as const, label: 'Switching', icon: <Shuffle className="w-4 h-4 text-blue-500" />, desc: 'Adds lane-switch notes' },
-                                        { key: 'invisible' as const, label: 'Invisible', icon: <EyeOff className="w-4 h-4 text-slate-500" />, desc: 'Notes fade before hit line' },
+                                        { key: 'invisible' as const, label: 'Invisible', icon: <EyeOff className="w-4 h-4 text-slice-text-muted" />, desc: 'Notes fade before hit line' },
                                         { key: 'spin' as const, label: 'Spin', icon: <RotateCw className="w-4 h-4 text-cyan-500" />, desc: 'Playfield rotates during gameplay' },
                                         { key: 'strictTiming' as const, label: 'Strict Timing', icon: <Target className="w-4 h-4 text-red-600" />, desc: 'Tighter hit windows' },
                                         { key: 'oneTrack' as const, label: 'One Track', icon: <Minus className="w-4 h-4 text-violet-500" />, desc: 'All notes on a single lane' },
@@ -411,8 +494,8 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
                                             key={opt.key}
                                             className={`flex items-center justify-between w-full p-2 rounded-lg transition-all ${
                                                 myDifficulty[opt.key]
-                                                    ? 'bg-blue-50 shadow-[inset_2px_2px_4px_#c5d0e6,inset_-2px_-2px_4px_#ffffff]'
-                                                    : 'bg-[#e0e5ec] shadow-[2px_2px_4px_#a3b1c6,-2px_-2px_4px_#ffffff] hover:bg-slate-50'
+                                                    ? 'bg-blue-500/10 shadow-[inset_2px_2px_4px_var(--slice-shadow-dark),inset_-2px_-2px_4px_var(--slice-shadow-light)]'
+                                                    : 'bg-slice-bg shadow-[2px_2px_4px_var(--slice-shadow-dark),-2px_-2px_4px_var(--slice-shadow-light)] hover:bg-slice-shadow-dark/20'
                                             }`}
                                             onClick={() => {
                                                 const toggled = !myDifficulty[opt.key];
@@ -425,13 +508,13 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
                                         >
                                             <div className="flex items-center gap-2">
                                                 {opt.icon}
-                                                <span className="text-xs font-bold text-slate-600">{opt.label}</span>
-                                                <span className="text-[9px] text-slate-400" title={opt.desc}>
+                                                <span className="text-xs font-bold text-slice-text-darker">{opt.label}</span>
+                                                <span className="text-[9px] text-slice-text-light" title={opt.desc}>
                                                     <Info className="w-3 h-3" />
                                                 </span>
                                             </div>
                                             <div className={`w-8 h-5 rounded-full transition-colors ${
-                                                myDifficulty[opt.key] ? 'bg-blue-500' : 'bg-slate-300'
+                                                myDifficulty[opt.key] ? 'bg-blue-500' : 'bg-slice-shadow-dark'
                                             } relative`}>
                                                 <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${
                                                     myDifficulty[opt.key] ? 'translate-x-3.5' : 'translate-x-0.5'
@@ -443,10 +526,24 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
                             )}
                          </div>
 
+                         {showSongSelect && (
+                            <SongLibrary 
+                                onSelect={(song) => {
+                                    if (isHost && lobbyData) {
+                                        mp.selectSong(lobbyData.lobbyId, song);
+                                        setShowSongSelect(false);
+                                    }
+                                }}
+                                onHighlight={() => {}} // Not used here directly
+                                selectedSongId={lobbyData?.song?.id}
+                                readOnly={!isHost}
+                            />
+                         )}
+
                          <div className="flex gap-4 pt-4">
                             <Button 
                                 variant="ghost"
-                                className="flex-1 text-slate-500 hover:text-red-500"
+                                className="flex-1 text-slice-text-muted hover:text-red-500"
                                 onClick={handleLeave}
                             >
                                 LEAVE
@@ -492,7 +589,7 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
     // LIST / JOIN VIEW
     if (isPending) {
          return (
-            <div className="absolute inset-0 z-[60] flex items-center justify-center bg-[#e0e5ec] p-4 text-slate-700">
+            <div className="absolute inset-0 z-[60] flex items-center justify-center bg-slice-bg p-4 text-slice-text">
                  <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
             </div>
          );
@@ -500,17 +597,17 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
 
     if (!session) {
         return (
-            <div className="absolute inset-0 z-[60] flex items-center justify-center bg-[#e0e5ec] p-4 text-slate-700">
-                 <Card className="w-full max-w-md bg-[#e0e5ec] shadow-[20px_20px_60px_#bebebe,-20px_-20px_60px_#ffffff] rounded-[2rem] border-none p-8 text-center">
-                    <h2 className="text-2xl font-black text-slate-600 mb-4">MULTIPLAYER</h2>
-                    <p className="text-slate-500 mb-6 font-medium">To play online and track your stats, you need to sign in with your account.</p>
+            <div className="absolute inset-0 z-[60] flex items-center justify-center bg-slice-bg p-4 text-slice-text">
+                 <Card className="w-full max-w-md bg-slice-bg shadow-[20px_20px_60px_var(--slice-shadow-dark),-20px_-20px_60px_var(--slice-shadow-light)] rounded-[2rem] border-none p-8 text-center">
+                    <h2 className="text-2xl font-black text-slice-text-darker mb-4">MULTIPLAYER</h2>
+                    <p className="text-slice-text-muted mb-6 font-medium">To play online and track your stats, you need to sign in with your account.</p>
                     <Button 
                         className="w-full py-6 bg-blue-500 hover:bg-blue-600 text-white font-bold shadow-lg rounded-xl text-lg mb-4"
                         onClick={() => window.location.href = `/login?callbackURL=${encodeURIComponent(window.location.pathname)}`}
                     >
                         SIGN IN / SIGN UP
                     </Button>
-                    <Button variant="ghost" onClick={handleLeave} className="text-slate-400 hover:text-slate-600">
+                    <Button variant="ghost" onClick={handleLeave} className="text-slice-text-light hover:text-slice-text-darker">
                         CANCEL
                     </Button>
                  </Card>
@@ -519,15 +616,15 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
     }
 
     return (
-        <div className="absolute inset-0 z-[60] flex items-center justify-center bg-[#e0e5ec] p-4 text-slate-700">
-             <Card className="w-full max-w-md bg-[#e0e5ec] shadow-[20px_20px_60px_#bebebe,-20px_-20px_60px_#ffffff] rounded-[2rem] border-none">
+        <div className="absolute inset-0 z-[60] flex items-center justify-center bg-slice-bg p-4 text-slice-text">
+             <Card className="w-full max-w-md bg-slice-bg shadow-[20px_20px_60px_var(--slice-shadow-dark),-20px_-20px_60px_var(--slice-shadow-light)] rounded-[2rem] border-none">
                 <CardHeader>
-                    <CardTitle className="text-2xl font-black text-center text-slate-600">MULTIPLAYER</CardTitle>
+                    <CardTitle className="text-2xl font-black text-center text-slice-text-darker">MULTIPLAYER</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
                     <div className="text-center">
-                        <div className="text-xs font-bold text-slate-400 uppercase mb-1">Signed in as</div>
-                        <div className="font-bold text-lg text-slate-700">{session.user.name}</div>
+                        <div className="text-xs font-bold text-slice-text-light uppercase mb-1">Signed in as</div>
+                        <div className="font-bold text-lg text-slice-text">{session.user.name}</div>
                     </div>
 
                     <div className="flex flex-col gap-4">
@@ -536,10 +633,10 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
                                 value={lobbyIdInput} 
                                 onChange={(e) => setLobbyIdInput(e.target.value)} 
                                 placeholder="Lobby Code"
-                                className="bg-[#e0e5ec] border-none shadow-[inset_3px_3px_6px_#a3b1c6,inset_-3px_-3px_6px_#ffffff] rounded-xl uppercase text-center font-mono tracking-widest"
+                                className="bg-slice-bg border-none shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] rounded-xl uppercase text-center font-mono tracking-widest"
                             />
                             <Button 
-                                className="bg-[#e0e5ec] text-blue-500 font-bold shadow-[5px_5px_10px_#a3b1c6,-5px_-5px_10px_#ffffff] active:shadow-[inset_5px_5px_10px_#a3b1c6,inset_-5px_-5px_10px_#ffffff] rounded-xl"
+                                className="bg-slice-bg text-blue-500 font-bold shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] active:shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)] rounded-xl"
                                 onClick={handleJoinLobby}
                             >
                                 JOIN
@@ -547,8 +644,8 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
                          </div>
                          
                          <div className="relative">
-                            <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-slate-300"></span></div>
-                            <div className="relative flex justify-center text-xs uppercase"><span className="bg-[#e0e5ec] px-2 text-slate-400 font-bold">Or</span></div>
+                            <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-slice-shadow-dark/50"></span></div>
+                            <div className="relative flex justify-center text-xs uppercase"><span className="bg-slice-bg px-2 text-slice-text-light font-bold">Or</span></div>
                         </div>
 
                          <Button 
@@ -561,7 +658,7 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
 
                     <Button 
                         variant="ghost"
-                        className="w-full text-slate-400 hover:text-slate-600"
+                        className="w-full text-slice-text-light hover:text-slice-text-darker"
                         onClick={handleLeave}
                     >
                         BACK TO MENU

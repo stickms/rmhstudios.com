@@ -14,13 +14,11 @@ import { MultiplayerSidebar } from './MultiplayerSidebar';
 import { MatchResults } from './MatchResults';
 import { MultiplayerFactory } from '@/lib/game/MultiplayerFactory';
 
-// Soft/Neumorphic Palette
+// Neumorphic Palette (dark-mode-aware colors are read from CSS vars at render time)
 const COLORS = {
-    bg: '#e0e5ec',
     lane1: '#3b82f6', // Blue
     lane2: '#f472b6', // Pink
     grid: '#cbd5e0',
-    text: '#4a5568',
     bomb: '#ef4444',
     slice: {
         SPEED: '#a78bfa',
@@ -29,7 +27,7 @@ const COLORS = {
         SILENT: '#94a3b8',
         BOMB: '#ef4444',
         SWITCH: '#60a5fa',
-        DEFAULT: '#ffffff'
+        DEFAULT: 'var(--slice-shadow-light)'
     }
 };
 
@@ -72,6 +70,9 @@ export function GameCanvas() {
     const [listeningForKey, setListeningForKey] = useState<null | 'lane1' | 'lane2'>(null);
     const listeningForKeyRef = useRef<null | 'lane1' | 'lane2'>(null);
     useEffect(() => { listeningForKeyRef.current = listeningForKey; }, [listeningForKey]);
+
+    // Score submission guard
+    const hasSubmittedScoreRef = useRef(false);
 
     // Sync volume store value → AudioManager
     useEffect(() => {
@@ -153,6 +154,11 @@ export function GameCanvas() {
         engine.submitInput(lane);
     }, [engine]);
 
+    const handleInputRelease = useCallback((lane: number) => {
+        if (!engine) return;
+        engine.submitRelease(lane);
+    }, [engine]);
+
     // ── Gamepad polling for in-game input ───────────────────────────────────────
     const gamepadPrevRef = useRef<Record<number, Set<number>>>({});
     useEffect(() => {
@@ -195,6 +201,17 @@ export function GameCanvas() {
                     else if (GAMEPAD_LANE1_BUTTONS.includes(btnIdx)) handleInput(1);
                 });
 
+                // Detect releases
+                prev.forEach(btnIdx => {
+                    if (curr.has(btnIdx)) return; // still held
+
+                    if (store.status !== 'PLAYING') return;
+                    if (store.isPaused) return;
+
+                    if (GAMEPAD_LANE0_BUTTONS.includes(btnIdx)) handleInputRelease(0);
+                    else if (GAMEPAD_LANE1_BUTTONS.includes(btnIdx)) handleInputRelease(1);
+                });
+
                 gamepadPrevRef.current[gp.index] = curr;
             }
 
@@ -232,6 +249,25 @@ export function GameCanvas() {
                 // Then Update
                 newEngine.update();
 
+                // Check for score submission when game finishes
+                const store = useGameStore.getState();
+                if (store.status === 'FINISHED' && !hasSubmittedScoreRef.current) {
+                    hasSubmittedScoreRef.current = true;
+                    const { score, maxCombo, accuracy, songId } = store;
+                    if (songId) {
+                        fetch('/api/slice-it/leaderboard/submit', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                songId,
+                                score,
+                                maxCombo,
+                                accuracy
+                            })
+                        }).catch(err => console.error("Failed to submit score:", err));
+                    }
+                }
+
             } catch (e: any) {
                 console.error("GameCanvas Render Error:", e);
                 setDebugInfo(prev => ({ ...prev, error: e.message || 'Unknown Error' }));
@@ -240,8 +276,30 @@ export function GameCanvas() {
         };
         rafRef.current = requestAnimationFrame(loop);
 
+        // Pause audio when tab is hidden, resume when visible again
+        const handleVisibilityChange = () => {
+            const audio = AudioManager.getInstance();
+            const store = useGameStore.getState();
+            if (document.hidden) {
+                if (store.status === 'PLAYING' && !store.isPaused && !store.isMultiplayer) {
+                    newEngine.pause();
+                } else if (store.status === 'PLAYING') {
+                    // In multiplayer or if game is running, just stop audio without pausing game state
+                    audio.pause();
+                }
+            } else {
+                if (store.status === 'PLAYING' && store.isPaused && !store.isMultiplayer) {
+                    // Don't auto-resume — let the player decide
+                } else if (store.status === 'PLAYING' && !store.isPaused) {
+                    audio.play();
+                }
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
         return () => {
             if (rafRef.current) cancelAnimationFrame(rafRef.current);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
             AudioManager.getInstance().stop();
             useGameStore.getState().reset();
         };
@@ -375,38 +433,107 @@ export function GameCanvas() {
             if (e.code === 'Space') e.preventDefault();
         };
 
+        const handleKeyUp = (e: KeyboardEvent) => {
+            if (useGameStore.getState().isPaused) return;
+            if (status !== 'PLAYING') return;
+            if (e.code === keybinds.lane1) handleInputRelease(0);
+            else if (e.code === keybinds.lane2) handleInputRelease(1);
+        };
+
         let lastTouchTime = 0;
         const handleGlobalClick = (e: MouseEvent | TouchEvent) => {
-            // Prevent touch + mouse double-fire on touch devices
-            if (e.type === 'touchstart') lastTouchTime = performance.now();
-            if (e.type === 'mousedown' && performance.now() - lastTouchTime < 500) return;
+            if (e.type === 'touchstart') {
+                lastTouchTime = performance.now();
+            } else if (e.type === 'mousedown') {
+                // Prevent double-fire on touch devices
+                if (performance.now() - lastTouchTime < 500) return;
+
+                // If rebinding, capture this mouse button as the new keybind
+                if (listeningForKeyRef.current) {
+                    const btnCode = `Mouse${(e as MouseEvent).button}`;
+                    setKeybinds({ ...keybindsRef.current, [listeningForKeyRef.current]: btnCode });
+                    setListeningForKey(null);
+                    return;
+                }
+
+                // Only process if this button is mapped to a lane
+                const btnCode = `Mouse${(e as MouseEvent).button}`;
+                const kb = keybindsRef.current;
+                if (btnCode !== kb.lane1 && btnCode !== kb.lane2) return;
+            }
+
             if ((e.target as HTMLElement).closest('[data-mobile-btn]')) return;
             if ((e.target as HTMLElement).tagName === 'BUTTON') return;
             if ((e.target as HTMLElement).closest('[data-settings-panel]')) return;
             if (useGameStore.getState().isPaused) return;
-            if (isMultiplayer && showSettings) return; // settings panel open — don't fire input
+            if (isMultiplayer && showSettings) return;
             if (status !== 'PLAYING') return;
             if (useGameStore.getState().countdown > 0) return;
 
-            let clientY = 0;
-            if (e instanceof MouseEvent) clientY = e.clientY;
-            else clientY = e.touches[0].clientY;
+            if (e instanceof MouseEvent) {
+                // Use keybind mapping to determine lane
+                const btnCode = `Mouse${(e as MouseEvent).button}`;
+                const kb = keybindsRef.current;
+                if (btnCode === kb.lane1) handleInput(0);
+                else if (btnCode === kb.lane2) handleInput(1);
+                return;
+            }
 
+            // Touch: use Y-position for lane
+            const clientY = (e as TouchEvent).touches[0].clientY;
             const rect = canvasRef.current?.getBoundingClientRect();
             if (!rect) return;
             const lane = (clientY - rect.top) < rect.height / 2 ? 0 : 1;
             handleInput(lane);
         };
 
+        const handleGlobalRelease = (e: MouseEvent | TouchEvent) => {
+            if (e.type === 'mouseup') {
+                const btnCode = `Mouse${(e as MouseEvent).button}`;
+                const kb = keybindsRef.current;
+                if (btnCode !== kb.lane1 && btnCode !== kb.lane2) return;
+            }
+            if (useGameStore.getState().isPaused) return;
+            if (status !== 'PLAYING') return;
+
+            if (e instanceof MouseEvent) {
+                const btnCode = `Mouse${(e as MouseEvent).button}`;
+                const kb = keybindsRef.current;
+                if (btnCode === kb.lane1) handleInputRelease(0);
+                else if (btnCode === kb.lane2) handleInputRelease(1);
+                return;
+            }
+
+            if (!(e as TouchEvent).changedTouches?.length) return;
+            const clientY = (e as TouchEvent).changedTouches[0].clientY;
+            const rect = canvasRef.current?.getBoundingClientRect();
+            if (!rect) return;
+            const lane = (clientY - rect.top) < rect.height / 2 ? 0 : 1;
+            handleInputRelease(lane);
+        };
+
+        // Disable context menu during gameplay
+        const handleContextMenu = (e: MouseEvent) => {
+            if (status === 'PLAYING') e.preventDefault();
+        };
+
         window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('keyup', handleKeyUp);
         window.addEventListener('mousedown', handleGlobalClick);
+        window.addEventListener('mouseup', handleGlobalRelease);
+        window.addEventListener('contextmenu', handleContextMenu);
         window.addEventListener('touchstart', handleGlobalClick, { passive: true });
+        window.addEventListener('touchend', handleGlobalRelease, { passive: true });
         return () => {
             window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('keyup', handleKeyUp);
             window.removeEventListener('mousedown', handleGlobalClick);
+            window.removeEventListener('mouseup', handleGlobalRelease);
+            window.removeEventListener('contextmenu', handleContextMenu);
             window.removeEventListener('touchstart', handleGlobalClick);
+            window.removeEventListener('touchend', handleGlobalRelease);
         };
-    }, [engine, keybinds, status, handleInput, isMultiplayer, setKeybinds]);
+    }, [engine, keybinds, status, handleInput, handleInputRelease, isMultiplayer, setKeybinds]);
 
     useEffect(() => {
         if (status === 'MENU' && engine) {
@@ -421,17 +548,26 @@ export function GameCanvas() {
     const particlesRef = useRef<{x:number, y:number, vx:number, vy:number, life:number, color:string, size:number}[]>([]);
     const lastHitTimeRef = useRef(0);
 
-    const spawnParticles = (x: number, y: number, color: string) => {
-        for (let i = 0; i < 8; i++) {
+    const spawnParticles = (x: number, y: number, color: string, hitResult: string = 'GOOD') => {
+        // Particle intensity scales with hit accuracy
+        const configs: Record<string, { count: number; minSpeed: number; maxSpeed: number; minSize: number; maxSize: number }> = {
+            'MARVELOUS': { count: 18, minSpeed: 4,   maxSpeed: 11, minSize: 4, maxSize: 9  },
+            'PERFECT':   { count: 13, minSpeed: 3,   maxSpeed: 8,  minSize: 3, maxSize: 7  },
+            'GREAT':     { count: 9,  minSpeed: 2,   maxSpeed: 6,  minSize: 2, maxSize: 5  },
+            'GOOD':      { count: 5,  minSpeed: 1.5, maxSpeed: 4,  minSize: 1, maxSize: 4  },
+            'HOLD OK':   { count: 10, minSpeed: 2,   maxSpeed: 6,  minSize: 2, maxSize: 5  },
+        };
+        const cfg = configs[hitResult] ?? configs['GOOD'];
+        for (let i = 0; i < cfg.count; i++) {
             const angle = Math.random() * Math.PI * 2;
-            const speed = Math.random() * 5 + 2;
+            const speed = Math.random() * (cfg.maxSpeed - cfg.minSpeed) + cfg.minSpeed;
             particlesRef.current.push({
                 x, y,
                 vx: Math.cos(angle) * speed,
                 vy: Math.sin(angle) * speed,
                 life: 1.0,
                 color,
-                size: Math.random() * 4 + 2
+                size: Math.random() * (cfg.maxSize - cfg.minSize) + cfg.minSize
             });
         }
     };
@@ -446,10 +582,11 @@ export function GameCanvas() {
         const H = ctx.canvas.height;
         const dpr = window.devicePixelRatio || 1;
 
-        // Reset & Clear
+        // Reset & Clear — read background color from CSS variable so dark mode works
+        const bgColor = getComputedStyle(document.documentElement).getPropertyValue('--slice-bg').trim() || '#e0e5ec';
         ctx.setTransform(1, 0, 0, 1, 0, 0);
         ctx.globalAlpha = 1;
-        ctx.fillStyle = '#e0e5ec'; // Soft Grey BG
+        ctx.fillStyle = bgColor;
         ctx.fillRect(0, 0, W, H);
 
         // Setup Scale
@@ -495,20 +632,22 @@ export function GameCanvas() {
         const currentTime = AudioManager.getInstance().getCurrentTime();
 
         // 1. Draw Tracks (Neumorphic Trough)
+        const shadowDark = getComputedStyle(document.documentElement).getPropertyValue('--slice-shadow-dark').trim() || '#a3b1c6';
+        const shadowLight = getComputedStyle(document.documentElement).getPropertyValue('--slice-shadow-light').trim() || '#ffffff';
         LANE_Y.forEach((y, i) => {
-            // "Inscet" effect: Top shadow dark, Bottom shadow light
+            // "Inset" effect: Top shadow dark, Bottom shadow light
             const trackHeight = BAR_H * 1.5;
-            
+
             // Dark Shadow (Top Left)
-            ctx.shadowColor = '#a3b1c6';
+            ctx.shadowColor = shadowDark;
             ctx.shadowBlur = 10;
             ctx.shadowOffsetX = 3;
             ctx.shadowOffsetY = 3;
-            ctx.fillStyle = '#e0e5ec';
+            ctx.fillStyle = bgColor;
             ctx.fillRect(0, y - trackHeight/2, w, trackHeight);
 
             // Light Highlight (Bottom Right)
-            ctx.shadowColor = '#ffffff';
+            ctx.shadowColor = shadowLight;
             ctx.shadowBlur = 10;
             ctx.shadowOffsetX = -3;
             ctx.shadowOffsetY = -3;
@@ -529,9 +668,10 @@ export function GameCanvas() {
         const latestFeedback = engine.feedbackQueue[engine.feedbackQueue.length - 1];
         if (latestFeedback && latestFeedback.time > lastHitTimeRef.current) {
              lastHitTimeRef.current = latestFeedback.time;
-             if (latestFeedback.text !== 'MISS' && latestFeedback.text !== 'BAD') {
-                 const particleLaneY = isOneTrack ? LANE_Y[0] : LANE_Y[latestFeedback.lane];
-                 spawnParticles(CURSOR_X, particleLaneY, latestFeedback.color);
+             if (latestFeedback.text !== 'MISS' && latestFeedback.text !== 'BAD' && latestFeedback.text !== 'RELEASED') {
+                 const particleLaneIdx = Math.max(0, Math.min(latestFeedback.lane, LANE_Y.length - 1));
+                 const particleLaneY = isOneTrack ? LANE_Y[0] : LANE_Y[particleLaneIdx];
+                 spawnParticles(CURSOR_X, particleLaneY, latestFeedback.color, latestFeedback.text);
              }
         }
 
@@ -552,11 +692,30 @@ export function GameCanvas() {
             if (targeted1) targetedIds.add(targeted1.id);
 
             map.slices.forEach(slice => {
-                if (slice.hit) return;
+                // Determine X position (clamped to CURSOR_X if it's currently being held during its duration)
+                let sliceX = CURSOR_X + (slice.time - currentTime) * PPS;
+                // If this is a LONG note that has been hit and is active, left edge clamps to cursor
+                const isHeldActive = slice.hit && slice.type === 'LONG' && currentTime >= slice.time && currentTime <= slice.time + (slice.duration || 0);
+                if (isHeldActive) {
+                    sliceX = CURSOR_X;
+                }
 
-                const sliceX = CURSOR_X + (slice.time - currentTime) * PPS;
-                // Cull off-screen
-                if (sliceX < -100 || sliceX > w + 100) return;
+                // Fade out on hit (50ms) or spatially behind the reticle
+                let noteAlpha = 1.0;
+                if (slice.hit && slice.type !== 'LONG') {
+                    const elapsed = performance.now() - (slice.hitTime ?? 0);
+                    noteAlpha = Math.max(0, 1 - elapsed / 50);
+                    if (noteAlpha <= 0) return; // Fully faded
+                } else if (sliceX < CURSOR_X && !isHeldActive) {
+                    const distBehind = CURSOR_X - sliceX;
+                    const fadeDist = w * 0.08; // Fade over 8% of the screen width
+                    noteAlpha *= Math.max(0, 1 - (distBehind / fadeDist));
+                    if (noteAlpha <= 0) return; // Completely faded out or too far behind
+                }
+
+                // Cull off-screen to the right
+                const rightBoundary = slice.type === 'LONG' ? sliceX + ((slice.duration || 0) * PPS) : sliceX;
+                if (sliceX > w + 100) return;
 
                 // Compute effective lane (SWITCH notes flip lanes near the hit line)
                 let effectiveLane = slice.lane;
@@ -597,10 +756,12 @@ export function GameCanvas() {
                         // Skip rendering entirely
                         return;
                     } else if (travelRatio < 0.20) {
-                        ctx.globalAlpha = (travelRatio - 0.08) / 0.12; // 0→1 over the fade range
+                        ctx.globalAlpha = noteAlpha * ((travelRatio - 0.08) / 0.12); // 0→1 over the fade range
                     } else {
-                        ctx.globalAlpha = 1;
+                        ctx.globalAlpha = noteAlpha;
                     }
+                } else {
+                    ctx.globalAlpha = noteAlpha;
                 }
                 
                 // Color mapping
@@ -622,7 +783,7 @@ export function GameCanvas() {
                     ctx.shadowOffsetX = 0;
                     ctx.shadowOffsetY = 0;
                     // Draw a transparent filled shape at the note position to produce the glow
-                    ctx.globalAlpha = (ctx.globalAlpha || 1) * 0.45;
+                    ctx.globalAlpha = (ctx.globalAlpha || 1) * 0.45 * (slice.hit ? 0.3 : 1.0); // Reduce glow if hit
                     ctx.beginPath();
                     if (slice.type === 'LONG') {
                         const len = (slice.duration || 0.5) * PPS;
@@ -647,19 +808,53 @@ export function GameCanvas() {
                     ctx.beginPath();
                     ctx.arc(sliceX, y, CURSOR_R, 0, Math.PI * 2);
                     ctx.fill();
+                    
+                    if (isTargeted) {
+                        ctx.save();
+                        ctx.strokeStyle = 'rgba(239, 68, 68, 0.8)'; // Red
+                        ctx.lineWidth = 3;
+                        ctx.shadowColor = '#ef4444';
+                        ctx.shadowBlur = 12;
+                        ctx.beginPath();
+                        ctx.arc(sliceX, y, CURSOR_R + 6, 0, Math.PI * 2);
+                        ctx.stroke();
+                        ctx.restore();
+                        
+                        // Restore the normal note shadow
+                        ctx.shadowColor = 'rgba(163, 177, 198, 0.6)';
+                        ctx.shadowBlur = 8;
+                        ctx.shadowOffsetX = 4;
+                        ctx.shadowOffsetY = 4;
+                    }
+                    
                     ctx.fillStyle = 'white';
                     ctx.font = 'bold 20px sans-serif';
                     ctx.textAlign = 'center';
                     ctx.fillText('!', sliceX, y + 7);
-                } else if (slice.type === 'LONG') {
+                 } else if (slice.type === 'LONG') {
                      // Long note logic
-                     const len = (slice.duration || 0.5) * PPS;
                      ctx.fillStyle = color;
                      // Pill Shape
                      ctx.beginPath();
-                     ctx.roundRect(sliceX, y - BAR_H/2, len, BAR_H, 10);
+                     if (isHeldActive) {
+                         // Length shrinks as time passes, but left edge stays at cursor
+                         const remainingDuration = (slice.time + (slice.duration || 0)) - currentTime;
+                         if (remainingDuration > 0) {
+                             const remainingLen = remainingDuration * PPS;
+                             ctx.roundRect(sliceX, y - BAR_H/2, remainingLen, BAR_H, 10);
+                             ctx.globalAlpha = noteAlpha;
+                             // Add "active glow" core since it's being held
+                             ctx.fill();
+                             ctx.fillStyle = `rgba(255,255,255,${0.7 * noteAlpha})`;
+                             ctx.beginPath();
+                             ctx.roundRect(sliceX, y - (BAR_H*0.4), remainingLen - 4, BAR_H*0.8, 8);
+                         }
+                     } else {
+                         const len = (slice.duration || 0.5) * PPS;
+                         ctx.roundRect(sliceX, y - BAR_H/2, len, BAR_H, 10);
+                     }
                      ctx.fill();
-                } else if (slice.type === 'SWITCH') {
+                 } else if (slice.type === 'SWITCH') {
                     // Switch Note — diamond shape with arrow indicator
                     const size = BAR_H;
                     ctx.save();
@@ -695,9 +890,7 @@ export function GameCanvas() {
                 }
 
                 // Reset alpha after each note if invisible mod is active
-                if (isInvisibleMod) {
-                    ctx.globalAlpha = 1;
-                }
+                ctx.globalAlpha = 1;
             });
             ctx.shadowColor = 'transparent'; // Reset
         }
@@ -762,43 +955,44 @@ export function GameCanvas() {
         }
 
         // 5. Cursors (Receptors)
+        const textColor = getComputedStyle(document.documentElement).getPropertyValue('--slice-text-muted').trim() || '#64748b';
         if (isOneTrack) {
-            // One-track mode: draw a single white receptor
+            // One-track mode: draw a single receptor
             const y = LANE_Y[0];
             const cx = CURSOR_X;
-            ctx.shadowColor = '#ffffff';
+            ctx.shadowColor = shadowLight;
             ctx.shadowBlur = 5;
             ctx.shadowOffsetX = -2;
             ctx.shadowOffsetY = -2;
-            ctx.strokeStyle = '#e0e5ec';
+            ctx.strokeStyle = bgColor;
             ctx.lineWidth = 4;
             ctx.beginPath(); ctx.arc(cx, y, CURSOR_R * 1.5, 0, Math.PI * 2); ctx.stroke();
-            ctx.shadowColor = '#a3b1c6';
+            ctx.shadowColor = shadowDark;
             ctx.shadowBlur = 5;
             ctx.shadowOffsetX = 2;
             ctx.shadowOffsetY = 2;
             ctx.stroke();
             ctx.shadowColor = 'transparent';
-            ctx.strokeStyle = '#ffffff';
+            ctx.strokeStyle = shadowLight;
             ctx.lineWidth = 3;
             ctx.beginPath(); ctx.arc(cx, y, CURSOR_R * 1.5, 0, Math.PI * 2); ctx.stroke();
-            ctx.fillStyle = '#64748b';
+            ctx.fillStyle = textColor;
             ctx.font = 'bold 10px sans-serif';
             ctx.textAlign = 'center';
-            const bind1 = currentKeybinds.lane1.replace('Key','').replace('Arrow','');
-            const bind2 = currentKeybinds.lane2.replace('Key','').replace('Arrow','');
+            const bind1 = currentKeybinds.lane1.replace('Mouse0','LMB').replace('Mouse1','MMB').replace('Mouse2','RMB').replace('Key','').replace('Arrow','');
+            const bind2 = currentKeybinds.lane2.replace('Mouse0','LMB').replace('Mouse1','MMB').replace('Mouse2','RMB').replace('Key','').replace('Arrow','');
             ctx.fillText(`${bind1}/${bind2}`, cx, y + 4);
         } else {
             LANE_Y.forEach((y, i) => {
                 const color = i === 0 ? COLORS.lane1 : COLORS.lane2;
-                ctx.shadowColor = '#ffffff';
+                ctx.shadowColor = shadowLight;
                 ctx.shadowBlur = 5;
                 ctx.shadowOffsetX = -2;
                 ctx.shadowOffsetY = -2;
-                ctx.strokeStyle = '#e0e5ec';
+                ctx.strokeStyle = bgColor;
                 ctx.lineWidth = 4;
                 ctx.beginPath(); ctx.arc(CURSOR_X, y, CURSOR_R * 1.5, 0, Math.PI * 2); ctx.stroke();
-                ctx.shadowColor = '#a3b1c6';
+                ctx.shadowColor = shadowDark;
                 ctx.shadowBlur = 5;
                 ctx.shadowOffsetX = 2;
                 ctx.shadowOffsetY = 2;
@@ -807,11 +1001,11 @@ export function GameCanvas() {
                 ctx.strokeStyle = color;
                 ctx.lineWidth = 3;
                 ctx.beginPath(); ctx.arc(CURSOR_X, y, CURSOR_R * 1.5, 0, Math.PI * 2); ctx.stroke();
-                ctx.fillStyle = '#64748b';
+                ctx.fillStyle = textColor;
                 ctx.font = 'bold 12px sans-serif';
                 ctx.textAlign = 'center';
                 const bind = i === 0 ? currentKeybinds.lane1 : currentKeybinds.lane2;
-                ctx.fillText(bind.replace('Key','').replace('Arrow',''), CURSOR_X, y + 4);
+                ctx.fillText(bind.replace('Mouse0','LMB').replace('Mouse1','MMB').replace('Mouse2','RMB').replace('Key','').replace('Arrow',''), CURSOR_X, y + 4);
             });
         }
 
@@ -819,17 +1013,12 @@ export function GameCanvas() {
     };
 
     return (
-        <div className="flex w-full h-full bg-[#e0e5ec]">
+        <div className="flex w-full h-full bg-slice-bg">
             {/* Game Area Container - Flex Grow */}
-            <div className="flex-1 flex items-center justify-center p-4 min-w-0 bg-[#d1d9e6]">
-                {/* 
-                  Target Aspect Ratio: 21:9 (Ultra-wide) or 16:9? 
-                  User said "shrink the width of the screen".
-                  21:9 gives a lot of horizontal space for scrolling notes. 
-                */}
-                <div 
-                    ref={wrapperRef} 
-                    className="relative w-full aspect-video bg-[#e0e5ec] rounded-[2rem] shadow-[20px_20px_60px_#b2b9c5,-20px_-20px_60px_#ffffff] overflow-hidden border-4 border-[#e0e5ec] max-w-[min(1400px,calc((100vh-2rem)*16/9))]"
+            <div className="flex-1 flex items-center justify-center p-4 min-w-0 bg-slice-shadow-dark/30">
+                <div
+                    ref={wrapperRef}
+                    className="relative w-full aspect-video bg-slice-bg rounded-[2rem] shadow-[20px_20px_60px_var(--slice-shadow-dark),-20px_-20px_60px_var(--slice-shadow-light)] overflow-hidden border-4 border-slice-shadow-light/40 max-w-[min(1400px,calc((100vh-6rem)*16/9))]"
                 >
                     <canvas
                         ref={canvasRef}
@@ -843,7 +1032,10 @@ export function GameCanvas() {
                                 data-mobile-btn
                                 className="pointer-events-auto flex-1 w-full flex items-center justify-end pr-6 opacity-0 active:opacity-100 transition-opacity"
                                 onTouchStart={e => { e.preventDefault(); handleInput(0); }}
-                                onClick={() => handleInput(0)}
+                                onTouchEnd={e => { e.preventDefault(); handleInputRelease(0); }}
+                                onMouseDown={e => { e.preventDefault(); handleInput(0); }}
+                                onMouseUp={e => { e.preventDefault(); handleInputRelease(0); }}
+                                onMouseLeave={e => { e.preventDefault(); handleInputRelease(0); }}
                             >
                                 <div className="w-16 h-16 rounded-full bg-blue-500/20 border-2 border-blue-500 flex items-center justify-center text-blue-500 text-2xl font-black">↑</div>
                             </button>
@@ -851,7 +1043,10 @@ export function GameCanvas() {
                                 data-mobile-btn
                                 className="pointer-events-auto flex-1 w-full flex items-center justify-end pr-6 opacity-0 active:opacity-100 transition-opacity"
                                 onTouchStart={e => { e.preventDefault(); handleInput(1); }}
-                                onClick={() => handleInput(1)}
+                                onTouchEnd={e => { e.preventDefault(); handleInputRelease(1); }}
+                                onMouseDown={e => { e.preventDefault(); handleInput(1); }}
+                                onMouseUp={e => { e.preventDefault(); handleInputRelease(1); }}
+                                onMouseLeave={e => { e.preventDefault(); handleInputRelease(1); }}
                             >
                                 <div className="w-16 h-16 rounded-full bg-pink-500/20 border-2 border-pink-500 flex items-center justify-center text-pink-500 text-2xl font-black">↓</div>
                             </button>
@@ -861,7 +1056,7 @@ export function GameCanvas() {
                     {/* Gear icon button — always visible during gameplay */}
                     {status === 'PLAYING' && !isLoadingSong && countdown === 0 && (
                         <button
-                            className="absolute top-3 right-3 z-50 w-9 h-9 rounded-full bg-[#e0e5ec] shadow-[4px_4px_8px_#a3b1c6,-4px_-4px_8px_#ffffff] flex items-center justify-center text-slate-500 hover:text-slate-700 transition-colors active:shadow-[inset_4px_4px_8px_#a3b1c6,inset_-4px_-4px_8px_#ffffff]"
+                            className="absolute top-3 right-3 z-50 w-9 h-9 rounded-full bg-slice-bg shadow-[4px_4px_8px_var(--slice-shadow-dark),-4px_-4px_8px_var(--slice-shadow-light)] flex items-center justify-center text-slice-text-muted hover:text-slice-text transition-colors active:shadow-[inset_4px_4px_8px_var(--slice-shadow-dark),inset_-4px_-4px_8px_var(--slice-shadow-light)]"
                             data-mobile-btn
                             onClick={() => {
                                 if (isMultiplayer) {
@@ -880,15 +1075,15 @@ export function GameCanvas() {
                     {/* Singleplayer Pause Overlay (with settings) */}
                     {isPaused && status === 'PLAYING' && !isMultiplayer && (
                         <div className="absolute inset-0 z-50 bg-black/20 backdrop-blur-sm flex items-center justify-center overflow-y-auto">
-                            <div className="bg-[#e0e5ec] p-6 rounded-[30px] shadow-[9px_9px_16px_#a3b1c6,-9px_-9px_16px_#ffffff] flex flex-col gap-4 items-center w-full max-w-sm mx-4 my-4">
-                                <h2 className="text-3xl font-black text-slate-700">PAUSED</h2>
+                            <div className="bg-slice-bg p-6 rounded-[30px] shadow-[9px_9px_16px_var(--slice-shadow-dark),-9px_-9px_16px_var(--slice-shadow-light)] flex flex-col gap-4 items-center w-full max-w-sm mx-4 my-4">
+                                <h2 className="text-3xl font-black text-slice-text">PAUSED</h2>
 
                                 {/* Settings section */}
-                                <div className="w-full bg-[#d1d9e6] rounded-2xl p-4 shadow-[inset_3px_3px_6px_#a3b1c6,inset_-3px_-3px_6px_#ffffff] flex flex-col gap-4">
+                                <div className="w-full bg-slice-shadow-dark/30 rounded-2xl p-4 shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] flex flex-col gap-4">
                                     {/* Volume */}
                                     <div className="flex flex-col gap-1.5">
                                         <div className="flex justify-between items-center">
-                                            <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Volume</span>
+                                            <span className="text-[11px] font-black text-slice-text-muted uppercase tracking-wider">Volume</span>
                                             <span className="text-sm font-bold text-blue-500">{volume}%</span>
                                         </div>
                                         <Slider value={[volume]} min={0} max={100} step={1} onValueChange={([v]) => setVolume(v)} className="w-full" />
@@ -897,7 +1092,7 @@ export function GameCanvas() {
                                     {/* SFX Volume */}
                                     <div className="flex flex-col gap-1.5">
                                         <div className="flex justify-between items-center">
-                                            <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Effects</span>
+                                            <span className="text-[11px] font-black text-slice-text-muted uppercase tracking-wider">Effects</span>
                                             <span className="text-sm font-bold text-blue-500">{useGameStore.getState().sfxVolume}%</span>
                                         </div>
                                         <Slider value={[useGameStore.getState().sfxVolume]} min={0} max={100} step={1} onValueChange={([v]) => useGameStore.getState().setSfxVolume(v)} className="w-full" />
@@ -905,40 +1100,40 @@ export function GameCanvas() {
 
                                     {/* Audio Offset */}
                                     <div className="flex items-center justify-between gap-2">
-                                        <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Audio Offset</span>
+                                        <span className="text-[11px] font-black text-slice-text-muted uppercase tracking-wider">Audio Offset</span>
                                         <div className="flex items-center gap-2">
-                                            <button className="w-7 h-7 rounded-lg bg-[#e0e5ec] shadow-[3px_3px_6px_#a3b1c6,-3px_-3px_6px_#ffffff] text-slate-600 font-bold text-sm flex items-center justify-center active:shadow-[inset_3px_3px_6px_#a3b1c6,inset_-3px_-3px_6px_#ffffff]"
+                                            <button className="w-7 h-7 rounded-lg bg-slice-bg shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)] text-slice-text-darker font-bold text-sm flex items-center justify-center active:shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)]"
                                                 onClick={() => setAudioOffset(audioOffset - 5)}>−</button>
-                                            <span className="text-sm font-bold text-slate-600 w-16 text-center font-mono">{audioOffset > 0 ? '+' : ''}{audioOffset}ms</span>
-                                            <button className="w-7 h-7 rounded-lg bg-[#e0e5ec] shadow-[3px_3px_6px_#a3b1c6,-3px_-3px_6px_#ffffff] text-slate-600 font-bold text-sm flex items-center justify-center active:shadow-[inset_3px_3px_6px_#a3b1c6,inset_-3px_-3px_6px_#ffffff]"
+                                            <span className="text-sm font-bold text-slice-text-darker w-16 text-center font-mono">{audioOffset > 0 ? '+' : ''}{audioOffset}ms</span>
+                                            <button className="w-7 h-7 rounded-lg bg-slice-bg shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)] text-slice-text-darker font-bold text-sm flex items-center justify-center active:shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)]"
                                                 onClick={() => setAudioOffset(audioOffset + 5)}>+</button>
                                         </div>
                                     </div>
 
                                     {/* Keybinds */}
                                     <div className="flex flex-col gap-2">
-                                        <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Keybinds</span>
+                                        <span className="text-[11px] font-black text-slice-text-muted uppercase tracking-wider">Keybinds</span>
                                         {(['lane1', 'lane2'] as const).map((lane, i) => (
                                             <div key={lane} className="flex items-center justify-between">
-                                                <span className="text-xs font-bold text-slate-500">Lane {i + 1}</span>
+                                                <span className="text-xs font-bold text-slice-text-muted">Lane {i + 1}</span>
                                                 <button
                                                     className={`px-3 py-1.5 rounded-lg text-xs font-black font-mono transition-all ${
                                                         listeningForKey === lane
                                                             ? 'bg-blue-500 text-white shadow-[inset_3px_3px_6px_rgba(0,0,0,0.2)] animate-pulse'
-                                                            : 'bg-[#e0e5ec] text-slate-700 shadow-[3px_3px_6px_#a3b1c6,-3px_-3px_6px_#ffffff]'
+                                                            : 'bg-slice-bg text-slice-text shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)]'
                                                     }`}
                                                     onClick={() => setListeningForKey(listeningForKey === lane ? null : lane)}
                                                 >
-                                                    {listeningForKey === lane ? 'press a key…' : keybinds[lane].replace('ArrowUp', '↑').replace('ArrowDown', '↓').replace('ArrowLeft', '←').replace('ArrowRight', '→').replace('Key', '')}
+                                                    {listeningForKey === lane ? 'press key / btn…' : keybinds[lane].replace('Mouse0','LMB').replace('Mouse1','MMB').replace('Mouse2','RMB').replace('ArrowUp', '↑').replace('ArrowDown', '↓').replace('ArrowLeft', '←').replace('ArrowRight', '→').replace('Key', '')}
                                                 </button>
                                             </div>
                                         ))}
                                     </div>
                                 </div>
 
-                                <Button size="lg" className="w-full shadow-[5px_5px_10px_#a3b1c6,-5px_-5px_10px_#ffffff] bg-[#e0e5ec] text-slate-700 hover:bg-slate-50 border-none active:shadow-[inset_5px_5px_10px_#a3b1c6,inset_-5px_-5px_10px_#ffffff]"
+                                <Button size="lg" className="w-full shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] bg-slice-bg text-slice-text hover:bg-slice-shadow-dark/20 border-none active:shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)]"
                                     onClick={() => { setListeningForKey(null); engine?.resume(); }}>RESUME</Button>
-                                <Button size="lg" variant="ghost" className="w-full text-slate-500 hover:text-slate-700 hover:bg-transparent shadow-[5px_5px_10px_#a3b1c6,-5px_-5px_10px_#ffffff] active:shadow-[inset_5px_5px_10px_#a3b1c6,inset_-5px_-5px_10px_#ffffff]"
+                                <Button size="lg" variant="ghost" className="w-full text-slice-text-muted hover:text-slice-text hover:bg-transparent shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] active:shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)]"
                                     onClick={() => { setListeningForKey(null); engine?.reset(); engine?.start(); setIsPaused(false); }}>RETRY</Button>
                                 <Button size="lg" variant="ghost" className="w-full text-red-400 hover:text-red-500 hover:bg-transparent"
                                     onClick={() => { setListeningForKey(null); useGameStore.getState().setStatus('MENU'); useGameStore.getState().setIsMultiplayer(false); setIsPaused(false); engine?.reset(); engine?.setLobbyId(null); }}>QUIT</Button>
@@ -950,23 +1145,23 @@ export function GameCanvas() {
                     {showSettings && status === 'PLAYING' && isMultiplayer && (
                         <div
                             data-settings-panel
-                            className="absolute top-14 right-3 z-50 w-72 bg-[#e0e5ec] rounded-[20px] shadow-[9px_9px_16px_#a3b1c6,-9px_-9px_16px_#ffffff] flex flex-col gap-3 p-4 animate-in slide-in-from-top-2 fade-in duration-200"
+                            className="absolute top-14 right-3 z-50 w-72 bg-slice-bg rounded-[20px] shadow-[9px_9px_16px_var(--slice-shadow-dark),-9px_-9px_16px_var(--slice-shadow-light)] flex flex-col gap-3 p-4 animate-in slide-in-from-top-2 fade-in duration-200"
                             onMouseDown={e => e.stopPropagation()}
                             onTouchStart={e => e.stopPropagation()}
                         >
                             <div className="flex items-center justify-between">
-                                <h2 className="text-sm font-black text-slate-600 uppercase tracking-widest">Settings</h2>
-                                <button className="w-7 h-7 rounded-full bg-[#e0e5ec] shadow-[3px_3px_6px_#a3b1c6,-3px_-3px_6px_#ffffff] flex items-center justify-center text-slate-500 hover:text-slate-700 active:shadow-[inset_3px_3px_6px_#a3b1c6,inset_-3px_-3px_6px_#ffffff]"
+                                <h2 className="text-sm font-black text-slice-text-darker uppercase tracking-widest">Settings</h2>
+                                <button className="w-7 h-7 rounded-full bg-slice-bg shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)] flex items-center justify-center text-slice-text-muted hover:text-slice-text active:shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)]"
                                     onClick={() => setShowSettings(false)}>
                                     <X className="w-3.5 h-3.5" />
                                 </button>
                             </div>
 
-                            <div className="bg-[#d1d9e6] rounded-xl p-3 shadow-[inset_3px_3px_6px_#a3b1c6,inset_-3px_-3px_6px_#ffffff] flex flex-col gap-3">
+                            <div className="bg-slice-shadow-dark/30 rounded-xl p-3 shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] flex flex-col gap-3">
                                 {/* Volume */}
                                 <div className="flex flex-col gap-1.5">
                                     <div className="flex justify-between items-center">
-                                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Volume</span>
+                                        <span className="text-[10px] font-black text-slice-text-muted uppercase tracking-wider">Volume</span>
                                         <span className="text-xs font-bold text-blue-500">{volume}%</span>
                                     </div>
                                     <Slider value={[volume]} min={0} max={100} step={1} onValueChange={([v]) => setVolume(v)} className="w-full" />
@@ -974,34 +1169,47 @@ export function GameCanvas() {
 
                                 {/* Audio Offset */}
                                 <div className="flex items-center justify-between gap-2">
-                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Audio Offset</span>
+                                    <span className="text-[10px] font-black text-slice-text-muted uppercase tracking-wider">Audio Offset</span>
                                     <div className="flex items-center gap-1.5">
-                                        <button className="w-6 h-6 rounded-md bg-[#e0e5ec] shadow-[3px_3px_6px_#a3b1c6,-3px_-3px_6px_#ffffff] text-slate-600 font-bold text-xs flex items-center justify-center active:shadow-[inset_3px_3px_6px_#a3b1c6,inset_-3px_-3px_6px_#ffffff]"
+                                        <button className="w-6 h-6 rounded-md bg-slice-bg shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)] text-slice-text-darker font-bold text-xs flex items-center justify-center active:shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)]"
                                             onClick={() => setAudioOffset(audioOffset - 5)}>−</button>
-                                        <span className="text-xs font-bold text-slate-600 w-14 text-center font-mono">{audioOffset > 0 ? '+' : ''}{audioOffset}ms</span>
-                                        <button className="w-6 h-6 rounded-md bg-[#e0e5ec] shadow-[3px_3px_6px_#a3b1c6,-3px_-3px_6px_#ffffff] text-slate-600 font-bold text-xs flex items-center justify-center active:shadow-[inset_3px_3px_6px_#a3b1c6,inset_-3px_-3px_6px_#ffffff]"
+                                        <span className="text-xs font-bold text-slice-text-darker w-14 text-center font-mono">{audioOffset > 0 ? '+' : ''}{audioOffset}ms</span>
+                                        <button className="w-6 h-6 rounded-md bg-slice-bg shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)] text-slice-text-darker font-bold text-xs flex items-center justify-center active:shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)]"
                                             onClick={() => setAudioOffset(audioOffset + 5)}>+</button>
                                     </div>
                                 </div>
 
                                 {/* Keybinds */}
                                 <div className="flex flex-col gap-1.5">
-                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Keybinds</span>
-                                    {(['lane1', 'lane2'] as const).map((lane, i) => (
-                                        <div key={lane} className="flex items-center justify-between">
-                                            <span className="text-[10px] font-bold text-slate-500">Lane {i + 1}</span>
-                                            <button
-                                                className={`px-2 py-1 rounded-md text-[10px] font-black font-mono transition-all ${
-                                                    listeningForKey === lane
-                                                        ? 'bg-blue-500 text-white shadow-[inset_3px_3px_6px_rgba(0,0,0,0.2)] animate-pulse'
-                                                        : 'bg-[#e0e5ec] text-slate-700 shadow-[3px_3px_6px_#a3b1c6,-3px_-3px_6px_#ffffff]'
-                                                }`}
-                                                onClick={() => setListeningForKey(listeningForKey === lane ? null : lane)}
-                                            >
-                                                {listeningForKey === lane ? 'press a key…' : keybinds[lane].replace('ArrowUp', '↑').replace('ArrowDown', '↓').replace('ArrowLeft', '←').replace('ArrowRight', '→').replace('Key', '')}
-                                            </button>
-                                        </div>
-                                    ))}
+                                    <span className="text-[10px] font-black text-slice-text-muted uppercase tracking-wider">Keybinds</span>
+                                    {(['lane1', 'lane2'] as const).map((lane, i) => {
+                                        let displayBind = 'press key / btn…';
+                                        if (listeningForKey !== lane) {
+                                            displayBind = keybinds[lane]
+                                                .replace('Mouse0', 'LMB').replace('Mouse1', 'MMB').replace('Mouse2', 'RMB')
+                                                .replace('ArrowUp', '↑')
+                                                .replace('ArrowDown', '↓')
+                                                .replace('ArrowLeft', '←')
+                                                .replace('ArrowRight', '→')
+                                                .replace('Key', '');
+                                        }
+
+                                        return (
+                                            <div key={lane} className="flex items-center justify-between">
+                                                <span className="text-[10px] font-bold text-slice-text-muted">Lane {i + 1}</span>
+                                                <button
+                                                    className={`px-2 py-1 rounded-md text-[10px] font-black font-mono transition-all ${
+                                                        listeningForKey === lane
+                                                            ? 'bg-blue-500 text-white shadow-[inset_3px_3px_6px_rgba(0,0,0,0.2)] animate-pulse'
+                                                            : 'bg-slice-bg text-slice-text shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)]'
+                                                    }`}
+                                                    onClick={() => setListeningForKey(listeningForKey === lane ? null : lane)}
+                                                >
+                                                    {displayBind}
+                                                </button>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             </div>
 
@@ -1014,13 +1222,13 @@ export function GameCanvas() {
                     
                     {/* Synchronized Loading Overlay */}
                     {status === 'PLAYING' && isLoadingSong && (
-                        <div className="absolute inset-0 z-[60] bg-[#e0e5ec]/90 backdrop-blur-md flex flex-col items-center justify-center p-10">
+                        <div className="absolute inset-0 z-[60] bg-slice-bg/90 backdrop-blur-md flex flex-col items-center justify-center p-10">
                             <div className="w-full max-w-md space-y-4">
                                 <div className="flex justify-between items-end mb-1">
-                                    <span className="text-sm font-black text-slate-500 uppercase tracking-widest">Loading Assets</span>
+                                    <span className="text-sm font-black text-slice-text-muted uppercase tracking-widest">Loading Assets</span>
                                     <span className="text-2xl font-black text-blue-500">{Math.round(loadingProgress)}%</span>
                                 </div>
-                                <div className="h-4 bg-[#e0e5ec] rounded-full shadow-[inset_4px_4px_8px_#a3b1c6,inset_-4px_-4px_8px_#ffffff] p-1">
+                                <div className="h-4 bg-slice-bg rounded-full shadow-[inset_4px_4px_8px_var(--slice-shadow-dark),inset_-4px_-4px_8px_var(--slice-shadow-light)] p-1">
                                     <div 
                                         className="h-full bg-gradient-to-r from-blue-500 to-pink-500 rounded-full transition-all duration-300 shadow-[0_0_15px_rgba(59,130,246,0.5)]"
                                         style={{ width: `${loadingProgress}%` }}
@@ -1030,11 +1238,11 @@ export function GameCanvas() {
                                 {/* Multiplayer: per-player loading status */}
                                 {isMultiplayer && loadingPlayers.length > 0 && (
                                     <div className="space-y-2 pt-2">
-                                        <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest text-center">
+                                        <p className="text-[11px] font-black text-slice-text-light uppercase tracking-widest text-center">
                                             Waiting for players...
                                         </p>
                                         {/* Overall bar: X / total loaded */}
-                                        <div className="h-2 bg-[#e0e5ec] rounded-full shadow-[inset_3px_3px_6px_#a3b1c6,inset_-3px_-3px_6px_#ffffff] overflow-hidden">
+                                        <div className="h-2 bg-slice-bg rounded-full shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] overflow-hidden">
                                             <div
                                                 className="h-full bg-green-400 rounded-full transition-all duration-500"
                                                 style={{ width: `${loadingPlayers.length === 0 ? 0 : (loadingPlayers.filter(p => p.loaded).length / loadingPlayers.length) * 100}%` }}
@@ -1044,13 +1252,13 @@ export function GameCanvas() {
                                             {loadingPlayers.map(p => (
                                                 <div
                                                     key={p.id}
-                                                    className="flex items-center justify-between bg-[#e0e5ec] px-3 py-2 rounded-xl shadow-[inset_2px_2px_4px_#a3b1c6,inset_-2px_-2px_4px_#ffffff]"
+                                                    className="flex items-center justify-between bg-slice-bg px-3 py-2 rounded-xl shadow-[inset_2px_2px_4px_var(--slice-shadow-dark),inset_-2px_-2px_4px_var(--slice-shadow-light)]"
                                                 >
-                                                    <span className="text-xs font-bold text-slate-600 truncate">{p.name}</span>
+                                                    <span className="text-xs font-bold text-slice-text-darker truncate">{p.name}</span>
                                                     {p.loaded ? (
                                                         <span className="text-[11px] font-black text-green-500 uppercase tracking-wide">Ready ✓</span>
                                                     ) : (
-                                                        <span className="flex items-center gap-1 text-[11px] font-bold text-slate-400">
+                                                        <span className="flex items-center gap-1 text-[11px] font-bold text-slice-text-light">
                                                             <span className="w-3 h-3 border-2 border-slate-400 border-t-blue-500 rounded-full animate-spin inline-block" />
                                                             Loading
                                                         </span>
@@ -1062,7 +1270,7 @@ export function GameCanvas() {
                                 )}
 
                                 {!isMultiplayer && (
-                                    <p className="text-center text-xs text-slate-400 font-bold uppercase tracking-tighter animate-pulse">
+                                    <p className="text-center text-xs text-slice-text-light font-bold uppercase tracking-tighter animate-pulse">
                                         Synchronizing with group...
                                     </p>
                                 )}
@@ -1074,7 +1282,7 @@ export function GameCanvas() {
                     {status === 'PLAYING' && countdown > 0 && (
                         <div className="absolute inset-0 z-[70] flex items-center justify-center pointer-events-none">
                             <div key={countdown} className="animate-in zoom-in-150 fade-in duration-500 ease-out">
-                                <span className="text-[12rem] font-black italic text-slate-700 soft-glow-text drop-shadow-[0_10px_30px_rgba(0,0,0,0.2)]">
+                                <span className="text-[12rem] font-black italic text-slice-text soft-glow-text drop-shadow-[0_10px_30px_rgba(0,0,0,0.2)]">
                                     {countdown}
                                 </span>
                             </div>
