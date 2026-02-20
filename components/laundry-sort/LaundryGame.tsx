@@ -61,6 +61,30 @@ const WALLS: Wall[] = [
   { x: 450, y: 440, width: 6, height: 80 },
 ];
 
+/** Scale client position to canvas coordinates (canvas may be CSS-scaled). */
+function clientToCanvas(canvas: HTMLCanvasElement, clientX: number, clientY: number): { x: number; y: number } {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  return {
+    x: (clientX - rect.left) * scaleX,
+    y: (clientY - rect.top) * scaleY,
+  };
+}
+
+/** Hit test: is point (px, py) in canvas space inside the clothing's rotated rect? Uses padding for easier grabbing. */
+function hitTestClothing(c: Clothing, px: number, py: number, padding: number = 8): boolean {
+  const dx = px - c.x;
+  const dy = py - c.y;
+  const cos = Math.cos(-c.rotation);
+  const sin = Math.sin(-c.rotation);
+  const localX = dx * cos - dy * sin;
+  const localY = dx * sin + dy * cos;
+  const halfW = c.width / 2 + padding;
+  const halfH = c.height / 2 + padding;
+  return localX >= -halfW && localX <= halfW && localY >= -halfH && localY <= halfH;
+}
+
 export function LaundryGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [score, setScore] = useState(0);
@@ -394,22 +418,15 @@ export function LaundryGame() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const { x, y } = clientToCanvas(canvas, e.clientX, e.clientY);
 
     gameStateRef.current.isPointerDown = true;
 
-    // Find all clothing under cursor
+    // Find all clothing under cursor (rotation-aware hitbox + padding)
     gameStateRef.current.draggedClothing = [];
     for (let i = gameStateRef.current.clothing.length - 1; i >= 0; i--) {
       const c = gameStateRef.current.clothing[i];
-      if (
-        x > c.x - c.width / 2 &&
-        x < c.x + c.width / 2 &&
-        y > c.y - c.height / 2 &&
-        y < c.y + c.height / 2
-      ) {
+      if (hitTestClothing(c, x, y)) {
         c.isDragging = true;
         gameStateRef.current.draggedClothing.push(c);
       }
@@ -422,19 +439,12 @@ export function LaundryGame() {
     const canvas = canvasRef.current;
     if (!canvas || !gameStateRef.current.isPointerDown) return;
 
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const { x, y } = clientToCanvas(canvas, e.clientX, e.clientY);
 
-    // Check if new items are under the cursor and add them
+    // Check if new items are under the cursor and add them (rotation-aware + padding)
     for (let i = gameStateRef.current.clothing.length - 1; i >= 0; i--) {
       const c = gameStateRef.current.clothing[i];
-      if (!c.isDragging &&
-        x > c.x - c.width / 2 &&
-        x < c.x + c.width / 2 &&
-        y > c.y - c.height / 2 &&
-        y < c.y + c.height / 2
-      ) {
+      if (!c.isDragging && hitTestClothing(c, x, y)) {
         c.isDragging = true;
         gameStateRef.current.draggedClothing.push(c);
       }
@@ -469,22 +479,15 @@ export function LaundryGame() {
     const canvas = canvasRef.current;
     if (!canvas || !e.touches.length) return;
 
-    const rect = canvas.getBoundingClientRect();
-    const x = e.touches[0].clientX - rect.left;
-    const y = e.touches[0].clientY - rect.top;
+    const { x, y } = clientToCanvas(canvas, e.touches[0].clientX, e.touches[0].clientY);
 
     gameStateRef.current.isPointerDown = true;
 
-    // Find all clothing under touch point
+    // Find all clothing under touch point (rotation-aware + padding)
     gameStateRef.current.draggedClothing = [];
     for (let i = gameStateRef.current.clothing.length - 1; i >= 0; i--) {
       const c = gameStateRef.current.clothing[i];
-      if (
-        x > c.x - c.width / 2 &&
-        x < c.x + c.width / 2 &&
-        y > c.y - c.height / 2 &&
-        y < c.y + c.height / 2
-      ) {
+      if (hitTestClothing(c, x, y)) {
         c.isDragging = true;
         gameStateRef.current.draggedClothing.push(c);
       }
@@ -497,19 +500,12 @@ export function LaundryGame() {
     const canvas = canvasRef.current;
     if (!canvas || !gameStateRef.current.isPointerDown || !e.touches.length) return;
 
-    const rect = canvas.getBoundingClientRect();
-    const x = e.touches[0].clientX - rect.left;
-    const y = e.touches[0].clientY - rect.top;
+    const { x, y } = clientToCanvas(canvas, e.touches[0].clientX, e.touches[0].clientY);
 
-    // Check if new items are under the touch point and add them
+    // Check if new items are under the touch point and add them (rotation-aware + padding)
     for (let i = gameStateRef.current.clothing.length - 1; i >= 0; i--) {
       const c = gameStateRef.current.clothing[i];
-      if (!c.isDragging &&
-        x > c.x - c.width / 2 &&
-        x < c.x + c.width / 2 &&
-        y > c.y - c.height / 2 &&
-        y < c.y + c.height / 2
-      ) {
+      if (!c.isDragging && hitTestClothing(c, x, y)) {
         c.isDragging = true;
         gameStateRef.current.draggedClothing.push(c);
       }
