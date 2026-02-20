@@ -32,7 +32,7 @@ const formatBind = (bind: string) =>
 
 const KeybindInput = ({ label, value, onChange }: { label: string, value: string, onChange: (val: string) => void }) => {
     const [listening, setListening] = React.useState(false);
-    const btnRef = React.useRef<HTMLButtonElement>(null);
+    const justAssigned = React.useRef(false);
 
     React.useEffect(() => {
         if (!listening) return;
@@ -41,13 +41,16 @@ const KeybindInput = ({ label, value, onChange }: { label: string, value: string
             e.preventDefault();
             if (e.code !== 'Escape') onChange(e.code);
             setListening(false);
+            justAssigned.current = true;
+            setTimeout(() => justAssigned.current = false, 100);
         };
 
         const handleMouseDown = (e: MouseEvent) => {
-            if (btnRef.current?.contains(e.target as Node)) return; // button click handled by onClick
             e.preventDefault();
             onChange(`Mouse${e.button}`);
             setListening(false);
+            justAssigned.current = true;
+            setTimeout(() => justAssigned.current = false, 100);
         };
 
         const suppressContextMenu = (e: MouseEvent) => { e.preventDefault(); };
@@ -66,11 +69,13 @@ const KeybindInput = ({ label, value, onChange }: { label: string, value: string
         <div className="flex justify-between items-center bg-slice-bg p-3 rounded-xl shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)]">
             <span className="text-xs text-slice-text-muted uppercase font-bold">{label}</span>
             <Button
-                ref={btnRef}
                 variant="ghost"
                 size="sm"
                 className={`font-mono text-xs w-32 rounded-lg ${listening ? 'bg-blue-500/20 text-blue-400' : 'bg-slice-bg shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)] text-slice-text-darker'}`}
-                onClick={() => setListening(l => !l)}
+                onClick={() => {
+                    if (justAssigned.current) return;
+                    setListening(true);
+                }}
             >
                 {listening ? 'PRESS KEY/BTN...' : formatBind(value)}
             </Button>

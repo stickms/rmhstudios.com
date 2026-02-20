@@ -1,0 +1,1 @@
+import { PrismaClient } from '@prisma/client'; const prisma = new PrismaClient(); async function main() { const res = await prisma.song.aggregate({ _sum: { fileSizeBytes: true } }); console.log('SUCCESS:', res); } main().catch(console.error).finally(()=>prisma.());

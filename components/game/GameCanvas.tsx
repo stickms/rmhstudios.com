@@ -69,6 +69,7 @@ export function GameCanvas() {
     // Which lane's keybind is being re-mapped (null = not listening)
     const [listeningForKey, setListeningForKey] = useState<null | 'lane1' | 'lane2'>(null);
     const listeningForKeyRef = useRef<null | 'lane1' | 'lane2'>(null);
+    const justAssignedKeyRef = useRef(false);
     useEffect(() => { listeningForKeyRef.current = listeningForKey; }, [listeningForKey]);
 
     // Score submission guard
@@ -407,6 +408,8 @@ export function GameCanvas() {
                     setKeybinds({ ...keybindsRef.current, [listeningForKeyRef.current]: e.code });
                 }
                 setListeningForKey(null);
+                justAssignedKeyRef.current = true;
+                setTimeout(() => justAssignedKeyRef.current = false, 100);
                 return;
             }
 
@@ -453,6 +456,8 @@ export function GameCanvas() {
                     const btnCode = `Mouse${(e as MouseEvent).button}`;
                     setKeybinds({ ...keybindsRef.current, [listeningForKeyRef.current]: btnCode });
                     setListeningForKey(null);
+                    justAssignedKeyRef.current = true;
+                    setTimeout(() => justAssignedKeyRef.current = false, 100);
                     return;
                 }
 
@@ -1122,7 +1127,10 @@ export function GameCanvas() {
                                                             ? 'bg-blue-500 text-white shadow-[inset_3px_3px_6px_rgba(0,0,0,0.2)] animate-pulse'
                                                             : 'bg-slice-bg text-slice-text shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)]'
                                                     }`}
-                                                    onClick={() => setListeningForKey(listeningForKey === lane ? null : lane)}
+                                                    onClick={() => {
+                                                        if (justAssignedKeyRef.current) return;
+                                                        setListeningForKey(listeningForKey === lane ? null : lane)
+                                                    }}
                                                 >
                                                     {listeningForKey === lane ? 'press key / btn…' : keybinds[lane].replace('Mouse0','LMB').replace('Mouse1','MMB').replace('Mouse2','RMB').replace('ArrowUp', '↑').replace('ArrowDown', '↓').replace('ArrowLeft', '←').replace('ArrowRight', '→').replace('Key', '')}
                                                 </button>
@@ -1203,7 +1211,10 @@ export function GameCanvas() {
                                                             ? 'bg-blue-500 text-white shadow-[inset_3px_3px_6px_rgba(0,0,0,0.2)] animate-pulse'
                                                             : 'bg-slice-bg text-slice-text shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)]'
                                                     }`}
-                                                    onClick={() => setListeningForKey(listeningForKey === lane ? null : lane)}
+                                                    onClick={() => {
+                                                        if (justAssignedKeyRef.current) return;
+                                                        setListeningForKey(listeningForKey === lane ? null : lane)
+                                                    }}
                                                 >
                                                     {displayBind}
                                                 </button>

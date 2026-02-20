@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"next dev -p 3000\" \"pnpm run socket-server\"",
+    "dev": "concurrently \"next dev -p 7000\" \"pnpm run socket-server\"",
     "build": "next build && tsc --project tsconfig.server.json",
-    "start": "concurrently \"next start -p 3000\" \"node dist-server/server/socket-server.js\"",
+    "start": "concurrently \"next start -p 7000\" \"node dist-server/server/socket-server.js\"",
     "socket-server": "npx tsx server/socket-server.ts",
     "lint": "eslint",
     "postinstall": "prisma generate",

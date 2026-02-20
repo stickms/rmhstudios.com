@@ -157,6 +157,29 @@ export class BeatDetector {
             }
         }
 
+        // Convert some notes to LONG hold notes deterministically
+        for (let i = 0; i < finalSlices.length; i++) {
+            if (rng() < 0.15) { // ~15% chance to be a HOLD note
+                // Find next note in the same lane to limit duration
+                let nextInLane = null;
+                for (let j = i + 1; j < finalSlices.length; j++) {
+                    if (finalSlices[j].lane === finalSlices[i].lane) {
+                        nextInLane = finalSlices[j];
+                        break;
+                    }
+                }
+                
+                const gapToNext = nextInLane ? (nextInLane.time - finalSlices[i].time) : 2.0;
+                const maxDuration = gapToNext - (beatInterval * 0.25); // Leave a small gap before next note
+                
+                if (maxDuration >= beatInterval * 0.5) { // Need at least half a beat
+                    finalSlices[i].type = 'LONG';
+                    const targetDur = beatInterval * (1 + rng() * 2); // 1 to 3 beats long
+                    finalSlices[i].duration = Math.min(targetDur, maxDuration, beatInterval * 4);
+                }
+            }
+        }
+
         // Fallback: If no slices detected (e.g. silent or failed analysis), generate a simple metronome beat
         if (finalSlices.length === 0) {
             console.warn("BeatDetector: No slices found! Generating fallback metronome.");

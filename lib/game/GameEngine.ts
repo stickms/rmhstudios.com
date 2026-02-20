@@ -278,7 +278,7 @@ export class GameEngine {
             const scoreMultiplier = calculateScoreMultiplier(m);
             const strictFactor = m.strictTiming ? 0.7 : 1.0;
             // Overhold window: how long after the note ends before it counts as a miss
-            const HOLD_MISS_WINDOW = HIT_WINDOWS.BAD * (m.strictTiming ? 0.7 : 1.0);
+            const HOLD_MISS_WINDOW = HIT_WINDOWS.BAD * (m.strictTiming ? 0.7 : 1.0) * this.speedMultiplier;
 
             this.activeHolds.forEach((slice, lane) => {
                 const holdEndTime = slice.time + (slice.duration || 0);
@@ -310,7 +310,7 @@ export class GameEngine {
                 if (this.processedSliceIds.has(slice.id)) return;
                 
                 // If time passed window + slice time, it's a miss
-                if (currentTime > slice.time + HIT_WINDOWS.BAD * strictFactor) {
+                if (currentTime > slice.time + HIT_WINDOWS.BAD * strictFactor * this.speedMultiplier) {
                     if (slice.type === 'BOMB') {
                          this.processedSliceIds.add(slice.id); // Just mark as processed, no penalty
                     } else {
@@ -345,7 +345,7 @@ export class GameEngine {
         const map = this.beatMap; // Changed from activeMap to this.beatMap
         if (!map) return;
         // Only the targeted (next sequential) note in this lane can be hit
-        const hitWindow = HIT_WINDOWS.BAD * (useGameStore.getState().modifiers.strictTiming ? 0.7 : 1.0);
+        const hitWindow = HIT_WINDOWS.BAD * (useGameStore.getState().modifiers.strictTiming ? 0.7 : 1.0) * this.speedMultiplier;
         const targeted = this.getTargetedSlice(lane);
 
         if (!targeted || Math.abs(targeted.time - currentTime) > hitWindow) {
@@ -383,7 +383,7 @@ export class GameEngine {
         const diff = Math.abs(sliceTime - currentTime);
         const strict = useGameStore.getState().modifiers.strictTiming;
         // Strict timing shrinks all hit windows to 70%
-        const factor = strict ? 0.7 : 1.0;
+        const factor = (strict ? 0.7 : 1.0) * this.speedMultiplier;
         if (diff <= HIT_WINDOWS.MARVELOUS * factor) return 'MARVELOUS';
         if (diff <= HIT_WINDOWS.PERFECT * factor) return 'PERFECT';
         if (diff <= HIT_WINDOWS.GREAT * factor) return 'GREAT';
@@ -503,7 +503,7 @@ export class GameEngine {
         const holdEndTime = heldSlice.time + (heldSlice.duration || 0);
         const m = useGameStore.getState().modifiers;
         const scoreMultiplier = calculateScoreMultiplier(m);
-        const HOLD_MISS_WINDOW = HIT_WINDOWS.BAD * (m.strictTiming ? 0.7 : 1.0);
+        const HOLD_MISS_WINDOW = HIT_WINDOWS.BAD * (m.strictTiming ? 0.7 : 1.0) * this.speedMultiplier;
 
         // Within the release window (from holdEndTime - HOLD_MISS_WINDOW to holdEndTime + HOLD_MISS_WINDOW)
         const inWindow = currentTime >= holdEndTime - HOLD_MISS_WINDOW && currentTime <= holdEndTime + HOLD_MISS_WINDOW;
@@ -519,10 +519,22 @@ export class GameEngine {
                 color: '#0891b2'
             });
         } else {
-            // Early release — no bonus, combo continues (note was already hit)
+            // Early release — award partial points based on duration held, but break combo
+            const holdStart = heldSlice.time;
+            const totalDuration = heldSlice.duration || 0;
+            // The time they held it actually stopped when they released
+            const heldDuration = Math.max(0, currentTime - holdStart);
+            const ratio = Math.min(1.0, totalDuration > 0 ? heldDuration / totalDuration : 0);
+            
+            // Partial points
+            this.score += Math.floor((100 * ratio) * (this.combo > 0 ? this.combo : 1) * scoreMultiplier);
+            
+            // Break combo because they dropped it early
+            this.combo = 0;
+
             this.feedbackQueue.push({
                 id: this.feedbackIdCounter++,
-                text: 'RELEASED',
+                text: 'DROPPED',
                 lane: lane,
                 time: performance.now(),
                 color: '#64748b'
@@ -545,7 +557,7 @@ export class GameEngine {
         const offsetSeconds = (useGameStore.getState().audioOffset || 0) / 1000;
         const currentTime = this.audioManager.getCurrentTime() - offsetSeconds;
         const strictFactor = useGameStore.getState().modifiers.strictTiming ? 0.7 : 1.0;
-        const missWindow = HIT_WINDOWS.BAD * strictFactor;
+        const missWindow = HIT_WINDOWS.BAD * strictFactor * this.speedMultiplier;
 
         let best: Slice | null = null;
         for (const slice of this.beatMap.slices) {
@@ -564,6 +576,10 @@ export class GameEngine {
 
             // Skip notes that have already fully passed the miss window
             if (currentTime > slice.time + missWindow) continue;
+
+            // Bombs shouldn't be targeted once they're behind the reticle
+            if (slice.type === 'BOMB' && currentTime > slice.time) continue;
+
             // Pick the earliest remaining note
             if (!best || slice.time < best.time) best = slice;
         }
