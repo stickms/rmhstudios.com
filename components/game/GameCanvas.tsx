@@ -144,7 +144,8 @@ export function GameCanvas() {
                     engine?.start();
                     return;
                 }
-                const seconds = Math.ceil(diff / 1000);
+                // Cap at 3 to guard against client/server clock skew
+                const seconds = Math.min(3, Math.ceil(diff / 1000));
                 setCountdown(seconds);
                 setTimeout(updateCount, 100);
             };
