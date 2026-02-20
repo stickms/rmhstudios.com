@@ -31,7 +31,7 @@ export function HeroSection() {
   const rotateY = useSpring(useTransform(normalizedX, [0, 1], [-5, 5]), springConfig);
 
   return (
-    <section id="home" className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden scanlines pt-20">
+    <section id="home" className="relative min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center overflow-hidden scanlines pt-20">
       {/* Background grid - animated */}
       <div className="absolute inset-0 grid-bg" />
 
