@@ -108,6 +108,16 @@ export async function POST(req: NextRequest) {
         }
 
         const description = (formData.get("description") as string) || "";
+        
+        let analysisData = null;
+        const analysisDataString = formData.get("analysisData") as string;
+        if (analysisDataString) {
+            try {
+                analysisData = JSON.parse(analysisDataString);
+            } catch (e) {
+                console.warn("Invalid analysisData JSON provided", e);
+            }
+        }
 
         const song = await prisma.song.create({
             data: {
@@ -119,6 +129,7 @@ export async function POST(req: NextRequest) {
                 audioUrl: fileName,
                 coverUrl,
                 fileSizeBytes: buffer.length,
+                analysisData,
                 uploadedBy: session.user.id,
                 isPublic: true,
             },

@@ -28,6 +28,7 @@ export async function GET(req: NextRequest) {
             duration: s.duration,
             audioUrl: s.audioUrl,
             coverUrl: s.coverUrl,
+            analysisData: s.analysisData,
             uploadedBy: s.uploadedBy,
             uploader: { name: s.uploader.name || s.uploader.username || "Unknown" },
             _count: s._count

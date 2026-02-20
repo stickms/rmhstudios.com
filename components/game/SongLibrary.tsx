@@ -11,6 +11,8 @@ import { authClient } from '@/lib/auth-client';
 import { useRouter } from 'next/navigation';
 import { useGameStore } from '@/lib/store/useGameStore';
 import { GameEngine } from '@/lib/game/GameEngine';
+import { BeatDetector } from '@/lib/audio/BeatDetector';
+import { BPMDetector } from '@/lib/audio/BPMDetector';
 import * as metadata from 'music-metadata-browser';
 
 interface Song {
@@ -24,6 +26,7 @@ interface Song {
     uploadedBy: string;
     uploader: { name: string };
     coverUrl?: string; // Type definition
+    analysisData?: any; // The pre-computed beatmap
     _count?: {
         scores: number;
     }
@@ -40,6 +43,7 @@ export function SongLibrary({ onSelect, onHighlight, selectedSongId, onStopPrevi
     const [searchTerm, setSearchTerm] = useState('');
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
+    const [uploadStatusText, setUploadStatusText] = useState("");
     const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
     
     // Global Volume
@@ -168,52 +172,87 @@ export function SongLibrary({ onSelect, onHighlight, selectedSongId, onStopPrevi
 
         setIsUploading(true);
         setUploadProgress(0);
+        setUploadStatusText("Analyzing audio format...");
 
-        const formData = new FormData();
-        formData.append('file', uploadFile);
-        formData.append('title', uploadTitle);
-        formData.append('artist', uploadArtist);
-        formData.append('bpm', uploadBpm);
-        formData.append('duration', String(uploadDuration));
-        formData.append('description', uploadDescription);
-        
-        const xhr = new XMLHttpRequest();
-
-        xhr.upload.addEventListener('progress', (event) => {
-            if (event.lengthComputable) {
-                const percent = Math.round((event.loaded / event.total) * 100);
-                setUploadProgress(percent);
+        try {
+            // 1. ArrayBuffer setup
+            const arrayBuffer = await uploadFile.arrayBuffer();
+            
+            setUploadStatusText("Decoding audio (this may take a few seconds)...");
+            // Standard AudioContext to decode for beatmap generator
+            const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+            const decodedBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+            
+            // Re-detect BPM if input is 0
+            let finalBpm = parseFloat(uploadBpm) || 0;
+            if (finalBpm === 0) {
+                setUploadStatusText("Detecting BPM...");
+                finalBpm = await BPMDetector.detect(decodedBuffer);
+                setUploadBpm(finalBpm.toString());
             }
-        });
 
-        xhr.addEventListener('load', () => {
-            if (xhr.status >= 200 && xhr.status < 300) {
-                setUploadFile(null);
-                setUploadDescription("");
-                setUploadProgress(100);
-                toast.success("Track uploaded successfully!");
-                fetchSongs();
-                // Auto-close dialog after a brief moment
-                setTimeout(() => {
-                    setUploadDialogOpen(false);
-                    setUploadProgress(0);
+            setUploadStatusText("Generating BeatMap...");
+            const tempSongId = Date.now().toString() + "-" + Math.round(Math.random() * 1000);
+            const beatMap = await BeatDetector.generateMap(decodedBuffer, tempSongId, uploadTitle, uploadArtist, finalBpm);
+            
+            audioCtx.close();
+
+            setUploadStatusText("Uploading track & map...");
+            const formData = new FormData();
+            // Need the original File to upload the MP3, not the decoded buffer
+            formData.append('file', uploadFile);
+            formData.append('title', uploadTitle);
+            formData.append('artist', uploadArtist);
+            formData.append('bpm', finalBpm.toString());
+            formData.append('duration', String(uploadDuration));
+            formData.append('description', uploadDescription);
+            formData.append('analysisData', JSON.stringify(beatMap));
+            
+            const xhr = new XMLHttpRequest();
+
+            xhr.upload.addEventListener('progress', (event) => {
+                if (event.lengthComputable) {
+                    const percent = Math.round((event.loaded / event.total) * 100);
+                    setUploadProgress(percent);
+                }
+            });
+
+            xhr.addEventListener('load', () => {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    setUploadFile(null);
+                    setUploadDescription("");
+                    setUploadProgress(100);
+                    setUploadStatusText("Success!");
+                    toast.success("Track uploaded and map generated successfully!");
+                    fetchSongs();
+                    // Auto-close dialog after a brief moment
+                    setTimeout(() => {
+                        setUploadDialogOpen(false);
+                        setUploadProgress(0);
+                        setIsUploading(false);
+                    }, 600);
+                } else {
+                    toast.error("Upload failed");
                     setIsUploading(false);
-                }, 600);
-            } else {
-                toast.error("Upload failed");
+                    setUploadProgress(0);
+                }
+            });
+
+            xhr.addEventListener('error', () => {
+                toast.error("Upload error");
                 setIsUploading(false);
                 setUploadProgress(0);
-            }
-        });
+            });
 
-        xhr.addEventListener('error', () => {
-            toast.error("Upload error");
+            xhr.open('POST', '/api/slice-it/songs/upload');
+            xhr.send(formData);
+
+        } catch (err) {
+            console.error(err);
+            toast.error("Failed to generate beatmap. Ensure the file is a valid audio format.");
             setIsUploading(false);
             setUploadProgress(0);
-        });
-
-        xhr.open('POST', '/api/slice-it/songs/upload');
-        xhr.send(formData);
+        }
     };
 
     const togglePreview = (song: Song) => {
@@ -336,20 +375,20 @@ export function SongLibrary({ onSelect, onHighlight, selectedSongId, onStopPrevi
                             {isUploading && (
                                 <div className="space-y-2 mt-4">
                                     <div className="flex justify-between text-xs font-bold text-slice-text-muted">
-                                        <span>UPLOADING...</span>
-                                        <span>{uploadProgress}%</span>
+                                        <span className="uppercase">{uploadStatusText}</span>
+                                        {uploadProgress > 0 && <span>{uploadProgress}%</span>}
                                     </div>
                                     <div className="w-full h-3 bg-slice-shadow-dark rounded-full overflow-hidden">
                                         <div 
                                             className="h-full bg-blue-500 rounded-full transition-all duration-300 ease-out"
-                                            style={{ width: `${uploadProgress}%` }}
+                                            style={{ width: `${Math.max(10, uploadProgress)}%` }} // Give a little visual progress even when analyzing
                                         />
                                     </div>
                                 </div>
                             )}
 
                             <Button type="submit" disabled={isUploading || !uploadFile} className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold h-12 rounded-xl mt-4">
-                                {isUploading ? `UPLOADING... ${uploadProgress}%` : 'UPLOAD TRACK'}
+                                {isUploading ? `PROCESSING...` : 'UPLOAD TRACK'}
                             </Button>
                         </form>
                     </DialogContent>

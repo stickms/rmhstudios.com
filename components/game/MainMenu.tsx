@@ -280,15 +280,27 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
 
                 audioBuffer = rawBuffer;
 
-                if (!bpm || bpm === 0) {
-                    setLoadingProgress(25);
-                    bpm = await BPMDetector.detect(audioBuffer);
-                }
+                if (song.analysisData) {
+                    // Fast path: beatmap was pre-generated and stored on the server!
+                    setLoadingProgress(40);
+                    map = typeof song.analysisData === 'string' ? JSON.parse(song.analysisData) : song.analysisData;
+                    
+                    // Fallback to ensuring song metadata is attached
+                    map.audioUrl = audioUrl;
+                    if (bpm > 0) map.bpm = bpm;
+                    else if (!map.bpm) map.bpm = 120;
+                } else {
+                    // Legacy path: beatmap wasn't stored (e.g., uploaded before update)
+                    if (!bpm || bpm === 0) {
+                        setLoadingProgress(25);
+                        bpm = await BPMDetector.detect(audioBuffer);
+                    }
 
-                setLoadingProgress(40);
-                map = await BeatDetector.generateMap(audioBuffer, song.id, song.title, song.artist, bpm);
-                map.audioUrl = audioUrl;
-                map.bpm = bpm;
+                    setLoadingProgress(40);
+                    map = await BeatDetector.generateMap(audioBuffer, song.id, song.title, song.artist, bpm);
+                    map.audioUrl = audioUrl;
+                    map.bpm = bpm;
+                }
             }
 
             setLoadingProgress(80);

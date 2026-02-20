@@ -31,159 +31,187 @@ export class BeatDetector {
      */
     public static async generateMap(buffer: AudioBuffer, id: string, name: string, artist: string, overrideBpm?: number): Promise<BeatMap> {
         console.log(`BeatDetector: Generating map for ${name} (${id}). Buffer duration: ${buffer.duration}`);
-        // 1. Detect or use override BPM
-        let bpm: number;
-        if (overrideBpm && overrideBpm > 0) {
-            bpm = overrideBpm;
-            console.log(`Using override BPM: ${bpm}`);
-        } else {
-            bpm = await BPMDetector.detect(buffer);
-            console.log(`Detected BPM: ${bpm}`);
-            if (bpm <= 0) bpm = 120;
-        }
-
-        // 2. Prepare analysis
-        const offlineCtx = new OfflineAudioContext(1, buffer.length, buffer.sampleRate);
+        
+        let bpm = overrideBpm && overrideBpm > 0 ? overrideBpm : await BPMDetector.detect(buffer);
+        if (bpm <= 0) bpm = 120;
+        
+        const offlineCtx = new window.OfflineAudioContext(3, buffer.length, buffer.sampleRate);
         const source = offlineCtx.createBufferSource();
         source.buffer = buffer;
-        
-        // We want to analyze frequency bands
-        // Low (Bass/Kick), Mid (Snare/Vocal), High (Hats)
+
+        // Create specific filters for spectral analysis
         const lowFilter = offlineCtx.createBiquadFilter();
         lowFilter.type = "lowpass";
-        lowFilter.frequency.value = 250;
+        lowFilter.frequency.value = 150; // Kicks/Sub
 
         const highFilter = offlineCtx.createBiquadFilter();
         highFilter.type = "highpass";
-        highFilter.frequency.value = 2000;
+        highFilter.frequency.value = 2500; // Hats/Snares
 
-        // Connect source to filters? 
-        // Actually, getting raw data and doing FFT manually is expensive in JS main thread (even offline).
-        // Simpler approach for "Game":
-        // Use the "Energy Variance" method on 2 bands (Low vs All)
+        const midFilter = offlineCtx.createBiquadFilter();
+        midFilter.type = "bandpass";
+        midFilter.frequency.value = 1000;
+        midFilter.Q.value = 1.0; // Sustained vocals/synths
+
+        // Splitter to route to 3 distinct channels we can analyze
+        const merger = offlineCtx.createChannelMerger(3);
+
+        source.connect(lowFilter);
+        lowFilter.connect(merger, 0, 0);
+
+        source.connect(midFilter);
+        midFilter.connect(merger, 0, 1);
+
+        source.connect(highFilter);
+        highFilter.connect(merger, 0, 2);
+
+        merger.connect(offlineCtx.destination);
         
-        // Let's stick to the offline rendering for filtering if needed, or just raw PCM analysis.
-        // Raw PCM analysis is faster for 1 minute songs.
-        
-        const channelData = buffer.getChannelData(0); // Mono analysis for timing
-        const sampleRate = buffer.sampleRate;
-        const beatInterval = 60 / bpm; // Seconds per beat
-        
-        // Quantization grid: 1/4 beats (16th notes)
-        const gridInterval = beatInterval / 4; 
-        const slices: Slice[] = [];
-        
-        // Parameters
+        source.start(0);
+        const renderedBuffer = await offlineCtx.startRendering();
+
+        // 3 discrete separated bands
+        const lowData = renderedBuffer.getChannelData(0);
+        const midData = renderedBuffer.getChannelData(1);
+        const highData = renderedBuffer.getChannelData(2);
+
+        const sampleRate = renderedBuffer.sampleRate;
+        const beatInterval = 60 / bpm;
+        // Quantize strictly to 1/8 notes for fairness
+        const gridInterval = beatInterval / 2; 
+
         const windowSize = Math.floor(sampleRate * 0.05); // 50ms window
         const stepSize = Math.floor(sampleRate * 0.01); // 10ms step
+
+        const slices: Slice[] = [];
+        const rng = createSeededRandom(`${id}-${bpm}`);
+
+        // We will process chunk by chunk and calculate spectral flux for transients
+        const historySize = 50; 
         
-        // Compute energy profile
-        const energyProfile: number[] = [];
-        for (let i = 0; i < channelData.length; i += stepSize) {
-            let sum = 0;
-            for (let j = 0; j < windowSize && i + j < channelData.length; j++) {
-                sum += channelData[i+j] * channelData[i+j];
+        // Profiles
+        const combinedEnergy: number[] = [];
+        const midEnergy: number[] = [];
+
+        for (let i = 0; i < lowData.length; i += stepSize) {
+            let sumL = 0, sumM = 0, sumH = 0;
+            for (let j = 0; j < windowSize && i + j < lowData.length; j++) {
+                sumL += lowData[i+j] * lowData[i+j];
+                sumM += midData[i+j] * midData[i+j];
+                sumH += highData[i+j] * highData[i+j];
             }
-            energyProfile.push(sum / windowSize);
+            // weighted combination favoring rhythmic hits (kicks + snares/hats)
+            combinedEnergy.push((sumL * 1.5 + sumH * 1.2 + sumM * 0.3) / windowSize);
+            midEnergy.push(sumM / windowSize);
         }
-        
-        // Find local maxima in energy (Onsets)
-        // Compare local energy to running average
-        const peaks: { time: number, energy: number }[] = [];
-        const historySize = 43; // ~0.5s approx
-        
-        for (let i = historySize; i < energyProfile.length; i++) {
-            // Local average of previous chunk
+
+        const peaks: { time: number, energy: number, isSustained: boolean }[] = [];
+        let currentlySustained = false;
+        let sustainedStartTime = 0;
+
+        for (let i = historySize; i < combinedEnergy.length; i++) {
+            const time = (i * stepSize) / sampleRate;
+
+            // Transients (STANDARD hits)
             let localSum = 0;
-            for (let h = 1; h <= historySize; h++) {
-                localSum += energyProfile[i - h];
-            }
+            for (let h = 1; h <= historySize; h++) localSum += combinedEnergy[i - h];
             const localAvg = localSum / historySize;
-            const variance = energyProfile[i] / localAvg;
+
+            const isTransient = combinedEnergy[i] > localAvg * 1.5 && combinedEnergy[i] > 0.002;
+            const isLocalMax = combinedEnergy[i] > combinedEnergy[i-1] && combinedEnergy[i] >= combinedEnergy[i+1];
+
+            if (isTransient && isLocalMax) {
+                peaks.push({ time, energy: combinedEnergy[i], isSustained: false });
+                i += 5; // skip 50ms forward
+                continue;
+            }
+
+            // Sustained notes (LONG hits) from Mid band
+            let localMidSum = 0;
+            for (let h = 1; h <= historySize; h++) localMidSum += midEnergy[i - h];
+            const localMidAvg = localMidSum / historySize;
             
-            // If energy spike
-            if (variance > 1.3 && energyProfile[i] > 0.001) {
-                // Check if it's a local peak (larger than neighbors)
-                if (energyProfile[i] > energyProfile[i-1] && energyProfile[i] >= energyProfile[i+1]) {
-                    const time = (i * stepSize) / sampleRate;
-                    peaks.push({ time, energy: energyProfile[i] });
-                    i += 5; // Skip ahead a bit (50ms)
+            // Sustained energy exists when variance isn't sharp but volume is high
+            const hasSustainedVolume = midEnergy[i] > 0.003 && midEnergy[i] > localMidAvg * 1.1;
+
+            if (hasSustainedVolume && !currentlySustained) {
+                currentlySustained = true;
+                sustainedStartTime = time;
+            } else if (!hasSustainedVolume && currentlySustained) {
+                currentlySustained = false;
+                const duration = time - sustainedStartTime;
+                if (duration > beatInterval * 0.5) { // Needs to be at least half a beat
+                    peaks.push({ time: sustainedStartTime, energy: duration, isSustained: true });
                 }
             }
         }
-        
-        // Quantize peaks to grid
-        const quantizedPeaks: { time: number, energy: number }[] = [];
+
+        // Quantize peaks to mathematical rhythm grid
         const processedGridIndices = new Set<number>();
         
         peaks.forEach(p => {
-            // Find closest grid point
             const gridIndex = Math.round(p.time / gridInterval);
-            if (processedGridIndices.has(gridIndex)) return; // Already occupied
+            if (processedGridIndices.has(gridIndex)) return; 
             
-            // Check closeness (e.g. within 30% of interval)
             const gridTime = gridIndex * gridInterval;
+            // Snap if it's within 40% of the grid snapping distance
             if (Math.abs(p.time - gridTime) < gridInterval * 0.4) {
                 processedGridIndices.add(gridIndex);
-                quantizedPeaks.push({ time: gridTime, energy: p.energy });
+                
+                const lane = rng() > 0.5 ? 1 : 0;
+                
+                if (p.isSustained) {
+                    // Maximum duration cap against the next nearest beat
+                    let duration = Math.min(p.energy, beatInterval * 4);
+                    // Snap duration to nearest beat intervals as well
+                    duration = Math.max(beatInterval * 0.5, Math.round(duration / gridInterval) * gridInterval);
+                    
+                    slices.push({
+                        id: `slice-${gridIndex}`,
+                        time: gridTime,
+                        type: 'LONG',
+                        lane: lane,
+                        duration: duration
+                    });
+                } else {
+                    slices.push({
+                        id: `slice-${gridIndex}`,
+                        time: gridTime,
+                        type: 'STANDARD',
+                        lane: lane
+                    });
+                }
             }
         });
-        
-        // Create a deterministic PRNG seeded by songId + bpm
-        const rng = createSeededRandom(`${id}-${bpm}`);
 
-        // Convert to Slices
-        quantizedPeaks.forEach((p, index) => {
-            // Deterministic lane assignment based on seeded PRNG
-            const lane = rng() > 0.5 ? 1 : 0;
-            
-            slices.push({
-                id: `slice-${index}`,
-                time: p.time,
-                type: 'STANDARD',
-                lane: lane
-            });
-        });
-
-        // Filter out too dense sections? 
-        // Already handled by quantization somewhat, but ensure min distance
+        // Cleanup filtering pass (remove overlapping notes in same lane)
         const finalSlices: Slice[] = [];
-        if (slices.length > 0) {
-            finalSlices.push(slices[0]);
-            for (let i = 1; i < slices.length; i++) {
-                if (slices[i].time - finalSlices[finalSlices.length - 1].time >= beatInterval * 0.45) { // At least 8th note distance roughly
-                    finalSlices.push(slices[i]);
+        slices.sort((a, b) => a.time - b.time);
+
+        for (const slice of slices) {
+            if (finalSlices.length === 0) {
+                finalSlices.push(slice);
+                continue;
+            }
+            
+            const prevInLane = [...finalSlices].reverse().find(s => s.lane === slice.lane);
+            let isValid = true;
+
+            if (prevInLane) {
+                // Cannot place a standard note directly over an active hold note
+                const prevEnd = prevInLane.time + (prevInLane.type === 'LONG' ? (prevInLane.duration || 0) : 0);
+                // Require at least a 1/8 beat gap between any note in the lane
+                if (slice.time < prevEnd + (beatInterval / 2)) {
+                    isValid = false;
                 }
             }
+
+            if (isValid) finalSlices.push(slice);
         }
 
-        // Convert some notes to LONG hold notes deterministically
-        for (let i = 0; i < finalSlices.length; i++) {
-            if (rng() < 0.15) { // ~15% chance to be a HOLD note
-                // Find next note in the same lane to limit duration
-                let nextInLane = null;
-                for (let j = i + 1; j < finalSlices.length; j++) {
-                    if (finalSlices[j].lane === finalSlices[i].lane) {
-                        nextInLane = finalSlices[j];
-                        break;
-                    }
-                }
-                
-                const gapToNext = nextInLane ? (nextInLane.time - finalSlices[i].time) : 2.0;
-                const maxDuration = gapToNext - (beatInterval * 0.25); // Leave a small gap before next note
-                
-                if (maxDuration >= beatInterval * 0.5) { // Need at least half a beat
-                    finalSlices[i].type = 'LONG';
-                    const targetDur = beatInterval * (1 + rng() * 2); // 1 to 3 beats long
-                    finalSlices[i].duration = Math.min(targetDur, maxDuration, beatInterval * 4);
-                }
-            }
-        }
-
-        // Fallback: If no slices detected (e.g. silent or failed analysis), generate a simple metronome beat
         if (finalSlices.length === 0) {
-            console.warn("BeatDetector: No slices found! Generating fallback metronome.");
-            const duration = buffer.duration || 180; // Default 3 mins if duration missing
+            console.warn("BeatDetector: Generating fallback metronome.");
+            const duration = buffer.duration || 180;
             const totalBeats = Math.floor((duration * bpm) / 60);
             for (let i = 0; i < totalBeats; i++) {
                 finalSlices.push({
@@ -195,13 +223,6 @@ export class BeatDetector {
             }
         }
 
-        return {
-            id,
-            name,
-            artist,
-            audioUrl: '',
-            bpm,
-            slices: finalSlices
-        };
+        return { id, name, artist, audioUrl: '', bpm, slices: finalSlices };
     }
 }

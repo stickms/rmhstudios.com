@@ -838,27 +838,46 @@ export function GameCanvas() {
                     ctx.fillText('!', sliceX, y + 7);
                  } else if (slice.type === 'LONG') {
                      // Long note logic
-                     ctx.fillStyle = color;
-                     // Pill Shape
-                     ctx.beginPath();
+                     
+                     // Calculate total and remaining length
+                     let remainingDuration = slice.duration || 0.5;
                      if (isHeldActive) {
-                         // Length shrinks as time passes, but left edge stays at cursor
-                         const remainingDuration = (slice.time + (slice.duration || 0)) - currentTime;
-                         if (remainingDuration > 0) {
-                             const remainingLen = remainingDuration * PPS;
-                             ctx.roundRect(sliceX, y - BAR_H/2, remainingLen, BAR_H, 10);
-                             ctx.globalAlpha = noteAlpha;
-                             // Add "active glow" core since it's being held
-                             ctx.fill();
-                             ctx.fillStyle = `rgba(255,255,255,${0.7 * noteAlpha})`;
-                             ctx.beginPath();
-                             ctx.roundRect(sliceX, y - (BAR_H*0.4), remainingLen - 4, BAR_H*0.8, 8);
-                         }
-                     } else {
-                         const len = (slice.duration || 0.5) * PPS;
-                         ctx.roundRect(sliceX, y - BAR_H/2, len, BAR_H, 10);
+                         remainingDuration = (slice.time + (slice.duration || 0)) - currentTime;
                      }
-                     ctx.fill();
+                     
+                     if (remainingDuration > 0) {
+                         const len = remainingDuration * PPS;
+                         
+                         // 1. Draw the white tail (body of the hold)
+                         // It extends to the right of the start sliceX
+                         ctx.fillStyle = isHeldActive ? 'rgba(255, 255, 255, 0.9)' : `rgba(255, 255, 255, ${0.5 * noteAlpha})`;
+                         ctx.beginPath();
+                         ctx.roundRect(sliceX, y - (BAR_H * 0.3), len, BAR_H * 0.6, 4);
+                         ctx.fill();
+                         
+                         // 2. Draw the tall, narrow colored start rectangle (head of the hold)
+                         // We make it slightly taller than a normal note (BAR_H) and quite narrow
+                         const headWidth = Math.max(8, BAR_H * 0.4);
+                         const headHeight = BAR_H * 1.4;
+                         
+                         ctx.fillStyle = color; // Uses lane color
+                         ctx.globalAlpha = noteAlpha;
+                         
+                         // Optional glow if held
+                         if (isHeldActive) {
+                             ctx.save();
+                             ctx.shadowColor = color;
+                             ctx.shadowBlur = 10;
+                             ctx.beginPath();
+                             ctx.roundRect(sliceX - headWidth/2, y - headHeight/2, headWidth, headHeight, 4);
+                             ctx.fill();
+                             ctx.restore();
+                         } else {
+                             ctx.beginPath();
+                             ctx.roundRect(sliceX - headWidth/2, y - headHeight/2, headWidth, headHeight, 4);
+                             ctx.fill();
+                         }
+                     }
                  } else if (slice.type === 'SWITCH') {
                     // Switch Note — diamond shape with arrow indicator
                     const size = BAR_H;
