@@ -66,24 +66,26 @@ export class AudioManager {
     this.source.buffer = this.buffer;
     this.source.playbackRate.value = this.playbackRate;
     
-    // Normalize Buffer Logic
-    // Find peak amplitude
-    let peak = 0;
-    const channelData = this.buffer.getChannelData(0); // Check first channel
-    // Checking every sample is expensive, check every 100th
-    for (let i = 0; i < channelData.length; i += 100) {
-        const val = Math.abs(channelData[i]);
-        if (val > peak) peak = val;
+    // RMS Normalization — normalize to a consistent average loudness level,
+    // then the user's volume control is applied on top via gainNode.
+    const numChannels = this.buffer.numberOfChannels;
+    let sumOfSquares = 0;
+    let sampleCount = 0;
+    const step = 50; // sample every 50th value for performance
+    for (let c = 0; c < numChannels; c++) {
+      const channelData = this.buffer.getChannelData(c);
+      for (let i = 0; i < channelData.length; i += step) {
+        sumOfSquares += channelData[i] * channelData[i];
+        sampleCount++;
+      }
     }
+    const rms = sampleCount > 0 ? Math.sqrt(sumOfSquares / sampleCount) : 0;
+    // ~-20 dBFS target — comfortable with headroom; cap at 4× to avoid over-amplifying very quiet tracks
+    const targetRms = 0.10;
+    const normalizationGain = rms > 0 ? Math.min(targetRms / rms, 4.0) : 1.0;
     
-    // Target peak is ~0.8 to leave headroom
-    const normalizationGain = peak > 0 ? 0.8 / peak : 1.0;
-    
-    // Connect source -> gain -> destination
+    // Connect: source → normNode (per-song RMS normalization) → gainNode (user volume)
     if (!this.gainNode) this.initialize();
-    
-    // Apply normalization gain via a separate node or just adjust existing gain?
-    // Better to have a separate node for normalization so user volume control is independent.
     const normNode = this.audioContext.createGain();
     normNode.gain.value = normalizationGain;
     

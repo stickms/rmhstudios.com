@@ -20,8 +20,12 @@ export function CalibrationScreen({ onBack }: { onBack: () => void }) {
     const BPM = 120;
     const BEAT_MS = 60000 / BPM;
 
+    const [beatFlash, setBeatFlash] = React.useState(false);
+
     const startMetronome = () => {
         if (isPlaying) return;
+        // Ensure AudioContext is initialized before trying to use it
+        AudioManager.getInstance().initialize();
         setIsPlaying(true);
         setBeats([]);
         
@@ -29,6 +33,7 @@ export function CalibrationScreen({ onBack }: { onBack: () => void }) {
         const playClick = () => {
             const ctx = AudioManager.getInstance().getContext();
             if (ctx) {
+                if (ctx.state === 'suspended') ctx.resume();
                 const osc = ctx.createOscillator();
                 const gain = ctx.createGain();
                 osc.connect(gain);
@@ -38,9 +43,10 @@ export function CalibrationScreen({ onBack }: { onBack: () => void }) {
                 gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
                 osc.start();
                 osc.stop(ctx.currentTime + 0.1);
-                
-                // Visual flash?
             }
+            // Visual beat flash
+            setBeatFlash(true);
+            setTimeout(() => setBeatFlash(false), 80);
             lastBeatTime.current = performance.now();
         };
 
@@ -120,9 +126,9 @@ export function CalibrationScreen({ onBack }: { onBack: () => void }) {
                         Listen to the beat and tap SPACE or the button exactly when you hear it.
                     </p>
                     
-                    <div className="bg-[#e0e5ec] p-8 rounded-full w-48 h-48 mx-auto flex items-center justify-center shadow-[inset_5px_5px_10px_#a3b1c6,inset_-5px_-5px_10px_#ffffff]">
+                    <div className={`bg-[#e0e5ec] p-8 rounded-full w-48 h-48 mx-auto flex items-center justify-center transition-all duration-75 ${beatFlash ? 'shadow-[0_0_30px_rgba(59,130,246,0.8),inset_5px_5px_10px_#a3b1c6,inset_-5px_-5px_10px_#ffffff]' : 'shadow-[inset_5px_5px_10px_#a3b1c6,inset_-5px_-5px_10px_#ffffff]'}`}>
                          <Button 
-                            className={`w-32 h-32 rounded-full font-bold text-xl shadow-[5px_5px_10px_#a3b1c6,-5px_-5px_10px_#ffffff] active:shadow-[inset_5px_5px_10px_#a3b1c6,inset_-5px_-5px_10px_#ffffff] transition-all ${isPlaying ? 'bg-blue-500 text-white animate-pulse' : 'bg-[#e0e5ec] text-slate-500'}`}
+                            className={`w-32 h-32 rounded-full font-bold text-xl shadow-[5px_5px_10px_#a3b1c6,-5px_-5px_10px_#ffffff] active:shadow-[inset_5px_5px_10px_#a3b1c6,inset_-5px_-5px_10px_#ffffff] transition-all ${isPlaying ? 'bg-blue-500 text-white' : 'bg-[#e0e5ec] text-slate-500'} ${beatFlash ? 'scale-95' : 'scale-100'}`}
                             onClick={isPlaying ? handleTap : startMetronome}
                         >
                             {isPlaying ? 'TAP!' : 'START'}

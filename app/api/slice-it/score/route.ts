@@ -20,7 +20,7 @@ export async function POST(req: Request) {
         if (!username || typeof username !== 'string' || username.length < 2 || username.length > 24) {
             return NextResponse.json({ error: 'Invalid username' }, { status: 400 });
         }
-        if (typeof score !== 'number' || score < 0 || score > 1_000_000) {
+        if (typeof score !== 'number' || score < 0 || score > 1_000_000_000) {
             return NextResponse.json({ error: 'Invalid score' }, { status: 400 });
         }
 

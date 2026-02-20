@@ -12,9 +12,16 @@ export function GameOver() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username: userName, score, accuracy, maxCombo, songId }),
-        }).catch(err => console.error("Failed to submit score", err));
+        })
+        .then(async (res) => {
+            if (!res.ok) {
+                const body = await res.json().catch(() => ({}));
+                console.error('Score submission failed:', res.status, body);
+            }
+        })
+        .catch(err => console.error('Score submission network error:', err));
     }
-  }, [score, userName, status]);
+  }, [score, accuracy, maxCombo, songId, userName, status]);
 
   const accuracyPct = (accuracy * 100).toFixed(2);
   const isFC = accuracy >= 1.0;

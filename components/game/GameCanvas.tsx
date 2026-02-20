@@ -175,6 +175,8 @@ export function GameCanvas() {
     // ── Input ──────────────────────────────────────────────────────────────────
     const handleInput = useCallback((lane: number) => {
         if (!engine) return;
+        // Block input during countdown
+        if (useGameStore.getState().countdown > 0) return;
         const audio = AudioManager.getInstance();
         if (audio.getContext()?.state === 'suspended') {
             audio.getContext()?.resume();
@@ -213,6 +215,7 @@ export function GameCanvas() {
             }
             if (useGameStore.getState().isPaused) return;
             if (status !== 'PLAYING') return;
+            if (useGameStore.getState().countdown > 0) return;
             if (e.code === keybinds.lane1) handleInput(0);
             if (e.code === keybinds.lane2) handleInput(1);
             if (e.code === 'Space') e.preventDefault();
@@ -223,6 +226,7 @@ export function GameCanvas() {
             if ((e.target as HTMLElement).tagName === 'BUTTON') return;
             if (useGameStore.getState().isPaused) return;
             if (status !== 'PLAYING') return;
+            if (useGameStore.getState().countdown > 0) return;
 
             let clientY = 0;
             if (e instanceof MouseEvent) clientY = e.clientY;
@@ -512,7 +516,7 @@ export function GameCanvas() {
                     />
 
                     {/* Mobile Buttons */}
-                    {showMobileButtons && status === 'PLAYING' && !isPaused && (
+                    {showMobileButtons && status === 'PLAYING' && !isPaused && countdown === 0 && (
                         <div data-mobile-btn className="absolute inset-0 pointer-events-none flex flex-col">
                             <button
                                 data-mobile-btn

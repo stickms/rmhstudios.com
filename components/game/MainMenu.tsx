@@ -57,7 +57,7 @@ const KeybindInput = ({ label, value, onChange }: { label: string, value: string
 
 
 export function MainMenu({ engine }: MainMenuProps) {
-    const { setStatus, setUserName, userName, keybinds, setKeybinds, volume, setVolume, setIsLoadingSong, setLoadingProgress, setIsMultiplayer } = useGameStore();
+    const { setStatus, setUserName, userName, keybinds, setKeybinds, volume, setVolume, setIsLoadingSong, setLoadingProgress, setIsMultiplayer, setCountdown } = useGameStore();
     const session = authClient.useSession();
     const router = useRouter();
     // Remove local state
@@ -177,7 +177,14 @@ export function MainMenu({ engine }: MainMenuProps) {
                 MultiplayerFactory.getInstance().playerLoaded(lobbyId);
             } else {
                 setIsLoadingSong(false);
-                engine.start();
+                // 3-2-1 countdown before actually starting
+                setCountdown(3);
+                setTimeout(() => { if (useGameStore.getState().status === 'PLAYING') setCountdown(2); }, 1000);
+                setTimeout(() => { if (useGameStore.getState().status === 'PLAYING') setCountdown(1); }, 2000);
+                setTimeout(() => {
+                    setCountdown(0);
+                    if (useGameStore.getState().status === 'PLAYING') engine.start();
+                }, 3000);
             }
         } catch (e) {
             console.error("Start Game Error", e);
