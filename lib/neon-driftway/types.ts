@@ -33,6 +33,8 @@ export interface Car {
   maxHp: number;
   invincibleUntil: number;
   boostMeter: number;
+  spriteKey?: string;
+  abilityCharges: number;
 }
 
 export type ObstacleType =
@@ -41,10 +43,12 @@ export type ObstacleType =
   | 'traffic_slow'
   | 'traffic_lane_change'
   | 'traffic_aggressive'
+  | 'traffic_truck'
   | 'puddle'
   | 'hydro_strip'
   | 'debris'
-  | 'boost_pad';
+  | 'boost_pad'
+  | 'ability_slowdown';
 
 export type TrafficBehavior = 'keep_lane' | 'drift' | 'signal_and_change' | 'chase_bias' | 'weave';
 
@@ -69,6 +73,7 @@ export interface Obstacle {
   isTraffic: boolean;
   gripPenalty: number;
   driftImpulse: number;
+  spriteKey?: string;
 }
 
 export interface Particle {
@@ -109,4 +114,35 @@ export interface InputState {
   boost: boolean;
   pause: boolean;
   restart: boolean;
+  ability: boolean;
+}
+
+// ── Multiplayer types ──
+
+export interface RemoteCar {
+  id: string;
+  name: string;
+  x: number;
+  speed: number;
+  distance: number;
+  score: number;
+  lane: number;
+  prevX: number;
+  targetX: number;
+  lastUpdate: number;
+  spriteKey?: string;
+}
+
+export interface NDWLobbyPlayer {
+  id: string;
+  name: string;
+  ready: boolean;
+  isHost: boolean;
+}
+
+export interface NDWLobbyState {
+  roomId: string;
+  players: NDWLobbyPlayer[];
+  gameStarted: boolean;
+  levelId: LevelId;
 }

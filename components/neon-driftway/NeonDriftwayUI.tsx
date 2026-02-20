@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Play, ArrowLeft, RotateCcw, Trophy, Lock } from 'lucide-react';
+import { Play, ArrowLeft, RotateCcw, Trophy, Lock, Users } from 'lucide-react';
 import { authClient } from '@/lib/auth-client';
 import { useRouter } from 'next/navigation';
 import { LEVELS } from '@/lib/neon-driftway/constants';
@@ -23,8 +23,10 @@ export function NeonDriftwayUI({
   onStartLevel,
   onResume,
   onContinueEndless,
+  onGoToMultiplayer,
+  multiplayerRankings,
 }: {
-  uiState: 'menu' | 'levelSelect' | 'playing' | 'gameOver' | 'levelComplete';
+  uiState: 'menu' | 'levelSelect' | 'playing' | 'gameOver' | 'levelComplete' | 'multiplayerMenu' | 'lobby' | 'multiplayerPlaying' | 'multiplayerGameOver';
   unlockedLevels: Set<LevelId>;
   runStats: RunStats | null;
   currentLevel: LevelId;
@@ -33,6 +35,8 @@ export function NeonDriftwayUI({
   onStartLevel: (id: LevelId) => void;
   onResume: () => void;
   onContinueEndless: () => void;
+  onGoToMultiplayer?: () => void;
+  multiplayerRankings?: { id: string; name: string; score: number; rank: number }[];
 }) {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [scoreSubmitted, setScoreSubmitted] = useState(false);
@@ -80,7 +84,7 @@ export function NeonDriftwayUI({
     if (uiState === 'playing') setScoreSubmitted(false);
   }, [uiState]);
 
-  if (uiState === 'playing') return null;
+  if (uiState === 'playing' || uiState === 'multiplayerPlaying' || uiState === 'multiplayerMenu' || uiState === 'lobby') return null;
 
   // ── Main Menu ──
   if (uiState === 'menu') {
@@ -101,13 +105,24 @@ export function NeonDriftwayUI({
                 Sign In to Play
               </Button>
             ) : (
-              <Button
-                onClick={onGoToLevelSelect}
-                className="w-full bg-gradient-to-r from-cyan-500 to-red-500 hover:from-cyan-600 hover:to-red-600 text-black font-bold py-3 text-lg"
-              >
-                <Play className="w-5 h-5 mr-2" />
-                Play
-              </Button>
+              <>
+                <Button
+                  onClick={onGoToLevelSelect}
+                  className="w-full bg-gradient-to-r from-cyan-500 to-red-500 hover:from-cyan-600 hover:to-red-600 text-black font-bold py-3 text-lg"
+                >
+                  <Play className="w-5 h-5 mr-2" />
+                  Play
+                </Button>
+                {onGoToMultiplayer && (
+                  <Button
+                    onClick={onGoToMultiplayer}
+                    className="w-full bg-gradient-to-r from-purple-500 to-cyan-500 hover:from-purple-600 hover:to-cyan-600 text-white font-bold py-3"
+                  >
+                    <Users className="w-5 h-5 mr-2" />
+                    Multiplayer
+                  </Button>
+                )}
+              </>
             )}
           </div>
 
@@ -162,11 +177,10 @@ export function NeonDriftwayUI({
                   key={id}
                   onClick={() => unlocked && onStartLevel(id)}
                   disabled={!unlocked}
-                  className={`relative text-left p-4 rounded-lg border transition-all ${
-                    unlocked
-                      ? 'border-zinc-600 hover:border-cyan-500 bg-zinc-900/80 cursor-pointer'
-                      : 'border-zinc-800 bg-zinc-900/40 cursor-not-allowed opacity-50'
-                  }`}
+                  className={`relative text-left p-4 rounded-lg border transition-all ${unlocked
+                    ? 'border-zinc-600 hover:border-cyan-500 bg-zinc-900/80 cursor-pointer'
+                    : 'border-zinc-800 bg-zinc-900/40 cursor-not-allowed opacity-50'
+                    }`}
                 >
                   <div className="flex items-center justify-between">
                     <div>

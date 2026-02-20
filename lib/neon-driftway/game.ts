@@ -1,6 +1,7 @@
 import type {
   GameState, LevelId, LevelConfig, Car, Obstacle, Particle,
   Popup, RunStats, InputState, ObstacleType, TrafficBehavior,
+  RemoteCar,
 } from './types';
 import {
   CANVAS_WIDTH, CANVAS_HEIGHT, CAR_WIDTH, CAR_HEIGHT, CAR_Y,
@@ -14,6 +15,7 @@ import {
   roadLeft, roadRight, laneCenter, laneWidth,
 } from './constants';
 import { SeededRNG } from './rng';
+import { PLAYER_CHOICES, TRAFFIC_CAR_CHOICES, TRAFFIC_TRUCK_CHOICES } from './spriteAtlas';
 
 function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * Math.min(t, 1);
@@ -58,16 +60,18 @@ interface ObstacleTemplate {
 }
 
 const OBSTACLE_TEMPLATES: Record<string, ObstacleTemplate> = {
-  cone:               { type: 'cone',               width: 20, height: 20, color: '#ff6b00', damage: 1, isTraffic: false, behavior: 'keep_lane', speedFactor: 0,    gripPenalty: 0,    driftImpulse: 0 },
-  barrier:            { type: 'barrier',            width: 60, height: 24, color: '#cc2222', damage: 1, isTraffic: false, behavior: 'keep_lane', speedFactor: 0,    gripPenalty: 0,    driftImpulse: 0 },
-  traffic_slow:       { type: 'traffic_slow',       width: 32, height: 64, color: '#5577aa', damage: 1, isTraffic: true,  behavior: 'keep_lane', speedFactor: 0.35, gripPenalty: 0,    driftImpulse: 0 },
-  traffic_lane_change:{ type: 'traffic_lane_change',width: 32, height: 64, color: '#aa7755', damage: 1, isTraffic: true,  behavior: 'signal_and_change', speedFactor: 0.4, gripPenalty: 0, driftImpulse: 0 },
-  traffic_aggressive: { type: 'traffic_aggressive', width: 34, height: 66, color: '#dd3355', damage: 2, isTraffic: true,  behavior: 'chase_bias', speedFactor: 0.5, gripPenalty: 0,    driftImpulse: 0 },
-  puddle:             { type: 'puddle',             width: 50, height: 30, color: 'rgba(60,120,200,0.5)', damage: 0, isTraffic: false, behavior: 'keep_lane', speedFactor: 0, gripPenalty: 0.35, driftImpulse: 0 },
-  hydro_strip:        { type: 'hydro_strip',        width: 80, height: 14, color: 'rgba(100,160,240,0.4)', damage: 0, isTraffic: false, behavior: 'keep_lane', speedFactor: 0, gripPenalty: 0, driftImpulse: 180 },
-  debris:             { type: 'debris',             width: 44, height: 36, color: '#666666', damage: 1, isTraffic: false, behavior: 'keep_lane', speedFactor: 0,    gripPenalty: 0,    driftImpulse: 0 },
-  weave_barrier:      { type: 'barrier',            width: 64, height: 28, color: '#ff4444', damage: 1, isTraffic: false, behavior: 'weave',     speedFactor: 0,    gripPenalty: 0,    driftImpulse: 0 },
-  boost_pad:          { type: 'boost_pad',          width: 40, height: 20, color: '#ff00ff', damage: 0, isTraffic: false, behavior: 'keep_lane', speedFactor: 0,    gripPenalty: 0,    driftImpulse: 0 },
+  cone: { type: 'cone', width: 20, height: 20, color: '#ff6b00', damage: 1, isTraffic: false, behavior: 'keep_lane', speedFactor: 0, gripPenalty: 0, driftImpulse: 0 },
+  barrier: { type: 'barrier', width: 60, height: 24, color: '#cc2222', damage: 1, isTraffic: false, behavior: 'keep_lane', speedFactor: 0, gripPenalty: 0, driftImpulse: 0 },
+  traffic_slow: { type: 'traffic_slow', width: 32, height: 64, color: '#5577aa', damage: 1, isTraffic: true, behavior: 'keep_lane', speedFactor: 0.35, gripPenalty: 0, driftImpulse: 0 },
+  traffic_lane_change: { type: 'traffic_lane_change', width: 32, height: 64, color: '#aa7755', damage: 1, isTraffic: true, behavior: 'signal_and_change', speedFactor: 0.4, gripPenalty: 0, driftImpulse: 0 },
+  traffic_aggressive: { type: 'traffic_aggressive', width: 34, height: 66, color: '#dd3355', damage: 2, isTraffic: true, behavior: 'chase_bias', speedFactor: 0.5, gripPenalty: 0, driftImpulse: 0 },
+  puddle: { type: 'puddle', width: 50, height: 30, color: 'rgba(60,120,200,0.5)', damage: 0, isTraffic: false, behavior: 'keep_lane', speedFactor: 0, gripPenalty: 0.35, driftImpulse: 0 },
+  hydro_strip: { type: 'hydro_strip', width: 80, height: 14, color: 'rgba(100,160,240,0.4)', damage: 0, isTraffic: false, behavior: 'keep_lane', speedFactor: 0, gripPenalty: 0, driftImpulse: 180 },
+  debris: { type: 'debris', width: 44, height: 36, color: '#666666', damage: 1, isTraffic: false, behavior: 'keep_lane', speedFactor: 0, gripPenalty: 0, driftImpulse: 0 },
+  weave_barrier: { type: 'barrier', width: 64, height: 28, color: '#ff4444', damage: 1, isTraffic: false, behavior: 'weave', speedFactor: 0, gripPenalty: 0, driftImpulse: 0 },
+  boost_pad: { type: 'boost_pad', width: 40, height: 20, color: '#ff00ff', damage: 0, isTraffic: false, behavior: 'keep_lane', speedFactor: 0, gripPenalty: 0, driftImpulse: 0 },
+  traffic_truck: { type: 'traffic_truck', width: 44, height: 100, color: '#aaaacc', damage: 2, isTraffic: true, behavior: 'keep_lane', speedFactor: 0.30, gripPenalty: 0, driftImpulse: 0 },
+  ability_slowdown: { type: 'ability_slowdown', width: 28, height: 28, color: '#b040ff', damage: 0, isTraffic: false, behavior: 'keep_lane', speedFactor: 0, gripPenalty: 0, driftImpulse: 0 },
 };
 
 // Per-level weighted obstacle pools (distance-based thresholds in meters)
@@ -77,6 +81,7 @@ const LEVEL_POOLS: Record<LevelId, { key: string; weight: number; minDistance?: 
     { key: 'barrier', weight: 2 },
     { key: 'traffic_slow', weight: 5 },
     { key: 'traffic_lane_change', weight: 2, minDistance: 200 },
+    { key: 'traffic_truck', weight: 1, minDistance: 300 },
     { key: 'boost_pad', weight: 6, minDistance: 50 },
   ],
   2: [
@@ -84,6 +89,7 @@ const LEVEL_POOLS: Record<LevelId, { key: string; weight: number; minDistance?: 
     { key: 'barrier', weight: 2 },
     { key: 'traffic_slow', weight: 5 },
     { key: 'traffic_lane_change', weight: 4 },
+    { key: 'traffic_truck', weight: 2, minDistance: 200 },
     { key: 'puddle', weight: 3, minDistance: 100 },
     { key: 'hydro_strip', weight: 2, minDistance: 200 },
     { key: 'weave_barrier', weight: 2, minDistance: 150 },
@@ -95,6 +101,7 @@ const LEVEL_POOLS: Record<LevelId, { key: string; weight: number; minDistance?: 
     { key: 'traffic_slow', weight: 4 },
     { key: 'traffic_lane_change', weight: 5 },
     { key: 'traffic_aggressive', weight: 4, minDistance: 250 },
+    { key: 'traffic_truck', weight: 3, minDistance: 150 },
     { key: 'debris', weight: 3 },
     { key: 'weave_barrier', weight: 2, minDistance: 100 },
     { key: 'boost_pad', weight: 6, minDistance: 50 },
@@ -148,6 +155,17 @@ export class NeonDriftwayEngine {
   continuedEndless = false;
   private prevPause = false;
 
+  // Multiplayer
+  isMultiplayer = false;
+  remotePlayers = new Map<string, RemoteCar>();
+  isSlowed = false;
+  slowUntil = 0;
+  private abilitySpawnTimer = 0;
+  private readonly ABILITY_SPAWN_MIN_ELAPSED = 10_000;
+  private readonly ABILITY_SPAWN_GUARANTEE_INTERVAL = 15_000;
+  private lastAbilitySpawnTime = 0;
+  private readonly MAX_ABILITY_CHARGES = 3;
+
   constructor() {
     this.obstacles = new Array(MAX_OBSTACLES);
     for (let i = 0; i < MAX_OBSTACLES; i++) {
@@ -165,6 +183,7 @@ export class NeonDriftwayEngine {
       type: 'cone', lane: 0, vx: 0, vy: 0, color: '', damage: 0,
       behavior: 'keep_lane', signaling: false, signalTimer: 0, targetLane: 0,
       closeCalled: false, isTraffic: false, gripPenalty: 0, driftImpulse: 0,
+      spriteKey: undefined,
     };
   }
 
@@ -185,6 +204,8 @@ export class NeonDriftwayEngine {
       maxHp: this.level.hp,
       invincibleUntil: 0,
       boostMeter: 0,
+      spriteKey: PLAYER_CHOICES[0],
+      abilityCharges: 0,
     };
 
     for (const o of this.obstacles) o.active = false;
@@ -215,6 +236,11 @@ export class NeonDriftwayEngine {
     this.speedSamples = 0;
     this.continuedEndless = false;
     this.prevPause = false;
+    this.isSlowed = false;
+    this.slowUntil = 0;
+    this.abilitySpawnTimer = 0;
+    this.lastAbilitySpawnTime = 0;
+    this.car.abilityCharges = 0;
 
     this.countdownTimer = 3;
     this.state = 'countdown';
@@ -266,6 +292,11 @@ export class NeonDriftwayEngine {
       if (this.level.gripEnabled) this.updateGrip(dt);
       if (this.level.headlightsEnabled) this.updateHeadlights(dt);
 
+      // Slowdown timer
+      if (this.isSlowed && this.elapsedMs >= this.slowUntil) {
+        this.isSlowed = false;
+      }
+
       // Track speed stats
       this.maxSpeed = Math.max(this.maxSpeed, this.car.speed);
       this.speedSum += this.car.speed;
@@ -290,6 +321,19 @@ export class NeonDriftwayEngine {
   continueEndless(): void {
     this.continuedEndless = true;
     this.state = 'playing';
+  }
+
+  /** Called when server applies slowdown to this player (multiplayer ability) */
+  applySlowdown(): void {
+    if (this.isSlowed) return; // Cannot stack slowdowns
+    this.isSlowed = true;
+    this.slowUntil = this.elapsedMs + 3000;
+    this.popups.push({
+      text: 'SLOWED!',
+      x: this.car.x, y: this.car.y - 40,
+      life: 1.0, maxLife: 1.0,
+      color: '#4488ff',
+    });
   }
 
   getRunStats(): RunStats {
@@ -324,7 +368,9 @@ export class NeonDriftwayEngine {
       car.boostMeter -= BOOST_DRAIN * dt;
     }
     car.boostMeter = clamp(car.boostMeter, 0, BOOST_MAX);
-    const maxSpeed = (input.boost && car.boostMeter > 0) ? V_MAX_BOOST : V_MAX_NORMAL;
+    let maxSpeed = (input.boost && car.boostMeter > 0) ? V_MAX_BOOST : V_MAX_NORMAL;
+    // Slowdown ability effect
+    if (this.isSlowed) maxSpeed = V_MAX_NORMAL * 0.6;
     car.speed = clamp(car.speed, V_MIN, maxSpeed);
 
     // Steering
@@ -384,9 +430,27 @@ export class NeonDriftwayEngine {
     // Guaranteed boost pad spawn if timer exceeded (distance-based)
     const forceBoost = this.distance > 50 && this.boostSpawnTimer >= 6.0;
 
+    // Multiplayer: ability slowdown spawn
+    let forceAbility = false;
+    if (this.isMultiplayer && this.elapsedMs >= this.ABILITY_SPAWN_MIN_ELAPSED) {
+      this.abilitySpawnTimer += dt;
+      if (this.abilitySpawnTimer >= (this.ABILITY_SPAWN_GUARANTEE_INTERVAL / 1000)) {
+        forceAbility = true;
+        this.abilitySpawnTimer = 0;
+        this.lastAbilitySpawnTime = this.elapsedMs;
+      }
+    }
+
     const keys = pool.map(p => p.key);
     const weights = pool.map(p => p.weight);
-    const chosenKey = forceBoost ? 'boost_pad' : this.rng.weightedChoice(keys, weights);
+
+    // In multiplayer, add ability_slowdown to the pool
+    if (this.isMultiplayer && this.elapsedMs >= this.ABILITY_SPAWN_MIN_ELAPSED && !forceAbility) {
+      keys.push('ability_slowdown');
+      weights.push(3);
+    }
+
+    const chosenKey = forceAbility ? 'ability_slowdown' : (forceBoost ? 'boost_pad' : this.rng.weightedChoice(keys, weights));
     const tmpl = OBSTACLE_TEMPLATES[chosenKey];
 
     // Choose lane, ensuring fairness: don't block all lanes
@@ -439,10 +503,23 @@ export class NeonDriftwayEngine {
     slot.targetLane = lane;
     slot.vx = 0;
 
+    // Assign sprite keys for traffic vehicles
     if (tmpl.isTraffic) {
       slot.vy = this.car.speed * tmpl.speedFactor;
+      if (chosenKey === 'traffic_truck') {
+        slot.spriteKey = this.rng.weightedChoice(
+          TRAFFIC_TRUCK_CHOICES as unknown as string[],
+          TRAFFIC_TRUCK_CHOICES.map(() => 1),
+        );
+      } else {
+        slot.spriteKey = this.rng.weightedChoice(
+          TRAFFIC_CAR_CHOICES as unknown as string[],
+          TRAFFIC_CAR_CHOICES.map(() => 1),
+        );
+      }
     } else {
       slot.vy = 0;
+      slot.spriteKey = undefined;
     }
 
     // Reset boost spawn timer when boost pad is spawned
@@ -549,6 +626,21 @@ export class NeonDriftwayEngine {
         continue;
       }
 
+      // Ability slowdown pickup (multiplayer only)
+      if (o.type === 'ability_slowdown') {
+        if (this.car.abilityCharges < this.MAX_ABILITY_CHARGES) {
+          this.car.abilityCharges++;
+          this.popups.push({
+            text: `ABILITY +1`,
+            x: o.x, y: o.y - 20,
+            life: 0.8, maxLife: 0.8,
+            color: '#b040ff',
+          });
+        }
+        o.active = false;
+        continue;
+      }
+
       // Boost pad pickup
       if (o.type === 'boost_pad') {
         this.car.boostMeter = Math.min(this.car.boostMeter + BOOST_PAD_VALUE, BOOST_MAX);
@@ -609,7 +701,7 @@ export class NeonDriftwayEngine {
 
     for (const o of this.obstacles) {
       if (!o.active || o.closeCalled) continue;
-      if (o.type === 'puddle' || o.type === 'hydro_strip' || o.type === 'boost_pad') continue;
+      if (o.type === 'puddle' || o.type === 'hydro_strip' || o.type === 'boost_pad' || o.type === 'ability_slowdown') continue;
 
       // Only trigger when obstacle passes below car center
       if (o.y - o.height / 2 < car.y + car.height / 2) continue;
