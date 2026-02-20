@@ -104,6 +104,67 @@ export const RELIC_CATALOG: RelicTemplate[] = [
     description: 'Glitch threshold raised from 4 to 6 Static.',
     rarity: 'common',
   },
+  // Phase 5.1 — New common relics
+  {
+    key: 'burn_fuel',
+    name: 'Burn Fuel',
+    description: 'Draw 1 card whenever you exhaust a card.',
+    rarity: 'common',
+  },
+  {
+    key: 'momentum_core',
+    name: 'Momentum Core',
+    description: 'If you play 4+ cards in a turn, all cards cost 1 less next turn.',
+    rarity: 'common',
+  },
+  {
+    key: 'healing_pulse',
+    name: 'Healing Pulse',
+    description: 'Heal 3 HP whenever you complete a Forge Burst.',
+    rarity: 'common',
+  },
+  {
+    key: 'type_master',
+    name: 'Type Master',
+    description: 'Gain +1 energy if you play 3+ different waveform types in one turn.',
+    rarity: 'common',
+  },
+  {
+    key: 'damage_echo',
+    name: 'Damage Echo',
+    description: 'When you deal 15+ damage to one enemy, deal 5 splash damage to all others.',
+    rarity: 'common',
+  },
+  {
+    key: 'signal_amplifier',
+    name: 'Signal Amplifier',
+    description: 'All cards deal +1 damage.',
+    rarity: 'common',
+  },
+  {
+    key: 'waveform_tuner',
+    name: 'Waveform Tuner',
+    description: 'First card of each waveform type per turn costs 1 less.',
+    rarity: 'common',
+  },
+  {
+    key: 'quick_draw',
+    name: 'Quick Draw Module',
+    description: 'Draw 1 extra card on first turn of each combat.',
+    rarity: 'common',
+  },
+  {
+    key: 'hp_regen',
+    name: 'HP Regenerator',
+    description: 'Heal 1 HP per turn during combat.',
+    rarity: 'common',
+  },
+  {
+    key: 'tempo_primer',
+    name: 'Tempo Primer',
+    description: 'Start each combat with 2 Tempo.',
+    rarity: 'common',
+  },
   // ── UNCOMMON ──────────────────────────────
   {
     key: 'coil_capacitor',
@@ -141,6 +202,43 @@ export const RELIC_CATALOG: RelicTemplate[] = [
     description: '+1 Energy at the start of each turn.',
     rarity: 'uncommon',
   },
+  // Phase 5.2 — New uncommon relics
+  {
+    key: 'bleed_catalyst',
+    name: 'Bleed Catalyst',
+    description: 'All Bleed effects deal +2 extra damage per stack.',
+    rarity: 'uncommon',
+  },
+  {
+    key: 'freeze_amplifier',
+    name: 'Freeze Amplifier',
+    description: 'Frozen enemies skip 2 turns instead of 1.',
+    rarity: 'uncommon',
+  },
+  {
+    key: 'vulnerable_lens',
+    name: 'Vulnerable Lens',
+    description: 'Vulnerable increases damage taken by +75% instead of +50%.',
+    rarity: 'uncommon',
+  },
+  {
+    key: 'retention_matrix',
+    name: 'Retention Matrix',
+    description: 'Draw 1 extra card at start of turn for each Retain card in hand.',
+    rarity: 'uncommon',
+  },
+  {
+    key: 'piercing_edge',
+    name: 'Piercing Edge',
+    description: 'All cards gain Piercing (ignore armor).',
+    rarity: 'uncommon',
+  },
+  {
+    key: 'safe_landing',
+    name: 'Safe Landing',
+    description: 'Once per combat, survive a fatal blow with 1 HP.',
+    rarity: 'uncommon',
+  },
   // ── RARE ──────────────────────────────────
   {
     key: 'clean_room',
@@ -165,6 +263,112 @@ export const RELIC_CATALOG: RelicTemplate[] = [
     name: 'Expanded Buffer',
     description: 'Draw 1 extra card each turn (hand size 5 → 6).',
     rarity: 'uncommon',
+  },
+  // Phase 5.3 — New rare relics
+  {
+    key: 'temporal_anchor',
+    name: 'Temporal Anchor',
+    description: 'Tempo doesn\'t reset at end of turn. Instead, lose 2 tempo per turn (min 0).',
+    rarity: 'rare',
+  },
+  {
+    key: 'void_harvester',
+    name: 'Void Harvester',
+    description: 'Each exhausted card grants +2 permanent damage to ALL cards for rest of combat.',
+    rarity: 'rare',
+  },
+  {
+    key: 'dual_wield',
+    name: 'Dual Wield',
+    description: 'First card you play each turn triggers twice (same energy cost).',
+    rarity: 'rare',
+  },
+  {
+    key: 'glitch_forge',
+    name: 'Glitch Forge',
+    description: 'Glitch cards transform into random uncommon cards when drawn.',
+    rarity: 'rare',
+  },
+  // Phase 5.4 — Cursed relics (powerful with drawbacks)
+  {
+    key: 'demon_core',
+    name: 'Demon Core',
+    description: '+2 energy per turn, but take 5 damage at start of each combat.',
+    rarity: 'rare',
+  },
+  {
+    key: 'shattered_mirror',
+    name: 'Shattered Mirror',
+    description: 'All card damage/shield values doubled, but enemy damage also doubled.',
+    rarity: 'rare',
+  },
+  {
+    key: 'overclocked_processor',
+    name: 'Overclocked Processor',
+    description: 'Draw 2 extra cards per turn, but Static threshold reduced by 2 (4→2).',
+    rarity: 'rare',
+  },
+  // Phase 5.5 — Boss-drop relics
+  {
+    key: 'modulators_core',
+    name: 'Modulator\'s Core',
+    description: 'Regen 1: Heal 1 HP per turn in all future combats.',
+    rarity: 'rare',
+  },
+  {
+    key: 'fault_line_crystal',
+    name: 'Fault Line Crystal',
+    description: 'Glitch cards in hand can be discarded for free (bypass Feedback Loop damage).',
+    rarity: 'rare',
+  },
+  {
+    key: 'debuggers_lens',
+    name: 'Debugger\'s Lens',
+    description: 'See the top 3 cards of your draw pile at all times.',
+    rarity: 'rare',
+  },
+  {
+    key: 'overwriters_pen',
+    name: 'Overwriter\'s Pen',
+    description: 'Once per combat, transform a card in hand into any card you\'ve owned this run.',
+    rarity: 'rare',
+  },
+  // Phase 5.6 — Additional Relics
+  {
+    key: 'echo_chamber',
+    name: 'Echo Chamber',
+    description: 'Echo triggers at 75% instead of 50%. Echo archetype boost.',
+    rarity: 'uncommon',
+  },
+  {
+    key: 'infinity_engine',
+    name: 'Infinity Engine',
+    description: 'Draw 2 extra cards on every deck reshuffle.',
+    rarity: 'rare',
+  },
+  {
+    key: 'pattern_mastery',
+    name: 'Pattern Mastery',
+    description: 'Completing a sequence draws 1 card and grants +4 shield on top of Forge Burst.',
+    rarity: 'rare',
+  },
+  {
+    key: 'static_heart',
+    name: 'Static Heart',
+    description: 'Convert Static to energy at 3:1 ratio at start of each turn (consuming the Static).',
+    rarity: 'rare',
+  },
+  {
+    key: 'unstoppable_force',
+    name: 'Unstoppable Force',
+    description: 'All your attacks ignore enemy Armored (global Piercing).',
+    rarity: 'rare',
+  },
+  {
+    key: 'dark_insight',
+    name: 'Dark Insight',
+    description: 'See all enemy intents with exact values, but enemies deal +2 damage.',
+    rarity: 'rare',
   },
 ];
 
@@ -193,13 +397,13 @@ export function createRandomRelic(floor: number, index: number, id: number): Rel
 }
 
 /** Create N relics for a shop floor */
-export function createShopRelics(floor: number, count: number = 2): Relic[] {
+export function createShopRelics(floor: number, count: number = 2, seedOffset: number = 0): Relic[] {
   const relics: Relic[] = [];
   const usedIndices = new Set<number>();
 
   for (let i = 0; i < count; i++) {
-    const id = floor * 2000 + i;
-    let seed = floor * 2000 + i * 211;
+    const id = floor * 2000 + i + seedOffset * 100;
+    let seed = floor * 2000 + i * 211 + seedOffset * 7919;
     let idx = Math.floor(seededRandom(seed) * RELIC_CATALOG.length);
 
     // Avoid offering duplicate relics in the same shop
