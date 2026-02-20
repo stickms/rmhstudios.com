@@ -16,6 +16,7 @@ interface Modifiers {
   switching: boolean;
   spin: boolean;
   strictTiming: boolean;
+  oneTrack: boolean;
   difficulty: Difficulty;
 }
 
@@ -100,6 +101,7 @@ export const useGameStore = create<GameState>()(
           switching: false,
           spin: false,
           strictTiming: false,
+          oneTrack: false,
           difficulty: 'normal' as Difficulty,
       },
       isPaused: false,

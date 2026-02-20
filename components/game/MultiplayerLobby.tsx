@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -6,11 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MultiplayerFactory } from '@/lib/game/MultiplayerFactory'; // Named import
-import { useGameStore } from '@/lib/store/useGameStore';
+import { useGameStore, Difficulty } from '@/lib/store/useGameStore';
 import { authClient } from "@/lib/auth-client";
 import { useSearchParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Copy, Share2, Check, Zap, Bomb, Shuffle, EyeOff, Skull, Info, ChevronDown, ChevronUp, Settings, RotateCw, Target } from 'lucide-react';
+import { Copy, Share2, Check, Zap, Bomb, Shuffle, EyeOff, Skull, Info, ChevronDown, ChevronUp, Settings, RotateCw, Target, Minus } from 'lucide-react';
 
 import { SongLibrary } from '@/components/game/SongLibrary'; // Import SongLibrary
 
@@ -19,7 +18,7 @@ interface Player {
     name: string;
     score: number;
     isReady: boolean;
-    difficulty?: { speed: number; bombs: boolean; switching: boolean; suddenDeath: boolean; invisible: boolean; spin: boolean; strictTiming: boolean; level: string };
+    difficulty?: { speed: number; bombs: boolean; switching: boolean; suddenDeath: boolean; invisible: boolean; spin: boolean; strictTiming: boolean; oneTrack: boolean; level: Difficulty };
 }
 
 interface LobbyData {
@@ -39,15 +38,19 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
     const [showSongSelect, setShowSongSelect] = React.useState(false);
     const [isCopied, setIsCopied] = React.useState(false);
     const [showDifficulty, setShowDifficulty] = React.useState(false);
-    const [myDifficulty, setMyDifficulty] = React.useState({
-        speed: 1.0,
-        bombs: false,
-        switching: false,
-        suddenDeath: false,
-        invisible: false,
-        spin: false,
-        strictTiming: false,
-        level: 'normal' as string,
+    const [myDifficulty, setMyDifficulty] = React.useState(() => {
+        const storeMods = useGameStore.getState().modifiers;
+        return {
+            speed: storeMods.speed,
+            bombs: storeMods.bombs,
+            switching: storeMods.switching,
+            suddenDeath: storeMods.suddenDeath,
+            invisible: storeMods.invisible,
+            spin: storeMods.spin,
+            strictTiming: storeMods.strictTiming,
+            oneTrack: storeMods.oneTrack,
+            level: storeMods.difficulty,
+        };
     });
     
     const searchParams = useSearchParams();
@@ -141,6 +144,8 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
         if (lobbyParam && session && !lobbyData) {
             console.log("Auto-joining lobby from URL:", lobbyParam);
             mp.joinLobby(lobbyParam.toUpperCase(), session.user.name || 'Unknown', session.user.id);
+            // Immediately sync client modifiers to lobby
+            mp.updateDifficulty(lobbyParam.toUpperCase(), myDifficulty);
         }
     }, [searchParams, session, lobbyData, mp]);
 
@@ -148,11 +153,13 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
         if (!session) return;
         const id = Math.random().toString(36).substring(2, 8).toUpperCase();
         mp.joinLobby(id, session.user.name || 'Unknown', session.user.id);
+        mp.updateDifficulty(id, myDifficulty);
     };
 
     const handleJoinLobby = () => {
         if (!lobbyIdInput || !session) return;
         mp.joinLobby(lobbyIdInput.toUpperCase(), session.user.name || 'Unknown', session.user.id);
+        mp.updateDifficulty(lobbyIdInput.toUpperCase(), myDifficulty);
     };
 
     const handleStartGame = () => {
@@ -186,6 +193,7 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
             invisible: newDiff.invisible,
             spin: newDiff.spin,
             strictTiming: newDiff.strictTiming,
+            oneTrack: newDiff.oneTrack,
             difficulty: (newDiff.level as 'easy' | 'normal' | 'hard' | 'expert'),
         });
     };
@@ -203,6 +211,7 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
         if (d.switching) m += 0.15;
         if (d.spin) m += 0.15;
         if (d.strictTiming) m += 0.25;
+        if (d.oneTrack) m -= 0.3;
         return m;
     };
 
@@ -298,8 +307,9 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
                                                     {p.difficulty.bombs && <span title="Bombs enabled" className="text-[9px] bg-red-100 text-red-500 px-1 py-0.5 rounded-full"><Bomb className="w-3 h-3" /></span>}
                                                     {p.difficulty.switching && <span title="Switching enabled" className="text-[9px] bg-blue-100 text-blue-500 px-1 py-0.5 rounded-full"><Shuffle className="w-3 h-3" /></span>}
                                                     {p.difficulty.invisible && <span title="Invisible" className="text-[9px] bg-slate-200 text-slate-600 px-1 py-0.5 rounded-full"><EyeOff className="w-3 h-3" /></span>}
-                                                    {p.difficulty.spin && <span title="Spin" className="text-[9px] bg-cyan-100 text-cyan-600 px-1 py-0.5 rounded-full"><RotateCw className="w-3 h-3" /></span>}
+                                                    {p.difficulty.spin && <span title="Spin enabled" className="text-[9px] bg-cyan-100 text-cyan-500 px-1 py-0.5 rounded-full"><RotateCw className="w-3 h-3" /></span>}
                                                     {p.difficulty.strictTiming && <span title="Strict Timing" className="text-[9px] bg-red-100 text-red-600 px-1 py-0.5 rounded-full"><Target className="w-3 h-3" /></span>}
+                                                    {p.difficulty.oneTrack && <span title="One Track" className="text-[9px] bg-violet-100 text-violet-500 px-1 py-0.5 rounded-full"><Minus className="w-3 h-3" /></span>}
                                                 </div>
                                             )}
                                             {mult > 1.0 && (
@@ -400,12 +410,13 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
                                         </div>
                                     </div>
                                     {/* Toggles */}
-                                    {[
+                                    {[  
                                         { key: 'bombs' as const, label: 'Bombs', icon: <Bomb className="w-4 h-4 text-red-500" />, desc: 'Adds bomb notes to avoid' },
                                         { key: 'switching' as const, label: 'Switching', icon: <Shuffle className="w-4 h-4 text-blue-500" />, desc: 'Adds lane-switch notes' },
                                         { key: 'invisible' as const, label: 'Invisible', icon: <EyeOff className="w-4 h-4 text-slate-500" />, desc: 'Notes fade before hit line' },
                                         { key: 'spin' as const, label: 'Spin', icon: <RotateCw className="w-4 h-4 text-cyan-500" />, desc: 'Playfield rotates during gameplay' },
                                         { key: 'strictTiming' as const, label: 'Strict Timing', icon: <Target className="w-4 h-4 text-red-600" />, desc: 'Tighter hit windows' },
+                                        { key: 'oneTrack' as const, label: 'One Track', icon: <Minus className="w-4 h-4 text-violet-500" />, desc: 'All notes on a single lane' },
                                     ].map(opt => (
                                         <button
                                             key={opt.key}
@@ -414,7 +425,14 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
                                                     ? 'bg-blue-50 shadow-[inset_2px_2px_4px_#c5d0e6,inset_-2px_-2px_4px_#ffffff]'
                                                     : 'bg-[#e0e5ec] shadow-[2px_2px_4px_#a3b1c6,-2px_-2px_4px_#ffffff] hover:bg-slate-50'
                                             }`}
-                                            onClick={() => handleDifficultyChange({ [opt.key]: !myDifficulty[opt.key] })}
+                                            onClick={() => {
+                                                const toggled = !myDifficulty[opt.key];
+                                                const patch: Record<string, boolean> = { [opt.key]: toggled };
+                                                // Mutual exclusion: switching and oneTrack
+                                                if (opt.key === 'switching' && toggled) patch.oneTrack = false;
+                                                if (opt.key === 'oneTrack' && toggled) patch.switching = false;
+                                                handleDifficultyChange(patch);
+                                            }}
                                         >
                                             <div className="flex items-center gap-2">
                                                 {opt.icon}

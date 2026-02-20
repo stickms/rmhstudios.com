@@ -371,7 +371,7 @@ export function GameCanvas() {
             if (useGameStore.getState().countdown > 0) return;
             if (e.repeat) return; // Block held-key repeats: one press = one note
             if (e.code === keybinds.lane1) handleInput(0);
-            if (e.code === keybinds.lane2) handleInput(1);
+            else if (e.code === keybinds.lane2) handleInput(1);
             if (e.code === 'Space') e.preventDefault();
         };
 
@@ -492,7 +492,8 @@ export function GameCanvas() {
         const PPS        = (w / 3.0) * speedMod; 
         
         const CURSOR_X   = w * 0.15; // Hit line at 15% width
-        const LANE_Y     = [h * 0.3, h * 0.7];
+        const isOneTrack = useGameStore.getState().modifiers.oneTrack;
+        const LANE_Y     = isOneTrack ? [h * 0.5] : [h * 0.3, h * 0.7];
         const BAR_H      = Math.max(15, h * 0.04); 
         const CURSOR_R   = Math.max(10, w * 0.008); 
         const currentTime = AudioManager.getInstance().getCurrentTime();
@@ -533,7 +534,8 @@ export function GameCanvas() {
         if (latestFeedback && latestFeedback.time > lastHitTimeRef.current) {
              lastHitTimeRef.current = latestFeedback.time;
              if (latestFeedback.text !== 'MISS' && latestFeedback.text !== 'BAD') {
-                 spawnParticles(CURSOR_X, LANE_Y[latestFeedback.lane], latestFeedback.color);
+                 const particleLaneY = isOneTrack ? LANE_Y[0] : LANE_Y[latestFeedback.lane];
+                 spawnParticles(CURSOR_X, particleLaneY, latestFeedback.color);
              }
         }
 
@@ -579,11 +581,11 @@ export function GameCanvas() {
                 }
 
                 // Interpolate Y position for switch animation
-                const origY = LANE_Y[slice.lane];
-                const destY = LANE_Y[slice.lane === 0 ? 1 : 0];
-                const y = slice.type === 'SWITCH'
+                const origY = isOneTrack ? LANE_Y[0] : LANE_Y[slice.lane];
+                const destY = isOneTrack ? LANE_Y[0] : LANE_Y[slice.lane === 0 ? 1 : 0];
+                const y = slice.type === 'SWITCH' && !isOneTrack
                     ? origY + (destY - origY) * switchProgress
-                    : LANE_Y[slice.lane];
+                    : isOneTrack ? LANE_Y[0] : LANE_Y[slice.lane];
 
                 // Invisible modifier: notes fade out as they approach the hit line
                 // Similar to osu! Hidden — notes appear, then fade to invisible
@@ -733,12 +735,15 @@ export function GameCanvas() {
             ctx.globalAlpha = alpha;
             ctx.textAlign = 'center';
             
+            // Position feedback above the track in one-track mode, centered otherwise
+            const feedbackY = isOneTrack ? LANE_Y[0] - BAR_H * 1.5 - 40 : h * 0.5;
+
             // Judgment
             ctx.fillStyle = latestFeedback.color;
             ctx.font = '900 32px sans-serif';
             ctx.shadowColor = latestFeedback.color;
             ctx.shadowBlur = 6;
-            ctx.fillText(latestFeedback.text, w / 2, h * 0.5);
+            ctx.fillText(latestFeedback.text, w / 2, feedbackY);
             
             // Reset shadow completely before drawing offset text
             ctx.shadowColor = 'transparent';
@@ -754,47 +759,67 @@ export function GameCanvas() {
                  
                  ctx.font = 'bold 16px monospace';
                  ctx.fillStyle = Math.abs(ms) < 20 ? '#334155' : '#64748b';
-                 ctx.fillText(offsetText, w / 2, h * 0.5 + 30);
+                 ctx.fillText(offsetText, w / 2, feedbackY + 30);
             }
             
             ctx.restore();
         }
 
         // 5. Cursors (Receptors)
-        LANE_Y.forEach((y, i) => {
-            const color = i === 0 ? COLORS.lane1 : COLORS.lane2;
-             
-            // Outer Ring (Neumorphic extrude)
-            // Light Top-Left
-            ctx.shadowColor = '#ffffff';
-            ctx.shadowBlur = 5;
-            ctx.shadowOffsetX = -2;
-            ctx.shadowOffsetY = -2;
-            ctx.strokeStyle = '#e0e5ec';
-            ctx.lineWidth = 4;
-            ctx.beginPath(); ctx.arc(CURSOR_X, y, CURSOR_R * 1.5, 0, Math.PI * 2); ctx.stroke();
-
-            // Dark Bottom-Right
-            ctx.shadowColor = '#a3b1c6';
-            ctx.shadowBlur = 5;
-            ctx.shadowOffsetX = 2;
-            ctx.shadowOffsetY = 2;
-            ctx.stroke(); // Re-stroke
-            
-            ctx.shadowColor = 'transparent';
-
-            // Inner Ring Color
-            ctx.strokeStyle = color;
-            ctx.lineWidth = 3;
-            ctx.beginPath(); ctx.arc(CURSOR_X, y, CURSOR_R * 1.5, 0, Math.PI * 2); ctx.stroke();
-            
-            // Key Label
-            ctx.fillStyle = '#64748b';
-            ctx.font = 'bold 12px sans-serif';
-            ctx.textAlign = 'center';
-            const bind = i === 0 ? currentKeybinds.lane1 : currentKeybinds.lane2;
-            ctx.fillText(bind.replace('Key','').replace('Arrow',''), CURSOR_X, y + 4);
-        });
+        if (isOneTrack) {
+            // One-track mode: draw two receptors side-by-side on the single track
+            const y = LANE_Y[0];
+            const spacing = CURSOR_R * 2;
+            [{ color: COLORS.lane1, bind: currentKeybinds.lane1, xOff: -spacing },
+             { color: COLORS.lane2, bind: currentKeybinds.lane2, xOff: spacing }].forEach(({ color, bind, xOff }) => {
+                const cx = CURSOR_X + xOff;
+                ctx.shadowColor = '#ffffff';
+                ctx.shadowBlur = 5;
+                ctx.shadowOffsetX = -2;
+                ctx.shadowOffsetY = -2;
+                ctx.strokeStyle = '#e0e5ec';
+                ctx.lineWidth = 4;
+                ctx.beginPath(); ctx.arc(cx, y, CURSOR_R * 1.5, 0, Math.PI * 2); ctx.stroke();
+                ctx.shadowColor = '#a3b1c6';
+                ctx.shadowBlur = 5;
+                ctx.shadowOffsetX = 2;
+                ctx.shadowOffsetY = 2;
+                ctx.stroke();
+                ctx.shadowColor = 'transparent';
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 3;
+                ctx.beginPath(); ctx.arc(cx, y, CURSOR_R * 1.5, 0, Math.PI * 2); ctx.stroke();
+                ctx.fillStyle = '#64748b';
+                ctx.font = 'bold 12px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(bind.replace('Key','').replace('Arrow',''), cx, y + 4);
+            });
+        } else {
+            LANE_Y.forEach((y, i) => {
+                const color = i === 0 ? COLORS.lane1 : COLORS.lane2;
+                ctx.shadowColor = '#ffffff';
+                ctx.shadowBlur = 5;
+                ctx.shadowOffsetX = -2;
+                ctx.shadowOffsetY = -2;
+                ctx.strokeStyle = '#e0e5ec';
+                ctx.lineWidth = 4;
+                ctx.beginPath(); ctx.arc(CURSOR_X, y, CURSOR_R * 1.5, 0, Math.PI * 2); ctx.stroke();
+                ctx.shadowColor = '#a3b1c6';
+                ctx.shadowBlur = 5;
+                ctx.shadowOffsetX = 2;
+                ctx.shadowOffsetY = 2;
+                ctx.stroke();
+                ctx.shadowColor = 'transparent';
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 3;
+                ctx.beginPath(); ctx.arc(CURSOR_X, y, CURSOR_R * 1.5, 0, Math.PI * 2); ctx.stroke();
+                ctx.fillStyle = '#64748b';
+                ctx.font = 'bold 12px sans-serif';
+                ctx.textAlign = 'center';
+                const bind = i === 0 ? currentKeybinds.lane1 : currentKeybinds.lane2;
+                ctx.fillText(bind.replace('Key','').replace('Arrow',''), CURSOR_X, y + 4);
+            });
+        }
 
         ctx.restore();
     };

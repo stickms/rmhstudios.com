@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
-import { useGameStore } from '@/lib/store/useGameStore';
+import { useGameStore, Difficulty } from '@/lib/store/useGameStore';
 import { MultiplayerFactory } from '@/lib/game/MultiplayerFactory';
 import { Trophy, Medal, Crown, Clock, CheckCircle2 } from 'lucide-react';
 
@@ -13,7 +13,7 @@ interface PlayerResult {
     combo: number;
     isFinished: boolean;
     isLocal: boolean;
-    difficulty?: { speed: number; bombs: boolean; switching: boolean; suddenDeath: boolean; invisible: boolean; level: string };
+    difficulty?: { speed: number; bombs: boolean; switching: boolean; suddenDeath: boolean; invisible: boolean; spin: boolean; strictTiming: boolean; oneTrack: boolean; level: Difficulty };
 }
 
 export function MatchResults({ onBack, isHost, lobbyId }: { onBack: () => void; isHost: boolean; lobbyId: string | null }) {

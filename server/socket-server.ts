@@ -37,7 +37,7 @@ interface Player {
     health: number;
     isReady: boolean;
     isFinished: boolean;
-    difficulty: { speed: number; bombs: boolean; switching: boolean; suddenDeath: boolean; invisible: boolean; level: string };
+    difficulty: { speed: number; bombs: boolean; switching: boolean; suddenDeath: boolean; invisible: boolean; spin: boolean; strictTiming: boolean; oneTrack: boolean; level: string };
 }
 
 interface Lobby {
@@ -85,7 +85,7 @@ io.on("connection", (socket: Socket) => {
         health: 100,
         isReady: false,
         isFinished: false,
-        difficulty: { speed: 1.0, bombs: false, switching: false, suddenDeath: false, invisible: false, level: 'normal' },
+        difficulty: { speed: 1.0, bombs: false, switching: false, suddenDeath: false, invisible: false, spin: false, strictTiming: false, oneTrack: false, level: 'normal' },
     };
     
     lobby.players.set(socket.id, player);
@@ -355,9 +355,12 @@ io.on("connection", (socket: Socket) => {
                 switching: Boolean((d as { switching?: boolean }).switching),
                 suddenDeath: Boolean((d as { suddenDeath?: boolean }).suddenDeath),
                 invisible: Boolean((d as { invisible?: boolean }).invisible),
+                spin: Boolean((d as { spin?: boolean }).spin),
+                strictTiming: Boolean((d as { strictTiming?: boolean }).strictTiming),
+                oneTrack: Boolean((d as { oneTrack?: boolean }).oneTrack),
                 level: typeof (d as { level?: string }).level === "string" ? (d as { level: string }).level.slice(0, 32) : "normal",
               }
-            : { speed: 1.0, bombs: false, switching: false, suddenDeath: false, invisible: false, level: "normal" };
+            : { speed: 1.0, bombs: false, switching: false, suddenDeath: false, invisible: false, spin: false, strictTiming: false, oneTrack: false, level: "normal" };
           io.to(lobbyId).emit("lobby_update", {
               lobbyId,
               players: Array.from(lobby.players.values()),

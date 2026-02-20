@@ -413,6 +413,8 @@ export class GameEngine {
         else if (m.difficulty === 'hard') scoreMultiplier *= 1.3;
         else if (m.difficulty === 'expert') scoreMultiplier *= 1.5;
 
+        if (m.oneTrack) scoreMultiplier -= 0.3;
+
         if (m.invisible) scoreMultiplier += 0.2;
         if (m.speed > 1.0) scoreMultiplier += (m.speed - 1.0) * 0.5;
         if (m.bombs) scoreMultiplier += 0.15;
