@@ -36,8 +36,8 @@ export function GameOver() {
       <Card className="w-full max-w-md bg-[#e0e5ec] text-slate-700 shadow-[20px_20px_60px_#bebebe,-20px_-20px_60px_#ffffff] border-none rounded-[2rem] overflow-hidden">
         
         <CardHeader className="text-center pb-2 pt-8">
-          <CardTitle className={`text-5xl font-black tracking-tight ${status === 'FAILED' ? 'text-red-400' : 'text-blue-500'}`}>
-            {status === 'FAILED' ? 'FAILED' : 'COMPLETE'}
+          <CardTitle className="text-5xl font-black tracking-tight text-blue-500">
+            COMPLETE
           </CardTitle>
         </CardHeader>
         

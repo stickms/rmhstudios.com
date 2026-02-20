@@ -138,7 +138,6 @@ export function SongDetailsPanel({ song, onPlay, onSongUpdated }: SongDetailsPan
         else if (modifiers.difficulty === 'expert') mult *= 1.5;
         if (modifiers.invisible) mult += 0.2;
         if (modifiers.speed > 1.0) mult += (modifiers.speed - 1.0) * 0.5;
-        if (modifiers.suddenDeath) mult += 0.3;
         if (modifiers.bombs) mult += 0.15;
         if (modifiers.switching) mult += 0.15;
         return mult;
@@ -317,12 +316,6 @@ export function SongDetailsPanel({ song, onPlay, onSongUpdated }: SongDetailsPan
                         active={modifiers.invisible}
                         onClick={() => setModifiers({...modifiers, invisible: !modifiers.invisible})}
                         color="#a855f7"
-                    />
-                    <ModifierToggle
-                        label="Sudden Death"
-                        active={modifiers.suddenDeath}
-                        onClick={() => setModifiers({...modifiers, suddenDeath: !modifiers.suddenDeath})}
-                        color="#ef4444"
                     />
                     <ModifierToggle
                         label="Bombs"

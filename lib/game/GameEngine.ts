@@ -96,6 +96,10 @@ export class GameEngine {
     private audioManager: AudioManager;
     private beatMap: BeatMap | null = null;
     private processedSliceIds: Set<string> = new Set();
+
+    // Per-lane input cooldown to ensure one input = one note
+    private lastInputTime: Map<number, number> = new Map();
+    private static readonly INPUT_COOLDOWN_MS = 50;
     
     // Feedback Queue for Rendering
     public feedbackQueue: { id: number, text: string, lane: number, time: number, color: string, offset?: number }[] = [];
@@ -105,8 +109,6 @@ export class GameEngine {
     private score: number = 0;
     private combo: number = 0;
     private maxCombo: number = 0;
-    private health: number = 100;
-    private maxHealth: number = 100;
     private speedMultiplier: number = 1.0;
     private totalNotes: number = 0;   // non-bomb/silent notes resolved
     private hitPoints: number = 0;    // weighted accuracy points earned
@@ -138,26 +140,6 @@ export class GameEngine {
         // Clone slices to avoid mutating original map ref if we reload
         let slices = [...map.slices];
 
-        if (m.bombs) {
-            // Inject bombs in empty spaces
-            // Simple logic: Add a bomb between strict slices if gap > 1s
-            const newSlices: Slice[] = [];
-            for (let i = 0; i < slices.length - 1; i++) {
-                newSlices.push(slices[i]);
-                const gap = slices[i+1].time - slices[i].time;
-                if (gap > 0.8 && Math.random() > 0.6) {
-                    newSlices.push({
-                        id: `bomb-${Date.now()}-${i}`,
-                        time: slices[i].time + gap / 2,
-                        type: 'BOMB',
-                        lane: Math.random() > 0.5 ? 0 : 1
-                    });
-                }
-            }
-            newSlices.push(slices[slices.length-1]);
-            slices = newSlices.sort((a,b) => a.time - b.time);
-        }
-
         if (m.switching) {
             // Inject switching notes in gaps between existing slices
             const newSlices: Slice[] = [];
@@ -179,6 +161,34 @@ export class GameEngine {
             slices = newSlices.sort((a, b) => a.time - b.time);
         }
 
+        if (m.bombs) {
+            // Inject bombs in empty spaces, ensuring they don't overlap with any note
+            const BOMB_BUFFER = 0.35; // seconds — minimum distance from any note in any lane
+            const newSlices: Slice[] = [];
+            for (let i = 0; i < slices.length - 1; i++) {
+                newSlices.push(slices[i]);
+                const gap = slices[i+1].time - slices[i].time;
+                if (gap > 0.8 && Math.random() > 0.6) {
+                    const bombTime = slices[i].time + gap / 2;
+                    const bombLane = Math.random() > 0.5 ? 0 : 1;
+                    // Check that no existing note (any lane, any type) is within the buffer
+                    const tooClose = slices.some(s =>
+                        s.type !== 'BOMB' && Math.abs(s.time - bombTime) < BOMB_BUFFER
+                    );
+                    if (!tooClose) {
+                        newSlices.push({
+                            id: `bomb-${Date.now()}-${i}`,
+                            time: bombTime,
+                            type: 'BOMB',
+                            lane: bombLane
+                        });
+                    }
+                }
+            }
+            newSlices.push(slices[slices.length-1]);
+            slices = newSlices.sort((a,b) => a.time - b.time);
+        }
+
         // Apply Difficulty Filter (deterministic thinning based on song+bpm+difficulty)
         const difficulty = m.difficulty || 'normal';
         slices = applyDifficultyFilter(slices, map.id, map.bpm, difficulty);
@@ -197,10 +207,10 @@ export class GameEngine {
     
     public reset() {
         this.processedSliceIds.clear();
+        this.lastInputTime.clear();
         this.score = 0;
         this.combo = 0;
         this.maxCombo = 0;
-        this.health = 100;
         this.totalNotes = 0;
         this.hitPoints = 0;
         
@@ -213,7 +223,6 @@ export class GameEngine {
 
              // Reset store except modifiers/settings
              store.setScore(0, 0, 1);
-             store.setHealth(100);
              store.setCombo(0);
              store.setMaxCombo(0);
              store.setAccuracy(0);
@@ -300,8 +309,7 @@ export class GameEngine {
             if (this.lobbyId && Math.random() < 0.05) { // Approx every 20 frames (~3 times/sec)
                 this.mp.updateScore(this.lobbyId, {
                     score: this.score,
-                    combo: this.combo,
-                    health: this.health
+                    combo: this.combo
                 });
             }
         }
@@ -311,7 +319,12 @@ export class GameEngine {
     
     public submitInput(lane: number) {
          if (useGameStore.getState().isPaused) return;
-         if (this.health <= 0) return;
+
+        // Per-lane cooldown: ignore rapid duplicate inputs so one press = one note
+        const now = performance.now();
+        const lastTime = this.lastInputTime.get(lane) ?? 0;
+        if (now - lastTime < GameEngine.INPUT_COOLDOWN_MS) return;
+        this.lastInputTime.set(lane, now);
         
         const offsetSeconds = (useGameStore.getState().audioOffset || 0) / 1000;
         const currentTime = this.audioManager.getCurrentTime() - offsetSeconds;
@@ -327,13 +340,11 @@ export class GameEngine {
         );
         
         if (bombs.length > 0) {
-            // Hit a bomb!
-            const bomb = bombs[0]; // Take the first one if overlapping
+            // Hit a bomb — kills combo and deducts score
+            const bomb = bombs[0];
             if (!this.processedSliceIds.has(bomb.id)) {
                  this.processedSliceIds.add(bomb.id);
                  
-                 // Penalty — bombs deal significant damage
-                 this.health = Math.max(0, this.health - 40); // 40 HP chunk
                  this.combo = 0;
                  this.score = Math.max(0, this.score - 500);
                  
@@ -346,11 +357,6 @@ export class GameEngine {
                     color: '#ff0000'
                 });
                 this.audioManager.playSfX(150, 'sawtooth', 0.3, useGameStore.getState().sfxVolume / 100);
-                
-                if (this.health <= 0) {
-                    useGameStore.getState().setStatus('FAILED'); // Changed from this.status
-                    this.audioManager.stop(); // Added stop audio
-                }
             }
             return; // Stop processing normal hits if hitting bomb
         }
@@ -367,7 +373,7 @@ export class GameEngine {
         
         if (potentialHits.length === 0) {
             // Miss Click / Ghost Tap Penalty
-            this.handleHit(null, 'MISS'); // Treat as miss
+            this.handleHit(null, 'MISS', lane); // Treat as miss
             return; 
         }
 
@@ -378,7 +384,8 @@ export class GameEngine {
         
         this.processedSliceIds.add(bestSlice.id);
         const result = this.getHitResult(bestSlice.time, currentTime);
-        this.handleHit(bestSlice, result);
+        const effectiveLane = this.getEffectiveLane(bestSlice, currentTime);
+        this.handleHit(bestSlice, result, effectiveLane);
     }
     
     private getHitResult(sliceTime: number, currentTime: number): HitResult {
@@ -391,7 +398,7 @@ export class GameEngine {
         return 'MISS';
     }
     
-    private handleHit(slice: Slice | null, result: HitResult) { 
+    private handleHit(slice: Slice | null, result: HitResult, effectiveLane?: number) { 
         if (slice) {
             this.processedSliceIds.add(slice.id);
             slice.hit = true;
@@ -409,7 +416,6 @@ export class GameEngine {
 
         if (m.invisible) scoreMultiplier += 0.2;
         if (m.speed > 1.0) scoreMultiplier += (m.speed - 1.0) * 0.5;
-        if (m.suddenDeath) scoreMultiplier += 0.3;
         if (m.bombs) scoreMultiplier += 0.15;
         if (m.switching) scoreMultiplier += 0.15;
 
@@ -427,23 +433,6 @@ export class GameEngine {
                 // hitPoints += 0 (miss contributes nothing)
             }
             this.combo = 0;
-            const penalty = slice ? 15 : 5; // 15 damage for real miss, 5 for ghost tap
-            this.health = Math.max(0, this.health - penalty); 
-            
-            // SUDDEN DEATH
-            // Strict Mode: Ghost tap kills? Maybe too harsh. 
-            // Only kill if it was a real slice miss? 
-            if (m.suddenDeath && slice) { // Only kill on actual note miss
-                 this.health = 0;
-            }
-
-            if (this.health <= 0) {
-                if (this.lobbyId) {
-                    this.mp.finishGame(this.lobbyId, this.score);
-                }
-                useGameStore.getState().setStatus('FAILED');
-                this.audioManager.stop();
-            }
         } else if (slice) {
             // Successful Hit Logic ...
             let points = 50;
@@ -468,10 +457,8 @@ export class GameEngine {
             
             if (result === 'BAD') {
                  this.combo = 0; // Break combo on Bad
-                 this.health = Math.max(0, this.health - 2); // Small health penalty
             } else {
                 this.combo++;
-                this.health = Math.min(this.maxHealth, this.health + 2); 
                 this.maxCombo = Math.max(this.maxCombo, this.combo);
             }
             
@@ -481,7 +468,7 @@ export class GameEngine {
             this.feedbackQueue.push({
                 id: this.feedbackIdCounter++,
                 text: result,
-                lane: slice.lane,
+                lane: effectiveLane ?? slice.lane,
                 time: performance.now(),
                 color: color,
                 offset: offset
@@ -497,7 +484,6 @@ export class GameEngine {
         // Update store
         const accuracy = this.totalNotes > 0 ? this.hitPoints / (this.totalNotes * 100) : 0;
         useGameStore.getState().setScore(this.score, this.combo, this.speedMultiplier);
-        useGameStore.getState().setHealth(this.health);
         useGameStore.getState().setAccuracy(accuracy);
         useGameStore.getState().setMaxCombo(this.maxCombo);
 
@@ -505,9 +491,7 @@ export class GameEngine {
         if (this.lobbyId) {
              this.mp.updateScore(this.lobbyId, {
                  score: this.score,
-                 combo: this.combo,
-                 health: this.health,
-                 isDead: this.health <= 0
+                 combo: this.combo
              });
         }
     }    

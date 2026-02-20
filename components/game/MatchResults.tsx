@@ -11,7 +11,6 @@ interface PlayerResult {
     name: string;
     score: number;
     combo: number;
-    health: number;
     isFinished: boolean;
     isLocal: boolean;
     difficulty?: { speed: number; bombs: boolean; switching: boolean; suddenDeath: boolean; invisible: boolean; level: string };
@@ -34,7 +33,6 @@ export function MatchResults({ onBack, isHost, lobbyId }: { onBack: () => void; 
                     name: p.name,
                     score: p.score,
                     combo: p.combo || 0,
-                    health: p.health,
                     isFinished: p.isFinished ?? true,
                     isLocal: p.id === mySocketId,
                     difficulty: p.difficulty,
@@ -50,7 +48,6 @@ export function MatchResults({ onBack, isHost, lobbyId }: { onBack: () => void; 
                 name: userName || 'You',
                 score: score,
                 combo: maxCombo,
-                health: 0,
                 isFinished: true,
                 isLocal: true,
             });
@@ -62,8 +59,7 @@ export function MatchResults({ onBack, isHost, lobbyId }: { onBack: () => void; 
                     name: op.name,
                     score: op.score,
                     combo: op.combo || 0,
-                    health: op.health,
-                    isFinished: op.isDead !== undefined,
+                    isFinished: true,
                     isLocal: false,
                 });
             });
@@ -93,7 +89,6 @@ export function MatchResults({ onBack, isHost, lobbyId }: { onBack: () => void; 
                 name: p.name,
                 score: p.score,
                 combo: p.combo || 0,
-                health: p.health,
                 isFinished: true,
                 isLocal: p.id === mySocketId,
                 difficulty: p.difficulty,

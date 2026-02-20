@@ -131,6 +131,7 @@ export function GameCanvas() {
         return () => {
             if (rafRef.current) cancelAnimationFrame(rafRef.current);
             AudioManager.getInstance().stop();
+            useGameStore.getState().reset();
         };
     }, []);
 
@@ -210,7 +211,7 @@ export function GameCanvas() {
             // Update the player's score in the live results if we have them
             const store = useGameStore.getState();
             if (data.id !== mp.getSocketId()) {
-                store.setOpponent(data.id, { score: data.finalScore, isDead: false });
+                store.setOpponent(data.id, { score: data.finalScore });
             }
         };
         mp.on('player_finished', onPlayerFinished);
@@ -271,12 +272,17 @@ export function GameCanvas() {
             if (useGameStore.getState().isPaused) return;
             if (status !== 'PLAYING') return;
             if (useGameStore.getState().countdown > 0) return;
+            if (e.repeat) return; // Block held-key repeats: one press = one note
             if (e.code === keybinds.lane1) handleInput(0);
             if (e.code === keybinds.lane2) handleInput(1);
             if (e.code === 'Space') e.preventDefault();
         };
 
+        let lastTouchTime = 0;
         const handleGlobalClick = (e: MouseEvent | TouchEvent) => {
+            // Prevent touch + mouse double-fire on touch devices
+            if (e.type === 'touchstart') lastTouchTime = performance.now();
+            if (e.type === 'mousedown' && performance.now() - lastTouchTime < 500) return;
             if ((e.target as HTMLElement).closest('[data-mobile-btn]')) return;
             if ((e.target as HTMLElement).tagName === 'BUTTON') return;
             if ((e.target as HTMLElement).closest('[data-settings-panel]')) return;
@@ -456,13 +462,13 @@ export function GameCanvas() {
                     const timeUntilHit = slice.time - currentTime; // audio-seconds until hit
                     const visibleWindow = 3.0 / speedMod; // total visible window in audio-seconds
                     const travelRatio = timeUntilHit / visibleWindow; // 1.0 = just spawned, 0.0 = at hit line
-                    // Fade: fully visible from 1.0 to 0.30, fade from 0.30 to 0.15, invisible below 0.15
-                    if (travelRatio < 0.15) {
+                    // Fade: fully visible from 1.0 to 0.20, fade from 0.20 to 0.08, invisible below 0.08
+                    if (travelRatio < 0.08) {
                         ctx.globalAlpha = 0;
                         // Skip rendering entirely
                         return;
-                    } else if (travelRatio < 0.30) {
-                        ctx.globalAlpha = (travelRatio - 0.15) / 0.15; // 0→1 over the fade range
+                    } else if (travelRatio < 0.20) {
+                        ctx.globalAlpha = (travelRatio - 0.08) / 0.12; // 0→1 over the fade range
                     } else {
                         ctx.globalAlpha = 1;
                     }
@@ -886,7 +892,7 @@ export function GameCanvas() {
                         </div>
                     )}
                     
-                    {(status === 'FINISHED' || status === 'FAILED') && isMultiplayer && (
+                    {status === 'FINISHED' && isMultiplayer && (
                         <MatchResults
                             isHost={multiplayerHostId === MultiplayerFactory.getInstance().getSocketId()}
                             lobbyId={multiplayerLobbyId}
@@ -898,7 +904,7 @@ export function GameCanvas() {
                         />
                     )}
 
-                    {(status === 'FINISHED' || status === 'FAILED') && !isMultiplayer && (
+                    {status === 'FINISHED' && !isMultiplayer && (
                         <GameOver />
                     )}
                     
@@ -907,7 +913,7 @@ export function GameCanvas() {
             </div>
 
             {/* Sidebar for Multiplayer Opponents — only shown in multiplayer */}
-            {(status === 'PLAYING' || ((status === 'FINISHED' || status === 'FAILED') && isMultiplayer)) && isMultiplayer && (
+            {(status === 'PLAYING' || (status === 'FINISHED' && isMultiplayer)) && isMultiplayer && (
                 <MultiplayerSidebar />
             )}
         </div>

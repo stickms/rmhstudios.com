@@ -195,7 +195,6 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
         else if (d.level === 'expert') m *= 1.5;
         if (d.invisible) m += 0.2;
         if (d.speed > 1.0) m += (d.speed - 1.0) * 0.5;
-        if (d.suddenDeath) m += 0.3;
         if (d.bombs) m += 0.15;
         if (d.switching) m += 0.15;
         return m;
@@ -292,7 +291,6 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
                                                     )}
                                                     {p.difficulty.bombs && <span title="Bombs enabled" className="text-[9px] bg-red-100 text-red-500 px-1 py-0.5 rounded-full"><Bomb className="w-3 h-3" /></span>}
                                                     {p.difficulty.switching && <span title="Switching enabled" className="text-[9px] bg-blue-100 text-blue-500 px-1 py-0.5 rounded-full"><Shuffle className="w-3 h-3" /></span>}
-                                                    {p.difficulty.suddenDeath && <span title="Sudden Death" className="text-[9px] bg-red-100 text-red-600 px-1 py-0.5 rounded-full"><Skull className="w-3 h-3" /></span>}
                                                     {p.difficulty.invisible && <span title="Invisible" className="text-[9px] bg-slate-200 text-slate-600 px-1 py-0.5 rounded-full"><EyeOff className="w-3 h-3" /></span>}
                                                 </div>
                                             )}
@@ -397,7 +395,6 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong }: { onBack: ()
                                     {[
                                         { key: 'bombs' as const, label: 'Bombs', icon: <Bomb className="w-4 h-4 text-red-500" />, desc: 'Adds bomb notes to avoid' },
                                         { key: 'switching' as const, label: 'Switching', icon: <Shuffle className="w-4 h-4 text-blue-500" />, desc: 'Adds lane-switch notes' },
-                                        { key: 'suddenDeath' as const, label: 'Sudden Death', icon: <Skull className="w-4 h-4 text-red-600" />, desc: 'One miss = game over' },
                                         { key: 'invisible' as const, label: 'Invisible', icon: <EyeOff className="w-4 h-4 text-slate-500" />, desc: 'Notes fade before hit line' },
                                     ].map(opt => (
                                         <button

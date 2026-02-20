@@ -44,3 +44,9 @@
 .soft-glow-text {
   text-shadow: 0 0 10px currentColor;
 }
+
+@keyframes combo-bounce {
+  0% { transform: scale(1.4); }
+  50% { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}

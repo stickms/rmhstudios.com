@@ -24,8 +24,8 @@ export function MultiplayerSidebar() {
                                 <div className="font-bold text-slate-700 text-sm truncate max-w-[120px]" title={op.name}>
                                     {op.name}
                                 </div>
-                                <div className={`text-[10px] font-black px-2 py-0.5 rounded-full ${op.isDead ? 'bg-red-100 text-red-500' : 'bg-blue-100 text-blue-500'}`}>
-                                    {op.isDead ? 'FAILED' : 'ACTIVE'}
+                                <div className="text-[10px] font-black px-2 py-0.5 rounded-full bg-blue-100 text-blue-500">
+                                    ACTIVE
                                 </div>
                             </div>
                             
