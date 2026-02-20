@@ -79,8 +79,6 @@ if ! "$GIT_BIN" pull "$REMOTE_REPO" "$BRANCH"; then
     exit 1
 fi
 
-stop_apps
-
 log "Installing dependencies..."
 "$PNPM_BIN" install --frozen-lockfile --production=false || { log "ERROR: pnpm install failed."; exit 1; }
 
@@ -96,6 +94,8 @@ log "Building..."
 [ -d ".next" ] || { log "ERROR: .next missing after build."; exit 1; }
 [ -f "dist-server/server/socket-server.js" ] || { log "ERROR: socket-server.js missing after build."; exit 1; }
 
+log "Build successful. Swapping processes..."
+stop_apps
 start_apps
 
 ok=0
