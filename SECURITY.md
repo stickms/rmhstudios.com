@@ -42,3 +42,5 @@ Rejection happens before any file is written to disk.
 ### Reporting vulnerabilities
 
 If you believe you've found a security issue, please report it responsibly (e.g. private disclosure to the maintainers) rather than opening a public issue.
+
+For a full security audit of the website (APIs, WebSocket, rate limiting, UGC), see [SECURITY-AUDIT-REPORT.md](SECURITY-AUDIT-REPORT.md).
