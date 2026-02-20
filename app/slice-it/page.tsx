@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { GameCanvas } from '@/components/game/GameCanvas';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -22,7 +23,9 @@ export default function SliceItPage() {
 
       {/* Game Canvas — full screen */}
       <div className="w-full h-full bg-slate-900">
-        <GameCanvas />
+        <Suspense fallback={<div className="w-full h-full bg-[#e0e5ec]" />}>
+          <GameCanvas />
+        </Suspense>
       </div>
     </main>
   );
