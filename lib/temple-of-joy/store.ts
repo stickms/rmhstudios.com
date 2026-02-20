@@ -56,6 +56,7 @@ export function createInitialState(): GameState {
     pageOpenTime: now,
     offlineHappinessOnLoad: 0,
     offlineSecondsOnLoad: 0,
+    autoBuyTimer: 30,
     theme: 'dark',
     numberFormat: 'abbreviated',
     soundEnabled: false,

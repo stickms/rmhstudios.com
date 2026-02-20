@@ -114,6 +114,35 @@ export const RELICS: RelicDef[] = [
     flavorText: '"Grateful for every cycle. More grateful each time."',
     karmaCost: 12000,
   },
+  // ── New Relics ────────────────────────────────────────────────────────────
+  {
+    id: 'bubbleTeaCard',
+    name: 'Bubble Tea Loyalty Card',
+    description: '×3 Sweet Treat HPS.',
+    flavorText: '"Tenth cup free. You have lost count of how many free cups you\'ve received."',
+    karmaCost: 80,
+  },
+  {
+    id: 'cozyPlaylist',
+    name: 'The Playlist (Correct)',
+    description: '+15% global HPS.',
+    flavorText: '"Every song was right. In order. Nobody knows how."',
+    karmaCost: 200,
+  },
+  {
+    id: 'zenBell',
+    name: 'The Zen Bell',
+    description: 'Vibe Check buffs last 2× longer. +1 karma/s permanently.',
+    flavorText: '"One strike. Reverberates forever."',
+    karmaCost: 450,
+  },
+  {
+    id: 'nappingCat',
+    name: 'The Napping Cat',
+    description: 'Pilgrimage duration −50%. Pilgrimage burst ×2.',
+    flavorText: '"It knows. It naps anyway. This is the lesson."',
+    karmaCost: 130,
+  },
 ];
 
 export const RELIC_MAP: Record<RelicId, RelicDef> = Object.fromEntries(

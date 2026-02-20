@@ -15,7 +15,7 @@ export const BUILDINGS: BuildingDef[] = [
     tagline: 'The pillow accepts you. You accept the pillow.',
     icon: '😴',
     baseCost: 100,
-    baseHPS: 0.5,
+    baseHPS: 0.75,
   },
   {
     id: 'snackBar',
@@ -23,7 +23,15 @@ export const BUILDINGS: BuildingDef[] = [
     tagline: 'Crunchy. Warm. Theologically sound.',
     icon: '🍪',
     baseCost: 500,
-    baseHPS: 2,
+    baseHPS: 4,
+  },
+  {
+    id: 'sweetTreat',
+    name: 'Sweet Treat',
+    tagline: 'Brown sugar milk tea, extra boba. You deserve it. You always deserve it.',
+    icon: '🧋',
+    baseCost: 1600,
+    baseHPS: 12,
   },
   {
     id: 'hotTub',
@@ -31,7 +39,7 @@ export const BUILDINGS: BuildingDef[] = [
     tagline: 'Buoyancy is a gift you did not earn.',
     icon: '🛁',
     baseCost: 2500,
-    baseHPS: 7,
+    baseHPS: 20,
   },
   {
     id: 'massageStudio',
@@ -39,7 +47,15 @@ export const BUILDINGS: BuildingDef[] = [
     tagline: 'Strangers touch your back professionally.',
     icon: '💆',
     baseCost: 12000,
-    baseHPS: 25,
+    baseHPS: 100,
+  },
+  {
+    id: 'retailTherapy',
+    name: 'Retail Therapy',
+    tagline: "Studious has a sale. You weren't planning to stop in. You stopped in. The bag was necessary.",
+    icon: '🛍️',
+    baseCost: 30000,
+    baseHPS: 270,
   },
   {
     id: 'gratitudeJournal',
@@ -47,7 +63,7 @@ export const BUILDINGS: BuildingDef[] = [
     tagline: 'You wrote three things. Karma increased.',
     icon: '📓',
     baseCost: 50000,
-    baseHPS: 80,
+    baseHPS: 470,
   },
   {
     id: 'goonCave',
@@ -55,7 +71,7 @@ export const BUILDINGS: BuildingDef[] = [
     tagline: 'A sacred chamber. Minimally furnished. Profoundly... focused.',
     icon: '🕳️',
     baseCost: 200000,
-    baseHPS: 250,
+    baseHPS: 2000,
   },
   {
     id: 'joyCult',
@@ -63,7 +79,7 @@ export const BUILDINGS: BuildingDef[] = [
     tagline: '"Cult" is a strong word. We prefer "voluntary bliss congregation."',
     icon: '🙏',
     baseCost: 750000,
-    baseHPS: 700,
+    baseHPS: 7800,
   },
   {
     id: 'spaSanctum',
@@ -71,7 +87,15 @@ export const BUILDINGS: BuildingDef[] = [
     tagline: 'Your pores are open. So is your mind.',
     icon: '🧖',
     baseCost: 3000000,
-    baseHPS: 2000,
+    baseHPS: 32500,
+  },
+  {
+    id: 'soundBath',
+    name: 'Sound Bath',
+    tagline: 'The bowls sing. Your nervous system: dissolved. Your bones: grateful.',
+    icon: '🔔',
+    baseCost: 6000000,
+    baseHPS: 68000,
   },
   {
     id: 'therapy',
@@ -79,7 +103,7 @@ export const BUILDINGS: BuildingDef[] = [
     tagline: '$250/hr. Worth every penny. Should have started sooner.',
     icon: '🛋️',
     baseCost: 15000000,
-    baseHPS: 5500,
+    baseHPS: 180000,
   },
   {
     id: 'pleasurePalace',
@@ -87,7 +111,7 @@ export const BUILDINGS: BuildingDef[] = [
     tagline: 'Architecture designed entirely around feeling great.',
     icon: '🏛️',
     baseCost: 80000000,
-    baseHPS: 14000,
+    baseHPS: 1000000,
   },
   {
     id: 'dopamineLab',
@@ -95,7 +119,15 @@ export const BUILDINGS: BuildingDef[] = [
     tagline: 'Scientists. All smiling. Suspiciously.',
     icon: '🔬',
     baseCost: 500000000,
-    baseHPS: 38000,
+    baseHPS: 6500000,
+  },
+  {
+    id: 'artGallery',
+    name: 'Art Gallery',
+    tagline: "You stood in front of a painting for twelve minutes. You don't know what it meant. That was the point.",
+    icon: '🖼️',
+    baseCost: 1800000000,
+    baseHPS: 25000000,
   },
   {
     id: 'hedonistMonastery',
@@ -103,7 +135,7 @@ export const BUILDINGS: BuildingDef[] = [
     tagline: 'Monks devoted entirely to enjoying themselves.',
     icon: '⛩️',
     baseCost: 3500000000,
-    baseHPS: 100000,
+    baseHPS: 51000000,
   },
   {
     id: 'feastHall',
@@ -111,7 +143,7 @@ export const BUILDINGS: BuildingDef[] = [
     tagline: 'Unlimited breadsticks. This was the promise.',
     icon: '🍽️',
     baseCost: 25000000000,
-    baseHPS: 280000,
+    baseHPS: 380000000,
     lifetimeHPUnlock: 2500000000,
   },
   {
@@ -120,7 +152,7 @@ export const BUILDINGS: BuildingDef[] = [
     tagline: 'Checkout is not available.',
     icon: '🌅',
     baseCost: 200000000000,
-    baseHPS: 750000,
+    baseHPS: 3200000000,
     lifetimeHPUnlock: 20000000000,
   },
   {
@@ -129,7 +161,7 @@ export const BUILDINGS: BuildingDef[] = [
     tagline: 'Nobody knows when it started. Nobody is leaving.',
     icon: '🎉',
     baseCost: 1800000000000,
-    baseHPS: 2000000,
+    baseHPS: 3e10,
     lifetimeHPUnlock: 180000000000,
   },
   {
@@ -138,7 +170,7 @@ export const BUILDINGS: BuildingDef[] = [
     tagline: 'Publicly traded. Shares: priceless.',
     icon: '✨',
     baseCost: 18000000000000,
-    baseHPS: 5500000,
+    baseHPS: 3.2e11,
     lifetimeHPUnlock: 1800000000000,
   },
   {
@@ -147,7 +179,7 @@ export const BUILDINGS: BuildingDef[] = [
     tagline: 'Happiness so concentrated it folds space-time.',
     icon: '🌀',
     baseCost: 210000000000000,
-    baseHPS: 15000000,
+    baseHPS: 3.9e12,
     lifetimeHPUnlock: 21000000000000,
   },
   // ── Post-Prestige Buildings ────────────────────────────────────────────────
@@ -157,7 +189,7 @@ export const BUILDINGS: BuildingDef[] = [
     tagline: 'Every grain of sand placed with intent. Every rake stroke: prayer.',
     icon: '🪨',
     baseCost: 5e15,
-    baseHPS: 45000000,
+    baseHPS: 9.8e13,
     requiresPrestige: 1,
   },
   {
@@ -166,7 +198,7 @@ export const BUILDINGS: BuildingDef[] = [
     tagline: 'The water remembers joy. You soak in accumulated bliss.',
     icon: '♨️',
     baseCost: 8e17,
-    baseHPS: 200000000,
+    baseHPS: 1.64e16,
     requiresPrestige: 3,
   },
   {
@@ -175,7 +207,7 @@ export const BUILDINGS: BuildingDef[] = [
     tagline: 'A machine that converts existence into contentment. Patent pending.',
     icon: '⚙️',
     baseCost: 5e20,
-    baseHPS: 1000000000,
+    baseHPS: 1.08e19,
     requiresPrestige: 5,
   },
   {
@@ -184,7 +216,7 @@ export const BUILDINGS: BuildingDef[] = [
     tagline: 'The architecture itself induces transcendence. Structurally unsound. Spiritually flawless.',
     icon: '⛪',
     baseCost: 1e24,
-    baseHPS: 6000000000,
+    baseHPS: 2.26e22,
     requiresPrestige: 8,
   },
   {
@@ -193,7 +225,7 @@ export const BUILDINGS: BuildingDef[] = [
     tagline: 'Heated by dying stars. Jets powered by dark energy. Towels: complimentary.',
     icon: '🌌',
     baseCost: 1e28,
-    baseHPS: 50000000000,
+    baseHPS: 2.37e26,
     requiresPrestige: 12,
   },
   {
@@ -202,7 +234,7 @@ export const BUILDINGS: BuildingDef[] = [
     tagline: 'It knows what you need before you do. The robe is already warm.',
     icon: '👁️',
     baseCost: 1e33,
-    baseHPS: 500000000000,
+    baseHPS: 2.49e31,
     requiresPrestige: 18,
   },
 ];

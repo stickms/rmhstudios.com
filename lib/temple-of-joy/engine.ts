@@ -111,6 +111,8 @@ export function computeBuildingHPS(buildingId: BuildingId, state: GameState): nu
   }
   hps *= computeSynergyMultiplier(buildingId, state);
   hps *= computeOfferingMultiplier(buildingId, state);
+  // bubbleTeaCard relic: Sweet Treat HPS ×3
+  if (buildingId === 'sweetTreat' && state.activeRelics.includes('bubbleTeaCard')) hps *= 3;
   return hps;
 }
 
@@ -177,6 +179,9 @@ export function computeTotalHPS(state: GameState): number {
     hps *= 1 + 0.05 * state.blissShards;
   }
 
+  // 12. cozyPlaylist relic: +15% global HPS
+  if (state.activeRelics.includes('cozyPlaylist')) hps *= 1.15;
+
   return hps;
 }
 
@@ -220,6 +225,9 @@ export function computeGlobalHPSMultiplier(state: GameState): number {
     const minutesOpen = (Date.now() - state.pageOpenTime) / 60_000;
     multiplier *= 1 + Math.min(minutesOpen * 0.1, 4.0);
   }
+
+  // cozyPlaylist relic: +15% global HPS
+  if (state.activeRelics.includes('cozyPlaylist')) multiplier *= 1.15;
 
   // Note: Hymnal of Excess and Confession Booth add flat HPS, not multiplicative
   // so we don't include them here
@@ -268,6 +276,15 @@ export function computeKarmaRate(state: GameState): number {
   if (state.wheelPurchased.has('karmicDividend') && state.prestigeCount >= 3) {
     rate *= 5;
   }
+  // karmaTithe wheel: +0.001 per building owned
+  if (state.wheelPurchased.has('karmaTithe')) {
+    const totalOwned = Object.values(state.buildings).reduce((sum, n) => sum + (n ?? 0), 0);
+    rate += 0.001 * totalOwned;
+  }
+  // zenBell relic: +1 flat karma/s
+  if (state.activeRelics.includes('zenBell')) rate += 1;
+  // karmicOverflow wheel: ×10 karma rate
+  if (state.wheelPurchased.has('karmicOverflow')) rate *= 10;
   return rate;
 }
 
@@ -391,6 +408,7 @@ export function computeStartingHPSFromWheel(
       pageOpenTime: 0,
       offlineHappinessOnLoad: 0,
       offlineSecondsOnLoad: 0,
+      autoBuyTimer: 30,
       theme: 'light',
       numberFormat: 'abbreviated',
       buildingBuyQty: 1,

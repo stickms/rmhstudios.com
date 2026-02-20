@@ -5,10 +5,10 @@
 // ─── IDs ─────────────────────────────────────────────────────────────────────
 
 export type BuildingId =
-  | 'moodCandle' | 'napPod' | 'snackBar' | 'hotTub'
-  | 'massageStudio' | 'gratitudeJournal' | 'goonCave' | 'joyCult'
-  | 'spaSanctum' | 'therapy' | 'pleasurePalace' | 'dopamineLab'
-  | 'hedonistMonastery' | 'feastHall' | 'nirvanaResort'
+  | 'moodCandle' | 'napPod' | 'snackBar' | 'sweetTreat' | 'hotTub'
+  | 'massageStudio' | 'retailTherapy' | 'gratitudeJournal' | 'goonCave' | 'joyCult'
+  | 'spaSanctum' | 'soundBath' | 'therapy' | 'pleasurePalace' | 'dopamineLab'
+  | 'artGallery' | 'hedonistMonastery' | 'feastHall' | 'nirvanaResort'
   | 'eternalParty' | 'heavenOnEarth' | 'blissSingularity'
   | 'zenGarden' | 'euphoriaSprings' | 'serenityEngine'
   | 'raptureCathedral' | 'cosmicJacuzzi' | 'omniscientSpa';
@@ -20,7 +20,8 @@ export type RelicId =
   | 'epicurusRing' | 'laurelCrown' | 'incenseOfAncients' | 'stuffedPillow'
   | 'goldenFork' | 'confessionBooth' | 'vibeCrystal' | 'philosophersStone'
   | 'warmBlanket' | 'sacredLedger' | 'hymnalOfExcess' | 'eternalNap'
-  | 'karmaResonator' | 'lighthouseOfJoy' | 'temporalComfort' | 'infiniteGratitude';
+  | 'karmaResonator' | 'lighthouseOfJoy' | 'temporalComfort' | 'infiniteGratitude'
+  | 'bubbleTeaCard' | 'cozyPlaylist' | 'zenBell' | 'nappingCat';
 
 export type EventType = 'blessing' | 'choice' | 'philosophical';
 
@@ -202,6 +203,7 @@ export interface GameState {
   recentClickTimes: number[];      // timestamps (ms) of last 7 clicks for ritual detection
   eventTimer: number;              // seconds until next random event
   pendingEvent: string | null;     // ID of event waiting to be shown
+  autoBuyTimer: number;            // seconds until next auto-buy attempt
   lastEventEffect: {               // effect from last resolved event (for display)
     title: string;
     summary: string[];             // lines describing what happened
@@ -268,6 +270,7 @@ export interface SaveData {
   milestones: string[];
   baselineHappiness: number;
   pilgrimageCooldown: number;
+  autoBuyTimer: number;
   permanentHPSBonus: number;
   permanentHPCBonus: number;
   theme: 'light' | 'dark';

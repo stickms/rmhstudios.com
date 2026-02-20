@@ -63,6 +63,7 @@ function makeInitialState(
     pageOpenTime: now,
     offlineHappinessOnLoad: 0,
     offlineSecondsOnLoad: 0,
+    autoBuyTimer: 30,
     theme: 'light',
     numberFormat: 'abbreviated',
     buildingBuyQty: 1,
@@ -104,7 +105,8 @@ export function doClick(state: GameState): GameState {
 
   if (updatedClickTimes.length >= ritualThreshold && state.ritualCooldown <= 0) {
     // Ritual triggered: bonus burst
-    happinessGained = hpc * 7 * incenseBonus;
+    const burstMultiplier = state.wheelPurchased.has('ritualAmplification') ? 14 : 7;
+    happinessGained = hpc * burstMultiplier * incenseBonus;
     newRitualCooldown = state.wheelPurchased.has('ritualMastery') ? 15 : 30;
     finalClickTimes = [];
     ritualTriggered = true;
@@ -142,6 +144,11 @@ export function doClick(state: GameState): GameState {
     newState = grantAchievement(newState, 'ritual');
   }
 
+  // livingTemple wheel: +1 karma per click
+  if (state.wheelPurchased.has('livingTemple')) {
+    newState = { ...newState, karma: newState.karma + 1 };
+  }
+
   return newState;
 }
 
@@ -167,6 +174,12 @@ export function doBuyBuilding(state: GameState, buildingId: BuildingId): GameSta
   if (buildingId === 'napPod' && newOwned >= 100) newState = grantAchievement(newState, 'napPodArmy');
   if (buildingId === 'zenGarden' && newOwned === 1) newState = grantAchievement(newState, 'zenGardenUnlock');
   if (buildingId === 'omniscientSpa' && newOwned === 1) newState = grantAchievement(newState, 'omniscientSpaUnlock');
+  if (buildingId === 'sweetTreat' && newOwned === 1) newState = grantAchievement(newState, 'bobaAddiction');
+  if (buildingId === 'sweetTreat' && newOwned >= 10) newState = grantAchievement(newState, 'tenSweetTreats');
+  if (buildingId === 'retailTherapy' && newOwned >= 100) newState = grantAchievement(newState, 'studiousHaul');
+  if (buildingId === 'soundBath' && newOwned === 1) newState = grantAchievement(newState, 'soundBathFirst');
+  if (buildingId === 'artGallery' && newOwned === 1) newState = grantAchievement(newState, 'artGalleryFirst');
+  if (buildingId === 'artGallery' && newOwned >= 100) newState = grantAchievement(newState, 'artCollector');
 
   // allBuildings: every building type owned >= 1
   const allBuildings = Object.values(newState.buildings).every((count) => count >= 1);
@@ -193,9 +206,12 @@ export function doBuyBuilding(state: GameState, buildingId: BuildingId): GameSta
 
   // allPostPrestige: every post-prestige building owned >= 1 (only if prestigeCount >= 1)
   if (state.prestigeCount >= 1) {
-    const postPrestigeBuildings = ['zenGarden', 'omniscientSpa'];
+    const postPrestigeBuildings: BuildingId[] = [
+      'zenGarden', 'euphoriaSprings', 'serenityEngine',
+      'raptureCathedral', 'cosmicJacuzzi', 'omniscientSpa',
+    ];
     const allPostPrestige = postPrestigeBuildings.every(
-      (id) => (newState.buildings[id as BuildingId] ?? 0) >= 1
+      (id) => (newState.buildings[id] ?? 0) >= 1
     );
     if (allPostPrestige) newState = grantAchievement(newState, 'allPostPrestige');
   }
@@ -284,10 +300,12 @@ export function doUnequipRelic(state: GameState, relicId: RelicId): GameState {
 export function doTriggerPilgrimage(state: GameState): GameState {
   if (state.pilgrimageActive || state.pilgrimageCooldown > 0) return state;
 
+  const duration = state.activeRelics.includes('nappingCat') ? 60 : 120;
+
   let newState: GameState = {
     ...state,
     pilgrimageActive: true,
-    pilgrimageTimer: 120,
+    pilgrimageTimer: duration,
     lastClickTime: Date.now(), // prevent idle bonus triggering mid-pilgrimage
   };
 
@@ -358,6 +376,56 @@ export function doTriggerTranscendence(state: GameState): GameState {
   // Karmically retained resources
   const retainedKarma = state.wheelPurchased.has('karmicVessel') ? state.karma : 0;
 
+  // Compute values from prior run needed for wheel effects
+  const prevPeakHappiness = state.peakHappiness;
+  const prevHPS = computeTotalHPS(state);
+
+  // Build initial building overrides
+  const startingBuildings = { ...INITIAL_BUILDINGS };
+
+  // deepRoots: start with 5 copies of first 5 buildings
+  if (state.wheelPurchased.has('deepRoots')) {
+    startingBuildings.moodCandle = Math.max(startingBuildings.moodCandle, 5);
+    startingBuildings.napPod = Math.max(startingBuildings.napPod, 5);
+    startingBuildings.snackBar = Math.max(startingBuildings.snackBar, 5);
+    startingBuildings.hotTub = Math.max(startingBuildings.hotTub, 5);
+    startingBuildings.massageStudio = Math.max(startingBuildings.massageStudio, 5);
+  }
+
+  // eternalFoundation: start with 5 of every building
+  if (state.wheelPurchased.has('eternalFoundation')) {
+    for (const id of Object.keys(startingBuildings) as BuildingId[]) {
+      startingBuildings[id] = Math.max(startingBuildings[id], 5);
+    }
+  }
+
+  // karmicOverflow: +2 max relic slots
+  const bonusRelicSlots = state.wheelPurchased.has('karmicOverflow') ? 2 : 0;
+
+  // Build starting timed buffs
+  const startingBuffs: TimedBuff[] = [];
+  if (state.wheelPurchased.has('rememberedJoy')) {
+    startingBuffs.push({ id: 'rememberedJoy', hpsMultiplier: 5, remainingSeconds: 60 });
+  }
+  if (state.wheelPurchased.has('theSecondComing')) {
+    startingBuffs.push({ id: 'theSecondComing', hpsMultiplier: 10, remainingSeconds: 600 });
+  }
+  if (state.wheelPurchased.has('blissOverdrive')) {
+    startingBuffs.push({ id: 'blissOverdrive', hpsMultiplier: 100, remainingSeconds: 300 });
+  }
+
+  // reincarnatedWealthier: start with 1% of previous peak happiness
+  const wealthierBonus = state.wheelPurchased.has('reincarnatedWealthier')
+    ? prevPeakHappiness * 0.01
+    : 0;
+
+  // nirvanaBlueprint: start with happiness = 50% of 1 minute of peak HPS
+  const nirvanaBlueprintBonus = state.wheelPurchased.has('nirvanaBlueprint')
+    ? prevHPS * 60 * 0.5
+    : 0;
+
+  const startingHappiness = wealthierBonus + nirvanaBlueprintBonus;
+
   let newState = makeInitialState({
     blissShards: newBlissShards,
     wheelPurchased: new Set(state.wheelPurchased),
@@ -368,6 +436,10 @@ export function doTriggerTranscendence(state: GameState): GameState {
     karma: retainedKarma,
     peakKarma: retainedKarma,
     upgrades: retainedUpgrades,
+    buildings: startingBuildings,
+    happiness: startingHappiness,
+    maxRelicSlots: 3 + bonusRelicSlots,
+    activeBuffs: startingBuffs,
     // Preserve user preferences
     theme: state.theme,
     numberFormat: state.numberFormat,
@@ -410,6 +482,11 @@ export function doPurchaseWheelUpgrade(state: GameState, upgradeId: string): Gam
 
   // Wheel achievements
   newState = grantAchievement(newState, 'firstWheelUpgrade');
+
+  // karmicOverflow: immediately grant +2 relic slots
+  if (upgradeId === 'karmicOverflow') {
+    newState = { ...newState, maxRelicSlots: newState.maxRelicSlots + 2 };
+  }
 
   // Check if all tier 4 upgrades are purchased (fullWheel)
   const tier4Upgrades = [

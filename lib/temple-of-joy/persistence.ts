@@ -39,6 +39,7 @@ export function stateToSaveData(state: GameState): SaveData {
     milestones: [...state.milestones],
     baselineHappiness: state.baselineHappiness,
     pilgrimageCooldown: state.pilgrimageCooldown,
+    autoBuyTimer: state.autoBuyTimer,
     permanentHPSBonus: state.permanentHPSBonus,
     permanentHPCBonus: state.permanentHPCBonus,
     theme: state.theme,
@@ -74,6 +75,7 @@ export function saveDataToState(save: SaveData, baseState: GameState): Partial<G
     milestones: new Set(save.milestones ?? []),
     baselineHappiness: save.baselineHappiness ?? 0,
     pilgrimageCooldown: save.pilgrimageCooldown ?? 0,
+    autoBuyTimer: save.autoBuyTimer ?? 30,
     permanentHPSBonus: save.permanentHPSBonus ?? 0,
     permanentHPCBonus: save.permanentHPCBonus ?? 0,
     theme: save.theme ?? 'dark',
@@ -119,7 +121,10 @@ export function computeOfflineProgress(
   const effectiveSecs = Math.min(elapsedSecs, capSecs);
   if (effectiveSecs < 30) return { happiness: 0, seconds: 0 };
   const hps = computeTotalHPS(state);
-  const happiness = hps * effectiveSecs * OFFLINE_EFFICIENCY;
+  // theLongView wheel: use sqrt formula for offline income (diminishing returns)
+  const happiness = state.wheelPurchased.has('theLongView')
+    ? hps * Math.sqrt(effectiveSecs) * OFFLINE_EFFICIENCY
+    : hps * effectiveSecs * OFFLINE_EFFICIENCY;
   return { happiness, seconds: effectiveSecs };
 }
 

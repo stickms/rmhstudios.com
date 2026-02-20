@@ -96,6 +96,22 @@ export const WHEEL_UPGRADES: WheelUpgradeDef[] = [
     tier: 2,
     requires: ['theSecondSmile'],
   },
+  {
+    id: 'livingTemple',
+    name: 'The Living Temple',
+    description: 'Clicking generates +1 karma per click.',
+    shardCost: 10,
+    tier: 2,
+    requires: ['theSecondSmile'],
+  },
+  {
+    id: 'karmaTithe',
+    name: 'Karma Tithe',
+    description: 'Each building owned passively generates +0.001 karma/s.',
+    shardCost: 12,
+    tier: 2,
+    requires: ['karmicVessel'],
+  },
 
   // ─── Tier 3 ───────────────────────────────────────────────────────────────
 
@@ -147,6 +163,30 @@ export const WHEEL_UPGRADES: WheelUpgradeDef[] = [
     tier: 3,
     requires: ['karmicVessel', 'samsarasGift', 'saintsPatience'],
   },
+  {
+    id: 'ritualAmplification',
+    name: 'Ritual Amplification',
+    description: 'Ritual burst multiplier doubled (×7 → ×14 HPC per click).',
+    shardCost: 50,
+    tier: 3,
+    requires: ['ritualMastery', 'enlightenedClicker'],
+  },
+  {
+    id: 'prestigeMomentum',
+    name: 'Prestige Momentum',
+    description: 'First 3 minutes of each run: ×3 all happiness earned.',
+    shardCost: 60,
+    tier: 3,
+    requires: ['samsarasGift', 'deepRoots'],
+  },
+  {
+    id: 'autoBuyer1',
+    name: 'The Lazy Pilgrim',
+    description: 'Every 30 s, automatically buys 1 of the most expensive building you can afford.',
+    shardCost: 60,
+    tier: 3,
+    requires: ['deepRoots', 'reincarnatedWealthier'],
+  },
 
   // ─── Tier 4 ───────────────────────────────────────────────────────────────
 
@@ -161,7 +201,7 @@ export const WHEEL_UPGRADES: WheelUpgradeDef[] = [
   {
     id: 'nirvanaBlueprint',
     name: "Nirvana's Blueprint",
-    description: "All new runs start at 50% of previous run's peak HPS.",
+    description: "All new runs start with bonus happiness equal to 50% of 1 min of peak HPS.",
     shardCost: 300,
     tier: 4,
     requires: ['theLongView', 'theSecondComing', 'prophetsMemory'],
@@ -181,6 +221,14 @@ export const WHEEL_UPGRADES: WheelUpgradeDef[] = [
     shardCost: 400,
     tier: 4,
     requires: ['enlightenedClicker', 'heavensInfrastructure', 'karmicDividend'],
+  },
+  {
+    id: 'autoBuyer2',
+    name: 'Bulk Enlightenment',
+    description: 'Every 30 s, automatically buys max of the most expensive building you can afford.',
+    shardCost: 200,
+    tier: 4,
+    requires: ['autoBuyer1', 'heavensInfrastructure'],
   },
 
   // ─── Tier 5 ───────────────────────────────────────────────────────────────
@@ -216,6 +264,14 @@ export const WHEEL_UPGRADES: WheelUpgradeDef[] = [
     shardCost: 8000,
     tier: 5,
     requires: ['infiniteWheel', 'templeEternal'],
+  },
+  {
+    id: 'autoBuyer3',
+    name: 'Automatic Temple',
+    description: 'Every 30 s, buys max of the most expensive affordable building, then the next, and so on until nothing is affordable.',
+    shardCost: 1500,
+    tier: 5,
+    requires: ['autoBuyer2', 'eternalFoundation'],
   },
 ];
 

@@ -11,6 +11,7 @@ const CARNAL: UpgradeDef[] = [
     cost: 500,
     targetBuildings: ['snackBar'],
     buildingMultiplier: 1.5,
+    requiresBuilding: { snackBar: 1 },
   },
   {
     id: 'perfectTemperature',
@@ -36,6 +37,7 @@ const CARNAL: UpgradeDef[] = [
     cost: 25000,
     targetBuildings: ['napPod'],
     buildingMultiplier: 2,
+    requiresBuilding: { napPod: 1 },
   },
   {
     id: 'napMastery2',
@@ -73,6 +75,7 @@ const CARNAL: UpgradeDef[] = [
     cost: 500000,
     targetBuildings: ['feastHall'],
     buildingMultiplier: 3,
+    requiresBuilding: { feastHall: 1 },
   },
   {
     id: 'warmBreadAtLast',
@@ -90,6 +93,7 @@ const CARNAL: UpgradeDef[] = [
     cost: 50000000,
     targetBuildings: ['hotTub', 'spaSanctum'],
     buildingMultiplier: 2,
+    requiresBuilding: { hotTub: 1 },
   },
   {
     id: 'moderationDiscarded',
@@ -107,6 +111,29 @@ const CARNAL: UpgradeDef[] = [
     cost: 2500000000,
     targetBuildings: ['feastHall'],
     buildingMultiplier: 5,
+    requiresBuilding: { feastHall: 1 },
+  },
+  // ── Sweet Treat path ──
+  {
+    id: 'bobaProtocol',
+    name: 'The Boba Protocol',
+    flavor: 'Brown sugar. Oat milk. Tapioca pearls. Non-negotiable.',
+    path: 'carnal',
+    cost: 3200,
+    targetBuildings: ['sweetTreat'],
+    buildingMultiplier: 2,
+    requiresBuilding: { sweetTreat: 1 },
+  },
+  {
+    id: 'milkTeaAscension',
+    name: 'Milk Tea Ascension',
+    flavor: 'You reached the final form. Extra pearls. No ice. Perfect.',
+    path: 'carnal',
+    cost: 48000,
+    targetBuildings: ['sweetTreat'],
+    buildingMultiplier: 3,
+    requiresUpgrade: 'bobaProtocol',
+    requiresBuilding: { sweetTreat: 1 },
   },
 ];
 
@@ -137,6 +164,7 @@ const SOCIAL: UpgradeDef[] = [
     cost: 15000,
     targetBuildings: ['gratitudeJournal'],
     buildingMultiplier: 1.5,
+    requiresBuilding: { gratitudeJournal: 1 },
   },
   {
     id: 'winningArgumentOnline',
@@ -154,6 +182,7 @@ const SOCIAL: UpgradeDef[] = [
     cost: 200000,
     targetBuildings: ['joyCult'],
     buildingMultiplier: 1.5,
+    requiresBuilding: { joyCult: 1 },
   },
   {
     id: 'lifeOfTheParty',
@@ -164,6 +193,7 @@ const SOCIAL: UpgradeDef[] = [
     targetBuildings: ['joyCult'],
     buildingMultiplier: 2.5,
     requiresUpgrade: 'crowdGoesWild',
+    requiresBuilding: { joyCult: 1 },
   },
   {
     id: 'validationProfessional',
@@ -173,6 +203,7 @@ const SOCIAL: UpgradeDef[] = [
     cost: 3000000,
     targetBuildings: ['therapy'],
     buildingMultiplier: 2,
+    requiresBuilding: { therapy: 1 },
   },
   {
     id: 'complimentThatLanded',
@@ -190,6 +221,7 @@ const SOCIAL: UpgradeDef[] = [
     cost: 50000000,
     targetBuildings: ['joyCult', 'eternalParty'],
     buildingMultiplier: 2,
+    requiresBuilding: { joyCult: 1 },
   },
   {
     id: 'viralMoment',
@@ -207,6 +239,7 @@ const SOCIAL: UpgradeDef[] = [
     cost: 2500000000,
     targetBuildings: ['joyCult', 'eternalParty', 'therapy', 'gratitudeJournal'],
     buildingMultiplier: 2,
+    requiresBuilding: { joyCult: 1 },
   },
   {
     id: 'adoringCrowdEternal',
@@ -216,6 +249,29 @@ const SOCIAL: UpgradeDef[] = [
     cost: 25000000000,
     targetBuildings: ['eternalParty'],
     buildingMultiplier: 3,
+    requiresBuilding: { eternalParty: 1 },
+  },
+  // ── Retail Therapy path ──
+  {
+    id: 'shoppingWithFriends',
+    name: 'Shopping With Friends',
+    flavor: "You went in for one thing. You emerged with eight things and a story.",
+    path: 'social',
+    cost: 60000,
+    targetBuildings: ['retailTherapy'],
+    buildingMultiplier: 2,
+    requiresBuilding: { retailTherapy: 1 },
+  },
+  {
+    id: 'studiousRegular',
+    name: 'The Studious Regular',
+    flavor: 'They know your size. Your preferences. Your entire wishlist. You are respected.',
+    path: 'social',
+    cost: 1200000,
+    targetBuildings: ['retailTherapy'],
+    buildingMultiplier: 3,
+    requiresUpgrade: 'shoppingWithFriends',
+    requiresBuilding: { retailTherapy: 1 },
   },
 ];
 
@@ -246,6 +302,7 @@ const MIND: UpgradeDef[] = [
     cost: 40000,
     targetBuildings: ['gratitudeJournal'],
     buildingMultiplier: 2,
+    requiresBuilding: { gratitudeJournal: 1 },
   },
   {
     id: 'perfectPlaylist',
@@ -263,6 +320,7 @@ const MIND: UpgradeDef[] = [
     cost: 500000,
     targetBuildings: ['dopamineLab'],
     buildingMultiplier: 3,
+    requiresBuilding: { dopamineLab: 1 },
   },
   {
     id: 'finishingCreativeProject',
@@ -273,6 +331,7 @@ const MIND: UpgradeDef[] = [
     targetBuildings: ['dopamineLab'],
     buildingMultiplier: 5,
     requiresUpgrade: 'suddenUnderstanding',
+    requiresBuilding: { dopamineLab: 1 },
   },
   {
     id: 'deepWorkActually',
@@ -283,6 +342,7 @@ const MIND: UpgradeDef[] = [
     hpcMultiplier: 2,
     targetBuildings: ['dopamineLab'],
     buildingMultiplier: 1.5,
+    requiresBuilding: { dopamineLab: 1 },
   },
   {
     id: 'rabbitHoleAcademic',
@@ -292,6 +352,7 @@ const MIND: UpgradeDef[] = [
     cost: 40000000,
     targetBuildings: ['dopamineLab', 'gratitudeJournal', 'therapy'],
     buildingMultiplier: 2.5,
+    requiresBuilding: { dopamineLab: 1 },
   },
   {
     id: 'flowStateSustained',
@@ -317,6 +378,37 @@ const MIND: UpgradeDef[] = [
     path: 'mind',
     cost: 15000000000,
     globalHPSMultiplier: 1.25,
+  },
+  // ── Sound Bath path ──
+  {
+    id: 'acousticAlignment',
+    name: 'Acoustic Alignment',
+    flavor: 'The frequencies matched perfectly. Your cells reorganised themselves politely.',
+    path: 'mind',
+    cost: 12000000,
+    targetBuildings: ['soundBath'],
+    buildingMultiplier: 2,
+    requiresBuilding: { soundBath: 1 },
+  },
+  {
+    id: 'resonanceTheory',
+    name: 'Resonance Theory (Applied)',
+    flavor: 'Everything vibrates. You proved it. Your dissertation was a singing bowl.',
+    path: 'mind',
+    cost: 180000000,
+    targetBuildings: ['soundBath'],
+    buildingMultiplier: 3,
+    requiresUpgrade: 'acousticAlignment',
+    requiresBuilding: { soundBath: 1 },
+  },
+  // ── Click mastery ──
+  {
+    id: 'fingerOlympics',
+    name: 'Finger Olympics',
+    flavor: 'Trained. Taped. Ready. Gold medal in the click triathlon.',
+    path: 'mind',
+    cost: 75000000,
+    hpcMultiplier: 3,
   },
 ];
 
@@ -398,6 +490,7 @@ const SPIRIT: UpgradeDef[] = [
     cost: 250000000,
     targetBuildings: ['hedonistMonastery'],
     buildingMultiplier: 2.5,
+    requiresBuilding: { hedonistMonastery: 1 },
   },
   {
     id: 'voidComfortable',
@@ -417,6 +510,7 @@ const SPIRIT: UpgradeDef[] = [
     targetBuildings: ['hedonistMonastery', 'nirvanaResort', 'spaSanctum', 'gratitudeJournal'],
     buildingMultiplier: 3,
     karmaRateMultiplier: 2.5,
+    requiresBuilding: { hedonistMonastery: 1 },
   },
   {
     id: 'enlightenmentPartial',
@@ -426,6 +520,15 @@ const SPIRIT: UpgradeDef[] = [
     cost: 100000000000,
     globalHPSMultiplier: 1.25,
     hpcMultiplier: 1.5,
+  },
+  // ── Click ascension ──
+  {
+    id: 'theBlur',
+    name: 'The Blur',
+    flavor: 'Your hand. The mouse. One continuous motion. The cursor barely touches the screen.',
+    path: 'spirit',
+    cost: 8000000000,
+    hpcMultiplier: 5,
   },
 ];
 
@@ -465,6 +568,7 @@ const INDULGENCE: UpgradeDef[] = [
     cost: 250000,
     targetBuildings: ['nirvanaResort'],
     buildingMultiplier: 3,
+    requiresBuilding: { nirvanaResort: 1 },
   },
   {
     id: 'notCheckingEmail',
@@ -482,6 +586,7 @@ const INDULGENCE: UpgradeDef[] = [
     cost: 4000000,
     targetBuildings: ['pleasurePalace'],
     buildingMultiplier: 2,
+    requiresBuilding: { pleasurePalace: 1 },
   },
   {
     id: 'thePenthouse',
@@ -492,6 +597,7 @@ const INDULGENCE: UpgradeDef[] = [
     targetBuildings: ['pleasurePalace'],
     buildingMultiplier: 3,
     requiresUpgrade: 'customEverything',
+    requiresBuilding: { pleasurePalace: 1 },
   },
   {
     id: 'chefsTablePermanent',
@@ -501,6 +607,7 @@ const INDULGENCE: UpgradeDef[] = [
     cost: 75000000,
     targetBuildings: ['feastHall', 'snackBar'],
     buildingMultiplier: 2.5,
+    requiresBuilding: { feastHall: 1 },
   },
   {
     id: 'personalMasseuse',
@@ -510,6 +617,7 @@ const INDULGENCE: UpgradeDef[] = [
     cost: 400000000,
     targetBuildings: ['massageStudio'],
     buildingMultiplier: 3.5,
+    requiresBuilding: { massageStudio: 1 },
   },
   {
     id: 'firstClassExistence',
@@ -519,6 +627,7 @@ const INDULGENCE: UpgradeDef[] = [
     cost: 2500000000,
     targetBuildings: ['pleasurePalace', 'nirvanaResort', 'blissSingularity'],
     buildingMultiplier: 2,
+    requiresBuilding: { pleasurePalace: 1 },
   },
   {
     id: 'hedonistOfYear',
@@ -535,6 +644,28 @@ const INDULGENCE: UpgradeDef[] = [
     path: 'indulgence',
     cost: 125000000000,
     globalHPSMultiplier: 3,
+  },
+  // ── Art Gallery path ──
+  {
+    id: 'patronOfTheArts',
+    name: 'Patron of the Arts',
+    flavor: 'You funded the show. Your name is on the wall. Small plaque. Tasteful.',
+    path: 'indulgence',
+    cost: 3600000000,
+    targetBuildings: ['artGallery'],
+    buildingMultiplier: 2,
+    requiresBuilding: { artGallery: 1 },
+  },
+  {
+    id: 'permanentCollection',
+    name: 'The Permanent Collection',
+    flavor: 'Every piece: yours. Permanently. The museum is you.',
+    path: 'indulgence',
+    cost: 54000000000,
+    targetBuildings: ['artGallery'],
+    buildingMultiplier: 3,
+    requiresUpgrade: 'patronOfTheArts',
+    requiresBuilding: { artGallery: 1 },
   },
 ];
 
@@ -1446,6 +1577,142 @@ const OFFERINGS: UpgradeDef[] = [
     requiresBuilding: { omniscientSpa: 50 },
     requiresUpgrade: 'omniscientSpaOffering2',
     requiresPrestige: 18,
+  },
+
+  // ── Sweet Treat (baseCost: 1600) ──
+  {
+    id: 'sweetTreatOffering1',
+    name: 'Sweet Treat: First Offering',
+    flavor: 'Ten cups in. You know the menu by heart.',
+    path: 'offering',
+    cost: 1600 * 80,
+    targetBuildings: ['sweetTreat'],
+    buildingMultiplier: 1.5,
+    requiresBuilding: { sweetTreat: 10 },
+  },
+  {
+    id: 'sweetTreatOffering2',
+    name: 'Sweet Treat: Second Offering',
+    flavor: 'Loyalty card punched. Loyalty: proven.',
+    path: 'offering',
+    cost: 1600 * 500,
+    targetBuildings: ['sweetTreat'],
+    buildingMultiplier: 2,
+    requiresBuilding: { sweetTreat: 25 },
+    requiresUpgrade: 'sweetTreatOffering1',
+  },
+  {
+    id: 'sweetTreatOffering3',
+    name: 'Sweet Treat: Third Offering',
+    flavor: 'You are the bubble tea. The bubble tea is you.',
+    path: 'offering',
+    cost: 1600 * 3000,
+    targetBuildings: ['sweetTreat'],
+    buildingMultiplier: 2.5,
+    requiresBuilding: { sweetTreat: 50 },
+    requiresUpgrade: 'sweetTreatOffering2',
+  },
+
+  // ── Retail Therapy (baseCost: 30000) ──
+  {
+    id: 'retailTherapyOffering1',
+    name: 'Retail Therapy: First Offering',
+    flavor: 'The receipt: filed. The bag: treasured.',
+    path: 'offering',
+    cost: 30000 * 80,
+    targetBuildings: ['retailTherapy'],
+    buildingMultiplier: 1.5,
+    requiresBuilding: { retailTherapy: 10 },
+  },
+  {
+    id: 'retailTherapyOffering2',
+    name: 'Retail Therapy: Second Offering',
+    flavor: 'Browsing: elevated to a practice.',
+    path: 'offering',
+    cost: 30000 * 500,
+    targetBuildings: ['retailTherapy'],
+    buildingMultiplier: 2,
+    requiresBuilding: { retailTherapy: 25 },
+    requiresUpgrade: 'retailTherapyOffering1',
+  },
+  {
+    id: 'retailTherapyOffering3',
+    name: 'Retail Therapy: Third Offering',
+    flavor: 'Every cart: full. Every checkout: transcendent.',
+    path: 'offering',
+    cost: 30000 * 3000,
+    targetBuildings: ['retailTherapy'],
+    buildingMultiplier: 2.5,
+    requiresBuilding: { retailTherapy: 50 },
+    requiresUpgrade: 'retailTherapyOffering2',
+  },
+
+  // ── Sound Bath (baseCost: 6000000) ──
+  {
+    id: 'soundBathOffering1',
+    name: 'Sound Bath: First Offering',
+    flavor: 'The bowl rang. You rang with it.',
+    path: 'offering',
+    cost: 6000000 * 80,
+    targetBuildings: ['soundBath'],
+    buildingMultiplier: 1.5,
+    requiresBuilding: { soundBath: 10 },
+  },
+  {
+    id: 'soundBathOffering2',
+    name: 'Sound Bath: Second Offering',
+    flavor: 'Harmonic resonance achieved. Twice.',
+    path: 'offering',
+    cost: 6000000 * 500,
+    targetBuildings: ['soundBath'],
+    buildingMultiplier: 2,
+    requiresBuilding: { soundBath: 25 },
+    requiresUpgrade: 'soundBathOffering1',
+  },
+  {
+    id: 'soundBathOffering3',
+    name: 'Sound Bath: Third Offering',
+    flavor: 'The frequencies know your name. They hum it at 432 Hz.',
+    path: 'offering',
+    cost: 6000000 * 3000,
+    targetBuildings: ['soundBath'],
+    buildingMultiplier: 2.5,
+    requiresBuilding: { soundBath: 50 },
+    requiresUpgrade: 'soundBathOffering2',
+  },
+
+  // ── Art Gallery (baseCost: 1800000000) ──
+  {
+    id: 'artGalleryOffering1',
+    name: 'Art Gallery: First Offering',
+    flavor: 'You stood in front of it for ten minutes. You got it.',
+    path: 'offering',
+    cost: 1800000000 * 80,
+    targetBuildings: ['artGallery'],
+    buildingMultiplier: 1.5,
+    requiresBuilding: { artGallery: 10 },
+  },
+  {
+    id: 'artGalleryOffering2',
+    name: 'Art Gallery: Second Offering',
+    flavor: 'The docent follows you now. Learning.',
+    path: 'offering',
+    cost: 1800000000 * 500,
+    targetBuildings: ['artGallery'],
+    buildingMultiplier: 2,
+    requiresBuilding: { artGallery: 25 },
+    requiresUpgrade: 'artGalleryOffering1',
+  },
+  {
+    id: 'artGalleryOffering3',
+    name: 'Art Gallery: Third Offering',
+    flavor: 'The art is looking at you now. It approves.',
+    path: 'offering',
+    cost: 1800000000 * 3000,
+    targetBuildings: ['artGallery'],
+    buildingMultiplier: 2.5,
+    requiresBuilding: { artGallery: 50 },
+    requiresUpgrade: 'artGalleryOffering2',
   },
 ];
 

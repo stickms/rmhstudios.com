@@ -2,10 +2,11 @@
  * Temple of Joy — Tick Engine
  * Called on every animation frame. Mutates state immutably.
  */
-import type { GameState } from './types';
-import { computeTotalHPS, computeKarmaRate } from './engine';
+import type { GameState, BuildingId } from './types';
+import { computeTotalHPS, computeKarmaRate, computeBuildingCost, computeMaxAffordable } from './engine';
 import { MILESTONES } from './data/milestones';
 import { EVENTS } from './data/events';
+import { BUILDINGS } from './data/buildings';
 
 // ACHIEVEMENTS is imported for completeness; individual IDs are hardcoded
 // in the tick for performance.
@@ -16,7 +17,8 @@ import { ACHIEVEMENTS } from './data/achievements';
 
 export function computePilgrimageBurst(state: GameState): number {
   const pilgrimageRelicBonus = state.activeRelics.includes('stuffedPillow') ? 1.5 : 1;
-  return 5 * 60 * computeTotalHPS(state) * pilgrimageRelicBonus;
+  const nappingCatBonus = state.activeRelics.includes('nappingCat') ? 2 : 1;
+  return 5 * 60 * computeTotalHPS(state) * pilgrimageRelicBonus * nappingCatBonus;
 }
 
 // ─── Main Tick ────────────────────────────────────────────────────────────────
@@ -34,7 +36,13 @@ export function applyTick(state: GameState, deltaMs: number): GameState {
   const karmaRate = computeKarmaRate(state);
 
   // ── 3–6. Happiness & peak ─────────────────────────────────────────────────
-  const happinessGained = hps * deltaSeconds;
+  let happinessGained = hps * deltaSeconds;
+
+  // prestigeMomentum: ×3 HPS during first 3 minutes of a new run
+  if (state.wheelPurchased.has('prestigeMomentum') && state.totalPlaytime < 180) {
+    happinessGained *= 3;
+  }
+
   let newHappiness = state.happiness + happinessGained;
   let newLifetimeHappiness = state.lifetimeHappiness + happinessGained;
   let newPeakHappiness = Math.max(state.peakHappiness, newHappiness);
@@ -150,7 +158,99 @@ export function applyTick(state: GameState, deltaMs: number): GameState {
 
   // Prestige achievements are now tracked in actions.ts (doTriggerTranscendence)
 
-  // ── 17. Return new state ──────────────────────────────────────────────────
+  // ── 17. Auto-buy timer (autoBuyer wheel upgrades) ────────────────────────
+  let newAutoBuyTimer = state.autoBuyTimer - deltaSeconds;
+  let autoBuyBuildings = state.buildings;
+  let autoBuyHappiness = newHappiness;
+
+  const hasAutoBuyer =
+    state.wheelPurchased.has('autoBuyer1') ||
+    state.wheelPurchased.has('autoBuyer2') ||
+    state.wheelPurchased.has('autoBuyer3');
+
+  if (hasAutoBuyer && newAutoBuyTimer <= 0) {
+    newAutoBuyTimer = 30;
+    // Work on mutable copies only when the timer fires
+    let workBuildings = { ...state.buildings };
+    let workHappiness = newHappiness;
+
+    // Helper: build an ephemeral state with latest happiness/buildings
+    const tempState = (): GameState => ({
+      ...state,
+      happiness: workHappiness,
+      buildings: workBuildings,
+    });
+
+    // Unlocked buildings sorted by baseCost descending
+    const unlocked = BUILDINGS.filter(
+      (b) => !b.requiresPrestige || b.requiresPrestige <= state.prestigeCount
+    ).sort((a, b) => b.baseCost - a.baseCost);
+
+    if (state.wheelPurchased.has('autoBuyer3')) {
+      // Cascade: buy max of most expensive, then next, etc.
+      for (const building of unlocked) {
+        const ts = tempState();
+        const n = computeMaxAffordable(building.id as BuildingId, ts);
+        if (n <= 0) continue;
+        let cost = 0;
+        for (let i = 0; i < n; i++) {
+          cost += computeBuildingCost(
+            building.id as BuildingId,
+            (workBuildings[building.id as BuildingId] ?? 0) + i,
+            ts
+          );
+        }
+        workHappiness -= cost;
+        workBuildings = {
+          ...workBuildings,
+          [building.id]: (workBuildings[building.id as BuildingId] ?? 0) + n,
+        };
+      }
+    } else if (state.wheelPurchased.has('autoBuyer2')) {
+      // Buy max of the single most expensive affordable building
+      for (const building of unlocked) {
+        const ts = tempState();
+        const n = computeMaxAffordable(building.id as BuildingId, ts);
+        if (n <= 0) continue;
+        let cost = 0;
+        for (let i = 0; i < n; i++) {
+          cost += computeBuildingCost(
+            building.id as BuildingId,
+            (workBuildings[building.id as BuildingId] ?? 0) + i,
+            ts
+          );
+        }
+        workHappiness -= cost;
+        workBuildings = {
+          ...workBuildings,
+          [building.id]: (workBuildings[building.id as BuildingId] ?? 0) + n,
+        };
+        break; // only most expensive
+      }
+    } else {
+      // autoBuyer1: buy 1 of most expensive affordable building
+      for (const building of unlocked) {
+        const ts = tempState();
+        const cost = computeBuildingCost(
+          building.id as BuildingId,
+          workBuildings[building.id as BuildingId] ?? 0,
+          ts
+        );
+        if (workHappiness < cost) continue;
+        workHappiness -= cost;
+        workBuildings = {
+          ...workBuildings,
+          [building.id]: (workBuildings[building.id as BuildingId] ?? 0) + 1,
+        };
+        break; // only most expensive
+      }
+    }
+
+    autoBuyBuildings = workBuildings;
+    autoBuyHappiness = workHappiness;
+  }
+
+  // ── 18. Return new state ──────────────────────────────────────────────────
   // Clear expired event effect summary
   let newLastEventEffect = state.lastEventEffect;
   if (newLastEventEffect && Date.now() >= newLastEventEffect.expiresAt) {
@@ -159,7 +259,8 @@ export function applyTick(state: GameState, deltaMs: number): GameState {
 
   return {
     ...state,
-    happiness: newHappiness,
+    happiness: autoBuyBuildings !== state.buildings ? autoBuyHappiness : newHappiness,
+    buildings: autoBuyBuildings,
     lifetimeHappiness: newLifetimeHappiness,
     peakHappiness: newPeakHappiness,
     karma: newKarma,
@@ -179,5 +280,6 @@ export function applyTick(state: GameState, deltaMs: number): GameState {
     lastEventEffect: newLastEventEffect,
     milestones: newMilestones,
     achievements: newAchievements,
+    autoBuyTimer: newAutoBuyTimer,
   };
 }
