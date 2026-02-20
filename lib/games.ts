@@ -149,6 +149,21 @@ export const games: GameInfo[] = [
         tags: ['Survival Horror', 'Steam', 'In Development'],
     },
     {
+        id: 'neon-driftway',
+        title: 'Neon Driftway',
+        description: 'An endless highway survival racer with 3 levels and leaderboards.',
+        longDescription:
+            'Grip the wheel and push into the neon. Dodge traffic, weave through hazards, and chase close calls for massive score multipliers across three distinct levels: Sunset Freeway, Rainline, and Night Circuit. Each level brings unique mechanics — grip loss, headlight cones, aggressive traffic. How long can you survive?',
+        href: '/neon-driftway',
+        status: 'Playable Demo',
+        cta: 'Play Now',
+        isSteam: false,
+        gradient: 'from-red-600 to-cyan-600',
+        iconName: 'Zap',
+        color: 'from-red-500/20 to-cyan-600/20 hover:border-red-500/50',
+        tags: ['Arcade', 'Racing', 'Endless'],
+    },
+    {
         id: 'rmhdle',
         title: 'RMHdle',
         description: 'The daily word game for the RMH community.',

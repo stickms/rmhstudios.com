@@ -27,6 +27,7 @@ model User {
   sliceItProfile Player?
   vegaProfile    VegaPlayer?
   signalForgeProfile SignalForgePlayer?
+  neonDriftwayProfile NeonDriftwayPlayer?
   
   // Slice-It Library Relations
   uploadedSongs  Song[]
@@ -163,6 +164,22 @@ model SignalForgePlayer {
 
   @@index([highScore(sort: Desc)], map: "idx_signal_forge_high_score")
   @@index([floorReached(sort: Desc)], map: "idx_signal_forge_floor")
+}
+
+model NeonDriftwayPlayer {
+  id            String   @id @default(uuid())
+  username      String   @unique
+  highScore     Int      @default(0)
+  bestDistance   Int      @default(0)
+  bestTimeMs    Int      @default(0)
+  bestLevel     Int      @default(1)
+  gamesPlayed   Int      @default(1)
+  updatedAt     DateTime @default(now()) @updatedAt
+
+  userId        String?  @unique
+  user          User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([highScore(sort: Desc)], map: "idx_neon_driftway_high_score")
 }
 
 // --- Slice-It Music Library Models ---
