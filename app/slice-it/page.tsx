@@ -9,7 +9,7 @@ export default function SliceItPage() {
     <main className="fixed inset-0 slice-theme overflow-hidden">
       {/* Back button */}
       <div className="absolute top-2 left-2 z-50">
-        <Link href="/">
+        <Link href="/games">
           <Button
             variant="ghost"
             size="sm"

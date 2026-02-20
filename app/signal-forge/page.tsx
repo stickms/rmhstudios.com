@@ -8,7 +8,7 @@ export default function SignalForgePage() {
     <main className="fixed inset-0 bg-black flex flex-col overflow-hidden">
       {/* Top bar: back button | title | (pause button rendered by SignalForgeUI) */}
       <div className="flex items-center justify-between px-3 pt-3 pb-1 shrink-0 relative z-60">
-        <Link href="/">
+        <Link href="/games">
           <Button
             variant="ghost"
             size="sm"
