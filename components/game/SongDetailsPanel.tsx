@@ -73,13 +73,13 @@ export function SongDetailsPanel({ song, onPlay, onSongUpdated, readOnly = false
         setShowEdit(true);
     };
 
-    const MAX_COVER_SIZE = 2.5 * 1024 * 1024; // 2.5 MB
+    const MAX_COVER_SIZE = 10 * 1024 * 1024; // 10 MB
 
     const handleCoverSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
         if (file.size > MAX_COVER_SIZE) {
-            toast.error(`Cover image too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum size is 2.5 MB.`);
+            toast.error(`Cover image too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum size is 10 MB.`);
             e.target.value = '';
             return;
         }

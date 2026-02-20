@@ -5,8 +5,8 @@
 
 import path from "path";
 
+const COVER_MAX_BYTES = 10 * 1024 * 1024; // 10 MB
 const AUDIO_MAX_BYTES = 50 * 1024 * 1024; // 50 MB
-const COVER_MAX_BYTES = 5 * 1024 * 1024;  // 5 MB
 
 // Magic bytes for allowed audio formats (from list of file signatures)
 const AUDIO_SIGNATURES: { name: string; check: (buf: Buffer) => boolean }[] = [

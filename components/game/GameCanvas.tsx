@@ -677,7 +677,13 @@ export function GameCanvas() {
              if (latestFeedback.text !== 'MISS' && latestFeedback.text !== 'BAD' && latestFeedback.text !== 'RELEASED') {
                  const particleLaneIdx = Math.max(0, Math.min(latestFeedback.lane, LANE_Y.length - 1));
                  const particleLaneY = isOneTrack ? LANE_Y[0] : LANE_Y[particleLaneIdx];
-                 spawnParticles(CURSOR_X, particleLaneY, latestFeedback.color, latestFeedback.text);
+                 
+                 // If the note was hit early/late, offset particle emission from CURSOR_X
+                 // offset is (current - slice.time). If positive (late), note is left of cursor.
+                 // So we subtract (offset * PPS) to get spatial position.
+                 const particleX = CURSOR_X - (latestFeedback.offset || 0) * PPS;
+                 
+                 spawnParticles(particleX, particleLaneY, latestFeedback.color, latestFeedback.text);
              }
         }
 
