@@ -70,13 +70,24 @@ export class GameEngine {
         }
 
         if (m.switching) {
-            // Convert random STANDARD slices to SWITCH
-            slices = slices.map(s => {
-                if (s.type === 'STANDARD' && Math.random() > 0.7) {
-                    return { ...s, type: 'SWITCH' };
+            // Inject switching notes in gaps between existing slices
+            const newSlices: Slice[] = [];
+            for (let i = 0; i < slices.length - 1; i++) {
+                newSlices.push(slices[i]);
+                const gap = slices[i + 1].time - slices[i].time;
+                if (gap > 0.6 && Math.random() > 0.5) {
+                    // Place switch note in the opposite lane from the surrounding notes
+                    const oppositeLane = slices[i].lane === 0 ? 1 : 0;
+                    newSlices.push({
+                        id: `switch-${i}-${Math.floor(slices[i].time * 1000)}`,
+                        time: slices[i].time + gap / 2,
+                        type: 'SWITCH',
+                        lane: oppositeLane,
+                    });
                 }
-                return s;
-            });
+            }
+            newSlices.push(slices[slices.length - 1]);
+            slices = newSlices.sort((a, b) => a.time - b.time);
         }
 
         // Apply Speed to audio

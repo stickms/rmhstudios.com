@@ -389,6 +389,23 @@ export function GameCanvas() {
                      ctx.beginPath();
                      ctx.roundRect(sliceX, y - BAR_H/2, len, BAR_H, 10);
                      ctx.fill();
+                } else if (slice.type === 'SWITCH') {
+                    // Switch Note — diamond shape with arrow indicator
+                    const size = BAR_H;
+                    ctx.save();
+                    ctx.translate(sliceX, y);
+                    ctx.rotate(Math.PI / 4);
+                    ctx.beginPath();
+                    ctx.roundRect(-size / 2, -size / 2, size, size, 4);
+                    ctx.fill();
+                    ctx.restore();
+                    // Arrow symbol
+                    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+                    ctx.font = `bold ${Math.round(size * 0.55)}px sans-serif`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('⇄', sliceX, y);
+                    ctx.textBaseline = 'alphabetic';
                 } else {
                     // Standard Note
                     const size = BAR_H;
