@@ -6,7 +6,7 @@ export const SYNERGIES: SynergyDef[] = [
     name: 'The Drowsy Economy',
     flavor: 'Rest and snacks. The foundation of civilization.',
     requirements: { napPod: 10, snackBar: 10 },
-    targetBuildings: ['napPod', 'snackBar'],
+    targetSources: ['napPod', 'snackBar'],
     multiplier: 2,
   },
   {
@@ -14,7 +14,7 @@ export const SYNERGIES: SynergyDef[] = [
     name: "Hedonist's Routine",
     flavor: 'Morning candle. Evening massage. Perfect day.',
     requirements: { moodCandle: 25, massageStudio: 25 },
-    targetBuildings: ['moodCandle', 'massageStudio'],
+    targetSources: ['moodCandle', 'massageStudio'],
     multiplier: 3,
   },
   {
@@ -22,7 +22,7 @@ export const SYNERGIES: SynergyDef[] = [
     name: 'Cult Cuisine',
     flavor: 'The congregation eats together. Transcendence is served warm.',
     requirements: { joyCult: 50, feastHall: 30 },
-    targetBuildings: ['joyCult', 'feastHall'],
+    targetSources: ['joyCult', 'feastHall'],
     multiplier: 2.5,
   },
   {
@@ -30,7 +30,7 @@ export const SYNERGIES: SynergyDef[] = [
     name: 'The Bliss Pipeline',
     flavor: 'Chemical and architectural happiness, unified.',
     requirements: { dopamineLab: 100, spaSanctum: 50 },
-    targetBuildings: ['dopamineLab', 'spaSanctum'],
+    targetSources: ['dopamineLab', 'spaSanctum'],
     multiplier: 4,
   },
   {
@@ -38,7 +38,7 @@ export const SYNERGIES: SynergyDef[] = [
     name: "The Philosopher's Spa",
     flavor: "Inner peace, outer peace. You've both.",
     requirements: { therapy: 75, hedonistMonastery: 75 },
-    targetBuildings: ['therapy', 'hedonistMonastery'],
+    targetSources: ['therapy', 'hedonistMonastery'],
     multiplier: 5,
   },
   {
@@ -46,7 +46,7 @@ export const SYNERGIES: SynergyDef[] = [
     name: "Eden's Architecture",
     flavor: 'Two interpretations of paradise. Merged.',
     requirements: { pleasurePalace: 100, heavenOnEarth: 50 },
-    targetBuildings: ['pleasurePalace', 'heavenOnEarth'],
+    targetSources: ['pleasurePalace', 'heavenOnEarth'],
     multiplier: 6,
   },
   {
@@ -54,7 +54,7 @@ export const SYNERGIES: SynergyDef[] = [
     name: 'The Eternal Feast',
     flavor: 'The table is infinite. The music never stops.',
     requirements: { feastHall: 150, eternalParty: 100 },
-    targetBuildings: ['feastHall', 'eternalParty'],
+    targetSources: ['feastHall', 'eternalParty'],
     multiplier: 8,
   },
   // ── Post-Prestige Synergies ──
@@ -63,7 +63,7 @@ export const SYNERGIES: SynergyDef[] = [
     name: 'Zen Serenity Circuit',
     flavor: 'The garden feeds the engine. The engine powers the garden.',
     requirements: { zenGarden: 50, serenityEngine: 25 },
-    targetBuildings: ['zenGarden', 'serenityEngine'],
+    targetSources: ['zenGarden', 'serenityEngine'],
     multiplier: 4,
   },
   {
@@ -71,7 +71,7 @@ export const SYNERGIES: SynergyDef[] = [
     name: 'Cosmic Rapture',
     flavor: 'The cathedral floats in the jacuzzi. Architecture was never this wet.',
     requirements: { raptureCathedral: 50, cosmicJacuzzi: 25 },
-    targetBuildings: ['raptureCathedral', 'cosmicJacuzzi'],
+    targetSources: ['raptureCathedral', 'cosmicJacuzzi'],
     multiplier: 6,
   },
   {
@@ -79,7 +79,7 @@ export const SYNERGIES: SynergyDef[] = [
     name: 'Omniscient Euphoria',
     flavor: 'The spa knows everything. The springs feel everything. Together: everything.',
     requirements: { omniscientSpa: 25, euphoriaSprings: 50 },
-    targetBuildings: ['omniscientSpa', 'euphoriaSprings'],
+    targetSources: ['omniscientSpa', 'euphoriaSprings'],
     multiplier: 8,
   },
 ];

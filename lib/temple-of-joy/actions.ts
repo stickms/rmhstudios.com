@@ -2,16 +2,17 @@
  * Temple of Joy — Action Handlers
  * Pure functions that take state + action params and return new state.
  */
-import type { GameState, BuildingId, RelicId, TimedBuff } from './types';
+import type { GameState, SourceId, RelicId, TimedBuff } from './types';
 import {
   computeHPC,
-  computeBuildingCost,
+  computeSourceCost,
+  computeSourcePrestigeReq,
   computeCanTranscend,
   computeBlissShards,
   computeUpgradeCost,
   computeTotalHPS,
 } from './engine';
-import { BUILDING_MAP, INITIAL_BUILDINGS } from './data/buildings';
+import { SOURCE_MAP, INITIAL_SOURCES } from './data/sources';
 import { UPGRADE_MAP } from './data/upgrades';
 import { RELIC_MAP } from './data/relics';
 import { WHEEL_MAP } from './data/wheel';
@@ -30,17 +31,24 @@ function makeInitialState(
     peakKarma: 0,
     karma: 0,
     blissShards: 0,
-    buildings: { ...INITIAL_BUILDINGS },
+    sources: { ...INITIAL_SOURCES },
     upgrades: new Set<string>(),
     activeRelics: [],
     maxRelicSlots: 3,
+    equippedRelicsHistory: [],
     prestigeCount: 0,
     wheelPurchased: new Set<string>(),
     samsaraGiftStacks: 0,
     lastSaved: now,
     totalPlaytime: 0,
+    totalClicks: 0,
+    totalPilgrimages: 0,
+    totalVibeChecks: 0,
+    totalEventsResolved: 0,
     achievements: new Set<string>(),
     milestones: new Set<string>(),
+    pilgrimageStreak: 0,
+    epicurusApprovedCount: 0,
     baselineHappiness: 0,
     vibeCheckTimer: 300,
     vibeBuff: null,
@@ -49,8 +57,9 @@ function makeInitialState(
     pilgrimageCooldown: 0,
     ritualCooldown: 0,
     recentClickTimes: [],
-    eventTimer: Math.random() * 600 + 600,
+    eventTimer: Math.random() * 480 + 120,
     pendingEvent: null,
+    lastEventEffect: null,
     activeBuffs: [],
     permanentHPSBonus: 0,
     permanentHPCBonus: 0,
@@ -58,11 +67,13 @@ function makeInitialState(
     pageOpenTime: now,
     offlineHappinessOnLoad: 0,
     offlineSecondsOnLoad: 0,
+    autoBuyTimer: 30,
     theme: 'light',
     numberFormat: 'abbreviated',
-    buildingBuyQty: 1,
+    sourceBuyQty: 1,
     soundEnabled: true,
-    soundVolume: 1,
+    musicVolume: 0.5,
+    sfxVolume: 0.5,
     activeTab: 'temple',
     upgradePathFilter: 'all',
     showTranscendenceModal: false,
@@ -95,14 +106,20 @@ export function doClick(state: GameState): GameState {
   let happinessGained: number;
   let newRitualCooldown = state.ritualCooldown;
   let finalClickTimes = updatedClickTimes;
+  let ritualTriggered = false;
 
   if (updatedClickTimes.length >= ritualThreshold && state.ritualCooldown <= 0) {
     // Ritual triggered: bonus burst
-    happinessGained = hpc * 7 * incenseBonus;
-    newRitualCooldown = state.wheelPurchased.has('ritualMastery') ? 15 : 30;
+    const burstMultiplier = state.wheelPurchased.has('ritualAmplification') ? 14 : 7;
+    happinessGained = hpc * burstMultiplier * incenseBonus;
+    let cooldownBase = state.wheelPurchased.has('ritualMastery') ? 15 : 30;
+    // incenseOfAncients relic: ritual cooldown halved
+    if (state.activeRelics.includes('incenseOfAncients')) cooldownBase /= 2;
+    newRitualCooldown = cooldownBase;
     finalClickTimes = [];
+    ritualTriggered = true;
   } else {
-    happinessGained = hpc * incenseBonus;
+    happinessGained = hpc;
   }
 
   const newHappiness = state.happiness + happinessGained;
@@ -117,6 +134,8 @@ export function doClick(state: GameState): GameState {
     lastClickTime: now,
     recentClickTimes: finalClickTimes,
     ritualCooldown: newRitualCooldown,
+    totalClicks: state.totalClicks + 1,
+    pilgrimageStreak: 0, // Clicks reset the streak
   };
 
   // Achievement: first click (proxy: lifetime was 0 before this click)
@@ -124,44 +143,96 @@ export function doClick(state: GameState): GameState {
     newState = grantAchievement(newState, 'firstClick');
   }
 
+  // Click count achievements
+  if (newState.totalClicks >= 100) newState = grantAchievement(newState, 'hundredClicks');
+  if (newState.totalClicks >= 1000) newState = grantAchievement(newState, 'thousandClicks');
+  if (newState.totalClicks >= 10000) newState = grantAchievement(newState, 'tenThousandClicks');
+
+  // Ritual trigger achievement
+  if (ritualTriggered && !state.achievements.has('ritual')) {
+    newState = grantAchievement(newState, 'ritual');
+  }
+
+  // livingTemple wheel: +1 karma per click
+  if (state.wheelPurchased.has('livingTemple')) {
+    newState = { ...newState, karma: newState.karma + 1 };
+  }
+
   return newState;
 }
 
-// ─── Buy Building ─────────────────────────────────────────────────────────────
+// ─── Buy Source ─────────────────────────────────────────────────────────────
 
-export function doBuyBuilding(state: GameState, buildingId: BuildingId): GameState {
-  const cost = computeBuildingCost(buildingId, state.buildings[buildingId], state);
+export function doBuySource(state: GameState, sourceId: SourceId): GameState {  // Prestige gate: check if player has enough prestige to buy this source
+  const prestigeReq = computeSourcePrestigeReq(sourceId, state);
+  if (state.prestigeCount < prestigeReq) return state;
+  const cost = computeSourceCost(sourceId, state.sources[sourceId], state);
   if (state.happiness < cost) return state;
 
-  const newOwned = state.buildings[buildingId] + 1;
+  const newOwned = state.sources[sourceId] + 1;
   let newState: GameState = {
     ...state,
     happiness: state.happiness - cost,
-    buildings: { ...state.buildings, [buildingId]: newOwned },
+    sources: { ...state.sources, [sourceId]: newOwned },
   };
 
-  // Building-specific achievements
-  if (buildingId === 'moodCandle' && newOwned === 1) newState = grantAchievement(newState, 'firstCandle');
-  if (buildingId === 'goonCave' && newOwned === 1) newState = grantAchievement(newState, 'caveDweller');
-  if (buildingId === 'blissSingularity' && newOwned === 1) newState = grantAchievement(newState, 'singularity');
+  // Source-specific achievements
+  if (sourceId === 'moodCandle' && newOwned === 1) newState = grantAchievement(newState, 'firstCandle');
+  if (sourceId === 'moodCandle' && newOwned >= 1000) newState = grantAchievement(newState, 'candleObsession');
+  if (sourceId === 'therapy' && newOwned >= 100) newState = grantAchievement(newState, 'therapyRich');
+  if (sourceId === 'goonCave' && newOwned === 1) newState = grantAchievement(newState, 'caveDweller');
+  if (sourceId === 'blissSingularity' && newOwned === 1) newState = grantAchievement(newState, 'singularity');
+  if (sourceId === 'napPod' && newOwned >= 100) newState = grantAchievement(newState, 'napPodArmy');
+  if (sourceId === 'zenGarden' && newOwned === 1) newState = grantAchievement(newState, 'zenGardenUnlock');
+  if (sourceId === 'omniscientSpa' && newOwned === 1) newState = grantAchievement(newState, 'omniscientSpaUnlock');
+  if (sourceId === 'sweetTreat' && newOwned === 1) newState = grantAchievement(newState, 'bobaAddiction');
+  if (sourceId === 'sweetTreat' && newOwned >= 10) newState = grantAchievement(newState, 'tenSweetTreats');
+  if (sourceId === 'retailTherapy' && newOwned >= 100) newState = grantAchievement(newState, 'studiousHaul');
+  if (sourceId === 'soundBath' && newOwned === 1) newState = grantAchievement(newState, 'soundBathFirst');
+  if (sourceId === 'artGallery' && newOwned === 1) newState = grantAchievement(newState, 'artGalleryFirst');
+  if (sourceId === 'artGallery' && newOwned >= 100) newState = grantAchievement(newState, 'artCollector');
 
-  // allBuildings: every building type owned >= 1
-  const allBuildings = Object.values(newState.buildings).every((count) => count >= 1);
-  if (allBuildings) newState = grantAchievement(newState, 'allBuildings');
+  // allSources: every source type owned >= 1
+  const allSources = Object.values(newState.sources).every((count) => count >= 1);
+  if (allSources) newState = grantAchievement(newState, 'allSources');
 
-  // tenOfEach: every building type owned >= 10
-  const tenOfEach = Object.values(newState.buildings).every((count) => count >= 10);
+  // tenOfEach: every source type owned >= 10
+  const tenOfEach = Object.values(newState.sources).every((count) => count >= 10);
   if (tenOfEach) newState = grantAchievement(newState, 'tenOfEach');
 
-  // fiftyOfOne: any single building >= 50
+  // fiftyOfOne: any single source >= 50
   if (newOwned >= 50) newState = grantAchievement(newState, 'fiftyOfOne');
+
+  // hundredOfOne: any single source >= 100
+  if (newOwned >= 100) newState = grantAchievement(newState, 'hundredOfOne');
+
+  // twoHundredOfOne: any single source >= 200
+  if (newOwned >= 200) newState = grantAchievement(newState, 'twoHundredOfOne');
+
+  // fiveHundredOfOne: any single source >= 500
+  if (newOwned >= 500) newState = grantAchievement(newState, 'fiveHundredOfOne');
+
+  // thousandOfOne: any single source >= 1000
+  if (newOwned >= 1000) newState = grantAchievement(newState, 'thousandOfOne');
+
+  // allPostPrestige: every post-prestige source owned >= 1 (only if prestigeCount >= 1)
+  if (state.prestigeCount >= 1) {
+    const postPrestigeSources: SourceId[] = [
+      'zenGarden', 'euphoriaSprings', 'serenityEngine',
+      'raptureCathedral', 'cosmicJacuzzi', 'omniscientSpa',
+    ];
+    const allPostPrestige = postPrestigeSources.every(
+      (id) => (newState.sources[id] ?? 0) >= 1
+    );
+    if (allPostPrestige) newState = grantAchievement(newState, 'allPostPrestige');
+  }
 
   return newState;
 }
-export function doBuyBuildingN(state: GameState, buildingId: BuildingId, n: number): GameState {
+export function doBuySourceN(state: GameState, SourceId: SourceId, n: number): GameState {
   let current = state;
   for (let i = 0; i < n; i++) {
-    const next = doBuyBuilding(current, buildingId);
+    const next = doBuySource(current, SourceId);
     if (next === current) break; // can't afford more
     current = next;
   }
@@ -203,13 +274,33 @@ export function doEquipRelic(state: GameState, relicId: RelicId): GameState {
   if (state.activeRelics.includes(relicId)) return state;
   if (state.activeRelics.length >= state.maxRelicSlots) return state;
 
+  const newHistory = new Set(state.equippedRelicsHistory);
+  newHistory.add(relicId);
+
   let newState: GameState = {
     ...state,
     karma: state.karma - def.karmaCost,
     activeRelics: [...state.activeRelics, relicId],
+    equippedRelicsHistory: Array.from(newHistory),
   };
 
   newState = grantAchievement(newState, 'firstRelic');
+
+  // Check if all 20 relics have been equipped
+  if (newHistory.size >= 20) {
+    newState = grantAchievement(newState, 'allRelics');
+  }
+
+  // Check if they have philosopher's stone
+  if (relicId === 'philosophersStone') {
+    newState = grantAchievement(newState, 'philosophersStone');
+  }
+
+  // Check if all slots are filled
+  if (newState.activeRelics.length >= newState.maxRelicSlots) {
+    newState = grantAchievement(newState, 'maxRelics');
+  }
+
   return newState;
 }
 
@@ -229,14 +320,15 @@ export function doUnequipRelic(state: GameState, relicId: RelicId): GameState {
 export function doTriggerPilgrimage(state: GameState): GameState {
   if (state.pilgrimageActive || state.pilgrimageCooldown > 0) return state;
 
-  let newState: GameState = {
+  const duration = state.activeRelics.includes('nappingCat') ? 60 : 120;
+
+  const newState: GameState = {
     ...state,
     pilgrimageActive: true,
-    pilgrimageTimer: 120,
+    pilgrimageTimer: duration,
     lastClickTime: Date.now(), // prevent idle bonus triggering mid-pilgrimage
   };
 
-  newState = grantAchievement(newState, 'pilgrimageFirst');
   return newState;
 }
 
@@ -249,10 +341,12 @@ export function doMakePilgrimageReady(state: GameState): boolean {
 
 export function doPassVibeCheck(state: GameState): GameState {
   const multiplier = state.activeRelics.includes('vibeCrystal') ? 2.3 : 1.15;
+  // zenBell relic: vibe check buffs last 2× longer
+  const vibeDuration = state.activeRelics.includes('zenBell') ? 120 : 60;
   const vibeBuff: TimedBuff = {
     id: 'vibe',
     hpsMultiplier: multiplier,
-    remainingSeconds: 60,
+    remainingSeconds: vibeDuration,
   };
 
   // Reset timer to 180–420 seconds
@@ -262,9 +356,11 @@ export function doPassVibeCheck(state: GameState): GameState {
     ...state,
     vibeBuff,
     vibeCheckTimer: newVibeCheckTimer,
+    totalVibeChecks: state.totalVibeChecks + 1,
   };
 
   newState = grantAchievement(newState, 'vibeCheck');
+  if (newState.totalVibeChecks >= 10) newState = grantAchievement(newState, 'vibeCheckTen');
   return newState;
 }
 
@@ -273,7 +369,7 @@ export function doPassVibeCheck(state: GameState): GameState {
 export function doTriggerTranscendence(state: GameState): GameState {
   if (!computeCanTranscend(state)) return state;
 
-  const shardsEarned = computeBlissShards(state.lifetimeHappiness, state.wheelPurchased);
+  const shardsEarned = computeBlissShards(state);
   const newBlissShards = state.blissShards + shardsEarned;
   const newPrestigeCount = state.prestigeCount + 1;
   const newSamsaraGiftStacks = Math.min(20, state.samsaraGiftStacks + 1);
@@ -301,22 +397,95 @@ export function doTriggerTranscendence(state: GameState): GameState {
   // Karmically retained resources
   const retainedKarma = state.wheelPurchased.has('karmicVessel') ? state.karma : 0;
 
-  const newState = makeInitialState({
+  // Compute values from prior run needed for wheel effects
+  const prevPeakHappiness = state.peakHappiness;
+  const prevHPS = computeTotalHPS(state);
+
+  // Build initial source overrides
+  const startingSources = { ...INITIAL_SOURCES };
+
+  // deepRoots: start with 5 copies of first 5 sources
+  if (state.wheelPurchased.has('deepRoots')) {
+    startingSources.moodCandle = Math.max(startingSources.moodCandle, 5);
+    startingSources.napPod = Math.max(startingSources.napPod, 5);
+    startingSources.snackBar = Math.max(startingSources.snackBar, 5);
+    startingSources.sweetTreat = Math.max(startingSources.sweetTreat, 5);
+    startingSources.hotTub = Math.max(startingSources.hotTub, 5);
+  }
+
+  // eternalFoundation: start with 5 of every source
+  if (state.wheelPurchased.has('eternalFoundation')) {
+    for (const id of Object.keys(startingSources) as SourceId[]) {
+      startingSources[id] = Math.max(startingSources[id], 5);
+    }
+  }
+
+  // karmicOverflow: +2 max relic slots
+  const bonusRelicSlots = state.wheelPurchased.has('karmicOverflow') ? 2 : 0;
+
+  // theRemembering: if NOT purchased, milestones reset on prestige
+  const retainedMilestones = state.wheelPurchased.has('theRemembering')
+    ? new Set(state.milestones)
+    : new Set<string>();
+
+  // Build starting timed buffs
+  const startingBuffs: TimedBuff[] = [];
+  if (state.wheelPurchased.has('rememberedJoy')) {
+    startingBuffs.push({ id: 'rememberedJoy', hpsMultiplier: 5, remainingSeconds: 60 });
+  }
+  if (state.wheelPurchased.has('theSecondComing')) {
+    startingBuffs.push({ id: 'theSecondComing', hpsMultiplier: 10, remainingSeconds: 600 });
+  }
+  if (state.wheelPurchased.has('blissOverdrive')) {
+    startingBuffs.push({ id: 'blissOverdrive', hpsMultiplier: 100, remainingSeconds: 300 });
+  }
+
+  // reincarnatedWealthier: start with 1% of previous peak happiness
+  const wealthierBonus = state.wheelPurchased.has('reincarnatedWealthier')
+    ? prevPeakHappiness * 0.01
+    : 0;
+
+  // nirvanaBlueprint: start with happiness = 50% of 1 minute of peak HPS
+  const nirvanaBlueprintBonus = state.wheelPurchased.has('nirvanaBlueprint')
+    ? prevHPS * 60 * 0.5
+    : 0;
+
+  const startingHappiness = wealthierBonus + nirvanaBlueprintBonus;
+
+  let newState = makeInitialState({
     blissShards: newBlissShards,
     wheelPurchased: new Set(state.wheelPurchased),
     achievements: new Set(state.achievements),
-    milestones: new Set(state.milestones),
+    milestones: retainedMilestones,
     prestigeCount: newPrestigeCount,
     samsaraGiftStacks: newSamsaraGiftStacks,
     karma: retainedKarma,
     peakKarma: retainedKarma,
     upgrades: retainedUpgrades,
+    sources: startingSources,
+    happiness: startingHappiness,
+    maxRelicSlots: 3 + bonusRelicSlots,
+    activeBuffs: startingBuffs,
     // Preserve user preferences
     theme: state.theme,
     numberFormat: state.numberFormat,
     soundEnabled: state.soundEnabled,
-    soundVolume: state.soundVolume,
+    musicVolume: state.musicVolume,
+    sfxVolume: state.sfxVolume,
   });
+
+  // Grant prestige achievements
+  newState = grantAchievement(newState, 'firstPrestige');
+  if (newPrestigeCount >= 5) newState = grantAchievement(newState, 'fivePrestige');
+  if (newPrestigeCount >= 10) newState = grantAchievement(newState, 'tenPrestige');
+  if (newPrestigeCount >= 20) newState = grantAchievement(newState, 'twentyPrestige');
+  if (newPrestigeCount >= 30) newState = grantAchievement(newState, 'thirtyPrestige');
+  if (newPrestigeCount >= 50) newState = grantAchievement(newState, 'fiftyPrestige');
+
+  // speedPrestige: first prestige in under 30 minutes
+  if (newPrestigeCount === 1 && state.totalPlaytime < 1800) {
+    newState = grantAchievement(newState, 'speedPrestige');
+  }
 
   return newState;
 }
@@ -335,11 +504,34 @@ export function doPurchaseWheelUpgrade(state: GameState, upgradeId: string): Gam
     if (!requirementsMet) return state;
   }
 
-  return {
+  const newWheelPurchased = new Set([...state.wheelPurchased, upgradeId]);
+
+  let newState: GameState = {
     ...state,
     blissShards: state.blissShards - def.shardCost,
-    wheelPurchased: new Set([...state.wheelPurchased, upgradeId]),
+    wheelPurchased: newWheelPurchased,
   };
+
+  // Wheel achievements
+  newState = grantAchievement(newState, 'firstWheelUpgrade');
+
+  // karmicOverflow: immediately grant +2 relic slots
+  if (upgradeId === 'karmicOverflow') {
+    newState = { ...newState, maxRelicSlots: newState.maxRelicSlots + 2 };
+  }
+
+  // Check if all tier 4 upgrades are purchased (fullWheel)
+  const tier4Upgrades = [
+    'templeEternal',
+    'infiniteWheel',
+    'nirvanaBlueprint',
+    'divineMemory',
+    'autoBuyer2',
+  ];
+  const hasAllTier4 = tier4Upgrades.every((id) => newWheelPurchased.has(id));
+  if (hasAllTier4) newState = grantAchievement(newState, 'fullWheel');
+
+  return newState;
 }
 
 // ─── Events ───────────────────────────────────────────────────────────────────
@@ -363,7 +555,35 @@ export function doResolveEvent(
     return { ...state, pendingEvent: null, showEventModal: false };
   }
 
-  let newState: GameState = { ...state, pendingEvent: null, showEventModal: false };
+  // Build effect summary lines
+  const effectSummary: string[] = [];
+
+  let newState: GameState = {
+    ...state,
+    pendingEvent: null,
+    showEventModal: false,
+    totalEventsResolved: state.totalEventsResolved + 1,
+  };
+
+  // Track epicurusApproved
+  if (eventDef.type === 'philosophical' && eventDef.choices) {
+    const choice = eventDef.choices[choiceIndex];
+    if (choice) {
+      const isFrugal = [
+        'Agree with him',
+        'Rest instead',
+        'I need it to be real.',
+        'Yes. It is enough.'
+      ].includes(choice.label);
+
+      if (isFrugal) {
+        newState.epicurusApprovedCount += 1;
+        if (newState.epicurusApprovedCount >= 5) {
+          newState = grantAchievement(newState, 'epicurusApproved');
+        }
+      }
+    }
+  }
 
   // Apply happiness bonus
   if (effect.happinessBonus !== undefined) {
@@ -371,8 +591,10 @@ export function doResolveEvent(
     if (effect.happinessBonus > 0 && effect.happinessBonus < 10) {
       // Treat as "minutes of HPS"
       bonusHP = computeTotalHPS(state) * effect.happinessBonus * 60;
+      effectSummary.push(`+${Math.floor(bonusHP)} happiness (${effect.happinessBonus} min of income)`);
     } else {
       bonusHP = effect.happinessBonus;
+      effectSummary.push(`+${Math.floor(bonusHP)} happiness`);
     }
     newState = {
       ...newState,
@@ -387,6 +609,8 @@ export function doResolveEvent(
     effect.hpsMultiplier !== undefined &&
     effect.hpsMultiplierDuration !== undefined
   ) {
+    const durationMinutes = Math.round(effect.hpsMultiplierDuration / 60);
+    effectSummary.push(`×${effect.hpsMultiplier} HPS for ${durationMinutes} min`);
     const buff: TimedBuff = {
       id: `event_${eventId}_${Date.now()}`,
       hpsMultiplier: effect.hpsMultiplier,
@@ -397,11 +621,14 @@ export function doResolveEvent(
 
   // Apply karma bonus
   if (effect.karmaBonus !== undefined) {
+    effectSummary.push(`+${effect.karmaBonus} karma`);
     newState = { ...newState, karma: newState.karma + effect.karmaBonus };
   }
 
   // Apply permanent HPS %
   if (effect.permanentHPSPercent !== undefined) {
+    const percent = Math.round(effect.permanentHPSPercent * 100);
+    effectSummary.push(`+${percent}% permanent HPS`);
     newState = {
       ...newState,
       permanentHPSBonus: newState.permanentHPSBonus + effect.permanentHPSPercent,
@@ -410,6 +637,8 @@ export function doResolveEvent(
 
   // Apply permanent HPC %
   if (effect.permanentHPCPercent !== undefined) {
+    const percent = Math.round(effect.permanentHPCPercent * 100);
+    effectSummary.push(`+${percent}% permanent HPC`);
     newState = {
       ...newState,
       permanentHPCBonus: newState.permanentHPCBonus + effect.permanentHPCPercent,
@@ -417,6 +646,15 @@ export function doResolveEvent(
   }
 
   newState = grantAchievement(newState, 'eventResolved');
+  if (newState.totalEventsResolved >= 50) newState = grantAchievement(newState, 'eventsFifty');
+
+  // Store event effect for display (show for 5 seconds)
+  newState.lastEventEffect = {
+    title: eventDef.title,
+    summary: effectSummary,
+    expiresAt: Date.now() + 5000,
+  };
+
   return newState;
 }
 
@@ -450,4 +688,4 @@ export function doMakeOffering(state: GameState, tier: 1 | 2 | 3): GameState {
 
 // Suppress unused import warning — EVENTS used at runtime when EVENT_MAP is populated
 void EVENTS;
-void BUILDING_MAP;
+void SOURCE_MAP;

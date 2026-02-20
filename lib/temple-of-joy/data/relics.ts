@@ -74,7 +74,7 @@ export const RELICS: RelicDef[] = [
   {
     id: 'hymnalOfExcess',
     name: 'The Hymnal of Excess',
-    description: 'Each building type gains ×1.01^owned compound bonus (per type).',
+    description: 'Each source type gains ×1.01^owned compound bonus (per type).',
     flavorText: '"Sung louder with every verse. Verse count: increasing."',
     karmaCost: 1200,
   },
@@ -96,7 +96,7 @@ export const RELICS: RelicDef[] = [
   {
     id: 'lighthouseOfJoy',
     name: 'Lighthouse of Joy',
-    description: '×3 HPS for all post-prestige buildings.',
+    description: '×3 HPS for all post-prestige sources.',
     flavorText: '"A beacon visible across lifetimes. Check-in is eternal."',
     karmaCost: 6000,
   },
@@ -113,6 +113,35 @@ export const RELICS: RelicDef[] = [
     description: 'Each prestige permanently adds +2% HPS (uncapped).',
     flavorText: '"Grateful for every cycle. More grateful each time."',
     karmaCost: 12000,
+  },
+  // ── New Relics ────────────────────────────────────────────────────────────
+  {
+    id: 'bubbleTeaCard',
+    name: 'Bubble Tea Loyalty Card',
+    description: '×3 Sweet Treat HPS.',
+    flavorText: '"Tenth cup free. You have lost count of how many free cups you\'ve received."',
+    karmaCost: 80,
+  },
+  {
+    id: 'cozyPlaylist',
+    name: 'The Playlist (Correct)',
+    description: '+15% global HPS.',
+    flavorText: '"Every song was right. In order. Nobody knows how."',
+    karmaCost: 200,
+  },
+  {
+    id: 'zenBell',
+    name: 'The Zen Bell',
+    description: 'Vibe Check buffs last 2× longer. +1 karma/s permanently.',
+    flavorText: '"One strike. Reverberates forever."',
+    karmaCost: 450,
+  },
+  {
+    id: 'nappingCat',
+    name: 'The Napping Cat',
+    description: 'Pilgrimage duration −50%. Pilgrimage burst ×2.',
+    flavorText: '"It knows. It naps anyway. This is the lesson."',
+    karmaCost: 130,
   },
 ];
 

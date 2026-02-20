@@ -1,7 +1,7 @@
 import type { AchievementDef } from '@/lib/temple-of-joy/types';
 
 export const ACHIEVEMENTS: AchievementDef[] = [
-  // ─── Building Milestones ───────────────────────────────────────────────────
+  // ─── Source Milestones ───────────────────────────────────────────────────
 
   {
     id: 'firstCandle',
@@ -34,27 +34,27 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     flavor: 'Physics: concerned.',
   },
   {
-    id: 'allBuildings',
+    id: 'allSources',
     name: 'Full Temple',
-    description: 'Own at least 1 of every building.',
+    description: 'Own at least 1 of every source.',
     flavor: 'The temple is complete.',
   },
   {
     id: 'tenOfEach',
     name: 'Devout Builder',
-    description: 'Own 10 of every building.',
+    description: 'Own 10 of every source.',
     flavor: 'Committed.',
   },
   {
     id: 'fiftyOfOne',
     name: 'True Believer',
-    description: 'Own 50 of any one building.',
+    description: 'Own 50 of any one source.',
     flavor: 'Choose your idol wisely.',
   },
   {
     id: 'hundredOfOne',
     name: 'Zealot',
-    description: 'Own 100 of any one building.',
+    description: 'Own 100 of any one source.',
     flavor: 'No notes.',
   },
   {
@@ -140,26 +140,26 @@ export const ACHIEVEMENTS: AchievementDef[] = [
 
   {
     id: 'firstPrestige',
-    name: 'Enlightenment (Partial)',
-    description: 'Prestige for the first time.',
+    name: 'First Transcendence',
+    description: 'Transcend for the first time.',
     flavor: 'The wheel turns.',
   },
   {
     id: 'fivePrestige',
-    name: 'The Eternal Return',
-    description: 'Prestige 5 times.',
+    name: 'Five Cycles',
+    description: 'Transcend 5 times.',
     flavor: 'Each time: warmer.',
   },
   {
     id: 'tenPrestige',
-    name: 'Enlightenment (Complete)',
-    description: 'Prestige 10 times.',
+    name: 'Ten Cycles',
+    description: 'Transcend 10 times.',
     flavor: 'The wheel has turned.',
   },
   {
     id: 'twentyPrestige',
     name: 'The Wheel Master',
-    description: 'Prestige 20 times.',
+    description: 'Transcend 20 times.',
     flavor: "You've lost count. The wheel has not.",
   },
 
@@ -333,24 +333,24 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     hidden: true,
   },
 
-  // ─── Extended Building Milestones ──────────────────────────────────────────
+  // ─── Extended Source Milestones ──────────────────────────────────────────
 
   {
     id: 'twoHundredOfOne',
     name: 'Surplus',
-    description: 'Own 200 of any one building.',
+    description: 'Own 200 of any one source.',
     flavor: 'Supply exceeds demand. Demand increases anyway.',
   },
   {
     id: 'fiveHundredOfOne',
     name: 'Industrial Devotion',
-    description: 'Own 500 of any one building.',
-    flavor: 'This building is your personality now.',
+    description: 'Own 500 of any one source.',
+    flavor: 'This source is your personality now.',
   },
   {
     id: 'thousandOfOne',
     name: 'Monomaniac',
-    description: 'Own 1,000 of any one building.',
+    description: 'Own 1,000 of any one source.',
     flavor: 'Obsession, but make it architecture.',
   },
   {
@@ -368,8 +368,44 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   {
     id: 'allPostPrestige',
     name: 'Beyond the Veil',
-    description: 'Own at least 1 of every post-prestige building.',
+    description: 'Own at least 1 of every post-prestige source.',
     flavor: 'The new world opens.',
+  },
+  {
+    id: 'bobaAddiction',
+    name: 'Boba Addiction',
+    description: 'Buy your first Sweet Treat.',
+    flavor: 'One cup. That was the deal. The deal was a lie.',
+  },
+  {
+    id: 'studiousHaul',
+    name: 'The Studious Haul',
+    description: 'Own 100 Retail Therapy sessions.',
+    flavor: 'You said you were just browsing. The receipts disagree.',
+  },
+  {
+    id: 'soundBathFirst',
+    name: 'The Bowl Rings',
+    description: 'Buy your first Sound Bath.',
+    flavor: 'Everything vibrated. You vibrated. Peak vibe.',
+  },
+  {
+    id: 'artGalleryFirst',
+    name: 'Culture Acquired',
+    description: 'Buy your first Art Gallery.',
+    flavor: 'You said you understood it. You were correct.',
+  },
+  {
+    id: 'tenSweetTreats',
+    name: 'Boba Empire',
+    description: 'Own 10 Sweet Treats.',
+    flavor: 'You have a loyalty card. It is full. You have ten loyalty cards.',
+  },
+  {
+    id: 'artCollector',
+    name: 'Art Collector',
+    description: 'Own 100 Art Galleries.',
+    flavor: 'The curator: you. The collection: unprecedented. The critics: silent.',
   },
 
   // ─── Extended Happiness Milestones ─────────────────────────────────────────
@@ -422,13 +458,13 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   {
     id: 'thirtyPrestige',
     name: 'The Spiral',
-    description: 'Prestige 30 times.',
+    description: 'Transcend 30 times.',
     flavor: 'Down? Up? Neither. Both.',
   },
   {
     id: 'fiftyPrestige',
     name: 'Eternal Pilgrim',
-    description: 'Prestige 50 times.',
+    description: 'Transcend 50 times.',
     flavor: 'The wheel spins freely now. You are the wheel.',
   },
 

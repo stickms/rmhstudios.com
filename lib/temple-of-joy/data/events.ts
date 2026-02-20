@@ -22,8 +22,7 @@ export const EVENTS: GameEventDef[] = [
     type: 'blessing',
     title: 'Found: $20',
     body: "In an old jacket pocket. It was always there. Happiness, too, was always there.",
-    // happinessBonus: 0 — game engine treats this as 5 minutes of current HPS
-    effect: { happinessBonus: 0 },
+    effect: { happinessBonus: 5 },
   },
   {
     id: 'perfectNap',
@@ -133,7 +132,7 @@ export const EVENTS: GameEventDef[] = [
     id: 'epicurusVisit',
     type: 'philosophical',
     title: 'Epicurus Walks In',
-    body: "'Excess diminishes the feast,' he says, gesturing at your buildings.",
+    body: "'Excess diminishes the feast,' he says, gesturing at your sources.",
     choices: [
       { label: 'Agree with him',            effect: { karmaBonus: 30 } },
       { label: 'Order the large plate anyway', effect: { happinessBonus: 1000 } },
@@ -163,7 +162,7 @@ export const EVENTS: GameEventDef[] = [
     id: 'hedonismQuestion',
     type: 'philosophical',
     title: 'The Question',
-    body: "'Is happiness enough?' You consider this. The buildings hum softly behind you.",
+    body: "'Is happiness enough?' You consider this. The sources hum softly behind you.",
     choices: [
       { label: 'Yes. It is enough.', effect: { permanentHPSPercent: 0.1, karmaBonus: 10 } },
       { label: 'There must be more.', effect: { karmaBonus: 40, hpsMultiplierDuration: 1800, hpsMultiplier: 3 } },

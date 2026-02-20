@@ -13,7 +13,7 @@ interface TabDef {
 
 const TABS: TabDef[] = [
   { id: 'temple',       label: 'Temple',       icon: '🛕'  },
-  { id: 'buildings',    label: 'Sources',      icon: '🌿'  },
+  { id: 'sources',      label: 'Sources',      icon: '🌿'  },
   { id: 'upgrades',     label: 'Upgrades',     icon: '⬆️'  },
   { id: 'relics',       label: 'Relics',       icon: '💍'  },
   { id: 'wheel',        label: 'Wheel',        icon: '🔄'  },

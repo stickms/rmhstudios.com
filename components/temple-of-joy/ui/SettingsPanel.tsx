@@ -6,8 +6,14 @@ import { saveToServer } from '@/lib/temple-of-joy/persistence';
 export default function SettingsPanel() {
   const theme = useTempleStore((s) => s.theme);
   const numberFormat = useTempleStore((s) => s.numberFormat);
+  const soundEnabled = useTempleStore((s) => s.soundEnabled);
+  const musicVolume = useTempleStore((s) => s.musicVolume);
+  const sfxVolume = useTempleStore((s) => s.sfxVolume);
   const setTheme = useTempleStore((s) => s.setTheme);
   const setNumberFormat = useTempleStore((s) => s.setNumberFormat);
+  const setSoundEnabled = useTempleStore((s) => s.setSoundEnabled);
+  const setMusicVolume = useTempleStore((s) => s.setMusicVolume);
+  const setSfxVolume = useTempleStore((s) => s.setSfxVolume);
   const resetRun = useTempleStore((s) => s.resetRun);
   const state = useTempleStore((s) => s);
 
@@ -94,6 +100,63 @@ export default function SettingsPanel() {
               </button>
             ))}
           </div>
+        </div>
+      </div>
+
+      {/* Sound */}
+      <div className={sectionCls} style={{ ...surface, ...border }}>
+        <p className={labelCls}>Sound</p>
+
+        {/* Master toggle */}
+        <div className={rowCls}>
+          <span className="text-sm">Sound</span>
+          <button
+            onClick={() => setSoundEnabled(!soundEnabled)}
+            className="px-3 py-1 rounded-lg text-xs font-semibold border transition-colors"
+            style={pillBtn(soundEnabled)}
+          >
+            {soundEnabled ? '🔊 On' : '🔇 Off'}
+          </button>
+        </div>
+
+        {/* Music volume */}
+        <div className="space-y-1">
+          <div className={rowCls}>
+            <span className="text-sm">Music</span>
+            <span className="text-xs opacity-60">{Math.round(musicVolume * 100)}%</span>
+          </div>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            value={Math.round(musicVolume * 100)}
+            onChange={(e) => setMusicVolume(Number(e.target.value) / 100)}
+            className="w-full h-2 rounded-lg appearance-none cursor-pointer"
+            style={{
+              accentColor: dark ? '#d4a847' : '#8b6914',
+              background: dark ? '#1a120b' : '#e8dcc8',
+            }}
+          />
+        </div>
+
+        {/* SFX volume */}
+        <div className="space-y-1">
+          <div className={rowCls}>
+            <span className="text-sm">SFX</span>
+            <span className="text-xs opacity-60">{Math.round(sfxVolume * 100)}%</span>
+          </div>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            value={Math.round(sfxVolume * 100)}
+            onChange={(e) => setSfxVolume(Number(e.target.value) / 100)}
+            className="w-full h-2 rounded-lg appearance-none cursor-pointer"
+            style={{
+              accentColor: dark ? '#d4a847' : '#8b6914',
+              background: dark ? '#1a120b' : '#e8dcc8',
+            }}
+          />
         </div>
       </div>
 

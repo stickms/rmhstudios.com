@@ -4,11 +4,11 @@
 
 // ─── IDs ─────────────────────────────────────────────────────────────────────
 
-export type BuildingId =
-  | 'moodCandle' | 'napPod' | 'snackBar' | 'hotTub'
-  | 'massageStudio' | 'gratitudeJournal' | 'goonCave' | 'joyCult'
-  | 'spaSanctum' | 'therapy' | 'pleasurePalace' | 'dopamineLab'
-  | 'hedonistMonastery' | 'feastHall' | 'nirvanaResort'
+export type SourceId =
+  | 'moodCandle' | 'napPod' | 'snackBar' | 'sweetTreat' | 'hotTub'
+  | 'massageStudio' | 'retailTherapy' | 'gratitudeJournal' | 'goonCave' | 'joyCult'
+  | 'spaSanctum' | 'soundBath' | 'therapy' | 'pleasurePalace' | 'dopamineLab'
+  | 'artGallery' | 'hedonistMonastery' | 'feastHall' | 'nirvanaResort'
   | 'eternalParty' | 'heavenOnEarth' | 'blissSingularity'
   | 'zenGarden' | 'euphoriaSprings' | 'serenityEngine'
   | 'raptureCathedral' | 'cosmicJacuzzi' | 'omniscientSpa';
@@ -20,7 +20,8 @@ export type RelicId =
   | 'epicurusRing' | 'laurelCrown' | 'incenseOfAncients' | 'stuffedPillow'
   | 'goldenFork' | 'confessionBooth' | 'vibeCrystal' | 'philosophersStone'
   | 'warmBlanket' | 'sacredLedger' | 'hymnalOfExcess' | 'eternalNap'
-  | 'karmaResonator' | 'lighthouseOfJoy' | 'temporalComfort' | 'infiniteGratitude';
+  | 'karmaResonator' | 'lighthouseOfJoy' | 'temporalComfort' | 'infiniteGratitude'
+  | 'bubbleTeaCard' | 'cozyPlaylist' | 'zenBell' | 'nappingCat';
 
 export type EventType = 'blessing' | 'choice' | 'philosophical';
 
@@ -28,8 +29,8 @@ export type WheelTier = 1 | 2 | 3 | 4 | 5;
 
 // ─── Data Definitions ────────────────────────────────────────────────────────
 
-export interface BuildingDef {
-  id: BuildingId;
+export interface SourceDef {
+  id: SourceId;
   name: string;
   tagline: string;
   icon: string;
@@ -49,10 +50,10 @@ export interface UpgradeDef {
   flavor: string;
   path: UpgradePath;
   cost: number;
-  /** Which buildings' HPS this boosts (undefined = all) */
-  targetBuildings?: BuildingId[];
-  /** Multiplier applied to targetBuildings HPS */
-  buildingMultiplier?: number;
+  /** Which sources' HPS this boosts (undefined = all) */
+  targetSources?: SourceId[];
+  /** Multiplier applied to targetSources HPS */
+  sourceMultiplier?: number;
   /** Flat HPC addition */
   hpcBonus?: number;
   /** HPC multiplier */
@@ -65,8 +66,8 @@ export interface UpgradeDef {
   karmaBonus?: number;
   /** Karma per second multiplier */
   karmaRateMultiplier?: number;
-  /** Requires this many of a building to unlock */
-  requiresBuilding?: Partial<Record<BuildingId, number>>;
+  /** Requires this many of a source to unlock */
+  requiresSource?: Partial<Record<SourceId, number>>;
   /** Requires prestige count >= value */
   requiresPrestige?: number;
   /** Requires specific upgrade purchased first */
@@ -79,8 +80,8 @@ export interface SynergyDef {
   id: string;
   name: string;
   flavor: string;
-  requirements: Partial<Record<BuildingId, number>>;
-  targetBuildings: BuildingId[];
+  requirements: Partial<Record<SourceId, number>>;
+  targetSources: SourceId[];
   multiplier: number;
 }
 
@@ -163,8 +164,8 @@ export interface GameState {
   karma: number;
   blissShards: number;
 
-  // ── Buildings ──
-  buildings: Record<BuildingId, number>;
+  // ── Sources ──
+  sources: Record<SourceId, number>;
 
   // ── Upgrades (purchased IDs) ──
   upgrades: Set<string>;
@@ -172,6 +173,7 @@ export interface GameState {
   // ── Relics ──
   activeRelics: RelicId[];
   maxRelicSlots: number;
+  equippedRelicsHistory: RelicId[]; // tracking for `allRelics` achievement
 
   // ── Prestige ──
   prestigeCount: number;
@@ -182,8 +184,14 @@ export interface GameState {
   // ── Meta ──
   lastSaved: number;               // Unix ms timestamp
   totalPlaytime: number;           // seconds
+  totalClicks: number;             // total button clicks (for achievements)
+  totalPilgrimages: number;        // total pilgrimages completed
+  totalVibeChecks: number;         // total vibe checks passed
+  totalEventsResolved: number;     // total events resolved
   achievements: Set<string>;
   milestones: Set<string>;
+  pilgrimageStreak: number;        // consecutive pilgrimages without clicking
+  epicurusApprovedCount: number;   // number of frugal philosophical choices made
 
   // ── Hedonic Treadmill ──
   baselineHappiness: number;
@@ -198,6 +206,12 @@ export interface GameState {
   recentClickTimes: number[];      // timestamps (ms) of last 7 clicks for ritual detection
   eventTimer: number;              // seconds until next random event
   pendingEvent: string | null;     // ID of event waiting to be shown
+  autoBuyTimer: number;            // seconds until next auto-buy attempt
+  lastEventEffect: {               // effect from last resolved event (for display)
+    title: string;
+    summary: string[];             // lines describing what happened
+    expiresAt: number;             // ms timestamp when to hide
+  } | null;
 
   // ── Timed Buffs ──
   activeBuffs: TimedBuff[];
@@ -220,12 +234,13 @@ export interface GameState {
   theme: 'light' | 'dark';
   numberFormat: 'abbreviated' | 'scientific';
   soundEnabled: boolean;
-  soundVolume: number;
+  musicVolume: number;
+  sfxVolume: number;
 
   // ── UI ──
-  activeTab: 'temple' | 'buildings' | 'upgrades' | 'relics' | 'wheel' | 'achievements' | 'settings';
+  activeTab: 'temple' | 'sources' | 'upgrades' | 'relics' | 'wheel' | 'achievements' | 'settings';
   upgradePathFilter: UpgradePath | 'all';
-  buildingBuyQty: 1 | 10 | 100 | 'max';
+  sourceBuyQty: 1 | 10 | 100 | 'max';
   showTranscendenceModal: boolean;
   showOfflineModal: boolean;
   showEventModal: boolean;
@@ -242,24 +257,43 @@ export interface SaveData {
   peakKarma: number;
   karma: number;
   blissShards: number;
-  buildings: Record<BuildingId, number>;
+  sources: Record<SourceId, number>;
   upgrades: string[];
   activeRelics: RelicId[];
   maxRelicSlots: number;
+  equippedRelicsHistory: RelicId[];
   prestigeCount: number;
   wheelPurchased: string[];
   samsaraGiftStacks: number;
   lastSaved: number;
   totalPlaytime: number;
+  totalClicks: number;
+  totalPilgrimages: number;
+  totalVibeChecks: number;
+  totalEventsResolved: number;
   achievements: string[];
   milestones: string[];
+  pilgrimageStreak: number;
+  epicurusApprovedCount: number;
   baselineHappiness: number;
   pilgrimageCooldown: number;
+  pilgrimageActive: boolean;
+  pilgrimageTimer: number;
+  autoBuyTimer: number;
   permanentHPSBonus: number;
   permanentHPCBonus: number;
   theme: 'light' | 'dark';
   numberFormat: 'abbreviated' | 'scientific';
-  buildingBuyQty: 1 | 10 | 100 | 'max';
+  sourceBuyQty: 1 | 10 | 100 | 'max';
   soundEnabled: boolean;
-  soundVolume: number;
+  musicVolume: number;
+  sfxVolume: number;
+
+  // Deprecated fields (backwards compat with old saves)
+  /** @deprecated Use sources instead */
+  buildings?: Record<SourceId, number>;
+  /** @deprecated Use musicVolume/sfxVolume instead */
+  soundVolume?: number;
+  /** @deprecated Use sourceBuyQty instead */
+  buildingBuyQty?: 1 | 10 | 100 | 'max';
 }

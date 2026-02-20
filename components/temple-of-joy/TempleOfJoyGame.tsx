@@ -2,11 +2,12 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { saveDataToState, computeOfflineProgress, useAutoSave, saveToServer } from '@/lib/temple-of-joy/persistence';
+import { templeAudio } from '@/lib/temple-of-joy/audio';
 import type { SaveData } from '@/lib/temple-of-joy/types';
 import TabBar from '@/components/temple-of-joy/ui/TabBar';
 import SmileButton from '@/components/temple-of-joy/ui/SmileButton';
 import StatsPanel from '@/components/temple-of-joy/ui/StatsPanel';
-import BuildingsPanel from '@/components/temple-of-joy/ui/BuildingsPanel';
+import SourcesPanel from '@/components/temple-of-joy/ui/SourcesPanel';
 import UpgradesPanel from '@/components/temple-of-joy/ui/UpgradesPanel';
 import RelicsPanel from '@/components/temple-of-joy/ui/RelicsPanel';
 import WheelOfSamsara from '@/components/temple-of-joy/ui/WheelOfSamsara';
@@ -14,8 +15,8 @@ import AchievementsPanel from '@/components/temple-of-joy/ui/AchievementsPanel';
 import SettingsPanel from '@/components/temple-of-joy/ui/SettingsPanel';
 import MilestonesPanel from '@/components/temple-of-joy/ui/MilestonesPanel';
 import VibeCheck from '@/components/temple-of-joy/ui/VibeCheck';
-import PilgrimageOverlay from '@/components/temple-of-joy/ui/PilgrimageOverlay';
 import EventModal from '@/components/temple-of-joy/ui/EventModal';
+import EventEffectSummary from '@/components/temple-of-joy/ui/EventEffectSummary';
 import TranscendenceModal from '@/components/temple-of-joy/ui/TranscendenceModal';
 import OfflineModal from '@/components/temple-of-joy/ui/OfflineModal';
 import AchievementToast from '@/components/temple-of-joy/ui/AchievementToast';
@@ -38,6 +39,10 @@ export function TempleOfJoyGame({ initialSaveData }: { initialSaveData?: SaveDat
         offlineSecondsOnLoad: offline.seconds,
         happiness: mergedState.happiness + offline.happiness,
         lifetimeHappiness: mergedState.lifetimeHappiness + offline.happiness,
+        pilgrimageActive: offline.pilgrimageActive,
+        pilgrimageTimer: offline.pilgrimageTimer,
+        pilgrimageCooldown: offline.pilgrimageCooldown,
+        totalPilgrimages: offline.totalPilgrimages,
         showOfflineModal: offline.seconds > 30,
       });
     } else {
@@ -78,7 +83,45 @@ export function TempleOfJoyGame({ initialSaveData }: { initialSaveData?: SaveDat
 
   // ── Auto-save ─────────────────────────────────────────────────────────────
   useAutoSave();
+  // ── Audio: init and subscribe to store settings ────────────────────────
+  useEffect(() => {
+    templeAudio.init();
+    const { soundEnabled, musicVolume, sfxVolume } = useTempleStore.getState();
+    templeAudio.setMusicVolume(musicVolume);
+    templeAudio.setSfxVolume(sfxVolume);
+    templeAudio.setEnabled(soundEnabled);
 
+    // Subscribe to sound setting changes
+    const unsub1 = useTempleStore.subscribe(
+      (s) => s.soundEnabled,
+      (enabled) => templeAudio.setEnabled(enabled),
+    );
+    const unsub2 = useTempleStore.subscribe(
+      (s) => s.musicVolume,
+      (vol) => templeAudio.setMusicVolume(vol),
+    );
+    const unsub3 = useTempleStore.subscribe(
+      (s) => s.sfxVolume,
+      (vol) => templeAudio.setSfxVolume(vol),
+    );
+
+    return () => { unsub1(); unsub2(); unsub3(); };
+  }, []);
+
+  // ── Audio: unlock autoplay on first user interaction ───────────────────
+  useEffect(() => {
+    const handleFirstInteraction = () => {
+      templeAudio.markInteracted();
+      document.removeEventListener('click', handleFirstInteraction);
+      document.removeEventListener('keydown', handleFirstInteraction);
+    };
+    document.addEventListener('click', handleFirstInteraction);
+    document.addEventListener('keydown', handleFirstInteraction);
+    return () => {
+      document.removeEventListener('click', handleFirstInteraction);
+      document.removeEventListener('keydown', handleFirstInteraction);
+    };
+  }, []);
   // ── Save-and-navigate helper ──────────────────────────────────────────────
   const handleBackToGames = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -147,7 +190,7 @@ export function TempleOfJoyGame({ initialSaveData }: { initialSaveData?: SaveDat
             {/* Left: Sources panel */}
             <div className="hidden lg:flex lg:flex-col min-h-0">
               <div className="flex-1 min-h-0">
-                <BuildingsPanel />
+                <SourcesPanel />
               </div>
             </div>
             {/* Center: SmileButton + StatsPanel */}
@@ -164,7 +207,7 @@ export function TempleOfJoyGame({ initialSaveData }: { initialSaveData?: SaveDat
           </div>
         )}
 
-        {activeTab === 'buildings'    && <div className="overflow-y-auto p-4 pb-16 md:pb-4 h-full min-h-0"><BuildingsPanel /></div>}
+        {activeTab === 'sources'    && <div className="overflow-y-auto p-4 pb-16 md:pb-4 h-full min-h-0"><SourcesPanel /></div>}
         {activeTab === 'upgrades'     && <div className="overflow-y-auto p-4 pb-16 md:pb-4 h-full min-h-0"><UpgradesPanel /></div>}
         {activeTab === 'relics'       && <div className="overflow-y-auto p-4 pb-16 md:pb-4 h-full min-h-0"><RelicsPanel /></div>}
         {activeTab === 'wheel'        && <div className="overflow-y-auto p-4 pb-16 md:pb-4 h-full min-h-0"><WheelOfSamsara /></div>}
@@ -179,8 +222,8 @@ export function TempleOfJoyGame({ initialSaveData }: { initialSaveData?: SaveDat
 
       {/* Overlays */}
       <VibeCheck />
-      <PilgrimageOverlay />
       <EventModal />
+      <EventEffectSummary />
       <TranscendenceModal />
       <OfflineModal />
       <AchievementToast />
