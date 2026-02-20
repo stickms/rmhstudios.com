@@ -346,7 +346,7 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
                                         <div className="flex items-center gap-2">
                                             {/* Ready indicator */}
                                             <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${p.isReady ? 'bg-green-500' : 'bg-slice-shadow-dark'}`} title={p.isReady ? 'Ready' : 'Not ready'} />
-                                            <span className="font-bold">{p.name}</span>
+                                            <span className="font-bold text-slice-text-darker">{p.name}</span>
                                             {isMe && <span className="text-[9px] font-black bg-blue-500 text-white px-1.5 py-0.5 rounded-full">YOU</span>}
                                         </div>
                                         <div className="flex items-center gap-2">
@@ -472,13 +472,13 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
                                         <Slider
                                             value={[myDifficulty.speed]}
                                             min={0.5}
-                                            max={3.0}
+                                            max={2.0}
                                             step={0.1}
                                             onValueChange={([v]) => handleDifficultyChange({ speed: +v.toFixed(1) })}
                                             className="w-full"
                                         />
-                                        <div className="flex justify-between text-[9px] text-slice-text-light font-mono">
-                                            <span>0.5x</span><span>1.0x</span><span>2.0x</span><span>3.0x</span>
+                                        <div className="flex justify-between px-1 text-[9px] text-slice-text-light font-mono">
+                                            <span>0.5x</span><span>1.0x</span><span>1.5x</span><span>2.0x</span>
                                         </div>
                                     </div>
                                     {/* Toggles */}
@@ -633,7 +633,7 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
                                 value={lobbyIdInput} 
                                 onChange={(e) => setLobbyIdInput(e.target.value)} 
                                 placeholder="Lobby Code"
-                                className="bg-slice-bg border-none shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] rounded-xl uppercase text-center font-mono tracking-widest"
+                                className="bg-[var(--slice-input-bg)] border-[var(--slice-input-border)] shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] rounded-xl uppercase text-center font-mono tracking-widest h-12"
                             />
                             <Button 
                                 className="bg-slice-bg text-blue-500 font-bold shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] active:shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)] rounded-xl"

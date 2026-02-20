@@ -269,6 +269,7 @@ model SongLeaderboard {
   song        Song     @relation(fields: [songId], references: [id], onDelete: Cascade)
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@unique([songId, userId], name: "songId_userId")
   @@index([songId, score(sort: Desc)])
 }
 

@@ -106,7 +106,7 @@ export function MatchResults({ onBack, isHost, lobbyId }: { onBack: () => void; 
     const isUnranked = modifiers.speed < 1.0;
 
     React.useEffect(() => {
-        if (!allFinished || scoreSubmitted) return;
+        if (scoreSubmitted) return;
         if (!userName || score <= 0) return;
         if (isUnranked) return; // Speed below 1.0x is unranked
 
@@ -148,7 +148,7 @@ export function MatchResults({ onBack, isHost, lobbyId }: { onBack: () => void; 
                 </div>
 
                 {/* Player List */}
-                <div className="px-6 pb-2 space-y-3 max-h-[50vh] overflow-y-auto">
+                <div className="px-6 pb-4 pt-4 space-y-3 max-h-[50vh] overflow-y-auto custom-scrollbar">
                     {sorted.map((p, i) => (
                         <div
                             key={p.id}
@@ -157,7 +157,9 @@ export function MatchResults({ onBack, isHost, lobbyId }: { onBack: () => void; 
                                     ? 'bg-blue-500/10 shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] border-2 border-blue-500/30'
                                     : 'bg-slice-bg shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)]'
                                 }
-                                ${i === 0 && p.isFinished ? 'ring-2 ring-yellow-400 ring-offset-2 ring-offset-slice-bg' : ''}
+                                ${i === 0 && p.isFinished ? 'ring-2 ring-yellow-400 ring-offset-2 ring-offset-slice-bg' : 
+                                  i === 1 && p.isFinished ? 'ring-2 ring-zinc-300 ring-offset-2 ring-offset-slice-bg' :
+                                  i === 2 && p.isFinished ? 'ring-2 ring-amber-600 ring-offset-2 ring-offset-slice-bg' : ''}
                             `}
                         >
                             {/* Rank */}

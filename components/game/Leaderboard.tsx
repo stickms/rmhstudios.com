@@ -43,14 +43,18 @@ export function Leaderboard({ songId }: LeaderboardProps) {
                 <span className={`w-2 h-2 rounded-full ${songId ? 'bg-blue-500' : 'bg-yellow-400'} animate-pulse`}/>
                 {songId ? 'Song Leaderboard' : 'Global Leaderboard'}
             </label>
-            <div className="bg-slice-bg rounded-xl shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] p-3 text-xs space-y-1 overflow-y-auto custom-scrollbar flex-1 min-h-[200px]">
+            <div className="bg-slice-bg rounded-xl shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] px-3 pb-3 pt-4 text-xs space-y-1 overflow-y-auto custom-scrollbar flex-1 min-h-[200px]">
                 {isLoading ? (
                     <div className="text-slice-text-light text-center py-4">Loading...</div>
                 ) : leaderboard.length === 0 ? (
                     <div className="text-slice-text-light text-center py-4">No scores yet</div>
                 ) : (
                     leaderboard.map((p, i) => (
-                        <div key={i} className="flex items-center gap-2 p-2 hover:bg-slice-shadow-dark/50 rounded cursor-default border-b border-slice-shadow-dark/30/50 last:border-0">
+                        <div key={i} className={`flex items-center gap-2 p-2 hover:bg-slice-shadow-dark/50 rounded cursor-default border-b border-slice-shadow-dark/30/50 last:border-0
+                            ${i === 0 ? 'ring-2 ring-yellow-400 ring-inset shadow-[inset_0_0_8px_rgba(250,204,21,0.2)]' : 
+                              i === 1 ? 'ring-2 ring-zinc-300 ring-inset shadow-[inset_0_0_8px_rgba(212,212,216,0.2)]' :
+                              i === 2 ? 'ring-2 ring-amber-600 ring-inset shadow-[inset_0_0_8px_rgba(180,83,9,0.2)]' : ''}
+                        `}>
                             <span className="text-slice-text-light w-5 text-center font-bold shrink-0">{i+1}.</span>
                             <span className="text-slice-text font-bold truncate flex-1 min-w-0">{p.username}</span>
                             <div className="flex flex-col items-end shrink-0 gap-0.5">

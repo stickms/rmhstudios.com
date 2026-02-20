@@ -70,16 +70,41 @@ export async function POST(req: Request) {
         if (songId && typeof songId === 'string') {
             const songExists = await prisma.song.findUnique({ where: { id: songId }, select: { id: true } });
             if (songExists) {
-                await prisma.songLeaderboard.create({
-                    data: {
-                        songId,
-                        userId,
-                        score: Math.round(score),
-                        maxCombo: typeof maxCombo === 'number' ? Math.round(maxCombo) : 0,
-                        accuracy: typeof accuracy === 'number' ? Math.max(0, Math.min(1, accuracy)) : null,
-                        speedMod: playSpeed,
+                // Check for existing personal best
+                const personalBest = await prisma.songLeaderboard.findUnique({
+                    where: {
+                        songId_userId: {
+                            songId,
+                            userId
+                        }
                     }
                 });
+
+                if (!personalBest || score > personalBest.score || (maxCombo && maxCombo > personalBest.maxCombo)) {
+                    await prisma.songLeaderboard.upsert({
+                        where: {
+                            songId_userId: {
+                                songId,
+                                userId
+                            }
+                        },
+                        create: {
+                            songId,
+                            userId,
+                            score: Math.round(score),
+                            maxCombo: typeof maxCombo === 'number' ? Math.round(maxCombo) : 0,
+                            accuracy: typeof accuracy === 'number' ? Math.max(0, Math.min(1, accuracy)) : null,
+                            speedMod: playSpeed,
+                        },
+                        update: {
+                            score: score > (personalBest?.score || 0) ? Math.round(score) : undefined,
+                            maxCombo: maxCombo > (personalBest?.maxCombo || 0) ? Math.round(maxCombo) : undefined,
+                            accuracy: score > (personalBest?.score || 0) ? (typeof accuracy === 'number' ? Math.max(0, Math.min(1, accuracy)) : undefined) : undefined,
+                            speedMod: score > (personalBest?.score || 0) ? playSpeed : undefined,
+                            createdAt: new Date() // Store date of personal best
+                        }
+                    });
+                }
             }
         }
 

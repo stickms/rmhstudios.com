@@ -11,12 +11,16 @@
 
     --slice-lane-top: #3b82f6;
     --slice-lane-bottom: #f472b6;
+    --slice-hold-trail: rgba(0, 0, 0, 0.35);
+    --slice-text-darker: #2d3748;
+    --slice-input-bg: #dce1e9;
+    --slice-input-border: rgba(163, 177, 198, 0.8);
   }
 
   .dark .slice-theme {
     --slice-bg: #16161a;
     --slice-text: #f0f0f0;
-    --slice-text-darker: #e4e4e7;
+    --slice-text-darker: #ffffff;
     --slice-text-muted: #a1a1aa;
     --slice-text-light: #71717a;
     --slice-shadow-light: #222228;
@@ -24,6 +28,9 @@
     --slice-card-bg: #1e1e24;
     --slice-primary: #60a5fa;
     --slice-accent: #f472b6;
+    --slice-hold-trail: rgba(255, 255, 255, 0.5);
+    --slice-input-bg: #121216;
+    --slice-input-border: rgba(0, 0, 0, 0.5);
   }
 }
 
@@ -52,7 +59,15 @@
 }
 
 @keyframes combo-bounce {
-  0% { transform: scale(1.4); }
-  50% { transform: scale(0.95); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1.4);
+  }
+
+  50% {
+    transform: scale(0.95);
+  }
+
+  100% {
+    transform: scale(1);
+  }
 }

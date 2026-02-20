@@ -171,19 +171,19 @@ export function SongDetailsPanel({ song, onPlay, onSongUpdated, readOnly = false
                             </div>
                             <div className="space-y-1">
                                 <label className="text-xs font-bold text-slice-text-light uppercase tracking-wider">Title</label>
-                                <Input value={editTitle} onChange={e => setEditTitle(e.target.value)} className="bg-slice-shadow-dark/20 text-slice-text border-slice-shadow-dark/30" />
+                                <Input value={editTitle} onChange={e => setEditTitle(e.target.value)} className="bg-[var(--slice-input-bg)] text-slice-text border-[var(--slice-input-border)] shadow-[inset_2px_2px_4px_var(--slice-shadow-dark),inset_-2px_-2px_4px_var(--slice-shadow-light)]" />
                             </div>
                             <div className="space-y-1">
                                 <label className="text-xs font-bold text-slice-text-light uppercase tracking-wider">Artist</label>
-                                <Input value={editArtist} onChange={e => setEditArtist(e.target.value)} className="bg-slice-shadow-dark/20 text-slice-text border-slice-shadow-dark/30" />
+                                <Input value={editArtist} onChange={e => setEditArtist(e.target.value)} className="bg-[var(--slice-input-bg)] text-slice-text border-[var(--slice-input-border)] shadow-[inset_2px_2px_4px_var(--slice-shadow-dark),inset_-2px_-2px_4px_var(--slice-shadow-light)]" />
                             </div>
                             <div className="space-y-1">
                                 <label className="text-xs font-bold text-slice-text-light uppercase tracking-wider">BPM</label>
-                                <Input type="number" value={editBpm} onChange={e => setEditBpm(e.target.value)} className="bg-slice-shadow-dark/20 text-slice-text border-slice-shadow-dark/30" placeholder="e.g. 120" />
+                                <Input type="number" value={editBpm} onChange={e => setEditBpm(e.target.value)} className="bg-[var(--slice-input-bg)] text-slice-text border-[var(--slice-input-border)] shadow-[inset_2px_2px_4px_var(--slice-shadow-dark),inset_-2px_-2px_4px_var(--slice-shadow-light)]" placeholder="e.g. 120" />
                             </div>
                             <div className="space-y-1">
                                 <label className="text-xs font-bold text-slice-text-light uppercase tracking-wider">Description</label>
-                                <Input value={editDescription} onChange={e => setEditDescription(e.target.value)} className="bg-slice-shadow-dark/20 text-slice-text border-slice-shadow-dark/30" placeholder="Optional description..." />
+                                <Input value={editDescription} onChange={e => setEditDescription(e.target.value)} className="bg-[var(--slice-input-bg)] text-slice-text border-[var(--slice-input-border)] shadow-[inset_2px_2px_4px_var(--slice-shadow-dark),inset_-2px_-2px_4px_var(--slice-shadow-light)]" placeholder="Optional description..." />
                             </div>
                         </div>
                         <div className="flex gap-2 pt-1">
@@ -360,8 +360,11 @@ export function SongDetailsPanel({ song, onPlay, onSongUpdated, readOnly = false
                             max={2.0}
                             step={0.1}
                             onValueChange={(vals) => setModifiers({...modifiers, speed: vals[0]})}
-                            className="cursor-pointer"
+                            className="cursor-pointer mb-2"
                         />
+                        <div className="flex justify-between px-1 text-[9px] text-slice-text-light font-mono select-none">
+                            <span>0.5x</span><span>1.0x</span><span>1.5x</span><span>2.0x</span>
+                        </div>
                     </div>
                 </div>
             </div>

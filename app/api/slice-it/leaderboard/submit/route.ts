@@ -45,27 +45,35 @@ export async function POST(req: Request) {
         }
 
         // Handle Song Leaderboard entry
-        const existingScore = await prisma.songLeaderboard.findFirst({
-            where: { songId, userId }
+        const personalBest = await prisma.songLeaderboard.findUnique({
+            where: {
+                songId_userId: {
+                    songId,
+                    userId
+                }
+            }
         });
 
-        if (!existingScore) {
-            await prisma.songLeaderboard.create({
-                data: {
+        if (!personalBest || score > personalBest.score) {
+            await prisma.songLeaderboard.upsert({
+                where: {
+                    songId_userId: {
+                        songId,
+                        userId
+                    }
+                },
+                create: {
                     songId,
                     userId,
                     score,
                     maxCombo,
-                    accuracy
-                }
-            });
-        } else if (score > existingScore.score) {
-            await prisma.songLeaderboard.update({
-                where: { id: existingScore.id },
-                data: {
+                    accuracy,
+                },
+                update: {
                     score,
                     maxCombo,
-                    accuracy
+                    accuracy,
+                    createdAt: new Date()
                 }
             });
         }

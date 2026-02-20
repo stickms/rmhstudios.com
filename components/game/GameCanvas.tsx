@@ -859,7 +859,9 @@ export function GameCanvas() {
                          
                          // 1. Draw the white tail (body of the hold)
                          // It extends to the right of the start sliceX
-                         ctx.fillStyle = isHeldActive ? 'rgba(255, 255, 255, 0.9)' : `rgba(255, 255, 255, ${0.5 * noteAlpha})`;
+                         const trailColor = getComputedStyle(document.documentElement).getPropertyValue('--slice-hold-trail').trim() || 'rgba(255, 255, 255, 0.5)';
+                          ctx.fillStyle = isHeldActive ? trailColor.replace('0.5', '0.9').replace('0.15', '0.4') : trailColor;
+                          ctx.globalAlpha = noteAlpha;
                          ctx.beginPath();
                          ctx.roundRect(sliceX, y - (BAR_H * 0.3), len, BAR_H * 0.6, 4);
                          ctx.fill();
