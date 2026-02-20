@@ -234,7 +234,8 @@ export interface GameState {
   theme: 'light' | 'dark';
   numberFormat: 'abbreviated' | 'scientific';
   soundEnabled: boolean;
-  soundVolume: number;
+  musicVolume: number;
+  sfxVolume: number;
 
   // ── UI ──
   activeTab: 'temple' | 'sources' | 'upgrades' | 'relics' | 'wheel' | 'achievements' | 'settings';
@@ -285,5 +286,14 @@ export interface SaveData {
   numberFormat: 'abbreviated' | 'scientific';
   sourceBuyQty: 1 | 10 | 100 | 'max';
   soundEnabled: boolean;
-  soundVolume: number;
+  musicVolume: number;
+  sfxVolume: number;
+
+  // Deprecated fields (backwards compat with old saves)
+  /** @deprecated Use sources instead */
+  buildings?: Record<SourceId, number>;
+  /** @deprecated Use musicVolume/sfxVolume instead */
+  soundVolume?: number;
+  /** @deprecated Use sourceBuyQty instead */
+  buildingBuyQty?: 1 | 10 | 100 | 'max';
 }

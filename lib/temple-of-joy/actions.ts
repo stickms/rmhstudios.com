@@ -72,7 +72,8 @@ function makeInitialState(
     numberFormat: 'abbreviated',
     sourceBuyQty: 1,
     soundEnabled: true,
-    soundVolume: 1,
+    musicVolume: 0.5,
+    sfxVolume: 0.5,
     activeTab: 'temple',
     upgradePathFilter: 'all',
     showTranscendenceModal: false,
@@ -469,7 +470,8 @@ export function doTriggerTranscendence(state: GameState): GameState {
     theme: state.theme,
     numberFormat: state.numberFormat,
     soundEnabled: state.soundEnabled,
-    soundVolume: state.soundVolume,
+    musicVolume: state.musicVolume,
+    sfxVolume: state.sfxVolume,
   });
 
   // Grant prestige achievements

@@ -28,8 +28,10 @@ export function computePilgrimageBurst(state: GameState): number {
  * Returns a new state object — never mutates the input.
  */
 export function applyTick(state: GameState, deltaMs: number): GameState {
-  // Cap delta to 1 second to prevent runaway jumps on tab resume
-  const deltaSeconds = Math.min(deltaMs / 1000, 1);
+  // Uncapped delta for timer decrements (allows catch-up after tab hidden/unfocused)
+  const realDelta = deltaMs / 1000;
+  // Cap delta to 1 second for income/playtime to prevent runaway jumps on tab resume
+  const deltaSeconds = Math.min(realDelta, 1);
 
   // ── 1 & 2. Rates ──────────────────────────────────────────────────────────
   const hps = computeTotalHPS(state);
@@ -62,7 +64,7 @@ export function applyTick(state: GameState, deltaMs: number): GameState {
 
   // ── 10. Timed buffs ───────────────────────────────────────────────────────
   // temporalComfort relic: buffs tick down at 2/3 speed (last 50% longer)
-  const buffTickRate = state.activeRelics.includes('temporalComfort') ? deltaSeconds * (2 / 3) : deltaSeconds;
+  const buffTickRate = state.activeRelics.includes('temporalComfort') ? realDelta * (2 / 3) : realDelta;
   const newActiveBuffs = state.activeBuffs
     .map((b) => ({ ...b, remainingSeconds: b.remainingSeconds - buffTickRate }))
     .filter((b) => b.remainingSeconds > 0);
@@ -74,21 +76,21 @@ export function applyTick(state: GameState, deltaMs: number): GameState {
     newVibeBuff = remaining > 0 ? { ...newVibeBuff, remainingSeconds: remaining } : null;
   }
 
-  // ── 12. Timers ────────────────────────────────────────────────────────────
-  const newVibeCheckTimer = Math.max(0, state.vibeCheckTimer - deltaSeconds);
+  // ── 12. Timers (use realDelta for accurate catch-up after tab hidden) ────
+  const newVibeCheckTimer = Math.max(0, state.vibeCheckTimer - realDelta);
 
   let newPilgrimageActive = state.pilgrimageActive;
   let newPilgrimageTimer = state.pilgrimageTimer;
-  let newPilgrimageCooldown = Math.max(0, state.pilgrimageCooldown - deltaSeconds);
+  let newPilgrimageCooldown = Math.max(0, state.pilgrimageCooldown - realDelta);
   if (newPilgrimageActive) {
-    newPilgrimageTimer = state.pilgrimageTimer - deltaSeconds;
+    newPilgrimageTimer = state.pilgrimageTimer - realDelta;
   }
 
-  const newRitualCooldown = Math.max(0, state.ritualCooldown - deltaSeconds);
-  let newEventTimer = Math.max(0, state.eventTimer - deltaSeconds);
+  const newRitualCooldown = Math.max(0, state.ritualCooldown - realDelta);
+  let newEventTimer = Math.max(0, state.eventTimer - realDelta);
   // temporalComfort relic: event frequency +25% (timer ticks 1.25× faster)
   if (state.activeRelics.includes('temporalComfort')) {
-    newEventTimer = Math.max(0, state.eventTimer - deltaSeconds * 1.25);
+    newEventTimer = Math.max(0, state.eventTimer - realDelta * 1.25);
   }
 
   // ── 13. Pending event ─────────────────────────────────────────────────────
@@ -105,12 +107,14 @@ export function applyTick(state: GameState, deltaMs: number): GameState {
   let newPilgrimageStreak = state.pilgrimageStreak;
 
   if (newPilgrimageActive && newPilgrimageTimer <= 0) {
+    const overshoot = -newPilgrimageTimer; // seconds past completion
     const burst = computePilgrimageBurst(state);
     newHappiness += burst;
     newLifetimeHappiness += burst;
     newPeakHappiness = Math.max(newPeakHappiness, newHappiness);
     newPilgrimageActive = false;
-    newPilgrimageCooldown = 900;
+    newPilgrimageTimer = 0;
+    newPilgrimageCooldown = Math.max(0, 900 - overshoot);
     pilgrimeCompleted = true;
     newPilgrimageStreak += 1;
   }

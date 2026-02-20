@@ -51,11 +51,20 @@ export function stateToSaveData(state: GameState): SaveData {
     numberFormat: state.numberFormat,
     sourceBuyQty: state.sourceBuyQty,
     soundEnabled: state.soundEnabled,
-    soundVolume: state.soundVolume,
+    musicVolume: state.musicVolume,
+    sfxVolume: state.sfxVolume,
   };
 }
 
 export function saveDataToState(save: SaveData, baseState: GameState): Partial<GameState> {
+  // Backwards compat: old saves used 'buildings' instead of 'sources'
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const legacy = save as any;
+  const savedSources = save.sources ?? (legacy.buildings as Record<string, number> | undefined) ?? {};
+  const savedBuyQty = save.sourceBuyQty ?? (legacy.buildingBuyQty as 1 | 10 | 100 | 'max' | undefined) ?? 1;
+  const savedMusicVol = save.musicVolume ?? (legacy.soundVolume as number | undefined) ?? 0.5;
+  const savedSfxVol = save.sfxVolume ?? (legacy.soundVolume as number | undefined) ?? 0.5;
+
   return {
     happiness: save.happiness ?? 0,
     lifetimeHappiness: save.lifetimeHappiness ?? 0,
@@ -63,7 +72,7 @@ export function saveDataToState(save: SaveData, baseState: GameState): Partial<G
     peakKarma: save.peakKarma ?? 0,
     karma: save.karma ?? 0,
     blissShards: save.blissShards ?? 0,
-    sources: { ...baseState.sources, ...(save.sources ?? {}) },
+    sources: { ...baseState.sources, ...savedSources },
     upgrades: new Set(save.upgrades ?? []),
     activeRelics: save.activeRelics ?? [],
     maxRelicSlots: save.maxRelicSlots ?? 5,
@@ -90,9 +99,10 @@ export function saveDataToState(save: SaveData, baseState: GameState): Partial<G
     permanentHPCBonus: save.permanentHPCBonus ?? 0,
     theme: save.theme ?? 'dark',
     numberFormat: save.numberFormat ?? 'abbreviated',
-    sourceBuyQty: save.sourceBuyQty ?? 1,
+    sourceBuyQty: savedBuyQty,
     soundEnabled: save.soundEnabled ?? false,
-    soundVolume: save.soundVolume ?? 0.5,
+    musicVolume: savedMusicVol,
+    sfxVolume: savedSfxVol,
   };
 }
 
@@ -149,9 +159,10 @@ export function computeOfflineProgress(
     pilgrimageTimer -= effectiveSecs;
     if (pilgrimageTimer <= 0) {
       // Pilgrimage completed offline — grant burst
+      const overshoot = -pilgrimageTimer; // how far past 0 the timer went
       pilgrimageActive = false;
       pilgrimageTimer = 0;
-      pilgrimageCooldown = Math.max(0, 900 - Math.abs(pilgrimageTimer)); // 15 min cooldown minus overshoot
+      pilgrimageCooldown = Math.max(0, 900 - overshoot); // 15 min cooldown minus overshoot
       totalPilgrimages += 1;
       // Pilgrimage burst: 5 min × HPS × relic bonuses
       const hps = computeTotalHPS(state);

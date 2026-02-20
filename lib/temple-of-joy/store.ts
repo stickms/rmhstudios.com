@@ -63,7 +63,8 @@ export function createInitialState(): GameState {
     theme: 'dark',
     numberFormat: 'abbreviated',
     soundEnabled: false,
-    soundVolume: 0.5,
+    musicVolume: 0.5,
+    sfxVolume: 0.5,
     activeTab: 'temple',
     upgradePathFilter: 'all',
     sourceBuyQty: 1,
@@ -109,7 +110,8 @@ interface TempleStore extends GameState {
   setTheme: (theme: 'light' | 'dark') => void;
   setNumberFormat: (fmt: 'abbreviated' | 'scientific') => void;
   setSoundEnabled: (enabled: boolean) => void;
-  setSoundVolume: (vol: number) => void;
+  setMusicVolume: (vol: number) => void;
+  setSfxVolume: (vol: number) => void;
   setShowTranscendenceModal: (show: boolean) => void;
   setShowOfflineModal: (show: boolean) => void;
   setShowEventModal: (show: boolean) => void;
@@ -158,7 +160,8 @@ export const useTempleStore = create<TempleStore>()(
     setTheme: (theme) => set({ theme }),
     setNumberFormat: (fmt) => set({ numberFormat: fmt }),
     setSoundEnabled: (enabled) => set({ soundEnabled: enabled }),
-    setSoundVolume: (vol) => set({ soundVolume: vol }),
+    setMusicVolume: (vol) => set({ musicVolume: vol }),
+    setSfxVolume: (vol) => set({ sfxVolume: vol }),
     setShowTranscendenceModal: (show) => set({ showTranscendenceModal: show }),
     setShowOfflineModal: (show) => set({ showOfflineModal: show }),
     setShowEventModal: (show) => set({ showEventModal: show }),

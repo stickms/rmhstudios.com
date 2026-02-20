@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { saveDataToState, computeOfflineProgress, useAutoSave, saveToServer } from '@/lib/temple-of-joy/persistence';
+import { templeAudio } from '@/lib/temple-of-joy/audio';
 import type { SaveData } from '@/lib/temple-of-joy/types';
 import TabBar from '@/components/temple-of-joy/ui/TabBar';
 import SmileButton from '@/components/temple-of-joy/ui/SmileButton';
@@ -82,7 +83,45 @@ export function TempleOfJoyGame({ initialSaveData }: { initialSaveData?: SaveDat
 
   // ── Auto-save ─────────────────────────────────────────────────────────────
   useAutoSave();
+  // ── Audio: init and subscribe to store settings ────────────────────────
+  useEffect(() => {
+    templeAudio.init();
+    const { soundEnabled, musicVolume, sfxVolume } = useTempleStore.getState();
+    templeAudio.setMusicVolume(musicVolume);
+    templeAudio.setSfxVolume(sfxVolume);
+    templeAudio.setEnabled(soundEnabled);
 
+    // Subscribe to sound setting changes
+    const unsub1 = useTempleStore.subscribe(
+      (s) => s.soundEnabled,
+      (enabled) => templeAudio.setEnabled(enabled),
+    );
+    const unsub2 = useTempleStore.subscribe(
+      (s) => s.musicVolume,
+      (vol) => templeAudio.setMusicVolume(vol),
+    );
+    const unsub3 = useTempleStore.subscribe(
+      (s) => s.sfxVolume,
+      (vol) => templeAudio.setSfxVolume(vol),
+    );
+
+    return () => { unsub1(); unsub2(); unsub3(); };
+  }, []);
+
+  // ── Audio: unlock autoplay on first user interaction ───────────────────
+  useEffect(() => {
+    const handleFirstInteraction = () => {
+      templeAudio.markInteracted();
+      document.removeEventListener('click', handleFirstInteraction);
+      document.removeEventListener('keydown', handleFirstInteraction);
+    };
+    document.addEventListener('click', handleFirstInteraction);
+    document.addEventListener('keydown', handleFirstInteraction);
+    return () => {
+      document.removeEventListener('click', handleFirstInteraction);
+      document.removeEventListener('keydown', handleFirstInteraction);
+    };
+  }, []);
   // ── Save-and-navigate helper ──────────────────────────────────────────────
   const handleBackToGames = useCallback((e: React.MouseEvent) => {
     e.preventDefault();

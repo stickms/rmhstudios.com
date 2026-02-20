@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { ACHIEVEMENTS } from '@/lib/temple-of-joy/data/achievements';
+import { templeAudio } from '@/lib/temple-of-joy/audio';
 
 interface Toast {
   id: number;
@@ -37,6 +38,9 @@ export default function AchievementToast() {
       ...prev,
       ...newOnes.map(id => ({ id: ++toastCounter, achievementId: id })),
     ]);
+
+    // Play achievement SFX once per batch of new achievements
+    templeAudio.playAchievement();
   }, [achievements, gameInitialized]);
 
   const dismiss = (id: number) => setToasts(prev => prev.filter(t => t.id !== id));
