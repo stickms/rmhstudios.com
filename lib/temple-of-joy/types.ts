@@ -9,7 +9,9 @@ export type BuildingId =
   | 'massageStudio' | 'gratitudeJournal' | 'goonCave' | 'joyCult'
   | 'spaSanctum' | 'therapy' | 'pleasurePalace' | 'dopamineLab'
   | 'hedonistMonastery' | 'feastHall' | 'nirvanaResort'
-  | 'eternalParty' | 'heavenOnEarth' | 'blissSingularity';
+  | 'eternalParty' | 'heavenOnEarth' | 'blissSingularity'
+  | 'zenGarden' | 'euphoriaSprings' | 'serenityEngine'
+  | 'raptureCathedral' | 'cosmicJacuzzi' | 'omniscientSpa';
 
 export type UpgradePath =
   | 'carnal' | 'social' | 'mind' | 'spirit' | 'indulgence' | 'philosophy' | 'offering' | 'synergy';
@@ -17,11 +19,12 @@ export type UpgradePath =
 export type RelicId =
   | 'epicurusRing' | 'laurelCrown' | 'incenseOfAncients' | 'stuffedPillow'
   | 'goldenFork' | 'confessionBooth' | 'vibeCrystal' | 'philosophersStone'
-  | 'warmBlanket' | 'sacredLedger' | 'hymnalOfExcess' | 'eternalNap';
+  | 'warmBlanket' | 'sacredLedger' | 'hymnalOfExcess' | 'eternalNap'
+  | 'karmaResonator' | 'lighthouseOfJoy' | 'temporalComfort' | 'infiniteGratitude';
 
 export type EventType = 'blessing' | 'choice' | 'philosophical';
 
-export type WheelTier = 1 | 2 | 3 | 4;
+export type WheelTier = 1 | 2 | 3 | 4 | 5;
 
 // ─── Data Definitions ────────────────────────────────────────────────────────
 
@@ -36,6 +39,8 @@ export interface BuildingDef {
   costMultiplier?: number;
   /** Minimum lifetime HP required to unlock (optional secondary gate) */
   lifetimeHPUnlock?: number;
+  /** Minimum prestige count required to unlock */
+  requiresPrestige?: number;
 }
 
 export interface UpgradeDef {

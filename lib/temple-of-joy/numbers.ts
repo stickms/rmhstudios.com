@@ -10,6 +10,18 @@ interface Tier {
 }
 
 const TIERS: Tier[] = [
+  { value: 1e99, suffix: 'JC',  name: 'Joy Complete' },
+  { value: 1e96, suffix: 'BI',  name: 'Beyond Infinity' },
+  { value: 1e93, suffix: 'AB',  name: 'Absolute Bliss' },
+  { value: 1e90, suffix: 'OH',  name: 'Omega Happiness' },
+  { value: 1e87, suffix: 'JV',  name: 'Joy Convergence' },
+  { value: 1e84, suffix: 'TC',  name: 'Total Contentment' },
+  { value: 1e81, suffix: 'NO',  name: 'Nirvana Overflow' },
+  { value: 1e78, suffix: 'GE',  name: 'Great Exhale' },
+  { value: 1e75, suffix: 'IC',  name: 'Infinite Cuddle' },
+  { value: 1e72, suffix: 'RC',  name: 'Rapture Cascade' },
+  { value: 1e69, suffix: 'Nc',  name: 'Nice' },
+  { value: 1e66, suffix: 'GS',  name: 'Grand Sigh' },
   { value: 1e63, suffix: 'Vg',  name: 'Omniscient' },
   { value: 1e60, suffix: 'Nv',  name: 'Eternal' },
   { value: 1e57, suffix: 'Oc',  name: 'Infinite' },

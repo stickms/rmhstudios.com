@@ -47,7 +47,7 @@ export default function AchievementToast() {
 
   return (
     <div
-      className="fixed top-16 right-3 z-[60] flex flex-col gap-2 pointer-events-none"
+      className="fixed top-16 right-3 z-60 flex flex-col gap-2 pointer-events-none"
       aria-live="polite"
       aria-label="Achievement notifications"
     >

@@ -2,7 +2,7 @@
 
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { fmt } from '@/lib/temple-of-joy/numbers';
-import { useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 
 interface FloatLabel {
   id: number;
@@ -22,21 +22,35 @@ export default function SmileButton() {
   const click          = useTempleStore(s => s.click);
   const getHPS         = useTempleStore(s => s.getHPS);
   const getHPC         = useTempleStore(s => s.getHPC);
+  const recentClickTimes = useTempleStore(s => s.recentClickTimes);
 
   const [floats, setFloats] = useState<FloatLabel[]>([]);
   const [pressing, setPressing] = useState(false);
+  const [nowMs, setNowMs] = useState(() => Date.now());
   const counter = useRef(0);
+
+  const hpc = getHPC();
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => setNowMs(Date.now()), 250);
+    return () => window.clearInterval(intervalId);
+  }, []);
 
   const handleClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
     click();
-    const hpc = getHPC();
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
     const id = ++counter.current;
     setFloats(prev => [...prev, { id, text: `+${fmt(hpc, numberFormat)}`, x, y }]);
     setTimeout(() => setFloats(prev => prev.filter(f => f.id !== id)), 1000);
-  }, [click, getHPC, numberFormat]);
+  }, [click, hpc, numberFormat]);
+
+  const clickWindowMs = 500;
+  const recentClickCount = recentClickTimes.filter((t) => nowMs - t <= clickWindowMs).length;
+  const clicksPerSecond = recentClickCount / (clickWindowMs / 1000);
+  const passiveHps = getHPS();
+  const activeHps = passiveHps + clicksPerSecond * hpc;
 
   const hasGlow = activeBuffs.length > 0 || vibeBuff !== null;
   const onCooldown = ritualCooldown > 0;
@@ -165,7 +179,7 @@ export default function SmileButton() {
         className="text-sm font-medium tabular-nums"
         style={{ color: 'var(--temple-text)', opacity: 0.8 }}
       >
-        {fmt(getHPS(), numberFormat)}{' '}
+        {fmt(activeHps, numberFormat)}{' '}
         <span style={{ opacity: 0.65 }}>happiness/sec</span>
       </p>
 

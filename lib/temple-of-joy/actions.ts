@@ -422,9 +422,9 @@ export function doResolveEvent(
 // ─── Offerings ────────────────────────────────────────────────────────────────
 
 const OFFERING_TIERS: Record<1 | 2 | 3, { karmaCost: number; multiplier: number; duration: number }> = {
-  1: { karmaCost: 5, multiplier: 1.02, duration: 86400 },
-  2: { karmaCost: 15, multiplier: 1.05, duration: 43200 },
-  3: { karmaCost: 40, multiplier: 1.15, duration: 21600 },
+  1: { karmaCost: 10, multiplier: 1.02, duration: 86400 },
+  2: { karmaCost: 30, multiplier: 1.05, duration: 43200 },
+  3: { karmaCost: 75, multiplier: 1.15, duration: 21600 },
 };
 
 export function doMakeOffering(state: GameState, tier: 1 | 2 | 3): GameState {

@@ -10,6 +10,7 @@ const TIER_LABELS: Record<WheelTier, string> = {
   2: 'Tier II — Deepening',
   3: 'Tier III — Enlightenment',
   4: 'Tier IV — The Infinite',
+  5: 'Tier V — Beyond the Wheel',
 };
 
 interface WheelCardProps {
@@ -118,7 +119,7 @@ export default function WheelOfSamsara() {
 
   const threshold = computeTranscendenceThreshold(0);
 
-  const tiers: WheelTier[] = [1, 2, 3, 4];
+  const tiers: WheelTier[] = [1, 2, 3, 4, 5];
 
   return (
     <div className="flex flex-col gap-5 w-full" style={{ color: 'var(--temple-text)' }}>

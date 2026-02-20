@@ -83,57 +83,56 @@ export default function StatsPanel() {
         Statistics
       </h2>
 
-      <Row
-        label="Happiness"
-        value={fmt(happiness, numberFormat)}
-      />
-      <Row
-        label="Lifetime"
-        value={fmt(lifetimeHappiness, numberFormat)}
-        sub="total earned"
-      />
-      <Row
-        label="Per Second"
-        value={`${fmt(getHPS(), numberFormat)}/s`}
-      />
-      <Row
-        label="Per Click"
-        value={
-          <>
-            {fmt(getHPC(), numberFormat)}/click{' '}
-            {ritualReady && (
-              <span
-                className="ml-1 text-[10px] font-bold uppercase"
-                style={{ color: 'var(--temple-accent)' }}
-              >
-                ✨ RITUAL READY!
-              </span>
-            )}
-          </>
-        }
-      />
-
-      <Row
-        label="Effective Satisfaction"
-        value={fmt(getEffectiveSatisfaction(), numberFormat)}
-        sub="above baseline"
-      />
-
-      <Row
-        label="Karma"
-        value={`${karma.toFixed(1)} karma`}
-      />
-      <Row
-        label="Bliss Shards"
-        value={`${blissShards} 💎`}
-      />
-
-      {prestigeCount > 0 && (
+      <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-x-4">
         <Row
-          label="Prestige"
-          value={`×${prestigeCount}`}
+          label="Happiness"
+          value={fmt(happiness, numberFormat)}
         />
-      )}
+        <Row
+          label="Per Second"
+          value={`${fmt(getHPS(), numberFormat)}/s`}
+        />
+        <Row
+          label="Lifetime"
+          value={fmt(lifetimeHappiness, numberFormat)}
+          sub="total earned"
+        />
+        <Row
+          label="Per Click"
+          value={
+            <>
+              {fmt(getHPC(), numberFormat)}/click{' '}
+              {ritualReady && (
+                <span
+                  className="ml-1 text-[10px] font-bold uppercase"
+                  style={{ color: 'var(--temple-accent)' }}
+                >
+                  ✨ RITUAL READY!
+                </span>
+              )}
+            </>
+          }
+        />
+        <Row
+          label="Satisfaction"
+          value={fmt(getEffectiveSatisfaction(), numberFormat)}
+          sub="above baseline"
+        />
+        <Row
+          label="Karma"
+          value={`${karma.toFixed(1)} karma`}
+        />
+        <Row
+          label="Bliss Shards"
+          value={`${blissShards} 💎`}
+        />
+        {prestigeCount > 0 && (
+          <Row
+            label="Prestige"
+            value={`×${prestigeCount}`}
+          />
+        )}
+      </div>
 
       {/* Transcendence teaser — clickable button */}
       {getCanTranscend() && (

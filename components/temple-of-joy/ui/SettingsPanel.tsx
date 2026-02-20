@@ -3,17 +3,11 @@ import { useState } from 'react';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { saveToServer } from '@/lib/temple-of-joy/persistence';
 
-const VERSION = 'Temple of Joy v1.0';
-
 export default function SettingsPanel() {
   const theme = useTempleStore((s) => s.theme);
   const numberFormat = useTempleStore((s) => s.numberFormat);
-  const soundEnabled = useTempleStore((s) => s.soundEnabled);
-  const soundVolume = useTempleStore((s) => s.soundVolume);
   const setTheme = useTempleStore((s) => s.setTheme);
   const setNumberFormat = useTempleStore((s) => s.setNumberFormat);
-  const setSoundEnabled = useTempleStore((s) => s.setSoundEnabled);
-  const setSoundVolume = useTempleStore((s) => s.setSoundVolume);
   const resetRun = useTempleStore((s) => s.resetRun);
   const state = useTempleStore((s) => s);
 
@@ -42,7 +36,6 @@ export default function SettingsPanel() {
   // Shared styles
   const surface = { background: dark ? '#2c1d12' : '#f5f0e8' };
   const border = { borderColor: dark ? '#6b4c2a' : '#c4a97a' };
-  const accent = { color: dark ? '#d4a847' : '#8b6914' };
   const textColor = { color: dark ? '#e8d5b0' : '#3d2c1e' };
 
   const sectionCls = 'rounded-xl border p-4 space-y-3';
@@ -63,7 +56,6 @@ export default function SettingsPanel() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-serif font-bold">⚙️ Settings</h2>
-        <span className="text-xs opacity-40">{VERSION}</span>
       </div>
 
       {/* Display */}
@@ -103,41 +95,6 @@ export default function SettingsPanel() {
             ))}
           </div>
         </div>
-      </div>
-
-      {/* Sound */}
-      <div className={sectionCls} style={{ ...surface, ...border }}>
-        <p className={labelCls}>Sound</p>
-
-        <div className={rowCls}>
-          <span className="text-sm">Sound Effects</span>
-          <button
-            onClick={() => setSoundEnabled(!soundEnabled)}
-            className="px-3 py-1 rounded-lg text-xs font-semibold border transition-colors"
-            style={pillBtn(soundEnabled)}
-          >
-            {soundEnabled ? '🔊 On' : '🔇 Off'}
-          </button>
-        </div>
-
-        {soundEnabled && (
-          <div className={rowCls}>
-            <span className="text-sm">Volume</span>
-            <input
-              type="range"
-              min={0}
-              max={1}
-              step={0.05}
-              value={soundVolume}
-              onChange={(e) => setSoundVolume(parseFloat(e.target.value))}
-              className="w-32 accent-current"
-              style={accent}
-            />
-            <span className="text-xs w-8 text-right opacity-60">
-              {Math.round(soundVolume * 100)}%
-            </span>
-          </div>
-        )}
       </div>
 
       {/* Save */}

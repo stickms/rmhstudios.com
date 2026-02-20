@@ -10,16 +10,16 @@ import { SYNERGIES } from './data/synergies';
 // ─── Transcendence ────────────────────────────────────────────────────────────
 
 export function computeTranscendenceThreshold(prestigeCount: number): number {
-  return Math.max(1e8, 1e12 * Math.pow(0.85, prestigeCount));
+  return 1e13 * Math.pow(8, prestigeCount);
 }
 
 export function computeBlissShards(lifetimeHP: number, wheelPurchased: Set<string>): number {
   if (lifetimeHP <= 0) return 0;
   let shards: number;
   if (wheelPurchased.has('infiniteWheel')) {
-    shards = Math.floor(Math.pow(lifetimeHP / 1e10, 0.55));
+    shards = Math.floor(Math.pow(lifetimeHP / 1e11, 0.55));
   } else {
-    shards = Math.floor(Math.sqrt(lifetimeHP / 1e10));
+    shards = Math.floor(Math.sqrt(lifetimeHP / 1e11));
   }
   return Math.max(1, shards);
 }
@@ -218,7 +218,7 @@ export function computeKarmaRate(state: GameState): number {
     if (upgrade.karmaRateMultiplier) rate *= upgrade.karmaRateMultiplier;
   }
   // Karma Dividend wheel: ×5 if prestigeCount >= 3
-  if (state.wheelPurchased.has('karmaDividend') && state.prestigeCount >= 3) {
+  if (state.wheelPurchased.has('karmicDividend') && state.prestigeCount >= 3) {
     rate *= 5;
   }
   return rate;

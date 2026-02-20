@@ -332,6 +332,120 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     flavor: 'He would have left a review. Five stars. Small portions.',
     hidden: true,
   },
+
+  // ─── Extended Building Milestones ──────────────────────────────────────────
+
+  {
+    id: 'twoHundredOfOne',
+    name: 'Surplus',
+    description: 'Own 200 of any one building.',
+    flavor: 'Supply exceeds demand. Demand increases anyway.',
+  },
+  {
+    id: 'fiveHundredOfOne',
+    name: 'Industrial Devotion',
+    description: 'Own 500 of any one building.',
+    flavor: 'This building is your personality now.',
+  },
+  {
+    id: 'thousandOfOne',
+    name: 'Monomaniac',
+    description: 'Own 1,000 of any one building.',
+    flavor: 'Obsession, but make it architecture.',
+  },
+  {
+    id: 'zenGardenUnlock',
+    name: 'The Garden Awakens',
+    description: 'Unlock the Zen Garden.',
+    flavor: 'Every grain of sand: intentional.',
+  },
+  {
+    id: 'omniscientSpaUnlock',
+    name: 'Omniscience Achieved',
+    description: 'Unlock the Omniscient Spa.',
+    flavor: 'It already knew you would.',
+  },
+  {
+    id: 'allPostPrestige',
+    name: 'Beyond the Veil',
+    description: 'Own at least 1 of every post-prestige building.',
+    flavor: 'The new world opens.',
+  },
+
+  // ─── Extended Happiness Milestones ─────────────────────────────────────────
+
+  {
+    id: 'quintillion',
+    name: 'Happiness: Holy',
+    description: 'Earn 1 Quintillion (1e18) lifetime Happiness.',
+    flavor: 'Numbers this big require faith.',
+  },
+  {
+    id: 'septillion',
+    name: 'Happiness: Sacred',
+    description: 'Earn 1 Septillion (1e24) lifetime Happiness.',
+    flavor: 'The accountants have given up.',
+  },
+  {
+    id: 'nonillion',
+    name: 'Happiness: Infinite',
+    description: 'Earn 1 Nonillion (1e30) lifetime Happiness.',
+    flavor: 'Infinity called. It wants its number back.',
+  },
+  {
+    id: 'quindecillion',
+    name: 'Happiness: Cosmic',
+    description: 'Earn 1e48 lifetime Happiness.',
+    flavor: 'More happiness than atoms in the sun.',
+  },
+  {
+    id: 'happiness1e66',
+    name: 'Happiness: Grand Sigh',
+    description: 'Earn 1e66 lifetime Happiness.',
+    flavor: 'The universe exhales.',
+  },
+  {
+    id: 'happiness1e84',
+    name: 'Happiness: Total Contentment',
+    description: 'Earn 1e84 lifetime Happiness.',
+    flavor: 'Not a single complaint. Ever again.',
+  },
+  {
+    id: 'happiness1e99',
+    name: 'Joy Complete',
+    description: 'Earn 1e99 lifetime Happiness.',
+    flavor: 'You did it. All the joy. Every last drop.',
+  },
+
+  // ─── Extended Prestige ─────────────────────────────────────────────────────
+
+  {
+    id: 'thirtyPrestige',
+    name: 'The Spiral',
+    description: 'Prestige 30 times.',
+    flavor: 'Down? Up? Neither. Both.',
+  },
+  {
+    id: 'fiftyPrestige',
+    name: 'Eternal Pilgrim',
+    description: 'Prestige 50 times.',
+    flavor: 'The wheel spins freely now. You are the wheel.',
+  },
+
+  // ─── Extended Playtime ─────────────────────────────────────────────────────
+
+  {
+    id: 'fiveHundredHours',
+    name: 'The Dedication',
+    description: 'Play for 500 hours total.',
+    flavor: 'You could have learned a language. You learned joy instead.',
+  },
+  {
+    id: 'thousandHours',
+    name: 'The Magnum Opus',
+    description: 'Play for 1,000 hours total.',
+    flavor: 'This is your life now. It is warm.',
+  },
 ];
 
 export const ACHIEVEMENT_MAP: Record<string, AchievementDef> = Object.fromEntries(

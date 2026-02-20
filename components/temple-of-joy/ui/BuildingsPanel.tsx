@@ -15,7 +15,10 @@ function isUnlocked(
   lifetimeHPUnlock: number | undefined,
   peakHappiness: number,
   lifetimeHappiness: number,
+  requiresPrestige: number | undefined,
+  prestigeCount: number,
 ) {
+  if (requiresPrestige !== undefined && prestigeCount < requiresPrestige) return false;
   if (count > 0) return true;
   if (peakHappiness >= baseCost * 0.1) return true;
   if (lifetimeHPUnlock !== undefined && lifetimeHappiness >= lifetimeHPUnlock) return true;
@@ -36,6 +39,7 @@ function BuildingRow({ id, buyQty }: BuildingRowProps) {
   const buyBuilding        = useTempleStore(s => s.buyBuilding);
   const buyBuildingN       = useTempleStore(s => s.buyBuildingN);
   const buyBuildingMax     = useTempleStore(s => s.buyBuildingMax);
+  const prestigeCount      = useTempleStore(s => s.prestigeCount);
 
   const [pulseKey, setPulseKey] = useState(0);
   const prevCountRef = useRef<number | null>(null);
@@ -58,6 +62,8 @@ function BuildingRow({ id, buyQty }: BuildingRowProps) {
     def.lifetimeHPUnlock,
     peakHappiness,
     lifetimeHappiness,
+    def.requiresPrestige,
+    prestigeCount,
   );
 
   // Cost / affordability based on selected quantity
@@ -166,7 +172,7 @@ export default function BuildingsPanel() {
 
   return (
     <div
-      className="flex flex-col gap-2 w-full"
+      className="flex flex-col gap-2 w-full h-full min-h-0"
       style={{ color: 'var(--temple-text)' }}
     >
       {/* Header + Quantity selector */}
@@ -199,7 +205,7 @@ export default function BuildingsPanel() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-2 overflow-y-auto max-h-[70vh] pr-1">
+      <div className="flex flex-1 min-h-0 flex-col gap-2 overflow-y-auto pr-1">
         {BUILDINGS.map(b => (
           <BuildingRow key={b.id} id={b.id} buyQty={buyQty} />
         ))}

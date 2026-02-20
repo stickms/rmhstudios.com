@@ -1,7 +1,7 @@
 'use client';
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
-import { saveDataToState, computeOfflineProgress, useAutoSave } from '@/lib/temple-of-joy/persistence';
+import { saveDataToState, computeOfflineProgress, useAutoSave, saveToServer } from '@/lib/temple-of-joy/persistence';
 import type { SaveData } from '@/lib/temple-of-joy/types';
 import TabBar from '@/components/temple-of-joy/ui/TabBar';
 import SmileButton from '@/components/temple-of-joy/ui/SmileButton';
@@ -79,6 +79,14 @@ export function TempleOfJoyGame({ initialSaveData }: { initialSaveData?: SaveDat
   // ── Auto-save ─────────────────────────────────────────────────────────────
   useAutoSave();
 
+  // ── Save-and-navigate helper ──────────────────────────────────────────────
+  const handleBackToGames = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    saveToServer(useTempleStore.getState())
+      .catch(() => { /* best-effort */ })
+      .finally(() => { window.location.href = '/games'; });
+  }, []);
+
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div
@@ -99,6 +107,7 @@ export function TempleOfJoyGame({ initialSaveData }: { initialSaveData?: SaveDat
       >
         <a
           href="/games"
+          onClick={handleBackToGames}
           className="w-24 text-sm opacity-70 hover:opacity-100 transition-opacity shrink-0"
           style={{ color: theme === 'dark' ? '#d4a847' : '#8b6914' }}
         >
@@ -119,12 +128,14 @@ export function TempleOfJoyGame({ initialSaveData }: { initialSaveData?: SaveDat
       </div>
 
       {/* Main content — scrollable area */}
-      <main className="flex-1 overflow-y-auto w-full mx-auto pb-16 md:pb-0">
+      <main className="flex-1 min-h-0 w-full mx-auto">
         {activeTab === 'temple' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 p-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 overflow-y-auto gap-4 p-4 pb-16 md:pb-4 h-full min-h-0">
             {/* Left: Sources panel */}
-            <div className="hidden lg:block">
-              <BuildingsPanel />
+            <div className="hidden lg:flex lg:flex-col min-h-0">
+              <div className="flex-1 min-h-0">
+                <BuildingsPanel />
+              </div>
             </div>
             {/* Center: SmileButton + StatsPanel */}
             <div className="flex flex-col items-center gap-4">
@@ -132,23 +143,25 @@ export function TempleOfJoyGame({ initialSaveData }: { initialSaveData?: SaveDat
               <StatsPanel />
             </div>
             {/* Right: Upgrades summary */}
-            <div className="hidden lg:block">
-              <UpgradesPanel />
+            <div className="hidden lg:flex lg:flex-col min-h-0">
+              <div className="flex-1 min-h-0">
+                <UpgradesPanel />
+              </div>
             </div>
           </div>
         )}
 
-        {activeTab === 'buildings'    && <div className="p-4"><BuildingsPanel /></div>}
-        {activeTab === 'upgrades'     && <div className="p-4"><UpgradesPanel /></div>}
-        {activeTab === 'relics'       && <div className="p-4"><RelicsPanel /></div>}
-        {activeTab === 'wheel'        && <div className="p-4"><WheelOfSamsara /></div>}
+        {activeTab === 'buildings'    && <div className="p-4 pb-12 md:pb-0"><BuildingsPanel /></div>}
+        {activeTab === 'upgrades'     && <div className="p-4 pb-12 md:pb-0"><UpgradesPanel /></div>}
+        {activeTab === 'relics'       && <div className="p-4 pb-12 md:pb-0"><RelicsPanel /></div>}
+        {activeTab === 'wheel'        && <div className="p-4 pb-12 md:pb-0"><WheelOfSamsara /></div>}
         {activeTab === 'achievements' && (
-          <div className="p-4">
+          <div className="p-4 pb-12 md:pb-0">
             <AchievementsPanel />
             <MilestonesPanel />
           </div>
         )}
-        {activeTab === 'settings'     && <div className="p-4"><SettingsPanel /></div>}
+        {activeTab === 'settings'     && <div className="p-4 pb-12 md:pb-0"><SettingsPanel /></div>}
       </main>
 
       {/* Overlays */}

@@ -72,14 +72,12 @@ function UpgradeRow({ upgradeId, purchased, affordable }: UpgradeRowProps) {
           >
             {def.name}
           </p>
-          {def.flavor && (
-            <p
-              className="text-xs italic mt-0.5 leading-snug"
-              style={{ color: 'var(--temple-text)', opacity: 0.55, fontFamily: 'inherit' }}
-            >
-              {def.flavor}
-            </p>
-          )}
+          <p
+            className="text-[11px] mt-0.5 font-medium leading-snug"
+            style={{ color: 'var(--temple-text)', opacity: 0.7 }}
+          >
+            {buildEffectSummary()}
+          </p>
         </div>
       </div>
     );
@@ -176,7 +174,7 @@ export default function UpgradesPanel() {
   const purchased  = filteredUpgrades.filter(u => upgrades.has(u.id));
 
   return (
-    <div className="flex flex-col gap-3 w-full" style={{ color: 'var(--temple-text)' }}>
+    <div className="flex flex-col gap-3 w-full h-full min-h-0" style={{ color: 'var(--temple-text)' }}>
       <h2
         className="text-xs font-bold uppercase tracking-widest px-1"
         style={{ color: 'var(--temple-accent)' }}
@@ -209,7 +207,7 @@ export default function UpgradesPanel() {
         ))}
       </div>
 
-      <div className="flex flex-col gap-4 overflow-y-auto max-h-[65vh] pr-1">
+      <div className="flex flex-1 min-h-0 flex-col gap-4 overflow-y-auto pr-1">
         {/* Available */}
         {available.length > 0 && (
           <section>
