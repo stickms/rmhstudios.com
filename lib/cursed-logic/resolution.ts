@@ -48,7 +48,7 @@ export function resolveRound(
   const baseStrike = doubleDown ? 2 : 1;
   const doubleStrike = modifier === 'DoubleStrike';
   let playerStrikeDamage = (effectivePlayer === 'Strike' ? (playerPrepared ? 2 : baseStrike) : 0) * (doubleStrike ? 2 : 1);
-  let protocolStrikeDamage = (effectiveProtocol === 'Strike' ? (protocolPrepared ? 2 : baseStrike) : 0) * (doubleStrike ? 2 : 1);
+  const protocolStrikeDamage = (effectiveProtocol === 'Strike' ? (protocolPrepared ? 2 : baseStrike) : 0) * (doubleStrike ? 2 : 1);
 
   if (runUpgrades.includes('strikePlus1') && effectivePlayer === 'Strike') playerStrikeDamage += 1;
   const eff = stance ? getStanceEffect(stance) : null;

@@ -41,6 +41,21 @@ export const games: GameInfo[] = [
         tags: ['Deckbuilder', 'Roguelike', 'Strategy'],
     },
     {
+        id: 'temple-of-joy',
+        title: 'Temple of Joy',
+        description: 'An idle clicker about the pursuit of happiness. Build your temple, earn bliss, transcend.',
+        longDescription:
+            'Accumulate Happiness through clicking and constructing an ever-expanding temple of earthly delights. Manage the Hedonic Treadmill, earn Karma through spiritual practices, and Transcend reality itself via the Wheel of Samsara. An idle game about what it means to feel good.',
+        href: '/temple-of-joy',
+        status: 'Playable',
+        cta: 'Enter the Temple',
+        isSteam: false,
+        gradient: 'from-amber-700 to-yellow-600',
+        iconName: 'Crown',
+        color: 'from-amber-700/20 to-yellow-600/20 hover:border-amber-500/50',
+        tags: ['Idle', 'Clicker', 'Prestige'],
+    },
+    {
         id: 'cursed-logic',
         title: 'Cursed Logic',
         description:

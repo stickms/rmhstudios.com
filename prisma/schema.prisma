@@ -27,6 +27,7 @@ model User {
   sliceItProfile Player?
   vegaProfile    VegaPlayer?
   signalForgeProfile SignalForgePlayer?
+  templeOfJoyProfile TempleOfJoySave?
   neonDriftwayProfile NeonDriftwayPlayer?
   
   // Slice-It Library Relations
@@ -164,6 +165,17 @@ model SignalForgePlayer {
 
   @@index([highScore(sort: Desc)], map: "idx_signal_forge_high_score")
   @@index([floorReached(sort: Desc)], map: "idx_signal_forge_floor")
+}
+
+model TempleOfJoySave {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  saveData  Json
+  updatedAt DateTime @default(now()) @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("temple_of_joy_save")
 }
 
 model NeonDriftwayPlayer {
