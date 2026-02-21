@@ -13,6 +13,7 @@ interface GameCardProps {
 
 export function GameCard({ game }: GameCardProps) {
     const [isHovered, setIsHovered] = useState(false);
+    const [popoverDirection, setPopoverDirection] = useState<'right' | 'left'>('right');
     const cardRef = useRef<HTMLDivElement>(null);
     
     // Mouse tracking for glossy effect
@@ -51,13 +52,23 @@ export function GameCard({ game }: GameCardProps) {
         return () => window.removeEventListener('mousemove', handleGlobalMouseMove);
     }, [mouseX, mouseY]);
 
+    const handleMouseEnter = () => {
+        if (cardRef.current) {
+            const rect = cardRef.current.getBoundingClientRect();
+            const spaceOnRight = window.innerWidth - rect.right;
+            // If less than 350px (w-80 + some margin), flip to left
+            setPopoverDirection(spaceOnRight < 350 ? 'left' : 'right');
+        }
+        setIsHovered(true);
+    };
+
     return (
         <div className="relative group">
             <Link href={game.href}>
                 <motion.div
                     ref={cardRef}
                     className="relative aspect-[2/3] rounded-lg overflow-hidden border border-slate-800 bg-slate-900 shadow-xl transition-all duration-300 group-hover:border-slate-500/50 group-hover:shadow-[0_0_30px_rgba(255,255,255,0.05)]"
-                    onMouseEnter={() => setIsHovered(true)}
+                    onMouseEnter={handleMouseEnter}
                     onMouseLeave={() => setIsHovered(false)}
                     style={{
                         rotateX,
@@ -130,15 +141,35 @@ export function GameCard({ game }: GameCardProps) {
             <AnimatePresence>
                 {isHovered && (
                     <motion.div
-                        initial={{ opacity: 0, x: 10, scale: 0.95 }}
-                        animate={{ opacity: 1, x: 20, scale: 1 }}
-                        exit={{ opacity: 0, x: 10, scale: 0.95 }}
+                        initial={{ 
+                            opacity: 0, 
+                            x: popoverDirection === 'right' ? 10 : -10, 
+                            scale: 0.95 
+                        }}
+                        animate={{ 
+                            opacity: 1, 
+                            x: popoverDirection === 'right' ? 20 : -20, 
+                            scale: 1 
+                        }}
+                        exit={{ 
+                            opacity: 0, 
+                            x: popoverDirection === 'right' ? 10 : -10, 
+                            scale: 0.95 
+                        }}
                         transition={{ duration: 0.2 }}
-                        className="absolute left-full top-0 z-50 ml-4 hidden lg:block w-80 pointer-events-none"
+                        className={cn(
+                            "absolute top-0 z-50 hidden lg:block w-80 pointer-events-none",
+                            popoverDirection === 'right' ? "left-full ml-4" : "right-full mr-4"
+                        )}
                     >
                         <div className="bg-slate-900/95 backdrop-blur-md border border-slate-700 rounded-xl p-6 shadow-2xl relative">
                             {/* Decorative pointer/arrow */}
-                            <div className="absolute top-8 -left-2 w-4 h-4 bg-slate-900 border-l border-b border-slate-700 rotate-45" />
+                            <div className={cn(
+                                "absolute top-8 w-4 h-4 bg-slate-900 border-slate-700 rotate-45",
+                                popoverDirection === 'right' 
+                                    ? "-left-2 border-l border-b" 
+                                    : "-right-2 border-r border-t"
+                            )} />
                             
                             <div className="relative space-y-4">
                                 <div className="space-y-1">
