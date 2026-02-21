@@ -31,7 +31,7 @@ export function TempleOfJoyGame({ initialSaveData }: { initialSaveData?: SaveDat
     const baseState = useTempleStore.getState();
     if (raw) {
       const merged = saveDataToState(raw, baseState);
-      const mergedState = { ...baseState, ...merged, lastClickTime: Date.now(), pageOpenTime: Date.now() };
+      const mergedState = { ...baseState, ...merged, lastClickTime: Date.now(), pageOpenTime: Date.now(), lastTickTime: Date.now() };
       const offline = computeOfflineProgress(mergedState, Date.now());
       useTempleStore.setState({
         ...mergedState,
@@ -50,6 +50,7 @@ export function TempleOfJoyGame({ initialSaveData }: { initialSaveData?: SaveDat
         ...s,
         lastClickTime: Date.now(),
         pageOpenTime: Date.now(),
+        lastTickTime: Date.now(),
       }));
     }
     // Signal that initialization is complete
@@ -61,12 +62,8 @@ export function TempleOfJoyGame({ initialSaveData }: { initialSaveData?: SaveDat
   const rafRef = useRef<number>(0);
 
   useEffect(() => {
-    let lastTime = performance.now();
     function tick() {
-      const now = performance.now();
-      const delta = now - lastTime;
-      lastTime = now;
-      useTempleStore.getState().tick(delta);
+      useTempleStore.getState().tick();
       rafRef.current = requestAnimationFrame(tick);
     }
     rafRef.current = requestAnimationFrame(tick);
@@ -122,6 +119,21 @@ export function TempleOfJoyGame({ initialSaveData }: { initialSaveData?: SaveDat
       document.removeEventListener('keydown', handleFirstInteraction);
     };
   }, []);
+  // ── Delegated click SFX: play click sound for ALL button clicks in the game ──
+  const gameContainerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const container = gameContainerRef.current;
+    if (!container) return;
+    const handler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.closest('button') && !(target.closest('button') as HTMLButtonElement).disabled) {
+        templeAudio.playClick();
+      }
+    };
+    container.addEventListener('click', handler);
+    return () => container.removeEventListener('click', handler);
+  }, []);
+
   // ── Save-and-navigate helper ──────────────────────────────────────────────
   const handleBackToGames = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -146,6 +158,7 @@ export function TempleOfJoyGame({ initialSaveData }: { initialSaveData?: SaveDat
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div
+      ref={gameContainerRef}
       data-theme={theme}
       className="h-screen flex flex-col overflow-hidden font-sans"
       style={{

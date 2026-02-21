@@ -27,11 +27,12 @@ export function computePilgrimageBurst(state: GameState): number {
  * Advances the game state by `deltaMs` milliseconds.
  * Returns a new state object — never mutates the input.
  */
-export function applyTick(state: GameState, deltaMs: number): GameState {
-  // Uncapped delta for timer decrements (allows catch-up after tab hidden/unfocused)
-  const realDelta = deltaMs / 1000;
-  // Cap delta to 1 second for income/playtime to prevent runaway jumps on tab resume
-  const deltaSeconds = Math.min(realDelta, 1);
+export function applyTick(state: GameState): GameState {
+  // Wall-clock delta — accurate even when the tab is hidden / throttled
+  const now = Date.now();
+  const realDelta = (now - state.lastTickTime) / 1000;
+  // Use full wall-clock delta for income so background time is never lost
+  const deltaSeconds = realDelta;
 
   // ── 1 & 2. Rates ──────────────────────────────────────────────────────────
   const hps = computeTotalHPS(state);
@@ -283,6 +284,7 @@ export function applyTick(state: GameState, deltaMs: number): GameState {
 
   return {
     ...state,
+    lastTickTime: now,
     happiness: autoBuySources !== state.sources ? autoBuyHappiness : newHappiness,
     sources: autoBuySources,
     lifetimeHappiness: newLifetimeHappiness,

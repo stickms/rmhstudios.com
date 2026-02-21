@@ -3,6 +3,7 @@
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { WHEEL_UPGRADES } from '@/lib/temple-of-joy/data/wheel';
 import { computeTranscendenceThreshold } from '@/lib/temple-of-joy/engine';
+import { fmt } from '@/lib/temple-of-joy/numbers';
 import type { WheelTier } from '@/lib/temple-of-joy/types';
 
 const TIER_LABELS: Record<WheelTier, string> = {
@@ -117,7 +118,7 @@ export default function WheelOfSamsara() {
   const blissShards    = useTempleStore(s => s.blissShards);
   const prestigeCount  = useTempleStore(s => s.prestigeCount);
 
-  const threshold = computeTranscendenceThreshold(0);
+  const nextThreshold = computeTranscendenceThreshold(prestigeCount);
 
   const tiers: WheelTier[] = [1, 2, 3, 4, 5];
 
@@ -139,6 +140,20 @@ export default function WheelOfSamsara() {
         </span>
       </div>
 
+      {/* Transcendence threshold */}
+      {prestigeCount > 0 && (
+        <p
+          className="text-xs text-center"
+          style={{ color: 'var(--temple-text)', opacity: 0.7 }}
+        >
+          Next transcendence at{' '}
+          <span style={{ color: 'var(--temple-accent)', fontWeight: 600 }}>
+            {fmt(nextThreshold)}
+          </span>{' '}
+          lifetime happiness
+        </p>
+      )}
+
       {/* Pre-prestige gate */}
       {prestigeCount === 0 && (
         <div
@@ -158,7 +173,7 @@ export default function WheelOfSamsara() {
             className="text-xs"
             style={{ color: 'var(--temple-text)', opacity: 0.65 }}
           >
-            Requires <span style={{ color: 'var(--temple-accent)' }}>{threshold.toLocaleString()}</span> lifetime happiness.
+            Requires <span style={{ color: 'var(--temple-accent)' }}>{fmt(nextThreshold)}</span> lifetime happiness.
           </p>
         </div>
       )}

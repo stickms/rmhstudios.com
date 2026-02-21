@@ -32,6 +32,7 @@ export function createInitialState(): GameState {
     wheelPurchased: new Set<string>(),
     samsaraGiftStacks: 0,
     lastSaved: now,
+    lastTickTime: now,
     totalPlaytime: 0,
     totalClicks: 0,
     totalPilgrimages: 0,
@@ -62,7 +63,7 @@ export function createInitialState(): GameState {
     autoBuyTimer: 30,
     theme: 'dark',
     numberFormat: 'abbreviated',
-    soundEnabled: false,
+    soundEnabled: true,
     musicVolume: 0.5,
     sfxVolume: 0.5,
     activeTab: 'temple',
@@ -88,7 +89,7 @@ interface TempleStore extends GameState {
   getIsIdle: () => boolean;
 
   // Actions
-  tick: (deltaMs: number) => void;
+  tick: () => void;
   click: () => void;
   buySource: (id: SourceId) => void;
   buySourceN: (id: SourceId, n: number) => void;
@@ -137,7 +138,7 @@ export const useTempleStore = create<TempleStore>()(
     getIsIdle: () => computeIsIdle(get()),
 
     // ── Actions ──
-    tick: (deltaMs: number) => set(state => applyTick(state, deltaMs)),
+    tick: () => set(state => applyTick(state)),
     click: () => set(state => Actions.doClick(state)),
     buySource: (id: SourceId) => set(state => Actions.doBuySource(state, id)),
     buySourceN: (id: SourceId, n: number) => set(state => Actions.doBuySourceN(state, id, n)),

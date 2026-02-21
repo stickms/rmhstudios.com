@@ -2,8 +2,7 @@
 
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { fmt } from '@/lib/temple-of-joy/numbers';
-import { computeSourceHPS } from '@/lib/temple-of-joy/engine';
-import type { SourceId } from '@/lib/temple-of-joy/types';
+import { SOURCES } from '@/lib/temple-of-joy/data/sources';
 import HedoTreadmillGraph from './HedoTreadmillGraph';
 
 function Row({
@@ -64,21 +63,21 @@ export default function StatsPanel() {
   const getHPC                 = useTempleStore(s => s.getHPC);
   const getCanTranscend        = useTempleStore(s => s.getCanTranscend);
   const getEffectiveSatisfaction = useTempleStore(s => s.getEffectiveSatisfaction);
-  const getGlobalHPSMultiplier = useTempleStore(s => s.getGlobalHPSMultiplier);
 
   const setShowTranscendenceModal = useTempleStore(s => s.setShowTranscendenceModal);
 
   const state = useTempleStore(s => s);
   
-  // Calculate base HPS (sum of all source HPS)
-  const baseHPS = Object.entries(state.sources).reduce((sum, [SourceId, owned]) => {
+  // Calculate raw base HPS (baseHPS × owned, before any multipliers)
+  const rawBaseHPS = Object.entries(state.sources).reduce((sum, [id, owned]) => {
     if (owned === 0) return sum;
-    return sum + computeSourceHPS(SourceId as SourceId, state);
+    const def = SOURCES.find(s => s.id === id);
+    return sum + (def ? def.baseHPS * owned : 0);
   }, 0);
 
   const ritualReady = ritualCooldown <= 0;
-  const globalMult = getGlobalHPSMultiplier();
   const totalHps = getHPS();
+  const effectiveMult = rawBaseHPS > 0 ? totalHps / rawBaseHPS : 1;
 
   return (
     <div
@@ -123,12 +122,12 @@ export default function StatsPanel() {
         <div>
           <Row
             label="Global Mult"
-            value={`×${globalMult.toFixed(2)}`}
+            value={`×${effectiveMult.toFixed(2)}`}
           />
           <Row
             label="HPS"
             value={fmt(totalHps, numberFormat)}
-            sub={`${fmt(baseHPS, numberFormat)} × ${globalMult.toFixed(2)}`}
+            sub={`${fmt(rawBaseHPS, numberFormat)} × ${effectiveMult.toFixed(2)}`}
             highlight={true}
           />
           <Row

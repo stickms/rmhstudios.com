@@ -360,7 +360,11 @@ export function computeEffectiveSatisfaction(state: GameState): number {
 }
 
 export function computeIsIdle(state: GameState): boolean {
-  return Date.now() - state.lastClickTime > 10_000;
+  // Tolerant idle detection: occasional clicks don't break idle status.
+  // Player is "active" only if they've clicked 3+ times in the last 10 seconds.
+  const now = Date.now();
+  const recentClicks = state.recentClickTimes.filter(t => now - t <= 10_000).length;
+  return recentClicks < 3;
 }
 
 export function computeCanTranscend(state: GameState): boolean {
@@ -454,6 +458,7 @@ export function computeStartingHPSFromWheel(
       wheelPurchased: state.wheelPurchased,
       samsaraGiftStacks: 0,
       lastSaved: 0,
+      lastTickTime: 0,
       totalPlaytime: 0,
       totalClicks: 0,
       totalPilgrimages: 0,

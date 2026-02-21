@@ -15,6 +15,7 @@
     "db:reset": "prisma db push --force-reset"
   },
   "dependencies": {
+    "@fontsource/noto-color-emoji": "^5.2.11",
     "@prisma/adapter-pg": "^7.4.1",
     "@prisma/client": "^7.4.1",
     "@radix-ui/react-dialog": "^1.1.15",

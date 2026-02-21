@@ -173,7 +173,7 @@ export default function RelicsPanel() {
   // Only reveal a relic once the player has had at least 1/10th of its karma cost
   const visibleRelics = RELICS.filter(
     r => activeRelics.includes(r.id) || peakKarma >= r.karmaCost * 0.1
-  );
+  ).sort((a, b) => a.karmaCost - b.karmaCost);
 
   return (
     <div className="flex flex-col gap-4 w-full" style={{ color: 'var(--temple-text)' }}>
