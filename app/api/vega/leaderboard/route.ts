@@ -29,8 +29,14 @@ export async function GET(req: Request) {
         
         return NextResponse.json(leaderboard);
         
-    } catch (error) {
-        console.error('Error fetching Vega leaderboard:', error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    } catch (e: any) {
+        console.error('Error fetching Vega leaderboard:', {
+            error: e.message,
+            stack: e.stack
+        });
+        return NextResponse.json({ 
+            error: 'Internal Server Error',
+            message: process.env.NODE_ENV === 'development' ? e.message : undefined
+        }, { status: 500 });
     }
 }

@@ -36,15 +36,18 @@ export async function GET(req: Request) {
             });
             
             // Map scores and handle potential missing usernames or profile issues
-            leaderboard = scores.map((s: any) => ({
-                username: s.user.username || s.user.name || "Unknown",
-                score: s.score,
-                accuracy: s.accuracy,
-                maxCombo: s.maxCombo,
-                modifiers: s.modifiers,
-                speedMod: s.speedMod,
-            }));
-            console.log('[LEADERBOARD] Song leaderboard for', songId, leaderboard);
+            leaderboard = scores.map((s: any) => {
+                const username = s.user?.username || s.user?.name || "Unknown";
+                return {
+                    username,
+                    score: s.score,
+                    accuracy: s.accuracy,
+                    maxCombo: s.maxCombo,
+                    modifiers: s.modifiers,
+                    speedMod: s.speedMod,
+                };
+            });
+            console.log('[LEADERBOARD] Song leaderboard for', songId, leaderboard.length, 'entries');
         } else {
             // Global leaderboard
             const players = await prisma.player.findMany({
@@ -59,11 +62,18 @@ export async function GET(req: Request) {
                 username: p.username,
                 score: p.totalScore
             }));
-            console.log('[LEADERBOARD] Global leaderboard', leaderboard);
+            console.log('[LEADERBOARD] Global leaderboard', leaderboard.length, 'entries');
         }
         return NextResponse.json(leaderboard);
-    } catch (e) {
-        console.error('[LEADERBOARD] Fetch failed:', e);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    } catch (e: any) {
+        console.error('[LEADERBOARD] Fetch failed:', {
+            error: e.message,
+            stack: e.stack,
+            songId
+        });
+        return NextResponse.json({ 
+            error: 'Internal Server Error',
+            message: process.env.NODE_ENV === 'development' ? e.message : undefined 
+        }, { status: 500 });
     }
 }

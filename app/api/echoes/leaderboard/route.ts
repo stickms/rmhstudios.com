@@ -36,8 +36,14 @@ export async function GET(req: Request) {
         });
 
         return NextResponse.json(leaderboard);
-    } catch (e) {
-        console.error('Echoes leaderboard fetch failed:', e);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    } catch (e: any) {
+        console.error('Echoes leaderboard fetch failed:', {
+            error: e.message,
+            stack: e.stack
+        });
+        return NextResponse.json({ 
+            error: 'Internal Server Error',
+            message: process.env.NODE_ENV === 'development' ? e.message : undefined
+        }, { status: 500 });
     }
 }

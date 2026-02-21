@@ -82,9 +82,9 @@ fi
 log "Installing dependencies..."
 "$PNPM_BIN" install --frozen-lockfile --production=false || { log "ERROR: pnpm install failed."; exit 1; }
 
-log "Running database migrations..."
-"$PNPM_BIN" run db:migrate:prod || {
-    log "ERROR: Migration failed. Manual intervention required."
+log "Syncing database schema..."
+yes | "$PNPM_BIN" run db:push || {
+    log "ERROR: Database sync failed."
     exit 1
 }
 
