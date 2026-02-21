@@ -635,7 +635,14 @@ io.on("connection", (socket: Socket) => {
     });
 });
 
+import { cleanupLeaderboardDuplicates } from "../lib/maintenance/leaderboard-cleanup";
+
 const PORT = 7001;
 httpServer.listen(PORT, () => {
     console.log(`Socket.io server running on http://localhost:${PORT}`);
+    
+    // Run maintenance tasks
+    cleanupLeaderboardDuplicates().catch(err => {
+        console.error('Failed to run leaderboard cleanup:', err);
+    });
 });

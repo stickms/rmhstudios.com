@@ -85,7 +85,7 @@ export async function POST(req: Request) {
                         }
                     }
                 });
-                if (!personalBest || score > personalBest.score || (maxCombo && maxCombo > personalBest.maxCombo)) {
+                if (!personalBest || score > personalBest.score) {
                     await prisma.songLeaderboard.upsert({
                         where: {
                             songId_userId: {
@@ -102,16 +102,16 @@ export async function POST(req: Request) {
                             speedMod: playSpeed,
                         },
                         update: {
-                            score: score > (personalBest?.score || 0) ? Math.round(score) : undefined,
-                            maxCombo: maxCombo > (personalBest?.maxCombo || 0) ? Math.round(maxCombo) : undefined,
-                            accuracy: score > (personalBest?.score || 0) ? (typeof accuracy === 'number' ? Math.max(0, Math.min(1, accuracy)) : undefined) : undefined,
-                            speedMod: score > (personalBest?.score || 0) ? playSpeed : undefined,
-                            createdAt: new Date() // Store date of personal best
+                            score: Math.round(score),
+                            maxCombo: typeof maxCombo === 'number' ? Math.round(maxCombo) : undefined,
+                            accuracy: typeof accuracy === 'number' ? Math.max(0, Math.min(1, accuracy)) : undefined,
+                            speedMod: playSpeed,
+                            createdAt: new Date() // Store date of this specific high score
                         }
                     });
-                    console.log('[DEBUG][API] Upserted SongLeaderboard:', { songId, userId, score, maxCombo, accuracy, playSpeed });
+                    console.log('[DEBUG][API] Updated Personal Best (High Score wins):', { songId, userId, score, maxCombo, accuracy, playSpeed });
                 } else {
-                    console.log('[DEBUG][API] No leaderboard update needed:', { songId, userId, score, maxCombo, accuracy });
+                    console.log('[DEBUG][API] Score did not beat personal best:', { songId, userId, score, pb: personalBest.score });
                 }
             } else {
                 console.log('[DEBUG][API] Song not found:', songId);

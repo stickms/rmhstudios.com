@@ -60,7 +60,20 @@ export class GameEngine {
     }
 
     public async loadMap(map: BeatMap, preloadedBuffer?: AudioBuffer) {
-        this.beatMap = map; // Initial assignment
+        // Deep clone the slices to prevent mutations from leaking back to the asset or across retries
+        let slices: Slice[] = [];
+        const storeModifiers = useGameStore.getState().modifiers;
+        const difficulty = storeModifiers.difficulty || 'normal';
+
+        if (Array.isArray(map.slices)) {
+            slices = map.slices.map(s => ({ ...s }));
+        } else {
+            const sourceSlices = (map.slices as Record<Difficulty, Slice[]>)[difficulty] || 
+                             (map.slices as Record<Difficulty, Slice[]>).normal;
+            slices = sourceSlices.map(s => ({ ...s }));
+        }
+
+        this.beatMap = { ...map, slices };
         this.processedSliceIds.clear();
         this.reset();
         
@@ -68,39 +81,45 @@ export class GameEngine {
         const m = useGameStore.getState().modifiers;
         const speed = m.speed || 1.0;
         
-        const difficulty = m.difficulty || 'normal';
-    
-    // Support legacy maps (flat array) alongside new Map dictionaries
-    let slices: Slice[] = [];
-    if (Array.isArray(map.slices)) {
-        slices = [...map.slices];
-    } else {
-        slices = [...((map.slices as Record<Difficulty, Slice[]>)[difficulty] || (map.slices as Record<Difficulty, Slice[]>).normal)];
-    }
+        if (m.switching) {
+            // Pre-calculate which lanes are occupied by LONG notes at what times
+            // to avoid switching a note into a hold trail.
+            const longNotes = (this.beatMap.slices as Slice[]).filter(s => s.type === 'LONG');
 
-    if (m.switching) {
-        // Convert ~15% of normal slices into SWITCH notes
-        slices = slices.map(slice => {
-            // Avoid converting BOMBs or LONGs to SWITCH if possible to preserve their mechanics
-            if (slice.type !== 'BOMB' && slice.type !== 'LONG' && Math.random() < 0.15) {
-                return { ...slice, type: 'SWITCH', duration: undefined };
-            }
-            return slice;
-        });
-    }
+            // Convert ~15% of normal slices into SWITCH notes
+            this.beatMap.slices = (this.beatMap.slices as Slice[]).map(slice => {
+                // Avoid converting BOMBs or LONGs to SWITCH
+                if (slice.type !== 'BOMB' && slice.type !== 'LONG' && Math.random() < 0.15) {
+                    const destLane = slice.lane === 0 ? 1 : 0;
+                    
+                    // Conflict Check: Is there a LONG note on destLane that covers this slice's time?
+                    // We add a small buffer (e.g., 0.1s) to avoid very tight transitions
+                    const buffer = 0.1;
+                    const hasConflict = longNotes.some(long => 
+                        long.lane === destLane && 
+                        slice.time >= (long.time - buffer) && 
+                        slice.time <= (long.time + (long.duration || 0) + buffer)
+                    );
 
-    if (m.bombs) {
-        // Convert ~5% of normal slices into bombs
-        slices = slices.map(slice => {
-            if (slice.type !== 'SWITCH' && Math.random() < 0.05) {
-                return { ...slice, type: 'BOMB', duration: undefined };
-            }
-            return slice;
-        });
-    }
+                    if (!hasConflict) {
+                        return { ...slice, type: 'SWITCH', duration: undefined };
+                    }
+                }
+                return slice;
+            });
+        }
+
+        if (m.bombs) {
+            // Convert ~5% of normal slices into bombs
+            this.beatMap.slices = (this.beatMap.slices as Slice[]).map(slice => {
+                if (slice.type !== 'SWITCH' && Math.random() < 0.05) {
+                    return { ...slice, type: 'BOMB', duration: undefined };
+                }
+                return slice;
+            });
+        }
 
         // Apply Speed to audio
-        this.beatMap = { ...map, slices }; // Update beatMap with modified slices
         this.songId = map.id;
         useGameStore.getState().setSongId(map.id);
         if (preloadedBuffer) {
@@ -126,6 +145,14 @@ export class GameEngine {
         this.maxCombo = 0;
         this.totalNotes = 0;
         this.hitPoints = 0;
+        
+        // RESET SLICE FLAGS on current beatMap
+        if (this.beatMap && Array.isArray(this.beatMap.slices)) {
+            (this.beatMap.slices as Slice[]).forEach(slice => {
+                slice.hit = false;
+                slice.hitTime = undefined;
+            });
+        }
         
         // Load modifiers
         // We need to re-fetch from store because reset() is called on restart

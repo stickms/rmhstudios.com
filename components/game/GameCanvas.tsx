@@ -706,6 +706,8 @@ export function GameCanvas() {
             if (targeted1) targetedIds.add(targeted1.id);
 
             (map.slices as Slice[]).forEach(slice => {
+                ctx.globalAlpha = 1;
+
                 // Determine X position (clamped to CURSOR_X if it's currently being held during its duration)
                 let sliceX = CURSOR_X + (slice.time - currentTime) * PPS;
                 // If this is a LONG note that has been hit and is active, left edge clamps to cursor
@@ -926,8 +928,6 @@ export function GameCanvas() {
                     ctx.fill();
                 }
 
-                // Reset alpha after each note if invisible mod is active
-                ctx.globalAlpha = 1;
             });
             ctx.shadowColor = 'transparent'; // Reset
         }
