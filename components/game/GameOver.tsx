@@ -18,12 +18,21 @@ export function GameOver() {
         accuracy,
         maxCombo,
         songId,
-        speed: modifiers.speed
+        speed: modifiers.speed,
+        modifiers
       });
       fetch('/api/slice-it/score', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: userName, score, accuracy, maxCombo, songId, speed: modifiers.speed }),
+        body: JSON.stringify({ 
+          username: userName, 
+          score, 
+          accuracy, 
+          maxCombo, 
+          songId, 
+          speed: modifiers.speed,
+          modifiers 
+        }),
       })
       .then(async (res) => {
         const body = await res.json().catch(() => ({}));

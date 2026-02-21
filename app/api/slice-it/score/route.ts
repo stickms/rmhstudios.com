@@ -16,8 +16,8 @@ export async function POST(req: Request) {
 
     try {
         const body = await req.json();
-        const { username, score, accuracy, maxCombo, songId, speed } = body;
-        console.log('[SCORE SUBMIT] Payload received:', { username, score, accuracy, maxCombo, songId, speed });
+        const { username, score, accuracy, maxCombo, songId, speed, modifiers } = body;
+        console.log('[SCORE SUBMIT] Payload received:', { username, score, accuracy, maxCombo, songId, speed, modifiers });
 
         if (!username || typeof username !== 'string' || typeof score !== 'number') {
             console.log('[SCORE SUBMIT] Invalid data:', { username, score });
@@ -109,6 +109,7 @@ export async function POST(req: Request) {
                                 maxCombo: typeof maxCombo === 'number' ? Math.round(maxCombo) : undefined,
                                 accuracy: typeof accuracy === 'number' ? Math.max(0, Math.min(1, accuracy)) : undefined,
                                 speedMod: playSpeed,
+                                modifiers: modifiers || undefined,
                                 createdAt: new Date()
                             }
                         });
@@ -132,6 +133,7 @@ export async function POST(req: Request) {
                                 maxCombo: typeof maxCombo === 'number' ? Math.round(maxCombo) : 0,
                                 accuracy: typeof accuracy === 'number' ? Math.max(0, Math.min(1, accuracy)) : null,
                                 speedMod: playSpeed,
+                                modifiers: modifiers || undefined,
                             }
                         });
                     }

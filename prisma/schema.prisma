@@ -263,6 +263,7 @@ model SongLeaderboard {
   maxCombo    Int
   accuracy    Float?
   speedMod    Float    @default(1.0)
+  modifiers   Json?
   
   createdAt   DateTime @default(now())
 

@@ -1,12 +1,25 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Bomb, Zap, Ghost, RefreshCw, Layers, Crosshair, Flame, RotateCcw } from 'lucide-react';
+import { Tooltip } from '@/components/ui/Tooltip';
 
 interface LeaderboardEntry {
     username: string;
     score: number;
     accuracy?: number;
     maxCombo?: number;
+    modifiers?: {
+        bombs: boolean;
+        switching: boolean;
+        suddenDeath: boolean;
+        invisible: boolean;
+        spin: boolean;
+        strictTiming: boolean;
+        oneTrack: boolean;
+        speed: number;
+    };
+    speedMod?: number;
 }
 
 interface LeaderboardProps {
@@ -57,20 +70,72 @@ export function Leaderboard({ songId }: LeaderboardProps) {
                             <span className="text-slice-text-light w-5 text-center font-bold shrink-0">{i+1}.</span>
                             <span className="text-slice-text font-bold truncate flex-1 min-w-0">{p.username}</span>
                             <div className="flex flex-col items-end shrink-0 gap-0.5">
-                                <span className="text-blue-500 font-mono font-bold tabular-nums">{p.score.toLocaleString()}</span>
+                                <div className="flex items-center gap-1 mb-0.5">
+                                    {p.modifiers && (
+                                        <div className="flex items-center gap-1">
+                                            {p.modifiers.bombs && (
+                                                <Tooltip content="Bombs">
+                                                    <Bomb className="w-3 h-3 text-red-500" />
+                                                </Tooltip>
+                                            )}
+                                            {p.modifiers.switching && (
+                                                <Tooltip content="Switching">
+                                                    <RefreshCw className="w-3 h-3 text-blue-400" />
+                                                </Tooltip>
+                                            )}
+                                            {p.modifiers.suddenDeath && (
+                                                <Tooltip content="Sudden Death">
+                                                    <Flame className="w-3 h-3 text-orange-500" />
+                                                </Tooltip>
+                                            )}
+                                            {p.modifiers.invisible && (
+                                                <Tooltip content="Invisible Notes">
+                                                    <Ghost className="w-3 h-3 text-purple-400" />
+                                                </Tooltip>
+                                            )}
+                                            {p.modifiers.spin && (
+                                                <Tooltip content="Spin Mod">
+                                                    <RotateCcw className="w-3 h-3 text-indigo-400" />
+                                                </Tooltip>
+                                            )}
+                                            {p.modifiers.strictTiming && (
+                                                <Tooltip content="Strict Timing">
+                                                    <Crosshair className="w-3 h-3 text-emerald-500" />
+                                                </Tooltip>
+                                            )}
+                                            {p.modifiers.oneTrack && (
+                                                <Tooltip content="One Track">
+                                                    <Layers className="w-3 h-3 text-amber-500" />
+                                                </Tooltip>
+                                            )}
+                                        </div>
+                                    )}
+                                    {p.speedMod && p.speedMod !== 1.0 && (
+                                        <Tooltip content={`${p.speedMod.toFixed(1)}x Speed`}>
+                                            <span className="text-[10px] font-black text-purple-500 bg-purple-100 px-1.5 py-0.5 rounded-full">
+                                                {p.speedMod.toFixed(1)}x
+                                            </span>
+                                        </Tooltip>
+                                    )}
+                                    <span className="text-blue-500 font-mono font-bold tabular-nums ml-1">{p.score.toLocaleString()}</span>
+                                </div>
                                 <div className="flex items-center gap-1.5">
                                     {p.accuracy !== undefined && (
-                                        <span className={`text-[10px] font-bold font-mono px-1.5 py-0.5 rounded-full ${
-                                            p.accuracy >= 1      ? 'bg-cyan-100 text-cyan-600'  :
-                                            p.accuracy >= 0.95   ? 'bg-green-100 text-green-600' :
-                                            p.accuracy >= 0.80   ? 'bg-yellow-100 text-yellow-600' :
-                                                                   'bg-slice-shadow-dark text-slice-text-muted'
-                                        }`}>
-                                            {(p.accuracy * 100).toFixed(1)}%
-                                        </span>
+                                        <Tooltip content={`${(p.accuracy * 100).toFixed(2)}% Accuracy`}>
+                                            <span className={`text-[10px] font-bold font-mono px-1.5 py-0.5 rounded-full ${
+                                                p.accuracy >= 1      ? 'bg-cyan-100 text-cyan-600'  :
+                                                p.accuracy >= 0.95   ? 'bg-green-100 text-green-600' :
+                                                p.accuracy >= 0.80   ? 'bg-yellow-100 text-yellow-600' :
+                                                                    'bg-slice-shadow-dark text-slice-text-muted'
+                                            }`}>
+                                                {(p.accuracy * 100).toFixed(1)}%
+                                            </span>
+                                        </Tooltip>
                                     )}
                                     {p.maxCombo !== undefined && p.maxCombo > 0 && (
-                                        <span className="text-[10px] font-bold text-slice-text-light font-mono">{p.maxCombo}x</span>
+                                        <Tooltip content={`${p.maxCombo}x Max Combo`}>
+                                            <span className="text-[10px] font-bold text-slice-text-light font-mono italic">{p.maxCombo}x</span>
+                                        </Tooltip>
                                     )}
                                 </div>
                             </div>

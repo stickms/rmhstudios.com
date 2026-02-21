@@ -41,6 +41,8 @@ export async function GET(req: Request) {
                 score: s.score,
                 accuracy: s.accuracy,
                 maxCombo: s.maxCombo,
+                modifiers: s.modifiers,
+                speedMod: s.speedMod,
             }));
             console.log('[LEADERBOARD] Song leaderboard for', songId, leaderboard);
         } else {

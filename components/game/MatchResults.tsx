@@ -114,7 +114,15 @@ export function MatchResults({ onBack, isHost, lobbyId }: { onBack: () => void; 
         fetch('/api/slice-it/score', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: userName, score, accuracy, maxCombo, songId, speed: modifiers.speed }),
+            body: JSON.stringify({ 
+                username: userName, 
+                score, 
+                accuracy, 
+                maxCombo, 
+                songId, 
+                speed: modifiers.speed,
+                modifiers
+            }),
         })
         .then(async (res) => {
             if (!res.ok) {
