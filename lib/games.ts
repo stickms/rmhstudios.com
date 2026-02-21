@@ -29,9 +29,9 @@ export const games: GameInfo[] = [
     {
         id: 'signal-forge',
         title: 'Signal Forge',
-        description: 'A roguelike deckbuilder where you match waveform sequences to survive.',
+        description: 'A rhythmic roguelike deckbuilder where you manipulate waveforms to stabilize the signal.',
         longDescription:
-            'Build your deck of waveforms and match sequences to defeat enemies. Every run is different as you navigate floors of increasing difficulty. Manage your tempo, control static corruption, and discover powerful synergies. A game about composing the perfect signal.',
+            'Build a deck of frequency modulations and pattern-match waveform sequences to survive. Manage static corruption, build tempo for massive bursts, and stabilize glitches in a clinical, tech-driven roguelike experience.',
         href: '/signal-forge',
         status: 'Playable Demo',
         cta: 'Play Now',
@@ -45,9 +45,9 @@ export const games: GameInfo[] = [
     {
         id: 'temple-of-joy',
         title: 'Temple of Joy',
-        description: 'An idle clicker about the pursuit of happiness. Build your temple, earn bliss, transcend.',
+        description: 'An advanced idle clicker exploring the pursuit of bliss through spiritual and carnal indulgence.',
         longDescription:
-            'Accumulate Happiness through clicking and constructing an ever-expanding temple of earthly delights. Manage the Hedonic Treadmill, earn Karma through spiritual practices, and Transcend reality itself via the Wheel of Samsara. An idle game about what it means to feel good.',
+            'Accumulate Happiness to construct a sprawling temple of delights. Balance the Hedonic Treadmill, earn Karma through pilgrimages, and Transcend the Wheel of Samsara in a deep idle game featuring relics, rituals, and philosophical choices.',
         href: '/temple-of-joy',
         status: 'Playable',
         cta: 'Enter the Temple',
@@ -62,9 +62,9 @@ export const games: GameInfo[] = [
         id: 'cursed-logic',
         title: 'Cursed Logic',
         description:
-            'A turn-based duel against an unstable Protocol. Commit actions in secret, resolve simultaneously.',
+            'A psychological turn-based duel against an unstable, semi-sentient AI Protocol.',
         longDescription:
-            'Interface with a hostile, semi-sentient system that controls a shared reality. Each round you and the Protocol commit to one action in secret; resolution is simultaneous. The system is unstable—rules and modifiers shift between rounds. Outsmart chaos under severe resource constraint. Absurd, dark, and slightly comedic.',
+            "Strategy meets absurdity in a high-stakes duel where actions resolve simultaneously. Choose your Stance, predict the Protocol's shifting Mutations, and manage your Integrity and Charge under the pressure of an unstable system.",
         href: '/cursed-logic',
         status: 'Playable Demo',
         cta: 'Duel the Protocol',
@@ -79,9 +79,9 @@ export const games: GameInfo[] = [
         id: 'echoes',
         title: 'Echoes of the Spire',
         description:
-            'A narrative-driven puzzle game exploring memory, identity, and the nature of reality.',
+            'A narrative-driven extraction thriller set on a fragmented deep space mining rig.',
         longDescription:
-            'Dive into a fragmented reality where memories are currency. Solve complex narrative puzzles to piece together the truth of your existence before the entropy of the void dissolves everything you know. Features non-linear storytelling, adaptive audio landscapes, and choices that ripple across timelines.',
+            'Navigate Outpost 13, a reality-glitched mining station overrun by "Echoes." Use your neural link to piece together fragmented memories, manage cryo-sickness, and survive the shadows in this narrative-heavy survival experience.',
         href: '/echoes',
         status: 'Playable',
         cta: 'Play Now',
@@ -95,9 +95,9 @@ export const games: GameInfo[] = [
     {
         id: 'slice-it',
         title: 'Slice It!',
-        description: 'A high-octane rhythm game where you slice beats to the music.',
+        description: 'A high-octane neon rhythm game where you slice through beats in a pulse-pounding world.',
         longDescription:
-            'Test your reflexes in this neon-soaked rhythm game. Slice through beats, dodge obstacles, and aim for the high score in a world that pulses to the music. Upload your own tracks or play the demo.',
+            'Test your reflexes as you slice through beat sequences and dodge obstacles in a vibrant, neon-soaked environment. Feature-rich with global leaderboards, multiplayer lobbies, and support for custom track uploads.',
         href: '/slice-it',
         status: 'Playable Demo',
         cta: 'Play Now',
@@ -111,9 +111,9 @@ export const games: GameInfo[] = [
     {
         id: 'laundry-sort',
         title: 'Laundry Sort',
-        description: 'A physics-based game where gravity and color matching are everything.',
+        description: 'A frantic physics-based arcade game where gravity and color matching are your only tools.',
         longDescription:
-            'Sort falling laundry into color-matched bins using gravity and ragdoll physics. Watch as clothes tumble and bounce through the air. Earn points for correct sorts, but watch out—put a red shirt in the blue bin and you\'ll lose points! Features dynamic physics, vibrant colors, and addictive gameplay.',
+            'Sort falling laundry into color-coded bins using ragdoll physics. Watch clothes tumble and bounce through complex dividers as you chase high scores in a race against the clock. Simple controls, chaotic physics.',
         href: '/laundry-sort',
         status: 'Playable Demo',
         cta: 'Play Now',
@@ -127,9 +127,9 @@ export const games: GameInfo[] = [
     {
         id: 'vega',
         title: 'Project Vega',
-        description: 'A Chrono-Loop Tower Defense where you defend against intrusive thoughts.',
+        description: 'A clinical horror tower defense featuring recursive timelines and Ghost Protocols.',
         longDescription:
-            'Defend the Memory Core across 3 recursive timelines. Your towers from previous loops become \'Ghost Protocols\' that assist you. Merging timelines creates Paradoxes. A clinical horror aesthetic inspired by Balatro and Pony Island.',
+            'Defend the Memory Core from intrusive thoughts across three recursive loops. Deploy Ghost Protocols from your past runs, merge timelines to create powerful Paradoxes, and survive the escalating difficulty of a clinical horror simulation.',
         href: '/vega',
         status: 'Prototype',
         cta: 'Initialize Loop',
@@ -143,9 +143,9 @@ export const games: GameInfo[] = [
     {
         id: 'house-always-wins',
         title: 'House Always Wins',
-        description: 'A casino metroidvania where gambling is corruption.',
+        description: 'A dark casino Metroidvania where gambling is a form of world-altering corruption.',
         longDescription:
-            'A dark, narrative 2D exploration-platformer inside an old, abandoned casino. Inspired by Hollow Knight, Celeste, and Undertale. Gambling never blocks progress—it only changes difficulty, debt, NPC tone, and the world around you. The house always wins, but how you play changes everything.',
+            'Explore the depths of an abandoned, decaying casino in this 2D platformer. Debt is your greatest enemy, altering NPC interactions, world hazards, and difficulty as you uncover the secrets of a house that never loses.',
         href: '/house-always-wins',
         status: 'In Development',
         cta: 'Enter Casino',
@@ -160,9 +160,9 @@ export const games: GameInfo[] = [
         id: 'satans-library',
         title: "Satan's Library",
         description:
-            "A survival horror where you 'lock in' to gain Knowledge and Aura while escaping succubi.",
+            'A survival horror experience about "locking in" to survive the ultimate test of willpower.',
         longDescription:
-            "A survival horror where you play as an underdog in a library overrun by succubi and chadlites. Your goal: 'lock in' and build your Knowledge and Aura stats to escape. Resist temptation, survive beatdowns, and outsmart Satan (Rish) himself in this high-stakes test of willpower.",
+            "Play as an underdog in a library overrun by succubi and chadlites. Resist temptation, build your Knowledge and Aura stats, and outsmart Satan himself in this high-stakes survival horror challenge.",
         href: '#',
         status: 'In Development',
         cta: 'Wishlist on Steam',
@@ -176,9 +176,9 @@ export const games: GameInfo[] = [
     {
         id: 'neon-driftway',
         title: 'Neon Driftway',
-        description: 'An endless highway survival racer with 3 levels and leaderboards.',
+        description: 'An endless highway survival racer featuring high-speed drifting and close-call mechanics.',
         longDescription:
-            'Grip the wheel and push into the neon. Dodge traffic, weave through hazards, and chase close calls for massive score multipliers across three distinct levels: Sunset Freeway, Rainline, and Night Circuit. Each level brings unique mechanics — grip loss, headlight cones, aggressive traffic. How long can you survive?',
+            'Push your car to the limit across three distinct levels: Sunset Freeway, Rainline, and Night Circuit. Rack up multipliers with daring close calls, manage grip in the rain, and dodge aggressive traffic in a neon-soaked endless racer.',
         href: '/neon-driftway',
         status: 'Playable Demo',
         cta: 'Play Now',
@@ -192,9 +192,9 @@ export const games: GameInfo[] = [
     {
         id: 'rmhdle',
         title: 'RMHdle',
-        description: 'The daily word game for the RMH community.',
+        description: 'The official daily word challenge for the RMH community.',
         longDescription:
-            'A daily word challenge where you guess a 5-letter word in 6 tries. Part of the RMH Discord integration, featuring community-specific words and global competition.',
+            'A daily 5-letter word game tailored for the RMH ecosystem. Join the community on Discord to share your streaks, compete with others, and guess secret terms from RMH history.',
         href: 'https://discord.gg/ZdfhdAKVSf',
         status: 'Discord Game',
         cta: 'Play on Discord',
@@ -208,9 +208,9 @@ export const games: GameInfo[] = [
     {
         id: 'rmh-connections',
         title: 'RMHConnections',
-        description: 'Find the common threads between RMH community terms.',
+        description: 'A daily puzzle game about finding common threads in RMH lore.',
         longDescription:
-            'Group sixteen items into four categories of four. Each daily puzzle features references, history, and characters from the RMH community. Stay local or compete globally.',
+            'Group sixteen community-themed items into four categories. A daily test of your RMH knowledge, featuring characters, memes, and historical events from across the community.',
         href: 'https://discord.gg/ZdfhdAKVSf',
         status: 'Discord Game',
         cta: 'Play on Discord',
@@ -221,4 +221,5 @@ export const games: GameInfo[] = [
         tags: ['Discord', 'Puzzle', 'Daily'],
         imagePath: '/images/games/rmhconnections.png',
     },
+
 ];
