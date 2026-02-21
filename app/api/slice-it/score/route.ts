@@ -48,7 +48,8 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const existingProfile = await prisma.player.findUnique({ where: { userId } });
+        // Use findFirst for profile to be resilient to duplicates on older data
+        const existingProfile = await prisma.player.findFirst({ where: { userId } });
         if (existingProfile) {
             await prisma.player.update({
                 where: { id: existingProfile.id },
@@ -59,9 +60,10 @@ export async function POST(req: Request) {
                     username: cleanUsername
                 }
             });
-            console.log('[SCORE SUBMIT] Updated Player:', userId, cleanUsername, score);
+            console.log('[SCORE SUBMIT] Updated Player Profile:', userId, cleanUsername, score);
         } else {
-            const usernameConfig = await prisma.player.findUnique({ where: { username: cleanUsername } });
+            // Also check username with findFirst
+            const usernameConfig = await prisma.player.findFirst({ where: { username: cleanUsername } });
             if (usernameConfig) {
                 console.log('[SCORE SUBMIT] Username taken:', cleanUsername);
                 return NextResponse.json({ error: 'Username taken.' }, { status: 409 });
@@ -69,49 +71,68 @@ export async function POST(req: Request) {
             await prisma.player.create({
                 data: { userId, username: cleanUsername, totalScore: score, gamesPlayed: 1 }
             });
-            console.log('[SCORE SUBMIT] Created Player:', userId, cleanUsername, score);
+            console.log('[SCORE SUBMIT] Created Player Profile:', userId, cleanUsername, score);
         }
 
         // Save per-song leaderboard entry if songId is provided
         if (songId && typeof songId === 'string') {
-            const songExists = await prisma.song.findUnique({ where: { id: songId }, select: { id: true } });
+            const songExists = await prisma.song.findFirst({ where: { id: songId }, select: { id: true } });
             if (songExists) {
-                // Check for existing personal best
-                const personalBest = await prisma.songLeaderboard.findUnique({
-                    where: {
-                        songId_userId: {
-                            songId,
-                            userId
-                        }
-                    }
+                // Use findMany to detect and handle duplicates for this user/song pair
+                const existingScores = await prisma.songLeaderboard.findMany({
+                    where: { songId, userId },
+                    orderBy: { score: 'desc' }
                 });
+
+                const personalBest = existingScores[0]; // Highest score is the PB
+
                 if (!personalBest || score > personalBest.score) {
-                    await prisma.songLeaderboard.upsert({
-                        where: {
-                            songId_userId: {
-                                songId,
-                                userId
+                    if (personalBest) {
+                        // Update the existing best
+                        await prisma.songLeaderboard.update({
+                            where: { id: personalBest.id },
+                            data: {
+                                score: Math.round(score),
+                                maxCombo: typeof maxCombo === 'number' ? Math.round(maxCombo) : undefined,
+                                accuracy: typeof accuracy === 'number' ? Math.max(0, Math.min(1, accuracy)) : undefined,
+                                speedMod: playSpeed,
+                                createdAt: new Date()
                             }
-                        },
-                        create: {
-                            songId,
-                            userId,
-                            score: Math.round(score),
-                            maxCombo: typeof maxCombo === 'number' ? Math.round(maxCombo) : 0,
-                            accuracy: typeof accuracy === 'number' ? Math.max(0, Math.min(1, accuracy)) : null,
-                            speedMod: playSpeed,
-                        },
-                        update: {
-                            score: Math.round(score),
-                            maxCombo: typeof maxCombo === 'number' ? Math.round(maxCombo) : undefined,
-                            accuracy: typeof accuracy === 'number' ? Math.max(0, Math.min(1, accuracy)) : undefined,
-                            speedMod: playSpeed,
-                            createdAt: new Date() // Store date of this specific high score
+                        });
+                        
+                        // Clean up any remaining duplicates (redundant records)
+                        if (existingScores.length > 1) {
+                            const idsToDelete = existingScores.slice(1).map(s => s.id);
+                            await prisma.songLeaderboard.deleteMany({
+                                where: { id: { in: idsToDelete } }
+                            });
+                            console.log('[SCORE SUBMIT] Cleaned up duplicates for user/song:', { userId, songId, removed: idsToDelete.length });
                         }
-                    });
-                    console.log('[DEBUG][API] Updated Personal Best (High Score wins):', { songId, userId, score, maxCombo, accuracy, playSpeed });
+                    } else {
+                        // Create new entry
+                        await prisma.songLeaderboard.create({
+                            data: {
+                                songId,
+                                userId,
+                                score: Math.round(score),
+                                maxCombo: typeof maxCombo === 'number' ? Math.round(maxCombo) : 0,
+                                accuracy: typeof accuracy === 'number' ? Math.max(0, Math.min(1, accuracy)) : null,
+                                speedMod: playSpeed,
+                            }
+                        });
+                    }
+                    console.log('[DEBUG][API] Updated Personal Best (Resilient):', { songId, userId, score });
                 } else {
                     console.log('[DEBUG][API] Score did not beat personal best:', { songId, userId, score, pb: personalBest.score });
+                    
+                    // Even if not beating PB, we can take the opportunity to clean up duplicates if they exist
+                    if (existingScores.length > 1) {
+                        const idsToDelete = existingScores.slice(1).map(s => s.id);
+                        await prisma.songLeaderboard.deleteMany({
+                            where: { id: { in: idsToDelete } }
+                        });
+                        console.log('[SCORE SUBMIT] Cleaned up duplicates for user/song (during unranked/low score):', { userId, songId, removed: idsToDelete.length });
+                    }
                 }
             } else {
                 console.log('[DEBUG][API] Song not found:', songId);

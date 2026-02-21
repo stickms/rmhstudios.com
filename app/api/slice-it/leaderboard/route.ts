@@ -29,15 +29,15 @@ export async function GET(req: Request) {
                         select: {
                             name: true,
                             username: true,
-                            sliceItProfile: {
-                                select: { username: true }
-                            }
+                            // Avoid nested include for sliceItProfile if it's potentially non-unique on prod
                         }
                     }
                 }
             });
+            
+            // Map scores and handle potential missing usernames or profile issues
             leaderboard = scores.map((s: any) => ({
-                username: s.user.sliceItProfile?.username || s.user.name || s.user.username || "Unknown",
+                username: s.user.username || s.user.name || "Unknown",
                 score: s.score,
                 accuracy: s.accuracy,
                 maxCombo: s.maxCombo,
