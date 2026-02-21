@@ -1,4 +1,4 @@
-
+import 'dotenv/config';
 import { Server, Socket } from "socket.io";
 // No http server needed if standalone, but usually we wrap http.
 // But standalone socket.io can listen on a port directly.
