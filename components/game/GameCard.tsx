@@ -63,13 +63,15 @@ export function GameCard({ game }: GameCardProps) {
     };
 
     return (
-        <div className="relative group">
+        <div 
+            className={cn("relative group", isHovered && "z-[100]")}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={() => setIsHovered(false)}
+        >
             <Link href={game.href}>
                 <motion.div
                     ref={cardRef}
                     className="relative aspect-[2/3] rounded-lg overflow-hidden border border-slate-800 bg-slate-900 shadow-xl transition-all duration-300 group-hover:border-slate-500/50 group-hover:shadow-[0_0_30px_rgba(255,255,255,0.05)]"
-                    onMouseEnter={handleMouseEnter}
-                    onMouseLeave={() => setIsHovered(false)}
                     style={{
                         rotateX,
                         rotateY,
@@ -141,6 +143,7 @@ export function GameCard({ game }: GameCardProps) {
             <AnimatePresence>
                 {isHovered && (
                     <motion.div
+                        key="game-popover"
                         initial={{ 
                             opacity: 0, 
                             x: popoverDirection === 'right' ? 10 : -10, 
