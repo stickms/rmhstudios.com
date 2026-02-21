@@ -48,6 +48,7 @@ export function applyTick(state: GameState): GameState {
 
   let newHappiness = state.happiness + happinessGained;
   let newLifetimeHappiness = state.lifetimeHappiness + happinessGained;
+  let newRunHappiness = state.runHappiness + happinessGained;
   let newPeakHappiness = Math.max(state.peakHappiness, newHappiness);
 
   // ── 7. Karma ──────────────────────────────────────────────────────────────
@@ -123,7 +124,7 @@ export function applyTick(state: GameState): GameState {
   // ── 15. Milestones ────────────────────────────────────────────────────────
   let newMilestones = state.milestones;
   for (const milestone of MILESTONES) {
-    if (newLifetimeHappiness >= milestone.threshold && !newMilestones.has(milestone.id)) {
+    if (newRunHappiness >= milestone.threshold && !newMilestones.has(milestone.id)) {
       newMilestones = new Set(newMilestones);
       newMilestones.add(milestone.id);
     }
@@ -292,6 +293,7 @@ export function applyTick(state: GameState): GameState {
     happiness: autoBuySources !== state.sources ? autoBuyHappiness : newHappiness,
     sources: autoBuySources,
     lifetimeHappiness: newLifetimeHappiness,
+    runHappiness: newRunHappiness,
     peakHappiness: newPeakHappiness,
     karma: newKarma,
     peakKarma: newPeakKarma,

@@ -50,6 +50,7 @@ function Row({
 export default function StatsPanel() {
   const happiness              = useTempleStore(s => s.happiness);
   const lifetimeHappiness      = useTempleStore(s => s.lifetimeHappiness);
+  const runHappiness           = useTempleStore(s => s.runHappiness);
   const karma                  = useTempleStore(s => s.karma);
   const blissShards            = useTempleStore(s => s.blissShards);
   const prestigeCount          = useTempleStore(s => s.prestigeCount);
@@ -108,7 +109,12 @@ export default function StatsPanel() {
             sub="above baseline"
           />
           <Row
-            label="Lifetime"
+            label="This Run"
+            value={fmt(runHappiness, numberFormat)}
+            sub="for transcendence"
+          />
+          <Row
+            label="All Time"
             value={fmt(lifetimeHappiness, numberFormat)}
             sub="total earned"
           />

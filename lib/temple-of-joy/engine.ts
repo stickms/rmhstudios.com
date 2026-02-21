@@ -368,7 +368,7 @@ export function computeIsIdle(state: GameState): boolean {
 }
 
 export function computeCanTranscend(state: GameState): boolean {
-  return state.lifetimeHappiness >= computeTranscendenceThreshold(state.prestigeCount);
+  return state.runHappiness >= computeTranscendenceThreshold(state.prestigeCount);
 }
 
 // ─── Upgrade Queries ──────────────────────────────────────────────────────────
@@ -486,6 +486,7 @@ export function computeStartingHPSFromWheel(
       pageOpenTime: 0,
       offlineHappinessOnLoad: 0,
       offlineSecondsOnLoad: 0,
+      runHappiness: 0,
       autoBuyTimer: 30,
       theme: 'light',
       numberFormat: 'abbreviated',
@@ -494,6 +495,7 @@ export function computeStartingHPSFromWheel(
       musicVolume: 0.5,
       sfxVolume: 0.5,
       autoBuyEnabled: true,
+      emberSelections: [],
       activeTab: 'temple',
       upgradePathFilter: 'all',
       showTranscendenceModal: false,

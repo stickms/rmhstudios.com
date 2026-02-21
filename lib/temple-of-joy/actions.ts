@@ -27,6 +27,7 @@ function makeInitialState(
   return {
     happiness: 0,
     lifetimeHappiness: 0,
+    runHappiness: 0,
     peakHappiness: 0,
     peakKarma: 0,
     karma: 0,
@@ -39,6 +40,7 @@ function makeInitialState(
     prestigeCount: 0,
     wheelPurchased: new Set<string>(),
     samsaraGiftStacks: 0,
+    emberSelections: [],
     lastSaved: now,
     lastTickTime: now,
     totalPlaytime: 0,
@@ -128,12 +130,14 @@ export function doClick(state: GameState): GameState {
 
   const newHappiness = state.happiness + happinessGained;
   const newLifetimeHappiness = state.lifetimeHappiness + happinessGained;
+  const newRunHappiness = state.runHappiness + happinessGained;
   const newPeakHappiness = Math.max(state.peakHappiness, newHappiness);
 
   let newState: GameState = {
     ...state,
     happiness: newHappiness,
     lifetimeHappiness: newLifetimeHappiness,
+    runHappiness: newRunHappiness,
     peakHappiness: newPeakHappiness,
     lastClickTime: now,
     recentClickTimes: finalClickTimes,
@@ -390,12 +394,9 @@ export function doTriggerTranscendence(state: GameState): GameState {
       .map((u) => u.id);
     retainedUpgrades = new Set(sorted);
   } else if (state.wheelPurchased.has('emberOfMemory')) {
-    const sorted = [...state.upgrades]
-      .map((id) => ({ id, cost: UPGRADE_MAP[id]?.cost ?? 0 }))
-      .sort((a, b) => b.cost - a.cost)
-      .slice(0, 5)
-      .map((u) => u.id);
-    retainedUpgrades = new Set(sorted);
+    // Use player's hand-picked selections, filtered to upgrades still owned this run
+    const validSelections = state.emberSelections.filter(id => state.upgrades.has(id)).slice(0, 5);
+    retainedUpgrades = new Set(validSelections);
   }
 
   // Karmically retained resources
@@ -468,8 +469,10 @@ export function doTriggerTranscendence(state: GameState): GameState {
     upgrades: retainedUpgrades,
     sources: startingSources,
     happiness: startingHappiness,
+    lifetimeHappiness: state.lifetimeHappiness, // all-time counter: never resets
     maxRelicSlots: 3 + bonusRelicSlots,
     activeBuffs: startingBuffs,
+    emberSelections: state.emberSelections,     // preserve selections for next transcendence
     // Preserve user preferences
     theme: state.theme,
     numberFormat: state.numberFormat,

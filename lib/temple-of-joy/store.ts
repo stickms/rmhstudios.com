@@ -19,6 +19,7 @@ export function createInitialState(): GameState {
   return {
     happiness: 0,
     lifetimeHappiness: 0,
+    runHappiness: 0,
     peakHappiness: 0,
     peakKarma: 0,
     karma: 0,
@@ -31,6 +32,7 @@ export function createInitialState(): GameState {
     prestigeCount: 0,
     wheelPurchased: new Set<string>(),
     samsaraGiftStacks: 0,
+    emberSelections: [],
     lastSaved: now,
     lastTickTime: now,
     totalPlaytime: 0,
@@ -115,6 +117,7 @@ interface TempleStore extends GameState {
   setMusicVolume: (vol: number) => void;
   setSfxVolume: (vol: number) => void;
   setAutoBuyEnabled: (enabled: boolean) => void;
+  setEmberSelections: (ids: string[]) => void;
   setShowTranscendenceModal: (show: boolean) => void;
   setShowOfflineModal: (show: boolean) => void;
   setShowEventModal: (show: boolean) => void;
@@ -166,6 +169,7 @@ export const useTempleStore = create<TempleStore>()(
     setMusicVolume: (vol) => set({ musicVolume: vol }),
     setSfxVolume: (vol) => set({ sfxVolume: vol }),
     setAutoBuyEnabled: (enabled) => set({ autoBuyEnabled: enabled }),
+    setEmberSelections: (ids) => set({ emberSelections: ids }),
     setShowTranscendenceModal: (show) => set({ showTranscendenceModal: show }),
     setShowOfflineModal: (show) => set({ showOfflineModal: show }),
     setShowEventModal: (show) => set({ showEventModal: show }),

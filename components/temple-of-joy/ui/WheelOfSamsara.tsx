@@ -117,6 +117,7 @@ function WheelCard({ upgradeId }: WheelCardProps) {
 export default function WheelOfSamsara() {
   const blissShards    = useTempleStore(s => s.blissShards);
   const prestigeCount  = useTempleStore(s => s.prestigeCount);
+  const runHappiness   = useTempleStore(s => s.runHappiness);
   const numberFormat   = useTempleStore(s => s.numberFormat);
 
   const nextThreshold = computeTranscendenceThreshold(prestigeCount);
@@ -151,7 +152,8 @@ export default function WheelOfSamsara() {
           <span style={{ color: 'var(--temple-accent)', fontWeight: 600 }}>
             {fmt(nextThreshold, numberFormat)}
           </span>{' '}
-          lifetime happiness
+          run happiness
+          {' '}({fmt(runHappiness, numberFormat)} earned this run)
         </p>
       )}
 
@@ -174,7 +176,7 @@ export default function WheelOfSamsara() {
             className="text-xs"
             style={{ color: 'var(--temple-text)', opacity: 0.65 }}
           >
-            Requires <span style={{ color: 'var(--temple-accent)' }}>{fmt(nextThreshold, numberFormat)}</span> lifetime happiness.
+            Requires <span style={{ color: 'var(--temple-accent)' }}>{fmt(nextThreshold, numberFormat)}</span> run happiness.
           </p>
         </div>
       )}

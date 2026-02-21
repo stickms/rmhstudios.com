@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { computeBlissShards, computeTranscendenceThreshold } from '@/lib/temple-of-joy/engine';
 import { fmt } from '@/lib/temple-of-joy/numbers';
+import { UPGRADE_MAP } from '@/lib/temple-of-joy/data/upgrades';
 
 export default function TranscendenceModal() {
   const showTranscendenceModal = useTempleStore((s) => s.showTranscendenceModal);
@@ -14,6 +15,10 @@ export default function TranscendenceModal() {
   const blissShards = useTempleStore((s) => s.blissShards);
   const prestigeCount = useTempleStore((s) => s.prestigeCount);
   const state = useTempleStore((s) => s);
+
+  const upgrades = useTempleStore((s) => s.upgrades);
+  const emberSelections = useTempleStore((s) => s.emberSelections);
+  const setEmberSelections = useTempleStore((s) => s.setEmberSelections);
 
   const [dissolving, setDissolving] = useState(false);
 
@@ -32,10 +37,19 @@ export default function TranscendenceModal() {
   if (hasDivine) {
     retentionNote = '🌀 Divine Memory — All upgrades retained';
   } else if (hasProphet) {
-    retentionNote = "🔮 The Prophet's Memory — Keep 20 upgrades of your choice";
+    retentionNote = "🔮 The Prophet's Memory — 20 most valuable upgrades kept";
   } else if (hasEmber) {
-    retentionNote = '🕯️ Ember of Memory — Keep 5 upgrades of your choice';
+    retentionNote = '🕯️ Ember of Memory — Choose 5 upgrades to keep (see below)';
   }
+
+  // Sorted upgrades for ember selection UI (most expensive first)
+  const sortedUpgrades = [...upgrades]
+    .map(id => ({ id, cost: UPGRADE_MAP[id]?.cost ?? 0 }))
+    .sort((a, b) => b.cost - a.cost)
+    .map(u => u.id);
+
+  // How many ember selections are still valid (upgrade must still be owned)
+  const validEmberCount = emberSelections.filter(id => upgrades.has(id)).length;
 
   const handleTranscend = () => {
     setDissolving(true);
@@ -103,11 +117,13 @@ export default function TranscendenceModal() {
           <p className="font-semibold opacity-70 mb-1">Reset:</p>
           <ul className="space-y-0.5 opacity-80 text-xs">
             <li>  Happiness</li>
+            <li>  Run progress</li>
             <li>  Sources</li>
             <li>  Upgrades (most)</li>
           </ul>
           <p className="font-semibold opacity-70 mt-2 mb-1">Kept:</p>
           <ul className="space-y-0.5 opacity-80 text-xs">
+            <li>  Lifetime Happiness</li>
             <li>  Bliss Shards</li>
             <li>  Wheel Upgrades</li>
             <li>  Achievements</li>
@@ -122,9 +138,66 @@ export default function TranscendenceModal() {
           )}
         </div>
 
+        {/* Ember of Memory — upgrade selection picker */}
+        {hasEmber && !hasProphet && !hasDivine && (
+          <div className="mb-4">
+            <p
+              className="text-xs font-semibold mb-1.5"
+              style={{ color: dark ? '#d4a847' : '#8b6914' }}
+            >
+              🕯️ Choose up to 5 upgrades to keep:
+            </p>
+            {sortedUpgrades.length === 0 ? (
+              <p className="text-xs opacity-50 italic">No upgrades purchased yet.</p>
+            ) : (
+              <>
+                <div
+                  className="max-h-32 overflow-y-auto rounded-lg border p-1.5 space-y-0.5"
+                  style={{
+                    borderColor: dark ? '#6b4c2a' : '#c4a97a',
+                    background: dark ? '#1a120b' : '#f5f0e8',
+                  }}
+                >
+                  {sortedUpgrades.map(id => {
+                    const def = UPGRADE_MAP[id];
+                    if (!def) return null;
+                    const isSelected = emberSelections.includes(id);
+                    const canSelect = isSelected || validEmberCount < 5;
+                    return (
+                      <label
+                        key={id}
+                        className="flex items-center gap-2 px-1 py-0.5 rounded cursor-pointer hover:opacity-75"
+                        style={{ color: dark ? '#e8d5b0' : '#3d2c1e', opacity: canSelect || isSelected ? 1 : 0.4 }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          disabled={!canSelect && !isSelected}
+                          onChange={() => {
+                            if (isSelected) {
+                              setEmberSelections(emberSelections.filter(s => s !== id));
+                            } else if (canSelect) {
+                              setEmberSelections([...emberSelections, id]);
+                            }
+                          }}
+                          className="w-3 h-3 shrink-0 accent-amber-500"
+                        />
+                        <span className="text-xs truncate">{def.name}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+                <p className="text-[10px] opacity-50 mt-1">
+                  {validEmberCount}/5 selected
+                </p>
+              </>
+            )}
+          </div>
+        )}
+
         {/* Threshold reminder */}
         <p className="text-xs opacity-50 text-center mb-5">
-          Required lifetime happiness: {fmt(threshold, numberFormat)}
+          Required run happiness: {fmt(threshold, numberFormat)}
         </p>
 
         {/* Buttons */}

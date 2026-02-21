@@ -158,7 +158,8 @@ export interface TimedBuff {
 export interface GameState {
   // ── Currencies ──
   happiness: number;
-  lifetimeHappiness: number;       // total earned this run (for transcendence threshold)
+  lifetimeHappiness: number;       // total happiness earned across all runs (all-time, for achievements)
+  runHappiness: number;            // happiness earned this run (resets on transcendence, used for threshold)
   peakHappiness: number;           // highest happiness reached this run
   peakKarma: number;               // highest karma reached (sticky unlock tracking)
   karma: number;
@@ -180,6 +181,8 @@ export interface GameState {
   wheelPurchased: Set<string>;
   /** HPS % bonus from Samsara's Gift: +5% per prestige, up to 20 stacks */
   samsaraGiftStacks: number;
+  /** Upgrade IDs the player has chosen to keep on next transcendence (Ember of Memory) */
+  emberSelections: string[];
 
   // ── Meta ──
   lastSaved: number;               // Unix ms timestamp
@@ -255,6 +258,7 @@ export interface SaveData {
   version: number;
   happiness: number;
   lifetimeHappiness: number;
+  runHappiness: number;
   peakHappiness: number;
   peakKarma: number;
   karma: number;
@@ -291,6 +295,7 @@ export interface SaveData {
   musicVolume: number;
   sfxVolume: number;
   autoBuyEnabled: boolean;
+  emberSelections: string[];
 
   // Deprecated fields (backwards compat with old saves)
   /** @deprecated Use sources instead */

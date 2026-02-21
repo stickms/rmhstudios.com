@@ -39,6 +39,7 @@ export function TempleOfJoyGame({ initialSaveData }: { initialSaveData?: SaveDat
         offlineSecondsOnLoad: offline.seconds,
         happiness: mergedState.happiness + offline.happiness,
         lifetimeHappiness: mergedState.lifetimeHappiness + offline.happiness,
+        runHappiness: mergedState.runHappiness + offline.happiness,
         pilgrimageActive: offline.pilgrimageActive,
         pilgrimageTimer: offline.pilgrimageTimer,
         pilgrimageCooldown: offline.pilgrimageCooldown,
