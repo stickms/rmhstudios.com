@@ -13,7 +13,8 @@ interface GameCardProps {
 
 export function GameCard({ game }: GameCardProps) {
     const [isHovered, setIsHovered] = useState(false);
-    const [popoverDirection, setPopoverDirection] = useState<'right' | 'left' | 'bottom'>('right');
+    const [popoverDirection, setPopoverDirection] = useState<'right' | 'left' | 'bottom' | 'top'>('right');
+    const [popoverAlign, setPopoverAlign] = useState<'start' | 'center' | 'end'>('center');
     const cardRef = useRef<HTMLDivElement>(null);
     
     // Mouse tracking for glossy effect
@@ -35,12 +36,9 @@ export function GameCard({ game }: GameCardProps) {
             
             const rect = cardRef.current.getBoundingClientRect();
             // Calculate mouse position relative to card center
-            // Larger divisor = slower movement of light (stays on card longer)
             const x = (e.clientX - (rect.left + rect.width / 2)) / 800; 
             const y = (e.clientY - (rect.top + rect.height / 2)) / 800;
             
-            // Limit the tilt/shine impact when far away
-            // But don't clamp too tight so the light can reach edges
             const boundedX = Math.max(-1.5, Math.min(1.5, x));
             const boundedY = Math.max(-1.5, Math.min(1.5, y));
             
@@ -56,11 +54,35 @@ export function GameCard({ game }: GameCardProps) {
         if (cardRef.current) {
             const rect = cardRef.current.getBoundingClientRect();
             const windowWidth = window.innerWidth;
+            const windowHeight = window.innerHeight;
             
-            // On tablets/small screens, always show below
+            // Determine vertical placement
+            const spaceBelow = windowHeight - rect.bottom;
+            const spaceAbove = rect.top;
+            const minVerticalSpace = 320; // Approx height of popover
+            
+            // On tablets/small screens, prefer vertical placement
             if (windowWidth < 1024) {
-                setPopoverDirection('bottom');
+                if (spaceBelow < minVerticalSpace && spaceAbove > spaceBelow) {
+                    setPopoverDirection('top');
+                } else {
+                    setPopoverDirection('bottom');
+                }
+                
+                // Calculate horizontal alignment for vertical states
+                const popoverWidth = Math.min(windowWidth * 0.85, 320);
+                const halfPopover = popoverWidth / 2;
+                const cardCenter = rect.left + rect.width / 2;
+                
+                if (cardCenter - halfPopover < 10) {
+                    setPopoverAlign('start');
+                } else if (cardCenter + halfPopover > windowWidth - 10) {
+                    setPopoverAlign('end');
+                } else {
+                    setPopoverAlign('center');
+                }
             } else {
+                // Desktop: side placement
                 const spaceOnRight = windowWidth - rect.right;
                 const spaceOnLeft = rect.left;
                 const minSpaceNeeded = 350;
@@ -70,6 +92,7 @@ export function GameCard({ game }: GameCardProps) {
                 } else {
                     setPopoverDirection('right');
                 }
+                setPopoverAlign('center');
             }
         }
         setIsHovered(true);
@@ -77,7 +100,7 @@ export function GameCard({ game }: GameCardProps) {
 
     return (
         <div 
-            className={cn("relative group", isHovered && "z-[100]")}
+            className={cn("relative group", isHovered && "z-40")}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={() => setIsHovered(false)}
         >
@@ -116,14 +139,12 @@ export function GameCard({ game }: GameCardProps) {
                                 [smoothedX, smoothedY],
                                 ([x, y]) => {
                                     const dist = Math.sqrt((x as number)**2 + (y as number)**2);
-                                    // Fade out sheen when mouse is very far
                                     return Math.max(0.1, 1 - dist * 0.5);
                                 }
                             ),
                             background: useTransform(
                                 [smoothedX, smoothedY],
                                 ([x, y]) => {
-                                    // Map [-1.5, 1.5] to [0, 100]%
                                     const posX = ((x as number + 1.5) / 3) * 100;
                                     const posY = ((y as number + 1.5) / 3) * 100;
                                     return `radial-gradient(circle at ${posX}% ${posY}%, rgba(255,255,255,0.4) 0%, transparent 80%)`;
@@ -160,19 +181,19 @@ export function GameCard({ game }: GameCardProps) {
                         initial={{ 
                             opacity: 0, 
                             x: popoverDirection === 'right' ? 10 : popoverDirection === 'left' ? -10 : 0,
-                            y: popoverDirection === 'bottom' ? 10 : 0,
+                            y: popoverDirection === 'bottom' ? 10 : popoverDirection === 'top' ? -10 : 0,
                             scale: 0.95 
                         }}
                         animate={{ 
                             opacity: 1, 
                             x: popoverDirection === 'right' ? 20 : popoverDirection === 'left' ? -20 : 0,
-                            y: popoverDirection === 'bottom' ? 20 : 0,
+                            y: popoverDirection === 'bottom' ? 20 : popoverDirection === 'top' ? -20 : 0,
                             scale: 1 
                         }}
                         exit={{ 
                             opacity: 0, 
                             x: popoverDirection === 'right' ? 10 : popoverDirection === 'left' ? -10 : 0,
-                            y: popoverDirection === 'bottom' ? 10 : 0,
+                            y: popoverDirection === 'bottom' ? 10 : popoverDirection === 'top' ? -10 : 0,
                             scale: 0.95 
                         }}
                         transition={{ duration: 0.2 }}
@@ -180,7 +201,18 @@ export function GameCard({ game }: GameCardProps) {
                             "absolute z-50 w-[85vw] sm:w-80 pointer-events-none",
                             popoverDirection === 'right' && "left-full top-0 ml-4",
                             popoverDirection === 'left' && "right-full top-0 mr-4",
-                            popoverDirection === 'bottom' && "top-full left-1/2 -translate-x-1/2 mt-4"
+                            popoverDirection === 'bottom' && cn(
+                                "top-full mt-4",
+                                popoverAlign === 'center' && "left-1/2 -translate-x-1/2",
+                                popoverAlign === 'start' && "left-0",
+                                popoverAlign === 'end' && "right-0"
+                            ),
+                            popoverDirection === 'top' && cn(
+                                "bottom-full mb-4",
+                                popoverAlign === 'center' && "left-1/2 -translate-x-1/2",
+                                popoverAlign === 'start' && "left-0",
+                                popoverAlign === 'end' && "right-0"
+                            )
                         )}
                     >
                         <div className="bg-slate-900/95 backdrop-blur-md border border-slate-700 rounded-xl p-6 shadow-2xl relative">
@@ -189,7 +221,18 @@ export function GameCard({ game }: GameCardProps) {
                                 "absolute w-4 h-4 bg-slate-900 border-slate-700 rotate-45",
                                 popoverDirection === 'right' && "top-8 -left-2 border-l border-b",
                                 popoverDirection === 'left' && "top-8 -right-2 border-r border-t",
-                                popoverDirection === 'bottom' && "-top-2 left-1/2 -translate-x-1/2 border-l border-t"
+                                popoverDirection === 'bottom' && cn(
+                                    "-top-2 border-l border-t",
+                                    popoverAlign === 'center' && "left-1/2 -translate-x-1/2",
+                                    popoverAlign === 'start' && "left-8",
+                                    popoverAlign === 'end' && "right-8"
+                                ),
+                                popoverDirection === 'top' && cn(
+                                    "-bottom-2 border-r border-b",
+                                    popoverAlign === 'center' && "left-1/2 -translate-x-1/2",
+                                    popoverAlign === 'start' && "left-8",
+                                    popoverAlign === 'end' && "right-8"
+                                )
                             )} />
                             
                             <div className="relative space-y-4">
