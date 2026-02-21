@@ -476,9 +476,11 @@ export function doTriggerTranscendence(state: GameState): GameState {
     // Preserve user preferences
     theme: state.theme,
     numberFormat: state.numberFormat,
+    sourceBuyQty: state.sourceBuyQty,
     soundEnabled: state.soundEnabled,
     musicVolume: state.musicVolume,
     sfxVolume: state.sfxVolume,
+    autoBuyEnabled: state.autoBuyEnabled,
   });
 
   // Grant prestige achievements
@@ -592,21 +594,15 @@ export function doResolveEvent(
     }
   }
 
-  // Apply happiness bonus
+  // Apply happiness bonus (always expressed as minutes of current HPS income)
   if (effect.happinessBonus !== undefined) {
-    let bonusHP: number;
-    if (effect.happinessBonus > 0 && effect.happinessBonus < 10) {
-      // Treat as "minutes of HPS"
-      bonusHP = computeTotalHPS(state) * effect.happinessBonus * 60;
-      effectSummary.push(`+${Math.floor(bonusHP)} happiness (${effect.happinessBonus} min of income)`);
-    } else {
-      bonusHP = effect.happinessBonus;
-      effectSummary.push(`+${Math.floor(bonusHP)} happiness`);
-    }
+    const bonusHP = computeTotalHPS(state) * effect.happinessBonus * 60;
+    effectSummary.push(`+${Math.floor(bonusHP)} happiness (${effect.happinessBonus} min of income)`);
     newState = {
       ...newState,
       happiness: newState.happiness + bonusHP,
       lifetimeHappiness: newState.lifetimeHappiness + bonusHP,
+      runHappiness: newState.runHappiness + bonusHP,
       peakHappiness: Math.max(newState.peakHappiness, newState.happiness + bonusHP),
     };
   }
@@ -695,4 +691,130 @@ export function doMakeOffering(state: GameState, tier: 1 | 2 | 3): GameState {
 
 // Suppress unused import warning — EVENTS used at runtime when EVENT_MAP is populated
 void EVENTS;
+
+// ─── Achievement Audit ────────────────────────────────────────────────────────
+
+/**
+ * Retroactively checks all statically determinable achievement conditions and
+ * grants any that the player qualifies for but hasn't received yet.
+ * Called once on game load so new achievements and load-time gaps are corrected.
+ */
+export function doAuditAchievements(state: GameState): GameState {
+  let s = state;
+  const grant = (id: string, condition: boolean) => {
+    if (condition) s = grantAchievement(s, id);
+  };
+
+  // ── Sources ──
+  const src = s.sources;
+  const allSrcValues = Object.values(src);
+  const maxOwned = Math.max(...allSrcValues);
+
+  grant('firstCandle',       (src.moodCandle ?? 0) >= 1);
+  grant('candleObsession',   (src.moodCandle ?? 0) >= 1000);
+  grant('caveDweller',       (src.goonCave ?? 0) >= 1);
+  grant('therapyRich',       (src.therapy ?? 0) >= 100);
+  grant('singularity',       (src.blissSingularity ?? 0) >= 1);
+  grant('napPodArmy',        (src.napPod ?? 0) >= 100);
+  grant('allSources',        allSrcValues.every(n => n >= 1));
+  grant('tenOfEach',         allSrcValues.every(n => n >= 10));
+  grant('fiftyOfOne',        maxOwned >= 50);
+  grant('hundredOfOne',      maxOwned >= 100);
+  grant('twoHundredOfOne',   maxOwned >= 200);
+  grant('fiveHundredOfOne',  maxOwned >= 500);
+  grant('thousandOfOne',     maxOwned >= 1000);
+  grant('zenGardenUnlock',   (src.zenGarden ?? 0) >= 1);
+  grant('omniscientSpaUnlock',(src.omniscientSpa ?? 0) >= 1);
+  grant('bobaAddiction',     (src.sweetTreat ?? 0) >= 1);
+  grant('tenSweetTreats',    (src.sweetTreat ?? 0) >= 10);
+  grant('studiousHaul',      (src.retailTherapy ?? 0) >= 100);
+  grant('soundBathFirst',    (src.soundBath ?? 0) >= 1);
+  grant('artGalleryFirst',   (src.artGallery ?? 0) >= 1);
+  grant('artCollector',      (src.artGallery ?? 0) >= 100);
+
+  if (s.prestigeCount >= 1) {
+    const postPrestigeSources: SourceId[] = [
+      'zenGarden', 'euphoriaSprings', 'serenityEngine',
+      'raptureCathedral', 'cosmicJacuzzi', 'omniscientSpa',
+    ];
+    grant('allPostPrestige', postPrestigeSources.every(id => (src[id] ?? 0) >= 1));
+  }
+
+  // ── Clicking ──
+  grant('firstClick',        s.lifetimeHappiness > 0 || s.totalClicks > 0);
+  grant('hundredClicks',     s.totalClicks >= 100);
+  grant('thousandClicks',    s.totalClicks >= 1_000);
+  grant('tenThousandClicks', s.totalClicks >= 10_000);
+
+  // ── Happiness (all-time) ──
+  const lh = s.lifetimeHappiness;
+  grant('firstThousand',      lh >= 1_000);
+  grant('tenThousandHappiness',lh >= 10_000);
+  grant('millionaire',        lh >= 1e6);
+  grant('billionaire',        lh >= 1e9);
+  grant('trillionaire',       lh >= 1e12);
+  grant('philosopher',        lh >= 1e15);
+  grant('quintillion',        lh >= 1e18);
+  grant('septillion',         lh >= 1e24);
+  grant('nonillion',          lh >= 1e30);
+  grant('quindecillion',      lh >= 1e48);
+  grant('happiness1e66',      lh >= 1e66);
+  grant('happiness1e84',      lh >= 1e84);
+  grant('happiness1e99',      lh >= 1e99);
+
+  // ── Prestige ──
+  grant('firstPrestige',  s.prestigeCount >= 1);
+  grant('fivePrestige',   s.prestigeCount >= 5);
+  grant('tenPrestige',    s.prestigeCount >= 10);
+  grant('twentyPrestige', s.prestigeCount >= 20);
+  grant('thirtyPrestige', s.prestigeCount >= 30);
+  grant('fiftyPrestige',  s.prestigeCount >= 50);
+
+  // ── Pilgrimages ──
+  grant('pilgrimageFirst', s.totalPilgrimages >= 1);
+  grant('pilgrimageTen',   s.totalPilgrimages >= 10);
+  grant('pilgrimageStreak',s.pilgrimageStreak >= 5);
+
+  // ── Vibe Checks ──
+  grant('vibeCheck',    s.totalVibeChecks >= 1);
+  grant('vibeCheckTen', s.totalVibeChecks >= 10);
+
+  // ── Events ──
+  grant('eventResolved', s.totalEventsResolved >= 1);
+  grant('eventsFifty',   s.totalEventsResolved >= 50);
+
+  // ── Karma ──
+  grant('firstKarma',   s.peakKarma >= 0.1);
+  grant('hundredKarma', s.peakKarma >= 100);
+  grant('goodKarma',    s.peakKarma >= 500);
+
+  // ── Relics ──
+  const relicHistory = s.equippedRelicsHistory;
+  grant('firstRelic',        relicHistory.length >= 1);
+  grant('allRelics',         relicHistory.length >= 20);
+  grant('philosophersStone', relicHistory.includes('philosophersStone'));
+  grant('maxRelics',         s.activeRelics.length >= s.maxRelicSlots && s.maxRelicSlots > 0);
+
+  // ── Wheel ──
+  const wp = s.wheelPurchased;
+  grant('firstWheelUpgrade', wp.size >= 1);
+  const tier4Ids = ['templeEternal', 'infiniteWheel', 'nirvanaBlueprint', 'divineMemory', 'autoBuyer2'];
+  grant('fullWheel', tier4Ids.every(id => wp.has(id)));
+
+  // ── Playtime ──
+  const pt = s.totalPlaytime;
+  grant('oneHour',        pt >= 3_600);
+  grant('tenHours',       pt >= 36_000);
+  grant('hundredHours',   pt >= 360_000);
+  grant('twoHundredHours',pt >= 720_000);
+  grant('fiveHundredHours',pt >= 1_800_000);
+  grant('thousandHours',  pt >= 3_600_000);
+
+  // ── Hidden ──
+  grant('epicurusApproved', s.epicurusApprovedCount >= 5);
+  // noUpgrades: deterministic — had 1B+ happiness with nothing purchased
+  grant('noUpgrades', lh >= 1e9 && s.upgrades.size === 0);
+
+  return s;
+}
 void SOURCE_MAP;

@@ -55,6 +55,7 @@ export function TempleOfJoyGame({ initialSaveData }: { initialSaveData?: SaveDat
       }));
     }
     // Signal that initialization is complete
+    useTempleStore.getState().auditAchievements();
     useTempleStore.setState({ gameInitialized: true });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // run once on mount only

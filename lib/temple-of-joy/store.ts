@@ -106,6 +106,7 @@ interface TempleStore extends GameState {
   purchaseWheelUpgrade: (id: string) => void;
   resolveEvent: (eventId: string, choiceIndex: number) => void;
   makeOffering: (tier: 1 | 2 | 3) => void;
+  auditAchievements: () => void;
 
   // UI setters
   setActiveTab: (tab: GameState['activeTab']) => void;
@@ -158,6 +159,7 @@ export const useTempleStore = create<TempleStore>()(
     resolveEvent: (eventId: string, choiceIndex: number) =>
       set(state => Actions.doResolveEvent(state, eventId, choiceIndex)),
     makeOffering: (tier: 1 | 2 | 3) => set(state => Actions.doMakeOffering(state, tier)),
+    auditAchievements: () => set(state => Actions.doAuditAchievements(state)),
 
     // ── UI setters ──
     setActiveTab: (tab) => set({ activeTab: tab }),

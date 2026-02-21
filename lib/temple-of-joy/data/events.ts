@@ -100,7 +100,7 @@ export const EVENTS: GameEventDef[] = [
     choices: [
       {
         label: 'Spend it immediately',
-        effect: { happinessBonus: 1000, hpsMultiplierDuration: 1800, hpsMultiplier: 3 },
+        effect: { happinessBonus: 15, hpsMultiplierDuration: 1800, hpsMultiplier: 3 },
       },
       { label: 'Invest in the future', effect: { permanentHPSPercent: 0.15 } },
     ],
@@ -135,7 +135,7 @@ export const EVENTS: GameEventDef[] = [
     body: "'Excess diminishes the feast,' he says, gesturing at your sources.",
     choices: [
       { label: 'Agree with him',            effect: { karmaBonus: 30 } },
-      { label: 'Order the large plate anyway', effect: { happinessBonus: 1000 } },
+      { label: 'Order the large plate anyway', effect: { happinessBonus: 10 } },
     ],
   },
   {

@@ -99,7 +99,7 @@ export interface EventChoice {
 }
 
 export interface EventEffect {
-  happinessBonus?: number;          // flat HP bonus
+  happinessBonus?: number;          // minutes of current HPS income to award as a flat bonus
   hpsMultiplierDuration?: number;   // seconds
   hpsMultiplier?: number;
   karmaBonus?: number;
