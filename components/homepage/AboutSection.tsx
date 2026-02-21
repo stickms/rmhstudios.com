@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { FloatingElement } from "@/components/ui/FloatingElement";
 import { PulsatingOrb } from "@/components/ui/PulsatingOrb";
 import { ProximityText } from "@/components/ui/ProximityText";
+import { games } from "@/lib/games";
 
 export function AboutSection() {
   return (
@@ -76,7 +77,7 @@ export function AboutSection() {
             <div className="pt-8 grid grid-cols-2 md:grid-cols-4 gap-6">
               {[
                 { label: "Founded", value: "2026" },
-                { label: "Games", value: "5+" },
+                { label: "Games", value: `${games.length - 1}+` },
                 { label: "Platform", value: "Web" },
                 { label: "Passion", value: "100%" },
               ].map((stat, index) => (
