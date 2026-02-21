@@ -100,7 +100,7 @@ export const EVENTS: GameEventDef[] = [
     choices: [
       {
         label: 'Spend it immediately',
-        effect: { happinessBonus: 1000, hpsMultiplierDuration: 1800, hpsMultiplier: 3 },
+        effect: { happinessBonus: 15, hpsMultiplierDuration: 1800, hpsMultiplier: 3 },
       },
       { label: 'Invest in the future', effect: { permanentHPSPercent: 0.15 } },
     ],
@@ -135,7 +135,7 @@ export const EVENTS: GameEventDef[] = [
     body: "'Excess diminishes the feast,' he says, gesturing at your sources.",
     choices: [
       { label: 'Agree with him',            effect: { karmaBonus: 30 } },
-      { label: 'Order the large plate anyway', effect: { happinessBonus: 1000 } },
+      { label: 'Order the large plate anyway', effect: { happinessBonus: 10 } },
     ],
   },
   {
@@ -166,6 +166,134 @@ export const EVENTS: GameEventDef[] = [
     choices: [
       { label: 'Yes. It is enough.', effect: { permanentHPSPercent: 0.1, karmaBonus: 10 } },
       { label: 'There must be more.', effect: { karmaBonus: 40, hpsMultiplierDuration: 1800, hpsMultiplier: 3 } },
+    ],
+  },
+
+  // ── Patch 2: Blessing Events ──
+  {
+    id: 'cosmicDelivery',
+    type: 'blessing',
+    title: 'Cosmic Delivery',
+    body: 'A package arrives from space. Inside: concentrated joy. Postage: paid.',
+    effect: { hpsMultiplier: 4, hpsMultiplierDuration: 300 },
+  },
+  {
+    id: 'doubleRainbow',
+    type: 'blessing',
+    title: 'Double Rainbow',
+    body: 'Two rainbows. At once. The sky is showing off.',
+    effect: { hpsMultiplier: 2, hpsMultiplierDuration: 600 },
+  },
+  {
+    id: 'perfectSandwich',
+    type: 'blessing',
+    title: 'The Perfect Sandwich',
+    body: 'Every ingredient in exact proportion. Bread: warm. Filling: transcendent.',
+    effect: { happinessBonus: 50 },
+  },
+  {
+    id: 'foundRemote',
+    type: 'blessing',
+    title: 'Found the Remote',
+    body: 'It was between the cushions. Of course it was.',
+    effect: { hpsMultiplier: 2.5, hpsMultiplierDuration: 300 },
+  },
+  {
+    id: 'catPurring',
+    type: 'blessing',
+    title: 'Cat Started Purring',
+    body: 'Unprompted. On your lap. Volume: maximum.',
+    effect: { hpsMultiplier: 3, hpsMultiplierDuration: 480 },
+  },
+  {
+    id: 'longWeekend',
+    type: 'blessing',
+    title: 'Surprise Long Weekend',
+    body: 'Monday is off. Nobody told you until now. A gift.',
+    effect: { hpsMultiplier: 5, hpsMultiplierDuration: 180 },
+  },
+
+  // ── Patch 2: Choice Events ──
+  {
+    id: 'dreamOffer',
+    type: 'choice',
+    title: 'The Dream Offer',
+    body: 'A dream offers you a gift: power now, or wisdom forever?',
+    choices: [
+      { label: 'Power now', effect: { hpsMultiplier: 10, hpsMultiplierDuration: 300 } },
+      { label: 'Wisdom forever', effect: { permanentHPSPercent: 0.2 } },
+    ],
+  },
+  {
+    id: 'mysteriousStranger2',
+    type: 'choice',
+    title: 'The Mysterious Stranger (Returns)',
+    body: 'The stranger is back. They have two envelopes. One glows.',
+    choices: [
+      { label: 'Glowing envelope', effect: { hpsMultiplier: 8, hpsMultiplierDuration: 120 } },
+      { label: 'Plain envelope', effect: { karmaBonus: 100, permanentHPSPercent: 0.1 } },
+    ],
+  },
+  {
+    id: 'timeTravelOffer',
+    type: 'choice',
+    title: 'Time Travel Opportunity',
+    body: 'A clock appears. You can revisit any happy memory, or create a new one.',
+    choices: [
+      { label: 'Revisit the past', effect: { hpsMultiplier: 4, hpsMultiplierDuration: 600 } },
+      { label: 'Create something new', effect: { happinessBonus: 100, karmaBonus: 25 } },
+    ],
+  },
+  {
+    id: 'cosmicGamble',
+    type: 'choice',
+    title: 'The Cosmic Gamble',
+    body: 'The universe offers a bet. Risk something for something greater?',
+    choices: [
+      { label: 'All in', effect: { hpsMultiplier: 20, hpsMultiplierDuration: 60 } },
+      { label: 'Play it safe', effect: { permanentHPSPercent: 0.15, karmaBonus: 15 } },
+    ],
+  },
+
+  // ── Patch 2: Philosophical Events ──
+  {
+    id: 'nietzscheVisit',
+    type: 'philosophical',
+    title: 'Nietzsche at the Door',
+    body: '"What if you had to live this exact life, infinitely?" He stares intensely.',
+    choices: [
+      { label: 'I would change nothing.', effect: { permanentHPSPercent: 0.2, karmaBonus: 20 } },
+      { label: 'I would change everything.', effect: { hpsMultiplier: 5, hpsMultiplierDuration: 600 } },
+    ],
+  },
+  {
+    id: 'senecaAdvice',
+    type: 'philosophical',
+    title: 'Seneca Sends a Letter',
+    body: '"It is not that we have a short time to live, but that we waste a great deal of it."',
+    choices: [
+      { label: 'Waste no more.', effect: { permanentHPSPercent: 0.15 } },
+      { label: 'Some waste is sacred.', effect: { karmaBonus: 75, hpsMultiplier: 3, hpsMultiplierDuration: 300 } },
+    ],
+  },
+  {
+    id: 'aristotleQuestion',
+    type: 'philosophical',
+    title: 'Aristotle\'s Question',
+    body: '"Is the good life the pleasant life, the engaged life, or the meaningful life?"',
+    choices: [
+      { label: 'All three, together.', effect: { permanentHPSPercent: 0.1, permanentHPCPercent: 0.1, karmaBonus: 30 } },
+      { label: 'The pleasant life. Obviously.', effect: { hpsMultiplier: 8, hpsMultiplierDuration: 300 } },
+    ],
+  },
+  {
+    id: 'laozi',
+    type: 'philosophical',
+    title: 'Laozi Appears',
+    body: '"The journey of a thousand miles begins with a single step." He gestures at your sources.',
+    choices: [
+      { label: 'Take the step.', effect: { permanentHPSPercent: 0.25 } },
+      { label: 'I have already arrived.', effect: { karmaBonus: 100 } },
     ],
   },
 ];

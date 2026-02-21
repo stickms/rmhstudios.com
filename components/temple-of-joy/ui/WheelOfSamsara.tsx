@@ -12,6 +12,11 @@ const TIER_LABELS: Record<WheelTier, string> = {
   3: 'Tier III — Enlightenment',
   4: 'Tier IV — The Infinite',
   5: 'Tier V — Beyond the Wheel',
+  6: 'Tier VI — Celestial',
+  7: 'Tier VII — Cosmic',
+  8: 'Tier VIII — Eternal',
+  9: 'Tier IX — Ascendant',
+  10: 'Tier X — Omega',
 };
 
 interface WheelCardProps {
@@ -117,6 +122,8 @@ function WheelCard({ upgradeId }: WheelCardProps) {
 export default function WheelOfSamsara() {
   const blissShards    = useTempleStore(s => s.blissShards);
   const prestigeCount  = useTempleStore(s => s.prestigeCount);
+  const runHappiness   = useTempleStore(s => s.runHappiness);
+  const numberFormat   = useTempleStore(s => s.numberFormat);
 
   const nextThreshold = computeTranscendenceThreshold(prestigeCount);
 
@@ -148,13 +155,14 @@ export default function WheelOfSamsara() {
         >
           Next transcendence at{' '}
           <span style={{ color: 'var(--temple-accent)', fontWeight: 600 }}>
-            {fmt(nextThreshold)}
+            {fmt(nextThreshold, numberFormat)}
           </span>{' '}
-          lifetime happiness
+          run happiness
+          {' '}({fmt(runHappiness, numberFormat)} earned this run)
         </p>
       )}
 
-      {/* Pre-prestige gate */}
+      {/* Pre-transcendence gate */}
       {prestigeCount === 0 && (
         <div
           className="rounded-xl p-4 text-center"
@@ -173,7 +181,7 @@ export default function WheelOfSamsara() {
             className="text-xs"
             style={{ color: 'var(--temple-text)', opacity: 0.65 }}
           >
-            Requires <span style={{ color: 'var(--temple-accent)' }}>{fmt(nextThreshold)}</span> lifetime happiness.
+            Requires <span style={{ color: 'var(--temple-accent)' }}>{fmt(nextThreshold, numberFormat)}</span> run happiness.
           </p>
         </div>
       )}
