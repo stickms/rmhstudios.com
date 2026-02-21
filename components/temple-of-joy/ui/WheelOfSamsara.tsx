@@ -127,7 +127,7 @@ export default function WheelOfSamsara() {
 
   const nextThreshold = computeTranscendenceThreshold(prestigeCount);
 
-  const tiers: WheelTier[] = [1, 2, 3, 4, 5];
+  const tiers: WheelTier[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
   return (
     <div className="flex flex-col gap-5 w-full" style={{ color: 'var(--temple-text)' }}>

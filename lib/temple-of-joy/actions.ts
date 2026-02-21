@@ -45,6 +45,7 @@ function makeInitialState(
     lastSaved: now,
     lastTickTime: now,
     totalPlaytime: 0,
+    runPlaytime: 0,
     totalClicks: 0,
     totalPilgrimages: 0,
     totalVibeChecks: 0,
@@ -440,6 +441,8 @@ export function doPassVibeCheck(state: GameState): GameState {
 
   newState = grantAchievement(newState, 'vibeCheck');
   if (newState.totalVibeChecks >= 10) newState = grantAchievement(newState, 'vibeCheckTen');
+  if (newState.totalVibeChecks >= 25) newState = grantAchievement(newState, 'vibeCheckTwentyFive');
+  if (newState.totalVibeChecks >= 50) newState = grantAchievement(newState, 'vibeCheckFifty');
   return newState;
 }
 
@@ -606,9 +609,13 @@ export function doTriggerTranscendence(state: GameState): GameState {
   if (newPrestigeCount >= 100) newState = grantAchievement(newState, 'hundredPrestige');
   if (newPrestigeCount >= 200) newState = grantAchievement(newState, 'twoHundredPrestige');
 
-  // speedPrestige: first prestige in under 30 minutes
-  if (newPrestigeCount === 1 && state.totalPlaytime < 1800) {
+  // speedPrestige: first prestige in under 30 minutes of run time
+  if (newPrestigeCount === 1 && state.runPlaytime < 1800) {
     newState = grantAchievement(newState, 'speedPrestige');
+  }
+  // transcendUnderMinute: transcend in under 1 minute of run time
+  if (state.runPlaytime < 60) {
+    newState = grantAchievement(newState, 'transcendUnderMinute');
   }
 
   return newState;
@@ -717,13 +724,20 @@ export function doResolveEvent(
         'Agree with him',
         'Rest instead',
         'I need it to be real.',
-        'Yes. It is enough.'
+        'Yes. It is enough.',
+        'I would change nothing.',
+        'Waste no more.',
+        'All three, together.',
+        'Take the step.',
       ].includes(choice.label);
 
       if (isFrugal) {
         newState.epicurusApprovedCount += 1;
         if (newState.epicurusApprovedCount >= 5) {
           newState = grantAchievement(newState, 'epicurusApproved');
+        }
+        if (newState.epicurusApprovedCount >= 10) {
+          newState = grantAchievement(newState, 'allPhilosFrugal');
         }
       }
     }
@@ -790,6 +804,7 @@ export function doResolveEvent(
   newState = grantAchievement(newState, 'eventResolved');
   if (newState.totalEventsResolved >= 50) newState = grantAchievement(newState, 'eventsFifty');
   if (newState.totalEventsResolved >= 100) newState = grantAchievement(newState, 'eventsHundred');
+  if (newState.totalEventsResolved >= 200) newState = grantAchievement(newState, 'eventsTwoHundred');
 
   // Store event effect for display (show for 5 seconds)
   newState.lastEventEffect = {
@@ -1072,9 +1087,11 @@ export function doAuditAchievements(state: GameState): GameState {
   grant('tenBuffsActive', totalBuffs >= 10);
   // clickDuringPilgrimage
   grant('clickDuringPilgrimage', s.pilgrimageActive && s.totalClicks > 0 && s.pilgrimageStreak === 0);
-  // speedPrestige10: prestige 10 in under 10 minutes
-  grant('speedPrestige10', s.prestigeCount >= 10 && s.totalPlaytime < 600);
+  // speedPrestige10: prestige 10 in under 10 minutes of run time
+  grant('speedPrestige10', s.prestigeCount >= 10 && s.runPlaytime < 600);
   // transcendUnderMinute: transcend in under 1 minute (checked in doTriggerTranscendence too)
+  // allPhilosFrugal: choose frugal in 10 philosophical events
+  grant('allPhilosFrugal', s.epicurusApprovedCount >= 10);
   // templeEternalAchievement: complex check, done below
   const allWheelComplete = WHEEL_UPGRADES.every(u => wp.has(u.id));
   const allSourcesOwned = allSourceIds.every(id => (src[id] ?? 0) >= 1);

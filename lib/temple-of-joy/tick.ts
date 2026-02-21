@@ -48,7 +48,7 @@ export function applyTick(state: GameState): GameState {
   // prestigeMomentum: ×3 HPS during first 3 minutes of a new run
   // perpetualMomentum: extends to 10 minutes
   const momentumDuration = state.wheelPurchased.has('perpetualMomentum') ? 600 : 180;
-  if (state.wheelPurchased.has('prestigeMomentum') && state.totalPlaytime < momentumDuration) {
+  if (state.wheelPurchased.has('prestigeMomentum') && state.runPlaytime < momentumDuration) {
     happinessGained *= 3;
   }
 
@@ -63,6 +63,7 @@ export function applyTick(state: GameState): GameState {
 
   // ── 8. Total playtime ─────────────────────────────────────────────────────
   const newTotalPlaytime = state.totalPlaytime + deltaSeconds;
+  const newRunPlaytime = state.runPlaytime + deltaSeconds;
 
   // ── 9. Hedonic Treadmill ──────────────────────────────────────────────────
   // Baseline slowly drifts toward current happiness (~14 hours to fully catch up)
@@ -202,6 +203,8 @@ export function applyTick(state: GameState): GameState {
   // Pilgrimage achievements
   if (pilgrimeCompleted) grantAchievement('pilgrimageFirst');
   if (pilgrimeCompleted && state.totalPilgrimages + 1 >= 10) grantAchievement('pilgrimageTen');
+  if (pilgrimeCompleted && state.totalPilgrimages + 1 >= 25) grantAchievement('pilgrimageTwentyFive');
+  if (pilgrimeCompleted && state.totalPilgrimages + 1 >= 50) grantAchievement('pilgrimageFifty');
   if (newPilgrimageStreak >= 5) grantAchievement('pilgrimageStreak');
 
   // Hidden achievements
@@ -333,6 +336,7 @@ export function applyTick(state: GameState): GameState {
     karma: newKarma,
     peakKarma: newPeakKarma,
     totalPlaytime: newTotalPlaytime,
+    runPlaytime: newRunPlaytime,
     totalPilgrimages: state.totalPilgrimages + (pilgrimeCompleted ? 1 : 0),
     baselineHappiness: newBaseline,
     activeBuffs: newActiveBuffs,
