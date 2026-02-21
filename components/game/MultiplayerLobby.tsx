@@ -247,7 +247,8 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
                                      return;
                                  }
                                  // Only use backend-fetched song objects (except demo)
-                                 if (song.id !== 'demo' && !Array.isArray(window.allSongs) ? false : !window.allSongs.find((s) => s.id === song.id)) {
+                                 const allSongs = (window as any).allSongs;
+                                 if (song.id !== 'demo' && (!Array.isArray(allSongs) ? false : !allSongs.find((s: any) => s.id === song.id))) {
                                      alert('Please select a valid song from the library.');
                                      return;
                                  }

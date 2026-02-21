@@ -252,25 +252,8 @@ export function GameCanvas() {
                 // Then Update
                 newEngine.update();
 
-                // Check for score submission when game finishes
-                // (Handled by GameOver.tsx, do not submit here)
-                // const store = useGameStore.getState();
-                // if (store.status === 'FINISHED' && !hasSubmittedScoreRef.current) {
-                //     hasSubmittedScoreRef.current = true;
-                //     const { score, maxCombo, accuracy, songId } = store;
-                //     if (songId) {
-                //         fetch('/api/slice-it/leaderboard/submit', {
-                //             method: 'POST',
-                //             headers: { 'Content-Type': 'application/json' },
-                //             body: JSON.stringify({
-                //                 songId,
-                //                 score,
-                //                 maxCombo,
-                //                 accuracy
-                //             })
-                //         }).catch(err => console.error("Failed to submit score:", err));
-                //     }
-                // }
+                // Then Update
+                newEngine.update();
 
             } catch (e: any) {
                 console.error("GameCanvas Render Error:", e);
