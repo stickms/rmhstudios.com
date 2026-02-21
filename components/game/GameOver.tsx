@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useGameStore } from '@/lib/store/useGameStore';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -6,21 +6,34 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 export function GameOver() {
   const { score, multiplier, maxCombo, accuracy, songId, reset, userName, status, modifiers } = useGameStore();
   const isUnranked = modifiers.speed < 1.0;
+  const submittedRef = useRef(false);
 
   useEffect(() => {
+    if (submittedRef.current) return;
     if (userName && score > 0 && status === 'FINISHED' && !isUnranked) {
-        fetch('/api/slice-it/score', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: userName, score, accuracy, maxCombo, songId, speed: modifiers.speed }),
-        })
-        .then(async (res) => {
-            if (!res.ok) {
-                const body = await res.json().catch(() => ({}));
-                console.error('Score submission failed:', res.status, body);
-            }
-        })
-        .catch(err => console.error('Score submission network error:', err));
+      submittedRef.current = true;
+      console.log('[DEBUG] Submitting score:', {
+        username: userName,
+        score,
+        accuracy,
+        maxCombo,
+        songId,
+        speed: modifiers.speed
+      });
+      fetch('/api/slice-it/score', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: userName, score, accuracy, maxCombo, songId, speed: modifiers.speed }),
+      })
+      .then(async (res) => {
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          console.error('Score submission failed:', res.status, body);
+        } else {
+          console.log('[DEBUG] Score submission response:', body);
+        }
+      })
+      .catch(err => console.error('Score submission network error:', err));
     }
   }, [score, accuracy, maxCombo, songId, userName, status, isUnranked, modifiers.speed]);
 

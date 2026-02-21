@@ -11,7 +11,7 @@
 
     --slice-lane-top: #3b82f6;
     --slice-lane-bottom: #f472b6;
-    --slice-hold-trail: rgba(0, 0, 0, 0.35);
+    --slice-hold-trail: rgba(30, 30, 50, 0.65);
     --slice-text-darker: #2d3748;
     --slice-input-bg: #dce1e9;
     --slice-input-border: rgba(163, 177, 198, 0.8);

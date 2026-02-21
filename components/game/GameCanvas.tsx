@@ -14,6 +14,7 @@ import { Settings, X } from 'lucide-react';
 import { MultiplayerSidebar } from './MultiplayerSidebar';
 import { MatchResults } from './MatchResults';
 import { MultiplayerFactory } from '@/lib/game/MultiplayerFactory';
+import { authClient } from '@/lib/auth-client';
 
 // Neumorphic Palette (dark-mode-aware colors are read from CSS vars at render time)
 const COLORS = {
@@ -252,23 +253,24 @@ export function GameCanvas() {
                 newEngine.update();
 
                 // Check for score submission when game finishes
-                const store = useGameStore.getState();
-                if (store.status === 'FINISHED' && !hasSubmittedScoreRef.current) {
-                    hasSubmittedScoreRef.current = true;
-                    const { score, maxCombo, accuracy, songId } = store;
-                    if (songId) {
-                        fetch('/api/slice-it/leaderboard/submit', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                songId,
-                                score,
-                                maxCombo,
-                                accuracy
-                            })
-                        }).catch(err => console.error("Failed to submit score:", err));
-                    }
-                }
+                // (Handled by GameOver.tsx, do not submit here)
+                // const store = useGameStore.getState();
+                // if (store.status === 'FINISHED' && !hasSubmittedScoreRef.current) {
+                //     hasSubmittedScoreRef.current = true;
+                //     const { score, maxCombo, accuracy, songId } = store;
+                //     if (songId) {
+                //         fetch('/api/slice-it/leaderboard/submit', {
+                //             method: 'POST',
+                //             headers: { 'Content-Type': 'application/json' },
+                //             body: JSON.stringify({
+                //                 songId,
+                //                 score,
+                //                 maxCombo,
+                //                 accuracy
+                //             })
+                //         }).catch(err => console.error("Failed to submit score:", err));
+                //     }
+                // }
 
             } catch (e: any) {
                 console.error("GameCanvas Render Error:", e);
@@ -860,7 +862,7 @@ export function GameCanvas() {
                          // 1. Draw the white tail (body of the hold)
                          // It extends to the right of the start sliceX
                          const trailColor = getComputedStyle(document.documentElement).getPropertyValue('--slice-hold-trail').trim() || 'rgba(255, 255, 255, 0.5)';
-                          ctx.fillStyle = isHeldActive ? trailColor.replace('0.5', '0.9').replace('0.15', '0.4') : trailColor;
+                          ctx.fillStyle = isHeldActive ? trailColor.replace(/,\s*[\d.]+\)$/, ', 0.9)') : trailColor;
                           ctx.globalAlpha = noteAlpha;
                          ctx.beginPath();
                          ctx.roundRect(sliceX, y - (BAR_H * 0.3), len, BAR_H * 0.6, 4);
@@ -1040,7 +1042,7 @@ export function GameCanvas() {
                 ctx.font = 'bold 12px sans-serif';
                 ctx.textAlign = 'center';
                 const bind = i === 0 ? currentKeybinds.lane1 : currentKeybinds.lane2;
-                ctx.fillText(bind.replace('Mouse0','LMB').replace('Mouse1','MMB').replace('Mouse2','RMB').replace('Key','').replace('Arrow',''), CURSOR_X, y + 4);
+                ctx.fillText(bind.replace('Mouse0','LMB').replace('Mouse1','MMB').replace('Mouse2','RMB').replace('ArrowUp', '↑').replace('ArrowDown', '↓').replace('ArrowLeft', '←').replace('ArrowRight', '→').replace('Key', '') , CURSOR_X, y + 4);
             });
         }
 

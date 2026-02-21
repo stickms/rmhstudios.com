@@ -189,6 +189,12 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
 
     // Selected track (from library) or custom file
     const [selectedSong, setSelectedSong] = React.useState<any | null>(null);
+    // Always set songId in store from backend Song object
+    React.useEffect(() => {
+        if (selectedSong && selectedSong.id) {
+            setSongId(selectedSong.id);
+        }
+    }, [selectedSong, setSongId]);
 
     const [highlightedSong, setHighlightedSong] = React.useState<any | null>(null); // For leaderboard/comments
 
@@ -232,17 +238,31 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
     };
 
     // Fetch audio, generate beatmap, and launch the game — single authoritative entry point
+    const [allSongs, setAllSongs] = React.useState<any[]>([]);
+    React.useEffect(() => {
+        fetch('/api/slice-it/songs')
+            .then(res => res.json())
+            .then((songs) => {
+                setAllSongs(Array.isArray(songs) ? songs : []);
+            })
+            .catch(() => {});
+    }, []);
+
     const handleStartGame = async (song: any) => {
         if (!engine) return;
-
+        // Only use backend-fetched song objects (except demo)
+        const validSong = song.id === 'demo' ? song : allSongs.find((s) => s.id === song.id);
+        if (!validSong) {
+            alert('Invalid song selection. Please pick a valid song from the library.');
+            return;
+        }
+        setSelectedSong(validSong); // Always set selectedSong for leaderboard sync
         // Stop any playing song preview before launching the game
         stopPreviewRef.current?.();
-
         setIsLoading(true);
         setIsLoadingSong(true);
         setLoadingProgress(0);
         setStatus('PLAYING');
-
         try {
             let audioBuffer: AudioBuffer | undefined;
             let bpm: number = song.bpm || 0;
@@ -285,8 +305,10 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                     setLoadingProgress(40);
                     setLoadingProgressText('RETRIEVING SPECTRAL ANALYSIS...');
                     map = typeof song.analysisData === 'string' ? JSON.parse(song.analysisData) : song.analysisData;
-                    
-                    // Fallback to ensuring song metadata is attached
+
+                    // Always use the current DB song ID — the analysisData may contain an
+                    // older or locally-generated ID that won't match the Song table.
+                    map.id = song.id;
                     map.audioUrl = audioUrl;
                     if (bpm > 0) map.bpm = bpm;
                     else if (!map.bpm) map.bpm = 120;
@@ -366,10 +388,16 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
             console.error("Cannot start multiplayer: engine not initialised yet", { lobbyId });
             return;
         }
+        // Only use backend-fetched song objects (except demo)
+        const validSong = song.id === 'demo' ? song : allSongs.find((s) => s.id === song.id);
+        if (!validSong) {
+            alert('Invalid song selection. Please pick a valid song from the library.');
+            return;
+        }
         engine.setLobbyId(lobbyId);
         setIsMultiplayer(true);
         setShowMultiplayer(false);
-        await handleStartGame(song);
+        await handleStartGame(validSong);
     };
 
 

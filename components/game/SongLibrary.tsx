@@ -326,11 +326,11 @@ export function SongLibrary({ onSelect, onHighlight, selectedSongId, onStopPrevi
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-1">
                                             <label className="text-xs font-bold text-slice-text-light uppercase">Title</label>
-                                            <Input value={uploadTitle} onChange={e => setUploadTitle(e.target.value)} className="bg-slice-card-bg text-slice-text placeholder:text-slice-text-light" />
+                                            <Input value={uploadTitle} onChange={e => setUploadTitle(e.target.value)} className="bg-slice-card-bg text-slice-text placeholder:text-slice-text-light shadow-[5px_5px_15px_var(--slice-shadow-dark),-5px_-5px_15px_var(--slice-shadow-light)] border border-slice-shadow-dark/30 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.15)] transition-all" />
                                         </div>
                                         <div className="space-y-1">
                                             <label className="text-xs font-bold text-slice-text-light uppercase">Artist</label>
-                                            <Input value={uploadArtist} onChange={e => setUploadArtist(e.target.value)} className="bg-slice-card-bg text-slice-text placeholder:text-slice-text-light" />
+                                            <Input value={uploadArtist} onChange={e => setUploadArtist(e.target.value)} className="bg-slice-card-bg text-slice-text placeholder:text-slice-text-light shadow-[5px_5px_15px_var(--slice-shadow-dark),-5px_-5px_15px_var(--slice-shadow-light)] border border-slice-shadow-dark/30 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.15)] transition-all" />
                                         </div>
                                     </div>
 
@@ -339,7 +339,7 @@ export function SongLibrary({ onSelect, onHighlight, selectedSongId, onStopPrevi
                                         <Input 
                                             value={uploadDescription} 
                                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUploadDescription(e.target.value)}
-                                            className="bg-slice-card-bg text-slice-text placeholder:text-slice-text-light"
+                                            className="bg-slice-card-bg text-slice-text placeholder:text-slice-text-light shadow-[5px_5px_15px_var(--slice-shadow-dark),-5px_-5px_15px_var(--slice-shadow-light)] border border-slice-shadow-dark/30 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.15)] transition-all"
                                             placeholder="Tell us about this track..."
                                         />
                                     </div>

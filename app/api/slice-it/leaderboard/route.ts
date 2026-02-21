@@ -18,7 +18,6 @@ export async function GET(req: Request) {
 
     try {
         let leaderboard;
-
         if (songId) {
             // Song-specific leaderboard
             const scores = await prisma.songLeaderboard.findMany({
@@ -29,18 +28,21 @@ export async function GET(req: Request) {
                     user: {
                         select: {
                             name: true,
-                            username: true
+                            username: true,
+                            sliceItProfile: {
+                                select: { username: true }
+                            }
                         }
                     }
                 }
             });
-
             leaderboard = scores.map((s: any) => ({
-                username: s.user.name || s.user.username || "Unknown",
+                username: s.user.sliceItProfile?.username || s.user.name || s.user.username || "Unknown",
                 score: s.score,
                 accuracy: s.accuracy,
                 maxCombo: s.maxCombo,
             }));
+            console.log('[LEADERBOARD] Song leaderboard for', songId, leaderboard);
         } else {
             // Global leaderboard
             const players = await prisma.player.findMany({
@@ -51,16 +53,15 @@ export async function GET(req: Request) {
                     totalScore: true
                 }
             });
-
             leaderboard = players.map((p: any) => ({
                 username: p.username,
                 score: p.totalScore
             }));
+            console.log('[LEADERBOARD] Global leaderboard', leaderboard);
         }
-
         return NextResponse.json(leaderboard);
     } catch (e) {
-        console.error('Slice leaderboard fetch failed:', e);
+        console.error('[LEADERBOARD] Fetch failed:', e);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }

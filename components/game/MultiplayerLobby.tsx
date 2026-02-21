@@ -9,7 +9,7 @@ import { useGameStore, Difficulty } from '@/lib/store/useGameStore';
 import { authClient } from "@/lib/auth-client";
 import { useSearchParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Copy, Share2, Check, Zap, Bomb, Shuffle, EyeOff, Skull, Info, ChevronDown, ChevronUp, Settings, RotateCw, Target, Minus } from 'lucide-react';
+import { Copy, Share2, Check, Zap, Bomb, Shuffle, EyeOff, Skull, Info, ChevronDown, ChevronUp, Settings, RotateCw, Target, Minus, Sun, Moon } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 
 import { SongLibrary } from '@/components/game/SongLibrary'; // Import SongLibrary
@@ -33,6 +33,8 @@ interface LobbyData {
 }
 
 export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings }: { onBack: () => void, onStart: (lobbyId: string, song: any) => void, onSelectSong: (song: any) => void, onOpenSettings?: () => void }) {
+        const isDarkMode = useGameStore(state => state.isDarkMode);
+        const setIsDarkMode = useGameStore(state => state.setIsDarkMode);
     // const { userName, setUserName } = useGameStore(); // No longer used locally here
 
     const [lobbyIdInput, setLobbyIdInput] = React.useState('');
@@ -231,21 +233,31 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
         
         if (showSongSelect && isHost) {
             return (
-                <div className="absolute inset-0 z-[60] bg-slice-bg p-4 flex flex-col">
+                <div className="absolute inset-0 z-60 bg-slice-bg p-4 flex flex-col">
                     <div className="flex justify-between items-center mb-4">
                         <h2 className="text-xl font-bold text-slice-text-darker">SELECT A SONG</h2>
                         <Button variant="ghost" onClick={() => setShowSongSelect(false)}>CANCEL</Button>
                     </div>
                     <div className="flex-1 overflow-hidden rounded-2xl shadow-[inset_10px_10px_20px_var(--slice-shadow-dark),inset_-10px_-10px_20px_var(--slice-shadow-light)] p-4">
                          <SongLibrary
-                             onSelect={() => {}}
+                             onSelect={(song) => {
+                                 // Only allow selection of valid backend songs
+                                 if (!song.id || typeof song.id !== 'string') {
+                                     alert('Please select a valid song from the library.');
+                                     return;
+                                 }
+                                 // Only use backend-fetched song objects (except demo)
+                                 if (song.id !== 'demo' && !Array.isArray(window.allSongs) ? false : !window.allSongs.find((s) => s.id === song.id)) {
+                                     alert('Please select a valid song from the library.');
+                                     return;
+                                 }
+                                 mp.selectSong(lobbyData.lobbyId, song);
+                                 setShowSongSelect(false);
+                             }}
                              onHighlight={(song) => {
-                             console.log("Host selected song:", song);
-                             // Send to server
-                             mp.selectSong(lobbyData.lobbyId, song);
-                             setShowSongSelect(false);
-                         }}
-                         selectedSongId={lobbyData.song?.id ?? null}
+                                 setBrowsedSong(song);
+                             }}
+                             selectedSongId={lobbyData.song?.id ?? null}
                          />
                     </div>
                 </div>
@@ -255,7 +267,7 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
         // Browse Songs view (non-host): full song library + details panel in read-only mode
         if (showBrowseSongs) {
             return (
-                <div className="absolute inset-0 z-[60] bg-slice-bg flex flex-col">
+                <div className="absolute inset-0 z-60 bg-slice-bg flex flex-col">
                     <div className="flex items-center justify-between px-4 py-3 border-b border-slice-shadow-dark/30 bg-slice-bg shrink-0">
                         <h2 className="text-xl font-bold text-slice-text-darker uppercase tracking-wide">Browse Songs</h2>
                         <Button variant="ghost" onClick={() => { setShowBrowseSongs(false); setBrowsedSong(null); }}>← Back to Lobby</Button>
@@ -273,10 +285,10 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
                         {browsedSong && (
                             <>
                                 <div
-                                    className="absolute inset-0 bg-black/20 z-[65] animate-in fade-in duration-200"
+                                    className="absolute inset-0 bg-black/20 z-65 animate-in fade-in duration-200"
                                     onClick={() => setBrowsedSong(null)}
                                 />
-                                <div className="absolute top-0 right-0 bottom-0 w-full sm:max-w-2xl bg-slice-bg shadow-2xl z-[70] animate-in slide-in-from-right duration-300 flex flex-col overflow-hidden">
+                                <div className="absolute top-0 right-0 bottom-0 w-full sm:max-w-2xl bg-slice-bg shadow-2xl z-70 animate-in slide-in-from-right duration-300 flex flex-col overflow-hidden">
                                     <div className="flex items-center justify-between p-4 border-b border-slice-shadow-dark/50 bg-slice-shadow-dark/20">
                                         <h2 className="text-lg font-black text-slice-text">Song Details</h2>
                                         <Button variant="ghost" size="icon" className="h-8 w-8 text-slice-text-muted hover:text-slice-text hover:bg-slice-shadow-dark rounded-lg"
@@ -302,21 +314,32 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
         }
         
         return (
-            <div className="absolute inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-slice-bg p-4 text-slice-text">
+            <div className="absolute inset-0 z-60 flex items-center justify-center overflow-y-auto bg-slice-bg p-4 text-slice-text">
                  <Card className="w-full max-w-lg bg-slice-bg shadow-[20px_20px_60px_var(--slice-shadow-dark),-20px_-20px_60px_var(--slice-shadow-light)] rounded-[2rem] border-none my-auto">
                     <CardHeader>
-                        <CardTitle className="text-2xl font-black text-center text-slice-text-darker flex flex-col items-center gap-2 relative">
+                        <div className="flex justify-end items-center gap-2 mb-2 relative">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-10 w-10 text-slice-text-muted hover:text-slice-text hover:bg-slice-shadow-dark dark:text-slice-text-muted dark:hover:text-slice-text dark:hover:bg-slice-shadow-light rounded-lg transition-all"
+                                onClick={() => setIsDarkMode(!isDarkMode)}
+                                title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                            >
+                                {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                            </Button>
                             {onOpenSettings && (
                                 <Button
                                     size="icon"
                                     variant="ghost"
-                                    className="absolute right-0 top-0 h-10 w-10 sm:-mr-4 sm:-mt-2 rounded-2xl shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] active:shadow-[inset_2px_2px_5px_var(--slice-shadow-dark),inset_-2px_-2px_5px_var(--slice-shadow-light)] transition-all text-slice-text-muted hover:text-slice-text"
+                                    className="h-10 w-10 rounded-2xl shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] active:shadow-[inset_2px_2px_5px_var(--slice-shadow-dark),inset_-2px_-2px_5px_var(--slice-shadow-light)] transition-all text-slice-text-muted hover:text-slice-text"
                                     onClick={onOpenSettings}
                                     title="Settings"
                                 >
                                     <Settings className="w-5 h-5" />
                                 </Button>
                             )}
+                        </div>
+                        <CardTitle className="text-2xl font-black text-center text-slice-text-darker flex flex-col items-center gap-2 relative">
                             <span>LOBBY CODE</span>
                             <div className="flex items-center gap-3">
                                 <span className="text-4xl tracking-widest text-blue-500 bg-slice-bg px-4 py-2 rounded-2xl shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)]">
@@ -471,14 +494,22 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
                                         </div>
                                         <Slider
                                             value={[myDifficulty.speed]}
-                                            min={0.5}
+                                            min={lobbyData ? 1.0 : 0.5}
                                             max={2.0}
                                             step={0.1}
                                             onValueChange={([v]) => handleDifficultyChange({ speed: +v.toFixed(1) })}
                                             className="w-full"
                                         />
                                         <div className="flex justify-between px-1 text-[9px] text-slice-text-light font-mono">
-                                            <span>0.5x</span><span>1.0x</span><span>1.5x</span><span>2.0x</span>
+                                            {lobbyData ? (
+                                                <>
+                                                    <span>1.0x</span><span>1.5x</span><span>2.0x</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <span>0.5x</span><span>1.0x</span><span>1.5x</span><span>2.0x</span>
+                                                </>
+                                            )}
                                         </div>
                                     </div>
                                     {/* Toggles */}
@@ -589,7 +620,7 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
     // LIST / JOIN VIEW
     if (isPending) {
          return (
-            <div className="absolute inset-0 z-[60] flex items-center justify-center bg-slice-bg p-4 text-slice-text">
+            <div className="absolute inset-0 z-60 flex items-center justify-center bg-slice-bg p-4 text-slice-text">
                  <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
             </div>
          );
@@ -597,7 +628,7 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
 
     if (!session) {
         return (
-            <div className="absolute inset-0 z-[60] flex items-center justify-center bg-slice-bg p-4 text-slice-text">
+            <div className="absolute inset-0 z-60 flex items-center justify-center bg-slice-bg p-4 text-slice-text">
                  <Card className="w-full max-w-md bg-slice-bg shadow-[20px_20px_60px_var(--slice-shadow-dark),-20px_-20px_60px_var(--slice-shadow-light)] rounded-[2rem] border-none p-8 text-center">
                     <h2 className="text-2xl font-black text-slice-text-darker mb-4">MULTIPLAYER</h2>
                     <p className="text-slice-text-muted mb-6 font-medium">To play online and track your stats, you need to sign in with your account.</p>
@@ -616,7 +647,7 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
     }
 
     return (
-        <div className="absolute inset-0 z-[60] flex items-center justify-center bg-slice-bg p-4 text-slice-text">
+        <div className="absolute inset-0 z-60 flex items-center justify-center bg-slice-bg p-4 text-slice-text">
              <Card className="w-full max-w-md bg-slice-bg shadow-[20px_20px_60px_var(--slice-shadow-dark),-20px_-20px_60px_var(--slice-shadow-light)] rounded-[2rem] border-none">
                 <CardHeader>
                     <CardTitle className="text-2xl font-black text-center text-slice-text-darker">MULTIPLAYER</CardTitle>
@@ -633,7 +664,7 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
                                 value={lobbyIdInput} 
                                 onChange={(e) => setLobbyIdInput(e.target.value)} 
                                 placeholder="Lobby Code"
-                                className="bg-[var(--slice-input-bg)] border-[var(--slice-input-border)] shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] rounded-xl uppercase text-center font-mono tracking-widest h-12"
+                                className="bg-[--slice-input-bg] border-[--slice-input-border] shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] rounded-xl uppercase text-center font-mono tracking-widest h-12"
                             />
                             <Button 
                                 className="bg-slice-bg text-blue-500 font-bold shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] active:shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)] rounded-xl"

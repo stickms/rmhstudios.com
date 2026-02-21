@@ -16,15 +16,19 @@ export async function POST(req: Request) {
 
     try {
         const { username, score, accuracy, maxCombo, songId, speed } = await req.json();
+        console.log('[SCORE SUBMIT] Incoming:', { username, score, accuracy, maxCombo, songId, speed });
 
         if (!username || typeof username !== 'string') {
+            console.log('[DEBUG][API] Invalid username:', username);
             return NextResponse.json({ error: 'Invalid username' }, { status: 400 });
         }
         const cleanUsername = username.trim().replace(/[^a-zA-Z0-9_\-. ]/g, '').slice(0, 24);
         if (cleanUsername.length < 2) {
+            console.log('[DEBUG][API] Username too short:', cleanUsername);
             return NextResponse.json({ error: 'Invalid username' }, { status: 400 });
         }
         if (typeof score !== 'number' || score < 0 || score > 1_000_000_000) {
+            console.log('[SCORE SUBMIT] Invalid score:', score);
             return NextResponse.json({ error: 'Invalid score' }, { status: 400 });
         }
 
@@ -39,13 +43,12 @@ export async function POST(req: Request) {
             headers: await headers()
         });
         const userId = session?.user?.id;
-
         if (!userId) {
+            console.log('[SCORE SUBMIT] Unauthorized');
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
         const existingProfile = await prisma.player.findUnique({ where: { userId } });
-
         if (existingProfile) {
             await prisma.player.update({
                 where: { id: existingProfile.id },
@@ -56,14 +59,17 @@ export async function POST(req: Request) {
                     username: cleanUsername
                 }
             });
+            console.log('[SCORE SUBMIT] Updated Player:', userId, cleanUsername, score);
         } else {
             const usernameConfig = await prisma.player.findUnique({ where: { username: cleanUsername } });
             if (usernameConfig) {
+                console.log('[SCORE SUBMIT] Username taken:', cleanUsername);
                 return NextResponse.json({ error: 'Username taken.' }, { status: 409 });
             }
             await prisma.player.create({
                 data: { userId, username: cleanUsername, totalScore: score, gamesPlayed: 1 }
             });
+            console.log('[SCORE SUBMIT] Created Player:', userId, cleanUsername, score);
         }
 
         // Save per-song leaderboard entry if songId is provided
@@ -79,7 +85,6 @@ export async function POST(req: Request) {
                         }
                     }
                 });
-
                 if (!personalBest || score > personalBest.score || (maxCombo && maxCombo > personalBest.maxCombo)) {
                     await prisma.songLeaderboard.upsert({
                         where: {
@@ -104,13 +109,19 @@ export async function POST(req: Request) {
                             createdAt: new Date() // Store date of personal best
                         }
                     });
+                    console.log('[DEBUG][API] Upserted SongLeaderboard:', { songId, userId, score, maxCombo, accuracy, playSpeed });
+                } else {
+                    console.log('[DEBUG][API] No leaderboard update needed:', { songId, userId, score, maxCombo, accuracy });
                 }
+            } else {
+                console.log('[DEBUG][API] Song not found:', songId);
             }
         }
 
+        console.log('[SCORE SUBMIT] Success');
         return NextResponse.json({ success: true });
     } catch (e) {
-        console.error('Failed to submit score:', e);
+        console.error('[SCORE SUBMIT] Failed to submit score:', e);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }

@@ -33,7 +33,6 @@ export function Leaderboard({ songId }: LeaderboardProps) {
                 setIsLoading(false);
             }
         };
-
         fetchLeaderboard();
     }, [songId]);
 
