@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@fontsource/noto-color-emoji':
+        specifier: ^5.2.11
+        version: 5.2.11
       '@prisma/adapter-pg':
         specifier: ^7.4.1
         version: 7.4.1
@@ -510,6 +513,9 @@ packages:
 
   '@floating-ui/utils@0.2.10':
     resolution: {integrity: sha512-aGTxbpbg8/b5JfU1HXSrbH3wXZuLPJcNEcZQFMxLs3oSzgtVu6nFPkbbGGUvBcUjKV2YyB9Wxxabo+HEH9tcRQ==}
+
+  '@fontsource/noto-color-emoji@5.2.11':
+    resolution: {integrity: sha512-H1lT1LFRRSvCcTvCuhY4jQceJ5QTNGyCDNwF+egRn1ybObOF2rXkftGP+Hpg4RIGzM3HVtty1vT5HaILD4E/Mg==}
 
   '@hono/node-server@1.19.9':
     resolution: {integrity: sha512-vHL6w3ecZsky+8P5MD+eFfaGTyCeOHUIFYMGpQGbrBTSmNNoxv0if69rEZ5giu36weC5saFuznL411gRX7bJDw==}
@@ -4855,6 +4861,8 @@ snapshots:
       react-dom: 19.2.3(react@19.2.3)
 
   '@floating-ui/utils@0.2.10': {}
+
+  '@fontsource/noto-color-emoji@5.2.11': {}
 
   '@hono/node-server@1.19.9(hono@4.11.4)':
     dependencies:

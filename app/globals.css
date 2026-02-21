@@ -184,6 +184,9 @@
 
 /* ==================== TEMPLE OF JOY — IN-THEME CHROME ==================== */
 
+/* Noto Color Emoji — consistent cross-platform emoji rendering */
+[data-theme] { font-family: inherit, 'Noto Color Emoji', sans-serif; }
+
 /* Scrollbars */
 [data-theme] ::-webkit-scrollbar          { width: 6px; height: 6px; }
 [data-theme] ::-webkit-scrollbar-track    { background: var(--temple-surface); }
@@ -192,6 +195,10 @@
 
 /* Text selection */
 [data-theme] ::selection { background: rgba(212, 168, 71, 0.28); color: var(--temple-text); }
+
+/* All buttons in the temple game should use pointer cursor */
+[data-theme] button { cursor: pointer; }
+[data-theme] button:disabled { cursor: not-allowed; }
 
 /* ==================== TEMPLE OF JOY ANIMATIONS ==================== */
 

@@ -183,6 +183,7 @@ export interface GameState {
 
   // ── Meta ──
   lastSaved: number;               // Unix ms timestamp
+  lastTickTime: number;            // Unix ms timestamp of most recent tick
   totalPlaytime: number;           // seconds
   totalClicks: number;             // total button clicks (for achievements)
   totalPilgrimages: number;        // total pilgrimages completed

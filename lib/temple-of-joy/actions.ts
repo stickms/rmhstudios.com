@@ -40,6 +40,7 @@ function makeInitialState(
     wheelPurchased: new Set<string>(),
     samsaraGiftStacks: 0,
     lastSaved: now,
+    lastTickTime: now,
     totalPlaytime: 0,
     totalClicks: 0,
     totalPilgrimages: 0,

@@ -100,7 +100,7 @@ export function saveDataToState(save: SaveData, baseState: GameState): Partial<G
     theme: save.theme ?? 'dark',
     numberFormat: save.numberFormat ?? 'abbreviated',
     sourceBuyQty: savedBuyQty,
-    soundEnabled: save.soundEnabled ?? false,
+    soundEnabled: save.soundEnabled ?? true,
     musicVolume: savedMusicVol,
     sfxVolume: savedSfxVol,
   };

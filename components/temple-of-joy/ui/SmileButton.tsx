@@ -2,7 +2,6 @@
 
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { fmt } from '@/lib/temple-of-joy/numbers';
-import { templeAudio } from '@/lib/temple-of-joy/audio';
 import { useEffect, useState, useCallback, useRef } from 'react';
 
 interface FloatLabel {
@@ -48,7 +47,6 @@ export default function SmileButton() {
   const handleClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
     if (pilgrimageActive) return; // no clicking during pilgrimage
     click();
-    templeAudio.playClick();
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;

@@ -3,12 +3,13 @@
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { fmt } from '@/lib/temple-of-joy/numbers';
 import { UPGRADES } from '@/lib/temple-of-joy/data/upgrades';
+import { SOURCE_MAP } from '@/lib/temple-of-joy/data/sources';
 import {
   computeIsUpgradeVisible,
   computeIsUpgradeAffordable,
   computeUpgradeCost,
 } from '@/lib/temple-of-joy/engine';
-import type { UpgradePath } from '@/lib/temple-of-joy/types';
+import type { UpgradePath, SourceId } from '@/lib/temple-of-joy/types';
 
 const ALL_FILTERS: Array<UpgradePath | 'all'> = [
   'all', 'carnal', 'social', 'mind', 'spirit', 'indulgence', 'philosophy', 'offering', 'synergy',
@@ -43,7 +44,8 @@ function UpgradeRow({ upgradeId, purchased, affordable }: UpgradeRowProps) {
   const buildEffectSummary = () => {
     const parts: string[] = [];
     if (def.sourceMultiplier && def.targetSources?.length) {
-      parts.push(`×${def.sourceMultiplier} ${def.targetSources.join(', ')} HPS`);
+      const names = def.targetSources.map(id => SOURCE_MAP[id as SourceId]?.name ?? id).join(', ');
+      parts.push(`×${def.sourceMultiplier} ${names} HPS`);
     }
     if (def.globalHPSMultiplier) parts.push(`×${def.globalHPSMultiplier} global HPS`);
     if (def.hpcMultiplier) parts.push(`×${def.hpcMultiplier} HPC`);
