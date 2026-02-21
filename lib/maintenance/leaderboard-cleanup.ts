@@ -13,10 +13,10 @@ export async function cleanupLeaderboardDuplicates() {
         const duplicates = await prisma.songLeaderboard.groupBy({
             by: ['songId', 'userId'],
             _count: {
-                _all: true
+                userId: true
             },
             having: {
-                songId: {
+                userId: {
                     _count: {
                         gt: 1
                     }
