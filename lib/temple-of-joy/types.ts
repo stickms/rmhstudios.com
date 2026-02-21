@@ -201,7 +201,8 @@ export interface GameState {
   // ── Meta ──
   lastSaved: number;               // Unix ms timestamp
   lastTickTime: number;            // Unix ms timestamp of most recent tick
-  totalPlaytime: number;           // seconds
+  totalPlaytime: number;           // cumulative seconds across all runs
+  runPlaytime: number;             // seconds in current run (resets on transcendence)
   totalClicks: number;             // total button clicks (for achievements)
   totalPilgrimages: number;        // total pilgrimages completed
   totalVibeChecks: number;         // total vibe checks passed
@@ -289,6 +290,7 @@ export interface SaveData {
   samsaraGiftStacks: number;
   lastSaved: number;
   totalPlaytime: number;
+  runPlaytime: number;
   totalClicks: number;
   totalPilgrimages: number;
   totalVibeChecks: number;

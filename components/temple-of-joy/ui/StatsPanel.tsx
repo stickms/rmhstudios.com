@@ -79,12 +79,8 @@ export default function StatsPanel() {
 
   const ritualReady = ritualCooldown <= 0;
   const totalHps = getHPS();
-  // Stable multiplier (excludes temporary buffs / time-varying effects)
-  const stableMult = getGlobalHPSMultiplier();
-  // Temporary buff multiplier (event buffs + vibe buff)
-  const buffMult = [...state.activeBuffs, ...(state.vibeBuff ? [state.vibeBuff] : [])]
-    .reduce((m, b) => m * b.hpsMultiplier, 1);
-  const hasTemporaryBuffs = buffMult > 1;
+  // Effective global multiplier (including temporary buffs)
+  const globalMult = totalHps > 0 && rawBaseHPS > 0 ? totalHps / rawBaseHPS : getGlobalHPSMultiplier();
 
   return (
     <div
@@ -130,13 +126,12 @@ export default function StatsPanel() {
         <div>
           <Row
             label="Global Mult"
-            value={`×${fmt(stableMult, numberFormat)}`}
-            sub={hasTemporaryBuffs ? `+buff ×${buffMult.toFixed(2)}` : undefined}
+            value={`×${fmt(globalMult, numberFormat)}`}
           />
           <Row
             label="HPS"
             value={fmt(totalHps, numberFormat)}
-            sub={`${fmt(rawBaseHPS, numberFormat)} × ${fmt(stableMult, numberFormat)}`}
+            sub={`${fmt(rawBaseHPS, numberFormat)} × ${fmt(globalMult, numberFormat)}`}
             highlight={true}
           />
           <Row

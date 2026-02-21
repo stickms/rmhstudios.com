@@ -608,6 +608,7 @@ export function computeStartingHPSFromWheel(
       lastSaved: 0,
       lastTickTime: 0,
       totalPlaytime: 0,
+      runPlaytime: 0,
       totalClicks: 0,
       totalPilgrimages: 0,
       totalVibeChecks: 0,

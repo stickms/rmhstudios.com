@@ -36,6 +36,7 @@ export function createInitialState(): GameState {
     lastSaved: now,
     lastTickTime: now,
     totalPlaytime: 0,
+    runPlaytime: 0,
     totalClicks: 0,
     totalPilgrimages: 0,
     totalVibeChecks: 0,
