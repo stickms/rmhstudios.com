@@ -31,10 +31,12 @@ model User {
   neonDriftwayProfile NeonDriftwayPlayer?
   
   // Slice-It Library Relations
-  uploadedSongs  Song[]
+  uploadedSongs  Song[]        @relation("SongUploader")
+  songLikes      SongLike[]
   songRatings    SongRating[]
   songComments   SongComment[]
   songScores     SongLeaderboard[]
+  songPlays      SongPlay[]
 
   @@map("user")
 }
@@ -213,7 +215,7 @@ model Song {
   analysisData Json? 
 
   uploadedBy  String
-  uploader    User     @relation(fields: [uploadedBy], references: [id])
+  uploader    User     @relation("SongUploader", fields: [uploadedBy], references: [id])
   
   isPublic    Boolean  @default(true)
   plays       Int      @default(0)
@@ -224,10 +226,24 @@ model Song {
   ratings     SongRating[]
   comments    SongComment[]
   scores      SongLeaderboard[]
+  likes       SongLike[]
+  songPlays   SongPlay[]
 
   @@index([title])
   @@index([artist])
   @@index([uploadedBy])
+}
+
+model SongLike {
+  id        String   @id @default(cuid())
+  songId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  song      Song     @relation(fields: [songId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([songId, userId])
 }
 
 model SongRating {
@@ -272,5 +288,18 @@ model SongLeaderboard {
 
   @@unique([songId, userId], name: "songId_userId")
   @@index([songId, score(sort: Desc)])
+}
+
+model SongPlay {
+  id           String   @id @default(cuid())
+  songId       String
+  userId       String
+  count        Int      @default(1)
+  lastPlayedAt DateTime @default(now())
+
+  song         Song     @relation(fields: [songId], references: [id], onDelete: Cascade)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([songId, userId])
 }
 

@@ -84,6 +84,8 @@ export async function POST(req: Request) {
             console.log('[SCORE SUBMIT] Created Player Profile:', userId, cleanUsername, score);
         }
 
+        let isNewBest = false;
+        
         // Save per-song leaderboard entry if songId is provided
         if (songId && typeof songId === 'string') {
             console.log('[SCORE SUBMIT] Processing song leaderboard for songId:', songId);
@@ -99,6 +101,7 @@ export async function POST(req: Request) {
                 console.log('[SCORE SUBMIT] Existing scores found:', existingScores.length, 'Best score:', personalBest?.score);
 
                 if (!personalBest || score > personalBest.score) {
+                    isNewBest = true;
                     if (personalBest) {
                         console.log('[SCORE SUBMIT] Updating personal best from', personalBest.score, 'to', score);
                         // Update the existing best
@@ -154,7 +157,7 @@ export async function POST(req: Request) {
             }
         }
         
-        return NextResponse.json({ success: true });
+        return NextResponse.json({ success: true, isNewBest });
     } catch (e) {
         console.error('[SCORE SUBMIT] CRITICAL FAILURE:', e);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

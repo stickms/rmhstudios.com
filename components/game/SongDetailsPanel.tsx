@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Play, Settings, X, Check, ImagePlus } from 'lucide-react';
+import { Play, Settings, X, Check, ImagePlus, Heart } from 'lucide-react';
 import { Leaderboard } from './Leaderboard';
 import { SongComments } from './SongComments';
 import { useGameStore, Difficulty } from '@/lib/store/useGameStore';
@@ -23,8 +23,13 @@ interface Song {
     description?: string;
     uploadedBy: string;
     uploader: { name: string };
+    plays?: number;
+    likeCount?: number;
+    isLiked?: boolean;
+    userPlays?: number;
     _count?: {
         scores: number;
+        likes: number;
     }
 }
 
@@ -61,6 +66,25 @@ export function SongDetailsPanel({ song, onPlay, onSongUpdated, readOnly = false
     const [editCoverFile, setEditCoverFile] = React.useState<File | null>(null);
     const [editCoverPreview, setEditCoverPreview] = React.useState<string | null>(null);
     const [isSaving, setIsSaving] = React.useState(false);
+    const [isLiking, setIsLiking] = React.useState(false);
+
+    const handleLike = async () => {
+        if (!song || isLiking) return;
+        setIsLiking(true);
+        try {
+            const res = await fetch(`/api/slice-it/songs/${song.id}/like`, { method: 'POST' });
+            if (!res.ok) throw new Error();
+            const data = await res.json();
+            onSongUpdated?.({
+                isLiked: data.liked,
+                likeCount: (song.likeCount || 0) + (data.liked ? 1 : -1)
+            });
+        } catch (e) {
+            // silent
+        } finally {
+            setIsLiking(false);
+        }
+    };
 
     const openEdit = () => {
         if (!song) return;
@@ -246,6 +270,23 @@ export function SongDetailsPanel({ song, onPlay, onSongUpdated, readOnly = false
                                 }`}>{modifiers.difficulty.toUpperCase()}</span>
                             </div>
                         </div>
+
+                        <div className="flex items-center gap-2 mt-3 flex-wrap">
+                            <div className="flex items-center gap-1.5 bg-slice-shadow-dark/20 px-2 py-1 rounded-md border border-slice-shadow-dark/30" title="Total plays">
+                                <Play className="w-3 h-3 text-blue-500 fill-current" />
+                                <span className="text-xs font-bold text-slice-text">{song.plays || 0}</span>
+                            </div>
+                            <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md border transition-colors ${song.isLiked ? 'bg-red-500/10 border-red-500/30' : 'bg-slice-shadow-dark/20 border-slice-shadow-dark/30'}`} title="Likes">
+                                <Heart className={`w-3 h-3 ${song.isLiked ? 'text-red-500 fill-current' : 'text-slice-text-light'}`} />
+                                <span className={`text-xs font-bold ${song.isLiked ? 'text-red-500' : 'text-slice-text'}`}>{song.likeCount || 0}</span>
+                            </div>
+                            {song.userPlays !== undefined && (
+                                <div className="flex items-center gap-1.5 bg-blue-500/10 px-2 py-1 rounded-md border border-blue-500/30" title="Your plays">
+                                    <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wide">YOU</span>
+                                    <span className="text-xs font-bold text-blue-500">{song.userPlays}</span>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
 
@@ -258,6 +299,18 @@ export function SongDetailsPanel({ song, onPlay, onSongUpdated, readOnly = false
                         >
                             <Play className="w-6 h-6 fill-current group-hover:scale-110 transition-transform" />
                             <span className="uppercase tracking-wide">Start Game</span>
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            className={`h-14 w-14 rounded-lg border flex items-center justify-center transition-all ${
+                                song.isLiked
+                                    ? 'bg-red-500/10 border-red-500/50 text-red-500 shadow-[inset_2px_2px_4px_rgba(239,68,68,0.2)]'
+                                    : 'bg-slice-card-bg border-slice-shadow-dark/50 text-slice-text-light hover:text-red-400 hover:border-red-400/50'
+                            }`}
+                            onClick={handleLike}
+                            disabled={isLiking}
+                        >
+                            <Heart className={`w-6 h-6 transition-transform ${song.isLiked ? 'fill-current scale-110' : 'group-hover:scale-110'}`} />
                         </Button>
                         <div className="flex flex-col items-center px-4 py-2 bg-slice-card-bg rounded-lg border border-slice-shadow-dark/50">
                             <div className="text-[10px] font-bold text-slice-text-light uppercase">Multiplier</div>

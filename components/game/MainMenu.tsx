@@ -248,7 +248,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
             .catch(() => {});
     }, []);
 
-    const handleStartGame = async (song: any) => {
+    const handleStartGame = async (song: any, skipIncrement = false) => {
         if (!engine) return;
         // Only use backend-fetched song objects (except demo)
         const validSong = song.id === 'demo' ? song : allSongs.find((s) => s.id === song.id);
@@ -256,6 +256,12 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
             alert('Invalid song selection. Please pick a valid song from the library.');
             return;
         }
+
+        // Increment play count for single player
+        if (!skipIncrement && song.id !== 'demo') {
+            fetch(`/api/slice-it/songs/${song.id}/play`, { method: 'POST' }).catch(() => {});
+        }
+
         setSelectedSong(validSong); // Always set selectedSong for leaderboard sync
         // Stop any playing song preview before launching the game
         stopPreviewRef.current?.();
@@ -379,7 +385,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
 
     const [leaderboard, setLeaderboard] = React.useState<any[]>([]);
 
-    const handleMultiplayerStart = async (lobbyId: string, song: any) => {
+    const handleMultiplayerStart = async (lobbyId: string, song: any, isHost?: boolean) => {
         if (!song) {
             console.error("Cannot start multiplayer: no song provided");
             return;
@@ -395,9 +401,15 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
             return;
         }
         engine.setLobbyId(lobbyId);
+
+        // Increment play count if host
+        if (isHost && song.id !== 'demo') {
+            fetch(`/api/slice-it/songs/${song.id}/play`, { method: 'POST' }).catch(() => {});
+        }
+
         setIsMultiplayer(true);
         setShowMultiplayer(false);
-        await handleStartGame(validSong);
+        await handleStartGame(validSong, true); // Pass true to skip play increment in handleStartGame
     };
 
 

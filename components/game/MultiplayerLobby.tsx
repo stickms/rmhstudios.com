@@ -32,7 +32,7 @@ interface LobbyData {
     song: any | null;
 }
 
-export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings }: { onBack: () => void, onStart: (lobbyId: string, song: any) => void, onSelectSong: (song: any) => void, onOpenSettings?: () => void }) {
+export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings }: { onBack: () => void, onStart: (lobbyId: string, song: any, isHost?: boolean) => void, onSelectSong: (song: any) => void, onOpenSettings?: () => void }) {
         const isDarkMode = useGameStore(state => state.isDarkMode);
         const setIsDarkMode = useGameStore(state => state.setIsDarkMode);
     // const { userName, setUserName } = useGameStore(); // No longer used locally here
@@ -125,7 +125,8 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
             // server sends after the countdown ends — from re-triggering loading.
             if (data.status === 'PLAYING' && !hasStartedRef.current) {
                 hasStartedRef.current = true;
-                onStartRef.current(data.lobbyId, data.song);
+                const isHost = data.hostId === mp.getSocketId();
+                onStartRef.current(data.lobbyId, data.song, isHost);
             }
         };
 

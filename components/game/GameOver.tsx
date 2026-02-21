@@ -1,10 +1,16 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useGameStore } from '@/lib/store/useGameStore';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { RotateCcw, Home, Trophy } from 'lucide-react';
 
-export function GameOver() {
+interface GameOverProps {
+  onRetry?: () => void;
+}
+
+export function GameOver({ onRetry }: GameOverProps) {
   const { score, multiplier, maxCombo, accuracy, songId, reset, userName, status, modifiers } = useGameStore();
+  const [isNewBest, setIsNewBest] = useState(false);
   const isUnranked = modifiers.speed < 1.0;
   const submittedRef = useRef(false);
 
@@ -40,6 +46,9 @@ export function GameOver() {
           console.error('Score submission failed:', res.status, body);
         } else {
           console.log('[DEBUG] Score submission response:', body);
+          if (body.isNewBest) {
+            setIsNewBest(true);
+          }
         }
       })
       .catch(err => console.error('Score submission network error:', err));
@@ -73,8 +82,16 @@ export function GameOver() {
         <CardContent className="space-y-6 text-center relative z-10 p-8">
           <div className="space-y-1">
             <div className="text-sm text-slice-text-light uppercase tracking-widest font-bold">Final Score</div>
-            <div className="text-6xl font-bold text-slice-text">
+            <div className="text-6xl font-bold text-slice-text relative inline-block">
               {score.toLocaleString()}
+              {isNewBest && (
+                <div className="absolute -top-6 -right-12 rotate-12 animate-in zoom-in duration-500">
+                  <div className="bg-yellow-400 text-black text-[10px] font-black px-2 py-1 rounded-md shadow-lg flex items-center gap-1">
+                    <Trophy className="w-3 h-3" />
+                    NEW BEST!
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -100,12 +117,23 @@ export function GameOver() {
              </div>
           </div>
 
-          <Button 
-            className="w-full bg-slice-bg hover:bg-slice-shadow-dark/20 text-blue-500 font-black uppercase tracking-widest text-lg h-16 rounded-xl shadow-[6px_6px_12px_var(--slice-shadow-dark),-6px_-6px_12px_var(--slice-shadow-light)] active:shadow-[inset_6px_6px_12px_var(--slice-shadow-dark),inset_-6px_-6px_12px_var(--slice-shadow-light)] transition-all border-none"
-            onClick={reset}
-          >
-            Play Again
-          </Button>
+          <div className="flex gap-4">
+            <Button 
+                className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-black uppercase tracking-widest text-sm h-14 rounded-xl shadow-lg transition-all border-none flex items-center justify-center gap-2 group"
+                onClick={onRetry}
+            >
+                <RotateCcw className="w-4 h-4 group-hover:rotate-[-120deg] transition-transform" />
+                Retry
+            </Button>
+            <Button 
+                variant="ghost"
+                className="flex-1 bg-slice-bg hover:bg-slice-shadow-dark/20 text-slice-text-muted font-bold uppercase tracking-widest text-sm h-14 rounded-xl shadow-[4px_4px_10px_var(--slice-shadow-dark),-4px_-4px_10px_var(--slice-shadow-light)] active:shadow-inner transition-all border-none flex items-center justify-center gap-2"
+                onClick={reset}
+            >
+                <Home className="w-4 h-4" />
+                Menu
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>

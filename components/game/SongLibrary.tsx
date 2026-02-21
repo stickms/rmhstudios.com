@@ -5,7 +5,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Upload, Play, Pause } from 'lucide-react';
+import { Search, Upload, Play, Pause, Heart } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { authClient } from '@/lib/auth-client';
 import { NeumorphicModal } from './NeumorphicModal';
@@ -26,8 +26,13 @@ interface Song {
     uploader: { name: string };
     coverUrl?: string; // Type definition
     analysisData?: any; // The pre-computed beatmap
+    plays?: number;
+    likeCount?: number;
+    isLiked?: boolean;
+    userPlays?: number;
     _count?: {
         scores: number;
+        likes: number;
     }
 }
 
@@ -62,6 +67,28 @@ export function SongLibrary({ onSelect, onHighlight, selectedSongId, onStopPrevi
     // Delete Modal State
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [songToDelete, setSongToDelete] = useState<string | null>(null);
+
+    // Like state
+    const [likingId, setLikingId] = useState<string | null>(null);
+
+    const handleLike = async (e: React.MouseEvent, song: Song) => {
+        e.stopPropagation();
+        if (!session.data || likingId) return;
+        setLikingId(song.id);
+        try {
+            const res = await fetch(`/api/slice-it/songs/${song.id}/like`, { method: 'POST' });
+            if (!res.ok) throw new Error();
+            const data = await res.json();
+            setSongs(prev => prev.map(s => s.id === song.id
+                ? { ...s, isLiked: data.liked, likeCount: (s.likeCount || 0) + (data.liked ? 1 : -1) }
+                : s
+            ));
+        } catch {
+            // silent
+        } finally {
+            setLikingId(null);
+        }
+    };
     
     const session = authClient.useSession();
     const router = useRouter();
@@ -405,14 +432,22 @@ export function SongLibrary({ onSelect, onHighlight, selectedSongId, onStopPrevi
                             <div className="flex-1 min-w-0">
                                 <div className="font-bold text-slice-text text-sm leading-tight truncate">{song.title}</div>
                                 <div className="text-xs text-slice-text-muted truncate">{song.artist} • {song.bpm} BPM • {Math.floor(song.duration / 60)}:{Math.round(song.duration % 60).toString().padStart(2, '0')}</div>
-                                {session.data?.user?.id === song.uploadedBy && (
-                                    <div className="text-[10px] text-blue-500 font-bold">UPLOADED BY YOU</div>
-                                )}
+                                <div className="flex items-center gap-3 mt-0.5">
+                                    <span className="flex items-center gap-1 text-[10px] text-slice-text-light">
+                                        <Play className="w-2.5 h-2.5 fill-current" />{song.plays || 0}
+                                    </span>
+                                    <span className={`flex items-center gap-1 text-[10px] ${song.isLiked ? 'text-red-400' : 'text-slice-text-light'}`}>
+                                        <Heart className={`w-2.5 h-2.5 ${song.isLiked ? 'fill-current' : ''}`} />{song.likeCount || 0}
+                                    </span>
+                                    {session.data?.user?.id === song.uploadedBy && (
+                                        <span className="text-[10px] text-blue-500 font-bold">YOUR TRACK</span>
+                                    )}
+                                </div>
                             </div>
                         </div>
 
                         <div className="flex items-center gap-1 shrink-0">
-                             {!readOnly && session.data?.user?.id === song.uploadedBy && (
+                            {!readOnly && session.data?.user?.id === song.uploadedBy && (
                                 <Button
                                     variant="destructive"
                                     size="sm"
@@ -422,6 +457,18 @@ export function SongLibrary({ onSelect, onHighlight, selectedSongId, onStopPrevi
                                 >
                                     <span className="sr-only">Delete</span>
                                     <span className="text-xs font-bold">✕</span>
+                                </Button>
+                            )}
+                            {session.data && (
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className={`h-8 w-8 rounded-lg shrink-0 transition-colors ${song.isLiked ? 'text-red-500 hover:text-red-400' : 'text-slice-text-light hover:text-red-400'}`}
+                                    onClick={(e) => handleLike(e, song)}
+                                    disabled={likingId === song.id}
+                                    title={song.isLiked ? 'Unlike' : 'Like'}
+                                >
+                                    <Heart className={`w-4 h-4 ${song.isLiked ? 'fill-current' : ''}`} />
                                 </Button>
                             )}
                             {!readOnly && (

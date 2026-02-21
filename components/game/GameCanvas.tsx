@@ -1363,7 +1363,20 @@ export function GameCanvas() {
                     )}
 
                     {status === 'FINISHED' && !isMultiplayer && (
-                        <GameOver />
+                        <GameOver onRetry={() => {
+                            if (!engine) return;
+                            engine.reset();
+                            setCountdown(3);
+                            setTimeout(() => { if (useGameStore.getState().status === 'FINISHED') setCountdown(2); }, 1000);
+                            setTimeout(() => { if (useGameStore.getState().status === 'FINISHED') setCountdown(1); }, 2000);
+                            setTimeout(() => {
+                                setCountdown(0);
+                                if (useGameStore.getState().status === 'FINISHED') {
+                                    useGameStore.getState().setStatus('PLAYING');
+                                    engine.start();
+                                }
+                            }, 3000);
+                        }} />
                     )}
                     
                     {status === 'MENU' && <MainMenu engine={engine} />}
