@@ -148,7 +148,7 @@ export default function StatsPanel() {
           />
           <Row
             label="Karma"
-            value={`${karma.toFixed(1)} karma`}
+            value={`${fmt(karma, numberFormat)} karma`}
           />
         </div>
       </div>

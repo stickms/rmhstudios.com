@@ -117,6 +117,7 @@ function WheelCard({ upgradeId }: WheelCardProps) {
 export default function WheelOfSamsara() {
   const blissShards    = useTempleStore(s => s.blissShards);
   const prestigeCount  = useTempleStore(s => s.prestigeCount);
+  const numberFormat   = useTempleStore(s => s.numberFormat);
 
   const nextThreshold = computeTranscendenceThreshold(prestigeCount);
 
@@ -148,7 +149,7 @@ export default function WheelOfSamsara() {
         >
           Next transcendence at{' '}
           <span style={{ color: 'var(--temple-accent)', fontWeight: 600 }}>
-            {fmt(nextThreshold)}
+            {fmt(nextThreshold, numberFormat)}
           </span>{' '}
           lifetime happiness
         </p>
@@ -173,7 +174,7 @@ export default function WheelOfSamsara() {
             className="text-xs"
             style={{ color: 'var(--temple-text)', opacity: 0.65 }}
           >
-            Requires <span style={{ color: 'var(--temple-accent)' }}>{fmt(nextThreshold)}</span> lifetime happiness.
+            Requires <span style={{ color: 'var(--temple-accent)' }}>{fmt(nextThreshold, numberFormat)}</span> lifetime happiness.
           </p>
         </div>
       )}

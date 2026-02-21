@@ -53,6 +53,7 @@ export function stateToSaveData(state: GameState): SaveData {
     soundEnabled: state.soundEnabled,
     musicVolume: state.musicVolume,
     sfxVolume: state.sfxVolume,
+    autoBuyEnabled: state.autoBuyEnabled,
   };
 }
 
@@ -103,6 +104,7 @@ export function saveDataToState(save: SaveData, baseState: GameState): Partial<G
     soundEnabled: save.soundEnabled ?? true,
     musicVolume: savedMusicVol,
     sfxVolume: savedSfxVol,
+    autoBuyEnabled: save.autoBuyEnabled ?? true,
   };
 }
 

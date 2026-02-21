@@ -185,12 +185,15 @@ export function applyTick(state: GameState): GameState {
   let autoBuySources = state.sources;
   let autoBuyHappiness = newHappiness;
 
+  // Prune recentClickTimes — remove entries > 10s old to keep state consistent
+  const prunedClickTimes = state.recentClickTimes.filter(t => now - t <= 10_000);
+
   const hasAutoBuyer =
     state.wheelPurchased.has('autoBuyer1') ||
     state.wheelPurchased.has('autoBuyer2') ||
     state.wheelPurchased.has('autoBuyer3');
 
-  if (hasAutoBuyer && newAutoBuyTimer <= 0) {
+  if (hasAutoBuyer && state.autoBuyEnabled && newAutoBuyTimer <= 0) {
     newAutoBuyTimer = 30;
     // Work on mutable copies only when the timer fires
     let workSources = { ...state.sources };
@@ -285,6 +288,7 @@ export function applyTick(state: GameState): GameState {
   return {
     ...state,
     lastTickTime: now,
+    recentClickTimes: prunedClickTimes,
     happiness: autoBuySources !== state.sources ? autoBuyHappiness : newHappiness,
     sources: autoBuySources,
     lifetimeHappiness: newLifetimeHappiness,

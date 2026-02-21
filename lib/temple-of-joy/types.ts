@@ -237,6 +237,7 @@ export interface GameState {
   soundEnabled: boolean;
   musicVolume: number;
   sfxVolume: number;
+  autoBuyEnabled: boolean;
 
   // ── UI ──
   activeTab: 'temple' | 'sources' | 'upgrades' | 'relics' | 'wheel' | 'achievements' | 'settings';
@@ -289,6 +290,7 @@ export interface SaveData {
   soundEnabled: boolean;
   musicVolume: number;
   sfxVolume: number;
+  autoBuyEnabled: boolean;
 
   // Deprecated fields (backwards compat with old saves)
   /** @deprecated Use sources instead */

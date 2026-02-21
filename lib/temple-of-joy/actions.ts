@@ -75,6 +75,7 @@ function makeInitialState(
     soundEnabled: true,
     musicVolume: 0.5,
     sfxVolume: 0.5,
+    autoBuyEnabled: true,
     activeTab: 'temple',
     upgradePathFilter: 'all',
     showTranscendenceModal: false,
@@ -97,10 +98,12 @@ export function doClick(state: GameState): GameState {
   const incenseBonus = state.activeRelics.includes('incenseOfAncients') ? 2 : 1;
   const now = Date.now();
 
-  // Update recent click times (filter to last 3 seconds)
+  // Update recent click times — keep 10s window (matches idle detection window).
+  // Separate 3s count used for ritual detection.
   const updatedClickTimes = [...state.recentClickTimes, now].filter(
-    (t) => now - t <= 3000
+    (t) => now - t <= 10_000
   );
+  const recentClicksIn3s = updatedClickTimes.filter(t => now - t <= 3_000).length;
 
   const ritualThreshold = state.wheelPurchased.has('ritualMastery') ? 5 : 7;
 
@@ -109,7 +112,7 @@ export function doClick(state: GameState): GameState {
   let finalClickTimes = updatedClickTimes;
   let ritualTriggered = false;
 
-  if (updatedClickTimes.length >= ritualThreshold && state.ritualCooldown <= 0) {
+  if (recentClicksIn3s >= ritualThreshold && state.ritualCooldown <= 0) {
     // Ritual triggered: bonus burst
     const burstMultiplier = state.wheelPurchased.has('ritualAmplification') ? 14 : 7;
     happinessGained = hpc * burstMultiplier * incenseBonus;

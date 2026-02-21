@@ -66,6 +66,7 @@ export function createInitialState(): GameState {
     soundEnabled: true,
     musicVolume: 0.5,
     sfxVolume: 0.5,
+    autoBuyEnabled: true,
     activeTab: 'temple',
     upgradePathFilter: 'all',
     sourceBuyQty: 1,
@@ -113,6 +114,7 @@ interface TempleStore extends GameState {
   setSoundEnabled: (enabled: boolean) => void;
   setMusicVolume: (vol: number) => void;
   setSfxVolume: (vol: number) => void;
+  setAutoBuyEnabled: (enabled: boolean) => void;
   setShowTranscendenceModal: (show: boolean) => void;
   setShowOfflineModal: (show: boolean) => void;
   setShowEventModal: (show: boolean) => void;
@@ -163,6 +165,7 @@ export const useTempleStore = create<TempleStore>()(
     setSoundEnabled: (enabled) => set({ soundEnabled: enabled }),
     setMusicVolume: (vol) => set({ musicVolume: vol }),
     setSfxVolume: (vol) => set({ sfxVolume: vol }),
+    setAutoBuyEnabled: (enabled) => set({ autoBuyEnabled: enabled }),
     setShowTranscendenceModal: (show) => set({ showTranscendenceModal: show }),
     setShowOfflineModal: (show) => set({ showOfflineModal: show }),
     setShowEventModal: (show) => set({ showEventModal: show }),

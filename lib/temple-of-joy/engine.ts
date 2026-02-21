@@ -361,10 +361,10 @@ export function computeEffectiveSatisfaction(state: GameState): number {
 
 export function computeIsIdle(state: GameState): boolean {
   // Tolerant idle detection: occasional clicks don't break idle status.
-  // Player is "active" only if they've clicked 3+ times in the last 10 seconds.
+  // Player is "active" only if they've clicked 5+ times in the last 10 seconds.
   const now = Date.now();
   const recentClicks = state.recentClickTimes.filter(t => now - t <= 10_000).length;
-  return recentClicks < 3;
+  return recentClicks < 5;
 }
 
 export function computeCanTranscend(state: GameState): boolean {
@@ -493,6 +493,7 @@ export function computeStartingHPSFromWheel(
       soundEnabled: true,
       musicVolume: 0.5,
       sfxVolume: 0.5,
+      autoBuyEnabled: true,
       activeTab: 'temple',
       upgradePathFilter: 'all',
       showTranscendenceModal: false,
