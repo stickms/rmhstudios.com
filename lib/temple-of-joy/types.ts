@@ -11,7 +11,15 @@ export type SourceId =
   | 'artGallery' | 'hedonistMonastery' | 'feastHall' | 'nirvanaResort'
   | 'eternalParty' | 'heavenOnEarth' | 'blissSingularity'
   | 'zenGarden' | 'euphoriaSprings' | 'serenityEngine'
-  | 'raptureCathedral' | 'cosmicJacuzzi' | 'omniscientSpa';
+  | 'raptureCathedral' | 'cosmicJacuzzi' | 'omniscientSpa'
+  // ── Patch 2 sources ──
+  | 'dreamWeaver' | 'laughterForge' | 'cloudLounge' | 'goldenHammock'
+  | 'pleasureArchive' | 'infiniteBuffet' | 'echoGarden' | 'blissConduit'
+  | 'seraphStation' | 'paradoxEngine' | 'memoryPalace' | 'auroraSpire'
+  | 'gravitySpa' | 'euterpeHall' | 'ambrosiaTap' | 'joySatellite'
+  | 'elysiumGate' | 'cosmicHamper' | 'eternitySofa' | 'nirvanaCore'
+  | 'transcendenceLab' | 'celestialBath' | 'euphoriaReactor' | 'pleasurePlanet'
+  | 'karmaFountain' | 'infiniteHug' | 'joyNova' | 'omegaTemple';
 
 export type UpgradePath =
   | 'carnal' | 'social' | 'mind' | 'spirit' | 'indulgence' | 'philosophy' | 'offering' | 'synergy';
@@ -21,11 +29,17 @@ export type RelicId =
   | 'goldenFork' | 'confessionBooth' | 'vibeCrystal' | 'philosophersStone'
   | 'warmBlanket' | 'sacredLedger' | 'hymnalOfExcess' | 'eternalNap'
   | 'karmaResonator' | 'lighthouseOfJoy' | 'temporalComfort' | 'infiniteGratitude'
-  | 'bubbleTeaCard' | 'cozyPlaylist' | 'zenBell' | 'nappingCat';
+  | 'bubbleTeaCard' | 'cozyPlaylist' | 'zenBell' | 'nappingCat'
+  // ── Patch 2 relics ──
+  | 'crystalBall' | 'goldenPen' | 'perpetualTeapot' | 'astronomersLens'
+  | 'silkRobe' | 'luckyCoin' | 'eternalQuill' | 'mirrorOfTruth'
+  | 'celestialCompass' | 'gardenersGlove' | 'starChart' | 'ancientHourglass'
+  | 'jestersCrown' | 'soulLantern' | 'cosmicTeaCup' | 'infinityScarf'
+  | 'pilgrimsStaff' | 'dreamCatcher' | 'alchemistsFlask' | 'omegaRelic';
 
 export type EventType = 'blessing' | 'choice' | 'philosophical';
 
-export type WheelTier = 1 | 2 | 3 | 4 | 5;
+export type WheelTier = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
 
 // ─── Data Definitions ────────────────────────────────────────────────────────
 
@@ -99,7 +113,7 @@ export interface EventChoice {
 }
 
 export interface EventEffect {
-  happinessBonus?: number;          // flat HP bonus
+  happinessBonus?: number;          // minutes of current HPS income to award as a flat bonus
   hpsMultiplierDuration?: number;   // seconds
   hpsMultiplier?: number;
   karmaBonus?: number;
@@ -158,7 +172,8 @@ export interface TimedBuff {
 export interface GameState {
   // ── Currencies ──
   happiness: number;
-  lifetimeHappiness: number;       // total earned this run (for transcendence threshold)
+  lifetimeHappiness: number;       // total happiness earned across all runs (all-time, for achievements)
+  runHappiness: number;            // happiness earned this run (resets on transcendence, used for threshold)
   peakHappiness: number;           // highest happiness reached this run
   peakKarma: number;               // highest karma reached (sticky unlock tracking)
   karma: number;
@@ -180,6 +195,8 @@ export interface GameState {
   wheelPurchased: Set<string>;
   /** HPS % bonus from Samsara's Gift: +5% per prestige, up to 20 stacks */
   samsaraGiftStacks: number;
+  /** Upgrade IDs the player has chosen to keep on next transcendence (Ember of Memory) */
+  emberSelections: string[];
 
   // ── Meta ──
   lastSaved: number;               // Unix ms timestamp
@@ -189,6 +206,8 @@ export interface GameState {
   totalPilgrimages: number;        // total pilgrimages completed
   totalVibeChecks: number;         // total vibe checks passed
   totalEventsResolved: number;     // total events resolved
+  totalRituals: number;            // total rituals triggered
+  totalOfferings: number;          // total offerings made
   achievements: Set<string>;
   milestones: Set<string>;
   pilgrimageStreak: number;        // consecutive pilgrimages without clicking
@@ -237,6 +256,7 @@ export interface GameState {
   soundEnabled: boolean;
   musicVolume: number;
   sfxVolume: number;
+  autoBuyEnabled: boolean;
 
   // ── UI ──
   activeTab: 'temple' | 'sources' | 'upgrades' | 'relics' | 'wheel' | 'achievements' | 'settings';
@@ -254,6 +274,7 @@ export interface SaveData {
   version: number;
   happiness: number;
   lifetimeHappiness: number;
+  runHappiness: number;
   peakHappiness: number;
   peakKarma: number;
   karma: number;
@@ -272,6 +293,8 @@ export interface SaveData {
   totalPilgrimages: number;
   totalVibeChecks: number;
   totalEventsResolved: number;
+  totalRituals: number;
+  totalOfferings: number;
   achievements: string[];
   milestones: string[];
   pilgrimageStreak: number;
@@ -289,6 +312,8 @@ export interface SaveData {
   soundEnabled: boolean;
   musicVolume: number;
   sfxVolume: number;
+  autoBuyEnabled: boolean;
+  emberSelections: string[];
 
   // Deprecated fields (backwards compat with old saves)
   /** @deprecated Use sources instead */

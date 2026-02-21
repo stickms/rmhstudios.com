@@ -19,6 +19,7 @@ export function createInitialState(): GameState {
   return {
     happiness: 0,
     lifetimeHappiness: 0,
+    runHappiness: 0,
     peakHappiness: 0,
     peakKarma: 0,
     karma: 0,
@@ -31,6 +32,7 @@ export function createInitialState(): GameState {
     prestigeCount: 0,
     wheelPurchased: new Set<string>(),
     samsaraGiftStacks: 0,
+    emberSelections: [],
     lastSaved: now,
     lastTickTime: now,
     totalPlaytime: 0,
@@ -38,6 +40,8 @@ export function createInitialState(): GameState {
     totalPilgrimages: 0,
     totalVibeChecks: 0,
     totalEventsResolved: 0,
+    totalRituals: 0,
+    totalOfferings: 0,
     achievements: new Set<string>(),
     milestones: new Set<string>(),
     pilgrimageStreak: 0,
@@ -66,6 +70,7 @@ export function createInitialState(): GameState {
     soundEnabled: true,
     musicVolume: 0.5,
     sfxVolume: 0.5,
+    autoBuyEnabled: true,
     activeTab: 'temple',
     upgradePathFilter: 'all',
     sourceBuyQty: 1,
@@ -103,6 +108,7 @@ interface TempleStore extends GameState {
   purchaseWheelUpgrade: (id: string) => void;
   resolveEvent: (eventId: string, choiceIndex: number) => void;
   makeOffering: (tier: 1 | 2 | 3) => void;
+  auditAchievements: () => void;
 
   // UI setters
   setActiveTab: (tab: GameState['activeTab']) => void;
@@ -113,6 +119,8 @@ interface TempleStore extends GameState {
   setSoundEnabled: (enabled: boolean) => void;
   setMusicVolume: (vol: number) => void;
   setSfxVolume: (vol: number) => void;
+  setAutoBuyEnabled: (enabled: boolean) => void;
+  setEmberSelections: (ids: string[]) => void;
   setShowTranscendenceModal: (show: boolean) => void;
   setShowOfflineModal: (show: boolean) => void;
   setShowEventModal: (show: boolean) => void;
@@ -153,6 +161,7 @@ export const useTempleStore = create<TempleStore>()(
     resolveEvent: (eventId: string, choiceIndex: number) =>
       set(state => Actions.doResolveEvent(state, eventId, choiceIndex)),
     makeOffering: (tier: 1 | 2 | 3) => set(state => Actions.doMakeOffering(state, tier)),
+    auditAchievements: () => set(state => Actions.doAuditAchievements(state)),
 
     // ── UI setters ──
     setActiveTab: (tab) => set({ activeTab: tab }),
@@ -163,6 +172,8 @@ export const useTempleStore = create<TempleStore>()(
     setSoundEnabled: (enabled) => set({ soundEnabled: enabled }),
     setMusicVolume: (vol) => set({ musicVolume: vol }),
     setSfxVolume: (vol) => set({ sfxVolume: vol }),
+    setAutoBuyEnabled: (enabled) => set({ autoBuyEnabled: enabled }),
+    setEmberSelections: (ids) => set({ emberSelections: ids.slice(0, 5) }),
     setShowTranscendenceModal: (show) => set({ showTranscendenceModal: show }),
     setShowOfflineModal: (show) => set({ showOfflineModal: show }),
     setShowEventModal: (show) => set({ showEventModal: show }),

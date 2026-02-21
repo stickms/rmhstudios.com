@@ -9,11 +9,14 @@ export default function SettingsPanel() {
   const soundEnabled = useTempleStore((s) => s.soundEnabled);
   const musicVolume = useTempleStore((s) => s.musicVolume);
   const sfxVolume = useTempleStore((s) => s.sfxVolume);
+  const autoBuyEnabled = useTempleStore((s) => s.autoBuyEnabled);
+  const wheelPurchased = useTempleStore((s) => s.wheelPurchased);
   const setTheme = useTempleStore((s) => s.setTheme);
   const setNumberFormat = useTempleStore((s) => s.setNumberFormat);
   const setSoundEnabled = useTempleStore((s) => s.setSoundEnabled);
   const setMusicVolume = useTempleStore((s) => s.setMusicVolume);
   const setSfxVolume = useTempleStore((s) => s.setSfxVolume);
+  const setAutoBuyEnabled = useTempleStore((s) => s.setAutoBuyEnabled);
   const resetRun = useTempleStore((s) => s.resetRun);
   const state = useTempleStore((s) => s);
 
@@ -159,6 +162,26 @@ export default function SettingsPanel() {
           />
         </div>
       </div>
+
+      {/* Auto-buyer — only shown when an auto-buyer upgrade is owned */}
+      {(wheelPurchased.has('autoBuyer1') || wheelPurchased.has('autoBuyer2') || wheelPurchased.has('autoBuyer3')) && (
+        <div className={sectionCls} style={{ ...surface, ...border }}>
+          <p className={labelCls}>Automation</p>
+          <div className={rowCls}>
+            <div>
+              <span className="text-sm">Auto-Buyer</span>
+              <p className="text-xs opacity-50 mt-0.5">Automatically purchase sources on a 30s timer</p>
+            </div>
+            <button
+              onClick={() => setAutoBuyEnabled(!autoBuyEnabled)}
+              className="px-3 py-1 rounded-lg text-xs font-semibold border transition-colors shrink-0"
+              style={pillBtn(autoBuyEnabled)}
+            >
+              {autoBuyEnabled ? '✅ On' : '⏸️ Off'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Save */}
       <div className={sectionCls} style={{ ...surface, ...border }}>

@@ -18,6 +18,7 @@ export function stateToSaveData(state: GameState): SaveData {
     version: SAVE_VERSION,
     happiness: state.happiness,
     lifetimeHappiness: state.lifetimeHappiness,
+    runHappiness: state.runHappiness,
     peakHappiness: state.peakHappiness,
     peakKarma: state.peakKarma,
     karma: state.karma,
@@ -36,6 +37,8 @@ export function stateToSaveData(state: GameState): SaveData {
     totalPilgrimages: state.totalPilgrimages,
     totalVibeChecks: state.totalVibeChecks,
     totalEventsResolved: state.totalEventsResolved,
+    totalRituals: state.totalRituals,
+    totalOfferings: state.totalOfferings,
     achievements: [...state.achievements],
     milestones: [...state.milestones],
     pilgrimageStreak: state.pilgrimageStreak,
@@ -53,6 +56,8 @@ export function stateToSaveData(state: GameState): SaveData {
     soundEnabled: state.soundEnabled,
     musicVolume: state.musicVolume,
     sfxVolume: state.sfxVolume,
+    autoBuyEnabled: state.autoBuyEnabled,
+    emberSelections: [...state.emberSelections],
   };
 }
 
@@ -68,6 +73,7 @@ export function saveDataToState(save: SaveData, baseState: GameState): Partial<G
   return {
     happiness: save.happiness ?? 0,
     lifetimeHappiness: save.lifetimeHappiness ?? 0,
+    runHappiness: save.runHappiness ?? 0,
     peakHappiness: save.peakHappiness ?? 0,
     peakKarma: save.peakKarma ?? 0,
     karma: save.karma ?? 0,
@@ -86,6 +92,8 @@ export function saveDataToState(save: SaveData, baseState: GameState): Partial<G
     totalPilgrimages: save.totalPilgrimages ?? 0,
     totalVibeChecks: save.totalVibeChecks ?? 0,
     totalEventsResolved: save.totalEventsResolved ?? 0,
+    totalRituals: save.totalRituals ?? 0,
+    totalOfferings: save.totalOfferings ?? 0,
     achievements: new Set(save.achievements ?? []),
     milestones: new Set(save.milestones ?? []),
     pilgrimageStreak: save.pilgrimageStreak ?? 0,
@@ -103,6 +111,8 @@ export function saveDataToState(save: SaveData, baseState: GameState): Partial<G
     soundEnabled: save.soundEnabled ?? true,
     musicVolume: savedMusicVol,
     sfxVolume: savedSfxVol,
+    autoBuyEnabled: save.autoBuyEnabled ?? true,
+    emberSelections: save.emberSelections ?? [],
   };
 }
 

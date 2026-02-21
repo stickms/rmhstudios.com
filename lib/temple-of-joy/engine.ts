@@ -18,7 +18,9 @@ export function computeBlissShards(state: GameState): number {
   if (state.happiness <= 0 && state.prestigeCount === 0) return 0;
 
   // Base shards from number of times transcended
-  let shards = 10 + (state.prestigeCount * 10);
+  // cosmicDividend wheel: +20 base per prestige instead of +10
+  const perPrestige = state.wheelPurchased.has('cosmicDividend') ? 20 : 10;
+  let shards = 10 + (state.prestigeCount * perPrestige);
 
   // Small bonus from current happiness balance
   shards += Math.floor(Math.log10(Math.max(1, state.happiness)));
@@ -31,6 +33,16 @@ export function computeBlissShards(state: GameState): number {
   // eternalReturn wheel: ×1.25 shard yield
   if (state.wheelPurchased.has('eternalReturn')) {
     shards = Math.floor(shards * 1.25);
+  }
+
+  // infiniteWheel2 wheel: ×2.0 shard yield
+  if (state.wheelPurchased.has('infiniteWheel2')) {
+    shards = Math.floor(shards * 2.0);
+  }
+
+  // alchemistsFlask relic: +20% shard yield
+  if (state.activeRelics.includes('alchemistsFlask')) {
+    shards = Math.floor(shards * 1.2);
   }
 
   return Math.max(1, shards);
@@ -48,6 +60,10 @@ export function computeSourceCost(
   let cost = def.baseCost * Math.pow(multiplier, owned);
   if (state.wheelPurchased.has('earlyWarmth')) cost *= 0.95;
   if (state.wheelPurchased.has('heavensInfrastructure')) cost *= 0.9;
+  // holyInfrastructure wheel: −25% source costs
+  if (state.wheelPurchased.has('holyInfrastructure')) cost *= 0.75;
+  // celestialArchitect wheel: −50% source costs
+  if (state.wheelPurchased.has('celestialArchitect')) cost *= 0.5;
   return Math.floor(cost);
 }
 
@@ -136,6 +152,28 @@ export function computeSourceHPS(SourceId: SourceId, state: GameState): number {
     const def = SOURCE_MAP[SourceId];
     if (def.requiresPrestige && def.requiresPrestige >= 1) hps *= 3;
   }
+  // perpetualTeapot relic: ×2 Snack Bar, Sweet Treat, Feast Hall
+  if (state.activeRelics.includes('perpetualTeapot')) {
+    if (['snackBar', 'feastHall', 'sweetTreat'].includes(SourceId)) hps *= 2;
+  }
+  // mirrorOfTruth relic: ×2 Therapy & Gratitude Journal
+  if (state.activeRelics.includes('mirrorOfTruth')) {
+    if (SourceId === 'therapy' || SourceId === 'gratitudeJournal') hps *= 2;
+  }
+  // gardenersGlove relic: ×5 Zen Garden, ×2 Echo Garden
+  if (state.activeRelics.includes('gardenersGlove')) {
+    if (SourceId === 'zenGarden') hps *= 5;
+    if (SourceId === 'echoGarden') hps *= 2;
+  }
+  // dreamCatcher relic: ×4 Dream Weaver, ×2 Memory Palace
+  if (state.activeRelics.includes('dreamCatcher')) {
+    if (SourceId === 'dreamWeaver') hps *= 4;
+    if (SourceId === 'memoryPalace') hps *= 2;
+  }
+  // cosmicTeaCup relic: ×3 Ambrosia Tap, Celestial Bath
+  if (state.activeRelics.includes('cosmicTeaCup')) {
+    if (SourceId === 'ambrosiaTap' || SourceId === 'celestialBath') hps *= 3;
+  }
   return hps;
 }
 
@@ -153,17 +191,17 @@ export function computeTotalHPS(state: GameState): number {
     if (upgrade.globalHPSMultiplier) hps *= upgrade.globalHPSMultiplier;
   }
 
-  // 3. Idle multiplier (no click in last 10 seconds)
-  // warmBlanket relic: idle bonuses always apply (regardless of click activity)
-  const isIdleOrBlanket = computeIsIdle(state) || state.activeRelics.includes('warmBlanket');
-  if (isIdleOrBlanket) {
-    for (const upgrade of UPGRADES) {
-      if (!state.upgrades.has(upgrade.id)) continue;
-      if (upgrade.idleHPSMultiplier) hps *= upgrade.idleHPSMultiplier;
-    }
-    // laurelCrown relic: ×2 when idle
-    if (state.activeRelics.includes('laurelCrown')) hps *= 2;
+  // 3. Rest-mastery multipliers (always applied — clicking never reduces HPS)
+  for (const upgrade of UPGRADES) {
+    if (!state.upgrades.has(upgrade.id)) continue;
+    if (upgrade.idleHPSMultiplier) hps *= upgrade.idleHPSMultiplier;
   }
+  // laurelCrown relic: ×2 HPS
+  if (state.activeRelics.includes('laurelCrown')) hps *= 2;
+  // silkRobe relic: ×2 rest-mastery bonus
+  if (state.activeRelics.includes('silkRobe')) hps *= 2;
+  // warmBlanket relic: ×1.25 global HPS
+  if (state.activeRelics.includes('warmBlanket')) hps *= 1.25;
 
   // 4. Active timed buffs
   for (const buff of state.activeBuffs) {
@@ -183,9 +221,11 @@ export function computeTotalHPS(state: GameState): number {
   if (state.wheelPurchased.has('templeEternal')) hps *= 10;
 
   // 9. Sacred Ledger relic: grows with time on page
+  // ancientHourglass relic: doubles ramp speed (×0.2/min instead of ×0.1/min)
   if (state.activeRelics.includes('sacredLedger')) {
     const minutesOpen = (Date.now() - state.pageOpenTime) / 60_000;
-    hps *= 1 + Math.min(minutesOpen * 0.1, 4.0);
+    const rampRate = state.activeRelics.includes('ancientHourglass') ? 0.2 : 0.1;
+    hps *= 1 + Math.min(minutesOpen * rampRate, 4.0);
   }
 
   // 10. Hymnal of Excess relic: each source adds bonus proportional to count
@@ -226,12 +266,62 @@ export function computeTotalHPS(state: GameState): number {
   // 15. beginnersBliss wheel: +50 flat HPS
   if (state.wheelPurchased.has('beginnersBliss')) hps += 50;
 
-  // 16. philosophersStone relic: ×2 all multipliers (applied last)
-  if (state.activeRelics.includes('philosophersStone')) hps *= 2;
+  // 16. philosophersStone relic: ×2 all multipliers (skipped if omegaRelic is active)
+  if (state.activeRelics.includes('philosophersStone') && !state.activeRelics.includes('omegaRelic')) hps *= 2;
+
+  // 17. New wheel HPS multipliers
+  if (state.wheelPurchased.has('singularityEngine')) hps *= 50;
+  if (state.wheelPurchased.has('nirvanaEngine')) hps *= 500;
+  if (state.wheelPurchased.has('dimensionalRift')) hps *= 5000;
+  if (state.wheelPurchased.has('theGrandDesign')) hps *= 100000;
+  if (state.wheelPurchased.has('theLastSmile')) hps *= 1000000;
+
+  // 18. templeComplete wheel: +10% HPS per achievement
+  if (state.wheelPurchased.has('templeComplete')) {
+    hps *= 1 + 0.1 * state.achievements.size;
+  }
+
+  // 19. astronomersLens relic: milestones threshold ÷10 (handled in tick.ts milestone check)
+  // No HPS effect here — the relic makes milestones unlock earlier.
+
+  // 20. starChart relic: +3% HPS per prestige count
+  if (state.activeRelics.includes('starChart') && state.prestigeCount > 0) {
+    hps *= 1 + 0.03 * state.prestigeCount;
+  }
+
+  // 21. ancientHourglass relic: doubles sacredLedger ramp (handled in sacredLedger block above)
+  // No separate HPS effect.
+
+  // 22. soulLantern relic: +0.5% HPS per source copy owned
+  if (state.activeRelics.includes('soulLantern')) {
+    const totalOwned = Object.values(state.sources).reduce((sum, n) => sum + (n ?? 0), 0);
+    hps *= 1 + 0.005 * totalOwned;
+  }
+
+  // 23. cosmicTeaCup relic: per-source ×3 handled in computeSourceHPS
+  // No global HPS effect.
+
+  // 24. infinityScarf relic: +5% HPS per equipped relic
+  if (state.activeRelics.includes('infinityScarf')) {
+    hps *= 1 + 0.05 * state.activeRelics.length;
+  }
+
+  // 25. omegaRelic: ×3 all HPS (replaces philosophersStone)
+  if (state.activeRelics.includes('omegaRelic')) hps *= 3;
+
+  // 26. goldenPen relic: +20% per event resolved, capped at +100%
+  if (state.activeRelics.includes('goldenPen')) {
+    hps *= 1 + Math.min(0.20 * state.totalEventsResolved, 1.0);
+  }
 
   return hps;
 }
 
+/**
+ * Computes the stable "Global Mult" for display.
+ * Excludes volatile / temporary effects (timed buffs, vibe buff, Sacred Ledger)
+ * so the displayed number doesn't randomly fluctuate.
+ */
 export function computeGlobalHPSMultiplier(state: GameState): number {
   let multiplier = 1.0;
 
@@ -241,23 +331,19 @@ export function computeGlobalHPSMultiplier(state: GameState): number {
     if (upgrade.globalHPSMultiplier) multiplier *= upgrade.globalHPSMultiplier;
   }
 
-  // Idle multiplier (warmBlanket: always apply idle bonuses)
-  const isIdleOrBlanket = computeIsIdle(state) || state.activeRelics.includes('warmBlanket');
-  if (isIdleOrBlanket) {
-    for (const upgrade of UPGRADES) {
-      if (!state.upgrades.has(upgrade.id)) continue;
-      if (upgrade.idleHPSMultiplier) multiplier *= upgrade.idleHPSMultiplier;
-    }
-    if (state.activeRelics.includes('laurelCrown')) multiplier *= 2;
+  // Rest-mastery multipliers (always applied — clicking never reduces HPS)
+  for (const upgrade of UPGRADES) {
+    if (!state.upgrades.has(upgrade.id)) continue;
+    if (upgrade.idleHPSMultiplier) multiplier *= upgrade.idleHPSMultiplier;
   }
+  if (state.activeRelics.includes('laurelCrown')) multiplier *= 2;
+  if (state.activeRelics.includes('silkRobe')) multiplier *= 2;
+  if (state.activeRelics.includes('warmBlanket')) multiplier *= 1.25;
 
-  // Active timed buffs
-  for (const buff of state.activeBuffs) {
-    multiplier *= buff.hpsMultiplier;
-  }
-
-  // Vibe buff
-  if (state.vibeBuff) multiplier *= state.vibeBuff.hpsMultiplier;
+  // NOTE: activeBuffs, vibeBuff, and sacredLedger are EXCLUDED from this
+  // display multiplier. They are temporary / time-varying effects and
+  // including them causes the "Global Mult" readout to fluctuate randomly.
+  // They still affect actual HPS via computeTotalHPS().
 
   // Permanent HPS bonus
   multiplier *= 1 + state.permanentHPSBonus;
@@ -268,14 +354,62 @@ export function computeGlobalHPSMultiplier(state: GameState): number {
   // Temple Eternal wheel
   if (state.wheelPurchased.has('templeEternal')) multiplier *= 10;
 
-  // Sacred Ledger relic
-  if (state.activeRelics.includes('sacredLedger')) {
-    const minutesOpen = (Date.now() - state.pageOpenTime) / 60_000;
-    multiplier *= 1 + Math.min(minutesOpen * 0.1, 4.0);
-  }
-
   // cozyPlaylist relic: +15% global HPS
   if (state.activeRelics.includes('cozyPlaylist')) multiplier *= 1.15;
+
+  // Milestone bonuses
+  for (const milestone of MILESTONES) {
+    if (!state.milestones.has(milestone.id)) continue;
+    if (milestone.hpsMultiplier) {
+      let mult = milestone.hpsMultiplier;
+      if (state.activeRelics.includes('karmaResonator')) mult = 1 + (mult - 1) * 1.5;
+      multiplier *= mult;
+    }
+  }
+
+  // infiniteGratitude relic: +2% per prestige
+  if (state.activeRelics.includes('infiniteGratitude') && state.prestigeCount > 0) {
+    multiplier *= 1 + 0.02 * state.prestigeCount;
+  }
+
+  // philosophersStone (skipped if omegaRelic active)
+  if (state.activeRelics.includes('philosophersStone') && !state.activeRelics.includes('omegaRelic')) multiplier *= 2;
+
+  // Wheel HPS multipliers
+  if (state.wheelPurchased.has('singularityEngine')) multiplier *= 50;
+  if (state.wheelPurchased.has('nirvanaEngine')) multiplier *= 500;
+  if (state.wheelPurchased.has('dimensionalRift')) multiplier *= 5000;
+  if (state.wheelPurchased.has('theGrandDesign')) multiplier *= 100000;
+  if (state.wheelPurchased.has('theLastSmile')) multiplier *= 1000000;
+
+  // templeComplete: +10% HPS per achievement
+  if (state.wheelPurchased.has('templeComplete')) {
+    multiplier *= 1 + 0.1 * state.achievements.size;
+  }
+
+  // starChart relic: +3% per prestige
+  if (state.activeRelics.includes('starChart') && state.prestigeCount > 0) {
+    multiplier *= 1 + 0.03 * state.prestigeCount;
+  }
+
+  // soulLantern relic: +0.5% per source copy
+  if (state.activeRelics.includes('soulLantern')) {
+    const totalOwned = Object.values(state.sources).reduce((sum, n) => sum + (n ?? 0), 0);
+    multiplier *= 1 + 0.005 * totalOwned;
+  }
+
+  // infinityScarf relic: +5% per equipped relic
+  if (state.activeRelics.includes('infinityScarf')) {
+    multiplier *= 1 + 0.05 * state.activeRelics.length;
+  }
+
+  // omegaRelic: ×3 all (replaces philosophersStone)
+  if (state.activeRelics.includes('omegaRelic')) multiplier *= 3;
+
+  // goldenPen relic: +20% per event resolved, capped at +100%
+  if (state.activeRelics.includes('goldenPen')) {
+    multiplier *= 1 + Math.min(0.20 * state.totalEventsResolved, 1.0);
+  }
 
   // Note: Hymnal of Excess and Confession Booth add flat HPS, not multiplicative
   // so we don't include them here
@@ -301,16 +435,21 @@ export function computeHPC(state: GameState): number {
   // The Second Smile wheel
   if (state.wheelPurchased.has('theSecondSmile')) base *= 2;
 
-  // Enlightened Clicker wheel
-  if (state.wheelPurchased.has('enlightenedClicker')) {
+  // Enlightened Clicker wheel (skipped if ascendedClicker purchased — ascended replaces it)
+  if (state.wheelPurchased.has('enlightenedClicker') && !state.wheelPurchased.has('ascendedClicker')) {
     base *= 1 + 0.1 * state.prestigeCount;
+  }
+
+  // ascendedClicker wheel: replaces enlightenedClicker with ×(1 + 0.25 × prestige)
+  if (state.wheelPurchased.has('ascendedClicker')) {
+    base *= 1 + 0.25 * state.prestigeCount;
   }
 
   // Permanent HPC bonus
   base *= 1 + state.permanentHPCBonus;
 
-  // philosophersStone relic: ×2 all multipliers
-  if (state.activeRelics.includes('philosophersStone')) base *= 2;
+  // philosophersStone relic: ×2 all multipliers (skipped if omegaRelic is active)
+  if (state.activeRelics.includes('philosophersStone') && !state.activeRelics.includes('omegaRelic')) base *= 2;
 
   return Math.max(1, base);
 }
@@ -338,6 +477,12 @@ export function computeKarmaRate(state: GameState): number {
   if (state.activeRelics.includes('karmaResonator')) rate *= 2;
   // karmicOverflow wheel: ×10 karma rate
   if (state.wheelPurchased.has('karmicOverflow')) rate *= 10;
+  // karmicResonance wheel: ×25 karma rate
+  if (state.wheelPurchased.has('karmicResonance')) rate *= 25;
+  // theThirdEye wheel: ×2 karma rate
+  if (state.wheelPurchased.has('theThirdEye')) rate *= 2;
+  // karmicAscension wheel: ×100 karma rate
+  if (state.wheelPurchased.has('karmicAscension')) rate *= 100;
   return rate;
 }
 
@@ -361,14 +506,14 @@ export function computeEffectiveSatisfaction(state: GameState): number {
 
 export function computeIsIdle(state: GameState): boolean {
   // Tolerant idle detection: occasional clicks don't break idle status.
-  // Player is "active" only if they've clicked 3+ times in the last 10 seconds.
+  // Player is "active" only if they've clicked 5+ times in the last 10 seconds.
   const now = Date.now();
   const recentClicks = state.recentClickTimes.filter(t => now - t <= 10_000).length;
-  return recentClicks < 3;
+  return recentClicks < 5;
 }
 
 export function computeCanTranscend(state: GameState): boolean {
-  return state.lifetimeHappiness >= computeTranscendenceThreshold(state.prestigeCount);
+  return state.runHappiness >= computeTranscendenceThreshold(state.prestigeCount);
 }
 
 // ─── Upgrade Queries ──────────────────────────────────────────────────────────
@@ -380,6 +525,9 @@ export function computeUpgradeCost(upgradeId: string, state: GameState): number 
   if (def.path === 'philosophy' && state.activeRelics.includes('epicurusRing')) {
     cost *= 0.5;
   }
+  // goldenPen relic: −15% upgrade costs globally
+  if (state.activeRelics.includes('goldenPen')) cost *= 0.85;
+  // karmicAscension wheel: relics cost 50% less (handled in actions, not here for upgrades)
   return cost;
 }
 
@@ -439,8 +587,8 @@ export function computeStartingHPSFromWheel(
       moodCandle: 5,
       napPod: 5,
       snackBar: 5,
+      sweetTreat: 5,
       hotTub: 5,
-      massageStudio: 5,
     };
     const fakeState: GameState = {
       happiness: 0,
@@ -464,6 +612,8 @@ export function computeStartingHPSFromWheel(
       totalPilgrimages: 0,
       totalVibeChecks: 0,
       totalEventsResolved: 0,
+      totalRituals: 0,
+      totalOfferings: 0,
       achievements: new Set<string>(),
       milestones: new Set<string>(),
       pilgrimageStreak: 0,
@@ -486,6 +636,7 @@ export function computeStartingHPSFromWheel(
       pageOpenTime: 0,
       offlineHappinessOnLoad: 0,
       offlineSecondsOnLoad: 0,
+      runHappiness: 0,
       autoBuyTimer: 30,
       theme: 'light',
       numberFormat: 'abbreviated',
@@ -493,6 +644,8 @@ export function computeStartingHPSFromWheel(
       soundEnabled: true,
       musicVolume: 0.5,
       sfxVolume: 0.5,
+      autoBuyEnabled: true,
+      emberSelections: [],
       activeTab: 'temple',
       upgradePathFilter: 'all',
       showTranscendenceModal: false,
