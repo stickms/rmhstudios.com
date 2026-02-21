@@ -177,7 +177,7 @@ export function GameCard({ game }: GameCardProps) {
                         }}
                         transition={{ duration: 0.2 }}
                         className={cn(
-                            "absolute z-50 hidden md:block w-80 pointer-events-none",
+                            "absolute z-50 w-[85vw] sm:w-80 pointer-events-none",
                             popoverDirection === 'right' && "left-full top-0 ml-4",
                             popoverDirection === 'left' && "right-full top-0 mr-4",
                             popoverDirection === 'bottom' && "top-full left-1/2 -translate-x-1/2 mt-4"
