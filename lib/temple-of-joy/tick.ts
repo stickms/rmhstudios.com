@@ -18,7 +18,11 @@ import { ACHIEVEMENTS } from './data/achievements';
 export function computePilgrimageBurst(state: GameState): number {
   const pilgrimageRelicBonus = state.activeRelics.includes('stuffedPillow') ? 1.5 : 1;
   const nappingCatBonus = state.activeRelics.includes('nappingCat') ? 2 : 1;
-  return 5 * 60 * computeTotalHPS(state) * pilgrimageRelicBonus * nappingCatBonus;
+  // pilgrimsStaff relic: burst ×3
+  const staffBonus = state.activeRelics.includes('pilgrimsStaff') ? 3 : 1;
+  // pilgrimsEnlightenment wheel: burst ×10
+  const enlightenmentBonus = state.wheelPurchased.has('pilgrimsEnlightenment') ? 10 : 1;
+  return 5 * 60 * computeTotalHPS(state) * pilgrimageRelicBonus * nappingCatBonus * staffBonus * enlightenmentBonus;
 }
 
 // ─── Main Tick ────────────────────────────────────────────────────────────────
@@ -42,13 +46,15 @@ export function applyTick(state: GameState): GameState {
   let happinessGained = hps * deltaSeconds;
 
   // prestigeMomentum: ×3 HPS during first 3 minutes of a new run
-  if (state.wheelPurchased.has('prestigeMomentum') && state.totalPlaytime < 180) {
+  // perpetualMomentum: extends to 10 minutes
+  const momentumDuration = state.wheelPurchased.has('perpetualMomentum') ? 600 : 180;
+  if (state.wheelPurchased.has('prestigeMomentum') && state.totalPlaytime < momentumDuration) {
     happinessGained *= 3;
   }
 
   let newHappiness = state.happiness + happinessGained;
   let newLifetimeHappiness = state.lifetimeHappiness + happinessGained;
-  let newRunHappiness = state.runHappiness + happinessGained;
+  const newRunHappiness = state.runHappiness + happinessGained;
   let newPeakHappiness = Math.max(state.peakHappiness, newHappiness);
 
   // ── 7. Karma ──────────────────────────────────────────────────────────────
@@ -66,7 +72,9 @@ export function applyTick(state: GameState): GameState {
 
   // ── 10. Timed buffs ───────────────────────────────────────────────────────
   // temporalComfort relic: buffs tick down at 2/3 speed (last 50% longer)
-  const buffTickRate = state.activeRelics.includes('temporalComfort') ? realDelta * (2 / 3) : realDelta;
+  let buffTickRate = state.activeRelics.includes('temporalComfort') ? realDelta * (2 / 3) : realDelta;
+  // temporalLoop wheel: buffs ×3 duration (tick down at 1/3 speed)
+  if (state.wheelPurchased.has('temporalLoop')) buffTickRate /= 3;
   const newActiveBuffs = state.activeBuffs
     .map((b) => ({ ...b, remainingSeconds: b.remainingSeconds - buffTickRate }))
     .filter((b) => b.remainingSeconds > 0);
@@ -79,13 +87,23 @@ export function applyTick(state: GameState): GameState {
   }
 
   // ── 12. Timers (use realDelta for accurate catch-up after tab hidden) ────
-  const newVibeCheckTimer = Math.max(0, state.vibeCheckTimer - realDelta);
+  // crystalBall relic: vibe timer fills 30% faster
+  const vibeTimerRate = state.activeRelics.includes('crystalBall') ? realDelta * 1.3 : realDelta;
+  const newVibeCheckTimer = Math.max(0, state.vibeCheckTimer - vibeTimerRate);
 
   let newPilgrimageActive = state.pilgrimageActive;
   let newPilgrimageTimer = state.pilgrimageTimer;
+  // pilgrimsStaff relic: pilgrimage duration −25% (tick rate ×4/3)
+  const pilgrimageTickRate = state.activeRelics.includes('pilgrimsStaff') ? realDelta * (4 / 3) : realDelta;
   let newPilgrimageCooldown = Math.max(0, state.pilgrimageCooldown - realDelta);
+  // celestialCompass relic: pilgrimage cooldown reduced 50%
+  if (state.activeRelics.includes('celestialCompass')) {
+    newPilgrimageCooldown = Math.max(0, state.pilgrimageCooldown - realDelta * 2);
+  }
+  // pilgrimsEnlightenment wheel: pilgrimage no cooldown
+  if (state.wheelPurchased.has('pilgrimsEnlightenment')) newPilgrimageCooldown = 0;
   if (newPilgrimageActive) {
-    newPilgrimageTimer = state.pilgrimageTimer - realDelta;
+    newPilgrimageTimer = state.pilgrimageTimer - pilgrimageTickRate;
   }
 
   const newRitualCooldown = Math.max(0, state.ritualCooldown - realDelta);
@@ -93,6 +111,10 @@ export function applyTick(state: GameState): GameState {
   // temporalComfort relic: event frequency +25% (timer ticks 1.25× faster)
   if (state.activeRelics.includes('temporalComfort')) {
     newEventTimer = Math.max(0, state.eventTimer - realDelta * 1.25);
+  }
+  // temporalLoop wheel: events 2× faster
+  if (state.wheelPurchased.has('temporalLoop')) {
+    newEventTimer = Math.max(0, newEventTimer - realDelta);
   }
 
   // ── 13. Pending event ─────────────────────────────────────────────────────
@@ -122,9 +144,12 @@ export function applyTick(state: GameState): GameState {
   }
 
   // ── 15. Milestones ────────────────────────────────────────────────────────
+  // astronomersLens relic: milestones unlock 1 tier earlier (threshold ÷10)
+  const hasAstronomersLens = state.activeRelics.includes('astronomersLens');
   let newMilestones = state.milestones;
   for (const milestone of MILESTONES) {
-    if (newRunHappiness >= milestone.threshold && !newMilestones.has(milestone.id)) {
+    const effectiveThreshold = hasAstronomersLens ? milestone.threshold / 10 : milestone.threshold;
+    if (newRunHappiness >= effectiveThreshold && !newMilestones.has(milestone.id)) {
       newMilestones = new Set(newMilestones);
       newMilestones.add(milestone.id);
     }
@@ -162,6 +187,12 @@ export function applyTick(state: GameState): GameState {
   if (newLifetimeHappiness >= 1e66) grantAchievement('happiness1e66');
   if (newLifetimeHappiness >= 1e84) grantAchievement('happiness1e84');
   if (newLifetimeHappiness >= 1e99) grantAchievement('happiness1e99');
+  if (newLifetimeHappiness >= 1e108) grantAchievement('happiness1e108');
+  if (newLifetimeHappiness >= 1e120) grantAchievement('happiness1e120');
+  if (newLifetimeHappiness >= 1e135) grantAchievement('happiness1e135');
+  if (newLifetimeHappiness >= 1e150) grantAchievement('happiness1e150');
+  if (newLifetimeHappiness >= 1e200) grantAchievement('happiness1e200');
+  if (newLifetimeHappiness >= 1e300) grantAchievement('happiness1e300');
 
   // Karma achievements
   if (newKarma >= 0.1 && state.karma < 0.1) grantAchievement('firstKarma');
@@ -195,7 +226,11 @@ export function applyTick(state: GameState): GameState {
     state.wheelPurchased.has('autoBuyer3');
 
   if (hasAutoBuyer && state.autoBuyEnabled && newAutoBuyTimer <= 0) {
-    newAutoBuyTimer = 30;
+    // sacredAutomation wheel: auto-buyer every 10s; omegaAutomation: every 5s
+    const autoBuyInterval = state.wheelPurchased.has('omegaAutomation') ? 5
+      : state.wheelPurchased.has('sacredAutomation') ? 10
+      : 30;
+    newAutoBuyTimer = autoBuyInterval;
     // Work on mutable copies only when the timer fires
     let workSources = { ...state.sources };
     let workHappiness = newHappiness;

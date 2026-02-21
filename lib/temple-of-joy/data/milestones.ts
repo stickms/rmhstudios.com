@@ -21,7 +21,7 @@ export const MILESTONES: MilestoneDef[] = [
   { id: 'ms_1e42', threshold: 1e42,            label: 'Pure Bliss',        hpsMultiplier: 1.5 },
   { id: 'ms_1e45', threshold: 1e45,            label: 'Unfathomable',      hpsMultiplier: 1.5 },
   { id: 'ms_1e48', threshold: 1e48,            label: 'Joy Eternal',       hpsMultiplier: 2.0 },
-  // ── Extended Milestones (post-prestige content) ──
+  // ── Extended Milestones (post-transcendence content) ──
   { id: 'ms_1e51', threshold: 1e51,            label: 'The Cosmic Smile',  hpsMultiplier: 1.5 },
   { id: 'ms_1e54', threshold: 1e54,            label: 'Bliss Horizon',     hpsMultiplier: 1.5 },
   { id: 'ms_1e57', threshold: 1e57,            label: 'Joy Nebula',        hpsMultiplier: 1.6 },
@@ -39,4 +39,24 @@ export const MILESTONES: MilestoneDef[] = [
   { id: 'ms_1e93', threshold: 1e93,            label: 'Absolute Bliss',    hpsMultiplier: 2.5 },
   { id: 'ms_1e96', threshold: 1e96,            label: 'Beyond Infinity',   hpsMultiplier: 3.0 },
   { id: 'ms_1e99', threshold: 1e99,            label: 'Joy Complete',      hpsMultiplier: 3.0 },
+
+  // ── Patch 2 milestones ──
+  { id: 'ms_1e102', threshold: 1e102, label: 'Eternal Warmth',         hpsMultiplier: 3.0 },
+  { id: 'ms_1e105', threshold: 1e105, label: 'Infinite Laughter',      hpsMultiplier: 3.5 },
+  { id: 'ms_1e108', threshold: 1e108, label: 'Boundless Grace',        hpsMultiplier: 3.5 },
+  { id: 'ms_1e111', threshold: 1e111, label: 'The Grand Exhale II',    hpsMultiplier: 4.0 },
+  { id: 'ms_1e114', threshold: 1e114, label: 'Celestial Overflow',     hpsMultiplier: 4.0 },
+  { id: 'ms_1e117', threshold: 1e117, label: 'Paradise Cascade',       hpsMultiplier: 4.5 },
+  { id: 'ms_1e120', threshold: 1e120, label: 'The Warmth Beyond',      hpsMultiplier: 4.5 },
+  { id: 'ms_1e123', threshold: 1e123, label: 'Cosmic Gratitude',       hpsMultiplier: 5.0 },
+  { id: 'ms_1e126', threshold: 1e126, label: 'Joy Supernova',          hpsMultiplier: 5.0 },
+  { id: 'ms_1e129', threshold: 1e129, label: 'The Final Sigh',         hpsMultiplier: 6.0 },
+  { id: 'ms_1e132', threshold: 1e132, label: 'Beyond Omega',           hpsMultiplier: 6.0 },
+  { id: 'ms_1e135', threshold: 1e135, label: 'Pleasure Dimension',     hpsMultiplier: 7.0 },
+  { id: 'ms_1e138', threshold: 1e138, label: 'The Infinite Temple',    hpsMultiplier: 8.0 },
+  { id: 'ms_1e141', threshold: 1e141, label: 'Bliss Omnipresent',      hpsMultiplier: 9.0 },
+  { id: 'ms_1e144', threshold: 1e144, label: 'Joy Absolute',           hpsMultiplier: 10.0 },
+  { id: 'ms_1e147', threshold: 1e147, label: 'The Warm Universe',      hpsMultiplier: 15.0 },
+  { id: 'ms_1e150', threshold: 1e150, label: 'Temple Beyond Time',     hpsMultiplier: 20.0 },
+  { id: 'ms_1e153', threshold: 1e153, label: 'Omega Joy',              hpsMultiplier: 50.0 },
 ];

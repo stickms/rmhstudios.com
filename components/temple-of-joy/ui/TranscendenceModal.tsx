@@ -67,13 +67,15 @@ export default function TranscendenceModal() {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      onClick={handleCancel}
       style={{
         background: 'rgba(0,0,0,0.75)',
         animation: dissolving ? 'templeDissolve 0.65s ease-in forwards' : 'templeAppear 0.3s ease-out both',
       }}
     >
       <div
-        className="relative w-full max-w-md rounded-2xl border-2 p-6 shadow-2xl"
+        className="relative w-full max-w-md max-h-[calc(100vh-2rem)] rounded-2xl border-2 p-6 shadow-2xl flex flex-col"
+        onClick={(e) => e.stopPropagation()}
         style={{
           background: dark ? '#2c1d12' : '#ede7d9',
           borderColor: dark ? '#6b4c2a' : '#c4a97a',
@@ -96,7 +98,9 @@ export default function TranscendenceModal() {
           style={{ background: dark ? '#6b4c2a' : '#c4a97a' }}
         />
 
-        {/* What you earn */}
+        {/* Scrollable content */}
+        <div className="overflow-y-auto flex-1 mb-4">
+          {/* What you earn */}
         <div className="mb-4 text-sm space-y-1">
           <p className="font-semibold mb-2" style={{ color: dark ? '#d4a847' : '#8b6914' }}>
             You will earn:
@@ -111,23 +115,31 @@ export default function TranscendenceModal() {
 
         {/* What resets */}
         <div
-          className="rounded-xl p-3 mb-4 text-sm space-y-1"
+          className="rounded-xl p-3 mb-4 text-sm"
           style={{ background: dark ? '#1a120b' : '#f5f0e8' }}
         >
-          <p className="font-semibold opacity-70 mb-1">Reset:</p>
-          <ul className="space-y-0.5 opacity-80 text-xs">
-            <li>  Happiness</li>
-            <li>  Run progress</li>
-            <li>  Sources</li>
-            <li>  Upgrades (most)</li>
-          </ul>
-          <p className="font-semibold opacity-70 mt-2 mb-1">Kept:</p>
-          <ul className="space-y-0.5 opacity-80 text-xs">
-            <li>  Lifetime Happiness</li>
-            <li>  Bliss Shards</li>
-            <li>  Wheel Upgrades</li>
-            <li>  Achievements</li>
-          </ul>
+          <div className="grid grid-cols-2 gap-3">
+            {/* Reset column */}
+            <div>
+              <p className="font-semibold opacity-70 mb-1">Reset:</p>
+              <ul className="space-y-0.5 opacity-80 text-xs">
+                <li>• Happiness</li>
+                <li>• Run progress</li>
+                <li>• Sources</li>
+                <li>• Upgrades (most)</li>
+              </ul>
+            </div>
+            {/* Kept column */}
+            <div>
+              <p className="font-semibold opacity-70 mb-1">Kept:</p>
+              <ul className="space-y-0.5 opacity-80 text-xs">
+                <li>• Lifetime Happiness</li>
+                <li>• Bliss Shards</li>
+                <li>• Wheel Upgrades</li>
+                <li>• Achievements</li>
+              </ul>
+            </div>
+          </div>
           {retentionNote && (
             <p
               className="text-xs mt-2 font-medium"
@@ -176,7 +188,7 @@ export default function TranscendenceModal() {
                           onChange={() => {
                             if (isSelected) {
                               setEmberSelections(emberSelections.filter(s => s !== id));
-                            } else if (canSelect) {
+                            } else if (emberSelections.length < 5) {
                               setEmberSelections([...emberSelections, id]);
                             }
                           }}
@@ -194,6 +206,7 @@ export default function TranscendenceModal() {
             )}
           </div>
         )}
+        </div>
 
         {/* Threshold reminder */}
         <p className="text-xs opacity-50 text-center mb-5">

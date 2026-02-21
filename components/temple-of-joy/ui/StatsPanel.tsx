@@ -62,13 +62,14 @@ export default function StatsPanel() {
 
   const getHPS                 = useTempleStore(s => s.getHPS);
   const getHPC                 = useTempleStore(s => s.getHPC);
+  const getGlobalHPSMultiplier = useTempleStore(s => s.getGlobalHPSMultiplier);
   const getCanTranscend        = useTempleStore(s => s.getCanTranscend);
   const getEffectiveSatisfaction = useTempleStore(s => s.getEffectiveSatisfaction);
 
   const setShowTranscendenceModal = useTempleStore(s => s.setShowTranscendenceModal);
 
   const state = useTempleStore(s => s);
-  
+
   // Calculate raw base HPS (baseHPS × owned, before any multipliers)
   const rawBaseHPS = Object.entries(state.sources).reduce((sum, [id, owned]) => {
     if (owned === 0) return sum;
@@ -78,7 +79,12 @@ export default function StatsPanel() {
 
   const ritualReady = ritualCooldown <= 0;
   const totalHps = getHPS();
-  const effectiveMult = rawBaseHPS > 0 ? totalHps / rawBaseHPS : 1;
+  // Stable multiplier (excludes temporary buffs / time-varying effects)
+  const stableMult = getGlobalHPSMultiplier();
+  // Temporary buff multiplier (event buffs + vibe buff)
+  const buffMult = [...state.activeBuffs, ...(state.vibeBuff ? [state.vibeBuff] : [])]
+    .reduce((m, b) => m * b.hpsMultiplier, 1);
+  const hasTemporaryBuffs = buffMult > 1;
 
   return (
     <div
@@ -118,22 +124,19 @@ export default function StatsPanel() {
             value={fmt(lifetimeHappiness, numberFormat)}
             sub="total earned"
           />
-          <Row
-            label="Bliss Shards"
-            value={`${blissShards} 💎`}
-          />
         </div>
 
         {/* Right column */}
         <div>
           <Row
             label="Global Mult"
-            value={`×${effectiveMult.toFixed(2)}`}
+            value={`×${fmt(stableMult, numberFormat)}`}
+            sub={hasTemporaryBuffs ? `+buff ×${buffMult.toFixed(2)}` : undefined}
           />
           <Row
             label="HPS"
             value={fmt(totalHps, numberFormat)}
-            sub={`${fmt(rawBaseHPS, numberFormat)} × ${effectiveMult.toFixed(2)}`}
+            sub={`${fmt(rawBaseHPS, numberFormat)} × ${fmt(stableMult, numberFormat)}`}
             highlight={true}
           />
           <Row
@@ -156,6 +159,10 @@ export default function StatsPanel() {
             label="Karma"
             value={`${fmt(karma, numberFormat)} karma`}
           />
+          <Row
+            label="Bliss Shards"
+            value={`${blissShards} 💎`}
+          />
         </div>
       </div>
 
@@ -164,7 +171,7 @@ export default function StatsPanel() {
           className="mt-2 pt-2 text-xs"
           style={{ borderTop: '1px solid var(--temple-border)', color: 'var(--temple-text)', opacity: 0.7 }}
         >
-          Prestige: ×{prestigeCount}
+          Transcendence: ×{prestigeCount}
         </div>
       )}
 

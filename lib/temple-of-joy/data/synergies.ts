@@ -57,7 +57,7 @@ export const SYNERGIES: SynergyDef[] = [
     targetSources: ['feastHall', 'eternalParty'],
     multiplier: 8,
   },
-  // ── Post-Prestige Synergies ──
+  // ── Post-Transcendence Synergies ──
   {
     id: 'zenSerenity',
     name: 'Zen Serenity Circuit',
@@ -81,6 +81,88 @@ export const SYNERGIES: SynergyDef[] = [
     requirements: { omniscientSpa: 25, euphoriaSprings: 50 },
     targetSources: ['omniscientSpa', 'euphoriaSprings'],
     multiplier: 8,
+  },
+
+  // ── Patch 2 synergies ──
+  {
+    id: 'dreamFeast',
+    name: 'The Dream Feast',
+    flavor: 'You feast in your dreams. The dreams feast on your joy.',
+    requirements: { dreamWeaver: 25, infiniteBuffet: 25 },
+    targetSources: ['dreamWeaver', 'infiniteBuffet'],
+    multiplier: 4,
+  },
+  {
+    id: 'laughterGarden',
+    name: 'Laughter Garden',
+    flavor: 'The garden laughs. The forge blooms.',
+    requirements: { laughterForge: 50, echoGarden: 25 },
+    targetSources: ['laughterForge', 'echoGarden'],
+    multiplier: 5,
+  },
+  {
+    id: 'celestialBond',
+    name: 'Celestial Bond',
+    flavor: 'Angels bathe in celestial waters. Everyone is invited.',
+    requirements: { seraphStation: 25, celestialBath: 25 },
+    targetSources: ['seraphStation', 'celestialBath'],
+    multiplier: 6,
+  },
+  {
+    id: 'paradoxMemory',
+    name: 'Paradox & Memory',
+    flavor: 'You remember what never happened. It was wonderful.',
+    requirements: { paradoxEngine: 25, memoryPalace: 25 },
+    targetSources: ['paradoxEngine', 'memoryPalace'],
+    multiplier: 7,
+  },
+  {
+    id: 'gravitySymphony',
+    name: 'Gravity Symphony',
+    flavor: 'Zero-G relaxation set to Euterpe\'s greatest hits.',
+    requirements: { gravitySpa: 50, euterpeHall: 25 },
+    targetSources: ['gravitySpa', 'euterpeHall'],
+    multiplier: 5,
+  },
+  {
+    id: 'ambrosialRain',
+    name: 'Ambrosial Rain',
+    flavor: 'Nectar rains into the karma fountain. Wishes become real.',
+    requirements: { ambrosiaTap: 25, karmaFountain: 25 },
+    targetSources: ['ambrosiaTap', 'karmaFountain'],
+    multiplier: 8,
+  },
+  {
+    id: 'orbitalHug',
+    name: 'Orbital Hug',
+    flavor: 'The satellite beams hugs from orbit. No one escapes joy.',
+    requirements: { joySatellite: 25, infiniteHug: 25 },
+    targetSources: ['joySatellite', 'infiniteHug'],
+    multiplier: 6,
+  },
+  {
+    id: 'elysiumNova',
+    name: 'Elysium Nova',
+    flavor: 'The gate opens to a nova of pure joy.',
+    requirements: { elysiumGate: 25, joyNova: 25 },
+    targetSources: ['elysiumGate', 'joyNova'],
+    multiplier: 10,
+  },
+  {
+    id: 'eternityCore',
+    name: 'Eternity Core',
+    flavor: 'The sofa becomes the core. Rest becomes power.',
+    requirements: { eternitySofa: 50, nirvanaCore: 25 },
+    targetSources: ['eternitySofa', 'nirvanaCore'],
+    multiplier: 8,
+  },
+  {
+    id: 'omegaFusion',
+    name: 'Omega Fusion',
+    flavor: 'The temple and the lab merge. Science meets nirvana.',
+    requirements: { omegaTemple: 10, transcendenceLab: 25 },
+    targetSources: ['omegaTemple', 'transcendenceLab'],
+    multiplier: 15,
   },
 ];
 

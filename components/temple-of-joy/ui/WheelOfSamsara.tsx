@@ -12,6 +12,11 @@ const TIER_LABELS: Record<WheelTier, string> = {
   3: 'Tier III — Enlightenment',
   4: 'Tier IV — The Infinite',
   5: 'Tier V — Beyond the Wheel',
+  6: 'Tier VI — Celestial',
+  7: 'Tier VII — Cosmic',
+  8: 'Tier VIII — Eternal',
+  9: 'Tier IX — Ascendant',
+  10: 'Tier X — Omega',
 };
 
 interface WheelCardProps {
@@ -157,7 +162,7 @@ export default function WheelOfSamsara() {
         </p>
       )}
 
-      {/* Pre-prestige gate */}
+      {/* Pre-transcendence gate */}
       {prestigeCount === 0 && (
         <div
           className="rounded-xl p-4 text-center"

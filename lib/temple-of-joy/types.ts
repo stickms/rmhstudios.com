@@ -11,7 +11,15 @@ export type SourceId =
   | 'artGallery' | 'hedonistMonastery' | 'feastHall' | 'nirvanaResort'
   | 'eternalParty' | 'heavenOnEarth' | 'blissSingularity'
   | 'zenGarden' | 'euphoriaSprings' | 'serenityEngine'
-  | 'raptureCathedral' | 'cosmicJacuzzi' | 'omniscientSpa';
+  | 'raptureCathedral' | 'cosmicJacuzzi' | 'omniscientSpa'
+  // ── Patch 2 sources ──
+  | 'dreamWeaver' | 'laughterForge' | 'cloudLounge' | 'goldenHammock'
+  | 'pleasureArchive' | 'infiniteBuffet' | 'echoGarden' | 'blissConduit'
+  | 'seraphStation' | 'paradoxEngine' | 'memoryPalace' | 'auroraSpire'
+  | 'gravitySpa' | 'euterpeHall' | 'ambrosiaTap' | 'joySatellite'
+  | 'elysiumGate' | 'cosmicHamper' | 'eternitySofa' | 'nirvanaCore'
+  | 'transcendenceLab' | 'celestialBath' | 'euphoriaReactor' | 'pleasurePlanet'
+  | 'karmaFountain' | 'infiniteHug' | 'joyNova' | 'omegaTemple';
 
 export type UpgradePath =
   | 'carnal' | 'social' | 'mind' | 'spirit' | 'indulgence' | 'philosophy' | 'offering' | 'synergy';
@@ -21,11 +29,17 @@ export type RelicId =
   | 'goldenFork' | 'confessionBooth' | 'vibeCrystal' | 'philosophersStone'
   | 'warmBlanket' | 'sacredLedger' | 'hymnalOfExcess' | 'eternalNap'
   | 'karmaResonator' | 'lighthouseOfJoy' | 'temporalComfort' | 'infiniteGratitude'
-  | 'bubbleTeaCard' | 'cozyPlaylist' | 'zenBell' | 'nappingCat';
+  | 'bubbleTeaCard' | 'cozyPlaylist' | 'zenBell' | 'nappingCat'
+  // ── Patch 2 relics ──
+  | 'crystalBall' | 'goldenPen' | 'perpetualTeapot' | 'astronomersLens'
+  | 'silkRobe' | 'luckyCoin' | 'eternalQuill' | 'mirrorOfTruth'
+  | 'celestialCompass' | 'gardenersGlove' | 'starChart' | 'ancientHourglass'
+  | 'jestersCrown' | 'soulLantern' | 'cosmicTeaCup' | 'infinityScarf'
+  | 'pilgrimsStaff' | 'dreamCatcher' | 'alchemistsFlask' | 'omegaRelic';
 
 export type EventType = 'blessing' | 'choice' | 'philosophical';
 
-export type WheelTier = 1 | 2 | 3 | 4 | 5;
+export type WheelTier = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
 
 // ─── Data Definitions ────────────────────────────────────────────────────────
 
@@ -192,6 +206,8 @@ export interface GameState {
   totalPilgrimages: number;        // total pilgrimages completed
   totalVibeChecks: number;         // total vibe checks passed
   totalEventsResolved: number;     // total events resolved
+  totalRituals: number;            // total rituals triggered
+  totalOfferings: number;          // total offerings made
   achievements: Set<string>;
   milestones: Set<string>;
   pilgrimageStreak: number;        // consecutive pilgrimages without clicking
@@ -277,6 +293,8 @@ export interface SaveData {
   totalPilgrimages: number;
   totalVibeChecks: number;
   totalEventsResolved: number;
+  totalRituals: number;
+  totalOfferings: number;
   achievements: string[];
   milestones: string[];
   pilgrimageStreak: number;

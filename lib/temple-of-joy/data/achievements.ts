@@ -127,7 +127,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     id: 'trillionaire',
     name: 'Happiness: Transcendent',
     description: 'Earn 1 Trillion lifetime Happiness.',
-    flavor: 'First prestige unlocked.',
+    flavor: 'First transcendence unlocked.',
   },
   {
     id: 'philosopher',
@@ -136,7 +136,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     flavor: "(That's a real number.)",
   },
 
-  // ─── Prestige ─────────────────────────────────────────────────────────────
+  // ─── Transcendence ────────────────────────────────────────────────────────
 
   {
     id: 'firstPrestige',
@@ -321,7 +321,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   {
     id: 'speedPrestige',
     name: 'Burn It Down',
-    description: 'Reach your first Prestige in under 30 minutes.',
+    description: 'Reach your first Transcendence in under 30 minutes.',
     flavor: 'The wheel spins fast when you want it to.',
     hidden: true,
   },
@@ -368,7 +368,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   {
     id: 'allPostPrestige',
     name: 'Beyond the Veil',
-    description: 'Own at least 1 of every post-prestige source.',
+    description: 'Own at least 1 of every post-transcendence source.',
     flavor: 'The new world opens.',
   },
   {
@@ -453,7 +453,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     flavor: 'You did it. All the joy. Every last drop.',
   },
 
-  // ─── Extended Prestige ─────────────────────────────────────────────────────
+  // ─── Extended Transcendence ───────────────────────────────────────────────
 
   {
     id: 'thirtyPrestige',
@@ -481,6 +481,457 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     name: 'The Magnum Opus',
     description: 'Play for 1,000 hours total.',
     flavor: 'This is your life now. It is warm.',
+  },
+
+  // ─── Patch 2: New Source Milestones ─────────────────────────────────────────
+
+  {
+    id: 'dreamWeaverUnlock',
+    name: 'Dream Weaver',
+    description: 'Unlock the Dream Weaver.',
+    flavor: 'The thread between worlds is yours to pull.',
+  },
+  {
+    id: 'infiniteBuffetUnlock',
+    name: 'All You Can Eat (Literally)',
+    description: 'Unlock the Infinite Buffet.',
+    flavor: 'The plates refill before you finish. Heaven.',
+  },
+  {
+    id: 'paradoxEngineUnlock',
+    name: 'Contradiction Engine',
+    description: 'Unlock the Paradox Engine.',
+    flavor: 'It runs on impossibility. Somehow.',
+  },
+  {
+    id: 'joySatelliteUnlock',
+    name: 'Orbital Broadcast',
+    description: 'Unlock the Joy Satellite.',
+    flavor: 'Broadcasting happiness from low Earth orbit.',
+  },
+  {
+    id: 'omegaTempleUnlock',
+    name: 'The Final Temple',
+    description: 'Unlock the Omega Temple.',
+    flavor: 'You built the last temple. Or the first.',
+  },
+  {
+    id: 'fiveHundredAllSources',
+    name: 'Global Devotion',
+    description: 'Own at least 500 of every base source.',
+    flavor: 'Each one a prayer. Each one answered.',
+  },
+  {
+    id: 'allNewSourcesOwned',
+    name: 'New Temple Wing',
+    description: 'Own at least 1 of every Patch 2 source.',
+    flavor: 'The temple grows. The joy compounds.',
+  },
+  {
+    id: 'thousandOfFive',
+    name: 'Pentadivine',
+    description: 'Own 1,000 of five different sources.',
+    flavor: 'Five pillars. One thousand each. Architecture.',
+  },
+  {
+    id: 'twoThousandOfOne',
+    name: 'Fanatical',
+    description: 'Own 2,000 of any one source.',
+    flavor: 'This is not a hobby. This is a calling.',
+  },
+  {
+    id: 'fiveThousandOfOne',
+    name: 'The Legion',
+    description: 'Own 5,000 of any one source.',
+    flavor: 'An army of joy. Unstoppable.',
+  },
+
+  // ─── Patch 2: Clicking ────────────────────────────────────────────────────
+
+  {
+    id: 'fiftyThousandClicks',
+    name: 'Professional Clicker',
+    description: 'Click 50,000 times total.',
+    flavor: 'Your finger has a six-pack.',
+  },
+  {
+    id: 'hundredThousandClicks',
+    name: 'The Machine',
+    description: 'Click 100,000 times total.',
+    flavor: 'You are the auto-clicker now.',
+  },
+  {
+    id: 'ritualHundred',
+    name: 'Ritual Master',
+    description: 'Trigger 100 Rituals.',
+    flavor: 'The ritual knows you. You know it. You are one.',
+  },
+
+  // ─── Patch 2: Happiness ───────────────────────────────────────────────────
+
+  {
+    id: 'happiness1e108',
+    name: 'Happiness: Dimensional',
+    description: 'Earn 1e108 lifetime Happiness.',
+    flavor: 'Happiness in dimensions you cannot name.',
+  },
+  {
+    id: 'happiness1e120',
+    name: 'Happiness: Omniversal',
+    description: 'Earn 1e120 lifetime Happiness.',
+    flavor: 'Every universe smiles.',
+  },
+  {
+    id: 'happiness1e135',
+    name: 'Happiness: Absolute',
+    description: 'Earn 1e135 lifetime Happiness.',
+    flavor: 'No more units. Just... everything.',
+  },
+  {
+    id: 'happiness1e150',
+    name: 'Happiness: Final',
+    description: 'Earn 1e150 lifetime Happiness.',
+    flavor: 'The counter stopped. It is enough.',
+  },
+  {
+    id: 'happiness1e200',
+    name: 'Happiness: Transcendent',
+    description: 'Earn 1e200 lifetime Happiness.',
+    flavor: 'Numbers gave up. Joy continued.',
+  },
+  {
+    id: 'happiness1e300',
+    name: 'Happiness: Infinite',
+    description: 'Earn 1e300 lifetime Happiness.',
+    flavor: 'The universe ran out of digits. You did not run out of joy.',
+  },
+
+  // ─── Patch 2: Transcendence ───────────────────────────────────────────────
+
+  {
+    id: 'seventyFivePrestige',
+    name: 'The Eternal Return',
+    description: 'Transcend 75 times.',
+    flavor: 'Nietzsche would be proud. Or horrified.',
+  },
+  {
+    id: 'hundredPrestige',
+    name: 'Centurion',
+    description: 'Transcend 100 times.',
+    flavor: 'One hundred lives. Each one better.',
+  },
+  {
+    id: 'twoHundredPrestige',
+    name: 'The Infinite Spiral',
+    description: 'Transcend 200 times.',
+    flavor: 'You have been everywhere. You are still going.',
+  },
+
+  // ─── Patch 2: Karma & Relics ──────────────────────────────────────────────
+
+  {
+    id: 'thousandKarma',
+    name: 'Karmic Abundance',
+    description: 'Hold 1,000 Karma at once.',
+    flavor: 'The universe owes you many favours.',
+  },
+  {
+    id: 'fiveThousandKarma',
+    name: 'Karmic Overflow',
+    description: 'Hold 5,000 Karma at once.',
+    flavor: 'Karma is now your currency.',
+  },
+  {
+    id: 'tenThousandKarma',
+    name: 'Karmic Flood',
+    description: 'Hold 10,000 Karma at once.',
+    flavor: 'The river of karma flows from you.',
+  },
+  {
+    id: 'fiveRelics',
+    name: 'Collector',
+    description: 'Unlock 5 different Relics.',
+    flavor: 'A modest collection. A serious start.',
+  },
+  {
+    id: 'tenRelics',
+    name: 'Curator',
+    description: 'Unlock 10 different Relics.',
+    flavor: 'Half the collection. All the satisfaction.',
+  },
+  {
+    id: 'twentyRelics',
+    name: 'Archivist',
+    description: 'Unlock 20 different Relics.',
+    flavor: 'The relics whisper your name.',
+  },
+  {
+    id: 'thirtyRelics',
+    name: 'Reliquary Guardian',
+    description: 'Unlock 30 different Relics.',
+    flavor: 'The relics orbit you now.',
+  },
+  {
+    id: 'allRelicsNew',
+    name: 'The Complete Reliquary',
+    description: 'Unlock all 40 Relics.',
+    flavor: 'Every relic. Every power. All yours.',
+  },
+
+  // ─── Patch 2: Wheel ───────────────────────────────────────────────────────
+
+  {
+    id: 'wheelTier5',
+    name: 'Tier 5 Complete',
+    description: 'Purchase all Tier 5 Wheel upgrades.',
+    flavor: 'The wheel spins faster.',
+  },
+  {
+    id: 'wheelTier6',
+    name: 'Tier 6 Complete',
+    description: 'Purchase all Tier 6 Wheel upgrades.',
+    flavor: 'Sacred automation begins.',
+  },
+  {
+    id: 'wheelTier7',
+    name: 'Tier 7 Complete',
+    description: 'Purchase all Tier 7 Wheel upgrades.',
+    flavor: 'Ascended infrastructure.',
+  },
+  {
+    id: 'wheelTier8',
+    name: 'Tier 8 Complete',
+    description: 'Purchase all Tier 8 Wheel upgrades.',
+    flavor: 'The omega automation hums.',
+  },
+  {
+    id: 'wheelTier9',
+    name: 'Tier 9 Complete',
+    description: 'Purchase all Tier 9 Wheel upgrades.',
+    flavor: 'Dimensions fold. Time loops. Architecture.',
+  },
+  {
+    id: 'wheelTier10',
+    name: 'The Complete Wheel',
+    description: 'Purchase all Tier 10 Wheel upgrades.',
+    flavor: 'The wheel is complete. The temple is eternal.',
+  },
+  {
+    id: 'tenThousandShards',
+    name: 'Shard Hoarder',
+    description: 'Accumulate 10,000 total Bliss Shards.',
+    flavor: 'Each shard a fragment of transcendence.',
+  },
+  {
+    id: 'hundredThousandShards',
+    name: 'Shard Lord',
+    description: 'Accumulate 100,000 total Bliss Shards.',
+    flavor: 'The shards form constellations.',
+  },
+  {
+    id: 'millionShards',
+    name: 'Shard Cosmos',
+    description: 'Accumulate 1,000,000 total Bliss Shards.',
+    flavor: 'A galaxy of bliss shards. Breathtaking.',
+  },
+
+  // ─── Patch 2: Special Mechanics ───────────────────────────────────────────
+
+  {
+    id: 'pilgrimageHundred',
+    name: 'The Endless Walk',
+    description: 'Complete 100 Pilgrimages.',
+    flavor: 'Your feet know the way. Your soul follows.',
+  },
+  {
+    id: 'vibeCheckFifty',
+    name: 'Perpetual Good Vibes',
+    description: 'Pass 50 Vibe Checks.',
+    flavor: 'Your vibes are beyond reproach.',
+  },
+  {
+    id: 'vibeCheckHundred',
+    name: 'Vibe Transcendence',
+    description: 'Pass 100 Vibe Checks.',
+    flavor: 'You ARE the vibe.',
+  },
+  {
+    id: 'eventsHundred',
+    name: 'Seasoned Storyteller',
+    description: 'Resolve 100 events total.',
+    flavor: 'Every event is a chapter. You have a library.',
+  },
+  {
+    id: 'offeringComplete',
+    name: 'The Generous Temple',
+    description: 'Complete 50 Daily Offerings.',
+    flavor: 'The offering plate is full. Always.',
+  },
+  {
+    id: 'allUpgradesPurchased',
+    name: 'The Completionist',
+    description: 'Purchase every available upgrade.',
+    flavor: 'Nothing left to buy. Everything left to enjoy.',
+  },
+  {
+    id: 'allSynergies',
+    name: 'Perfect Harmony',
+    description: 'Activate all synergies.',
+    flavor: 'Every source resonates with every other.',
+  },
+
+  // ─── Patch 2: Hidden / Funny ──────────────────────────────────────────────
+
+  {
+    id: 'speedPrestige10',
+    name: 'Speedrunner',
+    description: 'Reach Transcendence 10 in under 10 minutes total playtime.',
+    flavor: 'Was that... was that supposed to be possible?',
+    hidden: true,
+  },
+  {
+    id: 'noRelics',
+    name: 'The Minimalist',
+    description: 'Reach 1e30 happiness with zero relics equipped.',
+    flavor: 'No relics. No shortcuts. Pure willpower.',
+    hidden: true,
+  },
+  {
+    id: 'millionClicks',
+    name: 'Carpal Tunnel Enlightenment',
+    description: 'Click 1,000,000 times.',
+    flavor: 'Your finger has transcended. It no longer exists.',
+    hidden: true,
+  },
+  {
+    id: 'bankruptKarma',
+    name: 'Spiritually Bankrupt',
+    description: 'Have exactly 0 Karma after owning at least 1,000.',
+    flavor: 'You spent it ALL. On what? Everything. Nothing.',
+    hidden: true,
+  },
+  {
+    id: 'allPhilosophers',
+    name: 'The Symposium',
+    description: 'Encounter every philosophical event.',
+    flavor: 'Epicurus, Bentham, the Cave, the Question, Nietzsche, Seneca, Aristotle, Laozi. All of them.',
+    hidden: true,
+  },
+  {
+    id: 'templeEternalAchievement',
+    name: 'The Eternal Temple',
+    description: 'Own every source, every upgrade, every relic, and complete the Wheel.',
+    flavor: 'You did it. The temple is complete. Rest now.',
+    hidden: true,
+  },
+
+  // ─── Patch 2: Additional Spec Achievements ────────────────────────────────
+
+  {
+    id: 'tenThousandOfOne',
+    name: 'Monoculture',
+    description: 'Own 10,000 of any one source.',
+    flavor: 'An obsession of architectural proportions.',
+  },
+  {
+    id: 'fiftyOfEach',
+    name: 'Devoted Architect',
+    description: 'Own 50 of every source.',
+    flavor: 'Every source, fifty deep.',
+  },
+  {
+    id: 'hundredOfEach',
+    name: 'The Completionist',
+    description: 'Own 100 of every source.',
+    flavor: 'Maximalism: achieved.',
+  },
+  {
+    id: 'pilgrimageTwentyFive',
+    name: 'The Devoted Walker',
+    description: 'Complete 25 Pilgrimages.',
+    flavor: 'The path knows you by name.',
+  },
+  {
+    id: 'pilgrimageFifty',
+    name: 'The Eternal Pilgrim',
+    description: 'Complete 50 Pilgrimages.',
+    flavor: 'You walk. The temple walks with you.',
+  },
+  {
+    id: 'vibeCheckTwentyFive',
+    name: 'Vibe: Legendary',
+    description: 'Pass 25 Vibe Checks.',
+    flavor: 'Your vibes are canonized.',
+  },
+  {
+    id: 'eventsTwoHundred',
+    name: 'Life Fully Lived',
+    description: 'Resolve 200 events total.',
+    flavor: 'No moment wasted.',
+  },
+  {
+    id: 'dailyOfferingTen',
+    name: 'The Faithful',
+    description: 'Complete 10 offerings.',
+    flavor: 'The tithe: consistent.',
+  },
+  {
+    id: 'hundredThousandKarma',
+    name: 'Karmic Singularity',
+    description: 'Hold 100,000 Karma at once.',
+    flavor: 'A black hole of good vibes.',
+  },
+  {
+    id: 'twoThousandHours',
+    name: 'The Eternal Student',
+    description: 'Play for 2,000 hours total.',
+    flavor: 'This is more than a hobby. It\'s a calling.',
+  },
+  {
+    id: 'fiveThousandHours',
+    name: 'Life\'s Work',
+    description: 'Play for 5,000 hours total.',
+    flavor: 'You have given more time to joy than most give to anything.',
+  },
+  {
+    id: 'clickDuringPilgrimage',
+    name: 'Oops',
+    description: 'Click during a Pilgrimage.',
+    flavor: 'You had ONE job: do nothing.',
+    hidden: true,
+  },
+  {
+    id: 'tenBuffsActive',
+    name: 'Buff Hoarder',
+    description: 'Have 10+ active buffs simultaneously.',
+    flavor: 'Your HPS bar needs a scrollbar.',
+    hidden: true,
+  },
+  {
+    id: 'transcendUnderMinute',
+    name: 'Speed Run',
+    description: 'Transcend in under 1 minute.',
+    flavor: 'They said it couldn\'t be done. It took 47 seconds.',
+    hidden: true,
+  },
+  {
+    id: 'omegaRelicEquipped',
+    name: 'The Omega Relic',
+    description: 'Equip the Omega Relic.',
+    flavor: 'The circle closes.',
+    hidden: true,
+  },
+  {
+    id: 'hundredShards',
+    name: 'Shard Collector',
+    description: 'Accumulate 100 bliss shards.',
+    flavor: 'A modest fortune in crystallized transcendence.',
+  },
+  {
+    id: 'thousandShards',
+    name: 'Shard Hoarder',
+    description: 'Accumulate 1,000 bliss shards.',
+    flavor: 'They glitter with purpose.',
   },
 ];
 
