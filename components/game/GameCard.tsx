@@ -13,7 +13,7 @@ interface GameCardProps {
 
 export function GameCard({ game }: GameCardProps) {
     const [isHovered, setIsHovered] = useState(false);
-    const [popoverDirection, setPopoverDirection] = useState<'right' | 'left'>('right');
+    const [popoverDirection, setPopoverDirection] = useState<'right' | 'left' | 'bottom'>('right');
     const cardRef = useRef<HTMLDivElement>(null);
     
     // Mouse tracking for glossy effect
@@ -56,16 +56,20 @@ export function GameCard({ game }: GameCardProps) {
         if (cardRef.current) {
             const rect = cardRef.current.getBoundingClientRect();
             const windowWidth = window.innerWidth;
-            const spaceOnRight = windowWidth - rect.right;
-            const spaceOnLeft = rect.left;
             
-            // Popover is 320px wide (w-80) + 16px margin (ml-4)
-            const minSpaceNeeded = 350;
-
-            if (spaceOnRight < minSpaceNeeded && spaceOnLeft > minSpaceNeeded) {
-                setPopoverDirection('left');
+            // On tablets/small screens, always show below
+            if (windowWidth < 1024) {
+                setPopoverDirection('bottom');
             } else {
-                setPopoverDirection('right');
+                const spaceOnRight = windowWidth - rect.right;
+                const spaceOnLeft = rect.left;
+                const minSpaceNeeded = 350;
+
+                if (spaceOnRight < minSpaceNeeded && spaceOnLeft > minSpaceNeeded) {
+                    setPopoverDirection('left');
+                } else {
+                    setPopoverDirection('right');
+                }
             }
         }
         setIsHovered(true);
@@ -155,32 +159,37 @@ export function GameCard({ game }: GameCardProps) {
                         key="game-popover"
                         initial={{ 
                             opacity: 0, 
-                            x: popoverDirection === 'right' ? 10 : -10, 
+                            x: popoverDirection === 'right' ? 10 : popoverDirection === 'left' ? -10 : 0,
+                            y: popoverDirection === 'bottom' ? 10 : 0,
                             scale: 0.95 
                         }}
                         animate={{ 
                             opacity: 1, 
-                            x: popoverDirection === 'right' ? 20 : -20, 
+                            x: popoverDirection === 'right' ? 20 : popoverDirection === 'left' ? -20 : 0,
+                            y: popoverDirection === 'bottom' ? 20 : 0,
                             scale: 1 
                         }}
                         exit={{ 
                             opacity: 0, 
-                            x: popoverDirection === 'right' ? 10 : -10, 
+                            x: popoverDirection === 'right' ? 10 : popoverDirection === 'left' ? -10 : 0,
+                            y: popoverDirection === 'bottom' ? 10 : 0,
                             scale: 0.95 
                         }}
                         transition={{ duration: 0.2 }}
                         className={cn(
-                            "absolute top-0 z-50 hidden lg:block w-80 pointer-events-none",
-                            popoverDirection === 'right' ? "left-full ml-4" : "right-full mr-4"
+                            "absolute z-50 hidden md:block w-80 pointer-events-none",
+                            popoverDirection === 'right' && "left-full top-0 ml-4",
+                            popoverDirection === 'left' && "right-full top-0 mr-4",
+                            popoverDirection === 'bottom' && "top-full left-1/2 -translate-x-1/2 mt-4"
                         )}
                     >
                         <div className="bg-slate-900/95 backdrop-blur-md border border-slate-700 rounded-xl p-6 shadow-2xl relative">
                             {/* Decorative pointer/arrow */}
                             <div className={cn(
-                                "absolute top-8 w-4 h-4 bg-slate-900 border-slate-700 rotate-45",
-                                popoverDirection === 'right' 
-                                    ? "-left-2 border-l border-b" 
-                                    : "-right-2 border-r border-t"
+                                "absolute w-4 h-4 bg-slate-900 border-slate-700 rotate-45",
+                                popoverDirection === 'right' && "top-8 -left-2 border-l border-b",
+                                popoverDirection === 'left' && "top-8 -right-2 border-r border-t",
+                                popoverDirection === 'bottom' && "-top-2 left-1/2 -translate-x-1/2 border-l border-t"
                             )} />
                             
                             <div className="relative space-y-4">
