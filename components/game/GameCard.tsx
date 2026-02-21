@@ -55,9 +55,18 @@ export function GameCard({ game }: GameCardProps) {
     const handleMouseEnter = () => {
         if (cardRef.current) {
             const rect = cardRef.current.getBoundingClientRect();
-            const spaceOnRight = window.innerWidth - rect.right;
-            // If less than 350px (w-80 + some margin), flip to left
-            setPopoverDirection(spaceOnRight < 350 ? 'left' : 'right');
+            const windowWidth = window.innerWidth;
+            const spaceOnRight = windowWidth - rect.right;
+            const spaceOnLeft = rect.left;
+            
+            // Popover is 320px wide (w-80) + 16px margin (ml-4)
+            const minSpaceNeeded = 350;
+
+            if (spaceOnRight < minSpaceNeeded && spaceOnLeft > minSpaceNeeded) {
+                setPopoverDirection('left');
+            } else {
+                setPopoverDirection('right');
+            }
         }
         setIsHovered(true);
     };
