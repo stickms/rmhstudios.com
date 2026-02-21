@@ -27,10 +27,26 @@ const COLORS = {
         MOVING: '#facc15',
         SILENT: '#94a3b8',
         BOMB: '#ef4444',
-        SWITCH: '#60a5fa',
         DEFAULT: 'var(--slice-shadow-light)'
     }
 };
+
+// Helper to interpolate between two hex colors
+function interpolateHex(hex1: string, hex2: string, ratio: number): string {
+    const r1 = parseInt(hex1.slice(1, 3), 16);
+    const g1 = parseInt(hex1.slice(3, 5), 16);
+    const b1 = parseInt(hex1.slice(5, 7), 16);
+
+    const r2 = parseInt(hex2.slice(1, 3), 16);
+    const g2 = parseInt(hex2.slice(3, 5), 16);
+    const b2 = parseInt(hex2.slice(5, 7), 16);
+
+    const r = Math.round(r1 + (r2 - r1) * ratio);
+    const g = Math.round(g1 + (g2 - g1) * ratio);
+    const b = Math.round(b1 + (b2 - b1) * ratio);
+
+    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
 
 
 // Gamepad button indices (Standard Gamepad mapping)
@@ -574,7 +590,8 @@ export function GameCanvas() {
         const dpr = window.devicePixelRatio || 1;
 
         // Reset & Clear — read background color from CSS variable so dark mode works
-        const bgColor = getComputedStyle(document.documentElement).getPropertyValue('--slice-bg').trim() || '#e0e5ec';
+        const canvasStyle = getComputedStyle(ctx.canvas);
+        const bgColor = canvasStyle.getPropertyValue('--slice-bg').trim() || '#e0e5ec';
         ctx.setTransform(1, 0, 0, 1, 0, 0);
         ctx.globalAlpha = 1;
         ctx.fillStyle = bgColor;
@@ -623,8 +640,8 @@ export function GameCanvas() {
         const currentTime = AudioManager.getInstance().getCurrentTime();
 
         // 1. Draw Tracks (Neumorphic Trough)
-        const shadowDark = getComputedStyle(document.documentElement).getPropertyValue('--slice-shadow-dark').trim() || '#a3b1c6';
-        const shadowLight = getComputedStyle(document.documentElement).getPropertyValue('--slice-shadow-light').trim() || '#ffffff';
+        const shadowDark = canvasStyle.getPropertyValue('--slice-shadow-dark').trim() || '#a3b1c6';
+        const shadowLight = canvasStyle.getPropertyValue('--slice-shadow-light').trim() || '#ffffff';
         LANE_Y.forEach((y, i) => {
             // "Inset" effect: Top shadow dark, Bottom shadow light
             const trackHeight = BAR_H * 1.5;
@@ -768,6 +785,11 @@ export function GameCanvas() {
                 if (slice.type === 'BOMB') color = '#ef4444';
                 // Hold notes and standard notes match their lane color
                 else if (slice.type === 'LONG') color = slice.lane === 0 ? COLORS.lane1 : COLORS.lane2;
+                else if (slice.type === 'SWITCH') {
+                    const startCol = slice.lane === 0 ? COLORS.lane1 : COLORS.lane2;
+                    const endCol = slice.lane === 0 ? COLORS.lane2 : COLORS.lane1;
+                    color = interpolateHex(startCol, endCol, switchProgress);
+                }
                 // @ts-expect-error — COLORS.slice is typed loosely
                 else if (COLORS.slice[slice.type]) color = COLORS.slice[slice.type]; 
                 else if (slice.lane === 0) color = COLORS.lane1;
@@ -975,7 +997,8 @@ export function GameCanvas() {
         }
 
         // 5. Cursors (Receptors)
-        const textColor = getComputedStyle(document.documentElement).getPropertyValue('--slice-text-muted').trim() || '#64748b';
+        const textColor = canvasStyle.getPropertyValue('--slice-text-muted').trim() || '#64748b';
+        const textShadowColor = canvasStyle.getPropertyValue('--slice-text-shadow').trim() || 'rgba(0,0,0,0.3)';
         if (isOneTrack) {
             // One-track mode: draw a single receptor
             const y = LANE_Y[0];
@@ -1001,7 +1024,12 @@ export function GameCanvas() {
             ctx.textAlign = 'center';
             const bind1 = currentKeybinds.lane1.replace('Mouse0','LMB').replace('Mouse1','MMB').replace('Mouse2','RMB').replace('Key','').replace('Arrow','');
             const bind2 = currentKeybinds.lane2.replace('Mouse0','LMB').replace('Mouse1','MMB').replace('Mouse2','RMB').replace('Key','').replace('Arrow','');
+            ctx.shadowColor = textShadowColor;
+            ctx.shadowBlur = 2;
+            ctx.shadowOffsetX = 1;
+            ctx.shadowOffsetY = 1;
             ctx.fillText(`${bind1}/${bind2}`, cx, y + 4);
+            ctx.shadowColor = 'transparent';
         } else {
             LANE_Y.forEach((y, i) => {
                 const color = i === 0 ? COLORS.lane1 : COLORS.lane2;
@@ -1025,7 +1053,12 @@ export function GameCanvas() {
                 ctx.font = 'bold 12px sans-serif';
                 ctx.textAlign = 'center';
                 const bind = i === 0 ? currentKeybinds.lane1 : currentKeybinds.lane2;
+                ctx.shadowColor = textShadowColor;
+                ctx.shadowBlur = 2;
+                ctx.shadowOffsetX = 1;
+                ctx.shadowOffsetY = 1;
                 ctx.fillText(bind.replace('Mouse0','LMB').replace('Mouse1','MMB').replace('Mouse2','RMB').replace('ArrowUp', '↑').replace('ArrowDown', '↓').replace('ArrowLeft', '←').replace('ArrowRight', '→').replace('Key', '') , CURSOR_X, y + 4);
+                ctx.shadowColor = 'transparent';
             });
         }
 

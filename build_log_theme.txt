@@ -1,0 +1,70 @@
+
+> rmhstudios.com@0.1.0 build C:\Users\Amadeus\Documents\Development\rmhstudios.com
+> next build && tsc --project tsconfig.server.json
+
+Γû▓ Next.js 16.1.6 (Turbopack)
+- Environments: .env
+
+  Creating an optimized production build ...
+Γ£ô Compiled successfully in 3.5s
+  Running TypeScript ...
+  Collecting page data using 15 workers ...
+  Generating static pages using 15 workers (0/137) ...
+  Generating static pages using 15 workers (34/137) 
+  Generating static pages using 15 workers (68/137) 
+  Generating static pages using 15 workers (102/137) 
+Γ£ô Generating static pages using 15 workers (137/137) in 1017.9ms
+  Finalizing page optimization ...
+
+Route (app)
+Γöî Γùï /
+Γö£ Γùï /_not-found
+Γö£ ╞Æ /api/auth/[...all]
+Γö£ ╞Æ /api/echoes/leaderboard
+Γö£ ╞Æ /api/echoes/score
+Γö£ ╞Æ /api/laundry-sort/leaderboard
+Γö£ ╞Æ /api/laundry-sort/score
+Γö£ ╞Æ /api/neon-driftway/leaderboard
+Γö£ ╞Æ /api/neon-driftway/score
+Γö£ ╞Æ /api/signal-forge/abandon
+Γö£ ╞Æ /api/signal-forge/leaderboard
+Γö£ ╞Æ /api/signal-forge/load
+Γö£ ╞Æ /api/signal-forge/save
+Γö£ ╞Æ /api/signal-forge/score
+Γö£ ╞Æ /api/slice-it/leaderboard
+Γö£ ╞Æ /api/slice-it/score
+Γö£ ╞Æ /api/slice-it/songs
+Γö£ ╞Æ /api/slice-it/songs/[id]
+Γö£ ╞Æ /api/slice-it/songs/[id]/comments
+Γö£ ╞Æ /api/slice-it/songs/[id]/patch-analysis
+Γö£ ╞Æ /api/slice-it/songs/cover/[filename]
+Γö£ ╞Æ /api/slice-it/songs/stream/[id]
+Γö£ ╞Æ /api/slice-it/songs/upload
+Γö£ ╞Æ /api/temple-of-joy/save
+Γö£ ╞Æ /api/vega/leaderboard
+Γö£ ╞Æ /api/vega/score
+Γö£ Γùï /blog
+Γö£ ΓùÅ /blog/[slug]
+Γöé Γö£ /blog/adding-door-functionality
+Γöé Γö£ /blog/boss-mechanics-101
+Γöé Γö£ /blog/cursed-logic-actions
+Γöé Γöö [+99 more paths]
+Γö£ Γùï /cursed-logic
+Γö£ Γùï /echoes
+Γö£ Γùï /games
+Γö£ Γùï /house-always-wins
+Γö£ Γùï /icon.svg
+Γö£ Γùï /laundry-sort
+Γö£ Γùï /login
+Γö£ Γùï /neon-driftway
+Γö£ Γùï /roadmap
+Γö£ Γùï /signal-forge
+Γö£ Γùï /slice-it
+Γö£ Γùï /temple-of-joy
+Γöö Γùï /vega
+
+
+Γùï  (Static)   prerendered as static content
+ΓùÅ  (SSG)      prerendered as static HTML (uses generateStaticParams)
+╞Æ  (Dynamic)  server-rendered on demand
+
