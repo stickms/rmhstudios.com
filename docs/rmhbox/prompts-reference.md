@@ -119,13 +119,17 @@ Phase 6 (/docs/design-spec/minigames-2.md): Fact or Friction, Undercover Editor,
 Phase 7 (/docs/design-spec/minigames-3.md): Sequence Sam, Human Keyboard, Cursor Curling, Human Tetris
 Phase 8 (/docs/design-spec/minigames-4.md): Identity Crisis, Ranking File, Pixel Pushers, Scroll Soul
 
-Detail the implementation plan for all in /docs/rmhbox/implementation/phase-1.md, ..., /docs/rmhbox/implementation/phase-8.md.
+Note that the implementation plans for Phase 1 through Phase 5 have already been written and are located in /docs/rmhbox/implementation/. Even though these plans are already written, keep their requirements in mind to ensure Phases 6-8 remain consistent with the core logic. Your primary objective is to generate the granular implementation plans for Phases 6, 7, and 8.
+
+Detail the implementation plans for all phases 6-8 in /docs/rmhbox/implementation/phase-6.md, ..., /docs/rmhbox/implementation/phase-8.md.
 
 Do not miss any details mentioned in the design specs (cross-reference as needed), and adhere to the system design and code quality principles as much as possible. Avoid 'Shortcut' implementations; if a game requires physics (like Cursor Curling), the plan must include the setup of the physics engine (e.g., Matter.js) and its integration into the server's update tick.
 
 Code design should be as modular as possible, (reusable UI components, having a minigame class that all minigames inherit from or using functional mixins with a unified lifecycle, for example). Avoid hardcoding and magic formulas as much as possible, in both client/server logic and UI components.
 
 Every phase must be broken down into highly granular tasks and subtasks, each with complete details. A task should never be as broad as just "Implement Lobby Logic"; instead, it must be subdivided into steps like "Create Room Code generator utility," "Implement 'Join Room' socket handler," and "Write 'Player Ready' toggle logic," all with specific implementation details.
+
+When creating files, incrementally build them by first creating the file with the intro information, then add edits section by section. Since the resulting files will be quite large, we want to avoid the output being too large for the model output token limit.
 
 
 
@@ -161,4 +165,4 @@ Implement structured logging for all server-side state transitions to facilitate
 
 Follow the modular principles of the spec strictly; as you build the reusable UI components (Buttons, Modals, Timer Bars), document their API and Props in the /docs/rmhbox/ui-components.md file. This ensures that in later phases, the minigames can reuse UI patterns.
 
-Now follow the implementation plan for the current phase and implement it. Check off tasks and sections as they are completed, but only after tests have passed. Install dependencies as necessary, including for testing, using pnpm.
+Now follow the implementation plan for the current phase and implement it. Check off tasks and sections as they are completed, but only after tests have passed. Install dependencies as necessary, including for testing, using pnpm. All code should pass typescript compilation and eslint checks with no warnings and no errors.
