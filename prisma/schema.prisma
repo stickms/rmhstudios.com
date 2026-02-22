@@ -29,6 +29,7 @@ model User {
   signalForgeProfile SignalForgePlayer?
   templeOfJoyProfile TempleOfJoySave?
   neonDriftwayProfile NeonDriftwayPlayer?
+  synapseStormProfile SynapseStormPlayer?
   
   // Slice-It Library Relations
   uploadedSongs  Song[]        @relation("SongUploader")
@@ -301,5 +302,101 @@ model SongPlay {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([songId, userId])
+}
+
+model SynapseStormPlayer {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  highScore      Int      @default(0)
+  puzzlesSolved  Int      @default(0)
+  maxCombo       Int      @default(0)
+  peakDifficulty Float    @default(1)
+  totalTime      Float    @default(0)
+  updatedAt      DateTime @default(now()) @updatedAt
+
+  @@map("synapse_storm_player")
+  @@index([highScore(sort: Desc)])
+}
+
+// ─── Synapse Storm Multiplayer ───
+
+enum SSLobbyStatus {
+  WAITING
+  IN_MATCH
+  CLOSED
+}
+
+enum SSMatchStatus {
+  RUNNING
+  FINISHED
+}
+
+model SSLobby {
+  id         String        @id @default(cuid())
+  code       String        @unique
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  status     SSLobbyStatus @default(WAITING)
+  hostUserId String
+
+  members SSLobbyMember[]
+  matches SSMatch[]
+
+  @@map("ss_lobby")
+}
+
+model SSLobbyMember {
+  id          String   @id @default(cuid())
+  lobbyId     String
+  userId      String
+  displayName String
+  joinedAt    DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+  isReady     Boolean  @default(false)
+  isHost      Boolean  @default(false)
+
+  lobby SSLobby @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+
+  @@unique([lobbyId, userId])
+  @@index([lobbyId])
+  @@map("ss_lobby_member")
+}
+
+model SSMatch {
+  id        String        @id @default(cuid())
+  lobbyId   String
+  seed      Int
+  startAt   DateTime
+  endAt     DateTime?
+  status    SSMatchStatus @default(RUNNING)
+  createdAt DateTime      @default(now())
+
+  lobby   SSLobby         @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+  players SSPlayerMatch[]
+
+  @@index([lobbyId])
+  @@map("ss_match")
+}
+
+model SSPlayerMatch {
+  id            String    @id @default(cuid())
+  matchId       String
+  lobbyId       String
+  userId        String
+  displayName   String
+  score         Int       @default(0)
+  maxCombo      Int       @default(0)
+  puzzlesSolved Int       @default(0)
+  puzzlesMissed Int       @default(0)
+  finishedAt    DateTime?
+  lastUpdateAt  DateTime  @default(now())
+
+  match SSMatch @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@unique([matchId, userId])
+  @@index([matchId])
+  @@index([lobbyId])
+  @@map("ss_player_match")
 }
 

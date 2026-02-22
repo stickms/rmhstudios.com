@@ -7,7 +7,7 @@ REPO_DIR="/home/rmhstudios/rmhstudios.com"
 APP_WEB="rmhstudios-web"
 APP_SOCKET="rmhstudios-socket"
 
-PORT_WEB=7000
+PORT_WEB=7005
 PORT_SOCKET=7001
 
 LOCKFILE="/tmp/autodeploy.lock"

@@ -1,10 +1,8 @@
 import 'dotenv/config';
 import { Server, Socket } from "socket.io";
-// No http server needed if standalone, but usually we wrap http.
-// But standalone socket.io can listen on a port directly.
-// We'll use http + socket.io for better control.
-
 import { createServer } from "http";
+import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 
 const httpServer = createServer();
 const io = new Server(httpServer, {
@@ -79,6 +77,131 @@ interface NDWLobby {
 const ndwLobbies = new Map<string, NDWLobby>();
 const ABILITY_COOLDOWN_MS = 5000;
 const MAX_NDW_PLAYERS = 6;
+
+// ═══════════════════════════════════════════════════════
+// ── Synapse Storm Multiplayer (ss: events) ──
+// ═══════════════════════════════════════════════════════
+
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
+const prisma = new PrismaClient({ adapter });
+
+interface SSPlayer {
+    socketId: string;
+    userId: string;
+    displayName: string;
+    isReady: boolean;
+    isHost: boolean;
+}
+
+interface SSMatchPlayer {
+    userId: string;
+    displayName: string;
+    score: number;
+    maxCombo: number;
+    puzzlesSolved: number;
+    puzzlesMissed: number;
+    finished: boolean;
+    lastUpdateAt: number;
+    lastScore: number;
+}
+
+interface SSLobbyInMemory {
+    id: string;
+    code: string;
+    hostUserId: string;
+    status: 'WAITING' | 'IN_MATCH' | 'CLOSED';
+    players: Map<string, SSPlayer>; // keyed by userId
+    currentMatchId: string | null;
+    currentMatchSeed: number | null;
+    currentMatchStartAt: number | null;
+    matchPlayers: Map<string, SSMatchPlayer>; // keyed by userId
+}
+
+const ssLobbies = new Map<string, SSLobbyInMemory>(); // keyed by code
+const ssUserSocketMap = new Map<string, string>(); // userId -> socketId
+const ssSocketUserMap = new Map<string, string>(); // socketId -> userId
+const ssSocketLobbyMap = new Map<string, string>(); // socketId -> lobbyCode
+
+const MAX_SS_PLAYERS = 8;
+const SCORE_RATE_LIMIT = 5000; // max score increase per 5 seconds
+const SCORE_UPDATE_INTERVAL = 5000; // ms between server-side rate checks
+
+function generateLobbyCode(): string {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = '';
+    for (let i = 0; i < 5; i++) code += chars[Math.floor(Math.random() * chars.length)];
+    return code;
+}
+
+function ssGetLobbyByCode(code: string): SSLobbyInMemory | undefined {
+    return ssLobbies.get(code.toUpperCase());
+}
+
+function ssBroadcastLobby(lobby: SSLobbyInMemory): void {
+    const players = Array.from(lobby.players.values()).map(p => ({
+        id: p.socketId,
+        userId: p.userId,
+        displayName: p.displayName,
+        isReady: p.isReady,
+        isHost: p.isHost,
+    }));
+    io.to(`ss:${lobby.code}`).emit('ss:lobbyUpdate', {
+        lobbyId: lobby.id,
+        code: lobby.code,
+        status: lobby.status,
+        players,
+        hostUserId: lobby.hostUserId,
+    });
+}
+
+function ssBroadcastLeaderboard(lobby: SSLobbyInMemory): void {
+    const leaderboard = Array.from(lobby.matchPlayers.values())
+        .sort((a, b) => b.score - a.score)
+        .map(p => ({
+            userId: p.userId,
+            displayName: p.displayName,
+            score: p.score,
+            maxCombo: p.maxCombo,
+            puzzlesSolved: p.puzzlesSolved,
+            puzzlesMissed: p.puzzlesMissed,
+            finished: p.finished,
+        }));
+    io.to(`ss:${lobby.code}`).emit('ss:leaderboardUpdate', { leaderboard });
+}
+
+function ssRemovePlayer(socketId: string): void {
+    const userId = ssSocketUserMap.get(socketId);
+    const lobbyCode = ssSocketLobbyMap.get(socketId);
+    if (!userId || !lobbyCode) return;
+
+    const lobby = ssLobbies.get(lobbyCode);
+    if (!lobby) return;
+
+    lobby.players.delete(userId);
+    ssUserSocketMap.delete(userId);
+    ssSocketUserMap.delete(socketId);
+    ssSocketLobbyMap.delete(socketId);
+
+    if (lobby.players.size === 0) {
+        ssLobbies.delete(lobbyCode);
+        return;
+    }
+
+    // Host migration
+    if (lobby.hostUserId === userId) {
+        const newHost = lobby.players.values().next().value;
+        if (newHost) {
+            lobby.hostUserId = newHost.userId;
+            newHost.isHost = true;
+        }
+    }
+
+    ssBroadcastLobby(lobby);
+
+    if (lobby.status === 'IN_MATCH') {
+        ssBroadcastLeaderboard(lobby);
+    }
+}
 
 function ndwBroadcastLobby(lobbyId: string): void {
     const lobby = ndwLobbies.get(lobbyId);
@@ -585,9 +708,420 @@ io.on("connection", (socket: Socket) => {
         }
     });
 
+    // ═══════════════════════════════════════════════════════
+    // ── Synapse Storm Events ──
+    // ═══════════════════════════════════════════════════════
+
+    socket.on('ss:timeSync', (payload: { clientTime?: number }) => {
+        const clientTime = typeof payload?.clientTime === 'number' ? payload.clientTime : Date.now();
+        socket.emit('ss:timeSync', { serverTime: Date.now(), clientTime });
+    });
+
+    socket.on('ss:createLobby', async (payload: { userId?: string; displayName?: string }) => {
+        const userId = typeof payload?.userId === 'string' ? payload.userId : '';
+        const displayName = sanitizeUserName(payload?.displayName);
+        if (!userId) { socket.emit('ss:error', { message: 'Missing userId' }); return; }
+
+        // Leave existing lobby if any
+        ssRemovePlayer(socket.id);
+
+        let code = generateLobbyCode();
+        let attempts = 0;
+        while (ssLobbies.has(code) && attempts < 20) { code = generateLobbyCode(); attempts++; }
+
+        let dbLobby;
+        try {
+            dbLobby = await prisma.sSLobby.create({
+                data: { code, hostUserId: userId, status: 'WAITING' },
+            });
+        } catch (err) {
+            console.error('[SS] Failed to create lobby in DB:', err);
+            socket.emit('ss:error', { message: 'Failed to create lobby' });
+            return;
+        }
+
+        const lobby: SSLobbyInMemory = {
+            id: dbLobby.id,
+            code,
+            hostUserId: userId,
+            status: 'WAITING',
+            players: new Map(),
+            currentMatchId: null,
+            currentMatchSeed: null,
+            currentMatchStartAt: null,
+            matchPlayers: new Map(),
+        };
+
+        const player: SSPlayer = { socketId: socket.id, userId, displayName, isReady: false, isHost: true };
+        lobby.players.set(userId, player);
+        ssLobbies.set(code, lobby);
+        ssUserSocketMap.set(userId, socket.id);
+        ssSocketUserMap.set(socket.id, userId);
+        ssSocketLobbyMap.set(socket.id, code);
+
+        socket.join(`ss:${code}`);
+
+        try {
+            await prisma.sSLobbyMember.upsert({
+                where: { lobbyId_userId: { lobbyId: dbLobby.id, userId } },
+                update: { displayName, isHost: true, lastSeenAt: new Date() },
+                create: { lobbyId: dbLobby.id, userId, displayName, isHost: true },
+            });
+        } catch (err) {
+            console.error('[SS] Failed to upsert lobby member:', err);
+        }
+
+        ssBroadcastLobby(lobby);
+        console.log(`[SS] ${displayName} created lobby ${code}`);
+    });
+
+    socket.on('ss:joinLobby', async (payload: { code?: string; userId?: string; displayName?: string }) => {
+        const code = (typeof payload?.code === 'string' ? payload.code : '').toUpperCase().trim();
+        const userId = typeof payload?.userId === 'string' ? payload.userId : '';
+        const displayName = sanitizeUserName(payload?.displayName);
+        if (!code || !userId) { socket.emit('ss:error', { message: 'Missing code or userId' }); return; }
+
+        const lobby = ssGetLobbyByCode(code);
+        if (!lobby) { socket.emit('ss:error', { message: 'Lobby not found' }); return; }
+        if (lobby.status === 'CLOSED') { socket.emit('ss:error', { message: 'Lobby is closed' }); return; }
+        if (lobby.players.size >= MAX_SS_PLAYERS && !lobby.players.has(userId)) {
+            socket.emit('ss:error', { message: 'Lobby is full' }); return;
+        }
+
+        // If this user already in a different lobby, remove them
+        const existingCode = ssSocketLobbyMap.get(socket.id);
+        if (existingCode && existingCode !== code) ssRemovePlayer(socket.id);
+
+        // Clean up old socket mapping for this userId (reconnect case)
+        const oldSocketId = ssUserSocketMap.get(userId);
+        if (oldSocketId && oldSocketId !== socket.id) {
+            ssSocketUserMap.delete(oldSocketId);
+            ssSocketLobbyMap.delete(oldSocketId);
+        }
+
+        const isHost = lobby.players.size === 0 || lobby.hostUserId === userId;
+        const player: SSPlayer = {
+            socketId: socket.id, userId, displayName,
+            isReady: lobby.players.get(userId)?.isReady ?? false,
+            isHost,
+        };
+        lobby.players.set(userId, player);
+        ssUserSocketMap.set(userId, socket.id);
+        ssSocketUserMap.set(socket.id, userId);
+        ssSocketLobbyMap.set(socket.id, code);
+
+        socket.join(`ss:${code}`);
+
+        try {
+            await prisma.sSLobbyMember.upsert({
+                where: { lobbyId_userId: { lobbyId: lobby.id, userId } },
+                update: { displayName, lastSeenAt: new Date(), isHost },
+                create: { lobbyId: lobby.id, userId, displayName, isHost },
+            });
+        } catch (err) {
+            console.error('[SS] Failed to upsert lobby member:', err);
+        }
+
+        ssBroadcastLobby(lobby);
+
+        // If match is in progress, send match state for reconnection
+        if (lobby.status === 'IN_MATCH' && lobby.currentMatchId && lobby.currentMatchSeed !== null && lobby.currentMatchStartAt !== null) {
+            const leaderboard = Array.from(lobby.matchPlayers.values())
+                .sort((a, b) => b.score - a.score)
+                .map(p => ({
+                    userId: p.userId, displayName: p.displayName,
+                    score: p.score, maxCombo: p.maxCombo,
+                    puzzlesSolved: p.puzzlesSolved, puzzlesMissed: p.puzzlesMissed,
+                    finished: p.finished,
+                }));
+            socket.emit('ss:matchStart', {
+                matchId: lobby.currentMatchId,
+                seed: lobby.currentMatchSeed,
+                startAt: lobby.currentMatchStartAt,
+                status: 'RUNNING',
+                leaderboard,
+            });
+        }
+
+        console.log(`[SS] ${displayName} joined lobby ${code}`);
+    });
+
+    socket.on('ss:leaveLobby', (payload: { code?: string; userId?: string }) => {
+        ssRemovePlayer(socket.id);
+        const code = typeof payload?.code === 'string' ? payload.code.toUpperCase() : '';
+        if (code) socket.leave(`ss:${code}`);
+    });
+
+    socket.on('ss:toggleReady', (payload: { code?: string; userId?: string }) => {
+        const code = (typeof payload?.code === 'string' ? payload.code : '').toUpperCase();
+        const userId = typeof payload?.userId === 'string' ? payload.userId : '';
+        const lobby = ssGetLobbyByCode(code);
+        if (!lobby) return;
+        const player = lobby.players.get(userId);
+        if (!player) return;
+        player.isReady = !player.isReady;
+        ssBroadcastLobby(lobby);
+    });
+
+    socket.on('ss:startMatch', async (payload: { code?: string; userId?: string }) => {
+        const code = (typeof payload?.code === 'string' ? payload.code : '').toUpperCase();
+        const userId = typeof payload?.userId === 'string' ? payload.userId : '';
+        const lobby = ssGetLobbyByCode(code);
+        if (!lobby) { socket.emit('ss:error', { message: 'Lobby not found' }); return; }
+        if (lobby.hostUserId !== userId) { socket.emit('ss:error', { message: 'Only host can start' }); return; }
+        if (lobby.status !== 'WAITING') { socket.emit('ss:error', { message: 'Lobby not in waiting state' }); return; }
+        if (lobby.players.size < 1) { socket.emit('ss:error', { message: 'Need at least 1 player' }); return; }
+
+        const seed = Math.floor(Math.random() * 2147483647);
+        const countdownMs = 3000;
+        const startAt = Date.now() + countdownMs;
+
+        let dbMatch;
+        try {
+            dbMatch = await prisma.sSMatch.create({
+                data: {
+                    lobbyId: lobby.id,
+                    seed,
+                    startAt: new Date(startAt),
+                    status: 'RUNNING',
+                },
+            });
+        } catch (err) {
+            console.error('[SS] Failed to create match in DB:', err);
+            socket.emit('ss:error', { message: 'Failed to start match' });
+            return;
+        }
+
+        lobby.status = 'IN_MATCH';
+        lobby.currentMatchId = dbMatch.id;
+        lobby.currentMatchSeed = seed;
+        lobby.currentMatchStartAt = startAt;
+        lobby.matchPlayers.clear();
+
+        const playerMatchCreates: Promise<unknown>[] = [];
+        for (const [uid, p] of lobby.players) {
+            lobby.matchPlayers.set(uid, {
+                userId: uid,
+                displayName: p.displayName,
+                score: 0, maxCombo: 0, puzzlesSolved: 0, puzzlesMissed: 0,
+                finished: false, lastUpdateAt: Date.now(), lastScore: 0,
+            });
+            playerMatchCreates.push(
+                prisma.sSPlayerMatch.create({
+                    data: {
+                        matchId: dbMatch.id,
+                        lobbyId: lobby.id,
+                        userId: uid,
+                        displayName: p.displayName,
+                    },
+                }).catch(err => console.error('[SS] Failed to create player match:', err))
+            );
+        }
+        await Promise.all(playerMatchCreates);
+
+        try {
+            await prisma.sSLobby.update({ where: { id: lobby.id }, data: { status: 'IN_MATCH' } });
+        } catch (err) {
+            console.error('[SS] Failed to update lobby status:', err);
+        }
+
+        // Send countdown
+        io.to(`ss:${code}`).emit('ss:countdown', { countdownEndsAt: startAt });
+
+        ssBroadcastLobby(lobby);
+
+        // After countdown, send match start
+        setTimeout(() => {
+            const leaderboard = Array.from(lobby.matchPlayers.values())
+                .sort((a, b) => b.score - a.score)
+                .map(p => ({
+                    userId: p.userId, displayName: p.displayName,
+                    score: p.score, maxCombo: p.maxCombo,
+                    puzzlesSolved: p.puzzlesSolved, puzzlesMissed: p.puzzlesMissed,
+                    finished: p.finished,
+                }));
+            io.to(`ss:${code}`).emit('ss:matchStart', {
+                matchId: dbMatch.id,
+                seed,
+                startAt,
+                status: 'RUNNING',
+                leaderboard,
+            });
+        }, countdownMs);
+
+        console.log(`[SS] Match started in lobby ${code}, seed=${seed}`);
+    });
+
+    socket.on('ss:scoreUpdate', (payload: {
+        matchId?: string; userId?: string; displayName?: string;
+        score?: number; maxCombo?: number; puzzlesSolved?: number; puzzlesMissed?: number;
+    }) => {
+        const userId = typeof payload?.userId === 'string' ? payload.userId : '';
+        const lobbyCode = ssSocketLobbyMap.get(socket.id);
+        if (!lobbyCode) return;
+        const lobby = ssGetLobbyByCode(lobbyCode);
+        if (!lobby || lobby.status !== 'IN_MATCH') return;
+
+        const mp = lobby.matchPlayers.get(userId);
+        if (!mp || mp.finished) return;
+
+        const newScore = typeof payload?.score === 'number' ? payload.score : mp.score;
+
+        // Anti-cheat: score cannot decrease
+        if (newScore < mp.score) return;
+
+        // Anti-cheat: rate limit score growth
+        const now = Date.now();
+        const elapsed = Math.max(1, now - mp.lastUpdateAt);
+        const scoreDelta = newScore - mp.lastScore;
+        if (elapsed < SCORE_UPDATE_INTERVAL && scoreDelta > SCORE_RATE_LIMIT) {
+            console.warn(`[SS] Score rate limit exceeded for ${userId}: delta=${scoreDelta} in ${elapsed}ms`);
+            return;
+        }
+
+        const newSolved = typeof payload?.puzzlesSolved === 'number' ? payload.puzzlesSolved : mp.puzzlesSolved;
+        const solvedDelta = newSolved - mp.puzzlesSolved;
+        if (solvedDelta > 10) {
+            console.warn(`[SS] Puzzle solved jump too high for ${userId}: delta=${solvedDelta}`);
+            return;
+        }
+
+        mp.score = newScore;
+        mp.maxCombo = Math.max(mp.maxCombo, typeof payload?.maxCombo === 'number' ? payload.maxCombo : 0);
+        mp.puzzlesSolved = newSolved;
+        mp.puzzlesMissed = typeof payload?.puzzlesMissed === 'number' ? payload.puzzlesMissed : mp.puzzlesMissed;
+        mp.lastUpdateAt = now;
+        mp.lastScore = newScore;
+
+        ssBroadcastLeaderboard(lobby);
+
+        // Persist score (throttled at server level, only write on significant changes)
+        if (scoreDelta >= 500 || solvedDelta >= 5) {
+            prisma.sSPlayerMatch.updateMany({
+                where: { matchId: lobby.currentMatchId!, userId },
+                data: {
+                    score: mp.score,
+                    maxCombo: mp.maxCombo,
+                    puzzlesSolved: mp.puzzlesSolved,
+                    puzzlesMissed: mp.puzzlesMissed,
+                    lastUpdateAt: new Date(),
+                },
+            }).catch(err => console.error('[SS] Failed to update player match score:', err));
+        }
+    });
+
+    socket.on('ss:finishMatch', async (payload: {
+        matchId?: string; userId?: string;
+        score?: number; maxCombo?: number; puzzlesSolved?: number; puzzlesMissed?: number;
+    }) => {
+        const userId = typeof payload?.userId === 'string' ? payload.userId : '';
+        const lobbyCode = ssSocketLobbyMap.get(socket.id);
+        if (!lobbyCode) return;
+        const lobby = ssGetLobbyByCode(lobbyCode);
+        if (!lobby || lobby.status !== 'IN_MATCH') return;
+
+        const mp = lobby.matchPlayers.get(userId);
+        if (!mp) return;
+
+        mp.finished = true;
+        mp.score = typeof payload?.score === 'number' ? Math.max(mp.score, payload.score) : mp.score;
+        mp.maxCombo = Math.max(mp.maxCombo, typeof payload?.maxCombo === 'number' ? payload.maxCombo : 0);
+        mp.puzzlesSolved = typeof payload?.puzzlesSolved === 'number' ? payload.puzzlesSolved : mp.puzzlesSolved;
+        mp.puzzlesMissed = typeof payload?.puzzlesMissed === 'number' ? payload.puzzlesMissed : mp.puzzlesMissed;
+
+        try {
+            await prisma.sSPlayerMatch.updateMany({
+                where: { matchId: lobby.currentMatchId!, userId },
+                data: {
+                    score: mp.score, maxCombo: mp.maxCombo,
+                    puzzlesSolved: mp.puzzlesSolved, puzzlesMissed: mp.puzzlesMissed,
+                    finishedAt: new Date(), lastUpdateAt: new Date(),
+                },
+            });
+        } catch (err) {
+            console.error('[SS] Failed to update finished player:', err);
+        }
+
+        ssBroadcastLeaderboard(lobby);
+
+        // Check if all players finished
+        const allFinished = Array.from(lobby.matchPlayers.values()).every(p => p.finished);
+        if (allFinished) {
+            lobby.status = 'WAITING';
+            try {
+                await prisma.sSMatch.update({
+                    where: { id: lobby.currentMatchId! },
+                    data: { status: 'FINISHED', endAt: new Date() },
+                });
+                await prisma.sSLobby.update({
+                    where: { id: lobby.id },
+                    data: { status: 'WAITING' },
+                });
+            } catch (err) {
+                console.error('[SS] Failed to finish match in DB:', err);
+            }
+
+            const finalLeaderboard = Array.from(lobby.matchPlayers.values())
+                .sort((a, b) => b.score - a.score)
+                .map(p => ({
+                    userId: p.userId, displayName: p.displayName,
+                    score: p.score, maxCombo: p.maxCombo,
+                    puzzlesSolved: p.puzzlesSolved, puzzlesMissed: p.puzzlesMissed,
+                    finished: p.finished,
+                }));
+            io.to(`ss:${lobby.code}`).emit('ss:matchFinished', { leaderboard: finalLeaderboard });
+
+            // Reset ready state
+            for (const p of lobby.players.values()) p.isReady = false;
+            ssBroadcastLobby(lobby);
+            console.log(`[SS] Match finished in lobby ${lobby.code}`);
+        }
+    });
+
+    socket.on('ss:returnToLobby', async (payload: { code?: string; userId?: string }) => {
+        const code = (typeof payload?.code === 'string' ? payload.code : '').toUpperCase();
+        const userId = typeof payload?.userId === 'string' ? payload.userId : '';
+        const lobby = ssGetLobbyByCode(code);
+        if (!lobby) return;
+        if (lobby.hostUserId !== userId) return;
+
+        lobby.status = 'WAITING';
+        lobby.matchPlayers.clear();
+        lobby.currentMatchId = null;
+        lobby.currentMatchSeed = null;
+        lobby.currentMatchStartAt = null;
+
+        for (const p of lobby.players.values()) p.isReady = false;
+
+        try {
+            await prisma.sSLobby.update({ where: { id: lobby.id }, data: { status: 'WAITING' } });
+        } catch (err) {
+            console.error('[SS] Failed to update lobby to WAITING:', err);
+        }
+
+        io.to(`ss:${code}`).emit('ss:returnToLobby');
+        ssBroadcastLobby(lobby);
+    });
+
     // DISCONNECT
     socket.on("disconnect", () => {
         console.log(`Player disconnected: ${socket.id}`);
+
+        // Synapse Storm cleanup (soft - keep player in match for reconnect)
+        const ssUserId = ssSocketUserMap.get(socket.id);
+        if (ssUserId) {
+            const ssLobbyCode = ssSocketLobbyMap.get(socket.id);
+            if (ssLobbyCode) {
+                const ssLobby = ssLobbies.get(ssLobbyCode);
+                if (ssLobby && ssLobby.status !== 'IN_MATCH') {
+                    ssRemovePlayer(socket.id);
+                } else {
+                    // During match, just clear socket mappings but keep player data
+                    ssSocketUserMap.delete(socket.id);
+                    ssSocketLobbyMap.delete(socket.id);
+                }
+            }
+        }
 
         // Slice It lobby cleanup
         for (const [lobbyId, lobby] of lobbies.entries()) {
