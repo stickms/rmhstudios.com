@@ -143,7 +143,7 @@ export class LeaderboardService {
 
         if (existingProfile) {
           // Read-modify-write for minigameStats JSON field
-          const currentStats = (existingProfile.minigameStats as Record<string, MinigameStatEntry>) ?? {};
+          const currentStats = (existingProfile.minigameStats as unknown as Record<string, MinigameStatEntry>) ?? {};
           const gameStat: MinigameStatEntry = currentStats[minigameId] ?? {
             gamesPlayed: 0,
             wins: 0,

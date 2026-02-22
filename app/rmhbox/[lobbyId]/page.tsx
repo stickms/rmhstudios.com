@@ -16,17 +16,17 @@
 
 import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
-import { connectToRMHbox, emit, getSocket } from '@/lib/rmhbox/socket';
+import { connectToRMHbox, emit } from '@/lib/rmhbox/socket';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { C2S, S2C } from '@/lib/rmhbox/events';
-import { LobbyView } from '@/components/rmhbox/LobbyView';
-import { GameVoting } from '@/components/rmhbox/GameVoting';
-import { InstructionsScreen } from '@/components/rmhbox/InstructionsScreen';
-import { PreloadScreen } from '@/components/rmhbox/PreloadScreen';
-import { ResultsScreen } from '@/components/rmhbox/ResultsScreen';
-import { SpectatorBanner } from '@/components/rmhbox/SpectatorBanner';
-import { MinigameRenderer } from '@/components/rmhbox/minigames/MinigameRenderer';
-import { GameShell } from '@/components/rmhbox/GameShell';
+import LobbyView from '@/components/rmhbox/LobbyView';
+import GameVoting from '@/components/rmhbox/GameVoting';
+import InstructionsScreen from '@/components/rmhbox/InstructionsScreen';
+import PreloadScreen from '@/components/rmhbox/PreloadScreen';
+import ResultsScreen from '@/components/rmhbox/ResultsScreen';
+import SpectatorBanner from '@/components/rmhbox/SpectatorBanner';
+import MinigameRenderer from '@/components/rmhbox/minigames/MinigameRenderer';
+import GameShell from '@/components/rmhbox/GameShell';
 import type { VoteCandidate } from '@/lib/rmhbox/types';
 
 export default function LobbyPage({ params }: { params: Promise<{ lobbyId: string }> }) {
@@ -188,7 +188,7 @@ export default function LobbyPage({ params }: { params: Promise<{ lobbyId: strin
           candidates={voteCandidates}
           durationSeconds={voteDuration}
           endsAt={voteEndsAt}
-          onVote={(minigameId) => emit(C2S.GAME_CAST_VOTE, { lobbyId, minigameId })}
+          onVote={(minigameId: string) => emit(C2S.GAME_CAST_VOTE, { lobbyId, minigameId })}
         />
       )}
 

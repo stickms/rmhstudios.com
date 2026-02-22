@@ -18,7 +18,7 @@ import { useRouter } from 'next/navigation';
 import { connectToRMHbox, getSocket, disconnectFromRMHbox, emit } from '@/lib/rmhbox/socket';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { S2C, C2S } from '@/lib/rmhbox/events';
-import { LeaderboardPanel } from '@/components/rmhbox/LeaderboardPanel';
+import LeaderboardPanel from '@/components/rmhbox/LeaderboardPanel';
 import type { PublicLobbyInfo } from '@/lib/rmhbox/types';
 
 export default function RMHboxLanding() {
