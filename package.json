@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"next dev -p 7000\" \"pnpm run socket-server\"",
+    "dev": "concurrently \"next dev -p 7005\" \"pnpm run socket-server\"",
     "build": "next build && tsc --project tsconfig.server.json",
-    "start": "concurrently \"next start -p 7000\" \"node dist-server/server/socket-server.js\"",
+    "start": "concurrently \"next start -p 7005\" \"node dist-server/server/socket-server.js\"",
     "socket-server": "npx tsx server/socket-server.ts",
     "lint": "eslint",
     "postinstall": "prisma generate",
@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@fontsource/noto-color-emoji": "^5.2.11",
+    "@monaco-editor/react": "^4.7.0",
     "@prisma/adapter-pg": "^7.4.1",
     "@prisma/client": "^7.4.1",
     "@radix-ui/react-dialog": "^1.1.15",

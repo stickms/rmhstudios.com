@@ -27,6 +27,22 @@ export interface GameInfo {
  */
 export const games: GameInfo[] = [
     {
+        id: 'rmh-code',
+        title: 'RMH Code',
+        description: 'A browser-based code editor. Write and save code right in your browser.',
+        longDescription:
+            'RMH Code brings the VS Code experience to your browser. Create projects, manage files in a tree, and write code with full syntax highlighting and IntelliSense — all saved to your account.',
+        href: '/rmh-code',
+        status: 'Beta',
+        cta: 'Open Editor',
+        isSteam: false,
+        gradient: 'from-blue-600 via-indigo-500 to-violet-600',
+        iconName: 'Code2',
+        color: 'from-blue-500/20 to-violet-600/20 hover:border-blue-500/50',
+        tags: ['Code Editor', 'Developer Tool', 'Beta'],
+        imagePath: '/images/games/rmhcode.png',
+    },
+    {
         id: 'signal-forge',
         title: 'Signal Forge',
         description: 'A rhythmic roguelike deckbuilder where you manipulate waveforms to stabilize the signal.',
