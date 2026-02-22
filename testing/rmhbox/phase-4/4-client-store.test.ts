@@ -28,6 +28,7 @@ describe('Client-Side Store (§4)', () => {
         musicVolume: 0.5,
         showChat: true,
         chatPosition: 'right',
+        theme: 'dark',
       },
     });
   });

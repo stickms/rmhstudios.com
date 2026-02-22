@@ -24,6 +24,7 @@ describe('Security: State-Masking Verification (Phase 4)', () => {
         musicVolume: 0.5,
         showChat: true,
         chatPosition: 'right',
+        theme: 'dark',
       },
     });
   });

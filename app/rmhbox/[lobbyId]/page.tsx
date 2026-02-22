@@ -19,6 +19,7 @@ import { useRouter } from 'next/navigation';
 import { connectToRMHbox, emit } from '@/lib/rmhbox/socket';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { C2S, S2C } from '@/lib/rmhbox/events';
+import { toast } from '@/lib/rmhbox/toast-store';
 import LobbyView from '@/components/rmhbox/LobbyView';
 import GameVoting from '@/components/rmhbox/GameVoting';
 import InstructionsScreen from '@/components/rmhbox/InstructionsScreen';
@@ -34,7 +35,6 @@ export default function LobbyPage({ params }: { params: Promise<{ lobbyId: strin
   const router = useRouter();
   const lobby = useRMHboxStore((s) => s.lobby);
   const connectionStatus = useRMHboxStore((s) => s.connectionStatus);
-  const [error, setError] = useState<string | null>(null);
 
   // Voting state (received via separate events)
   const [voteCandidates, setVoteCandidates] = useState<VoteCandidate[]>([]);
@@ -126,20 +126,26 @@ export default function LobbyPage({ params }: { params: Promise<{ lobbyId: strin
 
         // Listen for kick
         socket.on(S2C.LOBBY_KICKED, () => {
-          if (mounted) router.push('/rmhbox');
+          if (mounted) {
+            useRMHboxStore.getState().leaveLobby();
+            router.push('/rmhbox');
+          }
         });
 
         // Listen for disband
         socket.on(S2C.LOBBY_DISBANDED, () => {
-          if (mounted) router.push('/rmhbox');
+          if (mounted) {
+            useRMHboxStore.getState().leaveLobby();
+            router.push('/rmhbox');
+          }
         });
 
         // Listen for errors
         socket.on(S2C.ERROR, (data: { message: string }) => {
-          if (mounted) setError(data.message);
+          if (mounted) toast.error(data.message);
         });
       } catch (err) {
-        if (mounted) setError(err instanceof Error ? err.message : 'Failed to connect');
+        if (mounted) toast.error(err instanceof Error ? err.message : 'Failed to connect');
       }
     }
 
@@ -150,27 +156,26 @@ export default function LobbyPage({ params }: { params: Promise<{ lobbyId: strin
   // Loading state
   if (connectionStatus === 'connecting' || connectionStatus === 'disconnected') {
     return (
-      <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: 'var(--rmhbox-bg, #0f0f1a)', color: 'var(--rmhbox-text, #e0e0f0)' }}>
+      <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="text-2xl mb-4">Connecting...</div>
-          <div className="animate-spin w-8 h-8 border-2 border-t-transparent rounded-full mx-auto" style={{ borderColor: 'var(--rmhbox-accent, #7c5cfc)', borderTopColor: 'transparent' }} />
+          <div className="text-2xl mb-4 text-[var(--rmhbox-text)]">Connecting...</div>
+          <div className="animate-spin w-8 h-8 border-2 border-t-transparent rounded-full mx-auto border-[var(--rmhbox-accent)]" style={{ borderTopColor: 'transparent' }} />
         </div>
       </div>
     );
   }
 
-  // Error state
-  if (error || connectionStatus === 'error') {
+  // Error state — no longer blocks the screen; errors go to toast
+  if (connectionStatus === 'error') {
     return (
-      <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: 'var(--rmhbox-bg, #0f0f1a)', color: 'var(--rmhbox-text, #e0e0f0)' }}>
+      <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="text-2xl mb-4" style={{ color: 'var(--rmhbox-danger, #f87171)' }}>
-            {error ?? 'Connection error'}
+          <div className="text-2xl mb-4 text-[var(--rmhbox-danger)]">
+            Connection error
           </div>
           <button
             onClick={() => router.push('/rmhbox')}
-            className="px-6 py-2 rounded-lg"
-            style={{ backgroundColor: 'var(--rmhbox-accent, #7c5cfc)', color: '#fff' }}
+            className="px-6 py-2 rounded-lg bg-[var(--rmhbox-accent)] text-white font-semibold hover:bg-[var(--rmhbox-accent-hover)] transition-colors"
           >
             Back to Lobby
           </button>
@@ -182,10 +187,10 @@ export default function LobbyPage({ params }: { params: Promise<{ lobbyId: strin
   // No lobby state yet
   if (!lobby) {
     return (
-      <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: 'var(--rmhbox-bg, #0f0f1a)', color: 'var(--rmhbox-text, #e0e0f0)' }}>
+      <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="text-2xl mb-4">Joining lobby {lobbyId}...</div>
-          <div className="animate-spin w-8 h-8 border-2 border-t-transparent rounded-full mx-auto" style={{ borderColor: 'var(--rmhbox-accent, #7c5cfc)', borderTopColor: 'transparent' }} />
+          <div className="text-2xl mb-4 text-[var(--rmhbox-text)]">Joining lobby {lobbyId}...</div>
+          <div className="animate-spin w-8 h-8 border-2 border-t-transparent rounded-full mx-auto border-[var(--rmhbox-accent)]" style={{ borderTopColor: 'transparent' }} />
         </div>
       </div>
     );
@@ -195,7 +200,7 @@ export default function LobbyPage({ params }: { params: Promise<{ lobbyId: strin
   const isHost = lobby.hostUserId === lobby.myUserId;
 
   return (
-    <div className="min-h-screen relative" style={{ backgroundColor: 'var(--rmhbox-bg, #0f0f1a)', color: 'var(--rmhbox-text, #e0e0f0)' }}>
+    <div className="min-h-screen relative">
       {/* Spectator Banner */}
       {isSpectator && (
         <SpectatorBanner
@@ -234,22 +239,32 @@ export default function LobbyPage({ params }: { params: Promise<{ lobbyId: strin
 
       {lobby.state === 'COUNTDOWN' && (
         <div className="flex items-center justify-center min-h-screen">
-          <div className="text-9xl font-bold animate-pulse" style={{ color: 'var(--rmhbox-accent, #7c5cfc)', fontFamily: 'var(--rmhbox-font-display, Nunito, sans-serif)' }}>
+          <div className="text-9xl font-bold animate-pulse text-[var(--rmhbox-accent)]" style={{ fontFamily: 'var(--rmhbox-font-display)' }}>
             {countdownValue}
           </div>
         </div>
       )}
 
-      {lobby.state === 'PLAYING' && lobby.currentGame && (
-        <GameShell
-          gameName={lobby.currentGame.displayName}
-          timeRemaining={lobby.currentGame.timeRemaining}
-          roundNumber={lobby.roundNumber}
-          score={lobby.players.find((p) => p.userId === lobby.myUserId)?.score ?? 0}
-          playerCount={lobby.players.length}
-        >
-          <MinigameRenderer minigameId={lobby.currentGame.minigameId} />
-        </GameShell>
+      {lobby.state === 'PLAYING' && (
+        lobby.currentGame ? (
+          <GameShell
+            gameName={lobby.currentGame.displayName}
+            timeRemaining={lobby.currentGame.timeRemaining}
+            roundNumber={lobby.roundNumber}
+            score={lobby.players.find((p) => p.userId === lobby.myUserId)?.score ?? 0}
+            playerCount={lobby.players.length}
+          >
+            <MinigameRenderer minigameId={lobby.currentGame.minigameId} />
+          </GameShell>
+        ) : (
+          /* Brief loading state while GAME_SELECTED action is in-flight */
+          <div className="flex items-center justify-center min-h-screen">
+            <div className="text-center">
+              <div className="text-xl mb-3 text-[var(--rmhbox-text)]">Starting game…</div>
+              <div className="animate-spin w-8 h-8 border-2 border-t-transparent rounded-full mx-auto" style={{ borderColor: 'var(--rmhbox-accent)', borderTopColor: 'transparent' }} />
+            </div>
+          </div>
+        )
       )}
 
       {lobby.state === 'ROUND_RESULTS' && roundResults && (
@@ -263,7 +278,7 @@ export default function LobbyPage({ params }: { params: Promise<{ lobbyId: strin
 
       {lobby.state === 'SESSION_RESULTS' && (
         <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-6 p-6 min-h-screen justify-center">
-          <h1 className="text-4xl font-bold" style={{ fontFamily: 'var(--rmhbox-font-display, Nunito, sans-serif)' }}>
+          <h1 className="text-4xl font-bold" style={{ fontFamily: 'var(--rmhbox-font-display)' }}>
             Session Complete! 🎉
           </h1>
 
@@ -309,9 +324,11 @@ export default function LobbyPage({ params }: { params: Promise<{ lobbyId: strin
           )}
 
           <button
-            onClick={() => router.push('/rmhbox')}
-            className="px-8 py-3 rounded-lg font-semibold"
-            style={{ backgroundColor: 'var(--rmhbox-accent, #7c5cfc)', color: '#fff' }}
+            onClick={() => {
+              useRMHboxStore.getState().leaveLobby();
+              router.push('/rmhbox');
+            }}
+            className="px-8 py-3 rounded-lg font-semibold bg-[var(--rmhbox-accent)] text-white hover:bg-[var(--rmhbox-accent-hover)] transition-colors"
           >
             Back to Lobby
           </button>

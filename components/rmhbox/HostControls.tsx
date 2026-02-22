@@ -14,10 +14,11 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Play, Vote, Settings, XCircle, ChevronDown } from 'lucide-react';
+import { Play, Vote, Settings, ChevronDown, AlertCircle } from 'lucide-react';
 import { emit } from '@/lib/rmhbox/socket';
 import { C2S } from '@/lib/rmhbox/events';
-import { getEligibleMinigames } from '@/lib/rmhbox/minigame-registry';
+import { getAllMinigames } from '@/lib/rmhbox/minigame-registry';
+import { toast } from '@/lib/rmhbox/toast-store';
 import type { LobbySettings } from '@/lib/rmhbox/types';
 
 interface HostControlsProps {
@@ -42,15 +43,27 @@ export default function HostControls({ isHost, lobbyId, lobbyState, playerCount 
 
   const isWaiting = lobbyState === 'WAITING';
   const isResults = lobbyState === 'ROUND_RESULTS' || lobbyState === 'SESSION_RESULTS';
+  const canAct = isWaiting || isResults;
+  const hasEnoughPlayers = playerCount >= 2;
 
-  const handleStartVote = () => emit(C2S.GAME_START_VOTE, { lobbyId });
+  const handleStartVote = () => {
+    if (!hasEnoughPlayers) {
+      toast.warning('Need at least 2 players to start a vote');
+      return;
+    }
+    emit(C2S.GAME_START_VOTE, { lobbyId });
+  };
   const handleSelectGame = (minigameId: string) => {
+    const game = allGames.find((g) => g.id === minigameId);
+    if (game && (playerCount < game.minPlayers || playerCount > game.maxPlayers)) {
+      toast.warning(`${game.displayName} requires ${game.minPlayers}–${game.maxPlayers} players (you have ${playerCount})`);
+      return;
+    }
     emit(C2S.GAME_SELECT, { lobbyId, minigameId });
     setShowGamePicker(false);
   };
-  const handleEndSession = () => emit(C2S.LOBBY_END_SESSION, { lobbyId });
 
-  const eligibleGames = getEligibleMinigames(playerCount);
+  const allGames = getAllMinigames();
 
   return (
     <div className="flex flex-col gap-3 rounded-xl bg-[var(--rmhbox-surface)] border border-[var(--rmhbox-border)] p-4">
@@ -61,8 +74,9 @@ export default function HostControls({ isHost, lobbyId, lobbyState, playerCount 
       <div className="flex flex-wrap gap-3">
         <button
           onClick={handleStartVote}
-          disabled={!isWaiting && !isResults}
+          disabled={!canAct || !hasEnoughPlayers}
           className="flex items-center gap-2 rounded-lg bg-[var(--rmhbox-accent)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--rmhbox-accent-hover)] disabled:opacity-40 disabled:cursor-not-allowed"
+          title={!hasEnoughPlayers ? `Need at least 2 players (${playerCount} connected)` : undefined}
         >
           <Vote className="h-4 w-4" /> Start Vote
         </button>
@@ -71,32 +85,45 @@ export default function HostControls({ isHost, lobbyId, lobbyState, playerCount 
         <div className="relative">
           <button
             onClick={() => setShowGamePicker(!showGamePicker)}
-            disabled={!isWaiting && !isResults}
+            disabled={!canAct}
             className="flex items-center gap-2 rounded-lg bg-[var(--rmhbox-success)] px-4 py-2 text-sm font-semibold text-black transition-colors hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Play className="h-4 w-4" /> Pick Game <ChevronDown className="h-3 w-3" />
           </button>
 
-          {showGamePicker && (isWaiting || isResults) && (
-            <div className="absolute left-0 top-full z-50 mt-1 max-h-64 w-64 overflow-y-auto rounded-lg border border-[var(--rmhbox-border)] bg-[var(--rmhbox-surface)] shadow-lg">
-              {eligibleGames.length === 0 ? (
+          {showGamePicker && canAct && (
+            <div className="absolute left-0 top-full z-50 mt-1 max-h-64 w-72 overflow-y-auto rounded-lg border border-[var(--rmhbox-border)] bg-[var(--rmhbox-surface)] shadow-lg">
+              {allGames.length === 0 ? (
                 <div className="p-3 text-sm text-[var(--rmhbox-text-muted)]">
-                  No games available for {playerCount} players
+                  No games registered
                 </div>
               ) : (
-                eligibleGames.map((game) => (
-                  <button
-                    key={game.id}
-                    onClick={() => handleSelectGame(game.id)}
-                    className="flex w-full items-start gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-[var(--rmhbox-surface-hover)]"
-                  >
-                    <span className="text-base">{game.icon}</span>
-                    <div>
-                      <div className="font-semibold text-[var(--rmhbox-text)]">{game.displayName}</div>
-                      <div className="text-xs text-[var(--rmhbox-text-muted)]">{game.category} · {game.minPlayers}–{game.maxPlayers} players</div>
-                    </div>
-                  </button>
-                ))
+                allGames.map((game) => {
+                  const isPlayable = playerCount >= game.minPlayers && playerCount <= game.maxPlayers;
+                  return (
+                    <button
+                      key={game.id}
+                      onClick={() => handleSelectGame(game.id)}
+                      disabled={!isPlayable}
+                      className={`flex w-full items-start gap-2 px-3 py-2 text-left text-sm transition-colors ${
+                        isPlayable
+                          ? 'hover:bg-[var(--rmhbox-surface-hover)]'
+                          : 'opacity-40 cursor-not-allowed'
+                      }`}
+                    >
+                      <span className="text-base">{game.icon}</span>
+                      <div className="flex-1">
+                        <div className="font-semibold text-[var(--rmhbox-text)]">{game.displayName}</div>
+                        <div className="text-xs text-[var(--rmhbox-text-muted)]">
+                          {game.category} · {game.minPlayers}–{game.maxPlayers} players
+                        </div>
+                      </div>
+                      {!isPlayable && (
+                        <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--rmhbox-warning)]" />
+                      )}
+                    </button>
+                  );
+                })
               )}
             </div>
           )}
@@ -109,12 +136,6 @@ export default function HostControls({ isHost, lobbyId, lobbyState, playerCount 
           <Settings className="h-4 w-4" /> Settings
         </button>
 
-        <button
-          onClick={handleEndSession}
-          className="flex items-center gap-2 rounded-lg bg-[var(--rmhbox-danger)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:brightness-110"
-        >
-          <XCircle className="h-4 w-4" /> End Session
-        </button>
       </div>
 
       {/* Settings panel */}

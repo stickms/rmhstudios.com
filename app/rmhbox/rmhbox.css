@@ -1,0 +1,198 @@
+/**
+ * RMHbox — Dedicated Theme Stylesheet
+ *
+ * Provides a fully isolated visual identity for the RMHbox party game platform.
+ * Includes dark/light theme support, custom scrollbar, selection colors,
+ * and utility animations.
+ */
+
+/* ─── Dark Theme (default) ──────────────────────────────────────── */
+
+.rmhbox-theme {
+  --rmhbox-bg: #0d0d1a;
+  --rmhbox-bg-subtle: #12122a;
+  --rmhbox-surface: #1a1a30;
+  --rmhbox-surface-hover: #24244a;
+  --rmhbox-surface-active: #2e2e5a;
+  --rmhbox-border: #2a2a50;
+  --rmhbox-border-bright: #3a3a6a;
+  --rmhbox-text: #eaeaff;
+  --rmhbox-text-muted: #8888bb;
+  --rmhbox-text-dim: #555588;
+  --rmhbox-accent: #7c5cfc;
+  --rmhbox-accent-hover: #9b7eff;
+  --rmhbox-accent-dim: rgba(124, 92, 252, 0.15);
+  --rmhbox-success: #4ade80;
+  --rmhbox-success-dim: rgba(74, 222, 128, 0.15);
+  --rmhbox-danger: #f87171;
+  --rmhbox-danger-dim: rgba(248, 113, 113, 0.15);
+  --rmhbox-warning: #fbbf24;
+  --rmhbox-warning-dim: rgba(251, 191, 36, 0.15);
+  --rmhbox-info: #60a5fa;
+  --rmhbox-info-dim: rgba(96, 165, 250, 0.15);
+  --rmhbox-font-display: 'Nunito', 'Segoe UI', system-ui, sans-serif;
+  --rmhbox-font-body: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --rmhbox-font-mono: 'JetBrains Mono', 'Cascadia Code', monospace;
+  --rmhbox-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  --rmhbox-radius: 12px;
+  --rmhbox-radius-sm: 8px;
+  --rmhbox-toast-bg: #1e1e3a;
+}
+
+/* ─── Light Theme ───────────────────────────────────────────────── */
+
+.rmhbox-theme.rmhbox-light {
+  --rmhbox-bg: #f0f0f8;
+  --rmhbox-bg-subtle: #e8e8f2;
+  --rmhbox-surface: #ffffff;
+  --rmhbox-surface-hover: #f5f5ff;
+  --rmhbox-surface-active: #ebebf5;
+  --rmhbox-border: #d0d0e0;
+  --rmhbox-border-bright: #b8b8d0;
+  --rmhbox-text: #1a1a2e;
+  --rmhbox-text-muted: #666688;
+  --rmhbox-text-dim: #9999aa;
+  --rmhbox-accent: #6b46e5;
+  --rmhbox-accent-hover: #5a35d4;
+  --rmhbox-accent-dim: rgba(107, 70, 229, 0.1);
+  --rmhbox-success: #22c55e;
+  --rmhbox-success-dim: rgba(34, 197, 94, 0.1);
+  --rmhbox-danger: #ef4444;
+  --rmhbox-danger-dim: rgba(239, 68, 68, 0.1);
+  --rmhbox-warning: #f59e0b;
+  --rmhbox-warning-dim: rgba(245, 158, 11, 0.1);
+  --rmhbox-info: #3b82f6;
+  --rmhbox-info-dim: rgba(59, 130, 246, 0.1);
+  --rmhbox-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  --rmhbox-toast-bg: #ffffff;
+}
+
+/* ─── Base Styles ───────────────────────────────────────────────── */
+
+.rmhbox-theme {
+  background-color: var(--rmhbox-bg);
+  color: var(--rmhbox-text);
+  font-family: var(--rmhbox-font-body);
+  min-height: 100vh;
+}
+
+/* ─── Scrollbar ─────────────────────────────────────────────────── */
+
+.rmhbox-theme ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.rmhbox-theme ::-webkit-scrollbar-track {
+  background: var(--rmhbox-bg-subtle);
+  border-radius: 4px;
+}
+
+.rmhbox-theme ::-webkit-scrollbar-thumb {
+  background: var(--rmhbox-border-bright);
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.rmhbox-theme ::-webkit-scrollbar-thumb:hover {
+  background: var(--rmhbox-accent);
+}
+
+.rmhbox-theme ::-webkit-scrollbar-corner {
+  background: var(--rmhbox-bg-subtle);
+}
+
+/* Firefox scrollbar */
+.rmhbox-theme {
+  scrollbar-width: thin;
+  scrollbar-color: var(--rmhbox-border-bright) var(--rmhbox-bg-subtle);
+}
+
+/* ─── Selection ─────────────────────────────────────────────────── */
+
+.rmhbox-theme ::selection {
+  background: var(--rmhbox-accent);
+  color: #ffffff;
+}
+
+.rmhbox-theme ::-moz-selection {
+  background: var(--rmhbox-accent);
+  color: #ffffff;
+}
+
+/* ─── Focus ─────────────────────────────────────────────────────── */
+
+.rmhbox-theme :focus-visible {
+  outline: 2px solid var(--rmhbox-accent);
+  outline-offset: 2px;
+}
+
+/* ─── Toast Animations ──────────────────────────────────────────── */
+
+@keyframes rmhbox-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes rmhbox-toast-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.96);
+  }
+}
+
+.rmhbox-toast-enter {
+  animation: rmhbox-toast-in 0.25s ease-out forwards;
+}
+
+.rmhbox-toast-exit {
+  animation: rmhbox-toast-out 0.2s ease-in forwards;
+}
+
+/* ─── Modal Overlay ─────────────────────────────────────────────── */
+
+@keyframes rmhbox-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes rmhbox-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.rmhbox-overlay {
+  animation: rmhbox-fade-in 0.2s ease-out;
+}
+
+.rmhbox-modal {
+  animation: rmhbox-slide-up 0.25s ease-out;
+}
+
+/* ─── Utilities ─────────────────────────────────────────────────── */
+
+.rmhbox-glass {
+  background: rgba(26, 26, 48, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.rmhbox-light .rmhbox-glass {
+  background: rgba(255, 255, 255, 0.85);
+}

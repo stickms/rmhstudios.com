@@ -28,6 +28,7 @@ export interface RMHboxUserSettings {
   musicVolume: number;   // 0–1, default 0.5
   showChat: boolean;     // default true
   chatPosition: 'left' | 'right'; // default 'right'
+  theme: 'dark' | 'light'; // default 'dark'
 }
 
 const DEFAULT_SETTINGS: RMHboxUserSettings = {
@@ -36,6 +37,7 @@ const DEFAULT_SETTINGS: RMHboxUserSettings = {
   musicVolume: 0.5,
   showChat: true,
   chatPosition: 'right',
+  theme: 'dark',
 };
 
 // ─── Store Interface ─────────────────────────────────────────────
@@ -53,6 +55,7 @@ export interface RMHboxStore {
   applyFullSync: (fullState: ClientLobbyState) => void;
   setGameState: (state: Record<string, unknown>) => void;
   updateSettings: (partial: Partial<RMHboxUserSettings>) => void;
+  leaveLobby: () => void;
   reset: () => void;
 }
 
@@ -100,6 +103,12 @@ export const useRMHboxStore = create<RMHboxStore>()(
           settings: { ...state.settings, ...partial },
         }));
       },
+
+      leaveLobby: () => set({
+        lobby: null,
+        gameState: {},
+        lastSeq: -1,
+      }),
 
       reset: () => set({
         connectionStatus: 'disconnected',
@@ -211,7 +220,7 @@ export function applyLobbyAction(
     case 'SETTINGS_UPDATED':
       return {
         ...lobby,
-        settings: { ...lobby.settings, ...(data.settings as object) },
+        settings: { ...lobby.settings, ...(data as object) },
       };
 
     case 'PLAYER_READY_CHANGED':
@@ -222,11 +231,21 @@ export function applyLobbyAction(
         ),
       };
 
-    case 'STATE_CHANGED':
+    case 'STATE_CHANGED': {
+      const newState = data.state as ClientLobbyState['state'];
+      // When returning to WAITING, clear game state to avoid stale data
+      if (newState === 'WAITING') {
+        return {
+          ...lobby,
+          state: newState,
+          currentGame: null,
+        };
+      }
       return {
         ...lobby,
-        state: data.state as ClientLobbyState['state'],
+        state: newState,
       };
+    }
 
     case 'CHAT_MESSAGE':
       return {
@@ -277,13 +296,18 @@ export function applyLobbyAction(
 
     case 'TIMER_TICK':
       if (lobby.currentGame) {
-        return {
-          ...lobby,
-          currentGame: {
-            ...lobby.currentGame,
-            timeRemaining: (data.remaining as number) ?? null,
-          },
-        };
+        const newTime = data.timeRemaining as number | null | undefined;
+        // Only update if we received a valid numeric value — prevents flicker
+        // from malformed or stale ticks
+        if (typeof newTime === 'number' && newTime >= 0) {
+          return {
+            ...lobby,
+            currentGame: {
+              ...lobby.currentGame,
+              timeRemaining: newTime,
+            },
+          };
+        }
       }
       return lobby;
 

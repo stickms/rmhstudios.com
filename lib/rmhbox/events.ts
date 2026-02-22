@@ -20,6 +20,7 @@ export const C2S = {
   LOBBY_END_SESSION:      'rmhbox:lobby:end_session',
   LOBBY_TOGGLE_READY:     'rmhbox:lobby:toggle_ready',
   LOBBY_REQUEST_PROMOTION:'rmhbox:lobby:request_promotion',
+  LOBBY_PROMOTE_SPECTATOR:'rmhbox:lobby:promote_spectator',
   LOBBY_CHAT:             'rmhbox:lobby:chat',
   LOBBY_BROWSE:           'rmhbox:lobby:browse',
   GAME_SELECT:            'rmhbox:game:select',

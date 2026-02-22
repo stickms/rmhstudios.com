@@ -28,6 +28,7 @@ import {
   EndSessionSchema,
   ToggleReadySchema,
   RequestPromotionSchema,
+  PromoteSpectatorSchema,
   BrowseLobbiesSchema,
 } from './schemas';
 import { validated } from './schemas';
@@ -177,6 +178,7 @@ export class LobbyManager {
     socket.on('rmhbox:lobby:end_session', validated(socket, 'rmhbox:lobby:end_session', EndSessionSchema, (s, d) => this.endSession(s, d)));
     socket.on('rmhbox:lobby:toggle_ready', validated(socket, 'rmhbox:lobby:toggle_ready', ToggleReadySchema, (s, d) => this.toggleReady(s, d)));
     socket.on('rmhbox:lobby:request_promotion', validated(socket, 'rmhbox:lobby:request_promotion', RequestPromotionSchema, (s, d) => this.requestPromotion(s, d)));
+    socket.on('rmhbox:lobby:promote_spectator', validated(socket, 'rmhbox:lobby:promote_spectator', PromoteSpectatorSchema, (s, d) => this.promoteSpectator(s, d)));
     socket.on('rmhbox:lobby:browse', validated(socket, 'rmhbox:lobby:browse', BrowseLobbiesSchema, (s, d) => this.browseLobbies(s, d)));
   }
 
@@ -428,7 +430,7 @@ export class LobbyManager {
 
       this.broadcastAction(lobby.id, {
         type: 'SPECTATOR_JOINED',
-        payload: { userId, userName },
+        payload: { userId, userName, avatarUrl },
       });
 
       socket.emit(S2C.LOBBY_STATE_SNAPSHOT, this.buildClientState(lobby, userId));
@@ -475,7 +477,7 @@ export class LobbyManager {
 
       this.broadcastAction(lobby.id, {
         type: 'PLAYER_JOINED',
-        payload: { userId, userName },
+        payload: { userId, userName, avatarUrl },
       });
 
       socket.emit(S2C.LOBBY_STATE_SNAPSHOT, this.buildClientState(lobby, userId));
@@ -959,6 +961,68 @@ export class LobbyManager {
     logger.info({ event: 'spectator_promoted', lobbyId: lobby.id, userId });
   }
 
+  // ─── Host-initiated spectator promotion ────────────────────
+
+  private promoteSpectator(socket: Socket, payload: { lobbyId: string; userId: string }): void {
+    const hostId = socket.data.userId as string;
+    const lobby = this.getLobbyByUserId(hostId);
+    if (!lobby || lobby.id !== payload.lobbyId) {
+      socket.emit(S2C.ERROR, { code: 'NOT_IN_LOBBY', message: 'You are not in a lobby.' });
+      return;
+    }
+
+    if (lobby.hostUserId !== hostId) {
+      socket.emit(S2C.ERROR, { code: 'NOT_HOST', message: 'Only the host can promote spectators.' });
+      return;
+    }
+
+    const spectator = lobby.spectators.get(payload.userId);
+    if (!spectator) {
+      socket.emit(S2C.ERROR, { code: 'INVALID_PAYLOAD', message: 'That user is not a spectator.' });
+      return;
+    }
+
+    if (lobby.players.size >= lobby.settings.maxPlayers) {
+      socket.emit(S2C.ERROR, { code: 'LOBBY_FULL', message: 'Player slots are full.' });
+      return;
+    }
+
+    // Move spectator to players
+    lobby.spectators.delete(payload.userId);
+    const newPlayer: RMHboxPlayer = {
+      userId: spectator.userId,
+      userName: spectator.userName,
+      avatarUrl: spectator.avatarUrl,
+      socketId: spectator.socketId,
+      isConnected: spectator.isConnected,
+      isReady: false,
+      score: 0,
+      roundScore: 0,
+      joinedAt: spectator.joinedAt,
+      lastSeenAt: Date.now(),
+      role: 'player',
+    };
+    lobby.players.set(payload.userId, newPlayer);
+
+    // Update Socket.io rooms for the promoted spectator
+    const specSocket = spectator.socketId ? this.io.sockets.sockets.get(spectator.socketId) : undefined;
+    if (specSocket) {
+      specSocket.leave(`lobby:${lobby.id}:spectators`);
+      specSocket.join(`lobby:${lobby.id}:players`);
+    }
+
+    lobby.lastActivityAt = Date.now();
+
+    this.broadcastAction(lobby.id, {
+      type: 'SPECTATOR_PROMOTED',
+      payload: { userId: payload.userId, userName: spectator.userName },
+    });
+
+    this.addSystemChat(lobby.id, `${spectator.userName} was promoted by the host`);
+
+    logger.info({ event: 'host_promoted_spectator', lobbyId: lobby.id, userId: payload.userId, hostId });
+  }
+
   // ─── Lobby browser (§9) ───────────────────────────────────
 
   private browseLobbies(socket: Socket, payload: { cursor?: string; limit: number }): void {
@@ -1155,6 +1219,32 @@ export class LobbyManager {
     logger.info({ event: 'lobby_disbanded', lobbyId, reason });
 
     this.io.to(`lobby:${lobbyId}`).emit(S2C.LOBBY_DISBANDED, { reason });
+
+    // Remove all connected sockets from lobby rooms to prevent ghost messages
+    // if the lobby code is reused later
+    const lobbyRooms = [
+      `lobby:${lobbyId}`,
+      `lobby:${lobbyId}:players`,
+      `lobby:${lobbyId}:spectators`,
+    ];
+    for (const [userId, player] of lobby.players) {
+      if (player.socketId) {
+        const sock = this.io.sockets.sockets?.get(player.socketId);
+        if (sock) {
+          for (const room of lobbyRooms) sock.leave(room);
+          sock.leave(`lobby:${lobbyId}:player:${userId}`);
+        }
+      }
+    }
+    for (const [userId, spectator] of lobby.spectators) {
+      if (spectator.socketId) {
+        const sock = this.io.sockets.sockets?.get(spectator.socketId);
+        if (sock) {
+          for (const room of lobbyRooms) sock.leave(room);
+          sock.leave(`lobby:${lobbyId}:player:${userId}`);
+        }
+      }
+    }
 
     // Clean up all user→lobby mappings
     for (const userId of lobby.players.keys()) {

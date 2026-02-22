@@ -64,6 +64,11 @@ export const RequestPromotionSchema = z.object({
   lobbyId: z.string(),
 });
 
+export const PromoteSpectatorSchema = z.object({
+  lobbyId: z.string(),
+  userId: z.string(),
+});
+
 export const ChatSchema = z.object({
   lobbyId: z.string(),
   content: z.string().min(1).max(200).transform((s) => s.trim()).pipe(z.string().min(1)),

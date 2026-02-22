@@ -295,6 +295,23 @@ export class GameCoordinator {
       startedAt: Date.now(),
     };
 
+    // Broadcast GAME_SELECTED so clients get currentGame via incremental action
+    // before the full sync arrives in the next phase transition
+    const def2 = this.getMinigameDef(minigameId);
+    this.lobbyManager.broadcastAction(lobbyId, {
+      type: 'GAME_SELECTED',
+      payload: {
+        game: {
+          minigameId,
+          displayName: def2?.displayName ?? minigameId,
+          phase: 'instructions',
+          timeRemaining: null,
+          publicState: {},
+          privateState: {},
+        },
+      },
+    });
+
     logger.info({ event: 'game_flow_started', lobbyId, minigameId });
     this.startInstructions(lobby, minigameId);
   }

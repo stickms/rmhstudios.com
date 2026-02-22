@@ -266,3 +266,19 @@ export function getEligibleMinigames(playerCount: number): MinigameDefinition[] 
     (game) => playerCount >= game.minPlayers && playerCount <= game.maxPlayers,
   );
 }
+
+/**
+ * Returns ALL registered minigames (no player count filter).
+ */
+export function getAllMinigames(): MinigameDefinition[] {
+  return Object.values(MINIGAME_REGISTRY);
+}
+
+/**
+ * Checks whether a minigame can be played with the given player count.
+ */
+export function isMinigamePlayable(minigameId: string, playerCount: number): boolean {
+  const game = MINIGAME_REGISTRY[minigameId];
+  if (!game) return false;
+  return playerCount >= game.minPlayers && playerCount <= game.maxPlayers;
+}

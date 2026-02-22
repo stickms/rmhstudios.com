@@ -69,6 +69,20 @@ export function validated<T>(
       return;
     }
 
-    handler(socket, result.data);
+    try {
+      handler(socket, result.data);
+    } catch (err) {
+      logger.error({
+        event: 'handler_uncaught_error',
+        socketId: socket.id,
+        eventName,
+        userId: socket.data?.userId,
+        error: String(err),
+      });
+      socket.emit(S2C.ERROR, {
+        code: 'INTERNAL_ERROR',
+        message: 'An internal error occurred.',
+      });
+    }
   };
 }

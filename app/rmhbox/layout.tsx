@@ -1,13 +1,15 @@
 /**
- * RMHbox Layout — Auth Gate
+ * RMHbox Layout — Auth Gate + Theme Shell
  *
- * Wraps all /rmhbox routes with authentication.
+ * Wraps all /rmhbox routes with authentication and the RMHbox theme system.
  * Unauthenticated users are redirected to /login with a callback URL.
  */
 
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
+import RMHboxShell from '@/components/rmhbox/RMHboxShell';
+import './rmhbox.css';
 
 export const metadata = {
   title: 'RMHbox — Party Games',
@@ -19,5 +21,5 @@ export default async function RMHboxLayout({ children }: { children: React.React
   if (!session?.user) {
     redirect('/login?callbackURL=/rmhbox');
   }
-  return <>{children}</>;
+  return <RMHboxShell>{children}</RMHboxShell>;
 }
