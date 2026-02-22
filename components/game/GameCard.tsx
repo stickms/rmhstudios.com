@@ -100,7 +100,7 @@ export function GameCard({ game }: GameCardProps) {
 
     return (
         <div 
-            className={cn("relative group", isHovered && "z-40")}
+            className={cn("relative group", isHovered && "z-[100]")}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={() => setIsHovered(false)}
         >
@@ -198,7 +198,7 @@ export function GameCard({ game }: GameCardProps) {
                         }}
                         transition={{ duration: 0.2 }}
                         className={cn(
-                            "absolute z-50 w-[85vw] sm:w-80 pointer-events-none",
+                            "absolute z-[110] w-[85vw] sm:w-80 pointer-events-none",
                             popoverDirection === 'right' && "left-full top-0 ml-4",
                             popoverDirection === 'left' && "right-full top-0 mr-4",
                             popoverDirection === 'bottom' && cn(
