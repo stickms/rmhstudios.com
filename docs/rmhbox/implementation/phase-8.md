@@ -716,6 +716,19 @@
   ```
   **Verification:** Call registry lookup for `"identity-crisis"`; confirm all metadata fields correct and handler instantiates with valid context.
 
+- [ ] Add server handler to `MINIGAME_SERVER_REGISTRY` in `server/rmhbox/minigame-server-registry.ts`:
+  ```ts
+  import { IdentityCrisisGame } from './minigames/identity-crisis';
+  MINIGAME_SERVER_REGISTRY.set('identity-crisis', IdentityCrisisGame);
+  ```
+  **Verification:** `MINIGAME_SERVER_REGISTRY.get('identity-crisis')` returns `IdentityCrisisGame` class.
+
+- [ ] Add lazy-loaded component to `MinigameRenderer` map in `components/rmhbox/MinigameRenderer.tsx`:
+  ```ts
+  'identity-crisis': lazy(() => import('./minigames/identity-crisis/IdentityCrisisGame'))
+  ```
+  **Verification:** `MinigameRenderer` renders `<Suspense>` fallback, then loads `IdentityCrisisGame` chunk on demand.
+
 ---
 
 ### 8.1.13 Build Client Components
@@ -837,6 +850,27 @@
 - [ ] After all reveals: show final rankings table
 - [ ] Rankings show: rank, name, score, guessed correctly, questions used, voting accuracy
   **Verification:** Reveals play sequentially. Confetti on correct guessers. Rankings table correct.
+
+#### 8.1.13.10 Sound Effects
+
+- [ ] Wire up sound effects for Identity Crisis events:
+  - `IC_IDENTITIES_REVEAL` → `playSound('swoosh')`
+  - `IC_TURN_START` / `IC_TURN_START_SELF` → `playSound('chime')`
+  - `IC_QUESTION_ASKED` → `playSound('click')`
+  - `IC_VOTE_RECEIVED` → `playSound('click')`
+  - `IC_VOTE_RESULTS` → `playSound('swoosh')`
+  - `IC_EARLY_GUESS_RESULT` correct → `playSound('scoreDing')`
+  - `IC_EARLY_GUESS_RESULT` wrong → `playSound('buzzer')`
+  - `IC_FINAL_GUESS_PHASE` → `playSound('goFanfare')`
+  - `IC_RESULTS` → `playSound('victoryFanfare')`
+  **Verification:** Each event triggers the correct sound exactly once. Volume settings respected.
+
+#### 8.1.13.11 Zustand Store Integration
+
+- [ ] Read other players' identities from `publicState`; own identity is NEVER in client state until `IC_RESULTS`
+- [ ] Spectator sees ALL identities (god view)
+- [ ] Component uses `IC_TURN_START_SELF` vs `IC_TURN_START` to determine if current player is the asker
+  **Verification:** Own identity absent from store during gameplay. Spectator store contains all identities. Asker detection correct.
 
 ---
 
@@ -1432,6 +1466,19 @@
   ```
   **Verification:** Call registry lookup for `"ranking-file"`; confirm all metadata fields correct and handler instantiates with valid context.
 
+- [ ] Add server handler to `MINIGAME_SERVER_REGISTRY` in `server/rmhbox/minigame-server-registry.ts`:
+  ```ts
+  import { RankingFileGame } from './minigames/ranking-file';
+  MINIGAME_SERVER_REGISTRY.set('ranking-file', RankingFileGame);
+  ```
+  **Verification:** `MINIGAME_SERVER_REGISTRY.get('ranking-file')` returns `RankingFileGame` class.
+
+- [ ] Add lazy-loaded component to `MinigameRenderer` map in `components/rmhbox/MinigameRenderer.tsx`:
+  ```ts
+  'ranking-file': lazy(() => import('./minigames/ranking-file/RankingFileGame'))
+  ```
+  **Verification:** `MinigameRenderer` renders `<Suspense>` fallback, then loads `RankingFileGame` chunk on demand.
+
 ---
 
 ### 8.2.8 Build Client Components
@@ -1537,6 +1584,23 @@
 - [ ] Winner highlighted with crown
 - [ ] Awards display
   **Verification:** Rankings correct. Category results expandable. Awards shown.
+
+#### 8.2.8.9 Sound Effects
+
+- [ ] Wire up sound effects for Ranking File events:
+  - `RF_CATEGORY_REVEAL` → `playSound('goFanfare')`
+  - `RF_LOCK_IN_PHASE` → `playSound('swoosh')`
+  - `RF_ROUND_RESULTS` → `playSound('victoryFanfare')`
+  - `RF_GAME_OVER` → `playSound('victoryFanfare')`
+  - `TIMER_TICK` with `timeRemaining <= 5` → `playSound('countdownBeep')`
+  **Verification:** Each event triggers the correct sound exactly once. Countdown beeps fire only in final 5 seconds. Volume settings respected.
+
+#### 8.2.8.10 Zustand Store Integration
+
+- [ ] Read category and items from `publicState`; read own ranking from `privateState`
+- [ ] Detect spectator to show submission progress without drag-and-drop
+- [ ] Uses `@dnd-kit/core` and `@dnd-kit/sortable` for ranking interaction
+  **Verification:** Public/private state separation correct. Spectator view shows progress count only. Drag-and-drop libraries load correctly.
 
 ---
 
@@ -2251,6 +2315,19 @@ This is the core physics loop running at ~30Hz. Each tick:
   ```
   **Verification:** Registry lookup for `"pixel-pushers"` returns correct metadata.
 
+- [ ] Add server handler to `MINIGAME_SERVER_REGISTRY` in `server/rmhbox/minigame-server-registry.ts`:
+  ```ts
+  import { PixelPushersGame } from './minigames/pixel-pushers';
+  MINIGAME_SERVER_REGISTRY.set('pixel-pushers', PixelPushersGame);
+  ```
+  **Verification:** `MINIGAME_SERVER_REGISTRY.get('pixel-pushers')` returns `PixelPushersGame` class.
+
+- [ ] Add lazy-loaded component to `MinigameRenderer` map in `components/rmhbox/MinigameRenderer.tsx`:
+  ```ts
+  'pixel-pushers': lazy(() => import('./minigames/pixel-pushers/PixelPushersGame'))
+  ```
+  **Verification:** `MinigameRenderer` renders `<Suspense>` fallback, then loads `PixelPushersGame` chunk on demand.
+
 ---
 
 ### 8.3.9 Build Client Components
@@ -2349,6 +2426,26 @@ This is the core physics loop running at ~30Hz. Each tick:
 - [ ] Awards display
 - [ ] Winner highlighted (cooperative, so highest individual score)
   **Verification:** Rankings correct. Stats displayed. Awards shown.
+
+#### 8.3.9.8 Sound Effects
+
+- [ ] Wire up sound effects for Pixel Pushers events:
+  - `PP_LEVEL_START` → `playSound('goFanfare')`
+  - `PP_PUSH_EVENT` → `playSound('click')`
+  - `PP_POLARITY_WARNING` → `playSound('countdownBeep')`
+  - `PP_POLARITY_FLIP` → `playSound('swoosh')`
+  - `PP_WAYPOINT_REACHED` → `playSound('scoreDing')`
+  - `PP_LEVEL_COMPLETE` → `playSound('victoryFanfare')`
+  - `PP_LEVEL_FAILED` → `playSound('buzzer')`
+  - `PP_GAME_OVER` → `playSound('victoryFanfare')`
+  **Verification:** Each event triggers the correct sound exactly once. Volume settings respected.
+
+#### 8.3.9.9 Zustand Store Integration
+
+- [ ] Read all pusher positions, ball state, and polarity info from `publicState` (cooperative game)
+- [ ] Client uses `requestAnimationFrame` to interpolate between 15Hz server state updates for smooth 60fps rendering
+- [ ] Spectator sees same view but `VirtualJoystick` disabled
+  **Verification:** Store reflects all cooperative state. Interpolation produces smooth animation. Spectator cannot emit inputs.
 
 ---
 
@@ -3052,6 +3149,19 @@ Each tick (~33ms):
   ```
   **Verification:** Registry lookup for `"scroll-soul"` returns correct metadata. `joinInProgressPolicy` is `"spectate_only"`.
 
+- [ ] Add server handler to `MINIGAME_SERVER_REGISTRY` in `server/rmhbox/minigame-server-registry.ts`:
+  ```ts
+  import { ScrollSoulGame } from './minigames/scroll-soul';
+  MINIGAME_SERVER_REGISTRY.set('scroll-soul', ScrollSoulGame);
+  ```
+  **Verification:** `MINIGAME_SERVER_REGISTRY.get('scroll-soul')` returns `ScrollSoulGame` class.
+
+- [ ] Add lazy-loaded component to `MinigameRenderer` map in `components/rmhbox/MinigameRenderer.tsx`:
+  ```ts
+  'scroll-soul': lazy(() => import('./minigames/scroll-soul/ScrollSoulGame'))
+  ```
+  **Verification:** `MinigameRenderer` renders `<Suspense>` fallback, then loads `ScrollSoulGame` chunk on demand.
+
 ---
 
 ### 8.4.7 Build Client Components
@@ -3168,6 +3278,28 @@ Each tick (~33ms):
 - [ ] Summary stats: total survival time, ads spawned, max scroll speed reached
 - [ ] Awards display
   **Verification:** Rankings correct. Winner highlighted. Stats displayed.
+
+#### 8.4.7.8 Sound Effects
+
+- [ ] Wire up sound effects for Scroll Soul events:
+  - `SC_COUNTDOWN` → `playSound('countdownBeep')`
+  - `SC_GAME_START` → `playSound('goFanfare')`
+  - `SC_AD_SPAWN` → `playSound('chime')`
+  - `SC_AD_CLOSED` → `playSound('click')`
+  - `SC_AD_CLOSE_FAILED` → `playSound('buzzer')`
+  - `SC_LAVA_WARNING` → `playSound('buzzer')`
+  - `SC_PLAYER_ELIMINATED` → `playSound('buzzer')`
+  - `SC_HEIGHT_MILESTONE` → `playSound('scoreDing')`
+  - `SC_GAME_OVER` → `playSound('victoryFanfare')`
+  **Verification:** Each event triggers the correct sound exactly once. Volume settings respected.
+
+#### 8.4.7.9 Zustand Store Integration
+
+- [ ] Read all player positions, scroll offset, and safe zones from server state updates at 15Hz
+- [ ] Client-side prediction for local player movement (gravity, jump) between server updates, with smooth server-correction interpolation
+- [ ] Fake ads read from per-player state
+- [ ] Spectator sees all players and all ads
+  **Verification:** Client prediction produces smooth local movement. Server corrections interpolated without visible snapping. Per-player ad isolation maintained. Spectator store contains all player and ad data.
 
 ---
 
@@ -3404,6 +3536,31 @@ For each Phase 8 game (Identity Crisis, Ranking File, Pixel Pushers, Scroll Soul
   - Scroll Soul: 15Hz state updates + 60fps canvas rendering → smooth
   - No canvas memory leaks (canvases disposed on component unmount)
   **Verification:** Server stays responsive. No memory leaks. Client renders smoothly on mobile.
+
+### 8.5.13 MinigameRenderer Code-Splitting
+
+- [ ] **MinigameRenderer code-splitting:** verify each Phase 8 game loads as a separate chunk
+  - [ ] Identity Crisis, Ranking File, Pixel Pushers, Scroll Soul each load on demand
+  - [ ] Verify `<Suspense>` fallback renders during chunk load
+  **Verification:** Network tab shows separate chunk files. Main bundle unaffected.
+
+### 8.5.14 Sound Effect Integration Test
+
+- [ ] **Sound effect integration test:** verify all 4 Phase 8 games trigger sounds at correct moments
+  - [ ] Identity Crisis: chime on turn start, buzzer on wrong guess, fanfare on reveal
+  - [ ] Ranking File: fanfare on category reveal, swoosh on lock-in, fanfare on results
+  - [ ] Pixel Pushers: swoosh on polarity flip, ding on waypoint, fanfare on level complete
+  - [ ] Scroll Soul: beeps on countdown, chime on ad spawn, buzzer on elimination
+  **Verification:** Sounds fire once per event. Volume settings respected.
+
+### 8.5.15 MINIGAME_SERVER_REGISTRY Completeness
+
+- [ ] **MINIGAME_SERVER_REGISTRY completeness:** verify all 4 Phase 8 handlers registered
+  - [ ] `MINIGAME_SERVER_REGISTRY.get('identity-crisis')` → `IdentityCrisisGame`
+  - [ ] `MINIGAME_SERVER_REGISTRY.get('ranking-file')` → `RankingFileGame`
+  - [ ] `MINIGAME_SERVER_REGISTRY.get('pixel-pushers')` → `PixelPushersGame`
+  - [ ] `MINIGAME_SERVER_REGISTRY.get('scroll-soul')` → `ScrollSoulGame`
+  **Verification:** All 4 handlers instantiate and implement `BaseMinigame` interface.
 
 ---
 
