@@ -24,6 +24,8 @@ import { ChatHandler } from './chat';
 import { VoteManager } from './vote-manager';
 import { LeaderboardService } from './leaderboard';
 import { StateSyncService } from './state-sync';
+import { cleanupRateLimits } from './rate-limit';
+import { logger } from './logger';
 
 // ─── Health-check HTTP handler ───────────────────────────────────
 
@@ -76,7 +78,7 @@ const leaderboard     = new LeaderboardService();
 io.on('connection', (socket) => {
   const userId = socket.data.userId as string;
   const userName = socket.data.userName as string;
-  console.log(`[RMHbox] Connected: ${userName} (${userId}) — socket ${socket.id}`);
+  logger.info({ event: 'connection', userId, userName, socketId: socket.id });
 
   // Attempt reconnection to an existing lobby first
   reconnection.attemptReconnect(socket);
@@ -89,10 +91,11 @@ io.on('connection', (socket) => {
   leaderboard.handleConnection(socket);
 
   socket.on('disconnect', (reason) => {
-    console.log(`[RMHbox] Disconnected: ${userName} (${userId}) — ${reason}`);
+    logger.info({ event: 'disconnect', userId, userName, socketId: socket.id, reason });
     lobbyManager.handleDisconnect(socket);
     gameCoordinator.handleDisconnect(socket);
     reconnection.handleDisconnect(socket);
+    cleanupRateLimits(socket.id);
   });
 });
 
@@ -107,11 +110,11 @@ lobbyManager.startGarbageCollector();
 // ─── Graceful shutdown ──────────────────────────────────────────
 
 function shutdown(signal: string): void {
-  console.log(`[RMHbox] Received ${signal} — shutting down gracefully...`);
+  logger.info({ event: 'shutdown_initiated', signal });
 
   // Stop accepting new connections
   io.close(() => {
-    console.log('[RMHbox] All sockets closed.');
+    logger.info({ event: 'sockets_closed' });
   });
 
   // Stop periodic tasks
@@ -120,13 +123,13 @@ function shutdown(signal: string): void {
 
   // Let in-flight events drain
   httpServer.close(() => {
-    console.log('[RMHbox] HTTP server closed. Exiting.');
+    logger.info({ event: 'http_server_closed' });
     process.exit(0);
   });
 
   // Force-kill after timeout
   setTimeout(() => {
-    console.error('[RMHbox] Forced shutdown after timeout.');
+    logger.error({ event: 'forced_shutdown', reason: 'timeout' });
     process.exit(1);
   }, config.SHUTDOWN_TIMEOUT_MS);
 }
@@ -137,6 +140,5 @@ process.on('SIGTERM', () => shutdown('SIGTERM'));
 // ─── Start listening ────────────────────────────────────────────
 
 httpServer.listen(config.PORT, () => {
-  console.log(`[RMHbox] WebSocket server running on http://localhost:${config.PORT}`);
-  console.log(`[RMHbox] Socket.io path: ${config.SOCKET_PATH}`);
+  logger.info({ event: 'server_started', port: config.PORT, socketPath: config.SOCKET_PATH });
 });

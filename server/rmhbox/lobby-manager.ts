@@ -3,10 +3,13 @@
  *
  * Handles lobby CRUD, player joins/leaves, host controls,
  * lobby browsing, and garbage collection of idle lobbies.
+ *
+ * Reference: docs/rmhbox/design-spec/core.md §6
  */
 
 import { Server, Socket } from 'socket.io';
 import { config } from './config';
+import { logger } from './logger';
 import type { RMHboxLobby, LobbySettings, RMHboxPlayer, RMHboxSpectator } from './types';
 
 export class LobbyManager {
@@ -94,6 +97,8 @@ export class LobbyManager {
       const isEmptyTooLong = isEmpty && now - lobby.lastActivityAt > config.LOBBY_EMPTY_TIMEOUT_MS;
 
       if (isExpired || isIdle || isEmptyTooLong) {
+        const reason = isExpired ? 'expired' : isIdle ? 'idle' : 'empty';
+        logger.info({ event: 'lobby_gc', lobbyId: id, reason });
         this.disband(id, 'Lobby timed out');
       }
     }
@@ -154,6 +159,7 @@ export class LobbyManager {
   private disband(lobbyId: string, reason: string): void {
     const lobby = this.lobbies.get(lobbyId);
     if (!lobby) return;
+    logger.info({ event: 'lobby_disbanded', lobbyId, reason });
     this.io.to(`lobby:${lobbyId}`).emit('rmhbox:lobby:disbanded', { reason });
     this.lobbies.delete(lobbyId);
   }
