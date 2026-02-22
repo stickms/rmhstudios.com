@@ -16,7 +16,6 @@
 import { Server } from 'socket.io';
 import { config } from './config';
 import { LobbyManager } from './lobby-manager';
-import { logger } from './logger';
 import { S2C } from '../../lib/rmhbox/events';
 import type { RMHboxLobby } from './types';
 import type { ClientLobbyState } from '../../lib/rmhbox/types';

@@ -1010,17 +1010,29 @@ export class LobbyManager {
     let currentGame: ClientGameInfo | null = null;
     if (lobby.currentGame) {
       const handler = lobby.currentGame.handler;
-      const gameState = myRole === 'player'
-        ? handler.getStateForPlayer(userId)
-        : handler.getStateForSpectator();
+      let gameState: unknown = {};
+
+      // Handler may be null during pre-game phases (INSTRUCTIONS, PRELOADING, COUNTDOWN)
+      if (handler) {
+        gameState = myRole === 'player'
+          ? handler.getStateForPlayer(userId)
+          : handler.getStateForSpectator();
+      }
+
+      // Determine client-visible phase from lobby state
+      let phase: ClientGameInfo['phase'] = 'playing';
+      if (lobby.state === 'INSTRUCTIONS') phase = 'instructions';
+      else if (lobby.state === 'PRELOADING') phase = 'preloading';
+      else if (lobby.state === 'COUNTDOWN') phase = 'countdown';
+      else if (lobby.state === 'ROUND_RESULTS') phase = 'results';
 
       currentGame = {
         minigameId: lobby.currentGame.minigameId,
         displayName: lobby.currentGame.minigameId,
-        phase: 'playing',
+        phase,
         timeRemaining: null,
         publicState: (typeof gameState === 'object' && gameState !== null ? gameState : {}) as Record<string, unknown>,
-        privateState: {},
+        privateState: myRole === 'spectator' ? {} : {},
       };
     }
 
