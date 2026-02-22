@@ -819,7 +819,7 @@ export class LobbyManager {
       matchHistory: lobby.matchHistory.map((m) => ({
         matchId: `${m.minigameId}-${m.roundNumber}`,
         minigameId: m.minigameId,
-        minigameDisplayName: m.minigameId,
+        minigameDisplayName: MINIGAME_REGISTRY[m.minigameId]?.displayName ?? m.minigameId,
         playerCount: m.standings.length,
         winnerUserName: m.standings[0]?.userName ?? null,
         rankings: m.standings,
@@ -844,7 +844,7 @@ export class LobbyManager {
         userId: p.userId,
         userName: p.userName,
         totalScore: p.score,
-        wins: 0,
+        wins: lobby.matchHistory.filter((m) => m.standings[0]?.userId === p.userId).length,
         rank: 0,
       }))
       .sort((a, b) => b.totalScore - a.totalScore);
@@ -1055,7 +1055,7 @@ export class LobbyManager {
 
       currentGame = {
         minigameId: lobby.currentGame.minigameId,
-        displayName: lobby.currentGame.minigameId,
+        displayName: MINIGAME_REGISTRY[lobby.currentGame.minigameId]?.displayName ?? lobby.currentGame.minigameId,
         phase,
         timeRemaining: null,
         publicState: (typeof gameState === 'object' && gameState !== null ? gameState : {}) as Record<string, unknown>,
@@ -1068,7 +1068,7 @@ export class LobbyManager {
     const matchHistory: MatchSummary[] = lobby.matchHistory.map((m) => ({
       matchId: `${m.minigameId}-${m.roundNumber}`,
       minigameId: m.minigameId,
-      minigameDisplayName: m.minigameId,
+      minigameDisplayName: MINIGAME_REGISTRY[m.minigameId]?.displayName ?? m.minigameId,
       playerCount: m.standings.length,
       winnerUserName: m.standings[0]?.userName ?? null,
       rankings: m.standings,

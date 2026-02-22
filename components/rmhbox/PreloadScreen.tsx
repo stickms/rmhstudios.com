@@ -22,13 +22,14 @@ interface PreloadPlayer {
 
 interface PreloadScreenProps {
   players: PreloadPlayer[];
+  lobbyId: string;
 }
 
-export default function PreloadScreen({ players }: PreloadScreenProps) {
+export default function PreloadScreen({ players, lobbyId }: PreloadScreenProps) {
   // Auto-emit ready on mount
   useEffect(() => {
-    emit(C2S.GAME_READY_TO_RENDER);
-  }, []);
+    emit(C2S.GAME_READY_TO_RENDER, { lobbyId });
+  }, [lobbyId]);
 
   const readyCount = useMemo(() => players.filter((p) => p.ready).length, [players]);
   const progress = players.length > 0 ? (readyCount / players.length) * 100 : 0;

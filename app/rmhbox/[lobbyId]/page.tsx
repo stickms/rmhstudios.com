@@ -27,7 +27,7 @@ import ResultsScreen from '@/components/rmhbox/ResultsScreen';
 import SpectatorBanner from '@/components/rmhbox/SpectatorBanner';
 import MinigameRenderer from '@/components/rmhbox/minigames/MinigameRenderer';
 import GameShell from '@/components/rmhbox/GameShell';
-import type { VoteCandidate, PlayerRanking, SessionStanding, Award, RoundResultsPayload } from '@/lib/rmhbox/types';
+import type { VoteCandidate, PlayerRanking, SessionStanding, Award, RoundResultsPayload, MatchSummary } from '@/lib/rmhbox/types';
 
 export default function LobbyPage({ params }: { params: Promise<{ lobbyId: string }> }) {
   const { lobbyId } = use(params);
@@ -58,6 +58,12 @@ export default function LobbyPage({ params }: { params: Promise<{ lobbyId: strin
     sessionStandings: SessionStanding[];
     awards: Award[];
     roundNumber: number;
+  } | null>(null);
+
+  // Session results state
+  const [sessionResults, setSessionResults] = useState<{
+    standings: SessionStanding[];
+    matchHistory: MatchSummary[];
   } | null>(null);
 
   // Connect and join lobby on mount
@@ -111,6 +117,11 @@ export default function LobbyPage({ params }: { params: Promise<{ lobbyId: strin
         // Listen for round results
         socket.on(S2C.GAME_ROUND_RESULTS, (data: RoundResultsPayload) => {
           if (mounted) setRoundResults(data);
+        });
+
+        // Listen for session results
+        socket.on(S2C.GAME_SESSION_RESULTS, (data: { standings: SessionStanding[]; matchHistory: MatchSummary[] }) => {
+          if (mounted) setSessionResults(data);
         });
 
         // Listen for kick
@@ -218,7 +229,7 @@ export default function LobbyPage({ params }: { params: Promise<{ lobbyId: strin
       )}
 
       {lobby.state === 'PRELOADING' && (
-        <PreloadScreen players={preloadPlayers} />
+        <PreloadScreen players={preloadPlayers} lobbyId={lobbyId} />
       )}
 
       {lobby.state === 'COUNTDOWN' && (
@@ -251,19 +262,59 @@ export default function LobbyPage({ params }: { params: Promise<{ lobbyId: strin
       )}
 
       {lobby.state === 'SESSION_RESULTS' && (
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center">
-            <h1 className="text-4xl font-bold mb-4" style={{ fontFamily: 'var(--rmhbox-font-display, Nunito, sans-serif)' }}>
-              Session Complete!
-            </h1>
-            <button
-              onClick={() => router.push('/rmhbox')}
-              className="px-8 py-3 rounded-lg font-semibold"
-              style={{ backgroundColor: 'var(--rmhbox-accent, #7c5cfc)', color: '#fff' }}
-            >
-              Back to Lobby
-            </button>
-          </div>
+        <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-6 p-6 min-h-screen justify-center">
+          <h1 className="text-4xl font-bold" style={{ fontFamily: 'var(--rmhbox-font-display, Nunito, sans-serif)' }}>
+            Session Complete! 🎉
+          </h1>
+
+          {/* Final Standings */}
+          {sessionResults?.standings && sessionResults.standings.length > 0 && (
+            <div className="w-full rounded-xl border border-[var(--rmhbox-border)] bg-[var(--rmhbox-surface)] p-4">
+              <h2 className="mb-3 text-lg font-semibold text-[var(--rmhbox-accent)]">Final Standings</h2>
+              <div className="space-y-2">
+                {sessionResults.standings.map((s) => (
+                  <div key={s.userId} className="flex items-center justify-between rounded-lg bg-[var(--rmhbox-bg)] px-4 py-2">
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl font-bold" style={{ color: s.rank === 1 ? 'var(--rmhbox-warning)' : s.rank === 2 ? '#c0c0c0' : s.rank === 3 ? '#cd7f32' : 'var(--rmhbox-text-muted)' }}>
+                        #{s.rank}
+                      </span>
+                      <span className="font-semibold">{s.userName}</span>
+                    </div>
+                    <div className="flex items-center gap-4 text-sm">
+                      <span className="text-[var(--rmhbox-text-muted)]">{s.wins} win{s.wins !== 1 ? 's' : ''}</span>
+                      <span className="font-bold text-[var(--rmhbox-accent)]">{s.totalScore} pts</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Match History */}
+          {sessionResults?.matchHistory && sessionResults.matchHistory.length > 0 && (
+            <div className="w-full rounded-xl border border-[var(--rmhbox-border)] bg-[var(--rmhbox-surface)] p-4">
+              <h2 className="mb-3 text-lg font-semibold text-[var(--rmhbox-accent)]">Match History</h2>
+              <div className="space-y-2">
+                {sessionResults.matchHistory.map((m) => (
+                  <div key={m.matchId} className="flex items-center justify-between rounded-lg bg-[var(--rmhbox-bg)] px-4 py-2 text-sm">
+                    <div>
+                      <span className="font-semibold">{m.minigameDisplayName}</span>
+                      <span className="ml-2 text-[var(--rmhbox-text-muted)]">· {m.playerCount} players</span>
+                    </div>
+                    <span className="text-[var(--rmhbox-success)]">🏆 {m.winnerUserName ?? 'N/A'}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <button
+            onClick={() => router.push('/rmhbox')}
+            className="px-8 py-3 rounded-lg font-semibold"
+            style={{ backgroundColor: 'var(--rmhbox-accent, #7c5cfc)', color: '#fff' }}
+          >
+            Back to Lobby
+          </button>
         </div>
       )}
     </div>

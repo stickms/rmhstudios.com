@@ -443,15 +443,50 @@ export class GameCoordinator {
     // Look up server-side handler class
     const GameClass = MINIGAME_SERVER_REGISTRY.get(minigameId);
     if (!GameClass) {
-      // No server handler registered — log and use a stub that auto-completes
+      // No server handler registered — auto-complete with empty results after game duration
       logger.warn({ event: 'no_server_handler', lobbyId: lobby.id, minigameId });
-      // The game will run without a server handler; game flow is complete
-      // In production, this would be an error — for now, allow it for testing
       lobby.currentGame = {
         minigameId,
         handler: null as unknown as BaseMinigame,
         startedAt: Date.now(),
       };
+
+      // Auto-complete after the estimated game duration or a fallback of 60s
+      const def = this.getMinigameDef(minigameId);
+      const fallbackDurationMs = (def?.estimatedDurationSeconds ?? 60) * 1000;
+      let lifecycle = this.lifecycles.get(lobby.id);
+      if (!lifecycle) {
+        lifecycle = { phaseTimer: null, cancelTimerBroadcast: null, readyPlayers: new Set() };
+        this.lifecycles.set(lobby.id, lifecycle);
+      }
+      lifecycle.phaseTimer = setTimeout(() => {
+        const currentLobby = this.lobbyManager.getLobby(lobby.id);
+        if (!currentLobby || currentLobby.state !== 'PLAYING') return;
+
+        // Build placeholder results from current players
+        const players = Array.from(currentLobby.players.values());
+        const placeholderResults: MinigameResults = {
+          rankings: players.map((p, idx) => ({
+            userId: p.userId,
+            userName: p.userName,
+            score: 0,
+            rank: idx + 1,
+            deltas: {},
+          })),
+          awards: [],
+          gameSpecificData: {},
+          duration: fallbackDurationMs,
+        };
+        this.handleGameComplete(lobby.id, placeholderResults);
+      }, fallbackDurationMs);
+
+      // Start timer broadcast for the duration
+      lifecycle.cancelTimerBroadcast = this.stateSync.startTimerBroadcast(
+        lobby.id,
+        Math.ceil(fallbackDurationMs / 1000),
+        () => { /* timer expiry handled by phaseTimer above */ },
+      );
+
       return;
     }
 
@@ -536,7 +571,7 @@ export class GameCoordinator {
         userId: p.userId,
         userName: p.userName,
         totalScore: p.score,
-        wins: 0, // TODO: track wins properly
+        wins: lobby.matchHistory.filter((m) => m.standings[0]?.userId === p.userId).length,
         rank: idx + 1,
       }));
 

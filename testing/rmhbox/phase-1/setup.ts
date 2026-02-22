@@ -10,7 +10,15 @@ import { vi } from 'vitest';
 
 // ─── Mock User Data ──────────────────────────────────────────────
 
-export const MOCK_USERS = {
+export interface MockUser {
+  userId: string;
+  userName: string;
+  avatarUrl: string | null;
+  sessionToken: string;
+  expiresAt: Date;
+}
+
+export const MOCK_USERS: Record<string, MockUser> = {
   alice: {
     userId: 'user-alice-001',
     userName: 'Alice',
@@ -46,7 +54,7 @@ export const MOCK_USERS = {
 /**
  * Creates a mock Socket.io socket for testing event handlers.
  */
-export function createMockSocket(user = MOCK_USERS.alice) {
+export function createMockSocket(user: MockUser = MOCK_USERS.alice) {
   const emitted: Array<{ event: string; data: unknown }> = [];
   const joinedRooms = new Set<string>();
 
@@ -60,7 +68,7 @@ export function createMockSocket(user = MOCK_USERS.alice) {
         sessionToken: user.sessionToken,
       },
       handshake: {
-        auth: { token: user.sessionToken },
+        auth: { token: user.sessionToken } as Record<string, unknown>,
       },
       emit: vi.fn((event: string, data: unknown) => {
         emitted.push({ event, data });
