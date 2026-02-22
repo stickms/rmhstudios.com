@@ -3,11 +3,17 @@
  *
  * Manages heartbeat broadcasting and delta-based state updates
  * to all connected lobby members.
+ *
+ * Reference: docs/rmhbox/design-spec/core.md §8, §24.2
+ * Implementation: docs/rmhbox/implementation/phase-2.md §10
  */
 
 import { Server } from 'socket.io';
 import { config } from './config';
 import { LobbyManager } from './lobby-manager';
+import { S2C } from '../../lib/rmhbox/events';
+import type { RMHboxLobby } from './types';
+import type { ClientLobbyState } from '../../lib/rmhbox/types';
 
 export class StateSyncService {
   private readonly io: Server;
@@ -31,7 +37,7 @@ export class StateSyncService {
   }
 
   private tick(): void {
-    for (const [_lobbyId, lobby] of this.lobbyManager.getLobbies()) {
+    for (const lobby of this.lobbyManager.getLobbies().values()) {
       if (lobby.state !== 'PLAYING') continue;
 
       // Send per-player scoped state snapshots
@@ -40,7 +46,7 @@ export class StateSyncService {
           const clientState = this.buildClientState(lobby, userId);
           this.io
             .to(`lobby:${lobby.id}:player:${userId}`)
-            .emit('rmhbox:lobby:state_snapshot', clientState);
+            .emit(S2C.LOBBY_STATE_SNAPSHOT, clientState);
         }
       }
 
@@ -50,7 +56,7 @@ export class StateSyncService {
           const clientState = this.buildClientState(lobby, userId);
           this.io
             .to(`lobby:${lobby.id}:player:${userId}`)
-            .emit('rmhbox:lobby:state_snapshot', clientState);
+            .emit(S2C.LOBBY_STATE_SNAPSHOT, clientState);
         }
       }
     }
@@ -58,12 +64,11 @@ export class StateSyncService {
 
   /**
    * Build a client-safe state snapshot for a specific user.
-   * This is the ONLY exit point for state data — it strips
-   * internal fields and scopes minigame state per player role.
+   * Delegates to LobbyManager.buildClientState() which is the
+   * ONLY exit point for state data — it strips internal fields
+   * and scopes minigame state per player role.
    */
-  buildClientState(lobby: unknown, _userId: string): Record<string, unknown> {
-    // TODO: Implement per core.md §8 + §24.2
-    void lobby;
-    return {};
+  buildClientState(lobby: RMHboxLobby, userId: string): ClientLobbyState {
+    return this.lobbyManager.buildClientState(lobby, userId);
   }
 }

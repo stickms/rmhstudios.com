@@ -52,6 +52,10 @@ export const UpdateSettingsSchema = z.object({
   settings: LobbySettingsSchema,
 });
 
+export const EndSessionSchema = z.object({
+  lobbyId: z.string(),
+});
+
 export const ToggleReadySchema = z.object({
   lobbyId: z.string(),
 });

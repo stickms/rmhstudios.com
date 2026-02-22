@@ -36,7 +36,33 @@ This document catalogs all reusable UI components built for RMHbox. Each compone
 
 ## Component API Documentation
 
-_Components will be documented here as they are implemented in Phase 2+._
+_Front-end UI components will be documented here as they are implemented in later phases. Phase 2 established the server-side WebSocket APIs and client state types (`ClientLobbyState`, `ClientPlayerInfo`, `ClientSpectatorInfo`, `PublicLobbyInfo`) that these components will consume._
+
+### Server-Side Data Contracts (Phase 2)
+
+The following client-safe types are available for component development:
+
+| Type | Source | Description |
+|------|--------|-------------|
+| `ClientLobbyState` | `lib/rmhbox/types.ts` | Full lobby state snapshot sent to clients |
+| `ClientPlayerInfo` | `lib/rmhbox/types.ts` | Player info without internal fields (no socketId, joinedAt) |
+| `ClientSpectatorInfo` | `lib/rmhbox/types.ts` | Spectator info for display |
+| `PublicLobbyInfo` | `lib/rmhbox/types.ts` | Lobby browser entry with player count and status |
+| `ChatMessage` | `lib/rmhbox/types.ts` | Chat message with id, userId, content, type |
+| `GameAction` | `lib/rmhbox/types.ts` | Broadcast action with seq counter and type |
+
+### WebSocket Events (Phase 2)
+
+Key events for UI component integration:
+
+| Event | Direction | Description |
+|-------|-----------|-------------|
+| `rmhbox:lobby:created` | S→C | Lobby creation confirmation with lobbyId |
+| `rmhbox:lobby:state_snapshot` | S→C | Full state snapshot on join/reconnect |
+| `rmhbox:game:action` | S→C | Game actions (PLAYER_JOINED, CHAT_MESSAGE, etc.) |
+| `rmhbox:lobby:browse_result` | S→C | Public lobby browser results |
+| `rmhbox:lobby:kicked` | S→C | Kicked notification |
+| `rmhbox:lobby:disbanded` | S→C | Lobby disbanded notification |
 
 ### Template
 

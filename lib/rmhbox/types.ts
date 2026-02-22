@@ -77,6 +77,19 @@ export interface ClientGameInfo {
   privateState: Record<string, unknown>;
 }
 
+// ─── Public Lobby Info (for lobby browser) ───────────────────────
+
+export interface PublicLobbyInfo {
+  lobbyId: string;
+  hostName: string;
+  playerCount: number;
+  maxPlayers: number;
+  spectatorCount: number;
+  state: LobbyState;
+  currentGame: string | null;
+  roundNumber: number;
+}
+
 // ─── Chat ────────────────────────────────────────────────────────
 
 export interface ChatMessage {
