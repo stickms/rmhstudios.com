@@ -214,3 +214,41 @@ Systematically read through docs/design-spec/core.md and ensure that all aspects
 Check over all rmhbox code so far and ensure there are no placeholders for parts that should be implemented. Any features that have been marked as TODO or that have been disabled or don't work should be brought up to spec and properly implemented; if a feature isn't in the design spec but would otherwise make sense to have, add the feature and update the design spec. Leave no stone unturned.
 
 Run comprehensive typescript compilation and eslint checks across all rmhbox files, and fix any errors in accordance with design specs.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Current phase is PHASE 6. We are focusing only on the sections relevant to the minigame Fact or Friction.
+
+Read through /docs/rmhbox/design-spec/core.md (for phases 1-4) and/or /docs/rmhbox/design-spec/minigames-[1-4].md (for phases 5-8) and /docs/rmhbox/implementation/phase-[#].md.
+
+Review /docs/rmhbox/ui-compoments for reference to use. If you need more context as well, you can refer to the codebase for the minigames implemented in phase 5.
+
+Adhere to the design spec and implementation plan as much as possible, unless there is some error in either, in which case use your best judgement. Add comment headers to all files to detail their contents, and comment code that is not readily understandable, or that require more context.
+
+For all testing tasks, write out the test and test cases in the /testing/rmhbox/phase-[#]/ directory with files named by section number and label with informatively named functions. Make sure to use test cases beyond just the suggested specific test cases; write enough test cases to get a good sample. All tests should pass before moving onto the next section. 
+
+Ensure all tests in /testing/rmhbox/ are environment-agnostic. Use mocks for the Prisma database and a virtual WebSocket client (like socket.io-client in a test runner) to simulate multi-user interactions. The implementation must include a setup script to populate the test database with necessary mock users/auth sessions. Ensure that all state-masking logic is verified by a dedicated security test case (e.g. verifying Player A cannot see Player B's hidden data).
+
+Implement structured logging for all server-side state transitions to facilitate debugging. Every state transition, lobby lifecycle event, and critical WebSocket action must include structured logging (e.g., logger.info({ event, roomId, userId, data })). 
+
+Follow the modular principles of the spec strictly; as you build the reusable UI components (Buttons, Modals, Timer Bars, etc), document their API and Props in the /docs/rmhbox/ui-components.md file. This ensures that in later phases, the minigames can reuse UI patterns.
+
+Use sensible code separation for all code. Write code in mostly self-contained, digestible-length files. This includes the server-side and client-side code. There should always be a subfolder, something like */minigames/[minigame-name]/* so that files remain organized. Do not write one-file megafiles that have all logic in one long block.
+
+Now follow the implementation plan for the current phase and specified game and implement it, by following the relevant design spec. Do not let any details from the design spec go unimplemented. Check off tasks and sections as they are completed, but only after tests have passed. Install dependencies as necessary, including for testing, using pnpm. All code should pass typescript compilation and eslint checks with no warnings and no errors. 
+
+Ensure all necessary minigame game logic, rendering logic, websocket communication logic, UI components, database interaction logic, and any other necessary server and/or client-side code is correctly and completely implemented for this minigame, and all relevant testing passes.

@@ -31,18 +31,26 @@ import { validated, SelectGameSchema, ForceSkipSchema, ReadyToRenderSchema, Game
 import type { MinigameDefinition, RoundResultsPayload, SessionStanding } from '../../lib/rmhbox/types';
 import type { RMHboxLobby, ServerMatchSummary } from './types';
 import type { BaseMinigame, MinigameContext, MinigameResults } from './minigames/base-minigame';
+import { RhymeTimeMinigame } from './minigames/rhyme-time';
+import { UndercoverAgentMinigame } from './minigames/undercover-agent';
+import { CategoryCrashMinigame } from './minigames/category-crash';
+import { WikiRaceMinigame } from './minigames/wiki-race';
 
 // ─── Minigame Server Registry ────────────────────────────────────
 
 /**
  * Maps minigameId → server-side minigame class constructor.
- * Populated when minigame implementations are added (Phases 5-8).
- * For testing, a stub minigame can be registered here.
+ * Registered minigames are instantiated when the PLAYING phase begins.
  */
 export const MINIGAME_SERVER_REGISTRY = new Map<
   string,
   new (context: MinigameContext) => BaseMinigame
->();
+>([
+  ['rhyme-time', RhymeTimeMinigame],
+  ['undercover-agent', UndercoverAgentMinigame],
+  ['category-crash', CategoryCrashMinigame],
+  ['wiki-race', WikiRaceMinigame],
+]);
 
 // ─── Per-lobby lifecycle tracking ────────────────────────────────
 
@@ -713,9 +721,9 @@ export class GameCoordinator {
     lobby.state = 'WAITING';
     lobby.lastActivityAt = Date.now();
 
-    // Reset player ready states and round scores
+    // Reset player ready states and round scores (host stays ready)
     for (const player of lobby.players.values()) {
-      player.isReady = false;
+      player.isReady = player.userId === lobby.hostUserId;
       player.roundScore = 0;
     }
 

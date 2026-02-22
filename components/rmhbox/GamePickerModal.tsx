@@ -12,8 +12,23 @@
 
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X, AlertCircle, Vote, Gamepad2 } from 'lucide-react';
+import { X, AlertCircle, Vote, Gamepad2, icons } from 'lucide-react';
 import { getAllMinigames } from '@/lib/rmhbox/minigame-registry';
+
+/** Convert kebab-case icon name to PascalCase for lucide-react lookup */
+function kebabToPascal(name: string): string {
+  return name.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join('');
+}
+
+/** Resolve a minigame icon string to a Lucide component, falling back to Gamepad2 */
+function GameIcon({ icon, className }: { icon: string; className?: string }) {
+  const pascalName = kebabToPascal(icon);
+  const LucideIcon = icons[pascalName as keyof typeof icons];
+  if (LucideIcon) return <LucideIcon className={className} />;
+  // Fallback: if icon is an emoji, show it; otherwise show default
+  if (/^\p{Emoji}/u.test(icon)) return <span className={className}>{icon}</span>;
+  return <Gamepad2 className={className} />;
+}
 
 interface GamePickerModalProps {
   isOpen: boolean;
@@ -147,8 +162,16 @@ export default function GamePickerModal({
                     color: isSelected ? 'white' : undefined,
                   }}
                 >
-                  <span className="text-base shrink-0 w-7 text-center">{game.icon}</span>
-                  <div className="flex-1 min-w-0">
+                  <div
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full"
+                    style={{
+                      backgroundColor: isSelected ? 'rgba(255,255,255,0.2)' : 'var(--rmhbox-bg-subtle)',
+                      color: isSelected ? 'white' : 'var(--rmhbox-text-muted)',
+                    }}
+                  >
+                    <GameIcon icon={game.icon} className="h-3.5 w-3.5" />
+                  </div>
+                  <div className="flex-1 min-w-0 text-left">
                     <div className="flex items-center gap-2">
                       <span className={`text-sm font-medium ${isSelected ? 'text-white' : 'text-(--rmhbox-text)'}`}>
                         {game.displayName}
@@ -157,7 +180,7 @@ export default function GamePickerModal({
                         <AlertCircle className="h-3.5 w-3.5 shrink-0 text-(--rmhbox-warning)" />
                       )}
                     </div>
-                    <div className={`text-xs ${isSelected ? 'text-white/70' : 'text-(--rmhbox-text-muted)'}`}>
+                    <div className={`text-xs text-left ${isSelected ? 'text-white/70' : 'text-(--rmhbox-text-muted)'}`}>
                       {game.category} · {game.minPlayers}–{game.maxPlayers} players
                     </div>
                     {isConfirming && (

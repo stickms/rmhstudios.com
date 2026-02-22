@@ -10,8 +10,9 @@
  *   GAME_OVER    → RhymeTimeScoreboard (final scores + awards)
  *
  * Handles server actions:
- *   RT_ROUND_START, RT_RHYME_SUBMITTED, RT_SUBMISSION_COUNT,
- *   RT_ROUND_RESULTS, RT_INTERMISSION, RT_GAME_OVER, TIMER_TICK
+ *   RT_ROUND_START, RT_INPUT_START, RT_RHYME_SUBMITTED,
+ *   RT_SUBMISSION_COUNT, RT_ROUND_RESULTS, RT_INTERMISSION,
+ *   RT_GAME_OVER, TIMER_TICK
  *
  * Props:
  *   playerId: string — Current player's user ID
@@ -22,6 +23,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getSocket, emit } from '@/lib/rmhbox/socket';
+import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { S2C, C2S } from '@/lib/rmhbox/events';
 import RhymeTimeInput from './RhymeTimeInput';
 import RhymeTimeResults from './RhymeTimeResults';
@@ -32,12 +34,20 @@ import type { Standing, AwardEntry } from './RhymeTimeScoreboard';
 
 type Phase = 'ROUND_START' | 'INPUT' | 'SCORING' | 'INTERMISSION' | 'GAME_OVER';
 
+/** Helper: emit a game input action with the correct GameInputSchema shape */
+function emitGameInput(action: string, data: unknown = {}) {
+  const lobbyId = useRMHboxStore.getState().lobby?.lobbyId;
+  if (!lobbyId) return;
+  emit(C2S.GAME_INPUT, { lobbyId, action, data });
+}
+
 interface RhymeTimeGameProps {
   playerId: string;
   playerName: string;
 }
 
-export default function RhymeTimeGame({ playerId, playerName }: RhymeTimeGameProps) {
+export default function RhymeTimeGame({ playerId, playerName: _playerName }: RhymeTimeGameProps) {
+  void _playerName; // Consumed by MinigameProps interface; not directly used in this component
   const [phase, setPhase] = useState<Phase>('ROUND_START');
   const [currentRound, setCurrentRound] = useState(1);
   const [totalRounds, setTotalRounds] = useState(3);
@@ -51,58 +61,193 @@ export default function RhymeTimeGame({ playerId, playerName }: RhymeTimeGamePro
   const [standings, setStandings] = useState<Standing[]>([]);
   const [awards, setAwards] = useState<AwardEntry[]>([]);
 
-  // Handle incoming game actions
-  const handleGameAction = useCallback(
-    (data: { action: string; payload: Record<string, unknown> }) => {
-      const { action, payload } = data;
+  // Lookup map from userId → userName for building breakdowns
+  const players = useRMHboxStore((s) => s.lobby?.players);
 
-      switch (action) {
+  // Handle incoming game actions
+  // Server sends flat objects: { type: 'RT_ROUND_START', round, totalRounds, rootWord, duration }
+  const handleGameAction = useCallback(
+    (data: Record<string, unknown>) => {
+      const actionType = data.type as string;
+
+      switch (actionType) {
         case 'RT_ROUND_START': {
           setPhase('ROUND_START');
-          setRootWord(payload.rootWord as string);
-          setCurrentRound(payload.round as number);
-          setTotalRounds(payload.totalRounds as number);
-          setTimeRemaining(payload.duration as number);
-          setTotalDuration(payload.duration as number);
+          // rootWord may be a string or { word, ... } object
+          const rw = data.rootWord;
+          setRootWord(typeof rw === 'string' ? rw : (rw as Record<string, unknown>)?.word as string ?? '');
+          setCurrentRound(data.round as number);
+          setTotalRounds(data.totalRounds as number);
+          setTimeRemaining(data.duration as number);
+          setTotalDuration(data.duration as number);
           setMySubmissions([]);
           setSubmissionCounts([]);
           // Transition to INPUT after reveal animation
           setTimeout(() => setPhase('INPUT'), 3000);
           break;
         }
+        case 'RT_INPUT_START': {
+          // Server sends this after round start to signal input phase
+          setPhase('INPUT');
+          setTimeRemaining(data.timeRemaining as number);
+          setTotalDuration(data.duration as number);
+          break;
+        }
         case 'RT_RHYME_SUBMITTED': {
-          const sub = payload as unknown as {
-            word: string;
-            status: Submission['status'];
-            invalidReason?: string;
+          // Server sends: { type, word, isValid, submissionCount, maxSubmissions }
+          const sub: Submission = {
+            word: data.word as string,
+            status: (data.isValid as boolean) ? 'valid' : 'invalid',
           };
           setMySubmissions((prev) => [...prev, sub]);
           break;
         }
         case 'RT_SUBMISSION_COUNT': {
-          setSubmissionCounts(payload.counts as PlayerSubmissionCount[]);
+          // Server sends per-player: { type, userId, count }
+          // Accumulate into the counts array
+          const userId = data.userId as string;
+          const count = data.count as number;
+          setSubmissionCounts((prev) => {
+            const existing = prev.find((p) => p.userId === userId);
+            if (existing) {
+              return prev.map((p) =>
+                p.userId === userId ? { ...p, count } : p,
+              );
+            }
+            // Find userName from lobby players
+            const p = players?.find((pl) => pl.userId === userId);
+            return [...prev, { userId, userName: p?.userName ?? userId, count }];
+          });
           break;
         }
         case 'RT_ROUND_RESULTS': {
+          // Server sends: { type, round, results: RoundResult, scores, duration }
+          // RoundResult.playerResults: Record<string, { userId, userName, breakdown: WordBreakdown[], roundScore, validCount, invalidCount }>
           setPhase('SCORING');
-          setWordResults(payload.words as WordResult[]);
-          setPlayerBreakdowns(payload.breakdowns as PlayerBreakdown[]);
+          const results = data.results as Record<string, unknown>;
+          const playerResults = results?.playerResults as Record<
+            string,
+            {
+              userId: string;
+              userName: string;
+              breakdown: Array<{
+                word: string;
+                isValid: boolean;
+                rarity: number;
+                basePoints: number;
+                multiSyllableMultiplier: number;
+                speedBonus: number;
+                totalPoints: number;
+                submitterCount: number;
+                isMultiSyllable: boolean;
+              }>;
+              roundScore: number;
+              validCount: number;
+              invalidCount: number;
+            }
+          >;
+
+          // Flatten all breakdowns into WordResult[]
+          const words: WordResult[] = [];
+          const breakdowns: PlayerBreakdown[] = [];
+
+          if (playerResults) {
+            for (const pr of Object.values(playerResults)) {
+              breakdowns.push({
+                userId: pr.userId,
+                userName: pr.userName,
+                validCount: pr.validCount,
+                invalidCount: pr.invalidCount,
+                roundScore: pr.roundScore,
+              });
+              for (const wb of pr.breakdown) {
+                if (!wb.isValid) continue;
+                // Map rarity number → tier name
+                let rarity: 'rare' | 'uncommon' | 'common' = 'common';
+                if (wb.submitterCount === 1) rarity = 'rare';
+                else if (wb.submitterCount <= 2) rarity = 'uncommon';
+
+                words.push({
+                  word: wb.word,
+                  submittedBy: pr.userName,
+                  userId: pr.userId,
+                  rarity,
+                  points: wb.totalPoints,
+                  multiSyllable: wb.isMultiSyllable,
+                  speedBonus: wb.speedBonus > 0,
+                });
+              }
+            }
+          }
+
+          setWordResults(words);
+          setPlayerBreakdowns(breakdowns);
           break;
         }
         case 'RT_INTERMISSION': {
+          // Server sends: { type, duration, nextRound, scores: Record<string,number> }
           setPhase('INTERMISSION');
-          setStandings(payload.standings as Standing[]);
+          const scores = data.scores as Record<string, number> | undefined;
+          if (scores) {
+            const standingsList: Standing[] = Object.entries(scores).map(([uid, sc]) => {
+              const p = players?.find((pl) => pl.userId === uid);
+              return { userId: uid, userName: p?.userName ?? uid, totalScore: sc, delta: 0 };
+            });
+            standingsList.sort((a, b) => b.totalScore - a.totalScore);
+            setStandings(standingsList);
+          }
           break;
         }
         case 'RT_GAME_OVER': {
+          // Game-over is handled by game coordinator via GAME_ROUND_RESULTS event,
+          // but the minigame itself may also send a final state.
           setPhase('GAME_OVER');
-          setStandings(payload.standings as Standing[]);
-          setAwards((payload.awards as AwardEntry[]) || []);
           break;
         }
         case 'TIMER_TICK': {
-          setTimeRemaining(payload.remaining as number);
+          setTimeRemaining(data.timeRemaining as number);
           break;
+        }
+      }
+    },
+    [players],
+  );
+
+  // Also listen for GAME_ROUND_RESULTS for game-over standings/awards
+  const handleRoundResults = useCallback(
+    (data: Record<string, unknown>) => {
+      const rankings = data.rankings as Array<{
+        userId: string;
+        userName: string;
+        score: number;
+        rank: number;
+      }> | undefined;
+
+      const rawAwards = data.awards as Array<{
+        userId: string;
+        title: string;
+        description: string;
+        icon: string;
+      }> | undefined;
+
+      if (rankings) {
+        setPhase('GAME_OVER');
+        const scoreboard: Standing[] = rankings.map((r) => ({
+          userId: r.userId,
+          userName: r.userName,
+          totalScore: r.score,
+          delta: r.score,
+        }));
+        setStandings(scoreboard);
+
+        if (rawAwards) {
+          const mapped: AwardEntry[] = rawAwards.map((a) => ({
+            icon: a.icon,
+            title: a.title,
+            recipient: a.userId,
+            description: a.description,
+          }));
+          setAwards(mapped);
         }
       }
     },
@@ -115,15 +260,17 @@ export default function RhymeTimeGame({ playerId, playerName }: RhymeTimeGamePro
     if (!socket) return;
 
     socket.on(S2C.GAME_ACTION, handleGameAction);
+    socket.on(S2C.GAME_ROUND_RESULTS, handleRoundResults);
     return () => {
       socket.off(S2C.GAME_ACTION, handleGameAction);
+      socket.off(S2C.GAME_ROUND_RESULTS, handleRoundResults);
     };
-  }, [handleGameAction]);
+  }, [handleGameAction, handleRoundResults]);
 
   // Submit a word
   const handleSubmitWord = useCallback(
     (word: string) => {
-      emit(C2S.GAME_INPUT, { type: 'RT_SUBMIT_RHYME', word });
+      emitGameInput('SUBMIT_RHYME', { word });
     },
     [],
   );

@@ -283,7 +283,7 @@ export class LobbyManager {
       avatarUrl,
       socketId: socket.id,
       isConnected: true,
-      isReady: false,
+      isReady: true, // Host is always ready
       score: 0,
       roundScore: 0,
       joinedAt: now,
@@ -581,6 +581,15 @@ export class LobbyManager {
         lobby.hostUserId = newHostId;
         const newHost = lobby.players.get(newHostId)!;
 
+        // Auto-ready the new host
+        if (!newHost.isReady) {
+          newHost.isReady = true;
+          this.broadcastAction(lobby.id, {
+            type: 'PLAYER_READY_CHANGED',
+            payload: { userId: newHostId, isReady: true },
+          });
+        }
+
         this.broadcastAction(lobby.id, {
           type: 'HOST_TRANSFERRED',
           payload: { newHostUserId: newHostId, newHostUserName: newHost.userName },
@@ -608,7 +617,7 @@ export class LobbyManager {
           avatarUrl: spectator.avatarUrl,
           socketId: spectator.socketId,
           isConnected: spectator.isConnected,
-          isReady: false,
+          isReady: true, // Host is always ready
           score: 0,
           roundScore: 0,
           joinedAt: spectator.joinedAt,
@@ -743,6 +752,15 @@ export class LobbyManager {
 
     lobby.hostUserId = payload.targetUserId;
     lobby.lastActivityAt = Date.now();
+
+    // Auto-ready the new host
+    if (!targetPlayer.isReady) {
+      targetPlayer.isReady = true;
+      this.broadcastAction(lobby.id, {
+        type: 'PLAYER_READY_CHANGED',
+        payload: { userId: payload.targetUserId, isReady: true },
+      });
+    }
 
     this.broadcastAction(lobby.id, {
       type: 'HOST_TRANSFERRED',
