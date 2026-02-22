@@ -16,6 +16,7 @@ export interface GameInfo {
     color: string;
     tags: string[];
     imagePath?: string;
+    authGate: boolean;
 }
 
 /**
@@ -41,6 +42,7 @@ export const games: GameInfo[] = [
         color: 'from-cyan-500/20 to-blue-600/20 hover:border-cyan-500/50',
         tags: ['Deckbuilder', 'Roguelike', 'Strategy'],
         imagePath: '/images/games/signal_forge.png',
+        authGate: true,
     },
     {
         id: 'synapse-storm',
@@ -56,6 +58,7 @@ export const games: GameInfo[] = [
         color: 'from-cyan-500/20 to-pink-500/20 hover:border-cyan-500/50',
         tags: ['Action', 'Puzzle', 'Fast-paced'],
         imagePath: '/images/games/synapsestorm.png',
+        authGate: true,
     },
     {
         id: 'temple-of-joy',
@@ -72,6 +75,7 @@ export const games: GameInfo[] = [
         color: 'from-amber-700/20 to-yellow-600/20 hover:border-amber-500/50',
         tags: ['Idle', 'Clicker', 'Prestige'],
         imagePath: '/images/games/temple_of_joy.png',
+        authGate: true,
     },
     {
         id: 'cursed-logic',
@@ -89,6 +93,7 @@ export const games: GameInfo[] = [
         color: 'from-amber-500/20 to-orange-600/20 hover:border-amber-500/50',
         tags: ['Turn-based', 'Duel', 'Minigames'],
         imagePath: '/images/games/cursed_logic.png',
+        authGate: true,
     },
     {
         id: 'echoes',
@@ -106,6 +111,7 @@ export const games: GameInfo[] = [
         color: 'from-cyan-500/20 to-blue-600/20 hover:border-cyan-500/50',
         tags: ['Deckbuilder', 'Roguelike', 'Strategy'],
         imagePath: '/images/games/echoes_of_the_spire.png',
+        authGate: true,
     },
     {
         id: 'slice-it',
@@ -122,6 +128,7 @@ export const games: GameInfo[] = [
         color: 'from-rose-500/20 to-purple-600/20 hover:border-rose-500/50',
         tags: ['Arcade', 'Rhythm', 'Action'],
         imagePath: '/images/games/slice_it.png',
+        authGate: true,
     },
     {
         id: 'laundry-sort',
@@ -138,6 +145,7 @@ export const games: GameInfo[] = [
         color: 'from-yellow-500/20 to-orange-600/20 hover:border-yellow-500/50',
         tags: ['Casual', 'Physics', 'Puzzle'],
         imagePath: '/images/games/laundry_sort.png',
+        authGate: true,
     },
     {
         id: 'vega',
@@ -154,6 +162,7 @@ export const games: GameInfo[] = [
         color: 'from-green-500/20 to-emerald-600/20 hover:border-green-500/50',
         tags: ['Tower Defense', 'Strategy', 'Experimental'],
         imagePath: '/images/games/project_vega.png',
+        authGate: true,
     },
     {
         id: 'house-always-wins',
@@ -170,6 +179,7 @@ export const games: GameInfo[] = [
         color: 'from-amber-950/40 to-neutral-900/20 hover:border-amber-500/50',
         tags: ['Metroidvania', 'Narrative', 'In Development'],
         imagePath: '/images/games/house_always_wins.png',
+        authGate: true,
     },
     {
         id: 'satans-library',
@@ -187,6 +197,7 @@ export const games: GameInfo[] = [
         color: 'from-red-900/40 to-red-600/20 hover:border-red-500/50',
         tags: ['Survival Horror', 'Steam', 'In Development'],
         imagePath: '/images/games/satans_library.png',
+        authGate: false,
     },
     {
         id: 'neon-driftway',
@@ -203,6 +214,7 @@ export const games: GameInfo[] = [
         color: 'from-red-500/20 to-cyan-600/20 hover:border-red-500/50',
         tags: ['Arcade', 'Racing', 'Endless'],
         imagePath: '/images/games/neon_driftway.png',
+        authGate: true,
     },
     {
         id: 'rmhdle',
@@ -219,6 +231,7 @@ export const games: GameInfo[] = [
         color: 'from-indigo-500/20 to-blue-600/20 hover:border-indigo-500/50',
         tags: ['Discord', 'Word Game', 'Daily'],
         imagePath: '/images/games/rmhdle.png',
+        authGate: false,
     },
     {
         id: 'rmh-connections',
@@ -235,6 +248,7 @@ export const games: GameInfo[] = [
         color: 'from-violet-500/20 to-purple-600/20 hover:border-violet-500/50',
         tags: ['Discord', 'Puzzle', 'Daily'],
         imagePath: '/images/games/rmhconnections.png',
+        authGate: false,
     },
     {
         id: 'rmh-code',
@@ -251,5 +265,6 @@ export const games: GameInfo[] = [
         color: 'from-blue-500/20 to-violet-600/20 hover:border-blue-500/50',
         tags: ['Code Editor', 'Developer Tool', 'Beta'],
         imagePath: '/images/games/rmhcode.png',
+        authGate: true,
     },
 ];

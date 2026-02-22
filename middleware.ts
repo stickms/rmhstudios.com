@@ -1,19 +1,10 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { games } from '@/lib/games';
 
-const PROTECTED_GAME_ROUTES = [
-    '/temple-of-joy',
-    '/synapse-storm',
-    '/house-always-wins',
-    '/slice-it',
-    '/signal-forge',
-    '/neon-driftway',
-    '/vega',
-    '/laundry-sort',
-    '/echoes',
-    '/cursed-logic',
-    '/rmh-code',
-];
+const PROTECTED_GAME_ROUTES = games
+    .filter((g) => g.authGate)
+    .map((g) => g.href);
 
 export function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
@@ -37,17 +28,10 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-    matcher: [
-        '/temple-of-joy/:path*',
-        '/synapse-storm/:path*',
-        '/house-always-wins/:path*',
-        '/slice-it/:path*',
-        '/signal-forge/:path*',
-        '/neon-driftway/:path*',
-        '/vega/:path*',
-        '/laundry-sort/:path*',
-        '/echoes/:path*',
-        '/cursed-logic/:path*',
-        '/rmh-code/:path*',
-    ],
+    /*
+     * The matcher broadly covers all page routes. The middleware function
+     * dynamically filters to only auth-gate routes from games with authGate: true.
+     * Static assets, API routes, and Next.js internals are excluded.
+     */
+    matcher: ['/((?!api|_next/static|_next/image|favicon\\.ico|images|fonts|sounds|songs).*)'],
 };
