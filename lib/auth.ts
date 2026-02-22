@@ -13,8 +13,7 @@ export const auth = betterAuth({
         },
     },
     emailAndPassword: {
-        enabled: true,
-        // Optional: requireEmailVerification: true
+        enabled: process.env.NODE_ENV !== 'production',
     },
     user: {
         additionalFields: {
