@@ -161,4 +161,4 @@ Implement structured logging for all server-side state transitions to facilitate
 
 Follow the modular principles of the spec strictly; as you build the reusable UI components (Buttons, Modals, Timer Bars), document their API and Props in the /docs/rmhbox/ui-components.md file. This ensures that in later phases, the minigames can reuse UI patterns.
 
-Now implement the current phase.
+Now follow the implementation plan for the current phase and implement it. Check off tasks and sections as they are completed, but only after tests have passed. Install dependencies as necessary, including for testing, using pnpm.
