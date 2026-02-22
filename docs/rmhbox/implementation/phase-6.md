@@ -412,6 +412,19 @@
   ```
   **Verification:** Call registry lookup for `"fact-or-friction"`; confirm all metadata fields correct and handler instantiates with valid context.
 
+- [ ] Register server handler in `MINIGAME_SERVER_REGISTRY` (in `server/rmhbox/game-coordinator.ts`):
+  ```ts
+  import { FactOrFrictionGame } from './minigames/fact-or-friction';
+  MINIGAME_SERVER_REGISTRY.set('fact-or-friction', FactOrFrictionGame);
+  ```
+  **Verification:** `MINIGAME_SERVER_REGISTRY.get('fact-or-friction')` returns the `FactOrFrictionGame` class. `GameCoordinator` can instantiate it with a valid `MinigameContext`.
+
+- [ ] Add lazy-load entry in `components/rmhbox/MinigameRenderer.tsx`:
+  ```tsx
+  'fact-or-friction': lazy(() => import('./minigames/fact-or-friction/FactOrFrictionGame')),
+  ```
+  **Verification:** When lobby enters PLAYING with `minigameId: 'fact-or-friction'`, MinigameRenderer renders `<FactOrFrictionGame />` inside `<Suspense>`. Verify code-splitting in network tab.
+
 ---
 
 ### 6.1.8 Build Client Components
@@ -485,6 +498,28 @@
 - [ ] Pass button with tap handler (emits `PASS_QUESTION` action)
 - [ ] Timer display
   **Verification:** Score updates animate correctly. Pass button emits correct event. Player count updates in real-time.
+
+#### 6.1.8.7 Sound Effect Integration
+
+- [ ] Import `playSound` from `@/lib/rmhbox/audio`
+- [ ] Trigger sounds in `FactOrFrictionGame.tsx` event handlers:
+  - [ ] `FOF_QUESTION` → `playSound('swoosh')`
+  - [ ] `FOF_ANSWER_LOCKED` → `playSound('click')`
+  - [ ] `FOF_ANSWER_REVEAL` (player correct) → `playSound('scoreDing')`
+  - [ ] `FOF_ANSWER_REVEAL` (player wrong) → `playSound('buzzer')`
+  - [ ] `FOF_SCORE_UPDATE` → `playSound('scoreDing')`
+  - [ ] `TIMER_TICK` with `timeRemaining <= 5` → `playSound('countdownBeep')`
+  **Verification:** All sounds fire at correct moments. Volume respects user settings.
+
+#### 6.1.8.8 Zustand Store Integration
+
+- [ ] Read game state via `useRMHboxStore()`:
+  - [ ] `gameState.lastAction` for reacting to `FOF_*` events
+  - [ ] `lobby.currentGame.timeRemaining` for countdown
+  - [ ] `lobby.currentGame.publicState` for question, pot value, and player answer status
+  - [ ] `lobby.currentGame.privateState` for own locked answer and pot-at-lock value
+- [ ] Detect spectator mode: render read-only QuestionCard without clickable options
+  **Verification:** Component re-renders on store updates. Spectator sees question and pot but cannot answer.
 
 ---
 
@@ -1009,6 +1044,19 @@
   ```
   **Verification:** Registry lookup for `"undercover-editor"` returns correct metadata and handler instantiates.
 
+- [ ] Register server handler in `MINIGAME_SERVER_REGISTRY` (in `server/rmhbox/game-coordinator.ts`):
+  ```ts
+  import { UndercoverEditorGame } from './minigames/undercover-editor';
+  MINIGAME_SERVER_REGISTRY.set('undercover-editor', UndercoverEditorGame);
+  ```
+  **Verification:** `MINIGAME_SERVER_REGISTRY.get('undercover-editor')` returns the `UndercoverEditorGame` class. `GameCoordinator` can instantiate it with a valid `MinigameContext`.
+
+- [ ] Add lazy-load entry in `components/rmhbox/MinigameRenderer.tsx`:
+  ```tsx
+  'undercover-editor': lazy(() => import('./minigames/undercover-editor/UndercoverEditorGame')),
+  ```
+  **Verification:** When lobby enters PLAYING with `minigameId: 'undercover-editor'`, MinigameRenderer renders `<UndercoverEditorGame />` inside `<Suspense>`. Verify code-splitting in network tab.
+
 ---
 
 ### 6.2.8 Build Client Components
@@ -1108,6 +1156,30 @@
 - [ ] Turn progress: "Turn 4/12"
 - [ ] Animated transition between turns
   **Verification:** Correct player shown per turn. Highlight on own turn. Progress counter accurate.
+
+#### 6.2.8.9 Sound Effect Integration
+
+- [ ] Import `playSound` from `@/lib/rmhbox/audio`
+- [ ] Trigger sounds in `UndercoverEditorGame.tsx` event handlers:
+  - [ ] `UE_GAME_START` → `playSound('swoosh')`
+  - [ ] `UE_TURN_START` → `playSound('chime')`
+  - [ ] `UE_SENTENCE_ADDED` → `playSound('click')`
+  - [ ] `UE_EDIT_PROMPT` → `playSound('swoosh')`
+  - [ ] `UE_REVIEW_START` → `playSound('swoosh')`
+  - [ ] `UE_ACCUSATION_START` → `playSound('swoosh')`
+  - [ ] `UE_VOTE_CAST` → `playSound('click')`
+  - [ ] `UE_REVEAL` → `playSound('victoryFanfare')`
+  **Verification:** All sounds fire at correct moments. Volume respects user settings.
+
+#### 6.2.8.10 Zustand Store Integration
+
+- [ ] Read game state via `useRMHboxStore()`:
+  - [ ] `gameState.lastAction` for reacting to `UE_*` events
+  - [ ] `lobby.currentGame.timeRemaining` for countdown
+  - [ ] `lobby.currentGame.publicState` for story
+  - [ ] `lobby.currentGame.privateState` for role
+- [ ] Detect spectator mode: render omniscient view showing Editor identity and keyword
+  **Verification:** Component re-renders on store updates. Spectator sees Editor identity, keyword, and all edits.
 
 ---
 
@@ -1556,6 +1628,19 @@
   ```
   **Verification:** Registry lookup for `"minimalist-masterpiece"` returns correct metadata.
 
+- [ ] Register server handler in `MINIGAME_SERVER_REGISTRY` (in `server/rmhbox/game-coordinator.ts`):
+  ```ts
+  import { MinimalistMasterpieceGame } from './minigames/minimalist-masterpiece';
+  MINIGAME_SERVER_REGISTRY.set('minimalist-masterpiece', MinimalistMasterpieceGame);
+  ```
+  **Verification:** `MINIGAME_SERVER_REGISTRY.get('minimalist-masterpiece')` returns the `MinimalistMasterpieceGame` class. `GameCoordinator` can instantiate it with a valid `MinigameContext`.
+
+- [ ] Add lazy-load entry in `components/rmhbox/MinigameRenderer.tsx`:
+  ```tsx
+  'minimalist-masterpiece': lazy(() => import('./minigames/minimalist-masterpiece/MinimalistMasterpieceGame')),
+  ```
+  **Verification:** When lobby enters PLAYING with `minigameId: 'minimalist-masterpiece'`, MinigameRenderer renders `<MinimalistMasterpieceGame />` inside `<Suspense>`. Verify code-splitting in network tab.
+
 ---
 
 ### 6.3.8 Build Client Components
@@ -1658,6 +1743,28 @@
 - [ ] Framer Motion animations for rank reveals (staggered)
 - [ ] canvas-confetti for winner
   **Verification:** Rankings display correctly. De-anonymization correct. Confetti on winner.
+
+#### 6.3.8.10 Sound Effect Integration
+
+- [ ] Import `playSound` from `@/lib/rmhbox/audio`
+- [ ] Trigger sounds in `MinimalistMasterpieceGame.tsx` event handlers:
+  - [ ] `MM_PROMPT` → `playSound('goFanfare')`
+  - [ ] `MM_DRAWING_SUBMITTED` → `playSound('click')`
+  - [ ] `MM_GALLERY` → `playSound('swoosh')`
+  - [ ] `MM_AUCTION_START` → `playSound('goFanfare')`
+  - [ ] `MM_BID_UPDATE` → `playSound('click')`
+  - [ ] `MM_RESULTS` → `playSound('victoryFanfare')`
+  **Verification:** All sounds fire at correct moments. Volume respects user settings.
+
+#### 6.3.8.11 Zustand Store Integration
+
+- [ ] Read game state via `useRMHboxStore()`:
+  - [ ] `gameState.lastAction` for reacting to `MM_*` events
+  - [ ] `lobby.currentGame.timeRemaining` for countdown
+  - [ ] `lobby.currentGame.publicState` for gallery and auction data
+  - [ ] `lobby.currentGame.privateState` for drawing state
+- [ ] Detect spectator mode: render live multi-canvas view during drawing phase
+  **Verification:** Component re-renders on store updates. Spectator sees all canvases live but cannot draw or bid.
 
 ---
 
@@ -2139,6 +2246,19 @@
   ```
   **Verification:** Registry lookup for `"emoji-cinema"` returns correct metadata.
 
+- [ ] Register server handler in `MINIGAME_SERVER_REGISTRY` (in `server/rmhbox/game-coordinator.ts`):
+  ```ts
+  import { EmojiCinemaGame } from './minigames/emoji-cinema';
+  MINIGAME_SERVER_REGISTRY.set('emoji-cinema', EmojiCinemaGame);
+  ```
+  **Verification:** `MINIGAME_SERVER_REGISTRY.get('emoji-cinema')` returns the `EmojiCinemaGame` class. `GameCoordinator` can instantiate it with a valid `MinigameContext`.
+
+- [ ] Add lazy-load entry in `components/rmhbox/MinigameRenderer.tsx`:
+  ```tsx
+  'emoji-cinema': lazy(() => import('./minigames/emoji-cinema/EmojiCinemaGame')),
+  ```
+  **Verification:** When lobby enters PLAYING with `minigameId: 'emoji-cinema'`, MinigameRenderer renders `<EmojiCinemaGame />` inside `<Suspense>`. Verify code-splitting in network tab.
+
 ---
 
 ### 6.4.8 Build Client Components
@@ -2242,6 +2362,28 @@
 - [ ] Emoji sequence displayed below title
 - [ ] Year and genre badges
   **Verification:** Animation plays smoothly. Title, year, genre visible.
+
+#### 6.4.8.10 Sound Effect Integration
+
+- [ ] Import `playSound` from `@/lib/rmhbox/audio`
+- [ ] Trigger sounds in `EmojiCinemaGame.tsx` event handlers:
+  - [ ] `EC_PRODUCER_ASSIGNED` → `playSound('swoosh')`
+  - [ ] `EC_EMOJI_UPDATED` → `playSound('click')`
+  - [ ] `EC_CLOSE_GUESS` → `playSound('chime')`
+  - [ ] `EC_CORRECT_GUESS` → `playSound('scoreDing')`
+  - [ ] `EC_ROUND_OVER` → `playSound('victoryFanfare')`
+  - [ ] `TIMER_TICK` with `timeRemaining <= 5` → `playSound('countdownBeep')`
+  **Verification:** All sounds fire at correct moments. Volume respects user settings.
+
+#### 6.4.8.11 Zustand Store Integration
+
+- [ ] Read game state via `useRMHboxStore()`:
+  - [ ] `gameState.lastAction` for reacting to `EC_*` events
+  - [ ] `lobby.currentGame.timeRemaining` for countdown
+  - [ ] `lobby.currentGame.publicState` for emoji sequence
+  - [ ] `lobby.currentGame.privateState` for role (Producer/Audience)
+- [ ] Detect spectator mode: render omniscient view showing movie title and all guesses
+  **Verification:** Component re-renders on store updates. Spectator sees movie title and all guesses but cannot interact.
 
 ---
 
@@ -2368,5 +2510,28 @@
   - Minimalist Masterpiece: `drawing_submitted`, `bid_placed`, `auction_result`
   - Emoji Cinema: `round_start`, `emoji_placed`, `guess_attempt`, `round_end`
   **Verification:** Game logs persist and are retrievable via API. Action types match spec.
+
+### 6.5.10 MinigameRenderer Code-Splitting Test
+
+- [ ] **MinigameRenderer code-splitting:** verify each Phase 6 game's client component loads as a separate chunk
+  - [ ] Start each game → verify chunk loaded on demand via network tab
+  - [ ] Verify `<Suspense>` fallback appears during chunk load
+  **Verification:** Separate chunk files for each minigame. Main bundle unaffected.
+
+### 6.5.11 Sound Effect Integration Test
+
+- [ ] **Sound effect integration test:** verify all 4 Phase 6 games trigger appropriate sounds
+  - [ ] Test with master volume at 0 → silence
+  - [ ] Test with master volume at 1.0 → all sounds audible at correct moments
+  **Verification:** Sound events fire once per game event. Volume settings respected.
+
+### 6.5.12 MINIGAME_SERVER_REGISTRY Completeness Test
+
+- [ ] **MINIGAME_SERVER_REGISTRY completeness:** verify all 4 Phase 6 handlers registered
+  - [ ] `MINIGAME_SERVER_REGISTRY.get('fact-or-friction')` → `FactOrFrictionGame`
+  - [ ] `MINIGAME_SERVER_REGISTRY.get('undercover-editor')` → `UndercoverEditorGame`
+  - [ ] `MINIGAME_SERVER_REGISTRY.get('minimalist-masterpiece')` → `MinimalistMasterpieceGame`
+  - [ ] `MINIGAME_SERVER_REGISTRY.get('emoji-cinema')` → `EmojiCinemaGame`
+  **Verification:** All 4 handlers instantiate and implement `BaseMinigame` interface.
 
 > **Note on parallel development:** Phase 6 can be implemented fully in parallel with Phase 7 and Phase 8 after Phase 5 is complete. The coexistence test above (6.5.8) should be run once Phase 5 is available. If Phase 7 or Phase 8 are also complete, run a combined coexistence test covering all deployed phases.

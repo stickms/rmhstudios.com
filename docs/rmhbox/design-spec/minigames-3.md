@@ -11,9 +11,13 @@
 ## Table of Contents
 
 1. [Sequence Sam](#1-sequence-sam)
+   - 1.14 [MinigameRenderer & Client-Server Wiring](#114-minigamerenderer--client-server-wiring)
 2. [Human Keyboard](#2-human-keyboard)
+   - 2.15 [MinigameRenderer & Client-Server Wiring](#215-minigamerenderer--client-server-wiring)
 3. [Cursor Curling](#3-cursor-curling)
+   - 3.14 [MinigameRenderer & Client-Server Wiring](#314-minigamerenderer--client-server-wiring)
 4. [Human Tetris](#4-human-tetris)
+   - 4.16 [MinigameRenderer & Client-Server Wiring](#416-minigamerenderer--client-server-wiring)
 
 ---
 
@@ -409,6 +413,78 @@ interface SSInitialState {
 
 **Replay Value:** The fun of reviewing a Sequence Sam log is seeing the elimination order — who survived the longest, which chaos rounds caused the most failures, and how the sequence length ramped up over time.
 
+### 1.14 MinigameRenderer & Client-Server Wiring
+
+#### MinigameRenderer Registration
+
+```typescript
+// In MinigameRenderer lazy-import map
+'sequence-sam': lazy(() => import('./minigames/sequence-sam/SequenceSamGame'))
+```
+
+#### Client-Side Store Integration
+
+The client listens for the following server-dispatched action types and merges them into the minigame slice of the room store:
+
+`SS_ROUND_START`, `SS_PATTERN_STEP`, `SS_PATTERN_COMPLETE`, `SS_GRID_ROTATE`, `SS_TAP_RESULT`, `SS_PLAYER_COMPLETE`, `SS_PLAYER_FAILED`, `SS_ROUND_RESULTS`, `SS_ELIMINATION`, `SS_GAME_OVER`, `TIMER_TICK`
+
+```typescript
+useEffect(() => {
+  const handlers = [
+    'SS_ROUND_START', 'SS_PATTERN_STEP', 'SS_PATTERN_COMPLETE',
+    'SS_GRID_ROTATE', 'SS_TAP_RESULT', 'SS_PLAYER_COMPLETE',
+    'SS_PLAYER_FAILED', 'SS_ROUND_RESULTS', 'SS_ELIMINATION',
+    'SS_GAME_OVER', 'TIMER_TICK',
+  ];
+  handlers.forEach((type) =>
+    socket.on(type, (payload) => dispatch({ type, payload }))
+  );
+  return () => handlers.forEach((type) => socket.off(type));
+}, [socket, dispatch]);
+```
+
+#### Client-Side Input Dispatch
+
+Players tap a grid cell to reproduce the pattern. The only client-to-server message is:
+
+- **`SS_TAP`** — `{ position }` where `position` is a 0–8 grid index.
+
+```typescript
+const handleTap = (index: number) => {
+  socket.emit('SS_TAP', { position: index });
+};
+```
+
+> **Security note:** The raw sequence is NEVER sent to the client. The pattern is displayed one step at a time via `SS_PATTERN_STEP` events. The server validates each tap against the expected sequence position.
+
+#### Server-Side Handler Registration
+
+```typescript
+// server/minigames/sequence-sam/SequenceSamGame.ts
+export class SequenceSamGame { /* … */ }
+
+// server/minigame-registry.ts
+MINIGAME_SERVER_REGISTRY.set('sequence-sam', SequenceSamGame);
+```
+
+#### Sound Effect Integration
+
+| Event | Sound | Notes |
+|---|---|---|
+| Round start | `goFanfare` | New round begins |
+| Pattern step flash | `click` | Each tile lights up during pattern display |
+| Pattern complete | `swoosh` | All steps shown, input phase begins |
+| Grid rotate (chaos) | `swoosh` | Chaos round tile remap |
+| Correct tap | `scoreDing` | Player tapped the right cell |
+| Wrong tap / strike | `buzzer` | Incorrect cell tapped |
+| Player eliminated | `buzzer` | Player exceeded max strikes |
+| Round results | `victoryFanfare` | Summary after each round |
+| Game over | `victoryFanfare` | Final standings revealed |
+
+#### Spectator Rendering
+
+Spectators see pattern steps, all players' progress (completion status), and elimination events. The component renders a read-only grid without tap handlers.
+
 ---
 
 ## 2. Human Keyboard
@@ -779,6 +855,77 @@ interface HKInitialState {
 | `game_end` | `{ completed: boolean; finalProgress: number; elapsedMs: number; mvpUserId: string; totalCorrectKeys: number; totalWrongKeys: number }` | Game over |
 
 **Replay Value:** Reviewing a Human Keyboard log reveals which players carried the team, how reshuffles affected typing momentum, and whether the team completed the sentence — or how close they got.
+
+### 2.15 MinigameRenderer & Client-Server Wiring
+
+#### MinigameRenderer Registration
+
+```typescript
+// In MinigameRenderer lazy-import map
+'human-keyboard': lazy(() => import('./minigames/human-keyboard/HumanKeyboardGame'))
+```
+
+#### Client-Side Store Integration
+
+The client listens for the following server-dispatched action types and merges them into the minigame slice of the room store:
+
+`HK_SENTENCE_REVEAL`, `HK_KEY_ASSIGNMENT`, `HK_KEY_CORRECT`, `HK_KEY_WRONG`, `HK_KEY_WRONG_PLAYER`, `HK_CURSOR_LOCKED`, `HK_SPACE_AUTO`, `HK_RESHUFFLE`, `HK_RESHUFFLE_WARNING`, `HK_COMPLETE`, `HK_RESULTS`, `TIMER_TICK`
+
+```typescript
+useEffect(() => {
+  const handlers = [
+    'HK_SENTENCE_REVEAL', 'HK_KEY_ASSIGNMENT', 'HK_KEY_CORRECT',
+    'HK_KEY_WRONG', 'HK_KEY_WRONG_PLAYER', 'HK_CURSOR_LOCKED',
+    'HK_SPACE_AUTO', 'HK_RESHUFFLE', 'HK_RESHUFFLE_WARNING',
+    'HK_COMPLETE', 'HK_RESULTS', 'TIMER_TICK',
+  ];
+  handlers.forEach((type) =>
+    socket.on(type, (payload) => dispatch({ type, payload }))
+  );
+  return () => handlers.forEach((type) => socket.off(type));
+}, [socket, dispatch]);
+```
+
+#### Client-Side Input Dispatch
+
+Each player presses the key they are assigned. The only client-to-server message is:
+
+- **`HK_PRESS`** — `{ key }` where `key` is a single lowercase letter a–z.
+
+```typescript
+const handleKeyPress = (key: string) => {
+  socket.emit('HK_PRESS', { key: key.toLowerCase() });
+};
+```
+
+#### Server-Side Handler Registration
+
+```typescript
+// server/minigames/human-keyboard/HumanKeyboardGame.ts
+export class HumanKeyboardGame { /* … */ }
+
+// server/minigame-registry.ts
+MINIGAME_SERVER_REGISTRY.set('human-keyboard', HumanKeyboardGame);
+```
+
+#### Sound Effect Integration
+
+| Event | Sound | Notes |
+|---|---|---|
+| Sentence revealed | `goFanfare` | Sentence appears on screen |
+| Key correct | `scoreDing` | Correct key pressed by assigned player |
+| Key wrong | `buzzer` | Wrong key pressed |
+| Wrong player pressed | *(silent)* | Silent to the pressing player |
+| Cursor locked | `buzzer` | Cursor is temporarily locked |
+| Space auto-advance | `click` | Automatic space insertion |
+| Reshuffle warning | `countdownBeep` | Warning before key reassignment |
+| Reshuffle | `swoosh` | Keys are reassigned |
+| Sentence complete | `victoryFanfare` | Team finished the sentence |
+| Results | `victoryFanfare` | Final scores displayed |
+
+#### Spectator Rendering
+
+Spectators see all key assignments for all players, the sentence with cursor position, and every correct/wrong keypress. The component renders a full keyboard heatmap showing which player owns which keys.
 
 ---
 
@@ -1207,6 +1354,83 @@ interface CUInitialState {
 
 **Replay Value:** Comparing throw angles and power levels across players reveals different strategies — cautious vs. aggressive throws, effective sweeping, and how stone collisions changed the outcome of each end.
 
+### 3.14 MinigameRenderer & Client-Server Wiring
+
+#### MinigameRenderer Registration
+
+```typescript
+// In MinigameRenderer lazy-import map
+'cursor-curling': lazy(() => import('./minigames/cursor-curling/CursorCurlingGame'))
+```
+
+#### Client-Side Store Integration
+
+The client listens for the following server-dispatched action types and merges them into the minigame slice of the room store:
+
+`CU_END_START`, `CU_THROWER_ACTIVE`, `CU_AIM_PREVIEW`, `CU_POWER_PHASE`, `CU_STONE_LAUNCHED`, `CU_STONE_POSITION`, `CU_STONE_COLLISION`, `CU_SWEEP_ACTIVE`, `CU_SWEPT_EFFECT`, `CU_STONE_STOPPED`, `CU_END_RESULTS`, `CU_GAME_OVER`, `TIMER_TICK`
+
+```typescript
+useEffect(() => {
+  const handlers = [
+    'CU_END_START', 'CU_THROWER_ACTIVE', 'CU_AIM_PREVIEW',
+    'CU_POWER_PHASE', 'CU_STONE_LAUNCHED', 'CU_STONE_POSITION',
+    'CU_STONE_COLLISION', 'CU_SWEEP_ACTIVE', 'CU_SWEPT_EFFECT',
+    'CU_STONE_STOPPED', 'CU_END_RESULTS', 'CU_GAME_OVER',
+    'TIMER_TICK',
+  ];
+  handlers.forEach((type) =>
+    socket.on(type, (payload) => dispatch({ type, payload }))
+  );
+  return () => handlers.forEach((type) => socket.off(type));
+}, [socket, dispatch]);
+```
+
+#### Client-Side Input Dispatch
+
+Two client-to-server messages exist, depending on the player's role:
+
+- **`THROW_STONE`** — `{ angle, power }` (thrower only, during aiming/power phase).
+- **`SWEEP`** — `{ x, y }` (non-throwers during stone simulation, rate-limited to 15 Hz).
+
+```typescript
+const handleThrow = (angle: number, power: number) => {
+  socket.emit('THROW_STONE', { angle, power });
+};
+
+const handleSweep = (x: number, y: number) => {
+  socket.emit('SWEEP', { x, y });
+};
+```
+
+> **Performance note:** Stone positions are broadcast at 30 Hz during simulation. The client renders interpolated positions between server updates using `requestAnimationFrame` for smooth motion.
+
+#### Server-Side Handler Registration
+
+```typescript
+// server/minigames/cursor-curling/CursorCurlingGame.ts
+export class CursorCurlingGame { /* … */ }
+
+// server/minigame-registry.ts
+MINIGAME_SERVER_REGISTRY.set('cursor-curling', CursorCurlingGame);
+```
+
+#### Sound Effect Integration
+
+| Event | Sound | Notes |
+|---|---|---|
+| End start | `swoosh` | New end begins |
+| Thrower active | `chime` | Active thrower is announced |
+| Stone launched | `swoosh` | Stone released onto the sheet |
+| Stone collision | `click` | Two stones collide |
+| Stone stopped | `click` | Stone comes to rest |
+| Sweep detected | `click` | Sweep action registered |
+| End results | `victoryFanfare` | Scores for the end displayed |
+| Game over | `victoryFanfare` | Final standings revealed |
+
+#### Spectator Rendering
+
+Spectators have an omniscient view — they see aim arrow direction, power meter, all stone positions, and sweep indicators. The component renders the full `CurlingCanvas` with all overlays enabled.
+
 ---
 
 ## 4. Human Tetris
@@ -1632,6 +1856,75 @@ interface HTInitialState {
 | `game_end` | `{ wavesCompleted: number; totalWaves: number; finalScore: number; perfectWaves: number; longestStreak: number }` | Game over |
 
 **Replay Value:** The log shows how team coordination evolved across waves — whether the group improved with practice, which wall shapes caused the most failures, and how long their success streaks lasted.
+
+### 4.16 MinigameRenderer & Client-Server Wiring
+
+#### MinigameRenderer Registration
+
+```typescript
+// In MinigameRenderer lazy-import map
+'human-tetris': lazy(() => import('./minigames/human-tetris/HumanTetrisGame'))
+```
+
+#### Client-Side Store Integration
+
+The client listens for the following server-dispatched action types and merges them into the minigame slice of the room store:
+
+`HT_WAVE_START`, `HT_PLAYER_MOVED`, `HT_MOVE_REJECTED`, `HT_WALL_IMPACT`, `HT_WAVE_RESULTS`, `HT_GAME_OVER`, `TIMER_TICK`
+
+```typescript
+useEffect(() => {
+  const handlers = [
+    'HT_WAVE_START', 'HT_PLAYER_MOVED', 'HT_MOVE_REJECTED',
+    'HT_WALL_IMPACT', 'HT_WAVE_RESULTS', 'HT_GAME_OVER',
+    'TIMER_TICK',
+  ];
+  handlers.forEach((type) =>
+    socket.on(type, (payload) => dispatch({ type, payload }))
+  );
+  return () => handlers.forEach((type) => socket.off(type));
+}, [socket, dispatch]);
+```
+
+#### Client-Side Input Dispatch
+
+Players move their avatar to fit through the approaching wall. The only client-to-server message is:
+
+- **`HT_MOVE`** — `{ direction }` where `direction` is `'up' | 'down' | 'left' | 'right'`.
+
+On mobile, swipe gestures are supported via `SwipeDetector`.
+
+```typescript
+const handleMove = (direction: 'up' | 'down' | 'left' | 'right') => {
+  socket.emit('HT_MOVE', { direction });
+};
+```
+
+#### Server-Side Handler Registration
+
+```typescript
+// server/minigames/human-tetris/HumanTetrisGame.ts
+export class HumanTetrisGame { /* … */ }
+
+// server/minigame-registry.ts
+MINIGAME_SERVER_REGISTRY.set('human-tetris', HumanTetrisGame);
+```
+
+#### Sound Effect Integration
+
+| Event | Sound | Notes |
+|---|---|---|
+| Wave start / wall preview | `swoosh` | New wave begins, wall shape revealed |
+| Player moved (own) | `click` | Player's own avatar moved |
+| Move rejected | `buzzer` | Movement blocked (out of bounds, etc.) |
+| Wall impact (all safe) | `victoryFanfare` | Everyone fit through the wall |
+| Wall impact (hit) | `buzzer` | One or more players collided |
+| Wave results (perfect) | `scoreDing` | Perfect wave bonus |
+| Game over | `victoryFanfare` | Final score revealed |
+
+#### Spectator Rendering
+
+Spectators see the same view as players (cooperative game — all positions are visible). The component renders the `WallCanvas` with all player avatars and wall shapes. Spectators cannot send `HT_MOVE` inputs.
 
 ---
 
