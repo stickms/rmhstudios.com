@@ -854,6 +854,8 @@
 /* ==================== BASE STYLES ==================== */
 html {
   scroll-behavior: smooth;
+  overflow-y: scroll;
+  min-height: 100%;
 }
 
 body {
@@ -861,6 +863,7 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
   overflow-x: hidden;
+  min-height: 100%;
 }
 
 /* Selection styling */

@@ -569,6 +569,15 @@
     opacity: 0.3;
 }
 
+.hud-best-streak {
+    margin-left: auto;
+}
+
+.best-streak-value {
+    color: var(--accent-gold);
+    text-shadow: 0 0 10px rgba(255, 215, 64, 0.4);
+}
+
 /* ============================================
    PUZZLE CARD
    ============================================ */
@@ -1027,6 +1036,28 @@
 
 .minigame-shape-btn:active {
     transform: scale(0.95);
+}
+
+.fling-hint {
+    flex-direction: column;
+    gap: 0.5rem;
+    pointer-events: none;
+}
+
+.fling-hint .fling-arrow {
+    font-size: 2rem;
+    animation: flingBounce 1s ease-in-out infinite;
+}
+
+@keyframes flingBounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+}
+
+.fling-hint p {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin: 0;
 }
 
 /* ---- POWERUP ---- */

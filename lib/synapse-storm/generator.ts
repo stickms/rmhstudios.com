@@ -6,6 +6,7 @@ import type {
     MemoryPuzzleData,
     ReactionPuzzleData,
     MinigamePuzzleData,
+    FlingDirection,
     PowerUpPuzzleData,
     MetaPuzzleData,
     ShapeInfo,
@@ -36,6 +37,26 @@ function shuffle<T>(arr: T[]): T[] {
     return a;
 }
 
+/** Ensures options are unique, include the answer, and have at least minCount items. */
+function ensureUniqueOptions<T>(raw: T[], answer: T, minCount: number, genExtra: () => T): T[] {
+    const seen = new Set<T>([answer]);
+    const result: T[] = [answer];
+    for (const o of raw) {
+        if (!seen.has(o)) {
+            seen.add(o);
+            result.push(o);
+        }
+    }
+    for (let attempts = 0; result.length < minCount && attempts < 20; attempts++) {
+        const extra = genExtra();
+        if (!seen.has(extra)) {
+            seen.add(extra);
+            result.push(extra);
+        }
+    }
+    return shuffle(result);
+}
+
 const SHAPE_TYPES: ShapeInfo['shape'][] = ['circle', 'square', 'triangle', 'diamond', 'hexagon'];
 const SHAPE_COLORS = ['#ff5252', '#00e5ff', '#76ff03', '#ffab00', '#b388ff', '#ff6ec7'];
 
@@ -58,7 +79,12 @@ function generateMathPuzzle(difficulty: number): PuzzleDefinition {
         answer = x;
         expression = isAddition ? `${a}x + ${b} = ${c}` : `${a}x - ${b} = ${c}`;
         instruction = `Solve for x`;
-        options = shuffle([answer, answer + rand(1, 4), answer - rand(1, 4) || answer + 5, answer + rand(5, 8)]);
+        options = ensureUniqueOptions(
+            [answer + rand(1, 4), (answer - rand(1, 4)) || answer + 5, answer + rand(5, 8)],
+            answer,
+            4,
+            () => (answer as number) + (rand(0, 1) ? rand(2, 15) : -rand(2, 10))
+        );
     } else if (ptype === 'geometry') {
         const w = rand(3, 12);
         const h = rand(3, 12);
@@ -66,7 +92,12 @@ function generateMathPuzzle(difficulty: number): PuzzleDefinition {
         answer = isArea ? w * h : 2 * (w + h);
         expression = isArea ? `Area of ${w}×${h} rectangle` : `Perimeter of ${w}×${h} rect`;
         instruction = `Calculate`;
-        options = shuffle([answer, answer + rand(1, 4), answer - rand(1, 4) || answer + 5, answer + rand(5, 8)]);
+        options = ensureUniqueOptions(
+            [answer + rand(1, 4), (answer - rand(1, 4)) || answer + 5, answer + rand(5, 8)],
+            answer,
+            4,
+            () => (answer as number) + (rand(0, 1) ? rand(2, 12) : -rand(2, 8))
+        );
     } else if (ptype === 'compare') {
         const a1 = rand(10, 50), b1 = rand(1, 20);
         const a2 = rand(10, 50), b2 = rand(1, 20);
@@ -106,7 +137,12 @@ function generateMathPuzzle(difficulty: number): PuzzleDefinition {
         answer = Math.round((pct / 100) * num);
         expression = `${pct}% of ${num}`;
         instruction = `Calculate`;
-        options = shuffle([answer as number, (answer as number) + 5, (answer as number) - 5 || (answer as number) + 3, (answer as number) + 10]);
+        options = ensureUniqueOptions(
+            [(answer as number) + 5, (answer as number) - 5 || (answer as number) + 3, (answer as number) + 10],
+            answer as number,
+            4,
+            () => (answer as number) + rand(2, 15)
+        );
     } else if (ptype === 'sequence') {
         const start = rand(1, 5);
         const step = pick([2, 3, 5]);
@@ -115,14 +151,24 @@ function generateMathPuzzle(difficulty: number): PuzzleDefinition {
         answer = seq[len - 1] + step;
         expression = seq.join(', ') + ', _';
         instruction = `Next number?`;
-        options = shuffle([answer as number, (answer as number) + step, (answer as number) - step, seq[0]]);
+        options = ensureUniqueOptions(
+            [(answer as number) + step, (answer as number) - step, seq[0]],
+            answer as number,
+            4,
+            () => (answer as number) + rand(2, 8)
+        );
     } else if (ptype === 'digit_sum') {
         const num = rand(100, 499);
         const digits = String(num).split('').map(Number);
         answer = digits.reduce((a, b) => a + b, 0);
         expression = `Sum of digits in ${num}`;
         instruction = `Calculate`;
-        options = shuffle([answer as number, (answer as number) + 1, (answer as number) - 1 || 0, (answer as number) + 2]);
+        options = ensureUniqueOptions(
+            [(answer as number) + 1, (answer as number) - 1 || (answer as number) + 3, (answer as number) + 2],
+            answer as number,
+            4,
+            () => (answer as number) + rand(3, 10)
+        );
     } else {
         const ops = ['+', '-', '×'];
         if (difficulty > 4) ops.push('÷');
@@ -138,7 +184,12 @@ function generateMathPuzzle(difficulty: number): PuzzleDefinition {
             default: a = rand(1, maxNum); b = rand(1, maxNum); answer = a + b; expression = `${a} + ${b}`;
         }
         instruction = `What is ${expression}?`;
-        options = shuffle([answer as number, (answer as number) + rand(1, 5), (answer as number) - rand(1, 5) || (answer as number) + 6, (answer as number) + rand(6, 12)]);
+        options = ensureUniqueOptions(
+            [(answer as number) + rand(1, 5), (answer as number) - rand(1, 5) || (answer as number) + 6, (answer as number) + rand(6, 12)],
+            answer as number,
+            4,
+            () => (answer as number) + (rand(0, 1) ? rand(2, 15) : -rand(2, 10))
+        );
     }
 
     return {
@@ -202,15 +253,18 @@ function generatePatternPuzzle(difficulty: number): PuzzleDefinition {
 
     answer = { ...sequence[missingIndex] };
 
-    // Generate options
+    // Generate options - must include the correct answer and use actual sequence shapes for alternating
     options = [answer];
+    const altShape1 = sequence[0];
+    const altShape2 = sequence[1];
     while (options.length < 4) {
         let opt: ShapeInfo;
         if (ptype === 'alternating') {
-            const shape1: ShapeInfo = { shape: baseShape, color: baseColor, size: 30 };
-            const shape2Shape = SHAPE_TYPES.find(s => s !== baseShape && !sequence.some(item => item.shape === s)) || pick(SHAPE_TYPES);
-            const shape2: ShapeInfo = { shape: shape2Shape, color: pick(SHAPE_COLORS), size: 30 };
-            opt = Math.random() > 0.5 ? shape1 : shape2;
+            const isAnswerShape1 = answer.shape === altShape1.shape && answer.color === altShape1.color;
+            const otherInPattern = isAnswerShape1 ? altShape2 : altShape1;
+            const wrongShape = pick(SHAPE_TYPES.filter(s => s !== altShape1.shape && s !== altShape2.shape));
+            const wrongColor = pick(SHAPE_COLORS.filter(c => c !== altShape1.color && c !== altShape2.color));
+            opt = Math.random() > 0.33 ? otherInPattern : { shape: wrongShape, color: wrongColor, size: 30 };
         } else if (ptype === 'growing') {
             const sizes = [15, 27, 39, 51, 63, 75, 87];
             opt = { shape: baseShape, color: baseColor, size: pick(sizes.filter(s => s !== answer.size)) };
@@ -354,7 +408,13 @@ function generateLanguagePuzzle(difficulty: number): PuzzleDefinition {
             const cons = word.replace(/[aeiou]/gi, '').length;
             answer = cons.toString();
             instruction = `How many consonants?`;
-            options = shuffle([cons, cons + 1, cons - 1, cons + 2].filter(n => n >= 0).map(String));
+            const consNum = cons;
+            options = ensureUniqueOptions(
+                [consNum + 1, consNum - 1, consNum + 2, consNum + 3].filter(n => n >= 0).map(String),
+                answer,
+                4,
+                () => String(Math.max(0, consNum + rand(-2, 5)))
+            );
             break;
         }
         case 'length': {
@@ -362,7 +422,12 @@ function generateLanguagePuzzle(difficulty: number): PuzzleDefinition {
             answer = word.length.toString();
             instruction = `How many letters?`;
             const len = word.length;
-            options = shuffle([len, len + 1, len - 1, len + 2].filter(n => n > 0).map(String));
+            options = ensureUniqueOptions(
+                [len + 1, len - 1, len + 2, len + 3].filter(n => n > 0).map(String),
+                answer,
+                4,
+                () => String(Math.max(1, len + rand(-1, 4)))
+            );
             break;
         }
         case 'palindrome': {
@@ -710,6 +775,38 @@ function generateReactionPuzzle(difficulty: number): PuzzleDefinition {
     };
 }
 
+// ---- FLING PUZZLES (first-class category, difficulty-scaled) ----
+function generateFlingPuzzle(difficulty: number): PuzzleDefinition {
+    const cardinalDirs: FlingDirection[] = ['left', 'right', 'top', 'bottom'];
+    const diagonalDirs: FlingDirection[] = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
+    const dirs: FlingDirection[] = difficulty < 4
+        ? cardinalDirs
+        : difficulty < 7
+            ? [...cardinalDirs, ...diagonalDirs]
+            : [...cardinalDirs, ...diagonalDirs];
+    const dir = pick(dirs);
+    const instructions: Record<FlingDirection, string> = {
+        left: 'Fling this card LEFT! ←',
+        right: 'Fling this card RIGHT! →',
+        top: 'Swipe UP! ↑',
+        bottom: 'Yeet it DOWN! ↓',
+        'top-left': 'Toss to the top-left! ↖',
+        'top-right': 'Launch top-right! ↗',
+        'bottom-left': 'Sling bottom-left! ↙',
+        'bottom-right': 'Fling to the corner! ↘',
+    };
+    const timeLimit = Math.max(3, 5 - difficulty * 0.2);
+    return {
+        id: uid(),
+        category: 'fling',
+        instruction: instructions[dir],
+        difficulty,
+        timeLimit,
+        basePoints: 90 + difficulty * 12,
+        data: { type: 'minigame', variant: 'fling_direction', targetDirection: dir },
+    };
+}
+
 // ---- MINIGAME PUZZLES (WarioWare-style microgames) ----
 function generateMinigamePuzzle(difficulty: number): PuzzleDefinition {
     const variants: MinigamePuzzleData['variant'][] =
@@ -796,52 +893,85 @@ function generateMetaPuzzle(difficulty: number, state: GameState): PuzzleDefinit
         case 'gameTime':
             answer = Math.floor((now - state.startTime) / 1000);
             instruction = 'How many seconds have you been playing?';
-            options = shuffle([answer, answer + rand(5, 15), Math.max(0, answer - rand(5, 15)), answer + rand(20, 40)]);
+            options = ensureUniqueOptions(
+                [answer + rand(5, 15), Math.max(0, answer - rand(5, 15)), answer + rand(20, 40)],
+                answer,
+                4,
+                () => Math.max(0, answer + rand(-20, 60))
+            );
             break;
         case 'lives':
             answer = Math.max(0, state.missThreshold - state.puzzlesMissed);
             instruction = 'How many lives do you have left?';
-            options = shuffle([answer, answer + 1, Math.max(0, answer - 1), answer + 2]);
+            options = ensureUniqueOptions(
+                [answer + 1, Math.max(0, answer - 1), answer + 2, answer + 3],
+                answer,
+                4,
+                () => Math.max(0, answer + rand(1, 5))
+            );
             break;
         case 'intensity':
             answer = Math.round(state.difficulty);
             instruction = "What's your intensity level? (1-10)";
-            options = shuffle([
+            options = ensureUniqueOptions(
+                [Math.min(10, answer + 1), Math.max(1, answer - 1), Math.min(10, answer + 2), Math.max(1, answer - 2)],
                 answer,
-                Math.min(10, answer + 1),
-                Math.max(1, answer - 1),
-                Math.min(10, answer + 2),
-            ]);
+                4,
+                () => Math.min(10, Math.max(1, answer + rand(-3, 3)))
+            );
             break;
         case 'combo':
             answer = state.combo;
             instruction = "What's your current combo?";
-            options = shuffle([answer, answer + 1, Math.max(0, answer - 1), answer + rand(2, 5)]);
+            options = ensureUniqueOptions(
+                [answer + 1, Math.max(0, answer - 1), answer + rand(2, 5), answer + rand(6, 10)],
+                answer,
+                4,
+                () => Math.max(0, answer + rand(2, 12))
+            );
             break;
         case 'maxCombo':
             answer = state.maxCombo;
             instruction = "What's your best combo this run?";
-            options = shuffle([answer, answer + 1, Math.max(0, answer - 1), answer + rand(2, 5)]);
+            options = ensureUniqueOptions(
+                [answer + 1, Math.max(0, answer - 1), answer + rand(2, 5), answer + rand(6, 10)],
+                answer,
+                4,
+                () => Math.max(0, answer + rand(2, 12))
+            );
             break;
         case 'score':
             answer = state.score;
-            instruction = "What's your current score?";
+            instruction = "What number is closest to your current score?";
             const delta = Math.max(100, Math.floor(state.score * 0.1));
-            options = shuffle([answer, answer + delta, Math.max(0, answer - delta), answer + delta * 2]);
+            options = ensureUniqueOptions(
+                [answer + delta, Math.max(0, answer - delta), answer + delta * 2, answer + delta * 3],
+                answer,
+                4,
+                () => Math.max(0, answer + rand(-2, 4) * delta)
+            );
             break;
         case 'activeCount':
             answer = state.activePuzzles.filter((p) => !p.solved && !p.expired).length;
-            instruction = 'How many puzzles are on screen right now?';
-            options = shuffle([answer, answer + 1, Math.max(0, answer - 1), answer + 2]);
+            instruction = 'How many puzzles are on screen right now? (including this card)';
+            options = ensureUniqueOptions(
+                [answer + 1, Math.max(0, answer - 1), answer + 2, answer + 3],
+                answer,
+                4,
+                () => Math.max(0, answer + rand(1, 5))
+            );
             break;
         case 'realTimeHour': {
             const hour12 = (new Date().getHours() % 12) || 12;
             answer = hour12;
             instruction = "What hour is it? (12-hour, 1-12)";
-            const nextHr = (hour12 % 12) + 1;
-            const prevHr = ((hour12 + 10) % 12) + 1;
-            const next2Hr = ((hour12 + 1) % 12) + 1;
-            options = shuffle([hour12, nextHr, prevHr, next2Hr]);
+            const candidates = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].filter((h) => h !== hour12);
+            options = ensureUniqueOptions(
+                [candidates[rand(0, Math.min(2, candidates.length - 1))] ?? 1, candidates[rand(3, Math.min(5, candidates.length - 1))] ?? 2, candidates[rand(6, Math.min(8, candidates.length - 1))] ?? 3],
+                hour12,
+                4,
+                () => candidates[rand(0, candidates.length - 1)] ?? 1
+            );
             break;
         }
     }
@@ -903,6 +1033,7 @@ const generators: Record<PuzzleCategory, (d: number) => PuzzleDefinition> = {
     memory: generateMemoryPuzzle,
     reaction: generateReactionPuzzle,
     minigame: generateMinigamePuzzle,
+    fling: generateFlingPuzzle,
     powerup: generatePowerUpPuzzle,
     meta: generateMetaPuzzle as (d: number) => PuzzleDefinition,
 };
@@ -915,6 +1046,7 @@ const CATEGORY_UNLOCK_ORDER: PuzzleCategory[] = [
     'reaction',
     'memory',
     'minigame',
+    'fling',
     'meta',
     'powerup',
 ];

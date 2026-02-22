@@ -58,11 +58,25 @@ function getDifficultyConfig(difficulty: number): DifficultyConfig {
     };
 }
 
-function randomPosition(): { x: number; y: number } {
-    return {
-        x: 5 + Math.random() * 70, // percent-based
-        y: 5 + Math.random() * 60,
-    };
+const CARD_MIN_DISTANCE = 22; // minimum % distance between card centers to avoid overlap
+
+function findNonOverlappingPosition(existing: { x: number; y: number }[]): { x: number; y: number } {
+    for (let attempt = 0; attempt < 80; attempt++) {
+        const x = 8 + Math.random() * 68;
+        const y = 8 + Math.random() * 58;
+        let ok = true;
+        for (const p of existing) {
+            const dx = x - p.x;
+            const dy = y - p.y;
+            if (Math.sqrt(dx * dx + dy * dy) < CARD_MIN_DISTANCE) {
+                ok = false;
+                break;
+            }
+        }
+        if (ok) return { x, y };
+    }
+    // fallback: return random position if all attempts fail
+    return { x: 15 + Math.random() * 55, y: 15 + Math.random() * 45 };
 }
 
 export function useGameEngine(mode: GameMode = 'singleplayer', mpConfig?: MultiplayerConfig) {
@@ -127,13 +141,14 @@ export function useGameEngine(mode: GameMode = 'singleplayer', mpConfig?: Multip
         }
 
         const puzzle = generatePuzzle(s.difficulty, activeCategories, isPowerup ? 'powerup' : undefined, s);
+        const existingPos = s.activePuzzles.filter((p) => !p.solved && !p.expired).map((p) => p.position);
         const activePuzzle: ActivePuzzle = {
             ...puzzle,
             spawnTime: now,
             timeRemaining: puzzle.timeLimit,
             solved: false,
             expired: false,
-            position: randomPosition(),
+            position: findNonOverlappingPosition(existingPos),
         };
 
         if (puzzle.category === 'memory' && puzzle.data.type === 'memory') {
@@ -394,7 +409,7 @@ export function useGameEngine(mode: GameMode = 'singleplayer', mpConfig?: Multip
                 const speedFactor = Math.max(0.5, 1 - timeUsed / puzzle.timeLimit);
                 const difficultyMult = 1 + (prev.difficulty - 1) * 0.15;
                 const newCombo = prev.combo + 1;
-                const comboMult = 1 + Math.min(newCombo * 0.1, 2);
+                const comboMult = newCombo >= 3 ? 1 + Math.min(newCombo * 0.1, 2) : 1;
                 const priorityMult = puzzle.isPriority ? 2 : 1;
 
                 const points = Math.round(
@@ -437,7 +452,7 @@ export function useGameEngine(mode: GameMode = 'singleplayer', mpConfig?: Multip
                     ...prev,
                     score: prev.score + points,
                     combo: newCombo,
-                    maxCombo: Math.max(prev.maxCombo, newCombo),
+                    maxCombo: newCombo >= 3 ? Math.max(prev.maxCombo, newCombo) : prev.maxCombo,
                     puzzlesSolved: prev.puzzlesSolved + 1,
                     correctStreak: prev.correctStreak + 1,
                     speedBonus: points - puzzle.basePoints,

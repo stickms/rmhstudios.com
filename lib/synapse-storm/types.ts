@@ -6,6 +6,7 @@ export type PuzzleCategory =
     | 'memory'
     | 'reaction'
     | 'minigame'
+    | 'fling'
     | 'powerup'
     | 'meta';
 
@@ -95,13 +96,17 @@ export interface ReactionPuzzleData {
     decoys?: number;
 }
 
+export type FlingDirection = 'left' | 'right' | 'top' | 'bottom' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+
 export interface MinigamePuzzleData {
     type: 'minigame';
-    variant: 'click_when_go' | 'whack' | 'pick_biggest' | 'pick_odd' | 'double_tap' | 'dont_click' | 'countdown' | 'tap_fast';
+    variant: 'click_when_go' | 'whack' | 'pick_biggest' | 'pick_odd' | 'double_tap' | 'dont_click' | 'countdown' | 'tap_fast' | 'fling_direction';
     /** For pick_biggest/pick_odd: shapes to display */
     shapes?: ShapeInfo[];
     /** Index of correct answer (for pick_biggest, pick_odd) */
     answerIndex?: number;
+    /** For fling_direction: which side/corner to fling toward */
+    targetDirection?: FlingDirection;
 }
 
 export interface PowerUpPuzzleData {
@@ -161,6 +166,7 @@ export const CATEGORY_COLORS: Record<PuzzleCategory, string> = {
     memory: '#b388ff',
     reaction: '#ff5252',
     minigame: '#ff4081',
+    fling: '#ff4081',
     powerup: '#ffd740',
     meta: '#9c27b0',
 };
@@ -182,6 +188,7 @@ export const CATEGORY_LABELS: Record<PuzzleCategory, string> = {
     memory: '🧠 Memory',
     reaction: '⚡ Reaction',
     minigame: '🎮 Mini',
+    fling: '👉 Fling',
     powerup: '⭐ Power-Up',
     meta: '🎯 Meta',
 };

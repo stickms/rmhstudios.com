@@ -19,7 +19,7 @@ export const HUD: React.FC<HUDProps> = ({ state }) => {
             <div className="hud-section hud-combo">
                 <span className="hud-label">Combo</span>
                 <span className={`hud-value combo-value ${state.combo >= 5 ? 'combo-active' : ''}`}>
-                    x{state.combo}
+                    {state.combo >= 3 ? `x${state.combo}` : '—'}
                 </span>
             </div>
 
@@ -57,6 +57,13 @@ export const HUD: React.FC<HUDProps> = ({ state }) => {
                 <span className="hud-label">Solved</span>
                 <span className="hud-value">{state.puzzlesSolved}</span>
             </div>
+
+            {state.combo === 0 && state.maxCombo >= 3 && (
+                <div className="hud-section hud-best-streak">
+                    <span className="hud-label">Best Streak</span>
+                    <span className="hud-value best-streak-value">x{state.maxCombo}</span>
+                </div>
+            )}
         </div>
     );
 };

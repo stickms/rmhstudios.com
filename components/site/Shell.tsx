@@ -28,7 +28,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Navbar />
-      <main className="pt-16 min-h-[calc(100vh-4rem)]">
+      <main className="pt-20 min-h-screen">
         {children}
       </main>
     </>

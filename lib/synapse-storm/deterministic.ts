@@ -12,6 +12,7 @@ import type {
     MemoryPuzzleData,
     ReactionPuzzleData,
     MinigamePuzzleData,
+    FlingDirection,
     PowerUpPuzzleData,
     MetaPuzzleData,
 } from './types';
@@ -54,6 +55,25 @@ export class SeededRNG {
 export function createSpawnRNG(matchSeed: number, spawnIndex: number): SeededRNG {
     const combined = matchSeed ^ (spawnIndex * 2654435761);
     return new SeededRNG(combined);
+}
+
+function ensureUniqueOptionsRng<T>(rng: SeededRNG, raw: T[], answer: T, minCount: number, genExtra: () => T): T[] {
+    const seen = new Set<T>([answer]);
+    const result: T[] = [answer];
+    for (const o of raw) {
+        if (!seen.has(o)) {
+            seen.add(o);
+            result.push(o);
+        }
+    }
+    for (let attempts = 0; result.length < minCount && attempts < 20; attempts++) {
+        const extra = genExtra();
+        if (!seen.has(extra)) {
+            seen.add(extra);
+            result.push(extra);
+        }
+    }
+    return rng.shuffle(result);
 }
 
 // ─── Deterministic spawn timing ───
@@ -110,7 +130,7 @@ const WORDS_BY_LENGTH: Record<number, string[]> = {
 const WORDS_POOL = Object.values(WORDS_BY_LENGTH).flat();
 const TYPING_WORDS_POOL = [...WORDS_BY_LENGTH[4]!, ...WORDS_BY_LENGTH[5]!, ...WORDS_BY_LENGTH[6]!];
 
-const CATEGORIES_ORDER: PuzzleCategory[] = ['math', 'pattern', 'language', 'spatial', 'reaction', 'memory', 'minigame', 'meta'];
+const CATEGORIES_ORDER: PuzzleCategory[] = ['math', 'pattern', 'language', 'spatial', 'reaction', 'memory', 'minigame', 'fling', 'meta'];
 
 function scrambleWordSeeded(word: string, rng: SeededRNG): string {
     if (word.length <= 3) return word;
@@ -140,7 +160,13 @@ function genMathDeterministic(rng: SeededRNG, difficulty: number): PuzzleDefinit
         answer = x;
         expression = isAdd ? `${a}x + ${b} = ${c}` : `${a}x - ${b} = ${c}`;
         instruction = 'Solve for x';
-        options = rng.shuffle([answer, answer + rng.nextInt(1, 4), (answer - rng.nextInt(1, 4)) || answer + 5, answer + rng.nextInt(5, 8)]);
+        options = ensureUniqueOptionsRng(
+            rng,
+            [answer + rng.nextInt(1, 4), (answer - rng.nextInt(1, 4)) || answer + 5, answer + rng.nextInt(5, 8)],
+            answer,
+            4,
+            () => (answer as number) + (rng.next() > 0.5 ? rng.nextInt(2, 15) : -rng.nextInt(2, 10))
+        );
     } else if (ptype === 'geometry') {
         const w = rng.nextInt(3, 12);
         const h = rng.nextInt(3, 12);
@@ -148,7 +174,13 @@ function genMathDeterministic(rng: SeededRNG, difficulty: number): PuzzleDefinit
         answer = isArea ? w * h : 2 * (w + h);
         expression = isArea ? `Area of ${w}×${h} rectangle` : `Perimeter of ${w}×${h} rect`;
         instruction = 'Calculate';
-        options = rng.shuffle([answer, answer + rng.nextInt(1, 4), (answer - rng.nextInt(1, 4)) || answer + 5, answer + rng.nextInt(5, 8)]);
+        options = ensureUniqueOptionsRng(
+            rng,
+            [answer + rng.nextInt(1, 4), (answer - rng.nextInt(1, 4)) || answer + 5, answer + rng.nextInt(5, 8)],
+            answer,
+            4,
+            () => (answer as number) + (rng.next() > 0.5 ? rng.nextInt(2, 12) : -rng.nextInt(2, 8))
+        );
     } else if (ptype === 'compare') {
         const a1 = rng.nextInt(10, 50), b1 = rng.nextInt(1, 20);
         const a2 = rng.nextInt(10, 50), b2 = rng.nextInt(1, 20);
@@ -186,7 +218,13 @@ function genMathDeterministic(rng: SeededRNG, difficulty: number): PuzzleDefinit
         answer = Math.round((pct / 100) * num);
         expression = `${pct}% of ${num}`;
         instruction = 'Calculate';
-        options = rng.shuffle([answer as number, (answer as number) + 5, (answer as number) - 5 || (answer as number) + 3, (answer as number) + 10]);
+        options = ensureUniqueOptionsRng(
+            rng,
+            [(answer as number) + 5, (answer as number) - 5 || (answer as number) + 3, (answer as number) + 10],
+            answer as number,
+            4,
+            () => (answer as number) + rng.nextInt(2, 15)
+        );
     } else if (ptype === 'sequence') {
         const start = rng.nextInt(1, 5);
         const step = rng.pick([2, 3, 5]);
@@ -195,14 +233,26 @@ function genMathDeterministic(rng: SeededRNG, difficulty: number): PuzzleDefinit
         answer = seq[len - 1] + step;
         expression = seq.join(', ') + ', _';
         instruction = 'Next number?';
-        options = rng.shuffle([answer as number, (answer as number) + step, (answer as number) - step, seq[0]]);
+        options = ensureUniqueOptionsRng(
+            rng,
+            [(answer as number) + step, (answer as number) - step, seq[0]],
+            answer as number,
+            4,
+            () => (answer as number) + rng.nextInt(2, 8)
+        );
     } else if (ptype === 'digit_sum') {
         const num = rng.nextInt(100, 499);
         const digits = String(num).split('').map(Number);
         answer = digits.reduce((a, b) => a + b, 0);
         expression = `Sum of digits in ${num}`;
         instruction = 'Calculate';
-        options = rng.shuffle([answer as number, (answer as number) + 1, (answer as number) - 1 || 0, (answer as number) + 2]);
+        options = ensureUniqueOptionsRng(
+            rng,
+            [(answer as number) + 1, (answer as number) - 1 || (answer as number) + 3, (answer as number) + 2],
+            answer as number,
+            4,
+            () => (answer as number) + rng.nextInt(3, 10)
+        );
     } else {
         const ops = ['+', '-', '×'];
         if (difficulty > 4) ops.push('÷');
@@ -217,7 +267,13 @@ function genMathDeterministic(rng: SeededRNG, difficulty: number): PuzzleDefinit
             default: a = rng.nextInt(1, maxNum); b = rng.nextInt(1, maxNum); answer = a + b; expression = `${a} + ${b}`;
         }
         instruction = `What is ${expression}?`;
-        options = rng.shuffle([answer as number, (answer as number) + rng.nextInt(1, 5), ((answer as number) - rng.nextInt(1, 5)) || ((answer as number) + 6), (answer as number) + rng.nextInt(6, 12)]);
+        options = ensureUniqueOptionsRng(
+            rng,
+            [(answer as number) + rng.nextInt(1, 5), ((answer as number) - rng.nextInt(1, 5)) || ((answer as number) + 6), (answer as number) + rng.nextInt(6, 12)],
+            answer as number,
+            4,
+            () => (answer as number) + (rng.next() > 0.5 ? rng.nextInt(2, 15) : -rng.nextInt(2, 10))
+        );
     }
 
     return {
@@ -268,11 +324,19 @@ function genPatternDeterministic(rng: SeededRNG, difficulty: number): PuzzleDefi
 
     const answer = { ...sequence[missingIndex] };
     const options: ShapeInfo[] = [answer];
+    const altShape1 = sequence[0];
+    const altShape2 = sequence[1];
     let attempts = 0;
     while (options.length < 4 && attempts < 20) {
         attempts++;
         let opt: ShapeInfo;
-        if (ptype === 'growing') {
+        if (ptype === 'alternating') {
+            const isAnswerShape1 = answer.shape === altShape1.shape && answer.color === altShape1.color;
+            const otherInPattern = isAnswerShape1 ? altShape2 : altShape1;
+            const wrongShape = rng.pick(SHAPE_TYPES.filter(s => s !== altShape1.shape && s !== altShape2.shape));
+            const wrongColor = rng.pick(SHAPE_COLORS.filter(c => c !== altShape1.color && c !== altShape2.color));
+            opt = rng.next() > 0.33 ? otherInPattern : { shape: wrongShape, color: wrongColor, size: 30 };
+        } else if (ptype === 'growing') {
             const sizes = [15, 27, 39, 51, 63, 75, 87];
             opt = { shape: baseShape, color: baseColor, size: rng.pick(sizes.filter(s => s !== answer.size)) };
         } else if (ptype === 'color_cycle') {
@@ -344,7 +408,13 @@ function genLanguageDeterministic(rng: SeededRNG, difficulty: number): PuzzleDef
             const cons = word.replace(/[aeiou]/gi, '').length;
             answer = cons.toString();
             instruction = 'How many consonants?';
-            options = rng.shuffle([cons, cons + 1, cons - 1, cons + 2].filter(n => n >= 0).map(String));
+            options = ensureUniqueOptionsRng(
+                rng,
+                [cons + 1, cons - 1, cons + 2, cons + 3].filter(n => n >= 0).map(String),
+                answer,
+                4,
+                () => String(Math.max(0, cons + rng.nextInt(-2, 5)))
+            );
             break;
         }
         case 'length': {
@@ -352,7 +422,13 @@ function genLanguageDeterministic(rng: SeededRNG, difficulty: number): PuzzleDef
             answer = word.length.toString();
             instruction = 'How many letters?';
             const len = word.length;
-            options = rng.shuffle([len, len + 1, len - 1, len + 2].filter(n => n > 0).map(String));
+            options = ensureUniqueOptionsRng(
+                rng,
+                [len + 1, len - 1, len + 2, len + 3].filter(n => n > 0).map(String),
+                answer,
+                4,
+                () => String(Math.max(1, len + rng.nextInt(-1, 4)))
+            );
             break;
         }
         case 'palindrome': {
@@ -531,6 +607,37 @@ function genReactionDeterministic(rng: SeededRNG, difficulty: number): PuzzleDef
     return { id: '', category: 'reaction', instruction, difficulty, timeLimit: Math.max(3, 8 - difficulty * 0.4), basePoints: 80 + difficulty * 15, data };
 }
 
+function genFlingDeterministic(rng: SeededRNG, difficulty: number): PuzzleDefinition {
+    const cardinalDirs: FlingDirection[] = ['left', 'right', 'top', 'bottom'];
+    const diagonalDirs: FlingDirection[] = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
+    const dirs: FlingDirection[] = difficulty < 4
+        ? cardinalDirs
+        : difficulty < 7
+            ? [...cardinalDirs, ...diagonalDirs]
+            : [...cardinalDirs, ...diagonalDirs];
+    const dir = rng.pick(dirs);
+    const instructions: Record<FlingDirection, string> = {
+        left: 'Fling this card LEFT! ←',
+        right: 'Fling this card RIGHT! →',
+        top: 'Swipe UP! ↑',
+        bottom: 'Yeet it DOWN! ↓',
+        'top-left': 'Toss to the top-left! ↖',
+        'top-right': 'Launch top-right! ↗',
+        'bottom-left': 'Sling bottom-left! ↙',
+        'bottom-right': 'Fling to the corner! ↘',
+    };
+    const timeLimit = Math.max(3, 5 - difficulty * 0.2);
+    return {
+        id: '',
+        category: 'fling',
+        instruction: instructions[dir],
+        difficulty,
+        timeLimit,
+        basePoints: 90 + difficulty * 12,
+        data: { type: 'minigame', variant: 'fling_direction', targetDirection: dir },
+    };
+}
+
 function genMinigameDeterministic(rng: SeededRNG, difficulty: number): PuzzleDefinition {
     const variants: MinigamePuzzleData['variant'][] =
         ['click_when_go', 'whack', 'pick_biggest', 'pick_odd', 'double_tap', 'dont_click', 'countdown', 'tap_fast'];
@@ -611,9 +718,9 @@ function genMetaDeterministic(rng: SeededRNG, difficulty: number): PuzzleDefinit
         intensity: "What's your intensity level? (1-10)",
         combo: "What's your current combo?",
         maxCombo: "What's your best combo this run?",
-        activeCount: 'How many puzzles are on screen right now?',
+        activeCount: 'How many puzzles are on screen right now? (including this card)',
         realTimeHour: "What hour is it? (12-hour, 1-12)",
-        score: "What's your current score?",
+        score: "What number is closest to your current score?",
     };
     const data: MetaPuzzleData = { type: 'meta', variant };
     return {
@@ -649,6 +756,7 @@ const deterministicGenerators: Record<PuzzleCategory, (rng: SeededRNG, d: number
     memory: genMemoryDeterministic,
     reaction: genReactionDeterministic,
     minigame: genMinigameDeterministic,
+    fling: genFlingDeterministic,
     meta: genMetaDeterministic,
     powerup: genPowerupDeterministic,
 };
@@ -702,11 +810,17 @@ export function getDifficultyAtTime(elapsedSeconds: number, puzzlesSolvedEstimat
 
 /**
  * Generate a deterministic position for a puzzle card.
+ * Uses a 5x4 grid so cards never overlap.
  */
+const GRID_COLS = 5;
+const GRID_ROWS = 4;
+
 export function deterministicPosition(matchSeed: number, spawnIndex: number): { x: number; y: number } {
-    const rng = new SeededRNG(matchSeed ^ (spawnIndex * 48271));
-    return {
-        x: 5 + rng.next() * 70,
-        y: 5 + rng.next() * 60,
-    };
+    const cellIndex = spawnIndex % (GRID_COLS * GRID_ROWS);
+    const col = cellIndex % GRID_COLS;
+    const row = Math.floor(cellIndex / GRID_COLS);
+    // Center of each cell: spread across 10-85% x, 10-75% y
+    const x = 10 + (col + 0.5) * (75 / GRID_COLS);
+    const y = 10 + (row + 0.5) * (65 / GRID_ROWS);
+    return { x, y };
 }

@@ -9,6 +9,7 @@ import {
     MemoryPuzzleData,
     ReactionPuzzleData,
     MinigamePuzzleData,
+    FlingDirection,
     PowerUpPuzzleData,
     MetaPuzzleData,
     GameState,
@@ -26,7 +27,7 @@ interface PuzzleCardProps {
 }
 
 function computeMetaAnswerAndOptions(variant: MetaPuzzleData['variant'], state: GameState): { answer: number; options: number[] } {
-    const shuffle = <T,>(arr: T[]): T[] => {
+    const shuffleArr = <T,>(arr: T[]): T[] => {
         const a = [...arr];
         for (let i = a.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
@@ -34,47 +35,74 @@ function computeMetaAnswerAndOptions(variant: MetaPuzzleData['variant'], state: 
         }
         return a;
     };
+    const ensureUnique = (raw: number[], ans: number, minCount: number, genExtra: () => number): number[] => {
+        const seen = new Set<number>([ans]);
+        const result: number[] = [ans];
+        for (const o of raw) {
+            if (!seen.has(o)) {
+                seen.add(o);
+                result.push(o);
+            }
+        }
+        for (let attempts = 0; result.length < minCount && attempts < 20; attempts++) {
+            const extra = genExtra();
+            if (!seen.has(extra)) {
+                seen.add(extra);
+                result.push(extra);
+            }
+        }
+        return shuffleArr(result);
+    };
     const now = Date.now();
     let answer: number;
     let options: number[];
     switch (variant) {
         case 'gameTime':
             answer = Math.floor((now - state.startTime) / 1000);
-            options = shuffle([answer, answer + 15, Math.max(0, answer - 10), answer + 30]);
+            options = ensureUnique([answer + 15, Math.max(0, answer - 10), answer + 30], answer, 4, () => Math.max(0, answer + Math.floor((Math.random() - 0.5) * 60)));
             break;
         case 'lives':
             answer = Math.max(0, state.missThreshold - state.puzzlesMissed);
-            options = shuffle([answer, answer + 1, Math.max(0, answer - 1), answer + 2]);
+            options = ensureUnique([answer + 1, Math.max(0, answer - 1), answer + 2, answer + 3], answer, 4, () => Math.max(0, answer + Math.floor(Math.random() * 5) + 1));
             break;
         case 'intensity':
             answer = Math.round(state.difficulty);
-            options = shuffle([answer, Math.min(10, answer + 1), Math.max(1, answer - 1), Math.min(10, answer + 2)]);
+            options = ensureUnique(
+                [Math.min(10, answer + 1), Math.max(1, answer - 1), Math.min(10, answer + 2), Math.max(1, answer - 2)],
+                answer,
+                4,
+                () => Math.min(10, Math.max(1, answer + Math.floor((Math.random() - 0.5) * 6)))
+            );
             break;
         case 'combo':
             answer = state.combo;
-            options = shuffle([answer, answer + 1, Math.max(0, answer - 1), answer + 3]);
+            options = ensureUnique([answer + 1, Math.max(0, answer - 1), answer + 3, answer + 5], answer, 4, () => Math.max(0, answer + Math.floor(Math.random() * 10) + 2));
             break;
         case 'maxCombo':
             answer = state.maxCombo;
-            options = shuffle([answer, answer + 1, Math.max(0, answer - 1), answer + 3]);
+            options = ensureUnique([answer + 1, Math.max(0, answer - 1), answer + 3, answer + 5], answer, 4, () => Math.max(0, answer + Math.floor(Math.random() * 10) + 2));
             break;
         case 'activeCount':
             answer = state.activePuzzles.filter((p) => !p.solved && !p.expired).length;
-            options = shuffle([answer, answer + 1, Math.max(0, answer - 1), answer + 2]);
+            options = ensureUnique([answer + 1, Math.max(0, answer - 1), answer + 2, answer + 3], answer, 4, () => Math.max(0, answer + Math.floor(Math.random() * 5) + 1));
             break;
         case 'realTimeHour': {
             const hour12 = (new Date().getHours() % 12) || 12;
             answer = hour12;
-            const nextHr = (hour12 % 12) + 1;
-            const prevHr = ((hour12 + 10) % 12) + 1;
-            const next2Hr = ((hour12 + 1) % 12) + 1;
-            options = shuffle([hour12, nextHr, prevHr, next2Hr]);
+            const candidates = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].filter((h) => h !== hour12);
+            const pickWrong = () => candidates[Math.floor(Math.random() * candidates.length)] ?? 1;
+            options = ensureUnique([pickWrong(), pickWrong(), pickWrong()], hour12, 4, pickWrong);
             break;
         }
         case 'score':
             answer = state.score;
             const delta = Math.max(100, Math.floor(state.score * 0.1));
-            options = shuffle([answer, answer + delta, Math.max(0, answer - delta), answer + delta * 2]);
+            options = ensureUnique(
+                [answer + delta, Math.max(0, answer - delta), answer + delta * 2, answer + delta * 3],
+                answer,
+                4,
+                () => Math.max(0, answer + Math.floor((Math.random() - 0.5) * 4) * delta)
+            );
             break;
     }
     return { answer, options };
@@ -735,6 +763,15 @@ const MinigameRenderer: React.FC<{
             </div>
         );
     }
+    // fling_direction - drag the whole card; no buttons to block pointer
+    if (data.variant === 'fling_direction') {
+        return (
+            <div className="puzzle-content minigame-area fling-hint">
+                <span className="fling-arrow">👆</span>
+                <p>Drag & fling this card!</p>
+            </div>
+        );
+    }
     return null;
 };
 
@@ -906,6 +943,23 @@ export const PuzzleCard: React.FC<PuzzleCardProps> = ({ puzzle, gameState, onSol
         setDragOffset({ x: newX, y: newY });
     };
 
+    const getFlingDirectionFromVelocity = (vx: number, vy: number): FlingDirection | null => {
+        const speed = Math.sqrt(vx * vx + vy * vy);
+        if (speed < 0.2) return null; // too slow to count as fling
+        const angle = Math.atan2(vy, vx);
+        const deg = (angle * 180) / Math.PI;
+        const pi8 = 22.5;
+        if (deg >= -pi8 && deg < pi8) return 'right';
+        if (deg >= pi8 && deg < 3 * pi8) return 'bottom-right';
+        if (deg >= 3 * pi8 && deg < 5 * pi8) return 'bottom';
+        if (deg >= 5 * pi8 && deg < 7 * pi8) return 'bottom-left';
+        if (deg >= 7 * pi8 || deg < -7 * pi8) return 'left';
+        if (deg >= -7 * pi8 && deg < -5 * pi8) return 'top-left';
+        if (deg >= -5 * pi8 && deg < -3 * pi8) return 'top';
+        if (deg >= -3 * pi8 && deg < -pi8) return 'top-right';
+        return null;
+    };
+
     const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
         if (!isDragging || e.pointerId !== dragRef.current.ptrId) return;
         setIsDragging(false);
@@ -914,6 +968,16 @@ export const PuzzleCard: React.FC<PuzzleCardProps> = ({ puzzle, gameState, onSol
         let { vx, vy } = dragRef.current;
         vx *= 16;
         vy *= 16;
+
+        // Fling puzzle: resolve based on fling direction
+        const isFling = puzzle.data.type === 'minigame' && puzzle.data.variant === 'fling_direction';
+        if (isFling && puzzle.data.targetDirection) {
+            const flungDir = getFlingDirectionFromVelocity(vx, vy);
+            const correct = flungDir === puzzle.data.targetDirection;
+            handleAnswer(correct);
+            setDragOffset({ x: 0, y: 0 });
+            return;
+        }
 
         let currentX = e.clientX - dragRef.current.startX;
         let currentY = e.clientY - dragRef.current.startY;
