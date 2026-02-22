@@ -375,6 +375,17 @@
 - [ ] Return `MinigameResults` with rankings, awards, and `gameSpecificData` containing `questionHistory`
   **Verification:** Unit test: construct scoring scenarios triggering each award → all 5 awards assigned correctly to different players.
 
+#### 6.1.6.14 `buildGameLog()`
+
+- [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
+- [ ] Log `question_start` action when a question is revealed (questionIndex, questionText, category, pointPotMax)
+- [ ] Log `answer_submitted` action per player answer (userId, answer, correct, timeMs, pointsAwarded)
+- [ ] Log `question_pass` action when a player passes (userId, questionIndex)
+- [ ] Log `question_end` action at question resolution (questionIndex, correctAnswer, potState, answerBreakdown)
+- [ ] In `computeResults()`, build `GameLog` with `initialState` containing total questions, point pot config, player list
+- [ ] Return `GameLog` from `buildGameLog()`
+  **Verification:** Unit test: 8-question game, verify log has 8 `question_start` and 8 `question_end` actions.
+
 ---
 
 ### 6.1.7 Register Game in Minigame Registry
@@ -957,6 +968,21 @@
 - [ ] Return `MinigameResults` with rankings, awards, and `gameSpecificData` containing `edits`, `votes`, `winner`, `keyword`
   **Verification:** Unit test: construct scenarios for each award → all 5 awards assigned correctly.
 
+#### 6.2.6.18 `buildGameLog()`
+
+- [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
+- [ ] Log `turn_start` action on each turn (turnNumber, activeUserId)
+- [ ] Log `sentence_written` action when a player writes their sentence (userId, sentence)
+- [ ] Log `editor_swap` action when the Editor swaps a word (sentenceIndex, originalWord, newWord, position)
+- [ ] Log `editor_skip` action when Editor chooses not to edit
+- [ ] Log `story_snapshot` action at end of each turn cycle (full story text)
+- [ ] Log `accusation_vote` action for each vote (voterId, suspectedUserId)
+- [ ] Log `vote_result` action at vote resolution (votes tally, editorCaught boolean)
+- [ ] Log `final_reveal` action with Editor identity, keyword, and all swaps made
+- [ ] In `computeResults()`, build `GameLog` with `initialState` containing story prompt, keyword, Editor userId, turn order
+- [ ] Return `GameLog` from `buildGameLog()`
+  **Verification:** Unit test: 6-player game, 12 turns, verify log contains turn_start/sentence_written per turn, editor_swap/skip on Editor turns, and final reveal.
+
 ---
 
 ### 6.2.7 Register Game in Minigame Registry
@@ -1492,6 +1518,17 @@
   - [ ] **Shrewd Investor** — player who earned the highest investment bonus; icon: `trending-up`
 - [ ] Return `MinigameResults` with rankings, awards, and `gameSpecificData` containing drawings + bids
   **Verification:** Unit test: scenarios triggering each award → all 5 awards assigned correctly.
+
+#### 6.3.6.14 `buildGameLog()`
+
+- [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
+- [ ] Log `drawing_submitted` action per player drawing (userId, strokes serialized as polyline arrays, strokeCount)
+- [ ] Log `bid_placed` action during auction (bidderId, targetDrawingUserId, bidAmount)
+- [ ] Log `auction_result` action per drawing (drawingUserId, totalMarketValue, highestBidder, bidCount)
+- [ ] In `computeResults()`, build `GameLog` with `initialState` containing prompt text, canvasSize, maxStrokes, startingBudget
+- [ ] Include all drawing stroke data in game log for gallery replay
+- [ ] Return `GameLog` from `buildGameLog()`
+  **Verification:** Unit test: 5-player game, verify all 5 drawings captured in log with stroke data, bids recorded, and auction results present.
 
 ---
 
@@ -2064,6 +2101,17 @@
   - [ ] **Close but No Cigar** — player with the most "close" guesses that never converted to correct in the same round; icon: `cigarette`
 - [ ] Return `MinigameResults` with rankings, awards, and `gameSpecificData` containing rounds summary
   **Verification:** Unit test: scenarios triggering each award → all 5 awards assigned correctly.
+
+#### 6.4.6.15 `buildGameLog()`
+
+- [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
+- [ ] Log `round_start` action when a new Producer is assigned (round, producerUserId, movieTitle)
+- [ ] Log `emoji_placed` action for each emoji the Producer adds (emoji, position, emojiSequence snapshot)
+- [ ] Log `guess_attempt` action for significant guesses only — close guesses and the correct guess (userId, guessText, result: 'close' | 'correct', matchScore)
+- [ ] Log `round_end` action at round completion (round, movieTitle, emojiSequence, correctGuesserId or null, guessCount)
+- [ ] In `computeResults()`, build `GameLog` with `initialState` containing total rounds, movie pool difficulty, player list
+- [ ] Return `GameLog` from `buildGameLog()`
+  **Verification:** Unit test: 4-round game, verify log contains round_start/round_end per round with correct movie titles and emoji sequences.
 
 ---
 
