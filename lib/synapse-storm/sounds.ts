@@ -3,6 +3,14 @@ class SoundManager {
     private initialized = false;
     private masterVolume = 0.3;
 
+    setVolume(v: number): void {
+        this.masterVolume = Math.max(0, Math.min(1, v));
+    }
+
+    getVolume(): number {
+        return this.masterVolume;
+    }
+
     init(): void {
         if (this.initialized) return;
         this.ctx = new AudioContext();

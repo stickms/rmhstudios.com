@@ -7,6 +7,8 @@ import type {
 } from './types';
 import { generatePuzzle, resetPuzzleCounter } from './generator';
 import { soundManager } from './sounds';
+import { synapseStormMusic } from './music';
+import { getSettings } from './settings';
 import {
     generatePuzzleDeterministic,
     getDifficultyAtTime,
@@ -289,6 +291,7 @@ export function useGameEngine(mode: GameMode = 'singleplayer', mpConfig?: Multip
 
             if (newMissed >= prev.missThreshold) {
                 soundManager.gameOver();
+                synapseStormMusic.stop();
                 if (modeRef.current === 'multiplayer' && mpConfigRef.current?.onGameOver) {
                     mpConfigRef.current.onGameOver({
                         score: prev.score,
@@ -351,7 +354,11 @@ export function useGameEngine(mode: GameMode = 'singleplayer', mpConfig?: Multip
         mpSpawnIndexRef.current = 0;
         scoreUpdateThrottleRef.current = 0;
         soundManager.init();
+        const settings = getSettings();
+        soundManager.setVolume(settings.sfxVolume);
+        synapseStormMusic.setVolume(settings.musicVolume);
         soundManager.startGame();
+        synapseStormMusic.play();
 
         const isMP = modeRef.current === 'multiplayer' && mpConfigRef.current;
         const now = Date.now();
@@ -449,6 +456,7 @@ export function useGameEngine(mode: GameMode = 'singleplayer', mpConfig?: Multip
 
                 if (newMissed >= prev.missThreshold) {
                     soundManager.gameOver();
+                    synapseStormMusic.stop();
                     if (modeRef.current === 'multiplayer' && mpConfigRef.current?.onGameOver) {
                         mpConfigRef.current.onGameOver({
                             score: prev.score,
@@ -501,6 +509,7 @@ export function useGameEngine(mode: GameMode = 'singleplayer', mpConfig?: Multip
     // Return to menu
     const returnToMenu = useCallback(() => {
         clearTimers();
+        synapseStormMusic.stop();
         setState(INITIAL_STATE);
     }, [clearTimers]);
 

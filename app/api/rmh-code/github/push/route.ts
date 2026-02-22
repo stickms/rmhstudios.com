@@ -47,7 +47,7 @@ export async function POST(req: Request) {
 
   // Find changed files
   const changedFiles = project.files.filter(
-    f => !gitLastSyncAt || f.updatedAt > gitLastSyncAt
+    (f: (typeof project.files)[number]) => !gitLastSyncAt || f.updatedAt > gitLastSyncAt
   );
 
   if (changedFiles.length === 0) {

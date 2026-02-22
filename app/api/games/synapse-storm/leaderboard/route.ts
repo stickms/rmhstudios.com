@@ -29,7 +29,7 @@ export async function GET(req: Request) {
             },
         });
 
-        const leaderboard = entries.map((e, i) => ({
+        const leaderboard = entries.map((e: (typeof entries)[number], i: number) => ({
             rank: i + 1,
             userId: e.userId,
             displayName: e.user?.username || e.user?.name || 'Anonymous',

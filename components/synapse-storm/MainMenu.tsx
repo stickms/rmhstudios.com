@@ -1,7 +1,10 @@
 'use client';
-import React from 'react';
-import { Zap, Brain, Activity, Target, Layers, Timer } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Zap, Brain, Activity, Target, Layers, Timer, Settings2 } from 'lucide-react';
 import { GlobalLeaderboard } from './GlobalLeaderboard';
+import { getSettings, setMusicVolume, setSfxVolume } from '@/lib/synapse-storm/settings';
+import { soundManager } from '@/lib/synapse-storm/sounds';
+import { synapseStormMusic } from '@/lib/synapse-storm/music';
 
 interface MainMenuProps {
     onStart: () => void;
@@ -19,6 +22,28 @@ const FEATURES = [
 ];
 
 export const MainMenu: React.FC<MainMenuProps> = ({ onStart, onMultiplayer, currentUserId }) => {
+    const [settingsOpen, setSettingsOpen] = useState(false);
+    const [musicVol, setMusicVol] = useState(0.25);
+    const [sfxVol, setSfxVol] = useState(0.3);
+
+    useEffect(() => {
+        const s = getSettings();
+        setMusicVol(s.musicVolume);
+        setSfxVol(s.sfxVolume);
+    }, []);
+
+    const handleMusicChange = (v: number) => {
+        setMusicVol(v);
+        setMusicVolume(v);
+        synapseStormMusic.setVolume(v);
+    };
+
+    const handleSfxChange = (v: number) => {
+        setSfxVol(v);
+        setSfxVolume(v);
+        soundManager.setVolume(v);
+    };
+
     return (
         <div className="main-menu">
             <div className="menu-bg-effect" />
@@ -56,6 +81,44 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onStart, onMultiplayer, curr
                             MULTIPLAYER STORM
                             <div className="start-glow" />
                         </button>
+                    )}
+                </div>
+
+                <div className="menu-settings-section">
+                    <button
+                        type="button"
+                        className="settings-toggle"
+                        onClick={() => setSettingsOpen(!settingsOpen)}
+                        aria-expanded={settingsOpen}
+                    >
+                        <Settings2 size={18} />
+                        Settings
+                    </button>
+                    {settingsOpen && (
+                        <div className="settings-panel">
+                            <div className="settings-row">
+                                <label>Music</label>
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="100"
+                                    value={Math.round(musicVol * 100)}
+                                    onChange={(e) => handleMusicChange(Number(e.target.value) / 100)}
+                                />
+                                <span className="settings-value">{Math.round(musicVol * 100)}%</span>
+                            </div>
+                            <div className="settings-row">
+                                <label>Sound effects</label>
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="100"
+                                    value={Math.round(sfxVol * 100)}
+                                    onChange={(e) => handleSfxChange(Number(e.target.value) / 100)}
+                                />
+                                <span className="settings-value">{Math.round(sfxVol * 100)}%</span>
+                            </div>
+                        </div>
                     )}
                 </div>
 

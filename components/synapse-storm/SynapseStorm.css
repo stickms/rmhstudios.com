@@ -244,6 +244,90 @@
     }
 }
 
+.menu-settings-section {
+    margin-bottom: 1.25rem;
+}
+
+.settings-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.settings-toggle:hover {
+    color: var(--accent-cyan);
+    border-color: rgba(0, 229, 255, 0.3);
+}
+
+.settings-panel {
+    margin-top: 0.75rem;
+    padding: 1rem 1.25rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    backdrop-filter: blur(10px);
+}
+
+.settings-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.settings-row:last-child {
+    margin-bottom: 0;
+}
+
+.settings-row label {
+    flex: 0 0 100px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.settings-row input[type="range"] {
+    flex: 1;
+    height: 6px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+}
+
+.settings-row input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
+}
+
+.settings-row input[type="range"]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+    cursor: pointer;
+    border: none;
+}
+
+.settings-value {
+    flex: 0 0 36px;
+    font-size: 0.8rem;
+    font-family: var(--font-mono);
+    color: var(--text-secondary);
+}
+
 .menu-instructions {
     text-align: left;
     background: var(--bg-card);
