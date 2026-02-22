@@ -426,6 +426,19 @@
   ```
   **Verification:** Call registry lookup for `"rhyme-time"`; confirm all metadata fields correct and handler instantiates.
 
+- [ ] Register server handler in `MINIGAME_SERVER_REGISTRY` (in `server/rmhbox/game-coordinator.ts`):
+  ```ts
+  import { RhymeTimeGame } from './minigames/rhyme-time';
+  MINIGAME_SERVER_REGISTRY.set('rhyme-time', RhymeTimeGame);
+  ```
+  **Verification:** `MINIGAME_SERVER_REGISTRY.get('rhyme-time')` returns the `RhymeTimeGame` class. `GameCoordinator` can instantiate it with a valid `MinigameContext`.
+
+- [ ] Add lazy-load entry in `components/rmhbox/MinigameRenderer.tsx`:
+  ```tsx
+  'rhyme-time': lazy(() => import('./minigames/rhyme-time/RhymeTimeGame')),
+  ```
+  **Verification:** When lobby enters PLAYING with `minigameId: 'rhyme-time'`, MinigameRenderer renders `<RhymeTimeGame />` inside `<Suspense>`. Verify code-splitting: `RhymeTimeGame` chunk is NOT in the main bundle.
+
 ---
 
 ### 5.1.8 Build Client Components
@@ -491,6 +504,32 @@
 - [ ] Compact pill shape, fits in scrollable list
 - [ ] Animation on state transition
   **Verification:** Render in all 3 states. Tooltip visible on hover for invalid pills.
+
+#### 5.1.8.6 Sound Effect Integration
+
+- [ ] Import `playSound` from `@/lib/rmhbox/audio`
+- [ ] Trigger sounds in `RhymeTimeGame.tsx` event handlers:
+  - [ ] `RT_ROUND_START` → `playSound('goFanfare')`
+  - [ ] `RT_RHYME_SUBMITTED` with `valid: true` → `playSound('scoreDing')`
+  - [ ] `RT_RHYME_SUBMITTED` with `valid: false` → `playSound('buzzer')`
+  - [ ] `RT_ROUND_RESULTS` → `playSound('victoryFanfare')`
+  - [ ] `TIMER_TICK` with `timeRemaining <= 5` → `playSound('countdownBeep')`
+  - [ ] Phase transitions (intermission, next round) → `playSound('swoosh')`
+  **Verification:** Mute master volume → no sounds play. Set volume to 1.0 → all sounds audible at correct moments. Each sound plays exactly once per event.
+
+#### 5.1.8.7 Zustand Store Integration
+
+- [ ] Read game state via `useRMHboxStore()` hook:
+  ```tsx
+  const { gameState, lobby } = useRMHboxStore();
+  const lastAction = gameState.lastAction as GameAction | undefined;
+  ```
+- [ ] React to `lastAction` changes in a `useEffect` to update local component state
+- [ ] Read `lobby.currentGame.timeRemaining` for timer display
+- [ ] Read `lobby.currentGame.publicState` for shared game state (submission counts, phase)
+- [ ] Read `lobby.currentGame.privateState` for player-specific state (own submissions, validity)
+- [ ] Detect spectator mode: if current user is not in `lobby.players`, render read-only view without input controls
+  **Verification:** Component re-renders when store state changes. Spectator sees scoreboard but no input field. Timer updates smoothly via store.
 
 ---
 
@@ -864,6 +903,19 @@
   ```
   **Verification:** Registry lookup returns correct metadata. Handler instantiates with 6 players.
 
+- [ ] Register server handler in `MINIGAME_SERVER_REGISTRY` (in `server/rmhbox/game-coordinator.ts`):
+  ```ts
+  import { UndercoverAgentGame } from './minigames/undercover-agent';
+  MINIGAME_SERVER_REGISTRY.set('undercover-agent', UndercoverAgentGame);
+  ```
+  **Verification:** `MINIGAME_SERVER_REGISTRY.get('undercover-agent')` returns the `UndercoverAgentGame` class. `GameCoordinator` can instantiate it with a valid `MinigameContext`.
+
+- [ ] Add lazy-load entry in `components/rmhbox/MinigameRenderer.tsx`:
+  ```tsx
+  'undercover-agent': lazy(() => import('./minigames/undercover-agent/UndercoverAgentGame')),
+  ```
+  **Verification:** When lobby enters PLAYING with `minigameId: 'undercover-agent'`, MinigameRenderer renders `<UndercoverAgentGame />` inside `<Suspense>`. Verify code-splitting: `UndercoverAgentGame` chunk is NOT in the main bundle.
+
 ---
 
 ### 5.2.8 Build Client Components
@@ -943,6 +995,35 @@
 - [ ] Turn number display
 - [ ] Animated transition between phases
   **Verification:** Indicator updates on phase changes. Timer is accurate. Animation plays on transition.
+
+#### 5.2.8.8 Sound Effect Integration
+
+- [ ] Import `playSound` from `@/lib/rmhbox/audio`
+- [ ] Trigger sounds in `UndercoverAgentGame.tsx` event handlers:
+  - [ ] `UA_SETUP` → `playSound('swoosh')`
+  - [ ] `UA_CLUE_GIVEN` → `playSound('click')`
+  - [ ] `UA_TILE_REVEALED` (correct agent) → `playSound('scoreDing')`
+  - [ ] `UA_TILE_REVEALED` (bystander/wrong) → `playSound('buzzer')`
+  - [ ] `UA_TILE_REVEALED` (assassin) → `playSound('buzzer')`
+  - [ ] `UA_TURN_END` → `playSound('swoosh')`
+  - [ ] `UA_GAME_OVER` → `playSound('victoryFanfare')`
+  - [ ] `TIMER_TICK` with `timeRemaining <= 5` → `playSound('countdownBeep')`
+  **Verification:** Mute master volume → no sounds play. Set volume to 1.0 → all sounds audible at correct moments. Each sound plays exactly once per event.
+
+#### 5.2.8.9 Zustand Store Integration
+
+- [ ] Read game state via `useRMHboxStore()` hook:
+  ```tsx
+  const { gameState, lobby } = useRMHboxStore();
+  const lastAction = gameState.lastAction as GameAction | undefined;
+  ```
+- [ ] React to `lastAction` changes in a `useEffect` to update local component state
+- [ ] Read `lobby.currentGame.timeRemaining` for timer display
+- [ ] Read `lobby.currentGame.publicState` for shared game state (grid, revealed tiles, current team, phase)
+- [ ] Read `lobby.currentGame.privateState` for player-specific state (team assignment, role)
+- [ ] Read team assignment from `privateState`, render SpymasterKey overlay if role is spymaster
+- [ ] Detect spectator mode: if current user is not in `lobby.players`, render omniscient view with full key card visible
+  **Verification:** Component re-renders when store state changes. Spymaster sees key card overlay. Spectator sees omniscient view. Timer updates smoothly via store.
 
 ---
 
@@ -1422,6 +1503,19 @@
   ```
   **Verification:** Registry lookup returns correct metadata. Handler instantiates with 5 players.
 
+- [ ] Register server handler in `MINIGAME_SERVER_REGISTRY` (in `server/rmhbox/game-coordinator.ts`):
+  ```ts
+  import { CategoryCrashGame } from './minigames/category-crash';
+  MINIGAME_SERVER_REGISTRY.set('category-crash', CategoryCrashGame);
+  ```
+  **Verification:** `MINIGAME_SERVER_REGISTRY.get('category-crash')` returns the `CategoryCrashGame` class. `GameCoordinator` can instantiate it with a valid `MinigameContext`.
+
+- [ ] Add lazy-load entry in `components/rmhbox/MinigameRenderer.tsx`:
+  ```tsx
+  'category-crash': lazy(() => import('./minigames/category-crash/CategoryCrashGame')),
+  ```
+  **Verification:** When lobby enters PLAYING with `minigameId: 'category-crash'`, MinigameRenderer renders `<CategoryCrashGame />` inside `<Suspense>`. Verify code-splitting: `CategoryCrashGame` chunk is NOT in the main bundle.
+
 ---
 
 ### 5.3.8 Build Client Components
@@ -1495,6 +1589,33 @@
 - [ ] Highlight unique answers, crashed answers
 - [ ] Awards display (after final round)
   **Verification:** Results match scoring formula. Awards displayed correctly. Scoreboard sorted.
+
+#### 5.3.8.7 Sound Effect Integration
+
+- [ ] Import `playSound` from `@/lib/rmhbox/audio`
+- [ ] Trigger sounds in `CategoryCrashGame.tsx` event handlers:
+  - [ ] `CC_ROUND_START` → `playSound('goFanfare')`
+  - [ ] `CC_ANSWERS_LOCKED` → `playSound('click')`
+  - [ ] `CC_PEER_REVIEW_START` → `playSound('swoosh')`
+  - [ ] `CC_CRASH_UPDATE` (crash placed) → `playSound('buzzer')`
+  - [ ] `CC_ROUND_RESULTS` → `playSound('victoryFanfare')`
+  - [ ] `TIMER_TICK` with `timeRemaining <= 5` → `playSound('countdownBeep')`
+  **Verification:** Mute master volume → no sounds play. Set volume to 1.0 → all sounds audible at correct moments. Each sound plays exactly once per event.
+
+#### 5.3.8.8 Zustand Store Integration
+
+- [ ] Read game state via `useRMHboxStore()` hook:
+  ```tsx
+  const { gameState, lobby } = useRMHboxStore();
+  const lastAction = gameState.lastAction as GameAction | undefined;
+  ```
+- [ ] React to `lastAction` changes in a `useEffect` to update local component state
+- [ ] Read `lobby.currentGame.timeRemaining` for timer display
+- [ ] Read `lobby.currentGame.publicState` for shared game state (anonymized answers, crash counts, phase)
+- [ ] Read `lobby.currentGame.privateState` for player-specific state (own answers, crash targets)
+- [ ] Read anonymized answers from `publicState` during peer review phase
+- [ ] Detect spectator mode: if current user is not in `lobby.players`, render de-anonymized view showing all player answers
+  **Verification:** Component re-renders when store state changes. Spectator sees de-anonymized answers. Timer updates smoothly via store.
 
 ---
 
@@ -1983,6 +2104,19 @@
   ```
   **Verification:** Registry lookup returns correct metadata. Handler instantiates with 4 players.
 
+- [ ] Register server handler in `MINIGAME_SERVER_REGISTRY` (in `server/rmhbox/game-coordinator.ts`):
+  ```ts
+  import { WikiRaceGame } from './minigames/wiki-race';
+  MINIGAME_SERVER_REGISTRY.set('wiki-race', WikiRaceGame);
+  ```
+  **Verification:** `MINIGAME_SERVER_REGISTRY.get('wiki-race')` returns the `WikiRaceGame` class. `GameCoordinator` can instantiate it with a valid `MinigameContext`.
+
+- [ ] Add lazy-load entry in `components/rmhbox/MinigameRenderer.tsx`:
+  ```tsx
+  'wiki-race': lazy(() => import('./minigames/wiki-race/WikiRaceGame')),
+  ```
+  **Verification:** When lobby enters PLAYING with `minigameId: 'wiki-race'`, MinigameRenderer renders `<WikiRaceGame />` inside `<Suspense>`. Verify code-splitting: `WikiRaceGame` chunk is NOT in the main bundle.
+
 ---
 
 ### 5.4.8 Build Client Components
@@ -2055,6 +2189,33 @@
 - [ ] Click count and time comparison
 - [ ] Awards display
   **Verification:** Rankings match scoring formula. Optimal path displayed. Player paths shown. Awards visible.
+
+#### 5.4.8.7 Sound Effect Integration
+
+- [ ] Import `playSound` from `@/lib/rmhbox/audio`
+- [ ] Trigger sounds in `WikiRaceGame.tsx` event handlers:
+  - [ ] `WR_ARTICLES_REVEALED` → `playSound('swoosh')`
+  - [ ] link click (local) → `playSound('click')`
+  - [ ] `WR_PLAYER_FINISHED` → `playSound('scoreDing')`
+  - [ ] `WR_NAVIGATE_ERROR` → `playSound('buzzer')`
+  - [ ] `WR_RESULTS` → `playSound('victoryFanfare')`
+  - [ ] `TIMER_TICK` with `timeRemaining <= 5` → `playSound('countdownBeep')`
+  **Verification:** Mute master volume → no sounds play. Set volume to 1.0 → all sounds audible at correct moments. Each sound plays exactly once per event.
+
+#### 5.4.8.8 Zustand Store Integration
+
+- [ ] Read game state via `useRMHboxStore()` hook:
+  ```tsx
+  const { gameState, lobby } = useRMHboxStore();
+  const lastAction = gameState.lastAction as GameAction | undefined;
+  ```
+- [ ] React to `lastAction` changes in a `useEffect` to update local component state
+- [ ] Read `lobby.currentGame.timeRemaining` for timer display
+- [ ] Read `lobby.currentGame.publicState` for shared game state (player progress, finish order)
+- [ ] Read `lobby.currentGame.privateState` for player-specific state (current article content, own path)
+- [ ] Read article content from `privateState` for WikiFrame rendering
+- [ ] Detect spectator mode: if current user is not in `lobby.players`, render multi-player path comparison view
+  **Verification:** Component re-renders when store state changes. Spectator sees all player paths. Timer updates smoothly via store.
 
 ---
 
@@ -2137,6 +2298,26 @@
 
 - [ ] **Spectator mode across all games:** verify spectators receive appropriate state for each game type
   **Verification:** Spectators see correct information (no more, no less) per game spec.
+
+- [ ] **MinigameRenderer code-splitting:** verify each game's client component is loaded as a separate chunk
+  - [ ] Navigate to RMHbox lobby → verify no minigame code in initial bundle
+  - [ ] Start Rhyme Time → verify `RhymeTimeGame` chunk loaded on demand
+  - [ ] Start Undercover Agent → verify `UndercoverAgentGame` chunk loaded
+  - [ ] Verify `<Suspense>` fallback (loading spinner) appears briefly during chunk load
+  **Verification:** Network tab shows separate chunk files for each minigame. Main bundle size remains constant regardless of which game is played.
+
+- [ ] **Sound effect integration test:** verify all 4 games trigger appropriate sounds at correct moments
+  - [ ] Test with master volume at 0 → no sounds
+  - [ ] Test with master volume at 1.0 → all sounds audible
+  - [ ] Verify no overlapping/stacking of identical sounds
+  **Verification:** Sound events fire exactly once per game event. Volume settings respected.
+
+- [ ] **MINIGAME_SERVER_REGISTRY completeness:** verify all 4 game handlers are registered
+  - [ ] `MINIGAME_SERVER_REGISTRY.get('rhyme-time')` returns `RhymeTimeGame`
+  - [ ] `MINIGAME_SERVER_REGISTRY.get('undercover-agent')` returns `UndercoverAgentGame`
+  - [ ] `MINIGAME_SERVER_REGISTRY.get('category-crash')` returns `CategoryCrashGame`
+  - [ ] `MINIGAME_SERVER_REGISTRY.get('wiki-race')` returns `WikiRaceGame`
+  **Verification:** All 4 server handlers instantiate correctly and implement required `BaseMinigame` methods.
 
 - [ ] **Disconnection/reconnection across all games:** verify reconnection restores correct state for each game
   **Verification:** Reconnected players resume correctly in all 4 games.
