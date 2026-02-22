@@ -21,6 +21,7 @@ export function Navbar() {
   const links = [
     { href: '/', label: 'Home' },
     { href: '/games', label: 'Games' },
+    { href: '/apps', label: 'Apps' },
     { href: '/roadmap', label: 'Roadmap' },
     { href: '/blog', label: 'Blog' },
   ];

@@ -2,6 +2,7 @@
 
 import type { FileMeta } from './utils';
 import { getLanguage } from './utils';
+import { useSettings } from './SettingsContext';
 
 interface StatusBarProps {
   file: FileMeta | null;
@@ -12,6 +13,7 @@ interface StatusBarProps {
 }
 
 export default function StatusBar({ file, line, col, saveStatus, isGuest }: StatusBarProps) {
+  const { settings, updateSettings } = useSettings();
   const language = file ? (file.language ?? getLanguage(file.name)) : null;
 
   return (
@@ -32,6 +34,24 @@ export default function StatusBar({ file, line, col, saveStatus, isGuest }: Stat
         {file && <span className="opacity-80">Ln {line}, Col {col}</span>}
         {language && (
           <span className="capitalize opacity-90">{language}</span>
+        )}
+        {file && (
+          <button
+            onClick={() => updateSettings({ showMinimap: !settings.showMinimap })}
+            title={settings.showMinimap ? 'Hide minimap' : 'Show minimap'}
+            className={`transition-opacity hover:opacity-100 ${settings.showMinimap ? 'opacity-90' : 'opacity-40'}`}
+          >
+            Map
+          </button>
+        )}
+        {file && (
+          <button
+            onClick={() => updateSettings({ stickyScroll: !settings.stickyScroll })}
+            title={settings.stickyScroll ? 'Disable sticky scroll' : 'Enable sticky scroll'}
+            className={`transition-opacity hover:opacity-100 ${settings.stickyScroll ? 'opacity-90' : 'opacity-40'}`}
+          >
+            Sticky
+          </button>
         )}
         <span className="opacity-70">RMH Code</span>
       </div>

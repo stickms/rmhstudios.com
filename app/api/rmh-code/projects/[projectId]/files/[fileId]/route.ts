@@ -5,6 +5,24 @@ import { prisma } from '@/lib/prisma';
 
 type Params = { params: Promise<{ projectId: string; fileId: string }> };
 
+function getLanguage(filename: string): string {
+  const ext = filename.split('.').pop()?.toLowerCase() ?? '';
+  const map: Record<string, string> = {
+    ts: 'typescript', tsx: 'typescript',
+    js: 'javascript', jsx: 'javascript',
+    css: 'css', scss: 'scss',
+    json: 'json', md: 'markdown',
+    html: 'html', htm: 'html',
+    py: 'python', rs: 'rust',
+    go: 'go', sh: 'shell',
+    yaml: 'yaml', yml: 'yaml',
+    toml: 'toml', xml: 'xml',
+    sql: 'sql', c: 'c', cpp: 'cpp',
+    java: 'java', rb: 'ruby', php: 'php',
+  };
+  return map[ext] ?? 'plaintext';
+}
+
 async function getAuthorizedFile(userId: string, projectId: string, fileId: string) {
   const file = await prisma.codeFile.findUnique({
     where: { id: fileId },
@@ -25,6 +43,46 @@ export async function GET(_req: Request, { params }: Params) {
   if (!file) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
   return NextResponse.json({ file });
+}
+
+export async function PATCH(req: Request, { params }: Params) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { projectId, fileId } = await params;
+  const file = await getAuthorizedFile(session.user.id, projectId, fileId);
+  if (!file) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+
+  let body: { name?: string; path?: string };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
+
+  const { name, path } = body;
+  if (!name || !path) {
+    return NextResponse.json({ error: 'name and path are required' }, { status: 400 });
+  }
+
+  // Check for path conflict
+  const conflict = await prisma.codeFile.findUnique({
+    where: { projectId_path: { projectId, path } },
+    select: { id: true },
+  });
+  if (conflict && conflict.id !== fileId) {
+    return NextResponse.json({ error: 'A file at that path already exists' }, { status: 409 });
+  }
+
+  const updated = await prisma.codeFile.update({
+    where: { id: fileId },
+    data: { name, path, language: getLanguage(name) },
+    select: { id: true, name: true, path: true, language: true, updatedAt: true },
+  });
+
+  return NextResponse.json({ file: updated });
 }
 
 export async function PUT(req: Request, { params }: Params) {
