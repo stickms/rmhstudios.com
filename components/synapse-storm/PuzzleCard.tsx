@@ -8,7 +8,10 @@ import {
     SpatialPuzzleData,
     MemoryPuzzleData,
     ReactionPuzzleData,
+    MinigamePuzzleData,
     PowerUpPuzzleData,
+    MetaPuzzleData,
+    GameState,
     CATEGORY_COLORS,
     CATEGORY_LABELS,
     ShapeInfo,
@@ -17,9 +20,90 @@ import { soundManager } from '../../lib/synapse-storm/sounds';
 
 interface PuzzleCardProps {
     puzzle: ActivePuzzle;
+    gameState?: GameState;
     onSolve: (id: string, correct: boolean) => void;
     onSkipPhase?: (id: string) => void;
 }
+
+function computeMetaAnswerAndOptions(variant: MetaPuzzleData['variant'], state: GameState): { answer: number; options: number[] } {
+    const shuffle = <T,>(arr: T[]): T[] => {
+        const a = [...arr];
+        for (let i = a.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+    };
+    const now = Date.now();
+    let answer: number;
+    let options: number[];
+    switch (variant) {
+        case 'gameTime':
+            answer = Math.floor((now - state.startTime) / 1000);
+            options = shuffle([answer, answer + 15, Math.max(0, answer - 10), answer + 30]);
+            break;
+        case 'lives':
+            answer = Math.max(0, state.missThreshold - state.puzzlesMissed);
+            options = shuffle([answer, answer + 1, Math.max(0, answer - 1), answer + 2]);
+            break;
+        case 'intensity':
+            answer = Math.round(state.difficulty);
+            options = shuffle([answer, Math.min(10, answer + 1), Math.max(1, answer - 1), Math.min(10, answer + 2)]);
+            break;
+        case 'combo':
+            answer = state.combo;
+            options = shuffle([answer, answer + 1, Math.max(0, answer - 1), answer + 3]);
+            break;
+        case 'maxCombo':
+            answer = state.maxCombo;
+            options = shuffle([answer, answer + 1, Math.max(0, answer - 1), answer + 3]);
+            break;
+        case 'activeCount':
+            answer = state.activePuzzles.filter((p) => !p.solved && !p.expired).length;
+            options = shuffle([answer, answer + 1, Math.max(0, answer - 1), answer + 2]);
+            break;
+        case 'realTimeHour': {
+            const hour12 = (new Date().getHours() % 12) || 12;
+            answer = hour12;
+            const nextHr = (hour12 % 12) + 1;
+            const prevHr = ((hour12 + 10) % 12) + 1;
+            const next2Hr = ((hour12 + 1) % 12) + 1;
+            options = shuffle([hour12, nextHr, prevHr, next2Hr]);
+            break;
+        }
+        case 'score':
+            answer = state.score;
+            const delta = Math.max(100, Math.floor(state.score * 0.1));
+            options = shuffle([answer, answer + delta, Math.max(0, answer - delta), answer + delta * 2]);
+            break;
+    }
+    return { answer, options };
+}
+
+// ---- META ----
+const MetaRenderer: React.FC<{
+    data: MetaPuzzleData;
+    gameState?: GameState;
+    onAnswer: (correct: boolean) => void;
+}> = ({ data, gameState, onAnswer }) => {
+    const [resolved, setResolved] = React.useState<{ answer: number; options: number[] } | null>(() => {
+        if (data.answer !== undefined && data.options?.length) return { answer: data.answer, options: data.options };
+        if (gameState) return computeMetaAnswerAndOptions(data.variant, gameState);
+        return null;
+    });
+    if (!resolved) return <div className="puzzle-content">Loading...</div>;
+    return (
+        <div className="puzzle-content">
+            <div className="puzzle-options">
+                {resolved.options.map((opt, i) => (
+                    <button key={i} className="option-btn" onClick={() => onAnswer(opt === resolved.answer)}>
+                        {opt}
+                    </button>
+                ))}
+            </div>
+        </div>
+    );
+};
 
 // ---- MATH ----
 const MathRenderer: React.FC<{ data: MathPuzzleData; onAnswer: (correct: boolean) => void }> = ({
@@ -175,7 +259,11 @@ const LanguageRenderer: React.FC<{
 const SpatialRenderer: React.FC<{
     data: SpatialPuzzleData;
     onAnswer: (correct: boolean) => void;
-}> = ({ data, onAnswer }) => (
+}> = ({ data, onAnswer }) => {
+    const isCorrectClick = (i: number) =>
+        data.answerIndices ? data.answerIndices.includes(i) : i === data.answer;
+    const isClickable = ['odd', 'color', 'size', 'rotation', 'match', 'pair'].includes(data.variant);
+    return (
     <div className="puzzle-content">
         <div className="shape-grid">
             {data.shapes.map((s, i) => (
@@ -183,10 +271,10 @@ const SpatialRenderer: React.FC<{
                     key={i}
                     width={s.size}
                     height={s.size}
-                    className={`shape-svg ${['odd', 'color', 'size', 'rotation', 'match'].includes(data.variant) ? 'clickable-shape' : ''}`}
-                    onClick={() => ['odd', 'color', 'size', 'rotation', 'match'].includes(data.variant) && onAnswer(i === data.answer)}
+                    className={`shape-svg ${isClickable ? 'clickable-shape' : ''}`}
+                    onClick={() => isClickable && onAnswer(isCorrectClick(i))}
                     style={{
-                        cursor: ['odd', 'color', 'size', 'rotation', 'match'].includes(data.variant) ? 'pointer' : 'default',
+                        cursor: isClickable ? 'pointer' : 'default',
                         transform: s.rotation ? `rotate(${s.rotation}deg)` : 'none'
                     }}
                 >
@@ -204,7 +292,8 @@ const SpatialRenderer: React.FC<{
             </div>
         )}
     </div>
-);
+    );
+};
 
 // ---- MEMORY ----
 const MemoryRenderer: React.FC<{
@@ -232,6 +321,10 @@ const MemoryRenderer: React.FC<{
             const entered = trimmedInput.split(',').filter(Boolean);
             const correct = entered.length === data.sequence.length && entered.every((c, i) => c === data.sequence[i]);
             onAnswer(correct);
+        } else if (data.variant === 'shapes') {
+            const entered = trimmedInput.split(',').filter(Boolean);
+            const correct = entered.length === data.sequence.length && entered.every((s, i) => s === data.sequence[i]);
+            onAnswer(correct);
         }
     };
 
@@ -240,9 +333,17 @@ const MemoryRenderer: React.FC<{
             <div className="puzzle-content">
                 <div className="memory-sequence">
                     {data.sequence.map((n, i) => (
+                        data.variant === 'shapes' ? (
+                            <span key={i} className="memory-shape" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32 }}>
+                                <svg width={28} height={28}>
+                                    {SVG_SHAPES[n as string]?.('#00e5ff', 28, `mem-${i}`)}
+                                </svg>
+                            </span>
+                        ) : (
                         <span key={i} className="memory-digit" style={data.variant === 'colors' ? { backgroundColor: n as string, color: 'transparent', width: 28, height: 28, borderRadius: '6px', display: 'inline-block', boxShadow: '0 0 8px rgba(0,0,0,0.3)' } : {}}>
                             {data.variant === 'colors' ? '' : n}
                         </span>
+                        )
                     ))}
                 </div>
                 <div className="memory-hint">Memorize!</div>
@@ -256,6 +357,8 @@ const MemoryRenderer: React.FC<{
             </div>
         );
     }
+
+    const SHAPE_NAMES: ShapeInfo['shape'][] = ['circle', 'square', 'triangle', 'diamond', 'hexagon'];
 
     return (
         <div className="puzzle-content">
@@ -271,6 +374,41 @@ const MemoryRenderer: React.FC<{
                         maxLength={data.sequence.length + 2}
                         style={{ width: '100%', textAlign: 'center', fontSize: '1.2rem', marginBottom: '8px' }}
                     />
+                ) : data.variant === 'shapes' ? (
+                    <div className="shape-input-controls">
+                        <div className="selected-shapes" style={{ minHeight: 28, marginBottom: 8, display: 'flex', gap: 4, flexWrap: 'wrap', justifyContent: 'center' }}>
+                            {input.split(',').filter(Boolean).map((s, i) => (
+                                <span key={i} style={{ display: 'inline-flex' }}>
+                                    <svg width={24} height={24}>{SVG_SHAPES[s]?.('#76ff03', 24, `sel-${i}`)}</svg>
+                                </span>
+                            ))}
+                            {input === '' && <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Tap shapes in order</span>}
+                        </div>
+                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+                            {SHAPE_NAMES.map(shape => (
+                                <button
+                                    type="button"
+                                    key={shape}
+                                    className="shape-pick-btn"
+                                    style={{ padding: 6, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 8, cursor: 'pointer' }}
+                                    onClick={() => {
+                                        const parts = input.split(',').filter(Boolean);
+                                        if (parts.length < data.sequence.length) {
+                                            setInput(prev => prev ? `${prev},${shape}` : shape);
+                                        }
+                                    }}
+                                >
+                                    <svg width={28} height={28}>{SVG_SHAPES[shape]?.('#00e5ff', 28, shape)}</svg>
+                                </button>
+                            ))}
+                        </div>
+                        <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                            <button type="button" className="option-btn text-small" onClick={() => setInput('')}>Clear</button>
+                            <button type="submit" className="submit-btn" style={{ flex: 1 }} disabled={input.split(',').filter(Boolean).length !== data.sequence.length}>
+                                SUBMIT
+                            </button>
+                        </div>
+                    </div>
                 ) : (
                     <div className="color-input-controls">
                         <div className="selected-colors">
@@ -438,6 +576,168 @@ const ReactionRenderer: React.FC<{
     );
 };
 
+// ---- MINIGAME (WarioWare-style microgames) ----
+const MinigameRenderer: React.FC<{
+    data: MinigamePuzzleData;
+    onAnswer: (correct: boolean) => void;
+}> = ({ data, onAnswer }) => {
+    const [phase, setPhase] = useState<'wait' | 'go'>('wait');
+    const [count, setCount] = useState(3);
+    const [tapCount, setTapCount] = useState(0);
+    const [targetVisible, setTargetVisible] = useState(false);
+    const [targetPos, setTargetPos] = useState({ x: 50, y: 50 });
+    const [doubleTapStage, setDoubleTapStage] = useState<'first' | 'second'>('first');
+    const lastTapRef = useRef(0);
+    const barRef = useRef<HTMLDivElement>(null);
+    const barFillRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (data.variant === 'click_when_go') {
+            const t = setTimeout(() => setPhase('go'), 600 + Math.random() * 400);
+            return () => clearTimeout(t);
+        }
+        if (data.variant === 'whack') {
+            const t = setTimeout(() => {
+                setTargetVisible(true);
+                setTargetPos({ x: 20 + Math.random() * 60, y: 25 + Math.random() * 40 });
+            }, 300);
+            return () => clearTimeout(t);
+        }
+        if (data.variant === 'dont_click') {
+            const t = setTimeout(() => setPhase('go'), 800 + Math.random() * 600);
+            return () => clearTimeout(t);
+        }
+        if (data.variant === 'countdown') {
+            const interval = setInterval(() => {
+                setCount((c) => {
+                    if (c <= 0) return 0;
+                    return c - 1;
+                });
+            }, 700);
+            return () => clearInterval(interval);
+        }
+    }, [data.variant]);
+
+    const handleClickWhenGo = () => {
+        if (phase !== 'go') return;
+        onAnswer(true);
+    };
+    const handleWhack = () => {
+        if (!targetVisible) return;
+        onAnswer(true);
+    };
+    const handlePick = (index: number) => {
+        if (data.answerIndex === undefined) return;
+        onAnswer(index === data.answerIndex);
+    };
+    const handleDoubleTap = () => {
+        const now = Date.now();
+        if (now - lastTapRef.current < 400) {
+            onAnswer(true);
+        } else {
+            lastTapRef.current = now;
+            setDoubleTapStage('second');
+            setTimeout(() => setDoubleTapStage('first'), 400);
+        }
+    };
+    const handleDontClick = () => {
+        if (phase !== 'go') {
+            onAnswer(false);
+        } else {
+            onAnswer(true);
+        }
+    };
+    const handleCountdownClick = () => {
+        onAnswer(count === 0);
+    };
+    const handleTapFast = () => {
+        const next = tapCount + 1;
+        setTapCount(next);
+        if (next >= 5) onAnswer(true);
+    };
+
+    // click_when_go
+    if (data.variant === 'click_when_go') {
+        return (
+            <div className="puzzle-content minigame-area" onClick={handleClickWhenGo}>
+                <button className="minigame-go-btn" style={{ opacity: phase === 'go' ? 1 : 0.3, cursor: phase === 'go' ? 'pointer' : 'default' }}>
+                    {phase === 'go' ? 'GO!' : '...'}
+                </button>
+            </div>
+        );
+    }
+    // whack
+    if (data.variant === 'whack') {
+        return (
+            <div className="puzzle-content minigame-area reaction-field">
+                {targetVisible && (
+                    <button
+                        className="minigame-whack-target"
+                        style={{ left: `${targetPos.x}%`, top: `${targetPos.y}%` }}
+                        onClick={handleWhack}
+                    >
+                        👆
+                    </button>
+                )}
+            </div>
+        );
+    }
+    // pick_biggest, pick_odd
+    if (data.variant === 'pick_biggest' || data.variant === 'pick_odd') {
+        const shapes = data.shapes ?? [];
+        return (
+            <div className="puzzle-content minigame-area minigame-shapes">
+                <div className="minigame-shapes-grid">
+                    {shapes.map((s, i) => (
+                        <button key={i} className="minigame-shape-btn" onClick={() => handlePick(i)}>
+                            <svg width={s.size} height={s.size}>{SVG_SHAPES[s.shape]?.(s.color, s.size, `mg-${i}`)}</svg>
+                        </button>
+                    ))}
+                </div>
+            </div>
+        );
+    }
+    // double_tap
+    if (data.variant === 'double_tap') {
+        return (
+            <div className="puzzle-content minigame-area">
+                <button className="minigame-double-tap" onClick={handleDoubleTap}>
+                    {doubleTapStage === 'second' ? 'Tap again!' : 'Double-tap!'}
+                </button>
+            </div>
+        );
+    }
+    // dont_click
+    if (data.variant === 'dont_click') {
+        return (
+            <div className="puzzle-content minigame-area" onClick={handleDontClick}>
+                <button className="minigame-go-btn" style={{ opacity: 1, cursor: 'pointer' }}>
+                    {phase === 'go' ? 'CLICK!' : 'Don\'t tap!'}
+                </button>
+            </div>
+        );
+    }
+    // countdown
+    if (data.variant === 'countdown') {
+        return (
+            <div className="puzzle-content minigame-area" onClick={handleCountdownClick}>
+                <button className="minigame-countdown-btn">{count}</button>
+            </div>
+        );
+    }
+    // tap_fast
+    if (data.variant === 'tap_fast') {
+        return (
+            <div className="puzzle-content minigame-area">
+                <button className="minigame-tap-fast" onClick={handleTapFast}>
+                    {tapCount}/5
+                </button>
+            </div>
+        );
+    }
+    return null;
+};
+
 // ---- POWER-UP ----
 const PowerUpRenderer: React.FC<{
     data: PowerUpPuzzleData;
@@ -531,7 +831,7 @@ const PowerUpRenderer: React.FC<{
 };
 
 // ---- MAIN CARD ----
-export const PuzzleCard: React.FC<PuzzleCardProps> = ({ puzzle, onSolve, onSkipPhase }) => {
+export const PuzzleCard: React.FC<PuzzleCardProps> = ({ puzzle, gameState, onSolve, onSkipPhase }) => {
     const [status, setStatus] = useState<'idle' | 'correct' | 'wrong'>('idle');
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
     const [isDragging, setIsDragging] = useState(false);
@@ -672,8 +972,12 @@ export const PuzzleCard: React.FC<PuzzleCardProps> = ({ puzzle, onSolve, onSkipP
                 return <MemoryRenderer data={puzzle.data as MemoryPuzzleData} puzzleId={puzzle.id} phase={puzzle.memoryPhase} onAnswer={handleAnswer} onSkipPhase={onSkipPhase} />;
             case 'reaction':
                 return <ReactionRenderer data={puzzle.data} onAnswer={handleAnswer} />;
+            case 'minigame':
+                return <MinigameRenderer data={puzzle.data as MinigamePuzzleData} onAnswer={handleAnswer} />;
             case 'powerup':
                 return <PowerUpRenderer data={puzzle.data as PowerUpPuzzleData} onAnswer={handleAnswer} />;
+            case 'meta':
+                return <MetaRenderer data={puzzle.data as MetaPuzzleData} gameState={gameState} onAnswer={handleAnswer} />;
             default:
                 return null;
         }

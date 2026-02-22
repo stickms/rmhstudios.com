@@ -5,8 +5,11 @@ import type {
     SpatialPuzzleData,
     MemoryPuzzleData,
     ReactionPuzzleData,
+    MinigamePuzzleData,
     PowerUpPuzzleData,
+    MetaPuzzleData,
     ShapeInfo,
+    GameState,
 } from './types';
 import { SHAPE_COLOR_NAMES } from './types';
 
@@ -38,7 +41,7 @@ const SHAPE_COLORS = ['#ff5252', '#00e5ff', '#76ff03', '#ffab00', '#b388ff', '#f
 
 // ---- MATH PUZZLES ----
 function generateMathPuzzle(difficulty: number): PuzzleDefinition {
-    const types: ('arithmetic' | 'algebra' | 'geometry' | 'compare' | 'nearest' | 'operator')[] = ['arithmetic', 'compare', 'nearest', 'operator'];
+    const types: ('arithmetic' | 'algebra' | 'geometry' | 'compare' | 'nearest' | 'operator' | 'percent' | 'sequence' | 'digit_sum')[] = ['arithmetic', 'compare', 'nearest', 'operator', 'percent', 'sequence', 'digit_sum'];
     if (difficulty > 2) types.push('algebra');
     if (difficulty > 3) types.push('geometry');
     const ptype = pick(types);
@@ -97,6 +100,29 @@ function generateMathPuzzle(difficulty: number): PuzzleDefinition {
         instruction = `Missing operator?`;
         answer = chosen;
         options = ['+', '-', '×', '÷'];
+    } else if (ptype === 'percent') {
+        const pct = pick([10, 25, 50, 75]);
+        const num = pick([20, 40, 60, 80, 100, 120]);
+        answer = Math.round((pct / 100) * num);
+        expression = `${pct}% of ${num}`;
+        instruction = `Calculate`;
+        options = shuffle([answer as number, (answer as number) + 5, (answer as number) - 5 || (answer as number) + 3, (answer as number) + 10]);
+    } else if (ptype === 'sequence') {
+        const start = rand(1, 5);
+        const step = pick([2, 3, 5]);
+        const len = 4;
+        const seq = Array.from({ length: len }, (_, i) => start + i * step);
+        answer = seq[len - 1] + step;
+        expression = seq.join(', ') + ', _';
+        instruction = `Next number?`;
+        options = shuffle([answer as number, (answer as number) + step, (answer as number) - step, seq[0]]);
+    } else if (ptype === 'digit_sum') {
+        const num = rand(100, 499);
+        const digits = String(num).split('').map(Number);
+        answer = digits.reduce((a, b) => a + b, 0);
+        expression = `Sum of digits in ${num}`;
+        instruction = `Calculate`;
+        options = shuffle([answer as number, (answer as number) + 1, (answer as number) - 1 || 0, (answer as number) + 2]);
     } else {
         const ops = ['+', '-', '×'];
         if (difficulty > 4) ops.push('÷');
@@ -128,7 +154,7 @@ function generateMathPuzzle(difficulty: number): PuzzleDefinition {
 
 // ---- PATTERN PUZZLES ----
 function generatePatternPuzzle(difficulty: number): PuzzleDefinition {
-    const variants: ('alternating' | 'growing' | 'rotating')[] = ['alternating', 'growing', 'rotating'];
+    const variants: ('alternating' | 'growing' | 'rotating' | 'color_cycle')[] = ['alternating', 'growing', 'rotating', 'color_cycle'];
     const ptype = pick(variants);
 
     let sequence: ShapeInfo[] = [];
@@ -162,6 +188,16 @@ function generatePatternPuzzle(difficulty: number): PuzzleDefinition {
             sequence = Array.from({ length: seqLen }, (_, i) => ({ shape: rotShape, color: baseColor, size: 30, rotation: i * rotStep }));
             break;
         }
+        case 'color_cycle': {
+            const cycleColors = shuffle([...SHAPE_COLORS]).slice(0, 3);
+            const cycleShape = pick(SHAPE_TYPES);
+            sequence = Array.from({ length: seqLen }, (_, i) => ({
+                shape: cycleShape,
+                color: cycleColors[i % cycleColors.length],
+                size: 30
+            }));
+            break;
+        }
     }
 
     answer = { ...sequence[missingIndex] };
@@ -178,6 +214,8 @@ function generatePatternPuzzle(difficulty: number): PuzzleDefinition {
         } else if (ptype === 'growing') {
             const sizes = [15, 27, 39, 51, 63, 75, 87];
             opt = { shape: baseShape, color: baseColor, size: pick(sizes.filter(s => s !== answer.size)) };
+        } else if (ptype === 'color_cycle') {
+            opt = { shape: answer.shape, color: pick(SHAPE_COLORS.filter(c => c !== answer.color)), size: 30 };
         } else {
             const rots = [0, 45, 90, 135, 180, 225, 270, 315];
             opt = { shape: answer.shape, color: baseColor, size: 30, rotation: pick(rots.filter(r => r !== (answer.rotation || 0))) };
@@ -207,14 +245,18 @@ function generatePatternPuzzle(difficulty: number): PuzzleDefinition {
 }
 
 // ---- LANGUAGE PUZZLES ----
-const WORDS_POOL = [
-    'brain', 'storm', 'pulse', 'nerve', 'focus', 'react', 'spark',
-    'flash', 'swift', 'blaze', 'sharp', 'logic', 'think', 'solve',
-    'power', 'speed', 'chess', 'pixel', 'glyph', 'nexus', 'prime',
-    'crypt', 'omega', 'delta', 'sigma', 'alpha', 'laser', 'sonic',
-    'turbo', 'hyper', 'ultra', 'cyber', 'boost', 'flame', 'frost',
-    'lunar', 'solar', 'astro', 'quark', 'prism', 'surge', 'drift',
-];
+// Words by length for variety (especially "how many letters" puzzle)
+const WORDS_BY_LENGTH: Record<number, string[]> = {
+    3: ['axe', 'ion', 'arc', 'zen', 'hex', 'cat', 'cup', 'pie', 'gem', 'key', 'log', 'map', 'ray', 'run', 'web'],
+    4: ['flow', 'code', 'wave', 'glow', 'mint', 'bolt', 'core', 'edge', 'fuel', 'jolt', 'link', 'meld', 'node', 'path', 'rift', 'scan', 'void', 'zap', 'pear', 'dusk'],
+    5: ['brain', 'storm', 'pulse', 'nerve', 'focus', 'react', 'spark', 'flash', 'swift', 'blaze', 'sharp', 'logic', 'think', 'solve', 'power', 'speed', 'chess', 'pixel', 'glyph', 'nexus', 'prime', 'crypt', 'omega', 'delta', 'sigma', 'alpha', 'laser', 'sonic', 'turbo', 'hyper', 'ultra', 'cyber', 'boost', 'flame', 'frost', 'lunar', 'solar', 'astro', 'quark', 'prism', 'surge', 'drift', 'pitch', 'sword', 'coral', 'vault'],
+    6: ['signal', 'matrix', 'vertex', 'puzzle', 'thrive', 'syntax', 'buffer', 'cipher', 'portal', 'fusion', 'zenith', 'pulsar', 'echoes', 'tundra', 'cobalt', 'velvet', 'mosaic', 'static', 'legacy', 'anchor', 'helix', 'mantra', 'oxygen', 'quartz'],
+    7: ['circuit', 'quantum', 'cascade', 'pyramid', 'triumph', 'vortex', 'spectrum', 'harmony', 'marquee', 'citadel', 'phantom', 'plasma', 'emerald', 'sapphire', 'crystal', 'horizon'],
+    8: ['algorithm', 'velocity', 'momentum', 'paramount', 'asteroid', 'fracture', 'levitate', 'pavilion', 'resonance', 'terminal'],
+};
+const WORDS_POOL = Object.values(WORDS_BY_LENGTH).flat();
+// For typing/anagram/reverse/spelling: 4-6 chars for doable input speed
+const TYPING_WORDS_POOL = [...WORDS_BY_LENGTH[4]!, ...WORDS_BY_LENGTH[5]!, ...WORDS_BY_LENGTH[6]!];
 
 function scrambleWord(word: string): string {
     if (word.length <= 3) return word;
@@ -232,10 +274,13 @@ function scrambleWord(word: string): string {
 }
 
 function generateLanguagePuzzle(difficulty: number): PuzzleDefinition {
-    const variants: ('typing' | 'anagram' | 'spelling' | 'vowels' | 'reverse' | 'category' | 'affix')[] =
-        ['typing', 'anagram', 'spelling', 'vowels', 'reverse', 'category', 'affix'];
+    const variants: ('typing' | 'anagram' | 'spelling' | 'vowels' | 'reverse' | 'category' | 'affix' | 'consonants' | 'length' | 'palindrome')[] =
+        ['typing', 'anagram', 'spelling', 'vowels', 'reverse', 'category', 'affix', 'consonants', 'length', 'palindrome'];
     const variant = pick(variants);
-    const word = pick(WORDS_POOL);
+    // Length/consonants/vowels need varied word lengths; typing variants use shorter words for input speed
+    const word = ['length', 'consonants', 'vowels'].includes(variant)
+        ? pick(WORDS_POOL)
+        : pick(TYPING_WORDS_POOL);
 
     let prompt: string, answer: string, instruction: string;
     let options: string[] | undefined;
@@ -272,11 +317,17 @@ function generateLanguagePuzzle(difficulty: number): PuzzleDefinition {
             break;
         }
         case 'category': {
-            const C_WORDS = ['DOG', 'CAT', 'BIRD', 'FISH'];
-            const F_WORDS = ['APPLE', 'PEAR', 'PLUM', 'GRAPE'];
-            const useC = Math.random() > 0.5;
-            const targetWord = useC ? pick(F_WORDS) : pick(C_WORDS);
-            const distractors = shuffle(useC ? C_WORDS : F_WORDS).slice(0, 3);
+            const CATEGORY_SETS = [
+                { odd: ['DOG', 'CAT', 'BIRD'], in: ['APPLE', 'PEAR', 'PLUM'] },
+                { odd: ['APPLE', 'PEAR', 'GRAPE'], in: ['LION', 'TIGER', 'BEAR'] },
+                { odd: ['RED', 'BLUE', 'GREEN'], in: ['FROST', 'FLAME', 'STORM'] },
+                { odd: ['RUN', 'JUMP', 'SWIM'], in: ['PIANO', 'GUITAR', 'DRUMS'] },
+                { odd: ['SUN', 'MOON', 'STAR'], in: ['RIVER', 'OCEAN', 'LAKE'] },
+            ];
+            const set = pick(CATEGORY_SETS);
+            const useOdd = Math.random() > 0.5;
+            const targetWord = useOdd ? pick(set.in) : pick(set.odd);
+            const distractors = shuffle(useOdd ? set.odd : set.in).slice(0, 3);
             prompt = '';
             answer = targetWord;
             options = shuffle([targetWord, ...distractors]);
@@ -285,16 +336,44 @@ function generateLanguagePuzzle(difficulty: number): PuzzleDefinition {
         }
         case 'affix': {
             const affixes = [
-                { w: 'HYPER', p: 'HYP', s: 'ER' },
-                { w: 'SUPER', p: 'SUP', s: 'ER' },
-                { w: 'REACT', p: 'RE', s: 'ACT' },
-                { w: 'BRAIN', p: 'BR', s: 'AIN' }
+                { w: 'HYPER', p: 'HYP', s: 'ER' }, { w: 'SUPER', p: 'SUP', s: 'ER' },
+                { w: 'REACT', p: 'RE', s: 'ACT' }, { w: 'BRAIN', p: 'BR', s: 'AIN' },
+                { w: 'UNLOCK', p: 'UN', s: 'LOCK' }, { w: 'REPLAY', p: 'RE', s: 'PLAY' },
+                { w: 'DISARM', p: 'DIS', s: 'ARM' }, { w: 'PRETEND', p: 'PRE', s: 'TEND' },
             ];
             const a = pick(affixes);
             prompt = `${a.p}__`;
             answer = a.s;
             instruction = `Complete the word:`;
-            options = shuffle([a.s, 'OR', 'IS', 'ED']);
+            const distractors = ['OR', 'IS', 'ED', 'LY', 'IN', 'ON', 'EN'];
+            options = shuffle([a.s, ...distractors.filter(d => d !== a.s).slice(0, 3)]);
+            break;
+        }
+        case 'consonants': {
+            prompt = word.toUpperCase();
+            const cons = word.replace(/[aeiou]/gi, '').length;
+            answer = cons.toString();
+            instruction = `How many consonants?`;
+            options = shuffle([cons, cons + 1, cons - 1, cons + 2].filter(n => n >= 0).map(String));
+            break;
+        }
+        case 'length': {
+            prompt = word.toUpperCase();
+            answer = word.length.toString();
+            instruction = `How many letters?`;
+            const len = word.length;
+            options = shuffle([len, len + 1, len - 1, len + 2].filter(n => n > 0).map(String));
+            break;
+        }
+        case 'palindrome': {
+            const palindromes = ['RADAR', 'CIVIC', 'LEVEL', 'ROTOR', 'KAYAK', 'REFER', 'MADAM', 'TENET'];
+            const notPals = ['BRAIN', 'STORM', 'PULSE', 'SPARK', 'PIANO', 'TIGER', 'OCEAN', 'MAGIC'];
+            const isPal = Math.random() > 0.5;
+            const w = isPal ? pick(palindromes) : pick(notPals);
+            prompt = `Is "${w}" a palindrome?`;
+            answer = isPal ? 'Yes' : 'No';
+            instruction = 'Pick Yes or No';
+            options = shuffle(['Yes', 'No']);
             break;
         }
     }
@@ -320,7 +399,7 @@ function generateLanguagePuzzle(difficulty: number): PuzzleDefinition {
 
 // ---- SPATIAL PUZZLES ----
 function generateSpatialPuzzle(difficulty: number): PuzzleDefinition {
-    const variants: ('count' | 'odd' | 'color' | 'size' | 'rotation' | 'match')[] = ['count', 'odd', 'color', 'size', 'rotation', 'match'];
+    const variants: ('count' | 'odd' | 'color' | 'size' | 'rotation' | 'match' | 'pair')[] = ['count', 'odd', 'color', 'size', 'rotation', 'match', 'pair'];
     const variant = pick(variants);
 
     if (variant === 'count') {
@@ -365,6 +444,47 @@ function generateSpatialPuzzle(difficulty: number): PuzzleDefinition {
             difficulty,
             timeLimit: Math.max(5, 12 - difficulty * 0.5),
             basePoints: 130 + difficulty * 20,
+            data,
+        };
+    } else if (variant === 'pair') {
+        // Two shapes match; click either of the pair. Others are unique.
+        const pairShape = pick(SHAPE_TYPES);
+        const pairColor = pick(SHAPE_COLORS);
+        const pairInfo: ShapeInfo = { shape: pairShape, color: pairColor, size: 30 };
+        const shapes: ShapeInfo[] = [];
+        const pairIndices: number[] = [];
+        const slotCount = rand(6, 8);
+        const pairSlot1 = rand(0, slotCount - 1);
+        let pairSlot2 = rand(0, slotCount - 1);
+        while (pairSlot2 === pairSlot1) pairSlot2 = rand(0, slotCount - 1);
+        for (let i = 0; i < slotCount; i++) {
+            if (i === pairSlot1 || i === pairSlot2) {
+                shapes.push({ ...pairInfo });
+                pairIndices.push(i);
+            } else {
+                let s = pick(SHAPE_TYPES);
+                let c = pick(SHAPE_COLORS);
+                while (s === pairShape && c === pairColor) {
+                    s = pick(SHAPE_TYPES);
+                    c = pick(SHAPE_COLORS);
+                }
+                shapes.push({ shape: s, color: c, size: 30 });
+            }
+        }
+        const data: SpatialPuzzleData = {
+            type: 'spatial',
+            variant: 'pair',
+            shapes,
+            answer: pairIndices[0],
+            answerIndices: pairIndices,
+        };
+        return {
+            id: uid(),
+            category: 'spatial',
+            instruction: `Click one of the matching pair`,
+            difficulty,
+            timeLimit: Math.max(4, 10 - difficulty * 0.4),
+            basePoints: 120 + difficulty * 20,
             data,
         };
     } else if (variant === 'rotation' || variant === 'match') {
@@ -515,14 +635,20 @@ function generateSpatialPuzzle(difficulty: number): PuzzleDefinition {
 }
 
 // ---- MEMORY PUZZLES ----
+const SHAPE_NAMES: ShapeInfo['shape'][] = ['circle', 'square', 'triangle', 'diamond', 'hexagon'];
+
 function generateMemoryPuzzle(difficulty: number): PuzzleDefinition {
-    const variant = pick(['numbers', 'colors'] as const);
-    // Start at 1 digit, scale up slowly
-    const len = Math.min(1 + Math.floor(difficulty / 2.5), 7);
+    const variant = pick(['numbers', 'colors', 'shapes'] as const);
+    // Start at 1, scale up slowly. Shapes use fewer items (harder to recall)
+    const len = variant === 'shapes'
+        ? Math.min(1 + Math.floor(difficulty / 2), 5)
+        : Math.min(1 + Math.floor(difficulty / 2.5), 7);
 
     let sequence: (number | string)[];
     if (variant === 'colors') {
         sequence = Array.from({ length: len }, () => pick(SHAPE_COLORS));
+    } else if (variant === 'shapes') {
+        sequence = Array.from({ length: len }, () => pick(SHAPE_NAMES));
     } else {
         sequence = Array.from({ length: len }, () => rand(1, 9));
     }
@@ -551,11 +677,13 @@ function generateMemoryPuzzle(difficulty: number): PuzzleDefinition {
 
 // ---- REACTION PUZZLES ----
 function generateReactionPuzzle(difficulty: number): PuzzleDefinition {
-    const variants: ('click' | 'moving' | 'sequence' | 'decoy' | 'double' | 'jitter')[] =
-        ['click', 'moving', 'sequence', 'decoy', 'double', 'jitter'];
+    const variants: ('click' | 'moving' | 'sequence' | 'decoy' | 'double' | 'jitter' | 'burst')[] =
+        ['click', 'moving', 'sequence', 'decoy', 'double', 'jitter', 'burst'];
     const variant = pick(variants);
     const count = Math.min(1 + Math.floor(difficulty / 3), 5);
-    const targetCount = variant === 'sequence' ? Math.max(3, count + 1) : (variant === 'double' ? 2 : count);
+    const targetCount = variant === 'sequence' ? Math.max(3, count + 1)
+        : (variant === 'double' ? 2
+            : (variant === 'burst' ? Math.min(5, count + 2) : count));
 
     const data: ReactionPuzzleData = {
         type: 'reaction',
@@ -569,6 +697,7 @@ function generateReactionPuzzle(difficulty: number): PuzzleDefinition {
     if (variant === 'decoy') instruction = `Click targets, avoid RED!`;
     if (variant === 'double') instruction = `Double-click targets!`;
     if (variant === 'jitter') instruction = `Catch the shaking targets!`;
+    if (variant === 'burst') instruction = `Clear all ${targetCount} targets fast!`;
 
     return {
         id: uid(),
@@ -577,6 +706,154 @@ function generateReactionPuzzle(difficulty: number): PuzzleDefinition {
         difficulty,
         timeLimit: Math.max(3, 8 - difficulty * 0.4),
         basePoints: 80 + difficulty * 15,
+        data,
+    };
+}
+
+// ---- MINIGAME PUZZLES (WarioWare-style microgames) ----
+function generateMinigamePuzzle(difficulty: number): PuzzleDefinition {
+    const variants: MinigamePuzzleData['variant'][] =
+        ['click_when_go', 'whack', 'pick_biggest', 'pick_odd', 'double_tap', 'dont_click', 'countdown', 'tap_fast'];
+    const variant = pick(variants);
+
+    let instruction = '';
+    let data: MinigamePuzzleData = { type: 'minigame', variant };
+
+    switch (variant) {
+        case 'click_when_go':
+            instruction = 'Wait... then tap GO!';
+            break;
+        case 'whack':
+            instruction = 'Whack it!';
+            break;
+        case 'pick_biggest':
+            instruction = 'Tap the biggest!';
+            {
+                const count = 4;
+                const answerIndex = rand(0, count - 1);
+                const shapes: ShapeInfo[] = [];
+                for (let i = 0; i < count; i++) {
+                    shapes.push({
+                        shape: pick(SHAPE_TYPES),
+                        color: pick(SHAPE_COLORS),
+                        size: i === answerIndex ? 44 : 24 + rand(-2, 2),
+                    });
+                }
+                data = { ...data, shapes, answerIndex };
+            }
+            break;
+        case 'pick_odd':
+            instruction = 'Tap the odd one!';
+            {
+                const mainShape = pick(SHAPE_TYPES);
+                const oddShape = pick(SHAPE_TYPES.filter((s) => s !== mainShape));
+                const count = 4;
+                const answerIndex = rand(0, count - 1);
+                const shapes: ShapeInfo[] = Array.from({ length: count }, (_, i) => ({
+                    shape: i === answerIndex ? oddShape : mainShape,
+                    color: pick(SHAPE_COLORS),
+                    size: 28,
+                }));
+                data = { ...data, shapes, answerIndex };
+            }
+            break;
+        case 'double_tap':
+            instruction = 'Double-tap!';
+            break;
+        case 'dont_click':
+            instruction = 'Don\'t tap until it says CLICK!';
+            break;
+        case 'countdown':
+            instruction = 'Tap on zero!';
+            break;
+        case 'tap_fast':
+            instruction = 'Tap 5 times fast!';
+            break;
+    }
+
+    return {
+        id: uid(),
+        category: 'minigame',
+        instruction,
+        difficulty,
+        timeLimit: Math.max(2.5, 4 - difficulty * 0.15),
+        basePoints: 90 + difficulty * 12,
+        data,
+    };
+}
+
+// ---- META PUZZLES (game-state awareness, singleplayer only) ----
+function generateMetaPuzzle(difficulty: number, state: GameState): PuzzleDefinition {
+    const variants: MetaPuzzleData['variant'][] = ['gameTime', 'lives', 'intensity', 'combo', 'maxCombo', 'activeCount', 'realTimeHour', 'score'];
+    const variant = pick(variants);
+
+    const now = Date.now();
+    let answer: number;
+    let instruction: string;
+    let options: number[];
+
+    switch (variant) {
+        case 'gameTime':
+            answer = Math.floor((now - state.startTime) / 1000);
+            instruction = 'How many seconds have you been playing?';
+            options = shuffle([answer, answer + rand(5, 15), Math.max(0, answer - rand(5, 15)), answer + rand(20, 40)]);
+            break;
+        case 'lives':
+            answer = Math.max(0, state.missThreshold - state.puzzlesMissed);
+            instruction = 'How many lives do you have left?';
+            options = shuffle([answer, answer + 1, Math.max(0, answer - 1), answer + 2]);
+            break;
+        case 'intensity':
+            answer = Math.round(state.difficulty);
+            instruction = "What's your intensity level? (1-10)";
+            options = shuffle([
+                answer,
+                Math.min(10, answer + 1),
+                Math.max(1, answer - 1),
+                Math.min(10, answer + 2),
+            ]);
+            break;
+        case 'combo':
+            answer = state.combo;
+            instruction = "What's your current combo?";
+            options = shuffle([answer, answer + 1, Math.max(0, answer - 1), answer + rand(2, 5)]);
+            break;
+        case 'maxCombo':
+            answer = state.maxCombo;
+            instruction = "What's your best combo this run?";
+            options = shuffle([answer, answer + 1, Math.max(0, answer - 1), answer + rand(2, 5)]);
+            break;
+        case 'score':
+            answer = state.score;
+            instruction = "What's your current score?";
+            const delta = Math.max(100, Math.floor(state.score * 0.1));
+            options = shuffle([answer, answer + delta, Math.max(0, answer - delta), answer + delta * 2]);
+            break;
+        case 'activeCount':
+            answer = state.activePuzzles.filter((p) => !p.solved && !p.expired).length;
+            instruction = 'How many puzzles are on screen right now?';
+            options = shuffle([answer, answer + 1, Math.max(0, answer - 1), answer + 2]);
+            break;
+        case 'realTimeHour': {
+            const hour12 = (new Date().getHours() % 12) || 12;
+            answer = hour12;
+            instruction = "What hour is it? (12-hour, 1-12)";
+            const nextHr = (hour12 % 12) + 1;
+            const prevHr = ((hour12 + 10) % 12) + 1;
+            const next2Hr = ((hour12 + 1) % 12) + 1;
+            options = shuffle([hour12, nextHr, prevHr, next2Hr]);
+            break;
+        }
+    }
+
+    const data: MetaPuzzleData = { type: 'meta', variant, answer, options };
+    return {
+        id: uid(),
+        category: 'meta',
+        instruction: instruction!,
+        difficulty,
+        timeLimit: Math.max(5, 10 - difficulty * 0.3),
+        basePoints: 130 + difficulty * 25,
         data,
     };
 }
@@ -625,7 +902,9 @@ const generators: Record<PuzzleCategory, (d: number) => PuzzleDefinition> = {
     spatial: generateSpatialPuzzle,
     memory: generateMemoryPuzzle,
     reaction: generateReactionPuzzle,
+    minigame: generateMinigamePuzzle,
     powerup: generatePowerUpPuzzle,
+    meta: generateMetaPuzzle as (d: number) => PuzzleDefinition,
 };
 
 const CATEGORY_UNLOCK_ORDER: PuzzleCategory[] = [
@@ -635,6 +914,8 @@ const CATEGORY_UNLOCK_ORDER: PuzzleCategory[] = [
     'spatial',
     'reaction',
     'memory',
+    'minigame',
+    'meta',
     'powerup',
 ];
 
@@ -642,14 +923,26 @@ export function getAvailableCategories(_difficulty: number): PuzzleCategory[] {
     return [...CATEGORY_UNLOCK_ORDER];
 }
 
-export function generatePuzzle(difficulty: number, activeCategories: PuzzleCategory[] = [], forceCategory?: PuzzleCategory): PuzzleDefinition {
+export function generatePuzzle(
+    difficulty: number,
+    activeCategories: PuzzleCategory[] = [],
+    forceCategory?: PuzzleCategory,
+    gameState?: GameState
+): PuzzleDefinition {
     if (forceCategory) {
+        if (forceCategory === 'meta' && gameState) {
+            return generateMetaPuzzle(Math.min(10, Math.max(1, Math.round(difficulty))), gameState);
+        }
         return generators[forceCategory](Math.min(10, Math.max(1, Math.round(difficulty))));
     }
 
     const availableCategories = getAvailableCategories(difficulty);
     let categories = availableCategories;
 
+    // Meta requires game state (singleplayer only); exclude if no state
+    if (!gameState) {
+        categories = categories.filter(c => c !== 'meta');
+    }
     // Prevent duplicates of intense categories if they are already active
     if (activeCategories.includes('memory')) {
         categories = categories.filter(c => c !== 'memory');
@@ -659,10 +952,13 @@ export function generatePuzzle(difficulty: number, activeCategories: PuzzleCateg
     }
 
     // Fallback if we accidentally filtered everything
-    if (categories.length === 0) categories = availableCategories;
+    if (categories.length === 0) categories = availableCategories.filter(c => c !== 'meta' || gameState);
 
     const category = pick(categories);
     const clampedDifficulty = Math.min(10, Math.max(1, Math.round(difficulty)));
+    if (category === 'meta' && gameState) {
+        return generateMetaPuzzle(clampedDifficulty, gameState);
+    }
     return generators[category](clampedDifficulty);
 }
 

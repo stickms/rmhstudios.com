@@ -5,7 +5,9 @@ export type PuzzleCategory =
     | 'spatial'
     | 'memory'
     | 'reaction'
-    | 'powerup';
+    | 'minigame'
+    | 'powerup'
+    | 'meta';
 
 export interface PuzzleDefinition {
     id: string;
@@ -18,6 +20,13 @@ export interface PuzzleDefinition {
     data: PuzzleData;
 }
 
+export interface MetaPuzzleData {
+    type: 'meta';
+    variant: 'gameTime' | 'lives' | 'intensity' | 'combo' | 'maxCombo' | 'activeCount' | 'realTimeHour' | 'score';
+    answer?: number;   // baked in for singleplayer; computed at render for multiplayer
+    options?: number[];
+}
+
 // Union type for all puzzle data
 export type PuzzleData =
     | MathPuzzleData
@@ -26,11 +35,13 @@ export type PuzzleData =
     | SpatialPuzzleData
     | MemoryPuzzleData
     | ReactionPuzzleData
-    | PowerUpPuzzleData;
+    | MinigamePuzzleData
+    | PowerUpPuzzleData
+    | MetaPuzzleData;
 
 export interface MathPuzzleData {
     type: 'math';
-    variant: 'arithmetic' | 'algebra' | 'geometry' | 'compare' | 'nearest' | 'operator';
+    variant: 'arithmetic' | 'algebra' | 'geometry' | 'compare' | 'nearest' | 'operator' | 'percent' | 'sequence' | 'digit_sum';
     expression: string;
     answer: number | string;
     options?: (number | string)[];
@@ -38,7 +49,7 @@ export interface MathPuzzleData {
 
 export interface PatternPuzzleData {
     type: 'pattern';
-    variant: 'alternating' | 'growing' | 'rotating';
+    variant: 'alternating' | 'growing' | 'rotating' | 'color_cycle';
     sequence: ShapeInfo[];
     answer: ShapeInfo;
     options: ShapeInfo[];
@@ -47,7 +58,7 @@ export interface PatternPuzzleData {
 
 export interface LanguagePuzzleData {
     type: 'language';
-    variant: 'typing' | 'anagram' | 'spelling' | 'vowels' | 'reverse' | 'category' | 'affix';
+    variant: 'typing' | 'anagram' | 'spelling' | 'vowels' | 'reverse' | 'category' | 'affix' | 'consonants' | 'length' | 'palindrome';
     prompt: string;
     answer: string;
     options?: string[];
@@ -55,9 +66,10 @@ export interface LanguagePuzzleData {
 
 export interface SpatialPuzzleData {
     type: 'spatial';
-    variant: 'count' | 'match' | 'odd' | 'color' | 'size' | 'rotation';
+    variant: 'count' | 'match' | 'odd' | 'color' | 'size' | 'rotation' | 'pair';
     shapes: ShapeInfo[];
     answer: number | string;
+    answerIndices?: number[]; // for 'pair': multiple valid clicks
     options?: (number | string)[];
 }
 
@@ -70,7 +82,7 @@ export interface ShapeInfo {
 
 export interface MemoryPuzzleData {
     type: 'memory';
-    variant: 'numbers' | 'colors';
+    variant: 'numbers' | 'colors' | 'shapes';
     sequence: (string | number)[];
     showDuration: number; // ms
     inputDuration: number; // ms - for the second phase
@@ -78,9 +90,18 @@ export interface MemoryPuzzleData {
 
 export interface ReactionPuzzleData {
     type: 'reaction';
-    variant: 'click' | 'sequence' | 'moving' | 'decoy' | 'double' | 'jitter';
+    variant: 'click' | 'sequence' | 'moving' | 'decoy' | 'double' | 'jitter' | 'burst';
     targetCount: number;
     decoys?: number;
+}
+
+export interface MinigamePuzzleData {
+    type: 'minigame';
+    variant: 'click_when_go' | 'whack' | 'pick_biggest' | 'pick_odd' | 'double_tap' | 'dont_click' | 'countdown' | 'tap_fast';
+    /** For pick_biggest/pick_odd: shapes to display */
+    shapes?: ShapeInfo[];
+    /** Index of correct answer (for pick_biggest, pick_odd) */
+    answerIndex?: number;
 }
 
 export interface PowerUpPuzzleData {
@@ -139,7 +160,9 @@ export const CATEGORY_COLORS: Record<PuzzleCategory, string> = {
     spatial: '#ffab00',
     memory: '#b388ff',
     reaction: '#ff5252',
+    minigame: '#ff4081',
     powerup: '#ffd740',
+    meta: '#9c27b0',
 };
 
 export const SHAPE_COLOR_NAMES: Record<string, string> = {
@@ -158,5 +181,7 @@ export const CATEGORY_LABELS: Record<PuzzleCategory, string> = {
     spatial: '🔲 Spatial',
     memory: '🧠 Memory',
     reaction: '⚡ Reaction',
+    minigame: '🎮 Mini',
     powerup: '⭐ Power-Up',
+    meta: '🎯 Meta',
 };
