@@ -11,7 +11,9 @@ import type {
     SpatialPuzzleData,
     MemoryPuzzleData,
     ReactionPuzzleData,
+    MinigamePuzzleData,
     PowerUpPuzzleData,
+    MetaPuzzleData,
 } from './types';
 import { SHAPE_COLOR_NAMES } from './types';
 
@@ -97,16 +99,18 @@ export function computeSpawnsUpTo(
 const SHAPE_TYPES: ShapeInfo['shape'][] = ['circle', 'square', 'triangle', 'diamond', 'hexagon'];
 const SHAPE_COLORS = ['#ff5252', '#00e5ff', '#76ff03', '#ffab00', '#b388ff', '#ff6ec7'];
 
-const WORDS_POOL = [
-    'brain', 'storm', 'pulse', 'nerve', 'focus', 'react', 'spark',
-    'flash', 'swift', 'blaze', 'sharp', 'logic', 'think', 'solve',
-    'power', 'speed', 'chess', 'pixel', 'glyph', 'nexus', 'prime',
-    'crypt', 'omega', 'delta', 'sigma', 'alpha', 'laser', 'sonic',
-    'turbo', 'hyper', 'ultra', 'cyber', 'boost', 'flame', 'frost',
-    'lunar', 'solar', 'astro', 'quark', 'prism', 'surge', 'drift',
-];
+const WORDS_BY_LENGTH: Record<number, string[]> = {
+    3: ['axe', 'ion', 'arc', 'zen', 'hex', 'cat', 'cup', 'pie', 'gem', 'key', 'log', 'map', 'ray', 'run', 'web'],
+    4: ['flow', 'code', 'wave', 'glow', 'mint', 'bolt', 'core', 'edge', 'fuel', 'jolt', 'link', 'meld', 'node', 'path', 'rift', 'scan', 'void', 'zap', 'pear', 'dusk'],
+    5: ['brain', 'storm', 'pulse', 'nerve', 'focus', 'react', 'spark', 'flash', 'swift', 'blaze', 'sharp', 'logic', 'think', 'solve', 'power', 'speed', 'chess', 'pixel', 'glyph', 'nexus', 'prime', 'crypt', 'omega', 'delta', 'sigma', 'alpha', 'laser', 'sonic', 'turbo', 'hyper', 'ultra', 'cyber', 'boost', 'flame', 'frost', 'lunar', 'solar', 'astro', 'quark', 'prism', 'surge', 'drift', 'pitch', 'sword', 'coral', 'vault'],
+    6: ['signal', 'matrix', 'vertex', 'puzzle', 'thrive', 'syntax', 'buffer', 'cipher', 'portal', 'fusion', 'zenith', 'pulsar', 'echoes', 'tundra', 'cobalt', 'velvet', 'mosaic', 'static', 'legacy', 'anchor', 'helix', 'mantra', 'oxygen', 'quartz'],
+    7: ['circuit', 'quantum', 'cascade', 'pyramid', 'triumph', 'vortex', 'spectrum', 'harmony', 'marquee', 'citadel', 'phantom', 'plasma', 'emerald', 'sapphire', 'crystal', 'horizon'],
+    8: ['algorithm', 'velocity', 'momentum', 'paramount', 'asteroid', 'fracture', 'levitate', 'pavilion', 'resonance', 'terminal'],
+};
+const WORDS_POOL = Object.values(WORDS_BY_LENGTH).flat();
+const TYPING_WORDS_POOL = [...WORDS_BY_LENGTH[4]!, ...WORDS_BY_LENGTH[5]!, ...WORDS_BY_LENGTH[6]!];
 
-const CATEGORIES_ORDER: PuzzleCategory[] = ['math', 'pattern', 'language', 'spatial', 'reaction', 'memory'];
+const CATEGORIES_ORDER: PuzzleCategory[] = ['math', 'pattern', 'language', 'spatial', 'reaction', 'memory', 'minigame', 'meta'];
 
 function scrambleWordSeeded(word: string, rng: SeededRNG): string {
     if (word.length <= 3) return word;
@@ -119,7 +123,7 @@ function scrambleWordSeeded(word: string, rng: SeededRNG): string {
 }
 
 function genMathDeterministic(rng: SeededRNG, difficulty: number): PuzzleDefinition {
-    const types: ('arithmetic' | 'algebra' | 'geometry' | 'compare' | 'nearest' | 'operator')[] = ['arithmetic', 'compare', 'nearest', 'operator'];
+    const types: ('arithmetic' | 'algebra' | 'geometry' | 'compare' | 'nearest' | 'operator' | 'percent' | 'sequence' | 'digit_sum')[] = ['arithmetic', 'compare', 'nearest', 'operator', 'percent', 'sequence', 'digit_sum'];
     if (difficulty > 2) types.push('algebra');
     if (difficulty > 3) types.push('geometry');
     const ptype = rng.pick(types);
@@ -176,6 +180,29 @@ function genMathDeterministic(rng: SeededRNG, difficulty: number): PuzzleDefinit
         instruction = 'Missing operator?';
         answer = chosen;
         options = ['+', '-', '×', '÷'];
+    } else if (ptype === 'percent') {
+        const pct = rng.pick([10, 25, 50, 75]);
+        const num = rng.pick([20, 40, 60, 80, 100, 120]);
+        answer = Math.round((pct / 100) * num);
+        expression = `${pct}% of ${num}`;
+        instruction = 'Calculate';
+        options = rng.shuffle([answer as number, (answer as number) + 5, (answer as number) - 5 || (answer as number) + 3, (answer as number) + 10]);
+    } else if (ptype === 'sequence') {
+        const start = rng.nextInt(1, 5);
+        const step = rng.pick([2, 3, 5]);
+        const len = 4;
+        const seq = Array.from({ length: len }, (_, i) => start + i * step);
+        answer = seq[len - 1] + step;
+        expression = seq.join(', ') + ', _';
+        instruction = 'Next number?';
+        options = rng.shuffle([answer as number, (answer as number) + step, (answer as number) - step, seq[0]]);
+    } else if (ptype === 'digit_sum') {
+        const num = rng.nextInt(100, 499);
+        const digits = String(num).split('').map(Number);
+        answer = digits.reduce((a, b) => a + b, 0);
+        expression = `Sum of digits in ${num}`;
+        instruction = 'Calculate';
+        options = rng.shuffle([answer as number, (answer as number) + 1, (answer as number) - 1 || 0, (answer as number) + 2]);
     } else {
         const ops = ['+', '-', '×'];
         if (difficulty > 4) ops.push('÷');
@@ -202,7 +229,7 @@ function genMathDeterministic(rng: SeededRNG, difficulty: number): PuzzleDefinit
 }
 
 function genPatternDeterministic(rng: SeededRNG, difficulty: number): PuzzleDefinition {
-    const variants: ('alternating' | 'growing' | 'rotating')[] = ['alternating', 'growing', 'rotating'];
+    const variants: ('alternating' | 'growing' | 'rotating' | 'color_cycle')[] = ['alternating', 'growing', 'rotating', 'color_cycle'];
     const ptype = rng.pick(variants);
     const baseShape = rng.pick(SHAPE_TYPES);
     const baseColor = rng.pick(SHAPE_COLORS);
@@ -227,6 +254,16 @@ function genPatternDeterministic(rng: SeededRNG, difficulty: number): PuzzleDefi
             sequence = Array.from({ length: seqLen }, (_, i) => ({ shape: rotShape, color: baseColor, size: 30, rotation: i * rotStep }));
             break;
         }
+        case 'color_cycle': {
+            const cycleColors = rng.shuffle([...SHAPE_COLORS]).slice(0, 3);
+            const cycleShape = rng.pick(SHAPE_TYPES);
+            sequence = Array.from({ length: seqLen }, (_, i) => ({
+                shape: cycleShape,
+                color: cycleColors[i % cycleColors.length],
+                size: 30
+            }));
+            break;
+        }
     }
 
     const answer = { ...sequence[missingIndex] };
@@ -238,6 +275,8 @@ function genPatternDeterministic(rng: SeededRNG, difficulty: number): PuzzleDefi
         if (ptype === 'growing') {
             const sizes = [15, 27, 39, 51, 63, 75, 87];
             opt = { shape: baseShape, color: baseColor, size: rng.pick(sizes.filter(s => s !== answer.size)) };
+        } else if (ptype === 'color_cycle') {
+            opt = { shape: answer.shape, color: rng.pick(SHAPE_COLORS.filter(c => c !== answer.color)), size: 30 };
         } else if (ptype === 'rotating') {
             const rots = [0, 45, 90, 135, 180, 225, 270, 315];
             opt = { shape: answer.shape, color: baseColor, size: 30, rotation: rng.pick(rots.filter(r => r !== (answer.rotation || 0))) };
@@ -257,10 +296,12 @@ function genPatternDeterministic(rng: SeededRNG, difficulty: number): PuzzleDefi
 }
 
 function genLanguageDeterministic(rng: SeededRNG, difficulty: number): PuzzleDefinition {
-    const variants: ('typing' | 'anagram' | 'spelling' | 'vowels' | 'reverse' | 'category' | 'affix')[] =
-        ['typing', 'anagram', 'spelling', 'vowels', 'reverse', 'category', 'affix'];
+    const variants: ('typing' | 'anagram' | 'spelling' | 'vowels' | 'reverse' | 'category' | 'affix' | 'consonants' | 'length' | 'palindrome')[] =
+        ['typing', 'anagram', 'spelling', 'vowels', 'reverse', 'category', 'affix', 'consonants', 'length', 'palindrome'];
     const variant = rng.pick(variants);
-    const word = rng.pick(WORDS_POOL);
+    const word = ['length', 'consonants', 'vowels'].includes(variant)
+        ? rng.pick(WORDS_POOL)
+        : rng.pick(TYPING_WORDS_POOL);
     let prompt = '', answer = '', instruction = '';
     let options: string[] | undefined;
 
@@ -271,11 +312,17 @@ function genLanguageDeterministic(rng: SeededRNG, difficulty: number): PuzzleDef
         case 'vowels': { prompt = word.toUpperCase(); const vowels = word.match(/[aeiou]/gi); answer = vowels ? vowels.length.toString() : '0'; instruction = 'How many vowels?'; break; }
         case 'reverse': prompt = word.toUpperCase(); answer = word.split('').reverse().join(''); instruction = 'Type backwards:'; break;
         case 'category': {
-            const C_WORDS = ['DOG', 'CAT', 'BIRD', 'FISH'];
-            const F_WORDS = ['APPLE', 'PEAR', 'PLUM', 'GRAPE'];
-            const useC = rng.next() > 0.5;
-            const targetWord = useC ? rng.pick(F_WORDS) : rng.pick(C_WORDS);
-            const distractors = rng.shuffle(useC ? C_WORDS : F_WORDS).slice(0, 3);
+            const CATEGORY_SETS = [
+                { odd: ['DOG', 'CAT', 'BIRD'], in: ['APPLE', 'PEAR', 'PLUM'] },
+                { odd: ['APPLE', 'PEAR', 'GRAPE'], in: ['LION', 'TIGER', 'BEAR'] },
+                { odd: ['RED', 'BLUE', 'GREEN'], in: ['FROST', 'FLAME', 'STORM'] },
+                { odd: ['RUN', 'JUMP', 'SWIM'], in: ['PIANO', 'GUITAR', 'DRUMS'] },
+                { odd: ['SUN', 'MOON', 'STAR'], in: ['RIVER', 'OCEAN', 'LAKE'] },
+            ];
+            const set = rng.pick(CATEGORY_SETS);
+            const useOdd = rng.next() > 0.5;
+            const targetWord = useOdd ? rng.pick(set.in) : rng.pick(set.odd);
+            const distractors = rng.shuffle(useOdd ? set.odd : set.in).slice(0, 3);
             prompt = ''; answer = targetWord;
             options = rng.shuffle([targetWord, ...distractors]);
             instruction = 'Find the odd word out:'; break;
@@ -283,11 +330,41 @@ function genLanguageDeterministic(rng: SeededRNG, difficulty: number): PuzzleDef
         case 'affix': {
             const affixes = [
                 { w: 'HYPER', p: 'HYP', s: 'ER' }, { w: 'SUPER', p: 'SUP', s: 'ER' },
-                { w: 'REACT', p: 'RE', s: 'ACT' }, { w: 'BRAIN', p: 'BR', s: 'AIN' }
+                { w: 'REACT', p: 'RE', s: 'ACT' }, { w: 'BRAIN', p: 'BR', s: 'AIN' },
+                { w: 'UNLOCK', p: 'UN', s: 'LOCK' }, { w: 'REPLAY', p: 'RE', s: 'PLAY' },
+                { w: 'DISARM', p: 'DIS', s: 'ARM' }, { w: 'PRETEND', p: 'PRE', s: 'TEND' },
             ];
             const a = rng.pick(affixes);
+            const distractors = ['OR', 'IS', 'ED', 'LY', 'IN', 'ON', 'EN'];
             prompt = `${a.p}__`; answer = a.s; instruction = 'Complete the word:';
-            options = rng.shuffle([a.s, 'OR', 'IS', 'ED']); break;
+            options = rng.shuffle([a.s, ...distractors.filter(d => d !== a.s).slice(0, 3)]); break;
+        }
+        case 'consonants': {
+            prompt = word.toUpperCase();
+            const cons = word.replace(/[aeiou]/gi, '').length;
+            answer = cons.toString();
+            instruction = 'How many consonants?';
+            options = rng.shuffle([cons, cons + 1, cons - 1, cons + 2].filter(n => n >= 0).map(String));
+            break;
+        }
+        case 'length': {
+            prompt = word.toUpperCase();
+            answer = word.length.toString();
+            instruction = 'How many letters?';
+            const len = word.length;
+            options = rng.shuffle([len, len + 1, len - 1, len + 2].filter(n => n > 0).map(String));
+            break;
+        }
+        case 'palindrome': {
+            const palindromes = ['RADAR', 'CIVIC', 'LEVEL', 'ROTOR', 'KAYAK', 'REFER', 'MADAM', 'TENET'];
+            const notPals = ['BRAIN', 'STORM', 'PULSE', 'SPARK', 'PIANO', 'TIGER', 'OCEAN', 'MAGIC'];
+            const isPal = rng.next() > 0.5;
+            const w = isPal ? rng.pick(palindromes) : rng.pick(notPals);
+            prompt = `Is "${w}" a palindrome?`;
+            answer = isPal ? 'Yes' : 'No';
+            instruction = 'Pick Yes or No';
+            options = rng.shuffle(['Yes', 'No']);
+            break;
         }
     }
 
@@ -301,8 +378,40 @@ function genLanguageDeterministic(rng: SeededRNG, difficulty: number): PuzzleDef
 }
 
 function genSpatialDeterministic(rng: SeededRNG, difficulty: number): PuzzleDefinition {
-    const variants: ('count' | 'odd' | 'color' | 'size' | 'rotation' | 'match')[] = ['count', 'odd', 'color', 'size', 'rotation', 'match'];
+    const variants: ('count' | 'odd' | 'color' | 'size' | 'rotation' | 'match' | 'pair')[] = ['count', 'odd', 'color', 'size', 'rotation', 'match', 'pair'];
     const variant = rng.pick(variants);
+
+    if (variant === 'pair') {
+        const pairShape = rng.pick(SHAPE_TYPES);
+        const pairColor = rng.pick(SHAPE_COLORS);
+        const pairInfo: ShapeInfo = { shape: pairShape, color: pairColor, size: 30 };
+        const slotCount = rng.nextInt(6, 8);
+        const pairSlot1 = rng.nextInt(0, slotCount - 1);
+        let pairSlot2 = rng.nextInt(0, slotCount - 1);
+        while (pairSlot2 === pairSlot1) pairSlot2 = rng.nextInt(0, slotCount - 1);
+        const pairIndices = [pairSlot1, pairSlot2];
+        const shapes: ShapeInfo[] = [];
+        for (let i = 0; i < slotCount; i++) {
+            if (pairIndices.includes(i)) {
+                shapes.push({ ...pairInfo });
+            } else {
+                let s = rng.pick(SHAPE_TYPES);
+                let c = rng.pick(SHAPE_COLORS);
+                let att = 0;
+                while (s === pairShape && c === pairColor && att < 10) {
+                    s = rng.pick(SHAPE_TYPES);
+                    c = rng.pick(SHAPE_COLORS);
+                    att++;
+                }
+                shapes.push({ shape: s, color: c, size: 30 });
+            }
+        }
+        return {
+            id: '', category: 'spatial', instruction: 'Click one of the matching pair', difficulty,
+            timeLimit: Math.max(4, 10 - difficulty * 0.4), basePoints: 120 + difficulty * 20,
+            data: { type: 'spatial', variant: 'pair', shapes, answer: pairIndices[0], answerIndices: pairIndices } as SpatialPuzzleData,
+        };
+    }
 
     if (variant === 'count') {
         const targetShape = rng.pick(SHAPE_TYPES);
@@ -388,11 +497,16 @@ function genSpatialDeterministic(rng: SeededRNG, difficulty: number): PuzzleDefi
     };
 }
 
+const SHAPE_NAMES_DET: ShapeInfo['shape'][] = ['circle', 'square', 'triangle', 'diamond', 'hexagon'];
+
 function genMemoryDeterministic(rng: SeededRNG, difficulty: number): PuzzleDefinition {
-    const variant = rng.pick(['numbers', 'colors'] as const);
-    const len = Math.min(1 + Math.floor(difficulty / 2.5), 7);
+    const variant = rng.pick(['numbers', 'colors', 'shapes'] as const);
+    const len = variant === 'shapes'
+        ? Math.min(1 + Math.floor(difficulty / 2), 5)
+        : Math.min(1 + Math.floor(difficulty / 2.5), 7);
     let sequence: (number | string)[];
     if (variant === 'colors') sequence = Array.from({ length: len }, () => rng.pick(SHAPE_COLORS));
+    else if (variant === 'shapes') sequence = Array.from({ length: len }, () => rng.pick(SHAPE_NAMES_DET));
     else sequence = Array.from({ length: len }, () => rng.nextInt(1, 9));
     const showDuration = Math.max(3, 8 - difficulty * 0.5);
     const inputDuration = Math.max(5, 12 - difficulty * 0.5);
@@ -401,17 +515,116 @@ function genMemoryDeterministic(rng: SeededRNG, difficulty: number): PuzzleDefin
 }
 
 function genReactionDeterministic(rng: SeededRNG, difficulty: number): PuzzleDefinition {
-    const variants: ('click' | 'moving' | 'sequence' | 'decoy' | 'double' | 'jitter')[] = ['click', 'moving', 'sequence', 'decoy', 'double', 'jitter'];
+    const variants: ('click' | 'moving' | 'sequence' | 'decoy' | 'double' | 'jitter' | 'burst')[] = ['click', 'moving', 'sequence', 'decoy', 'double', 'jitter', 'burst'];
     const variant = rng.pick(variants);
     const count = Math.min(1 + Math.floor(difficulty / 3), 5);
-    const targetCount = variant === 'sequence' ? Math.max(3, count + 1) : (variant === 'double' ? 2 : count);
+    const targetCount = variant === 'sequence' ? Math.max(3, count + 1)
+        : (variant === 'double' ? 2
+            : (variant === 'burst' ? Math.min(5, count + 2) : count));
     const data: ReactionPuzzleData = { type: 'reaction', variant, targetCount, decoys: variant === 'decoy' ? rng.nextInt(2, 4) : undefined };
     let instruction = 'Click the targets!';
     if (variant === 'sequence') instruction = `Click in order (1 to ${targetCount})!`;
     if (variant === 'decoy') instruction = 'Click targets, avoid RED!';
     if (variant === 'double') instruction = 'Double-click targets!';
     if (variant === 'jitter') instruction = 'Catch the shaking targets!';
+    if (variant === 'burst') instruction = `Clear all ${targetCount} targets fast!`;
     return { id: '', category: 'reaction', instruction, difficulty, timeLimit: Math.max(3, 8 - difficulty * 0.4), basePoints: 80 + difficulty * 15, data };
+}
+
+function genMinigameDeterministic(rng: SeededRNG, difficulty: number): PuzzleDefinition {
+    const variants: MinigamePuzzleData['variant'][] =
+        ['click_when_go', 'whack', 'pick_biggest', 'pick_odd', 'double_tap', 'dont_click', 'countdown', 'tap_fast'];
+    const variant = rng.pick(variants);
+
+    let instruction = '';
+    let data: MinigamePuzzleData = { type: 'minigame', variant };
+
+    switch (variant) {
+        case 'click_when_go':
+            instruction = 'Wait... then tap GO!';
+            break;
+        case 'whack':
+            instruction = 'Whack it!';
+            break;
+        case 'pick_biggest':
+            instruction = 'Tap the biggest!';
+            {
+                const count = 4;
+                const answerIndex = rng.nextInt(0, count - 1);
+                const shapes: ShapeInfo[] = [];
+                for (let i = 0; i < count; i++) {
+                    shapes.push({
+                        shape: rng.pick(SHAPE_TYPES),
+                        color: rng.pick(SHAPE_COLORS),
+                        size: i === answerIndex ? 44 : 24 + rng.nextInt(-2, 2),
+                    });
+                }
+                data = { ...data, shapes, answerIndex };
+            }
+            break;
+        case 'pick_odd':
+            instruction = 'Tap the odd one!';
+            {
+                const mainShape = rng.pick(SHAPE_TYPES);
+                const oddShape = rng.pick(SHAPE_TYPES.filter((s) => s !== mainShape));
+                const count = 4;
+                const answerIndex = rng.nextInt(0, count - 1);
+                const shapes: ShapeInfo[] = Array.from({ length: count }, (_, i) => ({
+                    shape: i === answerIndex ? oddShape : mainShape,
+                    color: rng.pick(SHAPE_COLORS),
+                    size: 28,
+                }));
+                data = { ...data, shapes, answerIndex };
+            }
+            break;
+        case 'double_tap':
+            instruction = 'Double-tap!';
+            break;
+        case 'dont_click':
+            instruction = 'Don\'t tap until it says CLICK!';
+            break;
+        case 'countdown':
+            instruction = 'Tap on zero!';
+            break;
+        case 'tap_fast':
+            instruction = 'Tap 5 times fast!';
+            break;
+    }
+
+    return {
+        id: '',
+        category: 'minigame',
+        instruction,
+        difficulty,
+        timeLimit: Math.max(2.5, 4 - difficulty * 0.15),
+        basePoints: 90 + difficulty * 12,
+        data,
+    };
+}
+
+function genMetaDeterministic(rng: SeededRNG, difficulty: number): PuzzleDefinition {
+    const variants: MetaPuzzleData['variant'][] = ['gameTime', 'lives', 'intensity', 'combo', 'maxCombo', 'activeCount', 'realTimeHour', 'score'];
+    const variant = rng.pick(variants);
+    const instructions: Record<MetaPuzzleData['variant'], string> = {
+        gameTime: 'How many seconds have you been playing?',
+        lives: 'How many lives do you have left?',
+        intensity: "What's your intensity level? (1-10)",
+        combo: "What's your current combo?",
+        maxCombo: "What's your best combo this run?",
+        activeCount: 'How many puzzles are on screen right now?',
+        realTimeHour: "What hour is it? (12-hour, 1-12)",
+        score: "What's your current score?",
+    };
+    const data: MetaPuzzleData = { type: 'meta', variant };
+    return {
+        id: '',
+        category: 'meta',
+        instruction: instructions[variant],
+        difficulty,
+        timeLimit: Math.max(5, 10 - difficulty * 0.3),
+        basePoints: 130 + difficulty * 25,
+        data,
+    };
 }
 
 function genPowerupDeterministic(rng: SeededRNG, difficulty: number): PuzzleDefinition {
@@ -435,6 +648,8 @@ const deterministicGenerators: Record<PuzzleCategory, (rng: SeededRNG, d: number
     spatial: genSpatialDeterministic,
     memory: genMemoryDeterministic,
     reaction: genReactionDeterministic,
+    minigame: genMinigameDeterministic,
+    meta: genMetaDeterministic,
     powerup: genPowerupDeterministic,
 };
 
