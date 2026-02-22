@@ -385,6 +385,39 @@ export const IC_MAX_QUESTION_LENGTH = 200;
 export const IC_MAX_GUESS_LENGTH = 100;
 ```
 
+### 1.13 Game History
+
+**Game History Level:** Full Action Log
+
+Identity Crisis is a social deduction game where the entire experience is built on dialogue — questions, votes, and guesses. Every action is small, text-based, and meaningful. The full Q&A log lets players relive how they (or others) narrowed down identities, making this one of the most replay-worthy formats.
+
+**`initialState`**
+
+```typescript
+interface ICGameHistoryInit {
+  identityPool: string;                              // identity pack ID used
+  identityAssignments: Array<{
+    userId: string;
+    assignedIdentity: string;
+  }>;
+  questionOrder: string[];                           // turn order for asking
+  maxQuestionsPerPlayer: number;
+}
+```
+
+**Actions Logged**
+
+| Action Type | Payload | Recorded When |
+|---|---|---|
+| `question_asked` | `{ askerId, questionText, roundNumber }` | Player submits a question |
+| `vote_cast` | `{ voterId, vote: 'yes' \| 'no' \| 'maybe' }` | Each player votes on current question |
+| `vote_result` | `{ yes, no, maybe, majorityAnswer }` | Voting phase closes |
+| `early_guess` | `{ userId, guess, correct, matchScore, roundNumber }` | Player attempts an early guess |
+| `final_guess` | `{ userId, guess, correct, matchScore }` | Player submits final guess |
+| `identity_reveal` | `{ userId, assignedIdentity, guessedCorrectly }` | Results phase reveals all identities |
+
+**Replay Value:** The social deduction aspect makes this a strong candidate for full logging. Players can review the Q&A transcript to see how answers led them toward (or away from) the correct identity, compare voting patterns, and spot the moment the penny dropped.
+
 ---
 
 ## 2. Ranking File
@@ -746,6 +779,35 @@ export const RF_EXACT_MATCH_BONUS = 100;
 export const RF_OUTLIER_BONUS = 25;
 export const RF_MAX_THEORETICAL_DISTANCE = 12;
 ```
+
+### 2.13 Game History
+
+**Game History Level:** Summary Log
+
+Ranking File generates interesting data — every player's subjective ranking vs. the group consensus — but the core interaction (drag items into order) doesn't produce granular actions worth replaying frame-by-frame. A per-round summary captures the meaningful comparisons and debate-worthy disagreements without bloating the log.
+
+**`initialState`**
+
+```typescript
+interface RFGameHistoryInit {
+  categoryPack: string;                              // category pack ID used
+  totalRounds: number;
+  itemsPerRound: number;
+  playerCount: number;
+}
+```
+
+**Actions Logged**
+
+| Action Type | Payload | Recorded When |
+|---|---|---|
+| `round_start` | `{ roundNumber, category, items: string[] }` | New round begins |
+| `ranking_submitted` | `{ userId, submittedOrder: string[] }` | Player locks in their ranking |
+| `round_result` | `{ consensusRanking: string[], playerScores: Array<{ userId, distance, points, exactMatches }> }` | Round scoring completes |
+| `outlier_awarded` | `{ userId, category, outlierItem, deviation }` | Player earns outlier bonus |
+| `game_complete` | `{ finalStandings: Array<{ userId, totalPoints, roundBreakdown: number[] }> }` | All rounds finished |
+
+**Replay Value:** Comparing how players ranked the same items reveals taste differences and unexpected consensus. The round-by-round breakdown fuels post-game arguments about whether pizza truly belongs above tacos.
 
 ---
 
@@ -1161,6 +1223,36 @@ export const PP_TIME_BONUS_PER_SECOND = 3;
 export const PP_MVP_BONUS = 75;
 export const PP_POLARITY_CONTROL_BONUS = 50;
 ```
+
+### 3.14 Game History
+
+**Game History Level:** Minimal Log
+
+Pixel Pushers is a real-time cooperative physics game running at 30 ticks/second — logging every position update would produce massive payloads with little replay value. Instead, only milestone events (level completions, waypoints, polarity flips) are captured, giving a clear picture of team progression without the noise.
+
+**`initialState`**
+
+```typescript
+interface PPGameHistoryInit {
+  levelSequence: string[];                           // ordered level layout IDs
+  totalLevels: number;
+  playerCount: number;
+  initialPolarity: Record<string, 'positive' | 'negative'>;  // userId → starting polarity
+}
+```
+
+**Actions Logged**
+
+| Action Type | Payload | Recorded When |
+|---|---|---|
+| `level_start` | `{ levelIndex, layoutId, timeLimit }` | Team begins a level |
+| `waypoint_hit` | `{ userId, waypointId, elapsed }` | Player reaches a waypoint |
+| `polarity_flip` | `{ targetUserId, flippedBy: 'server' \| 'obstacle', newPolarity, elapsed }` | Player's polarity is inverted |
+| `level_complete` | `{ levelIndex, completionTime, waypointsCollected, timeBonus }` | All players reach the exit |
+| `level_failed` | `{ levelIndex, reason: 'timeout' \| 'all_eliminated', elapsed }` | Team fails a level |
+| `game_complete` | `{ levelsCleared, totalTime, mvpUserId, playerStats: Array<{ userId, waypointsHit, flipsReceived }> }` | Run ends |
+
+**Replay Value:** The log shows team coordination through level-by-level progression. Polarity flip events highlight the cooperative chaos, and completion times let teams compare runs and track improvement.
 
 ---
 
@@ -1628,6 +1720,35 @@ export const SC_PLACEMENT_POINTS = 15;
 - **Input rate limiting:** Max input rate of 15Hz per player. Excessive input is throttled.
 - **Zone visibility:** Only zones within the viewport + buffer are sent to clients, preventing pre-planning or automated navigation.
 - **Gravity cannot be disabled client-side:** Since the server applies gravity, a hacked client that ignores gravity would desynchronize and be corrected by server state updates.
+
+### 4.14 Game History
+
+**Game History Level:** Minimal Log
+
+Scroll Soul is a real-time survival game where moment-to-moment movement doesn't translate well to a replay log. What matters is the elimination story — who died, when, how, and who outlasted everyone. Capturing elimination milestones and key hazard interactions keeps the log compact and narratively complete.
+
+**`initialState`**
+
+```typescript
+interface SCGameHistoryInit {
+  playerCount: number;
+  initialScrollSpeed: number;
+  adFrequencyBase: number;                           // starting ad interval in ms
+  obstacleLayoutSeed: number;                        // seed for procedural generation
+}
+```
+
+**Actions Logged**
+
+| Action Type | Payload | Recorded When |
+|---|---|---|
+| `ad_spawned` | `{ targetUserId, adType, elapsed }` | Ad popup appears on a player's screen |
+| `ad_dismissed` | `{ userId, elapsed, dismissTime, usedFakeX: boolean }` | Player closes an ad |
+| `player_eliminated` | `{ userId, survivalTime, cause: 'lava' \| 'ad' \| 'obstacle', scrollSpeedAtDeath, placement }` | Player is eliminated |
+| `speed_milestone` | `{ newSpeed, elapsed, playersRemaining }` | Scroll speed crosses a threshold |
+| `game_complete` | `{ winnerId, finalSurvivalTime, eliminationOrder: Array<{ userId, survivalTime, cause }>, adStats: Array<{ userId, adsEncountered, adsDismissed }> }` | Last player standing or time expires |
+
+**Replay Value:** The elimination timeline tells the full story — rising scroll speed, cascading deaths, and the final survivor. Ad stats add a comedic layer, showing who struggled with the fake close buttons.
 
 ---
 
