@@ -102,11 +102,11 @@ export class LobbyManager {
   // ─── Broadcasting helpers (§12.2) ──────────────────────────
 
   /** Broadcast a game action to all members in a lobby with auto-incrementing seq */
-  broadcastAction(lobbyId: string, action: Partial<GameAction>): void {
+  broadcastAction(lobbyId: string, action: { type: string; payload?: unknown }): void {
     const seq = (this.seqCounters.get(lobbyId) ?? 0) + 1;
     this.seqCounters.set(lobbyId, seq);
     const fullAction: GameAction = {
-      type: (action.type as string) ?? 'UNKNOWN',
+      type: action.type,
       payload: action.payload ?? null,
       seq,
       timestamp: Date.now(),
@@ -425,10 +425,9 @@ export class LobbyManager {
   // ─── Lobby leave (§4.1) ────────────────────────────────────
 
   private leaveLobby(socket: Socket, payload: { lobbyId: string }): void {
-    void payload;
     const userId = socket.data.userId as string;
     const lobby = this.getLobbyByUserId(userId);
-    if (!lobby) {
+    if (!lobby || lobby.id !== payload.lobbyId) {
       socket.emit(S2C.ERROR, { code: 'NOT_IN_LOBBY', message: 'You are not in a lobby.' });
       return;
     }
@@ -721,10 +720,9 @@ export class LobbyManager {
   }
 
   private endSession(socket: Socket, payload: { lobbyId: string }): void {
-    void payload;
     const userId = socket.data.userId as string;
     const lobby = this.getLobbyByUserId(userId);
-    if (!lobby) {
+    if (!lobby || lobby.id !== payload.lobbyId) {
       socket.emit(S2C.ERROR, { code: 'NOT_IN_LOBBY', message: 'You are not in a lobby.' });
       return;
     }
@@ -786,10 +784,9 @@ export class LobbyManager {
   // ─── Ready-up (§7) ────────────────────────────────────────
 
   private toggleReady(socket: Socket, payload: { lobbyId: string }): void {
-    void payload;
     const userId = socket.data.userId as string;
     const lobby = this.getLobbyByUserId(userId);
-    if (!lobby) {
+    if (!lobby || lobby.id !== payload.lobbyId) {
       socket.emit(S2C.ERROR, { code: 'NOT_IN_LOBBY', message: 'You are not in a lobby.' });
       return;
     }
@@ -827,10 +824,9 @@ export class LobbyManager {
   // ─── Spectator promotion (§8) ──────────────────────────────
 
   private requestPromotion(socket: Socket, payload: { lobbyId: string }): void {
-    void payload;
     const userId = socket.data.userId as string;
     const lobby = this.getLobbyByUserId(userId);
-    if (!lobby) {
+    if (!lobby || lobby.id !== payload.lobbyId) {
       socket.emit(S2C.ERROR, { code: 'NOT_IN_LOBBY', message: 'You are not in a lobby.' });
       return;
     }

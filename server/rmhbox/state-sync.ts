@@ -37,7 +37,7 @@ export class StateSyncService {
   }
 
   private tick(): void {
-    for (const [, lobby] of this.lobbyManager.getLobbies()) {
+    for (const lobby of this.lobbyManager.getLobbies().values()) {
       if (lobby.state !== 'PLAYING') continue;
 
       // Send per-player scoped state snapshots
