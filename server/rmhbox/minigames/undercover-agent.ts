@@ -621,7 +621,7 @@ export class UndercoverAgentMinigame extends BaseMinigame {
 
     // Check for draw via consecutive passes
     if (this.state.consecutivePasses >= UA_MAX_PASSES) {
-      this.endGameWithWinner('draw' as 'red' | 'blue', 'max_passes');
+      this.endGameWithWinner('draw', 'max_passes');
       return;
     }
 
@@ -1067,7 +1067,8 @@ export class UndercoverAgentMinigame extends BaseMinigame {
 
     // Speedrunner — won in ≤5 turns
     if (this.state.winner && this.state.winner !== 'draw' && this.state.turnNumber <= 5) {
-      const winningTeam = this.state.teams[this.state.winner as 'red' | 'blue'];
+      const winnerTeamId = this.state.winner;
+      const winningTeam = this.state.teams[winnerTeamId];
       awards.push({
         userId: winningTeam.spymasterId,
         title: 'Speedrunner',
