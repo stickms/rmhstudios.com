@@ -6,9 +6,11 @@ import { useSearchParams } from "next/navigation";
 import { FaDiscord } from "react-icons/fa";
 import { MdEmail, MdLock, MdPerson } from "react-icons/md";
 
+const allowEmailAuth = !!process.env.NEXT_PUBLIC_ALLOW_EMAIL_ONLY_AUTH;
+
 function LoginForm() {
     const searchParams = useSearchParams();
-    const callbackURL = searchParams.get("callbackURL") || "/";
+    const callbackURL = searchParams.get("callbackURL") || searchParams.get("callbackUrl") || searchParams.get("next") || "/";
 
     const [isSignUp, setIsSignUp] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -104,77 +106,80 @@ function LoginForm() {
                         )}
                     </button>
 
-                    <div className="relative">
-                        <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-800"></div></div>
-                        <div className="relative flex justify-center text-xs uppercase"><span className="bg-slate-900 px-2 text-slate-600 font-mono">Or using credentials</span></div>
-                    </div>
+                    {allowEmailAuth && (
+                        <>
+                            <div className="relative">
+                                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-800"></div></div>
+                                <div className="relative flex justify-center text-xs uppercase"><span className="bg-slate-900 px-2 text-slate-600 font-mono">Or using credentials</span></div>
+                            </div>
 
-                    <form onSubmit={handleCredentialsSubmit} className="space-y-4">
-                        {isSignUp && (
-                            <div className="space-y-4">
+                            <form onSubmit={handleCredentialsSubmit} className="space-y-4">
+                                {isSignUp && (
+                                    <div className="space-y-4">
+                                        <div className="relative">
+                                            <MdPerson className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                                            <input
+                                                type="text"
+                                                placeholder="Username"
+                                                value={username}
+                                                onChange={(e) => setUsername(e.target.value)}
+                                                required
+                                                className="w-full bg-slate-800 border border-slate-700 rounded-lg py-3 pl-10 px-4 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+
                                 <div className="relative">
-                                    <MdPerson className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                                    <MdEmail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
                                     <input
-                                        type="text"
-                                        placeholder="Username"
-                                        value={username}
-                                        onChange={(e) => setUsername(e.target.value)}
+                                        type="email"
+                                        placeholder="Email Address"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
                                         required
                                         className="w-full bg-slate-800 border border-slate-700 rounded-lg py-3 pl-10 px-4 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
                                     />
                                 </div>
-                                {/* Optional Name Field can go here if needed */}
+
+                                <div className="relative">
+                                    <MdLock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                                    <input
+                                        type="password"
+                                        placeholder="Password"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        required
+                                        minLength={8}
+                                        className="w-full bg-slate-800 border border-slate-700 rounded-lg py-3 pl-10 px-4 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
+                                    />
+                                </div>
+
+                                {error && (
+                                    <div className="text-red-400 text-xs text-center bg-red-900/20 py-2 rounded border border-red-900/50">
+                                        {error}
+                                    </div>
+                                )}
+
+                                <button
+                                    type="submit"
+                                    disabled={loading}
+                                    className="w-full bg-slate-100 hover:bg-white text-slate-900 py-3 rounded-xl font-bold transition-all disabled:opacity-50 hover:scale-[1.02] active:scale-[0.98]"
+                                >
+                                    {loading ? "Processing..." : (isSignUp ? "Create Account" : "Sign In")}
+                                </button>
+                            </form>
+
+                            <div className="text-center">
+                                <button
+                                    onClick={() => { setIsSignUp(!isSignUp); setError(null); }}
+                                    className="text-slate-500 hover:text-white text-sm transition-colors"
+                                >
+                                    {isSignUp ? "Already have an account? Sign In" : "Don't have an account? Sign Up"}
+                                </button>
                             </div>
-                        )}
-
-                        <div className="relative">
-                            <MdEmail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                            <input
-                                type="email"
-                                placeholder="Email Address"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
-                                className="w-full bg-slate-800 border border-slate-700 rounded-lg py-3 pl-10 px-4 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
-                            />
-                        </div>
-
-                        <div className="relative">
-                            <MdLock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                            <input
-                                type="password"
-                                placeholder="Password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                                minLength={8}
-                                className="w-full bg-slate-800 border border-slate-700 rounded-lg py-3 pl-10 px-4 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
-                            />
-                        </div>
-
-                        {error && (
-                            <div className="text-red-400 text-xs text-center bg-red-900/20 py-2 rounded border border-red-900/50">
-                                {error}
-                            </div>
-                        )}
-
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="w-full bg-slate-100 hover:bg-white text-slate-900 py-3 rounded-xl font-bold transition-all disabled:opacity-50 hover:scale-[1.02] active:scale-[0.98]"
-                        >
-                            {loading ? "Processing..." : (isSignUp ? "Create Account" : "Sign In")}
-                        </button>
-                    </form>
-
-                    <div className="text-center">
-                        <button
-                            onClick={() => { setIsSignUp(!isSignUp); setError(null); }}
-                            className="text-slate-500 hover:text-white text-sm transition-colors"
-                        >
-                            {isSignUp ? "Already have an account? Sign In" : "Don't have an account? Sign Up"}
-                        </button>
-                    </div>
+                        </>
+                    )}
                 </div>
             </div>
         </div>

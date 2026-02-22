@@ -42,20 +42,10 @@ export function SynapseStormGate() {
     }
 
     if (!session.data) {
+        window.location.href = '/login?callbackURL=/synapse-storm';
         return (
-            <div className="h-screen w-full flex flex-col items-center justify-center bg-[#0a0a1a] text-white p-4">
-                <h1 className="text-4xl font-black mb-4">SYNAPSE STORM</h1>
-                <p className="text-gray-400 mb-8 max-w-md text-center">
-                    Neural link unavailable. Please authenticate to initialize the storm.
-                </p>
-                <div className="p-1 rounded-lg bg-gradient-to-r from-cyan-500 to-pink-500">
-                    <button
-                        onClick={() => (window.location.href = '/login?callbackUrl=/synapse-storm')}
-                        className="px-8 py-3 bg-[#0a0a1a] rounded-md font-bold hover:bg-transparent transition-colors"
-                    >
-                        LOGIN TO PLAY
-                    </button>
-                </div>
+            <div className="h-screen w-full flex items-center justify-center bg-[#0a0a1a]">
+                <Loader2 className="w-12 h-12 text-cyan-500 animate-spin" />
             </div>
         );
     }

@@ -1,7 +1,6 @@
 "use client";
 
 import { authClient } from "@/lib/auth-client";
-import { LoggedOutScreen } from "./LoggedOutScreen";
 import { GameShell } from "./GameShell";
 
 export function HouseAlwaysWinsGate() {
@@ -18,7 +17,14 @@ export function HouseAlwaysWinsGate() {
   }
 
   if (!session.data?.user) {
-    return <LoggedOutScreen />;
+    window.location.href = '/login?callbackURL=/house-always-wins';
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-neutral-950">
+        <div className="text-neutral-600 text-sm font-mono tracking-widest animate-pulse">
+          LOADING...
+        </div>
+      </div>
+    );
   }
 
   return <GameShell userName={session.data.user.name} />;
