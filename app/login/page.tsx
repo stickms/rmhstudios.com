@@ -1,7 +1,7 @@
 'use client';
 
 import { authClient } from "@/lib/auth-client";
-import { useState, Suspense } from "react";
+import { useState, Suspense, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { FaDiscord } from "react-icons/fa";
 import { MdEmail, MdLock, MdPerson } from "react-icons/md";
@@ -10,7 +10,16 @@ const allowEmailAuth = !!process.env.NEXT_PUBLIC_ALLOW_EMAIL_ONLY_AUTH;
 
 function LoginForm() {
     const searchParams = useSearchParams();
-    const callbackURL = searchParams.get("callbackURL") || searchParams.get("callbackUrl") || searchParams.get("next") || "/";
+    const rawCallback = searchParams.get("callbackURL") || searchParams.get("callbackUrl") || searchParams.get("next");
+    const callbackURL = rawCallback?.startsWith("/") ? rawCallback : "/games";
+
+    const { data: session, isPending } = authClient.useSession();
+
+    useEffect(() => {
+        if (!isPending && session?.user) {
+            window.location.href = callbackURL;
+        }
+    }, [isPending, session, callbackURL]);
 
     const [isSignUp, setIsSignUp] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -77,6 +86,14 @@ function LoginForm() {
             setError("Something went wrong. Please try again.");
         }
     };
+
+    if (isPending || session?.user) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white" role="status" aria-live="polite">
+                Loading...
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white p-4 font-sans">
