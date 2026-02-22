@@ -12,6 +12,9 @@ import GitPanel from './GitPanel';
 import Terminal from './Terminal';
 import NewProjectDialog from './NewProjectDialog';
 import NewFileDialog from './NewFileDialog';
+import QuickOpenPanel from './QuickOpenPanel';
+import SettingsPanel from './SettingsPanel';
+import { SettingsProvider } from './SettingsContext';
 import type { FileMeta, ProjectMeta } from './utils';
 import { getLanguage } from './utils';
 
@@ -56,7 +59,6 @@ async function readDirRecursive(
   prefix = ''
 ): Promise<FileMeta[]> {
   const results: FileMeta[] = [];
-  // FileSystemDirectoryHandle is iterable via asyncIterator in modern browsers
   for await (const [name, handle] of dirHandle as unknown as AsyncIterable<[string, FileSystemHandle]>) {
     if (name.startsWith('.') || SKIP_ENTRIES.has(name)) continue;
     const path = prefix ? `${prefix}/${name}` : name;
@@ -71,7 +73,50 @@ async function readDirRecursive(
   return results.sort((a, b) => a.path.localeCompare(b.path));
 }
 
-export default function RMHCodeApp() {
+// ─── Recent files (localStorage) ──────────────────────────────────────────────
+const RECENT_KEY = 'rmhcode:recent';
+const MAX_RECENT = 10;
+
+interface RecentEntry {
+  fileId: string;
+  fileName: string;
+  filePath: string;
+  projectId: string;
+  projectName: string;
+  language: string | null;
+  openedAt: number;
+}
+
+function loadRecent(): RecentEntry[] {
+  try {
+    return JSON.parse(localStorage.getItem(RECENT_KEY) ?? '[]');
+  } catch { return []; }
+}
+
+function pushRecent(entry: Omit<RecentEntry, 'openedAt'>) {
+  const list = loadRecent().filter(r => r.fileId !== entry.fileId);
+  list.unshift({ ...entry, openedAt: Date.now() });
+  localStorage.setItem(RECENT_KEY, JSON.stringify(list.slice(0, MAX_RECENT)));
+}
+
+// ─── Layout persistence (localStorage) ────────────────────────────────────────
+const LAYOUT_KEY = 'rmhcode:layout';
+
+interface LayoutPersist {
+  sidebarWidth: number;
+  terminalHeight: number;
+  terminalOpen: boolean;
+}
+
+function loadLayout(): Partial<LayoutPersist> {
+  try {
+    return JSON.parse(localStorage.getItem(LAYOUT_KEY) ?? '{}');
+  } catch { return {}; }
+}
+
+// ─── Inner app (wrapped in SettingsProvider below) ────────────────────────────
+
+function RMHCodeInner() {
   const { data: session, isPending } = authClient.useSession();
   const isGuest = !isPending && !session?.user;
 
@@ -79,6 +124,10 @@ export default function RMHCodeApp() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activePanel, setActivePanel] = useState<Panel>('files');
   const [terminalOpen, setTerminalOpen] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [zenMode, setZenMode] = useState(false);
+  const [sidebarWidth, setSidebarWidth] = useState(224); // px (default w-56)
+  const [terminalHeight, setTerminalHeight] = useState(220); // px
 
   // Cloud projects & files
   const [projects, setProjects] = useState<ProjectMeta[]>([]);
@@ -107,11 +156,28 @@ export default function RMHCodeApp() {
   // Dialogs
   const [showNewProject, setShowNewProject] = useState(false);
   const [showNewFile, setShowNewFile] = useState(false);
+  const [newFileFolderPrefix, setNewFileFolderPrefix] = useState('');
+  const [showQuickOpen, setShowQuickOpen] = useState(false);
 
   const isLocal = !!localDirHandle;
   const activeFiles = isLocal ? localFiles : files;
 
-  // ─── Init ──────────────────────────────────────────────────────────────────
+  // ─── Layout persistence ───────────────────────────────────────────────────
+  useEffect(() => {
+    const saved = loadLayout();
+    if (saved.sidebarWidth) setSidebarWidth(saved.sidebarWidth);
+    if (saved.terminalHeight) setTerminalHeight(saved.terminalHeight);
+    if (saved.terminalOpen !== undefined) setTerminalOpen(saved.terminalOpen);
+  }, []);
+
+  useEffect(() => {
+    try {
+      const layout: LayoutPersist = { sidebarWidth, terminalHeight, terminalOpen };
+      localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout));
+    } catch { /* ignore */ }
+  }, [sidebarWidth, terminalHeight, terminalOpen]);
+
+  // ─── Init ────────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!session?.user) return;
     loadProjects();
@@ -131,6 +197,80 @@ export default function RMHCodeApp() {
       setFileContents({ [SAMPLE_FILE.id]: SAMPLE_CONTENT });
     }
   }, [isGuest]);
+
+  // ─── Download file via custom event ──────────────────────────────────────
+  useEffect(() => {
+    function onDownload(e: Event) {
+      const { fileId } = (e as CustomEvent<{ fileId: string }>).detail;
+      const file = [...files, ...localFiles].find(f => f.id === fileId);
+      const content = fileContents[fileId];
+      if (!file || content === undefined) return;
+      const blob = new Blob([content], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = file.name;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+    window.addEventListener('rmhcode:download-file', onDownload);
+    return () => window.removeEventListener('rmhcode:download-file', onDownload);
+  }, [files, localFiles, fileContents]);
+
+  // ─── Keyboard shortcuts ───────────────────────────────────────────────────
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      // Ctrl+P → Quick open
+      if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+        e.preventDefault();
+        if (!isGuest) setShowQuickOpen(o => !o);
+      }
+      // F11 → Zen mode
+      if (e.key === 'F11') {
+        e.preventDefault();
+        setZenMode(z => !z);
+      }
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isGuest]);
+
+  // ─── Sidebar resize ───────────────────────────────────────────────────────
+  function handleSidebarResizeStart(e: React.MouseEvent) {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startWidth = sidebarWidth;
+
+    function onMouseMove(ev: MouseEvent) {
+      const newWidth = Math.max(160, Math.min(480, startWidth + (ev.clientX - startX)));
+      setSidebarWidth(newWidth);
+    }
+    function onMouseUp() {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    }
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  }
+
+  // ─── Terminal resize ──────────────────────────────────────────────────────
+  function handleTerminalResizeStart(e: React.MouseEvent) {
+    e.preventDefault();
+    const startY = e.clientY;
+    const startHeight = terminalHeight;
+
+    function onMouseMove(ev: MouseEvent) {
+      // Dragging up (negative dy) makes terminal taller
+      const newHeight = Math.max(80, Math.min(600, startHeight - (ev.clientY - startY)));
+      setTerminalHeight(newHeight);
+    }
+    function onMouseUp() {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    }
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  }
 
   // ─── Cloud project ops ────────────────────────────────────────────────────
   async function loadProjects() {
@@ -173,7 +313,6 @@ export default function RMHCodeApp() {
       const handles = new Map<string, FileSystemFileHandle>();
       const lFiles = await readDirRecursive(handle, handles);
 
-      // Prefetch text files into content cache (up to 100)
       const contentPatch: Record<string, string> = {};
       await Promise.all(lFiles.slice(0, 100).map(async f => {
         try {
@@ -189,7 +328,7 @@ export default function RMHCodeApp() {
       setFileContents(prev => ({ ...prev, ...contentPatch }));
       setOpenTabs([]);
       setActiveTabId(null);
-    } catch { /* user cancelled or permission denied */ }
+    } catch { /* user cancelled */ }
   }
 
   function closeLocalFolder() {
@@ -215,6 +354,16 @@ export default function RMHCodeApp() {
       }
     } else {
       await loadFileContent(file);
+      if (activeProject) {
+        pushRecent({
+          fileId: file.id,
+          fileName: file.name,
+          filePath: file.path,
+          projectId: activeProject.id,
+          projectName: activeProject.name,
+          language: file.language,
+        });
+      }
     }
     setOpenTabs(prev => prev.find(t => t.id === file.id) ? prev : [...prev, file]);
     setActiveTabId(file.id);
@@ -306,7 +455,7 @@ export default function RMHCodeApp() {
   }
 
   // ─── Project CRUD ─────────────────────────────────────────────────────────
-  async function handleNewProject(name: string) {
+  async function handleNewProject(name: string, templateFiles?: Array<{ path: string; content: string }>) {
     setShowNewProject(false);
     const res = await fetch('/api/rmh-code/projects', {
       method: 'POST',
@@ -321,6 +470,30 @@ export default function RMHCodeApp() {
     setFiles([]);
     setOpenTabs([]);
     setActiveTabId(null);
+
+    if (templateFiles && templateFiles.length > 0) {
+      const created: FileMeta[] = [];
+      for (const tf of templateFiles) {
+        const fname = tf.path.split('/').pop() ?? tf.path;
+        const r = await fetch(`/api/rmh-code/projects/${newProject.id}/files`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: fname, path: tf.path, content: tf.content }),
+        });
+        if (r.ok) {
+          const d = await r.json();
+          created.push({
+            id: d.file.id, name: d.file.name, path: d.file.path,
+            language: d.file.language, updatedAt: d.file.updatedAt,
+          });
+          setFileContents(prev => ({ ...prev, [d.file.id]: tf.content }));
+        }
+      }
+      if (created.length > 0) {
+        setFiles(created.sort((a, b) => a.path.localeCompare(b.path)));
+        openFile(created[0]);
+      }
+    }
   }
 
   async function handleDeleteProject(id: string) {
@@ -336,14 +509,28 @@ export default function RMHCodeApp() {
     }
   }
 
-  async function handleNewFile(path: string) {
+  async function handleRenameProject(id: string, newName: string) {
+    const res = await fetch(`/api/rmh-code/projects/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: newName }),
+    });
+    if (!res.ok) return;
+    setProjects(prev => prev.map(p => p.id === id ? { ...p, name: newName } : p));
+    if (activeProject?.id === id) {
+      setActiveProject(prev => prev ? { ...prev, name: newName } : prev);
+    }
+  }
+
+  async function handleNewFile(path: string, content = '') {
     setShowNewFile(false);
+    setNewFileFolderPrefix('');
     if (!activeProject) return;
     const name = path.split('/').pop() ?? path;
     const res = await fetch(`/api/rmh-code/projects/${activeProject.id}/files`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, path, content: '' }),
+      body: JSON.stringify({ name, path, content }),
     });
     if (!res.ok) return;
     const data = await res.json();
@@ -353,7 +540,7 @@ export default function RMHCodeApp() {
       updatedAt: data.file.updatedAt,
     };
     setFiles(prev => [...prev, newFile].sort((a, b) => a.path.localeCompare(b.path)));
-    setFileContents(prev => ({ ...prev, [newFile.id]: '' }));
+    setFileContents(prev => ({ ...prev, [newFile.id]: content }));
     openFile(newFile);
   }
 
@@ -366,7 +553,51 @@ export default function RMHCodeApp() {
     closeTab(fileId);
   }
 
-  // ─── Panel toggle (click active to collapse sidebar) ─────────────────────
+  async function handleRenameFile(fileId: string, newPath: string) {
+    if (!activeProject) return;
+    const newName = newPath.split('/').pop() ?? newPath;
+    const res = await fetch(`/api/rmh-code/projects/${activeProject.id}/files/${fileId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: newName, path: newPath }),
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    const updated: FileMeta = data.file;
+    setFiles(prev => prev.map(f => f.id === fileId ? updated : f).sort((a, b) => a.path.localeCompare(b.path)));
+    setOpenTabs(prev => prev.map(t => t.id === fileId ? updated : t));
+  }
+
+  async function handleUploadFiles(uploadedFiles: File[]) {
+    if (!activeProject) return;
+    for (const f of uploadedFiles) {
+      if (f.size > 500_000) continue;
+      try {
+        const content = await f.text();
+        await handleNewFile(f.name, content);
+      } catch { /* skip binary/unreadable files */ }
+    }
+  }
+
+  async function handleExportZip() {
+    if (!activeProject) return;
+    const res = await fetch(`/api/rmh-code/projects/${activeProject.id}/export`);
+    if (!res.ok) return;
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${activeProject.name}.zip`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function handleNewFolder() {
+    setNewFileFolderPrefix('');
+    setShowNewFile(true);
+  }
+
+  // ─── Panel toggle ─────────────────────────────────────────────────────────
   function handleSetPanel(panel: Panel) {
     if (activePanel === panel) {
       setSidebarOpen(o => !o);
@@ -388,6 +619,48 @@ export default function RMHCodeApp() {
     );
   }
 
+  // ── Zen mode ──────────────────────────────────────────────────────────────
+  if (zenMode) {
+    return (
+      <div className="h-screen w-screen flex flex-col bg-[#1e1e1e] text-white overflow-hidden">
+        {/* Zen exit button — top right corner */}
+        <button
+          onClick={() => setZenMode(false)}
+          title="Exit Zen mode (F11)"
+          className="fixed top-2 right-3 z-50 text-[10px] text-[#555] hover:text-[#aaa] transition-colors select-none"
+        >
+          F11 to exit
+        </button>
+
+        {/* Editor fills the entire screen */}
+        <div className="flex flex-col flex-1 min-h-0">
+          <EditorArea
+            file={activeTab}
+            content={activeContent}
+            readOnly={isGuest}
+            onChange={value => activeTabId && handleContentChange(activeTabId, value)}
+            onCursorChange={(line, col) => { setCursorLine(line); setCursorCol(col); }}
+            onOpenRecentFile={openFile}
+            activeProject={activeProject}
+            isLocal={isLocal}
+            localDirName={localDirHandle?.name}
+          />
+          {terminalOpen && (
+            <Terminal
+              files={activeFiles}
+              fileContents={fileContents}
+              onFileWrite={handleFileWrite}
+              onClose={() => setTerminalOpen(false)}
+              height={terminalHeight}
+              onResizeStart={handleTerminalResizeStart}
+            />
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Normal mode ───────────────────────────────────────────────────────────
   return (
     <div className="h-screen w-screen flex flex-col bg-[#1e1e1e] text-white overflow-hidden">
       {/* Top bar */}
@@ -416,12 +689,17 @@ export default function RMHCodeApp() {
           onSetPanel={handleSetPanel}
           terminalOpen={terminalOpen}
           onToggleTerminal={() => setTerminalOpen(o => !o)}
+          settingsOpen={showSettings}
+          onToggleSettings={() => setShowSettings(o => !o)}
           isGuest={isGuest}
         />
 
         {/* Sidebar */}
         {sidebarOpen && (
-          <div className="w-56 shrink-0 border-r border-[#252526] flex flex-col overflow-hidden">
+          <div
+            className="shrink-0 border-r border-[#252526] flex flex-col overflow-hidden relative"
+            style={{ width: sidebarWidth }}
+          >
             {activePanel === 'files' && (
               <FileExplorer
                 projects={projects}
@@ -436,8 +714,13 @@ export default function RMHCodeApp() {
                 }}
                 onNewProject={() => setShowNewProject(true)}
                 onDeleteProject={handleDeleteProject}
+                onRenameProject={handleRenameProject}
                 onNewFile={() => setShowNewFile(true)}
+                onNewFolder={handleNewFolder}
                 onDeleteFile={handleDeleteFile}
+                onRenameFile={handleRenameFile}
+                onUploadFiles={handleUploadFiles}
+                onExportZip={handleExportZip}
                 onOpenLocalFolder={openLocalFolder}
                 onCloseLocalFolder={closeLocalFolder}
                 activeFileId={activeTabId}
@@ -452,6 +735,13 @@ export default function RMHCodeApp() {
                 onPushSuccess={() => { /* SHAs updated server-side */ }}
               />
             )}
+
+            {/* Sidebar resize handle */}
+            <div
+              onMouseDown={handleSidebarResizeStart}
+              className="absolute top-0 right-0 w-1 h-full cursor-ew-resize bg-transparent hover:bg-[#007acc] transition-colors z-10"
+              title="Drag to resize sidebar"
+            />
           </div>
         )}
 
@@ -470,6 +760,10 @@ export default function RMHCodeApp() {
             readOnly={isGuest}
             onChange={value => activeTabId && handleContentChange(activeTabId, value)}
             onCursorChange={(line, col) => { setCursorLine(line); setCursorCol(col); }}
+            onOpenRecentFile={openFile}
+            activeProject={activeProject}
+            isLocal={isLocal}
+            localDirName={localDirHandle?.name}
           />
           {terminalOpen && (
             <Terminal
@@ -477,9 +771,16 @@ export default function RMHCodeApp() {
               fileContents={fileContents}
               onFileWrite={handleFileWrite}
               onClose={() => setTerminalOpen(false)}
+              height={terminalHeight}
+              onResizeStart={handleTerminalResizeStart}
             />
           )}
         </div>
+
+        {/* Settings panel */}
+        {showSettings && (
+          <SettingsPanel onClose={() => setShowSettings(false)} />
+        )}
       </div>
 
       {/* Status bar */}
@@ -496,8 +797,29 @@ export default function RMHCodeApp() {
         <NewProjectDialog onConfirm={handleNewProject} onClose={() => setShowNewProject(false)} />
       )}
       {showNewFile && !isGuest && activeProject && (
-        <NewFileDialog onConfirm={handleNewFile} onClose={() => setShowNewFile(false)} />
+        <NewFileDialog
+          folderPrefix={newFileFolderPrefix}
+          onConfirm={handleNewFile}
+          onClose={() => { setShowNewFile(false); setNewFileFolderPrefix(''); }}
+        />
+      )}
+      {showQuickOpen && !isGuest && (
+        <QuickOpenPanel
+          files={activeFiles}
+          onOpen={openFile}
+          onClose={() => setShowQuickOpen(false)}
+        />
       )}
     </div>
+  );
+}
+
+// ─── Root export — wrapped in SettingsProvider ────────────────────────────────
+
+export default function RMHCodeApp() {
+  return (
+    <SettingsProvider>
+      <RMHCodeInner />
+    </SettingsProvider>
   );
 }
