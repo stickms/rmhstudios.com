@@ -308,7 +308,7 @@ export async function connectToRMHbox(): Promise<Socket> {
   }
 
   // Connect to the standalone RMHbox WebSocket server.
-  // In production, Caddy reverse-proxies wss://rmhstudios.com/rmhbox → localhost:7676
+  // In production, reverse-proxy wss://rmhstudios.com/rmhbox → localhost:7676
   // In development, connect directly to localhost:7676.
   socket = io(process.env.NEXT_PUBLIC_RMHBOX_SOCKET_URL || 'http://localhost:7676', {
     path: '/rmhbox/',
@@ -320,7 +320,7 @@ export async function connectToRMHbox(): Promise<Socket> {
 ```
 
 > **Environment Variables:**
-> - `NEXT_PUBLIC_RMHBOX_SOCKET_URL` — The RMHbox WebSocket server URL. In production: `https://rmhstudios.com` (Caddy handles the path-based routing). In development: `http://localhost:7676`.
+> - `NEXT_PUBLIC_RMHBOX_SOCKET_URL` — The RMHbox WebSocket server URL. In production: `https://rmhstudios.com` (reverse-proxy handles the path-based routing). In development: `http://localhost:7676`.
 > - The `path: '/rmhbox/'` must match the server's `config.SOCKET_PATH`.
 
 > **Important:** The WebSocket server validates the token against the `session` table in PostgreSQL. It does NOT trust any client-supplied userId or userName — those are derived server-side from the authenticated session.
@@ -437,7 +437,7 @@ All server tuning is centralized in `server/rmhbox/config.ts`. Every value has a
 
 ### 5.1.2 Health Check
 
-The HTTP server exposes a `GET /health` endpoint that returns `{ "status": "ok", "uptime": <seconds> }`. This is used by PM2 for process monitoring and can be used by Caddy/nginx for upstream health probes.
+The HTTP server exposes a `GET /health` endpoint that returns `{ "status": "ok", "uptime": <seconds> }`. This is used by PM2 for process monitoring and can be used  for upstream health probes.
 ```
 
 ### 5.2 Room Naming Convention
@@ -2315,7 +2315,7 @@ const MAX_RECONNECT_ATTEMPTS = 10;
  * Connect to the standalone RMHbox WebSocket server.
  *
  * In production, the client connects to `https://rmhstudios.com` and
- * Caddy reverse-proxies the `/rmhbox/` path to localhost:7676.
+ * reverse-proxy maps the `/rmhbox/` path to localhost:7676.
  *
  * In development, the client connects directly to `http://localhost:7676`.
  *
@@ -2937,27 +2937,9 @@ log "Starting RMHbox WebSocket server on port $PORT_RMHBOX..."
 check_port "$PORT_RMHBOX" || ok=1
 ```
 
-### 25.2.1 Reverse Proxy (Caddy)
+### 25.2.1 Reverse Proxy 
 
-Caddy must route WebSocket upgrade requests on the `/rmhbox/` path to the RMHbox server:
-
-```caddyfile
-# Caddyfile (relevant section)
-rmhstudios.com {
-    # Existing: Next.js app
-    reverse_proxy /api/* localhost:7000
-    reverse_proxy /_next/* localhost:7000
-
-    # Existing: main Socket.io server
-    reverse_proxy /socket/* localhost:7001
-
-    # RMHbox standalone WebSocket server
-    reverse_proxy /rmhbox/* localhost:7676
-
-    # Fallback: Next.js
-    reverse_proxy localhost:7000
-}
-```
+Apache must route WebSocket upgrade requests on the `/rmhbox/` path to the RMHbox server. This is already done.
 
 ### 25.2.2 Environment Variables
 
@@ -3019,7 +3001,6 @@ Add RMHbox to `lib/games.ts`:
 │  └──────┬───────┘    └──────┬───────────┘    └──────┬────────┘  │
 │         │                   │                       │            │
 │  ───────┴───────────────────┴───────────────────────┴────────── │
-│                          Caddy                                   │
 │                    (reverse proxy)                                │
 │              rmhstudios.com :443                                 │
 │         /*        → 7000                                         │
