@@ -162,6 +162,10 @@ export class SynapseStormMultiplayerClient {
         // ─── Event listeners ───
 
         this.socket.on('ss:lobbyUpdate', (data: SSLobbyState) => {
+            if (data.code && !this.lobbyCode) {
+                this.lobbyCode = data.code;
+                setStoredLobbyCode(data.code);
+            }
             this.handlers.onLobbyUpdate?.(data);
         });
 
