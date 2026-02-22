@@ -41,6 +41,7 @@ model User {
   // RMH Code Relations
   codeProjects   CodeProject[] @relation("CodeProjects")
   codeFiles      CodeFile[]    @relation("CodeFiles")
+  githubToken    UserGitHubToken?
 
   @@map("user")
 }
@@ -309,14 +310,29 @@ model SongPlay {
 
 // --- RMH Code Models ---
 
+model UserGitHubToken {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String
+  login     String
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
 model CodeProject {
-  id        String     @id @default(cuid())
-  userId    String
-  user      User       @relation("CodeProjects", fields: [userId], references: [id], onDelete: Cascade)
-  name      String
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  files     CodeFile[]
+  id            String     @id @default(cuid())
+  userId        String
+  user          User       @relation("CodeProjects", fields: [userId], references: [id], onDelete: Cascade)
+  name          String
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  files         CodeFile[]
+
+  // Git tracking
+  gitOwner      String?
+  gitRepo       String?
+  gitBranch     String?    @default("main")
+  gitLastSyncAt DateTime?
 
   @@index([userId])
 }
@@ -331,6 +347,7 @@ model CodeFile {
   path      String
   content   String      @db.Text
   language  String?
+  gitSha    String?
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
 

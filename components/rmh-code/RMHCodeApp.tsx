@@ -8,9 +8,14 @@ import TabBar from './TabBar';
 import EditorArea from './EditorArea';
 import StatusBar from './StatusBar';
 import GuestBanner from './GuestBanner';
+import GitPanel from './GitPanel';
+import Terminal from './Terminal';
 import NewProjectDialog from './NewProjectDialog';
 import NewFileDialog from './NewFileDialog';
 import type { FileMeta, ProjectMeta } from './utils';
+import { getLanguage } from './utils';
+
+type Panel = 'files' | 'git';
 
 const SAMPLE_FILE: FileMeta = {
   id: '__sample__',
@@ -42,23 +47,54 @@ function greet(dev: Developer): string {
 console.log(greet(you));
 `;
 
+// ─── Local FS helpers ─────────────────────────────────────────────────────────
+const SKIP_ENTRIES = new Set(['node_modules', '.git', '.next', 'dist', 'build', '__pycache__', '.venv', 'venv']);
+
+async function readDirRecursive(
+  dirHandle: FileSystemDirectoryHandle,
+  fileHandles: Map<string, FileSystemFileHandle>,
+  prefix = ''
+): Promise<FileMeta[]> {
+  const results: FileMeta[] = [];
+  // FileSystemDirectoryHandle is iterable via asyncIterator in modern browsers
+  for await (const [name, handle] of dirHandle as unknown as AsyncIterable<[string, FileSystemHandle]>) {
+    if (name.startsWith('.') || SKIP_ENTRIES.has(name)) continue;
+    const path = prefix ? `${prefix}/${name}` : name;
+    if (handle.kind === 'file') {
+      fileHandles.set(path, handle as FileSystemFileHandle);
+      results.push({ id: path, name, path, language: getLanguage(name), updatedAt: new Date().toISOString() });
+    } else if (handle.kind === 'directory') {
+      const sub = await readDirRecursive(handle as FileSystemDirectoryHandle, fileHandles, path);
+      results.push(...sub);
+    }
+  }
+  return results.sort((a, b) => a.path.localeCompare(b.path));
+}
+
 export default function RMHCodeApp() {
   const { data: session, isPending } = authClient.useSession();
   const isGuest = !isPending && !session?.user;
 
   // Layout
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [activePanel, setActivePanel] = useState<Panel>('files');
+  const [terminalOpen, setTerminalOpen] = useState(false);
 
-  // Projects & files
+  // Cloud projects & files
   const [projects, setProjects] = useState<ProjectMeta[]>([]);
   const [activeProject, setActiveProject] = useState<ProjectMeta | null>(null);
   const [files, setFiles] = useState<FileMeta[]>([]);
+
+  // Local folder mode
+  const [localDirHandle, setLocalDirHandle] = useState<FileSystemDirectoryHandle | null>(null);
+  const [localFiles, setLocalFiles] = useState<FileMeta[]>([]);
+  const localFileHandles = useRef<Map<string, FileSystemFileHandle>>(new Map());
 
   // Tabs
   const [openTabs, setOpenTabs] = useState<FileMeta[]>([]);
   const [activeTabId, setActiveTabId] = useState<string | null>(null);
 
-  // File content cache
+  // Content cache & save state
   const [fileContents, setFileContents] = useState<Record<string, string>>({});
   const [dirtyFiles, setDirtyFiles] = useState<Set<string>>(new Set());
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'idle'>('idle');
@@ -72,19 +108,22 @@ export default function RMHCodeApp() {
   const [showNewProject, setShowNewProject] = useState(false);
   const [showNewFile, setShowNewFile] = useState(false);
 
-  // Load projects on mount (authenticated only)
+  const isLocal = !!localDirHandle;
+  const activeFiles = isLocal ? localFiles : files;
+
+  // ─── Init ──────────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!session?.user) return;
     loadProjects();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.user?.id]);
 
-  // Load files when active project changes
   useEffect(() => {
     if (!activeProject) return;
     loadProjectFiles(activeProject.id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeProject?.id]);
 
-  // Guest: open sample file
   useEffect(() => {
     if (isGuest) {
       setOpenTabs([SAMPLE_FILE]);
@@ -93,6 +132,7 @@ export default function RMHCodeApp() {
     }
   }, [isGuest]);
 
+  // ─── Cloud project ops ────────────────────────────────────────────────────
   async function loadProjects() {
     const res = await fetch('/api/rmh-code/projects');
     if (!res.ok) return;
@@ -114,7 +154,8 @@ export default function RMHCodeApp() {
 
   async function loadFileContent(file: FileMeta): Promise<string> {
     if (fileContents[file.id] !== undefined) return fileContents[file.id];
-    const res = await fetch(`/api/rmh-code/projects/${activeProject!.id}/files/${file.id}`);
+    if (!activeProject) return '';
+    const res = await fetch(`/api/rmh-code/projects/${activeProject.id}/files/${file.id}`);
     if (!res.ok) return '';
     const data = await res.json();
     const content = data.file.content as string;
@@ -122,13 +163,60 @@ export default function RMHCodeApp() {
     return content;
   }
 
+  // ─── Local folder ops ────────────────────────────────────────────────────
+  async function openLocalFolder() {
+    if (!('showDirectoryPicker' in window)) return;
+    try {
+      type DirPicker = (opts?: { mode?: string }) => Promise<FileSystemDirectoryHandle>;
+      const pick = (window as unknown as Record<string, unknown>).showDirectoryPicker as DirPicker;
+      const handle = await pick({ mode: 'readwrite' });
+      const handles = new Map<string, FileSystemFileHandle>();
+      const lFiles = await readDirRecursive(handle, handles);
+
+      // Prefetch text files into content cache (up to 100)
+      const contentPatch: Record<string, string> = {};
+      await Promise.all(lFiles.slice(0, 100).map(async f => {
+        try {
+          const fh = handles.get(f.path)!;
+          const file = await fh.getFile();
+          if (file.size < 300_000) contentPatch[f.id] = await file.text();
+        } catch { /* skip unreadable files */ }
+      }));
+
+      localFileHandles.current = handles;
+      setLocalDirHandle(handle);
+      setLocalFiles(lFiles);
+      setFileContents(prev => ({ ...prev, ...contentPatch }));
+      setOpenTabs([]);
+      setActiveTabId(null);
+    } catch { /* user cancelled or permission denied */ }
+  }
+
+  function closeLocalFolder() {
+    setLocalDirHandle(null);
+    setLocalFiles([]);
+    localFileHandles.current.clear();
+    setOpenTabs([]);
+    setActiveTabId(null);
+  }
+
+  // ─── File opening ─────────────────────────────────────────────────────────
   async function openFile(file: FileMeta) {
-    // Load content if not cached
-    await loadFileContent(file);
-    setOpenTabs(prev => {
-      if (prev.find(t => t.id === file.id)) return prev;
-      return [...prev, file];
-    });
+    if (isLocal) {
+      if (fileContents[file.id] === undefined) {
+        const fh = localFileHandles.current.get(file.path);
+        if (fh) {
+          try {
+            const f = await fh.getFile();
+            const text = await f.text();
+            setFileContents(prev => ({ ...prev, [file.id]: text }));
+          } catch { /* skip */ }
+        }
+      }
+    } else {
+      await loadFileContent(file);
+    }
+    setOpenTabs(prev => prev.find(t => t.id === file.id) ? prev : [...prev, file]);
     setActiveTabId(file.id);
   }
 
@@ -137,17 +225,16 @@ export default function RMHCodeApp() {
       const idx = prev.findIndex(t => t.id === fileId);
       const next = prev.filter(t => t.id !== fileId);
       if (activeTabId === fileId) {
-        const nextActive = next[idx] ?? next[idx - 1] ?? null;
-        setActiveTabId(nextActive?.id ?? null);
+        setActiveTabId((next[idx] ?? next[idx - 1])?.id ?? null);
       }
       return next;
     });
-    // Clear save timer for this file
     const timer = saveTimers.current.get(fileId);
     if (timer) { clearTimeout(timer); saveTimers.current.delete(fileId); }
   }
 
-  const saveFile = useCallback(async (fileId: string, content: string) => {
+  // ─── Auto-save ────────────────────────────────────────────────────────────
+  const saveFileToCloud = useCallback(async (fileId: string, content: string) => {
     if (!activeProject) return;
     setSaveStatus('saving');
     try {
@@ -164,6 +251,21 @@ export default function RMHCodeApp() {
     }
   }, [activeProject]);
 
+  const saveFileToLocal = useCallback(async (filePath: string, content: string) => {
+    const fh = localFileHandles.current.get(filePath);
+    if (!fh) return;
+    setSaveStatus('saving');
+    try {
+      const writable = await fh.createWritable();
+      await writable.write(content);
+      await writable.close();
+      setSaveStatus('saved');
+      setTimeout(() => setSaveStatus('idle'), 1500);
+    } catch {
+      setSaveStatus('idle');
+    }
+  }, []);
+
   function handleContentChange(fileId: string, content: string) {
     if (isGuest) return;
     setFileContents(prev => ({ ...prev, [fileId]: content }));
@@ -172,9 +274,38 @@ export default function RMHCodeApp() {
 
     const existing = saveTimers.current.get(fileId);
     if (existing) clearTimeout(existing);
-    saveTimers.current.set(fileId, setTimeout(() => saveFile(fileId, content), 1500));
+
+    if (isLocal) {
+      const file = localFiles.find(f => f.id === fileId);
+      if (file) {
+        saveTimers.current.set(fileId, setTimeout(() => {
+          saveFileToLocal(file.path, content);
+          setDirtyFiles(prev => { const next = new Set(prev); next.delete(fileId); return next; });
+        }, 1500));
+      }
+    } else {
+      saveTimers.current.set(fileId, setTimeout(() => saveFileToCloud(fileId, content), 1500));
+    }
   }
 
+  // ─── Terminal file write ──────────────────────────────────────────────────
+  function handleFileWrite(path: string, content: string) {
+    if (isLocal) {
+      const file = localFiles.find(f => f.path === path);
+      if (file) {
+        setFileContents(prev => ({ ...prev, [file.id]: content }));
+        saveFileToLocal(path, content);
+      }
+    } else {
+      const file = files.find(f => f.path === path);
+      if (file) {
+        setFileContents(prev => ({ ...prev, [file.id]: content }));
+        saveFileToCloud(file.id, content);
+      }
+    }
+  }
+
+  // ─── Project CRUD ─────────────────────────────────────────────────────────
   async function handleNewProject(name: string) {
     setShowNewProject(false);
     const res = await fetch('/api/rmh-code/projects', {
@@ -194,8 +325,7 @@ export default function RMHCodeApp() {
 
   async function handleDeleteProject(id: string) {
     if (!confirm('Delete this project and all its files?')) return;
-    const res = await fetch(`/api/rmh-code/projects/${id}`, { method: 'DELETE' });
-    if (!res.ok) return;
+    await fetch(`/api/rmh-code/projects/${id}`, { method: 'DELETE' });
     setProjects(prev => prev.filter(p => p.id !== id));
     if (activeProject?.id === id) {
       const remaining = projects.filter(p => p.id !== id);
@@ -218,10 +348,8 @@ export default function RMHCodeApp() {
     if (!res.ok) return;
     const data = await res.json();
     const newFile: FileMeta = {
-      id: data.file.id,
-      name: data.file.name,
-      path: data.file.path,
-      language: data.file.language,
+      id: data.file.id, name: data.file.name,
+      path: data.file.path, language: data.file.language,
       updatedAt: data.file.updatedAt,
     };
     setFiles(prev => [...prev, newFile].sort((a, b) => a.path.localeCompare(b.path)));
@@ -232,16 +360,23 @@ export default function RMHCodeApp() {
   async function handleDeleteFile(fileId: string) {
     if (!activeProject) return;
     const file = files.find(f => f.id === fileId);
-    if (!file) return;
-    if (!confirm(`Delete "${file.name}"?`)) return;
-    const res = await fetch(`/api/rmh-code/projects/${activeProject.id}/files/${fileId}`, {
-      method: 'DELETE',
-    });
-    if (!res.ok) return;
+    if (!file || !confirm(`Delete "${file.name}"?`)) return;
+    await fetch(`/api/rmh-code/projects/${activeProject.id}/files/${fileId}`, { method: 'DELETE' });
     setFiles(prev => prev.filter(f => f.id !== fileId));
     closeTab(fileId);
   }
 
+  // ─── Panel toggle (click active to collapse sidebar) ─────────────────────
+  function handleSetPanel(panel: Panel) {
+    if (activePanel === panel) {
+      setSidebarOpen(o => !o);
+    } else {
+      setActivePanel(panel);
+      setSidebarOpen(true);
+    }
+  }
+
+  // ─── Render ───────────────────────────────────────────────────────────────
   const activeTab = openTabs.find(t => t.id === activeTabId) ?? null;
   const activeContent = activeTabId ? (fileContents[activeTabId] ?? '') : '';
 
@@ -259,14 +394,13 @@ export default function RMHCodeApp() {
       <div className="flex items-center justify-between h-8 bg-[#3c3c3c] px-3 border-b border-[#252526] shrink-0">
         <div className="flex items-center gap-2">
           <span className="text-xs font-semibold text-white tracking-wide">RMH Code</span>
-          {activeProject && (
+          {isLocal ? (
+            <span className="text-xs text-[#e3a752]">— {localDirHandle!.name} (local)</span>
+          ) : activeProject ? (
             <span className="text-xs text-[#858585]">— {activeProject.name}</span>
-          )}
+          ) : null}
         </div>
-        <a
-          href="/"
-          className="text-[10px] text-[#858585] hover:text-white transition-colors"
-        >
+        <a href="/" className="text-[10px] text-[#858585] hover:text-white transition-colors">
           ← Back to site
         </a>
       </div>
@@ -274,30 +408,50 @@ export default function RMHCodeApp() {
       {/* Guest banner */}
       {isGuest && <GuestBanner />}
 
-      {/* Main editor area */}
+      {/* Main area */}
       <div className="flex flex-1 min-h-0 overflow-hidden">
         {/* Activity bar */}
-        <ActivityBar sidebarOpen={sidebarOpen} onToggleSidebar={() => setSidebarOpen(o => !o)} />
+        <ActivityBar
+          activePanel={activePanel}
+          onSetPanel={handleSetPanel}
+          terminalOpen={terminalOpen}
+          onToggleTerminal={() => setTerminalOpen(o => !o)}
+          isGuest={isGuest}
+        />
 
-        {/* Sidebar / file explorer */}
+        {/* Sidebar */}
         {sidebarOpen && (
           <div className="w-56 shrink-0 border-r border-[#252526] flex flex-col overflow-hidden">
-            <FileExplorer
-              projects={projects}
-              activeProject={activeProject}
-              files={files}
-              activeFileId={activeTabId}
-              onSelectProject={p => {
-                setActiveProject(p);
-                setOpenTabs([]);
-                setActiveTabId(null);
-              }}
-              onNewProject={() => setShowNewProject(true)}
-              onDeleteProject={handleDeleteProject}
-              onOpenFile={openFile}
-              onNewFile={() => setShowNewFile(true)}
-              onDeleteFile={handleDeleteFile}
-            />
+            {activePanel === 'files' && (
+              <FileExplorer
+                projects={projects}
+                activeProject={activeProject}
+                files={files}
+                localDirHandle={localDirHandle}
+                localFiles={localFiles}
+                onSelectProject={p => {
+                  setActiveProject(p);
+                  setOpenTabs([]);
+                  setActiveTabId(null);
+                }}
+                onNewProject={() => setShowNewProject(true)}
+                onDeleteProject={handleDeleteProject}
+                onNewFile={() => setShowNewFile(true)}
+                onDeleteFile={handleDeleteFile}
+                onOpenLocalFolder={openLocalFolder}
+                onCloseLocalFolder={closeLocalFolder}
+                activeFileId={activeTabId}
+                onOpenFile={openFile}
+              />
+            )}
+            {activePanel === 'git' && (
+              <GitPanel
+                activeProject={activeProject}
+                files={files}
+                onCloneSuccess={async () => { await loadProjects(); }}
+                onPushSuccess={() => { /* SHAs updated server-side */ }}
+              />
+            )}
           </div>
         )}
 
@@ -317,6 +471,14 @@ export default function RMHCodeApp() {
             onChange={value => activeTabId && handleContentChange(activeTabId, value)}
             onCursorChange={(line, col) => { setCursorLine(line); setCursorCol(col); }}
           />
+          {terminalOpen && (
+            <Terminal
+              files={activeFiles}
+              fileContents={fileContents}
+              onFileWrite={handleFileWrite}
+              onClose={() => setTerminalOpen(false)}
+            />
+          )}
         </div>
       </div>
 
@@ -331,16 +493,10 @@ export default function RMHCodeApp() {
 
       {/* Dialogs */}
       {showNewProject && !isGuest && (
-        <NewProjectDialog
-          onConfirm={handleNewProject}
-          onClose={() => setShowNewProject(false)}
-        />
+        <NewProjectDialog onConfirm={handleNewProject} onClose={() => setShowNewProject(false)} />
       )}
       {showNewFile && !isGuest && activeProject && (
-        <NewFileDialog
-          onConfirm={handleNewFile}
-          onClose={() => setShowNewFile(false)}
-        />
+        <NewFileDialog onConfirm={handleNewFile} onClose={() => setShowNewFile(false)} />
       )}
     </div>
   );
