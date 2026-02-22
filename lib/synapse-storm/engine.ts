@@ -96,6 +96,13 @@ export function useGameEngine(mode: GameMode = 'singleplayer', mpConfig?: Multip
         const s = stateRef.current;
         if (s.status !== 'playing') return;
 
+        // Pause spawning while a meta puzzle is active
+        const hasActiveMeta = s.activePuzzles.some((p) => !p.solved && !p.expired && p.category === 'meta');
+        if (hasActiveMeta) {
+            spawnTimerRef.current = setTimeout(spawnPuzzle, 500);
+            return;
+        }
+
         let spawnMultiplier = s.burstActive ? 0.6 : 1.0;
         const config = getDifficultyConfig(s.difficulty);
         const jitter = (Math.random() - 0.5) * 400 * spawnMultiplier;
@@ -117,7 +124,7 @@ export function useGameEngine(mode: GameMode = 'singleplayer', mpConfig?: Multip
             isPowerup = true;
         }
 
-        const puzzle = generatePuzzle(s.difficulty, activeCategories, isPowerup ? 'powerup' : undefined);
+        const puzzle = generatePuzzle(s.difficulty, activeCategories, isPowerup ? 'powerup' : undefined, s);
         const activePuzzle: ActivePuzzle = {
             ...puzzle,
             spawnTime: now,
@@ -161,9 +168,11 @@ export function useGameEngine(mode: GameMode = 'singleplayer', mpConfig?: Multip
             let missedThisTick = 0;
             const isMissCounts = (p: ActivePuzzle) => p.category !== 'powerup';
 
-            // ── Multiplayer deterministic spawning ──
+            const hasActiveMeta = prev.activePuzzles.some((p) => !p.solved && !p.expired && p.category === 'meta');
+
+            // ── Multiplayer deterministic spawning ── (paused when meta puzzle is active)
             let newSpawns: ActivePuzzle[] = [];
-            if (modeRef.current === 'multiplayer' && mpConfigRef.current) {
+            if (!hasActiveMeta && modeRef.current === 'multiplayer' && mpConfigRef.current) {
                 const cfg = mpConfigRef.current;
                 const activeCount = prev.activePuzzles.filter(p => !p.solved && !p.expired).length;
                 const maxNew = Math.max(0, prev.maxActivePuzzles - activeCount);
@@ -230,6 +239,9 @@ export function useGameEngine(mode: GameMode = 'singleplayer', mpConfig?: Multip
             const updatedPuzzles = prev.activePuzzles
                 .map((p) => {
                     if (p.solved || p.expired) return p;
+
+                    // When meta puzzle is active: only tick meta puzzles; freeze all others
+                    if (hasActiveMeta && p.category !== 'meta') return p;
 
                     let newRemaining = p.timeRemaining;
                     let mPhase = p.memoryPhase;

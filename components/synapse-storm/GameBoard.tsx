@@ -28,6 +28,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ state, onSolve, onSkipPhas
                         <PuzzleCard
                             key={puzzle.id}
                             puzzle={puzzle}
+                            gameState={state}
                             onSolve={onSolve}
                             onSkipPhase={onSkipPhase}
                         />
