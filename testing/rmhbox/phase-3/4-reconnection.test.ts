@@ -18,6 +18,7 @@ import {
   callEvent,
   findLastEmitted,
   findEmitted,
+  findServerEmitted,
   createTestGameClass,
   MOCK_USERS,
 } from './setup';

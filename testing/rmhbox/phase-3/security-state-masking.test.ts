@@ -12,7 +12,7 @@ import { GameCoordinator, MINIGAME_SERVER_REGISTRY } from '../../../server/rmhbo
 import { StateSyncService } from '../../../server/rmhbox/state-sync';
 import { S2C } from '../../../lib/rmhbox/events';
 import { BaseMinigame } from '../../../server/rmhbox/minigames/base-minigame';
-import type { MinigameContext, MinigameResults } from '../../../server/rmhbox/minigames/base-minigame';
+import type { MinigameResults } from '../../../server/rmhbox/minigames/base-minigame';
 import {
   createMockServer,
   createMockSocket,
@@ -21,9 +21,8 @@ import {
   findLastEmitted,
   MOCK_USERS,
 } from './setup';
-import type { MockServerData, MockSocketData } from './setup';
+import type { MockServerData } from './setup';
 import type { Server, Socket } from 'socket.io';
-import type { ClientLobbyState } from '../../../lib/rmhbox/types';
 
 let serverData: MockServerData;
 let lobbyManager: LobbyManager;

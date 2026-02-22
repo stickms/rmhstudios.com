@@ -9,7 +9,6 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { LobbyManager } from '../../../server/rmhbox/lobby-manager';
 import { GameCoordinator, MINIGAME_SERVER_REGISTRY } from '../../../server/rmhbox/game-coordinator';
 import { StateSyncService } from '../../../server/rmhbox/state-sync';
-import { VoteManager } from '../../../server/rmhbox/vote-manager';
 import { S2C } from '../../../lib/rmhbox/events';
 import {
   createMockServer,
@@ -17,7 +16,6 @@ import {
   registerSocket,
   callEvent,
   findLastEmitted,
-  findServerEmitted,
   createTestGameClass,
   MOCK_USERS,
 } from './setup';

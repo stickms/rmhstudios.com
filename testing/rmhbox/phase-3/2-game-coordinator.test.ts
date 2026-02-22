@@ -546,9 +546,7 @@ describe('Game Input Routing', () => {
     // Spectator tries to send input
     callEvent(specSocket, 'rmhbox:game:input', { lobbyId, action: 'submit_word', data: { word: 'cheat' } });
 
-    // No error emitted — silently dropped
-    const errors = findLastEmitted(specSocket.emitted, S2C.ERROR);
-    // The error should be null or an error from a different handler, not from input
+    // No error emitted — silently dropped. Game is still running.
     const lobby = lobbyManager.getLobby(lobbyId)!;
     expect(lobby.state).toBe('PLAYING');
   });
