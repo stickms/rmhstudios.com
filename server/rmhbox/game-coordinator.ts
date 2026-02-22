@@ -32,6 +32,12 @@ export class GameCoordinator {
     void socket;
   }
 
+  // ─── Game Flow Entry Point (called by VoteManager) ──────────
+
+  startGameFlow(_lobbyId: string, _minigameId: string): void {
+    // TODO: Implement per phase-3.md §2.2
+  }
+
   // ─── Stubs (full logic per core.md §7) ──────────────────────
 
   private onSelect(_socket: Socket, _payload: unknown): void {
