@@ -15,8 +15,10 @@ export function middleware(request: NextRequest) {
 
     if (!isProtected) return NextResponse.next();
 
-    // Better Auth stores session in this cookie
-    const sessionToken = request.cookies.get('better-auth.session_token');
+    // Better Auth stores session in this cookie (with __Secure- prefix on HTTPS)
+    const sessionToken =
+        request.cookies.get('better-auth.session_token') ||
+        request.cookies.get('__Secure-better-auth.session_token');
 
     if (!sessionToken) {
         const loginUrl = new URL('/login', request.url);
