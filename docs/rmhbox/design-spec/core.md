@@ -70,12 +70,12 @@
 | Frontend | Next.js 16 (App Router), React 19, TypeScript 5 |
 | Styling | Tailwind CSS 4, Framer Motion |
 | State | Zustand 5 |
-| Realtime | Socket.io 4.8 (server + client) |
+| Realtime | Socket.io 4.8 (standalone RMHbox server on port 7676 + client) |
 | Database | PostgreSQL + Prisma 7 |
 | Auth | Better Auth 1.4 (Discord OAuth + email/password) |
 | Icons | Lucide React |
 | Audio | Howler.js |
-| Build | pnpm workspaces, concurrently |
+| Build | pnpm workspaces, concurrently, PM2 (production) |
 
 ### 2.2 New Dependencies for RMHbox
 
@@ -189,7 +189,9 @@ lib/
 
 server/
   rmhbox/
-    index.ts                # Namespace registration & bootstrap
+    index.ts                # Standalone server entry point (port 7676)
+    config.ts               # All env-driven tuning constants (port, timers, limits)
+    auth.ts                 # Better Auth session token validation middleware
     lobby-manager.ts        # Lobby CRUD, player management, host logic
     game-coordinator.ts     # Minigame lifecycle orchestration
     state-sync.ts           # Delta broadcasting + heartbeat logic
@@ -252,34 +254,45 @@ export default async function RMHboxLayout({ children }: { children: React.React
 
 ### 4.2 WebSocket Authentication
 
-When a client connects to the RMHbox namespace, they must provide their session token in the `auth` handshake payload. The server validates this against Better Auth before allowing any lobby operations.
+When a client connects to the standalone RMHbox WebSocket server (port 7676), they must provide their session token in the `auth` handshake payload. The server validates this against Better Auth's `session` table in PostgreSQL before allowing any lobby operations.
+
+Because RMHbox runs as its own Socket.io server process (not a namespace on the main server), the auth middleware is applied server-wide via `io.use(...)`:
 
 ```typescript
-// Server-side middleware on the /rmhbox namespace
-io.of('/rmhbox').use(async (socket, next) => {
+// server/rmhbox/auth.ts — applied in index.ts via io.use(authMiddleware)
+export async function authMiddleware(
+  socket: Socket,
+  next: (err?: ExtendedError) => void,
+): Promise<void> {
   const token = socket.handshake.auth?.token;
   if (!token || typeof token !== 'string') {
     return next(new Error('AUTH_REQUIRED'));
   }
   try {
     const session = await validateSessionToken(token); // queries the session table
-    if (!session || new Date(session.expiresAt) < new Date()) {
+    if (!session) {
+      return next(new Error('AUTH_FAILED'));
+    }
+    if (session.expiresAt < new Date()) {
       return next(new Error('SESSION_EXPIRED'));
     }
-    // Attach user data to socket for later use
+    // Attach user data to socket for downstream handlers
     socket.data.userId = session.userId;
+    socket.data.userName = session.userName;
+    socket.data.avatarUrl = session.avatarUrl;
     socket.data.sessionToken = token;
-    socket.data.userName = session.user.username || session.user.name || 'Player';
     next();
   } catch {
     next(new Error('AUTH_FAILED'));
   }
-});
+}
 ```
+
+The `validateSessionToken()` function maintains its own `pg.Pool` connection to PostgreSQL (configured via the shared `DATABASE_URL` env var) and queries the `session` + `user` tables directly. It does **not** import from the Next.js app or Prisma client — the standalone server has zero coupling to the Next.js process.
 
 ### 4.3 Session Token Retrieval (Client-Side)
 
-The client retrieves the session token from Better Auth before connecting:
+The client retrieves the session token from Better Auth before connecting to the **standalone RMHbox server** (separate from the main Socket.io server):
 
 ```typescript
 // lib/rmhbox/socket.ts
@@ -294,16 +307,21 @@ export async function connectToRMHbox(): Promise<Socket> {
     throw new Error('Not authenticated');
   }
 
-  socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:7001', {
-    path: '/socket/',
+  // Connect to the standalone RMHbox WebSocket server.
+  // In production, Caddy reverse-proxies wss://rmhstudios.com/rmhbox → localhost:7676
+  // In development, connect directly to localhost:7676.
+  socket = io(process.env.NEXT_PUBLIC_RMHBOX_SOCKET_URL || 'http://localhost:7676', {
+    path: '/rmhbox/',
     auth: { token: session.data.session.token },
-    // NOTE: We use the main io server but register under a namespace
-    // Alternatively, the namespace path can be used
   });
 
   return socket;
 }
 ```
+
+> **Environment Variables:**
+> - `NEXT_PUBLIC_RMHBOX_SOCKET_URL` — The RMHbox WebSocket server URL. In production: `https://rmhstudios.com` (Caddy handles the path-based routing). In development: `http://localhost:7676`.
+> - The `path: '/rmhbox/'` must match the server's `config.SOCKET_PATH`.
 
 > **Important:** The WebSocket server validates the token against the `session` table in PostgreSQL. It does NOT trust any client-supplied userId or userName — those are derived server-side from the authenticated session.
 
@@ -311,39 +329,115 @@ export async function connectToRMHbox(): Promise<Socket> {
 
 ## 5. WebSocket Architecture
 
-### 5.1 Namespace
+### 5.1 Standalone Server Process
 
-RMHbox uses a dedicated Socket.io **namespace** (`/rmhbox`) to isolate its events from existing Slice-It and Neon Driftway events on the root namespace. This provides:
+RMHbox runs as a **dedicated, standalone Socket.io server process** on port **7676**, completely separate from the existing Socket.io server (port 7001) that handles Slice-It and Neon Driftway multiplayer. This provides:
 
-- Clean event separation (no prefix collisions)
-- Independent middleware (auth enforcement)
-- Independent connection lifecycle
+- **Process-level isolation** — a crash or memory leak in RMHbox does not affect other games.
+- **Independent scaling** — the RMHbox server can be allocated more CPU/RAM or horizontally scaled without touching the main server.
+- **Clean codebase separation** — no namespace prefixing or shared connection lifecycle.
+- **Independent deployment** — the RMHbox server can be restarted without downtime for other games.
+
+Since this is not a namespace but an entire server, there is no `io.of('/rmhbox')` call. The `io` instance IS the RMHbox server. Auth middleware is applied server-wide via `io.use(authMiddleware)`.
 
 ```typescript
-// server/rmhbox/index.ts
+// server/rmhbox/index.ts — Standalone server bootstrap (simplified)
+import 'dotenv/config';
+import { createServer, IncomingMessage, ServerResponse } from 'http';
 import { Server } from 'socket.io';
+import { config } from './config';
+import { authMiddleware } from './auth';
 import { LobbyManager } from './lobby-manager';
 import { GameCoordinator } from './game-coordinator';
+import { StateSyncService } from './state-sync';
+import { ReconnectionHandler } from './reconnection';
+import { VoteManager } from './vote-manager';
+import { ChatHandler } from './chat';
+import { LeaderboardService } from './leaderboard';
 
-export function registerRMHboxNamespace(io: Server): void {
-  const nsp = io.of('/rmhbox');
-  
-  // Auth middleware (see §4.2)
-  nsp.use(authMiddleware);
-  
-  const lobbyManager = new LobbyManager(nsp);
-  const gameCoordinator = new GameCoordinator(nsp, lobbyManager);
-  
-  nsp.on('connection', (socket) => {
-    lobbyManager.handleConnection(socket);
-    gameCoordinator.handleConnection(socket);
-    
-    socket.on('disconnect', () => {
-      lobbyManager.handleDisconnect(socket);
-      gameCoordinator.handleDisconnect(socket);
-    });
-  });
+// Health-check endpoint for PM2 / load balancer probes
+function requestHandler(req: IncomingMessage, res: ServerResponse): void {
+  if (req.url === '/health' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ status: 'ok', uptime: process.uptime() }));
+    return;
+  }
+  res.writeHead(404);
+  res.end();
 }
+
+const httpServer = createServer(requestHandler);
+
+const io = new Server(httpServer, {
+  path: config.SOCKET_PATH,           // '/rmhbox/'
+  cors: {
+    origin: config.CORS_ORIGIN,
+    methods: ['GET', 'POST'],
+    credentials: true,
+  },
+  maxHttpBufferSize: config.MAX_HTTP_BUFFER_SIZE,
+  pingInterval: config.PING_INTERVAL_MS,
+  pingTimeout: config.PING_TIMEOUT_MS,
+});
+
+// Server-wide auth — every connecting socket must pass
+io.use(authMiddleware);
+
+// Service layer
+const lobbyManager     = new LobbyManager(io);
+const stateSyncService = new StateSyncService(io, lobbyManager);
+const gameCoordinator  = new GameCoordinator(io, lobbyManager, stateSyncService);
+const voteManager      = new VoteManager(io, lobbyManager, gameCoordinator);
+const chatHandler      = new ChatHandler(io, lobbyManager);
+const reconnection     = new ReconnectionHandler(io, lobbyManager, stateSyncService);
+const leaderboard      = new LeaderboardService();
+
+io.on('connection', (socket) => {
+  reconnection.attemptReconnect(socket);
+  lobbyManager.handleConnection(socket);
+  gameCoordinator.handleConnection(socket);
+  voteManager.handleConnection(socket);
+  chatHandler.handleConnection(socket);
+  leaderboard.handleConnection(socket);
+
+  socket.on('disconnect', (reason) => {
+    lobbyManager.handleDisconnect(socket);
+    gameCoordinator.handleDisconnect(socket);
+    reconnection.handleDisconnect(socket);
+  });
+});
+
+// Periodic tasks
+stateSyncService.startHeartbeat();
+lobbyManager.startGarbageCollector();
+
+// Graceful shutdown on SIGINT / SIGTERM
+process.on('SIGINT',  () => shutdown('SIGINT'));
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+
+httpServer.listen(config.PORT, () => {
+  console.log(`[RMHbox] WebSocket server running on http://localhost:${config.PORT}`);
+});
+```
+
+### 5.1.1 Configuration
+
+All server tuning is centralized in `server/rmhbox/config.ts`. Every value has a sensible default and can be overridden via environment variables prefixed with `RMHBOX_`:
+
+| Env Var | Default | Purpose |
+|---|---|---|
+| `RMHBOX_PORT` | `7676` | Listen port |
+| `RMHBOX_SOCKET_PATH` | `/rmhbox/` | Socket.io handshake path |
+| `RMHBOX_CORS_ORIGIN` | `$SOCKET_CORS_ORIGIN` or `*` | Allowed CORS origin |
+| `RMHBOX_HEARTBEAT_MS` | `10000` | State snapshot interval |
+| `RMHBOX_GRACE_MS` | `120000` | Disconnect grace period |
+| `RMHBOX_GC_INTERVAL` | `60000` | Lobby garbage collection interval |
+| `RMHBOX_SHUTDOWN_TIMEOUT` | `10000` | Force-kill timeout on shutdown |
+| `DATABASE_URL` | (required) | PostgreSQL connection string (shared with Next.js) |
+
+### 5.1.2 Health Check
+
+The HTTP server exposes a `GET /health` endpoint that returns `{ "status": "ok", "uptime": <seconds> }`. This is used by PM2 for process monitoring and can be used by Caddy/nginx for upstream health probes.
 ```
 
 ### 5.2 Room Naming Convention
@@ -2217,6 +2311,17 @@ let socket: Socket | null = null;
 let reconnectAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 10;
 
+/**
+ * Connect to the standalone RMHbox WebSocket server.
+ *
+ * In production, the client connects to `https://rmhstudios.com` and
+ * Caddy reverse-proxies the `/rmhbox/` path to localhost:7676.
+ *
+ * In development, the client connects directly to `http://localhost:7676`.
+ *
+ * The `NEXT_PUBLIC_RMHBOX_SOCKET_URL` env var controls the base URL.
+ * The `path: '/rmhbox/'` must match the server's `config.SOCKET_PATH`.
+ */
 export async function connectToRMHbox(): Promise<Socket> {
   if (socket?.connected) return socket;
   
@@ -2228,11 +2333,9 @@ export async function connectToRMHbox(): Promise<Socket> {
   store.setConnectionStatus('connecting');
   
   socket = io(
-    process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:7001',
+    process.env.NEXT_PUBLIC_RMHBOX_SOCKET_URL || 'http://localhost:7676',
     {
-      path: '/socket/',
-      // Namespace is appended in connection:
-      // The actual namespace is `/rmhbox`
+      path: '/rmhbox/',
       auth: { token },
       reconnection: true,
       reconnectionAttempts: MAX_RECONNECT_ATTEMPTS,
@@ -2653,20 +2756,22 @@ setInterval(() => {
       for (const [userId, player] of lobby.players) {
         if (player.isConnected && player.socketId) {
           const clientState = buildClientState(lobby, userId);
-          nsp.to(`lobby:${lobbyId}:player:${userId}`).emit('rmhbox:lobby:state_snapshot', clientState);
+          io.to(`lobby:${lobbyId}:player:${userId}`).emit('rmhbox:lobby:state_snapshot', clientState);
         }
       }
       // Spectators get the spectator view
       for (const [userId, spectator] of lobby.spectators) {
         if (spectator.isConnected && spectator.socketId) {
           const clientState = buildClientState(lobby, userId);
-          nsp.to(`lobby:${lobbyId}:player:${userId}`).emit('rmhbox:lobby:state_snapshot', clientState);
+          io.to(`lobby:${lobbyId}:player:${userId}`).emit('rmhbox:lobby:state_snapshot', clientState);
         }
       }
     }
   }
 }, HEARTBEAT_INTERVAL_MS);
 ```
+
+> **Note:** `io` here refers to the standalone RMHbox `Server` instance, not a namespace. In the actual codebase, this logic is encapsulated in the `StateSyncService` class (see `server/rmhbox/state-sync.ts`).
 
 ### 22.2 Game Timers
 
@@ -2772,24 +2877,99 @@ Socket.io maxHttpBufferSize is set to **1 MB** (default). Individual event paylo
 
 ### 25.1 Server Build
 
-The RMHbox server code lives in `server/rmhbox/`. It must be included in the TypeScript server build:
+The RMHbox server code lives in `server/rmhbox/`. It is compiled by a **separate** TypeScript server build config alongside the existing socket server:
 
 ```jsonc
-// tsconfig.server.json — update include:
+// tsconfig.server.json — include RMHbox server files
 {
-  "include": ["server/socket-server.ts", "server/rmhbox/**/*.ts"]
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "outDir": "dist-server",
+    "rootDir": ".",
+    "noEmit": false,
+    "isolatedModules": false
+  },
+  "include": [
+    "server/socket-server.ts",
+    "server/rmhbox/**/*.ts"
+  ]
 }
 ```
 
-### 25.2 Socket Server Registration
+After `tsc --project tsconfig.server.json`, the compiled output lives at `dist-server/server/rmhbox/index.js`.
 
-The existing `server/socket-server.ts` imports and registers the RMHbox namespace:
+### 25.2 Standalone Server Startup
 
-```typescript
-// At the end of server/socket-server.ts, before httpServer.listen:
-import { registerRMHboxNamespace } from './rmhbox/index';
-registerRMHboxNamespace(io);
+The RMHbox server runs as its own Node.js process managed by PM2 in production. It does **not** register as a namespace on the existing socket server — it is a completely independent process.
+
+**Development:**
+
+```jsonc
+// package.json scripts
+{
+  "dev": "concurrently \"next dev -p 7000\" \"pnpm run socket-server\" \"pnpm run rmhbox-server\"",
+  "rmhbox-server": "npx tsx server/rmhbox/index.ts",
+  "start": "concurrently \"next start -p 7000\" \"node dist-server/server/socket-server.js\" \"node dist-server/server/rmhbox/index.js\""
+}
 ```
+
+**Production (PM2 via deploy.sh):**
+
+```bash
+APP_RMHBOX="rmhstudios-rmhbox"
+PORT_RMHBOX=7676
+
+# In stop_apps():
+"$PM2_BIN" stop   "$APP_RMHBOX"  2>/dev/null || true
+"$PM2_BIN" delete "$APP_RMHBOX"  2>/dev/null || true
+
+# In start_apps():
+log "Starting RMHbox WebSocket server on port $PORT_RMHBOX..."
+"$PM2_BIN" start "$NODE_BIN" \
+    --name "$APP_RMHBOX" \
+    --restart-delay=3000 \
+    --max-restarts=5 \
+    -- dist-server/server/rmhbox/index.js
+
+# Verify port:
+check_port "$PORT_RMHBOX" || ok=1
+```
+
+### 25.2.1 Reverse Proxy (Caddy)
+
+Caddy must route WebSocket upgrade requests on the `/rmhbox/` path to the RMHbox server:
+
+```caddyfile
+# Caddyfile (relevant section)
+rmhstudios.com {
+    # Existing: Next.js app
+    reverse_proxy /api/* localhost:7000
+    reverse_proxy /_next/* localhost:7000
+
+    # Existing: main Socket.io server
+    reverse_proxy /socket/* localhost:7001
+
+    # RMHbox standalone WebSocket server
+    reverse_proxy /rmhbox/* localhost:7676
+
+    # Fallback: Next.js
+    reverse_proxy localhost:7000
+}
+```
+
+### 25.2.2 Environment Variables
+
+The following env vars must be set in the production environment:
+
+| Variable | Example Value | Description |
+|---|---|---|
+| `DATABASE_URL` | `postgresql://...` | PostgreSQL connection string (shared across all processes) |
+| `RMHBOX_PORT` | `7676` | RMHbox WebSocket server port (defaults to 7676) |
+| `RMHBOX_CORS_ORIGIN` | `https://rmhstudios.com` | CORS origin for the RMHbox server |
+| `NEXT_PUBLIC_RMHBOX_SOCKET_URL` | `https://rmhstudios.com` | Client-side URL for RMHbox WebSocket connection |
+| `SOCKET_CORS_ORIGIN` | `https://rmhstudios.com` | CORS origin for the main socket server (existing) |
 
 ### 25.3 Database Migration
 
@@ -2818,6 +2998,34 @@ Add RMHbox to `lib/games.ts`:
   tags: ['multiplayer', 'party', 'minigames'],
   imagePath: '/images/rmhbox-cover.png',
 }
+```
+
+### 25.5 Process Architecture Summary
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    Production Process Map                        │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  ┌──────────────┐    ┌──────────────────┐    ┌───────────────┐  │
+│  │   Next.js    │    │  Socket.io       │    │   RMHbox      │  │
+│  │   (PM2)      │    │  Main Server     │    │   WS Server   │  │
+│  │              │    │  (PM2)           │    │   (PM2)       │  │
+│  │  port 7000   │    │  port 7001       │    │  port 7676    │  │
+│  │              │    │                  │    │               │  │
+│  │  Web UI,     │    │  Slice-It,       │    │  Lobbies,     │  │
+│  │  API routes, │    │  Neon Driftway   │    │  Minigames,   │  │
+│  │  SSR, Auth   │    │  multiplayer     │    │  Chat, etc.   │  │
+│  └──────┬───────┘    └──────┬───────────┘    └──────┬────────┘  │
+│         │                   │                       │            │
+│  ───────┴───────────────────┴───────────────────────┴────────── │
+│                          Caddy                                   │
+│                    (reverse proxy)                                │
+│              rmhstudios.com :443                                 │
+│         /*        → 7000                                         │
+│         /socket/* → 7001                                         │
+│         /rmhbox/* → 7676                                         │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ---
