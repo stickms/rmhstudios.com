@@ -309,7 +309,6 @@ model SongPlay {
   @@unique([songId, userId])
 }
 
-<<<<<<< HEAD
 model SynapseStormPlayer {
   id             String   @id @default(cuid())
   userId         String   @unique
@@ -404,7 +403,7 @@ model SSPlayerMatch {
   @@index([matchId])
   @@index([lobbyId])
   @@map("ss_player_match")
-=======
+}
 // --- RMH Code Models ---
 
 model UserGitHubToken {
@@ -451,6 +450,5 @@ model CodeFile {
   @@unique([projectId, path])
   @@index([projectId])
   @@index([userId])
->>>>>>> 0c889db7fa1d434d27278fd20f792f0cb27cddec
 }
 
