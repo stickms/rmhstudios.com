@@ -10,9 +10,9 @@
  * Reference: docs/rmhbox/design-spec/core.md §7.4
  */
 
-import type { LobbySettings } from '../../lib/rmhbox/types';
+import type { LobbySettings } from '../../../lib/rmhbox/types';
 import type { RMHboxPlayer } from '../types';
-import type { PlayerRanking, Award } from '../../lib/rmhbox/types';
+import type { PlayerRanking, Award } from '../../../lib/rmhbox/types';
 
 // ─── Minigame Context ────────────────────────────────────────────
 

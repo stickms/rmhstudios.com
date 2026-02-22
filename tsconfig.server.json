@@ -10,6 +10,7 @@
     },
     "include": [
         "server/socket-server.ts",
-        "server/rmhbox/**/*.ts"
+        "server/rmhbox/**/*.ts",
+        "lib/rmhbox/**/*.ts"
     ]
 }

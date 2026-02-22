@@ -8,7 +8,7 @@
  */
 
 import type { Socket } from 'socket.io';
-import type { ZodType } from 'zod/v4';
+import type { ZodType } from 'zod';
 import { S2C } from '../../lib/rmhbox/events';
 import { checkRateLimit } from './rate-limit';
 import { logger } from './logger';

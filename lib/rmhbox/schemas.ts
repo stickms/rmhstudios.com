@@ -8,7 +8,7 @@
  * Reference: docs/rmhbox/design-spec/core.md §21 (payload shapes)
  */
 
-import { z } from 'zod/v4';
+import { z } from 'zod';
 
 // ─── Lobby Settings (partial — for create/update payloads) ───────
 
@@ -62,7 +62,7 @@ export const RequestPromotionSchema = z.object({
 
 export const ChatSchema = z.object({
   lobbyId: z.string(),
-  content: z.string().min(1).max(200).transform((s) => s.trim()),
+  content: z.string().min(1).max(200).transform((s) => s.trim()).pipe(z.string().min(1)),
 });
 
 export const BrowseLobbiesSchema = z.object({

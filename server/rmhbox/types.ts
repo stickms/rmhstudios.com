@@ -12,7 +12,7 @@ import type {
   LobbyState,
   LobbySettings,
   ChatMessage,
-} from '../lib/rmhbox/types';
+} from '../../lib/rmhbox/types';
 
 // Re-export shared types for server convenience
 export type { LobbyState, LobbySettings, ChatMessage };

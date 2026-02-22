@@ -96,8 +96,12 @@ export async function authMiddleware(
 
     next();
   } catch (err) {
-    const { logger } = require('./logger');
-    logger.error({ event: 'auth_validation_error', error: String(err) });
+    console.error(JSON.stringify({
+      level: 'error',
+      timestamp: new Date().toISOString(),
+      event: 'auth_validation_error',
+      error: String(err),
+    }));
     next(new Error('AUTH_FAILED'));
   }
 }
