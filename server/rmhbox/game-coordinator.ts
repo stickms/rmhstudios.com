@@ -75,10 +75,10 @@ export class GameCoordinator {
   // ─── Connection Handler (§2.6) ────────────────────────────────
 
   handleConnection(socket: Socket): void {
-    socket.on('rmhbox:game:select', validated('rmhbox:game:select', SelectGameSchema, (s, d) => this.onSelect(s, d)));
-    socket.on('rmhbox:game:force_skip', validated('rmhbox:game:force_skip', ForceSkipSchema, (s, d) => this.onForceSkip(s, d)));
-    socket.on('rmhbox:game:ready_to_render', validated('rmhbox:game:ready_to_render', ReadyToRenderSchema, (s, d) => this.onReadyToRender(s, d)));
-    socket.on('rmhbox:game:input', validated('rmhbox:game:input', GameInputSchema, (s, d) => this.onInput(s, d)));
+    socket.on('rmhbox:game:select', validated(socket, 'rmhbox:game:select', SelectGameSchema, (s, d) => this.onSelect(s, d)));
+    socket.on('rmhbox:game:force_skip', validated(socket, 'rmhbox:game:force_skip', ForceSkipSchema, (s, d) => this.onForceSkip(s, d)));
+    socket.on('rmhbox:game:ready_to_render', validated(socket, 'rmhbox:game:ready_to_render', ReadyToRenderSchema, (s, d) => this.onReadyToRender(s, d)));
+    socket.on('rmhbox:game:input', validated(socket, 'rmhbox:game:input', GameInputSchema, (s, d) => this.onInput(s, d)));
   }
 
   // ─── Disconnect Handler (§2.8) ────────────────────────────────

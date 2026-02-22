@@ -19,24 +19,31 @@ export * from '../../lib/rmhbox/schemas';
 /**
  * Wraps a Socket.io event handler with rate limiting and Zod schema validation.
  *
+ * Socket.io event listeners only receive data arguments, NOT the socket itself.
+ * The socket must be captured via closure by passing it as the first parameter.
+ *
  * If the rate limit is exceeded, emits `rmhbox:error` with code `RATE_LIMITED`.
  * If the payload fails validation, emits `rmhbox:error` with code `INVALID_PAYLOAD`.
  * Otherwise, calls the handler with the parsed (validated) payload.
  *
+ * Usage: socket.on('event', validated(socket, 'event', Schema, handler))
+ *
+ * @param socket - The Socket.io socket instance (captured in closure)
  * @param eventName - The Socket.io event name (used for rate limiting key)
  * @param schema - The Zod schema to validate the incoming payload against
  * @param handler - The handler function to call with the validated payload
  * @returns A function suitable for use as a Socket.io event listener
  */
 export function validated<T>(
+  socket: Socket,
   eventName: string,
   schema: ZodType<T>,
   handler: (socket: Socket, payload: T) => void,
-): (socket: Socket, rawPayload: unknown) => void {
-  return (socket: Socket, rawPayload: unknown) => {
+): (rawPayload: unknown) => void {
+  return (rawPayload: unknown) => {
     // Rate limiting check
     if (!checkRateLimit(socket.id, eventName)) {
-      logger.warn({ event: 'rate_limited', socketId: socket.id, eventName, userId: socket.data.userId });
+      logger.warn({ event: 'rate_limited', socketId: socket.id, eventName, userId: socket.data?.userId });
       socket.emit(S2C.ERROR, {
         code: 'RATE_LIMITED',
         message: `Too many ${eventName} requests. Please slow down.`,
@@ -51,7 +58,7 @@ export function validated<T>(
         event: 'invalid_payload',
         socketId: socket.id,
         eventName,
-        userId: socket.data.userId,
+        userId: socket.data?.userId,
         errors: result.error.issues,
       });
       socket.emit(S2C.ERROR, {

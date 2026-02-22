@@ -36,6 +36,13 @@ export default function RMHboxLanding() {
       try {
         const socket = await connectToRMHbox();
 
+        // If already in a lobby (e.g. navigated back while still connected), redirect immediately
+        const existingLobby = useRMHboxStore.getState().lobby;
+        if (existingLobby && mounted) {
+          router.push(`/rmhbox/${existingLobby.lobbyId}`);
+          return;
+        }
+
         // Listen for lobby created event
         socket.on(S2C.LOBBY_CREATED, (data: { lobbyId: string }) => {
           if (mounted) router.push(`/rmhbox/${data.lobbyId}`);

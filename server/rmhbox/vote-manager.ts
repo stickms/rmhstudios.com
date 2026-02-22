@@ -45,9 +45,9 @@ export class VoteManager {
   // ─── Connection Handler ──────────────────────────────────────
 
   handleConnection(socket: Socket): void {
-    socket.on('rmhbox:game:start_vote', validated('rmhbox:game:start_vote', StartVoteSchema, (s, d) => this.onStartVote(s, d)));
-    socket.on('rmhbox:game:cast_vote', validated('rmhbox:game:cast_vote', CastVoteSchema, (s, d) => this.onCastVote(s, d)));
-    socket.on('rmhbox:game:force_skip', validated('rmhbox:game:force_skip', ForceSkipSchema, (s, d) => this.forceSkip(s, d)));
+    socket.on('rmhbox:game:start_vote', validated(socket, 'rmhbox:game:start_vote', StartVoteSchema, (s, d) => this.onStartVote(s, d)));
+    socket.on('rmhbox:game:cast_vote', validated(socket, 'rmhbox:game:cast_vote', CastVoteSchema, (s, d) => this.onCastVote(s, d)));
+    socket.on('rmhbox:game:force_skip', validated(socket, 'rmhbox:game:force_skip', ForceSkipSchema, (s, d) => this.forceSkip(s, d)));
   }
 
   // ─── Vote Initiation (§1.2) ──────────────────────────────────

@@ -30,7 +30,7 @@ export class ChatHandler {
   handleConnection(socket: Socket): void {
     socket.on(
       'rmhbox:lobby:chat',
-      validated('rmhbox:lobby:chat', ChatSchema, (s, d) => this.onChat(s, d)),
+      validated(socket, 'rmhbox:lobby:chat', ChatSchema, (s, d) => this.onChat(s, d)),
     );
   }
 

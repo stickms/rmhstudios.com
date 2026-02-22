@@ -168,16 +168,16 @@ export class LobbyManager {
   // ─── Connection event wiring (§13) ─────────────────────────
 
   handleConnection(socket: Socket): void {
-    socket.on('rmhbox:lobby:create', validated('rmhbox:lobby:create', CreateLobbySchema, (s, d) => this.createLobby(s, d)));
-    socket.on('rmhbox:lobby:join', validated('rmhbox:lobby:join', JoinLobbySchema, (s, d) => this.joinLobby(s, d)));
-    socket.on('rmhbox:lobby:leave', validated('rmhbox:lobby:leave', LeaveLobbySchema, (s, d) => this.leaveLobby(s, d)));
-    socket.on('rmhbox:lobby:kick', validated('rmhbox:lobby:kick', KickPlayerSchema, (s, d) => this.kickPlayer(s, d)));
-    socket.on('rmhbox:lobby:transfer_host', validated('rmhbox:lobby:transfer_host', TransferHostSchema, (s, d) => this.transferHost(s, d)));
-    socket.on('rmhbox:lobby:update_settings', validated('rmhbox:lobby:update_settings', UpdateSettingsSchema, (s, d) => this.updateSettings(s, d)));
-    socket.on('rmhbox:lobby:end_session', validated('rmhbox:lobby:end_session', EndSessionSchema, (s, d) => this.endSession(s, d)));
-    socket.on('rmhbox:lobby:toggle_ready', validated('rmhbox:lobby:toggle_ready', ToggleReadySchema, (s, d) => this.toggleReady(s, d)));
-    socket.on('rmhbox:lobby:request_promotion', validated('rmhbox:lobby:request_promotion', RequestPromotionSchema, (s, d) => this.requestPromotion(s, d)));
-    socket.on('rmhbox:lobby:browse', validated('rmhbox:lobby:browse', BrowseLobbiesSchema, (s, d) => this.browseLobbies(s, d)));
+    socket.on('rmhbox:lobby:create', validated(socket, 'rmhbox:lobby:create', CreateLobbySchema, (s, d) => this.createLobby(s, d)));
+    socket.on('rmhbox:lobby:join', validated(socket, 'rmhbox:lobby:join', JoinLobbySchema, (s, d) => this.joinLobby(s, d)));
+    socket.on('rmhbox:lobby:leave', validated(socket, 'rmhbox:lobby:leave', LeaveLobbySchema, (s, d) => this.leaveLobby(s, d)));
+    socket.on('rmhbox:lobby:kick', validated(socket, 'rmhbox:lobby:kick', KickPlayerSchema, (s, d) => this.kickPlayer(s, d)));
+    socket.on('rmhbox:lobby:transfer_host', validated(socket, 'rmhbox:lobby:transfer_host', TransferHostSchema, (s, d) => this.transferHost(s, d)));
+    socket.on('rmhbox:lobby:update_settings', validated(socket, 'rmhbox:lobby:update_settings', UpdateSettingsSchema, (s, d) => this.updateSettings(s, d)));
+    socket.on('rmhbox:lobby:end_session', validated(socket, 'rmhbox:lobby:end_session', EndSessionSchema, (s, d) => this.endSession(s, d)));
+    socket.on('rmhbox:lobby:toggle_ready', validated(socket, 'rmhbox:lobby:toggle_ready', ToggleReadySchema, (s, d) => this.toggleReady(s, d)));
+    socket.on('rmhbox:lobby:request_promotion', validated(socket, 'rmhbox:lobby:request_promotion', RequestPromotionSchema, (s, d) => this.requestPromotion(s, d)));
+    socket.on('rmhbox:lobby:browse', validated(socket, 'rmhbox:lobby:browse', BrowseLobbiesSchema, (s, d) => this.browseLobbies(s, d)));
   }
 
   // ─── Disconnect handling (§4.2) ────────────────────────────
@@ -337,8 +337,35 @@ export class LobbyManager {
       return;
     }
 
-    // Validate user is not already in a lobby
+    // Validate user is not already in a different lobby
     if (this.userToLobby.has(userId)) {
+      const existingLobbyId = this.userToLobby.get(userId)!;
+      if (existingLobbyId === payload.lobbyId) {
+        // User is re-joining the same lobby (e.g., page navigation after create).
+        // Re-send state snapshot instead of erroring.
+        const existingLobby = this.lobbies.get(existingLobbyId);
+        if (existingLobby) {
+          // Ensure socket rooms are current
+          socket.join(`lobby:${existingLobbyId}`);
+          const player = existingLobby.players.get(userId);
+          if (player) {
+            player.socketId = socket.id;
+            player.isConnected = true;
+            player.lastSeenAt = Date.now();
+            socket.join(`lobby:${existingLobbyId}:players`);
+          }
+          const spectator = existingLobby.spectators.get(userId);
+          if (spectator) {
+            spectator.socketId = socket.id;
+            spectator.isConnected = true;
+            socket.join(`lobby:${existingLobbyId}:spectators`);
+          }
+          socket.join(`lobby:${existingLobbyId}:player:${userId}`);
+          socket.emit(S2C.LOBBY_STATE_SNAPSHOT, this.buildClientState(existingLobby, userId));
+          logger.info({ event: 'lobby_rejoin_same', lobbyId: existingLobbyId, userId, userName });
+          return;
+        }
+      }
       socket.emit(S2C.ERROR, { code: 'ALREADY_IN_LOBBY', message: 'You are already in a lobby.' });
       return;
     }

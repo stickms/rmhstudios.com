@@ -208,3 +208,9 @@ Also, ideally phases 6-8 can be all implemented in parallel. Please ensure that 
 
 
 
+
+Systematically read through docs/design-spec/core.md and ensure that all aspects of the core game logic and design of RMHbox are implemented and working as intended. 
+
+Check over all rmhbox code so far and ensure there are no placeholders for parts that should be implemented. Any features that have been marked as TODO or that have been disabled or don't work should be brought up to spec and properly implemented; if a feature isn't in the design spec but would otherwise make sense to have, add the feature and update the design spec. Leave no stone unturned.
+
+Run comprehensive typescript compilation and eslint checks across all rmhbox files, and fix any errors in accordance with design specs.
