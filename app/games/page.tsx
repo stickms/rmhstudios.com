@@ -37,7 +37,7 @@ export default function GamesPage() {
                 {/* Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
                     {games.map((game) => (
-                        <Link key={game.id} href={game.href} className="group relative block h-full">
+                        <Link key={game.id} href={game.href} className="group relative block h-full group-hover:z-10">
                             <div className={`
                                 h-full p-5 lg:p-6 rounded-2xl border border-slate-800 bg-gradient-to-br ${game.color}
                                 backdrop-blur-sm transition-all duration-300 group-hover:scale-[1.02] group-hover:shadow-2xl

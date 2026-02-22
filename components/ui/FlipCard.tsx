@@ -17,7 +17,11 @@ export function FlipCard({ front, back, className = "" }: FlipCardProps) {
   };
 
   return (
-    <div className={`relative h-full perspective-1000 ${className}`} onClick={handleFlip}>
+    <div 
+      className={`relative h-full perspective-1000 ${className}`} 
+      onClick={handleFlip}
+      style={{ zIndex: isFlipped ? 50 : 0 }}
+    >
       <motion.div
         className="w-full h-full relative preserve-3d cursor-pointer"
         initial={false}
