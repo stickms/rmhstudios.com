@@ -530,6 +530,20 @@
 - [ ] Return `MinigameResults` with rankings, awards, and `gameSpecificData` containing `questionsAsked`, `reveals`
   **Verification:** Unit test: player with correct early guess at round 2 → highest score. Player with correct final guess → 200 pts. Voting accuracy bonus computed correctly. Awards assigned to correct players. All identities revealed in results.
 
+#### 8.1.6.14 `buildGameLog()`
+
+- [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
+- [ ] Log `question_asked` action when a player asks a question (askerId, questionText, roundNumber)
+- [ ] Log `vote_cast` action per vote on a question (voterId, vote: 'yes' | 'no' | 'maybe')
+- [ ] Log `vote_result` action when voting closes (yes, no, maybe tallies, majorityAnswer)
+- [ ] Log `early_guess` action when player attempts early guess (userId, guess, correct, matchScore, roundNumber)
+- [ ] Log `final_guess` action at final guess phase (userId, guess, correct, matchScore)
+- [ ] Log `identity_reveal` action at results (userId, assignedIdentity, guessedCorrectly)
+- [ ] In `computeResults()`, build `GameLog` with `initialState` containing identity assignments, question order, maxQuestionsPerPlayer
+- [ ] Return `GameLog` from `buildGameLog()`
+
+**Verification:** Unit test: 5-player game, 15 question rounds, verify Q&A log, early guesses, final guesses, and identity reveal actions.
+
 ---
 
 ### 8.1.7 `getStateForPlayer(userId)`
@@ -1376,6 +1390,17 @@
 - [ ] Return `MinigameResults` with rankings, awards, and `gameSpecificData` containing `roundResults`
   **Verification:** Unit test: player with lowest average distance wins. Awards assigned correctly: trendsetter = most outlier rounds, consistent = lowest distance variance.
 
+#### 8.2.6.14 `buildGameLog()`
+
+- [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
+- [ ] Log `round_start` action when category is revealed (round, categoryName, items)
+- [ ] Log `ranking_submitted` action per player (userId, ranking: number[])
+- [ ] Log `round_result` action at round end (round, consensusRanking, playerRankings, distanceScores)
+- [ ] In `computeResults()`, build `GameLog` with `initialState` containing totalRounds, categories used, player list
+- [ ] Return `GameLog` from `buildGameLog()`
+
+**Verification:** Unit test: 5-round game, verify 5 round_start, all ranking_submitted, and 5 round_result actions with consensus data.
+
 ---
 
 ### 8.2.7 Register Game in Minigame Registry
@@ -2143,6 +2168,18 @@ This is the core physics loop running at ~30Hz. Each tick:
   ```
 - [ ] Return `MinigameResults` with rankings, awards, and `gameSpecificData`
   **Verification:** Unit test: player with most pushes gets Heavy Hitter. Goal Scorer tracks last touch. Speed Demon tracks fastest level time.
+
+#### 8.3.6.15 `buildGameLog()`
+
+- [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
+- [ ] Log `level_start` action at level begin (levelNumber, layoutId)
+- [ ] Log `waypoint_hit` action when ball passes through a waypoint (waypointIndex, timeMs)
+- [ ] Log `polarity_flip` action when a player's polarity changes (userId, newPolarity, timeMs)
+- [ ] Log `level_complete` action at level end (levelNumber, completionTimeMs, waypointsHit, success)
+- [ ] In `computeResults()`, build `GameLog` with `initialState` containing totalLevels, playerCount, canvasSize
+- [ ] Return `GameLog` from `buildGameLog()`
+
+**Verification:** Unit test: 3-level game, verify level_start/level_complete per level, polarity_flip events captured.
 
 ---
 
@@ -2971,6 +3008,18 @@ Each tick (~33ms):
   }
   ```
   **Verification:** Unit test: last player = Soul Survivor. Most dismissals = Ad Blocker. Most fails = Gullible.
+
+#### 8.4.5.17 `buildGameLog()`
+
+- [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
+- [ ] Log `player_eliminated` action when player dies (userId, survivalTimeMs, scrollSpeedAtDeath, cause: 'lava' | 'ad_push' | 'obstacle')
+- [ ] Log `ad_spawned` action when a fake ad appears (adType, targetUserId, timeMs)
+- [ ] Log `ad_dismissed` action when player closes an ad (userId, adType, dismissTimeMs, penalty: boolean)
+- [ ] Log `speed_increase` action at each scroll speed change (newSpeed, timeMs)
+- [ ] In `computeResults()`, build `GameLog` with `initialState` containing baseScrollSpeed, maxScrollSpeed, viewportSize, playerCount
+- [ ] Return `GameLog` from `buildGameLog()`
+
+**Verification:** Unit test: 8-player game, verify elimination events in order, ad events captured, speed increases logged.
 
 ---
 
