@@ -1,6 +1,8 @@
 # Phase 8: Minigames Set 4 — Identity Crisis, Ranking File, Pixel Pushers, Scroll Soul
 
-> **Depends on:** Phase 4 (Minigame Engine & Lifecycle), Phase 5/6/7 patterns (BaseMinigame, registry, constants, schemas)
+> **Depends on:** Phase 4 (Minigame Engine & Lifecycle), Phase 5 (first minigame set establishes implementation patterns: BaseMinigame extensions, registry registration, constants, Zod schemas, data pipelines, client components, and `buildGameLog()`)
+>
+> **Parallelizable with:** Phase 6, Phase 7 — after Phase 5 is complete, Phases 6, 7, and 8 can be implemented in parallel since they share no inter-dependencies. Each phase independently extends `BaseMinigame`, registers games in the shared registry, and follows the patterns established in Phase 5.
 >
 > This phase implements the fourth and final set of four minigames for RMHbox. Each game extends `BaseMinigame` from Phase 4 and integrates with the existing lobby, lifecycle, scoring, and award systems. Notable in this phase: Identity Crisis features complex per-player information masking (each player sees all identities except their own), Pixel Pushers includes a server-side 2D physics simulation with polarity mechanics, and Scroll Soul requires procedural level generation with a server-authoritative platformer physics loop.
 
@@ -529,6 +531,20 @@
   - **Note:** Now ALL identities are revealed to ALL players including their own
 - [ ] Return `MinigameResults` with rankings, awards, and `gameSpecificData` containing `questionsAsked`, `reveals`
   **Verification:** Unit test: player with correct early guess at round 2 → highest score. Player with correct final guess → 200 pts. Voting accuracy bonus computed correctly. Awards assigned to correct players. All identities revealed in results.
+
+#### 8.1.6.14 `buildGameLog()`
+
+- [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
+- [ ] Log `question_asked` action when a player asks a question (askerId, questionText, roundNumber)
+- [ ] Log `vote_cast` action per vote on a question (voterId, vote: 'yes' | 'no' | 'maybe')
+- [ ] Log `vote_result` action when voting closes (yes, no, maybe tallies, majorityAnswer)
+- [ ] Log `early_guess` action when player attempts early guess (userId, guess, correct, matchScore, roundNumber)
+- [ ] Log `final_guess` action at final guess phase (userId, guess, correct, matchScore)
+- [ ] Log `identity_reveal` action at results (userId, assignedIdentity, guessedCorrectly)
+- [ ] In `computeResults()`, build `GameLog` with `initialState` containing identity assignments, question order, maxQuestionsPerPlayer
+- [ ] Return `GameLog` from `buildGameLog()`
+
+**Verification:** Unit test: 5-player game, 15 question rounds, verify Q&A log, early guesses, final guesses, and identity reveal actions.
 
 ---
 
@@ -1376,6 +1392,17 @@
 - [ ] Return `MinigameResults` with rankings, awards, and `gameSpecificData` containing `roundResults`
   **Verification:** Unit test: player with lowest average distance wins. Awards assigned correctly: trendsetter = most outlier rounds, consistent = lowest distance variance.
 
+#### 8.2.6.14 `buildGameLog()`
+
+- [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
+- [ ] Log `round_start` action when category is revealed (round, categoryName, items)
+- [ ] Log `ranking_submitted` action per player (userId, ranking: number[])
+- [ ] Log `round_result` action at round end (round, consensusRanking, playerRankings, distanceScores)
+- [ ] In `computeResults()`, build `GameLog` with `initialState` containing totalRounds, categories used, player list
+- [ ] Return `GameLog` from `buildGameLog()`
+
+**Verification:** Unit test: 5-round game, verify 5 round_start, all ranking_submitted, and 5 round_result actions with consensus data.
+
 ---
 
 ### 8.2.7 Register Game in Minigame Registry
@@ -2143,6 +2170,18 @@ This is the core physics loop running at ~30Hz. Each tick:
   ```
 - [ ] Return `MinigameResults` with rankings, awards, and `gameSpecificData`
   **Verification:** Unit test: player with most pushes gets Heavy Hitter. Goal Scorer tracks last touch. Speed Demon tracks fastest level time.
+
+#### 8.3.6.15 `buildGameLog()`
+
+- [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
+- [ ] Log `level_start` action at level begin (levelNumber, layoutId)
+- [ ] Log `waypoint_hit` action when ball passes through a waypoint (waypointIndex, timeMs)
+- [ ] Log `polarity_flip` action when a player's polarity changes (userId, newPolarity, timeMs)
+- [ ] Log `level_complete` action at level end (levelNumber, completionTimeMs, waypointsHit, success)
+- [ ] In `computeResults()`, build `GameLog` with `initialState` containing totalLevels, playerCount, canvasSize
+- [ ] Return `GameLog` from `buildGameLog()`
+
+**Verification:** Unit test: 3-level game, verify level_start/level_complete per level, polarity_flip events captured.
 
 ---
 
@@ -2972,6 +3011,18 @@ Each tick (~33ms):
   ```
   **Verification:** Unit test: last player = Soul Survivor. Most dismissals = Ad Blocker. Most fails = Gullible.
 
+#### 8.4.5.17 `buildGameLog()`
+
+- [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
+- [ ] Log `player_eliminated` action when player dies (userId, survivalTimeMs, scrollSpeedAtDeath, cause: 'lava' | 'ad_push' | 'obstacle')
+- [ ] Log `ad_spawned` action when a fake ad appears (adType, targetUserId, timeMs)
+- [ ] Log `ad_dismissed` action when player closes an ad (userId, adType, dismissTimeMs, penalty: boolean)
+- [ ] Log `speed_increase` action at each scroll speed change (newSpeed, timeMs)
+- [ ] In `computeResults()`, build `GameLog` with `initialState` containing baseScrollSpeed, maxScrollSpeed, viewportSize, playerCount
+- [ ] Return `GameLog` from `buildGameLog()`
+
+**Verification:** Unit test: 8-player game, verify elimination events in order, ad events captured, speed increases logged.
+
 ---
 
 ### 8.4.6 Register Game in Minigame Registry
@@ -3293,30 +3344,50 @@ For each Phase 8 game (Identity Crisis, Ranking File, Pixel Pushers, Scroll Soul
 
 ---
 
-### 8.5.9 Phase 5+6+7+8 Coexistence Test
+### 8.5.9 Phase 5 + Phase 8 Coexistence Test
+
+- [ ] Verify Phase 5 games (Rhyme Time, Undercover Agent, Category Crash, Wiki-Race) still function correctly after Phase 8 deployment
+- [ ] Play a mixed session: Phase 5 game → Phase 8 game → Phase 5 game
+- [ ] Verify registry correctly contains all 8 games (Phase 5 + Phase 8)
+- [ ] Verify no naming collisions between Phase 5 and Phase 8 constants (`IC_*`, `RF_*`, `PP_*`, `SC_*` prefixes), event types, Zod schema names, component file paths, or award IDs
+  **Verification:** No regressions. All 8 games playable in any order.
+
+### 8.5.10 Full Coexistence Test (All Phases)
+
+> **Note:** This test should be run once all phases (5, 6, 7, 8) are deployed. Since Phases 6, 7, and 8 are developed in parallel, this combined test validates the final integration.
 
 - [ ] Full integration: register ALL games from Phases 5, 6, 7, and 8 simultaneously
-- [ ] Verify `getAllMinigames().length === 16` (assuming 4 games per phase)
+- [ ] Verify `getAllMinigames().length === 16` (4 games per phase × 4 phases)
 - [ ] Verify random selection draws from all 16 games
 - [ ] Verify a complete 16-game session plays every game exactly once
 - [ ] Verify cumulative scoring across all 16 games produces correct final leaderboard
 - [ ] Verify lobby session can handle the full variety of game mechanics:
   - Text-based games (quizzes, voting)
-  - Real-time physics games (Pixel Pushers, Scroll Soul)
-  - Social deduction (Identity Crisis)
-  - DnD-based games (Ranking File)
+  - Real-time physics games (Pixel Pushers, Scroll Soul, Cursor Curling)
+  - Social deduction (Identity Crisis, Undercover Editor, Undercover Agent)
+  - Creative games (Minimalist Masterpiece, Emoji Cinema)
   - Cooperative and competitive modes
-- [ ] Verify no naming collisions in:
-  - Constants (`IC_*`, `RF_*`, `PP_*`, `SC_*` prefixes)
+- [ ] Verify no naming collisions across all 16 games:
+  - Constants (`IC_*`, `RF_*`, `PP_*`, `SC_*`, `RT_*`, `UA_*`, `CC_*`, `WR_*`, `FOF_*`, `UE_*`, `MM_*`, `EC_*`, `SS_*`, `HK_*`, `CU_*`, `HT_*` prefixes)
   - WebSocket event types
   - Zod schema names
   - Component file paths
   - Award IDs
   **Verification:** All 16 games coexist. No namespace collisions. Full session completes.
 
----
+### 8.5.11 Game History Integration Test
 
-### 8.5.10 Performance and Stress Testing
+- [ ] For each Phase 8 game: verify `buildGameLog()` produces a valid `GameLog` object
+- [ ] Verify game log is passed to `persistMatchResults()` and stored in the database
+- [ ] Verify `GET /api/rmhbox/history?matchId=...` returns the game log in `MatchDetailResponse`
+- [ ] Verify game-specific action types are present in the log for each game:
+  - Identity Crisis: `question_asked`, `vote_cast`, `vote_result`, `early_guess`, `final_guess`, `identity_reveal`
+  - Ranking File: `round_start`, `ranking_submitted`, `round_result`
+  - Pixel Pushers: `level_start`, `waypoint_hit`, `polarity_flip`, `level_complete`
+  - Scroll Soul: `player_eliminated`, `ad_spawned`, `ad_dismissed`, `speed_increase`
+  **Verification:** Game logs persist and are retrievable via API. Action types match spec.
+
+### 8.5.12 Performance and Stress Testing
 
 - [ ] Stress test: 8-player lobby, rapid fire through all 4 Phase 8 games:
   - Identity Crisis → Ranking File → Pixel Pushers → Scroll Soul
@@ -3342,4 +3413,6 @@ For each Phase 8 game (Identity Crisis, Ranking File, Pixel Pushers, Scroll Soul
 2. **Ranking File** — consensus calculation algorithm must handle edge cases (ties, partial rankings)
 3. **Pixel Pushers** — physics simulation must be deterministic per-tick and server-authoritative; test collision resolution thoroughly
 4. **Scroll Soul** — procedural generation must guarantee reachability; fake ad system needs careful per-player isolation
+
+> **Parallel Development Note:** Phase 8 can be developed in parallel with Phase 6 and Phase 7, as all three depend only on Phase 4 (engine) + Phase 5 (established patterns). The Phase 5 + Phase 8 Coexistence Test (§8.5.9) validates independent operation. The Full Coexistence Test (§8.5.10) should be run as a final integration step once all phases are merged.
 

@@ -369,6 +369,35 @@ export const RHYME_TIME_MAX_WORD_LENGTH = 30;
 - Submission rate is inherently capped by `MAX_SUBMISSIONS_PER_ROUND`. The `rmhbox:game:input` socket rate limit (100/10s) also applies.
 - Bot detection heuristic (optional, future): flag players whose median time between submissions is < 500ms over 10+ submissions — humans typically can't type-think-submit faster than ~1.5s per word.
 
+### 1.14 Game History
+
+**Game History Level:** Summary Log
+
+Rhyme Time produces a moderate volume of actions (many submissions per round), but individual keystrokes aren't meaningful for review. A summary log captures the interesting data — root words, all submissions with their validity/rarity/scores, and round winners — without recording every keystroke or UI interaction.
+
+**`initialState`**
+
+```typescript
+interface RhymeTimeInitialState {
+  rounds: number;
+  secondsPerRound: number;
+  maxSubmissionsPerRound: number;
+  rarityBonusEnabled: boolean;
+  players: Array<{ userId: string; userName: string }>;
+}
+```
+
+**Actions Logged**
+
+| Action Type | Payload | Recorded When |
+|---|---|---|
+| `round_start` | `{ round: number; rootWord: string; validRhymeCount: number }` | Root word is revealed |
+| `submission` | `{ userId: string; word: string; valid: boolean; duplicate: boolean; rarityTier: string; score: number }` | Each player submission is validated |
+| `round_end` | `{ round: number; rootWord: string; roundWinner: string; submissions: Array<{ userId: string; word: string; score: number }> }` | Round timer expires or all submissions used |
+| `game_end` | `{ finalScores: Array<{ userId: string; totalScore: number; rank: number }> }` | All rounds complete |
+
+**Replay Value:** Reviewing who discovered the rarest rhymes, comparing vocabulary breadth across players, and spotting the creative or unexpected submissions that earned rarity bonuses.
+
 ---
 
 ## 2. Undercover Agent
@@ -700,6 +729,44 @@ export const UA_CLUE_EFFICIENCY_BONUS = 50;
 export const UA_CORRECT_GUESS_POINTS = 75;
 export const UA_ASSASSIN_PENALTY = -200;
 ```
+
+### 2.15 Game History
+
+**Game History Level:** Full Action Log
+
+Undercover Agent is the most replay-worthy game in the collection. Every clue, guess, and tile reveal tells a story — reviewing the spymaster's one-word clues alongside their team's interpretation is endlessly entertaining. A full action log preserves the turn-by-turn tension, including the critical moments where operatives narrowly avoided the assassin or made a game-changing mistake.
+
+**`initialState`**
+
+```typescript
+interface UndercoverAgentInitialState {
+  gridSize: number;
+  keyCard: {
+    teamA: string[];       // words assigned to Team A
+    teamB: string[];       // words assigned to Team B
+    neutral: string[];
+    assassin: string;
+  };
+  words: string[];          // the 5×5 grid in order
+  teamASpymaster: string;
+  teamBSpymaster: string;
+  startingTeam: 'A' | 'B';
+}
+```
+
+**Actions Logged**
+
+| Action Type | Payload | Recorded When |
+|---|---|---|
+| `turn_start` | `{ team: string; role: 'spymaster' \| 'operative'; turnNumber: number }` | A new turn begins |
+| `clue_given` | `{ team: string; spymasterId: string; word: string; number: number }` | Spymaster submits a clue |
+| `guess` | `{ team: string; operativeId: string; word: string; tileType: 'teamA' \| 'teamB' \| 'neutral' \| 'assassin'; correct: boolean }` | Operative selects a tile |
+| `tile_reveal` | `{ word: string; tileType: string; gridPosition: number }` | A tile is flipped and revealed |
+| `pass` | `{ team: string; remainingGuesses: number }` | Operatives end their turn early |
+| `turn_end` | `{ team: string; guessCount: number; correctCount: number }` | Turn concludes |
+| `game_end` | `{ winningTeam: string; winCondition: 'all_found' \| 'assassin' \| 'stalemate'; remainingWords: { teamA: string[]; teamB: string[] } }` | Game concludes |
+
+**Replay Value:** Reliving the spymaster's strategy — which clues linked multiple words, where operatives went wrong, and the dramatic assassin-hit moments. Full logs allow step-by-step replay of the entire match.
 
 ---
 
@@ -1075,6 +1142,37 @@ export const CC_LETTER_WEIGHTS: Record<string, number> = {
   Q: 1, R: 8, S: 10, T: 9, U: 3, V: 3, W: 5, X: 1, Y: 2, Z: 1,
 };
 ```
+
+### 3.13 Game History
+
+**Game History Level:** Summary Log
+
+Category Crash generates a bounded set of answers per round (one per category per player), making a summary log the natural fit. The interesting review data is which answers players gave, whose answers got crashed (duplicated), and how creative the unique answers were — all captured without needing granular keystroke-level logging.
+
+**`initialState`**
+
+```typescript
+interface CategoryCrashInitialState {
+  rounds: number;
+  categoriesPerRound: number;
+  secondsPerRound: number;
+  crashRule: 'eliminate' | 'reduce';
+  players: Array<{ userId: string; userName: string }>;
+  categoryDistribution: { easy: number; medium: number; hard: number };
+}
+```
+
+**Actions Logged**
+
+| Action Type | Payload | Recorded When |
+|---|---|---|
+| `round_start` | `{ round: number; letter: string; categories: string[] }` | Letter and categories are revealed |
+| `answers_locked` | `{ userId: string; answers: Array<{ category: string; answer: string }> }` | Player's answers are submitted/timer expires |
+| `crash_result` | `{ category: string; crashedAnswer: string; crashedPlayers: string[]; survivingAnswers: Array<{ userId: string; answer: string }> }` | Duplicate answers are identified and crashed |
+| `round_score` | `{ round: number; scores: Array<{ userId: string; points: number; validAnswers: number; crashedAnswers: number }> }` | Round scoring completes |
+| `game_end` | `{ finalScores: Array<{ userId: string; totalScore: number; rank: number }> }` | All rounds complete |
+
+**Replay Value:** Seeing who came up with the most creative unique answers, laughing at the answers that multiple players chose (and got crashed), and comparing strategies for obscure vs. safe category responses.
 
 ---
 
@@ -1466,6 +1564,40 @@ export const WR_MAX_ARTICLE_PAIR_POOL_SIZE = 200;
 - Article content is rendered in a controlled container — no iframe with real Wikipedia access.
 - Per-player navigation rate limit (`WR_NAVIGATE_RATE_LIMIT_PER_SECOND`) prevents automated link-clicking scripts.
 - The optimal path is only revealed in results, never during gameplay.
+
+### 4.15 Game History
+
+**Game History Level:** Full Action Log
+
+Wiki-Race's core appeal in replay is comparing navigation strategies — the full path each player took through Wikipedia is the game itself. Every article click with its timestamp reveals decision-making patterns: who browsed methodically, who took creative shortcuts, and who got hopelessly lost. This is a relatively low-volume log (typically 10–50 clicks per player per round) that provides rich replay value.
+
+**`initialState`**
+
+```typescript
+interface WikiRaceInitialState {
+  rounds: number;
+  timeLimitSeconds: number;
+  startArticle: string;
+  targetArticle: string;
+  optimalPathLength: number;
+  backClickAllowed: boolean;
+  players: Array<{ userId: string; userName: string }>;
+}
+```
+
+**Actions Logged**
+
+| Action Type | Payload | Recorded When |
+|---|---|---|
+| `round_start` | `{ round: number; startArticle: string; targetArticle: string }` | Start and target articles are revealed |
+| `navigate` | `{ userId: string; fromArticle: string; toArticle: string; timestamp: number; clickIndex: number }` | Player clicks a link to a new article |
+| `back_click` | `{ userId: string; fromArticle: string; toArticle: string; timestamp: number }` | Player uses the back button |
+| `player_finish` | `{ userId: string; pathLength: number; timeMs: number; path: string[] }` | Player reaches the target article |
+| `player_timeout` | `{ userId: string; lastArticle: string; pathLength: number; path: string[] }` | Player fails to reach the target in time |
+| `round_end` | `{ round: number; finishers: Array<{ userId: string; pathLength: number; timeMs: number }>; optimalPath: string[] }` | Round timer expires or all players finish |
+| `game_end` | `{ finalScores: Array<{ userId: string; totalScore: number; rank: number }> }` | All rounds complete |
+
+**Replay Value:** Comparing the wildly different paths players took between the same two articles, seeing who found clever shortcuts vs. who wandered through dozens of articles, and measuring paths against the optimal route.
 
 ---
 

@@ -378,6 +378,37 @@ export const SS_GRID_SIZE = 9;                   // 3×3
 export const SS_GRID_COLS = 3;
 ```
 
+### 1.13 Game History
+
+**Game History Level:** Minimal Log
+
+Sequence Sam is a memory/elimination game where the main narrative is the progression of eliminations. There is no complex per-tick state to capture — just the sequences shown, who survived each round, and the final standings.
+
+**`initialState`**
+
+```typescript
+interface SSInitialState {
+  gridSize: number;
+  maxStrikes: number;
+  chaosInterval: number;
+  playerCount: number;
+  tileFlashDurationMs: number;
+  inputTimePerStepMs: number;
+}
+```
+
+**Actions Logged**
+
+| Action Type | Payload | Recorded |
+|---|---|---|
+| `round_start` | `{ round: number; sequenceLength: number; sequence: number[] }` | Start of each round |
+| `chaos_rotation` | `{ round: number; rotationType: string; mapping: Record<number, number> }` | When a chaos round triggers a tile remap |
+| `round_result` | `{ round: number; correct: string[]; failed: string[]; strikes: Record<string, number> }` | After all inputs are evaluated |
+| `elimination` | `{ userId: string; round: number; placement: number }` | When a player is eliminated |
+| `game_end` | `{ winner: string; finalPlacements: Array<{ userId: string; placement: number; score: number }> }` | Game over |
+
+**Replay Value:** The fun of reviewing a Sequence Sam log is seeing the elimination order — who survived the longest, which chaos rounds caused the most failures, and how the sequence length ramped up over time.
+
 ---
 
 ## 2. Human Keyboard
@@ -718,6 +749,36 @@ export const HK_COMPLETION_BONUS = 100;
 export const HK_TIME_BONUS_PER_SECOND = 5;
 export const HK_MVP_BONUS = 100;
 ```
+
+### 2.14 Game History
+
+**Game History Level:** Summary Log
+
+Human Keyboard is a cooperative typing game where the team works together to complete a sentence. The log captures team performance milestones, reshuffle events, and per-player contribution stats — enough to see who carried the team and how reshuffles disrupted momentum.
+
+**`initialState`**
+
+```typescript
+interface HKInitialState {
+  sentence: string;
+  sentenceLength: number;
+  typingDurationSeconds: number;
+  reshuffleIntervalSeconds: number;
+  playerCount: number;
+  initialKeyAssignments: Record<string, string[]>;  // userId → assigned keys
+}
+```
+
+**Actions Logged**
+
+| Action Type | Payload | Recorded |
+|---|---|---|
+| `reshuffle` | `{ period: number; newAssignments: Record<string, string[]>; progressAtReshuffle: number }` | Each key reshuffle |
+| `progress_milestone` | `{ milestone: 25 \| 50 \| 75 \| 100; elapsedMs: number; currentChar: number }` | At 25%, 50%, 75%, 100% completion |
+| `player_summary` | `{ userId: string; correctKeys: number; wrongKeys: number; accuracy: number }` | End of game, per player |
+| `game_end` | `{ completed: boolean; finalProgress: number; elapsedMs: number; mvpUserId: string; totalCorrectKeys: number; totalWrongKeys: number }` | Game over |
+
+**Replay Value:** Reviewing a Human Keyboard log reveals which players carried the team, how reshuffles affected typing momentum, and whether the team completed the sentence — or how close they got.
 
 ---
 
@@ -1114,6 +1175,38 @@ export const CU_HOUSE_POINTS = 10;
 export const CU_CLOSEST_BONUS = 50;
 ```
 
+### 3.13 Game History
+
+**Game History Level:** Summary Log
+
+Cursor Curling is a physics-heavy game where logging every simulation tick would be excessive. Instead, the log captures the throw inputs (angle, power) and final resting positions — enough to compare strategies and reconstruct the key moments of each end.
+
+**`initialState`**
+
+```typescript
+interface CUInitialState {
+  totalEnds: number;
+  playerCount: number;
+  canvasSize: { width: number; height: number };
+  houseCenter: { x: number; y: number };
+  bullseyeRadius: number;
+  stoneRadius: number;
+  throwOrder: string[];  // userId order
+}
+```
+
+**Actions Logged**
+
+| Action Type | Payload | Recorded |
+|---|---|---|
+| `end_start` | `{ end: number; throwOrder: string[] }` | Start of each end |
+| `throw` | `{ end: number; userId: string; angle: number; power: number; swept: boolean }` | After each player's throw completes |
+| `stone_rest` | `{ end: number; userId: string; position: { x: number; y: number }; distanceToBullseye: number }` | When a stone comes to rest |
+| `end_result` | `{ end: number; scores: Record<string, number>; closestUserId: string; stonePositions: Array<{ userId: string; x: number; y: number }> }` | End of each end |
+| `game_end` | `{ finalScores: Record<string, number>; placements: Array<{ userId: string; placement: number; score: number }> }` | Game over |
+
+**Replay Value:** Comparing throw angles and power levels across players reveals different strategies — cautious vs. aggressive throws, effective sweeping, and how stone collisions changed the outcome of each end.
+
 ---
 
 ## 4. Human Tetris
@@ -1509,6 +1602,36 @@ export const HT_STREAK_BONUS = 200;
 - Movement rate limiting prevents teleportation via rapid input.
 - The server checks all positions at the moment of wall impact — no client-side evaluation.
 - Dead zone occupancy is allowed for multiple players (no exploit from stacking in dead zones since it's cooperative).
+
+### 4.15 Game History
+
+**Game History Level:** Minimal Log
+
+Human Tetris is a cooperative game where the moment-to-moment player movement isn't very interesting after the fact. The log captures each wave's wall shape, the player positions at the moment of impact, and whether the team passed or failed — showing team coordination trends over time.
+
+**`initialState`**
+
+```typescript
+interface HTInitialState {
+  playerCount: number;
+  arenaSize: { width: number; height: number };
+  wallSpeedInitial: number;
+  totalWaves: number;
+  gapTolerance: number;
+  movementSpeed: number;
+}
+```
+
+**Actions Logged**
+
+| Action Type | Payload | Recorded |
+|---|---|---|
+| `wave_start` | `{ wave: number; wallShape: Array<{ x: number; y: number; width: number; height: number }>; requiredPlayers: number; wallSpeed: number }` | Start of each wave |
+| `wave_impact` | `{ wave: number; playerPositions: Array<{ userId: string; x: number; y: number }>; success: boolean; playersHit: string[] }` | Moment of wall impact |
+| `wave_result` | `{ wave: number; passed: boolean; teamScore: number; streak: number }` | After wave evaluation |
+| `game_end` | `{ wavesCompleted: number; totalWaves: number; finalScore: number; perfectWaves: number; longestStreak: number }` | Game over |
+
+**Replay Value:** The log shows how team coordination evolved across waves — whether the group improved with practice, which wall shapes caused the most failures, and how long their success streaks lasted.
 
 ---
 

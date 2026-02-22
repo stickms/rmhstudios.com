@@ -1,6 +1,8 @@
 # Phase 7: Minigames Set 3 — Sequence Sam, Human Keyboard, Cursor Curling, Human Tetris
 
-> **Depends on:** Phase 4 (Minigame Engine & Lifecycle), Phase 5/6 patterns (BaseMinigame, registry, constants, schemas)
+> **Depends on:** Phase 4 (Minigame Engine & Lifecycle), Phase 5 (first minigame set establishes implementation patterns: BaseMinigame extensions, registry registration, constants, Zod schemas, data pipelines, client components, and `buildGameLog()`)
+>
+> **Parallelizable with:** Phase 6, Phase 8 — after Phase 5 is complete, Phases 6, 7, and 8 can be implemented in parallel since they share no inter-dependencies. Each phase independently extends `BaseMinigame`, registers games in the shared registry, and follows the patterns established in Phase 5.
 >
 > This phase implements the third set of four minigames for RMHbox. Each game extends `BaseMinigame` from Phase 4. Notable in this phase: Cursor Curling includes a custom server-side 2D physics simulation, and Human Keyboard and Human Tetris are cooperative games.
 
@@ -304,6 +306,16 @@
   - [ ] **Iron Will** — survived a round with 1 strike remaining (0 left after that round); icon: `shield`
 - [ ] Return `MinigameResults` with rankings, awards, and `gameSpecificData`
   **Verification:** Unit test: scenarios for each award. Ties handled correctly.
+
+#### 7.1.4.13 `buildGameLog()`
+
+- [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
+- [ ] Log `round_start` action at each round (round, sequenceLength, isChaosRound, rotationDegrees)
+- [ ] Log `round_result` action at round end (round, survivingPlayers, eliminatedPlayers)
+- [ ] Log `player_eliminated` action when a player is eliminated (userId, round, reason: 'wrong_input' | 'timeout')
+- [ ] In `computeResults()`, build `GameLog` with `initialState` containing startingLength, chaosRoundInterval, maxRounds
+- [ ] Return `GameLog` from `buildGameLog()`
+  **Verification:** Unit test: 8-player game lasting 10 rounds, verify log contains round_start/round_result per round and player_eliminated for each elimination.
 
 ---
 
@@ -738,6 +750,18 @@
   - [ ] **Team Spirit** — team completed the sentence (awarded to ALL players); icon: `users`
 - [ ] Return `MinigameResults`
   **Verification:** Unit test: each award triggers correctly.
+
+#### 7.2.6.14 `buildGameLog()`
+
+- [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
+- [ ] Log `game_start` action with target sentence and initial key assignments (assignments map)
+- [ ] Log `reshuffle` action each time keys are reshuffled (newAssignments, progressAtReshuffle)
+- [ ] Log `milestone` action at 25%, 50%, 75% sentence completion (percentComplete, timeMs, charsCompleted)
+- [ ] Log `keystroke_summary` action per player at game end (userId, totalKeystrokes, correctKeystrokes, missedKeys)
+- [ ] Log `game_complete` action when sentence is finished or time expires (completed, totalTimeMs, finalProgress)
+- [ ] In `computeResults()`, build `GameLog` with `initialState` containing targetSentence, playerCount, reshuffleInterval
+- [ ] Return `GameLog` from `buildGameLog()`
+  **Verification:** Unit test: 5-player game, 2 reshuffles, verify log captures both reshuffles, milestones, and per-player keystroke summaries.
 
 ---
 
@@ -1223,6 +1247,17 @@
 - [ ] Return `MinigameResults`
   **Verification:** Unit test: each award triggers for appropriate scenarios.
 
+#### 7.3.4.14 `buildGameLog()`
+
+- [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
+- [ ] Log `end_start` action at each end (endNumber, totalEnds)
+- [ ] Log `throw` action for each stone thrown (userId, endNumber, angle, power, initialPosition)
+- [ ] Log `stone_rest` action when a stone comes to rest (userId, endNumber, finalPosition, distanceToBullseye)
+- [ ] Log `end_result` action at end conclusion (endNumber, stonePositions, scores, closestPlayer)
+- [ ] In `computeResults()`, build `GameLog` with `initialState` containing totalEnds, houseCenter, ringRadii
+- [ ] Return `GameLog` from `buildGameLog()`
+  **Verification:** Unit test: 3-end game, 4 players, verify 12 throw/stone_rest actions and 3 end_result actions.
+
 ---
 
 ### 7.3.5 Register Game in Minigame Registry
@@ -1673,6 +1708,16 @@
 - [ ] Return `MinigameResults`
   **Verification:** Each award triggers correctly.
 
+#### 7.4.6.12 `buildGameLog()`
+
+- [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
+- [ ] Log `wave_start` action at each wave (waveNumber, wallShape, requiredPlayers, positioningTime)
+- [ ] Log `wave_result` action at wall impact (waveNumber, success, playerPositions, matchPercentage)
+- [ ] Log `game_end` action with total waves completed, team score summary
+- [ ] In `computeResults()`, build `GameLog` with `initialState` containing totalWaves, gridSize, deadZones, playerCount
+- [ ] Return `GameLog` from `buildGameLog()`
+  **Verification:** Unit test: 8-wave game, verify 8 wave_start and 8 wave_result actions, final game_end action with team summary.
+
 ---
 
 ### 7.4.7 Register Game in Minigame Registry
@@ -1876,9 +1921,24 @@
 - [ ] Server CPU usage remains reasonable during simulation
   **Verification:** Physics handles 8 stones. No infinite loops. Acceptable performance.
 
-### 7.5.8 Phase 5 + 6 + 7 Coexistence Test
+### 7.5.8 Phase 5 + Phase 7 Coexistence Test
 
-- [ ] All Phase 5, 6, and 7 games function correctly
-- [ ] Mixed session: Phase 5 → Phase 7 → Phase 6 → Phase 7
-- [ ] Registry contains all 12 games
-  **Verification:** No regressions. All 12 games playable.
+- [ ] Verify Phase 5 games (Rhyme Time, Undercover Agent, Category Crash, Wiki-Race) still function correctly after Phase 7 deployment
+- [ ] Play a mixed session: Phase 5 game → Phase 7 game → Phase 5 game
+- [ ] Verify registry correctly contains all 8 games (Phase 5 + Phase 7)
+- [ ] Verify no naming collisions between Phase 5 and Phase 7 constants, event types, or component paths
+  **Verification:** No regressions. All 8 games playable in any order.
+
+### 7.5.9 Game History Integration Test
+
+- [ ] For each Phase 7 game: verify `buildGameLog()` produces a valid `GameLog` object
+- [ ] Verify game log is passed to `persistMatchResults()` and stored in the database
+- [ ] Verify `GET /api/rmhbox/history?matchId=...` returns the game log in `MatchDetailResponse`
+- [ ] Verify game-specific action types are present in the log for each game:
+  - Sequence Sam: `round_start`, `round_result`, `player_eliminated`
+  - Human Keyboard: `game_start`, `reshuffle`, `milestone`, `keystroke_summary`, `game_complete`
+  - Cursor Curling: `end_start`, `throw`, `stone_rest`, `end_result`
+  - Human Tetris: `wave_start`, `wave_result`, `game_end`
+  **Verification:** Game logs persist and are retrievable via API. Action types match spec.
+
+> **Note on parallel development:** Phase 7 can be implemented fully in parallel with Phase 6 and Phase 8 after Phase 5 is complete. The coexistence test above (7.5.8) validates Phase 7 against Phase 5. If other phases are also complete, run an expanded coexistence test covering all deployed phases to verify the full registry (up to 16 games).

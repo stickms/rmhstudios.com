@@ -352,6 +352,37 @@ export const FOF_QUESTION_DISTRIBUTION = { easy: 3, medium: 3, hard: 2 };
 - Answer submission time is server-stamped, not client-stamped.
 - Each player can only submit one answer per question. Duplicate submissions are silently ignored.
 
+### 1.14 Game History
+
+**Game History Level:** Summary Log
+
+Per-question results are compact and self-explanatory — full action replay isn't needed since the game has no spatial or creative state. The summary captures who answered what, how fast, and the pot dynamics.
+
+#### `initialState`
+
+```typescript
+interface FOFInitialState {
+  totalQuestions: number;
+  potStartValue: number;
+  potDecayRate: number;
+  playerIds: string[];
+  categoryPool: string[];           // categories selected for this session
+}
+```
+
+#### Actions Logged
+
+| Action Type | Payload | Recorded When |
+|---|---|---|
+| `QUESTION_START` | `{ questionIndex, questionText, options, category, potValue }` | Question is revealed |
+| `PLAYER_ANSWER` | `{ userId, selectedIndex, potValueAtSubmission, elapsedMs }` | Player locks in answer |
+| `PLAYER_PASS` | `{ userId, elapsedMs }` | Player passes or timer expires |
+| `QUESTION_RESULT` | `{ correctIndex, correctCount, incorrectCount, passCount, fastestUserId }` | Answer reveal phase |
+
+#### Replay Value
+
+Review who gambled on high pot values and lost, who was consistently fastest, and how the pot decayed across rounds. Useful for settling "I answered first!" disputes.
+
 ---
 
 ## 2. Undercover Editor
@@ -765,6 +796,42 @@ export const UE_CORRECT_VOTE_BONUS = 100;        // extra for writers who voted 
 export const UE_KEYWORD_FUZZY_THRESHOLD = 0.7;
 ```
 
+### 2.14 Game History
+
+**Game History Level:** Full Action Log
+
+Undercover Editor is one of the most replay-worthy games — watching the story evolve sentence by sentence and spotting where the Editor's subtle word swaps were hidden is endlessly entertaining. The full action log preserves every edit, vote, and reveal.
+
+#### `initialState`
+
+```typescript
+interface UEInitialState {
+  storyTitle: string;
+  originalStory: string[];          // original sentences
+  keyword: string;
+  editorUserId: string;
+  writerUserIds: string[];
+  turnsPerRound: number;
+}
+```
+
+#### Actions Logged
+
+| Action Type | Payload | Recorded When |
+|---|---|---|
+| `TURN_START` | `{ turnNumber, activeUserId, sentenceIndex }` | Writer/Editor turn begins |
+| `WORD_ADDED` | `{ userId, sentenceIndex, word }` | Writer adds a word |
+| `EDITOR_SWAP` | `{ sentenceIndex, originalWord, replacementWord, position }` | Editor makes a substitution |
+| `EDITOR_SKIP` | `{ sentenceIndex }` | Editor passes on editing |
+| `STORY_SNAPSHOT` | `{ sentences: string[] }` | End of each round — full story state |
+| `ACCUSATION_VOTE` | `{ voterId, suspectedUserId }` | Writer casts accusation vote |
+| `VOTE_RESULT` | `{ votes: Record<string, string[]>, editorCaught: boolean }` | Voting concludes (`votes`: suspectedUserId → voterIds) |
+| `FINAL_REVEAL` | `{ editorUserId, keyword, allSwaps: EditorSwap[] }` | Post-game reveal |
+
+#### Replay Value
+
+Step through the story's evolution turn by turn. See every word the Editor swapped, whether anyone noticed, and how close the accusation votes were. The `EDITOR_SWAP` entries are especially fun — compare original vs. replacement and judge how sneaky each edit was.
+
 ---
 
 ## 3. Minimalist Masterpiece
@@ -1157,6 +1224,41 @@ export const MM_RANK_3_POINTS = 250;
 export const MM_PARTICIPATION_POINTS = 100;
 export const MM_INVESTMENT_BONUS = 50;
 ```
+
+### 3.13 Game History
+
+**Game History Level:** Full Asset Log
+
+The stroke data and auction bids are the heart of Minimalist Masterpiece — revisiting the 5-stroke gallery and seeing who paid what for which artwork makes this log worth keeping in full.
+
+#### `initialState`
+
+```typescript
+interface MMInitialState {
+  prompt: string;
+  maxStrokes: number;
+  canvasSize: { width: number; height: number };
+  playerIds: string[];
+  startingCurrency: number;
+  auctionTimeLimitMs: number;
+}
+```
+
+#### Actions Logged
+
+| Action Type | Payload | Recorded When |
+|---|---|---|
+| `DRAWING_STROKE` | `{ userId, strokeIndex, points: Array<{ x: number; y: number }>, color, width }` | Player completes a stroke |
+| `DRAWING_UNDO` | `{ userId, strokeIndex }` | Player undoes a stroke |
+| `DRAWING_SUBMIT` | `{ userId, totalStrokes }` | Player submits final drawing |
+| `GALLERY_VIEW` | `{ drawingOrder: string[] }` | Gallery walk begins |
+| `AUCTION_BID` | `{ bidderId, drawingOwnerId, amount, previousBid }` | Player places a bid |
+| `AUCTION_CLOSE` | `{ drawingOwnerId, winnerId, finalPrice }` | Bidding closes on a piece |
+| `MARKET_VALUES` | `{ rankings: Array<{ userId: string; marketValue: number; rank: number }> }` | Final valuations computed |
+
+#### Replay Value
+
+Browse the gallery of 5-stroke creations for each prompt. The auction history shows who valued which art and how bidding wars played out. Compare the minimalist interpretations side-by-side — the constraint makes every stroke meaningful.
 
 ---
 
@@ -1558,6 +1660,39 @@ export const EC_EMOJI_PALETTE_SIZE = 200;
 - The curated emoji palette prevents the Producer from using flag emojis or letter emojis (🅰️ 🅱️ etc.) to spell out the title. These are excluded from the palette.
 - Maximum `EC_MAX_EMOJIS` prevents emoji spam.
 - Maximum `EC_MAX_GUESSES_PER_PLAYER` prevents brute-force guessing.
+
+### 4.15 Game History
+
+**Game History Level:** Summary Log
+
+The emoji sequences and guess highlights are the memorable moments — full keystroke logs of every guess attempt aren't needed. The summary captures each round's composition and the key guessing moments.
+
+#### `initialState`
+
+```typescript
+interface ECInitialState {
+  totalRounds: number;
+  maxEmojis: number;
+  maxGuessesPerPlayer: number;
+  playerIds: string[];
+  moviePool: string[];              // candidate titles for this session
+}
+```
+
+#### Actions Logged
+
+| Action Type | Payload | Recorded When |
+|---|---|---|
+| `ROUND_START` | `{ roundNumber, producerUserId, movieTitle }` | Round begins (title logged server-side) |
+| `EMOJI_PLACED` | `{ producerUserId, emoji, position, currentSequence: string[] }` | Producer places an emoji |
+| `CLOSE_GUESS` | `{ guesserId, guessText, similarity }` | A guess is flagged as close |
+| `CORRECT_GUESS` | `{ guesserId, guessText, elapsedMs }` | Someone guesses correctly |
+| `ROUND_TIMEOUT` | `{ finalSequence: string[], totalGuesses }` | Round ends with no correct guess |
+| `ROUND_RESULT` | `{ movieTitle, emojiSequence: string[], correctGuesserId, producerScore, guesserScores }` | Round scoring summary |
+
+#### Replay Value
+
+See each round's emoji composition alongside the movie title and marvel at how creative (or cryptic) the Producer was. The close-guess log is comedy gold — near-misses and creative interpretations are half the fun.
 
 ---
 

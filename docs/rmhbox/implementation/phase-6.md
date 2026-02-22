@@ -1,6 +1,8 @@
 # Phase 6: Minigames Set 2 — Fact or Friction, Undercover Editor, Minimalist Masterpiece, Emoji Cinema
 
-> **Depends on:** Phase 4 (Minigame Engine & Lifecycle), Phase 5 patterns (BaseMinigame, registry, constants, schemas)
+> **Depends on:** Phase 4 (Minigame Engine & Lifecycle), Phase 5 (first minigame set establishes implementation patterns: BaseMinigame extensions, registry registration, constants, Zod schemas, data pipelines, client components, and `buildGameLog()`)
+>
+> **Parallelizable with:** Phase 7, Phase 8 — after Phase 5 is complete, Phases 6, 7, and 8 can be implemented in parallel since they share no inter-dependencies. Each phase independently extends `BaseMinigame`, registers games in the shared registry, and follows the patterns established in Phase 5.
 >
 > This phase implements the second set of four minigames for RMHbox. Each game extends `BaseMinigame` from Phase 4 and integrates with the existing lobby, lifecycle, scoring, and award systems established in Phases 1–4.
 
@@ -374,6 +376,17 @@
   - [ ] **Comeback Kid** — had the biggest single-question positive score swing from negative territory (was at negative score, then answered correctly for the largest positive delta); icon: `trending-up`
 - [ ] Return `MinigameResults` with rankings, awards, and `gameSpecificData` containing `questionHistory`
   **Verification:** Unit test: construct scoring scenarios triggering each award → all 5 awards assigned correctly to different players.
+
+#### 6.1.6.14 `buildGameLog()`
+
+- [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
+- [ ] Log `question_start` action when a question is revealed (questionIndex, questionText, category, pointPotMax)
+- [ ] Log `answer_submitted` action per player answer (userId, answer, correct, timeMs, pointsAwarded)
+- [ ] Log `question_pass` action when a player passes (userId, questionIndex)
+- [ ] Log `question_end` action at question resolution (questionIndex, correctAnswer, potState, answerBreakdown)
+- [ ] In `computeResults()`, build `GameLog` with `initialState` containing total questions, point pot config, player list
+- [ ] Return `GameLog` from `buildGameLog()`
+  **Verification:** Unit test: 8-question game, verify log has 8 `question_start` and 8 `question_end` actions.
 
 ---
 
@@ -957,6 +970,21 @@
 - [ ] Return `MinigameResults` with rankings, awards, and `gameSpecificData` containing `edits`, `votes`, `winner`, `keyword`
   **Verification:** Unit test: construct scenarios for each award → all 5 awards assigned correctly.
 
+#### 6.2.6.18 `buildGameLog()`
+
+- [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
+- [ ] Log `turn_start` action on each turn (turnNumber, activeUserId)
+- [ ] Log `sentence_written` action when a player writes their sentence (userId, sentence)
+- [ ] Log `editor_swap` action when the Editor swaps a word (sentenceIndex, originalWord, newWord, position)
+- [ ] Log `editor_skip` action when Editor chooses not to edit
+- [ ] Log `story_snapshot` action at end of each turn cycle (full story text)
+- [ ] Log `accusation_vote` action for each vote (voterId, suspectedUserId)
+- [ ] Log `vote_result` action at vote resolution (votes tally, editorCaught boolean)
+- [ ] Log `final_reveal` action with Editor identity, keyword, and all swaps made
+- [ ] In `computeResults()`, build `GameLog` with `initialState` containing story prompt, keyword, Editor userId, turn order
+- [ ] Return `GameLog` from `buildGameLog()`
+  **Verification:** Unit test: 6-player game, 12 turns, verify log contains turn_start/sentence_written per turn, editor_swap/skip on Editor turns, and final reveal.
+
 ---
 
 ### 6.2.7 Register Game in Minigame Registry
@@ -1492,6 +1520,17 @@
   - [ ] **Shrewd Investor** — player who earned the highest investment bonus; icon: `trending-up`
 - [ ] Return `MinigameResults` with rankings, awards, and `gameSpecificData` containing drawings + bids
   **Verification:** Unit test: scenarios triggering each award → all 5 awards assigned correctly.
+
+#### 6.3.6.14 `buildGameLog()`
+
+- [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
+- [ ] Log `drawing_submitted` action per player drawing (userId, strokes serialized as polyline arrays, strokeCount)
+- [ ] Log `bid_placed` action during auction (bidderId, targetDrawingUserId, bidAmount)
+- [ ] Log `auction_result` action per drawing (drawingUserId, totalMarketValue, highestBidder, bidCount)
+- [ ] In `computeResults()`, build `GameLog` with `initialState` containing prompt text, canvasSize, maxStrokes, startingBudget
+- [ ] Include all drawing stroke data in game log for gallery replay
+- [ ] Return `GameLog` from `buildGameLog()`
+  **Verification:** Unit test: 5-player game, verify all 5 drawings captured in log with stroke data, bids recorded, and auction results present.
 
 ---
 
@@ -2065,6 +2104,17 @@
 - [ ] Return `MinigameResults` with rankings, awards, and `gameSpecificData` containing rounds summary
   **Verification:** Unit test: scenarios triggering each award → all 5 awards assigned correctly.
 
+#### 6.4.6.15 `buildGameLog()`
+
+- [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
+- [ ] Log `round_start` action when a new Producer is assigned (round, producerUserId, movieTitle)
+- [ ] Log `emoji_placed` action for each emoji the Producer adds (emoji, position, emojiSequence snapshot)
+- [ ] Log `guess_attempt` action for significant guesses only — close guesses and the correct guess (userId, guessText, result: 'close' | 'correct', matchScore)
+- [ ] Log `round_end` action at round completion (round, movieTitle, emojiSequence, correctGuesserId or null, guessCount)
+- [ ] In `computeResults()`, build `GameLog` with `initialState` containing total rounds, movie pool difficulty, player list
+- [ ] Return `GameLog` from `buildGameLog()`
+  **Verification:** Unit test: 4-round game, verify log contains round_start/round_end per round with correct movie titles and emoji sequences.
+
 ---
 
 ### 6.4.7 Register Game in Minigame Registry
@@ -2304,4 +2354,19 @@
 - [ ] Verify Phase 5 games (Rhyme Time, Undercover Agent, Category Crash, Wiki-Race) still function correctly after Phase 6 deployment
 - [ ] Play a mixed session: Phase 5 game → Phase 6 game → Phase 5 game
 - [ ] Verify registry correctly contains all 8 games
+- [ ] Verify no naming collisions between Phase 5 and Phase 6 constants, event types, or component paths
   **Verification:** No regressions. All 8 games playable in any order.
+
+### 6.5.9 Game History Integration Test
+
+- [ ] For each Phase 6 game: verify `buildGameLog()` produces a valid `GameLog` object
+- [ ] Verify game log is passed to `persistMatchResults()` and stored in the database
+- [ ] Verify `GET /api/rmhbox/history?matchId=...` returns the game log in `MatchDetailResponse`
+- [ ] Verify game-specific action types are present in the log for each game:
+  - Fact or Friction: `question_start`, `answer_submitted`, `question_end`
+  - Undercover Editor: `turn_start`, `sentence_written`, `editor_swap`, `accusation_vote`, `final_reveal`
+  - Minimalist Masterpiece: `drawing_submitted`, `bid_placed`, `auction_result`
+  - Emoji Cinema: `round_start`, `emoji_placed`, `guess_attempt`, `round_end`
+  **Verification:** Game logs persist and are retrievable via API. Action types match spec.
+
+> **Note on parallel development:** Phase 6 can be implemented fully in parallel with Phase 7 and Phase 8 after Phase 5 is complete. The coexistence test above (6.5.8) should be run once Phase 5 is available. If Phase 7 or Phase 8 are also complete, run a combined coexistence test covering all deployed phases.
