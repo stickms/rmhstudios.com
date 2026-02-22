@@ -54,9 +54,7 @@ export type SSEventHandler = {
     onReturnToLobby?: () => void;
 };
 
-const SOCKET_URL = typeof window !== 'undefined'
-    ? `${window.location.protocol}//${window.location.hostname}:7001`
-    : 'http://localhost:7001';
+const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:7001";
 
 const STORAGE_KEY_USER_ID = 'ss_mp_userId';
 const STORAGE_KEY_DISPLAY_NAME = 'ss_mp_displayName';
@@ -121,9 +119,9 @@ export class SynapseStormMultiplayerClient {
 
         this.socket = io(SOCKET_URL, {
             path: '/socket/',
-            transports: ['websocket', 'polling'],
+            transports: ['websocket'],
             reconnection: true,
-            reconnectionAttempts: 10,
+            reconnectionAttempts: 5,
             reconnectionDelay: 1000,
             reconnectionDelayMax: 5000,
         });
