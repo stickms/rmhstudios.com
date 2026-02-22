@@ -94,6 +94,25 @@
   --slice-card-bg: #1e1e24;
 }
 
+/* RMHbox — Party Game Design System */
+:root {
+  --rmhbox-bg: #0f0f1a;
+  --rmhbox-surface: #1a1a2e;
+  --rmhbox-surface-hover: #252540;
+  --rmhbox-border: #2a2a4a;
+  --rmhbox-text: #e0e0f0;
+  --rmhbox-text-muted: #8888aa;
+  --rmhbox-accent: #7c5cfc;
+  --rmhbox-accent-hover: #9b7eff;
+  --rmhbox-success: #4ade80;
+  --rmhbox-danger: #f87171;
+  --rmhbox-warning: #fbbf24;
+  --rmhbox-info: #60a5fa;
+  --rmhbox-font-display: 'Nunito', 'Segoe UI', sans-serif;
+  --rmhbox-font-body: 'Inter', 'Segoe UI', sans-serif;
+  --rmhbox-font-mono: 'JetBrains Mono', monospace;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
