@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { FaDiscord } from "react-icons/fa";
 import { MdEmail, MdLock, MdPerson } from "react-icons/md";
 
-const isProduction = process.env.NODE_ENV === 'production';
+const allowEmailAuth = !!process.env.NEXT_PUBLIC_ALLOW_EMAIL_ONLY_AUTH;
 
 function LoginForm() {
     const searchParams = useSearchParams();
@@ -106,7 +106,7 @@ function LoginForm() {
                         )}
                     </button>
 
-                    {!isProduction && (
+                    {allowEmailAuth && (
                         <>
                             <div className="relative">
                                 <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-800"></div></div>
