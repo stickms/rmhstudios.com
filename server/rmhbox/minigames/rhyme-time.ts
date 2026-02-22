@@ -3,7 +3,8 @@
  *
  * Players are given a root word each round and must submit as many
  * valid rhyming words as possible within the time limit. Submissions
- * are validated server-side against a pre-loaded rhyme dictionary.
+ * are validated server-side using the `rhyming-part` package, which
+ * checks phonetic rhyme matching via the CMU Pronouncing Dictionary.
  *
  * Scoring rewards rarity (how few players found the same word),
  * multi-syllable rhymes (2× multiplier), and speed (first player to
@@ -21,8 +22,8 @@
 import { BaseMinigame } from './base-minigame';
 import type { MinigameContext, MinigameResults } from './base-minigame';
 import type { PlayerRanking, Award } from '../../../lib/rmhbox/types';
-import type { RootWord, RhymeEntry } from '../../../lib/rmhbox/rhyme-time/dictionary-loader';
-import { loadRhymeDictionary, loadRootWords } from '../../../lib/rmhbox/rhyme-time/dictionary-loader';
+import type { RootWord } from '../../../lib/rmhbox/rhyme-time/dictionary-loader';
+import { loadRootWords, isValidRhyme, isMultiSyllableRhyme } from '../../../lib/rmhbox/rhyme-time/dictionary-loader';
 import { SubmitRhymeSchema } from '../../../lib/rmhbox/rhyme-time/schemas';
 import {
   RT_TOTAL_ROUNDS,
@@ -55,7 +56,7 @@ export interface PlayerSubmission {
   word: string;
   timestamp: number;
   isValid: boolean;
-  rhymeEntry: RhymeEntry | null;
+  isMultiSyllable: boolean;
 }
 
 /** Per-player submission list keyed by userId. */
@@ -109,8 +110,6 @@ export interface RhymeTimeState {
 // ─── Rhyme Time Minigame ─────────────────────────────────────────
 
 export class RhymeTimeMinigame extends BaseMinigame {
-  private rhymeDictionary: Map<string, RhymeEntry[]>;
-  private allValidWords: Set<string>;
   private rootWords: RootWord[];
   private usedRootWords: Set<string> = new Set();
   private state!: RhymeTimeState;
@@ -119,14 +118,7 @@ export class RhymeTimeMinigame extends BaseMinigame {
 
   constructor(context: MinigameContext) {
     super(context);
-    this.rhymeDictionary = loadRhymeDictionary();
     this.rootWords = loadRootWords();
-    this.allValidWords = new Set<string>();
-    this.rhymeDictionary.forEach((entries) => {
-      for (const entry of entries) {
-        this.allValidWords.add(entry.word);
-      }
-    });
   }
 
   // ─── Lifecycle ───────────────────────────────────────────────
@@ -360,16 +352,16 @@ export class RhymeTimeMinigame extends BaseMinigame {
       return;
     }
 
-    // Validate the rhyme server-side
+    // Validate the rhyme server-side using rhyming-part
     const rootWord = this.state.rootWord!;
     const isValid = this.validateRhyme(word, rootWord);
-    const rhymeEntry = isValid ? this.findRhymeEntry(word, rootWord) : null;
+    const multiSyllable = isValid ? isMultiSyllableRhyme(word, rootWord.syllableCount) : false;
 
     const submission: PlayerSubmission = {
       word,
       timestamp: Date.now(),
       isValid,
-      rhymeEntry,
+      isMultiSyllable: multiSyllable,
     };
 
     playerSubs.push(submission);
@@ -400,20 +392,7 @@ export class RhymeTimeMinigame extends BaseMinigame {
   }
 
   private validateRhyme(word: string, rootWord: RootWord): boolean {
-    // Must not be the root word itself
-    if (word === rootWord.word) return false;
-
-    // Must exist in the rhyme dictionary under the root word's rhymeEndSound
-    const entries = this.rhymeDictionary.get(rootWord.rhymeEndSound);
-    if (!entries) return false;
-
-    return entries.some((e) => e.word === word);
-  }
-
-  private findRhymeEntry(word: string, rootWord: RootWord): RhymeEntry | null {
-    const entries = this.rhymeDictionary.get(rootWord.rhymeEndSound);
-    if (!entries) return null;
-    return entries.find((e) => e.word === word) ?? null;
+    return isValidRhyme(word, rootWord.word);
   }
 
   // ─── Scoring ─────────────────────────────────────────────────
@@ -470,7 +449,7 @@ export class RhymeTimeMinigame extends BaseMinigame {
         const submitterCount = wordSubmitterCounts[sub.word] ?? 1;
         const rarity = this.computeRarity(submitterCount, totalPlayers);
         const basePoints = this.getBasePoints(rarity);
-        const isMultiSyllable = sub.rhymeEntry?.isMultiSyllableRhyme ?? false;
+        const isMultiSyllable = sub.isMultiSyllable;
         const multiSyllableMultiplier = isMultiSyllable ? RT_MULTI_SYLLABLE_MULT : 1;
 
         // Speed bonus: first submitter of a rare word
