@@ -11,9 +11,13 @@
 ## Table of Contents
 
 1. [Fact or Friction](#1-fact-or-friction)
+   - [1.15 MinigameRenderer & Client-Server Wiring](#115-minigamerenderer--client-server-wiring)
 2. [Undercover Editor](#2-undercover-editor)
+   - [2.15 MinigameRenderer & Client-Server Wiring](#215-minigamerenderer--client-server-wiring)
 3. [Minimalist Masterpiece](#3-minimalist-masterpiece)
+   - [3.14 MinigameRenderer & Client-Server Wiring](#314-minigamerenderer--client-server-wiring)
 4. [Emoji Cinema](#4-emoji-cinema)
+   - [4.16 MinigameRenderer & Client-Server Wiring](#416-minigamerenderer--client-server-wiring)
 
 ---
 
@@ -382,6 +386,77 @@ interface FOFInitialState {
 #### Replay Value
 
 Review who gambled on high pot values and lost, who was consistently fastest, and how the pot decayed across rounds. Useful for settling "I answered first!" disputes.
+
+### 1.15 MinigameRenderer & Client-Server Wiring
+
+#### MinigameRenderer Registration
+
+The `MinigameRenderer` lazy-loads the Fact or Friction component so it is only bundled when the game is active:
+
+```tsx
+const MINIGAME_COMPONENTS = {
+  'fact-or-friction': lazy(() => import('./minigames/fact-or-friction/FactOrFrictionGame')),
+  // …other minigames
+};
+```
+
+#### Client-Side Store Integration
+
+The client store listens for server-pushed actions and updates local state accordingly:
+
+```ts
+useEffect(() => {
+  const handlers: Record<string, (payload: unknown) => void> = {
+    FOF_QUESTION:      (p) => dispatch({ type: 'FOF_QUESTION', payload: p }),
+    FOF_POT_TICK:      (p) => dispatch({ type: 'FOF_POT_TICK', payload: p }),
+    FOF_ANSWER_LOCKED: (p) => dispatch({ type: 'FOF_ANSWER_LOCKED', payload: p }),
+    FOF_PLAYER_ANSWERED: (p) => dispatch({ type: 'FOF_PLAYER_ANSWERED', payload: p }),
+    FOF_ANSWER_REVEAL: (p) => dispatch({ type: 'FOF_ANSWER_REVEAL', payload: p }),
+    FOF_SCORE_UPDATE:  (p) => dispatch({ type: 'FOF_SCORE_UPDATE', payload: p }),
+    TIMER_TICK:        (p) => dispatch({ type: 'TIMER_TICK', payload: p }),
+  };
+  Object.entries(handlers).forEach(([ev, fn]) => socket.on(ev, fn));
+  return () => { Object.keys(handlers).forEach((ev) => socket.off(ev)); };
+}, [socket, dispatch]);
+```
+
+#### Client-Side Input Dispatch
+
+Players submit answers or pass via the socket:
+
+```ts
+// Lock in an answer
+socket.emit('SUBMIT_ANSWER', { selectedIndex });
+
+// Pass on the current question
+socket.emit('PASS_QUESTION', {});
+```
+
+#### Server-Side Handler Registration
+
+The server registers the game handler at startup:
+
+```ts
+import { FactOrFrictionGame } from './minigames/fact-or-friction/FactOrFrictionGame';
+
+MINIGAME_SERVER_REGISTRY.set('fact-or-friction', FactOrFrictionGame);
+```
+
+#### Sound Effect Integration
+
+| Event | Sound | Notes |
+|---|---|---|
+| Question revealed | `swoosh` | New question card flies in |
+| Pot ticking | *(visual only)* | Pot value decreases — no audio cue |
+| Answer locked | `click` | Confirms the player's selection |
+| Answer reveal (correct) | `scoreDing` | Positive feedback |
+| Answer reveal (wrong) | `buzzer` | Negative feedback |
+| Score update | `scoreDing` | Points awarded |
+| Timer warning | `countdownBeep` | Final seconds of the timer |
+
+#### Spectator Rendering
+
+Spectators see all player answer states (who has answered, but not which option until reveal), the current pot value, and the countdown timer. The component renders a read-only question card without clickable options.
 
 ---
 
@@ -832,6 +907,88 @@ interface UEInitialState {
 
 Step through the story's evolution turn by turn. See every word the Editor swapped, whether anyone noticed, and how close the accusation votes were. The `EDITOR_SWAP` entries are especially fun — compare original vs. replacement and judge how sneaky each edit was.
 
+### 2.15 MinigameRenderer & Client-Server Wiring
+
+#### MinigameRenderer Registration
+
+The `MinigameRenderer` lazy-loads the Undercover Editor component:
+
+```tsx
+const MINIGAME_COMPONENTS = {
+  'undercover-editor': lazy(() => import('./minigames/undercover-editor/UndercoverEditorGame')),
+  // …other minigames
+};
+```
+
+#### Client-Side Store Integration
+
+The client store listens for server-pushed actions and updates local state accordingly:
+
+```ts
+useEffect(() => {
+  const handlers: Record<string, (payload: unknown) => void> = {
+    UE_GAME_START:       (p) => dispatch({ type: 'UE_GAME_START', payload: p }),
+    UE_ROLE_ASSIGNED:    (p) => dispatch({ type: 'UE_ROLE_ASSIGNED', payload: p }),
+    UE_TURN_START:       (p) => dispatch({ type: 'UE_TURN_START', payload: p }),
+    UE_SENTENCE_ADDED:   (p) => dispatch({ type: 'UE_SENTENCE_ADDED', payload: p }),
+    UE_EDIT_PROMPT:      (p) => dispatch({ type: 'UE_EDIT_PROMPT', payload: p }),
+    UE_STORY_UPDATED:    (p) => dispatch({ type: 'UE_STORY_UPDATED', payload: p }),
+    UE_REVIEW_START:     (p) => dispatch({ type: 'UE_REVIEW_START', payload: p }),
+    UE_ACCUSATION_START: (p) => dispatch({ type: 'UE_ACCUSATION_START', payload: p }),
+    UE_VOTE_CAST:        (p) => dispatch({ type: 'UE_VOTE_CAST', payload: p }),
+    UE_REVEAL:           (p) => dispatch({ type: 'UE_REVEAL', payload: p }),
+    TIMER_TICK:          (p) => dispatch({ type: 'TIMER_TICK', payload: p }),
+  };
+  Object.entries(handlers).forEach(([ev, fn]) => socket.on(ev, fn));
+  return () => { Object.keys(handlers).forEach((ev) => socket.off(ev)); };
+}, [socket, dispatch]);
+```
+
+#### Client-Side Input Dispatch
+
+Players write sentences, the Editor edits words or skips, and everyone casts accusations:
+
+```ts
+// Writer adds a sentence
+socket.emit('WRITE_SENTENCE', { text });
+
+// Editor swaps a word (Editor only)
+socket.emit('EDIT_WORD', { sentenceIndex, wordIndex, newWord });
+
+// Editor skips editing (Editor only)
+socket.emit('SKIP_EDIT', {});
+
+// Cast an accusation vote
+socket.emit('CAST_ACCUSATION', { targetUserId });
+```
+
+#### Server-Side Handler Registration
+
+The server registers the game handler at startup:
+
+```ts
+import { UndercoverEditorGame } from './minigames/undercover-editor/UndercoverEditorGame';
+
+MINIGAME_SERVER_REGISTRY.set('undercover-editor', UndercoverEditorGame);
+```
+
+#### Sound Effect Integration
+
+| Event | Sound | Notes |
+|---|---|---|
+| Game start / role assigned | `swoosh` | Intro transition |
+| Turn start | `chime` | Signals a new turn |
+| Sentence added | `click` | Confirms submission |
+| Edit prompt (Editor only) | `swoosh` | Editor's turn to edit |
+| Review start | `swoosh` | Story review phase begins |
+| Accusation start | `swoosh` | Voting phase begins |
+| Vote cast | `click` | Confirms the player's vote |
+| Reveal | `victoryFanfare` | Editor identity and edits unveiled |
+
+#### Spectator Rendering
+
+Spectators have an omniscient view — they see the Editor's identity, the keyword, and all edits as they happen. The component checks `privateState.isSpectator` and shows a `RoleBadge` with full info.
+
 ---
 
 ## 3. Minimalist Masterpiece
@@ -1259,6 +1416,78 @@ interface MMInitialState {
 #### Replay Value
 
 Browse the gallery of 5-stroke creations for each prompt. The auction history shows who valued which art and how bidding wars played out. Compare the minimalist interpretations side-by-side — the constraint makes every stroke meaningful.
+
+### 3.14 MinigameRenderer & Client-Server Wiring
+
+#### MinigameRenderer Registration
+
+The `MinigameRenderer` lazy-loads the Minimalist Masterpiece component:
+
+```tsx
+const MINIGAME_COMPONENTS = {
+  'minimalist-masterpiece': lazy(() => import('./minigames/minimalist-masterpiece/MinimalistMasterpieceGame')),
+  // …other minigames
+};
+```
+
+#### Client-Side Store Integration
+
+The client store listens for server-pushed actions and updates local state accordingly:
+
+```ts
+useEffect(() => {
+  const handlers: Record<string, (payload: unknown) => void> = {
+    MM_PROMPT:             (p) => dispatch({ type: 'MM_PROMPT', payload: p }),
+    MM_DRAWING_SUBMITTED:  (p) => dispatch({ type: 'MM_DRAWING_SUBMITTED', payload: p }),
+    MM_GALLERY:            (p) => dispatch({ type: 'MM_GALLERY', payload: p }),
+    MM_AUCTION_START:      (p) => dispatch({ type: 'MM_AUCTION_START', payload: p }),
+    MM_BID_UPDATE:         (p) => dispatch({ type: 'MM_BID_UPDATE', payload: p }),
+    MM_BID_BROADCAST:      (p) => dispatch({ type: 'MM_BID_BROADCAST', payload: p }),
+    MM_RESULTS:            (p) => dispatch({ type: 'MM_RESULTS', payload: p }),
+    TIMER_TICK:            (p) => dispatch({ type: 'TIMER_TICK', payload: p }),
+  };
+  Object.entries(handlers).forEach(([ev, fn]) => socket.on(ev, fn));
+  return () => { Object.keys(handlers).forEach((ev) => socket.off(ev)); };
+}, [socket, dispatch]);
+```
+
+#### Client-Side Input Dispatch
+
+Players submit drawings and place bids:
+
+```ts
+// Submit a completed drawing
+socket.emit('SUBMIT_DRAWING', { strokes });   // strokes: Stroke[]
+
+// Place a bid during the auction
+socket.emit('PLACE_BID', { drawingId, amount });
+```
+
+#### Server-Side Handler Registration
+
+The server registers the game handler at startup:
+
+```ts
+import { MinimalistMasterpieceGame } from './minigames/minimalist-masterpiece/MinimalistMasterpieceGame';
+
+MINIGAME_SERVER_REGISTRY.set('minimalist-masterpiece', MinimalistMasterpieceGame);
+```
+
+#### Sound Effect Integration
+
+| Event | Sound | Notes |
+|---|---|---|
+| Prompt revealed | `goFanfare` | Drawing phase begins |
+| Drawing submitted | `click` | Confirms submission |
+| Gallery shown | `swoosh` | Gallery walk transition |
+| Auction start | `goFanfare` | Bidding phase begins |
+| Bid placed | `click` | Confirms the bid |
+| Bid broadcast (high value) | `scoreDing` | Highlights a significant bid |
+| Results | `victoryFanfare` | Final rankings revealed |
+
+#### Spectator Rendering
+
+During the drawing phase, spectators see all players' canvases live. During the auction, they see all bids. The component checks spectator status and renders a multi-canvas gallery view during the drawing phase.
 
 ---
 
@@ -1693,6 +1922,84 @@ interface ECInitialState {
 #### Replay Value
 
 See each round's emoji composition alongside the movie title and marvel at how creative (or cryptic) the Producer was. The close-guess log is comedy gold — near-misses and creative interpretations are half the fun.
+
+### 4.16 MinigameRenderer & Client-Server Wiring
+
+#### MinigameRenderer Registration
+
+The `MinigameRenderer` lazy-loads the Emoji Cinema component:
+
+```tsx
+const MINIGAME_COMPONENTS = {
+  'emoji-cinema': lazy(() => import('./minigames/emoji-cinema/EmojiCinemaGame')),
+  // …other minigames
+};
+```
+
+#### Client-Side Store Integration
+
+The client store listens for server-pushed actions and updates local state accordingly:
+
+```ts
+useEffect(() => {
+  const handlers: Record<string, (payload: unknown) => void> = {
+    EC_PRODUCER_ASSIGNED: (p) => dispatch({ type: 'EC_PRODUCER_ASSIGNED', payload: p }),
+    EC_MOVIE_ASSIGNED:    (p) => dispatch({ type: 'EC_MOVIE_ASSIGNED', payload: p }),
+    EC_EMOJI_UPDATED:     (p) => dispatch({ type: 'EC_EMOJI_UPDATED', payload: p }),
+    EC_GUESS_RESULT:      (p) => dispatch({ type: 'EC_GUESS_RESULT', payload: p }),
+    EC_CLOSE_GUESS:       (p) => dispatch({ type: 'EC_CLOSE_GUESS', payload: p }),
+    EC_CORRECT_GUESS:     (p) => dispatch({ type: 'EC_CORRECT_GUESS', payload: p }),
+    EC_ROUND_OVER:        (p) => dispatch({ type: 'EC_ROUND_OVER', payload: p }),
+    EC_GUESS_COUNT:       (p) => dispatch({ type: 'EC_GUESS_COUNT', payload: p }),
+    TIMER_TICK:           (p) => dispatch({ type: 'TIMER_TICK', payload: p }),
+  };
+  Object.entries(handlers).forEach(([ev, fn]) => socket.on(ev, fn));
+  return () => { Object.keys(handlers).forEach((ev) => socket.off(ev)); };
+}, [socket, dispatch]);
+```
+
+#### Client-Side Input Dispatch
+
+The Producer manages the emoji sequence while the Audience submits guesses:
+
+```ts
+// Producer adds an emoji (Producer only)
+socket.emit('ADD_EMOJI', { emoji, position });
+
+// Producer removes an emoji (Producer only)
+socket.emit('REMOVE_EMOJI', { position });
+
+// Producer reorders emojis (Producer only)
+socket.emit('REORDER_EMOJI', { fromIndex, toIndex });
+
+// Audience member submits a guess (Audience only)
+socket.emit('SUBMIT_GUESS', { guess });
+```
+
+#### Server-Side Handler Registration
+
+The server registers the game handler at startup:
+
+```ts
+import { EmojiCinemaGame } from './minigames/emoji-cinema/EmojiCinemaGame';
+
+MINIGAME_SERVER_REGISTRY.set('emoji-cinema', EmojiCinemaGame);
+```
+
+#### Sound Effect Integration
+
+| Event | Sound | Notes |
+|---|---|---|
+| Producer assigned | `swoosh` | New round begins |
+| Emoji updated | `click` | Emoji placed or removed |
+| Close guess | `chime` | A guess was close but not correct |
+| Correct guess | `scoreDing` | Someone guessed the movie |
+| Round over | `victoryFanfare` | Round scoring summary |
+| Timer warning | `countdownBeep` | Final seconds of the timer |
+
+#### Spectator Rendering
+
+Spectators have an omniscient view — they see the movie title, all guesses from all players, and the emoji composition in real-time. The component renders a split view showing the title, the emoji sequence, and a scrolling guess feed.
 
 ---
 
