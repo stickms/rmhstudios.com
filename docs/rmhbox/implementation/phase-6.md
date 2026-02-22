@@ -1,6 +1,8 @@
 # Phase 6: Minigames Set 2 — Fact or Friction, Undercover Editor, Minimalist Masterpiece, Emoji Cinema
 
-> **Depends on:** Phase 4 (Minigame Engine & Lifecycle), Phase 5 patterns (BaseMinigame, registry, constants, schemas)
+> **Depends on:** Phase 4 (Minigame Engine & Lifecycle), Phase 5 (first minigame set establishes implementation patterns: BaseMinigame extensions, registry registration, constants, Zod schemas, data pipelines, client components, and `buildGameLog()`)
+>
+> **Parallelizable with:** Phase 7, Phase 8 — after Phase 5 is complete, Phases 6, 7, and 8 can be implemented in parallel since they share no inter-dependencies. Each phase independently extends `BaseMinigame`, registers games in the shared registry, and follows the patterns established in Phase 5.
 >
 > This phase implements the second set of four minigames for RMHbox. Each game extends `BaseMinigame` from Phase 4 and integrates with the existing lobby, lifecycle, scoring, and award systems established in Phases 1–4.
 
@@ -2352,4 +2354,19 @@
 - [ ] Verify Phase 5 games (Rhyme Time, Undercover Agent, Category Crash, Wiki-Race) still function correctly after Phase 6 deployment
 - [ ] Play a mixed session: Phase 5 game → Phase 6 game → Phase 5 game
 - [ ] Verify registry correctly contains all 8 games
+- [ ] Verify no naming collisions between Phase 5 and Phase 6 constants, event types, or component paths
   **Verification:** No regressions. All 8 games playable in any order.
+
+### 6.5.9 Game History Integration Test
+
+- [ ] For each Phase 6 game: verify `buildGameLog()` produces a valid `GameLog` object
+- [ ] Verify game log is passed to `persistMatchResults()` and stored in the database
+- [ ] Verify `GET /api/rmhbox/history?matchId=...` returns the game log in `MatchDetailResponse`
+- [ ] Verify game-specific action types are present in the log for each game:
+  - Fact or Friction: `question_start`, `answer_submitted`, `question_end`
+  - Undercover Editor: `turn_start`, `sentence_written`, `editor_swap`, `accusation_vote`, `final_reveal`
+  - Minimalist Masterpiece: `drawing_submitted`, `bid_placed`, `auction_result`
+  - Emoji Cinema: `round_start`, `emoji_placed`, `guess_attempt`, `round_end`
+  **Verification:** Game logs persist and are retrievable via API. Action types match spec.
+
+> **Note on parallel development:** Phase 6 can be implemented fully in parallel with Phase 7 and Phase 8 after Phase 5 is complete. The coexistence test above (6.5.8) should be run once Phase 5 is available. If Phase 7 or Phase 8 are also complete, run a combined coexistence test covering all deployed phases.

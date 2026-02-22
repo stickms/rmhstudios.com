@@ -2141,6 +2141,15 @@
 - [ ] **Disconnection/reconnection across all games:** verify reconnection restores correct state for each game
   **Verification:** Reconnected players resume correctly in all 4 games.
 
+- [ ] **Game history integration:** verify `buildGameLog()` produces valid `GameLog` objects for each game
+  - [ ] Rhyme Time: log contains `round_start`, `submission`, `round_end` actions
+  - [ ] Undercover Agent: log contains `turn_start`, `clue_given`, `guess`, `tile_reveal`, `game_end` actions
+  - [ ] Category Crash: log contains `round_start`, `answers_locked`, `crash`, `round_end` actions
+  - [ ] Wiki-Race: log contains `navigate`, `go_back`, `player_finished`, `game_end` actions
+  - [ ] Verify game log is passed to `persistMatchResults()` and stored in the `rmhbox_match.gameLog` column
+  - [ ] Verify `GET /api/rmhbox/history?matchId=...` returns the game log in `MatchDetailResponse`
+  **Verification:** All 4 games produce valid game logs. Logs persist and are retrievable via the history API.
+
 ---
 
-> **Phase 5 Complete** when all checkboxes are checked and all verification steps pass. Proceed to Phase 6 (Minigames Set 2) after completion.
+> **Phase 5 Complete** when all checkboxes are checked and all verification steps pass. After Phase 5 is complete, Phases 6, 7, and 8 can be implemented **in parallel** — they share no inter-dependencies and each independently extends the patterns established here.

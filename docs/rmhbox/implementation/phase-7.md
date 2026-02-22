@@ -1,6 +1,8 @@
 # Phase 7: Minigames Set 3 — Sequence Sam, Human Keyboard, Cursor Curling, Human Tetris
 
-> **Depends on:** Phase 4 (Minigame Engine & Lifecycle), Phase 5/6 patterns (BaseMinigame, registry, constants, schemas)
+> **Depends on:** Phase 4 (Minigame Engine & Lifecycle), Phase 5 (first minigame set establishes implementation patterns: BaseMinigame extensions, registry registration, constants, Zod schemas, data pipelines, client components, and `buildGameLog()`)
+>
+> **Parallelizable with:** Phase 6, Phase 8 — after Phase 5 is complete, Phases 6, 7, and 8 can be implemented in parallel since they share no inter-dependencies. Each phase independently extends `BaseMinigame`, registers games in the shared registry, and follows the patterns established in Phase 5.
 >
 > This phase implements the third set of four minigames for RMHbox. Each game extends `BaseMinigame` from Phase 4. Notable in this phase: Cursor Curling includes a custom server-side 2D physics simulation, and Human Keyboard and Human Tetris are cooperative games.
 
@@ -1919,9 +1921,24 @@
 - [ ] Server CPU usage remains reasonable during simulation
   **Verification:** Physics handles 8 stones. No infinite loops. Acceptable performance.
 
-### 7.5.8 Phase 5 + 6 + 7 Coexistence Test
+### 7.5.8 Phase 5 + Phase 7 Coexistence Test
 
-- [ ] All Phase 5, 6, and 7 games function correctly
-- [ ] Mixed session: Phase 5 → Phase 7 → Phase 6 → Phase 7
-- [ ] Registry contains all 12 games
-  **Verification:** No regressions. All 12 games playable.
+- [ ] Verify Phase 5 games (Rhyme Time, Undercover Agent, Category Crash, Wiki-Race) still function correctly after Phase 7 deployment
+- [ ] Play a mixed session: Phase 5 game → Phase 7 game → Phase 5 game
+- [ ] Verify registry correctly contains all 8 games (Phase 5 + Phase 7)
+- [ ] Verify no naming collisions between Phase 5 and Phase 7 constants, event types, or component paths
+  **Verification:** No regressions. All 8 games playable in any order.
+
+### 7.5.9 Game History Integration Test
+
+- [ ] For each Phase 7 game: verify `buildGameLog()` produces a valid `GameLog` object
+- [ ] Verify game log is passed to `persistMatchResults()` and stored in the database
+- [ ] Verify `GET /api/rmhbox/history?matchId=...` returns the game log in `MatchDetailResponse`
+- [ ] Verify game-specific action types are present in the log for each game:
+  - Sequence Sam: `round_start`, `round_result`, `player_eliminated`
+  - Human Keyboard: `game_start`, `reshuffle`, `milestone`, `keystroke_summary`, `game_complete`
+  - Cursor Curling: `end_start`, `throw`, `stone_rest`, `end_result`
+  - Human Tetris: `wave_start`, `wave_result`, `game_end`
+  **Verification:** Game logs persist and are retrievable via API. Action types match spec.
+
+> **Note on parallel development:** Phase 7 can be implemented fully in parallel with Phase 6 and Phase 8 after Phase 5 is complete. The coexistence test above (7.5.8) validates Phase 7 against Phase 5. If other phases are also complete, run an expanded coexistence test covering all deployed phases to verify the full registry (up to 16 games).

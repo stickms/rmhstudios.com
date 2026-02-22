@@ -1,6 +1,8 @@
 # Phase 8: Minigames Set 4 — Identity Crisis, Ranking File, Pixel Pushers, Scroll Soul
 
-> **Depends on:** Phase 4 (Minigame Engine & Lifecycle), Phase 5/6/7 patterns (BaseMinigame, registry, constants, schemas)
+> **Depends on:** Phase 4 (Minigame Engine & Lifecycle), Phase 5 (first minigame set establishes implementation patterns: BaseMinigame extensions, registry registration, constants, Zod schemas, data pipelines, client components, and `buildGameLog()`)
+>
+> **Parallelizable with:** Phase 6, Phase 7 — after Phase 5 is complete, Phases 6, 7, and 8 can be implemented in parallel since they share no inter-dependencies. Each phase independently extends `BaseMinigame`, registers games in the shared registry, and follows the patterns established in Phase 5.
 >
 > This phase implements the fourth and final set of four minigames for RMHbox. Each game extends `BaseMinigame` from Phase 4 and integrates with the existing lobby, lifecycle, scoring, and award systems. Notable in this phase: Identity Crisis features complex per-player information masking (each player sees all identities except their own), Pixel Pushers includes a server-side 2D physics simulation with polarity mechanics, and Scroll Soul requires procedural level generation with a server-authoritative platformer physics loop.
 
@@ -3342,30 +3344,50 @@ For each Phase 8 game (Identity Crisis, Ranking File, Pixel Pushers, Scroll Soul
 
 ---
 
-### 8.5.9 Phase 5+6+7+8 Coexistence Test
+### 8.5.9 Phase 5 + Phase 8 Coexistence Test
+
+- [ ] Verify Phase 5 games (Rhyme Time, Undercover Agent, Category Crash, Wiki-Race) still function correctly after Phase 8 deployment
+- [ ] Play a mixed session: Phase 5 game → Phase 8 game → Phase 5 game
+- [ ] Verify registry correctly contains all 8 games (Phase 5 + Phase 8)
+- [ ] Verify no naming collisions between Phase 5 and Phase 8 constants (`IC_*`, `RF_*`, `PP_*`, `SC_*` prefixes), event types, Zod schema names, component file paths, or award IDs
+  **Verification:** No regressions. All 8 games playable in any order.
+
+### 8.5.10 Full Coexistence Test (All Phases)
+
+> **Note:** This test should be run once all phases (5, 6, 7, 8) are deployed. Since Phases 6, 7, and 8 are developed in parallel, this combined test validates the final integration.
 
 - [ ] Full integration: register ALL games from Phases 5, 6, 7, and 8 simultaneously
-- [ ] Verify `getAllMinigames().length === 16` (assuming 4 games per phase)
+- [ ] Verify `getAllMinigames().length === 16` (4 games per phase × 4 phases)
 - [ ] Verify random selection draws from all 16 games
 - [ ] Verify a complete 16-game session plays every game exactly once
 - [ ] Verify cumulative scoring across all 16 games produces correct final leaderboard
 - [ ] Verify lobby session can handle the full variety of game mechanics:
   - Text-based games (quizzes, voting)
-  - Real-time physics games (Pixel Pushers, Scroll Soul)
-  - Social deduction (Identity Crisis)
-  - DnD-based games (Ranking File)
+  - Real-time physics games (Pixel Pushers, Scroll Soul, Cursor Curling)
+  - Social deduction (Identity Crisis, Undercover Editor, Undercover Agent)
+  - Creative games (Minimalist Masterpiece, Emoji Cinema)
   - Cooperative and competitive modes
-- [ ] Verify no naming collisions in:
-  - Constants (`IC_*`, `RF_*`, `PP_*`, `SC_*` prefixes)
+- [ ] Verify no naming collisions across all 16 games:
+  - Constants (`IC_*`, `RF_*`, `PP_*`, `SC_*`, `RT_*`, `UA_*`, `CC_*`, `WR_*`, `FOF_*`, `UE_*`, `MM_*`, `EC_*`, `SS_*`, `HK_*`, `CU_*`, `HT_*` prefixes)
   - WebSocket event types
   - Zod schema names
   - Component file paths
   - Award IDs
   **Verification:** All 16 games coexist. No namespace collisions. Full session completes.
 
----
+### 8.5.11 Game History Integration Test
 
-### 8.5.10 Performance and Stress Testing
+- [ ] For each Phase 8 game: verify `buildGameLog()` produces a valid `GameLog` object
+- [ ] Verify game log is passed to `persistMatchResults()` and stored in the database
+- [ ] Verify `GET /api/rmhbox/history?matchId=...` returns the game log in `MatchDetailResponse`
+- [ ] Verify game-specific action types are present in the log for each game:
+  - Identity Crisis: `question_asked`, `vote_cast`, `vote_result`, `early_guess`, `final_guess`, `identity_reveal`
+  - Ranking File: `round_start`, `ranking_submitted`, `round_result`
+  - Pixel Pushers: `level_start`, `waypoint_hit`, `polarity_flip`, `level_complete`
+  - Scroll Soul: `player_eliminated`, `ad_spawned`, `ad_dismissed`, `speed_increase`
+  **Verification:** Game logs persist and are retrievable via API. Action types match spec.
+
+### 8.5.12 Performance and Stress Testing
 
 - [ ] Stress test: 8-player lobby, rapid fire through all 4 Phase 8 games:
   - Identity Crisis → Ranking File → Pixel Pushers → Scroll Soul
@@ -3391,4 +3413,6 @@ For each Phase 8 game (Identity Crisis, Ranking File, Pixel Pushers, Scroll Soul
 2. **Ranking File** — consensus calculation algorithm must handle edge cases (ties, partial rankings)
 3. **Pixel Pushers** — physics simulation must be deterministic per-tick and server-authoritative; test collision resolution thoroughly
 4. **Scroll Soul** — procedural generation must guarantee reachability; fake ad system needs careful per-player isolation
+
+> **Parallel Development Note:** Phase 8 can be developed in parallel with Phase 6 and Phase 7, as all three depend only on Phase 4 (engine) + Phase 5 (established patterns). The Phase 5 + Phase 8 Coexistence Test (§8.5.9) validates independent operation. The Full Coexistence Test (§8.5.10) should be run as a final integration step once all phases are merged.
 
