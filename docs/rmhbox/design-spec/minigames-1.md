@@ -11,9 +11,13 @@
 ## Table of Contents
 
 1. [Rhyme Time](#1-rhyme-time)
+   - [1.15 MinigameRenderer & Client-Server Wiring](#115-minigamerenderer--client-server-wiring)
 2. [Undercover Agent](#2-undercover-agent)
+   - [2.16 MinigameRenderer & Client-Server Wiring](#216-minigamerenderer--client-server-wiring)
 3. [Category Crash](#3-category-crash)
+   - [3.14 MinigameRenderer & Client-Server Wiring](#314-minigamerenderer--client-server-wiring)
 4. [Wiki-Race](#4-wiki-race)
+   - [4.16 MinigameRenderer & Client-Server Wiring](#416-minigamerenderer--client-server-wiring)
 
 ---
 
@@ -398,6 +402,91 @@ interface RhymeTimeInitialState {
 
 **Replay Value:** Reviewing who discovered the rarest rhymes, comparing vocabulary breadth across players, and spotting the creative or unexpected submissions that earned rarity bonuses.
 
+### 1.15 MinigameRenderer & Client-Server Wiring
+
+**MinigameRenderer Registration**
+
+Add a lazy-load entry to the `MinigameRenderer` component map so that `RhymeTimeGame` is code-split and loaded on demand:
+
+```typescript
+// In components/rmhbox/MinigameRenderer.tsx
+const MINIGAME_COMPONENTS: Record<string, React.LazyExoticComponent<React.ComponentType>> = {
+  'rhyme-time': lazy(() => import('./minigames/rhyme-time/RhymeTimeGame')),
+  // ...other games
+};
+```
+
+The `MinigameRenderer` renders the active game inside a `<Suspense>` boundary with a loading spinner fallback. It reads `lobby.currentGame.minigameId` from the Zustand store to select which component to render.
+
+**Client-Side Store Integration**
+
+`RhymeTimeGame.tsx` reads game state from the Zustand store and reacts to server-sent actions:
+
+```typescript
+const { gameState, lobby } = useRMHboxStore();
+const lastAction = gameState.lastAction as GameAction | undefined;
+
+// React to game-specific actions:
+useEffect(() => {
+  if (!lastAction) return;
+  switch (lastAction.type) {
+    case 'RT_ROUND_START':     // Update local phase to INPUT, display root word
+    case 'RT_RHYME_SUBMITTED': // Add submission pill to list
+    case 'RT_SUBMISSION_COUNT':// Update submission progress indicator
+    case 'RT_ROUND_RESULTS':   // Transition to results view
+    case 'RT_INTERMISSION':    // Show intermission screen
+    case 'TIMER_TICK':         // Update countdown display
+  }
+}, [lastAction]);
+```
+
+**Client-Side Input Dispatch**
+
+All player inputs are sent through the generic `rmhbox:game:input` event with game-specific action names:
+
+```typescript
+import { getSocket } from '@/lib/rmhbox/socket';
+
+// Submit a rhyme
+function submitRhyme(word: string) {
+  getSocket()?.emit('rmhbox:game:input', {
+    action: 'SUBMIT_RHYME',
+    data: { word },
+  });
+}
+```
+
+The server's `GameCoordinator.onInput()` routes this to `RhymeTimeGame.handleInput(userId, 'SUBMIT_RHYME', { word })`.
+
+**Server-Side Handler Registration**
+
+Register the server handler class in `MINIGAME_SERVER_REGISTRY` so the `GameCoordinator` can instantiate it:
+
+```typescript
+// In server/rmhbox/minigames/rhyme-time.ts (bottom of file)
+import { MINIGAME_SERVER_REGISTRY } from '../game-coordinator';
+MINIGAME_SERVER_REGISTRY.set('rhyme-time', RhymeTimeGame);
+```
+
+The `GameCoordinator` instantiates `new RhymeTimeGame(context)` when the lobby transitions to PLAYING with this minigame selected. The `context` provides `broadcastToLobby`, `sendToPlayer`, `sendToSpectators`, and `onComplete` callbacks.
+
+**Sound Effect Integration**
+
+Map game events to the shared sound system (`lib/rmhbox/audio.ts`):
+
+| Game Event | Sound | Trigger |
+|---|---|---|
+| Round starts | `goFanfare` | `RT_ROUND_START` received |
+| Valid submission | `scoreDing` | `RT_RHYME_SUBMITTED` with `valid: true` |
+| Invalid submission | `buzzer` | `RT_RHYME_SUBMITTED` with `valid: false` |
+| Round results shown | `victoryFanfare` | `RT_ROUND_RESULTS` received |
+| Timer warning (≤5s) | `countdownBeep` | `TIMER_TICK` with `timeRemaining <= 5` |
+| Phase transition | `swoosh` | Phase changes between rounds |
+
+**Spectator Rendering**
+
+Spectators receive the same `RT_*` actions but see an aggregated view: all players' submission counts (not content) during INPUT phase, and full word breakdowns during RESULTS. The `RhymeTimeGame` component checks `lobby.currentGame.privateState` — if absent (spectator), it renders a read-only scoreboard instead of the input field.
+
 ---
 
 ## 2. Undercover Agent
@@ -767,6 +856,111 @@ interface UndercoverAgentInitialState {
 | `game_end` | `{ winningTeam: string; winCondition: 'all_found' \| 'assassin' \| 'stalemate'; remainingWords: { teamA: string[]; teamB: string[] } }` | Game concludes |
 
 **Replay Value:** Reliving the spymaster's strategy — which clues linked multiple words, where operatives went wrong, and the dramatic assassin-hit moments. Full logs allow step-by-step replay of the entire match.
+
+### 2.16 MinigameRenderer & Client-Server Wiring
+
+**MinigameRenderer Registration**
+
+Add a lazy-load entry to the `MinigameRenderer` component map so that `UndercoverAgentGame` is code-split and loaded on demand:
+
+```typescript
+// In components/rmhbox/MinigameRenderer.tsx
+const MINIGAME_COMPONENTS: Record<string, React.LazyExoticComponent<React.ComponentType>> = {
+  'undercover-agent': lazy(() => import('./minigames/undercover-agent/UndercoverAgentGame')),
+  // ...other games
+};
+```
+
+The `MinigameRenderer` renders the active game inside a `<Suspense>` boundary with a loading spinner fallback. It reads `lobby.currentGame.minigameId` from the Zustand store to select which component to render.
+
+**Client-Side Store Integration**
+
+`UndercoverAgentGame.tsx` reads game state from the Zustand store and reacts to server-sent actions:
+
+```typescript
+const { gameState, lobby } = useRMHboxStore();
+const lastAction = gameState.lastAction as GameAction | undefined;
+
+// React to game-specific actions:
+useEffect(() => {
+  if (!lastAction) return;
+  switch (lastAction.type) {
+    case 'UA_SETUP':         // Initialize board and team assignments
+    case 'UA_KEY_CARD':      // Reveal key card to spymaster
+    case 'UA_CLUE_PHASE':    // Transition to clue-giving phase
+    case 'UA_CLUE_GIVEN':    // Display spymaster's clue and number
+    case 'UA_GUESS_PHASE':   // Transition to operative guessing phase
+    case 'UA_TILE_REVEALED': // Flip tile and show its type
+    case 'UA_TURN_END':      // End current team's turn
+    case 'UA_GAME_OVER':     // Show final results and winning team
+    case 'TIMER_TICK':       // Update countdown display
+  }
+}, [lastAction]);
+```
+
+**Client-Side Input Dispatch**
+
+All player inputs are sent through the generic `rmhbox:game:input` event with game-specific action names:
+
+```typescript
+import { getSocket } from '@/lib/rmhbox/socket';
+
+// Give a clue (spymaster only)
+function giveClue(word: string, number: number) {
+  getSocket()?.emit('rmhbox:game:input', {
+    action: 'GIVE_CLUE',
+    data: { word, number },
+  });
+}
+
+// Guess a tile (operative only)
+function guessTile(position: number) {
+  getSocket()?.emit('rmhbox:game:input', {
+    action: 'GUESS_TILE',
+    data: { position },
+  });
+}
+
+// End turn voluntarily
+function endTurn() {
+  getSocket()?.emit('rmhbox:game:input', {
+    action: 'END_TURN',
+    data: {},
+  });
+}
+```
+
+The server's `GameCoordinator.onInput()` routes this to `UndercoverAgentGame.handleInput(userId, 'GIVE_CLUE', { word, number })`.
+
+**Server-Side Handler Registration**
+
+Register the server handler class in `MINIGAME_SERVER_REGISTRY` so the `GameCoordinator` can instantiate it:
+
+```typescript
+// In server/rmhbox/minigames/undercover-agent.ts (bottom of file)
+import { MINIGAME_SERVER_REGISTRY } from '../game-coordinator';
+MINIGAME_SERVER_REGISTRY.set('undercover-agent', UndercoverAgentGame);
+```
+
+The `GameCoordinator` instantiates `new UndercoverAgentGame(context)` when the lobby transitions to PLAYING with this minigame selected. The `context` provides `broadcastToLobby`, `sendToPlayer`, `sendToSpectators`, and `onComplete` callbacks.
+
+**Sound Effect Integration**
+
+Map game events to the shared sound system (`lib/rmhbox/audio.ts`):
+
+| Game Event | Sound | Trigger |
+|---|---|---|
+| Setup / team reveal | `swoosh` | `UA_SETUP` received |
+| Clue given | `click` | `UA_CLUE_GIVEN` received |
+| Correct agent revealed | `scoreDing` | `UA_TILE_REVEALED` with matching team type |
+| Wrong guess (bystander) | `buzzer` | `UA_TILE_REVEALED` with `type: 'neutral'` |
+| Assassin hit | `buzzer` (loud) | `UA_TILE_REVEALED` with `type: 'assassin'` |
+| Turn end | `swoosh` | `UA_TURN_END` received |
+| Game over | `victoryFanfare` | `UA_GAME_OVER` received |
+
+**Spectator Rendering**
+
+Spectators receive the same `UA_*` actions but see the full key card (omniscient view), all teams' moves, and tile types. The `UndercoverAgentGame` component checks the player's role from `privateState` — spymasters see the `SpymasterKey` overlay, operatives see the standard grid, and spectators see the full omniscient board with all tile identities visible.
 
 ---
 
@@ -1173,6 +1367,117 @@ interface CategoryCrashInitialState {
 | `game_end` | `{ finalScores: Array<{ userId: string; totalScore: number; rank: number }> }` | All rounds complete |
 
 **Replay Value:** Seeing who came up with the most creative unique answers, laughing at the answers that multiple players chose (and got crashed), and comparing strategies for obscure vs. safe category responses.
+
+### 3.14 MinigameRenderer & Client-Server Wiring
+
+**MinigameRenderer Registration**
+
+Add a lazy-load entry to the `MinigameRenderer` component map so that `CategoryCrashGame` is code-split and loaded on demand:
+
+```typescript
+// In components/rmhbox/MinigameRenderer.tsx
+const MINIGAME_COMPONENTS: Record<string, React.LazyExoticComponent<React.ComponentType>> = {
+  'category-crash': lazy(() => import('./minigames/category-crash/CategoryCrashGame')),
+  // ...other games
+};
+```
+
+The `MinigameRenderer` renders the active game inside a `<Suspense>` boundary with a loading spinner fallback. It reads `lobby.currentGame.minigameId` from the Zustand store to select which component to render.
+
+**Client-Side Store Integration**
+
+`CategoryCrashGame.tsx` reads game state from the Zustand store and reacts to server-sent actions:
+
+```typescript
+const { gameState, lobby } = useRMHboxStore();
+const lastAction = gameState.lastAction as GameAction | undefined;
+
+// React to game-specific actions:
+useEffect(() => {
+  if (!lastAction) return;
+  switch (lastAction.type) {
+    case 'CC_ROUND_START':       // Display letter and categories
+    case 'CC_ANSWER_SAVED':      // Confirm answer saved locally
+    case 'CC_ANSWERS_LOCKED':    // Transition to peer review phase
+    case 'CC_PEER_REVIEW_START': // Show crash voting UI
+    case 'CC_CRASH_UPDATE':      // Update crash vote counts
+    case 'CC_ROUND_RESULTS':     // Show round scoring breakdown
+    case 'TIMER_TICK':           // Update countdown display
+  }
+}, [lastAction]);
+```
+
+**Client-Side Input Dispatch**
+
+All player inputs are sent through the generic `rmhbox:game:input` event with game-specific action names:
+
+```typescript
+import { getSocket } from '@/lib/rmhbox/socket';
+
+// Save answers during input phase
+function saveAnswers(answers: Record<string, string>) {
+  getSocket()?.emit('rmhbox:game:input', {
+    action: 'SAVE_ANSWERS',
+    data: { answers },
+  });
+}
+
+// Submit final answers
+function submitAnswers(answers: Record<string, string>) {
+  getSocket()?.emit('rmhbox:game:input', {
+    action: 'SUBMIT_ANSWERS',
+    data: { answers },
+  });
+}
+
+// Crash another player's answer during peer review
+function crashAnswer(targetUserId: string, categoryIndex: number) {
+  getSocket()?.emit('rmhbox:game:input', {
+    action: 'CRASH_ANSWER',
+    data: { targetUserId, categoryIndex },
+  });
+}
+
+// Remove a crash vote
+function uncrashAnswer(targetUserId: string, categoryIndex: number) {
+  getSocket()?.emit('rmhbox:game:input', {
+    action: 'UNCRASH_ANSWER',
+    data: { targetUserId, categoryIndex },
+  });
+}
+```
+
+The server's `GameCoordinator.onInput()` routes this to `CategoryCrashGame.handleInput(userId, 'SAVE_ANSWERS', { answers })`.
+
+**Server-Side Handler Registration**
+
+Register the server handler class in `MINIGAME_SERVER_REGISTRY` so the `GameCoordinator` can instantiate it:
+
+```typescript
+// In server/rmhbox/minigames/category-crash.ts (bottom of file)
+import { MINIGAME_SERVER_REGISTRY } from '../game-coordinator';
+MINIGAME_SERVER_REGISTRY.set('category-crash', CategoryCrashGame);
+```
+
+The `GameCoordinator` instantiates `new CategoryCrashGame(context)` when the lobby transitions to PLAYING with this minigame selected. The `context` provides `broadcastToLobby`, `sendToPlayer`, `sendToSpectators`, and `onComplete` callbacks.
+
+**Sound Effect Integration**
+
+Map game events to the shared sound system (`lib/rmhbox/audio.ts`):
+
+| Game Event | Sound | Trigger |
+|---|---|---|
+| Round start letter reveal | `goFanfare` | `CC_ROUND_START` received |
+| Answers locked | `click` | `CC_ANSWERS_LOCKED` received |
+| Peer review start | `swoosh` | `CC_PEER_REVIEW_START` received |
+| Crash placed | `buzzer` | `CC_CRASH_UPDATE` with crash added |
+| Crash removed | `click` | `CC_CRASH_UPDATE` with crash removed |
+| Round results | `victoryFanfare` | `CC_ROUND_RESULTS` received |
+| Timer warning (≤5s) | `countdownBeep` | `TIMER_TICK` with `timeRemaining <= 5` |
+
+**Spectator Rendering**
+
+Spectators receive the same `CC_*` actions but see all answers (de-anonymized) and crash counts in real-time. The `CategoryCrashGame` component detects spectator status by checking if the current user is in the players list. If absent, it renders a read-only overview showing all players' answers and crash tallies instead of the answer input form.
 
 ---
 
@@ -1598,6 +1903,100 @@ interface WikiRaceInitialState {
 | `game_end` | `{ finalScores: Array<{ userId: string; totalScore: number; rank: number }> }` | All rounds complete |
 
 **Replay Value:** Comparing the wildly different paths players took between the same two articles, seeing who found clever shortcuts vs. who wandered through dozens of articles, and measuring paths against the optimal route.
+
+### 4.16 MinigameRenderer & Client-Server Wiring
+
+**MinigameRenderer Registration**
+
+Add a lazy-load entry to the `MinigameRenderer` component map so that `WikiRaceGame` is code-split and loaded on demand:
+
+```typescript
+// In components/rmhbox/MinigameRenderer.tsx
+const MINIGAME_COMPONENTS: Record<string, React.LazyExoticComponent<React.ComponentType>> = {
+  'wiki-race': lazy(() => import('./minigames/wiki-race/WikiRaceGame')),
+  // ...other games
+};
+```
+
+The `MinigameRenderer` renders the active game inside a `<Suspense>` boundary with a loading spinner fallback. It reads `lobby.currentGame.minigameId` from the Zustand store to select which component to render.
+
+**Client-Side Store Integration**
+
+`WikiRaceGame.tsx` reads game state from the Zustand store and reacts to server-sent actions:
+
+```typescript
+const { gameState, lobby } = useRMHboxStore();
+const lastAction = gameState.lastAction as GameAction | undefined;
+
+// React to game-specific actions:
+useEffect(() => {
+  if (!lastAction) return;
+  switch (lastAction.type) {
+    case 'WR_ARTICLES_REVEALED': // Display start and target articles
+    case 'WR_ARTICLE_CONTENT':   // Render article HTML in WikiFrame
+    case 'WR_NAVIGATE_ERROR':    // Show navigation error toast
+    case 'WR_PLAYER_PROGRESS':   // Update other players' progress indicators
+    case 'WR_PLAYER_FINISHED':   // Show player-finished notification
+    case 'WR_RESULTS':           // Transition to results/path comparison view
+    case 'TIMER_TICK':           // Update countdown display
+  }
+}, [lastAction]);
+```
+
+**Client-Side Input Dispatch**
+
+All player inputs are sent through the generic `rmhbox:game:input` event with game-specific action names:
+
+```typescript
+import { getSocket } from '@/lib/rmhbox/socket';
+
+// Navigate to a new article
+function navigate(targetTitle: string) {
+  getSocket()?.emit('rmhbox:game:input', {
+    action: 'NAVIGATE',
+    data: { targetTitle },
+  });
+}
+
+// Go back to a previous article in the path
+function goBack(targetTitle: string, pathIndex: number) {
+  getSocket()?.emit('rmhbox:game:input', {
+    action: 'GO_BACK',
+    data: { targetTitle, pathIndex },
+  });
+}
+```
+
+The server's `GameCoordinator.onInput()` routes this to `WikiRaceGame.handleInput(userId, 'NAVIGATE', { targetTitle })`.
+
+**Server-Side Handler Registration**
+
+Register the server handler class in `MINIGAME_SERVER_REGISTRY` so the `GameCoordinator` can instantiate it:
+
+```typescript
+// In server/rmhbox/minigames/wiki-race.ts (bottom of file)
+import { MINIGAME_SERVER_REGISTRY } from '../game-coordinator';
+MINIGAME_SERVER_REGISTRY.set('wiki-race', WikiRaceGame);
+```
+
+The `GameCoordinator` instantiates `new WikiRaceGame(context)` when the lobby transitions to PLAYING with this minigame selected. The `context` provides `broadcastToLobby`, `sendToPlayer`, `sendToSpectators`, and `onComplete` callbacks.
+
+**Sound Effect Integration**
+
+Map game events to the shared sound system (`lib/rmhbox/audio.ts`):
+
+| Game Event | Sound | Trigger |
+|---|---|---|
+| Articles revealed | `swoosh` | `WR_ARTICLES_REVEALED` received |
+| Navigation click | `click` | `WR_ARTICLE_CONTENT` received after navigate |
+| Player finished | `scoreDing` | `WR_PLAYER_FINISHED` received |
+| Navigate error | `buzzer` | `WR_NAVIGATE_ERROR` received |
+| Results shown | `victoryFanfare` | `WR_RESULTS` received |
+| Timer warning (≤5s) | `countdownBeep` | `TIMER_TICK` with `timeRemaining <= 5` |
+
+**Spectator Rendering**
+
+Spectators receive the same `WR_*` actions but see all players' current articles, full paths, and click counts. The `WikiRaceGame` component checks spectator status and renders a multi-player path comparison view instead of the single-player WikiFrame. This allows spectators to follow along with each player's navigation journey in real-time.
 
 ---
 
