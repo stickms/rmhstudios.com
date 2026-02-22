@@ -341,6 +341,19 @@
   ```
   **Verification:** Registry lookup for `"sequence-sam"` returns correct metadata.
 
+- [ ] Add server handler to `MINIGAME_SERVER_REGISTRY` in `server/rmhbox/minigame-server-registry.ts`:
+  ```ts
+  import { SequenceSamGame } from './minigames/sequence-sam';
+  MINIGAME_SERVER_REGISTRY.set('sequence-sam', SequenceSamGame);
+  ```
+  **Verification:** `MINIGAME_SERVER_REGISTRY.get('sequence-sam')` returns `SequenceSamGame` class.
+
+- [ ] Add lazy-loaded component to `MinigameRenderer` map:
+  ```ts
+  'sequence-sam': lazy(() => import('./minigames/sequence-sam/SequenceSamGame'))
+  ```
+  **Verification:** `MinigameRenderer` renders `<Suspense>` fallback, then `SequenceSamGame` component.
+
 ---
 
 ### 7.1.6 Build Client Components
@@ -413,6 +426,26 @@
 - [ ] Winner highlighted with crown icon
 - [ ] Awards display
   **Verification:** Rankings correct. Awards shown.
+
+#### 7.1.6.8 Sound Effects
+
+- [ ] Wire up sound effects using `playSound()` for each Sequence Sam event:
+  - `SS_ROUND_START` → `playSound('goFanfare')`
+  - `SS_PATTERN_STEP` → `playSound('click')`
+  - `SS_PATTERN_COMPLETE` → `playSound('swoosh')`
+  - `SS_GRID_ROTATE` (chaos round) → `playSound('swoosh')`
+  - `SS_TAP_RESULT` correct → `playSound('scoreDing')`
+  - `SS_TAP_RESULT` wrong / `SS_PLAYER_FAILED` → `playSound('buzzer')`
+  - `SS_ELIMINATION` → `playSound('buzzer')`
+  - `SS_GAME_OVER` → `playSound('victoryFanfare')`
+  **Verification:** Each event triggers the correct sound exactly once. No overlapping duplicate sounds.
+
+#### 7.1.6.9 Zustand Store Integration
+
+- [ ] Read grid state from `publicState`
+- [ ] Read own strike count and input index from `privateState` (raw sequence never exposed)
+- [ ] Detect spectator mode → render read-only grid with progress indicators
+  **Verification:** Players see grid + own strikes. Spectators see grid + all players' progress. Raw sequence never sent to client.
 
 ---
 
@@ -787,6 +820,19 @@
   ```
   **Verification:** Registry lookup correct.
 
+- [ ] Add server handler to `MINIGAME_SERVER_REGISTRY` in `server/rmhbox/minigame-server-registry.ts`:
+  ```ts
+  import { HumanKeyboardGame } from './minigames/human-keyboard';
+  MINIGAME_SERVER_REGISTRY.set('human-keyboard', HumanKeyboardGame);
+  ```
+  **Verification:** `MINIGAME_SERVER_REGISTRY.get('human-keyboard')` returns `HumanKeyboardGame` class.
+
+- [ ] Add lazy-loaded component to `MinigameRenderer` map:
+  ```ts
+  'human-keyboard': lazy(() => import('./minigames/human-keyboard/HumanKeyboardGame'))
+  ```
+  **Verification:** `MinigameRenderer` renders `<Suspense>` fallback, then `HumanKeyboardGame` component.
+
 ---
 
 ### 7.2.8 Build Client Components
@@ -864,6 +910,26 @@
 - [ ] Final scores with multiplier applied
 - [ ] Sentence completion time (if completed)
   **Verification:** All stats display correctly.
+
+#### 7.2.8.8 Sound Effects
+
+- [ ] Wire up sound effects using `playSound()` for each Human Keyboard event:
+  - `HK_SENTENCE_REVEAL` → `playSound('goFanfare')`
+  - `HK_KEY_CORRECT` → `playSound('scoreDing')`
+  - `HK_KEY_WRONG` → `playSound('buzzer')`
+  - `HK_CURSOR_LOCKED` → `playSound('buzzer')`
+  - `HK_SPACE_AUTO` → `playSound('click')`
+  - `HK_RESHUFFLE_WARNING` → `playSound('countdownBeep')`
+  - `HK_RESHUFFLE` → `playSound('swoosh')`
+  - `HK_COMPLETE` → `playSound('victoryFanfare')`
+  **Verification:** Each event triggers the correct sound exactly once. No overlapping duplicate sounds.
+
+#### 7.2.8.9 Zustand Store Integration
+
+- [ ] Read own key assignments from `privateState`
+- [ ] Read sentence and cursor from `publicState`
+- [ ] Detect spectator mode → render full keyboard heatmap view showing all key assignments
+  **Verification:** Players see own keys + shared sentence/cursor. Spectators see full keyboard heatmap with all assignments.
 
 ---
 
@@ -1282,6 +1348,19 @@
   ```
   **Verification:** Registry lookup correct.
 
+- [ ] Add server handler to `MINIGAME_SERVER_REGISTRY` in `server/rmhbox/minigame-server-registry.ts`:
+  ```ts
+  import { CursorCurlingGame } from './minigames/cursor-curling';
+  MINIGAME_SERVER_REGISTRY.set('cursor-curling', CursorCurlingGame);
+  ```
+  **Verification:** `MINIGAME_SERVER_REGISTRY.get('cursor-curling')` returns `CursorCurlingGame` class.
+
+- [ ] Add lazy-loaded component to `MinigameRenderer` map:
+  ```ts
+  'cursor-curling': lazy(() => import('./minigames/cursor-curling/CursorCurlingGame'))
+  ```
+  **Verification:** `MinigameRenderer` renders `<Suspense>` fallback, then `CursorCurlingGame` component.
+
 ---
 
 ### 7.3.6 Build Client Components
@@ -1361,6 +1440,26 @@
 - [ ] Closest-to-center highlight with bonus
 - [ ] Cumulative scores
   **Verification:** All info displays correctly.
+
+#### 7.3.6.8 Sound Effects
+
+- [ ] Wire up sound effects using `playSound()` for each Cursor Curling event:
+  - `CU_END_START` → `playSound('swoosh')`
+  - `CU_THROWER_ACTIVE` → `playSound('chime')`
+  - `CU_STONE_LAUNCHED` → `playSound('swoosh')`
+  - `CU_STONE_COLLISION` → `playSound('click')`
+  - `CU_STONE_STOPPED` → `playSound('click')`
+  - `CU_END_RESULTS` → `playSound('victoryFanfare')`
+  - `CU_GAME_OVER` → `playSound('victoryFanfare')`
+  **Verification:** Each event triggers the correct sound exactly once. No overlapping duplicate sounds.
+
+#### 7.3.6.9 Zustand Store Integration
+
+- [ ] Read stone positions and phase from `publicState`
+- [ ] Read aim/power preview from `privateState` (only for active thrower)
+- [ ] Use `requestAnimationFrame` for 60fps interpolation between 30Hz server updates
+- [ ] Detect spectator mode → render omniscient view with aim/power overlays
+  **Verification:** Players see stones + own aim/power when active. Spectators see all overlays. Interpolation produces smooth 60fps rendering.
 
 ---
 
@@ -1742,6 +1841,19 @@
   ```
   **Verification:** Registry lookup correct.
 
+- [ ] Add server handler to `MINIGAME_SERVER_REGISTRY` in `server/rmhbox/minigame-server-registry.ts`:
+  ```ts
+  import { HumanTetrisGame } from './minigames/human-tetris';
+  MINIGAME_SERVER_REGISTRY.set('human-tetris', HumanTetrisGame);
+  ```
+  **Verification:** `MINIGAME_SERVER_REGISTRY.get('human-tetris')` returns `HumanTetrisGame` class.
+
+- [ ] Add lazy-loaded component to `MinigameRenderer` map:
+  ```ts
+  'human-tetris': lazy(() => import('./minigames/human-tetris/HumanTetrisGame'))
+  ```
+  **Verification:** `MinigameRenderer` renders `<Suspense>` fallback, then `HumanTetrisGame` component.
+
 ---
 
 ### 7.4.8 Build Client Components
@@ -1828,6 +1940,23 @@
 - [ ] Team score for the wave
 - [ ] Streak counter: "🔥 4 in a row!"
   **Verification:** All info displays. Streak counter accurate.
+
+#### 7.4.8.9 Sound Effects
+
+- [ ] Wire up sound effects using `playSound()` for each Human Tetris event:
+  - `HT_WAVE_START` → `playSound('swoosh')`
+  - `HT_PLAYER_MOVED` (own) → `playSound('click')`
+  - `HT_MOVE_REJECTED` → `playSound('buzzer')`
+  - `HT_WALL_IMPACT` (all safe) → `playSound('victoryFanfare')`
+  - `HT_WALL_IMPACT` (hit) → `playSound('buzzer')`
+  - `HT_GAME_OVER` → `playSound('victoryFanfare')`
+  **Verification:** Each event triggers the correct sound exactly once. No overlapping duplicate sounds.
+
+#### 7.4.8.10 Zustand Store Integration
+
+- [ ] Read all player positions, wall shape, and dead zones from `publicState` (cooperative game — all positions visible)
+- [ ] Detect spectator mode → disable `SwipeDetector` / movement input
+  **Verification:** All players see full board state. Spectators see full board but cannot send movement inputs.
 
 ---
 
@@ -1940,5 +2069,30 @@
   - Cursor Curling: `end_start`, `throw`, `stone_rest`, `end_result`
   - Human Tetris: `wave_start`, `wave_result`, `game_end`
   **Verification:** Game logs persist and are retrievable via API. Action types match spec.
+
+### 7.5.10 MinigameRenderer Code-Splitting Test
+
+- [ ] **MinigameRenderer code-splitting:** verify each Phase 7 game loads as a separate chunk
+  - [ ] Start each game → verify chunk loaded on demand
+  - [ ] Verify `<Suspense>` fallback renders during load
+  **Verification:** Network tab shows separate chunk files. Main bundle unaffected.
+
+### 7.5.11 Sound Effect Integration Test
+
+- [ ] **Sound effect integration test:** verify all 4 Phase 7 games trigger sounds at correct moments
+  - [ ] Sequence Sam: pattern step clicks, strike buzzer, victory fanfare
+  - [ ] Human Keyboard: key correct ding, key wrong buzzer, reshuffle swoosh
+  - [ ] Cursor Curling: stone launch swoosh, collision click, end results fanfare
+  - [ ] Human Tetris: wave start swoosh, move click, impact results
+  **Verification:** Sounds fire once per event. Volume settings respected.
+
+### 7.5.12 MINIGAME_SERVER_REGISTRY Completeness Test
+
+- [ ] **MINIGAME_SERVER_REGISTRY completeness:** verify all 4 Phase 7 handlers registered
+  - [ ] `MINIGAME_SERVER_REGISTRY.get('sequence-sam')` → `SequenceSamGame`
+  - [ ] `MINIGAME_SERVER_REGISTRY.get('human-keyboard')` → `HumanKeyboardGame`
+  - [ ] `MINIGAME_SERVER_REGISTRY.get('cursor-curling')` → `CursorCurlingGame`
+  - [ ] `MINIGAME_SERVER_REGISTRY.get('human-tetris')` → `HumanTetrisGame`
+  **Verification:** All 4 handlers instantiate and implement `BaseMinigame` interface.
 
 > **Note on parallel development:** Phase 7 can be implemented fully in parallel with Phase 6 and Phase 8 after Phase 5 is complete. The coexistence test above (7.5.8) validates Phase 7 against Phase 5. If other phases are also complete, run an expanded coexistence test covering all deployed phases to verify the full registry (up to 16 games).
