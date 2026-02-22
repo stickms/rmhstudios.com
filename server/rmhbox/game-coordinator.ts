@@ -18,6 +18,7 @@
 import { Server, Socket } from 'socket.io';
 import { LobbyManager } from './lobby-manager';
 import { StateSyncService } from './state-sync';
+import { LeaderboardService } from './leaderboard';
 import { logger } from './logger';
 import { S2C } from '../../lib/rmhbox/events';
 import { MINIGAME_REGISTRY } from '../../lib/rmhbox/minigame-registry';
@@ -60,13 +61,15 @@ export class GameCoordinator {
   private readonly io: Server;
   private readonly lobbyManager: LobbyManager;
   private readonly stateSync: StateSyncService;
+  private readonly leaderboardService: LeaderboardService;
   /** Per-lobby lifecycle state tracking */
   private readonly lifecycles = new Map<string, LifecycleState>();
 
-  constructor(io: Server, lobbyManager: LobbyManager, stateSync: StateSyncService) {
+  constructor(io: Server, lobbyManager: LobbyManager, stateSync: StateSyncService, leaderboardService?: LeaderboardService) {
     this.io = io;
     this.lobbyManager = lobbyManager;
     this.stateSync = stateSync;
+    this.leaderboardService = leaderboardService ?? new LeaderboardService();
   }
 
   // ─── Connection Handler (§2.6) ────────────────────────────────
@@ -563,8 +566,18 @@ export class GameCoordinator {
     };
     lobby.matchHistory.push(serverMatch);
 
-    // Placeholder for async persistence (Phase 4)
-    logger.info({ event: 'match_results_persist_placeholder', lobbyId, roundNumber: lobby.roundNumber });
+    // Async persistence — fire-and-forget, never blocks game flow
+    this.leaderboardService.persistMatchResults(
+      lobbyId,
+      lobby.currentGame?.minigameId ?? '',
+      results,
+      lobby.players,
+      null,
+    ).catch((err) => {
+      logger.error({ event: 'match_persist_fire_forget_error', lobbyId, error: String(err) });
+    });
+
+    logger.info({ event: 'match_results_persisted_async', lobbyId, roundNumber: lobby.roundNumber });
 
     // Send full state sync
     this.stateSync.broadcastFullSync(lobbyId);

@@ -21,8 +21,8 @@ export default function LeaderboardPanel() {
     const socket = getSocket();
     if (!socket) return;
 
-    const handler = (data: LeaderboardEntry[]) => {
-      setEntries(data);
+    const handler = (data: { entries: LeaderboardEntry[] }) => {
+      setEntries(data.entries);
       setLoading(false);
     };
 

@@ -8,6 +8,7 @@
  * Props:
  *   gameName: string — Display name of the current minigame
  *   timeRemaining: number | null — Seconds remaining (null hides timer)
+ *   totalDuration: number — Total duration in seconds for timer ring calculation (default 60)
  *   roundNumber: number — Current round number
  *   score: number — Player's current score
  *   playerCount: number — Number of players in the game
@@ -20,6 +21,7 @@ import { Users } from 'lucide-react';
 interface GameShellProps {
   gameName: string;
   timeRemaining: number | null;
+  totalDuration?: number;
   roundNumber: number;
   score: number;
   playerCount: number;
@@ -27,11 +29,10 @@ interface GameShellProps {
 }
 
 /** SVG ring for the countdown timer. */
-function TimerRing({ seconds }: { seconds: number }) {
+function TimerRing({ seconds, total }: { seconds: number; total: number }) {
   const radius = 18;
   const circumference = 2 * Math.PI * radius;
-  // Assume 60s total if unknown; clamp at 0
-  const ratio = Math.max(0, seconds) / 60;
+  const ratio = Math.max(0, seconds) / (total || 60);
   const offset = circumference * (1 - ratio);
 
   return (
@@ -64,6 +65,7 @@ function TimerRing({ seconds }: { seconds: number }) {
 export default function GameShell({
   gameName,
   timeRemaining,
+  totalDuration = 60,
   roundNumber,
   score,
   playerCount,
@@ -79,7 +81,7 @@ export default function GameShell({
             Round {roundNumber}
           </span>
         </div>
-        {timeRemaining !== null && <TimerRing seconds={timeRemaining} />}
+        {timeRemaining !== null && <TimerRing seconds={timeRemaining} total={totalDuration} />}
       </header>
 
       {/* Game content */}
