@@ -14,7 +14,15 @@ import type { MinigameResults } from '../../../server/rmhbox/minigames/base-mini
 
 // ─── Mock User Data ──────────────────────────────────────────────
 
-export const MOCK_USERS = {
+export interface MockUser {
+  userId: string;
+  userName: string;
+  avatarUrl: string | null;
+  sessionToken: string;
+  expiresAt: Date;
+}
+
+export const MOCK_USERS: Record<string, MockUser> = {
   alice: {
     userId: 'user-alice-001',
     userName: 'Alice',
@@ -60,7 +68,7 @@ export const DEFAULT_SETTINGS: LobbySettings = {
 // ─── Factory: RMHboxPlayer ──────────────────────────────────────
 
 export function createPlayer(
-  user: typeof MOCK_USERS.alice,
+  user: MockUser,
   overrides: Partial<RMHboxPlayer> = {},
 ): RMHboxPlayer {
   return {
@@ -104,7 +112,7 @@ export function createMockResults(
 // ─── Factory: ClientPlayerInfo ──────────────────────────────────
 
 export function createClientPlayer(
-  user: typeof MOCK_USERS.alice,
+  user: MockUser,
   overrides: Partial<ClientPlayerInfo> = {},
 ): ClientPlayerInfo {
   return {
@@ -205,7 +213,7 @@ export interface MockSocket {
   connected: boolean;
 }
 
-export function createMockSocket(user = MOCK_USERS.alice): MockSocketData {
+export function createMockSocket(user: MockUser = MOCK_USERS.alice): MockSocketData {
   const emitted: Array<{ event: string; data: unknown }> = [];
 
   const socket: MockSocket = {
