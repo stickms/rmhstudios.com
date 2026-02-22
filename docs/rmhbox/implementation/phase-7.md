@@ -305,6 +305,16 @@
 - [ ] Return `MinigameResults` with rankings, awards, and `gameSpecificData`
   **Verification:** Unit test: scenarios for each award. Ties handled correctly.
 
+#### 7.1.4.13 `buildGameLog()`
+
+- [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
+- [ ] Log `round_start` action at each round (round, sequenceLength, isChaosRound, rotationDegrees)
+- [ ] Log `round_result` action at round end (round, survivingPlayers, eliminatedPlayers)
+- [ ] Log `player_eliminated` action when a player is eliminated (userId, round, reason: 'wrong_input' | 'timeout')
+- [ ] In `computeResults()`, build `GameLog` with `initialState` containing startingLength, chaosRoundInterval, maxRounds
+- [ ] Return `GameLog` from `buildGameLog()`
+  **Verification:** Unit test: 8-player game lasting 10 rounds, verify log contains round_start/round_result per round and player_eliminated for each elimination.
+
 ---
 
 ### 7.1.5 Register Game in Minigame Registry
@@ -738,6 +748,18 @@
   - [ ] **Team Spirit** — team completed the sentence (awarded to ALL players); icon: `users`
 - [ ] Return `MinigameResults`
   **Verification:** Unit test: each award triggers correctly.
+
+#### 7.2.6.14 `buildGameLog()`
+
+- [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
+- [ ] Log `game_start` action with target sentence and initial key assignments (assignments map)
+- [ ] Log `reshuffle` action each time keys are reshuffled (newAssignments, progressAtReshuffle)
+- [ ] Log `milestone` action at 25%, 50%, 75% sentence completion (percentComplete, timeMs, charsCompleted)
+- [ ] Log `keystroke_summary` action per player at game end (userId, totalKeystrokes, correctKeystrokes, missedKeys)
+- [ ] Log `game_complete` action when sentence is finished or time expires (completed, totalTimeMs, finalProgress)
+- [ ] In `computeResults()`, build `GameLog` with `initialState` containing targetSentence, playerCount, reshuffleInterval
+- [ ] Return `GameLog` from `buildGameLog()`
+  **Verification:** Unit test: 5-player game, 2 reshuffles, verify log captures both reshuffles, milestones, and per-player keystroke summaries.
 
 ---
 
@@ -1223,6 +1245,17 @@
 - [ ] Return `MinigameResults`
   **Verification:** Unit test: each award triggers for appropriate scenarios.
 
+#### 7.3.4.14 `buildGameLog()`
+
+- [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
+- [ ] Log `end_start` action at each end (endNumber, totalEnds)
+- [ ] Log `throw` action for each stone thrown (userId, endNumber, angle, power, initialPosition)
+- [ ] Log `stone_rest` action when a stone comes to rest (userId, endNumber, finalPosition, distanceToBullseye)
+- [ ] Log `end_result` action at end conclusion (endNumber, stonePositions, scores, closestPlayer)
+- [ ] In `computeResults()`, build `GameLog` with `initialState` containing totalEnds, houseCenter, ringRadii
+- [ ] Return `GameLog` from `buildGameLog()`
+  **Verification:** Unit test: 3-end game, 4 players, verify 12 throw/stone_rest actions and 3 end_result actions.
+
 ---
 
 ### 7.3.5 Register Game in Minigame Registry
@@ -1672,6 +1705,16 @@
   - [ ] **Speed Mover** — reached correct position with the most time remaining (averaged); icon: `rabbit`
 - [ ] Return `MinigameResults`
   **Verification:** Each award triggers correctly.
+
+#### 7.4.6.12 `buildGameLog()`
+
+- [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
+- [ ] Log `wave_start` action at each wave (waveNumber, wallShape, requiredPlayers, positioningTime)
+- [ ] Log `wave_result` action at wall impact (waveNumber, success, playerPositions, matchPercentage)
+- [ ] Log `game_end` action with total waves completed, team score summary
+- [ ] In `computeResults()`, build `GameLog` with `initialState` containing totalWaves, gridSize, deadZones, playerCount
+- [ ] Return `GameLog` from `buildGameLog()`
+  **Verification:** Unit test: 8-wave game, verify 8 wave_start and 8 wave_result actions, final game_end action with team summary.
 
 ---
 
