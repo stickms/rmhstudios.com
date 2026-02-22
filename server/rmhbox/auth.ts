@@ -96,7 +96,8 @@ export async function authMiddleware(
 
     next();
   } catch (err) {
-    console.error('[RMHbox Auth] Session validation error:', err);
+    const { logger } = require('./logger');
+    logger.error({ event: 'auth_validation_error', error: String(err) });
     next(new Error('AUTH_FAILED'));
   }
 }

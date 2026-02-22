@@ -3,10 +3,13 @@
  *
  * Manages the 120-second grace period for disconnected players
  * and re-associates returning sockets with their lobby/game state.
+ *
+ * Reference: docs/rmhbox/design-spec/core.md §9
  */
 
 import { Server, Socket } from 'socket.io';
 import { config } from './config';
+import { logger } from './logger';
 import { LobbyManager } from './lobby-manager';
 import { StateSyncService } from './state-sync';
 
@@ -63,6 +66,7 @@ export class ReconnectionHandler {
     });
 
     console.log(`[RMHbox] Reconnected: ${player.userName} (${userId}) to lobby ${lobby.id}`);
+    logger.info({ event: 'player_reconnected', userId, userName: player.userName, lobbyId: lobby.id });
   }
 
   /**
@@ -91,7 +95,7 @@ export class ReconnectionHandler {
       this.graceTimers.delete(userId);
       // Remove player from lobby after grace period expires
       lobby.players.delete(userId);
-      console.log(`[RMHbox] Grace period expired for ${userId} in lobby ${lobby.id}`);
+      logger.info({ event: 'grace_period_expired', userId, lobbyId: lobby.id });
 
       // If lobby is now empty, let GC handle it
       // If the disconnected player was host, transfer host

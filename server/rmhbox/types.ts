@@ -3,34 +3,37 @@
  *
  * These types are used exclusively on the server side.
  * Shared types (used by both client and server) live in lib/rmhbox/types.ts.
+ *
+ * Reference: docs/rmhbox/design-spec/core.md §6.1, §7.4
  */
 
-// ─── Lobby State Machine ───
+import type { BaseMinigame } from './minigames/base-minigame';
+import type {
+  LobbyState,
+  LobbySettings,
+  ChatMessage,
+} from '../lib/rmhbox/types';
 
-export type LobbyState =
-  | 'LOBBY'
-  | 'VOTING'
-  | 'INSTRUCTIONS'
-  | 'PRELOADING'
-  | 'COUNTDOWN'
-  | 'PLAYING'
-  | 'RESULTS';
+// Re-export shared types for server convenience
+export type { LobbyState, LobbySettings, ChatMessage };
 
-// ─── Player ───
+// ─── Player ──────────────────────────────────────────────────────
 
 export interface RMHboxPlayer {
   userId: string;
   userName: string;
   avatarUrl: string | null;
-  socketId: string | null;
+  socketId: string | null;     // null when disconnected
   isConnected: boolean;
   isReady: boolean;
-  score: number;
+  score: number;               // cumulative session score across rounds
+  roundScore: number;          // score for current round only
   joinedAt: number;
-  lastPingAt: number;
+  lastSeenAt: number;
+  role: 'player';
 }
 
-// ─── Spectator ───
+// ─── Spectator ───────────────────────────────────────────────────
 
 export interface RMHboxSpectator {
   userId: string;
@@ -39,32 +42,20 @@ export interface RMHboxSpectator {
   socketId: string | null;
   isConnected: boolean;
   joinedAt: number;
+  role: 'spectator';
 }
 
-// ─── Lobby Settings ───
-
-export interface LobbySettings {
-  isPublic: boolean;
-  maxPlayers: number;
-  maxSpectators: number;
-  allowMidGameJoin: boolean;
-  allowSpectatorPromotion: boolean;
-  autoStartThreshold: number | null;
-  gameDurationOverride: number | null;
-}
-
-// ─── Active Game ───
+// ─── Active Game ─────────────────────────────────────────────────
 
 export interface ActiveGame {
   minigameId: string;
-  instance: unknown; // BaseMinigame subclass instance
+  handler: BaseMinigame;       // active minigame instance
   startedAt: number;
-  phase: LobbyState;
 }
 
-// ─── Match Summary ───
+// ─── Match Summary (server internal) ─────────────────────────────
 
-export interface MatchSummary {
+export interface ServerMatchSummary {
   minigameId: string;
   roundNumber: number;
   startedAt: number;
@@ -77,16 +68,7 @@ export interface MatchSummary {
   }>;
 }
 
-// ─── Chat ───
-
-export interface ChatMessage {
-  userId: string;
-  userName: string;
-  content: string;
-  timestamp: number;
-}
-
-// ─── Lobby ───
+// ─── Lobby ───────────────────────────────────────────────────────
 
 export interface RMHboxLobby {
   id: string;
@@ -99,6 +81,11 @@ export interface RMHboxLobby {
   createdAt: number;
   lastActivityAt: number;
   currentGame: ActiveGame | null;
-  matchHistory: MatchSummary[];
+  matchHistory: ServerMatchSummary[];
   roundNumber: number;
 }
+
+// ─── Minigame Context ────────────────────────────────────────────
+// (Re-exported from base-minigame.ts for convenience)
+
+export type { MinigameContext, MinigameResults } from './minigames/base-minigame';
