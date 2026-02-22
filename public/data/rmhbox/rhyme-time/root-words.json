@@ -1,0 +1,274 @@
+[
+  {
+    "word": "air",
+    "phonetic": "EH1 R",
+    "syllableCount": 1,
+    "rhymeEndSound": "EH1 R",
+    "knownRhymeCount": 187,
+    "difficulty": "easy"
+  },
+  {
+    "word": "beach",
+    "phonetic": "B IY1 CH",
+    "syllableCount": 1,
+    "rhymeEndSound": "IY1 CH",
+    "knownRhymeCount": 36,
+    "difficulty": "medium"
+  },
+  {
+    "word": "bell",
+    "phonetic": "B EH1 L",
+    "syllableCount": 1,
+    "rhymeEndSound": "EH1 L",
+    "knownRhymeCount": 338,
+    "difficulty": "easy"
+  },
+  {
+    "word": "birth",
+    "phonetic": "B ER1 TH",
+    "syllableCount": 1,
+    "rhymeEndSound": "ER1 TH",
+    "knownRhymeCount": 20,
+    "difficulty": "hard"
+  },
+  {
+    "word": "blue",
+    "phonetic": "B L UW1",
+    "syllableCount": 1,
+    "rhymeEndSound": "UW1",
+    "knownRhymeCount": 310,
+    "difficulty": "easy"
+  },
+  {
+    "word": "bone",
+    "phonetic": "B OW1 N",
+    "syllableCount": 1,
+    "rhymeEndSound": "OW1 N",
+    "knownRhymeCount": 157,
+    "difficulty": "easy"
+  },
+  {
+    "word": "cup",
+    "phonetic": "K AH1 P",
+    "syllableCount": 1,
+    "rhymeEndSound": "AH1 P",
+    "knownRhymeCount": 22,
+    "difficulty": "hard"
+  },
+  {
+    "word": "dark",
+    "phonetic": "D AA1 R K",
+    "syllableCount": 1,
+    "rhymeEndSound": "AA1 R K",
+    "knownRhymeCount": 38,
+    "difficulty": "medium"
+  },
+  {
+    "word": "day",
+    "phonetic": "D EY1",
+    "syllableCount": 1,
+    "rhymeEndSound": "EY1",
+    "knownRhymeCount": 332,
+    "difficulty": "easy"
+  },
+  {
+    "word": "deal",
+    "phonetic": "D IY1 L",
+    "syllableCount": 1,
+    "rhymeEndSound": "IY1 L",
+    "knownRhymeCount": 172,
+    "difficulty": "easy"
+  },
+  {
+    "word": "deep",
+    "phonetic": "D IY1 P",
+    "syllableCount": 1,
+    "rhymeEndSound": "IY1 P",
+    "knownRhymeCount": 39,
+    "difficulty": "medium"
+  },
+  {
+    "word": "dust",
+    "phonetic": "D AH1 S T",
+    "syllableCount": 1,
+    "rhymeEndSound": "AH1 S T",
+    "knownRhymeCount": 38,
+    "difficulty": "medium"
+  },
+  {
+    "word": "fish",
+    "phonetic": "F IH1 SH",
+    "syllableCount": 1,
+    "rhymeEndSound": "IH1 SH",
+    "knownRhymeCount": 33,
+    "difficulty": "medium"
+  },
+  {
+    "word": "fog",
+    "phonetic": "F AA1 G",
+    "syllableCount": 1,
+    "rhymeEndSound": "AA1 G",
+    "knownRhymeCount": 37,
+    "difficulty": "medium"
+  },
+  {
+    "word": "green",
+    "phonetic": "G R IY1 N",
+    "syllableCount": 1,
+    "rhymeEndSound": "IY1 N",
+    "knownRhymeCount": 293,
+    "difficulty": "easy"
+  },
+  {
+    "word": "grow",
+    "phonetic": "G R OW1",
+    "syllableCount": 1,
+    "rhymeEndSound": "OW1",
+    "knownRhymeCount": 365,
+    "difficulty": "easy"
+  },
+  {
+    "word": "half",
+    "phonetic": "HH AE1 F",
+    "syllableCount": 1,
+    "rhymeEndSound": "AE1 F",
+    "knownRhymeCount": 33,
+    "difficulty": "medium"
+  },
+  {
+    "word": "heart",
+    "phonetic": "HH AA1 R T",
+    "syllableCount": 1,
+    "rhymeEndSound": "AA1 R T",
+    "knownRhymeCount": 35,
+    "difficulty": "medium"
+  },
+  {
+    "word": "house",
+    "phonetic": "HH AW1 S",
+    "syllableCount": 1,
+    "rhymeEndSound": "AW1 S",
+    "knownRhymeCount": 37,
+    "difficulty": "medium"
+  },
+  {
+    "word": "late",
+    "phonetic": "L EY1 T",
+    "syllableCount": 1,
+    "rhymeEndSound": "EY1 T",
+    "knownRhymeCount": 115,
+    "difficulty": "easy"
+  },
+  {
+    "word": "match",
+    "phonetic": "M AE1 CH",
+    "syllableCount": 1,
+    "rhymeEndSound": "AE1 CH",
+    "knownRhymeCount": 36,
+    "difficulty": "medium"
+  },
+  {
+    "word": "math",
+    "phonetic": "M AE1 TH",
+    "syllableCount": 1,
+    "rhymeEndSound": "AE1 TH",
+    "knownRhymeCount": 22,
+    "difficulty": "hard"
+  },
+  {
+    "word": "moon",
+    "phonetic": "M UW1 N",
+    "syllableCount": 1,
+    "rhymeEndSound": "UW1 N",
+    "knownRhymeCount": 111,
+    "difficulty": "easy"
+  },
+  {
+    "word": "rain",
+    "phonetic": "R EY1 N",
+    "syllableCount": 1,
+    "rhymeEndSound": "EY1 N",
+    "knownRhymeCount": 266,
+    "difficulty": "easy"
+  },
+  {
+    "word": "rock",
+    "phonetic": "R AA1 K",
+    "syllableCount": 1,
+    "rhymeEndSound": "AA1 K",
+    "knownRhymeCount": 121,
+    "difficulty": "easy"
+  },
+  {
+    "word": "round",
+    "phonetic": "R AW1 N D",
+    "syllableCount": 1,
+    "rhymeEndSound": "AW1 N D",
+    "knownRhymeCount": 35,
+    "difficulty": "medium"
+  },
+  {
+    "word": "score",
+    "phonetic": "S K AO1 R",
+    "syllableCount": 1,
+    "rhymeEndSound": "AO1 R",
+    "knownRhymeCount": 161,
+    "difficulty": "easy"
+  },
+  {
+    "word": "star",
+    "phonetic": "S T AA1 R",
+    "syllableCount": 1,
+    "rhymeEndSound": "AA1 R",
+    "knownRhymeCount": 196,
+    "difficulty": "easy"
+  },
+  {
+    "word": "step",
+    "phonetic": "S T EH1 P",
+    "syllableCount": 1,
+    "rhymeEndSound": "EH1 P",
+    "knownRhymeCount": 32,
+    "difficulty": "medium"
+  },
+  {
+    "word": "town",
+    "phonetic": "T AW1 N",
+    "syllableCount": 1,
+    "rhymeEndSound": "AW1 N",
+    "knownRhymeCount": 24,
+    "difficulty": "hard"
+  },
+  {
+    "word": "tree",
+    "phonetic": "T R IY1",
+    "syllableCount": 1,
+    "rhymeEndSound": "IY1",
+    "knownRhymeCount": 426,
+    "difficulty": "easy"
+  },
+  {
+    "word": "warm",
+    "phonetic": "W AO1 R M",
+    "syllableCount": 1,
+    "rhymeEndSound": "AO1 R M",
+    "knownRhymeCount": 18,
+    "difficulty": "hard"
+  },
+  {
+    "word": "watch",
+    "phonetic": "W AA1 CH",
+    "syllableCount": 1,
+    "rhymeEndSound": "AA1 CH",
+    "knownRhymeCount": 19,
+    "difficulty": "hard"
+  },
+  {
+    "word": "wave",
+    "phonetic": "W EY1 V",
+    "syllableCount": 1,
+    "rhymeEndSound": "EY1 V",
+    "knownRhymeCount": 34,
+    "difficulty": "medium"
+  }
+]
