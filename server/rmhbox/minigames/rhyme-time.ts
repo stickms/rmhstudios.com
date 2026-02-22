@@ -115,6 +115,7 @@ export class RhymeTimeMinigame extends BaseMinigame {
   private usedRootWords: Set<string> = new Set();
   private state!: RhymeTimeState;
   private startedAt: number = 0;
+  private tickInterval: NodeJS.Timeout | null = null;
 
   constructor(context: MinigameContext) {
     super(context);
@@ -228,16 +229,12 @@ export class RhymeTimeMinigame extends BaseMinigame {
     });
 
     // Tick every second
-    const tickInterval = this.setInterval(() => {
+    this.tickInterval = this.setInterval(() => {
       this.state.timeRemaining--;
       this.context.broadcastToLobby('rmhbox:game:action', {
         type: 'TIMER_TICK',
         timeRemaining: this.state.timeRemaining,
       });
-      if (this.state.timeRemaining <= 0) {
-        clearInterval(tickInterval);
-        this.intervals = this.intervals.filter((i) => i !== tickInterval);
-      }
     }, 1000);
 
     this.setTimeout(() => this.endInputPhase(), RT_INPUT_DURATION * 1000);
@@ -245,6 +242,13 @@ export class RhymeTimeMinigame extends BaseMinigame {
 
   private endInputPhase(): void {
     if (!this.isRunning) return;
+
+    // Clear the tick interval before changing phase
+    if (this.tickInterval) {
+      clearInterval(this.tickInterval);
+      this.intervals = this.intervals.filter((i) => i !== this.tickInterval);
+      this.tickInterval = null;
+    }
 
     this.state.phase = RhymeTimePhase.SCORING;
     this.state.timeRemaining = RT_SCORING_DURATION;
@@ -710,8 +714,6 @@ export class RhymeTimeMinigame extends BaseMinigame {
         }
       }
     }
-
-    const getPlayerName = (uid: string) => this.context.players.get(uid)?.userName ?? 'Unknown';
 
     // Wordsmith — most valid submissions
     const wordsmithEntry = this.findTopPlayer(stats, (s) => s.validCount);
