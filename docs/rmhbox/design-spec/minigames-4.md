@@ -11,9 +11,13 @@
 ## Table of Contents
 
 1. [Identity Crisis](#1-identity-crisis)
+   - [1.14 MinigameRenderer & Client-Server Wiring](#114-minigamerenderer--client-server-wiring)
 2. [Ranking File](#2-ranking-file)
+   - [2.14 MinigameRenderer & Client-Server Wiring](#214-minigamerenderer--client-server-wiring)
 3. [Pixel Pushers](#3-pixel-pushers)
+   - [3.15 MinigameRenderer & Client-Server Wiring](#315-minigamerenderer--client-server-wiring)
 4. [Scroll Soul](#4-scroll-soul)
+   - [4.15 MinigameRenderer & Client-Server Wiring](#415-minigamerenderer--client-server-wiring)
 
 ---
 
@@ -418,6 +422,90 @@ interface ICGameHistoryInit {
 
 **Replay Value:** The social deduction aspect makes this a strong candidate for full logging. Players can review the Q&A transcript to see how answers led them toward (or away from) the correct identity, compare voting patterns, and spot the moment the penny dropped.
 
+### 1.14 MinigameRenderer & Client-Server Wiring
+
+#### 1.14.1 MinigameRenderer Registration
+
+```tsx
+// In MinigameRenderer component map
+const minigameComponents = {
+  'identity-crisis': lazy(() => import('./minigames/identity-crisis/IdentityCrisisGame')),
+  // ...other minigames
+};
+```
+
+#### 1.14.2 Client-Side Store Integration
+
+```tsx
+useEffect(() => {
+  const handlers: Record<string, (payload: any) => void> = {
+    IC_IDENTITIES_REVEAL: (p) => setIdentities(p.identities),
+    IC_TURN_START: (p) => setTurn({ ...p, isSelf: false }),
+    IC_TURN_START_SELF: (p) => setTurn({ ...p, isSelf: true }),
+    IC_QUESTION_ASKED: (p) => setCurrentQuestion(p.question),
+    IC_VOTE_RECEIVED: (p) => updateVoteCount(p),
+    IC_VOTE_RESULTS: (p) => setVoteResults(p),
+    IC_EARLY_GUESS_RESULT: (p) => setGuessResult(p),
+    IC_EARLY_GUESS_CORRECT: (p) => handleEarlyGuessCorrect(p),
+    IC_FINAL_GUESS_PHASE: () => setPhase('final-guess'),
+    IC_RESULTS: (p) => setResults(p),
+    TIMER_TICK: (p) => setTimeRemaining(p.remaining),
+  };
+
+  Object.entries(handlers).forEach(([action, handler]) =>
+    socket.on(action, handler)
+  );
+  return () => {
+    Object.keys(handlers).forEach((action) => socket.off(action));
+  };
+}, [socket]);
+```
+
+#### 1.14.3 Client-Side Input Dispatch
+
+```tsx
+// Ask a question (during your turn)
+socket.emit('IC_ASK_QUESTION', { question });
+
+// Vote on the current question
+socket.emit('IC_VOTE', { vote }); // vote: 'yes' | 'no' | 'maybe'
+
+// Attempt an early guess (before final phase)
+socket.emit('IC_EARLY_GUESS', { guess });
+
+// Submit final guess (during final guess phase)
+socket.emit('IC_FINAL_GUESS', { guess });
+```
+
+#### 1.14.4 Server-Side Handler Registration
+
+```typescript
+// In server minigame registry
+import { IdentityCrisisGame } from './minigames/identity-crisis/IdentityCrisisGame';
+
+registry.register('identity-crisis', IdentityCrisisGame);
+```
+
+#### 1.14.5 Sound Effect Integration
+
+| Event | Sound | Notes |
+|---|---|---|
+| Identities revealed | `swoosh` | All players see their assigned pool |
+| Turn start | `chime` | New question round begins |
+| Question asked | `click` | Asker submits their question |
+| Vote received | `click` | Each vote is acknowledged |
+| Vote results | `swoosh` | Aggregated results displayed |
+| Early guess correct | `scoreDing` | Player guessed their identity early |
+| Early guess wrong | `buzzer` | Incorrect early guess |
+| Final guess phase | `goFanfare` | Transition to final guessing round |
+| Results reveal | `victoryFanfare` | All identities and scores shown |
+
+#### 1.14.6 Spectator Rendering
+
+Spectators are **omniscient** — they see ALL identities (including the asking player's) and all votes in real-time. The component checks spectator status and shows full identity cards for all players.
+
+> **Note:** Critical information masking: the server sends `IC_TURN_START` (with identity) to all voters but `IC_TURN_START_SELF` (without identity) to the asker. The client component must render accordingly.
+
 ---
 
 ## 2. Ranking File
@@ -808,6 +896,76 @@ interface RFGameHistoryInit {
 | `game_complete` | `{ finalStandings: Array<{ userId, totalPoints, roundBreakdown: number[] }> }` | All rounds finished |
 
 **Replay Value:** Comparing how players ranked the same items reveals taste differences and unexpected consensus. The round-by-round breakdown fuels post-game arguments about whether pizza truly belongs above tacos.
+
+### 2.14 MinigameRenderer & Client-Server Wiring
+
+#### 2.14.1 MinigameRenderer Registration
+
+```tsx
+// In MinigameRenderer component map
+const minigameComponents = {
+  'ranking-file': lazy(() => import('./minigames/ranking-file/RankingFileGame')),
+  // ...other minigames
+};
+```
+
+#### 2.14.2 Client-Side Store Integration
+
+```tsx
+useEffect(() => {
+  const handlers: Record<string, (payload: any) => void> = {
+    RF_CATEGORY_REVEAL: (p) => setCategory(p),
+    RF_SUBMISSION_COUNT: (p) => setSubmissionCount(p.count),
+    RF_LOCK_IN_PHASE: () => setPhase('lock-in'),
+    RF_ROUND_RESULTS: (p) => setRoundResults(p),
+    RF_GAME_OVER: (p) => setResults(p),
+    TIMER_TICK: (p) => setTimeRemaining(p.remaining),
+  };
+
+  Object.entries(handlers).forEach(([action, handler]) =>
+    socket.on(action, handler)
+  );
+  return () => {
+    Object.keys(handlers).forEach((action) => socket.off(action));
+  };
+}, [socket]);
+```
+
+#### 2.14.3 Client-Side Input Dispatch
+
+```tsx
+// Submit final ranking (array of 5 unique numbers 1-5)
+socket.emit('RF_SUBMIT_RANKING', { ranking });
+
+// Optional: send live preview as player reorders
+socket.emit('RF_UPDATE_RANKING', { ranking });
+```
+
+#### 2.14.4 Server-Side Handler Registration
+
+```typescript
+// In server minigame registry
+import { RankingFileGame } from './minigames/ranking-file/RankingFileGame';
+
+registry.register('ranking-file', RankingFileGame);
+```
+
+#### 2.14.5 Sound Effect Integration
+
+| Event | Sound | Notes |
+|---|---|---|
+| Category revealed | `goFanfare` | New category and items shown |
+| Submission count update | *(silent)* | Progress indicator only |
+| Lock-in phase | `swoosh` | Final chance to submit ranking |
+| Round results | `victoryFanfare` | Consensus ranking and scores shown |
+| Game over | `victoryFanfare` | Final standings revealed |
+| Timer warning | `countdownBeep` | Time running low to submit |
+
+#### 2.14.6 Spectator Rendering
+
+During the ranking phase, spectators see submission progress (who submitted, not the rankings). During results, spectators see all rankings and the average. The component renders a read-only CategoryReveal without drag-and-drop interaction.
+
+> **Note:** Uses `@dnd-kit/core` and `@dnd-kit/sortable` for drag-and-drop ranking on the client. Items start in random order (shuffled per player to prevent positional bias).
 
 ---
 
@@ -1253,6 +1411,80 @@ interface PPGameHistoryInit {
 | `game_complete` | `{ levelsCleared, totalTime, mvpUserId, playerStats: Array<{ userId, waypointsHit, flipsReceived }> }` | Run ends |
 
 **Replay Value:** The log shows team coordination through level-by-level progression. Polarity flip events highlight the cooperative chaos, and completion times let teams compare runs and track improvement.
+
+### 3.15 MinigameRenderer & Client-Server Wiring
+
+#### 3.15.1 MinigameRenderer Registration
+
+```tsx
+// In MinigameRenderer component map
+const minigameComponents = {
+  'pixel-pushers': lazy(() => import('./minigames/pixel-pushers/PixelPushersGame')),
+  // ...other minigames
+};
+```
+
+#### 3.15.2 Client-Side Store Integration
+
+```tsx
+useEffect(() => {
+  const handlers: Record<string, (payload: any) => void> = {
+    PP_LEVEL_START: (p) => initLevel(p),
+    PP_STATE_UPDATE: (p) => applyServerState(p),
+    PP_PUSH_EVENT: (p) => showPushEffect(p),
+    PP_POLARITY_WARNING: (p) => setPolarityWarning(p),
+    PP_POLARITY_FLIP: (p) => flipPolarity(p),
+    PP_POLARITY_RESTORE: (p) => restorePolarity(p),
+    PP_WAYPOINT_REACHED: (p) => collectWaypoint(p),
+    PP_LEVEL_COMPLETE: (p) => setLevelComplete(p),
+    PP_LEVEL_FAILED: (p) => setLevelFailed(p),
+    PP_GAME_OVER: (p) => setResults(p),
+    TIMER_TICK: (p) => setTimeRemaining(p.remaining),
+  };
+
+  Object.entries(handlers).forEach(([action, handler]) =>
+    socket.on(action, handler)
+  );
+  return () => {
+    Object.keys(handlers).forEach((action) => socket.off(action));
+  };
+}, [socket]);
+```
+
+#### 3.15.3 Client-Side Input Dispatch
+
+```tsx
+// Movement input (normalized direction vector, sent at ~15Hz via throttled interval)
+socket.emit('PP_MOVE', { dx, dy });
+```
+
+#### 3.15.4 Server-Side Handler Registration
+
+```typescript
+// In server minigame registry
+import { PixelPushersGame } from './minigames/pixel-pushers/PixelPushersGame';
+
+registry.register('pixel-pushers', PixelPushersGame);
+```
+
+#### 3.15.5 Sound Effect Integration
+
+| Event | Sound | Notes |
+|---|---|---|
+| Level start | `goFanfare` | Team begins a new level |
+| Push event | `click` | Player pushes the ball |
+| Polarity warning | `countdownBeep` | Polarity flip is imminent |
+| Polarity flip | `swoosh` | Player's polarity is inverted |
+| Waypoint reached | `scoreDing` | Player collects a waypoint |
+| Level complete | `victoryFanfare` | All players reach the exit |
+| Level failed | `buzzer` | Team fails the level |
+| Game over | `victoryFanfare` | Run ends, final scores shown |
+
+#### 3.15.6 Spectator Rendering
+
+Spectators see the same cooperative view as players — all pusher positions, ball trajectory, and polarity indicators are visible. The component renders the GameCanvas with all entities but disables the VirtualJoystick input.
+
+> **Note:** State updates broadcast at 15Hz. Client-side rendering uses requestAnimationFrame to interpolate positions between server updates for smooth 60fps animation. Physics is server-authoritative — the client does NOT simulate physics.
 
 ---
 
@@ -1749,6 +1981,85 @@ interface SCGameHistoryInit {
 | `game_complete` | `{ winnerId, finalSurvivalTime, eliminationOrder: Array<{ userId, survivalTime, cause }>, adStats: Array<{ userId, adsEncountered, adsDismissed }> }` | Last player standing or time expires |
 
 **Replay Value:** The elimination timeline tells the full story — rising scroll speed, cascading deaths, and the final survivor. Ad stats add a comedic layer, showing who struggled with the fake close buttons.
+
+### 4.15 MinigameRenderer & Client-Server Wiring
+
+#### 4.15.1 MinigameRenderer Registration
+
+```tsx
+// In MinigameRenderer component map
+const minigameComponents = {
+  'scroll-soul': lazy(() => import('./minigames/scroll-soul/ScrollSoulGame')),
+  // ...other minigames
+};
+```
+
+#### 4.15.2 Client-Side Store Integration
+
+```tsx
+useEffect(() => {
+  const handlers: Record<string, (payload: any) => void> = {
+    SC_COUNTDOWN: (p) => setCountdown(p.count),
+    SC_GAME_START: () => setPhase('playing'),
+    SC_STATE_UPDATE: (p) => applyServerState(p),
+    SC_AD_SPAWN: (p) => addAd(p),
+    SC_AD_CLOSED: (p) => removeAd(p.adId),
+    SC_AD_EXPIRED: (p) => expireAd(p.adId),
+    SC_AD_CLOSE_FAILED: (p) => shakeAd(p.adId),
+    SC_LAVA_WARNING: (p) => setLavaWarning(p),
+    SC_PLAYER_ELIMINATED: (p) => eliminatePlayer(p),
+    SC_HEIGHT_MILESTONE: (p) => showMilestone(p),
+    SC_GAME_OVER: (p) => setResults(p),
+    TIMER_TICK: (p) => setTimeRemaining(p.remaining),
+  };
+
+  Object.entries(handlers).forEach(([action, handler]) =>
+    socket.on(action, handler)
+  );
+  return () => {
+    Object.keys(handlers).forEach((action) => socket.off(action));
+  };
+}, [socket]);
+```
+
+#### 4.15.3 Client-Side Input Dispatch
+
+```tsx
+// Movement input (sent continuously on input change)
+socket.emit('SC_INPUT', { moveX, jump }); // moveX: -1|0|1, jump: boolean
+
+// Close an ad popup
+socket.emit('SC_CLOSE_AD', { adId, clickX, clickY });
+```
+
+#### 4.15.4 Server-Side Handler Registration
+
+```typescript
+// In server minigame registry
+import { ScrollSoulGame } from './minigames/scroll-soul/ScrollSoulGame';
+
+registry.register('scroll-soul', ScrollSoulGame);
+```
+
+#### 4.15.5 Sound Effect Integration
+
+| Event | Sound | Notes |
+|---|---|---|
+| Countdown | `countdownBeep` | Pre-game countdown ticks |
+| Game start | `goFanfare` | Scrolling begins |
+| Ad spawn | `chime` | Ad popup appears on player's screen |
+| Ad closed | `click` | Player successfully dismisses ad |
+| Ad close failed (fake X) | `buzzer` | Player clicked a decoy close button |
+| Lava warning | `buzzer` | Lava is approaching the player |
+| Player eliminated | `buzzer` | Player falls into lava or is eliminated |
+| Height milestone | `scoreDing` | Player reaches a new height threshold |
+| Game over | `victoryFanfare` | Last player standing or time expires |
+
+#### 4.15.6 Spectator Rendering
+
+Spectators see all players' positions on a shared scrolling viewport with all ads visible (including which player each ad targets). The component renders the full ScrollCanvas with all player avatars but disables movement input.
+
+> **Note:** Scroll Soul uses a hybrid rendering approach — the server sends state updates at 15Hz, but the client renders at 60fps using client-side prediction for the local player's movement (gravity, jump). Server corrections are smoothly interpolated to prevent visual jitter. Fake ad close-button validation is server-side to prevent bot auto-closing.
 
 ---
 
