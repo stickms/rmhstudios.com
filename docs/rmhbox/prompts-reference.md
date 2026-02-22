@@ -166,3 +166,45 @@ Implement structured logging for all server-side state transitions to facilitate
 Follow the modular principles of the spec strictly; as you build the reusable UI components (Buttons, Modals, Timer Bars), document their API and Props in the /docs/rmhbox/ui-components.md file. This ensures that in later phases, the minigames can reuse UI patterns.
 
 Now follow the implementation plan for the current phase and implement it, by following the relevant design spec. Check off tasks and sections as they are completed, but only after tests have passed. Install dependencies as necessary, including for testing, using pnpm. All code should pass typescript compilation and eslint checks with no warnings and no errors.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Read through all the docs/rmhbox/design-spec/ files, as well as docs/implementation/phase-[5-8].md files. 
+
+For all minigames, contemplate if a game history (and to what extent) would be meaningful to have to look back on after the fact (certainly for Undercover Agent a full game log could be fun to look back on, for example). Then, add the relevant specs into all the docs/rmhbox/design-spec/minimages-[1-4] files, in accordance with the game history spec from core.md, and add related tasks in docs/rmhbox/implementation/phase-[5-8].md
+
+Check that all minigames in all spec files have been fully fleshed out, and that all necessary details have been specified in their respective spec documents. Similarly check that all of phases 5-8 implementation plans are comprehensive and address all aspects of the design specs.
+
+Also, ideally phases 6-8 can be all implemented in parallel. Please ensure that after phase 5 all of phases 6-8 can be completed in parallel, and update the implementation plans of phases 6-8 to reflect this dependency change.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
