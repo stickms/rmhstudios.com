@@ -62,6 +62,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^20",
     "@types/pg": "^8.11.14",
     "@types/react": "^19",

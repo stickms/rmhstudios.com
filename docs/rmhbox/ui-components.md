@@ -36,7 +36,260 @@ This document catalogs all reusable UI components built for RMHbox. Each compone
 
 ## Component API Documentation
 
-_Front-end UI components will be documented here as they are implemented in later phases. Phase 2 established the server-side WebSocket APIs and client state types (`ClientLobbyState`, `ClientPlayerInfo`, `ClientSpectatorInfo`, `PublicLobbyInfo`) that these components will consume._
+_Components implemented in Phase 4. All components use `'use client'` directive and are located in `components/rmhbox/`._
+
+---
+
+### RoomCodeDisplay
+
+**File:** `components/rmhbox/RoomCodeDisplay.tsx`
+
+**Props:**
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `code` | `string` | — | The 6-character room code to display |
+
+**Usage:**
+```tsx
+<RoomCodeDisplay code="ABC123" />
+```
+
+---
+
+### PlayerList
+
+**File:** `components/rmhbox/PlayerList.tsx`
+
+**Props:**
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `players` | `ClientPlayerInfo[]` | — | Array of player info objects |
+| `hostUserId` | `string` | — | User ID of the current host (shows crown icon) |
+
+**Usage:**
+```tsx
+<PlayerList players={lobby.players} hostUserId={lobby.hostUserId} />
+```
+
+---
+
+### ReadyButton
+
+**File:** `components/rmhbox/ReadyButton.tsx`
+
+**Props:**
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `isReady` | `boolean` | — | Current ready state |
+| `onToggle` | `() => void` | — | Callback when button is clicked |
+
+**Usage:**
+```tsx
+<ReadyButton isReady={false} onToggle={() => emit('rmhbox:lobby:toggle_ready', {})} />
+```
+
+---
+
+### HostControls
+
+**File:** `components/rmhbox/HostControls.tsx`
+
+**Props:**
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `isHost` | `boolean` | — | Whether the current user is the host |
+| `lobbyId` | `string` | — | Current lobby ID |
+| `lobbyState` | `string` | — | Current lobby state |
+
+**Usage:**
+```tsx
+<HostControls isHost={true} lobbyId="ABCDEF" lobbyState="WAITING" />
+```
+
+---
+
+### ChatOverlay
+
+**File:** `components/rmhbox/ChatOverlay.tsx`
+
+**Props:**
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `messages` | `ChatMessage[]` | — | Array of chat messages |
+| `onSend` | `(content: string) => void` | — | Callback when a message is sent |
+
+**Usage:**
+```tsx
+<ChatOverlay messages={lobby.chat} onSend={(msg) => emit('rmhbox:lobby:chat', { content: msg })} />
+```
+
+---
+
+### LeaderboardPanel
+
+**File:** `components/rmhbox/LeaderboardPanel.tsx`
+
+**Props:** None. Self-fetching component.
+
+**Usage:**
+```tsx
+<LeaderboardPanel />
+```
+
+---
+
+### LobbyView
+
+**File:** `components/rmhbox/LobbyView.tsx`
+
+**Props:** None. Reads from Zustand store.
+
+Composes: RoomCodeDisplay, PlayerList, ReadyButton, HostControls, ChatOverlay.
+
+**Usage:**
+```tsx
+<LobbyView />
+```
+
+---
+
+### GameVoting
+
+**File:** `components/rmhbox/GameVoting.tsx`
+
+**Props:**
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `candidates` | `VoteCandidate[]` | — | 5 candidate minigames |
+| `durationSeconds` | `number` | — | Vote timer duration |
+| `endsAt` | `number` | — | Unix timestamp when voting ends |
+| `onVote` | `(minigameId: string) => void` | — | Callback on vote cast |
+
+**Usage:**
+```tsx
+<GameVoting candidates={[...]} durationSeconds={30} endsAt={Date.now() + 30000} onVote={handleVote} />
+```
+
+---
+
+### InstructionsScreen
+
+**File:** `components/rmhbox/InstructionsScreen.tsx`
+
+**Props:**
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `title` | `string` | — | Minigame display name |
+| `description` | `string` | — | Minigame description |
+| `rules` | `string[]` | — | Bullet-point rules |
+| `tips` | `string[]` | — | Helpful tips |
+| `durationSeconds` | `number` | — | Countdown duration |
+| `isHost` | `boolean` | — | Whether to show skip button |
+| `onSkip` | `() => void` | — | Callback for host skip |
+
+**Usage:**
+```tsx
+<InstructionsScreen title="Rhyme Time" description="..." rules={[...]} tips={[...]} durationSeconds={15} isHost={true} onSkip={handleSkip} />
+```
+
+---
+
+### PreloadScreen
+
+**File:** `components/rmhbox/PreloadScreen.tsx`
+
+**Props:**
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `players` | `{ userId: string; userName: string; ready: boolean }[]` | — | Player readiness list |
+
+Auto-emits `rmhbox:game:ready_to_render` on mount.
+
+**Usage:**
+```tsx
+<PreloadScreen players={preloadPlayers} />
+```
+
+---
+
+### ResultsScreen
+
+**File:** `components/rmhbox/ResultsScreen.tsx`
+
+**Props:**
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `rankings` | `PlayerRanking[]` | — | Player rankings for the round |
+| `sessionStandings` | `SessionStanding[]` | — | Cumulative session standings |
+| `awards` | `Award[]` | — | Round awards |
+| `roundNumber` | `number` | — | Current round number |
+
+Uses framer-motion for staggered animations, canvas-confetti for winner celebration.
+
+**Usage:**
+```tsx
+<ResultsScreen rankings={[...]} sessionStandings={[...]} awards={[...]} roundNumber={1} />
+```
+
+---
+
+### SpectatorBanner
+
+**File:** `components/rmhbox/SpectatorBanner.tsx`
+
+**Props:**
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `lobbyState` | `string` | — | Current lobby state |
+| `onRequestPromotion` | `() => void` | — | Callback for "Join as Player" button |
+
+Shows "Join as Player" button only during WAITING and ROUND_RESULTS states.
+
+**Usage:**
+```tsx
+<SpectatorBanner lobbyState="WAITING" onRequestPromotion={handlePromotion} />
+```
+
+---
+
+### MinigameRenderer
+
+**File:** `components/rmhbox/minigames/MinigameRenderer.tsx`
+
+**Props:**
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `minigameId` | `string` | — | ID of the minigame to render |
+
+Uses React.lazy() and Suspense for code-splitting. Shows loading fallback during load, error fallback for unknown games.
+
+**Usage:**
+```tsx
+<MinigameRenderer minigameId="rhyme-time" />
+```
+
+---
+
+### GameShell
+
+**File:** `components/rmhbox/GameShell.tsx`
+
+**Props:**
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `gameName` | `string` | — | Display name of the minigame |
+| `timeRemaining` | `number \| null` | — | Seconds remaining (null hides timer) |
+| `roundNumber` | `number` | — | Current round number |
+| `score` | `number` | — | Player's current score |
+| `playerCount` | `number` | — | Number of players |
+| `children` | `React.ReactNode` | — | Game content |
+
+**Usage:**
+```tsx
+<GameShell gameName="Rhyme Time" timeRemaining={30} roundNumber={1} score={500} playerCount={4}>
+  <MinigameRenderer minigameId="rhyme-time" />
+</GameShell>
+```
 
 ### Server-Side Data Contracts (Phase 2)
 

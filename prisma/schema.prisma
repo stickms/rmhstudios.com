@@ -29,6 +29,7 @@ model User {
   signalForgeProfile SignalForgePlayer?
   templeOfJoyProfile TempleOfJoySave?
   neonDriftwayProfile NeonDriftwayPlayer?
+  rmhboxProfile  RMHboxProfile?
   
   // Slice-It Library Relations
   uploadedSongs  Song[]        @relation("SongUploader")
@@ -301,5 +302,67 @@ model SongPlay {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([songId, userId])
+}
+
+// --- RMHbox Models ---
+
+model RMHboxProfile {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  totalGamesPlayed Int      @default(0)
+  totalWins        Int      @default(0)
+  totalScore       Int      @default(0)
+  totalPlayTimeMs  Int      @default(0)
+  minigameStats    Json     @default("{}")
+  currentWinStreak Int      @default(0)
+  bestWinStreak    Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  matches          RMHboxMatchPlayer[]
+
+  @@index([totalWins(sort: Desc)])
+  @@index([totalScore(sort: Desc)])
+  @@map("rmhbox_profile")
+}
+
+model RMHboxMatch {
+  id            String    @id @default(cuid())
+  minigameId    String
+  lobbyId       String
+  startedAt     DateTime  @default(now())
+  endedAt       DateTime?
+  durationMs    Int?
+  winnerUserId  String?
+  playerCount   Int
+  gameLog       Json?
+  results       Json
+  players       RMHboxMatchPlayer[]
+
+  @@index([minigameId])
+  @@index([startedAt(sort: Desc)])
+  @@index([lobbyId])
+  @@map("rmhbox_match")
+}
+
+model RMHboxMatchPlayer {
+  id        String   @id @default(cuid())
+  matchId   String
+  match     RMHboxMatch   @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  profileId String
+  profile   RMHboxProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  userId    String
+  userName  String
+  rank      Int
+  score     Int
+  wasWinner Boolean  @default(false)
+  stats     Json     @default("{}")
+  createdAt DateTime @default(now())
+
+  @@unique([matchId, userId])
+  @@index([profileId])
+  @@index([userId])
+  @@index([createdAt(sort: Desc)])
+  @@map("rmhbox_match_player")
 }
 
