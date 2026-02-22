@@ -275,6 +275,18 @@ export function applyLobbyAction(
         currentGame: data.game as ClientLobbyState['currentGame'],
       };
 
+    case 'TIMER_TICK':
+      if (lobby.currentGame) {
+        return {
+          ...lobby,
+          currentGame: {
+            ...lobby.currentGame,
+            timeRemaining: (data.remaining as number) ?? null,
+          },
+        };
+      }
+      return lobby;
+
     default:
       return lobby;
   }

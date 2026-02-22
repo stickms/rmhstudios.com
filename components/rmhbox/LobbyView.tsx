@@ -22,12 +22,14 @@ export default function LobbyView() {
   const lobby = useRMHboxStore((s) => s.lobby);
 
   const handleToggleReady = useCallback(() => {
-    emit(C2S.LOBBY_TOGGLE_READY);
-  }, []);
+    if (!lobby) return;
+    emit(C2S.LOBBY_TOGGLE_READY, { lobbyId: lobby.lobbyId });
+  }, [lobby]);
 
   const handleSendChat = useCallback((content: string) => {
-    emit(C2S.LOBBY_CHAT, { content });
-  }, []);
+    if (!lobby) return;
+    emit(C2S.LOBBY_CHAT, { lobbyId: lobby.lobbyId, content });
+  }, [lobby]);
 
   if (!lobby) {
     return (
@@ -56,7 +58,13 @@ export default function LobbyView() {
             <ReadyButton isReady={me?.isReady ?? false} onToggle={handleToggleReady} />
           </div>
 
-          <HostControls isHost={isHost} lobbyId={lobby.lobbyId} lobbyState={lobby.state} />
+          <HostControls
+            isHost={isHost}
+            lobbyId={lobby.lobbyId}
+            lobbyState={lobby.state}
+            playerCount={lobby.players.length}
+            settings={lobby.settings}
+          />
         </div>
 
         {/* Right column — chat */}

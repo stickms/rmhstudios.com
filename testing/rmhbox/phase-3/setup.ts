@@ -17,7 +17,15 @@ import { BaseMinigame } from '../../../server/rmhbox/minigames/base-minigame';
 
 // ─── Mock User Data ──────────────────────────────────────────────
 
-export const MOCK_USERS = {
+export interface MockUser {
+  userId: string;
+  userName: string;
+  avatarUrl: string | null;
+  sessionToken: string;
+  expiresAt: Date;
+}
+
+export const MOCK_USERS: Record<string, MockUser> = {
   alice: {
     userId: 'user-alice-001',
     userName: 'Alice',
@@ -78,7 +86,7 @@ export interface MockSocket {
 /**
  * Creates a mock Socket.io socket with room tracking and emit capture.
  */
-export function createMockSocket(user = MOCK_USERS.alice): MockSocketData {
+export function createMockSocket(user: MockUser = MOCK_USERS.alice): MockSocketData {
   const emitted: Array<{ event: string; data: unknown }> = [];
   const joinedRooms = new Set<string>();
 
