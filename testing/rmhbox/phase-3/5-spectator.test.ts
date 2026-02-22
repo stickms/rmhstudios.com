@@ -21,7 +21,7 @@ import {
 } from './setup';
 import type { MockServerData, MockSocketData } from './setup';
 import type { Server, Socket } from 'socket.io';
-
+import type { ClientLobbyState } from '../../../lib/rmhbox/types';
 
 let serverData: MockServerData;
 let lobbyManager: LobbyManager;

@@ -502,7 +502,7 @@ export class GameCoordinator {
     // Clean up game handler
     if (lobby.currentGame?.handler) {
       try {
-        lobby.currentGame.handler.cleanup?.();
+        lobby.currentGame.handler.cleanup();
       } catch {
         // Ignore cleanup errors
       }
@@ -598,7 +598,7 @@ export class GameCoordinator {
     // Clean up broken game handler
     if (lobby.currentGame?.handler) {
       try {
-        lobby.currentGame.handler.cleanup?.();
+        lobby.currentGame.handler.cleanup();
       } catch {
         // Ignore cleanup errors on already-broken handler
       }

@@ -1032,7 +1032,7 @@ export class LobbyManager {
         phase,
         timeRemaining: null,
         publicState: (typeof gameState === 'object' && gameState !== null ? gameState : {}) as Record<string, unknown>,
-        privateState: myRole === 'spectator' ? {} : {},
+        privateState: {}, // Phase 3: placeholder for future per-player private state
       };
     }
 

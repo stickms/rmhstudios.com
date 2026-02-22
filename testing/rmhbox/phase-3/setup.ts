@@ -341,7 +341,9 @@ export class TestGame extends BaseMinigame {
         rank: idx + 1,
         deltas: {},
       })),
-      awards: [{ userId: players[0]?.userId ?? '', title: 'MVP', description: 'Most Valuable Player', icon: '🏆' }],
+      awards: players.length > 0
+        ? [{ userId: players[0].userId, title: 'MVP', description: 'Most Valuable Player', icon: '🏆' }]
+        : [],
       gameSpecificData: {},
       duration: this.autoCompleteDuration,
     };
