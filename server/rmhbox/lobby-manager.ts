@@ -15,7 +15,8 @@ import { config } from './config';
 import { logger } from './logger';
 import { generateRoomCode } from '../../lib/rmhbox/utils';
 import { S2C } from '../../lib/rmhbox/events';
-import type { GameAction, ChatMessage, ClientLobbyState, ClientPlayerInfo, ClientSpectatorInfo, ClientGameInfo, PublicLobbyInfo, MatchSummary } from '../../lib/rmhbox/types';
+import { MINIGAME_REGISTRY } from '../../lib/rmhbox/minigame-registry';
+import type { GameAction, ChatMessage, ClientLobbyState, ClientPlayerInfo, ClientSpectatorInfo, ClientGameInfo, PublicLobbyInfo, MatchSummary, JoinInProgressPolicy } from '../../lib/rmhbox/types';
 import type { RMHboxLobby, LobbySettings, RMHboxPlayer, RMHboxSpectator } from './types';
 import {
   CreateLobbySchema,
@@ -48,6 +49,8 @@ export class LobbyManager {
   private readonly graceTimers = new Map<string, ReturnType<typeof setTimeout>>();
   /** End-session disband timers keyed by lobbyId */
   private readonly disbandTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  /** Pending join-in-progress players (for join_next_subround policy) keyed by lobbyId */
+  private readonly pendingJoinPlayers = new Map<string, string[]>();
 
   private gcInterval: ReturnType<typeof setInterval> | null = null;
 
@@ -86,6 +89,16 @@ export class LobbyManager {
       }
     }
     return undefined;
+  }
+
+  /** Get pending join-in-progress players for a lobby (join_next_subround policy) */
+  getPendingJoinPlayers(lobbyId: string): string[] {
+    return this.pendingJoinPlayers.get(lobbyId) ?? [];
+  }
+
+  /** Clear pending join-in-progress players for a lobby */
+  clearPendingJoinPlayers(lobbyId: string): void {
+    this.pendingJoinPlayers.delete(lobbyId);
   }
 
   // ─── Room code generation (§1.2) ───────────────────────────
@@ -334,10 +347,25 @@ export class LobbyManager {
 
     // Determine join role
     let joinAsSpectator = payload.asSpectator;
+    let jipPolicy: JoinInProgressPolicy | null = null;
     if (!joinAsSpectator) {
-      // Force spectator if game is playing, regardless of allowMidGameJoin
+      // Check join-in-progress policy if game is playing
       if (lobby.state === 'PLAYING') {
-        joinAsSpectator = true;
+        if (lobby.currentGame) {
+          const gameDef = MINIGAME_REGISTRY[lobby.currentGame.minigameId];
+          jipPolicy = gameDef?.joinInProgressPolicy ?? 'spectate_only';
+          if (jipPolicy === 'spectate_only') {
+            joinAsSpectator = true;
+          }
+          // join_next_subround: join as spectator, added to pending list below
+          if (jipPolicy === 'join_next_subround') {
+            joinAsSpectator = true;
+          }
+          // join_immediately: join as player (handled below)
+        } else {
+          // No current game but state is PLAYING — default to spectator
+          joinAsSpectator = true;
+        }
       }
       // Force spectator if lobby is full
       if (lobby.players.size >= lobby.settings.maxPlayers) {
@@ -379,6 +407,14 @@ export class LobbyManager {
       socket.emit(S2C.LOBBY_STATE_SNAPSHOT, this.buildClientState(lobby, userId));
       this.addSystemChat(lobby.id, `${userName} joined`);
 
+      // Handle join_next_subround: add to pending list for game handler
+      if (jipPolicy === 'join_next_subround') {
+        const pending = this.pendingJoinPlayers.get(lobby.id) ?? [];
+        pending.push(userId);
+        this.pendingJoinPlayers.set(lobby.id, pending);
+        logger.info({ event: 'pending_join_player_added', lobbyId: lobby.id, userId });
+      }
+
       logger.info({ event: 'spectator_joined', lobbyId: lobby.id, userId, userName });
     } else {
       // Join as player
@@ -417,6 +453,16 @@ export class LobbyManager {
 
       socket.emit(S2C.LOBBY_STATE_SNAPSHOT, this.buildClientState(lobby, userId));
       this.addSystemChat(lobby.id, `${userName} joined`);
+
+      // Handle join_immediately: notify the active game handler
+      if (jipPolicy === 'join_immediately' && lobby.currentGame?.handler) {
+        try {
+          lobby.currentGame.handler.handlePlayerJoin(userId);
+          logger.info({ event: 'player_joined_in_progress', lobbyId: lobby.id, userId });
+        } catch (err) {
+          logger.error({ event: 'jip_handler_error', lobbyId: lobby.id, userId, error: String(err) });
+        }
+      }
 
       logger.info({ event: 'player_joined', lobbyId: lobby.id, userId, userName });
     }

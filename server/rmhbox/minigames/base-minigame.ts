@@ -73,6 +73,14 @@ export abstract class BaseMinigame {
   abstract computeResults(): MinigameResults;
 
   /**
+   * Called when a new player joins mid-game (join-in-progress).
+   * Default: no-op. Subclasses override for games that support immediate joins.
+   */
+  handlePlayerJoin(_userId: string): void {
+    // Default no-op — subclasses override for join-in-progress support
+  }
+
+  /**
    * Called when a player disconnects mid-game.
    * Default: mark as inactive. Subclasses can override for game-specific behavior.
    */
@@ -99,9 +107,9 @@ export abstract class BaseMinigame {
 
   /**
    * Clean up all tracked timers, intervals, and resources.
-   * Called automatically on game end or error.
+   * Called automatically on game end or error, and by GameCoordinator.
    */
-  protected cleanup(): void {
+  cleanup(): void {
     this.isRunning = false;
     this.timers.forEach((t) => clearTimeout(t));
     this.intervals.forEach((i) => clearInterval(i));
