@@ -12,7 +12,7 @@
 import { Pool } from 'pg';
 import { config } from './config';
 import type { Socket } from 'socket.io';
-import type { ExtendedError } from 'socket.io/dist/namespace';
+import type { ExtendedError } from 'socket.io';
 
 // ─── Database connection pool (shared across auth checks) ───────
 

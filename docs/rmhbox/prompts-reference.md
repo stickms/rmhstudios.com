@@ -108,7 +108,7 @@ Read through docs/rmhbox/design-spec/core.md and adjust all the relevant details
 
 
 
-Now I want you to write up checklist-based comprehensive implementation plans in accordance with the design docs in the /docs/rmhbox/design-spec/ directory. This should take the form of 8 phases:
+I want you to write up checklist-based comprehensive implementation plans for RMHbox in accordance with the design docs in the /docs/rmhbox/design-spec/ directory. This should take the form of 8 phases:
 
 For phases 1-4, split the core logic and common APIs (lobby system, database schemas, WebSocket protocols, reconnection handlers, and state-masking utilities, etc.) detailed in /docs/rmhbox/design-spec/core.md into 4 relatively even-sized and mostly self-contained phases consisting of tasks. Every task must include a 'Verification' step to ensure the logic is functional before moving to the next phase. Parts of the RMHbox WebSocket server code are already implemented, but ignore these and outline the implementation details anyways so that we can check all the existing code and verify its details correctly.
 
@@ -126,3 +126,39 @@ Do not miss any details mentioned in the design specs (cross-reference as needed
 Code design should be as modular as possible, (reusable UI components, having a minigame class that all minigames inherit from or using functional mixins with a unified lifecycle, for example). Avoid hardcoding and magic formulas as much as possible, in both client/server logic and UI components.
 
 Every phase must be broken down into highly granular tasks and subtasks, each with complete details. A task should never be as broad as just "Implement Lobby Logic"; instead, it must be subdivided into steps like "Create Room Code generator utility," "Implement 'Join Room' socket handler," and "Write 'Player Ready' toggle logic," all with specific implementation details.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Current phase is PHASE 1.
+
+Read through /docs/rmhbox/design-spec/core.md (for phases 1-4) and/or /docs/rmhbox/design-spec/minigames-[1-4].md (for phases 5-8) and /docs/rmhbox/implementation/phase-[#].md.
+
+Review the code implemented in all previous phases to ensure compatibility and consistent naming conventions. If you detect a structural error in previous work or the design spec, pause and suggest a fix before proceeding.
+
+Adhere to the design spec and implementation plan as much as possible, unless there is some error in either, in which case use your best judgement. Add comment headers to all files to detail their contents, and comment code that is not readily understandable, or that require more context.
+
+For all testing tasks, write out the test and test cases in the /testing/rmhbox/phase-[#]/ directory with files named by section number and label with informatively named functions. Make sure to use test cases beyond just the suggested specific test cases; write enough test cases to get a good sample. All tests should pass before moving onto the next section. 
+
+Ensure all tests in /testing/rmhbox/ are environment-agnostic. Use mocks for the Prisma database and a virtual WebSocket client (like socket.io-client in a test runner) to simulate multi-user interactions. The implementation must include a setup script to populate the test database with necessary mock users/auth sessions. Ensure that all state-masking logic is verified by a dedicated security test case (e.g. verifying Player A cannot see Player B's hidden data).
+
+Implement structured logging for all server-side state transitions to facilitate debugging. Every state transition, lobby lifecycle event, and critical WebSocket action must include structured logging (e.g., logger.info({ event, roomId, userId, data })). 
+
+Follow the modular principles of the spec strictly; as you build the reusable UI components (Buttons, Modals, Timer Bars), document their API and Props in the /docs/rmhbox/ui-components.md file. This ensures that in later phases, the minigames can reuse UI patterns.
+
+Now implement the current phase.
