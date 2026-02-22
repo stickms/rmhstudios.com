@@ -53,10 +53,10 @@ export default function HostControls({ isHost, lobbyId, lobbyState }: HostContro
         <Play className="h-4 w-4" /> Start Game
       </button>
 
-      {/* TODO: Wire to settings modal once implemented */}
       <button
-        onClick={() => {}}
-        className="flex items-center gap-2 rounded-lg bg-[var(--rmhbox-surface-hover)] px-4 py-2 text-sm font-semibold text-[var(--rmhbox-text)] transition-colors hover:brightness-110"
+        disabled
+        className="flex items-center gap-2 rounded-lg bg-[var(--rmhbox-surface-hover)] px-4 py-2 text-sm font-semibold text-[var(--rmhbox-text)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        title="Settings coming soon"
       >
         <Settings className="h-4 w-4" /> Settings
       </button>

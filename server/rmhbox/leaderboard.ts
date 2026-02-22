@@ -122,7 +122,7 @@ export class LeaderboardService {
           durationMs,
           winnerUserId,
           playerCount: results.rankings.length,
-          gameLog: gameLog as object ?? undefined,
+          gameLog: (gameLog as object) ?? undefined,
           results: results.rankings as unknown as object,
         },
       });

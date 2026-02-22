@@ -27,7 +27,7 @@ import ResultsScreen from '@/components/rmhbox/ResultsScreen';
 import SpectatorBanner from '@/components/rmhbox/SpectatorBanner';
 import MinigameRenderer from '@/components/rmhbox/minigames/MinigameRenderer';
 import GameShell from '@/components/rmhbox/GameShell';
-import type { VoteCandidate } from '@/lib/rmhbox/types';
+import type { VoteCandidate, PlayerRanking, SessionStanding, Award, RoundResultsPayload } from '@/lib/rmhbox/types';
 
 export default function LobbyPage({ params }: { params: Promise<{ lobbyId: string }> }) {
   const { lobbyId } = use(params);
@@ -51,6 +51,14 @@ export default function LobbyPage({ params }: { params: Promise<{ lobbyId: strin
 
   // Countdown state
   const [countdownValue, setCountdownValue] = useState(3);
+
+  // Round results state
+  const [roundResults, setRoundResults] = useState<{
+    rankings: PlayerRanking[];
+    sessionStandings: SessionStanding[];
+    awards: Award[];
+    roundNumber: number;
+  } | null>(null);
 
   // Connect and join lobby on mount
   useEffect(() => {
@@ -98,6 +106,11 @@ export default function LobbyPage({ params }: { params: Promise<{ lobbyId: strin
         // Listen for countdown
         socket.on(S2C.GAME_COUNTDOWN, (data: { seconds: number }) => {
           if (mounted) setCountdownValue(data.seconds);
+        });
+
+        // Listen for round results
+        socket.on(S2C.GAME_ROUND_RESULTS, (data: RoundResultsPayload) => {
+          if (mounted) setRoundResults(data);
         });
 
         // Listen for kick
@@ -228,12 +241,12 @@ export default function LobbyPage({ params }: { params: Promise<{ lobbyId: strin
         </GameShell>
       )}
 
-      {lobby.state === 'ROUND_RESULTS' && (
+      {lobby.state === 'ROUND_RESULTS' && roundResults && (
         <ResultsScreen
-          rankings={[]}
-          sessionStandings={[]}
-          awards={[]}
-          roundNumber={lobby.roundNumber}
+          rankings={roundResults.rankings}
+          sessionStandings={roundResults.sessionStandings}
+          awards={roundResults.awards}
+          roundNumber={roundResults.roundNumber}
         />
       )}
 

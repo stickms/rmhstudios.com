@@ -25,6 +25,7 @@ import { VoteManager } from './vote-manager';
 import { LeaderboardService } from './leaderboard';
 import { StateSyncService } from './state-sync';
 import { cleanupRateLimits } from './rate-limit';
+import { disconnectPrisma } from './prisma-client';
 import { logger } from './logger';
 
 // ─── Health-check HTTP handler ───────────────────────────────────
@@ -67,11 +68,11 @@ io.use(authMiddleware);
 
 const lobbyManager    = new LobbyManager(io);
 const stateSyncService = new StateSyncService(io, lobbyManager);
-const gameCoordinator = new GameCoordinator(io, lobbyManager, stateSyncService);
+const leaderboard     = new LeaderboardService();
+const gameCoordinator = new GameCoordinator(io, lobbyManager, stateSyncService, leaderboard);
 const voteManager     = new VoteManager(io, lobbyManager, gameCoordinator);
 const chatHandler     = new ChatHandler(io, lobbyManager);
 const reconnection    = new ReconnectionHandler(io, lobbyManager, stateSyncService);
-const leaderboard     = new LeaderboardService();
 
 // ─── Connection handler ─────────────────────────────────────────
 
@@ -124,7 +125,10 @@ function shutdown(signal: string): void {
   // Let in-flight events drain
   httpServer.close(() => {
     logger.info({ event: 'http_server_closed' });
-    process.exit(0);
+    // Disconnect Prisma client before exiting
+    disconnectPrisma().finally(() => {
+      process.exit(0);
+    });
   });
 
   // Force-kill after timeout
