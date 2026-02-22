@@ -64,7 +64,7 @@ export default function RhymeTimeScoreboard({
 
   return (
     <motion.div
-      className="mx-auto flex w-full max-w-xl flex-col gap-6 p-6 text-[var(--rmhbox-text)]"
+      className="mx-auto flex w-full max-w-xl flex-col gap-6 p-6 text-(--rmhbox-text)"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
@@ -75,14 +75,14 @@ export default function RhymeTimeScoreboard({
           {isGameOver ? 'Final Scores' : 'Scoreboard'}
         </h2>
         {!isGameOver && (
-          <p className="mt-1 text-sm text-[var(--rmhbox-text-muted)]">
+          <p className="mt-1 text-sm text-(--rmhbox-text-muted)">
             After round {currentRound} of {totalRounds}
           </p>
         )}
       </motion.div>
 
       {/* Standings list */}
-      <div className="rounded-xl border border-[var(--rmhbox-border)] bg-[var(--rmhbox-surface)] p-4">
+      <div className="rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) p-4">
         <ul className="space-y-2">
           {sorted.map((player, idx) => {
             const isMvp = player.userId === mvpId;
@@ -96,12 +96,12 @@ export default function RhymeTimeScoreboard({
                   isMvp
                     ? 'bg-yellow-500/10 ring-1 ring-yellow-500/30'
                     : isSelf
-                      ? 'bg-[var(--rmhbox-accent)]/10 ring-1 ring-[var(--rmhbox-accent)]/30'
+                      ? 'bg-(--rmhbox-accent)/10 ring-1 ring-(--rmhbox-accent)/30'
                       : ''
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <span className="w-6 text-right font-mono font-bold text-[var(--rmhbox-text-muted)]">
+                  <span className="w-6 text-right font-mono font-bold text-(--rmhbox-text-muted)">
                     {idx + 1}
                   </span>
                   {isMvp && <Trophy className="h-4 w-4 text-yellow-400" />}
@@ -123,7 +123,7 @@ export default function RhymeTimeScoreboard({
                       <ArrowUp className="h-3 w-3" />+{player.delta}
                     </motion.span>
                   )}
-                  <span className="font-mono font-bold text-[var(--rmhbox-accent)]">
+                  <span className="font-mono font-bold text-(--rmhbox-accent)">
                     {player.totalScore}
                   </span>
                 </div>
@@ -137,7 +137,7 @@ export default function RhymeTimeScoreboard({
       {!isGameOver && (
         <motion.p
           variants={rowVariants}
-          className="text-center text-sm text-[var(--rmhbox-text-muted)]"
+          className="text-center text-sm text-(--rmhbox-text-muted)"
         >
           Next up: Round {currentRound + 1} of {totalRounds}
         </motion.p>
@@ -147,9 +147,9 @@ export default function RhymeTimeScoreboard({
       {isGameOver && awards.length > 0 && (
         <motion.div
           variants={rowVariants}
-          className="rounded-xl border border-[var(--rmhbox-border)] bg-[var(--rmhbox-surface)] p-4"
+          className="rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) p-4"
         >
-          <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-[var(--rmhbox-text-muted)]">
+          <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-(--rmhbox-text-muted)">
             <AwardIcon className="h-4 w-4" /> Awards
           </h3>
           <ul className="space-y-3">
@@ -158,9 +158,9 @@ export default function RhymeTimeScoreboard({
                 <span className="text-xl">{award.icon}</span>
                 <div>
                   <span className="font-semibold">{award.title}</span>
-                  <span className="mx-1 text-[var(--rmhbox-text-muted)]">—</span>
-                  <span className="text-sm text-[var(--rmhbox-accent)]">{award.recipient}</span>
-                  <p className="text-xs text-[var(--rmhbox-text-muted)]">{award.description}</p>
+                  <span className="mx-1 text-(--rmhbox-text-muted)">—</span>
+                  <span className="text-sm text-(--rmhbox-accent)">{award.recipient}</span>
+                  <p className="text-xs text-(--rmhbox-text-muted)">{award.description}</p>
                 </div>
               </li>
             ))}

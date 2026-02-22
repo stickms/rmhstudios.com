@@ -28,7 +28,7 @@ export default function LaundryPage() {
       </div>
 
       {/* Game area — fills remaining space */}
-      <div className="flex-grow relative">
+      <div className="grow relative">
         <LaundryGame />
       </div>
     </main>

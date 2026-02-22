@@ -19,7 +19,7 @@ export function MiniTrack({ opponent }: MiniTrackProps) {
             <span>{opponent.score.toLocaleString()}</span>
         </div>
         
-        <Progress value={opponent.progress} className="h-1.5 bg-zinc-800" indicatorClassName="bg-gradient-to-r from-blue-500 to-cyan-400" />
+        <Progress value={opponent.progress} className="h-1.5 bg-zinc-800" indicatorClassName="bg-linear-to-r from-blue-500 to-cyan-400" />
         
         <div className="absolute top-1 right-1 opacity-20 text-4xl font-black text-white pointer-events-none select-none">
             {opponent.combo > 5 ? opponent.combo : ''}

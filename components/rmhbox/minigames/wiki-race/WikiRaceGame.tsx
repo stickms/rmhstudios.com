@@ -281,7 +281,7 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
   }, [players, playerId]);
 
   return (
-    <div className="flex w-full max-w-4xl flex-col gap-4 text-[var(--rmhbox-text)]">
+    <div className="flex w-full max-w-4xl flex-col gap-4 text-(--rmhbox-text)">
       {/* Error toast */}
       <AnimatePresence>
         {errorMsg && (
@@ -324,10 +324,10 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
             className="flex flex-col gap-3"
           >
             {/* Target reminder + timer */}
-            <div className="flex items-center justify-between rounded-lg border border-[var(--rmhbox-border)] bg-[var(--rmhbox-surface)] px-4 py-2">
+            <div className="flex items-center justify-between rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-surface) px-4 py-2">
               <div className="flex items-center gap-2 text-sm">
-                <span className="text-[var(--rmhbox-text-muted)]">Target:</span>
-                <span className="font-bold text-[var(--rmhbox-accent)]">
+                <span className="text-(--rmhbox-text-muted)">Target:</span>
+                <span className="font-bold text-(--rmhbox-accent)">
                   {targetArticle?.title}
                 </span>
               </div>
@@ -335,7 +335,7 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
                 className={`rounded-lg px-3 py-1 text-sm font-medium ${
                   timeRemaining <= 15
                     ? 'bg-red-500/20 text-red-300 animate-pulse'
-                    : 'bg-[var(--rmhbox-surface)] text-[var(--rmhbox-text-muted)]'
+                    : 'bg-(--rmhbox-surface) text-(--rmhbox-text-muted)'
                 }`}
               >
                 {timeRemaining}s
@@ -374,8 +374,8 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
 
             {/* Other players progress */}
             {Object.keys(otherPlayers).length > 0 && (
-              <div className="flex flex-col gap-1.5 rounded-lg border border-[var(--rmhbox-border)] bg-[var(--rmhbox-surface)] p-3">
-                <span className="text-xs font-medium uppercase tracking-wider text-[var(--rmhbox-text-muted)]">
+              <div className="flex flex-col gap-1.5 rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-surface) p-3">
+                <span className="text-xs font-medium uppercase tracking-wider text-(--rmhbox-text-muted)">
                   Other Players
                 </span>
                 {Object.values(otherPlayers).map((p) => (

@@ -80,8 +80,8 @@ export default function CategoryCrashResults({
         <h3 className="text-lg font-bold">
           {isGameOver ? '🏆 Final Results' : `Round ${currentRound} of ${totalRounds}`}
         </h3>
-        <p className="text-sm text-[var(--rmhbox-text-muted)]">
-          Letter: <span className="font-bold text-[var(--rmhbox-accent)]">{roundResults.letter}</span>
+        <p className="text-sm text-(--rmhbox-text-muted)">
+          Letter: <span className="font-bold text-(--rmhbox-accent)">{roundResults.letter}</span>
         </p>
       </div>
 
@@ -97,8 +97,8 @@ export default function CategoryCrashResults({
               transition={{ delay: idx * 0.1 }}
               className={`rounded-xl border p-4 ${
                 isMe
-                  ? 'border-[var(--rmhbox-accent)]/50 bg-[var(--rmhbox-accent)]/5'
-                  : 'border-[var(--rmhbox-border)] bg-[var(--rmhbox-surface)]'
+                  ? 'border-(--rmhbox-accent)/50 bg-(--rmhbox-accent)/5'
+                  : 'border-(--rmhbox-border) bg-(--rmhbox-surface)'
               }`}
             >
               {/* Player header */}
@@ -108,12 +108,12 @@ export default function CategoryCrashResults({
                   <span className="font-semibold">
                     {result.userName}
                     {isMe && (
-                      <span className="ml-1 text-xs text-[var(--rmhbox-accent)]">(you)</span>
+                      <span className="ml-1 text-xs text-(--rmhbox-accent)">(you)</span>
                     )}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="rounded bg-[var(--rmhbox-accent)]/10 px-2 py-0.5 text-sm font-bold text-[var(--rmhbox-accent)]">
+                  <span className="rounded bg-(--rmhbox-accent)/10 px-2 py-0.5 text-sm font-bold text-(--rmhbox-accent)">
                     +{result.roundScore}
                   </span>
                 </div>
@@ -141,9 +141,9 @@ export default function CategoryCrashResults({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.5 }}
-        className="rounded-xl border border-[var(--rmhbox-border)] bg-[var(--rmhbox-surface)] p-4"
+        className="rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) p-4"
       >
-        <h4 className="mb-3 flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-[var(--rmhbox-text-muted)]">
+        <h4 className="mb-3 flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-(--rmhbox-text-muted)">
           <TrendingUp size={14} />
           {isGameOver ? 'Final Standings' : 'Leaderboard'}
         </h4>
@@ -154,16 +154,16 @@ export default function CategoryCrashResults({
               <div
                 key={entry.userId}
                 className={`flex items-center justify-between rounded-lg px-3 py-1.5 text-sm ${
-                  isMe ? 'bg-[var(--rmhbox-accent)]/10 font-semibold' : ''
+                  isMe ? 'bg-(--rmhbox-accent)/10 font-semibold' : ''
                 }`}
               >
                 <div className="flex items-center gap-2">
-                  <span className="w-5 text-right text-xs font-bold text-[var(--rmhbox-text-muted)]">
+                  <span className="w-5 text-right text-xs font-bold text-(--rmhbox-text-muted)">
                     {idx + 1}.
                   </span>
                   {idx === 0 && <Star size={12} className="text-yellow-400" />}
                   <span>{entry.name}</span>
-                  {isMe && <span className="text-xs text-[var(--rmhbox-accent)]">(you)</span>}
+                  {isMe && <span className="text-xs text-(--rmhbox-accent)">(you)</span>}
                 </div>
                 <span className="font-bold">{entry.score}</span>
               </div>

@@ -68,9 +68,9 @@ export default function GridBoard({ grid, canGuess, isSpymaster, onTileClick }: 
               ${
                 isRevealed
                   ? `${revealedStyle?.bg ?? ''} ${revealedStyle?.text ?? ''} border-transparent opacity-80`
-                  : `border-[var(--rmhbox-border)] bg-[var(--rmhbox-surface)] text-[var(--rmhbox-text)] ${spymasterHint}`
+                  : `border-(--rmhbox-border) bg-(--rmhbox-surface) text-(--rmhbox-text) ${spymasterHint}`
               }
-              ${clickable ? 'cursor-pointer hover:border-[var(--rmhbox-accent)] hover:bg-[var(--rmhbox-accent)]/10' : ''}
+              ${clickable ? 'cursor-pointer hover:border-(--rmhbox-accent) hover:bg-(--rmhbox-accent)/10' : ''}
               ${!clickable && !isRevealed ? 'cursor-default' : ''}
             `}
           >

@@ -72,12 +72,12 @@ export default function WikiFrame({
   }, [currentTitle]);
 
   return (
-    <div className="relative rounded-xl border border-[var(--rmhbox-border)] bg-white/5 overflow-hidden">
+    <div className="relative rounded-xl border border-(--rmhbox-border) bg-white/5 overflow-hidden">
       {/* Title bar */}
-      <div className="flex items-center justify-between border-b border-[var(--rmhbox-border)] bg-[var(--rmhbox-surface)] px-4 py-2">
+      <div className="flex items-center justify-between border-b border-(--rmhbox-border) bg-(--rmhbox-surface) px-4 py-2">
         <h3 className="text-sm font-bold truncate">{currentTitle || 'Loading…'}</h3>
         {isLoading && (
-          <Loader2 size={14} className="animate-spin text-[var(--rmhbox-accent)]" />
+          <Loader2 size={14} className="animate-spin text-(--rmhbox-accent)" />
         )}
       </div>
 
@@ -88,7 +88,7 @@ export default function WikiFrame({
             animate={{ rotate: 360 }}
             transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
           >
-            <Loader2 size={24} className="text-[var(--rmhbox-accent)]" />
+            <Loader2 size={24} className="text-(--rmhbox-accent)" />
           </motion.div>
         </div>
       )}

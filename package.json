@@ -66,7 +66,7 @@
     "zustand": "^5.0.11"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
+    "@tailwindcss/postcss": "^4.2.0",
     "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^20",
     "@types/pg": "^8.11.14",
@@ -78,7 +78,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "prisma": "^7.4.1",
-    "tailwindcss": "^4",
+    "tailwindcss": "^4.2.0",
     "tsx": "^4.21.0",
     "typescript": "^5",
     "vitest": "^4.0.18"

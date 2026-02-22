@@ -13,9 +13,9 @@ const socialLinks = [
 
 export function FooterSection() {
   return (
-    <footer id="contact" className="relative min-h-screen flex flex-col justify-center px-4 py-20 pb-28 md:pb-20 overflow-hidden pb-safe bg-gradient-to-b from-[var(--neon-blue)]/20 to-black">
+    <footer id="contact" className="relative min-h-screen flex flex-col justify-center px-4 py-20 pb-28 md:pb-20 overflow-hidden pb-safe bg-linear-to-b from-(--neon-blue)/20 to-black">
       {/* Subtle Divider */}
-      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-[var(--neon-cyan)]/50 to-transparent opacity-50" />
+      <div className="absolute top-0 left-0 w-full h-px bg-linear-to-r from-transparent via-(--neon-cyan)/50 to-transparent opacity-50" />
       
       <div className="max-w-6xl mx-auto w-full">
         {/* Section header */}
@@ -46,7 +46,7 @@ export function FooterSection() {
                   key={link.name}
                   href={link.href}
                   aria-label={link.name}
-                  className="w-12 h-12 rounded-full border border-white/20 flex items-center justify-center text-white/60 hover:text-white hover:border-[var(--neon-pink)] hover:shadow-[0_0_20px_var(--neon-pink)] transition-all duration-300"
+                  className="w-12 h-12 rounded-full border border-white/20 flex items-center justify-center text-white/60 hover:text-white hover:border-(--neon-pink) hover:shadow-[0_0_20px_var(--neon-pink)] transition-all duration-300"
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
@@ -88,7 +88,7 @@ export function FooterSection() {
                 className="text-white/60 hover:text-white transition-colors relative group"
               >
                 hello@rmhstudios.com
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-[var(--neon-pink)] to-[var(--neon-cyan)] group-hover:w-full transition-all duration-300" />
+                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-linear-to-r from-(--neon-pink) to-(--neon-cyan) group-hover:w-full transition-all duration-300" />
               </a>
             </motion.div>
           </div>

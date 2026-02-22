@@ -124,10 +124,10 @@ export default function CategoryInput({
       {/* Header: letter + timer */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl border-2 border-[var(--rmhbox-accent)] bg-[var(--rmhbox-accent)]/10 text-2xl font-bold text-[var(--rmhbox-accent)]">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl border-2 border-(--rmhbox-accent) bg-(--rmhbox-accent)/10 text-2xl font-bold text-(--rmhbox-accent)">
             {letter}
           </div>
-          <div className="text-sm text-[var(--rmhbox-text-muted)]">
+          <div className="text-sm text-(--rmhbox-text-muted)">
             {filledCount}/{categories.length} answered
           </div>
         </div>
@@ -135,7 +135,7 @@ export default function CategoryInput({
           className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium ${
             isUrgent
               ? 'bg-red-500/20 text-red-300 animate-pulse'
-              : 'bg-[var(--rmhbox-surface)] text-[var(--rmhbox-text-muted)]'
+              : 'bg-(--rmhbox-surface) text-(--rmhbox-text-muted)'
           }`}
         >
           <Clock size={14} />
@@ -159,7 +159,7 @@ export default function CategoryInput({
               className="flex flex-col gap-1"
             >
               <label className="flex items-center gap-2 text-sm font-medium">
-                <span className="text-[var(--rmhbox-text-muted)]">{i + 1}.</span>
+                <span className="text-(--rmhbox-text-muted)">{i + 1}.</span>
                 {cat.name}
                 {cat.difficulty && (
                   <span
@@ -176,7 +176,7 @@ export default function CategoryInput({
                 )}
               </label>
               <div className="relative">
-                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-lg font-bold text-[var(--rmhbox-accent)]/40">
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-lg font-bold text-(--rmhbox-accent)/40">
                   {letter.toUpperCase()}
                 </span>
                 <input
@@ -188,10 +188,10 @@ export default function CategoryInput({
                   disabled={isLocked}
                   maxLength={50}
                   placeholder={`${letter.toUpperCase()}...`}
-                  className={`w-full rounded-lg border bg-[var(--rmhbox-surface)] px-3 py-2 pl-9 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--rmhbox-accent)]/50 disabled:opacity-50 ${
+                  className={`w-full rounded-lg border bg-(--rmhbox-surface) px-3 py-2 pl-9 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-(--rmhbox-accent)/50 disabled:opacity-50 ${
                     !startsCorrectly
                       ? 'border-red-500/50 ring-1 ring-red-500/30'
-                      : 'border-[var(--rmhbox-border)]'
+                      : 'border-(--rmhbox-border)'
                   }`}
                 />
                 {!startsCorrectly && (
@@ -207,7 +207,7 @@ export default function CategoryInput({
 
       {/* Footer: save/submit + locked count */}
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 text-sm text-[var(--rmhbox-text-muted)]">
+        <div className="flex items-center gap-2 text-sm text-(--rmhbox-text-muted)">
           <Lock size={14} />
           {lockedCount}/{totalPlayers} submitted
         </div>
@@ -215,7 +215,7 @@ export default function CategoryInput({
           <button
             onClick={() => onSave(localAnswers)}
             disabled={isLocked}
-            className="flex items-center gap-1.5 rounded-lg border border-[var(--rmhbox-border)] bg-[var(--rmhbox-surface)] px-3 py-2 text-sm transition-colors hover:bg-[var(--rmhbox-surface-hover)] disabled:opacity-40"
+            className="flex items-center gap-1.5 rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-surface) px-3 py-2 text-sm transition-colors hover:bg-(--rmhbox-surface-hover) disabled:opacity-40"
           >
             <Save size={14} />
             Save
@@ -223,7 +223,7 @@ export default function CategoryInput({
           <button
             onClick={handleSubmit}
             disabled={isLocked}
-            className="flex items-center gap-1.5 rounded-lg bg-[var(--rmhbox-accent)] px-4 py-2 text-sm font-semibold text-black transition-opacity hover:opacity-90 disabled:opacity-40"
+            className="flex items-center gap-1.5 rounded-lg bg-(--rmhbox-accent) px-4 py-2 text-sm font-semibold text-black transition-opacity hover:opacity-90 disabled:opacity-40"
           >
             <Send size={14} />
             {isLocked ? 'Submitted' : 'Submit'}

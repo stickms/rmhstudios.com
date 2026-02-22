@@ -434,7 +434,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
             {(!showMultiplayer && !showCalibration) && (
                 <>
                     {(isLoading || session.isPending) && (
-                <div className="absolute inset-0 z-[70] bg-slice-bg/80 flex items-center justify-center flex-col gap-4">
+                <div className="absolute inset-0 z-70 bg-slice-bg/80 flex items-center justify-center flex-col gap-4">
                     <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
                     <div className="text-blue-500 font-extrabold animate-pulse uppercase tracking-widest">{session.isPending ? 'Validating Session' : 'Initializing Track'}</div>
                 </div>
@@ -455,7 +455,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                 <div className="flex items-center gap-3">
                     <Button
                         variant="outline"
-                        className="h-10 bg-gradient-to-r from-violet-500 to-blue-500 text-white border-none hover:from-violet-400 hover:to-blue-400 font-black px-5 rounded-lg transition-all uppercase tracking-wide text-xs shadow-[0_0_12px_rgba(139,92,246,0.5)] hover:shadow-[0_0_20px_rgba(139,92,246,0.7)] animate-pulse hover:animate-none"
+                        className="h-10 bg-linear-to-r from-violet-500 to-blue-500 text-white border-none hover:from-violet-400 hover:to-blue-400 font-black px-5 rounded-lg transition-all uppercase tracking-wide text-xs shadow-[0_0_12px_rgba(139,92,246,0.5)] hover:shadow-[0_0_20px_rgba(139,92,246,0.7)] animate-pulse hover:animate-none"
                         onClick={() => setShowMultiplayer(true)}
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mr-1.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -485,7 +485,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
             <div className="flex-1 min-h-0 flex relative">
                 {/* Auth Overlay */}
                 {!session.data && !session.isPending && (
-                    <div className="absolute inset-0 z-[60] bg-slice-bg/90 flex items-center justify-center p-8 backdrop-blur-xl rounded-[4rem] shadow-[inset_15px_15px_40px_var(--slice-shadow-dark),inset_-15px_-15px_40px_var(--slice-shadow-light)]">
+                    <div className="absolute inset-0 z-60 bg-slice-bg/90 flex items-center justify-center p-8 backdrop-blur-xl rounded-[4rem] shadow-[inset_15px_15px_40px_var(--slice-shadow-dark),inset_-15px_-15px_40px_var(--slice-shadow-light)]">
                         <div className="w-full max-w-md space-y-10 text-center animate-in fade-in zoom-in duration-700">
                              <h3 className="text-3xl sm:text-5xl font-black tracking-tighter uppercase italic text-slice-text">Connect to Start</h3>
                              <p className="text-slice-text-muted font-bold uppercase text-xs tracking-[0.5em] opacity-60">Authentication is required for leaderboard ranking</p>
@@ -516,12 +516,12 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                     <>
                         {/* Backdrop */}
                         <div
-                            className="absolute inset-0 bg-black/20 z-[65] animate-in fade-in duration-200"
+                            className="absolute inset-0 bg-black/20 z-65 animate-in fade-in duration-200"
                             onClick={() => setSelectedSong(null)}
                         />
 
                         {/* Sidebar Panel */}
-                        <div className="absolute top-0 right-0 bottom-0 w-full sm:max-w-2xl bg-slice-bg shadow-2xl z-[70] animate-in slide-in-from-right duration-300 flex flex-col overflow-hidden">
+                        <div className="absolute top-0 right-0 bottom-0 w-full sm:max-w-2xl bg-slice-bg shadow-2xl z-70 animate-in slide-in-from-right duration-300 flex flex-col overflow-hidden">
                             {/* Sidebar Header */}
                             <div className="flex items-center justify-between p-4 border-b border-slice-shadow-dark/50 bg-slice-shadow-dark/20">
                                 <h2 className="text-lg font-black text-slice-text">Song Details</h2>
@@ -552,7 +552,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
             
             {/* Settings Overlay remains as a full-screen drawer */}
             {showSettings && (
-                <div className="absolute inset-0 z-[80] bg-slice-bg p-5 sm:p-12 flex flex-col animate-in slide-in-from-right-10 overflow-y-auto">
+                <div className="absolute inset-0 z-80 bg-slice-bg p-5 sm:p-12 flex flex-col animate-in slide-in-from-right-10 overflow-y-auto">
                     <div className="flex items-center justify-between mb-5 sm:mb-12">
                         <h2 className="text-2xl sm:text-5xl font-black text-slice-text tracking-tighter uppercase italic">System Configuration</h2>
                         <Button 
@@ -605,7 +605,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
 
                                 <div className="pt-4">
                                     <Button 
-                                        className="w-full h-16 bg-slice-bg text-slice-text-darker shadow-[8px_8px_16px_var(--slice-shadow-dark),-8px_-8px_16px_var(--slice-shadow-light)] active:shadow-inner rounded-2xl font-black text-sm tracking-[0.1em] uppercase transition-all"
+                                        className="w-full h-16 bg-slice-bg text-slice-text-darker shadow-[8px_8px_16px_var(--slice-shadow-dark),-8px_-8px_16px_var(--slice-shadow-light)] active:shadow-inner rounded-2xl font-black text-sm tracking-widest uppercase transition-all"
                                         onClick={() => setShowCalibration(true)}
                                     >
                                         Calibrate Synchronization

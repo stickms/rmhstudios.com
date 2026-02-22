@@ -50,15 +50,15 @@ export default function ClueInput({ gridWords, onSubmit, timeRemaining }: ClueIn
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-md flex-col items-center gap-4 rounded-xl border border-[var(--rmhbox-border)] bg-[var(--rmhbox-surface)] p-5">
+    <div className="mx-auto flex w-full max-w-md flex-col items-center gap-4 rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) p-5">
       {/* Timer */}
-      <div className="flex items-center gap-2 text-sm text-[var(--rmhbox-text-muted)]">
+      <div className="flex items-center gap-2 text-sm text-(--rmhbox-text-muted)">
         <Clock className="h-4 w-4" />
         <span className="font-mono font-semibold">{timeRemaining}s</span>
       </div>
 
-      <h3 className="text-lg font-bold text-[var(--rmhbox-text)]">Give a Clue</h3>
-      <p className="text-xs text-[var(--rmhbox-text-muted)]">
+      <h3 className="text-lg font-bold text-(--rmhbox-text)">Give a Clue</h3>
+      <p className="text-xs text-(--rmhbox-text-muted)">
         One word + a number (how many tiles relate to it)
       </p>
 
@@ -71,7 +71,7 @@ export default function ClueInput({ gridWords, onSubmit, timeRemaining }: ClueIn
         onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
         placeholder="Enter a one-word clue…"
         maxLength={30}
-        className="w-full rounded-lg border border-[var(--rmhbox-border)] bg-[var(--rmhbox-bg)] px-4 py-2 text-sm text-[var(--rmhbox-text)] placeholder:text-[var(--rmhbox-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--rmhbox-accent)]"
+        className="w-full rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) px-4 py-2 text-sm text-(--rmhbox-text) placeholder:text-(--rmhbox-text-muted) focus:outline-none focus:ring-2 focus:ring-(--rmhbox-accent)"
       />
 
       {/* Warnings */}
@@ -94,8 +94,8 @@ export default function ClueInput({ gridWords, onSubmit, timeRemaining }: ClueIn
               className={`rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors
                 ${
                   isSelected
-                    ? 'border-[var(--rmhbox-accent)] bg-[var(--rmhbox-accent)]/20 text-[var(--rmhbox-accent)]'
-                    : 'border-[var(--rmhbox-border)] bg-[var(--rmhbox-surface)] text-[var(--rmhbox-text-muted)] hover:bg-[var(--rmhbox-accent)]/10'
+                    ? 'border-(--rmhbox-accent) bg-(--rmhbox-accent)/20 text-(--rmhbox-accent)'
+                    : 'border-(--rmhbox-border) bg-(--rmhbox-surface) text-(--rmhbox-text-muted) hover:bg-(--rmhbox-accent)/10'
                 }`}
             >
               {n}
@@ -108,7 +108,7 @@ export default function ClueInput({ gridWords, onSubmit, timeRemaining }: ClueIn
       <button
         onClick={handleSubmit}
         disabled={!isValid}
-        className="flex items-center gap-2 rounded-lg bg-[var(--rmhbox-accent)] px-6 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+        className="flex items-center gap-2 rounded-lg bg-(--rmhbox-accent) px-6 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40"
       >
         <Send className="h-4 w-4" /> Submit Clue
       </button>

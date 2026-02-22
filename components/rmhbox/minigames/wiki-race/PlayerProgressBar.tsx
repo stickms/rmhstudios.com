@@ -33,13 +33,13 @@ export default function PlayerProgressBar({
         {hasFinished && (
           <Trophy
             size={12}
-            className={finishRank === 1 ? 'text-yellow-400' : 'text-[var(--rmhbox-text-muted)]'}
+            className={finishRank === 1 ? 'text-yellow-400' : 'text-(--rmhbox-text-muted)'}
           />
         )}
         <span className={hasFinished ? 'font-semibold' : ''}>{name}</span>
       </div>
       <div className="flex items-center gap-2">
-        <span className="text-xs text-[var(--rmhbox-text-muted)]">
+        <span className="text-xs text-(--rmhbox-text-muted)">
           {clickCount} click{clickCount !== 1 ? 's' : ''}
         </span>
         {hasFinished && (

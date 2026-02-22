@@ -285,20 +285,20 @@ export default function RhymeTimeGame({ playerId, playerName: _playerName }: Rhy
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 1.1 }}
           transition={{ duration: 0.5 }}
-          className="flex flex-col items-center justify-center gap-4 text-[var(--rmhbox-text)]"
+          className="flex flex-col items-center justify-center gap-4 text-(--rmhbox-text)"
         >
-          <p className="text-sm uppercase tracking-wider text-[var(--rmhbox-text-muted)]">
+          <p className="text-sm uppercase tracking-wider text-(--rmhbox-text-muted)">
             Round {currentRound} of {totalRounds}
           </p>
           <motion.h1
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5, duration: 0.6, type: 'spring' }}
-            className="text-6xl font-extrabold text-[var(--rmhbox-accent)]"
+            className="text-6xl font-extrabold text-(--rmhbox-accent)"
           >
             {rootWord}
           </motion.h1>
-          <p className="text-sm text-[var(--rmhbox-text-muted)]">Get ready to rhyme!</p>
+          <p className="text-sm text-(--rmhbox-text-muted)">Get ready to rhyme!</p>
         </motion.div>
       )}
 

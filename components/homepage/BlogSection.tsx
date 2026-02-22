@@ -79,9 +79,9 @@ export function BlogSection({ posts }: BlogSectionProps) {
   }, [emblaApi, onInit, onSelect]);
 
   return (
-    <section id="blog" ref={containerRef} className="relative py-20 overflow-hidden bg-gradient-to-b from-[var(--neon-pink)]/20 to-[var(--neon-purple)]/20 min-h-screen flex flex-col justify-center">
+    <section id="blog" ref={containerRef} className="relative py-20 overflow-hidden bg-linear-to-b from-(--neon-pink)/20 to-(--neon-purple)/20 min-h-screen flex flex-col justify-center">
       {/* Subtle Divider */}
-      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-[var(--neon-pink)]/50 to-transparent opacity-50" />
+      <div className="absolute top-0 left-0 w-full h-px bg-linear-to-r from-transparent via-(--neon-pink)/50 to-transparent opacity-50" />
       
       <div className="container mx-auto max-w-7xl relative z-10 px-4">
         <motion.div
@@ -106,9 +106,9 @@ export function BlogSection({ posts }: BlogSectionProps) {
         onMouseLeave={() => setIsPaused(false)}
       >
           {/* Left Grid Overlay */}
-          <div className="absolute inset-y-0 left-0 w-24 md:w-48 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:linear-gradient(to_right,black,transparent)] z-20 pointer-events-none" />
+          <div className="absolute inset-y-0 left-0 w-24 md:w-48 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-size-[24px_24px] mask-[linear-gradient(to_right,black,transparent)] z-20 pointer-events-none" />
           {/* Right Grid Overlay */}
-          <div className="absolute inset-y-0 right-0 w-24 md:w-48 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:linear-gradient(to_left,black,transparent)] z-20 pointer-events-none" />
+          <div className="absolute inset-y-0 right-0 w-24 md:w-48 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-size-[24px_24px] mask-[linear-gradient(to_left,black,transparent)] z-20 pointer-events-none" />
 
           <div className="overflow-visible" ref={emblaRef}>
               <div className="flex touch-pan-y">
@@ -118,26 +118,26 @@ export function BlogSection({ posts }: BlogSectionProps) {
                           className="flex-[0_0_80%] md:flex-[0_0_45%] lg:flex-[0_0_25%] min-w-0 px-4 transition-opacity duration-300"
                       >
                           <div
-                              className={`h-full transition-all duration-500 ease-out ${index === selectedIndex ? "scale-100 opacity-100 z-10" : "scale-[0.85] opacity-30 grayscale-[50%]"}`}
+                              className={`h-full transition-all duration-500 ease-out ${index === selectedIndex ? "scale-100 opacity-100 z-10" : "scale-[0.85] opacity-30 grayscale-50"}`}
                           >
                               <Link href={`/blog/${post.slug}`} className="block group/card h-full">
-                                  <div className="bg-black/60 border border-white/10 rounded-2xl overflow-hidden hover:border-[var(--neon-pink)] transition-all duration-300 h-full flex flex-col hover:shadow-[0_0_40px_rgba(255,0,255,0.2)] relative backdrop-blur-sm">
+                                  <div className="bg-black/60 border border-white/10 rounded-2xl overflow-hidden hover:border-(--neon-pink) transition-all duration-300 h-full flex flex-col hover:shadow-[0_0_40px_rgba(255,0,255,0.2)] relative backdrop-blur-sm">
                                   
                                   {/* Image Placeholder */}
                                   <div className="h-48 md:h-64 bg-white/5 relative overflow-hidden group-hover/card:scale-105 transition-transform duration-700">
                                       <div className="absolute inset-0 flex items-center justify-center text-white/20 font-mono text-sm px-4 text-center">
                                           [Image: {post.title}]
                                       </div>
-                                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 to-transparent" />
+                                      <div className="absolute inset-0 bg-linear-to-t from-black/90 to-transparent" />
                                   </div>
 
                                   <div className="p-6 flex flex-col flex-1 relative z-10">
-                                      <div className="flex items-center gap-2 text-[var(--neon-cyan)] text-xs md:text-sm font-mono mb-3">
+                                      <div className="flex items-center gap-2 text-(--neon-cyan) text-xs md:text-sm font-mono mb-3">
                                           <Calendar className="w-3 h-3 md:w-4 md:h-4" />
                                           {post.date}
                                       </div>
                                       
-                                      <h3 className="text-xl md:text-2xl font-bold text-white mb-3 group-hover/card:text-[var(--neon-pink)] transition-colors line-clamp-2">
+                                      <h3 className="text-xl md:text-2xl font-bold text-white mb-3 group-hover/card:text-(--neon-pink) transition-colors line-clamp-2">
                                           {post.title}
                                       </h3>
                                       
@@ -160,14 +160,14 @@ export function BlogSection({ posts }: BlogSectionProps) {
           {/* Custom Navigation Controls */}
           <button 
               onClick={scrollPrev} 
-              className="absolute left-2 sm:left-4 md:left-[10%] lg:left-[30%] top-1/2 -translate-y-1/2 z-30 p-2 sm:p-3 rounded-full bg-black/50 border border-white/10 text-white hover:bg-[var(--neon-pink)] hover:border-[var(--neon-pink)] transition-all flex backdrop-blur-md"
+              className="absolute left-2 sm:left-4 md:left-[10%] lg:left-[30%] top-1/2 -translate-y-1/2 z-30 p-2 sm:p-3 rounded-full bg-black/50 border border-white/10 text-white hover:bg-(--neon-pink) hover:border-(--neon-pink) transition-all flex backdrop-blur-md"
               aria-label="Previous Slide"
           >
               <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
           <button 
               onClick={scrollNext} 
-              className="absolute right-2 sm:right-4 md:right-[10%] lg:right-[30%] top-1/2 -translate-y-1/2 z-30 p-2 sm:p-3 rounded-full bg-black/50 border border-white/10 text-white hover:bg-[var(--neon-pink)] hover:border-[var(--neon-pink)] transition-all flex backdrop-blur-md"
+              className="absolute right-2 sm:right-4 md:right-[10%] lg:right-[30%] top-1/2 -translate-y-1/2 z-30 p-2 sm:p-3 rounded-full bg-black/50 border border-white/10 text-white hover:bg-(--neon-pink) hover:border-(--neon-pink) transition-all flex backdrop-blur-md"
               aria-label="Next Slide"
           >
               <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -187,7 +187,7 @@ export function BlogSection({ posts }: BlogSectionProps) {
                     >
                         {index === selectedIndex && (
                           <div 
-                              className="absolute inset-0 bg-[var(--neon-pink)]"
+                              className="absolute inset-0 bg-(--neon-pink)"
                               style={{ width: `${progress}%` }}
                           />
                         )}

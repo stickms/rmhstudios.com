@@ -31,7 +31,7 @@ export default function TeamPanel({ team, isActive, getPlayerName, currentUserId
 
   return (
     <div
-      className={`flex-1 rounded-xl border ${borderColor} bg-[var(--rmhbox-surface)] p-3 ${activeGlow} transition-all`}
+      className={`flex-1 rounded-xl border ${borderColor} bg-(--rmhbox-surface) p-3 ${activeGlow} transition-all`}
     >
       {/* Team header */}
       <div className="flex items-center justify-between">
@@ -44,7 +44,7 @@ export default function TeamPanel({ team, isActive, getPlayerName, currentUserId
       </div>
 
       {/* Agent progress bar */}
-      <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-[var(--rmhbox-border)]">
+      <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-(--rmhbox-border)">
         <div
           className={`h-full rounded-full transition-all duration-500 ${isRed ? 'bg-red-500' : 'bg-blue-500'}`}
           style={{ width: `${(team.agentsRevealed / team.agentsTotal) * 100}%` }}
@@ -58,7 +58,7 @@ export default function TeamPanel({ team, isActive, getPlayerName, currentUserId
           <Shield className={`h-3 w-3 ${teamColor}`} />
           <span
             className={`truncate ${
-              team.spymasterId === currentUserId ? 'font-bold text-[var(--rmhbox-accent)]' : 'text-[var(--rmhbox-text)]'
+              team.spymasterId === currentUserId ? 'font-bold text-(--rmhbox-accent)' : 'text-(--rmhbox-text)'
             }`}
           >
             {getPlayerName(team.spymasterId)}
@@ -67,10 +67,10 @@ export default function TeamPanel({ team, isActive, getPlayerName, currentUserId
         {/* Operatives */}
         {team.operativeIds.map((uid) => (
           <li key={uid} className="flex items-center gap-1.5 text-xs">
-            <Eye className={`h-3 w-3 text-[var(--rmhbox-text-muted)]`} />
+            <Eye className={`h-3 w-3 text-(--rmhbox-text-muted)`} />
             <span
               className={`truncate ${
-                uid === currentUserId ? 'font-bold text-[var(--rmhbox-accent)]' : 'text-[var(--rmhbox-text)]'
+                uid === currentUserId ? 'font-bold text-(--rmhbox-accent)' : 'text-(--rmhbox-text)'
               }`}
             >
               {getPlayerName(uid)}

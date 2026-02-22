@@ -98,7 +98,7 @@ export function SongComments({ songId }: SongCommentsProps) {
                 ) : (
                     comments.map(comment => (
                         <div key={comment.id} className="flex gap-2 animate-in slide-in-from-bottom-2">
-                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold text-[10px] shrink-0 shadow-sm mt-1">
+                            <div className="w-6 h-6 rounded-full bg-linear-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold text-[10px] shrink-0 shadow-sm mt-1">
                                 {comment.user.name?.[0] || "?"}
                             </div>
                             <div className="bg-slice-card-bg/60 p-2 rounded-xl rounded-tl-none shadow-sm flex-1">

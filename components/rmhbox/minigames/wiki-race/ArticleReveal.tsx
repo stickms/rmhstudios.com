@@ -69,14 +69,14 @@ export default function ArticleReveal({
           initial={{ opacity: 0, x: -30 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.4, duration: 0.5 }}
-          className="flex-1 rounded-xl border border-[var(--rmhbox-border)] bg-[var(--rmhbox-surface)] p-4"
+          className="flex-1 rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) p-4"
         >
-          <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-[var(--rmhbox-text-muted)]">
+          <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-(--rmhbox-text-muted)">
             <BookOpen size={12} />
             Start
           </div>
-          <h3 className="text-lg font-bold text-[var(--rmhbox-accent)]">{startArticle.title}</h3>
-          <p className="mt-1 text-sm text-[var(--rmhbox-text-muted)]">{startArticle.description}</p>
+          <h3 className="text-lg font-bold text-(--rmhbox-accent)">{startArticle.title}</h3>
+          <p className="mt-1 text-sm text-(--rmhbox-text-muted)">{startArticle.description}</p>
         </motion.div>
 
         {/* Arrow */}
@@ -85,7 +85,7 @@ export default function ArticleReveal({
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.7, type: 'spring' }}
         >
-          <ArrowRight size={24} className="text-[var(--rmhbox-accent)]" />
+          <ArrowRight size={24} className="text-(--rmhbox-accent)" />
         </motion.div>
 
         {/* Target article */}
@@ -93,14 +93,14 @@ export default function ArticleReveal({
           initial={{ opacity: 0, x: 30 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 1, duration: 0.5 }}
-          className="flex-1 rounded-xl border-2 border-[var(--rmhbox-accent)]/50 bg-[var(--rmhbox-accent)]/5 p-4"
+          className="flex-1 rounded-xl border-2 border-(--rmhbox-accent)/50 bg-(--rmhbox-accent)/5 p-4"
         >
-          <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-[var(--rmhbox-accent)]">
+          <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-(--rmhbox-accent)">
             <Target size={12} />
             Target
           </div>
           <h3 className="text-lg font-bold">{targetArticle.title}</h3>
-          <p className="mt-1 text-sm text-[var(--rmhbox-text-muted)]">{targetArticle.description}</p>
+          <p className="mt-1 text-sm text-(--rmhbox-text-muted)">{targetArticle.description}</p>
         </motion.div>
       </div>
 
@@ -108,7 +108,7 @@ export default function ArticleReveal({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1.5 }}
-        className="text-sm text-[var(--rmhbox-text-muted)]"
+        className="text-sm text-(--rmhbox-text-muted)"
       >
         Navigate from Start → Target by clicking only wiki links!
       </motion.p>

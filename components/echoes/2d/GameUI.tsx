@@ -53,7 +53,7 @@ export function GameHUD() {
                 <div className="text-neon-purple font-bold text-xs md:text-sm font-mono w-12 md:w-16 whitespace-nowrap">LVL {level}</div>
                 <div className="flex-1 h-2 md:h-3 bg-white/10 rounded-full overflow-hidden transition-all">
                     <motion.div
-                        className="h-full rounded-full bg-gradient-to-r from-purple-600 to-pink-500"
+                        className="h-full rounded-full bg-linear-to-r from-purple-600 to-pink-500"
                         animate={{ width: `${(xp / xpNeeded) * 100}%` }}
                         transition={{ duration: 0.2 }}
                     />

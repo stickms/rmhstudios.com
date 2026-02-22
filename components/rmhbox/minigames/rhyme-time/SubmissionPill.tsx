@@ -45,7 +45,7 @@ export default function SubmissionPill({ word, status, invalidReason }: Submissi
 
       {/* Tooltip for invalid words */}
       {showTooltip && invalidReason && (
-        <span className="absolute -top-8 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded bg-[var(--rmhbox-surface)] px-2 py-1 text-[10px] text-[var(--rmhbox-text-muted)] shadow-lg border border-[var(--rmhbox-border)]">
+        <span className="absolute -top-8 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded bg-(--rmhbox-surface) px-2 py-1 text-[10px] text-(--rmhbox-text-muted) shadow-lg border border-(--rmhbox-border)">
           {invalidReason}
         </span>
       )}

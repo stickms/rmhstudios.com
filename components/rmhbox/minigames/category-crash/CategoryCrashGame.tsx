@@ -285,7 +285,7 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
   );
 
   return (
-    <div className="flex w-full max-w-4xl flex-col gap-4 text-[var(--rmhbox-text)]">
+    <div className="flex w-full max-w-4xl flex-col gap-4 text-(--rmhbox-text)">
       {/* Error toast */}
       <AnimatePresence>
         {errorMsg && (
@@ -311,14 +311,14 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
             transition={{ duration: 0.5 }}
             className="flex flex-col items-center justify-center gap-6 py-8"
           >
-            <p className="text-sm uppercase tracking-wider text-[var(--rmhbox-text-muted)]">
+            <p className="text-sm uppercase tracking-wider text-(--rmhbox-text-muted)">
               Round {currentRound} of {totalRounds}
             </p>
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.5 }}
-              className="flex h-24 w-24 items-center justify-center rounded-2xl border-4 border-[var(--rmhbox-accent)] bg-[var(--rmhbox-accent)]/10 text-5xl font-extrabold text-[var(--rmhbox-accent)]"
+              className="flex h-24 w-24 items-center justify-center rounded-2xl border-4 border-(--rmhbox-accent) bg-(--rmhbox-accent)/10 text-5xl font-extrabold text-(--rmhbox-accent)"
             >
               {letter}
             </motion.div>
@@ -329,7 +329,7 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.6 + i * 0.15 }}
-                  className="rounded-full border border-[var(--rmhbox-border)] bg-[var(--rmhbox-surface)] px-3 py-1 text-sm font-medium"
+                  className="rounded-full border border-(--rmhbox-border) bg-(--rmhbox-surface) px-3 py-1 text-sm font-medium"
                 >
                   {cat.name}
                 </motion.span>
@@ -400,7 +400,7 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
               💥
             </motion.div>
             <h3 className="text-lg font-bold">Resolving Crashes…</h3>
-            <p className="text-sm text-[var(--rmhbox-text-muted)]">Tallying votes and checking answers</p>
+            <p className="text-sm text-(--rmhbox-text-muted)">Tallying votes and checking answers</p>
           </motion.div>
         )}
 

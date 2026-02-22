@@ -74,7 +74,7 @@ export default function PeerReview({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <h3 className="text-lg font-bold">Peer Review</h3>
-          <div className="flex items-center gap-1.5 rounded-lg bg-[var(--rmhbox-accent)]/10 px-3 py-1 text-sm font-medium text-[var(--rmhbox-accent)]">
+          <div className="flex items-center gap-1.5 rounded-lg bg-(--rmhbox-accent)/10 px-3 py-1 text-sm font-medium text-(--rmhbox-accent)">
             <Zap size={14} />
             {maxCrashes - crashesUsed} crashes left
           </div>
@@ -83,7 +83,7 @@ export default function PeerReview({
           className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium ${
             isUrgent
               ? 'bg-red-500/20 text-red-300 animate-pulse'
-              : 'bg-[var(--rmhbox-surface)] text-[var(--rmhbox-text-muted)]'
+              : 'bg-(--rmhbox-surface) text-(--rmhbox-text-muted)'
           }`}
         >
           <Clock size={14} />
@@ -91,7 +91,7 @@ export default function PeerReview({
         </div>
       </div>
 
-      <p className="text-sm text-[var(--rmhbox-text-muted)]">
+      <p className="text-sm text-(--rmhbox-text-muted)">
         Challenge answers you think are <strong>invalid</strong>. Letter: <strong>{letter}</strong>
       </p>
 
@@ -103,9 +103,9 @@ export default function PeerReview({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: idx * 0.05 }}
-            className="rounded-xl border border-[var(--rmhbox-border)] bg-[var(--rmhbox-surface)]"
+            className="rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface)"
           >
-            <div className="border-b border-[var(--rmhbox-border)] px-4 py-2 text-sm font-semibold text-[var(--rmhbox-text-muted)]">
+            <div className="border-b border-(--rmhbox-border) px-4 py-2 text-sm font-semibold text-(--rmhbox-text-muted)">
               {answerSet.anonymousLabel}
             </div>
             <div className="grid grid-cols-1 gap-2 p-4 sm:grid-cols-2 md:grid-cols-5">
@@ -117,9 +117,9 @@ export default function PeerReview({
                 return (
                   <div
                     key={cat.id}
-                    className="flex flex-col gap-1.5 rounded-lg border border-[var(--rmhbox-border)]/50 bg-[var(--rmhbox-bg)]/50 p-2"
+                    className="flex flex-col gap-1.5 rounded-lg border border-(--rmhbox-border)/50 bg-(--rmhbox-bg)/50 p-2"
                   >
-                    <span className="text-[10px] font-medium uppercase tracking-wider text-[var(--rmhbox-text-muted)]">
+                    <span className="text-[10px] font-medium uppercase tracking-wider text-(--rmhbox-text-muted)">
                       {cat.name}
                     </span>
                     <AnswerCell answer={answer} letter={letter} />
@@ -150,7 +150,7 @@ export default function PeerReview({
 function AnswerCell({ answer, letter }: { answer: string | null; letter: string }) {
   if (!answer) {
     return (
-      <span className="text-sm italic text-[var(--rmhbox-text-muted)]/50">
+      <span className="text-sm italic text-(--rmhbox-text-muted)/50">
         — empty —
       </span>
     );

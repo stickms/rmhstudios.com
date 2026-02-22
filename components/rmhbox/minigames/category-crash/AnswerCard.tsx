@@ -35,9 +35,9 @@ const statusStyles: Record<AnswerStatus, { bg: string; text: string; border: str
     badge: '★',
   },
   shared: {
-    bg: 'bg-[var(--rmhbox-surface)]',
-    text: 'text-[var(--rmhbox-text)]',
-    border: 'border-[var(--rmhbox-border)]',
+    bg: 'bg-(--rmhbox-surface)',
+    text: 'text-(--rmhbox-text)',
+    border: 'border-(--rmhbox-border)',
   },
   crashed: {
     bg: 'bg-red-500/10',
@@ -52,9 +52,9 @@ const statusStyles: Record<AnswerStatus, { bg: string; text: string; border: str
     badge: '⚠',
   },
   empty: {
-    bg: 'bg-[var(--rmhbox-surface)]/50',
-    text: 'text-[var(--rmhbox-text-muted)]/50 italic',
-    border: 'border-[var(--rmhbox-border)]/30',
+    bg: 'bg-(--rmhbox-surface)/50',
+    text: 'text-(--rmhbox-text-muted)/50 italic',
+    border: 'border-(--rmhbox-border)/30',
   },
 };
 
@@ -68,7 +68,7 @@ export default function AnswerCard({ answer, category, points, status }: AnswerC
       className={`flex flex-col gap-1 rounded-lg border p-2 ${style.bg} ${style.border}`}
     >
       <div className="flex items-center justify-between">
-        <span className="text-[10px] font-medium uppercase tracking-wider text-[var(--rmhbox-text-muted)]">
+        <span className="text-[10px] font-medium uppercase tracking-wider text-(--rmhbox-text-muted)">
           {category}
         </span>
         {style.badge && <span className="text-xs">{style.badge}</span>}
@@ -78,7 +78,7 @@ export default function AnswerCard({ answer, category, points, status }: AnswerC
       </span>
       <span
         className={`text-[10px] font-semibold ${
-          points > 0 ? 'text-green-400' : points < 0 ? 'text-red-400' : 'text-[var(--rmhbox-text-muted)]'
+          points > 0 ? 'text-green-400' : points < 0 ? 'text-red-400' : 'text-(--rmhbox-text-muted)'
         }`}
       >
         {points > 0 ? `+${points}` : points === 0 ? '0' : points} pts

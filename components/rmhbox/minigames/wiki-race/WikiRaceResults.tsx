@@ -60,7 +60,7 @@ export default function WikiRaceResults({
       {/* Header */}
       <div className="text-center">
         <h3 className="text-xl font-bold">🏁 Race Results</h3>
-        <div className="mt-2 flex items-center justify-center gap-3 text-sm text-[var(--rmhbox-text-muted)]">
+        <div className="mt-2 flex items-center justify-center gap-3 text-sm text-(--rmhbox-text-muted)">
           <span className="flex items-center gap-1">
             <MapPin size={12} className="text-green-400" /> {startTitle}
           </span>
@@ -69,7 +69,7 @@ export default function WikiRaceResults({
             <Target size={12} className="text-yellow-400" /> {targetTitle}
           </span>
         </div>
-        <div className="mt-1 flex items-center justify-center gap-1 text-xs text-[var(--rmhbox-text-muted)]">
+        <div className="mt-1 flex items-center justify-center gap-1 text-xs text-(--rmhbox-text-muted)">
           <Route size={10} />
           Optimal path: {optimalPathLength} click{optimalPathLength !== 1 ? 's' : ''}
         </div>
@@ -90,21 +90,21 @@ export default function WikiRaceResults({
               transition={{ delay: idx * 0.12 }}
               className={`rounded-xl border p-4 ${
                 isMe
-                  ? 'border-[var(--rmhbox-accent)]/50 bg-[var(--rmhbox-accent)]/5'
-                  : 'border-[var(--rmhbox-border)] bg-[var(--rmhbox-surface)]'
+                  ? 'border-(--rmhbox-accent)/50 bg-(--rmhbox-accent)/5'
+                  : 'border-(--rmhbox-border) bg-(--rmhbox-surface)'
               }`}
             >
               {/* Player header */}
               <div className="mb-2 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--rmhbox-surface)] text-xs font-bold">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-(--rmhbox-surface) text-xs font-bold">
                     {idx + 1}
                   </span>
                   {isWinner && <Trophy size={14} className="text-yellow-400" />}
                   <span className="font-semibold">
                     {player.userName}
                     {isMe && (
-                      <span className="ml-1 text-xs text-[var(--rmhbox-accent)]">(you)</span>
+                      <span className="ml-1 text-xs text-(--rmhbox-accent)">(you)</span>
                     )}
                   </span>
                   {isOptimal && (
@@ -113,13 +113,13 @@ export default function WikiRaceResults({
                     </span>
                   )}
                 </div>
-                <span className="text-lg font-bold text-[var(--rmhbox-accent)]">
+                <span className="text-lg font-bold text-(--rmhbox-accent)">
                   {player.score}
                 </span>
               </div>
 
               {/* Stats row */}
-              <div className="mb-2 flex items-center gap-4 text-xs text-[var(--rmhbox-text-muted)]">
+              <div className="mb-2 flex items-center gap-4 text-xs text-(--rmhbox-text-muted)">
                 <span>
                   {player.clickCount} click{player.clickCount !== 1 ? 's' : ''}
                 </span>
@@ -145,7 +145,7 @@ export default function WikiRaceResults({
                   return (
                     <span key={`${pi}-${title}`} className="flex items-center gap-1">
                       {pi > 0 && (
-                        <span className="text-[var(--rmhbox-text-muted)]/40">→</span>
+                        <span className="text-(--rmhbox-text-muted)/40">→</span>
                       )}
                       <span
                         className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${
@@ -155,7 +155,7 @@ export default function WikiRaceResults({
                               ? 'bg-blue-500/20 text-blue-400'
                               : isLast && !isTargetArticle
                                 ? 'bg-red-500/20 text-red-400'
-                                : 'bg-[var(--rmhbox-surface)] text-[var(--rmhbox-text-muted)]'
+                                : 'bg-(--rmhbox-surface) text-(--rmhbox-text-muted)'
                         }`}
                       >
                         {title.length > 20 ? `${title.slice(0, 17)}…` : title}

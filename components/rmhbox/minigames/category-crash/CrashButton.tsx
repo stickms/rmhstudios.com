@@ -38,7 +38,7 @@ export default function CrashButton({
         ${
           isCrashed
             ? 'bg-red-500/30 text-red-300 border border-red-500/40 hover:bg-red-500/20'
-            : 'bg-[var(--rmhbox-surface)] text-[var(--rmhbox-text-muted)] border border-[var(--rmhbox-border)] hover:bg-red-500/10 hover:text-red-300'
+            : 'bg-(--rmhbox-surface) text-(--rmhbox-text-muted) border border-(--rmhbox-border) hover:bg-red-500/10 hover:text-red-300'
         }
         ${disabled && !isCrashed ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'}
       `}

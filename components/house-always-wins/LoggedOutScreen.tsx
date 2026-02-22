@@ -20,7 +20,7 @@ export function LoggedOutScreen() {
         transition={{ duration: 0.8, ease: "easeOut" }}
       >
         {/* Decorative line */}
-        <div className="w-16 h-px bg-gradient-to-r from-transparent via-amber-700/50 to-transparent mb-8" />
+        <div className="w-16 h-px bg-linear-to-r from-transparent via-amber-700/50 to-transparent mb-8" />
 
         <h1 className="text-4xl font-bold tracking-tight text-amber-100/90 mb-2">
           House Always Wins
@@ -50,7 +50,7 @@ export function LoggedOutScreen() {
         </Link>
 
         {/* Decorative line */}
-        <div className="w-16 h-px bg-gradient-to-r from-transparent via-amber-700/50 to-transparent mt-10" />
+        <div className="w-16 h-px bg-linear-to-r from-transparent via-amber-700/50 to-transparent mt-10" />
       </motion.div>
     </div>
   );

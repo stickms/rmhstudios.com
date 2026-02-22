@@ -80,7 +80,7 @@ export default function RhymeTimeResults({
 
   return (
     <motion.div
-      className="mx-auto flex w-full max-w-2xl flex-col gap-6 p-6 text-[var(--rmhbox-text)]"
+      className="mx-auto flex w-full max-w-2xl flex-col gap-6 p-6 text-(--rmhbox-text)"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
@@ -88,8 +88,8 @@ export default function RhymeTimeResults({
       {/* Header */}
       <motion.div variants={itemVariants} className="text-center">
         <h2 className="text-2xl font-bold">Round {roundNumber} Results</h2>
-        <p className="mt-1 text-sm text-[var(--rmhbox-text-muted)]">
-          Root word: <span className="font-semibold text-[var(--rmhbox-accent)]">{rootWord}</span>
+        <p className="mt-1 text-sm text-(--rmhbox-text-muted)">
+          Root word: <span className="font-semibold text-(--rmhbox-accent)">{rootWord}</span>
         </p>
       </motion.div>
 
@@ -100,7 +100,7 @@ export default function RhymeTimeResults({
           <motion.div
             key={tier}
             variants={itemVariants}
-            className="rounded-xl border border-[var(--rmhbox-border)] bg-[var(--rmhbox-surface)] p-4"
+            className="rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) p-4"
           >
             <h3 className={`mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider ${config.color}`}>
               {tier === 'rare' && <Sparkles className="h-4 w-4" />}
@@ -113,7 +113,7 @@ export default function RhymeTimeResults({
                   <li
                     key={`${w.word}-${i}`}
                     className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm ${
-                      isOwn ? 'bg-[var(--rmhbox-accent)]/10 ring-1 ring-[var(--rmhbox-accent)]/30' : ''
+                      isOwn ? 'bg-(--rmhbox-accent)/10 ring-1 ring-(--rmhbox-accent)/30' : ''
                     }`}
                   >
                     <div className="flex items-center gap-2">
@@ -131,8 +131,8 @@ export default function RhymeTimeResults({
                       </span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-xs text-[var(--rmhbox-text-muted)]">{w.submittedBy}</span>
-                      <span className="font-mono font-semibold text-[var(--rmhbox-accent)]">
+                      <span className="text-xs text-(--rmhbox-text-muted)">{w.submittedBy}</span>
+                      <span className="font-mono font-semibold text-(--rmhbox-accent)">
                         +{w.points}
                       </span>
                     </div>
@@ -147,14 +147,14 @@ export default function RhymeTimeResults({
       {/* Per-player breakdown */}
       <motion.div
         variants={itemVariants}
-        className="rounded-xl border border-[var(--rmhbox-border)] bg-[var(--rmhbox-surface)] p-4"
+        className="rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) p-4"
       >
-        <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-[var(--rmhbox-text-muted)]">
+        <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-(--rmhbox-text-muted)">
           <Star className="h-4 w-4" /> Player Breakdown
         </h3>
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left text-[var(--rmhbox-text-muted)]">
+            <tr className="text-left text-(--rmhbox-text-muted)">
               <th className="pb-2 font-medium">Player</th>
               <th className="pb-2 text-right font-medium">Valid</th>
               <th className="pb-2 text-right font-medium">Invalid</th>
@@ -167,8 +167,8 @@ export default function RhymeTimeResults({
               .map((p) => (
                 <tr
                   key={p.userId}
-                  className={`border-t border-[var(--rmhbox-border)] ${
-                    p.userId === currentUserId ? 'text-[var(--rmhbox-accent)]' : ''
+                  className={`border-t border-(--rmhbox-border) ${
+                    p.userId === currentUserId ? 'text-(--rmhbox-accent)' : ''
                   }`}
                 >
                   <td className="py-1.5 font-medium">{p.userName}</td>

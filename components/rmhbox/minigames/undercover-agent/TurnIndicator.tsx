@@ -55,7 +55,7 @@ export default function TurnIndicator({
   return (
     <motion.div
       layout
-      className="flex items-center justify-between rounded-lg border border-[var(--rmhbox-border)] bg-[var(--rmhbox-surface)] px-4 py-2 text-sm"
+      className="flex items-center justify-between rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-surface) px-4 py-2 text-sm"
     >
       {/* Left: team + phase */}
       <div className="flex items-center gap-2">
@@ -64,10 +64,10 @@ export default function TurnIndicator({
             <span className={`font-bold uppercase ${teamColor}`}>
               {currentTeam}
             </span>
-            <span className="text-[var(--rmhbox-text-muted)]">—</span>
+            <span className="text-(--rmhbox-text-muted)">—</span>
           </>
         )}
-        <span className="font-medium text-[var(--rmhbox-text)]">{phaseLabel}</span>
+        <span className="font-medium text-(--rmhbox-text)">{phaseLabel}</span>
         {winner && winner !== 'draw' && (
           <span className={`ml-2 font-bold ${winner === 'red' ? 'text-red-400' : 'text-blue-400'}`}>
             🏆 {winner.charAt(0).toUpperCase() + winner.slice(1)} wins!
@@ -78,7 +78,7 @@ export default function TurnIndicator({
       {/* Right: turn number + timer */}
       <div className="flex items-center gap-4">
         {turnNumber > 0 && (
-          <span className="flex items-center gap-1 text-[var(--rmhbox-text-muted)]">
+          <span className="flex items-center gap-1 text-(--rmhbox-text-muted)">
             <Hash className="h-3.5 w-3.5" />
             <span className="font-mono">{turnNumber}</span>
           </span>
@@ -86,7 +86,7 @@ export default function TurnIndicator({
         {!isGameOver && timeRemaining > 0 && (
           <span
             className={`flex items-center gap-1 font-mono font-semibold ${
-              timeRemaining <= 10 ? 'text-red-400' : 'text-[var(--rmhbox-text-muted)]'
+              timeRemaining <= 10 ? 'text-red-400' : 'text-(--rmhbox-text-muted)'
             }`}
           >
             <Clock className="h-3.5 w-3.5" />

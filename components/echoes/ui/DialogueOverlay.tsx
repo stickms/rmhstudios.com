@@ -42,7 +42,7 @@ export default function DialogueOverlay() {
                 </div>
 
                 {/* Text */}
-                <p className="text-white text-lg leading-relaxed flex-grow font-mono">
+                <p className="text-white text-lg leading-relaxed grow font-mono">
                     {node.text}
                 </p>
 

@@ -289,7 +289,7 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
   );
 
   return (
-    <div className="flex w-full max-w-5xl flex-col gap-4 text-[var(--rmhbox-text)]">
+    <div className="flex w-full max-w-5xl flex-col gap-4 text-(--rmhbox-text)">
       {/* Turn indicator */}
       <TurnIndicator
         phase={phase}
@@ -349,8 +349,8 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
                 className="flex flex-col items-center gap-3"
               >
                 <h2 className="text-xl font-bold">Setting up the board…</h2>
-                <p className="text-sm text-[var(--rmhbox-text-muted)]">
-                  Your role: <span className="font-semibold capitalize text-[var(--rmhbox-accent)]">{myRole}</span>
+                <p className="text-sm text-(--rmhbox-text-muted)">
+                  Your role: <span className="font-semibold capitalize text-(--rmhbox-accent)">{myRole}</span>
                   {myTeam && (
                     <>
                       {' '}on <span className={`font-semibold ${myTeam === 'red' ? 'text-red-400' : 'text-blue-400'}`}>{myTeam}</span> team
@@ -423,7 +423,7 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
               >
                 <h3 className="text-lg font-bold">Turn Over</h3>
                 {turnEndReason && (
-                  <p className="text-sm text-[var(--rmhbox-text-muted)] capitalize">
+                  <p className="text-sm text-(--rmhbox-text-muted) capitalize">
                     {turnEndReason.replace(/_/g, ' ')}
                   </p>
                 )}
@@ -447,7 +447,7 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
                 )}
                 {winner === 'draw' && <p className="text-lg font-semibold text-yellow-400">It&apos;s a Draw!</p>}
                 {winReason && (
-                  <p className="text-sm text-[var(--rmhbox-text-muted)] capitalize">
+                  <p className="text-sm text-(--rmhbox-text-muted) capitalize">
                     {winReason.replace(/_/g, ' ')}
                   </p>
                 )}

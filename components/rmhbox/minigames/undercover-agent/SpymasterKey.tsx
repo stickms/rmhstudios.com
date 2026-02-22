@@ -29,8 +29,8 @@ interface SpymasterKeyProps {
 
 export default function SpymasterKey({ grid, teams }: SpymasterKeyProps) {
   return (
-    <div className="rounded-xl border border-[var(--rmhbox-border)] bg-[var(--rmhbox-surface)] p-3">
-      <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-[var(--rmhbox-text-muted)]">
+    <div className="rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) p-3">
+      <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-(--rmhbox-text-muted)">
         Key Card
       </h4>
 
@@ -56,7 +56,7 @@ export default function SpymasterKey({ grid, teams }: SpymasterKeyProps) {
             <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
             Red
           </span>
-          <span className="font-mono text-[var(--rmhbox-text-muted)]">
+          <span className="font-mono text-(--rmhbox-text-muted)">
             {teams.red.agentsRevealed}/{teams.red.agentsTotal}
           </span>
         </div>
@@ -65,7 +65,7 @@ export default function SpymasterKey({ grid, teams }: SpymasterKeyProps) {
             <span className="h-2.5 w-2.5 rounded-full bg-blue-500" />
             Blue
           </span>
-          <span className="font-mono text-[var(--rmhbox-text-muted)]">
+          <span className="font-mono text-(--rmhbox-text-muted)">
             {teams.blue.agentsRevealed}/{teams.blue.agentsTotal}
           </span>
         </div>
