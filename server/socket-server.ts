@@ -1,8 +1,6 @@
 import 'dotenv/config';
 import { Server, Socket } from "socket.io";
 import { createServer } from "http";
-import { PrismaClient } from "@prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
 
 const httpServer = createServer();
 const io = new Server(httpServer, {
@@ -82,8 +80,28 @@ const MAX_NDW_PLAYERS = 6;
 // ── Synapse Storm Multiplayer (ss: events) ──
 // ═══════════════════════════════════════════════════════
 
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
-const prisma = new PrismaClient({ adapter });
+let prisma: any = null;
+
+async function getSSPrisma(): Promise<any> {
+    if (prisma) return prisma;
+    try {
+        const { PrismaClient } = await import("@prisma/client");
+        const { PrismaPg } = await import("@prisma/adapter-pg");
+        const dbUrl = process.env.DATABASE_URL;
+        if (!dbUrl) { console.warn('[SS] DATABASE_URL not set, DB persistence disabled'); return null; }
+        const adapter = new PrismaPg({ connectionString: dbUrl });
+        prisma = new PrismaClient({ adapter });
+        console.log('[SS] Prisma initialized successfully');
+        return prisma;
+    } catch (err) {
+        console.warn('[SS] Prisma not available, running in memory-only mode:', (err as Error).message);
+        return null;
+    }
+}
+
+function generateSSId(): string {
+    return 'ss_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+}
 
 interface SSPlayer {
     socketId: string;
@@ -722,26 +740,16 @@ io.on("connection", (socket: Socket) => {
         const displayName = sanitizeUserName(payload?.displayName);
         if (!userId) { socket.emit('ss:error', { message: 'Missing userId' }); return; }
 
-        // Leave existing lobby if any
         ssRemovePlayer(socket.id);
 
         let code = generateLobbyCode();
         let attempts = 0;
         while (ssLobbies.has(code) && attempts < 20) { code = generateLobbyCode(); attempts++; }
 
-        let dbLobby;
-        try {
-            dbLobby = await prisma.sSLobby.create({
-                data: { code, hostUserId: userId, status: 'WAITING' },
-            });
-        } catch (err) {
-            console.error('[SS] Failed to create lobby in DB:', err);
-            socket.emit('ss:error', { message: 'Failed to create lobby' });
-            return;
-        }
+        const lobbyId = generateSSId();
 
         const lobby: SSLobbyInMemory = {
-            id: dbLobby.id,
+            id: lobbyId,
             code,
             hostUserId: userId,
             status: 'WAITING',
@@ -760,22 +768,26 @@ io.on("connection", (socket: Socket) => {
         ssSocketLobbyMap.set(socket.id, code);
 
         socket.join(`ss:${code}`);
-
-        try {
-            await prisma.sSLobbyMember.upsert({
-                where: { lobbyId_userId: { lobbyId: dbLobby.id, userId } },
-                update: { displayName, isHost: true, lastSeenAt: new Date() },
-                create: { lobbyId: dbLobby.id, userId, displayName, isHost: true },
-            });
-        } catch (err) {
-            console.error('[SS] Failed to upsert lobby member:', err);
-        }
-
         ssBroadcastLobby(lobby);
         console.log(`[SS] ${displayName} created lobby ${code}`);
+
+        // Fire-and-forget DB persistence
+        getSSPrisma().then(db => {
+            if (!db) return;
+            db.sSLobby.create({ data: { id: lobbyId, code, hostUserId: userId, status: 'WAITING' } })
+                .then((dbLobby: any) => {
+                    lobby.id = dbLobby.id;
+                    return db.sSLobbyMember.upsert({
+                        where: { lobbyId_userId: { lobbyId: dbLobby.id, userId } },
+                        update: { displayName, isHost: true, lastSeenAt: new Date() },
+                        create: { lobbyId: dbLobby.id, userId, displayName, isHost: true },
+                    });
+                })
+                .catch((err: Error) => console.warn('[SS] DB persist lobby failed (non-blocking):', err.message));
+        });
     });
 
-    socket.on('ss:joinLobby', async (payload: { code?: string; userId?: string; displayName?: string }) => {
+    socket.on('ss:joinLobby', (payload: { code?: string; userId?: string; displayName?: string }) => {
         const code = (typeof payload?.code === 'string' ? payload.code : '').toUpperCase().trim();
         const userId = typeof payload?.userId === 'string' ? payload.userId : '';
         const displayName = sanitizeUserName(payload?.displayName);
@@ -788,11 +800,9 @@ io.on("connection", (socket: Socket) => {
             socket.emit('ss:error', { message: 'Lobby is full' }); return;
         }
 
-        // If this user already in a different lobby, remove them
         const existingCode = ssSocketLobbyMap.get(socket.id);
         if (existingCode && existingCode !== code) ssRemovePlayer(socket.id);
 
-        // Clean up old socket mapping for this userId (reconnect case)
         const oldSocketId = ssUserSocketMap.get(userId);
         if (oldSocketId && oldSocketId !== socket.id) {
             ssSocketUserMap.delete(oldSocketId);
@@ -811,20 +821,8 @@ io.on("connection", (socket: Socket) => {
         ssSocketLobbyMap.set(socket.id, code);
 
         socket.join(`ss:${code}`);
-
-        try {
-            await prisma.sSLobbyMember.upsert({
-                where: { lobbyId_userId: { lobbyId: lobby.id, userId } },
-                update: { displayName, lastSeenAt: new Date(), isHost },
-                create: { lobbyId: lobby.id, userId, displayName, isHost },
-            });
-        } catch (err) {
-            console.error('[SS] Failed to upsert lobby member:', err);
-        }
-
         ssBroadcastLobby(lobby);
 
-        // If match is in progress, send match state for reconnection
         if (lobby.status === 'IN_MATCH' && lobby.currentMatchId && lobby.currentMatchSeed !== null && lobby.currentMatchStartAt !== null) {
             const leaderboard = Array.from(lobby.matchPlayers.values())
                 .sort((a, b) => b.score - a.score)
@@ -844,6 +842,15 @@ io.on("connection", (socket: Socket) => {
         }
 
         console.log(`[SS] ${displayName} joined lobby ${code}`);
+
+        getSSPrisma().then(db => {
+            if (!db) return;
+            db.sSLobbyMember.upsert({
+                where: { lobbyId_userId: { lobbyId: lobby.id, userId } },
+                update: { displayName, lastSeenAt: new Date(), isHost },
+                create: { lobbyId: lobby.id, userId, displayName, isHost },
+            }).catch((err: Error) => console.warn('[SS] DB persist join failed (non-blocking):', err.message));
+        });
     });
 
     socket.on('ss:leaveLobby', (payload: { code?: string; userId?: string }) => {
@@ -863,7 +870,7 @@ io.on("connection", (socket: Socket) => {
         ssBroadcastLobby(lobby);
     });
 
-    socket.on('ss:startMatch', async (payload: { code?: string; userId?: string }) => {
+    socket.on('ss:startMatch', (payload: { code?: string; userId?: string }) => {
         const code = (typeof payload?.code === 'string' ? payload.code : '').toUpperCase();
         const userId = typeof payload?.userId === 'string' ? payload.userId : '';
         const lobby = ssGetLobbyByCode(code);
@@ -875,30 +882,14 @@ io.on("connection", (socket: Socket) => {
         const seed = Math.floor(Math.random() * 2147483647);
         const countdownMs = 3000;
         const startAt = Date.now() + countdownMs;
-
-        let dbMatch;
-        try {
-            dbMatch = await prisma.sSMatch.create({
-                data: {
-                    lobbyId: lobby.id,
-                    seed,
-                    startAt: new Date(startAt),
-                    status: 'RUNNING',
-                },
-            });
-        } catch (err) {
-            console.error('[SS] Failed to create match in DB:', err);
-            socket.emit('ss:error', { message: 'Failed to start match' });
-            return;
-        }
+        const matchId = generateSSId();
 
         lobby.status = 'IN_MATCH';
-        lobby.currentMatchId = dbMatch.id;
+        lobby.currentMatchId = matchId;
         lobby.currentMatchSeed = seed;
         lobby.currentMatchStartAt = startAt;
         lobby.matchPlayers.clear();
 
-        const playerMatchCreates: Promise<unknown>[] = [];
         for (const [uid, p] of lobby.players) {
             lobby.matchPlayers.set(uid, {
                 userId: uid,
@@ -906,31 +897,11 @@ io.on("connection", (socket: Socket) => {
                 score: 0, maxCombo: 0, puzzlesSolved: 0, puzzlesMissed: 0,
                 finished: false, lastUpdateAt: Date.now(), lastScore: 0,
             });
-            playerMatchCreates.push(
-                prisma.sSPlayerMatch.create({
-                    data: {
-                        matchId: dbMatch.id,
-                        lobbyId: lobby.id,
-                        userId: uid,
-                        displayName: p.displayName,
-                    },
-                }).catch(err => console.error('[SS] Failed to create player match:', err))
-            );
-        }
-        await Promise.all(playerMatchCreates);
-
-        try {
-            await prisma.sSLobby.update({ where: { id: lobby.id }, data: { status: 'IN_MATCH' } });
-        } catch (err) {
-            console.error('[SS] Failed to update lobby status:', err);
         }
 
-        // Send countdown
         io.to(`ss:${code}`).emit('ss:countdown', { countdownEndsAt: startAt });
-
         ssBroadcastLobby(lobby);
 
-        // After countdown, send match start
         setTimeout(() => {
             const leaderboard = Array.from(lobby.matchPlayers.values())
                 .sort((a, b) => b.score - a.score)
@@ -941,7 +912,7 @@ io.on("connection", (socket: Socket) => {
                     finished: p.finished,
                 }));
             io.to(`ss:${code}`).emit('ss:matchStart', {
-                matchId: dbMatch.id,
+                matchId: lobby.currentMatchId,
                 seed,
                 startAt,
                 status: 'RUNNING',
@@ -950,6 +921,23 @@ io.on("connection", (socket: Socket) => {
         }, countdownMs);
 
         console.log(`[SS] Match started in lobby ${code}, seed=${seed}`);
+
+        getSSPrisma().then(db => {
+            if (!db) return;
+            db.sSMatch.create({
+                data: { id: matchId, lobbyId: lobby.id, seed, startAt: new Date(startAt), status: 'RUNNING' },
+            }).then((dbMatch: any) => {
+                lobby.currentMatchId = dbMatch.id;
+                const creates = Array.from(lobby.players.entries()).map(([uid, p]: [string, SSPlayer]) =>
+                    db.sSPlayerMatch.create({
+                        data: { matchId: dbMatch.id, lobbyId: lobby.id, userId: uid, displayName: p.displayName },
+                    }).catch((err: Error) => console.warn('[SS] DB player match create failed:', err.message))
+                );
+                return Promise.all(creates);
+            }).then(() =>
+                db.sSLobby.update({ where: { id: lobby.id }, data: { status: 'IN_MATCH' } })
+            ).catch((err: Error) => console.warn('[SS] DB persist match start failed (non-blocking):', err.message));
+        });
     });
 
     socket.on('ss:scoreUpdate', (payload: {
@@ -995,22 +983,22 @@ io.on("connection", (socket: Socket) => {
 
         ssBroadcastLeaderboard(lobby);
 
-        // Persist score (throttled at server level, only write on significant changes)
         if (scoreDelta >= 500 || solvedDelta >= 5) {
-            prisma.sSPlayerMatch.updateMany({
-                where: { matchId: lobby.currentMatchId!, userId },
-                data: {
-                    score: mp.score,
-                    maxCombo: mp.maxCombo,
-                    puzzlesSolved: mp.puzzlesSolved,
-                    puzzlesMissed: mp.puzzlesMissed,
-                    lastUpdateAt: new Date(),
-                },
-            }).catch(err => console.error('[SS] Failed to update player match score:', err));
+            getSSPrisma().then(db => {
+                if (!db || !lobby.currentMatchId) return;
+                db.sSPlayerMatch.updateMany({
+                    where: { matchId: lobby.currentMatchId, userId },
+                    data: {
+                        score: mp.score, maxCombo: mp.maxCombo,
+                        puzzlesSolved: mp.puzzlesSolved, puzzlesMissed: mp.puzzlesMissed,
+                        lastUpdateAt: new Date(),
+                    },
+                }).catch((err: Error) => console.warn('[SS] DB score persist failed:', err.message));
+            });
         }
     });
 
-    socket.on('ss:finishMatch', async (payload: {
+    socket.on('ss:finishMatch', (payload: {
         matchId?: string; userId?: string;
         score?: number; maxCombo?: number; puzzlesSolved?: number; puzzlesMissed?: number;
     }) => {
@@ -1029,37 +1017,11 @@ io.on("connection", (socket: Socket) => {
         mp.puzzlesSolved = typeof payload?.puzzlesSolved === 'number' ? payload.puzzlesSolved : mp.puzzlesSolved;
         mp.puzzlesMissed = typeof payload?.puzzlesMissed === 'number' ? payload.puzzlesMissed : mp.puzzlesMissed;
 
-        try {
-            await prisma.sSPlayerMatch.updateMany({
-                where: { matchId: lobby.currentMatchId!, userId },
-                data: {
-                    score: mp.score, maxCombo: mp.maxCombo,
-                    puzzlesSolved: mp.puzzlesSolved, puzzlesMissed: mp.puzzlesMissed,
-                    finishedAt: new Date(), lastUpdateAt: new Date(),
-                },
-            });
-        } catch (err) {
-            console.error('[SS] Failed to update finished player:', err);
-        }
-
         ssBroadcastLeaderboard(lobby);
 
-        // Check if all players finished
         const allFinished = Array.from(lobby.matchPlayers.values()).every(p => p.finished);
         if (allFinished) {
             lobby.status = 'WAITING';
-            try {
-                await prisma.sSMatch.update({
-                    where: { id: lobby.currentMatchId! },
-                    data: { status: 'FINISHED', endAt: new Date() },
-                });
-                await prisma.sSLobby.update({
-                    where: { id: lobby.id },
-                    data: { status: 'WAITING' },
-                });
-            } catch (err) {
-                console.error('[SS] Failed to finish match in DB:', err);
-            }
 
             const finalLeaderboard = Array.from(lobby.matchPlayers.values())
                 .sort((a, b) => b.score - a.score)
@@ -1071,14 +1033,34 @@ io.on("connection", (socket: Socket) => {
                 }));
             io.to(`ss:${lobby.code}`).emit('ss:matchFinished', { leaderboard: finalLeaderboard });
 
-            // Reset ready state
             for (const p of lobby.players.values()) p.isReady = false;
             ssBroadcastLobby(lobby);
             console.log(`[SS] Match finished in lobby ${lobby.code}`);
         }
+
+        getSSPrisma().then(db => {
+            if (!db || !lobby.currentMatchId) return;
+            db.sSPlayerMatch.updateMany({
+                where: { matchId: lobby.currentMatchId, userId },
+                data: {
+                    score: mp.score, maxCombo: mp.maxCombo,
+                    puzzlesSolved: mp.puzzlesSolved, puzzlesMissed: mp.puzzlesMissed,
+                    finishedAt: new Date(), lastUpdateAt: new Date(),
+                },
+            }).catch((err: Error) => console.warn('[SS] DB finish player persist failed:', err.message));
+
+            if (allFinished) {
+                db.sSMatch.update({
+                    where: { id: lobby.currentMatchId! },
+                    data: { status: 'FINISHED', endAt: new Date() },
+                }).then(() =>
+                    db.sSLobby.update({ where: { id: lobby.id }, data: { status: 'WAITING' } })
+                ).catch((err: Error) => console.warn('[SS] DB finish match persist failed:', err.message));
+            }
+        });
     });
 
-    socket.on('ss:returnToLobby', async (payload: { code?: string; userId?: string }) => {
+    socket.on('ss:returnToLobby', (payload: { code?: string; userId?: string }) => {
         const code = (typeof payload?.code === 'string' ? payload.code : '').toUpperCase();
         const userId = typeof payload?.userId === 'string' ? payload.userId : '';
         const lobby = ssGetLobbyByCode(code);
@@ -1093,14 +1075,14 @@ io.on("connection", (socket: Socket) => {
 
         for (const p of lobby.players.values()) p.isReady = false;
 
-        try {
-            await prisma.sSLobby.update({ where: { id: lobby.id }, data: { status: 'WAITING' } });
-        } catch (err) {
-            console.error('[SS] Failed to update lobby to WAITING:', err);
-        }
-
         io.to(`ss:${code}`).emit('ss:returnToLobby');
         ssBroadcastLobby(lobby);
+
+        getSSPrisma().then(db => {
+            if (!db) return;
+            db.sSLobby.update({ where: { id: lobby.id }, data: { status: 'WAITING' } })
+                .catch((err: Error) => console.warn('[SS] DB return-to-lobby persist failed:', err.message));
+        });
     });
 
     // DISCONNECT
