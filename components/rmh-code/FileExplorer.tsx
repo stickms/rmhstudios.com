@@ -1,7 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-import { ChevronDown, Plus, Trash2, FilePlus, FolderPlus, FolderOpen, X } from 'lucide-react';
+import { useState, useRef, useCallback, useEffect } from 'react';
+import {
+  ChevronDown, FilePlus, FolderPlus, FolderOpen, X,
+  Trash2, Pencil, Download, UploadCloud, Archive,
+} from 'lucide-react';
 import type { FileMeta, ProjectMeta } from './utils';
 
 interface FileExplorerProps {
@@ -12,8 +15,13 @@ interface FileExplorerProps {
   onSelectProject: (project: ProjectMeta) => void;
   onNewProject: () => void;
   onDeleteProject: (id: string) => void;
+  onRenameProject: (id: string, newName: string) => void;
   onNewFile: () => void;
+  onNewFolder: () => void;
   onDeleteFile: (id: string) => void;
+  onRenameFile: (id: string, newPath: string) => void;
+  onUploadFiles: (files: File[]) => void;
+  onExportZip: () => void;
   // Local mode
   localDirHandle: FileSystemDirectoryHandle | null;
   localFiles: FileMeta[];
@@ -22,6 +30,12 @@ interface FileExplorerProps {
   // Shared
   activeFileId: string | null;
   onOpenFile: (file: FileMeta) => void;
+}
+
+interface ContextMenu {
+  fileId: string;
+  x: number;
+  y: number;
 }
 
 function FileIcon({ filename }: { filename: string }) {
@@ -61,16 +75,38 @@ function FileTree({
   activeFileId,
   onOpenFile,
   onDeleteFile,
+  onRenameFile,
   isLocal,
 }: {
   files: FileMeta[];
   activeFileId: string | null;
   onOpenFile: (f: FileMeta) => void;
   onDeleteFile?: (id: string) => void;
+  onRenameFile?: (id: string, newPath: string) => void;
   isLocal?: boolean;
 }) {
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   const [hoveredFile, setHoveredFile] = useState<string | null>(null);
+  const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
+  const renameRef = useRef<HTMLInputElement>(null);
+
+  // Close context menu on outside click
+  useEffect(() => {
+    if (!contextMenu) return;
+    function handle() { setContextMenu(null); }
+    window.addEventListener('click', handle);
+    return () => window.removeEventListener('click', handle);
+  }, [contextMenu]);
+
+  // Focus rename input when it appears
+  useEffect(() => {
+    if (renamingId && renameRef.current) {
+      renameRef.current.focus();
+      renameRef.current.select();
+    }
+  }, [renamingId]);
 
   function toggleFolder(name: string) {
     setExpandedFolders(prev => {
@@ -80,32 +116,98 @@ function FileTree({
     });
   }
 
+  function startRename(file: FileMeta) {
+    setRenamingId(file.id);
+    setRenameValue(file.path);
+    setContextMenu(null);
+  }
+
+  function commitRename(file: FileMeta) {
+    const newPath = renameValue.trim().replace(/^\/+/, '');
+    if (newPath && newPath !== file.path && onRenameFile) {
+      onRenameFile(file.id, newPath);
+    }
+    setRenamingId(null);
+  }
+
+  function handleContextMenu(e: React.MouseEvent, file: FileMeta) {
+    if (isLocal) return;
+    e.preventDefault();
+    setContextMenu({ fileId: file.id, x: e.clientX, y: e.clientY });
+  }
+
+  function downloadFile(file: FileMeta) {
+    // Content is not in FileMeta — parent provides this via onOpenFile flow
+    // We'll use a custom event to signal download
+    const event = new CustomEvent('rmhcode:download-file', { detail: { fileId: file.id } });
+    window.dispatchEvent(event);
+    setContextMenu(null);
+  }
+
+  const contextFile = contextMenu ? files.find(f => f.id === contextMenu.fileId) : null;
+
   const { root, groups } = groupFiles(files);
+
+  function renderFileRow(file: FileMeta, indent = 'px-3') {
+    const isRenaming = renamingId === file.id;
+    const isActive = activeFileId === file.id;
+
+    return (
+      <div
+        key={file.id}
+        onMouseEnter={() => setHoveredFile(file.id)}
+        onMouseLeave={() => setHoveredFile(null)}
+        onContextMenu={e => handleContextMenu(e, file)}
+        onClick={() => !isRenaming && onOpenFile(file)}
+        onDoubleClick={() => !isLocal && startRename(file)}
+        className={`flex items-center gap-1 ${indent} py-0.5 cursor-pointer transition-colors ${
+          isActive ? 'bg-[#37373d] text-white' : 'hover:bg-[#2a2d2e] text-[#ccc]'
+        }`}
+      >
+        <FileIcon filename={file.name} />
+        {isRenaming ? (
+          <input
+            ref={renameRef}
+            value={renameValue}
+            onChange={e => setRenameValue(e.target.value)}
+            onClick={e => e.stopPropagation()}
+            onBlur={() => commitRename(file)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') commitRename(file);
+              if (e.key === 'Escape') setRenamingId(null);
+            }}
+            className="flex-1 bg-[#3c3c3c] border border-[#007acc] rounded px-1 py-0 text-xs text-white font-mono outline-none"
+          />
+        ) : (
+          <span className="truncate flex-1">{file.name}</span>
+        )}
+        {hoveredFile === file.id && !isRenaming && !isLocal && (
+          <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
+            <button
+              onClick={() => startRename(file)}
+              title="Rename"
+              className="text-[#858585] hover:text-white transition-colors"
+            >
+              <Pencil size={10} />
+            </button>
+            {onDeleteFile && (
+              <button
+                onClick={() => onDeleteFile(file.id)}
+                title="Delete"
+                className="text-[#858585] hover:text-red-400 transition-colors"
+              >
+                <Trash2 size={10} />
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 overflow-y-auto overflow-x-hidden text-xs">
-      {root.map(file => (
-        <div
-          key={file.id}
-          onMouseEnter={() => setHoveredFile(file.id)}
-          onMouseLeave={() => setHoveredFile(null)}
-          onClick={() => onOpenFile(file)}
-          className={`flex items-center gap-1 px-3 py-0.5 cursor-pointer transition-colors ${
-            activeFileId === file.id ? 'bg-[#37373d] text-white' : 'hover:bg-[#2a2d2e] text-[#ccc]'
-          }`}
-        >
-          <FileIcon filename={file.name} />
-          <span className="truncate flex-1">{file.name}</span>
-          {hoveredFile === file.id && !isLocal && onDeleteFile && (
-            <button
-              onClick={e => { e.stopPropagation(); onDeleteFile(file.id); }}
-              className="text-[#858585] hover:text-red-400 transition-colors shrink-0"
-            >
-              <Trash2 size={11} />
-            </button>
-          )}
-        </div>
-      ))}
+      {root.map(file => renderFileRow(file))}
 
       {Object.entries(groups).sort(([a], [b]) => a.localeCompare(b)).map(([folder, folderFiles]) => (
         <div key={folder}>
@@ -117,51 +219,121 @@ function FileTree({
               size={12}
               className={`shrink-0 transition-transform ${expandedFolders.has(folder) ? '' : '-rotate-90'}`}
             />
-            <Plus size={12} className="shrink-0 text-[#858585]" />
+            <FolderOpen size={12} className="shrink-0 text-[#e3a752]" />
             <span className="truncate">{folder}</span>
           </button>
-          {expandedFolders.has(folder) && folderFiles.map(file => (
-            <div
-              key={file.id}
-              onMouseEnter={() => setHoveredFile(file.id)}
-              onMouseLeave={() => setHoveredFile(null)}
-              onClick={() => onOpenFile(file)}
-              className={`flex items-center gap-1 pl-7 pr-3 py-0.5 cursor-pointer transition-colors ${
-                activeFileId === file.id ? 'bg-[#37373d] text-white' : 'hover:bg-[#2a2d2e] text-[#ccc]'
-              }`}
-            >
-              <FileIcon filename={file.name} />
-              <span className="truncate flex-1">{file.name}</span>
-              {hoveredFile === file.id && !isLocal && onDeleteFile && (
-                <button
-                  onClick={e => { e.stopPropagation(); onDeleteFile(file.id); }}
-                  className="text-[#858585] hover:text-red-400 transition-colors shrink-0"
-                >
-                  <Trash2 size={11} />
-                </button>
-              )}
-            </div>
-          ))}
+          {expandedFolders.has(folder) && folderFiles.map(file => renderFileRow(file, 'pl-7 pr-3'))}
         </div>
       ))}
+
+      {/* Context menu */}
+      {contextMenu && contextFile && (
+        <div
+          className="fixed z-50 bg-[#1e1e1e] border border-[#454545] rounded shadow-xl py-1 min-w-35"
+          style={{ top: contextMenu.y, left: contextMenu.x }}
+          onClick={e => e.stopPropagation()}
+        >
+          <button
+            onClick={() => startRename(contextFile)}
+            className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-[#ccc] hover:bg-[#2a2d2e] hover:text-white"
+          >
+            <Pencil size={12} /> Rename
+          </button>
+          <button
+            onClick={() => downloadFile(contextFile)}
+            className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-[#ccc] hover:bg-[#2a2d2e] hover:text-white"
+          >
+            <Download size={12} /> Download
+          </button>
+          <div className="border-t border-[#3c3c3c] my-0.5" />
+          {onDeleteFile && (
+            <button
+              onClick={() => { onDeleteFile(contextFile.id); setContextMenu(null); }}
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-red-400 hover:bg-[#2a2d2e]"
+            >
+              <Trash2 size={12} /> Delete
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
 export default function FileExplorer({
   projects, activeProject, files,
-  onSelectProject, onNewProject, onDeleteProject, onNewFile, onDeleteFile,
+  onSelectProject, onNewProject, onDeleteProject, onRenameProject,
+  onNewFile, onNewFolder, onDeleteFile, onRenameFile, onUploadFiles, onExportZip,
   localDirHandle, localFiles, onOpenLocalFolder, onCloseLocalFolder,
   activeFileId, onOpenFile,
 }: FileExplorerProps) {
   const [projectDropdownOpen, setProjectDropdownOpen] = useState(false);
+  const [renamingProjectId, setRenamingProjectId] = useState<string | null>(null);
+  const [renameProjectValue, setRenameProjectValue] = useState('');
+  const [isDragOver, setIsDragOver] = useState(false);
+  const uploadInputRef = useRef<HTMLInputElement>(null);
+
   const isLocal = !!localDirHandle;
   const supportsLocalFs = typeof window !== 'undefined' && 'showDirectoryPicker' in window;
-
   const displayFiles = isLocal ? localFiles : files;
 
+  function startRenameProject(project: ProjectMeta) {
+    setRenamingProjectId(project.id);
+    setRenameProjectValue(project.name);
+    setProjectDropdownOpen(false);
+  }
+
+  function commitRenameProject(id: string) {
+    const trimmed = renameProjectValue.trim();
+    if (trimmed && trimmed !== projects.find(p => p.id === id)?.name) {
+      onRenameProject(id, trimmed);
+    }
+    setRenamingProjectId(null);
+  }
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    if (isLocal) return;
+    e.preventDefault();
+    setIsDragOver(true);
+  }, [isLocal]);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setIsDragOver(false);
+    }
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    if (isLocal) return;
+    const droppedFiles = Array.from(e.dataTransfer.files);
+    if (droppedFiles.length > 0) onUploadFiles(droppedFiles);
+  }, [isLocal, onUploadFiles]);
+
+  function handleUploadInput(e: React.ChangeEvent<HTMLInputElement>) {
+    const selected = Array.from(e.target.files ?? []);
+    if (selected.length > 0) onUploadFiles(selected);
+    e.target.value = '';
+  }
+
   return (
-    <div className="flex flex-col h-full bg-[#252526] text-[#ccc] select-none min-w-0">
+    <div
+      className={`flex flex-col h-full bg-[#252526] text-[#ccc] select-none min-w-0 relative transition-colors ${
+        isDragOver ? 'bg-[#1a2d3d] ring-1 ring-inset ring-[#007acc]' : ''
+      }`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      {/* Drop overlay */}
+      {isDragOver && (
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-[#1a2d3d]/80 pointer-events-none">
+          <UploadCloud size={28} className="text-[#007acc] mb-2" />
+          <span className="text-xs text-[#007acc] font-semibold">Drop files to upload</span>
+        </div>
+      )}
+
       {/* Header */}
       <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-[#bbb] border-b border-[#3c3c3c] shrink-0">
         Explorer
@@ -188,13 +360,27 @@ export default function FileExplorer({
       {!isLocal && (
         <div className="px-2 pt-2 pb-1 shrink-0">
           <div className="relative">
-            <button
-              onClick={() => setProjectDropdownOpen(o => !o)}
-              className="w-full flex items-center justify-between gap-1 px-2 py-1.5 bg-[#3c3c3c] hover:bg-[#4a4a4a] rounded text-xs text-white transition-colors"
-            >
-              <span className="truncate">{activeProject?.name ?? 'Select project…'}</span>
-              <ChevronDown size={12} className="shrink-0 text-[#858585]" />
-            </button>
+            {renamingProjectId === activeProject?.id ? (
+              <input
+                autoFocus
+                value={renameProjectValue}
+                onChange={e => setRenameProjectValue(e.target.value)}
+                onBlur={() => activeProject && commitRenameProject(activeProject.id)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && activeProject) commitRenameProject(activeProject.id);
+                  if (e.key === 'Escape') setRenamingProjectId(null);
+                }}
+                className="w-full px-2 py-1.5 bg-[#3c3c3c] border border-[#007acc] rounded text-xs text-white outline-none"
+              />
+            ) : (
+              <button
+                onClick={() => setProjectDropdownOpen(o => !o)}
+                className="w-full flex items-center justify-between gap-1 px-2 py-1.5 bg-[#3c3c3c] hover:bg-[#4a4a4a] rounded text-xs text-white transition-colors"
+              >
+                <span className="truncate">{activeProject?.name ?? 'Select project…'}</span>
+                <ChevronDown size={12} className="shrink-0 text-[#858585]" />
+              </button>
+            )}
 
             {projectDropdownOpen && (
               <div className="absolute top-full left-0 right-0 mt-1 z-40 bg-[#1e1e1e] border border-[#454545] rounded shadow-xl max-h-48 overflow-y-auto">
@@ -205,12 +391,22 @@ export default function FileExplorer({
                     onClick={() => { onSelectProject(p); setProjectDropdownOpen(false); }}
                   >
                     <span className="text-xs truncate">{p.name}</span>
-                    <button
-                      onClick={e => { e.stopPropagation(); onDeleteProject(p.id); }}
-                      className="opacity-0 group-hover:opacity-100 text-[#858585] hover:text-red-400 transition-all ml-1 shrink-0"
-                    >
-                      <Trash2 size={11} />
-                    </button>
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100" onClick={e => e.stopPropagation()}>
+                      <button
+                        onClick={() => startRenameProject(p)}
+                        title="Rename"
+                        className="text-[#858585] hover:text-white transition-all"
+                      >
+                        <Pencil size={10} />
+                      </button>
+                      <button
+                        onClick={() => onDeleteProject(p.id)}
+                        title="Delete"
+                        className="text-[#858585] hover:text-red-400 transition-all"
+                      >
+                        <Trash2 size={11} />
+                      </button>
+                    </div>
                   </div>
                 ))}
                 {projects.length === 0 && (
@@ -230,14 +426,36 @@ export default function FileExplorer({
 
       {/* File section header */}
       {(activeProject || isLocal) && (
-        <div className="flex items-center justify-between px-3 py-1 shrink-0">
-          <span className="text-[10px] uppercase tracking-widest text-[#858585] font-semibold truncate">
+        <div className="flex items-center justify-between px-2 py-1 shrink-0">
+          <span className="text-[10px] uppercase tracking-widest text-[#858585] font-semibold truncate ml-1">
             {isLocal ? localDirHandle!.name : activeProject!.name}
           </span>
           {!isLocal && (
-            <button onClick={onNewFile} title="New File" className="text-[#858585] hover:text-white transition-colors shrink-0">
-              <FilePlus size={14} />
-            </button>
+            <div className="flex items-center gap-0.5 shrink-0">
+              <button onClick={onNewFile} title="New File" className="text-[#858585] hover:text-white transition-colors p-0.5">
+                <FilePlus size={14} />
+              </button>
+              <button onClick={onNewFolder} title="New Folder" className="text-[#858585] hover:text-white transition-colors p-0.5">
+                <FolderPlus size={14} />
+              </button>
+              <button
+                onClick={() => uploadInputRef.current?.click()}
+                title="Upload files"
+                className="text-[#858585] hover:text-white transition-colors p-0.5"
+              >
+                <UploadCloud size={14} />
+              </button>
+              <button onClick={onExportZip} title="Export as ZIP" className="text-[#858585] hover:text-white transition-colors p-0.5">
+                <Archive size={14} />
+              </button>
+              <input
+                ref={uploadInputRef}
+                type="file"
+                multiple
+                className="hidden"
+                onChange={handleUploadInput}
+              />
+            </div>
           )}
         </div>
       )}
@@ -277,6 +495,7 @@ export default function FileExplorer({
           activeFileId={activeFileId}
           onOpenFile={onOpenFile}
           onDeleteFile={!isLocal ? onDeleteFile : undefined}
+          onRenameFile={!isLocal ? onRenameFile : undefined}
           isLocal={isLocal}
         />
       )}
