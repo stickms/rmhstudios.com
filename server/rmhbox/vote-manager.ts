@@ -83,8 +83,12 @@ export class VoteManager {
       return;
     }
 
-    // Randomly select candidates
-    const shuffled = [...eligible].sort(() => Math.random() - 0.5);
+    // Randomly select candidates (Fisher-Yates shuffle)
+    const shuffled = [...eligible];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
     const selected = shuffled.slice(0, Math.min(VOTE_CANDIDATE_COUNT, shuffled.length));
     const candidates: VoteCandidate[] = selected.map((game) => ({
       minigameId: game.id,
@@ -190,14 +194,14 @@ export class VoteManager {
     const winnerId = this.determineWinner(activeVote, tallies);
     const winner = activeVote.candidates.find((c) => c.minigameId === winnerId);
 
-    const allVotesSame = activeVote.votes.size > 0
-      && new Set(activeVote.votes.values()).size === 1;
+    const uniqueChoices = new Set(activeVote.votes.values()).size;
+    const wasUnanimous = activeVote.votes.size >= MIN_PLAYERS && uniqueChoices === 1;
 
     const voteResult: VoteResultPayload = {
       winnerId,
       winnerName: winner?.displayName ?? winnerId,
       tallies,
-      wasUnanimous: allVotesSame && activeVote.votes.size > 1,
+      wasUnanimous,
     };
 
     this.io.to(`lobby:${lobbyId}`).emit(S2C.GAME_VOTE_RESULT, voteResult);
