@@ -63,7 +63,7 @@ export default function ResultsScreen({
 
   return (
     <motion.div
-      className="mx-auto flex w-full max-w-2xl flex-col gap-8 p-6 text-[var(--rmhbox-text)]"
+      className="mx-auto flex w-full max-w-2xl flex-col gap-8 p-6 text-(--rmhbox-text)"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
@@ -83,9 +83,9 @@ export default function ResultsScreen({
                 {podiumIndex === 0 ? <Trophy className="h-6 w-6" /> : <Medal className="h-5 w-5" />}
               </span>
               <span className="text-sm font-semibold">{player.userName}</span>
-              <span className="text-xs text-[var(--rmhbox-text-muted)]">{player.score} pts</span>
+              <span className="text-xs text-(--rmhbox-text-muted)">{player.score} pts</span>
               <div
-                className={`${PODIUM_HEIGHTS[podiumIndex]} w-20 rounded-t-lg bg-[var(--rmhbox-accent)]`}
+                className={`${PODIUM_HEIGHTS[podiumIndex]} w-20 rounded-t-lg bg-(--rmhbox-accent)`}
                 style={{ opacity: 1 - podiumIndex * 0.2 }}
               />
             </div>
@@ -95,15 +95,15 @@ export default function ResultsScreen({
 
       {/* Full rankings */}
       {rankings.length > 3 && (
-        <motion.div variants={itemVariants} className="rounded-xl bg-[var(--rmhbox-surface)] border border-[var(--rmhbox-border)] p-4">
-          <h3 className="mb-2 text-sm font-semibold uppercase tracking-wider text-[var(--rmhbox-text-muted)]">
+        <motion.div variants={itemVariants} className="rounded-xl bg-(--rmhbox-surface) border border-(--rmhbox-border) p-4">
+          <h3 className="mb-2 text-sm font-semibold uppercase tracking-wider text-(--rmhbox-text-muted)">
             All Players
           </h3>
           <ul className="space-y-1">
             {rankings.slice(3).map((p) => (
               <li key={p.userId} className="flex items-center justify-between text-sm">
                 <span>
-                  <span className="mr-2 font-mono text-[var(--rmhbox-text-muted)]">{p.rank}.</span>
+                  <span className="mr-2 font-mono text-(--rmhbox-text-muted)">{p.rank}.</span>
                   {p.userName}
                 </span>
                 <span className="font-mono">{p.score}</span>
@@ -115,8 +115,8 @@ export default function ResultsScreen({
 
       {/* Awards */}
       {awards.length > 0 && (
-        <motion.div variants={itemVariants} className="rounded-xl bg-[var(--rmhbox-surface)] border border-[var(--rmhbox-border)] p-4">
-          <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-[var(--rmhbox-text-muted)]">
+        <motion.div variants={itemVariants} className="rounded-xl bg-(--rmhbox-surface) border border-(--rmhbox-border) p-4">
+          <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-(--rmhbox-text-muted)">
             <AwardIcon className="h-4 w-4" /> Awards
           </h3>
           <ul className="space-y-2">
@@ -125,7 +125,7 @@ export default function ResultsScreen({
                 <span className="text-xl">{award.icon}</span>
                 <div>
                   <span className="font-semibold">{award.title}</span>
-                  <p className="text-xs text-[var(--rmhbox-text-muted)]">{award.description}</p>
+                  <p className="text-xs text-(--rmhbox-text-muted)">{award.description}</p>
                 </div>
               </li>
             ))}
@@ -135,13 +135,13 @@ export default function ResultsScreen({
 
       {/* Session standings */}
       {sessionStandings.length > 0 && (
-        <motion.div variants={itemVariants} className="rounded-xl bg-[var(--rmhbox-surface)] border border-[var(--rmhbox-border)] p-4">
-          <h3 className="mb-2 text-sm font-semibold uppercase tracking-wider text-[var(--rmhbox-text-muted)]">
+        <motion.div variants={itemVariants} className="rounded-xl bg-(--rmhbox-surface) border border-(--rmhbox-border) p-4">
+          <h3 className="mb-2 text-sm font-semibold uppercase tracking-wider text-(--rmhbox-text-muted)">
             Session Standings
           </h3>
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-[var(--rmhbox-text-muted)]">
+              <tr className="text-left text-(--rmhbox-text-muted)">
                 <th className="pb-1 font-medium">#</th>
                 <th className="pb-1 font-medium">Player</th>
                 <th className="pb-1 text-right font-medium">Total</th>
@@ -150,8 +150,8 @@ export default function ResultsScreen({
             </thead>
             <tbody>
               {sessionStandings.map((s) => (
-                <tr key={s.userId} className="border-t border-[var(--rmhbox-border)]">
-                  <td className="py-1 font-bold text-[var(--rmhbox-accent)]">{s.rank}</td>
+                <tr key={s.userId} className="border-t border-(--rmhbox-border)">
+                  <td className="py-1 font-bold text-(--rmhbox-accent)">{s.rank}</td>
                   <td className="py-1">{s.userName}</td>
                   <td className="py-1 text-right font-mono">{s.totalScore}</td>
                   <td className="py-1 text-right font-mono">{s.wins}</td>

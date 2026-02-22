@@ -23,6 +23,7 @@ export const C2S = {
   LOBBY_PROMOTE_SPECTATOR:'rmhbox:lobby:promote_spectator',
   LOBBY_CHAT:             'rmhbox:lobby:chat',
   LOBBY_BROWSE:           'rmhbox:lobby:browse',
+  GAME_PICK:              'rmhbox:game:pick',
   GAME_SELECT:            'rmhbox:game:select',
   GAME_START_VOTE:        'rmhbox:game:start_vote',
   GAME_CAST_VOTE:         'rmhbox:game:cast_vote',

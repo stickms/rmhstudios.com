@@ -35,18 +35,18 @@ export default function PreloadScreen({ players, lobbyId }: PreloadScreenProps) 
   const progress = players.length > 0 ? (readyCount / players.length) * 100 : 0;
 
   return (
-    <div className="mx-auto flex w-full max-w-md flex-col items-center gap-6 p-6 text-[var(--rmhbox-text)]">
-      <Loader2 className="h-10 w-10 animate-spin text-[var(--rmhbox-accent)]" />
+    <div className="mx-auto flex w-full max-w-md flex-col items-center gap-6 p-6 text-(--rmhbox-text)">
+      <Loader2 className="h-10 w-10 animate-spin text-(--rmhbox-accent)" />
       <h2 className="text-xl font-bold">Loading Game…</h2>
 
       {/* Progress bar */}
-      <div className="h-2 w-full overflow-hidden rounded-full bg-[var(--rmhbox-border)]">
+      <div className="h-2 w-full overflow-hidden rounded-full bg-(--rmhbox-border)">
         <div
-          className="h-full rounded-full bg-[var(--rmhbox-accent)] transition-all duration-500"
+          className="h-full rounded-full bg-(--rmhbox-accent) transition-all duration-500"
           style={{ width: `${progress}%` }}
         />
       </div>
-      <span className="text-sm text-[var(--rmhbox-text-muted)]">
+      <span className="text-sm text-(--rmhbox-text-muted)">
         {readyCount} / {players.length} players ready
       </span>
 
@@ -55,11 +55,11 @@ export default function PreloadScreen({ players, lobbyId }: PreloadScreenProps) 
         {players.map((p) => (
           <li key={p.userId} className="flex items-center gap-2 text-sm">
             {p.ready ? (
-              <CheckCircle2 className="h-4 w-4 text-[var(--rmhbox-success)]" />
+              <CheckCircle2 className="h-4 w-4 text-(--rmhbox-success)" />
             ) : (
-              <Circle className="h-4 w-4 text-[var(--rmhbox-text-muted)]" />
+              <Circle className="h-4 w-4 text-(--rmhbox-text-muted)" />
             )}
-            <span className={p.ready ? 'text-[var(--rmhbox-text)]' : 'text-[var(--rmhbox-text-muted)]'}>
+            <span className={p.ready ? 'text-(--rmhbox-text)' : 'text-(--rmhbox-text-muted)'}>
               {p.userName}
             </span>
           </li>

@@ -268,6 +268,7 @@ export function createTestLobby(overrides: Partial<RMHboxLobby> = {}): RMHboxLob
     createdAt: Date.now(),
     lastActivityAt: Date.now(),
     currentGame: null,
+    selectedGame: null,
     matchHistory: [],
     roundNumber: 0,
     ...overrides,

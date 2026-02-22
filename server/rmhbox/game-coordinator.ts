@@ -113,7 +113,9 @@ export class GameCoordinator {
     }
   }
 
-  // ─── Host Direct Select (§2.5) ────────────────────────────────
+  // ─── Host Start Game (§2.5) ────────────────────────────────
+  // Host presses "Start Game" — starts the game flow for the picked minigame.
+  // Vote mode is handled client-side by emitting GAME_START_VOTE instead.
 
   private onSelect(socket: Socket, payload: { lobbyId: string; minigameId: string }): void {
     const userId = socket.data.userId as string;
@@ -125,7 +127,7 @@ export class GameCoordinator {
     }
 
     if (lobby.hostUserId !== userId) {
-      socket.emit(S2C.ERROR, { code: 'NOT_HOST', message: 'Only the host can select a game.' });
+      socket.emit(S2C.ERROR, { code: 'NOT_HOST', message: 'Only the host can start the game.' });
       return;
     }
 
@@ -195,6 +197,17 @@ export class GameCoordinator {
 
       case 'COUNTDOWN':
         // Don't skip — only 3 seconds
+        break;
+
+      case 'PLAYING':
+        // Force-end the current game immediately and return to lobby
+        logger.info({ event: 'force_end_game', lobbyId: lobby.id, userId });
+        this.clearLifecycleTimers(lobby.id);
+        if (lobby.currentGame?.handler) {
+          lobby.currentGame.handler.cleanup();
+        }
+        this.lobbyManager.addSystemChat(lobby.id, 'Host force-ended the game.');
+        this.returnToWaiting(lobby);
         break;
 
       case 'ROUND_RESULTS':
@@ -696,6 +709,7 @@ export class GameCoordinator {
 
   private returnToWaiting(lobby: RMHboxLobby): void {
     lobby.currentGame = null;
+    lobby.selectedGame = null;
     lobby.state = 'WAITING';
     lobby.lastActivityAt = Date.now();
 

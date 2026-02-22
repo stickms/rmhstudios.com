@@ -35,19 +35,19 @@ export default function LeaderboardPanel() {
   }, []);
 
   return (
-    <div className="rounded-xl bg-[var(--rmhbox-surface)] border border-[var(--rmhbox-border)] p-4">
-      <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-[var(--rmhbox-text-muted)]">
+    <div className="rounded-xl bg-(--rmhbox-surface) border border-(--rmhbox-border) p-4">
+      <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-(--rmhbox-text-muted)">
         <Trophy className="h-4 w-4" /> Leaderboard
       </h3>
 
       {loading ? (
-        <p className="text-sm text-[var(--rmhbox-text-muted)]">Loading…</p>
+        <p className="text-sm text-(--rmhbox-text-muted)">Loading…</p>
       ) : entries.length === 0 ? (
-        <p className="text-sm text-[var(--rmhbox-text-muted)]">No entries yet.</p>
+        <p className="text-sm text-(--rmhbox-text-muted)">No entries yet.</p>
       ) : (
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left text-[var(--rmhbox-text-muted)]">
+            <tr className="text-left text-(--rmhbox-text-muted)">
               <th className="pb-2 pr-2 font-medium">#</th>
               <th className="pb-2 pr-2 font-medium">Player</th>
               <th className="pb-2 text-right font-medium">Score</th>
@@ -55,10 +55,10 @@ export default function LeaderboardPanel() {
           </thead>
           <tbody>
             {entries.map((entry) => (
-              <tr key={entry.userId} className="border-t border-[var(--rmhbox-border)]">
-                <td className="py-1.5 pr-2 font-bold text-[var(--rmhbox-accent)]">{entry.rank}</td>
-                <td className="py-1.5 pr-2 text-[var(--rmhbox-text)]">{entry.userName}</td>
-                <td className="py-1.5 text-right font-mono text-[var(--rmhbox-text)]">{entry.value}</td>
+              <tr key={entry.userId} className="border-t border-(--rmhbox-border)">
+                <td className="py-1.5 pr-2 font-bold text-(--rmhbox-accent)">{entry.rank}</td>
+                <td className="py-1.5 pr-2 text-(--rmhbox-text)">{entry.userName}</td>
+                <td className="py-1.5 text-right font-mono text-(--rmhbox-text)">{entry.value}</td>
               </tr>
             ))}
           </tbody>

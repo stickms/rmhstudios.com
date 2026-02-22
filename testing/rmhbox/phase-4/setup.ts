@@ -141,6 +141,7 @@ export function createClientLobbyState(
     players: [createClientPlayer(MOCK_USERS.alice, { isHost: true })],
     spectators: [],
     currentGame: null,
+    selectedGame: null,
     roundNumber: 0,
     chat: [],
     myRole: 'player',

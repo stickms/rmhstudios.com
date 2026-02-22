@@ -16,6 +16,7 @@ import { io, Socket } from 'socket.io-client';
 import { authClient } from '@/lib/auth-client';
 import { useRMHboxStore } from './store';
 import { S2C } from './events';
+import { toast } from './toast-store';
 
 // ─── Module-Level Socket Reference ──────────────────────────────
 
@@ -95,8 +96,11 @@ export async function connectToRMHbox(): Promise<Socket> {
     useRMHboxStore.getState().setGameState(gameState);
   });
 
-  socket.on(S2C.ERROR, (error) => {
-    console.error('[RMHbox] Server error:', error);
+  socket.on(S2C.ERROR, (error: { code?: string; message?: string }) => {
+    const code = error?.code ?? 'UNKNOWN';
+    const message = error?.message ?? 'An unknown error occurred.';
+    console.error(`[RMHbox] Server error [${code}]: ${message}`);
+    toast.error(message);
   });
 
   return socket;

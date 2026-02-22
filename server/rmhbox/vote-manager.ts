@@ -26,6 +26,8 @@ interface ActiveVote {
   timer: ReturnType<typeof setTimeout>;
   startedAt: number;
   endsAt: number;
+  /** Grace period timer set when all players have voted */
+  graceTimer: ReturnType<typeof setTimeout> | null;
 }
 
 // ─── VoteManager ─────────────────────────────────────────────────
@@ -110,6 +112,7 @@ export class VoteManager {
       timer,
       startedAt: now,
       endsAt,
+      graceTimer: null,
     };
 
     this.activeVotes.set(lobby.id, activeVote);
@@ -171,15 +174,36 @@ export class VoteManager {
       totalPlayers: lobby.players.size,
     };
 
-    this.io.to(`lobby:${lobby.id}`).emit(S2C.GAME_VOTE_UPDATE, voteUpdate);
-
     logger.info({ event: 'vote_cast', lobbyId: lobby.id, userId, minigameId: payload.minigameId });
 
-    // If all players have voted, resolve immediately
+    // If all players have voted, start/reset a grace period of min(5s, remaining time)
+    // so players can still change their pick before the vote resolves
     if (activeVote.votes.size >= lobby.players.size) {
-      logger.info({ event: 'all_votes_in', lobbyId: lobby.id });
-      this.resolveVote(lobby.id);
+      // Always clear existing grace timer so it resets on each vote change
+      if (activeVote.graceTimer) {
+        clearTimeout(activeVote.graceTimer);
+        activeVote.graceTimer = null;
+      }
+
+      const remainingMs = Math.max(0, activeVote.endsAt - Date.now());
+      const graceMs = Math.min(5000, remainingMs);
+      const newEndsAt = Date.now() + graceMs;
+      logger.info({ event: 'all_votes_in_grace', lobbyId: lobby.id, graceMs });
+
+      // Send the updated endsAt so clients can show the countdown
+      voteUpdate.endsAt = newEndsAt;
+
+      if (graceMs <= 0) {
+        this.io.to(`lobby:${lobby.id}`).emit(S2C.GAME_VOTE_UPDATE, voteUpdate);
+        // No time left — resolve now
+        this.resolveVote(lobby.id);
+        return;
+      } else {
+        activeVote.graceTimer = setTimeout(() => this.resolveVote(lobby.id), graceMs);
+      }
     }
+
+    this.io.to(`lobby:${lobby.id}`).emit(S2C.GAME_VOTE_UPDATE, voteUpdate);
   }
 
   // ─── Vote Resolution (§1.4) ──────────────────────────────────
@@ -189,6 +213,7 @@ export class VoteManager {
     if (!activeVote) return;
 
     clearTimeout(activeVote.timer);
+    if (activeVote.graceTimer) clearTimeout(activeVote.graceTimer);
 
     const tallies = this.computeTallies(activeVote);
     const winnerId = this.determineWinner(activeVote, tallies);
@@ -229,7 +254,8 @@ export class VoteManager {
     }
 
     if (lobby.state !== 'VOTING') {
-      socket.emit(S2C.ERROR, { code: 'INVALID_STATE', message: 'Can only force-skip during VOTING state.' });
+      // Not in VOTING — other states are handled by GameCoordinator
+      // which also listens on this event. Silently return.
       return;
     }
 

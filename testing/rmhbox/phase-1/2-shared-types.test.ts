@@ -79,6 +79,7 @@ describe('Shared Type Definitions (§2.1)', () => {
       myUserId: 'user-1',
       seq: 0,
       matchHistory: [],
+      selectedGame: null,
     };
     expect(state.lobbyId).toBe('ABC123');
   });

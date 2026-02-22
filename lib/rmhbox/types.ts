@@ -42,6 +42,8 @@ export interface ClientLobbyState {
   players: ClientPlayerInfo[];
   spectators: ClientSpectatorInfo[];
   currentGame: ClientGameInfo | null;
+  /** Game the host has picked but not yet started. '__vote__' = vote mode. */
+  selectedGame: { minigameId: string; displayName: string } | null;
   roundNumber: number;
   chat: ChatMessage[];
   myRole: 'player' | 'spectator';
@@ -87,6 +89,8 @@ export interface PublicLobbyInfo {
   spectatorCount: number;
   state: LobbyState;
   currentGame: string | null;
+  /** Display name of the game the host has picked (null if none). '__vote__' = vote mode. */
+  selectedGame: string | null;
   roundNumber: number;
 }
 
@@ -214,6 +218,8 @@ export interface VoteCastPayload {
   tallies: Record<string, number>;
   totalVoters: number;
   totalPlayers: number;
+  /** Updated deadline when all players have voted (grace period) */
+  endsAt?: number;
 }
 
 export interface VoteResultPayload {

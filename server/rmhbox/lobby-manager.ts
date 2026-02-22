@@ -30,6 +30,7 @@ import {
   RequestPromotionSchema,
   PromoteSpectatorSchema,
   BrowseLobbiesSchema,
+  PickGameSchema,
 } from './schemas';
 import { validated } from './schemas';
 
@@ -180,6 +181,7 @@ export class LobbyManager {
     socket.on('rmhbox:lobby:request_promotion', validated(socket, 'rmhbox:lobby:request_promotion', RequestPromotionSchema, (s, d) => this.requestPromotion(s, d)));
     socket.on('rmhbox:lobby:promote_spectator', validated(socket, 'rmhbox:lobby:promote_spectator', PromoteSpectatorSchema, (s, d) => this.promoteSpectator(s, d)));
     socket.on('rmhbox:lobby:browse', validated(socket, 'rmhbox:lobby:browse', BrowseLobbiesSchema, (s, d) => this.browseLobbies(s, d)));
+    socket.on('rmhbox:game:pick', validated(socket, 'rmhbox:game:pick', PickGameSchema, (s, d) => this.pickGame(s, d)));
   }
 
   // ─── Disconnect handling (§4.2) ────────────────────────────
@@ -300,6 +302,7 @@ export class LobbyManager {
       createdAt: now,
       lastActivityAt: now,
       currentGame: null,
+      selectedGame: null,
       matchHistory: [],
       roundNumber: 0,
     };
@@ -872,6 +875,18 @@ export class LobbyManager {
       return;
     }
 
+    // Host is permanently ready once a game is picked — cannot toggle
+    if (userId === lobby.hostUserId) {
+      socket.emit(S2C.ERROR, { code: 'INVALID_PAYLOAD', message: 'Host cannot toggle ready state.' });
+      return;
+    }
+
+    // Non-host players cannot ready up until the host has picked a game
+    if (!player.isReady && !lobby.selectedGame) {
+      socket.emit(S2C.ERROR, { code: 'INVALID_PAYLOAD', message: 'Wait for the host to pick a game first.' });
+      return;
+    }
+
     player.isReady = !player.isReady;
     lobby.lastActivityAt = Date.now();
 
@@ -894,6 +909,76 @@ export class LobbyManager {
         logger.info({ event: 'auto_start_triggered', lobbyId: lobby.id, readyCount, threshold: lobby.settings.autoStartThreshold });
       }
     }
+  }
+
+  // ─── Game Pick (host picks game without starting) ──────────
+
+  private pickGame(socket: Socket, payload: { lobbyId: string; minigameId: string }): void {
+    const userId = socket.data.userId as string;
+    const lobby = this.getLobbyByUserId(userId);
+    if (!lobby || lobby.id !== payload.lobbyId) {
+      socket.emit(S2C.ERROR, { code: 'NOT_IN_LOBBY', message: 'You are not in this lobby.' });
+      return;
+    }
+
+    if (lobby.hostUserId !== userId) {
+      socket.emit(S2C.ERROR, { code: 'NOT_HOST', message: 'Only the host can pick a game.' });
+      return;
+    }
+
+    if (lobby.state !== 'WAITING') {
+      socket.emit(S2C.ERROR, { code: 'INVALID_STATE', message: 'Lobby must be in WAITING state.' });
+      return;
+    }
+
+    const isVoteMode = payload.minigameId === '__vote__';
+
+    if (!isVoteMode) {
+      const def = MINIGAME_REGISTRY[payload.minigameId];
+      if (!def) {
+        socket.emit(S2C.ERROR, { code: 'INVALID_GAME', message: 'Unknown minigame.' });
+        return;
+      }
+    }
+
+    const displayName = isVoteMode
+      ? 'Player Vote'
+      : (MINIGAME_REGISTRY[payload.minigameId]?.displayName ?? payload.minigameId);
+
+    const prevSelection = lobby.selectedGame?.minigameId;
+    lobby.selectedGame = { minigameId: payload.minigameId, displayName };
+    lobby.lastActivityAt = Date.now();
+
+    // Mark host as permanently ready
+    const hostPlayer = lobby.players.get(userId);
+    if (hostPlayer && !hostPlayer.isReady) {
+      hostPlayer.isReady = true;
+      this.broadcastAction(lobby.id, {
+        type: 'PLAYER_READY_CHANGED',
+        payload: { userId, isReady: true },
+      });
+    }
+
+    // If changing the pick, unready all non-host players
+    if (prevSelection && prevSelection !== payload.minigameId) {
+      for (const player of lobby.players.values()) {
+        if (player.userId !== lobby.hostUserId && player.isReady) {
+          player.isReady = false;
+          this.broadcastAction(lobby.id, {
+            type: 'PLAYER_READY_CHANGED',
+            payload: { userId: player.userId, isReady: false },
+          });
+        }
+      }
+    }
+
+    // Broadcast game picked
+    this.broadcastAction(lobby.id, {
+      type: 'GAME_PICKED',
+      payload: { minigameId: payload.minigameId, displayName },
+    });
+
+    logger.info({ event: 'game_picked', lobbyId: lobby.id, userId, minigameId: payload.minigameId, displayName });
   }
 
   // ─── Spectator promotion (§8) ──────────────────────────────
@@ -1061,6 +1146,7 @@ export class LobbyManager {
         spectatorCount: lobby.spectators.size,
         state: lobby.state,
         currentGame: lobby.currentGame?.minigameId ?? null,
+        selectedGame: lobby.selectedGame?.displayName ?? null,
         roundNumber: lobby.roundNumber,
       };
     });
@@ -1148,6 +1234,7 @@ export class LobbyManager {
       players,
       spectators,
       currentGame,
+      selectedGame: lobby.selectedGame ?? null,
       roundNumber: lobby.roundNumber,
       chat: [...lobby.chat],
       myRole,

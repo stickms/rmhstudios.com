@@ -1,7 +1,9 @@
 /**
- * SettingsMenu — Floating settings panel for RMHbox.
+ * SettingsMenu — Settings panel for RMHbox.
  *
- * Accessible at all times via a gear icon button.
+ * Trigger button is a static circle intended for placement in the header.
+ * Panel opens centered on screen as a modal.
+ *
  * Contains audio controls (master, SFX, music volume)
  * and a light/dark theme toggle.
  *
@@ -10,6 +12,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Settings, Volume2, VolumeX, Sun, Moon, X } from 'lucide-react';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 
@@ -34,10 +37,10 @@ export default function SettingsMenu({ theme, onToggleTheme }: SettingsMenuProps
 
   return (
     <>
-      {/* Trigger button */}
+      {/* Trigger button — static circle for header placement */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-4 right-4 z-50 flex h-10 w-10 items-center justify-center rounded-full shadow-lg transition-all hover:scale-110 active:scale-95"
+        className="flex h-10 w-10 items-center justify-center rounded-full transition-all hover:scale-110 active:scale-95"
         style={{
           backgroundColor: 'var(--rmhbox-surface)',
           border: '1px solid var(--rmhbox-border)',
@@ -49,30 +52,30 @@ export default function SettingsMenu({ theme, onToggleTheme }: SettingsMenuProps
         <Settings className="h-5 w-5" />
       </button>
 
-      {/* Panel */}
-      {isOpen && (
+      {/* Modal — portaled to body to escape header containing block */}
+      {isOpen && createPortal(
         <>
           {/* Backdrop */}
           <div
-            className="rmhbox-overlay fixed inset-0 z-[60] bg-black/30"
+            className="rmhbox-overlay fixed inset-0 z-60 bg-black/30"
             onClick={() => setIsOpen(false)}
           />
 
-          {/* Settings panel */}
+          {/* Settings panel — centered on screen */}
           <div
-            className="rmhbox-modal fixed bottom-16 right-4 z-[70] w-72 rounded-xl border p-4 shadow-xl"
+            className="rmhbox-modal fixed inset-x-4 top-1/2 z-70 mx-auto max-w-sm -translate-y-1/2 rounded-xl border p-4 shadow-xl"
             style={{
               backgroundColor: 'var(--rmhbox-surface)',
               borderColor: 'var(--rmhbox-border)',
             }}
           >
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--rmhbox-text-muted)]">
+              <h3 className="text-sm font-bold uppercase tracking-wider text-(--rmhbox-text-muted)">
                 Settings
               </h3>
               <button
                 onClick={() => setIsOpen(false)}
-                className="rounded p-1 text-[var(--rmhbox-text-muted)] transition-colors hover:text-[var(--rmhbox-text)]"
+                className="rounded p-1 text-(--rmhbox-text-muted) transition-colors hover:text-(--rmhbox-text)"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -81,7 +84,7 @@ export default function SettingsMenu({ theme, onToggleTheme }: SettingsMenuProps
             <div className="space-y-4">
               {/* Theme Toggle */}
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-[var(--rmhbox-text)]">Theme</span>
+                <span className="text-sm font-medium text-(--rmhbox-text)">Theme</span>
                 <button
                   onClick={onToggleTheme}
                   className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors"
@@ -108,7 +111,7 @@ export default function SettingsMenu({ theme, onToggleTheme }: SettingsMenuProps
 
               {/* Audio Section */}
               <div className="space-y-3">
-                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[var(--rmhbox-text-muted)]">
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-(--rmhbox-text-muted)">
                   {settings.masterVolume === 0 ? (
                     <VolumeX className="h-3.5 w-3.5" />
                   ) : (
@@ -140,7 +143,8 @@ export default function SettingsMenu({ theme, onToggleTheme }: SettingsMenuProps
               </div>
             </div>
           </div>
-        </>
+        </>,
+        document.querySelector('.rmhbox-theme') ?? document.body,
       )}
     </>
   );
@@ -158,7 +162,7 @@ function VolumeSlider({
 }) {
   return (
     <label className="flex items-center gap-3">
-      <span className="w-12 text-xs text-[var(--rmhbox-text)]">{label}</span>
+      <span className="w-12 text-xs text-(--rmhbox-text)">{label}</span>
       <input
         type="range"
         min={0}
@@ -166,10 +170,10 @@ function VolumeSlider({
         step={0.05}
         value={value}
         onChange={(e) => onChange(parseFloat(e.target.value))}
-        className="flex-1 accent-[var(--rmhbox-accent)]"
+        className="flex-1 accent-(--rmhbox-accent)"
         style={{ height: '4px' }}
       />
-      <span className="w-8 text-right text-xs tabular-nums text-[var(--rmhbox-text-muted)]">
+      <span className="w-8 text-right text-xs tabular-nums text-(--rmhbox-text-muted)">
         {Math.round(value * 100)}
       </span>
     </label>

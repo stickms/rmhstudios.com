@@ -121,6 +121,18 @@ export const useRMHboxStore = create<RMHboxStore>()(
       name: 'rmhbox-settings',
       // Only persist the settings field to localStorage
       partialize: (state) => ({ settings: state.settings }),
+      // Deep-merge settings so new fields (e.g. theme) get their defaults
+      // even when the stored object was saved before those fields existed.
+      merge: (persisted, current) => {
+        const p = persisted as { settings?: Partial<RMHboxUserSettings> } | undefined;
+        return {
+          ...(current as RMHboxStore),
+          settings: {
+            ...DEFAULT_SETTINGS,
+            ...(p?.settings ?? {}),
+          },
+        };
+      },
     },
   ),
 );
@@ -233,12 +245,13 @@ export function applyLobbyAction(
 
     case 'STATE_CHANGED': {
       const newState = data.state as ClientLobbyState['state'];
-      // When returning to WAITING, clear game state to avoid stale data
+      // When returning to WAITING, clear game state and selectedGame to avoid stale data
       if (newState === 'WAITING') {
         return {
           ...lobby,
           state: newState,
           currentGame: null,
+          selectedGame: null,
         };
       }
       return {
@@ -294,6 +307,15 @@ export function applyLobbyAction(
         currentGame: data.game as ClientLobbyState['currentGame'],
       };
 
+    case 'GAME_PICKED':
+      return {
+        ...lobby,
+        selectedGame: {
+          minigameId: data.minigameId as string,
+          displayName: data.displayName as string,
+        },
+      };
+
     case 'TIMER_TICK':
       if (lobby.currentGame) {
         const newTime = data.timeRemaining as number | null | undefined;
@@ -335,7 +357,8 @@ export function applyGameAction(
     action.type.startsWith('STATE_') ||
     action.type.startsWith('CHAT_') ||
     action.type.startsWith('VOTE_') ||
-    action.type.startsWith('GAME_SELECTED')
+    action.type.startsWith('GAME_SELECTED') ||
+    action.type.startsWith('GAME_PICKED')
   ) {
     return gameState;
   }

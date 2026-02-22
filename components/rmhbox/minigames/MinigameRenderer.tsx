@@ -19,10 +19,10 @@ interface MinigameRendererProps {
 /** Stub component factory — creates a simple placeholder for each minigame. */
 function createStub(name: string): ComponentType {
   const Stub = () => (
-    <div className="flex flex-col items-center justify-center gap-2 p-8 text-center text-[var(--rmhbox-text)]">
+    <div className="flex flex-col items-center justify-center gap-2 p-8 text-center text-(--rmhbox-text)">
       <span className="text-4xl">🎮</span>
       <h3 className="text-xl font-bold">{name}</h3>
-      <p className="text-sm text-[var(--rmhbox-text-muted)]">Minigame coming soon…</p>
+      <p className="text-sm text-(--rmhbox-text-muted)">Minigame coming soon…</p>
     </div>
   );
   Stub.displayName = name;
@@ -55,7 +55,7 @@ const MINIGAME_COMPONENTS: Record<string, React.LazyExoticComponent<ComponentTyp
 /** Loading fallback shown while the component loads. */
 function LoadingFallback() {
   return (
-    <div className="flex items-center justify-center gap-2 p-8 text-[var(--rmhbox-text-muted)]">
+    <div className="flex items-center justify-center gap-2 p-8 text-(--rmhbox-text-muted)">
       <Loader2 className="h-6 w-6 animate-spin" />
       <span>Loading minigame…</span>
     </div>
@@ -67,8 +67,8 @@ function UnknownMinigame({ id }: { id: string }) {
   return (
     <div className="flex flex-col items-center justify-center gap-2 p-8 text-center">
       <span className="text-4xl">❓</span>
-      <h3 className="text-lg font-bold text-[var(--rmhbox-danger)]">Unknown Minigame</h3>
-      <p className="text-sm text-[var(--rmhbox-text-muted)]">
+      <h3 className="text-lg font-bold text-(--rmhbox-danger)">Unknown Minigame</h3>
+      <p className="text-sm text-(--rmhbox-text-muted)">
         No component found for &quot;{id}&quot;
       </p>
     </div>

@@ -81,6 +81,8 @@ export interface RMHboxLobby {
   createdAt: number;
   lastActivityAt: number;
   currentGame: ActiveGame | null;
+  /** Game the host has picked but not yet started. '__vote__' = vote mode. */
+  selectedGame: { minigameId: string; displayName: string } | null;
   matchHistory: ServerMatchSummary[];
   roundNumber: number;
 }

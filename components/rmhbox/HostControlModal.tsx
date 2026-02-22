@@ -1,8 +1,8 @@
 /**
  * HostControlModal — In-game host management modal.
  *
- * Accessible during gameplay via a floating button (crown icon).
- * Allows the host to:
+ * Trigger is a static circle button intended for header placement.
+ * Opens a centered modal allowing the host to:
  * - Force-end the current game
  * - Kick players
  * - Promote spectators to players
@@ -13,6 +13,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Crown,
   X,
@@ -41,7 +42,7 @@ export default function HostControlModal() {
   const handleKick = useCallback(
     (userId: string, userName: string) => {
       if (!lobby) return;
-      emit(C2S.LOBBY_KICK, { lobbyId: lobby.lobbyId, userId });
+      emit(C2S.LOBBY_KICK, { lobbyId: lobby.lobbyId, targetUserId: userId });
       toast.warning(`Kicked ${userName}`);
     },
     [lobby],
@@ -59,7 +60,7 @@ export default function HostControlModal() {
   const handleTransferHost = useCallback(
     (userId: string, userName: string) => {
       if (!lobby) return;
-      emit(C2S.LOBBY_TRANSFER_HOST, { lobbyId: lobby.lobbyId, newHostUserId: userId });
+      emit(C2S.LOBBY_TRANSFER_HOST, { lobbyId: lobby.lobbyId, targetUserId: userId });
       toast.info(`Transferred host to ${userName}`);
       setIsOpen(false);
     },
@@ -76,11 +77,11 @@ export default function HostControlModal() {
 
   return (
     <>
-      {/* Floating trigger — only show during non-WAITING states */}
+      {/* Trigger button — static circle for header placement, only show during non-WAITING states */}
       {lobby.state !== 'WAITING' && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-4 right-16 z-50 flex h-10 w-10 items-center justify-center rounded-full shadow-lg transition-all hover:scale-110 active:scale-95"
+          className="flex h-10 w-10 items-center justify-center rounded-full transition-all hover:scale-110 active:scale-95"
           style={{
             backgroundColor: 'var(--rmhbox-warning)',
             color: '#000',
@@ -92,31 +93,31 @@ export default function HostControlModal() {
         </button>
       )}
 
-      {/* Modal */}
-      {isOpen && (
+      {/* Modal — portaled to body to escape header containing block */}
+      {isOpen && createPortal(
         <>
           {/* Backdrop */}
           <div
-            className="rmhbox-overlay fixed inset-0 z-[80] bg-black/50"
+            className="rmhbox-overlay fixed inset-0 z-80 bg-black/50"
             onClick={() => setIsOpen(false)}
           />
 
           {/* Panel */}
           <div
-            className="rmhbox-modal fixed inset-x-4 top-1/2 z-[90] mx-auto max-w-md -translate-y-1/2 rounded-xl border p-5 shadow-2xl"
+            className="rmhbox-modal fixed inset-x-4 top-1/2 z-90 mx-auto max-w-md -translate-y-1/2 rounded-xl border p-5 shadow-2xl"
             style={{
               backgroundColor: 'var(--rmhbox-surface)',
               borderColor: 'var(--rmhbox-border)',
             }}
           >
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="flex items-center gap-2 text-lg font-bold text-[var(--rmhbox-text)]">
-                <Shield className="h-5 w-5 text-[var(--rmhbox-warning)]" />
+              <h2 className="flex items-center gap-2 text-lg font-bold text-(--rmhbox-text)">
+                <Shield className="h-5 w-5 text-(--rmhbox-warning)" />
                 Host Controls
               </h2>
               <button
                 onClick={() => setIsOpen(false)}
-                className="rounded p-1 text-[var(--rmhbox-text-muted)] hover:text-[var(--rmhbox-text)]"
+                className="rounded p-1 text-(--rmhbox-text-muted) hover:text-(--rmhbox-text)"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -139,7 +140,7 @@ export default function HostControlModal() {
             {/* Players */}
             {otherPlayers.length > 0 && (
               <div className="mb-4">
-                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-[var(--rmhbox-text-muted)]">
+                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-(--rmhbox-text-muted)">
                   Players ({otherPlayers.length})
                 </h3>
                 <div className="max-h-48 space-y-1 overflow-y-auto">
@@ -161,7 +162,7 @@ export default function HostControlModal() {
                       </div>
 
                       {/* Name */}
-                      <span className="flex-1 truncate text-sm font-medium text-[var(--rmhbox-text)]">
+                      <span className="flex-1 truncate text-sm font-medium text-(--rmhbox-text)">
                         {player.userName}
                       </span>
 
@@ -169,14 +170,14 @@ export default function HostControlModal() {
                       <div className="flex gap-1">
                         <button
                           onClick={() => handleTransferHost(player.userId, player.userName)}
-                          className="rounded p-1.5 text-[var(--rmhbox-warning)] transition-colors hover:bg-[var(--rmhbox-warning-dim)]"
+                          className="rounded p-1.5 text-(--rmhbox-warning) transition-colors hover:bg-(--rmhbox-warning-dim)"
                           title="Transfer host"
                         >
                           <ArrowRightLeft className="h-3.5 w-3.5" />
                         </button>
                         <button
                           onClick={() => handleKick(player.userId, player.userName)}
-                          className="rounded p-1.5 text-[var(--rmhbox-danger)] transition-colors hover:bg-[var(--rmhbox-danger-dim)]"
+                          className="rounded p-1.5 text-(--rmhbox-danger) transition-colors hover:bg-(--rmhbox-danger-dim)"
                           title="Kick player"
                         >
                           <UserMinus className="h-3.5 w-3.5" />
@@ -191,7 +192,7 @@ export default function HostControlModal() {
             {/* Spectators */}
             {lobby.spectators.length > 0 && (
               <div>
-                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-[var(--rmhbox-text-muted)]">
+                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-(--rmhbox-text-muted)">
                   Spectators ({lobby.spectators.length})
                 </h3>
                 <div className="max-h-32 space-y-1 overflow-y-auto">
@@ -210,12 +211,12 @@ export default function HostControlModal() {
                       >
                         {spec.userName.charAt(0).toUpperCase()}
                       </div>
-                      <span className="flex-1 truncate text-sm text-[var(--rmhbox-text-muted)]">
+                      <span className="flex-1 truncate text-sm text-(--rmhbox-text-muted)">
                         {spec.userName}
                       </span>
                       <button
                         onClick={() => handlePromote(spec.userId, spec.userName)}
-                        className="rounded p-1.5 text-[var(--rmhbox-success)] transition-colors hover:bg-[var(--rmhbox-success-dim)]"
+                        className="rounded p-1.5 text-(--rmhbox-success) transition-colors hover:bg-(--rmhbox-success-dim)"
                         title="Promote to player"
                       >
                         <UserPlus className="h-3.5 w-3.5" />
@@ -227,12 +228,13 @@ export default function HostControlModal() {
             )}
 
             {otherPlayers.length === 0 && lobby.spectators.length === 0 && !isInGame && (
-              <p className="text-center text-sm text-[var(--rmhbox-text-muted)]">
+              <p className="text-center text-sm text-(--rmhbox-text-muted)">
                 No other players or spectators in the lobby.
               </p>
             )}
           </div>
-        </>
+        </>,
+        document.querySelector('.rmhbox-theme') ?? document.body,
       )}
     </>
   );

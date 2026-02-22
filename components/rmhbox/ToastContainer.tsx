@@ -17,10 +17,10 @@ const ICON_MAP: Record<ToastType, React.ReactNode> = {
 };
 
 const COLOR_MAP: Record<ToastType, string> = {
-  success: 'border-l-[var(--rmhbox-success)] text-[var(--rmhbox-success)]',
-  error: 'border-l-[var(--rmhbox-danger)] text-[var(--rmhbox-danger)]',
-  warning: 'border-l-[var(--rmhbox-warning)] text-[var(--rmhbox-warning)]',
-  info: 'border-l-[var(--rmhbox-info)] text-[var(--rmhbox-info)]',
+  success: 'border-l-(--rmhbox-success) text-(--rmhbox-success)',
+  error: 'border-l-(--rmhbox-danger) text-(--rmhbox-danger)',
+  warning: 'border-l-(--rmhbox-warning) text-(--rmhbox-warning)',
+  info: 'border-l-(--rmhbox-info) text-(--rmhbox-info)',
 };
 
 export default function ToastContainer() {
@@ -30,7 +30,7 @@ export default function ToastContainer() {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed inset-x-0 top-4 z-[100] flex flex-col items-center gap-2 pointer-events-none">
+    <div className="fixed inset-x-0 top-4 z-100 flex flex-col items-center gap-2 pointer-events-none">
       {toasts.map((t) => (
         <div
           key={t.id}
@@ -44,12 +44,12 @@ export default function ToastContainer() {
           }}
         >
           {ICON_MAP[t.type]}
-          <span className="flex-1 text-sm font-medium text-[var(--rmhbox-text)]">
+          <span className="flex-1 text-sm font-medium text-(--rmhbox-text)">
             {t.message}
           </span>
           <button
             onClick={() => dismissToast(t.id)}
-            className="shrink-0 rounded p-0.5 text-[var(--rmhbox-text-muted)] transition-colors hover:text-[var(--rmhbox-text)]"
+            className="shrink-0 rounded p-0.5 text-(--rmhbox-text-muted) transition-colors hover:text-(--rmhbox-text)"
             aria-label="Dismiss"
           >
             <X className="h-3.5 w-3.5" />

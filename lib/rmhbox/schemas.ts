@@ -79,6 +79,12 @@ export const BrowseLobbiesSchema = z.object({
   limit: z.number().int().min(1).max(50).optional().default(20),
 });
 
+export const PickGameSchema = z.object({
+  lobbyId: z.string(),
+  /** Minigame ID or '__vote__' for vote mode */
+  minigameId: z.string(),
+});
+
 export const SelectGameSchema = z.object({
   lobbyId: z.string(),
   minigameId: z.string(),
