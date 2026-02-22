@@ -1,0 +1,77 @@
+export interface AppInfo {
+    id: string;
+    title: string;
+    description: string;
+    longDescription: string;
+    href: string;
+    status: string;
+    cta: string;
+    isSteam: boolean;
+
+    // Homepage card styling
+    gradient: string;
+    iconName: string;
+
+    // Apps page styling
+    color: string;
+    tags: string[];
+    imagePath?: string;
+    authGate: boolean;
+}
+
+/**
+ * Single source of truth for all apps displayed on the site.
+ */
+export const apps: AppInfo[] = [
+    {
+        id: 'rmh-code',
+        title: 'RMH Code',
+        description: 'A browser-based code editor. Write and save code right in your browser.',
+        longDescription:
+            'RMH Code brings the VS Code experience to your browser. Create projects, manage files in a tree, and write code with full syntax highlighting and IntelliSense — all saved to your account.',
+        href: '/rmh-code',
+        status: 'Beta',
+        cta: 'Open Editor',
+        isSteam: false,
+        gradient: 'from-blue-600 via-indigo-500 to-violet-600',
+        iconName: 'Code2',
+        color: 'from-blue-500/20 to-violet-600/20 hover:border-blue-500/50',
+        tags: ['Code Editor', 'Developer Tool', 'Beta'],
+        imagePath: '/images/games/rmhcode.png',
+        authGate: true,
+    },
+    {
+        id: 'rmhdle',
+        title: 'RMHdle',
+        description: 'The official daily word challenge for the RMH community.',
+        longDescription:
+            'A daily 5-letter word game tailored for the RMH ecosystem. Join the community on Discord to share your streaks, compete with others, and guess secret terms from RMH history.',
+        href: 'https://discord.gg/ZdfhdAKVSf',
+        status: 'Discord Game',
+        cta: 'Play on Discord',
+        isSteam: false,
+        gradient: 'from-[#5865F2] to-[#404EED]',
+        iconName: 'Brain',
+        color: 'from-indigo-500/20 to-blue-600/20 hover:border-indigo-500/50',
+        tags: ['Discord', 'Word Game', 'Daily'],
+        imagePath: '/images/games/rmhdle.png',
+        authGate: false,
+    },
+    {
+        id: 'rmh-connections',
+        title: 'RMHConnections',
+        description: 'A daily puzzle game about finding common threads in RMH lore.',
+        longDescription:
+            'Group sixteen community-themed items into four categories. A daily test of your RMH knowledge, featuring characters, memes, and historical events from across the community.',
+        href: 'https://discord.gg/ZdfhdAKVSf',
+        status: 'Discord Game',
+        cta: 'Play on Discord',
+        isSteam: false,
+        gradient: 'from-[#7289da] to-[#5865F2]',
+        iconName: 'Rocket',
+        color: 'from-violet-500/20 to-purple-600/20 hover:border-violet-500/50',
+        tags: ['Discord', 'Puzzle', 'Daily'],
+        imagePath: '/images/games/rmhconnections.png',
+        authGate: false,
+    },
+];
