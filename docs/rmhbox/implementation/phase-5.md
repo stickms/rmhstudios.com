@@ -395,6 +395,17 @@
 - [ ] Store in game results for lobby-level awards system
   **Verification:** Unit test: construct scenario where each award triggers for a different player; confirm all 5 awards assigned correctly.
 
+#### 5.1.6.13 `buildGameLog()`
+
+- [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
+- [ ] Log `round_start` action when root word is revealed (with rootWord, validRhymeCount)
+- [ ] Log `submission` action on each validated submission (userId, word, valid, rarityTier, score)
+- [ ] Log `round_end` action at round completion (round, rootWord, roundWinner, all submissions)
+- [ ] In `computeResults()`, build `GameLog` object with `initialState` containing rounds config and player list
+- [ ] Set `version: 1` for forward compatibility
+- [ ] Return `GameLog` from `buildGameLog()` to be passed to `persistMatchResults()`
+  **Verification:** Unit test: play a 3-round game, call `buildGameLog()`; verify log contains 3 `round_start`, N `submission`, and 3 `round_end` actions in sequential order with increasing timestamps.
+
 ---
 
 ### 5.1.7 Register Game in Minigame Registry
@@ -818,6 +829,20 @@
 - [ ] **Speedrunner** — winning team won in ≤5 turns
 - [ ] **Linguist** — spymaster who used the longest clue word (by character count)
   **Verification:** Unit test: construct scenarios triggering each award; confirm all 5 assigned correctly.
+
+#### 5.2.6.12 `buildGameLog()`
+
+- [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
+- [ ] Log `turn_start` action on each new turn (team, role, turnNumber)
+- [ ] Log `clue_given` action when spymaster submits (team, spymasterId, word, number)
+- [ ] Log `guess` action on each operative guess (team, operativeId, word, tileType, correct)
+- [ ] Log `tile_reveal` action on each tile flip (word, tileType, gridPosition)
+- [ ] Log `pass` action when operatives end turn early (team, remainingGuesses)
+- [ ] Log `turn_end` action at turn conclusion (team, guessCount, correctCount)
+- [ ] Log `game_end` action with full win condition details
+- [ ] In `computeResults()`, build `GameLog` with `initialState` containing the full grid, keyCard, team assignments, and spymaster IDs
+- [ ] Return `GameLog` from `buildGameLog()`
+  **Verification:** Unit test: play a full game with 2+ turns, call `buildGameLog()`; verify log contains turn_start/clue_given/guess/tile_reveal actions in correct order. Verify initialState contains keyCard.
 
 ---
 
@@ -1365,6 +1390,17 @@
   - [ ] **Vigilante** — most successful crashes (crashes that resulted in invalidation)
   - [ ] **Full House** — all 5 answers valid (non-crashed, non-empty, letter-correct) in any single round
   **Verification:** Unit test: construct scenarios triggering each award; confirm all 5 assigned correctly.
+
+#### 5.3.6.13 `buildGameLog()`
+
+- [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
+- [ ] Log `round_start` action when letter/categories are revealed (round, letter, categories)
+- [ ] Log `answers_locked` action when submissions close (userId, answers per category)
+- [ ] Log `crash` action for each crash during peer review (crasherId, targetUserId, category, answer)
+- [ ] Log `round_end` action at round completion (round, validAnswers, crashedAnswers, scores)
+- [ ] In `computeResults()`, build `GameLog` with `initialState` containing round count and player list
+- [ ] Return `GameLog` from `buildGameLog()`
+  **Verification:** Unit test: play 2-round game with crashes, verify log contains round_start, answers_locked, crash, round_end actions.
 
 ---
 
@@ -1915,6 +1951,17 @@
   - [ ] **Optimal Path** — matched or beat the optimal path length (`clickCount ≤ optimalPathLength`)
   - [ ] **Almost There** — was exactly 1 click away from target (target in `currentArticleLinks`) but didn't finish (DNF)
   **Verification:** Unit test: construct scenarios triggering each award; confirm all 5 assigned correctly.
+
+#### 5.4.6.14 `buildGameLog()`
+
+- [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
+- [ ] Log `navigate` action on every article click (userId, fromArticle, toArticle, clickCount)
+- [ ] Log `go_back` action when player uses back (userId, fromArticle, toArticle, backtrackCount)
+- [ ] Log `player_finished` action when player reaches target (userId, clickCount, timeMs)
+- [ ] Log `game_end` action with all players' final paths and completion status
+- [ ] In `computeResults()`, build `GameLog` with `initialState` containing startArticle, targetArticle, optimalPathLength
+- [ ] Return `GameLog` from `buildGameLog()`
+  **Verification:** Unit test: simulate 3 players navigating, 2 finish, 1 DNF; verify log captures all navigation steps and completion events.
 
 ---
 
