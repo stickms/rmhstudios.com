@@ -7,7 +7,7 @@ import { useState, useEffect, useRef } from 'react';
 export function JobSearch() {
     const { query, type, sort, setQuery, setType, setSort, resetFilters } = useJobSearchStore();
     const [localQuery, setLocalQuery] = useState(query);
-    const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+    const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
     const [showFilters, setShowFilters] = useState(false);
 
     useEffect(() => {
