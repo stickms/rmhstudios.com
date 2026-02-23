@@ -17,6 +17,7 @@ export interface AppInfo {
     tags: string[];
     imagePath?: string;
     authGate: boolean;
+    hidden?: boolean;
 }
 
 /**
@@ -56,6 +57,7 @@ export const apps: AppInfo[] = [
         tags: ['Discord', 'Word Game', 'Daily'],
         imagePath: '/images/games/rmhdle.png',
         authGate: false,
+        hidden: true,
     },
     {
         id: 'rmh-connections',
@@ -72,6 +74,41 @@ export const apps: AppInfo[] = [
         color: 'from-violet-500/20 to-purple-600/20 hover:border-violet-500/50',
         tags: ['Discord', 'Puzzle', 'Daily'],
         imagePath: '/images/games/rmhconnections.png',
+        authGate: false,
+        hidden: true,
+    },
+    {
+        id: 'rmh-notes',
+        title: 'RMHNotes',
+        description: 'A cozy, feature-rich notes and reminders app. Capture ideas, organize with folders and tags, and never forget a thing.',
+        longDescription:
+            'RMHNotes is your personal cozy notebook. Write in a beautiful rich text editor, organize with folders and tags, set reminders, lock private notes, share read-only links, and track your mood — all in one warm, inviting app.',
+        href: '/rmh-notes',
+        status: 'Beta',
+        cta: 'Open Notes',
+        isSteam: false,
+        gradient: 'from-amber-500 via-orange-400 to-yellow-400',
+        iconName: 'NotebookPen',
+        color: 'from-amber-500/20 to-orange-400/20 hover:border-amber-500/50',
+        tags: ['Notes', 'Productivity', 'Reminders', 'Beta'],
+        imagePath: '/images/games/rmhnotes.png',
+        authGate: true,
+    },
+    {
+        id: 'rmh-weather',
+        title: 'RMHWeather',
+        description: 'A premium, immersive weather experience with real-time data.',
+        longDescription:
+            'RMHWeather provides accurate real-time weather data, 48-hour forecasts, and 10-day summaries through a stunning glassmorphic interface that reacts to the current conditions.',
+        href: '/rmhweather',
+        status: 'Released',
+        cta: 'Check Weather',
+        isSteam: false,
+        gradient: 'from-blue-400 via-indigo-500 to-purple-600',
+        iconName: 'CloudSun',
+        color: 'from-blue-500/20 to-purple-600/20 hover:border-blue-400/50',
+        tags: ['Weather', 'Utility', 'Premium'],
+        imagePath: '/images/games/rmhweather.png',
         authGate: false,
     },
 ];
