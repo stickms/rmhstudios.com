@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { MapPin, Building2, Clock, Banknote } from 'lucide-react';
+import { MapPin, Building2, Calendar, Clock, Banknote } from 'lucide-react';
 
 interface JobCardProps {
     id: string;
@@ -14,8 +14,10 @@ interface JobCardProps {
     publishAt: string;
 }
 
-export function JobCard({ id, title, company, description, type, location, salaryRange, publishAt }: JobCardProps) {
-    const timeAgo = getTimeAgo(new Date(publishAt));
+export function JobCard({ id, title, company, description, location, salaryRange, publishAt }: JobCardProps) {
+    const publishDate = new Date(publishAt);
+    const timeAgo = getTimeAgo(publishDate);
+    const formattedDate = publishDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
     return (
         <Link href={`/rmh-jobs/${id}`} className="block">
@@ -33,11 +35,6 @@ export function JobCard({ id, title, company, description, type, location, salar
                             <span className="text-sm truncate">{company}</span>
                         </div>
                     </div>
-                    <span
-                        className={`shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full ${type === 'silly' ? 'badge-silly' : 'badge-real'}`}
-                    >
-                        {type === 'silly' ? 'Absurd' : 'Realistic'}
-                    </span>
                 </div>
 
                 <p
@@ -58,6 +55,10 @@ export function JobCard({ id, title, company, description, type, location, salar
                             {salaryRange}
                         </span>
                     )}
+                    <span className="flex items-center gap-1">
+                        <Calendar size={12} />
+                        {formattedDate}
+                    </span>
                     <span className="flex items-center gap-1 ml-auto">
                         <Clock size={12} />
                         {timeAgo}

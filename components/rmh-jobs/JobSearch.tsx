@@ -1,14 +1,13 @@
 'use client';
 
-import { Search, X, SlidersHorizontal } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { useJobSearchStore } from '@/lib/store/useJobSearchStore';
 import { useState, useEffect, useRef } from 'react';
 
 export function JobSearch() {
-    const { query, type, sort, setQuery, setType, setSort, resetFilters } = useJobSearchStore();
+    const { query, sort, setQuery, setSort, resetFilters } = useJobSearchStore();
     const [localQuery, setLocalQuery] = useState(query);
     const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
-    const [showFilters, setShowFilters] = useState(false);
 
     useEffect(() => {
         debounceRef.current = setTimeout(() => {
@@ -17,12 +16,11 @@ export function JobSearch() {
         return () => clearTimeout(debounceRef.current);
     }, [localQuery, setQuery]);
 
-    // Sync external query changes
     useEffect(() => {
         setLocalQuery(query);
     }, [query]);
 
-    const hasFilters = type !== 'all' || sort !== 'newest' || query !== '';
+    const hasFilters = sort !== 'newest' || query !== '';
 
     return (
         <div className="space-y-3">
@@ -51,14 +49,6 @@ export function JobSearch() {
                         </button>
                     )}
                 </div>
-                <button
-                    onClick={() => setShowFilters(!showFilters)}
-                    className={`jobs-btn-secondary flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-sm ${showFilters ? '!border-[var(--jobs-accent)]' : ''}`}
-                    style={{ borderRadius: 'var(--jobs-radius)' }}
-                >
-                    <SlidersHorizontal size={14} />
-                    Filters
-                </button>
                 {hasFilters && (
                     <button
                         onClick={resetFilters}
@@ -70,45 +60,27 @@ export function JobSearch() {
                 )}
             </div>
 
-            {showFilters && (
-                <div
-                    className="flex flex-wrap gap-3 p-3 rounded-lg"
-                    style={{ background: 'var(--jobs-surface-2)', borderRadius: 'var(--jobs-radius)' }}
-                >
-                    <div className="flex items-center gap-2">
-                        <span className="text-xs font-medium" style={{ color: 'var(--jobs-text-muted)' }}>Type:</span>
-                        {(['all', 'real', 'silly'] as const).map((t) => (
-                            <button
-                                key={t}
-                                onClick={() => setType(t)}
-                                className={`text-xs px-2.5 py-1 rounded-full transition-colors ${
-                                    type === t
-                                        ? 'bg-[var(--jobs-accent)] text-[var(--jobs-accent-fg)] font-semibold'
-                                        : 'bg-[var(--jobs-surface-3)] text-[var(--jobs-text-muted)] hover:text-[var(--jobs-text)]'
-                                }`}
-                            >
-                                {t === 'all' ? 'All' : t === 'real' ? 'Realistic' : 'Absurd'}
-                            </button>
-                        ))}
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <span className="text-xs font-medium" style={{ color: 'var(--jobs-text-muted)' }}>Sort:</span>
-                        {(['newest', 'oldest', 'company'] as const).map((s) => (
-                            <button
-                                key={s}
-                                onClick={() => setSort(s)}
-                                className={`text-xs px-2.5 py-1 rounded-full transition-colors ${
-                                    sort === s
-                                        ? 'bg-[var(--jobs-accent)] text-[var(--jobs-accent-fg)] font-semibold'
-                                        : 'bg-[var(--jobs-surface-3)] text-[var(--jobs-text-muted)] hover:text-[var(--jobs-text)]'
-                                }`}
-                            >
-                                {s === 'newest' ? 'Newest' : s === 'oldest' ? 'Oldest' : 'Company A-Z'}
-                            </button>
-                        ))}
-                    </div>
+            <div
+                className="flex flex-wrap gap-3 p-3 rounded-lg"
+                style={{ background: 'var(--jobs-surface-2)', borderRadius: 'var(--jobs-radius)' }}
+            >
+                <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium" style={{ color: 'var(--jobs-text-muted)' }}>Sort:</span>
+                    {(['newest', 'oldest', 'company'] as const).map((s) => (
+                        <button
+                            key={s}
+                            onClick={() => setSort(s)}
+                            className={`text-xs px-2.5 py-1 rounded-full transition-colors ${
+                                sort === s
+                                    ? 'bg-[var(--jobs-accent)] text-[var(--jobs-accent-fg)] font-semibold'
+                                    : 'bg-[var(--jobs-surface-3)] text-[var(--jobs-text-muted)] hover:text-[var(--jobs-text)]'
+                            }`}
+                        >
+                            {s === 'newest' ? 'Newest' : s === 'oldest' ? 'Oldest' : 'Company A-Z'}
+                        </button>
+                    ))}
                 </div>
-            )}
+            </div>
         </div>
     );
 }

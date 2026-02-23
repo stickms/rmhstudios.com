@@ -120,13 +120,8 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
             <main className="max-w-3xl mx-auto px-4 py-8">
                 {/* Job header */}
                 <div className="mb-6">
-                    <div className="flex items-start justify-between gap-4 mb-3">
+                    <div className="mb-3">
                         <h1 className="text-2xl font-bold">{job.title}</h1>
-                        <span
-                            className={`shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full ${job.type === 'silly' ? 'badge-silly' : 'badge-real'}`}
-                        >
-                            {job.type === 'silly' ? 'Absurd' : 'Realistic'}
-                        </span>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm" style={{ color: 'var(--jobs-text-muted)' }}>
@@ -192,12 +187,129 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                         </div>
                     ) : (
                         <>
-                            <h3 className="font-semibold mb-2">Ready to apply?</h3>
-                            <p className="text-sm mb-4" style={{ color: 'var(--jobs-text-muted)' }}>
-                                {session?.user
-                                    ? 'Click below to submit your application. Results may vary.'
-                                    : 'Sign in to apply for this position.'}
-                            </p>
+                            <h3 className="font-semibold mb-4">Application Questions</h3>
+
+                            <div className="space-y-4 mb-6">
+                                <div>
+                                    <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--jobs-text-muted)' }}>
+                                        Why are you interested in this role? <span style={{ color: 'var(--jobs-danger)' }}>*</span>
+                                    </label>
+                                    <textarea
+                                        rows={3}
+                                        placeholder="Tell us what excites you about this opportunity..."
+                                        className="jobs-search-input w-full px-3 py-2 rounded-lg text-sm resize-none"
+                                        style={{ borderRadius: 'var(--jobs-radius)' }}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--jobs-text-muted)' }}>
+                                        Highest level of education <span style={{ color: 'var(--jobs-danger)' }}>*</span>
+                                    </label>
+                                    <select
+                                        className="jobs-search-input w-full px-3 py-2 rounded-lg text-sm"
+                                        style={{ borderRadius: 'var(--jobs-radius)' }}
+                                        defaultValue=""
+                                    >
+                                        <option value="" disabled>Select...</option>
+                                        <option value="hs">High School / GED</option>
+                                        <option value="associate">Associate&apos;s Degree</option>
+                                        <option value="bachelor">Bachelor&apos;s Degree</option>
+                                        <option value="master">Master&apos;s Degree</option>
+                                        <option value="doctorate">Doctorate / PhD</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--jobs-text-muted)' }}>
+                                        Are you authorized to work in the country where this role is based? <span style={{ color: 'var(--jobs-danger)' }}>*</span>
+                                    </label>
+                                    <select
+                                        className="jobs-search-input w-full px-3 py-2 rounded-lg text-sm"
+                                        style={{ borderRadius: 'var(--jobs-radius)' }}
+                                        defaultValue=""
+                                    >
+                                        <option value="" disabled>Select...</option>
+                                        <option value="yes">Yes</option>
+                                        <option value="no">No</option>
+                                        <option value="sponsorship">Yes, with sponsorship</option>
+                                    </select>
+                                </div>
+
+                                <div
+                                    className="p-3 rounded-lg text-xs leading-relaxed"
+                                    style={{ background: 'var(--jobs-surface-2)', color: 'var(--jobs-text-subtle)', borderRadius: 'var(--jobs-radius)' }}
+                                >
+                                    <p className="font-medium mb-1.5" style={{ color: 'var(--jobs-text-muted)' }}>Voluntary Self-Identification</p>
+                                    <p className="mb-2">
+                                        We are an equal opportunity employer and do not discriminate on the basis of race, religion, color,
+                                        national origin, gender, sexual orientation, age, marital status, veteran status, or disability status.
+                                    </p>
+
+                                    <div className="space-y-2.5 mt-3">
+                                        <div>
+                                            <label className="block text-xs font-medium mb-1" style={{ color: 'var(--jobs-text-muted)' }}>Gender (optional)</label>
+                                            <select
+                                                className="jobs-search-input w-full px-2.5 py-1.5 rounded text-xs"
+                                                style={{ borderRadius: 'var(--jobs-radius)' }}
+                                                defaultValue=""
+                                            >
+                                                <option value="">Prefer not to say</option>
+                                                <option value="male">Male</option>
+                                                <option value="female">Female</option>
+                                                <option value="nonbinary">Non-binary</option>
+                                                <option value="other">Other</option>
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-medium mb-1" style={{ color: 'var(--jobs-text-muted)' }}>Race / Ethnicity (optional)</label>
+                                            <select
+                                                className="jobs-search-input w-full px-2.5 py-1.5 rounded text-xs"
+                                                style={{ borderRadius: 'var(--jobs-radius)' }}
+                                                defaultValue=""
+                                            >
+                                                <option value="">Prefer not to say</option>
+                                                <option value="ai">American Indian or Alaska Native</option>
+                                                <option value="asian">Asian</option>
+                                                <option value="black">Black or African American</option>
+                                                <option value="hispanic">Hispanic or Latino</option>
+                                                <option value="pi">Native Hawaiian or Other Pacific Islander</option>
+                                                <option value="white">White</option>
+                                                <option value="two">Two or More Races</option>
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-medium mb-1" style={{ color: 'var(--jobs-text-muted)' }}>Veteran status (optional)</label>
+                                            <select
+                                                className="jobs-search-input w-full px-2.5 py-1.5 rounded text-xs"
+                                                style={{ borderRadius: 'var(--jobs-radius)' }}
+                                                defaultValue=""
+                                            >
+                                                <option value="">Prefer not to say</option>
+                                                <option value="not">I am not a protected veteran</option>
+                                                <option value="protected">I identify as one or more of the classifications of protected veteran</option>
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-medium mb-1" style={{ color: 'var(--jobs-text-muted)' }}>Disability status (optional)</label>
+                                            <select
+                                                className="jobs-search-input w-full px-2.5 py-1.5 rounded text-xs"
+                                                style={{ borderRadius: 'var(--jobs-radius)' }}
+                                                defaultValue=""
+                                            >
+                                                <option value="">Prefer not to say</option>
+                                                <option value="yes">Yes, I have a disability (or previously had a disability)</option>
+                                                <option value="no">No, I do not have a disability</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             {error && (
                                 <p className="text-sm mb-3" style={{ color: 'var(--jobs-danger)' }}>{error}</p>
                             )}
@@ -212,8 +324,11 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                                 ) : (
                                     <Send size={14} />
                                 )}
-                                {session?.user ? 'Apply Now' : 'Sign In to Apply'}
+                                {session?.user ? 'Submit Application' : 'Sign In to Apply'}
                             </button>
+                            <p className="text-xs mt-2" style={{ color: 'var(--jobs-text-subtle)' }}>
+                                By submitting, you agree to our Terms of Service and Privacy Policy.
+                            </p>
                         </>
                     )}
                 </div>

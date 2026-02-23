@@ -26,7 +26,7 @@ interface Pagination {
 }
 
 export default function RMHJobsPage() {
-    const { query, type, sort, page, setPage } = useJobSearchStore();
+    const { query, sort, page, setPage } = useJobSearchStore();
     const [jobs, setJobs] = useState<Job[]>([]);
     const [pagination, setPagination] = useState<Pagination | null>(null);
     const [loading, setLoading] = useState(true);
@@ -37,7 +37,6 @@ export default function RMHJobsPage() {
         params.set('page', String(page));
         params.set('limit', '20');
         params.set('sort', sort);
-        if (type !== 'all') params.set('type', type);
         if (query) params.set('q', query);
 
         try {
@@ -52,7 +51,7 @@ export default function RMHJobsPage() {
         } finally {
             setLoading(false);
         }
-    }, [query, type, sort, page]);
+    }, [query, sort, page]);
 
     useEffect(() => {
         fetchJobs();

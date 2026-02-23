@@ -49,29 +49,33 @@ function generatePublishTimestamps(count: number): Date[] {
 export async function ensureJobsSeeded(): Promise<void> {
     if (seeded) return;
 
-    const count = await prisma.job.count();
-    if (count > 0) {
+    try {
+        const count = await prisma.job.count();
+        if (count > 0) {
+            seeded = true;
+            return;
+        }
+
+        const shuffled = shuffleArray(jobSeedData);
+        const timestamps = generatePublishTimestamps(shuffled.length);
+
+        for (let i = 0; i < shuffled.length; i++) {
+            const job = shuffled[i];
+            await prisma.job.create({
+                data: {
+                    title: job.title,
+                    company: job.company,
+                    description: job.description,
+                    type: job.type,
+                    location: job.location,
+                    salaryRange: job.salaryRange,
+                    publishAt: timestamps[i],
+                },
+            });
+        }
+
         seeded = true;
-        return;
+    } catch (err) {
+        console.error('[rmh-jobs] Auto-seed failed:', err);
     }
-
-    const shuffled = shuffleArray(jobSeedData);
-    const timestamps = generatePublishTimestamps(shuffled.length);
-
-    for (let i = 0; i < shuffled.length; i++) {
-        const job = shuffled[i];
-        await prisma.job.create({
-            data: {
-                title: job.title,
-                company: job.company,
-                description: job.description,
-                type: job.type,
-                location: job.location,
-                salaryRange: job.salaryRange,
-                publishAt: timestamps[i],
-            },
-        });
-    }
-
-    seeded = true;
 }

@@ -32,6 +32,10 @@ const outcomeConfigs: OutcomeConfig[] = [
 ];
 
 export function rollOutcome(): { outcome: ApplicationOutcome; processAt: Date } {
+    if (process.env.FORCE_OA === 'true') {
+        return { outcome: 'oa_invite', processAt: new Date() };
+    }
+
     const totalWeight = outcomeConfigs.reduce((sum, c) => sum + c.weight, 0);
     let roll = Math.random() * totalWeight;
 
