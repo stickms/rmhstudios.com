@@ -125,6 +125,7 @@ export const apps: AppInfo[] = [
         iconName: 'Briefcase',
         color: 'from-green-500/20 to-cyan-500/20 hover:border-green-500/50',
         tags: ['Job Board', 'Comedy', 'Beta'],
+        imagePath: '/images/games/rmhjobs.png',
         authGate: false,
     },
     {
