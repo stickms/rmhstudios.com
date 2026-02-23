@@ -9,7 +9,7 @@ async function processReadyApplications(userId: string) {
     const ready = await prisma.jobApplication.findMany({
         where: {
             userId,
-            status: 'pending',
+            status: { in: ['pending', 'oa_completed'] },
             processAt: { lte: new Date() },
         },
         include: {
@@ -18,7 +18,12 @@ async function processReadyApplications(userId: string) {
     });
 
     for (const app of ready) {
-        if (app.outcome === 'instant_reject' || app.outcome === 'delayed_reject') {
+        if (app.status === 'oa_completed') {
+            await prisma.jobApplication.update({
+                where: { id: app.id },
+                data: { status: 'rejected' },
+            });
+        } else if (app.outcome === 'instant_reject' || app.outcome === 'delayed_reject') {
             await prisma.jobApplication.update({
                 where: { id: app.id },
                 data: {

@@ -85,15 +85,25 @@ function ApplicationCard({ application: app }: { application: Application }) {
                 {app.status === 'rejected' && !app.assessment && (
                     <span style={{ color: 'var(--jobs-danger)' }}>Rejected</span>
                 )}
-                {(app.status === 'oa_invited' || app.assessment) && (
+                {(app.status === 'oa_invited' || app.status === 'oa_completed' || (app.status === 'rejected' && app.assessment)) && (
                     <>
                         <span className="text-[var(--jobs-accent)]">OA Invited</span>
                         <span className="mx-1">→</span>
                         {app.assessment?.submittedAt ? (
                             <>
                                 <span className="text-[var(--jobs-accent)]">OA Submitted</span>
-                                <span className="mx-1">→</span>
-                                <span style={{ color: 'var(--jobs-danger)' }}>Rejected</span>
+                                {app.status === 'oa_completed' && (
+                                    <>
+                                        <span className="mx-1">→</span>
+                                        <span style={{ color: 'var(--jobs-warning)' }}>Under Review...</span>
+                                    </>
+                                )}
+                                {app.status === 'rejected' && (
+                                    <>
+                                        <span className="mx-1">→</span>
+                                        <span style={{ color: 'var(--jobs-danger)' }}>Rejected</span>
+                                    </>
+                                )}
                             </>
                         ) : app.assessment ? (
                             <span style={{ color: 'var(--jobs-warning)' }}>OA Pending</span>
@@ -154,6 +164,12 @@ function getStatusConfig(app: Application) {
                 label: 'OA Invited',
                 className: 'status-oa-invited',
                 icon: <AlertTriangle size={12} />,
+            };
+        case 'oa_completed':
+            return {
+                label: 'OA Completed',
+                className: 'status-oa-invited',
+                icon: <CheckCircle2 size={12} />,
             };
         default:
             return {

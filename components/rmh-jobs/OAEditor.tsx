@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Clock, Play, Send, ChevronDown } from 'lucide-react';
+import { Clock, Play, Send, ChevronDown, Check } from 'lucide-react';
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import { FakeTestResults } from './FakeTestResults';
 
 const MonacoEditor = dynamic(() => import('@monaco-editor/react').then((m) => m.default), {
@@ -62,7 +63,6 @@ export function OAEditor({
     initialCode,
     initialLanguage,
     isSubmitted: initialSubmitted,
-    existingResult,
 }: OAEditorProps) {
     const [language, setLanguage] = useState(initialLanguage ?? 'javascript');
     const [code, setCode] = useState(initialCode ?? problem.starterCode[language] ?? '');
@@ -71,16 +71,17 @@ export function OAEditor({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isRunning, setIsRunning] = useState(false);
     const [runPassedTests, setRunPassedTests] = useState(0);
-    const [testResults, setTestResults] = useState<{
+    const [runResults, setRunResults] = useState<{
         totalTests: number;
         passedTests: number;
         message: string;
-        rejectionMessage: string;
-    } | null>(existingResult ?? null);
+    } | null>(null);
     const [showLangDropdown, setShowLangDropdown] = useState(false);
+    const [showConfirm, setShowConfirm] = useState(false);
+    const [showSuccess, setShowSuccess] = useState(false);
+    const [checkAnimated, setCheckAnimated] = useState(false);
     const hasAutoSubmittedRef = useRef(false);
 
-    // Timer
     useEffect(() => {
         const start = new Date(startedAt).getTime();
         const deadline = start + problem.timeLimit * 60 * 1000;
@@ -90,7 +91,7 @@ export function OAEditor({
             setTimeLeft(remaining);
             if (remaining <= 0 && !isSubmitted && !hasAutoSubmittedRef.current) {
                 hasAutoSubmittedRef.current = true;
-                handleSubmit();
+                doSubmit();
             }
         };
 
@@ -112,25 +113,27 @@ export function OAEditor({
         const passed = Math.random() < 0.3;
         const count = passed ? 3 : Math.floor(Math.random() * 3) + 1;
         setRunPassedTests(count);
-        setTestResults(null);
+        setRunResults(null);
         setIsRunning(true);
     };
 
     const handleRunComplete = useCallback(() => {
         setIsRunning(false);
-        setTestResults((prev) => {
-            const total = 247;
-            return {
-                totalTests: total,
-                passedTests: prev ? prev.passedTests : 0,
-                message: `Run complete`,
-                rejectionMessage: '',
-            };
+        setRunResults({
+            totalTests: 247,
+            passedTests: 0,
+            message: 'Run complete',
         });
     }, []);
 
-    const handleSubmit = async () => {
+    const handleSubmitClick = () => {
         if (isSubmitted || isSubmitting) return;
+        setShowConfirm(true);
+    };
+
+    const doSubmit = async () => {
+        if (isSubmitted || isSubmitting) return;
+        setShowConfirm(false);
         setIsSubmitting(true);
         setIsRunning(false);
 
@@ -142,14 +145,9 @@ export function OAEditor({
             });
 
             if (res.ok) {
-                const data = await res.json();
-                setTestResults({
-                    totalTests: data.totalTests,
-                    passedTests: data.passedTests,
-                    message: data.message,
-                    rejectionMessage: data.rejectionMessage,
-                });
                 setIsSubmitted(true);
+                setShowSuccess(true);
+                setTimeout(() => setCheckAnimated(true), 100);
             }
         } catch {
             // Ignore
@@ -161,6 +159,58 @@ export function OAEditor({
     const minutes = Math.floor(timeLeft / 60000);
     const seconds = Math.floor((timeLeft % 60000) / 1000);
     const isUrgent = timeLeft < 2 * 60 * 1000 && timeLeft > 0;
+
+    if (showSuccess) {
+        return (
+            <div className="flex flex-col h-screen items-center justify-center" style={{ background: 'var(--jobs-bg)' }}>
+                <div className="text-center max-w-md mx-auto px-4">
+                    <div
+                        className="mx-auto mb-6 flex items-center justify-center rounded-full transition-all duration-700 ease-out"
+                        style={{
+                            width: checkAnimated ? 80 : 0,
+                            height: checkAnimated ? 80 : 0,
+                            background: '#22c55e',
+                            opacity: checkAnimated ? 1 : 0,
+                            transform: checkAnimated ? 'scale(1)' : 'scale(0.3)',
+                        }}
+                    >
+                        <Check
+                            size={40}
+                            strokeWidth={3}
+                            color="white"
+                            style={{
+                                opacity: checkAnimated ? 1 : 0,
+                                transition: 'opacity 0.4s ease 0.3s',
+                            }}
+                        />
+                    </div>
+                    <h1 className="text-2xl font-bold mb-3">Assessment Submitted</h1>
+                    <p className="text-sm mb-2" style={{ color: 'var(--jobs-text-muted)' }}>
+                        Your Online Assessment for <strong>{job.title}</strong> at <strong>{job.company}</strong> has been submitted successfully.
+                    </p>
+                    <p className="text-sm mb-8" style={{ color: 'var(--jobs-text-subtle)' }}>
+                        Your submission is under review. You will be notified of the results.
+                    </p>
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                        <Link
+                            href="/rmh-jobs"
+                            className="jobs-btn-primary px-6 py-2.5 rounded-lg text-sm inline-block"
+                            style={{ borderRadius: 'var(--jobs-radius)' }}
+                        >
+                            Return to RMH Jobs Portal
+                        </Link>
+                        <Link
+                            href="/rmh-jobs/applications"
+                            className="jobs-btn-secondary px-6 py-2.5 rounded-lg text-sm inline-block"
+                            style={{ borderRadius: 'var(--jobs-radius)' }}
+                        >
+                            View My Applications
+                        </Link>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-col h-screen">
@@ -303,7 +353,7 @@ export function OAEditor({
                                 Run
                             </button>
                             <button
-                                onClick={handleSubmit}
+                                onClick={handleSubmitClick}
                                 disabled={isSubmitted || isSubmitting}
                                 className="jobs-btn-primary flex items-center gap-1 text-xs px-2.5 py-1 rounded"
                                 style={{ borderRadius: 'var(--jobs-radius-sm)' }}
@@ -334,8 +384,8 @@ export function OAEditor({
                         />
                     </div>
 
-                    {/* Test results panel */}
-                    {(isRunning || testResults) && (
+                    {/* Test results panel (only for Run, not Submit) */}
+                    {(isRunning || runResults) && (
                         <div
                             className="border-t p-3 shrink-0 max-h-64 overflow-y-auto"
                             style={{ borderColor: 'var(--jobs-border)', background: 'var(--jobs-surface)' }}
@@ -347,22 +397,49 @@ export function OAEditor({
                                     isRunning={isRunning}
                                     onComplete={handleRunComplete}
                                 />
-                            ) : testResults ? (
+                            ) : runResults ? (
                                 <div className="space-y-2">
-                                    <p className="text-xs font-mono" style={{ color: testResults.passedTests >= 247 ? 'var(--jobs-accent)' : 'var(--jobs-danger)' }}>
-                                        {testResults.message}
+                                    <p className="text-xs font-mono" style={{ color: 'var(--jobs-danger)' }}>
+                                        {runResults.passedTests}/{runResults.totalTests} test cases passed — Time Limit Exceeded on remaining
                                     </p>
-                                    {testResults.rejectionMessage && (
-                                        <div className="rejection-letter p-3 rounded text-xs whitespace-pre-wrap" style={{ borderRadius: 'var(--jobs-radius-sm)' }}>
-                                            {testResults.rejectionMessage}
-                                        </div>
-                                    )}
                                 </div>
                             ) : null}
                         </div>
                     )}
                 </div>
             </div>
+
+            {/* Confirmation modal */}
+            {showConfirm && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                    <div
+                        className="p-6 rounded-xl border max-w-md w-full mx-4"
+                        style={{ background: 'var(--jobs-surface)', borderColor: 'var(--jobs-border)', borderRadius: 'var(--jobs-radius-lg)' }}
+                    >
+                        <h3 className="text-lg font-bold mb-2">Submit Assessment?</h3>
+                        <p className="text-sm mb-6" style={{ color: 'var(--jobs-text-muted)' }}>
+                            Are you sure you want to submit your solution? This action cannot be undone and your assessment will be
+                            sent for evaluation.
+                        </p>
+                        <div className="flex items-center gap-3 justify-end">
+                            <button
+                                onClick={() => setShowConfirm(false)}
+                                className="jobs-btn-secondary px-4 py-2 rounded-lg text-sm"
+                                style={{ borderRadius: 'var(--jobs-radius)' }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={doSubmit}
+                                className="jobs-btn-primary px-4 py-2 rounded-lg text-sm"
+                                style={{ borderRadius: 'var(--jobs-radius)' }}
+                            >
+                                Yes, Submit
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

@@ -110,11 +110,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         return NextResponse.json({ error: 'Already submitted' }, { status: 409 });
     }
 
-    // Spoofed evaluation
     const passed = Math.random() < 0.4;
-    const totalTests = 247;
-    const passedTests = passed ? totalTests : Math.floor(Math.random() * 20) + 1;
-
     const evaluationResult = passed ? 'pass' : 'fail';
     const rejectionMessage = getRandomRejectionMessage(
         assessment.application.job.title,
@@ -122,6 +118,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         true,
         passed
     );
+
+    const HOUR = 60 * 60 * 1000;
+    const rejectDelay = (Math.floor(Math.random() * 3) + 1) * HOUR + Math.floor(Math.random() * HOUR);
 
     await prisma.$transaction([
         prisma.assessment.update({
@@ -138,19 +137,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         prisma.jobApplication.update({
             where: { id: assessment.applicationId },
             data: {
-                status: 'rejected',
+                status: 'oa_completed',
+                processAt: new Date(Date.now() + rejectDelay),
                 rejectionMessage,
             },
         }),
     ]);
 
-    return NextResponse.json({
-        evaluationResult,
-        totalTests,
-        passedTests,
-        message: passed
-            ? `All ${totalTests} test cases passed! Warning: solution appears to be O(2^n), expected ${problemBank.find((p) => p.id === assessment.problemId)?.complexityRequirement ?? 'O(n²)'}.`
-            : `${passedTests}/${totalTests} test cases passed — Time Limit Exceeded on remaining.`,
-        rejectionMessage,
-    });
+    return NextResponse.json({ submitted: true });
 }
