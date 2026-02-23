@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useMemo, useEffect, useDeferredValue, useRef } from 'react';
 import { Search, Star, Clock, Bike, X, Leaf, Heart, Zap, Smile, Shuffle } from 'lucide-react';
 import { mockRestaurants, cuisineTypes } from '@/lib/rmh-eats/mockData';
 import { useEatsStore } from '@/lib/store/useEatsStore';
@@ -33,8 +32,11 @@ export default function RestaurantsList() {
     const setMoodFilter = useEatsStore((s) => s.setMoodFilter);
 
     const [search, setSearch] = useState('');
+    const deferredSearch = useDeferredValue(search);
     const [selectedCuisine, setSelectedCuisine] = useState('All');
     const [fastestFirst, setFastestFirst] = useState(false);
+    const [visibleCount, setVisibleCount] = useState(12);
+    const sentinelRef = useRef<HTMLDivElement>(null);
 
     // Apply mood filter on mount / when it changes
     useEffect(() => {
@@ -52,15 +54,14 @@ export default function RestaurantsList() {
     );
 
     const filtered = useMemo(() => {
+        const q = deferredSearch.trim().toLowerCase();
         let results = mockRestaurants.filter((r) => {
             const matchesCuisine = selectedCuisine === 'All' || r.cuisine === selectedCuisine;
             const matchesSearch =
-                search.trim() === '' ||
-                r.name.toLowerCase().includes(search.toLowerCase()) ||
-                r.cuisine.toLowerCase().includes(search.toLowerCase()) ||
-                r.menu.some((item) =>
-                    item.name.toLowerCase().includes(search.toLowerCase())
-                );
+                q === '' ||
+                r.name.toLowerCase().includes(q) ||
+                r.cuisine.toLowerCase().includes(q) ||
+                r.menu.some((item) => item.name.toLowerCase().includes(q));
             const matchesDiet =
                 (!dietFilters.vegetarian || r.menu.some((i) => i.vegetarian)) &&
                 (!dietFilters.vegan || r.menu.some((i) => i.vegan)) &&
@@ -71,7 +72,25 @@ export default function RestaurantsList() {
             results = [...results].sort((a, b) => a.deliveryTimeMinutes - b.deliveryTimeMinutes);
         }
         return results;
-    }, [search, selectedCuisine, dietFilters, fastestFirst]);
+    }, [deferredSearch, selectedCuisine, dietFilters, fastestFirst]);
+
+    // Reset visible count when filters change
+    useEffect(() => { setVisibleCount(12); }, [deferredSearch, selectedCuisine, dietFilters, fastestFirst]);
+
+    // Load more restaurants as user scrolls
+    useEffect(() => {
+        if (visibleCount >= filtered.length) return;
+        const sentinel = sentinelRef.current;
+        if (!sentinel) return;
+        const observer = new IntersectionObserver(
+            ([entry]) => { if (entry.isIntersecting) setVisibleCount((c) => c + 12); },
+            { rootMargin: '200px' }
+        );
+        observer.observe(sentinel);
+        return () => observer.disconnect();
+    }, [visibleCount, filtered.length]);
+
+    const visibleRestaurants = filtered.slice(0, visibleCount);
 
     function handleSurpriseMe() {
         const eligible = mockRestaurants.filter((r) => r.rating >= 4.0);
@@ -227,17 +246,21 @@ export default function RestaurantsList() {
                         {fastestFirst && ' · Sorted by speed'}
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {filtered.map((restaurant, i) => (
+                        {visibleRestaurants.map((restaurant) => (
                             <RestaurantCard
                                 key={restaurant.id}
                                 restaurant={restaurant}
-                                index={i}
                                 isFavorite={favoriteRestaurantIds.includes(restaurant.id)}
                                 onSelect={() => selectRestaurant(restaurant.id)}
                                 onToggleFavorite={() => toggleFavorite(restaurant.id)}
                             />
                         ))}
                     </div>
+                    {visibleCount < filtered.length && (
+                        <div ref={sentinelRef} className="flex justify-center py-4">
+                            <span className="text-sm text-slate-500">Loading more...</span>
+                        </div>
+                    )}
                 </>
             )}
         </div>
@@ -246,13 +269,11 @@ export default function RestaurantsList() {
 
 function RestaurantCard({
     restaurant,
-    index,
     isFavorite,
     onSelect,
     onToggleFavorite,
 }: {
     restaurant: Restaurant;
-    index: number;
     isFavorite: boolean;
     onSelect: () => void;
     onToggleFavorite: () => void;
@@ -261,10 +282,7 @@ function RestaurantCard({
     const hasVegan = restaurant.menu.some((i) => i.vegan);
 
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.04 }}
+        <div
             className="group relative rounded-2xl bg-slate-800/60 border border-slate-700/50 overflow-hidden hover:border-orange-500/40 hover:bg-slate-800 transition-all duration-200 hover:shadow-lg hover:shadow-orange-500/10 cursor-pointer"
             onClick={onSelect}
         >
@@ -346,6 +364,6 @@ function RestaurantCard({
                     </span>
                 </div>
             </div>
-        </motion.div>
+        </div>
     );
 }

@@ -97,9 +97,9 @@ export const apps: AppInfo[] = [
     {
         id: 'rmh-eats',
         title: 'RMH Eats',
-        description: 'A mock food delivery app with restaurants, menus, cart, checkout, and order tracking.',
+        description: 'A food delivery app with restaurants, menus, cart, checkout, and order tracking.',
         longDescription:
-            'RMH Eats is a fully-featured mock food delivery experience. Browse 8 restaurants across different cuisines, customize menu items, manage your cart, go through a complete checkout flow, track orders in real-time, manage saved addresses and payment methods, and leave reviews — all simulated locally.',
+            'RMH Eats is a fully-featured food delivery experience. Browse restaurants across different cuisines, customize menu items, manage your cart, go through a complete checkout flow, track orders in real-time, manage saved addresses and payment methods, and leave reviews.',
         href: '/rmh-eats',
         status: 'Beta',
         cta: 'Order Food',
@@ -107,7 +107,7 @@ export const apps: AppInfo[] = [
         gradient: 'from-orange-500 via-red-500 to-rose-600',
         iconName: 'Utensils',
         color: 'from-orange-500/20 to-red-500/20 hover:border-orange-500/50',
-        tags: ['Food', 'Delivery', 'Demo', 'Beta'],
+        tags: ['Food', 'Delivery', 'Beta'],
         imagePath: '/images/games/rmh-eats.png',
         authGate: false,
     },

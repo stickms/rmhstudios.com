@@ -15,7 +15,9 @@ import {
     Smile,
     Flame,
     BarChart2,
+    ArrowLeft,
 } from 'lucide-react';
+import Link from 'next/link';
 import { useEatsStore } from '@/lib/store/useEatsStore';
 import RestaurantsList from './RestaurantsList';
 import RestaurantDetail from './RestaurantDetail';
@@ -45,6 +47,7 @@ export default function RMHEatsApp() {
     const goHome = useEatsStore((s) => s.goHome);
     const orders = useEatsStore((s) => s.orders);
     const openChatbot = useEatsStore((s) => s.openChatbot);
+    const goBack = useEatsStore((s) => s.goBack);
     const loyaltyPoints = useEatsStore((s) => s.loyaltyPoints);
 
     const [cartOpen, setCartOpen] = useState(false);
@@ -96,15 +99,24 @@ export default function RMHEatsApp() {
             {showNav && (
                 <header className="sticky top-0 z-30 border-b border-slate-800 bg-slate-950/95 backdrop-blur-md">
                     <div className="mx-auto max-w-5xl px-4 h-14 flex items-center justify-between gap-2">
-                        {/* Logo */}
-                        <button onClick={goHome} className="flex items-center gap-2 group shrink-0">
-                            <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center shrink-0 shadow-md shadow-orange-500/30 group-hover:shadow-orange-500/50 transition-shadow">
-                                <Utensils className="h-4 w-4 text-white" />
-                            </div>
-                            <span className="font-bold text-white hidden sm:block">
-                                RMH<span className="text-orange-400">Eats</span>
-                            </span>
-                        </button>
+                        {/* Back to site + Logo + In-app back */}
+                        <div className="flex items-center gap-1 shrink-0">
+                            <Link
+                                href="/apps"
+                                className="flex items-center justify-center h-8 w-8 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                                title="Back to apps"
+                            >
+                                <ArrowLeft className="h-4 w-4" />
+                            </Link>
+                            <button onClick={view === 'home' ? goHome : goBack} className="flex items-center gap-2 group">
+                                <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center shrink-0 shadow-md shadow-orange-500/30 group-hover:shadow-orange-500/50 transition-shadow">
+                                    <Utensils className="h-4 w-4 text-white" />
+                                </div>
+                                <span className="font-bold text-white hidden sm:block">
+                                    RMH<span className="text-orange-400">Eats</span>
+                                </span>
+                            </button>
+                        </div>
 
                         {/* Nav actions */}
                         <div className="flex items-center gap-1">
@@ -249,12 +261,6 @@ export default function RMHEatsApp() {
                 </button>
             )}
 
-            {/* Demo disclaimer */}
-            <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
-                <div className="rounded-full bg-slate-900/90 border border-slate-700 backdrop-blur-sm px-4 py-1.5 text-xs text-slate-400 whitespace-nowrap shadow-lg">
-                    🎭 Demo app — All restaurants, orders, and payments are simulated
-                </div>
-            </div>
         </div>
     );
 }

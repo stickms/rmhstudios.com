@@ -81,6 +81,7 @@ interface EatsState {
     openIssueReport: (orderId: string) => void;
     openSplitBill: (orderId: string) => void;
     openChatbot: () => void;
+    goBack: () => void;
 
     // Actions — Cart
     addToCart: (item: MenuItem, restaurantId: string, restaurantName: string, qty: number, options?: Record<string, string>, instructions?: string) => void;
@@ -198,13 +199,17 @@ export const useEatsStore = create<EatsState>()(
             moodCuisineFilter: null,
 
             // Navigation
-            setView: (view) => set({ view }),
-            selectRestaurant: (id) => set({ selectedRestaurantId: id, view: 'restaurant' }),
-            goHome: () => set({ view: 'home', selectedRestaurantId: null }),
-            openTracker: (orderId) => set({ selectedOrderId: orderId, view: 'tracker' }),
-            openReview: (orderId) => set({ reviewTargetOrderId: orderId, view: 'reviews' }),
-            openIssueReport: (orderId) => set({ issueTargetOrderId: orderId, view: 'issue-report' }),
-            openSplitBill: (orderId) => set({ splitBillTargetOrderId: orderId, view: 'split-bill' }),
+            setView: (view) => set((s) => ({ previousView: s.view, view })),
+            selectRestaurant: (id) => set((s) => ({ previousView: s.view, selectedRestaurantId: id, view: 'restaurant' })),
+            goHome: () => set({ previousView: null, view: 'home', selectedRestaurantId: null }),
+            goBack: () => set((s) => {
+                const prev = s.previousView ?? 'home';
+                return { view: prev, previousView: null, selectedRestaurantId: prev === 'home' ? null : s.selectedRestaurantId };
+            }),
+            openTracker: (orderId) => set((s) => ({ previousView: s.view, selectedOrderId: orderId, view: 'tracker' })),
+            openReview: (orderId) => set((s) => ({ previousView: s.view, reviewTargetOrderId: orderId, view: 'reviews' })),
+            openIssueReport: (orderId) => set((s) => ({ previousView: s.view, issueTargetOrderId: orderId, view: 'issue-report' })),
+            openSplitBill: (orderId) => set((s) => ({ previousView: s.view, splitBillTargetOrderId: orderId, view: 'split-bill' })),
             openChatbot: () => set((s) => ({ previousView: s.view, view: 'chatbot' })),
 
             // Cart
