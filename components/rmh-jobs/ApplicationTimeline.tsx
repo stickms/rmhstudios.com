@@ -126,9 +126,11 @@ function ApplicationCard({ application: app }: { application: Application }) {
 
             {/* Rejection message */}
             {app.rejectionMessage && app.status === 'rejected' && (
-                <div className="rejection-letter mt-3 p-3 rounded text-xs leading-relaxed whitespace-pre-wrap" style={{ borderRadius: 'var(--jobs-radius-sm)' }}>
-                    {app.rejectionMessage}
-                </div>
+                <div
+                    className="rejection-letter mt-3 p-3 rounded text-xs leading-relaxed whitespace-pre-wrap"
+                    style={{ borderRadius: 'var(--jobs-radius-sm)' }}
+                    dangerouslySetInnerHTML={{ __html: app.rejectionMessage.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>') }}
+                />
             )}
 
             <p className="text-xs mt-3" style={{ color: 'var(--jobs-text-subtle)' }}>
