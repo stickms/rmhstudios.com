@@ -74,4 +74,21 @@ export const apps: AppInfo[] = [
         imagePath: '/images/games/rmhconnections.png',
         authGate: false,
     },
+    {
+        id: 'rmh-weather',
+        title: 'RMHWeather',
+        description: 'A premium, immersive weather experience with real-time data.',
+        longDescription:
+            'RMHWeather provides accurate real-time weather data, 48-hour forecasts, and 10-day summaries through a stunning glassmorphic interface that reacts to the current conditions.',
+        href: '/rmhweather',
+        status: 'Released',
+        cta: 'Check Weather',
+        isSteam: false,
+        gradient: 'from-blue-400 via-indigo-500 to-purple-600',
+        iconName: 'CloudSun',
+        color: 'from-blue-500/20 to-purple-600/20 hover:border-blue-400/50',
+        tags: ['Weather', 'Utility', 'Premium'],
+        imagePath: '/images/games/rmhweather.png',
+        authGate: false,
+    },
 ];
