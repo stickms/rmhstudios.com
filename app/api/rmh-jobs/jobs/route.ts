@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { ensureJobsSeeded } from '@/lib/rmh-jobs/auto-seed';
 
 export async function GET(req: Request) {
+    await ensureJobsSeeded();
     const { searchParams } = new URL(req.url);
     const page = Math.max(1, parseInt(searchParams.get('page') ?? '1'));
     const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') ?? '20')));
