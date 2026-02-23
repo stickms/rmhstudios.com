@@ -6,7 +6,7 @@ const PROTECTED_GAME_ROUTES = games
     .filter((g) => g.authGate)
     .map((g) => g.href);
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
     const isProtected = PROTECTED_GAME_ROUTES.some(
