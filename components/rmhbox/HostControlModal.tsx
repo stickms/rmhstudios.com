@@ -22,6 +22,8 @@ import {
   StopCircle,
   ArrowRightLeft,
   Shield,
+  Pause,
+  Play,
 } from 'lucide-react';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { emit } from '@/lib/rmhbox/socket';
@@ -31,10 +33,11 @@ import { toast } from '@/lib/rmhbox/toast-store';
 export default function HostControlModal() {
   const [isOpen, setIsOpen] = useState(false);
   const lobby = useRMHboxStore((s) => s.lobby);
+  const timerInfo = useRMHboxStore((s) => s.timerInfo);
 
   const handleForceEnd = useCallback(() => {
     if (!lobby) return;
-    emit(C2S.GAME_FORCE_SKIP, { lobbyId: lobby.lobbyId });
+    emit(C2S.GAME_FORCE_END, { lobbyId: lobby.lobbyId });
     toast.info('Force-ending game…');
     setIsOpen(false);
   }, [lobby]);
@@ -67,13 +70,18 @@ export default function HostControlModal() {
     [lobby],
   );
 
+  const handlePauseTimer = useCallback(() => {
+    if (!lobby) return;
+    emit(C2S.GAME_PAUSE_TIMER, { lobbyId: lobby.lobbyId });
+  }, [lobby]);
+
   if (!lobby) return null;
 
   const isHost = lobby.hostUserId === lobby.myUserId;
   if (!isHost) return null;
 
   const otherPlayers = lobby.players.filter((p) => p.userId !== lobby.myUserId);
-  const isInGame = lobby.state === 'PLAYING' || lobby.state === 'COUNTDOWN' || lobby.state === 'INSTRUCTIONS' || lobby.state === 'PRELOADING';
+  const isInGame = lobby.state === 'PLAYING' || lobby.state === 'COUNTDOWN' || lobby.state === 'INSTRUCTIONS' || lobby.state === 'PRELOADING' || lobby.state === 'ROUND_RESULTS';
 
   return (
     <>
@@ -125,15 +133,25 @@ export default function HostControlModal() {
 
             {/* Force End Game */}
             {isInGame && (
-              <div className="mb-4">
+              <div className="mb-4 flex gap-2">
                 <button
                   onClick={handleForceEnd}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:brightness-110"
+                  className="flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:brightness-110"
                   style={{ backgroundColor: 'var(--rmhbox-danger)' }}
                 >
                   <StopCircle className="h-4 w-4" />
-                  Force End Game
+                  Force End
                 </button>
+                {timerInfo && (
+                  <button
+                    onClick={handlePauseTimer}
+                    className="flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:brightness-110"
+                    style={{ backgroundColor: timerInfo.paused ? 'var(--rmhbox-success)' : 'var(--rmhbox-warning)' }}
+                  >
+                    {timerInfo.paused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
+                    {timerInfo.paused ? 'Resume' : 'Pause'}
+                  </button>
+                )}
               </div>
             )}
 
@@ -180,7 +198,7 @@ export default function HostControlModal() {
                           className="rounded p-1.5 text-(--rmhbox-danger) transition-colors hover:bg-(--rmhbox-danger-dim)"
                           title="Kick player"
                         >
-                          <UserMinus className="h-3.5 w-3.5" />
+                          <UserMinus className="h-3.5 w-3.5" style={{ transform: 'scaleX(-1)' }} />
                         </button>
                       </div>
                     </div>

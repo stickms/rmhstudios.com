@@ -212,7 +212,9 @@ const SSTapSchema = z.object({
 | `SS_ROUND_RESULTS` | `{ survivors: SSRoundSurvivor[], eliminated: SSRoundEliminated[], roundNumber: number }` | All (lobby) | Round results |
 | `SS_ELIMINATION` | `{ userId: string, userName: string, finalRank: number }` | All (lobby) | A player is eliminated |
 | `SS_GAME_OVER` | `{ winner: string \| null, finalRankings: SSFinalRanking[] }` | All (lobby) | Game complete |
-| `TIMER_TICK` | `{ timeRemaining: number }` | All (lobby) | Standard timer (during INPUT phase) |
+| `TIMER_START` | `{ totalDuration: number, timeRemaining: number }` | All (lobby) | Emitted at the start of each timed phase (PATTERN_DISPLAY, INPUT) via `broadcastAction` |
+| `TIMER_TICK` | `{ timeRemaining: number }` | All (lobby) | Standard timer (every 1s during all timed phases) via `broadcastAction` |
+| `MINIGAME_ROUND` | `{ current: number, total: number }` | All (lobby) | Sub-round counter update via `broadcastAction` |
 
 **Supporting types:**
 
@@ -683,7 +685,8 @@ const HKPressSchema = z.object({
 | `HK_RESHUFFLE_WARNING` | `{ secondsUntilReshuffle: number }` | All (lobby) | 3-second warning before reshuffle |
 | `HK_COMPLETE` | `{ totalTimeMs: number, totalKeyPresses: number, accuracy: number }` | All (lobby) | Sentence completed! |
 | `HK_RESULTS` | `{ playerResults: HKPlayerResult[], teamPerformance: string, timeBonus: number, completed: boolean }` | All (lobby) | Final results |
-| `TIMER_TICK` | `{ timeRemaining: number }` | All (lobby) | Standard timer |
+| `TIMER_START` | `{ totalDuration: number, timeRemaining: number }` | All (lobby) | Emitted at the start of the TYPING phase via `broadcastAction` |
+| `TIMER_TICK` | `{ timeRemaining: number }` | All (lobby) | Standard timer (every 1s during all timed phases) via `broadcastAction` |
 
 **Supporting types:**
 
@@ -1176,7 +1179,9 @@ const SweepSchema = z.object({
 | `CU_STONE_STOPPED` | `{ stoneId: string, finalPosition: { x: number, y: number }, inPlay: boolean, zone: string \| null }` | All (lobby) | Stone has come to rest |
 | `CU_END_RESULTS` | `EndResult` | All (lobby) | End scoring |
 | `CU_GAME_OVER` | `{ finalRankings: CUFinalRanking[] }` | All (lobby) | Game over |
-| `TIMER_TICK` | `{ timeRemaining: number }` | All (lobby) | Standard timer |
+| `TIMER_START` | `{ totalDuration: number, timeRemaining: number }` | All (lobby) | Emitted at the start of each timed phase (AIM, POWER) via `broadcastAction` |
+| `TIMER_TICK` | `{ timeRemaining: number }` | All (lobby) | Standard timer (every 1s during all timed phases) via `broadcastAction` |
+| `MINIGAME_ROUND` | `{ current: number, total: number }` | All (lobby) | Sub-round counter update (e.g. "End 2/3") via `broadcastAction` |
 
 ### 3.6 Information Masking
 
@@ -1647,7 +1652,9 @@ const HTMoveSchema = z.object({
 | `HT_WALL_IMPACT` | `{ results: WallImpactResult }` | All (lobby) | Wall passes through |
 | `HT_WAVE_RESULTS` | `{ waveNumber: number, success: boolean, filledHoles: number, totalHoles: number, correctPlayers: string[], hitPlayers: string[], teamScore: number }` | All (lobby) | Wave scored |
 | `HT_GAME_OVER` | `{ finalRankings: HTFinalRanking[], wavesCompleted: number, perfectWaves: number }` | All (lobby) | Game over |
-| `TIMER_TICK` | `{ timeRemaining: number }` | All (lobby) | Standard timer |
+| `TIMER_START` | `{ totalDuration: number, timeRemaining: number }` | All (lobby) | Emitted at the start of each POSITIONING phase via `broadcastAction` |
+| `TIMER_TICK` | `{ timeRemaining: number }` | All (lobby) | Standard timer (every 1s during all timed phases) via `broadcastAction` |
+| `MINIGAME_ROUND` | `{ current: number, total: number }` | All (lobby) | Sub-round counter update (e.g. "Wave 3/8") via `broadcastAction` |
 
 **Supporting types:**
 

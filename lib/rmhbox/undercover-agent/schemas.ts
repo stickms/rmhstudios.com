@@ -2,7 +2,7 @@
  * Undercover Agent — Zod Validation Schemas
  *
  * Input validation for spymaster clues, operative tile guesses,
- * and end-turn actions.
+ * end-turn actions, and team-setup actions.
  */
 
 import { z } from 'zod';
@@ -27,3 +27,15 @@ export const GuessTileSchema = z.object({
 
 /** Schema for voluntarily ending a turn. */
 export const EndTurnSchema = z.object({});
+
+/** Schema for swapping a player to a different team during TEAM_SETUP. */
+export const SwapPlayerSchema = z.object({
+  targetUserId: z.string().min(1),
+  toTeam: z.enum(['red', 'blue']),
+});
+
+/** Schema for toggling a player's role during TEAM_SETUP. */
+export const SetRoleSchema = z.object({
+  targetUserId: z.string().min(1),
+  role: z.enum(['spymaster', 'operative']),
+});

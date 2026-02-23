@@ -5,14 +5,94 @@
  * for unknown minigame IDs. Reads player info from Zustand store
  * and passes it to the loaded minigame component.
  *
+ * Provides the `useHeaderTimer` and `useMinigameRound` hooks that
+ * minigame components use to drive the shared header timer ring and
+ * the footer round counter. These write directly to the Zustand store,
+ * so both RMHboxHeader and GameShell react automatically.
+ *
  * Props:
  *   minigameId: string — The ID of the minigame to render
  */
 'use client';
 
-import { lazy, Suspense, type ComponentType } from 'react';
-import { Loader2 } from 'lucide-react';
-import { useRMHboxStore } from '@/lib/rmhbox/store';
+import { lazy, Suspense, useCallback, useEffect, type ComponentType } from 'react';
+import { Loader2, Gamepad2, HelpCircle } from 'lucide-react';
+import { useRMHboxStore, type TimerInfo, type MinigameRoundInfo } from '@/lib/rmhbox/store';
+
+// ─── Minigame ↔ Shell Interface ──────────────────────────────────
+
+/**
+ * Hook for minigame components to control the header timer ring.
+ *
+ * - `startTimer(total, remaining?)` — starts a new timed phase.
+ *     `total` sets the full-circle baseline; `remaining` defaults to `total`.
+ * - `tickTimer(remaining)` — updates the remaining seconds (called on TIMER_TICK).
+ * - `clearTimer()` — hides the timer ring.
+ *
+ * The hook automatically clears the timer on unmount.
+ */
+export function useHeaderTimer() {
+  const setTimerInfo = useRMHboxStore((s) => s.setTimerInfo);
+
+  const startTimer = useCallback(
+    (total: number, remaining?: number) => {
+      setTimerInfo({ total, remaining: remaining ?? total, paused: false });
+    },
+    [setTimerInfo],
+  );
+
+  const tickTimer = useCallback(
+    (remaining: number) => {
+      const prev = useRMHboxStore.getState().timerInfo;
+      setTimerInfo({
+        total: prev?.total ?? remaining,
+        remaining,
+        paused: prev?.paused ?? false,
+      });
+    },
+    [setTimerInfo],
+  );
+
+  const clearTimer = useCallback(() => {
+    setTimerInfo(null);
+  }, [setTimerInfo]);
+
+  // Auto-clear on unmount
+  useEffect(() => () => { setTimerInfo(null); }, [setTimerInfo]);
+
+  return { startTimer, tickTimer, clearTimer };
+}
+
+/**
+ * Hook for minigame components to control the footer round counter.
+ *
+ * - `setRound(current, total)` — sets the sub-round display (e.g. "Round 2/3").
+ * - `clearRound()` — reverts to showing the session-level round number.
+ *
+ * The hook automatically clears on unmount.
+ */
+export function useMinigameRound() {
+  const setMinigameRound = useRMHboxStore((s) => s.setMinigameRound);
+
+  const setRound = useCallback(
+    (current: number, total: number) => {
+      setMinigameRound({ current, total });
+    },
+    [setMinigameRound],
+  );
+
+  const clearRound = useCallback(() => {
+    setMinigameRound(null);
+  }, [setMinigameRound]);
+
+  // Auto-clear on unmount
+  useEffect(() => () => { setMinigameRound(null); }, [setMinigameRound]);
+
+  return { setRound, clearRound };
+}
+
+/** Re-export store types for convenience */
+export type { TimerInfo, MinigameRoundInfo };
 
 /** Common props passed to every minigame component */
 export interface MinigameProps {
@@ -28,7 +108,7 @@ interface MinigameRendererProps {
 function createStub(name: string): ComponentType<MinigameProps> {
   const Stub = () => (
     <div className="flex flex-col items-center justify-center gap-2 p-8 text-center text-(--rmhbox-text)">
-      <span className="text-4xl">🎮</span>
+      <Gamepad2 className="h-10 w-10 text-(--rmhbox-text-muted)" />
       <h3 className="text-xl font-bold">{name}</h3>
       <p className="text-sm text-(--rmhbox-text-muted)">Minigame coming soon…</p>
     </div>
@@ -74,7 +154,7 @@ function LoadingFallback() {
 function UnknownMinigame({ id }: { id: string }) {
   return (
     <div className="flex flex-col items-center justify-center gap-2 p-8 text-center">
-      <span className="text-4xl">❓</span>
+      <HelpCircle className="h-10 w-10 text-(--rmhbox-danger)" />
       <h3 className="text-lg font-bold text-(--rmhbox-danger)">Unknown Minigame</h3>
       <p className="text-sm text-(--rmhbox-text-muted)">
         No component found for &quot;{id}&quot;

@@ -77,8 +77,8 @@ export default function CategoryCrashResults({
     <div className="flex flex-col gap-6">
       {/* Header */}
       <div className="text-center">
-        <h3 className="text-lg font-bold">
-          {isGameOver ? '🏆 Final Results' : `Round ${currentRound} of ${totalRounds}`}
+        <h3 className="text-lg font-bold flex items-center justify-center gap-1.5">
+          {isGameOver ? <><Trophy size={18} className="text-yellow-400" /> Final Results</> : `Round ${currentRound} of ${totalRounds}`}
         </h3>
         <p className="text-sm text-(--rmhbox-text-muted)">
           Letter: <span className="font-bold text-(--rmhbox-accent)">{roundResults.letter}</span>

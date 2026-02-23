@@ -18,7 +18,7 @@
 
 import { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Trophy, MapPin, Target, Route } from 'lucide-react';
+import { Trophy, MapPin, Target, Route, Flag, Star } from 'lucide-react';
 
 interface WRPlayerResult {
   userName: string;
@@ -59,7 +59,7 @@ export default function WikiRaceResults({
     <div className="flex flex-col gap-6">
       {/* Header */}
       <div className="text-center">
-        <h3 className="text-xl font-bold">🏁 Race Results</h3>
+        <h3 className="text-xl font-bold flex items-center justify-center gap-1.5"><Flag className="h-5 w-5" /> Race Results</h3>
         <div className="mt-2 flex items-center justify-center gap-3 text-sm text-(--rmhbox-text-muted)">
           <span className="flex items-center gap-1">
             <MapPin size={12} className="text-green-400" /> {startTitle}
@@ -108,8 +108,8 @@ export default function WikiRaceResults({
                     )}
                   </span>
                   {isOptimal && (
-                    <span className="rounded bg-yellow-500/20 px-1.5 py-0.5 text-[10px] font-semibold text-yellow-400">
-                      ⭐ Optimal
+                    <span className="rounded bg-yellow-500/20 px-1.5 py-0.5 text-[10px] font-semibold text-yellow-400 flex items-center gap-0.5">
+                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" /> Optimal
                     </span>
                   )}
                 </div>

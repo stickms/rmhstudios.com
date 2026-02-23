@@ -42,6 +42,26 @@ const DEFAULT_SETTINGS: RMHboxUserSettings = {
 
 // ─── Store Interface ─────────────────────────────────────────────
 
+// ─── Timer & Round Info ──────────────────────────────────────────
+
+/** Timer state managed by the header ring. Set via TIMER_START action or setTimerInfo(). */
+export interface TimerInfo {
+  /** Total duration in seconds (for full circle calculation) */
+  total: number;
+  /** Seconds remaining (decremented by TIMER_TICK) */
+  remaining: number;
+  /** Whether the timer is currently paused by the host */
+  paused: boolean;
+}
+
+/** Minigame sub-round info displayed in the GameShell footer. */
+export interface MinigameRoundInfo {
+  /** Current sub-round within the minigame (e.g. round 2 of 3 in Rhyme Time) */
+  current: number;
+  /** Total sub-rounds in this minigame */
+  total: number;
+}
+
 export interface RMHboxStore {
   connectionStatus: 'disconnected' | 'connecting' | 'connected' | 'error';
   lobby: ClientLobbyState | null;
@@ -49,11 +69,18 @@ export interface RMHboxStore {
   lastSeq: number;
   settings: RMHboxUserSettings;
 
+  /** Centralized timer state read by the header ring */
+  timerInfo: TimerInfo | null;
+  /** Minigame sub-round info read by the GameShell footer */
+  minigameRound: MinigameRoundInfo | null;
+
   // Actions
   setConnectionStatus: (status: RMHboxStore['connectionStatus']) => void;
   applyAction: (action: GameAction) => void;
   applyFullSync: (fullState: ClientLobbyState) => void;
   setGameState: (state: Record<string, unknown>) => void;
+  setTimerInfo: (info: TimerInfo | null) => void;
+  setMinigameRound: (info: MinigameRoundInfo | null) => void;
   updateSettings: (partial: Partial<RMHboxUserSettings>) => void;
   leaveLobby: () => void;
   reset: () => void;
@@ -69,6 +96,8 @@ export const useRMHboxStore = create<RMHboxStore>()(
       gameState: {},
       lastSeq: -1,
       settings: { ...DEFAULT_SETTINGS },
+      timerInfo: null,
+      minigameRound: null,
 
       setConnectionStatus: (status) => set({ connectionStatus: status }),
 
@@ -98,6 +127,10 @@ export const useRMHboxStore = create<RMHboxStore>()(
 
       setGameState: (gameState) => set({ gameState }),
 
+      setTimerInfo: (info) => set({ timerInfo: info }),
+
+      setMinigameRound: (info) => set({ minigameRound: info }),
+
       updateSettings: (partial) => {
         set((state) => ({
           settings: { ...state.settings, ...partial },
@@ -108,6 +141,8 @@ export const useRMHboxStore = create<RMHboxStore>()(
         lobby: null,
         gameState: {},
         lastSeq: -1,
+        timerInfo: null,
+        minigameRound: null,
       }),
 
       reset: () => set({
@@ -115,6 +150,8 @@ export const useRMHboxStore = create<RMHboxStore>()(
         lobby: null,
         gameState: {},
         lastSeq: -1,
+        timerInfo: null,
+        minigameRound: null,
       }),
     }),
     {
@@ -198,8 +235,11 @@ export function applyLobbyAction(
 
     case 'SPECTATOR_PROMOTED': {
       const promoted = lobby.spectators.find((s) => s.userId === data.userId);
+      const isMe = data.userId === lobby.myUserId;
       return {
         ...lobby,
+        // If the promoted spectator is me, switch my role to player
+        myRole: isMe ? 'player' : lobby.myRole,
         spectators: lobby.spectators.filter((s) => s.userId !== data.userId),
         players: promoted
           ? [
@@ -245,13 +285,14 @@ export function applyLobbyAction(
 
     case 'STATE_CHANGED': {
       const newState = data.state as ClientLobbyState['state'];
-      // When returning to WAITING, clear game state and selectedGame to avoid stale data
+      // When returning to WAITING, clear game state but preserve selectedGame
+      // (server auto-reselects the last played game via GAME_PICKED or full sync)
       if (newState === 'WAITING') {
+        useRMHboxStore.setState({ timerInfo: null, minigameRound: null });
         return {
           ...lobby,
           state: newState,
           currentGame: null,
-          selectedGame: null,
         };
       }
       return {
@@ -316,22 +357,70 @@ export function applyLobbyAction(
         },
       };
 
-    case 'TIMER_TICK':
+    case 'TIMER_START': {
+      // A timed phase is starting — store total + remaining for the header ring.
+      // Also forward to currentGame.timeRemaining for backward compatibility.
+      const total = data.totalDuration as number;
+      const remaining = data.timeRemaining as number;
+      useRMHboxStore.setState({ timerInfo: { total, remaining, paused: false } });
       if (lobby.currentGame) {
-        const newTime = data.timeRemaining as number | null | undefined;
-        // Only update if we received a valid numeric value — prevents flicker
-        // from malformed or stale ticks
-        if (typeof newTime === 'number' && newTime >= 0) {
+        return {
+          ...lobby,
+          currentGame: { ...lobby.currentGame, timeRemaining: remaining },
+        };
+      }
+      return lobby;
+    }
+
+    case 'TIMER_TICK': {
+      const newTime = data.timeRemaining as number | null | undefined;
+      if (typeof newTime === 'number' && newTime >= 0) {
+        // Update centralized timer state
+        const prev = useRMHboxStore.getState().timerInfo;
+        useRMHboxStore.setState({
+          timerInfo: prev
+            ? { total: prev.total, remaining: newTime, paused: prev.paused }
+            : { total: newTime, remaining: newTime, paused: false },
+        });
+        // Also update currentGame.timeRemaining for backward compatibility
+        if (lobby.currentGame) {
           return {
             ...lobby,
-            currentGame: {
-              ...lobby.currentGame,
-              timeRemaining: newTime,
-            },
+            currentGame: { ...lobby.currentGame, timeRemaining: newTime },
           };
         }
       }
       return lobby;
+    }
+
+    case 'TIMER_PAUSED': {
+      const prev = useRMHboxStore.getState().timerInfo;
+      const remaining = (data.timeRemaining as number) ?? prev?.remaining ?? 0;
+      useRMHboxStore.setState({
+        timerInfo: prev
+          ? { total: prev.total, remaining, paused: true }
+          : { total: remaining, remaining, paused: true },
+      });
+      return lobby;
+    }
+
+    case 'TIMER_RESUMED': {
+      const prev = useRMHboxStore.getState().timerInfo;
+      const remaining = (data.timeRemaining as number) ?? prev?.remaining ?? 0;
+      useRMHboxStore.setState({
+        timerInfo: prev
+          ? { total: prev.total, remaining, paused: false }
+          : { total: remaining, remaining, paused: false },
+      });
+      return lobby;
+    }
+
+    case 'MINIGAME_ROUND': {
+      const current = data.current as number;
+      const total = data.total as number;
+      useRMHboxStore.setState({ minigameRound: { current, total } });
+      return lobby;
+    }
 
     default:
       return lobby;
@@ -358,7 +447,9 @@ export function applyGameAction(
     action.type.startsWith('CHAT_') ||
     action.type.startsWith('VOTE_') ||
     action.type.startsWith('GAME_SELECTED') ||
-    action.type.startsWith('GAME_PICKED')
+    action.type.startsWith('GAME_PICKED') ||
+    action.type.startsWith('TIMER_') ||
+    action.type === 'MINIGAME_ROUND'
   ) {
     return gameState;
   }

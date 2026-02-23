@@ -1,10 +1,9 @@
 /**
- * PeerReview — Crash grid for Category Crash.
+ * PeerReview — Question-by-question crash UI for Category Crash.
  *
- * Displays a grid of anonymized player answers. Each column
- * corresponds to a category. Players can "crash" (challenge)
- * answers they believe are invalid—a toggle action. Crashes are
- * limited to `maxCrashes` per player.
+ * Shows one category at a time. For each category, lists all anonymized
+ * player answers. Players click an answer to toggle a "crash" challenge.
+ * Crashes are limited to `maxCrashes` per player.
  *
  * Props:
  *   letter: string
@@ -20,11 +19,10 @@
  */
 'use client';
 
-import { useMemo } from 'react';
-import { motion } from 'framer-motion';
-import { Clock, Zap } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Clock, Zap, ChevronLeft, ChevronRight, Flame } from 'lucide-react';
 import type { Category, AnonymizedAnswerSet } from './CategoryCrashGame';
-import CrashButton from './CrashButton';
 
 interface CrashEntry {
   targetUserId: string;
@@ -58,6 +56,7 @@ export default function PeerReview({
 }: PeerReviewProps) {
   void _currentUserId;
 
+  const [activeCatIndex, setActiveCatIndex] = useState(0);
   const isUrgent = timeRemaining <= 10;
 
   const crashSet = useMemo(() => {
@@ -67,6 +66,14 @@ export default function PeerReview({
   }, [myCrashes]);
 
   const canCrash = crashesUsed < maxCrashes;
+  const activeCategory = categories[activeCatIndex];
+
+  // Count crashes per category for the dot indicators
+  const crashCountPerCat = useMemo(() => {
+    return categories.map((_, idx) =>
+      myCrashes.filter((c) => c.categoryIndex === idx).length,
+    );
+  }, [categories, myCrashes]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -95,76 +102,109 @@ export default function PeerReview({
         Challenge answers you think are <strong>invalid</strong>. Letter: <strong>{letter}</strong>
       </p>
 
-      {/* Answer grid — one card per anonymous player */}
-      <div className="grid gap-3">
-        {anonymizedAnswers.map((answerSet, idx) => (
-          <motion.div
-            key={answerSet.anonymousLabel}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: idx * 0.05 }}
-            className="rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface)"
-          >
-            <div className="border-b border-(--rmhbox-border) px-4 py-2 text-sm font-semibold text-(--rmhbox-text-muted)">
-              {answerSet.anonymousLabel}
-            </div>
-            <div className="grid grid-cols-1 gap-2 p-4 sm:grid-cols-2 md:grid-cols-5">
-              {categories.map((cat, catIdx) => {
-                const answer = answerSet.answers[catIdx];
-                const key = `${answerSet.anonymousLabel}:${catIdx}`;
-                const isCrashed = crashSet.has(key);
+      {/* Category navigation */}
+      <div className="flex items-center justify-between gap-2">
+        <button
+          type="button"
+          onClick={() => setActiveCatIndex((i) => Math.max(0, i - 1))}
+          disabled={activeCatIndex === 0}
+          className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-surface) p-2 text-(--rmhbox-text-muted) transition-colors hover:bg-(--rmhbox-accent)/10 disabled:opacity-30 disabled:cursor-not-allowed"
+        >
+          <ChevronLeft size={16} />
+        </button>
 
-                return (
-                  <div
-                    key={cat.id}
-                    className="flex flex-col gap-1.5 rounded-lg border border-(--rmhbox-border)/50 bg-(--rmhbox-bg)/50 p-2"
-                  >
-                    <span className="text-[10px] font-medium uppercase tracking-wider text-(--rmhbox-text-muted)">
-                      {cat.name}
-                    </span>
-                    <AnswerCell answer={answer} letter={letter} />
-                    <CrashButton
-                      isCrashed={isCrashed}
-                      canCrash={canCrash}
-                      isEmpty={!answer}
-                      onToggle={() => {
-                        if (isCrashed) {
-                          onUncrash(answerSet.anonymousLabel, catIdx);
-                        } else {
-                          onCrash(answerSet.anonymousLabel, catIdx);
-                        }
-                      }}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-          </motion.div>
-        ))}
+        <div className="flex flex-col items-center gap-1.5">
+          <span className="text-base font-bold text-(--rmhbox-text)">
+            {activeCategory?.name ?? '—'}
+          </span>
+          {/* Dot indicators */}
+          <div className="flex gap-1.5">
+            {categories.map((_, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => setActiveCatIndex(idx)}
+                className={`relative h-2 w-2 rounded-full transition-all ${
+                  idx === activeCatIndex
+                    ? 'bg-(--rmhbox-accent) scale-125'
+                    : 'bg-(--rmhbox-border) hover:bg-(--rmhbox-text-muted)'
+                }`}
+                title={categories[idx].name}
+              >
+                {crashCountPerCat[idx] > 0 && (
+                  <span className="absolute -top-1 -right-1 h-1.5 w-1.5 rounded-full bg-red-400" />
+                )}
+              </button>
+            ))}
+          </div>
+          <span className="text-[10px] text-(--rmhbox-text-muted)">
+            {activeCatIndex + 1} / {categories.length}
+          </span>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setActiveCatIndex((i) => Math.min(categories.length - 1, i + 1))}
+          disabled={activeCatIndex === categories.length - 1}
+          className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-surface) p-2 text-(--rmhbox-text-muted) transition-colors hover:bg-(--rmhbox-accent)/10 disabled:opacity-30 disabled:cursor-not-allowed"
+        >
+          <ChevronRight size={16} />
+        </button>
       </div>
+
+      {/* Answer list for the active category */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeCatIndex}
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          transition={{ duration: 0.15 }}
+          className="flex flex-col gap-1.5"
+        >
+          {anonymizedAnswers.map((answerSet) => {
+            const answer = answerSet.answers[activeCatIndex];
+            const key = `${answerSet.anonymousLabel}:${activeCatIndex}`;
+            const isCrashed = crashSet.has(key);
+            const isEmpty = !answer;
+            const startsCorrectly = answer ? answer[0]?.toUpperCase() === letter.toUpperCase() : false;
+            const disabled = isEmpty || (!isCrashed && !canCrash);
+
+            return (
+              <button
+                key={answerSet.anonymousLabel}
+                type="button"
+                onClick={() => {
+                  if (disabled) return;
+                  if (isCrashed) {
+                    onUncrash(answerSet.anonymousLabel, activeCatIndex);
+                  } else {
+                    onCrash(answerSet.anonymousLabel, activeCatIndex);
+                  }
+                }}
+                disabled={disabled}
+                className={`flex items-center justify-between rounded-lg border px-3 py-2 text-sm transition-colors ${
+                  isCrashed
+                    ? 'border-red-500/40 bg-red-500/10 text-red-300'
+                    : isEmpty
+                      ? 'border-(--rmhbox-border)/30 bg-(--rmhbox-surface)/50 cursor-not-allowed opacity-40'
+                      : 'border-(--rmhbox-border) bg-(--rmhbox-surface) hover:bg-red-500/5 hover:border-red-500/30'
+                }`}
+              >
+                <span className={`truncate ${!startsCorrectly && !isEmpty ? 'line-through text-red-400/70' : ''}`}>
+                  {answer ?? '— empty —'}
+                </span>
+                {!isEmpty && (
+                  <span className={`ml-2 shrink-0 flex items-center gap-1 text-xs ${isCrashed ? 'text-red-300' : 'text-(--rmhbox-text-muted)'}`}>
+                    <Flame className="h-3 w-3" />
+                    {isCrashed ? 'Crashed' : 'Crash'}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </motion.div>
+      </AnimatePresence>
     </div>
-  );
-}
-
-/** Mini component: shows a single answer cell */
-function AnswerCell({ answer, letter }: { answer: string | null; letter: string }) {
-  if (!answer) {
-    return (
-      <span className="text-sm italic text-(--rmhbox-text-muted)/50">
-        — empty —
-      </span>
-    );
-  }
-
-  const startsCorrectly = answer[0]?.toUpperCase() === letter.toUpperCase();
-
-  return (
-    <span
-      className={`text-sm font-medium ${
-        !startsCorrectly ? 'text-red-400 line-through' : ''
-      }`}
-    >
-      {answer}
-    </span>
   );
 }

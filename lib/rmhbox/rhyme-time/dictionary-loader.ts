@@ -47,16 +47,17 @@ export function loadRootWords(): RootWord[] {
  *
  * A word is a valid rhyme if:
  *  - It exists in the CMU dictionary (rhymingPart returns non-empty)
- *  - Its rhyming part matches the root word's rhyming part
+ *  - Any of its rhyming parts overlaps with any of the root word's rhyming parts
+ *    (handles words with multiple pronunciations in the CMU dictionary)
  *  - It is not the root word itself
  */
 export function isValidRhyme(word: string, rootWord: string): boolean {
   if (word === rootWord) return false;
-  const wordPart = rhymingPart(word);
-  if (!wordPart) return false; // word not in dictionary
-  const rootPart = rhymingPart(rootWord);
-  if (!rootPart) return false;
-  return wordPart === rootPart;
+  const wordParts = rhymingPart(word, { multiple: true }) as string[];
+  if (!wordParts || wordParts.length === 0) return false; // word not in dictionary
+  const rootParts = rhymingPart(rootWord, { multiple: true }) as string[];
+  if (!rootParts || rootParts.length === 0) return false;
+  return wordParts.some((wp) => rootParts.includes(wp));
 }
 
 /**

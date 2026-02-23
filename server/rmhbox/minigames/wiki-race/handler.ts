@@ -19,14 +19,14 @@
  * Reference: docs/rmhbox/design-spec/minigames/wiki-race.md
  */
 
-import { BaseMinigame } from './base-minigame';
-import type { MinigameContext, MinigameResults } from './base-minigame';
-import type { PlayerRanking, Award } from '../../../lib/rmhbox/types';
-import type { ArticlePair } from '../../../lib/rmhbox/wiki-race/data-loader';
-import { selectArticlePair } from '../../../lib/rmhbox/wiki-race/data-loader';
-import { NavigateSchema, GoBackSchema } from '../../../lib/rmhbox/wiki-race/schemas';
-import { createArticleCache, fetchArticle } from '../../../lib/rmhbox/wiki-race/wikipedia-proxy';
-import type { CachedArticle } from '../../../lib/rmhbox/wiki-race/wikipedia-proxy';
+import { BaseMinigame } from '../base-minigame';
+import type { MinigameContext, MinigameResults } from '../base-minigame';
+import type { PlayerRanking, Award } from '@/lib/rmhbox/types';
+import type { ArticlePair } from '@/lib/rmhbox/wiki-race/data-loader';
+import { selectArticlePair } from '@/lib/rmhbox/wiki-race/data-loader';
+import { NavigateSchema, GoBackSchema } from '@/lib/rmhbox/wiki-race/schemas';
+import { createArticleCache, fetchArticle } from '@/lib/rmhbox/wiki-race/wikipedia-proxy';
+import type { CachedArticle } from '@/lib/rmhbox/wiki-race/wikipedia-proxy';
 import type { LRUCache } from 'lru-cache';
 import {
   WR_NAV_DURATION,
@@ -39,54 +39,14 @@ import {
   WR_DNF_BASE,
   WR_DNF_CLICK_BONUS,
   WR_NAV_RATE_LIMIT,
-} from '../../../lib/rmhbox/constants';
-import { logger } from '../logger';
-
-// ─── Phase Enum ──────────────────────────────────────────────────
-
-export enum WikiRacePhase {
-  ARTICLE_REVEAL = 'ARTICLE_REVEAL',
-  NAVIGATION = 'NAVIGATION',
-  RESULTS = 'RESULTS',
-}
-
-// ─── Type Definitions ────────────────────────────────────────────
-
-/** Per-player state tracked by the server during navigation. */
-export interface WRPlayerState {
-  userId: string;
-  currentArticleTitle: string;
-  currentArticleLinks: Set<string>;
-  path: string[];
-  clickCount: number;
-  hasFinished: boolean;
-  finishedAt: number | null;
-  finishRank: number;
-  score: number;
-}
-
-/** Action log entry for the game log. */
-export interface ActionLogEntry {
-  action: string;
-  timestamp: number;
-  data: Record<string, unknown>;
-}
-
-/** Full internal state of the Wiki-Race minigame. */
-export interface WikiRaceState {
-  phase: WikiRacePhase;
-  articlePair: ArticlePair;
-  playerStates: Map<string, WRPlayerState>;
-  timeRemaining: number;
-  finishCounter: number;
-  actionLog: ActionLogEntry[];
-}
-
-// ─── Per-player rate-limit tracking ──────────────────────────────
-
-interface RateLimitEntry {
-  timestamps: number[];
-}
+} from '@/lib/rmhbox/constants';
+import { logger } from '../../logger';
+import {
+  WikiRacePhase,
+  type WRPlayerState,
+  type WikiRaceState,
+  type RateLimitEntry,
+} from './types';
 
 // ─── Wiki-Race Minigame ──────────────────────────────────────────
 
@@ -94,7 +54,6 @@ export class WikiRaceMinigame extends BaseMinigame {
   private state!: WikiRaceState;
   private startedAt: number = 0;
   private navigationStartedAt: number = 0;
-  private tickInterval: NodeJS.Timeout | null = null;
   private articleCache: LRUCache<string, CachedArticle>;
   private rateLimits: Map<string, RateLimitEntry> = new Map();
 
@@ -133,6 +92,9 @@ export class WikiRaceMinigame extends BaseMinigame {
       difficulty: this.state.articlePair.difficulty,
       duration: WR_REVEAL,
     });
+
+    // Show reveal countdown in the header timer
+    this.startPhaseTimer(WR_REVEAL);
 
     this.setTimeout(() => this.startNavigation(), WR_REVEAL * 1000);
   }
@@ -207,14 +169,8 @@ export class WikiRaceMinigame extends BaseMinigame {
       // Article fetch failed — logged inside fetchAndSendArticle
     });
 
-    // Timer tick every second
-    this.tickInterval = this.setInterval(() => {
-      this.state.timeRemaining--;
-      this.context.broadcastToLobby('rmhbox:game:action', {
-        type: 'TIMER_TICK',
-        timeRemaining: this.state.timeRemaining,
-      });
-    }, 1000);
+    // Timer tick every second — drives the header timer ring
+    this.startPhaseTimer(WR_NAV_DURATION);
 
     // End navigation when time expires
     this.setTimeout(() => this.endNavigation(), WR_NAV_DURATION * 1000);
@@ -223,12 +179,8 @@ export class WikiRaceMinigame extends BaseMinigame {
   private endNavigation(): void {
     if (!this.isRunning) return;
 
-    // Clear the tick interval
-    if (this.tickInterval) {
-      clearInterval(this.tickInterval);
-      this.intervals = this.intervals.filter((i) => i !== this.tickInterval);
-      this.tickInterval = null;
-    }
+    // Clear the phase timer
+    this.clearPhaseTimer();
 
     this.logAction('game_end', {
       reason: 'time_expired',
@@ -269,6 +221,9 @@ export class WikiRaceMinigame extends BaseMinigame {
       optimalPathLength: this.state.articlePair.optimalPathLength,
       duration: WR_RESULTS,
     });
+
+    // Show results countdown in the header timer
+    this.startPhaseTimer(WR_RESULTS);
 
     this.setTimeout(() => this.endGame(), WR_RESULTS * 1000);
   }
@@ -493,12 +448,7 @@ export class WikiRaceMinigame extends BaseMinigame {
         finishedCount: this.state.finishCounter,
         totalPlayers: this.state.playerStates.size,
       });
-      // Clear tick interval and end
-      if (this.tickInterval) {
-        clearInterval(this.tickInterval);
-        this.intervals = this.intervals.filter((i) => i !== this.tickInterval);
-        this.tickInterval = null;
-      }
+      this.clearPhaseTimer();
       this.computeScores();
       this.showResults();
     }
@@ -786,7 +736,7 @@ export class WikiRaceMinigame extends BaseMinigame {
         userId: firstFinisher.userId,
         title: 'Speed Runner',
         description: 'First to reach the target article',
-        icon: '🏃',
+        icon: 'person-standing',
       });
     }
 
@@ -799,7 +749,7 @@ export class WikiRaceMinigame extends BaseMinigame {
         userId: fewestClicks.userId,
         title: 'Efficiency Expert',
         description: `Reached the target in only ${fewestClicks.clickCount} clicks`,
-        icon: '🎯',
+        icon: 'target',
       });
     }
 
@@ -811,7 +761,7 @@ export class WikiRaceMinigame extends BaseMinigame {
           userId: p.userId,
           title: 'Optimal Path',
           description: `Found the optimal route in ${p.clickCount} clicks`,
-          icon: '⭐',
+          icon: 'star',
         });
       }
     }
@@ -826,7 +776,7 @@ export class WikiRaceMinigame extends BaseMinigame {
           userId: mostClicks.userId,
           title: 'Tourist',
           description: `Explored ${mostClicks.clickCount} articles along the way`,
-          icon: '🗺️',
+          icon: 'map',
         });
       }
     }
@@ -838,7 +788,7 @@ export class WikiRaceMinigame extends BaseMinigame {
           userId: p.userId,
           title: 'Almost There',
           description: 'Target article was just one click away',
-          icon: '😱',
+          icon: 'alert-circle',
         });
       }
     }

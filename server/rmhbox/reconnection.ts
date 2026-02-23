@@ -43,7 +43,11 @@ export class ReconnectionHandler {
     const userId = socket.data.userId as string;
     const userName = socket.data.userName as string;
     const lobby = this.lobbyManager.getLobbyByUserId(userId);
-    if (!lobby) return; // Not in a lobby — normal fresh connection
+    if (!lobby) {
+      // User is not in any lobby — inform the client so it can clear stale state
+      socket.emit(S2C.NOT_IN_LOBBY, { userId });
+      return;
+    }
 
     const player = lobby.players.get(userId);
     const spectator = lobby.spectators.get(userId);

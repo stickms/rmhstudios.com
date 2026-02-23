@@ -20,6 +20,7 @@ import { connectToRMHbox, emit } from '@/lib/rmhbox/socket';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { C2S, S2C } from '@/lib/rmhbox/events';
 import { toast } from '@/lib/rmhbox/toast-store';
+import { PartyPopper, Trophy } from 'lucide-react';
 import LobbyView from '@/components/rmhbox/LobbyView';
 import GameVoting from '@/components/rmhbox/GameVoting';
 import InstructionsScreen from '@/components/rmhbox/InstructionsScreen';
@@ -218,20 +219,21 @@ export default function LobbyPage({ params }: { params: Promise<{ lobbyId: strin
   const isHost = lobby.hostUserId === lobby.myUserId;
 
   // Determine header context and title based on current lobby state
-  const isPlaying = lobby.state === 'PLAYING' || lobby.state === 'COUNTDOWN';
-  const headerContext = isPlaying ? 'game' as const : 'lobby' as const;
-  const headerTitle = isPlaying && lobby.currentGame ? lobby.currentGame.displayName : undefined;
+  const isGamePhase = lobby.state === 'PLAYING' || lobby.state === 'COUNTDOWN'
+    || lobby.state === 'INSTRUCTIONS' || lobby.state === 'PRELOADING'
+    || lobby.state === 'ROUND_RESULTS';
+  const headerContext = isGamePhase ? 'game' as const : 'lobby' as const;
+  const headerTitle = lobby.currentGame ? lobby.currentGame.displayName : undefined;
 
   return (
     <div className="flex h-screen flex-col overflow-hidden relative">
       <RMHboxHeader
         context={headerContext}
         title={headerTitle}
-        timeRemaining={isPlaying ? lobby.currentGame?.timeRemaining : undefined}
       />
 
       {/* Content area below header */}
-      <div className="flex-1 min-h-0 overflow-hidden relative">
+      <div className="flex-1 min-h-0 overflow-y-auto relative">
         {/* Spectator Banner */}
         {isSpectator && (
           <SpectatorBanner
@@ -308,7 +310,7 @@ export default function LobbyPage({ params }: { params: Promise<{ lobbyId: strin
       {lobby.state === 'SESSION_RESULTS' && (
         <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-6 p-6 h-full justify-center">
           <h1 className="text-4xl font-bold" style={{ fontFamily: 'var(--rmhbox-font-display)' }}>
-            Session Complete! 🎉
+            Session Complete! <PartyPopper className="h-8 w-8 inline" />
           </h1>
 
           {/* Final Standings */}
@@ -345,7 +347,7 @@ export default function LobbyPage({ params }: { params: Promise<{ lobbyId: strin
                       <span className="font-semibold">{m.minigameDisplayName}</span>
                       <span className="ml-2 text-(--rmhbox-text-muted)">· {m.playerCount} players</span>
                     </div>
-                    <span className="text-(--rmhbox-success)">🏆 {m.winnerUserName ?? 'N/A'}</span>
+                    <span className="text-(--rmhbox-success) flex items-center gap-1"><Trophy className="h-3.5 w-3.5" /> {m.winnerUserName ?? 'N/A'}</span>
                   </div>
                 ))}
               </div>

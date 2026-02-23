@@ -20,7 +20,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Clock, Hash } from 'lucide-react';
+import { Clock, Hash, Trophy } from 'lucide-react';
 
 interface TurnIndicatorProps {
   phase: string;
@@ -33,6 +33,7 @@ interface TurnIndicatorProps {
 
 /** Map phase IDs to human-readable labels */
 const PHASE_LABELS: Record<string, string> = {
+  TEAM_SETUP: 'Team Setup',
   SETUP: 'Setting Up',
   CLUE: 'Clue Phase',
   GUESS: 'Guess Phase',
@@ -69,8 +70,8 @@ export default function TurnIndicator({
         )}
         <span className="font-medium text-(--rmhbox-text)">{phaseLabel}</span>
         {winner && winner !== 'draw' && (
-          <span className={`ml-2 font-bold ${winner === 'red' ? 'text-red-400' : 'text-blue-400'}`}>
-            🏆 {winner.charAt(0).toUpperCase() + winner.slice(1)} wins!
+          <span className={`ml-2 font-bold flex items-center gap-1 ${winner === 'red' ? 'text-red-400' : 'text-blue-400'}`}>
+            <Trophy className="h-4 w-4" /> {winner.charAt(0).toUpperCase() + winner.slice(1)} wins!
           </span>
         )}
       </div>

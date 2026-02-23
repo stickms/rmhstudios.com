@@ -22,17 +22,16 @@
  */
 
 import Fuse from 'fuse.js';
-import { BaseMinigame } from './base-minigame';
-import type { MinigameContext, MinigameResults } from './base-minigame';
-import type { PlayerRanking, Award } from '../../../lib/rmhbox/types';
-import type { Category } from '../../../lib/rmhbox/category-crash/data-loader';
-import { selectRoundLetter, selectRoundCategories } from '../../../lib/rmhbox/category-crash/data-loader';
+import { BaseMinigame } from '../base-minigame';
+import type { MinigameContext, MinigameResults } from '../base-minigame';
+import type { PlayerRanking, Award } from '@/lib/rmhbox/types';
+import { selectRoundLetter, selectRoundCategories } from '@/lib/rmhbox/category-crash/data-loader';
 import {
   SaveAnswersSchema,
   SubmitAnswersSchema,
   CrashAnswerSchema,
   UncrashAnswerSchema,
-} from '../../../lib/rmhbox/category-crash/schemas';
+} from '@/lib/rmhbox/category-crash/schemas';
 import {
   CC_TOTAL_ROUNDS,
   CC_CATEGORIES_PER_ROUND,
@@ -48,102 +47,22 @@ import {
   CC_CRASH_BONUS,
   CC_CRASH_PENALTY,
   CC_FUZZY_THRESHOLD,
-} from '../../../lib/rmhbox/constants';
-import { logger } from '../logger';
-
-// ─── Phase Enum ──────────────────────────────────────────────────
-
-export enum CategoryCrashPhase {
-  REVEAL = 'REVEAL',
-  INPUT = 'INPUT',
-  PEER_REVIEW = 'PEER_REVIEW',
-  CRASH_RESOLUTION = 'CRASH_RESOLUTION',
-  ROUND_RESULTS = 'ROUND_RESULTS',
-}
-
-// ─── Type Definitions ────────────────────────────────────────────
-
-/** An anonymized answer set shown during peer review. */
-export interface AnonymizedAnswerSet {
-  anonymousLabel: string;
-  answers: (string | null)[];
-}
-
-/** A single crash vote targeting a player's answer for a specific category. */
-export interface CrashRecord {
-  crasherId: string;
-  targetUserId: string;
-  categoryIndex: number;
-}
-
-/** Per-player result for a single round. */
-export interface CCPlayerResult {
-  userId: string;
-  userName: string;
-  answers: (string | null)[];
-  pointsPerCategory: number[];
-  roundScore: number;
-  crashedIndices: number[];
-  duplicateIndices: number[];
-  invalidIndices: number[];
-  uniqueIndices: number[];
-}
-
-/** Full result payload for a single round. */
-export interface CCRoundResults {
-  roundNumber: number;
-  letter: string;
-  categories: Category[];
-  playerResults: Record<string, CCPlayerResult>;
-}
-
-/** Action log entry for the game log. */
-export interface ActionLogEntry {
-  action: string;
-  timestamp: number;
-  data: Record<string, unknown>;
-}
-
-/** Full internal state of the Category Crash minigame. */
-export interface CategoryCrashState {
-  phase: CategoryCrashPhase;
-  currentRound: number;
-  totalRounds: number;
-  letter: string;
-  categories: Category[];
-  /** Player answers keyed by userId → array of CC_CATEGORIES_PER_ROUND answers. */
-  answers: Record<string, (string | null)[]>;
-  /** Whether a player's answers are locked (submitted). */
-  locked: Record<string, boolean>;
-  /** Crash votes for the current round. */
-  crashes: CrashRecord[];
-  /** Anonymization mapping: real userId → anonymous label (set during PEER_REVIEW). */
-  anonymizationMap: Record<string, string>;
-  /** Reverse map: anonymous label → real userId. */
-  reverseAnonymizationMap: Record<string, string>;
-  /** Cumulative scores keyed by userId. */
-  scores: Record<string, number>;
-  /** IDs of categories already used across rounds. */
-  usedCategoryIds: string[];
-  /** Letters already used across rounds. */
-  usedLetters: string[];
-  /** Round results history. */
-  roundResults: CCRoundResults[];
-  /** Game action log. */
-  actionLog: ActionLogEntry[];
-  /** Players pending promotion (joined mid-game). */
-  pendingPlayers: Set<string>;
-  /** Number of crashes each player has issued this round. */
-  crashCounts: Record<string, number>;
-  timeRemaining: number;
-}
+} from '../../../../lib/rmhbox/constants';
+import { logger } from '../../logger';
+import {
+  CategoryCrashPhase,
+  type AnonymizedAnswerSet,
+  type CrashRecord,
+  type CCPlayerResult,
+  type CCRoundResults,
+  type CategoryCrashState,
+} from './types';
 
 // ─── Category Crash Minigame ─────────────────────────────────────
 
 export class CategoryCrashMinigame extends BaseMinigame {
   private state!: CategoryCrashState;
   private startedAt: number = 0;
-  private tickInterval: NodeJS.Timeout | null = null;
 
   constructor(context: MinigameContext) {
     super(context);
@@ -246,6 +165,9 @@ export class CategoryCrashMinigame extends BaseMinigame {
       categories: this.state.categories.map((c) => c.id),
     });
 
+    // Broadcast sub-round to the footer counter
+    this.broadcastRound(this.state.currentRound, this.state.totalRounds);
+
     this.context.broadcastToLobby('rmhbox:game:action', {
       type: 'CC_ROUND_START',
       round: this.state.currentRound,
@@ -255,6 +177,9 @@ export class CategoryCrashMinigame extends BaseMinigame {
       duration: CC_REVEAL,
     });
 
+    // Show reveal countdown in the header timer
+    this.startPhaseTimer(CC_REVEAL);
+
     this.setTimeout(() => this.startInputPhase(), CC_REVEAL * 1000);
   }
 
@@ -262,35 +187,34 @@ export class CategoryCrashMinigame extends BaseMinigame {
     if (!this.isRunning) return;
 
     this.state.phase = CategoryCrashPhase.INPUT;
-    this.state.timeRemaining = CC_INPUT_DURATION;
+
+    // Scale input duration by player count: 60s base, +15s per player beyond 2, max 180s
+    const playerCount = this.context.players.size;
+    const scaledInputDuration = Math.min(180, CC_INPUT_DURATION + Math.max(0, playerCount - 2) * 15);
+    this.state.timeRemaining = scaledInputDuration;
 
     logger.info({
       event: 'category_crash:input_phase_start',
       lobbyId: this.context.lobbyId,
       round: this.state.currentRound,
-      duration: CC_INPUT_DURATION,
+      duration: scaledInputDuration,
     });
 
     this.context.broadcastToLobby('rmhbox:game:action', {
       type: 'CC_INPUT_START',
-      duration: CC_INPUT_DURATION,
-      timeRemaining: CC_INPUT_DURATION,
+      duration: scaledInputDuration,
+      timeRemaining: scaledInputDuration,
     });
 
-    this.tickInterval = this.setInterval(() => {
-      this.state.timeRemaining--;
-      this.context.broadcastToLobby('rmhbox:game:action', {
-        type: 'TIMER_TICK',
-        timeRemaining: this.state.timeRemaining,
-      });
-    }, 1000);
+    // Drive the header timer ring for the input phase
+    this.startPhaseTimer(scaledInputDuration);
 
-    this.setTimeout(() => this.endInputPhase(), CC_INPUT_DURATION * 1000);
+    this.setTimeout(() => this.endInputPhase(), scaledInputDuration * 1000);
   }
 
   private endInputPhase(): void {
     if (!this.isRunning) return;
-    this.clearTickInterval();
+    this.clearPhaseTimer();
 
     // Auto-lock any unlocked answers
     for (const userId of Object.keys(this.state.answers)) {
@@ -312,7 +236,11 @@ export class CategoryCrashMinigame extends BaseMinigame {
     if (!this.isRunning) return;
 
     this.state.phase = CategoryCrashPhase.PEER_REVIEW;
-    this.state.timeRemaining = CC_PEER_REVIEW_DURATION;
+
+    // Scale peer review duration by player count: 30s base, +10s per player beyond 2, max 90s
+    const playerCount = this.context.players.size;
+    const scaledReviewDuration = Math.min(90, CC_PEER_REVIEW_DURATION + Math.max(0, playerCount - 2) * 10);
+    this.state.timeRemaining = scaledReviewDuration;
 
     // Build anonymization map
     this.buildAnonymizationMap();
@@ -321,34 +249,29 @@ export class CategoryCrashMinigame extends BaseMinigame {
       event: 'category_crash:peer_review_start',
       lobbyId: this.context.lobbyId,
       round: this.state.currentRound,
-      duration: CC_PEER_REVIEW_DURATION,
+      duration: scaledReviewDuration,
     });
 
     const anonymizedAnswers = this.getAnonymizedAnswers();
 
     this.context.broadcastToLobby('rmhbox:game:action', {
       type: 'CC_PEER_REVIEW_START',
-      duration: CC_PEER_REVIEW_DURATION,
-      timeRemaining: CC_PEER_REVIEW_DURATION,
+      duration: scaledReviewDuration,
+      timeRemaining: scaledReviewDuration,
       anonymizedAnswers,
       categories: this.state.categories,
       letter: this.state.letter,
     });
 
-    this.tickInterval = this.setInterval(() => {
-      this.state.timeRemaining--;
-      this.context.broadcastToLobby('rmhbox:game:action', {
-        type: 'TIMER_TICK',
-        timeRemaining: this.state.timeRemaining,
-      });
-    }, 1000);
+    // Drive the header timer ring for the peer review phase
+    this.startPhaseTimer(scaledReviewDuration);
 
-    this.setTimeout(() => this.startCrashResolution(), CC_PEER_REVIEW_DURATION * 1000);
+    this.setTimeout(() => this.startCrashResolution(), scaledReviewDuration * 1000);
   }
 
   private startCrashResolution(): void {
     if (!this.isRunning) return;
-    this.clearTickInterval();
+    this.clearPhaseTimer();
 
     this.state.phase = CategoryCrashPhase.CRASH_RESOLUTION;
     this.state.timeRemaining = CC_CRASH_RESOLUTION;
@@ -364,6 +287,9 @@ export class CategoryCrashMinigame extends BaseMinigame {
       type: 'CC_CRASH_RESOLUTION_START',
       duration: CC_CRASH_RESOLUTION,
     });
+
+    // Show crash resolution countdown in the header timer
+    this.startPhaseTimer(CC_CRASH_RESOLUTION);
 
     this.setTimeout(() => this.showRoundResults(), CC_CRASH_RESOLUTION * 1000);
   }
@@ -401,6 +327,9 @@ export class CategoryCrashMinigame extends BaseMinigame {
       duration: CC_ROUND_RESULTS,
       anonymizationMap: this.state.anonymizationMap,
     });
+
+    // Show round results countdown in the header timer
+    this.startPhaseTimer(CC_ROUND_RESULTS);
 
     this.setTimeout(() => {
       if (this.state.currentRound >= this.state.totalRounds) {
@@ -1124,7 +1053,7 @@ export class CategoryCrashMinigame extends BaseMinigame {
         userId: snowflake.userId,
         title: 'Unique Snowflake',
         description: `Had ${snowflake.value} unique answers no one else thought of`,
-        icon: '❄️',
+        icon: 'snowflake',
       });
     }
 
@@ -1139,7 +1068,7 @@ export class CategoryCrashMinigame extends BaseMinigame {
           userId: fastestUserId,
           title: 'Speed Demon',
           description: 'First player to lock in answers',
-          icon: '⚡',
+          icon: 'zap',
         });
       }
     }
@@ -1164,7 +1093,7 @@ export class CategoryCrashMinigame extends BaseMinigame {
         userId: maxCrashedUser,
         title: 'Crash Test Dummy',
         description: `Had ${maxCrashed} answers crashed by other players`,
-        icon: '💥',
+        icon: 'flame',
       });
     }
 
@@ -1175,7 +1104,7 @@ export class CategoryCrashMinigame extends BaseMinigame {
         userId: vigilante.userId,
         title: 'Vigilante',
         description: `Issued ${vigilante.value} crash votes`,
-        icon: '🔍',
+        icon: 'search',
       });
     }
 
@@ -1186,7 +1115,7 @@ export class CategoryCrashMinigame extends BaseMinigame {
           userId,
           title: 'Full House',
           description: 'Scored on every category in a round',
-          icon: '🏠',
+          icon: 'home',
         });
         break; // Only award once
       }
@@ -1233,13 +1162,5 @@ export class CategoryCrashMinigame extends BaseMinigame {
     };
   }
 
-  // ─── Helpers ─────────────────────────────────────────────────
 
-  private clearTickInterval(): void {
-    if (this.tickInterval) {
-      clearInterval(this.tickInterval);
-      this.intervals = this.intervals.filter((i) => i !== this.tickInterval);
-      this.tickInterval = null;
-    }
-  }
 }

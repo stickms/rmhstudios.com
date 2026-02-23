@@ -231,10 +231,10 @@ describe('Timer Tick Broadcasting (§3.5)', () => {
     setupLobbyWith2Players();
 
     const onComplete = vi.fn();
-    const cancel = stateSyncService.startTimerBroadcast(lobbyId, 10, onComplete);
+    const handle = stateSyncService.startTimerBroadcast(lobbyId, 10, onComplete);
 
     vi.advanceTimersByTime(3_000);
-    cancel();
+    handle.cancel();
     vi.advanceTimersByTime(10_000);
 
     expect(onComplete).not.toHaveBeenCalled();

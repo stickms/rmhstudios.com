@@ -20,7 +20,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Lock, Send, Save, Clock } from 'lucide-react';
+import { Clock } from 'lucide-react';
 import type { Category } from './CategoryCrashGame';
 
 interface CategoryInputProps {
@@ -28,11 +28,8 @@ interface CategoryInputProps {
   categories: Category[];
   myAnswers: (string | null)[];
   isLocked: boolean;
-  lockedCount: number;
-  totalPlayers: number;
   timeRemaining: number;
   onSave: (answers: (string | null)[]) => void;
-  onSubmit: (answers: (string | null)[]) => void;
 }
 
 export default function CategoryInput({
@@ -40,11 +37,8 @@ export default function CategoryInput({
   categories,
   myAnswers,
   isLocked,
-  lockedCount,
-  totalPlayers,
   timeRemaining,
   onSave,
-  onSubmit,
 }: CategoryInputProps) {
   const [localAnswers, setLocalAnswers] = useState<(string | null)[]>(
     () => myAnswers.length ? [...myAnswers] : Array(categories.length).fill(null),
@@ -69,6 +63,10 @@ export default function CategoryInput({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Ref to track latest local answers for debounced save (avoids setState-in-render)
+  const latestAnswersRef = useRef<(string | null)[]>(localAnswers);
+  useEffect(() => { latestAnswersRef.current = localAnswers; }, [localAnswers]);
+
   const handleChange = useCallback(
     (index: number, value: string) => {
       setLocalAnswers((prev) => {
@@ -77,23 +75,20 @@ export default function CategoryInput({
         return next;
       });
 
-      // Debounced auto-save
+      // Debounced auto-save — read from ref to avoid calling setState inside setState
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
       saveTimerRef.current = setTimeout(() => {
-        setLocalAnswers((current) => {
-          onSave(current);
-          return current;
-        });
+        onSave(latestAnswersRef.current);
       }, 1500);
     },
     [onSave],
   );
 
-  const handleSubmit = useCallback(() => {
-    if (isLocked) return;
+  /** Flush pending save immediately on blur */
+  const handleBlur = useCallback(() => {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    onSubmit(localAnswers);
-  }, [isLocked, localAnswers, onSubmit]);
+    onSave(latestAnswersRef.current);
+  }, [onSave]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent, index: number) => {
@@ -101,19 +96,22 @@ export default function CategoryInput({
         e.preventDefault();
         if (index < categories.length - 1) {
           inputRefs.current[index + 1]?.focus();
-        } else {
-          handleSubmit();
         }
       }
     },
-    [categories.length, handleSubmit],
+    [categories.length],
   );
 
-  // Cleanup save timer on unmount
+  // Flush save on unmount (phase transition / timer expiry)
+  const onSaveRef = useRef(onSave);
+  useEffect(() => { onSaveRef.current = onSave; }, [onSave]);
   useEffect(() => {
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      // Final save so server has latest answers before auto-lock
+      onSaveRef.current(latestAnswersRef.current);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const filledCount = localAnswers.filter((a) => a && a.trim().length > 0).length;
@@ -184,6 +182,7 @@ export default function CategoryInput({
                   type="text"
                   value={value}
                   onChange={(e) => handleChange(i, e.target.value)}
+                  onBlur={handleBlur}
                   onKeyDown={(e) => handleKeyDown(e, i)}
                   disabled={isLocked}
                   maxLength={50}
@@ -203,32 +202,6 @@ export default function CategoryInput({
             </motion.div>
           );
         })}
-      </div>
-
-      {/* Footer: save/submit + locked count */}
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 text-sm text-(--rmhbox-text-muted)">
-          <Lock size={14} />
-          {lockedCount}/{totalPlayers} submitted
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => onSave(localAnswers)}
-            disabled={isLocked}
-            className="flex items-center gap-1.5 rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-surface) px-3 py-2 text-sm transition-colors hover:bg-(--rmhbox-surface-hover) disabled:opacity-40"
-          >
-            <Save size={14} />
-            Save
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={isLocked}
-            className="flex items-center gap-1.5 rounded-lg bg-(--rmhbox-accent) px-4 py-2 text-sm font-semibold text-black transition-opacity hover:opacity-90 disabled:opacity-40"
-          >
-            <Send size={14} />
-            {isLocked ? 'Submitted' : 'Submit'}
-          </button>
-        </div>
       </div>
     </div>
   );

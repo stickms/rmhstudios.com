@@ -16,6 +16,7 @@ import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { Trophy, Medal, Award as AwardIcon } from 'lucide-react';
+import LucideAwardIcon from './LucideAwardIcon';
 import type { PlayerRanking, SessionStanding, Award } from '@/lib/rmhbox/types';
 
 interface ResultsScreenProps {
@@ -120,15 +121,22 @@ export default function ResultsScreen({
             <AwardIcon className="h-4 w-4" /> Awards
           </h3>
           <ul className="space-y-2">
-            {awards.map((award, i) => (
-              <li key={i} className="flex items-center gap-3">
-                <span className="text-xl">{award.icon}</span>
-                <div>
-                  <span className="font-semibold">{award.title}</span>
-                  <p className="text-xs text-(--rmhbox-text-muted)">{award.description}</p>
-                </div>
-              </li>
-            ))}
+            {awards.map((award, i) => {
+              const recipientName = rankings.find((r) => r.userId === award.userId)?.userName
+                ?? sessionStandings.find((s) => s.userId === award.userId)?.userName
+                ?? award.userId;
+              return (
+                <li key={i} className="flex items-center gap-3">
+                  <LucideAwardIcon name={award.icon} className="h-5 w-5" />
+                  <div>
+                    <span className="font-semibold">{award.title}</span>
+                    <span className="mx-1 text-(--rmhbox-text-muted)">&mdash;</span>
+                    <span className="text-sm text-(--rmhbox-accent)">{recipientName}</span>
+                    <p className="text-xs text-(--rmhbox-text-muted)">{award.description}</p>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         </motion.div>
       )}

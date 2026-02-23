@@ -13,6 +13,8 @@
  */
 'use client';
 
+import { Flame } from 'lucide-react';
+
 interface CrashButtonProps {
   isCrashed: boolean;
   canCrash: boolean;
@@ -52,7 +54,7 @@ export default function CrashButton({
               : 'No crashes remaining'
       }
     >
-      💥 {isCrashed ? 'Crashed' : 'Crash'}
+      <Flame className="h-3.5 w-3.5" /> {isCrashed ? 'Crashed' : 'Crash'}
     </button>
   );
 }

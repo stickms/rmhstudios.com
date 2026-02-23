@@ -20,6 +20,14 @@ import { S2C } from '../../lib/rmhbox/events';
 import type { RMHboxLobby } from './types';
 import type { ClientLobbyState } from '../../lib/rmhbox/types';
 
+/** Handle returned by startTimerBroadcast for cancel / pause / resume control. */
+export interface TimerHandle {
+  cancel: () => void;
+  pause: () => void;
+  resume: () => void;
+  readonly isPaused: boolean;
+}
+
 export class StateSyncService {
   private readonly io: Server;
   private readonly lobbyManager: LobbyManager;
@@ -83,24 +91,33 @@ export class StateSyncService {
    * Creates a 1-second countdown timer that broadcasts TIMER_TICK
    * actions to a lobby, then calls onComplete when done.
    *
+   * First emits a TIMER_START action with `totalDuration` and `timeRemaining`
+   * so the client header ring knows the full circle baseline. Then emits
+   * TIMER_TICK every second with the decremented `timeRemaining`.
+   *
    * @param lobbyId - The lobby to broadcast to
    * @param durationSeconds - Total seconds for the countdown
    * @param onComplete - Callback fired when countdown reaches 0
-   * @returns A cancel function that stops the timer
+   * @returns A timer handle with cancel / pause / resume helpers
    */
   startTimerBroadcast(
     lobbyId: string,
     durationSeconds: number,
     onComplete: () => void,
-  ): () => void {
+  ): TimerHandle {
     let remaining = durationSeconds;
     let cancelled = false;
+    let paused = false;
+    let interval: ReturnType<typeof setInterval> | null = null;
 
-    const interval = setInterval(() => {
-      if (cancelled) {
-        clearInterval(interval);
-        return;
-      }
+    // Emit TIMER_START so the client knows totalDuration for ring animation
+    this.lobbyManager.broadcastAction(lobbyId, {
+      type: 'TIMER_START',
+      payload: { totalDuration: durationSeconds, timeRemaining: remaining },
+    });
+
+    const tick = () => {
+      if (cancelled || paused) return;
 
       // Broadcast TIMER_TICK action
       this.lobbyManager.broadcastAction(lobbyId, {
@@ -111,18 +128,40 @@ export class StateSyncService {
       remaining--;
 
       if (remaining < 0) {
-        clearInterval(interval);
+        if (interval) clearInterval(interval);
+        interval = null;
         if (!cancelled) {
           onComplete();
         }
       }
-    }, 1000);
-
-    // Return cancel function
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
     };
+
+    interval = setInterval(tick, 1000);
+
+    const cancel = () => {
+      cancelled = true;
+      if (interval) { clearInterval(interval); interval = null; }
+    };
+
+    const pause = () => {
+      if (paused || cancelled) return;
+      paused = true;
+      this.lobbyManager.broadcastAction(lobbyId, {
+        type: 'TIMER_PAUSED',
+        payload: { timeRemaining: remaining },
+      });
+    };
+
+    const resume = () => {
+      if (!paused || cancelled) return;
+      paused = false;
+      this.lobbyManager.broadcastAction(lobbyId, {
+        type: 'TIMER_RESUMED',
+        payload: { timeRemaining: remaining },
+      });
+    };
+
+    return { cancel, pause, resume, get isPaused() { return paused; } };
   }
 
   // ─── Internal Helpers ─────────────────────────────────────────

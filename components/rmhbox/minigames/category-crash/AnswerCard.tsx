@@ -16,7 +16,9 @@
  */
 'use client';
 
+import type { ReactNode } from 'react';
 import { motion } from 'framer-motion';
+import { Star, Flame, AlertTriangle } from 'lucide-react';
 
 type AnswerStatus = 'unique' | 'shared' | 'crashed' | 'invalid' | 'empty';
 
@@ -27,12 +29,12 @@ interface AnswerCardProps {
   status: AnswerStatus;
 }
 
-const statusStyles: Record<AnswerStatus, { bg: string; text: string; border: string; badge?: string }> = {
+const statusStyles: Record<AnswerStatus, { bg: string; text: string; border: string; badge?: ReactNode }> = {
   unique: {
     bg: 'bg-green-500/10',
     text: 'text-green-300',
     border: 'border-green-500/30',
-    badge: '★',
+    badge: <Star className="h-3 w-3 fill-green-400 text-green-400" />,
   },
   shared: {
     bg: 'bg-(--rmhbox-surface)',
@@ -43,13 +45,13 @@ const statusStyles: Record<AnswerStatus, { bg: string; text: string; border: str
     bg: 'bg-red-500/10',
     text: 'text-red-400 line-through',
     border: 'border-red-500/30',
-    badge: '💥',
+    badge: <Flame className="h-3 w-3 text-red-400" />,
   },
   invalid: {
     bg: 'bg-amber-500/10',
     text: 'text-amber-400 line-through',
     border: 'border-amber-500/30',
-    badge: '⚠',
+    badge: <AlertTriangle className="h-3 w-3 text-amber-400" />,
   },
   empty: {
     bg: 'bg-(--rmhbox-surface)/50',

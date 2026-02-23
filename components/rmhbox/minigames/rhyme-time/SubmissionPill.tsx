@@ -1,14 +1,15 @@
 /**
  * SubmissionPill — Compact pill displaying a submitted rhyme word.
  *
- * Three visual states based on validation status:
- *   - pending (gray)  — word submitted, awaiting scoring
- *   - valid   (green) — accepted rhyme
- *   - invalid (red + strikethrough) — rejected; tooltip shows reason
+ * Four visual states based on validation status:
+ *   - pending       (gray)    — word submitted, awaiting scoring
+ *   - valid         (green)   — accepted rhyme
+ *   - invalid       (red + strikethrough) — known word that doesn't rhyme
+ *   - not_in_dict   (gray, dimmed) — word not found in dictionary (no penalty)
  *
  * Props:
  *   word: string — The submitted word
- *   status: 'pending' | 'valid' | 'invalid' — Current validation state
+ *   status: 'pending' | 'valid' | 'invalid' | 'not_in_dict' — Current validation state
  *   invalidReason?: string — Reason shown on hover when invalid
  */
 'use client';
@@ -18,14 +19,15 @@ import { motion } from 'framer-motion';
 
 export interface SubmissionPillProps {
   word: string;
-  status: 'pending' | 'valid' | 'invalid';
+  status: 'pending' | 'valid' | 'invalid' | 'not_in_dict';
   invalidReason?: string;
 }
 
 const STATUS_STYLES: Record<SubmissionPillProps['status'], string> = {
-  pending: 'bg-gray-500/20 text-gray-300 border-gray-500/40',
-  valid:   'bg-green-500/20 text-green-300 border-green-500/40',
-  invalid: 'bg-red-500/20 text-red-400 border-red-500/40 line-through',
+  pending:      'bg-gray-500/20 text-gray-300 border-gray-500/40',
+  valid:        'bg-green-500/20 text-green-300 border-green-500/40',
+  invalid:      'bg-red-500/20 text-red-400 border-red-500/40 line-through',
+  not_in_dict:  'bg-gray-500/10 text-gray-500 border-gray-600/30',
 };
 
 export default function SubmissionPill({ word, status, invalidReason }: SubmissionPillProps) {
@@ -37,8 +39,8 @@ export default function SubmissionPill({ word, status, invalidReason }: Submissi
       initial={{ scale: 0.8, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-      className={`relative inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium ${STATUS_STYLES[status]}`}
-      onMouseEnter={() => status === 'invalid' && setShowTooltip(true)}
+      className={`relative inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium my-0.5 ${STATUS_STYLES[status]}`}
+      onMouseEnter={() => (status === 'invalid' || status === 'not_in_dict') && setShowTooltip(true)}
       onMouseLeave={() => setShowTooltip(false)}
     >
       {word}

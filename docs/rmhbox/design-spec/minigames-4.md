@@ -221,7 +221,9 @@ const ICGuessSchema = z.object({
 | `IC_EARLY_GUESS_CORRECT` | `{ userId: string, userName: string, identity: string, questionsRemaining: number, bonusPoints: number }` | All (lobby) | Correct early guess — identity revealed |
 | `IC_FINAL_GUESS_PHASE` | `{ durationSeconds: number }` | All (lobby) | Final guess phase begins |
 | `IC_RESULTS` | `{ reveals: ICReveal[], finalRankings: ICFinalRanking[] }` | All (lobby) | Final results and identity reveals |
-| `TIMER_TICK` | `{ timeRemaining: number }` | All (lobby) | Standard timer |
+| `TIMER_START` | `{ totalDuration: number, timeRemaining: number }` | All (lobby) | Emitted at the start of each timed phase (ASK, VOTE, FINAL_GUESS) via `broadcastAction` |
+| `TIMER_TICK` | `{ timeRemaining: number }` | All (lobby) | Standard timer (every 1s during all timed phases) via `broadcastAction` |
+| `MINIGAME_ROUND` | `{ current: number, total: number }` | All (lobby) | Sub-round counter update (e.g. "Question 3/12") via `broadcastAction` |
 
 **Supporting types:**
 
@@ -728,7 +730,9 @@ const RFSubmitSchema = z.object({
 | `RF_LOCK_IN_PHASE` | `{ lockInSeconds: number }` | All (lobby) | Lock-in begins |
 | `RF_ROUND_RESULTS` | `{ averageRanking: number[], consensusOrder: Array<{ item: string, avgRank: number }>, playerResults: RFPlayerResult[], mostConsensus: { userId: string, userName: string }, mostUnique: { userId: string, userName: string } }` | All (lobby) | Round results |
 | `RF_GAME_OVER` | `{ finalRankings: RFFinalRanking[], categoryResults: RFRoundResult[] }` | All (lobby) | Game complete |
-| `TIMER_TICK` | `{ timeRemaining: number }` | All (lobby) | Standard timer |
+| `TIMER_START` | `{ totalDuration: number, timeRemaining: number }` | All (lobby) | Emitted at the start of each timed phase (RANKING, LOCK_IN) via `broadcastAction` |
+| `TIMER_TICK` | `{ timeRemaining: number }` | All (lobby) | Standard timer (every 1s during all timed phases) via `broadcastAction` |
+| `MINIGAME_ROUND` | `{ current: number, total: number }` | All (lobby) | Sub-round counter update (e.g. "Round 2/5") via `broadcastAction` |
 
 **Supporting types:**
 
@@ -1206,7 +1210,9 @@ Note: Movement input is sent at fixed intervals (~15Hz). The server applies move
 | `PP_LEVEL_COMPLETE` | `{ timeMs: number, waypointsReached: number, totalWaypoints: number }` | All (lobby) | Level completed! |
 | `PP_LEVEL_FAILED` | `{ reason: 'TIMEOUT' }` | All (lobby) | Level time ran out |
 | `PP_GAME_OVER` | `{ finalRankings: PPFinalRanking[], levelsCompleted: number, totalPushes: number }` | All (lobby) | Game over |
-| `TIMER_TICK` | `{ timeRemaining: number }` | All (lobby) | Standard timer |
+| `TIMER_START` | `{ totalDuration: number, timeRemaining: number }` | All (lobby) | Emitted at the start of each ACTIVE phase via `broadcastAction` |
+| `TIMER_TICK` | `{ timeRemaining: number }` | All (lobby) | Standard timer (every 1s during all timed phases) via `broadcastAction` |
+| `MINIGAME_ROUND` | `{ current: number, total: number }` | All (lobby) | Sub-round counter update (e.g. "Level 2/3") via `broadcastAction` |
 
 **Supporting types:**
 
@@ -1754,6 +1760,8 @@ const SCCloseAdSchema = z.object({
 | `SC_PLAYER_ELIMINATED` | `{ userId: string, userName: string, survivalTimeMs: number, rank: number }` | All (lobby) | Player eliminated |
 | `SC_HEIGHT_MILESTONE` | `{ userId: string, userName: string, height: number }` | All (lobby) | Height milestone reached |
 | `SC_GAME_OVER` | `{ finalRankings: SCFinalRanking[] }` | All (lobby) | Game over |
+| `TIMER_START` | `{ totalDuration: number, timeRemaining: number }` | All (lobby) | Emitted at the start of the SURVIVAL phase via `broadcastAction` |
+| `TIMER_TICK` | `{ timeRemaining: number }` | All (lobby) | Standard timer (every 1s during survival) via `broadcastAction` |
 
 **Supporting types:**
 

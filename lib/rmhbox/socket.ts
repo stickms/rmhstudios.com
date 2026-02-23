@@ -103,6 +103,15 @@ export async function connectToRMHbox(): Promise<Socket> {
     toast.error(message);
   });
 
+  // If the server tells us we're not in a lobby, clear stale local state
+  socket.on(S2C.NOT_IN_LOBBY, () => {
+    const store = useRMHboxStore.getState();
+    if (store.lobby) {
+      console.warn('[RMHbox] Server reports NOT_IN_LOBBY — clearing stale lobby state');
+      store.leaveLobby();
+    }
+  });
+
   return socket;
 }
 

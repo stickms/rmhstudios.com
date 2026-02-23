@@ -29,6 +29,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Flame } from 'lucide-react';
 import { getSocket, emit } from '@/lib/rmhbox/socket';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { S2C, C2S } from '@/lib/rmhbox/events';
@@ -132,8 +133,7 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
           setCrashesUsed(0);
           setRoundResults(null);
           setAnonymizedAnswers([]);
-          // Transition to INPUT after reveal animation
-          globalThis.setTimeout(() => setPhase('INPUT'), 3000);
+          // Server will send CC_INPUT_START when the reveal period ends
           break;
         }
         case 'CC_INPUT_START': {
@@ -204,8 +204,17 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
           globalThis.setTimeout(() => setErrorMsg(null), 3000);
           break;
         }
+        case 'TIMER_START': {
+          const pl = data.payload as Record<string, unknown> | undefined;
+          if (pl) {
+            setTimeRemaining(pl.timeRemaining as number);
+          }
+          break;
+        }
         case 'TIMER_TICK': {
-          setTimeRemaining(data.timeRemaining as number);
+          const pl = data.payload as Record<string, unknown> | undefined;
+          const remaining = (pl?.timeRemaining ?? data.timeRemaining) as number;
+          if (typeof remaining === 'number') setTimeRemaining(remaining);
           break;
         }
       }
@@ -259,15 +268,22 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
     };
   }, [handleGameAction, handleStateSnapshot, handleRoundResults]);
 
+  // Hydrate from the Zustand gameState snapshot on mount.
+  // This fixes the race condition where the server broadcasts initial game state
+  // before the lazy-loaded component has mounted and subscribed to socket events.
+  useEffect(() => {
+    const snapshot = useRMHboxStore.getState().gameState;
+    if (snapshot && Object.keys(snapshot).length > 0 && snapshot.phase) {
+      handleStateSnapshot(snapshot as Record<string, unknown>);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ─── Action Handlers ────────────────────────────────────────────
 
   const handleSaveAnswers = useCallback((answers: (string | null)[]) => {
     setMyAnswers(answers);
     emitGameInput('SAVE_ANSWERS', { answers });
-  }, []);
-
-  const handleSubmitAnswers = useCallback((answers: (string | null)[]) => {
-    emitGameInput('SUBMIT_ANSWERS', { answers });
   }, []);
 
   const handleCrash = useCallback((targetUserId: string, categoryIndex: number) => {
@@ -351,11 +367,8 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
               categories={categories}
               myAnswers={myAnswers}
               isLocked={isLocked}
-              lockedCount={lockedCount}
-              totalPlayers={totalPlayers}
               timeRemaining={timeRemaining}
               onSave={handleSaveAnswers}
-              onSubmit={handleSubmitAnswers}
             />
           </motion.div>
         )}
@@ -397,7 +410,7 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
               transition={{ repeat: Infinity, duration: 1 }}
               className="text-4xl"
             >
-              💥
+              <Flame className="h-10 w-10 text-orange-400" />
             </motion.div>
             <h3 className="text-lg font-bold">Resolving Crashes…</h3>
             <p className="text-sm text-(--rmhbox-text-muted)">Tallying votes and checking answers</p>

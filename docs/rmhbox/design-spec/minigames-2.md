@@ -192,7 +192,9 @@ const SubmitAnswerSchema = z.object({
 | `FOF_PLAYER_ANSWERED` | `{ userId: string, userName: string }` | All (lobby) | Notification that a player has answered (not WHAT they answered) |
 | `FOF_ANSWER_REVEAL` | `{ correctIndex: number, correctAnswer: string, playerResults: FOFPlayerQuestionResult[] }` | All (lobby) | Correct answer + everyone's results |
 | `FOF_SCORE_UPDATE` | `{ scores: Array<{ userId: string, userName: string, totalScore: number, scoreChange: number }> }` | All (lobby) | Updated leaderboard after each question |
-| `TIMER_TICK` | `{ timeRemaining: number }` | All (lobby) | Standard timer (1s intervals during ANSWER phase) |
+| `TIMER_START` | `{ totalDuration: number, timeRemaining: number }` | All (lobby) | Emitted at the start of each timed phase (ANSWER) via `broadcastAction` |
+| `TIMER_TICK` | `{ timeRemaining: number }` | All (lobby) | Standard timer (every 1s during all timed phases) via `broadcastAction` |
+| `MINIGAME_ROUND` | `{ current: number, total: number }` | All (lobby) | Sub-round counter update (e.g. "Question 3/8") via `broadcastAction` |
 
 **`FOFPlayerQuestionResult`:**
 
@@ -648,7 +650,8 @@ const CastAccusationSchema = z.object({
 | `UE_ACCUSATION_START` | `{ players: Array<{ userId: string, userName: string }>, accusationDurationSeconds: number }` | All (lobby) | Voting phase begins |
 | `UE_VOTE_CAST` | `{ voterId: string, hasVoted: boolean }` | All (lobby) | Someone voted (not who for) |
 | `UE_REVEAL` | `{ editorUserId: string, editorName: string, keyword: string, keywordInStory: boolean, editorCaught: boolean, edits: WordEditView[], votes: VoteResult[], winner: string, scores: ScoreResult[] }` | All (lobby) | Full reveal |
-| `TIMER_TICK` | `{ timeRemaining: number }` | All (lobby) | Standard timer |
+| `TIMER_START` | `{ totalDuration: number, timeRemaining: number }` | All (lobby) | Emitted at the start of each timed phase (WRITE, EDIT, REVIEW, ACCUSATION) via `broadcastAction` |
+| `TIMER_TICK` | `{ timeRemaining: number }` | All (lobby) | Standard timer (every 1s during all timed phases) via `broadcastAction` |
 
 **Supporting types:**
 
@@ -1221,7 +1224,8 @@ const PlaceBidSchema = z.object({
 | `MM_BID_UPDATE` | `{ drawingId: string, totalValue: number, myBid: number, myRemainingCurrency: number }` | Each player individually | Bid state updated |
 | `MM_BID_BROADCAST` | `{ drawingId: string, totalValue: number }` | All (lobby) | Public bid total update |
 | `MM_RESULTS` | `{ rankings: MMRanking[], investmentBonuses: InvestmentBonus[] }` | All (lobby) | Final results |
-| `TIMER_TICK` | `{ timeRemaining: number }` | All (lobby) | Standard timer |
+| `TIMER_START` | `{ totalDuration: number, timeRemaining: number }` | All (lobby) | Emitted at the start of each timed phase (DRAWING, GALLERY, AUCTION) via `broadcastAction` |
+| `TIMER_TICK` | `{ timeRemaining: number }` | All (lobby) | Standard timer (every 1s during all timed phases) via `broadcastAction` |
 
 **Supporting types:**
 
@@ -1702,7 +1706,9 @@ const SubmitGuessSchema = z.object({
 | `EC_CORRECT_GUESS` | `{ userId: string, userName: string, rank: number }` | All (lobby) | Someone guessed correctly |
 | `EC_ROUND_OVER` | `{ movieTitle: string, emojiSequence: string[], correctGuessers: CorrectGuesser[], producerScore: number, roundScores: Array<{ userId: string, userName: string, score: number }> }` | All (lobby) | Round ended (correct guess or timeout) |
 | `EC_GUESS_COUNT` | `{ userId: string, count: number }` | All (lobby) | How many guesses a player has made (not the content) |
-| `TIMER_TICK` | `{ timeRemaining: number }` | All (lobby) | Standard timer |
+| `TIMER_START` | `{ totalDuration: number, timeRemaining: number }` | All (lobby) | Emitted at the start of each timed phase (CONSTRUCTION) via `broadcastAction` |
+| `TIMER_TICK` | `{ timeRemaining: number }` | All (lobby) | Standard timer (every 1s during all timed phases) via `broadcastAction` |
+| `MINIGAME_ROUND` | `{ current: number, total: number }` | All (lobby) | Sub-round counter update (e.g. "Round 2/6") via `broadcastAction` |
 
 ### 4.6 Information Masking
 

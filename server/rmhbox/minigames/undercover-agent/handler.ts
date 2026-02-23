@@ -19,18 +19,17 @@
 
 import fs from 'fs';
 import path from 'path';
-import { BaseMinigame } from './base-minigame';
-import type { MinigameContext, MinigameResults } from './base-minigame';
-import type { PlayerRanking, Award } from '../../../lib/rmhbox/types';
-import { GiveClueSchema, GuessTileSchema, EndTurnSchema } from '../../../lib/rmhbox/undercover-agent/schemas';
+import { BaseMinigame } from '../base-minigame';
+import type { MinigameContext, MinigameResults } from '../base-minigame';
+import type { PlayerRanking, Award } from '@/lib/rmhbox/types';
+import { GiveClueSchema, GuessTileSchema, EndTurnSchema, SwapPlayerSchema, SetRoleSchema } from '@/lib/rmhbox/undercover-agent/schemas';
 import {
   UA_GRID_SIZE,
   UA_FIRST_TEAM_AGENTS,
   UA_SECOND_TEAM_AGENTS,
   UA_ASSASSIN,
   UA_BYSTANDER,
-  UA_SPYMASTER_TIMEOUT,
-  UA_OPERATIVE_TIMEOUT,
+  UA_SETUP_DURATION,
   UA_TURN_TRANSITION,
   UA_MAX_UNLIMITED,
   UA_MAX_PASSES,
@@ -39,79 +38,18 @@ import {
   UA_CLUE_EFFICIENCY,
   UA_CORRECT_GUESS,
   UA_ASSASSIN_PENALTY,
-} from '../../../lib/rmhbox/constants';
-import { logger } from '../logger';
-
-// ─── Phase Enum ──────────────────────────────────────────────────
-
-export enum UndercoverAgentPhase {
-  SETUP = 'SETUP',
-  CLUE = 'CLUE',
-  GUESS = 'GUESS',
-  TURN_TRANSITION = 'TURN_TRANSITION',
-  GAME_OVER = 'GAME_OVER',
-}
-
-// ─── Tile Enums ──────────────────────────────────────────────────
-
-export enum TileType {
-  RED_AGENT = 'RED_AGENT',
-  BLUE_AGENT = 'BLUE_AGENT',
-  BYSTANDER = 'BYSTANDER',
-  ASSASSIN = 'ASSASSIN',
-}
-
-export enum TileState {
-  HIDDEN = 'HIDDEN',
-  REVEALED = 'REVEALED',
-}
-
-// ─── Type Definitions ────────────────────────────────────────────
-
-export interface GridTile {
-  position: number;
-  word: string;
-  type: TileType;
-  state: TileState;
-  revealedBy?: string;
-}
-
-export interface TeamState {
-  teamId: 'red' | 'blue';
-  spymasterId: string;
-  operativeIds: string[];
-  agentsTotal: number;
-  agentsRevealed: number;
-  color: string;
-}
-
-export interface CurrentClue {
-  word: string;
-  number: number | 'unlimited';
-  teamId: 'red' | 'blue';
-  guessesUsed: number;
-}
-
-export interface ActionLogEntry {
-  action: string;
-  timestamp: number;
-  data: Record<string, unknown>;
-}
-
-export interface UndercoverAgentState {
-  grid: GridTile[];
-  keyCard: TileType[];
-  teams: Record<'red' | 'blue', TeamState>;
-  currentTeam: 'red' | 'blue';
-  phase: UndercoverAgentPhase;
-  currentClue: CurrentClue | null;
-  guessesRemaining: number;
-  turnNumber: number;
-  consecutivePasses: number;
-  winner: 'red' | 'blue' | 'draw' | null;
-  winReason: string | null;
-  actionLog: ActionLogEntry[];
-}
+} from '@/lib/rmhbox/constants';
+import { logger } from '../../logger';
+import {
+  UndercoverAgentPhase,
+  TileType,
+  TileState,
+} from './types';
+import type {
+  GridTile,
+  TeamState,
+  UndercoverAgentState,
+} from './types';
 
 // ─── Undercover Agent Minigame ───────────────────────────────────
 
@@ -136,7 +74,7 @@ export class UndercoverAgentMinigame extends BaseMinigame {
   constructor(context: MinigameContext) {
     super(context);
     const poolPath = path.resolve(
-      __dirname, '..', '..', '..', 'public', 'data', 'rmhbox', 'undercover-agent', 'word-pool.json',
+      __dirname, '..', '..', '..', '..', 'public', 'data', 'rmhbox', 'undercover-agent', 'word-pool.json',
     );
     const raw = fs.readFileSync(poolPath, 'utf-8');
     this.wordPool = JSON.parse(raw) as string[];
@@ -156,6 +94,26 @@ export class UndercoverAgentMinigame extends BaseMinigame {
       redTeam: this.state.teams.red.operativeIds.length + 1,
       blueTeam: this.state.teams.blue.operativeIds.length + 1,
     });
+
+    // Enter TEAM_SETUP phase — players can rearrange teams before the game begins
+    this.state.phase = UndercoverAgentPhase.TEAM_SETUP;
+
+    this.context.broadcastToLobby('rmhbox:game:action', {
+      type: 'UA_TEAM_SETUP',
+      teams: {
+        red: this.getPublicTeamState('red'),
+        blue: this.getPublicTeamState('blue'),
+      },
+      hostId: this.context.getHostId(),
+    });
+  }
+
+  /** Called by the host after team composition is valid. Transitions from TEAM_SETUP → SETUP → CLUE. */
+  private startGame(): void {
+    this.state.phase = UndercoverAgentPhase.SETUP;
+
+    // Initialize player stats now that teams are final
+    this.initializePlayerStats();
 
     // Broadcast setup: grid words (without types) to all players
     const gridWords = this.state.grid.map((t) => ({
@@ -177,19 +135,25 @@ export class UndercoverAgentMinigame extends BaseMinigame {
     this.sendKeyCardToSpymaster('red');
     this.sendKeyCardToSpymaster('blue');
 
-    // Transition to CLUE phase
-    this.state.phase = UndercoverAgentPhase.CLUE;
-    this.state.turnNumber = 1;
-    this.logAction('turn_start', { turnNumber: 1, team: this.state.currentTeam });
-    this.startTurnTimer(UA_SPYMASTER_TIMEOUT);
+    // Show setup countdown in the header timer
+    this.startPhaseTimer(UA_SETUP_DURATION);
 
-    this.context.broadcastToLobby('rmhbox:game:action', {
-      type: 'UA_PHASE_CHANGE',
-      phase: UndercoverAgentPhase.CLUE,
-      currentTeam: this.state.currentTeam,
-      turnNumber: this.state.turnNumber,
-      timeout: UA_SPYMASTER_TIMEOUT,
-    });
+    // Delay before transitioning to CLUE phase so players can see their
+    // team assignment and role before the game begins.
+    this.setTimeout(() => {
+      // Transition to CLUE phase (no turn timer — unlimited time by default)
+      this.state.phase = UndercoverAgentPhase.CLUE;
+      this.state.turnNumber = 1;
+      this.logAction('turn_start', { turnNumber: 1, team: this.state.currentTeam });
+
+      this.context.broadcastToLobby('rmhbox:game:action', {
+        type: 'UA_PHASE_CHANGE',
+        phase: UndercoverAgentPhase.CLUE,
+        currentTeam: this.state.currentTeam,
+        turnNumber: this.state.turnNumber,
+        timeout: 0,
+      });
+    }, UA_SETUP_DURATION * 1000);
   }
 
   private initializeState(): void {
@@ -208,11 +172,12 @@ export class UndercoverAgentMinigame extends BaseMinigame {
       state: TileState.HIDDEN,
     }));
 
-    // Assign players to teams (round-robin)
+    // Assign players to teams (round-robin, shuffled)
     const playerIds = this.shuffleArray(Array.from(this.context.players.keys()));
     const redPlayerIds: string[] = [];
     const bluePlayerIds: string[] = [];
 
+    // Balanced assignment: alternate between teams
     playerIds.forEach((id, i) => {
       if (i % 2 === 0) {
         redPlayerIds.push(id);
@@ -221,7 +186,8 @@ export class UndercoverAgentMinigame extends BaseMinigame {
       }
     });
 
-    // Select 1 spymaster per team randomly (first element after shuffle)
+    // Ensure each team has at least 1 spymaster. With 2–3 players a team
+    // may have no operative — the spymaster doubles as both roles.
     const redSpymaster = redPlayerIds[0];
     const redOperatives = redPlayerIds.slice(1);
     const blueSpymaster = bluePlayerIds[0];
@@ -246,8 +212,32 @@ export class UndercoverAgentMinigame extends BaseMinigame {
       },
     };
 
-    // Initialize player stats
-    for (const id of playerIds) {
+    this.state = {
+      grid,
+      keyCard,
+      teams,
+      currentTeam: 'red', // Red goes first (has 9 agents)
+      phase: UndercoverAgentPhase.TEAM_SETUP,
+      currentClue: null,
+      guessesRemaining: 0,
+      turnNumber: 0,
+      consecutivePasses: 0,
+      winner: null,
+      winReason: null,
+      actionLog: [],
+    };
+  }
+
+  /** Initialize per-player stats for scoring and awards. Call after teams are finalized. */
+  private initializePlayerStats(): void {
+    this.playerStats.clear();
+    const allPlayerIds = [
+      this.state.teams.red.spymasterId,
+      ...this.state.teams.red.operativeIds,
+      this.state.teams.blue.spymasterId,
+      ...this.state.teams.blue.operativeIds,
+    ];
+    for (const id of allPlayerIds) {
       this.playerStats.set(id, {
         correctGuesses: 0,
         incorrectGuesses: 0,
@@ -258,21 +248,19 @@ export class UndercoverAgentMinigame extends BaseMinigame {
         triggeredAssassin: false,
       });
     }
+  }
 
-    this.state = {
-      grid,
-      keyCard,
-      teams,
-      currentTeam: 'red', // Red goes first (has 9 agents)
-      phase: UndercoverAgentPhase.SETUP,
-      currentClue: null,
-      guessesRemaining: 0,
-      turnNumber: 0,
-      consecutivePasses: 0,
-      winner: null,
-      winReason: null,
-      actionLog: [],
-    };
+  /** Check whether the current team composition is valid for starting the game. */
+  private isTeamCompositionValid(): boolean {
+    const red = this.state.teams.red;
+    const blue = this.state.teams.blue;
+    // Each team needs exactly 1 spymaster and ≥1 operative
+    return (
+      !!red.spymasterId &&
+      !!blue.spymasterId &&
+      red.operativeIds.length >= 1 &&
+      blue.operativeIds.length >= 1
+    );
   }
 
   private generateKeyCard(): TileType[] {
@@ -308,6 +296,20 @@ export class UndercoverAgentMinigame extends BaseMinigame {
     if (this.state.phase === UndercoverAgentPhase.GAME_OVER) return;
 
     switch (action) {
+      // ── Team Setup actions ──
+      case 'SHUFFLE_TEAMS':
+        this.handleShuffleTeams(userId);
+        break;
+      case 'SWAP_PLAYER':
+        this.handleSwapPlayer(userId, data);
+        break;
+      case 'SET_ROLE':
+        this.handleSetRole(userId, data);
+        break;
+      case 'START_GAME':
+        this.handleStartGame(userId);
+        break;
+      // ── Gameplay actions ──
       case 'GIVE_CLUE':
         this.handleGiveClue(userId, data);
         break;
@@ -321,6 +323,204 @@ export class UndercoverAgentMinigame extends BaseMinigame {
         break;
     }
   }
+
+  // ─── Team Setup Actions ──────────────────────────────────────
+
+  private handleShuffleTeams(userId: string): void {
+    if (this.state.phase !== UndercoverAgentPhase.TEAM_SETUP) return;
+    if (userId !== this.context.getHostId()) {
+      this.context.sendToPlayer(userId, 'rmhbox:game:action', {
+        type: 'UA_ACTION_REJECTED',
+        reason: 'not_host',
+      });
+      return;
+    }
+
+    // Collect all player IDs (filter out empty strings) and re-shuffle
+    const allIds = [
+      this.state.teams.red.spymasterId,
+      ...this.state.teams.red.operativeIds,
+      this.state.teams.blue.spymasterId,
+      ...this.state.teams.blue.operativeIds,
+    ].filter(Boolean);
+
+    if (allIds.length < 4) {
+      // Not enough players to form two valid teams
+      this.broadcastTeamUpdate();
+      return;
+    }
+
+    const shuffled = this.shuffleArray([...allIds]);
+
+    const redPlayerIds: string[] = [];
+    const bluePlayerIds: string[] = [];
+    shuffled.forEach((id, i) => {
+      if (i % 2 === 0) redPlayerIds.push(id);
+      else bluePlayerIds.push(id);
+    });
+
+    this.state.teams.red.spymasterId = redPlayerIds[0];
+    this.state.teams.red.operativeIds = redPlayerIds.slice(1);
+    this.state.teams.blue.spymasterId = bluePlayerIds[0];
+    this.state.teams.blue.operativeIds = bluePlayerIds.slice(1);
+
+    this.broadcastTeamUpdate();
+  }
+
+  private handleSwapPlayer(userId: string, data: unknown): void {
+    if (this.state.phase !== UndercoverAgentPhase.TEAM_SETUP) return;
+
+    const parsed = SwapPlayerSchema.safeParse(data);
+    if (!parsed.success) {
+      this.context.sendToPlayer(userId, 'rmhbox:game:action', {
+        type: 'UA_ACTION_REJECTED',
+        reason: 'invalid_input',
+      });
+      return;
+    }
+
+    const { targetUserId, toTeam } = parsed.data;
+
+    // Only the host or the player themselves can swap
+    if (userId !== this.context.getHostId() && userId !== targetUserId) {
+      this.context.sendToPlayer(userId, 'rmhbox:game:action', {
+        type: 'UA_ACTION_REJECTED',
+        reason: 'not_authorized',
+      });
+      return;
+    }
+
+    // Find the player's current team
+    const fromTeam = this.getPlayerTeam(targetUserId);
+    if (!fromTeam || fromTeam === toTeam) return;
+
+    // Remove from current team
+    this.removePlayerFromTeam(targetUserId, fromTeam);
+
+    // Add to destination team — become spymaster if team has none, otherwise operative
+    if (!this.state.teams[toTeam].spymasterId) {
+      this.state.teams[toTeam].spymasterId = targetUserId;
+    } else {
+      this.state.teams[toTeam].operativeIds.push(targetUserId);
+    }
+
+    // If the source team lost its spymaster, promote the first operative
+    if (!this.state.teams[fromTeam].spymasterId) {
+      const ops = this.state.teams[fromTeam].operativeIds;
+      if (ops.length > 0) {
+        this.state.teams[fromTeam].spymasterId = ops.shift()!;
+      }
+    }
+
+    this.broadcastTeamUpdate();
+  }
+
+  private handleSetRole(userId: string, data: unknown): void {
+    if (this.state.phase !== UndercoverAgentPhase.TEAM_SETUP) return;
+
+    const parsed = SetRoleSchema.safeParse(data);
+    if (!parsed.success) {
+      this.context.sendToPlayer(userId, 'rmhbox:game:action', {
+        type: 'UA_ACTION_REJECTED',
+        reason: 'invalid_input',
+      });
+      return;
+    }
+
+    const { targetUserId, role } = parsed.data;
+
+    // Only the host or the player themselves can change role
+    if (userId !== this.context.getHostId() && userId !== targetUserId) {
+      this.context.sendToPlayer(userId, 'rmhbox:game:action', {
+        type: 'UA_ACTION_REJECTED',
+        reason: 'not_authorized',
+      });
+      return;
+    }
+
+    const teamId = this.getPlayerTeam(targetUserId);
+    if (!teamId) return;
+
+    const team = this.state.teams[teamId];
+
+    if (role === 'spymaster') {
+      if (team.spymasterId === targetUserId) return; // already spymaster
+      // Demote current spymaster to operative
+      team.operativeIds.push(team.spymasterId);
+      // Remove target from operatives
+      team.operativeIds = team.operativeIds.filter((id) => id !== targetUserId);
+      // Promote target
+      team.spymasterId = targetUserId;
+    } else {
+      if (team.operativeIds.includes(targetUserId)) return; // already operative
+      // Can only demote from spymaster if there's someone to take over
+      if (team.operativeIds.length === 0) {
+        this.context.sendToPlayer(userId, 'rmhbox:game:action', {
+          type: 'UA_ACTION_REJECTED',
+          reason: 'team_needs_spymaster',
+        });
+        return;
+      }
+      // Swap: first operative becomes spymaster, current spymaster becomes operative
+      const newSpymaster = team.operativeIds.shift()!;
+      team.operativeIds.push(targetUserId);
+      team.spymasterId = newSpymaster;
+    }
+
+    this.broadcastTeamUpdate();
+  }
+
+  private handleStartGame(userId: string): void {
+    if (this.state.phase !== UndercoverAgentPhase.TEAM_SETUP) return;
+    if (userId !== this.context.getHostId()) {
+      this.context.sendToPlayer(userId, 'rmhbox:game:action', {
+        type: 'UA_ACTION_REJECTED',
+        reason: 'not_host',
+      });
+      return;
+    }
+
+    if (!this.isTeamCompositionValid()) {
+      this.context.sendToPlayer(userId, 'rmhbox:game:action', {
+        type: 'UA_ACTION_REJECTED',
+        reason: 'invalid_team_composition',
+      });
+      return;
+    }
+
+    logger.info({
+      event: 'undercover_agent:teams_finalized',
+      lobbyId: this.context.lobbyId,
+      redTeam: this.state.teams.red.operativeIds.length + 1,
+      blueTeam: this.state.teams.blue.operativeIds.length + 1,
+    });
+
+    this.startGame();
+  }
+
+  /** Remove a player from their team (spymaster or operative). Clears spymasterId if they were spymaster. */
+  private removePlayerFromTeam(userId: string, teamId: 'red' | 'blue'): void {
+    const team = this.state.teams[teamId];
+    if (team.spymasterId === userId) {
+      team.spymasterId = '';
+    } else {
+      team.operativeIds = team.operativeIds.filter((id) => id !== userId);
+    }
+  }
+
+  /** Broadcast updated team state to all players. */
+  private broadcastTeamUpdate(): void {
+    this.context.broadcastToLobby('rmhbox:game:action', {
+      type: 'UA_TEAMS_UPDATED',
+      teams: {
+        red: this.getPublicTeamState('red'),
+        blue: this.getPublicTeamState('blue'),
+      },
+      isValid: this.isTeamCompositionValid(),
+    });
+  }
+
+  // ─── Gameplay Actions ────────────────────────────────────────
 
   private handleGiveClue(userId: string, data: unknown): void {
     // Must be CLUE phase
@@ -404,17 +604,17 @@ export class UndercoverAgentMinigame extends BaseMinigame {
       turnNumber: this.state.turnNumber,
     });
 
-    // Transition to GUESS phase
+    // Transition to GUESS phase (no turn timer — unlimited time by default)
     this.state.phase = UndercoverAgentPhase.GUESS;
-    this.startTurnTimer(UA_OPERATIVE_TIMEOUT);
 
     this.context.broadcastToLobby('rmhbox:game:action', {
       type: 'UA_CLUE',
       word: clueWord,
       number,
       teamId: this.state.currentTeam,
+      spymasterId: userId,
       guessesRemaining: this.state.guessesRemaining,
-      timeout: UA_OPERATIVE_TIMEOUT,
+      timeout: 0,
     });
   }
 
@@ -428,9 +628,12 @@ export class UndercoverAgentMinigame extends BaseMinigame {
       return;
     }
 
-    // Must be an operative on the current team
+    // Must be an operative on the current team (or spymaster if solo team)
     const currentTeam = this.state.teams[this.state.currentTeam];
-    if (!currentTeam.operativeIds.includes(userId)) {
+    const isSoloTeam = currentTeam.operativeIds.length === 0;
+    const isOperative = currentTeam.operativeIds.includes(userId);
+    const isSoloSpymaster = isSoloTeam && currentTeam.spymasterId === userId;
+    if (!isOperative && !isSoloSpymaster) {
       this.context.sendToPlayer(userId, 'rmhbox:game:action', {
         type: 'UA_ACTION_REJECTED',
         reason: 'not_operative',
@@ -583,9 +786,12 @@ export class UndercoverAgentMinigame extends BaseMinigame {
       return;
     }
 
-    // Must be an operative on the current team
+    // Must be an operative on the current team (or spymaster if solo team)
     const currentTeam = this.state.teams[this.state.currentTeam];
-    if (!currentTeam.operativeIds.includes(userId)) {
+    const isSoloTeam = currentTeam.operativeIds.length === 0;
+    const isOperative = currentTeam.operativeIds.includes(userId);
+    const isSoloSpymaster = isSoloTeam && currentTeam.spymasterId === userId;
+    if (!isOperative && !isSoloSpymaster) {
       this.context.sendToPlayer(userId, 'rmhbox:game:action', {
         type: 'UA_ACTION_REJECTED',
         reason: 'not_operative',
@@ -681,19 +887,21 @@ export class UndercoverAgentMinigame extends BaseMinigame {
       return;
     }
 
-    this.startTurnTimer(UA_SPYMASTER_TIMEOUT);
+    // No turn timer — unlimited time by default
 
     this.context.broadcastToLobby('rmhbox:game:action', {
       type: 'UA_PHASE_CHANGE',
       phase: UndercoverAgentPhase.CLUE,
       currentTeam: this.state.currentTeam,
       turnNumber: this.state.turnNumber,
-      timeout: UA_SPYMASTER_TIMEOUT,
+      timeout: 0,
     });
   }
 
   private startTurnTimer(timeoutSeconds: number): void {
     this.clearTurnTimer();
+    // Drive the header timer ring for this turn
+    this.startPhaseTimer(timeoutSeconds);
     this.turnTimer = this.setTimeout(() => {
       this.handleTurnTimeout();
     }, timeoutSeconds * 1000);
@@ -701,10 +909,10 @@ export class UndercoverAgentMinigame extends BaseMinigame {
 
   private clearTurnTimer(): void {
     if (this.turnTimer) {
-      clearTimeout(this.turnTimer);
-      this.timers = this.timers.filter((t) => t !== this.turnTimer);
+      this.clearTrackedTimeout(this.turnTimer);
       this.turnTimer = null;
     }
+    this.clearPhaseTimer();
   }
 
   private handleTurnTimeout(): void {
@@ -839,6 +1047,8 @@ export class UndercoverAgentMinigame extends BaseMinigame {
       winReason: this.state.winReason,
       myRole: role,
       myTeam: teamId,
+      hostId: this.context.getHostId(),
+      isTeamValid: this.isTeamCompositionValid(),
     };
   }
 
@@ -867,6 +1077,8 @@ export class UndercoverAgentMinigame extends BaseMinigame {
       winReason: this.state.winReason,
       myRole: 'spectator',
       myTeam: null,
+      hostId: this.context.getHostId(),
+      isTeamValid: this.isTeamCompositionValid(),
     };
   }
 
@@ -1022,12 +1234,11 @@ export class UndercoverAgentMinigame extends BaseMinigame {
     // Mastermind — 3+ agents found from a single clue
     for (const [userId, stats] of this.playerStats) {
       if (stats.maxAgentsFromSingleClue >= 3) {
-        const player = this.context.players.get(userId);
         awards.push({
           userId,
           title: 'Mastermind',
           description: `${stats.maxAgentsFromSingleClue} agents found from a single clue`,
-          icon: '🧠',
+          icon: 'brain',
         });
       }
     }
@@ -1049,7 +1260,7 @@ export class UndercoverAgentMinigame extends BaseMinigame {
         userId: topGuesserId,
         title: 'Sharpshooter',
         description: `${topGuesses} correct guesses`,
-        icon: '🎯',
+        icon: 'target',
       });
     }
 
@@ -1060,7 +1271,7 @@ export class UndercoverAgentMinigame extends BaseMinigame {
           userId,
           title: 'Oops',
           description: 'Triggered the assassin',
-          icon: '💀',
+          icon: 'skull',
         });
       }
     }
@@ -1073,7 +1284,7 @@ export class UndercoverAgentMinigame extends BaseMinigame {
         userId: winningTeam.spymasterId,
         title: 'Speedrunner',
         description: `Won in ${this.state.turnNumber} turns`,
-        icon: '⚡',
+        icon: 'zap',
       });
     }
 
@@ -1091,7 +1302,7 @@ export class UndercoverAgentMinigame extends BaseMinigame {
         userId: longestClueUserId,
         title: 'Linguist',
         description: `Gave a ${longestClueLength}-letter clue word`,
-        icon: '📖',
+        icon: 'book-open',
       });
     }
 
@@ -1113,7 +1324,7 @@ export class UndercoverAgentMinigame extends BaseMinigame {
     return {
       teamId: team.teamId,
       spymasterId: team.spymasterId,
-      operativeIds: team.operativeIds,
+      operativeIds: team.operativeIds.filter(Boolean),
       agentsTotal: team.agentsTotal,
       agentsRevealed: team.agentsRevealed,
       color: team.color,

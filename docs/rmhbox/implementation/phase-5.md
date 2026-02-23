@@ -584,8 +584,8 @@
 - [ ] Add `UA_SECOND_TEAM_AGENTS = 8` — agent count for second team (Blue)
 - [ ] Add `UA_ASSASSIN = 1` — number of assassin tiles
 - [ ] Add `UA_BYSTANDER = 7` — number of bystander tiles
-- [ ] Add `UA_SPYMASTER_TIMEOUT = 90` — seconds for Spymaster clue phase
-- [ ] Add `UA_OPERATIVE_TIMEOUT = 120` — seconds for Operative guess phase (resets on correct)
+- [ ] Add `UA_SPYMASTER_TIMEOUT = 0` — no time limit for Spymaster clue phase
+- [ ] Add `UA_OPERATIVE_TIMEOUT = 0` — no time limit for Operative guess phase
 - [ ] Add `UA_TURN_TRANSITION = 3` — seconds for turn transition display
 - [ ] Add `UA_MAX_UNLIMITED = 25` — max guesses when clue number is ∞
 - [ ] Add `UA_MAX_PASSES = 6` — max consecutive passes (3/team) before forced end
@@ -664,6 +664,7 @@
 - [ ] Define `UndercoverAgentPhase` enum:
   ```ts
   enum UndercoverAgentPhase {
+    TEAM_SETUP = "TEAM_SETUP",
     SETUP = "SETUP",
     CLUE = "CLUE",
     GUESS = "GUESS",
@@ -671,7 +672,7 @@
     GAME_OVER = "GAME_OVER",
   }
   ```
-  **Verification:** Enum has exactly 5 values.
+  **Verification:** Enum has exactly 6 values (includes TEAM_SETUP).
 
 - [ ] Define `TileType` enum:
   ```ts
@@ -752,30 +753,45 @@
 
 #### 5.2.6.3 State Initialization (`initializeState()`)
 
-- [ ] Shuffle word pool; select 25 words for the grid
-- [ ] Generate key card: randomly assign 9 RED_AGENT, 8 BLUE_AGENT, 1 ASSASSIN, 7 BYSTANDER to 25 positions
-- [ ] Assign grid tiles: position 0–24, each with word and HIDDEN state
+- [ ] Enter `TEAM_SETUP` phase first (do NOT generate the grid yet)
 - [ ] Divide players into Red and Blue teams (round-robin assignment)
 - [ ] Randomly select 1 Spymaster per team from team members
 - [ ] Remaining team members are Operatives
+- [ ] Emit `UA_TEAM_SETUP { teams, hostId }` to all players
+- [ ] Set `phase = TEAM_SETUP`
+  **Verification:** Players enter team setup, see two team columns with assigned members.
+
+#### 5.2.6.3b Team Setup Actions (TEAM_SETUP phase)
+
+- [ ] `handleShuffleTeams()`: Gather all player IDs, randomly split into two balanced teams, assign random spymasters. Broadcast `UA_TEAMS_UPDATED`. Only host can trigger.
+- [ ] `handleSwapPlayer(targetUserId, toTeam)`: Move a player from one team to the other (as operative). If the source team loses its spymaster, promote the first remaining operative. Host or the player themselves can trigger.
+- [ ] `handleSetRole(targetUserId, role)`: Set a player as spymaster or operative. If setting as spymaster, swap with current spymaster. Host or the player themselves can trigger.
+- [ ] `handleStartGame()`: Validate team composition (each team has ≥ 1 spymaster + ≥ 1 operative, min 4 total). If valid, generate the grid and key card, then transition to SETUP phase. Only host can trigger.
+- [ ] After each team change, broadcast `UA_TEAMS_UPDATED { teams, isValid }` so all clients see the updates and the Start button enables/disables.
+  **Verification:** Shuffle randomizes teams. Swap moves player. SetRole swaps with existing spymaster. Start validates and transitions.
+
+#### 5.2.6.3c Grid Generation (on START_GAME)
+
+- [ ] Shuffle word pool; select 25 words for the grid
+- [ ] Generate key card: randomly assign 9 RED_AGENT, 8 BLUE_AGENT, 1 ASSASSIN, 7 BYSTANDER to 25 positions
+- [ ] Assign grid tiles: position 0–24, each with word and HIDDEN state
 - [ ] Set `currentTeam = "red"` (Red goes first since they have 9 agents)
 - [ ] Set `turnNumber = 0`, `consecutivePasses = 0`, `winner = null`, `winReason = null`
-- [ ] Set `phase = SETUP`
-  **Verification:** Unit test with 6 players: confirm grid has 25 unique words, key card has correct distribution (9+8+1+7=25), 2 teams with 3 players each, 1 spymaster per team.
+  **Verification:** Unit test: confirm grid has 25 unique words, key card has correct distribution (9+8+1+7=25).
 
 #### 5.2.6.4 Phase Management
 
 - [ ] `startGame()`: emit `UA_SETUP` to all with `{ grid (words only, types hidden), teams, currentTeam }`. Emit `UA_KEY_CARD` privately to EACH spymaster with `{ keyCard[] }`. Transition to `CLUE` phase.
   **Verification:** Confirm operatives receive grid without tile types. Confirm spymasters receive key card. Confirm events are separate (key card is private).
 
-- [ ] `startCluePhase()`: set `phase = CLUE`, increment `turnNumber`, emit `UA_CLUE_PHASE { teamId: currentTeam, spymasterName, timeoutSeconds: UA_SPYMASTER_TIMEOUT }`, start timer. On timeout: auto-pass (increment `consecutivePasses`), transition to next team's CLUE.
-  **Verification:** Timer of 90s starts. If spymaster doesn't submit clue, auto-pass triggers.
+- [ ] `startCluePhase()`: set `phase = CLUE`, increment `turnNumber`, emit `UA_PHASE_CHANGE { phase: 'CLUE', currentTeam, turnNumber, timeout: 0 }`. No timer — unlimited time for spymaster.
+  **Verification:** Phase change emitted. No auto-pass from timeout.
 
-- [ ] `handleClueGiven(clue)`: validate clue word is not on the grid (case-insensitive comparison against all 25 words), validate single word, validate max 30 chars. Set `currentClue`, compute `guessesRemaining` = clue.number + 1 (or `UA_MAX_UNLIMITED` if unlimited). Emit `UA_CLUE_GIVEN { teamId, word, number }` to all. Reset `consecutivePasses` for this team. Transition to GUESS phase.
+- [ ] `handleClueGiven(clue)`: validate clue word is not on the grid (case-insensitive comparison against all 25 words), validate single word, validate max 30 chars. Set `currentClue`, compute `guessesRemaining` = clue.number + 1 (or `UA_MAX_UNLIMITED` if unlimited). Emit `UA_CLUE { teamId, word, number, guessesRemaining, timeout: 0 }` to all. Reset `consecutivePasses` for this team. Transition to GUESS phase.
   **Verification:** Clue "bridge 3" → guessesRemaining = 4. Clue "link ∞" → guessesRemaining = 25. Clue with grid word → rejected. Multi-word clue → rejected.
 
-- [ ] `startGuessPhase()`: set `phase = GUESS`, emit `UA_GUESS_PHASE { teamId, guessesAllowed: guessesRemaining, timeoutSeconds: UA_OPERATIVE_TIMEOUT }`, start timer. On timeout: end turn automatically.
-  **Verification:** Timer resets on correct guess. Turn ends on timeout.
+- [ ] `startGuessPhase()`: set `phase = GUESS`, emit `UA_PHASE_CHANGE { phase: 'GUESS', currentTeam, turnNumber, timeout: 0 }`. No timer — unlimited time for operatives.
+  **Verification:** Phase emitted, no auto-end from timeout.
 
 - [ ] `handleTileGuess(userId, position)`:
   - [ ] Validate guesser is an operative on the current team
@@ -922,54 +938,68 @@
 
 #### 5.2.8.1 `components/rmhbox/undercover-agent/UndercoverAgentGame.tsx`
 
-- [ ] Phase router: renders sub-components based on `phase`
+- [ ] Phase router: renders sub-components based on `phase` (TEAM_SETUP, SETUP, CLUE, GUESS, TURN_TRANSITION, GAME_OVER)
 - [ ] Subscribe to all `UA_*` and `TIMER_TICK` events
-- [ ] Maintain local state: grid, teams, currentTeam, phase, currentClue, guessesRemaining, turnNumber, timeRemaining, winner, winReason, keyCard (spymaster only)
-- [ ] Handle `UA_SETUP` → populate grid and teams
+- [ ] Maintain local state: grid, teams, currentTeam, phase, currentClue, guessesRemaining, turnNumber, timeRemaining, winner, winReason, keyCard (spymaster only), hostId, isTeamValid, gameLog (GameLogEntry[])
+- [ ] Handle `UA_TEAM_SETUP` → enter team setup phase, store hostId
+- [ ] Handle `UA_TEAMS_UPDATED` → update teams + validation state
+- [ ] Handle `UA_SETUP` → populate grid and teams, clear game log
 - [ ] Handle `UA_KEY_CARD` → store privately (spymaster only)
-- [ ] Handle `UA_CLUE_PHASE` → show clue input (spymaster) or waiting state (operatives)
-- [ ] Handle `UA_CLUE_GIVEN` → display clue to all
-- [ ] Handle `UA_GUESS_PHASE` → enable tile clicking for current team operatives
-- [ ] Handle `UA_TILE_REVEALED` → update grid tile state and type
-- [ ] Handle `UA_TURN_END` → show transition, swap team indicator
-- [ ] Handle `UA_GAME_OVER` → reveal full board, show results
+- [ ] Handle `UA_PHASE_CHANGE` → update phase, team, turn number
+- [ ] Handle `UA_CLUE` → display clue to all + push log entry
+- [ ] Handle `UA_TILE_REVEALED` → update grid tile state + push log entry (with word lookup)
+- [ ] Handle `UA_GUESS_RESULT` → update guesses remaining + team agent counts
+- [ ] Handle `UA_TURN_END` → show transition, push log entry
+- [ ] Handle `UA_GAME_OVER` → reveal full board, push log entry
+- [ ] Handle `UA_ACTION_REJECTED` → show error toast (auto-clear after 3s)
+- [ ] **TeamSetupColumn** inline component: renders team members with ↑/↓ role buttons and ←/→ team swap buttons. Filters empty userId slots, shows "No players" for empty teams. Host or self can interact.
+- [ ] **Scrollable content area:** Main container uses `overflow-y-auto max-h-[calc(100vh-8rem)]`
+- [ ] **Clue input hidden after submission:** During CLUE phase, spymaster sees `ClueInput` only while `currentClue` is null. Once clue is given, spymaster sees `ClueDisplay` like everyone else.
 - [ ] Conditional rendering:
+  - `TEAM_SETUP` → Two team columns + shuffle/start buttons
   - `SETUP` → loading/team display
-  - `CLUE` → `<ClueInput />` (spymaster) or `<ClueDisplay />` waiting
-  - `GUESS` → `<GridBoard />` with clickable tiles + `<ClueDisplay />`
+  - `CLUE` → `<ClueInput />` (spymaster, before clue) or `<ClueDisplay />` (everyone, after clue)
+  - `GUESS` → `<GridBoard />` with highlight-then-submit + `<ClueDisplay />`
   - `TURN_TRANSITION` → transition overlay
   - `GAME_OVER` → full board reveal + scoreboard
-  **Verification:** Component renders for each phase. State transitions are smooth. No key card leak to operatives in React DevTools.
+- [x] **Layout:** Left sidebar = TeamPanel (both teams), Center = phase content + GridBoard, Right sidebar = GameLog (always visible). SpymasterKey removed from sidebar.
+  **Verification:** Component renders for each phase (including TEAM_SETUP). State transitions are smooth. Game log populates in real-time with player names (e.g. "Alice: ANIMAL 3"). Clue input disappears after submission.
 
 #### 5.2.8.2 `components/rmhbox/undercover-agent/GridBoard.tsx`
 
 - [ ] Render 5×5 grid of tiles
-- [ ] Each tile shows: word text, color-coded background when revealed (red/blue/beige/black)
+- [ ] Each tile shows: word text, color-coded background when revealed (red/blue/beige/pitch black for assassin)
+- [x] **Assassin styling:** Revealed assassin uses `bg-black border-2 dark:border-white/60 border-black/60`. Spymaster hint uses `ring-red-800/60 bg-black/40`.
+- [ ] **Auto-shrink long words:** Word font size dynamically scales based on word length (≤7 chars = normal, 8–9 = smaller, 10–12 = even smaller, 13+ = smallest). Uses `break-all` instead of `truncate` so words never clip.
 - [ ] Hidden tiles: neutral background, clickable if current team operative during GUESS phase
 - [ ] Revealed tiles: show color, non-clickable, slight transparency
 - [ ] Hover state on clickable tiles
 - [ ] Spymaster overlay: tiles have colored borders/tints matching key card
-- [ ] Click handler: emit `rmhbox:game:input` with `{ type: "GUESS_TILE", position }`
+- [x] **Card borders:** All tiles use `border-2 box-border` for more substantial borders
+- [ ] **Two-click highlight-then-submit flow:**
+  - [ ] Local state tracks `highlightedPos: number | null`
+  - [ ] First click on a hidden tile sets it as highlighted (amber border + `ring-2 ring-amber-400/50`)
+  - [ ] A `MousePointerClick` (Lucide) confirm icon appears at the tile's top-right (`-top-1.5 -right-1.5`) as a round amber button
+  - [ ] Clicking the confirm icon or clicking the same tile again emits `GUESS_TILE { position }`
+  - [ ] Clicking a different tile moves the highlight there
+  - [ ] Highlight auto-clears when `canGuess` becomes false (turn ends) or the highlighted tile gets revealed
+  - [ ] Uses `AnimatePresence` for smooth icon appear/disappear animation
 - [ ] Responsive: scales for mobile and desktop
-  **Verification:** Grid displays 25 tiles in 5 columns. Clicking a hidden tile emits event. Revealed tiles are non-interactive. Spymaster sees color hints.
+  **Verification:** Grid displays 25 tiles in 5 columns. Single click highlights but does NOT send guess. Second click on same tile or confirm icon sends guess. Assassin tile is pitch black. Long words fully visible without truncation. Spymaster sees color hints.
 
 #### 5.2.8.3 `components/rmhbox/undercover-agent/SpymasterKey.tsx`
 
-- [ ] Overlay or sidebar showing the full key card
-- [ ] 5×5 mini-grid with color coding: red, blue, beige (bystander), black (assassin)
-- [ ] Only rendered for spymasters (conditionally)
-- [ ] Shows count: "Red: X/9 found" and "Blue: X/8 found"
-  **Verification:** Only visible in spymaster view. Colors match key card. Counts update on reveals.
+> **REMOVED** — SpymasterKey component is no longer rendered in the sidebar. The file still exists but is unused. Spymasters see tile hints directly on the grid via color-coded borders/tints.
 
 #### 5.2.8.4 `components/rmhbox/undercover-agent/ClueInput.tsx`
 
 - [ ] Text input for clue word + number selector (0–9, ∞)
-- [ ] Only rendered for current team's spymaster during CLUE phase
+- [ ] Only rendered for current team's spymaster during CLUE phase AND before clue is submitted (once `currentClue` is set, parent renders `ClueDisplay` instead)
 - [ ] Validation: single word, not a grid word, max 30 chars
 - [ ] Client-side warnings (non-blocking): "This word appears on the grid"
 - [ ] Submit button: emit `rmhbox:game:input` with `{ type: "GIVE_CLUE", word, number }`
-- [ ] Timer display showing remaining seconds
-  **Verification:** Input validates single word. Grid word shows warning. Submit emits correct event. Timer counts down.
+- [x] No timer display when `timeRemaining` is 0 (timer hidden via `{timeRemaining > 0 && ...}`)
+  **Verification:** Input validates single word. Grid word shows warning. Submit emits correct event. After submission, ClueInput disappears and ClueDisplay appears.
 
 #### 5.2.8.5 `components/rmhbox/undercover-agent/ClueDisplay.tsx`
 
@@ -982,21 +1012,36 @@
 #### 5.2.8.6 `components/rmhbox/undercover-agent/TeamPanel.tsx`
 
 - [ ] Shows team name, color, member list
-- [ ] Highlights Spymaster vs Operatives
-- [ ] Shows agent count: "Agents: X/9 found"
-- [ ] Active team indicator (glow/border)
+- [ ] Highlights Spymaster vs Operatives (Shield/Eye icons)
+- [ ] Shows agent count: "Agents: X/9 found" with progress bar
+- [ ] Active team indicator (ring glow)
+- [ ] **Team-color self-highlighting:** Current user's name appears in team color (red-400 or blue-400), NOT generic accent color
 - [ ] Disconnected player indicator
-  **Verification:** Both teams displayed. Active team visually distinct. Agent counts update on reveals.
+  **Verification:** Both teams displayed. Active team visually distinct. Agent counts update on reveals. Your own name appears in your team's color.
 
 #### 5.2.8.7 `components/rmhbox/undercover-agent/TurnIndicator.tsx`
 
 - [ ] Shows whose turn it is: "[Red/Blue] Team — [Clue/Guess] Phase"
-- [ ] Timer countdown
 - [ ] Turn number display
-- [ ] Animated transition between phases
-  **Verification:** Indicator updates on phase changes. Timer is accurate. Animation plays on transition.
+- [ ] Timer display (only shown if timeRemaining > 0; currently always 0)
+- [ ] Animated layout transitions between phases
+- [ ] Hidden during TEAM_SETUP phase
+  **Verification:** Indicator updates on phase changes. Hidden during team setup. Animation plays on transition.
 
-#### 5.2.8.8 Sound Effect Integration
+#### 5.2.8.8 `components/rmhbox/undercover-agent/GameLog.tsx`
+
+- [ ] Right sidebar component showing score display + scrollable action log
+- [ ] **Score header:** Red and Blue agent counts side-by-side (`agentsRevealed/agentsTotal`) with team-colored backgrounds (red-500/10 and blue-500/10)
+- [ ] **Game Log title:** Small label below score header
+- [ ] **Scrollable log entries:** `max-h-48 lg:max-h-64 overflow-y-auto`, auto-scrolls to bottom on new entries
+- [ ] Log entry types with icons: `clue` (MessageSquare), `guess_correct` (Target), `guess_wrong` (Users), `guess_assassin` (Skull), `guess_bystander` (Users), `turn_end` (RotateCcw), `game_over` (Skull)
+- [ ] Each entry shows team-colored icon + descriptive text
+- [ ] Empty state: "No actions yet" italic text
+- [ ] Entries populated from UndercoverAgentGame event handlers (UA_CLUE, UA_TILE_REVEALED, UA_TURN_END, UA_GAME_OVER)
+- [ ] Exported `GameLogEntry` interface: `{ id: number; type: string; team: 'red' | 'blue'; text: string }`
+  **Verification:** Score updates in real-time. Log auto-scrolls. All game events appear. Icons match event type. Team colors are correct.
+
+#### 5.2.8.9 Sound Effect Integration
 
 - [ ] Import `playSound` from `@/lib/rmhbox/audio`
 - [ ] Trigger sounds in `UndercoverAgentGame.tsx` event handlers:
@@ -1010,7 +1055,7 @@
   - [ ] `TIMER_TICK` with `timeRemaining <= 5` → `playSound('countdownBeep')`
   **Verification:** Mute master volume → no sounds play. Set volume to 1.0 → all sounds audible at correct moments. Each sound plays exactly once per event.
 
-#### 5.2.8.9 Zustand Store Integration
+#### 5.2.8.10 Zustand Store Integration
 
 - [ ] Read game state via `useRMHboxStore()` hook:
   ```tsx

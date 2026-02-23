@@ -24,6 +24,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { Flag } from 'lucide-react';
 import { getSocket, emit } from '@/lib/rmhbox/socket';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { S2C, C2S } from '@/lib/rmhbox/events';
@@ -197,8 +198,17 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
           globalThis.setTimeout(() => setErrorMsg(null), 2000);
           break;
         }
+        case 'TIMER_START': {
+          const pl = data.payload as Record<string, unknown> | undefined;
+          if (pl) {
+            setTimeRemaining(pl.timeRemaining as number);
+          }
+          break;
+        }
         case 'TIMER_TICK': {
-          setTimeRemaining(data.timeRemaining as number);
+          const pl = data.payload as Record<string, unknown> | undefined;
+          const remaining = (pl?.timeRemaining ?? data.timeRemaining) as number;
+          if (typeof remaining === 'number') setTimeRemaining(remaining);
           break;
         }
       }
@@ -243,6 +253,17 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
       socket.off(S2C.GAME_STATE_SNAPSHOT, handleStateSnapshot);
     };
   }, [handleGameAction, handleStateSnapshot]);
+
+  // Hydrate from the Zustand gameState snapshot on mount.
+  // This fixes the race condition where the server broadcasts initial game state
+  // before the lazy-loaded component has mounted and subscribed to socket events.
+  useEffect(() => {
+    const snapshot = useRMHboxStore.getState().gameState;
+    if (snapshot && Object.keys(snapshot).length > 0 && snapshot.phase) {
+      handleStateSnapshot(snapshot as Record<string, unknown>);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ─── Action Handlers ────────────────────────────────────────────
 
@@ -346,7 +367,7 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
             {hasFinished && (
               <div className="rounded-lg bg-green-500/20 border border-green-500/40 px-4 py-3 text-center">
                 <span className="text-lg font-bold text-green-300">
-                  🏁 Finished! Rank #{finishRank}
+                  <Flag className="h-5 w-5 inline" /> Finished! Rank #{finishRank}
                 </span>
                 <p className="text-sm text-green-300/70">
                   {clickCount} clicks • Waiting for others…

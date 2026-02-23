@@ -30,15 +30,16 @@ import { getSocket, emit } from '@/lib/rmhbox/socket';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { S2C, C2S } from '@/lib/rmhbox/events';
 import GridBoard from './GridBoard';
-import SpymasterKey from './SpymasterKey';
 import ClueInput from './ClueInput';
 import ClueDisplay from './ClueDisplay';
 import TeamPanel from './TeamPanel';
 import TurnIndicator from './TurnIndicator';
+import GameLog from './GameLog';
+import type { GameLogEntry } from './GameLog';
 
 // ─── Types ───────────────────────────────────────────────────────
 
-type Phase = 'SETUP' | 'CLUE' | 'GUESS' | 'TURN_TRANSITION' | 'GAME_OVER';
+type Phase = 'TEAM_SETUP' | 'SETUP' | 'CLUE' | 'GUESS' | 'TURN_TRANSITION' | 'GAME_OVER';
 type TileType = 'RED_AGENT' | 'BLUE_AGENT' | 'BYSTANDER' | 'ASSASSIN';
 type Team = 'red' | 'blue';
 type Role = 'spymaster' | 'operative' | 'spectator';
@@ -82,7 +83,7 @@ interface UndercoverAgentGameProps {
 export default function UndercoverAgentGame({ playerId, playerName: _playerName }: UndercoverAgentGameProps) {
   void _playerName;
 
-  const [phase, setPhase] = useState<Phase>('SETUP');
+  const [phase, setPhase] = useState<Phase>('TEAM_SETUP');
   const [grid, setGrid] = useState<GridTileClient[]>([]);
   const [teams, setTeams] = useState<{ red: TeamInfo; blue: TeamInfo } | null>(null);
   const [currentTeam, setCurrentTeam] = useState<Team>('red');
@@ -96,11 +97,25 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
   const [myTeam, setMyTeam] = useState<Team | null>(null);
   const [turnEndReason, setTurnEndReason] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isTeamValid, setIsTeamValid] = useState(false);
+
+  // Host from lobby store — updated on HOST_TRANSFERRED automatically
+  const storeHostId = useRMHboxStore((s) => s.lobby?.hostUserId ?? '');
+
+  // Game log entries for the sidebar
+  const [gameLog, setGameLog] = useState<GameLogEntry[]>([]);
+  const logIdRef = useRef(0);
 
   // Key card data — only populated for spymasters
   const keyCardRef = useRef<GridTileClient[]>([]);
 
   const players = useRMHboxStore((s) => s.lobby?.players);
+
+  // Ref-based player name lookup for use inside handleGameAction without creating dependency
+  const playersRef = useRef(players);
+  useEffect(() => { playersRef.current = players; }, [players]);
+  const lookupName = (userId: string) =>
+    playersRef.current?.find((p) => p.userId === userId)?.userName ?? userId;
 
   /** Derive role and team from teams state */
   const deriveRole = useCallback(
@@ -120,9 +135,35 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
     (data: Record<string, unknown>) => {
       const type = data.type as string;
 
+      /** Helper to push a log entry */
+      const pushLog = (entry: Omit<GameLogEntry, 'id'>) => {
+        logIdRef.current += 1;
+        setGameLog((prev) => [...prev, { ...entry, id: logIdRef.current }]);
+      };
+
       switch (type) {
+        case 'UA_TEAM_SETUP': {
+          setPhase('TEAM_SETUP');
+          const rawTeams = data.teams as { red: TeamInfo; blue: TeamInfo };
+          setTeams(rawTeams);
+          const { role, team } = deriveRole(rawTeams);
+          setMyRole(role);
+          setMyTeam(team);
+          break;
+        }
+        case 'UA_TEAMS_UPDATED': {
+          const rawTeams = data.teams as { red: TeamInfo; blue: TeamInfo };
+          setTeams(rawTeams);
+          setIsTeamValid(data.isValid as boolean);
+          const { role, team } = deriveRole(rawTeams);
+          setMyRole(role);
+          setMyTeam(team);
+          break;
+        }
         case 'UA_SETUP': {
           setPhase('SETUP');
+          setGameLog([]);
+          logIdRef.current = 0;
           const rawGrid = data.grid as { position: number; word: string }[];
           setGrid(rawGrid.map((g) => ({ ...g, type: null, state: 'HIDDEN' as const })));
           const rawTeams = data.teams as { red: TeamInfo; blue: TeamInfo };
@@ -161,25 +202,67 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
           break;
         }
         case 'UA_CLUE': {
+          const clueWord = data.word as string;
+          const clueNum = data.number as number | 'unlimited';
+          const clueTeam = data.teamId as Team;
+          const clueGiver = data.spymasterId as string | undefined;
           setCurrentClue({
-            word: data.word as string,
-            number: data.number as number | 'unlimited',
-            teamId: data.teamId as Team,
+            word: clueWord,
+            number: clueNum,
+            teamId: clueTeam,
             guessesUsed: 0,
           });
           setGuessesRemaining(data.guessesRemaining as number);
           setTimeRemaining(data.timeout as number);
+          // Transition to GUESS phase when clue is received
+          setPhase('GUESS');
+          const giverName = clueGiver ? lookupName(clueGiver) : '';
+          pushLog({
+            type: 'clue',
+            team: clueTeam,
+            text: `${giverName ? giverName + ': ' : ''}Clue: ${clueWord.toUpperCase()} ${clueNum === 'unlimited' ? '∞' : clueNum}`,
+          });
           break;
         }
         case 'UA_TILE_REVEALED': {
           const pos = data.position as number;
           const tileType = data.tileType as TileType;
           const revealedBy = data.teamId as string;
-          setGrid((prev) =>
-            prev.map((t) =>
+          const guesserId = data.revealedBy as string | undefined;
+          const revealedWord = data.word as string | undefined;
+          let wordLabel = revealedWord ?? `tile #${pos}`;
+          setGrid((prev) => {
+            // Grab the word from grid state if not in payload
+            if (!revealedWord) {
+              const tile = prev.find((t) => t.position === pos);
+              if (tile) wordLabel = tile.word;
+            }
+            return prev.map((t) =>
               t.position === pos ? { ...t, type: tileType, state: 'REVEALED' as const, revealedBy } : t,
-            ),
-          );
+            );
+          });
+          const logType: GameLogEntry['type'] =
+            tileType === 'ASSASSIN'
+              ? 'guess_assassin'
+              : tileType === 'BYSTANDER'
+                ? 'guess_bystander'
+                : tileType === (revealedBy === 'red' ? 'RED_AGENT' : 'BLUE_AGENT')
+                  ? 'guess_correct'
+                  : 'guess_wrong';
+          const typeLabel =
+            tileType === 'ASSASSIN'
+              ? '💀 Assassin!'
+              : tileType === 'BYSTANDER'
+                ? 'Bystander'
+                : tileType === 'RED_AGENT'
+                  ? 'Red Agent'
+                  : 'Blue Agent';
+          const guesserName = guesserId ? lookupName(guesserId) : '';
+          pushLog({
+            type: logType,
+            team: revealedBy as Team,
+            text: `${guesserName ? guesserName + ': ' : ''}${wordLabel.toUpperCase()} → ${typeLabel}`,
+          });
           break;
         }
         case 'UA_GUESS_RESULT': {
@@ -197,9 +280,15 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
           break;
         }
         case 'UA_TURN_END': {
-          setTurnEndReason(data.reason as string);
+          const reason = data.reason as string;
+          setTurnEndReason(reason);
           setPhase('TURN_TRANSITION');
           setCurrentClue(null);
+          pushLog({
+            type: 'turn_end',
+            team: currentTeam,
+            text: `Turn ended — ${reason.replace(/_/g, ' ')}`,
+          });
           break;
         }
         case 'UA_TIMEOUT': {
@@ -208,13 +297,20 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
         }
         case 'UA_GAME_OVER': {
           setPhase('GAME_OVER');
-          setWinner(data.winner as Team | 'draw');
-          setWinReason(data.reason as string);
+          const gameWinner = data.winner as Team | 'draw';
+          const gameReason = data.reason as string;
+          setWinner(gameWinner);
+          setWinReason(gameReason);
           // Reveal full grid
           const fullGrid = data.grid as GridTileClient[];
           if (fullGrid) setGrid(fullGrid);
           const finalTeams = data.teams as { red: TeamInfo; blue: TeamInfo };
           if (finalTeams) setTeams(finalTeams);
+          pushLog({
+            type: 'game_over',
+            team: gameWinner === 'draw' ? currentTeam : gameWinner,
+            text: `Game over — ${gameReason.replace(/_/g, ' ')}`,
+          });
           break;
         }
         case 'UA_ACTION_REJECTED': {
@@ -223,8 +319,17 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
           globalThis.setTimeout(() => setErrorMsg(null), 3000);
           break;
         }
+        case 'TIMER_START': {
+          const pl = data.payload as Record<string, unknown> | undefined;
+          if (pl) {
+            setTimeRemaining(pl.timeRemaining as number);
+          }
+          break;
+        }
         case 'TIMER_TICK': {
-          setTimeRemaining(data.timeRemaining as number);
+          const pl = data.payload as Record<string, unknown> | undefined;
+          const remaining = (pl?.timeRemaining ?? data.timeRemaining) as number;
+          if (typeof remaining === 'number') setTimeRemaining(remaining);
           break;
         }
       }
@@ -236,7 +341,7 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
   const handleStateSnapshot = useCallback(
     (data: Record<string, unknown>) => {
       setPhase(data.phase as Phase);
-      setGrid(data.grid as GridTileClient[]);
+      if (data.grid) setGrid(data.grid as GridTileClient[]);
       const rawTeams = data.teams as { red: TeamInfo; blue: TeamInfo };
       setTeams(rawTeams);
       setCurrentTeam(data.currentTeam as Team);
@@ -248,8 +353,13 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
       setMyRole(data.myRole as Role);
       setMyTeam(data.myTeam as Team | null);
       setTimeRemaining(data.timeRemaining as number ?? 0);
+      if (typeof data.isTeamValid === 'boolean') setIsTeamValid(data.isTeamValid as boolean);
+      // Derive role from teams
+      const { role, team } = deriveRole(rawTeams);
+      setMyRole(role);
+      setMyTeam(team);
     },
-    [],
+    [deriveRole],
   );
 
   // Subscribe to socket events
@@ -263,6 +373,17 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
       socket.off(S2C.GAME_STATE_SNAPSHOT, handleStateSnapshot);
     };
   }, [handleGameAction, handleStateSnapshot]);
+
+  // Hydrate from the Zustand gameState snapshot on mount.
+  // This fixes the race condition where the server broadcasts initial game state
+  // before the lazy-loaded component has mounted and subscribed to socket events.
+  useEffect(() => {
+    const snapshot = useRMHboxStore.getState().gameState;
+    if (snapshot && Object.keys(snapshot).length > 0 && snapshot.phase) {
+      handleStateSnapshot(snapshot as Record<string, unknown>);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ─── Action Handlers ────────────────────────────────────────────
 
@@ -278,6 +399,26 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
     emitGameInput('END_TURN', {});
   }, []);
 
+  // ─── Team Setup Actions ─────────────────────────────────────────
+
+  const handleShuffleTeams = useCallback(() => {
+    emitGameInput('SHUFFLE_TEAMS', {});
+  }, []);
+
+  const handleSwapPlayer = useCallback((targetUserId: string, toTeam: Team) => {
+    emitGameInput('SWAP_PLAYER', { targetUserId, toTeam });
+  }, []);
+
+  const handleSetRole = useCallback((targetUserId: string, role: 'spymaster' | 'operative') => {
+    emitGameInput('SET_ROLE', { targetUserId, role });
+  }, []);
+
+  const handleStartGame = useCallback(() => {
+    emitGameInput('START_GAME', {});
+  }, []);
+
+  const isHost = playerId === storeHostId;
+
   // Only the current team's operatives can click tiles
   const canGuess = phase === 'GUESS' && myRole === 'operative' && myTeam === currentTeam;
   const isMyCluePhase = phase === 'CLUE' && myRole === 'spymaster' && myTeam === currentTeam;
@@ -290,15 +431,17 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
 
   return (
     <div className="flex w-full max-w-5xl flex-col gap-4 text-(--rmhbox-text)">
-      {/* Turn indicator */}
-      <TurnIndicator
-        phase={phase}
-        currentTeam={currentTeam}
-        turnNumber={turnNumber}
-        timeRemaining={timeRemaining}
-        winner={winner}
-        winReason={winReason}
-      />
+      {/* Turn indicator — hidden during team setup */}
+      {phase !== 'TEAM_SETUP' && (
+        <TurnIndicator
+          phase={phase}
+          currentTeam={currentTeam}
+          turnNumber={turnNumber}
+          timeRemaining={timeRemaining}
+          winner={winner}
+          winReason={winReason}
+        />
+      )}
 
       {/* Error toast */}
       <AnimatePresence>
@@ -309,170 +452,342 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
             exit={{ opacity: 0, y: -10 }}
             className="rounded-lg bg-red-500/20 border border-red-500/40 px-4 py-2 text-center text-sm text-red-300"
           >
-            {errorMsg}
+            {errorMsg === 'invalid_team_composition'
+              ? 'Each team needs at least 1 spymaster and 1 operative'
+              : errorMsg === 'not_host'
+                ? 'Only the host can do that'
+                : errorMsg.replace(/_/g, ' ')}
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Main content area */}
-      <div className="flex flex-col gap-4 lg:flex-row">
-        {/* Team panels (left sidebar on desktop) */}
-        <aside className="flex gap-3 lg:w-48 lg:flex-col">
-          {teams && (
-            <>
-              <TeamPanel
-                team={teams.red}
-                isActive={currentTeam === 'red'}
-                getPlayerName={getPlayerName}
-                currentUserId={playerId}
-              />
-              <TeamPanel
-                team={teams.blue}
-                isActive={currentTeam === 'blue'}
-                getPlayerName={getPlayerName}
-                currentUserId={playerId}
-              />
-            </>
+      {/* ─── TEAM_SETUP Phase ─────────────────────────────── */}
+      {phase === 'TEAM_SETUP' && teams && (
+        <motion.div
+          key="team-setup"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col items-center gap-5"
+        >
+          <h2 className="text-xl font-bold">Team Assignment</h2>
+          <p className="text-sm text-(--rmhbox-text-muted)">
+            {isHost
+              ? 'Arrange teams, then press Start when ready.'
+              : 'Waiting for the host to start the game. Click your name to switch teams or roles.'}
+          </p>
+
+          {/* Two team columns */}
+          <div className="grid w-full max-w-lg grid-cols-2 gap-4">
+            {/* RED team */}
+            <TeamSetupColumn
+              team={teams.red}
+              teamId="red"
+              getPlayerName={getPlayerName}
+              currentUserId={playerId}
+              isHost={isHost}
+              onSwap={handleSwapPlayer}
+              onSetRole={handleSetRole}
+            />
+            {/* BLUE team */}
+            <TeamSetupColumn
+              team={teams.blue}
+              teamId="blue"
+              getPlayerName={getPlayerName}
+              currentUserId={playerId}
+              isHost={isHost}
+              onSwap={handleSwapPlayer}
+              onSetRole={handleSetRole}
+            />
+          </div>
+
+          {/* Host controls */}
+          {isHost && (
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={handleShuffleTeams}
+                className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-surface) px-4 py-2 text-sm font-medium text-(--rmhbox-text) transition-colors hover:bg-(--rmhbox-accent)/10"
+              >
+                🔀 Shuffle
+              </button>
+              <button
+                type="button"
+                onClick={handleStartGame}
+                disabled={!isTeamValid}
+                className={`rounded-lg px-6 py-2 text-sm font-bold transition-colors ${
+                  isTeamValid
+                    ? 'bg-(--rmhbox-accent) text-white hover:brightness-110'
+                    : 'cursor-not-allowed bg-(--rmhbox-surface) text-(--rmhbox-text-muted) opacity-50'
+                }`}
+              >
+                Start Game
+              </button>
+            </div>
           )}
-        </aside>
 
-        {/* Grid + interactions */}
-        <div className="flex flex-1 flex-col items-center gap-4">
-          <AnimatePresence mode="wait">
-            {/* SETUP — waiting to start */}
-            {phase === 'SETUP' && (
-              <motion.div
-                key="setup"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex flex-col items-center gap-3"
-              >
-                <h2 className="text-xl font-bold">Setting up the board…</h2>
-                <p className="text-sm text-(--rmhbox-text-muted)">
-                  Your role: <span className="font-semibold capitalize text-(--rmhbox-accent)">{myRole}</span>
-                  {myTeam && (
-                    <>
-                      {' '}on <span className={`font-semibold ${myTeam === 'red' ? 'text-red-400' : 'text-blue-400'}`}>{myTeam}</span> team
-                    </>
-                  )}
-                </p>
-              </motion.div>
+          {!isTeamValid && (
+            <p className="text-xs text-yellow-400/80">
+              Each team needs at least 1 spymaster + 1 operative (min 4 players)
+            </p>
+          )}
+        </motion.div>
+      )}
+
+      {/* ─── Gameplay Phases ──────────────────────────────── */}
+      {phase !== 'TEAM_SETUP' && (
+        <div className="flex flex-col gap-4 lg:flex-row">
+          {/* Team panels (left sidebar on desktop) */}
+          <aside className="flex gap-3 lg:w-48 lg:flex-col">
+            {teams && (
+              <>
+                <TeamPanel
+                  team={teams.red}
+                  isActive={currentTeam === 'red'}
+                  getPlayerName={getPlayerName}
+                  currentUserId={playerId}
+                />
+                <TeamPanel
+                  team={teams.blue}
+                  isActive={currentTeam === 'blue'}
+                  getPlayerName={getPlayerName}
+                  currentUserId={playerId}
+                />
+              </>
             )}
+          </aside>
 
-            {/* CLUE phase — spymaster gives clue or operatives wait */}
-            {phase === 'CLUE' && (
-              <motion.div
-                key="clue"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="w-full"
-              >
-                {isMyCluePhase ? (
-                  <ClueInput
-                    gridWords={grid.map((t) => t.word)}
-                    onSubmit={handleGiveClue}
-                    timeRemaining={timeRemaining}
-                  />
-                ) : (
+          {/* Grid + interactions */}
+          <div className="flex flex-1 flex-col items-center gap-4">
+            <AnimatePresence mode="wait">
+              {/* SETUP — waiting to start */}
+              {phase === 'SETUP' && (
+                <motion.div
+                  key="setup"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="flex flex-col items-center gap-3"
+                >
+                  <h2 className="text-xl font-bold">Setting up the board…</h2>
+                  <p className="text-sm text-(--rmhbox-text-muted)">
+                    Your role: <span className="font-semibold capitalize text-(--rmhbox-accent)">{myRole}</span>
+                    {myTeam && (
+                      <>
+                        {' '}on <span className={`font-semibold ${myTeam === 'red' ? 'text-red-400' : 'text-blue-400'}`}>{myTeam}</span> team
+                      </>
+                    )}
+                  </p>
+                </motion.div>
+              )}
+
+              {/* CLUE phase — spymaster gives clue or operatives wait */}
+              {phase === 'CLUE' && (
+                <motion.div
+                  key="clue"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="w-full"
+                >
+                  {isMyCluePhase && !currentClue ? (
+                    <ClueInput
+                      gridWords={grid.map((t) => t.word)}
+                      onSubmit={handleGiveClue}
+                      timeRemaining={timeRemaining}
+                    />
+                  ) : (
+                    <ClueDisplay
+                      clue={currentClue}
+                      guessesRemaining={guessesRemaining}
+                      isWaiting={!currentClue}
+                      spymasterName={
+                        teams
+                          ? getPlayerName(teams[currentTeam].spymasterId)
+                          : 'Spymaster'
+                      }
+                      onEndTurn={undefined}
+                    />
+                  )}
+                </motion.div>
+              )}
+
+              {/* GUESS phase — operatives click tiles */}
+              {phase === 'GUESS' && (
+                <motion.div
+                  key="guess"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="w-full"
+                >
                   <ClueDisplay
                     clue={currentClue}
                     guessesRemaining={guessesRemaining}
-                    isWaiting={true}
+                    isWaiting={false}
                     spymasterName={
-                      teams
-                        ? getPlayerName(teams[currentTeam].spymasterId)
-                        : 'Spymaster'
+                      teams ? getPlayerName(teams[currentTeam].spymasterId) : 'Spymaster'
                     }
-                    onEndTurn={undefined}
+                    onEndTurn={myRole === 'operative' && myTeam === currentTeam ? handleEndTurn : undefined}
                   />
-                )}
-              </motion.div>
-            )}
+                </motion.div>
+              )}
 
-            {/* GUESS phase — operatives click tiles */}
-            {phase === 'GUESS' && (
-              <motion.div
-                key="guess"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="w-full"
-              >
-                <ClueDisplay
-                  clue={currentClue}
-                  guessesRemaining={guessesRemaining}
-                  isWaiting={false}
-                  spymasterName={
-                    teams ? getPlayerName(teams[currentTeam].spymasterId) : 'Spymaster'
-                  }
-                  onEndTurn={myRole === 'operative' && myTeam === currentTeam ? handleEndTurn : undefined}
-                />
-              </motion.div>
-            )}
+              {/* TURN_TRANSITION — brief overlay */}
+              {phase === 'TURN_TRANSITION' && (
+                <motion.div
+                  key="transition"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 1.1 }}
+                  className="flex flex-col items-center gap-2 py-4"
+                >
+                  <h3 className="text-lg font-bold">Turn Over</h3>
+                  {turnEndReason && (
+                    <p className="text-sm text-(--rmhbox-text-muted) capitalize">
+                      {turnEndReason.replace(/_/g, ' ')}
+                    </p>
+                  )}
+                </motion.div>
+              )}
 
-            {/* TURN_TRANSITION — brief overlay */}
-            {phase === 'TURN_TRANSITION' && (
-              <motion.div
-                key="transition"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 1.1 }}
-                className="flex flex-col items-center gap-2 py-4"
-              >
-                <h3 className="text-lg font-bold">Turn Over</h3>
-                {turnEndReason && (
-                  <p className="text-sm text-(--rmhbox-text-muted) capitalize">
-                    {turnEndReason.replace(/_/g, ' ')}
-                  </p>
-                )}
-              </motion.div>
-            )}
+              {/* GAME_OVER — results */}
+              {phase === 'GAME_OVER' && (
+                <motion.div
+                  key="game-over"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="flex flex-col items-center gap-3 py-4"
+                >
+                  <h2 className="text-2xl font-bold">Game Over!</h2>
+                  {winner && winner !== 'draw' && (
+                    <p className={`text-lg font-semibold ${winner === 'red' ? 'text-red-400' : 'text-blue-400'}`}>
+                      {winner.charAt(0).toUpperCase() + winner.slice(1)} Team Wins!
+                    </p>
+                  )}
+                  {winner === 'draw' && <p className="text-lg font-semibold text-yellow-400">It&apos;s a Draw!</p>}
+                  {winReason && (
+                    <p className="text-sm text-(--rmhbox-text-muted) capitalize">
+                      {winReason.replace(/_/g, ' ')}
+                    </p>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-            {/* GAME_OVER — results */}
-            {phase === 'GAME_OVER' && (
-              <motion.div
-                key="game-over"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex flex-col items-center gap-3 py-4"
-              >
-                <h2 className="text-2xl font-bold">Game Over!</h2>
-                {winner && winner !== 'draw' && (
-                  <p className={`text-lg font-semibold ${winner === 'red' ? 'text-red-400' : 'text-blue-400'}`}>
-                    {winner.charAt(0).toUpperCase() + winner.slice(1)} Team Wins!
-                  </p>
-                )}
-                {winner === 'draw' && <p className="text-lg font-semibold text-yellow-400">It&apos;s a Draw!</p>}
-                {winReason && (
-                  <p className="text-sm text-(--rmhbox-text-muted) capitalize">
-                    {winReason.replace(/_/g, ' ')}
-                  </p>
-                )}
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* The 5×5 grid is always visible */}
-          <GridBoard
-            grid={grid}
-            canGuess={canGuess}
-            isSpymaster={myRole === 'spymaster'}
-            onTileClick={handleGuessTile}
-          />
-        </div>
-
-        {/* Spymaster key card (right sidebar, only for spymasters) */}
-        {myRole === 'spymaster' && teams && (
-          <aside className="hidden lg:block lg:w-48">
-            <SpymasterKey
+            {/* The 5×5 grid is always visible */}
+            <GridBoard
               grid={grid}
-              teams={teams}
+              canGuess={canGuess}
+              isSpymaster={myRole === 'spymaster'}
+              onTileClick={handleGuessTile}
             />
+          </div>
+
+          {/* Right sidebar: Game Log */}
+          <aside className="flex flex-col gap-3 lg:w-52">
+            {/* Game log (always visible during gameplay) */}
+            {teams && (
+              <GameLog
+                redTeam={{ teamId: 'red', agentsRevealed: teams.red.agentsRevealed, agentsTotal: teams.red.agentsTotal }}
+                blueTeam={{ teamId: 'blue', agentsRevealed: teams.blue.agentsRevealed, agentsTotal: teams.blue.agentsTotal }}
+                logEntries={gameLog}
+              />
+            )}
           </aside>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Team Setup Column ─────────────────────────────────────────────
+
+interface TeamSetupColumnProps {
+  team: TeamInfo;
+  teamId: Team;
+  getPlayerName: (userId: string) => string;
+  currentUserId: string;
+  isHost: boolean;
+  onSwap: (targetUserId: string, toTeam: Team) => void;
+  onSetRole: (targetUserId: string, role: 'spymaster' | 'operative') => void;
+}
+
+function TeamSetupColumn({
+  team,
+  teamId,
+  getPlayerName,
+  currentUserId,
+  isHost,
+  onSwap,
+  onSetRole,
+}: TeamSetupColumnProps) {
+  const isRed = teamId === 'red';
+  const teamColor = isRed ? 'text-red-400' : 'text-blue-400';
+  const borderColor = isRed ? 'border-red-500/40' : 'border-blue-500/40';
+  const otherTeam: Team = isRed ? 'blue' : 'red';
+
+  // Filter out empty member slots (e.g. spymasterId can be '' when all leave)
+  const allMembers = [
+    ...(team.spymasterId ? [{ userId: team.spymasterId, role: 'spymaster' as const }] : []),
+    ...team.operativeIds.filter(Boolean).map((id) => ({ userId: id, role: 'operative' as const })),
+  ];
+
+  return (
+    <div className={`rounded-xl border ${borderColor} bg-(--rmhbox-surface) p-3`}>
+      <h3 className={`mb-3 text-center text-sm font-bold uppercase tracking-wider ${teamColor}`}>
+        {teamId} team
+      </h3>
+
+      <div className="space-y-1.5">
+        {allMembers.length === 0 && (
+          <p className="text-center text-[10px] text-(--rmhbox-text-muted) italic py-2">No players</p>
         )}
+        {allMembers.map(({ userId, role }) => {
+          const isSelf = userId === currentUserId;
+          const canInteract = isHost || isSelf;
+
+          return (
+            <div
+              key={userId}
+              className={`flex items-center justify-between rounded-lg px-2 py-1.5 text-xs transition-colors ${
+                isSelf ? 'bg-(--rmhbox-accent)/10 font-bold' : ''
+              }`}
+            >
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className={`shrink-0 text-[10px] uppercase ${role === 'spymaster' ? teamColor : 'text-(--rmhbox-text-muted)'}`}>
+                  {role === 'spymaster' ? '🔍' : '👁️'}
+                </span>
+                <span className="truncate">{getPlayerName(userId)}</span>
+              </div>
+
+              {canInteract && (
+                <div className="flex items-center gap-1 shrink-0 ml-1">
+                  {/* Toggle role — ↑ for promote to spymaster, ↓ for demote to operative */}
+                  <button
+                    type="button"
+                    onClick={() => onSetRole(userId, role === 'spymaster' ? 'operative' : 'spymaster')}
+                    title={role === 'spymaster' ? 'Make operative' : 'Make spymaster'}
+                    className="rounded px-1.5 py-0.5 text-[10px] border border-(--rmhbox-border)/50 hover:bg-(--rmhbox-accent)/10 transition-colors"
+                  >
+                    {role === 'spymaster' ? '↓ Op' : '↑ Spy'}
+                  </button>
+                  {/* Swap to other team — ← for red (left column), → for blue (right column) */}
+                  <button
+                    type="button"
+                    onClick={() => onSwap(userId, otherTeam)}
+                    title={`Move to ${otherTeam} team`}
+                    className={`rounded px-1.5 py-0.5 text-[10px] border border-(--rmhbox-border)/50 hover:bg-(--rmhbox-accent)/10 transition-colors ${
+                      isRed ? 'text-blue-400' : 'text-red-400'
+                    }`}
+                  >
+                    {isRed ? '→' : '←'} {otherTeam.charAt(0).toUpperCase() + otherTeam.slice(1)}
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

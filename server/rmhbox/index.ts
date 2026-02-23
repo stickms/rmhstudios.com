@@ -83,6 +83,7 @@ io.on('connection', (socket) => {
 
   // Attempt reconnection to an existing lobby first
   reconnection.attemptReconnect(socket);
+  gameCoordinator.handleReconnect(socket);
 
   // Register domain event handlers
   lobbyManager.handleConnection(socket);

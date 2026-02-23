@@ -52,10 +52,12 @@ export default function ClueInput({ gridWords, onSubmit, timeRemaining }: ClueIn
   return (
     <div className="mx-auto flex w-full max-w-md flex-col items-center gap-4 rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) p-5">
       {/* Timer */}
-      <div className="flex items-center gap-2 text-sm text-(--rmhbox-text-muted)">
-        <Clock className="h-4 w-4" />
-        <span className="font-mono font-semibold">{timeRemaining}s</span>
-      </div>
+      {timeRemaining > 0 && (
+        <div className="flex items-center gap-2 text-sm text-(--rmhbox-text-muted)">
+          <Clock className="h-4 w-4" />
+          <span className="font-mono font-semibold">{timeRemaining}s</span>
+        </div>
+      )}
 
       <h3 className="text-lg font-bold text-(--rmhbox-text)">Give a Clue</h3>
       <p className="text-xs text-(--rmhbox-text-muted)">

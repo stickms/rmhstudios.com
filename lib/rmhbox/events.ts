@@ -28,6 +28,8 @@ export const C2S = {
   GAME_START_VOTE:        'rmhbox:game:start_vote',
   GAME_CAST_VOTE:         'rmhbox:game:cast_vote',
   GAME_FORCE_SKIP:        'rmhbox:game:force_skip',
+  GAME_FORCE_END:         'rmhbox:game:force_end',
+  GAME_PAUSE_TIMER:       'rmhbox:game:pause_timer',
   GAME_READY_TO_RENDER:   'rmhbox:game:ready_to_render',
   GAME_INPUT:             'rmhbox:game:input',
   LEADERBOARD_FETCH:      'rmhbox:leaderboard:fetch',
@@ -54,5 +56,6 @@ export const S2C = {
   GAME_VOTE_UPDATE:       'rmhbox:game:vote_update',
   GAME_VOTE_RESULT:       'rmhbox:game:vote_result',
   LEADERBOARD_DATA:       'rmhbox:leaderboard:data',
+  NOT_IN_LOBBY:           'rmhbox:lobby:not_in_lobby',
   ERROR:                  'rmhbox:error',
 } as const;

@@ -41,7 +41,7 @@ export default function WikiFrame({
 
   /** Handle clicks inside the article HTML */
   const handleClick = useCallback(
-    (e: MouseEvent) => {
+    (e: React.MouseEvent<HTMLDivElement>) => {
       if (disabled) return;
 
       const target = (e.target as HTMLElement).closest('a[data-wiki-target]') as HTMLAnchorElement | null;
@@ -57,14 +57,6 @@ export default function WikiFrame({
     },
     [disabled, onNavigate],
   );
-
-  // Attach click listener to the container
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-    container.addEventListener('click', handleClick);
-    return () => container.removeEventListener('click', handleClick);
-  }, [handleClick]);
 
   // Scroll to top on article change
   useEffect(() => {
@@ -97,6 +89,7 @@ export default function WikiFrame({
       {html && (
         <div
           ref={containerRef}
+          onClick={handleClick}
           className={`wiki-frame max-h-[50vh] overflow-y-auto px-4 py-3 text-sm leading-relaxed ${
             disabled ? 'pointer-events-none opacity-60' : ''
           } ${isLoading ? 'opacity-40' : ''}`}
@@ -108,25 +101,41 @@ export default function WikiFrame({
         />
       )}
 
-      {/* Wiki-frame link styles */}
-      <style jsx>{`
+      {/* Wiki-frame styles — must be global to apply to dangerouslySetInnerHTML content */}
+      <style>{`
         .wiki-frame a[data-wiki-target] {
-          color: var(--rmhbox-accent);
+          color: #3366cc;
           text-decoration: underline;
-          text-decoration-style: dotted;
           cursor: pointer;
           transition: color 0.15s ease;
         }
         .wiki-frame a[data-wiki-target]:hover {
-          color: white;
-          background-color: var(--rmhbox-accent);
-          border-radius: 2px;
-          padding: 0 2px;
+          color: #5577dd;
         }
-        .wiki-frame h2, .wiki-frame h3, .wiki-frame h4 {
+        .wiki-frame a[data-wiki-target]:visited {
+          color: #795cb2;
+        }
+        .wiki-frame .stripped-link {
+          color: inherit;
+        }
+        .wiki-frame h2 {
+          font-size: 1.25rem;
           font-weight: 700;
           margin-top: 1em;
           margin-bottom: 0.5em;
+          padding-bottom: 0.25em;
+          border-bottom: 1px solid var(--rmhbox-border);
+        }
+        .wiki-frame h3 {
+          font-size: 1.1rem;
+          font-weight: 700;
+          margin-top: 1em;
+          margin-bottom: 0.5em;
+        }
+        .wiki-frame h4 {
+          font-weight: 700;
+          margin-top: 0.75em;
+          margin-bottom: 0.4em;
         }
         .wiki-frame p {
           margin-bottom: 0.5em;
@@ -134,6 +143,55 @@ export default function WikiFrame({
         .wiki-frame ul, .wiki-frame ol {
           padding-left: 1.5em;
           margin-bottom: 0.5em;
+        }
+        .wiki-frame li {
+          margin-bottom: 0.15em;
+        }
+        .wiki-frame table {
+          border-collapse: collapse;
+          margin-bottom: 0.75em;
+          font-size: 0.8125rem;
+        }
+        .wiki-frame th,
+        .wiki-frame td {
+          border: 1px solid var(--rmhbox-border);
+          padding: 0.35em 0.65em;
+          text-align: left;
+          vertical-align: top;
+        }
+        .wiki-frame th {
+          background-color: var(--rmhbox-surface);
+          font-weight: 600;
+        }
+        .wiki-frame tr:nth-child(even) td {
+          background-color: rgba(255, 255, 255, 0.03);
+        }
+        .wiki-frame caption {
+          caption-side: top;
+          font-weight: 600;
+          font-size: 0.875rem;
+          margin-bottom: 0.25em;
+          text-align: left;
+        }
+        .wiki-frame figure {
+          margin: 0.5em 0;
+        }
+        .wiki-frame figcaption {
+          font-size: 0.75rem;
+          color: var(--rmhbox-text-muted);
+          margin-top: 0.25em;
+        }
+        .wiki-frame img {
+          max-width: 200px;
+          height: auto;
+        }
+        .wiki-frame sup {
+          font-size: 0.75em;
+          vertical-align: super;
+        }
+        .wiki-frame sub {
+          font-size: 0.75em;
+          vertical-align: sub;
         }
       `}</style>
     </div>

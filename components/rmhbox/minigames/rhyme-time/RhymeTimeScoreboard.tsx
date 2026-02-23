@@ -17,6 +17,7 @@
 
 import { motion } from 'framer-motion';
 import { Trophy, ArrowUp, Award as AwardIcon } from 'lucide-react';
+import LucideAwardIcon from '../../LucideAwardIcon';
 
 export interface Standing {
   userId: string;
@@ -155,7 +156,7 @@ export default function RhymeTimeScoreboard({
           <ul className="space-y-3">
             {awards.map((award, i) => (
               <li key={i} className="flex items-center gap-3">
-                <span className="text-xl">{award.icon}</span>
+                <LucideAwardIcon name={award.icon} className="h-5 w-5" />
                 <div>
                   <span className="font-semibold">{award.title}</span>
                   <span className="mx-1 text-(--rmhbox-text-muted)">—</span>

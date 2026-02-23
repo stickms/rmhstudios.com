@@ -5,8 +5,13 @@
  * Footer with score, round counter (centered), and player count.
  * Header is handled by RMHboxHeader in the parent page.
  *
+ * The round counter displays:
+ *   - Minigame sub-round info from `minigameRound` store field when set
+ *     (e.g. "Round 2/3" for Rhyme Time's internal rounds)
+ *   - Otherwise, the session-level `roundNumber` from the lobby
+ *
  * Props:
- *   roundNumber: number — Current round number
+ *   roundNumber: number — Session-level round number (lobby.roundNumber)
  *   score: number — Player's current score
  *   playerCount: number — Number of players in the game
  *   children: React.ReactNode — Game content
@@ -14,6 +19,7 @@
 'use client';
 
 import { Users } from 'lucide-react';
+import { useRMHboxStore } from '@/lib/rmhbox/store';
 
 interface GameShellProps {
   roundNumber: number;
@@ -28,10 +34,16 @@ export default function GameShell({
   playerCount,
   children,
 }: GameShellProps) {
+  const minigameRound = useRMHboxStore((s) => s.minigameRound);
+
+  const roundLabel = minigameRound
+    ? `Round ${minigameRound.current}/${minigameRound.total}`
+    : `Round ${roundNumber}`;
+
   return (
     <div className="flex h-full flex-col overflow-hidden bg-(--rmhbox-bg) text-(--rmhbox-text)">
       {/* Game content */}
-      <main className="flex flex-1 items-center justify-center p-4">{children}</main>
+      <main className="flex flex-1 items-center justify-center p-4 overflow-y-auto">{children}</main>
 
       {/* Footer */}
       <footer className="relative flex shrink-0 items-center border-t border-(--rmhbox-border) px-4 py-1.5 text-sm">
@@ -41,7 +53,7 @@ export default function GameShell({
         {/* Round counter — absolutely centered to screen */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <span className="rounded-full bg-(--rmhbox-surface) px-2 py-0.5 text-xs font-medium text-(--rmhbox-text-muted)">
-            Round {roundNumber}
+            {roundLabel}
           </span>
         </div>
         <span className="ml-auto flex items-center gap-1 text-(--rmhbox-text-muted)">

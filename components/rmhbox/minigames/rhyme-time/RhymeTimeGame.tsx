@@ -82,8 +82,7 @@ export default function RhymeTimeGame({ playerId, playerName: _playerName }: Rhy
           setTotalDuration(data.duration as number);
           setMySubmissions([]);
           setSubmissionCounts([]);
-          // Transition to INPUT after reveal animation
-          setTimeout(() => setPhase('INPUT'), 3000);
+          // Server will send RT_INPUT_START when the reveal period ends
           break;
         }
         case 'RT_INPUT_START': {
@@ -94,10 +93,20 @@ export default function RhymeTimeGame({ playerId, playerName: _playerName }: Rhy
           break;
         }
         case 'RT_RHYME_SUBMITTED': {
-          // Server sends: { type, word, isValid, submissionCount, maxSubmissions }
+          // Server sends: { type, word, isValid, invalidReason?, submissionCount, maxSubmissions }
+          const rawReason = data.invalidReason as string | undefined;
           const sub: Submission = {
             word: data.word as string,
-            status: (data.isValid as boolean) ? 'valid' : 'invalid',
+            status: (data.isValid as boolean)
+              ? 'valid'
+              : rawReason === 'not_in_dictionary'
+                ? 'not_in_dict'
+                : 'invalid',
+            invalidReason: rawReason === 'not_in_dictionary'
+              ? 'Not in dictionary (no penalty)'
+              : rawReason === 'does_not_rhyme'
+                ? "Doesn't rhyme (−1)"
+                : undefined,
           };
           setMySubmissions((prev) => [...prev, sub]);
           break;
@@ -133,6 +142,7 @@ export default function RhymeTimeGame({ playerId, playerName: _playerName }: Rhy
               breakdown: Array<{
                 word: string;
                 isValid: boolean;
+                invalidReason?: string;
                 rarity: number;
                 basePoints: number;
                 multiSyllableMultiplier: number;
@@ -161,21 +171,33 @@ export default function RhymeTimeGame({ playerId, playerName: _playerName }: Rhy
                 roundScore: pr.roundScore,
               });
               for (const wb of pr.breakdown) {
-                if (!wb.isValid) continue;
-                // Map rarity number → tier name
-                let rarity: 'rare' | 'uncommon' | 'common' = 'common';
-                if (wb.submitterCount === 1) rarity = 'rare';
-                else if (wb.submitterCount <= 2) rarity = 'uncommon';
+                if (wb.isValid) {
+                  // Map rarity number → tier name
+                  let rarity: 'rare' | 'uncommon' | 'common' = 'common';
+                  if (wb.submitterCount === 1) rarity = 'rare';
+                  else if (wb.submitterCount <= 2) rarity = 'uncommon';
 
-                words.push({
-                  word: wb.word,
-                  submittedBy: pr.userName,
-                  userId: pr.userId,
-                  rarity,
-                  points: wb.totalPoints,
-                  multiSyllable: wb.isMultiSyllable,
-                  speedBonus: wb.speedBonus > 0,
-                });
+                  words.push({
+                    word: wb.word,
+                    submittedBy: pr.userName,
+                    userId: pr.userId,
+                    rarity,
+                    points: wb.totalPoints,
+                    multiSyllable: wb.isMultiSyllable,
+                    speedBonus: wb.speedBonus > 0,
+                  });
+                } else {
+                  // Invalid words: not_in_dictionary or does_not_rhyme
+                  words.push({
+                    word: wb.word,
+                    submittedBy: pr.userName,
+                    userId: pr.userId,
+                    rarity: wb.invalidReason === 'not_in_dictionary' ? 'not_in_dict' : 'does_not_rhyme',
+                    points: wb.totalPoints,
+                    multiSyllable: false,
+                    speedBonus: false,
+                  });
+                }
               }
             }
           }
@@ -204,8 +226,20 @@ export default function RhymeTimeGame({ playerId, playerName: _playerName }: Rhy
           setPhase('GAME_OVER');
           break;
         }
+        case 'TIMER_START': {
+          // Phase timer started — update local duration/remaining from payload
+          const pl = data.payload as Record<string, unknown> | undefined;
+          if (pl) {
+            setTotalDuration(pl.totalDuration as number);
+            setTimeRemaining(pl.timeRemaining as number);
+          }
+          break;
+        }
         case 'TIMER_TICK': {
-          setTimeRemaining(data.timeRemaining as number);
+          // Timer now comes from broadcastAction with payload wrapping
+          const pl = data.payload as Record<string, unknown> | undefined;
+          const remaining = (pl?.timeRemaining ?? data.timeRemaining) as number;
+          if (typeof remaining === 'number') setTimeRemaining(remaining);
           break;
         }
       }
@@ -267,6 +301,35 @@ export default function RhymeTimeGame({ playerId, playerName: _playerName }: Rhy
     };
   }, [handleGameAction, handleRoundResults]);
 
+  // Hydrate from the Zustand gameState snapshot on mount.
+  // This fixes the race condition where the server broadcasts initial game state
+  // (e.g. RT_ROUND_START) before the lazy-loaded component has mounted.
+  useEffect(() => {
+    const snapshot = useRMHboxStore.getState().gameState;
+    if (!snapshot || !snapshot.phase) return;
+
+    const p = snapshot.phase as string;
+    if (p === 'ROUND_START' || p === 'INPUT' || p === 'SCORING' || p === 'INTERMISSION' || p === 'GAME_OVER') {
+      setPhase(p);
+    }
+    if (snapshot.currentRound) setCurrentRound(snapshot.currentRound as number);
+    if (snapshot.totalRounds) setTotalRounds(snapshot.totalRounds as number);
+    if (snapshot.timeRemaining != null) setTimeRemaining(snapshot.timeRemaining as number);
+    if (snapshot.rootWord) {
+      const rw = snapshot.rootWord;
+      setRootWord(typeof rw === 'string' ? rw : (rw as Record<string, unknown>)?.word as string ?? '');
+    }
+    if (Array.isArray(snapshot.mySubmissions) && snapshot.mySubmissions.length > 0) {
+      setMySubmissions(
+        (snapshot.mySubmissions as Array<Record<string, unknown>>).map((s) => ({
+          word: s.word as string,
+          status: (s.isValid as boolean) ? 'valid' as const : 'invalid' as const,
+          invalidReason: s.invalidReason as string | undefined,
+        })),
+      );
+    }
+  }, []);
+
   // Submit a word
   const handleSubmitWord = useCallback(
     (word: string) => {
@@ -310,7 +373,7 @@ export default function RhymeTimeGame({ playerId, playerName: _playerName }: Rhy
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
-          className="w-full"
+          className="flex w-full items-start justify-center"
         >
           <RhymeTimeInput
             rootWord={rootWord}

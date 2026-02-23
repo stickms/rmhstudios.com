@@ -63,7 +63,7 @@ class TestMinigame extends BaseMinigame {
   }
 
   public getTimerCount() {
-    return this.timers.length;
+    return this.pendingTimerCount;
   }
 
   public getIntervalCount() {
@@ -88,8 +88,10 @@ function createTestContext(overrides: Partial<MinigameContext> = {}): MinigameCo
       autoStartThreshold: null,
       gameDurationOverride: null,
     },
+    getHostId: () => 'host-user',
     broadcastToLobby: vi.fn(),
     broadcastToPlayers: vi.fn(),
+    broadcastAction: vi.fn(),
     sendToPlayer: vi.fn(),
     sendToSpectators: vi.fn(),
     onComplete: vi.fn(),

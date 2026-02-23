@@ -58,19 +58,23 @@ export default function TeamPanel({ team, isActive, getPlayerName, currentUserId
           <Shield className={`h-3 w-3 ${teamColor}`} />
           <span
             className={`truncate ${
-              team.spymasterId === currentUserId ? 'font-bold text-(--rmhbox-accent)' : 'text-(--rmhbox-text)'
+              team.spymasterId === currentUserId ? `font-bold ${teamColor}` : 'text-(--rmhbox-text)'
             }`}
           >
             {getPlayerName(team.spymasterId)}
           </span>
         </li>
+        {/* Divider between spymaster and operatives */}
+        {team.operativeIds.length > 0 && (
+          <li aria-hidden className={`border-t ${isRed ? 'border-red-500/20' : 'border-blue-500/20'} my-1`} />
+        )}
         {/* Operatives */}
         {team.operativeIds.map((uid) => (
           <li key={uid} className="flex items-center gap-1.5 text-xs">
             <Eye className={`h-3 w-3 text-(--rmhbox-text-muted)`} />
             <span
               className={`truncate ${
-                uid === currentUserId ? 'font-bold text-(--rmhbox-accent)' : 'text-(--rmhbox-text)'
+                uid === currentUserId ? `font-bold ${teamColor}` : 'text-(--rmhbox-text)'
               }`}
             >
               {getPlayerName(uid)}

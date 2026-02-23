@@ -52,6 +52,13 @@ export default function PlayerList({ players, hostUserId, isHost, myUserId, onKi
               )}
             </div>
 
+            {/* Score */}
+            {player.score > 0 && (
+              <span className="shrink-0 rounded-full bg-(--rmhbox-accent)/15 px-2 py-0.5 text-xs font-bold tabular-nums text-(--rmhbox-accent)">
+                {player.score.toLocaleString()}
+              </span>
+            )}
+
             {/* Host management actions — only for other players, before status icons */}
             {isHost && !isSelf && (
               <div className="flex gap-1">
@@ -70,7 +77,7 @@ export default function PlayerList({ players, hostUserId, isHost, myUserId, onKi
                     className="rounded p-1.5 text-(--rmhbox-danger) transition-colors hover:bg-(--rmhbox-danger-dim)"
                     title="Kick player"
                   >
-                    <UserMinus className="h-3.5 w-3.5" />
+                    <UserMinus className="h-3.5 w-3.5" style={{ transform: 'scaleX(-1)' }} />
                   </button>
                 )}
               </div>

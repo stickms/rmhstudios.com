@@ -38,7 +38,7 @@ export const MINIGAME_REGISTRY: Record<string, MinigameDefinition> = {
     maxPlayers: 16,
     estimatedDurationSeconds: 180,
     supportsTeams: true,
-    instructionDurationSeconds: 20,
+    instructionDurationSeconds: 15,
     preloadAssets: { images: [], sounds: [], data: [], estimatedSizeBytes: 0 },
     joinInProgressPolicy: 'spectate_only',
     tags: ['word', 'teams', 'strategy', 'deduction'],

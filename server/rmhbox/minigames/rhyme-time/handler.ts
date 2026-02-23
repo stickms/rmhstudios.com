@@ -19,12 +19,12 @@
  * Reference: docs/rmhbox/design-spec/minigames/rhyme-time.md
  */
 
-import { BaseMinigame } from './base-minigame';
-import type { MinigameContext, MinigameResults } from './base-minigame';
-import type { PlayerRanking, Award } from '../../../lib/rmhbox/types';
-import type { RootWord } from '../../../lib/rmhbox/rhyme-time/dictionary-loader';
-import { loadRootWords, isValidRhyme, isMultiSyllableRhyme } from '../../../lib/rmhbox/rhyme-time/dictionary-loader';
-import { SubmitRhymeSchema } from '../../../lib/rmhbox/rhyme-time/schemas';
+import { BaseMinigame } from '../base-minigame';
+import type { MinigameContext, MinigameResults } from '../base-minigame';
+import type { PlayerRanking, Award } from '@/lib/rmhbox/types';
+import type { RootWord } from '@/lib/rmhbox/rhyme-time/dictionary-loader';
+import { loadRootWords, isValidRhyme, isMultiSyllableRhyme, isKnownWord } from '@/lib/rmhbox/rhyme-time/dictionary-loader';
+import { SubmitRhymeSchema } from '@/lib/rmhbox/rhyme-time/schemas';
 import {
   RT_TOTAL_ROUNDS,
   RT_INPUT_DURATION,
@@ -38,74 +38,16 @@ import {
   RT_MULTI_SYLLABLE_MULT,
   RT_SPEED_BONUS,
   RT_INVALID_PENALTY,
-} from '../../../lib/rmhbox/constants';
-import { logger } from '../logger';
-
-// ─── Phase Enum ──────────────────────────────────────────────────
-
-export enum RhymeTimePhase {
-  ROUND_START = 'ROUND_START',
-  INPUT = 'INPUT',
-  SCORING = 'SCORING',
-  INTERMISSION = 'INTERMISSION',
-}
-
-// ─── Type Definitions ────────────────────────────────────────────
-
-export interface PlayerSubmission {
-  word: string;
-  timestamp: number;
-  isValid: boolean;
-  isMultiSyllable: boolean;
-}
-
-/** Per-player submission list keyed by userId. */
-export type PlayerSubmissions = Record<string, PlayerSubmission[]>;
-
-export interface WordBreakdown {
-  word: string;
-  isValid: boolean;
-  rarity: 'common' | 'uncommon' | 'rare' | null;
-  basePoints: number;
-  multiSyllableMultiplier: number;
-  speedBonus: number;
-  totalPoints: number;
-  submitterCount: number;
-  isMultiSyllable: boolean;
-}
-
-export interface PlayerRoundResult {
-  userId: string;
-  userName: string;
-  breakdown: WordBreakdown[];
-  roundScore: number;
-  validCount: number;
-  invalidCount: number;
-}
-
-export interface RoundResult {
-  roundNumber: number;
-  rootWord: RootWord;
-  playerResults: Record<string, PlayerRoundResult>;
-}
-
-export interface ActionLogEntry {
-  action: string;
-  timestamp: number;
-  data: Record<string, unknown>;
-}
-
-export interface RhymeTimeState {
-  phase: RhymeTimePhase;
-  currentRound: number;
-  totalRounds: number;
-  rootWord: RootWord | null;
-  timeRemaining: number;
-  submissions: PlayerSubmissions;
-  roundResults: RoundResult[];
-  scores: Record<string, number>;
-  actionLog: ActionLogEntry[];
-}
+} from '@/lib/rmhbox/constants';
+import { logger } from '../../logger';
+import {
+  RhymeTimePhase,
+  type PlayerSubmission,
+  type WordBreakdown,
+  type RoundResult,
+  type PlayerRoundResult,
+  type RhymeTimeState,
+} from './types';
 
 // ─── Rhyme Time Minigame ─────────────────────────────────────────
 
@@ -114,7 +56,6 @@ export class RhymeTimeMinigame extends BaseMinigame {
   private usedRootWords: Set<string> = new Set();
   private state!: RhymeTimeState;
   private startedAt: number = 0;
-  private tickInterval: NodeJS.Timeout | null = null;
 
   constructor(context: MinigameContext) {
     super(context);
@@ -190,6 +131,9 @@ export class RhymeTimeMinigame extends BaseMinigame {
       rootWord: this.state.rootWord.word,
     });
 
+    // Broadcast sub-round to the footer counter
+    this.broadcastRound(this.state.currentRound, this.state.totalRounds);
+
     this.context.broadcastToLobby('rmhbox:game:action', {
       type: 'RT_ROUND_START',
       round: this.state.currentRound,
@@ -197,6 +141,9 @@ export class RhymeTimeMinigame extends BaseMinigame {
       rootWord: this.state.rootWord,
       duration: RT_ROUND_START_DURATION,
     });
+
+    // Show reveal countdown in the header timer
+    this.startPhaseTimer(RT_ROUND_START_DURATION);
 
     this.setTimeout(() => this.startInputPhase(), RT_ROUND_START_DURATION * 1000);
   }
@@ -220,14 +167,8 @@ export class RhymeTimeMinigame extends BaseMinigame {
       timeRemaining: RT_INPUT_DURATION,
     });
 
-    // Tick every second
-    this.tickInterval = this.setInterval(() => {
-      this.state.timeRemaining--;
-      this.context.broadcastToLobby('rmhbox:game:action', {
-        type: 'TIMER_TICK',
-        timeRemaining: this.state.timeRemaining,
-      });
-    }, 1000);
+    // Drive the header timer ring for the input phase
+    this.startPhaseTimer(RT_INPUT_DURATION);
 
     this.setTimeout(() => this.endInputPhase(), RT_INPUT_DURATION * 1000);
   }
@@ -235,12 +176,8 @@ export class RhymeTimeMinigame extends BaseMinigame {
   private endInputPhase(): void {
     if (!this.isRunning) return;
 
-    // Clear the tick interval before changing phase
-    if (this.tickInterval) {
-      clearInterval(this.tickInterval);
-      this.intervals = this.intervals.filter((i) => i !== this.tickInterval);
-      this.tickInterval = null;
-    }
+    // Clear the phase timer before changing phase
+    this.clearPhaseTimer();
 
     this.state.phase = RhymeTimePhase.SCORING;
     this.state.timeRemaining = RT_SCORING_DURATION;
@@ -272,6 +209,9 @@ export class RhymeTimeMinigame extends BaseMinigame {
       duration: RT_SCORING_DURATION,
     });
 
+    // Show scoring countdown in the header timer
+    this.startPhaseTimer(RT_SCORING_DURATION);
+
     this.setTimeout(() => {
       if (this.state.currentRound >= this.state.totalRounds) {
         this.endGame();
@@ -299,6 +239,9 @@ export class RhymeTimeMinigame extends BaseMinigame {
       nextRound: this.state.currentRound + 1,
       scores: this.state.scores,
     });
+
+    // Show intermission countdown in the header timer
+    this.startPhaseTimer(RT_INTERMISSION_DURATION);
 
     this.setTimeout(() => this.startRound(), RT_INTERMISSION_DURATION * 1000);
   }
@@ -357,11 +300,18 @@ export class RhymeTimeMinigame extends BaseMinigame {
     const isValid = this.validateRhyme(word, rootWord);
     const multiSyllable = isValid ? isMultiSyllableRhyme(word, rootWord.syllableCount) : false;
 
+    // Determine invalid reason for client feedback
+    let invalidReason: string | undefined;
+    if (!isValid) {
+      invalidReason = isKnownWord(word) ? 'does_not_rhyme' : 'not_in_dictionary';
+    }
+
     const submission: PlayerSubmission = {
       word,
       timestamp: Date.now(),
       isValid,
       isMultiSyllable: multiSyllable,
+      invalidReason: invalidReason as PlayerSubmission['invalidReason'],
     };
 
     playerSubs.push(submission);
@@ -378,6 +328,7 @@ export class RhymeTimeMinigame extends BaseMinigame {
       type: 'RT_RHYME_SUBMITTED',
       word,
       isValid,
+      invalidReason,
       submissionCount: playerSubs.length,
       maxSubmissions: RT_MAX_SUBMISSIONS,
     });
@@ -430,18 +381,22 @@ export class RhymeTimeMinigame extends BaseMinigame {
       for (const sub of subs) {
         if (!sub.isValid) {
           invalidCount++;
+          // Not-in-dictionary words get 0 points (no penalty);
+          // known words that don't rhyme get -1 penalty
+          const penalty = sub.invalidReason === 'not_in_dictionary' ? 0 : RT_INVALID_PENALTY;
           breakdown.push({
             word: sub.word,
             isValid: false,
+            invalidReason: sub.invalidReason,
             rarity: null,
-            basePoints: RT_INVALID_PENALTY,
+            basePoints: penalty,
             multiSyllableMultiplier: 1,
             speedBonus: 0,
-            totalPoints: RT_INVALID_PENALTY,
+            totalPoints: penalty,
             submitterCount: 0,
             isMultiSyllable: false,
           });
-          roundScore += RT_INVALID_PENALTY;
+          roundScore += penalty;
           continue;
         }
 
@@ -701,7 +656,7 @@ export class RhymeTimeMinigame extends BaseMinigame {
         userId: wordsmithEntry.userId,
         title: 'Wordsmith',
         description: `Submitted ${wordsmithEntry.value} valid rhymes`,
-        icon: '📝',
+        icon: 'pencil-line',
       });
     }
 
@@ -712,7 +667,7 @@ export class RhymeTimeMinigame extends BaseMinigame {
         userId: diamondEntry.userId,
         title: 'Diamond in the Rough',
         description: `Found ${diamondEntry.value} rare rhymes`,
-        icon: '💎',
+        icon: 'gem',
       });
     }
 
@@ -723,7 +678,7 @@ export class RhymeTimeMinigame extends BaseMinigame {
         userId: syllableEntry.userId,
         title: 'Syllable Surfer',
         description: `Submitted ${syllableEntry.value} multi-syllable rhymes`,
-        icon: '🏄',
+        icon: 'waves',
       });
     }
 
@@ -734,7 +689,7 @@ export class RhymeTimeMinigame extends BaseMinigame {
         userId: quickDrawEntry.userId,
         title: 'Quick Draw',
         description: `Earned ${quickDrawEntry.value} speed bonuses`,
-        icon: '⚡',
+        icon: 'zap',
       });
     }
 
@@ -745,7 +700,7 @@ export class RhymeTimeMinigame extends BaseMinigame {
           userId,
           title: 'Overachiever',
           description: `Hit the ${RT_MAX_SUBMISSIONS}-word submission limit`,
-          icon: '🏆',
+          icon: 'trophy',
         });
       }
     }

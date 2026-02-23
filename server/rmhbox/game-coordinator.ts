@@ -17,13 +17,15 @@
 
 import { Server, Socket } from 'socket.io';
 import { LobbyManager } from './lobby-manager';
-import { StateSyncService } from './state-sync';
+import { StateSyncService, TimerHandle } from './state-sync';
 import { LeaderboardService } from './leaderboard';
 import { logger } from './logger';
 import { S2C } from '../../lib/rmhbox/events';
 import { MINIGAME_REGISTRY } from '../../lib/rmhbox/minigame-registry';
 import {
   COUNTDOWN_SECONDS,
+  DEFAULT_INSTRUCTION_DURATION_SECONDS,
+  GAME_DISCONNECT_GRACE_MS,
   PRELOAD_TIMEOUT_MS,
   RESULTS_DISPLAY_SECONDS,
 } from '../../lib/rmhbox/constants';
@@ -57,8 +59,8 @@ export const MINIGAME_SERVER_REGISTRY = new Map<
 interface LifecycleState {
   /** Timer for the current phase (instructions, preloading, countdown, results) */
   phaseTimer: ReturnType<typeof setTimeout> | null;
-  /** Cancel function for timer tick broadcast */
-  cancelTimerBroadcast: (() => void) | null;
+  /** Handle for the running timer broadcast (cancel / pause / resume) */
+  timerHandle: TimerHandle | null;
   /** Set of userIds who have sent ready_to_render during PRELOADING */
   readyPlayers: Set<string>;
 }
@@ -72,6 +74,8 @@ export class GameCoordinator {
   private readonly leaderboardService: LeaderboardService;
   /** Per-lobby lifecycle state tracking */
   private readonly lifecycles = new Map<string, LifecycleState>();
+  /** Per-lobby grace timers for in-game disconnects (cleared on reconnect or game end) */
+  private readonly disconnectGraceTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
   constructor(io: Server, lobbyManager: LobbyManager, stateSync: StateSyncService, leaderboardService?: LeaderboardService) {
     this.io = io;
@@ -85,6 +89,8 @@ export class GameCoordinator {
   handleConnection(socket: Socket): void {
     socket.on('rmhbox:game:select', validated(socket, 'rmhbox:game:select', SelectGameSchema, (s, d) => this.onSelect(s, d)));
     socket.on('rmhbox:game:force_skip', validated(socket, 'rmhbox:game:force_skip', ForceSkipSchema, (s, d) => this.onForceSkip(s, d)));
+    socket.on('rmhbox:game:force_end', validated(socket, 'rmhbox:game:force_end', ForceSkipSchema, (s, d) => this.onForceEnd(s, d)));
+    socket.on('rmhbox:game:pause_timer', validated(socket, 'rmhbox:game:pause_timer', ForceSkipSchema, (s, d) => this.onPauseTimer(s, d)));
     socket.on('rmhbox:game:ready_to_render', validated(socket, 'rmhbox:game:ready_to_render', ReadyToRenderSchema, (s, d) => this.onReadyToRender(s, d)));
     socket.on('rmhbox:game:input', validated(socket, 'rmhbox:game:input', GameInputSchema, (s, d) => this.onInput(s, d)));
   }
@@ -98,25 +104,66 @@ export class GameCoordinator {
 
     const handler = lobby.currentGame.handler;
 
-    // Notify the active minigame handler
+    // Notify the active minigame handler immediately (e.g. skip their turn)
     try {
       handler.handlePlayerDisconnect(userId);
     } catch (err) {
       logger.error({ event: 'game_disconnect_handler_error', lobbyId: lobby.id, userId, error: String(err) });
     }
 
-    // Check if remaining connected players < minPlayers
+    // Check if remaining connected players < minPlayers — defer force-end
     const def = MINIGAME_REGISTRY[lobby.currentGame.minigameId];
     if (def) {
       const connectedCount = Array.from(lobby.players.values()).filter((p) => p.isConnected).length;
-      if (connectedCount < def.minPlayers) {
-        logger.info({ event: 'force_end_insufficient_players', lobbyId: lobby.id, connectedCount, minPlayers: def.minPlayers });
-        try {
-          handler.forceEnd('insufficient_players');
-        } catch (err) {
-          logger.error({ event: 'force_end_error', lobbyId: lobby.id, error: String(err) });
-          this.handleGameError(lobby.id, err as Error);
-        }
+      if (connectedCount < def.minPlayers && !this.disconnectGraceTimers.has(lobby.id)) {
+        logger.info({
+          event: 'game_disconnect_grace_started',
+          lobbyId: lobby.id,
+          connectedCount,
+          minPlayers: def.minPlayers,
+          graceMs: GAME_DISCONNECT_GRACE_MS,
+        });
+
+        const timer = setTimeout(() => {
+          this.disconnectGraceTimers.delete(lobby.id);
+          // Re-check after grace period — player may have reconnected
+          const currentLobby = this.lobbyManager.getLobby(lobby.id);
+          if (!currentLobby || currentLobby.state !== 'PLAYING' || !currentLobby.currentGame) return;
+          const count = Array.from(currentLobby.players.values()).filter((p) => p.isConnected).length;
+          const currentDef = MINIGAME_REGISTRY[currentLobby.currentGame.minigameId];
+          if (currentDef && count < currentDef.minPlayers) {
+            logger.info({ event: 'force_end_insufficient_players', lobbyId: lobby.id, connectedCount: count, minPlayers: currentDef.minPlayers });
+            try {
+              currentLobby.currentGame.handler.forceEnd('insufficient_players');
+            } catch (err) {
+              logger.error({ event: 'force_end_error', lobbyId: lobby.id, error: String(err) });
+              this.handleGameError(lobby.id, err as Error);
+            }
+          }
+        }, GAME_DISCONNECT_GRACE_MS);
+
+        this.disconnectGraceTimers.set(lobby.id, timer);
+      }
+    }
+  }
+
+  // ─── Reconnect Handler ─────────────────────────────────────
+
+  /**
+   * Called when a player reconnects. Cancels any pending in-game
+   * disconnect grace timer if the player count is back above minPlayers.
+   */
+  handleReconnect(socket: Socket): void {
+    const userId = socket.data.userId as string;
+    const lobby = this.lobbyManager.getLobbyByUserId(userId);
+    if (!lobby || lobby.state !== 'PLAYING' || !lobby.currentGame) return;
+
+    // Cancel grace timer if reconnected player brings count back above min
+    const def = MINIGAME_REGISTRY[lobby.currentGame.minigameId];
+    if (def) {
+      const connectedCount = Array.from(lobby.players.values()).filter((p) => p.isConnected).length;
+      if (connectedCount >= def.minPlayers) {
+        this.cancelDisconnectGrace(lobby.id);
       }
     }
   }
@@ -163,7 +210,7 @@ export class GameCoordinator {
     this.startGameFlow(lobby.id, payload.minigameId);
   }
 
-  // ─── Host Force-Skip (§2.7) ───────────────────────────────────
+  // ─── Host Force-Skip (§2.7a) — Skip the current non-playing phase ──
 
   private onForceSkip(socket: Socket, payload: { lobbyId: string }): void {
     const userId = socket.data.userId as string;
@@ -187,6 +234,7 @@ export class GameCoordinator {
       case 'INSTRUCTIONS':
         logger.info({ event: 'force_skip_instructions', lobbyId: lobby.id, userId });
         this.clearLifecycleTimers(lobby.id);
+        this.lobbyManager.addSystemChat(lobby.id, 'Host skipped instructions.');
         this.startPreloading(lobby);
         break;
 
@@ -204,11 +252,51 @@ export class GameCoordinator {
         break;
 
       case 'COUNTDOWN':
-        // Don't skip — only 3 seconds
+        logger.info({ event: 'force_skip_countdown', lobbyId: lobby.id, userId });
+        this.clearLifecycleTimers(lobby.id);
+        this.lobbyManager.addSystemChat(lobby.id, 'Host skipped countdown.');
+        this.startPlaying(lobby);
+        break;
+
+      case 'ROUND_RESULTS':
+        logger.info({ event: 'force_skip_results', lobbyId: lobby.id, userId });
+        this.clearLifecycleTimers(lobby.id);
+        this.returnToWaiting(lobby);
+        break;
+
+      default:
+        // No-op for PLAYING or other states — use force_end instead
+        break;
+    }
+  }
+
+  // ─── Host Force-End (§2.7b) — Cancel / end the game entirely ──
+
+  private onForceEnd(socket: Socket, payload: { lobbyId: string }): void {
+    const userId = socket.data.userId as string;
+    const lobby = this.lobbyManager.getLobbyByUserId(userId);
+
+    if (!lobby || lobby.id !== payload.lobbyId) {
+      socket.emit(S2C.ERROR, { code: 'NOT_IN_LOBBY', message: 'You are not in this lobby.' });
+      return;
+    }
+
+    if (lobby.hostUserId !== userId) {
+      socket.emit(S2C.ERROR, { code: 'NOT_HOST', message: 'Only the host can force-end.' });
+      return;
+    }
+
+    switch (lobby.state) {
+      case 'INSTRUCTIONS':
+      case 'PRELOADING':
+      case 'COUNTDOWN':
+        logger.info({ event: 'force_end_pregame', lobbyId: lobby.id, state: lobby.state, userId });
+        this.clearLifecycleTimers(lobby.id);
+        this.lobbyManager.addSystemChat(lobby.id, 'Host cancelled the game.');
+        this.returnToWaiting(lobby);
         break;
 
       case 'PLAYING':
-        // Force-end the current game immediately and return to lobby
         logger.info({ event: 'force_end_game', lobbyId: lobby.id, userId });
         this.clearLifecycleTimers(lobby.id);
         if (lobby.currentGame?.handler) {
@@ -219,13 +307,75 @@ export class GameCoordinator {
         break;
 
       case 'ROUND_RESULTS':
-        logger.info({ event: 'force_skip_results', lobbyId: lobby.id, userId });
+        logger.info({ event: 'force_end_results', lobbyId: lobby.id, userId });
         this.clearLifecycleTimers(lobby.id);
         this.returnToWaiting(lobby);
         break;
 
       default:
-        // No-op for other states
+        // No-op for WAITING
+        break;
+    }
+  }
+
+  // ─── Pause / Resume Timer ──────────────────────────────────────
+
+  private onPauseTimer(socket: Socket, payload: { lobbyId: string }): void {
+    const userId = socket.data.userId as string;
+    const lobby = this.lobbyManager.getLobbyByUserId(userId);
+
+    if (!lobby || lobby.id !== payload.lobbyId) {
+      socket.emit(S2C.ERROR, { code: 'NOT_IN_LOBBY', message: 'You are not in this lobby.' });
+      return;
+    }
+
+    if (lobby.hostUserId !== userId) {
+      socket.emit(S2C.ERROR, { code: 'NOT_HOST', message: 'Only the host can pause/resume.' });
+      return;
+    }
+
+    const lifecycle = this.lifecycles.get(lobby.id);
+
+    switch (lobby.state) {
+      case 'INSTRUCTIONS':
+      case 'COUNTDOWN':
+      case 'ROUND_RESULTS': {
+        // Toggle the lifecycle timer broadcast
+        if (!lifecycle?.timerHandle) return;
+        if (lifecycle.timerHandle.isPaused) {
+          lifecycle.timerHandle.resume();
+          logger.info({ event: 'timer_resumed', lobbyId: lobby.id, state: lobby.state, userId });
+        } else {
+          lifecycle.timerHandle.pause();
+          logger.info({ event: 'timer_paused', lobbyId: lobby.id, state: lobby.state, userId });
+        }
+        break;
+      }
+
+      case 'PLAYING': {
+        // Toggle the game handler's phase timer
+        const handler = lobby.currentGame?.handler;
+        if (!handler) return;
+        if (handler.isPhaseTimerPaused) {
+          handler.resumePhaseTimer();
+          // Also resume lifecycle timer if present (for games using both)
+          if (lifecycle?.timerHandle && lifecycle.timerHandle.isPaused) {
+            lifecycle.timerHandle.resume();
+          }
+          logger.info({ event: 'timer_resumed', lobbyId: lobby.id, state: lobby.state, userId });
+        } else {
+          handler.pausePhaseTimer();
+          // Also pause lifecycle timer if present
+          if (lifecycle?.timerHandle && !lifecycle.timerHandle.isPaused) {
+            lifecycle.timerHandle.pause();
+          }
+          logger.info({ event: 'timer_paused', lobbyId: lobby.id, state: lobby.state, userId });
+        }
+        break;
+      }
+
+      default:
+        // No-op for WAITING/PRELOADING
         break;
     }
   }
@@ -316,6 +466,9 @@ export class GameCoordinator {
       startedAt: Date.now(),
     };
 
+    // Reset round number for new minigame (so first round is always "Round 1")
+    lobby.roundNumber = 0;
+
     // Broadcast GAME_SELECTED so clients get currentGame via incremental action
     // before the full sync arrives in the next phase transition
     const def2 = this.getMinigameDef(minigameId);
@@ -341,7 +494,7 @@ export class GameCoordinator {
 
   private startInstructions(lobby: RMHboxLobby, minigameId: string): void {
     const def = this.getMinigameDef(minigameId);
-    const durationSeconds = def?.instructionDurationSeconds ?? 15;
+    const durationSeconds = def?.instructionDurationSeconds ?? DEFAULT_INSTRUCTION_DURATION_SECONDS;
 
     lobby.state = 'INSTRUCTIONS';
     lobby.lastActivityAt = Date.now();
@@ -372,13 +525,13 @@ export class GameCoordinator {
     this.stateSync.broadcastFullSync(lobby.id);
 
     // Start instruction timer with tick broadcast
-    const cancelTimer = this.stateSync.startTimerBroadcast(lobby.id, durationSeconds, () => {
+    const timerHandle = this.stateSync.startTimerBroadcast(lobby.id, durationSeconds, () => {
       this.startPreloading(lobby);
     });
 
     this.lifecycles.set(lobby.id, {
       phaseTimer: null,
-      cancelTimerBroadcast: cancelTimer,
+      timerHandle,
       readyPlayers: new Set(),
     });
 
@@ -408,7 +561,7 @@ export class GameCoordinator {
     // Initialize lifecycle tracking
     let lifecycle = this.lifecycles.get(lobby.id);
     if (!lifecycle) {
-      lifecycle = { phaseTimer: null, cancelTimerBroadcast: null, readyPlayers: new Set() };
+      lifecycle = { phaseTimer: null, timerHandle: null, readyPlayers: new Set() };
       this.lifecycles.set(lobby.id, lifecycle);
     } else {
       lifecycle.readyPlayers = new Set();
@@ -446,7 +599,7 @@ export class GameCoordinator {
     // Send full state sync
     this.stateSync.broadcastFullSync(lobby.id);
 
-    const cancelTimer = this.stateSync.startTimerBroadcast(lobby.id, COUNTDOWN_SECONDS, () => {
+    const timerHandle = this.stateSync.startTimerBroadcast(lobby.id, COUNTDOWN_SECONDS, () => {
       const currentLobby = this.lobbyManager.getLobby(lobby.id);
       if (!currentLobby || currentLobby.state !== 'COUNTDOWN') return;
       this.startPlaying(currentLobby);
@@ -454,10 +607,10 @@ export class GameCoordinator {
 
     let lifecycle = this.lifecycles.get(lobby.id);
     if (!lifecycle) {
-      lifecycle = { phaseTimer: null, cancelTimerBroadcast: cancelTimer, readyPlayers: new Set() };
+      lifecycle = { phaseTimer: null, timerHandle, readyPlayers: new Set() };
       this.lifecycles.set(lobby.id, lifecycle);
     } else {
-      lifecycle.cancelTimerBroadcast = cancelTimer;
+      lifecycle.timerHandle = timerHandle;
     }
 
     logger.info({ event: 'countdown_started', lobbyId: lobby.id, seconds: COUNTDOWN_SECONDS });
@@ -471,6 +624,10 @@ export class GameCoordinator {
 
     lobby.state = 'PLAYING';
     lobby.lastActivityAt = Date.now();
+
+    // Increment round number at game start (not at game end)
+    // so that Round 1 shows during the first game
+    lobby.roundNumber++;
 
     this.lobbyManager.broadcastAction(lobby.id, { type: 'STATE_CHANGED', payload: { state: 'PLAYING' } });
     this.io.to(`lobby:${lobby.id}`).emit(S2C.GAME_STARTED, { minigameId });
@@ -494,7 +651,7 @@ export class GameCoordinator {
       const fallbackDurationMs = (def?.estimatedDurationSeconds ?? 60) * 1000;
       let lifecycle = this.lifecycles.get(lobby.id);
       if (!lifecycle) {
-        lifecycle = { phaseTimer: null, cancelTimerBroadcast: null, readyPlayers: new Set() };
+        lifecycle = { phaseTimer: null, timerHandle: null, readyPlayers: new Set() };
         this.lifecycles.set(lobby.id, lifecycle);
       }
       lifecycle.phaseTimer = setTimeout(() => {
@@ -519,7 +676,7 @@ export class GameCoordinator {
       }, fallbackDurationMs);
 
       // Start timer broadcast for the duration
-      lifecycle.cancelTimerBroadcast = this.stateSync.startTimerBroadcast(
+      lifecycle.timerHandle = this.stateSync.startTimerBroadcast(
         lobby.id,
         Math.ceil(fallbackDurationMs / 1000),
         () => { /* timer expiry handled by phaseTimer above */ },
@@ -533,11 +690,15 @@ export class GameCoordinator {
       lobbyId: lobby.id,
       players: new Map(lobby.players),
       settings: { ...lobby.settings },
+      getHostId: () => lobby.hostUserId,
       broadcastToLobby: (event: string, data: unknown) => {
         this.io.to(`lobby:${lobby.id}`).emit(event, data);
       },
       broadcastToPlayers: (event: string, data: unknown) => {
         this.lobbyManager.broadcastToPlayers(lobby.id, event, data);
+      },
+      broadcastAction: (action: { type: string; payload?: unknown }) => {
+        this.lobbyManager.broadcastAction(lobby.id, action);
       },
       sendToPlayer: (userId: string, event: string, data: unknown) => {
         this.lobbyManager.sendToPlayer(lobby.id, userId, event, data);
@@ -562,6 +723,23 @@ export class GameCoordinator {
         startedAt: Date.now(),
       };
       gameInstance.start();
+
+      // Send initial game state snapshot to every player and spectator.
+      // This ensures the client has the game state in the Zustand store
+      // BEFORE the lazy-loaded minigame component mounts and subscribes.
+      for (const [playerId] of lobby.players) {
+        try {
+          const playerState = gameInstance.getStateForPlayer(playerId);
+          this.lobbyManager.sendToPlayer(lobby.id, playerId, S2C.GAME_STATE_SNAPSHOT, playerState);
+        } catch { /* ignore — player may not be connected */ }
+      }
+      for (const [spectatorId] of lobby.spectators) {
+        try {
+          const spectatorState = gameInstance.getStateForSpectator();
+          this.lobbyManager.sendToPlayer(lobby.id, spectatorId, S2C.GAME_STATE_SNAPSHOT, spectatorState);
+        } catch { /* ignore */ }
+      }
+
       logger.info({ event: 'game_handler_started', lobbyId: lobby.id, minigameId });
     } catch (err) {
       logger.error({ event: 'game_start_error', lobbyId: lobby.id, minigameId, error: String(err) });
@@ -584,8 +762,7 @@ export class GameCoordinator {
       }
     }
 
-    // Increment round number
-    lobby.roundNumber++;
+    // Round number was already incremented in startPlaying(), so no increment here
 
     // Update player scores
     for (const ranking of results.rankings) {
@@ -656,7 +833,7 @@ export class GameCoordinator {
     this.stateSync.broadcastFullSync(lobbyId);
 
     // Start results display timer
-    const cancelTimer = this.stateSync.startTimerBroadcast(lobbyId, RESULTS_DISPLAY_SECONDS, () => {
+    const timerHandle = this.stateSync.startTimerBroadcast(lobbyId, RESULTS_DISPLAY_SECONDS, () => {
       const currentLobby = this.lobbyManager.getLobby(lobbyId);
       if (!currentLobby || currentLobby.state !== 'ROUND_RESULTS') return;
       this.returnToWaiting(currentLobby);
@@ -664,10 +841,10 @@ export class GameCoordinator {
 
     let lifecycle = this.lifecycles.get(lobbyId);
     if (!lifecycle) {
-      lifecycle = { phaseTimer: null, cancelTimerBroadcast: cancelTimer, readyPlayers: new Set() };
+      lifecycle = { phaseTimer: null, timerHandle, readyPlayers: new Set() };
       this.lifecycles.set(lobbyId, lifecycle);
     } else {
-      lifecycle.cancelTimerBroadcast = cancelTimer;
+      lifecycle.timerHandle = timerHandle;
     }
 
     logger.info({ event: 'round_results_displayed', lobbyId, roundNumber: lobby.roundNumber });
@@ -716,8 +893,17 @@ export class GameCoordinator {
   // ─── Return to Waiting ────────────────────────────────────────
 
   private returnToWaiting(lobby: RMHboxLobby): void {
+    // Auto-reselect the previously played game so the host can easily repeat it
+    const lastGameId = lobby.currentGame?.minigameId ?? null;
     lobby.currentGame = null;
-    lobby.selectedGame = null;
+    if (lastGameId) {
+      const def = this.getMinigameDef(lastGameId);
+      lobby.selectedGame = def
+        ? { minigameId: lastGameId, displayName: def.displayName }
+        : null;
+    } else {
+      lobby.selectedGame = null;
+    }
     lobby.state = 'WAITING';
     lobby.lastActivityAt = Date.now();
 
@@ -735,6 +921,7 @@ export class GameCoordinator {
     // Clean up lifecycle tracking
     this.clearLifecycleTimers(lobby.id);
     this.lifecycles.delete(lobby.id);
+    this.cancelDisconnectGrace(lobby.id);
 
     logger.info({ event: 'returned_to_waiting', lobbyId: lobby.id });
   }
@@ -762,6 +949,16 @@ export class GameCoordinator {
     return { players, allReady };
   }
 
+  /** Cancel any pending in-game disconnect grace timer for a lobby */
+  private cancelDisconnectGrace(lobbyId: string): void {
+    const timer = this.disconnectGraceTimers.get(lobbyId);
+    if (timer) {
+      clearTimeout(timer);
+      this.disconnectGraceTimers.delete(lobbyId);
+      logger.info({ event: 'game_disconnect_grace_cancelled', lobbyId });
+    }
+  }
+
   /** Clear all lifecycle timers for a lobby */
   private clearLifecycleTimers(lobbyId: string): void {
     const lifecycle = this.lifecycles.get(lobbyId);
@@ -771,9 +968,9 @@ export class GameCoordinator {
       clearTimeout(lifecycle.phaseTimer);
       lifecycle.phaseTimer = null;
     }
-    if (lifecycle.cancelTimerBroadcast) {
-      lifecycle.cancelTimerBroadcast();
-      lifecycle.cancelTimerBroadcast = null;
+    if (lifecycle.timerHandle) {
+      lifecycle.timerHandle.cancel();
+      lifecycle.timerHandle = null;
     }
   }
 }

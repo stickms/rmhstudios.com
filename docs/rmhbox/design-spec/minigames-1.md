@@ -227,7 +227,9 @@ const SubmitRhymeSchema = z.object({
 | `RT_ROUND_RESULTS` | `{ rootWord: string, playerResults: PlayerRoundScore[], allWords: AllWordsBreakdown[] }` | All (lobby) | Round scoring complete |
 | `RT_INTERMISSION` | `{ nextRound: number, nextRootWordPreview: { difficulty: string }, mvpUserId: string, mvpScore: number }` | All (lobby) | Brief break between rounds |
 | `RT_GAME_OVER` | _(none — handled by base `computeResults()`)_ | — | End of all rounds |
-| `TIMER_TICK` | `{ timeRemaining: number }` | All (lobby) | Standard timer tick (every 1s during INPUT phase) |
+| `TIMER_START` | `{ totalDuration: number, timeRemaining: number }` | All (lobby) | Emitted at the start of each timed phase (ROUND_START, INPUT, SCORING, INTERMISSION) via `broadcastAction` |
+| `TIMER_TICK` | `{ timeRemaining: number }` | All (lobby) | Standard timer tick (every 1s during all timed phases) via `broadcastAction` |
+| `MINIGAME_ROUND` | `{ current: number, total: number }` | All (lobby) | Sub-round counter update (e.g. "Round 2/3") via `broadcastAction` |
 
 **`AllWordsBreakdown`** (shown during results):
 
@@ -510,15 +512,35 @@ Spectators receive the same `RT_*` actions but see an aggregated view: all playe
 
 A team-based word-association game inspired by *Codenames*. A 5×5 grid of words is displayed. Each team has a **Spymaster** who sees a color-coded **Key Card** revealing which words belong to which team. Spymasters give single-word clues with a number hint. Their team's **Operatives** must deduce and click the correct tiles. Hitting the **Assassin** tile is an instant loss.
 
+**Key UX features:**
+- **Interactive team setup** — Players are placed in a TEAM_SETUP phase where the host (and individual players) can rearrange teams and roles before the game begins.
+- **No time limits** — Both clue and guess phases have no timeout (timeout: 0), allowing unlimited thinking time.
+- **Two-click guessing** — Operatives first highlight a tile (amber border), then confirm the guess via a pointer-click icon. This prevents accidental clicks.
+- **Live game log** — A scrollable sidebar shows real-time clue, guess, and turn events alongside team scores.
+- **Smart word sizing** — Long words on tiles auto-shrink to fit without truncation.
+- **Pitch-black assassin** — The assassin tile uses a stark black background with red text for maximum visual impact.
+
 ### 2.3 Detailed Mechanics
 
-#### 2.3.1 Setup Phase
+#### 2.3.1 Team Setup Phase (TEAM_SETUP)
 
-When the game starts:
+Before the game board is generated, players enter an interactive **Team Setup** phase:
 
-1. **Team Assignment:** Players are divided into two teams (Red and Blue). The server assigns teams using round-robin by join order, ensuring balanced team sizes (difference ≤ 1). If an odd number of players, Red team gets the extra player (and goes first).
-2. **Spymaster Selection:** One player per team is randomly designated as the **Spymaster**. The remaining players are **Operatives**.
-3. **Grid Generation:** 25 words are randomly selected from the word pool (`/public/data/rmhbox/undercover-agent/word-pool.json`, ~400 words, all common English nouns).
+1. **Initial Team Assignment:** Players are divided into two teams (Red and Blue) via round-robin by join order, ensuring balanced team sizes (difference ≤ 1). If an odd number, Red gets the extra player. One player per team is randomly designated as the **Spymaster**.
+2. **Interactive Rearrangement:** The host (lobby creator) and individual players can rearrange teams:
+   - **Swap team:** Move a player between Red and Blue (arrows: `→` from Red to Blue, `←` from Blue to Red).
+   - **Toggle role:** Promote to Spymaster (`↑ Spy`) or demote to Operative (`↓ Op`).
+   - Players can move themselves; only the host can move others.
+   - Empty slots (no `spymasterId` or empty `operativeIds`) are filtered from the display — no buttons rendered for phantom entries.
+3. **Shuffle:** The host can randomize all team assignments with a Shuffle button.
+4. **Validation:** The Start Game button is disabled until each team has at least 1 Spymaster and 1 Operative (minimum 4 total players).
+5. **Start:** When the host clicks Start, the server validates team composition and transitions to the SETUP phase.
+
+#### 2.3.1b Grid Setup Phase (SETUP)
+
+After team setup is confirmed:
+
+1. **Grid Generation:** 25 words are randomly selected from the word pool (`/public/data/rmhbox/undercover-agent/word-pool.json`, ~400 words, all common English nouns).
 4. **Key Card Generation:** The 25 grid positions are assigned:
    - **Red Agents:** `KEY_CARD_FIRST_TEAM_COUNT` (default: 9) — the team that goes first gets one extra
    - **Blue Agents:** `KEY_CARD_SECOND_TEAM_COUNT` (default: 8)
@@ -537,7 +559,7 @@ Each turn follows:
      - Cannot be any word currently visible on the grid (case-insensitive substring check).
      - Maximum 30 characters.
      - Number must be 0–9, or "∞" (unlimited guesses).
-   - Time limit: `SPYMASTER_CLUE_TIMEOUT_SECONDS` (default: **90 seconds**). If exceeded, the turn is auto-passed (0 guesses).
+   - Time limit: **None** (timeout: 0). Spymasters have unlimited time to think. The host or team can coordinate verbally to keep the game moving.
 
 2. **Guess Phase** (Operatives' turn):
    - The team's Operatives discuss (via chat) and click tiles.
@@ -549,7 +571,13 @@ Each turn follows:
      - ⬜ **Bystander:** Tile revealed as neutral. Turn ends immediately.
      - 💀 **Assassin:** Tile revealed. **Game over — the guessing team loses instantly.**
    - Operatives can voluntarily end their turn early by clicking "End Turn".
-   - Time limit per guess phase: `OPERATIVE_GUESS_TIMEOUT_SECONDS` (default: **120 seconds** total for all guesses). Timer resets on each correct guess.
+   - **Two-click guessing flow:** To prevent accidental guesses, operatives use a highlight-then-submit approach:
+     1. **First click** on a hidden tile highlights it with an amber border and ring.
+     2. A `MousePointerClick` confirm icon appears at the tile's top-right corner.
+     3. **Clicking the confirm icon** (or clicking the same tile again) submits the guess.
+     4. Clicking a different tile moves the highlight there instead.
+     5. The highlight auto-clears when the turn ends or the tile is revealed.
+   - Time limit per guess phase: **None** (timeout: 0). Operatives have unlimited time.
 
 #### 2.3.3 Win Conditions
 
@@ -599,7 +627,7 @@ interface UndercoverAgentState {
   phaseEndsAt: number;
 }
 
-type UAPhase = 'SETUP' | 'CLUE' | 'GUESS' | 'TURN_TRANSITION' | 'GAME_OVER';
+type UAPhase = 'TEAM_SETUP' | 'SETUP' | 'CLUE' | 'GUESS' | 'TURN_TRANSITION' | 'GAME_OVER';
 
 interface TeamState {
   teamId: 'red' | 'blue';
@@ -625,8 +653,12 @@ interface ActiveClue {
 
 | Action | Payload | Who Can Send | Description |
 |---|---|---|---|
+| `SHUFFLE_TEAMS` | `{}` | Host only (TEAM_SETUP) | Randomize all team assignments |
+| `SWAP_PLAYER` | `{ targetUserId: string, toTeam: 'red' \| 'blue' }` | Host or self (TEAM_SETUP) | Move a player to the other team |
+| `SET_ROLE` | `{ targetUserId: string, role: 'spymaster' \| 'operative' }` | Host or self (TEAM_SETUP) | Change a player's role |
+| `START_GAME` | `{}` | Host only (TEAM_SETUP) | Start the game (requires valid team composition) |
 | `GIVE_CLUE` | `{ word: string, number: number \| 'unlimited' }` | Active team's Spymaster only | Submit a clue |
-| `GUESS_TILE` | `{ position: number }` | Active team's Operatives only | Click a grid tile |
+| `GUESS_TILE` | `{ position: number }` | Active team's Operatives only | Submit a confirmed guess (after highlight) |
 | `END_TURN` | `{}` | Active team's Operatives only | Voluntarily end the guess phase |
 
 **Zod schemas:**
@@ -649,15 +681,19 @@ const GuessTileSchema = z.object({
 
 | Action Type | Payload | Sent To | Description |
 |---|---|---|---|
-| `UA_SETUP` | `{ grid: GridWord[], teams: TeamsInfo, currentTeam: string }` | All (lobby) | Initial game state |
+| `UA_TEAM_SETUP` | `{ teams: TeamsInfo, hostId: string }` | All (lobby) | Enter team setup phase |
+| `UA_TEAMS_UPDATED` | `{ teams: TeamsInfo, isValid: boolean }` | All (lobby) | Team composition changed during setup |
+| `UA_SETUP` | `{ grid: GridWord[], teams: TeamsInfo, currentTeam: string }` | All (lobby) | Initial game state (board generated) |
 | `UA_KEY_CARD` | `{ keyCard: TileType[] }` | Each Spymaster, privately | Key card data (which tiles are which) |
-| `UA_CLUE_PHASE` | `{ teamId: string, spymasterName: string, timeoutSeconds: number }` | All (lobby) | Spymaster's turn to give a clue |
-| `UA_CLUE_GIVEN` | `{ teamId: string, word: string, number: number \| 'unlimited' }` | All (lobby) | Clue revealed |
-| `UA_GUESS_PHASE` | `{ teamId: string, guessesAllowed: number, timeoutSeconds: number }` | All (lobby) | Operatives' guess phase begins |
-| `UA_TILE_REVEALED` | `{ position: number, tileType: TileType, revealedBy: string, correct: boolean }` | All (lobby) | A tile was clicked and revealed |
-| `UA_TURN_END` | `{ reason: 'WRONG_GUESS' \| 'BYSTANDER' \| 'NO_GUESSES' \| 'VOLUNTARY' \| 'TIMEOUT', nextTeam: string }` | All (lobby) | Turn ended, switching teams |
-| `UA_GAME_OVER` | `{ winner: string, winReason: string, keyCard: TileType[] }` | All (lobby) | Game over — full key card revealed to everyone |
-| `TIMER_TICK` | `{ timeRemaining: number }` | All (lobby) | Phase timer |
+| `UA_PHASE_CHANGE` | `{ phase: UAPhase, currentTeam: string, turnNumber: number, timeout: number }` | All (lobby) | Phase transition (CLUE/GUESS/etc.) |
+| `UA_CLUE` | `{ teamId: string, word: string, number: number \| 'unlimited', guessesRemaining: number, timeout: number }` | All (lobby) | Clue given by spymaster |
+| `UA_TILE_REVEALED` | `{ position: number, tileType: TileType, teamId: string, word?: string }` | All (lobby) | A tile was guessed and revealed |
+| `UA_GUESS_RESULT` | `{ guessesRemaining: number, teamAgentsRevealed: number, teamAgentsTotal: number }` | All (lobby) | Updated guess/agent counts after a reveal |
+| `UA_TURN_END` | `{ reason: 'WRONG_GUESS' \| 'BYSTANDER' \| 'NO_GUESSES' \| 'VOLUNTARY' \| 'TIMEOUT' }` | All (lobby) | Turn ended, switching teams |
+| `UA_GAME_OVER` | `{ winner: string, reason: string, grid: GridTileClient[], teams: TeamsInfo }` | All (lobby) | Game over — full board revealed to everyone |
+| `UA_ACTION_REJECTED` | `{ reason: string }` | Sender only | Action was invalid (e.g., not_host, invalid_team_composition) |
+| `TIMER_START` | `{ totalDuration: number, timeRemaining: number }` | All (lobby) | Emitted at the start of each timed phase (SETUP, CLUE turns, GUESS turns) via `broadcastAction` |
+| `TIMER_TICK` | `{ timeRemaining: number }` | All (lobby) | Phase timer (every 1s during all timed phases) via `broadcastAction` |
 
 ### 2.6 Information Masking
 
@@ -763,39 +799,48 @@ No additional packages required beyond what's in the core spec. The word pool is
 
 ```
 components/rmhbox/minigames/undercover-agent/
-  UndercoverAgentGame.tsx     # Main game component, phase router
-  GridBoard.tsx               # 5×5 clickable grid (responsive, mobile-friendly)
-  SpymasterKey.tsx             # Key card overlay (transparent colored cells)
+  UndercoverAgentGame.tsx     # Main game component, phase router (incl. TeamSetupColumn)
+  GridBoard.tsx               # 5×5 clickable grid with highlight-then-submit flow
   ClueInput.tsx                # Spymaster clue input (word + number)
   ClueDisplay.tsx              # Shows the active clue to operatives
-  TeamPanel.tsx                # Team roster with roles, reusable for both sides
+  TeamPanel.tsx                # Team roster with team-color self-highlighting
   TurnIndicator.tsx            # Shows whose turn it is
+  GameLog.tsx                  # Score display + scrollable action log sidebar
 ```
 
-**Mobile UI layout (GUESS phase, Operative view):**
+**Desktop UI layout (GUESS phase, Operative view):**
 
 ```
-┌──────────────────────────────┐
-│ Undercover Agent  ⏱ 1:30     │
-├──────────────────────────────┤
-│ 🔴 Red's Turn — Clue: "Animal: 3"│
-├──────────────────────────────┤
-│ ┌────┬────┬────┬────┬────┐  │
-│ │Milk│Tree│🟥  │Fox │Dog │  │  ← 5×5 grid, tap to guess
-│ ├────┼────┼────┼────┼────┤  │    🟥 = revealed red agent
-│ │Moon│    │Book│Star│    │  │    Colors overlay revealed tiles
-│ ├────┼────┼────┼────┼────┤  │
-│ │    │Run │    │    │Cup │  │
-│ ├────┼────┼────┼────┼────┤  │
-│ │    │    │🟦  │    │    │  │
-│ ├────┼────┼────┼────┼────┤  │
-│ │    │Key │    │Car │    │  │
-│ └────┴────┴────┴────┴────┘  │
-├──────────────────────────────┤
-│ Guesses: 2/4  [End Turn]     │
-│ 🟥 Red 3/9   🟦 Blue 1/8    │  ← Agent progress
-└──────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│ RED — Guess Phase                              #2          │
+├───────────┬──────────────────────────────┬──────────────────┤
+│ RED       │                              │ ┌──────────────┐│
+│ ■ 3/9     │   ANIMAL  3                  │ │ Red    Blue  ││
+│ ▊▊▊░░░░░░ │   Guesses remaining: 2       │ │ 3/9    1/8   ││
+│ 🛡 Alice  │   [End Turn]                 │ ├──────────────┤│
+│ 👁 *Bob*  │                              │ │ Game Log     ││
+│           │ ┌────┬────┬────┬────┬────┐   │ │              ││
+│ BLUE      │ │Milk│Tree│🟥  │Fox │🔶👆│   │ │ Clue: ANI…3  ││
+│ ■ 1/8     │ ├────┼────┼────┼────┼────┤   │ │ FOX → ✅ Red ││
+│ ▊░░░░░░░░ │ │Moon│    │Book│Star│    │   │ │ TREE → Byst. ││
+│ 🛡 Carol  │ ├────┼────┼────┼────┼────┤   │ │ Turn ended   ││
+│ 👁 Dave   │ │    │Run │    │    │Cup │   │ │ Clue: LIN…2  ││
+│           │ ├────┼────┼────┼────┼────┤   │ │              ││
+│           │ │    │    │🟦  │    │    │   │ └──────────────┘│
+│           │ ├────┼────┼────┼────┼────┤   │                │
+│           │ │    │Key │    │Car │    │   │                │
+│           │ └────┴────┴────┴────┴────┘   │                │
+├───────────┴──────────────────────────────┴──────────────────┤
+│ 🔶👆 = highlighted tile with confirm icon (two-click flow) │
+│ *Bob* = self-highlight in team color (not accent)          │
+└─────────────────────────────────────────────────────────────┘
 ```
+
+Layout notes:
+- **Left sidebar:** Team panels showing roster with team-color self-highlighting (your name appears in red-400 or blue-400 matching your team, not generic accent).
+- **Center:** Clue display area + 5×5 grid. The entire content area is scrollable (`overflow-y-auto max-h-[calc(100vh-8rem)]`).
+- **Right sidebar:** Score display (red/blue agent counts with colored backgrounds) + scrollable game log showing clues, guess results, turn events. Log entries include the player's name (e.g. "Alice: ANIMAL 3", "Bob: FOX → Red Agent"). Auto-scrolls to latest entry.
+- During CLUE phase, spymaster sees `ClueInput` only until the clue is submitted. Once submitted, they see `ClueDisplay` like everyone else.
 
 ### 2.14 Constants
 
@@ -806,8 +851,8 @@ export const UA_FIRST_TEAM_AGENT_COUNT = 9;
 export const UA_SECOND_TEAM_AGENT_COUNT = 8;
 export const UA_ASSASSIN_COUNT = 1;
 export const UA_BYSTANDER_COUNT = 7;                     // 25 - 9 - 8 - 1
-export const UA_SPYMASTER_CLUE_TIMEOUT_SECONDS = 90;
-export const UA_OPERATIVE_GUESS_TIMEOUT_SECONDS = 120;
+export const UA_SPYMASTER_CLUE_TIMEOUT_SECONDS = 0;     // No time limit
+export const UA_OPERATIVE_GUESS_TIMEOUT_SECONDS = 0;     // No time limit
 export const UA_TURN_TRANSITION_SECONDS = 3;
 export const UA_MAX_UNLIMITED_GUESSES = 25;
 export const UA_MAX_CONSECUTIVE_PASSES = 6;              // 3 per team = stalemate
@@ -1182,7 +1227,9 @@ const CrashAnswerSchema = z.object({
 | `CC_PEER_REVIEW_START` | `{ allAnswers: AnonymizedAnswerSet[], reviewDurationSeconds: number }` | All (lobby) | Peer review begins — all answers revealed (anonymized) |
 | `CC_CRASH_UPDATE` | `{ targetUserId: string, categoryIndex: number, crashCount: number, threshold: number }` | All (lobby) | Updated crash count for an answer |
 | `CC_ROUND_RESULTS` | `CCRoundResults` | All (lobby) | Round scoring complete (de-anonymized) |
-| `TIMER_TICK` | `{ timeRemaining: number }` | All (lobby) | Standard timer |
+| `TIMER_START` | `{ totalDuration: number, timeRemaining: number }` | All (lobby) | Emitted at the start of each timed phase (REVEAL, INPUT, PEER_REVIEW, CRASH_RESOLUTION, ROUND_RESULTS) via `broadcastAction` |
+| `TIMER_TICK` | `{ timeRemaining: number }` | All (lobby) | Standard timer (every 1s during all timed phases) via `broadcastAction` |
+| `MINIGAME_ROUND` | `{ current: number, total: number }` | All (lobby) | Sub-round counter update via `broadcastAction` |
 
 **`AnonymizedAnswerSet`:**
 
@@ -1310,8 +1357,8 @@ components/rmhbox/minigames/category-crash/
 ```typescript
 export const CC_TOTAL_ROUNDS = 2;
 export const CC_CATEGORIES_PER_ROUND = 5;
-export const CC_INPUT_DURATION_SECONDS = 60;
-export const CC_PEER_REVIEW_DURATION_SECONDS = 30;
+export const CC_INPUT_DURATION_SECONDS = 60;       // base; scales +15s per player beyond 2, max 180s
+export const CC_PEER_REVIEW_DURATION_SECONDS = 30; // base; scales +10s per player beyond 2, max 90s
 export const CC_CRASH_RESOLUTION_SECONDS = 5;
 export const CC_ROUND_RESULTS_SECONDS = 8;
 export const CC_REVEAL_SECONDS = 3;
@@ -1686,7 +1733,8 @@ const GoBackSchema = z.object({
 | `WR_PLAYER_PROGRESS` | `{ userId: string, userName: string, clickCount: number, hasFinished: boolean }` | All (lobby) | A player's progress update |
 | `WR_PLAYER_FINISHED` | `{ userId: string, userName: string, clickCount: number, finishRank: number, timeElapsed: number }` | All (lobby) | A player reached the target |
 | `WR_RESULTS` | `{ rankings: WRRanking[], startArticle: string, targetArticle: string, optimalPath: string[] }` | All (lobby) | Game over — paths and scores revealed |
-| `TIMER_TICK` | `{ timeRemaining: number }` | All (lobby) | Standard timer |
+| `TIMER_START` | `{ totalDuration: number, timeRemaining: number }` | All (lobby) | Emitted at the start of each timed phase (ARTICLE_REVEAL, NAVIGATION, RESULTS) via `broadcastAction` |
+| `TIMER_TICK` | `{ timeRemaining: number }` | All (lobby) | Standard timer (every 1s during all timed phases) via `broadcastAction` |
 
 **`WRRanking`:**
 

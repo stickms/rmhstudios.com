@@ -194,9 +194,16 @@ export class LobbyManager {
     const player = lobby.players.get(userId);
     if (player) {
       player.isConnected = false;
+      player.isReady = false;
       player.socketId = null;
       player.lastSeenAt = Date.now();
       lobby.lastActivityAt = Date.now();
+
+      // Broadcast ready-state change so other clients see them as unready
+      this.broadcastAction(lobby.id, {
+        type: 'PLAYER_READY_CHANGED',
+        payload: { userId, isReady: false },
+      });
 
       logger.info({ event: 'player_disconnected', userId, lobbyId: lobby.id });
 
@@ -1286,8 +1293,8 @@ export class LobbyManager {
       // Check idle timeout (only in WAITING state)
       const isIdle = lobby.state === 'WAITING' && now - lobby.lastActivityAt > config.LOBBY_IDLE_TIMEOUT_MS;
 
-      // Check absolute timeout (any state)
-      const isExpired = now - lobby.lastActivityAt > config.LOBBY_ABSOLUTE_TIMEOUT_MS;
+      // Check absolute timeout (any state) — but only if no clients are connected
+      const isExpired = allDisconnected && now - lobby.lastActivityAt > config.LOBBY_ABSOLUTE_TIMEOUT_MS;
 
       // Check empty timeout (all disconnected or nobody present)
       const isEmptyTooLong = (isEmpty || allDisconnected) && now - lobby.lastActivityAt > config.LOBBY_EMPTY_TIMEOUT_MS;

@@ -491,7 +491,7 @@ interface RMHboxLobby {
   lastActivityAt: number;              // Updated on any event; used for GC
   currentGame: ActiveGame | null;      // null when in lobby/voting
   matchHistory: MatchSummary[];        // results from games played in this session
-  roundNumber: number;                 // increments each game played
+  roundNumber: number;                 // increments each game played; reset to 0 at the start of each new minigame
 }
 
 interface LobbySettings {
@@ -643,7 +643,7 @@ Only the host (`lobby.hostUserId === socket.data.userId`) can:
 | Start game (direct) | `rmhbox:game:select` | Host picks a minigame directly |
 | Start vote | `rmhbox:game:start_vote` | Initiate a vote on minigames (see §12) |
 | End session | `rmhbox:lobby:end_session` | Transition to `SESSION_RESULTS`, then disband |
-| Force skip | `rmhbox:game:force_skip` | Skip the current phase (instructions, voting timeout, etc.) |
+| Force skip | `rmhbox:game:force_skip` | Skip the current phase. During INSTRUCTIONS or COUNTDOWN, returns to WAITING (cancels the game). During PLAYING, force-ends the active minigame. |
 
 All host actions are validated server-side. If `socket.data.userId !== lobby.hostUserId`, the event is silently dropped.
 
@@ -872,6 +872,8 @@ export interface MinigameContext {
   nsp: Namespace;
   broadcastToLobby: (event: string, data: unknown) => void;
   broadcastToPlayers: (event: string, data: unknown) => void;
+  /** Emit a sequenced GameAction via LobbyManager (includes seq + timestamp). */
+  broadcastAction: (action: { type: string; payload?: unknown }) => void;
   sendToPlayer: (userId: string, event: string, data: unknown) => void;
   sendToSpectators: (event: string, data: unknown) => void;
   onComplete: (results: MinigameResults) => void;
@@ -1135,7 +1137,9 @@ These are game-specific and defined per minigame. Common patterns:
 
 ```typescript
 type CommonGameActionType =
+  | 'TIMER_START'              // { totalDuration: number, timeRemaining: number }
   | 'TIMER_TICK'               // { timeRemaining: number }
+  | 'MINIGAME_ROUND'           // { current: number, total: number }
   | 'ROUND_START'              // { roundNumber, roundData }
   | 'TURN_CHANGED'             // { activeUserId }
   | 'SCORE_UPDATED'            // { userId, newScore, delta }
@@ -1143,6 +1147,15 @@ type CommonGameActionType =
   | 'GAME_OVER'                // { rankings }
   | 'PHASE_CHANGED';           // { newPhase: string }
 ```
+
+**`TIMER_START`** must be emitted before the first `TIMER_TICK` of any timed phase.
+It sets the `totalDuration` baseline used by the header timer ring to calculate the
+full-circle animation. All subsequent `TIMER_TICK` actions only carry `timeRemaining`.
+
+**`MINIGAME_ROUND`** sets the sub-round display in the footer (e.g. "Round 2/3").
+Minigame handlers call `this.broadcastRound(current, total)` at the start of each
+internal round. The store's `minigameRound` field is automatically cleared on
+game end / lobby leave.
 
 Each minigame extends these with its own action types (detailed in `design-spec-minigames.md`).
 
@@ -1292,7 +1305,7 @@ socket.on('rmhbox:game:input', (payload) => {
 
 ### 10.3 Spectator UI
 
-A persistent `<SpectatorBanner>` is shown at the top of the screen:
+A persistent `<SpectatorBanner>` is shown at the top of the screen. It uses `h-16` to match the header height, `bg-.../75` for 75% transparency, and `pointer-events-none` on the container with `pointer-events-auto` on interactive elements so it doesn't block the game UI underneath:
 
 ```
 ┌─────────────────────────────────────────┐
@@ -1336,7 +1349,7 @@ Between rounds (during `WAITING` or `ROUND_RESULTS` states), if `settings.allowS
 1. Spectators see a "Join as Player" button.
 2. **Client emits:** `rmhbox:lobby:request_promotion`
 3. Server checks `players.size < settings.maxPlayers`.
-4. If space available: move the spectator from `spectators` map to `players` map, update their rooms, broadcast `SPECTATOR_PROMOTED` action.
+4. If space available: move the spectator from `spectators` map to `players` map, update their rooms, broadcast `SPECTATOR_PROMOTED` action. The client store reducer sets `myRole: 'player'` when the promoted user matches the local user.
 5. If no space: respond with `rmhbox:error` (`LOBBY_FULL`).
 
 ---
@@ -2395,6 +2408,43 @@ export function disconnectFromRMHbox(): void {
 
 ### 19.3 Minigame Component Loader
 
+`MinigameRenderer` dynamically lazy-loads minigame components and provides two hooks
+that minigame components use to drive the shared header timer ring and the footer
+round counter. These write directly to the Zustand store, so both `RMHboxHeader`
+and `GameShell` react automatically.
+
+#### Hooks
+
+```typescript
+// useHeaderTimer — controls the header timer ring
+const { startTimer, tickTimer, clearTimer } = useHeaderTimer();
+startTimer(total, remaining?); // start a new timed phase
+tickTimer(remaining);          // update remaining seconds
+clearTimer();                  // hide the timer ring
+// Auto-clears on component unmount.
+
+// useMinigameRound — controls the footer round counter
+const { setRound, clearRound } = useMinigameRound();
+setRound(current, total);      // show "Round X/Y" in footer
+clearRound();                  // revert to session-level round
+// Auto-clears on component unmount.
+```
+
+> **Note:** Most minigames do NOT need to call these hooks directly because the
+> server-side `startPhaseTimer()` and `broadcastRound()` helpers emit sequenced
+> `TIMER_START`, `TIMER_TICK`, and `MINIGAME_ROUND` actions that the Zustand store
+> processes automatically via `applyLobbyAction`. The hooks exist for client-side
+> overrides when needed.
+
+#### Store Fields
+
+| Field | Type | Description |
+|---|---|---|
+| `timerInfo` | `TimerInfo \| null` | `{ total, remaining }` — set by `TIMER_START`, updated by `TIMER_TICK`, read by `RMHboxHeader`. |
+| `minigameRound` | `MinigameRoundInfo \| null` | `{ current, total }` — set by `MINIGAME_ROUND`, read by `GameShell`. |
+
+#### Component Loader
+
 ```typescript
 // components/rmhbox/minigames/MinigameRenderer.tsx
 
@@ -2780,17 +2830,44 @@ Each minigame manages its own timers via the `BaseMinigame.setTimeout` and `Base
 - Are wrapped in try-catch to prevent unhandled exceptions.
 - Use server-side `Date.now()` for all timing (not client clocks).
 
+Additionally, `BaseMinigame` provides two high-level helpers:
+
+- **`startPhaseTimer(durationSeconds)`** — Emits `TIMER_START` (via `broadcastAction`),
+  then emits `TIMER_TICK` every second. Automatically cancels any previous phase timer.
+- **`clearPhaseTimer()`** — Stops the current phase timer interval.
+- **`broadcastRound(current, total)`** — Emits `MINIGAME_ROUND` to update the footer
+  sub-round counter (e.g. "Round 2/3").
+
+Minigame handlers use `context.broadcastAction(...)` (routed through `LobbyManager.broadcastAction`)
+to ensure timer actions are properly sequenced with `seq` and `timestamp`.
+
 ### 22.3 Timer Synchronization
 
-The server sends `timeRemaining` in seconds (integer) as part of `TIMER_TICK` actions. Clients display a local countdown using `requestAnimationFrame` between ticks for smooth UI, but correct to the server's value whenever a tick arrives.
+The server sends a two-stage timer protocol for each timed phase:
+
+1. **`TIMER_START`** — emitted once at the beginning of the phase. Carries both
+   `totalDuration` (the full-circle baseline) and `timeRemaining` (initial seconds).
+   The client store sets `timerInfo = { total, remaining }` which the header
+   timer ring reads to compute `stroke-dashoffset`.
+2. **`TIMER_TICK`** — emitted every 1 second thereafter. Carries only
+   `timeRemaining`. The client store updates `timerInfo.remaining`.
 
 ```typescript
-// Server sends TIMER_TICK every 1 second during timed phases:
+// Server sends TIMER_START at the beginning of each timed phase:
+broadcastAction(lobbyId, {
+  type: 'TIMER_START',
+  payload: { totalDuration: durationSeconds, timeRemaining: durationSeconds },
+});
+
+// Then TIMER_TICK every 1 second:
 broadcastAction(lobbyId, {
   type: 'TIMER_TICK',
-  payload: { timeRemaining: Math.ceil((endTime - Date.now()) / 1000) },
+  payload: { timeRemaining: remaining },
 });
 ```
+
+Clients display a local countdown using `requestAnimationFrame` between ticks
+for smooth UI, but correct to the server's value whenever a tick arrives.
 
 ---
 
