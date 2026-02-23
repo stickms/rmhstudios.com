@@ -13,7 +13,8 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:migrate:prod": "prisma migrate deploy",
-    "db:reset": "prisma db push --force-reset"
+    "db:reset": "prisma db push --force-reset",
+    "db:seed-jobs": "npx tsx scripts/seed-jobs.ts"
   },
   "dependencies": {
     "@fontsource/noto-color-emoji": "^5.2.11",

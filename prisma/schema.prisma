@@ -51,6 +51,9 @@ model User {
   noteTemplates  NoteTemplate[]
   noteMoods      NoteMood[]
 
+  // RMH Job Search Relations
+  jobApplications JobApplication[]
+
   @@map("user")
 }
 
@@ -610,5 +613,67 @@ model NoteMood {
   @@unique([userId, date])
   @@index([userId])
   @@map("note_mood")
+}
+
+// ─── RMH Job Search Models ───
+
+model Job {
+  id          String   @id @default(cuid())
+  title       String
+  company     String
+  description String   @db.Text
+  type        String
+  location    String   @default("Remote")
+  salaryRange String?
+  publishAt   DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  applications JobApplication[]
+
+  @@index([publishAt])
+  @@index([type])
+  @@map("job")
+}
+
+model JobApplication {
+  id               String    @id @default(cuid())
+  userId           String
+  jobId            String
+  status           String    @default("pending")
+  outcome          String?
+  processAt        DateTime?
+  rejectionMessage String?   @db.Text
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  job        Job        @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  assessment Assessment?
+
+  @@unique([userId, jobId])
+  @@index([status])
+  @@index([processAt])
+  @@map("job_application")
+}
+
+model Assessment {
+  id               String    @id @default(cuid())
+  applicationId    String    @unique
+  problemId        String
+  status           String    @default("pending")
+  code             String?   @db.Text
+  language         String?   @default("javascript")
+  startedAt        DateTime?
+  submittedAt      DateTime?
+  evaluationResult String?
+  rejectionMessage String?   @db.Text
+  expiresAt        DateTime
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  application JobApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@map("assessment")
 }
 
