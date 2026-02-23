@@ -112,6 +112,22 @@ export const apps: AppInfo[] = [
         authGate: false,
     },
     {
+        id: 'rmh-jobs',
+        title: 'RMH Job Search',
+        description: 'Browse hundreds of job listings. Some real. Some ridiculous. All rejections guaranteed.',
+        longDescription:
+            'RMH Job Search is the premier job board for aspiring professionals and fantasy adventurers alike. Browse realistic tech roles alongside absurd postings like "Dragon Hunter" and "Professional Rubber Duck." Apply, get ghosted, receive auto-rejections, or earn your way to an impossible online assessment. Every path leads to rejection — but at least the journey is fun.',
+        href: '/rmh-jobs',
+        status: 'Beta',
+        cta: 'Browse Jobs',
+        isSteam: false,
+        gradient: 'from-green-500 via-emerald-400 to-cyan-500',
+        iconName: 'Briefcase',
+        color: 'from-green-500/20 to-cyan-500/20 hover:border-green-500/50',
+        tags: ['Job Board', 'Comedy', 'Beta'],
+        authGate: false,
+    },
+    {
         id: 'rmh-weather',
         title: 'RMHWeather',
         description: 'A premium, immersive weather experience with real-time data.',
