@@ -83,13 +83,6 @@ export const useWeatherStore = create<WeatherState>()(
       onRehydrateStorage: (state) => {
         return () => state.setHasHydrated(true);
       }
-    // ...existing code...
-  },
-  {
-    name: 'rmh-weather-storage',
-    onRehydrateStorage: (state) => {
-      return () => state.setHasHydrated(true);
     }
-  }
 )
 );

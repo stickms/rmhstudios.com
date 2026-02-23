@@ -10,7 +10,7 @@ const petStates = {
 };
 
 export const WeatherPet = ({ condition }: { condition: string }) => {
-  const pet = petStates[condition] || petStates.default;
+  const pet = petStates[condition as keyof typeof petStates] || petStates.default;
   return (
     <div className="my-8">
       <div className="text-lg font-semibold text-green-400 mb-2">Virtual Pet Reacts to Weather</div>

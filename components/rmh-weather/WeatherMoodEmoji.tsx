@@ -11,7 +11,7 @@ const moodMap = {
 };
 
 export const WeatherMoodEmoji = ({ condition }: { condition: string }) => {
-  const emoji = moodMap[condition] || moodMap.default;
+  const emoji = moodMap[condition as keyof typeof moodMap] || moodMap.default;
   return (
     <div className="my-8 flex items-center">
       <span className="text-5xl mr-4">{emoji}</span>

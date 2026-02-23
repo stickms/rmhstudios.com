@@ -78,6 +78,23 @@ export const apps: AppInfo[] = [
         hidden: true,
     },
     {
+        id: 'rmh-notes',
+        title: 'RMHNotes',
+        description: 'A cozy, feature-rich notes and reminders app. Capture ideas, organize with folders and tags, and never forget a thing.',
+        longDescription:
+            'RMHNotes is your personal cozy notebook. Write in a beautiful rich text editor, organize with folders and tags, set reminders, lock private notes, share read-only links, and track your mood — all in one warm, inviting app.',
+        href: '/rmh-notes',
+        status: 'Beta',
+        cta: 'Open Notes',
+        isSteam: false,
+        gradient: 'from-amber-500 via-orange-400 to-yellow-400',
+        iconName: 'NotebookPen',
+        color: 'from-amber-500/20 to-orange-400/20 hover:border-amber-500/50',
+        tags: ['Notes', 'Productivity', 'Reminders', 'Beta'],
+        imagePath: '/images/games/rmhnotes.png',
+        authGate: true,
+    },
+    {
         id: 'rmh-weather',
         title: 'RMHWeather',
         description: 'A premium, immersive weather experience with real-time data.',

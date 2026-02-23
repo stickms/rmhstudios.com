@@ -44,6 +44,13 @@ model User {
   codeFiles      CodeFile[]    @relation("CodeFiles")
   githubToken    UserGitHubToken?
 
+  // RMH Notes Relations
+  notes          Note[]
+  noteFolders    NoteFolder[]
+  noteTags       NoteTag[]
+  noteTemplates  NoteTemplate[]
+  noteMoods      NoteMood[]
+
   @@map("user")
 }
 
@@ -450,5 +457,158 @@ model CodeFile {
   @@unique([projectId, path])
   @@index([projectId])
   @@index([userId])
+}
+
+// ─── RMH Notes Models ───
+
+model Note {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String    @default("Untitled")
+  content     String    @db.Text @default("{}")
+  color       String?
+  isPinned    Boolean   @default(false)
+  isFavorite  Boolean   @default(false)
+  isArchived  Boolean   @default(false)
+  isDeleted   Boolean   @default(false)
+  deletedAt   DateTime?
+  isLocked    Boolean   @default(false)
+  lockHash    String?
+  folderId    String?
+  folder      NoteFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  wordCount   Int       @default(0)
+  charCount   Int       @default(0)
+  sortOrder   Int       @default(0)
+  moodEmoji   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tags        NoteTagRelation[]
+  reminders   NoteReminder[]
+  versions    NoteVersion[]
+  shares      NoteShare[]
+
+  @@index([userId])
+  @@index([folderId])
+  @@index([userId, isDeleted])
+  @@index([userId, isArchived])
+  @@index([userId, isPinned])
+  @@map("note")
+}
+
+model NoteFolder {
+  id        String       @id @default(cuid())
+  userId    String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  parentId  String?
+  parent    NoteFolder?  @relation("FolderChildren", fields: [parentId], references: [id], onDelete: Cascade)
+  children  NoteFolder[] @relation("FolderChildren")
+  color     String?
+  position  Int          @default(0)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  notes     Note[]
+
+  @@index([userId])
+  @@index([parentId])
+  @@map("note_folder")
+}
+
+model NoteTag {
+  id        String            @id @default(cuid())
+  userId    String
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  color     String?
+  createdAt DateTime          @default(now())
+
+  notes     NoteTagRelation[]
+
+  @@unique([userId, name])
+  @@index([userId])
+  @@map("note_tag")
+}
+
+model NoteTagRelation {
+  noteId    String
+  tagId     String
+  note      Note    @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  tag       NoteTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([noteId, tagId])
+  @@map("note_tag_relation")
+}
+
+model NoteReminder {
+  id           String    @id @default(cuid())
+  noteId       String
+  userId       String
+  note         Note      @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  title        String?
+  dueAt        DateTime
+  repeatRule   String?   // "daily" | "weekly" | "monthly" | null
+  isCompleted  Boolean   @default(false)
+  snoozedUntil DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([noteId])
+  @@index([dueAt])
+  @@map("note_reminder")
+}
+
+model NoteVersion {
+  id        String   @id @default(cuid())
+  noteId    String
+  note      Note     @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  content   String   @db.Text
+  title     String
+  createdAt DateTime @default(now())
+
+  @@index([noteId])
+  @@map("note_version")
+}
+
+model NoteShare {
+  id        String    @id @default(cuid())
+  noteId    String
+  note      Note      @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  token     String    @unique @default(cuid())
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([noteId])
+  @@map("note_share")
+}
+
+model NoteTemplate {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  content   String   @db.Text
+  isBuiltin Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("note_template")
+}
+
+model NoteMood {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emoji     String
+  color     String
+  note      String?
+  date      DateTime @default(now()) @db.Date
+
+  @@unique([userId, date])
+  @@index([userId])
+  @@map("note_mood")
 }
 
