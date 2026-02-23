@@ -3,7 +3,6 @@ import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import { prisma } from '@/lib/prisma';
 import { rollOutcome } from '@/lib/rmh-jobs/outcomes';
-import { getRandomRejectionMessage } from '@/lib/rmh-jobs/rejections';
 
 export async function POST(req: Request) {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -36,28 +35,19 @@ export async function POST(req: Request) {
 
     const { outcome, processAt } = rollOutcome();
 
-    // For instant rejections, set the status and message immediately
-    const isInstant = outcome === 'instant_reject';
-
     const application = await prisma.jobApplication.create({
         data: {
             userId: session.user.id,
             jobId,
-            status: isInstant ? 'rejected' : 'pending',
+            status: 'pending',
             outcome,
             processAt,
-            rejectionMessage: isInstant
-                ? getRandomRejectionMessage(job.title, job.company)
-                : null,
         },
     });
 
     return NextResponse.json({
         id: application.id,
-        status: application.status,
-        message:
-            application.status === 'rejected'
-                ? 'Your application has been reviewed.'
-                : 'Application submitted successfully. You will hear back soon.',
+        status: 'pending',
+        message: 'Your application has been submitted successfully. You will hear back soon!',
     });
 }

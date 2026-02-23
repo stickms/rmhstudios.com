@@ -11,7 +11,6 @@ import {
     Send,
     Loader2,
     CheckCircle2,
-    XCircle,
 } from 'lucide-react';
 import Link from 'next/link';
 import { authClient } from '@/lib/auth-client';
@@ -34,8 +33,14 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
     const [job, setJob] = useState<Job | null>(null);
     const [loading, setLoading] = useState(true);
     const [applying, setApplying] = useState(false);
-    const [applied, setApplied] = useState<{ status: string; message: string } | null>(null);
+    const [applied, setApplied] = useState(false);
+    const [showConfirm, setShowConfirm] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [validationErrors, setValidationErrors] = useState<string[]>([]);
+
+    const [interest, setInterest] = useState('');
+    const [education, setEducation] = useState('');
+    const [workAuth, setWorkAuth] = useState('');
 
     const { data: session } = authClient.useSession();
 
@@ -49,12 +54,27 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
             .catch(() => setLoading(false));
     }, [id]);
 
-    const handleApply = async () => {
+    const validate = (): string[] => {
+        const errors: string[] = [];
+        if (!interest.trim()) errors.push('Please tell us why you are interested in this role.');
+        if (!education) errors.push('Please select your highest level of education.');
+        if (!workAuth) errors.push('Please select your work authorization status.');
+        return errors;
+    };
+
+    const handleSubmitClick = () => {
         if (!session?.user) {
             router.push('/login');
             return;
         }
+        const errors = validate();
+        setValidationErrors(errors);
+        if (errors.length > 0) return;
+        setShowConfirm(true);
+    };
 
+    const handleConfirmApply = async () => {
+        setShowConfirm(false);
         setApplying(true);
         setError(null);
 
@@ -68,7 +88,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
             const data = await res.json();
 
             if (res.ok) {
-                setApplied({ status: data.status, message: data.message });
+                setApplied(true);
             } else {
                 setError(data.error ?? 'Failed to apply');
             }
@@ -163,25 +183,27 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                     style={{ background: 'var(--jobs-surface)', borderColor: 'var(--jobs-border)', borderRadius: 'var(--jobs-radius-lg)' }}
                 >
                     {applied ? (
-                        <div className="flex items-start gap-3">
-                            {applied.status === 'rejected' ? (
-                                <XCircle size={20} className="shrink-0 mt-0.5" style={{ color: 'var(--jobs-danger)' }} />
-                            ) : (
-                                <CheckCircle2 size={20} className="shrink-0 mt-0.5" style={{ color: 'var(--jobs-accent)' }} />
-                            )}
-                            <div>
-                                <p className="font-semibold mb-1">
-                                    {applied.status === 'rejected' ? 'Application Reviewed' : 'Application Submitted'}
-                                </p>
-                                <p className="text-sm" style={{ color: 'var(--jobs-text-muted)' }}>
-                                    {applied.message}
-                                </p>
+                        <div className="text-center py-4">
+                            <CheckCircle2 size={40} className="mx-auto mb-4" style={{ color: 'var(--jobs-accent)' }} />
+                            <h3 className="text-xl font-bold mb-2">Application Submitted!</h3>
+                            <p className="text-sm mb-6" style={{ color: 'var(--jobs-text-muted)' }}>
+                                You have successfully submitted your application for <strong>{job.title}</strong> at <strong>{job.company}</strong>.
+                                You will hear back soon!
+                            </p>
+                            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                                <Link
+                                    href="/rmh-jobs"
+                                    className="jobs-btn-primary px-5 py-2.5 rounded-lg text-sm inline-block"
+                                    style={{ borderRadius: 'var(--jobs-radius)' }}
+                                >
+                                    Return to RMH Jobs Portal
+                                </Link>
                                 <Link
                                     href="/rmh-jobs/applications"
-                                    className="text-sm mt-2 inline-block"
-                                    style={{ color: 'var(--jobs-accent)' }}
+                                    className="jobs-btn-secondary px-5 py-2.5 rounded-lg text-sm inline-block"
+                                    style={{ borderRadius: 'var(--jobs-radius)' }}
                                 >
-                                    View your applications →
+                                    View My Applications
                                 </Link>
                             </div>
                         </div>
@@ -196,6 +218,8 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                                     </label>
                                     <textarea
                                         rows={3}
+                                        value={interest}
+                                        onChange={(e) => setInterest(e.target.value)}
                                         placeholder="Tell us what excites you about this opportunity..."
                                         className="jobs-search-input w-full px-3 py-2 rounded-lg text-sm resize-none"
                                         style={{ borderRadius: 'var(--jobs-radius)' }}
@@ -209,7 +233,8 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                                     <select
                                         className="jobs-search-input w-full px-3 py-2 rounded-lg text-sm"
                                         style={{ borderRadius: 'var(--jobs-radius)' }}
-                                        defaultValue=""
+                                        value={education}
+                                        onChange={(e) => setEducation(e.target.value)}
                                     >
                                         <option value="" disabled>Select...</option>
                                         <option value="hs">High School / GED</option>
@@ -228,7 +253,8 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                                     <select
                                         className="jobs-search-input w-full px-3 py-2 rounded-lg text-sm"
                                         style={{ borderRadius: 'var(--jobs-radius)' }}
-                                        defaultValue=""
+                                        value={workAuth}
+                                        onChange={(e) => setWorkAuth(e.target.value)}
                                     >
                                         <option value="" disabled>Select...</option>
                                         <option value="yes">Yes</option>
@@ -310,11 +336,18 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                                 </div>
                             </div>
 
+                            {validationErrors.length > 0 && (
+                                <div className="mb-3 space-y-1">
+                                    {validationErrors.map((err, i) => (
+                                        <p key={i} className="text-sm" style={{ color: 'var(--jobs-danger)' }}>{err}</p>
+                                    ))}
+                                </div>
+                            )}
                             {error && (
                                 <p className="text-sm mb-3" style={{ color: 'var(--jobs-danger)' }}>{error}</p>
                             )}
                             <button
-                                onClick={handleApply}
+                                onClick={handleSubmitClick}
                                 disabled={applying}
                                 className="jobs-btn-primary flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm"
                                 style={{ borderRadius: 'var(--jobs-radius)' }}
@@ -332,6 +365,38 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                         </>
                     )}
                 </div>
+
+                {/* Confirmation modal */}
+                {showConfirm && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                        <div
+                            className="p-6 rounded-xl border max-w-md w-full mx-4"
+                            style={{ background: 'var(--jobs-surface)', borderColor: 'var(--jobs-border)', borderRadius: 'var(--jobs-radius-lg)' }}
+                        >
+                            <h3 className="text-lg font-bold mb-2">Are you sure?</h3>
+                            <p className="text-sm mb-6" style={{ color: 'var(--jobs-text-muted)' }}>
+                                You are about to submit your application for <strong>{job.title}</strong> at <strong>{job.company}</strong>.
+                                This action cannot be undone.
+                            </p>
+                            <div className="flex items-center gap-3 justify-end">
+                                <button
+                                    onClick={() => setShowConfirm(false)}
+                                    className="jobs-btn-secondary px-4 py-2 rounded-lg text-sm"
+                                    style={{ borderRadius: 'var(--jobs-radius)' }}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleConfirmApply}
+                                    className="jobs-btn-primary px-4 py-2 rounded-lg text-sm"
+                                    style={{ borderRadius: 'var(--jobs-radius)' }}
+                                >
+                                    Yes, Submit Application
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </main>
         </div>
     );

@@ -70,6 +70,7 @@ export function OAEditor({
     const [isSubmitted, setIsSubmitted] = useState(initialSubmitted);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isRunning, setIsRunning] = useState(false);
+    const [runPassedTests, setRunPassedTests] = useState(0);
     const [testResults, setTestResults] = useState<{
         totalTests: number;
         passedTests: number;
@@ -108,20 +109,23 @@ export function OAEditor({
     };
 
     const handleRun = () => {
-        setIsRunning(true);
+        const passed = Math.random() < 0.3;
+        const count = passed ? 3 : Math.floor(Math.random() * 3) + 1;
+        setRunPassedTests(count);
         setTestResults(null);
+        setIsRunning(true);
     };
 
     const handleRunComplete = useCallback(() => {
         setIsRunning(false);
-        const passed = Math.random() < 0.3;
-        const total = 247;
-        const passedCount = passed ? 3 : Math.floor(Math.random() * 3) + 1;
-        setTestResults({
-            totalTests: total,
-            passedTests: passedCount,
-            message: `${passedCount}/${total} test cases passed`,
-            rejectionMessage: '',
+        setTestResults((prev) => {
+            const total = 247;
+            return {
+                totalTests: total,
+                passedTests: prev ? prev.passedTests : 0,
+                message: `Run complete`,
+                rejectionMessage: '',
+            };
         });
     }, []);
 
@@ -339,7 +343,7 @@ export function OAEditor({
                             {isRunning ? (
                                 <FakeTestResults
                                     totalTests={247}
-                                    passedTests={Math.floor(Math.random() * 5) + 1}
+                                    passedTests={runPassedTests}
                                     isRunning={isRunning}
                                     onComplete={handleRunComplete}
                                 />

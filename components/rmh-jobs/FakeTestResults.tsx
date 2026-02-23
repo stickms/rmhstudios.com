@@ -1,12 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Check, X, Loader2 } from 'lucide-react';
 
 interface TestResult {
-    id: number;
+    caseNumber: number;
     passed: boolean;
-    label: string;
 }
 
 interface FakeTestResultsProps {
@@ -18,46 +17,54 @@ interface FakeTestResultsProps {
 
 export function FakeTestResults({ totalTests, passedTests, isRunning, onComplete }: FakeTestResultsProps) {
     const [visibleResults, setVisibleResults] = useState<TestResult[]>([]);
-    const [currentIndex, setCurrentIndex] = useState(0);
+    const generatedRef = useRef<TestResult[]>([]);
+    const intervalRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const onCompleteRef = useRef(onComplete);
+    onCompleteRef.current = onComplete;
 
     useEffect(() => {
         if (!isRunning) {
+            if (intervalRef.current) clearInterval(intervalRef.current);
             setVisibleResults([]);
-            setCurrentIndex(0);
+            generatedRef.current = [];
             return;
         }
 
-        const results: TestResult[] = [];
-        for (let i = 0; i < Math.min(20, totalTests); i++) {
-            results.push({
-                id: i,
-                passed: i < Math.min(passedTests, 20),
-                label: `Test Case ${i + 1}`,
-            });
+        const displayCount = Math.min(20, totalTests);
+        const passedSet = new Set<number>();
+        while (passedSet.size < Math.min(passedTests, displayCount)) {
+            passedSet.add(Math.floor(Math.random() * displayCount));
         }
 
-        // Shuffle so passes and fails are intermixed (with bias toward early passes)
-        for (let i = results.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [results[i], results[j]] = [results[j], results[i]];
+        const results: TestResult[] = [];
+        for (let i = 0; i < displayCount; i++) {
+            results.push({ caseNumber: i + 1, passed: passedSet.has(i) });
         }
+        generatedRef.current = results;
 
         let idx = 0;
-        const interval = setInterval(() => {
-            if (idx >= results.length) {
-                clearInterval(interval);
-                onComplete?.();
+        intervalRef.current = setInterval(() => {
+            if (idx >= generatedRef.current.length) {
+                if (intervalRef.current) clearInterval(intervalRef.current);
+                onCompleteRef.current?.();
                 return;
             }
-            setVisibleResults((prev) => [...prev, results[idx]]);
-            setCurrentIndex(idx + 1);
+            const next = generatedRef.current[idx];
+            setVisibleResults((prev) => [...prev, next]);
             idx++;
         }, 150 + Math.random() * 200);
 
-        return () => clearInterval(interval);
-    }, [isRunning, totalTests, passedTests, onComplete]);
+        return () => {
+            if (intervalRef.current) clearInterval(intervalRef.current);
+        };
+    // Only re-run when isRunning transitions to true
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isRunning]);
 
     if (!isRunning && visibleResults.length === 0) return null;
+
+    const doneCount = visibleResults.length;
+    const displayCount = Math.min(20, totalTests);
 
     return (
         <div
@@ -65,7 +72,7 @@ export function FakeTestResults({ totalTests, passedTests, isRunning, onComplete
             style={{ background: 'var(--jobs-surface-2)', borderRadius: 'var(--jobs-radius)' }}
         >
             <div className="flex items-center gap-2 mb-2" style={{ color: 'var(--jobs-text-muted)' }}>
-                {isRunning && currentIndex < 20 ? (
+                {isRunning && doneCount < displayCount ? (
                     <>
                         <Loader2 size={12} className="animate-spin" />
                         Running against {totalTests} test cases...
@@ -77,11 +84,11 @@ export function FakeTestResults({ totalTests, passedTests, isRunning, onComplete
                     </span>
                 )}
             </div>
-            {visibleResults.map((result) => (
-                <div key={result.id} className={result.passed ? 'test-result-pass' : 'test-result-fail'}>
+            {visibleResults.map((result, idx) => (
+                <div key={idx} className={result.passed ? 'test-result-pass' : 'test-result-fail'}>
                     <span className="inline-flex items-center gap-1.5">
                         {result.passed ? <Check size={10} /> : <X size={10} />}
-                        {result.label}: {result.passed ? 'Passed' : 'Time Limit Exceeded'}
+                        Test Case {result.caseNumber}: {result.passed ? 'Passed' : 'Time Limit Exceeded'}
                     </span>
                 </div>
             ))}

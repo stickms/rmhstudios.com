@@ -18,7 +18,7 @@ async function processReadyApplications(userId: string) {
     });
 
     for (const app of ready) {
-        if (app.outcome === 'delayed_reject') {
+        if (app.outcome === 'instant_reject' || app.outcome === 'delayed_reject') {
             await prisma.jobApplication.update({
                 where: { id: app.id },
                 data: {
