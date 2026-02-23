@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useNotesStore, NoteView } from '@/lib/store/useNotesStore';
 import { NoteFolder, NoteTag, NoteReminder } from './types';
 import { toast } from 'sonner';
@@ -103,11 +104,12 @@ export default function NotesSidebar({ folders, tags, reminders, overdueCount, o
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid var(--notes-sidebar-border)' }}>
         <div className="flex items-center gap-2">
+          <Link href="/" className="text-base hover:opacity-70 transition-opacity" title="Back to home" style={{ color: 'var(--notes-text-muted)' }}>←</Link>
           <span className="text-xl">📓</span>
           <span className="font-bold text-sm tracking-wide" style={{ color: 'var(--notes-text)' }}>RMHNotes</span>
         </div>
         <button
-          onClick={() => setDarkMode(isDarkMode === null ? true : isDarkMode ? false : null)}
+          onClick={() => setDarkMode(isDarkMode ? false : true)}
           className="text-base hover:opacity-70 transition-opacity"
           title="Toggle theme"
         >
@@ -263,7 +265,7 @@ function FolderItem({ folder, onDelete }: { folder: NoteFolder; onDelete: (id: s
       <span className="text-xs" style={{ color: folder.color ?? 'var(--notes-text-muted)' }}>📁</span>
       <span className="flex-1 truncate text-xs">{folder.name}</span>
       {folder._count !== undefined && <span className="text-xs opacity-50">{folder._count.notes}</span>}
-      <button onClick={(e) => onDelete(folder.id, e)} className="opacity-0 group-hover:opacity-60 hover:!opacity-100 text-xs" title="Delete folder">✕</button>
+      <span role="button" tabIndex={0} onClick={(e) => onDelete(folder.id, e)} onKeyDown={(e) => { if (e.key === 'Enter') onDelete(folder.id, e as unknown as React.MouseEvent); }} className="opacity-0 group-hover:opacity-60 hover:!opacity-100 text-xs cursor-pointer" title="Delete folder">✕</span>
     </button>
   );
 }
@@ -285,7 +287,7 @@ function TagItem({ tag, onDelete }: { tag: NoteTag; onDelete: (id: string, e: Re
       <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: tag.color ?? 'var(--notes-text-subtle)' }} />
       <span className="flex-1 truncate text-xs">{tag.name}</span>
       {tag._count !== undefined && <span className="text-xs opacity-50">{tag._count.notes}</span>}
-      <button onClick={(e) => onDelete(tag.id, e)} className="opacity-0 group-hover:opacity-60 hover:!opacity-100 text-xs" title="Delete tag">✕</button>
+      <span role="button" tabIndex={0} onClick={(e) => onDelete(tag.id, e)} onKeyDown={(e) => { if (e.key === 'Enter') onDelete(tag.id, e as unknown as React.MouseEvent); }} className="opacity-0 group-hover:opacity-60 hover:!opacity-100 text-xs cursor-pointer" title="Delete tag">✕</span>
     </button>
   );
 }
