@@ -626,13 +626,12 @@ model Job {
   location    String   @default("Remote")
   salaryRange String?
   publishAt   DateTime
-  isVisible   Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   applications JobApplication[]
 
-  @@index([isVisible, publishAt])
+  @@index([publishAt])
   @@index([type])
   @@map("job")
 }

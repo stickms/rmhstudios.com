@@ -5,7 +5,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     const { id } = await params;
 
     const job = await prisma.job.findUnique({
-        where: { id, isVisible: true },
+        where: { id, publishAt: { lte: new Date() } },
         select: {
             id: true,
             title: true,

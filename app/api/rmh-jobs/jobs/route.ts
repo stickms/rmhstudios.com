@@ -9,7 +9,7 @@ export async function GET(req: Request) {
     const sort = searchParams.get('sort') ?? 'newest'; // 'newest' | 'oldest' | 'company'
     const q = searchParams.get('q')?.trim();
 
-    const where: Record<string, unknown> = { isVisible: true };
+    const where: Record<string, unknown> = { publishAt: { lte: new Date() } };
 
     if (type === 'real' || type === 'silly') {
         where.type = type;

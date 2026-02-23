@@ -14,7 +14,7 @@ export async function GET(req: Request) {
     // pgvector semantic search can be layered on top later
     const jobs = await prisma.job.findMany({
         where: {
-            isVisible: true,
+            publishAt: { lte: new Date() },
             OR: [
                 { title: { contains: q, mode: 'insensitive' } },
                 { company: { contains: q, mode: 'insensitive' } },

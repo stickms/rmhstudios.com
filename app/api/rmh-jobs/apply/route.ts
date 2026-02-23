@@ -19,7 +19,7 @@ export async function POST(req: Request) {
     }
 
     const job = await prisma.job.findUnique({
-        where: { id: jobId, isVisible: true },
+        where: { id: jobId, publishAt: { lte: new Date() } },
     });
 
     if (!job) {
