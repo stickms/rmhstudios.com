@@ -38,6 +38,7 @@ const PHASE_LABELS: Record<string, string> = {
   CLUE: 'Clue Phase',
   GUESS: 'Guess Phase',
   TURN_TRANSITION: 'Switching Turns…',
+  BOARD_REVEAL: 'Board Reveal',
   GAME_OVER: 'Game Over',
 };
 
@@ -51,7 +52,7 @@ export default function TurnIndicator({
   const isRed = currentTeam === 'red';
   const teamColor = isRed ? 'text-red-400' : 'text-blue-400';
   const phaseLabel = PHASE_LABELS[phase] ?? phase;
-  const isGameOver = phase === 'GAME_OVER';
+  const isGameOver = phase === 'GAME_OVER' || phase === 'BOARD_REVEAL';
 
   return (
     <motion.div

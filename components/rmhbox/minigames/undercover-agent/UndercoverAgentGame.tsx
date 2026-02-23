@@ -26,6 +26,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Shield, Eye, Shuffle } from 'lucide-react';
 import { getSocket, emit } from '@/lib/rmhbox/socket';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { S2C, C2S } from '@/lib/rmhbox/events';
@@ -39,9 +40,9 @@ import type { GameLogEntry } from './GameLog';
 
 // ─── Types ───────────────────────────────────────────────────────
 
-type Phase = 'TEAM_SETUP' | 'SETUP' | 'CLUE' | 'GUESS' | 'TURN_TRANSITION' | 'GAME_OVER';
+type Phase = 'TEAM_SETUP' | 'SETUP' | 'CLUE' | 'GUESS' | 'TURN_TRANSITION' | 'BOARD_REVEAL' | 'GAME_OVER';
 type TileType = 'RED_AGENT' | 'BLUE_AGENT' | 'BYSTANDER' | 'ASSASSIN';
-type Team = 'red' | 'blue';
+export type Team = 'red' | 'blue';
 type Role = 'spymaster' | 'operative' | 'spectator';
 
 export interface GridTileClient {
@@ -98,6 +99,7 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
   const [turnEndReason, setTurnEndReason] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isTeamValid, setIsTeamValid] = useState(false);
+  const [highlightCounts, setHighlightCounts] = useState<Record<number, number>>({});
 
   // Host from lobby store — updated on HOST_TRANSFERRED automatically
   const storeHostId = useRMHboxStore((s) => s.lobby?.hostUserId ?? '');
@@ -163,7 +165,7 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
         case 'UA_SETUP': {
           setPhase('SETUP');
           setGameLog([]);
-          logIdRef.current = 0;
+          // Note: logIdRef is NOT reset — monotonically increasing ensures unique keys
           const rawGrid = data.grid as { position: number; word: string }[];
           setGrid(rawGrid.map((g) => ({ ...g, type: null, state: 'HIDDEN' as const })));
           const rawTeams = data.teams as { red: TeamInfo; blue: TeamInfo };
@@ -251,7 +253,7 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
                   : 'guess_wrong';
           const typeLabel =
             tileType === 'ASSASSIN'
-              ? '💀 Assassin!'
+              ? 'Assassin!'
               : tileType === 'BYSTANDER'
                 ? 'Bystander'
                 : tileType === 'RED_AGENT'
@@ -295,22 +297,34 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
           // Phase timed out — handled by subsequent UA_TURN_END or UA_PHASE_CHANGE
           break;
         }
+        case 'UA_BOARD_REVEAL': {
+          setPhase('BOARD_REVEAL');
+          const revealWinner = data.winner as Team | 'draw';
+          const revealReason = data.reason as string;
+          setWinner(revealWinner);
+          setWinReason(revealReason);
+          // Reveal full grid
+          const revealGrid = data.grid as GridTileClient[];
+          if (revealGrid) setGrid(revealGrid);
+          const revealTeams = data.teams as { red: TeamInfo; blue: TeamInfo };
+          if (revealTeams) setTeams(revealTeams);
+          pushLog({
+            type: 'game_over',
+            team: revealWinner === 'draw' ? currentTeam : revealWinner,
+            text: `Game over — ${revealReason.replace(/_/g, ' ')}`,
+          });
+          break;
+        }
         case 'UA_GAME_OVER': {
           setPhase('GAME_OVER');
           const gameWinner = data.winner as Team | 'draw';
           const gameReason = data.reason as string;
           setWinner(gameWinner);
           setWinReason(gameReason);
-          // Reveal full grid
-          const fullGrid = data.grid as GridTileClient[];
-          if (fullGrid) setGrid(fullGrid);
-          const finalTeams = data.teams as { red: TeamInfo; blue: TeamInfo };
-          if (finalTeams) setTeams(finalTeams);
-          pushLog({
-            type: 'game_over',
-            team: gameWinner === 'draw' ? currentTeam : gameWinner,
-            text: `Game over — ${gameReason.replace(/_/g, ' ')}`,
-          });
+          break;
+        }
+        case 'UA_HIGHLIGHTS': {
+          setHighlightCounts(data.counts as Record<number, number>);
           break;
         }
         case 'UA_ACTION_REJECTED': {
@@ -354,6 +368,7 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
       setMyTeam(data.myTeam as Team | null);
       setTimeRemaining(data.timeRemaining as number ?? 0);
       if (typeof data.isTeamValid === 'boolean') setIsTeamValid(data.isTeamValid as boolean);
+      setHighlightCounts(data.highlightCounts as Record<number, number> ?? {});
       // Derive role from teams
       const { role, team } = deriveRole(rawTeams);
       setMyRole(role);
@@ -397,6 +412,14 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
 
   const handleEndTurn = useCallback(() => {
     emitGameInput('END_TURN', {});
+  }, []);
+
+  const handleHighlightTile = useCallback((position: number, highlighted: boolean) => {
+    emitGameInput('HIGHLIGHT_TILE', { position, highlighted });
+  }, []);
+
+  const handleContinueBoardReveal = useCallback(() => {
+    emitGameInput('CONTINUE_BOARD_REVEAL', {});
   }, []);
 
   // ─── Team Setup Actions ─────────────────────────────────────────
@@ -508,7 +531,7 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
                 onClick={handleShuffleTeams}
                 className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-surface) px-4 py-2 text-sm font-medium text-(--rmhbox-text) transition-colors hover:bg-(--rmhbox-accent)/10"
               >
-                🔀 Shuffle
+                <Shuffle className="h-4 w-4 inline-block mr-1" />Shuffle
               </button>
               <button
                 type="button"
@@ -605,6 +628,7 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
                           ? getPlayerName(teams[currentTeam].spymasterId)
                           : 'Spymaster'
                       }
+                      teamId={currentTeam}
                       onEndTurn={undefined}
                     />
                   )}
@@ -627,6 +651,7 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
                     spymasterName={
                       teams ? getPlayerName(teams[currentTeam].spymasterId) : 'Spymaster'
                     }
+                    teamId={currentTeam}
                     onEndTurn={myRole === 'operative' && myTeam === currentTeam ? handleEndTurn : undefined}
                   />
                 </motion.div>
@@ -646,6 +671,42 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
                     <p className="text-sm text-(--rmhbox-text-muted) capitalize">
                       {turnEndReason.replace(/_/g, ' ')}
                     </p>
+                  )}
+                </motion.div>
+              )}
+
+              {/* BOARD_REVEAL — full board shown to everyone before leaderboard */}
+              {phase === 'BOARD_REVEAL' && (
+                <motion.div
+                  key="board-reveal"
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="flex flex-col items-center gap-3 py-4"
+                >
+                  <h2 className="text-2xl font-bold">Board Reveal</h2>
+                  {winner && winner !== 'draw' && (
+                    <p className={`text-lg font-semibold ${winner === 'red' ? 'text-red-400' : 'text-blue-400'}`}>
+                      {winner.charAt(0).toUpperCase() + winner.slice(1)} Team Wins!
+                    </p>
+                  )}
+                  {winner === 'draw' && <p className="text-lg font-semibold text-yellow-400">It&apos;s a Draw!</p>}
+                  {winReason && (
+                    <p className="text-sm text-(--rmhbox-text-muted) capitalize">
+                      {winReason.replace(/_/g, ' ')}
+                    </p>
+                  )}
+                  {isHost && (
+                    <button
+                      type="button"
+                      onClick={handleContinueBoardReveal}
+                      className="mt-2 rounded-lg bg-(--rmhbox-accent) px-6 py-2 text-sm font-bold text-white transition-colors hover:brightness-110"
+                    >
+                      Continue to Results
+                    </button>
+                  )}
+                  {!isHost && (
+                    <p className="text-xs text-(--rmhbox-text-muted) mt-1">Waiting for host to continue…</p>
                   )}
                 </motion.div>
               )}
@@ -679,8 +740,10 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
             <GridBoard
               grid={grid}
               canGuess={canGuess}
-              isSpymaster={myRole === 'spymaster'}
+              isSpymaster={myRole === 'spymaster' || phase === 'BOARD_REVEAL'}
+              highlightCounts={highlightCounts}
               onTileClick={handleGuessTile}
+              onHighlightChange={handleHighlightTile}
             />
           </div>
 
@@ -755,8 +818,8 @@ function TeamSetupColumn({
               }`}
             >
               <div className="flex items-center gap-1.5 min-w-0">
-                <span className={`shrink-0 text-[10px] uppercase ${role === 'spymaster' ? teamColor : 'text-(--rmhbox-text-muted)'}`}>
-                  {role === 'spymaster' ? '🔍' : '👁️'}
+                <span className={`shrink-0 ${role === 'spymaster' ? teamColor : 'text-(--rmhbox-text-muted)'}`}>
+                  {role === 'spymaster' ? <Shield className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
                 </span>
                 <span className="truncate">{getPlayerName(userId)}</span>
               </div>

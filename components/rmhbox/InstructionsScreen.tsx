@@ -1,7 +1,9 @@
 /**
  * InstructionsScreen — Displays minigame instructions before play begins.
  *
- * Shows title, description, rules, control hints, and a countdown timer.
+ * Shows title, description, rules, control hints, and a countdown timer bar.
+ * The progress bar is synced with the centralized timer from the store
+ * (respects server-driven ticks and pause/resume).
  * Host can skip the instructions phase.
  *
  * Props:
@@ -9,14 +11,14 @@
  *   description: string — Minigame description
  *   rules: string[] — List of rules
  *   tips: string[] — List of control/play tips
- *   durationSeconds: number — Instructions phase duration
+ *   durationSeconds: number — Instructions phase total duration (for ratio calculation)
  *   isHost: boolean — Whether current user is host
  *   onSkip: () => void — Callback for host to skip instructions
  */
 'use client';
 
-import { useState, useEffect } from 'react';
 import { BookOpen, Lightbulb, SkipForward } from 'lucide-react';
+import { useRMHboxStore } from '@/lib/rmhbox/store';
 
 interface InstructionsScreenProps {
   title: string;
@@ -37,21 +39,18 @@ export default function InstructionsScreen({
   isHost,
   onSkip,
 }: InstructionsScreenProps) {
-  const [remaining, setRemaining] = useState(durationSeconds);
-
-  useEffect(() => {
-    if (remaining <= 0) return;
-    const id = setInterval(() => setRemaining((r) => Math.max(0, r - 1)), 1000);
-    return () => clearInterval(id);
-  }, [remaining]);
+  const timerInfo = useRMHboxStore((s) => s.timerInfo);
+  const remaining = timerInfo?.remaining ?? durationSeconds;
+  const total = timerInfo?.total ?? durationSeconds;
+  const paused = timerInfo?.paused ?? false;
 
   return (
     <div className="mx-auto flex w-full max-w-xl flex-col gap-6 p-6 text-(--rmhbox-text)">
-      {/* Timer bar */}
+      {/* Timer bar — synced with server timer, respects pauses */}
       <div className="h-1.5 w-full overflow-hidden rounded-full bg-(--rmhbox-border)">
         <div
-          className="h-full rounded-full bg-(--rmhbox-accent) transition-all duration-1000 ease-linear"
-          style={{ width: `${(remaining / durationSeconds) * 100}%` }}
+          className={`h-full rounded-full ${paused ? 'bg-(--rmhbox-warning)' : 'bg-(--rmhbox-accent)'} ${paused ? '' : 'transition-all duration-1000 ease-linear'}`}
+          style={{ width: `${(Math.max(0, remaining) / (total || 1)) * 100}%` }}
         />
       </div>
 

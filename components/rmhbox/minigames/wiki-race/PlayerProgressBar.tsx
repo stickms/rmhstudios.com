@@ -43,7 +43,7 @@ export default function PlayerProgressBar({
           {clickCount} click{clickCount !== 1 ? 's' : ''}
         </span>
         {hasFinished && (
-          <span className="rounded bg-green-500/20 px-1.5 py-0.5 text-[10px] font-semibold text-green-400">
+          <span className="rounded bg-(--rmhbox-success-dim) px-1.5 py-0.5 text-[10px] font-semibold text-(--rmhbox-success)">
             #{finishRank}
           </span>
         )}

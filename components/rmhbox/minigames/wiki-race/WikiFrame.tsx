@@ -7,13 +7,19 @@
  * carry `data-wiki-target` attributes (set by the server sanitizer);
  * clicks on those links emit `NAVIGATE` via the parent's callback.
  *
+ * The inner content div is marked `inert` so that browser find-in-page
+ * (Ctrl+F) cannot match text inside the article — players must navigate
+ * by reading, not searching.  Scrolling is handled by the non-inert
+ * wrapper, and link clicks are detected with `elementFromPoint`.
+ *
  * External links, images, scripts, and iframes are stripped server-side.
  *
  * Props:
  *   html: string — Sanitized article HTML from the server
  *   currentTitle: string — Title of the currently displayed article
  *   isLoading: boolean — Whether a new article is being fetched
- *   disabled: boolean — True when player has finished
+ *   disabled: boolean — True when player has finished (links disabled,
+ *                        scrolling still allowed)
  *   onNavigate: (targetTitle: string) => void
  */
 'use client';
@@ -37,20 +43,35 @@ export default function WikiFrame({
   disabled,
   onNavigate,
 }: WikiFrameProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
 
-  /** Handle clicks inside the article HTML */
+  /**
+   * Handle clicks on wiki links.
+   *
+   * Because the content div is `inert`, pointer events pass through to
+   * the scrollable wrapper.  We temporarily lift `inert`, query
+   * `elementFromPoint` to find the link under the cursor, then restore it.
+   */
   const handleClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
       if (disabled) return;
 
-      const target = (e.target as HTMLElement).closest('a[data-wiki-target]') as HTMLAnchorElement | null;
-      if (!target) return;
+      const contentEl = contentRef.current;
+      if (!contentEl) return;
+
+      // Lift inert, hit-test, restore
+      contentEl.removeAttribute('inert');
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      contentEl.setAttribute('inert', '');
+
+      const link = (el as HTMLElement | null)?.closest('a[data-wiki-target]') as HTMLAnchorElement | null;
+      if (!link) return;
 
       e.preventDefault();
       e.stopPropagation();
 
-      const wikiTarget = target.getAttribute('data-wiki-target');
+      const wikiTarget = link.getAttribute('data-wiki-target');
       if (wikiTarget) {
         onNavigate(wikiTarget);
       }
@@ -60,7 +81,7 @@ export default function WikiFrame({
 
   // Scroll to top on article change
   useEffect(() => {
-    containerRef.current?.scrollTo(0, 0);
+    scrollRef.current?.scrollTo(0, 0);
   }, [currentTitle]);
 
   return (
@@ -85,20 +106,23 @@ export default function WikiFrame({
         </div>
       )}
 
-      {/* Article content */}
+      {/* Article content — scrollable wrapper is NOT inert so scroll+click work */}
       {html && (
         <div
-          ref={containerRef}
+          ref={scrollRef}
           onClick={handleClick}
-          className={`wiki-frame max-h-[50vh] overflow-y-auto px-4 py-3 text-sm leading-relaxed ${
-            disabled ? 'pointer-events-none opacity-60' : ''
-          } ${isLoading ? 'opacity-40' : ''}`}
-          dangerouslySetInnerHTML={{ __html: html }}
-          style={{
-            // Override wiki HTML styling for dark mode
-            color: 'var(--rmhbox-text)',
-          }}
-        />
+          className={`max-h-[50vh] overflow-y-auto px-4 py-3 text-sm leading-relaxed ${
+            isLoading ? 'opacity-40' : ''
+          }`}
+        >
+          <div
+            ref={contentRef}
+            className={`wiki-frame ${disabled ? 'wiki-frame-disabled' : ''}`}
+            inert
+            dangerouslySetInnerHTML={{ __html: html }}
+            style={{ color: 'var(--rmhbox-text)' }}
+          />
+        </div>
       )}
 
       {/* Wiki-frame styles — must be global to apply to dangerouslySetInnerHTML content */}
@@ -114,6 +138,14 @@ export default function WikiFrame({
         }
         .wiki-frame a[data-wiki-target]:visited {
           color: #795cb2;
+        }
+        .wiki-frame.wiki-frame-disabled {
+          opacity: 0.7;
+        }
+        .wiki-frame.wiki-frame-disabled a[data-wiki-target] {
+          color: inherit;
+          text-decoration: none;
+          cursor: default;
         }
         .wiki-frame .stripped-link {
           color: inherit;

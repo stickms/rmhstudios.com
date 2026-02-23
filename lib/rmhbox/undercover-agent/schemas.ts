@@ -39,3 +39,9 @@ export const SetRoleSchema = z.object({
   targetUserId: z.string().min(1),
   role: z.enum(['spymaster', 'operative']),
 });
+
+/** Schema for toggling a tile highlight. */
+export const HighlightTileSchema = z.object({
+  position: z.number().int().min(0).max(24),
+  highlighted: z.boolean(),
+});

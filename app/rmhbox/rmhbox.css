@@ -30,6 +30,8 @@
   --rmhbox-warning-dim: rgba(217, 195, 110, 0.12);
   --rmhbox-info: #7cacd4;
   --rmhbox-info-dim: rgba(124, 172, 212, 0.12);
+  --rmhbox-rare: #b58ad9;
+  --rmhbox-rare-dim: rgba(181, 138, 217, 0.12);
   --rmhbox-font-display: 'Nunito', 'Segoe UI', system-ui, sans-serif;
   --rmhbox-font-body: 'Inter', 'Segoe UI', system-ui, sans-serif;
   --rmhbox-font-mono: 'JetBrains Mono', 'Cascadia Code', monospace;
@@ -63,6 +65,8 @@
   --rmhbox-warning-dim: rgba(196, 169, 74, 0.08);
   --rmhbox-info: #5a96c0;
   --rmhbox-info-dim: rgba(90, 150, 192, 0.08);
+  --rmhbox-rare: #9364ba;
+  --rmhbox-rare-dim: rgba(147, 100, 186, 0.08);
   --rmhbox-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
   --rmhbox-toast-bg: #ffffff;
 }

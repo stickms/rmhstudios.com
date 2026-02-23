@@ -380,10 +380,12 @@ export class RhymeTimeMinigame extends BaseMinigame {
 
       for (const sub of subs) {
         if (!sub.isValid) {
-          invalidCount++;
-          // Not-in-dictionary words get 0 points (no penalty);
-          // known words that don't rhyme get -1 penalty
+          // Not-in-dictionary words get 0 points (no penalty) and are NOT counted as invalid;
+          // known words that don't rhyme get -1 penalty and ARE counted as invalid
           const penalty = sub.invalidReason === 'not_in_dictionary' ? 0 : RT_INVALID_PENALTY;
+          if (sub.invalidReason !== 'not_in_dictionary') {
+            invalidCount++;
+          }
           breakdown.push({
             word: sub.word,
             isValid: false,

@@ -104,8 +104,6 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
   const [totalPlayers, setTotalPlayers] = useState(0);
   const [anonymizedAnswers, setAnonymizedAnswers] = useState<AnonymizedAnswerSet[]>([]);
   const [myCrashes, setMyCrashes] = useState<CrashEntry[]>([]);
-  const [crashesUsed, setCrashesUsed] = useState(0);
-  const [maxCrashes, setMaxCrashes] = useState(5);
   const [scores, setScores] = useState<Record<string, number>>({});
   const [roundResults, setRoundResults] = useState<CCRoundResults | null>(null);
   const [anonymizationMap, setAnonymizationMap] = useState<Record<string, string>>({});
@@ -130,7 +128,6 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
           setIsLocked(false);
           setLockedCount(0);
           setMyCrashes([]);
-          setCrashesUsed(0);
           setRoundResults(null);
           setAnonymizedAnswers([]);
           // Server will send CC_INPUT_START when the reveal period ends
@@ -162,7 +159,6 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
           if (data.categories) setCategories(data.categories as Category[]);
           if (data.letter) setLetter(data.letter as string);
           setMyCrashes([]);
-          setCrashesUsed(0);
           break;
         }
         case 'CC_CRASH_RECORDED': {
@@ -171,8 +167,6 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
             categoryIndex: data.categoryIndex as number,
           };
           setMyCrashes((prev) => [...prev, entry]);
-          setCrashesUsed(data.crashesUsed as number);
-          setMaxCrashes(data.maxCrashes as number);
           break;
         }
         case 'CC_UNCRASH_RECORDED': {
@@ -181,7 +175,6 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
           setMyCrashes((prev) =>
             prev.filter((c) => !(c.targetUserId === target && c.categoryIndex === catIdx)),
           );
-          setCrashesUsed(data.crashesUsed as number);
           break;
         }
         case 'CC_CRASH_RESOLUTION_START': {
@@ -238,8 +231,6 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
       if (data.totalPlayers !== undefined) setTotalPlayers(data.totalPlayers as number);
       if (data.anonymizedAnswers) setAnonymizedAnswers(data.anonymizedAnswers as AnonymizedAnswerSet[]);
       if (data.myCrashes) setMyCrashes(data.myCrashes as CrashEntry[]);
-      if (data.crashesUsed !== undefined) setCrashesUsed(data.crashesUsed as number);
-      if (data.maxCrashes !== undefined) setMaxCrashes(data.maxCrashes as number);
       if (data.roundResults) setRoundResults(data.roundResults as CCRoundResults);
       if (data.anonymizationMap) setAnonymizationMap(data.anonymizationMap as Record<string, string>);
     },
@@ -386,8 +377,6 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
               categories={categories}
               anonymizedAnswers={anonymizedAnswers}
               myCrashes={myCrashes}
-              crashesUsed={crashesUsed}
-              maxCrashes={maxCrashes}
               timeRemaining={timeRemaining}
               currentUserId={playerId}
               onCrash={handleCrash}

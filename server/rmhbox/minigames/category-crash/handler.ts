@@ -40,14 +40,13 @@ import {
   CC_CRASH_RESOLUTION,
   CC_ROUND_RESULTS,
   CC_REVEAL,
-  CC_MAX_CRASHES,
   CC_CRASH_THRESHOLD_PERCENT,
   CC_UNIQUE_POINTS,
   CC_SHARED_POINTS,
   CC_CRASH_BONUS,
   CC_CRASH_PENALTY,
   CC_FUZZY_THRESHOLD,
-} from '../../../../lib/rmhbox/constants';
+} from '@/lib/rmhbox/constants';
 import { logger } from '../../logger';
 import {
   CategoryCrashPhase,
@@ -475,15 +474,6 @@ export class CategoryCrashMinigame extends BaseMinigame {
       return;
     }
 
-    // Max crashes per round
-    if ((this.state.crashCounts[userId] ?? 0) >= CC_MAX_CRASHES) {
-      this.context.sendToPlayer(userId, 'rmhbox:game:action', {
-        type: 'CC_CRASH_REJECTED',
-        reason: 'max_crashes_reached',
-      });
-      return;
-    }
-
     // No duplicate crash on same target+category
     const alreadyCrashed = this.state.crashes.some(
       (c) => c.crasherId === userId && c.targetUserId === realTargetId && c.categoryIndex === categoryIndex,
@@ -524,8 +514,6 @@ export class CategoryCrashMinigame extends BaseMinigame {
       type: 'CC_CRASH_RECORDED',
       targetUserId,
       categoryIndex,
-      crashesUsed: this.state.crashCounts[userId],
-      maxCrashes: CC_MAX_CRASHES,
     });
   }
 
@@ -573,8 +561,6 @@ export class CategoryCrashMinigame extends BaseMinigame {
       type: 'CC_UNCRASH_RECORDED',
       targetUserId,
       categoryIndex,
-      crashesUsed: this.state.crashCounts[userId],
-      maxCrashes: CC_MAX_CRASHES,
     });
   }
 
@@ -846,7 +832,6 @@ export class CategoryCrashMinigame extends BaseMinigame {
               categoryIndex: c.categoryIndex,
             })),
           crashesUsed: this.state.crashCounts[userId] ?? 0,
-          maxCrashes: CC_MAX_CRASHES,
         };
 
       case CategoryCrashPhase.CRASH_RESOLUTION:

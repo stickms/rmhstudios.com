@@ -30,6 +30,12 @@ let socket: Socket | null = null;
  * Gets the current auth session token, creates a Socket.io connection,
  * and sets up all global event listeners for state synchronization.
  *
+ * If an existing socket is alive but disconnected, it is torn down first
+ * to prevent orphaned listeners from overwriting the connection status.
+ *
+ * The `auth` callback is dynamic so the session token is refreshed on
+ * every reconnection attempt (handles token expiration during long AFK).
+ *
  * @returns The connected Socket instance
  * @throws If no auth session is available
  */
@@ -37,10 +43,19 @@ export async function connectToRMHbox(): Promise<Socket> {
   // If already connected, return existing socket
   if (socket?.connected) return socket;
 
+  // ── Tear down stale socket before creating a new one ────────
+  // Without this, the old socket's reconnect/disconnect handlers
+  // can overwrite the new socket's connection status.
+  if (socket) {
+    socket.removeAllListeners();
+    socket.disconnect();
+    socket = null;
+  }
+
   const store = useRMHboxStore.getState();
   store.setConnectionStatus('connecting');
 
-  // Get auth session token
+  // Verify the user is authenticated before attempting to connect
   const session = await authClient.getSession();
   const token = session?.data?.session?.token;
   if (!token) {
@@ -52,9 +67,16 @@ export async function connectToRMHbox(): Promise<Socket> {
 
   socket = io(serverUrl, {
     path: '/rmhbox/',
-    auth: { token },
+    // Dynamic auth: refreshes the session token on every (re)connection
+    // attempt so expired tokens are replaced automatically.
+    auth: (cb) => {
+      authClient
+        .getSession()
+        .then((s) => cb({ token: s?.data?.session?.token ?? token }))
+        .catch(() => cb({ token }));
+    },
     reconnection: true,
-    reconnectionAttempts: 10,
+    reconnectionAttempts: Infinity,
     reconnectionDelay: 1000,
     reconnectionDelayMax: 10000,
     timeout: 10000,
@@ -74,10 +96,9 @@ export async function connectToRMHbox(): Promise<Socket> {
     }
   });
 
-  socket.on('connect_error', () => {
-    const s = socket;
-    if (s && !s.active) {
-      // Reconnection failed completely
+  socket.on('connect_error', (err) => {
+    // Auth-related failures won't resolve by retrying with the same session.
+    if (err.message?.includes('auth') || err.message?.includes('token') || err.message?.includes('unauthorized')) {
       useRMHboxStore.getState().setConnectionStatus('error');
     }
   });

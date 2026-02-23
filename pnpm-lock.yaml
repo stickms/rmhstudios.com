@@ -137,6 +137,9 @@ importers:
       syllable:
         specifier: ^5.0.1
         version: 5.0.1
+      syllable-count-english:
+        specifier: ^1.0.6
+        version: 1.0.6
       tailwind-merge:
         specifier: ^3.4.0
         version: 3.4.0
@@ -4550,6 +4553,9 @@ packages:
     resolution: {integrity: sha512-aqldKgX9aZqpoDp3e8/BZ8Dm7x1pJl+qI3ZKxDN0i/IQTWUwBx/ManmlVJ3wowqbno6c2bmiIfs+Um6LbsjJyQ==}
     peerDependencies:
       react: '>=17.0'
+
+  syllable-count-english@1.0.6:
+    resolution: {integrity: sha512-Z0Sj+Djb9jMOQqJACqx93zGXbKOxKvWUwxQJ878leGHM4RWhxBDcvem/311xUY4cTPY+8sgkiYpr+nEStSg0DA==}
 
   syllable@5.0.1:
     resolution: {integrity: sha512-HWtNCp6v7J8H0lrT8j1HHjfOLltRoDcC7QRFVu25p4BE52JqetXG65nqC7CsatT8WQRfY4Qvh93BWJIUxbmXFg==}
@@ -9788,6 +9794,10 @@ snapshots:
   suspend-react@0.1.3(react@19.2.3):
     dependencies:
       react: 19.2.3
+
+  syllable-count-english@1.0.6:
+    dependencies:
+      syllable: 5.0.1
 
   syllable@5.0.1:
     dependencies:

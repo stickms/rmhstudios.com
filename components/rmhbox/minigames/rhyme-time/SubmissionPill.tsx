@@ -24,10 +24,10 @@ export interface SubmissionPillProps {
 }
 
 const STATUS_STYLES: Record<SubmissionPillProps['status'], string> = {
-  pending:      'bg-gray-500/20 text-gray-300 border-gray-500/40',
-  valid:        'bg-green-500/20 text-green-300 border-green-500/40',
-  invalid:      'bg-red-500/20 text-red-400 border-red-500/40 line-through',
-  not_in_dict:  'bg-gray-500/10 text-gray-500 border-gray-600/30',
+  pending:      'bg-(--rmhbox-text-muted)/20 text-(--rmhbox-text-muted) border-(--rmhbox-text-muted)/40',
+  valid:        'bg-(--rmhbox-success)/20 text-(--rmhbox-success) border-(--rmhbox-success)/40',
+  invalid:      'bg-(--rmhbox-danger)/20 text-(--rmhbox-danger) border-(--rmhbox-danger)/40 line-through',
+  not_in_dict:  'bg-(--rmhbox-text-dim)/10 text-(--rmhbox-text-dim) border-(--rmhbox-text-dim)/30',
 };
 
 export default function SubmissionPill({ word, status, invalidReason }: SubmissionPillProps) {

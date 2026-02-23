@@ -21,7 +21,7 @@ export default function SpectatorBanner({ lobbyState, onRequestPromotion }: Spec
   const canJoin = lobbyState === 'WAITING' || lobbyState === 'ROUND_RESULTS';
 
   return (
-    <div className="fixed inset-x-0 top-0 z-50 flex h-16 items-center justify-center gap-4 bg-(--rmhbox-surface)/75 border-b border-(--rmhbox-border) px-4 backdrop-blur-sm pointer-events-none">
+    <div className="sticky top-0 z-30 flex h-12 items-center justify-center gap-4 bg-(--rmhbox-surface)/50 border-b border-(--rmhbox-border) px-4 backdrop-blur-[1px] pointer-events-none">
       <span className="flex items-center gap-1.5 text-sm font-medium text-(--rmhbox-text) pointer-events-auto">
         <Eye className="h-4 w-4" /> You are spectating
       </span>

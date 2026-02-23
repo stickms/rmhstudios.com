@@ -119,12 +119,6 @@ export class StateSyncService {
     const tick = () => {
       if (cancelled || paused) return;
 
-      // Broadcast TIMER_TICK action
-      this.lobbyManager.broadcastAction(lobbyId, {
-        type: 'TIMER_TICK',
-        payload: { timeRemaining: remaining },
-      });
-
       remaining--;
 
       if (remaining < 0) {
@@ -133,7 +127,14 @@ export class StateSyncService {
         if (!cancelled) {
           onComplete();
         }
+        return;
       }
+
+      // Broadcast TIMER_TICK action (decrement first so remaining matches display)
+      this.lobbyManager.broadcastAction(lobbyId, {
+        type: 'TIMER_TICK',
+        payload: { timeRemaining: remaining },
+      });
     };
 
     interval = setInterval(tick, 1000);
@@ -148,7 +149,7 @@ export class StateSyncService {
       paused = true;
       this.lobbyManager.broadcastAction(lobbyId, {
         type: 'TIMER_PAUSED',
-        payload: { timeRemaining: remaining },
+        payload: { timeRemaining: Math.max(0, remaining) },
       });
     };
 
@@ -157,7 +158,45 @@ export class StateSyncService {
       paused = false;
       this.lobbyManager.broadcastAction(lobbyId, {
         type: 'TIMER_RESUMED',
-        payload: { timeRemaining: remaining },
+        payload: { timeRemaining: Math.max(0, remaining) },
+      });
+    };
+
+    return { cancel, pause, resume, get isPaused() { return paused; } };
+  }
+
+  /**
+   * Broadcast an "infinite" timer that shows a full ring with an ∞ icon.
+   * No ticking, no auto-complete. The host advances manually via force-skip.
+   * Sentinel value: `totalDuration: -1, timeRemaining: -1`.
+   * Always shows the host "Next" button (`showSkip: true`).
+   */
+  broadcastInfiniteTimer(lobbyId: string): TimerHandle {
+    let cancelled = false;
+    let paused = false;
+
+    this.lobbyManager.broadcastAction(lobbyId, {
+      type: 'TIMER_START',
+      payload: { totalDuration: -1, timeRemaining: -1, showSkip: true },
+    });
+
+    const cancel = () => { cancelled = true; };
+
+    const pause = () => {
+      if (paused || cancelled) return;
+      paused = true;
+      this.lobbyManager.broadcastAction(lobbyId, {
+        type: 'TIMER_PAUSED',
+        payload: { timeRemaining: -1 },
+      });
+    };
+
+    const resume = () => {
+      if (!paused || cancelled) return;
+      paused = false;
+      this.lobbyManager.broadcastAction(lobbyId, {
+        type: 'TIMER_RESUMED',
+        payload: { timeRemaining: -1 },
       });
     };
 

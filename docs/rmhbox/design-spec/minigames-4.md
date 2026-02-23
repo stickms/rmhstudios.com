@@ -61,7 +61,7 @@ Social deduction where the only person who doesn't know who you are is *you*. Ev
 
 #### 1.3.2 Identity Assignment
 
-Identities are drawn from `/public/data/rmhbox/identity-crisis/identities.json`:
+Identities are drawn from `data/rmhbox/identity-crisis/identities.json`:
 
 ```typescript
 interface Identity {
@@ -83,8 +83,8 @@ interface Identity {
 
 On a player's turn:
 
-1. **Ask phase** (`IC_ASK_SECONDS`, default: **20s**): The active player types a Yes/No question about themselves (e.g., "Am I a real person?" or "Am I known for music?"). The question is sent to the server.
-2. **Vote phase** (`IC_VOTE_SECONDS`, default: **15s**): All OTHER players see the question and vote: "Yes," "No," or "Maybe." Voting is simultaneous — no one can see others' votes until all votes are in (or the timer expires).
+1. **Ask phase** (`IC_ASK`, default: **20s**): The active player types a Yes/No question about themselves (e.g., "Am I a real person?" or "Am I known for music?"). The question is sent to the server.
+2. **Vote phase** (`IC_VOTE`, default: **15s**): All OTHER players see the question and vote: "Yes," "No," or "Maybe." Voting is simultaneous — no one can see others' votes until all votes are in (or the timer expires).
 3. **Results reveal** (3s): The aggregate vote result is shown to everyone:
    - The majority answer is displayed prominently.
    - Vote breakdown (e.g., "Yes: 4, No: 1, Maybe: 0") is shown.
@@ -110,13 +110,13 @@ After all question rounds:
 1. Every player who hasn't already guessed correctly submits their best guess.
 2. Guessing is done via a text input with fuzzy matching against the identity name.
 3. The server uses `fuse.js` for matching with a threshold of `IC_GUESS_MATCH_THRESHOLD` (default: **0.3**, very forgiving — "einstein" matches "Albert Einstein").
-4. Players have `IC_FINAL_GUESS_SECONDS` (default: **30s**) to submit.
+4. Players have `IC_FINAL_GUESS` (default: **30s**) to submit.
 
 #### 1.3.6 Scoring
 
 | Event | Points |
 |---|---|
-| Correct final guess | `IC_CORRECT_GUESS_POINTS` (default: **200**) |
+| Correct final guess | `IC_CORRECT_GUESS` (default: **200**) |
 | Early guess bonus (correct) | `IC_EARLY_GUESS_BONUS_BASE` × `questionsRemaining / totalQuestions` (default: **300** × ratio) |
 | Incorrect early guess penalty | `IC_EARLY_GUESS_PENALTY` (default: **-100**) |
 | Asking questions efficiently (fewer questions asked overall) | `IC_EFFICIENCY_BONUS` (default: **20** per unused question slot) |
@@ -373,14 +373,14 @@ components/rmhbox/minigames/identity-crisis/
 
 ```typescript
 export const IC_QUESTIONS_PER_PLAYER = 3;
-export const IC_ASK_SECONDS = 20;
-export const IC_VOTE_SECONDS = 15;
-export const IC_VOTE_RESULTS_SECONDS = 3;
-export const IC_ASSIGNMENT_REVEAL_SECONDS = 5;
-export const IC_FINAL_GUESS_SECONDS = 30;
-export const IC_RESULTS_SECONDS = 10;
+export const IC_ASK = 20;
+export const IC_VOTE = 15;
+export const IC_VOTE_RESULTS = 3;
+export const IC_ASSIGNMENT_REVEAL = 5;
+export const IC_FINAL_GUESS = 30;
+export const IC_RESULTS = 10;
 
-export const IC_CORRECT_GUESS_POINTS = 200;
+export const IC_CORRECT_GUESS = 200;
 export const IC_EARLY_GUESS_BONUS_BASE = 300;
 export const IC_EARLY_GUESS_PENALTY = -100;
 export const IC_EFFICIENCY_BONUS = 20;
@@ -482,10 +482,10 @@ socket.emit('IC_FINAL_GUESS', { guess });
 #### 1.14.4 Server-Side Handler Registration
 
 ```typescript
-// In server minigame registry
+// In server/rmhbox/minigames/identity-crisis
 import { IdentityCrisisGame } from './minigames/identity-crisis/IdentityCrisisGame';
 
-registry.register('identity-crisis', IdentityCrisisGame);
+MINIGAME_SERVER_REGISTRY.set('identity-crisis', IdentityCrisisGame);
 ```
 
 #### 1.14.5 Sound Effect Integration
@@ -549,7 +549,7 @@ The game consists of `RF_TOTAL_ROUNDS` (default: **5**) rounds, each with a diff
 
 #### 2.3.2 Category & Item Selection
 
-Categories come from `/public/data/rmhbox/ranking-file/categories.json`:
+Categories come from `data/rmhbox/ranking-file/categories.json`:
 
 ```typescript
 interface RankingCategory {
@@ -627,7 +627,7 @@ function computeDistance(playerRanking: number[], averageRanking: number[]): num
 const maxDistance = 12;  // theoretical max deviation
 const distance = computeDistance(playerRanking, averageRanking);
 const normalizedScore = Math.max(0, 1 - (distance / maxDistance));  // 0–1
-const roundScore = Math.round(normalizedScore * RF_MAX_ROUND_POINTS);
+const roundScore = Math.round(normalizedScore * RF_MAX_ROUND);
 ```
 
 | Distance | Approximate Score (with max 200) |
@@ -860,13 +860,13 @@ components/rmhbox/minigames/ranking-file/
 export const RF_TOTAL_ROUNDS = 5;
 export const RF_ITEMS_PER_CATEGORY = 5;
 
-export const RF_CATEGORY_REVEAL_SECONDS = 3;
-export const RF_RANKING_SECONDS = 25;
-export const RF_LOCK_IN_SECONDS = 3;
-export const RF_RESULTS_SECONDS = 8;
-export const RF_TRANSITION_SECONDS = 2;
+export const RF_CATEGORY_REVEAL = 3;
+export const RF_RANKING = 25;
+export const RF_LOCK_IN = 3;
+export const RF_RESULTS = 8;
+export const RF_TRANSITION = 2;
 
-export const RF_MAX_ROUND_POINTS = 200;
+export const RF_MAX_ROUND = 200;
 export const RF_EXACT_MATCH_BONUS = 100;
 export const RF_OUTLIER_BONUS = 25;
 export const RF_MAX_THEORETICAL_DISTANCE = 12;
@@ -948,10 +948,10 @@ socket.emit('RF_UPDATE_RANKING', { ranking });
 #### 2.14.4 Server-Side Handler Registration
 
 ```typescript
-// In server minigame registry
+// In server/rmhbox/minigames/ranking-file
 import { RankingFileGame } from './minigames/ranking-file/RankingFileGame';
 
-registry.register('ranking-file', RankingFileGame);
+MINIGAME_SERVER_REGISTRY.set('ranking-file', RankingFileGame);
 ```
 
 #### 2.14.5 Sound Effect Integration
@@ -992,7 +992,7 @@ During the ranking phase, spectators see submission progress (who submitted, not
 
 ### 3.2 Game Concept
 
-Collaborative physics-based navigation. Players control colored circles ("Pushers") on a 2D canvas. A neutral "Physics Ball" sits on the field. The team must physically bump into the ball to push it through a series of waypoints or into a goal zone. Every `PP_POLARITY_INTERVAL_SECONDS` (default: **10 seconds**), one player's "Polarity" flips — they begin *attracting* the ball like a magnet instead of pushing it, forcing the team to adapt their formation.
+Collaborative physics-based navigation. Players control colored circles ("Pushers") on a 2D canvas. A neutral "Physics Ball" sits on the field. The team must physically bump into the ball to push it through a series of waypoints or into a goal zone. Every `PP_POLARITY_INTERVAL` (default: **10 seconds**), one player's "Polarity" flips — they begin *attracting* the ball like a magnet instead of pushing it, forcing the team to adapt their formation.
 
 ### 3.3 Detailed Mechanics
 
@@ -1065,7 +1065,7 @@ const PP_BALL_MAX_SPEED = 8;       // max velocity magnitude
 
 #### 3.3.5 Polarity Flip (The Twist)
 
-Every `PP_POLARITY_INTERVAL_SECONDS` (default: **10s**), the server randomly selects one player to have their polarity **flipped**:
+Every `PP_POLARITY_INTERVAL` (default: **10s**), the server randomly selects one player to have their polarity **flipped**:
 
 **Normal polarity (Push):** The pusher pushes the ball away on collision (standard physics).
 
@@ -1096,8 +1096,8 @@ Some levels have ordered waypoints:
 
 | Event | Points |
 |---|---|
-| Level completed | `PP_LEVEL_COMPLETE_POINTS` (default: **200** per player) |
-| Waypoint reached | `PP_WAYPOINT_POINTS` (default: **50** per player) |
+| Level completed | `PP_LEVEL_COMPLETE_BONUS` (default: **200** per player) |
+| Waypoint reached | `PP_WAYPOINT` (default: **50** per player) |
 | Time bonus (level completion) | `PP_TIME_BONUS_PER_SECOND` × seconds remaining (default: **3** × remaining) |
 | Most pushes (MVP pusher) | `PP_MVP_BONUS` (default: **75**) |
 | Handling polarity well (moved away from ball during attraction, ball didn't deviate more than threshold) | `PP_POLARITY_CONTROL_BONUS` (default: **50** per polarity flip handled well) |
@@ -1105,7 +1105,7 @@ Some levels have ordered waypoints:
 
 #### 3.3.8 Level Design
 
-Levels are defined in `/public/data/rmhbox/pixel-pushers/levels.json`:
+Levels are defined in `data/rmhbox/pixel-pushers/levels.json`:
 
 ```typescript
 interface PPLevel {
@@ -1358,9 +1358,9 @@ export const PP_TOTAL_LEVELS = 3;
 export const PP_CANVAS_WIDTH = 600;
 export const PP_CANVAS_HEIGHT = 400;
 
-export const PP_LEVEL_PREVIEW_SECONDS = 3;
-export const PP_ACTIVE_DURATION_SECONDS = 90;
-export const PP_LEVEL_COMPLETE_SECONDS = 3;
+export const PP_LEVEL_PREVIEW = 3;
+export const PP_ACTIVE_DURATION = 90;
+export const PP_LEVEL_COMPLETE = 3;
 
 export const PP_PUSHER_RADIUS = 15;
 export const PP_BALL_RADIUS = 20;
@@ -1370,19 +1370,19 @@ export const PP_BALL_FRICTION = 0.97;
 export const PP_BALL_MAX_SPEED = 8;
 export const PP_BALL_WALL_RESTITUTION = 0.6;
 
-export const PP_POLARITY_INTERVAL_SECONDS = 10;
-export const PP_POLARITY_WARNING_SECONDS = 3;
+export const PP_POLARITY_INTERVAL = 10;
+export const PP_POLARITY_WARNING = 3;
 export const PP_ATTRACT_RADIUS = 80;
 export const PP_ATTRACT_FORCE = 200;                // numerator in inverse-square law
 export const PP_MAX_ATTRACT_FORCE = 2.0;            // clamp per tick
 
 export const PP_WAYPOINT_RADIUS = 30;
 export const PP_MOVE_INPUT_RATE = 15;               // Hz
-export const PP_SIMULATION_TICK_MS = 33;            // ~30 ticks/second
+export const PP_SIMULATION_TICK = 33;            // ~30 ticks/second
 export const PP_STATE_BROADCAST_RATE = 15;          // Hz (every other tick)
 
-export const PP_LEVEL_COMPLETE_POINTS = 200;
-export const PP_WAYPOINT_POINTS = 50;
+export const PP_LEVEL_COMPLETE_BONUS = 200;
+export const PP_WAYPOINT = 50;
 export const PP_TIME_BONUS_PER_SECOND = 3;
 export const PP_MVP_BONUS = 75;
 export const PP_POLARITY_CONTROL_BONUS = 50;
@@ -1467,10 +1467,10 @@ socket.emit('PP_MOVE', { dx, dy });
 #### 3.15.4 Server-Side Handler Registration
 
 ```typescript
-// In server minigame registry
+// In server/rmhbox/minigames/pixel-pushers
 import { PixelPushersGame } from './minigames/pixel-pushers/PixelPushersGame';
 
-registry.register('pixel-pushers', PixelPushersGame);
+MINIGAME_SERVER_REGISTRY.set('pixel-pushers', PixelPushersGame);
 ```
 
 #### 3.15.5 Sound Effect Integration
@@ -1532,12 +1532,12 @@ The game is a continuous survival experience with no discrete rounds.
 The game world is a tall vertical page (height: effectively infinite, procedurally generated). The viewport auto-scrolls **upward** at an increasing speed:
 
 - **Starting scroll speed:** `SC_BASE_SCROLL_SPEED` (default: **1.5** pixels/tick).
-- **Speed increase:** Every `SC_SPEED_INCREASE_INTERVAL_MS` (default: **5000ms** = 5 seconds), speed increases by `SC_SPEED_INCREASE_AMOUNT` (default: **0.2** pixels/tick).
+- **Speed increase:** Every `SC_SPEED_INCREASE_INTERVAL` (default: **5000ms** = 5 seconds), speed increases by `SC_SPEED_INCREASE_AMOUNT` (default: **0.2** pixels/tick).
 - **Max scroll speed:** `SC_MAX_SCROLL_SPEED` (default: **5.0** pixels/tick).
 
 The viewport is `SC_VIEWPORT_WIDTH` × `SC_VIEWPORT_HEIGHT` (default: **400 × 600** logical pixels).
 
-**Lava zones:** The top and bottom `SC_LAVA_HEIGHT` (default: **40px**) pixels of the viewport are "lava." If a player's avatar touches or enters the lava zone, they take damage and are eliminated after `SC_LAVA_ELIMINATION_MS` (default: **500ms**) of continuous contact.
+**Lava zones:** The top and bottom `SC_LAVA_HEIGHT` (default: **40px**) pixels of the viewport are "lava." If a player's avatar touches or enters the lava zone, they take damage and are eliminated after `SC_LAVA_ELIMINATION` (default: **500ms**) of continuous contact.
 
 #### 4.3.3 Safe Zones
 
@@ -1606,14 +1606,14 @@ type AdEffect =
 ```
 
 **Ad spawn frequency:**
-- Starts at `SC_AD_INTERVAL_MIN_MS` (default: **8000ms**) and decreases to `SC_AD_INTERVAL_MAX_FREQUENCY_MS` (default: **3000ms**) over the game duration.
+- Starts at `SC_AD_INTERVAL_MIN` (default: **8000ms**) and decreases to `SC_AD_INTERVAL_MAX_FREQUENCY` (default: **3000ms**) over the game duration.
 - Maximum of `SC_MAX_CONCURRENT_ADS` (default: **3**) on screen at once.
 
 **Closing ads:**
 - Each ad has a small "X" close button. The player must **tap/click the X** to dismiss it.
 - The close button position varies per ad (different corners, sometimes tiny, sometimes offset).
 - Some ads have a **fake X** that doesn't work — the real X is elsewhere. (Indicated by `SC_FAKE_X_CHANCE`, default: **0.2** = 20% of ads).
-- Ads that aren't closed expire after `SC_AD_DURATION_MS` (default: **5000ms**) but their effects persist for the full duration.
+- Ads that aren't closed expire after `SC_AD_DURATION` (default: **5000ms**) but their effects persist for the full duration.
 
 **Ad effects:**
 | Effect | Impact |
@@ -1635,7 +1635,7 @@ Closing an ad immediately removes its effect.
 #### 4.3.6 Server-Side vs Client-Side Physics
 
 **Server-authoritative approach:**
-- The server runs the physics simulation at `SC_SIMULATION_TICK_MS` (default: **33ms**, ~30Hz).
+- The server runs the physics simulation at `SC_SIMULATION_TICK` (default: **33ms**, ~30Hz).
 - The server generates Safe Zones, spawns ads, and tracks avatar positions.
 - The client sends input (movement direction, jump, ad close).
 - The server broadcasts consolidated state updates at `SC_STATE_BROADCAST_RATE` (default: **15Hz**).
@@ -1646,7 +1646,7 @@ This prevents cheating (e.g., teleporting, ignoring gravity, auto-closing ads).
 #### 4.3.7 Elimination
 
 A player is eliminated when:
-1. Their avatar is in the lava zone (top or bottom) for `SC_LAVA_ELIMINATION_MS` (default: **500ms** continuous contact). Brief touches don't kill immediately — the avatar flashes red as a warning.
+1. Their avatar is in the lava zone (top or bottom) for `SC_LAVA_ELIMINATION` (default: **500ms** continuous contact). Brief touches don't kill immediately — the avatar flashes red as a warning.
 2. Their avatar falls off-screen below the viewport.
 
 On elimination:
@@ -1660,12 +1660,12 @@ On elimination:
 
 | Event | Points |
 |---|---|
-| Survival time | `SC_SURVIVAL_POINTS_PER_SECOND` (default: **10** per second alive) |
-| Closing an ad | `SC_AD_CLOSE_POINTS` (default: **25**) |
+| Survival time | `SC_SURVIVAL_PER_SECOND` (default: **10** per second alive) |
+| Closing an ad | `SC_AD_CLOSE` (default: **25**) |
 | Closing an ad with a fake X (found the real X) | `SC_FAKE_AD_CLOSE_BONUS` (default: **50** bonus) |
-| Reaching a new "height milestone" (every `SC_HEIGHT_MILESTONE_INTERVAL` pixels scrolled) | `SC_HEIGHT_MILESTONE_POINTS` (default: **30**) |
+| Reaching a new "height milestone" (every `SC_HEIGHT_MILESTONE_INTERVAL` pixels scrolled) | `SC_HEIGHT_MILESTONE` (default: **30**) |
 | Last player standing bonus | `SC_WINNER_BONUS` (default: **200**) |
-| Placement bonus | `SC_PLACEMENT_POINTS` × (totalPlayers − rank + 1) (default: **15** × placement) |
+| Placement bonus | `SC_PLACEMENT` × (totalPlayers − rank + 1) (default: **15** × placement) |
 
 ### 4.4 Server-Side State Schema
 
@@ -1912,19 +1912,19 @@ export const SC_VIEWPORT_HEIGHT = 600;
 export const SC_LAVA_HEIGHT = 40;
 export const SC_AVATAR_SIZE = 20;
 
-export const SC_COUNTDOWN_SECONDS = 3;
-export const SC_MAX_SURVIVAL_SECONDS = 90;
-export const SC_GAME_OVER_SECONDS = 5;
+export const SC_COUNTDOWN = 3;
+export const SC_MAX_SURVIVAL = 90;
+export const SC_GAME_OVER = 5;
 
 export const SC_BASE_SCROLL_SPEED = 1.5;            // pixels/tick
-export const SC_SPEED_INCREASE_INTERVAL_MS = 5000;
+export const SC_SPEED_INCREASE_INTERVAL = 5000;
 export const SC_SPEED_INCREASE_AMOUNT = 0.2;
 export const SC_MAX_SCROLL_SPEED = 5.0;
 
 export const SC_GRAVITY = 0.3;                      // pixels/tick² (downward)
 export const SC_JUMP_VELOCITY = -7;                  // pixels/tick (upward)
 export const SC_AVATAR_SPEED_X = 4;                  // pixels/tick
-export const SC_LAVA_ELIMINATION_MS = 500;
+export const SC_LAVA_ELIMINATION = 500;
 
 export const SC_ZONE_GAP_MIN = 80;
 export const SC_ZONE_GAP_MAX = 200;
@@ -1935,22 +1935,22 @@ export const SC_MIN_ZONE_WIDTH = 20;                 // shrinking zones disappea
 export const SC_SHRINK_RATE = 10;                    // pixels/second width reduction
 export const SC_ZONE_BUFFER_PX = 200;                // send zones this many px outside viewport
 
-export const SC_AD_INTERVAL_MIN_MS = 8000;
-export const SC_AD_INTERVAL_MAX_FREQUENCY_MS = 3000;
+export const SC_AD_INTERVAL_MIN = 8000;
+export const SC_AD_INTERVAL_MAX_FREQUENCY = 3000;
 export const SC_MAX_CONCURRENT_ADS = 3;
-export const SC_AD_DURATION_MS = 5000;
+export const SC_AD_DURATION = 5000;
 export const SC_FAKE_X_CHANCE = 0.2;                 // 20% of ads have a fake X
 
-export const SC_SIMULATION_TICK_MS = 33;
+export const SC_SIMULATION_TICK = 33;
 export const SC_STATE_BROADCAST_RATE = 15;           // Hz
 
-export const SC_SURVIVAL_POINTS_PER_SECOND = 10;
-export const SC_AD_CLOSE_POINTS = 25;
+export const SC_SURVIVAL_PER_SECOND = 10;
+export const SC_AD_CLOSE = 25;
 export const SC_FAKE_AD_CLOSE_BONUS = 50;
 export const SC_HEIGHT_MILESTONE_INTERVAL = 500;     // every 500px scrolled
-export const SC_HEIGHT_MILESTONE_POINTS = 30;
+export const SC_HEIGHT_MILESTONE = 30;
 export const SC_WINNER_BONUS = 200;
-export const SC_PLACEMENT_POINTS = 15;
+export const SC_PLACEMENT = 15;
 ```
 
 ### 4.13 Anti-Cheat Notes
@@ -2043,10 +2043,10 @@ socket.emit('SC_CLOSE_AD', { adId, clickX, clickY });
 #### 4.15.4 Server-Side Handler Registration
 
 ```typescript
-// In server minigame registry
+// In server/rmhbox/minigames/scroll-soul
 import { ScrollSoulGame } from './minigames/scroll-soul/ScrollSoulGame';
 
-registry.register('scroll-soul', ScrollSoulGame);
+MINIGAME_SERVER_REGISTRY.set('scroll-soul', ScrollSoulGame);
 ```
 
 #### 4.15.5 Sound Effect Integration

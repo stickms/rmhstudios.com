@@ -22,7 +22,6 @@
 import { BaseMinigame } from '../base-minigame';
 import type { MinigameContext, MinigameResults } from '../base-minigame';
 import type { PlayerRanking, Award } from '@/lib/rmhbox/types';
-import type { ArticlePair } from '@/lib/rmhbox/wiki-race/data-loader';
 import { selectArticlePair } from '@/lib/rmhbox/wiki-race/data-loader';
 import { NavigateSchema, GoBackSchema } from '@/lib/rmhbox/wiki-race/schemas';
 import { createArticleCache, fetchArticle } from '@/lib/rmhbox/wiki-race/wikipedia-proxy';
@@ -72,7 +71,8 @@ export class WikiRaceMinigame extends BaseMinigame {
     logger.info({
       event: 'wiki_race:start',
       lobbyId: this.context.lobbyId,
-      articlePair: this.state.articlePair.id,
+      startArticle: this.state.articlePair.startArticle.title,
+      targetArticle: this.state.articlePair.targetArticle.title,
       playerCount: this.context.players.size,
     });
 
@@ -218,7 +218,6 @@ export class WikiRaceMinigame extends BaseMinigame {
     this.context.broadcastToLobby('rmhbox:game:action', {
       type: 'WR_RESULTS',
       playerResults,
-      optimalPathLength: this.state.articlePair.optimalPathLength,
       duration: WR_RESULTS,
     });
 
@@ -440,6 +439,22 @@ export class WikiRaceMinigame extends BaseMinigame {
       pathLength: ps.path.length,
     });
 
+    // Send the target article to the winning player so they can read it
+    // while waiting for other players. Intentionally skips the isRunning
+    // check — the player should see the target even if the game ends.
+    const targetTitle = this.state.articlePair.targetArticle.title;
+    this.fetchAndSendArticle(targetTitle).then((article) => {
+      if (!article) return;
+      this.context.sendToPlayer(userId, 'rmhbox:game:action', {
+        type: 'WR_ARTICLE_CONTENT',
+        title: article.title,
+        html: article.sanitizedHtml,
+        linkCount: article.links.size,
+      });
+    }).catch(() => {
+      // Ignore — player just won't see the target article
+    });
+
     // Check if all players finished — end early
     const allFinished = Array.from(this.state.playerStates.values()).every((p) => p.hasFinished);
     if (allFinished) {
@@ -457,8 +472,11 @@ export class WikiRaceMinigame extends BaseMinigame {
   // ─── Scoring ─────────────────────────────────────────────────
 
   private computeScores(): void {
-    const optimalPath = this.state.articlePair.optimalPathLength;
     const targetTitle = this.state.articlePair.targetArticle.title;
+    const finishedPlayers = Array.from(this.state.playerStates.values()).filter((p) => p.hasFinished);
+    const fewestClicks = finishedPlayers.length > 0
+      ? Math.min(...finishedPlayers.map((p) => p.clickCount))
+      : 0;
 
     for (const ps of this.state.playerStates.values()) {
       if (ps.hasFinished) {
@@ -470,8 +488,8 @@ export class WikiRaceMinigame extends BaseMinigame {
         const secsRemaining = Math.max(0, WR_NAV_DURATION - Math.floor(elapsedMs / 1000));
         score += WR_SPEED_BONUS_PER_SEC * secsRemaining;
 
-        // Efficiency bonus: fewer clicks relative to optimal
-        const efficiencyDelta = Math.max(0, optimalPath + 2 - ps.clickCount);
+        // Efficiency bonus: fewer clicks relative to the best finisher
+        const efficiencyDelta = Math.max(0, fewestClicks + 3 - ps.clickCount);
         score += WR_EFFICIENCY_BONUS * efficiencyDelta;
 
         ps.score = score;
@@ -481,8 +499,8 @@ export class WikiRaceMinigame extends BaseMinigame {
           // Target was on the current page but player didn't click it
           ps.score = WR_ONE_AWAY;
         } else {
-          // Partial credit based on clicks made
-          ps.score = WR_DNF_BASE + WR_DNF_CLICK_BONUS * Math.min(ps.clickCount, optimalPath);
+          // Partial credit based on clicks made (capped at 10)
+          ps.score = WR_DNF_BASE + WR_DNF_CLICK_BONUS * Math.min(ps.clickCount, 10);
         }
       }
     }
@@ -568,11 +586,6 @@ export class WikiRaceMinigame extends BaseMinigame {
       otherPlayers,
     };
 
-    // Only reveal optimal path during RESULTS
-    if (this.state.phase === WikiRacePhase.RESULTS) {
-      base.optimalPathLength = this.state.articlePair.optimalPathLength;
-    }
-
     return base;
   }
 
@@ -606,11 +619,6 @@ export class WikiRaceMinigame extends BaseMinigame {
       timeRemaining: this.state.timeRemaining,
       players: allPlayers,
     };
-
-    // Optimal path hidden until RESULTS
-    if (this.state.phase === WikiRacePhase.RESULTS) {
-      base.optimalPathLength = this.state.articlePair.optimalPathLength;
-    }
 
     return base;
   }
@@ -684,10 +692,8 @@ export class WikiRaceMinigame extends BaseMinigame {
       awards,
       gameSpecificData: {
         articlePair: {
-          id: this.state.articlePair.id,
           startArticle: this.state.articlePair.startArticle.title,
           targetArticle: this.state.articlePair.targetArticle.title,
-          optimalPathLength: this.state.articlePair.optimalPathLength,
           difficulty: this.state.articlePair.difficulty,
         },
         gameLog: this.buildGameLog(),
@@ -751,19 +757,6 @@ export class WikiRaceMinigame extends BaseMinigame {
         description: `Reached the target in only ${fewestClicks.clickCount} clicks`,
         icon: 'target',
       });
-    }
-
-    // Optimal Path — finished with clicks ≤ optimalPathLength
-    const optimalPath = this.state.articlePair.optimalPathLength;
-    for (const p of finishedPlayers) {
-      if (p.clickCount <= optimalPath) {
-        awards.push({
-          userId: p.userId,
-          title: 'Optimal Path',
-          description: `Found the optimal route in ${p.clickCount} clicks`,
-          icon: 'star',
-        });
-      }
     }
 
     // Tourist — most clicks overall

@@ -53,8 +53,8 @@ export const SOCKET_RATE_LIMITS: Record<string, { max: number; windowMs: number 
 
 export const RT_TOTAL_ROUNDS = 3;
 export const RT_INPUT_DURATION = 45;
-export const RT_SCORING_DURATION = 5;
-export const RT_INTERMISSION_DURATION = 5;
+export const RT_SCORING_DURATION = 10;
+export const RT_INTERMISSION_DURATION = 10;
 export const RT_ROUND_START_DURATION = 2;
 export const RT_MAX_SUBMISSIONS = 30;
 export const RT_COMMON_POINTS = 1;

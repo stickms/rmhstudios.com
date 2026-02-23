@@ -18,18 +18,21 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { MessageSquare } from 'lucide-react';
-import type { ActiveClue } from './UndercoverAgentGame';
+import { Infinity, MessageSquare } from 'lucide-react';
+import type { ActiveClue, Team } from './UndercoverAgentGame';
 
 interface ClueDisplayProps {
   clue: ActiveClue | null;
   guessesRemaining: number;
   isWaiting: boolean;
   spymasterName: string;
+  teamId: Team;
   onEndTurn: (() => void) | undefined;
 }
 
-export default function ClueDisplay({ clue, guessesRemaining, isWaiting, spymasterName, onEndTurn }: ClueDisplayProps) {
+export default function ClueDisplay({ clue, guessesRemaining, isWaiting, spymasterName, teamId, onEndTurn }: ClueDisplayProps) {
+  const teamTextColor = teamId === 'red' ? 'text-red-400' : 'text-blue-400';
+  const teamBgColor = teamId === 'red' ? 'bg-red-400/20' : 'bg-blue-400/20';
   if (isWaiting && !clue) {
     return (
       <div className="mx-auto flex w-full max-w-md flex-col items-center gap-3 rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) p-4 text-center">
@@ -43,7 +46,7 @@ export default function ClueDisplay({ clue, guessesRemaining, isWaiting, spymast
 
   if (!clue) return null;
 
-  const displayNumber = clue.number === 'unlimited' ? '∞' : clue.number;
+  const displayNumber = clue.number === 'unlimited' ? <Infinity className="h-5 w-5 inline-block" /> : clue.number;
 
   return (
     <motion.div
@@ -53,10 +56,10 @@ export default function ClueDisplay({ clue, guessesRemaining, isWaiting, spymast
     >
       {/* Clue word + number */}
       <div className="flex items-baseline gap-3">
-        <span className="text-2xl font-extrabold uppercase tracking-wide text-(--rmhbox-accent)">
+        <span className={`text-2xl font-extrabold uppercase tracking-wide ${teamTextColor}`}>
           {clue.word}
         </span>
-        <span className="rounded-full bg-(--rmhbox-accent)/20 px-3 py-1 text-lg font-bold text-(--rmhbox-accent)">
+        <span className={`rounded-full ${teamBgColor} px-3 py-1 text-lg font-bold ${teamTextColor}`}>
           {displayNumber}
         </span>
       </div>

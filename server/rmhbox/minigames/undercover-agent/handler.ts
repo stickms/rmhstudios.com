@@ -22,7 +22,7 @@ import path from 'path';
 import { BaseMinigame } from '../base-minigame';
 import type { MinigameContext, MinigameResults } from '../base-minigame';
 import type { PlayerRanking, Award } from '@/lib/rmhbox/types';
-import { GiveClueSchema, GuessTileSchema, EndTurnSchema, SwapPlayerSchema, SetRoleSchema } from '@/lib/rmhbox/undercover-agent/schemas';
+import { GiveClueSchema, GuessTileSchema, EndTurnSchema, SwapPlayerSchema, SetRoleSchema, HighlightTileSchema } from '@/lib/rmhbox/undercover-agent/schemas';
 import {
   UA_GRID_SIZE,
   UA_FIRST_TEAM_AGENTS,
@@ -60,6 +60,9 @@ export class UndercoverAgentMinigame extends BaseMinigame {
   private turnTimer: NodeJS.Timeout | null = null;
   private disconnectTimers: Map<string, NodeJS.Timeout> = new Map();
 
+  /** Operative tile highlights: position → Set<userId> */
+  private highlights: Map<number, Set<string>> = new Map();
+
   /** Per-player stats for scoring and awards. */
   private playerStats: Map<string, {
     correctGuesses: number;
@@ -74,7 +77,7 @@ export class UndercoverAgentMinigame extends BaseMinigame {
   constructor(context: MinigameContext) {
     super(context);
     const poolPath = path.resolve(
-      __dirname, '..', '..', '..', '..', 'public', 'data', 'rmhbox', 'undercover-agent', 'word-pool.json',
+      __dirname, '..', '..', '..', '..', 'data', 'rmhbox', 'undercover-agent', 'word-pool.json',
     );
     const raw = fs.readFileSync(poolPath, 'utf-8');
     this.wordPool = JSON.parse(raw) as string[];
@@ -106,6 +109,9 @@ export class UndercoverAgentMinigame extends BaseMinigame {
       },
       hostId: this.context.getHostId(),
     });
+
+    // Infinite timer during team setup (host clicks Start to advance)
+    this.startInfinitePhaseTimer();
   }
 
   /** Called by the host after team composition is valid. Transitions from TEAM_SETUP → SETUP → CLUE. */
@@ -153,6 +159,12 @@ export class UndercoverAgentMinigame extends BaseMinigame {
         turnNumber: this.state.turnNumber,
         timeout: 0,
       });
+
+      // Infinite timer during CLUE phase (spymaster has unlimited time)
+      this.startInfinitePhaseTimer();
+
+      // Update footer round counter with turn number
+      this.broadcastRound(this.state.turnNumber, 0);
     }, UA_SETUP_DURATION * 1000);
   }
 
@@ -295,6 +307,9 @@ export class UndercoverAgentMinigame extends BaseMinigame {
     if (!this.isRunning) return;
     if (this.state.phase === UndercoverAgentPhase.GAME_OVER) return;
 
+    // Allow CONTINUE_BOARD_REVEAL during BOARD_REVEAL phase
+    if (this.state.phase === UndercoverAgentPhase.BOARD_REVEAL && action !== 'CONTINUE_BOARD_REVEAL') return;
+
     switch (action) {
       // ── Team Setup actions ──
       case 'SHUFFLE_TEAMS':
@@ -318,6 +333,12 @@ export class UndercoverAgentMinigame extends BaseMinigame {
         break;
       case 'END_TURN':
         this.handleEndTurn(userId, data);
+        break;
+      case 'HIGHLIGHT_TILE':
+        this.handleHighlightTile(userId, data);
+        break;
+      case 'CONTINUE_BOARD_REVEAL':
+        this.handleContinueBoardReveal(userId);
         break;
       default:
         break;
@@ -616,6 +637,80 @@ export class UndercoverAgentMinigame extends BaseMinigame {
       guessesRemaining: this.state.guessesRemaining,
       timeout: 0,
     });
+
+    // Infinite timer during GUESS phase (operatives have unlimited time)
+    this.startInfinitePhaseTimer();
+
+    // Update footer round counter (same turn number during guessing)
+    this.broadcastRound(this.state.turnNumber, 0);
+
+    // Clear highlights when a new clue starts
+    this.highlights.clear();
+    this.broadcastHighlights();
+  }
+
+  // ─── Highlight Tile ──────────────────────────────────────────
+
+  private handleHighlightTile(userId: string, data: unknown): void {
+    // Only allow during GUESS phase
+    if (this.state.phase !== UndercoverAgentPhase.GUESS) return;
+
+    // Must be an operative on the current team
+    const currentTeam = this.state.teams[this.state.currentTeam];
+    if (!currentTeam.operativeIds.includes(userId)) return;
+
+    const parsed = HighlightTileSchema.safeParse(data);
+    if (!parsed.success) return;
+
+    const { position, highlighted } = parsed.data;
+    const tile = this.state.grid[position];
+    if (!tile || tile.state === TileState.REVEALED) return;
+
+    if (highlighted) {
+      let posSet = this.highlights.get(position);
+      if (!posSet) {
+        posSet = new Set();
+        this.highlights.set(position, posSet);
+      }
+      posSet.add(userId);
+    } else {
+      const posSet = this.highlights.get(position);
+      if (posSet) {
+        posSet.delete(userId);
+        if (posSet.size === 0) this.highlights.delete(position);
+      }
+    }
+
+    this.broadcastHighlights();
+  }
+
+  /** Broadcast current highlight counts to all players */
+  private broadcastHighlights(): void {
+    const counts: Record<number, number> = {};
+    for (const [pos, userSet] of this.highlights) {
+      if (userSet.size > 0) counts[pos] = userSet.size;
+    }
+    this.context.broadcastToLobby('rmhbox:game:action', {
+      type: 'UA_HIGHLIGHTS',
+      counts,
+    });
+  }
+
+  /** Clear all highlights (called on turn end, tile reveal, etc.) */
+  private clearHighlights(): void {
+    if (this.highlights.size > 0) {
+      this.highlights.clear();
+      this.broadcastHighlights();
+    }
+  }
+
+  /** Get highlight counts as a plain object for serialization */
+  private getHighlightCounts(): Record<number, number> {
+    const counts: Record<number, number> = {};
+    for (const [pos, userSet] of this.highlights) {
+      if (userSet.size > 0) counts[pos] = userSet.size;
+    }
+    return counts;
   }
 
   private handleGuessTile(userId: string, data: unknown): void {
@@ -670,6 +765,10 @@ export class UndercoverAgentMinigame extends BaseMinigame {
     if (this.state.currentClue) {
       this.state.currentClue.guessesUsed++;
     }
+
+    // Remove highlight for this tile
+    this.highlights.delete(position);
+    this.broadcastHighlights();
 
     this.logAction('guess', {
       userId,
@@ -824,6 +923,7 @@ export class UndercoverAgentMinigame extends BaseMinigame {
 
   private endCurrentTurn(reason: string): void {
     this.clearTurnTimer();
+    this.clearHighlights();
 
     // Check for draw via consecutive passes
     if (this.state.consecutivePasses >= UA_MAX_PASSES) {
@@ -896,6 +996,12 @@ export class UndercoverAgentMinigame extends BaseMinigame {
       turnNumber: this.state.turnNumber,
       timeout: 0,
     });
+
+    // Infinite timer during CLUE phase
+    this.startInfinitePhaseTimer();
+
+    // Update footer round counter with new turn number
+    this.broadcastRound(this.state.turnNumber, 0);
   }
 
   private startTurnTimer(timeoutSeconds: number): void {
@@ -950,7 +1056,7 @@ export class UndercoverAgentMinigame extends BaseMinigame {
 
   private endGameWithWinner(winner: 'red' | 'blue' | 'draw', reason: string): void {
     this.clearTurnTimer();
-    this.state.phase = UndercoverAgentPhase.GAME_OVER;
+    this.state.phase = UndercoverAgentPhase.BOARD_REVEAL;
     this.state.winner = winner;
     this.state.winReason = reason;
 
@@ -982,7 +1088,7 @@ export class UndercoverAgentMinigame extends BaseMinigame {
     }));
 
     this.context.broadcastToLobby('rmhbox:game:action', {
-      type: 'UA_GAME_OVER',
+      type: 'UA_BOARD_REVEAL',
       winner,
       reason,
       grid: fullGrid,
@@ -991,6 +1097,31 @@ export class UndercoverAgentMinigame extends BaseMinigame {
         blue: this.getPublicTeamState('blue'),
       },
       turnNumber: this.state.turnNumber,
+    });
+
+    // Infinite timer during board reveal (host clicks Continue to advance)
+    this.startInfinitePhaseTimer();
+  }
+
+  /**
+   * Host clicks "Continue" from the board reveal screen → finalize game.
+   */
+  private handleContinueBoardReveal(userId: string): void {
+    if (this.state.phase !== UndercoverAgentPhase.BOARD_REVEAL) return;
+    if (userId !== this.context.getHostId()) {
+      this.context.sendToPlayer(userId, 'rmhbox:game:action', {
+        type: 'UA_ACTION_REJECTED',
+        reason: 'not_host',
+      });
+      return;
+    }
+
+    this.state.phase = UndercoverAgentPhase.GAME_OVER;
+
+    this.context.broadcastToLobby('rmhbox:game:action', {
+      type: 'UA_GAME_OVER',
+      winner: this.state.winner,
+      reason: this.state.winReason,
     });
 
     this.cleanup();
@@ -1005,8 +1136,8 @@ export class UndercoverAgentMinigame extends BaseMinigame {
     const isSpymaster = isRedSpymaster || isBlueSpymaster;
 
     const grid = this.state.grid.map((tile) => {
-      if (isSpymaster || tile.state === TileState.REVEALED) {
-        // Spymasters see all tile types; revealed tiles visible to all
+      if (isSpymaster || tile.state === TileState.REVEALED || this.state.phase === UndercoverAgentPhase.BOARD_REVEAL || this.state.phase === UndercoverAgentPhase.GAME_OVER) {
+        // Spymasters, revealed tiles, and board-reveal/game-over phase: see all types
         return {
           position: tile.position,
           word: tile.word,
@@ -1049,6 +1180,7 @@ export class UndercoverAgentMinigame extends BaseMinigame {
       myTeam: teamId,
       hostId: this.context.getHostId(),
       isTeamValid: this.isTeamCompositionValid(),
+      highlightCounts: this.getHighlightCounts(),
     };
   }
 
@@ -1079,6 +1211,7 @@ export class UndercoverAgentMinigame extends BaseMinigame {
       myTeam: null,
       hostId: this.context.getHostId(),
       isTeamValid: this.isTeamCompositionValid(),
+      highlightCounts: this.getHighlightCounts(),
     };
   }
 
@@ -1108,6 +1241,16 @@ export class UndercoverAgentMinigame extends BaseMinigame {
       isSpymaster,
       turnNumber: this.state.turnNumber,
     });
+
+    // During TEAM_SETUP / SETUP phases, don't end the game for disconnects.
+    // The game-coordinator's grace timer handles insufficient-player scenarios,
+    // and team composition can change freely during setup.
+    if (
+      this.state.phase === UndercoverAgentPhase.TEAM_SETUP ||
+      this.state.phase === UndercoverAgentPhase.SETUP
+    ) {
+      return;
+    }
 
     // Check if all players on the team are disconnected
     if (this.isTeamFullyDisconnected(teamId)) {

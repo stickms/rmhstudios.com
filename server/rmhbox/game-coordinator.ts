@@ -27,7 +27,6 @@ import {
   DEFAULT_INSTRUCTION_DURATION_SECONDS,
   GAME_DISCONNECT_GRACE_MS,
   PRELOAD_TIMEOUT_MS,
-  RESULTS_DISPLAY_SECONDS,
 } from '../../lib/rmhbox/constants';
 import { validated, SelectGameSchema, ForceSkipSchema, ReadyToRenderSchema, GameInputSchema } from './schemas';
 import type { MinigameDefinition, RoundResultsPayload, SessionStanding } from '../../lib/rmhbox/types';
@@ -832,12 +831,8 @@ export class GameCoordinator {
     // Send full state sync
     this.stateSync.broadcastFullSync(lobbyId);
 
-    // Start results display timer
-    const timerHandle = this.stateSync.startTimerBroadcast(lobbyId, RESULTS_DISPLAY_SECONDS, () => {
-      const currentLobby = this.lobbyManager.getLobby(lobbyId);
-      if (!currentLobby || currentLobby.state !== 'ROUND_RESULTS') return;
-      this.returnToWaiting(currentLobby);
-    });
+    // Start infinite timer for results display (host advances via force-skip)
+    const timerHandle = this.stateSync.broadcastInfiniteTimer(lobbyId);
 
     let lifecycle = this.lifecycles.get(lobbyId);
     if (!lifecycle) {
@@ -911,6 +906,43 @@ export class GameCoordinator {
     for (const player of lobby.players.values()) {
       player.isReady = player.userId === lobby.hostUserId;
       player.roundScore = 0;
+    }
+
+    // Auto-promote spectators to players if setting allows and slots are available
+    if (lobby.settings.allowSpectatorPromotion) {
+      const spectatorsToPromote = Array.from(lobby.spectators.values());
+      for (const spectator of spectatorsToPromote) {
+        if (lobby.players.size >= lobby.settings.maxPlayers) break;
+
+        lobby.spectators.delete(spectator.userId);
+        lobby.players.set(spectator.userId, {
+          userId: spectator.userId,
+          userName: spectator.userName,
+          avatarUrl: spectator.avatarUrl,
+          socketId: spectator.socketId,
+          isConnected: spectator.isConnected,
+          isReady: false,
+          score: 0,
+          roundScore: 0,
+          joinedAt: spectator.joinedAt,
+          lastSeenAt: Date.now(),
+          role: 'player',
+        });
+
+        // Update Socket.io rooms for the promoted spectator
+        const specSocket = spectator.socketId ? this.io.sockets.sockets.get(spectator.socketId) : undefined;
+        if (specSocket) {
+          specSocket.leave(`lobby:${lobby.id}:spectators`);
+          specSocket.join(`lobby:${lobby.id}:players`);
+        }
+
+        this.lobbyManager.broadcastAction(lobby.id, {
+          type: 'SPECTATOR_PROMOTED',
+          payload: { userId: spectator.userId, userName: spectator.userName },
+        });
+
+        logger.info({ event: 'auto_promoted_spectator', lobbyId: lobby.id, userId: spectator.userId });
+      }
     }
 
     this.lobbyManager.broadcastAction(lobby.id, { type: 'STATE_CHANGED', payload: { state: 'WAITING' } });

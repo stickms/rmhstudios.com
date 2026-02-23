@@ -142,17 +142,22 @@ export default function LobbyPage({ params }: { params: Promise<{ lobbyId: strin
           }
         });
 
-        // Listen for errors
-        socket.on(S2C.ERROR, (data: { code?: string; message: string }) => {
+        // Listen for errors — only handle redirects here.
+        // Toast display is handled by the global S2C.ERROR listener in socket.ts.
+        socket.on(S2C.ERROR, (data: { code?: string; message?: string }) => {
           if (!mounted) return;
-          // Redirect to home if lobby doesn't exist
           if (data.code === 'LOBBY_NOT_FOUND') {
-            toast.error(data.message);
             useRMHboxStore.getState().leaveLobby();
             router.push('/rmhbox');
-            return;
           }
-          toast.error(data.message);
+        });
+
+        // If the server tells us we're not in any lobby (e.g. after long idle
+        // and auto-reconnect), redirect back to the landing page.
+        socket.on(S2C.NOT_IN_LOBBY, () => {
+          if (!mounted) return;
+          useRMHboxStore.getState().leaveLobby();
+          router.push('/rmhbox');
         });
       } catch (err) {
         if (mounted) toast.error(err instanceof Error ? err.message : 'Failed to connect');
@@ -304,6 +309,8 @@ export default function LobbyPage({ params }: { params: Promise<{ lobbyId: strin
           sessionStandings={roundResults.sessionStandings}
           awards={roundResults.awards}
           roundNumber={roundResults.roundNumber}
+          isHost={isHost}
+          lobbyId={lobbyId}
         />
       )}
 

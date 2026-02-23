@@ -6,6 +6,7 @@ export enum UndercoverAgentPhase {
   CLUE = 'CLUE',
   GUESS = 'GUESS',
   TURN_TRANSITION = 'TURN_TRANSITION',
+  BOARD_REVEAL = 'BOARD_REVEAL',
   GAME_OVER = 'GAME_OVER',
 }
 

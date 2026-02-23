@@ -32,6 +32,7 @@ export default function RMHboxLanding() {
   // Connect to WebSocket on mount
   useEffect(() => {
     let mounted = true;
+    let browseInterval: ReturnType<typeof setInterval> | null = null;
 
     async function connect() {
       try {
@@ -64,13 +65,18 @@ export default function RMHboxLanding() {
           }
         });
 
-        // Listen for errors
-        socket.on(S2C.ERROR, (data: { message: string }) => {
-          if (mounted) toast.error(data.message);
-        });
+        // Errors are handled by the global S2C.ERROR listener in socket.ts.
+        // No page-specific error listener needed here.
 
         // Browse public lobbies on connect
         socket.emit(C2S.LOBBY_BROWSE, {});
+
+        // Periodically refresh the lobby list every 10 seconds
+        browseInterval = setInterval(() => {
+          if (mounted && socket.connected) {
+            socket.emit(C2S.LOBBY_BROWSE, {});
+          }
+        }, 10_000);
       } catch (err) {
         if (mounted) toast.error(err instanceof Error ? err.message : 'Connection failed');
       }
@@ -79,15 +85,17 @@ export default function RMHboxLanding() {
     connect();
     return () => {
       mounted = false;
+      if (browseInterval) clearInterval(browseInterval);
     };
   }, [router]);
 
   // Clean up on unmount
   useEffect(() => {
     return () => {
-      // Only disconnect if not navigating to a lobby
+      // Only disconnect if the socket is truly dead (not reconnecting).
+      // socket.active is true while the manager is still retrying.
       const socket = getSocket();
-      if (socket && !socket.connected) {
+      if (socket && !socket.connected && !socket.active) {
         disconnectFromRMHbox();
       }
     };

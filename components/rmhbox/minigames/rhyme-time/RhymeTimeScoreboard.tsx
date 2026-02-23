@@ -93,9 +93,9 @@ export default function RhymeTimeScoreboard({
               <motion.li
                 key={player.userId}
                 variants={rowVariants}
-                className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm ${
+                className={`flex gap-3 items-center justify-between rounded-lg px-3 py-2 text-sm ${
                   isMvp
-                    ? 'bg-yellow-500/10 ring-1 ring-yellow-500/30'
+                    ? 'bg-(--rmhbox-warning)/10 ring-1 ring-(--rmhbox-warning)/30'
                     : isSelf
                       ? 'bg-(--rmhbox-accent)/10 ring-1 ring-(--rmhbox-accent)/30'
                       : ''
@@ -105,10 +105,10 @@ export default function RhymeTimeScoreboard({
                   <span className="w-6 text-right font-mono font-bold text-(--rmhbox-text-muted)">
                     {idx + 1}
                   </span>
-                  {isMvp && <Trophy className="h-4 w-4 text-yellow-400" />}
+                  {isMvp && <Trophy className="h-4 w-4 text-(--rmhbox-warning)" />}
                   <span className="font-semibold">{player.userName}</span>
                   {isMvp && (
-                    <span className="rounded-full bg-yellow-500/20 px-2 py-0.5 text-[10px] font-medium text-yellow-300 border border-yellow-500/30">
+                    <span className="rounded-full bg-(--rmhbox-warning)/20 px-2 py-0.5 text-[10px] font-medium text-(--rmhbox-warning) border border-(--rmhbox-warning)/30">
                       MVP
                     </span>
                   )}
@@ -119,7 +119,7 @@ export default function RhymeTimeScoreboard({
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.4 + idx * 0.1, duration: 0.3 }}
-                      className="flex items-center gap-0.5 text-xs font-medium text-green-400"
+                      className="flex items-center gap-0.5 text-xs font-medium text-(--rmhbox-success)"
                     >
                       <ArrowUp className="h-3 w-3" />+{player.delta}
                     </motion.span>

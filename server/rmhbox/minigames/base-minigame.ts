@@ -160,6 +160,25 @@ export abstract class BaseMinigame {
     this.phaseTimerPaused = false;
   }
 
+  /**
+   * Broadcast an infinite phase timer: full ring + ∞ icon on clients.
+   * No ticking, no auto-complete. The host advances via force-skip or a
+   * game-specific continue action. Clears any previous phase timer first.
+   *
+   * @param showSkip — Whether to show the host "Next" button in the footer.
+   *   Defaults to `false` so minigames that manage their own advancement
+   *   (e.g. Undercover Agent) don't expose the generic skip button.
+   */
+  protected startInfinitePhaseTimer(showSkip = false): void {
+    this.clearPhaseTimer();
+    this.phaseTimerPaused = false;
+    this.phaseTimerRemaining = -1;
+    this.context.broadcastAction({
+      type: 'TIMER_START',
+      payload: { totalDuration: -1, timeRemaining: -1, showSkip },
+    });
+  }
+
   /** Pause the current phase timer and all tracked setTimeout timers. Broadcasts TIMER_PAUSED action. */
   pausePhaseTimer(): void {
     if (!this.phaseTimerInterval || this.phaseTimerPaused) return;
@@ -178,7 +197,7 @@ export abstract class BaseMinigame {
 
     this.context.broadcastAction({
       type: 'TIMER_PAUSED',
-      payload: { timeRemaining: this.phaseTimerRemaining },
+      payload: { timeRemaining: Math.max(0, this.phaseTimerRemaining) },
     });
   }
 
@@ -204,7 +223,7 @@ export abstract class BaseMinigame {
 
     this.context.broadcastAction({
       type: 'TIMER_RESUMED',
-      payload: { timeRemaining: this.phaseTimerRemaining },
+      payload: { timeRemaining: Math.max(0, this.phaseTimerRemaining) },
     });
   }
 

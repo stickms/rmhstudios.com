@@ -11,25 +11,66 @@
  * A TIMER_START action sets the total duration for the full circle animation;
  * TIMER_TICK actions decrement the remaining time each second.
  *
+ * Infinite timers (totalDuration === -1) show a full ring with an ∞ icon.
+ * The host can click the timer to pause/unpause; on hover a pause/play icon appears.
+ *
  * The title is absolutely centered to the screen width regardless of side content.
  */
 'use client';
 
-import { useCallback } from 'react';
-import { Circle } from 'lucide-react';
+import { useState, useCallback } from 'react';
+import { Circle, Infinity, Pause, Play } from 'lucide-react';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
+import { emit } from '@/lib/rmhbox/socket';
+import { C2S } from '@/lib/rmhbox/events';
 import SettingsMenu from './SettingsMenu';
 import HostControlModal from './HostControlModal';
 
 /** SVG ring for the countdown timer (compact for header). Depletes clockwise. */
-function TimerRing({ seconds, total, paused }: { seconds: number; total: number; paused: boolean }) {
+function TimerRing({
+  seconds,
+  total,
+  paused,
+  infinite,
+  isHost,
+  lobbyId,
+}: {
+  seconds: number;
+  total: number;
+  paused: boolean;
+  infinite: boolean;
+  isHost: boolean;
+  lobbyId: string | null;
+}) {
+  const [hovered, setHovered] = useState(false);
   const radius = 15;
   const circumference = 2 * Math.PI * radius;
-  const ratio = Math.max(0, seconds) / (total || 1);
+
+  // Infinite → full ring; otherwise deplete as normal
+  const ratio = infinite ? 1 : Math.max(0, seconds) / (total || 1);
   const offset = circumference * (1 - ratio);
 
+  // Color: paused → warning (yellow), ≤10s → danger, infinite → accent, else → accent
+  const strokeColor = paused
+    ? 'var(--rmhbox-warning)'
+    : !infinite && seconds <= 10
+      ? 'var(--rmhbox-danger)'
+      : 'var(--rmhbox-accent)';
+
+  const handleClick = useCallback(() => {
+    if (!isHost || !lobbyId || infinite) return;
+    emit(C2S.GAME_PAUSE_TIMER, { lobbyId });
+  }, [isHost, lobbyId, infinite]);
+
+  const interactive = isHost && !infinite;
+
   return (
-    <div className="relative flex items-center justify-center">
+    <div
+      className={`relative flex items-center justify-center ${interactive ? 'cursor-pointer' : ''}`}
+      onClick={handleClick}
+      onMouseEnter={() => interactive && setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
       <svg
         width="40"
         height="40"
@@ -44,16 +85,31 @@ function TimerRing({ seconds, total, paused }: { seconds: number; total: number;
         <circle
           cx="20" cy="20" r={radius}
           fill="none"
-          stroke={paused ? 'var(--rmhbox-warning)' : seconds <= 10 ? 'var(--rmhbox-danger)' : 'var(--rmhbox-accent)'}
+          stroke={strokeColor}
           strokeWidth="2.5"
           strokeDasharray={circumference}
           strokeDashoffset={offset}
           strokeLinecap="round"
-          className={paused ? '' : 'transition-[stroke-dashoffset] duration-1000 ease-linear'}
+          className={paused || infinite ? '' : 'transition-[stroke-dashoffset] duration-1000 ease-linear'}
         />
       </svg>
-      <span className={`absolute text-xs font-bold text-(--rmhbox-text) ${paused ? 'animate-pulse' : ''}`}>
-        {Math.ceil(seconds)}
+      {/* Center content: number or ∞, with pause/play overlay for host on hover */}
+      <span className={`absolute flex items-center justify-center text-xs font-bold ${paused ? 'text-(--rmhbox-warning)' : 'text-(--rmhbox-text)'}`}>
+        {/* Host hover: show pause/play icon replacing the number */}
+        {interactive && hovered ? (
+          paused
+            ? <Play className="h-3.5 w-3.5 text-(--rmhbox-warning)" />
+            : <Pause className="h-3.5 w-3.5 text-(--rmhbox-text-muted)" />
+        ) : paused ? (
+          /* Paused (not hovering): show Play icon instead of a stale number */
+          interactive
+            ? <Play className="h-3.5 w-3.5 text-(--rmhbox-warning)" />
+            : <Pause className="h-3.5 w-3.5 text-(--rmhbox-warning)" />
+        ) : infinite ? (
+          <Infinity className="h-4 w-4" />
+        ) : (
+          Math.max(0, Math.ceil(seconds))
+        )}
       </span>
     </div>
   );
@@ -74,6 +130,7 @@ export default function RMHboxHeader({
   const theme = useRMHboxStore((s) => s.settings.theme) ?? 'dark';
   const updateSettings = useRMHboxStore((s) => s.updateSettings);
   const timerInfo = useRMHboxStore((s) => s.timerInfo);
+  const lobby = useRMHboxStore((s) => s.lobby);
 
   const handleToggleTheme = useCallback(() => {
     updateSettings({ theme: theme === 'dark' ? 'light' : 'dark' });
@@ -82,6 +139,7 @@ export default function RMHboxHeader({
   const isGame = context === 'game';
   const isLanding = context === 'landing';
   const showTimer = timerInfo !== null;
+  const isHost = !!(lobby && lobby.hostUserId === lobby.myUserId);
 
   const displayTitle = title ?? 'RMHbox';
 
@@ -132,7 +190,14 @@ export default function RMHboxHeader({
           {!isGame && !showTimer && <span className="hidden sm:inline">{statusText}</span>}
         </span>
         {showTimer && (
-          <TimerRing seconds={timerInfo.remaining} total={timerInfo.total} paused={timerInfo.paused} />
+          <TimerRing
+            seconds={timerInfo.remaining}
+            total={timerInfo.total}
+            paused={timerInfo.paused}
+            infinite={timerInfo.infinite}
+            isHost={isHost}
+            lobbyId={lobby?.lobbyId ?? null}
+          />
         )}
       </div>
     </header>

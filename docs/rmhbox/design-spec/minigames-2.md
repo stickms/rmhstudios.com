@@ -59,7 +59,7 @@ The game consists of **8 questions** (configurable: `FOF_TOTAL_QUESTIONS`). Each
 
 #### 1.3.2 Question Pool
 
-Questions are stored in `/public/data/rmhbox/fact-or-friction/questions.json`. Each question has:
+Questions are stored in `data/rmhbox/fact-or-friction/questions.json`. Each question has:
 
 ```typescript
 interface TriviaQuestion {
@@ -82,9 +82,9 @@ Question selection per game:
 
 The Point Pot is a **server-authoritative** counter that ticks down:
 
-1. Starts at `FOF_POT_START_VALUE` (default: **1000**).
-2. Decreases by `FOF_POT_TICK_VALUE` (default: **50**) every `FOF_POT_TICK_INTERVAL_MS` (default: **500ms**, i.e., 2 ticks/second).
-3. Minimum pot value: `FOF_POT_MIN_VALUE` (default: **100**). The pot never drops below this.
+1. Starts at `FOF_POT_START` (default: **1000**).
+2. Decreases by `FOF_POT_TICK` (default: **50**) every `FOF_POT_TICK_INTERVAL` (default: **500ms**, i.e., 2 ticks/second).
+3. Minimum pot value: `FOF_POT_MIN` (default: **100**). The pot never drops below this.
 4. When a player submits an answer, the server records the pot value **at the moment of server receipt** (not client-side clock).
 
 **Time to min pot:** (1000 − 100) / 50 = 18 ticks = 9 seconds. So the pot drains from 1000→100 over 9 seconds, then stays at 100 for the remaining 6 seconds.
@@ -332,15 +332,15 @@ components/rmhbox/minigames/fact-or-friction/
 
 ```typescript
 export const FOF_TOTAL_QUESTIONS = 8;
-export const FOF_QUESTION_REVEAL_SECONDS = 2;
-export const FOF_ANSWER_DURATION_SECONDS = 15;
-export const FOF_ANSWER_REVEAL_SECONDS = 4;
-export const FOF_PAUSE_SECONDS = 1;
+export const FOF_QUESTION_REVEAL = 2;
+export const FOF_ANSWER_DURATION = 15;
+export const FOF_ANSWER_REVEAL = 4;
+export const FOF_PAUSE = 1;
 
-export const FOF_POT_START_VALUE = 1000;
-export const FOF_POT_TICK_VALUE = 50;
-export const FOF_POT_TICK_INTERVAL_MS = 500;
-export const FOF_POT_MIN_VALUE = 100;
+export const FOF_POT_START = 1000;
+export const FOF_POT_TICK = 50;
+export const FOF_POT_TICK_INTERVAL = 500;
+export const FOF_POT_MIN = 100;
 
 export const FOF_EASY_MULTIPLIER = 0.8;
 export const FOF_MEDIUM_MULTIPLIER = 1.0;
@@ -498,14 +498,14 @@ Each player takes turns in order. Each turn:
 
 1. **Write Phase** (active player):
    - The active player writes one sentence (min 10 chars, max 200 chars) to append to the story.
-   - Time limit: `UE_WRITE_TIMEOUT_SECONDS` (default: **45 seconds**). If exceeded, the server auto-submits "..." (an ellipsis sentence indicating a timeout).
+   - Time limit: `UE_WRITE_TIMEOUT` (default: **45 seconds**). If exceeded, the server auto-submits "..." (an ellipsis sentence indicating a timeout).
 
 2. **Edit Phase** (Editor only, on Editor's turn):
    - After writing their sentence, the Editor gets an additional **secret action**: they may edit one word in any previous sentence.
    - The edit UI shows the full story with each word as a clickable token. Selecting a word reveals an input field to replace it.
    - The edit is applied silently — no other player is notified that an edit occurred.
    - The Editor can choose NOT to edit on a given turn (risky if the keyword isn't being steered toward).
-   - Time limit for editing: `UE_EDIT_TIMEOUT_SECONDS` (default: **30 seconds**). 
+   - Time limit for editing: `UE_EDIT_TIMEOUT` (default: **30 seconds**). 
    - **Constraints:**
      - Only one word can be changed per turn.
      - The replacement word must be a single word (no spaces).
@@ -773,7 +773,7 @@ On reconnect:
 ### 2.9 Player Disconnect Mid-Game
 
 - If the disconnected player's turn comes up during the grace period:
-  - After `UE_DISCONNECT_TURN_WAIT_SECONDS` (default: **15 seconds**, shorter than the write timeout), their turn is auto-completed with a "..." sentence.
+  - After `UE_DISCONNECT_WAIT` (default: **15 seconds**, shorter than the write timeout), their turn is auto-completed with a "..." sentence.
   - If they were the Editor, their edit phase is auto-skipped.
 - If the Editor fully disconnects (grace period expires):
   - The game continues. The Editor is essentially AFK — they won't make any more edits. At the end, if the keyword isn't in the story, Writers win by default.
@@ -850,12 +850,12 @@ components/rmhbox/minigames/undercover-editor/
 export const UE_MIN_PLAYERS = 4;
 export const UE_MAX_PLAYERS = 10;
 export const UE_ROTATIONS = 2;                    // each player writes twice
-export const UE_WRITE_TIMEOUT_SECONDS = 45;
-export const UE_EDIT_TIMEOUT_SECONDS = 30;
-export const UE_REVIEW_DURATION_SECONDS = 20;
-export const UE_ACCUSATION_DURATION_SECONDS = 30;
-export const UE_REVEAL_DURATION_SECONDS = 10;
-export const UE_DISCONNECT_TURN_WAIT_SECONDS = 15;
+export const UE_WRITE_TIMEOUT = 45;
+export const UE_EDIT_TIMEOUT = 30;
+export const UE_REVIEW_DURATION = 20;
+export const UE_ACCUSATION_DURATION = 30;
+export const UE_REVEAL_DURATION = 10;
+export const UE_DISCONNECT_WAIT = 15;
 
 export const UE_MIN_SENTENCE_LENGTH = 10;
 export const UE_MAX_SENTENCE_LENGTH = 200;
@@ -1031,7 +1031,7 @@ Restricted drawing followed by peer valuation. All players receive the same draw
 
 #### 3.3.2 Drawing Prompt
 
-The server selects a prompt from `/public/data/rmhbox/minimalist-masterpiece/prompts.json`:
+The server selects a prompt from `data/rmhbox/minimalist-masterpiece/prompts.json`:
 
 ```typescript
 interface DrawingPrompt {
@@ -1072,7 +1072,7 @@ interface Point {
 
 **Anti-bot validation:**
 - Each stroke must have at least `MM_MIN_POINTS_PER_STROKE` (default: 5) points.
-- Time between first and last point of a stroke must be ≥ `MM_MIN_STROKE_DURATION_MS` (default: 100ms).
+- Time between first and last point of a stroke must be ≥ `MM_MIN_STROKE_DURATION` (default: 100ms).
 - Maximum points per stroke: `MM_MAX_POINTS_PER_STROKE` (default: 500, to prevent DoS).
 
 #### 3.3.4 Drawing Submission
@@ -1120,10 +1120,10 @@ After the auction:
 1. **Market Value** = total coins bid on a drawing by ALL other players.
 2. Artist ranking is by Market Value (descending).
 3. Score conversion:
-   - Rank 1: `MM_RANK_1_POINTS` (default: **500**)
-   - Rank 2: `MM_RANK_2_POINTS` (default: **350**)
-   - Rank 3: `MM_RANK_3_POINTS` (default: **250**)
-   - Remaining: `MM_PARTICIPATION_POINTS` (default: **100**)
+   - Rank 1: `MM_RANK_1` (default: **500**)
+   - Rank 2: `MM_RANK_2` (default: **350**)
+   - Rank 3: `MM_RANK_3` (default: **250**)
+   - Remaining: `MM_PARTICIPATION` (default: **100**)
 4. **Investment bonus:** Players who bid on the highest-valued drawing (correct market prediction) receive `MM_INVESTMENT_BONUS` (default: **50** bonus points) proportional to how much they invested as a fraction of the drawing's total value.
 
    Formula: `investmentBonus = floor(MM_INVESTMENT_BONUS * (playerBid / totalBid))`
@@ -1352,18 +1352,18 @@ components/rmhbox/minigames/minimalist-masterpiece/
 ### 3.12 Constants
 
 ```typescript
-export const MM_PROMPT_REVEAL_SECONDS = 3;
-export const MM_DRAWING_DURATION_SECONDS = 60;
-export const MM_GALLERY_DURATION_SECONDS = 15;
-export const MM_AUCTION_DURATION_SECONDS = 60;
-export const MM_RESULTS_DURATION_SECONDS = 10;
+export const MM_PROMPT_REVEAL = 3;
+export const MM_DRAWING_DURATION = 60;
+export const MM_GALLERY_DURATION = 15;
+export const MM_AUCTION_DURATION = 60;
+export const MM_RESULTS_DURATION = 10;
 
 export const MM_MAX_STROKES = 5;
 export const MM_CANVAS_SIZE = 400;
 export const MM_STROKE_WIDTH = 4;
 export const MM_MIN_POINTS_PER_STROKE = 5;
 export const MM_MAX_POINTS_PER_STROKE = 500;
-export const MM_MIN_STROKE_DURATION_MS = 100;
+export const MM_MIN_STROKE_DURATION = 100;
 
 export const MM_COLOR_PALETTE = [
   '#1a1a2e', // dark navy (near-black)
@@ -1379,10 +1379,10 @@ export const MM_COLOR_PALETTE = [
 export const MM_STARTING_CURRENCY = 1000;
 export const MM_BID_INCREMENT = 50;
 
-export const MM_RANK_1_POINTS = 500;
-export const MM_RANK_2_POINTS = 350;
-export const MM_RANK_3_POINTS = 250;
-export const MM_PARTICIPATION_POINTS = 100;
+export const MM_RANK_1 = 500;
+export const MM_RANK_2 = 350;
+export const MM_RANK_3 = 250;
+export const MM_PARTICIPATION = 100;
 export const MM_INVESTMENT_BONUS = 50;
 ```
 
@@ -1533,7 +1533,7 @@ The game cycles through each player as the Producer. Total rounds = number of pl
 
 #### 4.3.2 Movie Selection
 
-Movies come from a curated database (`/public/data/rmhbox/emoji-cinema/movies.json`):
+Movies come from a curated database (`data/rmhbox/emoji-cinema/movies.json`):
 
 ```typescript
 interface MovieEntry {
@@ -1590,15 +1590,15 @@ The Audience types text guesses in a standard text input:
 
 | Who | Score | Condition |
 |---|---|---|
-| Producer | `EC_PRODUCER_BASE_POINTS` + `EC_PRODUCER_SPEED_BONUS` × secondsRemaining | Someone guesses correctly |
+| Producer | `EC_PRODUCER_BASE` + `EC_PRODUCER_SPEED_BONUS` × secondsRemaining | Someone guesses correctly |
 | Producer | 0 | No one guesses correctly (timeout) |
-| First correct guesser | `EC_FIRST_GUESS_POINTS` (default: **300**) | First to guess correctly |
-| Second correct guesser | `EC_SECOND_GUESS_POINTS` (default: **150**) | Second to guess correctly (if multiple guess on the same tick, server uses submission timestamp) |
-| Other correct guessers | `EC_OTHER_GUESS_POINTS` (default: **75**) | |
+| First correct guesser | `EC_FIRST_GUESS` (default: **300**) | First to guess correctly |
+| Second correct guesser | `EC_SECOND_GUESS` (default: **150**) | Second to guess correctly (if multiple guess on the same tick, server uses submission timestamp) |
+| Other correct guessers | `EC_OTHER_GUESS` (default: **75**) | |
 | Wrong guessers | 0 | No penalty for wrong guesses |
 
 **Producer scoring defaults:**
-- `EC_PRODUCER_BASE_POINTS` = **100** (guaranteed if someone guesses correctly).
+- `EC_PRODUCER_BASE` = **100** (guaranteed if someone guesses correctly).
 - `EC_PRODUCER_SPEED_BONUS` = **10** points × seconds remaining when the first correct guess arrives.
 - Maximum Producer score per round: 100 + 10 × 45 = **550**.
 
@@ -1776,7 +1776,7 @@ On reconnect:
 
 ### 4.9 Player Disconnect Mid-Game
 
-- **If the Producer disconnects:** Wait `EC_PRODUCER_DISCONNECT_WAIT_SECONDS` (default: **10s**). If they don't reconnect, the round is skipped (no points awarded for that round). Move to the next round.
+- **If the Producer disconnects:** Wait `EC_PRODUCER_DISCONNECT_WAIT` (default: **10s**). If they don't reconnect, the round is skipped (no points awarded for that round). Move to the next round.
 - **If an Audience member disconnects:** No impact on the round. They miss their chance to guess.
 
 ### 4.10 Awards
@@ -1864,10 +1864,10 @@ components/rmhbox/minigames/emoji-cinema/
 
 ```typescript
 export const EC_MAX_ROUNDS = 6;                  // cap even if more players
-export const EC_PRODUCER_ASSIGNMENT_SECONDS = 2;
-export const EC_ROUND_DURATION_SECONDS = 45;
-export const EC_ROUND_RESULTS_SECONDS = 5;
-export const EC_TRANSITION_SECONDS = 1;
+export const EC_PRODUCER_ASSIGNMENT = 2;
+export const EC_ROUND_DURATION = 45;
+export const EC_ROUND_RESULTS = 5;
+export const EC_TRANSITION = 1;
 
 export const EC_MAX_EMOJIS = 12;
 export const EC_MAX_GUESSES_PER_PLAYER = 15;
@@ -1877,13 +1877,13 @@ export const EC_FUZZY_MATCH_THRESHOLD = 0.80;    // correct guess
 export const EC_CLOSE_THRESHOLD = 0.60;           // "close" hint
 export const EC_MIN_POPULARITY = 40;
 
-export const EC_PRODUCER_BASE_POINTS = 100;
+export const EC_PRODUCER_BASE = 100;
 export const EC_PRODUCER_SPEED_BONUS = 10;
-export const EC_FIRST_GUESS_POINTS = 300;
-export const EC_SECOND_GUESS_POINTS = 150;
-export const EC_OTHER_GUESS_POINTS = 75;
+export const EC_FIRST_GUESS = 300;
+export const EC_SECOND_GUESS = 150;
+export const EC_OTHER_GUESS = 75;
 
-export const EC_PRODUCER_DISCONNECT_WAIT_SECONDS = 10;
+export const EC_PRODUCER_DISCONNECT_WAIT = 10;
 export const EC_EMOJI_PALETTE_SIZE = 200;
 ```
 

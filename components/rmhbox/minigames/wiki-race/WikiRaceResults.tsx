@@ -2,13 +2,11 @@
  * WikiRaceResults — Final results display for Wiki-Race.
  *
  * Shows each player's navigation path, click count, finish rank/time,
- * and score. Highlights the optimal path length and awards badges for
- * Speed Runner, Efficiency Expert, Optimal Path, Tourist, and
- * Almost There.
+ * and score. Awards badges for Speed Runner, Efficiency Expert,
+ * Tourist, and Almost There.
  *
  * Props:
  *   results: Record<string, WRPlayerResult>
- *   optimalPathLength: number
  *   startTitle: string
  *   targetTitle: string
  *   currentUserId: string
@@ -18,7 +16,7 @@
 
 import { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Trophy, MapPin, Target, Route, Flag, Star } from 'lucide-react';
+import { Trophy, MapPin, Target, Flag } from 'lucide-react';
 
 interface WRPlayerResult {
   userName: string;
@@ -31,7 +29,6 @@ interface WRPlayerResult {
 
 interface WikiRaceResultsProps {
   results: Record<string, WRPlayerResult>;
-  optimalPathLength: number;
   startTitle: string;
   targetTitle: string;
   currentUserId: string;
@@ -40,7 +37,6 @@ interface WikiRaceResultsProps {
 
 export default function WikiRaceResults({
   results,
-  optimalPathLength,
   startTitle,
   targetTitle,
   currentUserId,
@@ -69,10 +65,6 @@ export default function WikiRaceResults({
             <Target size={12} className="text-yellow-400" /> {targetTitle}
           </span>
         </div>
-        <div className="mt-1 flex items-center justify-center gap-1 text-xs text-(--rmhbox-text-muted)">
-          <Route size={10} />
-          Optimal path: {optimalPathLength} click{optimalPathLength !== 1 ? 's' : ''}
-        </div>
       </div>
 
       {/* Player results */}
@@ -80,7 +72,6 @@ export default function WikiRaceResults({
         {sortedPlayers.map((player, idx) => {
           const isMe = player.userId === currentUserId;
           const isWinner = idx === 0;
-          const isOptimal = player.hasFinished && player.clickCount <= optimalPathLength;
 
           return (
             <motion.div
@@ -107,11 +98,6 @@ export default function WikiRaceResults({
                       <span className="ml-1 text-xs text-(--rmhbox-accent)">(you)</span>
                     )}
                   </span>
-                  {isOptimal && (
-                    <span className="rounded bg-yellow-500/20 px-1.5 py-0.5 text-[10px] font-semibold text-yellow-400 flex items-center gap-0.5">
-                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" /> Optimal
-                    </span>
-                  )}
                 </div>
                 <span className="text-lg font-bold text-(--rmhbox-accent)">
                   {player.score}

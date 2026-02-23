@@ -36,7 +36,7 @@ export function useHeaderTimer() {
 
   const startTimer = useCallback(
     (total: number, remaining?: number) => {
-      setTimerInfo({ total, remaining: remaining ?? total, paused: false });
+      setTimerInfo({ total, remaining: remaining ?? total, paused: false, infinite: false, showSkip: false });
     },
     [setTimerInfo],
   );
@@ -48,6 +48,8 @@ export function useHeaderTimer() {
         total: prev?.total ?? remaining,
         remaining,
         paused: prev?.paused ?? false,
+        infinite: prev?.infinite ?? false,
+        showSkip: prev?.showSkip ?? false,
       });
     },
     [setTimerInfo],

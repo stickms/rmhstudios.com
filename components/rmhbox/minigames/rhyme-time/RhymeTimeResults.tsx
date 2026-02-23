@@ -49,11 +49,11 @@ interface RhymeTimeResultsProps {
 }
 
 const RARITY_CONFIG: Record<RarityTier, { label: string; color: string; bg: string }> = {
-  rare:           { label: 'Rare',             color: 'text-purple-300', bg: 'bg-purple-500/20 border-purple-500/40' },
-  uncommon:       { label: 'Uncommon',         color: 'text-blue-300',   bg: 'bg-blue-500/20 border-blue-500/40' },
-  common:         { label: 'Common',           color: 'text-gray-300',   bg: 'bg-gray-500/20 border-gray-500/40' },
-  does_not_rhyme: { label: "Doesn't Rhyme",    color: 'text-red-400',    bg: 'bg-red-500/20 border-red-500/40' },
-  not_in_dict:    { label: 'Not In Dictionary', color: 'text-gray-500',   bg: 'bg-gray-500/10 border-gray-600/30' },
+  rare:           { label: 'Rare',             color: 'text-(--rmhbox-rare)',       bg: 'bg-(--rmhbox-rare)/20 border-(--rmhbox-rare)/40' },
+  uncommon:       { label: 'Uncommon',         color: 'text-(--rmhbox-info)',       bg: 'bg-(--rmhbox-info)/20 border-(--rmhbox-info)/40' },
+  common:         { label: 'Common',           color: 'text-(--rmhbox-text-muted)', bg: 'bg-(--rmhbox-text-muted)/20 border-(--rmhbox-text-muted)/40' },
+  does_not_rhyme: { label: "Doesn't Rhyme",    color: 'text-(--rmhbox-danger)',     bg: 'bg-(--rmhbox-danger)/20 border-(--rmhbox-danger)/40' },
+  not_in_dict:    { label: 'Not In Dictionary', color: 'text-(--rmhbox-text-dim)',   bg: 'bg-(--rmhbox-text-dim)/10 border-(--rmhbox-text-dim)/30' },
 };
 
 const TIER_ORDER: RarityTier[] = ['rare', 'uncommon', 'common', 'does_not_rhyme', 'not_in_dict'];
@@ -115,21 +115,21 @@ export default function RhymeTimeResults({
                 return (
                   <li
                     key={`${w.word}-${i}`}
-                    className={`flex items-center justify-between rounded-lg px-3 py-1.5 text-sm ${
+                    className={`flex gap-3 items-center justify-between rounded-lg px-3 py-1.5 text-sm ${
                       isOwn ? 'bg-(--rmhbox-accent)/10 ring-1 ring-(--rmhbox-accent)/30' : ''
                     } ${isInvalid ? 'opacity-60' : ''}`}
                   >
                     <div className="flex items-center gap-2">
-                      <span className={`font-semibold ${tier === 'does_not_rhyme' ? 'line-through text-red-400' : ''} ${tier === 'not_in_dict' ? 'text-gray-500' : ''}`}>
+                      <span className={`font-semibold ${tier === 'does_not_rhyme' ? 'line-through text-(--rmhbox-danger)' : ''} ${tier === 'not_in_dict' ? 'text-(--rmhbox-text-dim)' : ''}`}>
                         {w.word}
                       </span>
                       {w.multiSyllable && (
-                        <span className="rounded-full bg-yellow-500/20 px-1.5 py-0.5 text-[10px] font-medium text-yellow-300 border border-yellow-500/30">
+                        <span className="rounded-full bg-(--rmhbox-warning)/20 px-1.5 py-0.5 text-[10px] font-medium text-(--rmhbox-warning) border border-(--rmhbox-warning)/30">
                           multi
                         </span>
                       )}
                       {w.speedBonus && (
-                        <span title="Speed bonus"><Zap className="h-3.5 w-3.5 text-amber-400" /></span>
+                        <span title="Speed bonus"><Zap className="h-3.5 w-3.5 text-(--rmhbox-warning)" /></span>
                       )}
                       <span className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${config.bg} ${config.color}`}>
                         {config.label}
@@ -137,7 +137,7 @@ export default function RhymeTimeResults({
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="text-xs text-(--rmhbox-text-muted)">{w.submittedBy}</span>
-                      <span className={`font-mono font-semibold ${w.points < 0 ? 'text-red-400' : w.points === 0 ? 'text-gray-500' : 'text-(--rmhbox-accent)'}`}>
+                      <span className={`font-mono font-semibold ${w.points < 0 ? 'text-(--rmhbox-danger)' : w.points === 0 ? 'text-(--rmhbox-text-dim)' : 'text-(--rmhbox-accent)'}`}>
                         {w.points > 0 ? '+' : ''}{w.points}
                       </span>
                     </div>
@@ -177,8 +177,8 @@ export default function RhymeTimeResults({
                   }`}
                 >
                   <td className="py-1 font-medium">{p.userName}</td>
-                  <td className="py-1 text-right font-mono text-green-400">{p.validCount}</td>
-                  <td className="py-1 text-right font-mono text-red-400">{p.invalidCount}</td>
+                  <td className="py-1 text-right font-mono text-(--rmhbox-success)">{p.validCount}</td>
+                  <td className="py-1 text-right font-mono text-(--rmhbox-danger)">{p.invalidCount}</td>
                   <td className="py-1 text-right font-mono font-bold">{p.roundScore}</td>
                 </tr>
               ))}

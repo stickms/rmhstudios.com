@@ -186,6 +186,26 @@ lib/
     socket.ts               # Socket.io client wrapper (connect, emit, listen)
     utils.ts                # Shared utility functions
     minigame-registry.ts    # Maps minigame IDs to metadata + components
+    rhyme-time/             # Rhyme Time data-loader + dictionary-loader
+      dictionary-loader.ts
+    wiki-race/              # Wiki-Race data-loader, schemas, wikipedia-proxy
+      data-loader.ts
+      schemas.ts
+      wikipedia-proxy.ts
+    category-crash/         # Category Crash data-loader
+      data-loader.ts
+    undercover-agent/       # (word pool loaded directly in handler)
+
+data/
+  rmhbox/                   # Static data files (NOT in public/, server-only)
+    rhyme-time/
+      root-words.json
+    wiki-race/
+      article-pairs.json
+    category-crash/
+      categories.json
+    undercover-agent/
+      word-pool.json
 
 server/
   rmhbox/
@@ -201,24 +221,27 @@ server/
     chat.ts                 # In-lobby chat handler
     types.ts                # Server-only type definitions
     schemas.ts              # Server-side Zod validation schemas
+    logger.ts               # Structured logger using pino
+    prisma-client.ts        # Prisma client singleton for server
+    rate-limit.ts           # Server-side rate limiting
     minigames/
-      base-minigame.ts      # Abstract base class / functional mixin interface
-      rhyme-time.ts
-      undercover-agent.ts
-      emoji-cinema.ts
-      identity-crisis.ts
-      fact-or-friction.ts
-      wiki-race.ts
-      sequence-sam.ts
-      category-crash.ts
-      pixel-pushers.ts
-      human-keyboard.ts
-      cursor-curling.ts
-      scroll-soul.ts
-      human-tetris.ts
-      undercover-editor.ts
-      minimalist-masterpiece.ts
-      ranking-file.ts
+      base-minigame.ts      # Abstract base class with pausable timer system
+      rhyme-time/           # Rhyme Time minigame handler + types
+        handler.ts
+        index.ts
+        types.ts
+      undercover-agent/     # Undercover Agent minigame handler + types
+        handler.ts
+        index.ts
+        types.ts
+      category-crash/       # Category Crash minigame handler + types  
+        handler.ts
+        index.ts
+        types.ts
+      wiki-race/            # Wiki-Race minigame handler + types
+        handler.ts
+        index.ts
+        types.ts
 
 app/api/rmhbox/
   leaderboard/
@@ -490,7 +513,8 @@ interface RMHboxLobby {
   createdAt: number;                   // Date.now()
   lastActivityAt: number;              // Updated on any event; used for GC
   currentGame: ActiveGame | null;      // null when in lobby/voting
-  matchHistory: MatchSummary[];        // results from games played in this session
+  matchHistory: MatchSummary[];        // results from games played in this session (uses ServerMatchSummary on the server)
+  selectedGame: { minigameId: string; displayName: string } | null; // currently selected game for pre-vote picking
   roundNumber: number;                 // increments each game played; reset to 0 at the start of each new minigame
 }
 
@@ -505,7 +529,7 @@ interface LobbySettings {
 }
 
 interface RMHboxPlayer {
-  oduserId: string;
+  userId: string;
   userName: string;
   avatarUrl: string | null;
   socketId: string | null;             // null when disconnected
@@ -640,10 +664,14 @@ Only the host (`lobby.hostUserId === socket.data.userId`) can:
 | Kick player | `rmhbox:lobby:kick` | Remove a player; they receive `rmhbox:lobby:kicked` |
 | Transfer host | `rmhbox:lobby:transfer_host` | Reassign `hostUserId` to another player |
 | Change settings | `rmhbox:lobby:update_settings` | Modify `LobbySettings` (only while `WAITING`) |
-| Start game (direct) | `rmhbox:game:select` | Host picks a minigame directly |
+| Pick game | `rmhbox:game:pick` | Host pre-selects a minigame (shown in lobby, before vote/start) |
+| Start game (direct) | `rmhbox:game:select` | Host picks and immediately starts a minigame |
 | Start vote | `rmhbox:game:start_vote` | Initiate a vote on minigames (see §12) |
 | End session | `rmhbox:lobby:end_session` | Transition to `SESSION_RESULTS`, then disband |
-| Force skip | `rmhbox:game:force_skip` | Skip the current phase. During INSTRUCTIONS or COUNTDOWN, returns to WAITING (cancels the game). During PLAYING, force-ends the active minigame. |
+| Force skip | `rmhbox:game:force_skip` | Skip the current phase. Advances to the next lifecycle phase (e.g., INSTRUCTIONS → PRELOADING → COUNTDOWN → PLAYING). During PLAYING, force-ends the active minigame. |
+| Force end | `rmhbox:game:force_end` | Immediately ends the active minigame and returns to WAITING. |
+| Pause/Resume | `rmhbox:game:pause_timer` | Toggle pause on the current timer (both lifecycle and in-game phase timers). |
+| Promote spectator | `rmhbox:lobby:promote_spectator` | Promote a spectator to player status (host-initiated) |
 
 All host actions are validated server-side. If `socket.data.userId !== lobby.hostUserId`, the event is silently dropped.
 
@@ -674,6 +702,7 @@ interface PublicLobbyInfo {
   spectatorCount: number;
   state: LobbyState;
   currentGame: string | null; // minigame display name if playing
+  selectedGame: string | null; // pre-selected game name if picked
   roundNumber: number;
 }
 ```
@@ -863,13 +892,11 @@ const MINIGAME_REGISTRY: Record<string, MinigameDefinition> = {
 ```typescript
 // server/rmhbox/minigames/base-minigame.ts
 
-import { Namespace, Socket } from 'socket.io';
-
 export interface MinigameContext {
   lobbyId: string;
   players: Map<string, RMHboxPlayer>;  // player snapshots at game start
   settings: LobbySettings;
-  nsp: Namespace;
+  getHostId: () => string;             // returns current host userId
   broadcastToLobby: (event: string, data: unknown) => void;
   broadcastToPlayers: (event: string, data: unknown) => void;
   /** Emit a sequenced GameAction via LobbyManager (includes seq + timestamp). */
@@ -887,12 +914,30 @@ export interface MinigameResults {
   duration: number; // actual game duration in ms
 }
 
+/**
+ * PausableTimer — wraps setTimeout so game timers can be paused/resumed
+ * alongside the header timer when the host toggles pause.
+ */
+interface PausableTimer {
+  id: string;
+  callback: () => void;
+  remaining: number;
+  startedAt: number;
+  handle: NodeJS.Timeout | null;
+  completed: boolean;
+}
+
 export abstract class BaseMinigame {
   protected context: MinigameContext;
-  protected gameState: Record<string, unknown> = {};
-  protected timers: NodeJS.Timeout[] = [];  // tracked for cleanup
+  protected pausableTimers: PausableTimer[] = [];
   protected intervals: NodeJS.Timeout[] = [];
   protected isRunning: boolean = false;
+  private phaseTimerHandle: NodeJS.Timeout | null = null;
+  private phaseTimerRemaining: number = 0;
+  private phaseStartedAt: number = 0;
+  private phaseIsPaused: boolean = false;
+  private phaseIsInfinite: boolean = false;
+  private tickInterval: NodeJS.Timeout | null = null;
 
   constructor(context: MinigameContext) {
     this.context = context;
@@ -909,6 +954,12 @@ export abstract class BaseMinigame {
 
   /** Return the full game state for spectators. */
   abstract getStateForSpectator(): unknown;
+
+  /** Called when a new player joins during an active game (join-in-progress). */
+  handlePlayerJoin(userId: string): void {
+    // Default: send spectator state
+    this.context.sendToPlayer(userId, 'rmhbox:game:state_snapshot', this.getStateForSpectator());
+  }
 
   /** Called when a player disconnects mid-game. */
   handlePlayerDisconnect(userId: string): void {
@@ -931,32 +982,55 @@ export abstract class BaseMinigame {
   /** Compute final results. Must be implemented by subclasses. */
   abstract computeResults(): MinigameResults;
 
+  // ─── Pausable Timer System ───────────────────────────────────
+
+  /**
+   * Start a header timer that counts down and broadcasts TIMER_START + TIMER_TICK.
+   * Does NOT auto-fire a callback — use setTimeout separately.
+   */
+  protected startPhaseTimer(durationSeconds: number): void { /* ... */ }
+
+  /** Clear the current phase timer and stop tick broadcasts. */
+  protected clearPhaseTimer(): void { /* ... */ }
+
+  /**
+   * Start an infinite timer (no countdown). Used for phases where
+   * the host manually advances (e.g., UA_TEAM_SETUP).
+   * @param showSkip - if true, host sees a "Skip" button in the header
+   */
+  protected startInfinitePhaseTimer(showSkip?: boolean): void { /* ... */ }
+
+  /** Pause both the phase timer and all tracked pausable timers. */
+  pausePhaseTimer(): void { /* ... */ }
+
+  /** Resume the phase timer and all tracked pausable timers. */
+  resumePhaseTimer(): void { /* ... */ }
+
+  /** Broadcast the current sub-round info (e.g., "Round 2 of 3"). */
+  protected broadcastRound(current: number, total: number): void { /* ... */ }
+
+  /**
+   * Create a tracked timeout that is pausable. All game timeouts should
+   * use this instead of raw setTimeout to support host pausing.
+   */
+  protected setTimeout(fn: () => void, ms: number): string { /* returns timer ID */ }
+
+  /** Cancel a specific tracked timeout. */
+  protected clearTrackedTimeout(id: string): void { /* ... */ }
+
+  /** Helper: create a tracked interval. */
+  protected setInterval(fn: () => void, ms: number): NodeJS.Timeout { /* ... */ }
+
   /** Clean up all timers, intervals, and resources. */
   protected cleanup(): void {
     this.isRunning = false;
-    this.timers.forEach(t => clearTimeout(t));
+    this.clearPhaseTimer();
+    this.pausableTimers.forEach(t => {
+      if (t.handle) clearTimeout(t.handle);
+    });
     this.intervals.forEach(i => clearInterval(i));
-    this.timers = [];
+    this.pausableTimers = [];
     this.intervals = [];
-  }
-
-  /** Helper: create a tracked timeout. */
-  protected setTimeout(fn: () => void, ms: number): NodeJS.Timeout {
-    const t = setTimeout(() => {
-      this.timers = this.timers.filter(x => x !== t);
-      try { fn(); } catch (e) { this.context.onError(e as Error); }
-    }, ms);
-    this.timers.push(t);
-    return t;
-  }
-
-  /** Helper: create a tracked interval. */
-  protected setInterval(fn: () => void, ms: number): NodeJS.Timeout {
-    const i = setInterval(() => {
-      try { fn(); } catch (e) { this.context.onError(e as Error); }
-    }, ms);
-    this.intervals.push(i);
-    return i;
   }
 }
 ```
@@ -996,13 +1070,42 @@ Clients apply these actions to their local Zustand store via a reducer pattern:
 import { create } from 'zustand';
 
 interface RMHboxStore {
-  lobbyState: ClientLobbyState | null;
+  connectionStatus: 'disconnected' | 'connecting' | 'connected';
+  lobby: ClientLobbyState | null;
   gameState: Record<string, unknown>;
   lastSeq: number;
+  timerInfo: TimerInfo | null;       // current phase timer state
+  minigameRound: MinigameRoundInfo | null; // current round info (e.g., "Round 2 of 3")
+  settings: UserSettings;            // persisted user preferences
   
   applyAction: (action: GameAction) => void;
   applyFullSync: (state: ClientLobbyState) => void;
+  setTimerInfo: (info: TimerInfo | null) => void;
+  setMinigameRound: (info: MinigameRoundInfo | null) => void;
+  leaveLobby: () => void;
   reset: () => void;
+}
+
+interface TimerInfo {
+  total: number;        // total duration in seconds (-1 for infinite)
+  remaining: number;    // seconds remaining
+  paused: boolean;
+  infinite: boolean;    // true when total === -1
+  showSkip: boolean;    // true when host should see a skip button
+}
+
+interface MinigameRoundInfo {
+  current: number;      // 1-based current round
+  total: number;        // total rounds
+}
+
+interface UserSettings {
+  masterVolume: number;   // 0–1, default 0.7
+  sfxVolume: number;      // 0–1, default 0.8
+  musicVolume: number;    // 0–1, default 0.5
+  showChat: boolean;      // default true
+  chatPosition: 'left' | 'right'; // default 'right'
+  theme: 'dark' | 'light'; // default 'dark'
 }
 
 export const useRMHboxStore = create<RMHboxStore>((set, get) => ({
@@ -1042,6 +1145,8 @@ interface ClientLobbyState {
   players: ClientPlayerInfo[];
   spectators: ClientSpectatorInfo[];
   currentGame: ClientGameInfo | null;
+  selectedGame: { minigameId: string; displayName: string } | null;
+  matchHistory: MatchSummary[];
   roundNumber: number;
   chat: ChatMessage[];
   myRole: 'player' | 'spectator';
@@ -1127,6 +1232,7 @@ type LobbyActionType =
   | 'VOTE_CAST'
   | 'VOTE_RESULT'
   | 'GAME_SELECTED'
+  | 'GAME_PICKED'             // host pre-selected a game (before vote/start)
   | 'PLAYER_CONNECTED'        // reconnection
   | 'PLAYER_DISCONNECTED';    // temporary disconnect
 ```
@@ -1137,8 +1243,10 @@ These are game-specific and defined per minigame. Common patterns:
 
 ```typescript
 type CommonGameActionType =
-  | 'TIMER_START'              // { totalDuration: number, timeRemaining: number }
+  | 'TIMER_START'              // { totalDuration: number, timeRemaining: number, showSkip?: boolean }
   | 'TIMER_TICK'               // { timeRemaining: number }
+  | 'TIMER_PAUSED'             // {} — host paused the timer
+  | 'TIMER_RESUMED'            // {} — host resumed the timer
   | 'MINIGAME_ROUND'           // { current: number, total: number }
   | 'ROUND_START'              // { roundNumber, roundData }
   | 'TURN_CHANGED'             // { activeUserId }
@@ -1150,7 +1258,13 @@ type CommonGameActionType =
 
 **`TIMER_START`** must be emitted before the first `TIMER_TICK` of any timed phase.
 It sets the `totalDuration` baseline used by the header timer ring to calculate the
-full-circle animation. All subsequent `TIMER_TICK` actions only carry `timeRemaining`.
+full-circle animation. A `totalDuration` of `-1` indicates an infinite timer (no countdown);
+the timer ring hides and the optional `showSkip` flag controls whether the host sees a skip button.
+All subsequent `TIMER_TICK` actions only carry `timeRemaining`.
+
+**`TIMER_PAUSED`** and **`TIMER_RESUMED`** are broadcast when the host toggles pause.
+All tracked pausable timers (including game-internal timeouts) freeze and resume alongside
+the phase timer. The store sets `timerInfo.paused` accordingly.
 
 **`MINIGAME_ROUND`** sets the sub-round display in the footer (e.g. "Round 2/3").
 Minigame handlers call `this.broadcastRound(current, total)` at the start of each
@@ -1241,10 +1355,12 @@ When a player disconnects:
 
 1. Immediately: `socketId = null`, `isConnected = false`.
 2. Broadcast `PLAYER_DISCONNECTED` action to lobby.
-3. **Start a 120-second grace timer.**
+3. **Start a 120-second grace timer** (`DISCONNECT_GRACE_PERIOD_MS=120000`).
 4. If the player reconnects within 120 seconds: cancel the timer, run reconnect flow (§9.2).
 5. If the timer expires: treat as a permanent leave (§6.4 logic).
 6. During the grace period, the player's slot is preserved. In-game, they are treated as AFK (minigame handles this — e.g., auto-pass their turn, submit empty answer).
+
+**In-game disconnect grace:** A separate, shorter timer (`GAME_DISCONNECT_GRACE_MS=15000`) runs during active gameplay. When connected player count drops below `MIN_PLAYERS` (2) during a game, a 15-second grace timer starts. If any player reconnects, the timer is cancelled. If it expires, the game is force-ended and results are computed normally.
 
 ### 9.4 Multiple Tabs / Devices
 
@@ -1404,6 +1520,7 @@ interface VoteCastPayload {
   tallies: Record<string, number>; // minigameId → vote count
   totalVoters: number;
   totalPlayers: number;
+  endsAt?: number;                 // if all voted, shortened deadline for grace period
 }
 ```
 
@@ -2319,10 +2436,9 @@ export const useRMHboxStore = create<RMHboxStore>()(
 import { io, Socket } from 'socket.io-client';
 import { authClient } from '@/lib/auth-client';
 import { useRMHboxStore } from './store';
+import { addToast } from '@/lib/store/toast-store';
 
 let socket: Socket | null = null;
-let reconnectAttempts = 0;
-const MAX_RECONNECT_ATTEMPTS = 10;
 
 /**
  * Connect to the standalone RMHbox WebSocket server.
@@ -2334,6 +2450,10 @@ const MAX_RECONNECT_ATTEMPTS = 10;
  *
  * The `NEXT_PUBLIC_RMHBOX_SOCKET_URL` env var controls the base URL.
  * The `path: '/rmhbox/'` must match the server's `config.SOCKET_PATH`.
+ *
+ * Authentication uses a dynamic `auth` callback that refreshes the session
+ * token on every reconnect attempt, ensuring tokens don't expire during
+ * long sessions.
  */
 export async function connectToRMHbox(): Promise<Socket> {
   if (socket?.connected) return socket;
@@ -2349,9 +2469,13 @@ export async function connectToRMHbox(): Promise<Socket> {
     process.env.NEXT_PUBLIC_RMHBOX_SOCKET_URL || 'http://localhost:7676',
     {
       path: '/rmhbox/',
-      auth: { token },
+      auth: async (cb) => {
+        // Dynamic auth: re-fetch token on each reconnect to prevent expiration
+        const s = await authClient.getSession();
+        cb({ token: s?.data?.session?.token ?? token });
+      },
       reconnection: true,
-      reconnectionAttempts: MAX_RECONNECT_ATTEMPTS,
+      reconnectionAttempts: Infinity,    // never stop trying
       reconnectionDelay: 1000,
       reconnectionDelayMax: 10000,
       timeout: 10000,
@@ -2359,7 +2483,6 @@ export async function connectToRMHbox(): Promise<Socket> {
   );
   
   socket.on('connect', () => {
-    reconnectAttempts = 0;
     store.setConnectionStatus('connected');
   });
   
@@ -2367,11 +2490,8 @@ export async function connectToRMHbox(): Promise<Socket> {
     store.setConnectionStatus(reason === 'io server disconnect' ? 'error' : 'connecting');
   });
   
-  socket.on('connect_error', (error) => {
-    reconnectAttempts++;
-    if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-      store.setConnectionStatus('error');
-    }
+  socket.on('connect_error', () => {
+    // Handled by infinite reconnection; no max-attempts cutoff
   });
   
   // Global listeners
@@ -2387,9 +2507,13 @@ export async function connectToRMHbox(): Promise<Socket> {
     store.setGameState(data);
   });
   
+  socket.on('rmhbox:lobby:not_in_lobby', () => {
+    // Server says we're not in any lobby (e.g., lobby disbanded while disconnected)
+    store.leaveLobby();
+  });
+  
   socket.on('rmhbox:error', (data) => {
-    console.error('[RMHbox] Server error:', data);
-    // Surface to UI via store or toast
+    addToast({ type: 'error', message: data.message ?? 'An error occurred' });
   });
   
   return socket;
@@ -2440,7 +2564,7 @@ clearRound();                  // revert to session-level round
 
 | Field | Type | Description |
 |---|---|---|
-| `timerInfo` | `TimerInfo \| null` | `{ total, remaining }` — set by `TIMER_START`, updated by `TIMER_TICK`, read by `RMHboxHeader`. |
+| `timerInfo` | `TimerInfo \| null` | `{ total, remaining, paused, infinite, showSkip }` — set by `TIMER_START`, updated by `TIMER_TICK`, paused by `TIMER_PAUSED`, read by `RMHboxHeader`. |
 | `minigameRound` | `MinigameRoundInfo \| null` | `{ current, total }` — set by `MINIGAME_ROUND`, read by `GameShell`. |
 
 #### Component Loader
@@ -2757,12 +2881,16 @@ export interface RMHboxError {
 | `rmhbox:lobby:end_session` | `{ lobbyId: string }` | [Host] End the session |
 | `rmhbox:lobby:toggle_ready` | `{ lobbyId: string }` | Toggle ready status |
 | `rmhbox:lobby:request_promotion` | `{ lobbyId: string }` | [Spectator] Request to become a player |
+| `rmhbox:lobby:promote_spectator` | `{ lobbyId: string, targetUserId: string }` | [Host] Promote a spectator to player |
 | `rmhbox:lobby:chat` | `{ lobbyId: string, content: string }` | Send a chat message |
 | `rmhbox:lobby:browse` | `{ cursor?: string, limit?: number }` | Browse public lobbies |
-| `rmhbox:game:select` | `{ lobbyId: string, minigameId: string }` | [Host] Directly select a minigame |
+| `rmhbox:game:pick` | `{ lobbyId: string, minigameId: string }` | [Host] Pre-select a game (visible in lobby) |
+| `rmhbox:game:select` | `{ lobbyId: string, minigameId: string }` | [Host] Directly select and start a minigame |
 | `rmhbox:game:start_vote` | `{ lobbyId: string }` | [Host] Start a minigame vote |
 | `rmhbox:game:cast_vote` | `{ lobbyId: string, minigameId: string }` | Cast a vote for a minigame |
-| `rmhbox:game:force_skip` | `{ lobbyId: string }` | [Host] Skip current phase |
+| `rmhbox:game:force_skip` | `{ lobbyId: string }` | [Host] Skip/advance current phase |
+| `rmhbox:game:force_end` | `{ lobbyId: string }` | [Host] Force-end the game, return to WAITING |
+| `rmhbox:game:pause_timer` | `{ lobbyId: string }` | [Host] Toggle pause on current timer |
 | `rmhbox:game:ready_to_render` | `{ lobbyId: string }` | Signal that local preloading is complete |
 | `rmhbox:game:input` | `{ lobbyId: string, action: string, data: unknown }` | Submit a game input/action |
 | `rmhbox:leaderboard:fetch` | `{ period: string, minigame?: string, limit?: number }` | Fetch leaderboard data |
@@ -2789,6 +2917,7 @@ export interface RMHboxError {
 | `rmhbox:game:vote_update` | `VoteCastPayload` | Vote tally updated |
 | `rmhbox:game:vote_result` | `VoteResultPayload` | Vote completed |
 | `rmhbox:leaderboard:data` | `{ entries: LeaderboardEntry[], period: string }` | Leaderboard data response |
+| `rmhbox:lobby:not_in_lobby` | `{}` | Client is not in any lobby (e.g., lobby disbanded while disconnected) |
 | `rmhbox:error` | `RMHboxError` | Error notification |
 
 ---

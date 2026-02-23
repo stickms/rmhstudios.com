@@ -33,7 +33,7 @@
 | **Icon** | `mic-vocal` (Lucide) |
 | **Min Players** | 2 |
 | **Max Players** | 16 |
-| **Estimated Duration** | 60 seconds |
+| **Estimated Duration** | ~171 seconds (~3 minutes) |
 | **Supports Teams** | No |
 | **Join-in-Progress** | `spectate_only` |
 | **Tags** | `['word', 'speed', 'competitive', 'vocabulary']` |
@@ -52,59 +52,70 @@ The game consists of **3 rounds**, each with a different Root Word. Between roun
 |---|---|---|
 | Round Start | 2s | Root word reveal animation (bounces in, scales up) |
 | Input Phase | 45s | Players type and submit rhymes |
-| Scoring Phase | 5s | Server tallies, deduplicates, and broadcasts round results |
-| Intermission | 5s | Round MVP display + next round preview |
+| Scoring Phase | 10s | Server tallies, deduplicates, and broadcasts round results |
+| Intermission | 10s | Round MVP display + next round preview |
 
-**Total game time:** ~3 rounds × 57s = ~171s ≈ 3 minutes.
+**Total game time:** ~3 rounds × 67s = ~201s ≈ 3.4 minutes (actual ~171s due to reduced final round intermission).
 
 #### 1.3.2 Root Word Selection
 
-The server selects Root Words from the preloaded word list (`/public/data/rmhbox/rhyme-time/root-words.json`). Selection criteria:
+The server selects Root Words from the preloaded word list (`data/rmhbox/rhyme-time/root-words.json`). Selection criteria:
 
-1. The word must have **at least 15 known rhymes** in the dictionary (to ensure fair gameplay).
-2. The word should be a common English word (frequency rank ≤ 5,000 in a word frequency corpus).
-3. Words used in previous rounds within the same session are excluded.
-4. The server shuffles eligible words and picks the first 3 for the 3 rounds at game start.
+1. Words used in previous rounds within the same session are excluded.
+2. The server shuffles eligible words and picks the first 3 for the 3 rounds at game start.
 
-Root Word data structure:
+Root Word data (JSON file — syllable count is computed at runtime):
 
 ```typescript
+// Raw JSON structure (data/rmhbox/rhyme-time/root-words.json)
+interface RootWordRaw {
+  word: string;              // e.g., "power"
+  difficulty: 'easy' | 'medium' | 'hard';
+}
+
+// Runtime-enriched structure (after loading via dictionary-loader.ts)
 interface RootWord {
   word: string;              // e.g., "power"
-  phonetic: string;          // IPA pronunciation, e.g., "/ˈpaʊər/"
-  syllableCount: number;     // 2
-  rhymeEndSound: string;     // the phonetic ending used for rhyme matching, e.g., "aʊər"
-  knownRhymeCount: number;   // total known rhymes in the dictionary
-  difficulty: 'easy' | 'medium' | 'hard'; // based on knownRhymeCount ranges
+  syllableCount: number;     // computed at runtime via syllable-count-english
+  difficulty: 'easy' | 'medium' | 'hard';
 }
 ```
 
 #### 1.3.3 Rhyme Validation
 
-All validation is **server-side only**. The client never receives the rhyme dictionary.
+All validation is **server-side only**. The client never receives rhyme data.
+
+Rhyme detection uses the `rhyming-part` npm package, which extracts the rhyming
+portion of a word from the CMU Pronouncing Dictionary. Two words rhyme if their
+rhyming parts match. This is a runtime check — no pre-generated dictionary is needed.
 
 A submission is a valid rhyme if:
 
-1. **Phonetic match:** The word's ending phoneme(s) match the Root Word's `rhymeEndSound`. This is determined by a precomputed rhyme lookup table keyed by phonetic endings.
-2. **Real word:** The submission exists in the validation dictionary (a curated English word list, ~50,000 entries).
+1. **Phonetic match:** The word's rhyming part (from CMU dictionary via `rhyming-part`) matches the Root Word's rhyming part.
+2. **Known word:** The submission exists in the CMU Pronouncing Dictionary (checked via `rhyming-part`'s dictionary lookup).
 3. **Not the root word itself.**
 4. **Not already submitted by this player** (duplicate detection per-player).
 5. **Minimum length:** At least 2 characters.
 6. **Maximum length:** At most 30 characters.
 
-The rhyme lookup table is structured as:
-
 ```typescript
-// Pre-loaded on server startup from /public/data/rmhbox/rhyme-time/rhyme-dictionary.json
-interface RhymeDictionary {
-  [rhymeEndSound: string]: RhymeEntry[];
+// lib/rmhbox/rhyme-time/dictionary-loader.ts
+import { rhymingPart } from 'rhyming-part';
+import { syllableCount } from 'syllable-count-english';
+
+function isValidRhyme(word: string, rootWord: string): boolean {
+  const wordPart = rhymingPart(word);    // e.g., "AW ER" for "power"
+  const rootPart = rhymingPart(rootWord);
+  if (!wordPart || !rootPart) return false;
+  return wordPart === rootPart && word.toLowerCase() !== rootWord.toLowerCase();
 }
 
-interface RhymeEntry {
-  word: string;
-  syllableCount: number;
-  frequencyRank: number;     // lower = more common (1 = most common word)
-  isMultiSyllableRhyme: boolean; // true if 2+ syllables match the root's ending
+function isMultiSyllableRhyme(word: string, rootSyllableCount: number): boolean {
+  return syllableCount(word) >= rootSyllableCount + 1;
+}
+
+function isKnownWord(word: string): boolean {
+  return rhymingPart(word) !== null; // returns null for unknown words
 }
 ```
 
@@ -303,15 +314,10 @@ On reconnect:
 
 | Package | Purpose | Notes |
 |---|---|---|
-| `cmu-pronouncing-dictionary` | Carnegie Mellon University pronouncing dictionary — maps English words to ARPAbet phonetic transcriptions | Use this to build the rhyme lookup table at build time. ~134,000 entries. MIT license. |
-| `syllable` | Count syllables in English words | Lightweight (~2KB), fast, well-maintained. Used for multi-syllable bonus calculation. |
+| `rhyming-part` | Extracts the rhyming portion of a word using CMU pronouncing dictionary phonemes | Runtime rhyme detection — two words rhyme if they share the same `rhymingPart()`. MIT license. |
+| `syllable-count-english` | Count syllables in English words using CMU pronouncing dictionary data | Preferentially uses CMU data; falls back to heuristic syllable counting. Used for multi-syllable bonus. |
 
-**Build-time data pipeline:** Use `cmu-pronouncing-dictionary` + `syllable` to pre-generate two JSON files at build time:
-
-1. `root-words.json` — Curated list of ~500 root words with metadata.
-2. `rhyme-dictionary.json` — Map of phonetic endings → arrays of rhyming words.
-
-These are loaded into server memory on startup (not served to clients). Approximate size: ~2–4 MB in-memory.
+**Runtime approach:** Both `rhyming-part` and `syllable-count-english` operate at runtime (no build step). Root words are loaded from `data/rmhbox/rhyme-time/root-words.json` (a curated list of ~34 words with `word` and `difficulty` fields). Syllable counts are computed on load via `syllableCount()`. Rhyme validation uses `rhymingPart()` comparisons at submission time. The data file and rhyme dictionary are never exposed to clients.
 
 ### 1.11 Client Component Structure
 
@@ -347,26 +353,26 @@ components/rmhbox/minigames/rhyme-time/
 ### 1.12 Constants
 
 ```typescript
-// Defined in lib/rmhbox/constants.ts under a RHYME_TIME namespace/prefix
+// Defined in lib/rmhbox/constants.ts under a RT_ prefix
 
-export const RHYME_TIME_TOTAL_ROUNDS = 3;
-export const RHYME_TIME_INPUT_DURATION_SECONDS = 45;
-export const RHYME_TIME_SCORING_DURATION_SECONDS = 5;
-export const RHYME_TIME_INTERMISSION_DURATION_SECONDS = 5;
-export const RHYME_TIME_ROUND_START_DURATION_SECONDS = 2;
-export const RHYME_TIME_MAX_SUBMISSIONS_PER_ROUND = 30;
+export const RT_TOTAL_ROUNDS = 3;
+export const RT_INPUT_DURATION = 45;
+export const RT_SCORING_DURATION = 10;
+export const RT_INTERMISSION_DURATION = 10;
+export const RT_ROUND_START_DURATION = 2;
+export const RT_MAX_SUBMISSIONS = 30;
 
-export const RHYME_TIME_COMMON_RHYME_POINTS = 1;
-export const RHYME_TIME_UNCOMMON_RHYME_POINTS = 3;
-export const RHYME_TIME_RARE_RHYME_POINTS = 5;
-export const RHYME_TIME_MULTI_SYLLABLE_MULTIPLIER = 2;
-export const RHYME_TIME_SPEED_BONUS_POINTS = 2;
-export const RHYME_TIME_INVALID_PENALTY_POINTS = -1;
+export const RT_COMMON_POINTS = 1;
+export const RT_UNCOMMON_POINTS = 3;
+export const RT_RARE_POINTS = 5;
+export const RT_MULTI_SYLLABLE_MULT = 2;
+export const RT_SPEED_BONUS = 2;
+export const RT_INVALID_PENALTY = -1;
 
-export const RHYME_TIME_MIN_RHYMES_FOR_ROOT_WORD = 15;
-export const RHYME_TIME_MAX_FREQUENCY_RANK = 5000;
-export const RHYME_TIME_MIN_WORD_LENGTH = 2;
-export const RHYME_TIME_MAX_WORD_LENGTH = 30;
+export const RT_MIN_RHYMES = 15;
+export const RT_MAX_FREQ_RANK = 5000;
+export const RT_MIN_WORD_LEN = 2;
+export const RT_MAX_WORD_LEN = 30;
 ```
 
 ### 1.13 Anti-Cheat Notes
@@ -847,22 +853,25 @@ Layout notes:
 ```typescript
 export const UA_GRID_SIZE = 25;                          // 5×5
 export const UA_GRID_COLS = 5;
-export const UA_FIRST_TEAM_AGENT_COUNT = 9;
-export const UA_SECOND_TEAM_AGENT_COUNT = 8;
-export const UA_ASSASSIN_COUNT = 1;
-export const UA_BYSTANDER_COUNT = 7;                     // 25 - 9 - 8 - 1
-export const UA_SPYMASTER_CLUE_TIMEOUT_SECONDS = 0;     // No time limit
-export const UA_OPERATIVE_GUESS_TIMEOUT_SECONDS = 0;     // No time limit
-export const UA_TURN_TRANSITION_SECONDS = 3;
-export const UA_MAX_UNLIMITED_GUESSES = 25;
-export const UA_MAX_CONSECUTIVE_PASSES = 6;              // 3 per team = stalemate
+export const UA_FIRST_TEAM_AGENTS = 9;
+export const UA_SECOND_TEAM_AGENTS = 8;
+export const UA_ASSASSIN = 1;
+export const UA_BYSTANDER = 7;                           // 25 - 9 - 8 - 1
+export const UA_SETUP_DURATION = 2;                      // Brief setup phase
+export const UA_SPYMASTER_TIMEOUT = 90;                  // Infinite timer (pausable)
+export const UA_OPERATIVE_TIMEOUT = 120;                 // Infinite timer (pausable)
+export const UA_TURN_TRANSITION = 3;
+export const UA_MAX_UNLIMITED = 25;
+export const UA_MAX_PASSES = 6;                          // 3 per team = stalemate
 
-export const UA_WIN_POINTS = 500;
-export const UA_LOSE_POINTS = 100;
-export const UA_CLUE_EFFICIENCY_BONUS = 50;
-export const UA_CORRECT_GUESS_POINTS = 75;
+export const UA_WIN = 500;
+export const UA_LOSE = 100;
+export const UA_CLUE_EFFICIENCY = 50;
+export const UA_CORRECT_GUESS = 75;
 export const UA_ASSASSIN_PENALTY = -200;
 ```
+
+> **Note:** `UA_SPYMASTER_TIMEOUT` and `UA_OPERATIVE_TIMEOUT` use the BaseMinigame infinite timer system (`startInfinitePhaseTimer`). The timer counts up and can be paused/resumed by the host, but does not auto-advance on expiry.
 
 ### 2.15 Game History
 
@@ -1021,7 +1030,7 @@ Spectators receive the same `UA_*` actions but see the full key card (omniscient
 | **Icon** | `list-collapse` (Lucide) |
 | **Min Players** | 3 |
 | **Max Players** | 16 |
-| **Estimated Duration** | 150 seconds |
+| **Estimated Duration** | ~212 seconds (~3.5 minutes) |
 | **Supports Teams** | No |
 | **Join-in-Progress** | `join_next_subround` |
 | **Tags** | `['word', 'brainstorm', 'speed', 'competitive', 'social']` |
@@ -1357,30 +1366,30 @@ components/rmhbox/minigames/category-crash/
 ```typescript
 export const CC_TOTAL_ROUNDS = 2;
 export const CC_CATEGORIES_PER_ROUND = 5;
-export const CC_INPUT_DURATION_SECONDS = 60;       // base; scales +15s per player beyond 2, max 180s
-export const CC_PEER_REVIEW_DURATION_SECONDS = 30; // base; scales +10s per player beyond 2, max 90s
-export const CC_CRASH_RESOLUTION_SECONDS = 5;
-export const CC_ROUND_RESULTS_SECONDS = 8;
-export const CC_REVEAL_SECONDS = 3;
+export const CC_INPUT_DURATION = 60;
+export const CC_PEER_REVIEW_DURATION = 30;
+export const CC_CRASH_RESOLUTION = 5;
+export const CC_ROUND_RESULTS = 8;
+export const CC_REVEAL = 3;
 
 export const CC_MAX_ANSWER_LENGTH = 50;
-export const CC_MAX_CRASHES_PER_ROUND = 5;
+export const CC_MAX_CRASHES = 5;
 export const CC_CRASH_THRESHOLD_PERCENT = 50;
 
-export const CC_UNIQUE_ANSWER_POINTS = 10;
-export const CC_SHARED_ANSWER_POINTS = 5;
-export const CC_SUCCESSFUL_CRASH_BONUS = 2;
-export const CC_FAILED_CRASH_PENALTY = -1;
+export const CC_UNIQUE_POINTS = 10;
+export const CC_SHARED_POINTS = 5;
+export const CC_CRASH_BONUS = 2;
+export const CC_CRASH_PENALTY = -1;
 
-export const CC_FUZZY_MATCH_THRESHOLD = 0.85;
-export const CC_ANSWER_SAVE_DEBOUNCE_MS = 500;
+export const CC_FUZZY_THRESHOLD = 0.85;
+export const CC_SAVE_DEBOUNCE = 500;
 
 export const CC_CATEGORY_DISTRIBUTION = { easy: 2, medium: 2, hard: 1 };
 
 export const CC_LETTER_WEIGHTS: Record<string, number> = {
-  A: 10, B: 8, C: 10, D: 8, E: 7, F: 7, G: 6, H: 6,
-  I: 5, J: 3, K: 4, L: 7, M: 8, N: 6, O: 5, P: 8,
-  Q: 1, R: 8, S: 10, T: 9, U: 3, V: 3, W: 5, X: 1, Y: 2, Z: 1,
+  A: 10, B: 5, C: 5, D: 5, E: 8, F: 4, G: 4, H: 4,
+  I: 5, J: 2, K: 2, L: 5, M: 5, N: 5, O: 5, P: 5,
+  Q: 1, R: 5, S: 8, T: 8, U: 3, V: 2, W: 3, X: 1, Y: 2, Z: 1,
 };
 ```
 
@@ -1565,20 +1574,21 @@ The game is a single round with one Start → Target pair.
 
 #### 4.3.2 Article Selection
 
-The server selects the Start and Target articles from a curated list (`/public/data/rmhbox/wiki-race/article-pairs.json`). Each pair is pre-validated to ensure:
+The server selects the Start and Target articles from a curated list (`data/rmhbox/wiki-race/article-pairs.json`). This file is in the project root (not `public/`) so article pairs are never exposed to the client.
 
-1. A path exists between the two articles within a reasonable number of clicks (pre-computed: `optimalPathLength` stored in the pair data).
-2. Both articles are "popular" (exist in a curated subset of ~10,000 well-known articles).
-3. The optimal path length is between `WIKI_MIN_PATH_LENGTH` (default: 3) and `WIKI_MAX_PATH_LENGTH` (default: 8).
-4. Neither article is a disambiguation page, list page, or stub.
+Pairs are curated with the following guidelines:
+1. Both articles are well-known Wikipedia pages (not disambiguation, list, or stub pages).
+2. The pair should require **lateral thinking** — the start and target should not share an obvious surface-level connection at first glance.
+3. Difficulties are `medium`, `hard`, or `extreme` (no `easy` difficulty).
+4. Neither article title appears in more than a few pairs to keep the pool varied.
+
+Pair identification uses a derived key (`startTitle::targetTitle`) rather than an explicit `id` field.
 
 ```typescript
 interface ArticlePair {
-  id: string;
   startArticle: WikiArticleRef;
   targetArticle: WikiArticleRef;
-  optimalPathLength: number;        // pre-computed shortest path
-  difficulty: 'easy' | 'medium' | 'hard';
+  difficulty: 'medium' | 'hard' | 'extreme';
   tags: string[];                    // e.g., ['history', 'science']
 }
 
@@ -1586,7 +1596,11 @@ interface WikiArticleRef {
   title: string;                     // e.g., "Banana"
   url: string;                       // relative: "/wiki/Banana"
   description: string;               // brief one-liner
-  thumbnail: string | null;          // Wikipedia thumbnail URL
+}
+
+// Pair key derivation (used for tracking used pairs across rounds)
+function pairKey(pair: ArticlePair): string {
+  return `${pair.startArticle.title}::${pair.targetArticle.title}`;
 }
 ```
 
@@ -1648,17 +1662,19 @@ Scoring:
 
 | Metric | Scoring Formula |
 |---|---|
-| Finished | `WR_FINISH_BASE_POINTS` (default: **500**) |
-| Speed bonus | `WR_SPEED_BONUS_POINTS_PER_SECOND` (default: **5**) × seconds remaining |
-| Efficiency bonus | `WR_EFFICIENCY_BONUS_POINTS` (default: **50**) × max(0, `optimalPathLength + 2` - `playerClickCount`) |
+| Finished | `WR_FINISH_BASE` (default: **500**) |
+| Speed bonus | `WR_SPEED_BONUS_PER_SEC` (default: **5**) × seconds remaining |
+| Efficiency bonus | `WR_EFFICIENCY_BONUS` (default: **50**) × max(0, `fewestClicks + 3` - `playerClickCount`) — relative to the best finisher, not a pre-computed optimal |
 | Did not finish | Points based on **proximity score** (see below) |
+
+**Efficiency bonus:** Since there is no pre-computed optimal path length, the efficiency bonus is calculated relative to the finisher with the fewest clicks. This rewards players who found short paths relative to the best competitor.
 
 **Proximity scoring for DNF players:**
 
 If the timer expires before a player reaches the target, their score is based on how "close" they got. This is estimated by the server using the link structure:
 
-1. The server checks if the target article title appears as a link on the player's current page → score = `WR_ONE_AWAY_POINTS` (default: **200**).
-2. Otherwise, a heuristic based on click count relative to optimal: `WR_DNF_BASE_POINTS` (default: **50**) + `WR_DNF_CLICK_BONUS` (default: **10**) × min(`playerClickCount`, `optimalPathLength`).
+1. The server checks if the target article title appears as a link on the player's current page → score = `WR_ONE_AWAY` (default: **200**).
+2. Otherwise, a heuristic based on click count: `WR_DNF_BASE` (default: **50**) + `WR_DNF_CLICK_BONUS` (default: **10**) × min(`playerClickCount`, **10**).
 
 Players who finish are ranked by finish order (first = rank 1). DNF players are ranked by proximity score, all after finishers.
 
@@ -1670,23 +1686,15 @@ Since the browser back button is disabled (the page doesn't actually navigate), 
 
 ```typescript
 interface WikiRaceState {
-  startArticle: WikiArticleRef;
-  targetArticle: WikiArticleRef;
-  optimalPathLength: number;
-  phase: WRPhase;
-  
-  // Per-player state
+  phase: WikiRacePhase;
+  articlePair: ArticlePair;          // contains startArticle, targetArticle, difficulty, tags
   playerStates: Map<string, WRPlayerState>;
-  
-  // Finish order
-  finishOrder: string[];            // userIds in order of finishing
-  
-  // Timer
-  phaseStartedAt: number;
-  phaseEndsAt: number;
+  timeRemaining: number;
+  finishCounter: number;             // increments as players finish
+  actionLog: ActionLogEntry[];
 }
 
-type WRPhase = 'ARTICLE_REVEAL' | 'NAVIGATION' | 'RESULTS';
+type WikiRacePhase = 'ARTICLE_REVEAL' | 'NAVIGATION' | 'RESULTS';
 
 interface WRPlayerState {
   userId: string;
@@ -1890,23 +1898,23 @@ components/rmhbox/minigames/wiki-race/
 ### 4.13 Constants
 
 ```typescript
-export const WR_NAVIGATION_DURATION_SECONDS = 180;
-export const WR_ARTICLE_REVEAL_SECONDS = 5;
-export const WR_RESULTS_SECONDS = 8;
-export const WR_MIN_PATH_LENGTH = 3;
-export const WR_MAX_PATH_LENGTH = 8;
+export const WR_NAV_DURATION = 180;
+export const WR_REVEAL = 5;
+export const WR_RESULTS = 8;
+export const WR_MIN_PATH = 3;
+export const WR_MAX_PATH = 8;
 
-export const WR_FINISH_BASE_POINTS = 500;
-export const WR_SPEED_BONUS_POINTS_PER_SECOND = 5;
-export const WR_EFFICIENCY_BONUS_POINTS = 50;
-export const WR_ONE_AWAY_POINTS = 200;
-export const WR_DNF_BASE_POINTS = 50;
+export const WR_FINISH_BASE = 500;
+export const WR_SPEED_BONUS_PER_SEC = 5;
+export const WR_EFFICIENCY_BONUS = 50;
+export const WR_ONE_AWAY = 200;
+export const WR_DNF_BASE = 50;
 export const WR_DNF_CLICK_BONUS = 10;
 
-export const WR_ARTICLE_CACHE_MAX_ENTRIES = 500;
-export const WR_ARTICLE_CACHE_TTL_MS = 10 * 60 * 1000;  // 10 min
-export const WR_NAVIGATE_RATE_LIMIT_PER_SECOND = 3;       // per player
-export const WR_MAX_ARTICLE_PAIR_POOL_SIZE = 200;
+export const WR_CACHE_MAX = 500;
+export const WR_CACHE_TTL = 600000;                       // 10 min
+export const WR_NAV_RATE_LIMIT = 3;                        // per player
+export const WR_MAX_PAIR_POOL = 200;
 ```
 
 ### 4.14 Anti-Cheat Notes
@@ -1916,7 +1924,7 @@ export const WR_MAX_ARTICLE_PAIR_POOL_SIZE = 200;
 - External links are stripped; the client receives no raw Wikipedia URLs.
 - Article content is rendered in a controlled container — no iframe with real Wikipedia access.
 - Per-player navigation rate limit (`WR_NAVIGATE_RATE_LIMIT_PER_SECOND`) prevents automated link-clicking scripts.
-- The optimal path is only revealed in results, never during gameplay.
+- No pre-computed optimal path is stored or revealed. Efficiency is scored relative to the best finisher.
 
 ### 4.15 Game History
 
@@ -1932,7 +1940,7 @@ interface WikiRaceInitialState {
   timeLimitSeconds: number;
   startArticle: string;
   targetArticle: string;
-  optimalPathLength: number;
+  difficulty: 'medium' | 'hard' | 'extreme';
   backClickAllowed: boolean;
   players: Array<{ userId: string; userName: string }>;
 }
@@ -1947,10 +1955,10 @@ interface WikiRaceInitialState {
 | `back_click` | `{ userId: string; fromArticle: string; toArticle: string; timestamp: number }` | Player uses the back button |
 | `player_finish` | `{ userId: string; pathLength: number; timeMs: number; path: string[] }` | Player reaches the target article |
 | `player_timeout` | `{ userId: string; lastArticle: string; pathLength: number; path: string[] }` | Player fails to reach the target in time |
-| `round_end` | `{ round: number; finishers: Array<{ userId: string; pathLength: number; timeMs: number }>; optimalPath: string[] }` | Round timer expires or all players finish |
+| `round_end` | `{ round: number; finishers: Array<{ userId: string; pathLength: number; timeMs: number }> }` | Round timer expires or all players finish |
 | `game_end` | `{ finalScores: Array<{ userId: string; totalScore: number; rank: number }> }` | All rounds complete |
 
-**Replay Value:** Comparing the wildly different paths players took between the same two articles, seeing who found clever shortcuts vs. who wandered through dozens of articles, and measuring paths against the optimal route.
+**Replay Value:** Comparing the wildly different paths players took between the same two articles, seeing who found clever shortcuts vs. who wandered through dozens of articles, and comparing paths against the best finisher's route.
 
 ### 4.16 MinigameRenderer & Client-Server Wiring
 

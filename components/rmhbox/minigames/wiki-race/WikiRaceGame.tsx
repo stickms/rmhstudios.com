@@ -97,7 +97,6 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
 
   // Results
   const [results, setResults] = useState<Record<string, WRPlayerResult> | null>(null);
-  const [optimalPathLength, setOptimalPathLength] = useState(0);
 
   // Error
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -189,7 +188,6 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
         case 'WR_RESULTS': {
           setPhase('RESULTS');
           setResults(data.playerResults as Record<string, WRPlayerResult>);
-          setOptimalPathLength(data.optimalPathLength as number);
           break;
         }
         case 'WR_NAVIGATE_REJECTED': {
@@ -236,8 +234,6 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
 
       const other = data.otherPlayers as Record<string, OtherPlayer> | undefined;
       if (other) setOtherPlayers(other);
-
-      if (data.optimalPathLength) setOptimalPathLength(data.optimalPathLength as number);
     },
     [],
   );
@@ -365,12 +361,12 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
 
             {/* Finished banner */}
             {hasFinished && (
-              <div className="rounded-lg bg-green-500/20 border border-green-500/40 px-4 py-3 text-center">
-                <span className="text-lg font-bold text-green-300">
+              <div className="rounded-lg bg-(--rmhbox-success-dim) border border-(--rmhbox-success)/40 px-4 py-3 text-center">
+                <span className="text-lg font-bold text-(--rmhbox-success)">
                   <Flag className="h-5 w-5 inline" /> Finished! Rank #{finishRank}
                 </span>
-                <p className="text-sm text-green-300/70">
-                  {clickCount} clicks • Waiting for others…
+                <p className="text-sm text-(--rmhbox-success)/70">
+                  {clickCount} clicks • Viewing target article
                 </p>
               </div>
             )}
@@ -423,7 +419,6 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
           >
             <WikiRaceResults
               results={results}
-              optimalPathLength={optimalPathLength}
               startTitle={startArticle?.title ?? ''}
               targetTitle={targetArticle?.title ?? ''}
               currentUserId={playerId}

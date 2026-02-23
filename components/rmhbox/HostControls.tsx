@@ -89,14 +89,17 @@ export default function HostControls({
       {/* Settings panel */}
       {showSettings && settings && (
         <div className="mt-2 rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-3 space-y-3">
-          <label className="flex items-center justify-between text-sm">
+          <label className="flex items-center justify-between text-sm cursor-pointer">
             <span className="text-(--rmhbox-text)">Public lobby</span>
-            <input
-              type="checkbox"
-              checked={settings.isPublic}
-              onChange={(e) => handleUpdateSettings({ isPublic: e.target.checked })}
-              className="h-4 w-4 accent-(--rmhbox-accent)"
-            />
+            <button
+              type="button"
+              role="switch"
+              aria-checked={settings.isPublic}
+              onClick={() => handleUpdateSettings({ isPublic: !settings.isPublic })}
+              className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${settings.isPublic ? 'bg-(--rmhbox-accent)' : 'bg-(--rmhbox-border)'}`}
+            >
+              <span className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${settings.isPublic ? 'translate-x-4.5' : 'translate-x-0.5'}`} />
+            </button>
           </label>
           <label className="flex items-center justify-between text-sm">
             <span className="text-(--rmhbox-text)">Max players</span>
@@ -110,23 +113,29 @@ export default function HostControls({
               ))}
             </select>
           </label>
-          <label className="flex items-center justify-between text-sm">
+          <label className="flex items-center justify-between text-sm cursor-pointer">
             <span className="text-(--rmhbox-text)">Allow mid-game join</span>
-            <input
-              type="checkbox"
-              checked={settings.allowMidGameJoin}
-              onChange={(e) => handleUpdateSettings({ allowMidGameJoin: e.target.checked })}
-              className="h-4 w-4 accent-(--rmhbox-accent)"
-            />
+            <button
+              type="button"
+              role="switch"
+              aria-checked={settings.allowMidGameJoin}
+              onClick={() => handleUpdateSettings({ allowMidGameJoin: !settings.allowMidGameJoin })}
+              className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${settings.allowMidGameJoin ? 'bg-(--rmhbox-accent)' : 'bg-(--rmhbox-border)'}`}
+            >
+              <span className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${settings.allowMidGameJoin ? 'translate-x-4.5' : 'translate-x-0.5'}`} />
+            </button>
           </label>
-          <label className="flex items-center justify-between text-sm">
+          <label className="flex items-center justify-between text-sm cursor-pointer">
             <span className="text-(--rmhbox-text)">Allow spectator promotion</span>
-            <input
-              type="checkbox"
-              checked={settings.allowSpectatorPromotion}
-              onChange={(e) => handleUpdateSettings({ allowSpectatorPromotion: e.target.checked })}
-              className="h-4 w-4 accent-(--rmhbox-accent)"
-            />
+            <button
+              type="button"
+              role="switch"
+              aria-checked={settings.allowSpectatorPromotion}
+              onClick={() => handleUpdateSettings({ allowSpectatorPromotion: !settings.allowSpectatorPromotion })}
+              className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${settings.allowSpectatorPromotion ? 'bg-(--rmhbox-accent)' : 'bg-(--rmhbox-border)'}`}
+            >
+              <span className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${settings.allowSpectatorPromotion ? 'translate-x-4.5' : 'translate-x-0.5'}`} />
+            </button>
           </label>
         </div>
       )}

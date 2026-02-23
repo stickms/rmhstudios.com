@@ -25,7 +25,7 @@ let cachedCategories: Category[] | null = null;
 export function loadCategories(): Category[] {
   if (cachedCategories) return cachedCategories;
   const raw = fs.readFileSync(
-    path.join(process.cwd(), 'public', 'data', 'rmhbox', 'category-crash', 'categories.json'),
+    path.join(process.cwd(), 'data', 'rmhbox', 'category-crash', 'categories.json'),
     'utf-8',
   );
   cachedCategories = JSON.parse(raw) as Category[];

@@ -4,19 +4,26 @@
  * Uses framer-motion for staggered animations and canvas-confetti
  * for the winner celebration effect.
  *
+ * When the timer is infinite (host-driven advancement), shows a pulsing
+ * "Next" button at the bottom for the host.
+ *
  * Props:
  *   rankings: PlayerRanking[] — Player rankings for the current round
  *   sessionStandings: SessionStanding[] — Cumulative session standings
  *   awards: Award[] — Special awards earned during the round
  *   roundNumber: number — Current round number
+ *   isHost: boolean — Whether the current user is the host
+ *   lobbyId: string — Lobby ID for emitting force-skip
  */
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
-import { Trophy, Medal, Award as AwardIcon } from 'lucide-react';
+import { Trophy, Medal, Award as AwardIcon, ChevronRight } from 'lucide-react';
 import LucideAwardIcon from './LucideAwardIcon';
+import { emit } from '@/lib/rmhbox/socket';
+import { C2S } from '@/lib/rmhbox/events';
 import type { PlayerRanking, SessionStanding, Award } from '@/lib/rmhbox/types';
 
 interface ResultsScreenProps {
@@ -24,6 +31,8 @@ interface ResultsScreenProps {
   sessionStandings: SessionStanding[];
   awards: Award[];
   roundNumber: number;
+  isHost: boolean;
+  lobbyId: string;
 }
 
 const PODIUM_COLORS = ['text-yellow-400', 'text-gray-300', 'text-amber-600'];
@@ -44,7 +53,16 @@ export default function ResultsScreen({
   sessionStandings,
   awards,
   roundNumber,
+  isHost,
+  lobbyId,
 }: ResultsScreenProps) {
+  // ResultsScreen only renders during ROUND_RESULTS — always let the host advance.
+  const showNextButton = isHost;
+
+  const handleNext = useCallback(() => {
+    emit(C2S.GAME_FORCE_SKIP, { lobbyId });
+  }, [lobbyId]);
+
   // Fire confetti for the winner
   useEffect(() => {
     if (rankings.length === 0) return;
@@ -64,18 +82,18 @@ export default function ResultsScreen({
 
   return (
     <motion.div
-      className="mx-auto flex w-full max-w-2xl flex-col gap-8 p-6 text-(--rmhbox-text)"
+      className="mx-auto flex w-full max-w-2xl flex-col p-6 text-(--rmhbox-text)"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
     >
       {/* Header */}
-      <motion.h2 variants={itemVariants} className="text-center text-2xl font-bold">
+      <motion.h2 variants={itemVariants} className="mb-6 text-center text-2xl font-bold">
         Round {roundNumber} Results
       </motion.h2>
 
       {/* Podium */}
-      <motion.div variants={itemVariants} className="flex items-end justify-center gap-4">
+      <motion.div variants={itemVariants} className="mb-6 flex items-end justify-center gap-4">
         {podiumOrder.map((player, i) => {
           const podiumIndex = top3.length >= 3 ? [1, 0, 2][i] : i;
           return (
@@ -96,7 +114,7 @@ export default function ResultsScreen({
 
       {/* Full rankings */}
       {rankings.length > 3 && (
-        <motion.div variants={itemVariants} className="rounded-xl bg-(--rmhbox-surface) border border-(--rmhbox-border) p-4">
+        <motion.div variants={itemVariants} className="mb-6 rounded-xl bg-(--rmhbox-surface) border border-(--rmhbox-border) p-4">
           <h3 className="mb-2 text-sm font-semibold uppercase tracking-wider text-(--rmhbox-text-muted)">
             All Players
           </h3>
@@ -116,7 +134,7 @@ export default function ResultsScreen({
 
       {/* Awards */}
       {awards.length > 0 && (
-        <motion.div variants={itemVariants} className="rounded-xl bg-(--rmhbox-surface) border border-(--rmhbox-border) p-4">
+        <motion.div variants={itemVariants} className="mb-6 rounded-xl bg-(--rmhbox-surface) border border-(--rmhbox-border) p-4">
           <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-(--rmhbox-text-muted)">
             <AwardIcon className="h-4 w-4" /> Awards
           </h3>
@@ -143,7 +161,7 @@ export default function ResultsScreen({
 
       {/* Session standings */}
       {sessionStandings.length > 0 && (
-        <motion.div variants={itemVariants} className="rounded-xl bg-(--rmhbox-surface) border border-(--rmhbox-border) p-4">
+        <motion.div variants={itemVariants} className="mb-6 rounded-xl bg-(--rmhbox-surface) border border-(--rmhbox-border) p-4">
           <h3 className="mb-2 text-sm font-semibold uppercase tracking-wider text-(--rmhbox-text-muted)">
             Session Standings
           </h3>
@@ -167,6 +185,20 @@ export default function ResultsScreen({
               ))}
             </tbody>
           </table>
+        </motion.div>
+      )}
+
+      {/* Host "Next" button — shown when using infinite timer */}
+      {showNextButton && (
+        <motion.div variants={itemVariants} className="flex justify-center pt-2 pb-4">
+          <button
+            onClick={handleNext}
+            className="flex items-center gap-2 rounded-lg px-8 py-3 text-base font-semibold text-white transition-all hover:brightness-110 active:scale-95 animate-pulse"
+            style={{ backgroundColor: 'var(--rmhbox-accent)' }}
+          >
+            Continue to Lobby
+            <ChevronRight className="h-5 w-5" />
+          </button>
         </motion.div>
       )}
     </motion.div>

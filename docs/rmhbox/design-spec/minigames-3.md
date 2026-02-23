@@ -51,17 +51,17 @@ The game consists of escalating rounds until all players are eliminated or `SS_M
 | Phase | Duration | Description |
 |---|---|---|
 | Pattern Display | Variable (depends on sequence length) | Grid tiles flash in sequence |
-| Input Phase | Variable (sequence length × `SS_INPUT_TIME_PER_STEP_MS`) | Players repeat the pattern |
+| Input Phase | Variable (sequence length × `SS_INPUT_TIME_PER_STEP`) | Players repeat the pattern |
 | Round Results | 2s | Show who got it right/wrong, eliminations |
 | Next Round Transition | 1s | Grid resets, next pattern prepares |
 
 **Pattern display timing:**
-- Each tile lights up for `SS_TILE_FLASH_DURATION_MS` (default: **500ms**).
-- Gap between flashes: `SS_TILE_GAP_MS` (default: **200ms**).
+- Each tile lights up for `SS_TILE_FLASH_DURATION` (default: **500ms**).
+- Gap between flashes: `SS_TILE_GAP` (default: **200ms**).
 - Total display time for a sequence of length N: `N × (500 + 200)` = `N × 700ms`.
 
 **Input phase timing:**
-- Players have `SS_INPUT_TIME_PER_STEP_MS` (default: **1500ms**) per step in the sequence.
+- Players have `SS_INPUT_TIME_PER_STEP` (default: **1500ms**) per step in the sequence.
 - Total input time for sequence length N: `N × 1500ms`.
 - A countdown timer is visible during input.
 
@@ -129,12 +129,12 @@ As the player clicks tiles:
 
 | Event | Points |
 |---|---|
-| Surviving a round | `SS_SURVIVE_POINTS` (default: **50**) |
+| Surviving a round | `SS_SURVIVE` (default: **50**) |
 | Perfect round (no wrong taps before correct completion) | `SS_PERFECT_ROUND_BONUS` (default: **25** bonus) |
 | Surviving a Chaos Round | `SS_CHAOS_SURVIVE_BONUS` (default: **50** bonus, on top of base survive) |
-| Speed bonus | `SS_SPEED_BONUS_PER_MS` (default: **0.05** per ms under the time limit) |
+| Speed bonus | `SS_SPEED_BONUS_PER` (default: **0.05** per ms under the time limit) |
 | Last player standing | `SS_WINNER_BONUS` (default: **200**) |
-| Elimination placement bonus | `SS_PLACEMENT_POINTS` × (totalPlayers − rank + 1) (default: **20** × placement) |
+| Elimination placement bonus | `SS_PLACEMENT` × (totalPlayers − rank + 1) (default: **20** × placement) |
 
 ### 1.4 Server-Side State Schema
 
@@ -367,18 +367,18 @@ export const SS_STARTING_LENGTH = 3;
 export const SS_MAX_STRIKES = 3;
 export const SS_CHAOS_INTERVAL = 4;              // every 4th round
 
-export const SS_TILE_FLASH_DURATION_MS = 500;
-export const SS_TILE_GAP_MS = 200;
-export const SS_INPUT_TIME_PER_STEP_MS = 1500;
-export const SS_ROUND_RESULTS_SECONDS = 2;
-export const SS_TRANSITION_SECONDS = 1;
+export const SS_TILE_FLASH_DURATION = 500;
+export const SS_TILE_GAP = 200;
+export const SS_INPUT_TIME_PER_STEP = 1500;
+export const SS_ROUND_RESULTS = 2;
+export const SS_TRANSITION = 1;
 
-export const SS_SURVIVE_POINTS = 50;
+export const SS_SURVIVE = 50;
 export const SS_PERFECT_ROUND_BONUS = 25;
 export const SS_CHAOS_SURVIVE_BONUS = 50;
-export const SS_SPEED_BONUS_PER_MS = 0.05;
+export const SS_SPEED_BONUS_PER = 0.05;
 export const SS_WINNER_BONUS = 200;
-export const SS_PLACEMENT_POINTS = 20;
+export const SS_PLACEMENT = 20;
 
 export const SS_GRID_SIZE = 9;                   // 3×3
 export const SS_GRID_COLS = 3;
@@ -462,10 +462,10 @@ const handleTap = (index: number) => {
 #### Server-Side Handler Registration
 
 ```typescript
-// server/minigames/sequence-sam/SequenceSamGame.ts
+// server/rmhbox/minigames/sequence-sam/SequenceSamGame.ts
 export class SequenceSamGame { /* … */ }
 
-// server/minigame-registry.ts
+// server/rmhbox/game-coordinator.ts
 MINIGAME_SERVER_REGISTRY.set('sequence-sam', SequenceSamGame);
 ```
 
@@ -508,7 +508,7 @@ Spectators see pattern steps, all players' progress (completion status), and eli
 
 ### 2.2 Game Concept
 
-Chaotic cooperative spelling through distributed responsibility. A target sentence appears. The 26 letters of the alphabet are divided among the players — each player is responsible for a subset of keys. The group must collaboratively type the sentence in order, character by character. Every `HK_RESHUFFLE_INTERVAL_SECONDS` (default: **8 seconds**), the keyboard is reshuffled and assignments change.
+Chaotic cooperative spelling through distributed responsibility. A target sentence appears. The 26 letters of the alphabet are divided among the players — each player is responsible for a subset of keys. The group must collaboratively type the sentence in order, character by character. Every `HK_RESHUFFLE_INTERVAL` (default: **8 seconds**), the keyboard is reshuffled and assignments change.
 
 ### 2.3 Detailed Mechanics
 
@@ -524,7 +524,7 @@ Chaotic cooperative spelling through distributed responsibility. A target senten
 
 #### 2.3.2 Sentence Selection
 
-Sentences come from `/public/data/rmhbox/human-keyboard/sentences.json`:
+Sentences come from `data/rmhbox/human-keyboard/sentences.json`:
 
 ```typescript
 interface TargetSentence {
@@ -567,11 +567,11 @@ function assignKeys(playerIds: string[]): Map<string, string[]> {
 
 For 5 players, each gets ~5 letters. For 3 players, each gets ~8–9 letters.
 
-**Spaces** are handled automatically — no player "owns" the space key. When the next character in the sentence is a space, the server auto-advances to the next letter after a short delay (`HK_SPACE_DELAY_MS`, default: **200ms**), simulating an automatic space.
+**Spaces** are handled automatically — no player "owns" the space key. When the next character in the sentence is a space, the server auto-advances to the next letter after a short delay (`HK_SPACE_DELAY`, default: **200ms**), simulating an automatic space.
 
 #### 2.3.4 Key Reshuffling
 
-Every `HK_RESHUFFLE_INTERVAL_SECONDS` (default: **8s**), the server:
+Every `HK_RESHUFFLE_INTERVAL` (default: **8s**), the server:
 
 1. Re-randomizes key assignments using the same algorithm.
 2. Broadcasts `HK_RESHUFFLE` with the new assignments.
@@ -589,7 +589,7 @@ Players must constantly check their UI to see which letters they currently own.
    - The server checks if the player is the one assigned to that key.
    - **Correct key by correct player:** Cursor advances. `HK_KEY_CORRECT` broadcast.
    - **Correct key by WRONG player:** The press is **rejected** (they don't own that letter right now). `HK_KEY_WRONG_PLAYER` sent to the pressing player only.
-   - **Wrong key entirely:** `HK_KEY_WRONG` sent to the pressing player. A small time penalty of `HK_WRONG_KEY_PENALTY_MS` (default: **500ms**) is added — the cursor is locked for that duration, and nobody can type. This discourages random key-mashing.
+   - **Wrong key entirely:** `HK_KEY_WRONG` sent to the pressing player. A small time penalty of `HK_WRONG_KEY_LOCK` (default: **500ms**) is added — the cursor is locked for that duration, and nobody can type. This discourages random key-mashing.
 
 **Input rate limit:** Each player can send at most `HK_INPUT_RATE_LIMIT` (default: **5**) key presses per second per player. This prevents rapid-fire guessing.
 
@@ -599,12 +599,12 @@ This game is **cooperative** — the group works together. However, individual c
 
 | Metric | Points |
 |---|---|
-| Each correct key press | `HK_CORRECT_KEY_POINTS` (default: **20**) |
+| Each correct key press | `HK_CORRECT_KEY` (default: **20**) |
 | No incorrect presses (personal accuracy = 100%) | `HK_PERFECT_ACCURACY_BONUS` (default: **200**) |
 | Team completes sentence | `HK_COMPLETION_BONUS` (default: **100** to each player) |
 | Time bonus (if completed) | `HK_TIME_BONUS_PER_SECOND` (default: **5**) × seconds remaining |
 | MVP bonus (most correct key presses) | `HK_MVP_BONUS` (default: **100**) |
-| Wrong key press | `HK_WRONG_KEY_PENALTY_POINTS` (default: **-5**) |
+| Wrong key press | `HK_WRONG_KEY_PENALTY` (default: **-5**) |
 
 **Group performance is ranked against a time/accuracy curve.** The team's performance is compared to an expected completion curve to derive overall quality:
 - If time ≤ 50% of limit → "Outstanding" (1.5× multiplier on all individual scores)
@@ -811,18 +811,18 @@ components/rmhbox/minigames/human-keyboard/
 ### 2.13 Constants
 
 ```typescript
-export const HK_TYPING_DURATION_SECONDS = 90;
-export const HK_SENTENCE_REVEAL_SECONDS = 3;
-export const HK_RESULTS_SECONDS = 5;
+export const HK_TYPING_DURATION = 90;
+export const HK_SENTENCE_REVEAL = 3;
+export const HK_RESULTS = 5;
 
-export const HK_RESHUFFLE_INTERVAL_SECONDS = 8;
-export const HK_RESHUFFLE_WARNING_SECONDS = 3;
-export const HK_SPACE_DELAY_MS = 200;
-export const HK_WRONG_KEY_PENALTY_MS = 500;
+export const HK_RESHUFFLE_INTERVAL = 8;
+export const HK_RESHUFFLE_WARNING = 3;
+export const HK_SPACE_DELAY = 200;
+export const HK_WRONG_KEY_LOCK = 500;
 export const HK_INPUT_RATE_LIMIT = 5;             // max presses per second per player
 
-export const HK_CORRECT_KEY_POINTS = 20;
-export const HK_WRONG_KEY_PENALTY_POINTS = -5;
+export const HK_CORRECT_KEY = 20;
+export const HK_WRONG_KEY_PENALTY = -5;
 export const HK_PERFECT_ACCURACY_BONUS = 200;
 export const HK_COMPLETION_BONUS = 100;
 export const HK_TIME_BONUS_PER_SECOND = 5;
@@ -904,10 +904,10 @@ const handleKeyPress = (key: string) => {
 #### Server-Side Handler Registration
 
 ```typescript
-// server/minigames/human-keyboard/HumanKeyboardGame.ts
+// server/rmhbox/minigames/human-keyboard/HumanKeyboardGame.ts
 export class HumanKeyboardGame { /* … */ }
 
-// server/minigame-registry.ts
+// server/rmhbox/game-coordinator.ts
 MINIGAME_SERVER_REGISTRY.set('human-keyboard', HumanKeyboardGame);
 ```
 
@@ -957,7 +957,7 @@ A momentum-based accuracy game inspired by curling. Players "flick" their cursor
 
 #### 3.3.1 Game Flow
 
-The game consists of `CC_TOTAL_ENDS` (default: **3**) "ends" (curling terminology for rounds). In each end, every player launches one stone.
+The game consists of `CU_TOTAL_ENDS` (default: **3**) "ends" (curling terminology for rounds). In each end, every player launches one stone.
 
 | Phase | Duration | Description |
 |---|---|---|
@@ -1032,7 +1032,7 @@ interface StonePhysics {
 **Simulation parameters:**
 - `CU_BASE_FRICTION` (default: **0.98** — velocity multiplier per tick, < 1 so it slows down).
 - `CU_MAX_LAUNCH_SPEED` (default: **15** pixels/tick).
-- `CU_SIMULATION_TICK_MS` (default: **33ms**, ~30 ticks/second).
+- `CU_SIMULATION_TICK` (default: **33ms**, ~30 ticks/second).
 - Launch velocity: `power × CU_MAX_LAUNCH_SPEED`, directed along `angle`.
 - Each tick: `velocity *= friction`, `position += velocity`.
 - Stone stops when `|velocity| < CU_STOP_THRESHOLD` (default: **0.1**).
@@ -1057,7 +1057,7 @@ While a stone is in motion, OTHER players (not the thrower) can "sweep" to reduc
 
 1. Players wiggle their cursor/finger rapidly in the area **in front of** the stone (within `CU_SWEEP_ZONE_RADIUS` (default: **60px**) ahead of the stone's direction).
 2. The server detects sweeping by measuring the frequency of `SWEEP_INPUT` events from a player.
-3. Sweep effectiveness is calculated as: number of valid sweep events received in the last `CU_SWEEP_WINDOW_MS` (default: **500ms**).
+3. Sweep effectiveness is calculated as: number of valid sweep events received in the last `CU_SWEEP_WINDOW` (default: **500ms**).
 4. If sweep frequency ≥ `CU_SWEEP_THRESHOLD` (default: **6** events per window), the stone's friction is temporarily reduced to `CU_SWEPT_FRICTION` (default: **0.995** — much less deceleration).
 5. The swept friction only applies while sweeping is active. Once sweeping stops, friction returns to `CU_BASE_FRICTION`.
 
@@ -1081,10 +1081,10 @@ After all players throw in an end, stones are scored by proximity to bullseye:
 
 | Zone | Points |
 |---|---|
-| Bullseye (within `CU_BULLSEYE_RADIUS`) | `CU_BULLSEYE_POINTS` (default: **100**) |
-| Inner ring | `CU_INNER_RING_POINTS` (default: **60**) |
-| Outer ring | `CU_OUTER_RING_POINTS` (default: **30**) |
-| In the House (outside outer ring but within House boundary) | `CU_HOUSE_POINTS` (default: **10**) |
+| Bullseye (within `CU_BULLSEYE_RADIUS`) | `CU_BULLSEYE` (default: **100**) |
+| Inner ring | `CU_INNER_RING` (default: **60**) |
+| Outer ring | `CU_OUTER_RING` (default: **30**) |
+| In the House (outside outer ring but within House boundary) | `CU_HOUSE` (default: **10**) |
 | Out of House / out of play | **0** |
 
 **Closest-to-center bonus:** The player whose stone is closest to the bullseye center (by Euclidean distance) gets `CU_CLOSEST_BONUS` (default: **50**) extra points for that end.
@@ -1292,11 +1292,11 @@ components/rmhbox/minigames/cursor-curling/
 
 ```typescript
 export const CU_TOTAL_ENDS = 3;
-export const CU_END_START_SECONDS = 2;
-export const CU_AIM_DURATION_SECONDS = 3;
-export const CU_POWER_DURATION_SECONDS = 2;
-export const CU_END_RESULTS_SECONDS = 5;
-export const CU_TRANSITION_SECONDS = 2;
+export const CU_END_START = 2;
+export const CU_AIM_DURATION = 3;
+export const CU_POWER_DURATION = 2;
+export const CU_END_RESULTS = 5;
+export const CU_TRANSITION = 2;
 
 export const CU_CANVAS_WIDTH = 400;
 export const CU_CANVAS_HEIGHT = 600;
@@ -1311,19 +1311,19 @@ export const CU_LAUNCH_Y = 550;
 export const CU_BASE_FRICTION = 0.98;
 export const CU_SWEPT_FRICTION = 0.995;
 export const CU_MAX_LAUNCH_SPEED = 15;
-export const CU_SIMULATION_TICK_MS = 33;
+export const CU_SIMULATION_TICK = 33;
 export const CU_STOP_THRESHOLD = 0.1;
 export const CU_RESTITUTION = 0.7;
 
 export const CU_SWEEP_ZONE_RADIUS = 60;
-export const CU_SWEEP_WINDOW_MS = 500;
+export const CU_SWEEP_WINDOW = 500;
 export const CU_SWEEP_THRESHOLD = 6;
 export const CU_SWEEP_INPUT_RATE_LIMIT = 15;      // max inputs per second
 
-export const CU_BULLSEYE_POINTS = 100;
-export const CU_INNER_RING_POINTS = 60;
-export const CU_OUTER_RING_POINTS = 30;
-export const CU_HOUSE_POINTS = 10;
+export const CU_BULLSEYE = 100;
+export const CU_INNER_RING = 60;
+export const CU_OUTER_RING = 30;
+export const CU_HOUSE = 10;
 export const CU_CLOSEST_BONUS = 50;
 ```
 
@@ -1412,10 +1412,10 @@ const handleSweep = (x: number, y: number) => {
 #### Server-Side Handler Registration
 
 ```typescript
-// server/minigames/cursor-curling/CursorCurlingGame.ts
+// server/rmhbox/minigames/cursor-curling/CursorCurlingGame.ts
 export class CursorCurlingGame { /* … */ }
 
-// server/minigame-registry.ts
+// server/rmhbox/game-coordinator.ts
 MINIGAME_SERVER_REGISTRY.set('cursor-curling', CursorCurlingGame);
 ```
 
@@ -1473,9 +1473,9 @@ The game consists of `HT_TOTAL_WAVES` (default: **8**) waves of escalating diffi
 | Wave Results | 2s | Show success/failure, highlight correct/incorrect players |
 
 **Positioning phase duration:**
-- Waves 1–3: `HT_EASY_POSITION_SECONDS` (default: **8s**)
-- Waves 4–6: `HT_MEDIUM_POSITION_SECONDS` (default: **6s**)
-- Waves 7–8: `HT_HARD_POSITION_SECONDS` (default: **4s**)
+- Waves 1–3: `HT_EASY_POSITION` (default: **8s**)
+- Waves 4–6: `HT_MEDIUM_POSITION` (default: **6s**)
+- Waves 7–8: `HT_HARD_POSITION` (default: **4s**)
 
 **Total game time:** ~8 × 14s avg = ~112s ≈ 2 minutes.
 
@@ -1507,7 +1507,7 @@ Each wave's wall is generated by the server:
 
 1. The wall occupies the full grid width and height.
 2. The "hole" is a connected shape made of `N` cells, where `N` = number of players who need to fill it.
-3. The shape is randomly generated from a set of templates (`/public/data/rmhbox/human-tetris/shapes.json`) or procedurally generated with constraints:
+3. The shape is randomly generated from a set of templates (`data/rmhbox/human-tetris/shapes.json`) or procedurally generated with constraints:
    - All hole cells must be **connected** (orthogonally adjacent — no floating islands).
    - The shape must be centered (not touching edges, leaving room for dead zones).
    - Shape complexity increases with wave number.
@@ -1563,9 +1563,9 @@ When the positioning timer expires:
 
 | Outcome | Points (per player) |
 |---|---|
-| Team success (all conditions met) | `HT_SUCCESS_POINTS` (default: **100** per player) |
-| Partial success (some holes filled but not all) | `HT_PARTIAL_POINTS` (default: **30**) × (filled holes / required holes) |
-| Player correctly in hole or dead zone | `HT_CORRECT_POSITION_POINTS` (default: **50**) |
+| Team success (all conditions met) | `HT_SUCCESS` (default: **100** per player) |
+| Partial success (some holes filled but not all) | `HT_PARTIAL` (default: **30**) × (filled holes / required holes) |
+| Player correctly in hole or dead zone | `HT_CORRECT_POSITION` (default: **50**) |
 | Player hit by wall (wrong position) | `HT_HIT_PENALTY` (default: **-20**) |
 | Perfect wave (team success with ≥ 2s remaining) | `HT_PERFECT_WAVE_BONUS` (default: **50** per player) |
 | All 8 waves successful in a row | `HT_STREAK_BONUS` (default: **200** per player) |
@@ -1808,20 +1808,20 @@ export const HT_TOTAL_WAVES = 8;
 export const HT_GRID_COLS = 8;
 export const HT_GRID_ROWS = 6;
 
-export const HT_EASY_POSITION_SECONDS = 8;
-export const HT_MEDIUM_POSITION_SECONDS = 6;
-export const HT_HARD_POSITION_SECONDS = 4;
-export const HT_WALL_PREVIEW_SECONDS = 3;
-export const HT_WALL_IMPACT_SECONDS = 1;
-export const HT_WAVE_RESULTS_SECONDS = 2;
+export const HT_EASY_POSITION = 8;
+export const HT_MEDIUM_POSITION = 6;
+export const HT_HARD_POSITION = 4;
+export const HT_WALL_PREVIEW = 3;
+export const HT_WALL_IMPACT = 1;
+export const HT_WAVE_RESULTS = 2;
 
 export const HT_EXCLUSION_RATIO = 0.2;            // 20% of players must hide in dead zones (on harder waves)
 export const HT_DEAD_ZONE_MIN_COUNT = 2;
 export const HT_MOVE_RATE_LIMIT = 6;               // moves/sec/player
 
-export const HT_SUCCESS_POINTS = 100;
-export const HT_PARTIAL_POINTS = 30;
-export const HT_CORRECT_POSITION_POINTS = 50;
+export const HT_SUCCESS = 100;
+export const HT_PARTIAL = 30;
+export const HT_CORRECT_POSITION = 50;
 export const HT_HIT_PENALTY = -20;
 export const HT_PERFECT_WAVE_BONUS = 50;
 export const HT_STREAK_BONUS = 200;
@@ -1910,10 +1910,10 @@ const handleMove = (direction: 'up' | 'down' | 'left' | 'right') => {
 #### Server-Side Handler Registration
 
 ```typescript
-// server/minigames/human-tetris/HumanTetrisGame.ts
+// server/rmhbox/minigames/human-tetris/HumanTetrisGame.ts
 export class HumanTetrisGame { /* … */ }
 
-// server/minigame-registry.ts
+// server/rmhbox/game-coordinator.ts
 MINIGAME_SERVER_REGISTRY.set('human-tetris', HumanTetrisGame);
 ```
 

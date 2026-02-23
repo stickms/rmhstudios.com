@@ -52,6 +52,10 @@ export interface TimerInfo {
   remaining: number;
   /** Whether the timer is currently paused by the host */
   paused: boolean;
+  /** Whether this is an infinite (no-countdown) timer — full ring + ∞ icon */
+  infinite: boolean;
+  /** Whether to show the host "Next" / force-skip button (only relevant for infinite timers) */
+  showSkip: boolean;
 }
 
 /** Minigame sub-round info displayed in the GameShell footer. */
@@ -236,26 +240,35 @@ export function applyLobbyAction(
     case 'SPECTATOR_PROMOTED': {
       const promoted = lobby.spectators.find((s) => s.userId === data.userId);
       const isMe = data.userId === lobby.myUserId;
+      // Build a player entry from the spectator data, or fall back to the action payload
+      const newPlayer = promoted
+        ? {
+            userId: promoted.userId,
+            userName: promoted.userName,
+            avatarUrl: promoted.avatarUrl,
+            isConnected: true,
+            isReady: false,
+            score: 0,
+            roundScore: 0,
+            isHost: false,
+          }
+        : {
+            userId: data.userId as string,
+            userName: (data.userName as string) ?? 'Player',
+            avatarUrl: null,
+            isConnected: true,
+            isReady: false,
+            score: 0,
+            roundScore: 0,
+            isHost: false,
+          };
+      // Only add if not already in the players list
+      const alreadyPlayer = lobby.players.some((p) => p.userId === data.userId);
       return {
         ...lobby,
-        // If the promoted spectator is me, switch my role to player
         myRole: isMe ? 'player' : lobby.myRole,
         spectators: lobby.spectators.filter((s) => s.userId !== data.userId),
-        players: promoted
-          ? [
-              ...lobby.players,
-              {
-                userId: promoted.userId,
-                userName: promoted.userName,
-                avatarUrl: promoted.avatarUrl,
-                isConnected: true,
-                isReady: false,
-                score: 0,
-                roundScore: 0,
-                isHost: false,
-              },
-            ]
-          : lobby.players,
+        players: alreadyPlayer ? lobby.players : [...lobby.players, newPlayer],
       };
     }
 
@@ -359,11 +372,13 @@ export function applyLobbyAction(
 
     case 'TIMER_START': {
       // A timed phase is starting — store total + remaining for the header ring.
-      // Also forward to currentGame.timeRemaining for backward compatibility.
+      // Sentinel value -1 means infinite (no countdown).
       const total = data.totalDuration as number;
       const remaining = data.timeRemaining as number;
-      useRMHboxStore.setState({ timerInfo: { total, remaining, paused: false } });
-      if (lobby.currentGame) {
+      const infinite = total === -1;
+      const showSkip = infinite ? (data.showSkip as boolean | undefined) ?? true : false;
+      useRMHboxStore.setState({ timerInfo: { total, remaining, paused: false, infinite, showSkip } });
+      if (lobby.currentGame && !infinite) {
         return {
           ...lobby,
           currentGame: { ...lobby.currentGame, timeRemaining: remaining },
@@ -379,8 +394,8 @@ export function applyLobbyAction(
         const prev = useRMHboxStore.getState().timerInfo;
         useRMHboxStore.setState({
           timerInfo: prev
-            ? { total: prev.total, remaining: newTime, paused: prev.paused }
-            : { total: newTime, remaining: newTime, paused: false },
+            ? { total: prev.total, remaining: newTime, paused: prev.paused, infinite: prev.infinite, showSkip: prev.showSkip }
+            : { total: newTime, remaining: newTime, paused: false, infinite: false, showSkip: false },
         });
         // Also update currentGame.timeRemaining for backward compatibility
         if (lobby.currentGame) {
@@ -398,8 +413,8 @@ export function applyLobbyAction(
       const remaining = (data.timeRemaining as number) ?? prev?.remaining ?? 0;
       useRMHboxStore.setState({
         timerInfo: prev
-          ? { total: prev.total, remaining, paused: true }
-          : { total: remaining, remaining, paused: true },
+          ? { total: prev.total, remaining, paused: true, infinite: prev.infinite, showSkip: prev.showSkip }
+          : { total: remaining, remaining, paused: true, infinite: false, showSkip: false },
       });
       return lobby;
     }
@@ -409,8 +424,8 @@ export function applyLobbyAction(
       const remaining = (data.timeRemaining as number) ?? prev?.remaining ?? 0;
       useRMHboxStore.setState({
         timerInfo: prev
-          ? { total: prev.total, remaining, paused: false }
-          : { total: remaining, remaining, paused: false },
+          ? { total: prev.total, remaining, paused: false, infinite: prev.infinite, showSkip: prev.showSkip }
+          : { total: remaining, remaining, paused: false, infinite: false, showSkip: false },
       });
       return lobby;
     }

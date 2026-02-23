@@ -5,21 +5,29 @@
  * rhyme detection via the `rhyming-part` package (which wraps the CMU
  * Pronouncing Dictionary internally). No pre-generated rhyme dictionary
  * is needed — rhyme matching is computed on-the-fly.
+ *
+ * Syllable counts are computed at load time via `syllable-count-english`
+ * which preferentially uses CMU dictionary data, falling back to a
+ * heuristic algorithm.
  */
 
 import fs from 'fs';
 import path from 'path';
 import rhymingPart from 'rhyming-part';
-import { syllable } from 'syllable';
+import { syllableCount as countSyllables } from 'syllable-count-english';
 
 // ─── Types ───────────────────────────────────────────────────────
 
+/** Raw shape stored in root-words.json (minimal — no precomputed phonetic data). */
+interface RootWordRaw {
+  word: string;
+  difficulty: 'easy' | 'medium' | 'hard';
+}
+
+/** Hydrated root word with runtime-computed syllable count. */
 export interface RootWord {
   word: string;
-  phonetic: string;
   syllableCount: number;
-  rhymeEndSound: string;
-  knownRhymeCount: number;
   difficulty: 'easy' | 'medium' | 'hard';
 }
 
@@ -27,16 +35,22 @@ export interface RootWord {
 
 let cachedRootWords: RootWord[] | null = null;
 
-const DATA_DIR = path.join(process.cwd(), 'public', 'data', 'rmhbox', 'rhyme-time');
+const DATA_DIR = path.join(process.cwd(), 'data', 'rmhbox', 'rhyme-time');
 
 /**
  * Loads and returns the root words from root-words.json.
+ * Syllable counts are computed via `syllable-count-english` on first load.
  * Cached as a singleton — subsequent calls return the same array reference.
  */
 export function loadRootWords(): RootWord[] {
   if (cachedRootWords) return cachedRootWords;
   const raw = fs.readFileSync(path.join(DATA_DIR, 'root-words.json'), 'utf-8');
-  cachedRootWords = JSON.parse(raw) as RootWord[];
+  const rawWords = JSON.parse(raw) as RootWordRaw[];
+  cachedRootWords = rawWords.map((rw) => ({
+    word: rw.word,
+    syllableCount: countSyllables(rw.word),
+    difficulty: rw.difficulty,
+  }));
   return cachedRootWords;
 }
 
@@ -65,7 +79,7 @@ export function isValidRhyme(word: string, rootWord: string): boolean {
  * A multi-syllable rhyme has syllableCount >= rootWord.syllableCount + 1.
  */
 export function isMultiSyllableRhyme(word: string, rootSyllableCount: number): boolean {
-  return syllable(word) >= rootSyllableCount + 1;
+  return countSyllables(word) >= rootSyllableCount + 1;
 }
 
 /**

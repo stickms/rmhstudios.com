@@ -7,22 +7,24 @@
  *   - Neutral background when hidden, with hover effects if clickable
  *   - Subtle color borders/tints for spymasters on hidden tiles
  *
- * Operatives use a two-step highlight-then-submit flow:
- *   1. First click highlights the tile (amber border + pointer icon)
- *   2. Clicking the pointer icon (or the tile again) submits the guess
- *   - Clicking a different tile moves the highlight
+ * Operatives can highlight multiple tiles. Clicking a tile toggles its
+ * highlight state. Only clicking the confirm circle (bottom-right) submits.
+ * A badge in the upper-left shows how many operatives have highlighted
+ * each tile (broadcast from the server).
  *
  * Props:
  *   grid: GridTileClient[] — 25 grid tiles
  *   canGuess: boolean — Whether the current user can click tiles
  *   isSpymaster: boolean — Whether to show key-card coloring on hidden tiles
+ *   highlightCounts: Record<number, number> — Per-tile operative highlight counts from server
  *   onTileClick: (position: number) => void — Click handler (submits guess)
+ *   onHighlightChange: (position: number, highlighted: boolean) => void — Toggle highlight
  */
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MousePointerClick } from 'lucide-react';
+import { MousePointerClick, Users } from 'lucide-react';
 import type { GridTileClient } from './UndercoverAgentGame';
 
 // ─── Color Mapping ───────────────────────────────────────────────
@@ -31,8 +33,8 @@ import type { GridTileClient } from './UndercoverAgentGame';
 const REVEALED_COLORS: Record<string, { bg: string; text: string }> = {
   RED_AGENT: { bg: 'bg-red-600/80', text: 'text-white' },
   BLUE_AGENT: { bg: 'bg-blue-600/80', text: 'text-white' },
-  BYSTANDER: { bg: 'bg-amber-200/40', text: 'text-amber-100' },
-  ASSASSIN: { bg: 'bg-black border-2 dark:border-white/60 border-black/60', text: 'text-red-500' },
+  BYSTANDER: { bg: 'bg-amber-200/50 dark:bg-amber-200/40', text: 'text-amber-900 dark:text-amber-100' },
+  ASSASSIN: { bg: 'bg-neutral-900 border-2 dark:border-white/60 border-neutral-400/60', text: 'text-white' },
 };
 
 /** Spymaster key-card border colors for hidden tiles */
@@ -57,52 +59,71 @@ interface GridBoardProps {
   grid: GridTileClient[];
   canGuess: boolean;
   isSpymaster: boolean;
+  highlightCounts: Record<number, number>;
   onTileClick: (position: number) => void;
+  onHighlightChange: (position: number, highlighted: boolean) => void;
 }
 
-export default function GridBoard({ grid, canGuess, isSpymaster, onTileClick }: GridBoardProps) {
-  // Track which tile the operative has highlighted (first click)
-  const [highlightedPos, setHighlightedPos] = useState<number | null>(null);
+export default function GridBoard({ grid, canGuess, isSpymaster, highlightCounts, onTileClick, onHighlightChange }: GridBoardProps) {
+  // Track which tiles the operative has locally highlighted (multi-select)
+  const [highlighted, setHighlighted] = useState<Set<number>>(new Set());
 
-  // Clear highlight when canGuess changes (e.g. turn ends) or when grid tiles get revealed
+  // Clear local highlights when canGuess changes (e.g. turn ends)
   useEffect(() => {
-    if (!canGuess) setHighlightedPos(null);
+    if (!canGuess) setHighlighted(new Set());
   }, [canGuess]);
 
-  // Clear highlight if the highlighted tile gets revealed
+  // Clear local highlights for tiles that get revealed
   useEffect(() => {
-    if (highlightedPos !== null) {
-      const tile = grid.find((t) => t.position === highlightedPos);
-      if (tile?.state === 'REVEALED') setHighlightedPos(null);
-    }
-  }, [grid, highlightedPos]);
+    setHighlighted((prev) => {
+      let changed = false;
+      const next = new Set(prev);
+      for (const pos of prev) {
+        const tile = grid.find((t) => t.position === pos);
+        if (tile?.state === 'REVEALED') {
+          next.delete(pos);
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [grid]);
 
-  const handleTileClick = (position: number) => {
+  const handleTileClick = useCallback((position: number) => {
     if (!canGuess) return;
-    if (highlightedPos === position) {
-      // Second click on same tile → submit guess
-      onTileClick(position);
-      setHighlightedPos(null);
-    } else {
-      // First click → highlight this tile
-      setHighlightedPos(position);
-    }
-  };
+    // Toggle highlight
+    setHighlighted((prev) => {
+      const next = new Set(prev);
+      if (next.has(position)) {
+        next.delete(position);
+        onHighlightChange(position, false);
+      } else {
+        next.add(position);
+        onHighlightChange(position, true);
+      }
+      return next;
+    });
+  }, [canGuess, onHighlightChange]);
 
-  const handleConfirmClick = (e: React.MouseEvent, position: number) => {
+  const handleConfirmClick = useCallback((e: React.MouseEvent, position: number) => {
     e.stopPropagation();
     onTileClick(position);
-    setHighlightedPos(null);
-  };
+    setHighlighted((prev) => {
+      const next = new Set(prev);
+      next.delete(position);
+      return next;
+    });
+  }, [onTileClick]);
 
   return (
     <div className="grid w-full max-w-lg grid-cols-5 gap-1.5 sm:gap-2">
       {grid.map((tile) => {
         const isRevealed = tile.state === 'REVEALED';
         const revealedStyle = isRevealed && tile.type ? REVEALED_COLORS[tile.type] : null;
-        const spymasterHint = !isRevealed && isSpymaster && tile.type ? SPYMASTER_HINTS[tile.type] : '';
+        const spymasterHint = isSpymaster && tile.type ? SPYMASTER_HINTS[tile.type] : '';
         const clickable = canGuess && !isRevealed;
-        const isHighlighted = highlightedPos === tile.position && !isRevealed;
+        const isHighlighted = highlighted.has(tile.position) && !isRevealed;
+        const hlCount = highlightCounts[tile.position] ?? 0;
 
         return (
           <motion.button
@@ -117,19 +138,34 @@ export default function GridBoard({ grid, canGuess, isSpymaster, onTileClick }: 
               ${getWordSizeClass(tile.word)}
               ${
                 isRevealed
-                  ? `${revealedStyle?.bg ?? ''} ${revealedStyle?.text ?? ''} border-transparent opacity-80`
+                  ? `${revealedStyle?.bg ?? ''} ${revealedStyle?.text ?? ''} border-transparent opacity-80 ${spymasterHint}`
                   : isHighlighted
-                    ? 'border-amber-400 bg-amber-400/15 text-(--rmhbox-text) ring-2 ring-amber-400/50'
+                    ? `border-amber-400 bg-amber-400/15 text-(--rmhbox-text) ring-2 ring-amber-400/50 ${spymasterHint}`
                     : `border-(--rmhbox-border) bg-(--rmhbox-surface) text-(--rmhbox-text) ${spymasterHint}`
               }
-              ${clickable && !isHighlighted ? 'cursor-pointer hover:border-(--rmhbox-accent) hover:bg-(--rmhbox-accent)/10' : ''}
+              ${clickable && !isHighlighted ? 'cursor-pointer hover:border-amber-400/60 hover:bg-transparent' : ''}
               ${clickable && isHighlighted ? 'cursor-pointer' : ''}
               ${!clickable && !isRevealed ? 'cursor-default' : ''}
             `}
           >
             <span className="text-center leading-tight break-all">{tile.word}</span>
 
-            {/* Confirm guess icon — appears on highlighted tiles */}
+            {/* Highlight count badge — upper left, visible to everyone when > 0 */}
+            <AnimatePresence>
+              {hlCount > 0 && !isRevealed && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.5 }}
+                  className="absolute -top-1.5 -left-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-amber-400 text-black shadow-lg sm:h-6 sm:w-6"
+                  title={`${hlCount} operative${hlCount !== 1 ? 's' : ''} highlighting`}
+                >
+                  <span className="text-[9px] font-bold sm:text-[10px]">{hlCount}</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Confirm guess icon — bottom right on highlighted tiles */}
             <AnimatePresence>
               {isHighlighted && (
                 <motion.div
@@ -137,7 +173,7 @@ export default function GridBoard({ grid, canGuess, isSpymaster, onTileClick }: 
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.5 }}
                   onClick={(e) => handleConfirmClick(e, tile.position)}
-                  className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-amber-400 text-black shadow-lg cursor-pointer hover:bg-amber-300 transition-colors sm:h-6 sm:w-6"
+                  className="absolute -bottom-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-amber-400 text-black shadow-lg cursor-pointer hover:bg-amber-300 transition-colors sm:h-6 sm:w-6"
                   title="Confirm guess"
                 >
                   <MousePointerClick className="h-3 w-3 sm:h-3.5 sm:w-3.5" />

@@ -22,8 +22,6 @@ import {
   StopCircle,
   ArrowRightLeft,
   Shield,
-  Pause,
-  Play,
 } from 'lucide-react';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { emit } from '@/lib/rmhbox/socket';
@@ -33,7 +31,6 @@ import { toast } from '@/lib/rmhbox/toast-store';
 export default function HostControlModal() {
   const [isOpen, setIsOpen] = useState(false);
   const lobby = useRMHboxStore((s) => s.lobby);
-  const timerInfo = useRMHboxStore((s) => s.timerInfo);
 
   const handleForceEnd = useCallback(() => {
     if (!lobby) return;
@@ -69,11 +66,6 @@ export default function HostControlModal() {
     },
     [lobby],
   );
-
-  const handlePauseTimer = useCallback(() => {
-    if (!lobby) return;
-    emit(C2S.GAME_PAUSE_TIMER, { lobbyId: lobby.lobbyId });
-  }, [lobby]);
 
   if (!lobby) return null;
 
@@ -133,25 +125,15 @@ export default function HostControlModal() {
 
             {/* Force End Game */}
             {isInGame && (
-              <div className="mb-4 flex gap-2">
+              <div className="mb-4">
                 <button
                   onClick={handleForceEnd}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:brightness-110"
+                  className="flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:brightness-110"
                   style={{ backgroundColor: 'var(--rmhbox-danger)' }}
                 >
                   <StopCircle className="h-4 w-4" />
                   Force End
                 </button>
-                {timerInfo && (
-                  <button
-                    onClick={handlePauseTimer}
-                    className="flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:brightness-110"
-                    style={{ backgroundColor: timerInfo.paused ? 'var(--rmhbox-success)' : 'var(--rmhbox-warning)' }}
-                  >
-                    {timerInfo.paused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
-                    {timerInfo.paused ? 'Resume' : 'Pause'}
-                  </button>
-                )}
               </div>
             )}
 

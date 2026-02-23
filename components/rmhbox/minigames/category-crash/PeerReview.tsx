@@ -3,15 +3,13 @@
  *
  * Shows one category at a time. For each category, lists all anonymized
  * player answers. Players click an answer to toggle a "crash" challenge.
- * Crashes are limited to `maxCrashes` per player.
+ * Crashes are unlimited — majority vote determines the outcome.
  *
  * Props:
  *   letter: string
  *   categories: Category[]
  *   anonymizedAnswers: AnonymizedAnswerSet[]
  *   myCrashes: CrashEntry[]
- *   crashesUsed: number
- *   maxCrashes: number
  *   timeRemaining: number
  *   currentUserId: string
  *   onCrash: (targetUserId, categoryIndex) => void
@@ -21,7 +19,7 @@
 
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Clock, Zap, ChevronLeft, ChevronRight, Flame } from 'lucide-react';
+import { Clock, ChevronLeft, ChevronRight, Flame } from 'lucide-react';
 import type { Category, AnonymizedAnswerSet } from './CategoryCrashGame';
 
 interface CrashEntry {
@@ -34,8 +32,6 @@ interface PeerReviewProps {
   categories: Category[];
   anonymizedAnswers: AnonymizedAnswerSet[];
   myCrashes: CrashEntry[];
-  crashesUsed: number;
-  maxCrashes: number;
   timeRemaining: number;
   currentUserId: string;
   onCrash: (targetUserId: string, categoryIndex: number) => void;
@@ -47,8 +43,6 @@ export default function PeerReview({
   categories,
   anonymizedAnswers,
   myCrashes,
-  crashesUsed,
-  maxCrashes,
   timeRemaining,
   currentUserId: _currentUserId,
   onCrash,
@@ -65,7 +59,6 @@ export default function PeerReview({
     return s;
   }, [myCrashes]);
 
-  const canCrash = crashesUsed < maxCrashes;
   const activeCategory = categories[activeCatIndex];
 
   // Count crashes per category for the dot indicators
@@ -81,10 +74,6 @@ export default function PeerReview({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <h3 className="text-lg font-bold">Peer Review</h3>
-          <div className="flex items-center gap-1.5 rounded-lg bg-(--rmhbox-accent)/10 px-3 py-1 text-sm font-medium text-(--rmhbox-accent)">
-            <Zap size={14} />
-            {maxCrashes - crashesUsed} crashes left
-          </div>
         </div>
         <div
           className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium ${
@@ -168,7 +157,7 @@ export default function PeerReview({
             const isCrashed = crashSet.has(key);
             const isEmpty = !answer;
             const startsCorrectly = answer ? answer[0]?.toUpperCase() === letter.toUpperCase() : false;
-            const disabled = isEmpty || (!isCrashed && !canCrash);
+            const disabled = isEmpty;
 
             return (
               <button
