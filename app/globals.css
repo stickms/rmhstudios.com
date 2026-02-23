@@ -981,22 +981,28 @@ body {
   color: var(--background);
 }
 
-/* Custom scrollbar */
+/* Minimalistic scrollbar (overridden by specific games/apps) */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--background);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(var(--neon-pink), var(--neon-cyan));
-  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(var(--neon-cyan), var(--neon-pink));
+  background: rgba(255, 255, 255, 0.3);
 }
 
 /* Cursed Logic duel animations */
