@@ -970,8 +970,7 @@ export const PuzzleCard: React.FC<PuzzleCardProps> = ({ puzzle, gameState, onSol
         vy *= 16;
 
         // Fling puzzle: resolve based on fling direction
-        const isFling = puzzle.data.type === 'minigame' && puzzle.data.variant === 'fling_direction';
-        if (isFling && puzzle.data.targetDirection) {
+        if (puzzle.data.type === 'minigame' && puzzle.data.variant === 'fling_direction' && puzzle.data.targetDirection) {
             const flungDir = getFlingDirectionFromVelocity(vx, vy);
             const correct = flungDir === puzzle.data.targetDirection;
             handleAnswer(correct);
