@@ -16,20 +16,14 @@ import { SavedLocations } from './SavedLocations';
 import { TemperatureHeatMap } from './TemperatureHeatMap';
 import { HistoricalTemperatureTrend } from './HistoricalTemperatureTrend';
 import { PrecipitationTotals } from './PrecipitationTotals';
-import { Loader2, AlertCircle, Menu } from 'lucide-react';
+import { Loader2, AlertCircle, Menu, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
 import { ExportWeatherData } from './ExportWeatherData';
 import { PressureTendencyGraph } from './PressureTendencyGraph';
 import { MeteogramView } from './MeteogramView';
 import { ModelDataToggle } from './ModelDataToggle';
 import { SoundingProfileChart } from './SoundingProfileChart';
-import { WeatherMoodEmoji } from './WeatherMoodEmoji';
-import { WeatherHistoryFact } from './WeatherHistoryFact';
-import { ComplainOMeter } from './ComplainOMeter';
-import { WeatherRecipeSuggestion } from './WeatherRecipeSuggestion';
-import { ItCouldBeWorse } from './ItCouldBeWorse';
-import { WeatherFortuneCookie } from './WeatherFortuneCookie';
-import { WeatherPet } from './WeatherPet';
 import { TripWeatherPlanner } from './TripWeatherPlanner';
 import { MultiCityComparison } from './MultiCityComparison';
 
@@ -114,6 +108,13 @@ export const WeatherDashboard = () => {
         {/* Top Bar with Search and Settings */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-4 w-full flex-1">
+            <Link
+              href="/"
+              className="p-4 bg-weather-glass border border-weather rounded-2xl hover:bg-weather-glass-hover transition-all backdrop-blur-md shrink-0"
+              title="Back to homepage"
+            >
+              <ArrowLeft className="w-6 h-6 text-weather" />
+            </Link>
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
               className="p-4 bg-weather-glass border border-weather rounded-2xl hover:bg-weather-glass-hover transition-all backdrop-blur-md"
@@ -277,32 +278,11 @@ export const WeatherDashboard = () => {
                   <MeteogramView hourly={data.hourly} />
                   <ModelDataToggle />
                   <SoundingProfileChart />
-                  <WeatherMoodEmoji condition={data.current.condition} />
-                  <WeatherHistoryFact />
                 </div>
                 <div className="bg-weather-glass rounded-2xl p-6 border border-weather flex flex-col gap-4">
-                  <ComplainOMeter temp={data.current.temp} condition={data.current.condition} />
-                  <WeatherRecipeSuggestion condition={data.current.condition} />
-                  <ItCouldBeWorse currentTemp={data.current.temp} />
-                  <WeatherFortuneCookie />
-                  <WeatherPet condition={data.current.condition} />
-                  <div className="flex flex-col gap-6 max-w-md w-full mx-auto">
-                    <div className="flex flex-col gap-4 items-center">
-                      <div className="w-full max-w-xs">
-                        <TripWeatherPlanner />
-                      </div>
-                    </div>
-                    <div className="flex flex-col gap-4 items-center">
-                      <div className="w-full max-w-xs">
-                        <MultiCityComparison />
-                      </div>
-                    </div>
-                    <div className="flex flex-col gap-4 items-center">
-                      <div className="w-full max-w-xs">
-                        <ExportWeatherData data={data} />
-                      </div>
-                    </div>
-                  </div>
+                  <TripWeatherPlanner />
+                  <MultiCityComparison />
+                  <ExportWeatherData data={data} />
                 </div>
               </div>
             </motion.div>
@@ -347,6 +327,13 @@ export const WeatherDashboard = () => {
         {/* Top Bar with Search and Settings */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-4 w-full flex-1">
+            <Link
+              href="/"
+              className="p-4 bg-weather-glass border border-weather rounded-2xl hover:bg-weather-glass-hover transition-all backdrop-blur-md shrink-0"
+              title="Back to homepage"
+            >
+              <ArrowLeft className="w-6 h-6 text-weather" />
+            </Link>
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
               className="p-4 bg-weather-glass border border-weather rounded-2xl hover:bg-weather-glass-hover transition-all backdrop-blur-md"

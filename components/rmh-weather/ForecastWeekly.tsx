@@ -30,14 +30,14 @@ export const ForecastWeekly = ({ data, units }: ForecastWeeklyProps) => {
           7-Day Forecast
         </h3>
       </div>
-      <div className="divide-y border-weather">
+      <div className="divide-y border-weather overflow-x-auto">
         {data.map((day, i) => {
           const date = new Date(day.date).toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
           const Icon = getIcon(day.conditionCode);
           const isToday = i === 0;
 
           return (
-            <div key={day.date} className="px-6 py-4 flex items-center justify-between group hover:bg-white/5 transition-colors">
+            <div key={day.date} className="px-6 py-4 flex items-center justify-between group hover:bg-white/5 transition-colors min-w-105">
               <div className="w-32">
                 <div className={`font-medium ${isToday ? 'text-blue-500 font-bold' : 'text-weather'}`}>
                   {isToday ? 'Today' : date.split(',')[0]}

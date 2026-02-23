@@ -14,6 +14,7 @@ export interface WeatherData {
     temp: number;
     conditionCode: number;
     precipProb: number;
+    pressure: number;
   }>;
   daily: Array<{
     date: string;
@@ -37,7 +38,7 @@ const GEOCODING_BASE = 'https://geocoding-api.open-meteo.com/v1/search';
 
 export async function fetchWeather(lat: number, lon: number, units: 'metric' | 'imperial'): Promise<WeatherData> {
   const unitQuery = units === 'imperial' ? '&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch' : '';
-  const url = `${OPEN_METEO_BASE}?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,weather_code,wind_speed_10m,visibility,uv_index&hourly=temperature_2m,weather_code,precipitation_probability&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=auto${unitQuery}`;
+  const url = `${OPEN_METEO_BASE}?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,weather_code,wind_speed_10m,visibility,uv_index&hourly=temperature_2m,weather_code,precipitation_probability,surface_pressure&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=auto${unitQuery}`;
 
   const res = await fetch(url);
   if (!res.ok) throw new Error('Failed to fetch weather data');
@@ -59,6 +60,7 @@ export async function fetchWeather(lat: number, lon: number, units: 'metric' | '
       temp: data.hourly.temperature_2m[i],
       conditionCode: data.hourly.weather_code[i],
       precipProb: data.hourly.precipitation_probability[i],
+      pressure: data.hourly.surface_pressure[i],
     })),
     daily: data.daily.time.map((date: string, i: number) => ({
       date,

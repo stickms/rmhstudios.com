@@ -43,7 +43,7 @@ export function AppsSection() {
           transition={{ duration: 1 }}
           className="w-full"
         >
-          <GameCarousel games={apps as any} />
+          <GameCarousel games={apps.filter((a) => !a.hidden) as any} />
         </motion.div>
       </div>
     </section>

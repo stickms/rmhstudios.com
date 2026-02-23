@@ -23,7 +23,7 @@ export default function AppsPage() {
 
                 {/* Grid */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
-                    {apps.map((app) => (
+                    {apps.filter((app) => !app.hidden).map((app) => (
                         <GameCard key={app.id} game={app as any} />
                     ))}
                 </div>

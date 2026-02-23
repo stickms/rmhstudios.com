@@ -1,5 +1,6 @@
 import React from 'react';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const ExportWeatherData = ({ data }: { data: any }) => {
   const exportCSV = () => {
     const rows = [Object.keys(data.current).join(','), Object.values(data.current).join(',')];
@@ -25,11 +26,24 @@ export const ExportWeatherData = ({ data }: { data: any }) => {
   };
 
   return (
-    <div className="my-8">
-      <div className="text-lg font-semibold text-gray-400 mb-2">Export Weather Data</div>
-      <div className="bg-weather-glass rounded-2xl p-4 border border-weather text-weather flex gap-4">
-        <button className="px-4 py-2 rounded bg-blue-500 text-white" onClick={exportCSV}>Export CSV</button>
-        <button className="px-4 py-2 rounded bg-green-500 text-white" onClick={exportJSON}>Export JSON</button>
+    <div className="my-2">
+      <div className="text-lg font-semibold text-blue-400 mb-2">Export Weather Data</div>
+      <div className="bg-weather-glass rounded-2xl p-4 border border-weather text-weather flex flex-col gap-3">
+        <p className="text-xs text-weather-muted">Download current weather data for this location.</p>
+        <div className="flex gap-2">
+          <button
+            onClick={exportCSV}
+            className="flex-1 px-4 py-2 rounded-xl bg-blue-500/80 hover:bg-blue-500 text-white font-semibold text-sm transition-colors"
+          >
+            Export CSV
+          </button>
+          <button
+            onClick={exportJSON}
+            className="flex-1 px-4 py-2 rounded-xl bg-emerald-500/80 hover:bg-emerald-500 text-white font-semibold text-sm transition-colors"
+          >
+            Export JSON
+          </button>
+        </div>
       </div>
     </div>
   );

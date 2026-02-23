@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { searchCities, fetchWeather, WeatherData } from '@/lib/weather';
 
+const inputClass =
+  'w-full bg-weather-glass border border-weather rounded-xl px-3 py-2 text-weather placeholder:text-weather-muted focus:outline-none focus:ring-1 focus:ring-blue-400 text-sm';
+
 export const TripWeatherPlanner = () => {
   const [destination, setDestination] = useState('');
   const [startDate, setStartDate] = useState('');
@@ -30,48 +33,52 @@ export const TripWeatherPlanner = () => {
   }
 
   return (
-    <div className="my-8">
+    <div className="my-2">
       <div className="text-lg font-semibold text-blue-400 mb-2">Trip Weather Planner</div>
-      <div className="flex gap-2 mb-4">
+      <div className="bg-weather-glass rounded-2xl p-4 border border-weather text-weather flex flex-col gap-3">
         <input
           value={destination}
           onChange={e => setDestination(e.target.value)}
           placeholder="Destination city"
-          className="p-2 rounded border border-weather"
+          className={inputClass}
         />
-        <input
-          type="date"
-          value={startDate}
-          onChange={e => setStartDate(e.target.value)}
-          className="p-2 rounded border border-weather"
-        />
-        <input
-          type="date"
-          value={endDate}
-          onChange={e => setEndDate(e.target.value)}
-          className="p-2 rounded border border-weather"
-        />
+        <div className="flex gap-2">
+          <input
+            type="date"
+            value={startDate}
+            onChange={e => setStartDate(e.target.value)}
+            className={`${inputClass} min-w-0`}
+          />
+          <input
+            type="date"
+            value={endDate}
+            onChange={e => setEndDate(e.target.value)}
+            className={`${inputClass} min-w-0`}
+          />
+        </div>
         <button
           onClick={handleSearch}
           disabled={loading || !destination.trim()}
-          className="px-4 py-2 rounded bg-blue-500 text-white font-bold"
-        >Get Forecast</button>
+          className="w-full px-4 py-2 rounded-xl bg-blue-500/80 hover:bg-blue-500 disabled:opacity-40 text-white font-semibold text-sm transition-colors"
+        >
+          {loading ? 'Searching…' : 'Get Forecast'}
+        </button>
+
+        {weather && city && (
+          <div className="mt-1 flex flex-col gap-1">
+            <div className="font-semibold text-weather text-sm">{city.name}</div>
+            <ul className="space-y-1">
+              {filterDailyByDate(weather.daily).map(day => (
+                <li key={day.date} className="flex items-center justify-between text-xs">
+                  <span className="text-weather-muted">{new Date(day.date).toLocaleDateString()}</span>
+                  <span className="text-weather">↑{Math.round(day.maxTemp)}° ↓{Math.round(day.minTemp)}°</span>
+                  <span className="text-blue-400">{Math.round(day.rainSum)}mm</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
-      {weather && city && (
-        <div className="bg-weather-glass rounded-2xl p-4 border border-weather">
-          <div className="font-bold text-weather mb-2">{city.name} ({city.lat.toFixed(2)}, {city.lon.toFixed(2)})</div>
-          <ul className="space-y-2">
-            {filterDailyByDate(weather.daily).map(day => (
-              <li key={day.date} className="flex items-center gap-4">
-                <span className="text-weather font-semibold">{new Date(day.date).toLocaleDateString()}</span>
-                <span className="text-weather-muted">High: {Math.round(day.maxTemp)}°C</span>
-                <span className="text-weather-muted">Low: {Math.round(day.minTemp)}°C</span>
-                <span className="text-blue-400">Rain: {Math.round(day.rainSum)}mm</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
     </div>
   );
 };

@@ -17,6 +17,7 @@ export interface AppInfo {
     tags: string[];
     imagePath?: string;
     authGate: boolean;
+    hidden?: boolean;
 }
 
 /**
@@ -56,6 +57,7 @@ export const apps: AppInfo[] = [
         tags: ['Discord', 'Word Game', 'Daily'],
         imagePath: '/images/games/rmhdle.png',
         authGate: false,
+        hidden: true,
     },
     {
         id: 'rmh-connections',
@@ -73,6 +75,7 @@ export const apps: AppInfo[] = [
         tags: ['Discord', 'Puzzle', 'Daily'],
         imagePath: '/images/games/rmhconnections.png',
         authGate: false,
+        hidden: true,
     },
     {
         id: 'rmh-weather',

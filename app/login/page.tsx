@@ -11,7 +11,21 @@ const allowEmailAuth = !!process.env.NEXT_PUBLIC_ALLOW_EMAIL_ONLY_AUTH;
 function LoginForm() {
     const searchParams = useSearchParams();
     const rawCallback = searchParams.get("callbackURL") || searchParams.get("callbackUrl") || searchParams.get("next");
-    const callbackURL = rawCallback?.startsWith("/") ? rawCallback : "/games";
+
+    const [callbackURL, setCallbackURL] = useState(() =>
+        rawCallback?.startsWith("/") ? rawCallback : "/games"
+    );
+
+    useEffect(() => {
+        if (!rawCallback?.startsWith("/")) {
+            try {
+                const ref = new URL(document.referrer);
+                if (ref.origin === window.location.origin && ref.pathname !== "/login") {
+                    setCallbackURL(ref.pathname + ref.search);
+                }
+            } catch {}
+        }
+    }, [rawCallback]);
 
     const { data: session, isPending } = authClient.useSession();
 
