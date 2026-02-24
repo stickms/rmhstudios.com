@@ -593,6 +593,49 @@ Replace hardcoded constants with `this.getSetting()` calls in the Fact or Fricti
 - [ ] **Select setting logic:** `difficulty` filters the question pool by tag. When `'mixed'`, all difficulties are included.
   **Verification:** Each constant usage replaced. Handler respects custom settings passed via `MinigameContext.gameSettings`.
 
+### 6.1.11 History Display Configuration
+
+Implement the history display config for Fact or Friction as defined in `minigames-2.md §1.16`.
+
+#### 6.1.11.1 Create Detail Component
+
+Create `components/rmhbox/minigames/fact-or-friction/FactOrFrictionHistoryDetail.tsx`:
+- Render question-by-question breakdown with correct answer highlighted
+- Show per-player answer indicators (correct/incorrect/timeout)
+- Display point pot value at each player's submission time
+- Show difficulty badge per question (easy/medium/hard)
+
+#### 6.1.11.2 Register History Display
+
+Add registration in `lib/rmhbox/history-display-registrations.ts`:
+
+```typescript
+registerHistoryDisplay({
+  minigameId: 'fact-or-friction',
+  DetailComponent: FactOrFrictionHistoryDetail,
+  searchableFields: [
+    { key: 'questions', label: 'Questions', extract: (log) => log.actions.filter(a => a.type === 'question_reveal').map(a => a.payload.question as string) },
+    { key: 'categories', label: 'Categories', extract: (log) => log.actions.filter(a => a.type === 'question_reveal').map(a => a.payload.category as string) },
+  ],
+  filterableFields: [
+    { key: 'difficulty', label: 'Difficulty', type: 'select', options: () => ['easy', 'medium', 'hard'] },
+    { key: 'correctCount', label: 'Questions Correct', type: 'range', valuePath: 'correctCount' },
+  ],
+  getSummary: (log) => {
+    const questions = log.actions.filter(a => a.type === 'question_reveal');
+    return `${questions.length} questions — Trivia challenge`;
+  },
+});
+```
+
+#### 6.1.11.3 Tests
+
+- [ ] Verify `getHistoryDisplay('fact-or-friction')` returns a valid config
+- [ ] Verify searchable fields extract question text and categories from a mock game log
+- [ ] Verify filterable fields include difficulty (select) and correctCount (range)
+- [ ] Verify `getSummary()` returns a meaningful string for a mock game log
+- [ ] Verify `DetailComponent` renders without errors when given a valid game log
+
 ---
 
 ## 6.2 Undercover Editor
@@ -1280,6 +1323,33 @@ Replace hardcoded constants with `this.getSetting()` calls in the Undercover Edi
 
   **Verification:** Each constant usage replaced. Handler respects custom settings passed via `MinigameContext.gameSettings`.
 
+### 6.2.11 History Display Configuration
+
+Implement the history display config for Undercover Editor as defined in `minigames-2.md §2.16`.
+
+#### 6.2.11.1 Create Detail Component
+
+Create `components/rmhbox/minigames/undercover-editor/UndercoverEditorHistoryDetail.tsx`:
+- Render full story text with editor's word swaps highlighted
+- Show sentence-by-sentence timeline (who wrote what)
+- Display editor reveal with vote breakdown
+- Show keyword reveal and whether it made it into the story
+
+#### 6.2.11.2 Register History Display
+
+Add registration in `lib/rmhbox/history-display-registrations.ts` with:
+- Searchable fields: `sentences` (story sentences), `keyword` (secret keyword)
+- Filterable fields: `role` (editor/writer), `editorCaught` (boolean), `keywordInStory` (boolean)
+- Summary: `Editor {caught/escaped} — Keyword: "{keyword}"`
+
+#### 6.2.11.3 Tests
+
+- [ ] Verify `getHistoryDisplay('undercover-editor')` returns a valid config
+- [ ] Verify searchable fields extract sentences and keyword from a mock game log
+- [ ] Verify filterable fields include role (select), editorCaught (boolean), keywordInStory (boolean)
+- [ ] Verify `getSummary()` returns a meaningful string for a mock game log
+- [ ] Verify `DetailComponent` renders without errors when given a valid game log
+
 ---
 
 ## 6.3 Minimalist Masterpiece
@@ -1889,6 +1959,32 @@ Replace hardcoded constants with `this.getSetting()` calls in the Minimalist Mas
 | `MM_BID_INCREMENT` | `bidIncrement` | `this.getSetting('bidIncrement', MM_BID_INCREMENT)` |
 
   **Verification:** Each constant usage replaced. Handler respects custom settings passed via `MinigameContext.gameSettings`.
+
+### 6.3.11 History Display Configuration
+
+Implement the history display config for Minimalist Masterpiece as defined in `minigames-2.md §3.15`.
+
+#### 6.3.11.1 Create Detail Component
+
+Create `components/rmhbox/minigames/minimalist-masterpiece/MinimalistMasterpieceHistoryDetail.tsx`:
+- Render gallery grid with drawing thumbnails (from stroke data)
+- Show prompt text alongside each drawing
+- Display gallery vote results and auction results with final bids
+
+#### 6.3.11.2 Register History Display
+
+Add registration in `lib/rmhbox/history-display-registrations.ts` with:
+- Searchable fields: `prompts` (drawing prompts)
+- Filterable fields: `auctionWin` (boolean), `galleryVotes` (range)
+- Summary: `Prompt: "{prompt}"`
+
+#### 6.3.11.3 Tests
+
+- [ ] Verify `getHistoryDisplay('minimalist-masterpiece')` returns a valid config
+- [ ] Verify searchable fields extract prompts from a mock game log
+- [ ] Verify filterable fields include auctionWin (boolean) and galleryVotes (range)
+- [ ] Verify `getSummary()` returns a meaningful string for a mock game log
+- [ ] Verify `DetailComponent` renders without errors when given a valid game log
 
 ---
 
@@ -2545,6 +2641,32 @@ Replace hardcoded constants with `this.getSetting()` calls in the Emoji Cinema h
 
   **Verification:** Each constant usage replaced. Handler respects custom settings passed via `MinigameContext.gameSettings`.
 
+### 6.4.11 History Display Configuration
+
+Implement the history display config for Emoji Cinema as defined in `minigames-2.md §4.17`.
+
+#### 6.4.11.1 Create Detail Component
+
+Create `components/rmhbox/minigames/emoji-cinema/EmojiCinemaHistoryDetail.tsx`:
+- Render round-by-round review with emoji sequences and target movie titles
+- Show guessing timeline with each player's guesses and correctness
+- Display difficulty rating and creator identity per round
+
+#### 6.4.11.2 Register History Display
+
+Add registration in `lib/rmhbox/history-display-registrations.ts` with:
+- Searchable fields: `movieTitles`, `guesses`, `emojiSequences`
+- Filterable fields: `wasCreator` (boolean), `guessedCorrectly` (boolean), `difficulty` (select)
+- Summary: `{rounds} rounds — Movie emoji challenge`
+
+#### 6.4.11.3 Tests
+
+- [ ] Verify `getHistoryDisplay('emoji-cinema')` returns a valid config
+- [ ] Verify searchable fields extract movie titles, guesses, and emoji sequences from a mock game log
+- [ ] Verify filterable fields include wasCreator (boolean), guessedCorrectly (boolean), difficulty (select)
+- [ ] Verify `getSummary()` returns a meaningful string for a mock game log
+- [ ] Verify `DetailComponent` renders without errors when given a valid game log
+
 ---
 
 ## 6.5 Cross-Game Integration Testing
@@ -2625,6 +2747,10 @@ Replace hardcoded constants with `this.getSetting()` calls in the Emoji Cinema h
   - Minimalist Masterpiece: `drawing_submitted`, `bid_placed`, `auction_result`
   - Emoji Cinema: `round_start`, `emoji_placed`, `guess_attempt`, `round_end`
   **Verification:** Game logs persist and are retrievable via API. Action types match spec.
+- [ ] Verify `getHistoryDisplay()` returns a valid config for each Phase 6 game
+- [ ] Verify each game's history display has non-empty searchable and filterable fields
+- [ ] Verify each game's `getSummary()` returns a non-empty string for a valid game log
+- [ ] Verify each game's `DetailComponent` can be instantiated
 
 ### 6.5.10 MinigameRenderer Code-Splitting Test
 
