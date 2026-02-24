@@ -51,7 +51,7 @@
   {
     "id": "seasons",
     "name": "Seasons",
-    "items": ["Spring", "Summer", "Autumn", "Winter", "Late Summer"],
+    "items": ["Spring", "Summer", "Autumn", "Winter", "Rainy Season"],
     "emoji": "🌤️",
     "difficulty": "easy"
   },
