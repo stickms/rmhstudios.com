@@ -612,7 +612,7 @@ export class UndercoverAgentMinigame extends BaseMinigame {
     }
 
     this.logAction('clue_given', {
-      teamId: this.state.currentTeam,
+      team: this.state.currentTeam,
       spymasterId: userId,
       word: clueWord,
       number,
@@ -774,9 +774,12 @@ export class UndercoverAgentMinigame extends BaseMinigame {
     this.broadcastHighlights();
 
     this.logAction('guess', {
-      userId,
-      position,
+      team: this.state.currentTeam,
+      operativeId: userId,
       word: tile.word,
+      tileType: tile.type,
+      correct: tile.type === (this.state.currentTeam === 'red' ? TileType.RED_AGENT : TileType.BLUE_AGENT),
+      position,
     });
 
     this.logAction('tile_reveal', {
@@ -1064,8 +1067,8 @@ export class UndercoverAgentMinigame extends BaseMinigame {
     this.state.winReason = reason;
 
     this.logAction('game_end', {
-      winner,
-      reason,
+      winningTeam: winner,
+      winCondition: reason,
       turnNumber: this.state.turnNumber,
       redAgentsRevealed: this.state.teams.red.agentsRevealed,
       blueAgentsRevealed: this.state.teams.blue.agentsRevealed,
@@ -1514,15 +1517,30 @@ export class UndercoverAgentMinigame extends BaseMinigame {
 
   // ─── Action Log / Game Log ──────────────────────────────────
 
-  private logAction(action: string, data: Record<string, unknown>): void {
+  private actionSeq = 0;
+
+  private logAction(type: string, payload: Record<string, unknown>): void {
     this.state.actionLog.push({
-      action,
+      seq: ++this.actionSeq,
+      type,
       timestamp: Date.now(),
-      data,
+      payload,
     });
   }
 
   private buildGameLog(): Record<string, unknown> {
+    const players = Array.from(this.context.players.entries()).map(([userId, p]) => ({
+      userId,
+      userName: p.userName,
+    }));
+
+    // Build initial state with grid words and key card
+    const words = this.state.grid.map((tile) => tile.word);
+    const teamAWords = this.state.grid.filter((t) => t.type === TileType.RED_AGENT).map((t) => t.word);
+    const teamBWords = this.state.grid.filter((t) => t.type === TileType.BLUE_AGENT).map((t) => t.word);
+    const neutralWords = this.state.grid.filter((t) => t.type === TileType.BYSTANDER).map((t) => t.word);
+    const assassinWord = this.state.grid.find((t) => t.type === TileType.ASSASSIN)?.word ?? '';
+
     return {
       lobbyId: this.context.lobbyId,
       startedAt: this.startedAt,
@@ -1531,7 +1549,26 @@ export class UndercoverAgentMinigame extends BaseMinigame {
       playerCount: this.context.players.size,
       winner: this.state.winner,
       winReason: this.state.winReason,
+      players,
+      initialState: {
+        gridSize: 25,
+        words,
+        keyCard: {
+          teamA: teamAWords,
+          teamB: teamBWords,
+          neutral: neutralWords,
+          assassin: assassinWord,
+        },
+        teamASpymaster: this.state.teams.red.spymasterId,
+        teamBSpymaster: this.state.teams.blue.spymasterId,
+        startingTeam: 'red',
+      },
       actions: this.state.actionLog,
+      finalResults: Array.from(this.context.players.keys()).map((userId) => ({
+        userId,
+        userName: this.context.players.get(userId)?.userName ?? 'Unknown',
+        score: 0,
+      })),
     };
   }
 
