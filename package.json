@@ -7,7 +7,7 @@
     "build": "next build && tsc --project tsconfig.server.json",
     "start": "concurrently \"next start -p 7005\" \"node dist-server/server/socket-server.js\" \"node dist-server/server/collab-server.js\" \"node dist-server/server/rmhbox/index.js\"",
     "socket-server": "npx tsx watch --include \"server/socket-server.ts\" server/socket-server.ts",
-    "collab-server": "npx tsx --include \"server/collab-server.ts\" --include \"server/collab-server.ts\" server/collab-server.ts",
+    "collab-server": "npx tsx watch --include \"server/collab-server.ts\" server/collab-server.ts",
     "rmhbox-server": "npx tsx watch --include \"server/rmhbox/**/*\" server/rmhbox/index.ts",
     "lint": "eslint",
     "postinstall": "prisma generate",
