@@ -54,7 +54,7 @@ export const WIKI_RACE_SETTINGS: GameSettingsSchema = [
 // ─── Sequence Sam Settings ───────────────────────────────────────
 
 export const SEQUENCE_SAM_SETTINGS: GameSettingsSchema = [
-  { key: 'maxRounds', type: 'integer', label: 'Max Rounds', description: 'Maximum number of rounds before the game ends', default: SS_MAX_ROUNDS, min: 3, max: 8, step: 1 },
+  { key: 'maxRounds', type: 'integer', label: 'Max Rounds', description: 'Maximum number of rounds before the game ends', default: 5, min: 3, max: 20, step: 1 },
   { key: 'startingLength', type: 'integer', label: 'Starting Sequence Length', description: 'Number of tiles in the initial sequence', default: SS_STARTING_LENGTH, min: 2, max: 5, step: 1 },
   { key: 'maxStrikes', type: 'integer', label: 'Max Strikes', description: 'Wrong answers before elimination', default: SS_MAX_STRIKES, min: 1, max: 5, step: 1 },
   { key: 'enableChaosRounds', type: 'boolean', label: 'Chaos Rounds', description: 'Enable grid rotation on periodic rounds', default: SS_ENABLE_CHAOS },
@@ -66,7 +66,7 @@ export const SEQUENCE_SAM_SETTINGS: GameSettingsSchema = [
 export const HUMAN_KEYBOARD_SETTINGS: GameSettingsSchema = [
   { key: 'typingDuration', type: 'integer', label: 'Typing Duration (seconds)', description: 'Maximum time for the typing phase', default: HK_TYPING_DURATION_SECONDS, min: 30, max: 120, step: 10 },
   { key: 'enableReshuffle', type: 'boolean', label: 'Key Reshuffle', description: 'Periodically reassign keys among players', default: HK_ENABLE_RESHUFFLE },
-  { key: 'reshuffleInterval', type: 'integer', label: 'Reshuffle Interval (seconds)', description: 'Seconds between key reshuffles', default: HK_RESHUFFLE_INTERVAL_SECONDS, min: 10, max: 45, step: 5 },
+  { key: 'reshuffleInterval', type: 'integer', label: 'Reshuffle Interval (seconds)', description: 'Seconds between key reshuffles', default: HK_RESHUFFLE_INTERVAL_SECONDS, min: 5, max: 45, step: 5 },
   { key: 'wrongKeyLockMs', type: 'integer', label: 'Wrong Key Lock (ms)', description: 'Cursor lock duration on wrong key press', default: HK_WRONG_KEY_PENALTY_MS, min: 0, max: 2000, step: 100 },
 ];
 
