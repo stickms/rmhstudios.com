@@ -3,7 +3,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import http from 'http';
 import * as Y from 'yjs';
 
-const PORT = Number(process.env.COLLAB_PORT) || 7002;
+const PORT = Number(process.env.COLLAB_PORT) || 7003;
 
 // Lazy-load Prisma with PrismaPg adapter (same pattern as socket-server.ts)
 let prisma: any = null;
