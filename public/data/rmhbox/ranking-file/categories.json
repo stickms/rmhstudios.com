@@ -1,0 +1,303 @@
+[
+  {
+    "id": "fast-food-chains",
+    "name": "Fast Food Chains",
+    "items": ["McDonald's", "Burger King", "Wendy's", "Chick-fil-A", "Taco Bell"],
+    "emoji": "🍔",
+    "difficulty": "easy"
+  },
+  {
+    "id": "social-media-platforms",
+    "name": "Social Media Platforms",
+    "items": ["Instagram", "TikTok", "X (Twitter)", "YouTube", "Snapchat"],
+    "emoji": "📱",
+    "difficulty": "easy"
+  },
+  {
+    "id": "pets",
+    "name": "Pets",
+    "items": ["Dog", "Cat", "Fish", "Hamster", "Parrot"],
+    "emoji": "🐕",
+    "difficulty": "easy"
+  },
+  {
+    "id": "pizza-toppings",
+    "name": "Pizza Toppings",
+    "items": ["Pepperoni", "Mushrooms", "Sausage", "Extra Cheese", "Pineapple"],
+    "emoji": "🍕",
+    "difficulty": "easy"
+  },
+  {
+    "id": "ice-cream-flavors",
+    "name": "Ice Cream Flavors",
+    "items": ["Vanilla", "Chocolate", "Strawberry", "Mint Chocolate Chip", "Cookie Dough"],
+    "emoji": "🍦",
+    "difficulty": "easy"
+  },
+  {
+    "id": "streaming-services",
+    "name": "Streaming Services",
+    "items": ["Netflix", "Disney+", "HBO Max", "Hulu", "Amazon Prime Video"],
+    "emoji": "📺",
+    "difficulty": "easy"
+  },
+  {
+    "id": "breakfast-foods",
+    "name": "Breakfast Foods",
+    "items": ["Pancakes", "Eggs", "Bacon", "Cereal", "Waffles"],
+    "emoji": "🥞",
+    "difficulty": "easy"
+  },
+  {
+    "id": "seasons",
+    "name": "Seasons",
+    "items": ["Spring", "Summer", "Autumn", "Winter", "Late Summer"],
+    "emoji": "🌤️",
+    "difficulty": "easy"
+  },
+  {
+    "id": "fruits",
+    "name": "Fruits",
+    "items": ["Strawberry", "Mango", "Watermelon", "Banana", "Grape"],
+    "emoji": "🍓",
+    "difficulty": "easy"
+  },
+  {
+    "id": "soda-brands",
+    "name": "Soda Brands",
+    "items": ["Coca-Cola", "Pepsi", "Sprite", "Dr Pepper", "Fanta"],
+    "emoji": "🥤",
+    "difficulty": "easy"
+  },
+  {
+    "id": "holidays",
+    "name": "Holidays",
+    "items": ["Christmas", "Halloween", "Thanksgiving", "New Year's Eve", "Valentine's Day"],
+    "emoji": "🎄",
+    "difficulty": "easy"
+  },
+  {
+    "id": "chocolate-bars",
+    "name": "Chocolate Bars",
+    "items": ["Snickers", "Kit Kat", "Twix", "Reese's", "M&M's"],
+    "emoji": "🍫",
+    "difficulty": "easy"
+  },
+  {
+    "id": "theme-parks",
+    "name": "Theme Parks",
+    "items": ["Walt Disney World", "Universal Studios", "Six Flags", "SeaWorld", "Legoland"],
+    "emoji": "🎢",
+    "difficulty": "easy"
+  },
+  {
+    "id": "superheroes",
+    "name": "Superheroes",
+    "items": ["Spider-Man", "Batman", "Superman", "Wonder Woman", "Iron Man"],
+    "emoji": "🦸",
+    "difficulty": "easy"
+  },
+  {
+    "id": "dog-breeds",
+    "name": "Dog Breeds",
+    "items": ["Golden Retriever", "Labrador", "German Shepherd", "Poodle", "Bulldog"],
+    "emoji": "🐶",
+    "difficulty": "easy"
+  },
+  {
+    "id": "90s-movies",
+    "name": "90s Movies",
+    "items": ["Titanic", "Pulp Fiction", "The Matrix", "Forrest Gump", "Jurassic Park"],
+    "emoji": "🎬",
+    "difficulty": "medium"
+  },
+  {
+    "id": "vacation-types",
+    "name": "Vacation Types",
+    "items": ["Beach", "Mountain", "City", "Road Trip", "Staycation"],
+    "emoji": "🏖️",
+    "difficulty": "medium"
+  },
+  {
+    "id": "olympic-sports",
+    "name": "Olympic Sports",
+    "items": ["Swimming", "Gymnastics", "Track & Field", "Basketball", "Soccer"],
+    "emoji": "🏅",
+    "difficulty": "medium"
+  },
+  {
+    "id": "world-cuisines",
+    "name": "World Cuisines",
+    "items": ["Italian", "Japanese", "Mexican", "Indian", "Thai"],
+    "emoji": "🌍",
+    "difficulty": "medium"
+  },
+  {
+    "id": "board-games",
+    "name": "Board Games",
+    "items": ["Monopoly", "Scrabble", "Chess", "Clue", "Risk"],
+    "emoji": "🎲",
+    "difficulty": "medium"
+  },
+  {
+    "id": "decades-of-music",
+    "name": "Decades of Music",
+    "items": ["1960s", "1970s", "1980s", "1990s", "2000s"],
+    "emoji": "🎶",
+    "difficulty": "medium"
+  },
+  {
+    "id": "coffee-drinks",
+    "name": "Coffee Drinks",
+    "items": ["Espresso", "Latte", "Cappuccino", "Cold Brew", "Americano"],
+    "emoji": "☕",
+    "difficulty": "medium"
+  },
+  {
+    "id": "video-game-consoles",
+    "name": "Video Game Consoles",
+    "items": ["PlayStation 5", "Nintendo Switch", "Xbox Series X", "Steam Deck", "Nintendo 64"],
+    "emoji": "🎮",
+    "difficulty": "medium"
+  },
+  {
+    "id": "asian-cities",
+    "name": "Asian Cities to Visit",
+    "items": ["Tokyo", "Bangkok", "Seoul", "Singapore", "Mumbai"],
+    "emoji": "🏯",
+    "difficulty": "medium"
+  },
+  {
+    "id": "animated-movies",
+    "name": "Animated Movies",
+    "items": ["The Lion King", "Spirited Away", "Toy Story", "Shrek", "Frozen"],
+    "emoji": "🎞️",
+    "difficulty": "medium"
+  },
+  {
+    "id": "european-cities",
+    "name": "European Cities",
+    "items": ["Paris", "Rome", "London", "Barcelona", "Amsterdam"],
+    "emoji": "🗼",
+    "difficulty": "medium"
+  },
+  {
+    "id": "martial-arts",
+    "name": "Martial Arts",
+    "items": ["Karate", "Judo", "Taekwondo", "Brazilian Jiu-Jitsu", "Muay Thai"],
+    "emoji": "🥋",
+    "difficulty": "medium"
+  },
+  {
+    "id": "sitcoms",
+    "name": "Sitcoms",
+    "items": ["Friends", "The Office", "Seinfeld", "Brooklyn Nine-Nine", "Parks and Recreation"],
+    "emoji": "😂",
+    "difficulty": "medium"
+  },
+  {
+    "id": "car-brands",
+    "name": "Car Brands",
+    "items": ["Toyota", "BMW", "Tesla", "Mercedes-Benz", "Honda"],
+    "emoji": "🚗",
+    "difficulty": "medium"
+  },
+  {
+    "id": "weekend-activities",
+    "name": "Weekend Activities",
+    "items": ["Hiking", "Watching Movies", "Cooking", "Shopping", "Gaming"],
+    "emoji": "🌅",
+    "difficulty": "medium"
+  },
+  {
+    "id": "music-genres",
+    "name": "Music Genres",
+    "items": ["Pop", "Rock", "Hip-Hop", "Country", "Jazz"],
+    "emoji": "🎵",
+    "difficulty": "hard"
+  },
+  {
+    "id": "art-movements",
+    "name": "Art Movements",
+    "items": ["Impressionism", "Surrealism", "Renaissance", "Cubism", "Abstract Expressionism"],
+    "emoji": "🎨",
+    "difficulty": "hard"
+  },
+  {
+    "id": "philosophers",
+    "name": "Philosophers",
+    "items": ["Socrates", "Confucius", "Nietzsche", "Aristotle", "Simone de Beauvoir"],
+    "emoji": "🤔",
+    "difficulty": "hard"
+  },
+  {
+    "id": "programming-languages",
+    "name": "Programming Languages",
+    "items": ["Python", "JavaScript", "Rust", "Go", "TypeScript"],
+    "emoji": "💻",
+    "difficulty": "hard"
+  },
+  {
+    "id": "life-priorities",
+    "name": "Life Priorities",
+    "items": ["Health", "Family", "Career", "Wealth", "Adventure"],
+    "emoji": "⚖️",
+    "difficulty": "hard"
+  },
+  {
+    "id": "historical-eras",
+    "name": "Historical Eras",
+    "items": ["Ancient Egypt", "Roman Empire", "Medieval Europe", "Renaissance", "Industrial Revolution"],
+    "emoji": "📜",
+    "difficulty": "hard"
+  },
+  {
+    "id": "leadership-qualities",
+    "name": "Leadership Qualities",
+    "items": ["Empathy", "Decisiveness", "Integrity", "Vision", "Resilience"],
+    "emoji": "👑",
+    "difficulty": "hard"
+  },
+  {
+    "id": "ways-to-learn",
+    "name": "Ways to Learn",
+    "items": ["Reading Books", "Online Courses", "Mentorship", "Hands-On Practice", "Classroom Lectures"],
+    "emoji": "📚",
+    "difficulty": "hard"
+  },
+  {
+    "id": "forms-of-exercise",
+    "name": "Forms of Exercise",
+    "items": ["Yoga", "Weight Training", "Running", "Swimming", "Cycling"],
+    "emoji": "🏋️",
+    "difficulty": "hard"
+  },
+  {
+    "id": "types-of-intelligence",
+    "name": "Types of Intelligence",
+    "items": ["Emotional", "Logical", "Creative", "Social", "Spatial"],
+    "emoji": "🧠",
+    "difficulty": "hard"
+  },
+  {
+    "id": "world-wonders",
+    "name": "World Wonders",
+    "items": ["Great Wall of China", "Machu Picchu", "Taj Mahal", "Colosseum", "Petra"],
+    "emoji": "🏛️",
+    "difficulty": "medium"
+  },
+  {
+    "id": "dance-styles",
+    "name": "Dance Styles",
+    "items": ["Salsa", "Ballet", "Hip-Hop", "Tango", "K-Pop"],
+    "emoji": "💃",
+    "difficulty": "hard"
+  },
+  {
+    "id": "inventions",
+    "name": "Greatest Inventions",
+    "items": ["Printing Press", "Electricity", "Internet", "Wheel", "Penicillin"],
+    "emoji": "💡",
+    "difficulty": "hard"
+  }
+]
