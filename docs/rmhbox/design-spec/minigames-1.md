@@ -1032,7 +1032,7 @@ getSummary: (log) => {
   const endAction = log.actions.find(a => a.type === 'game_end');
   const winner = endAction?.payload.winningTeam ?? 'Unknown';
   const condition = endAction?.payload.winCondition ?? '';
-  return `Team ${winner} wins (${condition.replace('_', ' ')})`;
+  return `Team ${winner} wins (${condition.replace(/_/g, ' ')})`;
 }
 ```
 
@@ -2225,7 +2225,8 @@ Renders the expanded game log as a path comparison view:
 ```typescript
 getSummary: (log) => {
   const start = log.actions.find(a => a.type === 'round_start');
-  return `${start?.payload.startArticle} → ${start?.payload.targetArticle}`;
+  if (!start) return 'No rounds recorded';
+  return `${start.payload.startArticle} → ${start.payload.targetArticle}`;
 }
 ```
 
