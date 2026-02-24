@@ -982,7 +982,7 @@
 /* ==================== BASE STYLES ==================== */
 html {
   scroll-behavior: smooth;
-  overflow-y: scroll;
+  overflow-y: auto;
   min-height: 100%;
 }
 
