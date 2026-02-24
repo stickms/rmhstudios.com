@@ -62,7 +62,7 @@ export class HumanKeyboardGame extends BaseMinigame {
   /** Initial key assignments for game log. */
   private initialKeyAssignments: Record<string, string[]> = {};
   /** Reshuffle timer handle. */
-  private reshuffleWarningTimer: NodeJS.Timeout | null = null;
+  private reshuffleWarningTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(context: MinigameContext) {
     super(context);

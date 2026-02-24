@@ -195,3 +195,63 @@ registerHistoryDisplay({
     return `${start?.payload.startArticle ?? '?'} → ${start?.payload.targetArticle ?? '?'}`;
   },
 });
+
+// ─── Sequence Sam ────────────────────────────────────────────────
+
+import SequenceSamHistoryDetail from '@/components/rmhbox/minigames/sequence-sam/SequenceSamHistoryDetail';
+
+registerHistoryDisplay({
+  minigameId: 'sequence-sam',
+  DetailComponent: SequenceSamHistoryDetail,
+  searchableFields: [
+    {
+      key: 'playerNames',
+      label: 'Player Names',
+      extract: (log: GameLog) =>
+        (log.players ?? []).map((p: { userName?: string }) => p.userName).filter(Boolean) as string[],
+    },
+  ],
+  filterableFields: [
+    { key: 'roundsSurvived', label: 'Rounds Survived', type: 'range', valuePath: 'roundsSurvived' },
+    { key: 'hadChaosRound', label: 'Had Chaos Round', type: 'boolean' },
+    { key: 'wasEliminated', label: 'Was Eliminated', type: 'boolean' },
+  ],
+  getSummary: (log: GameLog) => {
+    const roundStarts = log.actions.filter((a) => a.type === 'round_start');
+    const chaosCount = log.actions.filter((a) => a.type === 'chaos_rotation').length;
+    return `${roundStarts.length} rounds (${chaosCount} chaos) — Sequence memory`;
+  },
+});
+
+// ─── Human Keyboard ──────────────────────────────────────────────
+
+import HumanKeyboardHistoryDetail from '@/components/rmhbox/minigames/human-keyboard/HumanKeyboardHistoryDetail';
+
+registerHistoryDisplay({
+  minigameId: 'human-keyboard',
+  DetailComponent: HumanKeyboardHistoryDetail,
+  searchableFields: [
+    {
+      key: 'targetSentence',
+      label: 'Target Sentence',
+      extract: (log: GameLog) => {
+        const sentence = log.initialState?.sentence;
+        return typeof sentence === 'string' ? [sentence] : [];
+      },
+    },
+    {
+      key: 'playerNames',
+      label: 'Player Names',
+      extract: (log: GameLog) =>
+        (log.players ?? []).map((p: { userName?: string }) => p.userName).filter(Boolean) as string[],
+    },
+  ],
+  filterableFields: [
+    { key: 'accuracy', label: 'Team Accuracy', type: 'range', valuePath: 'accuracy' },
+    { key: 'completedSentence', label: 'Completed Sentence', type: 'boolean' },
+  ],
+  getSummary: (log: GameLog) => {
+    const sentence = log.initialState?.sentence;
+    return typeof sentence === 'string' ? `"${sentence}"` : 'Human Keyboard game';
+  },
+});
