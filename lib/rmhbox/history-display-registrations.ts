@@ -1,8 +1,9 @@
 /**
- * RMHbox — History Display Registrations (Phase 5 Minigames)
+ * RMHbox — History Display Registrations (Phase 5 + Phase 7 Minigames)
  *
  * Registers the history display configurations for
- * Rhyme Time, Undercover Agent, Category Crash, and Wiki-Race.
+ * Rhyme Time, Undercover Agent, Category Crash, Wiki-Race,
+ * Cursor Curling, and Human Tetris.
  *
  * Reference: docs/rmhbox/design-spec/core.md §14A.5
  */
@@ -14,6 +15,8 @@ import RhymeTimeHistoryDetail from '@/components/rmhbox/minigames/rhyme-time/Rhy
 import UndercoverAgentHistoryDetail from '@/components/rmhbox/minigames/undercover-agent/UndercoverAgentHistoryDetail';
 import CategoryCrashHistoryDetail from '@/components/rmhbox/minigames/category-crash/CategoryCrashHistoryDetail';
 import WikiRaceHistoryDetail from '@/components/rmhbox/minigames/wiki-race/WikiRaceHistoryDetail';
+import CursorCurlingHistoryDetail from '@/components/rmhbox/minigames/cursor-curling/CursorCurlingHistoryDetail';
+import HumanTetrisHistoryDetail from '@/components/rmhbox/minigames/human-tetris/HumanTetrisHistoryDetail';
 
 // ─── Rhyme Time ──────────────────────────────────────────────────
 
@@ -193,5 +196,54 @@ registerHistoryDisplay({
   getSummary: (log: GameLog) => {
     const start = log.actions.find((a) => a.type === 'round_start');
     return `${start?.payload.startArticle ?? '?'} → ${start?.payload.targetArticle ?? '?'}`;
+  },
+});
+
+// ─── Cursor Curling ──────────────────────────────────────────────
+
+registerHistoryDisplay({
+  minigameId: 'cursor-curling',
+  DetailComponent: CursorCurlingHistoryDetail,
+  searchableFields: [
+    {
+      key: 'playerNames',
+      label: 'Player Names',
+      extract: (log: GameLog) =>
+        log.players.map((p) => p.userName),
+    },
+  ],
+  filterableFields: [
+    { key: 'hitBullseye', label: 'Hit Bullseye', type: 'boolean' },
+    { key: 'endCount', label: 'Ends Played', type: 'range', valuePath: 'endCount' },
+    { key: 'sweepCount', label: 'Sweeps Performed', type: 'range', valuePath: 'sweepCount' },
+  ],
+  getSummary: (log: GameLog) => {
+    const ends = log.actions.filter((a) => a.type === 'end_start');
+    return `${ends.length} ends — Curling precision`;
+  },
+});
+
+// ─── Human Tetris ────────────────────────────────────────────────
+
+registerHistoryDisplay({
+  minigameId: 'human-tetris',
+  DetailComponent: HumanTetrisHistoryDetail,
+  searchableFields: [
+    {
+      key: 'playerNames',
+      label: 'Player Names',
+      extract: (log: GameLog) =>
+        log.players.map((p) => p.userName),
+    },
+  ],
+  filterableFields: [
+    { key: 'linesCleared', label: 'Lines Cleared', type: 'range', valuePath: 'linesCleared' },
+    { key: 'blocksPlaced', label: 'Blocks Placed', type: 'range', valuePath: 'blocksPlaced' },
+  ],
+  getSummary: (log: GameLog) => {
+    const waves = log.actions.filter((a) => a.type === 'wave_start');
+    const results = log.actions.filter((a) => a.type === 'wave_result');
+    const passed = results.filter((r) => r.payload.passed).length;
+    return `${waves.length} waves, ${passed} passed`;
   },
 });

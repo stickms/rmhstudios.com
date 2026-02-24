@@ -59,7 +59,7 @@ export default function HumanTetrisHistoryDetail({
           <h4 className="text-xs font-semibold text-(--rmhbox-text-muted) uppercase mb-1">Game Settings</h4>
           <div className="flex flex-wrap gap-3 text-xs text-(--rmhbox-text-muted)">
             <span>Waves: {totalWaves}</span>
-            {settings.gridSize && <span>Grid: {String(settings.gridSize)}</span>}
+            {settings.gridSize ? <span>Grid: {String(settings.gridSize)}</span> : null}
             {settings.moveTimeSeconds != null && (
               <span>Move Time: {String(settings.moveTimeSeconds)}s</span>
             )}

@@ -52,7 +52,7 @@ interface Standing {
   totalScore: number;
 }
 
-export default function HumanTetrisGame({ playerId, playerName }: HumanTetrisGameProps) {
+export default function HumanTetrisGame({ playerId }: HumanTetrisGameProps) {
   const [phase, setPhase] = useState<Phase>('WALL_PREVIEW');
   const [waveNumber, setWaveNumber] = useState(1);
   const [totalWaves, setTotalWaves] = useState(1);

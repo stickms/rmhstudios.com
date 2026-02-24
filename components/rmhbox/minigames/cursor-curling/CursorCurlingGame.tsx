@@ -79,7 +79,6 @@ export default function CursorCurlingGame({ playerId }: CursorCurlingGameProps) 
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [aimAngle, setAimAngle] = useState(0);
   const [lockedPower, setLockedPower] = useState<number | null>(null);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const players = useRMHboxStore((s) => s.lobby?.players);
   const { startTimer, tickTimer, clearTimer } = useHeaderTimer();
@@ -313,19 +312,6 @@ export default function CursorCurlingGame({ playerId }: CursorCurlingGameProps) 
 
   return (
     <div className="flex w-full max-w-lg flex-col items-center gap-4 text-(--rmhbox-text)">
-      {/* Error toast */}
-      <AnimatePresence>
-        {errorMsg && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="rounded-lg bg-(--rmhbox-danger-dim) border border-(--rmhbox-danger)/40 px-4 py-2 text-center text-sm text-(--rmhbox-danger)"
-          >
-            {errorMsg}
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Scoreboard */}
       <div className="flex w-full items-center justify-between rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-surface) px-4 py-2 text-sm">

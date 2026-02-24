@@ -55,10 +55,8 @@ import type {
   CUPhase,
   CurlingStone,
   StonePhysics,
-  SweepState,
   EndResult,
   StoneResult,
-  CUActionLogEntry,
   CursorCurlingState,
 } from './types';
 
