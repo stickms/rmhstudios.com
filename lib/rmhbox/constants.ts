@@ -137,3 +137,64 @@ export const WR_CACHE_MAX = 500;
 export const WR_CACHE_TTL = 600000;
 export const WR_NAV_RATE_LIMIT = 3;
 export const WR_MAX_PAIR_POOL = 200;
+
+// ─── Cursor Curling (CU) ────────────────────────────────────────
+
+export const CU_TOTAL_ENDS = 3;
+export const CU_END_START_SECONDS = 2;
+export const CU_AIM_DURATION_SECONDS = 3;
+export const CU_POWER_DURATION_SECONDS = 2;
+export const CU_END_RESULTS_SECONDS = 5;
+export const CU_TRANSITION_SECONDS = 2;
+
+export const CU_CANVAS_WIDTH = 400;
+export const CU_CANVAS_HEIGHT = 600;
+export const CU_HOUSE_CENTER = { x: 200, y: 100 };
+export const CU_BULLSEYE_RADIUS = 15;
+export const CU_INNER_RADIUS = 40;
+export const CU_OUTER_RADIUS = 70;
+export const CU_HOUSE_RADIUS = 100;
+export const CU_STONE_RADIUS = 12;
+export const CU_LAUNCH_Y = 550;
+
+export const CU_BASE_FRICTION = 0.98;
+export const CU_SWEPT_FRICTION = 0.995;
+export const CU_MAX_LAUNCH_SPEED = 15;
+export const CU_SIMULATION_TICK_MS = 33;
+export const CU_STOP_THRESHOLD = 0.1;
+export const CU_RESTITUTION = 0.7;
+
+export const CU_SWEEP_ZONE_RADIUS = 60;
+export const CU_SWEEP_WINDOW_MS = 500;
+export const CU_SWEEP_THRESHOLD = 6;
+export const CU_SWEEP_INPUT_RATE_LIMIT = 15;
+
+export const CU_BULLSEYE_POINTS = 100;
+export const CU_INNER_RING_POINTS = 60;
+export const CU_OUTER_RING_POINTS = 30;
+export const CU_HOUSE_POINTS = 10;
+export const CU_CLOSEST_BONUS = 50;
+
+// ─── Human Tetris (HT) ─────────────────────────────────────────
+
+export const HT_TOTAL_WAVES = 8;
+export const HT_GRID_COLS = 8;
+export const HT_GRID_ROWS = 6;
+
+export const HT_EASY_POSITION_SECONDS = 8;
+export const HT_MEDIUM_POSITION_SECONDS = 6;
+export const HT_HARD_POSITION_SECONDS = 4;
+export const HT_WALL_PREVIEW_SECONDS = 3;
+export const HT_WALL_IMPACT_SECONDS = 1;
+export const HT_WAVE_RESULTS_SECONDS = 2;
+
+export const HT_EXCLUSION_RATIO = 0.2;
+export const HT_DEAD_ZONE_MIN_COUNT = 2;
+export const HT_MOVE_RATE_LIMIT = 6;
+
+export const HT_SUCCESS_POINTS = 100;
+export const HT_PARTIAL_POINTS = 30;
+export const HT_CORRECT_POSITION_POINTS = 50;
+export const HT_HIT_PENALTY = -20;
+export const HT_PERFECT_WAVE_BONUS = 50;
+export const HT_STREAK_BONUS = 200;
