@@ -878,15 +878,13 @@ export class FactOrFrictionGame extends BaseMinigame {
     // Perfect Score — all questions correct, no wrong answers
     for (const [userId, s] of Object.entries(stats)) {
       if (s.correctCount === this.state.totalQuestions && s.incorrectCount === 0 && s.passCount === 0) {
-        const player = this.context.players.get(userId);
         awards.push({
           userId,
           title: 'Perfect Score',
           description: `Answered all ${this.state.totalQuestions} questions correctly`,
           icon: 'star',
         });
-        // Only one perfect score award
-        if (player) break;
+        break;
       }
     }
 
