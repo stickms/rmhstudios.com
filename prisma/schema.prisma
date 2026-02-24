@@ -54,6 +54,10 @@ model User {
   // RMH Job Search Relations
   jobApplications JobApplication[]
 
+  // RMH Utils (Docs/Sheets/Slides) Relations
+  documents          Document[]
+  docCollaborations  DocumentCollaborator[]
+
   @@map("user")
 }
 
@@ -675,5 +679,74 @@ model Assessment {
   application JobApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 
   @@map("assessment")
+}
+
+// ─── RMH Utils (Docs / Sheets / Slides) ───
+
+enum DocumentType {
+  DOC
+  SHEET
+  SLIDE
+}
+
+enum CollaboratorRole {
+  VIEWER
+  EDITOR
+  OWNER
+}
+
+model Document {
+  id         String       @id @default(cuid())
+  type       DocumentType
+  title      String       @default("Untitled")
+  userId     String
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  yjsState   Bytes?
+  metadata   Json?
+
+  isDeleted  Boolean      @default(false)
+  deletedAt  DateTime?
+  isFavorite Boolean      @default(false)
+
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  collaborators DocumentCollaborator[]
+  versions      DocumentVersion[]
+
+  @@index([userId])
+  @@index([userId, type])
+  @@index([userId, isDeleted])
+  @@map("document")
+}
+
+model DocumentCollaborator {
+  id         String           @id @default(cuid())
+  documentId String
+  document   Document         @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role       CollaboratorRole @default(EDITOR)
+  addedAt    DateTime         @default(now())
+
+  @@unique([documentId, userId])
+  @@index([userId])
+  @@index([documentId])
+  @@map("document_collaborator")
+}
+
+model DocumentVersion {
+  id         String   @id @default(cuid())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  title      String
+  yjsState   Bytes
+  createdBy  String
+  createdAt  DateTime @default(now())
+
+  @@index([documentId])
+  @@index([documentId, createdAt])
+  @@map("document_version")
 }
 
