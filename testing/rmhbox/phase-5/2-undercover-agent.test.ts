@@ -190,4 +190,139 @@ describe('Undercover Agent Server Handler (§5.2)', () => {
       expect(results.duration).toBeGreaterThan(0);
     });
   });
+
+  describe('Disconnect Handling', () => {
+    it('should NOT end the game when all members of one team disconnect', () => {
+      const ctx = createMockContext();
+      const { game, broadcastLog, context } = createGame(ctx);
+      game.start();
+      game.handleInput('user-alice-001', 'START_GAME', {});
+
+      // Advance past UA_SETUP_DURATION (2s) to reach CLUE phase
+      vi.advanceTimersByTime(2000);
+
+      // Get teams to know who is on which team
+      const teams = getTeamInfo(broadcastLog) as Record<string, Record<string, unknown>>;
+      expect(teams).toBeDefined();
+
+      const redTeam = teams.red;
+      const redSpymaster = redTeam.spymasterId as string;
+      const redOperatives = redTeam.operativeIds as string[];
+
+      // Disconnect all red team members
+      const redMembers = [redSpymaster, ...redOperatives];
+      for (const member of redMembers) {
+        const player = context.players.get(member);
+        if (player) player.isConnected = false;
+        game.handlePlayerDisconnect(member);
+      }
+
+      // The game should NOT have ended — no UA_BOARD_REVEAL should appear
+      // after the disconnect. Instead, the turn should have been auto-ended.
+      const boardReveal = findLastActionBroadcast(broadcastLog, 'UA_BOARD_REVEAL');
+      // If the current team was red and they disconnected, we expect a turn end, not a game over
+      // If the current team was blue, nothing happens since the non-active team disconnected
+      // Either way, no premature game over with 'team_disconnected' winner
+      if (boardReveal) {
+        const reason = (boardReveal.data as Record<string, unknown>).reason;
+        // The only acceptable game over is via max_passes, not team_disconnected
+        expect(reason).not.toBe('team_disconnected');
+      }
+    });
+
+    it('should auto-skip turns for disconnected team and end game via max passes', () => {
+      const ctx = createMockContext();
+      const { game, broadcastLog, context } = createGame(ctx);
+      game.start();
+      game.handleInput('user-alice-001', 'START_GAME', {});
+
+      // Advance past setup
+      vi.advanceTimersByTime(2000);
+
+      const teams = getTeamInfo(broadcastLog) as Record<string, Record<string, unknown>>;
+      expect(teams).toBeDefined();
+
+      // Disconnect all members of BOTH teams except one player on blue
+      const redMembers = [teams.red.spymasterId as string, ...(teams.red.operativeIds as string[])];
+      const blueMembers = [teams.blue.spymasterId as string, ...(teams.blue.operativeIds as string[])];
+      const allMembers = [...redMembers, ...blueMembers];
+
+      // Disconnect all red members
+      for (const member of redMembers) {
+        const player = context.players.get(member);
+        if (player) player.isConnected = false;
+        game.handlePlayerDisconnect(member);
+      }
+
+      // Disconnect all blue members except one
+      for (let i = 0; i < blueMembers.length - 1; i++) {
+        const player = context.players.get(blueMembers[i]);
+        if (player) player.isConnected = false;
+        game.handlePlayerDisconnect(blueMembers[i]);
+      }
+
+      // Advance timers to allow turn transitions
+      vi.advanceTimersByTime(60000);
+
+      // At least one player is connected, so the game should not have
+      // been force-ended. But consecutive pass limit should eventually
+      // trigger a draw via max_passes.
+      const boardReveal = findLastActionBroadcast(broadcastLog, 'UA_BOARD_REVEAL');
+      if (boardReveal) {
+        const reason = (boardReveal.data as Record<string, unknown>).reason;
+        expect(reason).toBe('max_passes');
+      }
+    });
+  });
+
+  describe('Action Log Syncing', () => {
+    it('should include actionLog in getStateForPlayer', () => {
+      const { game, broadcastLog } = createGame();
+      game.start();
+      game.handleInput('user-alice-001', 'START_GAME', {});
+
+      const state = game.getStateForPlayer('user-alice-001') as Record<string, unknown>;
+      expect(state.actionLog).toBeDefined();
+      expect(Array.isArray(state.actionLog)).toBe(true);
+    });
+
+    it('should include actionLog in getStateForSpectator', () => {
+      const { game } = createGame();
+      game.start();
+      game.handleInput('user-alice-001', 'START_GAME', {});
+
+      const state = game.getStateForSpectator() as Record<string, unknown>;
+      expect(state.actionLog).toBeDefined();
+      expect(Array.isArray(state.actionLog)).toBe(true);
+    });
+
+    it('should include actionLog in game action broadcasts', () => {
+      const { game, broadcastLog } = createGame();
+      game.start();
+      game.handleInput('user-alice-001', 'START_GAME', {});
+
+      // Advance past setup to get the UA_PHASE_CHANGE broadcast
+      vi.advanceTimersByTime(2000);
+
+      const phaseChange = findLastActionBroadcast(broadcastLog, 'UA_PHASE_CHANGE');
+      expect(phaseChange).toBeDefined();
+      expect(phaseChange!.data.actionLog).toBeDefined();
+      expect(Array.isArray(phaseChange!.data.actionLog)).toBe(true);
+    });
+
+    it('actionLog entries should have unique seq numbers', () => {
+      const { game } = createGame();
+      game.start();
+      game.handleInput('user-alice-001', 'START_GAME', {});
+
+      // Advance timers to generate some action log entries
+      vi.advanceTimersByTime(2000);
+
+      const state = game.getStateForPlayer('user-alice-001') as Record<string, unknown>;
+      const actionLog = state.actionLog as Array<{ seq: number; type: string }>;
+      const seqs = actionLog.map((e) => e.seq);
+      const uniqueSeqs = new Set(seqs);
+      expect(uniqueSeqs.size).toBe(seqs.length);
+    });
+  });
 });

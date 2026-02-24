@@ -106,7 +106,6 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
 
   // Game log entries for the sidebar
   const [gameLog, setGameLog] = useState<GameLogEntry[]>([]);
-  const logIdRef = useRef(0);
 
   // Key card data — only populated for spymasters
   const keyCardRef = useRef<GridTileClient[]>([]);
@@ -118,6 +117,87 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
   useEffect(() => { playersRef.current = players; }, [players]);
   const lookupName = (userId: string) =>
     playersRef.current?.find((p) => p.userId === userId)?.userName ?? userId;
+
+  /** Build display-ready game log entries from the server's authoritative actionLog */
+  const syncGameLog = useCallback(
+    (actionLog: Array<{ seq: number; type: string; payload: Record<string, unknown> }>) => {
+      const entries: GameLogEntry[] = [];
+      for (const entry of actionLog) {
+        const p = entry.payload;
+        switch (entry.type) {
+          case 'clue_given': {
+            const giverName = p.spymasterId ? lookupName(p.spymasterId as string) : '';
+            const word = (p.word as string) ?? '';
+            const num = p.number === 'unlimited' ? '∞' : (p.number as number);
+            entries.push({
+              id: entry.seq,
+              type: 'clue',
+              team: (p.team as Team) ?? 'red',
+              text: `${giverName ? giverName + ': ' : ''}Clue: ${word.toUpperCase()} ${num}`,
+            });
+            break;
+          }
+          case 'tile_reveal': {
+            const tileType = p.type as TileType;
+            const teamId = (p.teamId as Team) ?? 'red';
+            const revealedBy = p.revealedBy as string | undefined;
+            const word = (p.word as string) ?? `tile #${p.position}`;
+            const logType: GameLogEntry['type'] =
+              tileType === 'ASSASSIN'
+                ? 'guess_assassin'
+                : tileType === 'BYSTANDER'
+                  ? 'guess_bystander'
+                  : tileType === (teamId === 'red' ? 'RED_AGENT' : 'BLUE_AGENT')
+                    ? 'guess_correct'
+                    : 'guess_wrong';
+            const typeLabel =
+              tileType === 'ASSASSIN'
+                ? 'Assassin!'
+                : tileType === 'BYSTANDER'
+                  ? 'Bystander'
+                  : tileType === 'RED_AGENT'
+                    ? 'Red Agent'
+                    : 'Blue Agent';
+            const guesserName = revealedBy ? lookupName(revealedBy) : '';
+            entries.push({
+              id: entry.seq,
+              type: logType,
+              team: teamId,
+              text: `${guesserName ? guesserName + ': ' : ''}${word.toUpperCase()} → ${typeLabel}`,
+            });
+            break;
+          }
+          case 'turn_end': {
+            const reason = (p.reason as string) ?? '';
+            entries.push({
+              id: entry.seq,
+              type: 'turn_end',
+              team: (p.teamId as Team) ?? 'red',
+              text: `Turn ended — ${reason.replace(/_/g, ' ')}`,
+            });
+            break;
+          }
+          case 'game_end': {
+            const winCondition = (p.winCondition as string) ?? '';
+            const winningTeam = (p.winningTeam as string) ?? 'red';
+            entries.push({
+              id: entry.seq,
+              type: 'game_over',
+              team: (winningTeam === 'draw' ? 'red' : winningTeam) as Team,
+              text: `Game over — ${winCondition.replace(/_/g, ' ')}`,
+            });
+            break;
+          }
+          // turn_start, guess, pass — not displayed
+        }
+      }
+      setGameLog(entries);
+    },
+    // lookupName reads from playersRef (a mutable ref), so it always
+    // returns the latest player names regardless of closure capture.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
 
   /** Derive role and team from teams state */
   const deriveRole = useCallback(
@@ -136,12 +216,6 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
   const handleGameAction = useCallback(
     (data: Record<string, unknown>) => {
       const type = data.type as string;
-
-      /** Helper to push a log entry */
-      const pushLog = (entry: Omit<GameLogEntry, 'id'>) => {
-        const id = ++logIdRef.current;
-        setGameLog((prev) => [...prev, { ...entry, id }]);
-      };
 
       switch (type) {
         case 'UA_TEAM_SETUP': {
@@ -165,7 +239,6 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
         case 'UA_SETUP': {
           setPhase('SETUP');
           setGameLog([]);
-          // Note: logIdRef is NOT reset — monotonically increasing ensures unique keys
           const rawGrid = data.grid as { position: number; word: string }[];
           setGrid(rawGrid.map((g) => ({ ...g, type: null, state: 'HIDDEN' as const })));
           const rawTeams = data.teams as { red: TeamInfo; blue: TeamInfo };
@@ -207,7 +280,6 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
           const clueWord = data.word as string;
           const clueNum = data.number as number | 'unlimited';
           const clueTeam = data.teamId as Team;
-          const clueGiver = data.spymasterId as string | undefined;
           setCurrentClue({
             word: clueWord,
             number: clueNum,
@@ -218,53 +290,17 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
           setTimeRemaining(data.timeout as number);
           // Transition to GUESS phase when clue is received
           setPhase('GUESS');
-          const giverName = clueGiver ? lookupName(clueGiver) : '';
-          pushLog({
-            type: 'clue',
-            team: clueTeam,
-            text: `${giverName ? giverName + ': ' : ''}Clue: ${clueWord.toUpperCase()} ${clueNum === 'unlimited' ? '∞' : clueNum}`,
-          });
           break;
         }
         case 'UA_TILE_REVEALED': {
           const pos = data.position as number;
           const tileType = data.tileType as TileType;
           const revealedBy = data.teamId as string;
-          const guesserId = data.revealedBy as string | undefined;
-          const revealedWord = data.word as string | undefined;
-          let wordLabel = revealedWord ?? `tile #${pos}`;
-          setGrid((prev) => {
-            // Grab the word from grid state if not in payload
-            if (!revealedWord) {
-              const tile = prev.find((t) => t.position === pos);
-              if (tile) wordLabel = tile.word;
-            }
-            return prev.map((t) =>
+          setGrid((prev) =>
+            prev.map((t) =>
               t.position === pos ? { ...t, type: tileType, state: 'REVEALED' as const, revealedBy } : t,
-            );
-          });
-          const logType: GameLogEntry['type'] =
-            tileType === 'ASSASSIN'
-              ? 'guess_assassin'
-              : tileType === 'BYSTANDER'
-                ? 'guess_bystander'
-                : tileType === (revealedBy === 'red' ? 'RED_AGENT' : 'BLUE_AGENT')
-                  ? 'guess_correct'
-                  : 'guess_wrong';
-          const typeLabel =
-            tileType === 'ASSASSIN'
-              ? 'Assassin!'
-              : tileType === 'BYSTANDER'
-                ? 'Bystander'
-                : tileType === 'RED_AGENT'
-                  ? 'Red Agent'
-                  : 'Blue Agent';
-          const guesserName = guesserId ? lookupName(guesserId) : '';
-          pushLog({
-            type: logType,
-            team: revealedBy as Team,
-            text: `${guesserName ? guesserName + ': ' : ''}${wordLabel.toUpperCase()} → ${typeLabel}`,
-          });
+            ),
+          );
           break;
         }
         case 'UA_GUESS_RESULT': {
@@ -286,11 +322,6 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
           setTurnEndReason(reason);
           setPhase('TURN_TRANSITION');
           setCurrentClue(null);
-          pushLog({
-            type: 'turn_end',
-            team: currentTeam,
-            text: `Turn ended — ${reason.replace(/_/g, ' ')}`,
-          });
           break;
         }
         case 'UA_TIMEOUT': {
@@ -308,11 +339,6 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
           if (revealGrid) setGrid(revealGrid);
           const revealTeams = data.teams as { red: TeamInfo; blue: TeamInfo };
           if (revealTeams) setTeams(revealTeams);
-          pushLog({
-            type: 'game_over',
-            team: revealWinner === 'draw' ? currentTeam : revealWinner,
-            text: `Game over — ${revealReason.replace(/_/g, ' ')}`,
-          });
           break;
         }
         case 'UA_GAME_OVER': {
@@ -347,8 +373,13 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
           break;
         }
       }
+
+      // Sync the game log from the server's authoritative actionLog
+      if (Array.isArray(data.actionLog)) {
+        syncGameLog(data.actionLog as Array<{ seq: number; type: string; payload: Record<string, unknown> }>);
+      }
     },
-    [currentTeam, deriveRole],
+    [currentTeam, deriveRole, syncGameLog],
   );
 
   /** Handle full state snapshot (reconnection / JIP) */
@@ -369,12 +400,16 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
       setTimeRemaining(data.timeRemaining as number ?? 0);
       if (typeof data.isTeamValid === 'boolean') setIsTeamValid(data.isTeamValid as boolean);
       setHighlightCounts(data.highlightCounts as Record<number, number> ?? {});
+      // Sync game log from server's authoritative actionLog
+      if (Array.isArray(data.actionLog)) {
+        syncGameLog(data.actionLog as Array<{ seq: number; type: string; payload: Record<string, unknown> }>);
+      }
       // Derive role from teams
       const { role, team } = deriveRole(rawTeams);
       setMyRole(role);
       setMyTeam(team);
     },
-    [deriveRole],
+    [deriveRole, syncGameLog],
   );
 
   // Subscribe to socket events
