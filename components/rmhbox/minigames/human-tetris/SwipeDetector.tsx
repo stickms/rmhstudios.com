@@ -11,6 +11,7 @@
 'use client';
 
 import { useEffect, useRef, useCallback, type ReactNode } from 'react';
+import { HT_MOVE_RATE_LIMIT } from '@/lib/rmhbox/constants';
 
 export type Direction = 'up' | 'down' | 'left' | 'right';
 
@@ -21,7 +22,7 @@ interface SwipeDetectorProps {
 }
 
 const MIN_SWIPE_DISTANCE = 30;
-const MOVE_INTERVAL_MS = 1000 / 6; // 6 moves/second
+const MOVE_INTERVAL_MS = 1000 / HT_MOVE_RATE_LIMIT;
 
 export default function SwipeDetector({ onMove, enabled, children }: SwipeDetectorProps) {
   const lastMoveTime = useRef(0);

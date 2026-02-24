@@ -13,11 +13,12 @@
 'use client';
 
 import { useMemo } from 'react';
+import { HT_GRID_COLS, HT_GRID_ROWS } from '@/lib/rmhbox/constants';
 import GridCell, { type CellType } from './GridCell';
 import PlayerAvatar from './PlayerAvatar';
 
-export const GRID_COLS = 8;
-export const GRID_ROWS = 6;
+export const GRID_COLS = HT_GRID_COLS;
+export const GRID_ROWS = HT_GRID_ROWS;
 
 export interface PlayerPosition {
   playerId: string;
