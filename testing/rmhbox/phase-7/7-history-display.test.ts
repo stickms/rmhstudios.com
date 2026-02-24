@@ -18,8 +18,6 @@ import {
 // Import registrations to trigger side effects
 import '../../../lib/rmhbox/history-display-registrations';
 
-import { MINIGAME_REGISTRY } from '../../../lib/rmhbox/minigame-registry';
-
 // ─── Mock Game Logs ──────────────────────────────────────────────
 
 function createMockCursorCurlingLog(): GameLog {

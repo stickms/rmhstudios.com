@@ -15,7 +15,7 @@ import {
   getDefaultSettings,
   validateGameSettings,
 } from '../../../lib/rmhbox/game-settings';
-import type { GameSettingsSchema, GameSettingValues } from '../../../lib/rmhbox/types';
+import type { GameSettingValues } from '../../../lib/rmhbox/types';
 import {
   CURSOR_CURLING_SETTINGS,
   HUMAN_TETRIS_SETTINGS,
@@ -26,8 +26,6 @@ import {
   CU_AIM_DURATION_SECONDS,
   CU_POWER_DURATION_SECONDS,
   CU_END_START_SECONDS,
-  CU_TRANSITION_SECONDS,
-  CU_END_RESULTS_SECONDS,
   CU_SIMULATION_TICK_MS,
 } from '../../../lib/rmhbox/constants';
 import {
@@ -82,6 +80,8 @@ function throwAndSettle(
   vi.advanceTimersByTime(CU_SIMULATION_TICK_MS * 300);
 }
 
+// playFullEnd is not currently used but retained as a helper for future tests
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function playFullEnd(
   game: CursorCurlingGame,
   broadcastLog: Array<{ event: string; data: unknown }>,

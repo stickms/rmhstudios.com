@@ -10,12 +10,11 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   MINIGAME_REGISTRY,
   getEligibleMinigames,
-  isMinigamePlayable,
 } from '../../../lib/rmhbox/minigame-registry';
 import { MINIGAME_SERVER_REGISTRY } from '../../../server/rmhbox/game-coordinator';
 import { CursorCurlingGame } from '../../../server/rmhbox/minigames/cursor-curling';
 import { HumanTetrisGame } from '../../../server/rmhbox/minigames/human-tetris';
-import { createMockContext, MOCK_USERS, findActionBroadcasts } from './setup';
+import { createMockContext, MOCK_USERS } from './setup';
 import {
   CU_END_START_SECONDS,
   CU_END_RESULTS_SECONDS,
@@ -26,7 +25,6 @@ import {
   HT_WALL_IMPACT_SECONDS,
   HT_WAVE_RESULTS_SECONDS,
 } from '../../../lib/rmhbox/constants';
-import type { MockContextData } from './setup';
 
 // ─── Mock Data Loader (Human Tetris) ─────────────────────────────
 
@@ -157,7 +155,7 @@ describe('Cross-Game Integration — Phase 7 (§7.5)', () => {
         const game = MINIGAME_REGISTRY[id];
         expect(game.settingsSchema).toBeDefined();
         expect(Array.isArray(game.settingsSchema)).toBe(true);
-        expect(game.settingsSchema.length).toBeGreaterThan(0);
+        expect(game.settingsSchema!.length).toBeGreaterThan(0);
       }
     });
   });

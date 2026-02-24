@@ -39,25 +39,15 @@ import {
   CU_CANVAS_HEIGHT,
   CU_HOUSE_CENTER,
   CU_BULLSEYE_RADIUS,
-  CU_INNER_RADIUS,
-  CU_OUTER_RADIUS,
   CU_HOUSE_RADIUS,
   CU_STONE_RADIUS,
-  CU_LAUNCH_Y,
-  CU_BASE_FRICTION,
-  CU_SWEPT_FRICTION,
-  CU_MAX_LAUNCH_SPEED,
   CU_SIMULATION_TICK_MS,
-  CU_STOP_THRESHOLD,
-  CU_RESTITUTION,
-  CU_SWEEP_WINDOW_MS,
   CU_SWEEP_THRESHOLD,
   CU_SWEEP_INPUT_RATE_LIMIT,
   CU_BULLSEYE_POINTS,
   CU_INNER_RING_POINTS,
   CU_OUTER_RING_POINTS,
   CU_HOUSE_POINTS,
-  CU_CLOSEST_BONUS,
 } from '../../../lib/rmhbox/constants';
 
 // ─── Helpers ─────────────────────────────────────────────────────
@@ -176,7 +166,7 @@ describe('Cursor Curling Server Handler (§3)', () => {
     });
 
     it('should begin in END_START phase then transition to AIM', () => {
-      const { game, broadcastLog } = createGame();
+      const { game } = createGame();
       game.start();
 
       // Initially END_START
@@ -246,7 +236,7 @@ describe('Cursor Curling Server Handler (§3)', () => {
     });
 
     it('should auto-advance to POWER after AIM duration expires', () => {
-      const { game, broadcastLog, playerLog } = startAndAdvanceToAim();
+      const { broadcastLog, playerLog } = startAndAdvanceToAim();
       const thrower = getCurrentThrower(broadcastLog);
 
       // Advance through AIM duration
@@ -261,7 +251,7 @@ describe('Cursor Curling Server Handler (§3)', () => {
     });
 
     it('should auto-throw with low power when POWER phase expires', () => {
-      const { game, broadcastLog } = startAndAdvanceToAim();
+      const { broadcastLog } = startAndAdvanceToAim();
 
       // Advance through AIM
       vi.advanceTimersByTime(CU_AIM_DURATION_SECONDS * 1000);
@@ -975,7 +965,7 @@ describe('Cursor Curling Server Handler (§3)', () => {
     it('should respect custom totalEnds setting', () => {
       const ctx = createMockContext([MOCK_USERS.alice, MOCK_USERS.bob]);
       ctx.context.gameSettings = { totalEnds: 2 };
-      const { game, broadcastLog, completedResults } = createGame(ctx);
+      const { game } = createGame(ctx);
       game.start();
 
       const state = game.getStateForPlayer(MOCK_USERS.alice.userId) as Record<string, unknown>;
@@ -993,7 +983,7 @@ describe('Cursor Curling Server Handler (§3)', () => {
     it('should respect custom aimDuration', () => {
       const ctx = createMockContext([MOCK_USERS.alice, MOCK_USERS.bob]);
       ctx.context.gameSettings = { aimDuration: 5 };
-      const { game, broadcastLog, playerLog } = createGame(ctx);
+      const { game, broadcastLog } = createGame(ctx);
       game.start();
       vi.advanceTimersByTime(CU_END_START_SECONDS * 1000);
 

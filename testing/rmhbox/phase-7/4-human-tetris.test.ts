@@ -28,7 +28,6 @@ import {
   createMockContext,
   findActionBroadcasts,
   findLastActionBroadcast,
-  findPlayerActions,
   type MockContextData,
 } from './setup';
 import {
@@ -36,8 +35,6 @@ import {
   HT_GRID_COLS,
   HT_GRID_ROWS,
   HT_EASY_POSITION_SECONDS,
-  HT_MEDIUM_POSITION_SECONDS,
-  HT_HARD_POSITION_SECONDS,
   HT_WALL_PREVIEW_SECONDS,
   HT_WALL_IMPACT_SECONDS,
   HT_WAVE_RESULTS_SECONDS,
@@ -46,7 +43,6 @@ import {
   HT_PARTIAL_POINTS,
   HT_CORRECT_POSITION_POINTS,
   HT_HIT_PENALTY,
-  HT_PERFECT_WAVE_BONUS,
   HT_STREAK_BONUS,
 } from '../../../lib/rmhbox/constants';
 
@@ -95,7 +91,7 @@ function actionPayload(entry: { data: Record<string, unknown> }): Record<string,
 
 /** Access internal game state for test setup. */
 function getState(game: HumanTetrisGame): HumanTetrisState {
-  return (game as any).state as HumanTetrisState;
+  return (game as unknown as { state: HumanTetrisState }).state as HumanTetrisState;
 }
 
 /** Set a player's position directly for controlled test scenarios. */
@@ -568,7 +564,7 @@ describe('Human Tetris Server Handler (§4)', () => {
     });
 
     it('should broadcast HT_WALL_IMPACT then HT_WAVE_RESULTS', () => {
-      const { game, broadcastLog } = startAndAdvanceToPositioning();
+      const { broadcastLog } = startAndAdvanceToPositioning();
 
       advancePastPositioning();
 
@@ -1146,7 +1142,7 @@ describe('Human Tetris Server Handler (§4)', () => {
     it('should use custom startingPositionTime', () => {
       const ctx = createMockContext();
       ctx.context.gameSettings = { totalWaves: 1, startingPositionTime: 3 };
-      const { game, broadcastLog } = createGame(ctx);
+      const { game } = createGame(ctx);
       game.start();
 
       advancePastWallPreview();
