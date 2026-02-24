@@ -137,3 +137,83 @@ export const WR_CACHE_MAX = 500;
 export const WR_CACHE_TTL = 600000;
 export const WR_NAV_RATE_LIMIT = 3;
 export const WR_MAX_PAIR_POOL = 200;
+
+// ─── Pixel Pushers (PP) ─────────────────────────────────────────
+
+export const PP_TOTAL_LEVELS = 3;
+export const PP_CANVAS_WIDTH = 600;
+export const PP_CANVAS_HEIGHT = 400;
+export const PP_LEVEL_PREVIEW_SECONDS = 3;
+export const PP_ACTIVE_DURATION_SECONDS = 90;
+export const PP_LEVEL_COMPLETE_SECONDS = 3;
+export const PP_PUSHER_RADIUS = 15;
+export const PP_BALL_RADIUS = 20;
+export const PP_PUSHER_SPEED = 3;
+export const PP_PUSH_FORCE = 0.8;
+export const PP_BALL_FRICTION = 0.97;
+export const PP_BALL_MAX_SPEED = 8;
+export const PP_BALL_WALL_RESTITUTION = 0.6;
+export const PP_POLARITY_INTERVAL_SECONDS = 10;
+export const PP_POLARITY_WARNING_SECONDS = 3;
+export const PP_ATTRACT_RADIUS = 80;
+export const PP_ATTRACT_FORCE = 200;
+export const PP_MAX_ATTRACT_FORCE = 2.0;
+export const PP_WAYPOINT_RADIUS = 30;
+export const PP_MOVE_INPUT_RATE = 15;
+export const PP_SIMULATION_TICK_MS = 33;
+export const PP_STATE_BROADCAST_RATE = 15;
+export const PP_LEVEL_COMPLETE_POINTS = 200;
+export const PP_WAYPOINT_POINTS = 50;
+export const PP_TIME_BONUS_PER_SECOND = 3;
+export const PP_MVP_BONUS = 75;
+export const PP_POLARITY_CONTROL_BONUS = 50;
+export const PP_DISCONNECT_GHOST_DELAY_MS = 10000;
+export const PP_PUSHER_COLORS = [
+  '#EF4444', '#3B82F6', '#22C55E', '#F59E0B',
+  '#A855F7', '#EC4899', '#14B8A6', '#F97316',
+];
+
+// ─── Scroll Soul (SC) ───────────────────────────────────────────
+
+export const SC_CANVAS_WIDTH = 400;
+export const SC_CANVAS_HEIGHT = 600;
+export const SC_PLAYER_WIDTH = 20;
+export const SC_PLAYER_HEIGHT = 30;
+export const SC_GRAVITY = 0.5;
+export const SC_JUMP_VELOCITY = -10;
+export const SC_MOVE_SPEED = 4;
+export const SC_MAX_FALL_SPEED = 12;
+export const SC_SCROLL_SPEED_INITIAL = 1.0;
+export const SC_SCROLL_SPEED_INCREMENT = 0.02;
+export const SC_SCROLL_SPEED_MAX = 4.0;
+export const SC_LAVA_HEIGHT = 40;
+export const SC_SAFE_ZONE_MIN_WIDTH = 60;
+export const SC_SAFE_ZONE_MAX_WIDTH = 120;
+export const SC_SAFE_ZONE_HEIGHT = 10;
+export const SC_SAFE_ZONE_VERTICAL_GAP_MIN = 60;
+export const SC_SAFE_ZONE_VERTICAL_GAP_MAX = 100;
+export const SC_SAFE_ZONE_HORIZONTAL_PADDING = 20;
+export const SC_MOVING_PLATFORM_SPEED = 1.5;
+export const SC_SHRINKING_PLATFORM_RATE = 0.5;
+export const SC_AD_SPAWN_INTERVAL_MIN = 8;
+export const SC_AD_SPAWN_INTERVAL_MAX = 15;
+export const SC_AD_DURATION_SECONDS = 5;
+export const SC_AD_EFFECT_DURATION_SECONDS = 3;
+export const SC_AD_OBSCURE_OPACITY = 0.7;
+export const SC_AD_PUSH_FORCE = 3;
+export const SC_AD_SLOW_MULTIPLIER = 0.5;
+export const SC_AD_INVERT_MULTIPLIER = -1;
+export const SC_SIMULATION_TICK_MS = 33;
+export const SC_STATE_BROADCAST_RATE = 15;
+export const SC_ELIMINATION_POINTS_BASE = 100;
+export const SC_SURVIVAL_BONUS_PER_SECOND = 5;
+export const SC_AD_DISMISS_BONUS = 20;
+export const SC_LAST_SURVIVOR_BONUS = 150;
+export const SC_GHOST_SPECTATE_DELAY_MS = 2000;
+export const SC_RESPAWN_INVINCIBILITY_MS = 0;
+export const SC_GENERATION_LOOKAHEAD = 400;
+export const SC_GENERATION_CULL_BEHIND = 200;
+export const SC_PLAYER_COLORS = [
+  '#EF4444', '#3B82F6', '#22C55E', '#F59E0B',
+  '#A855F7', '#EC4899', '#14B8A6', '#F97316',
+];
