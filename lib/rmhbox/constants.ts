@@ -137,3 +137,47 @@ export const WR_CACHE_MAX = 500;
 export const WR_CACHE_TTL = 600000;
 export const WR_NAV_RATE_LIMIT = 3;
 export const WR_MAX_PAIR_POOL = 200;
+
+// ─── Sequence Sam (SS) ──────────────────────────────────────────
+
+export const SS_MAX_ROUNDS = 20;
+export const SS_STARTING_LENGTH = 3;
+export const SS_MAX_STRIKES = 3;
+export const SS_CHAOS_INTERVAL = 4;
+export const SS_TILE_FLASH_DURATION_MS = 500;
+export const SS_TILE_GAP_MS = 200;
+export const SS_INPUT_TIME_PER_STEP_MS = 1500;
+export const SS_ROUND_RESULTS_SECONDS = 2;
+export const SS_TRANSITION_SECONDS = 1;
+export const SS_SURVIVE_POINTS = 50;
+export const SS_PERFECT_ROUND_BONUS = 25;
+export const SS_CHAOS_SURVIVE_BONUS = 50;
+export const SS_SPEED_BONUS_PER_MS = 0.05;
+export const SS_WINNER_BONUS = 200;
+export const SS_PLACEMENT_POINTS = 20;
+export const SS_GRID_SIZE = 9;
+export const SS_GRID_COLS = 3;
+export const SS_ENABLE_CHAOS = true;
+export const ROTATION_MAP_CW: Record<number, number> = {
+  0: 2, 1: 5, 2: 8,
+  3: 1, 4: 4, 5: 7,
+  6: 0, 7: 3, 8: 6,
+};
+
+// ─── Human Keyboard (HK) ────────────────────────────────────────
+
+export const HK_TYPING_DURATION_SECONDS = 90;
+export const HK_SENTENCE_REVEAL_SECONDS = 3;
+export const HK_RESULTS_SECONDS = 5;
+export const HK_RESHUFFLE_INTERVAL_SECONDS = 8;
+export const HK_RESHUFFLE_WARNING_SECONDS = 3;
+export const HK_SPACE_DELAY_MS = 200;
+export const HK_WRONG_KEY_PENALTY_MS = 500;
+export const HK_INPUT_RATE_LIMIT = 5;
+export const HK_CORRECT_KEY_POINTS = 20;
+export const HK_WRONG_KEY_PENALTY_POINTS = -5;
+export const HK_PERFECT_ACCURACY_BONUS = 200;
+export const HK_COMPLETION_BONUS = 100;
+export const HK_TIME_BONUS_PER_SECOND = 5;
+export const HK_MVP_BONUS = 100;
+export const HK_ENABLE_RESHUFFLE = true;
