@@ -2410,6 +2410,7 @@ interface GameLog {
     userId: string;
     userName: string;
   }>;
+  gameSettings: GameSettingValues;  // settings used for this match (§12A.11)
   initialState: Record<string, unknown>;  // sanitized initial game state
   actions: Array<{
     seq: number;
