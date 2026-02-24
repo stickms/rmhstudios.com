@@ -24,6 +24,7 @@
 12A. [Minigame Game Settings](#12a-minigame-game-settings)
 13. [Database Schema](#13-database-schema)
 14. [Leaderboard & Stats API](#14-leaderboard--stats-api)
+14A. [Minigame Browser & History Viewing](#14a-minigame-browser--history-viewing)
 15. [Match-End Lifecycle & Persistence](#15-match-end-lifecycle--persistence)
 16. [Error Handling & Fault Isolation](#16-error-handling--fault-isolation)
 17. [Anti-Cheat Considerations](#17-anti-cheat-considerations)
@@ -2409,6 +2410,7 @@ interface GameLog {
     userId: string;
     userName: string;
   }>;
+  gameSettings: GameSettingValues;  // settings used for this match (§12A.11)
   initialState: Record<string, unknown>;  // sanitized initial game state
   actions: Array<{
     seq: number;
@@ -2581,6 +2583,213 @@ interface LeaderboardDataPayload {
   period: string;
 }
 ```
+
+---
+
+## 14A. Minigame Browser & History Viewing
+
+### 14A.1 Overview
+
+The Minigame Browser and History Viewing system provides a publicly accessible interface for users to explore all available minigames, view per-minigame leaderboards, and search through their personal game histories.
+
+**User Flow:**
+
+```
+Landing Page (/rmhbox)
+  └─ "View Minigames" button
+       └─ Minigames List Page (/rmhbox/minigames)
+            ├─ [Leaderboard] → Leaderboard Modal (All-Time + Weekly tabs)
+            └─ [History] → History Page (/rmhbox/minigames/[minigameId]/history)
+```
+
+### 14A.2 Minigames List Page
+
+**Route:** `/rmhbox/minigames`
+
+Displays all registered minigames as responsive cards. Each card shows:
+
+- **Icon** — Lucide icon from the `MinigameDefinition.icon` field
+- **Name** — `MinigameDefinition.displayName`
+- **Description** — `MinigameDefinition.description`
+- **Category badge** — `MinigameDefinition.category` (word / trivia / action / creative)
+- **Player range** — `minPlayers–maxPlayers`
+- **Two action buttons:**
+  - **Leaderboard** — Opens a modal showing the minigame's leaderboard
+  - **History** — Navigates to `/rmhbox/minigames/[minigameId]/history`
+
+**Header:** The `RMHboxHeader` back link reads "← Home" and links to `/rmhbox`.
+
+**Data Source:** `getAllMinigames()` from `lib/rmhbox/minigame-registry.ts` — no API call needed, purely client-side registry data.
+
+### 14A.3 Leaderboard Modal
+
+When a user clicks the "Leaderboard" button on a minigame card, a modal overlay appears containing two tabs:
+
+| Tab | API Call | Description |
+|---|---|---|
+| **All-Time** | `GET /api/rmhbox/leaderboard?minigame={id}&period=all-time` | Global all-time leaderboard for this minigame |
+| **Weekly** | `GET /api/rmhbox/leaderboard?minigame={id}&period=weekly` | Top scores achieved within the last 7 days |
+
+**Modal UI:**
+
+```
+┌──────────────────────────────────────┐
+│  🏆 Rhyme Time Leaderboard     [✕]  │
+│  ┌──────────┐ ┌──────────┐          │
+│  │ All-Time │ │  Weekly  │          │
+│  └──────────┘ └──────────┘          │
+│  ┌──────────────────────────────┐   │
+│  │ # │ Player     │ Score       │   │
+│  │ 1 │ Alice      │ 4,520       │   │
+│  │ 2 │ Bob        │ 3,180       │   │
+│  │ 3 │ Charlie    │ 2,950       │   │
+│  │...│            │             │   │
+│  └──────────────────────────────┘   │
+│                                      │
+│  Your Rank: #7                       │
+└──────────────────────────────────────┘
+```
+
+**Component:** `MinigameLeaderboardModal.tsx`
+
+```typescript
+interface MinigameLeaderboardModalProps {
+  minigameId: string;
+  displayName: string;
+  isOpen: boolean;
+  onClose: () => void;
+}
+```
+
+Reuses the existing `LeaderboardEntry` type and fetches data via the REST API (not WebSocket), since this page doesn't require a socket connection.
+
+### 14A.4 History Viewing Page
+
+**Route:** `/rmhbox/minigames/[minigameId]/history`
+
+Displays a searchable, sortable, and filterable list of all matches for the given minigame that the authenticated user participated in.
+
+**Header:** The `RMHboxHeader` back link reads "← Minigames" and links to `/rmhbox/minigames`.
+
+**Data Source:** `GET /api/rmhbox/history?userId={currentUserId}&minigame={minigameId}&limit=20&offset=0`
+
+**Common Display Fields (all minigames):**
+
+| Field | Source | Description |
+|---|---|---|
+| Date | `match.startedAt` | Formatted game date/time |
+| Duration | `match.durationMs` | Game length |
+| Players | `match.playerCount` | Number of participants |
+| Winner | `match.players[rank=1].userName` | Winner's name |
+| Your Rank | `match.players[userId=me].rank` | User's placement |
+| Your Score | `match.players[userId=me].score` | User's final score |
+
+**Sorting Options:**
+
+| Sort Key | Direction | Default |
+|---|---|---|
+| Date | Newest first / Oldest first | Newest first |
+| Score | Highest / Lowest | — |
+| Rank | Best / Worst | — |
+| Duration | Longest / Shortest | — |
+
+**Search & Filter:**
+
+- **Text search** — Searches across player names and minigame-specific searchable fields
+- **Date range filter** — Start/end date pickers
+- **Result filter** — Win / Loss / All
+
+Each minigame defines additional filterable and searchable properties via a `HistoryDisplayConfig` interface (see §14A.5).
+
+**Expandable Detail View:**
+
+Each history row can be expanded to show the full game log details. When expanded, the row renders a minigame-specific detail component that processes and displays the `gameLog` data. This detail view is lazy-loaded per minigame.
+
+### 14A.5 Minigame History Display Configuration
+
+Each minigame must define a `HistoryDisplayConfig` that specifies:
+
+1. **How to render its game log** — A React component for the expanded detail view
+2. **What properties are searchable** — Fields from the game log that can be text-searched
+3. **What properties are filterable** — Fields that can be filtered via dropdowns or ranges
+
+```typescript
+interface HistoryDisplayConfig {
+  /** Unique minigame ID */
+  minigameId: string;
+
+  /** React component that renders the expanded game log detail view */
+  DetailComponent: React.ComponentType<HistoryDetailProps>;
+
+  /** Fields from the game log that can be text-searched */
+  searchableFields: HistorySearchField[];
+
+  /** Fields that can be filtered via dropdowns or ranges */
+  filterableFields: HistoryFilterField[];
+
+  /** Function to extract a one-line summary from a game log */
+  getSummary: (gameLog: GameLog) => string;
+}
+
+interface HistoryDetailProps {
+  gameLog: GameLog;
+  currentUserId: string;
+  players: Array<{ userId: string; userName: string; rank: number; score: number }>;
+}
+
+interface HistorySearchField {
+  key: string;
+  label: string;
+  /** Extractor function: given a gameLog, return all searchable string values */
+  extract: (gameLog: GameLog) => string[];
+}
+
+interface HistoryFilterField {
+  key: string;
+  label: string;
+  type: 'select' | 'range' | 'boolean';
+  /** For 'select': extract available options from a gameLog */
+  options?: (gameLog: GameLog) => string[];
+  /** For 'range': field path to numeric value */
+  valuePath?: string;
+}
+```
+
+**Registry Pattern:**
+
+```typescript
+// lib/rmhbox/history-display-registry.ts
+const HISTORY_DISPLAY_REGISTRY: Record<string, HistoryDisplayConfig> = {};
+
+export function registerHistoryDisplay(config: HistoryDisplayConfig): void {
+  HISTORY_DISPLAY_REGISTRY[config.minigameId] = config;
+}
+
+export function getHistoryDisplay(minigameId: string): HistoryDisplayConfig | null {
+  return HISTORY_DISPLAY_REGISTRY[minigameId] ?? null;
+}
+```
+
+Each minigame registers its history display config in its own module, following the same pattern as the minigame registry.
+
+### 14A.6 Landing Page Integration
+
+Add a "View Minigames" button to the RMHbox landing page (`app/rmhbox/page.tsx`) that navigates to `/rmhbox/minigames`.
+
+**Placement:** Below the Create/Join section, above the Public Lobbies section.
+
+**Button Style:** Full-width secondary action with a Gamepad2 icon, matching the existing card styling.
+
+### 14A.7 Navigation & Header Backlinks
+
+The header backlink hierarchy:
+
+| Page | Back Link Text | Links To |
+|---|---|---|
+| Landing (`/rmhbox`) | `← Games` | `/games` |
+| Minigames List (`/rmhbox/minigames`) | `← Home` | `/rmhbox` |
+| History View (`/rmhbox/minigames/[id]/history`) | `← Minigames` | `/rmhbox/minigames` |
+| Lobby (`/rmhbox/[lobbyId]`) | Settings/Host Controls | — |
 
 ---
 

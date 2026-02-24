@@ -247,7 +247,7 @@ export default function LobbyPage({ params }: { params: Promise<{ lobbyId: strin
       />
 
       {/* Content area below header */}
-      <div className="flex-1 min-h-0 overflow-y-auto relative" style={{ scrollbarGutter: 'stable both-edges' }}>
+      <div className="flex-1 min-h-0 overflow-y-auto relative" style={lobby.state === 'WAITING' ? { scrollbarGutter: 'stable both-edges' } : undefined}>
         {/* Spectator Banner */}
         {isSpectator && (
           <SpectatorBanner

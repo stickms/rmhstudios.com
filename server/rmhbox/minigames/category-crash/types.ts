@@ -48,9 +48,10 @@ export interface CCRoundResults {
 
 /** Action log entry for the game log. */
 export interface ActionLogEntry {
-  action: string;
+  seq: number;
+  type: string;
   timestamp: number;
-  data: Record<string, unknown>;
+  payload: Record<string, unknown>;
 }
 
 /** Full internal state of the Category Crash minigame. */

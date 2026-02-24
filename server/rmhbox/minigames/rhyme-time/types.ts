@@ -57,9 +57,10 @@ export interface RoundResult {
 }
 
 export interface ActionLogEntry {
-  action: string;
+  seq: number;
+  type: string;
   timestamp: number;
-  data: Record<string, unknown>;
+  payload: Record<string, unknown>;
 }
 
 export interface RhymeTimeState {

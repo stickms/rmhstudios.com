@@ -311,12 +311,35 @@
 #### 7.1.4.13 `buildGameLog()`
 
 - [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
-- [ ] Log `round_start` action at each round (round, sequenceLength, isChaosRound, rotationDegrees)
-- [ ] Log `round_result` action at round end (round, survivingPlayers, eliminatedPlayers)
-- [ ] Log `player_eliminated` action when a player is eliminated (userId, round, reason: 'wrong_input' | 'timeout')
-- [ ] In `computeResults()`, build `GameLog` with `initialState` containing startingLength, chaosRoundInterval, maxRounds
+- [ ] Build `GameLog` conforming to core.md §13.3, including `gameSettings` per §12A.11
+
+**`initialState` (from minigames-3.md §1.14):**
+
+```typescript
+interface SSInitialState {
+  gridSize: number;
+  maxStrikes: number;
+  chaosInterval: number;
+  playerCount: number;
+  tileFlashDurationMs: number;
+  inputTimePerStepMs: number;
+  gameSettings: GameSettingValues;
+}
+```
+
+**Actions Logged:**
+
+| Action Type | Payload | Recorded When |
+|---|---|---|
+| `round_start` | `{ round: number; sequenceLength: number; sequence: number[] }` | Start of each round |
+| `chaos_rotation` | `{ round: number; rotationType: string; mapping: Record<number, number> }` | When a chaos round triggers a tile remap |
+| `round_result` | `{ round: number; correct: string[]; failed: string[]; strikes: Record<string, number> }` | After all inputs are evaluated |
+| `elimination` | `{ userId: string; round: number; placement: number }` | When a player is eliminated |
+| `game_end` | `{ winner: string; finalPlacements: Array<{ userId: string; placement: number; score: number }> }` | Game over |
+
+- [ ] In `computeResults()`, build `GameLog` with `initialState`, full action log, and `finalResults`
 - [ ] Return `GameLog` from `buildGameLog()`
-  **Verification:** Unit test: 8-player game lasting 10 rounds, verify log contains round_start/round_result per round and player_eliminated for each elimination.
+  **Verification:** Unit test: 8-player game lasting 10 rounds, verify log contains `round_start`/`round_result` per round, `elimination` for each elimination, `initialState` has grid and chaos config, `finalResults` matches placements.
 
 ---
 
@@ -501,6 +524,35 @@ Replace hardcoded constants with `this.getSetting()` calls in the Sequence Sam h
 
 - [ ] **Boolean setting logic:** When `enableChaosRounds` is `false`, skip all chaos-round logic (no tile remapping, no shuffled sequences). The `chaosInterval` setting is ignored when chaos rounds are disabled.
   **Verification:** Each constant usage replaced. Handler respects custom settings passed via `MinigameContext.gameSettings`.
+
+---
+
+### 7.1.9 History Display Configuration
+
+Implement the history display config for Sequence Sam as defined in `minigames-3.md §1.15`.
+
+#### 7.1.9.1 Create Detail Component
+
+Create `components/rmhbox/minigames/sequence-sam/SequenceSamHistoryDetail.tsx`:
+- Render round-by-round elimination view with 3×3 tile grid visualization
+- Show chaos round indicators with rotation badges
+- Display per-player status (survived/eliminated/strikes remaining)
+- Show elimination order timeline and speed bonus indicators
+
+#### 7.1.9.2 Register History Display
+
+Add registration in `lib/rmhbox/history-display-registrations.ts` with:
+- Searchable fields: `playerNames` (player names)
+- Filterable fields: `roundsSurvived` (range), `hadChaosRound` (boolean), `wasEliminated` (boolean)
+- Summary: `{rounds} rounds ({chaos} chaos) — Sequence memory`
+
+#### 7.1.9.3 Tests
+
+- [ ] Verify `getHistoryDisplay('sequence-sam')` returns a valid config
+- [ ] Verify searchable fields extract player names from a mock game log
+- [ ] Verify filterable fields include roundsSurvived (range), hadChaosRound (boolean), wasEliminated (boolean)
+- [ ] Verify `getSummary()` returns a meaningful string for a mock game log
+- [ ] Verify `DetailComponent` renders without errors when given a valid game log
 
 ---
 
@@ -818,14 +870,34 @@ Replace hardcoded constants with `this.getSetting()` calls in the Sequence Sam h
 #### 7.2.6.14 `buildGameLog()`
 
 - [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
-- [ ] Log `game_start` action with target sentence and initial key assignments (assignments map)
-- [ ] Log `reshuffle` action each time keys are reshuffled (newAssignments, progressAtReshuffle)
-- [ ] Log `milestone` action at 25%, 50%, 75% sentence completion (percentComplete, timeMs, charsCompleted)
-- [ ] Log `keystroke_summary` action per player at game end (userId, totalKeystrokes, correctKeystrokes, missedKeys)
-- [ ] Log `game_complete` action when sentence is finished or time expires (completed, totalTimeMs, finalProgress)
-- [ ] In `computeResults()`, build `GameLog` with `initialState` containing targetSentence, playerCount, reshuffleInterval
+- [ ] Build `GameLog` conforming to core.md §13.3, including `gameSettings` per §12A.11
+
+**`initialState` (from minigames-3.md §2.15):**
+
+```typescript
+interface HKInitialState {
+  sentence: string;
+  sentenceLength: number;
+  typingDurationSeconds: number;
+  reshuffleIntervalSeconds: number;
+  playerCount: number;
+  initialKeyAssignments: Record<string, string[]>;
+  gameSettings: GameSettingValues;
+}
+```
+
+**Actions Logged:**
+
+| Action Type | Payload | Recorded When |
+|---|---|---|
+| `reshuffle` | `{ period: number; newAssignments: Record<string, string[]>; progressAtReshuffle: number }` | Each key reshuffle |
+| `progress_milestone` | `{ milestone: 25 \| 50 \| 75 \| 100; elapsedMs: number; currentChar: number }` | At 25%, 50%, 75%, 100% completion |
+| `player_summary` | `{ userId: string; correctKeys: number; wrongKeys: number; accuracy: number }` | End of game, per player |
+| `game_end` | `{ completed: boolean; finalProgress: number; elapsedMs: number; mvpUserId: string; totalCorrectKeys: number; totalWrongKeys: number }` | Game over |
+
+- [ ] In `computeResults()`, build `GameLog` with `initialState`, full action log, and `finalResults`
 - [ ] Return `GameLog` from `buildGameLog()`
-  **Verification:** Unit test: 5-player game, 2 reshuffles, verify log captures both reshuffles, milestones, and per-player keystroke summaries.
+  **Verification:** Unit test: 5-player game, 2 reshuffles, verify log captures `reshuffle` events, `progress_milestone` at each threshold, `player_summary` per player, `initialState` has sentence and key assignments.
 
 ---
 
@@ -1016,6 +1088,34 @@ Replace hardcoded constants with `this.getSetting()` calls in the Human Keyboard
 
 - [ ] **Boolean setting logic:** When `enableReshuffle` is `false`, key assignments remain fixed for the entire round. The `reshuffleInterval` setting is ignored when reshuffling is disabled.
   **Verification:** Each constant usage replaced. Handler respects custom settings passed via `MinigameContext.gameSettings`.
+
+---
+
+### 7.2.11 History Display Configuration
+
+Implement the history display config for Human Keyboard as defined in `minigames-3.md §2.16`.
+
+#### 7.2.11.1 Create Detail Component
+
+Create `components/rmhbox/minigames/human-keyboard/HumanKeyboardHistoryDetail.tsx`:
+- Render cooperative typing replay with target sentence and typed progress
+- Show key assignment map (player → keys visualization)
+- Display per-player accuracy statistics and reshuffle timeline markers
+
+#### 7.2.11.2 Register History Display
+
+Add registration in `lib/rmhbox/history-display-registrations.ts` with:
+- Searchable fields: `targetSentence` (sentence text), `playerNames` (player names)
+- Filterable fields: `accuracy` (range), `completedSentence` (boolean)
+- Summary: `"{sentence}"`
+
+#### 7.2.11.3 Tests
+
+- [ ] Verify `getHistoryDisplay('human-keyboard')` returns a valid config
+- [ ] Verify searchable fields extract target sentence and player names from a mock game log
+- [ ] Verify filterable fields include accuracy (range) and completedSentence (boolean)
+- [ ] Verify `getSummary()` returns a meaningful string for a mock game log
+- [ ] Verify `DetailComponent` renders without errors when given a valid game log
 
 ---
 
@@ -1375,13 +1475,36 @@ Replace hardcoded constants with `this.getSetting()` calls in the Human Keyboard
 #### 7.3.4.14 `buildGameLog()`
 
 - [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
-- [ ] Log `end_start` action at each end (endNumber, totalEnds)
-- [ ] Log `throw` action for each stone thrown (userId, endNumber, angle, power, initialPosition)
-- [ ] Log `stone_rest` action when a stone comes to rest (userId, endNumber, finalPosition, distanceToBullseye)
-- [ ] Log `end_result` action at end conclusion (endNumber, stonePositions, scores, closestPlayer)
-- [ ] In `computeResults()`, build `GameLog` with `initialState` containing totalEnds, houseCenter, ringRadii
+- [ ] Build `GameLog` conforming to core.md §13.3, including `gameSettings` per §12A.11
+
+**`initialState` (from minigames-3.md §3.14):**
+
+```typescript
+interface CUInitialState {
+  totalEnds: number;
+  playerCount: number;
+  canvasSize: { width: number; height: number };
+  houseCenter: { x: number; y: number };
+  bullseyeRadius: number;
+  stoneRadius: number;
+  throwOrder: string[];
+  gameSettings: GameSettingValues;
+}
+```
+
+**Actions Logged:**
+
+| Action Type | Payload | Recorded When |
+|---|---|---|
+| `end_start` | `{ end: number; throwOrder: string[] }` | Start of each end |
+| `throw` | `{ end: number; userId: string; angle: number; power: number; swept: boolean }` | After each player's throw completes |
+| `stone_rest` | `{ end: number; userId: string; position: { x: number; y: number }; distanceToBullseye: number }` | When a stone comes to rest |
+| `end_result` | `{ end: number; scores: Record<string, number>; closestUserId: string; stonePositions: Array<{ userId: string; x: number; y: number }> }` | End of each end |
+| `game_end` | `{ finalScores: Record<string, number>; placements: Array<{ userId: string; placement: number; score: number }> }` | Game over |
+
+- [ ] In `computeResults()`, build `GameLog` with `initialState`, full action log, and `finalResults`
 - [ ] Return `GameLog` from `buildGameLog()`
-  **Verification:** Unit test: 3-end game, 4 players, verify 12 throw/stone_rest actions and 3 end_result actions.
+  **Verification:** Unit test: 3-end game, 4 players, verify 12 `throw`/`stone_rest` actions and 3 `end_result` actions, `initialState` has house geometry and throw order.
 
 ---
 
@@ -1580,6 +1703,32 @@ Replace hardcoded constants with `this.getSetting()` calls in the Cursor Curling
 
 - [ ] **Boolean setting logic:** When `enableSweeping` is `false`, skip the sweeping phase entirely after stone release — the stone travels on its natural trajectory without team intervention.
   **Verification:** Each constant usage replaced. Handler respects custom settings passed via `MinigameContext.gameSettings`.
+
+### 7.3.9 History Display Configuration
+
+Implement the history display config for Cursor Curling as defined in `minigames-3.md §3.15`.
+
+#### 7.3.9.1 Create Detail Component
+
+Create `components/rmhbox/minigames/cursor-curling/CursorCurlingHistoryDetail.tsx`:
+- Render per-end scoring summary with stone positions on house visualization
+- Show distance-from-center ranking and sweep activity indicators
+- Display per-end scoring breakdown (bullseye/inner/outer/house/outside)
+
+#### 7.3.9.2 Register History Display
+
+Add registration in `lib/rmhbox/history-display-registrations.ts` with:
+- Searchable fields: `playerNames` (player names)
+- Filterable fields: `hitBullseye` (boolean), `endCount` (range), `sweepCount` (range)
+- Summary: `{ends} ends — Curling precision`
+
+#### 7.3.9.3 Tests
+
+- [ ] Verify `getHistoryDisplay('cursor-curling')` returns a valid config
+- [ ] Verify searchable fields extract player names from a mock game log
+- [ ] Verify filterable fields include hitBullseye (boolean), endCount (range), sweepCount (range)
+- [ ] Verify `getSummary()` returns a meaningful string for a mock game log
+- [ ] Verify `DetailComponent` renders without errors when given a valid game log
 
 ---
 
@@ -1897,12 +2046,34 @@ Replace hardcoded constants with `this.getSetting()` calls in the Cursor Curling
 #### 7.4.6.12 `buildGameLog()`
 
 - [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
-- [ ] Log `wave_start` action at each wave (waveNumber, wallShape, requiredPlayers, positioningTime)
-- [ ] Log `wave_result` action at wall impact (waveNumber, success, playerPositions, matchPercentage)
-- [ ] Log `game_end` action with total waves completed, team score summary
-- [ ] In `computeResults()`, build `GameLog` with `initialState` containing totalWaves, gridSize, deadZones, playerCount
+- [ ] Build `GameLog` conforming to core.md §13.3, including `gameSettings` per §12A.11
+
+**`initialState` (from minigames-3.md §4.16):**
+
+```typescript
+interface HTInitialState {
+  playerCount: number;
+  arenaSize: { width: number; height: number };
+  wallSpeedInitial: number;
+  totalWaves: number;
+  gapTolerance: number;
+  movementSpeed: number;
+  gameSettings: GameSettingValues;
+}
+```
+
+**Actions Logged:**
+
+| Action Type | Payload | Recorded When |
+|---|---|---|
+| `wave_start` | `{ wave: number; wallShape: Array<{ x: number; y: number; width: number; height: number }>; requiredPlayers: number; wallSpeed: number }` | Start of each wave |
+| `wave_impact` | `{ wave: number; playerPositions: Array<{ userId: string; x: number; y: number }>; success: boolean; playersHit: string[] }` | Moment of wall impact |
+| `wave_result` | `{ wave: number; passed: boolean; teamScore: number; streak: number }` | After wave evaluation |
+| `game_end` | `{ wavesCompleted: number; totalWaves: number; finalScore: number; perfectWaves: number; longestStreak: number }` | Game over |
+
+- [ ] In `computeResults()`, build `GameLog` with `initialState`, full action log, and `finalResults`
 - [ ] Return `GameLog` from `buildGameLog()`
-  **Verification:** Unit test: 8-wave game, verify 8 wave_start and 8 wave_result actions, final game_end action with team summary.
+  **Verification:** Unit test: 8-wave game, verify 8 `wave_start` and 8 `wave_result` actions, `wave_impact` with player positions, `game_end` with streak data, `initialState` has arena config and wave parameters.
 
 ---
 
@@ -2105,6 +2276,32 @@ Replace hardcoded constants with `this.getSetting()` calls in the Human Tetris h
 - [ ] **Boolean setting logic:** When `enableDeadZones` is `true`, the handler spawns dead-zone grid cells that eliminate players on contact. Default is `false` — enabling this is an advanced difficulty modifier.
   **Verification:** Each constant usage replaced. Handler respects custom settings passed via `MinigameContext.gameSettings`.
 
+### 7.4.11 History Display Configuration
+
+Implement the history display config for Human Tetris as defined in `minigames-3.md §4.17`.
+
+#### 7.4.11.1 Create Detail Component
+
+Create `components/rmhbox/minigames/human-tetris/HumanTetrisHistoryDetail.tsx`:
+- Render block-by-block summary with block shapes and placement positions
+- Show line clear events, voting results for rotation decisions
+- Display team coordination score and game-over condition
+
+#### 7.4.11.2 Register History Display
+
+Add registration in `lib/rmhbox/history-display-registrations.ts` with:
+- Searchable fields: `playerNames` (player names)
+- Filterable fields: `linesCleared` (range), `blocksPlaced` (range)
+- Summary: `{blocks} blocks, {clears} lines cleared`
+
+#### 7.4.11.3 Tests
+
+- [ ] Verify `getHistoryDisplay('human-tetris')` returns a valid config
+- [ ] Verify searchable fields extract player names from a mock game log
+- [ ] Verify filterable fields include linesCleared (range) and blocksPlaced (range)
+- [ ] Verify `getSummary()` returns a meaningful string for a mock game log
+- [ ] Verify `DetailComponent` renders without errors when given a valid game log
+
 ---
 
 ## 7.5 Cross-Game Integration Testing
@@ -2184,6 +2381,10 @@ Replace hardcoded constants with `this.getSetting()` calls in the Human Tetris h
   - Cursor Curling: `end_start`, `throw`, `stone_rest`, `end_result`
   - Human Tetris: `wave_start`, `wave_result`, `game_end`
   **Verification:** Game logs persist and are retrievable via API. Action types match spec.
+- [ ] Verify `getHistoryDisplay()` returns a valid config for each Phase 7 game
+- [ ] Verify each game's history display has non-empty searchable and filterable fields
+- [ ] Verify each game's `getSummary()` returns a non-empty string for a valid game log
+- [ ] Verify each game's `DetailComponent` can be instantiated
 
 ### 7.5.10 MinigameRenderer Code-Splitting Test
 

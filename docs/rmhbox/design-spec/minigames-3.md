@@ -438,7 +438,56 @@ interface SSInitialState {
 
 **Replay Value:** The fun of reviewing a Sequence Sam log is seeing the elimination order — who survived the longest, which chaos rounds caused the most failures, and how the sequence length ramped up over time.
 
-### 1.15 MinigameRenderer & Client-Server Wiring
+> **Note:** The `GameLog` also includes `gameSettings: GameSettingValues` at the top level (per core.md §12A.11), capturing the exact game settings used for this match.
+
+### 1.15 History Display Configuration
+
+**Detail Component:** `SequenceSamHistoryDetail`
+
+Renders the expanded game log as a round-by-round elimination view:
+- Sequence shown for each round (tile grid visualization)
+- Chaos round indicator with rotation badge
+- Per-player status: survived / eliminated / strikes remaining
+- Elimination order timeline
+- Speed bonus indicators for fast completions
+
+**Searchable Fields:**
+
+| Field Key | Label | Extraction |
+|---|---|---|
+| `playerNames` | Player Names | All player names from the game log |
+
+**Filterable Fields:**
+
+| Field Key | Label | Type | Details |
+|---|---|---|---|
+| `roundsSurvived` | Rounds Survived | range | Number of rounds the user survived |
+| `hadChaosRound` | Played Chaos Round | boolean | Whether game included chaos rounds |
+| `wasEliminated` | Was Eliminated | boolean | Whether user was eliminated before the end |
+
+**Summary Extractor:**
+
+```typescript
+getSummary: (log) => {
+  const rounds = log.actions.filter(a => a.type === 'round_start');
+  const chaos = log.actions.filter(a => a.type === 'chaos_round');
+  return `${rounds.length} rounds (${chaos.length} chaos) — Sequence memory`;
+}
+```
+
+**Component Structure:**
+
+```
+SequenceSamHistoryDetail.tsx
+├── RoundCard (per round)
+│   ├── SequenceGrid (3×3 tile visualization)
+│   ├── ChaosIndicator (rotation badge if chaos)
+│   └── PlayerStatusList (survived/eliminated/strikes)
+├── EliminationTimeline (order of eliminations)
+└── Final scores summary
+```
+
+### 1.16 MinigameRenderer & Client-Server Wiring
 
 #### MinigameRenderer Registration
 
@@ -903,7 +952,54 @@ interface HKInitialState {
 
 **Replay Value:** Reviewing a Human Keyboard log reveals which players carried the team, how reshuffles affected typing momentum, and whether the team completed the sentence — or how close they got.
 
-### 2.16 MinigameRenderer & Client-Server Wiring
+> **Note:** The `GameLog` also includes `gameSettings: GameSettingValues` at the top level (per core.md §12A.11), capturing the exact game settings used for this match.
+
+### 2.16 History Display Configuration
+
+**Detail Component:** `HumanKeyboardHistoryDetail`
+
+Renders the expanded game log as a cooperative typing replay:
+- Target sentence displayed with typed progress
+- Key assignment map showing which player had which keys
+- Per-player accuracy statistics (correct presses, wrong presses)
+- Reshuffle timeline markers
+- Team performance score and multiplier
+
+**Searchable Fields:**
+
+| Field Key | Label | Extraction |
+|---|---|---|
+| `targetSentence` | Target Sentence | The target sentence text |
+| `playerNames` | Player Names | All player names from the game log |
+
+**Filterable Fields:**
+
+| Field Key | Label | Type | Details |
+|---|---|---|---|
+| `accuracy` | Player Accuracy | range | Percentage of correct key presses |
+| `completedSentence` | Sentence Completed | boolean | Whether team finished the sentence |
+
+**Summary Extractor:**
+
+```typescript
+getSummary: (log) => {
+  const start = log.actions.find(a => a.type === 'sentence_reveal');
+  return `"${start?.payload.sentence ?? 'Unknown sentence'}"`;
+}
+```
+
+**Component Structure:**
+
+```
+HumanKeyboardHistoryDetail.tsx
+├── SentenceDisplay (target text with typed progress)
+├── KeyAssignmentMap (player → keys visualization)
+├── AccuracyStats (per-player correct/wrong/accuracy)
+├── ReshuffleTimeline (when keys were reshuffled)
+└── TeamScore (performance multiplier + final score)
+```
+
+### 2.17 MinigameRenderer & Client-Server Wiring
 
 #### MinigameRenderer Registration
 
@@ -1424,7 +1520,54 @@ interface CUInitialState {
 
 **Replay Value:** Comparing throw angles and power levels across players reveals different strategies — cautious vs. aggressive throws, effective sweeping, and how stone collisions changed the outcome of each end.
 
-### 3.15 MinigameRenderer & Client-Server Wiring
+> **Note:** The `GameLog` also includes `gameSettings: GameSettingValues` at the top level (per core.md §12A.11), capturing the exact game settings used for this match.
+
+### 3.15 History Display Configuration
+
+**Detail Component:** `CursorCurlingHistoryDetail`
+
+Renders the expanded game log as a per-end scoring summary:
+- Stone positions on the house (concentric circles visualization)
+- Distance-from-center ranking per end
+- Sweep activity indicators
+- Per-end scoring breakdown (bullseye/inner/outer/house/outside)
+- Closest bonus markers
+
+**Searchable Fields:**
+
+| Field Key | Label | Extraction |
+|---|---|---|
+| `playerNames` | Player Names | All player names from the game log |
+
+**Filterable Fields:**
+
+| Field Key | Label | Type | Details |
+|---|---|---|---|
+| `hitBullseye` | Hit Bullseye | boolean | Whether user landed a bullseye |
+| `endCount` | Ends Played | range | Number of ends in the game |
+| `sweepCount` | Sweeps Performed | range | Number of sweeps by user |
+
+**Summary Extractor:**
+
+```typescript
+getSummary: (log) => {
+  const ends = log.actions.filter(a => a.type === 'end_start');
+  return `${ends.length} ends — Curling precision`;
+}
+```
+
+**Component Structure:**
+
+```
+CursorCurlingHistoryDetail.tsx
+├── EndCard (per end)
+│   ├── HouseVisualization (stone positions on target)
+│   ├── ScoringZones (bullseye/inner/outer breakdown)
+│   └── SweepIndicators (sweep activity)
+└── Final scores summary
+```
+
+### 3.16 MinigameRenderer & Client-Server Wiring
 
 #### MinigameRenderer Registration
 
@@ -1950,7 +2093,54 @@ interface HTInitialState {
 
 **Replay Value:** The log shows how team coordination evolved across waves — whether the group improved with practice, which wall shapes caused the most failures, and how long their success streaks lasted.
 
-### 4.17 MinigameRenderer & Client-Server Wiring
+> **Note:** The `GameLog` also includes `gameSettings: GameSettingValues` at the top level (per core.md §12A.11), capturing the exact game settings used for this match.
+
+### 4.17 History Display Configuration
+
+**Detail Component:** `HumanTetrisHistoryDetail`
+
+Renders the expanded game log as a block-by-block summary:
+- Block shapes shown with placement positions
+- Line clear events highlighted
+- Voting results for rotation decisions
+- Team coordination score
+- Game-over condition (board overflow or timer)
+
+**Searchable Fields:**
+
+| Field Key | Label | Extraction |
+|---|---|---|
+| `playerNames` | Player Names | All player names from the game log |
+
+**Filterable Fields:**
+
+| Field Key | Label | Type | Details |
+|---|---|---|---|
+| `linesCleared` | Lines Cleared | range | Total lines cleared in the game |
+| `blocksPlaced` | Blocks Placed | range | Total blocks placed |
+
+**Summary Extractor:**
+
+```typescript
+getSummary: (log) => {
+  const clears = log.actions.filter(a => a.type === 'line_clear');
+  const blocks = log.actions.filter(a => a.type === 'block_placed');
+  return `${blocks.length} blocks, ${clears.length} lines cleared`;
+}
+```
+
+**Component Structure:**
+
+```
+HumanTetrisHistoryDetail.tsx
+├── BlockTimeline (block shapes + placements)
+├── LineClearEvents (highlighted clear moments)
+├── VotingResults (rotation vote breakdowns)
+├── TeamCoordinationScore
+└── Final scores summary
+```
+
+### 4.18 MinigameRenderer & Client-Server Wiring
 
 #### MinigameRenderer Registration
 

@@ -33,7 +33,7 @@ import type { GridTileClient } from './UndercoverAgentGame';
 const REVEALED_COLORS: Record<string, { bg: string; text: string }> = {
   RED_AGENT: { bg: 'bg-red-600/80', text: 'text-white' },
   BLUE_AGENT: { bg: 'bg-blue-600/80', text: 'text-white' },
-  BYSTANDER: { bg: 'bg-amber-300/80 dark:bg-amber-200/40', text: 'text-amber-950 dark:text-amber-100' },
+  BYSTANDER: { bg: 'bg-amber-200/50 dark:bg-amber-200/40', text: 'text-black' },
   ASSASSIN: { bg: 'bg-neutral-900 border-2 dark:border-white/60 border-neutral-400/60', text: 'text-white' },
 };
 

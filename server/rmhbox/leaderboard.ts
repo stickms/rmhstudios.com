@@ -20,8 +20,8 @@ import type { MinigameResults } from './minigames/base-minigame';
 
 // ─── Types ───────────────────────────────────────────────────────
 
-interface GameLog {
-  events: Array<{ timestamp: number; type: string; data: unknown }>;
+export interface GameLog {
+  [key: string]: unknown;
 }
 
 interface MinigameStatEntry {

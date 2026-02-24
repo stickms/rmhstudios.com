@@ -412,7 +412,56 @@ interface FOFInitialState {
 
 Review who gambled on high pot values and lost, who was consistently fastest, and how the pot decayed across rounds. Useful for settling "I answered first!" disputes.
 
-### 1.16 MinigameRenderer & Client-Server Wiring
+> **Note:** The `GameLog` also includes `gameSettings: GameSettingValues` at the top level (per core.md §12A.11), capturing the exact game settings used for this match.
+
+### 1.16 History Display Configuration
+
+**Detail Component:** `FactOrFrictionHistoryDetail`
+
+Renders the expanded game log as a question-by-question breakdown:
+- Each question with its options, correct answer highlighted
+- Per-player answer indicators (correct/incorrect/timeout)
+- Point pot value at each player's submission time
+- Running score graph across questions
+- Difficulty badge per question (easy/medium/hard)
+
+**Searchable Fields:**
+
+| Field Key | Label | Extraction |
+|---|---|---|
+| `questions` | Questions | Question text from `question_reveal` actions |
+| `categories` | Categories | Question categories from `question_reveal` actions |
+
+**Filterable Fields:**
+
+| Field Key | Label | Type | Details |
+|---|---|---|---|
+| `difficulty` | Difficulty | select | `easy`, `medium`, `hard` |
+| `correctCount` | Questions Correct | range | Number of correct answers by user |
+
+**Summary Extractor:**
+
+```typescript
+getSummary: (log) => {
+  const questions = log.actions.filter(a => a.type === 'question_reveal');
+  return `${questions.length} questions — Trivia challenge`;
+}
+```
+
+**Component Structure:**
+
+```
+FactOrFrictionHistoryDetail.tsx
+├── QuestionCard (per question)
+│   ├── QuestionText + DifficultyBadge
+│   ├── AnswerOptions (correct highlighted, player selections shown)
+│   ├── PotValueIndicator (point pot at submission time)
+│   └── PlayerAnswerGrid (who answered what)
+├── ScoreGraph (running score over questions)
+└── Final scores summary
+```
+
+### 1.17 MinigameRenderer & Client-Server Wiring
 
 #### MinigameRenderer Registration
 
@@ -954,7 +1003,56 @@ interface UEInitialState {
 
 Step through the story's evolution turn by turn. See every word the Editor swapped, whether anyone noticed, and how close the accusation votes were. The `EDITOR_SWAP` entries are especially fun — compare original vs. replacement and judge how sneaky each edit was.
 
-### 2.16 MinigameRenderer & Client-Server Wiring
+> **Note:** The `GameLog` also includes `gameSettings: GameSettingValues` at the top level (per core.md §12A.11), capturing the exact game settings used for this match.
+
+### 2.16 History Display Configuration
+
+**Detail Component:** `UndercoverEditorHistoryDetail`
+
+Renders the expanded game log as a story review:
+- Full story text with editor's word swaps highlighted
+- Sentence-by-sentence timeline showing who wrote what
+- Editor reveal with vote breakdown
+- Keyword reveal and whether it made it into the story
+- Win condition summary
+
+**Searchable Fields:**
+
+| Field Key | Label | Extraction |
+|---|---|---|
+| `sentences` | Story Sentences | All sentences from `sentence_written` actions |
+| `keyword` | Keyword | The secret keyword from `game_end` reveal |
+
+**Filterable Fields:**
+
+| Field Key | Label | Type | Details |
+|---|---|---|---|
+| `role` | Your Role | select | `editor`, `writer` |
+| `editorCaught` | Editor Caught | boolean | Whether the editor was identified |
+| `keywordInStory` | Keyword in Story | boolean | Whether keyword made it into the story |
+
+**Summary Extractor:**
+
+```typescript
+getSummary: (log) => {
+  const endAction = log.actions.find(a => a.type === 'game_end');
+  const caught = endAction?.payload.editorCaught ? 'caught' : 'escaped';
+  return `Editor ${caught} — Keyword: "${endAction?.payload.keyword ?? '?'}"`;
+}
+```
+
+**Component Structure:**
+
+```
+UndercoverEditorHistoryDetail.tsx
+├── StoryView (full story with highlighted edits)
+├── SentenceTimeline (who wrote each sentence)
+├── VoteResults (editor identification votes)
+├── KeywordReveal (keyword + whether it appeared)
+└── Final scores summary
+```
+
+### 2.17 MinigameRenderer & Client-Server Wiring
 
 #### MinigameRenderer Registration
 
@@ -1488,7 +1586,53 @@ interface MMInitialState {
 
 Browse the gallery of 5-stroke creations for each prompt. The auction history shows who valued which art and how bidding wars played out. Compare the minimalist interpretations side-by-side — the constraint makes every stroke meaningful.
 
-### 3.15 MinigameRenderer & Client-Server Wiring
+> **Note:** The `GameLog` also includes `gameSettings: GameSettingValues` at the top level (per core.md §12A.11), capturing the exact game settings used for this match.
+
+### 3.15 History Display Configuration
+
+**Detail Component:** `MinimalistMasterpieceHistoryDetail`
+
+Renders the expanded game log as a gallery view:
+- Thumbnail previews of each player's drawing (rendered from stroke data)
+- Prompt text shown alongside each drawing
+- Gallery vote results (who voted for whom)
+- Auction results with final bid amounts
+- Per-player score breakdown (gallery votes + auction bids)
+
+**Searchable Fields:**
+
+| Field Key | Label | Extraction |
+|---|---|---|
+| `prompts` | Drawing Prompts | All prompt texts from `drawing_start` actions |
+
+**Filterable Fields:**
+
+| Field Key | Label | Type | Details |
+|---|---|---|---|
+| `auctionWin` | Won Auction | boolean | Whether user won any auction bids |
+| `galleryVotes` | Gallery Votes Received | range | Number of votes user's drawing received |
+
+**Summary Extractor:**
+
+```typescript
+getSummary: (log) => {
+  const prompt = log.actions.find(a => a.type === 'drawing_start');
+  return `Prompt: "${prompt?.payload.prompt ?? 'Unknown'}"`;
+}
+```
+
+**Component Structure:**
+
+```
+MinimalistMasterpieceHistoryDetail.tsx
+├── GalleryGrid (drawing thumbnails)
+│   ├── DrawingCard (stroke render + prompt)
+│   └── VoteBadge (gallery votes count)
+├── AuctionResults (bids + winners)
+└── Final scores summary
+```
+
+### 3.16 MinigameRenderer & Client-Server Wiring
 
 #### MinigameRenderer Registration
 
@@ -2017,7 +2161,57 @@ interface ECInitialState {
 
 See each round's emoji composition alongside the movie title and marvel at how creative (or cryptic) the Producer was. The close-guess log is comedy gold — near-misses and creative interpretations are half the fun.
 
-### 4.17 MinigameRenderer & Client-Server Wiring
+> **Note:** The `GameLog` also includes `gameSettings: GameSettingValues` at the top level (per core.md §12A.11), capturing the exact game settings used for this match.
+
+### 4.17 History Display Configuration
+
+**Detail Component:** `EmojiCinemaHistoryDetail`
+
+Renders the expanded game log as a round-by-round review:
+- Emoji sequence displayed with the target movie title
+- Guessing timeline showing each player's guesses and correctness
+- Difficulty rating per round
+- Creator identity for each emoji sequence
+- Score breakdown per round
+
+**Searchable Fields:**
+
+| Field Key | Label | Extraction |
+|---|---|---|
+| `movieTitles` | Movie Titles | All movie titles from `round_start` actions |
+| `guesses` | Guesses | All player guesses from `guess` actions |
+| `emojiSequences` | Emoji Sequences | Emoji strings from `emoji_reveal` actions |
+
+**Filterable Fields:**
+
+| Field Key | Label | Type | Details |
+|---|---|---|---|
+| `wasCreator` | Was Emoji Creator | boolean | Whether user created the emoji sequence |
+| `guessedCorrectly` | Guessed Correctly | boolean | Whether user guessed the movie |
+| `difficulty` | Difficulty | select | `easy`, `medium`, `hard` |
+
+**Summary Extractor:**
+
+```typescript
+getSummary: (log) => {
+  const rounds = log.actions.filter(a => a.type === 'round_start');
+  return `${rounds.length} rounds — Movie emoji challenge`;
+}
+```
+
+**Component Structure:**
+
+```
+EmojiCinemaHistoryDetail.tsx
+├── RoundCard (per round)
+│   ├── EmojiSequence (the emoji clue)
+│   ├── MovieTitle (correct answer reveal)
+│   ├── GuessTimeline (player guesses + timing)
+│   └── CreatorBadge (who made the sequence)
+└── Final scores summary
+```
+
+### 4.18 MinigameRenderer & Client-Server Wiring
 
 #### MinigameRenderer Registration
 
