@@ -403,11 +403,11 @@ interface FOFInitialState {
 | `question_start` | `{ questionIndex: number; questionText: string; options: string[]; category: string; potValue: number }` | Question is revealed |
 | `player_answer` | `{ userId: string; selectedIndex: number; potValueAtSubmission: number; elapsedMs: number }` | Player locks in answer |
 | `player_pass` | `{ userId: string; elapsedMs: number }` | Player passes or timer expires |
-| `question_result` | `{ correctIndex: number; correctCount: number; incorrectCount: number; passCount: number; fastestUserId: string }` | Answer reveal phase |
+| `question_result` | `{ correctIndex: number; correctCount: number; incorrectCount: number; passCount: number; fastestUserId: string \| null }` | Answer reveal phase |
 
 - [ ] In `computeResults()`, build `GameLog` with `initialState`, full action log, and `finalResults`
 - [ ] Return `GameLog` from `buildGameLog()`
-  **Verification:** Unit test: 8-question game, verify log has 8 `question_start` and 8 `question_result` actions, `initialState` has all required fields, `finalResults` matches player rankings.
+  **Verification:** Unit test: 8-question game, verify log has 8 `question_start` and 8 `question_result` actions, `player_answer` and `player_pass` actions present, `initialState` has all required fields, `finalResults` matches player rankings.
 
 ---
 
@@ -1129,7 +1129,7 @@ interface UEInitialState {
 | `editor_skip` | `{ sentenceIndex: number }` | Editor passes on editing |
 | `story_snapshot` | `{ sentences: string[] }` | End of each turn cycle |
 | `accusation_vote` | `{ voterId: string; suspectedUserId: string }` | Writer casts accusation vote |
-| `vote_result` | `{ votes: Record<string, string[]>; editorCaught: boolean }` | Voting concludes |
+| `vote_result` | `{ votes: Record<string, string[]>; editorCaught: boolean }` | Voting concludes (`votes` key = suspected userId, value = array of voter userIds) |
 | `final_reveal` | `{ editorUserId: string; keyword: string; allSwaps: Array<{ sentenceIndex: number; originalWord: string; replacementWord: string }> }` | Post-game reveal |
 
 - [ ] In `computeResults()`, build `GameLog` with `initialState`, full action log, and `finalResults`
