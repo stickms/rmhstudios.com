@@ -381,13 +381,33 @@
 #### 6.1.6.14 `buildGameLog()`
 
 - [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
-- [ ] Log `question_start` action when a question is revealed (questionIndex, questionText, category, pointPotMax)
-- [ ] Log `answer_submitted` action per player answer (userId, answer, correct, timeMs, pointsAwarded)
-- [ ] Log `question_pass` action when a player passes (userId, questionIndex)
-- [ ] Log `question_end` action at question resolution (questionIndex, correctAnswer, potState, answerBreakdown)
-- [ ] In `computeResults()`, build `GameLog` with `initialState` containing total questions, point pot config, player list
+- [ ] Build `GameLog` conforming to core.md §13.3, including `gameSettings` per §12A.11
+
+**`initialState` (from minigames-2.md §1.15):**
+
+```typescript
+interface FOFInitialState {
+  totalQuestions: number;
+  potStartValue: number;
+  potDecayRate: number;
+  playerIds: string[];
+  categoryPool: string[];
+  gameSettings: GameSettingValues;
+}
+```
+
+**Actions Logged:**
+
+| Action Type | Payload | Recorded When |
+|---|---|---|
+| `question_start` | `{ questionIndex: number; questionText: string; options: string[]; category: string; potValue: number }` | Question is revealed |
+| `player_answer` | `{ userId: string; selectedIndex: number; potValueAtSubmission: number; elapsedMs: number }` | Player locks in answer |
+| `player_pass` | `{ userId: string; elapsedMs: number }` | Player passes or timer expires |
+| `question_result` | `{ correctIndex: number; correctCount: number; incorrectCount: number; passCount: number; fastestUserId: string }` | Answer reveal phase |
+
+- [ ] In `computeResults()`, build `GameLog` with `initialState`, full action log, and `finalResults`
 - [ ] Return `GameLog` from `buildGameLog()`
-  **Verification:** Unit test: 8-question game, verify log has 8 `question_start` and 8 `question_end` actions.
+  **Verification:** Unit test: 8-question game, verify log has 8 `question_start` and 8 `question_result` actions, `initialState` has all required fields, `finalResults` matches player rankings.
 
 ---
 
@@ -1083,17 +1103,38 @@ registerHistoryDisplay({
 #### 6.2.6.18 `buildGameLog()`
 
 - [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
-- [ ] Log `turn_start` action on each turn (turnNumber, activeUserId)
-- [ ] Log `sentence_written` action when a player writes their sentence (userId, sentence)
-- [ ] Log `editor_swap` action when the Editor swaps a word (sentenceIndex, originalWord, newWord, position)
-- [ ] Log `editor_skip` action when Editor chooses not to edit
-- [ ] Log `story_snapshot` action at end of each turn cycle (full story text)
-- [ ] Log `accusation_vote` action for each vote (voterId, suspectedUserId)
-- [ ] Log `vote_result` action at vote resolution (votes tally, editorCaught boolean)
-- [ ] Log `final_reveal` action with Editor identity, keyword, and all swaps made
-- [ ] In `computeResults()`, build `GameLog` with `initialState` containing story prompt, keyword, Editor userId, turn order
+- [ ] Build `GameLog` conforming to core.md §13.3, including `gameSettings` per §12A.11
+
+**`initialState` (from minigames-2.md §2.15):**
+
+```typescript
+interface UEInitialState {
+  storyTitle: string;
+  originalStory: string[];
+  keyword: string;
+  editorUserId: string;
+  writerUserIds: string[];
+  turnsPerRound: number;
+  gameSettings: GameSettingValues;
+}
+```
+
+**Actions Logged:**
+
+| Action Type | Payload | Recorded When |
+|---|---|---|
+| `turn_start` | `{ turnNumber: number; activeUserId: string; sentenceIndex: number }` | Writer/Editor turn begins |
+| `word_added` | `{ userId: string; sentenceIndex: number; word: string }` | Writer adds a word |
+| `editor_swap` | `{ sentenceIndex: number; originalWord: string; replacementWord: string; position: number }` | Editor makes a substitution |
+| `editor_skip` | `{ sentenceIndex: number }` | Editor passes on editing |
+| `story_snapshot` | `{ sentences: string[] }` | End of each turn cycle |
+| `accusation_vote` | `{ voterId: string; suspectedUserId: string }` | Writer casts accusation vote |
+| `vote_result` | `{ votes: Record<string, string[]>; editorCaught: boolean }` | Voting concludes |
+| `final_reveal` | `{ editorUserId: string; keyword: string; allSwaps: Array<{ sentenceIndex: number; originalWord: string; replacementWord: string }> }` | Post-game reveal |
+
+- [ ] In `computeResults()`, build `GameLog` with `initialState`, full action log, and `finalResults`
 - [ ] Return `GameLog` from `buildGameLog()`
-  **Verification:** Unit test: 6-player game, 12 turns, verify log contains turn_start/sentence_written per turn, editor_swap/skip on Editor turns, and final reveal.
+  **Verification:** Unit test: 6-player game, 12 turns, verify log contains all action types, `initialState` has keyword and editor identity, `finalResults` matches player rankings.
 
 ---
 
@@ -1725,13 +1766,38 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 #### 6.3.6.14 `buildGameLog()`
 
 - [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
-- [ ] Log `drawing_submitted` action per player drawing (userId, strokes serialized as polyline arrays, strokeCount)
-- [ ] Log `bid_placed` action during auction (bidderId, targetDrawingUserId, bidAmount)
-- [ ] Log `auction_result` action per drawing (drawingUserId, totalMarketValue, highestBidder, bidCount)
-- [ ] In `computeResults()`, build `GameLog` with `initialState` containing prompt text, canvasSize, maxStrokes, startingBudget
+- [ ] Build `GameLog` conforming to core.md §13.3, including `gameSettings` per §12A.11
+
+**`initialState` (from minigames-2.md §3.14):**
+
+```typescript
+interface MMInitialState {
+  prompt: string;
+  maxStrokes: number;
+  canvasSize: { width: number; height: number };
+  playerIds: string[];
+  startingCurrency: number;
+  auctionTimeLimitMs: number;
+  gameSettings: GameSettingValues;
+}
+```
+
+**Actions Logged:**
+
+| Action Type | Payload | Recorded When |
+|---|---|---|
+| `drawing_stroke` | `{ userId: string; strokeIndex: number; points: Array<{ x: number; y: number }>; color: string; width: number }` | Player completes a stroke |
+| `drawing_undo` | `{ userId: string; strokeIndex: number }` | Player undoes a stroke |
+| `drawing_submit` | `{ userId: string; totalStrokes: number }` | Player submits final drawing |
+| `gallery_view` | `{ drawingOrder: string[] }` | Gallery walk begins |
+| `auction_bid` | `{ bidderId: string; drawingOwnerId: string; amount: number; previousBid: number }` | Player places a bid |
+| `auction_close` | `{ drawingOwnerId: string; winnerId: string; finalPrice: number }` | Bidding closes on a piece |
+| `market_values` | `{ rankings: Array<{ userId: string; marketValue: number; rank: number }> }` | Final valuations computed |
+
 - [ ] Include all drawing stroke data in game log for gallery replay
+- [ ] In `computeResults()`, build `GameLog` with `initialState`, full action log, and `finalResults`
 - [ ] Return `GameLog` from `buildGameLog()`
-  **Verification:** Unit test: 5-player game, verify all 5 drawings captured in log with stroke data, bids recorded, and auction results present.
+  **Verification:** Unit test: 5-player game, verify all 5 drawings captured in log with stroke data, bids recorded, auction results present, `initialState` has prompt and canvas config.
 
 ---
 
@@ -2398,13 +2464,35 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 #### 6.4.6.15 `buildGameLog()`
 
 - [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
-- [ ] Log `round_start` action when a new Producer is assigned (round, producerUserId, movieTitle)
-- [ ] Log `emoji_placed` action for each emoji the Producer adds (emoji, position, emojiSequence snapshot)
-- [ ] Log `guess_attempt` action for significant guesses only — close guesses and the correct guess (userId, guessText, result: 'close' | 'correct', matchScore)
-- [ ] Log `round_end` action at round completion (round, movieTitle, emojiSequence, correctGuesserId or null, guessCount)
-- [ ] In `computeResults()`, build `GameLog` with `initialState` containing total rounds, movie pool difficulty, player list
+- [ ] Build `GameLog` conforming to core.md §13.3, including `gameSettings` per §12A.11
+
+**`initialState` (from minigames-2.md §4.16):**
+
+```typescript
+interface ECInitialState {
+  totalRounds: number;
+  maxEmojis: number;
+  maxGuessesPerPlayer: number;
+  playerIds: string[];
+  moviePool: string[];
+  gameSettings: GameSettingValues;
+}
+```
+
+**Actions Logged:**
+
+| Action Type | Payload | Recorded When |
+|---|---|---|
+| `round_start` | `{ roundNumber: number; producerUserId: string; movieTitle: string }` | Round begins (title logged server-side) |
+| `emoji_placed` | `{ producerUserId: string; emoji: string; position: number; currentSequence: string[] }` | Producer places an emoji |
+| `close_guess` | `{ guesserId: string; guessText: string; similarity: number }` | A guess is flagged as close |
+| `correct_guess` | `{ guesserId: string; guessText: string; elapsedMs: number }` | Someone guesses correctly |
+| `round_timeout` | `{ finalSequence: string[]; totalGuesses: number }` | Round ends with no correct guess |
+| `round_result` | `{ movieTitle: string; emojiSequence: string[]; correctGuesserId: string \| null; producerScore: number; guesserScores: Record<string, number> }` | Round scoring summary |
+
+- [ ] In `computeResults()`, build `GameLog` with `initialState`, full action log, and `finalResults`
 - [ ] Return `GameLog` from `buildGameLog()`
-  **Verification:** Unit test: 4-round game, verify log contains round_start/round_end per round with correct movie titles and emoji sequences.
+  **Verification:** Unit test: 4-round game, verify log contains `round_start`/`round_result` per round with movie titles and emoji sequences, `initialState` has movie pool and round config.
 
 ---
 
