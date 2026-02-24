@@ -3,16 +3,21 @@
 import { usePathname } from 'next/navigation';
 import { Navbar } from './Navbar';
 import { games } from '@/lib/games';
+import { apps } from '@/lib/apps';
 
 
 export function Shell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   
-  // gather gameRoutes from game details objects
+  // gather gameRoutes and internal appRoutes
   const gameRoutes = games.map(game => game.href);
-  const isGamePage = gameRoutes.some(route => pathname?.startsWith(route));
+  const appRoutes = apps
+    .map(app => app.href)
+    .filter(href => href.startsWith('/'));
 
-  if (isGamePage) {
+  const isExcludedPage = [...gameRoutes, ...appRoutes].some(route => pathname?.startsWith(route));
+
+  if (isExcludedPage) {
     return (
         <main className="min-h-screen">
             {children}
@@ -23,7 +28,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Navbar />
-      <main className="pt-16 min-h-[calc(100vh-4rem)]">
+      <main className="pt-20 min-h-screen">
         {children}
       </main>
     </>

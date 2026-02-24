@@ -8,7 +8,7 @@ APP_WEB="rmhstudios-web"
 APP_SOCKET="rmhstudios-socket"
 APP_RMHBOX="rmhstudios-rmhbox"
 
-PORT_WEB=7000
+PORT_WEB=7005
 PORT_SOCKET=7001
 PORT_RMHBOX=7676
 

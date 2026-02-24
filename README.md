@@ -66,8 +66,8 @@ DISCORD_CLIENT_SECRET=your_discord_client_secret
 
 # Better Auth Configuration
 BETTER_AUTH_SECRET=generate_a_secure_random_string
-BETTER_AUTH_URL=http://localhost:3000/
-NEXT_PUBLIC_BETTER_AUTH_URL=http://localhost:3000/
+BETTER_AUTH_URL=http://localhost:7005/
+NEXT_PUBLIC_BETTER_AUTH_URL=http://localhost:7005/
 ```
 
 ### Installation & Running Locally
@@ -89,7 +89,7 @@ NEXT_PUBLIC_BETTER_AUTH_URL=http://localhost:3000/
     pnpm dev
     ```
 
-4.  Open [http://localhost:7000](http://localhost:7000) in your browser.
+4.  Open [http://localhost:7005](http://localhost:7005) in your browser.
 
 ## 📦 Build & Deployment
 
@@ -102,7 +102,7 @@ The application is deployed to a VPS using PM2 to manage both the Next.js web ap
     This compiles the Next.js App and transpiles the Socket server via `tsconfig.server.json`.
 
 2.  **Deployment via Script:**
-    The provided `deploy.sh` script automates pulling, building, migrating, and swapping the PM2 processes (`rmhstudios-web` on port 7000, `rmhstudios-socket` on port 7001).
+    The provided `deploy.sh` script automates pulling, building, migrating, and swapping the PM2 processes (`rmhstudios-web` on port 7005, `rmhstudios-socket` on port 7001).
 
     ```bash
     ./deploy.sh

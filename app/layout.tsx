@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Providers } from "@/components/Providers";
 import { Shell } from '@/components/site/Shell';
-import '@fontsource/noto-color-emoji';
 import "./globals.css";
 
 const geistSans = Geist({

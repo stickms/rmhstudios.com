@@ -7,6 +7,7 @@ import { FooterSection } from "@/components/homepage/FooterSection";
 import { ParticleField } from "@/components/effects/ParticleField";
 import { GlobalSmartScroll } from "@/components/ui/GlobalSmartScroll";
 import { BlogSection } from "@/components/homepage/BlogSection";
+import { AppsSection } from "@/components/homepage/AppsSection";
 import { getAllPosts } from "@/lib/blog";
 
 export default function Home() {
@@ -19,6 +20,7 @@ export default function Home() {
 
       <HeroSection />
       <ProjectsSection />
+      <AppsSection />
       <AboutSection />
       <TestimonialsSection />
       <BlogSection posts={posts} />

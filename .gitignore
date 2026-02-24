@@ -46,4 +46,5 @@ next-env.d.ts
 /lib/generated/prisma
 db/music/
 dist-server/
+.venv/
 package-lock.json

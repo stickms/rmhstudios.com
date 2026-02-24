@@ -1,0 +1,197 @@
+/* RMH Job Search — Cyberpunk Corporate aesthetic */
+
+.jobs-theme {
+    --jobs-bg: #0a0a0f;
+    --jobs-surface: #111118;
+    --jobs-surface-2: #1a1a24;
+    --jobs-surface-3: #222230;
+    --jobs-border: #2a2a3a;
+    --jobs-border-hover: #3a3a50;
+    --jobs-text: #e8e8f0;
+    --jobs-text-muted: #8888a0;
+    --jobs-text-subtle: #5a5a70;
+    --jobs-accent: #00ff88;
+    --jobs-accent-hover: #00cc6a;
+    --jobs-accent-dim: rgba(0, 255, 136, 0.15);
+    --jobs-accent-fg: #0a0a0f;
+    --jobs-danger: #ff4466;
+    --jobs-danger-dim: rgba(255, 68, 102, 0.15);
+    --jobs-warning: #ffaa00;
+    --jobs-warning-dim: rgba(255, 170, 0, 0.15);
+    --jobs-info: #00aaff;
+    --jobs-info-dim: rgba(0, 170, 255, 0.15);
+    --jobs-silly: #ff66ff;
+    --jobs-silly-dim: rgba(255, 102, 255, 0.15);
+    --jobs-real: #00aaff;
+    --jobs-real-dim: rgba(0, 170, 255, 0.15);
+    --jobs-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+    --jobs-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.3);
+    --jobs-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6), 0 4px 12px rgba(0, 0, 0, 0.4);
+    --jobs-shadow-glow: 0 0 20px rgba(0, 255, 136, 0.15);
+    --jobs-radius: 8px;
+    --jobs-radius-sm: 4px;
+    --jobs-radius-lg: 12px;
+    --jobs-transition: 150ms ease;
+    --jobs-font-mono: 'Geist Mono', 'JetBrains Mono', monospace;
+}
+
+.jobs-theme * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--jobs-border) transparent;
+}
+
+/* Job card hover glow */
+.job-card {
+    transition: all var(--jobs-transition);
+    border: 1px solid var(--jobs-border);
+    background: var(--jobs-surface);
+}
+
+.job-card:hover {
+    border-color: var(--jobs-accent);
+    box-shadow: var(--jobs-shadow-glow);
+    transform: translateY(-1px);
+}
+
+/* Type badges */
+.badge-silly {
+    background: var(--jobs-silly-dim);
+    color: var(--jobs-silly);
+    border: 1px solid rgba(255, 102, 255, 0.3);
+}
+
+.badge-real {
+    background: var(--jobs-real-dim);
+    color: var(--jobs-real);
+    border: 1px solid rgba(0, 170, 255, 0.3);
+}
+
+/* Status badges */
+.status-pending {
+    background: var(--jobs-warning-dim);
+    color: var(--jobs-warning);
+}
+
+.status-rejected {
+    background: var(--jobs-danger-dim);
+    color: var(--jobs-danger);
+}
+
+.status-oa-invited {
+    background: var(--jobs-accent-dim);
+    color: var(--jobs-accent);
+}
+
+/* Search input */
+.jobs-search-input {
+    background: var(--jobs-surface-2);
+    border: 1px solid var(--jobs-border);
+    color: var(--jobs-text);
+    transition: all var(--jobs-transition);
+}
+
+.jobs-search-input:focus {
+    outline: none;
+    border-color: var(--jobs-accent);
+    box-shadow: 0 0 0 2px var(--jobs-accent-dim);
+}
+
+.jobs-search-input::placeholder {
+    color: var(--jobs-text-subtle);
+}
+
+/* Buttons */
+.jobs-btn-primary {
+    background: var(--jobs-accent);
+    color: var(--jobs-accent-fg);
+    font-weight: 600;
+    transition: all var(--jobs-transition);
+    border: none;
+    cursor: pointer;
+}
+
+.jobs-btn-primary:hover:not(:disabled) {
+    background: var(--jobs-accent-hover);
+    box-shadow: var(--jobs-shadow-glow);
+}
+
+.jobs-btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.jobs-btn-secondary {
+    background: var(--jobs-surface-2);
+    color: var(--jobs-text);
+    border: 1px solid var(--jobs-border);
+    transition: all var(--jobs-transition);
+    cursor: pointer;
+}
+
+.jobs-btn-secondary:hover {
+    border-color: var(--jobs-border-hover);
+    background: var(--jobs-surface-3);
+}
+
+/* Timer */
+.timer-urgent {
+    color: var(--jobs-danger);
+    animation: timer-pulse 1s ease-in-out infinite;
+}
+
+@keyframes timer-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Scanline overlay for OA page */
+.scanline-overlay {
+    pointer-events: none;
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 255, 136, 0.02) 2px,
+        rgba(0, 255, 136, 0.02) 4px
+    );
+    z-index: 50;
+}
+
+/* Test result animations */
+@keyframes test-pass {
+    from { transform: scale(0); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes test-fail {
+    from { transform: scale(0); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.test-result-pass {
+    animation: test-pass 0.3s ease-out forwards;
+    color: var(--jobs-accent);
+}
+
+.test-result-fail {
+    animation: test-fail 0.3s ease-out forwards;
+    color: var(--jobs-danger);
+}
+
+/* Rejection letter styling */
+.rejection-letter {
+    background: var(--jobs-surface);
+    border: 1px solid var(--jobs-border);
+    border-left: 3px solid var(--jobs-danger);
+    font-family: var(--jobs-font-mono);
+}
+
+/* Grid pattern background */
+.grid-bg {
+    background-image:
+        linear-gradient(rgba(0, 255, 136, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 136, 0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+}

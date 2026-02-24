@@ -35,7 +35,7 @@ export function LoggedOutScreen() {
         </p>
 
         <Link
-          href="/login?next=/house-always-wins"
+          href="/login?callbackURL=/house-always-wins"
           className="px-8 py-3 bg-amber-900/30 hover:bg-amber-800/40 border border-amber-700/40 hover:border-amber-600/60 text-amber-200/90 font-semibold rounded-lg transition-all duration-300 tracking-wide"
         >
           Login to Play

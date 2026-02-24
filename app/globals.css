@@ -24,7 +24,7 @@
   --rainbow-6: #0000ff;
   --rainbow-7: #9400d3;
 
-/* Temple of Joy — warm parchment / dark walnut theme */
+  /* Temple of Joy — warm parchment / dark walnut theme */
   --temple-bg: #f5f0e8;
   --temple-surface: #ede7d9;
   --temple-border: #c4a97a;
@@ -204,65 +204,174 @@
 /* ==================== TEMPLE OF JOY — IN-THEME CHROME ==================== */
 
 /* Noto Color Emoji — consistent cross-platform emoji rendering */
-[data-theme] { font-family: inherit, 'Noto Color Emoji', sans-serif; }
+[data-theme] {
+  font-family: inherit, 'Noto Color Emoji', sans-serif;
+}
 
 /* Scrollbars */
-[data-theme] ::-webkit-scrollbar          { width: 6px; height: 6px; }
-[data-theme] ::-webkit-scrollbar-track    { background: var(--temple-surface); }
-[data-theme] ::-webkit-scrollbar-thumb    { background: var(--temple-border); border-radius: 3px; }
-[data-theme] ::-webkit-scrollbar-thumb:hover { background: var(--temple-accent); }
+[data-theme] ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+[data-theme] ::-webkit-scrollbar-track {
+  background: var(--temple-surface);
+}
+
+[data-theme] ::-webkit-scrollbar-thumb {
+  background: var(--temple-border);
+  border-radius: 3px;
+}
+
+[data-theme] ::-webkit-scrollbar-thumb:hover {
+  background: var(--temple-accent);
+}
 
 /* Text selection */
-[data-theme] ::selection { background: rgba(212, 168, 71, 0.28); color: var(--temple-text); }
+[data-theme] ::selection {
+  background: rgba(212, 168, 71, 0.28);
+  color: var(--temple-text);
+}
 
 /* All buttons in the temple game should use pointer cursor */
-[data-theme] button { cursor: pointer; }
-[data-theme] button:disabled { cursor: not-allowed; }
+[data-theme] button {
+  cursor: pointer;
+}
+
+[data-theme] button:disabled {
+  cursor: not-allowed;
+}
 
 /* ==================== TEMPLE OF JOY ANIMATIONS ==================== */
 
 @keyframes templeCandle {
-  0%,  100% { opacity: 1;    transform: scaleY(1)    translateX(0);    }
-  15%        { opacity: 0.82; transform: scaleY(0.95) translateX(-1px); }
-  35%        { opacity: 0.95; transform: scaleY(1.05) translateX(0.5px);}
-  55%        { opacity: 0.87; transform: scaleY(0.97) translateX(1px);  }
-  75%        { opacity: 0.93; transform: scaleY(1.03) translateX(-0.5px);}
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scaleY(1) translateX(0);
+  }
+
+  15% {
+    opacity: 0.82;
+    transform: scaleY(0.95) translateX(-1px);
+  }
+
+  35% {
+    opacity: 0.95;
+    transform: scaleY(1.05) translateX(0.5px);
+  }
+
+  55% {
+    opacity: 0.87;
+    transform: scaleY(0.97) translateX(1px);
+  }
+
+  75% {
+    opacity: 0.93;
+    transform: scaleY(1.03) translateX(-0.5px);
+  }
 }
 
 @keyframes templeUnlockPulse {
-  0%   { box-shadow: 0 0 0 0px  rgba(212, 168, 71, 0.75); }
-  45%  { box-shadow: 0 0 0 12px rgba(212, 168, 71, 0);   }
-  100% { box-shadow: 0 0 0 0px  rgba(212, 168, 71, 0);   }
+  0% {
+    box-shadow: 0 0 0 0px rgba(212, 168, 71, 0.75);
+  }
+
+  45% {
+    box-shadow: 0 0 0 12px rgba(212, 168, 71, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0px rgba(212, 168, 71, 0);
+  }
 }
 
 @keyframes templeDissolve {
-  0%   { opacity: 1;   filter: blur(0px) brightness(1);   transform: scale(1);    }
-  60%  { opacity: 0.3; filter: blur(3px) brightness(1.4); transform: scale(1.025);}
-  100% { opacity: 0;   filter: blur(8px) brightness(2);   transform: scale(1.06); }
+  0% {
+    opacity: 1;
+    filter: blur(0px) brightness(1);
+    transform: scale(1);
+  }
+
+  60% {
+    opacity: 0.3;
+    filter: blur(3px) brightness(1.4);
+    transform: scale(1.025);
+  }
+
+  100% {
+    opacity: 0;
+    filter: blur(8px) brightness(2);
+    transform: scale(1.06);
+  }
 }
 
 @keyframes templeAppear {
-  0%   { opacity: 0; filter: blur(5px); transform: scale(0.96); }
-  100% { opacity: 1; filter: blur(0px); transform: scale(1);    }
+  0% {
+    opacity: 0;
+    filter: blur(5px);
+    transform: scale(0.96);
+  }
+
+  100% {
+    opacity: 1;
+    filter: blur(0px);
+    transform: scale(1);
+  }
 }
 
 @keyframes templeToastFade {
-  0%   { opacity: 0; transform: translateX(12px); }
-  10%  { opacity: 1; transform: translateX(0); }
-  72%  { opacity: 1; transform: translateX(0); }
-  100% { opacity: 0; transform: translateX(8px); }
+  0% {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+
+  10% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  72% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(8px);
+  }
 }
 
 @keyframes templeNumberPop {
-  0%   { transform: scale(1);    color: var(--temple-accent-bright); }
-  30%  { transform: scale(1.18); color: var(--temple-accent-bright); }
-  100% { transform: scale(1);    }
+  0% {
+    transform: scale(1);
+    color: var(--temple-accent-bright);
+  }
+
+  30% {
+    transform: scale(1.18);
+    color: var(--temple-accent-bright);
+  }
+
+  100% {
+    transform: scale(1);
+  }
 }
 
 /* Utility classes */
-.temple-number { transition: color 0.15s ease-out; }
-.temple-number-pop { animation: templeNumberPop 0.35s ease-out; }
-.temple-quote { font-family: var(--font-cormorant, Georgia, serif); font-style: italic; }
+.temple-number {
+  transition: color 0.15s ease-out;
+}
+
+.temple-number-pop {
+  animation: templeNumberPop 0.35s ease-out;
+}
+
+.temple-quote {
+  font-family: var(--font-cormorant, Georgia, serif);
+  font-style: italic;
+}
 
 @layer utilities {
   .min-h-screen {
@@ -873,6 +982,8 @@
 /* ==================== BASE STYLES ==================== */
 html {
   scroll-behavior: smooth;
+  overflow-y: scroll;
+  min-height: 100%;
 }
 
 body {
@@ -880,6 +991,7 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
   overflow-x: hidden;
+  min-height: 100%;
 }
 
 /* Selection styling */
@@ -888,22 +1000,28 @@ body {
   color: var(--background);
 }
 
-/* Custom scrollbar */
+/* Minimalistic scrollbar (overridden by specific games/apps) */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--background);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(var(--neon-pink), var(--neon-cyan));
-  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(var(--neon-cyan), var(--neon-pink));
+  background: rgba(255, 255, 255, 0.3);
 }
 
 /* Cursed Logic duel animations */
@@ -1151,5 +1269,234 @@ body {
   100% {
     transform: scale(1);
     opacity: 0.85;
+  }
+}
+
+/* ==================== RMHWEATHER THEME VARS ==================== */
+
+:root {
+  --weather-fg: #ffffff;
+  --weather-fg-muted: #94a3b8;
+  /* slate-400 */
+  --weather-fg-dim: #cbd5e1;
+  /* slate-300 */
+  --weather-border: rgba(255, 255, 255, 0.1);
+  --weather-glass: rgba(255, 255, 255, 0.05);
+  --weather-glass-hover: rgba(255, 255, 255, 0.1);
+}
+
+[data-weather-theme="snowy"] {
+  --weather-fg: #0f172a;
+  /* slate-900 */
+  --weather-fg-muted: #475569;
+  /* slate-600 */
+  --weather-fg-dim: #334155;
+  /* slate-700 */
+  --weather-border: rgba(15, 23, 42, 0.1);
+  --weather-glass: rgba(255, 255, 255, 0.4);
+  --weather-glass-hover: rgba(255, 255, 255, 0.5);
+}
+
+.text-weather {
+  color: var(--weather-fg);
+}
+
+.text-weather-muted {
+  color: var(--weather-fg-muted);
+}
+
+.text-weather-dim {
+  color: var(--weather-fg-dim);
+}
+
+.border-weather {
+  border-color: var(--weather-border);
+}
+
+.bg-weather-glass {
+  background-color: var(--weather-glass);
+}
+
+.hover\:bg-weather-glass:hover {
+  background-color: var(--weather-glass-hover);
+}
+
+/* ==================== RMHWEATHER ANIMATIONS ==================== */
+
+.weather-rain {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  overflow: hidden;
+}
+
+.weather-rain-back,
+.weather-rain-mid,
+.weather-rain-front {
+  position: absolute;
+  inset: -100px;
+  background-repeat: repeat;
+}
+
+.weather-rain-back {
+  background-image: radial-gradient(1px 30px at 50% 50%, rgba(255, 255, 255, 0.15) 0%, transparent 80%);
+  background-size: 150px 500px;
+  animation: weather-rain-anim-back 1.8s linear infinite;
+  opacity: 0.4;
+}
+
+.weather-rain-mid {
+  background-image: radial-gradient(1.5px 45px at 50% 50%, rgba(255, 255, 255, 0.25) 0%, transparent 80%);
+  background-size: 120px 400px;
+  animation: weather-rain-anim-mid 1.2s linear infinite;
+  opacity: 0.6;
+}
+
+.weather-rain-front {
+  background-image: radial-gradient(2px 60px at 50% 50%, rgba(255, 255, 255, 0.35) 0%, transparent 80%);
+  background-size: 100px 300px;
+  animation: weather-rain-anim-front 0.8s linear infinite;
+  opacity: 0.8;
+}
+
+@keyframes weather-rain-anim-back {
+  from {
+    background-position: 0 0;
+  }
+
+  to {
+    background-position: 100px 1000px;
+  }
+}
+
+@keyframes weather-rain-anim-mid {
+  from {
+    background-position: 25px 0;
+  }
+
+  to {
+    background-position: 150px 1000px;
+  }
+}
+
+@keyframes weather-rain-anim-front {
+  from {
+    background-position: 50px 0;
+  }
+
+  to {
+    background-position: 200px 1000px;
+  }
+}
+
+.weather-snow {
+  position: fixed;
+  inset: 0;
+  background-image:
+    radial-gradient(circle, white 2.5px, transparent 2.5px),
+    radial-gradient(circle, white 1.5px, transparent 1.5px);
+  background-size: 200px 200px, 150px 150px;
+  background-position: 0 0, 50px 70px;
+  animation: weather-snow-anim 15s linear infinite;
+  pointer-events: none;
+  z-index: -1;
+}
+
+@keyframes weather-snow-anim {
+  from {
+    background-position: 0 0, 50px 70px;
+  }
+
+  to {
+    background-position: 100px 1000px, 150px 1000px;
+  }
+}
+
+.weather-clouds {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.weather-cloud-item {
+  position: absolute;
+  background: white;
+  filter: blur(100px);
+  border-radius: 50%;
+  opacity: 0.25;
+  animation: weather-clouds-anim 80s linear infinite;
+}
+
+@keyframes weather-clouds-anim {
+  from {
+    transform: translateX(-400px);
+  }
+
+  to {
+    transform: translateX(100vw);
+  }
+}
+
+.weather-sun-glow {
+  position: fixed;
+  top: -15%;
+  right: -15%;
+  width: 70vw;
+  height: 70vw;
+  background: radial-gradient(circle, rgba(255, 230, 150, 0.3) 0%, rgba(255, 230, 150, 0) 70%);
+  filter: blur(60px);
+  border-radius: 50%;
+  animation: weather-sun-pulse 12s ease-in-out infinite;
+  pointer-events: none;
+  z-index: -1;
+}
+
+@keyframes weather-sun-pulse {
+
+  0%,
+  100% {
+    transform: scale(1) translate(0, 0);
+    opacity: 0.5;
+  }
+
+  50% {
+    transform: scale(1.1) translate(-20px, 20px);
+    opacity: 0.9;
+  }
+}
+
+.weather-lightning {
+  position: fixed;
+  inset: 0;
+  background: white;
+  opacity: 0;
+  pointer-events: none;
+  z-index: -1;
+  animation: weather-lightning-flash 6s infinite;
+}
+
+@keyframes weather-lightning-flash {
+
+  0%,
+  94%,
+  96%,
+  98%,
+  100% {
+    opacity: 0;
+  }
+
+  95% {
+    opacity: 0.25;
+  }
+
+  97% {
+    opacity: 0.15;
+  }
+
+  99% {
+    opacity: 0.45;
   }
 }

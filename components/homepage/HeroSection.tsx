@@ -35,7 +35,7 @@ export function HeroSection() {
   const isMinimal = perfMode === "minimal";
 
   return (
-    <section id="home" className={`relative min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center overflow-hidden ${isMinimal ? "" : "scanlines"} pt-20`}>
+    <section id="home" className={`relative min-h-[calc(100vh-5rem)] flex flex-col items-center justify-center overflow-hidden ${isMinimal ? "" : "scanlines"} pt-24 pb-8`}>
       {/* Background grid — skip animation in minimal */}
       {!isMinimal && <div className="absolute inset-0 grid-bg" />}
 
