@@ -435,6 +435,8 @@ interface RhymeTimeInitialState {
 
 **Replay Value:** Reviewing who discovered the rarest rhymes, comparing vocabulary breadth across players, and spotting the creative or unexpected submissions that earned rarity bonuses.
 
+> **Note:** The `GameLog` also includes `gameSettings: GameSettingValues` at the top level (per core.md §12A.11), capturing the exact game settings used for this match.
+
 ### 1.16 History Display Configuration
 
 **Detail Component:** `RhymeTimeHistoryDetail`
@@ -999,6 +1001,8 @@ interface UndercoverAgentInitialState {
 | `game_end` | `{ winningTeam: string; winCondition: 'all_found' \| 'assassin' \| 'stalemate'; remainingWords: { teamA: string[]; teamB: string[] } }` | Game concludes |
 
 **Replay Value:** Reliving the spymaster's strategy — which clues linked multiple words, where operatives went wrong, and the dramatic assassin-hit moments. Full logs allow step-by-step replay of the entire match.
+
+> **Note:** The `GameLog` also includes `gameSettings: GameSettingValues` at the top level (per core.md §12A.11), capturing the exact game settings used for this match.
 
 ### 2.17 History Display Configuration
 
@@ -1583,6 +1587,8 @@ interface CategoryCrashInitialState {
 | `game_end` | `{ finalScores: Array<{ userId: string; totalScore: number; rank: number }> }` | All rounds complete |
 
 **Replay Value:** Seeing who came up with the most creative unique answers, laughing at the answers that multiple players chose (and got crashed), and comparing strategies for obscure vs. safe category responses.
+
+> **Note:** The `GameLog` also includes `gameSettings: GameSettingValues` at the top level (per core.md §12A.11), capturing the exact game settings used for this match.
 
 ### 3.15 History Display Configuration
 
@@ -2193,6 +2199,8 @@ interface WikiRaceInitialState {
 | `game_end` | `{ finalScores: Array<{ userId: string; totalScore: number; rank: number }> }` | All rounds complete |
 
 **Replay Value:** Comparing the wildly different paths players took between the same two articles, seeing who found clever shortcuts vs. who wandered through dozens of articles, and comparing paths against the best finisher's route.
+
+> **Note:** The `GameLog` also includes `gameSettings: GameSettingValues` at the top level (per core.md §12A.11), capturing the exact game settings used for this match.
 
 ### 4.17 History Display Configuration
 

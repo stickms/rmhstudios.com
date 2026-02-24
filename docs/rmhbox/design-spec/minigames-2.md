@@ -412,6 +412,8 @@ interface FOFInitialState {
 
 Review who gambled on high pot values and lost, who was consistently fastest, and how the pot decayed across rounds. Useful for settling "I answered first!" disputes.
 
+> **Note:** The `GameLog` also includes `gameSettings: GameSettingValues` at the top level (per core.md §12A.11), capturing the exact game settings used for this match.
+
 ### 1.16 History Display Configuration
 
 **Detail Component:** `FactOrFrictionHistoryDetail`
@@ -1001,6 +1003,8 @@ interface UEInitialState {
 
 Step through the story's evolution turn by turn. See every word the Editor swapped, whether anyone noticed, and how close the accusation votes were. The `EDITOR_SWAP` entries are especially fun — compare original vs. replacement and judge how sneaky each edit was.
 
+> **Note:** The `GameLog` also includes `gameSettings: GameSettingValues` at the top level (per core.md §12A.11), capturing the exact game settings used for this match.
+
 ### 2.16 History Display Configuration
 
 **Detail Component:** `UndercoverEditorHistoryDetail`
@@ -1582,6 +1586,8 @@ interface MMInitialState {
 
 Browse the gallery of 5-stroke creations for each prompt. The auction history shows who valued which art and how bidding wars played out. Compare the minimalist interpretations side-by-side — the constraint makes every stroke meaningful.
 
+> **Note:** The `GameLog` also includes `gameSettings: GameSettingValues` at the top level (per core.md §12A.11), capturing the exact game settings used for this match.
+
 ### 3.15 History Display Configuration
 
 **Detail Component:** `MinimalistMasterpieceHistoryDetail`
@@ -2154,6 +2160,8 @@ interface ECInitialState {
 #### Replay Value
 
 See each round's emoji composition alongside the movie title and marvel at how creative (or cryptic) the Producer was. The close-guess log is comedy gold — near-misses and creative interpretations are half the fun.
+
+> **Note:** The `GameLog` also includes `gameSettings: GameSettingValues` at the top level (per core.md §12A.11), capturing the exact game settings used for this match.
 
 ### 4.17 History Display Configuration
 

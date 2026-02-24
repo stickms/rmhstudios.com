@@ -438,6 +438,8 @@ interface SSInitialState {
 
 **Replay Value:** The fun of reviewing a Sequence Sam log is seeing the elimination order — who survived the longest, which chaos rounds caused the most failures, and how the sequence length ramped up over time.
 
+> **Note:** The `GameLog` also includes `gameSettings: GameSettingValues` at the top level (per core.md §12A.11), capturing the exact game settings used for this match.
+
 ### 1.15 History Display Configuration
 
 **Detail Component:** `SequenceSamHistoryDetail`
@@ -949,6 +951,8 @@ interface HKInitialState {
 | `game_end` | `{ completed: boolean; finalProgress: number; elapsedMs: number; mvpUserId: string; totalCorrectKeys: number; totalWrongKeys: number }` | Game over |
 
 **Replay Value:** Reviewing a Human Keyboard log reveals which players carried the team, how reshuffles affected typing momentum, and whether the team completed the sentence — or how close they got.
+
+> **Note:** The `GameLog` also includes `gameSettings: GameSettingValues` at the top level (per core.md §12A.11), capturing the exact game settings used for this match.
 
 ### 2.16 History Display Configuration
 
@@ -1515,6 +1519,8 @@ interface CUInitialState {
 | `game_end` | `{ finalScores: Record<string, number>; placements: Array<{ userId: string; placement: number; score: number }> }` | Game over |
 
 **Replay Value:** Comparing throw angles and power levels across players reveals different strategies — cautious vs. aggressive throws, effective sweeping, and how stone collisions changed the outcome of each end.
+
+> **Note:** The `GameLog` also includes `gameSettings: GameSettingValues` at the top level (per core.md §12A.11), capturing the exact game settings used for this match.
 
 ### 3.15 History Display Configuration
 
@@ -2086,6 +2092,8 @@ interface HTInitialState {
 | `game_end` | `{ wavesCompleted: number; totalWaves: number; finalScore: number; perfectWaves: number; longestStreak: number }` | Game over |
 
 **Replay Value:** The log shows how team coordination evolved across waves — whether the group improved with practice, which wall shapes caused the most failures, and how long their success streaks lasted.
+
+> **Note:** The `GameLog` also includes `gameSettings: GameSettingValues` at the top level (per core.md §12A.11), capturing the exact game settings used for this match.
 
 ### 4.17 History Display Configuration
 

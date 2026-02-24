@@ -447,6 +447,8 @@ interface ICGameHistoryInit {
 
 **Replay Value:** The social deduction aspect makes this a strong candidate for full logging. Players can review the Q&A transcript to see how answers led them toward (or away from) the correct identity, compare voting patterns, and spot the moment the penny dropped.
 
+> **Note:** The `GameLog` also includes `gameSettings: GameSettingValues` at the top level (per core.md §12A.11), capturing the exact game settings used for this match.
+
 ### 1.15 History Display Configuration
 
 **Detail Component:** `IdentityCrisisHistoryDetail`
@@ -991,6 +993,8 @@ interface RFGameHistoryInit {
 | `game_complete` | `{ finalStandings: Array<{ userId, totalPoints, roundBreakdown: number[] }> }` | All rounds finished |
 
 **Replay Value:** Comparing how players ranked the same items reveals taste differences and unexpected consensus. The round-by-round breakdown fuels post-game arguments about whether pizza truly belongs above tacos.
+
+> **Note:** The `GameLog` also includes `gameSettings: GameSettingValues` at the top level (per core.md §12A.11), capturing the exact game settings used for this match.
 
 ### 2.15 History Display Configuration
 
@@ -1577,6 +1581,8 @@ interface PPGameHistoryInit {
 | `game_complete` | `{ levelsCleared, totalTime, mvpUserId, playerStats: Array<{ userId, waypointsHit, flipsReceived }> }` | Run ends |
 
 **Replay Value:** The log shows team coordination through level-by-level progression. Polarity flip events highlight the cooperative chaos, and completion times let teams compare runs and track improvement.
+
+> **Note:** The `GameLog` also includes `gameSettings: GameSettingValues` at the top level (per core.md §12A.11), capturing the exact game settings used for this match.
 
 ### 3.16 History Display Configuration
 
@@ -2218,6 +2224,8 @@ interface SCGameHistoryInit {
 | `game_complete` | `{ winnerId, finalSurvivalTime, eliminationOrder: Array<{ userId, survivalTime, cause }>, adStats: Array<{ userId, adsEncountered, adsDismissed }> }` | Last player standing or time expires |
 
 **Replay Value:** The elimination timeline tells the full story — rising scroll speed, cascading deaths, and the final survivor. Ad stats add a comedic layer, showing who struggled with the fake close buttons.
+
+> **Note:** The `GameLog` also includes `gameSettings: GameSettingValues` at the top level (per core.md §12A.11), capturing the exact game settings used for this match.
 
 ### 4.16 History Display Configuration
 
