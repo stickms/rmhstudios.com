@@ -66,7 +66,7 @@ export async function connectToRMHbox(): Promise<Socket> {
   const serverUrl = process.env.NEXT_PUBLIC_RMHBOX_SOCKET_URL || 'http://localhost:7676';
 
   socket = io(serverUrl, {
-    path: '/rmhbox/',
+    path: '/rmhbox-ws/',
     // Dynamic auth: refreshes the session token on every (re)connection
     // attempt so expired tokens are replaced automatically.
     auth: (cb) => {

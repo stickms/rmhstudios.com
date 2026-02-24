@@ -20,7 +20,7 @@ function envString(key: string, fallback: string): string {
 export const config = {
   // ─── Network ───
   PORT: envInt('RMHBOX_PORT', 7676),
-  SOCKET_PATH: envString('RMHBOX_SOCKET_PATH', '/rmhbox/'),
+  SOCKET_PATH: envString('RMHBOX_SOCKET_PATH', '/rmhbox-ws/'),
   CORS_ORIGIN: envString('RMHBOX_CORS_ORIGIN', process.env.SOCKET_CORS_ORIGIN || '*'),
 
   // ─── Socket.io Tuning ───
