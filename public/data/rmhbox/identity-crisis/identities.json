@@ -1,0 +1,597 @@
+[
+  {
+    "id": "albert-einstein",
+    "name": "Albert Einstein",
+    "category": "Scientist",
+    "difficulty": "easy",
+    "hints": ["Known for a famous equation", "Wild-haired physicist", "Developed the theory of relativity"]
+  },
+  {
+    "id": "mickey-mouse",
+    "name": "Mickey Mouse",
+    "category": "Fictional",
+    "difficulty": "easy",
+    "hints": ["Disney's mascot", "Wears red shorts and white gloves"]
+  },
+  {
+    "id": "michael-jordan",
+    "name": "Michael Jordan",
+    "category": "Athlete",
+    "difficulty": "easy",
+    "hints": ["Six NBA championships", "Wore number 23", "Has a famous shoe brand"]
+  },
+  {
+    "id": "beyonce",
+    "name": "Beyoncé",
+    "category": "Musician",
+    "difficulty": "easy",
+    "hints": ["Queen Bey", "Former Destiny's Child member", "Married to a rapper mogul"]
+  },
+  {
+    "id": "barack-obama",
+    "name": "Barack Obama",
+    "category": "Leader",
+    "difficulty": "easy",
+    "hints": ["44th US President", "First African-American president", "Yes We Can"]
+  },
+  {
+    "id": "leonardo-da-vinci",
+    "name": "Leonardo da Vinci",
+    "category": "Artist",
+    "difficulty": "easy",
+    "hints": ["Painted the Mona Lisa", "Renaissance polymath", "Designed flying machines"]
+  },
+  {
+    "id": "marilyn-monroe",
+    "name": "Marilyn Monroe",
+    "category": "Actor",
+    "difficulty": "easy",
+    "hints": ["Iconic blonde bombshell", "Sang Happy Birthday to a president", "Some Like It Hot star"]
+  },
+  {
+    "id": "muhammad-ali",
+    "name": "Muhammad Ali",
+    "category": "Athlete",
+    "difficulty": "easy",
+    "hints": ["Float like a butterfly, sting like a bee", "Born Cassius Clay", "Heavyweight boxing champion"]
+  },
+  {
+    "id": "william-shakespeare",
+    "name": "William Shakespeare",
+    "category": "Writer",
+    "difficulty": "easy",
+    "hints": ["The Bard of Avon", "Wrote Romeo and Juliet", "To be or not to be"]
+  },
+  {
+    "id": "queen-elizabeth-ii",
+    "name": "Queen Elizabeth II",
+    "category": "Leader",
+    "difficulty": "easy",
+    "hints": ["Longest-reigning British monarch", "Loved corgis", "Reigned for over 70 years"]
+  },
+  {
+    "id": "elon-musk",
+    "name": "Elon Musk",
+    "category": "Inventor",
+    "difficulty": "easy",
+    "hints": ["CEO of Tesla and SpaceX", "Wants to colonize Mars", "Bought a social media platform"]
+  },
+  {
+    "id": "taylor-swift",
+    "name": "Taylor Swift",
+    "category": "Musician",
+    "difficulty": "easy",
+    "hints": ["Started in country music", "Known for re-recording albums", "Eras Tour"]
+  },
+  {
+    "id": "harry-potter",
+    "name": "Harry Potter",
+    "category": "Fictional",
+    "difficulty": "easy",
+    "hints": ["The Boy Who Lived", "Has a lightning bolt scar", "Attended a school of witchcraft"]
+  },
+  {
+    "id": "martin-luther-king-jr",
+    "name": "Martin Luther King Jr.",
+    "category": "Leader",
+    "difficulty": "easy",
+    "hints": ["I Have a Dream speech", "Civil rights leader", "Nobel Peace Prize winner"]
+  },
+  {
+    "id": "oprah-winfrey",
+    "name": "Oprah Winfrey",
+    "category": "Actor",
+    "difficulty": "easy",
+    "hints": ["Queen of daytime TV", "Famous talk show host", "You get a car!"]
+  },
+  {
+    "id": "thomas-edison",
+    "name": "Thomas Edison",
+    "category": "Inventor",
+    "difficulty": "easy",
+    "hints": ["Invented the practical light bulb", "Held over 1000 patents", "Menlo Park lab"]
+  },
+  {
+    "id": "michael-jackson",
+    "name": "Michael Jackson",
+    "category": "Musician",
+    "difficulty": "easy",
+    "hints": ["King of Pop", "Thriller album", "Famous moonwalk dance"]
+  },
+  {
+    "id": "darth-vader",
+    "name": "Darth Vader",
+    "category": "Fictional",
+    "difficulty": "easy",
+    "hints": ["I am your father", "Wears a black helmet", "Star Wars villain"]
+  },
+  {
+    "id": "neil-armstrong",
+    "name": "Neil Armstrong",
+    "category": "Explorer",
+    "difficulty": "easy",
+    "hints": ["First person to walk on the Moon", "One small step for man", "Apollo 11 astronaut"]
+  },
+  {
+    "id": "usain-bolt",
+    "name": "Usain Bolt",
+    "category": "Athlete",
+    "difficulty": "easy",
+    "hints": ["Fastest man in the world", "Jamaican sprinter", "Lightning Bolt pose"]
+  },
+  {
+    "id": "abraham-lincoln",
+    "name": "Abraham Lincoln",
+    "category": "Leader",
+    "difficulty": "easy",
+    "hints": ["16th US President", "Abolished slavery", "Iconic top hat and beard"]
+  },
+  {
+    "id": "pablo-picasso",
+    "name": "Pablo Picasso",
+    "category": "Artist",
+    "difficulty": "easy",
+    "hints": ["Pioneer of Cubism", "Painted Guernica", "Spanish painter"]
+  },
+  {
+    "id": "princess-diana",
+    "name": "Princess Diana",
+    "category": "Historical",
+    "difficulty": "easy",
+    "hints": ["People's Princess", "Princess of Wales", "Known for humanitarian work"]
+  },
+  {
+    "id": "lebron-james",
+    "name": "LeBron James",
+    "category": "Athlete",
+    "difficulty": "easy",
+    "hints": ["King James", "NBA all-time scoring leader", "Played for multiple NBA teams"]
+  },
+  {
+    "id": "superman",
+    "name": "Superman",
+    "category": "Fictional",
+    "difficulty": "easy",
+    "hints": ["Man of Steel", "From the planet Krypton", "Wears a red cape"]
+  },
+  {
+    "id": "steve-jobs",
+    "name": "Steve Jobs",
+    "category": "Inventor",
+    "difficulty": "easy",
+    "hints": ["Co-founded Apple", "Famous product launches", "One more thing"]
+  },
+  {
+    "id": "cleopatra",
+    "name": "Cleopatra",
+    "category": "Historical",
+    "difficulty": "medium",
+    "hints": ["Last pharaoh of Egypt", "Allied with Julius Caesar and Mark Antony"]
+  },
+  {
+    "id": "ludwig-van-beethoven",
+    "name": "Ludwig van Beethoven",
+    "category": "Musician",
+    "difficulty": "medium",
+    "hints": ["Composed while going deaf", "Wrote nine symphonies", "German composer"]
+  },
+  {
+    "id": "frida-kahlo",
+    "name": "Frida Kahlo",
+    "category": "Artist",
+    "difficulty": "medium",
+    "hints": ["Mexican self-portrait painter", "Known for her unibrow", "Married to Diego Rivera"]
+  },
+  {
+    "id": "galileo-galilei",
+    "name": "Galileo Galilei",
+    "category": "Scientist",
+    "difficulty": "medium",
+    "hints": ["Father of modern science", "Championed heliocentrism", "Improved the telescope"]
+  },
+  {
+    "id": "napoleon-bonaparte",
+    "name": "Napoleon Bonaparte",
+    "category": "Leader",
+    "difficulty": "medium",
+    "hints": ["French emperor", "Exiled to Elba", "Defeated at Waterloo"]
+  },
+  {
+    "id": "sherlock-holmes",
+    "name": "Sherlock Holmes",
+    "category": "Fictional",
+    "difficulty": "medium",
+    "hints": ["221B Baker Street", "Elementary, my dear Watson", "Master detective"]
+  },
+  {
+    "id": "amelia-earhart",
+    "name": "Amelia Earhart",
+    "category": "Explorer",
+    "difficulty": "medium",
+    "hints": ["First woman to fly solo across the Atlantic", "Disappeared over the Pacific"]
+  },
+  {
+    "id": "mark-twain",
+    "name": "Mark Twain",
+    "category": "Writer",
+    "difficulty": "medium",
+    "hints": ["Wrote Huckleberry Finn", "Real name Samuel Clemens", "American humorist"]
+  },
+  {
+    "id": "bruce-lee",
+    "name": "Bruce Lee",
+    "category": "Actor",
+    "difficulty": "medium",
+    "hints": ["Martial arts legend", "Enter the Dragon star", "Founded Jeet Kune Do"]
+  },
+  {
+    "id": "marie-curie",
+    "name": "Marie Curie",
+    "category": "Scientist",
+    "difficulty": "medium",
+    "hints": ["Discovered radium and polonium", "First woman to win a Nobel Prize", "Won two Nobel Prizes"]
+  },
+  {
+    "id": "genghis-khan",
+    "name": "Genghis Khan",
+    "category": "Historical",
+    "difficulty": "medium",
+    "hints": ["Founded the Mongol Empire", "Largest contiguous land empire", "Born Temüjin"]
+  },
+  {
+    "id": "wolfgang-amadeus-mozart",
+    "name": "Wolfgang Amadeus Mozart",
+    "category": "Musician",
+    "difficulty": "medium",
+    "hints": ["Child prodigy composer", "Austrian classical composer", "Wrote The Magic Flute"]
+  },
+  {
+    "id": "charles-darwin",
+    "name": "Charles Darwin",
+    "category": "Scientist",
+    "difficulty": "medium",
+    "hints": ["Theory of evolution by natural selection", "Voyage of the Beagle", "On the Origin of Species"]
+  },
+  {
+    "id": "gandhi",
+    "name": "Mahatma Gandhi",
+    "category": "Leader",
+    "difficulty": "medium",
+    "hints": ["Led India's independence movement", "Advocated nonviolent resistance", "Known as the Father of the Nation"]
+  },
+  {
+    "id": "vincent-van-gogh",
+    "name": "Vincent van Gogh",
+    "category": "Artist",
+    "difficulty": "medium",
+    "hints": ["Painted The Starry Night", "Cut off part of his ear", "Post-Impressionist Dutch painter"]
+  },
+  {
+    "id": "alexander-the-great",
+    "name": "Alexander the Great",
+    "category": "Historical",
+    "difficulty": "medium",
+    "hints": ["Conquered much of the known world by 30", "King of Macedonia", "Tutored by Aristotle"]
+  },
+  {
+    "id": "nelson-mandela",
+    "name": "Nelson Mandela",
+    "category": "Leader",
+    "difficulty": "medium",
+    "hints": ["First Black president of South Africa", "Imprisoned for 27 years", "Anti-apartheid leader"]
+  },
+  {
+    "id": "freddie-mercury",
+    "name": "Freddie Mercury",
+    "category": "Musician",
+    "difficulty": "medium",
+    "hints": ["Lead singer of Queen", "Bohemian Rhapsody", "Legendary vocal range"]
+  },
+  {
+    "id": "isaac-newton",
+    "name": "Isaac Newton",
+    "category": "Scientist",
+    "difficulty": "medium",
+    "hints": ["Laws of motion", "Apple falling from a tree", "Invented calculus"]
+  },
+  {
+    "id": "julius-caesar",
+    "name": "Julius Caesar",
+    "category": "Historical",
+    "difficulty": "medium",
+    "hints": ["Et tu, Brute?", "Roman dictator", "Crossed the Rubicon"]
+  },
+  {
+    "id": "jane-austen",
+    "name": "Jane Austen",
+    "category": "Writer",
+    "difficulty": "medium",
+    "hints": ["Wrote Pride and Prejudice", "English novelist of the Regency era"]
+  },
+  {
+    "id": "serena-williams",
+    "name": "Serena Williams",
+    "category": "Athlete",
+    "difficulty": "medium",
+    "hints": ["23 Grand Slam singles titles", "American tennis champion", "Played with her sister Venus"]
+  },
+  {
+    "id": "gandalf",
+    "name": "Gandalf",
+    "category": "Fictional",
+    "difficulty": "medium",
+    "hints": ["You shall not pass!", "Grey then White wizard", "Lord of the Rings character"]
+  },
+  {
+    "id": "marco-polo",
+    "name": "Marco Polo",
+    "category": "Explorer",
+    "difficulty": "medium",
+    "hints": ["Venetian merchant traveler", "Explored the Silk Road to China", "Famous travel accounts"]
+  },
+  {
+    "id": "charlie-chaplin",
+    "name": "Charlie Chaplin",
+    "category": "Actor",
+    "difficulty": "medium",
+    "hints": ["Silent film icon", "The Tramp character", "Bowler hat and cane"]
+  },
+  {
+    "id": "winston-churchill",
+    "name": "Winston Churchill",
+    "category": "Leader",
+    "difficulty": "medium",
+    "hints": ["British Prime Minister during WWII", "We shall fight on the beaches", "Nobel Prize in Literature"]
+  },
+  {
+    "id": "stephen-hawking",
+    "name": "Stephen Hawking",
+    "category": "Scientist",
+    "difficulty": "medium",
+    "hints": ["A Brief History of Time", "Black hole radiation", "Used a wheelchair and voice synthesizer"]
+  },
+  {
+    "id": "edgar-allan-poe",
+    "name": "Edgar Allan Poe",
+    "category": "Writer",
+    "difficulty": "medium",
+    "hints": ["The Raven", "Master of the macabre", "American Gothic writer"]
+  },
+  {
+    "id": "bob-marley",
+    "name": "Bob Marley",
+    "category": "Musician",
+    "difficulty": "medium",
+    "hints": ["Reggae legend from Jamaica", "One Love", "Popularized reggae worldwide"]
+  },
+  {
+    "id": "audrey-hepburn",
+    "name": "Audrey Hepburn",
+    "category": "Actor",
+    "difficulty": "medium",
+    "hints": ["Breakfast at Tiffany's star", "Iconic little black dress", "UNICEF Goodwill Ambassador"]
+  },
+  {
+    "id": "pele",
+    "name": "Pelé",
+    "category": "Athlete",
+    "difficulty": "medium",
+    "hints": ["Brazilian soccer legend", "Won three World Cups", "The Beautiful Game"]
+  },
+  {
+    "id": "ada-lovelace",
+    "name": "Ada Lovelace",
+    "category": "Scientist",
+    "difficulty": "hard",
+    "hints": ["First computer programmer", "Worked with Charles Babbage", "Daughter of Lord Byron"]
+  },
+  {
+    "id": "nikola-tesla",
+    "name": "Nikola Tesla",
+    "category": "Inventor",
+    "difficulty": "hard",
+    "hints": ["Pioneered alternating current", "Rival of Edison", "Tesla coil inventor"]
+  },
+  {
+    "id": "alan-turing",
+    "name": "Alan Turing",
+    "category": "Scientist",
+    "difficulty": "hard",
+    "hints": ["Father of computer science", "Broke the Enigma code", "Proposed the Turing test"]
+  },
+  {
+    "id": "sun-tzu",
+    "name": "Sun Tzu",
+    "category": "Historical",
+    "difficulty": "hard",
+    "hints": ["Wrote The Art of War", "Ancient Chinese military strategist"]
+  },
+  {
+    "id": "caravaggio",
+    "name": "Caravaggio",
+    "category": "Artist",
+    "difficulty": "hard",
+    "hints": ["Italian Baroque master", "Known for dramatic chiaroscuro", "Had a violent temperament"]
+  },
+  {
+    "id": "rosalind-franklin",
+    "name": "Rosalind Franklin",
+    "category": "Scientist",
+    "difficulty": "hard",
+    "hints": ["Key to discovering DNA's structure", "Photo 51", "British chemist"]
+  },
+  {
+    "id": "ferdinand-magellan",
+    "name": "Ferdinand Magellan",
+    "category": "Explorer",
+    "difficulty": "hard",
+    "hints": ["First circumnavigation of Earth", "Portuguese explorer", "Died in the Philippines"]
+  },
+  {
+    "id": "atticus-finch",
+    "name": "Atticus Finch",
+    "category": "Fictional",
+    "difficulty": "hard",
+    "hints": ["Lawyer in To Kill a Mockingbird", "Defends an innocent man", "Father of Scout"]
+  },
+  {
+    "id": "hedy-lamarr",
+    "name": "Hedy Lamarr",
+    "category": "Inventor",
+    "difficulty": "hard",
+    "hints": ["Hollywood actress and inventor", "Co-invented frequency hopping", "Basis for Wi-Fi and Bluetooth"]
+  },
+  {
+    "id": "fyodor-dostoevsky",
+    "name": "Fyodor Dostoevsky",
+    "category": "Writer",
+    "difficulty": "hard",
+    "hints": ["Wrote Crime and Punishment", "Russian literary giant", "The Brothers Karamazov"]
+  },
+  {
+    "id": "hannibal-barca",
+    "name": "Hannibal Barca",
+    "category": "Historical",
+    "difficulty": "hard",
+    "hints": ["Crossed the Alps with elephants", "Carthaginian general", "Nearly conquered Rome"]
+  },
+  {
+    "id": "niels-bohr",
+    "name": "Niels Bohr",
+    "category": "Scientist",
+    "difficulty": "hard",
+    "hints": ["Atomic model pioneer", "Danish physicist", "Nobel Prize in 1922"]
+  },
+  {
+    "id": "roald-amundsen",
+    "name": "Roald Amundsen",
+    "category": "Explorer",
+    "difficulty": "hard",
+    "hints": ["First to reach the South Pole", "Norwegian explorer", "Beat Scott in the race"]
+  },
+  {
+    "id": "mary-shelley",
+    "name": "Mary Shelley",
+    "category": "Writer",
+    "difficulty": "hard",
+    "hints": ["Wrote Frankenstein", "Pioneer of science fiction", "Married to the poet Percy Shelley"]
+  },
+  {
+    "id": "billie-holiday",
+    "name": "Billie Holiday",
+    "category": "Musician",
+    "difficulty": "hard",
+    "hints": ["Lady Day", "Strange Fruit singer", "Influential jazz vocalist"]
+  },
+  {
+    "id": "rembrandt",
+    "name": "Rembrandt van Rijn",
+    "category": "Artist",
+    "difficulty": "hard",
+    "hints": ["Dutch Golden Age master", "The Night Watch", "Prolific self-portraitist"]
+  },
+  {
+    "id": "alexander-hamilton",
+    "name": "Alexander Hamilton",
+    "category": "Historical",
+    "difficulty": "hard",
+    "hints": ["First US Secretary of the Treasury", "Killed in a duel", "Subject of a hit musical"]
+  },
+  {
+    "id": "katherine-johnson",
+    "name": "Katherine Johnson",
+    "category": "Scientist",
+    "difficulty": "hard",
+    "hints": ["NASA mathematician", "Calculated trajectories for space missions", "Hidden Figures"]
+  },
+  {
+    "id": "captain-ahab",
+    "name": "Captain Ahab",
+    "category": "Fictional",
+    "difficulty": "hard",
+    "hints": ["Obsessed with a white whale", "Captain of the Pequod", "Moby-Dick character"]
+  },
+  {
+    "id": "guglielmo-marconi",
+    "name": "Guglielmo Marconi",
+    "category": "Inventor",
+    "difficulty": "hard",
+    "hints": ["Pioneer of long-distance radio", "Italian inventor", "Nobel Prize in Physics 1909"]
+  },
+  {
+    "id": "ernest-shackleton",
+    "name": "Ernest Shackleton",
+    "category": "Explorer",
+    "difficulty": "hard",
+    "hints": ["Endurance expedition to Antarctica", "Led crew to safety after ship was crushed by ice"]
+  },
+  {
+    "id": "simone-de-beauvoir",
+    "name": "Simone de Beauvoir",
+    "category": "Writer",
+    "difficulty": "hard",
+    "hints": ["Wrote The Second Sex", "French existentialist philosopher", "Partner of Jean-Paul Sartre"]
+  },
+  {
+    "id": "dame-judi-dench",
+    "name": "Dame Judi Dench",
+    "category": "Actor",
+    "difficulty": "hard",
+    "hints": ["Played M in James Bond films", "British acting legend", "Oscar for Shakespeare in Love"]
+  },
+  {
+    "id": "sacagawea",
+    "name": "Sacagawea",
+    "category": "Explorer",
+    "difficulty": "medium",
+    "hints": ["Guided Lewis and Clark expedition", "Shoshone woman", "Appears on the US dollar coin"]
+  },
+  {
+    "id": "walt-disney",
+    "name": "Walt Disney",
+    "category": "Inventor",
+    "difficulty": "easy",
+    "hints": ["Created a famous theme park", "Pioneer of animation", "Created Mickey Mouse"]
+  },
+  {
+    "id": "lionel-messi",
+    "name": "Lionel Messi",
+    "category": "Athlete",
+    "difficulty": "easy",
+    "hints": ["Argentine soccer star", "Won the 2022 World Cup", "Played for Barcelona"]
+  },
+  {
+    "id": "claude-monet",
+    "name": "Claude Monet",
+    "category": "Artist",
+    "difficulty": "medium",
+    "hints": ["Father of Impressionism", "Water Lilies series", "French painter"]
+  },
+  {
+    "id": "agatha-christie",
+    "name": "Agatha Christie",
+    "category": "Writer",
+    "difficulty": "medium",
+    "hints": ["Queen of Mystery", "Created Hercule Poirot", "Best-selling fiction writer of all time"]
+  }
+]
