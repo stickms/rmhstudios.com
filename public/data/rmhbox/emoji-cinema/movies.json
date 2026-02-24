@@ -1,0 +1,2302 @@
+[
+  {
+    "id": "ec-001",
+    "title": "The Lion King",
+    "titleNormalized": "lion king",
+    "alternativeTitles": [],
+    "year": 1994,
+    "genre": ["animation", "adventure", "drama"],
+    "difficulty": "easy",
+    "popularity": 95
+  },
+  {
+    "id": "ec-002",
+    "title": "Titanic",
+    "titleNormalized": "titanic",
+    "alternativeTitles": [],
+    "year": 1997,
+    "genre": ["romance", "drama"],
+    "difficulty": "easy",
+    "popularity": 97
+  },
+  {
+    "id": "ec-003",
+    "title": "Jurassic Park",
+    "titleNormalized": "jurassic park",
+    "alternativeTitles": ["Jurassic Park 1"],
+    "year": 1993,
+    "genre": ["sci-fi", "adventure", "thriller"],
+    "difficulty": "easy",
+    "popularity": 94
+  },
+  {
+    "id": "ec-004",
+    "title": "Star Wars",
+    "titleNormalized": "star wars",
+    "alternativeTitles": ["Star Wars: A New Hope", "Star Wars Episode IV", "A New Hope"],
+    "year": 1977,
+    "genre": ["sci-fi", "adventure", "fantasy"],
+    "difficulty": "easy",
+    "popularity": 98
+  },
+  {
+    "id": "ec-005",
+    "title": "The Wizard of Oz",
+    "titleNormalized": "wizard of oz",
+    "alternativeTitles": ["Wizard of Oz"],
+    "year": 1939,
+    "genre": ["fantasy", "musical", "adventure"],
+    "difficulty": "easy",
+    "popularity": 90
+  },
+  {
+    "id": "ec-006",
+    "title": "Jaws",
+    "titleNormalized": "jaws",
+    "alternativeTitles": [],
+    "year": 1975,
+    "genre": ["thriller", "horror", "adventure"],
+    "difficulty": "easy",
+    "popularity": 91
+  },
+  {
+    "id": "ec-007",
+    "title": "Finding Nemo",
+    "titleNormalized": "finding nemo",
+    "alternativeTitles": [],
+    "year": 2003,
+    "genre": ["animation", "adventure", "comedy"],
+    "difficulty": "easy",
+    "popularity": 93
+  },
+  {
+    "id": "ec-008",
+    "title": "Frozen",
+    "titleNormalized": "frozen",
+    "alternativeTitles": [],
+    "year": 2013,
+    "genre": ["animation", "adventure", "musical"],
+    "difficulty": "easy",
+    "popularity": 94
+  },
+  {
+    "id": "ec-009",
+    "title": "E.T. the Extra-Terrestrial",
+    "titleNormalized": "e.t. the extra-terrestrial",
+    "alternativeTitles": ["ET", "E.T."],
+    "year": 1982,
+    "genre": ["sci-fi", "adventure", "drama"],
+    "difficulty": "easy",
+    "popularity": 92
+  },
+  {
+    "id": "ec-010",
+    "title": "The Little Mermaid",
+    "titleNormalized": "little mermaid",
+    "alternativeTitles": ["Little Mermaid"],
+    "year": 1989,
+    "genre": ["animation", "musical", "romance"],
+    "difficulty": "easy",
+    "popularity": 90
+  },
+  {
+    "id": "ec-011",
+    "title": "Batman",
+    "titleNormalized": "batman",
+    "alternativeTitles": ["Batman 1989"],
+    "year": 1989,
+    "genre": ["action", "adventure"],
+    "difficulty": "easy",
+    "popularity": 88
+  },
+  {
+    "id": "ec-012",
+    "title": "Spider-Man",
+    "titleNormalized": "spider-man",
+    "alternativeTitles": ["Spiderman"],
+    "year": 2002,
+    "genre": ["action", "adventure"],
+    "difficulty": "easy",
+    "popularity": 91
+  },
+  {
+    "id": "ec-013",
+    "title": "Harry Potter and the Sorcerer's Stone",
+    "titleNormalized": "harry potter and the sorcerer's stone",
+    "alternativeTitles": ["Harry Potter 1", "Harry Potter and the Philosopher's Stone"],
+    "year": 2001,
+    "genre": ["fantasy", "adventure"],
+    "difficulty": "easy",
+    "popularity": 95
+  },
+  {
+    "id": "ec-014",
+    "title": "The Avengers",
+    "titleNormalized": "avengers",
+    "alternativeTitles": ["Avengers"],
+    "year": 2012,
+    "genre": ["action", "adventure", "sci-fi"],
+    "difficulty": "easy",
+    "popularity": 95
+  },
+  {
+    "id": "ec-015",
+    "title": "Toy Story",
+    "titleNormalized": "toy story",
+    "alternativeTitles": [],
+    "year": 1995,
+    "genre": ["animation", "comedy", "adventure"],
+    "difficulty": "easy",
+    "popularity": 94
+  },
+  {
+    "id": "ec-016",
+    "title": "Ghostbusters",
+    "titleNormalized": "ghostbusters",
+    "alternativeTitles": ["Ghost Busters"],
+    "year": 1984,
+    "genre": ["comedy", "sci-fi", "fantasy"],
+    "difficulty": "easy",
+    "popularity": 90
+  },
+  {
+    "id": "ec-017",
+    "title": "Shrek",
+    "titleNormalized": "shrek",
+    "alternativeTitles": [],
+    "year": 2001,
+    "genre": ["animation", "comedy", "fantasy"],
+    "difficulty": "easy",
+    "popularity": 93
+  },
+  {
+    "id": "ec-018",
+    "title": "The Terminator",
+    "titleNormalized": "terminator",
+    "alternativeTitles": ["Terminator", "Terminator 1"],
+    "year": 1984,
+    "genre": ["action", "sci-fi", "thriller"],
+    "difficulty": "easy",
+    "popularity": 91
+  },
+  {
+    "id": "ec-019",
+    "title": "Back to the Future",
+    "titleNormalized": "back to the future",
+    "alternativeTitles": ["BTTF"],
+    "year": 1985,
+    "genre": ["sci-fi", "adventure", "comedy"],
+    "difficulty": "easy",
+    "popularity": 95
+  },
+  {
+    "id": "ec-020",
+    "title": "Indiana Jones and the Raiders of the Lost Ark",
+    "titleNormalized": "indiana jones and the raiders of the lost ark",
+    "alternativeTitles": ["Raiders of the Lost Ark", "Indiana Jones 1"],
+    "year": 1981,
+    "genre": ["action", "adventure"],
+    "difficulty": "easy",
+    "popularity": 93
+  },
+  {
+    "id": "ec-021",
+    "title": "The Matrix",
+    "titleNormalized": "matrix",
+    "alternativeTitles": ["Matrix"],
+    "year": 1999,
+    "genre": ["sci-fi", "action"],
+    "difficulty": "easy",
+    "popularity": 94
+  },
+  {
+    "id": "ec-022",
+    "title": "Forrest Gump",
+    "titleNormalized": "forrest gump",
+    "alternativeTitles": [],
+    "year": 1994,
+    "genre": ["drama", "comedy", "romance"],
+    "difficulty": "easy",
+    "popularity": 95
+  },
+  {
+    "id": "ec-023",
+    "title": "Up",
+    "titleNormalized": "up",
+    "alternativeTitles": [],
+    "year": 2009,
+    "genre": ["animation", "adventure", "comedy"],
+    "difficulty": "easy",
+    "popularity": 90
+  },
+  {
+    "id": "ec-024",
+    "title": "The Incredibles",
+    "titleNormalized": "incredibles",
+    "alternativeTitles": ["Incredibles"],
+    "year": 2004,
+    "genre": ["animation", "action", "adventure"],
+    "difficulty": "easy",
+    "popularity": 90
+  },
+  {
+    "id": "ec-025",
+    "title": "Beauty and the Beast",
+    "titleNormalized": "beauty and the beast",
+    "alternativeTitles": [],
+    "year": 1991,
+    "genre": ["animation", "musical", "romance"],
+    "difficulty": "easy",
+    "popularity": 91
+  },
+  {
+    "id": "ec-026",
+    "title": "Aladdin",
+    "titleNormalized": "aladdin",
+    "alternativeTitles": [],
+    "year": 1992,
+    "genre": ["animation", "musical", "fantasy"],
+    "difficulty": "easy",
+    "popularity": 91
+  },
+  {
+    "id": "ec-027",
+    "title": "Home Alone",
+    "titleNormalized": "home alone",
+    "alternativeTitles": [],
+    "year": 1990,
+    "genre": ["comedy", "adventure"],
+    "difficulty": "easy",
+    "popularity": 92
+  },
+  {
+    "id": "ec-028",
+    "title": "The Jungle Book",
+    "titleNormalized": "jungle book",
+    "alternativeTitles": ["Jungle Book"],
+    "year": 1967,
+    "genre": ["animation", "adventure", "musical"],
+    "difficulty": "easy",
+    "popularity": 88
+  },
+  {
+    "id": "ec-029",
+    "title": "Rocky",
+    "titleNormalized": "rocky",
+    "alternativeTitles": [],
+    "year": 1976,
+    "genre": ["drama", "action"],
+    "difficulty": "easy",
+    "popularity": 89
+  },
+  {
+    "id": "ec-030",
+    "title": "Superman",
+    "titleNormalized": "superman",
+    "alternativeTitles": ["Superman: The Movie"],
+    "year": 1978,
+    "genre": ["action", "adventure", "sci-fi"],
+    "difficulty": "easy",
+    "popularity": 87
+  },
+  {
+    "id": "ec-031",
+    "title": "Grease",
+    "titleNormalized": "grease",
+    "alternativeTitles": [],
+    "year": 1978,
+    "genre": ["musical", "romance", "comedy"],
+    "difficulty": "easy",
+    "popularity": 87
+  },
+  {
+    "id": "ec-032",
+    "title": "The Nightmare Before Christmas",
+    "titleNormalized": "nightmare before christmas",
+    "alternativeTitles": ["Nightmare Before Christmas"],
+    "year": 1993,
+    "genre": ["animation", "fantasy", "musical"],
+    "difficulty": "easy",
+    "popularity": 88
+  },
+  {
+    "id": "ec-033",
+    "title": "Monsters, Inc.",
+    "titleNormalized": "monsters, inc.",
+    "alternativeTitles": ["Monsters Inc"],
+    "year": 2001,
+    "genre": ["animation", "comedy", "adventure"],
+    "difficulty": "easy",
+    "popularity": 91
+  },
+  {
+    "id": "ec-034",
+    "title": "Pirates of the Caribbean: The Curse of the Black Pearl",
+    "titleNormalized": "pirates of the caribbean: the curse of the black pearl",
+    "alternativeTitles": ["Pirates of the Caribbean", "POTC"],
+    "year": 2003,
+    "genre": ["action", "adventure", "fantasy"],
+    "difficulty": "easy",
+    "popularity": 92
+  },
+  {
+    "id": "ec-035",
+    "title": "The Iron Giant",
+    "titleNormalized": "iron giant",
+    "alternativeTitles": ["Iron Giant"],
+    "year": 1999,
+    "genre": ["animation", "sci-fi", "adventure"],
+    "difficulty": "medium",
+    "popularity": 80
+  },
+  {
+    "id": "ec-036",
+    "title": "Ratatouille",
+    "titleNormalized": "ratatouille",
+    "alternativeTitles": [],
+    "year": 2007,
+    "genre": ["animation", "comedy"],
+    "difficulty": "easy",
+    "popularity": 89
+  },
+  {
+    "id": "ec-037",
+    "title": "WALL-E",
+    "titleNormalized": "wall-e",
+    "alternativeTitles": ["Wall-E", "Walle"],
+    "year": 2008,
+    "genre": ["animation", "sci-fi", "adventure"],
+    "difficulty": "easy",
+    "popularity": 89
+  },
+  {
+    "id": "ec-038",
+    "title": "Jumanji",
+    "titleNormalized": "jumanji",
+    "alternativeTitles": [],
+    "year": 1995,
+    "genre": ["adventure", "fantasy", "comedy"],
+    "difficulty": "easy",
+    "popularity": 87
+  },
+  {
+    "id": "ec-039",
+    "title": "The Karate Kid",
+    "titleNormalized": "karate kid",
+    "alternativeTitles": ["Karate Kid"],
+    "year": 1984,
+    "genre": ["action", "drama"],
+    "difficulty": "easy",
+    "popularity": 86
+  },
+  {
+    "id": "ec-040",
+    "title": "Cars",
+    "titleNormalized": "cars",
+    "alternativeTitles": [],
+    "year": 2006,
+    "genre": ["animation", "comedy", "adventure"],
+    "difficulty": "easy",
+    "popularity": 85
+  },
+  {
+    "id": "ec-041",
+    "title": "Despicable Me",
+    "titleNormalized": "despicable me",
+    "alternativeTitles": [],
+    "year": 2010,
+    "genre": ["animation", "comedy"],
+    "difficulty": "easy",
+    "popularity": 88
+  },
+  {
+    "id": "ec-042",
+    "title": "Kung Fu Panda",
+    "titleNormalized": "kung fu panda",
+    "alternativeTitles": [],
+    "year": 2008,
+    "genre": ["animation", "action", "comedy"],
+    "difficulty": "easy",
+    "popularity": 87
+  },
+  {
+    "id": "ec-043",
+    "title": "Inside Out",
+    "titleNormalized": "inside out",
+    "alternativeTitles": [],
+    "year": 2015,
+    "genre": ["animation", "comedy", "drama"],
+    "difficulty": "easy",
+    "popularity": 89
+  },
+  {
+    "id": "ec-044",
+    "title": "Moana",
+    "titleNormalized": "moana",
+    "alternativeTitles": [],
+    "year": 2016,
+    "genre": ["animation", "adventure", "musical"],
+    "difficulty": "easy",
+    "popularity": 88
+  },
+  {
+    "id": "ec-045",
+    "title": "Coco",
+    "titleNormalized": "coco",
+    "alternativeTitles": [],
+    "year": 2017,
+    "genre": ["animation", "adventure", "musical"],
+    "difficulty": "easy",
+    "popularity": 89
+  },
+  {
+    "id": "ec-046",
+    "title": "The Hunger Games",
+    "titleNormalized": "hunger games",
+    "alternativeTitles": ["Hunger Games"],
+    "year": 2012,
+    "genre": ["action", "adventure", "sci-fi"],
+    "difficulty": "easy",
+    "popularity": 90
+  },
+  {
+    "id": "ec-047",
+    "title": "Twilight",
+    "titleNormalized": "twilight",
+    "alternativeTitles": [],
+    "year": 2008,
+    "genre": ["romance", "fantasy", "drama"],
+    "difficulty": "easy",
+    "popularity": 85
+  },
+  {
+    "id": "ec-048",
+    "title": "Avatar",
+    "titleNormalized": "avatar",
+    "alternativeTitles": [],
+    "year": 2009,
+    "genre": ["sci-fi", "adventure", "action"],
+    "difficulty": "easy",
+    "popularity": 95
+  },
+  {
+    "id": "ec-049",
+    "title": "The Dark Knight",
+    "titleNormalized": "dark knight",
+    "alternativeTitles": ["Dark Knight"],
+    "year": 2008,
+    "genre": ["action", "thriller", "drama"],
+    "difficulty": "easy",
+    "popularity": 96
+  },
+  {
+    "id": "ec-050",
+    "title": "Inception",
+    "titleNormalized": "inception",
+    "alternativeTitles": [],
+    "year": 2010,
+    "genre": ["sci-fi", "action", "thriller"],
+    "difficulty": "easy",
+    "popularity": 93
+  },
+  {
+    "id": "ec-051",
+    "title": "Gladiator",
+    "titleNormalized": "gladiator",
+    "alternativeTitles": [],
+    "year": 2000,
+    "genre": ["action", "drama", "adventure"],
+    "difficulty": "easy",
+    "popularity": 90
+  },
+  {
+    "id": "ec-052",
+    "title": "Ice Age",
+    "titleNormalized": "ice age",
+    "alternativeTitles": [],
+    "year": 2002,
+    "genre": ["animation", "comedy", "adventure"],
+    "difficulty": "easy",
+    "popularity": 85
+  },
+  {
+    "id": "ec-053",
+    "title": "Tangled",
+    "titleNormalized": "tangled",
+    "alternativeTitles": [],
+    "year": 2010,
+    "genre": ["animation", "musical", "comedy"],
+    "difficulty": "easy",
+    "popularity": 87
+  },
+  {
+    "id": "ec-054",
+    "title": "Zootopia",
+    "titleNormalized": "zootopia",
+    "alternativeTitles": ["Zootropolis"],
+    "year": 2016,
+    "genre": ["animation", "adventure", "comedy"],
+    "difficulty": "easy",
+    "popularity": 87
+  },
+  {
+    "id": "ec-055",
+    "title": "The Godfather",
+    "titleNormalized": "godfather",
+    "alternativeTitles": ["Godfather"],
+    "year": 1972,
+    "genre": ["drama", "thriller"],
+    "difficulty": "easy",
+    "popularity": 95
+  },
+  {
+    "id": "ec-056",
+    "title": "Black Panther",
+    "titleNormalized": "black panther",
+    "alternativeTitles": [],
+    "year": 2018,
+    "genre": ["action", "adventure", "sci-fi"],
+    "difficulty": "easy",
+    "popularity": 91
+  },
+  {
+    "id": "ec-057",
+    "title": "The Shawshank Redemption",
+    "titleNormalized": "shawshank redemption",
+    "alternativeTitles": ["Shawshank Redemption", "Shawshank"],
+    "year": 1994,
+    "genre": ["drama"],
+    "difficulty": "medium",
+    "popularity": 95
+  },
+  {
+    "id": "ec-058",
+    "title": "Alien",
+    "titleNormalized": "alien",
+    "alternativeTitles": [],
+    "year": 1979,
+    "genre": ["sci-fi", "horror", "thriller"],
+    "difficulty": "easy",
+    "popularity": 90
+  },
+  {
+    "id": "ec-059",
+    "title": "Top Gun",
+    "titleNormalized": "top gun",
+    "alternativeTitles": [],
+    "year": 1986,
+    "genre": ["action", "drama"],
+    "difficulty": "easy",
+    "popularity": 88
+  },
+  {
+    "id": "ec-060",
+    "title": "Die Hard",
+    "titleNormalized": "die hard",
+    "alternativeTitles": [],
+    "year": 1988,
+    "genre": ["action", "thriller"],
+    "difficulty": "easy",
+    "popularity": 90
+  },
+  {
+    "id": "ec-061",
+    "title": "Willy Wonka & the Chocolate Factory",
+    "titleNormalized": "willy wonka & the chocolate factory",
+    "alternativeTitles": ["Willy Wonka", "Charlie and the Chocolate Factory"],
+    "year": 1971,
+    "genre": ["fantasy", "musical", "comedy"],
+    "difficulty": "easy",
+    "popularity": 87
+  },
+  {
+    "id": "ec-062",
+    "title": "Cinderella",
+    "titleNormalized": "cinderella",
+    "alternativeTitles": [],
+    "year": 1950,
+    "genre": ["animation", "musical", "fantasy"],
+    "difficulty": "easy",
+    "popularity": 86
+  },
+  {
+    "id": "ec-063",
+    "title": "Sleeping Beauty",
+    "titleNormalized": "sleeping beauty",
+    "alternativeTitles": [],
+    "year": 1959,
+    "genre": ["animation", "musical", "fantasy"],
+    "difficulty": "easy",
+    "popularity": 82
+  },
+  {
+    "id": "ec-064",
+    "title": "Snow White and the Seven Dwarfs",
+    "titleNormalized": "snow white and the seven dwarfs",
+    "alternativeTitles": ["Snow White"],
+    "year": 1937,
+    "genre": ["animation", "musical", "fantasy"],
+    "difficulty": "easy",
+    "popularity": 85
+  },
+  {
+    "id": "ec-065",
+    "title": "Bambi",
+    "titleNormalized": "bambi",
+    "alternativeTitles": [],
+    "year": 1942,
+    "genre": ["animation", "drama"],
+    "difficulty": "easy",
+    "popularity": 82
+  },
+  {
+    "id": "ec-066",
+    "title": "It",
+    "titleNormalized": "it",
+    "alternativeTitles": ["It: Chapter One"],
+    "year": 2017,
+    "genre": ["horror", "thriller"],
+    "difficulty": "medium",
+    "popularity": 85
+  },
+  {
+    "id": "ec-067",
+    "title": "A Quiet Place",
+    "titleNormalized": "quiet place",
+    "alternativeTitles": [],
+    "year": 2018,
+    "genre": ["horror", "thriller", "sci-fi"],
+    "difficulty": "medium",
+    "popularity": 83
+  },
+  {
+    "id": "ec-068",
+    "title": "Get Out",
+    "titleNormalized": "get out",
+    "alternativeTitles": [],
+    "year": 2017,
+    "genre": ["horror", "thriller"],
+    "difficulty": "medium",
+    "popularity": 84
+  },
+  {
+    "id": "ec-069",
+    "title": "The Exorcist",
+    "titleNormalized": "exorcist",
+    "alternativeTitles": ["Exorcist"],
+    "year": 1973,
+    "genre": ["horror", "thriller"],
+    "difficulty": "medium",
+    "popularity": 87
+  },
+  {
+    "id": "ec-070",
+    "title": "Psycho",
+    "titleNormalized": "psycho",
+    "alternativeTitles": [],
+    "year": 1960,
+    "genre": ["horror", "thriller"],
+    "difficulty": "medium",
+    "popularity": 85
+  },
+  {
+    "id": "ec-071",
+    "title": "Halloween",
+    "titleNormalized": "halloween",
+    "alternativeTitles": [],
+    "year": 1978,
+    "genre": ["horror", "thriller"],
+    "difficulty": "medium",
+    "popularity": 84
+  },
+  {
+    "id": "ec-072",
+    "title": "Scream",
+    "titleNormalized": "scream",
+    "alternativeTitles": [],
+    "year": 1996,
+    "genre": ["horror", "thriller"],
+    "difficulty": "medium",
+    "popularity": 83
+  },
+  {
+    "id": "ec-073",
+    "title": "The Shining",
+    "titleNormalized": "shining",
+    "alternativeTitles": ["Shining"],
+    "year": 1980,
+    "genre": ["horror", "thriller"],
+    "difficulty": "medium",
+    "popularity": 88
+  },
+  {
+    "id": "ec-074",
+    "title": "Interstellar",
+    "titleNormalized": "interstellar",
+    "alternativeTitles": [],
+    "year": 2014,
+    "genre": ["sci-fi", "drama", "adventure"],
+    "difficulty": "medium",
+    "popularity": 91
+  },
+  {
+    "id": "ec-075",
+    "title": "Gravity",
+    "titleNormalized": "gravity",
+    "alternativeTitles": [],
+    "year": 2013,
+    "genre": ["sci-fi", "thriller", "drama"],
+    "difficulty": "medium",
+    "popularity": 82
+  },
+  {
+    "id": "ec-076",
+    "title": "The Martian",
+    "titleNormalized": "martian",
+    "alternativeTitles": ["Martian"],
+    "year": 2015,
+    "genre": ["sci-fi", "adventure", "drama"],
+    "difficulty": "medium",
+    "popularity": 85
+  },
+  {
+    "id": "ec-077",
+    "title": "Mad Max: Fury Road",
+    "titleNormalized": "mad max: fury road",
+    "alternativeTitles": ["Mad Max Fury Road", "Mad Max 4"],
+    "year": 2015,
+    "genre": ["action", "adventure", "sci-fi"],
+    "difficulty": "medium",
+    "popularity": 85
+  },
+  {
+    "id": "ec-078",
+    "title": "John Wick",
+    "titleNormalized": "john wick",
+    "alternativeTitles": [],
+    "year": 2014,
+    "genre": ["action", "thriller"],
+    "difficulty": "medium",
+    "popularity": 86
+  },
+  {
+    "id": "ec-079",
+    "title": "The Notebook",
+    "titleNormalized": "notebook",
+    "alternativeTitles": ["Notebook"],
+    "year": 2004,
+    "genre": ["romance", "drama"],
+    "difficulty": "medium",
+    "popularity": 85
+  },
+  {
+    "id": "ec-080",
+    "title": "The Sound of Music",
+    "titleNormalized": "sound of music",
+    "alternativeTitles": ["Sound of Music"],
+    "year": 1965,
+    "genre": ["musical", "drama", "romance"],
+    "difficulty": "easy",
+    "popularity": 87
+  },
+  {
+    "id": "ec-081",
+    "title": "Pretty Woman",
+    "titleNormalized": "pretty woman",
+    "alternativeTitles": [],
+    "year": 1990,
+    "genre": ["romance", "comedy"],
+    "difficulty": "medium",
+    "popularity": 84
+  },
+  {
+    "id": "ec-082",
+    "title": "Dirty Dancing",
+    "titleNormalized": "dirty dancing",
+    "alternativeTitles": [],
+    "year": 1987,
+    "genre": ["romance", "drama", "musical"],
+    "difficulty": "medium",
+    "popularity": 82
+  },
+  {
+    "id": "ec-083",
+    "title": "When Harry Met Sally",
+    "titleNormalized": "when harry met sally",
+    "alternativeTitles": [],
+    "year": 1989,
+    "genre": ["romance", "comedy"],
+    "difficulty": "medium",
+    "popularity": 82
+  },
+  {
+    "id": "ec-084",
+    "title": "Groundhog Day",
+    "titleNormalized": "groundhog day",
+    "alternativeTitles": [],
+    "year": 1993,
+    "genre": ["comedy", "fantasy", "romance"],
+    "difficulty": "medium",
+    "popularity": 84
+  },
+  {
+    "id": "ec-085",
+    "title": "Mrs. Doubtfire",
+    "titleNormalized": "mrs. doubtfire",
+    "alternativeTitles": ["Mrs Doubtfire"],
+    "year": 1993,
+    "genre": ["comedy", "drama"],
+    "difficulty": "medium",
+    "popularity": 83
+  },
+  {
+    "id": "ec-086",
+    "title": "The Truman Show",
+    "titleNormalized": "truman show",
+    "alternativeTitles": ["Truman Show"],
+    "year": 1998,
+    "genre": ["comedy", "drama", "sci-fi"],
+    "difficulty": "medium",
+    "popularity": 85
+  },
+  {
+    "id": "ec-087",
+    "title": "Braveheart",
+    "titleNormalized": "braveheart",
+    "alternativeTitles": [],
+    "year": 1995,
+    "genre": ["action", "drama", "adventure"],
+    "difficulty": "medium",
+    "popularity": 86
+  },
+  {
+    "id": "ec-088",
+    "title": "Saving Private Ryan",
+    "titleNormalized": "saving private ryan",
+    "alternativeTitles": [],
+    "year": 1998,
+    "genre": ["drama", "action"],
+    "difficulty": "medium",
+    "popularity": 90
+  },
+  {
+    "id": "ec-089",
+    "title": "Schindler's List",
+    "titleNormalized": "schindler's list",
+    "alternativeTitles": ["Schindlers List"],
+    "year": 1993,
+    "genre": ["drama"],
+    "difficulty": "medium",
+    "popularity": 90
+  },
+  {
+    "id": "ec-090",
+    "title": "Fight Club",
+    "titleNormalized": "fight club",
+    "alternativeTitles": [],
+    "year": 1999,
+    "genre": ["drama", "thriller"],
+    "difficulty": "medium",
+    "popularity": 89
+  },
+  {
+    "id": "ec-091",
+    "title": "Pulp Fiction",
+    "titleNormalized": "pulp fiction",
+    "alternativeTitles": [],
+    "year": 1994,
+    "genre": ["drama", "thriller"],
+    "difficulty": "medium",
+    "popularity": 91
+  },
+  {
+    "id": "ec-092",
+    "title": "Goodfellas",
+    "titleNormalized": "goodfellas",
+    "alternativeTitles": ["Good Fellas"],
+    "year": 1990,
+    "genre": ["drama", "thriller"],
+    "difficulty": "medium",
+    "popularity": 87
+  },
+  {
+    "id": "ec-093",
+    "title": "The Silence of the Lambs",
+    "titleNormalized": "silence of the lambs",
+    "alternativeTitles": ["Silence of the Lambs"],
+    "year": 1991,
+    "genre": ["thriller", "horror", "drama"],
+    "difficulty": "medium",
+    "popularity": 89
+  },
+  {
+    "id": "ec-094",
+    "title": "Se7en",
+    "titleNormalized": "se7en",
+    "alternativeTitles": ["Seven"],
+    "year": 1995,
+    "genre": ["thriller", "drama"],
+    "difficulty": "medium",
+    "popularity": 85
+  },
+  {
+    "id": "ec-095",
+    "title": "The Sixth Sense",
+    "titleNormalized": "sixth sense",
+    "alternativeTitles": ["Sixth Sense"],
+    "year": 1999,
+    "genre": ["thriller", "drama"],
+    "difficulty": "medium",
+    "popularity": 86
+  },
+  {
+    "id": "ec-096",
+    "title": "Cast Away",
+    "titleNormalized": "cast away",
+    "alternativeTitles": ["Castaway"],
+    "year": 2000,
+    "genre": ["drama", "adventure"],
+    "difficulty": "medium",
+    "popularity": 85
+  },
+  {
+    "id": "ec-097",
+    "title": "The Princess Bride",
+    "titleNormalized": "princess bride",
+    "alternativeTitles": ["Princess Bride"],
+    "year": 1987,
+    "genre": ["adventure", "comedy", "fantasy"],
+    "difficulty": "medium",
+    "popularity": 84
+  },
+  {
+    "id": "ec-098",
+    "title": "Jurassic World",
+    "titleNormalized": "jurassic world",
+    "alternativeTitles": ["Jurassic Park 4"],
+    "year": 2015,
+    "genre": ["action", "adventure", "sci-fi"],
+    "difficulty": "easy",
+    "popularity": 88
+  },
+  {
+    "id": "ec-099",
+    "title": "Wreck-It Ralph",
+    "titleNormalized": "wreck-it ralph",
+    "alternativeTitles": ["Wreck It Ralph"],
+    "year": 2012,
+    "genre": ["animation", "comedy", "adventure"],
+    "difficulty": "medium",
+    "popularity": 80
+  },
+  {
+    "id": "ec-100",
+    "title": "How to Train Your Dragon",
+    "titleNormalized": "how to train your dragon",
+    "alternativeTitles": ["HTTYD"],
+    "year": 2010,
+    "genre": ["animation", "adventure", "fantasy"],
+    "difficulty": "medium",
+    "popularity": 85
+  },
+  {
+    "id": "ec-101",
+    "title": "The Departed",
+    "titleNormalized": "departed",
+    "alternativeTitles": ["Departed"],
+    "year": 2006,
+    "genre": ["drama", "thriller"],
+    "difficulty": "medium",
+    "popularity": 85
+  },
+  {
+    "id": "ec-102",
+    "title": "No Country for Old Men",
+    "titleNormalized": "no country for old men",
+    "alternativeTitles": [],
+    "year": 2007,
+    "genre": ["thriller", "drama"],
+    "difficulty": "medium",
+    "popularity": 82
+  },
+  {
+    "id": "ec-103",
+    "title": "There Will Be Blood",
+    "titleNormalized": "there will be blood",
+    "alternativeTitles": [],
+    "year": 2007,
+    "genre": ["drama"],
+    "difficulty": "hard",
+    "popularity": 78
+  },
+  {
+    "id": "ec-104",
+    "title": "The Social Network",
+    "titleNormalized": "social network",
+    "alternativeTitles": ["Social Network"],
+    "year": 2010,
+    "genre": ["drama"],
+    "difficulty": "medium",
+    "popularity": 82
+  },
+  {
+    "id": "ec-105",
+    "title": "The Grand Budapest Hotel",
+    "titleNormalized": "grand budapest hotel",
+    "alternativeTitles": ["Grand Budapest Hotel"],
+    "year": 2014,
+    "genre": ["comedy", "drama", "adventure"],
+    "difficulty": "hard",
+    "popularity": 78
+  },
+  {
+    "id": "ec-106",
+    "title": "Whiplash",
+    "titleNormalized": "whiplash",
+    "alternativeTitles": [],
+    "year": 2014,
+    "genre": ["drama", "musical"],
+    "difficulty": "hard",
+    "popularity": 80
+  },
+  {
+    "id": "ec-107",
+    "title": "La La Land",
+    "titleNormalized": "la la land",
+    "alternativeTitles": [],
+    "year": 2016,
+    "genre": ["musical", "romance", "drama"],
+    "difficulty": "medium",
+    "popularity": 85
+  },
+  {
+    "id": "ec-108",
+    "title": "Moonlight",
+    "titleNormalized": "moonlight",
+    "alternativeTitles": [],
+    "year": 2016,
+    "genre": ["drama"],
+    "difficulty": "hard",
+    "popularity": 75
+  },
+  {
+    "id": "ec-109",
+    "title": "Parasite",
+    "titleNormalized": "parasite",
+    "alternativeTitles": [],
+    "year": 2019,
+    "genre": ["thriller", "drama", "comedy"],
+    "difficulty": "medium",
+    "popularity": 85
+  },
+  {
+    "id": "ec-110",
+    "title": "Joker",
+    "titleNormalized": "joker",
+    "alternativeTitles": [],
+    "year": 2019,
+    "genre": ["drama", "thriller"],
+    "difficulty": "medium",
+    "popularity": 88
+  },
+  {
+    "id": "ec-111",
+    "title": "1917",
+    "titleNormalized": "1917",
+    "alternativeTitles": [],
+    "year": 2019,
+    "genre": ["drama", "action"],
+    "difficulty": "hard",
+    "popularity": 80
+  },
+  {
+    "id": "ec-112",
+    "title": "Dune",
+    "titleNormalized": "dune",
+    "alternativeTitles": ["Dune: Part One"],
+    "year": 2021,
+    "genre": ["sci-fi", "adventure", "drama"],
+    "difficulty": "medium",
+    "popularity": 84
+  },
+  {
+    "id": "ec-113",
+    "title": "Everything Everywhere All at Once",
+    "titleNormalized": "everything everywhere all at once",
+    "alternativeTitles": ["EEAAO"],
+    "year": 2022,
+    "genre": ["action", "adventure", "comedy"],
+    "difficulty": "medium",
+    "popularity": 82
+  },
+  {
+    "id": "ec-114",
+    "title": "Spider-Man: Into the Spider-Verse",
+    "titleNormalized": "spider-man: into the spider-verse",
+    "alternativeTitles": ["Into the Spider-Verse", "Spider-Verse"],
+    "year": 2018,
+    "genre": ["animation", "action", "adventure"],
+    "difficulty": "medium",
+    "popularity": 86
+  },
+  {
+    "id": "ec-115",
+    "title": "The Lego Movie",
+    "titleNormalized": "lego movie",
+    "alternativeTitles": ["Lego Movie"],
+    "year": 2014,
+    "genre": ["animation", "comedy", "adventure"],
+    "difficulty": "medium",
+    "popularity": 82
+  },
+  {
+    "id": "ec-116",
+    "title": "Encanto",
+    "titleNormalized": "encanto",
+    "alternativeTitles": [],
+    "year": 2021,
+    "genre": ["animation", "musical", "fantasy"],
+    "difficulty": "easy",
+    "popularity": 86
+  },
+  {
+    "id": "ec-117",
+    "title": "Soul",
+    "titleNormalized": "soul",
+    "alternativeTitles": [],
+    "year": 2020,
+    "genre": ["animation", "comedy", "drama"],
+    "difficulty": "medium",
+    "popularity": 82
+  },
+  {
+    "id": "ec-118",
+    "title": "Spirited Away",
+    "titleNormalized": "spirited away",
+    "alternativeTitles": [],
+    "year": 2001,
+    "genre": ["animation", "adventure", "fantasy"],
+    "difficulty": "medium",
+    "popularity": 85
+  },
+  {
+    "id": "ec-119",
+    "title": "My Neighbor Totoro",
+    "titleNormalized": "my neighbor totoro",
+    "alternativeTitles": ["Totoro"],
+    "year": 1988,
+    "genre": ["animation", "fantasy"],
+    "difficulty": "medium",
+    "popularity": 80
+  },
+  {
+    "id": "ec-120",
+    "title": "Blade Runner",
+    "titleNormalized": "blade runner",
+    "alternativeTitles": [],
+    "year": 1982,
+    "genre": ["sci-fi", "thriller"],
+    "difficulty": "medium",
+    "popularity": 83
+  },
+  {
+    "id": "ec-121",
+    "title": "The Prestige",
+    "titleNormalized": "prestige",
+    "alternativeTitles": ["Prestige"],
+    "year": 2006,
+    "genre": ["thriller", "drama", "sci-fi"],
+    "difficulty": "medium",
+    "popularity": 84
+  },
+  {
+    "id": "ec-122",
+    "title": "Django Unchained",
+    "titleNormalized": "django unchained",
+    "alternativeTitles": [],
+    "year": 2012,
+    "genre": ["drama", "action", "adventure"],
+    "difficulty": "medium",
+    "popularity": 85
+  },
+  {
+    "id": "ec-123",
+    "title": "Inglourious Basterds",
+    "titleNormalized": "inglourious basterds",
+    "alternativeTitles": ["Inglorious Basterds"],
+    "year": 2009,
+    "genre": ["drama", "action", "adventure"],
+    "difficulty": "medium",
+    "popularity": 84
+  },
+  {
+    "id": "ec-124",
+    "title": "Kill Bill: Volume 1",
+    "titleNormalized": "kill bill: volume 1",
+    "alternativeTitles": ["Kill Bill", "Kill Bill Vol 1"],
+    "year": 2003,
+    "genre": ["action", "thriller"],
+    "difficulty": "medium",
+    "popularity": 84
+  },
+  {
+    "id": "ec-125",
+    "title": "The Wolf of Wall Street",
+    "titleNormalized": "wolf of wall street",
+    "alternativeTitles": ["Wolf of Wall Street"],
+    "year": 2013,
+    "genre": ["drama", "comedy"],
+    "difficulty": "medium",
+    "popularity": 86
+  },
+  {
+    "id": "ec-126",
+    "title": "Catch Me If You Can",
+    "titleNormalized": "catch me if you can",
+    "alternativeTitles": [],
+    "year": 2002,
+    "genre": ["drama", "comedy", "thriller"],
+    "difficulty": "medium",
+    "popularity": 83
+  },
+  {
+    "id": "ec-127",
+    "title": "Eternal Sunshine of the Spotless Mind",
+    "titleNormalized": "eternal sunshine of the spotless mind",
+    "alternativeTitles": ["Eternal Sunshine"],
+    "year": 2004,
+    "genre": ["drama", "romance", "sci-fi"],
+    "difficulty": "hard",
+    "popularity": 80
+  },
+  {
+    "id": "ec-128",
+    "title": "Memento",
+    "titleNormalized": "memento",
+    "alternativeTitles": [],
+    "year": 2000,
+    "genre": ["thriller", "drama"],
+    "difficulty": "hard",
+    "popularity": 78
+  },
+  {
+    "id": "ec-129",
+    "title": "The Big Lebowski",
+    "titleNormalized": "big lebowski",
+    "alternativeTitles": ["Big Lebowski"],
+    "year": 1998,
+    "genre": ["comedy", "drama"],
+    "difficulty": "hard",
+    "popularity": 80
+  },
+  {
+    "id": "ec-130",
+    "title": "Fargo",
+    "titleNormalized": "fargo",
+    "alternativeTitles": [],
+    "year": 1996,
+    "genre": ["thriller", "drama", "comedy"],
+    "difficulty": "hard",
+    "popularity": 78
+  },
+  {
+    "id": "ec-131",
+    "title": "American Beauty",
+    "titleNormalized": "american beauty",
+    "alternativeTitles": [],
+    "year": 1999,
+    "genre": ["drama"],
+    "difficulty": "hard",
+    "popularity": 78
+  },
+  {
+    "id": "ec-132",
+    "title": "A Clockwork Orange",
+    "titleNormalized": "clockwork orange",
+    "alternativeTitles": ["Clockwork Orange"],
+    "year": 1971,
+    "genre": ["drama", "sci-fi"],
+    "difficulty": "hard",
+    "popularity": 77
+  },
+  {
+    "id": "ec-133",
+    "title": "Taxi Driver",
+    "titleNormalized": "taxi driver",
+    "alternativeTitles": [],
+    "year": 1976,
+    "genre": ["drama", "thriller"],
+    "difficulty": "hard",
+    "popularity": 80
+  },
+  {
+    "id": "ec-134",
+    "title": "Apocalypse Now",
+    "titleNormalized": "apocalypse now",
+    "alternativeTitles": [],
+    "year": 1979,
+    "genre": ["drama", "action"],
+    "difficulty": "hard",
+    "popularity": 80
+  },
+  {
+    "id": "ec-135",
+    "title": "Full Metal Jacket",
+    "titleNormalized": "full metal jacket",
+    "alternativeTitles": [],
+    "year": 1987,
+    "genre": ["drama", "action"],
+    "difficulty": "hard",
+    "popularity": 77
+  },
+  {
+    "id": "ec-136",
+    "title": "Scarface",
+    "titleNormalized": "scarface",
+    "alternativeTitles": [],
+    "year": 1983,
+    "genre": ["drama", "thriller", "action"],
+    "difficulty": "medium",
+    "popularity": 84
+  },
+  {
+    "id": "ec-137",
+    "title": "The Breakfast Club",
+    "titleNormalized": "breakfast club",
+    "alternativeTitles": ["Breakfast Club"],
+    "year": 1985,
+    "genre": ["comedy", "drama"],
+    "difficulty": "medium",
+    "popularity": 82
+  },
+  {
+    "id": "ec-138",
+    "title": "Ferris Bueller's Day Off",
+    "titleNormalized": "ferris bueller's day off",
+    "alternativeTitles": ["Ferris Bueller"],
+    "year": 1986,
+    "genre": ["comedy"],
+    "difficulty": "medium",
+    "popularity": 83
+  },
+  {
+    "id": "ec-139",
+    "title": "The Goonies",
+    "titleNormalized": "goonies",
+    "alternativeTitles": ["Goonies"],
+    "year": 1985,
+    "genre": ["adventure", "comedy"],
+    "difficulty": "medium",
+    "popularity": 82
+  },
+  {
+    "id": "ec-140",
+    "title": "Beetlejuice",
+    "titleNormalized": "beetlejuice",
+    "alternativeTitles": ["Beetle Juice"],
+    "year": 1988,
+    "genre": ["comedy", "fantasy", "horror"],
+    "difficulty": "medium",
+    "popularity": 82
+  },
+  {
+    "id": "ec-141",
+    "title": "Edward Scissorhands",
+    "titleNormalized": "edward scissorhands",
+    "alternativeTitles": [],
+    "year": 1990,
+    "genre": ["fantasy", "drama", "romance"],
+    "difficulty": "medium",
+    "popularity": 82
+  },
+  {
+    "id": "ec-142",
+    "title": "The Wizard",
+    "titleNormalized": "wizard",
+    "alternativeTitles": [],
+    "year": 1989,
+    "genre": ["adventure", "comedy", "drama"],
+    "difficulty": "hard",
+    "popularity": 55
+  },
+  {
+    "id": "ec-143",
+    "title": "Twister",
+    "titleNormalized": "twister",
+    "alternativeTitles": [],
+    "year": 1996,
+    "genre": ["action", "adventure", "thriller"],
+    "difficulty": "medium",
+    "popularity": 78
+  },
+  {
+    "id": "ec-144",
+    "title": "Speed",
+    "titleNormalized": "speed",
+    "alternativeTitles": [],
+    "year": 1994,
+    "genre": ["action", "thriller"],
+    "difficulty": "medium",
+    "popularity": 79
+  },
+  {
+    "id": "ec-145",
+    "title": "Mission: Impossible",
+    "titleNormalized": "mission: impossible",
+    "alternativeTitles": ["Mission Impossible", "MI"],
+    "year": 1996,
+    "genre": ["action", "adventure", "thriller"],
+    "difficulty": "medium",
+    "popularity": 85
+  },
+  {
+    "id": "ec-146",
+    "title": "The Mask",
+    "titleNormalized": "mask",
+    "alternativeTitles": ["Mask"],
+    "year": 1994,
+    "genre": ["comedy", "action", "fantasy"],
+    "difficulty": "medium",
+    "popularity": 82
+  },
+  {
+    "id": "ec-147",
+    "title": "Ace Ventura: Pet Detective",
+    "titleNormalized": "ace ventura: pet detective",
+    "alternativeTitles": ["Ace Ventura"],
+    "year": 1994,
+    "genre": ["comedy"],
+    "difficulty": "medium",
+    "popularity": 80
+  },
+  {
+    "id": "ec-148",
+    "title": "Dumb and Dumber",
+    "titleNormalized": "dumb and dumber",
+    "alternativeTitles": [],
+    "year": 1994,
+    "genre": ["comedy"],
+    "difficulty": "medium",
+    "popularity": 81
+  },
+  {
+    "id": "ec-149",
+    "title": "The Hangover",
+    "titleNormalized": "hangover",
+    "alternativeTitles": ["Hangover"],
+    "year": 2009,
+    "genre": ["comedy"],
+    "difficulty": "medium",
+    "popularity": 84
+  },
+  {
+    "id": "ec-150",
+    "title": "Bridesmaids",
+    "titleNormalized": "bridesmaids",
+    "alternativeTitles": [],
+    "year": 2011,
+    "genre": ["comedy", "romance"],
+    "difficulty": "medium",
+    "popularity": 78
+  },
+  {
+    "id": "ec-151",
+    "title": "Superbad",
+    "titleNormalized": "superbad",
+    "alternativeTitles": [],
+    "year": 2007,
+    "genre": ["comedy"],
+    "difficulty": "medium",
+    "popularity": 78
+  },
+  {
+    "id": "ec-152",
+    "title": "Mean Girls",
+    "titleNormalized": "mean girls",
+    "alternativeTitles": [],
+    "year": 2004,
+    "genre": ["comedy"],
+    "difficulty": "medium",
+    "popularity": 82
+  },
+  {
+    "id": "ec-153",
+    "title": "Anchorman: The Legend of Ron Burgundy",
+    "titleNormalized": "anchorman: the legend of ron burgundy",
+    "alternativeTitles": ["Anchorman"],
+    "year": 2004,
+    "genre": ["comedy"],
+    "difficulty": "medium",
+    "popularity": 80
+  },
+  {
+    "id": "ec-154",
+    "title": "Napoleon Dynamite",
+    "titleNormalized": "napoleon dynamite",
+    "alternativeTitles": [],
+    "year": 2004,
+    "genre": ["comedy"],
+    "difficulty": "hard",
+    "popularity": 75
+  },
+  {
+    "id": "ec-155",
+    "title": "The Revenant",
+    "titleNormalized": "revenant",
+    "alternativeTitles": ["Revenant"],
+    "year": 2015,
+    "genre": ["drama", "adventure"],
+    "difficulty": "hard",
+    "popularity": 80
+  },
+  {
+    "id": "ec-156",
+    "title": "Birdman",
+    "titleNormalized": "birdman",
+    "alternativeTitles": [],
+    "year": 2014,
+    "genre": ["drama", "comedy"],
+    "difficulty": "hard",
+    "popularity": 72
+  },
+  {
+    "id": "ec-157",
+    "title": "The Shape of Water",
+    "titleNormalized": "shape of water",
+    "alternativeTitles": ["Shape of Water"],
+    "year": 2017,
+    "genre": ["fantasy", "drama", "romance"],
+    "difficulty": "hard",
+    "popularity": 72
+  },
+  {
+    "id": "ec-158",
+    "title": "Arrival",
+    "titleNormalized": "arrival",
+    "alternativeTitles": [],
+    "year": 2016,
+    "genre": ["sci-fi", "drama"],
+    "difficulty": "hard",
+    "popularity": 78
+  },
+  {
+    "id": "ec-159",
+    "title": "Ex Machina",
+    "titleNormalized": "ex machina",
+    "alternativeTitles": [],
+    "year": 2014,
+    "genre": ["sci-fi", "thriller", "drama"],
+    "difficulty": "hard",
+    "popularity": 76
+  },
+  {
+    "id": "ec-160",
+    "title": "Hereditary",
+    "titleNormalized": "hereditary",
+    "alternativeTitles": [],
+    "year": 2018,
+    "genre": ["horror", "thriller", "drama"],
+    "difficulty": "hard",
+    "popularity": 74
+  },
+  {
+    "id": "ec-161",
+    "title": "Midsommar",
+    "titleNormalized": "midsommar",
+    "alternativeTitles": [],
+    "year": 2019,
+    "genre": ["horror", "drama"],
+    "difficulty": "hard",
+    "popularity": 72
+  },
+  {
+    "id": "ec-162",
+    "title": "The Witch",
+    "titleNormalized": "witch",
+    "alternativeTitles": ["The VVitch"],
+    "year": 2015,
+    "genre": ["horror", "drama"],
+    "difficulty": "hard",
+    "popularity": 70
+  },
+  {
+    "id": "ec-163",
+    "title": "Pan's Labyrinth",
+    "titleNormalized": "pan's labyrinth",
+    "alternativeTitles": ["Pans Labyrinth"],
+    "year": 2006,
+    "genre": ["fantasy", "drama"],
+    "difficulty": "hard",
+    "popularity": 78
+  },
+  {
+    "id": "ec-164",
+    "title": "Amélie",
+    "titleNormalized": "amélie",
+    "alternativeTitles": ["Amelie"],
+    "year": 2001,
+    "genre": ["comedy", "romance"],
+    "difficulty": "hard",
+    "popularity": 76
+  },
+  {
+    "id": "ec-165",
+    "title": "Life of Pi",
+    "titleNormalized": "life of pi",
+    "alternativeTitles": [],
+    "year": 2012,
+    "genre": ["adventure", "drama", "fantasy"],
+    "difficulty": "hard",
+    "popularity": 78
+  },
+  {
+    "id": "ec-166",
+    "title": "Slumdog Millionaire",
+    "titleNormalized": "slumdog millionaire",
+    "alternativeTitles": [],
+    "year": 2008,
+    "genre": ["drama", "romance"],
+    "difficulty": "hard",
+    "popularity": 78
+  },
+  {
+    "id": "ec-167",
+    "title": "The Imitation Game",
+    "titleNormalized": "imitation game",
+    "alternativeTitles": ["Imitation Game"],
+    "year": 2014,
+    "genre": ["drama"],
+    "difficulty": "hard",
+    "popularity": 78
+  },
+  {
+    "id": "ec-168",
+    "title": "The King's Speech",
+    "titleNormalized": "king's speech",
+    "alternativeTitles": ["Kings Speech"],
+    "year": 2010,
+    "genre": ["drama"],
+    "difficulty": "hard",
+    "popularity": 76
+  },
+  {
+    "id": "ec-169",
+    "title": "Little Women",
+    "titleNormalized": "little women",
+    "alternativeTitles": [],
+    "year": 2019,
+    "genre": ["drama", "romance"],
+    "difficulty": "hard",
+    "popularity": 74
+  },
+  {
+    "id": "ec-170",
+    "title": "Knives Out",
+    "titleNormalized": "knives out",
+    "alternativeTitles": [],
+    "year": 2019,
+    "genre": ["thriller", "comedy", "drama"],
+    "difficulty": "medium",
+    "popularity": 82
+  },
+  {
+    "id": "ec-171",
+    "title": "The Conjuring",
+    "titleNormalized": "conjuring",
+    "alternativeTitles": ["Conjuring"],
+    "year": 2013,
+    "genre": ["horror", "thriller"],
+    "difficulty": "medium",
+    "popularity": 82
+  },
+  {
+    "id": "ec-172",
+    "title": "Coraline",
+    "titleNormalized": "coraline",
+    "alternativeTitles": [],
+    "year": 2009,
+    "genre": ["animation", "fantasy", "horror"],
+    "difficulty": "medium",
+    "popularity": 80
+  },
+  {
+    "id": "ec-173",
+    "title": "The Polar Express",
+    "titleNormalized": "polar express",
+    "alternativeTitles": ["Polar Express"],
+    "year": 2004,
+    "genre": ["animation", "adventure", "fantasy"],
+    "difficulty": "medium",
+    "popularity": 78
+  },
+  {
+    "id": "ec-174",
+    "title": "Elf",
+    "titleNormalized": "elf",
+    "alternativeTitles": [],
+    "year": 2003,
+    "genre": ["comedy", "fantasy"],
+    "difficulty": "easy",
+    "popularity": 85
+  },
+  {
+    "id": "ec-175",
+    "title": "Night at the Museum",
+    "titleNormalized": "night at the museum",
+    "alternativeTitles": [],
+    "year": 2006,
+    "genre": ["comedy", "adventure", "fantasy"],
+    "difficulty": "medium",
+    "popularity": 78
+  },
+  {
+    "id": "ec-176",
+    "title": "Happy Feet",
+    "titleNormalized": "happy feet",
+    "alternativeTitles": [],
+    "year": 2006,
+    "genre": ["animation", "comedy", "musical"],
+    "difficulty": "medium",
+    "popularity": 75
+  },
+  {
+    "id": "ec-177",
+    "title": "Madagascar",
+    "titleNormalized": "madagascar",
+    "alternativeTitles": [],
+    "year": 2005,
+    "genre": ["animation", "comedy", "adventure"],
+    "difficulty": "easy",
+    "popularity": 82
+  },
+  {
+    "id": "ec-178",
+    "title": "Shark Tale",
+    "titleNormalized": "shark tale",
+    "alternativeTitles": [],
+    "year": 2004,
+    "genre": ["animation", "comedy"],
+    "difficulty": "hard",
+    "popularity": 60
+  },
+  {
+    "id": "ec-179",
+    "title": "Bee Movie",
+    "titleNormalized": "bee movie",
+    "alternativeTitles": [],
+    "year": 2007,
+    "genre": ["animation", "comedy"],
+    "difficulty": "medium",
+    "popularity": 72
+  },
+  {
+    "id": "ec-180",
+    "title": "Megamind",
+    "titleNormalized": "megamind",
+    "alternativeTitles": [],
+    "year": 2010,
+    "genre": ["animation", "action", "comedy"],
+    "difficulty": "medium",
+    "popularity": 72
+  },
+  {
+    "id": "ec-181",
+    "title": "The Hobbit: An Unexpected Journey",
+    "titleNormalized": "hobbit: an unexpected journey",
+    "alternativeTitles": ["The Hobbit", "Hobbit"],
+    "year": 2012,
+    "genre": ["adventure", "fantasy"],
+    "difficulty": "medium",
+    "popularity": 82
+  },
+  {
+    "id": "ec-182",
+    "title": "The Lord of the Rings: The Fellowship of the Ring",
+    "titleNormalized": "lord of the rings: the fellowship of the ring",
+    "alternativeTitles": ["Lord of the Rings", "LOTR", "Fellowship of the Ring"],
+    "year": 2001,
+    "genre": ["adventure", "fantasy", "action"],
+    "difficulty": "easy",
+    "popularity": 95
+  },
+  {
+    "id": "ec-183",
+    "title": "Brave",
+    "titleNormalized": "brave",
+    "alternativeTitles": [],
+    "year": 2012,
+    "genre": ["animation", "adventure", "fantasy"],
+    "difficulty": "medium",
+    "popularity": 75
+  },
+  {
+    "id": "ec-184",
+    "title": "Mulan",
+    "titleNormalized": "mulan",
+    "alternativeTitles": [],
+    "year": 1998,
+    "genre": ["animation", "adventure", "musical"],
+    "difficulty": "easy",
+    "popularity": 85
+  },
+  {
+    "id": "ec-185",
+    "title": "Pocahontas",
+    "titleNormalized": "pocahontas",
+    "alternativeTitles": [],
+    "year": 1995,
+    "genre": ["animation", "adventure", "musical"],
+    "difficulty": "medium",
+    "popularity": 78
+  },
+  {
+    "id": "ec-186",
+    "title": "Tarzan",
+    "titleNormalized": "tarzan",
+    "alternativeTitles": [],
+    "year": 1999,
+    "genre": ["animation", "adventure"],
+    "difficulty": "easy",
+    "popularity": 82
+  },
+  {
+    "id": "ec-187",
+    "title": "Hercules",
+    "titleNormalized": "hercules",
+    "alternativeTitles": [],
+    "year": 1997,
+    "genre": ["animation", "adventure", "musical"],
+    "difficulty": "easy",
+    "popularity": 82
+  },
+  {
+    "id": "ec-188",
+    "title": "Lilo & Stitch",
+    "titleNormalized": "lilo & stitch",
+    "alternativeTitles": ["Lilo and Stitch"],
+    "year": 2002,
+    "genre": ["animation", "comedy", "adventure"],
+    "difficulty": "easy",
+    "popularity": 84
+  },
+  {
+    "id": "ec-189",
+    "title": "Men in Black",
+    "titleNormalized": "men in black",
+    "alternativeTitles": ["MIB"],
+    "year": 1997,
+    "genre": ["action", "comedy", "sci-fi"],
+    "difficulty": "easy",
+    "popularity": 85
+  },
+  {
+    "id": "ec-190",
+    "title": "Independence Day",
+    "titleNormalized": "independence day",
+    "alternativeTitles": ["ID4"],
+    "year": 1996,
+    "genre": ["action", "sci-fi", "adventure"],
+    "difficulty": "medium",
+    "popularity": 84
+  },
+  {
+    "id": "ec-191",
+    "title": "Armageddon",
+    "titleNormalized": "armageddon",
+    "alternativeTitles": [],
+    "year": 1998,
+    "genre": ["action", "sci-fi", "adventure"],
+    "difficulty": "medium",
+    "popularity": 80
+  },
+  {
+    "id": "ec-192",
+    "title": "The Day After Tomorrow",
+    "titleNormalized": "day after tomorrow",
+    "alternativeTitles": ["Day After Tomorrow"],
+    "year": 2004,
+    "genre": ["action", "adventure", "sci-fi"],
+    "difficulty": "hard",
+    "popularity": 72
+  },
+  {
+    "id": "ec-193",
+    "title": "2001: A Space Odyssey",
+    "titleNormalized": "2001: a space odyssey",
+    "alternativeTitles": ["2001"],
+    "year": 1968,
+    "genre": ["sci-fi", "adventure"],
+    "difficulty": "hard",
+    "popularity": 80
+  },
+  {
+    "id": "ec-194",
+    "title": "Close Encounters of the Third Kind",
+    "titleNormalized": "close encounters of the third kind",
+    "alternativeTitles": ["Close Encounters"],
+    "year": 1977,
+    "genre": ["sci-fi", "drama"],
+    "difficulty": "hard",
+    "popularity": 72
+  },
+  {
+    "id": "ec-195",
+    "title": "Predator",
+    "titleNormalized": "predator",
+    "alternativeTitles": [],
+    "year": 1987,
+    "genre": ["action", "sci-fi", "horror"],
+    "difficulty": "medium",
+    "popularity": 82
+  },
+  {
+    "id": "ec-196",
+    "title": "RoboCop",
+    "titleNormalized": "robocop",
+    "alternativeTitles": ["Robo Cop"],
+    "year": 1987,
+    "genre": ["action", "sci-fi", "thriller"],
+    "difficulty": "hard",
+    "popularity": 74
+  },
+  {
+    "id": "ec-197",
+    "title": "Total Recall",
+    "titleNormalized": "total recall",
+    "alternativeTitles": [],
+    "year": 1990,
+    "genre": ["action", "sci-fi"],
+    "difficulty": "hard",
+    "popularity": 74
+  },
+  {
+    "id": "ec-198",
+    "title": "The Fifth Element",
+    "titleNormalized": "fifth element",
+    "alternativeTitles": ["Fifth Element"],
+    "year": 1997,
+    "genre": ["action", "sci-fi"],
+    "difficulty": "hard",
+    "popularity": 78
+  },
+  {
+    "id": "ec-199",
+    "title": "Blade Runner 2049",
+    "titleNormalized": "blade runner 2049",
+    "alternativeTitles": [],
+    "year": 2017,
+    "genre": ["sci-fi", "drama", "thriller"],
+    "difficulty": "hard",
+    "popularity": 76
+  },
+  {
+    "id": "ec-200",
+    "title": "District 9",
+    "titleNormalized": "district 9",
+    "alternativeTitles": [],
+    "year": 2009,
+    "genre": ["sci-fi", "action", "thriller"],
+    "difficulty": "hard",
+    "popularity": 74
+  },
+  {
+    "id": "ec-201",
+    "title": "Tenet",
+    "titleNormalized": "tenet",
+    "alternativeTitles": [],
+    "year": 2020,
+    "genre": ["sci-fi", "action", "thriller"],
+    "difficulty": "hard",
+    "popularity": 72
+  },
+  {
+    "id": "ec-202",
+    "title": "Dunkirk",
+    "titleNormalized": "dunkirk",
+    "alternativeTitles": [],
+    "year": 2017,
+    "genre": ["action", "drama"],
+    "difficulty": "hard",
+    "popularity": 76
+  },
+  {
+    "id": "ec-203",
+    "title": "Once Upon a Time in Hollywood",
+    "titleNormalized": "once upon a time in hollywood",
+    "alternativeTitles": [],
+    "year": 2019,
+    "genre": ["drama", "comedy"],
+    "difficulty": "hard",
+    "popularity": 76
+  },
+  {
+    "id": "ec-204",
+    "title": "The Lighthouse",
+    "titleNormalized": "lighthouse",
+    "alternativeTitles": ["Lighthouse"],
+    "year": 2019,
+    "genre": ["horror", "drama"],
+    "difficulty": "hard",
+    "popularity": 65
+  },
+  {
+    "id": "ec-205",
+    "title": "Uncut Gems",
+    "titleNormalized": "uncut gems",
+    "alternativeTitles": [],
+    "year": 2019,
+    "genre": ["thriller", "drama"],
+    "difficulty": "hard",
+    "popularity": 68
+  },
+  {
+    "id": "ec-206",
+    "title": "Mamma Mia!",
+    "titleNormalized": "mamma mia!",
+    "alternativeTitles": ["Mamma Mia"],
+    "year": 2008,
+    "genre": ["musical", "comedy", "romance"],
+    "difficulty": "medium",
+    "popularity": 80
+  },
+  {
+    "id": "ec-207",
+    "title": "Bohemian Rhapsody",
+    "titleNormalized": "bohemian rhapsody",
+    "alternativeTitles": [],
+    "year": 2018,
+    "genre": ["drama", "musical"],
+    "difficulty": "medium",
+    "popularity": 82
+  },
+  {
+    "id": "ec-208",
+    "title": "The Greatest Showman",
+    "titleNormalized": "greatest showman",
+    "alternativeTitles": ["Greatest Showman"],
+    "year": 2017,
+    "genre": ["musical", "drama"],
+    "difficulty": "medium",
+    "popularity": 82
+  },
+  {
+    "id": "ec-209",
+    "title": "Sing",
+    "titleNormalized": "sing",
+    "alternativeTitles": [],
+    "year": 2016,
+    "genre": ["animation", "comedy", "musical"],
+    "difficulty": "medium",
+    "popularity": 76
+  },
+  {
+    "id": "ec-210",
+    "title": "Trolls",
+    "titleNormalized": "trolls",
+    "alternativeTitles": [],
+    "year": 2016,
+    "genre": ["animation", "comedy", "musical"],
+    "difficulty": "medium",
+    "popularity": 72
+  },
+  {
+    "id": "ec-211",
+    "title": "Wonder Woman",
+    "titleNormalized": "wonder woman",
+    "alternativeTitles": [],
+    "year": 2017,
+    "genre": ["action", "adventure", "fantasy"],
+    "difficulty": "easy",
+    "popularity": 85
+  },
+  {
+    "id": "ec-212",
+    "title": "Aquaman",
+    "titleNormalized": "aquaman",
+    "alternativeTitles": [],
+    "year": 2018,
+    "genre": ["action", "adventure", "fantasy"],
+    "difficulty": "medium",
+    "popularity": 78
+  },
+  {
+    "id": "ec-213",
+    "title": "Guardians of the Galaxy",
+    "titleNormalized": "guardians of the galaxy",
+    "alternativeTitles": ["GOTG", "Guardians"],
+    "year": 2014,
+    "genre": ["action", "adventure", "sci-fi"],
+    "difficulty": "easy",
+    "popularity": 88
+  },
+  {
+    "id": "ec-214",
+    "title": "Doctor Strange",
+    "titleNormalized": "doctor strange",
+    "alternativeTitles": ["Dr Strange", "Dr. Strange"],
+    "year": 2016,
+    "genre": ["action", "adventure", "fantasy"],
+    "difficulty": "medium",
+    "popularity": 80
+  },
+  {
+    "id": "ec-215",
+    "title": "Thor",
+    "titleNormalized": "thor",
+    "alternativeTitles": [],
+    "year": 2011,
+    "genre": ["action", "adventure", "fantasy"],
+    "difficulty": "easy",
+    "popularity": 82
+  },
+  {
+    "id": "ec-216",
+    "title": "Iron Man",
+    "titleNormalized": "iron man",
+    "alternativeTitles": [],
+    "year": 2008,
+    "genre": ["action", "adventure", "sci-fi"],
+    "difficulty": "easy",
+    "popularity": 90
+  },
+  {
+    "id": "ec-217",
+    "title": "Captain America: The First Avenger",
+    "titleNormalized": "captain america: the first avenger",
+    "alternativeTitles": ["Captain America", "Cap"],
+    "year": 2011,
+    "genre": ["action", "adventure"],
+    "difficulty": "easy",
+    "popularity": 82
+  },
+  {
+    "id": "ec-218",
+    "title": "Ant-Man",
+    "titleNormalized": "ant-man",
+    "alternativeTitles": ["Antman"],
+    "year": 2015,
+    "genre": ["action", "adventure", "comedy"],
+    "difficulty": "medium",
+    "popularity": 78
+  },
+  {
+    "id": "ec-219",
+    "title": "Deadpool",
+    "titleNormalized": "deadpool",
+    "alternativeTitles": [],
+    "year": 2016,
+    "genre": ["action", "comedy"],
+    "difficulty": "easy",
+    "popularity": 87
+  },
+  {
+    "id": "ec-220",
+    "title": "Logan",
+    "titleNormalized": "logan",
+    "alternativeTitles": ["Wolverine 3"],
+    "year": 2017,
+    "genre": ["action", "drama", "sci-fi"],
+    "difficulty": "medium",
+    "popularity": 84
+  },
+  {
+    "id": "ec-221",
+    "title": "The Conjuring 2",
+    "titleNormalized": "conjuring 2",
+    "alternativeTitles": ["Conjuring 2"],
+    "year": 2016,
+    "genre": ["horror", "thriller"],
+    "difficulty": "hard",
+    "popularity": 72
+  },
+  {
+    "id": "ec-222",
+    "title": "Annihilation",
+    "titleNormalized": "annihilation",
+    "alternativeTitles": [],
+    "year": 2018,
+    "genre": ["sci-fi", "horror", "thriller"],
+    "difficulty": "hard",
+    "popularity": 68
+  },
+  {
+    "id": "ec-223",
+    "title": "The Babadook",
+    "titleNormalized": "babadook",
+    "alternativeTitles": ["Babadook"],
+    "year": 2014,
+    "genre": ["horror", "thriller"],
+    "difficulty": "hard",
+    "popularity": 62
+  },
+  {
+    "id": "ec-224",
+    "title": "Us",
+    "titleNormalized": "us",
+    "alternativeTitles": [],
+    "year": 2019,
+    "genre": ["horror", "thriller"],
+    "difficulty": "hard",
+    "popularity": 76
+  },
+  {
+    "id": "ec-225",
+    "title": "Nope",
+    "titleNormalized": "nope",
+    "alternativeTitles": [],
+    "year": 2022,
+    "genre": ["horror", "sci-fi", "thriller"],
+    "difficulty": "hard",
+    "popularity": 70
+  },
+  {
+    "id": "ec-226",
+    "title": "Oppenheimer",
+    "titleNormalized": "oppenheimer",
+    "alternativeTitles": [],
+    "year": 2023,
+    "genre": ["drama"],
+    "difficulty": "medium",
+    "popularity": 88
+  },
+  {
+    "id": "ec-227",
+    "title": "Barbie",
+    "titleNormalized": "barbie",
+    "alternativeTitles": [],
+    "year": 2023,
+    "genre": ["comedy", "fantasy", "adventure"],
+    "difficulty": "easy",
+    "popularity": 88
+  },
+  {
+    "id": "ec-228",
+    "title": "Wonka",
+    "titleNormalized": "wonka",
+    "alternativeTitles": [],
+    "year": 2023,
+    "genre": ["fantasy", "musical", "comedy"],
+    "difficulty": "medium",
+    "popularity": 72
+  },
+  {
+    "id": "ec-229",
+    "title": "The Super Mario Bros. Movie",
+    "titleNormalized": "super mario bros. movie",
+    "alternativeTitles": ["Super Mario Bros", "Mario Movie"],
+    "year": 2023,
+    "genre": ["animation", "adventure", "comedy"],
+    "difficulty": "easy",
+    "popularity": 86
+  },
+  {
+    "id": "ec-230",
+    "title": "Elemental",
+    "titleNormalized": "elemental",
+    "alternativeTitles": [],
+    "year": 2023,
+    "genre": ["animation", "comedy", "fantasy"],
+    "difficulty": "medium",
+    "popularity": 68
+  }
+]
