@@ -949,6 +949,35 @@ Replace hardcoded constants with `this.getSetting()` calls in the Identity Crisi
 
 ---
 
+### 8.1.16 History Display Configuration
+
+Implement the history display config for Identity Crisis as defined in `minigames-4.md §1.15`.
+
+#### 8.1.16.1 Create Detail Component
+
+Create `components/rmhbox/minigames/identity-crisis/IdentityCrisisHistoryDetail.tsx`:
+- Render identity assignments revealed (who was assigned whom)
+- Show question timeline with vote breakdowns (yes/no/maybe)
+- Display early guess attempts with outcomes (correct/incorrect)
+- Show final guess results and voting accuracy scores
+
+#### 8.1.16.2 Register History Display
+
+Add registration in `lib/rmhbox/history-display-registrations.ts` with:
+- Searchable fields: `identities` (identity names), `questions` (question texts)
+- Filterable fields: `guessedCorrectly` (boolean), `madeEarlyGuess` (boolean), `identityCategory` (select)
+- Summary: `{correct}/{total} correct guesses — Identity deduction`
+
+#### 8.1.16.3 Tests
+
+- [ ] Verify `getHistoryDisplay('identity-crisis')` returns a valid config
+- [ ] Verify searchable fields extract identities and questions from a mock game log
+- [ ] Verify filterable fields include guessedCorrectly (boolean), madeEarlyGuess (boolean), identityCategory (select)
+- [ ] Verify `getSummary()` returns a meaningful string for a mock game log
+- [ ] Verify `DetailComponent` renders without errors when given a valid game log
+
+---
+
 ## 8.2 Ranking File
 
 **Game ID:** `ranking-file` | **Category:** `social` | **Icon:** `list-ordered`
@@ -1701,6 +1730,34 @@ Replace hardcoded constants with `this.getSetting()` calls in the Ranking File h
 
 - [ ] **Boolean setting logic:** When `enableOutlierBonus` is `false`, no bonus points are awarded for correctly placing the hardest-to-rank item. The outlier detection still runs (for analytics), but the bonus is suppressed.
   **Verification:** Each constant usage replaced. Handler respects custom settings passed via `MinigameContext.gameSettings`.
+
+---
+
+### 8.2.15 History Display Configuration
+
+Implement the history display config for Ranking File as defined in `minigames-4.md §2.15`.
+
+#### 8.2.15.1 Create Detail Component
+
+Create `components/rmhbox/minigames/ranking-file/RankingFileHistoryDetail.tsx`:
+- Render per-round ranking comparison (consensus vs. player rankings)
+- Show distance scores per player per round
+- Display exact match bonuses and outlier bonuses highlighted
+
+#### 8.2.15.2 Register History Display
+
+Add registration in `lib/rmhbox/history-display-registrations.ts` with:
+- Searchable fields: `categories` (category names), `items` (item names)
+- Filterable fields: `exactMatches` (range), `wasOutlier` (boolean), `roundCount` (range)
+- Summary: `{rounds} rounds — {categories}`
+
+#### 8.2.15.3 Tests
+
+- [ ] Verify `getHistoryDisplay('ranking-file')` returns a valid config
+- [ ] Verify searchable fields extract categories and items from a mock game log
+- [ ] Verify filterable fields include exactMatches (range), wasOutlier (boolean), roundCount (range)
+- [ ] Verify `getSummary()` returns a meaningful string for a mock game log
+- [ ] Verify `DetailComponent` renders without errors when given a valid game log
 
 ---
 
@@ -2573,6 +2630,34 @@ Replace hardcoded constants with `this.getSetting()` calls in the Pixel Pushers 
 
 - [ ] **Boolean setting logic:** When `enablePolarityFlip` is `false`, push/pull controls never invert — players retain their initial polarity for the entire run. The `polarityInterval` setting is ignored when polarity flipping is disabled.
   **Verification:** Each constant usage replaced. Handler respects custom settings passed via `MinigameContext.gameSettings`.
+
+---
+
+### 8.3.13 History Display Configuration
+
+Implement the history display config for Pixel Pushers as defined in `minigames-4.md §3.16`.
+
+#### 8.3.13.1 Create Detail Component
+
+Create `components/rmhbox/minigames/pixel-pushers/PixelPushersHistoryDetail.tsx`:
+- Render arena layout with block positions and polarity states
+- Show goal zone completion status and per-player push contributions
+- Display polarity toggle timeline and score breakdown per goal zone
+
+#### 8.3.13.2 Register History Display
+
+Add registration in `lib/rmhbox/history-display-registrations.ts` with:
+- Searchable fields: `playerNames` (player names)
+- Filterable fields: `blocksScored` (range), `polarityToggles` (range)
+- Summary: `{scored} blocks scored — Physics puzzle`
+
+#### 8.3.13.3 Tests
+
+- [ ] Verify `getHistoryDisplay('pixel-pushers')` returns a valid config
+- [ ] Verify searchable fields extract player names from a mock game log
+- [ ] Verify filterable fields include blocksScored (range) and polarityToggles (range)
+- [ ] Verify `getSummary()` returns a meaningful string for a mock game log
+- [ ] Verify `DetailComponent` renders without errors when given a valid game log
 
 ---
 
@@ -3474,6 +3559,34 @@ Replace hardcoded constants with `this.getSetting()` calls in the Scroll Soul ha
 
 ---
 
+### 8.4.13 History Display Configuration
+
+Implement the history display config for Scroll Soul as defined in `minigames-4.md §4.16`.
+
+#### 8.4.13.1 Create Detail Component
+
+Create `components/rmhbox/minigames/scroll-soul/ScrollSoulHistoryDetail.tsx`:
+- Render distance traveled visualization
+- Show voting decision timeline (left/right/straight)
+- Display difficulty scaling graph and combo streak indicators
+
+#### 8.4.13.2 Register History Display
+
+Add registration in `lib/rmhbox/history-display-registrations.ts` with:
+- Searchable fields: `playerNames` (player names)
+- Filterable fields: `distanceTraveled` (range), `combos` (range), `platformsCollected` (range)
+- Summary: `Distance: {distance}px — Platformer survival`
+
+#### 8.4.13.3 Tests
+
+- [ ] Verify `getHistoryDisplay('scroll-soul')` returns a valid config
+- [ ] Verify searchable fields extract player names from a mock game log
+- [ ] Verify filterable fields include distanceTraveled (range), combos (range), platformsCollected (range)
+- [ ] Verify `getSummary()` returns a meaningful string for a mock game log
+- [ ] Verify `DetailComponent` renders without errors when given a valid game log
+
+---
+
 ## 8.5 Cross-Game Integration Testing (Phase 8 Minigames)
 
 This section validates that all four Phase 8 minigames integrate correctly with the existing RMHbox infrastructure and coexist with Phase 5, 6, and 7 games.
@@ -3640,6 +3753,10 @@ For each Phase 8 game (Identity Crisis, Ranking File, Pixel Pushers, Scroll Soul
   - Pixel Pushers: `level_start`, `waypoint_hit`, `polarity_flip`, `level_complete`
   - Scroll Soul: `player_eliminated`, `ad_spawned`, `ad_dismissed`, `speed_increase`
   **Verification:** Game logs persist and are retrievable via API. Action types match spec.
+- [ ] Verify `getHistoryDisplay()` returns a valid config for each Phase 8 game
+- [ ] Verify each game's history display has non-empty searchable and filterable fields
+- [ ] Verify each game's `getSummary()` returns a non-empty string for a valid game log
+- [ ] Verify each game's `DetailComponent` can be instantiated
 
 ### 8.5.12 Performance and Stress Testing
 
