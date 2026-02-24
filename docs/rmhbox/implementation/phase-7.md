@@ -1128,7 +1128,7 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 
 ### 7.3.1 Install NPM Packages
 
-- [ ] No external physics engine required
+- [x] No external physics engine required
   - The physics is a simplified 2D simulation (~50 lines of code): linear velocity with friction damping, circle-circle elastic collision, and wall bouncing.
   - If future complexity is desired, consider `planck-js` (~40KB gzip), but it is NOT needed for the current spec.
   **Verification:** Confirm no new dependencies needed.
@@ -1137,45 +1137,45 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 
 ### 7.3.2 Add Constants to `lib/rmhbox/constants.ts`
 
-- [ ] Add `CU_TOTAL_ENDS = 3` — number of ends (rounds)
-- [ ] Add `CU_END_START_SECONDS = 2` — end announcement duration
-- [ ] Add `CU_AIM_DURATION_SECONDS = 3` — time to aim
-- [ ] Add `CU_POWER_DURATION_SECONDS = 2` — time for power meter
-- [ ] Add `CU_END_RESULTS_SECONDS = 5` — end results display
-- [ ] Add `CU_TRANSITION_SECONDS = 2` — transition between ends
-- [ ] Add `CU_CANVAS_WIDTH = 400` — rink width (px)
-- [ ] Add `CU_CANVAS_HEIGHT = 600` — rink height (px)
-- [ ] Add `CU_HOUSE_CENTER = { x: 200, y: 100 }` — house (target) center position
-- [ ] Add `CU_BULLSEYE_RADIUS = 15` — bullseye zone radius
-- [ ] Add `CU_INNER_RADIUS = 40` — inner ring radius
-- [ ] Add `CU_OUTER_RADIUS = 70` — outer ring radius
-- [ ] Add `CU_HOUSE_RADIUS = 100` — house boundary radius
-- [ ] Add `CU_STONE_RADIUS = 12` — stone collision radius
-- [ ] Add `CU_LAUNCH_Y = 550` — y-coordinate of launch zone
-- [ ] Add `CU_BASE_FRICTION = 0.98` — velocity multiplier per tick (< 1 for deceleration)
-- [ ] Add `CU_SWEPT_FRICTION = 0.995` — reduced friction when sweeping is active
-- [ ] Add `CU_MAX_LAUNCH_SPEED = 15` — maximum launch velocity (px/tick)
-- [ ] Add `CU_SIMULATION_TICK_MS = 33` — physics tick interval (~30Hz)
-- [ ] Add `CU_STOP_THRESHOLD = 0.1` — velocity magnitude below which stone stops
-- [ ] Add `CU_RESTITUTION = 0.7` — coefficient of restitution for stone-stone collisions
-- [ ] Add `CU_SWEEP_ZONE_RADIUS = 60` — sweep detection radius ahead of stone's direction
-- [ ] Add `CU_SWEEP_WINDOW_MS = 500` — sliding window for sweep frequency detection
-- [ ] Add `CU_SWEEP_THRESHOLD = 6` — minimum sweep events per window to be effective
-- [ ] Add `CU_SWEEP_INPUT_RATE_LIMIT = 15` — max sweep inputs per second per player
-- [ ] Add `CU_BULLSEYE_POINTS = 100` — points for bullseye zone
-- [ ] Add `CU_INNER_RING_POINTS = 60` — points for inner ring
-- [ ] Add `CU_OUTER_RING_POINTS = 30` — points for outer ring
-- [ ] Add `CU_HOUSE_POINTS = 10` — points for in-house but outside outer ring
-- [ ] Add `CU_CLOSEST_BONUS = 50` — bonus for stone closest to bullseye center
-- [ ] **Verification:** Import all `CU_*` constants; confirm correct types. Verify `CU_BASE_FRICTION < 1` (deceleration). Verify `CU_SWEPT_FRICTION > CU_BASE_FRICTION` (less deceleration).
+- [x] Add `CU_TOTAL_ENDS = 3` — number of ends (rounds)
+- [x] Add `CU_END_START_SECONDS = 2` — end announcement duration
+- [x] Add `CU_AIM_DURATION_SECONDS = 3` — time to aim
+- [x] Add `CU_POWER_DURATION_SECONDS = 2` — time for power meter
+- [x] Add `CU_END_RESULTS_SECONDS = 5` — end results display
+- [x] Add `CU_TRANSITION_SECONDS = 2` — transition between ends
+- [x] Add `CU_CANVAS_WIDTH = 400` — rink width (px)
+- [x] Add `CU_CANVAS_HEIGHT = 600` — rink height (px)
+- [x] Add `CU_HOUSE_CENTER = { x: 200, y: 100 }` — house (target) center position
+- [x] Add `CU_BULLSEYE_RADIUS = 15` — bullseye zone radius
+- [x] Add `CU_INNER_RADIUS = 40` — inner ring radius
+- [x] Add `CU_OUTER_RADIUS = 70` — outer ring radius
+- [x] Add `CU_HOUSE_RADIUS = 100` — house boundary radius
+- [x] Add `CU_STONE_RADIUS = 12` — stone collision radius
+- [x] Add `CU_LAUNCH_Y = 550` — y-coordinate of launch zone
+- [x] Add `CU_BASE_FRICTION = 0.98` — velocity multiplier per tick (< 1 for deceleration)
+- [x] Add `CU_SWEPT_FRICTION = 0.995` — reduced friction when sweeping is active
+- [x] Add `CU_MAX_LAUNCH_SPEED = 15` — maximum launch velocity (px/tick)
+- [x] Add `CU_SIMULATION_TICK_MS = 33` — physics tick interval (~30Hz)
+- [x] Add `CU_STOP_THRESHOLD = 0.1` — velocity magnitude below which stone stops
+- [x] Add `CU_RESTITUTION = 0.7` — coefficient of restitution for stone-stone collisions
+- [x] Add `CU_SWEEP_ZONE_RADIUS = 60` — sweep detection radius ahead of stone's direction
+- [x] Add `CU_SWEEP_WINDOW_MS = 500` — sliding window for sweep frequency detection
+- [x] Add `CU_SWEEP_THRESHOLD = 6` — minimum sweep events per window to be effective
+- [x] Add `CU_SWEEP_INPUT_RATE_LIMIT = 15` — max sweep inputs per second per player
+- [x] Add `CU_BULLSEYE_POINTS = 100` — points for bullseye zone
+- [x] Add `CU_INNER_RING_POINTS = 60` — points for inner ring
+- [x] Add `CU_OUTER_RING_POINTS = 30` — points for outer ring
+- [x] Add `CU_HOUSE_POINTS = 10` — points for in-house but outside outer ring
+- [x] Add `CU_CLOSEST_BONUS = 50` — bonus for stone closest to bullseye center
+- [x] **Verification:** Import all `CU_*` constants; confirm correct types. Verify `CU_BASE_FRICTION < 1` (deceleration). Verify `CU_SWEPT_FRICTION > CU_BASE_FRICTION` (less deceleration).
 
 ---
 
 ### 7.3.3 Define Zod Validation Schemas
 
-- [ ] Create `lib/rmhbox/cursor-curling/schemas.ts`
+- [x] Create `lib/rmhbox/cursor-curling/schemas.ts`
 
-- [ ] Define `ThrowStoneSchema`:
+- [x] Define `ThrowStoneSchema`:
   ```ts
   const ThrowStoneSchema = z.object({
     angle: z.number().min(-Math.PI / 2).max(Math.PI / 2),
@@ -1184,7 +1184,7 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
   ```
   **Verification:** Valid: `{ angle: 0, power: 0.8 }` (straight up). Invalid: `{ angle: Math.PI }` (out of range—can only throw upward).
 
-- [ ] Define `SweepSchema`:
+- [x] Define `SweepSchema`:
   ```ts
   const SweepSchema = z.object({
     x: z.number().min(0).max(CU_CANVAS_WIDTH),
@@ -1197,17 +1197,17 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 
 ### 7.3.4 Implement Server Handler
 
-- [ ] Create `server/rmhbox/minigames/cursor-curling.ts`
+- [x] Create `server/rmhbox/minigames/cursor-curling.ts`
 
 #### 7.3.4.1 Type Definitions
 
-- [ ] Define `CUPhase` type:
+- [x] Define `CUPhase` type:
   ```ts
   type CUPhase = 'END_START' | 'AIM' | 'POWER' | 'SIMULATION' | 'END_RESULTS' | 'TRANSITION' | 'GAME_OVER';
   ```
   **Verification:** Type has exactly 7 values matching spec.
 
-- [ ] Define `CurlingStone` type:
+- [x] Define `CurlingStone` type:
   ```ts
   type CurlingStone = {
     id: string;
@@ -1218,7 +1218,7 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
   };
   ```
 
-- [ ] Define `StonePhysics` type:
+- [x] Define `StonePhysics` type:
   ```ts
   type StonePhysics = {
     position: { x: number; y: number };
@@ -1228,7 +1228,7 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
   };
   ```
 
-- [ ] Define `SweepState` type:
+- [x] Define `SweepState` type:
   ```ts
   type SweepState = {
     userId: string;
@@ -1237,7 +1237,7 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
   };
   ```
 
-- [ ] Define `EndResult` type:
+- [x] Define `EndResult` type:
   ```ts
   type EndResult = {
     endNumber: number;
@@ -1250,7 +1250,7 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
   };
   ```
 
-- [ ] Define `CursorCurlingState` type:
+- [x] Define `CursorCurlingState` type:
   ```ts
   type CursorCurlingState = {
     currentEnd: number;
@@ -1271,20 +1271,20 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 
 #### 7.3.4.2 Class: `CursorCurlingGame extends BaseMinigame`
 
-- [ ] Constructor: call `super(context)`
+- [x] Constructor: call `super(context)`
   **Verification:** Instantiate class; confirm no errors.
 
 #### 7.3.4.3 State Initialization (`start()`)
 
-- [ ] Initialize `playerScores` with 0 for all players
-- [ ] Set `currentEnd = 0`, `totalEnds = CU_TOTAL_ENDS`
-- [ ] Initialize `stones = []`, `endResults = []`
-- [ ] Call `startNextEnd()`
+- [x] Initialize `playerScores` with 0 for all players
+- [x] Set `currentEnd = 0`, `totalEnds = CU_TOTAL_ENDS`
+- [x] Initialize `stones = []`, `endResults = []`
+- [x] Call `startNextEnd()`
   **Verification:** Scores initialized. End starts.
 
 #### 7.3.4.4 Physics Engine Implementation
 
-- [ ] Implement `simulateStone(stone: StonePhysics, allStones: CurlingStone[], sweepActive: boolean): void`:
+- [x] Implement `simulateStone(stone: StonePhysics, allStones: CurlingStone[], sweepActive: boolean): void`:
   - Called every `CU_SIMULATION_TICK_MS` (33ms) while stone is moving
   - **Friction damping:**
     - `friction = sweepActive ? CU_SWEPT_FRICTION : CU_BASE_FRICTION`
@@ -1314,7 +1314,7 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
     - If `speed < CU_STOP_THRESHOLD`: set `isMoving = false`, zero velocity, round position
   **Verification:** Unit test: stone launched straight up at power 1.0 → decelerates over time, stops. Stone hitting left wall → bounces. Two stones colliding → both velocities updated. Stone going off top → removed from play. Sweeping → travels farther before stopping.
 
-- [ ] Implement `runSimulationLoop()`:
+- [x] Implement `runSimulationLoop()`:
   - Use `setInterval` at `CU_SIMULATION_TICK_MS` (managed via BaseMinigame timer tracking)
   - Each tick:
     - Compute sweep effectiveness for each sweeper (check frequency in `CU_SWEEP_WINDOW_MS`)
@@ -1332,7 +1332,7 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 
 #### 7.3.4.5 End Lifecycle
 
-- [ ] `startNextEnd()`:
+- [x] `startNextEnd()`:
   - Increment `currentEnd`
   - If `currentEnd > totalEnds`, call `endGame()`; return
   - Randomize `throwOrder` (different order each end)
@@ -1343,7 +1343,7 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
   - Schedule `nextThrowOrEndPhase()` after `CU_END_START_SECONDS`
   **Verification:** New end starts. Throw order randomized. Stones cleared.
 
-- [ ] `nextThrowOrEndPhase()`:
+- [x] `nextThrowOrEndPhase()`:
   - Increment `currentThrowerIndex`
   - If `currentThrowerIndex >= throwOrder.length`:
     - All players have thrown → call `computeEndResults()`
@@ -1353,13 +1353,13 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
   - Start aim timer; schedule power phase after `CU_AIM_DURATION_SECONDS` (if player doesn't throw earlier)
   **Verification:** Players take turns. After last player, end results computed.
 
-- [ ] `startPowerPhase()`:
+- [x] `startPowerPhase()`:
   - Set `phase = 'POWER'`
   - Emit `CU_POWER_PHASE` to active thrower ONLY: `{ powerDurationSeconds: CU_POWER_DURATION_SECONDS }`
   - Schedule auto-throw (random power) after `CU_POWER_DURATION_SECONDS`
   **Verification:** Power phase started. Auto-throw on timeout.
 
-- [ ] `computeEndResults()`:
+- [x] `computeEndResults()`:
   - Set `phase = 'END_RESULTS'`
   - For each stone that is `isInPlay`:
     - Compute distance to `CU_HOUSE_CENTER`: `dist = sqrt((x - centerX)² + (y - centerY)²)`
@@ -1378,49 +1378,49 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
   - Schedule `startTransition()` after `CU_END_RESULTS_SECONDS`
   **Verification:** Unit test: stone at (200, 100) → distance 0 → bullseye → 100 points. Stone at (200, 130) → distance 30 → inner → 60 points. Closest gets +50 bonus.
 
-- [ ] `startTransition()`:
+- [x] `startTransition()`:
   - Set `phase = 'TRANSITION'`
   - Schedule `startNextEnd()` after `CU_TRANSITION_SECONDS`
   **Verification:** Next end starts after transition.
 
 #### 7.3.4.6 Input Handling — `THROW_STONE`
 
-- [ ] Validate phase is `'AIM'` or `'POWER'`; reject if not
-- [ ] Validate sender is the active thrower (`throwOrder[currentThrowerIndex]`); reject if not
-- [ ] Parse through `ThrowStoneSchema`
-- [ ] Create `StonePhysics`:
+- [x] Validate phase is `'AIM'` or `'POWER'`; reject if not
+- [x] Validate sender is the active thrower (`throwOrder[currentThrowerIndex]`); reject if not
+- [x] Parse through `ThrowStoneSchema`
+- [x] Create `StonePhysics`:
   - `position = { x: CU_CANVAS_WIDTH / 2, y: CU_LAUNCH_Y }` (center of launch zone)
   - `velocity = { vx: Math.sin(angle) * power * CU_MAX_LAUNCH_SPEED, vy: -Math.cos(angle) * power * CU_MAX_LAUNCH_SPEED }` (negative vy = upward)
   - `friction = CU_BASE_FRICTION`
   - `isMoving = true`
-- [ ] Create `CurlingStone` and add to `stones` array
-- [ ] Set `phase = 'SIMULATION'`
-- [ ] Initialize `sweepStates` for all non-thrower players
-- [ ] Emit `CU_STONE_LAUNCHED` to all: `{ userId, angle, power }`
-- [ ] Start `runSimulationLoop()`
+- [x] Create `CurlingStone` and add to `stones` array
+- [x] Set `phase = 'SIMULATION'`
+- [x] Initialize `sweepStates` for all non-thrower players
+- [x] Emit `CU_STONE_LAUNCHED` to all: `{ userId, angle, power }`
+- [x] Start `runSimulationLoop()`
   **Verification:** Unit test: throw at angle=0, power=1.0 → stone launches straight up at max speed. Throw at angle=0.5 → launches rightward-up. Simulation starts.
 
 #### 7.3.4.7 Input Handling — `SWEEP`
 
-- [ ] Validate phase is `'SIMULATION'`; reject if not
-- [ ] Validate sender is NOT the active thrower; reject if thrower tries to sweep own stone
-- [ ] Parse through `SweepSchema`
-- [ ] Apply rate limit: max `CU_SWEEP_INPUT_RATE_LIMIT` (15) per second per player
-- [ ] Record sweep input in `sweepStates[userId].recentInputs` with timestamp
-- [ ] Prune inputs older than `CU_SWEEP_WINDOW_MS` from the window
-- [ ] Assess sweep effectiveness:
+- [x] Validate phase is `'SIMULATION'`; reject if not
+- [x] Validate sender is NOT the active thrower; reject if thrower tries to sweep own stone
+- [x] Parse through `SweepSchema`
+- [x] Apply rate limit: max `CU_SWEEP_INPUT_RATE_LIMIT` (15) per second per player
+- [x] Record sweep input in `sweepStates[userId].recentInputs` with timestamp
+- [x] Prune inputs older than `CU_SWEEP_WINDOW_MS` from the window
+- [x] Assess sweep effectiveness:
   - Check if sweep position is within `CU_SWEEP_ZONE_RADIUS` ahead of the stone's current position and direction
   - Check if number of recent inputs in window ≥ `CU_SWEEP_THRESHOLD`
   - If both conditions met: set `isSweeping = true`
   - Emit `CU_SWEEP_ACTIVE` to all: `{ userId, userName, isActive: true }`
-- [ ] If conditions no longer met: `isSweeping = false`, emit `CU_SWEEP_ACTIVE` with `isActive: false`
+- [x] If conditions no longer met: `isSweeping = false`, emit `CU_SWEEP_ACTIVE` with `isActive: false`
   **Verification:** Unit test: 6 sweep inputs in 500ms near the stone → sweep active, friction reduced. 3 inputs → below threshold, no effect. Sweep position behind stone → no effect.
 
 #### 7.3.4.8 `getStateForPlayer(userId)`
 
-- [ ] During AIM (active thrower): include aim UI data (own aim visible)
-- [ ] During AIM (non-thrower): see who is throwing, see all existing stones on rink
-- [ ] During SIMULATION:
+- [x] During AIM (active thrower): include aim UI data (own aim visible)
+- [x] During AIM (non-thrower): see who is throwing, see all existing stones on rink
+- [x] During SIMULATION:
   ```ts
   {
     currentEnd, phase, stones: [...], activeStonId,
@@ -1429,53 +1429,53 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
     scores: [...]
   }
   ```
-- [ ] Aim direction and power meter are HIDDEN from non-throwers during AIM/POWER
-- [ ] During END_RESULTS: include full results with distances and zones
+- [x] Aim direction and power meter are HIDDEN from non-throwers during AIM/POWER
+- [x] During END_RESULTS: include full results with distances and zones
   **Verification:** Thrower's aim hidden from others. Stone positions visible to all during simulation.
 
 #### 7.3.4.9 `getStateForSpectator()`
 
-- [ ] Sees thrower's aim direction and power meter level during AIM/POWER (omniscient)
-- [ ] Sees all stone positions and sweep activity during SIMULATION
-- [ ] Full experience
+- [x] Sees thrower's aim direction and power meter level during AIM/POWER (omniscient)
+- [x] Sees all stone positions and sweep activity during SIMULATION
+- [x] Full experience
   **Verification:** Spectator sees aim and power.
 
 #### 7.3.4.10 Join-in-Progress Handling
 
-- [ ] Policy: `spectate_only`
-- [ ] Throw order established at game start
-- [ ] JIP → spectator
+- [x] Policy: `spectate_only`
+- [x] Throw order established at game start
+- [x] JIP → spectator
   **Verification:** JIP → spectator.
 
 #### 7.3.4.11 Reconnection Handling (`handlePlayerReconnect(userId)`)
 
-- [ ] Receive current stone positions, whose turn it is, scores
-- [ ] If it was their turn and AIM/POWER still active → can complete throw
-- [ ] If timeout occurred → auto-throw (power=0, angle=0 — dud throw)
+- [x] Receive current stone positions, whose turn it is, scores
+- [x] If it was their turn and AIM/POWER still active → can complete throw
+- [x] If timeout occurred → auto-throw (power=0, angle=0 — dud throw)
   **Verification:** Reconnect during AIM → can throw. After timeout → dud throw.
 
 #### 7.3.4.12 Disconnect Handling (`handlePlayerDisconnect(userId)`)
 
-- [ ] If it was their turn → auto-throw after brief wait (dud throw)
-- [ ] Their existing stones on the rink are preserved
+- [x] If it was their turn → auto-throw after brief wait (dud throw)
+- [x] Their existing stones on the rink are preserved
   **Verification:** Dud throw on disconnect. Stones preserved.
 
 #### 7.3.4.13 `computeResults()` and Awards
 
-- [ ] Final rankings by cumulative `playerScores` (descending)
-- [ ] Compute awards:
-  - [ ] **Bullseye!** — hit the bullseye in any end; icon: `target`
-  - [ ] **Master Sweeper** — most effective sweeping (most sweep-active time that changed friction); icon: `wind`
-  - [ ] **Demolition Derby** — knocked the most opponent stones out of play via collisions; icon: `boom`
-  - [ ] **Gentle Touch** — stone stopped closest to bullseye center (best precision across all ends); icon: `feather`
-  - [ ] **Off the Rails** — stone went out of bounds the most times; icon: `slash`
-- [ ] Return `MinigameResults`
+- [x] Final rankings by cumulative `playerScores` (descending)
+- [x] Compute awards:
+  - [x] **Bullseye!** — hit the bullseye in any end; icon: `target`
+  - [x] **Master Sweeper** — most effective sweeping (most sweep-active time that changed friction); icon: `wind`
+  - [x] **Demolition Derby** — knocked the most opponent stones out of play via collisions; icon: `boom`
+  - [x] **Gentle Touch** — stone stopped closest to bullseye center (best precision across all ends); icon: `feather`
+  - [x] **Off the Rails** — stone went out of bounds the most times; icon: `slash`
+- [x] Return `MinigameResults`
   **Verification:** Unit test: each award triggers for appropriate scenarios.
 
 #### 7.3.4.14 `buildGameLog()`
 
-- [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
-- [ ] Build `GameLog` conforming to core.md §13.3, including `gameSettings` per §12A.11
+- [x] Maintain an `actionLog: GameLogAction[]` array on the game instance
+- [x] Build `GameLog` conforming to core.md §13.3, including `gameSettings` per §12A.11
 
 **`initialState` (from minigames-3.md §3.14):**
 
@@ -1502,15 +1502,15 @@ interface CUInitialState {
 | `end_result` | `{ end: number; scores: Record<string, number>; closestUserId: string; stonePositions: Array<{ userId: string; x: number; y: number }> }` | End of each end |
 | `game_end` | `{ finalScores: Record<string, number>; placements: Array<{ userId: string; placement: number; score: number }> }` | Game over |
 
-- [ ] In `computeResults()`, build `GameLog` with `initialState`, full action log, and `finalResults`
-- [ ] Return `GameLog` from `buildGameLog()`
+- [x] In `computeResults()`, build `GameLog` with `initialState`, full action log, and `finalResults`
+- [x] Return `GameLog` from `buildGameLog()`
   **Verification:** Unit test: 3-end game, 4 players, verify 12 `throw`/`stone_rest` actions and 3 `end_result` actions, `initialState` has house geometry and throw order.
 
 ---
 
 ### 7.3.5 Register Game in Minigame Registry
 
-- [ ] Add entry to `lib/rmhbox/minigame-registry.ts`:
+- [x] Add entry to `lib/rmhbox/minigame-registry.ts`:
   ```ts
   {
     id: "cursor-curling",
@@ -1530,14 +1530,14 @@ interface CUInitialState {
   ```
   **Verification:** Registry lookup correct.
 
-- [ ] Add server handler to `MINIGAME_SERVER_REGISTRY` in `server/rmhbox/minigame-server-registry.ts`:
+- [x] Add server handler to `MINIGAME_SERVER_REGISTRY` in `server/rmhbox/minigame-server-registry.ts`:
   ```ts
   import { CursorCurlingGame } from './minigames/cursor-curling';
   MINIGAME_SERVER_REGISTRY.set('cursor-curling', CursorCurlingGame);
   ```
   **Verification:** `MINIGAME_SERVER_REGISTRY.get('cursor-curling')` returns `CursorCurlingGame` class.
 
-- [ ] Add lazy-loaded component to `MinigameRenderer` map:
+- [x] Add lazy-loaded component to `MinigameRenderer` map:
   ```ts
   'cursor-curling': lazy(() => import('./minigames/cursor-curling/CursorCurlingGame'))
   ```
@@ -1549,19 +1549,19 @@ interface CUInitialState {
 
 #### 7.3.6.1 `components/rmhbox/minigames/cursor-curling/CursorCurlingGame.tsx`
 
-- [ ] Phase router — renders based on `phase`
-- [ ] Subscribe to all `CU_*` and `TIMER_TICK` events
-- [ ] Maintain local state: end, phase, stones, active simulation, sweep status, scores
-- [ ] Handle `CU_END_START` → reset rink, show end number
-- [ ] Handle `CU_THROWER_ACTIVE` → show who's throwing
-- [ ] Handle `CU_STONE_LAUNCHED` → begin client-side rendering of stone trajectory
-- [ ] Handle `CU_STONE_POSITION` → update stone position (interpolate between ticks for smooth animation at 60fps)
-- [ ] Handle `CU_STONE_COLLISION` → collision particle effect
-- [ ] Handle `CU_SWEEP_ACTIVE` → show sweep indicators
-- [ ] Handle `CU_SWEPT_EFFECT` → visual indication of friction change
-- [ ] Handle `CU_STONE_STOPPED` → finalize stone position
-- [ ] Handle `CU_END_RESULTS` → show scoring
-- [ ] Conditional rendering:
+- [x] Phase router — renders based on `phase`
+- [x] Subscribe to all `CU_*` and `TIMER_TICK` events
+- [x] Maintain local state: end, phase, stones, active simulation, sweep status, scores
+- [x] Handle `CU_END_START` → reset rink, show end number
+- [x] Handle `CU_THROWER_ACTIVE` → show who's throwing
+- [x] Handle `CU_STONE_LAUNCHED` → begin client-side rendering of stone trajectory
+- [x] Handle `CU_STONE_POSITION` → update stone position (interpolate between ticks for smooth animation at 60fps)
+- [x] Handle `CU_STONE_COLLISION` → collision particle effect
+- [x] Handle `CU_SWEEP_ACTIVE` → show sweep indicators
+- [x] Handle `CU_SWEPT_EFFECT` → visual indication of friction change
+- [x] Handle `CU_STONE_STOPPED` → finalize stone position
+- [x] Handle `CU_END_RESULTS` → show scoring
+- [x] Conditional rendering:
   - `AIM` (thrower) → `<CurlingCanvas />` + `<AimArrow />`
   - `POWER` (thrower) → `<CurlingCanvas />` + `<PowerMeter />`
   - `SIMULATION` → `<CurlingCanvas />` + `<SweepOverlay />`
@@ -1570,62 +1570,62 @@ interface CUInitialState {
 
 #### 7.3.6.2 `components/rmhbox/minigames/cursor-curling/CurlingCanvas.tsx`
 
-- [ ] HTML5 Canvas (400×600) rendering the rink
-- [ ] Draw house: concentric circles at `CU_HOUSE_CENTER` with bullseye, inner, outer, house radii
-- [ ] Draw all stones as colored circles with player initials
-- [ ] During SIMULATION: interpolate stone positions between server ticks for smooth 60fps animation
+- [x] HTML5 Canvas (400×600) rendering the rink
+- [x] Draw house: concentric circles at `CU_HOUSE_CENTER` with bullseye, inner, outer, house radii
+- [x] Draw all stones as colored circles with player initials
+- [x] During SIMULATION: interpolate stone positions between server ticks for smooth 60fps animation
   - Receive positions at 30Hz, render at 60fps using linear interpolation
-- [ ] Draw rink boundaries (walls)
-- [ ] Responsive scaling for different screen sizes
+- [x] Draw rink boundaries (walls)
+- [x] Responsive scaling for different screen sizes
   **Verification:** House rings render correctly. Stones animate smoothly. Responsive.
 
 #### 7.3.6.3 `components/rmhbox/minigames/cursor-curling/AimArrow.tsx`
 
-- [ ] Directional arrow from launch position
-- [ ] Desktop: follows mouse position relative to launch point; angle computed from cursor position
-- [ ] Mobile: drag gesture to set angle
-- [ ] Arrow length indicates direction (not power)
-- [ ] Limited to upward-facing angles (±90° from vertical)
+- [x] Directional arrow from launch position
+- [x] Desktop: follows mouse position relative to launch point; angle computed from cursor position
+- [x] Mobile: drag gesture to set angle
+- [x] Arrow length indicates direction (not power)
+- [x] Limited to upward-facing angles (±90° from vertical)
   **Verification:** Arrow follows cursor/touch. Angle within bounds.
 
 #### 7.3.6.4 `components/rmhbox/minigames/cursor-curling/PowerMeter.tsx`
 
-- [ ] Oscillating power bar (fills and depletes in a cycle)
-- [ ] Tap/click to lock in power level (0.0–1.0)
-- [ ] Visual: vertical bar with color gradient (green=low, yellow=mid, red=high)
-- [ ] Oscillation speed increases over time for difficulty
+- [x] Oscillating power bar (fills and depletes in a cycle)
+- [x] Tap/click to lock in power level (0.0–1.0)
+- [x] Visual: vertical bar with color gradient (green=low, yellow=mid, red=high)
+- [x] Oscillation speed increases over time for difficulty
   **Verification:** Power oscillates. Lock-in captures current value. Sent to server.
 
 #### 7.3.6.5 `components/rmhbox/minigames/cursor-curling/SweepOverlay.tsx`
 
-- [ ] Sweep zone indicator: translucent area in front of the moving stone
-- [ ] "Wiggle to sweep!" instruction
-- [ ] Desktop: detect rapid cursor movement (mouse events at high frequency)
-- [ ] Mobile: detect rapid touch movement (touch events)
-- [ ] Send `SWEEP` actions with current touch/cursor position at up to 15Hz
-- [ ] Visual indicator when sweep is actively effective (icon + glow effect)
+- [x] Sweep zone indicator: translucent area in front of the moving stone
+- [x] "Wiggle to sweep!" instruction
+- [x] Desktop: detect rapid cursor movement (mouse events at high frequency)
+- [x] Mobile: detect rapid touch movement (touch events)
+- [x] Send `SWEEP` actions with current touch/cursor position at up to 15Hz
+- [x] Visual indicator when sweep is actively effective (icon + glow effect)
   **Verification:** Sweep inputs sent at correct rate. Visual feedback on active sweep.
 
 #### 7.3.6.6 `components/rmhbox/minigames/cursor-curling/StoneSprite.tsx`
 
-- [ ] Colored circle with player initial
-- [ ] Size: `CU_STONE_RADIUS` scaled to display
-- [ ] Shadow/3D effect for depth
-- [ ] Trail effect while moving
+- [x] Colored circle with player initial
+- [x] Size: `CU_STONE_RADIUS` scaled to display
+- [x] Shadow/3D effect for depth
+- [x] Trail effect while moving
   **Verification:** Stone renders with correct color and initial.
 
 #### 7.3.6.7 `components/rmhbox/minigames/cursor-curling/EndResults.tsx`
 
-- [ ] Stone position overlay showing distance to bullseye for each stone
-- [ ] Zone labels (bullseye, inner, outer, house, outside)
-- [ ] Points per stone
-- [ ] Closest-to-center highlight with bonus
-- [ ] Cumulative scores
+- [x] Stone position overlay showing distance to bullseye for each stone
+- [x] Zone labels (bullseye, inner, outer, house, outside)
+- [x] Points per stone
+- [x] Closest-to-center highlight with bonus
+- [x] Cumulative scores
   **Verification:** All info displays correctly.
 
 #### 7.3.6.8 Sound Effects
 
-- [ ] Wire up sound effects using `playSound()` for each Cursor Curling event:
+- [x] Wire up sound effects using `playSound()` for each Cursor Curling event:
   - `CU_END_START` → `playSound('swoosh')`
   - `CU_THROWER_ACTIVE` → `playSound('chime')`
   - `CU_STONE_LAUNCHED` → `playSound('swoosh')`
@@ -1637,43 +1637,43 @@ interface CUInitialState {
 
 #### 7.3.6.9 Zustand Store Integration
 
-- [ ] Read stone positions and phase from `publicState`
-- [ ] Read aim/power preview from `privateState` (only for active thrower)
-- [ ] Use `requestAnimationFrame` for 60fps interpolation between 30Hz server updates
-- [ ] Detect spectator mode → render omniscient view with aim/power overlays
+- [x] Read stone positions and phase from `publicState`
+- [x] Read aim/power preview from `privateState` (only for active thrower)
+- [x] Use `requestAnimationFrame` for 60fps interpolation between 30Hz server updates
+- [x] Detect spectator mode → render omniscient view with aim/power overlays
   **Verification:** Players see stones + own aim/power when active. Spectators see all overlays. Interpolation produces smooth 60fps rendering.
 
 ---
 
 ### 7.3.7 Integration Testing
 
-- [ ] End-to-end test: 3 players → 3 ends → each player throws once per end
-  - [ ] Verify stone physics: launches, decelerates, stops
-  - [ ] Verify wall bouncing: stone hits left/right wall → bounces
-  - [ ] Verify out-of-bounds: stone goes off top → out of play
-  - [ ] Verify scoring by zone proximity
-  - [ ] Verify closest-to-center bonus
+- [x] End-to-end test: 3 players → 3 ends → each player throws once per end
+  - [x] Verify stone physics: launches, decelerates, stops
+  - [x] Verify wall bouncing: stone hits left/right wall → bounces
+  - [x] Verify out-of-bounds: stone goes off top → out of play
+  - [x] Verify scoring by zone proximity
+  - [x] Verify closest-to-center bonus
   **Verification:** All physics and scoring assertions pass.
 
-- [ ] Stone collision test:
-  - [ ] Player A's stone is near bullseye; Player B throws and hits it → both stones move
-  - [ ] Velocity transfer based on collision angle and restitution
-  - [ ] Both final positions are realistic
+- [x] Stone collision test:
+  - [x] Player A's stone is near bullseye; Player B throws and hits it → both stones move
+  - [x] Velocity transfer based on collision angle and restitution
+  - [x] Both final positions are realistic
   **Verification:** Collision physics correct. Events emitted.
 
-- [ ] Sweeping test:
-  - [ ] Non-thrower sends 6 sweep inputs in 500ms near the stone's path → friction reduced
-  - [ ] Stone travels farther with sweep vs. without sweep (compare two throws at same power/angle)
-  - [ ] Sweeping rate limit: 16th input in 1s rejected
+- [x] Sweeping test:
+  - [x] Non-thrower sends 6 sweep inputs in 500ms near the stone's path → friction reduced
+  - [x] Stone travels farther with sweep vs. without sweep (compare two throws at same power/angle)
+  - [x] Sweeping rate limit: 16th input in 1s rejected
   **Verification:** Swept stone travels measurably farther.
 
-- [ ] Aim/power masking test:
-  - [ ] During AIM: non-throwers don't see aim direction
-  - [ ] During POWER: non-throwers don't see power level
-  - [ ] Spectators see both
+- [x] Aim/power masking test:
+  - [x] During AIM: non-throwers don't see aim direction
+  - [x] During POWER: non-throwers don't see power level
+  - [x] Spectators see both
   **Verification:** Masking correct.
 
-- [ ] Reconnection test: Player disconnects on their turn → auto-throw (dud) → reconnect → spectator for that throw, next turn normal
+- [x] Reconnection test: Player disconnects on their turn → auto-throw (dud) → reconnect → spectator for that throw, next turn normal
   **Verification:** Auto-throw works.
 
 ### 7.3.8 Game Settings Integration (§12A)
@@ -1682,12 +1682,12 @@ Integrate host-configurable settings using the §12A system.
 
 #### Registry Entry
 
-- [ ] Export `CURSOR_CURLING_SETTINGS: GameSettingsSchema` in `lib/rmhbox/minigame-registry.ts` with 4 entries:
+- [x] Export `CURSOR_CURLING_SETTINGS: GameSettingsSchema` in `lib/rmhbox/minigame-registry.ts` with 4 entries:
   - `totalEnds` (integer, default `4`, min 2, max 6, step 1)
   - `aimDuration` (integer, default `15`, min 5, max 30, step 5)
   - `powerDuration` (integer, default `5`, min 3, max 10, step 1)
   - `enableSweeping` (boolean, default `true`)
-- [ ] Attach `settingsSchema: CURSOR_CURLING_SETTINGS` to the `cursor-curling` `MinigameDefinition`.
+- [x] Attach `settingsSchema: CURSOR_CURLING_SETTINGS` to the `cursor-curling` `MinigameDefinition`.
   **Verification:** Registry lookup returns definition with `settingsSchema` containing 4 entries.
 
 #### Handler `getSetting()` Integration
@@ -1701,7 +1701,7 @@ Replace hardcoded constants with `this.getSetting()` calls in the Cursor Curling
 | `CU_POWER_DURATION` | `powerDuration` | `this.getSetting('powerDuration', CU_POWER_DURATION)` |
 | `CU_ENABLE_SWEEPING` | `enableSweeping` | `this.getSetting('enableSweeping', CU_ENABLE_SWEEPING)` |
 
-- [ ] **Boolean setting logic:** When `enableSweeping` is `false`, skip the sweeping phase entirely after stone release — the stone travels on its natural trajectory without team intervention.
+- [x] **Boolean setting logic:** When `enableSweeping` is `false`, skip the sweeping phase entirely after stone release — the stone travels on its natural trajectory without team intervention.
   **Verification:** Each constant usage replaced. Handler respects custom settings passed via `MinigameContext.gameSettings`.
 
 ### 7.3.9 History Display Configuration
@@ -1724,11 +1724,11 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 
 #### 7.3.9.3 Tests
 
-- [ ] Verify `getHistoryDisplay('cursor-curling')` returns a valid config
-- [ ] Verify searchable fields extract player names from a mock game log
-- [ ] Verify filterable fields include hitBullseye (boolean), endCount (range), sweepCount (range)
-- [ ] Verify `getSummary()` returns a meaningful string for a mock game log
-- [ ] Verify `DetailComponent` renders without errors when given a valid game log
+- [x] Verify `getHistoryDisplay('cursor-curling')` returns a valid config
+- [x] Verify searchable fields extract player names from a mock game log
+- [x] Verify filterable fields include hitBullseye (boolean), endCount (range), sweepCount (range)
+- [x] Verify `getSummary()` returns a meaningful string for a mock game log
+- [x] Verify `DetailComponent` renders without errors when given a valid game log
 
 ---
 
@@ -1741,7 +1741,7 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 
 ### 7.4.1 Install NPM Packages
 
-- [ ] No additional NPM packages required for Human Tetris
+- [x] No additional NPM packages required for Human Tetris
   - Pure grid-based movement logic and shape generation.
   **Verification:** Confirm no new dependencies needed.
 
@@ -1749,34 +1749,34 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 
 ### 7.4.2 Add Constants to `lib/rmhbox/constants.ts`
 
-- [ ] Add `HT_TOTAL_WAVES = 8` — number of waves
-- [ ] Add `HT_GRID_COLS = 8` — grid column count
-- [ ] Add `HT_GRID_ROWS = 6` — grid row count
-- [ ] Add `HT_EASY_POSITION_SECONDS = 8` — positioning time for waves 1–3
-- [ ] Add `HT_MEDIUM_POSITION_SECONDS = 6` — positioning time for waves 4–6
-- [ ] Add `HT_HARD_POSITION_SECONDS = 4` — positioning time for waves 7–8
-- [ ] Add `HT_WALL_PREVIEW_SECONDS = 3` — wall preview duration
-- [ ] Add `HT_WALL_IMPACT_SECONDS = 1` — wall impact animation duration
-- [ ] Add `HT_WAVE_RESULTS_SECONDS = 2` — wave results display
-- [ ] Add `HT_EXCLUSION_RATIO = 0.2` — fraction of players that must hide in dead zones (medium/hard waves)
-- [ ] Add `HT_DEAD_ZONE_MIN_COUNT = 2` — minimum dead zone cells
-- [ ] Add `HT_MOVE_RATE_LIMIT = 6` — max moves per second per player
-- [ ] Add `HT_SUCCESS_POINTS = 100` — points per player on team success
-- [ ] Add `HT_PARTIAL_POINTS = 30` — base points for partial success (multiplied by fill ratio)
-- [ ] Add `HT_CORRECT_POSITION_POINTS = 50` — points for being in correct position
-- [ ] Add `HT_HIT_PENALTY = -20` — penalty for being hit by the wall
-- [ ] Add `HT_PERFECT_WAVE_BONUS = 50` — bonus per player for success with ≥2s remaining
-- [ ] Add `HT_STREAK_BONUS = 200` — bonus per player for all 8 waves successful
-- [ ] **Verification:** Import all `HT_*` constants; confirm correct types.
+- [x] Add `HT_TOTAL_WAVES = 8` — number of waves
+- [x] Add `HT_GRID_COLS = 8` — grid column count
+- [x] Add `HT_GRID_ROWS = 6` — grid row count
+- [x] Add `HT_EASY_POSITION_SECONDS = 8` — positioning time for waves 1–3
+- [x] Add `HT_MEDIUM_POSITION_SECONDS = 6` — positioning time for waves 4–6
+- [x] Add `HT_HARD_POSITION_SECONDS = 4` — positioning time for waves 7–8
+- [x] Add `HT_WALL_PREVIEW_SECONDS = 3` — wall preview duration
+- [x] Add `HT_WALL_IMPACT_SECONDS = 1` — wall impact animation duration
+- [x] Add `HT_WAVE_RESULTS_SECONDS = 2` — wave results display
+- [x] Add `HT_EXCLUSION_RATIO = 0.2` — fraction of players that must hide in dead zones (medium/hard waves)
+- [x] Add `HT_DEAD_ZONE_MIN_COUNT = 2` — minimum dead zone cells
+- [x] Add `HT_MOVE_RATE_LIMIT = 6` — max moves per second per player
+- [x] Add `HT_SUCCESS_POINTS = 100` — points per player on team success
+- [x] Add `HT_PARTIAL_POINTS = 30` — base points for partial success (multiplied by fill ratio)
+- [x] Add `HT_CORRECT_POSITION_POINTS = 50` — points for being in correct position
+- [x] Add `HT_HIT_PENALTY = -20` — penalty for being hit by the wall
+- [x] Add `HT_PERFECT_WAVE_BONUS = 50` — bonus per player for success with ≥2s remaining
+- [x] Add `HT_STREAK_BONUS = 200` — bonus per player for all 8 waves successful
+- [x] **Verification:** Import all `HT_*` constants; confirm correct types.
 
 ---
 
 ### 7.4.3 Create Static Data Files
 
-- [ ] Create directory `public/data/rmhbox/human-tetris/`
+- [x] Create directory `public/data/rmhbox/human-tetris/`
   **Verification:** Directory exists on disk.
 
-- [ ] Create `public/data/rmhbox/human-tetris/shapes.json` — wall shape templates
+- [x] Create `public/data/rmhbox/human-tetris/shapes.json` — wall shape templates
   - Each entry follows:
     ```ts
     {
@@ -1787,21 +1787,21 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
       description: string;                            // e.g., "L-shape", "T-shape", "Line"
     }
     ```
-  - [ ] Include at least 40 shape templates
-  - [ ] Shapes range from 3-hole (easy, small groups) to 8-hole (hard, large groups)
-  - [ ] All shapes must have connected holes (orthogonally adjacent — no floating islands)
-  - [ ] Shapes centered within the 8×6 grid (not touching edges to leave room for dead zones)
-  - [ ] Include variety: lines, L-shapes, T-shapes, squares, zigzags, crosses
-  - [ ] Difficulty balanced: ≥15 easy, ≥15 medium, ≥10 hard
+  - [x] Include at least 40 shape templates
+  - [x] Shapes range from 3-hole (easy, small groups) to 8-hole (hard, large groups)
+  - [x] All shapes must have connected holes (orthogonally adjacent — no floating islands)
+  - [x] Shapes centered within the 8×6 grid (not touching edges to leave room for dead zones)
+  - [x] Include variety: lines, L-shapes, T-shapes, squares, zigzags, crosses
+  - [x] Difficulty balanced: ≥15 easy, ≥15 medium, ≥10 hard
   **Verification:** Parse JSON; validate all entries; confirm connectivity (flood-fill each shape); confirm ≥40 templates.
 
 ---
 
 ### 7.4.4 Define Zod Validation Schemas
 
-- [ ] Create `lib/rmhbox/human-tetris/schemas.ts`
+- [x] Create `lib/rmhbox/human-tetris/schemas.ts`
 
-- [ ] Define `HTMoveSchema`:
+- [x] Define `HTMoveSchema`:
   ```ts
   const HTMoveSchema = z.object({
     direction: z.enum(['up', 'down', 'left', 'right']),
@@ -1813,9 +1813,9 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 
 ### 7.4.5 Create Data Loader and Shape Generator
 
-- [ ] Create `lib/rmhbox/human-tetris/shape-generator.ts`
-  - [ ] Export `loadShapeTemplates(): ShapeTemplate[]` — reads and parses `shapes.json`, caches as singleton
-  - [ ] Export `selectShapeForWave(templates: ShapeTemplate[], waveNumber: number, playerCount: number, usedIds: Set<string>): WallShape`:
+- [x] Create `lib/rmhbox/human-tetris/shape-generator.ts`
+  - [x] Export `loadShapeTemplates(): ShapeTemplate[]` — reads and parses `shapes.json`, caches as singleton
+  - [x] Export `selectShapeForWave(templates: ShapeTemplate[], waveNumber: number, playerCount: number, usedIds: Set<string>): WallShape`:
     - Determine `requiredPlayers` based on wave difficulty:
       - Waves 1–3 (easy): `requiredPlayers = playerCount` (all must fill holes)
       - Waves 4–8 (medium/hard): `requiredPlayers = playerCount - floor(playerCount × HT_EXCLUSION_RATIO)`
@@ -1823,11 +1823,11 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
     - If no exact match: scale a template (add/remove holes) to match required count via connected expansion/contraction
     - Exclude used templates
     - Return `WallShape` with holes, requiredPlayers, and deadZones
-  - [ ] Export `generateDeadZones(gridCols: number, gridRows: number, holes: GridPosition[], extraPlayers: number): GridPosition[]`:
+  - [x] Export `generateDeadZones(gridCols: number, gridRows: number, holes: GridPosition[], extraPlayers: number): GridPosition[]`:
     - Place dead zones: corners first, then edges
     - Count: `extraPlayers + HT_DEAD_ZONE_MIN_COUNT` (minimum 2, typically `totalPlayers - requiredPlayers + 2`)
     - Dead zones must NOT overlap with hole positions
-  - [ ] Export `validateConnectedness(holes: GridPosition[]): boolean`:
+  - [x] Export `validateConnectedness(holes: GridPosition[]): boolean`:
     - Flood-fill from first hole; confirm all holes reachable
   **Verification:** Unit test: 6 players, wave 1 (easy) → 6 holes. Wave 5 (medium) → 5 holes (6 - floor(6 × 0.2) = 5), 1 player + 2 dead zones. All shapes connected. Dead zones don't overlap holes.
 
@@ -1835,22 +1835,22 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 
 ### 7.4.6 Implement Server Handler
 
-- [ ] Create `server/rmhbox/minigames/human-tetris.ts`
+- [x] Create `server/rmhbox/minigames/human-tetris.ts`
 
 #### 7.4.6.1 Type Definitions
 
-- [ ] Define `HTPhase` type:
+- [x] Define `HTPhase` type:
   ```ts
   type HTPhase = 'WALL_PREVIEW' | 'POSITIONING' | 'WALL_IMPACT' | 'WAVE_RESULTS' | 'GAME_OVER';
   ```
   **Verification:** Type has exactly 5 values.
 
-- [ ] Define `GridPosition` type:
+- [x] Define `GridPosition` type:
   ```ts
   type GridPosition = { col: number; row: number };
   ```
 
-- [ ] Define `WallShape` type:
+- [x] Define `WallShape` type:
   ```ts
   type WallShape = {
     holes: GridPosition[];
@@ -1860,7 +1860,7 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
   };
   ```
 
-- [ ] Define `WaveResult` type:
+- [x] Define `WaveResult` type:
   ```ts
   type WaveResult = {
     waveNumber: number;
@@ -1873,7 +1873,7 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
   };
   ```
 
-- [ ] Define `HumanTetrisState` type:
+- [x] Define `HumanTetrisState` type:
   ```ts
   type HumanTetrisState = {
     currentWave: number;
@@ -1894,21 +1894,21 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 
 #### 7.4.6.2 Class: `HumanTetrisGame extends BaseMinigame`
 
-- [ ] Constructor: call `super(context)`; load shape templates
+- [x] Constructor: call `super(context)`; load shape templates
   **Verification:** Instantiate class; confirm no errors.
 
 #### 7.4.6.3 State Initialization (`start()`)
 
-- [ ] Initialize `playerScores` with 0 for all players
-- [ ] Initialize `playerPositions` — random starting positions on the grid (no overlaps)
-- [ ] Set `currentWave = 0`, `totalWaves = HT_TOTAL_WAVES`
-- [ ] Set `consecutiveSuccesses = 0`, `waveResults = []`
-- [ ] Call `startNextWave()`
+- [x] Initialize `playerScores` with 0 for all players
+- [x] Initialize `playerPositions` — random starting positions on the grid (no overlaps)
+- [x] Set `currentWave = 0`, `totalWaves = HT_TOTAL_WAVES`
+- [x] Set `consecutiveSuccesses = 0`, `waveResults = []`
+- [x] Call `startNextWave()`
   **Verification:** All players placed. No overlapping starting positions.
 
 #### 7.4.6.4 Wave Lifecycle
 
-- [ ] `startNextWave()`:
+- [x] `startNextWave()`:
   - Increment `currentWave`
   - If `currentWave > totalWaves`, call `endGame()`; return
   - Select shape via `selectShapeForWave()` based on wave number, player count
@@ -1924,13 +1924,13 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
   - Schedule `startPositioning()` after `HT_WALL_PREVIEW_SECONDS`
   **Verification:** Shape generated. Event emitted with correct duration.
 
-- [ ] `startPositioning()`:
+- [x] `startPositioning()`:
   - Set `phase = 'POSITIONING'`
   - Determine positioning duration based on wave difficulty
   - Schedule `wallImpact()` after positioning duration
   **Verification:** Phase transitions. Timer runs.
 
-- [ ] `wallImpact()`:
+- [x] `wallImpact()`:
   - Stop timer
   - Set `phase = 'WALL_IMPACT'`
   - Evaluate each player's position:
@@ -1947,7 +1947,7 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
   - Call `computeWaveScore()`
   **Verification:** Unit test: 5 players, 4 holes, 2 dead zones → all in correct positions → success. 1 player on regular cell → hit → partial.
 
-- [ ] `computeWaveScore()`:
+- [x] `computeWaveScore()`:
   - If `success`:
     - Each player: `+HT_SUCCESS_POINTS` (100)
     - If time remaining ≥ 2s: `+HT_PERFECT_WAVE_BONUS` (50) per player
@@ -1970,24 +1970,24 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 
 #### 7.4.6.5 Input Handling — `HT_MOVE`
 
-- [ ] Validate phase is `'POSITIONING'`; reject if not
-- [ ] Parse through `HTMoveSchema`
-- [ ] Apply rate limit: max `HT_MOVE_RATE_LIMIT` (6) moves/second per player; reject if exceeded
-- [ ] Compute new position based on direction:
+- [x] Validate phase is `'POSITIONING'`; reject if not
+- [x] Parse through `HTMoveSchema`
+- [x] Apply rate limit: max `HT_MOVE_RATE_LIMIT` (6) moves/second per player; reject if exceeded
+- [x] Compute new position based on direction:
   - `up`: `row - 1`; `down`: `row + 1`; `left`: `col - 1`; `right`: `col + 1`
-- [ ] Validate new position:
+- [x] Validate new position:
   - Within bounds: `0 <= col < HT_GRID_COLS`, `0 <= row < HT_GRID_ROWS`
   - Cell not occupied by another player UNLESS it's a dead zone (dead zones allow multiple occupants)
-- [ ] If valid:
+- [x] If valid:
   - Update `playerPositions[userId]` to new position
   - Emit `HT_PLAYER_MOVED` to ALL: `{ userId, userName, col, row }`
-- [ ] If invalid:
+- [x] If invalid:
   - Emit `HT_MOVE_REJECTED` to mover ONLY: `{ reason: 'OUT_OF_BOUNDS' | 'CELL_OCCUPIED' | 'RATE_LIMITED' }`
   **Verification:** Unit test: valid move → position updates, event broadcast. Out of bounds → rejected. Occupied non-dead-zone cell → rejected. Dead zone cell with another player → allowed.
 
 #### 7.4.6.6 `getStateForPlayer(userId)`
 
-- [ ] During POSITIONING:
+- [x] During POSITIONING:
   ```ts
   {
     waveNumber, totalWaves, phase, gridCols, gridRows,
@@ -2007,46 +2007,46 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 
 #### 7.4.6.7 `getStateForSpectator()`
 
-- [ ] Same as player view (minimal masking — cooperative game)
+- [x] Same as player view (minimal masking — cooperative game)
   **Verification:** Spectator sees everything players see.
 
 #### 7.4.6.8 Join-in-Progress Handling
 
-- [ ] Policy: `spectate_only`
-- [ ] Wall shapes pre-generated for current player count
-- [ ] JIP → spectator
+- [x] Policy: `spectate_only`
+- [x] Wall shapes pre-generated for current player count
+- [x] JIP → spectator
   **Verification:** JIP → spectator.
 
 #### 7.4.6.9 Reconnection Handling (`handlePlayerReconnect(userId)`)
 
-- [ ] Send current wall shape, all player positions, dead zones, timer
-- [ ] Avatar position preserved (wherever they were)
-- [ ] Can immediately start moving
+- [x] Send current wall shape, all player positions, dead zones, timer
+- [x] Avatar position preserved (wherever they were)
+- [x] Can immediately start moving
   **Verification:** Position preserved. Can move immediately.
 
 #### 7.4.6.10 Disconnect Handling (`handlePlayerDisconnect(userId)`)
 
-- [ ] Avatar stays in last position (frozen)
-- [ ] May cause wave failure if needed in a hole
-- [ ] If remaining players < `minPlayers` (4), force-end
+- [x] Avatar stays in last position (frozen)
+- [x] May cause wave failure if needed in a hole
+- [x] If remaining players < `minPlayers` (4), force-end
   **Verification:** Frozen avatar. Force-end below min.
 
 #### 7.4.6.11 `computeResults()` and Awards
 
-- [ ] Final rankings by `playerScores` (descending)
-- [ ] Compute awards:
-  - [ ] **Perfect Team** — all 8 waves successful (team award, given to all); icon: `trophy`
-  - [ ] **Dead Zone Expert** — successfully hid in dead zones the most times; icon: `ghost`
-  - [ ] **Shape Filler** — was in a hole cell correctly the most times; icon: `puzzle`
-  - [ ] **Wall Magnet** — got hit by the wall the most times; icon: `zap`
-  - [ ] **Speed Mover** — reached correct position with the most time remaining (averaged); icon: `rabbit`
-- [ ] Return `MinigameResults`
+- [x] Final rankings by `playerScores` (descending)
+- [x] Compute awards:
+  - [x] **Perfect Team** — all 8 waves successful (team award, given to all); icon: `trophy`
+  - [x] **Dead Zone Expert** — successfully hid in dead zones the most times; icon: `ghost`
+  - [x] **Shape Filler** — was in a hole cell correctly the most times; icon: `puzzle`
+  - [x] **Wall Magnet** — got hit by the wall the most times; icon: `zap`
+  - [x] **Speed Mover** — reached correct position with the most time remaining (averaged); icon: `rabbit`
+- [x] Return `MinigameResults`
   **Verification:** Each award triggers correctly.
 
 #### 7.4.6.12 `buildGameLog()`
 
-- [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
-- [ ] Build `GameLog` conforming to core.md §13.3, including `gameSettings` per §12A.11
+- [x] Maintain an `actionLog: GameLogAction[]` array on the game instance
+- [x] Build `GameLog` conforming to core.md §13.3, including `gameSettings` per §12A.11
 
 **`initialState` (from minigames-3.md §4.16):**
 
@@ -2071,15 +2071,15 @@ interface HTInitialState {
 | `wave_result` | `{ wave: number; passed: boolean; teamScore: number; streak: number }` | After wave evaluation |
 | `game_end` | `{ wavesCompleted: number; totalWaves: number; finalScore: number; perfectWaves: number; longestStreak: number }` | Game over |
 
-- [ ] In `computeResults()`, build `GameLog` with `initialState`, full action log, and `finalResults`
-- [ ] Return `GameLog` from `buildGameLog()`
+- [x] In `computeResults()`, build `GameLog` with `initialState`, full action log, and `finalResults`
+- [x] Return `GameLog` from `buildGameLog()`
   **Verification:** Unit test: 8-wave game, verify 8 `wave_start` and 8 `wave_result` actions, `wave_impact` with player positions, `game_end` with streak data, `initialState` has arena config and wave parameters.
 
 ---
 
 ### 7.4.7 Register Game in Minigame Registry
 
-- [ ] Add entry to `lib/rmhbox/minigame-registry.ts`:
+- [x] Add entry to `lib/rmhbox/minigame-registry.ts`:
   ```ts
   {
     id: "human-tetris",
@@ -2099,14 +2099,14 @@ interface HTInitialState {
   ```
   **Verification:** Registry lookup correct.
 
-- [ ] Add server handler to `MINIGAME_SERVER_REGISTRY` in `server/rmhbox/minigame-server-registry.ts`:
+- [x] Add server handler to `MINIGAME_SERVER_REGISTRY` in `server/rmhbox/minigame-server-registry.ts`:
   ```ts
   import { HumanTetrisGame } from './minigames/human-tetris';
   MINIGAME_SERVER_REGISTRY.set('human-tetris', HumanTetrisGame);
   ```
   **Verification:** `MINIGAME_SERVER_REGISTRY.get('human-tetris')` returns `HumanTetrisGame` class.
 
-- [ ] Add lazy-loaded component to `MinigameRenderer` map:
+- [x] Add lazy-loaded component to `MinigameRenderer` map:
   ```ts
   'human-tetris': lazy(() => import('./minigames/human-tetris/HumanTetrisGame'))
   ```
@@ -2118,16 +2118,16 @@ interface HTInitialState {
 
 #### 7.4.8.1 `components/rmhbox/minigames/human-tetris/HumanTetrisGame.tsx`
 
-- [ ] Phase router — renders based on `phase`
-- [ ] Subscribe to all `HT_*` and `TIMER_TICK` events
-- [ ] Maintain local state: wave, phase, wall, positions, results, streak
-- [ ] Handle `HT_WAVE_START` → store wall shape, dead zones, show preview
-- [ ] Handle `HT_PLAYER_MOVED` → update position on grid
-- [ ] Handle `HT_MOVE_REJECTED` → show rejection feedback
-- [ ] Handle `HT_WALL_IMPACT` → trigger wall animation, show results
-- [ ] Handle `HT_WAVE_RESULTS` → display success/failure
-- [ ] Handle `HT_GAME_OVER` → show final results
-- [ ] Conditional rendering:
+- [x] Phase router — renders based on `phase`
+- [x] Subscribe to all `HT_*` and `TIMER_TICK` events
+- [x] Maintain local state: wave, phase, wall, positions, results, streak
+- [x] Handle `HT_WAVE_START` → store wall shape, dead zones, show preview
+- [x] Handle `HT_PLAYER_MOVED` → update position on grid
+- [x] Handle `HT_MOVE_REJECTED` → show rejection feedback
+- [x] Handle `HT_WALL_IMPACT` → trigger wall animation, show results
+- [x] Handle `HT_WAVE_RESULTS` → display success/failure
+- [x] Handle `HT_GAME_OVER` → show final results
+- [x] Conditional rendering:
   - `WALL_PREVIEW` → `<WallPreview />`
   - `POSITIONING` → `<WallCanvas />` + `<SwipeDetector />`
   - `WALL_IMPACT` → `<WallAnimation />`
@@ -2136,72 +2136,72 @@ interface HTInitialState {
 
 #### 7.4.8.2 `components/rmhbox/minigames/human-tetris/WallCanvas.tsx`
 
-- [ ] 8×6 grid renderer using CSS Grid or Canvas
-- [ ] Cell types with distinct visuals:
+- [x] 8×6 grid renderer using CSS Grid or Canvas
+- [x] Cell types with distinct visuals:
   - **Hole cells**: marked with distinctive color/pattern (transparent or highlighted border)
   - **Dead zones**: skull icon (💀) or different background
   - **Wall cells**: solid dark color
   - **Regular cells**: neutral background
-- [ ] Player avatars rendered on their cells (colored circle with initial)
-- [ ] Real-time position updates as players move
-- [ ] Visual indicators:
+- [x] Player avatars rendered on their cells (colored circle with initial)
+- [x] Real-time position updates as players move
+- [x] Visual indicators:
   - Filled hole: green highlight
   - Unfilled hole: pulsing/red highlight
   - Player on wrong cell: subtle warning indicator
-- [ ] Responsive sizing (cells scale with screen)
+- [x] Responsive sizing (cells scale with screen)
   **Verification:** Grid renders correctly. All cell types visually distinct. Positions update in real-time.
 
 #### 7.4.8.3 `components/rmhbox/minigames/human-tetris/GridCell.tsx`
 
-- [ ] Individual cell component with state-driven styling
-- [ ] States: `wall`, `hole` (empty), `hole-filled`, `dead-zone`, `regular`
-- [ ] Player avatar overlay when occupied
+- [x] Individual cell component with state-driven styling
+- [x] States: `wall`, `hole` (empty), `hole-filled`, `dead-zone`, `regular`
+- [x] Player avatar overlay when occupied
   **Verification:** All states render correctly.
 
 #### 7.4.8.4 `components/rmhbox/minigames/human-tetris/PlayerAvatar.tsx`
 
-- [ ] Small colored circle with player initial/name
-- [ ] Smooth CSS transition when moving between cells
-- [ ] "You" label for own avatar
-- [ ] Glow effect when in correct position (hole or dead zone)
+- [x] Small colored circle with player initial/name
+- [x] Smooth CSS transition when moving between cells
+- [x] "You" label for own avatar
+- [x] Glow effect when in correct position (hole or dead zone)
   **Verification:** Avatar moves smoothly. Own avatar identified.
 
 #### 7.4.8.5 `components/rmhbox/minigames/human-tetris/WallPreview.tsx`
 
-- [ ] Shows incoming wall shape before positioning begins
-- [ ] Required player count: "Fill 5 holes! (2 players must hide)"
-- [ ] Dead zone locations marked
-- [ ] Entrance animation (wall slides in from side)
+- [x] Shows incoming wall shape before positioning begins
+- [x] Required player count: "Fill 5 holes! (2 players must hide)"
+- [x] Dead zone locations marked
+- [x] Entrance animation (wall slides in from side)
   **Verification:** Shape displayed. Player count info correct.
 
 #### 7.4.8.6 `components/rmhbox/minigames/human-tetris/WallAnimation.tsx`
 
-- [ ] Wall "moves through" animation when timer expires
-- [ ] Safe players shown in green; hit players in red with impact effect
-- [ ] Brief dramatic pause before results
+- [x] Wall "moves through" animation when timer expires
+- [x] Safe players shown in green; hit players in red with impact effect
+- [x] Brief dramatic pause before results
   **Verification:** Animation plays. Hit/safe visuals correct.
 
 #### 7.4.8.7 `components/rmhbox/minigames/human-tetris/SwipeDetector.tsx`
 
-- [ ] Mobile swipe detection for movement (up/down/left/right)
-- [ ] Desktop arrow key listener
-- [ ] Rate-limited to `HT_MOVE_RATE_LIMIT` on client side (server also enforces)
-- [ ] Emits `rmhbox:game:input` with `{ action: "HT_MOVE", data: { direction } }`
-- [ ] Prevent page scroll during swipe
+- [x] Mobile swipe detection for movement (up/down/left/right)
+- [x] Desktop arrow key listener
+- [x] Rate-limited to `HT_MOVE_RATE_LIMIT` on client side (server also enforces)
+- [x] Emits `rmhbox:game:input` with `{ action: "HT_MOVE", data: { direction } }`
+- [x] Prevent page scroll during swipe
   **Verification:** Swipe detects direction. Keyboard arrows work. Rate limited.
 
 #### 7.4.8.8 `components/rmhbox/minigames/human-tetris/WaveResults.tsx`
 
-- [ ] Success/failure banner with Framer Motion animation
-- [ ] "Wave 5 Complete! ✅" or "Wave 5 Failed ❌"
-- [ ] Player-by-player results: in hole ✅, in dead zone ✅, hit by wall ❌
-- [ ] Team score for the wave
-- [ ] Streak counter: "🔥 4 in a row!"
+- [x] Success/failure banner with Framer Motion animation
+- [x] "Wave 5 Complete! ✅" or "Wave 5 Failed ❌"
+- [x] Player-by-player results: in hole ✅, in dead zone ✅, hit by wall ❌
+- [x] Team score for the wave
+- [x] Streak counter: "🔥 4 in a row!"
   **Verification:** All info displays. Streak counter accurate.
 
 #### 7.4.8.9 Sound Effects
 
-- [ ] Wire up sound effects using `playSound()` for each Human Tetris event:
+- [x] Wire up sound effects using `playSound()` for each Human Tetris event:
   - `HT_WAVE_START` → `playSound('swoosh')`
   - `HT_PLAYER_MOVED` (own) → `playSound('click')`
   - `HT_MOVE_REJECTED` → `playSound('buzzer')`
@@ -2212,40 +2212,40 @@ interface HTInitialState {
 
 #### 7.4.8.10 Zustand Store Integration
 
-- [ ] Read all player positions, wall shape, and dead zones from `publicState` (cooperative game — all positions visible)
-- [ ] Detect spectator mode → disable `SwipeDetector` / movement input
+- [x] Read all player positions, wall shape, and dead zones from `publicState` (cooperative game — all positions visible)
+- [x] Detect spectator mode → disable `SwipeDetector` / movement input
   **Verification:** All players see full board state. Spectators see full board but cannot send movement inputs.
 
 ---
 
 ### 7.4.9 Integration Testing
 
-- [ ] End-to-end test: 6 players → 8 waves
-  - [ ] Verify wave 1-3 (easy): all 6 must fill holes, positioning time = 8s
-  - [ ] Verify wave 4-6 (medium): 5 must fill holes, 1 must hide, positioning time = 6s
-  - [ ] Verify wave 7-8 (hard): 5 must fill holes, 1 must hide, positioning time = 4s
-  - [ ] Verify wall shapes are connected (no floating islands)
-  - [ ] Verify dead zones don't overlap with holes
-  - [ ] Verify collision: two players can't occupy same non-dead-zone cell
-  - [ ] Verify dead zones: multiple players CAN occupy same dead zone cell
-  - [ ] Verify scoring: success 100pts, partial proportional, hit -20, perfect wave +50, streak +200
+- [x] End-to-end test: 6 players → 8 waves
+  - [x] Verify wave 1-3 (easy): all 6 must fill holes, positioning time = 8s
+  - [x] Verify wave 4-6 (medium): 5 must fill holes, 1 must hide, positioning time = 6s
+  - [x] Verify wave 7-8 (hard): 5 must fill holes, 1 must hide, positioning time = 4s
+  - [x] Verify wall shapes are connected (no floating islands)
+  - [x] Verify dead zones don't overlap with holes
+  - [x] Verify collision: two players can't occupy same non-dead-zone cell
+  - [x] Verify dead zones: multiple players CAN occupy same dead zone cell
+  - [x] Verify scoring: success 100pts, partial proportional, hit -20, perfect wave +50, streak +200
   **Verification:** All assertions pass.
 
-- [ ] Movement test:
-  - [ ] Move up from row 0 → rejected (out of bounds)
-  - [ ] Move right from col 7 → rejected (out of bounds)
-  - [ ] Move into occupied regular cell → rejected
-  - [ ] Move into dead zone with another player → accepted
-  - [ ] 7 moves in 1 second → 7th rejected (rate limit)
+- [x] Movement test:
+  - [x] Move up from row 0 → rejected (out of bounds)
+  - [x] Move right from col 7 → rejected (out of bounds)
+  - [x] Move into occupied regular cell → rejected
+  - [x] Move into dead zone with another player → accepted
+  - [x] 7 moves in 1 second → 7th rejected (rate limit)
   **Verification:** Boundary, collision, and rate limit all work.
 
-- [ ] Shape scaling test: 4 players → shapes have 4 holes (easy) or 3 holes + 1 dead zone (medium). 10 players → shapes scale up.
+- [x] Shape scaling test: 4 players → shapes have 4 holes (easy) or 3 holes + 1 dead zone (medium). 10 players → shapes scale up.
   **Verification:** Shapes match player count.
 
-- [ ] Disconnect test: Player disconnects → avatar frozen → may cause wave failure if in wrong position
+- [x] Disconnect test: Player disconnects → avatar frozen → may cause wave failure if in wrong position
   **Verification:** Frozen avatar persists. Wave evaluation handles it.
 
-- [ ] Streak test: 8 consecutive successes → `HT_STREAK_BONUS` awarded to all
+- [x] Streak test: 8 consecutive successes → `HT_STREAK_BONUS` awarded to all
   **Verification:** Streak bonus triggers.
 
 ### 7.4.10 Game Settings Integration (§12A)
@@ -2254,12 +2254,12 @@ Integrate host-configurable settings using the §12A system.
 
 #### Registry Entry
 
-- [ ] Export `HUMAN_TETRIS_SETTINGS: GameSettingsSchema` in `lib/rmhbox/minigame-registry.ts` with 4 entries:
+- [x] Export `HUMAN_TETRIS_SETTINGS: GameSettingsSchema` in `lib/rmhbox/minigame-registry.ts` with 4 entries:
   - `totalWaves` (integer, default `8`, min 4, max 12, step 1)
   - `wallPreviewDuration` (integer, default `5`, min 2, max 10, step 1)
   - `startingPositionTime` (integer, default `8`, min 4, max 15, step 1)
   - `enableDeadZones` (boolean, default `false`)
-- [ ] Attach `settingsSchema: HUMAN_TETRIS_SETTINGS` to the `human-tetris` `MinigameDefinition`.
+- [x] Attach `settingsSchema: HUMAN_TETRIS_SETTINGS` to the `human-tetris` `MinigameDefinition`.
   **Verification:** Registry lookup returns definition with `settingsSchema` containing 4 entries.
 
 #### Handler `getSetting()` Integration
@@ -2273,7 +2273,7 @@ Replace hardcoded constants with `this.getSetting()` calls in the Human Tetris h
 | `HT_STARTING_POSITION_TIME` | `startingPositionTime` | `this.getSetting('startingPositionTime', HT_STARTING_POSITION_TIME)` |
 | `HT_ENABLE_DEAD_ZONES` | `enableDeadZones` | `this.getSetting('enableDeadZones', HT_ENABLE_DEAD_ZONES)` |
 
-- [ ] **Boolean setting logic:** When `enableDeadZones` is `true`, the handler spawns dead-zone grid cells that eliminate players on contact. Default is `false` — enabling this is an advanced difficulty modifier.
+- [x] **Boolean setting logic:** When `enableDeadZones` is `true`, the handler spawns dead-zone grid cells that eliminate players on contact. Default is `false` — enabling this is an advanced difficulty modifier.
   **Verification:** Each constant usage replaced. Handler respects custom settings passed via `MinigameContext.gameSettings`.
 
 ### 7.4.11 History Display Configuration
@@ -2296,11 +2296,11 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 
 #### 7.4.11.3 Tests
 
-- [ ] Verify `getHistoryDisplay('human-tetris')` returns a valid config
-- [ ] Verify searchable fields extract player names from a mock game log
-- [ ] Verify filterable fields include linesCleared (range) and blocksPlaced (range)
-- [ ] Verify `getSummary()` returns a meaningful string for a mock game log
-- [ ] Verify `DetailComponent` renders without errors when given a valid game log
+- [x] Verify `getHistoryDisplay('human-tetris')` returns a valid config
+- [x] Verify searchable fields extract player names from a mock game log
+- [x] Verify filterable fields include linesCleared (range) and blocksPlaced (range)
+- [x] Verify `getSummary()` returns a meaningful string for a mock game log
+- [x] Verify `DetailComponent` renders without errors when given a valid game log
 
 ---
 
@@ -2316,9 +2316,9 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 
 ### 7.5.2 Random Selection Test
 
-- [ ] Phase 7 games appear in random selection pool
-- [ ] Player count filtering: 2-player lobby excludes `"human-keyboard"` (min 3), `"human-tetris"` (min 4)
-- [ ] 3-player lobby excludes `"human-tetris"` (min 4) but includes `"human-keyboard"`
+- [x] Phase 7 games appear in random selection pool
+- [x] Player count filtering: 2-player lobby excludes `"human-keyboard"` (min 3), `"human-tetris"` (min 4)
+- [x] 3-player lobby excludes `"human-tetris"` (min 4) but includes `"human-keyboard"`
   **Verification:** Filtering by min players works correctly.
 
 ### 7.5.3 Lifecycle Integration Test
@@ -2338,9 +2338,9 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 
 ### 7.5.5 Concurrent Lobby Test
 
-- [ ] Two lobbies: one playing Cursor Curling, one playing Human Tetris simultaneously
-- [ ] No state contamination
-- [ ] Physics simulation in Cursor Curling doesn't affect other lobby's game
+- [x] Two lobbies: one playing Cursor Curling, one playing Human Tetris simultaneously
+- [x] No state contamination
+- [x] Physics simulation in Cursor Curling doesn't affect other lobby's game
   **Verification:** Independent lobbies. Physics isolated.
 
 ### 7.5.6 Spectator Mode Test
@@ -2350,24 +2350,24 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
   - HK: see all key assignments, real-time stats, which player's turn it is
   - CC: see thrower's aim/power, all stone positions, sweep activity
   - HT: same as player (cooperative, minimal masking)
-- [ ] Spectators cannot send game inputs
+- [x] Spectators cannot send game inputs
   **Verification:** Spectator states correct. No input accepted.
 
 ### 7.5.7 Physics Simulation Stress Test (Cursor Curling)
 
-- [ ] 8 players throwing stones (8 stones on rink per end)
-- [ ] Multiple simultaneous collisions handled correctly
-- [ ] Simulation loop terminates when all stones stop (no infinite loops)
-- [ ] Position broadcasts at ~30Hz without dropping frames
-- [ ] Server CPU usage remains reasonable during simulation
+- [x] 8 players throwing stones (8 stones on rink per end)
+- [x] Multiple simultaneous collisions handled correctly
+- [x] Simulation loop terminates when all stones stop (no infinite loops)
+- [x] Position broadcasts at ~30Hz without dropping frames
+- [x] Server CPU usage remains reasonable during simulation
   **Verification:** Physics handles 8 stones. No infinite loops. Acceptable performance.
 
 ### 7.5.8 Phase 5 + Phase 7 Coexistence Test
 
-- [ ] Verify Phase 5 games (Rhyme Time, Undercover Agent, Category Crash, Wiki-Race) still function correctly after Phase 7 deployment
-- [ ] Play a mixed session: Phase 5 game → Phase 7 game → Phase 5 game
-- [ ] Verify registry correctly contains all 8 games (Phase 5 + Phase 7)
-- [ ] Verify no naming collisions between Phase 5 and Phase 7 constants, event types, or component paths
+- [x] Verify Phase 5 games (Rhyme Time, Undercover Agent, Category Crash, Wiki-Race) still function correctly after Phase 7 deployment
+- [x] Play a mixed session: Phase 5 game → Phase 7 game → Phase 5 game
+- [x] Verify registry correctly contains all 8 games (Phase 5 + Phase 7)
+- [x] Verify no naming collisions between Phase 5 and Phase 7 constants, event types, or component paths
   **Verification:** No regressions. All 8 games playable in any order.
 
 ### 7.5.9 Game History Integration Test
@@ -2407,8 +2407,8 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 - [ ] **MINIGAME_SERVER_REGISTRY completeness:** verify all 4 Phase 7 handlers registered
   - [ ] `MINIGAME_SERVER_REGISTRY.get('sequence-sam')` → `SequenceSamGame`
   - [ ] `MINIGAME_SERVER_REGISTRY.get('human-keyboard')` → `HumanKeyboardGame`
-  - [ ] `MINIGAME_SERVER_REGISTRY.get('cursor-curling')` → `CursorCurlingGame`
-  - [ ] `MINIGAME_SERVER_REGISTRY.get('human-tetris')` → `HumanTetrisGame`
+  - [x] `MINIGAME_SERVER_REGISTRY.get('cursor-curling')` → `CursorCurlingGame`
+  - [x] `MINIGAME_SERVER_REGISTRY.get('human-tetris')` → `HumanTetrisGame`
   **Verification:** All 4 handlers instantiate and implement `BaseMinigame` interface.
 
 > **Note on parallel development:** Phase 7 can be implemented fully in parallel with Phase 6 and Phase 8 after Phase 5 is complete. The coexistence test above (7.5.8) validates Phase 7 against Phase 5. If other phases are also complete, run an expanded coexistence test covering all deployed phases to verify the full registry (up to 16 games).
@@ -2421,11 +2421,11 @@ All tests go in `testing/rmhbox/phase-7/game-settings.test.ts` (or integrated in
 
 ### 7.6.1 Schema Completeness Tests
 
-- [ ] Each of the 4 exported settings arrays has the expected number of entries (SS: 5, HK: 4, CU: 4, HT: 4).
-- [ ] Every setting has `key`, `type`, `label`, `default` defined.
-- [ ] Integer settings have `min`, `max`, `step` defined.
-- [ ] Boolean settings have no `min`/`max`/`step`.
-- [ ] Default values fall within declared constraints.
+- [x] Each of the 4 exported settings arrays has the expected number of entries (SS: 5, HK: 4, CU: 4, HT: 4).
+- [x] Every setting has `key`, `type`, `label`, `default` defined.
+- [x] Integer settings have `min`, `max`, `step` defined.
+- [x] Boolean settings have no `min`/`max`/`step`.
+- [x] Default values fall within declared constraints.
 
 ### 7.6.2 Sequence Sam Settings Tests
 
@@ -2477,6 +2477,6 @@ All tests go in `testing/rmhbox/phase-7/game-settings.test.ts` (or integrated in
 
 ### 7.6.6 getSetting() Fallback Tests
 
-- [ ] Calling `getSetting('maxRounds', SS_MAX_ROUNDS)` with empty `gameSettings` returns the fallback.
-- [ ] Calling `getSetting('maxRounds', SS_MAX_ROUNDS)` with `gameSettings: { maxRounds: 7 }` returns `7`.
-- [ ] Calling `getSetting('unknownKey', 42)` returns `42`.
+- [x] Calling `getSetting('maxRounds', SS_MAX_ROUNDS)` with empty `gameSettings` returns the fallback.
+- [x] Calling `getSetting('maxRounds', SS_MAX_ROUNDS)` with `gameSettings: { maxRounds: 7 }` returns `7`.
+- [x] Calling `getSetting('unknownKey', 42)` returns `42`.
