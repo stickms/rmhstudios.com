@@ -141,7 +141,7 @@ export function MatchResults({ onBack, isHost, lobbyId }: { onBack: () => void; 
     };
 
     return (
-        <div className="absolute inset-0 z-[70] flex items-center justify-center bg-slice-bg/90 backdrop-blur-md p-4">
+        <div className="absolute inset-0 z-70 flex items-center justify-center bg-slice-bg/90 backdrop-blur-md p-4">
             <div className="w-full max-w-xl bg-slice-bg shadow-[20px_20px_60px_var(--slice-shadow-dark),-20px_-20px_60px_var(--slice-shadow-light)] rounded-[2rem] border-none overflow-hidden">
                 {/* Header */}
                 <div className="text-center py-6 px-4">

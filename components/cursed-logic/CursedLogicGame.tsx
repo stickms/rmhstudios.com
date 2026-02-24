@@ -694,13 +694,13 @@ export function CursedLogicGame() {
           <div className="flex justify-center gap-8">
             <div>
               <div className="text-cyan-400 text-xs">You</div>
-              <div className="font-mono font-bold text-white min-w-[4rem]">
+              <div className="font-mono font-bold text-white min-w-16">
                 {revealStep >= 1 && pendingPlayerAction ? ACTION_LABELS[pendingPlayerAction] : '—'}
               </div>
             </div>
             <div>
               <div className="text-amber-400/90 text-xs">Protocol</div>
-              <div className="font-mono font-bold text-white min-w-[4rem]">
+              <div className="font-mono font-bold text-white min-w-16">
                 {revealStep >= 0 && pendingProtocolAction ? ACTION_LABELS[pendingProtocolAction] : '—'}
               </div>
             </div>

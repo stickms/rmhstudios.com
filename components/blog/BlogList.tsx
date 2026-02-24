@@ -185,7 +185,7 @@ export function BlogList({ initialPosts }: BlogListProps) {
              <input
                 type="text"
                 placeholder="Search titles, descriptions, tags..."
-                className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-10 text-white placeholder-white/30 focus:outline-none focus:border-[var(--neon-pink)] focus:ring-1 focus:ring-[var(--neon-pink)] transition-all"
+                className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-10 text-white placeholder-white/30 focus:outline-none focus:border-(--neon-pink) focus:ring-1 focus:ring-(--neon-pink) transition-all"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
              />
@@ -205,12 +205,12 @@ export function BlogList({ initialPosts }: BlogListProps) {
            
            {/* Tags */}
            <div className="flex flex-wrap gap-2 items-center flex-1">
-              <div className="flex items-center gap-2 text-sm text-[var(--neon-cyan)] mr-2 whitespace-nowrap">
+              <div className="flex items-center gap-2 text-sm text-(--neon-cyan) mr-2 whitespace-nowrap">
                 <Filter className="w-4 h-4" /> Filters:
               </div>
               <button
                 onClick={() => setSelectedTag(null)}
-                className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${!selectedTag ? "bg-[var(--neon-pink)] text-white" : "bg-white/10 text-white/50 hover:bg-white/20"}`}
+                className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${!selectedTag ? "bg-(--neon-pink) text-white" : "bg-white/10 text-white/50 hover:bg-white/20"}`}
               >
                 All
               </button>
@@ -218,7 +218,7 @@ export function BlogList({ initialPosts }: BlogListProps) {
                 <button
                     key={tag}
                     onClick={() => setSelectedTag(tag === selectedTag ? null : tag)}
-                    className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${selectedTag === tag ? "bg-[var(--neon-pink)] text-white" : "bg-white/10 text-white/50 hover:bg-white/20"}`}
+                    className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${selectedTag === tag ? "bg-(--neon-pink) text-white" : "bg-white/10 text-white/50 hover:bg-white/20"}`}
                 >
                     {tag}
                 </button>
@@ -226,7 +226,7 @@ export function BlogList({ initialPosts }: BlogListProps) {
               {!showAllTags && allTags.length > 5 && (
                   <button
                     onClick={() => setShowAllTags(true)}
-                    className="text-xs text-[var(--neon-cyan)] hover:text-white transition-colors ml-1 font-mono"
+                    className="text-xs text-(--neon-cyan) hover:text-white transition-colors ml-1 font-mono"
                   >
                     (+ {allTags.length - 5} more)
                   </button>
@@ -234,7 +234,7 @@ export function BlogList({ initialPosts }: BlogListProps) {
               {showAllTags && allTags.length > 5 && (
                   <button
                     onClick={() => setShowAllTags(false)}
-                    className="text-xs text-[var(--neon-cyan)] hover:text-white transition-colors ml-1 font-mono"
+                    className="text-xs text-(--neon-cyan) hover:text-white transition-colors ml-1 font-mono"
                   >
                     (show less)
                   </button>
@@ -246,7 +246,7 @@ export function BlogList({ initialPosts }: BlogListProps) {
               {hasActiveFilters && (
                 <button
                   onClick={clearAllFilters}
-                  className="text-xs text-[var(--neon-pink)] hover:text-white transition-colors font-mono flex items-center gap-1"
+                  className="text-xs text-(--neon-pink) hover:text-white transition-colors font-mono flex items-center gap-1"
                 >
                   <X className="w-3 h-3" /> Clear all
                 </button>
@@ -255,7 +255,7 @@ export function BlogList({ initialPosts }: BlogListProps) {
               <select 
                 value={sortMode}
                 onChange={(e) => setSortMode(e.target.value as "newest" | "oldest" | "az" | "za")}
-                className="bg-black/40 border border-white/10 rounded-lg py-1 px-3 text-sm text-white focus:outline-none focus:border-[var(--neon-pink)]"
+                className="bg-black/40 border border-white/10 rounded-lg py-1 px-3 text-sm text-white focus:outline-none focus:border-(--neon-pink)"
               >
                 <option value="newest">Newest</option>
                 <option value="oldest">Oldest</option>
@@ -285,7 +285,7 @@ export function BlogList({ initialPosts }: BlogListProps) {
               exit={{ opacity: 0, scale: 0.9 }}
               transition={{ duration: 0.3 }}
             >
-               <div className="bg-black/40 border border-white/10 rounded-2xl overflow-hidden hover:border-[var(--neon-cyan)] transition-colors duration-300 h-full flex flex-col group relative">
+               <div className="bg-black/40 border border-white/10 rounded-2xl overflow-hidden hover:border-(--neon-cyan) transition-colors duration-300 h-full flex flex-col group relative">
                   <Link href={`/blog/${post.slug}`} className="absolute inset-0 z-0" />
                   
                   {/* Share Button (Above Link Z-Index) */}
@@ -296,11 +296,11 @@ export function BlogList({ initialPosts }: BlogListProps) {
                     <div className="absolute inset-0 flex items-center justify-center text-white/10 font-mono text-xs p-4 text-center">
                         {post.title}
                     </div>
-                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+                     <div className="absolute inset-0 bg-linear-to-t from-black/80 to-transparent" />
                   </div>
 
                   <div className="p-5 flex flex-col flex-1 relative pointer-events-none">
-                    <div className="flex items-center gap-2 text-[var(--neon-pink)] text-xs font-mono mb-2">
+                    <div className="flex items-center gap-2 text-(--neon-pink) text-xs font-mono mb-2">
                         <Calendar className="w-3 h-3" />
                         {post.date}
                     </div>
@@ -324,7 +324,7 @@ export function BlogList({ initialPosts }: BlogListProps) {
                         {post.description}
                     </p>
                     
-                    <div className="mt-auto flex items-center text-[var(--neon-cyan)] text-xs font-bold uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="mt-auto flex items-center text-(--neon-cyan) text-xs font-bold uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
                         Read Entry &rarr;
                     </div>
                   </div>
@@ -341,7 +341,7 @@ export function BlogList({ initialPosts }: BlogListProps) {
                 )}
                 <button 
                     onClick={clearAllFilters}
-                    className="mt-4 text-[var(--neon-pink)] hover:underline"
+                    className="mt-4 text-(--neon-pink) hover:underline"
                 >
                     Clear All Filters
                 </button>
@@ -388,7 +388,7 @@ export function BlogList({ initialPosts }: BlogListProps) {
                   onClick={() => goToPage(page as number)}
                   className={`w-9 h-9 rounded-lg text-sm font-bold transition-all ${
                     safePage === page
-                      ? "bg-[var(--neon-pink)] text-white shadow-lg shadow-[var(--neon-pink)]/25"
+                      ? "bg-(--neon-pink) text-white shadow-lg shadow-(--neon-pink)/25"
                       : "text-white/50 hover:text-white hover:bg-white/10"
                   }`}
                 >

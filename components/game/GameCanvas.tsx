@@ -1281,7 +1281,7 @@ export function GameCanvas() {
                     
                     {/* Synchronized Loading Overlay */}
                     {status === 'PLAYING' && isLoadingSong && (
-                        <div className="absolute inset-0 z-[60] bg-slice-bg/90 backdrop-blur-md flex flex-col items-center justify-center p-10">
+                        <div className="absolute inset-0 z-60 bg-slice-bg/90 backdrop-blur-md flex flex-col items-center justify-center p-10">
                             <div className="w-full max-w-md space-y-4">
                                 <div className="flex justify-between items-end mb-1">
                                     <span className="text-sm font-black text-slice-text-muted uppercase tracking-widest">
@@ -1291,7 +1291,7 @@ export function GameCanvas() {
                                 </div>
                                 <div className="h-4 bg-slice-bg rounded-full shadow-[inset_4px_4px_8px_var(--slice-shadow-dark),inset_-4px_-4px_8px_var(--slice-shadow-light)] p-1">
                                     <div 
-                                        className="h-full bg-gradient-to-r from-blue-500 to-pink-500 rounded-full transition-all duration-300 shadow-[0_0_15px_rgba(59,130,246,0.5)]"
+                                        className="h-full bg-linear-to-r from-blue-500 to-pink-500 rounded-full transition-all duration-300 shadow-[0_0_15px_rgba(59,130,246,0.5)]"
                                         style={{ width: `${loadingProgress}%` }}
                                     />
                                 </div>
@@ -1341,7 +1341,7 @@ export function GameCanvas() {
 
                     {/* Countdown Overlay */}
                     {status === 'PLAYING' && countdown > 0 && (
-                        <div className="absolute inset-0 z-[70] flex items-center justify-center pointer-events-none">
+                        <div className="absolute inset-0 z-70 flex items-center justify-center pointer-events-none">
                             <div key={countdown} className="animate-in zoom-in-150 fade-in duration-500 ease-out">
                                 <span className="text-[12rem] font-black italic text-slice-text soft-glow-text drop-shadow-[0_10px_30px_rgba(0,0,0,0.2)]">
                                     {countdown}
@@ -1383,7 +1383,7 @@ export function GameCanvas() {
 
                     {/* No input device warning */}
                     {!hasKeyboard && !hasGamepad && !hasTouch && (
-                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[90] max-w-md w-[90%] animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-90 max-w-md w-[90%] animate-in fade-in slide-in-from-bottom-4 duration-500">
                             <div className="bg-amber-50 border-2 border-amber-400 rounded-2xl px-5 py-4 shadow-lg flex items-start gap-3">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-amber-500 shrink-0 mt-0.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                                 <div>
@@ -1396,7 +1396,7 @@ export function GameCanvas() {
 
                     {/* Gamepad connected indicator (brief) */}
                     {hasGamepad && !hasKeyboard && !hasTouch && status === 'MENU' && (
-                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[90] animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-90 animate-in fade-in slide-in-from-bottom-4 duration-500">
                             <div className="bg-green-50 border-2 border-green-400 rounded-2xl px-5 py-3 shadow-lg flex items-center gap-3">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-green-600 shrink-0"><path d="M6 12h4m-2-2v4m5-3h.01M17 10h.01"/><path d="M2 15.24V7.5A2.5 2.5 0 0 1 4.5 5h15A2.5 2.5 0 0 1 22 7.5v7.74a2.5 2.5 0 0 1-1.26 2.17l-5.5 3.17a2.5 2.5 0 0 1-2.49 0H11.24a2.5 2.5 0 0 1-2.49 0l-5.5-3.17A2.5 2.5 0 0 1 2 15.24Z"/></svg>
                                 <p className="text-sm font-black text-green-800 uppercase tracking-wide">Controller Connected</p>

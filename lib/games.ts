@@ -28,6 +28,23 @@ export interface GameInfo {
  */
 export const games: GameInfo[] = [
     {
+        id: 'rmhbox',
+        title: 'RMHbox',
+        description: 'Party game madness! Join a lobby and play 16+ minigames with friends.',
+        longDescription:
+            'Create or join a lobby, vote on minigames, and compete with friends in real-time. Features 16+ unique minigames across word, trivia, action, and creative categories with live leaderboards and match history.',
+        href: '/rmhbox',
+        status: 'Playable',
+        cta: 'Play Now',
+        isSteam: false,
+        gradient: 'from-purple-500 to-pink-500',
+        iconName: 'Gamepad2',
+        color: 'from-purple-500/20 to-pink-500/20 hover:border-purple-500/50',
+        tags: ['Multiplayer', 'Party', 'Minigames'],
+        imagePath: '/images/games/rmhbox.png',
+        authGate: true,
+    },
+    {
         id: 'signal-forge',
         title: 'Signal Forge',
         description: 'A rhythmic roguelike deckbuilder where you manipulate waveforms to stabilize the signal.',
@@ -106,7 +123,7 @@ export const games: GameInfo[] = [
         status: 'Playable',
         cta: 'Play Now',
         isSteam: false,
-        gradient: 'from-[var(--neon-purple)] to-[var(--neon-pink)]',
+        gradient: 'from-(--neon-purple) to-(--neon-pink)',
         iconName: 'Brain',
         color: 'from-cyan-500/20 to-blue-600/20 hover:border-cyan-500/50',
         tags: ['Deckbuilder', 'Roguelike', 'Strategy'],
@@ -123,7 +140,7 @@ export const games: GameInfo[] = [
         status: 'Playable Demo',
         cta: 'Play Now',
         isSteam: false,
-        gradient: 'from-[var(--neon-cyan)] to-[var(--neon-blue)]',
+        gradient: 'from-(--neon-cyan) to-(--neon-blue)',
         iconName: 'Music',
         color: 'from-rose-500/20 to-purple-600/20 hover:border-rose-500/50',
         tags: ['Arcade', 'Rhythm', 'Action'],

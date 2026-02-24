@@ -8,14 +8,14 @@ import { games } from "@/lib/games";
 
 export function AboutSection() {
   return (
-    <section id="about" className="relative min-h-screen flex flex-col pt-20 overflow-hidden bg-gradient-to-b from-black via-[var(--neon-cyan)]/5 to-[var(--neon-cyan)]/20">
+    <section id="about" className="relative min-h-screen flex flex-col pt-20 overflow-hidden bg-linear-to-b from-black via-(--neon-cyan)/5 to-(--neon-cyan)/20">
       {/* Subtle Divider */}
-      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-[var(--neon-cyan)]/30 to-transparent opacity-50" />
+      <div className="absolute top-0 left-0 w-full h-px bg-linear-to-r from-transparent via-(--neon-cyan)/30 to-transparent opacity-50" />
 
       {/* Background Ambience */}
       <div className="absolute inset-0 pointer-events-none" />
 
-      <div className="flex-grow flex flex-col justify-center px-4 py-20 relative z-10">
+      <div className="grow flex flex-col justify-center px-4 py-20 relative z-10">
         {/* Background orbs */}
         <PulsatingOrb
           className="absolute top-1/4 right-0 translate-x-1/2"

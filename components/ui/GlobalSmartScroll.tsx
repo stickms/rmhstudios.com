@@ -145,7 +145,7 @@ export function GlobalSmartScroll() {
             </AnimatePresence>
 
             <motion.div
-              className={`w-12 h-12 rounded-full border-2 border-white/30 flex items-center justify-center transition-all duration-300 bg-black/20 backdrop-blur-sm group-hover:border-[var(--neon-cyan)] group-hover:shadow-[0_0_15px_var(--neon-cyan)]`}
+              className={`w-12 h-12 rounded-full border-2 border-white/30 flex items-center justify-center transition-all duration-300 bg-black/20 backdrop-blur-sm group-hover:border-(--neon-cyan) group-hover:shadow-[0_0_15px_var(--neon-cyan)]`}
               animate={
                 mode === "top"
                   ? { y: [0, -5, 0] }

@@ -107,7 +107,7 @@ export function GameCard({ game }: GameCardProps) {
             <Link href={game.href}>
                 <motion.div
                     ref={cardRef}
-                    className="relative aspect-[2/3] rounded-lg overflow-hidden border border-slate-800 bg-slate-900 shadow-xl transition-all duration-300 group-hover:border-slate-500/50 group-hover:shadow-[0_0_30px_rgba(255,255,255,0.05)]"
+                    className="relative aspect-2/3 rounded-lg overflow-hidden border border-slate-800 bg-slate-900 shadow-xl transition-all duration-300 group-hover:border-slate-500/50 group-hover:shadow-[0_0_30px_rgba(255,255,255,0.05)]"
                     style={{
                         rotateX,
                         rotateY,
@@ -126,7 +126,7 @@ export function GameCard({ game }: GameCardProps) {
                             sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw"
                         />
                     ) : (
-                        <div className={cn("w-full h-full flex items-center justify-center bg-gradient-to-br", game.gradient)}>
+                        <div className={cn("w-full h-full flex items-center justify-center bg-linear-to-br", game.gradient)}>
                             <span className="text-2xl font-bold text-white text-center px-4">{game.title}</span>
                         </div>
                     )}

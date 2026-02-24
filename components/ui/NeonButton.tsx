@@ -49,13 +49,13 @@ export function NeonButton({
 
       {/* Background gradient that appears on hover - rainbow with white */}
       <motion.span
-        className="absolute inset-0 bg-gradient-to-r from-white/20 via-white/10 to-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full"
+        className="absolute inset-0 bg-linear-to-r from-white/20 via-white/10 to-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full"
         initial={{ opacity: 0 }}
       />
 
       {/* Shine effect */}
       <motion.span
-        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -skew-x-12"
+        className="absolute inset-0 bg-linear-to-r from-transparent via-white/30 to-transparent -skew-x-12"
         initial={{ x: "-100%" }}
         whileHover={{ x: "100%" }}
         transition={{ duration: 0.6, ease: "easeInOut" }}

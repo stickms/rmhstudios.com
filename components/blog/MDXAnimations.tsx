@@ -69,7 +69,7 @@ export const AnimatedLi = ({ className, ...props }: any) => (
 export const AnimatedBlockquote = ({ className, ...props }: any) => (
   <motion.blockquote 
     {...animationProps}
-    className={cn("border-l-4 border-[var(--neon-pink)] pl-6 py-2 my-8 text-xl font-light italic text-white/90 bg-white/5 rounded-r-lg", className)} 
+    className={cn("border-l-4 border-(--neon-pink) pl-6 py-2 my-8 text-xl font-light italic text-white/90 bg-white/5 rounded-r-lg", className)} 
     {...props} 
   />
 );

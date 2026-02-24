@@ -172,7 +172,7 @@ export function LaundryUI({
                 ) : (
                   <Button
                     onClick={() => onStart(session.data?.user.name || (session.data?.user as any).username || 'User')}
-                    className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-black font-bold px-8 py-3 rounded-lg flex items-center gap-2 text-lg mx-auto"
+                    className="bg-linear-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-black font-bold px-8 py-3 rounded-lg flex items-center gap-2 text-lg mx-auto"
                   >
                     <Play className="w-5 h-5" />
                     Start Game

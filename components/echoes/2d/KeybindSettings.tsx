@@ -50,7 +50,7 @@ export default function KeybindSettings({ open, onClose }: KeybindSettingsProps)
         <AnimatePresence>
             {open && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                    className="absolute inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm"
+                    className="absolute inset-0 z-60 flex items-center justify-center bg-black/80 backdrop-blur-sm"
                     onClick={e => { if (e.target === e.currentTarget) { setListening(null); onClose(); } }}>
                     <motion.div initial={{ scale: 0.95, y: 10 }} animate={{ scale: 1, y: 0 }}
                         className="bg-[#0d0d1a] border border-white/10 rounded-2xl p-6 w-80">

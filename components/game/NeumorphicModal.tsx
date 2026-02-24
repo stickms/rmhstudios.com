@@ -31,11 +31,11 @@ export function NeumorphicModal({
         <DialogPrimitive.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
             <DialogPrimitive.Portal>
                 <DialogPrimitive.Overlay 
-                    className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" 
+                    className="fixed inset-0 z-100 bg-black/40 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" 
                 />
                 <DialogPrimitive.Content
                     className={cn(
-                        "fixed left-[50%] top-[50%] z-[101] w-[90%] max-w-md translate-x-[-50%] translate-y-[-50%] p-8 outline-none",
+                        "fixed left-[50%] top-[50%] z-101 w-[90%] max-w-md translate-x-[-50%] translate-y-[-50%] p-8 outline-none",
                         "bg-slice-bg rounded-[2.5rem]",
                         "shadow-[20px_20px_60px_var(--slice-shadow-dark),-20px_-20px_60px_var(--slice-shadow-light)]",
                         "border border-slice-shadow-light/20",

@@ -7,10 +7,12 @@ REPO_DIR="/home/rmhstudios/rmhstudios.com"
 APP_WEB="rmhstudios-web"
 APP_SOCKET="rmhstudios-socket"
 APP_COLLAB="rmhstudios-collab"
+APP_RMHBOX="rmhstudios-rmhbox"
 
 PORT_WEB=7005
 PORT_SOCKET=7001
 PORT_COLLAB=7002
+PORT_RMHBOX=7676
 
 LOCKFILE="/tmp/autodeploy.lock"
 
@@ -44,9 +46,11 @@ stop_apps() {
     "$PM2_BIN" stop   "$APP_WEB"    2>/dev/null || true
     "$PM2_BIN" stop   "$APP_SOCKET" 2>/dev/null || true
     "$PM2_BIN" stop   "$APP_COLLAB" 2>/dev/null || true
+    "$PM2_BIN" stop   "$APP_RMHBOX" 2>/dev/null || true
     "$PM2_BIN" delete "$APP_WEB"    2>/dev/null || true
     "$PM2_BIN" delete "$APP_SOCKET" 2>/dev/null || true
     "$PM2_BIN" delete "$APP_COLLAB" 2>/dev/null || true
+    "$PM2_BIN" delete "$APP_RMHBOX" 2>/dev/null || true
 }
 
 start_apps() {
@@ -70,6 +74,13 @@ start_apps() {
         --restart-delay=3000 \
         --max-restarts=5 \
         -- dist-server/server/collab-server.js
+
+    log "Starting RMHbox WebSocket server on port $PORT_RMHBOX..."
+    "$PM2_BIN" start "$NODE_BIN" \
+        --name "$APP_RMHBOX" \
+        --restart-delay=3000 \
+        --max-restarts=5 \
+        -- dist-server/server/rmhbox/index.js
 
     "$PM2_BIN" save
 }
@@ -105,6 +116,7 @@ log "Building..."
 [ -d ".next" ] || { log "ERROR: .next missing after build."; exit 1; }
 [ -f "dist-server/server/socket-server.js" ] || { log "ERROR: socket-server.js missing after build."; exit 1; }
 [ -f "dist-server/server/collab-server.js" ] || { log "ERROR: collab-server.js missing after build."; exit 1; }
+[ -f "dist-server/server/rmhbox/index.js" ] || { log "ERROR: rmhbox/index.js missing after build."; exit 1; }
 
 log "Build successful. Swapping processes..."
 stop_apps
@@ -114,6 +126,7 @@ ok=0
 check_port "$PORT_WEB"    || ok=1
 check_port "$PORT_SOCKET" || ok=1
 check_port "$PORT_COLLAB" || ok=1
+check_port "$PORT_RMHBOX" || ok=1
 
 if [ $ok -ne 0 ]; then
     log "--- PM2 logs ($APP_WEB) ---"
@@ -122,7 +135,9 @@ if [ $ok -ne 0 ]; then
     "$PM2_BIN" logs "$APP_SOCKET" --lines 50 --nostream
     log "--- PM2 logs ($APP_COLLAB) ---"
     "$PM2_BIN" logs "$APP_COLLAB" --lines 50 --nostream
+    log "--- PM2 logs ($APP_RMHBOX) ---"
+    "$PM2_BIN" logs "$APP_RMHBOX" --lines 50 --nostream
     exit 1
 fi
 
-log "=== Deployment complete (web: $PORT_WEB, socket: $PORT_SOCKET, collab: $PORT_COLLAB) ==="
+log "=== Deployment complete (web: $PORT_WEB, socket: $PORT_SOCKET, collab: $PORT_COLLAB, rmhbox: $PORT_RMHBOX) ==="

@@ -106,7 +106,7 @@ function ProximityLetter({
       </motion.span>
       {/* Single soft glow layer instead of 3 heavy blur layers */}
       <motion.span
-        className="absolute inset-0 rainbow-text blur-[4px]"
+        className="absolute inset-0 rainbow-text blur-xs"
         style={{
           opacity: springTrailOpacity,
           x: 2,

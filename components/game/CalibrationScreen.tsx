@@ -116,7 +116,7 @@ export function CalibrationScreen({ onBack }: { onBack: () => void }) {
     };
 
     return (
-        <div className="absolute inset-0 z-[60] flex items-center justify-center bg-slice-bg p-4">
+        <div className="absolute inset-0 z-60 flex items-center justify-center bg-slice-bg p-4">
              <Card className="w-full max-w-md bg-slice-bg text-slice-text shadow-[20px_20px_60px_var(--slice-shadow-dark),-20px_-20px_60px_var(--slice-shadow-light)] rounded-[2rem] border-none">
                 <CardHeader>
                     <CardTitle className="text-2xl font-black text-center text-slice-text-darker">AUDIO CALIBRATION</CardTitle>
