@@ -102,7 +102,7 @@ export class UndercoverAgentMinigame extends BaseMinigame {
     // Enter TEAM_SETUP phase — players can rearrange teams before the game begins
     this.state.phase = UndercoverAgentPhase.TEAM_SETUP;
 
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'UA_TEAM_SETUP',
       teams: {
         red: this.getPublicTeamState('red'),
@@ -128,7 +128,7 @@ export class UndercoverAgentMinigame extends BaseMinigame {
       word: t.word,
     }));
 
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'UA_SETUP',
       grid: gridWords,
       teams: {
@@ -153,7 +153,7 @@ export class UndercoverAgentMinigame extends BaseMinigame {
       this.state.turnNumber = 1;
       this.logAction('turn_start', { turnNumber: 1, team: this.state.currentTeam });
 
-      this.context.broadcastToLobby('rmhbox:game:action', {
+      this.broadcastGameAction({
         type: 'UA_PHASE_CHANGE',
         phase: UndercoverAgentPhase.CLUE,
         currentTeam: this.state.currentTeam,
@@ -534,7 +534,7 @@ export class UndercoverAgentMinigame extends BaseMinigame {
 
   /** Broadcast updated team state to all players. */
   private broadcastTeamUpdate(): void {
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'UA_TEAMS_UPDATED',
       teams: {
         red: this.getPublicTeamState('red'),
@@ -631,7 +631,7 @@ export class UndercoverAgentMinigame extends BaseMinigame {
     // Transition to GUESS phase (no turn timer — unlimited time by default)
     this.state.phase = UndercoverAgentPhase.GUESS;
 
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'UA_CLUE',
       word: clueWord,
       number,
@@ -693,7 +693,7 @@ export class UndercoverAgentMinigame extends BaseMinigame {
     for (const [pos, userSet] of this.highlights) {
       if (userSet.size > 0) counts[pos] = userSet.size;
     }
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'UA_HIGHLIGHTS',
       counts,
     });
@@ -802,7 +802,7 @@ export class UndercoverAgentMinigame extends BaseMinigame {
     });
 
     // Broadcast the reveal to all players
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'UA_TILE_REVEALED',
       position,
       word: tile.word,
@@ -846,7 +846,7 @@ export class UndercoverAgentMinigame extends BaseMinigame {
 
       // Continue guessing if guesses remain
       if (this.state.guessesRemaining > 0) {
-        this.context.broadcastToLobby('rmhbox:game:action', {
+        this.broadcastGameAction({
           type: 'UA_GUESS_RESULT',
           result: 'correct',
           guessesRemaining: this.state.guessesRemaining,
@@ -956,7 +956,7 @@ export class UndercoverAgentMinigame extends BaseMinigame {
     this.state.currentClue = null;
     this.state.guessesRemaining = 0;
 
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'UA_TURN_END',
       teamId: this.state.currentTeam,
       reason,
@@ -986,16 +986,17 @@ export class UndercoverAgentMinigame extends BaseMinigame {
       turnNumber: this.state.turnNumber,
     });
 
-    // Check if all players on the current team are disconnected
+    // If the current team is fully disconnected, auto-skip their turn.
+    // The game-coordinator's grace timer handles the "all players disconnected" case.
     if (this.isTeamFullyDisconnected(this.state.currentTeam)) {
-      const otherTeam = this.state.currentTeam === 'red' ? 'blue' : 'red';
-      this.endGameWithWinner(otherTeam, 'team_disconnected');
+      this.state.consecutivePasses++;
+      this.endCurrentTurn('team_disconnected');
       return;
     }
 
     // No turn timer — unlimited time by default
 
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'UA_PHASE_CHANGE',
       phase: UndercoverAgentPhase.CLUE,
       currentTeam: this.state.currentTeam,
@@ -1041,7 +1042,7 @@ export class UndercoverAgentMinigame extends BaseMinigame {
     if (this.state.phase === UndercoverAgentPhase.CLUE) {
       // Spymaster timed out → auto-pass
       this.state.consecutivePasses++;
-      this.context.broadcastToLobby('rmhbox:game:action', {
+      this.broadcastGameAction({
         type: 'UA_TIMEOUT',
         phase: 'CLUE',
         teamId: this.state.currentTeam,
@@ -1049,7 +1050,7 @@ export class UndercoverAgentMinigame extends BaseMinigame {
       this.endCurrentTurn('spymaster_timeout');
     } else if (this.state.phase === UndercoverAgentPhase.GUESS) {
       // Operatives timed out → end turn
-      this.context.broadcastToLobby('rmhbox:game:action', {
+      this.broadcastGameAction({
         type: 'UA_TIMEOUT',
         phase: 'GUESS',
         teamId: this.state.currentTeam,
@@ -1093,7 +1094,7 @@ export class UndercoverAgentMinigame extends BaseMinigame {
       revealedBy: t.revealedBy,
     }));
 
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'UA_BOARD_REVEAL',
       winner,
       reason,
@@ -1124,7 +1125,7 @@ export class UndercoverAgentMinigame extends BaseMinigame {
 
     this.state.phase = UndercoverAgentPhase.GAME_OVER;
 
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'UA_GAME_OVER',
       winner: this.state.winner,
       reason: this.state.winReason,
@@ -1187,6 +1188,7 @@ export class UndercoverAgentMinigame extends BaseMinigame {
       hostId: this.context.getHostId(),
       isTeamValid: this.isTeamCompositionValid(),
       highlightCounts: this.getHighlightCounts(),
+      actionLog: this.state.actionLog,
     };
   }
 
@@ -1218,6 +1220,7 @@ export class UndercoverAgentMinigame extends BaseMinigame {
       hostId: this.context.getHostId(),
       isTeamValid: this.isTeamCompositionValid(),
       highlightCounts: this.getHighlightCounts(),
+      actionLog: this.state.actionLog,
     };
   }
 
@@ -1258,11 +1261,24 @@ export class UndercoverAgentMinigame extends BaseMinigame {
       return;
     }
 
-    // Check if all players on the team are disconnected
-    if (this.isTeamFullyDisconnected(teamId)) {
-      const otherTeam = teamId === 'red' ? 'blue' : 'red';
-      this.endGameWithWinner(otherTeam, 'team_disconnected');
-      return;
+    // If the disconnected player's team is the current team and is now fully
+    // disconnected, auto-end their turn instead of ending the game.  The
+    // game-coordinator's grace timer handles the "all players disconnected" case.
+    if (this.isTeamFullyDisconnected(teamId) && teamId === this.state.currentTeam) {
+      if (
+        this.state.phase === UndercoverAgentPhase.CLUE ||
+        this.state.phase === UndercoverAgentPhase.GUESS
+      ) {
+        logger.info({
+          event: 'undercover_agent:team_disconnected_auto_pass',
+          lobbyId: this.context.lobbyId,
+          teamId,
+          turnNumber: this.state.turnNumber,
+        });
+        this.state.consecutivePasses++;
+        this.endCurrentTurn('team_disconnected');
+        return;
+      }
     }
 
     // Spymaster disconnect during CLUE phase → auto-pass after timeout
@@ -1518,6 +1534,14 @@ export class UndercoverAgentMinigame extends BaseMinigame {
   // ─── Action Log / Game Log ──────────────────────────────────
 
   private actionSeq = 0;
+
+  /** Broadcast a game action to all players, always including the full actionLog */
+  private broadcastGameAction(data: Record<string, unknown>): void {
+    this.context.broadcastToLobby('rmhbox:game:action', {
+      ...data,
+      actionLog: this.state.actionLog,
+    });
+  }
 
   private logAction(type: string, payload: Record<string, unknown>): void {
     this.state.actionLog.push({
