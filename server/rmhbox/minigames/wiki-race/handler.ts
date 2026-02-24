@@ -43,6 +43,7 @@ import {
 import { logger } from '../../logger';
 import {
   WikiRacePhase,
+  type ActionLogEntry,
   type WRPlayerState,
   type WikiRaceState,
   type RateLimitEntry,
@@ -915,7 +916,7 @@ export class WikiRaceMinigame extends BaseMinigame {
     }));
 
     // Build player timeout events for those who didn't finish
-    const timeoutActions: Array<Record<string, unknown>> = [];
+    const timeoutActions: ActionLogEntry[] = [];
     for (const [userId, ps] of this.state.playerStates) {
       if (!ps.hasFinished) {
         timeoutActions.push({
@@ -934,7 +935,7 @@ export class WikiRaceMinigame extends BaseMinigame {
 
     // Add timeout actions to the log
     for (const ta of timeoutActions) {
-      this.state.actionLog.push(ta as any);
+      this.state.actionLog.push(ta);
     }
 
     return {
