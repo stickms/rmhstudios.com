@@ -88,16 +88,16 @@ describe('Game Settings Integration (§6.6)', () => {
   });
 
   describe('Handler getSetting() Integration', () => {
-    it('FOF handler should respect custom totalQuestions setting', () => {
+    it('FF handler should respect custom totalQuestions setting', () => {
       const ctx = createMockContext();
       ctx.context.gameSettings = { totalQuestions: 4 };
       const game = new FactOrFrictionGame(ctx.context);
       game.start();
 
-      // Find the FOF_QUESTION broadcast — totalQuestions should be 4
+      // Find the FF_QUESTION broadcast — totalQuestions should be 4
       const questionEvent = ctx.broadcastLog.find(
         (e) => e.event === 'rmhbox:game:action' &&
-          (e.data as Record<string, unknown>).type === 'FOF_QUESTION',
+          (e.data as Record<string, unknown>).type === 'FF_QUESTION',
       );
       expect(questionEvent).toBeDefined();
       const data = questionEvent!.data as Record<string, unknown>;

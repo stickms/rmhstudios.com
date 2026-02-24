@@ -17,15 +17,15 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { FactOrFrictionGame } from '../../../server/rmhbox/minigames/fact-or-friction';
 import {
-  FOF_QUESTION_REVEAL_SECONDS,
-  FOF_ANSWER_DURATION_SECONDS,
-  FOF_ANSWER_REVEAL_SECONDS,
-  FOF_PAUSE_SECONDS,
-  FOF_POT_START_VALUE,
-  FOF_POT_TICK_VALUE,
-  FOF_POT_TICK_INTERVAL_MS,
-  FOF_POT_MIN_VALUE,
-  FOF_SCORE_FLOOR,
+  FF_QUESTION_REVEAL_SECONDS,
+  FF_ANSWER_DURATION_SECONDS,
+  FF_ANSWER_REVEAL_SECONDS,
+  FF_PAUSE_SECONDS,
+  FF_POT_START_VALUE,
+  FF_POT_TICK_VALUE,
+  FF_POT_TICK_INTERVAL_MS,
+  FF_POT_MIN_VALUE,
+  FF_SCORE_FLOOR,
 } from '../../../lib/rmhbox/constants';
 import {
   MOCK_USERS,
@@ -46,13 +46,13 @@ function createGame(ctxData?: MockContextData) {
 
 /** Advance timers into ANSWER phase (past QUESTION_REVEAL) */
 function advanceToAnswerPhase() {
-  vi.advanceTimersByTime(FOF_QUESTION_REVEAL_SECONDS * 1000 + 50);
+  vi.advanceTimersByTime(FF_QUESTION_REVEAL_SECONDS * 1000 + 50);
 }
 
 /** Advance timers through ANSWER_REVEAL and PAUSE to next question */
 function advanceToNextQuestion() {
-  vi.advanceTimersByTime(FOF_ANSWER_REVEAL_SECONDS * 1000 + 50);
-  vi.advanceTimersByTime(FOF_PAUSE_SECONDS * 1000 + 50);
+  vi.advanceTimersByTime(FF_ANSWER_REVEAL_SECONDS * 1000 + 50);
+  vi.advanceTimersByTime(FF_PAUSE_SECONDS * 1000 + 50);
 }
 
 // ─── Tests ───────────────────────────────────────────────────────
@@ -73,13 +73,13 @@ describe('Fact or Friction Server Handler (§6.1)', () => {
       expect(context.players.size).toBe(4);
     });
 
-    it('should start and emit FOF_QUESTION on start()', () => {
+    it('should start and emit FF_QUESTION on start()', () => {
       const { game, broadcastLog } = createGame();
       game.start();
 
       const questionEvents = broadcastLog.filter(
         (e) => e.event === 'rmhbox:game:action' &&
-          (e.data as Record<string, unknown>).type === 'FOF_QUESTION',
+          (e.data as Record<string, unknown>).type === 'FF_QUESTION',
       );
       expect(questionEvents.length).toBe(1);
 
@@ -107,23 +107,23 @@ describe('Fact or Friction Server Handler (§6.1)', () => {
 
       const answerPhase = broadcastLog.find(
         (e) => e.event === 'rmhbox:game:action' &&
-          (e.data as Record<string, unknown>).type === 'FOF_ANSWER_PHASE',
+          (e.data as Record<string, unknown>).type === 'FF_ANSWER_PHASE',
       );
       expect(answerPhase).toBeDefined();
 
       game.cleanup();
     });
 
-    it('should emit FOF_POT_TICK during ANSWER phase', () => {
+    it('should emit FF_POT_TICK during ANSWER phase', () => {
       const { game, broadcastLog } = createGame();
       game.start();
       advanceToAnswerPhase();
       broadcastLog.length = 0;
 
       // Advance several pot tick intervals
-      vi.advanceTimersByTime(FOF_POT_TICK_INTERVAL_MS * 3);
+      vi.advanceTimersByTime(FF_POT_TICK_INTERVAL_MS * 3);
 
-      const potTicks = findActionBroadcasts(broadcastLog, 'FOF_POT_TICK');
+      const potTicks = findActionBroadcasts(broadcastLog, 'FF_POT_TICK');
       expect(potTicks.length).toBeGreaterThan(0);
 
       const lastTick = potTicks[potTicks.length - 1].data as Record<string, unknown>;
@@ -134,51 +134,51 @@ describe('Fact or Friction Server Handler (§6.1)', () => {
       game.cleanup();
     });
 
-    it('should drain pot by FOF_POT_TICK_VALUE each tick', () => {
+    it('should drain pot by FF_POT_TICK_VALUE each tick', () => {
       const { game, broadcastLog } = createGame();
       game.start();
       advanceToAnswerPhase();
       broadcastLog.length = 0;
 
-      vi.advanceTimersByTime(FOF_POT_TICK_INTERVAL_MS);
+      vi.advanceTimersByTime(FF_POT_TICK_INTERVAL_MS);
 
-      const potTicks = findActionBroadcasts(broadcastLog, 'FOF_POT_TICK');
+      const potTicks = findActionBroadcasts(broadcastLog, 'FF_POT_TICK');
       expect(potTicks.length).toBeGreaterThanOrEqual(1);
       const payload = potTicks[0].data.payload as Record<string, unknown>;
-      expect(payload.potValue).toBe(FOF_POT_START_VALUE - FOF_POT_TICK_VALUE);
+      expect(payload.potValue).toBe(FF_POT_START_VALUE - FF_POT_TICK_VALUE);
 
       game.cleanup();
     });
 
-    it('should not drain pot below FOF_POT_MIN_VALUE', () => {
+    it('should not drain pot below FF_POT_MIN_VALUE', () => {
       const { game, broadcastLog } = createGame();
       game.start();
       advanceToAnswerPhase();
       broadcastLog.length = 0;
 
       // Advance enough ticks to fully drain pot
-      const ticksToMin = Math.ceil((FOF_POT_START_VALUE - FOF_POT_MIN_VALUE) / FOF_POT_TICK_VALUE);
-      vi.advanceTimersByTime(FOF_POT_TICK_INTERVAL_MS * (ticksToMin + 5));
+      const ticksToMin = Math.ceil((FF_POT_START_VALUE - FF_POT_MIN_VALUE) / FF_POT_TICK_VALUE);
+      vi.advanceTimersByTime(FF_POT_TICK_INTERVAL_MS * (ticksToMin + 5));
 
-      const potTicks = findActionBroadcasts(broadcastLog, 'FOF_POT_TICK');
+      const potTicks = findActionBroadcasts(broadcastLog, 'FF_POT_TICK');
       const lastPayload = potTicks[potTicks.length - 1].data.payload as Record<string, unknown>;
-      expect(lastPayload.potValue).toBe(FOF_POT_MIN_VALUE);
+      expect(lastPayload.potValue).toBe(FF_POT_MIN_VALUE);
 
       game.cleanup();
     });
 
-    it('should emit FOF_ANSWER_REVEAL after ANSWER phase timer expires', () => {
+    it('should emit FF_ANSWER_REVEAL after ANSWER phase timer expires', () => {
       const { game, broadcastLog } = createGame();
       game.start();
       advanceToAnswerPhase();
       broadcastLog.length = 0;
 
       // Advance past answer duration
-      vi.advanceTimersByTime(FOF_ANSWER_DURATION_SECONDS * 1000 + 50);
+      vi.advanceTimersByTime(FF_ANSWER_DURATION_SECONDS * 1000 + 50);
 
       const reveal = broadcastLog.find(
         (e) => e.event === 'rmhbox:game:action' &&
-          (e.data as Record<string, unknown>).type === 'FOF_ANSWER_REVEAL',
+          (e.data as Record<string, unknown>).type === 'FF_ANSWER_REVEAL',
       );
       expect(reveal).toBeDefined();
 
@@ -200,7 +200,7 @@ describe('Fact or Friction Server Handler (§6.1)', () => {
 
       const locked = playerLog.find(
         (e) => e.userId === userId &&
-          (e.data as Record<string, unknown>).type === 'FOF_ANSWER_LOCKED',
+          (e.data as Record<string, unknown>).type === 'FF_ANSWER_LOCKED',
       );
       expect(locked).toBeDefined();
       const lockData = locked!.data as Record<string, unknown>;
@@ -219,7 +219,7 @@ describe('Fact or Friction Server Handler (§6.1)', () => {
 
       const rejected = playerLog.find(
         (e) => e.userId === userId &&
-          (e.data as Record<string, unknown>).type === 'FOF_ANSWER_REJECTED',
+          (e.data as Record<string, unknown>).type === 'FF_ANSWER_REJECTED',
       );
       expect(rejected).toBeDefined();
 
@@ -237,7 +237,7 @@ describe('Fact or Friction Server Handler (§6.1)', () => {
 
       const rejections = playerLog.filter(
         (e) => e.userId === userId &&
-          (e.data as Record<string, unknown>).type === 'FOF_ANSWER_REJECTED' &&
+          (e.data as Record<string, unknown>).type === 'FF_ANSWER_REJECTED' &&
           (e.data as Record<string, unknown>).reason === 'already_answered',
       );
       expect(rejections.length).toBe(1);
@@ -255,7 +255,7 @@ describe('Fact or Friction Server Handler (§6.1)', () => {
 
       const rejected = playerLog.find(
         (e) => e.userId === userId &&
-          (e.data as Record<string, unknown>).type === 'FOF_ANSWER_REJECTED' &&
+          (e.data as Record<string, unknown>).type === 'FF_ANSWER_REJECTED' &&
           (e.data as Record<string, unknown>).reason === 'invalid_input',
       );
       expect(rejected).toBeDefined();
@@ -273,16 +273,16 @@ describe('Fact or Friction Server Handler (§6.1)', () => {
 
       const locked = playerLog.find(
         (e) => e.userId === userId &&
-          (e.data as Record<string, unknown>).type === 'FOF_ANSWER_LOCKED',
+          (e.data as Record<string, unknown>).type === 'FF_ANSWER_LOCKED',
       );
       expect(locked).toBeDefined();
       const lockData = locked!.data as Record<string, unknown>;
       expect(lockData.selectedIndex).toBeNull();
 
-      // Should broadcast FOF_PLAYER_ANSWERED to all
+      // Should broadcast FF_PLAYER_ANSWERED to all
       const answered = broadcastLog.find(
         (e) => e.event === 'rmhbox:game:action' &&
-          (e.data as Record<string, unknown>).type === 'FOF_PLAYER_ANSWERED' &&
+          (e.data as Record<string, unknown>).type === 'FF_PLAYER_ANSWERED' &&
           (e.data as Record<string, unknown>).userId === userId,
       );
       expect(answered).toBeDefined();
@@ -305,14 +305,14 @@ describe('Fact or Friction Server Handler (§6.1)', () => {
       // Should immediately show ANSWER_REVEAL (no timer wait)
       const reveal = broadcastLog.find(
         (e) => e.event === 'rmhbox:game:action' &&
-          (e.data as Record<string, unknown>).type === 'FOF_ANSWER_REVEAL',
+          (e.data as Record<string, unknown>).type === 'FF_ANSWER_REVEAL',
       );
       expect(reveal).toBeDefined();
 
       game.cleanup();
     });
 
-    it('should broadcast FOF_PLAYER_ANSWERED without revealing the answer', () => {
+    it('should broadcast FF_PLAYER_ANSWERED without revealing the answer', () => {
       const { game, broadcastLog } = createGame();
       game.start();
       advanceToAnswerPhase();
@@ -322,7 +322,7 @@ describe('Fact or Friction Server Handler (§6.1)', () => {
 
       const answered = broadcastLog.find(
         (e) => e.event === 'rmhbox:game:action' &&
-          (e.data as Record<string, unknown>).type === 'FOF_PLAYER_ANSWERED',
+          (e.data as Record<string, unknown>).type === 'FF_PLAYER_ANSWERED',
       );
       expect(answered).toBeDefined();
 
@@ -430,7 +430,7 @@ describe('Fact or Friction Server Handler (§6.1)', () => {
 
       const scoreUpdate = broadcastLog.find(
         (e) => e.event === 'rmhbox:game:action' &&
-          (e.data as Record<string, unknown>).type === 'FOF_SCORE_UPDATE',
+          (e.data as Record<string, unknown>).type === 'FF_SCORE_UPDATE',
       );
       expect(scoreUpdate).toBeDefined();
 
@@ -457,8 +457,8 @@ describe('Fact or Friction Server Handler (§6.1)', () => {
       const scores = state.scores as Record<string, number>;
       const aliceScore = scores[MOCK_USERS.alice.userId];
 
-      // Score should never go below FOF_SCORE_FLOOR
-      expect(aliceScore).toBeGreaterThanOrEqual(FOF_SCORE_FLOOR);
+      // Score should never go below FF_SCORE_FLOOR
+      expect(aliceScore).toBeGreaterThanOrEqual(FF_SCORE_FLOOR);
 
       game.cleanup();
     });
@@ -540,7 +540,7 @@ describe('Fact or Friction Server Handler (§6.1)', () => {
       // Play through all questions by advancing through timeouts
       for (let i = 0; i < 8; i++) {
         advanceToAnswerPhase();
-        vi.advanceTimersByTime(FOF_ANSWER_DURATION_SECONDS * 1000 + 50);
+        vi.advanceTimersByTime(FF_ANSWER_DURATION_SECONDS * 1000 + 50);
         advanceToNextQuestion();
       }
 
@@ -566,7 +566,7 @@ describe('Fact or Friction Server Handler (§6.1)', () => {
       // Play through all questions
       for (let i = 0; i < 8; i++) {
         advanceToAnswerPhase();
-        vi.advanceTimersByTime(FOF_ANSWER_DURATION_SECONDS * 1000 + 50);
+        vi.advanceTimersByTime(FF_ANSWER_DURATION_SECONDS * 1000 + 50);
         advanceToNextQuestion();
       }
 
@@ -596,23 +596,23 @@ describe('Fact or Friction Server Handler (§6.1)', () => {
           // Some answer, rest timeout
           game.handleInput(MOCK_USERS.alice.userId, 'SUBMIT_ANSWER', { selectedIndex: 1 });
           game.handleInput(MOCK_USERS.bob.userId, 'PASS_QUESTION', {});
-          vi.advanceTimersByTime(FOF_ANSWER_DURATION_SECONDS * 1000 + 50);
+          vi.advanceTimersByTime(FF_ANSWER_DURATION_SECONDS * 1000 + 50);
         } else {
           // All timeout
-          vi.advanceTimersByTime(FOF_ANSWER_DURATION_SECONDS * 1000 + 50);
+          vi.advanceTimersByTime(FF_ANSWER_DURATION_SECONDS * 1000 + 50);
         }
 
         // Advance through ANSWER_REVEAL and PAUSE
-        vi.advanceTimersByTime(FOF_ANSWER_REVEAL_SECONDS * 1000 + FOF_PAUSE_SECONDS * 1000 + 200);
+        vi.advanceTimersByTime(FF_ANSWER_REVEAL_SECONDS * 1000 + FF_PAUSE_SECONDS * 1000 + 200);
       }
 
       expect(completedResults.length).toBe(1);
       expect(completedResults[0].rankings.length).toBe(4);
 
-      // Should have 8 FOF_QUESTION events
+      // Should have 8 FF_QUESTION events
       const questionEvents = broadcastLog.filter(
         (e) => e.event === 'rmhbox:game:action' &&
-          (e.data as Record<string, unknown>).type === 'FOF_QUESTION',
+          (e.data as Record<string, unknown>).type === 'FF_QUESTION',
       );
       expect(questionEvents.length).toBe(8);
     });

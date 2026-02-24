@@ -16,7 +16,7 @@ import {
   CC_TOTAL_ROUNDS, CC_INPUT_DURATION, CC_CATEGORIES_PER_ROUND,
   CC_PEER_REVIEW_DURATION, CC_CRASH_THRESHOLD_PERCENT,
   WR_NAV_DURATION, WR_EFFICIENCY_BONUS, WR_ONE_AWAY, WR_TOTAL_ROUNDS,
-  FOF_TOTAL_QUESTIONS, FOF_ANSWER_DURATION_SECONDS, FOF_POT_START_VALUE,
+  FF_TOTAL_QUESTIONS, FF_ANSWER_DURATION_SECONDS, FF_POT_START_VALUE,
   UE_ROTATIONS, UE_WRITE_TIMEOUT_SECONDS, UE_EDIT_TIMEOUT_SECONDS, UE_ACCUSATION_DURATION_SECONDS,
 } from './constants';
 
@@ -51,9 +51,9 @@ export const WIKI_RACE_SETTINGS: GameSettingsSchema = [
 ];
 
 export const FACT_OR_FRICTION_SETTINGS: GameSettingsSchema = [
-  { key: 'totalQuestions', type: 'integer', label: 'Number of Questions', description: 'How many trivia questions to play', default: FOF_TOTAL_QUESTIONS, min: 4, max: 12, step: 1 },
-  { key: 'answerDuration', type: 'integer', label: 'Answer Duration (seconds)', description: 'Time players have to lock in their answer each round', default: FOF_ANSWER_DURATION_SECONDS, min: 10, max: 45, step: 5 },
-  { key: 'potStartValue', type: 'integer', label: 'Starting Pot Value', description: 'Points in the pot at the start of each question', default: FOF_POT_START_VALUE, min: 500, max: 2000, step: 100 },
+  { key: 'totalQuestions', type: 'integer', label: 'Number of Questions', description: 'How many trivia questions to play', default: FF_TOTAL_QUESTIONS, min: 4, max: 12, step: 1 },
+  { key: 'answerDuration', type: 'integer', label: 'Answer Duration (seconds)', description: 'Time players have to lock in their answer each round', default: FF_ANSWER_DURATION_SECONDS, min: 10, max: 45, step: 5 },
+  { key: 'potStartValue', type: 'integer', label: 'Starting Pot Value', description: 'Points in the pot at the start of each question', default: FF_POT_START_VALUE, min: 500, max: 2000, step: 100 },
   { key: 'enableScoreFloor', type: 'boolean', label: 'Score Floor', description: 'Prevent players from going below -500 points', default: true },
   { key: 'difficulty', type: 'select', label: 'Difficulty', description: 'Difficulty of the trivia questions', default: 'mixed', options: ['easy', 'medium', 'hard', 'mixed'] },
 ];

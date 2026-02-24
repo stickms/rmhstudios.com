@@ -8,7 +8,7 @@ import type { TriviaQuestion } from '@/lib/rmhbox/fact-or-friction/schemas';
 
 // ─── Phase Type ──────────────────────────────────────────────────
 
-export type FOFPhase = 'QUESTION_REVEAL' | 'ANSWER' | 'ANSWER_REVEAL' | 'PAUSE';
+export type FFPhase = 'QUESTION_REVEAL' | 'ANSWER' | 'ANSWER_REVEAL' | 'PAUSE';
 
 // ─── Type Definitions ────────────────────────────────────────────
 
@@ -35,7 +35,7 @@ export interface FactOrFrictionState {
   questions: TriviaQuestion[];
   currentQuestionIndex: number;
   totalQuestions: number;
-  phase: FOFPhase;
+  phase: FFPhase;
   potValue: number;
   potStartedAt: number;
   playerAnswers: Map<string, PlayerAnswer>;
@@ -45,7 +45,7 @@ export interface FactOrFrictionState {
   phaseEndsAt: number;
 }
 
-export interface FOFPlayerQuestionResult {
+export interface FFPlayerQuestionResult {
   userId: string;
   userName: string;
   selectedIndex: number | null;

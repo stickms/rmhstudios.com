@@ -23,36 +23,36 @@ import { loadQuestions, selectQuestionsForGame } from '@/lib/rmhbox/fact-or-fric
 import { SubmitAnswerSchema, PassQuestionSchema } from '@/lib/rmhbox/fact-or-friction/schemas';
 import type { TriviaQuestion } from '@/lib/rmhbox/fact-or-friction/schemas';
 import {
-  FOF_TOTAL_QUESTIONS,
-  FOF_QUESTION_REVEAL_SECONDS,
-  FOF_ANSWER_DURATION_SECONDS,
-  FOF_ANSWER_REVEAL_SECONDS,
-  FOF_PAUSE_SECONDS,
-  FOF_POT_START_VALUE,
-  FOF_POT_TICK_VALUE,
-  FOF_POT_TICK_INTERVAL_MS,
-  FOF_POT_MIN_VALUE,
-  FOF_EASY_MULTIPLIER,
-  FOF_MEDIUM_MULTIPLIER,
-  FOF_HARD_MULTIPLIER,
-  FOF_SCORE_FLOOR,
+  FF_TOTAL_QUESTIONS,
+  FF_QUESTION_REVEAL_SECONDS,
+  FF_ANSWER_DURATION_SECONDS,
+  FF_ANSWER_REVEAL_SECONDS,
+  FF_PAUSE_SECONDS,
+  FF_POT_START_VALUE,
+  FF_POT_TICK_VALUE,
+  FF_POT_TICK_INTERVAL_MS,
+  FF_POT_MIN_VALUE,
+  FF_EASY_MULTIPLIER,
+  FF_MEDIUM_MULTIPLIER,
+  FF_HARD_MULTIPLIER,
+  FF_SCORE_FLOOR,
 } from '@/lib/rmhbox/constants';
 import { logger } from '../../logger';
 import type {
-  FOFPhase,
+  FFPhase,
   PlayerAnswer,
   QuestionResult,
   FactOrFrictionState,
-  FOFPlayerQuestionResult,
+  FFPlayerQuestionResult,
   GameLogAction,
 } from './types';
 
 // ─── Difficulty Multiplier Map ───────────────────────────────────
 
 const DIFFICULTY_MULTIPLIERS: Record<string, number> = {
-  easy: FOF_EASY_MULTIPLIER,
-  medium: FOF_MEDIUM_MULTIPLIER,
-  hard: FOF_HARD_MULTIPLIER,
+  easy: FF_EASY_MULTIPLIER,
+  medium: FF_MEDIUM_MULTIPLIER,
+  hard: FF_HARD_MULTIPLIER,
 };
 
 // ─── Fact or Friction Minigame ───────────────────────────────────
@@ -77,7 +77,7 @@ export class FactOrFrictionGame extends BaseMinigame {
     this.isRunning = true;
     this.startedAt = Date.now();
 
-    const totalQuestions = this.getSetting('totalQuestions', FOF_TOTAL_QUESTIONS);
+    const totalQuestions = this.getSetting('totalQuestions', FF_TOTAL_QUESTIONS);
     const questions = selectQuestionsForGame(this.questionPool, this.usedQuestionIds);
     const selected = questions.slice(0, totalQuestions);
     for (const q of selected) {
@@ -93,8 +93,8 @@ export class FactOrFrictionGame extends BaseMinigame {
       questions: selected,
       currentQuestionIndex: -1,
       totalQuestions: selected.length,
-      phase: 'QUESTION_REVEAL' as FOFPhase,
-      potValue: this.getSetting('potStartValue', FOF_POT_START_VALUE),
+      phase: 'QUESTION_REVEAL' as FFPhase,
+      potValue: this.getSetting('potStartValue', FF_POT_START_VALUE),
       potStartedAt: 0,
       playerAnswers: new Map(),
       playerScores,
@@ -120,7 +120,7 @@ export class FactOrFrictionGame extends BaseMinigame {
 
     this.state.currentQuestionIndex++;
     this.state.playerAnswers = new Map();
-    this.state.potValue = this.getSetting('potStartValue', FOF_POT_START_VALUE);
+    this.state.potValue = this.getSetting('potStartValue', FF_POT_START_VALUE);
     this.state.potStartedAt = 0;
 
     const question = this.state.questions[this.state.currentQuestionIndex];
@@ -132,7 +132,7 @@ export class FactOrFrictionGame extends BaseMinigame {
     this.state.phase = 'QUESTION_REVEAL';
     const now = Date.now();
     this.state.phaseStartedAt = now;
-    this.state.phaseEndsAt = now + FOF_QUESTION_REVEAL_SECONDS * 1000;
+    this.state.phaseEndsAt = now + FF_QUESTION_REVEAL_SECONDS * 1000;
 
     this.broadcastRound(this.state.currentQuestionIndex + 1, this.state.totalQuestions);
 
@@ -153,7 +153,7 @@ export class FactOrFrictionGame extends BaseMinigame {
 
     // Broadcast question WITHOUT correctIndex
     this.context.broadcastToLobby('rmhbox:game:action', {
-      type: 'FOF_QUESTION',
+      type: 'FF_QUESTION',
       questionIndex: this.state.currentQuestionIndex,
       totalQuestions: this.state.totalQuestions,
       question: {
@@ -164,18 +164,18 @@ export class FactOrFrictionGame extends BaseMinigame {
         difficulty: question.difficulty,
         source: question.source,
       },
-      duration: FOF_QUESTION_REVEAL_SECONDS,
+      duration: FF_QUESTION_REVEAL_SECONDS,
     });
 
-    this.startPhaseTimer(FOF_QUESTION_REVEAL_SECONDS);
+    this.startPhaseTimer(FF_QUESTION_REVEAL_SECONDS);
 
-    this.setTimeout(() => this.startAnswerPhase(), FOF_QUESTION_REVEAL_SECONDS * 1000);
+    this.setTimeout(() => this.startAnswerPhase(), FF_QUESTION_REVEAL_SECONDS * 1000);
   }
 
   private startAnswerPhase(): void {
     if (!this.isRunning) return;
 
-    const answerDuration = this.getSetting('answerDuration', FOF_ANSWER_DURATION_SECONDS);
+    const answerDuration = this.getSetting('answerDuration', FF_ANSWER_DURATION_SECONDS);
     this.state.phase = 'ANSWER';
     const now = Date.now();
     this.state.phaseStartedAt = now;
@@ -191,7 +191,7 @@ export class FactOrFrictionGame extends BaseMinigame {
     });
 
     this.context.broadcastToLobby('rmhbox:game:action', {
-      type: 'FOF_ANSWER_PHASE',
+      type: 'FF_ANSWER_PHASE',
       duration: answerDuration,
       potValue: this.state.potValue,
     });
@@ -202,14 +202,14 @@ export class FactOrFrictionGame extends BaseMinigame {
     this.potInterval = this.setInterval(() => {
       if (this.state.phase !== 'ANSWER') return;
       this.state.potValue = Math.max(
-        this.state.potValue - FOF_POT_TICK_VALUE,
-        FOF_POT_MIN_VALUE,
+        this.state.potValue - FF_POT_TICK_VALUE,
+        FF_POT_MIN_VALUE,
       );
       this.context.broadcastAction({
-        type: 'FOF_POT_TICK',
+        type: 'FF_POT_TICK',
         payload: { potValue: this.state.potValue },
       });
-    }, FOF_POT_TICK_INTERVAL_MS);
+    }, FF_POT_TICK_INTERVAL_MS);
 
     this.setTimeout(() => this.endAnswerPhase(), answerDuration * 1000);
   }
@@ -249,10 +249,10 @@ export class FactOrFrictionGame extends BaseMinigame {
     this.state.phase = 'ANSWER_REVEAL';
     const now = Date.now();
     this.state.phaseStartedAt = now;
-    this.state.phaseEndsAt = now + FOF_ANSWER_REVEAL_SECONDS * 1000;
+    this.state.phaseEndsAt = now + FF_ANSWER_REVEAL_SECONDS * 1000;
 
     // Build player results with correctIndex included
-    const playerResults: FOFPlayerQuestionResult[] = [];
+    const playerResults: FFPlayerQuestionResult[] = [];
     for (const [userId, answer] of this.state.playerAnswers) {
       const player = this.context.players.get(userId);
       playerResults.push({
@@ -286,11 +286,11 @@ export class FactOrFrictionGame extends BaseMinigame {
     });
 
     this.context.broadcastToLobby('rmhbox:game:action', {
-      type: 'FOF_ANSWER_REVEAL',
+      type: 'FF_ANSWER_REVEAL',
       questionIndex: this.state.currentQuestionIndex,
       correctIndex: question.correctIndex,
       playerResults,
-      duration: FOF_ANSWER_REVEAL_SECONDS,
+      duration: FF_ANSWER_REVEAL_SECONDS,
     });
 
     // Broadcast updated scores
@@ -299,13 +299,13 @@ export class FactOrFrictionGame extends BaseMinigame {
       scores[userId] = score;
     }
     this.context.broadcastToLobby('rmhbox:game:action', {
-      type: 'FOF_SCORE_UPDATE',
+      type: 'FF_SCORE_UPDATE',
       scores,
     });
 
-    this.startPhaseTimer(FOF_ANSWER_REVEAL_SECONDS);
+    this.startPhaseTimer(FF_ANSWER_REVEAL_SECONDS);
 
-    this.setTimeout(() => this.startPause(), FOF_ANSWER_REVEAL_SECONDS * 1000);
+    this.setTimeout(() => this.startPause(), FF_ANSWER_REVEAL_SECONDS * 1000);
   }
 
   private startPause(): void {
@@ -330,7 +330,7 @@ export class FactOrFrictionGame extends BaseMinigame {
     this.state.phase = 'PAUSE';
     const now = Date.now();
     this.state.phaseStartedAt = now;
-    this.state.phaseEndsAt = now + FOF_PAUSE_SECONDS * 1000;
+    this.state.phaseEndsAt = now + FF_PAUSE_SECONDS * 1000;
 
     logger.info({
       event: 'fact_or_friction:pause',
@@ -338,7 +338,7 @@ export class FactOrFrictionGame extends BaseMinigame {
       questionIndex: this.state.currentQuestionIndex,
     });
 
-    this.startPhaseTimer(FOF_PAUSE_SECONDS);
+    this.startPhaseTimer(FF_PAUSE_SECONDS);
 
     this.setTimeout(() => {
       if (this.state.currentQuestionIndex + 1 >= this.state.totalQuestions) {
@@ -346,7 +346,7 @@ export class FactOrFrictionGame extends BaseMinigame {
       } else {
         this.startNextQuestion();
       }
-    }, FOF_PAUSE_SECONDS * 1000);
+    }, FF_PAUSE_SECONDS * 1000);
   }
 
   // ─── Input Handling ──────────────────────────────────────────
@@ -362,7 +362,7 @@ export class FactOrFrictionGame extends BaseMinigame {
   private handleSubmitAnswer(userId: string, data: unknown): void {
     if (this.state.phase !== 'ANSWER') {
       this.context.sendToPlayer(userId, 'rmhbox:game:action', {
-        type: 'FOF_ANSWER_REJECTED',
+        type: 'FF_ANSWER_REJECTED',
         reason: 'wrong_phase',
       });
       return;
@@ -371,7 +371,7 @@ export class FactOrFrictionGame extends BaseMinigame {
     const parsed = SubmitAnswerSchema.safeParse(data);
     if (!parsed.success) {
       this.context.sendToPlayer(userId, 'rmhbox:game:action', {
-        type: 'FOF_ANSWER_REJECTED',
+        type: 'FF_ANSWER_REJECTED',
         reason: 'invalid_input',
       });
       return;
@@ -379,7 +379,7 @@ export class FactOrFrictionGame extends BaseMinigame {
 
     if (this.state.playerAnswers.has(userId)) {
       this.context.sendToPlayer(userId, 'rmhbox:game:action', {
-        type: 'FOF_ANSWER_REJECTED',
+        type: 'FF_ANSWER_REJECTED',
         reason: 'already_answered',
       });
       return;
@@ -387,7 +387,7 @@ export class FactOrFrictionGame extends BaseMinigame {
 
     if (!this.state.playerScores.has(userId)) {
       this.context.sendToPlayer(userId, 'rmhbox:game:action', {
-        type: 'FOF_ANSWER_REJECTED',
+        type: 'FF_ANSWER_REJECTED',
         reason: 'not_participant',
       });
       return;
@@ -397,7 +397,7 @@ export class FactOrFrictionGame extends BaseMinigame {
     const question = this.state.questions[this.state.currentQuestionIndex];
     const isCorrect = selectedIndex === question.correctIndex;
 
-    const difficultyMultiplier = DIFFICULTY_MULTIPLIERS[question.difficulty] ?? FOF_MEDIUM_MULTIPLIER;
+    const difficultyMultiplier = DIFFICULTY_MULTIPLIERS[question.difficulty] ?? FF_MEDIUM_MULTIPLIER;
     const effectivePot = Math.floor(this.state.potValue * difficultyMultiplier);
 
     const currentScore = this.state.playerScores.get(userId) ?? 0;
@@ -407,8 +407,8 @@ export class FactOrFrictionGame extends BaseMinigame {
     const enableScoreFloor = this.getSetting('enableScoreFloor', true);
     if (enableScoreFloor) {
       const newScore = currentScore + scoreChange;
-      if (newScore < FOF_SCORE_FLOOR) {
-        scoreChange = FOF_SCORE_FLOOR - currentScore;
+      if (newScore < FF_SCORE_FLOOR) {
+        scoreChange = FF_SCORE_FLOOR - currentScore;
       }
     }
 
@@ -436,14 +436,14 @@ export class FactOrFrictionGame extends BaseMinigame {
 
     // Notify the answering player only
     this.context.sendToPlayer(userId, 'rmhbox:game:action', {
-      type: 'FOF_ANSWER_LOCKED',
+      type: 'FF_ANSWER_LOCKED',
       selectedIndex,
       potValueAtSubmission: this.state.potValue,
     });
 
     // Broadcast to all that a player has answered (without revealing what)
     this.context.broadcastToLobby('rmhbox:game:action', {
-      type: 'FOF_PLAYER_ANSWERED',
+      type: 'FF_PLAYER_ANSWERED',
       userId,
     });
 
@@ -462,7 +462,7 @@ export class FactOrFrictionGame extends BaseMinigame {
   private handlePassQuestion(userId: string, data: unknown): void {
     if (this.state.phase !== 'ANSWER') {
       this.context.sendToPlayer(userId, 'rmhbox:game:action', {
-        type: 'FOF_ANSWER_REJECTED',
+        type: 'FF_ANSWER_REJECTED',
         reason: 'wrong_phase',
       });
       return;
@@ -471,7 +471,7 @@ export class FactOrFrictionGame extends BaseMinigame {
     const parsed = PassQuestionSchema.safeParse(data);
     if (!parsed.success) {
       this.context.sendToPlayer(userId, 'rmhbox:game:action', {
-        type: 'FOF_ANSWER_REJECTED',
+        type: 'FF_ANSWER_REJECTED',
         reason: 'invalid_input',
       });
       return;
@@ -479,7 +479,7 @@ export class FactOrFrictionGame extends BaseMinigame {
 
     if (this.state.playerAnswers.has(userId)) {
       this.context.sendToPlayer(userId, 'rmhbox:game:action', {
-        type: 'FOF_ANSWER_REJECTED',
+        type: 'FF_ANSWER_REJECTED',
         reason: 'already_answered',
       });
       return;
@@ -487,7 +487,7 @@ export class FactOrFrictionGame extends BaseMinigame {
 
     if (!this.state.playerScores.has(userId)) {
       this.context.sendToPlayer(userId, 'rmhbox:game:action', {
-        type: 'FOF_ANSWER_REJECTED',
+        type: 'FF_ANSWER_REJECTED',
         reason: 'not_participant',
       });
       return;
@@ -511,14 +511,14 @@ export class FactOrFrictionGame extends BaseMinigame {
 
     // Notify the passing player
     this.context.sendToPlayer(userId, 'rmhbox:game:action', {
-      type: 'FOF_ANSWER_LOCKED',
+      type: 'FF_ANSWER_LOCKED',
       selectedIndex: null,
       potValueAtSubmission: this.state.potValue,
     });
 
     // Broadcast to all
     this.context.broadcastToLobby('rmhbox:game:action', {
-      type: 'FOF_PLAYER_ANSWERED',
+      type: 'FF_PLAYER_ANSWERED',
       userId,
     });
 

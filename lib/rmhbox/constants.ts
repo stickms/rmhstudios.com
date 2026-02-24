@@ -138,22 +138,22 @@ export const WR_CACHE_TTL = 600000;
 export const WR_NAV_RATE_LIMIT = 3;
 export const WR_MAX_PAIR_POOL = 200;
 
-// ─── Fact or Friction (FOF) ─────────────────────────────────────
+// ─── Fact or Friction (FF) ──────────────────────────────────────
 
-export const FOF_TOTAL_QUESTIONS = 8;
-export const FOF_QUESTION_REVEAL_SECONDS = 2;
-export const FOF_ANSWER_DURATION_SECONDS = 15;
-export const FOF_ANSWER_REVEAL_SECONDS = 4;
-export const FOF_PAUSE_SECONDS = 1;
-export const FOF_POT_START_VALUE = 1000;
-export const FOF_POT_TICK_VALUE = 50;
-export const FOF_POT_TICK_INTERVAL_MS = 500;
-export const FOF_POT_MIN_VALUE = 100;
-export const FOF_EASY_MULTIPLIER = 0.8;
-export const FOF_MEDIUM_MULTIPLIER = 1.0;
-export const FOF_HARD_MULTIPLIER = 1.5;
-export const FOF_SCORE_FLOOR = -500;
-export const FOF_QUESTION_DISTRIBUTION = { easy: 3, medium: 3, hard: 2 };
+export const FF_TOTAL_QUESTIONS = 8;
+export const FF_QUESTION_REVEAL_SECONDS = 2;
+export const FF_ANSWER_DURATION_SECONDS = 15;
+export const FF_ANSWER_REVEAL_SECONDS = 4;
+export const FF_PAUSE_SECONDS = 1;
+export const FF_POT_START_VALUE = 1000;
+export const FF_POT_TICK_VALUE = 50;
+export const FF_POT_TICK_INTERVAL_MS = 500;
+export const FF_POT_MIN_VALUE = 100;
+export const FF_EASY_MULTIPLIER = 0.8;
+export const FF_MEDIUM_MULTIPLIER = 1.0;
+export const FF_HARD_MULTIPLIER = 1.5;
+export const FF_SCORE_FLOOR = -500;
+export const FF_QUESTION_DISTRIBUTION = { easy: 3, medium: 3, hard: 2 };
 
 // ─── Undercover Editor (UE) ─────────────────────────────────────
 

@@ -9,9 +9,9 @@
  *   PAUSE           → Brief transition
  *
  * Handles server actions:
- *   FOF_QUESTION, FOF_POT_TICK, FOF_ANSWER_LOCKED, FOF_PLAYER_ANSWERED,
- *   FOF_ANSWER_REVEAL, FOF_SCORE_UPDATE, TIMER_TICK, TIMER_START,
- *   MINIGAME_ROUND, FOF_GAME_OVER
+ *   FF_QUESTION, FF_POT_TICK, FF_ANSWER_LOCKED, FF_PLAYER_ANSWERED,
+ *   FF_ANSWER_REVEAL, FF_SCORE_UPDATE, TIMER_TICK, TIMER_START,
+ *   MINIGAME_ROUND, FF_GAME_OVER
  *
  * Props:
  *   playerId: string — Current player's user ID
@@ -88,7 +88,7 @@ export default function FactOrFrictionGame({ playerId, playerName: _playerName }
       const actionType = data.type as string;
 
       switch (actionType) {
-        case 'FOF_QUESTION': {
+        case 'FF_QUESTION': {
           setPhase('QUESTION_REVEAL');
           // Server sends question data as a nested object under `data.question`
           const qObj = data.question as Record<string, unknown>;
@@ -114,20 +114,20 @@ export default function FactOrFrictionGame({ playerId, playerName: _playerName }
           // (server will send a separate event or we rely on timer)
           break;
         }
-        case 'FOF_ANSWER_PHASE': {
+        case 'FF_ANSWER_PHASE': {
           setPhase('ANSWER');
           if (typeof data.timeRemaining === 'number') {
             setTimeRemaining(data.timeRemaining as number);
           }
           break;
         }
-        case 'FOF_POT_TICK': {
+        case 'FF_POT_TICK': {
           const pl = data.payload as Record<string, unknown> | undefined;
           const newPot = (pl?.potValue ?? data.potValue) as number;
           if (typeof newPot === 'number') setPotValue(newPot);
           break;
         }
-        case 'FOF_ANSWER_LOCKED': {
+        case 'FF_ANSWER_LOCKED': {
           // Confirmation that our answer was accepted
           const pl = data.payload as Record<string, unknown> | undefined;
           const locked = (pl?.potValue ?? data.potValue) as number | undefined;
@@ -135,13 +135,13 @@ export default function FactOrFrictionGame({ playerId, playerName: _playerName }
           playSound('click');
           break;
         }
-        case 'FOF_PLAYER_ANSWERED': {
+        case 'FF_PLAYER_ANSWERED': {
           const pl = data.payload as Record<string, unknown> | undefined;
           const count = (pl?.answeredCount ?? data.answeredCount) as number | undefined;
           if (typeof count === 'number') setPlayersAnswered(count);
           break;
         }
-        case 'FOF_ANSWER_REVEAL': {
+        case 'FF_ANSWER_REVEAL': {
           setPhase('ANSWER_REVEAL');
           const pl = data.payload as Record<string, unknown> | undefined;
           const raw = pl ?? data;
@@ -164,7 +164,7 @@ export default function FactOrFrictionGame({ playerId, playerName: _playerName }
           }
           break;
         }
-        case 'FOF_SCORE_UPDATE': {
+        case 'FF_SCORE_UPDATE': {
           const pl = data.payload as Record<string, unknown> | undefined;
           const raw = pl ?? data;
           const scores = raw.scores as Record<string, number> | undefined;
@@ -176,11 +176,11 @@ export default function FactOrFrictionGame({ playerId, playerName: _playerName }
           }
           break;
         }
-        case 'FOF_PAUSE': {
+        case 'FF_PAUSE': {
           setPhase('PAUSE');
           break;
         }
-        case 'FOF_GAME_OVER': {
+        case 'FF_GAME_OVER': {
           setPhase('GAME_OVER');
           break;
         }

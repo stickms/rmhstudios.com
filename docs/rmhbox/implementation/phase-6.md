@@ -36,21 +36,21 @@
 
 ### 6.1.2 Add Constants to `lib/rmhbox/constants.ts`
 
-- [x] Add `FOF_TOTAL_QUESTIONS = 8` — number of questions per game
-- [x] Add `FOF_QUESTION_REVEAL_SECONDS = 2` — duration of the question reveal animation
-- [x] Add `FOF_ANSWER_DURATION_SECONDS = 15` — seconds for the answer phase per question
-- [x] Add `FOF_ANSWER_REVEAL_SECONDS = 4` — duration of the answer reveal phase
-- [x] Add `FOF_PAUSE_SECONDS = 1` — brief pause between questions
-- [x] Add `FOF_POT_START_VALUE = 1000` — starting value of the Point Pot
-- [x] Add `FOF_POT_TICK_VALUE = 50` — amount the pot decreases per tick
-- [x] Add `FOF_POT_TICK_INTERVAL_MS = 500` — interval between pot ticks (2 ticks/second)
-- [x] Add `FOF_POT_MIN_VALUE = 100` — minimum pot value (floor)
-- [x] Add `FOF_EASY_MULTIPLIER = 0.8` — difficulty multiplier for easy questions
-- [x] Add `FOF_MEDIUM_MULTIPLIER = 1.0` — difficulty multiplier for medium questions
-- [x] Add `FOF_HARD_MULTIPLIER = 1.5` — difficulty multiplier for hard questions
-- [x] Add `FOF_SCORE_FLOOR = -500` — minimum total score a player can have
-- [x] Add `FOF_QUESTION_DISTRIBUTION = { easy: 3, medium: 3, hard: 2 }` — question difficulty distribution per game
-- [x] **Verification:** Import all `FOF_*` constants in a test file; confirm no undefined values and correct types. Verify `FOF_QUESTION_DISTRIBUTION` sums to `FOF_TOTAL_QUESTIONS` (3+3+2=8).
+- [x] Add `FF_TOTAL_QUESTIONS = 8` — number of questions per game
+- [x] Add `FF_QUESTION_REVEAL_SECONDS = 2` — duration of the question reveal animation
+- [x] Add `FF_ANSWER_DURATION_SECONDS = 15` — seconds for the answer phase per question
+- [x] Add `FF_ANSWER_REVEAL_SECONDS = 4` — duration of the answer reveal phase
+- [x] Add `FF_PAUSE_SECONDS = 1` — brief pause between questions
+- [x] Add `FF_POT_START_VALUE = 1000` — starting value of the Point Pot
+- [x] Add `FF_POT_TICK_VALUE = 50` — amount the pot decreases per tick
+- [x] Add `FF_POT_TICK_INTERVAL_MS = 500` — interval between pot ticks (2 ticks/second)
+- [x] Add `FF_POT_MIN_VALUE = 100` — minimum pot value (floor)
+- [x] Add `FF_EASY_MULTIPLIER = 0.8` — difficulty multiplier for easy questions
+- [x] Add `FF_MEDIUM_MULTIPLIER = 1.0` — difficulty multiplier for medium questions
+- [x] Add `FF_HARD_MULTIPLIER = 1.5` — difficulty multiplier for hard questions
+- [x] Add `FF_SCORE_FLOOR = -500` — minimum total score a player can have
+- [x] Add `FF_QUESTION_DISTRIBUTION = { easy: 3, medium: 3, hard: 2 }` — question difficulty distribution per game
+- [x] **Verification:** Import all `FF_*` constants in a test file; confirm no undefined values and correct types. Verify `FF_QUESTION_DISTRIBUTION` sums to `FF_TOTAL_QUESTIONS` (3+3+2=8).
 
 ---
 
@@ -124,7 +124,7 @@
   - [ ] Validate each question against `TriviaQuestionSchema` during load; skip invalid entries with a warning log
   - [ ] Cache in module-level variable (singleton pattern)
   - [ ] Export `selectQuestionsForGame(pool: TriviaQuestion[], usedIds: Set<string>): TriviaQuestion[]`
-    - Select questions according to `FOF_QUESTION_DISTRIBUTION` (3 easy, 3 medium, 2 hard)
+    - Select questions according to `FF_QUESTION_DISTRIBUTION` (3 easy, 3 medium, 2 hard)
     - Exclude questions with IDs in `usedIds` (prevents repeats within a lobby session)
     - Avoid consecutive questions from the same category when possible
     - Shuffle within each difficulty bucket before selection
@@ -139,9 +139,9 @@
 
 #### 6.1.6.1 Type Definitions
 
-- [x] Define `FOFPhase` enum:
+- [x] Define `FFPhase` enum:
   ```ts
-  type FOFPhase = 'QUESTION_REVEAL' | 'ANSWER' | 'ANSWER_REVEAL' | 'PAUSE';
+  type FFPhase = 'QUESTION_REVEAL' | 'ANSWER' | 'ANSWER_REVEAL' | 'PAUSE';
   ```
   **Verification:** Type has exactly 4 values matching spec.
 
@@ -176,7 +176,7 @@
     questions: TriviaQuestion[];
     currentQuestionIndex: number;
     totalQuestions: number;
-    phase: FOFPhase;
+    phase: FFPhase;
     potValue: number;
     potStartedAt: number;
     playerAnswers: Map<string, PlayerAnswer>;
@@ -200,7 +200,7 @@
 - [x] Initialize `playerScores` map with 0 for each player in `context.players`
 - [x] Initialize empty `playerAnswers` map
 - [x] Set `currentQuestionIndex = -1` (will be incremented to 0 on first call)
-- [x] Set `totalQuestions = FOF_TOTAL_QUESTIONS`
+- [x] Set `totalQuestions = FF_TOTAL_QUESTIONS`
 - [x] Set `questionHistory = []`
 - [x] Call `startNextQuestion()`
   **Verification:** Unit test: init with 4 players; confirm 8 questions selected with correct distribution, all scores = 0, no answers recorded.
@@ -213,7 +213,7 @@
   - Set `phase = 'QUESTION_REVEAL'`
   - Get current question from `questions[currentQuestionIndex]`
   - Clear `playerAnswers` map
-  - Emit `rmhbox:game:action` with type `FOF_QUESTION` to all lobby members:
+  - Emit `rmhbox:game:action` with type `FF_QUESTION` to all lobby members:
     ```ts
     {
       questionIndex: currentQuestionIndex,
@@ -221,25 +221,25 @@
       options: currentQuestion.options,
       category: currentQuestion.category,
       difficulty: currentQuestion.difficulty,
-      potStartValue: FOF_POT_START_VALUE,
-      answerDurationSeconds: FOF_ANSWER_DURATION_SECONDS,
+      potStartValue: FF_POT_START_VALUE,
+      answerDurationSeconds: FF_ANSWER_DURATION_SECONDS,
     }
     ```
   - **Do NOT include `correctIndex` in this payload**
-  - Schedule `startAnswerPhase()` after `FOF_QUESTION_REVEAL_SECONDS` (2s)
+  - Schedule `startAnswerPhase()` after `FF_QUESTION_REVEAL_SECONDS` (2s)
   **Verification:** Unit test: call `startNextQuestion()` → event emitted without `correctIndex`. Timer scheduled for 2s. Phase is `QUESTION_REVEAL`.
 
 - [x] `startAnswerPhase()`:
   - Set `phase = 'ANSWER'`
-  - Set `potValue = FOF_POT_START_VALUE` (1000)
+  - Set `potValue = FF_POT_START_VALUE` (1000)
   - Set `potStartedAt = Date.now()`
   - Set `phaseStartedAt = Date.now()`
-  - Set `phaseEndsAt = phaseStartedAt + FOF_ANSWER_DURATION_SECONDS * 1000`
-  - Start pot tick interval: every `FOF_POT_TICK_INTERVAL_MS` (500ms):
-    - `potValue = Math.max(potValue - FOF_POT_TICK_VALUE, FOF_POT_MIN_VALUE)`
-    - Emit `rmhbox:game:action` with type `FOF_POT_TICK` to all: `{ potValue }`
+  - Set `phaseEndsAt = phaseStartedAt + FF_ANSWER_DURATION_SECONDS * 1000`
+  - Start pot tick interval: every `FF_POT_TICK_INTERVAL_MS` (500ms):
+    - `potValue = Math.max(potValue - FF_POT_TICK_VALUE, FF_POT_MIN_VALUE)`
+    - Emit `rmhbox:game:action` with type `FF_POT_TICK` to all: `{ potValue }`
   - Start timer tick interval: every 1000ms, emit `TIMER_TICK` with `{ timeRemaining }`
-  - Schedule `endAnswerPhase()` after `FOF_ANSWER_DURATION_SECONDS` (15s)
+  - Schedule `endAnswerPhase()` after `FF_ANSWER_DURATION_SECONDS` (15s)
   **Verification:** Unit test: after 1s → pot = 950 (2 ticks at 500ms). After 9s → pot = 100 (min). After 14s → pot still 100. Timer ticks emit decreasing values.
 
 - [x] `endAnswerPhase()`:
@@ -248,27 +248,27 @@
   - For any player who hasn't submitted an answer, treat as pass (scoreChange = 0)
   - Call `computeQuestionResult()`
   - Set `phase = 'ANSWER_REVEAL'`
-  - Emit `rmhbox:game:action` with type `FOF_ANSWER_REVEAL` to all:
+  - Emit `rmhbox:game:action` with type `FF_ANSWER_REVEAL` to all:
     ```ts
     {
       correctIndex: currentQuestion.correctIndex,
       correctAnswer: currentQuestion.options[currentQuestion.correctIndex],
-      playerResults: Array<FOFPlayerQuestionResult>,
+      playerResults: Array<FFPlayerQuestionResult>,
     }
     ```
-  - Emit `rmhbox:game:action` with type `FOF_SCORE_UPDATE` to all:
+  - Emit `rmhbox:game:action` with type `FF_SCORE_UPDATE` to all:
     ```ts
     {
       scores: Array<{ userId, userName, totalScore, scoreChange }>,
     }
     ```
-  - Schedule `startPause()` after `FOF_ANSWER_REVEAL_SECONDS` (4s)
+  - Schedule `startPause()` after `FF_ANSWER_REVEAL_SECONDS` (4s)
   **Verification:** Unit test: correctIndex now revealed. Player results include isCorrect, scoreChange, potValueAtSubmission. Scores updated correctly.
 
 - [x] `startPause()`:
   - Set `phase = 'PAUSE'`
   - Check for pending join-in-progress players; add them to `playerScores` with 0
-  - Schedule `startNextQuestion()` after `FOF_PAUSE_SECONDS` (1s)
+  - Schedule `startNextQuestion()` after `FF_PAUSE_SECONDS` (1s)
   **Verification:** JIP players added during pause. Next question starts after 1s.
 
 #### 6.1.6.5 Input Handling — `SUBMIT_ANSWER`
@@ -278,16 +278,16 @@
 - [x] Check player hasn't already answered this question (check `playerAnswers` map); reject if duplicate
 - [x] Record answer:
   - Get current `potValue` from server state (NOT from client)
-  - Compute effective pot: `floor(potValue × difficultyMultiplier)` where multiplier is `FOF_EASY_MULTIPLIER`, `FOF_MEDIUM_MULTIPLIER`, or `FOF_HARD_MULTIPLIER` based on question difficulty
+  - Compute effective pot: `floor(potValue × difficultyMultiplier)` where multiplier is `FF_EASY_MULTIPLIER`, `FF_MEDIUM_MULTIPLIER`, or `FF_HARD_MULTIPLIER` based on question difficulty
   - Determine `isCorrect = (selectedIndex === currentQuestion.correctIndex)`
   - Compute `scoreChange`:
     - If correct: `+effectivePot`
     - If incorrect: `-effectivePot`
-  - Apply score floor: `newTotal = Math.max(currentScore + scoreChange, FOF_SCORE_FLOOR)`; adjust `scoreChange` if floor was hit
+  - Apply score floor: `newTotal = Math.max(currentScore + scoreChange, FF_SCORE_FLOOR)`; adjust `scoreChange` if floor was hit
   - Store `PlayerAnswer` in `playerAnswers` map
   - Update `playerScores`
-- [x] Emit `FOF_ANSWER_LOCKED` to answering player ONLY: `{ potValueAtLock: effectivePot }`
-- [x] Emit `FOF_PLAYER_ANSWERED` to ALL lobby members: `{ userId, userName }` (NOT what they answered)
+- [x] Emit `FF_ANSWER_LOCKED` to answering player ONLY: `{ potValueAtLock: effectivePot }`
+- [x] Emit `FF_PLAYER_ANSWERED` to ALL lobby members: `{ userId, userName }` (NOT what they answered)
 - [x] If ALL players have answered (or passed), immediately call `endAnswerPhase()` (skip remaining timer)
   **Verification:** Unit test: Player answers correctly at pot=800, medium difficulty → scoreChange = +800. Player answers incorrectly at pot=600, hard difficulty → scoreChange = -(600×1.5) = -900; if score would drop below -500, clamped. Duplicate submission rejected. After all players answer, phase ends early.
 
@@ -297,7 +297,7 @@
 - [x] Parse input through `PassQuestionSchema`
 - [x] Check player hasn't already answered; reject if duplicate
 - [x] Record pass: `PlayerAnswer` with `selectedIndex = null`, `scoreChange = 0`
-- [x] Emit `FOF_PLAYER_ANSWERED` to ALL lobby members: `{ userId, userName }`
+- [x] Emit `FF_PLAYER_ANSWERED` to ALL lobby members: `{ userId, userName }`
 - [x] If ALL players have answered/passed, immediately call `endAnswerPhase()`
   **Verification:** Unit test: pass recorded with scoreChange = 0. Player count check triggers early phase end.
 
@@ -320,7 +320,7 @@
     options: string[];
     category: string;
     difficulty: string;
-    phase: FOFPhase;
+    phase: FFPhase;
     potValue: number;
     timeRemaining: number;
     myAnswer: { selectedIndex: number; potValueAtLock: number } | null;
@@ -386,7 +386,7 @@
 **`initialState` (from minigames-2.md §1.15):**
 
 ```typescript
-interface FOFInitialState {
+interface FFInitialState {
   totalQuestions: number;
   potStartValue: number;
   potDecayRate: number;
@@ -453,18 +453,18 @@ interface FOFInitialState {
 #### 6.1.8.1 `components/rmhbox/minigames/fact-or-friction/FactOrFrictionGame.tsx`
 
 - [x] Phase router component — renders appropriate sub-component based on `phase`
-- [x] Subscribe to all `FOF_*` and `TIMER_TICK` WebSocket events via `useRMHboxStore`
+- [x] Subscribe to all `FF_*` and `TIMER_TICK` WebSocket events via `useRMHboxStore`
 - [x] Maintain local state:
   - `currentQuestionIndex`, `totalQuestions`, `question`, `options`, `category`, `difficulty`
   - `phase`, `potValue`, `timeRemaining`
   - `myAnswer`, `myHasPassed`, `playersAnswered[]`
   - `scores[]`, `questionHistory[]`
-- [x] Handle `FOF_QUESTION` → update question data, reset answer state, transition to reveal animation
-- [x] Handle `FOF_POT_TICK` → update `potValue` with smooth interpolation between ticks for animation
-- [x] Handle `FOF_ANSWER_LOCKED` → update `myAnswer` with locked pot value, show lock confirmation
-- [x] Handle `FOF_PLAYER_ANSWERED` → update `playersAnswered` array
-- [x] Handle `FOF_ANSWER_REVEAL` → show correct answer, highlight results
-- [x] Handle `FOF_SCORE_UPDATE` → animate score changes
+- [x] Handle `FF_QUESTION` → update question data, reset answer state, transition to reveal animation
+- [x] Handle `FF_POT_TICK` → update `potValue` with smooth interpolation between ticks for animation
+- [x] Handle `FF_ANSWER_LOCKED` → update `myAnswer` with locked pot value, show lock confirmation
+- [x] Handle `FF_PLAYER_ANSWERED` → update `playersAnswered` array
+- [x] Handle `FF_ANSWER_REVEAL` → show correct answer, highlight results
+- [x] Handle `FF_SCORE_UPDATE` → animate score changes
 - [x] Handle `TIMER_TICK` → update `timeRemaining` display
 - [x] Conditional rendering:
   - `QUESTION_REVEAL` → `<QuestionCard />` with entrance animation
@@ -524,18 +524,18 @@ interface FOFInitialState {
 
 - [x] Import `playSound` from `@/lib/rmhbox/audio`
 - [x] Trigger sounds in `FactOrFrictionGame.tsx` event handlers:
-  - [ ] `FOF_QUESTION` → `playSound('swoosh')`
-  - [ ] `FOF_ANSWER_LOCKED` → `playSound('click')`
-  - [ ] `FOF_ANSWER_REVEAL` (player correct) → `playSound('scoreDing')`
-  - [ ] `FOF_ANSWER_REVEAL` (player wrong) → `playSound('buzzer')`
-  - [ ] `FOF_SCORE_UPDATE` → `playSound('scoreDing')`
+  - [ ] `FF_QUESTION` → `playSound('swoosh')`
+  - [ ] `FF_ANSWER_LOCKED` → `playSound('click')`
+  - [ ] `FF_ANSWER_REVEAL` (player correct) → `playSound('scoreDing')`
+  - [ ] `FF_ANSWER_REVEAL` (player wrong) → `playSound('buzzer')`
+  - [ ] `FF_SCORE_UPDATE` → `playSound('scoreDing')`
   - [ ] `TIMER_TICK` with `timeRemaining <= 5` → `playSound('countdownBeep')`
   **Verification:** All sounds fire at correct moments. Volume respects user settings.
 
 #### 6.1.8.8 Zustand Store Integration
 
 - [x] Read game state via `useRMHboxStore()`:
-  - [ ] `gameState.lastAction` for reacting to `FOF_*` events
+  - [ ] `gameState.lastAction` for reacting to `FF_*` events
   - [ ] `lobby.currentGame.timeRemaining` for countdown
   - [ ] `lobby.currentGame.publicState` for question, pot value, and player answer status
   - [ ] `lobby.currentGame.privateState` for own locked answer and pot-at-lock value
@@ -578,7 +578,7 @@ interface FOFInitialState {
   **Verification:** Only first valid submission accepted; duplicates silently ignored.
 
 - [x] Anti-cheat test: Confirm `correctIndex` is never sent until `ANSWER_REVEAL` phase
-  - [ ] Inspect all `FOF_QUESTION`, `FOF_POT_TICK`, `FOF_ANSWER_LOCKED`, `FOF_PLAYER_ANSWERED` events — no `correctIndex`
+  - [ ] Inspect all `FF_QUESTION`, `FF_POT_TICK`, `FF_ANSWER_LOCKED`, `FF_PLAYER_ANSWERED` events — no `correctIndex`
   - [ ] Inspect `getStateForPlayer()` during `ANSWER` — no `correctIndex`
   **Verification:** Zero correctIndex leakage before reveal.
 
@@ -603,11 +603,11 @@ Replace hardcoded constants with `this.getSetting()` calls in the Fact or Fricti
 
 | Constant | Setting Key | Replacement |
 |---|---|---|
-| `FOF_TOTAL_QUESTIONS` | `totalQuestions` | `this.getSetting('totalQuestions', FOF_TOTAL_QUESTIONS)` |
-| `FOF_ANSWER_DURATION` | `answerDuration` | `this.getSetting('answerDuration', FOF_ANSWER_DURATION)` |
-| `FOF_POT_START_VALUE` | `potStartValue` | `this.getSetting('potStartValue', FOF_POT_START_VALUE)` |
-| `FOF_SCORE_FLOOR` | `enableScoreFloor` | `this.getSetting('enableScoreFloor', FOF_SCORE_FLOOR)` |
-| `FOF_DIFFICULTY` | `difficulty` | `this.getSetting('difficulty', FOF_DIFFICULTY)` |
+| `FF_TOTAL_QUESTIONS` | `totalQuestions` | `this.getSetting('totalQuestions', FF_TOTAL_QUESTIONS)` |
+| `FF_ANSWER_DURATION` | `answerDuration` | `this.getSetting('answerDuration', FF_ANSWER_DURATION)` |
+| `FF_POT_START_VALUE` | `potStartValue` | `this.getSetting('potStartValue', FF_POT_START_VALUE)` |
+| `FF_SCORE_FLOOR` | `enableScoreFloor` | `this.getSetting('enableScoreFloor', FF_SCORE_FLOOR)` |
+| `FF_DIFFICULTY` | `difficulty` | `this.getSetting('difficulty', FF_DIFFICULTY)` |
 
 - [x] **Boolean setting logic:** When `enableScoreFloor` is `false`, allow player scores to go negative (remove `Math.max(0, ...)` guard or make it conditional).
 - [x] **Select setting logic:** `difficulty` filters the question pool by tag. When `'mixed'`, all difficulties are included.
@@ -2802,7 +2802,7 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 
 - [ ] Spectate each of the 4 Phase 6 games
 - [ ] Verify omniscient data in spectator state:
-  - FOF: same as player (no privileged info)
+  - FF: same as player (no privileged info)
   - UE: keyword, editor identity, edits, all votes
   - MM: all drawings live, all individual bids, identity mapping
   - EC: movie title, all guess text
@@ -2873,7 +2873,7 @@ All tests go in `testing/rmhbox/phase-6/game-settings.test.ts` (or integrated in
 
 ### 6.6.1 Schema Completeness Tests
 
-- [ ] Each of the 4 exported settings arrays has the expected number of entries (FOF: 5, UE: 4, MM: 5, EC: 4).
+- [ ] Each of the 4 exported settings arrays has the expected number of entries (FF: 5, UE: 4, MM: 5, EC: 4).
 - [ ] Every setting has `key`, `type`, `label`, `default` defined.
 - [ ] Integer/float settings have `min`, `max`, `step` defined.
 - [ ] Select settings have a non-empty `options` array.
@@ -2883,7 +2883,7 @@ All tests go in `testing/rmhbox/phase-6/game-settings.test.ts` (or integrated in
 
 | Test Case | Description |
 |---|---|
-| `default totalQuestions` | With no custom settings, handler uses `FOF_TOTAL_QUESTIONS` (8) |
+| `default totalQuestions` | With no custom settings, handler uses `FF_TOTAL_QUESTIONS` (8) |
 | `custom totalQuestions = 12` | Handler plays 12 question rounds |
 | `custom answerDuration = 30` | Timer broadcasts use 30s instead of default 20s |
 | `custom potStartValue = 150` | Starting pot is 150 per question |
@@ -2925,6 +2925,6 @@ All tests go in `testing/rmhbox/phase-6/game-settings.test.ts` (or integrated in
 
 ### 6.6.6 getSetting() Fallback Tests
 
-- [ ] Calling `getSetting('totalQuestions', FOF_TOTAL_QUESTIONS)` with empty `gameSettings` returns the fallback.
-- [ ] Calling `getSetting('totalQuestions', FOF_TOTAL_QUESTIONS)` with `gameSettings: { totalQuestions: 10 }` returns `10`.
+- [ ] Calling `getSetting('totalQuestions', FF_TOTAL_QUESTIONS)` with empty `gameSettings` returns the fallback.
+- [ ] Calling `getSetting('totalQuestions', FF_TOTAL_QUESTIONS)` with `gameSettings: { totalQuestions: 10 }` returns `10`.
 - [ ] Calling `getSetting('unknownKey', 42)` returns `42`.

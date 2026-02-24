@@ -1,5 +1,5 @@
 /**
- * FactOrFrictionHistoryDetail — Expanded history view for FOF games.
+ * FactOrFrictionHistoryDetail — Expanded history view for FF games.
  *
  * Renders each question with category, difficulty, correct answer,
  * and per-player results showing who answered correctly, their

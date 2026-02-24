@@ -20,8 +20,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { FactOrFrictionGame } from '../../../server/rmhbox/minigames/fact-or-friction';
 import { UndercoverEditorGame } from '../../../server/rmhbox/minigames/undercover-editor';
 import {
-  FOF_QUESTION_REVEAL_SECONDS,
-  FOF_ANSWER_DURATION_SECONDS,
+  FF_QUESTION_REVEAL_SECONDS,
+  FF_ANSWER_DURATION_SECONDS,
   UE_WRITE_TIMEOUT_SECONDS,
   UE_EDIT_TIMEOUT_SECONDS,
   UE_REVIEW_DURATION_SECONDS,
@@ -34,7 +34,7 @@ import {
 
 // ─── Helpers ─────────────────────────────────────────────────────
 
-function createFOFGame(ctxData?: MockContextData) {
+function createFFGame(ctxData?: MockContextData) {
   const ctx = ctxData ?? createMockContext();
   const game = new FactOrFrictionGame(ctx.context);
   return { game, ...ctx };
@@ -61,7 +61,7 @@ describe('Security: State Masking (Phase 6)', () => {
 
   describe('Fact or Friction — correctIndex masking', () => {
     it('correctIndex MUST NOT appear in any player state during QUESTION_REVEAL', () => {
-      const { game } = createFOFGame();
+      const { game } = createFFGame();
       game.start();
 
       const allIds = [
@@ -79,9 +79,9 @@ describe('Security: State Masking (Phase 6)', () => {
     });
 
     it('correctIndex MUST NOT appear in any player state during ANSWER', () => {
-      const { game } = createFOFGame();
+      const { game } = createFFGame();
       game.start();
-      vi.advanceTimersByTime(FOF_QUESTION_REVEAL_SECONDS * 1000 + 50);
+      vi.advanceTimersByTime(FF_QUESTION_REVEAL_SECONDS * 1000 + 50);
 
       const allIds = [
         MOCK_USERS.alice.userId, MOCK_USERS.bob.userId,
@@ -98,9 +98,9 @@ describe('Security: State Masking (Phase 6)', () => {
     });
 
     it('correctIndex MUST NOT appear in spectator state during ANSWER', () => {
-      const { game } = createFOFGame();
+      const { game } = createFFGame();
       game.start();
-      vi.advanceTimersByTime(FOF_QUESTION_REVEAL_SECONDS * 1000 + 50);
+      vi.advanceTimersByTime(FF_QUESTION_REVEAL_SECONDS * 1000 + 50);
 
       const state = game.getStateForSpectator() as Record<string, unknown>;
       const question = state.question as Record<string, unknown>;
@@ -110,9 +110,9 @@ describe('Security: State Masking (Phase 6)', () => {
     });
 
     it('Player A MUST NOT see Player B selectedIndex during ANSWER', () => {
-      const { game } = createFOFGame();
+      const { game } = createFFGame();
       game.start();
-      vi.advanceTimersByTime(FOF_QUESTION_REVEAL_SECONDS * 1000 + 50);
+      vi.advanceTimersByTime(FF_QUESTION_REVEAL_SECONDS * 1000 + 50);
 
       // Alice answers
       game.handleInput(MOCK_USERS.alice.userId, 'SUBMIT_ANSWER', { selectedIndex: 2 });

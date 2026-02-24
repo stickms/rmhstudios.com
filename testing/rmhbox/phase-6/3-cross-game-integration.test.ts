@@ -55,7 +55,7 @@ describe('Cross-Game Integration (§6.5)', () => {
       expect(ids).toContain('undercover-editor');
     });
 
-    it('getEligibleMinigames with 3 players should include FOF but not UE', () => {
+    it('getEligibleMinigames with 3 players should include FF but not UE', () => {
       const eligible = getEligibleMinigames(3);
       const ids = eligible.map((g) => g.id);
       expect(ids).toContain('fact-or-friction');

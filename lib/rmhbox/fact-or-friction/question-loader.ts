@@ -11,7 +11,7 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { TriviaQuestionSchema, type TriviaQuestion } from './schemas';
-import { FOF_QUESTION_DISTRIBUTION } from '../constants';
+import { FF_QUESTION_DISTRIBUTION } from '../constants';
 import { logger } from '../../../server/rmhbox/logger';
 
 // ─── Singleton Cache ─────────────────────────────────────────────
@@ -74,7 +74,7 @@ function shuffle<T>(arr: T[]): T[] {
 /**
  * Select questions for a single game round.
  *
- * - Picks according to FOF_QUESTION_DISTRIBUTION (default: 3 easy, 3 medium, 2 hard).
+ * - Picks according to FF_QUESTION_DISTRIBUTION (default: 3 easy, 3 medium, 2 hard).
  * - Excludes questions whose IDs appear in `usedIds` (prevents repeats within a lobby session).
  * - Avoids consecutive questions from the same category when possible.
  * - Shuffles within each difficulty bucket before selection.
@@ -85,7 +85,7 @@ export function selectQuestionsForGame(
   pool: TriviaQuestion[],
   usedIds: Set<string>,
 ): TriviaQuestion[] {
-  const distribution = FOF_QUESTION_DISTRIBUTION;
+  const distribution = FF_QUESTION_DISTRIBUTION;
   const available = pool.filter((q) => !usedIds.has(q.id));
 
   // Group by difficulty
