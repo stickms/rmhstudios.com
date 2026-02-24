@@ -18,7 +18,7 @@
 import { Server, Socket } from 'socket.io';
 import { LobbyManager } from './lobby-manager';
 import { StateSyncService, TimerHandle } from './state-sync';
-import { LeaderboardService } from './leaderboard';
+import { LeaderboardService, type GameLog } from './leaderboard';
 import { logger } from './logger';
 import { S2C } from '../../lib/rmhbox/events';
 import { MINIGAME_REGISTRY } from '../../lib/rmhbox/minigame-registry';
@@ -1052,12 +1052,13 @@ export class GameCoordinator {
     lobby.matchHistory.push(serverMatch);
 
     // Async persistence — fire-and-forget, never blocks game flow
+    const gameLog = (results.gameSpecificData?.gameLog as GameLog) ?? null;
     this.leaderboardService.persistMatchResults(
       lobbyId,
       lobby.currentGame?.minigameId ?? '',
       results,
       lobby.players,
-      null,
+      gameLog,
     ).catch((err) => {
       logger.error({ event: 'match_persist_fire_forget_error', lobbyId, error: String(err) });
     });

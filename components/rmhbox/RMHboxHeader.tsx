@@ -145,6 +145,7 @@ export default function RMHboxHeader({
   const isGame = context === 'game';
   const isLanding = context === 'landing';
   const hasBackLink = isLanding || context === 'minigames' || context === 'history';
+  const showConnection = context !== 'minigames' && context !== 'history';
   const showTimer = timerInfo !== null;
   const isHost = !!(lobby && lobby.hostUserId === lobby.myUserId);
 
@@ -192,10 +193,12 @@ export default function RMHboxHeader({
 
       {/* Right side */}
       <div className="ml-auto flex items-center gap-2 z-10">
-        <span className="flex items-center gap-1.5 text-sm text-(--rmhbox-text-muted)" title={statusText}>
-          {statusIcon}
-          {!isGame && !showTimer && <span className="hidden sm:inline">{statusText}</span>}
-        </span>
+        {showConnection && (
+          <span className="flex items-center gap-1.5 text-sm text-(--rmhbox-text-muted)" title={statusText}>
+            {statusIcon}
+            {!isGame && !showTimer && <span className="hidden sm:inline">{statusText}</span>}
+          </span>
+        )}
         {showTimer && (
           <TimerRing
             seconds={timerInfo.remaining}
