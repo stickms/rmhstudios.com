@@ -504,6 +504,35 @@ Replace hardcoded constants with `this.getSetting()` calls in the Sequence Sam h
 
 ---
 
+### 7.1.9 History Display Configuration
+
+Implement the history display config for Sequence Sam as defined in `minigames-3.md §1.15`.
+
+#### 7.1.9.1 Create Detail Component
+
+Create `components/rmhbox/minigames/sequence-sam/SequenceSamHistoryDetail.tsx`:
+- Render round-by-round elimination view with 3×3 tile grid visualization
+- Show chaos round indicators with rotation badges
+- Display per-player status (survived/eliminated/strikes remaining)
+- Show elimination order timeline and speed bonus indicators
+
+#### 7.1.9.2 Register History Display
+
+Add registration in `lib/rmhbox/history-display-registrations.ts` with:
+- Searchable fields: `playerNames` (player names)
+- Filterable fields: `roundsSurvived` (range), `hadChaosRound` (boolean), `wasEliminated` (boolean)
+- Summary: `{rounds} rounds ({chaos} chaos) — Sequence memory`
+
+#### 7.1.9.3 Tests
+
+- [ ] Verify `getHistoryDisplay('sequence-sam')` returns a valid config
+- [ ] Verify searchable fields extract player names from a mock game log
+- [ ] Verify filterable fields include roundsSurvived (range), hadChaosRound (boolean), wasEliminated (boolean)
+- [ ] Verify `getSummary()` returns a meaningful string for a mock game log
+- [ ] Verify `DetailComponent` renders without errors when given a valid game log
+
+---
+
 ## 7.2 Human Keyboard
 
 **Game ID:** `human-keyboard` | **Category:** `action` | **Icon:** `keyboard`
@@ -1016,6 +1045,34 @@ Replace hardcoded constants with `this.getSetting()` calls in the Human Keyboard
 
 - [ ] **Boolean setting logic:** When `enableReshuffle` is `false`, key assignments remain fixed for the entire round. The `reshuffleInterval` setting is ignored when reshuffling is disabled.
   **Verification:** Each constant usage replaced. Handler respects custom settings passed via `MinigameContext.gameSettings`.
+
+---
+
+### 7.2.11 History Display Configuration
+
+Implement the history display config for Human Keyboard as defined in `minigames-3.md §2.16`.
+
+#### 7.2.11.1 Create Detail Component
+
+Create `components/rmhbox/minigames/human-keyboard/HumanKeyboardHistoryDetail.tsx`:
+- Render cooperative typing replay with target sentence and typed progress
+- Show key assignment map (player → keys visualization)
+- Display per-player accuracy statistics and reshuffle timeline markers
+
+#### 7.2.11.2 Register History Display
+
+Add registration in `lib/rmhbox/history-display-registrations.ts` with:
+- Searchable fields: `targetSentence` (sentence text), `playerNames` (player names)
+- Filterable fields: `accuracy` (range), `completedSentence` (boolean)
+- Summary: `"{sentence}"`
+
+#### 7.2.11.3 Tests
+
+- [ ] Verify `getHistoryDisplay('human-keyboard')` returns a valid config
+- [ ] Verify searchable fields extract target sentence and player names from a mock game log
+- [ ] Verify filterable fields include accuracy (range) and completedSentence (boolean)
+- [ ] Verify `getSummary()` returns a meaningful string for a mock game log
+- [ ] Verify `DetailComponent` renders without errors when given a valid game log
 
 ---
 
@@ -1581,6 +1638,32 @@ Replace hardcoded constants with `this.getSetting()` calls in the Cursor Curling
 - [ ] **Boolean setting logic:** When `enableSweeping` is `false`, skip the sweeping phase entirely after stone release — the stone travels on its natural trajectory without team intervention.
   **Verification:** Each constant usage replaced. Handler respects custom settings passed via `MinigameContext.gameSettings`.
 
+### 7.3.9 History Display Configuration
+
+Implement the history display config for Cursor Curling as defined in `minigames-3.md §3.15`.
+
+#### 7.3.9.1 Create Detail Component
+
+Create `components/rmhbox/minigames/cursor-curling/CursorCurlingHistoryDetail.tsx`:
+- Render per-end scoring summary with stone positions on house visualization
+- Show distance-from-center ranking and sweep activity indicators
+- Display per-end scoring breakdown (bullseye/inner/outer/house/outside)
+
+#### 7.3.9.2 Register History Display
+
+Add registration in `lib/rmhbox/history-display-registrations.ts` with:
+- Searchable fields: `playerNames` (player names)
+- Filterable fields: `hitBullseye` (boolean), `endCount` (range), `sweepCount` (range)
+- Summary: `{ends} ends — Curling precision`
+
+#### 7.3.9.3 Tests
+
+- [ ] Verify `getHistoryDisplay('cursor-curling')` returns a valid config
+- [ ] Verify searchable fields extract player names from a mock game log
+- [ ] Verify filterable fields include hitBullseye (boolean), endCount (range), sweepCount (range)
+- [ ] Verify `getSummary()` returns a meaningful string for a mock game log
+- [ ] Verify `DetailComponent` renders without errors when given a valid game log
+
 ---
 
 ## 7.4 Human Tetris
@@ -2105,6 +2188,32 @@ Replace hardcoded constants with `this.getSetting()` calls in the Human Tetris h
 - [ ] **Boolean setting logic:** When `enableDeadZones` is `true`, the handler spawns dead-zone grid cells that eliminate players on contact. Default is `false` — enabling this is an advanced difficulty modifier.
   **Verification:** Each constant usage replaced. Handler respects custom settings passed via `MinigameContext.gameSettings`.
 
+### 7.4.11 History Display Configuration
+
+Implement the history display config for Human Tetris as defined in `minigames-3.md §4.17`.
+
+#### 7.4.11.1 Create Detail Component
+
+Create `components/rmhbox/minigames/human-tetris/HumanTetrisHistoryDetail.tsx`:
+- Render block-by-block summary with block shapes and placement positions
+- Show line clear events, voting results for rotation decisions
+- Display team coordination score and game-over condition
+
+#### 7.4.11.2 Register History Display
+
+Add registration in `lib/rmhbox/history-display-registrations.ts` with:
+- Searchable fields: `playerNames` (player names)
+- Filterable fields: `linesCleared` (range), `blocksPlaced` (range)
+- Summary: `{blocks} blocks, {clears} lines cleared`
+
+#### 7.4.11.3 Tests
+
+- [ ] Verify `getHistoryDisplay('human-tetris')` returns a valid config
+- [ ] Verify searchable fields extract player names from a mock game log
+- [ ] Verify filterable fields include linesCleared (range) and blocksPlaced (range)
+- [ ] Verify `getSummary()` returns a meaningful string for a mock game log
+- [ ] Verify `DetailComponent` renders without errors when given a valid game log
+
 ---
 
 ## 7.5 Cross-Game Integration Testing
@@ -2184,6 +2293,10 @@ Replace hardcoded constants with `this.getSetting()` calls in the Human Tetris h
   - Cursor Curling: `end_start`, `throw`, `stone_rest`, `end_result`
   - Human Tetris: `wave_start`, `wave_result`, `game_end`
   **Verification:** Game logs persist and are retrievable via API. Action types match spec.
+- [ ] Verify `getHistoryDisplay()` returns a valid config for each Phase 7 game
+- [ ] Verify each game's history display has non-empty searchable and filterable fields
+- [ ] Verify each game's `getSummary()` returns a non-empty string for a valid game log
+- [ ] Verify each game's `DetailComponent` can be instantiated
 
 ### 7.5.10 MinigameRenderer Code-Splitting Test
 
