@@ -77,8 +77,8 @@ export class UndercoverAgentMinigame extends BaseMinigame {
 
   constructor(context: MinigameContext) {
     super(context);
-    const poolPath = path.resolve(
-      __dirname, '..', '..', '..', '..', 'data', 'rmhbox', 'undercover-agent', 'word-pool.json',
+    const poolPath = path.join(
+      process.cwd(), 'data', 'rmhbox', 'undercover-agent', 'word-pool.json',
     );
     const raw = fs.readFileSync(poolPath, 'utf-8');
     this.wordPool = JSON.parse(raw) as string[];
