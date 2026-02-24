@@ -435,7 +435,52 @@ interface RhymeTimeInitialState {
 
 **Replay Value:** Reviewing who discovered the rarest rhymes, comparing vocabulary breadth across players, and spotting the creative or unexpected submissions that earned rarity bonuses.
 
-### 1.16 MinigameRenderer & Client-Server Wiring
+### 1.16 History Display Configuration
+
+**Detail Component:** `RhymeTimeHistoryDetail`
+
+Renders the expanded game log in the history viewer. Shows each round as a collapsible section with:
+- Root word displayed prominently
+- All submissions grouped by rarity tier (rare → uncommon → common → invalid)
+- Per-player score breakdown with multi-syllable and speed bonus indicators
+- Round winner highlighted
+
+**Searchable Fields:**
+
+| Field Key | Label | Extraction |
+|---|---|---|
+| `rootWords` | Root Words | All root words from `round_start` actions |
+| `submissions` | Submissions | All submitted words from `submission` actions |
+
+**Filterable Fields:**
+
+| Field Key | Label | Type | Details |
+|---|---|---|---|
+| `roundCount` | Rounds Played | range | Number of rounds (1–5) |
+| `hadSpeedBonus` | Speed Bonus Awarded | boolean | Whether any speed bonus was earned |
+
+**Summary Extractor:**
+
+```typescript
+getSummary: (log) => {
+  const rounds = log.actions.filter(a => a.type === 'round_start');
+  const rootWords = rounds.map(r => r.payload.rootWord).join(', ');
+  return `${rounds.length} rounds — ${rootWords}`;
+}
+```
+
+**Component Structure:**
+
+```
+RhymeTimeHistoryDetail.tsx
+├── RoundSection (per round)
+│   ├── Root word header
+│   ├── Submission table (word, player, rarity, score)
+│   └── Round winner badge
+└── Final scores summary
+```
+
+### 1.17 MinigameRenderer & Client-Server Wiring
 
 **MinigameRenderer Registration**
 
@@ -955,7 +1000,55 @@ interface UndercoverAgentInitialState {
 
 **Replay Value:** Reliving the spymaster's strategy — which clues linked multiple words, where operatives went wrong, and the dramatic assassin-hit moments. Full logs allow step-by-step replay of the entire match.
 
-### 2.17 MinigameRenderer & Client-Server Wiring
+### 2.17 History Display Configuration
+
+**Detail Component:** `UndercoverAgentHistoryDetail`
+
+Renders the expanded game log as a turn-by-turn replay view:
+- Full 5×5 grid with color-coded tile types revealed
+- Turn timeline showing each clue and the resulting guesses
+- Tile reveal animations (optional, re-playable)
+- Win condition summary (all found / assassin hit / stalemate)
+
+**Searchable Fields:**
+
+| Field Key | Label | Extraction |
+|---|---|---|
+| `clues` | Clues Given | All clue words from `clue_given` actions |
+| `gridWords` | Grid Words | All words from `initialState.words` |
+
+**Filterable Fields:**
+
+| Field Key | Label | Type | Details |
+|---|---|---|---|
+| `winCondition` | Win Condition | select | `all_found`, `assassin`, `stalemate` |
+| `team` | Your Team | select | `A`, `B` |
+| `role` | Your Role | select | `spymaster`, `operative` |
+
+**Summary Extractor:**
+
+```typescript
+getSummary: (log) => {
+  const endAction = log.actions.find(a => a.type === 'game_end');
+  const winner = endAction?.payload.winningTeam ?? 'Unknown';
+  const condition = endAction?.payload.winCondition ?? '';
+  return `Team ${winner} wins (${condition.replace('_', ' ')})`;
+}
+```
+
+**Component Structure:**
+
+```
+UndercoverAgentHistoryDetail.tsx
+├── GridReplay (5×5 grid with reveal state)
+├── TurnTimeline (ordered list of turns)
+│   ├── ClueEntry (clue word + number)
+│   └── GuessEntry (word guessed, tile type, correct/incorrect)
+├── WinSummary (condition + remaining words)
+└── Final scores
+```
+
+### 2.18 MinigameRenderer & Client-Server Wiring
 
 **MinigameRenderer Registration**
 
@@ -1491,7 +1584,55 @@ interface CategoryCrashInitialState {
 
 **Replay Value:** Seeing who came up with the most creative unique answers, laughing at the answers that multiple players chose (and got crashed), and comparing strategies for obscure vs. safe category responses.
 
-### 3.15 MinigameRenderer & Client-Server Wiring
+### 3.15 History Display Configuration
+
+**Detail Component:** `CategoryCrashHistoryDetail`
+
+Renders the expanded game log as a per-round breakdown:
+- Letter and categories shown for each round
+- All players' answers displayed in a grid (category × player)
+- Crashed answers highlighted with strikethrough styling
+- Unique/surviving answers shown in accent color
+- Per-round score breakdown
+
+**Searchable Fields:**
+
+| Field Key | Label | Extraction |
+|---|---|---|
+| `categories` | Categories | All category names from `round_start` actions |
+| `answers` | Answers | All player answers from `answers_locked` actions |
+
+**Filterable Fields:**
+
+| Field Key | Label | Type | Details |
+|---|---|---|---|
+| `letter` | Starting Letter | select | Letters used across rounds |
+| `crashCount` | Crashes Received | range | Number of times answers were crashed |
+
+**Summary Extractor:**
+
+```typescript
+getSummary: (log) => {
+  const rounds = log.actions.filter(a => a.type === 'round_start');
+  const letters = rounds.map(r => r.payload.letter).join(', ');
+  return `${rounds.length} rounds — Letters: ${letters}`;
+}
+```
+
+**Component Structure:**
+
+```
+CategoryCrashHistoryDetail.tsx
+├── RoundSection (per round)
+│   ├── Letter + Categories header
+│   ├── AnswerGrid (category × player matrix)
+│   │   ├── CrashedAnswer (strikethrough + crash count)
+│   │   └── SurvivingAnswer (accent highlight)
+│   └── Round scores
+└── Final scores summary
+```
+
+### 3.16 MinigameRenderer & Client-Server Wiring
 
 **MinigameRenderer Registration**
 
@@ -2053,7 +2194,55 @@ interface WikiRaceInitialState {
 
 **Replay Value:** Comparing the wildly different paths players took between the same two articles, seeing who found clever shortcuts vs. who wandered through dozens of articles, and comparing paths against the best finisher's route.
 
-### 4.17 MinigameRenderer & Client-Server Wiring
+### 4.17 History Display Configuration
+
+**Detail Component:** `WikiRaceHistoryDetail`
+
+Renders the expanded game log as a path comparison view:
+- Start and target articles displayed prominently
+- Each player's navigation path shown as a breadcrumb trail
+- Path length and time comparison chart
+- Finishers vs. timeouts clearly distinguished
+- Clickable article names (links to actual Wikipedia articles)
+
+**Searchable Fields:**
+
+| Field Key | Label | Extraction |
+|---|---|---|
+| `articles` | Articles Visited | All article names from `navigate` actions |
+| `startTarget` | Start/Target | Start and target article names from `round_start` actions |
+
+**Filterable Fields:**
+
+| Field Key | Label | Type | Details |
+|---|---|---|---|
+| `finished` | Completed Race | boolean | Whether user reached the target |
+| `pathLength` | Path Length | range | Number of clicks to reach target |
+| `round` | Round Number | select | Filter by specific round |
+
+**Summary Extractor:**
+
+```typescript
+getSummary: (log) => {
+  const start = log.actions.find(a => a.type === 'round_start');
+  return `${start?.payload.startArticle} → ${start?.payload.targetArticle}`;
+}
+```
+
+**Component Structure:**
+
+```
+WikiRaceHistoryDetail.tsx
+├── RoundSection (per round)
+│   ├── ArticlePair (start → target)
+│   ├── PathComparison (all players' paths side-by-side)
+│   │   ├── BreadcrumbPath (clickable article links)
+│   │   └── PathStats (clicks, time, efficiency)
+│   └── Round results (finishers + timeouts)
+└── Final scores summary
+```
+
+### 4.18 MinigameRenderer & Client-Server Wiring
 
 **MinigameRenderer Registration**
 
