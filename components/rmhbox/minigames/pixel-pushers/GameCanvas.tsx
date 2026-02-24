@@ -13,7 +13,7 @@
  */
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useMemo } from 'react';
 
 // ─── Types ───────────────────────────────────────────────────────
 
@@ -232,8 +232,8 @@ export default function GameCanvas({
     return () => cancelAnimationFrame(animId);
   }, [canvasWidth, canvasHeight, walls, goalZone, waypoints, myUserId]);
 
-  // Scale canvas for high-DPI displays
-  const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
+  // DPR for high-DPI displays (safe for SSR)
+  const dpr = useMemo(() => (typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1), []);
 
   return (
     <canvas
