@@ -627,14 +627,13 @@ export class WikiRaceMinigame extends BaseMinigame {
 
         ps.score = score;
       } else {
-        // DNF scoring
+        // DNF scoring: base + click bonus
+        ps.score = WR_DNF_BASE + WR_DNF_CLICK_BONUS * Math.min(ps.clickCount, 10);
+
+        // One-away bonus: target was on the current page but player didn't click it
         const normalizedTarget = targetTitle.replace(/ /g, '_');
         if (this.getSetting('enableOneAwayPoints', WR_ONE_AWAY > 0) && (ps.currentArticleLinks.has(targetTitle) || ps.currentArticleLinks.has(normalizedTarget))) {
-          // Target was on the current page but player didn't click it
-          ps.score = WR_ONE_AWAY;
-        } else {
-          // Partial credit based on clicks made (capped at 10)
-          ps.score = WR_DNF_BASE + WR_DNF_CLICK_BONUS * Math.min(ps.clickCount, 10);
+          ps.score += WR_ONE_AWAY;
         }
       }
     }

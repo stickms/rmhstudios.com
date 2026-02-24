@@ -335,6 +335,9 @@ export class CategoryCrashMinigame extends BaseMinigame {
         points: pr.roundScore,
         validAnswers: pr.uniqueIndices.length,
         crashedAnswers: pr.crashedIndices.length,
+        duplicateAnswers: pr.duplicateIndices.length,
+        duplicatedCategories: pr.duplicateIndices.map((i) =>
+          this.state.categories[i]?.name ?? this.state.categories[i]?.id ?? ''),
       })),
     });
 
@@ -514,6 +517,27 @@ export class CategoryCrashMinigame extends BaseMinigame {
         reason: 'duplicate_crash',
       });
       return;
+    }
+
+    // Cannot crash a pre-crashed (duplicate) answer — it already scores 0
+    const targetAnswer = this.state.answers[realTargetId]?.[categoryIndex];
+    if (targetAnswer) {
+      const normalised = (targetAnswer as string).trim().toLowerCase();
+      if (normalised) {
+        const isDuplicate = Object.entries(this.state.answers).some(
+          ([otherId, answers]) =>
+            otherId !== realTargetId &&
+            answers[categoryIndex] &&
+            (answers[categoryIndex] as string).trim().toLowerCase() === normalised,
+        );
+        if (isDuplicate) {
+          this.context.sendToPlayer(userId, 'rmhbox:game:action', {
+            type: 'CC_CRASH_REJECTED',
+            reason: 'answer_already_pre_crashed',
+          });
+          return;
+        }
+      }
     }
 
     const crash: CrashRecord = {
@@ -723,6 +747,7 @@ export class CategoryCrashMinigame extends BaseMinigame {
           // Duplicate answers auto-crash — same answer = 0 points
           pointsPerCategory.push(0);
           crashedIndices.push(catIdx);
+          duplicateIndices.push(catIdx);
         } else {
           pointsPerCategory.push(CC_UNIQUE_POINTS);
           uniqueIndices.push(catIdx);

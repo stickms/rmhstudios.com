@@ -184,7 +184,7 @@ export default function PeerReview({
             const isOwn = myAnonymousLabel === answerSet.anonymousLabel;
             const isDuplicate = duplicateSetPerCat[activeCatIndex]?.has(answerSet.anonymousLabel) ?? false;
             const startsCorrectly = answer ? answer[0]?.toUpperCase() === letter.toUpperCase() : false;
-            const disabled = isEmpty || isOwn;
+            const disabled = isEmpty || isOwn || isDuplicate;
 
             return (
               <button
@@ -207,7 +207,7 @@ export default function PeerReview({
                       : isEmpty
                         ? 'border-(--rmhbox-border)/30 bg-(--rmhbox-surface)/50 cursor-not-allowed opacity-40'
                         : isDuplicate
-                          ? 'border-(--rmhbox-warning)/40 bg-(--rmhbox-warning-dim) text-(--rmhbox-warning)'
+                          ? 'border-(--rmhbox-warning)/40 bg-(--rmhbox-warning-dim) text-(--rmhbox-warning) cursor-not-allowed'
                           : 'border-(--rmhbox-border) bg-(--rmhbox-surface) hover:bg-(--rmhbox-danger-dim) hover:border-(--rmhbox-danger)/30'
                 }`}
               >

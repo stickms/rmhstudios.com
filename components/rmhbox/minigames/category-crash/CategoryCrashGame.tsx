@@ -190,8 +190,27 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
         case 'CC_ROUND_RESULTS': {
           setPhase('ROUND_RESULTS');
           setRoundResults(data.results as CCRoundResults);
-          setScores(data.scores as Record<string, number>);
+          const newScores = data.scores as Record<string, number>;
+          setScores(newScores);
           setAnonymizationMap(data.anonymizationMap as Record<string, string> ?? {});
+
+          // Update footer score in the lobby store so GameShell reflects
+          // the cumulative score between CC sub-rounds.
+          const myNewScore = newScores?.[playerId];
+          if (typeof myNewScore === 'number') {
+            useRMHboxStore.setState((state) => ({
+              lobby: state.lobby
+                ? {
+                    ...state.lobby,
+                    players: state.lobby.players.map((p) =>
+                      p.userId === state.lobby!.myUserId
+                        ? { ...p, score: myNewScore }
+                        : p,
+                    ),
+                  }
+                : null,
+            }));
+          }
           break;
         }
         case 'CC_SAVE_REJECTED':
@@ -217,7 +236,7 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
         }
       }
     },
-    [],
+    [playerId],
   );
 
   /** Handle full state snapshot (reconnection) */

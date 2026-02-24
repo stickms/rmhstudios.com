@@ -88,11 +88,11 @@ export const UA_TURN_TRANSITION = 3;
 export const UA_MAX_UNLIMITED = 25;
 export const UA_MAX_PASSES = 6;
 export const UA_WIN = 500;
-export const UA_WIN_OPERATIVE = 400;
+export const UA_WIN_OPERATIVE = 500;
 export const UA_LOSE = 100;
 export const UA_CLUE_EFFICIENCY = 20;
 export const UA_CORRECT_GUESS = 50;
-export const UA_ASSASSIN_PENALTY = -200;
+export const UA_ASSASSIN_PENALTY = -100;
 
 // ─── Category Crash (CC) ────────────────────────────────────────
 
