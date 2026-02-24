@@ -311,12 +311,35 @@
 #### 7.1.4.13 `buildGameLog()`
 
 - [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
-- [ ] Log `round_start` action at each round (round, sequenceLength, isChaosRound, rotationDegrees)
-- [ ] Log `round_result` action at round end (round, survivingPlayers, eliminatedPlayers)
-- [ ] Log `player_eliminated` action when a player is eliminated (userId, round, reason: 'wrong_input' | 'timeout')
-- [ ] In `computeResults()`, build `GameLog` with `initialState` containing startingLength, chaosRoundInterval, maxRounds
+- [ ] Build `GameLog` conforming to core.md §13.3, including `gameSettings` per §12A.11
+
+**`initialState` (from minigames-3.md §1.14):**
+
+```typescript
+interface SSInitialState {
+  gridSize: number;
+  maxStrikes: number;
+  chaosInterval: number;
+  playerCount: number;
+  tileFlashDurationMs: number;
+  inputTimePerStepMs: number;
+  gameSettings: GameSettingValues;
+}
+```
+
+**Actions Logged:**
+
+| Action Type | Payload | Recorded When |
+|---|---|---|
+| `round_start` | `{ round: number; sequenceLength: number; sequence: number[] }` | Start of each round |
+| `chaos_rotation` | `{ round: number; rotationType: string; mapping: Record<number, number> }` | When a chaos round triggers a tile remap |
+| `round_result` | `{ round: number; correct: string[]; failed: string[]; strikes: Record<string, number> }` | After all inputs are evaluated |
+| `elimination` | `{ userId: string; round: number; placement: number }` | When a player is eliminated |
+| `game_end` | `{ winner: string; finalPlacements: Array<{ userId: string; placement: number; score: number }> }` | Game over |
+
+- [ ] In `computeResults()`, build `GameLog` with `initialState`, full action log, and `finalResults`
 - [ ] Return `GameLog` from `buildGameLog()`
-  **Verification:** Unit test: 8-player game lasting 10 rounds, verify log contains round_start/round_result per round and player_eliminated for each elimination.
+  **Verification:** Unit test: 8-player game lasting 10 rounds, verify log contains `round_start`/`round_result` per round, `elimination` for each elimination, `initialState` has grid and chaos config, `finalResults` matches placements.
 
 ---
 
@@ -847,14 +870,34 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 #### 7.2.6.14 `buildGameLog()`
 
 - [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
-- [ ] Log `game_start` action with target sentence and initial key assignments (assignments map)
-- [ ] Log `reshuffle` action each time keys are reshuffled (newAssignments, progressAtReshuffle)
-- [ ] Log `milestone` action at 25%, 50%, 75% sentence completion (percentComplete, timeMs, charsCompleted)
-- [ ] Log `keystroke_summary` action per player at game end (userId, totalKeystrokes, correctKeystrokes, missedKeys)
-- [ ] Log `game_complete` action when sentence is finished or time expires (completed, totalTimeMs, finalProgress)
-- [ ] In `computeResults()`, build `GameLog` with `initialState` containing targetSentence, playerCount, reshuffleInterval
+- [ ] Build `GameLog` conforming to core.md §13.3, including `gameSettings` per §12A.11
+
+**`initialState` (from minigames-3.md §2.15):**
+
+```typescript
+interface HKInitialState {
+  sentence: string;
+  sentenceLength: number;
+  typingDurationSeconds: number;
+  reshuffleIntervalSeconds: number;
+  playerCount: number;
+  initialKeyAssignments: Record<string, string[]>;
+  gameSettings: GameSettingValues;
+}
+```
+
+**Actions Logged:**
+
+| Action Type | Payload | Recorded When |
+|---|---|---|
+| `reshuffle` | `{ period: number; newAssignments: Record<string, string[]>; progressAtReshuffle: number }` | Each key reshuffle |
+| `progress_milestone` | `{ milestone: 25 \| 50 \| 75 \| 100; elapsedMs: number; currentChar: number }` | At 25%, 50%, 75%, 100% completion |
+| `player_summary` | `{ userId: string; correctKeys: number; wrongKeys: number; accuracy: number }` | End of game, per player |
+| `game_end` | `{ completed: boolean; finalProgress: number; elapsedMs: number; mvpUserId: string; totalCorrectKeys: number; totalWrongKeys: number }` | Game over |
+
+- [ ] In `computeResults()`, build `GameLog` with `initialState`, full action log, and `finalResults`
 - [ ] Return `GameLog` from `buildGameLog()`
-  **Verification:** Unit test: 5-player game, 2 reshuffles, verify log captures both reshuffles, milestones, and per-player keystroke summaries.
+  **Verification:** Unit test: 5-player game, 2 reshuffles, verify log captures `reshuffle` events, `progress_milestone` at each threshold, `player_summary` per player, `initialState` has sentence and key assignments.
 
 ---
 
@@ -1432,13 +1475,36 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 #### 7.3.4.14 `buildGameLog()`
 
 - [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
-- [ ] Log `end_start` action at each end (endNumber, totalEnds)
-- [ ] Log `throw` action for each stone thrown (userId, endNumber, angle, power, initialPosition)
-- [ ] Log `stone_rest` action when a stone comes to rest (userId, endNumber, finalPosition, distanceToBullseye)
-- [ ] Log `end_result` action at end conclusion (endNumber, stonePositions, scores, closestPlayer)
-- [ ] In `computeResults()`, build `GameLog` with `initialState` containing totalEnds, houseCenter, ringRadii
+- [ ] Build `GameLog` conforming to core.md §13.3, including `gameSettings` per §12A.11
+
+**`initialState` (from minigames-3.md §3.14):**
+
+```typescript
+interface CUInitialState {
+  totalEnds: number;
+  playerCount: number;
+  canvasSize: { width: number; height: number };
+  houseCenter: { x: number; y: number };
+  bullseyeRadius: number;
+  stoneRadius: number;
+  throwOrder: string[];
+  gameSettings: GameSettingValues;
+}
+```
+
+**Actions Logged:**
+
+| Action Type | Payload | Recorded When |
+|---|---|---|
+| `end_start` | `{ end: number; throwOrder: string[] }` | Start of each end |
+| `throw` | `{ end: number; userId: string; angle: number; power: number; swept: boolean }` | After each player's throw completes |
+| `stone_rest` | `{ end: number; userId: string; position: { x: number; y: number }; distanceToBullseye: number }` | When a stone comes to rest |
+| `end_result` | `{ end: number; scores: Record<string, number>; closestUserId: string; stonePositions: Array<{ userId: string; x: number; y: number }> }` | End of each end |
+| `game_end` | `{ finalScores: Record<string, number>; placements: Array<{ userId: string; placement: number; score: number }> }` | Game over |
+
+- [ ] In `computeResults()`, build `GameLog` with `initialState`, full action log, and `finalResults`
 - [ ] Return `GameLog` from `buildGameLog()`
-  **Verification:** Unit test: 3-end game, 4 players, verify 12 throw/stone_rest actions and 3 end_result actions.
+  **Verification:** Unit test: 3-end game, 4 players, verify 12 `throw`/`stone_rest` actions and 3 `end_result` actions, `initialState` has house geometry and throw order.
 
 ---
 
@@ -1980,12 +2046,34 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 #### 7.4.6.12 `buildGameLog()`
 
 - [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
-- [ ] Log `wave_start` action at each wave (waveNumber, wallShape, requiredPlayers, positioningTime)
-- [ ] Log `wave_result` action at wall impact (waveNumber, success, playerPositions, matchPercentage)
-- [ ] Log `game_end` action with total waves completed, team score summary
-- [ ] In `computeResults()`, build `GameLog` with `initialState` containing totalWaves, gridSize, deadZones, playerCount
+- [ ] Build `GameLog` conforming to core.md §13.3, including `gameSettings` per §12A.11
+
+**`initialState` (from minigames-3.md §4.16):**
+
+```typescript
+interface HTInitialState {
+  playerCount: number;
+  arenaSize: { width: number; height: number };
+  wallSpeedInitial: number;
+  totalWaves: number;
+  gapTolerance: number;
+  movementSpeed: number;
+  gameSettings: GameSettingValues;
+}
+```
+
+**Actions Logged:**
+
+| Action Type | Payload | Recorded When |
+|---|---|---|
+| `wave_start` | `{ wave: number; wallShape: Array<{ x: number; y: number; width: number; height: number }>; requiredPlayers: number; wallSpeed: number }` | Start of each wave |
+| `wave_impact` | `{ wave: number; playerPositions: Array<{ userId: string; x: number; y: number }>; success: boolean; playersHit: string[] }` | Moment of wall impact |
+| `wave_result` | `{ wave: number; passed: boolean; teamScore: number; streak: number }` | After wave evaluation |
+| `game_end` | `{ wavesCompleted: number; totalWaves: number; finalScore: number; perfectWaves: number; longestStreak: number }` | Game over |
+
+- [ ] In `computeResults()`, build `GameLog` with `initialState`, full action log, and `finalResults`
 - [ ] Return `GameLog` from `buildGameLog()`
-  **Verification:** Unit test: 8-wave game, verify 8 wave_start and 8 wave_result actions, final game_end action with team summary.
+  **Verification:** Unit test: 8-wave game, verify 8 `wave_start` and 8 `wave_result` actions, `wave_impact` with player positions, `game_end` with streak data, `initialState` has arena config and wave parameters.
 
 ---
 
