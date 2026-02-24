@@ -123,6 +123,7 @@ export class RhymeTimeMinigame extends BaseMinigame {
     this.logAction('round_start', {
       round: this.state.currentRound,
       rootWord: this.state.rootWord.word,
+      validRhymeCount: this.state.rootWord.validRhymes?.length ?? 0,
     });
 
     logger.info({
@@ -195,6 +196,19 @@ export class RhymeTimeMinigame extends BaseMinigame {
     this.logAction('round_end', {
       round: this.state.currentRound,
       rootWord: this.state.rootWord!.word,
+      roundWinner: roundResult.playerResults
+        ? Object.entries(roundResult.playerResults).sort(([, a], [, b]) => b.roundScore - a.roundScore)[0]?.[0] ?? null
+        : null,
+      submissions: Object.entries(roundResult.playerResults).flatMap(([uid, pr]) =>
+        pr.breakdown.map((wb) => ({
+          userId: uid,
+          word: wb.word,
+          valid: wb.isValid,
+          rarityTier: wb.rarity ?? 'invalid',
+          score: wb.totalPoints,
+          isMultiSyllable: wb.isMultiSyllable,
+        })),
+      ),
     });
 
     logger.info({
@@ -322,7 +336,9 @@ export class RhymeTimeMinigame extends BaseMinigame {
       round: this.state.currentRound,
       userId,
       word,
-      isValid,
+      valid: isValid,
+      duplicate: false,
+      isMultiSyllable: multiSyllable,
     });
 
     // Notify the submitter only
@@ -733,15 +749,23 @@ export class RhymeTimeMinigame extends BaseMinigame {
 
   // ─── Action Log / Game Log ───────────────────────────────────
 
-  private logAction(action: string, data: Record<string, unknown>): void {
+  private actionSeq = 0;
+
+  private logAction(type: string, payload: Record<string, unknown>): void {
     this.state.actionLog.push({
-      action,
+      seq: ++this.actionSeq,
+      type,
       timestamp: Date.now(),
-      data,
+      payload,
     });
   }
 
   private buildGameLog(): Record<string, unknown> {
+    const players = Array.from(this.context.players.entries()).map(([userId, p]) => ({
+      userId,
+      userName: p.userName,
+    }));
+
     return {
       lobbyId: this.context.lobbyId,
       startedAt: this.startedAt,
@@ -749,7 +773,18 @@ export class RhymeTimeMinigame extends BaseMinigame {
       totalRounds: this.state.totalRounds,
       roundsPlayed: this.state.currentRound,
       playerCount: this.context.players.size,
+      players,
+      initialState: {
+        rounds: this.state.totalRounds,
+        secondsPerRound: this.getSetting('inputDuration', 45),
+        maxSubmissionsPerRound: this.getSetting('maxSubmissions', 10),
+      },
       actions: this.state.actionLog,
+      finalResults: Array.from(this.context.players.keys()).map((userId) => ({
+        userId,
+        userName: this.context.players.get(userId)?.userName ?? 'Unknown',
+        score: this.state.scores[userId] ?? 0,
+      })),
     };
   }
 }
