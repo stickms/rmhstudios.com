@@ -66,13 +66,15 @@ export function selectLevelsForGame(
   for (let i = 0; i < levelCount; i++) {
     const difficulty = difficultyOrder[Math.min(i, difficultyOrder.length - 1)];
     const bucket = byDifficulty[difficulty];
-    if (bucket && bucket.length > 0) {
-      selected.push(bucket.shift()!);
+    const pick = bucket && bucket.length > 0 ? bucket.shift() : undefined;
+    if (pick) {
+      selected.push(pick);
     } else {
       // Fallback: pick from any remaining bucket
       for (const d of difficultyOrder) {
-        if (byDifficulty[d] && byDifficulty[d].length > 0) {
-          selected.push(byDifficulty[d].shift()!);
+        const fallback = byDifficulty[d] && byDifficulty[d].length > 0 ? byDifficulty[d].shift() : undefined;
+        if (fallback) {
+          selected.push(fallback);
           break;
         }
       }
