@@ -195,7 +195,7 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
     },
     // lookupName reads from playersRef (a mutable ref), so it always
     // returns the latest player names regardless of closure capture.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
     [],
   );
 

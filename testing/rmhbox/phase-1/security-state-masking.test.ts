@@ -140,7 +140,7 @@ describe('Security: State-Masking Verification', () => {
     // Player A should NOT see Player B's word
     const playerBInA = (stateA.otherPlayers as Array<Record<string, unknown>>).find((p) => p.userId === 'player-b');
     expect(playerBInA).toBeDefined();
-    expect(playerBInA.hasWord).toBe(true);
+    expect(playerBInA!.hasWord).toBe(true);
     expect(playerBInA).not.toHaveProperty('word');
     expect(playerBInA).not.toHaveProperty('secretWord');
     expect(playerBInA).not.toHaveProperty('myWord');
@@ -148,9 +148,9 @@ describe('Security: State-Masking Verification', () => {
     // Player B should NOT see Player A's word
     const playerAInB = (stateB.otherPlayers as Array<Record<string, unknown>>).find((p) => p.userId === 'player-a');
     expect(playerAInB).toBeDefined();
-    expect(playerAInB).not.toHaveProperty('word');
-    expect(playerAInB).not.toHaveProperty('secretWord');
-    expect(playerAInB).not.toHaveProperty('myWord');
+    expect(playerAInB!).not.toHaveProperty('word');
+    expect(playerAInB!).not.toHaveProperty('secretWord');
+    expect(playerAInB!).not.toHaveProperty('myWord');
   });
 
   it('should not expose any secret words to spectators', () => {

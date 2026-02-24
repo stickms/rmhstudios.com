@@ -978,7 +978,8 @@ export class WikiRaceMinigame extends BaseMinigame {
       finishedCount: this.state.finishCounter,
       players,
       initialState: {
-        rounds: 1,
+        totalRounds: this.state.totalRounds,
+        currentRound: this.state.currentRound,
         timeLimitSeconds: this.getSetting('navDuration', WR_NAV_DURATION),
         startArticle: this.state.articlePair.startArticle.title,
         targetArticle: this.state.articlePair.targetArticle.title,
