@@ -18,6 +18,7 @@ import { S2C } from '../../lib/rmhbox/events';
 import { MINIGAME_REGISTRY } from '../../lib/rmhbox/minigame-registry';
 import type { GameAction, ChatMessage, ClientLobbyState, ClientPlayerInfo, ClientSpectatorInfo, ClientGameInfo, PublicLobbyInfo, MatchSummary, JoinInProgressPolicy } from '../../lib/rmhbox/types';
 import type { RMHboxLobby, LobbySettings, RMHboxPlayer, RMHboxSpectator } from './types';
+import { getDefaultSettings } from '../../lib/rmhbox/game-settings';
 import {
   CreateLobbySchema,
   JoinLobbySchema,
@@ -312,6 +313,8 @@ export class LobbyManager {
       selectedGame: null,
       matchHistory: [],
       roundNumber: 0,
+      pendingGameSettings: null,
+      resolvedGameSettings: null,
     };
 
     this.lobbies.set(lobbyId, lobby);
@@ -973,6 +976,21 @@ export class LobbyManager {
     const prevSelection = lobby.selectedGame?.minigameId;
     lobby.selectedGame = { minigameId: payload.minigameId, displayName };
     lobby.lastActivityAt = Date.now();
+
+    // Initialize or clear pending game settings for the selected game
+    if (!isVoteMode) {
+      const def = MINIGAME_REGISTRY[payload.minigameId];
+      if (def?.settingsSchema && def.settingsSchema.length > 0) {
+        // Only reset settings when the game selection actually changes
+        if (prevSelection !== payload.minigameId) {
+          lobby.pendingGameSettings = getDefaultSettings(def.settingsSchema);
+        }
+      } else {
+        lobby.pendingGameSettings = null;
+      }
+    } else {
+      lobby.pendingGameSettings = null;
+    }
 
     // Mark host as permanently ready
     const hostPlayer = lobby.players.get(userId);

@@ -12,10 +12,11 @@ import type {
   LobbyState,
   LobbySettings,
   ChatMessage,
+  GameSettingValues,
 } from '../../lib/rmhbox/types';
 
 // Re-export shared types for server convenience
-export type { LobbyState, LobbySettings, ChatMessage };
+export type { LobbyState, LobbySettings, ChatMessage, GameSettingValues };
 
 // ─── Player ──────────────────────────────────────────────────────
 
@@ -85,6 +86,10 @@ export interface RMHboxLobby {
   selectedGame: { minigameId: string; displayName: string } | null;
   matchHistory: ServerMatchSummary[];
   roundNumber: number;
+  /** Host-edited game settings during GAME_SETTINGS phase (§12A). */
+  pendingGameSettings: GameSettingValues | null;
+  /** Resolved game settings for the current/last game (§12A). Passed to handler. */
+  resolvedGameSettings: GameSettingValues | null;
 }
 
 // ─── Minigame Context ────────────────────────────────────────────

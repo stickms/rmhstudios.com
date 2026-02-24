@@ -54,7 +54,7 @@ function createGame(ctxData?: MockContextData) {
 
   // Mock the data loader
   vi.mock('../../../lib/rmhbox/wiki-race/data-loader', () => ({
-    selectArticlePair: () => ({
+    selectArticlePair: (_usedPairKeys: string[] = []) => ({
       id: 'test-pair-001',
       startArticle: {
         title: 'Start_Article',
@@ -70,6 +70,8 @@ function createGame(ctxData?: MockContextData) {
       difficulty: 'medium' as const,
       tags: ['test'],
     }),
+    pairKey: (pair: { startArticle: { title: string }; targetArticle: { title: string } }) =>
+      `${pair.startArticle.title}::${pair.targetArticle.title}`,
   }));
 
   const game = new WikiRaceMinigame(ctx.context);

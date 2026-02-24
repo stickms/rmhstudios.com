@@ -50,7 +50,7 @@ export default function RhymeTimeGame({ playerId, playerName: _playerName }: Rhy
   void _playerName; // Consumed by MinigameProps interface; not directly used in this component
   const [phase, setPhase] = useState<Phase>('ROUND_START');
   const [currentRound, setCurrentRound] = useState(1);
-  const [totalRounds, setTotalRounds] = useState(3);
+  const [totalRounds, setTotalRounds] = useState(0);
   const [rootWord, setRootWord] = useState('');
   const [timeRemaining, setTimeRemaining] = useState(60);
   const [totalDuration, setTotalDuration] = useState(60);
@@ -351,7 +351,7 @@ export default function RhymeTimeGame({ playerId, playerName: _playerName }: Rhy
           className="flex flex-col items-center justify-center gap-4 text-(--rmhbox-text)"
         >
           <p className="text-sm uppercase tracking-wider text-(--rmhbox-text-muted)">
-            Round {currentRound} of {totalRounds}
+            {totalRounds > 0 ? `Round ${currentRound} of ${totalRounds}` : `Round ${currentRound}`}
           </p>
           <motion.h1
             initial={{ opacity: 0, y: 30 }}

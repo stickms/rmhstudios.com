@@ -15,6 +15,7 @@
 3. [6.3 Minimalist Masterpiece](#63-minimalist-masterpiece)
 4. [6.4 Emoji Cinema](#64-emoji-cinema)
 5. [6.5 Cross-Game Integration Testing](#65-cross-game-integration-testing)
+6. [6.6 Game Settings Test Plan (§12A)](#66-game-settings-test-plan-12a)
 
 ---
 
@@ -560,6 +561,37 @@
   - [ ] Inspect all `FOF_QUESTION`, `FOF_POT_TICK`, `FOF_ANSWER_LOCKED`, `FOF_PLAYER_ANSWERED` events — no `correctIndex`
   - [ ] Inspect `getStateForPlayer()` during `ANSWER` — no `correctIndex`
   **Verification:** Zero correctIndex leakage before reveal.
+
+### 6.1.10 Game Settings Integration (§12A)
+
+Integrate host-configurable settings using the §12A system established in Phase 5. See `lib/rmhbox/game-settings.ts` and `BaseMinigame.getSetting()` for the canonical pattern.
+
+#### Registry Entry
+
+- [ ] Export `FACT_OR_FRICTION_SETTINGS: GameSettingsSchema` in `lib/rmhbox/minigame-registry.ts` with 5 entries:
+  - `totalQuestions` (integer, default `8`, min 4, max 12, step 1)
+  - `answerDuration` (integer, default `20`, min 10, max 45, step 5)
+  - `potStartValue` (integer, default `100`, min 50, max 200, step 25)
+  - `enableScoreFloor` (boolean, default `true`)
+  - `difficulty` (select, default `'mixed'`, options: `['easy','medium','hard','mixed']`)
+- [ ] Attach `settingsSchema: FACT_OR_FRICTION_SETTINGS` to the `fact-or-friction` `MinigameDefinition`.
+  **Verification:** Registry lookup returns definition with `settingsSchema` containing 5 entries.
+
+#### Handler `getSetting()` Integration
+
+Replace hardcoded constants with `this.getSetting()` calls in the Fact or Friction handler:
+
+| Constant | Setting Key | Replacement |
+|---|---|---|
+| `FOF_TOTAL_QUESTIONS` | `totalQuestions` | `this.getSetting('totalQuestions', FOF_TOTAL_QUESTIONS)` |
+| `FOF_ANSWER_DURATION` | `answerDuration` | `this.getSetting('answerDuration', FOF_ANSWER_DURATION)` |
+| `FOF_POT_START_VALUE` | `potStartValue` | `this.getSetting('potStartValue', FOF_POT_START_VALUE)` |
+| `FOF_SCORE_FLOOR` | `enableScoreFloor` | `this.getSetting('enableScoreFloor', FOF_SCORE_FLOOR)` |
+| `FOF_DIFFICULTY` | `difficulty` | `this.getSetting('difficulty', FOF_DIFFICULTY)` |
+
+- [ ] **Boolean setting logic:** When `enableScoreFloor` is `false`, allow player scores to go negative (remove `Math.max(0, ...)` guard or make it conditional).
+- [ ] **Select setting logic:** `difficulty` filters the question pool by tag. When `'mixed'`, all difficulties are included.
+  **Verification:** Each constant usage replaced. Handler respects custom settings passed via `MinigameContext.gameSettings`.
 
 ---
 
@@ -1221,6 +1253,33 @@
 - [ ] Vote change test: Player votes for A, then changes to B → only final vote counted
   **Verification:** Final vote is B in tally.
 
+### 6.2.10 Game Settings Integration (§12A)
+
+Integrate host-configurable settings using the §12A system.
+
+#### Registry Entry
+
+- [ ] Export `UNDERCOVER_EDITOR_SETTINGS: GameSettingsSchema` in `lib/rmhbox/minigame-registry.ts` with 4 entries:
+  - `rotations` (integer, default `2`, min 1, max 3, step 1)
+  - `writeTimeout` (integer, default `90`, min 45, max 180, step 15)
+  - `editTimeout` (integer, default `60`, min 30, max 120, step 10)
+  - `accusationDuration` (integer, default `45`, min 20, max 90, step 5)
+- [ ] Attach `settingsSchema: UNDERCOVER_EDITOR_SETTINGS` to the `undercover-editor` `MinigameDefinition`.
+  **Verification:** Registry lookup returns definition with `settingsSchema` containing 4 entries.
+
+#### Handler `getSetting()` Integration
+
+Replace hardcoded constants with `this.getSetting()` calls in the Undercover Editor handler:
+
+| Constant | Setting Key | Replacement |
+|---|---|---|
+| `UE_ROTATIONS` | `rotations` | `this.getSetting('rotations', UE_ROTATIONS)` |
+| `UE_WRITE_TIMEOUT` | `writeTimeout` | `this.getSetting('writeTimeout', UE_WRITE_TIMEOUT)` |
+| `UE_EDIT_TIMEOUT` | `editTimeout` | `this.getSetting('editTimeout', UE_EDIT_TIMEOUT)` |
+| `UE_ACCUSATION_DURATION` | `accusationDuration` | `this.getSetting('accusationDuration', UE_ACCUSATION_DURATION)` |
+
+  **Verification:** Each constant usage replaced. Handler respects custom settings passed via `MinigameContext.gameSettings`.
+
 ---
 
 ## 6.3 Minimalist Masterpiece
@@ -1801,6 +1860,35 @@
 
 - [ ] Reconnection test: Player disconnects during DRAWING (has 3 strokes), reconnects → strokes restored, can continue
   **Verification:** Strokes preserved and restored.
+
+### 6.3.10 Game Settings Integration (§12A)
+
+Integrate host-configurable settings using the §12A system.
+
+#### Registry Entry
+
+- [ ] Export `MINIMALIST_MASTERPIECE_SETTINGS: GameSettingsSchema` in `lib/rmhbox/minigame-registry.ts` with 5 entries:
+  - `drawingDuration` (integer, default `45`, min 20, max 90, step 5)
+  - `maxStrokes` (integer, default `15`, min 5, max 30, step 5)
+  - `auctionDuration` (integer, default `30`, min 15, max 60, step 5)
+  - `startingCurrency` (integer, default `500`, min 200, max 1000, step 50)
+  - `bidIncrement` (integer, default `25`, min 10, max 100, step 5)
+- [ ] Attach `settingsSchema: MINIMALIST_MASTERPIECE_SETTINGS` to the `minimalist-masterpiece` `MinigameDefinition`.
+  **Verification:** Registry lookup returns definition with `settingsSchema` containing 5 entries.
+
+#### Handler `getSetting()` Integration
+
+Replace hardcoded constants with `this.getSetting()` calls in the Minimalist Masterpiece handler:
+
+| Constant | Setting Key | Replacement |
+|---|---|---|
+| `MM_DRAWING_DURATION` | `drawingDuration` | `this.getSetting('drawingDuration', MM_DRAWING_DURATION)` |
+| `MM_MAX_STROKES` | `maxStrokes` | `this.getSetting('maxStrokes', MM_MAX_STROKES)` |
+| `MM_AUCTION_DURATION` | `auctionDuration` | `this.getSetting('auctionDuration', MM_AUCTION_DURATION)` |
+| `MM_STARTING_CURRENCY` | `startingCurrency` | `this.getSetting('startingCurrency', MM_STARTING_CURRENCY)` |
+| `MM_BID_INCREMENT` | `bidIncrement` | `this.getSetting('bidIncrement', MM_BID_INCREMENT)` |
+
+  **Verification:** Each constant usage replaced. Handler respects custom settings passed via `MinigameContext.gameSettings`.
 
 ---
 
@@ -2430,6 +2518,33 @@
 - [ ] Max rounds cap test: 8 players → only 6 rounds (capped at `EC_MAX_ROUNDS`)
   **Verification:** Only 6 rounds played even with 8 players.
 
+### 6.4.10 Game Settings Integration (§12A)
+
+Integrate host-configurable settings using the §12A system.
+
+#### Registry Entry
+
+- [ ] Export `EMOJI_CINEMA_SETTINGS: GameSettingsSchema` in `lib/rmhbox/minigame-registry.ts` with 4 entries:
+  - `maxRounds` (integer, default `4`, min 2, max 6, step 1)
+  - `roundDuration` (integer, default `45`, min 20, max 90, step 5)
+  - `maxEmojis` (integer, default `5`, min 3, max 8, step 1)
+  - `maxGuessesPerPlayer` (integer, default `3`, min 1, max 5, step 1)
+- [ ] Attach `settingsSchema: EMOJI_CINEMA_SETTINGS` to the `emoji-cinema` `MinigameDefinition`.
+  **Verification:** Registry lookup returns definition with `settingsSchema` containing 4 entries.
+
+#### Handler `getSetting()` Integration
+
+Replace hardcoded constants with `this.getSetting()` calls in the Emoji Cinema handler:
+
+| Constant | Setting Key | Replacement |
+|---|---|---|
+| `EC_MAX_ROUNDS` | `maxRounds` | `this.getSetting('maxRounds', EC_MAX_ROUNDS)` |
+| `EC_ROUND_DURATION` | `roundDuration` | `this.getSetting('roundDuration', EC_ROUND_DURATION)` |
+| `EC_MAX_EMOJIS` | `maxEmojis` | `this.getSetting('maxEmojis', EC_MAX_EMOJIS)` |
+| `EC_MAX_GUESSES_PER_PLAYER` | `maxGuessesPerPlayer` | `this.getSetting('maxGuessesPerPlayer', EC_MAX_GUESSES_PER_PLAYER)` |
+
+  **Verification:** Each constant usage replaced. Handler respects custom settings passed via `MinigameContext.gameSettings`.
+
 ---
 
 ## 6.5 Cross-Game Integration Testing
@@ -2535,3 +2650,67 @@
   **Verification:** All 4 handlers instantiate and implement `BaseMinigame` interface.
 
 > **Note on parallel development:** Phase 6 can be implemented fully in parallel with Phase 7 and Phase 8 after Phase 5 is complete. The coexistence test above (6.5.8) should be run once Phase 5 is available. If Phase 7 or Phase 8 are also complete, run a combined coexistence test covering all deployed phases.
+
+---
+
+## 6.6 Game Settings Test Plan (§12A)
+
+All tests go in `testing/rmhbox/phase-6/game-settings.test.ts` (or integrated into the phase-6 test suite). Follow the Phase 5 test patterns in `testing/rmhbox/phase-5/6-game-settings.test.ts`.
+
+### 6.6.1 Schema Completeness Tests
+
+- [ ] Each of the 4 exported settings arrays has the expected number of entries (FOF: 5, UE: 4, MM: 5, EC: 4).
+- [ ] Every setting has `key`, `type`, `label`, `default` defined.
+- [ ] Integer/float settings have `min`, `max`, `step` defined.
+- [ ] Select settings have a non-empty `options` array.
+- [ ] Default values fall within declared constraints.
+
+### 6.6.2 Fact or Friction Settings Tests
+
+| Test Case | Description |
+|---|---|
+| `default totalQuestions` | With no custom settings, handler uses `FOF_TOTAL_QUESTIONS` (8) |
+| `custom totalQuestions = 12` | Handler plays 12 question rounds |
+| `custom answerDuration = 30` | Timer broadcasts use 30s instead of default 20s |
+| `custom potStartValue = 150` | Starting pot is 150 per question |
+| `enableScoreFloor = false` | Player score can go below 0 |
+| `enableScoreFloor = true (default)` | Player score floors at 0 |
+| `difficulty = 'hard'` | Only hard-tagged questions are selected |
+| `difficulty = 'mixed' (default)` | Mixed difficulty pool |
+
+### 6.6.3 Undercover Editor Settings Tests
+
+| Test Case | Description |
+|---|---|
+| `default rotations` | With no custom settings, handler uses `UE_ROTATIONS` (2) |
+| `custom rotations = 3` | Handler runs 3 write-edit cycles |
+| `custom writeTimeout = 120` | Write phase timer is 120s |
+| `custom editTimeout = 90` | Edit phase timer is 90s |
+| `custom accusationDuration = 60` | Accusation timer is 60s |
+
+### 6.6.4 Minimalist Masterpiece Settings Tests
+
+| Test Case | Description |
+|---|---|
+| `default maxStrokes` | Uses `MM_MAX_STROKES` (15) |
+| `custom maxStrokes = 5` | Only 5 strokes allowed; extras rejected |
+| `custom drawingDuration = 60` | Drawing timer is 60s |
+| `custom auctionDuration = 45` | Auction timer is 45s |
+| `custom startingCurrency = 800` | Players start with 800 currency |
+| `custom bidIncrement = 50` | Minimum bid step is 50 |
+
+### 6.6.5 Emoji Cinema Settings Tests
+
+| Test Case | Description |
+|---|---|
+| `default maxRounds` | Uses `EC_MAX_ROUNDS` (4) |
+| `custom maxRounds = 6` | Handler plays 6 rounds |
+| `custom roundDuration = 60` | Encoding timer is 60s |
+| `custom maxEmojis = 3` | Only 3 emojis allowed; extras rejected |
+| `custom maxGuessesPerPlayer = 1` | Each player gets only 1 guess per round |
+
+### 6.6.6 getSetting() Fallback Tests
+
+- [ ] Calling `getSetting('totalQuestions', FOF_TOTAL_QUESTIONS)` with empty `gameSettings` returns the fallback.
+- [ ] Calling `getSetting('totalQuestions', FOF_TOTAL_QUESTIONS)` with `gameSettings: { totalQuestions: 10 }` returns `10`.
+- [ ] Calling `getSetting('unknownKey', 42)` returns `42`.

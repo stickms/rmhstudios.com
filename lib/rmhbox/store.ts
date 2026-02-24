@@ -18,7 +18,21 @@ import { persist } from 'zustand/middleware';
 import type {
   ClientLobbyState,
   GameAction,
+  GameSettingsSchema,
+  GameSettingValues,
 } from './types';
+
+// ─── Game Settings State ────────────────────────────────────────────
+
+/** Game settings state for the pre-launch modal and GAME_SETTINGS phase. */
+export interface GameSettingsState {
+  minigameId: string;
+  displayName: string;
+  schema: GameSettingsSchema;
+  currentValues: GameSettingValues;
+  /** 'lobby' = pre-launch in WAITING, 'post-vote' = GAME_SETTINGS phase after vote */
+  mode: 'lobby' | 'post-vote';
+}
 
 // ─── User Settings ───────────────────────────────────────────────
 
@@ -77,6 +91,8 @@ export interface RMHboxStore {
   timerInfo: TimerInfo | null;
   /** Minigame sub-round info read by the GameShell footer */
   minigameRound: MinigameRoundInfo | null;
+  /** Game settings for pre-launch modal and GAME_SETTINGS phase (§12A) */
+  gameSettingsState: GameSettingsState | null;
 
   // Actions
   setConnectionStatus: (status: RMHboxStore['connectionStatus']) => void;
@@ -85,6 +101,8 @@ export interface RMHboxStore {
   setGameState: (state: Record<string, unknown>) => void;
   setTimerInfo: (info: TimerInfo | null) => void;
   setMinigameRound: (info: MinigameRoundInfo | null) => void;
+  setGameSettingsState: (state: GameSettingsState | null) => void;
+  updateGameSettingsValues: (values: GameSettingValues) => void;
   updateSettings: (partial: Partial<RMHboxUserSettings>) => void;
   leaveLobby: () => void;
   reset: () => void;
@@ -102,6 +120,7 @@ export const useRMHboxStore = create<RMHboxStore>()(
       settings: { ...DEFAULT_SETTINGS },
       timerInfo: null,
       minigameRound: null,
+      gameSettingsState: null,
 
       setConnectionStatus: (status) => set({ connectionStatus: status }),
 
@@ -127,6 +146,35 @@ export const useRMHboxStore = create<RMHboxStore>()(
           lobby: fullState,
           lastSeq: fullState.seq,
         });
+
+        // After a full sync (e.g. returning to WAITING after force-end),
+        // reinitialize gameSettingsState if a game is pre-selected and the
+        // lobby is in the WAITING state, so the settings button appears.
+        if (fullState.selectedGame && fullState.state === 'WAITING') {
+          const { minigameId, displayName } = fullState.selectedGame;
+          if (minigameId !== '__vote__') {
+            try {
+              // eslint-disable-next-line @typescript-eslint/no-require-imports
+              const { MINIGAME_REGISTRY } = require('./minigame-registry');
+              const def = MINIGAME_REGISTRY[minigameId];
+              if (def?.settingsSchema && def.settingsSchema.length > 0) {
+                // eslint-disable-next-line @typescript-eslint/no-require-imports
+                const { getDefaultSettings } = require('./game-settings');
+                set({
+                  gameSettingsState: {
+                    minigameId,
+                    displayName,
+                    schema: def.settingsSchema,
+                    currentValues: getDefaultSettings(def.settingsSchema),
+                    mode: 'lobby' as const,
+                  },
+                });
+              }
+            } catch {
+              // Registry not available — skip
+            }
+          }
+        }
       },
 
       setGameState: (gameState) => set({ gameState }),
@@ -134,6 +182,16 @@ export const useRMHboxStore = create<RMHboxStore>()(
       setTimerInfo: (info) => set({ timerInfo: info }),
 
       setMinigameRound: (info) => set({ minigameRound: info }),
+
+      setGameSettingsState: (state) => set({ gameSettingsState: state }),
+
+      updateGameSettingsValues: (values) => {
+        set((state) => ({
+          gameSettingsState: state.gameSettingsState
+            ? { ...state.gameSettingsState, currentValues: values }
+            : null,
+        }));
+      },
 
       updateSettings: (partial) => {
         set((state) => ({
@@ -147,6 +205,7 @@ export const useRMHboxStore = create<RMHboxStore>()(
         lastSeq: -1,
         timerInfo: null,
         minigameRound: null,
+        gameSettingsState: null,
       }),
 
       reset: () => set({
@@ -156,6 +215,7 @@ export const useRMHboxStore = create<RMHboxStore>()(
         lastSeq: -1,
         timerInfo: null,
         minigameRound: null,
+        gameSettingsState: null,
       }),
     }),
     {
@@ -301,12 +361,16 @@ export function applyLobbyAction(
       // When returning to WAITING, clear game state but preserve selectedGame
       // (server auto-reselects the last played game via GAME_PICKED or full sync)
       if (newState === 'WAITING') {
-        useRMHboxStore.setState({ timerInfo: null, minigameRound: null });
+        useRMHboxStore.setState({ timerInfo: null, minigameRound: null, gameSettingsState: null });
         return {
           ...lobby,
           state: newState,
           currentGame: null,
         };
+      }
+      // When entering a game phase (INSTRUCTIONS onwards), clear lobby-mode settings state
+      if (newState === 'INSTRUCTIONS' || newState === 'PLAYING') {
+        useRMHboxStore.setState({ gameSettingsState: null });
       }
       return {
         ...lobby,
@@ -361,14 +425,44 @@ export function applyLobbyAction(
         currentGame: data.game as ClientLobbyState['currentGame'],
       };
 
-    case 'GAME_PICKED':
+    case 'GAME_PICKED': {
+      const minigameId = data.minigameId as string;
+      const displayName = data.displayName as string;
+
+      // Initialize game settings state from the minigame registry
+      // (deferred import to avoid circular dependency)
+      if (minigameId !== '__vote__') {
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-require-imports
+          const { MINIGAME_REGISTRY } = require('./minigame-registry');
+          const def = MINIGAME_REGISTRY[minigameId];
+          if (def?.settingsSchema && def.settingsSchema.length > 0) {
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
+            const { getDefaultSettings } = require('./game-settings');
+            useRMHboxStore.setState({
+              gameSettingsState: {
+                minigameId,
+                displayName,
+                schema: def.settingsSchema,
+                currentValues: getDefaultSettings(def.settingsSchema),
+                mode: 'lobby' as const,
+              },
+            });
+          } else {
+            useRMHboxStore.setState({ gameSettingsState: null });
+          }
+        } catch {
+          useRMHboxStore.setState({ gameSettingsState: null });
+        }
+      } else {
+        useRMHboxStore.setState({ gameSettingsState: null });
+      }
+
       return {
         ...lobby,
-        selectedGame: {
-          minigameId: data.minigameId as string,
-          displayName: data.displayName as string,
-        },
+        selectedGame: { minigameId, displayName },
       };
+    }
 
     case 'TIMER_START': {
       // A timed phase is starting — store total + remaining for the header ring.

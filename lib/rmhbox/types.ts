@@ -12,6 +12,7 @@
 export type LobbyState =
   | 'WAITING'
   | 'VOTING'
+  | 'GAME_SETTINGS'
   | 'INSTRUCTIONS'
   | 'PRELOADING'
   | 'COUNTDOWN'
@@ -158,6 +159,27 @@ export interface MatchSummary {
   playedAt: number;
 }
 
+// ─── Game Settings (§12A) ────────────────────────────────────────
+
+export type GameSettingType = 'boolean' | 'integer' | 'float' | 'select';
+
+export interface GameSettingDef {
+  key: string;
+  type: GameSettingType;
+  label: string;
+  description: string;
+  default: boolean | number | string;
+  /** For integer/float: { min, max, step } */
+  min?: number;
+  max?: number;
+  step?: number;
+  /** For select: array of allowed string values */
+  options?: string[];
+}
+
+export type GameSettingsSchema = GameSettingDef[];
+export type GameSettingValues = Record<string, boolean | number | string>;
+
 // ─── Minigame Registry ───────────────────────────────────────────
 
 export type MinigameCategory = 'word' | 'trivia' | 'action' | 'creative';
@@ -194,6 +216,8 @@ export interface MinigameDefinition {
   preloadAssets: PreloadManifest;
   joinInProgressPolicy: JoinInProgressPolicy;
   tags: string[];
+  /** Host-configurable game settings schema (§12A). Empty = no settings. */
+  settingsSchema?: GameSettingsSchema;
 }
 
 // ─── Voting ──────────────────────────────────────────────────────

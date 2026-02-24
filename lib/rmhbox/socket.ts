@@ -133,6 +133,30 @@ export async function connectToRMHbox(): Promise<Socket> {
     }
   });
 
+  // ─── Game Settings listeners (§12A) ───────────────────────────
+
+  socket.on(S2C.GAME_SETTINGS_OPENED, (data: {
+    minigameId: string;
+    displayName: string;
+    schema: import('./types').GameSettingsSchema;
+    currentValues: import('./types').GameSettingValues;
+    mode: 'direct' | 'post-vote';
+  }) => {
+    useRMHboxStore.getState().setGameSettingsState({
+      minigameId: data.minigameId,
+      displayName: data.displayName,
+      schema: data.schema,
+      currentValues: data.currentValues,
+      mode: data.mode === 'post-vote' ? 'post-vote' : 'lobby',
+    });
+  });
+
+  socket.on(S2C.GAME_SETTINGS_UPDATED, (data: {
+    currentValues: import('./types').GameSettingValues;
+  }) => {
+    useRMHboxStore.getState().updateGameSettingsValues(data.currentValues);
+  });
+
   return socket;
 }
 

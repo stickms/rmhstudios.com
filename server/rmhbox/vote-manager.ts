@@ -234,7 +234,11 @@ export class VoteManager {
 
     logger.info({ event: 'vote_resolved', lobbyId, winnerId, tallies });
 
-    this.gameCoordinator.startGameFlow(lobbyId, winnerId);
+    // Enter game settings phase (will skip to game flow if no settings schema)
+    const lobby = this.lobbyManager.getLobby(lobbyId);
+    if (lobby) {
+      this.gameCoordinator.enterGameSettings(lobby, winnerId, 'post-vote');
+    }
   }
 
   // ─── Host Force-Skip (§1.5) ──────────────────────────────────

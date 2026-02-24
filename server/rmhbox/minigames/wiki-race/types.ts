@@ -44,6 +44,14 @@ export interface WikiRaceState {
   timeRemaining: number;
   finishCounter: number;
   actionLog: ActionLogEntry[];
+  /** Current round number (1-based) */
+  currentRound: number;
+  /** Total number of rounds */
+  totalRounds: number;
+  /** Cumulative scores across rounds (keyed by userId) */
+  cumulativeScores: Map<string, number>;
+  /** Previously used pair keys (to avoid repeats) */
+  usedPairKeys: string[];
 }
 
 // ─── Per-player rate-limit tracking ──────────────────────────────

@@ -77,7 +77,7 @@ export class CategoryCrashMinigame extends BaseMinigame {
     logger.info({
       event: 'category_crash:start',
       lobbyId: this.context.lobbyId,
-      totalRounds: CC_TOTAL_ROUNDS,
+      totalRounds: this.getSetting('totalRounds', CC_TOTAL_ROUNDS),
       playerCount: this.context.players.size,
     });
 
@@ -93,7 +93,7 @@ export class CategoryCrashMinigame extends BaseMinigame {
     this.state = {
       phase: CategoryCrashPhase.REVEAL,
       currentRound: 0,
-      totalRounds: CC_TOTAL_ROUNDS,
+      totalRounds: this.getSetting('totalRounds', CC_TOTAL_ROUNDS),
       letter: '',
       categories: [],
       answers: {},
@@ -141,7 +141,7 @@ export class CategoryCrashMinigame extends BaseMinigame {
 
     for (const userId of this.context.players.keys()) {
       if (this.state.scores[userId] !== undefined) {
-        this.state.answers[userId] = new Array(CC_CATEGORIES_PER_ROUND).fill(null);
+        this.state.answers[userId] = new Array(this.getSetting('categoriesPerRound', CC_CATEGORIES_PER_ROUND)).fill(null);
         this.state.locked[userId] = false;
         this.state.crashCounts[userId] = 0;
       }
@@ -189,7 +189,7 @@ export class CategoryCrashMinigame extends BaseMinigame {
 
     // Scale input duration by player count: 60s base, +15s per player beyond 2, max 180s
     const playerCount = this.context.players.size;
-    const scaledInputDuration = Math.min(180, CC_INPUT_DURATION + Math.max(0, playerCount - 2) * 15);
+    const scaledInputDuration = Math.min(180, this.getSetting('inputDuration', CC_INPUT_DURATION) + Math.max(0, playerCount - 2) * 15);
     this.state.timeRemaining = scaledInputDuration;
 
     logger.info({
@@ -238,7 +238,7 @@ export class CategoryCrashMinigame extends BaseMinigame {
 
     // Scale peer review duration by player count: 30s base, +10s per player beyond 2, max 90s
     const playerCount = this.context.players.size;
-    const scaledReviewDuration = Math.min(90, CC_PEER_REVIEW_DURATION + Math.max(0, playerCount - 2) * 10);
+    const scaledReviewDuration = Math.min(90, this.getSetting('peerReviewDuration', CC_PEER_REVIEW_DURATION) + Math.max(0, playerCount - 2) * 10);
     this.state.timeRemaining = scaledReviewDuration;
 
     // Build anonymization map
@@ -595,7 +595,7 @@ export class CategoryCrashMinigame extends BaseMinigame {
 
   private computeRoundResults(): CCRoundResults {
     const playerCount = Object.keys(this.state.answers).length;
-    const crashThreshold = Math.ceil(((playerCount - 1) * CC_CRASH_THRESHOLD_PERCENT) / 100);
+    const crashThreshold = Math.ceil(((playerCount - 1) * this.getSetting('crashThreshold', CC_CRASH_THRESHOLD_PERCENT)) / 100);
     const letter = this.state.letter;
 
     // Determine which answers are crashed (met threshold)

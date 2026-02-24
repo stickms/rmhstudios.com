@@ -55,6 +55,7 @@ describe('Undercover Agent Server Handler (§5.2)', () => {
     it('should create a 5×5 grid with 25 tiles', () => {
       const { game, broadcastLog } = createGame();
       game.start();
+      game.handleInput('user-alice-001', 'START_GAME', {});
 
       const setup = findLastActionBroadcast(broadcastLog, 'UA_SETUP');
       expect(setup).toBeDefined();
@@ -66,6 +67,7 @@ describe('Undercover Agent Server Handler (§5.2)', () => {
     it('should assign teams with spymasters and operatives', () => {
       const { game, broadcastLog } = createGame();
       game.start();
+      game.handleInput('user-alice-001', 'START_GAME', {});
 
       const teams = getTeamInfo(broadcastLog);
       expect(teams).toBeDefined();
@@ -76,6 +78,7 @@ describe('Undercover Agent Server Handler (§5.2)', () => {
     it('should send key card privately to spymasters only', () => {
       const { game, playerLog } = createGame();
       game.start();
+      game.handleInput('user-alice-001', 'START_GAME', {});
 
       // Find UA_KEY_CARD events - should be sent to exactly 2 players (spymasters)
       const keycardEvents = playerLog.filter(
@@ -87,6 +90,7 @@ describe('Undercover Agent Server Handler (§5.2)', () => {
     it('key card should have correct tile type distribution', () => {
       const { game, playerLog } = createGame();
       game.start();
+      game.handleInput('user-alice-001', 'START_GAME', {});
 
       const keycardEvent = playerLog.find(
         (e) => (e.data as Record<string, unknown>).type === 'UA_KEY_CARD',
@@ -114,6 +118,10 @@ describe('Undercover Agent Server Handler (§5.2)', () => {
     it('should start in CLUE phase with first team', () => {
       const { game, broadcastLog } = createGame();
       game.start();
+      game.handleInput('user-alice-001', 'START_GAME', {});
+
+      // Advance past UA_SETUP_DURATION (2s) to reach CLUE phase
+      vi.advanceTimersByTime(2000);
 
       const phaseChange = findLastActionBroadcast(broadcastLog, 'UA_PHASE_CHANGE');
       expect(phaseChange).toBeDefined();
@@ -125,6 +133,7 @@ describe('Undercover Agent Server Handler (§5.2)', () => {
     it('getStateForPlayer should hide key card from operatives', () => {
       const { game, broadcastLog } = createGame();
       game.start();
+      game.handleInput('user-alice-001', 'START_GAME', {});
 
       // Get teams info to find an operative
       const teams = getTeamInfo(broadcastLog) as Record<string, Record<string, unknown>>;
@@ -149,6 +158,7 @@ describe('Undercover Agent Server Handler (§5.2)', () => {
     it('getStateForSpectator should show the key card', () => {
       const { game } = createGame();
       game.start();
+      game.handleInput('user-alice-001', 'START_GAME', {});
 
       const state = game.getStateForSpectator() as Record<string, unknown>;
       expect(state).toBeDefined();

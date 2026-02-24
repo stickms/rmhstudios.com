@@ -271,6 +271,8 @@ export function createTestLobby(overrides: Partial<RMHboxLobby> = {}): RMHboxLob
     selectedGame: null,
     matchHistory: [],
     roundNumber: 0,
+    pendingGameSettings: null,
+    resolvedGameSettings: null,
     ...overrides,
   };
 }

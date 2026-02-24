@@ -21,6 +21,7 @@
 10. [Spectator System](#10-spectator-system)
 11. [Ready-Up & Join-in-Progress](#11-ready-up--join-in-progress)
 12. [Voting System](#12-voting-system)
+12A. [Minigame Game Settings](#12a-minigame-game-settings)
 13. [Database Schema](#13-database-schema)
 14. [Leaderboard & Stats API](#14-leaderboard--stats-api)
 15. [Match-End Lifecycle & Persistence](#15-match-end-lifecycle--persistence)
@@ -811,6 +812,9 @@ interface PreloadProgressPayload {
 - Duration: 10 seconds (configurable), or until host advances.
 - During this phase, the match-end persistence pipeline fires asynchronously (§15).
 - After the results timer, transition back to `WAITING` (or `VOTING` if auto-continue is set).
+- **ResultsScreen** displays the title "Results" (not round-specific). The "All Players"
+  panel shows every player's score (not just 4th place and beyond), so the full standings
+  are always visible below the podium.
 
 ```typescript
 interface RoundResultsPayload {
@@ -1556,6 +1560,717 @@ interface SelectGamePayload {
 ```
 
 Server validates the minigame is eligible for the current player count, then transitions directly to `INSTRUCTIONS`.
+
+---
+
+## 12A. Minigame Game Settings
+
+A unified system that lets the host configure game-specific settings (round count, time limits, difficulty toggles, etc.) **before** a minigame launches. Settings are typed, validated, persisted per-account, and surfaced in the lobby UI.
+
+### 12A.1 Setting Schema Types
+
+Every configurable setting is described by a **`GameSettingDef`** that declares its type, constraints, label, and default value. Four primitive types are supported:
+
+```typescript
+// lib/rmhbox/types.ts
+
+type GameSettingType = 'boolean' | 'integer' | 'float' | 'string';
+
+/** A single setting definition. */
+interface GameSettingDef {
+  key: string;                       // machine-readable identifier, e.g. 'totalRounds'
+  type: GameSettingType;
+  label: string;                     // human-readable label, e.g. 'Number of Rounds'
+  description?: string;              // tooltip / help text
+  defaultValue: boolean | number | string;
+
+  // ─── Type-specific constraints ───
+  /** Integer / Float: inclusive minimum. */
+  min?: number;
+  /** Integer / Float: inclusive maximum. */
+  max?: number;
+  /** Integer / Float: step increment for the UI slider/stepper. */
+  step?: number;
+  /** String: allowed values (renders as a dropdown). Empty = free text. */
+  options?: Array<{ value: string; label: string }>;
+  /** String: max length for free-text inputs. */
+  maxLength?: number;
+}
+
+/** Resolved setting values — a flat Record keyed by `GameSettingDef.key`. */
+type GameSettingValues = Record<string, boolean | number | string>;
+
+/** Schema + defaults for a minigame. */
+interface GameSettingsSchema {
+  minigameId: string;
+  settings: GameSettingDef[];
+}
+```
+
+Examples:
+
+| Key | Type | Default | Constraints | Label |
+|---|---|---|---|---|
+| `totalRounds` | `integer` | `3` | min=1, max=10, step=1 | Number of Rounds |
+| `inputDuration` | `integer` | `45` | min=15, max=120, step=5 | Input Timer (seconds) |
+| `enableSpeedBonus` | `boolean` | `true` | — | Speed Bonus |
+| `difficulty` | `string` | `'mixed'` | options: easy/medium/hard/mixed | Difficulty |
+| `scoringMultiplier` | `float` | `1.0` | min=0.5, max=3.0, step=0.5 | Scoring Multiplier |
+
+### 12A.2 MinigameDefinition Extension
+
+`MinigameDefinition` (§7.3) gains a new optional field:
+
+```typescript
+interface MinigameDefinition {
+  // ... existing fields ...
+  settingsSchema?: GameSettingDef[];  // if omitted, the game has no configurable settings
+}
+```
+
+When a minigame is registered in `MINIGAME_REGISTRY`, it may include a `settingsSchema` array describing all host-configurable settings. The `defaultValue` on each `GameSettingDef` doubles as the fallback when the host has no saved preferences.
+
+### 12A.3 Server-Side Interface: BaseMinigame
+
+`MinigameContext` gains a new field:
+
+```typescript
+interface MinigameContext {
+  // ... existing fields ...
+  gameSettings: GameSettingValues;   // resolved settings for this match
+}
+```
+
+`BaseMinigame` provides a typed helper for reading settings:
+
+```typescript
+abstract class BaseMinigame {
+  // ... existing ...
+
+  /** Read a game setting with type safety, falling back to the constant default. */
+  protected getSetting<T extends boolean | number | string>(key: string, fallback: T): T {
+    const val = this.context.gameSettings[key];
+    return (val !== undefined ? val : fallback) as T;
+  }
+}
+```
+
+Game handlers use `this.getSetting('totalRounds', RT_TOTAL_ROUNDS)` instead of the raw constant, making every tuning knob overridable.
+
+### 12A.4 Lifecycle Flow
+
+The settings configuration phase occurs **after** the game is selected (by direct pick or vote result) but **before** instructions begin. A new `GAME_SETTINGS` lobby state is introduced:
+
+```
+WAITING → [VOTING] → GAME_SETTINGS → INSTRUCTIONS → PRELOADING → COUNTDOWN → PLAYING → ROUND_RESULTS → WAITING
+```
+
+#### 12A.4.1 State Machine Update
+
+```typescript
+type LobbyState =
+  | 'WAITING'
+  | 'VOTING'
+  | 'GAME_SETTINGS'      // ← NEW: host configuring game settings
+  | 'INSTRUCTIONS'
+  | 'PRELOADING'
+  | 'COUNTDOWN'
+  | 'PLAYING'
+  | 'ROUND_RESULTS'
+  | 'SESSION_RESULTS'
+  | 'DISBANDED';
+```
+
+#### 12A.4.2 Lobby Pre-Configuration (WAITING State)
+
+While the lobby is in the `WAITING` state and a game is picked, the host may open a **Game Settings Modal** to pre-configure settings before launching the game. Non-host players can also view the same modal, updated in real-time, but all inputs are disabled.
+
+1. Host picks a game via `GAME_PICK`. If the game has `settingsSchema`, `pendingGameSettings` is initialized with defaults.
+2. Host (or any player) can open the pre-launch settings modal at any time.
+3. When the host changes a setting, the client emits `rmhbox:game:update_settings` — the server validates, updates `pendingGameSettings`, and broadcasts `GAME_SETTINGS_UPDATED` to all clients.
+4. Non-host players see settings values update live as the host makes changes. All inputs are disabled for non-hosts.
+5. The host may also press **"Reset Defaults"** to revert all values.
+6. Changes persist on the lobby until the game starts or the game selection changes.
+
+#### 12A.4.3 Flow A — Host Direct-Select
+
+1. Host picks a game and presses **Start**.
+2. The `GAME_SETTINGS` phase is **skipped entirely** — the server resolves settings from `pendingGameSettings` (or defaults if empty) and proceeds directly to `INSTRUCTIONS`.
+3. This applies whether or not the game has a `settingsSchema`. The host has already had the opportunity to configure settings in the lobby via the pre-launch modal.
+
+#### 12A.4.4 Flow B — Vote Result
+
+1. Vote completes → winning minigame determined.
+2. If the winning game has `settingsSchema`:
+   - Server transitions to `GAME_SETTINGS`.
+   - Host sees a full-screen settings phase with editable controls.
+   - Non-host players see the same view in real-time, but all inputs are disabled (read-only). A message says "Host is configuring settings…".
+   - The host **cannot go back to the lobby** or to the vote — they can only configure and start, or skip.
+   - If the host does not act within **30 seconds**, the game auto-starts with the current settings (defaults or host-modified).
+3. If the winning game has NO `settingsSchema`:
+   - Proceed directly to `INSTRUCTIONS`.
+
+#### 12A.4.5 Host Force-Skip
+
+The host can **force-skip** the `GAME_SETTINGS` phase (via `rmhbox:game:force_skip`), which starts the game with the current (potentially partially modified) settings.
+
+### 12A.5 WebSocket Events
+
+#### Client → Server
+
+| Event | Payload | Description |
+|---|---|---|
+| `rmhbox:game:update_settings` | `{ lobbyId: string, settings: Partial<GameSettingValues> }` | [Host] Update one or more game settings. Accepted in both `WAITING` and `GAME_SETTINGS` states. |
+| `rmhbox:game:confirm_settings` | `{ lobbyId: string }` | [Host] Confirm settings during `GAME_SETTINGS` phase and proceed to INSTRUCTIONS |
+| `rmhbox:game:reset_settings` | `{ lobbyId: string }` | [Host] Reset all settings to minigame defaults. Accepted in both `WAITING` and `GAME_SETTINGS` states. |
+
+#### Server → Client
+
+| Event | Payload | Description |
+|---|---|---|
+| `rmhbox:game:game_settings_opened` | `GameSettingsOpenedPayload` | Game settings phase started; includes schema + current values |
+| `rmhbox:game:game_settings_updated` | `{ settings: GameSettingValues }` | Settings changed (broadcast to all; players see live preview) |
+
+```typescript
+interface GameSettingsOpenedPayload {
+  minigameId: string;
+  displayName: string;
+  schema: GameSettingDef[];
+  currentValues: GameSettingValues;
+  /** Whether this is a post-vote flow (affects button labels and timeout). */
+  isPostVote: boolean;
+  /** If post-vote, auto-start deadline (unix ms). Null for direct-select. */
+  autoStartAt: number | null;
+}
+```
+
+### 12A.6 Server-Side Logic (GameCoordinator)
+
+#### 12A.6.1 Entering GAME_SETTINGS
+
+When `startGameFlow()` determines the selected minigame has a `settingsSchema`:
+
+```typescript
+private async startGameSettings(lobby: RMHboxLobby, minigameId: string, isPostVote: boolean): Promise<void> {
+  const def = this.getMinigameDef(minigameId);
+  if (!def?.settingsSchema?.length) {
+    // No settings — skip directly to instructions
+    this.startInstructions(lobby, minigameId);
+    return;
+  }
+
+  lobby.state = 'GAME_SETTINGS';
+  lobby.lastActivityAt = Date.now();
+
+  // Load host's saved preferences
+  const hostPrefs = await this.loadHostGamePreferences(lobby.hostUserId, minigameId);
+  const defaults = buildDefaults(def.settingsSchema);
+  const currentValues = { ...defaults, ...hostPrefs };
+
+  // Store pending settings on the lobby
+  lobby.pendingGameSettings = {
+    minigameId,
+    schema: def.settingsSchema,
+    values: currentValues,
+    isPostVote,
+  };
+
+  // Broadcast
+  this.lobbyManager.broadcastAction(lobby.id, {
+    type: 'STATE_CHANGED',
+    payload: { state: 'GAME_SETTINGS' },
+  });
+
+  const autoStartAt = isPostVote ? Date.now() + 30_000 : null;
+
+  this.io.to(`lobby:${lobby.id}`).emit(S2C.GAME_SETTINGS_OPENED, {
+    minigameId,
+    displayName: def.displayName,
+    schema: def.settingsSchema,
+    currentValues,
+    isPostVote,
+    autoStartAt,
+  });
+
+  this.stateSync.broadcastFullSync(lobby.id);
+
+  // Post-vote auto-start timer
+  if (isPostVote) {
+    const timerHandle = this.stateSync.startTimerBroadcast(lobby.id, 30, () => {
+      const current = this.lobbyManager.getLobby(lobby.id);
+      if (current?.state === 'GAME_SETTINGS') {
+        this.confirmGameSettings(lobby.id);
+      }
+    });
+    let lifecycle = this.lifecycles.get(lobby.id);
+    if (!lifecycle) {
+      lifecycle = { phaseTimer: null, timerHandle, readyPlayers: new Set() };
+      this.lifecycles.set(lobby.id, lifecycle);
+    } else {
+      lifecycle.timerHandle = timerHandle;
+    }
+  }
+}
+```
+
+#### 12A.6.2 Handling Setting Updates
+
+```typescript
+private onUpdateGameSettings(socket: Socket, payload: { lobbyId: string; settings: Partial<GameSettingValues> }): void {
+  const userId = socket.data.userId as string;
+  const lobby = this.lobbyManager.getLobbyByUserId(userId);
+  if (!lobby || lobby.id !== payload.lobbyId) return;
+  if (lobby.hostUserId !== userId) return; // Host only
+  if (lobby.state !== 'GAME_SETTINGS' || !lobby.pendingGameSettings) return;
+
+  const schema = lobby.pendingGameSettings.schema;
+  const validated = validateSettings(schema, payload.settings);
+
+  // Merge into pending
+  Object.assign(lobby.pendingGameSettings.values, validated);
+
+  // Broadcast updated values to all clients
+  this.io.to(`lobby:${lobby.id}`).emit(S2C.GAME_SETTINGS_UPDATED, {
+    settings: lobby.pendingGameSettings.values,
+  });
+}
+```
+
+#### 12A.6.3 Confirming Settings
+
+```typescript
+private async confirmGameSettings(lobbyId: string): Promise<void> {
+  const lobby = this.lobbyManager.getLobby(lobbyId);
+  if (!lobby || lobby.state !== 'GAME_SETTINGS' || !lobby.pendingGameSettings) return;
+
+  const { minigameId, values } = lobby.pendingGameSettings;
+
+  // Persist the host's preferences for this game
+  await this.saveHostGamePreferences(lobby.hostUserId, minigameId, values);
+
+  // Store resolved settings on the ActiveGame for the handler
+  lobby.resolvedGameSettings = values;
+
+  // Clear pending state
+  lobby.pendingGameSettings = null;
+
+  // Clear any auto-start timer
+  this.clearLifecycleTimers(lobbyId);
+
+  // Continue with the game flow
+  this.startInstructions(lobby, minigameId);
+}
+```
+
+#### 12A.6.4 Resetting to Defaults
+
+```typescript
+private onResetGameSettings(socket: Socket, payload: { lobbyId: string }): void {
+  const userId = socket.data.userId as string;
+  const lobby = this.lobbyManager.getLobbyByUserId(userId);
+  if (!lobby || lobby.id !== payload.lobbyId) return;
+  if (lobby.hostUserId !== userId) return;
+  if (lobby.state !== 'GAME_SETTINGS' || !lobby.pendingGameSettings) return;
+
+  const defaults = buildDefaults(lobby.pendingGameSettings.schema);
+  lobby.pendingGameSettings.values = { ...defaults };
+
+  this.io.to(`lobby:${lobby.id}`).emit(S2C.GAME_SETTINGS_UPDATED, {
+    settings: lobby.pendingGameSettings.values,
+  });
+}
+```
+
+#### 12A.6.5 Validation Helper
+
+Settings are validated against their schema constraints:
+
+```typescript
+function validateSettings(
+  schema: GameSettingDef[],
+  partial: Partial<GameSettingValues>,
+): GameSettingValues {
+  const result: GameSettingValues = {};
+  for (const def of schema) {
+    const raw = partial[def.key];
+    if (raw === undefined) continue;
+
+    switch (def.type) {
+      case 'boolean':
+        if (typeof raw === 'boolean') result[def.key] = raw;
+        break;
+      case 'integer':
+        if (typeof raw === 'number' && Number.isInteger(raw)) {
+          result[def.key] = Math.max(def.min ?? -Infinity, Math.min(def.max ?? Infinity, raw));
+        }
+        break;
+      case 'float':
+        if (typeof raw === 'number' && Number.isFinite(raw)) {
+          result[def.key] = Math.max(def.min ?? -Infinity, Math.min(def.max ?? Infinity, raw));
+        }
+        break;
+      case 'string':
+        if (typeof raw === 'string') {
+          if (def.options?.length) {
+            // Must be one of the allowed values
+            if (def.options.some((o) => o.value === raw)) result[def.key] = raw;
+          } else {
+            result[def.key] = raw.slice(0, def.maxLength ?? 100);
+          }
+        }
+        break;
+    }
+  }
+  return result;
+}
+
+function buildDefaults(schema: GameSettingDef[]): GameSettingValues {
+  const result: GameSettingValues = {};
+  for (const def of schema) {
+    result[def.key] = def.defaultValue;
+  }
+  return result;
+}
+```
+
+### 12A.7 UI/UX Design
+
+#### 12A.7.1 Host Controls Updates
+
+The "Settings" button in `HostControls` is renamed to **"Lobby Settings"**. A new **"Game Settings"** button appears when a game is selected (i.e., `selectedGame !== null`). Pressing it opens the `GameSettingsModal` without starting the game — the host can pre-configure settings before pressing Start.
+
+```
+┌──────────────────────────────────────────────────┐
+│              HOST CONTROLS                        │
+│                                                   │
+│  [🎮 Pick Game]  [⚙ Lobby Settings]             │
+│                                                   │
+│  [🔧 Game Settings]  ← visible when game picked  │
+│                                                   │
+│  Selected: Rhyme Time                             │
+└──────────────────────────────────────────────────┘
+```
+
+#### 12A.7.2 Game Settings Modal (WAITING State — Pre-Launch)
+
+When opened from the lobby (WAITING), the modal shows:
+
+```
+┌────────────────────────────────────────────────────┐
+│  🔧  Rhyme Time — Game Settings            [✕]    │
+│────────────────────────────────────────────────────│
+│                                                    │
+│  Number of Rounds            [  3  ] ← stepper    │
+│  Input Timer (seconds)       [──●──] 45s ← slider │
+│  Speed Bonus                 [■ ON ]  ← toggle    │
+│  Scoring Multiplier          [──●──] 1.0× ← slider│
+│                                                    │
+│────────────────────────────────────────────────────│
+│  [↺ Reset Defaults]                    [💾 Save]  │
+└────────────────────────────────────────────────────┘
+```
+
+- **"Save"** persists the host's preferences and closes the modal. The game does NOT start.
+- **"Reset Defaults"** reverts all values to the minigame's built-in defaults.
+- Changes are broadcast live to all players via `GAME_SETTINGS_UPDATED`. Non-host players can open the same modal to view settings in real-time with all inputs disabled.
+
+#### 12A.7.3 Game Settings Phase (GAME_SETTINGS State — Pre-Instructions)
+
+When the game enters the `GAME_SETTINGS` phase (after direct-select or vote), **all** players transition to the settings screen:
+
+**Host View:**
+
+```
+┌────────────────────────────────────────────────────┐
+│  🔧  Rhyme Time — Game Settings            [✕]    │
+│────────────────────────────────────────────────────│
+│                                                    │
+│  Number of Rounds            [  3  ] ← stepper    │
+│  Input Timer (seconds)       [──●──] 45s ← slider │
+│  Speed Bonus                 [■ ON ]  ← toggle    │
+│  Scoring Multiplier          [──●──] 1.0× ← slider│
+│                                                    │
+│────────────────────────────────────────────────────│
+│  [↺ Reset]      [← Back to Lobby] [▶ Start Game] │
+│                                                    │
+│  (Post-vote: [↺ Reset]  [▶ Use Defaults & Start]  │
+│               [▶ Save & Start])                    │
+│                          Auto-starting in: 0:25    │
+└────────────────────────────────────────────────────┘
+```
+
+**Non-Host Player View:**
+
+```
+┌────────────────────────────────────────────────────┐
+│  🔧  Rhyme Time — Game Settings                    │
+│────────────────────────────────────────────────────│
+│                                                    │
+│  Number of Rounds                    3             │
+│  Input Timer (seconds)               45s           │
+│  Speed Bonus                         ON            │
+│  Scoring Multiplier                  1.0×          │
+│                                                    │
+│         Host is configuring settings...            │
+│       [settings update live as host changes]       │
+│                                                    │
+│                          Auto-starting in: 0:25    │
+└────────────────────────────────────────────────────┘
+```
+
+- Non-host players see a **read-only** view of the current settings that updates live as the host makes changes.
+- The post-vote flow has a **30-second auto-start timer** (shown for all players).
+- The direct-select flow has **no auto-start timer**; the host controls the pace.
+
+#### 12A.7.4 Setting Input Controls
+
+Each setting type maps to a specific UI control:
+
+| Type | Control | Details |
+|---|---|---|
+| `boolean` | Toggle switch | ON/OFF with colored fill |
+| `integer` | Stepper or slider | If `max - min ≤ 20`, use a stepper (- / + buttons). Otherwise, use a slider with value label. In both modes, clicking the displayed value opens an inline `<input type="number">` for direct editing. Enter/blur commits (snapped to nearest step, clamped to range), Escape cancels. |
+| `float` | Slider | Continuous slider with value label showing `step` precision |
+| `string` (with `options`) | Dropdown select | Renders all options as a `<select>` |
+| `string` (no `options`) | Text input | Free-form input with `maxLength` constraint |
+
+#### 12A.7.5 GameSettingsModal Component
+
+```typescript
+// components/rmhbox/GameSettingsModal.tsx
+
+interface GameSettingsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  /** The minigame whose settings to display. */
+  minigameId: string;
+  displayName: string;
+  /** Setting definitions from MinigameDefinition.settingsSchema. */
+  schema: GameSettingDef[];
+  /** Current values (may be host's saved prefs or defaults). */
+  values: GameSettingValues;
+  /** Whether the host can edit (true) or is viewing read-only (false). */
+  editable: boolean;
+  /** Callback when the host changes a setting. */
+  onSettingChange?: (key: string, value: boolean | number | string) => void;
+  /** Callback when the host presses Reset. */
+  onReset?: () => void;
+  /** Footer mode determines which buttons appear. */
+  mode: 'lobby' | 'pre-launch' | 'post-vote';
+  /** Callback for the primary action (Save / Start Game / Save & Start). */
+  onPrimaryAction?: () => void;
+  /** Callback for back-to-lobby (pre-launch only). */
+  onBackToLobby?: () => void;
+  /** Auto-start countdown remaining (seconds). Null if no countdown. */
+  autoStartCountdown?: number | null;
+}
+```
+
+### 12A.8 Database Persistence
+
+Host game settings preferences are persisted so they carry across sessions. A new model stores per-user, per-minigame settings:
+
+```prisma
+model RMHboxGamePreference {
+  id          String   @id @default(cuid())
+  userId      String
+  minigameId  String
+  settings    Json     // GameSettingValues serialized
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, minigameId])
+  @@index([userId])
+  @@map("rmhbox_game_preference")
+}
+```
+
+The `RMHboxProfile` model gains a relation:
+
+```prisma
+model RMHboxProfile {
+  // ... existing fields ...
+  gamePreferences  RMHboxGamePreference[]
+}
+```
+
+**Wait — actually**, `RMHboxGamePreference` references `userId` directly (not `profileId`), since we may want preferences even before a profile exists. The relation can be through `User` instead:
+
+```prisma
+model RMHboxGamePreference {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  minigameId  String
+  settings    Json     // GameSettingValues serialized
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, minigameId])
+  @@index([userId])
+  @@map("rmhbox_game_preference")
+}
+
+// Add to User model:
+// rmhboxGamePreferences  RMHboxGamePreference[]
+```
+
+#### 12A.8.1 Load Preferences
+
+```typescript
+async function loadHostGamePreferences(userId: string, minigameId: string): Promise<GameSettingValues | null> {
+  const pref = await prisma.rMHboxGamePreference.findUnique({
+    where: { userId_minigameId: { userId, minigameId } },
+  });
+  return pref ? (pref.settings as GameSettingValues) : null;
+}
+```
+
+#### 12A.8.2 Save Preferences
+
+```typescript
+async function saveHostGamePreferences(userId: string, minigameId: string, settings: GameSettingValues): Promise<void> {
+  await prisma.rMHboxGamePreference.upsert({
+    where: { userId_minigameId: { userId, minigameId } },
+    create: { userId, minigameId, settings },
+    update: { settings },
+  });
+}
+```
+
+#### 12A.8.3 Caching Strategy
+
+To avoid a DB round-trip on every `GAME_SETTINGS` entry, the server maintains an in-memory LRU cache of host preferences:
+
+```typescript
+// server/rmhbox/game-settings-cache.ts
+
+const PREFS_CACHE = new Map<string, { values: GameSettingValues; loadedAt: number }>();
+const PREFS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const PREFS_CACHE_MAX = 500;
+
+function cacheKey(userId: string, minigameId: string): string {
+  return `${userId}::${minigameId}`;
+}
+```
+
+Cache is invalidated on save and evicted LRU when exceeding `PREFS_CACHE_MAX`.
+
+### 12A.9 Server-Side Lobby Extensions
+
+The `RMHboxLobby` interface gains two optional fields:
+
+```typescript
+interface RMHboxLobby {
+  // ... existing fields ...
+  /** Settings being configured during the GAME_SETTINGS phase. */
+  pendingGameSettings: {
+    minigameId: string;
+    schema: GameSettingDef[];
+    values: GameSettingValues;
+    isPostVote: boolean;
+  } | null;
+  /** Resolved game settings to be passed to the minigame handler. */
+  resolvedGameSettings: GameSettingValues | null;
+}
+```
+
+When `startPlaying()` builds the `MinigameContext`, it includes `gameSettings`:
+
+```typescript
+const context: MinigameContext = {
+  // ... existing fields ...
+  gameSettings: lobby.resolvedGameSettings ?? {},
+};
+```
+
+### 12A.10 Client Store Extensions
+
+The Zustand store gains a field for game settings state:
+
+```typescript
+interface RMHboxStore {
+  // ... existing fields ...
+  /** Game settings for the GAME_SETTINGS phase. Null when not in that phase. */
+  gameSettingsState: {
+    minigameId: string;
+    displayName: string;
+    schema: GameSettingDef[];
+    values: GameSettingValues;
+    isPostVote: boolean;
+    autoStartAt: number | null;
+  } | null;
+  setGameSettingsState: (state: RMHboxStore['gameSettingsState']) => void;
+}
+```
+
+New actions in the lobby action reducer:
+
+```typescript
+case 'GAME_SETTINGS_UPDATED':
+  // Update the settings values in the store  
+  if (state.gameSettingsState) {
+    return { ...state, gameSettingsState: { ...state.gameSettingsState, values: payload.settings } };
+  }
+  return state;
+```
+
+Socket listener for `GAME_SETTINGS_OPENED`:
+
+```typescript
+socket.on(S2C.GAME_SETTINGS_OPENED, (data: GameSettingsOpenedPayload) => {
+  useRMHboxStore.getState().setGameSettingsState({
+    minigameId: data.minigameId,
+    displayName: data.displayName,
+    schema: data.schema,
+    values: data.currentValues,
+    isPostVote: data.isPostVote,
+    autoStartAt: data.autoStartAt,
+  });
+});
+```
+
+### 12A.11 Match History Integration
+
+The resolved game settings used for a match are stored in the `RMHboxMatch.gameLog` JSON alongside the game actions. This allows match replays to know what settings were active:
+
+```typescript
+interface GameLog {
+  // ... existing fields ...
+  gameSettings: GameSettingValues;   // settings used for this match
+}
+```
+
+The settings are also summarized in `RoundResultsPayload` so the results screen can show what configuration was used:
+
+```typescript
+interface RoundResultsPayload {
+  // ... existing fields ...
+  gameSettings?: GameSettingValues;  // optional: settings used (for display)
+}
+```
+
+### 12A.12 Constants
+
+```typescript
+// lib/rmhbox/constants.ts
+
+/** Duration of the auto-start timer during the post-vote GAME_SETTINGS phase. */
+export const GAME_SETTINGS_POST_VOTE_TIMEOUT = 30;
+
+/** Maximum number of settings a minigame can define. */
+export const MAX_GAME_SETTINGS_PER_MINIGAME = 20;
+
+/** Rate limit for game:update_game_settings events. */
+// Added to SOCKET_RATE_LIMITS:
+// 'rmhbox:game:update_game_settings': { max: 30, windowMs: 10_000 }
+```
+
+### 12A.13 Security & Validation
+
+1. **Host-only mutation:** Only the current host (`lobby.hostUserId === userId`) can emit `update_settings`, `confirm_settings`, or `reset_settings`. All others are silently dropped.
+2. **Schema validation:** Every value update is validated against the `GameSettingDef[]` schema. Unknown keys are ignored. Values outside `min`/`max` are clamped. Invalid types are rejected.
+3. **State gating:** `update_settings` and `reset_settings` are accepted in both `WAITING` (pre-configuration) and `GAME_SETTINGS` (post-vote) states. `confirm_settings` is only accepted during the `GAME_SETTINGS` phase. Out-of-state events are dropped.
+4. **Rate limiting:** `update_settings` is rate-limited to 30 events per 10 seconds to prevent spam.
+5. **Payload size:** The `settings` JSON payload is validated to be under 10 KB.
 
 ---
 
@@ -2411,6 +3126,12 @@ export const useRMHboxStore = create<RMHboxStore>()(
       
       applyFullSync: (fullState) => {
         set({ lobby: fullState, lastSeq: fullState.seq });
+        // If the lobby has a pre-selected game and is WAITING, reinitialize
+        // gameSettingsState so the settings button appears (e.g. after force-end).
+        if (fullState.selectedGame && fullState.state === 'WAITING') {
+          const { minigameId, displayName } = fullState.selectedGame;
+          // ... load settingsSchema from MINIGAME_REGISTRY, set gameSettingsState
+        }
       },
       
       setGameState: (gameState) => set({ gameState }),
@@ -2565,7 +3286,7 @@ clearRound();                  // revert to session-level round
 | Field | Type | Description |
 |---|---|---|
 | `timerInfo` | `TimerInfo \| null` | `{ total, remaining, paused, infinite, showSkip }` — set by `TIMER_START`, updated by `TIMER_TICK`, paused by `TIMER_PAUSED`, read by `RMHboxHeader`. |
-| `minigameRound` | `MinigameRoundInfo \| null` | `{ current, total }` — set by `MINIGAME_ROUND`, read by `GameShell`. |
+| `minigameRound` | `MinigameRoundInfo \| null` | `{ current, total }` — set by `MINIGAME_ROUND`, read by `GameShell`. When `null`, the footer round counter is hidden entirely (used by single-round minigames that never call `broadcastRound`). |
 
 #### Component Loader
 

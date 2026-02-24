@@ -113,7 +113,7 @@ export default function WikiFrame({
           onClick={handleClick}
           className={`max-h-[50vh] overflow-y-auto px-4 py-3 text-sm leading-relaxed ${
             isLoading ? 'opacity-40' : ''
-          }`}
+          } ${!disabled ? 'wiki-frame-clickable' : ''}`}
         >
           <div
             ref={contentRef}
@@ -224,6 +224,13 @@ export default function WikiFrame({
         .wiki-frame sub {
           font-size: 0.75em;
           vertical-align: sub;
+        }
+        /* The inert attribute suppresses pointer-events on child elements,
+           which prevents cursor: pointer from working on wiki links.
+           Override on the scrollable wrapper level so users see the pointer
+           when hovering links — click handling still uses elementFromPoint. */
+        .wiki-frame-clickable {
+          cursor: pointer;
         }
       `}</style>
     </div>

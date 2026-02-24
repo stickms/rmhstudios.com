@@ -384,7 +384,30 @@ export const SS_GRID_SIZE = 9;                   // 3×3
 export const SS_GRID_COLS = 3;
 ```
 
-### 1.13 Game History
+### 1.13 Game Settings Schema (§12A)
+
+Host-configurable settings for Sequence Sam. Defined in `MinigameDefinition.settingsSchema`.
+Handlers read values via `this.getSetting(key, CONSTANT_DEFAULT)`.
+
+| Key | Type | Label | Description | Default | Constraints |
+|---|---|---|---|---|---|
+| `maxRounds` | `integer` | Number of Rounds | How many sequence rounds to play | `5` | min: 3, max: 8, step: 1 |
+| `startingLength` | `integer` | Starting Sequence Length | Length of the sequence in round 1 | `3` | min: 2, max: 5, step: 1 |
+| `maxStrikes` | `integer` | Max Strikes | Number of wrong answers before elimination | `3` | min: 1, max: 5, step: 1 |
+| `enableChaosRounds` | `boolean` | Chaos Rounds | Enable special rounds with shuffled/reversed sequences | `true` | — |
+| `chaosInterval` | `integer` | Chaos Interval | A chaos round occurs every N rounds | `3` | min: 2, max: 5, step: 1 |
+
+**Constant Mapping:**
+
+| Setting Key | Constant Override | Usage |
+|---|---|---|
+| `maxRounds` | `SS_MAX_ROUNDS` | `this.getSetting('maxRounds', SS_MAX_ROUNDS)` |
+| `startingLength` | `SS_STARTING_LENGTH` | `this.getSetting('startingLength', SS_STARTING_LENGTH)` |
+| `maxStrikes` | `SS_MAX_STRIKES` | `this.getSetting('maxStrikes', SS_MAX_STRIKES)` |
+| `enableChaosRounds` | `SS_ENABLE_CHAOS` | If `false`, all rounds are standard |
+| `chaosInterval` | `SS_CHAOS_INTERVAL` | `this.getSetting('chaosInterval', SS_CHAOS_INTERVAL)` |
+
+### 1.14 Game History
 
 **Game History Level:** Minimal Log
 
@@ -415,7 +438,7 @@ interface SSInitialState {
 
 **Replay Value:** The fun of reviewing a Sequence Sam log is seeing the elimination order — who survived the longest, which chaos rounds caused the most failures, and how the sequence length ramped up over time.
 
-### 1.14 MinigameRenderer & Client-Server Wiring
+### 1.15 MinigameRenderer & Client-Server Wiring
 
 #### MinigameRenderer Registration
 
@@ -829,7 +852,28 @@ export const HK_TIME_BONUS_PER_SECOND = 5;
 export const HK_MVP_BONUS = 100;
 ```
 
-### 2.14 Game History
+### 2.14 Game Settings Schema (§12A)
+
+Host-configurable settings for Human Keyboard. Defined in `MinigameDefinition.settingsSchema`.
+Handlers read values via `this.getSetting(key, CONSTANT_DEFAULT)`.
+
+| Key | Type | Label | Description | Default | Constraints |
+|---|---|---|---|---|---|
+| `typingDuration` | `integer` | Typing Duration (seconds) | Time limit for each typing phrase | `60` | min: 30, max: 120, step: 10 |
+| `enableReshuffle` | `boolean` | Key Reshuffle | Periodically reassign key assignments during play | `true` | — |
+| `reshuffleInterval` | `integer` | Reshuffle Interval (seconds) | How often key assignments are shuffled | `20` | min: 10, max: 45, step: 5 |
+| `wrongKeyLockMs` | `integer` | Wrong Key Lock (ms) | How long a player is locked out after pressing the wrong key | `500` | min: 0, max: 2000, step: 100 |
+
+**Constant Mapping:**
+
+| Setting Key | Constant Override | Usage |
+|---|---|---|
+| `typingDuration` | `HK_TYPING_DURATION` | `this.getSetting('typingDuration', HK_TYPING_DURATION)` |
+| `enableReshuffle` | `HK_ENABLE_RESHUFFLE` | If `false`, key assignments are fixed for the entire round |
+| `reshuffleInterval` | `HK_RESHUFFLE_INTERVAL` | `this.getSetting('reshuffleInterval', HK_RESHUFFLE_INTERVAL)` |
+| `wrongKeyLockMs` | `HK_WRONG_KEY_LOCK_MS` | `this.getSetting('wrongKeyLockMs', HK_WRONG_KEY_LOCK_MS)` |
+
+### 2.15 Game History
 
 **Game History Level:** Summary Log
 
@@ -859,7 +903,7 @@ interface HKInitialState {
 
 **Replay Value:** Reviewing a Human Keyboard log reveals which players carried the team, how reshuffles affected typing momentum, and whether the team completed the sentence — or how close they got.
 
-### 2.15 MinigameRenderer & Client-Server Wiring
+### 2.16 MinigameRenderer & Client-Server Wiring
 
 #### MinigameRenderer Registration
 
@@ -1327,7 +1371,28 @@ export const CU_HOUSE = 10;
 export const CU_CLOSEST_BONUS = 50;
 ```
 
-### 3.13 Game History
+### 3.13 Game Settings Schema (§12A)
+
+Host-configurable settings for Cursor Curling. Defined in `MinigameDefinition.settingsSchema`.
+Handlers read values via `this.getSetting(key, CONSTANT_DEFAULT)`.
+
+| Key | Type | Label | Description | Default | Constraints |
+|---|---|---|---|---|---|
+| `totalEnds` | `integer` | Number of Ends | How many ends (rounds) to play | `4` | min: 2, max: 6, step: 1 |
+| `aimDuration` | `integer` | Aim Duration (seconds) | Time players have to aim their stone | `15` | min: 5, max: 30, step: 5 |
+| `powerDuration` | `integer` | Power Duration (seconds) | Time to set the throw power | `5` | min: 3, max: 10, step: 1 |
+| `enableSweeping` | `boolean` | Sweeping | Allow teammates to sweep the stone after release | `true` | — |
+
+**Constant Mapping:**
+
+| Setting Key | Constant Override | Usage |
+|---|---|---|
+| `totalEnds` | `CU_TOTAL_ENDS` | `this.getSetting('totalEnds', CU_TOTAL_ENDS)` |
+| `aimDuration` | `CU_AIM_DURATION` | `this.getSetting('aimDuration', CU_AIM_DURATION)` |
+| `powerDuration` | `CU_POWER_DURATION` | `this.getSetting('powerDuration', CU_POWER_DURATION)` |
+| `enableSweeping` | `CU_ENABLE_SWEEPING` | If `false`, no sweeping phase after stone release |
+
+### 3.14 Game History
 
 **Game History Level:** Summary Log
 
@@ -1359,7 +1424,7 @@ interface CUInitialState {
 
 **Replay Value:** Comparing throw angles and power levels across players reveals different strategies — cautious vs. aggressive throws, effective sweeping, and how stone collisions changed the outcome of each end.
 
-### 3.14 MinigameRenderer & Client-Server Wiring
+### 3.15 MinigameRenderer & Client-Server Wiring
 
 #### MinigameRenderer Registration
 
@@ -1827,14 +1892,35 @@ export const HT_PERFECT_WAVE_BONUS = 50;
 export const HT_STREAK_BONUS = 200;
 ```
 
-### 4.14 Anti-Cheat Notes
+### 4.14 Game Settings Schema (§12A)
+
+Host-configurable settings for Human Tetris. Defined in `MinigameDefinition.settingsSchema`.
+Handlers read values via `this.getSetting(key, CONSTANT_DEFAULT)`.
+
+| Key | Type | Label | Description | Default | Constraints |
+|---|---|---|---|---|---|
+| `totalWaves` | `integer` | Number of Waves | How many wall-shape waves to survive | `8` | min: 4, max: 12, step: 1 |
+| `wallPreviewDuration` | `integer` | Wall Preview (seconds) | Time players see the incoming wall shape before it arrives | `5` | min: 2, max: 10, step: 1 |
+| `startingPositionTime` | `integer` | Position Time (seconds) | Time players have to move into position | `8` | min: 4, max: 15, step: 1 |
+| `enableDeadZones` | `boolean` | Dead Zones | Enable grid cells that eliminate players on contact | `false` | — |
+
+**Constant Mapping:**
+
+| Setting Key | Constant Override | Usage |
+|---|---|---|
+| `totalWaves` | `HT_TOTAL_WAVES` | `this.getSetting('totalWaves', HT_TOTAL_WAVES)` |
+| `wallPreviewDuration` | `HT_WALL_PREVIEW_DURATION` | `this.getSetting('wallPreviewDuration', HT_WALL_PREVIEW_DURATION)` |
+| `startingPositionTime` | `HT_STARTING_POSITION_TIME` | `this.getSetting('startingPositionTime', HT_STARTING_POSITION_TIME)` |
+| `enableDeadZones` | `HT_ENABLE_DEAD_ZONES` | If `true`, dead zones appear on the grid |
+
+### 4.15 Anti-Cheat Notes
 
 - Player positions are server-authoritative. The client sends directional movement commands, not positions. The server computes new positions and validates bounds/collisions.
 - Movement rate limiting prevents teleportation via rapid input.
 - The server checks all positions at the moment of wall impact — no client-side evaluation.
 - Dead zone occupancy is allowed for multiple players (no exploit from stacking in dead zones since it's cooperative).
 
-### 4.15 Game History
+### 4.16 Game History
 
 **Game History Level:** Minimal Log
 
@@ -1864,7 +1950,7 @@ interface HTInitialState {
 
 **Replay Value:** The log shows how team coordination evolved across waves — whether the group improved with practice, which wall shapes caused the most failures, and how long their success streaks lasted.
 
-### 4.16 MinigameRenderer & Client-Server Wiring
+### 4.17 MinigameRenderer & Client-Server Wiring
 
 #### MinigameRenderer Registration
 

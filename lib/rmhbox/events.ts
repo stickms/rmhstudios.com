@@ -32,6 +32,9 @@ export const C2S = {
   GAME_PAUSE_TIMER:       'rmhbox:game:pause_timer',
   GAME_READY_TO_RENDER:   'rmhbox:game:ready_to_render',
   GAME_INPUT:             'rmhbox:game:input',
+  GAME_UPDATE_SETTINGS:   'rmhbox:game:update_settings',
+  GAME_CONFIRM_SETTINGS:  'rmhbox:game:confirm_settings',
+  GAME_RESET_SETTINGS:    'rmhbox:game:reset_settings',
   LEADERBOARD_FETCH:      'rmhbox:leaderboard:fetch',
 } as const;
 
@@ -55,6 +58,8 @@ export const S2C = {
   GAME_VOTE_STARTED:      'rmhbox:game:vote_started',
   GAME_VOTE_UPDATE:       'rmhbox:game:vote_update',
   GAME_VOTE_RESULT:       'rmhbox:game:vote_result',
+  GAME_SETTINGS_OPENED:   'rmhbox:game:settings_opened',
+  GAME_SETTINGS_UPDATED:  'rmhbox:game:settings_updated',
   LEADERBOARD_DATA:       'rmhbox:leaderboard:data',
   NOT_IN_LOBBY:           'rmhbox:lobby:not_in_lobby',
   ERROR:                  'rmhbox:error',

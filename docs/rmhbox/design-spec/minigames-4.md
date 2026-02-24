@@ -391,7 +391,30 @@ export const IC_MAX_QUESTION_LENGTH = 200;
 export const IC_MAX_GUESS_LENGTH = 100;
 ```
 
-### 1.13 Game History
+### 1.13 Game Settings Schema (§12A)
+
+Host-configurable settings for Identity Crisis. Defined in `MinigameDefinition.settingsSchema`.
+Handlers read values via `this.getSetting(key, CONSTANT_DEFAULT)`.
+
+| Key | Type | Label | Description | Default | Constraints |
+|---|---|---|---|---|---|
+| `questionsPerPlayer` | `integer` | Questions Per Player | Number of "Who am I?" questions each player answers about | `3` | min: 2, max: 5, step: 1 |
+| `askDuration` | `integer` | Ask Duration (seconds) | Time for the subject to ask a yes/no question | `30` | min: 15, max: 60, step: 5 |
+| `voteDuration` | `integer` | Vote Duration (seconds) | Time for others to vote on the yes/no question | `15` | min: 10, max: 30, step: 5 |
+| `finalGuessDuration` | `integer` | Final Guess Duration (seconds) | Time for the subject to guess their identity | `30` | min: 15, max: 60, step: 5 |
+| `enableEarlyGuess` | `boolean` | Early Guess | Allow the subject to guess their identity before all questions are used | `true` | — |
+
+**Constant Mapping:**
+
+| Setting Key | Constant Override | Usage |
+|---|---|---|
+| `questionsPerPlayer` | `IC_QUESTIONS_PER_PLAYER` | `this.getSetting('questionsPerPlayer', IC_QUESTIONS_PER_PLAYER)` |
+| `askDuration` | `IC_ASK_DURATION` | `this.getSetting('askDuration', IC_ASK_DURATION)` |
+| `voteDuration` | `IC_VOTE_DURATION` | `this.getSetting('voteDuration', IC_VOTE_DURATION)` |
+| `finalGuessDuration` | `IC_FINAL_GUESS_DURATION` | `this.getSetting('finalGuessDuration', IC_FINAL_GUESS_DURATION)` |
+| `enableEarlyGuess` | `IC_ENABLE_EARLY_GUESS` | If `false`, the subject must use all questions |
+
+### 1.14 Game History
 
 **Game History Level:** Full Action Log
 
@@ -424,7 +447,7 @@ interface ICGameHistoryInit {
 
 **Replay Value:** The social deduction aspect makes this a strong candidate for full logging. Players can review the Q&A transcript to see how answers led them toward (or away from) the correct identity, compare voting patterns, and spot the moment the penny dropped.
 
-### 1.14 MinigameRenderer & Client-Server Wiring
+### 1.15 MinigameRenderer & Client-Server Wiring
 
 #### 1.14.1 MinigameRenderer Registration
 
@@ -872,7 +895,28 @@ export const RF_OUTLIER_BONUS = 25;
 export const RF_MAX_THEORETICAL_DISTANCE = 12;
 ```
 
-### 2.13 Game History
+### 2.13 Game Settings Schema (§12A)
+
+Host-configurable settings for Ranking File. Defined in `MinigameDefinition.settingsSchema`.
+Handlers read values via `this.getSetting(key, CONSTANT_DEFAULT)`.
+
+| Key | Type | Label | Description | Default | Constraints |
+|---|---|---|---|---|---|
+| `totalRounds` | `integer` | Number of Rounds | How many ranking rounds to play | `4` | min: 2, max: 6, step: 1 |
+| `rankingDuration` | `integer` | Ranking Duration (seconds) | Time to arrange items in order | `45` | min: 20, max: 90, step: 5 |
+| `itemsPerCategory` | `integer` | Items Per Category | Number of items to rank in each round | `5` | min: 3, max: 7, step: 1 |
+| `enableOutlierBonus` | `boolean` | Outlier Bonus | Award bonus points for correctly placing the hardest item | `true` | — |
+
+**Constant Mapping:**
+
+| Setting Key | Constant Override | Usage |
+|---|---|---|
+| `totalRounds` | `RF_TOTAL_ROUNDS` | `this.getSetting('totalRounds', RF_TOTAL_ROUNDS)` |
+| `rankingDuration` | `RF_RANKING_DURATION` | `this.getSetting('rankingDuration', RF_RANKING_DURATION)` |
+| `itemsPerCategory` | `RF_ITEMS_PER_CATEGORY` | `this.getSetting('itemsPerCategory', RF_ITEMS_PER_CATEGORY)` |
+| `enableOutlierBonus` | `RF_OUTLIER_BONUS` | If `false`, no bonus for hardest item |
+
+### 2.14 Game History
 
 **Game History Level:** Summary Log
 
@@ -901,7 +945,7 @@ interface RFGameHistoryInit {
 
 **Replay Value:** Comparing how players ranked the same items reveals taste differences and unexpected consensus. The round-by-round breakdown fuels post-game arguments about whether pizza truly belongs above tacos.
 
-### 2.14 MinigameRenderer & Client-Server Wiring
+### 2.15 MinigameRenderer & Client-Server Wiring
 
 #### 2.14.1 MinigameRenderer Registration
 
@@ -1388,7 +1432,28 @@ export const PP_MVP_BONUS = 75;
 export const PP_POLARITY_CONTROL_BONUS = 50;
 ```
 
-### 3.14 Game History
+### 3.14 Game Settings Schema (§12A)
+
+Host-configurable settings for Pixel Pushers. Defined in `MinigameDefinition.settingsSchema`.
+Handlers read values via `this.getSetting(key, CONSTANT_DEFAULT)`.
+
+| Key | Type | Label | Description | Default | Constraints |
+|---|---|---|---|---|---|
+| `totalLevels` | `integer` | Number of Levels | How many cooperative pixel-art levels to complete | `3` | min: 2, max: 5, step: 1 |
+| `activeDuration` | `integer` | Active Duration (seconds) | Time limit per level | `90` | min: 45, max: 180, step: 15 |
+| `enablePolarityFlip` | `boolean` | Polarity Flip | Enable the mechanic where push/pull controls invert periodically | `true` | — |
+| `polarityInterval` | `integer` | Polarity Interval (seconds) | How often the polarity flips | `15` | min: 8, max: 30, step: 1 |
+
+**Constant Mapping:**
+
+| Setting Key | Constant Override | Usage |
+|---|---|---|
+| `totalLevels` | `PP_TOTAL_LEVELS` | `this.getSetting('totalLevels', PP_TOTAL_LEVELS)` |
+| `activeDuration` | `PP_ACTIVE_DURATION` | `this.getSetting('activeDuration', PP_ACTIVE_DURATION)` |
+| `enablePolarityFlip` | `PP_ENABLE_POLARITY_FLIP` | If `false`, polarity never flips |
+| `polarityInterval` | `PP_POLARITY_INTERVAL` | `this.getSetting('polarityInterval', PP_POLARITY_INTERVAL)` |
+
+### 3.15 Game History
 
 **Game History Level:** Minimal Log
 
@@ -1418,7 +1483,7 @@ interface PPGameHistoryInit {
 
 **Replay Value:** The log shows team coordination through level-by-level progression. Polarity flip events highlight the cooperative chaos, and completion times let teams compare runs and track improvement.
 
-### 3.15 MinigameRenderer & Client-Server Wiring
+### 3.16 MinigameRenderer & Client-Server Wiring
 
 #### 3.15.1 MinigameRenderer Registration
 
@@ -1953,7 +2018,32 @@ export const SC_WINNER_BONUS = 200;
 export const SC_PLACEMENT = 15;
 ```
 
-### 4.13 Anti-Cheat Notes
+### 4.13 Game Settings Schema (§12A)
+
+Host-configurable settings for Scroll Soul. Defined in `MinigameDefinition.settingsSchema`.
+Handlers read values via `this.getSetting(key, CONSTANT_DEFAULT)`.
+
+| Key | Type | Label | Description | Default | Constraints |
+|---|---|---|---|---|---|
+| `maxSurvival` | `integer` | Max Survival Time (seconds) | Maximum round length before the game ends | `120` | min: 60, max: 240, step: 15 |
+| `baseScrollSpeed` | `float` | Base Scroll Speed | Starting scroll speed multiplier | `1.0` | min: 0.5, max: 2.0, step: 0.1 |
+| `maxScrollSpeed` | `float` | Max Scroll Speed | Maximum scroll speed reached at end of round | `3.0` | min: 1.5, max: 5.0, step: 0.5 |
+| `maxConcurrentAds` | `integer` | Max Concurrent Pop-ups | Maximum number of fake ads/pop-ups on screen at once | `3` | min: 1, max: 5, step: 1 |
+| `fakeXChance` | `float` | Fake X Chance (%) | Probability that a pop-up close button is a fake X | `0.3` | min: 0.0, max: 0.8, step: 0.1 |
+| `enableAds` | `boolean` | Pop-up Ads | Enable the fake ad/pop-up obstacle mechanic | `true` | — |
+
+**Constant Mapping:**
+
+| Setting Key | Constant Override | Usage |
+|---|---|---|
+| `maxSurvival` | `SC_MAX_SURVIVAL` | `this.getSetting('maxSurvival', SC_MAX_SURVIVAL)` |
+| `baseScrollSpeed` | `SC_BASE_SCROLL_SPEED` | `this.getSetting('baseScrollSpeed', SC_BASE_SCROLL_SPEED)` |
+| `maxScrollSpeed` | `SC_MAX_SCROLL_SPEED` | `this.getSetting('maxScrollSpeed', SC_MAX_SCROLL_SPEED)` |
+| `maxConcurrentAds` | `SC_MAX_CONCURRENT_ADS` | `this.getSetting('maxConcurrentAds', SC_MAX_CONCURRENT_ADS)` |
+| `fakeXChance` | `SC_FAKE_X_CHANCE` | `this.getSetting('fakeXChance', SC_FAKE_X_CHANCE)` |
+| `enableAds` | `SC_ENABLE_ADS` | If `false`, no pop-up obstacles appear |
+
+### 4.14 Anti-Cheat Notes
 
 - **Server-authoritative physics:** All position updates, gravity, and platform collisions are computed server-side. The client only sends input direction and jump requests.
 - **Ad close validation:** The server checks if the click position (`clickX`, `clickY`) is within the actual close button bounds (not the fake X). This prevents bots from auto-closing ads.
@@ -1961,7 +2051,7 @@ export const SC_PLACEMENT = 15;
 - **Zone visibility:** Only zones within the viewport + buffer are sent to clients, preventing pre-planning or automated navigation.
 - **Gravity cannot be disabled client-side:** Since the server applies gravity, a hacked client that ignores gravity would desynchronize and be corrected by server state updates.
 
-### 4.14 Game History
+### 4.15 Game History
 
 **Game History Level:** Minimal Log
 
@@ -1990,7 +2080,7 @@ interface SCGameHistoryInit {
 
 **Replay Value:** The elimination timeline tells the full story — rising scroll speed, cascading deaths, and the final survivor. Ad stats add a comedic layer, showing who struggled with the fake close buttons.
 
-### 4.15 MinigameRenderer & Client-Server Wiring
+### 4.16 MinigameRenderer & Client-Server Wiring
 
 #### 4.15.1 MinigameRenderer Registration
 

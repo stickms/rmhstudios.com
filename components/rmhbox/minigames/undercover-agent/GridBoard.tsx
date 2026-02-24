@@ -24,7 +24,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MousePointerClick, Users } from 'lucide-react';
+import { MousePointerClick } from 'lucide-react';
 import type { GridTileClient } from './UndercoverAgentGame';
 
 // ─── Color Mapping ───────────────────────────────────────────────
@@ -41,7 +41,7 @@ const REVEALED_COLORS: Record<string, { bg: string; text: string }> = {
 const SPYMASTER_HINTS: Record<string, string> = {
   RED_AGENT: 'ring-2 ring-red-500/50',
   BLUE_AGENT: 'ring-2 ring-blue-500/50',
-  BYSTANDER: 'ring-1 ring-amber-500/30',
+  BYSTANDER: 'ring-2 ring-amber-500/50',
   ASSASSIN: 'ring-2 ring-black-800/60 dark:ring-white-800/60 bg-black/40',
 };
 

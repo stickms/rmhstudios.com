@@ -15,6 +15,7 @@
 3. [8.3 Pixel Pushers](#83-pixel-pushers)
 4. [8.4 Scroll Soul](#84-scroll-soul)
 5. [8.5 Cross-Game Integration Testing](#85-cross-game-integration-testing)
+6. [8.6 Game Settings Test Plan (§12A)](#86-game-settings-test-plan-12a)
 
 ---
 
@@ -916,6 +917,36 @@
 - [ ] Reconnection test: Disconnect during VOTE → reconnect → can still vote if timer active
   **Verification:** State restored correctly, no identity leakage.
 
+### 8.1.15 Game Settings Integration (§12A)
+
+Integrate host-configurable settings using the §12A system established in Phase 5. See `lib/rmhbox/game-settings.ts` and `BaseMinigame.getSetting()` for the canonical pattern.
+
+#### Registry Entry
+
+- [ ] Export `IDENTITY_CRISIS_SETTINGS: GameSettingsSchema` in `lib/rmhbox/minigame-registry.ts` with 5 entries:
+  - `questionsPerPlayer` (integer, default `3`, min 2, max 5, step 1)
+  - `askDuration` (integer, default `30`, min 15, max 60, step 5)
+  - `voteDuration` (integer, default `15`, min 10, max 30, step 5)
+  - `finalGuessDuration` (integer, default `30`, min 15, max 60, step 5)
+  - `enableEarlyGuess` (boolean, default `true`)
+- [ ] Attach `settingsSchema: IDENTITY_CRISIS_SETTINGS` to the `identity-crisis` `MinigameDefinition`.
+  **Verification:** Registry lookup returns definition with `settingsSchema` containing 5 entries.
+
+#### Handler `getSetting()` Integration
+
+Replace hardcoded constants with `this.getSetting()` calls in the Identity Crisis handler:
+
+| Constant | Setting Key | Replacement |
+|---|---|---|
+| `IC_QUESTIONS_PER_PLAYER` | `questionsPerPlayer` | `this.getSetting('questionsPerPlayer', IC_QUESTIONS_PER_PLAYER)` |
+| `IC_ASK_DURATION` | `askDuration` | `this.getSetting('askDuration', IC_ASK_DURATION)` |
+| `IC_VOTE_DURATION` | `voteDuration` | `this.getSetting('voteDuration', IC_VOTE_DURATION)` |
+| `IC_FINAL_GUESS_DURATION` | `finalGuessDuration` | `this.getSetting('finalGuessDuration', IC_FINAL_GUESS_DURATION)` |
+| `IC_ENABLE_EARLY_GUESS` | `enableEarlyGuess` | `this.getSetting('enableEarlyGuess', IC_ENABLE_EARLY_GUESS)` |
+
+- [ ] **Boolean setting logic:** When `enableEarlyGuess` is `false`, the subject must use all of their allotted questions before guessing. The early-guess action is rejected server-side if the setting is disabled.
+  **Verification:** Each constant usage replaced. Handler respects custom settings passed via `MinigameContext.gameSettings`.
+
 ---
 
 ## 8.2 Ranking File
@@ -1642,6 +1673,34 @@
 
 - [ ] Reconnection test: Disconnect during RANKING → reconnect → can still submit/update
   **Verification:** State restored. Prior updates preserved.
+
+### 8.2.10 Game Settings Integration (§12A)
+
+Integrate host-configurable settings using the §12A system.
+
+#### Registry Entry
+
+- [ ] Export `RANKING_FILE_SETTINGS: GameSettingsSchema` in `lib/rmhbox/minigame-registry.ts` with 4 entries:
+  - `totalRounds` (integer, default `4`, min 2, max 6, step 1)
+  - `rankingDuration` (integer, default `45`, min 20, max 90, step 5)
+  - `itemsPerCategory` (integer, default `5`, min 3, max 7, step 1)
+  - `enableOutlierBonus` (boolean, default `true`)
+- [ ] Attach `settingsSchema: RANKING_FILE_SETTINGS` to the `ranking-file` `MinigameDefinition`.
+  **Verification:** Registry lookup returns definition with `settingsSchema` containing 4 entries.
+
+#### Handler `getSetting()` Integration
+
+Replace hardcoded constants with `this.getSetting()` calls in the Ranking File handler:
+
+| Constant | Setting Key | Replacement |
+|---|---|---|
+| `RF_TOTAL_ROUNDS` | `totalRounds` | `this.getSetting('totalRounds', RF_TOTAL_ROUNDS)` |
+| `RF_RANKING_DURATION` | `rankingDuration` | `this.getSetting('rankingDuration', RF_RANKING_DURATION)` |
+| `RF_ITEMS_PER_CATEGORY` | `itemsPerCategory` | `this.getSetting('itemsPerCategory', RF_ITEMS_PER_CATEGORY)` |
+| `RF_OUTLIER_BONUS` | `enableOutlierBonus` | `this.getSetting('enableOutlierBonus', RF_OUTLIER_BONUS)` |
+
+- [ ] **Boolean setting logic:** When `enableOutlierBonus` is `false`, no bonus points are awarded for correctly placing the hardest-to-rank item. The outlier detection still runs (for analytics), but the bonus is suppressed.
+  **Verification:** Each constant usage replaced. Handler respects custom settings passed via `MinigameContext.gameSettings`.
 
 ---
 
@@ -2486,6 +2545,34 @@ This is the core physics loop running at ~30Hz. Each tick:
 
 - [ ] Performance test: 8 players, all moving, physics simulation at 30Hz, broadcast at 15Hz → server CPU usage acceptable
   **Verification:** No frame drops. Simulation stays on schedule.
+
+### 8.3.11 Game Settings Integration (§12A)
+
+Integrate host-configurable settings using the §12A system.
+
+#### Registry Entry
+
+- [ ] Export `PIXEL_PUSHERS_SETTINGS: GameSettingsSchema` in `lib/rmhbox/minigame-registry.ts` with 4 entries:
+  - `totalLevels` (integer, default `3`, min 2, max 5, step 1)
+  - `activeDuration` (integer, default `90`, min 45, max 180, step 15)
+  - `enablePolarityFlip` (boolean, default `true`)
+  - `polarityInterval` (integer, default `15`, min 8, max 30, step 1)
+- [ ] Attach `settingsSchema: PIXEL_PUSHERS_SETTINGS` to the `pixel-pushers` `MinigameDefinition`.
+  **Verification:** Registry lookup returns definition with `settingsSchema` containing 4 entries.
+
+#### Handler `getSetting()` Integration
+
+Replace hardcoded constants with `this.getSetting()` calls in the Pixel Pushers handler:
+
+| Constant | Setting Key | Replacement |
+|---|---|---|
+| `PP_TOTAL_LEVELS` | `totalLevels` | `this.getSetting('totalLevels', PP_TOTAL_LEVELS)` |
+| `PP_ACTIVE_DURATION` | `activeDuration` | `this.getSetting('activeDuration', PP_ACTIVE_DURATION)` |
+| `PP_ENABLE_POLARITY_FLIP` | `enablePolarityFlip` | `this.getSetting('enablePolarityFlip', PP_ENABLE_POLARITY_FLIP)` |
+| `PP_POLARITY_INTERVAL` | `polarityInterval` | `this.getSetting('polarityInterval', PP_POLARITY_INTERVAL)` |
+
+- [ ] **Boolean setting logic:** When `enablePolarityFlip` is `false`, push/pull controls never invert — players retain their initial polarity for the entire run. The `polarityInterval` setting is ignored when polarity flipping is disabled.
+  **Verification:** Each constant usage replaced. Handler respects custom settings passed via `MinigameContext.gameSettings`.
 
 ---
 
@@ -3350,6 +3437,41 @@ Each tick (~33ms):
   - [ ] 0 platforms remaining in viewport → should not happen (generation guarantees coverage), but verify graceful handling
   **Verification:** Edge cases handled gracefully.
 
+### 8.4.9 Game Settings Integration (§12A)
+
+Integrate host-configurable settings using the §12A system.
+
+#### Registry Entry
+
+- [ ] Export `SCROLL_SOUL_SETTINGS: GameSettingsSchema` in `lib/rmhbox/minigame-registry.ts` with 6 entries:
+  - `maxSurvival` (integer, default `120`, min 60, max 240, step 15)
+  - `baseScrollSpeed` (float, default `1.0`, min 0.5, max 2.0, step 0.1)
+  - `maxScrollSpeed` (float, default `3.0`, min 1.5, max 5.0, step 0.5)
+  - `maxConcurrentAds` (integer, default `3`, min 1, max 5, step 1)
+  - `fakeXChance` (float, default `0.3`, min 0.0, max 0.8, step 0.1)
+  - `enableAds` (boolean, default `true`)
+- [ ] Attach `settingsSchema: SCROLL_SOUL_SETTINGS` to the `scroll-soul` `MinigameDefinition`.
+  **Verification:** Registry lookup returns definition with `settingsSchema` containing 6 entries.
+
+> **Note:** Scroll Soul is the first game to use `float` type settings (`baseScrollSpeed`, `maxScrollSpeed`, `fakeXChance`). Ensure `validateGameSettings()` in `lib/rmhbox/game-settings.ts` correctly handles float clamping and step-snapping for these fields.
+
+#### Handler `getSetting()` Integration
+
+Replace hardcoded constants with `this.getSetting()` calls in the Scroll Soul handler:
+
+| Constant | Setting Key | Replacement |
+|---|---|---|
+| `SC_MAX_SURVIVAL` | `maxSurvival` | `this.getSetting('maxSurvival', SC_MAX_SURVIVAL)` |
+| `SC_BASE_SCROLL_SPEED` | `baseScrollSpeed` | `this.getSetting('baseScrollSpeed', SC_BASE_SCROLL_SPEED)` |
+| `SC_MAX_SCROLL_SPEED` | `maxScrollSpeed` | `this.getSetting('maxScrollSpeed', SC_MAX_SCROLL_SPEED)` |
+| `SC_MAX_CONCURRENT_ADS` | `maxConcurrentAds` | `this.getSetting('maxConcurrentAds', SC_MAX_CONCURRENT_ADS)` |
+| `SC_FAKE_X_CHANCE` | `fakeXChance` | `this.getSetting('fakeXChance', SC_FAKE_X_CHANCE)` |
+| `SC_ENABLE_ADS` | `enableAds` | `this.getSetting('enableAds', SC_ENABLE_ADS)` |
+
+- [ ] **Boolean setting logic:** When `enableAds` is `false`, no pop-up ads spawn during the game. The `maxConcurrentAds` and `fakeXChance` settings are ignored when ads are disabled. This turns Scroll Soul into a pure platformer survival game.
+- [ ] **Float setting notes:** `baseScrollSpeed` and `maxScrollSpeed` control the scroll speed ramp curve. The handler should interpolate between them over the game duration. `fakeXChance` is a probability (0.0–0.8) applied when spawning each ad's close button.
+  **Verification:** Each constant usage replaced. Handler respects custom settings passed via `MinigameContext.gameSettings`.
+
 ---
 
 ## 8.5 Cross-Game Integration Testing (Phase 8 Minigames)
@@ -3572,4 +3694,78 @@ For each Phase 8 game (Identity Crisis, Ranking File, Pixel Pushers, Scroll Soul
 4. **Scroll Soul** — procedural generation must guarantee reachability; fake ad system needs careful per-player isolation
 
 > **Parallel Development Note:** Phase 8 can be developed in parallel with Phase 6 and Phase 7, as all three depend only on Phase 4 (engine) + Phase 5 (established patterns). The Phase 5 + Phase 8 Coexistence Test (§8.5.9) validates independent operation. The Full Coexistence Test (§8.5.10) should be run as a final integration step once all phases are merged.
+
+---
+
+## 8.6 Game Settings Test Plan (§12A)
+
+All tests go in `testing/rmhbox/phase-8/game-settings.test.ts` (or integrated into the phase-8 test suite). Follow the Phase 5 test patterns in `testing/rmhbox/phase-5/6-game-settings.test.ts`.
+
+### 8.6.1 Schema Completeness Tests
+
+- [ ] Each of the 4 exported settings arrays has the expected number of entries (IC: 5, RF: 4, PP: 4, SC: 6).
+- [ ] Every setting has `key`, `type`, `label`, `default` defined.
+- [ ] Integer/float settings have `min`, `max`, `step` defined.
+- [ ] Select settings (if any) have a non-empty `options` array.
+- [ ] Boolean settings have no `min`/`max`/`step`.
+- [ ] Default values fall within declared constraints.
+- [ ] Float settings (`baseScrollSpeed`, `maxScrollSpeed`, `fakeXChance`) have type `'float'`.
+
+### 8.6.2 Identity Crisis Settings Tests
+
+| Test Case | Description |
+|---|---|
+| `default questionsPerPlayer` | With no custom settings, handler uses `IC_QUESTIONS_PER_PLAYER` (3) |
+| `custom questionsPerPlayer = 5` | Handler allows 5 questions per player |
+| `custom askDuration = 45` | Ask phase timer is 45s |
+| `custom voteDuration = 25` | Vote phase timer is 25s |
+| `custom finalGuessDuration = 60` | Final guess timer is 60s |
+| `enableEarlyGuess = false` | Early guess action is rejected; must use all questions |
+| `enableEarlyGuess = true (default)` | Subject can guess before all questions are used |
+
+### 8.6.3 Ranking File Settings Tests
+
+| Test Case | Description |
+|---|---|
+| `default totalRounds` | Uses `RF_TOTAL_ROUNDS` (4) |
+| `custom totalRounds = 6` | Handler plays 6 ranking rounds |
+| `custom rankingDuration = 60` | Ranking timer is 60s |
+| `custom itemsPerCategory = 7` | 7 items to rank per round |
+| `enableOutlierBonus = false` | No outlier bonus awarded |
+| `enableOutlierBonus = true (default)` | Bonus points for hardest item |
+
+### 8.6.4 Pixel Pushers Settings Tests
+
+| Test Case | Description |
+|---|---|
+| `default totalLevels` | Uses `PP_TOTAL_LEVELS` (3) |
+| `custom totalLevels = 5` | Handler plays 5 levels |
+| `custom activeDuration = 120` | Level timer is 120s |
+| `enablePolarityFlip = false` | Polarity never flips; controls are fixed |
+| `enablePolarityFlip = true (default)` | Polarity flips every `polarityInterval` seconds |
+| `custom polarityInterval = 10` | Polarity flips every 10s |
+| `polarityInterval ignored when flip disabled` | Setting has no effect when `enablePolarityFlip = false` |
+
+### 8.6.5 Scroll Soul Settings Tests
+
+| Test Case | Description |
+|---|---|
+| `default maxSurvival` | Uses `SC_MAX_SURVIVAL` (120s) |
+| `custom maxSurvival = 180` | Game lasts up to 180 seconds |
+| `custom baseScrollSpeed = 1.5` | Starting speed is 1.5× |
+| `custom maxScrollSpeed = 4.0` | Max speed ramps to 4.0× |
+| `custom maxConcurrentAds = 5` | Up to 5 ads on screen at once |
+| `custom fakeXChance = 0.6` | 60% chance of fake close button |
+| `enableAds = false` | No ads spawn; pure platformer mode |
+| `enableAds = true (default)` | Ads spawn normally |
+| `maxConcurrentAds ignored when ads disabled` | Setting has no effect when `enableAds = false` |
+| `fakeXChance ignored when ads disabled` | Setting has no effect when `enableAds = false` |
+| `float clamping: baseScrollSpeed = 0.3` | Clamped to min 0.5 |
+| `float step-snapping: fakeXChance = 0.35` | Snapped to nearest step (0.3 or 0.4) |
+
+### 8.6.6 getSetting() Fallback Tests
+
+- [ ] Calling `getSetting('maxSurvival', SC_MAX_SURVIVAL)` with empty `gameSettings` returns the fallback.
+- [ ] Calling `getSetting('baseScrollSpeed', SC_BASE_SCROLL_SPEED)` with `gameSettings: { baseScrollSpeed: 1.5 }` returns `1.5`.
+- [ ] Calling `getSetting('unknownKey', 42)` returns `42`.
 

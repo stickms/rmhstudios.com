@@ -375,13 +375,38 @@ export const RT_MIN_WORD_LEN = 2;
 export const RT_MAX_WORD_LEN = 30;
 ```
 
-### 1.13 Anti-Cheat Notes
+### 1.13 Game Settings Schema (§12A)
+
+Host-configurable settings for Rhyme Time. Defined in `MinigameDefinition.settingsSchema`.
+Handlers read values via `this.getSetting(key, CONSTANT_DEFAULT)`.
+
+| Key | Type | Label | Description | Default | Constraints |
+|---|---|---|---|---|---|
+| `totalRounds` | `integer` | Number of Rounds | How many rounds of rhyming to play | `3` | min: 1, max: 5, step: 1 |
+| `inputDuration` | `integer` | Round Duration (seconds) | Time players have to submit rhymes each round | `45` | min: 20, max: 90, step: 5 |
+| `maxSubmissions` | `integer` | Max Submissions | Maximum number of rhymes a player can submit per round | `30` | min: 10, max: 50, step: 5 |
+| `enableSpeedBonus` | `boolean` | Speed Bonus | Award bonus points for submitting rhymes quickly | `true` | — |
+| `enableMultiSyllableBonus` | `boolean` | Multi-Syllable Bonus | Double points for rhymes with more syllables than the root word | `true` | — |
+| `invalidPenalty` | `integer` | Invalid Rhyme Penalty | Points deducted for submitting a non-rhyming word | `-1` | min: -5, max: 0, step: 1 |
+
+**Constant Mapping:**
+
+| Setting Key | Constant Override | Usage |
+|---|---|---|
+| `totalRounds` | `RT_TOTAL_ROUNDS` | `this.getSetting('totalRounds', RT_TOTAL_ROUNDS)` |
+| `inputDuration` | `RT_INPUT_DURATION` | `this.getSetting('inputDuration', RT_INPUT_DURATION)` |
+| `maxSubmissions` | `RT_MAX_SUBMISSIONS` | `this.getSetting('maxSubmissions', RT_MAX_SUBMISSIONS)` |
+| `enableSpeedBonus` | `RT_SPEED_BONUS` | If `false`, speed bonus is `0` |
+| `enableMultiSyllableBonus` | `RT_MULTI_SYLLABLE_MULT` | If `false`, multiplier is `1` |
+| `invalidPenalty` | `RT_INVALID_PENALTY` | `this.getSetting('invalidPenalty', RT_INVALID_PENALTY)` |
+
+### 1.14 Anti-Cheat Notes
 
 - The rhyme dictionary is never sent to any client. All validation is server-side.
 - Submission rate is inherently capped by `MAX_SUBMISSIONS_PER_ROUND`. The `rmhbox:game:input` socket rate limit (100/10s) also applies.
 - Bot detection heuristic (optional, future): flag players whose median time between submissions is < 500ms over 10+ submissions — humans typically can't type-think-submit faster than ~1.5s per word.
 
-### 1.14 Game History
+### 1.15 Game History
 
 **Game History Level:** Summary Log
 
@@ -410,7 +435,7 @@ interface RhymeTimeInitialState {
 
 **Replay Value:** Reviewing who discovered the rarest rhymes, comparing vocabulary breadth across players, and spotting the creative or unexpected submissions that earned rarity bonuses.
 
-### 1.15 MinigameRenderer & Client-Server Wiring
+### 1.16 MinigameRenderer & Client-Server Wiring
 
 **MinigameRenderer Registration**
 
@@ -781,10 +806,11 @@ Scoring in Undercover Agent is team-based but distributed individually:
 
 | Achievement | Points |
 |---|---|
-| Winning team (each player) | `UA_WIN_POINTS` (default: **500**) |
-| Losing team (each player) | `UA_LOSE_POINTS` (default: **100**) |
-| Spymaster clue efficiency bonus | `UA_CLUE_EFFICIENCY_BONUS` × (agents found from one clue) (default: **50** per agent) |
-| Operative correct guess | `UA_CORRECT_GUESS_POINTS` (default: **75** per correct tile) |
+| Winning Spymaster | `UA_WIN` (default: **500**) |
+| Winning Operatives (each) | `UA_WIN_OPERATIVE` (default: **400**) |
+| Losing team (each player) | `UA_LOSE` (default: **100**) |
+| Spymaster bonus per correct operative tap | `UA_CLUE_EFFICIENCY` (default: **20** per tap) |
+| Operative correct guess | `UA_CORRECT_GUESS` (default: **50** per correct tile) |
 | Assassin penalty (triggering player) | `UA_ASSASSIN_PENALTY` (default: **-200**) |
 
 ### 2.11 Awards
@@ -864,16 +890,34 @@ export const UA_TURN_TRANSITION = 3;
 export const UA_MAX_UNLIMITED = 25;
 export const UA_MAX_PASSES = 6;                          // 3 per team = stalemate
 
-export const UA_WIN = 500;
+export const UA_WIN = 500;                               // Winning spymaster base
+export const UA_WIN_OPERATIVE = 400;                     // Winning operatives base
 export const UA_LOSE = 100;
-export const UA_CLUE_EFFICIENCY = 50;
-export const UA_CORRECT_GUESS = 75;
+export const UA_CLUE_EFFICIENCY = 20;                    // Per correct operative tap (any spymaster)
+export const UA_CORRECT_GUESS = 50;                      // Per correct tap (any operative)
 export const UA_ASSASSIN_PENALTY = -200;
 ```
 
-> **Note:** `UA_SPYMASTER_TIMEOUT` and `UA_OPERATIVE_TIMEOUT` use the BaseMinigame infinite timer system (`startInfinitePhaseTimer`). The timer counts up and can be paused/resumed by the host, but does not auto-advance on expiry.
+> **Note:** `UA_SPYMASTER_TIMEOUT` and `UA_OPERATIVE_TIMEOUT` use the BaseMinigame infinite timer system (`startInfinitePhaseTimer`). The timer counts up and can be paused/resumed by the host, but does not auto-advance on expiry. These are **not** exposed as configurable settings since the game is inherently infinite-time.
 
-### 2.15 Game History
+### 2.15 Game Settings Schema (§12A)
+
+Host-configurable settings for Undercover Agent. Defined in `MinigameDefinition.settingsSchema`.
+Handlers read values via `this.getSetting(key, CONSTANT_DEFAULT)`.
+
+| Key | Type | Label | Description | Default | Constraints |
+|---|---|---|---|---|---|
+| `enableAssassin` | `boolean` | Assassin Tile | Include the instant-loss assassin tile on the board | `true` | — |
+
+> **Note:** Time limits and pass counts are not exposed as settings because the game uses infinite timers and has no explicit pass mechanism.
+
+**Constant Mapping:**
+
+| Setting Key | Constant Override | Usage |
+|---|---|---|
+| `enableAssassin` | `UA_ASSASSIN` | If `false`, assassin tile becomes a bystander |
+
+### 2.16 Game History
 
 **Game History Level:** Full Action Log
 
@@ -911,7 +955,7 @@ interface UndercoverAgentInitialState {
 
 **Replay Value:** Reliving the spymaster's strategy — which clues linked multiple words, where operatives went wrong, and the dramatic assassin-hit moments. Full logs allow step-by-step replay of the entire match.
 
-### 2.16 MinigameRenderer & Client-Server Wiring
+### 2.17 MinigameRenderer & Client-Server Wiring
 
 **MinigameRenderer Registration**
 
@@ -1393,7 +1437,30 @@ export const CC_LETTER_WEIGHTS: Record<string, number> = {
 };
 ```
 
-### 3.13 Game History
+### 3.13 Game Settings Schema (§12A)
+
+Host-configurable settings for Category Crash. Defined in `MinigameDefinition.settingsSchema`.
+Handlers read values via `this.getSetting(key, CONSTANT_DEFAULT)`.
+
+| Key | Type | Label | Description | Default | Constraints |
+|---|---|---|---|---|---|
+| `totalRounds` | `integer` | Number of Rounds | How many rounds to play | `2` | min: 1, max: 4, step: 1 |
+| `inputDuration` | `integer` | Brainstorm Duration (seconds) | Time to fill in answers for all categories | `60` | min: 30, max: 120, step: 10 |
+| `categoriesPerRound` | `integer` | Categories Per Round | Number of categories to fill in each round | `5` | min: 3, max: 7, step: 1 |
+| `peerReviewDuration` | `integer` | Peer Review Duration (seconds) | Time for players to review and challenge answers | `30` | min: 15, max: 60, step: 5 |
+| `crashThreshold` | `integer` | Crash Threshold (%) | Percentage of votes needed to reject a contested answer | `50` | min: 30, max: 80, step: 5 |
+
+**Constant Mapping:**
+
+| Setting Key | Constant Override | Usage |
+|---|---|---|
+| `totalRounds` | `CC_TOTAL_ROUNDS` | `this.getSetting('totalRounds', CC_TOTAL_ROUNDS)` |
+| `inputDuration` | `CC_INPUT_DURATION` | `this.getSetting('inputDuration', CC_INPUT_DURATION)` |
+| `categoriesPerRound` | `CC_CATEGORIES_PER_ROUND` | `this.getSetting('categoriesPerRound', CC_CATEGORIES_PER_ROUND)` |
+| `peerReviewDuration` | `CC_PEER_REVIEW_DURATION` | `this.getSetting('peerReviewDuration', CC_PEER_REVIEW_DURATION)` |
+| `crashThreshold` | `CC_CRASH_THRESHOLD_PERCENT` | `this.getSetting('crashThreshold', CC_CRASH_THRESHOLD_PERCENT)` |
+
+### 3.14 Game History
 
 **Game History Level:** Summary Log
 
@@ -1424,7 +1491,7 @@ interface CategoryCrashInitialState {
 
 **Replay Value:** Seeing who came up with the most creative unique answers, laughing at the answers that multiple players chose (and got crashed), and comparing strategies for obscure vs. safe category responses.
 
-### 3.14 MinigameRenderer & Client-Server Wiring
+### 3.15 MinigameRenderer & Client-Server Wiring
 
 **MinigameRenderer Registration**
 
@@ -1562,7 +1629,7 @@ A competitive scavenger hunt through Wikipedia. All players start on the same ra
 
 #### 4.3.1 Round Structure
 
-The game is a single round with one Start → Target pair.
+The game supports multiple rounds (default 3, configurable 1–5 via `totalRounds` setting). Each round uses a fresh Start → Target article pair. Scores accumulate across rounds. Previously used pairs are excluded from future rounds.
 
 | Phase | Duration | Description |
 |---|---|---|
@@ -1570,7 +1637,10 @@ The game is a single round with one Start → Target pair.
 | Navigation Phase | 180s (3 min) | Players navigate through Wikipedia articles |
 | Results | 8s | Show who finished, click counts, and paths taken |
 
-**Total game time:** ~193s ≈ 3.2 minutes.
+After Results, if more rounds remain, the server selects a new article pair and transitions to Article Reveal for the next round. The footer round counter shows `Round X/Y`.
+
+**Total game time per round:** ~193s ≈ 3.2 minutes.
+**Total game time (3 rounds):** ~579s ≈ 9.6 minutes.
 
 #### 4.3.2 Article Selection
 
@@ -1911,13 +1981,36 @@ export const WR_ONE_AWAY = 200;
 export const WR_DNF_BASE = 50;
 export const WR_DNF_CLICK_BONUS = 10;
 
+export const WR_TOTAL_ROUNDS = 3;                         // default round count
+
 export const WR_CACHE_MAX = 500;
 export const WR_CACHE_TTL = 600000;                       // 10 min
 export const WR_NAV_RATE_LIMIT = 3;                        // per player
 export const WR_MAX_PAIR_POOL = 200;
 ```
 
-### 4.14 Anti-Cheat Notes
+### 4.14 Game Settings Schema (§12A)
+
+Host-configurable settings for Wiki-Race. Defined in `MinigameDefinition.settingsSchema`.
+Handlers read values via `this.getSetting(key, CONSTANT_DEFAULT)`.
+
+| Key | Type | Label | Description | Default | Constraints |
+|---|---|---|---|---|---|
+| `totalRounds` | `integer` | Number of Rounds | How many article-pair rounds to play | `3` | min: 1, max: 5, step: 1 |
+| `navDuration` | `integer` | Race Duration (seconds) | Total time to navigate from the start article to the target | `180` | min: 60, max: 300, step: 15 |
+| `enableEfficiencyBonus` | `boolean` | Efficiency Bonus | Award bonus points for reaching the target in fewer clicks | `true` | — |
+| `enableOneAwayPoints` | `boolean` | "One Away" Points | Award consolation points to players who were one click from the target | `true` | — |
+
+**Constant Mapping:**
+
+| Setting Key | Constant Override | Usage |
+|---|---|---|
+| `totalRounds` | `WR_TOTAL_ROUNDS` | `this.getSetting('totalRounds', WR_TOTAL_ROUNDS)` |
+| `navDuration` | `WR_NAV_DURATION` | `this.getSetting('navDuration', WR_NAV_DURATION)` |
+| `enableEfficiencyBonus` | `WR_EFFICIENCY_BONUS` | If `false`, efficiency bonus is `0` |
+| `enableOneAwayPoints` | `WR_ONE_AWAY` | If `false`, one-away points are `0` |
+
+### 4.15 Anti-Cheat Notes
 
 - The server validates every navigation against the current page's link set. Players cannot jump to arbitrary articles.
 - The "back" button is a tracked click (not free), discouraging random exploration.
@@ -1926,7 +2019,7 @@ export const WR_MAX_PAIR_POOL = 200;
 - Per-player navigation rate limit (`WR_NAVIGATE_RATE_LIMIT_PER_SECOND`) prevents automated link-clicking scripts.
 - No pre-computed optimal path is stored or revealed. Efficiency is scored relative to the best finisher.
 
-### 4.15 Game History
+### 4.16 Game History
 
 **Game History Level:** Full Action Log
 
@@ -1960,7 +2053,7 @@ interface WikiRaceInitialState {
 
 **Replay Value:** Comparing the wildly different paths players took between the same two articles, seeing who found clever shortcuts vs. who wandered through dozens of articles, and comparing paths against the best finisher's route.
 
-### 4.16 MinigameRenderer & Client-Server Wiring
+### 4.17 MinigameRenderer & Client-Server Wiring
 
 **MinigameRenderer Registration**
 

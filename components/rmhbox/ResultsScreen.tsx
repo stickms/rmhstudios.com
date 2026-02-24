@@ -52,10 +52,11 @@ export default function ResultsScreen({
   rankings,
   sessionStandings,
   awards,
-  roundNumber,
+  roundNumber: _roundNumber,
   isHost,
   lobbyId,
 }: ResultsScreenProps) {
+  void _roundNumber; // retained in the prop interface for future use
   // ResultsScreen only renders during ROUND_RESULTS — always let the host advance.
   const showNextButton = isHost;
 
@@ -89,7 +90,7 @@ export default function ResultsScreen({
     >
       {/* Header */}
       <motion.h2 variants={itemVariants} className="mb-6 text-center text-2xl font-bold">
-        Round {roundNumber} Results
+        Results
       </motion.h2>
 
       {/* Podium */}
@@ -113,13 +114,13 @@ export default function ResultsScreen({
       </motion.div>
 
       {/* Full rankings */}
-      {rankings.length > 3 && (
+      {rankings.length > 0 && (
         <motion.div variants={itemVariants} className="mb-6 rounded-xl bg-(--rmhbox-surface) border border-(--rmhbox-border) p-4">
           <h3 className="mb-2 text-sm font-semibold uppercase tracking-wider text-(--rmhbox-text-muted)">
             All Players
           </h3>
           <ul className="space-y-1">
-            {rankings.slice(3).map((p) => (
+            {rankings.map((p) => (
               <li key={p.userId} className="flex items-center justify-between text-sm">
                 <span>
                   <span className="mr-2 font-mono text-(--rmhbox-text-muted)">{p.rank}.</span>

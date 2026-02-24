@@ -34,6 +34,7 @@ import {
   UA_MAX_UNLIMITED,
   UA_MAX_PASSES,
   UA_WIN,
+  UA_WIN_OPERATIVE,
   UA_LOSE,
   UA_CLUE_EFFICIENCY,
   UA_CORRECT_GUESS,
@@ -280,8 +281,10 @@ export class UndercoverAgentMinigame extends BaseMinigame {
 
     for (let i = 0; i < UA_FIRST_TEAM_AGENTS; i++) types.push(TileType.RED_AGENT);
     for (let i = 0; i < UA_SECOND_TEAM_AGENTS; i++) types.push(TileType.BLUE_AGENT);
-    for (let i = 0; i < UA_ASSASSIN; i++) types.push(TileType.ASSASSIN);
-    for (let i = 0; i < UA_BYSTANDER; i++) types.push(TileType.BYSTANDER);
+    const assassinCount = this.getSetting('enableAssassin', UA_ASSASSIN > 0) ? UA_ASSASSIN : 0;
+    const bystanderCount = UA_BYSTANDER + (UA_ASSASSIN - assassinCount); // Convert removed assassins to bystanders
+    for (let i = 0; i < assassinCount; i++) types.push(TileType.ASSASSIN);
+    for (let i = 0; i < bystanderCount; i++) types.push(TileType.BYSTANDER);
 
     return this.shuffleArray(types);
   }
@@ -926,7 +929,7 @@ export class UndercoverAgentMinigame extends BaseMinigame {
     this.clearHighlights();
 
     // Check for draw via consecutive passes
-    if (this.state.consecutivePasses >= UA_MAX_PASSES) {
+    if (this.state.consecutivePasses >= this.getSetting('maxPasses', UA_MAX_PASSES)) {
       this.endGameWithWinner('draw', 'max_passes');
       return;
     }
@@ -1322,21 +1325,22 @@ export class UndercoverAgentMinigame extends BaseMinigame {
 
       if (winner === 'draw') {
         score = 300;
-      } else if (teamId === winner) {
-        score = UA_WIN;
+      } else if (teamId && teamId === winner) {
+        // Winning team: spymaster gets UA_WIN, operatives get UA_WIN_OPERATIVE
+        const team = this.state.teams[teamId];
+        score = userId === team.spymasterId ? UA_WIN : UA_WIN_OPERATIVE;
       } else if (teamId) {
         score = UA_LOSE;
       }
 
-      // Spymaster clue efficiency bonus
+      // Spymaster: bonus per correct operative tap (+UA_CLUE_EFFICIENCY each)
       if (stats && teamId) {
         const team = this.state.teams[teamId];
-        if (userId === team.spymasterId && stats.cluesGiven > 0) {
-          const efficiency = Math.floor(stats.totalAgentsFromClues / stats.cluesGiven);
-          score += UA_CLUE_EFFICIENCY * efficiency;
+        if (userId === team.spymasterId) {
+          score += UA_CLUE_EFFICIENCY * stats.totalAgentsFromClues;
         }
 
-        // Operative correct guess bonus
+        // Operative: bonus per correct guess (+UA_CORRECT_GUESS each)
         if (team.operativeIds.includes(userId)) {
           score += UA_CORRECT_GUESS * stats.correctGuesses;
         }
@@ -1351,7 +1355,10 @@ export class UndercoverAgentMinigame extends BaseMinigame {
       score = Math.max(0, score);
 
       const deltas: Record<string, number> = {};
-      if (teamId === winner) deltas.win = UA_WIN;
+      if (teamId === winner && teamId) {
+        const team = this.state.teams[teamId];
+        deltas.win = userId === team.spymasterId ? UA_WIN : UA_WIN_OPERATIVE;
+      }
       if (teamId && teamId !== winner && winner !== 'draw') deltas.lose = UA_LOSE;
       if (stats?.correctGuesses) deltas.correct_guesses = UA_CORRECT_GUESS * stats.correctGuesses;
       if (stats?.triggeredAssassin) deltas.assassin_penalty = UA_ASSASSIN_PENALTY;

@@ -69,10 +69,11 @@ export class RhymeTimeMinigame extends BaseMinigame {
     this.startedAt = Date.now();
     this.initializeState();
 
+    const totalRounds = this.getSetting('totalRounds', RT_TOTAL_ROUNDS);
     logger.info({
       event: 'rhyme_time:start',
       lobbyId: this.context.lobbyId,
-      totalRounds: RT_TOTAL_ROUNDS,
+      totalRounds,
       playerCount: this.context.players.size,
     });
 
@@ -87,7 +88,7 @@ export class RhymeTimeMinigame extends BaseMinigame {
     this.state = {
       phase: RhymeTimePhase.ROUND_START,
       currentRound: 0,
-      totalRounds: RT_TOTAL_ROUNDS,
+      totalRounds: this.getSetting('totalRounds', RT_TOTAL_ROUNDS),
       rootWord: null,
       timeRemaining: 0,
       submissions: {},
@@ -151,26 +152,27 @@ export class RhymeTimeMinigame extends BaseMinigame {
   private startInputPhase(): void {
     if (!this.isRunning) return;
 
+    const inputDuration = this.getSetting('inputDuration', RT_INPUT_DURATION);
     this.state.phase = RhymeTimePhase.INPUT;
-    this.state.timeRemaining = RT_INPUT_DURATION;
+    this.state.timeRemaining = inputDuration;
 
     logger.info({
       event: 'rhyme_time:input_phase_start',
       lobbyId: this.context.lobbyId,
       round: this.state.currentRound,
-      duration: RT_INPUT_DURATION,
+      duration: inputDuration,
     });
 
     this.context.broadcastToLobby('rmhbox:game:action', {
       type: 'RT_INPUT_START',
-      duration: RT_INPUT_DURATION,
-      timeRemaining: RT_INPUT_DURATION,
+      duration: inputDuration,
+      timeRemaining: inputDuration,
     });
 
     // Drive the header timer ring for the input phase
-    this.startPhaseTimer(RT_INPUT_DURATION);
+    this.startPhaseTimer(inputDuration);
 
-    this.setTimeout(() => this.endInputPhase(), RT_INPUT_DURATION * 1000);
+    this.setTimeout(() => this.endInputPhase(), inputDuration * 1000);
   }
 
   private endInputPhase(): void {
@@ -278,7 +280,7 @@ export class RhymeTimeMinigame extends BaseMinigame {
     const playerSubs = this.state.submissions[userId];
     if (!playerSubs) return; // not a participant
 
-    if (playerSubs.length >= RT_MAX_SUBMISSIONS) {
+    if (playerSubs.length >= this.getSetting('maxSubmissions', RT_MAX_SUBMISSIONS)) {
       this.context.sendToPlayer(userId, 'rmhbox:game:action', {
         type: 'RT_RHYME_REJECTED',
         reason: 'max_submissions',
@@ -330,7 +332,7 @@ export class RhymeTimeMinigame extends BaseMinigame {
       isValid,
       invalidReason,
       submissionCount: playerSubs.length,
-      maxSubmissions: RT_MAX_SUBMISSIONS,
+      maxSubmissions: this.getSetting('maxSubmissions', RT_MAX_SUBMISSIONS),
     });
 
     // Broadcast valid submission count to all
@@ -382,7 +384,8 @@ export class RhymeTimeMinigame extends BaseMinigame {
         if (!sub.isValid) {
           // Not-in-dictionary words get 0 points (no penalty) and are NOT counted as invalid;
           // known words that don't rhyme get -1 penalty and ARE counted as invalid
-          const penalty = sub.invalidReason === 'not_in_dictionary' ? 0 : RT_INVALID_PENALTY;
+          const invalidPenalty = this.getSetting('invalidPenalty', RT_INVALID_PENALTY);
+          const penalty = sub.invalidReason === 'not_in_dictionary' ? 0 : invalidPenalty;
           if (sub.invalidReason !== 'not_in_dictionary') {
             invalidCount++;
           }
@@ -407,11 +410,13 @@ export class RhymeTimeMinigame extends BaseMinigame {
         const rarity = this.computeRarity(submitterCount, totalPlayers);
         const basePoints = this.getBasePoints(rarity);
         const isMultiSyllable = sub.isMultiSyllable;
-        const multiSyllableMultiplier = isMultiSyllable ? RT_MULTI_SYLLABLE_MULT : 1;
+        const enableMultiSyllable = this.getSetting('enableMultiSyllableBonus', RT_MULTI_SYLLABLE_MULT > 1);
+        const multiSyllableMultiplier = (isMultiSyllable && enableMultiSyllable) ? RT_MULTI_SYLLABLE_MULT : 1;
 
         // Speed bonus: first submitter of a rare word
+        const enableSpeed = this.getSetting('enableSpeedBonus', RT_SPEED_BONUS > 0);
         let speedBonus = 0;
-        if (rarity === 'rare') {
+        if (rarity === 'rare' && enableSpeed) {
           const first = wordFirstSubmitter[sub.word];
           if (first && first.userId === userId) {
             speedBonus = RT_SPEED_BONUS;

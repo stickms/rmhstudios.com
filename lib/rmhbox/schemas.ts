@@ -113,6 +113,19 @@ export const GameInputSchema = z.object({
   data: z.unknown(),
 });
 
+export const UpdateGameSettingsSchema = z.object({
+  lobbyId: z.string(),
+  settings: z.record(z.string(), z.union([z.boolean(), z.number(), z.string()])),
+});
+
+export const ConfirmGameSettingsSchema = z.object({
+  lobbyId: z.string(),
+});
+
+export const ResetGameSettingsSchema = z.object({
+  lobbyId: z.string(),
+});
+
 export const FetchLeaderboardSchema = z.object({
   period: z.enum(['all-time', 'weekly', 'monthly']),
   minigame: z.string().optional(),

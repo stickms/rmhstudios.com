@@ -38,6 +38,11 @@ export const LOBBY_GC_INTERVAL_MS = 60_000;                 // 1 min
 
 export const VOTE_CANDIDATE_COUNT = 5;
 
+// ─── Game Settings (§12A) ────────────────────────────────────────
+
+export const GAME_SETTINGS_POST_VOTE_TIMEOUT = 30;
+export const MAX_GAME_SETTINGS_PER_MINIGAME = 20;
+
 // ─── Rate Limits ─────────────────────────────────────────────────
 
 export const SOCKET_RATE_LIMITS: Record<string, { max: number; windowMs: number }> = {
@@ -83,9 +88,10 @@ export const UA_TURN_TRANSITION = 3;
 export const UA_MAX_UNLIMITED = 25;
 export const UA_MAX_PASSES = 6;
 export const UA_WIN = 500;
+export const UA_WIN_OPERATIVE = 400;
 export const UA_LOSE = 100;
-export const UA_CLUE_EFFICIENCY = 50;
-export const UA_CORRECT_GUESS = 75;
+export const UA_CLUE_EFFICIENCY = 20;
+export const UA_CORRECT_GUESS = 50;
 export const UA_ASSASSIN_PENALTY = -200;
 
 // ─── Category Crash (CC) ────────────────────────────────────────
@@ -115,6 +121,7 @@ export const CC_LETTER_WEIGHTS: Record<string, number> = {
 
 // ─── Wiki-Race (WR) ─────────────────────────────────────────────
 
+export const WR_TOTAL_ROUNDS = 3;
 export const WR_NAV_DURATION = 180;
 export const WR_REVEAL = 5;
 export const WR_RESULTS = 8;

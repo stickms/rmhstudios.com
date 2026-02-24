@@ -130,6 +130,7 @@ export function createMockContext(
     lobbyId: 'TEST01',
     players,
     settings: { ...DEFAULT_SETTINGS },
+    gameSettings: {},
     getHostId: () => playerUsers[0]?.userId ?? 'host-user',
     broadcastToLobby: vi.fn((event: string, data: unknown) => {
       broadcastLog.push({ event, data });
@@ -137,7 +138,9 @@ export function createMockContext(
     broadcastToPlayers: vi.fn((event: string, data: unknown) => {
       broadcastLog.push({ event, data });
     }),
-    broadcastAction: vi.fn(),
+    broadcastAction: vi.fn((action: { type: string; payload?: unknown }) => {
+      broadcastLog.push({ event: 'action', data: action });
+    }),
     sendToPlayer: vi.fn((userId: string, event: string, data: unknown) => {
       playerLog.push({ userId, event, data });
     }),

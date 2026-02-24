@@ -26,10 +26,21 @@ import {
   COUNTDOWN_SECONDS,
   DEFAULT_INSTRUCTION_DURATION_SECONDS,
   GAME_DISCONNECT_GRACE_MS,
+  GAME_SETTINGS_POST_VOTE_TIMEOUT,
   PRELOAD_TIMEOUT_MS,
 } from '../../lib/rmhbox/constants';
-import { validated, SelectGameSchema, ForceSkipSchema, ReadyToRenderSchema, GameInputSchema } from './schemas';
-import type { MinigameDefinition, RoundResultsPayload, SessionStanding } from '../../lib/rmhbox/types';
+import {
+  validated,
+  SelectGameSchema,
+  ForceSkipSchema,
+  ReadyToRenderSchema,
+  GameInputSchema,
+  UpdateGameSettingsSchema,
+  ConfirmGameSettingsSchema,
+  ResetGameSettingsSchema,
+} from './schemas';
+import { getDefaultSettings, validateGameSettings, mergeGameSettings } from '../../lib/rmhbox/game-settings';
+import type { MinigameDefinition, RoundResultsPayload, SessionStanding, GameSettingValues } from '../../lib/rmhbox/types';
 import type { RMHboxLobby, ServerMatchSummary } from './types';
 import type { BaseMinigame, MinigameContext, MinigameResults } from './minigames/base-minigame';
 import { RhymeTimeMinigame } from './minigames/rhyme-time';
@@ -92,6 +103,9 @@ export class GameCoordinator {
     socket.on('rmhbox:game:pause_timer', validated(socket, 'rmhbox:game:pause_timer', ForceSkipSchema, (s, d) => this.onPauseTimer(s, d)));
     socket.on('rmhbox:game:ready_to_render', validated(socket, 'rmhbox:game:ready_to_render', ReadyToRenderSchema, (s, d) => this.onReadyToRender(s, d)));
     socket.on('rmhbox:game:input', validated(socket, 'rmhbox:game:input', GameInputSchema, (s, d) => this.onInput(s, d)));
+    socket.on('rmhbox:game:update_settings', validated(socket, 'rmhbox:game:update_settings', UpdateGameSettingsSchema, (s, d) => this.onUpdateGameSettings(s, d)));
+    socket.on('rmhbox:game:confirm_settings', validated(socket, 'rmhbox:game:confirm_settings', ConfirmGameSettingsSchema, (s, d) => this.onConfirmGameSettings(s, d)));
+    socket.on('rmhbox:game:reset_settings', validated(socket, 'rmhbox:game:reset_settings', ResetGameSettingsSchema, (s, d) => this.onResetGameSettings(s, d)));
   }
 
   // ─── Disconnect Handler (§2.8) ────────────────────────────────
@@ -206,7 +220,7 @@ export class GameCoordinator {
     }
 
     logger.info({ event: 'game_direct_select', lobbyId: lobby.id, userId, minigameId: payload.minigameId });
-    this.startGameFlow(lobby.id, payload.minigameId);
+    this.enterGameSettings(lobby, payload.minigameId, 'direct');
   }
 
   // ─── Host Force-Skip (§2.7a) — Skip the current non-playing phase ──
@@ -230,6 +244,13 @@ export class GameCoordinator {
     switch (lobby.state) {
       // VOTING is handled by VoteManager — this handler won't fire for VOTING
       // because VoteManager also registers on the same event and validates state
+      case 'GAME_SETTINGS':
+        logger.info({ event: 'force_skip_game_settings', lobbyId: lobby.id, userId });
+        this.clearLifecycleTimers(lobby.id);
+        this.lobbyManager.addSystemChat(lobby.id, 'Host skipped game settings.');
+        this.startGameFlow(lobby.id, lobby.currentGame?.minigameId ?? '');
+        break;
+
       case 'INSTRUCTIONS':
         logger.info({ event: 'force_skip_instructions', lobbyId: lobby.id, userId });
         this.clearLifecycleTimers(lobby.id);
@@ -286,6 +307,7 @@ export class GameCoordinator {
     }
 
     switch (lobby.state) {
+      case 'GAME_SETTINGS':
       case 'INSTRUCTIONS':
       case 'PRELOADING':
       case 'COUNTDOWN':
@@ -423,6 +445,219 @@ export class GameCoordinator {
     } catch (err) {
       logger.error({ event: 'game_input_error', lobbyId: lobby.id, userId, action: payload.action, error: String(err) });
     }
+  }
+
+  // ─── Game Settings Phase (§12A) ─────────────────────────────────
+
+  /**
+   * Enter the GAME_SETTINGS phase before starting a game.
+   * If the minigame has no settings schema, skip directly to startGameFlow.
+   *
+   * @param mode - 'direct' (host picked) or 'post-vote' (vote result)
+   */
+  enterGameSettings(lobby: RMHboxLobby, minigameId: string, mode: 'direct' | 'post-vote'): void {
+    const def = MINIGAME_REGISTRY[minigameId];
+    const schema = def?.settingsSchema;
+
+    // Store the intended minigame on the lobby as early as possible
+    lobby.currentGame = {
+      minigameId,
+      handler: null as unknown as BaseMinigame,
+      startedAt: Date.now(),
+    };
+
+    // Direct-select mode: skip GAME_SETTINGS phase entirely.
+    // Use any pre-configured settings from the lobby (set via the pre-launch modal)
+    // or fall back to defaults.
+    if (mode === 'direct') {
+      if (schema && schema.length > 0 && lobby.pendingGameSettings) {
+        lobby.resolvedGameSettings = validateGameSettings(schema, lobby.pendingGameSettings);
+      } else if (schema && schema.length > 0) {
+        lobby.resolvedGameSettings = getDefaultSettings(schema);
+      } else {
+        lobby.resolvedGameSettings = {};
+      }
+      lobby.pendingGameSettings = null;
+      logger.info({ event: 'game_settings_direct_skip', lobbyId: lobby.id, minigameId });
+      this.startGameFlow(lobby.id, minigameId);
+      return;
+    }
+
+    // Post-vote mode: enter GAME_SETTINGS phase so host can adjust settings
+    // No settings schema → skip directly to game flow
+    if (!schema || schema.length === 0) {
+      lobby.resolvedGameSettings = {};
+      this.startGameFlow(lobby.id, minigameId);
+      return;
+    }
+
+    // Initialize pending settings with defaults
+    lobby.pendingGameSettings = getDefaultSettings(schema);
+    lobby.state = 'GAME_SETTINGS';
+    lobby.lastActivityAt = Date.now();
+
+    this.lobbyManager.broadcastAction(lobby.id, { type: 'STATE_CHANGED', payload: { state: 'GAME_SETTINGS' } });
+
+    // Broadcast settings opened event
+    this.io.to(`lobby:${lobby.id}`).emit(S2C.GAME_SETTINGS_OPENED, {
+      minigameId,
+      displayName: def?.displayName ?? minigameId,
+      schema,
+      currentValues: lobby.pendingGameSettings,
+      mode,
+    });
+
+    // Send full state sync
+    this.stateSync.broadcastFullSync(lobby.id);
+
+    // Post-vote mode: auto-start after timeout
+    const timerHandle = this.stateSync.startTimerBroadcast(lobby.id, GAME_SETTINGS_POST_VOTE_TIMEOUT, () => {
+      const currentLobby = this.lobbyManager.getLobby(lobby.id);
+      if (!currentLobby || currentLobby.state !== 'GAME_SETTINGS') return;
+      logger.info({ event: 'game_settings_auto_start', lobbyId: lobby.id });
+      this.resolveAndStartGame(currentLobby, minigameId);
+    });
+
+    let lifecycle = this.lifecycles.get(lobby.id);
+    if (!lifecycle) {
+      lifecycle = { phaseTimer: null, timerHandle, readyPlayers: new Set() };
+      this.lifecycles.set(lobby.id, lifecycle);
+    } else {
+      lifecycle.timerHandle = timerHandle;
+    }
+
+    logger.info({ event: 'game_settings_opened', lobbyId: lobby.id, minigameId, mode });
+  }
+
+  /**
+   * Host updates one or more game settings.
+   * Accepted in both WAITING (pre-launch configuration) and GAME_SETTINGS (post-vote phase) states.
+   */
+  private onUpdateGameSettings(socket: Socket, payload: { lobbyId: string; settings: Record<string, boolean | number | string> }): void {
+    const userId = socket.data.userId as string;
+    const lobby = this.lobbyManager.getLobbyByUserId(userId);
+
+    if (!lobby || lobby.id !== payload.lobbyId) {
+      socket.emit(S2C.ERROR, { code: 'NOT_IN_LOBBY', message: 'You are not in this lobby.' });
+      return;
+    }
+    if (lobby.hostUserId !== userId) {
+      socket.emit(S2C.ERROR, { code: 'NOT_HOST', message: 'Only the host can update game settings.' });
+      return;
+    }
+    if (lobby.state !== 'GAME_SETTINGS' && lobby.state !== 'WAITING') {
+      socket.emit(S2C.ERROR, { code: 'INVALID_PAYLOAD', message: 'Settings can only be changed in WAITING or GAME_SETTINGS state.' });
+      return;
+    }
+
+    // In WAITING state, use the selected game; in GAME_SETTINGS, use currentGame
+    const minigameId = lobby.state === 'WAITING'
+      ? lobby.selectedGame?.minigameId
+      : lobby.currentGame?.minigameId;
+    if (!minigameId || minigameId === '__vote__') return;
+
+    const def = MINIGAME_REGISTRY[minigameId];
+    const schema = def?.settingsSchema;
+    if (!schema) return;
+
+    // Merge and validate
+    lobby.pendingGameSettings = mergeGameSettings(
+      schema,
+      lobby.pendingGameSettings ?? getDefaultSettings(schema),
+      payload.settings,
+    );
+
+    // Broadcast updated settings to all clients
+    this.io.to(`lobby:${lobby.id}`).emit(S2C.GAME_SETTINGS_UPDATED, {
+      currentValues: lobby.pendingGameSettings,
+    });
+
+    logger.info({ event: 'game_settings_updated', lobbyId: lobby.id, userId, state: lobby.state, updatedKeys: Object.keys(payload.settings) });
+  }
+
+  /**
+   * Host confirms game settings — resolve and start the game.
+   */
+  private onConfirmGameSettings(socket: Socket, payload: { lobbyId: string }): void {
+    const userId = socket.data.userId as string;
+    const lobby = this.lobbyManager.getLobbyByUserId(userId);
+
+    if (!lobby || lobby.id !== payload.lobbyId) {
+      socket.emit(S2C.ERROR, { code: 'NOT_IN_LOBBY', message: 'You are not in this lobby.' });
+      return;
+    }
+    if (lobby.hostUserId !== userId) {
+      socket.emit(S2C.ERROR, { code: 'NOT_HOST', message: 'Only the host can confirm game settings.' });
+      return;
+    }
+    if (lobby.state !== 'GAME_SETTINGS') {
+      socket.emit(S2C.ERROR, { code: 'INVALID_PAYLOAD', message: 'Not in GAME_SETTINGS state.' });
+      return;
+    }
+
+    const minigameId = lobby.currentGame?.minigameId;
+    if (!minigameId) return;
+
+    logger.info({ event: 'game_settings_confirmed', lobbyId: lobby.id, userId });
+    this.clearLifecycleTimers(lobby.id);
+    this.resolveAndStartGame(lobby, minigameId);
+  }
+
+  /**
+   * Host resets game settings back to defaults.
+   * Accepted in both WAITING (pre-launch configuration) and GAME_SETTINGS (post-vote phase) states.
+   */
+  private onResetGameSettings(socket: Socket, payload: { lobbyId: string }): void {
+    const userId = socket.data.userId as string;
+    const lobby = this.lobbyManager.getLobbyByUserId(userId);
+
+    if (!lobby || lobby.id !== payload.lobbyId) {
+      socket.emit(S2C.ERROR, { code: 'NOT_IN_LOBBY', message: 'You are not in this lobby.' });
+      return;
+    }
+    if (lobby.hostUserId !== userId) {
+      socket.emit(S2C.ERROR, { code: 'NOT_HOST', message: 'Only the host can reset game settings.' });
+      return;
+    }
+    if (lobby.state !== 'GAME_SETTINGS' && lobby.state !== 'WAITING') {
+      socket.emit(S2C.ERROR, { code: 'INVALID_PAYLOAD', message: 'Settings can only be reset in WAITING or GAME_SETTINGS state.' });
+      return;
+    }
+
+    // In WAITING state, use the selected game; in GAME_SETTINGS, use currentGame
+    const minigameId = lobby.state === 'WAITING'
+      ? lobby.selectedGame?.minigameId
+      : lobby.currentGame?.minigameId;
+    if (!minigameId || minigameId === '__vote__') return;
+
+    const def = MINIGAME_REGISTRY[minigameId];
+    const schema = def?.settingsSchema;
+    if (!schema) return;
+
+    lobby.pendingGameSettings = getDefaultSettings(schema);
+
+    this.io.to(`lobby:${lobby.id}`).emit(S2C.GAME_SETTINGS_UPDATED, {
+      currentValues: lobby.pendingGameSettings,
+    });
+
+    logger.info({ event: 'game_settings_reset', lobbyId: lobby.id, userId, state: lobby.state });
+  }
+
+  /**
+   * Resolve pending settings and start the game flow.
+   */
+  private resolveAndStartGame(lobby: RMHboxLobby, minigameId: string): void {
+    const def = MINIGAME_REGISTRY[minigameId];
+    const schema = def?.settingsSchema;
+
+    if (schema && lobby.pendingGameSettings) {
+      lobby.resolvedGameSettings = validateGameSettings(schema, lobby.pendingGameSettings);
+    } else {
+      lobby.resolvedGameSettings = {};
+    }
+
+    lobby.pendingGameSettings = null;
+    this.startGameFlow(lobby.id, minigameId);
   }
 
   // ─── Game Flow Orchestration (§2.2) ───────────────────────────
@@ -689,6 +924,7 @@ export class GameCoordinator {
       lobbyId: lobby.id,
       players: new Map(lobby.players),
       settings: { ...lobby.settings },
+      gameSettings: lobby.resolvedGameSettings ?? {},
       getHostId: () => lobby.hostUserId,
       broadcastToLobby: (event: string, data: unknown) => {
         this.io.to(`lobby:${lobby.id}`).emit(event, data);

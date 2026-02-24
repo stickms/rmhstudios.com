@@ -351,14 +351,37 @@ export const FOF_SCORE_FLOOR = -500;
 export const FOF_QUESTION_DISTRIBUTION = { easy: 3, medium: 3, hard: 2 };
 ```
 
-### 1.13 Anti-Cheat Notes
+### 1.13 Game Settings Schema (§12A)
+
+Host-configurable settings for Fact or Friction. Defined in `MinigameDefinition.settingsSchema`.
+Handlers read values via `this.getSetting(key, CONSTANT_DEFAULT)`.
+
+| Key | Type | Label | Description | Default | Constraints |
+|---|---|---|---|---|---|
+| `totalQuestions` | `integer` | Number of Questions | How many fact/fiction questions to play | `8` | min: 4, max: 12, step: 1 |
+| `answerDuration` | `integer` | Answer Duration (seconds) | Time players have to lock in their answer each round | `20` | min: 10, max: 45, step: 5 |
+| `potStartValue` | `integer` | Starting Pot Value | Points in the pot at the start of each question | `100` | min: 50, max: 200, step: 25 |
+| `enableScoreFloor` | `boolean` | Score Floor | Prevent players from going below 0 points | `true` | — |
+| `difficulty` | `select` | Difficulty | Difficulty of the fact/fiction statements | `mixed` | options: `easy`, `medium`, `hard`, `mixed` |
+
+**Constant Mapping:**
+
+| Setting Key | Constant Override | Usage |
+|---|---|---|
+| `totalQuestions` | `FOF_TOTAL_QUESTIONS` | `this.getSetting('totalQuestions', FOF_TOTAL_QUESTIONS)` |
+| `answerDuration` | `FOF_ANSWER_DURATION` | `this.getSetting('answerDuration', FOF_ANSWER_DURATION)` |
+| `potStartValue` | `FOF_POT_START_VALUE` | `this.getSetting('potStartValue', FOF_POT_START_VALUE)` |
+| `enableScoreFloor` | `FOF_SCORE_FLOOR` | If `false`, scores can go negative |
+| `difficulty` | `FOF_DIFFICULTY` | Filters question set by difficulty tag |
+
+### 1.14 Anti-Cheat Notes
 
 - The correct answer index is NEVER sent to clients until the `ANSWER_REVEAL` phase.
 - The pot value is server-authoritative. The client displays the value from the latest `FOF_POT_TICK` action and interpolates visually between ticks, but the score is always computed using the server's pot value at receipt time.
 - Answer submission time is server-stamped, not client-stamped.
 - Each player can only submit one answer per question. Duplicate submissions are silently ignored.
 
-### 1.14 Game History
+### 1.15 Game History
 
 **Game History Level:** Summary Log
 
@@ -389,7 +412,7 @@ interface FOFInitialState {
 
 Review who gambled on high pot values and lost, who was consistently fastest, and how the pot decayed across rounds. Useful for settling "I answered first!" disputes.
 
-### 1.15 MinigameRenderer & Client-Server Wiring
+### 1.16 MinigameRenderer & Client-Server Wiring
 
 #### MinigameRenderer Registration
 
@@ -874,7 +897,28 @@ export const UE_CORRECT_VOTE_BONUS = 100;        // extra for writers who voted 
 export const UE_KEYWORD_FUZZY_THRESHOLD = 0.7;
 ```
 
-### 2.14 Game History
+### 2.14 Game Settings Schema (§12A)
+
+Host-configurable settings for Undercover Editor. Defined in `MinigameDefinition.settingsSchema`.
+Handlers read values via `this.getSetting(key, CONSTANT_DEFAULT)`.
+
+| Key | Type | Label | Description | Default | Constraints |
+|---|---|---|---|---|---|
+| `rotations` | `integer` | Rotations | Number of write-edit cycles before accusation | `2` | min: 1, max: 3, step: 1 |
+| `writeTimeout` | `integer` | Write Duration (seconds) | Time to write the initial passage | `90` | min: 45, max: 180, step: 15 |
+| `editTimeout` | `integer` | Edit Duration (seconds) | Time to edit another player's passage | `60` | min: 30, max: 120, step: 10 |
+| `accusationDuration` | `integer` | Accusation Duration (seconds) | Time to vote on who the undercover editor was | `45` | min: 20, max: 90, step: 5 |
+
+**Constant Mapping:**
+
+| Setting Key | Constant Override | Usage |
+|---|---|---|
+| `rotations` | `UE_ROTATIONS` | `this.getSetting('rotations', UE_ROTATIONS)` |
+| `writeTimeout` | `UE_WRITE_TIMEOUT` | `this.getSetting('writeTimeout', UE_WRITE_TIMEOUT)` |
+| `editTimeout` | `UE_EDIT_TIMEOUT` | `this.getSetting('editTimeout', UE_EDIT_TIMEOUT)` |
+| `accusationDuration` | `UE_ACCUSATION_DURATION` | `this.getSetting('accusationDuration', UE_ACCUSATION_DURATION)` |
+
+### 2.15 Game History
 
 **Game History Level:** Full Action Log
 
@@ -910,7 +954,7 @@ interface UEInitialState {
 
 Step through the story's evolution turn by turn. See every word the Editor swapped, whether anyone noticed, and how close the accusation votes were. The `EDITOR_SWAP` entries are especially fun — compare original vs. replacement and judge how sneaky each edit was.
 
-### 2.15 MinigameRenderer & Client-Server Wiring
+### 2.16 MinigameRenderer & Client-Server Wiring
 
 #### MinigameRenderer Registration
 
@@ -1386,7 +1430,30 @@ export const MM_PARTICIPATION = 100;
 export const MM_INVESTMENT_BONUS = 50;
 ```
 
-### 3.13 Game History
+### 3.13 Game Settings Schema (§12A)
+
+Host-configurable settings for Minimalist Masterpiece. Defined in `MinigameDefinition.settingsSchema`.
+Handlers read values via `this.getSetting(key, CONSTANT_DEFAULT)`.
+
+| Key | Type | Label | Description | Default | Constraints |
+|---|---|---|---|---|---|
+| `drawingDuration` | `integer` | Drawing Duration (seconds) | Time the artist has to draw a single prompt | `45` | min: 20, max: 90, step: 5 |
+| `maxStrokes` | `integer` | Max Strokes | Maximum number of brush strokes allowed per drawing | `15` | min: 5, max: 30, step: 5 |
+| `auctionDuration` | `integer` | Auction Duration (seconds) | Time for the bidding phase on each artwork | `30` | min: 15, max: 60, step: 5 |
+| `startingCurrency` | `integer` | Starting Currency | Amount of currency each player starts with | `500` | min: 200, max: 1000, step: 50 |
+| `bidIncrement` | `integer` | Minimum Bid Increment | Minimum amount above the current bid | `25` | min: 10, max: 100, step: 5 |
+
+**Constant Mapping:**
+
+| Setting Key | Constant Override | Usage |
+|---|---|---|
+| `drawingDuration` | `MM_DRAWING_DURATION` | `this.getSetting('drawingDuration', MM_DRAWING_DURATION)` |
+| `maxStrokes` | `MM_MAX_STROKES` | `this.getSetting('maxStrokes', MM_MAX_STROKES)` |
+| `auctionDuration` | `MM_AUCTION_DURATION` | `this.getSetting('auctionDuration', MM_AUCTION_DURATION)` |
+| `startingCurrency` | `MM_STARTING_CURRENCY` | `this.getSetting('startingCurrency', MM_STARTING_CURRENCY)` |
+| `bidIncrement` | `MM_BID_INCREMENT` | `this.getSetting('bidIncrement', MM_BID_INCREMENT)` |
+
+### 3.14 Game History
 
 **Game History Level:** Full Asset Log
 
@@ -1421,7 +1488,7 @@ interface MMInitialState {
 
 Browse the gallery of 5-stroke creations for each prompt. The auction history shows who valued which art and how bidding wars played out. Compare the minimalist interpretations side-by-side — the constraint makes every stroke meaningful.
 
-### 3.14 MinigameRenderer & Client-Server Wiring
+### 3.15 MinigameRenderer & Client-Server Wiring
 
 #### MinigameRenderer Registration
 
@@ -1887,7 +1954,28 @@ export const EC_PRODUCER_DISCONNECT_WAIT = 10;
 export const EC_EMOJI_PALETTE_SIZE = 200;
 ```
 
-### 4.14 Anti-Cheat Notes
+### 4.14 Game Settings Schema (§12A)
+
+Host-configurable settings for Emoji Cinema. Defined in `MinigameDefinition.settingsSchema`.
+Handlers read values via `this.getSetting(key, CONSTANT_DEFAULT)`.
+
+| Key | Type | Label | Description | Default | Constraints |
+|---|---|---|---|---|---|
+| `maxRounds` | `integer` | Number of Rounds | Number of emoji-encoding rounds to play | `4` | min: 2, max: 6, step: 1 |
+| `roundDuration` | `integer` | Encoding Duration (seconds) | Time the encoder has to build their emoji sequence | `45` | min: 20, max: 90, step: 5 |
+| `maxEmojis` | `integer` | Max Emojis | Maximum number of emojis the encoder can use | `5` | min: 3, max: 8, step: 1 |
+| `maxGuessesPerPlayer` | `integer` | Guesses Per Player | Maximum guesses each player can submit per round | `3` | min: 1, max: 5, step: 1 |
+
+**Constant Mapping:**
+
+| Setting Key | Constant Override | Usage |
+|---|---|---|
+| `maxRounds` | `EC_MAX_ROUNDS` | `this.getSetting('maxRounds', EC_MAX_ROUNDS)` |
+| `roundDuration` | `EC_ROUND_DURATION` | `this.getSetting('roundDuration', EC_ROUND_DURATION)` |
+| `maxEmojis` | `EC_MAX_EMOJIS` | `this.getSetting('maxEmojis', EC_MAX_EMOJIS)` |
+| `maxGuessesPerPlayer` | `EC_MAX_GUESSES_PER_PLAYER` | `this.getSetting('maxGuessesPerPlayer', EC_MAX_GUESSES_PER_PLAYER)` |
+
+### 4.15 Anti-Cheat Notes
 
 - The movie title is ONLY sent to the Producer's socket. Audience players never receive it until `EC_ROUND_OVER`.
 - Guess text from other players is never sent to anyone during the guessing phase (only the count and close/correct notifications without the actual text).
@@ -1896,7 +1984,7 @@ export const EC_EMOJI_PALETTE_SIZE = 200;
 - Maximum `EC_MAX_EMOJIS` prevents emoji spam.
 - Maximum `EC_MAX_GUESSES_PER_PLAYER` prevents brute-force guessing.
 
-### 4.15 Game History
+### 4.16 Game History
 
 **Game History Level:** Summary Log
 
@@ -1929,7 +2017,7 @@ interface ECInitialState {
 
 See each round's emoji composition alongside the movie title and marvel at how creative (or cryptic) the Producer was. The close-guess log is comedy gold — near-misses and creative interpretations are half the fun.
 
-### 4.16 MinigameRenderer & Client-Server Wiring
+### 4.17 MinigameRenderer & Client-Server Wiring
 
 #### MinigameRenderer Registration
 

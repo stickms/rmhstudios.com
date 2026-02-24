@@ -15,10 +15,12 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Gamepad2, Settings } from 'lucide-react';
+import { Gamepad2, Settings, SlidersHorizontal } from 'lucide-react';
 import { emit } from '@/lib/rmhbox/socket';
 import { C2S } from '@/lib/rmhbox/events';
+import { useRMHboxStore } from '@/lib/rmhbox/store';
 import GamePickerModal from './GamePickerModal';
+import GameSettingsModal from './GameSettingsModal';
 import type { LobbySettings } from '@/lib/rmhbox/types';
 
 interface HostControlsProps {
@@ -43,12 +45,23 @@ export default function HostControls({
   onPickGame,
 }: HostControlsProps) {
   const [showGamePicker, setShowGamePicker] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
+  const [showSettings, setShowSettings] = useState(true);
+  const [showGameSettings, setShowGameSettings] = useState(false);
+
+  const gameSettingsState = useRMHboxStore((s) => s.gameSettingsState);
 
   const handleUpdateSettings = useCallback((partial: Partial<LobbySettings>) => {
     emit(C2S.LOBBY_UPDATE_SETTINGS, { lobbyId, settings: partial });
     onSettingsChange?.(partial);
   }, [lobbyId, onSettingsChange]);
+
+  const handleGameSettingChange = useCallback((key: string, value: boolean | number | string) => {
+    emit(C2S.GAME_UPDATE_SETTINGS, { lobbyId, settings: { [key]: value } });
+  }, [lobbyId]);
+
+  const handleGameSettingsReset = useCallback(() => {
+    emit(C2S.GAME_RESET_SETTINGS, { lobbyId });
+  }, [lobbyId]);
 
   if (!isHost) return null;
 
@@ -69,11 +82,21 @@ export default function HostControls({
           <Gamepad2 className="h-4 w-4" /> Pick Game
         </button>
 
+        {/* Game Settings — only when a game with settings is selected */}
+        {gameSettingsState && gameSettingsState.mode === 'lobby' && (
+          <button
+            onClick={() => setShowGameSettings(true)}
+            className="flex items-center gap-2 rounded-lg bg-(--rmhbox-surface-hover) px-4 py-2 text-sm font-semibold text-(--rmhbox-text) transition-colors hover:brightness-110"
+          >
+            <SlidersHorizontal className="h-4 w-4" /> Game Settings
+          </button>
+        )}
+
         <button
           onClick={() => setShowSettings(!showSettings)}
           className="flex items-center gap-2 rounded-lg bg-(--rmhbox-surface-hover) px-4 py-2 text-sm font-semibold text-(--rmhbox-text) transition-colors hover:brightness-110"
         >
-          <Settings className="h-4 w-4" /> Settings
+          <Settings className="h-4 w-4" /> Lobby Settings
         </button>
       </div>
 
@@ -85,6 +108,20 @@ export default function HostControls({
         playerCount={playerCount}
         currentPickId={selectedGameId}
       />
+
+      {/* Game Settings Modal (pre-launch in lobby) */}
+      {gameSettingsState && gameSettingsState.mode === 'lobby' && (
+        <GameSettingsModal
+          isOpen={showGameSettings}
+          onClose={() => setShowGameSettings(false)}
+          displayName={gameSettingsState.displayName}
+          schema={gameSettingsState.schema}
+          values={gameSettingsState.currentValues}
+          editable={true}
+          onSettingChange={handleGameSettingChange}
+          onReset={handleGameSettingsReset}
+        />
+      )}
 
       {/* Settings panel */}
       {showSettings && settings && (

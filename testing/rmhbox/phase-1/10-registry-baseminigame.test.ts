@@ -88,6 +88,7 @@ function createTestContext(overrides: Partial<MinigameContext> = {}): MinigameCo
       autoStartThreshold: null,
       gameDurationOverride: null,
     },
+    gameSettings: {},
     getHostId: () => 'host-user',
     broadcastToLobby: vi.fn(),
     broadcastToPlayers: vi.fn(),

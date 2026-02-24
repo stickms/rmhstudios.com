@@ -22,13 +22,14 @@
 import { BaseMinigame } from '../base-minigame';
 import type { MinigameContext, MinigameResults } from '../base-minigame';
 import type { PlayerRanking, Award } from '@/lib/rmhbox/types';
-import { selectArticlePair } from '@/lib/rmhbox/wiki-race/data-loader';
+import { selectArticlePair, pairKey } from '@/lib/rmhbox/wiki-race/data-loader';
 import { NavigateSchema, GoBackSchema } from '@/lib/rmhbox/wiki-race/schemas';
 import { createArticleCache, fetchArticle } from '@/lib/rmhbox/wiki-race/wikipedia-proxy';
 import type { CachedArticle } from '@/lib/rmhbox/wiki-race/wikipedia-proxy';
 import type { LRUCache } from 'lru-cache';
 import {
   WR_NAV_DURATION,
+  WR_TOTAL_ROUNDS,
   WR_REVEAL,
   WR_RESULTS,
   WR_FINISH_BASE,
@@ -96,12 +97,17 @@ export class WikiRaceMinigame extends BaseMinigame {
     // Show reveal countdown in the header timer
     this.startPhaseTimer(WR_REVEAL);
 
+    // Broadcast round info for the footer counter
+    this.broadcastRound(this.state.currentRound, this.state.totalRounds);
+
     this.setTimeout(() => this.startNavigation(), WR_REVEAL * 1000);
   }
 
   private initializeState(): void {
     const articlePair = selectArticlePair([]);
     const playerStates = new Map<string, WRPlayerState>();
+    const cumulativeScores = new Map<string, number>();
+    const totalRounds = this.getSetting('totalRounds', WR_TOTAL_ROUNDS);
 
     for (const userId of this.context.players.keys()) {
       playerStates.set(userId, {
@@ -115,15 +121,20 @@ export class WikiRaceMinigame extends BaseMinigame {
         finishRank: 0,
         score: 0,
       });
+      cumulativeScores.set(userId, 0);
     }
 
     this.state = {
       phase: WikiRacePhase.ARTICLE_REVEAL,
       articlePair,
       playerStates,
-      timeRemaining: WR_NAV_DURATION,
+      timeRemaining: this.getSetting('navDuration', WR_NAV_DURATION),
       finishCounter: 0,
       actionLog: [],
+      currentRound: 1,
+      totalRounds,
+      cumulativeScores,
+      usedPairKeys: [pairKey(articlePair)],
     };
   }
 
@@ -133,19 +144,19 @@ export class WikiRaceMinigame extends BaseMinigame {
     if (!this.isRunning) return;
 
     this.state.phase = WikiRacePhase.NAVIGATION;
-    this.state.timeRemaining = WR_NAV_DURATION;
+    this.state.timeRemaining = this.getSetting('navDuration', WR_NAV_DURATION);
     this.navigationStartedAt = Date.now();
 
     logger.info({
       event: 'wiki_race:navigation_start',
       lobbyId: this.context.lobbyId,
-      duration: WR_NAV_DURATION,
+      duration: this.getSetting('navDuration', WR_NAV_DURATION),
     });
 
     this.context.broadcastToLobby('rmhbox:game:action', {
       type: 'WR_NAVIGATION_START',
-      duration: WR_NAV_DURATION,
-      timeRemaining: WR_NAV_DURATION,
+      duration: this.getSetting('navDuration', WR_NAV_DURATION),
+      timeRemaining: this.getSetting('navDuration', WR_NAV_DURATION),
     });
 
     // Fetch start article for each player
@@ -170,10 +181,10 @@ export class WikiRaceMinigame extends BaseMinigame {
     });
 
     // Timer tick every second — drives the header timer ring
-    this.startPhaseTimer(WR_NAV_DURATION);
+    this.startPhaseTimer(this.getSetting('navDuration', WR_NAV_DURATION));
 
     // End navigation when time expires
-    this.setTimeout(() => this.endNavigation(), WR_NAV_DURATION * 1000);
+    this.setTimeout(() => this.endNavigation(), this.getSetting('navDuration', WR_NAV_DURATION) * 1000);
   }
 
   private endNavigation(): void {
@@ -198,8 +209,16 @@ export class WikiRaceMinigame extends BaseMinigame {
     logger.info({
       event: 'wiki_race:results',
       lobbyId: this.context.lobbyId,
+      round: this.state.currentRound,
+      totalRounds: this.state.totalRounds,
       finishedCount: this.state.finishCounter,
     });
+
+    // Accumulate round scores into cumulative totals
+    for (const [userId, ps] of this.state.playerStates) {
+      const prev = this.state.cumulativeScores.get(userId) ?? 0;
+      this.state.cumulativeScores.set(userId, prev + ps.score);
+    }
 
     // Build results payload with all player data visible
     const playerResults: Record<string, unknown> = {};
@@ -215,16 +234,86 @@ export class WikiRaceMinigame extends BaseMinigame {
       };
     }
 
+    const hasMoreRounds = this.state.currentRound < this.state.totalRounds;
+
     this.context.broadcastToLobby('rmhbox:game:action', {
       type: 'WR_RESULTS',
       playerResults,
       duration: WR_RESULTS,
+      round: this.state.currentRound,
+      totalRounds: this.state.totalRounds,
+      hasMoreRounds,
     });
 
     // Show results countdown in the header timer
     this.startPhaseTimer(WR_RESULTS);
 
-    this.setTimeout(() => this.endGame(), WR_RESULTS * 1000);
+    if (hasMoreRounds) {
+      this.setTimeout(() => this.startNextRound(), WR_RESULTS * 1000);
+    } else {
+      this.setTimeout(() => this.endGame(), WR_RESULTS * 1000);
+    }
+  }
+
+  /** Advance to the next round with a new article pair. */
+  private startNextRound(): void {
+    if (!this.isRunning) return;
+
+    this.state.currentRound++;
+
+    // Select a new article pair, avoiding previously used ones
+    const newPair = selectArticlePair(this.state.usedPairKeys);
+    this.state.usedPairKeys.push(pairKey(newPair));
+    this.state.articlePair = newPair;
+    this.state.finishCounter = 0;
+
+    // Reset player states for the new round
+    for (const [userId, ps] of this.state.playerStates) {
+      ps.currentArticleTitle = newPair.startArticle.title;
+      ps.currentArticleLinks = new Set<string>();
+      ps.path = [newPair.startArticle.title];
+      ps.clickCount = 0;
+      ps.hasFinished = false;
+      ps.finishedAt = null;
+      ps.finishRank = 0;
+      ps.score = 0;
+      void userId; // used as map key
+    }
+
+    // Clear rate limits for the new round
+    this.rateLimits.clear();
+
+    logger.info({
+      event: 'wiki_race:next_round',
+      lobbyId: this.context.lobbyId,
+      round: this.state.currentRound,
+      startArticle: newPair.startArticle.title,
+      targetArticle: newPair.targetArticle.title,
+    });
+
+    // Broadcast round info
+    this.broadcastRound(this.state.currentRound, this.state.totalRounds);
+
+    // Enter ARTICLE_REVEAL for the new round
+    this.state.phase = WikiRacePhase.ARTICLE_REVEAL;
+    this.context.broadcastToLobby('rmhbox:game:action', {
+      type: 'WR_ARTICLES_REVEALED',
+      startArticle: {
+        title: newPair.startArticle.title,
+        description: newPair.startArticle.description,
+      },
+      targetArticle: {
+        title: newPair.targetArticle.title,
+        description: newPair.targetArticle.description,
+      },
+      difficulty: newPair.difficulty,
+      duration: WR_REVEAL,
+      round: this.state.currentRound,
+      totalRounds: this.state.totalRounds,
+    });
+
+    this.startPhaseTimer(WR_REVEAL);
+    this.setTimeout(() => this.startNavigation(), WR_REVEAL * 1000);
   }
 
   private endGame(): void {
@@ -485,17 +574,19 @@ export class WikiRaceMinigame extends BaseMinigame {
 
         // Speed bonus: seconds remaining when finished
         const elapsedMs = (ps.finishedAt ?? Date.now()) - this.navigationStartedAt;
-        const secsRemaining = Math.max(0, WR_NAV_DURATION - Math.floor(elapsedMs / 1000));
+        const secsRemaining = Math.max(0, this.getSetting('navDuration', WR_NAV_DURATION) - Math.floor(elapsedMs / 1000));
         score += WR_SPEED_BONUS_PER_SEC * secsRemaining;
 
         // Efficiency bonus: fewer clicks relative to the best finisher
-        const efficiencyDelta = Math.max(0, fewestClicks + 3 - ps.clickCount);
-        score += WR_EFFICIENCY_BONUS * efficiencyDelta;
+        if (this.getSetting('enableEfficiencyBonus', WR_EFFICIENCY_BONUS > 0)) {
+          const efficiencyDelta = Math.max(0, fewestClicks + 3 - ps.clickCount);
+          score += WR_EFFICIENCY_BONUS * efficiencyDelta;
+        }
 
         ps.score = score;
       } else {
         // DNF scoring
-        if (ps.currentArticleLinks.has(targetTitle)) {
+        if (this.getSetting('enableOneAwayPoints', WR_ONE_AWAY > 0) && ps.currentArticleLinks.has(targetTitle)) {
           // Target was on the current page but player didn't click it
           ps.score = WR_ONE_AWAY;
         } else {
@@ -573,6 +664,8 @@ export class WikiRaceMinigame extends BaseMinigame {
       },
       difficulty: this.state.articlePair.difficulty,
       timeRemaining: this.state.timeRemaining,
+      round: this.state.currentRound,
+      totalRounds: this.state.totalRounds,
       myState: ps
         ? {
             currentArticleTitle: ps.currentArticleTitle,
@@ -617,6 +710,8 @@ export class WikiRaceMinigame extends BaseMinigame {
       },
       difficulty: this.state.articlePair.difficulty,
       timeRemaining: this.state.timeRemaining,
+      round: this.state.currentRound,
+      totalRounds: this.state.totalRounds,
       players: allPlayers,
     };
 
@@ -707,10 +802,12 @@ export class WikiRaceMinigame extends BaseMinigame {
 
     for (const [userId, ps] of this.state.playerStates) {
       const player = this.context.players.get(userId);
+      // Use cumulative scores across all rounds
+      const totalScore = this.state.cumulativeScores.get(userId) ?? ps.score;
       entries.push({
         userId,
         userName: player?.userName ?? 'Unknown',
-        score: ps.score,
+        score: totalScore,
         rank: 0,
         deltas: {
           clickCount: ps.clickCount,

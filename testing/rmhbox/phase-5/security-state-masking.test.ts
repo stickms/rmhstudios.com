@@ -60,6 +60,9 @@ describe('Security — State Masking (Phase 5)', () => {
       const game = new UndercoverAgentMinigame(ctx.context);
       game.start();
 
+      // Advance past TEAM_SETUP by having host send START_GAME action
+      game.handleInput(MOCK_USERS.alice.userId, 'START_GAME', {});
+
       // Get the team info
       const setupBroadcast = findLastActionBroadcast(ctx.broadcastLog, 'UA_SETUP');
       expect(setupBroadcast).toBeDefined();
@@ -159,7 +162,7 @@ describe('Security — State Masking (Phase 5)', () => {
       }));
 
       vi.mock('../../../lib/rmhbox/wiki-race/data-loader', () => ({
-        selectArticlePair: () => ({
+        selectArticlePair: (_usedPairKeys: string[] = []) => ({
           id: 'test-pair-001',
           startArticle: {
             title: 'Start_Article',
@@ -175,6 +178,8 @@ describe('Security — State Masking (Phase 5)', () => {
           difficulty: 'medium' as const,
           tags: ['test'],
         }),
+        pairKey: (pair: { startArticle: { title: string }; targetArticle: { title: string } }) =>
+          `${pair.startArticle.title}::${pair.targetArticle.title}`,
       }));
 
       const ctx = createMockContext();
@@ -194,7 +199,7 @@ describe('Security — State Masking (Phase 5)', () => {
       }
     });
 
-    it('optimalPathLength should be hidden during NAVIGATION but visible during RESULTS', () => {
+    it('optimalPathLength should never be exposed in player state', () => {
       vi.mock('../../../lib/rmhbox/wiki-race/wikipedia-proxy', () => ({
         createArticleCache: () => {
           const cache = new Map();
@@ -215,7 +220,7 @@ describe('Security — State Masking (Phase 5)', () => {
       }));
 
       vi.mock('../../../lib/rmhbox/wiki-race/data-loader', () => ({
-        selectArticlePair: () => ({
+        selectArticlePair: (_usedPairKeys: string[] = []) => ({
           id: 'test-pair-001',
           startArticle: {
             title: 'Start_Article',
@@ -231,22 +236,24 @@ describe('Security — State Masking (Phase 5)', () => {
           difficulty: 'medium' as const,
           tags: ['test'],
         }),
+        pairKey: (pair: { startArticle: { title: string }; targetArticle: { title: string } }) =>
+          `${pair.startArticle.title}::${pair.targetArticle.title}`,
       }));
 
-      const ctx = createMockContext();
+      const ctx = createMockContext(undefined, { gameSettings: { totalRounds: 1 } });
       const game = new WikiRaceMinigame(ctx.context);
       game.start();
       vi.advanceTimersByTime(6000); // Into NAVIGATION
 
-      // During NAVIGATION
+      // During NAVIGATION — should not be exposed
       const navState = game.getStateForPlayer(MOCK_USERS.alice.userId) as Record<string, unknown>;
       expect(navState.optimalPathLength).toBeUndefined();
 
-      // Run to RESULTS
-      vi.advanceTimersByTime(600_000);
+      // Run to RESULTS — still should not be exposed
+      vi.advanceTimersByTime(200_000);
 
       const resultState = game.getStateForPlayer(MOCK_USERS.alice.userId) as Record<string, unknown>;
-      expect(resultState.optimalPathLength).toBeDefined();
+      expect(resultState.optimalPathLength).toBeUndefined();
     });
   });
 });

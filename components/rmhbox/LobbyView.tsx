@@ -13,20 +13,24 @@
  */
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { emit } from '@/lib/rmhbox/socket';
 import { C2S } from '@/lib/rmhbox/events';
+import { SlidersHorizontal } from 'lucide-react';
 import RoomCodeDisplay from './RoomCodeDisplay';
 import PlayerList from './PlayerList';
 import ReadyButton from './ReadyButton';
 import HostControls from './HostControls';
 import ChatOverlay from './ChatOverlay';
+import GameSettingsModal from './GameSettingsModal';
 
 export default function LobbyView() {
   const lobby = useRMHboxStore((s) => s.lobby);
+  const gameSettingsState = useRMHboxStore((s) => s.gameSettingsState);
   const router = useRouter();
+  const [showViewSettings, setShowViewSettings] = useState(false);
 
   const handleToggleReady = useCallback(() => {
     if (!lobby) return;
@@ -86,7 +90,7 @@ export default function LobbyView() {
   const selectedGameName = lobby.selectedGame?.displayName ?? null;
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col p-4 h-full max-lg:overflow-y-auto lg:overflow-hidden lg:p-6">
+    <div className="mx-auto flex w-full max-w-4xl flex-col p-4 lg:p-6">
       {/* Room code with integrated leave button */}
       <div className="flex shrink-0 items-center justify-center pb-2">
         <RoomCodeDisplay code={lobby.lobbyId} onLeave={handleLeaveLobby} />
@@ -131,12 +135,36 @@ export default function LobbyView() {
               selectedGameId={lobby.selectedGame?.minigameId ?? null}
               onPickGame={handlePickGame}
             />
+
+            {/* Non-host: "View Settings" button when a game with settings is selected */}
+            {!isHost && gameSettingsState && gameSettingsState.mode === 'lobby' && (
+              <div className="flex justify-center">
+                <button
+                  onClick={() => setShowViewSettings(true)}
+                  className="flex items-center gap-2 rounded-lg bg-(--rmhbox-surface-hover) px-4 py-2 text-sm font-semibold text-(--rmhbox-text) transition-colors hover:brightness-110"
+                >
+                  <SlidersHorizontal className="h-4 w-4" /> View Game Settings
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Right column — chat */}
         <ChatOverlay messages={lobby.chat} onSend={handleSendChat} />
       </div>
+
+      {/* Non-host: read-only game settings modal */}
+      {!isHost && gameSettingsState && gameSettingsState.mode === 'lobby' && (
+        <GameSettingsModal
+          isOpen={showViewSettings}
+          onClose={() => setShowViewSettings(false)}
+          displayName={gameSettingsState.displayName}
+          schema={gameSettingsState.schema}
+          values={gameSettingsState.currentValues}
+          editable={false}
+        />
+      )}
     </div>
   );
 }

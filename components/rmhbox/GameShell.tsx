@@ -36,11 +36,12 @@ interface GameShellProps {
 }
 
 export default function GameShell({
-  roundNumber,
+  roundNumber: _roundNumber,
   score,
   playerCount,
   children,
 }: GameShellProps) {
+  void _roundNumber; // retained in the prop interface; round info now comes from minigameRound store field
   const minigameRound = useRMHboxStore((s) => s.minigameRound);
   const timerInfo = useRMHboxStore((s) => s.timerInfo);
   const lobby = useRMHboxStore((s) => s.lobby);
@@ -57,7 +58,7 @@ export default function GameShell({
     ? minigameRound.total > 0
       ? `Round ${minigameRound.current}/${minigameRound.total}`
       : `Turn ${minigameRound.current}`
-    : `Round ${roundNumber}`;
+    : null;
 
   return (
     <div className="flex h-full flex-col overflow-hidden bg-(--rmhbox-bg) text-(--rmhbox-text)">
@@ -84,11 +85,11 @@ export default function GameShell({
               Next
               <ChevronRight className="h-3.5 w-3.5" />
             </button>
-          ) : (
+          ) : roundLabel ? (
             <span className="rounded-full bg-(--rmhbox-surface) px-2 py-0.5 text-xs font-medium text-(--rmhbox-text-muted) pointer-events-none">
               {roundLabel}
             </span>
-          )}
+          ) : null}
         </div>
         <span className="ml-auto flex items-center gap-1 text-(--rmhbox-text-muted)">
           <Users className="h-4 w-4" /> {playerCount}

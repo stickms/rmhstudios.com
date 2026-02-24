@@ -15,6 +15,7 @@
 3. [7.3 Cursor Curling](#73-cursor-curling)
 4. [7.4 Human Tetris](#74-human-tetris)
 5. [7.5 Cross-Game Integration Testing](#75-cross-game-integration-testing)
+6. [7.6 Game Settings Test Plan (§12A)](#76-game-settings-test-plan-12a)
 
 ---
 
@@ -470,6 +471,36 @@
 
 - [ ] Reconnection test: Disconnect during PATTERN_DISPLAY → reconnect → see remaining steps only (natural penalty for missed steps)
   **Verification:** Reconnected player can attempt input but may have missed earlier steps.
+
+### 7.1.8 Game Settings Integration (§12A)
+
+Integrate host-configurable settings using the §12A system established in Phase 5. See `lib/rmhbox/game-settings.ts` and `BaseMinigame.getSetting()` for the canonical pattern.
+
+#### Registry Entry
+
+- [ ] Export `SEQUENCE_SAM_SETTINGS: GameSettingsSchema` in `lib/rmhbox/minigame-registry.ts` with 5 entries:
+  - `maxRounds` (integer, default `5`, min 3, max 8, step 1)
+  - `startingLength` (integer, default `3`, min 2, max 5, step 1)
+  - `maxStrikes` (integer, default `3`, min 1, max 5, step 1)
+  - `enableChaosRounds` (boolean, default `true`)
+  - `chaosInterval` (integer, default `3`, min 2, max 5, step 1)
+- [ ] Attach `settingsSchema: SEQUENCE_SAM_SETTINGS` to the `sequence-sam` `MinigameDefinition`.
+  **Verification:** Registry lookup returns definition with `settingsSchema` containing 5 entries.
+
+#### Handler `getSetting()` Integration
+
+Replace hardcoded constants with `this.getSetting()` calls in the Sequence Sam handler:
+
+| Constant | Setting Key | Replacement |
+|---|---|---|
+| `SS_MAX_ROUNDS` | `maxRounds` | `this.getSetting('maxRounds', SS_MAX_ROUNDS)` |
+| `SS_STARTING_LENGTH` | `startingLength` | `this.getSetting('startingLength', SS_STARTING_LENGTH)` |
+| `SS_MAX_STRIKES` | `maxStrikes` | `this.getSetting('maxStrikes', SS_MAX_STRIKES)` |
+| `SS_ENABLE_CHAOS` | `enableChaosRounds` | `this.getSetting('enableChaosRounds', SS_ENABLE_CHAOS)` |
+| `SS_CHAOS_INTERVAL` | `chaosInterval` | `this.getSetting('chaosInterval', SS_CHAOS_INTERVAL)` |
+
+- [ ] **Boolean setting logic:** When `enableChaosRounds` is `false`, skip all chaos-round logic (no tile remapping, no shuffled sequences). The `chaosInterval` setting is ignored when chaos rounds are disabled.
+  **Verification:** Each constant usage replaced. Handler respects custom settings passed via `MinigameContext.gameSettings`.
 
 ---
 
@@ -957,6 +988,34 @@
 
 - [ ] Cursor lock test: Wrong key → cursor locked → correct key during lock → rejected → lock expires → correct key → accepted
   **Verification:** Lock timing correct.
+
+### 7.2.10 Game Settings Integration (§12A)
+
+Integrate host-configurable settings using the §12A system.
+
+#### Registry Entry
+
+- [ ] Export `HUMAN_KEYBOARD_SETTINGS: GameSettingsSchema` in `lib/rmhbox/minigame-registry.ts` with 4 entries:
+  - `typingDuration` (integer, default `60`, min 30, max 120, step 10)
+  - `enableReshuffle` (boolean, default `true`)
+  - `reshuffleInterval` (integer, default `20`, min 10, max 45, step 5)
+  - `wrongKeyLockMs` (integer, default `500`, min 0, max 2000, step 100)
+- [ ] Attach `settingsSchema: HUMAN_KEYBOARD_SETTINGS` to the `human-keyboard` `MinigameDefinition`.
+  **Verification:** Registry lookup returns definition with `settingsSchema` containing 4 entries.
+
+#### Handler `getSetting()` Integration
+
+Replace hardcoded constants with `this.getSetting()` calls in the Human Keyboard handler:
+
+| Constant | Setting Key | Replacement |
+|---|---|---|
+| `HK_TYPING_DURATION` | `typingDuration` | `this.getSetting('typingDuration', HK_TYPING_DURATION)` |
+| `HK_ENABLE_RESHUFFLE` | `enableReshuffle` | `this.getSetting('enableReshuffle', HK_ENABLE_RESHUFFLE)` |
+| `HK_RESHUFFLE_INTERVAL` | `reshuffleInterval` | `this.getSetting('reshuffleInterval', HK_RESHUFFLE_INTERVAL)` |
+| `HK_WRONG_KEY_LOCK_MS` | `wrongKeyLockMs` | `this.getSetting('wrongKeyLockMs', HK_WRONG_KEY_LOCK_MS)` |
+
+- [ ] **Boolean setting logic:** When `enableReshuffle` is `false`, key assignments remain fixed for the entire round. The `reshuffleInterval` setting is ignored when reshuffling is disabled.
+  **Verification:** Each constant usage replaced. Handler respects custom settings passed via `MinigameContext.gameSettings`.
 
 ---
 
@@ -1494,6 +1553,34 @@
 - [ ] Reconnection test: Player disconnects on their turn → auto-throw (dud) → reconnect → spectator for that throw, next turn normal
   **Verification:** Auto-throw works.
 
+### 7.3.8 Game Settings Integration (§12A)
+
+Integrate host-configurable settings using the §12A system.
+
+#### Registry Entry
+
+- [ ] Export `CURSOR_CURLING_SETTINGS: GameSettingsSchema` in `lib/rmhbox/minigame-registry.ts` with 4 entries:
+  - `totalEnds` (integer, default `4`, min 2, max 6, step 1)
+  - `aimDuration` (integer, default `15`, min 5, max 30, step 5)
+  - `powerDuration` (integer, default `5`, min 3, max 10, step 1)
+  - `enableSweeping` (boolean, default `true`)
+- [ ] Attach `settingsSchema: CURSOR_CURLING_SETTINGS` to the `cursor-curling` `MinigameDefinition`.
+  **Verification:** Registry lookup returns definition with `settingsSchema` containing 4 entries.
+
+#### Handler `getSetting()` Integration
+
+Replace hardcoded constants with `this.getSetting()` calls in the Cursor Curling handler:
+
+| Constant | Setting Key | Replacement |
+|---|---|---|
+| `CU_TOTAL_ENDS` | `totalEnds` | `this.getSetting('totalEnds', CU_TOTAL_ENDS)` |
+| `CU_AIM_DURATION` | `aimDuration` | `this.getSetting('aimDuration', CU_AIM_DURATION)` |
+| `CU_POWER_DURATION` | `powerDuration` | `this.getSetting('powerDuration', CU_POWER_DURATION)` |
+| `CU_ENABLE_SWEEPING` | `enableSweeping` | `this.getSetting('enableSweeping', CU_ENABLE_SWEEPING)` |
+
+- [ ] **Boolean setting logic:** When `enableSweeping` is `false`, skip the sweeping phase entirely after stone release — the stone travels on its natural trajectory without team intervention.
+  **Verification:** Each constant usage replaced. Handler respects custom settings passed via `MinigameContext.gameSettings`.
+
 ---
 
 ## 7.4 Human Tetris
@@ -1990,6 +2077,34 @@
 - [ ] Streak test: 8 consecutive successes → `HT_STREAK_BONUS` awarded to all
   **Verification:** Streak bonus triggers.
 
+### 7.4.10 Game Settings Integration (§12A)
+
+Integrate host-configurable settings using the §12A system.
+
+#### Registry Entry
+
+- [ ] Export `HUMAN_TETRIS_SETTINGS: GameSettingsSchema` in `lib/rmhbox/minigame-registry.ts` with 4 entries:
+  - `totalWaves` (integer, default `8`, min 4, max 12, step 1)
+  - `wallPreviewDuration` (integer, default `5`, min 2, max 10, step 1)
+  - `startingPositionTime` (integer, default `8`, min 4, max 15, step 1)
+  - `enableDeadZones` (boolean, default `false`)
+- [ ] Attach `settingsSchema: HUMAN_TETRIS_SETTINGS` to the `human-tetris` `MinigameDefinition`.
+  **Verification:** Registry lookup returns definition with `settingsSchema` containing 4 entries.
+
+#### Handler `getSetting()` Integration
+
+Replace hardcoded constants with `this.getSetting()` calls in the Human Tetris handler:
+
+| Constant | Setting Key | Replacement |
+|---|---|---|
+| `HT_TOTAL_WAVES` | `totalWaves` | `this.getSetting('totalWaves', HT_TOTAL_WAVES)` |
+| `HT_WALL_PREVIEW_DURATION` | `wallPreviewDuration` | `this.getSetting('wallPreviewDuration', HT_WALL_PREVIEW_DURATION)` |
+| `HT_STARTING_POSITION_TIME` | `startingPositionTime` | `this.getSetting('startingPositionTime', HT_STARTING_POSITION_TIME)` |
+| `HT_ENABLE_DEAD_ZONES` | `enableDeadZones` | `this.getSetting('enableDeadZones', HT_ENABLE_DEAD_ZONES)` |
+
+- [ ] **Boolean setting logic:** When `enableDeadZones` is `true`, the handler spawns dead-zone grid cells that eliminate players on contact. Default is `false` — enabling this is an advanced difficulty modifier.
+  **Verification:** Each constant usage replaced. Handler respects custom settings passed via `MinigameContext.gameSettings`.
+
 ---
 
 ## 7.5 Cross-Game Integration Testing
@@ -2096,3 +2211,71 @@
   **Verification:** All 4 handlers instantiate and implement `BaseMinigame` interface.
 
 > **Note on parallel development:** Phase 7 can be implemented fully in parallel with Phase 6 and Phase 8 after Phase 5 is complete. The coexistence test above (7.5.8) validates Phase 7 against Phase 5. If other phases are also complete, run an expanded coexistence test covering all deployed phases to verify the full registry (up to 16 games).
+
+---
+
+## 7.6 Game Settings Test Plan (§12A)
+
+All tests go in `testing/rmhbox/phase-7/game-settings.test.ts` (or integrated into the phase-7 test suite). Follow the Phase 5 test patterns in `testing/rmhbox/phase-5/6-game-settings.test.ts`.
+
+### 7.6.1 Schema Completeness Tests
+
+- [ ] Each of the 4 exported settings arrays has the expected number of entries (SS: 5, HK: 4, CU: 4, HT: 4).
+- [ ] Every setting has `key`, `type`, `label`, `default` defined.
+- [ ] Integer settings have `min`, `max`, `step` defined.
+- [ ] Boolean settings have no `min`/`max`/`step`.
+- [ ] Default values fall within declared constraints.
+
+### 7.6.2 Sequence Sam Settings Tests
+
+| Test Case | Description |
+|---|---|
+| `default maxRounds` | With no custom settings, handler uses `SS_MAX_ROUNDS` (5) |
+| `custom maxRounds = 8` | Handler plays 8 sequence rounds |
+| `custom startingLength = 5` | First sequence has 5 elements |
+| `custom maxStrikes = 1` | One wrong answer eliminates the player |
+| `enableChaosRounds = false` | No chaos rounds occur; all rounds are standard |
+| `enableChaosRounds = true (default)` | Chaos rounds trigger every `chaosInterval` rounds |
+| `custom chaosInterval = 2` | Chaos round every 2 rounds |
+| `chaosInterval ignored when chaos disabled` | Setting `chaosInterval` has no effect when `enableChaosRounds = false` |
+
+### 7.6.3 Human Keyboard Settings Tests
+
+| Test Case | Description |
+|---|---|
+| `default typingDuration` | Uses `HK_TYPING_DURATION` (60s) |
+| `custom typingDuration = 90` | Typing timer is 90s |
+| `enableReshuffle = false` | Key assignments stay fixed for the entire round |
+| `enableReshuffle = true (default)` | Keys reshuffle every `reshuffleInterval` seconds |
+| `custom reshuffleInterval = 10` | Reshuffle occurs every 10s |
+| `reshuffleInterval ignored when reshuffle disabled` | Setting has no effect when `enableReshuffle = false` |
+| `custom wrongKeyLockMs = 0` | No lockout on wrong key press |
+| `custom wrongKeyLockMs = 2000` | 2s lockout on wrong key press |
+
+### 7.6.4 Cursor Curling Settings Tests
+
+| Test Case | Description |
+|---|---|
+| `default totalEnds` | Uses `CU_TOTAL_ENDS` (4) |
+| `custom totalEnds = 6` | Handler plays 6 ends |
+| `custom aimDuration = 25` | Aim phase timer is 25s |
+| `custom powerDuration = 8` | Power phase timer is 8s |
+| `enableSweeping = false` | No sweeping phase after stone release |
+| `enableSweeping = true (default)` | Sweeping phase is active |
+
+### 7.6.5 Human Tetris Settings Tests
+
+| Test Case | Description |
+|---|---|
+| `default totalWaves` | Uses `HT_TOTAL_WAVES` (8) |
+| `custom totalWaves = 12` | Handler plays 12 waves |
+| `custom wallPreviewDuration = 3` | Wall preview is 3s |
+| `custom startingPositionTime = 12` | Position time is 12s |
+| `enableDeadZones = true` | Dead zones appear on the grid |
+| `enableDeadZones = false (default)` | No dead zones |
+
+### 7.6.6 getSetting() Fallback Tests
+
+- [ ] Calling `getSetting('maxRounds', SS_MAX_ROUNDS)` with empty `gameSettings` returns the fallback.
+- [ ] Calling `getSetting('maxRounds', SS_MAX_ROUNDS)` with `gameSettings: { maxRounds: 7 }` returns `7`.
+- [ ] Calling `getSetting('unknownKey', 42)` returns `42`.

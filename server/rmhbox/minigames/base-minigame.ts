@@ -10,7 +10,7 @@
  * Reference: docs/rmhbox/design-spec/core.md §7.4
  */
 
-import type { LobbySettings } from '../../../lib/rmhbox/types';
+import type { LobbySettings, GameSettingValues } from '../../../lib/rmhbox/types';
 import type { RMHboxPlayer } from '../types';
 import type { PlayerRanking, Award } from '../../../lib/rmhbox/types';
 
@@ -24,6 +24,8 @@ export interface MinigameContext {
   lobbyId: string;
   players: Map<string, RMHboxPlayer>;
   settings: LobbySettings;
+  /** Host-configured game settings for this minigame instance (§12A). */
+  gameSettings: GameSettingValues;
   /** Live lookup of the current host userId (reflects host transfer). */
   getHostId: () => string;
   broadcastToLobby: (event: string, data: unknown) => void;
@@ -82,6 +84,17 @@ export abstract class BaseMinigame {
 
   constructor(context: MinigameContext) {
     this.context = context;
+  }
+
+  /**
+   * Read a host-configured game setting, falling back to the provided default
+   * (which should be the matching constant). Type-safe via generic parameter.
+   *
+   * @example this.getSetting('totalRounds', RT_TOTAL_ROUNDS)
+   */
+  protected getSetting<T extends boolean | number | string>(key: string, fallback: T): T {
+    const val = this.context.gameSettings[key];
+    return (val !== undefined ? val : fallback) as T;
   }
 
   /** Called when the PLAYING phase begins. Start game logic here. */

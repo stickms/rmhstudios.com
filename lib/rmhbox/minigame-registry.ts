@@ -8,7 +8,45 @@
  * Reference: docs/rmhbox/design-spec/core.md §20 (MinigameDefinition)
  */
 
-import type { MinigameDefinition } from './types';
+import type { MinigameDefinition, GameSettingsSchema } from './types';
+import {
+  RT_TOTAL_ROUNDS, RT_INPUT_DURATION, RT_MAX_SUBMISSIONS,
+  RT_SPEED_BONUS, RT_MULTI_SYLLABLE_MULT, RT_INVALID_PENALTY,
+  UA_ASSASSIN,
+  CC_TOTAL_ROUNDS, CC_INPUT_DURATION, CC_CATEGORIES_PER_ROUND,
+  CC_PEER_REVIEW_DURATION, CC_CRASH_THRESHOLD_PERCENT,
+  WR_NAV_DURATION, WR_EFFICIENCY_BONUS, WR_ONE_AWAY, WR_TOTAL_ROUNDS,
+} from './constants';
+
+// ─── Per-Minigame Settings Schemas ───────────────────────────────
+
+export const RHYME_TIME_SETTINGS: GameSettingsSchema = [
+  { key: 'totalRounds', type: 'integer', label: 'Number of Rounds', description: 'How many rounds of rhyming to play', default: RT_TOTAL_ROUNDS, min: 1, max: 5, step: 1 },
+  { key: 'inputDuration', type: 'integer', label: 'Round Duration (seconds)', description: 'Time players have to submit rhymes each round', default: RT_INPUT_DURATION, min: 20, max: 90, step: 5 },
+  { key: 'maxSubmissions', type: 'integer', label: 'Max Submissions', description: 'Maximum number of rhymes a player can submit per round', default: RT_MAX_SUBMISSIONS, min: 10, max: 50, step: 5 },
+  { key: 'enableSpeedBonus', type: 'boolean', label: 'Speed Bonus', description: 'Award bonus points for submitting rare rhymes first', default: RT_SPEED_BONUS > 0 },
+  { key: 'enableMultiSyllableBonus', type: 'boolean', label: 'Multi-Syllable Bonus', description: 'Double points for rhymes with more syllables than the root word', default: RT_MULTI_SYLLABLE_MULT > 1 },
+  { key: 'invalidPenalty', type: 'integer', label: 'Invalid Rhyme Penalty', description: 'Points deducted for submitting a non-rhyming word', default: RT_INVALID_PENALTY, min: -5, max: 0, step: 1 },
+];
+
+export const UNDERCOVER_AGENT_SETTINGS: GameSettingsSchema = [
+  { key: 'enableAssassin', type: 'boolean', label: 'Assassin Tile', description: 'Include the instant-loss assassin tile on the board', default: UA_ASSASSIN > 0 },
+];
+
+export const CATEGORY_CRASH_SETTINGS: GameSettingsSchema = [
+  { key: 'totalRounds', type: 'integer', label: 'Number of Rounds', description: 'How many rounds to play', default: CC_TOTAL_ROUNDS, min: 1, max: 4, step: 1 },
+  { key: 'inputDuration', type: 'integer', label: 'Brainstorm Duration (seconds)', description: 'Time to fill in answers for all categories', default: CC_INPUT_DURATION, min: 30, max: 120, step: 10 },
+  { key: 'categoriesPerRound', type: 'integer', label: 'Categories Per Round', description: 'Number of categories to fill in each round', default: CC_CATEGORIES_PER_ROUND, min: 3, max: 7, step: 1 },
+  { key: 'peerReviewDuration', type: 'integer', label: 'Peer Review Duration (seconds)', description: 'Time for players to review and challenge answers', default: CC_PEER_REVIEW_DURATION, min: 15, max: 60, step: 5 },
+  { key: 'crashThreshold', type: 'integer', label: 'Crash Threshold (%)', description: 'Percentage of votes needed to reject a contested answer', default: CC_CRASH_THRESHOLD_PERCENT, min: 30, max: 80, step: 5 },
+];
+
+export const WIKI_RACE_SETTINGS: GameSettingsSchema = [
+  { key: 'totalRounds', type: 'integer', label: 'Number of Rounds', description: 'How many rounds of racing to play', default: WR_TOTAL_ROUNDS, min: 1, max: 5, step: 1 },
+  { key: 'navDuration', type: 'integer', label: 'Race Duration (seconds)', description: 'Total time to navigate from start article to target', default: WR_NAV_DURATION, min: 60, max: 300, step: 15 },
+  { key: 'enableEfficiencyBonus', type: 'boolean', label: 'Efficiency Bonus', description: 'Award bonus points for reaching the target in fewer clicks', default: WR_EFFICIENCY_BONUS > 0 },
+  { key: 'enableOneAwayPoints', type: 'boolean', label: '"One Away" Points', description: 'Award consolation points to players who were one click from the target', default: WR_ONE_AWAY > 0 },
+];
 
 // ─── Registry ────────────────────────────────────────────────────
 
@@ -27,6 +65,7 @@ export const MINIGAME_REGISTRY: Record<string, MinigameDefinition> = {
     preloadAssets: { images: [], sounds: [], data: [], estimatedSizeBytes: 0 },
     joinInProgressPolicy: 'spectate_only',
     tags: ['word', 'speed', 'competitive', 'vocabulary'],
+    settingsSchema: RHYME_TIME_SETTINGS,
   },
   'undercover-agent': {
     id: 'undercover-agent',
@@ -42,6 +81,7 @@ export const MINIGAME_REGISTRY: Record<string, MinigameDefinition> = {
     preloadAssets: { images: [], sounds: [], data: [], estimatedSizeBytes: 0 },
     joinInProgressPolicy: 'spectate_only',
     tags: ['word', 'teams', 'strategy', 'deduction'],
+    settingsSchema: UNDERCOVER_AGENT_SETTINGS,
   },
   'category-crash': {
     id: 'category-crash',
@@ -57,6 +97,7 @@ export const MINIGAME_REGISTRY: Record<string, MinigameDefinition> = {
     preloadAssets: { images: [], sounds: [], data: [], estimatedSizeBytes: 0 },
     joinInProgressPolicy: 'join_next_subround',
     tags: ['word', 'categories'],
+    settingsSchema: CATEGORY_CRASH_SETTINGS,
   },
   'wiki-race': {
     id: 'wiki-race',
@@ -72,6 +113,7 @@ export const MINIGAME_REGISTRY: Record<string, MinigameDefinition> = {
     preloadAssets: { images: [], sounds: [], data: [], estimatedSizeBytes: 0 },
     joinInProgressPolicy: 'spectate_only',
     tags: ['trivia', 'race'],
+    settingsSchema: WIKI_RACE_SETTINGS,
   },
   // ─── Unimplemented Minigames (commented out until server handlers exist) ───
   // 'fact-or-friction': {

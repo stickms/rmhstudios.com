@@ -23,6 +23,7 @@ import { toast } from '@/lib/rmhbox/toast-store';
 import { PartyPopper, Trophy } from 'lucide-react';
 import LobbyView from '@/components/rmhbox/LobbyView';
 import GameVoting from '@/components/rmhbox/GameVoting';
+import GameSettingsPhase from '@/components/rmhbox/GameSettingsPhase';
 import InstructionsScreen from '@/components/rmhbox/InstructionsScreen';
 import PreloadScreen from '@/components/rmhbox/PreloadScreen';
 import ResultsScreen from '@/components/rmhbox/ResultsScreen';
@@ -226,7 +227,7 @@ export default function LobbyPage({ params }: { params: Promise<{ lobbyId: strin
   // Determine header context and title based on current lobby state
   const isGamePhase = lobby.state === 'PLAYING' || lobby.state === 'COUNTDOWN'
     || lobby.state === 'INSTRUCTIONS' || lobby.state === 'PRELOADING'
-    || lobby.state === 'ROUND_RESULTS';
+    || lobby.state === 'ROUND_RESULTS' || lobby.state === 'GAME_SETTINGS';
   const headerContext = isGamePhase ? 'game' as const : 'lobby' as const;
   const headerTitle = lobby.currentGame ? lobby.currentGame.displayName : undefined;
 
@@ -238,7 +239,7 @@ export default function LobbyPage({ params }: { params: Promise<{ lobbyId: strin
       />
 
       {/* Content area below header */}
-      <div className="flex-1 min-h-0 overflow-y-auto relative">
+      <div className="flex-1 min-h-0 overflow-y-auto relative" style={{ scrollbarGutter: 'stable both-edges' }}>
         {/* Spectator Banner */}
         {isSpectator && (
           <SpectatorBanner
@@ -258,6 +259,8 @@ export default function LobbyPage({ params }: { params: Promise<{ lobbyId: strin
           onVote={(minigameId: string) => emit(C2S.GAME_CAST_VOTE, { lobbyId, minigameId })}
         />
       )}
+
+      {lobby.state === 'GAME_SETTINGS' && <GameSettingsPhase />}
 
       {lobby.state === 'INSTRUCTIONS' && instructions && (
         <InstructionsScreen

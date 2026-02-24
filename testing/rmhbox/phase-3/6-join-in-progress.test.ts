@@ -179,6 +179,7 @@ describe('BaseMinigame.handlePlayerJoin', () => {
         autoStartThreshold: null,
         gameDurationOverride: null,
       },
+      gameSettings: {},
       getHostId: () => 'test-host',
       broadcastToLobby: vi.fn(),
       broadcastToPlayers: vi.fn(),
