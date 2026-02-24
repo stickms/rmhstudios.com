@@ -1,0 +1,1 @@
+export { IdentityCrisisGame } from './handler';
