@@ -16,6 +16,10 @@ import {
   CC_TOTAL_ROUNDS, CC_INPUT_DURATION, CC_CATEGORIES_PER_ROUND,
   CC_PEER_REVIEW_DURATION, CC_CRASH_THRESHOLD_PERCENT,
   WR_NAV_DURATION, WR_EFFICIENCY_BONUS, WR_ONE_AWAY, WR_TOTAL_ROUNDS,
+  IC_QUESTIONS_PER_PLAYER, IC_ASK_SECONDS, IC_VOTE_SECONDS,
+  IC_FINAL_GUESS_SECONDS,
+  RF_TOTAL_ROUNDS, RF_RANKING_SECONDS, RF_ITEMS_PER_CATEGORY,
+  RF_OUTLIER_BONUS,
 } from './constants';
 
 // ─── Per-Minigame Settings Schemas ───────────────────────────────
@@ -46,6 +50,21 @@ export const WIKI_RACE_SETTINGS: GameSettingsSchema = [
   { key: 'navDuration', type: 'integer', label: 'Race Duration (seconds)', description: 'Total time to navigate from start article to target', default: WR_NAV_DURATION, min: 60, max: 300, step: 15 },
   { key: 'enableEfficiencyBonus', type: 'boolean', label: 'Efficiency Bonus', description: 'Award bonus points for reaching the target in fewer clicks', default: WR_EFFICIENCY_BONUS > 0 },
   { key: 'enableOneAwayPoints', type: 'boolean', label: '"One Away" Points', description: 'Award consolation points to players who were one click from the target', default: WR_ONE_AWAY > 0 },
+];
+
+export const IDENTITY_CRISIS_SETTINGS: GameSettingsSchema = [
+  { key: 'questionsPerPlayer', type: 'integer', label: 'Questions Per Player', description: 'Number of yes/no questions each player can ask', default: IC_QUESTIONS_PER_PLAYER, min: 2, max: 5, step: 1 },
+  { key: 'askDuration', type: 'integer', label: 'Ask Duration (seconds)', description: 'Time for the subject to type a yes/no question', default: IC_ASK_SECONDS, min: 15, max: 60, step: 5 },
+  { key: 'voteDuration', type: 'integer', label: 'Vote Duration (seconds)', description: 'Time for others to vote on the yes/no question', default: IC_VOTE_SECONDS, min: 10, max: 30, step: 5 },
+  { key: 'finalGuessDuration', type: 'integer', label: 'Final Guess Duration (seconds)', description: 'Time for all players to submit their final identity guess', default: IC_FINAL_GUESS_SECONDS, min: 15, max: 60, step: 5 },
+  { key: 'enableEarlyGuess', type: 'boolean', label: 'Early Guess', description: 'Allow players to guess their identity before all questions are used', default: true },
+];
+
+export const RANKING_FILE_SETTINGS: GameSettingsSchema = [
+  { key: 'totalRounds', type: 'integer', label: 'Number of Rounds', description: 'How many ranking rounds to play', default: RF_TOTAL_ROUNDS, min: 2, max: 6, step: 1 },
+  { key: 'rankingDuration', type: 'integer', label: 'Ranking Duration (seconds)', description: 'Time to arrange items in order', default: RF_RANKING_SECONDS, min: 20, max: 90, step: 5 },
+  { key: 'itemsPerCategory', type: 'integer', label: 'Items Per Category', description: 'Number of items to rank in each round', default: RF_ITEMS_PER_CATEGORY, min: 3, max: 7, step: 1 },
+  { key: 'enableOutlierBonus', type: 'boolean', label: 'Outlier Bonus', description: 'Award bonus points for the most unique ranking', default: RF_OUTLIER_BONUS > 0 },
 ];
 
 // ─── Registry ────────────────────────────────────────────────────
@@ -114,6 +133,48 @@ export const MINIGAME_REGISTRY: Record<string, MinigameDefinition> = {
     joinInProgressPolicy: 'spectate_only',
     tags: ['trivia', 'race'],
     settingsSchema: WIKI_RACE_SETTINGS,
+  },
+  'identity-crisis': {
+    id: 'identity-crisis',
+    displayName: 'Identity Crisis',
+    description: 'Everyone knows who you are... except you! Ask yes/no questions and piece together your secret identity. Guess early for bonus points, but get it wrong and you\'re out!',
+    category: 'social',
+    icon: 'user-question',
+    minPlayers: 3,
+    maxPlayers: 10,
+    estimatedDurationSeconds: 180,
+    supportsTeams: false,
+    instructionDurationSeconds: 15,
+    preloadAssets: {
+      images: [],
+      sounds: [],
+      data: ['/data/rmhbox/identity-crisis/identities.json'],
+      estimatedSizeBytes: 15000,
+    },
+    joinInProgressPolicy: 'spectate_only',
+    tags: ['social', 'deduction', 'competitive', 'knowledge'],
+    settingsSchema: IDENTITY_CRISIS_SETTINGS,
+  },
+  'ranking-file': {
+    id: 'ranking-file',
+    displayName: 'Ranking File',
+    description: 'Rank 5 items from best to worst — but the goal isn\'t to have the "right" opinion, it\'s to match the group\'s consensus! The most average player wins.',
+    category: 'social',
+    icon: 'list-ordered',
+    minPlayers: 3,
+    maxPlayers: 16,
+    estimatedDurationSeconds: 120,
+    supportsTeams: false,
+    instructionDurationSeconds: 15,
+    preloadAssets: {
+      images: [],
+      sounds: [],
+      data: ['/data/rmhbox/ranking-file/categories.json'],
+      estimatedSizeBytes: 20000,
+    },
+    joinInProgressPolicy: 'join_next_subround',
+    tags: ['social', 'opinion', 'competitive', 'light'],
+    settingsSchema: RANKING_FILE_SETTINGS,
   },
   // ─── Unimplemented Minigames (commented out until server handlers exist) ───
   // 'fact-or-friction': {
