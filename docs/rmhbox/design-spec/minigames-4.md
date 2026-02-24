@@ -447,9 +447,56 @@ interface ICGameHistoryInit {
 
 **Replay Value:** The social deduction aspect makes this a strong candidate for full logging. Players can review the Q&A transcript to see how answers led them toward (or away from) the correct identity, compare voting patterns, and spot the moment the penny dropped.
 
-### 1.15 MinigameRenderer & Client-Server Wiring
+### 1.15 History Display Configuration
 
-#### 1.14.1 MinigameRenderer Registration
+**Detail Component:** `IdentityCrisisHistoryDetail`
+
+Renders the expanded game log as a question-and-guess review:
+- Identity assignments revealed (who was assigned whom)
+- Question timeline with vote breakdowns (yes/no/maybe)
+- Early guess attempts with outcomes (correct/incorrect)
+- Final guess results
+- Voting accuracy scores
+
+**Searchable Fields:**
+
+| Field Key | Label | Extraction |
+|---|---|---|
+| `identities` | Identities | All identity names from `assignment` actions |
+| `questions` | Questions Asked | All question texts from `question_asked` actions |
+
+**Filterable Fields:**
+
+| Field Key | Label | Type | Details |
+|---|---|---|---|
+| `guessedCorrectly` | Guessed Own Identity | boolean | Whether user correctly identified themselves |
+| `madeEarlyGuess` | Made Early Guess | boolean | Whether user attempted an early guess |
+| `identityCategory` | Identity Category | select | Scientist, Musician, Fictional, Historical, etc. |
+
+**Summary Extractor:**
+
+```typescript
+getSummary: (log) => {
+  const correct = log.actions.filter(a => a.type === 'final_guess' && a.payload.correct);
+  return `${correct.length}/${log.players.length} correct guesses — Identity deduction`;
+}
+```
+
+**Component Structure:**
+
+```
+IdentityCrisisHistoryDetail.tsx
+├── IdentityReveal (who was assigned whom)
+├── QuestionTimeline (ordered questions + vote results)
+│   ├── QuestionEntry (question text + asker)
+│   └── VoteBreakdown (yes/no/maybe counts)
+├── GuessResults (early + final guesses)
+└── Final scores summary
+```
+
+### 1.16 MinigameRenderer & Client-Server Wiring
+
+#### 1.16.1 MinigameRenderer Registration
 
 ```tsx
 // In MinigameRenderer component map
@@ -459,7 +506,7 @@ const minigameComponents = {
 };
 ```
 
-#### 1.14.2 Client-Side Store Integration
+#### 1.16.2 Client-Side Store Integration
 
 ```tsx
 useEffect(() => {
@@ -486,7 +533,7 @@ useEffect(() => {
 }, [socket]);
 ```
 
-#### 1.14.3 Client-Side Input Dispatch
+#### 1.16.3 Client-Side Input Dispatch
 
 ```tsx
 // Ask a question (during your turn)
@@ -502,7 +549,7 @@ socket.emit('IC_EARLY_GUESS', { guess });
 socket.emit('IC_FINAL_GUESS', { guess });
 ```
 
-#### 1.14.4 Server-Side Handler Registration
+#### 1.16.4 Server-Side Handler Registration
 
 ```typescript
 // In server/rmhbox/minigames/identity-crisis
@@ -511,7 +558,7 @@ import { IdentityCrisisGame } from './minigames/identity-crisis/IdentityCrisisGa
 MINIGAME_SERVER_REGISTRY.set('identity-crisis', IdentityCrisisGame);
 ```
 
-#### 1.14.5 Sound Effect Integration
+#### 1.16.5 Sound Effect Integration
 
 | Event | Sound | Notes |
 |---|---|---|
@@ -525,7 +572,7 @@ MINIGAME_SERVER_REGISTRY.set('identity-crisis', IdentityCrisisGame);
 | Final guess phase | `goFanfare` | Transition to final guessing round |
 | Results reveal | `victoryFanfare` | All identities and scores shown |
 
-#### 1.14.6 Spectator Rendering
+#### 1.16.6 Spectator Rendering
 
 Spectators are **omniscient** — they see ALL identities (including the asking player's) and all votes in real-time. The component checks spectator status and shows full identity cards for all players.
 
@@ -945,9 +992,57 @@ interface RFGameHistoryInit {
 
 **Replay Value:** Comparing how players ranked the same items reveals taste differences and unexpected consensus. The round-by-round breakdown fuels post-game arguments about whether pizza truly belongs above tacos.
 
-### 2.15 MinigameRenderer & Client-Server Wiring
+### 2.15 History Display Configuration
 
-#### 2.14.1 MinigameRenderer Registration
+**Detail Component:** `RankingFileHistoryDetail`
+
+Renders the expanded game log as a per-round ranking comparison:
+- Category and items shown for each round
+- Consensus ranking vs. each player's ranking (visual diff)
+- Distance scores per player per round
+- Exact match bonuses and outlier bonuses highlighted
+- Per-round score breakdown
+
+**Searchable Fields:**
+
+| Field Key | Label | Extraction |
+|---|---|---|
+| `categories` | Categories | Category names from `round_start` actions |
+| `items` | Items Ranked | Item names from `round_start` actions |
+
+**Filterable Fields:**
+
+| Field Key | Label | Type | Details |
+|---|---|---|---|
+| `exactMatches` | Exact Matches | range | Number of items ranked in exact consensus position |
+| `wasOutlier` | Was Outlier | boolean | Whether user had the most unique ranking |
+| `roundCount` | Rounds Played | range | Number of rounds |
+
+**Summary Extractor:**
+
+```typescript
+getSummary: (log) => {
+  const rounds = log.actions.filter(a => a.type === 'round_start');
+  const categories = rounds.map(r => r.payload.category).join(', ');
+  return `${rounds.length} rounds — ${categories}`;
+}
+```
+
+**Component Structure:**
+
+```
+RankingFileHistoryDetail.tsx
+├── RoundCard (per round)
+│   ├── CategoryHeader (category name)
+│   ├── RankingComparison (consensus vs. player rankings)
+│   ├── DistanceScores (Manhattan distance visualization)
+│   └── BonusBadges (exact match, outlier)
+└── Final scores summary
+```
+
+### 2.16 MinigameRenderer & Client-Server Wiring
+
+#### 2.16.1 MinigameRenderer Registration
 
 ```tsx
 // In MinigameRenderer component map
@@ -957,7 +1052,7 @@ const minigameComponents = {
 };
 ```
 
-#### 2.14.2 Client-Side Store Integration
+#### 2.16.2 Client-Side Store Integration
 
 ```tsx
 useEffect(() => {
@@ -979,7 +1074,7 @@ useEffect(() => {
 }, [socket]);
 ```
 
-#### 2.14.3 Client-Side Input Dispatch
+#### 2.16.3 Client-Side Input Dispatch
 
 ```tsx
 // Submit final ranking (array of 5 unique numbers 1-5)
@@ -989,7 +1084,7 @@ socket.emit('RF_SUBMIT_RANKING', { ranking });
 socket.emit('RF_UPDATE_RANKING', { ranking });
 ```
 
-#### 2.14.4 Server-Side Handler Registration
+#### 2.16.4 Server-Side Handler Registration
 
 ```typescript
 // In server/rmhbox/minigames/ranking-file
@@ -998,7 +1093,7 @@ import { RankingFileGame } from './minigames/ranking-file/RankingFileGame';
 MINIGAME_SERVER_REGISTRY.set('ranking-file', RankingFileGame);
 ```
 
-#### 2.14.5 Sound Effect Integration
+#### 2.16.5 Sound Effect Integration
 
 | Event | Sound | Notes |
 |---|---|---|
@@ -1009,7 +1104,7 @@ MINIGAME_SERVER_REGISTRY.set('ranking-file', RankingFileGame);
 | Game over | `victoryFanfare` | Final standings revealed |
 | Timer warning | `countdownBeep` | Time running low to submit |
 
-#### 2.14.6 Spectator Rendering
+#### 2.16.6 Spectator Rendering
 
 During the ranking phase, spectators see submission progress (who submitted, not the rankings). During results, spectators see all rankings and the average. The component renders a read-only CategoryReveal without drag-and-drop interaction.
 
@@ -1483,9 +1578,53 @@ interface PPGameHistoryInit {
 
 **Replay Value:** The log shows team coordination through level-by-level progression. Polarity flip events highlight the cooperative chaos, and completion times let teams compare runs and track improvement.
 
-### 3.16 MinigameRenderer & Client-Server Wiring
+### 3.16 History Display Configuration
 
-#### 3.15.1 MinigameRenderer Registration
+**Detail Component:** `PixelPushersHistoryDetail`
+
+Renders the expanded game log as an arena replay summary:
+- Arena layout with block positions and polarity states
+- Goal zone completion status
+- Per-player push contributions
+- Polarity toggle timeline
+- Score breakdown per goal zone
+
+**Searchable Fields:**
+
+| Field Key | Label | Extraction |
+|---|---|---|
+| `playerNames` | Player Names | All player names from the game log |
+
+**Filterable Fields:**
+
+| Field Key | Label | Type | Details |
+|---|---|---|---|
+| `blocksScored` | Blocks Scored | range | Number of blocks user pushed into correct goals |
+| `polarityToggles` | Polarity Toggles | range | Number of polarity toggles by user |
+
+**Summary Extractor:**
+
+```typescript
+getSummary: (log) => {
+  const scored = log.actions.filter(a => a.type === 'block_scored');
+  return `${scored.length} blocks scored — Physics puzzle`;
+}
+```
+
+**Component Structure:**
+
+```
+PixelPushersHistoryDetail.tsx
+├── ArenaView (block positions + polarity colors)
+├── GoalZoneStatus (completion per zone)
+├── PlayerContributions (pushes per player)
+├── PolarityTimeline (toggle events)
+└── Final scores summary
+```
+
+### 3.17 MinigameRenderer & Client-Server Wiring
+
+#### 3.17.1 MinigameRenderer Registration
 
 ```tsx
 // In MinigameRenderer component map
@@ -1495,7 +1634,7 @@ const minigameComponents = {
 };
 ```
 
-#### 3.15.2 Client-Side Store Integration
+#### 3.17.2 Client-Side Store Integration
 
 ```tsx
 useEffect(() => {
@@ -1522,14 +1661,14 @@ useEffect(() => {
 }, [socket]);
 ```
 
-#### 3.15.3 Client-Side Input Dispatch
+#### 3.17.3 Client-Side Input Dispatch
 
 ```tsx
 // Movement input (normalized direction vector, sent at ~15Hz via throttled interval)
 socket.emit('PP_MOVE', { dx, dy });
 ```
 
-#### 3.15.4 Server-Side Handler Registration
+#### 3.17.4 Server-Side Handler Registration
 
 ```typescript
 // In server/rmhbox/minigames/pixel-pushers
@@ -1538,7 +1677,7 @@ import { PixelPushersGame } from './minigames/pixel-pushers/PixelPushersGame';
 MINIGAME_SERVER_REGISTRY.set('pixel-pushers', PixelPushersGame);
 ```
 
-#### 3.15.5 Sound Effect Integration
+#### 3.17.5 Sound Effect Integration
 
 | Event | Sound | Notes |
 |---|---|---|
@@ -1551,7 +1690,7 @@ MINIGAME_SERVER_REGISTRY.set('pixel-pushers', PixelPushersGame);
 | Level failed | `buzzer` | Team fails the level |
 | Game over | `victoryFanfare` | Run ends, final scores shown |
 
-#### 3.15.6 Spectator Rendering
+#### 3.17.6 Spectator Rendering
 
 Spectators see the same cooperative view as players — all pusher positions, ball trajectory, and polarity indicators are visible. The component renders the GameCanvas with all entities but disables the VirtualJoystick input.
 
@@ -2080,9 +2219,55 @@ interface SCGameHistoryInit {
 
 **Replay Value:** The elimination timeline tells the full story — rising scroll speed, cascading deaths, and the final survivor. Ad stats add a comedic layer, showing who struggled with the fake close buttons.
 
-### 4.16 MinigameRenderer & Client-Server Wiring
+### 4.16 History Display Configuration
 
-#### 4.15.1 MinigameRenderer Registration
+**Detail Component:** `ScrollSoulHistoryDetail`
+
+Renders the expanded game log as a platformer run summary:
+- Distance traveled visualization
+- Platform collection highlights
+- Voting decision timeline (left/right/straight)
+- Difficulty scaling graph
+- Near-miss and combo streak indicators
+
+**Searchable Fields:**
+
+| Field Key | Label | Extraction |
+|---|---|---|
+| `playerNames` | Player Names | All player names from the game log |
+
+**Filterable Fields:**
+
+| Field Key | Label | Type | Details |
+|---|---|---|---|
+| `distanceTraveled` | Distance Traveled | range | Total pixels scrolled |
+| `combos` | Combo Streaks | range | Longest combo streak |
+| `platformsCollected` | Platforms Collected | range | Number of bonus platforms collected |
+
+**Summary Extractor:**
+
+```typescript
+getSummary: (log) => {
+  const endAction = log.actions.find(a => a.type === 'game_end');
+  const distance = endAction?.payload.distanceTraveled ?? 0;
+  return `Distance: ${distance}px — Platformer survival`;
+}
+```
+
+**Component Structure:**
+
+```
+ScrollSoulHistoryDetail.tsx
+├── DistanceBar (total distance visualization)
+├── VotingTimeline (jump direction decisions)
+├── DifficultyGraph (difficulty over time)
+├── ComboHighlights (streak moments)
+└── Final scores summary
+```
+
+### 4.17 MinigameRenderer & Client-Server Wiring
+
+#### 4.17.1 MinigameRenderer Registration
 
 ```tsx
 // In MinigameRenderer component map
@@ -2092,7 +2277,7 @@ const minigameComponents = {
 };
 ```
 
-#### 4.15.2 Client-Side Store Integration
+#### 4.17.2 Client-Side Store Integration
 
 ```tsx
 useEffect(() => {
@@ -2120,7 +2305,7 @@ useEffect(() => {
 }, [socket]);
 ```
 
-#### 4.15.3 Client-Side Input Dispatch
+#### 4.17.3 Client-Side Input Dispatch
 
 ```tsx
 // Movement input (sent continuously on input change)
@@ -2130,7 +2315,7 @@ socket.emit('SC_INPUT', { moveX, jump }); // moveX: -1|0|1, jump: boolean
 socket.emit('SC_CLOSE_AD', { adId, clickX, clickY });
 ```
 
-#### 4.15.4 Server-Side Handler Registration
+#### 4.17.4 Server-Side Handler Registration
 
 ```typescript
 // In server/rmhbox/minigames/scroll-soul
@@ -2139,7 +2324,7 @@ import { ScrollSoulGame } from './minigames/scroll-soul/ScrollSoulGame';
 MINIGAME_SERVER_REGISTRY.set('scroll-soul', ScrollSoulGame);
 ```
 
-#### 4.15.5 Sound Effect Integration
+#### 4.17.5 Sound Effect Integration
 
 | Event | Sound | Notes |
 |---|---|---|
@@ -2153,7 +2338,7 @@ MINIGAME_SERVER_REGISTRY.set('scroll-soul', ScrollSoulGame);
 | Height milestone | `scoreDing` | Player reaches a new height threshold |
 | Game over | `victoryFanfare` | Last player standing or time expires |
 
-#### 4.15.6 Spectator Rendering
+#### 4.17.6 Spectator Rendering
 
 Spectators see all players' positions on a shared scrolling viewport with all ads visible (including which player each ad targets). The component renders the full ScrollCanvas with all player avatars but disables movement input.
 
