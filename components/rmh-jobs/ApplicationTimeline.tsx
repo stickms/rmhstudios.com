@@ -61,7 +61,7 @@ function ApplicationCard({ application: app }: { application: Application }) {
                 <div>
                     <Link
                         href={`/rmh-jobs/${app.job.id}`}
-                        className="font-semibold hover:text-[var(--jobs-accent)] transition-colors"
+                        className="font-semibold hover:text-(--jobs-accent) transition-colors"
                     >
                         {app.job.title}
                     </Link>
@@ -77,7 +77,7 @@ function ApplicationCard({ application: app }: { application: Application }) {
 
             {/* Timeline steps */}
             <div className="flex items-center gap-1 text-xs mb-3" style={{ color: 'var(--jobs-text-subtle)' }}>
-                <span className="text-[var(--jobs-accent)]">Applied</span>
+                <span className="text-(--jobs-accent)">Applied</span>
                 <span className="mx-1">→</span>
                 {app.status === 'pending' && (
                     <span style={{ color: 'var(--jobs-warning)' }}>Under Review...</span>
@@ -87,11 +87,11 @@ function ApplicationCard({ application: app }: { application: Application }) {
                 )}
                 {(app.status === 'oa_invited' || app.status === 'oa_completed' || (app.status === 'rejected' && app.assessment)) && (
                     <>
-                        <span className="text-[var(--jobs-accent)]">OA Invited</span>
+                        <span className="text-(--jobs-accent)">OA Invited</span>
                         <span className="mx-1">→</span>
                         {app.assessment?.submittedAt ? (
                             <>
-                                <span className="text-[var(--jobs-accent)]">OA Submitted</span>
+                                <span className="text-(--jobs-accent)">OA Submitted</span>
                                 {app.status === 'oa_completed' && (
                                     <>
                                         <span className="mx-1">→</span>

@@ -48,7 +48,7 @@ export default function TemplateSelector({ onSelect, onClose }: Props) {
               {!t.isBuiltin && (
                 <button
                   onClick={(e) => handleDelete(t.id, e)}
-                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-60 hover:!opacity-100 text-xs"
+                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-60 hover:opacity-100! text-xs"
                   style={{ color: 'var(--notes-danger)' }}
                 >✕</button>
               )}

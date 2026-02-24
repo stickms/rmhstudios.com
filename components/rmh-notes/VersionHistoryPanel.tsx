@@ -61,7 +61,7 @@ export default function VersionHistoryPanel({ noteId, onRestore, onClose }: Prop
       ) : (
         <div className="flex gap-4" style={{ minHeight: 300 }}>
           {/* Version list */}
-          <div className="w-48 flex-shrink-0 space-y-1 overflow-y-auto pr-2">
+          <div className="w-48 shrink-0 space-y-1 overflow-y-auto pr-2">
             {versions.map((v) => (
               <button
                 key={v.id}

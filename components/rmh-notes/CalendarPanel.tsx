@@ -73,7 +73,7 @@ export default function CalendarPanel({ onSelectNote }: Props) {
             {new Date(r.dueAt).toLocaleString()} {r.repeatRule && `• ${r.repeatRule}`}
           </p>
         </div>
-        <div className="flex gap-1 flex-shrink-0">
+        <div className="flex gap-1 shrink-0">
           {isOver && [10, 60].map((m) => (
             <button key={m} onClick={() => handleSnooze(r.id, m)} className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'var(--notes-surface-3)', color: 'var(--notes-text-muted)' }}>
               +{m < 60 ? `${m}m` : `${m / 60}h`}

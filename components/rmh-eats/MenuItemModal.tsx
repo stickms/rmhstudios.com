@@ -114,7 +114,7 @@ export default function MenuItemModal({
                     </button>
 
                     {/* Emoji / Image area */}
-                    <div className="h-40 bg-gradient-to-br from-slate-800 to-slate-700 flex items-center justify-center flex-shrink-0">
+                    <div className="h-40 bg-linear-to-br from-slate-800 to-slate-700 flex items-center justify-center shrink-0">
                         <span className="text-7xl">{item.image}</span>
                     </div>
 
@@ -272,7 +272,7 @@ export default function MenuItemModal({
                     </div>
 
                     {/* Footer */}
-                    <div className="p-4 border-t border-slate-700/50 bg-slate-900 flex items-center gap-3 flex-shrink-0">
+                    <div className="p-4 border-t border-slate-700/50 bg-slate-900 flex items-center gap-3 shrink-0">
                         {/* Quantity */}
                         <div className="flex items-center gap-3 bg-slate-800 rounded-xl px-3 py-2">
                             <button

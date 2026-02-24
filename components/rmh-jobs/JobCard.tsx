@@ -25,7 +25,7 @@ export function JobCard({ id, title, company, description, location, salaryRange
                 <div className="flex items-start justify-between gap-3 mb-3">
                     <div className="min-w-0 flex-1">
                         <h3
-                            className="font-semibold text-lg leading-tight mb-1 group-hover:text-[var(--jobs-accent)] transition-colors truncate"
+                            className="font-semibold text-lg leading-tight mb-1 group-hover:text-(--jobs-accent) transition-colors truncate"
                             style={{ color: 'var(--jobs-text)' }}
                         >
                             {title}

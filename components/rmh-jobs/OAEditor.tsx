@@ -317,7 +317,7 @@ export function OAEditor({
                         <div className="relative">
                             <button
                                 onClick={() => setShowLangDropdown(!showLangDropdown)}
-                                className="flex items-center gap-1 text-xs px-2 py-1 rounded hover:bg-[var(--jobs-surface-3)] transition-colors"
+                                className="flex items-center gap-1 text-xs px-2 py-1 rounded hover:bg-(--jobs-surface-3) transition-colors"
                                 style={{ color: 'var(--jobs-text-muted)' }}
                                 disabled={isSubmitted}
                             >
@@ -333,7 +333,7 @@ export function OAEditor({
                                         <button
                                             key={l.value}
                                             onClick={() => handleLanguageChange(l.value)}
-                                            className="block w-full text-left text-xs px-3 py-1.5 hover:bg-[var(--jobs-surface-2)] transition-colors"
+                                            className="block w-full text-left text-xs px-3 py-1.5 hover:bg-(--jobs-surface-2) transition-colors"
                                             style={{ color: language === l.value ? 'var(--jobs-accent)' : 'var(--jobs-text-muted)' }}
                                         >
                                             {l.label}

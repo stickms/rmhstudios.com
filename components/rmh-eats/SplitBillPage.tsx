@@ -148,7 +148,7 @@ export default function SplitBillPage() {
                     <p className="text-sm text-slate-400 mb-4">Total ÷ {people} people</p>
                     <div className="grid grid-cols-2 gap-3">
                         {Array.from({ length: people }, (_, i) => (
-                            <div key={i} className={`rounded-xl p-4 bg-gradient-to-br ${PERSON_COLORS[i]}/20 border border-slate-700`}>
+                            <div key={i} className={`rounded-xl p-4 bg-linear-to-br ${PERSON_COLORS[i]}/20 border border-slate-700`}>
                                 <p className="text-xs text-slate-400 mb-1">Person {i + 1}</p>
                                 <p className="text-2xl font-bold text-white">${perPerson.toFixed(2)}</p>
                             </div>
@@ -175,7 +175,7 @@ export default function SplitBillPage() {
                                         <p className="text-sm text-white truncate">{item.quantity}× {item.name}</p>
                                         <p className="text-xs text-orange-400">${(item.price * item.quantity).toFixed(2)}</p>
                                     </div>
-                                    <div className="flex gap-1 flex-shrink-0">
+                                    <div className="flex gap-1 shrink-0">
                                         {Array.from({ length: Math.min(people, 5) }, (_, i) => (
                                             <button
                                                 key={i}
@@ -211,7 +211,7 @@ export default function SplitBillPage() {
                         <p className="text-sm font-medium text-white mb-3">Per-person totals</p>
                         <div className="grid grid-cols-2 gap-2">
                             {personTotals.map((total, i) => (
-                                <div key={i} className={`rounded-xl p-3 bg-gradient-to-br ${PERSON_COLORS[i]}/15 border border-slate-700`}>
+                                <div key={i} className={`rounded-xl p-3 bg-linear-to-br ${PERSON_COLORS[i]}/15 border border-slate-700`}>
                                     <p className="text-xs text-slate-400">Person {i + 1}</p>
                                     <p className="text-xl font-bold text-white mt-0.5">${total.toFixed(2)}</p>
                                 </div>

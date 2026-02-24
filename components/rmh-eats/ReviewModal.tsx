@@ -99,7 +99,7 @@ export default function ReviewModal() {
                         {order.items.map((item) => (
                             <div key={item.menuItemId} className="flex items-center justify-between gap-3">
                                 <p className="text-sm text-slate-300 flex-1 min-w-0 truncate">{item.name}</p>
-                                <div className="flex gap-1 flex-shrink-0">
+                                <div className="flex gap-1 shrink-0">
                                     {[1, 2, 3, 4, 5].map((star) => (
                                         <button
                                             key={star}

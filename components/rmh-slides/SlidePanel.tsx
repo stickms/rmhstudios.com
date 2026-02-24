@@ -171,7 +171,7 @@ function SortableThumbnail({
       onContextMenu={onContextMenu}
     >
       <div className="flex items-start gap-2">
-        <span className="text-[10px] pt-1 w-4 text-right flex-shrink-0" style={{ color: 'var(--slides-text-subtle)' }}>
+        <span className="text-[10px] pt-1 w-4 text-right shrink-0" style={{ color: 'var(--slides-text-subtle)' }}>
           {index + 1}
         </span>
         <div className={`slides-thumbnail flex-1 ${isActive ? 'active' : ''}`}>

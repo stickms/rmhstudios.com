@@ -153,7 +153,7 @@ export default function OrderConfirmation() {
                     transition={{ delay: 0.35 }}
                     className="rounded-2xl bg-slate-800/50 border border-slate-700/50 p-4 flex gap-3"
                 >
-                    <MapPin className="h-5 w-5 text-orange-400 flex-shrink-0 mt-0.5" />
+                    <MapPin className="h-5 w-5 text-orange-400 shrink-0 mt-0.5" />
                     <div>
                         <p className="text-sm font-medium text-white mb-0.5">Delivering to</p>
                         <p className="text-sm text-slate-400">
@@ -170,7 +170,7 @@ export default function OrderConfirmation() {
                     transition={{ delay: 0.4 }}
                     className="rounded-2xl bg-slate-800/50 border border-slate-700/50 p-4 flex gap-3"
                 >
-                    <CreditCard className="h-5 w-5 text-orange-400 flex-shrink-0 mt-0.5" />
+                    <CreditCard className="h-5 w-5 text-orange-400 shrink-0 mt-0.5" />
                     <div>
                         <p className="text-sm font-medium text-white mb-0.5">Paid with</p>
                         <p className="text-sm text-slate-400">{order.paymentMethod.label}</p>

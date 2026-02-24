@@ -38,7 +38,7 @@ export default function TabBar({ tabs, activeFileId, dirtyFiles, onSelectTab, on
               className={`shrink-0 rounded transition-colors ml-0.5 ${
                 isDirty
                   ? 'text-[#007acc] hover:text-white'
-                  : 'text-transparent group-hover:text-[#858585] hover:!text-white'
+                  : 'text-transparent group-hover:text-[#858585] hover:text-white!'
               }`}
             >
               {isDirty ? '●' : <X size={12} />}

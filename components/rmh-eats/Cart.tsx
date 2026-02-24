@@ -120,7 +120,7 @@ export default function Cart({ isOpen, onClose }: CartProps) {
                                             key={`${cartItem.menuItem.id}-${JSON.stringify(cartItem.selectedOptions)}`}
                                             className="flex gap-3 rounded-xl bg-slate-800/50 p-3 border border-slate-700/30"
                                         >
-                                            <div className="h-12 w-12 flex-shrink-0 rounded-lg bg-slate-700 flex items-center justify-center text-2xl">
+                                            <div className="h-12 w-12 shrink-0 rounded-lg bg-slate-700 flex items-center justify-center text-2xl">
                                                 {cartItem.menuItem.image}
                                             </div>
 

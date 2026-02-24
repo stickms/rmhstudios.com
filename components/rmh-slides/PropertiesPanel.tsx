@@ -309,7 +309,7 @@ function PropertySection({ title, children }: { title: string; children: React.R
 function PropertyRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-2">
-      <span className="text-[10px] w-10 flex-shrink-0" style={{ color: 'var(--slides-text-subtle)' }}>{label}</span>
+      <span className="text-[10px] w-10 shrink-0" style={{ color: 'var(--slides-text-subtle)' }}>{label}</span>
       <div className="flex-1">{children}</div>
     </div>
   );

@@ -47,7 +47,7 @@ export default function ApplicationsPage() {
                 <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
                     <Link
                         href="/rmh-jobs"
-                        className="flex items-center gap-1.5 text-sm hover:text-[var(--jobs-accent)] transition-colors"
+                        className="flex items-center gap-1.5 text-sm hover:text-(--jobs-accent) transition-colors"
                         style={{ color: 'var(--jobs-text-muted)' }}
                     >
                         <ArrowLeft size={14} />

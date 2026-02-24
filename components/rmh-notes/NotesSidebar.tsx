@@ -265,7 +265,7 @@ function FolderItem({ folder, onDelete }: { folder: NoteFolder; onDelete: (id: s
       <span className="text-xs" style={{ color: folder.color ?? 'var(--notes-text-muted)' }}>📁</span>
       <span className="flex-1 truncate text-xs">{folder.name}</span>
       {folder._count !== undefined && <span className="text-xs opacity-50">{folder._count.notes}</span>}
-      <span role="button" tabIndex={0} onClick={(e) => onDelete(folder.id, e)} onKeyDown={(e) => { if (e.key === 'Enter') onDelete(folder.id, e as unknown as React.MouseEvent); }} className="opacity-0 group-hover:opacity-60 hover:!opacity-100 text-xs cursor-pointer" title="Delete folder">✕</span>
+      <span role="button" tabIndex={0} onClick={(e) => onDelete(folder.id, e)} onKeyDown={(e) => { if (e.key === 'Enter') onDelete(folder.id, e as unknown as React.MouseEvent); }} className="opacity-0 group-hover:opacity-60 hover:opacity-100! text-xs cursor-pointer" title="Delete folder">✕</span>
     </button>
   );
 }
@@ -284,10 +284,10 @@ function TagItem({ tag, onDelete }: { tag: NoteTag; onDelete: (id: string, e: Re
       onMouseEnter={(e) => { if (!active) (e.currentTarget as HTMLButtonElement).style.background = 'var(--notes-sidebar-hover)'; }}
       onMouseLeave={(e) => { if (!active) (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
     >
-      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: tag.color ?? 'var(--notes-text-subtle)' }} />
+      <span className="w-2 h-2 rounded-full shrink-0" style={{ background: tag.color ?? 'var(--notes-text-subtle)' }} />
       <span className="flex-1 truncate text-xs">{tag.name}</span>
       {tag._count !== undefined && <span className="text-xs opacity-50">{tag._count.notes}</span>}
-      <span role="button" tabIndex={0} onClick={(e) => onDelete(tag.id, e)} onKeyDown={(e) => { if (e.key === 'Enter') onDelete(tag.id, e as unknown as React.MouseEvent); }} className="opacity-0 group-hover:opacity-60 hover:!opacity-100 text-xs cursor-pointer" title="Delete tag">✕</span>
+      <span role="button" tabIndex={0} onClick={(e) => onDelete(tag.id, e)} onKeyDown={(e) => { if (e.key === 'Enter') onDelete(tag.id, e as unknown as React.MouseEvent); }} className="opacity-0 group-hover:opacity-60 hover:opacity-100! text-xs cursor-pointer" title="Delete tag">✕</span>
     </button>
   );
 }

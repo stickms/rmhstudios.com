@@ -66,7 +66,7 @@ export default function PaymentManager() {
                         }`}
                     >
                         {/* Card art */}
-                        <div className="h-10 w-16 rounded-lg bg-gradient-to-br from-slate-600 to-slate-700 flex items-center justify-center flex-shrink-0">
+                        <div className="h-10 w-16 rounded-lg bg-linear-to-br from-slate-600 to-slate-700 flex items-center justify-center shrink-0">
                             <CreditCard className="h-5 w-5 text-slate-300" />
                         </div>
 
@@ -86,7 +86,7 @@ export default function PaymentManager() {
                             )}
                         </div>
 
-                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <div className="flex items-center gap-1.5 shrink-0">
                             {!pm.isDefault && (
                                 <button
                                     onClick={() => {

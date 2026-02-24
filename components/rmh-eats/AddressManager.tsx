@@ -54,7 +54,7 @@ export default function AddressManager() {
                                 : 'border-slate-700/50 bg-slate-800/50'
                         }`}
                     >
-                        <MapPin className="h-5 w-5 text-orange-400 flex-shrink-0 mt-0.5" />
+                        <MapPin className="h-5 w-5 text-orange-400 shrink-0 mt-0.5" />
                         <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                                 <p className="font-medium text-white">{addr.label || 'Address'}</p>
@@ -68,7 +68,7 @@ export default function AddressManager() {
                                 {addr.street}, {addr.city}, {addr.state} {addr.zip}
                             </p>
                         </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
+                        <div className="flex items-center gap-2 shrink-0">
                             {!addr.isDefault && (
                                 <button
                                     onClick={() => {

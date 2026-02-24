@@ -108,8 +108,8 @@ export default function RestaurantsList() {
     return (
         <div className="flex flex-col gap-6">
             {/* Hero / Search Header */}
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-orange-500 via-red-500 to-rose-600 p-6 md:p-8">
-                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(255,255,255,0.15),_transparent_60%)]" />
+            <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-orange-500 via-red-500 to-rose-600 p-6 md:p-8">
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.15),transparent_60%)]" />
                 <div className="relative z-10">
                     <p className="mb-1 text-sm font-medium text-orange-100 uppercase tracking-widest">
                         Delivering to Springfield, IL
@@ -287,8 +287,8 @@ function RestaurantCard({
             onClick={onSelect}
         >
             {/* Cover / Emoji Area */}
-            <div className="h-32 bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center text-6xl relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-red-500/10 group-hover:from-orange-500/20 group-hover:to-red-500/20 transition-all duration-200" />
+            <div className="h-32 bg-linear-to-br from-slate-700 to-slate-800 flex items-center justify-center text-6xl relative overflow-hidden">
+                <div className="absolute inset-0 bg-linear-to-br from-orange-500/10 to-red-500/10 group-hover:from-orange-500/20 group-hover:to-red-500/20 transition-all duration-200" />
                 <span className="relative z-10">{restaurant.image}</span>
 
                 {/* Tags */}

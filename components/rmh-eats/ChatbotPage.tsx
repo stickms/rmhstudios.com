@@ -89,7 +89,7 @@ export default function ChatbotPage() {
     return (
         <div className="max-w-lg mx-auto flex flex-col h-[calc(100vh-180px)] min-h-[500px]">
             {/* Header */}
-            <div className="flex items-center gap-3 mb-4 flex-shrink-0">
+            <div className="flex items-center gap-3 mb-4 shrink-0">
                 <button
                     onClick={handleBack}
                     className="rounded-xl bg-slate-800 p-2.5 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
@@ -117,7 +117,7 @@ export default function ChatbotPage() {
                         className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
                         {msg.role === 'bot' && (
-                            <div className="h-7 w-7 rounded-full bg-orange-500/20 border border-orange-500/30 flex items-center justify-center mr-2 mt-1 flex-shrink-0">
+                            <div className="h-7 w-7 rounded-full bg-orange-500/20 border border-orange-500/30 flex items-center justify-center mr-2 mt-1 shrink-0">
                                 <Bot className="h-4 w-4 text-orange-400" />
                             </div>
                         )}
@@ -164,7 +164,7 @@ export default function ChatbotPage() {
 
             {/* Quick questions (shown only at start) */}
             {messages.length <= 1 && (
-                <div className="flex gap-2 flex-wrap mb-3 flex-shrink-0">
+                <div className="flex gap-2 flex-wrap mb-3 shrink-0">
                     {QUICK_QUESTIONS.map((q) => (
                         <button
                             key={q}
@@ -178,7 +178,7 @@ export default function ChatbotPage() {
             )}
 
             {/* Input */}
-            <div className="flex gap-2 flex-shrink-0">
+            <div className="flex gap-2 shrink-0">
                 <input
                     ref={inputRef}
                     value={input}

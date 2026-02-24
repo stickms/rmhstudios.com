@@ -83,7 +83,7 @@ export function GameCarousel({ games }: GameCarouselProps) {
             <div className="overflow-visible px-4 md:px-12 lg:px-24" ref={emblaRef}>
                 <div className="flex -ml-4">
                     {games.map((game) => (
-                        <div key={game.id} className="flex-[0_0_80%] sm:flex-[0_0_45%] lg:flex-[0_0_30%] xl:flex-[0_0_22%] pl-4 py-8 relative hover:z-[100] focus-within:z-[100]">
+                        <div key={game.id} className="flex-[0_0_80%] sm:flex-[0_0_45%] lg:flex-[0_0_30%] xl:flex-[0_0_22%] pl-4 py-8 relative hover:z-100 focus-within:z-100">
                             <GameCard game={game} />
                         </div>
                     ))}

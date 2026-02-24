@@ -81,7 +81,7 @@ export default function ProfilePage() {
             </div>
 
             {/* Loyalty Points */}
-            <div className="rounded-2xl bg-gradient-to-br from-orange-500/20 to-amber-500/10 border border-orange-500/30 p-5">
+            <div className="rounded-2xl bg-linear-to-br from-orange-500/20 to-amber-500/10 border border-orange-500/30 p-5">
                 <div className="flex items-center gap-2 mb-3">
                     <Trophy className="h-5 w-5 text-orange-400" />
                     <h3 className="font-semibold text-white">Loyalty Points</h3>
@@ -241,7 +241,7 @@ export default function ProfilePage() {
                                 </div>
                                 <button
                                     onClick={() => handleLoadSaved(so.id)}
-                                    className="rounded-lg bg-orange-500 hover:bg-orange-400 px-2.5 py-1.5 text-xs font-medium text-white transition-colors flex-shrink-0"
+                                    className="rounded-lg bg-orange-500 hover:bg-orange-400 px-2.5 py-1.5 text-xs font-medium text-white transition-colors shrink-0"
                                 >
                                     Load
                                 </button>
@@ -295,13 +295,13 @@ export default function ProfilePage() {
                                             className="flex items-center gap-3 rounded-xl bg-purple-500/10 border border-purple-500/20 p-3 cursor-pointer hover:border-purple-500/40 transition-colors"
                                             onClick={() => { useEatsStore.getState().selectRestaurant(rec.restaurant.id); }}
                                         >
-                                            <span className="text-2xl flex-shrink-0">{rec.restaurant.image}</span>
+                                            <span className="text-2xl shrink-0">{rec.restaurant.image}</span>
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-xs font-medium text-purple-300">{rec.reason}</p>
                                                 <p className="text-sm text-white font-semibold">{rec.items[0]?.name}</p>
                                                 <p className="text-xs text-slate-400">{rec.restaurant.name} · ${rec.items[0]?.price.toFixed(2)}</p>
                                             </div>
-                                            <ChevronRight className="h-4 w-4 text-slate-500 flex-shrink-0" />
+                                            <ChevronRight className="h-4 w-4 text-slate-500 shrink-0" />
                                         </motion.div>
                                     ))}
                                 </div>
