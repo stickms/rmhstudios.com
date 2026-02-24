@@ -153,7 +153,7 @@ export class CategoryCrashMinigame extends BaseMinigame {
     this.logAction('round_start', {
       round: this.state.currentRound,
       letter: this.state.letter,
-      categories: this.state.categories.map((c) => c.id),
+      categories: this.state.categories.map((c) => c.name ?? c.id),
     });
 
     logger.info({
@@ -310,6 +310,12 @@ export class CategoryCrashMinigame extends BaseMinigame {
     this.logAction('round_end', {
       round: this.state.currentRound,
       letter: this.state.letter,
+      scores: Object.entries(roundResult.playerResults).map(([uid, pr]) => ({
+        userId: uid,
+        points: pr.roundScore,
+        validAnswers: pr.uniqueIndices.length,
+        crashedAnswers: pr.crashedIndices.length,
+      })),
     });
 
     logger.info({
@@ -413,6 +419,10 @@ export class CategoryCrashMinigame extends BaseMinigame {
     this.logAction('answers_locked', {
       round: this.state.currentRound,
       userId,
+      answers: this.state.categories.map((cat, i) => ({
+        category: cat.name ?? cat.id,
+        answer: (this.state.answers[userId]?.[i] as string) ?? '',
+      })),
     });
 
     logger.info({
@@ -499,6 +509,8 @@ export class CategoryCrashMinigame extends BaseMinigame {
       crasherId: userId,
       targetUserId: realTargetId,
       categoryIndex,
+      category: this.state.categories[categoryIndex]?.name ?? this.state.categories[categoryIndex]?.id ?? '',
+      crashedAnswer: (this.state.answers[realTargetId]?.[categoryIndex] as string) ?? '',
     });
 
     logger.info({
@@ -1023,8 +1035,8 @@ export class CategoryCrashMinigame extends BaseMinigame {
 
     // Count crashes across all rounds from action log
     for (const entry of this.state.actionLog) {
-      if (entry.action === 'crash' && typeof entry.data.crasherId === 'string') {
-        const crasherId = entry.data.crasherId;
+      if (entry.type === 'crash' && typeof entry.payload.crasherId === 'string') {
+        const crasherId = entry.payload.crasherId;
         if (stats[crasherId]) {
           stats[crasherId].crashesIssued++;
         }
@@ -1044,10 +1056,10 @@ export class CategoryCrashMinigame extends BaseMinigame {
 
     // Speed Demon — first to lock answers (check action log)
     const lockActions = this.state.actionLog
-      .filter((a) => a.action === 'answers_locked')
+      .filter((a) => a.type === 'answers_locked')
       .sort((a, b) => a.timestamp - b.timestamp);
     if (lockActions.length > 0) {
-      const fastestUserId = lockActions[0].data.userId as string;
+      const fastestUserId = lockActions[0].payload.userId as string;
       if (this.context.players.has(fastestUserId)) {
         awards.push({
           userId: fastestUserId,
@@ -1127,15 +1139,23 @@ export class CategoryCrashMinigame extends BaseMinigame {
 
   // ─── Action Log / Game Log ───────────────────────────────────
 
-  private logAction(action: string, data: Record<string, unknown>): void {
+  private actionSeq = 0;
+
+  private logAction(type: string, payload: Record<string, unknown>): void {
     this.state.actionLog.push({
-      action,
+      seq: ++this.actionSeq,
+      type,
       timestamp: Date.now(),
-      data,
+      payload,
     });
   }
 
   private buildGameLog(): Record<string, unknown> {
+    const players = Array.from(this.context.players.entries()).map(([userId, p]) => ({
+      userId,
+      userName: p.userName,
+    }));
+
     return {
       lobbyId: this.context.lobbyId,
       startedAt: this.startedAt,
@@ -1143,7 +1163,17 @@ export class CategoryCrashMinigame extends BaseMinigame {
       totalRounds: this.state.totalRounds,
       roundsPlayed: this.state.currentRound,
       playerCount: this.context.players.size,
+      players,
+      initialState: {
+        rounds: this.state.totalRounds,
+        categoriesPerRound: this.state.categories.length,
+      },
       actions: this.state.actionLog,
+      finalResults: Array.from(this.context.players.keys()).map((userId) => ({
+        userId,
+        userName: this.context.players.get(userId)?.userName ?? 'Unknown',
+        score: this.state.scores[userId] ?? 0,
+      })),
     };
   }
 
