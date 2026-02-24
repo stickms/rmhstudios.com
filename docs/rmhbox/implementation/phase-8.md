@@ -28,14 +28,14 @@
 
 ### 8.1.1 Install NPM Packages
 
-- [ ] Verify `fuse.js` is already installed (used for fuzzy identity guess matching)
+- [x] Verify `fuse.js` is already installed (used for fuzzy identity guess matching)
   ```bash
   pnpm ls fuse.js
   ```
   — `fuse.js` should already be in the project from the core spec / earlier phases (used by Emoji Cinema in Phase 6 and Category Crash in Phase 5).
   **Verification:** `pnpm ls fuse.js` shows version listed. If missing: `pnpm add fuse.js`.
 
-- [ ] No additional NPM packages required for Identity Crisis
+- [x] No additional NPM packages required for Identity Crisis
   - Identity data is a static JSON file; fuzzy matching uses the existing `fuse.js`; turn logic and voting are pure server-side.
   **Verification:** Confirm no new dependencies needed beyond `fuse.js`.
 
@@ -43,31 +43,31 @@
 
 ### 8.1.2 Add Constants to `lib/rmhbox/constants.ts`
 
-- [ ] Add `IC_QUESTIONS_PER_PLAYER = 3` — number of question turns each player gets
-- [ ] Add `IC_ASK_SECONDS = 20` — seconds for the active player to type a question
-- [ ] Add `IC_VOTE_SECONDS = 15` — seconds for other players to vote Yes/No/Maybe
-- [ ] Add `IC_VOTE_RESULTS_SECONDS = 3` — seconds to display vote results
-- [ ] Add `IC_ASSIGNMENT_REVEAL_SECONDS = 5` — seconds to show others' identities at game start
-- [ ] Add `IC_FINAL_GUESS_SECONDS = 30` — seconds for the final guess phase
-- [ ] Add `IC_RESULTS_SECONDS = 10` — seconds to display final results and identity reveals
-- [ ] Add `IC_CORRECT_GUESS_POINTS = 200` — points for correctly guessing own identity in final phase
-- [ ] Add `IC_EARLY_GUESS_BONUS_BASE = 300` — base points for a correct early guess (scaled by remaining questions)
-- [ ] Add `IC_EARLY_GUESS_PENALTY = -100` — points deducted for an incorrect early guess
-- [ ] Add `IC_EFFICIENCY_BONUS = 20` — bonus points per unused question slot (rewarding early correct guess)
-- [ ] Add `IC_VOTING_ACCURACY_BONUS = 5` — points per vote that matched the "true" answer for others' questions
-- [ ] Add `IC_GUESS_MATCH_THRESHOLD = 0.3` — fuse.js threshold for forgiving guess matching (lower = more forgiving)
-- [ ] Add `IC_MAX_QUESTION_LENGTH = 200` — maximum character length for a question
-- [ ] Add `IC_MAX_GUESS_LENGTH = 100` — maximum character length for a guess
-- [ ] **Verification:** Import all `IC_*` constants in a test file; confirm no undefined values and correct types (`number` or `string`). Verify `IC_GUESS_MATCH_THRESHOLD` is between 0 and 1.
+- [x] Add `IC_QUESTIONS_PER_PLAYER = 3` — number of question turns each player gets
+- [x] Add `IC_ASK_SECONDS = 20` — seconds for the active player to type a question
+- [x] Add `IC_VOTE_SECONDS = 15` — seconds for other players to vote Yes/No/Maybe
+- [x] Add `IC_VOTE_RESULTS_SECONDS = 3` — seconds to display vote results
+- [x] Add `IC_ASSIGNMENT_REVEAL_SECONDS = 5` — seconds to show others' identities at game start
+- [x] Add `IC_FINAL_GUESS_SECONDS = 30` — seconds for the final guess phase
+- [x] Add `IC_RESULTS_SECONDS = 10` — seconds to display final results and identity reveals
+- [x] Add `IC_CORRECT_GUESS_POINTS = 200` — points for correctly guessing own identity in final phase
+- [x] Add `IC_EARLY_GUESS_BONUS_BASE = 300` — base points for a correct early guess (scaled by remaining questions)
+- [x] Add `IC_EARLY_GUESS_PENALTY = -100` — points deducted for an incorrect early guess
+- [x] Add `IC_EFFICIENCY_BONUS = 20` — bonus points per unused question slot (rewarding early correct guess)
+- [x] Add `IC_VOTING_ACCURACY_BONUS = 5` — points per vote that matched the "true" answer for others' questions
+- [x] Add `IC_GUESS_MATCH_THRESHOLD = 0.3` — fuse.js threshold for forgiving guess matching (lower = more forgiving)
+- [x] Add `IC_MAX_QUESTION_LENGTH = 200` — maximum character length for a question
+- [x] Add `IC_MAX_GUESS_LENGTH = 100` — maximum character length for a guess
+- [x] **Verification:** Import all `IC_*` constants in a test file; confirm no undefined values and correct types (`number` or `string`). Verify `IC_GUESS_MATCH_THRESHOLD` is between 0 and 1.
 
 ---
 
 ### 8.1.3 Create Static Data Files
 
-- [ ] Create directory `public/data/rmhbox/identity-crisis/`
+- [x] Create directory `public/data/rmhbox/identity-crisis/`
   **Verification:** Directory exists on disk.
 
-- [ ] Create `public/data/rmhbox/identity-crisis/identities.json` — curated identity pool
+- [x] Create `public/data/rmhbox/identity-crisis/identities.json` — curated identity pool
   - Each entry follows the `Identity` interface:
     ```ts
     {
@@ -78,23 +78,23 @@
       hints: string[];                // backup hints if game stalls (optional, min 0, max 3)
     }
     ```
-  - [ ] Include at least 80 identities total
-  - [ ] Balanced difficulty distribution: ≥25 easy, ≥30 medium, ≥20 hard
-  - [ ] At least 8 distinct categories represented
-  - [ ] No duplicate `id` values
-  - [ ] All identities should be widely recognizable (no extremely obscure figures)
-  - [ ] Easy: universally known (e.g., "Albert Einstein", "Mickey Mouse")
-  - [ ] Medium: well-known but requires some cultural knowledge (e.g., "Cleopatra", "Beethoven")
-  - [ ] Hard: recognizable but may require specific domain knowledge (e.g., "Ada Lovelace", "Nikola Tesla")
+  - [x] Include at least 80 identities total
+  - [x] Balanced difficulty distribution: ≥25 easy, ≥30 medium, ≥20 hard
+  - [x] At least 8 distinct categories represented
+  - [x] No duplicate `id` values
+  - [x] All identities should be widely recognizable (no extremely obscure figures)
+  - [x] Easy: universally known (e.g., "Albert Einstein", "Mickey Mouse")
+  - [x] Medium: well-known but requires some cultural knowledge (e.g., "Cleopatra", "Beethoven")
+  - [x] Hard: recognizable but may require specific domain knowledge (e.g., "Ada Lovelace", "Nikola Tesla")
   **Verification:** Parse JSON; validate every entry against schema; confirm ≥80 entries; confirm ≥8 unique categories; confirm no duplicate `id`; confirm difficulty distribution meets minimums.
 
 ---
 
 ### 8.1.4 Define Zod Validation Schemas
 
-- [ ] Create `lib/rmhbox/identity-crisis/schemas.ts`
+- [x] Create `lib/rmhbox/identity-crisis/schemas.ts`
 
-- [ ] Define `ICQuestionSchema`:
+- [x] Define `ICQuestionSchema`:
   ```ts
   const ICQuestionSchema = z.object({
     question: z.string().min(3).max(IC_MAX_QUESTION_LENGTH).trim(),
@@ -102,7 +102,7 @@
   ```
   **Verification:** Valid: `{ question: "Am I a real person?" }`, `{ question: "Do I play sports?" }`. Invalid: `{ question: "Hi" }` (too short), `{ question: "" }` (empty), string > 200 chars.
 
-- [ ] Define `ICVoteSchema`:
+- [x] Define `ICVoteSchema`:
   ```ts
   const ICVoteSchema = z.object({
     vote: z.enum(['yes', 'no', 'maybe']),
@@ -110,7 +110,7 @@
   ```
   **Verification:** Valid: `{ vote: "yes" }`, `{ vote: "no" }`, `{ vote: "maybe" }`. Invalid: `{ vote: "perhaps" }`, `{ vote: 1 }`.
 
-- [ ] Define `ICGuessSchema`:
+- [x] Define `ICGuessSchema`:
   ```ts
   const ICGuessSchema = z.object({
     guess: z.string().min(1).max(IC_MAX_GUESS_LENGTH).trim(),
@@ -118,7 +118,7 @@
   ```
   **Verification:** Valid: `{ guess: "Einstein" }`, `{ guess: "Albert Einstein" }`. Invalid: `{ guess: "" }`.
 
-- [ ] Define `IdentityDataSchema` for server-side data validation at startup:
+- [x] Define `IdentityDataSchema` for server-side data validation at startup:
   ```ts
   const IdentitySchema = z.object({
     id: z.string().min(1),
@@ -134,11 +134,11 @@
 
 ### 8.1.5 Create Data Loader
 
-- [ ] Create `lib/rmhbox/identity-crisis/identity-loader.ts`
-  - [ ] Export `loadIdentities(): Identity[]` — reads and parses `identities.json` once at server init
-  - [ ] Validate each identity against `IdentitySchema` during load; skip invalid entries with a warning log
-  - [ ] Cache in module-level variable (singleton pattern)
-  - [ ] Export `selectIdentitiesForGame(pool: Identity[], playerCount: number, usedIds: Set<string>, sessionRound: number): Identity[]`
+- [x] Create `lib/rmhbox/identity-crisis/identity-loader.ts`
+  - [x] Export `loadIdentities(): Identity[]` — reads and parses `identities.json` once at server init
+  - [x] Validate each identity against `IdentitySchema` during load; skip invalid entries with a warning log
+  - [x] Cache in module-level variable (singleton pattern)
+  - [x] Export `selectIdentitiesForGame(pool: Identity[], playerCount: number, usedIds: Set<string>, sessionRound: number): Identity[]`
     - Select `playerCount` identities from the pool without replacement
     - Exclude identities with IDs in `usedIds` (prevents repeats within a lobby session)
     - Difficulty escalation: `sessionRound === 0` → prefer `easy` difficulty; `sessionRound >= 1` → mix of `easy`/`medium`; `sessionRound >= 3` → include `hard`
@@ -150,17 +150,17 @@
 
 ### 8.1.6 Implement Server Handler
 
-- [ ] Create `server/rmhbox/minigames/identity-crisis.ts`
+- [x] Create `server/rmhbox/minigames/identity-crisis.ts`
 
 #### 8.1.6.1 Type Definitions
 
-- [ ] Define `ICPhase` type:
+- [x] Define `ICPhase` type:
   ```ts
   type ICPhase = 'ASSIGNMENT_REVEAL' | 'ASK' | 'VOTE' | 'VOTE_RESULTS' | 'FINAL_GUESS' | 'RESULTS';
   ```
   **Verification:** Type has exactly 6 values matching spec §1.4.
 
-- [ ] Define `ICQuestion` type:
+- [x] Define `ICQuestion` type:
   ```ts
   type ICQuestion = {
     askerId: string;
@@ -173,12 +173,12 @@
   };
   ```
 
-- [ ] Define `ICVote` type:
+- [x] Define `ICVote` type:
   ```ts
   type ICVote = 'yes' | 'no' | 'maybe';
   ```
 
-- [ ] Define `ICGuessResult` type:
+- [x] Define `ICGuessResult` type:
   ```ts
   type ICGuessResult = {
     userId: string;
@@ -189,7 +189,7 @@
   };
   ```
 
-- [ ] Define `IdentityCrisisState` type:
+- [x] Define `IdentityCrisisState` type:
   ```ts
   type IdentityCrisisState = {
     phase: ICPhase;
@@ -215,30 +215,30 @@
 
 #### 8.1.6.2 Class: `IdentityCrisisGame extends BaseMinigame`
 
-- [ ] Constructor: call `super(context)`; load identity pool via identity loader
+- [x] Constructor: call `super(context)`; load identity pool via identity loader
   **Verification:** Instantiate class; confirm no errors and identity pool is loaded.
 
 #### 8.1.6.3 State Initialization (`start()`)
 
-- [ ] Retrieve `usedIdentityIds` from the lobby's session context (prevents repeats across games in same lobby)
-- [ ] Call `selectIdentitiesForGame()` with pool, player count, exclusion set, and session round number
-- [ ] Create `identityAssignments` map: assign one identity to each player (randomized)
-- [ ] Add used identity IDs to lobby session context for future games
-- [ ] Generate `questionOrder`: randomize the order of player IDs for turn-taking
-- [ ] Compute `totalQuestionRounds = playerCount × IC_QUESTIONS_PER_PLAYER`
-- [ ] Initialize `questionsPerPlayer` map: every player starts at 0 questions asked
-- [ ] Initialize `playerScores` map: every player starts at 0
-- [ ] Initialize empty maps: `currentVotes`, `earlyGuesses`, `finalGuesses`
-- [ ] Initialize empty set: `eliminatedFromQuestions`
-- [ ] Initialize empty array: `questionsAsked`
-- [ ] Set `currentQuestionRound = 0`
-- [ ] Set `maxQuestionsPerPlayer = IC_QUESTIONS_PER_PLAYER`
-- [ ] Call `startAssignmentReveal()`
+- [x] Retrieve `usedIdentityIds` from the lobby's session context (prevents repeats across games in same lobby)
+- [x] Call `selectIdentitiesForGame()` with pool, player count, exclusion set, and session round number
+- [x] Create `identityAssignments` map: assign one identity to each player (randomized)
+- [x] Add used identity IDs to lobby session context for future games
+- [x] Generate `questionOrder`: randomize the order of player IDs for turn-taking
+- [x] Compute `totalQuestionRounds = playerCount × IC_QUESTIONS_PER_PLAYER`
+- [x] Initialize `questionsPerPlayer` map: every player starts at 0 questions asked
+- [x] Initialize `playerScores` map: every player starts at 0
+- [x] Initialize empty maps: `currentVotes`, `earlyGuesses`, `finalGuesses`
+- [x] Initialize empty set: `eliminatedFromQuestions`
+- [x] Initialize empty array: `questionsAsked`
+- [x] Set `currentQuestionRound = 0`
+- [x] Set `maxQuestionsPerPlayer = IC_QUESTIONS_PER_PLAYER`
+- [x] Call `startAssignmentReveal()`
   **Verification:** Unit test with 5 players: 5 unique identities assigned, question order contains 5 player IDs, totalQuestionRounds = 15, all scores = 0, all question counts = 0.
 
 #### 8.1.6.4 Assignment Reveal Phase
 
-- [ ] `startAssignmentReveal()`:
+- [x] `startAssignmentReveal()`:
   - Set `phase = 'ASSIGNMENT_REVEAL'`
   - Set `phaseStartedAt = Date.now()`
   - Set `phaseEndsAt = phaseStartedAt + IC_ASSIGNMENT_REVEAL_SECONDS * 1000`
@@ -258,7 +258,7 @@
 
 #### 8.1.6.5 Question Turn Lifecycle
 
-- [ ] `startNextQuestionTurn()`:
+- [x] `startNextQuestionTurn()`:
   - Increment `currentQuestionRound`
   - If `currentQuestionRound > totalQuestionRounds`, call `startFinalGuessPhase()`; return
   - Determine current asker: `currentAskerId = questionOrder[(currentQuestionRound - 1) % questionOrder.length]`
@@ -295,7 +295,7 @@
   - Schedule `handleAskTimeout()` after `IC_ASK_SECONDS`
   **Verification:** Unit test: when player A is asker — A receives `IC_TURN_START_SELF` with NO identity; others receive `IC_TURN_START` with A's identity. Timer starts. Skip logic works for eliminated players.
 
-- [ ] `handleAskTimeout()`:
+- [x] `handleAskTimeout()`:
   - If `currentQuestionText` is still null (player didn't submit a question):
     - Player's turn is skipped — they lose this question opportunity
     - The `questionsPerPlayer` count is NOT incremented (preserving their remaining questions from design spec: "If a player doesn't ask a question (timeout): Their turn is skipped. They still have their remaining turns.")
@@ -305,14 +305,14 @@
 
 #### 8.1.6.6 Input Handling — `IC_ASK_QUESTION`
 
-- [ ] Validate phase is `'ASK'`; reject if not
-- [ ] Validate sender is `currentAskerId`; reject if someone else tries to ask
-- [ ] Parse input through `ICQuestionSchema`; reject on validation failure
-- [ ] Check player hasn't already submitted a question this turn (idempotency guard)
-- [ ] Store question text: `currentQuestionText = question`
-- [ ] Increment `questionsPerPlayer` for the asker
-- [ ] Cancel the ask timeout timer
-- [ ] Emit `rmhbox:game:action` with type `IC_QUESTION_ASKED` to ALL lobby:
+- [x] Validate phase is `'ASK'`; reject if not
+- [x] Validate sender is `currentAskerId`; reject if someone else tries to ask
+- [x] Parse input through `ICQuestionSchema`; reject on validation failure
+- [x] Check player hasn't already submitted a question this turn (idempotency guard)
+- [x] Store question text: `currentQuestionText = question`
+- [x] Increment `questionsPerPlayer` for the asker
+- [x] Cancel the ask timeout timer
+- [x] Emit `rmhbox:game:action` with type `IC_QUESTION_ASKED` to ALL lobby:
   ```ts
   {
     question: string;
@@ -320,12 +320,12 @@
     askerName: string;
   }
   ```
-- [ ] Call `startVotePhase()`
+- [x] Call `startVotePhase()`
   **Verification:** Unit test: valid question from asker → stored, event emitted, vote phase starts. Question from non-asker → rejected. Duplicate question submission → rejected. Question too short → rejected.
 
 #### 8.1.6.7 Vote Phase
 
-- [ ] `startVotePhase()`:
+- [x] `startVotePhase()`:
   - Set `phase = 'VOTE'`
   - Initialize `currentVotes = new Map()` (empty)
   - Set `phaseStartedAt = Date.now()`
@@ -336,14 +336,14 @@
 
 #### 8.1.6.8 Input Handling — `IC_VOTE`
 
-- [ ] Validate phase is `'VOTE'`; reject if not
-- [ ] Validate sender is NOT the current asker (askers cannot vote on their own question); reject if asker
-- [ ] Validate sender is a player (not spectator); reject if spectator
-- [ ] Parse input through `ICVoteSchema`; reject on validation failure
-- [ ] Check player hasn't already voted this round; reject if duplicate
-- [ ] Store vote: `currentVotes.set(userId, vote)`
-- [ ] Compute total eligible voters: `connectedPlayers.length - 1` (excluding asker)
-- [ ] Emit `rmhbox:game:action` with type `IC_VOTE_RECEIVED` to ALL lobby:
+- [x] Validate phase is `'VOTE'`; reject if not
+- [x] Validate sender is NOT the current asker (askers cannot vote on their own question); reject if asker
+- [x] Validate sender is a player (not spectator); reject if spectator
+- [x] Parse input through `ICVoteSchema`; reject on validation failure
+- [x] Check player hasn't already voted this round; reject if duplicate
+- [x] Store vote: `currentVotes.set(userId, vote)`
+- [x] Compute total eligible voters: `connectedPlayers.length - 1` (excluding asker)
+- [x] Emit `rmhbox:game:action` with type `IC_VOTE_RECEIVED` to ALL lobby:
   ```ts
   {
     votesReceived: currentVotes.size;
@@ -351,12 +351,12 @@
   }
   ```
   - **Note:** Do NOT include who voted or what they voted — votes are anonymous
-- [ ] If all eligible voters have voted, cancel the vote timeout and call `endVotePhase()` immediately
+- [x] If all eligible voters have voted, cancel the vote timeout and call `endVotePhase()` immediately
   **Verification:** Unit test: vote from non-asker → stored, count emitted. Vote from asker → rejected. Duplicate vote → rejected. All voters done → early phase end.
 
 #### 8.1.6.9 Vote Results
 
-- [ ] `endVotePhase()`:
+- [x] `endVotePhase()`:
   - Stop timer tick interval
   - Compute vote tallies: count `yes`, `no`, `maybe` across all votes in `currentVotes`
   - Determine `majorityAnswer`: the vote with the highest count; if tied, pick the first in priority order: `yes > no > maybe`
@@ -388,32 +388,32 @@
   - Schedule `afterVoteResults()` after `IC_VOTE_RESULTS_SECONDS`
   **Verification:** Unit test: 4 voters → 3 yes, 1 no → majorityAnswer = 'yes'. Tie (2 yes, 2 no) → 'yes' wins (priority). Results event emitted without individual attribution. Question stored in history.
 
-- [ ] `afterVoteResults()`:
+- [x] `afterVoteResults()`:
   - Call `startNextQuestionTurn()`
   **Verification:** Next turn begins after vote results display.
 
 #### 8.1.6.10 Input Handling — `IC_EARLY_GUESS`
 
-- [ ] Validate sender is a player and NOT in `eliminatedFromQuestions`; reject if eliminated
-- [ ] Validate phase is NOT `'VOTE'` and NOT `'ASK'` (early guesses are allowed between turns — during `VOTE_RESULTS`, `ASSIGNMENT_REVEAL', or transition moments); reject if in restricted phase
+- [x] Validate sender is a player and NOT in `eliminatedFromQuestions`; reject if eliminated
+- [x] Validate phase is NOT `'VOTE'` and NOT `'ASK'` (early guesses are allowed between turns — during `VOTE_RESULTS`, `ASSIGNMENT_REVEAL', or transition moments); reject if in restricted phase
   - **Refinement:** Allow early guesses during `VOTE_RESULTS` phase (the brief 3s window between vote result display and next turn). Also allow during `ASSIGNMENT_REVEAL` if a player is very confident.
-- [ ] Parse input through `ICGuessSchema`; reject on validation failure
-- [ ] Check player hasn't already made an early guess; reject if they have (one chance only)
-- [ ] Use `fuse.js` to match guess against the player's ACTUAL identity:
+- [x] Parse input through `ICGuessSchema`; reject on validation failure
+- [x] Check player hasn't already made an early guess; reject if they have (one chance only)
+- [x] Use `fuse.js` to match guess against the player's ACTUAL identity:
   - Create Fuse instance with `[identityAssignments.get(userId)]` and options:
     ```ts
     { keys: ['name'], threshold: IC_GUESS_MATCH_THRESHOLD, ignoreLocation: true, isCaseSensitive: false }
     ```
   - If match found with score ≤ threshold → **correct**
   - Otherwise → **incorrect**
-- [ ] Compute `matchScore` from fuse result
-- [ ] Store `ICGuessResult` in `earlyGuesses` map
-- [ ] Emit `rmhbox:game:action` with type `IC_EARLY_GUESS_ATTEMPT` to ALL lobby:
+- [x] Compute `matchScore` from fuse result
+- [x] Store `ICGuessResult` in `earlyGuesses` map
+- [x] Emit `rmhbox:game:action` with type `IC_EARLY_GUESS_ATTEMPT` to ALL lobby:
   ```ts
   { userId: string; userName: string }
   ```
   - Do NOT include the guess text in this broadcast
-- [ ] If **correct**:
+- [x] If **correct**:
   - Compute bonus: `IC_EARLY_GUESS_BONUS_BASE × (questionsRemaining / totalQuestionRounds)` where `questionsRemaining = totalQuestionRounds - currentQuestionRound`
   - Add to player's score: `IC_CORRECT_GUESS_POINTS + bonus`
   - Compute efficiency bonus: `IC_EFFICIENCY_BONUS × unusedQuestionSlots` where `unusedQuestionSlots = IC_QUESTIONS_PER_PLAYER - questionsPerPlayer.get(userId)`
@@ -429,7 +429,7 @@
     }
     ```
   - Add player to `eliminatedFromQuestions` (they've guessed correctly — no more question turns needed)
-- [ ] If **incorrect**:
+- [x] If **incorrect**:
   - Apply penalty: add `IC_EARLY_GUESS_PENALTY` to player's score (can go negative)
   - Add player to `eliminatedFromQuestions` (wrong guess → eliminated from asking further questions)
   - Emit `IC_EARLY_GUESS_RESULT` to ALL lobby:
@@ -445,7 +445,7 @@
 
 #### 8.1.6.11 Final Guess Phase
 
-- [ ] `startFinalGuessPhase()`:
+- [x] `startFinalGuessPhase()`:
   - Set `phase = 'FINAL_GUESS'`
   - Set `phaseStartedAt = Date.now()`
   - Set `phaseEndsAt = phaseStartedAt + IC_FINAL_GUESS_SECONDS * 1000`
@@ -459,19 +459,19 @@
 
 #### 8.1.6.12 Input Handling — `IC_FINAL_GUESS`
 
-- [ ] Validate phase is `'FINAL_GUESS'`; reject if not
-- [ ] Validate sender is a player; reject if spectator
-- [ ] Parse input through `ICGuessSchema`; reject on validation failure
-- [ ] Check player hasn't already submitted a final guess; reject if duplicate
-- [ ] Check player hasn't already guessed correctly via early guess; reject if so (they're done)
-- [ ] Use `fuse.js` to match guess against the player's identity (same logic as early guess)
-- [ ] Store `ICGuessResult` in `finalGuesses` map with `roundGuessed = -1` (indicates final phase)
-- [ ] If correct: add `IC_CORRECT_GUESS_POINTS` to player's score (no early bonus)
-- [ ] If incorrect: no additional penalty (just no points)
-- [ ] If all eligible players have submitted final guesses, cancel timeout and call `endFinalGuessPhase()` immediately
+- [x] Validate phase is `'FINAL_GUESS'`; reject if not
+- [x] Validate sender is a player; reject if spectator
+- [x] Parse input through `ICGuessSchema`; reject on validation failure
+- [x] Check player hasn't already submitted a final guess; reject if duplicate
+- [x] Check player hasn't already guessed correctly via early guess; reject if so (they're done)
+- [x] Use `fuse.js` to match guess against the player's identity (same logic as early guess)
+- [x] Store `ICGuessResult` in `finalGuesses` map with `roundGuessed = -1` (indicates final phase)
+- [x] If correct: add `IC_CORRECT_GUESS_POINTS` to player's score (no early bonus)
+- [x] If incorrect: no additional penalty (just no points)
+- [x] If all eligible players have submitted final guesses, cancel timeout and call `endFinalGuessPhase()` immediately
   **Verification:** Unit test: correct final guess → 200 points. Incorrect → 0 penalty. Already guessed early correctly → rejected. All submitted → early phase end.
 
-- [ ] `endFinalGuessPhase()`:
+- [x] `endFinalGuessPhase()`:
   - Stop timer
   - Players who didn't submit a final guess and haven't guessed correctly → scored as incorrect (no points)
   - Call `computeResults()`
@@ -479,14 +479,14 @@
 
 #### 8.1.6.13 `computeResults()` and Awards
 
-- [ ] Compute voting accuracy bonus for each player:
+- [x] Compute voting accuracy bonus for each player:
   - For each question in `questionsAsked`:
     - The "truth" for voting accuracy: use the `majorityAnswer` as the consensus truth (see design decision in §8.1.6.9)
     - For each voter (player who voted on this question, i.e., not the asker):
       - If their vote matches `majorityAnswer`: add `IC_VOTING_ACCURACY_BONUS` to their score
   - This rewards players who engaged with others' questions and voted thoughtfully
 
-- [ ] Build `ICReveal[]` array for each player:
+- [x] Build `ICReveal[]` array for each player:
   ```ts
   {
     userId: string;
@@ -499,9 +499,9 @@
   }
   ```
 
-- [ ] Compute final rankings by `playerScores` (descending)
+- [x] Compute final rankings by `playerScores` (descending)
 
-- [ ] Build `ICFinalRanking[]`:
+- [x] Build `ICFinalRanking[]`:
   ```ts
   {
     userId: string;
@@ -514,15 +514,15 @@
   }
   ```
 
-- [ ] Compute awards:
-  - [ ] **Self-Aware** — guessed correctly first (earliest `roundGuessed` for correct guess); icon: `eye`
-  - [ ] **Master of Disguise** — last person to guess correctly, OR didn't guess correctly at all; icon: `ghost`
-  - [ ] **Philosopher** — asked the most "decisive" questions (questions with the highest yes/no consensus — least "Maybe" votes as a percentage); icon: `brain`
-  - [ ] **Crowd Pleaser** — highest voting accuracy percentage (most votes matching majority answer); icon: `check-circle`
-  - [ ] **Bold Move** — made an early guess (regardless of outcome); icon: `zap`
+- [x] Compute awards:
+  - [x] **Self-Aware** — guessed correctly first (earliest `roundGuessed` for correct guess); icon: `eye`
+  - [x] **Master of Disguise** — last person to guess correctly, OR didn't guess correctly at all; icon: `ghost`
+  - [x] **Philosopher** — asked the most "decisive" questions (questions with the highest yes/no consensus — least "Maybe" votes as a percentage); icon: `brain`
+  - [x] **Crowd Pleaser** — highest voting accuracy percentage (most votes matching majority answer); icon: `check-circle`
+  - [x] **Bold Move** — made an early guess (regardless of outcome); icon: `zap`
 
-- [ ] Set `phase = 'RESULTS'`
-- [ ] Emit `rmhbox:game:action` with type `IC_RESULTS` to ALL lobby:
+- [x] Set `phase = 'RESULTS'`
+- [x] Emit `rmhbox:game:action` with type `IC_RESULTS` to ALL lobby:
   ```ts
   {
     reveals: ICReveal[];
@@ -530,13 +530,13 @@
   }
   ```
   - **Note:** Now ALL identities are revealed to ALL players including their own
-- [ ] Return `MinigameResults` with rankings, awards, and `gameSpecificData` containing `questionsAsked`, `reveals`
+- [x] Return `MinigameResults` with rankings, awards, and `gameSpecificData` containing `questionsAsked`, `reveals`
   **Verification:** Unit test: player with correct early guess at round 2 → highest score. Player with correct final guess → 200 pts. Voting accuracy bonus computed correctly. Awards assigned to correct players. All identities revealed in results.
 
 #### 8.1.6.14 `buildGameLog()`
 
-- [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
-- [ ] Build `GameLog` conforming to core.md §13.3, including `gameSettings` per §12A.11
+- [x] Maintain an `actionLog: GameLogAction[]` array on the game instance
+- [x] Build `GameLog` conforming to core.md §13.3, including `gameSettings` per §12A.11
 
 **`initialState` (from minigames-4.md §1.14):**
 
@@ -564,8 +564,8 @@ interface ICGameHistoryInit {
 | `final_guess` | `{ userId: string; guess: string; correct: boolean; matchScore: number }` | Player submits final guess |
 | `identity_reveal` | `{ userId: string; assignedIdentity: string; guessedCorrectly: boolean }` | Results phase reveals all identities |
 
-- [ ] In `computeResults()`, build `GameLog` with `initialState`, full action log, and `finalResults`
-- [ ] Return `GameLog` from `buildGameLog()`
+- [x] In `computeResults()`, build `GameLog` with `initialState`, full action log, and `finalResults`
+- [x] Return `GameLog` from `buildGameLog()`
 
 **Verification:** Unit test: 5-player game, 15 question rounds, verify `question_asked`/`vote_result` per round, early and final guesses, `identity_reveal` for each player, `initialState` has identity assignments and question order.
 
@@ -573,7 +573,7 @@ interface ICGameHistoryInit {
 
 ### 8.1.7 `getStateForPlayer(userId)`
 
-- [ ] During `ASSIGNMENT_REVEAL`:
+- [x] During `ASSIGNMENT_REVEAL`:
   ```ts
   {
     phase: 'ASSIGNMENT_REVEAL';
@@ -583,7 +583,7 @@ interface ICGameHistoryInit {
   }
   ```
 
-- [ ] During `ASK` (if userId === currentAskerId):
+- [x] During `ASK` (if userId === currentAskerId):
   ```ts
   {
     phase: 'ASK';
@@ -599,7 +599,7 @@ interface ICGameHistoryInit {
   ```
   - **CRITICAL:** No `askerIdentity` field — the asker must NOT know their own identity
 
-- [ ] During `ASK` (if userId !== currentAskerId):
+- [x] During `ASK` (if userId !== currentAskerId):
   ```ts
   {
     phase: 'ASK';
@@ -617,7 +617,7 @@ interface ICGameHistoryInit {
   }
   ```
 
-- [ ] During `VOTE`:
+- [x] During `VOTE`:
   ```ts
   {
     phase: 'VOTE';
@@ -634,7 +634,7 @@ interface ICGameHistoryInit {
   ```
   - **CRITICAL:** `askerIdentity` is ONLY sent if the requesting player is NOT the asker
 
-- [ ] During `VOTE_RESULTS`:
+- [x] During `VOTE_RESULTS`:
   ```ts
   {
     phase: 'VOTE_RESULTS';
@@ -646,7 +646,7 @@ interface ICGameHistoryInit {
   }
   ```
 
-- [ ] During `FINAL_GUESS`:
+- [x] During `FINAL_GUESS`:
   ```ts
   {
     phase: 'FINAL_GUESS';
@@ -657,16 +657,16 @@ interface ICGameHistoryInit {
   }
   ```
 
-- [ ] During `RESULTS`: full reveals and rankings (all identities visible including own)
+- [x] During `RESULTS`: full reveals and rankings (all identities visible including own)
 
-- [ ] **CRITICAL MASKING RULE:** In EVERY phase except `RESULTS`, the player's OWN identity must NEVER appear in any field of the returned state. The `otherPlayersIdentities` array always excludes the receiving player. This is the core mechanic of the entire game.
+- [x] **CRITICAL MASKING RULE:** In EVERY phase except `RESULTS`, the player's OWN identity must NEVER appear in any field of the returned state. The `otherPlayersIdentities` array always excludes the receiving player. This is the core mechanic of the entire game.
   **Verification:** Security test: for each player in each phase, iterate through all fields of the returned state object — assert own identity string does NOT appear anywhere. Test with string search, not just field-level check (in case identity leaks through nested objects or combined strings).
 
 ---
 
 ### 8.1.8 `getStateForSpectator()`
 
-- [ ] Returns full omniscient state including:
+- [x] Returns full omniscient state including:
   - ALL players' identities (including each player's own — spectator sees who everyone is)
   - All votes with individual attribution (who voted what)
   - All guess texts (including early guesses)
@@ -679,42 +679,42 @@ interface ICGameHistoryInit {
 
 ### 8.1.9 Join-in-Progress Handling
 
-- [ ] Policy: `spectate_only`
-- [ ] Identities are assigned at game start and question order is pre-determined
-- [ ] A late joiner would not have an identity and would disrupt the turn order
-- [ ] Send spectator state on join (full god view)
+- [x] Policy: `spectate_only`
+- [x] Identities are assigned at game start and question order is pre-determined
+- [x] A late joiner would not have an identity and would disrupt the turn order
+- [x] Send spectator state on join (full god view)
   **Verification:** Unit test: JIP → spectator role assigned, receives full state, cannot send game inputs.
 
 ---
 
 ### 8.1.10 Reconnection Handling (`handlePlayerReconnect(userId)`)
 
-- [ ] Send full state via `getStateForPlayer(userId)`:
+- [x] Send full state via `getStateForPlayer(userId)`:
   - All other players' identities (NOT own)
   - Question history with vote results
   - Remaining question count for this player
   - Current phase and timer
-- [ ] If it was their turn to ask and ASK timer is still active: they can submit a question
-- [ ] If VOTE phase is active and they haven't voted: they can still vote
-- [ ] Identity is preserved — they NEVER see their own
-- [ ] If eliminated from questions (wrong early guess): reconnect state reflects elimination
+- [x] If it was their turn to ask and ASK timer is still active: they can submit a question
+- [x] If VOTE phase is active and they haven't voted: they can still vote
+- [x] Identity is preserved — they NEVER see their own
+- [x] If eliminated from questions (wrong early guess): reconnect state reflects elimination
   **Verification:** Unit test: disconnect during ASK (their turn) → reconnect → can submit question. Disconnect during VOTE → reconnect → can vote. Own identity never in reconnect state.
 
 ---
 
 ### 8.1.11 Disconnect Handling (`handlePlayerDisconnect(userId)`)
 
-- [ ] If ASK phase and disconnected player is the asker: their turn will timeout (skip)
-- [ ] If VOTE phase and disconnected player hasn't voted: they'll be excluded from total voter count check; if all remaining connected voters have voted, phase ends early
-- [ ] If FINAL_GUESS phase and disconnected player hasn't guessed: treated as no guess (0 points)
-- [ ] No special cleanup — identity preserved, turn order intact
+- [x] If ASK phase and disconnected player is the asker: their turn will timeout (skip)
+- [x] If VOTE phase and disconnected player hasn't voted: they'll be excluded from total voter count check; if all remaining connected voters have voted, phase ends early
+- [x] If FINAL_GUESS phase and disconnected player hasn't guessed: treated as no guess (0 points)
+- [x] No special cleanup — identity preserved, turn order intact
   **Verification:** Unit test: asker disconnects during ASK → timeout → turn skipped. Voter disconnects → remaining voters checked for completion.
 
 ---
 
 ### 8.1.12 Register Game in Minigame Registry
 
-- [ ] Add entry to `lib/rmhbox/minigame-registry.ts`:
+- [x] Add entry to `lib/rmhbox/minigame-registry.ts`:
   ```ts
   {
     id: "identity-crisis",
@@ -739,14 +739,14 @@ interface ICGameHistoryInit {
   ```
   **Verification:** Call registry lookup for `"identity-crisis"`; confirm all metadata fields correct and handler instantiates with valid context.
 
-- [ ] Add server handler to `MINIGAME_SERVER_REGISTRY` in `server/rmhbox/minigame-server-registry.ts`:
+- [x] Add server handler to `MINIGAME_SERVER_REGISTRY` in `server/rmhbox/minigame-server-registry.ts`:
   ```ts
   import { IdentityCrisisGame } from './minigames/identity-crisis';
   MINIGAME_SERVER_REGISTRY.set('identity-crisis', IdentityCrisisGame);
   ```
   **Verification:** `MINIGAME_SERVER_REGISTRY.get('identity-crisis')` returns `IdentityCrisisGame` class.
 
-- [ ] Add lazy-loaded component to `MinigameRenderer` map in `components/rmhbox/MinigameRenderer.tsx`:
+- [x] Add lazy-loaded component to `MinigameRenderer` map in `components/rmhbox/MinigameRenderer.tsx`:
   ```ts
   'identity-crisis': lazy(() => import('./minigames/identity-crisis/IdentityCrisisGame'))
   ```
@@ -758,26 +758,26 @@ interface ICGameHistoryInit {
 
 #### 8.1.13.1 `components/rmhbox/minigames/identity-crisis/IdentityCrisisGame.tsx`
 
-- [ ] Phase router component — renders appropriate sub-component based on `phase`
-- [ ] Subscribe to all `IC_*` and `TIMER_TICK` WebSocket events via `useRMHboxStore`
-- [ ] Maintain local state:
+- [x] Phase router component — renders appropriate sub-component based on `phase`
+- [x] Subscribe to all `IC_*` and `TIMER_TICK` WebSocket events via `useRMHboxStore`
+- [x] Maintain local state:
   - `phase`, `otherPlayersIdentities[]`, `isMyTurn`, `currentAskerId`, `askerIdentity`
   - `currentQuestion`, `myVote`, `votesReceived`, `totalVoters`
   - `questionHistory[]`, `myQuestionsRemaining`, `canEarlyGuess`
   - `timeRemaining`, `scores[]`
-- [ ] Handle `IC_IDENTITIES_REVEAL` → populate other players' identity cards
-- [ ] Handle `IC_TURN_START` → set asker info with identity (for voters)
-- [ ] Handle `IC_TURN_START_SELF` → set isMyTurn with NO identity info
-- [ ] Handle `IC_QUESTION_ASKED` → show question, transition to vote UI
-- [ ] Handle `IC_VOTE_RECEIVED` → update vote progress counter
-- [ ] Handle `IC_VOTE_RESULTS` → display vote breakdown
-- [ ] Handle `IC_EARLY_GUESS_ATTEMPT` → show guess animation
-- [ ] Handle `IC_EARLY_GUESS_RESULT` → show result (no identity reveal if wrong)
-- [ ] Handle `IC_EARLY_GUESS_CORRECT` → dramatic identity reveal for guesser
-- [ ] Handle `IC_FINAL_GUESS_PHASE` → show guess input
-- [ ] Handle `IC_RESULTS` → show all identity reveals and rankings
-- [ ] Handle `TIMER_TICK` → update timer display
-- [ ] Conditional rendering:
+- [x] Handle `IC_IDENTITIES_REVEAL` → populate other players' identity cards
+- [x] Handle `IC_TURN_START` → set asker info with identity (for voters)
+- [x] Handle `IC_TURN_START_SELF` → set isMyTurn with NO identity info
+- [x] Handle `IC_QUESTION_ASKED` → show question, transition to vote UI
+- [x] Handle `IC_VOTE_RECEIVED` → update vote progress counter
+- [x] Handle `IC_VOTE_RESULTS` → display vote breakdown
+- [x] Handle `IC_EARLY_GUESS_ATTEMPT` → show guess animation
+- [x] Handle `IC_EARLY_GUESS_RESULT` → show result (no identity reveal if wrong)
+- [x] Handle `IC_EARLY_GUESS_CORRECT` → dramatic identity reveal for guesser
+- [x] Handle `IC_FINAL_GUESS_PHASE` → show guess input
+- [x] Handle `IC_RESULTS` → show all identity reveals and rankings
+- [x] Handle `TIMER_TICK` → update timer display
+- [x] Conditional rendering:
   - `ASSIGNMENT_REVEAL` → `<IdentityRevealGrid />` (show N-1 identity cards)
   - `ASK` (my turn) → `<QuestionInput />` + identity cards
   - `ASK` (other's turn) → waiting view with asker's identity displayed
@@ -789,94 +789,94 @@ interface ICGameHistoryInit {
 
 #### 8.1.13.2 `components/rmhbox/minigames/identity-crisis/IdentityCard.tsx`
 
-- [ ] Displays a player's identity with their name and assigned famous person
-- [ ] Props: `{ userId: string; userName: string; identity: string; isHighlighted?: boolean }`
-- [ ] Visual: rounded card with player avatar, name, and identity text
-- [ ] Highlighted state: glowing border when it's that player's turn to ask
-- [ ] Category-themed color accent (Scientist=blue, Musician=purple, Fictional=green, etc.)
-- [ ] Responsive sizing for mobile (compact card on small screens)
+- [x] Displays a player's identity with their name and assigned famous person
+- [x] Props: `{ userId: string; userName: string; identity: string; isHighlighted?: boolean }`
+- [x] Visual: rounded card with player avatar, name, and identity text
+- [x] Highlighted state: glowing border when it's that player's turn to ask
+- [x] Category-themed color accent (Scientist=blue, Musician=purple, Fictional=green, etc.)
+- [x] Responsive sizing for mobile (compact card on small screens)
   **Verification:** Renders correctly with mock data. Highlighted state visually distinct. Category colors applied.
 
 #### 8.1.13.3 `components/rmhbox/minigames/identity-crisis/HiddenIdentityCard.tsx`
 
-- [ ] Shows "???" for the player's own identity
-- [ ] Props: `{ userName: string; questionsRemaining: number; hasGuessedCorrectly?: boolean }`
-- [ ] Visual: large question mark icon with pulsing animation
-- [ ] Shows question count: "Questions left: 2"
-- [ ] Turns green with checkmark if player guessed correctly
-- [ ] Mobile-friendly: prominent at top of screen
+- [x] Shows "???" for the player's own identity
+- [x] Props: `{ userName: string; questionsRemaining: number; hasGuessedCorrectly?: boolean }`
+- [x] Visual: large question mark icon with pulsing animation
+- [x] Shows question count: "Questions left: 2"
+- [x] Turns green with checkmark if player guessed correctly
+- [x] Mobile-friendly: prominent at top of screen
   **Verification:** Renders "???" state. Questions remaining count accurate. Correct guess state shows checkmark.
 
 #### 8.1.13.4 `components/rmhbox/minigames/identity-crisis/QuestionInput.tsx`
 
-- [ ] Text input for typing a yes/no question about yourself
-- [ ] Props: `{ onSubmit: (question: string) => void; timeRemaining: number; maxLength: number }`
-- [ ] Placeholder text: "Ask a yes/no question about yourself..."
-- [ ] Character counter showing remaining chars
-- [ ] Submit button (disabled until ≥3 chars)
-- [ ] Auto-submit on Enter key (desktop)
-- [ ] Timer bar at top
-- [ ] Emit `rmhbox:game:input` with `{ action: "IC_ASK_QUESTION", data: { question } }` on submit
-- [ ] Mobile-friendly keyboard handling (auto-focus, appropriate keyboard type)
+- [x] Text input for typing a yes/no question about yourself
+- [x] Props: `{ onSubmit: (question: string) => void; timeRemaining: number; maxLength: number }`
+- [x] Placeholder text: "Ask a yes/no question about yourself..."
+- [x] Character counter showing remaining chars
+- [x] Submit button (disabled until ≥3 chars)
+- [x] Auto-submit on Enter key (desktop)
+- [x] Timer bar at top
+- [x] Emit `rmhbox:game:input` with `{ action: "IC_ASK_QUESTION", data: { question } }` on submit
+- [x] Mobile-friendly keyboard handling (auto-focus, appropriate keyboard type)
   **Verification:** Submit emits correct event. Disabled when too short. Character counter works. Timer displays.
 
 #### 8.1.13.5 `components/rmhbox/minigames/identity-crisis/VotePanel.tsx`
 
-- [ ] Three vote buttons: Yes (green), No (red), Maybe (yellow/amber)
-- [ ] Props: `{ question: string; askerName: string; askerIdentity: string; myVote: ICVote | null; onVote: (vote: ICVote) => void; votesReceived: number; totalVoters: number; timeRemaining: number }`
-- [ ] Shows the question prominently
-- [ ] Shows asker's identity (so voter knows the truth)
-- [ ] Once voted: buttons become disabled, selected vote highlighted
-- [ ] Vote progress: "Votes: 3/5 received"
-- [ ] Timer bar
-- [ ] Emit `rmhbox:game:input` with `{ action: "IC_VOTE", data: { vote } }` on button tap
-- [ ] Touch-friendly button sizing (min 48px height, full-width on mobile)
+- [x] Three vote buttons: Yes (green), No (red), Maybe (yellow/amber)
+- [x] Props: `{ question: string; askerName: string; askerIdentity: string; myVote: ICVote | null; onVote: (vote: ICVote) => void; votesReceived: number; totalVoters: number; timeRemaining: number }`
+- [x] Shows the question prominently
+- [x] Shows asker's identity (so voter knows the truth)
+- [x] Once voted: buttons become disabled, selected vote highlighted
+- [x] Vote progress: "Votes: 3/5 received"
+- [x] Timer bar
+- [x] Emit `rmhbox:game:input` with `{ action: "IC_VOTE", data: { vote } }` on button tap
+- [x] Touch-friendly button sizing (min 48px height, full-width on mobile)
   **Verification:** Tap emits event. Selected vote highlighted after voting. Cannot re-vote.
 
 #### 8.1.13.6 `components/rmhbox/minigames/identity-crisis/VoteResultBar.tsx`
 
-- [ ] Horizontal stacked bar showing Yes/No/Maybe distribution
-- [ ] Props: `{ votes: { yes: number; no: number; maybe: number }; majorityAnswer: string }`
-- [ ] Color-coded segments: green (yes), red (no), amber (maybe)
-- [ ] Labels with counts above each segment
-- [ ] Majority answer highlighted with a larger label or crown icon
-- [ ] Animated entrance (segments grow from left)
+- [x] Horizontal stacked bar showing Yes/No/Maybe distribution
+- [x] Props: `{ votes: { yes: number; no: number; maybe: number }; majorityAnswer: string }`
+- [x] Color-coded segments: green (yes), red (no), amber (maybe)
+- [x] Labels with counts above each segment
+- [x] Majority answer highlighted with a larger label or crown icon
+- [x] Animated entrance (segments grow from left)
   **Verification:** Bar renders with correct proportions. Majority highlighted. Animation plays.
 
 #### 8.1.13.7 `components/rmhbox/minigames/identity-crisis/QuestionHistory.tsx`
 
-- [ ] Scrollable list of all past questions and their vote results
-- [ ] Props: `{ questions: Array<{ question: string; askerName: string; votes: { yes, no, maybe }; majorityAnswer: string }> }`
-- [ ] Each entry shows: asker name, question text, vote result bar mini-version
-- [ ] Most recent at top
-- [ ] Collapse/expand on mobile (shows last 3 by default, tap to see all)
+- [x] Scrollable list of all past questions and their vote results
+- [x] Props: `{ questions: Array<{ question: string; askerName: string; votes: { yes, no, maybe }; majorityAnswer: string }> }`
+- [x] Each entry shows: asker name, question text, vote result bar mini-version
+- [x] Most recent at top
+- [x] Collapse/expand on mobile (shows last 3 by default, tap to see all)
   **Verification:** Renders history correctly. Scrollable. Collapse toggle works on mobile.
 
 #### 8.1.13.8 `components/rmhbox/minigames/identity-crisis/GuessInput.tsx`
 
-- [ ] Text input for guessing own identity
-- [ ] Props: `{ onSubmit: (guess: string) => void; identityPool?: string[]; timeRemaining?: number; isEarlyGuess?: boolean }`
-- [ ] Optional autocomplete dropdown from visible identities (identities the player has SEEN assigned to others — helps narrow down remaining possibilities)
-- [ ] Warning text for early guess: "⚠️ Wrong guess = elimination from future questions!"
-- [ ] Submit button with confirmation dialog for early guesses (prevent accidental submission)
-- [ ] Timer bar (for final guess phase)
-- [ ] Emit `rmhbox:game:input` with `{ action: "IC_EARLY_GUESS" or "IC_FINAL_GUESS", data: { guess } }`
+- [x] Text input for guessing own identity
+- [x] Props: `{ onSubmit: (guess: string) => void; identityPool?: string[]; timeRemaining?: number; isEarlyGuess?: boolean }`
+- [x] Optional autocomplete dropdown from visible identities (identities the player has SEEN assigned to others — helps narrow down remaining possibilities)
+- [x] Warning text for early guess: "⚠️ Wrong guess = elimination from future questions!"
+- [x] Submit button with confirmation dialog for early guesses (prevent accidental submission)
+- [x] Timer bar (for final guess phase)
+- [x] Emit `rmhbox:game:input` with `{ action: "IC_EARLY_GUESS" or "IC_FINAL_GUESS", data: { guess } }`
   **Verification:** Submit emits correct action. Autocomplete shows relevant names. Warning shown for early guesses.
 
 #### 8.1.13.9 `components/rmhbox/minigames/identity-crisis/IdentityReveal.tsx`
 
-- [ ] Dramatic reveal animation showing each player's identity
-- [ ] Props: `{ reveals: ICReveal[]; finalRankings: ICFinalRanking[] }`
-- [ ] Sequential reveal: each player's card flips to show their identity (staggered animation, ~1s per player)
-- [ ] Correct guessers get a green checkmark + confetti (using `canvas-confetti`)
-- [ ] Wrong/no guessers get a red X
-- [ ] After all reveals: show final rankings table
-- [ ] Rankings show: rank, name, score, guessed correctly, questions used, voting accuracy
+- [x] Dramatic reveal animation showing each player's identity
+- [x] Props: `{ reveals: ICReveal[]; finalRankings: ICFinalRanking[] }`
+- [x] Sequential reveal: each player's card flips to show their identity (staggered animation, ~1s per player)
+- [x] Correct guessers get a green checkmark + confetti (using `canvas-confetti`)
+- [x] Wrong/no guessers get a red X
+- [x] After all reveals: show final rankings table
+- [x] Rankings show: rank, name, score, guessed correctly, questions used, voting accuracy
   **Verification:** Reveals play sequentially. Confetti on correct guessers. Rankings table correct.
 
 #### 8.1.13.10 Sound Effects
 
-- [ ] Wire up sound effects for Identity Crisis events:
+- [x] Wire up sound effects for Identity Crisis events:
   - `IC_IDENTITIES_REVEAL` → `playSound('swoosh')`
   - `IC_TURN_START` / `IC_TURN_START_SELF` → `playSound('chime')`
   - `IC_QUESTION_ASKED` → `playSound('click')`
@@ -890,53 +890,53 @@ interface ICGameHistoryInit {
 
 #### 8.1.13.11 Zustand Store Integration
 
-- [ ] Read other players' identities from `publicState`; own identity is NEVER in client state until `IC_RESULTS`
-- [ ] Spectator sees ALL identities (god view)
-- [ ] Component uses `IC_TURN_START_SELF` vs `IC_TURN_START` to determine if current player is the asker
+- [x] Read other players' identities from `publicState`; own identity is NEVER in client state until `IC_RESULTS`
+- [x] Spectator sees ALL identities (god view)
+- [x] Component uses `IC_TURN_START_SELF` vs `IC_TURN_START` to determine if current player is the asker
   **Verification:** Own identity absent from store during gameplay. Spectator store contains all identities. Asker detection correct.
 
 ---
 
 ### 8.1.14 Integration Testing
 
-- [ ] End-to-end test: 4 players join lobby → start Identity Crisis → play through all question rounds + final guess
-  - [ ] Verify each player receives N-1 identities (never their own)
-  - [ ] Verify asker receives `IC_TURN_START_SELF` (no identity); others receive `IC_TURN_START` (with asker's identity)
-  - [ ] Verify vote aggregation: correct tallies, majority calculation, anonymous results
-  - [ ] Verify question turn rotation through all players
-  - [ ] Verify early guess: correct → bonus + elimination from questions; incorrect → penalty + elimination
-  - [ ] Verify final guess: correct → base points; incorrect → no penalty
-  - [ ] Verify fuse.js matching: "einstein" matches "Albert Einstein" at threshold 0.3
-  - [ ] Verify voting accuracy bonus computed using majority answer
-  - [ ] Verify all 5 awards assigned correctly
+- [x] End-to-end test: 4 players join lobby → start Identity Crisis → play through all question rounds + final guess
+  - [x] Verify each player receives N-1 identities (never their own)
+  - [x] Verify asker receives `IC_TURN_START_SELF` (no identity); others receive `IC_TURN_START` (with asker's identity)
+  - [x] Verify vote aggregation: correct tallies, majority calculation, anonymous results
+  - [x] Verify question turn rotation through all players
+  - [x] Verify early guess: correct → bonus + elimination from questions; incorrect → penalty + elimination
+  - [x] Verify final guess: correct → base points; incorrect → no penalty
+  - [x] Verify fuse.js matching: "einstein" matches "Albert Einstein" at threshold 0.3
+  - [x] Verify voting accuracy bonus computed using majority answer
+  - [x] Verify all 5 awards assigned correctly
   **Verification:** All assertions pass. Scores match manual calculation.
 
-- [ ] Information masking test (CRITICAL):
-  - [ ] During ASSIGNMENT_REVEAL: Player A's socket NEVER receives Player A's identity in any field
-  - [ ] During ASK (A is asker): A receives `IC_TURN_START_SELF` without identity; B receives `IC_TURN_START` with A's identity
-  - [ ] During VOTE: A (asker) receives state WITHOUT `askerIdentity`; B (voter) receives state WITH `askerIdentity`
-  - [ ] String scan test: for each player in each phase, JSON.stringify the entire player state and search for the player's own identity name → must return NO matches
-  - [ ] During RESULTS: ALL identities visible to ALL players (masking ends)
+- [x] Information masking test (CRITICAL):
+  - [x] During ASSIGNMENT_REVEAL: Player A's socket NEVER receives Player A's identity in any field
+  - [x] During ASK (A is asker): A receives `IC_TURN_START_SELF` without identity; B receives `IC_TURN_START` with A's identity
+  - [x] During VOTE: A (asker) receives state WITHOUT `askerIdentity`; B (voter) receives state WITH `askerIdentity`
+  - [x] String scan test: for each player in each phase, JSON.stringify the entire player state and search for the player's own identity name → must return NO matches
+  - [x] During RESULTS: ALL identities visible to ALL players (masking ends)
   **Verification:** Zero identity leakage. String scan confirms no hidden identity exposure.
 
-- [ ] Fuzzy matching test:
-  - [ ] "Albert Einstein" → "albert einstein" = CORRECT (case-insensitive)
-  - [ ] "Albert Einstein" → "einstein" = CORRECT (partial match at threshold 0.3)
-  - [ ] "Albert Einstein" → "Albert Einstien" = CORRECT (typo tolerance)
-  - [ ] "Albert Einstein" → "Mickey Mouse" = WRONG
-  - [ ] "Albert Einstein" → "einstein albert" = CORRECT (word order tolerance)
+- [x] Fuzzy matching test:
+  - [x] "Albert Einstein" → "albert einstein" = CORRECT (case-insensitive)
+  - [x] "Albert Einstein" → "einstein" = CORRECT (partial match at threshold 0.3)
+  - [x] "Albert Einstein" → "Albert Einstien" = CORRECT (typo tolerance)
+  - [x] "Albert Einstein" → "Mickey Mouse" = WRONG
+  - [x] "Albert Einstein" → "einstein albert" = CORRECT (word order tolerance)
   **Verification:** All fuzzy match results match expected outcomes.
 
-- [ ] Turn skip test:
-  - [ ] Player doesn't submit question in ASK timeout → turn skipped, question count preserved
-  - [ ] Eliminated player's turn → auto-skipped
-  - [ ] All players eliminated from questions → final guess phase starts
+- [x] Turn skip test:
+  - [x] Player doesn't submit question in ASK timeout → turn skipped, question count preserved
+  - [x] Eliminated player's turn → auto-skipped
+  - [x] All players eliminated from questions → final guess phase starts
   **Verification:** Skip logic works in all scenarios.
 
-- [ ] Spectator test: Spectator receives ALL identities, ALL individual votes, ALL guess texts
+- [x] Spectator test: Spectator receives ALL identities, ALL individual votes, ALL guess texts
   **Verification:** Full god view confirmed.
 
-- [ ] Reconnection test: Disconnect during VOTE → reconnect → can still vote if timer active
+- [x] Reconnection test: Disconnect during VOTE → reconnect → can still vote if timer active
   **Verification:** State restored correctly, no identity leakage.
 
 ### 8.1.15 Game Settings Integration (§12A)
@@ -945,13 +945,13 @@ Integrate host-configurable settings using the §12A system established in Phase
 
 #### Registry Entry
 
-- [ ] Export `IDENTITY_CRISIS_SETTINGS: GameSettingsSchema` in `lib/rmhbox/minigame-registry.ts` with 5 entries:
+- [x] Export `IDENTITY_CRISIS_SETTINGS: GameSettingsSchema` in `lib/rmhbox/minigame-registry.ts` with 5 entries:
   - `questionsPerPlayer` (integer, default `3`, min 2, max 5, step 1)
   - `askDuration` (integer, default `30`, min 15, max 60, step 5)
   - `voteDuration` (integer, default `15`, min 10, max 30, step 5)
   - `finalGuessDuration` (integer, default `30`, min 15, max 60, step 5)
   - `enableEarlyGuess` (boolean, default `true`)
-- [ ] Attach `settingsSchema: IDENTITY_CRISIS_SETTINGS` to the `identity-crisis` `MinigameDefinition`.
+- [x] Attach `settingsSchema: IDENTITY_CRISIS_SETTINGS` to the `identity-crisis` `MinigameDefinition`.
   **Verification:** Registry lookup returns definition with `settingsSchema` containing 5 entries.
 
 #### Handler `getSetting()` Integration
@@ -966,7 +966,7 @@ Replace hardcoded constants with `this.getSetting()` calls in the Identity Crisi
 | `IC_FINAL_GUESS_DURATION` | `finalGuessDuration` | `this.getSetting('finalGuessDuration', IC_FINAL_GUESS_DURATION)` |
 | `IC_ENABLE_EARLY_GUESS` | `enableEarlyGuess` | `this.getSetting('enableEarlyGuess', IC_ENABLE_EARLY_GUESS)` |
 
-- [ ] **Boolean setting logic:** When `enableEarlyGuess` is `false`, the subject must use all of their allotted questions before guessing. The early-guess action is rejected server-side if the setting is disabled.
+- [x] **Boolean setting logic:** When `enableEarlyGuess` is `false`, the subject must use all of their allotted questions before guessing. The early-guess action is rejected server-side if the setting is disabled.
   **Verification:** Each constant usage replaced. Handler respects custom settings passed via `MinigameContext.gameSettings`.
 
 ---
@@ -992,11 +992,11 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 
 #### 8.1.16.3 Tests
 
-- [ ] Verify `getHistoryDisplay('identity-crisis')` returns a valid config
-- [ ] Verify searchable fields extract identities and questions from a mock game log
-- [ ] Verify filterable fields include guessedCorrectly (boolean), madeEarlyGuess (boolean), identityCategory (select)
-- [ ] Verify `getSummary()` returns a meaningful string for a mock game log
-- [ ] Verify `DetailComponent` renders without errors when given a valid game log
+- [x] Verify `getHistoryDisplay('identity-crisis')` returns a valid config
+- [x] Verify searchable fields extract identities and questions from a mock game log
+- [x] Verify filterable fields include guessedCorrectly (boolean), madeEarlyGuess (boolean), identityCategory (select)
+- [x] Verify `getSummary()` returns a meaningful string for a mock game log
+- [x] Verify `DetailComponent` renders without errors when given a valid game log
 
 ---
 
@@ -1009,40 +1009,40 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 
 ### 8.2.1 Install NPM Packages
 
-- [ ] Install `@dnd-kit/core` and `@dnd-kit/sortable` (drag-and-drop for ranking UI)
+- [x] Install `@dnd-kit/core` and `@dnd-kit/sortable` (drag-and-drop for ranking UI)
   ```bash
   pnpm add @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities
   ```
   **Verification:** Run `pnpm ls @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities` and confirm versions listed.
 
-- [ ] Verify TypeScript types are included (dnd-kit ships its own types)
+- [x] Verify TypeScript types are included (dnd-kit ships its own types)
   **Verification:** Create a scratch `.ts` file, import `{ DndContext }` from `@dnd-kit/core` and `{ SortableContext }` from `@dnd-kit/sortable`, confirm no type errors via `tsc --noEmit`.
 
 ---
 
 ### 8.2.2 Add Constants to `lib/rmhbox/constants.ts`
 
-- [ ] Add `RF_TOTAL_ROUNDS = 5` — number of rounds per game
-- [ ] Add `RF_ITEMS_PER_CATEGORY = 5` — items to rank per round
-- [ ] Add `RF_CATEGORY_REVEAL_SECONDS = 3` — seconds to display category name and items
-- [ ] Add `RF_RANKING_SECONDS = 25` — seconds for players to drag-rank items
-- [ ] Add `RF_LOCK_IN_SECONDS = 3` — seconds for final chance to confirm ranking
-- [ ] Add `RF_RESULTS_SECONDS = 8` — seconds to display round results
-- [ ] Add `RF_TRANSITION_SECONDS = 2` — seconds between rounds
-- [ ] Add `RF_MAX_ROUND_POINTS = 200` — maximum points per round (perfect consensus match)
-- [ ] Add `RF_EXACT_MATCH_BONUS = 100` — bonus for ranking matching the global average ordering exactly
-- [ ] Add `RF_OUTLIER_BONUS = 25` — consolation bonus for the player most different from average
-- [ ] Add `RF_MAX_THEORETICAL_DISTANCE = 12` — theoretical maximum sum of absolute deviations for 5 items ranked 1–5
-- [ ] **Verification:** Import all `RF_*` constants in a test file; confirm no undefined values and correct types (`number`). Verify `RF_MAX_THEORETICAL_DISTANCE` is mathematically correct: worst case for 5 items is rank [5,4,3,2,1] vs average [1,2,3,4,5] → |5-1|+|4-2|+|3-3|+|2-4|+|1-5| = 4+2+0+2+4 = 12.
+- [x] Add `RF_TOTAL_ROUNDS = 5` — number of rounds per game
+- [x] Add `RF_ITEMS_PER_CATEGORY = 5` — items to rank per round
+- [x] Add `RF_CATEGORY_REVEAL_SECONDS = 3` — seconds to display category name and items
+- [x] Add `RF_RANKING_SECONDS = 25` — seconds for players to drag-rank items
+- [x] Add `RF_LOCK_IN_SECONDS = 3` — seconds for final chance to confirm ranking
+- [x] Add `RF_RESULTS_SECONDS = 8` — seconds to display round results
+- [x] Add `RF_TRANSITION_SECONDS = 2` — seconds between rounds
+- [x] Add `RF_MAX_ROUND_POINTS = 200` — maximum points per round (perfect consensus match)
+- [x] Add `RF_EXACT_MATCH_BONUS = 100` — bonus for ranking matching the global average ordering exactly
+- [x] Add `RF_OUTLIER_BONUS = 25` — consolation bonus for the player most different from average
+- [x] Add `RF_MAX_THEORETICAL_DISTANCE = 12` — theoretical maximum sum of absolute deviations for 5 items ranked 1–5
+- [x] **Verification:** Import all `RF_*` constants in a test file; confirm no undefined values and correct types (`number`). Verify `RF_MAX_THEORETICAL_DISTANCE` is mathematically correct: worst case for 5 items is rank [5,4,3,2,1] vs average [1,2,3,4,5] → |5-1|+|4-2|+|3-3|+|2-4|+|1-5| = 4+2+0+2+4 = 12.
 
 ---
 
 ### 8.2.3 Create Static Data Files
 
-- [ ] Create directory `public/data/rmhbox/ranking-file/`
+- [x] Create directory `public/data/rmhbox/ranking-file/`
   **Verification:** Directory exists on disk.
 
-- [ ] Create `public/data/rmhbox/ranking-file/categories.json` — curated ranking categories
+- [x] Create `public/data/rmhbox/ranking-file/categories.json` — curated ranking categories
   - Each entry follows the `RankingCategory` interface:
     ```ts
     {
@@ -1053,14 +1053,14 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
       difficulty: "easy" | "medium" | "hard";
     }
     ```
-  - [ ] Include at least 40 categories total
-  - [ ] Each category has exactly 5 items
-  - [ ] Items should be well-known and culturally diverse
-  - [ ] Balanced difficulty: ≥15 easy, ≥15 medium, ≥10 hard
-  - [ ] No duplicate `id` values
-  - [ ] No duplicate items within a category
-  - [ ] Categories span diverse topics: food, entertainment, travel, sports, animals, technology, etc.
-  - [ ] Difficulty defined by subjectivity: easy = clear popular consensus likely; medium = debatable; hard = highly subjective with no obvious "right" answer
+  - [x] Include at least 40 categories total
+  - [x] Each category has exactly 5 items
+  - [x] Items should be well-known and culturally diverse
+  - [x] Balanced difficulty: ≥15 easy, ≥15 medium, ≥10 hard
+  - [x] No duplicate `id` values
+  - [x] No duplicate items within a category
+  - [x] Categories span diverse topics: food, entertainment, travel, sports, animals, technology, etc.
+  - [x] Difficulty defined by subjectivity: easy = clear popular consensus likely; medium = debatable; hard = highly subjective with no obvious "right" answer
   - **Example categories:**
     - 🍔 Fast Food Chains: McDonald's, Burger King, Wendy's, Chick-fil-A, Taco Bell
     - 🎬 90s Movies: Titanic, Pulp Fiction, The Matrix, Forrest Gump, Jurassic Park
@@ -1073,9 +1073,9 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 
 ### 8.2.4 Define Zod Validation Schemas
 
-- [ ] Create `lib/rmhbox/ranking-file/schemas.ts`
+- [x] Create `lib/rmhbox/ranking-file/schemas.ts`
 
-- [ ] Define `RFSubmitSchema`:
+- [x] Define `RFSubmitSchema`:
   ```ts
   const RFSubmitSchema = z.object({
     ranking: z.array(z.number().int().min(1).max(5)).length(5)
@@ -1087,7 +1087,7 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
   ```
   **Verification:** Valid: `{ ranking: [1, 2, 3, 4, 5] }`, `{ ranking: [5, 3, 1, 2, 4] }`. Invalid: `{ ranking: [1, 1, 3, 4, 5] }` (duplicate), `{ ranking: [1, 2, 3, 4] }` (too short), `{ ranking: [0, 1, 2, 3, 4] }` (0 out of range), `{ ranking: [1, 2, 3, 4, 6] }` (6 out of range).
 
-- [ ] Define `RFUpdateSchema` (same shape as submit — used for live preview updates):
+- [x] Define `RFUpdateSchema` (same shape as submit — used for live preview updates):
   ```ts
   const RFUpdateSchema = z.object({
     ranking: z.array(z.number().int().min(1).max(5)).length(5)
@@ -1099,7 +1099,7 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
   ```
   **Verification:** Same validation as submit schema.
 
-- [ ] Define `RankingCategorySchema` for server-side data validation at startup:
+- [x] Define `RankingCategorySchema` for server-side data validation at startup:
   ```ts
   const RankingCategorySchema = z.object({
     id: z.string().min(1),
@@ -1115,11 +1115,11 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 
 ### 8.2.5 Create Data Loader
 
-- [ ] Create `lib/rmhbox/ranking-file/category-loader.ts`
-  - [ ] Export `loadCategories(): RankingCategory[]` — reads and parses `categories.json` once at server init
-  - [ ] Validate each category against `RankingCategorySchema` during load; skip invalid entries with a warning log
-  - [ ] Cache in module-level variable (singleton pattern)
-  - [ ] Export `selectCategoriesForGame(pool: RankingCategory[], roundCount: number, usedIds: Set<string>): RankingCategory[]`
+- [x] Create `lib/rmhbox/ranking-file/category-loader.ts`
+  - [x] Export `loadCategories(): RankingCategory[]` — reads and parses `categories.json` once at server init
+  - [x] Validate each category against `RankingCategorySchema` during load; skip invalid entries with a warning log
+  - [x] Cache in module-level variable (singleton pattern)
+  - [x] Export `selectCategoriesForGame(pool: RankingCategory[], roundCount: number, usedIds: Set<string>): RankingCategory[]`
     - Select `roundCount` categories without replacement
     - Exclude categories with IDs in `usedIds` (prevents repeats within a lobby session)
     - Shuffle before selection to ensure variety
@@ -1130,17 +1130,17 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 
 ### 8.2.6 Implement Server Handler
 
-- [ ] Create `server/rmhbox/minigames/ranking-file.ts`
+- [x] Create `server/rmhbox/minigames/ranking-file.ts`
 
 #### 8.2.6.1 Type Definitions
 
-- [ ] Define `RFPhase` type:
+- [x] Define `RFPhase` type:
   ```ts
   type RFPhase = 'CATEGORY_REVEAL' | 'RANKING' | 'LOCK_IN' | 'RESULTS_REVEAL' | 'TRANSITION' | 'GAME_OVER';
   ```
   **Verification:** Type has exactly 6 values matching spec §2.4.
 
-- [ ] Define `RFPlayerResult` type:
+- [x] Define `RFPlayerResult` type:
   ```ts
   type RFPlayerResult = {
     userId: string;
@@ -1153,7 +1153,7 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
   };
   ```
 
-- [ ] Define `RFRoundResult` type:
+- [x] Define `RFRoundResult` type:
   ```ts
   type RFRoundResult = {
     roundNumber: number;
@@ -1164,7 +1164,7 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
   };
   ```
 
-- [ ] Define `RFFinalRanking` type:
+- [x] Define `RFFinalRanking` type:
   ```ts
   type RFFinalRanking = {
     userId: string;
@@ -1177,7 +1177,7 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
   };
   ```
 
-- [ ] Define `RankingFileState` type:
+- [x] Define `RankingFileState` type:
   ```ts
   type RankingFileState = {
     currentRound: number;
@@ -1198,24 +1198,24 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 
 #### 8.2.6.2 Class: `RankingFileGame extends BaseMinigame`
 
-- [ ] Constructor: call `super(context)`; load category pool via category loader
+- [x] Constructor: call `super(context)`; load category pool via category loader
   **Verification:** Instantiate class; confirm no errors and category pool loaded.
 
 #### 8.2.6.3 State Initialization (`start()`)
 
-- [ ] Retrieve `usedCategoryIds` from the lobby's session context (prevents repeats across games in same lobby)
-- [ ] Call `selectCategoriesForGame()` with pool, `RF_TOTAL_ROUNDS`, and exclusion set
-- [ ] Add used category IDs to lobby session context
-- [ ] Initialize `playerScores` map: every player starts at 0
-- [ ] Initialize empty maps: `submissions`, `hasSubmitted`
-- [ ] Initialize empty array: `roundResults`
-- [ ] Set `currentRound = 0`, `totalRounds = RF_TOTAL_ROUNDS`
-- [ ] Call `startNextRound()`
+- [x] Retrieve `usedCategoryIds` from the lobby's session context (prevents repeats across games in same lobby)
+- [x] Call `selectCategoriesForGame()` with pool, `RF_TOTAL_ROUNDS`, and exclusion set
+- [x] Add used category IDs to lobby session context
+- [x] Initialize `playerScores` map: every player starts at 0
+- [x] Initialize empty maps: `submissions`, `hasSubmitted`
+- [x] Initialize empty array: `roundResults`
+- [x] Set `currentRound = 0`, `totalRounds = RF_TOTAL_ROUNDS`
+- [x] Call `startNextRound()`
   **Verification:** Unit test with 5 players: 5 categories selected, all scores = 0, first round starts.
 
 #### 8.2.6.4 Round Lifecycle
 
-- [ ] `startNextRound()`:
+- [x] `startNextRound()`:
   - Increment `currentRound`
   - If `currentRound > totalRounds`, call `endGame()`; return
   - Set `currentCategory = categories[currentRound - 1]`
@@ -1238,7 +1238,7 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
   - Schedule `startRankingPhase()` after `RF_CATEGORY_REVEAL_SECONDS`
   **Verification:** Unit test: round 1 → category revealed with correct data. New round → previous submissions cleared.
 
-- [ ] `startRankingPhase()`:
+- [x] `startRankingPhase()`:
   - Set `phase = 'RANKING'`
   - Set `phaseStartedAt = Date.now()`
   - Set `phaseEndsAt = phaseStartedAt + RF_RANKING_SECONDS * 1000`
@@ -1246,7 +1246,7 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
   - Schedule `startLockInPhase()` after `RF_RANKING_SECONDS`
   **Verification:** Phase transitions to RANKING. Timer starts.
 
-- [ ] `startLockInPhase()`:
+- [x] `startLockInPhase()`:
   - Set `phase = 'LOCK_IN'`
   - Set `phaseStartedAt = Date.now()`
   - Set `phaseEndsAt = phaseStartedAt + RF_LOCK_IN_SECONDS * 1000`
@@ -1257,7 +1257,7 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
   - Schedule `endRankingPhase()` after `RF_LOCK_IN_SECONDS`
   **Verification:** Lock-in event emitted. Timer continues.
 
-- [ ] `endRankingPhase()`:
+- [x] `endRankingPhase()`:
   - Stop timer
   - For any player who hasn't submitted:
     - If they partially interacted (sent at least one `RF_UPDATE_RANKING`): use their last known ranking as submission
@@ -1268,7 +1268,7 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 
 #### 8.2.6.5 Consensus Calculation and Scoring
 
-- [ ] `computeAverageRanking(submissions: Map<string, number[]>): number[]`:
+- [x] `computeAverageRanking(submissions: Map<string, number[]>): number[]`:
   - For each of the 5 items (index 0–4): compute the arithmetic mean of all players' ranks for that item
   - Return array of 5 average values (floating point)
   ```ts
@@ -1288,7 +1288,7 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
   ```
   **Verification:** Unit test: 3 players rank item 0 as [1, 2, 3] → average = 2.0. 2 players rank same → average matches.
 
-- [ ] `computeDistance(playerRanking: number[], averageRanking: number[]): number`:
+- [x] `computeDistance(playerRanking: number[], averageRanking: number[]): number`:
   - Sum of `|playerRank[i] - averageRank[i]|` for all 5 items
   ```ts
   function computeDistance(playerRanking: number[], averageRanking: number[]): number {
@@ -1297,7 +1297,7 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
   ```
   **Verification:** Unit test: player [1,2,3,4,5] vs avg [1,2,3,4,5] → distance = 0. Player [5,4,3,2,1] vs avg [1,2,3,4,5] → distance = 12.
 
-- [ ] `computeRoundScore(distance: number): number`:
+- [x] `computeRoundScore(distance: number): number`:
   ```ts
   function computeRoundScore(distance: number): number {
     const normalizedScore = Math.max(0, 1 - (distance / RF_MAX_THEORETICAL_DISTANCE));
@@ -1306,7 +1306,7 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
   ```
   **Verification:** Distance 0 → 200 pts. Distance 6 → 100 pts. Distance 12 → 0 pts.
 
-- [ ] `computeConsensusOrder(averageRanking: number[]): number[]`:
+- [x] `computeConsensusOrder(averageRanking: number[]): number[]`:
   - Return array of item indices sorted by their average rank (ascending = best rank first)
   ```ts
   function computeConsensusOrder(averageRanking: number[]): number[] {
@@ -1318,7 +1318,7 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
   ```
   **Verification:** Avg [3.0, 1.5, 2.0, 4.0, 2.5] → consensus order [1, 2, 4, 0, 3] (item 1 ranked highest on average).
 
-- [ ] `isExactMatch(playerRanking: number[], consensusOrder: number[]): boolean`:
+- [x] `isExactMatch(playerRanking: number[], consensusOrder: number[]): boolean`:
   - Convert `consensusOrder` to ordinal rankings, then compare with player's ranking
   - Player's ranking for each item must match the ordinal position of that item in the consensus order
   ```ts
@@ -1332,7 +1332,7 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
   ```
   **Verification:** Unit test: player ranking matches consensus ordering exactly → true. One position differs → false.
 
-- [ ] `computeRoundResults()`:
+- [x] `computeRoundResults()`:
   - Call `computeAverageRanking()` with all submissions
   - Store `averageRanking`
   - Call `computeConsensusOrder()`
@@ -1366,7 +1366,7 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
   - Schedule `startTransition()` after `RF_RESULTS_SECONDS`
   **Verification:** Unit test: 4 players → average computed, distances correct, exact match bonus awarded, outlier bonus awarded, results emitted.
 
-- [ ] `startTransition()`:
+- [x] `startTransition()`:
   - Set `phase = 'TRANSITION'`
   - Check for pending join-in-progress players; add them to `playerScores` with 0 and `hasSubmitted = false`
   - Schedule `startNextRound()` after `RF_TRANSITION_SECONDS`
@@ -1374,12 +1374,12 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 
 #### 8.2.6.6 Input Handling — `RF_SUBMIT_RANKING`
 
-- [ ] Validate phase is `'RANKING'` or `'LOCK_IN'`; reject if other phase
-- [ ] Parse input through `RFSubmitSchema`; reject on validation failure (must be [1-5] with each value exactly once)
-- [ ] Check player hasn't already submitted; reject if duplicate (can use `RF_UPDATE_RANKING` to update before submission)
-- [ ] Store ranking in `submissions` map; set `hasSubmitted` to true
-- [ ] Compute submitted count
-- [ ] Emit `rmhbox:game:action` with type `RF_SUBMISSION_COUNT` to ALL lobby:
+- [x] Validate phase is `'RANKING'` or `'LOCK_IN'`; reject if other phase
+- [x] Parse input through `RFSubmitSchema`; reject on validation failure (must be [1-5] with each value exactly once)
+- [x] Check player hasn't already submitted; reject if duplicate (can use `RF_UPDATE_RANKING` to update before submission)
+- [x] Store ranking in `submissions` map; set `hasSubmitted` to true
+- [x] Compute submitted count
+- [x] Emit `rmhbox:game:action` with type `RF_SUBMISSION_COUNT` to ALL lobby:
   ```ts
   {
     submitted: number;
@@ -1387,22 +1387,22 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
   }
   ```
   - Do NOT include who submitted — only the count
-- [ ] If all players have submitted and phase is `'RANKING'`, transition to `LOCK_IN` immediately (skip remaining ranking timer)
+- [x] If all players have submitted and phase is `'RANKING'`, transition to `LOCK_IN` immediately (skip remaining ranking timer)
   **Verification:** Unit test: valid ranking → stored, count emitted. Invalid ranking [1,1,3,4,5] → rejected. Already submitted → rejected. All submitted → early lock-in.
 
 #### 8.2.6.7 Input Handling — `RF_UPDATE_RANKING`
 
-- [ ] Validate phase is `'RANKING'` or `'LOCK_IN'`; reject if other
-- [ ] Validate player has NOT already submitted via `RF_SUBMIT_RANKING`; reject if already locked in
-- [ ] Parse input through `RFUpdateSchema`; reject on validation failure
-- [ ] Store ranking in `submissions` map (overwrite previous update); do NOT set `hasSubmitted` to true
-- [ ] This serves as a live preview / partial interaction tracker (used for auto-submit on timeout)
-- [ ] No broadcast — updates are silent (no one else sees your ranking during ranking phase)
+- [x] Validate phase is `'RANKING'` or `'LOCK_IN'`; reject if other
+- [x] Validate player has NOT already submitted via `RF_SUBMIT_RANKING`; reject if already locked in
+- [x] Parse input through `RFUpdateSchema`; reject on validation failure
+- [x] Store ranking in `submissions` map (overwrite previous update); do NOT set `hasSubmitted` to true
+- [x] This serves as a live preview / partial interaction tracker (used for auto-submit on timeout)
+- [x] No broadcast — updates are silent (no one else sees your ranking during ranking phase)
   **Verification:** Unit test: update before submit → stored silently. Update after submit → rejected.
 
 #### 8.2.6.8 `getStateForPlayer(userId)`
 
-- [ ] During `CATEGORY_REVEAL`:
+- [x] During `CATEGORY_REVEAL`:
   ```ts
   {
     phase: 'CATEGORY_REVEAL';
@@ -1414,7 +1414,7 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
   }
   ```
 
-- [ ] During `RANKING`:
+- [x] During `RANKING`:
   ```ts
   {
     phase: 'RANKING';
@@ -1431,9 +1431,9 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
   ```
   - **CRITICAL:** Other players' rankings are NOT included — rankings are independent
 
-- [ ] During `LOCK_IN`: same as RANKING with `phase: 'LOCK_IN'`
+- [x] During `LOCK_IN`: same as RANKING with `phase: 'LOCK_IN'`
 
-- [ ] During `RESULTS_REVEAL`:
+- [x] During `RESULTS_REVEAL`:
   ```ts
   {
     phase: 'RESULTS_REVEAL';
@@ -1449,69 +1449,69 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
   ```
   - All rankings are now visible to everyone
 
-- [ ] During `GAME_OVER`: full final rankings
+- [x] During `GAME_OVER`: full final rankings
   **Verification:** During RANKING: no other player's ranking visible. During RESULTS: all rankings visible. Submission count anonymous.
 
 #### 8.2.6.9 `getStateForSpectator()`
 
-- [ ] Same as player view except during RANKING/LOCK_IN phases:
+- [x] Same as player view except during RANKING/LOCK_IN phases:
   - Spectators CAN see all players' live rankings (god view) — per spec §2.6
   - Include `allRankings: Map<string, number[]>` converted to `Array<{ userId, userName, ranking }>` in spectator state
-- [ ] Submission status: spectators see WHO has submitted (not just count)
+- [x] Submission status: spectators see WHO has submitted (not just count)
   **Verification:** Spectator sees all live rankings during RANKING. Players do not.
 
 #### 8.2.6.10 Join-in-Progress Handling
 
-- [ ] Policy: `join_next_subround`
-- [ ] Each round is independent — new category, no dependence on previous
-- [ ] Check for pending players during `startTransition()` between rounds
-- [ ] Initialize new player in `playerScores` with 0
-- [ ] New player participates starting from the next round's ranking phase
-- [ ] Send current state via `getStateForPlayer()` on join (if results visible, they see them)
+- [x] Policy: `join_next_subround`
+- [x] Each round is independent — new category, no dependence on previous
+- [x] Check for pending players during `startTransition()` between rounds
+- [x] Initialize new player in `playerScores` with 0
+- [x] New player participates starting from the next round's ranking phase
+- [x] Send current state via `getStateForPlayer()` on join (if results visible, they see them)
   **Verification:** Unit test: player joins during round 3 results → participates in round 4 with score 0.
 
 #### 8.2.6.11 Reconnection Handling (`handlePlayerReconnect(userId)`)
 
-- [ ] If in RANKING/LOCK_IN and player had submitted: their ranking is preserved; they see "locked in" state
-- [ ] If in RANKING/LOCK_IN and player hadn't submitted: they can still submit/update
-- [ ] Cumulative scores maintained
-- [ ] Send full state via `getStateForPlayer(userId)`
+- [x] If in RANKING/LOCK_IN and player had submitted: their ranking is preserved; they see "locked in" state
+- [x] If in RANKING/LOCK_IN and player hadn't submitted: they can still submit/update
+- [x] Cumulative scores maintained
+- [x] Send full state via `getStateForPlayer(userId)`
   **Verification:** Reconnect during RANKING with prior update → can still submit. Reconnect after submit → locked state shown.
 
 #### 8.2.6.12 Disconnect Handling (`handlePlayerDisconnect(userId)`)
 
-- [ ] If RANKING/LOCK_IN and player hasn't submitted: timeout will auto-assign ranking (random or last update)
-- [ ] Existing submission preserved
-- [ ] No special cleanup
+- [x] If RANKING/LOCK_IN and player hasn't submitted: timeout will auto-assign ranking (random or last update)
+- [x] Existing submission preserved
+- [x] No special cleanup
   **Verification:** Disconnect before submit → timeout handles it.
 
 #### 8.2.6.13 `computeResults()` and Awards
 
-- [ ] Compute final rankings by cumulative `playerScores` (descending)
-- [ ] Compute per-player stats: averageDistance, exactMatches count, outlierRounds count
+- [x] Compute final rankings by cumulative `playerScores` (descending)
+- [x] Compute per-player stats: averageDistance, exactMatches count, outlierRounds count
 
-- [ ] Compute awards:
-  - [ ] **Basic** — closest total ranking to lobby average (winner); icon: `users`
-  - [ ] **Trendsetter** — most outlier rounds (most unique taste); icon: `snowflake`
-  - [ ] **Mind Meld** — most exact matches with the average across rounds; icon: `brain`
-  - [ ] **Consistent** — lowest variance in distance across rounds (most consistent performance); icon: `ruler`
-  - [ ] **Hot Take** — single round with the highest distance from average (most extreme single-round opinion); icon: `flame`
+- [x] Compute awards:
+  - [x] **Basic** — closest total ranking to lobby average (winner); icon: `users`
+  - [x] **Trendsetter** — most outlier rounds (most unique taste); icon: `snowflake`
+  - [x] **Mind Meld** — most exact matches with the average across rounds; icon: `brain`
+  - [x] **Consistent** — lowest variance in distance across rounds (most consistent performance); icon: `ruler`
+  - [x] **Hot Take** — single round with the highest distance from average (most extreme single-round opinion); icon: `flame`
 
-- [ ] Build `RFFinalRanking[]` array
-- [ ] Emit `rmhbox:game:action` with type `RF_GAME_OVER`:
+- [x] Build `RFFinalRanking[]` array
+- [x] Emit `rmhbox:game:action` with type `RF_GAME_OVER`:
   ```ts
   {
     finalRankings: RFFinalRanking[];
     categoryResults: RFRoundResult[];
   }
   ```
-- [ ] Return `MinigameResults` with rankings, awards, and `gameSpecificData` containing `roundResults`
+- [x] Return `MinigameResults` with rankings, awards, and `gameSpecificData` containing `roundResults`
   **Verification:** Unit test: player with lowest average distance wins. Awards assigned correctly: trendsetter = most outlier rounds, consistent = lowest distance variance.
 
 #### 8.2.6.14 `buildGameLog()`
 
-- [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
-- [ ] Build `GameLog` conforming to core.md §13.3, including `gameSettings` per §12A.11
+- [x] Maintain an `actionLog: GameLogAction[]` array on the game instance
+- [x] Build `GameLog` conforming to core.md §13.3, including `gameSettings` per §12A.11
 
 **`initialState` (from minigames-4.md §2.14):**
 
@@ -1535,8 +1535,8 @@ interface RFGameHistoryInit {
 | `outlier_awarded` | `{ userId: string; category: string; outlierItem: string; deviation: number }` | Player earns outlier bonus |
 | `game_complete` | `{ finalStandings: Array<{ userId: string; totalPoints: number; roundBreakdown: number[] }> }` | All rounds finished |
 
-- [ ] In `computeResults()`, build `GameLog` with `initialState`, full action log, and `finalResults`
-- [ ] Return `GameLog` from `buildGameLog()`
+- [x] In `computeResults()`, build `GameLog` with `initialState`, full action log, and `finalResults`
+- [x] Return `GameLog` from `buildGameLog()`
 
 **Verification:** Unit test: 5-round game, verify 5 `round_start`, all `ranking_submitted`, 5 `round_result` actions with consensus data and distance scores, `initialState` has category pack and round config.
 
@@ -1544,7 +1544,7 @@ interface RFGameHistoryInit {
 
 ### 8.2.7 Register Game in Minigame Registry
 
-- [ ] Add entry to `lib/rmhbox/minigame-registry.ts`:
+- [x] Add entry to `lib/rmhbox/minigame-registry.ts`:
   ```ts
   {
     id: "ranking-file",
@@ -1569,14 +1569,14 @@ interface RFGameHistoryInit {
   ```
   **Verification:** Call registry lookup for `"ranking-file"`; confirm all metadata fields correct and handler instantiates with valid context.
 
-- [ ] Add server handler to `MINIGAME_SERVER_REGISTRY` in `server/rmhbox/minigame-server-registry.ts`:
+- [x] Add server handler to `MINIGAME_SERVER_REGISTRY` in `server/rmhbox/minigame-server-registry.ts`:
   ```ts
   import { RankingFileGame } from './minigames/ranking-file';
   MINIGAME_SERVER_REGISTRY.set('ranking-file', RankingFileGame);
   ```
   **Verification:** `MINIGAME_SERVER_REGISTRY.get('ranking-file')` returns `RankingFileGame` class.
 
-- [ ] Add lazy-loaded component to `MinigameRenderer` map in `components/rmhbox/MinigameRenderer.tsx`:
+- [x] Add lazy-loaded component to `MinigameRenderer` map in `components/rmhbox/MinigameRenderer.tsx`:
   ```ts
   'ranking-file': lazy(() => import('./minigames/ranking-file/RankingFileGame'))
   ```
@@ -1588,22 +1588,22 @@ interface RFGameHistoryInit {
 
 #### 8.2.8.1 `components/rmhbox/minigames/ranking-file/RankingFileGame.tsx`
 
-- [ ] Phase router component — renders appropriate sub-component based on `phase`
-- [ ] Subscribe to all `RF_*` and `TIMER_TICK` WebSocket events via `useRMHboxStore`
-- [ ] Maintain local state:
+- [x] Phase router component — renders appropriate sub-component based on `phase`
+- [x] Subscribe to all `RF_*` and `TIMER_TICK` WebSocket events via `useRMHboxStore`
+- [x] Maintain local state:
   - `phase`, `round`, `totalRounds`, `category`, `items`
   - `myRanking`, `hasSubmitted`, `submittedCount`, `totalPlayers`
   - `timeRemaining`, `scores[]`
   - `averageRanking`, `playerResults[]`, `mostConsensus`, `mostUnique`
   - `roundResults[]`
-- [ ] Handle `RF_CATEGORY_REVEAL` → set category data, show reveal animation
-- [ ] Handle `RF_SUBMISSION_COUNT` → update submitted count
-- [ ] Handle `RF_LOCK_IN_PHASE` → transition to lock-in UI (last chance to adjust)
-- [ ] Handle `RF_ROUND_RESULTS` → display comparison view with average
-- [ ] Handle `RF_SCORE_UPDATE` → animate score changes
-- [ ] Handle `RF_GAME_OVER` → show final rankings and all category results
-- [ ] Handle `TIMER_TICK` → update timer display
-- [ ] Conditional rendering:
+- [x] Handle `RF_CATEGORY_REVEAL` → set category data, show reveal animation
+- [x] Handle `RF_SUBMISSION_COUNT` → update submitted count
+- [x] Handle `RF_LOCK_IN_PHASE` → transition to lock-in UI (last chance to adjust)
+- [x] Handle `RF_ROUND_RESULTS` → display comparison view with average
+- [x] Handle `RF_SCORE_UPDATE` → animate score changes
+- [x] Handle `RF_GAME_OVER` → show final rankings and all category results
+- [x] Handle `TIMER_TICK` → update timer display
+- [x] Conditional rendering:
   - `CATEGORY_REVEAL` → `<CategoryReveal />` (animated category + items)
   - `RANKING` → `<RankingList />` (drag-and-drop) + submit button
   - `LOCK_IN` → `<RankingList />` (still adjustable) + "Lock In" emphasis
@@ -1614,83 +1614,83 @@ interface RFGameHistoryInit {
 
 #### 8.2.8.2 `components/rmhbox/minigames/ranking-file/CategoryReveal.tsx`
 
-- [ ] Animated display of category name and 5 items
-- [ ] Props: `{ category: { name: string; items: string[]; emoji: string }; round: number; totalRounds: number }`
-- [ ] Entrance animation: emoji + category name scale in; items stagger-fade in
-- [ ] Round counter: "Round 2/5"
-- [ ] Items shown in a clean list with numbered positions (but unranked — items in randomized order)
-- [ ] Responsive sizing for mobile
+- [x] Animated display of category name and 5 items
+- [x] Props: `{ category: { name: string; items: string[]; emoji: string }; round: number; totalRounds: number }`
+- [x] Entrance animation: emoji + category name scale in; items stagger-fade in
+- [x] Round counter: "Round 2/5"
+- [x] Items shown in a clean list with numbered positions (but unranked — items in randomized order)
+- [x] Responsive sizing for mobile
   **Verification:** Renders with mock data. Animation plays. Round counter correct.
 
 #### 8.2.8.3 `components/rmhbox/minigames/ranking-file/RankingList.tsx`
 
-- [ ] Drag-and-drop sortable list of 5 items using `@dnd-kit/sortable`
-- [ ] Props: `{ items: string[]; ranking: number[]; onRankingChange: (ranking: number[]) => void; hasSubmitted: boolean; isLockIn: boolean }`
-- [ ] Desktop: drag-and-drop reordering via mouse
-- [ ] Mobile: touch-drag with drag handles (grip icon on right side); fallback: tap two items to swap
-- [ ] Visual: numbered 1-5 on the left, item text in center, drag handle on right
-- [ ] Medal icons for top 3: 🏆 (1st), 🥈 (2nd), 🥉 (3rd)
-- [ ] Items start in a randomized order (shuffled per player to avoid positional bias)
-- [ ] On reorder: call `onRankingChange()` which emits `RF_UPDATE_RANKING`; on submit: emit `RF_SUBMIT_RANKING`
-- [ ] After submission: items become non-draggable, green "Locked In" indicator
-- [ ] During lock-in phase: pulsing border, "Last chance!" text
-- [ ] Smooth Framer Motion animations on item reposition
+- [x] Drag-and-drop sortable list of 5 items using `@dnd-kit/sortable`
+- [x] Props: `{ items: string[]; ranking: number[]; onRankingChange: (ranking: number[]) => void; hasSubmitted: boolean; isLockIn: boolean }`
+- [x] Desktop: drag-and-drop reordering via mouse
+- [x] Mobile: touch-drag with drag handles (grip icon on right side); fallback: tap two items to swap
+- [x] Visual: numbered 1-5 on the left, item text in center, drag handle on right
+- [x] Medal icons for top 3: 🏆 (1st), 🥈 (2nd), 🥉 (3rd)
+- [x] Items start in a randomized order (shuffled per player to avoid positional bias)
+- [x] On reorder: call `onRankingChange()` which emits `RF_UPDATE_RANKING`; on submit: emit `RF_SUBMIT_RANKING`
+- [x] After submission: items become non-draggable, green "Locked In" indicator
+- [x] During lock-in phase: pulsing border, "Last chance!" text
+- [x] Smooth Framer Motion animations on item reposition
   **Verification:** Drag-and-drop works on desktop and mobile. Reorder emits update event. Submit emits submit event. Locked state disables interaction.
 
 #### 8.2.8.4 `components/rmhbox/minigames/ranking-file/RankingItem.tsx`
 
-- [ ] Individual item in the ranking list (used inside `RankingList`)
-- [ ] Props: `{ item: string; rank: number; isDragging: boolean; isLocked: boolean }`
-- [ ] Visual states: default (white bg), dragging (elevated shadow, slight scale), locked (green border, lock icon)
-- [ ] Drag handle icon (≡ grip lines) on the right
-- [ ] Rank number with medal for top 3
-- [ ] Touch target ≥48px height
+- [x] Individual item in the ranking list (used inside `RankingList`)
+- [x] Props: `{ item: string; rank: number; isDragging: boolean; isLocked: boolean }`
+- [x] Visual states: default (white bg), dragging (elevated shadow, slight scale), locked (green border, lock icon)
+- [x] Drag handle icon (≡ grip lines) on the right
+- [x] Rank number with medal for top 3
+- [x] Touch target ≥48px height
   **Verification:** All states render correctly. Accessible drag handle.
 
 #### 8.2.8.5 `components/rmhbox/minigames/ranking-file/ResultsComparison.tsx`
 
-- [ ] Side-by-side view: player's ranking vs global average
-- [ ] Props: `{ myRanking: number[]; averageRanking: number[]; items: string[]; playerResults: RFPlayerResult[]; mostConsensus: {...}; mostUnique: {...} }`
-- [ ] Two columns: "Your Ranking" and "Group Average" with items ordered by rank
-- [ ] Items that deviate significantly (≥2 positions from average) highlighted in red/orange
-- [ ] Items matching average highlighted in green
-- [ ] "Most Consensus" player badge (closest to average)
-- [ ] "Most Unique" player badge (furthest from average)
-- [ ] Animated entrance: items slide to their positions
+- [x] Side-by-side view: player's ranking vs global average
+- [x] Props: `{ myRanking: number[]; averageRanking: number[]; items: string[]; playerResults: RFPlayerResult[]; mostConsensus: {...}; mostUnique: {...} }`
+- [x] Two columns: "Your Ranking" and "Group Average" with items ordered by rank
+- [x] Items that deviate significantly (≥2 positions from average) highlighted in red/orange
+- [x] Items matching average highlighted in green
+- [x] "Most Consensus" player badge (closest to average)
+- [x] "Most Unique" player badge (furthest from average)
+- [x] Animated entrance: items slide to their positions
   **Verification:** Comparison renders correctly. Deviation highlighting works. Badges assigned.
 
 #### 8.2.8.6 `components/rmhbox/minigames/ranking-file/AverageRankingChart.tsx`
 
-- [ ] Horizontal bar chart showing each item's average rank
-- [ ] Props: `{ items: string[]; averageRanking: number[]; consensusOrder: Array<{ item: string; avgRank: number }> }`
-- [ ] Items ordered by consensus (best to worst)
-- [ ] Bar length proportional to average rank (shorter bar = better average rank)
-- [ ] Animated bar growth from left
-- [ ] Item labels on left, average rank value on right of each bar
+- [x] Horizontal bar chart showing each item's average rank
+- [x] Props: `{ items: string[]; averageRanking: number[]; consensusOrder: Array<{ item: string; avgRank: number }> }`
+- [x] Items ordered by consensus (best to worst)
+- [x] Bar length proportional to average rank (shorter bar = better average rank)
+- [x] Animated bar growth from left
+- [x] Item labels on left, average rank value on right of each bar
   **Verification:** Chart renders with correct proportions. Animation plays. Ordering matches consensus.
 
 #### 8.2.8.7 `components/rmhbox/minigames/ranking-file/DistanceIndicator.tsx`
 
-- [ ] Visual indicator showing how close a player is to the average
-- [ ] Props: `{ distance: number; maxDistance: number; isExactMatch: boolean; isOutlier: boolean }`
-- [ ] Circular or linear gauge: green (low distance) → yellow (mid) → red (high distance)
-- [ ] Exact match: green checkmark with "Perfect Match!" label
-- [ ] Outlier: snowflake icon with "Most Unique!" label
+- [x] Visual indicator showing how close a player is to the average
+- [x] Props: `{ distance: number; maxDistance: number; isExactMatch: boolean; isOutlier: boolean }`
+- [x] Circular or linear gauge: green (low distance) → yellow (mid) → red (high distance)
+- [x] Exact match: green checkmark with "Perfect Match!" label
+- [x] Outlier: snowflake icon with "Most Unique!" label
   **Verification:** Distance 0 → green "Perfect Match!". Distance 12 → red. Outlier badge shown.
 
 #### 8.2.8.8 `components/rmhbox/minigames/ranking-file/RankingFileResults.tsx`
 
-- [ ] Final results: overall rankings, all category results summary
-- [ ] Props: `{ finalRankings: RFFinalRanking[]; categoryResults: RFRoundResult[] }`
-- [ ] Rankings table: rank, player name, total score, average distance, exact matches, outlier rounds
-- [ ] Category summary: collapsible per-round results
-- [ ] Winner highlighted with crown
-- [ ] Awards display
+- [x] Final results: overall rankings, all category results summary
+- [x] Props: `{ finalRankings: RFFinalRanking[]; categoryResults: RFRoundResult[] }`
+- [x] Rankings table: rank, player name, total score, average distance, exact matches, outlier rounds
+- [x] Category summary: collapsible per-round results
+- [x] Winner highlighted with crown
+- [x] Awards display
   **Verification:** Rankings correct. Category results expandable. Awards shown.
 
 #### 8.2.8.9 Sound Effects
 
-- [ ] Wire up sound effects for Ranking File events:
+- [x] Wire up sound effects for Ranking File events:
   - `RF_CATEGORY_REVEAL` → `playSound('goFanfare')`
   - `RF_LOCK_IN_PHASE` → `playSound('swoosh')`
   - `RF_ROUND_RESULTS` → `playSound('victoryFanfare')`
@@ -1700,50 +1700,50 @@ interface RFGameHistoryInit {
 
 #### 8.2.8.10 Zustand Store Integration
 
-- [ ] Read category and items from `publicState`; read own ranking from `privateState`
-- [ ] Detect spectator to show submission progress without drag-and-drop
-- [ ] Uses `@dnd-kit/core` and `@dnd-kit/sortable` for ranking interaction
+- [x] Read category and items from `publicState`; read own ranking from `privateState`
+- [x] Detect spectator to show submission progress without drag-and-drop
+- [x] Uses `@dnd-kit/core` and `@dnd-kit/sortable` for ranking interaction
   **Verification:** Public/private state separation correct. Spectator view shows progress count only. Drag-and-drop libraries load correctly.
 
 ---
 
 ### 8.2.9 Integration Testing
 
-- [ ] End-to-end test: 4 players join lobby → start Ranking File → play through 5 rounds
-  - [ ] Verify 5 unique categories selected (no repeats)
-  - [ ] Verify each category has exactly 5 items
-  - [ ] Verify average ranking computation: manual calculation matches server output
-  - [ ] Verify distance computation: sum of absolute deviations correct
-  - [ ] Verify scoring: distance → normalized score → round points
-  - [ ] Verify exact match bonus: player ranking matches consensus → +100
-  - [ ] Verify outlier bonus: highest distance player → +25
-  - [ ] Verify cumulative scores correct across 5 rounds
-  - [ ] Verify all 5 awards assigned correctly
+- [x] End-to-end test: 4 players join lobby → start Ranking File → play through 5 rounds
+  - [x] Verify 5 unique categories selected (no repeats)
+  - [x] Verify each category has exactly 5 items
+  - [x] Verify average ranking computation: manual calculation matches server output
+  - [x] Verify distance computation: sum of absolute deviations correct
+  - [x] Verify scoring: distance → normalized score → round points
+  - [x] Verify exact match bonus: player ranking matches consensus → +100
+  - [x] Verify outlier bonus: highest distance player → +25
+  - [x] Verify cumulative scores correct across 5 rounds
+  - [x] Verify all 5 awards assigned correctly
   **Verification:** All assertions pass. Scores match manual calculation.
 
-- [ ] Information masking test:
-  - [ ] During RANKING: other players' rankings NOT in any player's WebSocket state
-  - [ ] Submission count is anonymous (number only, not who)
-  - [ ] During RESULTS: all rankings visible
-  - [ ] Spectator during RANKING: CAN see all live rankings
+- [x] Information masking test:
+  - [x] During RANKING: other players' rankings NOT in any player's WebSocket state
+  - [x] Submission count is anonymous (number only, not who)
+  - [x] During RESULTS: all rankings visible
+  - [x] Spectator during RANKING: CAN see all live rankings
   **Verification:** Zero ranking leakage during ranking phase. Spectator has full view.
 
-- [ ] Auto-submit test:
-  - [ ] Player doesn't interact → timeout assigns random ranking [1-5 shuffled]
-  - [ ] Player partially interacts (sends updates but no submit) → timeout uses last update
-  - [ ] Player submits early → ranking locked, no change on timeout
+- [x] Auto-submit test:
+  - [x] Player doesn't interact → timeout assigns random ranking [1-5 shuffled]
+  - [x] Player partially interacts (sends updates but no submit) → timeout uses last update
+  - [x] Player submits early → ranking locked, no change on timeout
   **Verification:** Auto-submit behavior correct for all scenarios.
 
-- [ ] Drag-and-drop test:
-  - [ ] Desktop: drag item 5 to position 1 → ranking updates correctly
-  - [ ] Mobile: touch-drag with handle → ranking updates
-  - [ ] Tap-swap fallback: tap item 2, tap item 4 → positions swap
+- [x] Drag-and-drop test:
+  - [x] Desktop: drag item 5 to position 1 → ranking updates correctly
+  - [x] Mobile: touch-drag with handle → ranking updates
+  - [x] Tap-swap fallback: tap item 2, tap item 4 → positions swap
   **Verification:** DnD works on both platforms.
 
-- [ ] JIP test: Player joins during round 2 results → participates in round 3 with score 0
+- [x] JIP test: Player joins during round 2 results → participates in round 3 with score 0
   **Verification:** JIP player's ranking included in round 3 average.
 
-- [ ] Reconnection test: Disconnect during RANKING → reconnect → can still submit/update
+- [x] Reconnection test: Disconnect during RANKING → reconnect → can still submit/update
   **Verification:** State restored. Prior updates preserved.
 
 ### 8.2.10 Game Settings Integration (§12A)
@@ -1752,12 +1752,12 @@ Integrate host-configurable settings using the §12A system.
 
 #### Registry Entry
 
-- [ ] Export `RANKING_FILE_SETTINGS: GameSettingsSchema` in `lib/rmhbox/minigame-registry.ts` with 4 entries:
+- [x] Export `RANKING_FILE_SETTINGS: GameSettingsSchema` in `lib/rmhbox/minigame-registry.ts` with 4 entries:
   - `totalRounds` (integer, default `4`, min 2, max 6, step 1)
   - `rankingDuration` (integer, default `45`, min 20, max 90, step 5)
   - `itemsPerCategory` (integer, default `5`, min 3, max 7, step 1)
   - `enableOutlierBonus` (boolean, default `true`)
-- [ ] Attach `settingsSchema: RANKING_FILE_SETTINGS` to the `ranking-file` `MinigameDefinition`.
+- [x] Attach `settingsSchema: RANKING_FILE_SETTINGS` to the `ranking-file` `MinigameDefinition`.
   **Verification:** Registry lookup returns definition with `settingsSchema` containing 4 entries.
 
 #### Handler `getSetting()` Integration
@@ -1771,7 +1771,7 @@ Replace hardcoded constants with `this.getSetting()` calls in the Ranking File h
 | `RF_ITEMS_PER_CATEGORY` | `itemsPerCategory` | `this.getSetting('itemsPerCategory', RF_ITEMS_PER_CATEGORY)` |
 | `RF_OUTLIER_BONUS` | `enableOutlierBonus` | `this.getSetting('enableOutlierBonus', RF_OUTLIER_BONUS)` |
 
-- [ ] **Boolean setting logic:** When `enableOutlierBonus` is `false`, no bonus points are awarded for correctly placing the hardest-to-rank item. The outlier detection still runs (for analytics), but the bonus is suppressed.
+- [x] **Boolean setting logic:** When `enableOutlierBonus` is `false`, no bonus points are awarded for correctly placing the hardest-to-rank item. The outlier detection still runs (for analytics), but the bonus is suppressed.
   **Verification:** Each constant usage replaced. Handler respects custom settings passed via `MinigameContext.gameSettings`.
 
 ---
@@ -1796,11 +1796,11 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 
 #### 8.2.15.3 Tests
 
-- [ ] Verify `getHistoryDisplay('ranking-file')` returns a valid config
-- [ ] Verify searchable fields extract categories and items from a mock game log
-- [ ] Verify filterable fields include exactMatches (range), wasOutlier (boolean), roundCount (range)
-- [ ] Verify `getSummary()` returns a meaningful string for a mock game log
-- [ ] Verify `DetailComponent` renders without errors when given a valid game log
+- [x] Verify `getHistoryDisplay('ranking-file')` returns a valid config
+- [x] Verify searchable fields extract categories and items from a mock game log
+- [x] Verify filterable fields include exactMatches (range), wasOutlier (boolean), roundCount (range)
+- [x] Verify `getSummary()` returns a meaningful string for a mock game log
+- [x] Verify `DetailComponent` renders without errors when given a valid game log
 
 ---
 
@@ -3904,13 +3904,13 @@ All tests go in `testing/rmhbox/phase-8/game-settings.test.ts` (or integrated in
 
 ### 8.6.1 Schema Completeness Tests
 
-- [ ] Each of the 4 exported settings arrays has the expected number of entries (IC: 5, RF: 4, PP: 4, SC: 6).
-- [ ] Every setting has `key`, `type`, `label`, `default` defined.
-- [ ] Integer/float settings have `min`, `max`, `step` defined.
-- [ ] Select settings (if any) have a non-empty `options` array.
-- [ ] Boolean settings have no `min`/`max`/`step`.
-- [ ] Default values fall within declared constraints.
-- [ ] Float settings (`baseScrollSpeed`, `maxScrollSpeed`, `fakeXChance`) have type `'float'`.
+- [x] Each of the 4 exported settings arrays has the expected number of entries (IC: 5, RF: 4, PP: 4, SC: 6).
+- [x] Every setting has `key`, `type`, `label`, `default` defined.
+- [x] Integer/float settings have `min`, `max`, `step` defined.
+- [x] Select settings (if any) have a non-empty `options` array.
+- [x] Boolean settings have no `min`/`max`/`step`.
+- [x] Default values fall within declared constraints.
+- [x] Float settings (`baseScrollSpeed`, `maxScrollSpeed`, `fakeXChance`) have type `'float'`.
 
 ### 8.6.2 Identity Crisis Settings Tests
 
@@ -3966,7 +3966,7 @@ All tests go in `testing/rmhbox/phase-8/game-settings.test.ts` (or integrated in
 
 ### 8.6.6 getSetting() Fallback Tests
 
-- [ ] Calling `getSetting('maxSurvival', SC_MAX_SURVIVAL)` with empty `gameSettings` returns the fallback.
-- [ ] Calling `getSetting('baseScrollSpeed', SC_BASE_SCROLL_SPEED)` with `gameSettings: { baseScrollSpeed: 1.5 }` returns `1.5`.
-- [ ] Calling `getSetting('unknownKey', 42)` returns `42`.
+- [x] Calling `getSetting('maxSurvival', SC_MAX_SURVIVAL)` with empty `gameSettings` returns the fallback.
+- [x] Calling `getSetting('baseScrollSpeed', SC_BASE_SCROLL_SPEED)` with `gameSettings: { baseScrollSpeed: 1.5 }` returns `1.5`.
+- [x] Calling `getSetting('unknownKey', 42)` returns `42`.
 
