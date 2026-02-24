@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import * as Y from 'yjs';
 import DocumentHeader from '@/components/rmh-utils/DocumentHeader';
 import ShareDialog from '@/components/rmh-utils/ShareDialog';
@@ -19,17 +19,13 @@ const ACCENT = '#10b981';
 interface Props {
   document: DocumentInfo;
   user: { id: string; name: string | null; image: string | null };
+  sessionToken: string;
   onBack: () => void;
   onRename: (title: string) => void;
   onToggleFavorite: () => void;
 }
 
-function getSessionToken(): string {
-  const match = document.cookie.match(/better-auth\.session_token=([^;]+)/);
-  return match ? decodeURIComponent(match[1]) : '';
-}
-
-export default function SheetsEditor({ document: doc, user, onBack, onRename, onToggleFavorite }: Props) {
+export default function SheetsEditor({ document: doc, user, sessionToken, onBack, onRename, onToggleFavorite }: Props) {
   const [shareOpen, setShareOpen] = useState(false);
   const [collaboratorsList, setCollaboratorsList] = useState<CollaboratorInfo[]>(doc.collaborators || []);
   const [sheets, setSheets] = useState<SheetData[]>([]);
@@ -37,11 +33,6 @@ export default function SheetsEditor({ document: doc, user, onBack, onRename, on
   const initializedRef = useRef(false);
 
   const { activeSheetId, setActiveSheetId } = useSheetsStore();
-
-  const sessionToken = useMemo(() => {
-    if (typeof window === 'undefined') return '';
-    return getSessionToken();
-  }, []);
 
   const { yDoc, connected, collaborators } = useCollaboration({
     documentId: doc.id,

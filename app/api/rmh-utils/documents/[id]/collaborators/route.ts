@@ -38,7 +38,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const body = await req.json();
   const { username, role = 'EDITOR' } = body;
 
-  if (!username) return NextResponse.json({ error: 'Username required' }, { status: 400 });
+  if (!username) return NextResponse.json({ error: 'Username or email required' }, { status: 400 });
   if (!['VIEWER', 'EDITOR'].includes(role)) {
     return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
   }
@@ -50,8 +50,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ error: 'Only the owner can manage collaborators' }, { status: 403 });
   }
 
-  // Find user by username
-  const targetUser = await prisma.user.findUnique({ where: { username }, select: { id: true } });
+  // Find user by email or username
+  const isEmail = username.includes('@');
+  const targetUser = isEmail
+    ? await prisma.user.findUnique({ where: { email: username }, select: { id: true } })
+    : await prisma.user.findUnique({ where: { username }, select: { id: true } });
   if (!targetUser) return NextResponse.json({ error: 'User not found' }, { status: 404 });
   if (targetUser.id === session.user.id) {
     return NextResponse.json({ error: 'Cannot add yourself' }, { status: 400 });

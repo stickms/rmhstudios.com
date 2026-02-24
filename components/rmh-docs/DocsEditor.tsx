@@ -40,15 +40,8 @@ export default function DocsEditor({ document, onBack, onRename, onToggleFavorit
     authClient.getSession().then((res) => {
       if (res.data?.session) {
         setUser(res.data.user as { id: string; name: string | null; image: string | null });
-        // Extract session token from cookie
-        const cookies = globalThis.document?.cookie?.split(';') ?? [];
-        for (const cookie of cookies) {
-          const [key, val] = cookie.trim().split('=');
-          if (key === 'better-auth.session_token') {
-            setSessionToken(decodeURIComponent(val));
-            break;
-          }
-        }
+        // Get session token directly from Better Auth response
+        if (res.data.session.token) setSessionToken(res.data.session.token);
       }
     });
   }, []);

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import dynamic from 'next/dynamic';
+import { authClient } from '@/lib/auth-client';
 import type { DocumentInfo } from '@/lib/rmh-utils/types';
 import SheetsHome from './SheetsHome';
 
@@ -13,41 +14,34 @@ const ACCENT_HOVER = '#0ea572';
 export default function SheetsApp() {
   const [authed, setAuthed] = useState<boolean | null>(null);
   const [user, setUser] = useState<{ id: string; name: string | null; image: string | null } | null>(null);
+  const [sessionToken, setSessionToken] = useState('');
   const [documents, setDocuments] = useState<DocumentInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentDoc, setCurrentDoc] = useState<DocumentInfo | null>(null);
 
-  // Check auth
+  // Check auth and get session token
   useEffect(() => {
-    fetch('/api/rmh-utils/documents?type=SHEET')
-      .then(async (r) => {
-        if (r.status === 401) {
-          setAuthed(false);
-        } else {
-          setAuthed(true);
-          const data = await r.json();
-          setDocuments(data.documents || []);
-        }
-        setLoading(false);
-      })
-      .catch(() => {
+    authClient.getSession().then((res) => {
+      if (res.data?.session) {
+        setUser({ id: res.data.user.id, name: res.data.user.name ?? null, image: res.data.user.image ?? null });
+        if (res.data.session.token) setSessionToken(res.data.session.token);
+        setAuthed(true);
+        // Load documents
+        fetch('/api/rmh-utils/documents?type=SHEET')
+          .then(async (r) => {
+            const data = await r.json();
+            setDocuments(data.documents || []);
+            setLoading(false);
+          })
+          .catch(() => setLoading(false));
+      } else {
         setAuthed(false);
         setLoading(false);
-      });
-  }, []);
-
-  // Get current user session
-  useEffect(() => {
-    fetch('/api/auth/get-session')
-      .then(async (r) => {
-        if (r.ok) {
-          const data = await r.json();
-          if (data?.user) {
-            setUser({ id: data.user.id, name: data.user.name, image: data.user.image });
-          }
-        }
-      })
-      .catch(() => {});
+      }
+    }).catch(() => {
+      setAuthed(false);
+      setLoading(false);
+    });
   }, []);
 
   const loadDocuments = useCallback(async () => {
@@ -162,6 +156,7 @@ export default function SheetsApp() {
         <SheetsEditor
           document={currentDoc}
           user={user}
+          sessionToken={sessionToken}
           onBack={handleBack}
           onRename={(title) => handleRename(currentDoc.id, title)}
           onToggleFavorite={() => handleFavorite(currentDoc.id, !currentDoc.isFavorite)}

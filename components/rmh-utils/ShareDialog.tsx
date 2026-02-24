@@ -26,7 +26,7 @@ export default function ShareDialog({ open, onClose, documentId, collaborators, 
     setLoading(true);
     setError('');
     const ok = await onAdd(username.trim(), role);
-    if (!ok) setError('User not found or could not be added');
+    if (!ok) setError('User not found. Check the username or email and try again.');
     else setUsername('');
     setLoading(false);
   }, [username, role, onAdd]);
@@ -47,7 +47,7 @@ export default function ShareDialog({ open, onClose, documentId, collaborators, 
           {/* Add collaborator */}
           <div className="flex gap-2">
             <input
-              placeholder="Enter username..."
+              placeholder="Enter username or email..."
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleAdd()}

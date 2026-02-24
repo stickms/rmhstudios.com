@@ -16,7 +16,6 @@ import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import Underline from '@tiptap/extension-underline';
 import TextAlign from '@tiptap/extension-text-align';
 import Collaboration from '@tiptap/extension-collaboration';
-import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
 import { common, createLowlight } from 'lowlight';
 import type * as Y from 'yjs';
 import type { WebsocketProvider } from 'y-websocket';
@@ -42,6 +41,7 @@ export function createDocsExtensions({
   const extensions: AnyExtension[] = [
     StarterKit.configure({
       codeBlock: false, // We use CodeBlockLowlight instead
+      undoRedo: false, // Collaboration extension handles undo/redo
     }),
     TaskList,
     TaskItem.configure({ nested: true }),
@@ -61,22 +61,19 @@ export function createDocsExtensions({
     CharacterCount,
     CodeBlockLowlight.configure({ lowlight }),
     Placeholder.configure({ placeholder }),
+    // Always include Collaboration — it uses Y.Doc directly and handles sync + undo/redo.
+    // The Y.Doc is always available; the WebSocket provider syncs it when connected.
+    Collaboration.configure({
+      document: yDoc,
+    }),
   ];
 
-  // Only add collaboration extensions when provider is connected
+  // Set awareness state for cursor display when provider is connected
   if (provider) {
-    extensions.push(
-      Collaboration.configure({
-        document: yDoc,
-      }),
-      CollaborationCursor.configure({
-        provider,
-        user: {
-          name: userName,
-          color: userColor,
-        },
-      })
-    );
+    provider.awareness.setLocalStateField('user', {
+      name: userName,
+      color: userColor,
+    });
   }
 
   return extensions;

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import dynamic from 'next/dynamic';
+import { authClient } from '@/lib/auth-client';
 import type { DocumentInfo, CollaboratorRole } from '@/lib/rmh-utils/types';
 
 const SlidesHome = dynamic(() => import('./SlidesHome'), { ssr: false });
@@ -21,29 +22,28 @@ export default function SlidesApp() {
   const [activeDoc, setActiveDoc] = useState<DocumentInfo | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Check auth
+  // Check auth and get session token
   useEffect(() => {
-    const token = document.cookie
-      .split('; ')
-      .find((c) => c.startsWith('better-auth.session_token='))
-      ?.split('=')[1] || '';
-    setSessionToken(token);
-
-    fetch('/api/rmh-utils/documents?type=SLIDE')
-      .then(async (r) => {
-        if (r.status === 401) {
-          setAuthed(false);
-          setLoading(false);
-          return;
-        }
+    authClient.getSession().then((res) => {
+      if (res.data?.session) {
+        setUser({ id: res.data.user.id, name: res.data.user.name ?? null, image: res.data.user.image ?? null });
+        if (res.data.session.token) setSessionToken(res.data.session.token);
         setAuthed(true);
-        const data = await r.json();
-        setDocuments(data.documents || []);
-        setLoading(false);
-      })
-      .catch(() => {
+        // Load documents
+        fetch('/api/rmh-utils/documents?type=SLIDE')
+          .then(async (r) => {
+            const data = await r.json();
+            setDocuments(data.documents || []);
+            setLoading(false);
+          })
+          .catch(() => setLoading(false));
+      } else {
         setAuthed(false);
         setLoading(false);
+      }
+    }).catch(() => {
+      setAuthed(false);
+      setLoading(false);
       });
   }, []);
 
