@@ -216,7 +216,7 @@ registerHistoryDisplay({
     { key: 'polarityToggles', label: 'Polarity Toggles', type: 'range', valuePath: 'polarityToggles' },
   ],
   getSummary: (log: GameLog) => {
-    const pushes = log.actions.filter((a) => a.type === 'push');
+    const pushes = log.actions.filter((a) => a.type === 'waypoint_hit');
     const totalBlocks = pushes.reduce(
       (sum, a) => sum + ((a.payload.blocksScored as number) ?? 0),
       0,
@@ -244,7 +244,7 @@ registerHistoryDisplay({
     { key: 'platformsCollected', label: 'Platforms Collected', type: 'range', valuePath: 'platformsCollected' },
   ],
   getSummary: (log: GameLog) => {
-    const elims = log.actions.filter((a) => a.type === 'elimination');
+    const elims = log.actions.filter((a) => a.type === 'player_eliminated');
     const maxDistance = elims.reduce(
       (max, a) => Math.max(max, (a.payload.distanceTraveled as number) ?? 0),
       0,

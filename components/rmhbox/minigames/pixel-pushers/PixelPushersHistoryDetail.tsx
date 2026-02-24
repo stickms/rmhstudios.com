@@ -16,9 +16,9 @@ export default function PixelPushersHistoryDetail({
   players,
 }: HistoryDetailProps) {
   const levelStarts = gameLog.actions.filter((a) => a.type === 'level_start');
-  const levelEnds = gameLog.actions.filter((a) => a.type === 'level_end');
-  const pushActions = gameLog.actions.filter((a) => a.type === 'push');
-  const polarityEvents = gameLog.actions.filter((a) => a.type === 'polarity_toggle');
+  const levelEnds = gameLog.actions.filter((a) => a.type === 'level_complete' || a.type === 'level_failed');
+  const pushActions = gameLog.actions.filter((a) => a.type === 'waypoint_hit');
+  const polarityEvents = gameLog.actions.filter((a) => a.type === 'polarity_flip');
 
   return (
     <div className="space-y-4" data-testid="pixel-pushers-history-detail">
@@ -43,7 +43,6 @@ export default function PixelPushersHistoryDetail({
         const levelNum = (level.payload.level as number) ?? idx + 1;
         const targetScore = level.payload.targetScore as number | undefined;
         const levelEnd = levelEnds[idx];
-        const cleared = levelEnd?.payload.cleared as boolean | undefined;
 
         // Push contributions for this level
         const levelPushes = pushActions.filter((p) => {
@@ -82,11 +81,11 @@ export default function PixelPushersHistoryDetail({
                     Target: {targetScore}
                   </span>
                 )}
-                {cleared != null && (
+                {levelEnd && (
                   <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                    cleared ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
+                    levelEnd.type === 'level_complete' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
                   }`}>
-                    {cleared ? 'Cleared' : 'Failed'}
+                    {levelEnd.type === 'level_complete' ? 'Cleared' : 'Failed'}
                   </span>
                 )}
               </div>

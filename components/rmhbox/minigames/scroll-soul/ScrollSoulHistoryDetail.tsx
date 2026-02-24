@@ -15,10 +15,9 @@ export default function ScrollSoulHistoryDetail({
   currentUserId,
   players,
 }: HistoryDetailProps) {
-  const eliminations = gameLog.actions.filter((a) => a.type === 'elimination');
-  const adEvents = gameLog.actions.filter((a) => a.type === 'ad_shown');
+  const eliminations = gameLog.actions.filter((a) => a.type === 'player_eliminated');
   const speedMilestones = gameLog.actions.filter((a) => a.type === 'speed_milestone');
-  const platformCollects = gameLog.actions.filter((a) => a.type === 'platform_collected');
+  const adSpawned = gameLog.actions.filter((a) => a.type === 'ad_spawned');
 
   return (
     <div className="space-y-4" data-testid="scroll-soul-history-detail">
@@ -73,18 +72,14 @@ export default function ScrollSoulHistoryDetail({
       )}
 
       {/* Ad Stats */}
-      {adEvents.length > 0 && (
+      {adSpawned.length > 0 && (
         <div className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-4">
           <h4 className="text-sm font-semibold text-(--rmhbox-text-muted) mb-2">Ad Events</h4>
           <div className="flex flex-wrap gap-3 text-xs text-(--rmhbox-text-muted)">
-            <span>Total Ads Shown: {adEvents.length}</span>
+            <span>Total Ads Spawned: {adSpawned.length}</span>
             {(() => {
-              const dismissed = adEvents.filter((a) => a.payload.dismissed === true).length;
+              const dismissed = gameLog.actions.filter((a) => a.type === 'ad_dismissed').length;
               return dismissed > 0 ? <span>Dismissed: {dismissed}</span> : null;
-            })()}
-            {(() => {
-              const hitBy = adEvents.filter((a) => a.payload.hitPlayer === true).length;
-              return hitBy > 0 ? <span>Hit Players: {hitBy}</span> : null;
             })()}
           </div>
         </div>
@@ -121,9 +116,6 @@ export default function ScrollSoulHistoryDetail({
             .map((p) => {
               const elim = eliminations.find((e) => e.payload.userId === p.userId);
               const survivalTime = elim?.payload.survivalTime as number | undefined;
-              const platforms = platformCollects.filter(
-                (a) => a.payload.userId === p.userId,
-              ).length;
               return (
                 <div
                   key={p.userId}
@@ -135,7 +127,6 @@ export default function ScrollSoulHistoryDetail({
                     #{p.rank} {p.userName}
                     <span className="ml-1 text-xs opacity-50">
                       {survivalTime != null && `${survivalTime}s`}
-                      {platforms > 0 && ` · ${platforms} platforms`}
                     </span>
                   </span>
                   <span className="font-mono">{p.score}</span>
