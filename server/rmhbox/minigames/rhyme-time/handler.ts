@@ -413,10 +413,10 @@ export class RhymeTimeMinigame extends BaseMinigame {
         const enableMultiSyllable = this.getSetting('enableMultiSyllableBonus', RT_MULTI_SYLLABLE_MULT > 1);
         const multiSyllableMultiplier = (isMultiSyllable && enableMultiSyllable) ? RT_MULTI_SYLLABLE_MULT : 1;
 
-        // Speed bonus: first submitter of a rare word
+        // Speed bonus: first submitter of a word
         const enableSpeed = this.getSetting('enableSpeedBonus', RT_SPEED_BONUS > 0);
         let speedBonus = 0;
-        if (rarity === 'rare' && enableSpeed) {
+        if (enableSpeed && submitterCount === 1) {
           const first = wordFirstSubmitter[sub.word];
           if (first && first.userId === userId) {
             speedBonus = RT_SPEED_BONUS;

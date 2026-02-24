@@ -232,6 +232,9 @@ describe('Vote Casting (§1.3)', () => {
     callEvent(socketB, 'rmhbox:game:cast_vote', { lobbyId, minigameId: candidateId });
     callEvent(socketC, 'rmhbox:game:cast_vote', { lobbyId, minigameId: candidateId });
 
+    // Grace timer fires after min(5000, remaining) ms
+    vi.advanceTimersByTime(5001);
+
     // Vote should have resolved
     const results = findServerEmitted(serverData.emitted, S2C.GAME_VOTE_RESULT);
     expect(results.length).toBeGreaterThan(0);

@@ -7,7 +7,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { useRMHboxStore, applyLobbyAction } from '../../../lib/rmhbox/store';
+import { useRMHboxStore } from '../../../lib/rmhbox/store';
 import { createClientLobbyState, createClientPlayer, MOCK_USERS } from './setup';
 import type { GameAction } from '../../../lib/rmhbox/types';
 

@@ -54,6 +54,7 @@ function createGame(ctxData?: MockContextData) {
 
   // Mock the data loader
   vi.mock('../../../lib/rmhbox/wiki-race/data-loader', () => ({
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     selectArticlePair: (_usedPairKeys: string[] = []) => ({
       id: 'test-pair-001',
       startArticle: {

@@ -46,7 +46,7 @@ function setupSocket(user: typeof MOCK_USERS.alice): MockSocketData {
 
 function callEvent(sock: MockSocketData, event: string, payload: unknown): void {
   const handler = sock.socket.on.mock.calls.find((c: unknown[]) => c[0] === event);
-  handler![1](sock.socket, payload);
+  handler![1](payload);
 }
 
 function createLobbyAndGetId(sock: MockSocketData): string {
@@ -86,7 +86,10 @@ describe('End-to-End Lobby Lifecycle (§14.1)', () => {
     );
     expect(chatAction).toBeDefined();
 
-    // 4. Socket B toggles ready
+    // 4. Host picks a game so players can ready up
+    callEvent(socketA, 'rmhbox:game:pick', { lobbyId, minigameId: 'rhyme-time' });
+
+    // 5. Socket B toggles ready
     callEvent(socketB, 'rmhbox:lobby:toggle_ready', { lobbyId });
     const readyActions = findServerEmitted(serverData.emitted, S2C.GAME_ACTION, `lobby:${lobbyId}`);
     const readyAction = readyActions.find(
@@ -94,7 +97,7 @@ describe('End-to-End Lobby Lifecycle (§14.1)', () => {
     );
     expect(readyAction).toBeDefined();
 
-    // 5. Socket A (host) kicks Socket B
+    // 6. Socket A (host) kicks Socket B
     callEvent(socketA, 'rmhbox:lobby:kick', { lobbyId, targetUserId: MOCK_USERS.bob.userId });
 
     const targetSocket = serverData.registeredSockets.get(socketB.socket.id);

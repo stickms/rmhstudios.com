@@ -38,15 +38,14 @@ interface ResultsScreenProps {
 const PODIUM_COLORS = ['text-yellow-400', 'text-gray-300', 'text-amber-600'];
 const PODIUM_HEIGHTS = ['h-28', 'h-20', 'h-14'];
 
-const containerVariants = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.15 } },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
-};
+/** Fade-in animation props with a configurable stagger delay. */
+function fadeInProps(delay: number) {
+  return {
+    initial: { opacity: 0, y: 20 } as const,
+    animate: { opacity: 1, y: 0 } as const,
+    transition: { duration: 0.4, delay },
+  };
+}
 
 export default function ResultsScreen({
   rankings,
@@ -84,17 +83,16 @@ export default function ResultsScreen({
   return (
     <motion.div
       className="mx-auto flex w-full max-w-2xl flex-col p-6 text-(--rmhbox-text)"
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
     >
       {/* Header */}
-      <motion.h2 variants={itemVariants} className="mb-6 text-center text-2xl font-bold">
+      <motion.h2 {...fadeInProps(0)} className="mb-6 text-center text-2xl font-bold">
         Results
       </motion.h2>
 
       {/* Podium */}
-      <motion.div variants={itemVariants} className="mb-6 flex items-end justify-center gap-4">
+      <motion.div {...fadeInProps(0.15)} className="mb-6 flex items-end justify-center gap-4">
         {podiumOrder.map((player, i) => {
           const podiumIndex = top3.length >= 3 ? [1, 0, 2][i] : i;
           return (
@@ -115,7 +113,7 @@ export default function ResultsScreen({
 
       {/* Full rankings */}
       {rankings.length > 0 && (
-        <motion.div variants={itemVariants} className="mb-6 rounded-xl bg-(--rmhbox-surface) border border-(--rmhbox-border) p-4">
+        <motion.div {...fadeInProps(0.3)} className="mb-6 rounded-xl bg-(--rmhbox-surface) border border-(--rmhbox-border) p-4">
           <h3 className="mb-2 text-sm font-semibold uppercase tracking-wider text-(--rmhbox-text-muted)">
             All Players
           </h3>
@@ -135,7 +133,7 @@ export default function ResultsScreen({
 
       {/* Awards */}
       {awards.length > 0 && (
-        <motion.div variants={itemVariants} className="mb-6 rounded-xl bg-(--rmhbox-surface) border border-(--rmhbox-border) p-4">
+        <motion.div {...fadeInProps(0.45)} className="mb-6 rounded-xl bg-(--rmhbox-surface) border border-(--rmhbox-border) p-4">
           <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-(--rmhbox-text-muted)">
             <AwardIcon className="h-4 w-4" /> Awards
           </h3>
@@ -162,7 +160,7 @@ export default function ResultsScreen({
 
       {/* Session standings */}
       {sessionStandings.length > 0 && (
-        <motion.div variants={itemVariants} className="mb-6 rounded-xl bg-(--rmhbox-surface) border border-(--rmhbox-border) p-4">
+        <motion.div {...fadeInProps(0.6)} className="mb-6 rounded-xl bg-(--rmhbox-surface) border border-(--rmhbox-border) p-4">
           <h3 className="mb-2 text-sm font-semibold uppercase tracking-wider text-(--rmhbox-text-muted)">
             Session Standings
           </h3>
@@ -191,7 +189,7 @@ export default function ResultsScreen({
 
       {/* Host "Next" button — shown when using infinite timer */}
       {showNextButton && (
-        <motion.div variants={itemVariants} className="flex justify-center pt-2 pb-4">
+        <motion.div {...fadeInProps(0.75)} className="flex justify-center pt-2 pb-4">
           <button
             onClick={handleNext}
             className="flex items-center gap-2 rounded-lg px-8 py-3 text-base font-semibold text-white transition-all hover:brightness-110 active:scale-95 animate-pulse"

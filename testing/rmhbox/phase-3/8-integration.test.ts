@@ -104,8 +104,8 @@ describe('Full Game Lifecycle Integration', () => {
     expect(lobby.state).toBe('ROUND_RESULTS');
     expect(lobby.roundNumber).toBe(1);
 
-    // Results display timer
-    vi.advanceTimersByTime(11_000);
+    // Results display — host force-skips to advance (infinite timer)
+    callEvent(sockA, 'rmhbox:game:force_skip', { lobbyId });
     expect(lobby.state).toBe('WAITING');
     expect(lobby.currentGame).toBeNull();
   });
@@ -145,10 +145,12 @@ describe('Full Game Lifecycle Integration', () => {
       // Game completes
       vi.advanceTimersByTime(3_500);
       expect(lobby.state).toBe('ROUND_RESULTS');
-      expect(lobby.roundNumber).toBe(round);
+      // roundNumber resets per game flow, so always 1 per game
+      expect(lobby.roundNumber).toBe(1);
+      expect(lobby.matchHistory.length).toBe(round);
 
-      // Results
-      vi.advanceTimersByTime(11_000);
+      // Results — host force-skips to advance (infinite timer)
+      callEvent(sockA, 'rmhbox:game:force_skip', { lobbyId });
       expect(lobby.state).toBe('WAITING');
     }
 

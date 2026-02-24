@@ -376,6 +376,11 @@ export class WikiRaceMinigame extends BaseMinigame {
       return;
     }
 
+    // Save previous state for rollback if fetch fails
+    const prevTitle = ps.currentArticleTitle;
+    const prevLinks = ps.currentArticleLinks;
+    const prevClickCount = ps.clickCount;
+
     // Update player state
     ps.clickCount++;
     ps.path.push(targetTitle);
@@ -404,9 +409,34 @@ export class WikiRaceMinigame extends BaseMinigame {
       return;
     }
 
+    // Rollback player state on fetch failure and notify client
+    const rollbackNavigation = () => {
+      if (!this.isRunning) return;
+      const currentPs = this.state.playerStates.get(userId);
+      if (!currentPs || currentPs.currentArticleTitle !== targetTitle) return;
+      currentPs.path.pop();
+      currentPs.clickCount = prevClickCount;
+      currentPs.currentArticleTitle = prevTitle;
+      currentPs.currentArticleLinks = prevLinks;
+      this.context.sendToPlayer(userId, 'rmhbox:game:action', {
+        type: 'WR_NAVIGATE_REJECTED',
+        reason: 'This article is unavailable. Try another link.',
+      });
+      this.context.broadcastToPlayers('rmhbox:game:action', {
+        type: 'WR_PLAYER_PROGRESS',
+        userId,
+        clickCount: currentPs.clickCount,
+        pathLength: currentPs.path.length,
+      });
+    };
+
     // Fetch article and send to player
     this.fetchAndSendArticle(targetTitle).then((article) => {
-      if (!this.isRunning || !article) return;
+      if (!this.isRunning) return;
+      if (!article) {
+        rollbackNavigation();
+        return;
+      }
       const currentPs = this.state.playerStates.get(userId);
       if (!currentPs || currentPs.currentArticleTitle !== targetTitle) return;
       currentPs.currentArticleLinks = new Set(article.links);
@@ -417,7 +447,7 @@ export class WikiRaceMinigame extends BaseMinigame {
         linkCount: article.links.size,
       });
     }).catch(() => {
-      // Article fetch error — player stays on current page
+      rollbackNavigation();
     });
   }
 
@@ -586,7 +616,8 @@ export class WikiRaceMinigame extends BaseMinigame {
         ps.score = score;
       } else {
         // DNF scoring
-        if (this.getSetting('enableOneAwayPoints', WR_ONE_AWAY > 0) && ps.currentArticleLinks.has(targetTitle)) {
+        const normalizedTarget = targetTitle.replace(/ /g, '_');
+        if (this.getSetting('enableOneAwayPoints', WR_ONE_AWAY > 0) && (ps.currentArticleLinks.has(targetTitle) || ps.currentArticleLinks.has(normalizedTarget))) {
           // Target was on the current page but player didn't click it
           ps.score = WR_ONE_AWAY;
         } else {
@@ -872,8 +903,9 @@ export class WikiRaceMinigame extends BaseMinigame {
     }
 
     // Almost There — target was in links but player didn't finish (DNF)
+    const normalizedTargetAward = targetTitle.replace(/ /g, '_');
     for (const p of players) {
-      if (!p.hasFinished && p.currentArticleLinks.has(targetTitle)) {
+      if (!p.hasFinished && (p.currentArticleLinks.has(targetTitle) || p.currentArticleLinks.has(normalizedTargetAward))) {
         awards.push({
           userId: p.userId,
           title: 'Almost There',

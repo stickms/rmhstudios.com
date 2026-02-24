@@ -42,7 +42,7 @@ function setupSocket(user: typeof MOCK_USERS.alice): MockSocketData {
 
 function callEvent(sock: MockSocketData, event: string, payload: unknown): void {
   const handler = sock.socket.on.mock.calls.find((c: unknown[]) => c[0] === event);
-  handler![1](sock.socket, payload);
+  handler![1](payload);
 }
 
 function createLobbyAndGetId(sock: MockSocketData): string {
@@ -85,6 +85,9 @@ describe('Lobby Garbage Collection (§11.1)', () => {
     const lobby = lobbyManager.getLobby(lobbyId)!;
     lobby.state = 'PLAYING';
     lobby.lastActivityAt = Date.now() - 31 * 60 * 1000; // 31 minutes ago
+    // GC absolute timeout only triggers when all clients are disconnected
+    const player = lobby.players.get(MOCK_USERS.alice.userId)!;
+    player.isConnected = false;
 
     lobbyManager.startGarbageCollector();
     vi.advanceTimersByTime(61_000);
@@ -171,7 +174,6 @@ describe('Lobby Garbage Collection (§11.1)', () => {
     const socketC = setupSocket(MOCK_USERS.charlie);
     callEvent(socketC, 'rmhbox:lobby:join', { lobbyId, asSpectator: true });
 
-    const lobby = lobbyManager.getLobby(lobbyId)!;
     // Player is connected, spectator is connected, recently active
     // This should not be GC'd
 

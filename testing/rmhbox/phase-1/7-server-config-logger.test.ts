@@ -5,9 +5,7 @@
  * and the structured logger.
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { z } from 'zod';
-import { resetRateLimits } from '../../../server/rmhbox/rate-limit';
+import { describe, it, expect, vi } from 'vitest';
 import { logger } from '../../../server/rmhbox/logger';
 
 // We need to test validated() but it uses imports that need mocking

@@ -37,6 +37,7 @@ class SecretWordGame extends BaseMinigame {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   handleInput(_userId: string, _action: string, _data: unknown): void {}
 
   /**
@@ -126,9 +127,9 @@ describe('Security: State-Masking Verification', () => {
     game.start();
 
     // Get state for Player A
-    const stateA = game.getStateForPlayer('player-a') as any;
+    const stateA = game.getStateForPlayer('player-a') as Record<string, unknown>;
     // Get state for Player B
-    const stateB = game.getStateForPlayer('player-b') as any;
+    const stateB = game.getStateForPlayer('player-b') as Record<string, unknown>;
 
     // Player A should see their own word
     expect(stateA.myWord).toBe('apple');
@@ -137,7 +138,7 @@ describe('Security: State-Masking Verification', () => {
     expect(stateB.myWord).toBe('banana');
 
     // Player A should NOT see Player B's word
-    const playerBInA = stateA.otherPlayers.find((p: any) => p.userId === 'player-b');
+    const playerBInA = (stateA.otherPlayers as Array<Record<string, unknown>>).find((p) => p.userId === 'player-b');
     expect(playerBInA).toBeDefined();
     expect(playerBInA.hasWord).toBe(true);
     expect(playerBInA).not.toHaveProperty('word');
@@ -145,7 +146,7 @@ describe('Security: State-Masking Verification', () => {
     expect(playerBInA).not.toHaveProperty('myWord');
 
     // Player B should NOT see Player A's word
-    const playerAInB = stateB.otherPlayers.find((p: any) => p.userId === 'player-a');
+    const playerAInB = (stateB.otherPlayers as Array<Record<string, unknown>>).find((p) => p.userId === 'player-a');
     expect(playerAInB).toBeDefined();
     expect(playerAInB).not.toHaveProperty('word');
     expect(playerAInB).not.toHaveProperty('secretWord');
@@ -180,7 +181,7 @@ describe('Security: State-Masking Verification', () => {
     const game = new SecretWordGame(ctx);
     game.start();
 
-    const spectatorState = game.getStateForSpectator() as any;
+    const spectatorState = game.getStateForSpectator() as Record<string, unknown>;
 
     // Spectator state should have player count but no words
     expect(spectatorState.playerCount).toBe(3);
@@ -229,8 +230,8 @@ describe('Security: State-Masking Verification', () => {
     );
 
     // The sent state should not contain other players' words
-    const sentState = sendToPlayer.mock.calls[0][2] as any;
-    for (const other of sentState.otherPlayers) {
+    const sentState = sendToPlayer.mock.calls[0][2] as Record<string, unknown>;
+    for (const other of sentState.otherPlayers as Array<Record<string, unknown>>) {
       expect(other).not.toHaveProperty('myWord');
       expect(other).not.toHaveProperty('secretWord');
     }

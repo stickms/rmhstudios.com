@@ -31,16 +31,9 @@ import {
   RT_INVALID_PENALTY,
   RT_MULTI_SYLLABLE_MULT,
   RT_SPEED_BONUS,
-  UA_ASSASSIN,
-  UA_MAX_PASSES,
   CC_TOTAL_ROUNDS,
   CC_CATEGORIES_PER_ROUND,
-  CC_INPUT_DURATION,
-  CC_PEER_REVIEW_DURATION,
-  CC_CRASH_THRESHOLD_PERCENT,
   WR_NAV_DURATION,
-  WR_EFFICIENCY_BONUS,
-  WR_ONE_AWAY,
 } from '../../../lib/rmhbox/constants';
 import { RhymeTimeMinigame } from '../../../server/rmhbox/minigames/rhyme-time';
 import { CategoryCrashMinigame } from '../../../server/rmhbox/minigames/category-crash';
@@ -50,7 +43,6 @@ import {
   createMockContext,
   findActionBroadcasts,
   findLastActionBroadcast,
-  type MockContextData,
 } from './setup';
 
 // ─── Test Schema ──────────────────────────────────────────────────
