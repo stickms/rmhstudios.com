@@ -91,7 +91,7 @@ export function NeonDriftwayUI({
     return (
       <div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-auto bg-black/70 backdrop-blur-sm">
         <div className="text-center space-y-6 max-w-md px-4">
-          <h1 className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-white to-red-500 tracking-tighter">
+          <h1 className="text-5xl font-black text-transparent bg-clip-text bg-linear-to-r from-cyan-400 via-white to-red-500 tracking-tighter">
             NEON DRIFTWAY
           </h1>
           <p className="text-zinc-400 text-sm">Endless highway survival racer. Dodge traffic, survive hazards, chase the leaderboard.</p>
@@ -108,7 +108,7 @@ export function NeonDriftwayUI({
               <>
                 <Button
                   onClick={onGoToLevelSelect}
-                  className="w-full bg-gradient-to-r from-cyan-500 to-red-500 hover:from-cyan-600 hover:to-red-600 text-black font-bold py-3 text-lg"
+                  className="w-full bg-linear-to-r from-cyan-500 to-red-500 hover:from-cyan-600 hover:to-red-600 text-black font-bold py-3 text-lg"
                 >
                   <Play className="w-5 h-5 mr-2" />
                   Play
@@ -116,7 +116,7 @@ export function NeonDriftwayUI({
                 {onGoToMultiplayer && (
                   <Button
                     onClick={onGoToMultiplayer}
-                    className="w-full bg-gradient-to-r from-purple-500 to-cyan-500 hover:from-purple-600 hover:to-cyan-600 text-white font-bold py-3"
+                    className="w-full bg-linear-to-r from-purple-500 to-cyan-500 hover:from-purple-600 hover:to-cyan-600 text-white font-bold py-3"
                   >
                     <Users className="w-5 h-5 mr-2" />
                     Multiplayer
@@ -356,7 +356,7 @@ export function NeonDriftwayUI({
           <div className="flex gap-2">
             <Button
               onClick={onContinueEndless}
-              className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold"
+              className="flex-1 bg-linear-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold"
             >
               Continue Endless
             </Button>

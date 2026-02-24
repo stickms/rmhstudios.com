@@ -6,10 +6,17 @@
         "outDir": "dist-server",
         "rootDir": ".",
         "noEmit": false,
-        "isolatedModules": false
+        "isolatedModules": false,
+        "paths": {
+        "@/*": [
+            "./*"
+        ]
+        }
     },
     "include": [
         "server/socket-server.ts",
-        "server/collab-server.ts"
+        "server/collab-server.ts",
+        "server/rmhbox/**/*.ts",
+        "lib/rmhbox/**/*.ts"
     ]
 }

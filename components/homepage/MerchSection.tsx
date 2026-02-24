@@ -31,9 +31,9 @@ const merchItems = [
 
 export function MerchSection() {
   return (
-    <section id="merch" className="min-h-screen relative flex flex-col items-center justify-center py-20 px-4 overflow-hidden bg-gradient-to-b from-[var(--neon-purple)]/20 to-[var(--neon-blue)]/20">
+    <section id="merch" className="min-h-screen relative flex flex-col items-center justify-center py-20 px-4 overflow-hidden bg-linear-to-b from-(--neon-purple)/20 to-(--neon-blue)/20">
       {/* Subtle Divider */}
-      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-[var(--neon-blue)]/50 to-transparent opacity-50" />
+      <div className="absolute top-0 left-0 w-full h-px bg-linear-to-r from-transparent via-(--neon-blue)/50 to-transparent opacity-50" />
       
       {/* Background Ambience */}
       <div className="absolute inset-0 pointer-events-none" />
@@ -70,14 +70,14 @@ export function MerchSection() {
                     </div>
 
                     {/* Hover Glow Effect */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60 pointer-events-none" />
-                    <div className="absolute inset-0 bg-[var(--neon-cyan)]/0 group-hover:bg-[var(--neon-cyan)]/10 transition-colors duration-500 pointer-events-none" />
+                    <div className="absolute inset-0 bg-linear-to-t from-black/80 via-transparent to-transparent opacity-60 pointer-events-none" />
+                    <div className="absolute inset-0 bg-(--neon-cyan)/0 group-hover:bg-(--neon-cyan)/10 transition-colors duration-500 pointer-events-none" />
                 </div>
                 
                 <h3 className="text-2xl font-bold mb-2">{item.title}</h3>
 
                 <div className="flex justify-between items-end mt-auto">
-                    <p className="text-[var(--neon-pink)] font-mono text-lg">{item.price}</p>
+                    <p className="text-(--neon-pink) font-mono text-lg">{item.price}</p>
                     <motion.button
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}

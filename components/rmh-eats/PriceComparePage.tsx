@@ -101,14 +101,14 @@ export default function PriceComparePage() {
                                             : 'bg-slate-800/50 border-slate-700/50'
                                     }`}
                                 >
-                                    <div className="h-12 w-12 flex-shrink-0 rounded-xl bg-slate-700 flex items-center justify-center text-2xl">
+                                    <div className="h-12 w-12 shrink-0 rounded-xl bg-slate-700 flex items-center justify-center text-2xl">
                                         {item.image}
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 flex-wrap">
                                             <p className="text-sm font-semibold text-white truncate">{item.name}</p>
                                             {isCheapest && (
-                                                <span className="rounded-full bg-green-500/20 border border-green-500/30 px-2 py-0.5 text-xs font-medium text-green-400 flex-shrink-0">
+                                                <span className="rounded-full bg-green-500/20 border border-green-500/30 px-2 py-0.5 text-xs font-medium text-green-400 shrink-0">
                                                     Best Value
                                                 </span>
                                             )}
@@ -127,7 +127,7 @@ export default function PriceComparePage() {
                                             {item.spicy && <span className="text-red-400">🌶️ Spicy</span>}
                                         </div>
                                     </div>
-                                    <div className="flex-shrink-0 text-right">
+                                    <div className="shrink-0 text-right">
                                         <p className="text-lg font-bold text-orange-400">${item.price.toFixed(2)}</p>
                                         <button
                                             onClick={() => handleAdd({ restaurant, item })}

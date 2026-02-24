@@ -58,7 +58,7 @@ export default function FavoritesPage() {
                             onClick={() => selectRestaurant(r.id)}
                         >
                             {/* Cover */}
-                            <div className="h-28 bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center text-5xl relative">
+                            <div className="h-28 bg-linear-to-br from-slate-700 to-slate-800 flex items-center justify-center text-5xl relative">
                                 {r.image}
                                 {/* Unfavorite button */}
                                 <button

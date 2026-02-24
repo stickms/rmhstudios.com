@@ -61,7 +61,7 @@ export default async function BlogPost({ params }: Props) {
   return (
     <article className="min-h-screen pt-32 pb-20 px-4 bg-black relative overflow-hidden">
         {/* Ambient background */}
-        <div className="absolute top-0 left-0 w-full h-[50vh] bg-gradient-to-b from-[var(--neon-purple)]/10 to-transparent pointer-events-none" />
+        <div className="absolute top-0 left-0 w-full h-[50vh] bg-linear-to-b from-(--neon-purple)/10 to-transparent pointer-events-none" />
 
         <div className="container mx-auto max-w-3xl relative z-10">
             <Link href="/blog" className="inline-flex items-center gap-2 text-white/50 hover:text-white mb-8 transition-colors animate-in fade-in slide-in-from-left-4 duration-700">
@@ -70,7 +70,7 @@ export default async function BlogPost({ params }: Props) {
 
             <header className="mb-12">
                 <div className="flex items-center justify-between mb-4 animate-in fade-in slide-in-from-bottom-4 duration-700 fill-mode-both">
-                    <div className="flex items-center gap-2 text-[var(--neon-cyan)] font-mono">
+                    <div className="flex items-center gap-2 text-(--neon-cyan) font-mono">
                         <Calendar className="w-5 h-5" />
                         {post.date}
                     </div>
@@ -79,7 +79,7 @@ export default async function BlogPost({ params }: Props) {
                 <h1 className="text-4xl md:text-5xl font-black text-white mb-6 tracking-tight leading-tight animate-in fade-in slide-in-from-bottom-6 duration-700 delay-150 fill-mode-both">
                     <ProximityText>{post.title}</ProximityText>
                 </h1>
-                <p className="text-xl text-white/60 leading-relaxed border-l-4 border-[var(--neon-pink)] pl-6 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-300 fill-mode-both">
+                <p className="text-xl text-white/60 leading-relaxed border-l-4 border-(--neon-pink) pl-6 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-300 fill-mode-both">
                     {post.description}
                 </p>
             </header>

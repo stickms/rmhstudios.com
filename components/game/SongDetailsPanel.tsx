@@ -163,7 +163,7 @@ export function SongDetailsPanel({ song, onPlay, onSongUpdated, readOnly = false
         <>
             {/* Edit Modal */}
             {showEdit && (
-                <div className="fixed inset-0 z-[200] flex items-center justify-center">
+                <div className="fixed inset-0 z-200 flex items-center justify-center">
                     <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowEdit(false)} />
                     <div className="relative bg-slice-bg rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 flex flex-col gap-4">
                         <div className="flex items-center justify-between">
@@ -195,19 +195,19 @@ export function SongDetailsPanel({ song, onPlay, onSongUpdated, readOnly = false
                             </div>
                             <div className="space-y-1">
                                 <label className="text-xs font-bold text-slice-text-light uppercase tracking-wider">Title</label>
-                                <Input value={editTitle} onChange={e => setEditTitle(e.target.value)} className="bg-[var(--slice-input-bg)] text-slice-text border-[var(--slice-input-border)] shadow-[inset_2px_2px_4px_var(--slice-shadow-dark),inset_-2px_-2px_4px_var(--slice-shadow-light)]" />
+                                <Input value={editTitle} onChange={e => setEditTitle(e.target.value)} className="bg-(--slice-input-bg) text-slice-text border-(--slice-input-border) shadow-[inset_2px_2px_4px_var(--slice-shadow-dark),inset_-2px_-2px_4px_var(--slice-shadow-light)]" />
                             </div>
                             <div className="space-y-1">
                                 <label className="text-xs font-bold text-slice-text-light uppercase tracking-wider">Artist</label>
-                                <Input value={editArtist} onChange={e => setEditArtist(e.target.value)} className="bg-[var(--slice-input-bg)] text-slice-text border-[var(--slice-input-border)] shadow-[inset_2px_2px_4px_var(--slice-shadow-dark),inset_-2px_-2px_4px_var(--slice-shadow-light)]" />
+                                <Input value={editArtist} onChange={e => setEditArtist(e.target.value)} className="bg-(--slice-input-bg) text-slice-text border-(--slice-input-border) shadow-[inset_2px_2px_4px_var(--slice-shadow-dark),inset_-2px_-2px_4px_var(--slice-shadow-light)]" />
                             </div>
                             <div className="space-y-1">
                                 <label className="text-xs font-bold text-slice-text-light uppercase tracking-wider">BPM</label>
-                                <Input type="number" value={editBpm} onChange={e => setEditBpm(e.target.value)} className="bg-[var(--slice-input-bg)] text-slice-text border-[var(--slice-input-border)] shadow-[inset_2px_2px_4px_var(--slice-shadow-dark),inset_-2px_-2px_4px_var(--slice-shadow-light)]" placeholder="e.g. 120" />
+                                <Input type="number" value={editBpm} onChange={e => setEditBpm(e.target.value)} className="bg-(--slice-input-bg) text-slice-text border-(--slice-input-border) shadow-[inset_2px_2px_4px_var(--slice-shadow-dark),inset_-2px_-2px_4px_var(--slice-shadow-light)]" placeholder="e.g. 120" />
                             </div>
                             <div className="space-y-1">
                                 <label className="text-xs font-bold text-slice-text-light uppercase tracking-wider">Description</label>
-                                <Input value={editDescription} onChange={e => setEditDescription(e.target.value)} className="bg-[var(--slice-input-bg)] text-slice-text border-[var(--slice-input-border)] shadow-[inset_2px_2px_4px_var(--slice-shadow-dark),inset_-2px_-2px_4px_var(--slice-shadow-light)]" placeholder="Optional description..." />
+                                <Input value={editDescription} onChange={e => setEditDescription(e.target.value)} className="bg-(--slice-input-bg) text-slice-text border-(--slice-input-border) shadow-[inset_2px_2px_4px_var(--slice-shadow-dark),inset_-2px_-2px_4px_var(--slice-shadow-light)]" placeholder="Optional description..." />
                             </div>
                         </div>
                         <div className="flex gap-2 pt-1">

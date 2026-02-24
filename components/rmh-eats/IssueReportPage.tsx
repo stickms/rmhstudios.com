@@ -140,7 +140,7 @@ export default function IssueReportPage() {
                                             <p className="text-xs text-slate-400">{opt.desc}</p>
                                         </div>
                                         {selectedType === opt.type && (
-                                            <CheckCircle2 className="h-4 w-4 text-orange-400 ml-auto flex-shrink-0" />
+                                            <CheckCircle2 className="h-4 w-4 text-orange-400 ml-auto shrink-0" />
                                         )}
                                     </button>
                                 ))}
@@ -175,7 +175,7 @@ export default function IssueReportPage() {
                         className="space-y-4"
                     >
                         <div className="rounded-2xl bg-green-500/10 border border-green-500/30 p-4 flex items-start gap-3">
-                            <CheckCircle2 className="h-5 w-5 text-green-400 flex-shrink-0 mt-0.5" />
+                            <CheckCircle2 className="h-5 w-5 text-green-400 shrink-0 mt-0.5" />
                             <div>
                                 <p className="font-semibold text-green-400">Report Submitted</p>
                                 <p className="text-sm text-slate-400 mt-0.5">

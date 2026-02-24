@@ -26,7 +26,6 @@ async function getPrisma(): Promise<any> {
 }
 
 // ─── Room Management ───
-
 interface Room {
   yDoc: Y.Doc;
   clients: Map<WebSocket, { userId: string; name: string }>;

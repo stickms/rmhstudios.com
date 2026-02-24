@@ -57,7 +57,7 @@ export function HeroSection() {
       )}
 
       {/* Main content with perspective — skip 3D transform in minimal */}
-      <div className="flex-grow flex flex-col items-center justify-center w-full relative z-10 px-4 pb-32">
+      <div className="grow flex flex-col items-center justify-center w-full relative z-10 px-4 pb-32">
         {isMinimal ? (
           <div className="text-center">
             <HeroContent perfMode={perfMode} />
@@ -75,7 +75,7 @@ export function HeroSection() {
             {/* Decorative line — skip in reduced/minimal */}
             {isFull && (
               <motion.div
-                className="absolute -top-20 left-1/2 -translate-x-1/2 w-px h-16 bg-gradient-to-b from-transparent via-[var(--neon-pink)] to-transparent"
+                className="absolute -top-20 left-1/2 -translate-x-1/2 w-px h-16 bg-linear-to-b from-transparent via-(--neon-pink) to-transparent"
                 animate={{ scaleY: [0, 1, 0], opacity: [0, 1, 0] }}
                 transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
               />
@@ -96,7 +96,7 @@ export function HeroSection() {
                 </div>
                 <div className="absolute -right-20 top-0 text-4xl bounce-crazy" style={{ animationDelay: "0.3s" }}>
                   <motion.span
-                    className="text-[var(--neon-cyan)]"
+                    className="text-(--neon-cyan)"
                     animate={{ rotate: -360 }}
                     transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
                   >
@@ -124,22 +124,22 @@ export function HeroSection() {
       {isFull && (
         <>
           <motion.div
-            className="absolute top-8 left-8 w-20 h-20 border-l-2 border-t-2 border-[var(--neon-pink)]"
+            className="absolute top-8 left-8 w-20 h-20 border-l-2 border-t-2 border-(--neon-pink)"
             animate={{ opacity: [0.3, 0.8, 0.3] }}
             transition={{ duration: 2, repeat: Infinity }}
           />
           <motion.div
-            className="absolute top-8 right-8 w-20 h-20 border-r-2 border-t-2 border-[var(--neon-cyan)]"
+            className="absolute top-8 right-8 w-20 h-20 border-r-2 border-t-2 border-(--neon-cyan)"
             animate={{ opacity: [0.3, 0.8, 0.3] }}
             transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
           />
           <motion.div
-            className="absolute bottom-8 left-8 w-20 h-20 border-l-2 border-b-2 border-[var(--neon-purple)]"
+            className="absolute bottom-8 left-8 w-20 h-20 border-l-2 border-b-2 border-(--neon-purple)"
             animate={{ opacity: [0.3, 0.8, 0.3] }}
             transition={{ duration: 2, repeat: Infinity, delay: 1 }}
           />
           <motion.div
-            className="absolute bottom-8 right-8 w-20 h-20 border-r-2 border-b-2 border-[var(--neon-yellow)]"
+            className="absolute bottom-8 right-8 w-20 h-20 border-r-2 border-b-2 border-(--neon-yellow)"
             animate={{ opacity: [0.3, 0.8, 0.3] }}
             transition={{ duration: 2, repeat: Infinity, delay: 1.5 }}
           />
@@ -147,7 +147,7 @@ export function HeroSection() {
       )}
 
       {/* Bottom fade */}
-      <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-b from-transparent to-black pointer-events-none z-20" />
+      <div className="absolute bottom-0 left-0 w-full h-32 bg-linear-to-b from-transparent to-black pointer-events-none z-20" />
     </section>
   );
 }

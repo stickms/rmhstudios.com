@@ -60,7 +60,7 @@ export default function TweetFormatter({ content, title, onClose }: Props) {
             return (
               <div key={i} className="relative">
                 <div className="flex items-start gap-2">
-                  <span className="text-xs mt-2 font-semibold w-6 text-right flex-shrink-0" style={{ color: 'var(--notes-text-subtle)' }}>{i + 1}</span>
+                  <span className="text-xs mt-2 font-semibold w-6 text-right shrink-0" style={{ color: 'var(--notes-text-subtle)' }}>{i + 1}</span>
                   <textarea
                     value={tweet}
                     onChange={(e) => updateTweet(i, e.target.value)}

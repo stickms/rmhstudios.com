@@ -42,7 +42,7 @@ export function JobSearch() {
                     {localQuery && (
                         <button
                             onClick={() => { setLocalQuery(''); setQuery(''); }}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 hover:text-[var(--jobs-text)]"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 hover:text-(--jobs-text)"
                             style={{ color: 'var(--jobs-text-subtle)' }}
                         >
                             <X size={14} />
@@ -52,7 +52,7 @@ export function JobSearch() {
                 {hasFilters && (
                     <button
                         onClick={resetFilters}
-                        className="text-xs px-3 py-2.5 rounded-lg hover:bg-[var(--jobs-surface-2)] transition-colors"
+                        className="text-xs px-3 py-2.5 rounded-lg hover:bg-(--jobs-surface-2) transition-colors"
                         style={{ color: 'var(--jobs-accent)' }}
                     >
                         Reset
@@ -72,8 +72,8 @@ export function JobSearch() {
                             onClick={() => setSort(s)}
                             className={`text-xs px-2.5 py-1 rounded-full transition-colors ${
                                 sort === s
-                                    ? 'bg-[var(--jobs-accent)] text-[var(--jobs-accent-fg)] font-semibold'
-                                    : 'bg-[var(--jobs-surface-3)] text-[var(--jobs-text-muted)] hover:text-[var(--jobs-text)]'
+                                    ? 'bg-(--jobs-accent) text-(--jobs-accent-fg) font-semibold'
+                                    : 'bg-(--jobs-surface-3) text-(--jobs-text-muted) hover:text-(--jobs-text)'
                             }`}
                         >
                             {s === 'newest' ? 'Newest' : s === 'oldest' ? 'Oldest' : 'Company A-Z'}

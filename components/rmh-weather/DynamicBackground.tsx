@@ -14,27 +14,27 @@ export const DynamicBackground = ({ conditionCode }: DynamicBackgroundProps) => 
 
   const configs = {
     clear: {
-      bg: 'bg-gradient-to-br from-blue-400 via-blue-600 to-indigo-800',
+      bg: 'bg-linear-to-br from-blue-400 via-blue-600 to-indigo-800',
       overlay: 'bg-yellow-400/5',
       effect: 'sunlight'
     },
     cloudy: {
-      bg: 'bg-gradient-to-br from-slate-400 via-slate-600 to-slate-800',
+      bg: 'bg-linear-to-br from-slate-400 via-slate-600 to-slate-800',
       overlay: 'bg-white/5',
       effect: 'clouds'
     },
     rainy: {
-      bg: 'bg-gradient-to-br from-blue-700 via-indigo-900 to-slate-900',
+      bg: 'bg-linear-to-br from-blue-700 via-indigo-900 to-slate-900',
       overlay: 'bg-blue-900/20',
       effect: 'rain'
     },
     snowy: {
-      bg: 'bg-gradient-to-br from-blue-100 via-blue-300 to-indigo-400',
+      bg: 'bg-linear-to-br from-blue-100 via-blue-300 to-indigo-400',
       overlay: 'bg-white/30',
       effect: 'snow'
     },
     stormy: {
-      bg: 'bg-gradient-to-br from-slate-900 via-purple-900 to-black',
+      bg: 'bg-linear-to-br from-slate-900 via-purple-900 to-black',
       overlay: 'bg-purple-900/10',
       effect: 'lightning'
     },

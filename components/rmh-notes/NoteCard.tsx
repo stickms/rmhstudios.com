@@ -87,7 +87,7 @@ export default function NoteCard({ note, selected, onClick, onQuickAction, onDup
           <span className="font-semibold text-sm flex-1 truncate" style={{ color: 'var(--notes-text)' }}>
             {note.title || 'Untitled'}
           </span>
-          <div className="flex items-center gap-1 flex-shrink-0">
+          <div className="flex items-center gap-1 shrink-0">
             {note.isPinned && <span className="text-xs" title="Pinned" style={{ color: 'var(--notes-pin-color)' }}>📌</span>}
             {note.isFavorite && <span className="text-xs" style={{ color: 'var(--notes-fav-color)' }}>⭐</span>}
           </div>

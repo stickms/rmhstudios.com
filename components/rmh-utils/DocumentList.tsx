@@ -238,7 +238,7 @@ export default function DocumentList({ documents, docType, onOpen, onCreate, onD
                 className="group flex items-center gap-3 px-4 py-3 hover:bg-white/5 rounded-lg cursor-pointer transition-colors"
                 onClick={() => onOpen(doc)}
               >
-                <Icon size={18} style={{ color: accentColor }} className="flex-shrink-0" />
+                <Icon size={18} style={{ color: accentColor }} className="shrink-0" />
                 {renamingId === doc.id ? (
                   <input
                     autoFocus
@@ -252,16 +252,16 @@ export default function DocumentList({ documents, docType, onOpen, onCreate, onD
                 ) : (
                   <span className="text-sm text-white flex-1 truncate">{doc.title}</span>
                 )}
-                <span className="text-xs text-white/30 flex-shrink-0">{formatDate(doc.updatedAt)}</span>
+                <span className="text-xs text-white/30 shrink-0">{formatDate(doc.updatedAt)}</span>
                 <button
                   onClick={(e) => { e.stopPropagation(); onFavorite(doc.id, !doc.isFavorite); }}
-                  className={`flex-shrink-0 transition-opacity ${doc.isFavorite ? 'text-yellow-400' : 'text-white/20 opacity-0 group-hover:opacity-100'}`}
+                  className={`shrink-0 transition-opacity ${doc.isFavorite ? 'text-yellow-400' : 'text-white/20 opacity-0 group-hover:opacity-100'}`}
                 >
                   <Star size={14} fill={doc.isFavorite ? 'currentColor' : 'none'} />
                 </button>
                 <button
                   onClick={(e) => { e.stopPropagation(); onDelete(doc.id); }}
-                  className="flex-shrink-0 text-white/20 opacity-0 group-hover:opacity-100 hover:text-red-400 transition-all"
+                  className="shrink-0 text-white/20 opacity-0 group-hover:opacity-100 hover:text-red-400 transition-all"
                 >
                   <Trash2 size={14} />
                 </button>

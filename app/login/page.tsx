@@ -113,7 +113,7 @@ function LoginForm() {
         <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white p-4 font-sans">
             <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-2xl p-8 shadow-xl">
                 <div className="text-center mb-8">
-                    <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-600 mb-2">
+                    <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-linear-to-r from-blue-400 to-purple-600 mb-2">
                         RMH Auth
                     </h1>
                     <p className="text-slate-400 text-sm">

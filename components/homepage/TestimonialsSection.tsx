@@ -108,15 +108,15 @@ export function TestimonialsSection() {
   return (
     <section
       id="testimonials"
-      className="relative min-h-screen flex flex-col pt-20 overflow-hidden bg-gradient-to-b from-[var(--neon-cyan)]/20 to-[var(--neon-pink)]/20"
+      className="relative min-h-screen flex flex-col pt-20 overflow-hidden bg-linear-to-b from-(--neon-cyan)/20 to-(--neon-pink)/20"
     >
       {/* Subtle Divider */}
-      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-[var(--neon-cyan)]/50 to-transparent opacity-50" />
+      <div className="absolute top-0 left-0 w-full h-px bg-linear-to-r from-transparent via-(--neon-cyan)/50 to-transparent opacity-50" />
 
       {/* Background Ambience */}
       <div className="absolute inset-0 pointer-events-none" />
 
-      <div className="flex-grow flex flex-col justify-center px-4 py-20 relative z-10">
+      <div className="grow flex flex-col justify-center px-4 py-20 relative z-10">
         <div className="max-w-6xl mx-auto w-full">
           {/* Section header */}
           <motion.div
@@ -150,7 +150,7 @@ export function TestimonialsSection() {
                   <div>
                     <div className="flex gap-0.5 mb-4">
                       {Array.from({ length: t.stars }).map((_, i) => (
-                        <Star key={i} className="w-4 h-4 fill-[var(--neon-cyan)] text-[var(--neon-cyan)]" />
+                        <Star key={i} className="w-4 h-4 fill-(--neon-cyan) text-(--neon-cyan)" />
                       ))}
                     </div>
                     <p className="text-lg text-white/90 italic leading-relaxed mb-6">
@@ -159,7 +159,7 @@ export function TestimonialsSection() {
                   </div>
 
                   <div className="border-t border-white/10 pt-4 mt-auto">
-                    <div className="font-bold text-[var(--neon-pink)]">
+                    <div className="font-bold text-(--neon-pink)">
                       {t.author}
                     </div>
                     <div className="text-sm text-white/50">{t.role}</div>

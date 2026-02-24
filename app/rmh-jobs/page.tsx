@@ -71,7 +71,7 @@ export default function RMHJobsPage() {
                     </div>
                     <Link
                         href="/rmh-jobs/applications"
-                        className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg hover:bg-[var(--jobs-surface-2)] transition-colors"
+                        className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg hover:bg-(--jobs-surface-2) transition-colors"
                         style={{ color: 'var(--jobs-text-muted)' }}
                     >
                         <ClipboardList size={14} />

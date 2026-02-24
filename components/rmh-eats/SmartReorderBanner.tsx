@@ -50,7 +50,7 @@ export default function SmartReorderBanner({ restaurantId }: Props) {
             </div>
             <button
                 onClick={handleReorder}
-                className="flex items-center gap-1.5 rounded-xl bg-orange-500 hover:bg-orange-400 px-3 py-2 text-xs font-medium text-white transition-colors flex-shrink-0"
+                className="flex items-center gap-1.5 rounded-xl bg-orange-500 hover:bg-orange-400 px-3 py-2 text-xs font-medium text-white transition-colors shrink-0"
             >
                 <RotateCcw className="h-3.5 w-3.5" />
                 Reorder

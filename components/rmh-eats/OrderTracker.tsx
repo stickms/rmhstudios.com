@@ -112,7 +112,7 @@ export default function OrderTracker() {
                                 <div key={step.status} className="flex gap-4 relative">
                                     {/* Icon circle */}
                                     <div
-                                        className={`relative z-10 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border-2 transition-all duration-500 ${
+                                        className={`relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-500 ${
                                             isPast
                                                 ? 'border-orange-500 bg-orange-500 text-white'
                                                 : isCurrent

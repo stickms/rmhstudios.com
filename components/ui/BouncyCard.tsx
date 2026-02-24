@@ -98,7 +98,7 @@ export function BouncyCard({ children, className = "", delay = 0 }: BouncyCardPr
         {/* Skip inner glow overlay in reduced mode */}
         {isFull && (
           <div
-            className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/5 to-white/10 pointer-events-none"
+            className="absolute inset-0 rounded-2xl bg-linear-to-br from-white/5 to-white/10 pointer-events-none"
             style={{ opacity: isHovered ? 0.8 : 0.5 }}
           />
         )}

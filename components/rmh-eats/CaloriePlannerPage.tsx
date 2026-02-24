@@ -188,11 +188,11 @@ export default function CaloriePlannerPage() {
                                             <p className="text-sm text-white truncate font-medium">{item.name}</p>
                                             <p className="text-xs text-slate-400">{restaurantImage} {restaurantName}</p>
                                         </div>
-                                        <div className="flex-shrink-0 text-right">
+                                        <div className="shrink-0 text-right">
                                             <p className="text-xs font-semibold text-green-400">{item.calories} cal</p>
                                             <p className="text-xs text-slate-500">${item.price.toFixed(2)}</p>
                                         </div>
-                                        <ChevronRight className="h-4 w-4 text-slate-600 flex-shrink-0" />
+                                        <ChevronRight className="h-4 w-4 text-slate-600 shrink-0" />
                                     </motion.div>
                                 ))}
                             </div>

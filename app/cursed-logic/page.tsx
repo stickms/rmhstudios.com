@@ -36,7 +36,7 @@ export default function CursedLogicPage() {
         <p className="text-white/50 text-sm mt-1">Duel the Protocol</p>
       </div>
 
-      <div className="flex-grow relative overflow-auto">
+      <div className="grow relative overflow-auto">
         <CursedLogicGame />
       </div>
 

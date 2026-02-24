@@ -90,7 +90,7 @@ export default function RestaurantDetail({ restaurantId }: { restaurantId: strin
     return (
         <div className="flex flex-col gap-0">
             {/* Header */}
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700/50 mb-5">
+            <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-slate-800 to-slate-900 border border-slate-700/50 mb-5">
                 {/* Back button */}
                 <button
                     onClick={goHome}
@@ -112,7 +112,7 @@ export default function RestaurantDetail({ restaurantId }: { restaurantId: strin
                 </button>
 
                 {/* Cover */}
-                <div className="h-36 flex items-center justify-center text-7xl bg-gradient-to-br from-orange-500/10 to-red-500/10">
+                <div className="h-36 flex items-center justify-center text-7xl bg-linear-to-br from-orange-500/10 to-red-500/10">
                     {restaurant.image}
                 </div>
 

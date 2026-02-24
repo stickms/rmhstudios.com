@@ -13,7 +13,7 @@ export default function ThemePicker({ open, onClose, onApplyTheme }: Props) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-9999 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div
         className="w-full max-w-lg rounded-2xl shadow-2xl"
         style={{ background: 'var(--slides-surface)', border: '1px solid var(--slides-border)' }}

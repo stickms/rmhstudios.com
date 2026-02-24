@@ -109,10 +109,10 @@ export default function GameCanvas() {
           <button onClick={() => setShowTutorial(true)} className="underline">[HELP]</button>
       </div>
 
-      <div ref={containerRef} className="relative w-full max-w-[1200px] aspect-[3/2] max-h-[85vh] bg-slate-900 border-2 border-slate-700 rounded-xl overflow-hidden shadow-2xl shadow-blue-900/20 flex items-center justify-center font-mono text-slate-100">
+      <div ref={containerRef} className="relative w-full max-w-[1200px] aspect-3/2 max-h-[85vh] bg-slate-900 border-2 border-slate-700 rounded-xl overflow-hidden shadow-2xl shadow-blue-900/20 flex items-center justify-center font-mono text-slate-100">
       
       {/* CRT Overlay Effect */}
-      <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(255,255,255,0)_50%,rgba(255,255,255,0.05)_50%),linear-gradient(90deg,rgba(0,0,0,0.02),rgba(255,255,255,0.01),rgba(0,0,0,0.02))] z-10 bg-[length:100%_2px,3px_100%] pointer-events-none opacity-50" />
+      <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(255,255,255,0)_50%,rgba(255,255,255,0.05)_50%),linear-gradient(90deg,rgba(0,0,0,0.02),rgba(255,255,255,0.01),rgba(0,0,0,0.02))] z-10 bg-size-[100%_2px,3px_100%] pointer-events-none opacity-50" />
       
       {/* Canvas */}
       <canvas 

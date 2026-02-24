@@ -110,7 +110,7 @@ function TimedPressOverlay({ distort, onComplete }: TimedPressProps) {
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex flex-col items-center justify-center gap-4 bg-black/70 backdrop-blur-sm"
+      className="fixed inset-0 z-60 flex flex-col items-center justify-center gap-4 bg-black/70 backdrop-blur-sm"
       onClick={result === null ? handlePress : undefined}
       role="button"
       tabIndex={0}
@@ -244,7 +244,7 @@ function HoldZoneOverlay({ distort, onComplete }: HoldZoneProps) {
   }, [holding, failed, handleNudge]);
 
   return (
-    <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center gap-6 bg-black/70 backdrop-blur-sm">
+    <div className="fixed inset-0 z-60 flex flex-col items-center justify-center gap-6 bg-black/70 backdrop-blur-sm">
       <p className="text-cyan-300 text-sm font-mono">Hold — Brace to correct drift</p>
       <div className="w-full max-w-xs h-12 rounded-lg bg-white/10 border border-cyan-500/40 relative overflow-hidden">
         <div
@@ -331,7 +331,7 @@ function RapidChoiceOverlay({ onComplete }: RapidChoiceProps) {
   );
 
   return (
-    <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center gap-6 bg-black/70 backdrop-blur-sm">
+    <div className="fixed inset-0 z-60 flex flex-col items-center justify-center gap-6 bg-black/70 backdrop-blur-sm">
       <p className="text-cyan-300 text-sm font-mono">
         {!ready ? '…' : 'Choose quickly'}
       </p>

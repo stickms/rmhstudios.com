@@ -19,7 +19,7 @@ export default function NeonDriftwayPage() {
         </Link>
       </div>
 
-      <div className="flex-grow relative flex items-center justify-center">
+      <div className="grow relative flex items-center justify-center">
         <NeonDriftwayGame />
       </div>
     </main>

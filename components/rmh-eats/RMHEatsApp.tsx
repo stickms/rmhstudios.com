@@ -109,7 +109,7 @@ export default function RMHEatsApp() {
                                 <ArrowLeft className="h-4 w-4" />
                             </Link>
                             <button onClick={view === 'home' ? goHome : goBack} className="flex items-center gap-2 group">
-                                <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center shrink-0 shadow-md shadow-orange-500/30 group-hover:shadow-orange-500/50 transition-shadow">
+                                <div className="h-8 w-8 rounded-xl bg-linear-to-br from-orange-500 to-red-500 flex items-center justify-center shrink-0 shadow-md shadow-orange-500/30 group-hover:shadow-orange-500/50 transition-shadow">
                                     <Utensils className="h-4 w-4 text-white" />
                                 </div>
                                 <span className="font-bold text-white hidden sm:block">

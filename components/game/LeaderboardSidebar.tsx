@@ -85,7 +85,7 @@ export function LeaderboardSidebar() {
                             </div>
                             
                             {/* Hover Effect */}
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-neon-purple/5 opacity-0 group-hover:opacity-100 transition-opacity rounded pointer-events-none" />
+                            <div className="absolute inset-0 bg-linear-to-r from-transparent via-transparent to-neon-purple/5 opacity-0 group-hover:opacity-100 transition-opacity rounded pointer-events-none" />
                         </div>
                     ))
                 )}
