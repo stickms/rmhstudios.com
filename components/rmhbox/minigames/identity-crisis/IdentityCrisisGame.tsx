@@ -12,9 +12,10 @@
  *   RESULTS           → IdentityReveal dramatic reveal + rankings
  *
  * Handles server actions:
- *   IC_ASSIGNMENT, IC_ASK_START, IC_VOTE_START, IC_VOTE_CAST,
- *   IC_VOTE_RESULTS, IC_FINAL_GUESS, IC_GUESS_RESULT,
- *   IC_RESULTS, IC_EARLY_GUESS_OPEN, TIMER_TICK
+ *   IC_IDENTITIES_REVEAL, IC_TURN_START_SELF, IC_TURN_START,
+ *   IC_VOTE_START, IC_VOTE_COUNT, IC_VOTE_RESULTS,
+ *   IC_FINAL_GUESS_START, IC_EARLY_GUESS_RESULT, IC_RESULTS,
+ *   TIMER_TICK, TIMER_START
  *
  * Props:
  *   playerId: string — Current player's user ID
@@ -119,98 +120,107 @@ export default function IdentityCrisisGame({ playerId, playerName }: IdentityCri
   const [reveals, setReveals] = useState<RevealEntry[]>([]);
   const [finalRankings, setFinalRankings] = useState<RankingEntry[]>([]);
 
-  const players = useRMHboxStore((s) => s.lobby?.players);
-
   const isMyTurn = currentAskerId === playerId;
 
   const handleGameAction = useCallback(
     (data: Record<string, unknown>) => {
       const actionType = data.type as string;
+      // Server wraps data in a `payload` field for most IC events
+      const payload = (data.payload ?? data) as Record<string, unknown>;
 
       switch (actionType) {
-        case 'IC_ASSIGNMENT': {
+        case 'IC_IDENTITIES_REVEAL': {
           setPhase('ASSIGNMENT_REVEAL');
-          const assignments = data.identities as IdentityAssignment[] | undefined;
+          const assignments = payload.identities as IdentityAssignment[] | undefined;
           if (assignments) setIdentities(assignments);
-          setQuestionsRemaining(data.questionsPerPlayer as number ?? 0);
           break;
         }
-        case 'IC_ASK_START': {
+        case 'IC_TURN_START_SELF':
+        case 'IC_TURN_START': {
           setPhase('ASK');
-          setCurrentAskerId(data.askerId as string);
-          setCurrentAskerName(data.askerName as string ?? '');
-          setTimeRemaining(data.duration as number ?? 30);
+          setCurrentAskerId(payload.askerId as string);
+          setCurrentAskerName(payload.askerName as string ?? '');
           setMyVote(null);
           setEarlyGuessOpen(false);
           break;
         }
         case 'IC_VOTE_START': {
           setPhase('VOTE');
-          setCurrentQuestion(data.question as string);
-          setCurrentAskerName(data.askerName as string ?? '');
-          setCurrentAskerIdentity(data.askerIdentity as string ?? '');
-          setTimeRemaining(data.duration as number ?? 15);
+          setCurrentQuestion(payload.question as string);
+          setCurrentAskerName(payload.askerName as string ?? '');
+          setCurrentAskerIdentity(payload.askerIdentity as string ?? '');
           setMyVote(null);
           setVotesReceived(0);
-          setTotalVoters(data.totalVoters as number ?? 0);
+          setTotalVoters(payload.totalVoters as number ?? 0);
           break;
         }
-        case 'IC_VOTE_CAST': {
-          setVotesReceived(data.votesReceived as number ?? 0);
+        case 'IC_VOTE_COUNT': {
+          setVotesReceived(payload.voteCount as number ?? 0);
+          setTotalVoters(payload.totalEligible as number ?? totalVoters);
           break;
         }
         case 'IC_VOTE_RESULTS': {
           setPhase('VOTE_RESULTS');
-          const votes = data.votes as { yes: number; no: number; maybe: number };
-          if (votes) setLastVotes(votes);
-          setLastMajority(data.majorityAnswer as string ?? '');
+          const tally = payload.tally as { yes: number; no: number; maybe: number } | undefined;
+          if (tally) setLastVotes(tally);
+          const result = payload.result as string ?? '';
+          setLastMajority(result);
           setEarlyGuessOpen(false);
 
           // Append to question history
           setQuestionHistory((prev) => [
             ...prev,
             {
-              question: currentQuestion,
-              askerName: currentAskerName,
-              votes: votes ?? { yes: 0, no: 0, maybe: 0 },
-              majorityAnswer: data.majorityAnswer as string ?? '',
+              question: payload.question as string ?? currentQuestion,
+              askerName: payload.askerName as string ?? currentAskerName,
+              votes: tally ?? { yes: 0, no: 0, maybe: 0 },
+              majorityAnswer: result,
             },
           ]);
           break;
         }
-        case 'IC_EARLY_GUESS_OPEN': {
+        case 'IC_EARLY_GUESS_RESULT': {
+          // Sent privately to the player who guessed
+          const correct = payload.correct as boolean;
+          if (correct) setHasGuessedCorrectly(true);
+          setEarlyGuessOpen(false);
+          break;
+        }
+        case 'IC_EARLY_GUESS_MADE': {
+          // Broadcast to all — early guess window still open for others
           setEarlyGuessOpen(true);
           break;
         }
-        case 'IC_GUESS_RESULT': {
-          const correct = data.correct as boolean;
-          if (data.userId === playerId && correct) {
-            setHasGuessedCorrectly(true);
-          }
-          break;
-        }
-        case 'IC_FINAL_GUESS': {
+        case 'IC_FINAL_GUESS_START': {
           setPhase('FINAL_GUESS');
-          setTimeRemaining(data.duration as number ?? 30);
+          if (payload.alreadyGuessed) setHasGuessedCorrectly(true);
+          if (payload.otherIdentities) {
+            setIdentities(payload.otherIdentities as IdentityAssignment[]);
+          }
           break;
         }
         case 'IC_RESULTS': {
           setPhase('RESULTS');
-          const revealData = data.reveals as RevealEntry[] | undefined;
-          if (revealData) setReveals(revealData);
-          const rankings = data.rankings as RankingEntry[] | undefined;
+          const resultsPayload = payload;
+          const rankings = resultsPayload.rankings as RankingEntry[] | undefined;
           if (rankings) setFinalRankings(rankings);
+          const guessResults = resultsPayload.guessResults as RevealEntry[] | undefined;
+          if (guessResults) setReveals(guessResults);
+          break;
+        }
+        case 'TIMER_START': {
+          const pl = payload as Record<string, unknown>;
+          if (pl.totalDuration) setTimeRemaining(pl.totalDuration as number);
           break;
         }
         case 'TIMER_TICK': {
-          const pl = data.payload as Record<string, unknown> | undefined;
-          const remaining = (pl?.timeRemaining ?? data.timeRemaining) as number;
+          const remaining = (payload.timeRemaining ?? data.timeRemaining) as number;
           if (typeof remaining === 'number') setTimeRemaining(remaining);
           break;
         }
       }
     },
-    [playerId, currentQuestion, currentAskerName],
+    [playerId, currentQuestion, currentAskerName, totalVoters],
   );
 
   // Also handle game-over via GAME_ROUND_RESULTS
@@ -256,7 +266,7 @@ export default function IdentityCrisisGame({ playerId, playerName }: IdentityCri
   // ─── Callbacks ──────────────────────────────────────────────────
 
   const handleAskQuestion = useCallback((question: string) => {
-    emitGameInput('IC_ASK', { question });
+    emitGameInput('IC_ASK_QUESTION', { question });
   }, []);
 
   const handleVote = useCallback((vote: string) => {
@@ -265,7 +275,7 @@ export default function IdentityCrisisGame({ playerId, playerName }: IdentityCri
   }, []);
 
   const handleGuess = useCallback((guess: string) => {
-    emitGameInput('IC_GUESS', { guess });
+    emitGameInput('IC_FINAL_GUESS', { guess });
   }, []);
 
   const handleEarlyGuess = useCallback((guess: string) => {
