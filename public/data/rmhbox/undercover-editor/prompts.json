@@ -1,0 +1,362 @@
+[
+  {
+    "id": "prompt-001",
+    "text": "A detective arrives at an abandoned mansion on a stormy night.",
+    "genre": "Mystery",
+    "mood": "tense"
+  },
+  {
+    "id": "prompt-002",
+    "text": "The last starship leaves Earth, carrying only a hundred passengers toward an unknown planet.",
+    "genre": "Sci-Fi",
+    "mood": "dramatic"
+  },
+  {
+    "id": "prompt-003",
+    "text": "A young apprentice discovers a forbidden spell hidden inside a library book.",
+    "genre": "Fantasy",
+    "mood": "mysterious"
+  },
+  {
+    "id": "prompt-004",
+    "text": "Two rival bakers accidentally swap their secret recipes the night before the county fair.",
+    "genre": "Comedy",
+    "mood": "lighthearted"
+  },
+  {
+    "id": "prompt-005",
+    "text": "A map found in a grandfather's attic leads to a cave no one in town has ever seen.",
+    "genre": "Adventure",
+    "mood": "hopeful"
+  },
+  {
+    "id": "prompt-006",
+    "text": "A surgeon must choose between saving a stranger and keeping a promise to her dying father.",
+    "genre": "Drama",
+    "mood": "dramatic"
+  },
+  {
+    "id": "prompt-007",
+    "text": "The lights in the old lighthouse flicker on by themselves every night at midnight.",
+    "genre": "Horror",
+    "mood": "eerie"
+  },
+  {
+    "id": "prompt-008",
+    "text": "Two strangers reach for the same book at a crowded bookshop and lock eyes.",
+    "genre": "Romance",
+    "mood": "lighthearted"
+  },
+  {
+    "id": "prompt-009",
+    "text": "A soldier finds a sealed letter in the ruins of a medieval castle that changes everything.",
+    "genre": "Historical",
+    "mood": "mysterious"
+  },
+  {
+    "id": "prompt-010",
+    "text": "A private investigator receives a phone call from someone who claims to already be dead.",
+    "genre": "Mystery",
+    "mood": "tense"
+  },
+  {
+    "id": "prompt-011",
+    "text": "Colonists on Mars discover footprints in the dust that don't belong to any crew member.",
+    "genre": "Sci-Fi",
+    "mood": "eerie"
+  },
+  {
+    "id": "prompt-012",
+    "text": "A dragon lands in a farmer's field and politely asks for directions.",
+    "genre": "Fantasy",
+    "mood": "lighthearted"
+  },
+  {
+    "id": "prompt-013",
+    "text": "A cat burglar breaks into the wrong apartment and finds it full of cats.",
+    "genre": "Comedy",
+    "mood": "lighthearted"
+  },
+  {
+    "id": "prompt-014",
+    "text": "A deep-sea diver finds an entrance carved into the ocean floor that leads somewhere warm.",
+    "genre": "Adventure",
+    "mood": "mysterious"
+  },
+  {
+    "id": "prompt-015",
+    "text": "A mother reconnects with the child she gave up for adoption twenty years ago.",
+    "genre": "Drama",
+    "mood": "hopeful"
+  },
+  {
+    "id": "prompt-016",
+    "text": "Every mirror in the house shows a reflection that moves a half-second too late.",
+    "genre": "Horror",
+    "mood": "eerie"
+  },
+  {
+    "id": "prompt-017",
+    "text": "A love letter meant for one person is delivered to another, and it changes both their lives.",
+    "genre": "Romance",
+    "mood": "dramatic"
+  },
+  {
+    "id": "prompt-018",
+    "text": "A scribe in ancient Egypt overhears a plot to assassinate the pharaoh.",
+    "genre": "Historical",
+    "mood": "tense"
+  },
+  {
+    "id": "prompt-019",
+    "text": "A journalist discovers that the city's most beloved mayor has been hiding a second identity.",
+    "genre": "Mystery",
+    "mood": "dramatic"
+  },
+  {
+    "id": "prompt-020",
+    "text": "A scientist accidentally opens a portal to a parallel version of her own laboratory.",
+    "genre": "Sci-Fi",
+    "mood": "mysterious"
+  },
+  {
+    "id": "prompt-021",
+    "text": "An enchanted forest begins growing in the middle of a modern city overnight.",
+    "genre": "Fantasy",
+    "mood": "hopeful"
+  },
+  {
+    "id": "prompt-022",
+    "text": "A wedding planner realizes she has accidentally scheduled two weddings at the same venue on the same day.",
+    "genre": "Comedy",
+    "mood": "lighthearted"
+  },
+  {
+    "id": "prompt-023",
+    "text": "A hot-air balloon drifts off course and lands in a valley that appears on no map.",
+    "genre": "Adventure",
+    "mood": "hopeful"
+  },
+  {
+    "id": "prompt-024",
+    "text": "An aging musician plays her final concert, knowing a secret she has never told the audience.",
+    "genre": "Drama",
+    "mood": "dramatic"
+  },
+  {
+    "id": "prompt-025",
+    "text": "A child's imaginary friend starts leaving real footprints in the hallway.",
+    "genre": "Horror",
+    "mood": "eerie"
+  },
+  {
+    "id": "prompt-026",
+    "text": "Two pen pals who have written to each other for years finally agree to meet at a train station.",
+    "genre": "Romance",
+    "mood": "hopeful"
+  },
+  {
+    "id": "prompt-027",
+    "text": "A cartographer in the Age of Exploration draws an island that should not exist.",
+    "genre": "Historical",
+    "mood": "mysterious"
+  },
+  {
+    "id": "prompt-028",
+    "text": "A locked room is found with no doors, no windows, and a single chair facing the wall.",
+    "genre": "Mystery",
+    "mood": "eerie"
+  },
+  {
+    "id": "prompt-029",
+    "text": "Humanity's first AI asks a question no one expected: 'Why did you create me?'",
+    "genre": "Sci-Fi",
+    "mood": "dramatic"
+  },
+  {
+    "id": "prompt-030",
+    "text": "A blacksmith forges a sword that hums a different tune for each person who holds it.",
+    "genre": "Fantasy",
+    "mood": "mysterious"
+  },
+  {
+    "id": "prompt-031",
+    "text": "A time traveler goes back to fix one mistake and accidentally invents the sandwich.",
+    "genre": "Comedy",
+    "mood": "lighthearted"
+  },
+  {
+    "id": "prompt-032",
+    "text": "Explorers find a staircase descending into the earth beneath an Antarctic glacier.",
+    "genre": "Adventure",
+    "mood": "tense"
+  },
+  {
+    "id": "prompt-033",
+    "text": "A firefighter rescues a stranger and later discovers they share an impossible connection.",
+    "genre": "Drama",
+    "mood": "hopeful"
+  },
+  {
+    "id": "prompt-034",
+    "text": "The radio turns on at 3 a.m. and plays a song that won't be written for another ten years.",
+    "genre": "Horror",
+    "mood": "eerie"
+  },
+  {
+    "id": "prompt-035",
+    "text": "A florist leaves a single rose on the same park bench every morning, and someone always takes it.",
+    "genre": "Romance",
+    "mood": "mysterious"
+  },
+  {
+    "id": "prompt-036",
+    "text": "A spy during the Cold War discovers that her handler has been feeding her false intelligence.",
+    "genre": "Historical",
+    "mood": "tense"
+  },
+  {
+    "id": "prompt-037",
+    "text": "A librarian notices that the same stranger checks out the same book every week and returns it unread.",
+    "genre": "Mystery",
+    "mood": "mysterious"
+  },
+  {
+    "id": "prompt-038",
+    "text": "A generation ship's passengers wake from cryo-sleep to find the crew has vanished.",
+    "genre": "Sci-Fi",
+    "mood": "tense"
+  },
+  {
+    "id": "prompt-039",
+    "text": "A witch running a tea shop accidentally brews a potion that makes customers tell the truth.",
+    "genre": "Fantasy",
+    "mood": "lighthearted"
+  },
+  {
+    "id": "prompt-040",
+    "text": "A dog walker loses all twelve dogs at once in a park and has thirty minutes to find them.",
+    "genre": "Comedy",
+    "mood": "lighthearted"
+  },
+  {
+    "id": "prompt-041",
+    "text": "A river guide discovers ancient carvings behind a waterfall that depict modern technology.",
+    "genre": "Adventure",
+    "mood": "mysterious"
+  },
+  {
+    "id": "prompt-042",
+    "text": "A teacher reads a student's essay and realizes it describes events that haven't happened yet.",
+    "genre": "Drama",
+    "mood": "tense"
+  },
+  {
+    "id": "prompt-043",
+    "text": "A family moves into their dream house and finds a door in the basement that opens onto a field of stars.",
+    "genre": "Horror",
+    "mood": "eerie"
+  },
+  {
+    "id": "prompt-044",
+    "text": "A chef and a food critic who despise each other are seated next to each other on a twelve-hour flight.",
+    "genre": "Romance",
+    "mood": "lighthearted"
+  },
+  {
+    "id": "prompt-045",
+    "text": "A gladiator in ancient Rome discovers a hidden tunnel beneath the Colosseum that leads to freedom.",
+    "genre": "Historical",
+    "mood": "hopeful"
+  },
+  {
+    "id": "prompt-046",
+    "text": "An astronaut on a solo mission hears a knock on the outside of the spacecraft.",
+    "genre": "Sci-Fi",
+    "mood": "eerie"
+  },
+  {
+    "id": "prompt-047",
+    "text": "A painter's latest portrait blinks when no one is looking.",
+    "genre": "Horror",
+    "mood": "eerie"
+  },
+  {
+    "id": "prompt-048",
+    "text": "A retired thief is asked to steal one last thing: a memory.",
+    "genre": "Adventure",
+    "mood": "dramatic"
+  },
+  {
+    "id": "prompt-049",
+    "text": "Two best friends open a detective agency, but neither of them has any idea how to solve a crime.",
+    "genre": "Comedy",
+    "mood": "lighthearted"
+  },
+  {
+    "id": "prompt-050",
+    "text": "A clockmaker builds a clock that counts down to an event no one can identify.",
+    "genre": "Mystery",
+    "mood": "tense"
+  },
+  {
+    "id": "prompt-051",
+    "text": "A knight sworn to protect the kingdom discovers the king is the true villain.",
+    "genre": "Fantasy",
+    "mood": "dramatic"
+  },
+  {
+    "id": "prompt-052",
+    "text": "A war correspondent finds a child's drawing in the rubble that tells an impossible story.",
+    "genre": "Drama",
+    "mood": "hopeful"
+  },
+  {
+    "id": "prompt-053",
+    "text": "A botanist discovers a flower that blooms only when someone nearby tells a lie.",
+    "genre": "Sci-Fi",
+    "mood": "mysterious"
+  },
+  {
+    "id": "prompt-054",
+    "text": "A pirate captain and her crew follow a constellation that moves across the sky each night.",
+    "genre": "Adventure",
+    "mood": "hopeful"
+  },
+  {
+    "id": "prompt-055",
+    "text": "An old couple sits on a porch, and one of them finally confesses a secret kept for fifty years.",
+    "genre": "Romance",
+    "mood": "dramatic"
+  },
+  {
+    "id": "prompt-056",
+    "text": "A samurai in feudal Japan is given an impossible task: deliver a message across enemy territory alone.",
+    "genre": "Historical",
+    "mood": "tense"
+  },
+  {
+    "id": "prompt-057",
+    "text": "A voice on the subway intercom announces a stop that doesn't exist, and one passenger stands up.",
+    "genre": "Mystery",
+    "mood": "mysterious"
+  },
+  {
+    "id": "prompt-058",
+    "text": "A robot designed to clean a space station begins composing poetry in its downtime.",
+    "genre": "Sci-Fi",
+    "mood": "lighthearted"
+  },
+  {
+    "id": "prompt-059",
+    "text": "A village celebrates a harvest festival, unaware that the forest behind them has begun to move.",
+    "genre": "Fantasy",
+    "mood": "eerie"
+  },
+  {
+    "id": "prompt-060",
+    "text": "A magician's rabbit escapes during a live show and leads the audience on a wild chase through the theater.",
+    "genre": "Comedy",
+    "mood": "lighthearted"
+  }
+]
