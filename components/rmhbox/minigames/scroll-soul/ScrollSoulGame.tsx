@@ -48,7 +48,7 @@ export interface SCPlayer {
 }
 
 export interface SCPlatform {
-  id: number;
+  id: string;
   x: number;
   y: number;
   width: number;
@@ -75,10 +75,11 @@ export interface SCFinalRanking {
   userId: string;
   userName: string;
   rank: number;
-  score: number;
+  totalScore: number;
   survivalTimeMs: number;
-  adsDismissed: number;
-  adsTricked: number;
+  adsCorrectlyDismissed: number;
+  adsFailed: number;
+  eliminationRank: number;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────

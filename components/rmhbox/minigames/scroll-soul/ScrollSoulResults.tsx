@@ -60,24 +60,24 @@ function deriveAwards(rankings: SCFinalRanking[]) {
   }
 
   // Most ads dismissed correctly
-  const bestDismisser = [...rankings].sort((a, b) => b.adsDismissed - a.adsDismissed)[0];
-  if (bestDismisser.adsDismissed > 0) {
+  const bestDismisser = [...rankings].sort((a, b) => b.adsCorrectlyDismissed - a.adsCorrectlyDismissed)[0];
+  if (bestDismisser.adsCorrectlyDismissed > 0) {
     awards.push({
       icon: <Shield className="h-5 w-5 text-green-400" />,
       title: 'Ad Blocker',
       recipient: bestDismisser.userName,
-      description: `Dismissed ${bestDismisser.adsDismissed} ads correctly`,
+      description: `Dismissed ${bestDismisser.adsCorrectlyDismissed} ads correctly`,
     });
   }
 
   // Most times tricked by ads
-  const mostTricked = [...rankings].sort((a, b) => b.adsTricked - a.adsTricked)[0];
-  if (mostTricked.adsTricked > 0) {
+  const mostTricked = [...rankings].sort((a, b) => b.adsFailed - a.adsFailed)[0];
+  if (mostTricked.adsFailed > 0) {
     awards.push({
       icon: <Skull className="h-5 w-5 text-red-400" />,
       title: 'Click Bait Victim',
       recipient: mostTricked.userName,
-      description: `Tricked ${mostTricked.adsTricked} times`,
+      description: `Clicked ${mostTricked.adsFailed} fake close buttons`,
     });
   }
 
@@ -148,9 +148,9 @@ export default function ScrollSoulResults({
                   {r.rank <= 3 ? RANK_ICONS[r.rank - 1] : `#${r.rank}`}
                 </td>
                 <td className="py-1.5 font-medium">{r.userName}</td>
-                <td className="py-1.5 text-right font-mono font-bold">{r.score}</td>
+                <td className="py-1.5 text-right font-mono font-bold">{r.totalScore}</td>
                 <td className="py-1.5 text-right font-mono">{formatTime(r.survivalTimeMs)}</td>
-                <td className="py-1.5 text-right font-mono">{r.adsDismissed}</td>
+                <td className="py-1.5 text-right font-mono">{r.adsCorrectlyDismissed}</td>
               </tr>
             ))}
           </tbody>
