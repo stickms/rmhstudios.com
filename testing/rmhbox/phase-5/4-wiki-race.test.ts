@@ -17,6 +17,7 @@ import { WikiRaceMinigame, WikiRacePhase } from '../../../server/rmhbox/minigame
 import {
   WR_NAV_DURATION,
   WR_DNF_BASE,
+  WR_ONE_AWAY,
 } from '../../../lib/rmhbox/constants';
 import {
   MOCK_USERS,
@@ -277,6 +278,32 @@ describe('Wiki-Race Server Handler (§5.4)', () => {
       for (const ranking of results.rankings) {
         expect(ranking.score).toBeGreaterThanOrEqual(WR_DNF_BASE);
       }
+    });
+
+    it('should award WR_ONE_AWAY points to DNF player with target in links (e.g. Egypt → Ancient_Egypt)', async () => {
+      const ctxData = createMockContext();
+      ctxData.context.gameSettings = { totalRounds: 1 };
+      const { game } = createGame(ctxData);
+      game.start();
+
+      // Enter navigation phase; flush microtasks so start article links are populated
+      await vi.advanceTimersByTimeAsync(6000);
+
+      // Alice navigates to Other_Article (mock returns Target_Article in its links)
+      const userId = MOCK_USERS.alice.userId;
+      game.handleInput(userId, 'NAVIGATE', { targetTitle: 'Other_Article' });
+
+      // Flush microtasks so navigation fetch completes and links are populated
+      await vi.advanceTimersByTimeAsync(0);
+
+      // Let the game time out — Alice is DNF but one click away from Target_Article
+      await vi.advanceTimersByTimeAsync(300_000);
+
+      const results = game.computeResults();
+      const aliceRanking = results.rankings.find((r) => r.userId === userId);
+      expect(aliceRanking).toBeDefined();
+      // Alice was one click away from the target — should get WR_ONE_AWAY points
+      expect(aliceRanking!.score).toBeGreaterThanOrEqual(WR_ONE_AWAY);
     });
   });
 

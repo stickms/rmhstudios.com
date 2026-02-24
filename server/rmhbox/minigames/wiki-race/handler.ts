@@ -56,6 +56,7 @@ export class WikiRaceMinigame extends BaseMinigame {
   private navigationStartedAt: number = 0;
   private articleCache: LRUCache<string, CachedArticle>;
   private rateLimits: Map<string, RateLimitEntry> = new Map();
+  private navigationTimeoutHandle: NodeJS.Timeout | null = null;
 
   constructor(context: MinigameContext) {
     super(context);
@@ -191,7 +192,7 @@ export class WikiRaceMinigame extends BaseMinigame {
     this.startPhaseTimer(this.getSetting('navDuration', WR_NAV_DURATION));
 
     // End navigation when time expires
-    this.setTimeout(() => this.endNavigation(), this.getSetting('navDuration', WR_NAV_DURATION) * 1000);
+    this.navigationTimeoutHandle = this.setTimeout(() => this.endNavigation(), this.getSetting('navDuration', WR_NAV_DURATION) * 1000);
   }
 
   private endNavigation(): void {
@@ -392,7 +393,7 @@ export class WikiRaceMinigame extends BaseMinigame {
     ps.clickCount++;
     ps.path.push(targetTitle);
     ps.currentArticleTitle = targetTitle;
-    ps.currentArticleLinks = new Set<string>(); // Clear until new article loads
+    // Keep existing links until new article loads (avoids empty links on game end)
 
     this.logAction('navigate', {
       userId,
@@ -500,7 +501,7 @@ export class WikiRaceMinigame extends BaseMinigame {
     // Truncate path to the target index
     ps.path = ps.path.slice(0, pathIndex + 1);
     ps.currentArticleTitle = targetTitle;
-    ps.currentArticleLinks = new Set<string>();
+    // Keep existing links until new article loads (avoids empty links on game end)
 
     this.logAction('back_click', {
       userId,
@@ -591,6 +592,8 @@ export class WikiRaceMinigame extends BaseMinigame {
         finishedCount: this.state.finishCounter,
         totalPlayers: this.state.playerStates.size,
       });
+      this.clearTrackedTimeout(this.navigationTimeoutHandle);
+      this.navigationTimeoutHandle = null;
       this.clearPhaseTimer();
       this.computeScores();
       this.showResults();
