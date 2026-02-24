@@ -221,7 +221,7 @@ export default function HumanKeyboardGame({ playerId, playerName: _playerName }:
   const handleKeyPress = useCallback(
     (key: string) => {
       if (locked) return;
-      emitGameInput('HK_PRESS_KEY', { key: key.toUpperCase() });
+      emitGameInput('HK_PRESS', { key: key.toLowerCase() });
     },
     [locked],
   );
