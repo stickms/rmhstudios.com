@@ -148,7 +148,7 @@ describe('Security — State Masking (Phase 6)', () => {
       vi.advanceTimersByTime(10_000);
 
       // Identify the producer from the broadcast
-      const assignBroadcast = findLastActionBroadcast(ctx.broadcastLog, 'EC_ROUND_START');
+      const assignBroadcast = findLastActionBroadcast(ctx.broadcastLog, 'EC_PRODUCER_ASSIGNED');
       const producerId = assignBroadcast
         ? (assignBroadcast.data as Record<string, unknown>).producerUserId as string
         : MOCK_USERS.alice.userId;
@@ -176,7 +176,7 @@ describe('Security — State Masking (Phase 6)', () => {
       vi.advanceTimersByTime(10_000);
 
       // Identify producer
-      const assignBroadcast = findLastActionBroadcast(ctx.broadcastLog, 'EC_ROUND_START');
+      const assignBroadcast = findLastActionBroadcast(ctx.broadcastLog, 'EC_PRODUCER_ASSIGNED');
       const producerId = assignBroadcast
         ? (assignBroadcast.data as Record<string, unknown>).producerUserId as string
         : MOCK_USERS.alice.userId;
@@ -203,7 +203,7 @@ describe('Security — State Masking (Phase 6)', () => {
       // Into EMOJI_CONSTRUCTION
       vi.advanceTimersByTime(10_000);
 
-      const assignBroadcast = findLastActionBroadcast(ctx.broadcastLog, 'EC_ROUND_START');
+      const assignBroadcast = findLastActionBroadcast(ctx.broadcastLog, 'EC_PRODUCER_ASSIGNED');
       const producerId = assignBroadcast
         ? (assignBroadcast.data as Record<string, unknown>).producerUserId as string
         : MOCK_USERS.alice.userId;

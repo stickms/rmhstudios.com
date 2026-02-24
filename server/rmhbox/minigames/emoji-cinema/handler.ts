@@ -52,9 +52,7 @@ import {
 import { logger } from '../../logger';
 import type {
   ECPhase,
-  ECRoundData,
   ECPlayerGuess,
-  ECPlayerGuesses,
   CorrectGuesser,
   EmojiCinemaState,
 } from './types';
@@ -686,11 +684,19 @@ export class EmojiCinemaGame extends BaseMinigame {
     const myGuesses = this.state.guesses.get(userId);
     const revealMovie = this.state.phase === 'ROUND_RESULTS';
 
+    // Strip guessText from correctGuessers for audience — it may contain the movie title
+    const safeGuessers = this.state.correctGuessers.map((cg) => ({
+      userId: cg.userId,
+      userName: cg.userName,
+      timestamp: cg.timestamp,
+      rank: cg.rank,
+    }));
+
     return {
       ...base,
       role: 'audience',
       myGuesses: myGuesses?.guesses ?? [],
-      correctGuessers: this.state.correctGuessers,
+      correctGuessers: safeGuessers,
       closeGuessCount: this.state.closeGuessCount,
       ...(revealMovie
         ? {

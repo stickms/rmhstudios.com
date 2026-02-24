@@ -47,8 +47,6 @@ import {
   MM_STARTING_CURRENCY,
   MM_BID_INCREMENT,
   MM_RANK_1_POINTS,
-  MM_RANK_2_POINTS,
-  MM_PARTICIPATION_POINTS,
   MM_INVESTMENT_BONUS,
 } from '../../../lib/rmhbox/constants';
 
@@ -82,7 +80,7 @@ function createValidDrawing(strokeCount = 3): { strokes: Record<string, unknown>
 }
 
 /** Advance into the DRAWING phase. */
-function advanceToDrawing(game: MinimalistMasterpieceGame): void {
+function advanceToDrawing(_game: MinimalistMasterpieceGame): void {
   vi.advanceTimersByTime(MM_PROMPT_REVEAL_SECONDS * 1000);
 }
 
@@ -492,7 +490,7 @@ describe('Minimalist Masterpiece Server Handler (§6.3)', () => {
   // ───────────────────────────────────────────────────────────────
   describe('Scoring & Results', () => {
     it('should rank drawings by market value in descending order', () => {
-      const { game, playerLog } = createGame();
+      const { game } = createGame();
       game.start();
       advanceToAuction(game, ALL_PLAYER_IDS);
 

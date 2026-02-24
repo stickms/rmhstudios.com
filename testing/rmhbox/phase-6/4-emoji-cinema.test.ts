@@ -21,7 +21,6 @@ import {
   createMockContext,
   findLastActionBroadcast,
   findActionBroadcasts,
-  findPlayerActions,
   findLastPlayerAction,
   findLastPlayerEvent,
   type MockContextData,
@@ -45,8 +44,10 @@ vi.mock('@/lib/rmhbox/emoji-cinema/data-loader', () => ({
       { name: 'Nature', emojis: ['🌟', '❄️', '🔥', '🌊'] },
     ],
   }),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   selectMoviesForGame: (pool: any[], count: number, _used: Set<string>, producerOrder: string[]) => {
     const rounds = Math.min(count, pool.length);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return pool.slice(0, rounds).map((movie: any, i: number) => ({
       movie,
       producerUserId: producerOrder[i],
@@ -67,7 +68,6 @@ import {
   EC_ROUND_RESULTS_SECONDS,
   EC_TRANSITION_SECONDS,
   EC_MAX_EMOJIS,
-  EC_MAX_GUESSES_PER_PLAYER,
   EC_PRODUCER_BASE_POINTS,
   EC_PRODUCER_SPEED_BONUS,
   EC_FIRST_GUESS_POINTS,
@@ -95,7 +95,7 @@ const ALL_PLAYER_IDS = [
 ];
 
 /** Advance past PRODUCER_ASSIGNMENT into EMOJI_CONSTRUCTION. */
-function advanceToConstruction(game: EmojiCinemaGame): void {
+function advanceToConstruction(_game: EmojiCinemaGame): void {
   vi.advanceTimersByTime(EC_PRODUCER_ASSIGNMENT_SECONDS * 1000);
 }
 
@@ -170,6 +170,7 @@ describe('Emoji Cinema Server Handler (§6.4)', () => {
         { userId: 'user-grace-007', userName: 'Grace', avatarUrl: null, sessionToken: 'tok-grace', expiresAt: new Date(Date.now() + 86400_000) },
         { userId: 'user-hank-008', userName: 'Hank', avatarUrl: null, sessionToken: 'tok-hank', expiresAt: new Date(Date.now() + 86400_000) },
       ];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const ctx = createMockContext(eightUsers as any);
       const game = new EmojiCinemaGame(ctx.context);
       game.start();
@@ -345,7 +346,7 @@ describe('Emoji Cinema Server Handler (§6.4)', () => {
     });
 
     it('should reject ADD_EMOJI from a non-Producer', () => {
-      const { game, broadcastLog, playerLog } = createGame();
+      const { game, broadcastLog } = createGame();
       game.start();
       const producerId = getProducerFromLog(broadcastLog);
       const audienceIds = getAudienceIds(producerId);
@@ -632,7 +633,7 @@ describe('Emoji Cinema Server Handler (§6.4)', () => {
     });
 
     it('audience player does NOT see other players\' guess text', () => {
-      const { game, broadcastLog, playerLog } = createGame();
+      const { game, broadcastLog } = createGame();
       game.start();
       const producerId = getProducerFromLog(broadcastLog);
       const audienceIds = getAudienceIds(producerId);
@@ -899,7 +900,7 @@ describe('Emoji Cinema Server Handler (§6.4)', () => {
   // ───────────────────────────────────────────────────────────────
   describe('Join-in-Progress', () => {
     it('late joiner receives a state snapshot via handlePlayerJoin', () => {
-      const { game, playerLog, broadcastLog } = createGame();
+      const { game, playerLog } = createGame();
       game.start();
       advanceToConstruction(game);
 
