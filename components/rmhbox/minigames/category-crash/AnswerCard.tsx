@@ -31,10 +31,10 @@ interface AnswerCardProps {
 
 const statusStyles: Record<AnswerStatus, { bg: string; text: string; border: string; badge?: ReactNode }> = {
   unique: {
-    bg: 'bg-green-500/10',
-    text: 'text-green-300',
-    border: 'border-green-500/30',
-    badge: <Star className="h-3 w-3 fill-green-400 text-green-400" />,
+    bg: 'bg-(--rmhbox-success-dim)',
+    text: 'text-(--rmhbox-success)',
+    border: 'border-(--rmhbox-success)/30',
+    badge: <Star className="h-3 w-3 fill-current text-(--rmhbox-success)" />,
   },
   shared: {
     bg: 'bg-(--rmhbox-surface)',
@@ -42,16 +42,16 @@ const statusStyles: Record<AnswerStatus, { bg: string; text: string; border: str
     border: 'border-(--rmhbox-border)',
   },
   crashed: {
-    bg: 'bg-red-500/10',
-    text: 'text-red-400 line-through',
-    border: 'border-red-500/30',
-    badge: <Flame className="h-3 w-3 text-red-400" />,
+    bg: 'bg-(--rmhbox-danger-dim)',
+    text: 'text-(--rmhbox-danger) line-through',
+    border: 'border-(--rmhbox-danger)/30',
+    badge: <Flame className="h-3 w-3 text-(--rmhbox-danger)" />,
   },
   invalid: {
-    bg: 'bg-amber-500/10',
-    text: 'text-amber-400 line-through',
-    border: 'border-amber-500/30',
-    badge: <AlertTriangle className="h-3 w-3 text-amber-400" />,
+    bg: 'bg-(--rmhbox-warning-dim)',
+    text: 'text-(--rmhbox-warning) line-through',
+    border: 'border-(--rmhbox-warning)/30',
+    badge: <AlertTriangle className="h-3 w-3 text-(--rmhbox-warning)" />,
   },
   empty: {
     bg: 'bg-(--rmhbox-surface)/50',
@@ -80,7 +80,7 @@ export default function AnswerCard({ answer, category, points, status }: AnswerC
       </span>
       <span
         className={`text-[10px] font-semibold ${
-          points > 0 ? 'text-green-400' : points < 0 ? 'text-red-400' : 'text-(--rmhbox-text-muted)'
+          points > 0 ? 'text-(--rmhbox-success)' : points < 0 ? 'text-(--rmhbox-danger)' : 'text-(--rmhbox-text-muted)'
         }`}
       >
         {points > 0 ? `+${points}` : points === 0 ? '0' : points} pts

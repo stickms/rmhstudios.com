@@ -34,6 +34,7 @@ interface PeerReviewProps {
   myCrashes: CrashEntry[];
   timeRemaining: number;
   currentUserId: string;
+  myAnonymousLabel: string | null;
   onCrash: (targetUserId: string, categoryIndex: number) => void;
   onUncrash: (targetUserId: string, categoryIndex: number) => void;
 }
@@ -45,6 +46,7 @@ export default function PeerReview({
   myCrashes,
   timeRemaining,
   currentUserId: _currentUserId,
+  myAnonymousLabel,
   onCrash,
   onUncrash,
 }: PeerReviewProps) {
@@ -60,6 +62,29 @@ export default function PeerReview({
   }, [myCrashes]);
 
   const activeCategory = categories[activeCatIndex];
+
+  // Detect duplicate answers per category for "pre-crashed" display
+  const duplicateSetPerCat = useMemo(() => {
+    return categories.map((_, catIdx) => {
+      const answerMap = new Map<string, string[]>();
+      for (const answerSet of anonymizedAnswers) {
+        const raw = answerSet.answers[catIdx];
+        if (!raw) continue;
+        const normalised = raw.trim().toLowerCase();
+        if (!normalised) continue;
+        const existing = answerMap.get(normalised) ?? [];
+        existing.push(answerSet.anonymousLabel);
+        answerMap.set(normalised, existing);
+      }
+      const dupes = new Set<string>();
+      for (const [, labels] of answerMap) {
+        if (labels.length > 1) {
+          for (const label of labels) dupes.add(label);
+        }
+      }
+      return dupes;
+    });
+  }, [categories, anonymizedAnswers]);
 
   // Count crashes per category for the dot indicators
   const crashCountPerCat = useMemo(() => {
@@ -78,7 +103,7 @@ export default function PeerReview({
         <div
           className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium ${
             isUrgent
-              ? 'bg-red-500/20 text-red-300 animate-pulse'
+              ? 'bg-(--rmhbox-danger-dim) text-(--rmhbox-danger) animate-pulse'
               : 'bg-(--rmhbox-surface) text-(--rmhbox-text-muted)'
           }`}
         >
@@ -121,7 +146,7 @@ export default function PeerReview({
                 title={categories[idx].name}
               >
                 {crashCountPerCat[idx] > 0 && (
-                  <span className="absolute -top-1 -right-1 h-1.5 w-1.5 rounded-full bg-red-400" />
+                  <span className="absolute -top-1 -right-1 h-1.5 w-1.5 rounded-full bg-(--rmhbox-danger)" />
                 )}
               </button>
             ))}
@@ -156,8 +181,10 @@ export default function PeerReview({
             const key = `${answerSet.anonymousLabel}:${activeCatIndex}`;
             const isCrashed = crashSet.has(key);
             const isEmpty = !answer;
+            const isOwn = myAnonymousLabel === answerSet.anonymousLabel;
+            const isDuplicate = duplicateSetPerCat[activeCatIndex]?.has(answerSet.anonymousLabel) ?? false;
             const startsCorrectly = answer ? answer[0]?.toUpperCase() === letter.toUpperCase() : false;
-            const disabled = isEmpty;
+            const disabled = isEmpty || isOwn;
 
             return (
               <button
@@ -173,18 +200,30 @@ export default function PeerReview({
                 }}
                 disabled={disabled}
                 className={`flex items-center justify-between rounded-lg border px-3 py-2 text-sm transition-colors ${
-                  isCrashed
-                    ? 'border-red-500/40 bg-red-500/10 text-red-300'
-                    : isEmpty
-                      ? 'border-(--rmhbox-border)/30 bg-(--rmhbox-surface)/50 cursor-not-allowed opacity-40'
-                      : 'border-(--rmhbox-border) bg-(--rmhbox-surface) hover:bg-red-500/5 hover:border-red-500/30'
+                  isOwn
+                    ? 'border-(--rmhbox-accent)/40 bg-(--rmhbox-accent-dim) cursor-not-allowed'
+                    : isCrashed
+                      ? 'border-(--rmhbox-danger)/40 bg-(--rmhbox-danger-dim) text-(--rmhbox-danger)'
+                      : isEmpty
+                        ? 'border-(--rmhbox-border)/30 bg-(--rmhbox-surface)/50 cursor-not-allowed opacity-40'
+                        : isDuplicate
+                          ? 'border-(--rmhbox-warning)/40 bg-(--rmhbox-warning-dim) text-(--rmhbox-warning)'
+                          : 'border-(--rmhbox-border) bg-(--rmhbox-surface) hover:bg-(--rmhbox-danger-dim) hover:border-(--rmhbox-danger)/30'
                 }`}
               >
-                <span className={`truncate ${!startsCorrectly && !isEmpty ? 'line-through text-red-400/70' : ''}`}>
-                  {answer ?? '— empty —'}
+                <span className="flex items-center gap-2">
+                  <span className={`truncate ${!startsCorrectly && !isEmpty ? 'line-through text-(--rmhbox-danger)/70' : ''}`}>
+                    {answer ?? '— empty —'}
+                  </span>
+                  {isOwn && (
+                    <span className="text-[10px] font-medium text-(--rmhbox-accent)">(yours)</span>
+                  )}
+                  {isDuplicate && !isOwn && (
+                    <span className="text-[10px] font-medium text-(--rmhbox-warning)">Duplicate</span>
+                  )}
                 </span>
-                {!isEmpty && (
-                  <span className={`ml-2 shrink-0 flex items-center gap-1 text-xs ${isCrashed ? 'text-red-300' : 'text-(--rmhbox-text-muted)'}`}>
+                {!isEmpty && !isOwn && (
+                  <span className={`ml-2 shrink-0 flex items-center gap-1 text-xs ${isCrashed ? 'text-(--rmhbox-danger)' : 'text-(--rmhbox-text-muted)'}`}>
                     <Flame className="h-3 w-3" />
                     {isCrashed ? 'Crashed' : 'Crash'}
                   </span>

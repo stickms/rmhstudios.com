@@ -107,6 +107,7 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
   const [scores, setScores] = useState<Record<string, number>>({});
   const [roundResults, setRoundResults] = useState<CCRoundResults | null>(null);
   const [anonymizationMap, setAnonymizationMap] = useState<Record<string, string>>({});
+  const [myAnonymousLabel, setMyAnonymousLabel] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const players = useRMHboxStore((s) => s.lobby?.players);
@@ -159,6 +160,10 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
           if (data.categories) setCategories(data.categories as Category[]);
           if (data.letter) setLetter(data.letter as string);
           setMyCrashes([]);
+          break;
+        }
+        case 'CC_MY_ANONYMOUS_LABEL': {
+          setMyAnonymousLabel(data.myAnonymousLabel as string);
           break;
         }
         case 'CC_CRASH_RECORDED': {
@@ -231,6 +236,7 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
       if (data.totalPlayers !== undefined) setTotalPlayers(data.totalPlayers as number);
       if (data.anonymizedAnswers) setAnonymizedAnswers(data.anonymizedAnswers as AnonymizedAnswerSet[]);
       if (data.myCrashes) setMyCrashes(data.myCrashes as CrashEntry[]);
+      if (data.myAnonymousLabel) setMyAnonymousLabel(data.myAnonymousLabel as string);
       if (data.roundResults) setRoundResults(data.roundResults as CCRoundResults);
       if (data.anonymizationMap) setAnonymizationMap(data.anonymizationMap as Record<string, string>);
     },
@@ -300,7 +306,7 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="rounded-lg bg-red-500/20 border border-red-500/40 px-4 py-2 text-center text-sm text-red-300"
+            className="rounded-lg bg-(--rmhbox-danger-dim) border border-(--rmhbox-danger)/40 px-4 py-2 text-center text-sm text-(--rmhbox-danger)"
           >
             {errorMsg}
           </motion.div>
@@ -379,6 +385,7 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
               myCrashes={myCrashes}
               timeRemaining={timeRemaining}
               currentUserId={playerId}
+              myAnonymousLabel={myAnonymousLabel}
               onCrash={handleCrash}
               onUncrash={handleUncrash}
             />
