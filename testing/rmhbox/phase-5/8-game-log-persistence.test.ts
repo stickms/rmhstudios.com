@@ -160,10 +160,36 @@ describe('Game Log Persistence (§14A)', () => {
   describe('All minigames produce persistable game logs', () => {
     it('all 4 games should have gameLog as a serializable object', () => {
       const games = [
-        { name: 'Rhyme Time', create: () => { const ctx = createMockContext(); return new RhymeTimeMinigame(ctx.context); } },
-        { name: 'Undercover Agent', create: () => { const ctx = createMockContext(); return new UndercoverAgentMinigame(ctx.context); } },
-        { name: 'Category Crash', create: () => { const ctx = createMockContext([MOCK_USERS.alice, MOCK_USERS.bob, MOCK_USERS.charlie]); return new CategoryCrashMinigame(ctx.context); } },
-        { name: 'Wiki-Race', create: () => { const ctx = createMockContext(); return new WikiRaceMinigame(ctx.context); } },
+        {
+          name: 'Rhyme Time',
+          create: () => {
+            const ctx = createMockContext();
+            return new RhymeTimeMinigame(ctx.context);
+          },
+        },
+        {
+          name: 'Undercover Agent',
+          create: () => {
+            const ctx = createMockContext();
+            return new UndercoverAgentMinigame(ctx.context);
+          },
+        },
+        {
+          name: 'Category Crash',
+          create: () => {
+            const ctx = createMockContext([
+              MOCK_USERS.alice, MOCK_USERS.bob, MOCK_USERS.charlie,
+            ]);
+            return new CategoryCrashMinigame(ctx.context);
+          },
+        },
+        {
+          name: 'Wiki-Race',
+          create: () => {
+            const ctx = createMockContext();
+            return new WikiRaceMinigame(ctx.context);
+          },
+        },
       ];
 
       for (const { name, create } of games) {
