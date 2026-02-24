@@ -16,6 +16,9 @@ import {
   CC_TOTAL_ROUNDS, CC_INPUT_DURATION, CC_CATEGORIES_PER_ROUND,
   CC_PEER_REVIEW_DURATION, CC_CRASH_THRESHOLD_PERCENT,
   WR_NAV_DURATION, WR_EFFICIENCY_BONUS, WR_ONE_AWAY, WR_TOTAL_ROUNDS,
+  SS_MAX_ROUNDS, SS_STARTING_LENGTH, SS_MAX_STRIKES, SS_CHAOS_INTERVAL, SS_ENABLE_CHAOS,
+  HK_TYPING_DURATION_SECONDS, HK_RESHUFFLE_INTERVAL_SECONDS, HK_WRONG_KEY_PENALTY_MS,
+  HK_ENABLE_RESHUFFLE,
 } from './constants';
 
 // ─── Per-Minigame Settings Schemas ───────────────────────────────
@@ -46,6 +49,25 @@ export const WIKI_RACE_SETTINGS: GameSettingsSchema = [
   { key: 'navDuration', type: 'integer', label: 'Race Duration (seconds)', description: 'Total time to navigate from start article to target', default: WR_NAV_DURATION, min: 60, max: 300, step: 15 },
   { key: 'enableEfficiencyBonus', type: 'boolean', label: 'Efficiency Bonus', description: 'Award bonus points for reaching the target in fewer clicks', default: WR_EFFICIENCY_BONUS > 0 },
   { key: 'enableOneAwayPoints', type: 'boolean', label: '"One Away" Points', description: 'Award consolation points to players who were one click from the target', default: WR_ONE_AWAY > 0 },
+];
+
+// ─── Sequence Sam Settings ───────────────────────────────────────
+
+export const SEQUENCE_SAM_SETTINGS: GameSettingsSchema = [
+  { key: 'maxRounds', type: 'integer', label: 'Max Rounds', description: 'Maximum number of rounds before the game ends', default: SS_MAX_ROUNDS, min: 3, max: 8, step: 1 },
+  { key: 'startingLength', type: 'integer', label: 'Starting Sequence Length', description: 'Number of tiles in the initial sequence', default: SS_STARTING_LENGTH, min: 2, max: 5, step: 1 },
+  { key: 'maxStrikes', type: 'integer', label: 'Max Strikes', description: 'Wrong answers before elimination', default: SS_MAX_STRIKES, min: 1, max: 5, step: 1 },
+  { key: 'enableChaosRounds', type: 'boolean', label: 'Chaos Rounds', description: 'Enable grid rotation on periodic rounds', default: SS_ENABLE_CHAOS },
+  { key: 'chaosInterval', type: 'integer', label: 'Chaos Interval', description: 'Every Nth round is a Chaos Round (grid rotation)', default: SS_CHAOS_INTERVAL, min: 2, max: 5, step: 1 },
+];
+
+// ─── Human Keyboard Settings ────────────────────────────────────
+
+export const HUMAN_KEYBOARD_SETTINGS: GameSettingsSchema = [
+  { key: 'typingDuration', type: 'integer', label: 'Typing Duration (seconds)', description: 'Maximum time for the typing phase', default: HK_TYPING_DURATION_SECONDS, min: 30, max: 120, step: 10 },
+  { key: 'enableReshuffle', type: 'boolean', label: 'Key Reshuffle', description: 'Periodically reassign keys among players', default: HK_ENABLE_RESHUFFLE },
+  { key: 'reshuffleInterval', type: 'integer', label: 'Reshuffle Interval (seconds)', description: 'Seconds between key reshuffles', default: HK_RESHUFFLE_INTERVAL_SECONDS, min: 10, max: 45, step: 5 },
+  { key: 'wrongKeyLockMs', type: 'integer', label: 'Wrong Key Lock (ms)', description: 'Cursor lock duration on wrong key press', default: HK_WRONG_KEY_PENALTY_MS, min: 0, max: 2000, step: 100 },
 ];
 
 // ─── Registry ────────────────────────────────────────────────────
@@ -176,36 +198,38 @@ export const MINIGAME_REGISTRY: Record<string, MinigameDefinition> = {
   //   joinInProgressPolicy: 'join_next_subround',
   //   tags: ['word', 'emoji', 'movies'],
   // },
-  // 'sequence-sam': {
-  //   id: 'sequence-sam',
-  //   displayName: 'Sequence Sam',
-  //   description: 'Memorize and replicate increasingly complex sequences.',
-  //   category: 'action',
-  //   icon: '🧠',
-  //   minPlayers: 2,
-  //   maxPlayers: 10,
-  //   estimatedDurationSeconds: 120,
-  //   supportsTeams: false,
-  //   instructionDurationSeconds: 15,
-  //   preloadAssets: { images: [], sounds: [], data: [], estimatedSizeBytes: 0 },
-  //   joinInProgressPolicy: 'spectate_only',
-  //   tags: ['action', 'memory'],
-  // },
-  // 'human-keyboard': {
-  //   id: 'human-keyboard',
-  //   displayName: 'Human Keyboard',
-  //   description: 'Each player controls one key — type words together cooperatively.',
-  //   category: 'action',
-  //   icon: '⌨️',
-  //   minPlayers: 3,
-  //   maxPlayers: 10,
-  //   estimatedDurationSeconds: 120,
-  //   supportsTeams: true,
-  //   instructionDurationSeconds: 15,
-  //   preloadAssets: { images: [], sounds: [], data: [], estimatedSizeBytes: 0 },
-  //   joinInProgressPolicy: 'spectate_only',
-  //   tags: ['action', 'cooperative'],
-  // },
+  'sequence-sam': {
+    id: 'sequence-sam',
+    displayName: 'Sequence Sam',
+    description: 'Remember the pattern, repeat it perfectly! Chaos Rounds rotate the grid to test your spatial reasoning. Last one standing wins.',
+    category: 'action',
+    icon: 'grid-3x3',
+    minPlayers: 2,
+    maxPlayers: 16,
+    estimatedDurationSeconds: 120,
+    supportsTeams: false,
+    instructionDurationSeconds: 15,
+    preloadAssets: { images: [], sounds: [], data: [], estimatedSizeBytes: 0 },
+    joinInProgressPolicy: 'spectate_only',
+    tags: ['action', 'memory', 'speed', 'competitive'],
+    settingsSchema: SEQUENCE_SAM_SETTINGS,
+  },
+  'human-keyboard': {
+    id: 'human-keyboard',
+    displayName: 'Human Keyboard',
+    description: 'Each player controls a few letters. Work together to type the sentence! Keys reshuffle every 8 seconds.',
+    category: 'action',
+    icon: 'keyboard',
+    minPlayers: 3,
+    maxPlayers: 10,
+    estimatedDurationSeconds: 120,
+    supportsTeams: true,
+    instructionDurationSeconds: 15,
+    preloadAssets: { images: [], sounds: [], data: [], estimatedSizeBytes: 0 },
+    joinInProgressPolicy: 'spectate_only',
+    tags: ['action', 'coordination', 'cooperative', 'speed', 'chaos'],
+    settingsSchema: HUMAN_KEYBOARD_SETTINGS,
+  },
   // 'cursor-curling': {
   //   id: 'cursor-curling',
   //   displayName: 'Cursor Curling',

@@ -97,7 +97,7 @@ export default function SequenceSamGame({ playerId, playerName: _playerName }: S
 
         case 'SS_PATTERN_STEP': {
           setPhase('PATTERN_DISPLAY');
-          const tileIndex = data.tileIndex as number;
+          const tileIndex = data.position as number;
           setTiles((prev) => {
             const next = prev.map(() => 'default' as TileState);
             if (tileIndex >= 0 && tileIndex < 9) {
@@ -127,7 +127,7 @@ export default function SequenceSamGame({ playerId, playerName: _playerName }: S
         }
 
         case 'SS_TAP_RESULT': {
-          const tileIndex = data.tileIndex as number;
+          const tileIndex = data.position as number;
           const correct = data.correct as boolean;
 
           setTiles((prev) => {
@@ -315,7 +315,7 @@ export default function SequenceSamGame({ playerId, playerName: _playerName }: S
 
   const handleTileTap = useCallback(
     (tileIndex: number) => {
-      emitGameInput('TAP_TILE', { tileIndex });
+      emitGameInput('SS_TAP', { position: tileIndex });
     },
     [],
   );

@@ -13,7 +13,7 @@ export default function SequenceSamHistoryDetail({
   players,
 }: HistoryDetailProps) {
   const roundStarts = gameLog.actions.filter((a) => a.type === 'round_start');
-  const roundEnds = gameLog.actions.filter((a) => a.type === 'round_end');
+  const roundEnds = gameLog.actions.filter((a) => a.type === 'round_result');
   const eliminations = gameLog.actions.filter((a) => a.type === 'elimination');
 
   return (
