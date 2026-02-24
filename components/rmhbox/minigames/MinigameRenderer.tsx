@@ -138,8 +138,8 @@ const MINIGAME_COMPONENTS: Record<string, React.LazyExoticComponent<ComponentTyp
   'human-tetris':           lazy(() => Promise.resolve({ default: createStub('Human Tetris') })),
   'identity-crisis':        lazy(() => Promise.resolve({ default: createStub('Identity Crisis') })),
   'ranking-file':           lazy(() => Promise.resolve({ default: createStub('Ranking File') })),
-  'pixel-pushers':          lazy(() => Promise.resolve({ default: createStub('Pixel Pushers') })),
-  'scroll-soul':            lazy(() => Promise.resolve({ default: createStub('Scroll & Soul') })),
+  'pixel-pushers':          lazy(() => import('./pixel-pushers/PixelPushersGame')),
+  'scroll-soul':            lazy(() => import('./scroll-soul/ScrollSoulGame')),
 };
 
 /** Loading fallback shown while the component loads. */

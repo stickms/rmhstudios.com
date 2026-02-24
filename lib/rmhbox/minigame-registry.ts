@@ -16,6 +16,8 @@ import {
   CC_TOTAL_ROUNDS, CC_INPUT_DURATION, CC_CATEGORIES_PER_ROUND,
   CC_PEER_REVIEW_DURATION, CC_CRASH_THRESHOLD_PERCENT,
   WR_NAV_DURATION, WR_EFFICIENCY_BONUS, WR_ONE_AWAY, WR_TOTAL_ROUNDS,
+  PP_TOTAL_LEVELS, PP_ACTIVE_DURATION_SECONDS, PP_POLARITY_INTERVAL_SECONDS,
+  SC_SCROLL_SPEED_INITIAL, SC_SCROLL_SPEED_MAX,
 } from './constants';
 
 // ─── Per-Minigame Settings Schemas ───────────────────────────────
@@ -46,6 +48,22 @@ export const WIKI_RACE_SETTINGS: GameSettingsSchema = [
   { key: 'navDuration', type: 'integer', label: 'Race Duration (seconds)', description: 'Total time to navigate from start article to target', default: WR_NAV_DURATION, min: 60, max: 300, step: 15 },
   { key: 'enableEfficiencyBonus', type: 'boolean', label: 'Efficiency Bonus', description: 'Award bonus points for reaching the target in fewer clicks', default: WR_EFFICIENCY_BONUS > 0 },
   { key: 'enableOneAwayPoints', type: 'boolean', label: '"One Away" Points', description: 'Award consolation points to players who were one click from the target', default: WR_ONE_AWAY > 0 },
+];
+
+export const PIXEL_PUSHERS_SETTINGS: GameSettingsSchema = [
+  { key: 'totalLevels', type: 'integer', label: 'Number of Levels', description: 'How many cooperative pixel-art levels to complete', default: PP_TOTAL_LEVELS, min: 2, max: 5, step: 1 },
+  { key: 'activeDuration', type: 'integer', label: 'Active Duration (seconds)', description: 'Time limit per level', default: PP_ACTIVE_DURATION_SECONDS, min: 45, max: 180, step: 15 },
+  { key: 'enablePolarityFlip', type: 'boolean', label: 'Polarity Flip', description: 'Enable the mechanic where push/pull controls invert periodically', default: true },
+  { key: 'polarityInterval', type: 'integer', label: 'Polarity Interval (seconds)', description: 'How often the polarity flips', default: PP_POLARITY_INTERVAL_SECONDS, min: 8, max: 30, step: 1 },
+];
+
+export const SCROLL_SOUL_SETTINGS: GameSettingsSchema = [
+  { key: 'maxSurvival', type: 'integer', label: 'Max Survival Time (seconds)', description: 'Maximum round length before the game ends', default: 120, min: 60, max: 240, step: 15 },
+  { key: 'baseScrollSpeed', type: 'float', label: 'Base Scroll Speed', description: 'Starting scroll speed multiplier', default: SC_SCROLL_SPEED_INITIAL, min: 0.5, max: 2.0, step: 0.1 },
+  { key: 'maxScrollSpeed', type: 'float', label: 'Max Scroll Speed', description: 'Maximum scroll speed reached at end of round', default: SC_SCROLL_SPEED_MAX, min: 1.5, max: 5.0, step: 0.5 },
+  { key: 'maxConcurrentAds', type: 'integer', label: 'Max Concurrent Pop-ups', description: 'Maximum number of fake ads/pop-ups on screen at once', default: 3, min: 1, max: 5, step: 1 },
+  { key: 'fakeXChance', type: 'float', label: 'Fake X Chance (%)', description: 'Probability that a pop-up close button is a fake X', default: 0.3, min: 0.0, max: 0.8, step: 0.1 },
+  { key: 'enableAds', type: 'boolean', label: 'Pop-up Ads', description: 'Enable the fake ad/pop-up obstacle mechanic', default: true },
 ];
 
 // ─── Registry ────────────────────────────────────────────────────
@@ -114,6 +132,43 @@ export const MINIGAME_REGISTRY: Record<string, MinigameDefinition> = {
     joinInProgressPolicy: 'spectate_only',
     tags: ['trivia', 'race'],
     settingsSchema: WIKI_RACE_SETTINGS,
+  },
+  'pixel-pushers': {
+    id: 'pixel-pushers',
+    displayName: 'Pixel Pushers',
+    description: 'Work together to push a ball through obstacle courses! But watch out — every 10 seconds, one player becomes a magnet that attracts the ball. Coordinate and adapt!',
+    category: 'action',
+    icon: 'move',
+    minPlayers: 2,
+    maxPlayers: 8,
+    estimatedDurationSeconds: 120,
+    supportsTeams: true,
+    instructionDurationSeconds: 15,
+    preloadAssets: {
+      images: [],
+      sounds: [],
+      data: ['/data/rmhbox/pixel-pushers/levels.json'],
+      estimatedSizeBytes: 25000,
+    },
+    joinInProgressPolicy: 'join_immediately',
+    tags: ['action', 'physics', 'cooperative', 'coordination'],
+    settingsSchema: PIXEL_PUSHERS_SETTINGS,
+  },
+  'scroll-soul': {
+    id: 'scroll-soul',
+    displayName: 'Scroll Soul',
+    description: 'Survival platformer with a twist! Jump between platforms as the screen scrolls faster and faster. Dodge lava, avoid fake ads that mess with your controls, and be the last soul standing!',
+    category: 'action',
+    icon: 'flame',
+    minPlayers: 2,
+    maxPlayers: 8,
+    estimatedDurationSeconds: 120,
+    supportsTeams: false,
+    instructionDurationSeconds: 15,
+    preloadAssets: { images: [], sounds: [], data: [], estimatedSizeBytes: 5000 },
+    joinInProgressPolicy: 'spectate_only',
+    tags: ['action', 'platformer', 'survival', 'elimination'],
+    settingsSchema: SCROLL_SOUL_SETTINGS,
   },
   // ─── Unimplemented Minigames (commented out until server handlers exist) ───
   // 'fact-or-friction': {
@@ -266,36 +321,7 @@ export const MINIGAME_REGISTRY: Record<string, MinigameDefinition> = {
   //   joinInProgressPolicy: 'join_next_subround',
   //   tags: ['trivia', 'ranking'],
   // },
-  // 'pixel-pushers': {
-  //   id: 'pixel-pushers',
-  //   displayName: 'Pixel Pushers',
-  //   description: 'Cooperatively push pixels to match a target pattern using physics.',
-  //   category: 'action',
-  //   icon: '👾',
-  //   minPlayers: 2,
-  //   maxPlayers: 8,
-  //   estimatedDurationSeconds: 120,
-  //   supportsTeams: true,
-  //   instructionDurationSeconds: 15,
-  //   preloadAssets: { images: [], sounds: [], data: [], estimatedSizeBytes: 0 },
-  //   joinInProgressPolicy: 'join_immediately',
-  //   tags: ['action', 'cooperative', 'physics'],
-  // },
-  // 'scroll-soul': {
-  //   id: 'scroll-soul',
-  //   displayName: 'Scroll Soul',
-  //   description: 'Survive a fast-scrolling obstacle course — last one standing wins.',
-  //   category: 'action',
-  //   icon: '📜',
-  //   minPlayers: 2,
-  //   maxPlayers: 16,
-  //   estimatedDurationSeconds: 90,
-  //   supportsTeams: false,
-  //   instructionDurationSeconds: 15,
-  //   preloadAssets: { images: [], sounds: [], data: [], estimatedSizeBytes: 0 },
-  //   joinInProgressPolicy: 'spectate_only',
-  //   tags: ['action', 'survival'],
-  // },
+  // 'pixel-pushers' and 'scroll-soul' are now active entries above
 };
 
 // ─── Helper ──────────────────────────────────────────────────────
