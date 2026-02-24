@@ -14,6 +14,8 @@ import RhymeTimeHistoryDetail from '@/components/rmhbox/minigames/rhyme-time/Rhy
 import UndercoverAgentHistoryDetail from '@/components/rmhbox/minigames/undercover-agent/UndercoverAgentHistoryDetail';
 import CategoryCrashHistoryDetail from '@/components/rmhbox/minigames/category-crash/CategoryCrashHistoryDetail';
 import WikiRaceHistoryDetail from '@/components/rmhbox/minigames/wiki-race/WikiRaceHistoryDetail';
+import PixelPushersHistoryDetail from '@/components/rmhbox/minigames/pixel-pushers/PixelPushersHistoryDetail';
+import ScrollSoulHistoryDetail from '@/components/rmhbox/minigames/scroll-soul/ScrollSoulHistoryDetail';
 
 // ─── Rhyme Time ──────────────────────────────────────────────────
 
@@ -193,5 +195,60 @@ registerHistoryDisplay({
   getSummary: (log: GameLog) => {
     const start = log.actions.find((a) => a.type === 'round_start');
     return `${start?.payload.startArticle ?? '?'} → ${start?.payload.targetArticle ?? '?'}`;
+  },
+});
+
+// ─── Pixel Pushers ──────────────────────────────────────────────
+
+registerHistoryDisplay({
+  minigameId: 'pixel-pushers',
+  DetailComponent: PixelPushersHistoryDetail,
+  searchableFields: [
+    {
+      key: 'playerNames',
+      label: 'Player Names',
+      extract: (log: GameLog) =>
+        log.players.map((p) => p.userName).filter(Boolean),
+    },
+  ],
+  filterableFields: [
+    { key: 'blocksScored', label: 'Blocks Scored', type: 'range', valuePath: 'blocksScored' },
+    { key: 'polarityToggles', label: 'Polarity Toggles', type: 'range', valuePath: 'polarityToggles' },
+  ],
+  getSummary: (log: GameLog) => {
+    const pushes = log.actions.filter((a) => a.type === 'push');
+    const totalBlocks = pushes.reduce(
+      (sum, a) => sum + ((a.payload.blocksScored as number) ?? 0),
+      0,
+    );
+    return `${totalBlocks} blocks scored`;
+  },
+});
+
+// ─── Scroll Soul ────────────────────────────────────────────────
+
+registerHistoryDisplay({
+  minigameId: 'scroll-soul',
+  DetailComponent: ScrollSoulHistoryDetail,
+  searchableFields: [
+    {
+      key: 'playerNames',
+      label: 'Player Names',
+      extract: (log: GameLog) =>
+        log.players.map((p) => p.userName).filter(Boolean),
+    },
+  ],
+  filterableFields: [
+    { key: 'distanceTraveled', label: 'Distance Traveled', type: 'range', valuePath: 'distanceTraveled' },
+    { key: 'combos', label: 'Combos', type: 'range', valuePath: 'combos' },
+    { key: 'platformsCollected', label: 'Platforms Collected', type: 'range', valuePath: 'platformsCollected' },
+  ],
+  getSummary: (log: GameLog) => {
+    const elims = log.actions.filter((a) => a.type === 'elimination');
+    const maxDistance = elims.reduce(
+      (max, a) => Math.max(max, (a.payload.distanceTraveled as number) ?? 0),
+      0,
+    );
+    return `${maxDistance}m distance traveled`;
   },
 });
