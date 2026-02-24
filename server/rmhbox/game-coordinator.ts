@@ -47,6 +47,8 @@ import { RhymeTimeMinigame } from './minigames/rhyme-time';
 import { UndercoverAgentMinigame } from './minigames/undercover-agent';
 import { CategoryCrashMinigame } from './minigames/category-crash';
 import { WikiRaceMinigame } from './minigames/wiki-race';
+import { CursorCurlingGame } from './minigames/cursor-curling';
+import { HumanTetrisGame } from './minigames/human-tetris';
 
 // ─── Minigame Server Registry ────────────────────────────────────
 
@@ -62,6 +64,8 @@ export const MINIGAME_SERVER_REGISTRY = new Map<
   ['undercover-agent', UndercoverAgentMinigame],
   ['category-crash', CategoryCrashMinigame],
   ['wiki-race', WikiRaceMinigame],
+  ['cursor-curling', CursorCurlingGame],
+  ['human-tetris', HumanTetrisGame],
 ]);
 
 // ─── Per-lobby lifecycle tracking ────────────────────────────────

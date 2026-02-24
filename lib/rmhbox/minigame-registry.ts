@@ -16,6 +16,8 @@ import {
   CC_TOTAL_ROUNDS, CC_INPUT_DURATION, CC_CATEGORIES_PER_ROUND,
   CC_PEER_REVIEW_DURATION, CC_CRASH_THRESHOLD_PERCENT,
   WR_NAV_DURATION, WR_EFFICIENCY_BONUS, WR_ONE_AWAY, WR_TOTAL_ROUNDS,
+  CU_TOTAL_ENDS, CU_AIM_DURATION_SECONDS, CU_POWER_DURATION_SECONDS,
+  HT_TOTAL_WAVES, HT_WALL_PREVIEW_SECONDS, HT_EASY_POSITION_SECONDS,
 } from './constants';
 
 // ─── Per-Minigame Settings Schemas ───────────────────────────────
@@ -46,6 +48,20 @@ export const WIKI_RACE_SETTINGS: GameSettingsSchema = [
   { key: 'navDuration', type: 'integer', label: 'Race Duration (seconds)', description: 'Total time to navigate from start article to target', default: WR_NAV_DURATION, min: 60, max: 300, step: 15 },
   { key: 'enableEfficiencyBonus', type: 'boolean', label: 'Efficiency Bonus', description: 'Award bonus points for reaching the target in fewer clicks', default: WR_EFFICIENCY_BONUS > 0 },
   { key: 'enableOneAwayPoints', type: 'boolean', label: '"One Away" Points', description: 'Award consolation points to players who were one click from the target', default: WR_ONE_AWAY > 0 },
+];
+
+export const CURSOR_CURLING_SETTINGS: GameSettingsSchema = [
+  { key: 'totalEnds', type: 'integer', label: 'Number of Ends', description: 'How many ends (rounds) to play', default: CU_TOTAL_ENDS, min: 2, max: 6, step: 1 },
+  { key: 'aimDuration', type: 'integer', label: 'Aim Duration (seconds)', description: 'Time players have to aim their stone', default: CU_AIM_DURATION_SECONDS, min: 5, max: 30, step: 5 },
+  { key: 'powerDuration', type: 'integer', label: 'Power Duration (seconds)', description: 'Time to set the throw power', default: CU_POWER_DURATION_SECONDS, min: 3, max: 10, step: 1 },
+  { key: 'enableSweeping', type: 'boolean', label: 'Sweeping', description: 'Allow teammates to sweep the stone after release', default: true },
+];
+
+export const HUMAN_TETRIS_SETTINGS: GameSettingsSchema = [
+  { key: 'totalWaves', type: 'integer', label: 'Number of Waves', description: 'How many wall-shape waves to survive', default: HT_TOTAL_WAVES, min: 4, max: 12, step: 1 },
+  { key: 'wallPreviewDuration', type: 'integer', label: 'Wall Preview (seconds)', description: 'Time players see the incoming wall shape before it arrives', default: HT_WALL_PREVIEW_SECONDS, min: 2, max: 10, step: 1 },
+  { key: 'startingPositionTime', type: 'integer', label: 'Position Time (seconds)', description: 'Time players have to move into position', default: HT_EASY_POSITION_SECONDS, min: 4, max: 15, step: 1 },
+  { key: 'enableDeadZones', type: 'boolean', label: 'Dead Zones', description: 'Enable grid cells that eliminate players on contact', default: false },
 ];
 
 // ─── Registry ────────────────────────────────────────────────────
@@ -206,36 +222,38 @@ export const MINIGAME_REGISTRY: Record<string, MinigameDefinition> = {
   //   joinInProgressPolicy: 'spectate_only',
   //   tags: ['action', 'cooperative'],
   // },
-  // 'cursor-curling': {
-  //   id: 'cursor-curling',
-  //   displayName: 'Cursor Curling',
-  //   description: 'Slide your cursor stone closest to the target on a digital rink.',
-  //   category: 'action',
-  //   icon: '🥌',
-  //   minPlayers: 2,
-  //   maxPlayers: 8,
-  //   estimatedDurationSeconds: 150,
-  //   supportsTeams: false,
-  //   instructionDurationSeconds: 15,
-  //   preloadAssets: { images: [], sounds: [], data: [], estimatedSizeBytes: 0 },
-  //   joinInProgressPolicy: 'spectate_only',
-  //   tags: ['action', 'physics'],
-  // },
-  // 'human-tetris': {
-  //   id: 'human-tetris',
-  //   displayName: 'Human Tetris',
-  //   description: 'Cooperatively fit your team through approaching wall shapes.',
-  //   category: 'action',
-  //   icon: '🧱',
-  //   minPlayers: 4,
-  //   maxPlayers: 10,
-  //   estimatedDurationSeconds: 120,
-  //   supportsTeams: true,
-  //   instructionDurationSeconds: 15,
-  //   preloadAssets: { images: [], sounds: [], data: [], estimatedSizeBytes: 0 },
-  //   joinInProgressPolicy: 'spectate_only',
-  //   tags: ['action', 'cooperative'],
-  // },
+  'cursor-curling': {
+    id: 'cursor-curling',
+    displayName: 'Cursor Curling',
+    description: 'Slide your cursor stone closest to the target on a digital rink.',
+    category: 'action',
+    icon: 'target',
+    minPlayers: 2,
+    maxPlayers: 8,
+    estimatedDurationSeconds: 120,
+    supportsTeams: false,
+    instructionDurationSeconds: 15,
+    preloadAssets: { images: [], sounds: [], data: [], estimatedSizeBytes: 0 },
+    joinInProgressPolicy: 'spectate_only',
+    tags: ['action', 'physics', 'precision', 'competitive'],
+    settingsSchema: CURSOR_CURLING_SETTINGS,
+  },
+  'human-tetris': {
+    id: 'human-tetris',
+    displayName: 'Human Tetris',
+    description: 'Cooperatively fit your team through approaching wall shapes.',
+    category: 'action',
+    icon: 'square-stack',
+    minPlayers: 4,
+    maxPlayers: 10,
+    estimatedDurationSeconds: 120,
+    supportsTeams: true,
+    instructionDurationSeconds: 15,
+    preloadAssets: { images: [], sounds: [], data: [], estimatedSizeBytes: 0 },
+    joinInProgressPolicy: 'spectate_only',
+    tags: ['action', 'coordination', 'cooperative', 'spatial'],
+    settingsSchema: HUMAN_TETRIS_SETTINGS,
+  },
   // 'identity-crisis': {
   //   id: 'identity-crisis',
   //   displayName: 'Identity Crisis',
