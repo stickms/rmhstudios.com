@@ -9,6 +9,7 @@
         "isolatedModules": false
     },
     "include": [
-        "server/socket-server.ts"
+        "server/socket-server.ts",
+        "server/collab-server.ts"
     ]
 }
