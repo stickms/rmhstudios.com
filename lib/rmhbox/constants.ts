@@ -137,3 +137,35 @@ export const WR_CACHE_MAX = 500;
 export const WR_CACHE_TTL = 600000;
 export const WR_NAV_RATE_LIMIT = 3;
 export const WR_MAX_PAIR_POOL = 200;
+
+// ─── Identity Crisis (IC) ───────────────────────────────────────
+
+export const IC_QUESTIONS_PER_PLAYER = 3;
+export const IC_ASK_SECONDS = 20;
+export const IC_VOTE_SECONDS = 15;
+export const IC_VOTE_RESULTS_SECONDS = 3;
+export const IC_ASSIGNMENT_REVEAL_SECONDS = 5;
+export const IC_FINAL_GUESS_SECONDS = 30;
+export const IC_RESULTS_SECONDS = 10;
+export const IC_CORRECT_GUESS_POINTS = 200;
+export const IC_EARLY_GUESS_BONUS_BASE = 300;
+export const IC_EARLY_GUESS_PENALTY = -100;
+export const IC_EFFICIENCY_BONUS = 20;
+export const IC_VOTING_ACCURACY_BONUS = 5;
+export const IC_GUESS_MATCH_THRESHOLD = 0.3;
+export const IC_MAX_QUESTION_LENGTH = 200;
+export const IC_MAX_GUESS_LENGTH = 100;
+
+// ─── Ranking File (RF) ──────────────────────────────────────────
+
+export const RF_TOTAL_ROUNDS = 5;
+export const RF_ITEMS_PER_CATEGORY = 5;
+export const RF_CATEGORY_REVEAL_SECONDS = 3;
+export const RF_RANKING_SECONDS = 25;
+export const RF_LOCK_IN_SECONDS = 3;
+export const RF_RESULTS_SECONDS = 8;
+export const RF_TRANSITION_SECONDS = 2;
+export const RF_MAX_ROUND_POINTS = 200;
+export const RF_EXACT_MATCH_BONUS = 100;
+export const RF_OUTLIER_BONUS = 25;
+export const RF_MAX_THEORETICAL_DISTANCE = 12;
