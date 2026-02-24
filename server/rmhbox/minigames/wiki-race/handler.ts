@@ -159,6 +159,13 @@ export class WikiRaceMinigame extends BaseMinigame {
       timeRemaining: this.getSetting('navDuration', WR_NAV_DURATION),
     });
 
+    this.logAction('round_start', {
+      round: this.state.currentRound,
+      startArticle: this.state.articlePair.startArticle.title,
+      targetArticle: this.state.articlePair.targetArticle.title,
+      difficulty: this.state.articlePair.difficulty,
+    });
+
     // Fetch start article for each player
     const startTitle = this.state.articlePair.startArticle.title;
     this.fetchAndSendArticle(startTitle).then((article) => {
@@ -384,7 +391,8 @@ export class WikiRaceMinigame extends BaseMinigame {
 
     this.logAction('navigate', {
       userId,
-      targetTitle,
+      fromArticle: ps.path[ps.path.length - 2] ?? '',
+      toArticle: targetTitle,
       clickCount: ps.clickCount,
       pathLength: ps.path.length,
     });
@@ -464,10 +472,9 @@ export class WikiRaceMinigame extends BaseMinigame {
     ps.currentArticleTitle = targetTitle;
     ps.currentArticleLinks = new Set<string>();
 
-    this.logAction('go_back', {
+    this.logAction('back_click', {
       userId,
-      targetTitle,
-      pathIndex,
+      toArticle: targetTitle,
       clickCount: ps.clickCount,
       pathLength: ps.path.length,
     });
@@ -505,11 +512,13 @@ export class WikiRaceMinigame extends BaseMinigame {
     ps.finishedAt = Date.now();
     ps.finishRank = this.state.finishCounter;
 
-    this.logAction('player_finished', {
+    this.logAction('player_finish', {
       userId,
+      pathLength: ps.path.length,
+      timeMs: (ps.finishedAt ?? Date.now()) - this.startedAt,
+      path: [...ps.path],
       rank: ps.finishRank,
       clickCount: ps.clickCount,
-      pathLength: ps.path.length,
     });
 
     logger.info({
@@ -888,23 +897,67 @@ export class WikiRaceMinigame extends BaseMinigame {
 
   // ─── Action Log / Game Log ───────────────────────────────────
 
-  private logAction(action: string, data: Record<string, unknown>): void {
+  private actionSeq = 0;
+
+  private logAction(type: string, payload: Record<string, unknown>): void {
     this.state.actionLog.push({
-      action,
+      seq: ++this.actionSeq,
+      type,
       timestamp: Date.now(),
-      data,
+      payload,
     });
   }
 
   private buildGameLog(): Record<string, unknown> {
+    const players = Array.from(this.context.players.entries()).map(([userId, p]) => ({
+      userId,
+      userName: p.userName,
+    }));
+
+    // Build player timeout events for those who didn't finish
+    const timeoutActions: Array<Record<string, unknown>> = [];
+    for (const [userId, ps] of this.state.playerStates) {
+      if (!ps.hasFinished) {
+        timeoutActions.push({
+          seq: ++this.actionSeq,
+          type: 'player_timeout',
+          timestamp: Date.now(),
+          payload: {
+            userId,
+            lastArticle: ps.currentArticleTitle,
+            pathLength: ps.path.length,
+            path: [...ps.path],
+          },
+        });
+      }
+    }
+
+    // Add timeout actions to the log
+    for (const ta of timeoutActions) {
+      this.state.actionLog.push(ta as any);
+    }
+
     return {
       lobbyId: this.context.lobbyId,
       startedAt: this.startedAt,
       endedAt: Date.now(),
-      navigationDuration: WR_NAV_DURATION,
+      navigationDuration: this.getSetting('navDuration', WR_NAV_DURATION),
       playerCount: this.context.players.size,
       finishedCount: this.state.finishCounter,
+      players,
+      initialState: {
+        rounds: 1,
+        timeLimitSeconds: this.getSetting('navDuration', WR_NAV_DURATION),
+        startArticle: this.state.articlePair.startArticle.title,
+        targetArticle: this.state.articlePair.targetArticle.title,
+        difficulty: this.state.articlePair.difficulty,
+      },
       actions: this.state.actionLog,
+      finalResults: Array.from(this.state.playerStates.entries()).map(([userId, ps]) => ({
+        userId,
+        userName: this.context.players.get(userId)?.userName ?? 'Unknown',
+        score: this.state.cumulativeScores.get(userId) ?? ps.score ?? 0,
+      })),
     };
   }
 }
