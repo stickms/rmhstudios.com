@@ -1,0 +1,562 @@
+[
+  {
+    "id": 1,
+    "text": "The quick brown fox jumps over the lazy dog.",
+    "normalizedText": "the quick brown fox jumps over the lazy dog",
+    "letterCount": 35,
+    "difficulty": "medium",
+    "category": "Pangram"
+  },
+  {
+    "id": 2,
+    "text": "Pack my box with five dozen liquor jugs.",
+    "normalizedText": "pack my box with five dozen liquor jugs",
+    "letterCount": 32,
+    "difficulty": "medium",
+    "category": "Pangram"
+  },
+  {
+    "id": 3,
+    "text": "How vexingly quick daft zebras jump.",
+    "normalizedText": "how vexingly quick daft zebras jump",
+    "letterCount": 30,
+    "difficulty": "medium",
+    "category": "Pangram"
+  },
+  {
+    "id": 4,
+    "text": "The five boxing wizards jump quickly.",
+    "normalizedText": "the five boxing wizards jump quickly",
+    "letterCount": 31,
+    "difficulty": "medium",
+    "category": "Pangram"
+  },
+  {
+    "id": 5,
+    "text": "Sphinx of black quartz judge my vow.",
+    "normalizedText": "sphinx of black quartz judge my vow",
+    "letterCount": 29,
+    "difficulty": "medium",
+    "category": "Pangram"
+  },
+  {
+    "id": 6,
+    "text": "Two driven jocks help fax my big quiz.",
+    "normalizedText": "two driven jocks help fax my big quiz",
+    "letterCount": 30,
+    "difficulty": "medium",
+    "category": "Pangram"
+  },
+  {
+    "id": 7,
+    "text": "Jackdaws love my big sphinx of quartz.",
+    "normalizedText": "jackdaws love my big sphinx of quartz",
+    "letterCount": 31,
+    "difficulty": "medium",
+    "category": "Pangram"
+  },
+  {
+    "id": 8,
+    "text": "Bright vixens jump dozy fowl quack.",
+    "normalizedText": "bright vixens jump dozy fowl quack",
+    "letterCount": 29,
+    "difficulty": "medium",
+    "category": "Pangram"
+  },
+  {
+    "id": 9,
+    "text": "Waltz bad nymph for quick jigs vex.",
+    "normalizedText": "waltz bad nymph for quick jigs vex",
+    "letterCount": 28,
+    "difficulty": "medium",
+    "category": "Pangram"
+  },
+  {
+    "id": 10,
+    "text": "Glib jocks quiz nymph to vex dwarf.",
+    "normalizedText": "glib jocks quiz nymph to vex dwarf",
+    "letterCount": 28,
+    "difficulty": "medium",
+    "category": "Pangram"
+  },
+  {
+    "id": 11,
+    "text": "Actions speak louder than words.",
+    "normalizedText": "actions speak louder than words",
+    "letterCount": 27,
+    "difficulty": "medium",
+    "category": "Proverb"
+  },
+  {
+    "id": 12,
+    "text": "The early bird catches the worm.",
+    "normalizedText": "the early bird catches the worm",
+    "letterCount": 26,
+    "difficulty": "medium",
+    "category": "Proverb"
+  },
+  {
+    "id": 13,
+    "text": "Better late than never.",
+    "normalizedText": "better late than never",
+    "letterCount": 19,
+    "difficulty": "easy",
+    "category": "Proverb"
+  },
+  {
+    "id": 14,
+    "text": "Knowledge is power.",
+    "normalizedText": "knowledge is power",
+    "letterCount": 16,
+    "difficulty": "easy",
+    "category": "Proverb"
+  },
+  {
+    "id": 15,
+    "text": "Practice makes perfect.",
+    "normalizedText": "practice makes perfect",
+    "letterCount": 20,
+    "difficulty": "easy",
+    "category": "Proverb"
+  },
+  {
+    "id": 16,
+    "text": "Fortune favors the bold.",
+    "normalizedText": "fortune favors the bold",
+    "letterCount": 20,
+    "difficulty": "easy",
+    "category": "Proverb"
+  },
+  {
+    "id": 17,
+    "text": "Where there is a will there is a way.",
+    "normalizedText": "where there is a will there is a way",
+    "letterCount": 28,
+    "difficulty": "medium",
+    "category": "Proverb"
+  },
+  {
+    "id": 18,
+    "text": "All that glitters is not gold.",
+    "normalizedText": "all that glitters is not gold",
+    "letterCount": 24,
+    "difficulty": "easy",
+    "category": "Proverb"
+  },
+  {
+    "id": 19,
+    "text": "Rome was not built in a day.",
+    "normalizedText": "rome was not built in a day",
+    "letterCount": 21,
+    "difficulty": "easy",
+    "category": "Proverb"
+  },
+  {
+    "id": 20,
+    "text": "A rolling stone gathers no moss.",
+    "normalizedText": "a rolling stone gathers no moss",
+    "letterCount": 26,
+    "difficulty": "medium",
+    "category": "Proverb"
+  },
+  {
+    "id": 21,
+    "text": "Still waters run deep.",
+    "normalizedText": "still waters run deep",
+    "letterCount": 18,
+    "difficulty": "easy",
+    "category": "Proverb"
+  },
+  {
+    "id": 22,
+    "text": "If the shoe fits wear it.",
+    "normalizedText": "if the shoe fits wear it",
+    "letterCount": 19,
+    "difficulty": "easy",
+    "category": "Proverb"
+  },
+  {
+    "id": 23,
+    "text": "Well begun is half done.",
+    "normalizedText": "well begun is half done",
+    "letterCount": 19,
+    "difficulty": "easy",
+    "category": "Proverb"
+  },
+  {
+    "id": 24,
+    "text": "Necessity is the mother of invention.",
+    "normalizedText": "necessity is the mother of invention",
+    "letterCount": 31,
+    "difficulty": "medium",
+    "category": "Proverb"
+  },
+  {
+    "id": 25,
+    "text": "Do not count your chickens before they hatch.",
+    "normalizedText": "do not count your chickens before they hatch",
+    "letterCount": 37,
+    "difficulty": "medium",
+    "category": "Proverb"
+  },
+  {
+    "id": 26,
+    "text": "The squeaky wheel gets the grease.",
+    "normalizedText": "the squeaky wheel gets the grease",
+    "letterCount": 28,
+    "difficulty": "medium",
+    "category": "Proverb"
+  },
+  {
+    "id": 27,
+    "text": "When the going gets tough the tough get going.",
+    "normalizedText": "when the going gets tough the tough get going",
+    "letterCount": 37,
+    "difficulty": "medium",
+    "category": "Proverb"
+  },
+  {
+    "id": 28,
+    "text": "You cannot make an omelet without breaking eggs.",
+    "normalizedText": "you cannot make an omelet without breaking eggs",
+    "letterCount": 40,
+    "difficulty": "hard",
+    "category": "Proverb"
+  },
+  {
+    "id": 29,
+    "text": "An apple a day keeps the doctor away.",
+    "normalizedText": "an apple a day keeps the doctor away",
+    "letterCount": 29,
+    "difficulty": "medium",
+    "category": "Proverb"
+  },
+  {
+    "id": 30,
+    "text": "Do unto others as you would have them do unto you.",
+    "normalizedText": "do unto others as you would have them do unto you",
+    "letterCount": 39,
+    "difficulty": "hard",
+    "category": "Proverb"
+  },
+  {
+    "id": 31,
+    "text": "She sells seashells by the seashore.",
+    "normalizedText": "she sells seashells by the seashore",
+    "letterCount": 30,
+    "difficulty": "medium",
+    "category": "Tongue Twister"
+  },
+  {
+    "id": 32,
+    "text": "Peter Piper picked a peck of pickled peppers.",
+    "normalizedText": "peter piper picked a peck of pickled peppers",
+    "letterCount": 37,
+    "difficulty": "medium",
+    "category": "Tongue Twister"
+  },
+  {
+    "id": 33,
+    "text": "Red lorry yellow lorry red lorry yellow lorry.",
+    "normalizedText": "red lorry yellow lorry red lorry yellow lorry",
+    "letterCount": 38,
+    "difficulty": "medium",
+    "category": "Tongue Twister"
+  },
+  {
+    "id": 34,
+    "text": "How much wood would a woodchuck chuck.",
+    "normalizedText": "how much wood would a woodchuck chuck",
+    "letterCount": 31,
+    "difficulty": "medium",
+    "category": "Tongue Twister"
+  },
+  {
+    "id": 35,
+    "text": "Fuzzy wuzzy was a bear fuzzy wuzzy had no hair.",
+    "normalizedText": "fuzzy wuzzy was a bear fuzzy wuzzy had no hair",
+    "letterCount": 37,
+    "difficulty": "hard",
+    "category": "Tongue Twister"
+  },
+  {
+    "id": 36,
+    "text": "Unique New York you know you need unique New York.",
+    "normalizedText": "unique new york you know you need unique new york",
+    "letterCount": 40,
+    "difficulty": "hard",
+    "category": "Tongue Twister"
+  },
+  {
+    "id": 37,
+    "text": "Toy boat toy boat toy boat.",
+    "normalizedText": "toy boat toy boat toy boat",
+    "letterCount": 21,
+    "difficulty": "easy",
+    "category": "Tongue Twister"
+  },
+  {
+    "id": 38,
+    "text": "Which wristwatches are Swiss wristwatches.",
+    "normalizedText": "which wristwatches are swiss wristwatches",
+    "letterCount": 37,
+    "difficulty": "medium",
+    "category": "Tongue Twister"
+  },
+  {
+    "id": 39,
+    "text": "To be or not to be that is the question.",
+    "normalizedText": "to be or not to be that is the question",
+    "letterCount": 30,
+    "difficulty": "medium",
+    "category": "Quote"
+  },
+  {
+    "id": 40,
+    "text": "I think therefore I am.",
+    "normalizedText": "i think therefore i am",
+    "letterCount": 18,
+    "difficulty": "easy",
+    "category": "Quote"
+  },
+  {
+    "id": 41,
+    "text": "That which does not kill us makes us stronger.",
+    "normalizedText": "that which does not kill us makes us stronger",
+    "letterCount": 37,
+    "difficulty": "medium",
+    "category": "Quote"
+  },
+  {
+    "id": 42,
+    "text": "The only thing we have to fear is fear itself.",
+    "normalizedText": "the only thing we have to fear is fear itself",
+    "letterCount": 36,
+    "difficulty": "medium",
+    "category": "Quote"
+  },
+  {
+    "id": 43,
+    "text": "In the middle of difficulty lies opportunity.",
+    "normalizedText": "in the middle of difficulty lies opportunity",
+    "letterCount": 38,
+    "difficulty": "medium",
+    "category": "Quote"
+  },
+  {
+    "id": 44,
+    "text": "Be the change you wish to see in the world.",
+    "normalizedText": "be the change you wish to see in the world",
+    "letterCount": 33,
+    "difficulty": "medium",
+    "category": "Quote"
+  },
+  {
+    "id": 45,
+    "text": "Stay hungry stay foolish.",
+    "normalizedText": "stay hungry stay foolish",
+    "letterCount": 21,
+    "difficulty": "easy",
+    "category": "Quote"
+  },
+  {
+    "id": 46,
+    "text": "Imagination is more important than knowledge.",
+    "normalizedText": "imagination is more important than knowledge",
+    "letterCount": 39,
+    "difficulty": "medium",
+    "category": "Quote"
+  },
+  {
+    "id": 47,
+    "text": "You miss every shot you do not take.",
+    "normalizedText": "you miss every shot you do not take",
+    "letterCount": 28,
+    "difficulty": "medium",
+    "category": "Quote"
+  },
+  {
+    "id": 48,
+    "text": "Not all those who wander are lost.",
+    "normalizedText": "not all those who wander are lost",
+    "letterCount": 27,
+    "difficulty": "medium",
+    "category": "Quote"
+  },
+  {
+    "id": 49,
+    "text": "Speak softly and carry a big stick.",
+    "normalizedText": "speak softly and carry a big stick",
+    "letterCount": 28,
+    "difficulty": "medium",
+    "category": "Quote"
+  },
+  {
+    "id": 50,
+    "text": "Tough times never last but tough people do.",
+    "normalizedText": "tough times never last but tough people do",
+    "letterCount": 35,
+    "difficulty": "medium",
+    "category": "Quote"
+  },
+  {
+    "id": 51,
+    "text": "Life is what happens when you are busy making other plans.",
+    "normalizedText": "life is what happens when you are busy making other plans",
+    "letterCount": 47,
+    "difficulty": "hard",
+    "category": "Quote"
+  },
+  {
+    "id": 52,
+    "text": "It is during our darkest moments that we must focus to see the light.",
+    "normalizedText": "it is during our darkest moments that we must focus to see the light",
+    "letterCount": 55,
+    "difficulty": "hard",
+    "category": "Quote"
+  },
+  {
+    "id": 53,
+    "text": "The pen is mightier than the sword.",
+    "normalizedText": "the pen is mightier than the sword",
+    "letterCount": 28,
+    "difficulty": "medium",
+    "category": "Phrase"
+  },
+  {
+    "id": 54,
+    "text": "Every cloud has a silver lining.",
+    "normalizedText": "every cloud has a silver lining",
+    "letterCount": 26,
+    "difficulty": "medium",
+    "category": "Phrase"
+  },
+  {
+    "id": 55,
+    "text": "A picture is worth a thousand words.",
+    "normalizedText": "a picture is worth a thousand words",
+    "letterCount": 29,
+    "difficulty": "medium",
+    "category": "Phrase"
+  },
+  {
+    "id": 56,
+    "text": "Time flies when you are having fun.",
+    "normalizedText": "time flies when you are having fun",
+    "letterCount": 28,
+    "difficulty": "medium",
+    "category": "Phrase"
+  },
+  {
+    "id": 57,
+    "text": "Curiosity killed the cat.",
+    "normalizedText": "curiosity killed the cat",
+    "letterCount": 21,
+    "difficulty": "easy",
+    "category": "Phrase"
+  },
+  {
+    "id": 58,
+    "text": "Barking up the wrong tree.",
+    "normalizedText": "barking up the wrong tree",
+    "letterCount": 21,
+    "difficulty": "easy",
+    "category": "Phrase"
+  },
+  {
+    "id": 59,
+    "text": "What you see is what you get.",
+    "normalizedText": "what you see is what you get",
+    "letterCount": 22,
+    "difficulty": "easy",
+    "category": "Phrase"
+  },
+  {
+    "id": 60,
+    "text": "It takes two to tango.",
+    "normalizedText": "it takes two to tango",
+    "letterCount": 17,
+    "difficulty": "easy",
+    "category": "Phrase"
+  },
+  {
+    "id": 61,
+    "text": "Bite off more than you can chew.",
+    "normalizedText": "bite off more than you can chew",
+    "letterCount": 25,
+    "difficulty": "medium",
+    "category": "Phrase"
+  },
+  {
+    "id": 62,
+    "text": "Break a leg and give it your best shot tonight.",
+    "normalizedText": "break a leg and give it your best shot tonight",
+    "letterCount": 37,
+    "difficulty": "hard",
+    "category": "Phrase"
+  },
+  {
+    "id": 63,
+    "text": "Jack and Jill went up the hill to fetch a pail of water.",
+    "normalizedText": "jack and jill went up the hill to fetch a pail of water",
+    "letterCount": 43,
+    "difficulty": "hard",
+    "category": "Nursery Rhyme"
+  },
+  {
+    "id": 64,
+    "text": "Humpty Dumpty sat on a wall Humpty Dumpty had a great fall.",
+    "normalizedText": "humpty dumpty sat on a wall humpty dumpty had a great fall",
+    "letterCount": 47,
+    "difficulty": "hard",
+    "category": "Nursery Rhyme"
+  },
+  {
+    "id": 65,
+    "text": "Mary had a little lamb its fleece was white as snow.",
+    "normalizedText": "mary had a little lamb its fleece was white as snow",
+    "letterCount": 41,
+    "difficulty": "hard",
+    "category": "Nursery Rhyme"
+  },
+  {
+    "id": 66,
+    "text": "Twinkle twinkle little star how I wonder what you are.",
+    "normalizedText": "twinkle twinkle little star how i wonder what you are",
+    "letterCount": 44,
+    "difficulty": "hard",
+    "category": "Nursery Rhyme"
+  },
+  {
+    "id": 67,
+    "text": "Hickory dickory dock the mouse ran up the clock.",
+    "normalizedText": "hickory dickory dock the mouse ran up the clock",
+    "letterCount": 39,
+    "difficulty": "hard",
+    "category": "Nursery Rhyme"
+  },
+  {
+    "id": 68,
+    "text": "Three blind mice see how they run.",
+    "normalizedText": "three blind mice see how they run",
+    "letterCount": 27,
+    "difficulty": "medium",
+    "category": "Nursery Rhyme"
+  },
+  {
+    "id": 69,
+    "text": "Row row row your boat gently down the stream.",
+    "normalizedText": "row row row your boat gently down the stream",
+    "letterCount": 36,
+    "difficulty": "medium",
+    "category": "Nursery Rhyme"
+  },
+  {
+    "id": 70,
+    "text": "Little Bo Peep has lost her sheep.",
+    "normalizedText": "little bo peep has lost her sheep",
+    "letterCount": 27,
+    "difficulty": "medium",
+    "category": "Nursery Rhyme"
+  }
+]
