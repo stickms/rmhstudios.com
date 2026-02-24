@@ -170,8 +170,8 @@ export class PixelPushersMinigame extends BaseMinigame {
     this.state.walls = [...levelData.walls];
     this.state.goalZone = { ...levelData.goalZone };
     this.state.waypoints = levelData.waypoints
-      .sort((a, b) => a.order - b.order)
-      .map((w) => ({ x: w.x, y: w.y, order: w.order, reached: false }));
+      .sort((a: { order: number }, b: { order: number }) => a.order - b.order)
+      .map((w: { x: number; y: number; order: number }) => ({ x: w.x, y: w.y, order: w.order, reached: false }));
     this.state.nextWaypointIndex = 0;
 
     // Initialize ball

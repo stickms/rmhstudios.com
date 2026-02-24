@@ -91,7 +91,7 @@ export class ScrollSoulMinigame extends BaseMinigame {
       players: new Map(),
       platforms: [],
       activeAds: new Map(),
-      viewportY: 0,
+      viewportY: SC_CANVAS_HEIGHT, // Start with ground visible (viewport bottom well below players)
       scrollSpeed: this.getSetting('baseScrollSpeed', SC_SCROLL_SPEED_INITIAL),
       gameStartedAt: 0,
       elapsedMs: 0,
