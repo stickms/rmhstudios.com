@@ -6,7 +6,12 @@
         "outDir": "dist-server",
         "rootDir": ".",
         "noEmit": false,
-        "isolatedModules": false
+        "isolatedModules": false,
+        "paths": {
+        "@/*": [
+            "./*"
+        ]
+        }
     },
     "include": [
         "server/socket-server.ts",
