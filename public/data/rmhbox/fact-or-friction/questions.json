@@ -1,0 +1,1388 @@
+[
+  {
+    "id": "sci-001",
+    "question": "What is the chemical symbol for gold?",
+    "options": ["Go", "Au", "Ag", "Gd"],
+    "correctIndex": 1,
+    "category": "Science",
+    "difficulty": "easy",
+    "source": "Periodic Table of Elements"
+  },
+  {
+    "id": "sci-002",
+    "question": "What planet is known as the Red Planet?",
+    "options": ["Venus", "Jupiter", "Mars", "Saturn"],
+    "correctIndex": 2,
+    "category": "Science",
+    "difficulty": "easy",
+    "source": "NASA Solar System Exploration"
+  },
+  {
+    "id": "sci-003",
+    "question": "What gas do plants absorb from the atmosphere during photosynthesis?",
+    "options": ["Oxygen", "Nitrogen", "Carbon Dioxide", "Hydrogen"],
+    "correctIndex": 2,
+    "category": "Science",
+    "difficulty": "easy",
+    "source": "Biology: Campbell & Reece"
+  },
+  {
+    "id": "sci-004",
+    "question": "How many bones are in the adult human body?",
+    "options": ["186", "206", "226", "256"],
+    "correctIndex": 1,
+    "category": "Science",
+    "difficulty": "easy",
+    "source": "Gray's Anatomy"
+  },
+  {
+    "id": "sci-005",
+    "question": "What is the speed of light in a vacuum, approximately?",
+    "options": ["300,000 km/s", "150,000 km/s", "500,000 km/s", "1,000,000 km/s"],
+    "correctIndex": 0,
+    "category": "Science",
+    "difficulty": "medium",
+    "source": "NIST Reference on Constants"
+  },
+  {
+    "id": "sci-006",
+    "question": "What is the most abundant element in the Earth's crust?",
+    "options": ["Iron", "Silicon", "Oxygen", "Aluminum"],
+    "correctIndex": 2,
+    "category": "Science",
+    "difficulty": "medium",
+    "source": "CRC Handbook of Chemistry and Physics"
+  },
+  {
+    "id": "sci-007",
+    "question": "What subatomic particle has a positive charge?",
+    "options": ["Electron", "Neutron", "Proton", "Photon"],
+    "correctIndex": 2,
+    "category": "Science",
+    "difficulty": "easy",
+    "source": "Introduction to Modern Physics"
+  },
+  {
+    "id": "sci-008",
+    "question": "What is the half-life of Carbon-14, approximately?",
+    "options": ["1,200 years", "5,730 years", "12,400 years", "50,000 years"],
+    "correctIndex": 1,
+    "category": "Science",
+    "difficulty": "hard",
+    "source": "National Nuclear Data Center"
+  },
+  {
+    "id": "sci-009",
+    "question": "Which vitamin is produced when human skin is exposed to sunlight?",
+    "options": ["Vitamin A", "Vitamin B12", "Vitamin C", "Vitamin D"],
+    "correctIndex": 3,
+    "category": "Science",
+    "difficulty": "easy",
+    "source": "National Institutes of Health"
+  },
+  {
+    "id": "sci-010",
+    "question": "What is the Mohs hardness of diamond?",
+    "options": ["7", "8", "9", "10"],
+    "correctIndex": 3,
+    "category": "Science",
+    "difficulty": "medium",
+    "source": "Mineralogical Society of America"
+  },
+  {
+    "id": "sci-011",
+    "question": "What element has the atomic number 1?",
+    "options": ["Helium", "Hydrogen", "Lithium", "Carbon"],
+    "correctIndex": 1,
+    "category": "Science",
+    "difficulty": "easy",
+    "source": "Periodic Table of Elements"
+  },
+  {
+    "id": "sci-012",
+    "question": "What is the powerhouse of the cell?",
+    "options": ["Nucleus", "Ribosome", "Mitochondria", "Golgi Apparatus"],
+    "correctIndex": 2,
+    "category": "Science",
+    "difficulty": "easy",
+    "source": "Molecular Biology of the Cell, Alberts et al."
+  },
+  {
+    "id": "sci-013",
+    "question": "What type of bond involves the sharing of electron pairs between atoms?",
+    "options": ["Ionic bond", "Covalent bond", "Metallic bond", "Hydrogen bond"],
+    "correctIndex": 1,
+    "category": "Science",
+    "difficulty": "medium",
+    "source": "Chemistry: The Central Science, Brown et al."
+  },
+  {
+    "id": "sci-014",
+    "question": "What phenomenon causes the sky to appear blue?",
+    "options": ["Reflection", "Refraction", "Rayleigh scattering", "Diffraction"],
+    "correctIndex": 2,
+    "category": "Science",
+    "difficulty": "hard",
+    "source": "Optics by Eugene Hecht"
+  },
+  {
+    "id": "hist-001",
+    "question": "In what year did World War II end?",
+    "options": ["1943", "1944", "1945", "1946"],
+    "correctIndex": 2,
+    "category": "History",
+    "difficulty": "easy",
+    "source": "Encyclopedia Britannica"
+  },
+  {
+    "id": "hist-002",
+    "question": "Who was the first President of the United States?",
+    "options": ["Thomas Jefferson", "John Adams", "George Washington", "Benjamin Franklin"],
+    "correctIndex": 2,
+    "category": "History",
+    "difficulty": "easy",
+    "source": "National Archives"
+  },
+  {
+    "id": "hist-003",
+    "question": "What ancient civilization built the Machu Picchu complex?",
+    "options": ["Aztec", "Maya", "Inca", "Olmec"],
+    "correctIndex": 2,
+    "category": "History",
+    "difficulty": "medium",
+    "source": "National Geographic"
+  },
+  {
+    "id": "hist-004",
+    "question": "In what year did the Berlin Wall fall?",
+    "options": ["1987", "1988", "1989", "1990"],
+    "correctIndex": 2,
+    "category": "History",
+    "difficulty": "easy",
+    "source": "BBC History"
+  },
+  {
+    "id": "hist-005",
+    "question": "Which ship sank on its maiden voyage in April 1912?",
+    "options": ["Lusitania", "Britannic", "Titanic", "Olympic"],
+    "correctIndex": 2,
+    "category": "History",
+    "difficulty": "easy",
+    "source": "Encyclopedia Britannica"
+  },
+  {
+    "id": "hist-006",
+    "question": "What was the name of the first successful powered airplane flight, built by the Wright Brothers?",
+    "options": ["The Flyer", "Spirit of St. Louis", "The Kitty Hawk", "Spruce Goose"],
+    "correctIndex": 0,
+    "category": "History",
+    "difficulty": "medium",
+    "source": "Smithsonian National Air and Space Museum"
+  },
+  {
+    "id": "hist-007",
+    "question": "The Rosetta Stone helped scholars decipher which ancient writing system?",
+    "options": ["Cuneiform", "Egyptian hieroglyphs", "Linear B", "Sanskrit"],
+    "correctIndex": 1,
+    "category": "History",
+    "difficulty": "medium",
+    "source": "British Museum"
+  },
+  {
+    "id": "hist-008",
+    "question": "What treaty ended World War I?",
+    "options": ["Treaty of Paris", "Treaty of Versailles", "Treaty of Ghent", "Treaty of Tordesillas"],
+    "correctIndex": 1,
+    "category": "History",
+    "difficulty": "medium",
+    "source": "Encyclopedia Britannica"
+  },
+  {
+    "id": "hist-009",
+    "question": "Who was the longest-reigning British monarch before Queen Elizabeth II?",
+    "options": ["Queen Victoria", "King George III", "King Henry VIII", "King Edward VII"],
+    "correctIndex": 0,
+    "category": "History",
+    "difficulty": "hard",
+    "source": "Royal.uk Official Website"
+  },
+  {
+    "id": "hist-010",
+    "question": "What year did the French Revolution begin?",
+    "options": ["1776", "1789", "1799", "1804"],
+    "correctIndex": 1,
+    "category": "History",
+    "difficulty": "medium",
+    "source": "Encyclopedia Britannica"
+  },
+  {
+    "id": "hist-011",
+    "question": "Which empire was ruled by Genghis Khan?",
+    "options": ["Ottoman Empire", "Roman Empire", "Mongol Empire", "Persian Empire"],
+    "correctIndex": 2,
+    "category": "History",
+    "difficulty": "easy",
+    "source": "Encyclopedia Britannica"
+  },
+  {
+    "id": "hist-012",
+    "question": "What ancient wonder was located in the city of Babylon?",
+    "options": ["Colossus of Rhodes", "Hanging Gardens", "Lighthouse of Alexandria", "Temple of Artemis"],
+    "correctIndex": 1,
+    "category": "History",
+    "difficulty": "medium",
+    "source": "Ancient History Encyclopedia"
+  },
+  {
+    "id": "hist-013",
+    "question": "In which year did the United States Declaration of Independence get signed?",
+    "options": ["1774", "1775", "1776", "1777"],
+    "correctIndex": 2,
+    "category": "History",
+    "difficulty": "easy",
+    "source": "National Archives"
+  },
+  {
+    "id": "geo-001",
+    "question": "What is the largest continent by land area?",
+    "options": ["Africa", "North America", "Europe", "Asia"],
+    "correctIndex": 3,
+    "category": "Geography",
+    "difficulty": "easy",
+    "source": "National Geographic"
+  },
+  {
+    "id": "geo-002",
+    "question": "What river is traditionally considered the longest in the world?",
+    "options": ["Amazon", "Nile", "Yangtze", "Mississippi"],
+    "correctIndex": 1,
+    "category": "Geography",
+    "difficulty": "easy",
+    "source": "Encyclopedia Britannica (traditional measurement)"
+  },
+  {
+    "id": "geo-003",
+    "question": "What country has the most natural lakes?",
+    "options": ["United States", "Russia", "Canada", "Brazil"],
+    "correctIndex": 2,
+    "category": "Geography",
+    "difficulty": "medium",
+    "source": "World Atlas"
+  },
+  {
+    "id": "geo-004",
+    "question": "What is the smallest country in the world by area?",
+    "options": ["Monaco", "San Marino", "Liechtenstein", "Vatican City"],
+    "correctIndex": 3,
+    "category": "Geography",
+    "difficulty": "easy",
+    "source": "CIA World Factbook"
+  },
+  {
+    "id": "geo-005",
+    "question": "Mount Kilimanjaro is located in which country?",
+    "options": ["Kenya", "Tanzania", "Uganda", "Ethiopia"],
+    "correctIndex": 1,
+    "category": "Geography",
+    "difficulty": "medium",
+    "source": "National Geographic"
+  },
+  {
+    "id": "geo-006",
+    "question": "What is the deepest point in the Earth's oceans?",
+    "options": ["Tonga Trench", "Puerto Rico Trench", "Mariana Trench", "Java Trench"],
+    "correctIndex": 2,
+    "category": "Geography",
+    "difficulty": "medium",
+    "source": "NOAA Ocean Explorer"
+  },
+  {
+    "id": "geo-007",
+    "question": "Which desert is the largest hot desert in the world?",
+    "options": ["Gobi", "Kalahari", "Arabian", "Sahara"],
+    "correctIndex": 3,
+    "category": "Geography",
+    "difficulty": "easy",
+    "source": "National Geographic"
+  },
+  {
+    "id": "geo-008",
+    "question": "What is the capital of Australia?",
+    "options": ["Sydney", "Melbourne", "Canberra", "Brisbane"],
+    "correctIndex": 2,
+    "category": "Geography",
+    "difficulty": "medium",
+    "source": "Australian Government"
+  },
+  {
+    "id": "geo-009",
+    "question": "Which country is home to the most active volcanoes?",
+    "options": ["Japan", "Indonesia", "Iceland", "Philippines"],
+    "correctIndex": 1,
+    "category": "Geography",
+    "difficulty": "hard",
+    "source": "Smithsonian Global Volcanism Program"
+  },
+  {
+    "id": "geo-010",
+    "question": "What strait separates Europe from Africa?",
+    "options": ["Strait of Hormuz", "Strait of Malacca", "Strait of Gibraltar", "Bosphorus Strait"],
+    "correctIndex": 2,
+    "category": "Geography",
+    "difficulty": "medium",
+    "source": "World Atlas"
+  },
+  {
+    "id": "geo-011",
+    "question": "What is the largest island in the world?",
+    "options": ["Borneo", "Madagascar", "Greenland", "New Guinea"],
+    "correctIndex": 2,
+    "category": "Geography",
+    "difficulty": "easy",
+    "source": "National Geographic"
+  },
+  {
+    "id": "geo-012",
+    "question": "Lake Baikal, the deepest freshwater lake, is located in which country?",
+    "options": ["China", "Mongolia", "Russia", "Kazakhstan"],
+    "correctIndex": 2,
+    "category": "Geography",
+    "difficulty": "hard",
+    "source": "UNESCO World Heritage Centre"
+  },
+  {
+    "id": "geo-013",
+    "question": "What mountain range separates Europe from Asia?",
+    "options": ["Alps", "Himalayas", "Andes", "Ural Mountains"],
+    "correctIndex": 3,
+    "category": "Geography",
+    "difficulty": "medium",
+    "source": "Encyclopedia Britannica"
+  },
+  {
+    "id": "pop-001",
+    "question": "What fictional country is Black Panther from in the Marvel Cinematic Universe?",
+    "options": ["Sokovia", "Wakanda", "Genosha", "Latveria"],
+    "correctIndex": 1,
+    "category": "Pop Culture",
+    "difficulty": "easy",
+    "source": "Marvel Studios"
+  },
+  {
+    "id": "pop-002",
+    "question": "What is the name of the coffee shop in the TV show 'Friends'?",
+    "options": ["Central Park", "Central Perk", "The Coffee Bean", "Java Jive"],
+    "correctIndex": 1,
+    "category": "Pop Culture",
+    "difficulty": "easy",
+    "source": "NBC/Warner Bros. Television"
+  },
+  {
+    "id": "pop-003",
+    "question": "In the Harry Potter series, what position does Harry play on the Quidditch team?",
+    "options": ["Chaser", "Beater", "Keeper", "Seeker"],
+    "correctIndex": 3,
+    "category": "Pop Culture",
+    "difficulty": "easy",
+    "source": "Harry Potter and the Sorcerer's Stone by J.K. Rowling"
+  },
+  {
+    "id": "pop-004",
+    "question": "What year was the first iPhone released?",
+    "options": ["2005", "2006", "2007", "2008"],
+    "correctIndex": 2,
+    "category": "Pop Culture",
+    "difficulty": "medium",
+    "source": "Apple Inc."
+  },
+  {
+    "id": "pop-005",
+    "question": "Which animated film features a character named 'Elsa' with ice powers?",
+    "options": ["Tangled", "Brave", "Frozen", "Moana"],
+    "correctIndex": 2,
+    "category": "Pop Culture",
+    "difficulty": "easy",
+    "source": "Walt Disney Animation Studios"
+  },
+  {
+    "id": "pop-006",
+    "question": "What is the highest-grossing film of all time (not adjusted for inflation)?",
+    "options": ["Avengers: Endgame", "Avatar", "Titanic", "Star Wars: The Force Awakens"],
+    "correctIndex": 1,
+    "category": "Pop Culture",
+    "difficulty": "medium",
+    "source": "Box Office Mojo"
+  },
+  {
+    "id": "pop-007",
+    "question": "In 'The Simpsons,' what is the name of the bar where Homer drinks?",
+    "options": ["The Drunken Clam", "Paddy's Pub", "Moe's Tavern", "Cheers"],
+    "correctIndex": 2,
+    "category": "Pop Culture",
+    "difficulty": "easy",
+    "source": "Fox Broadcasting / The Simpsons"
+  },
+  {
+    "id": "pop-008",
+    "question": "What video game franchise features a character named Master Chief?",
+    "options": ["Call of Duty", "Halo", "Gears of War", "Destiny"],
+    "correctIndex": 1,
+    "category": "Pop Culture",
+    "difficulty": "easy",
+    "source": "Xbox Game Studios"
+  },
+  {
+    "id": "pop-009",
+    "question": "Which band released the album 'Abbey Road' in 1969?",
+    "options": ["The Rolling Stones", "The Beatles", "Led Zeppelin", "The Who"],
+    "correctIndex": 1,
+    "category": "Pop Culture",
+    "difficulty": "easy",
+    "source": "Apple Records"
+  },
+  {
+    "id": "pop-010",
+    "question": "What does the acronym 'GIF' stand for?",
+    "options": ["Graphics Interchange Format", "General Image File", "Graphic Image Framework", "Generated Image Format"],
+    "correctIndex": 0,
+    "category": "Pop Culture",
+    "difficulty": "medium",
+    "source": "CompuServe (original specification)"
+  },
+  {
+    "id": "pop-011",
+    "question": "Who directed the film 'Jurassic Park' (1993)?",
+    "options": ["James Cameron", "Steven Spielberg", "George Lucas", "Ridley Scott"],
+    "correctIndex": 1,
+    "category": "Pop Culture",
+    "difficulty": "medium",
+    "source": "Universal Pictures"
+  },
+  {
+    "id": "nat-001",
+    "question": "What is the largest species of shark?",
+    "options": ["Great White Shark", "Hammerhead Shark", "Whale Shark", "Tiger Shark"],
+    "correctIndex": 2,
+    "category": "Nature",
+    "difficulty": "easy",
+    "source": "National Geographic"
+  },
+  {
+    "id": "nat-002",
+    "question": "What is the fastest land animal?",
+    "options": ["Lion", "Pronghorn", "Cheetah", "Gazelle"],
+    "correctIndex": 2,
+    "category": "Nature",
+    "difficulty": "easy",
+    "source": "National Geographic"
+  },
+  {
+    "id": "nat-003",
+    "question": "How many hearts does an octopus have?",
+    "options": ["1", "2", "3", "4"],
+    "correctIndex": 2,
+    "category": "Nature",
+    "difficulty": "medium",
+    "source": "Smithsonian Ocean"
+  },
+  {
+    "id": "nat-004",
+    "question": "What is the largest living organism on Earth by area?",
+    "options": ["Blue Whale", "Giant Sequoia", "Honey Fungus", "Great Barrier Reef"],
+    "correctIndex": 2,
+    "category": "Nature",
+    "difficulty": "hard",
+    "source": "Scientific American"
+  },
+  {
+    "id": "nat-005",
+    "question": "Which bird is known for its ability to mimic human speech?",
+    "options": ["Eagle", "Parrot", "Penguin", "Hummingbird"],
+    "correctIndex": 1,
+    "category": "Nature",
+    "difficulty": "easy",
+    "source": "Audubon Society"
+  },
+  {
+    "id": "nat-006",
+    "question": "What animal has the longest gestation period?",
+    "options": ["Blue Whale", "African Elephant", "Giraffe", "Rhinoceros"],
+    "correctIndex": 1,
+    "category": "Nature",
+    "difficulty": "medium",
+    "source": "San Diego Zoo Wildlife Alliance"
+  },
+  {
+    "id": "nat-007",
+    "question": "What is the only mammal capable of true flight?",
+    "options": ["Flying Squirrel", "Sugar Glider", "Bat", "Colugo"],
+    "correctIndex": 2,
+    "category": "Nature",
+    "difficulty": "easy",
+    "source": "Smithsonian National Museum of Natural History"
+  },
+  {
+    "id": "nat-008",
+    "question": "What pigment gives plants their green color?",
+    "options": ["Carotene", "Xanthophyll", "Chlorophyll", "Anthocyanin"],
+    "correctIndex": 2,
+    "category": "Nature",
+    "difficulty": "easy",
+    "source": "Biology: Campbell & Reece"
+  },
+  {
+    "id": "nat-009",
+    "question": "How long can a tardigrade survive in the vacuum of space?",
+    "options": ["A few minutes", "A few hours", "A few days", "Up to 10 days"],
+    "correctIndex": 3,
+    "category": "Nature",
+    "difficulty": "hard",
+    "source": "Current Biology journal"
+  },
+  {
+    "id": "nat-010",
+    "question": "What is a group of flamingos called?",
+    "options": ["A flock", "A flamboyance", "A colony", "A stand"],
+    "correctIndex": 1,
+    "category": "Nature",
+    "difficulty": "hard",
+    "source": "Oxford English Dictionary"
+  },
+  {
+    "id": "nat-011",
+    "question": "Which insect can carry objects 50 times its own body weight?",
+    "options": ["Bee", "Ant", "Beetle", "Grasshopper"],
+    "correctIndex": 1,
+    "category": "Nature",
+    "difficulty": "medium",
+    "source": "National Geographic"
+  },
+  {
+    "id": "nat-012",
+    "question": "What is the largest species of penguin?",
+    "options": ["King Penguin", "Gentoo Penguin", "Emperor Penguin", "Macaroni Penguin"],
+    "correctIndex": 2,
+    "category": "Nature",
+    "difficulty": "medium",
+    "source": "World Wildlife Fund"
+  },
+  {
+    "id": "tech-001",
+    "question": "What does 'HTTP' stand for?",
+    "options": ["HyperText Transfer Protocol", "High Transfer Text Protocol", "HyperText Transmission Process", "High Text Transfer Protocol"],
+    "correctIndex": 0,
+    "category": "Technology",
+    "difficulty": "easy",
+    "source": "IETF RFC 2616"
+  },
+  {
+    "id": "tech-002",
+    "question": "Who is credited with inventing the World Wide Web?",
+    "options": ["Vint Cerf", "Tim Berners-Lee", "Steve Jobs", "Bill Gates"],
+    "correctIndex": 1,
+    "category": "Technology",
+    "difficulty": "easy",
+    "source": "W3C / CERN"
+  },
+  {
+    "id": "tech-003",
+    "question": "What programming language was created by Guido van Rossum?",
+    "options": ["Java", "Ruby", "Python", "C++"],
+    "correctIndex": 2,
+    "category": "Technology",
+    "difficulty": "medium",
+    "source": "Python Software Foundation"
+  },
+  {
+    "id": "tech-004",
+    "question": "What does 'CPU' stand for?",
+    "options": ["Central Processing Unit", "Computer Personal Unit", "Central Program Utility", "Core Processing Unit"],
+    "correctIndex": 0,
+    "category": "Technology",
+    "difficulty": "easy",
+    "source": "IEEE Computer Society"
+  },
+  {
+    "id": "tech-005",
+    "question": "In what year was the first email sent?",
+    "options": ["1965", "1971", "1978", "1983"],
+    "correctIndex": 1,
+    "category": "Technology",
+    "difficulty": "hard",
+    "source": "Computer History Museum"
+  },
+  {
+    "id": "tech-006",
+    "question": "What does 'SQL' stand for?",
+    "options": ["Simple Query Language", "Structured Query Language", "Standard Query Logic", "System Query Language"],
+    "correctIndex": 1,
+    "category": "Technology",
+    "difficulty": "easy",
+    "source": "ISO/IEC 9075"
+  },
+  {
+    "id": "tech-007",
+    "question": "What company developed the Java programming language?",
+    "options": ["Microsoft", "IBM", "Sun Microsystems", "Apple"],
+    "correctIndex": 2,
+    "category": "Technology",
+    "difficulty": "medium",
+    "source": "Oracle (originally Sun Microsystems)"
+  },
+  {
+    "id": "tech-008",
+    "question": "What does 'RAM' stand for in computing?",
+    "options": ["Read Access Memory", "Random Access Memory", "Rapid Application Memory", "Runtime Allocated Memory"],
+    "correctIndex": 1,
+    "category": "Technology",
+    "difficulty": "easy",
+    "source": "IEEE Computer Society"
+  },
+  {
+    "id": "tech-009",
+    "question": "Which protocol is used for secure communication over the internet?",
+    "options": ["FTP", "SMTP", "HTTPS", "Telnet"],
+    "correctIndex": 2,
+    "category": "Technology",
+    "difficulty": "easy",
+    "source": "IETF RFC 2818"
+  },
+  {
+    "id": "tech-010",
+    "question": "What is Moore's Law primarily about?",
+    "options": ["Internet speed doubling every year", "Transistor count doubling roughly every two years", "Storage capacity tripling every decade", "Battery life improving by 50% annually"],
+    "correctIndex": 1,
+    "category": "Technology",
+    "difficulty": "medium",
+    "source": "Intel Corporation / Gordon Moore's 1965 paper"
+  },
+  {
+    "id": "tech-011",
+    "question": "What was the first commercially successful personal computer?",
+    "options": ["IBM PC", "Apple II", "Commodore 64", "Altair 8800"],
+    "correctIndex": 1,
+    "category": "Technology",
+    "difficulty": "hard",
+    "source": "Computer History Museum"
+  },
+  {
+    "id": "tech-012",
+    "question": "What does 'IoT' stand for?",
+    "options": ["Internet of Things", "Integration of Technology", "Interconnected Online Tools", "Internal Operations Technology"],
+    "correctIndex": 0,
+    "category": "Technology",
+    "difficulty": "easy",
+    "source": "IEEE Internet of Things Journal"
+  },
+  {
+    "id": "lit-001",
+    "question": "Who wrote 'Romeo and Juliet'?",
+    "options": ["Charles Dickens", "William Shakespeare", "Jane Austen", "Mark Twain"],
+    "correctIndex": 1,
+    "category": "Literature",
+    "difficulty": "easy",
+    "source": "Folger Shakespeare Library"
+  },
+  {
+    "id": "lit-002",
+    "question": "What is the opening line of Herman Melville's 'Moby-Dick'?",
+    "options": ["It was a dark and stormy night.", "Call me Ishmael.", "In the beginning, there was the sea.", "I am born."],
+    "correctIndex": 1,
+    "category": "Literature",
+    "difficulty": "medium",
+    "source": "Moby-Dick by Herman Melville (1851)"
+  },
+  {
+    "id": "lit-003",
+    "question": "In George Orwell's '1984,' what is the name of the totalitarian leader?",
+    "options": ["Big Brother", "The Commander", "The Director", "The Chairman"],
+    "correctIndex": 0,
+    "category": "Literature",
+    "difficulty": "easy",
+    "source": "1984 by George Orwell"
+  },
+  {
+    "id": "lit-004",
+    "question": "Who wrote 'One Hundred Years of Solitude'?",
+    "options": ["Pablo Neruda", "Isabel Allende", "Gabriel García Márquez", "Jorge Luis Borges"],
+    "correctIndex": 2,
+    "category": "Literature",
+    "difficulty": "medium",
+    "source": "Harper & Row Publishers"
+  },
+  {
+    "id": "lit-005",
+    "question": "What novel begins with 'It was the best of times, it was the worst of times'?",
+    "options": ["Great Expectations", "Oliver Twist", "A Tale of Two Cities", "David Copperfield"],
+    "correctIndex": 2,
+    "category": "Literature",
+    "difficulty": "medium",
+    "source": "A Tale of Two Cities by Charles Dickens (1859)"
+  },
+  {
+    "id": "lit-006",
+    "question": "Who wrote 'The Great Gatsby'?",
+    "options": ["Ernest Hemingway", "F. Scott Fitzgerald", "John Steinbeck", "William Faulkner"],
+    "correctIndex": 1,
+    "category": "Literature",
+    "difficulty": "easy",
+    "source": "Charles Scribner's Sons (1925)"
+  },
+  {
+    "id": "lit-007",
+    "question": "In which language was 'Don Quixote' originally written?",
+    "options": ["Portuguese", "Italian", "Spanish", "French"],
+    "correctIndex": 2,
+    "category": "Literature",
+    "difficulty": "medium",
+    "source": "Cervantes, Don Quixote (1605)"
+  },
+  {
+    "id": "lit-008",
+    "question": "Who wrote 'The Odyssey'?",
+    "options": ["Sophocles", "Virgil", "Homer", "Aristotle"],
+    "correctIndex": 2,
+    "category": "Literature",
+    "difficulty": "easy",
+    "source": "Classical Greek Literature"
+  },
+  {
+    "id": "lit-009",
+    "question": "What dystopian novel features a society divided into factions: Abnegation, Dauntless, Erudite, Amity, and Candor?",
+    "options": ["The Hunger Games", "Divergent", "The Maze Runner", "Ender's Game"],
+    "correctIndex": 1,
+    "category": "Literature",
+    "difficulty": "medium",
+    "source": "Divergent by Veronica Roth (2011)"
+  },
+  {
+    "id": "lit-010",
+    "question": "What is the longest novel ever published by word count?",
+    "options": ["War and Peace", "Les Misérables", "In Search of Lost Time", "A Suitable Boy"],
+    "correctIndex": 2,
+    "category": "Literature",
+    "difficulty": "hard",
+    "source": "Guinness World Records"
+  },
+  {
+    "id": "spo-001",
+    "question": "How many players are on a standard soccer (football) team on the field?",
+    "options": ["9", "10", "11", "12"],
+    "correctIndex": 2,
+    "category": "Sports",
+    "difficulty": "easy",
+    "source": "FIFA Laws of the Game"
+  },
+  {
+    "id": "spo-002",
+    "question": "In which sport would you perform a 'slam dunk'?",
+    "options": ["Volleyball", "Basketball", "Tennis", "Baseball"],
+    "correctIndex": 1,
+    "category": "Sports",
+    "difficulty": "easy",
+    "source": "NBA Official Rules"
+  },
+  {
+    "id": "spo-003",
+    "question": "How many Grand Slam tennis tournaments are there each year?",
+    "options": ["2", "3", "4", "5"],
+    "correctIndex": 2,
+    "category": "Sports",
+    "difficulty": "easy",
+    "source": "International Tennis Federation"
+  },
+  {
+    "id": "spo-004",
+    "question": "What is the diameter of a basketball hoop in inches?",
+    "options": ["16 inches", "18 inches", "20 inches", "22 inches"],
+    "correctIndex": 1,
+    "category": "Sports",
+    "difficulty": "medium",
+    "source": "NBA Official Rules"
+  },
+  {
+    "id": "spo-005",
+    "question": "In which country did the sport of cricket originate?",
+    "options": ["Australia", "India", "England", "South Africa"],
+    "correctIndex": 2,
+    "category": "Sports",
+    "difficulty": "medium",
+    "source": "Marylebone Cricket Club (MCC)"
+  },
+  {
+    "id": "spo-006",
+    "question": "How many holes are played in a standard round of golf?",
+    "options": ["9", "12", "16", "18"],
+    "correctIndex": 3,
+    "category": "Sports",
+    "difficulty": "easy",
+    "source": "R&A Rules of Golf"
+  },
+  {
+    "id": "spo-007",
+    "question": "Which country has won the most FIFA World Cup titles?",
+    "options": ["Germany", "Italy", "Argentina", "Brazil"],
+    "correctIndex": 3,
+    "category": "Sports",
+    "difficulty": "medium",
+    "source": "FIFA"
+  },
+  {
+    "id": "spo-008",
+    "question": "What is the only sport to have been played on the Moon?",
+    "options": ["Baseball", "Golf", "Frisbee", "Javelin"],
+    "correctIndex": 1,
+    "category": "Sports",
+    "difficulty": "hard",
+    "source": "NASA (Apollo 14 mission, Alan Shepard)"
+  },
+  {
+    "id": "spo-009",
+    "question": "In Olympic swimming, how long is a standard competition pool?",
+    "options": ["25 meters", "50 meters", "75 meters", "100 meters"],
+    "correctIndex": 1,
+    "category": "Sports",
+    "difficulty": "medium",
+    "source": "FINA (World Aquatics)"
+  },
+  {
+    "id": "spo-010",
+    "question": "What sport uses the terms 'love,' 'deuce,' and 'advantage'?",
+    "options": ["Badminton", "Table Tennis", "Tennis", "Squash"],
+    "correctIndex": 2,
+    "category": "Sports",
+    "difficulty": "easy",
+    "source": "International Tennis Federation"
+  },
+  {
+    "id": "spo-011",
+    "question": "How many points is a touchdown worth in American football?",
+    "options": ["3", "5", "6", "7"],
+    "correctIndex": 2,
+    "category": "Sports",
+    "difficulty": "easy",
+    "source": "NFL Official Playing Rules"
+  },
+  {
+    "id": "art-001",
+    "question": "Who painted the Mona Lisa?",
+    "options": ["Michelangelo", "Raphael", "Leonardo da Vinci", "Donatello"],
+    "correctIndex": 2,
+    "category": "Art",
+    "difficulty": "easy",
+    "source": "Louvre Museum"
+  },
+  {
+    "id": "art-002",
+    "question": "What art movement is Salvador Dalí most associated with?",
+    "options": ["Impressionism", "Cubism", "Surrealism", "Pop Art"],
+    "correctIndex": 2,
+    "category": "Art",
+    "difficulty": "medium",
+    "source": "Museum of Modern Art (MoMA)"
+  },
+  {
+    "id": "art-003",
+    "question": "What painting technique uses small dots of color to form an image?",
+    "options": ["Impressionism", "Pointillism", "Cubism", "Fauvism"],
+    "correctIndex": 1,
+    "category": "Art",
+    "difficulty": "medium",
+    "source": "National Gallery of Art"
+  },
+  {
+    "id": "art-004",
+    "question": "Who sculpted the statue of David in Florence?",
+    "options": ["Donatello", "Bernini", "Michelangelo", "Rodin"],
+    "correctIndex": 2,
+    "category": "Art",
+    "difficulty": "medium",
+    "source": "Galleria dell'Accademia, Florence"
+  },
+  {
+    "id": "art-005",
+    "question": "What artist is famous for painting Campbell's Soup Cans?",
+    "options": ["Roy Lichtenstein", "Andy Warhol", "Jasper Johns", "Jean-Michel Basquiat"],
+    "correctIndex": 1,
+    "category": "Art",
+    "difficulty": "medium",
+    "source": "Museum of Modern Art (MoMA)"
+  },
+  {
+    "id": "art-006",
+    "question": "In what city is the Uffizi Gallery located?",
+    "options": ["Rome", "Venice", "Florence", "Milan"],
+    "correctIndex": 2,
+    "category": "Art",
+    "difficulty": "hard",
+    "source": "Uffizi Galleries Official Website"
+  },
+  {
+    "id": "art-007",
+    "question": "Who painted 'Starry Night'?",
+    "options": ["Claude Monet", "Vincent van Gogh", "Paul Cézanne", "Edgar Degas"],
+    "correctIndex": 1,
+    "category": "Art",
+    "difficulty": "easy",
+    "source": "Museum of Modern Art (MoMA)"
+  },
+  {
+    "id": "art-008",
+    "question": "What Japanese art form involves folding paper into decorative shapes?",
+    "options": ["Ikebana", "Origami", "Bonsai", "Kintsugi"],
+    "correctIndex": 1,
+    "category": "Art",
+    "difficulty": "easy",
+    "source": "International Origami Center"
+  },
+  {
+    "id": "mus-001",
+    "question": "How many keys does a standard modern piano have?",
+    "options": ["76", "82", "88", "92"],
+    "correctIndex": 2,
+    "category": "Music",
+    "difficulty": "medium",
+    "source": "Steinway & Sons"
+  },
+  {
+    "id": "mus-002",
+    "question": "What musical term indicates a piece should be played slowly?",
+    "options": ["Allegro", "Adagio", "Presto", "Vivace"],
+    "correctIndex": 1,
+    "category": "Music",
+    "difficulty": "medium",
+    "source": "Harvard Dictionary of Music"
+  },
+  {
+    "id": "mus-003",
+    "question": "Who composed the 'Four Seasons'?",
+    "options": ["Johann Sebastian Bach", "Wolfgang Amadeus Mozart", "Antonio Vivaldi", "Ludwig van Beethoven"],
+    "correctIndex": 2,
+    "category": "Music",
+    "difficulty": "medium",
+    "source": "Classical Music Archives"
+  },
+  {
+    "id": "mus-004",
+    "question": "What instrument does a concert orchestra's leader typically play?",
+    "options": ["Flute", "Piano", "Cello", "Violin"],
+    "correctIndex": 3,
+    "category": "Music",
+    "difficulty": "medium",
+    "source": "New York Philharmonic"
+  },
+  {
+    "id": "mus-005",
+    "question": "How many strings does a standard guitar have?",
+    "options": ["4", "5", "6", "8"],
+    "correctIndex": 2,
+    "category": "Music",
+    "difficulty": "easy",
+    "source": "Fender Musical Instruments"
+  },
+  {
+    "id": "mus-006",
+    "question": "What city is considered the birthplace of jazz?",
+    "options": ["Chicago", "Memphis", "New York", "New Orleans"],
+    "correctIndex": 3,
+    "category": "Music",
+    "difficulty": "medium",
+    "source": "Smithsonian National Museum of American History"
+  },
+  {
+    "id": "mus-007",
+    "question": "Who composed 'Für Elise'?",
+    "options": ["Frédéric Chopin", "Ludwig van Beethoven", "Franz Schubert", "Robert Schumann"],
+    "correctIndex": 1,
+    "category": "Music",
+    "difficulty": "easy",
+    "source": "Beethoven-Haus Bonn"
+  },
+  {
+    "id": "mus-008",
+    "question": "What is the highest female singing voice type?",
+    "options": ["Alto", "Mezzo-soprano", "Soprano", "Contralto"],
+    "correctIndex": 2,
+    "category": "Music",
+    "difficulty": "medium",
+    "source": "New Grove Dictionary of Music"
+  },
+  {
+    "id": "mus-009",
+    "question": "What instrument family does the saxophone belong to?",
+    "options": ["Brass", "Woodwind", "Percussion", "String"],
+    "correctIndex": 1,
+    "category": "Music",
+    "difficulty": "hard",
+    "source": "Yamaha Musical Instruments"
+  },
+  {
+    "id": "mus-010",
+    "question": "Which composer became deaf later in life but continued to compose?",
+    "options": ["Mozart", "Bach", "Beethoven", "Handel"],
+    "correctIndex": 2,
+    "category": "Music",
+    "difficulty": "easy",
+    "source": "Beethoven-Haus Bonn"
+  },
+  {
+    "id": "hist-014",
+    "question": "What was the code name for the Allied invasion of Normandy in 1944?",
+    "options": ["Operation Barbarossa", "Operation Overlord", "Operation Market Garden", "Operation Torch"],
+    "correctIndex": 1,
+    "category": "History",
+    "difficulty": "hard",
+    "source": "National WWII Museum"
+  },
+  {
+    "id": "hist-015",
+    "question": "Who was the first woman to fly solo across the Atlantic Ocean?",
+    "options": ["Bessie Coleman", "Amelia Earhart", "Harriet Quimby", "Jacqueline Cochran"],
+    "correctIndex": 1,
+    "category": "History",
+    "difficulty": "hard",
+    "source": "Smithsonian National Air and Space Museum"
+  },
+  {
+    "id": "sci-015",
+    "question": "What is the chemical formula for table salt?",
+    "options": ["NaO", "KCl", "NaCl", "CaCl2"],
+    "correctIndex": 2,
+    "category": "Science",
+    "difficulty": "easy",
+    "source": "Chemistry: The Central Science, Brown et al."
+  },
+  {
+    "id": "sci-016",
+    "question": "What planet has the most moons in our solar system?",
+    "options": ["Jupiter", "Saturn", "Uranus", "Neptune"],
+    "correctIndex": 1,
+    "category": "Science",
+    "difficulty": "hard",
+    "source": "NASA Jet Propulsion Laboratory"
+  },
+  {
+    "id": "tech-013",
+    "question": "What does 'API' stand for?",
+    "options": ["Application Programming Interface", "Automated Program Integration", "Application Process Interconnect", "Advanced Programming Interface"],
+    "correctIndex": 0,
+    "category": "Technology",
+    "difficulty": "easy",
+    "source": "IEEE Software Engineering Standards"
+  },
+  {
+    "id": "tech-014",
+    "question": "What company created the Linux kernel?",
+    "options": ["Microsoft", "IBM", "It was created by Linus Torvalds individually", "Sun Microsystems"],
+    "correctIndex": 2,
+    "category": "Technology",
+    "difficulty": "medium",
+    "source": "The Linux Foundation"
+  },
+  {
+    "id": "geo-014",
+    "question": "Which river flows through the Grand Canyon?",
+    "options": ["Missouri River", "Rio Grande", "Colorado River", "Columbia River"],
+    "correctIndex": 2,
+    "category": "Geography",
+    "difficulty": "medium",
+    "source": "National Park Service"
+  },
+  {
+    "id": "spo-012",
+    "question": "What is the maximum score possible in a single game of ten-pin bowling?",
+    "options": ["200", "250", "300", "350"],
+    "correctIndex": 2,
+    "category": "Sports",
+    "difficulty": "medium",
+    "source": "United States Bowling Congress"
+  },
+  {
+    "id": "spo-013",
+    "question": "In what year were the first modern Olympic Games held?",
+    "options": ["1892", "1896", "1900", "1904"],
+    "correctIndex": 1,
+    "category": "Sports",
+    "difficulty": "hard",
+    "source": "International Olympic Committee"
+  },
+  {
+    "id": "nat-013",
+    "question": "What is the only continent where giraffes live in the wild?",
+    "options": ["Asia", "South America", "Australia", "Africa"],
+    "correctIndex": 3,
+    "category": "Nature",
+    "difficulty": "easy",
+    "source": "World Wildlife Fund"
+  },
+  {
+    "id": "nat-014",
+    "question": "What is the largest type of bear?",
+    "options": ["Grizzly Bear", "Polar Bear", "Kodiak Bear", "Black Bear"],
+    "correctIndex": 1,
+    "category": "Nature",
+    "difficulty": "medium",
+    "source": "National Geographic"
+  },
+  {
+    "id": "lit-011",
+    "question": "What is the name of the hobbit who carries the One Ring in 'The Lord of the Rings'?",
+    "options": ["Bilbo Baggins", "Samwise Gamgee", "Frodo Baggins", "Pippin Took"],
+    "correctIndex": 2,
+    "category": "Literature",
+    "difficulty": "easy",
+    "source": "The Lord of the Rings by J.R.R. Tolkien"
+  },
+  {
+    "id": "art-009",
+    "question": "Which art movement is Claude Monet most associated with?",
+    "options": ["Impressionism", "Expressionism", "Romanticism", "Baroque"],
+    "correctIndex": 0,
+    "category": "Art",
+    "difficulty": "medium",
+    "source": "Musée d'Orsay"
+  },
+  {
+    "id": "art-010",
+    "question": "What architectural style features pointed arches, ribbed vaults, and flying buttresses?",
+    "options": ["Romanesque", "Baroque", "Gothic", "Art Deco"],
+    "correctIndex": 2,
+    "category": "Art",
+    "difficulty": "hard",
+    "source": "Encyclopedia Britannica"
+  },
+  {
+    "id": "sci-017",
+    "question": "What force keeps planets in orbit around the Sun?",
+    "options": ["Electromagnetic force", "Nuclear force", "Gravity", "Centrifugal force"],
+    "correctIndex": 2,
+    "category": "Science",
+    "difficulty": "easy",
+    "source": "NASA Science"
+  },
+  {
+    "id": "hist-016",
+    "question": "What civilization built the Great Pyramid of Giza?",
+    "options": ["Mesopotamian", "Ancient Egyptian", "Ancient Greek", "Roman"],
+    "correctIndex": 1,
+    "category": "History",
+    "difficulty": "easy",
+    "source": "Encyclopedia Britannica"
+  },
+  {
+    "id": "pop-012",
+    "question": "What is the name of the fictional continent in 'Game of Thrones' where most of the action takes place?",
+    "options": ["Essos", "Westeros", "Sothoryos", "Ulthos"],
+    "correctIndex": 1,
+    "category": "Pop Culture",
+    "difficulty": "medium",
+    "source": "A Song of Ice and Fire by George R.R. Martin"
+  },
+  {
+    "id": "pop-013",
+    "question": "In the 'Star Wars' franchise, what color is Mace Windu's lightsaber?",
+    "options": ["Blue", "Green", "Red", "Purple"],
+    "correctIndex": 3,
+    "category": "Pop Culture",
+    "difficulty": "medium",
+    "source": "Lucasfilm / Star Wars"
+  },
+  {
+    "id": "mus-011",
+    "question": "What genre of music originated in Kingston, Jamaica in the late 1960s?",
+    "options": ["Ska", "Reggae", "Calypso", "Soca"],
+    "correctIndex": 1,
+    "category": "Music",
+    "difficulty": "hard",
+    "source": "Smithsonian Folkways Recordings"
+  },
+  {
+    "id": "mus-012",
+    "question": "What is the term for the speed or pace of a piece of music?",
+    "options": ["Pitch", "Tempo", "Dynamics", "Timbre"],
+    "correctIndex": 1,
+    "category": "Music",
+    "difficulty": "easy",
+    "source": "Harvard Dictionary of Music"
+  },
+  {
+    "id": "tech-015",
+    "question": "What year was Bitcoin's whitepaper published?",
+    "options": ["2006", "2008", "2010", "2012"],
+    "correctIndex": 1,
+    "category": "Technology",
+    "difficulty": "hard",
+    "source": "Bitcoin.org (Satoshi Nakamoto, 2008)"
+  },
+  {
+    "id": "geo-015",
+    "question": "What is the only country that spans both Europe and Asia and borders the Black Sea?",
+    "options": ["Russia", "Georgia", "Turkey", "Ukraine"],
+    "correctIndex": 2,
+    "category": "Geography",
+    "difficulty": "hard",
+    "source": "CIA World Factbook"
+  },
+  {
+    "id": "spo-014",
+    "question": "In baseball, how many strikes make an out?",
+    "options": ["2", "3", "4", "5"],
+    "correctIndex": 1,
+    "category": "Sports",
+    "difficulty": "easy",
+    "source": "MLB Official Rules"
+  },
+  {
+    "id": "nat-015",
+    "question": "What is the world's largest coral reef system?",
+    "options": ["Mesoamerican Reef", "Great Barrier Reef", "Red Sea Coral Reef", "New Caledonia Barrier Reef"],
+    "correctIndex": 1,
+    "category": "Nature",
+    "difficulty": "easy",
+    "source": "UNESCO World Heritage Centre"
+  },
+  {
+    "id": "hist-017",
+    "question": "What empire was Constantinople the capital of?",
+    "options": ["Roman Empire", "Ottoman Empire", "Byzantine Empire", "Persian Empire"],
+    "correctIndex": 2,
+    "category": "History",
+    "difficulty": "hard",
+    "source": "Encyclopedia Britannica"
+  },
+  {
+    "id": "sci-018",
+    "question": "What organ in the human body produces insulin?",
+    "options": ["Liver", "Kidney", "Pancreas", "Thyroid"],
+    "correctIndex": 2,
+    "category": "Science",
+    "difficulty": "medium",
+    "source": "National Institute of Diabetes and Digestive and Kidney Diseases"
+  },
+  {
+    "id": "lit-012",
+    "question": "Who wrote 'Pride and Prejudice'?",
+    "options": ["Charlotte Brontë", "Jane Austen", "Mary Shelley", "George Eliot"],
+    "correctIndex": 1,
+    "category": "Literature",
+    "difficulty": "easy",
+    "source": "T. Egerton, Whitehall (1813)"
+  },
+  {
+    "id": "art-011",
+    "question": "What famous painting by Edvard Munch depicts a figure with an agonized expression?",
+    "options": ["The Persistence of Memory", "The Scream", "Guernica", "The Kiss"],
+    "correctIndex": 1,
+    "category": "Art",
+    "difficulty": "easy",
+    "source": "National Gallery of Norway"
+  },
+  {
+    "id": "tech-016",
+    "question": "What does 'DNS' stand for in networking?",
+    "options": ["Digital Network System", "Domain Name System", "Data Node Server", "Dynamic Network Service"],
+    "correctIndex": 1,
+    "category": "Technology",
+    "difficulty": "medium",
+    "source": "IETF RFC 1035"
+  },
+  {
+    "id": "pop-014",
+    "question": "What superhero's alter ego is Diana Prince?",
+    "options": ["Black Widow", "Supergirl", "Wonder Woman", "Catwoman"],
+    "correctIndex": 2,
+    "category": "Pop Culture",
+    "difficulty": "easy",
+    "source": "DC Comics"
+  },
+  {
+    "id": "geo-016",
+    "question": "What is the tallest mountain in North America?",
+    "options": ["Mount Logan", "Mount Whitney", "Denali", "Mount Rainier"],
+    "correctIndex": 2,
+    "category": "Geography",
+    "difficulty": "hard",
+    "source": "USGS"
+  },
+  {
+    "id": "spo-015",
+    "question": "What martial art originated in Japan and means 'gentle way'?",
+    "options": ["Karate", "Taekwondo", "Judo", "Kung Fu"],
+    "correctIndex": 2,
+    "category": "Sports",
+    "difficulty": "hard",
+    "source": "International Judo Federation"
+  },
+  {
+    "id": "nat-016",
+    "question": "What is the process by which caterpillars transform into butterflies?",
+    "options": ["Hibernation", "Metamorphosis", "Migration", "Pollination"],
+    "correctIndex": 1,
+    "category": "Nature",
+    "difficulty": "easy",
+    "source": "Smithsonian National Museum of Natural History"
+  },
+  {
+    "id": "hist-018",
+    "question": "What was the last dynasty to rule China?",
+    "options": ["Ming Dynasty", "Song Dynasty", "Qing Dynasty", "Tang Dynasty"],
+    "correctIndex": 2,
+    "category": "History",
+    "difficulty": "hard",
+    "source": "Encyclopedia Britannica"
+  },
+  {
+    "id": "sci-019",
+    "question": "What noble gas is used in neon signs to produce a red-orange glow?",
+    "options": ["Argon", "Helium", "Neon", "Krypton"],
+    "correctIndex": 2,
+    "category": "Science",
+    "difficulty": "medium",
+    "source": "American Chemical Society"
+  },
+  {
+    "id": "mus-013",
+    "question": "What instrument has 47 strings and 7 pedals in its concert form?",
+    "options": ["Lyre", "Zither", "Harp", "Harpsichord"],
+    "correctIndex": 2,
+    "category": "Music",
+    "difficulty": "hard",
+    "source": "New Grove Dictionary of Music"
+  },
+  {
+    "id": "art-012",
+    "question": "What color do you get when you mix blue and yellow paint?",
+    "options": ["Purple", "Orange", "Green", "Brown"],
+    "correctIndex": 2,
+    "category": "Art",
+    "difficulty": "easy",
+    "source": "Color Theory Fundamentals"
+  },
+  {
+    "id": "sci-020",
+    "question": "What is the Chandrasekhar limit, the maximum mass of a stable white dwarf star?",
+    "options": ["0.5 solar masses", "1.0 solar masses", "1.4 solar masses", "2.0 solar masses"],
+    "correctIndex": 2,
+    "category": "Science",
+    "difficulty": "hard",
+    "source": "Astrophysical Journal, Chandrasekhar (1931)"
+  },
+  {
+    "id": "lit-013",
+    "question": "What Russian author wrote 'Crime and Punishment'?",
+    "options": ["Leo Tolstoy", "Fyodor Dostoevsky", "Anton Chekhov", "Ivan Turgenev"],
+    "correctIndex": 1,
+    "category": "Literature",
+    "difficulty": "hard",
+    "source": "The Russian Messenger (1866)"
+  },
+  {
+    "id": "geo-017",
+    "question": "What is the driest continent on Earth by average annual precipitation?",
+    "options": ["Africa", "Australia", "Antarctica", "Asia"],
+    "correctIndex": 2,
+    "category": "Geography",
+    "difficulty": "hard",
+    "source": "British Antarctic Survey"
+  }
+]
