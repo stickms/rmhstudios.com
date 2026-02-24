@@ -262,9 +262,9 @@ export default function MinigameHistoryPage() {
                         </div>
                       </div>
                       {isExpanded ? (
-                        <ChevronUp className="h-4 w-4 text-(--rmhbox-text-muted) flex-shrink-0" />
+                        <ChevronUp className="h-4 w-4 text-(--rmhbox-text-muted) shrink-0" />
                       ) : (
-                        <ChevronDown className="h-4 w-4 text-(--rmhbox-text-muted) flex-shrink-0" />
+                        <ChevronDown className="h-4 w-4 text-(--rmhbox-text-muted) shrink-0" />
                       )}
                     </button>
 

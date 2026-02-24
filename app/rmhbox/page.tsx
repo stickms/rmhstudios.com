@@ -173,16 +173,6 @@ export default function RMHboxLanding() {
           </div>
         </div>
 
-        {/* View Minigames */}
-        <button
-          onClick={() => router.push('/rmhbox/minigames')}
-          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) font-semibold transition-colors text-(--rmhbox-text) hover:bg-(--rmhbox-surface-hover) hover:text-(--rmhbox-accent)"
-          data-testid="view-minigames-btn"
-        >
-          <Gamepad2 className="h-5 w-5" />
-          View Minigames
-        </button>
-
         {/* Public Lobbies */}
         <div className="rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) p-6">
           <div className="flex items-center justify-between mb-4">
@@ -228,6 +218,16 @@ export default function RMHboxLanding() {
             </div>
           )}
         </div>
+
+        {/* View Minigames */}
+        <button
+          onClick={() => router.push('/rmhbox/minigames')}
+          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) font-semibold transition-colors text-(--rmhbox-text) hover:bg-(--rmhbox-surface-hover) hover:text-(--rmhbox-accent)"
+          data-testid="view-minigames-btn"
+        >
+          <Gamepad2 className="h-5 w-5" />
+          View Minigames
+        </button>
 
         {/* Leaderboard */}
         <LeaderboardPanel />

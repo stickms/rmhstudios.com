@@ -47,7 +47,7 @@ export default function MinigamesPage() {
               >
                 {/* Icon + name + category */}
                 <div className="flex items-start gap-3 mb-3">
-                  <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-(--rmhbox-accent)/10 flex items-center justify-center">
+                  <div className="shrink-0 w-10 h-10 rounded-lg bg-(--rmhbox-accent)/10 flex items-center justify-center">
                     <LucideAwardIcon name={game.icon} className="h-5 w-5 text-(--rmhbox-accent)" />
                   </div>
                   <div className="flex-1 min-w-0">
