@@ -24,9 +24,11 @@ interface QuestionResult {
 
 const LABELS = ['A', 'B', 'C', 'D'];
 
+const DEFAULT_DIFFICULTY_STYLE = 'bg-yellow-500/20 text-yellow-400';
+
 const DIFFICULTY_STYLES: Record<string, string> = {
   easy: 'bg-green-500/20 text-green-400',
-  medium: 'bg-yellow-500/20 text-yellow-400',
+  medium: DEFAULT_DIFFICULTY_STYLE,
   hard: 'bg-red-500/20 text-red-400',
 };
 
@@ -86,7 +88,7 @@ export default function FactOrFrictionHistoryDetail({
                   </span>
                 )}
                 {difficulty && (
-                  <span className={`rounded-full px-1.5 py-0.5 text-xs ${DIFFICULTY_STYLES[difficulty] ?? ''}`}>
+                  <span className={`rounded-full px-1.5 py-0.5 text-xs ${DIFFICULTY_STYLES[difficulty] ?? DEFAULT_DIFFICULTY_STYLE}`}>
                     {difficulty}
                   </span>
                 )}

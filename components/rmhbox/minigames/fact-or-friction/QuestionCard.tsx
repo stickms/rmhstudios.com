@@ -16,9 +16,11 @@ interface QuestionCardProps {
   totalQuestions: number;
 }
 
+const DEFAULT_DIFFICULTY_STYLE = 'bg-yellow-500/20 text-yellow-400';
+
 const DIFFICULTY_STYLES: Record<string, string> = {
   easy: 'bg-green-500/20 text-green-400',
-  medium: 'bg-yellow-500/20 text-yellow-400',
+  medium: DEFAULT_DIFFICULTY_STYLE,
   hard: 'bg-red-500/20 text-red-400',
 };
 
@@ -45,7 +47,7 @@ export default function QuestionCard({
           <span className="rounded-full bg-(--rmhbox-surface-hover) px-2 py-0.5 text-xs text-(--rmhbox-text-muted)">
             {category}
           </span>
-          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${DIFFICULTY_STYLES[difficulty] ?? DIFFICULTY_STYLES.medium}`}>
+          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${DIFFICULTY_STYLES[difficulty] ?? DEFAULT_DIFFICULTY_STYLE}`}>
             {difficulty}
           </span>
         </div>
