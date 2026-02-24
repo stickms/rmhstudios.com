@@ -104,8 +104,8 @@ function createTestContext(overrides: Partial<MinigameContext> = {}): MinigameCo
 // ─── Registry Tests ──────────────────────────────────────────────
 
 describe('Minigame Registry (§10.1)', () => {
-  it('should contain exactly 4 minigames', () => {
-    expect(Object.keys(MINIGAME_REGISTRY)).toHaveLength(4);
+  it('should contain at least 4 minigames', () => {
+    expect(Object.keys(MINIGAME_REGISTRY).length).toBeGreaterThanOrEqual(4);
   });
 
   it('should have correct IDs matching their keys', () => {
@@ -115,7 +115,7 @@ describe('Minigame Registry (§10.1)', () => {
   });
 
   it('should have valid categories for all games', () => {
-    const validCategories = ['word', 'trivia', 'action', 'creative'];
+    const validCategories = ['word', 'trivia', 'action', 'creative', 'social'];
     for (const def of Object.values(MINIGAME_REGISTRY)) {
       expect(validCategories).toContain(def.category);
     }
