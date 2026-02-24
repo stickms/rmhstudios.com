@@ -23,6 +23,7 @@ import {
   createMockContext,
   findActionBroadcasts,
   findLastActionBroadcast,
+  findPlayerActions,
   type MockContextData,
 } from './setup';
 
@@ -234,6 +235,98 @@ describe('Category Crash Server Handler (§5.3)', () => {
       const results = game.computeResults();
       expect(results.awards).toBeDefined();
       expect(Array.isArray(results.awards)).toBe(true);
+    });
+  });
+
+  describe('Self-crash prevention (myAnonymousLabel)', () => {
+    it('should send CC_MY_ANONYMOUS_LABEL to each player during peer review', () => {
+      const { game, playerLog } = createGame();
+      game.start();
+      vi.advanceTimersByTime(5000); // Advance past reveal
+
+      // All 4 players submit answers
+      const users = [MOCK_USERS.alice, MOCK_USERS.bob, MOCK_USERS.charlie, MOCK_USERS.diana];
+      for (const user of users) {
+        game.handleInput(user.userId, 'SUBMIT_ANSWERS', {
+          answers: [`${user.userName}1`, `${user.userName}2`, `${user.userName}3`, `${user.userName}4`, `${user.userName}5`],
+        });
+      }
+
+      // Advance to peer review
+      vi.advanceTimersByTime(100_000);
+
+      // Each player should have received CC_MY_ANONYMOUS_LABEL
+      for (const user of users) {
+        const labelMsgs = findPlayerActions(playerLog, user.userId, 'CC_MY_ANONYMOUS_LABEL');
+        expect(labelMsgs.length).toBeGreaterThanOrEqual(1);
+        const data = labelMsgs[labelMsgs.length - 1].data as Record<string, unknown>;
+        expect(data.myAnonymousLabel).toBeDefined();
+        expect(typeof data.myAnonymousLabel).toBe('string');
+        expect(data.myAnonymousLabel).toMatch(/^Player \d+$/);
+      }
+    });
+
+    it('should include myAnonymousLabel in getStateForPlayer during PEER_REVIEW', () => {
+      const { game } = createGame();
+      game.start();
+      vi.advanceTimersByTime(5000);
+
+      // All players submit
+      const users = [MOCK_USERS.alice, MOCK_USERS.bob, MOCK_USERS.charlie, MOCK_USERS.diana];
+      for (const user of users) {
+        game.handleInput(user.userId, 'SUBMIT_ANSWERS', {
+          answers: [`${user.userName}1`, `${user.userName}2`, `${user.userName}3`, `${user.userName}4`, `${user.userName}5`],
+        });
+      }
+
+      // Advance to peer review
+      vi.advanceTimersByTime(100_000);
+
+      const state = game.getStateForPlayer(MOCK_USERS.alice.userId) as Record<string, unknown>;
+      expect(state.phase).toBe('PEER_REVIEW');
+      expect(state.myAnonymousLabel).toBeDefined();
+      expect(typeof state.myAnonymousLabel).toBe('string');
+    });
+  });
+
+  describe('Auto-lock logging', () => {
+    it('should log answers_locked for auto-locked players when timer expires', () => {
+      const { game } = createGame();
+      game.start();
+      vi.advanceTimersByTime(5000); // Advance past reveal
+
+      // Only Alice submits manually
+      game.handleInput(MOCK_USERS.alice.userId, 'SUBMIT_ANSWERS', {
+        answers: ['Apple', 'Bear', 'Cat', 'Dog', 'Elephant'],
+      });
+
+      // Save answers for Bob (but don't submit)
+      game.handleInput(MOCK_USERS.bob.userId, 'SAVE_ANSWERS', {
+        answers: ['Ball', 'Bat', null, null, null],
+      });
+
+      // Let the timer expire — should auto-lock remaining players
+      vi.advanceTimersByTime(200_000);
+
+      // Game should have completed (advanced through all phases)
+      const results = game.computeResults();
+      expect(results).toBeDefined();
+
+      // Check the game log for answers_locked actions
+      const gameLog = results.gameSpecificData?.gameLog as Record<string, unknown>;
+      expect(gameLog).toBeDefined();
+      const actions = gameLog.actions as Array<{ type: string; payload: Record<string, unknown> }>;
+      const answersLockedActions = actions.filter((a) => a.type === 'answers_locked');
+
+      // Should have at least 4 answers_locked entries (all 4 players, Alice manually + 3 auto-locked)
+      expect(answersLockedActions.length).toBeGreaterThanOrEqual(4);
+
+      // Check that Bob's auto-locked entry has answers
+      const bobLocked = answersLockedActions.find((a) => a.payload.userId === MOCK_USERS.bob.userId);
+      expect(bobLocked).toBeDefined();
+      expect(bobLocked!.payload.answers).toBeDefined();
+      const bobAnswers = bobLocked!.payload.answers as Array<{ category: string; answer: string }>;
+      expect(bobAnswers.length).toBe(CC_CATEGORIES_PER_ROUND);
     });
   });
 });

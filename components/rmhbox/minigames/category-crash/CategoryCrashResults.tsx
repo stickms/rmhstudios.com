@@ -78,7 +78,7 @@ export default function CategoryCrashResults({
       {/* Header */}
       <div className="text-center">
         <h3 className="text-lg font-bold flex items-center justify-center gap-1.5">
-          {isGameOver ? <><Trophy size={18} className="text-yellow-400" /> Final Results</> : `Round ${currentRound} of ${totalRounds}`}
+          {isGameOver ? <><Trophy size={18} className="text-(--rmhbox-warning)" /> Final Results</> : `Round ${currentRound} of ${totalRounds}`}
         </h3>
         <p className="text-sm text-(--rmhbox-text-muted)">
           Letter: <span className="font-bold text-(--rmhbox-accent)">{roundResults.letter}</span>
@@ -104,7 +104,7 @@ export default function CategoryCrashResults({
               {/* Player header */}
               <div className="mb-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  {idx === 0 && <Trophy size={16} className="text-yellow-400" />}
+                  {idx === 0 && <Trophy size={16} className="text-(--rmhbox-warning)" />}
                   <span className="font-semibold">
                     {result.userName}
                     {isMe && (
@@ -161,7 +161,7 @@ export default function CategoryCrashResults({
                   <span className="w-5 text-right text-xs font-bold text-(--rmhbox-text-muted)">
                     {idx + 1}.
                   </span>
-                  {idx === 0 && <Star size={12} className="text-yellow-400" />}
+                  {idx === 0 && <Star size={12} className="text-(--rmhbox-warning)" />}
                   <span>{entry.name}</span>
                   {isMe && <span className="text-xs text-(--rmhbox-accent)">(you)</span>}
                 </div>

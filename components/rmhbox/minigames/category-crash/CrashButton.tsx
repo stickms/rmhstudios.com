@@ -35,8 +35,8 @@ export default function CrashButton({
         transition-colors
         ${
           isCrashed
-            ? 'bg-red-500/30 text-red-300 border border-red-500/40 hover:bg-red-500/20'
-            : 'bg-(--rmhbox-surface) text-(--rmhbox-text-muted) border border-(--rmhbox-border) hover:bg-red-500/10 hover:text-red-300'
+            ? 'bg-(--rmhbox-danger)/30 text-(--rmhbox-danger) border border-(--rmhbox-danger)/40 hover:bg-(--rmhbox-danger)/20'
+            : 'bg-(--rmhbox-surface) text-(--rmhbox-text-muted) border border-(--rmhbox-border) hover:bg-(--rmhbox-danger-dim) hover:text-(--rmhbox-danger)'
         }
         ${disabled ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'}
       `}

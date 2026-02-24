@@ -215,10 +215,19 @@ export class CategoryCrashMinigame extends BaseMinigame {
     if (!this.isRunning) return;
     this.clearPhaseTimer();
 
-    // Auto-lock any unlocked answers
+    // Auto-lock any unlocked answers and log them
     for (const userId of Object.keys(this.state.answers)) {
       if (!this.state.locked[userId]) {
         this.state.locked[userId] = true;
+
+        this.logAction('answers_locked', {
+          round: this.state.currentRound,
+          userId,
+          answers: this.state.categories.map((cat, i) => ({
+            category: cat.name ?? cat.id,
+            answer: (this.state.answers[userId]?.[i] as string) ?? '',
+          })),
+        });
       }
     }
 
@@ -261,6 +270,17 @@ export class CategoryCrashMinigame extends BaseMinigame {
       categories: this.state.categories,
       letter: this.state.letter,
     });
+
+    // Tell each player their own anonymous label so the UI can prevent self-crashing
+    for (const userId of Object.keys(this.state.answers)) {
+      const label = this.state.anonymizationMap[userId];
+      if (label) {
+        this.context.sendToPlayer(userId, 'rmhbox:game:action', {
+          type: 'CC_MY_ANONYMOUS_LABEL',
+          myAnonymousLabel: label,
+        });
+      }
+    }
 
     // Drive the header timer ring for the peer review phase
     this.startPhaseTimer(scaledReviewDuration);
@@ -837,6 +857,7 @@ export class CategoryCrashMinigame extends BaseMinigame {
         return {
           ...base,
           anonymizedAnswers: this.getAnonymizedAnswers(),
+          myAnonymousLabel: this.state.anonymizationMap[userId] ?? null,
           myCrashes: this.state.crashes
             .filter((c) => c.crasherId === userId)
             .map((c) => ({

@@ -144,7 +144,7 @@ export default function CategoryCrashHistoryDetail({
                               key={p.userId}
                               className={`py-1 px-2 ${
                                 isCrashed
-                                  ? 'line-through text-red-400'
+                                  ? 'line-through text-(--rmhbox-danger)'
                                   : answer !== '—'
                                     ? 'text-(--rmhbox-accent)'
                                     : 'text-(--rmhbox-text-muted)'
@@ -169,7 +169,7 @@ export default function CategoryCrashHistoryDetail({
                 <div className="space-y-0.5 mt-1">
                   {crashDetails.map((c, i) => (
                     <div key={i} className="text-xs text-(--rmhbox-text-muted)">
-                      <span className="text-red-400">💥</span>{' '}
+                      <span className="text-(--rmhbox-danger)">💥</span>{' '}
                       <span className={c.crasher === currentUserId ? 'text-(--rmhbox-accent) font-semibold' : ''}>
                         {getPlayerName(c.crasher)}
                       </span>

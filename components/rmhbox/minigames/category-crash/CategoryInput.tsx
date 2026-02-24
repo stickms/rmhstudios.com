@@ -132,7 +132,7 @@ export default function CategoryInput({
         <div
           className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium ${
             isUrgent
-              ? 'bg-red-500/20 text-red-300 animate-pulse'
+              ? 'bg-(--rmhbox-danger-dim) text-(--rmhbox-danger) animate-pulse'
               : 'bg-(--rmhbox-surface) text-(--rmhbox-text-muted)'
           }`}
         >
@@ -163,10 +163,10 @@ export default function CategoryInput({
                   <span
                     className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${
                       cat.difficulty === 'hard'
-                        ? 'bg-red-500/20 text-red-400'
+                        ? 'bg-(--rmhbox-danger-dim) text-(--rmhbox-danger)'
                         : cat.difficulty === 'medium'
-                          ? 'bg-amber-500/20 text-amber-400'
-                          : 'bg-green-500/20 text-green-400'
+                          ? 'bg-(--rmhbox-warning-dim) text-(--rmhbox-warning)'
+                          : 'bg-(--rmhbox-success-dim) text-(--rmhbox-success)'
                     }`}
                   >
                     {cat.difficulty}
@@ -189,12 +189,12 @@ export default function CategoryInput({
                   placeholder={`${letter.toUpperCase()}...`}
                   className={`w-full rounded-lg border bg-(--rmhbox-surface) px-3 py-2 pl-9 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-(--rmhbox-accent)/50 disabled:opacity-50 ${
                     !startsCorrectly
-                      ? 'border-red-500/50 ring-1 ring-red-500/30'
+                      ? 'border-(--rmhbox-danger)/50 ring-1 ring-(--rmhbox-danger)/30'
                       : 'border-(--rmhbox-border)'
                   }`}
                 />
                 {!startsCorrectly && (
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-red-400">
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-(--rmhbox-danger)">
                     Must start with {letter.toUpperCase()}
                   </span>
                 )}
