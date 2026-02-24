@@ -116,15 +116,21 @@ function TimerRing({
 }
 
 interface RMHboxHeaderProps {
-  /** 'landing' | 'lobby' | 'game' — controls layout behavior */
-  context?: 'landing' | 'lobby' | 'game';
+  /** Controls layout behavior */
+  context?: 'landing' | 'lobby' | 'game' | 'minigames' | 'history';
   /** Override the center title (e.g. minigame name) */
   title?: string;
+  /** Override back link href (for minigames/history contexts) */
+  backHref?: string;
+  /** Override back link label */
+  backLabel?: string;
 }
 
 export default function RMHboxHeader({
   context = 'landing',
   title,
+  backHref,
+  backLabel,
 }: RMHboxHeaderProps) {
   const connectionStatus = useRMHboxStore((s) => s.connectionStatus);
   const theme = useRMHboxStore((s) => s.settings.theme) ?? 'dark';
@@ -138,6 +144,7 @@ export default function RMHboxHeader({
 
   const isGame = context === 'game';
   const isLanding = context === 'landing';
+  const hasBackLink = isLanding || context === 'minigames' || context === 'history';
   const showTimer = timerInfo !== null;
   const isHost = !!(lobby && lobby.hostUserId === lobby.myUserId);
 
@@ -158,12 +165,12 @@ export default function RMHboxHeader({
     <header className="relative flex shrink-0 items-center border-b border-(--rmhbox-border) bg-(--rmhbox-bg)/90 px-3 py-3 h-16 backdrop-blur-sm">
       {/* Left side */}
       <div className="flex items-center gap-2 z-10">
-        {isLanding ? (
+        {hasBackLink ? (
           <a
-            href="/games"
+            href={backHref ?? (isLanding ? '/games' : '/rmhbox')}
             className="text-sm font-medium text-(--rmhbox-text-muted) hover:text-(--rmhbox-accent) transition-colors"
           >
-            ← Games
+            {backLabel ?? (isLanding ? '← Games' : '← Home')}
           </a>
         ) : (
           <>

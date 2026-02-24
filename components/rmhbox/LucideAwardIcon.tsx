@@ -28,6 +28,10 @@ import {
   Map,
   AlertCircle,
   Award,
+  MicVocal,
+  ShieldCheck,
+  ListCollapse,
+  Globe,
   type LucideProps,
 } from 'lucide-react';
 import type { ComponentType } from 'react';
@@ -50,6 +54,10 @@ const ICON_MAP: Record<string, ComponentType<LucideProps>> = {
   star: Star,
   map: Map,
   'alert-circle': AlertCircle,
+  'mic-vocal': MicVocal,
+  'shield-check': ShieldCheck,
+  'list-collapse': ListCollapse,
+  globe: Globe,
 };
 
 interface LucideAwardIconProps extends LucideProps {

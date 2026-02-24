@@ -15,6 +15,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { Gamepad2 } from 'lucide-react';
 import { connectToRMHbox, getSocket, disconnectFromRMHbox, emit } from '@/lib/rmhbox/socket';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { S2C, C2S } from '@/lib/rmhbox/events';
@@ -171,6 +172,16 @@ export default function RMHboxLanding() {
             </form>
           </div>
         </div>
+
+        {/* View Minigames */}
+        <button
+          onClick={() => router.push('/rmhbox/minigames')}
+          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) font-semibold transition-colors text-(--rmhbox-text) hover:bg-(--rmhbox-surface-hover) hover:text-(--rmhbox-accent)"
+          data-testid="view-minigames-btn"
+        >
+          <Gamepad2 className="h-5 w-5" />
+          View Minigames
+        </button>
 
         {/* Public Lobbies */}
         <div className="rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) p-6">
