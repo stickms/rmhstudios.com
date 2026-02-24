@@ -230,7 +230,7 @@ describe('Undercover Agent Server Handler (§5.2)', () => {
       }
     });
 
-    it('should auto-skip turns for disconnected team at turn start', () => {
+    it('should auto-skip turns for disconnected team and end game via max passes', () => {
       const ctx = createMockContext();
       const { game, broadcastLog, context } = createGame(ctx);
       game.start();
