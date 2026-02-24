@@ -36,9 +36,6 @@ export default function CursorCurlingHistoryDetail({
           <h4 className="text-xs font-semibold text-(--rmhbox-text-muted) uppercase mb-1">Game Settings</h4>
           <div className="flex flex-wrap gap-3 text-xs text-(--rmhbox-text-muted)">
             <span>Ends: {(gameLog.initialState.totalEnds as number) ?? endStarts.length}</span>
-            {gameLog.initialState.stonesPerPlayer != null && (
-              <span>Stones per Player: {String(gameLog.initialState.stonesPerPlayer)}</span>
-            )}
           </div>
         </div>
       )}

@@ -17,7 +17,7 @@ interface EndResultsProps {
   getPlayerName: (userId: string) => string;
 }
 
-const ZONE_LABELS = ['Button (4pt)', '4-foot (3pt)', '8-foot (2pt)', '12-foot (1pt)', 'Out (0pt)'];
+const ZONE_LABELS = ['Button', 'Inner Ring', 'Middle Ring', 'Outer Ring', 'Out of House'];
 
 export default function EndResults({
   endScores,

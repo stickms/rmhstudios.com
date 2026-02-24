@@ -293,13 +293,12 @@ export default function CursorCurlingGame({ playerId }: CursorCurlingGameProps) 
 
   const handleAimSubmit = useCallback((angle: number) => {
     setAimAngle(angle);
-    emitGameInput('SET_AIM', { angle });
   }, []);
 
   const handlePowerSubmit = useCallback((power: number) => {
     setLockedPower(power);
-    emitGameInput('SET_POWER', { power });
-  }, []);
+    emitGameInput('THROW_STONE', { angle: aimAngle, power });
+  }, [aimAngle]);
 
   const handleSweep = useCallback((intensity: number) => {
     emitGameInput('SWEEP', { intensity });
@@ -409,7 +408,7 @@ export default function CursorCurlingGame({ playerId }: CursorCurlingGameProps) 
             <CurlingCanvas stones={stones} activeStoneId={activeStoneId} />
             <SweepOverlay
               active={activeStoneId !== null}
-              canSweep={isMyTurn}
+              canSweep={!isMyTurn}
               onSweep={handleSweep}
             />
           </motion.div>
