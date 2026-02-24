@@ -63,7 +63,7 @@ export async function connectToRMHbox(): Promise<Socket> {
     throw new Error('Not authenticated');
   }
 
-  const serverUrl = process.env.NEXT_PUBLIC_RMHBOX_SOCKET_URL || 'http://localhost:7676';
+  const serverUrl = process.env.NEXT_PUBLIC_RMHBOX_SOCKET_URL;
 
   socket = io(serverUrl, {
     path: '/rmhbox-ws/',

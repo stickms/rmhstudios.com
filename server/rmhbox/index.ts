@@ -5,11 +5,9 @@
  * Handles all RMHbox lobby, game, and leaderboard events
  * independently from the main Socket.io server (port 7001).
  *
- * External URL: ws://rmhstudios.com/rmhbox
- * Internal:     http://localhost:7676 with path "/rmhbox/"
+ * External URL: ws://rmhstudios.com/rmhbox-ws
+ * Internal:     http://localhost:7676 with path "/rmhbox-ws/"
  *
- * Caddy/nginx reverse-proxies `/rmhbox` WebSocket upgrades
- * to this process.
  */
 
 import 'dotenv/config';
