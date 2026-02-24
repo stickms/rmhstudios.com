@@ -21,11 +21,11 @@
 
 import { BaseMinigame } from '../base-minigame';
 import type { MinigameContext, MinigameResults } from '../base-minigame';
-import type { PlayerRanking, Award } from '../../../../lib/rmhbox/types';
-import { selectArticlePair, pairKey } from '../../../../lib/rmhbox/wiki-race/data-loader';
-import { NavigateSchema, GoBackSchema } from '../../../../lib/rmhbox/wiki-race/schemas';
-import { createArticleCache, fetchArticle } from '../../../../lib/rmhbox/wiki-race/wikipedia-proxy';
-import type { CachedArticle } from '../../../../lib/rmhbox/wiki-race/wikipedia-proxy';
+import type { PlayerRanking, Award } from '@/lib/rmhbox/types';
+import { selectArticlePair, pairKey } from '@/lib/rmhbox/wiki-race/data-loader';
+import { NavigateSchema, GoBackSchema } from '@/lib/rmhbox/wiki-race/schemas';
+import { createArticleCache, fetchArticle } from '@/lib/rmhbox/wiki-race/wikipedia-proxy';
+import type { CachedArticle } from '@/lib/rmhbox/wiki-race/wikipedia-proxy';
 import type { LRUCache } from 'lru-cache';
 import {
   WR_NAV_DURATION,
@@ -39,7 +39,7 @@ import {
   WR_DNF_BASE,
   WR_DNF_CLICK_BONUS,
   WR_NAV_RATE_LIMIT,
-} from '../../../../lib/rmhbox/constants';
+} from '@/lib/rmhbox/constants';
 import { logger } from '../../logger';
 import {
   WikiRacePhase,

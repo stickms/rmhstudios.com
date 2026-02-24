@@ -1,4 +1,4 @@
-import type { Category } from '../../../../lib/rmhbox/category-crash/data-loader';
+import type { Category } from '@/lib/rmhbox/category-crash/data-loader';
 
 // ─── Phase Enum ──────────────────────────────────────────────────
 

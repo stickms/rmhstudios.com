@@ -21,8 +21,8 @@ import fs from 'fs';
 import path from 'path';
 import { BaseMinigame } from '../base-minigame';
 import type { MinigameContext, MinigameResults } from '../base-minigame';
-import type { PlayerRanking, Award } from '../../../../lib/rmhbox/types';
-import { GiveClueSchema, GuessTileSchema, EndTurnSchema, SwapPlayerSchema, SetRoleSchema, HighlightTileSchema } from '../../../../lib/rmhbox/undercover-agent/schemas';
+import type { PlayerRanking, Award } from '@/lib/rmhbox/types';
+import { GiveClueSchema, GuessTileSchema, EndTurnSchema, SwapPlayerSchema, SetRoleSchema, HighlightTileSchema } from '@/lib/rmhbox/undercover-agent/schemas';
 import {
   UA_GRID_SIZE,
   UA_FIRST_TEAM_AGENTS,
@@ -39,7 +39,7 @@ import {
   UA_CLUE_EFFICIENCY,
   UA_CORRECT_GUESS,
   UA_ASSASSIN_PENALTY,
-} from '../../../../lib/rmhbox/constants';
+} from '@/lib/rmhbox/constants';
 import { logger } from '../../logger';
 import {
   UndercoverAgentPhase,

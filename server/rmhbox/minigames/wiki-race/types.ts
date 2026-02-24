@@ -4,7 +4,7 @@
  * Phase enum and all interfaces/types used by the Wiki-Race minigame.
  */
 
-import type { ArticlePair } from '../../../../lib/rmhbox/wiki-race/data-loader';
+import type { ArticlePair } from '@/lib/rmhbox/wiki-race/data-loader';
 
 // ─── Phase Enum ──────────────────────────────────────────────────
 
