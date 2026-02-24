@@ -1,0 +1,251 @@
+[
+  {
+    "id": "easy-1",
+    "name": "Straight Shot",
+    "difficulty": "easy",
+    "walls": [
+      { "x": 0, "y": 0, "width": 600, "height": 20 },
+      { "x": 0, "y": 380, "width": 600, "height": 20 },
+      { "x": 0, "y": 0, "width": 20, "height": 400 },
+      { "x": 580, "y": 0, "width": 20, "height": 400 }
+    ],
+    "ballStart": { "x": 50, "y": 200 },
+    "goalZone": { "x": 520, "y": 160, "width": 50, "height": 80 },
+    "waypoints": [],
+    "playerStartPositions": [
+      { "x": 100, "y": 80 }, { "x": 200, "y": 80 },
+      { "x": 300, "y": 80 }, { "x": 400, "y": 80 },
+      { "x": 100, "y": 320 }, { "x": 200, "y": 320 },
+      { "x": 300, "y": 320 }, { "x": 400, "y": 320 }
+    ]
+  },
+  {
+    "id": "easy-2",
+    "name": "Wide Alley",
+    "difficulty": "easy",
+    "walls": [
+      { "x": 0, "y": 0, "width": 600, "height": 20 },
+      { "x": 0, "y": 380, "width": 600, "height": 20 },
+      { "x": 0, "y": 0, "width": 20, "height": 400 },
+      { "x": 580, "y": 0, "width": 20, "height": 400 },
+      { "x": 200, "y": 20, "width": 20, "height": 140 },
+      { "x": 200, "y": 260, "width": 20, "height": 120 }
+    ],
+    "ballStart": { "x": 80, "y": 200 },
+    "goalZone": { "x": 500, "y": 170, "width": 60, "height": 60 },
+    "waypoints": [
+      { "x": 300, "y": 200, "order": 1 }
+    ],
+    "playerStartPositions": [
+      { "x": 60, "y": 60 }, { "x": 60, "y": 140 },
+      { "x": 60, "y": 280 }, { "x": 60, "y": 340 },
+      { "x": 400, "y": 60 }, { "x": 400, "y": 140 },
+      { "x": 400, "y": 280 }, { "x": 400, "y": 340 }
+    ]
+  },
+  {
+    "id": "easy-3",
+    "name": "Open Field",
+    "difficulty": "easy",
+    "walls": [
+      { "x": 0, "y": 0, "width": 600, "height": 20 },
+      { "x": 0, "y": 380, "width": 600, "height": 20 },
+      { "x": 0, "y": 0, "width": 20, "height": 400 },
+      { "x": 580, "y": 0, "width": 20, "height": 400 },
+      { "x": 280, "y": 100, "width": 40, "height": 80 },
+      { "x": 280, "y": 240, "width": 40, "height": 80 }
+    ],
+    "ballStart": { "x": 60, "y": 200 },
+    "goalZone": { "x": 510, "y": 170, "width": 50, "height": 60 },
+    "waypoints": [],
+    "playerStartPositions": [
+      { "x": 100, "y": 60 }, { "x": 200, "y": 60 },
+      { "x": 400, "y": 60 }, { "x": 500, "y": 60 },
+      { "x": 100, "y": 340 }, { "x": 200, "y": 340 },
+      { "x": 400, "y": 340 }, { "x": 500, "y": 340 }
+    ]
+  },
+  {
+    "id": "medium-1",
+    "name": "The L-Bend",
+    "difficulty": "medium",
+    "walls": [
+      { "x": 0, "y": 0, "width": 600, "height": 20 },
+      { "x": 0, "y": 380, "width": 600, "height": 20 },
+      { "x": 0, "y": 0, "width": 20, "height": 400 },
+      { "x": 580, "y": 0, "width": 20, "height": 400 },
+      { "x": 200, "y": 20, "width": 20, "height": 200 },
+      { "x": 200, "y": 220, "width": 200, "height": 20 },
+      { "x": 400, "y": 140, "width": 20, "height": 240 }
+    ],
+    "ballStart": { "x": 80, "y": 100 },
+    "goalZone": { "x": 480, "y": 40, "width": 60, "height": 60 },
+    "waypoints": [
+      { "x": 100, "y": 300, "order": 1 },
+      { "x": 300, "y": 320, "order": 2 }
+    ],
+    "playerStartPositions": [
+      { "x": 60, "y": 40 }, { "x": 140, "y": 40 },
+      { "x": 60, "y": 340 }, { "x": 140, "y": 340 },
+      { "x": 460, "y": 40 }, { "x": 540, "y": 40 },
+      { "x": 460, "y": 340 }, { "x": 540, "y": 340 }
+    ]
+  },
+  {
+    "id": "medium-2",
+    "name": "Zigzag Corridor",
+    "difficulty": "medium",
+    "walls": [
+      { "x": 0, "y": 0, "width": 600, "height": 20 },
+      { "x": 0, "y": 380, "width": 600, "height": 20 },
+      { "x": 0, "y": 0, "width": 20, "height": 400 },
+      { "x": 580, "y": 0, "width": 20, "height": 400 },
+      { "x": 140, "y": 20, "width": 20, "height": 260 },
+      { "x": 280, "y": 120, "width": 20, "height": 260 },
+      { "x": 420, "y": 20, "width": 20, "height": 260 }
+    ],
+    "ballStart": { "x": 60, "y": 60 },
+    "goalZone": { "x": 500, "y": 300, "width": 60, "height": 60 },
+    "waypoints": [
+      { "x": 200, "y": 340, "order": 1 },
+      { "x": 350, "y": 60, "order": 2 }
+    ],
+    "playerStartPositions": [
+      { "x": 60, "y": 340 }, { "x": 60, "y": 200 },
+      { "x": 200, "y": 60 }, { "x": 200, "y": 200 },
+      { "x": 340, "y": 340 }, { "x": 340, "y": 200 },
+      { "x": 500, "y": 60 }, { "x": 500, "y": 200 }
+    ]
+  },
+  {
+    "id": "medium-3",
+    "name": "Double Gate",
+    "difficulty": "medium",
+    "walls": [
+      { "x": 0, "y": 0, "width": 600, "height": 20 },
+      { "x": 0, "y": 380, "width": 600, "height": 20 },
+      { "x": 0, "y": 0, "width": 20, "height": 400 },
+      { "x": 580, "y": 0, "width": 20, "height": 400 },
+      { "x": 180, "y": 20, "width": 20, "height": 140 },
+      { "x": 180, "y": 220, "width": 20, "height": 160 },
+      { "x": 380, "y": 20, "width": 20, "height": 160 },
+      { "x": 380, "y": 240, "width": 20, "height": 140 },
+      { "x": 250, "y": 160, "width": 80, "height": 20 }
+    ],
+    "ballStart": { "x": 80, "y": 200 },
+    "goalZone": { "x": 480, "y": 170, "width": 60, "height": 60 },
+    "waypoints": [
+      { "x": 280, "y": 80, "order": 1 }
+    ],
+    "playerStartPositions": [
+      { "x": 60, "y": 60 }, { "x": 60, "y": 140 },
+      { "x": 60, "y": 280 }, { "x": 60, "y": 340 },
+      { "x": 520, "y": 60 }, { "x": 520, "y": 140 },
+      { "x": 520, "y": 280 }, { "x": 520, "y": 340 }
+    ]
+  },
+  {
+    "id": "hard-1",
+    "name": "The Labyrinth",
+    "difficulty": "hard",
+    "walls": [
+      { "x": 0, "y": 0, "width": 600, "height": 20 },
+      { "x": 0, "y": 380, "width": 600, "height": 20 },
+      { "x": 0, "y": 0, "width": 20, "height": 400 },
+      { "x": 580, "y": 0, "width": 20, "height": 400 },
+      { "x": 100, "y": 20, "width": 20, "height": 180 },
+      { "x": 100, "y": 260, "width": 20, "height": 120 },
+      { "x": 200, "y": 80, "width": 20, "height": 180 },
+      { "x": 200, "y": 320, "width": 20, "height": 60 },
+      { "x": 300, "y": 20, "width": 20, "height": 140 },
+      { "x": 300, "y": 220, "width": 20, "height": 160 },
+      { "x": 400, "y": 80, "width": 20, "height": 140 },
+      { "x": 400, "y": 280, "width": 20, "height": 100 },
+      { "x": 500, "y": 20, "width": 20, "height": 200 },
+      { "x": 500, "y": 280, "width": 20, "height": 60 }
+    ],
+    "ballStart": { "x": 50, "y": 340 },
+    "goalZone": { "x": 530, "y": 330, "width": 40, "height": 40 },
+    "waypoints": [
+      { "x": 150, "y": 50, "order": 1 },
+      { "x": 350, "y": 200, "order": 2 },
+      { "x": 550, "y": 250, "order": 3 }
+    ],
+    "playerStartPositions": [
+      { "x": 50, "y": 50 }, { "x": 50, "y": 230 },
+      { "x": 150, "y": 300 }, { "x": 250, "y": 50 },
+      { "x": 250, "y": 300 }, { "x": 350, "y": 50 },
+      { "x": 450, "y": 240 }, { "x": 550, "y": 50 }
+    ]
+  },
+  {
+    "id": "hard-2",
+    "name": "Spiral Squeeze",
+    "difficulty": "hard",
+    "walls": [
+      { "x": 0, "y": 0, "width": 600, "height": 20 },
+      { "x": 0, "y": 380, "width": 600, "height": 20 },
+      { "x": 0, "y": 0, "width": 20, "height": 400 },
+      { "x": 580, "y": 0, "width": 20, "height": 400 },
+      { "x": 80, "y": 80, "width": 440, "height": 20 },
+      { "x": 80, "y": 80, "width": 20, "height": 240 },
+      { "x": 80, "y": 300, "width": 380, "height": 20 },
+      { "x": 440, "y": 160, "width": 20, "height": 160 },
+      { "x": 180, "y": 160, "width": 260, "height": 20 },
+      { "x": 180, "y": 160, "width": 20, "height": 80 },
+      { "x": 180, "y": 220, "width": 180, "height": 20 },
+      { "x": 340, "y": 220, "width": 20, "height": 40 }
+    ],
+    "ballStart": { "x": 40, "y": 40 },
+    "goalZone": { "x": 260, "y": 240, "width": 40, "height": 40 },
+    "waypoints": [
+      { "x": 540, "y": 40, "order": 1 },
+      { "x": 540, "y": 340, "order": 2 },
+      { "x": 120, "y": 340, "order": 3 }
+    ],
+    "playerStartPositions": [
+      { "x": 40, "y": 200 }, { "x": 40, "y": 340 },
+      { "x": 300, "y": 40 }, { "x": 540, "y": 200 },
+      { "x": 300, "y": 340 }, { "x": 120, "y": 130 },
+      { "x": 500, "y": 120 }, { "x": 240, "y": 130 }
+    ]
+  },
+  {
+    "id": "hard-3",
+    "name": "Gauntlet Run",
+    "difficulty": "hard",
+    "walls": [
+      { "x": 0, "y": 0, "width": 600, "height": 20 },
+      { "x": 0, "y": 380, "width": 600, "height": 20 },
+      { "x": 0, "y": 0, "width": 20, "height": 400 },
+      { "x": 580, "y": 0, "width": 20, "height": 400 },
+      { "x": 80, "y": 20, "width": 20, "height": 120 },
+      { "x": 80, "y": 200, "width": 20, "height": 80 },
+      { "x": 80, "y": 340, "width": 20, "height": 40 },
+      { "x": 160, "y": 60, "width": 20, "height": 80 },
+      { "x": 160, "y": 200, "width": 20, "height": 120 },
+      { "x": 240, "y": 20, "width": 20, "height": 140 },
+      { "x": 240, "y": 220, "width": 20, "height": 80 },
+      { "x": 240, "y": 360, "width": 20, "height": 20 },
+      { "x": 320, "y": 80, "width": 20, "height": 100 },
+      { "x": 320, "y": 240, "width": 20, "height": 140 },
+      { "x": 400, "y": 20, "width": 20, "height": 160 },
+      { "x": 400, "y": 240, "width": 20, "height": 60 },
+      { "x": 480, "y": 100, "width": 20, "height": 120 },
+      { "x": 480, "y": 280, "width": 20, "height": 100 }
+    ],
+    "ballStart": { "x": 40, "y": 360 },
+    "goalZone": { "x": 520, "y": 30, "width": 50, "height": 50 },
+    "waypoints": [
+      { "x": 120, "y": 160, "order": 1 },
+      { "x": 360, "y": 200, "order": 2 },
+      { "x": 540, "y": 340, "order": 3 }
+    ],
+    "playerStartPositions": [
+      { "x": 40, "y": 40 }, { "x": 40, "y": 160 },
+      { "x": 120, "y": 320 }, { "x": 200, "y": 40 },
+      { "x": 280, "y": 180 }, { "x": 360, "y": 40 },
+      { "x": 440, "y": 40 }, { "x": 540, "y": 240 }
+    ]
+  }
+]
