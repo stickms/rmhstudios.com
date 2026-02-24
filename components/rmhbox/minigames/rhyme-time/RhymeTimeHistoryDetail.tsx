@@ -36,11 +36,11 @@ export default function RhymeTimeHistoryDetail({
           <h4 className="text-xs font-semibold text-(--rmhbox-text-muted) uppercase mb-1">Game Settings</h4>
           <div className="flex flex-wrap gap-3 text-xs text-(--rmhbox-text-muted)">
             <span>Rounds: {(gameLog.initialState.rounds as number) ?? roundStarts.length}</span>
-            {gameLog.initialState.secondsPerRound && (
-              <span>Time per Round: {gameLog.initialState.secondsPerRound as number}s</span>
+            {gameLog.initialState.secondsPerRound != null && (
+              <span>Time per Round: {String(gameLog.initialState.secondsPerRound)}s</span>
             )}
-            {gameLog.initialState.maxSubmissionsPerRound && (
-              <span>Max Submissions: {gameLog.initialState.maxSubmissionsPerRound as number}</span>
+            {gameLog.initialState.maxSubmissionsPerRound != null && (
+              <span>Max Submissions: {String(gameLog.initialState.maxSubmissionsPerRound)}</span>
             )}
           </div>
         </div>
@@ -50,7 +50,7 @@ export default function RhymeTimeHistoryDetail({
       {roundStarts.map((round, idx) => {
         const roundNum = (round.payload.round as number) ?? idx + 1;
         const rootWord = round.payload.rootWord as string;
-        const validRhymeCount = round.payload.validRhymeCount as number | undefined;
+        const difficulty = round.payload.difficulty as string | undefined;
         const roundEnd = roundEnds[idx];
         const roundWinner = roundEnd?.payload.roundWinner as string | undefined;
 
@@ -108,9 +108,13 @@ export default function RhymeTimeHistoryDetail({
                 <span className="text-lg font-bold text-(--rmhbox-accent)">
                   &ldquo;{rootWord}&rdquo;
                 </span>
-                {validRhymeCount != null && (
-                  <span className="text-xs text-(--rmhbox-text-muted)">
-                    ({validRhymeCount} valid rhymes)
+                {difficulty != null && (
+                  <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                    difficulty === 'hard' ? 'bg-red-500/20 text-red-400' :
+                    difficulty === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
+                    'bg-green-500/20 text-green-400'
+                  }`}>
+                    {difficulty}
                   </span>
                 )}
               </div>

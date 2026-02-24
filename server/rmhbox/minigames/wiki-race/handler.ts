@@ -43,7 +43,6 @@ import {
 import { logger } from '../../logger';
 import {
   WikiRacePhase,
-  type ActionLogEntry,
   type WRPlayerState,
   type WikiRaceState,
   type RateLimitEntry,
@@ -899,6 +898,7 @@ export class WikiRaceMinigame extends BaseMinigame {
   // ─── Action Log / Game Log ───────────────────────────────────
 
   private actionSeq = 0;
+  private timeoutEventsAdded = false;
 
   private logAction(type: string, payload: Record<string, unknown>): void {
     this.state.actionLog.push({
@@ -915,27 +915,24 @@ export class WikiRaceMinigame extends BaseMinigame {
       userName: p.userName,
     }));
 
-    // Build player timeout events for those who didn't finish
-    const timeoutActions: ActionLogEntry[] = [];
-    for (const [userId, ps] of this.state.playerStates) {
-      if (!ps.hasFinished) {
-        timeoutActions.push({
-          seq: ++this.actionSeq,
-          type: 'player_timeout',
-          timestamp: Date.now(),
-          payload: {
-            userId,
-            lastArticle: ps.currentArticleTitle,
-            pathLength: ps.path.length,
-            path: [...ps.path],
-          },
-        });
+    // Build player timeout events for those who didn't finish (only on first call)
+    if (!this.timeoutEventsAdded) {
+      this.timeoutEventsAdded = true;
+      for (const [userId, ps] of this.state.playerStates) {
+        if (!ps.hasFinished) {
+          this.state.actionLog.push({
+            seq: ++this.actionSeq,
+            type: 'player_timeout',
+            timestamp: Date.now(),
+            payload: {
+              userId,
+              lastArticle: ps.currentArticleTitle,
+              pathLength: ps.path.length,
+              path: [...ps.path],
+            },
+          });
+        }
       }
-    }
-
-    // Add timeout actions to the log
-    for (const ta of timeoutActions) {
-      this.state.actionLog.push(ta);
     }
 
     return {

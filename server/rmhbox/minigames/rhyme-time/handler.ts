@@ -123,7 +123,7 @@ export class RhymeTimeMinigame extends BaseMinigame {
     this.logAction('round_start', {
       round: this.state.currentRound,
       rootWord: this.state.rootWord.word,
-      validRhymeCount: this.state.rootWord.validRhymes?.length ?? 0,
+      difficulty: this.state.rootWord.difficulty,
     });
 
     logger.info({
@@ -193,12 +193,14 @@ export class RhymeTimeMinigame extends BaseMinigame {
       this.state.scores[userId] = (this.state.scores[userId] ?? 0) + playerResult.roundScore;
     }
 
+    // Determine round winner (highest score)
+    const roundWinnerUserId = Object.entries(roundResult.playerResults)
+      .sort(([, a], [, b]) => b.roundScore - a.roundScore)[0]?.[0] ?? null;
+
     this.logAction('round_end', {
       round: this.state.currentRound,
       rootWord: this.state.rootWord!.word,
-      roundWinner: roundResult.playerResults
-        ? Object.entries(roundResult.playerResults).sort(([, a], [, b]) => b.roundScore - a.roundScore)[0]?.[0] ?? null
-        : null,
+      roundWinner: roundWinnerUserId,
       submissions: Object.entries(roundResult.playerResults).flatMap(([uid, pr]) =>
         pr.breakdown.map((wb) => ({
           userId: uid,

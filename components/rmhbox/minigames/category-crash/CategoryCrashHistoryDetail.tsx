@@ -44,8 +44,8 @@ export default function CategoryCrashHistoryDetail({
           <h4 className="text-xs font-semibold text-(--rmhbox-text-muted) uppercase mb-1">Game Settings</h4>
           <div className="flex flex-wrap gap-3 text-xs text-(--rmhbox-text-muted)">
             <span>Rounds: {(gameLog.initialState.rounds as number) ?? roundStarts.length}</span>
-            {gameLog.initialState.categoriesPerRound && (
-              <span>Categories per Round: {gameLog.initialState.categoriesPerRound as number}</span>
+            {gameLog.initialState.categoriesPerRound != null && (
+              <span>Categories per Round: {String(gameLog.initialState.categoriesPerRound)}</span>
             )}
           </div>
         </div>
