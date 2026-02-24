@@ -62,6 +62,10 @@ export async function fetchArticle(
     if (!response.ok) return null;
 
     const rawHtml = await response.text();
+
+    // Yield to the event loop before CPU-intensive parsing
+    await new Promise((r) => globalThis.setTimeout(r, 0));
+
     const root = parseHTML(rawHtml);
 
     // Extract internal wiki links
@@ -76,6 +80,9 @@ export async function fetchArticle(
         links.add(linkTitle);
       }
     }
+
+    // Yield to the event loop before CPU-intensive sanitization
+    await new Promise((r) => globalThis.setTimeout(r, 0));
 
     // Sanitize HTML
     const sanitized = sanitizeHtml(rawHtml, {

@@ -355,7 +355,7 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
               <div
                 className={`rounded-lg px-3 py-1 text-sm font-medium ${
                   timeRemaining <= 15
-                    ? 'bg-red-500/20 text-red-300 animate-pulse'
+                    ? 'bg-(--rmhbox-danger-dim) text-(--rmhbox-danger) animate-pulse'
                     : 'bg-(--rmhbox-surface) text-(--rmhbox-text-muted)'
                 }`}
               >
