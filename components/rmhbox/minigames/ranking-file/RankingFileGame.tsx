@@ -97,7 +97,8 @@ export default function RankingFileGame({ playerId, playerName: _playerName }: R
   // Results state
   const [myRanking, setMyRanking] = useState<number[]>([]);
   const [averageRanking, setAverageRanking] = useState<number[]>([]);
-  const [consensusOrder, setConsensusOrder] = useState<Array<{ item: string; avgRank: number }>>([]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_consensusOrder, setConsensusOrder] = useState<Array<{ item: string; avgRank: number }>>([]);
   const [playerResults, setPlayerResults] = useState<PlayerResult[]>([]);
   const [mostConsensus, setMostConsensus] = useState({ userId: '', userName: '' });
   const [mostUnique, setMostUnique] = useState({ userId: '', userName: '' });

@@ -39,7 +39,6 @@ import {
   MOCK_CATEGORIES,
   createMockContext,
   findActionBroadcasts,
-  findLastActionBroadcast,
   findPlayerActions,
 } from './setup';
 
@@ -57,7 +56,7 @@ vi.mock('../../../lib/rmhbox/ranking-file/category-loader', () => ({
 
 // ─── IC Helper ──────────────────────────────────────────────────
 
-function createICGame(gameSettings: Record<string, unknown> = {}) {
+function createICGame(gameSettings: Record<string, boolean | number | string> = {}) {
   const ctx = createMockContext([MOCK_USERS.alice, MOCK_USERS.bob, MOCK_USERS.charlie, MOCK_USERS.diana], { gameSettings });
   const game = new IdentityCrisisGame(ctx.context);
   return { game, ...ctx };
@@ -65,7 +64,7 @@ function createICGame(gameSettings: Record<string, unknown> = {}) {
 
 // ─── RF Helper ──────────────────────────────────────────────────
 
-function createRFGame(gameSettings: Record<string, unknown> = {}) {
+function createRFGame(gameSettings: Record<string, boolean | number | string> = {}) {
   const ctx = createMockContext([MOCK_USERS.alice, MOCK_USERS.bob, MOCK_USERS.charlie, MOCK_USERS.diana], { gameSettings });
   const game = new RankingFileGame(ctx.context);
   return { game, ...ctx };
@@ -159,7 +158,8 @@ describe('Game Settings (§8.6)', () => {
 
   describe('§8.6.2 Identity Crisis Settings', () => {
     it('default questionsPerPlayer should use IC_QUESTIONS_PER_PLAYER', () => {
-      const { game, broadcastLog, playerLog } = createICGame();
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { game, broadcastLog: _broadcastLog, playerLog } = createICGame();
       game.start();
 
       // Advance past ASSIGNMENT_REVEAL (5s)

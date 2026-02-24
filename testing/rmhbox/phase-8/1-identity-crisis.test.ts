@@ -12,7 +12,6 @@ import {
   MOCK_IDENTITIES,
   createMockContext,
   findActionBroadcasts,
-  findLastActionBroadcast,
   findPlayerEvents,
   findPlayerActions,
   findLastPlayerAction,
@@ -224,12 +223,9 @@ describe('Identity Crisis (§Phase 8)', () => {
 
         // Get the player's own identity from getStateForPlayer in RESULTS phase
         // For now, verify the player's userId key is not in identities
-        const identityNames = Object.values(payload.identities).map((i) => i.name);
         // The player's own identity shouldn't be listed
         expect(Object.keys(payload.identities)).not.toContain(uid);
 
-        // String-scan: serialize and check player's own identity is absent
-        const serialized = JSON.stringify(payload.identities);
         // Each player's identity should NOT appear in their own reveal
         // We know the identity assigned is from the same index as player insertion order
         // but let's verify structurally: their userId key is excluded
@@ -948,7 +944,8 @@ describe('Identity Crisis (§Phase 8)', () => {
     });
 
     it('reconnect should send state snapshot via getStateForPlayer', () => {
-      const { game, playerLog, context } = createGame();
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { game, playerLog, context: _context } = createGame();
       game.start();
       advancePastReveal();
 

@@ -94,7 +94,8 @@ export default function IdentityCrisisGame({ playerId, playerName }: IdentityCri
   const [phase, setPhase] = useState<Phase>('ASSIGNMENT_REVEAL');
   const [timeRemaining, setTimeRemaining] = useState(30);
   const [identities, setIdentities] = useState<IdentityAssignment[]>([]);
-  const [questionsRemaining, setQuestionsRemaining] = useState(0);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [questionsRemaining, _setQuestionsRemaining] = useState(0);
   const [hasGuessedCorrectly, setHasGuessedCorrectly] = useState(false);
 
   // ASK phase state
@@ -220,7 +221,7 @@ export default function IdentityCrisisGame({ playerId, playerName }: IdentityCri
         }
       }
     },
-    [playerId, currentQuestion, currentAskerName, totalVoters],
+    [currentQuestion, currentAskerName, totalVoters],
   );
 
   // Also handle game-over via GAME_ROUND_RESULTS

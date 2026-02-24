@@ -65,11 +65,6 @@ interface ICQuestion {
   tally: { yes: number; no: number; maybe: number };
 }
 
-interface ICVote {
-  userId: string;
-  vote: 'yes' | 'no' | 'maybe';
-}
-
 interface ICGuessResult {
   userId: string;
   userName: string;
@@ -692,7 +687,8 @@ export class IdentityCrisisGame extends BaseMinigame {
     this.state.phase = 'RESULTS';
 
     // Award voting accuracy bonus points
-    for (const [userId, ps] of this.state.playerStates) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    for (const [_userId, ps] of this.state.playerStates) {
       const accuracyBonus = ps.votingAccuracy * IC_VOTING_ACCURACY_BONUS;
       ps.score += accuracyBonus;
     }

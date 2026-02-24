@@ -16,7 +16,6 @@ import {
   findLastActionBroadcast,
   findPlayerEvents,
   findLastPlayerEvent,
-  type MockContextData,
 } from './setup';
 import {
   RF_TOTAL_ROUNDS,
@@ -51,33 +50,6 @@ function createGame(
 /** Advance time to reach RANKING phase from the start of a round */
 function advanceToRankingPhase() {
   vi.advanceTimersByTime(RF_CATEGORY_REVEAL_SECONDS * 1000);
-}
-
-/** Advance through a full round where all players submit the same ranking */
-function advanceFullRound(
-  game: RankingFileGame,
-  ranking: number[] = [1, 2, 3, 4, 5],
-  playerIds: string[] = [
-    MOCK_USERS.alice.userId,
-    MOCK_USERS.bob.userId,
-    MOCK_USERS.charlie.userId,
-    MOCK_USERS.diana.userId,
-  ],
-) {
-  // CATEGORY_REVEAL → RANKING
-  advanceToRankingPhase();
-  // Submit rankings for all players
-  for (const uid of playerIds) {
-    game.handleInput(uid, 'RF_SUBMIT_RANKING', { ranking });
-  }
-  // RANKING → LOCK_IN
-  vi.advanceTimersByTime(RF_RANKING_SECONDS * 1000);
-  // LOCK_IN → RESULTS
-  vi.advanceTimersByTime(RF_LOCK_IN_SECONDS * 1000);
-  // RESULTS → TRANSITION or GAME_OVER
-  vi.advanceTimersByTime(RF_RESULTS_SECONDS * 1000);
-  // TRANSITION (if not last round)
-  vi.advanceTimersByTime(RF_TRANSITION_SECONDS * 1000);
 }
 
 // ─── Tests ──────────────────────────────────────────────────────
