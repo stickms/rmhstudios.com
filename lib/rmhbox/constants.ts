@@ -137,3 +137,46 @@ export const WR_CACHE_MAX = 500;
 export const WR_CACHE_TTL = 600000;
 export const WR_NAV_RATE_LIMIT = 3;
 export const WR_MAX_PAIR_POOL = 200;
+
+// ─── Fact or Friction (FOF) ─────────────────────────────────────
+
+export const FOF_TOTAL_QUESTIONS = 8;
+export const FOF_QUESTION_REVEAL_SECONDS = 2;
+export const FOF_ANSWER_DURATION_SECONDS = 15;
+export const FOF_ANSWER_REVEAL_SECONDS = 4;
+export const FOF_PAUSE_SECONDS = 1;
+export const FOF_POT_START_VALUE = 1000;
+export const FOF_POT_TICK_VALUE = 50;
+export const FOF_POT_TICK_INTERVAL_MS = 500;
+export const FOF_POT_MIN_VALUE = 100;
+export const FOF_EASY_MULTIPLIER = 0.8;
+export const FOF_MEDIUM_MULTIPLIER = 1.0;
+export const FOF_HARD_MULTIPLIER = 1.5;
+export const FOF_SCORE_FLOOR = -500;
+export const FOF_QUESTION_DISTRIBUTION = { easy: 3, medium: 3, hard: 2 };
+
+// ─── Undercover Editor (UE) ─────────────────────────────────────
+
+export const UE_MIN_PLAYERS = 4;
+export const UE_MAX_PLAYERS = 10;
+export const UE_ROTATIONS = 2;
+export const UE_WRITE_TIMEOUT_SECONDS = 45;
+export const UE_EDIT_TIMEOUT_SECONDS = 30;
+export const UE_REVIEW_DURATION_SECONDS = 20;
+export const UE_ACCUSATION_DURATION_SECONDS = 30;
+export const UE_REVEAL_DURATION_SECONDS = 10;
+export const UE_DISCONNECT_TURN_WAIT_SECONDS = 15;
+export const UE_MIN_SENTENCE_LENGTH = 10;
+export const UE_MAX_SENTENCE_LENGTH = 200;
+export const UE_MAX_EDIT_WORD_LENGTH = 30;
+export const UE_WRITER_MAJOR_WIN = 400;
+export const UE_WRITER_MINOR_WIN = 250;
+export const UE_WRITER_LOSS = 50;
+export const UE_WRITER_MINOR_LOSS = 100;
+export const UE_EDITOR_MAJOR_WIN = 600;
+export const UE_EDITOR_MINOR_WIN = 300;
+export const UE_EDITOR_PARTIAL = 200;
+export const UE_EDITOR_LOSS = 50;
+export const UE_CORRECT_VOTE_BONUS = 100;
+export const UE_KEYWORD_PROXIMITY_BONUS = 50;
+export const UE_KEYWORD_FUZZY_THRESHOLD = 0.7;
