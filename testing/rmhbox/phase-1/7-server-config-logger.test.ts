@@ -62,7 +62,7 @@ describe('Server Config', () => {
     const { config } = await import('../../../server/rmhbox/config');
 
     expect(config.PORT).toBe(7676);
-    expect(config.SOCKET_PATH).toBe('/rmhbox/');
+    expect(config.SOCKET_PATH).toBe('/rmhbox-ws/');
     expect(config.MAX_HTTP_BUFFER_SIZE).toBe(1_048_576);
     expect(config.PING_INTERVAL_MS).toBe(25_000);
     expect(config.PING_TIMEOUT_MS).toBe(20_000);
