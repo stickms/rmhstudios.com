@@ -52,7 +52,8 @@ function getWordSizeClass(word: string): string {
   if (len <= 7) return 'text-xs sm:text-sm';
   if (len <= 9) return 'text-[10px] sm:text-xs';
   if (len <= 12) return 'text-[9px] sm:text-[11px]';
-  return 'text-[8px] sm:text-[10px]';
+  if (len <= 15) return 'text-[7px] sm:text-[9px]';
+  return 'text-[6px] sm:text-[8px]';
 }
 
 interface GridBoardProps {
@@ -148,7 +149,7 @@ export default function GridBoard({ grid, canGuess, isSpymaster, highlightCounts
               ${!clickable && !isRevealed ? 'cursor-default' : ''}
             `}
           >
-            <span className="text-center leading-tight break-all">{tile.word}</span>
+            <span className="text-center leading-tight truncate w-full px-0.5">{tile.word}</span>
 
             {/* Highlight count badge — upper left, visible to everyone when > 0 */}
             <AnimatePresence>

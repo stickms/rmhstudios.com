@@ -104,8 +104,8 @@ function createTestContext(overrides: Partial<MinigameContext> = {}): MinigameCo
 // ─── Registry Tests ──────────────────────────────────────────────
 
 describe('Minigame Registry (§10.1)', () => {
-  it('should contain exactly 16 minigames', () => {
-    expect(Object.keys(MINIGAME_REGISTRY)).toHaveLength(16);
+  it('should contain exactly 4 minigames', () => {
+    expect(Object.keys(MINIGAME_REGISTRY)).toHaveLength(4);
   });
 
   it('should have correct IDs matching their keys', () => {
@@ -164,8 +164,8 @@ describe('Minigame Registry (§10.1)', () => {
     expect(game).toBeDefined();
     expect(game.category).toBe('word');
     expect(game.minPlayers).toBe(2);
-    expect(game.maxPlayers).toBe(10);
-    expect(game.estimatedDurationSeconds).toBe(120);
+    expect(game.maxPlayers).toBe(16);
+    expect(game.estimatedDurationSeconds).toBe(171);
     expect(game.supportsTeams).toBe(false);
     expect(game.joinInProgressPolicy).toBe('spectate_only');
   });
@@ -178,11 +178,11 @@ describe('Minigame Registry (§10.1)', () => {
     expect(game.maxPlayers).toBe(16);
   });
 
-  it('should contain specific game: pixel-pushers with join_immediately', () => {
-    const game = MINIGAME_REGISTRY['pixel-pushers'];
+  it('should contain specific game: category-crash with join_next_subround', () => {
+    const game = MINIGAME_REGISTRY['category-crash'];
     expect(game).toBeDefined();
-    expect(game.joinInProgressPolicy).toBe('join_immediately');
-    expect(game.supportsTeams).toBe(true);
+    expect(game.joinInProgressPolicy).toBe('join_next_subround');
+    expect(game.minPlayers).toBe(3);
   });
 
   it('should have preloadAssets defined for all games', () => {
@@ -204,7 +204,7 @@ describe('Minigame Registry (§10.1)', () => {
 });
 
 describe('getEligibleMinigames', () => {
-  it('should return all 16 games for playerCount=4', () => {
+  it('should return eligible games for playerCount=4', () => {
     const eligible = getEligibleMinigames(4);
     // Games with minPlayers <= 4 and maxPlayers >= 4
     expect(eligible.length).toBeGreaterThan(0);
@@ -233,16 +233,17 @@ describe('getEligibleMinigames', () => {
     for (const game of eligible) {
       expect(game.maxPlayers).toBeGreaterThanOrEqual(16);
     }
-    // undercover-agent (max 16) and fact-or-friction (max 16) should be included
+    // undercover-agent (max 16), rhyme-time (max 16), category-crash (max 16) should be included
     expect(eligible.find((g) => g.id === 'undercover-agent')).toBeDefined();
-    expect(eligible.find((g) => g.id === 'fact-or-friction')).toBeDefined();
-    // rhyme-time (max 10) should not be included
-    expect(eligible.find((g) => g.id === 'rhyme-time')).toBeUndefined();
+    expect(eligible.find((g) => g.id === 'rhyme-time')).toBeDefined();
+    expect(eligible.find((g) => g.id === 'category-crash')).toBeDefined();
+    // wiki-race (max 10) should not be included
+    expect(eligible.find((g) => g.id === 'wiki-race')).toBeUndefined();
   });
 
-  it('should include scroll-soul for playerCount=2', () => {
+  it('should include rhyme-time for playerCount=2', () => {
     const eligible = getEligibleMinigames(2);
-    expect(eligible.find((g) => g.id === 'scroll-soul')).toBeDefined();
+    expect(eligible.find((g) => g.id === 'rhyme-time')).toBeDefined();
   });
 });
 

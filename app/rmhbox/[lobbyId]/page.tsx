@@ -169,6 +169,14 @@ export default function LobbyPage({ params }: { params: Promise<{ lobbyId: strin
     return () => { mounted = false; };
   }, [lobbyId, router]);
 
+  // Reset stale round results when entering a new game to prevent
+  // the ResultsScreen from briefly rendering outdated data.
+  useEffect(() => {
+    if (lobby?.state === 'PLAYING' || lobby?.state === 'COUNTDOWN') {
+      setRoundResults(null);
+    }
+  }, [lobby?.state]);
+
   // Loading state
   if (connectionStatus === 'connecting' || connectionStatus === 'disconnected') {
     return (

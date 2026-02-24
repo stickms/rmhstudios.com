@@ -303,8 +303,9 @@ describe('Round Results (§2.3)', () => {
     expect(lobby.matchHistory[0].minigameId).toBe('rhyme-time');
   });
 
-  it('should return to WAITING after results timer', () => {
-    vi.advanceTimersByTime(11_000); // results display (10s)
+  it('should return to WAITING after host force-skips results', () => {
+    // ROUND_RESULTS uses infinite timer — host must force-skip to advance
+    callEvent(socketA, 'rmhbox:game:force_skip', { lobbyId });
 
     const lobby = lobbyManager.getLobby(lobbyId)!;
     expect(lobby.state).toBe('WAITING');
@@ -312,11 +313,16 @@ describe('Round Results (§2.3)', () => {
   });
 
   it('should reset player ready states when returning to WAITING', () => {
-    vi.advanceTimersByTime(11_000);
+    callEvent(socketA, 'rmhbox:game:force_skip', { lobbyId });
 
     const lobby = lobbyManager.getLobby(lobbyId)!;
     for (const player of lobby.players.values()) {
-      expect(player.isReady).toBe(false);
+      if (player.userId === lobby.hostUserId) {
+        // Host stays ready
+        expect(player.isReady).toBe(true);
+      } else {
+        expect(player.isReady).toBe(false);
+      }
       expect(player.roundScore).toBe(0);
     }
   });
@@ -456,7 +462,7 @@ describe('Host Force-Skip for All Phases (§2.7)', () => {
     expect(lobbyManager.getLobby(lobbyId)!.state).toBe('WAITING');
   });
 
-  it('should not skip COUNTDOWN phase', () => {
+  it('should skip COUNTDOWN phase when host force-skips', () => {
     gameCoordinator.startGameFlow(lobbyId, 'rhyme-time');
     vi.advanceTimersByTime(16_000);
     callEvent(socketA, 'rmhbox:game:ready_to_render', { lobbyId });
@@ -466,8 +472,8 @@ describe('Host Force-Skip for All Phases (§2.7)', () => {
 
     callEvent(socketA, 'rmhbox:game:force_skip', { lobbyId });
 
-    // Should still be COUNTDOWN (not skippable)
-    expect(lobbyManager.getLobby(lobbyId)!.state).toBe('COUNTDOWN');
+    // COUNTDOWN is skippable — should advance to PLAYING
+    expect(lobbyManager.getLobby(lobbyId)!.state).toBe('PLAYING');
   });
 
   it('should reject force-skip from non-host', () => {

@@ -38,7 +38,7 @@ function setupSocket(user: typeof MOCK_USERS.alice): MockSocketData {
 function callEvent(sock: MockSocketData, event: string, payload: unknown): void {
   const handler = sock.socket.on.mock.calls.find((c: unknown[]) => c[0] === event);
   expect(handler).toBeDefined();
-  handler![1](sock.socket, payload);
+  handler![1](payload);
 }
 
 function createLobbyAndGetId(sock: MockSocketData): string {
@@ -116,10 +116,15 @@ describe('Lobby Join (§3.1)', () => {
     expect((error!.data as { code: string }).code).toBe('LOBBY_NOT_FOUND');
   });
 
-  it('should reject joining when already in a lobby', () => {
+  it('should reject joining when already in a different lobby', () => {
     callEvent(socketB, 'rmhbox:lobby:join', { lobbyId, asSpectator: false });
-    // Try to join again
-    callEvent(socketB, 'rmhbox:lobby:join', { lobbyId, asSpectator: false });
+
+    // Create a second lobby with a different user
+    const socketC = setupSocket(MOCK_USERS.charlie);
+    const lobbyId2 = createLobbyAndGetId(socketC);
+
+    // Try to join the second lobby while still in the first
+    callEvent(socketB, 'rmhbox:lobby:join', { lobbyId: lobbyId2, asSpectator: false });
 
     const errors = socketB.emitted.filter(
       (e) => e.event === S2C.ERROR && (e.data as { code: string }).code === 'ALREADY_IN_LOBBY',

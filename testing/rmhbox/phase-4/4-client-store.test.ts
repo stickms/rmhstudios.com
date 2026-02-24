@@ -11,7 +11,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useRMHboxStore, applyLobbyAction, applyGameAction } from '../../../lib/rmhbox/store';
-import { createClientLobbyState, createClientPlayer, MOCK_USERS, createChatMessage } from './setup';
+import { createClientLobbyState, createClientPlayer, MOCK_USERS } from './setup';
 import type { GameAction } from '../../../lib/rmhbox/types';
 
 describe('Client-Side Store (§4)', () => {
@@ -273,7 +273,7 @@ describe('Lobby Action Reducer (§4.2)', () => {
     const lobby = createClientLobbyState();
     const result = applyLobbyAction(lobby, {
       type: 'SETTINGS_UPDATED',
-      payload: { settings: { isPublic: true } },
+      payload: { isPublic: true },
       seq: 1,
       timestamp: Date.now(),
     });

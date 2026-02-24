@@ -299,8 +299,8 @@ export function callEvent(socketData: MockSocketData, eventName: string, payload
     (c: unknown[]) => c[0] === eventName,
   );
   if (!call) throw new Error(`No handler registered for ${eventName}`);
-  // The validated wrapper expects (socket, rawPayload)
-  call[1](socketData.socket, payload);
+  // The validated wrapper captures socket via closure; only pass rawPayload
+  call[1](payload);
 }
 
 // ─── Test Minigame (Stub for Integration Testing) ────────────────

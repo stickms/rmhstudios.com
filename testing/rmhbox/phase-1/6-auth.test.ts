@@ -53,7 +53,7 @@ describe('Auth Middleware (§6.1)', () => {
     socket.handshake.auth = {};
 
     const next = vi.fn();
-    await authMiddleware(socket as any, next);
+    await authMiddleware(socket as unknown as Parameters<typeof authMiddleware>[0], next);
 
     expect(next).toHaveBeenCalledTimes(1);
     const error = next.mock.calls[0][0];
@@ -66,7 +66,7 @@ describe('Auth Middleware (§6.1)', () => {
     socket.handshake.auth = { token: 12345 };
 
     const next = vi.fn();
-    await authMiddleware(socket as any, next);
+    await authMiddleware(socket as unknown as Parameters<typeof authMiddleware>[0], next);
 
     expect(next).toHaveBeenCalledTimes(1);
     const error = next.mock.calls[0][0];
@@ -79,7 +79,7 @@ describe('Auth Middleware (§6.1)', () => {
     socket.handshake.auth = { token: 'invalid-token-xyz' };
 
     const next = vi.fn();
-    await authMiddleware(socket as any, next);
+    await authMiddleware(socket as unknown as Parameters<typeof authMiddleware>[0], next);
 
     expect(next).toHaveBeenCalledTimes(1);
     const error = next.mock.calls[0][0];
@@ -92,7 +92,7 @@ describe('Auth Middleware (§6.1)', () => {
     socket.handshake.auth = { token: MOCK_USERS.expired.sessionToken };
 
     const next = vi.fn();
-    await authMiddleware(socket as any, next);
+    await authMiddleware(socket as unknown as Parameters<typeof authMiddleware>[0], next);
 
     expect(next).toHaveBeenCalledTimes(1);
     const error = next.mock.calls[0][0];
@@ -105,7 +105,7 @@ describe('Auth Middleware (§6.1)', () => {
     socket.handshake.auth = { token: MOCK_USERS.alice.sessionToken };
 
     const next = vi.fn();
-    await authMiddleware(socket as any, next);
+    await authMiddleware(socket as unknown as Parameters<typeof authMiddleware>[0], next);
 
     expect(next).toHaveBeenCalledTimes(1);
     expect(next).toHaveBeenCalledWith(); // called with no arguments = success
@@ -120,7 +120,7 @@ describe('Auth Middleware (§6.1)', () => {
     socket.handshake.auth = { token: MOCK_USERS.bob.sessionToken };
 
     const next = vi.fn();
-    await authMiddleware(socket as any, next);
+    await authMiddleware(socket as unknown as Parameters<typeof authMiddleware>[0], next);
 
     expect(next).toHaveBeenCalledWith();
     expect(socket.data.userId).toBe(MOCK_USERS.bob.userId);
@@ -128,10 +128,10 @@ describe('Auth Middleware (§6.1)', () => {
 
   it('should reject connection with null auth object', async () => {
     const { socket } = createMockSocket(MOCK_USERS.alice);
-    socket.handshake.auth = null as any;
+    socket.handshake.auth = null as unknown as Record<string, unknown>;
 
     const next = vi.fn();
-    await authMiddleware(socket as any, next);
+    await authMiddleware(socket as unknown as Parameters<typeof authMiddleware>[0], next);
 
     const error = next.mock.calls[0][0];
     expect(error).toBeInstanceOf(Error);
@@ -145,7 +145,7 @@ describe('Auth Middleware (§6.1)', () => {
     socket.handshake.auth = { token: MOCK_USERS.alice.sessionToken };
 
     const next = vi.fn();
-    await authMiddleware(socket as any, next);
+    await authMiddleware(socket as unknown as Parameters<typeof authMiddleware>[0], next);
 
     const error = next.mock.calls[0][0];
     expect(error).toBeInstanceOf(Error);

@@ -139,8 +139,8 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
 
       /** Helper to push a log entry */
       const pushLog = (entry: Omit<GameLogEntry, 'id'>) => {
-        logIdRef.current += 1;
-        setGameLog((prev) => [...prev, { ...entry, id: logIdRef.current }]);
+        const id = ++logIdRef.current;
+        setGameLog((prev) => [...prev, { ...entry, id }]);
       };
 
       switch (type) {

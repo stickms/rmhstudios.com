@@ -36,7 +36,7 @@ function setupSocket(user: typeof MOCK_USERS.alice): MockSocketData {
 
 function callEvent(sock: MockSocketData, event: string, payload: unknown): void {
   const handler = sock.socket.on.mock.calls.find((c: unknown[]) => c[0] === event);
-  handler![1](sock.socket, payload);
+  handler![1](payload);
 }
 
 function createLobbyWithSettings(
@@ -98,7 +98,7 @@ describe('Lobby Browser (§9.1)', () => {
 
   it('should sort lobbies by player count descending', () => {
     // Create lobbies with different player counts
-    const id1 = createLobbyWithSettings('user-sort-1', 'Sort1', { isPublic: true });
+    createLobbyWithSettings('user-sort-1', 'Sort1', { isPublic: true });
     const id2 = createLobbyWithSettings('user-sort-2', 'Sort2', { isPublic: true });
     createLobbyWithSettings('user-sort-3', 'Sort3', { isPublic: true });
 

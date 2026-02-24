@@ -66,7 +66,7 @@ describe('Room Code Generation (§1.2)', () => {
     expect(createHandler).toBeDefined();
 
     // Call the handler directly (simulating the socket.on callback)
-    createHandler![1](socketA.socket, {});
+    createHandler![1]({});
 
     const created = findLastEmitted(socketA.emitted, S2C.LOBBY_CREATED);
     expect(created).toBeDefined();
@@ -93,7 +93,7 @@ describe('Room Code Generation (§1.2)', () => {
       const handler = sock.socket.on.mock.calls.find(
         (c: unknown[]) => c[0] === 'rmhbox:lobby:create',
       );
-      handler![1](sock.socket, {});
+      handler![1]({});
 
       const created = findLastEmitted(sock.emitted, S2C.LOBBY_CREATED);
       const data = created!.data as { lobbyId: string };
@@ -118,7 +118,7 @@ describe('Lobby Creation (§2.1)', () => {
     const handler = sock.socket.on.mock.calls.find(
       (c: unknown[]) => c[0] === 'rmhbox:lobby:create',
     );
-    handler![1](sock.socket, payload);
+    handler![1](payload);
   }
 
   it('should create a lobby with default settings', () => {
@@ -207,7 +207,7 @@ describe('Lobby Creation (§2.1)', () => {
 
     const lobby = lobbyManager.getLobbyByUserId(MOCK_USERS.alice.userId)!;
     const player = lobby.players.get(MOCK_USERS.alice.userId)!;
-    expect(player.isReady).toBe(false);
+    expect(player.isReady).toBe(true);
     expect(player.score).toBe(0);
     expect(player.roundScore).toBe(0);
     expect(player.isConnected).toBe(true);

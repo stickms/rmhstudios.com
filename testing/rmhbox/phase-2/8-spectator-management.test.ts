@@ -36,7 +36,7 @@ function setupSocket(user: typeof MOCK_USERS.alice): MockSocketData {
 
 function callEvent(sock: MockSocketData, event: string, payload: unknown): void {
   const handler = sock.socket.on.mock.calls.find((c: unknown[]) => c[0] === event);
-  handler![1](sock.socket, payload);
+  handler![1](payload);
 }
 
 function createLobbyAndGetId(sock: MockSocketData, settings: Record<string, unknown> = {}): string {

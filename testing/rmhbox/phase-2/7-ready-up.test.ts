@@ -36,7 +36,7 @@ function setupSocket(user: typeof MOCK_USERS.alice): MockSocketData {
 
 function callEvent(sock: MockSocketData, event: string, payload: unknown): void {
   const handler = sock.socket.on.mock.calls.find((c: unknown[]) => c[0] === event);
-  handler![1](sock.socket, payload);
+  handler![1](payload);
 }
 
 function createLobbyAndGetId(sock: MockSocketData): string {
@@ -66,25 +66,32 @@ describe('Ready-Up System (§7.1)', () => {
   });
 
   it('should toggle player ready status back to false', () => {
-    callEvent(socketA, 'rmhbox:lobby:toggle_ready', { lobbyId });
-    callEvent(socketA, 'rmhbox:lobby:toggle_ready', { lobbyId });
+    // Host picks a game so non-host players can ready up
+    callEvent(socketA, 'rmhbox:game:pick', { lobbyId, minigameId: 'rhyme-time' });
+    callEvent(socketB, 'rmhbox:lobby:toggle_ready', { lobbyId });
+    callEvent(socketB, 'rmhbox:lobby:toggle_ready', { lobbyId });
 
     const lobby = lobbyManager.getLobby(lobbyId)!;
-    const player = lobby.players.get(MOCK_USERS.alice.userId)!;
+    const player = lobby.players.get(MOCK_USERS.bob.userId)!;
     expect(player.isReady).toBe(false);
   });
 
   it('should broadcast PLAYER_READY_CHANGED action', () => {
-    callEvent(socketA, 'rmhbox:lobby:toggle_ready', { lobbyId });
+    // Host picks a game so non-host players can ready up
+    callEvent(socketA, 'rmhbox:game:pick', { lobbyId, minigameId: 'rhyme-time' });
+    callEvent(socketB, 'rmhbox:lobby:toggle_ready', { lobbyId });
 
     const actions = findServerEmitted(serverData.emitted, S2C.GAME_ACTION, `lobby:${lobbyId}`);
     const readyAction = actions.find(
-      (a) => (a.data as { type: string }).type === 'PLAYER_READY_CHANGED',
+      (a) => {
+        const d = a.data as { type: string; payload: { userId: string; isReady: boolean } };
+        return d.type === 'PLAYER_READY_CHANGED' && d.payload.userId === MOCK_USERS.bob.userId;
+      },
     );
     expect(readyAction).toBeDefined();
 
     const payload = (readyAction!.data as { payload: { userId: string; isReady: boolean } }).payload;
-    expect(payload.userId).toBe(MOCK_USERS.alice.userId);
+    expect(payload.userId).toBe(MOCK_USERS.bob.userId);
     expect(payload.isReady).toBe(true);
   });
 
@@ -110,8 +117,10 @@ describe('Ready-Up System (§7.1)', () => {
     const lobby = lobbyManager.getLobby(lobbyId)!;
     lobby.settings.autoStartThreshold = 2;
 
-    // Both players ready up
-    callEvent(socketA, 'rmhbox:lobby:toggle_ready', { lobbyId });
+    // Host picks a game (host becomes auto-ready)
+    callEvent(socketA, 'rmhbox:game:pick', { lobbyId, minigameId: 'rhyme-time' });
+
+    // Bob readies up — 2 ready players meets threshold
     callEvent(socketB, 'rmhbox:lobby:toggle_ready', { lobbyId });
 
     const actions = findServerEmitted(serverData.emitted, S2C.GAME_ACTION, `lobby:${lobbyId}`);

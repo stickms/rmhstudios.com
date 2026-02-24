@@ -700,9 +700,9 @@ export class CategoryCrashMinigame extends BaseMinigame {
         }
 
         if (isDuplicate) {
-          pointsPerCategory.push(CC_SHARED_POINTS);
-          duplicateIndices.push(catIdx);
-          roundScore += CC_SHARED_POINTS;
+          // Duplicate answers auto-crash — same answer = 0 points
+          pointsPerCategory.push(0);
+          crashedIndices.push(catIdx);
         } else {
           pointsPerCategory.push(CC_UNIQUE_POINTS);
           uniqueIndices.push(catIdx);
@@ -1027,7 +1027,7 @@ export class CategoryCrashMinigame extends BaseMinigame {
       for (const [userId, pr] of Object.entries(rr.playerResults)) {
         if (!stats[userId]) continue;
         stats[userId].uniqueCount += pr.uniqueIndices.length;
-        if (pr.uniqueIndices.length + pr.duplicateIndices.length === CC_CATEGORIES_PER_ROUND) {
+        if (pr.uniqueIndices.length === CC_CATEGORIES_PER_ROUND) {
           stats[userId].fullHouseRounds++;
         }
       }
@@ -1054,7 +1054,7 @@ export class CategoryCrashMinigame extends BaseMinigame {
       });
     }
 
-    // Speed Demon — first to lock answers (check action log)
+    // Speed Demon — first to lock answers with at least one valid answer
     const lockActions = this.state.actionLog
       .filter((a) => a.type === 'answers_locked')
       .sort((a, b) => a.timestamp - b.timestamp);

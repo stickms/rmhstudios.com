@@ -91,6 +91,7 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
   const [hasFinished, setHasFinished] = useState(false);
   const [finishRank, setFinishRank] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSpectator, setIsSpectator] = useState(false);
 
   // Other players
   const [otherPlayers, setOtherPlayers] = useState<Record<string, OtherPlayer>>({});
@@ -230,6 +231,9 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
         setClickCount(myState.clickCount as number);
         setHasFinished(myState.hasFinished as boolean);
         setFinishRank(myState.finishRank as number);
+        setIsSpectator(false);
+      } else {
+        setIsSpectator(true);
       }
 
       const other = data.otherPlayers as Record<string, OtherPlayer> | undefined;
@@ -264,18 +268,18 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
   // ─── Action Handlers ────────────────────────────────────────────
 
   const handleNavigate = useCallback((targetTitle: string) => {
-    if (hasFinished) return;
+    if (hasFinished || isSpectator) return;
     setIsLoading(true);
     emitGameInput('NAVIGATE', { targetTitle });
-  }, [hasFinished]);
+  }, [hasFinished, isSpectator]);
 
   const handleGoBack = useCallback((targetTitle: string, pathIndex: number) => {
-    if (hasFinished) return;
+    if (hasFinished || isSpectator) return;
     setIsLoading(true);
     // Truncate path locally for snappy UI
     setPath((prev) => prev.slice(0, pathIndex + 1));
     emitGameInput('GO_BACK', { targetTitle, pathIndex });
-  }, [hasFinished]);
+  }, [hasFinished, isSpectator]);
 
   // Player name lookup
   const getPlayerName = useCallback(
@@ -377,7 +381,7 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
               startTitle={startArticle?.title ?? ''}
               targetTitle={targetArticle?.title ?? ''}
               onGoBack={handleGoBack}
-              disabled={hasFinished}
+              disabled={hasFinished || isSpectator}
             />
 
             {/* Article frame */}
@@ -385,7 +389,7 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
               html={articleHtml}
               currentTitle={currentTitle}
               isLoading={isLoading}
-              disabled={hasFinished}
+              disabled={hasFinished || isSpectator}
               onNavigate={handleNavigate}
             />
 

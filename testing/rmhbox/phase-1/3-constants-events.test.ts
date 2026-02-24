@@ -83,7 +83,7 @@ describe('Shared Constants (§3.1)', () => {
 describe('Event Constants (§3.2)', () => {
   it('should define all client-to-server events with rmhbox: prefix', () => {
     const c2sEvents = Object.values(C2S);
-    expect(c2sEvents).toHaveLength(18);
+    expect(c2sEvents).toHaveLength(25);
     for (const event of c2sEvents) {
       expect(event).toMatch(/^rmhbox:/);
     }
@@ -91,7 +91,7 @@ describe('Event Constants (§3.2)', () => {
 
   it('should define all server-to-client events with rmhbox: prefix', () => {
     const s2cEvents = Object.values(S2C);
-    expect(s2cEvents).toHaveLength(19);
+    expect(s2cEvents).toHaveLength(22);
     for (const event of s2cEvents) {
       expect(event).toMatch(/^rmhbox:/);
     }
@@ -107,14 +107,21 @@ describe('Event Constants (§3.2)', () => {
     expect(C2S.LOBBY_END_SESSION).toBe('rmhbox:lobby:end_session');
     expect(C2S.LOBBY_TOGGLE_READY).toBe('rmhbox:lobby:toggle_ready');
     expect(C2S.LOBBY_REQUEST_PROMOTION).toBe('rmhbox:lobby:request_promotion');
+    expect(C2S.LOBBY_PROMOTE_SPECTATOR).toBe('rmhbox:lobby:promote_spectator');
     expect(C2S.LOBBY_CHAT).toBe('rmhbox:lobby:chat');
     expect(C2S.LOBBY_BROWSE).toBe('rmhbox:lobby:browse');
+    expect(C2S.GAME_PICK).toBe('rmhbox:game:pick');
     expect(C2S.GAME_SELECT).toBe('rmhbox:game:select');
     expect(C2S.GAME_START_VOTE).toBe('rmhbox:game:start_vote');
     expect(C2S.GAME_CAST_VOTE).toBe('rmhbox:game:cast_vote');
     expect(C2S.GAME_FORCE_SKIP).toBe('rmhbox:game:force_skip');
+    expect(C2S.GAME_FORCE_END).toBe('rmhbox:game:force_end');
+    expect(C2S.GAME_PAUSE_TIMER).toBe('rmhbox:game:pause_timer');
     expect(C2S.GAME_READY_TO_RENDER).toBe('rmhbox:game:ready_to_render');
     expect(C2S.GAME_INPUT).toBe('rmhbox:game:input');
+    expect(C2S.GAME_UPDATE_SETTINGS).toBe('rmhbox:game:update_settings');
+    expect(C2S.GAME_CONFIRM_SETTINGS).toBe('rmhbox:game:confirm_settings');
+    expect(C2S.GAME_RESET_SETTINGS).toBe('rmhbox:game:reset_settings');
     expect(C2S.LEADERBOARD_FETCH).toBe('rmhbox:leaderboard:fetch');
   });
 
@@ -136,7 +143,10 @@ describe('Event Constants (§3.2)', () => {
     expect(S2C.GAME_VOTE_STARTED).toBe('rmhbox:game:vote_started');
     expect(S2C.GAME_VOTE_UPDATE).toBe('rmhbox:game:vote_update');
     expect(S2C.GAME_VOTE_RESULT).toBe('rmhbox:game:vote_result');
+    expect(S2C.GAME_SETTINGS_OPENED).toBe('rmhbox:game:settings_opened');
+    expect(S2C.GAME_SETTINGS_UPDATED).toBe('rmhbox:game:settings_updated');
     expect(S2C.LEADERBOARD_DATA).toBe('rmhbox:leaderboard:data');
+    expect(S2C.NOT_IN_LOBBY).toBe('rmhbox:lobby:not_in_lobby');
     expect(S2C.ERROR).toBe('rmhbox:error');
   });
 

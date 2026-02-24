@@ -10,6 +10,7 @@ import { LobbyManager } from '../../../server/rmhbox/lobby-manager';
 import { GameCoordinator, MINIGAME_SERVER_REGISTRY } from '../../../server/rmhbox/game-coordinator';
 import { StateSyncService } from '../../../server/rmhbox/state-sync';
 import { S2C } from '../../../lib/rmhbox/events';
+import { MINIGAME_REGISTRY } from '../../../lib/rmhbox/minigame-registry';
 import { BaseMinigame } from '../../../server/rmhbox/minigames/base-minigame';
 import type { MinigameContext, MinigameResults } from '../../../server/rmhbox/minigames/base-minigame';
 import {
@@ -68,6 +69,7 @@ beforeEach(() => {
 
 afterEach(() => {
   MINIGAME_SERVER_REGISTRY.clear();
+  delete (MINIGAME_REGISTRY as Record<string, unknown>)['pixel-pushers'];
   vi.useRealTimers();
 });
 
@@ -96,7 +98,23 @@ describe('Join-in-Progress: spectate_only policy (§6.1)', () => {
 
 describe('Join-in-Progress: join_immediately policy (§6.1)', () => {
   it('should add player directly during join_immediately game', () => {
-    // pixel-pushers has join_immediately policy
+    // Register pixel-pushers in both client and server registries for JIP policy
+    MINIGAME_REGISTRY['pixel-pushers'] = {
+      id: 'pixel-pushers',
+      displayName: 'Pixel Pushers',
+      description: 'Test game with join_immediately policy',
+      category: 'action',
+      icon: 'paintbrush',
+      minPlayers: 2,
+      maxPlayers: 16,
+      estimatedDurationSeconds: 120,
+      supportsTeams: true,
+      instructionDurationSeconds: 15,
+      preloadAssets: { images: [], sounds: [], data: [], estimatedSizeBytes: 0 },
+      joinInProgressPolicy: 'join_immediately',
+      tags: ['action'],
+      settingsSchema: [],
+    };
     MINIGAME_SERVER_REGISTRY.set('pixel-pushers', createTestGameClass(60_000));
     setupLobbyWith2PlayersInGame('pixel-pushers');
 
