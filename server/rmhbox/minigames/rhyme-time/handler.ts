@@ -21,10 +21,10 @@
 
 import { BaseMinigame } from '../base-minigame';
 import type { MinigameContext, MinigameResults } from '../base-minigame';
-import type { PlayerRanking, Award } from '@/lib/rmhbox/types';
-import type { RootWord } from '@/lib/rmhbox/rhyme-time/dictionary-loader';
-import { loadRootWords, isValidRhyme, isMultiSyllableRhyme, isKnownWord } from '@/lib/rmhbox/rhyme-time/dictionary-loader';
-import { SubmitRhymeSchema } from '@/lib/rmhbox/rhyme-time/schemas';
+import type { PlayerRanking, Award } from '../../../../lib/rmhbox/types';
+import type { RootWord } from '../../../../lib/rmhbox/rhyme-time/dictionary-loader';
+import { loadRootWords, isValidRhyme, isMultiSyllableRhyme, isKnownWord } from '../../../../lib/rmhbox/rhyme-time/dictionary-loader';
+import { SubmitRhymeSchema } from '../../../../lib/rmhbox/rhyme-time/schemas';
 import {
   RT_TOTAL_ROUNDS,
   RT_INPUT_DURATION,
@@ -38,7 +38,7 @@ import {
   RT_MULTI_SYLLABLE_MULT,
   RT_SPEED_BONUS,
   RT_INVALID_PENALTY,
-} from '@/lib/rmhbox/constants';
+} from '../../../../lib/rmhbox/constants';
 import { logger } from '../../logger';
 import {
   RhymeTimePhase,
