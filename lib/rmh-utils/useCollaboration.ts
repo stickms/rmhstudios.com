@@ -5,7 +5,12 @@ import * as Y from 'yjs';
 import { WebsocketProvider } from 'y-websocket';
 import { getCollabColor } from './types';
 
-const COLLAB_URL = process.env.NEXT_PUBLIC_COLLAB_URL || 'ws://localhost:7002';
+// Normalize URL: ensure ws(s):// protocol and strip trailing slash
+const rawCollabUrl = process.env.NEXT_PUBLIC_COLLAB_URL || 'ws://localhost:7003';
+const COLLAB_URL = rawCollabUrl
+  .replace(/^http:\/\//, 'ws://')
+  .replace(/^https:\/\//, 'wss://')
+  .replace(/\/+$/, '');
 
 export interface CollabUser {
   id: string;

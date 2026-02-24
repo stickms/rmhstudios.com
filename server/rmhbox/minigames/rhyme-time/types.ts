@@ -4,7 +4,7 @@
  * Phase enum, interfaces, and type definitions for the Rhyme Time minigame.
  */
 
-import type { RootWord } from '@/lib/rmhbox/rhyme-time/dictionary-loader';
+import type { RootWord } from '../../../../lib/rmhbox/rhyme-time/dictionary-loader';
 
 // ─── Phase Enum ──────────────────────────────────────────────────
 

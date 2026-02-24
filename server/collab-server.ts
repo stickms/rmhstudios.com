@@ -2,6 +2,11 @@ import 'dotenv/config';
 import { WebSocketServer, WebSocket } from 'ws';
 import http from 'http';
 import * as Y from 'yjs';
+import * as syncProtocol from 'y-protocols/sync';
+import * as awarenessProtocol from 'y-protocols/awareness';
+import * as encoding from 'lib0/encoding';
+import * as decoding from 'lib0/decoding';
+import { Awareness } from 'y-protocols/awareness';
 
 const PORT = Number(process.env.COLLAB_PORT) || 7003;
 
@@ -25,9 +30,15 @@ async function getPrisma(): Promise<any> {
   }
 }
 
+// ─── Message Types (matching y-protocols) ───
+
+const MSG_SYNC = 0;
+const MSG_AWARENESS = 1;
+
 // ─── Room Management ───
 interface Room {
   yDoc: Y.Doc;
+  awareness: Awareness;
   clients: Map<WebSocket, { userId: string; name: string }>;
   saveTimeout: ReturnType<typeof setTimeout> | null;
   lastSaved: number;
@@ -42,6 +53,7 @@ async function getOrCreateRoom(roomName: string): Promise<Room> {
   if (existing) return existing;
 
   const yDoc = new Y.Doc();
+  const awareness = new Awareness(yDoc);
 
   // Parse documentId from room name (format: "doc-{id}", "sheet-{id}", "slide-{id}")
   const documentId = roomName.replace(/^(doc|sheet|slide)-/, '');
@@ -64,15 +76,42 @@ async function getOrCreateRoom(roomName: string): Promise<Room> {
 
   const room: Room = {
     yDoc,
+    awareness,
     clients: new Map(),
     saveTimeout: null,
     lastSaved: Date.now(),
   };
 
-  // Save to DB on document updates (debounced)
-  yDoc.on('update', () => {
+  // Save to DB and broadcast updates
+  yDoc.on('update', (update: Uint8Array, origin: unknown) => {
+    // Debounced save to DB
     if (room.saveTimeout) clearTimeout(room.saveTimeout);
     room.saveTimeout = setTimeout(() => saveRoom(roomName, room), SAVE_DEBOUNCE_MS);
+
+    // Broadcast to all clients except the one that originated the update
+    const encoder = encoding.createEncoder();
+    encoding.writeVarUint(encoder, MSG_SYNC);
+    syncProtocol.writeUpdate(encoder, update);
+    const msg = encoding.toUint8Array(encoder);
+    room.clients.forEach((_, client) => {
+      if (client !== origin && client.readyState === WebSocket.OPEN) {
+        client.send(msg);
+      }
+    });
+  });
+
+  // Broadcast awareness changes to all clients
+  awareness.on('update', ({ added, updated, removed }: { added: number[]; updated: number[]; removed: number[] }) => {
+    const changedClients = added.concat(updated, removed);
+    const encoder = encoding.createEncoder();
+    encoding.writeVarUint(encoder, MSG_AWARENESS);
+    encoding.writeVarUint8Array(encoder, awarenessProtocol.encodeAwarenessUpdate(awareness, changedClients));
+    const msg = encoding.toUint8Array(encoder);
+    room.clients.forEach((_, client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(msg);
+      }
+    });
   });
 
   rooms.set(roomName, room);
@@ -103,6 +142,7 @@ function cleanupRoom(roomName: string) {
   // Save before cleanup
   if (room.saveTimeout) clearTimeout(room.saveTimeout);
   saveRoom(roomName, room).then(() => {
+    room.awareness.destroy();
     room.yDoc.destroy();
     rooms.delete(roomName);
     console.log(`[collab] Room ${roomName} cleaned up`);
@@ -145,70 +185,30 @@ async function checkDocumentAccess(documentId: string, userId: string): Promise<
   }
 }
 
-// ─── Y.js Sync Protocol (simplified) ───
+// ─── Message Handling ───
 
-const MSG_SYNC = 0;
-const MSG_AWARENESS = 1;
+function handleMessage(room: Room, ws: WebSocket, data: Uint8Array) {
+  const decoder = decoding.createDecoder(data);
+  const messageType = decoding.readVarUint(decoder);
 
-const MSG_SYNC_STEP1 = 0;
-const MSG_SYNC_STEP2 = 1;
-const MSG_SYNC_UPDATE = 2;
+  switch (messageType) {
+    case MSG_SYNC: {
+      const encoder = encoding.createEncoder();
+      encoding.writeVarUint(encoder, MSG_SYNC);
+      // Pass ws as origin so the update handler can avoid echoing back to sender
+      syncProtocol.readSyncMessage(decoder, encoder, room.yDoc, ws);
 
-function writeSyncStep1(doc: Y.Doc): Uint8Array {
-  const stateVector = Y.encodeStateVector(doc);
-  const data = new Uint8Array(2 + stateVector.length);
-  data[0] = MSG_SYNC;
-  data[1] = MSG_SYNC_STEP1;
-  data.set(stateVector, 2);
-  return data;
-}
-
-function writeSyncStep2(doc: Y.Doc, stateVector: Uint8Array): Uint8Array {
-  const update = Y.encodeStateAsUpdate(doc, stateVector);
-  const data = new Uint8Array(2 + update.length);
-  data[0] = MSG_SYNC;
-  data[1] = MSG_SYNC_STEP2;
-  data.set(update, 2);
-  return data;
-}
-
-function writeUpdate(update: Uint8Array): Uint8Array {
-  const data = new Uint8Array(2 + update.length);
-  data[0] = MSG_SYNC;
-  data[1] = MSG_SYNC_UPDATE;
-  data.set(update, 2);
-  return data;
-}
-
-function handleSyncMessage(room: Room, ws: WebSocket, message: Uint8Array) {
-  const msgType = message[0];
-  const syncType = message[1];
-  const payload = message.slice(2);
-
-  if (msgType === MSG_SYNC) {
-    if (syncType === MSG_SYNC_STEP1) {
-      // Client sends state vector, server responds with missing updates
-      const response = writeSyncStep2(room.yDoc, payload);
-      ws.send(response);
-      // Also send server's state vector so client sends missing updates
-      ws.send(writeSyncStep1(room.yDoc));
-    } else if (syncType === MSG_SYNC_STEP2 || syncType === MSG_SYNC_UPDATE) {
-      Y.applyUpdate(room.yDoc, payload);
-      // Broadcast to all other clients
-      const updateMsg = writeUpdate(payload);
-      room.clients.forEach((_, client) => {
-        if (client !== ws && client.readyState === WebSocket.OPEN) {
-          client.send(updateMsg);
-        }
-      });
-    }
-  } else if (msgType === MSG_AWARENESS) {
-    // Broadcast awareness to all other clients
-    room.clients.forEach((_, client) => {
-      if (client !== ws && client.readyState === WebSocket.OPEN) {
-        client.send(message);
+      // If the sync response has content, send it back
+      if (encoding.length(encoder) > 1) {
+        ws.send(encoding.toUint8Array(encoder));
       }
-    });
+      break;
+    }
+    case MSG_AWARENESS: {
+      const update = decoding.readVarUint8Array(decoder);
+      awarenessProtocol.applyAwarenessUpdate(room.awareness, update, ws);
+      break;
+    }
   }
 }
 
@@ -256,13 +256,37 @@ wss.on('connection', async (ws, req) => {
   room.clients.set(ws, userInfo);
   console.log(`[collab] ${userInfo.name} joined ${roomName} (${room.clients.size} clients)`);
 
-  // Send initial sync
-  ws.send(writeSyncStep1(room.yDoc));
+  // Send sync step 1 (server state vector) so client can respond with missing updates
+  {
+    const encoder = encoding.createEncoder();
+    encoding.writeVarUint(encoder, MSG_SYNC);
+    syncProtocol.writeSyncStep1(encoder, room.yDoc);
+    ws.send(encoding.toUint8Array(encoder));
+  }
 
-  ws.on('message', (data) => {
+  // Send sync step 2 (full document state) so client has the complete document
+  {
+    const encoder = encoding.createEncoder();
+    encoding.writeVarUint(encoder, MSG_SYNC);
+    syncProtocol.writeSyncStep2(encoder, room.yDoc);
+    ws.send(encoding.toUint8Array(encoder));
+  }
+
+  // Send current awareness states
+  {
+    const states = room.awareness.getStates();
+    if (states.size > 0) {
+      const encoder = encoding.createEncoder();
+      encoding.writeVarUint(encoder, MSG_AWARENESS);
+      encoding.writeVarUint8Array(encoder, awarenessProtocol.encodeAwarenessUpdate(room.awareness, Array.from(states.keys())));
+      ws.send(encoding.toUint8Array(encoder));
+    }
+  }
+
+  ws.on('message', (rawData) => {
     try {
-      const message = new Uint8Array(data as ArrayBuffer);
-      handleSyncMessage(room, ws, message);
+      const message = new Uint8Array(rawData as ArrayBuffer);
+      handleMessage(room, ws, message);
     } catch (err) {
       console.error(`[collab] Error handling message in ${roomName}:`, err);
     }
@@ -270,6 +294,8 @@ wss.on('connection', async (ws, req) => {
 
   ws.on('close', () => {
     room.clients.delete(ws);
+    // Remove client from awareness
+    awarenessProtocol.removeAwarenessStates(room.awareness, [room.yDoc.clientID], null);
     console.log(`[collab] User left ${roomName} (${room.clients.size} clients)`);
     if (room.clients.size === 0) {
       // Delay cleanup so reconnects don't lose state

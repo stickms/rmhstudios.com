@@ -24,14 +24,14 @@
 import Fuse from 'fuse.js';
 import { BaseMinigame } from '../base-minigame';
 import type { MinigameContext, MinigameResults } from '../base-minigame';
-import type { PlayerRanking, Award } from '@/lib/rmhbox/types';
-import { selectRoundLetter, selectRoundCategories } from '@/lib/rmhbox/category-crash/data-loader';
+import type { PlayerRanking, Award } from '../../../../lib/rmhbox/types';
+import { selectRoundLetter, selectRoundCategories } from '../../../../lib/rmhbox/category-crash/data-loader';
 import {
   SaveAnswersSchema,
   SubmitAnswersSchema,
   CrashAnswerSchema,
   UncrashAnswerSchema,
-} from '@/lib/rmhbox/category-crash/schemas';
+} from '../../../../lib/rmhbox/category-crash/schemas';
 import {
   CC_TOTAL_ROUNDS,
   CC_CATEGORIES_PER_ROUND,
@@ -46,7 +46,7 @@ import {
   CC_CRASH_BONUS,
   CC_CRASH_PENALTY,
   CC_FUZZY_THRESHOLD,
-} from '@/lib/rmhbox/constants';
+} from '../../../../lib/rmhbox/constants';
 import { logger } from '../../logger';
 import {
   CategoryCrashPhase,
