@@ -90,11 +90,13 @@ export default function FactOrFrictionGame({ playerId, playerName: _playerName }
       switch (actionType) {
         case 'FOF_QUESTION': {
           setPhase('QUESTION_REVEAL');
+          // Server sends question data as a nested object under `data.question`
+          const qObj = data.question as Record<string, unknown>;
           const q: QuestionData = {
-            question: data.question as string,
-            category: data.category as string,
-            difficulty: data.difficulty as string,
-            options: data.options as string[],
+            question: qObj.question as string,
+            category: qObj.category as string,
+            difficulty: qObj.difficulty as string,
+            options: qObj.options as string[],
             questionIndex: data.questionIndex as number,
             totalQuestions: data.totalQuestions as number,
           };
