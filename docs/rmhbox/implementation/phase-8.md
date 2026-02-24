@@ -536,16 +536,38 @@
 #### 8.1.6.14 `buildGameLog()`
 
 - [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
-- [ ] Log `question_asked` action when a player asks a question (askerId, questionText, roundNumber)
-- [ ] Log `vote_cast` action per vote on a question (voterId, vote: 'yes' | 'no' | 'maybe')
-- [ ] Log `vote_result` action when voting closes (yes, no, maybe tallies, majorityAnswer)
-- [ ] Log `early_guess` action when player attempts early guess (userId, guess, correct, matchScore, roundNumber)
-- [ ] Log `final_guess` action at final guess phase (userId, guess, correct, matchScore)
-- [ ] Log `identity_reveal` action at results (userId, assignedIdentity, guessedCorrectly)
-- [ ] In `computeResults()`, build `GameLog` with `initialState` containing identity assignments, question order, maxQuestionsPerPlayer
+- [ ] Build `GameLog` conforming to core.md §13.3, including `gameSettings` per §12A.11
+
+**`initialState` (from minigames-4.md §1.14):**
+
+```typescript
+interface ICGameHistoryInit {
+  identityPool: string;
+  identityAssignments: Array<{
+    userId: string;
+    assignedIdentity: string;
+  }>;
+  questionOrder: string[];
+  maxQuestionsPerPlayer: number;
+  gameSettings: GameSettingValues;
+}
+```
+
+**Actions Logged:**
+
+| Action Type | Payload | Recorded When |
+|---|---|---|
+| `question_asked` | `{ askerId: string; questionText: string; roundNumber: number }` | Player submits a question |
+| `vote_cast` | `{ voterId: string; vote: 'yes' \| 'no' \| 'maybe' }` | Each player votes on current question |
+| `vote_result` | `{ yes: number; no: number; maybe: number; majorityAnswer: string }` | Voting phase closes |
+| `early_guess` | `{ userId: string; guess: string; correct: boolean; matchScore: number; roundNumber: number }` | Player attempts an early guess |
+| `final_guess` | `{ userId: string; guess: string; correct: boolean; matchScore: number }` | Player submits final guess |
+| `identity_reveal` | `{ userId: string; assignedIdentity: string; guessedCorrectly: boolean }` | Results phase reveals all identities |
+
+- [ ] In `computeResults()`, build `GameLog` with `initialState`, full action log, and `finalResults`
 - [ ] Return `GameLog` from `buildGameLog()`
 
-**Verification:** Unit test: 5-player game, 15 question rounds, verify Q&A log, early guesses, final guesses, and identity reveal actions.
+**Verification:** Unit test: 5-player game, 15 question rounds, verify `question_asked`/`vote_result` per round, early and final guesses, `identity_reveal` for each player, `initialState` has identity assignments and question order.
 
 ---
 
@@ -1489,13 +1511,34 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 #### 8.2.6.14 `buildGameLog()`
 
 - [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
-- [ ] Log `round_start` action when category is revealed (round, categoryName, items)
-- [ ] Log `ranking_submitted` action per player (userId, ranking: number[])
-- [ ] Log `round_result` action at round end (round, consensusRanking, playerRankings, distanceScores)
-- [ ] In `computeResults()`, build `GameLog` with `initialState` containing totalRounds, categories used, player list
+- [ ] Build `GameLog` conforming to core.md §13.3, including `gameSettings` per §12A.11
+
+**`initialState` (from minigames-4.md §2.14):**
+
+```typescript
+interface RFGameHistoryInit {
+  categoryPack: string;
+  totalRounds: number;
+  itemsPerRound: number;
+  playerCount: number;
+  gameSettings: GameSettingValues;
+}
+```
+
+**Actions Logged:**
+
+| Action Type | Payload | Recorded When |
+|---|---|---|
+| `round_start` | `{ roundNumber: number; category: string; items: string[] }` | New round begins |
+| `ranking_submitted` | `{ userId: string; submittedOrder: string[] }` | Player locks in their ranking |
+| `round_result` | `{ consensusRanking: string[]; playerScores: Array<{ userId: string; distance: number; points: number; exactMatches: number }> }` | Round scoring completes |
+| `outlier_awarded` | `{ userId: string; category: string; outlierItem: string; deviation: number }` | Player earns outlier bonus |
+| `game_complete` | `{ finalStandings: Array<{ userId: string; totalPoints: number; roundBreakdown: number[] }> }` | All rounds finished |
+
+- [ ] In `computeResults()`, build `GameLog` with `initialState`, full action log, and `finalResults`
 - [ ] Return `GameLog` from `buildGameLog()`
 
-**Verification:** Unit test: 5-round game, verify 5 round_start, all ranking_submitted, and 5 round_result actions with consensus data.
+**Verification:** Unit test: 5-round game, verify 5 `round_start`, all `ranking_submitted`, 5 `round_result` actions with consensus data and distance scores, `initialState` has category pack and round config.
 
 ---
 
@@ -2354,14 +2397,35 @@ This is the core physics loop running at ~30Hz. Each tick:
 #### 8.3.6.15 `buildGameLog()`
 
 - [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
-- [ ] Log `level_start` action at level begin (levelNumber, layoutId)
-- [ ] Log `waypoint_hit` action when ball passes through a waypoint (waypointIndex, timeMs)
-- [ ] Log `polarity_flip` action when a player's polarity changes (userId, newPolarity, timeMs)
-- [ ] Log `level_complete` action at level end (levelNumber, completionTimeMs, waypointsHit, success)
-- [ ] In `computeResults()`, build `GameLog` with `initialState` containing totalLevels, playerCount, canvasSize
+- [ ] Build `GameLog` conforming to core.md §13.3, including `gameSettings` per §12A.11
+
+**`initialState` (from minigames-4.md §3.15):**
+
+```typescript
+interface PPGameHistoryInit {
+  levelSequence: string[];
+  totalLevels: number;
+  playerCount: number;
+  initialPolarity: Record<string, 'positive' | 'negative'>;
+  gameSettings: GameSettingValues;
+}
+```
+
+**Actions Logged:**
+
+| Action Type | Payload | Recorded When |
+|---|---|---|
+| `level_start` | `{ levelIndex: number; layoutId: string; timeLimit: number }` | Team begins a level |
+| `waypoint_hit` | `{ userId: string; waypointId: string; elapsed: number }` | Player reaches a waypoint |
+| `polarity_flip` | `{ targetUserId: string; flippedBy: 'server' \| 'obstacle'; newPolarity: string; elapsed: number }` | Player's polarity is inverted |
+| `level_complete` | `{ levelIndex: number; completionTime: number; waypointsCollected: number; timeBonus: number }` | All players reach the exit |
+| `level_failed` | `{ levelIndex: number; reason: 'timeout' \| 'all_eliminated'; elapsed: number }` | Team fails a level |
+| `game_complete` | `{ levelsCleared: number; totalTime: number; mvpUserId: string; playerStats: Array<{ userId: string; waypointsHit: number; flipsReceived: number }> }` | Run ends |
+
+- [ ] In `computeResults()`, build `GameLog` with `initialState`, full action log, and `finalResults`
 - [ ] Return `GameLog` from `buildGameLog()`
 
-**Verification:** Unit test: 3-level game, verify level_start/level_complete per level, polarity_flip events captured.
+**Verification:** Unit test: 3-level game, verify `level_start`/`level_complete` per level, `polarity_flip` events captured, `initialState` has level sequence and initial polarities.
 
 ---
 
@@ -3283,14 +3347,34 @@ Each tick (~33ms):
 #### 8.4.5.17 `buildGameLog()`
 
 - [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
-- [ ] Log `player_eliminated` action when player dies (userId, survivalTimeMs, scrollSpeedAtDeath, cause: 'lava' | 'ad_push' | 'obstacle')
-- [ ] Log `ad_spawned` action when a fake ad appears (adType, targetUserId, timeMs)
-- [ ] Log `ad_dismissed` action when player closes an ad (userId, adType, dismissTimeMs, penalty: boolean)
-- [ ] Log `speed_increase` action at each scroll speed change (newSpeed, timeMs)
-- [ ] In `computeResults()`, build `GameLog` with `initialState` containing baseScrollSpeed, maxScrollSpeed, viewportSize, playerCount
+- [ ] Build `GameLog` conforming to core.md §13.3, including `gameSettings` per §12A.11
+
+**`initialState` (from minigames-4.md §4.15):**
+
+```typescript
+interface SCGameHistoryInit {
+  playerCount: number;
+  initialScrollSpeed: number;
+  adFrequencyBase: number;
+  obstacleLayoutSeed: number;
+  gameSettings: GameSettingValues;
+}
+```
+
+**Actions Logged:**
+
+| Action Type | Payload | Recorded When |
+|---|---|---|
+| `ad_spawned` | `{ targetUserId: string; adType: string; elapsed: number }` | Ad popup appears on a player's screen |
+| `ad_dismissed` | `{ userId: string; elapsed: number; dismissTime: number; usedFakeX: boolean }` | Player closes an ad |
+| `player_eliminated` | `{ userId: string; survivalTime: number; cause: 'lava' \| 'ad' \| 'obstacle'; scrollSpeedAtDeath: number; placement: number }` | Player is eliminated |
+| `speed_milestone` | `{ newSpeed: number; elapsed: number; playersRemaining: number }` | Scroll speed crosses a threshold |
+| `game_complete` | `{ winnerId: string; finalSurvivalTime: number; eliminationOrder: Array<{ userId: string; survivalTime: number; cause: string }>; adStats: Array<{ userId: string; adsEncountered: number; adsDismissed: number }> }` | Last player standing or time expires |
+
+- [ ] In `computeResults()`, build `GameLog` with `initialState`, full action log, and `finalResults`
 - [ ] Return `GameLog` from `buildGameLog()`
 
-**Verification:** Unit test: 8-player game, verify elimination events in order, ad events captured, speed increases logged.
+**Verification:** Unit test: 8-player game, verify `player_eliminated` events in order, `ad_spawned`/`ad_dismissed` events captured, `speed_milestone` logged, `initialState` has scroll speed config and obstacle seed.
 
 ---
 
