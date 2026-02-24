@@ -19,7 +19,7 @@
 
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Clock, ChevronLeft, ChevronRight, Flame } from 'lucide-react';
+import { Clock, ChevronLeft, ChevronRight, Flame, User, Copy } from 'lucide-react';
 import type { Category, AnonymizedAnswerSet } from './CategoryCrashGame';
 
 interface CrashEntry {
@@ -216,10 +216,16 @@ export default function PeerReview({
                     {answer ?? '— empty —'}
                   </span>
                   {isOwn && (
-                    <span className="text-[10px] font-medium text-(--rmhbox-accent)">(yours)</span>
+                    <span className="flex items-center gap-0.5 text-[10px] font-medium text-(--rmhbox-accent)">
+                      <User className="h-2.5 w-2.5" />
+                      (yours)
+                    </span>
                   )}
                   {isDuplicate && !isOwn && (
-                    <span className="text-[10px] font-medium text-(--rmhbox-warning)">Duplicate</span>
+                    <span className="flex items-center gap-0.5 text-[10px] font-medium text-(--rmhbox-warning)">
+                      <Copy className="h-2.5 w-2.5" />
+                      Duplicate
+                    </span>
                   )}
                 </span>
                 {!isEmpty && !isOwn && (
