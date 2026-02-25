@@ -8,15 +8,18 @@ interface EmojiSentenceProps {
 }
 
 export default function EmojiSentence({ emojis, maxEmojis, onRemove, readOnly = false }: EmojiSentenceProps) {
+  // Defensive: ensure emojis is always an array
+  const safeEmojis = Array.isArray(emojis) ? emojis : [];
+
   return (
     <div className="flex flex-col items-center gap-2 w-full">
       <div className="flex items-center gap-1 min-h-[3.5rem] p-3 rounded-xl bg-(--rmhbox-surface) border border-(--rmhbox-border) w-full overflow-x-auto">
-        {emojis.length === 0 ? (
+        {safeEmojis.length === 0 ? (
           <span className="text-(--rmhbox-text-muted) text-sm italic mx-auto">
             {readOnly ? 'Waiting for emojis…' : 'Tap emojis below to build your clue'}
           </span>
         ) : (
-          emojis.map((emoji, i) => (
+          safeEmojis.map((emoji, i) => (
             <button
               key={i}
               disabled={readOnly}
@@ -32,7 +35,7 @@ export default function EmojiSentence({ emojis, maxEmojis, onRemove, readOnly = 
         )}
       </div>
       <span className="text-xs text-(--rmhbox-text-muted)">
-        {emojis.length}/{maxEmojis} emojis
+        {safeEmojis.length}/{maxEmojis} emojis
       </span>
     </div>
   );

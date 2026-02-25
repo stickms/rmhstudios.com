@@ -2,8 +2,9 @@
  * DrawingCanvas — Pointer-event-based drawing surface.
  *
  * Captures pointer events to build strokes. Each stroke is recorded
- * as a series of { x, y, pressure } points. Drawing is disabled
- * once the stroke limit is reached or the drawing has been submitted.
+ * as a series of { x, y, pressure } points with its own color and width.
+ * All strokes use round end-caps. Supports undo via edit history.
+ * Players can also select a background color for the canvas.
  */
 'use client';
 
@@ -14,17 +15,23 @@ interface DrawingCanvasProps {
   strokes: MMStroke[];
   setStrokes: React.Dispatch<React.SetStateAction<MMStroke[]>>;
   selectedColor: string;
+  selectedWidth: number;
+  backgroundColor: string;
   maxStrokes: number;
   hasSubmitted: boolean;
   onSubmit: () => void;
+  onUndo: () => void;
 }
 
 export default function DrawingCanvas({
   strokes,
   setStrokes,
   selectedColor,
+  selectedWidth,
+  backgroundColor,
   maxStrokes,
   hasSubmitted,
+  onUndo,
 }: DrawingCanvasProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const isDrawing = useRef(false);
@@ -54,10 +61,10 @@ export default function DrawingCanvas({
       const point = getPoint(e);
       setStrokes((prev) => [
         ...prev,
-        { id, points: [point], color: selectedColor, width: 3, timestamp: Date.now() },
+        { id, points: [point], color: selectedColor, width: selectedWidth, timestamp: Date.now() },
       ]);
     },
-    [canDraw, getPoint, selectedColor, setStrokes],
+    [canDraw, getPoint, selectedColor, selectedWidth, setStrokes],
   );
 
   const handlePointerMove = useCallback(
@@ -96,11 +103,12 @@ export default function DrawingCanvas({
       <svg
         ref={svgRef}
         viewBox="0 0 300 300"
-        className={`w-72 h-72 rounded-lg border-2 bg-white touch-none ${
+        className={`w-72 h-72 rounded-lg border-2 touch-none ${
           canDraw
             ? 'border-(--rmhbox-accent) cursor-crosshair'
             : 'border-(--rmhbox-border) cursor-not-allowed'
         }`}
+        style={{ backgroundColor }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
@@ -118,6 +126,18 @@ export default function DrawingCanvas({
           />
         ))}
       </svg>
+
+      {/* Undo button */}
+      {!hasSubmitted && strokes.length > 0 && (
+        <button
+          onClick={onUndo}
+          className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-(--rmhbox-surface)/80 border border-(--rmhbox-border) text-(--rmhbox-text) text-sm hover:bg-(--rmhbox-border) transition-colors"
+          title="Undo last stroke"
+          aria-label="Undo last stroke"
+        >
+          ↩
+        </button>
+      )}
     </div>
   );
 }

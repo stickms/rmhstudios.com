@@ -63,6 +63,12 @@ function emitGameInput(action: string, data: unknown = {}) {
   emit(C2S.GAME_INPUT, { lobbyId, action, data });
 }
 
+// Stroke width presets for the width selector
+const STROKE_WIDTHS = [2, 4, 6, 10];
+
+// Background color options
+const BG_COLORS = ['#ffffff', '#f5f5dc', '#ffe4e1', '#e0f7fa', '#f0e68c', '#e8e8e8', '#1a1a2e'];
+
 export default function MinimalistMasterpieceGame({ playerId, playerName: _playerName }: MinigameProps) {
   void _playerName;
 
@@ -71,7 +77,10 @@ export default function MinimalistMasterpieceGame({ playerId, playerName: _playe
   const [maxStrokes, setMaxStrokes] = useState(5);
   const [colorPalette, setColorPalette] = useState<string[]>([]);
   const [selectedColor, setSelectedColor] = useState('#1a1a2e');
+  const [selectedWidth, setSelectedWidth] = useState(4);
+  const [backgroundColor, setBackgroundColor] = useState('#ffffff');
   const [strokes, setStrokes] = useState<MMStroke[]>([]);
+  const [editHistory, setEditHistory] = useState<MMStroke[][]>([]);
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [galleryDrawings, setGalleryDrawings] = useState<GalleryDrawing[]>([]);
   const [auctionDrawings, setAuctionDrawings] = useState<AuctionDrawing[]>([]);
@@ -88,24 +97,34 @@ export default function MinimalistMasterpieceGame({ playerId, playerName: _playe
       switch (actionType) {
         case 'MM_PROMPT': {
           const promptData = data.prompt as { text: string };
-          const palette = data.colorPalette as string[];
           setPrompt(promptData.text);
-          setMaxStrokes(data.maxStrokes as number);
-          setColorPalette(palette);
-          if (palette.length > 0) setSelectedColor(palette[0]);
+          if (typeof data.maxStrokes === 'number') setMaxStrokes(data.maxStrokes as number);
+          if (Array.isArray(data.colorPalette)) {
+            const palette = data.colorPalette as string[];
+            setColorPalette(palette);
+            if (palette.length > 0) setSelectedColor(palette[0]);
+          }
           setPhase('PROMPT_REVEAL');
           playSound('goFanfare');
           break;
         }
-        case 'MM_DRAWING_PHASE':
+        case 'MM_DRAWING_START':
+        case 'MM_DRAWING_PHASE': {
+          if (typeof data.maxStrokes === 'number') setMaxStrokes(data.maxStrokes as number);
           setPhase('DRAWING');
           break;
-        case 'MM_DRAWING_SUBMITTED': {
-          const userId = data.userId as string;
-          if (userId === playerId) setHasSubmitted(true);
+        }
+        case 'MM_DRAWING_ACCEPTED': {
+          // Sent to the submitting player
+          setHasSubmitted(true);
           playSound('click');
           break;
         }
+        case 'MM_SUBMISSION_COUNT': {
+          // Broadcast to all: { submitted, total }
+          break;
+        }
+        case 'MM_GALLERY_START':
         case 'MM_GALLERY': {
           setGalleryDrawings(data.drawings as GalleryDrawing[]);
           setPhase('GALLERY');
@@ -114,24 +133,38 @@ export default function MinimalistMasterpieceGame({ playerId, playerName: _playe
         }
         case 'MM_AUCTION_START': {
           setAuctionDrawings(data.drawings as AuctionDrawing[]);
-          setCurrency(data.startingCurrency as number);
+          // Server sends 'currency', client previously expected 'startingCurrency'
+          setCurrency((data.currency ?? data.startingCurrency) as number);
           setPhase('AUCTION');
           playSound('goFanfare');
           break;
         }
-        case 'MM_BID_UPDATE': {
+        case 'MM_BID_ACCEPTED': {
+          // Sent to the bidder: { drawingId, myBidAmount, currency }
           const drawingId = data.drawingId as string;
-          const totalValue = data.totalValue as number;
-          const myBid = data.myBid as number;
-          setCurrency(data.myRemainingCurrency as number);
+          const myBidAmount = data.myBidAmount as number;
+          setCurrency(data.currency as number);
           setAuctionDrawings((prev) =>
             prev.map((d) =>
               d.drawingId === drawingId
-                ? { ...d, currentBidTotal: totalValue, myBidAmount: myBid }
+                ? { ...d, myBidAmount }
                 : d,
             ),
           );
           playSound('click');
+          break;
+        }
+        case 'MM_BID_UPDATE': {
+          // Broadcast to all: { drawingId, currentBidTotal }
+          const drawingId = data.drawingId as string;
+          const total = (data.currentBidTotal ?? data.totalValue) as number;
+          setAuctionDrawings((prev) =>
+            prev.map((d) =>
+              d.drawingId === drawingId
+                ? { ...d, currentBidTotal: total }
+                : d,
+            ),
+          );
           break;
         }
         case 'MM_BID_BROADCAST': {
@@ -199,9 +232,33 @@ export default function MinimalistMasterpieceGame({ playerId, playerName: _playe
 
   const handleSubmitDrawing = useCallback(() => {
     if (hasSubmitted) return;
-    emitGameInput('SUBMIT_DRAWING', { strokes });
+    emitGameInput('SUBMIT_DRAWING', { strokes, backgroundColor });
     setHasSubmitted(true);
-  }, [hasSubmitted, strokes]);
+  }, [hasSubmitted, strokes, backgroundColor]);
+
+  // Undo: restore the previous edit history state
+  const handleUndo = useCallback(() => {
+    if (hasSubmitted || editHistory.length === 0) return;
+    const prev = editHistory[editHistory.length - 1];
+    setEditHistory((h) => h.slice(0, -1));
+    setStrokes(prev);
+  }, [hasSubmitted, editHistory]);
+
+  // Track edit history whenever strokes change (but not during active drawing)
+  const trackingSetStrokes: React.Dispatch<React.SetStateAction<MMStroke[]>> = useCallback(
+    (action) => {
+      setStrokes((prevStrokes) => {
+        const next = typeof action === 'function' ? action(prevStrokes) : action;
+        // Only save to history when a stroke is completed (not during pointer move)
+        // We track history on pointer down — save the state before the new stroke begins
+        if (next.length > prevStrokes.length) {
+          setEditHistory((h) => [...h, prevStrokes]);
+        }
+        return next;
+      });
+    },
+    [],
+  );
 
   const handlePlaceBid = useCallback((drawingId: string, amount: number) => {
     emitGameInput('PLACE_BID', { drawingId, amount });
@@ -223,17 +280,65 @@ export default function MinimalistMasterpieceGame({ playerId, playerName: _playe
           <p className="text-lg font-semibold text-(--rmhbox-text)">&quot;{prompt}&quot;</p>
           <DrawingCanvas
             strokes={strokes}
-            setStrokes={setStrokes}
+            setStrokes={trackingSetStrokes}
             selectedColor={selectedColor}
+            selectedWidth={selectedWidth}
+            backgroundColor={backgroundColor}
             maxStrokes={maxStrokes}
             hasSubmitted={hasSubmitted}
             onSubmit={handleSubmitDrawing}
+            onUndo={handleUndo}
           />
           <ColorPalette
             colors={colorPalette}
             selectedColor={selectedColor}
             onSelect={setSelectedColor}
           />
+
+          {/* Stroke width selector */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-(--rmhbox-text-muted)">Width:</span>
+            {STROKE_WIDTHS.map((w) => (
+              <button
+                key={w}
+                onClick={() => setSelectedWidth(w)}
+                className={`flex items-center justify-center w-8 h-8 rounded-full border transition-transform ${
+                  selectedWidth === w
+                    ? 'border-(--rmhbox-accent) scale-110 ring-2 ring-(--rmhbox-accent)/40'
+                    : 'border-(--rmhbox-border) hover:scale-105'
+                }`}
+                aria-label={`Stroke width ${w}`}
+              >
+                <span
+                  className="rounded-full"
+                  style={{
+                    width: `${Math.min(w * 2, 20)}px`,
+                    height: `${Math.min(w * 2, 20)}px`,
+                    backgroundColor: selectedColor,
+                  }}
+                />
+              </button>
+            ))}
+          </div>
+
+          {/* Background color selector */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-(--rmhbox-text-muted)">Background:</span>
+            {BG_COLORS.map((c) => (
+              <button
+                key={c}
+                onClick={() => setBackgroundColor(c)}
+                className={`w-6 h-6 rounded-full border-2 transition-transform ${
+                  backgroundColor === c
+                    ? 'border-(--rmhbox-accent) scale-110 ring-2 ring-(--rmhbox-accent)/40'
+                    : 'border-(--rmhbox-border) hover:scale-105'
+                }`}
+                style={{ backgroundColor: c }}
+                aria-label={`Background color ${c}`}
+              />
+            ))}
+          </div>
+
           <div className="flex items-center gap-4">
             <StrokeCounter current={strokes.length} max={maxStrokes} />
             {!hasSubmitted && (

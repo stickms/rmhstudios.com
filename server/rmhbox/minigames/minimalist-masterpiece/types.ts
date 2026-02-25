@@ -84,6 +84,8 @@ export interface AuctionDrawing extends GalleryDrawing {
 export interface MinimalistMasterpieceState {
   prompt: DrawingPrompt;
   phase: MMPhase;
+  currentRound: number;
+  totalRounds: number;
   drawings: Map<string, PlayerDrawing>;
   drawingIdToUserId: Map<string, string>;
   userIdToDrawingId: Map<string, string>;
@@ -91,6 +93,8 @@ export interface MinimalistMasterpieceState {
   bids: Map<string, DrawingBids>;
   marketValues: Map<string, number>;
   rankings: MMRanking[] | null;
+  /** Cumulative player scores across all rounds. */
+  cumulativeScores: Map<string, number>;
   phaseStartedAt: number;
   phaseEndsAt: number;
   actionLog: Array<{ seq: number; type: string; timestamp: number; payload: Record<string, unknown> }>;

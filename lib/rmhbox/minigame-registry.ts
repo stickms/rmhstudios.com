@@ -17,7 +17,7 @@ import {
   CC_PEER_REVIEW_DURATION, CC_CRASH_THRESHOLD_PERCENT,
   WR_NAV_DURATION, WR_EFFICIENCY_BONUS, WR_ONE_AWAY, WR_TOTAL_ROUNDS,
   MM_DRAWING_DURATION_SECONDS, MM_MAX_STROKES, MM_AUCTION_DURATION_SECONDS,
-  MM_STARTING_CURRENCY, MM_BID_INCREMENT,
+  MM_STARTING_CURRENCY, MM_BID_INCREMENT, MM_DEFAULT_ROUNDS,
   EC_MAX_ROUNDS, EC_ROUND_DURATION_SECONDS, EC_MAX_EMOJIS, EC_MAX_GUESSES_PER_PLAYER,
 } from './constants';
 
@@ -52,6 +52,7 @@ export const WIKI_RACE_SETTINGS: GameSettingsSchema = [
 ];
 
 export const MINIMALIST_MASTERPIECE_SETTINGS: GameSettingsSchema = [
+  { key: 'roundCount', type: 'integer', label: 'Number of Rounds', description: 'Number of drawing/auction rounds to play', default: MM_DEFAULT_ROUNDS, min: 1, max: 5, step: 1 },
   { key: 'drawingDuration', type: 'integer', label: 'Drawing Duration (seconds)', description: 'Time the artist has to draw a single prompt', default: MM_DRAWING_DURATION_SECONDS, min: 20, max: 90, step: 5 },
   { key: 'maxStrokes', type: 'integer', label: 'Max Strokes', description: 'Maximum number of brush strokes allowed per drawing', default: MM_MAX_STROKES, min: 5, max: 30, step: 5 },
   { key: 'auctionDuration', type: 'integer', label: 'Auction Duration (seconds)', description: 'Time for the bidding phase on each artwork', default: MM_AUCTION_DURATION_SECONDS, min: 15, max: 60, step: 5 },

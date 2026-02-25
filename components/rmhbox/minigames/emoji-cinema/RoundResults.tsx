@@ -38,7 +38,7 @@ export default function RoundResults({
       <MovieReveal title={movieTitle} />
 
       <div className="flex gap-1 text-2xl">
-        {emojis.map((e, i) => (
+        {(emojis ?? []).map((e, i) => (
           <span key={i}>{e}</span>
         ))}
       </div>

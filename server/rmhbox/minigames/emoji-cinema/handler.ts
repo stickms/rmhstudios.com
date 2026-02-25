@@ -243,7 +243,7 @@ export class EmojiCinemaGame extends BaseMinigame {
     this.setTimeout(() => this.endRound('timeout'), roundDuration * 1000);
   }
 
-  private endRound(reason: 'timeout' | 'guessed'): void {
+  private endRound(reason: 'timeout' | 'guessed' | 'no_emojis'): void {
     if (!this.isRunning) return;
     if (this.state.phase === 'ROUND_RESULTS' || this.state.phase === 'TRANSITION') return;
 
@@ -254,6 +254,10 @@ export class EmojiCinemaGame extends BaseMinigame {
       this.clearTrackedTimeout(this.state.correctGuessWindowTimer);
       this.state.correctGuessWindowTimer = null;
     }
+
+    // If no emojis were submitted, notify all players and skip to next round
+    const noEmojis = this.state.emojiSequence.length === 0 && reason === 'timeout';
+    const effectiveReason = noEmojis ? 'no_emojis' : reason;
 
     // Compute round scores
     const roundScores = this.computeRoundScores();
@@ -267,18 +271,20 @@ export class EmojiCinemaGame extends BaseMinigame {
 
     this.logAction('round_end', {
       round: this.state.currentRound,
-      reason,
+      reason: effectiveReason,
       correctGuessers: this.state.correctGuessers.length,
       closeGuessCount: this.state.closeGuessCount,
       movieTitle: this.state.currentMovie.title,
+      noEmojis,
     });
 
     logger.info({
       event: 'ec:round_end',
       lobbyId: this.context.lobbyId,
       round: this.state.currentRound,
-      reason,
+      reason: effectiveReason,
       correctGuessers: this.state.correctGuessers.length,
+      noEmojis,
     });
 
     // Serialize scores for broadcast
@@ -291,7 +297,8 @@ export class EmojiCinemaGame extends BaseMinigame {
     this.context.broadcastToLobby('rmhbox:game:action', {
       type: 'EC_ROUND_OVER',
       round: this.state.currentRound,
-      reason,
+      reason: effectiveReason,
+      noEmojis,
       movie: {
         id: this.state.currentMovie.id,
         title: this.state.currentMovie.title,

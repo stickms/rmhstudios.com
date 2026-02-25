@@ -27,6 +27,7 @@ import {
   MM_GALLERY_DURATION_SECONDS,
   MM_AUCTION_DURATION_SECONDS,
   MM_RESULTS_DURATION_SECONDS,
+  MM_DEFAULT_ROUNDS,
   MM_MAX_STROKES,
   MM_MIN_STROKE_DURATION_MS,
   MM_COLOR_PALETTE,
@@ -71,10 +72,64 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
     this.isRunning = true;
     this.startedAt = Date.now();
 
+    const totalRounds = this.getSetting('roundCount', MM_DEFAULT_ROUNDS);
+
+    // Initialize cumulative scores
+    const cumulativeScores = new Map<string, number>();
+    for (const userId of this.context.players.keys()) {
+      cumulativeScores.set(userId, 0);
+    }
+
+    const now = Date.now();
+    // Use a placeholder prompt — will be set properly in startRound()
     const prompt = selectPromptForGame(this.promptPool, this.usedPromptIds);
     this.usedPromptIds.add(prompt.id);
 
-    // Generate anonymous drawingIds and build lookup maps
+    this.state = {
+      prompt,
+      phase: 'PROMPT_REVEAL',
+      currentRound: 0,
+      totalRounds,
+      drawings: new Map(),
+      drawingIdToUserId: new Map(),
+      userIdToDrawingId: new Map(),
+      playerCurrencies: new Map(),
+      bids: new Map(),
+      marketValues: new Map(),
+      rankings: null,
+      cumulativeScores,
+      phaseStartedAt: now,
+      phaseEndsAt: now,
+      actionLog: [],
+    };
+
+    logger.info({
+      event: 'mm:start',
+      lobbyId: this.context.lobbyId,
+      totalRounds,
+      playerCount: this.context.players.size,
+    });
+
+    this.logAction('game_start', {
+      totalRounds,
+      playerCount: this.context.players.size,
+    });
+
+    // Start the first round using the prompt we already selected
+    this.startRound(prompt);
+  }
+
+  /** Begin a new round with the given prompt. Sets up drawings, currencies, bids. */
+  private startRound(prompt?: DrawingPrompt): void {
+    if (!this.isRunning) return;
+
+    this.state.currentRound++;
+
+    const roundPrompt = prompt ?? selectPromptForGame(this.promptPool, this.usedPromptIds);
+    if (!prompt) this.usedPromptIds.add(roundPrompt.id);
+    this.state.prompt = roundPrompt;
+
+    // Re-initialize per-round state
     const drawings = new Map<string, PlayerDrawing>();
     const drawingIdToUserId = new Map<string, string>();
     const userIdToDrawingId = new Map<string, string>();
@@ -97,39 +152,41 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
       bids.set(drawingId, { drawingId, totalValue: 0, bidders: new Map() });
     }
 
+    this.state.drawings = drawings;
+    this.state.drawingIdToUserId = drawingIdToUserId;
+    this.state.userIdToDrawingId = userIdToDrawingId;
+    this.state.playerCurrencies = playerCurrencies;
+    this.state.bids = bids;
+    this.state.marketValues = new Map();
+    this.state.rankings = null;
+
     const now = Date.now();
-    this.state = {
-      prompt,
-      phase: 'PROMPT_REVEAL',
-      drawings,
-      drawingIdToUserId,
-      userIdToDrawingId,
-      playerCurrencies,
-      bids,
-      marketValues: new Map(),
-      rankings: null,
-      phaseStartedAt: now,
-      phaseEndsAt: now + MM_PROMPT_REVEAL_SECONDS * 1000,
-      actionLog: [],
-    };
+    this.state.phase = 'PROMPT_REVEAL';
+    this.state.phaseStartedAt = now;
+    this.state.phaseEndsAt = now + MM_PROMPT_REVEAL_SECONDS * 1000;
 
     logger.info({
-      event: 'mm:start',
+      event: 'mm:round_start',
       lobbyId: this.context.lobbyId,
-      promptId: prompt.id,
-      promptText: prompt.text,
-      playerCount: this.context.players.size,
+      round: this.state.currentRound,
+      totalRounds: this.state.totalRounds,
+      promptId: roundPrompt.id,
+      promptText: roundPrompt.text,
     });
 
-    this.logAction('game_start', {
-      promptId: prompt.id,
-      promptText: prompt.text,
-      playerCount: this.context.players.size,
+    this.logAction('round_start', {
+      round: this.state.currentRound,
+      promptId: roundPrompt.id,
+      promptText: roundPrompt.text,
     });
 
     this.context.broadcastToLobby('rmhbox:game:action', {
       type: 'MM_PROMPT',
-      prompt: { id: prompt.id, text: prompt.text, category: prompt.category, difficulty: prompt.difficulty },
+      prompt: { id: roundPrompt.id, text: roundPrompt.text, category: roundPrompt.category, difficulty: roundPrompt.difficulty },
+      maxStrokes: this.getSetting('maxStrokes', MM_MAX_STROKES),
+      colorPalette: MM_COLOR_PALETTE,
+      round: this.state.currentRound,
+      totalRounds: this.state.totalRounds,
       duration: MM_PROMPT_REVEAL_SECONDS,
     });
 
@@ -143,6 +200,7 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
     if (!this.isRunning) return;
 
     const drawingDuration = this.getSetting('drawingDuration', MM_DRAWING_DURATION_SECONDS);
+    const maxStrokes = this.getSetting('maxStrokes', MM_MAX_STROKES);
     this.setPhase('DRAWING', drawingDuration);
 
     logger.info({
@@ -154,7 +212,8 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
     this.context.broadcastToLobby('rmhbox:game:action', {
       type: 'MM_DRAWING_START',
       duration: drawingDuration,
-      maxStrokes: MM_MAX_STROKES,
+      maxStrokes,
+      colorPalette: MM_COLOR_PALETTE,
     });
 
     this.startPhaseTimer(drawingDuration);
@@ -268,26 +327,65 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
 
     this.setPhase('RESULTS', MM_RESULTS_DURATION_SECONDS);
 
-    const results = this.computeResults();
-    this.state.rankings = results.rankings.length > 0
-      ? this.buildMMRankings()
-      : null;
+    const mmRankings = this.buildMMRankings();
+    this.state.rankings = mmRankings.length > 0 ? mmRankings : null;
+    const investmentBonuses = this.computeInvestmentBonuses();
+
+    // Accumulate round scores into cumulative totals
+    for (const r of mmRankings) {
+      this.state.cumulativeScores.set(
+        r.artistUserId,
+        (this.state.cumulativeScores.get(r.artistUserId) ?? 0) + r.points,
+      );
+    }
+    for (const b of investmentBonuses) {
+      this.state.cumulativeScores.set(
+        b.userId,
+        (this.state.cumulativeScores.get(b.userId) ?? 0) + b.bonusPoints,
+      );
+    }
+
+    this.logAction('round_end', {
+      round: this.state.currentRound,
+      rankings: mmRankings.map((r) => ({
+        artistUserId: r.artistUserId,
+        marketValue: r.marketValue,
+        rank: r.rank,
+        points: r.points,
+      })),
+    });
 
     logger.info({
       event: 'mm:results_phase_start',
       lobbyId: this.context.lobbyId,
+      round: this.state.currentRound,
+      totalRounds: this.state.totalRounds,
       duration: MM_RESULTS_DURATION_SECONDS,
     });
 
     this.context.broadcastToLobby('rmhbox:game:action', {
       type: 'MM_RESULTS',
       rankings: this.state.rankings,
-      investmentBonuses: this.computeInvestmentBonuses(),
+      investmentBonuses,
+      round: this.state.currentRound,
+      totalRounds: this.state.totalRounds,
       duration: MM_RESULTS_DURATION_SECONDS,
     });
 
     this.startPhaseTimer(MM_RESULTS_DURATION_SECONDS);
-    this.setTimeout(() => this.endGame(), MM_RESULTS_DURATION_SECONDS * 1000);
+    this.setTimeout(() => this.afterResults(), MM_RESULTS_DURATION_SECONDS * 1000);
+  }
+
+  /** After showing results, either start next round or end the game. */
+  private afterResults(): void {
+    if (!this.isRunning) return;
+
+    if (this.state.currentRound < this.state.totalRounds) {
+      // Start next round
+      this.startRound();
+    } else {
+      this.endGame();
+    }
   }
 
   private endGame(): void {
@@ -296,6 +394,8 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
     logger.info({
       event: 'mm:game_end',
       lobbyId: this.context.lobbyId,
+      rounds: this.state.currentRound,
+      totalRounds: this.state.totalRounds,
     });
 
     this.cleanup();
@@ -536,6 +636,8 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
     const base = {
       phase: this.state.phase,
       prompt: { id: this.state.prompt.id, text: this.state.prompt.text, category: this.state.prompt.category },
+      currentRound: this.state.currentRound,
+      totalRounds: this.state.totalRounds,
       phaseStartedAt: this.state.phaseStartedAt,
       phaseEndsAt: this.state.phaseEndsAt,
     };
@@ -676,9 +778,8 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
       rankings,
       awards,
       gameSpecificData: {
-        prompt: this.state.prompt,
-        mmRankings: this.buildMMRankings(),
-        investmentBonuses: this.computeInvestmentBonuses(),
+        totalRounds: this.state.totalRounds,
+        roundsPlayed: this.state.currentRound,
         gameLog: this.buildGameLog(),
       },
       duration,
@@ -762,33 +863,17 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
   }
 
   private computeRankings(): PlayerRanking[] {
-    const mmRankings = this.buildMMRankings();
-    const investmentBonuses = this.computeInvestmentBonuses();
-
-    // Build score map: ranking points + investment bonus
-    const scoreMap = new Map<string, number>();
-    for (const r of mmRankings) {
-      scoreMap.set(r.artistUserId, (scoreMap.get(r.artistUserId) ?? 0) + r.points);
-    }
-    for (const bonus of investmentBonuses) {
-      scoreMap.set(bonus.userId, (scoreMap.get(bonus.userId) ?? 0) + bonus.bonusPoints);
-    }
-
+    // Use cumulative scores for final rankings (across all rounds)
     const entries: PlayerRanking[] = [];
     for (const userId of this.context.players.keys()) {
       const player = this.context.players.get(userId)!;
-      const score = scoreMap.get(userId) ?? 0;
-      const mmRank = mmRankings.find((r) => r.artistUserId === userId);
-      const bonus = investmentBonuses.find((b) => b.userId === userId);
+      const score = this.state.cumulativeScores.get(userId) ?? 0;
       entries.push({
         userId,
         userName: player.userName,
         score,
         rank: 0,
-        deltas: {
-          artRank: mmRank?.points ?? 0,
-          investmentBonus: bonus?.bonusPoints ?? 0,
-        },
+        deltas: {},
       });
     }
 
@@ -961,16 +1046,19 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
       userName: p.userName,
     }));
 
+    const cumulativeScores: Record<string, number> = {};
+    for (const [uid, s] of this.state.cumulativeScores) cumulativeScores[uid] = s;
+
     return {
       lobbyId: this.context.lobbyId,
       startedAt: this.startedAt,
       endedAt: Date.now(),
-      prompt: this.state.prompt,
+      totalRounds: this.state.totalRounds,
+      roundsPlayed: this.state.currentRound,
       playerCount: this.context.players.size,
       players,
       actions: this.state.actionLog,
-      finalRankings: this.buildMMRankings(),
-      investmentBonuses: this.computeInvestmentBonuses(),
+      cumulativeScores,
     };
   }
 }

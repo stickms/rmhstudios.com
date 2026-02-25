@@ -145,6 +145,7 @@ export const MM_DRAWING_DURATION_SECONDS = 60;
 export const MM_GALLERY_DURATION_SECONDS = 15;
 export const MM_AUCTION_DURATION_SECONDS = 60;
 export const MM_RESULTS_DURATION_SECONDS = 10;
+export const MM_DEFAULT_ROUNDS = 3;
 export const MM_MAX_STROKES = 5;
 export const MM_CANVAS_SIZE = 400;
 export const MM_STROKE_WIDTH = 4;

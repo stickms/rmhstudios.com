@@ -58,6 +58,7 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
   const [resultsProducerName, setResultsProducerName] = useState('');
   const [resultsProducerPoints, setResultsProducerPoints] = useState(0);
   const [resultsPlayers, setResultsPlayers] = useState<PlayerResult[]>([]);
+  const [noEmojisSkipped, setNoEmojisSkipped] = useState(false);
 
   const isProducer = playerId === producerId;
 
@@ -74,9 +75,9 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
 
       switch (actionType) {
         case 'EC_PRODUCER_ASSIGNED': {
-          const pid = data.producerId as string;
+          const pid = (data.producerUserId ?? data.producerId) as string;
           setProducerId(pid);
-          setProducerName(data.producerName as string);
+          setProducerName((data.producerUserName ?? data.producerName) as string);
           setRoundNumber(data.round as number ?? roundNumber);
           setMovieTitle('');
           setEmojis([]);
@@ -88,12 +89,19 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
           break;
         }
         case 'EC_MOVIE_ASSIGNED': {
-          setMovieTitle(data.movieTitle as string);
+          // Server sends data.movie.title or data.movieTitle
+          const movie = data.movie as { title?: string } | undefined;
+          setMovieTitle((movie?.title ?? data.movieTitle) as string);
           setPhase('EMOJI_CONSTRUCTION');
           break;
         }
+        case 'EC_CONSTRUCTION_START':
+          // Marks the start of the emoji construction phase — transition audience too
+          if (phase !== 'EMOJI_CONSTRUCTION') setPhase('EMOJI_CONSTRUCTION');
+          break;
         case 'EC_EMOJI_UPDATED': {
-          setEmojis(data.emojis as string[]);
+          const seq = (data.emojiSequence ?? data.emojis) as string[] | undefined;
+          setEmojis(seq ?? []);
           if (phase !== 'EMOJI_CONSTRUCTION') setPhase('EMOJI_CONSTRUCTION');
           break;
         }
@@ -117,11 +125,36 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
           break;
         }
         case 'EC_ROUND_OVER': {
-          setResultsMovieTitle(data.movieTitle as string);
-          setResultsEmojis(data.emojis as string[]);
-          setResultsProducerName(data.producerName as string);
-          setResultsProducerPoints(data.producerPoints as number ?? 0);
-          setResultsPlayers(data.results as PlayerResult[] ?? []);
+          // Server sends movie.title, emojiSequence, correctGuessers, roundScores
+          const movie = data.movie as { title?: string } | undefined;
+          setResultsMovieTitle((movie?.title ?? data.movieTitle) as string);
+          const emojiSeq = (data.emojiSequence ?? data.emojis) as string[] | undefined;
+          setResultsEmojis(emojiSeq ?? []);
+
+          // Reconstruct producer info and results from the server data
+          const correctGuessers = (data.correctGuessers ?? []) as Array<{ userId: string; userName: string; rank: number }>;
+          const roundScores = (data.roundScores ?? {}) as Record<string, number>;
+          
+          // Produce player results from roundScores
+          const playerResults: PlayerResult[] = [];
+          for (const [uid, pts] of Object.entries(roundScores)) {
+            // Skip producer
+            if (uid === producerId) {
+              setResultsProducerPoints(pts);
+              continue;
+            }
+            const cg = correctGuessers.find((g) => g.userId === uid);
+            playerResults.push({
+              userId: uid,
+              userName: cg?.userName ?? uid,
+              guessedCorrectly: !!cg,
+              points: pts,
+              guessNumber: cg?.rank,
+            });
+          }
+          setResultsProducerName(producerName);
+          setResultsPlayers(data.results as PlayerResult[] ?? playerResults);
+          setNoEmojisSkipped(!!data.noEmojis);
           setPhase('ROUND_RESULTS');
           break;
         }
@@ -160,11 +193,19 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
     if (p === 'PRODUCER_ASSIGNMENT' || p === 'EMOJI_CONSTRUCTION' || p === 'ROUND_RESULTS' || p === 'TRANSITION') {
       setPhase(p as ECPhase);
     }
-    if (snapshot.producerId) setProducerId(snapshot.producerId as string);
-    if (snapshot.producerName) setProducerName(snapshot.producerName as string);
+    if (snapshot.producerUserId) setProducerId(snapshot.producerUserId as string);
+    else if (snapshot.producerId) setProducerId(snapshot.producerId as string);
+    if (snapshot.producerUserName) setProducerName(snapshot.producerUserName as string);
+    else if (snapshot.producerName) setProducerName(snapshot.producerName as string);
     if (snapshot.movieTitle) setMovieTitle(snapshot.movieTitle as string);
-    if (Array.isArray(snapshot.emojis)) setEmojis(snapshot.emojis as string[]);
-    if (snapshot.roundNumber) setRoundNumber(snapshot.roundNumber as number);
+    else if (snapshot.movie && typeof snapshot.movie === 'object') {
+      const m = snapshot.movie as { title?: string };
+      if (m.title) setMovieTitle(m.title);
+    }
+    const seq = (snapshot.emojiSequence ?? snapshot.emojis) as string[] | undefined;
+    if (Array.isArray(seq)) setEmojis(seq);
+    if (snapshot.currentRound) setRoundNumber(snapshot.currentRound as number);
+    else if (snapshot.roundNumber) setRoundNumber(snapshot.roundNumber as number);
   }, []);
 
   // Producer actions
@@ -173,7 +214,8 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
       setEmojis((prev) => {
         if (prev.length >= MAX_EMOJIS) return prev;
         const next = [...prev, emoji];
-        emitGameInput('EC_UPDATE_EMOJIS', { emojis: next });
+        // Server expects ADD_EMOJI with { emoji, position }
+        emitGameInput('ADD_EMOJI', { emoji, position: next.length - 1 });
         return next;
       });
     },
@@ -184,7 +226,8 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
     (index: number) => {
       setEmojis((prev) => {
         const next = prev.filter((_, i) => i !== index);
-        emitGameInput('EC_UPDATE_EMOJIS', { emojis: next });
+        // Server expects REMOVE_EMOJI with { position }
+        emitGameInput('REMOVE_EMOJI', { position: index });
         return next;
       });
     },
@@ -194,7 +237,7 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
   // Audience actions
   const handleSubmitGuess = useCallback(
     (guess: string) => {
-      emitGameInput('EC_SUBMIT_GUESS', { guess });
+      emitGameInput('SUBMIT_GUESS', { guess });
     },
     [],
   );
@@ -252,7 +295,18 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
       );
 
     case 'ROUND_RESULTS':
-      return (
+      return noEmojisSkipped ? (
+        <div className="flex flex-col items-center justify-center gap-4 p-8 text-center animate-in fade-in">
+          <span className="text-5xl">⏭️</span>
+          <h2 className="text-xl font-bold text-(--rmhbox-text)">Round Skipped</h2>
+          <p className="text-sm text-(--rmhbox-text-muted)">
+            The producer didn&apos;t submit any emojis — the round has been skipped.
+          </p>
+          <p className="text-lg font-semibold text-(--rmhbox-accent)">
+            🎬 {resultsMovieTitle}
+          </p>
+        </div>
+      ) : (
         <RoundResults
           movieTitle={resultsMovieTitle}
           emojis={resultsEmojis}
