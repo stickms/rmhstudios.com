@@ -10,12 +10,14 @@
 'use client';
 
 import { useRef, useEffect, useCallback, useState, useImperativeHandle, forwardRef } from 'react';
-import ReactPlayer from 'react-player';
+import dynamic from 'next/dynamic';
 import { useRmhTubeStore } from '@/lib/rmhtube/store';
 import { emit } from '@/lib/rmhtube/socket';
 import { C2S } from '@/lib/rmhtube/events';
 import { HOST_STATE_INTERVAL_MS, SYNC_TOLERANCE_S } from '@/lib/rmhtube/constants';
 import { detectMediaType } from '@/lib/rmhtube/utils';
+
+const ReactPlayer = dynamic(() => import('react-player'), { ssr: false });
 
 interface VideoPlayerProps {
   url: string | null;
@@ -37,6 +39,27 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
   const updateSettings = useRmhTubeStore((s) => s.updateSettings);
   const [ready, setReady] = useState(false);
   const lastSyncRef = useRef(0);
+
+  // ─── Volume: local state to decouple native controls from store ──
+  // Prevents feedback loop: native event → store → re-render → prop → native event
+  const [playerVolume, setPlayerVolume] = useState(masterVolume);
+  const [playerMuted, setPlayerMuted] = useState(muted);
+  const volumeRef = useRef({ volume: masterVolume, muted });
+  const nativeAdjustingRef = useRef(false);
+  const volumeDebounceRef = useRef<ReturnType<typeof setTimeout>>();
+
+  // Sync store → local (skip during native slider interaction)
+  useEffect(() => {
+    if (nativeAdjustingRef.current) return;
+    volumeRef.current = { volume: masterVolume, muted };
+    setPlayerVolume(masterVolume);
+    setPlayerMuted(muted);
+  }, [masterVolume, muted]);
+
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => clearTimeout(volumeDebounceRef.current);
+  }, []);
 
   // ─── Phase 2.5: PiP — expose toggle via imperative handle ────
 
@@ -122,12 +145,30 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
 
   const handlePlay = useCallback(() => {
     if (isHost) {
+      // Update local state immediately so the controlled `playing` prop
+      // doesn't fight the user's click (server only broadcasts to others)
+      const room = useRmhTubeStore.getState().room;
+      if (room) {
+        useRmhTubeStore.getState().updateVideoState({
+          ...room.videoState,
+          playing: true,
+          updatedAt: Date.now(),
+        });
+      }
       emit(C2S.SYNC_PLAY, {});
     }
   }, [isHost]);
 
   const handlePause = useCallback(() => {
     if (isHost) {
+      const room = useRmhTubeStore.getState().room;
+      if (room) {
+        useRmhTubeStore.getState().updateVideoState({
+          ...room.videoState,
+          playing: false,
+          updatedAt: Date.now(),
+        });
+      }
       emit(C2S.SYNC_PAUSE, {});
     }
   }, [isHost]);
@@ -168,10 +209,23 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       if (typeof internal.addEventListener === 'function') {
         const onVolumeChange = (e: { data: { volume: number; muted: boolean } }) => {
           const vol = e.data.volume / 100;
-          const s = useRmhTubeStore.getState().settings;
-          if (Math.abs(vol - s.masterVolume) > 0.01 || e.data.muted !== s.muted) {
-            updateSettings({ masterVolume: vol, muted: e.data.muted });
-          }
+          const m = e.data.muted;
+
+          // Skip echoes from our own prop update
+          if (Math.abs(vol - volumeRef.current.volume) < 0.01 && m === volumeRef.current.muted) return;
+
+          // Update local state immediately so ReactPlayer stays in sync
+          nativeAdjustingRef.current = true;
+          volumeRef.current = { volume: vol, muted: m };
+          setPlayerVolume(vol);
+          setPlayerMuted(m);
+
+          // Debounce the store update to prevent feedback loop
+          clearTimeout(volumeDebounceRef.current);
+          volumeDebounceRef.current = setTimeout(() => {
+            nativeAdjustingRef.current = false;
+            updateSettings({ masterVolume: vol, muted: m });
+          }, 200);
         };
         internal.addEventListener('onVolumeChange', onVolumeChange);
         cleanups.push(() => {
@@ -199,10 +253,24 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     } else if (internal instanceof HTMLMediaElement) {
       // HTML5 volume change
       const onVolumeChange = () => {
-        const s = useRmhTubeStore.getState().settings;
-        if (Math.abs(internal.volume - s.masterVolume) > 0.01 || internal.muted !== s.muted) {
-          updateSettings({ masterVolume: internal.volume, muted: internal.muted });
-        }
+        const vol = internal.volume;
+        const m = internal.muted;
+
+        // Skip echoes from our own prop update
+        if (Math.abs(vol - volumeRef.current.volume) < 0.01 && m === volumeRef.current.muted) return;
+
+        // Update local state immediately so ReactPlayer stays in sync
+        nativeAdjustingRef.current = true;
+        volumeRef.current = { volume: vol, muted: m };
+        setPlayerVolume(vol);
+        setPlayerMuted(m);
+
+        // Debounce the store update to prevent feedback loop
+        clearTimeout(volumeDebounceRef.current);
+        volumeDebounceRef.current = setTimeout(() => {
+          nativeAdjustingRef.current = false;
+          updateSettings({ masterVolume: vol, muted: m });
+        }, 200);
       };
       internal.addEventListener('volumechange', onVolumeChange);
       cleanups.push(() => internal.removeEventListener('volumechange', onVolumeChange));
@@ -253,8 +321,8 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         playing={videoState?.playing ?? false}
         playbackRate={videoState?.playbackRate ?? 1}
         controls={isHost}
-        volume={masterVolume}
-        muted={muted}
+        volume={playerVolume}
+        muted={playerMuted}
         width="100%"
         height="100%"
         onPlay={handlePlay}
