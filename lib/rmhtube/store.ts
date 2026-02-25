@@ -21,6 +21,8 @@ import type {
 
 export interface RmhTubeUserSettings {
   masterVolume: number;
+  muted: boolean;
+  captionsEnabled: boolean;
   showChat: boolean;
   chatPosition: 'left' | 'right';
   theme: 'dark' | 'light';
@@ -29,6 +31,8 @@ export interface RmhTubeUserSettings {
 
 const DEFAULT_SETTINGS: RmhTubeUserSettings = {
   masterVolume: 0.7,
+  muted: false,
+  captionsEnabled: false,
   showChat: true,
   chatPosition: 'right',
   theme: 'dark',

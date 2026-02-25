@@ -13,6 +13,7 @@ import { useRmhTubeStore } from '@/lib/rmhtube/store';
 import { emit } from '@/lib/rmhtube/socket';
 import { C2S } from '@/lib/rmhtube/events';
 import { HOST_STATE_INTERVAL_MS, SYNC_TOLERANCE_S } from '@/lib/rmhtube/constants';
+import { detectMediaType } from '@/lib/rmhtube/utils';
 
 interface VideoPlayerProps {
   url: string | null;
@@ -23,6 +24,9 @@ interface VideoPlayerProps {
 export default function VideoPlayer({ url, isHost, onEnded }: VideoPlayerProps) {
   const playerRef = useRef<ReactPlayer>(null);
   const videoState = useRmhTubeStore((s) => s.room?.videoState);
+  const masterVolume = useRmhTubeStore((s) => s.settings.masterVolume);
+  const muted = useRmhTubeStore((s) => s.settings.muted);
+  const captionsEnabled = useRmhTubeStore((s) => s.settings.captionsEnabled);
   const [ready, setReady] = useState(false);
   const lastSyncRef = useRef(0);
 
@@ -88,6 +92,22 @@ export default function VideoPlayer({ url, isHost, onEnded }: VideoPlayerProps) 
     }
   }, [isHost]);
 
+  // ─── Captions: Toggle via YouTube internal player API ────────
+  useEffect(() => {
+    if (!ready || !url) return;
+    const internal = playerRef.current?.getInternalPlayer();
+    if (!internal) return;
+
+    const isYouTube = detectMediaType(url) === 'youtube';
+    if (isYouTube && typeof internal.loadModule === 'function') {
+      if (captionsEnabled) {
+        internal.loadModule('captions');
+      } else {
+        internal.unloadModule('captions');
+      }
+    }
+  }, [captionsEnabled, ready, url]);
+
   const handleReady = useCallback(() => {
     setReady(true);
   }, []);
@@ -116,6 +136,8 @@ export default function VideoPlayer({ url, isHost, onEnded }: VideoPlayerProps) 
         url={url}
         playing={videoState?.playing ?? false}
         controls={isHost}
+        volume={masterVolume}
+        muted={muted}
         width="100%"
         height="100%"
         onPlay={handlePlay}
@@ -128,6 +150,7 @@ export default function VideoPlayer({ url, isHost, onEnded }: VideoPlayerProps) 
             playerVars: {
               modestbranding: 1,
               rel: 0,
+              cc_load_policy: captionsEnabled ? 1 : 0,
             },
           },
         }}
