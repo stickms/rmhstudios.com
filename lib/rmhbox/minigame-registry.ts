@@ -151,7 +151,7 @@ export const MINIGAME_REGISTRY: Record<string, MinigameDefinition> = {
   'undercover-editor': {
     id: 'undercover-editor',
     displayName: 'Undercover Editor',
-    description: 'Write a collaborative story — but one player is secretly editing words to insert a hidden keyword. Can you spot the Editor?',
+    description: 'Write parallel stories together — but each story has a secret editor sneaking in a keyword. Can you match each story to its undercover editor?',
     category: 'creative',
     icon: 'pencil',
     minPlayers: 4,

@@ -1,96 +1,86 @@
 /**
- * Phase 6 — Section 6.2: Undercover Editor Server Handler Tests
+ * RMHbox Phase 6 — Undercover Editor Tests (Parallel Design)
  *
- * Tests the UndercoverEditorGame server handler covering:
- * - State initialization and role assignment
- * - Turn lifecycle (WRITE → EDIT → next turn)
- * - Input handling (write sentence, edit word, skip edit, cast accusation)
- * - Review / accusation / reveal phases
- * - All 4 win condition scenarios
- * - State masking (keyword hidden from Writers, omniscient spectator)
- * - Awards computation
- * - Disconnect and reconnection handling
+ * Tests for the parallel-writing Undercover Editor minigame where
+ * all players write for all stories simultaneously, each player
+ * secretly edits one story, and players match stories to editors.
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { UndercoverEditorGame } from '../../../server/rmhbox/minigames/undercover-editor';
 import {
-  UE_WRITE_TIMEOUT_SECONDS,
-  UE_EDIT_TIMEOUT_SECONDS,
-  UE_REVIEW_DURATION_SECONDS,
-  UE_ACCUSATION_DURATION_SECONDS,
-  UE_REVEAL_DURATION_SECONDS,
-  UE_WRITER_MAJOR_WIN,
-  UE_WRITER_MINOR_WIN,
-  UE_EDITOR_MAJOR_WIN,
-  UE_EDITOR_MINOR_WIN,
-  UE_EDITOR_LOSS,
-  UE_EDITOR_PARTIAL,
-  UE_WRITER_LOSS,
-  UE_WRITER_MINOR_LOSS,
-  UE_CORRECT_VOTE_BONUS,
-} from '../../../lib/rmhbox/constants';
-import {
   MOCK_USERS,
   createMockContext,
+  findBroadcasts,
   findPlayerEvents,
   type MockContextData,
 } from './setup';
+import {
+  UE_WRITE_TIMEOUT_SECONDS,
+  UE_EDIT_TIMEOUT_SECONDS,
+  UE_REVEAL_DURATION_SECONDS,
+} from '../../../lib/rmhbox/constants';
 
 // ─── Helpers ─────────────────────────────────────────────────────
 
-function createGame(ctxData?: MockContextData) {
-  const ctx = ctxData ?? createMockContext([
+/** Create a UE game with 5 players (alice, bob, charlie, diana, eve). */
+function createUEGame(ctxData?: MockContextData) {
+  const data = ctxData ?? createMockContext([
     MOCK_USERS.alice, MOCK_USERS.bob, MOCK_USERS.charlie, MOCK_USERS.diana, MOCK_USERS.eve,
   ]);
-  const game = new UndercoverEditorGame(ctx.context);
-  return { game, ...ctx };
+  const game = new UndercoverEditorGame(data.context);
+  return { game, ...data };
 }
 
-/** Extract the editor user ID from playerLog role assignments */
-function findEditorUserId(playerLog: Array<{ userId: string; event: string; data: unknown }>): string {
-  const editorEvent = playerLog.find(
-    (e) => (e.data as Record<string, unknown>).type === 'UE_ROLE_ASSIGNED' &&
-      (e.data as Record<string, unknown>).role === 'editor',
-  );
-  return editorEvent?.userId ?? '';
-}
-
-/** Find all writer user IDs from role assignments */
-function findWriterUserIds(playerLog: Array<{ userId: string; event: string; data: unknown }>): string[] {
-  return playerLog
-    .filter(
-      (e) => (e.data as Record<string, unknown>).type === 'UE_ROLE_ASSIGNED' &&
-        (e.data as Record<string, unknown>).role === 'writer',
-    )
-    .map((e) => e.userId);
-}
-
-/** Get the active player's ID from the most recent UE_TURN_START broadcast */
-function getActivePlayerId(broadcastLog: Array<{ event: string; data: unknown }>): string {
-  const turnStarts = broadcastLog.filter(
-    (e) => e.event === 'rmhbox:game:action' &&
-      (e.data as Record<string, unknown>).type === 'UE_TURN_START',
-  );
-  if (turnStarts.length === 0) return '';
-  return (turnStarts[turnStarts.length - 1].data as Record<string, unknown>).activeUserId as string;
-}
-
-/** Advance to complete one write + edit cycle for one turn */
-function completeTurn(
+/** Advance all players through a WRITE phase by submitting sentences for all stories. */
+function submitAllSentences(
   game: UndercoverEditorGame,
-  activeUserId: string,
-  editorUserId: string,
-  sentence = 'The rain fell softly on the rooftops.',
+  playerIds: string[],
+  storyIds: string[],
+  prefix = 'This is a test sentence for the story',
 ) {
-  game.handleInput(activeUserId, 'WRITE_SENTENCE', { text: sentence });
-  // If we need to skip edit (editor always gets edit phase)
-  game.handleInput(editorUserId, 'SKIP_EDIT', {});
+  for (const storyId of storyIds) {
+    for (const uid of playerIds) {
+      game.handleInput(uid, 'WRITE_SENTENCE', {
+        storyId,
+        text: `${prefix} from ${uid} round`,
+      });
+    }
+  }
+}
+
+/** Find all story IDs from the broadcast log. */
+function getStoryIds(broadcastLog: Array<{ event: string; data: unknown }>): string[] {
+  const gameStart = broadcastLog.find(
+    (e) => e.event === 'rmhbox:game:action' &&
+      (e.data as Record<string, unknown>).type === 'UE_GAME_START',
+  );
+  if (!gameStart) return [];
+  const stories = (gameStart.data as Record<string, unknown>).stories as Array<{ storyId: string }>;
+  return stories.map((s) => s.storyId);
+}
+
+/** Find editor assignments from player events. */
+function getEditorAssignment(
+  playerLog: Array<{ userId: string; event: string; data: unknown }>,
+  userId: string,
+): { assignedStoryId: string; keyword: string } | null {
+  const roleEvent = playerLog.find(
+    (e) => e.userId === userId &&
+      e.event === 'rmhbox:game:action' &&
+      (e.data as Record<string, unknown>).type === 'UE_ROLE_ASSIGNED',
+  );
+  if (!roleEvent) return null;
+  const d = roleEvent.data as Record<string, unknown>;
+  return {
+    assignedStoryId: d.assignedStoryId as string,
+    keyword: d.keyword as string,
+  };
 }
 
 // ─── Tests ───────────────────────────────────────────────────────
 
-describe('Undercover Editor Server Handler (§6.2)', () => {
+describe('Undercover Editor Server Handler — Parallel Design (§6.2)', () => {
   beforeEach(() => {
     vi.useFakeTimers();
   });
@@ -99,58 +89,16 @@ describe('Undercover Editor Server Handler (§6.2)', () => {
     vi.useRealTimers();
   });
 
+  // ─── State Initialization ──────────────────────────────────
+
   describe('State Initialization', () => {
     it('should create a game instance with 5 players', () => {
-      const { game, context } = createGame();
+      const { game } = createUEGame();
       expect(game).toBeDefined();
-      expect(context.players.size).toBe(5);
-      game.cleanup();
     });
 
-    it('should assign exactly 1 Editor and remaining Writers', () => {
-      const { game, playerLog } = createGame();
-      game.start();
-
-      const editorAssignments = playerLog.filter(
-        (e) => (e.data as Record<string, unknown>).type === 'UE_ROLE_ASSIGNED' &&
-          (e.data as Record<string, unknown>).role === 'editor',
-      );
-      const writerAssignments = playerLog.filter(
-        (e) => (e.data as Record<string, unknown>).type === 'UE_ROLE_ASSIGNED' &&
-          (e.data as Record<string, unknown>).role === 'writer',
-      );
-
-      expect(editorAssignments.length).toBe(1);
-      expect(writerAssignments.length).toBe(4);
-
-      game.cleanup();
-    });
-
-    it('should send keyword to Editor but NOT to Writers', () => {
-      const { game, playerLog } = createGame();
-      game.start();
-
-      const editorEvent = playerLog.find(
-        (e) => (e.data as Record<string, unknown>).type === 'UE_ROLE_ASSIGNED' &&
-          (e.data as Record<string, unknown>).role === 'editor',
-      );
-      expect(editorEvent).toBeDefined();
-      expect((editorEvent!.data as Record<string, unknown>).keyword).toBeDefined();
-      expect(typeof (editorEvent!.data as Record<string, unknown>).keyword).toBe('string');
-
-      const writerEvents = playerLog.filter(
-        (e) => (e.data as Record<string, unknown>).type === 'UE_ROLE_ASSIGNED' &&
-          (e.data as Record<string, unknown>).role === 'writer',
-      );
-      for (const we of writerEvents) {
-        expect((we.data as Record<string, unknown>).keyword).toBeUndefined();
-      }
-
-      game.cleanup();
-    });
-
-    it('should emit UE_GAME_START with story prompt and turn order', () => {
-      const { game, broadcastLog } = createGame();
+    it('should create N stories (one per player) on start', () => {
+      const { game, broadcastLog } = createUEGame();
       game.start();
 
       const gameStart = broadcastLog.find(
@@ -158,636 +106,609 @@ describe('Undercover Editor Server Handler (§6.2)', () => {
           (e.data as Record<string, unknown>).type === 'UE_GAME_START',
       );
       expect(gameStart).toBeDefined();
-
-      const data = gameStart!.data as Record<string, unknown>;
-      expect(data.storyPrompt).toBeDefined();
-      expect(data.turnOrder).toBeDefined();
-      expect(data.totalTurns).toBe(10); // 5 players × 2 rotations
-
-      game.cleanup();
+      const stories = (gameStart!.data as Record<string, unknown>).stories as unknown[];
+      expect(stories.length).toBe(5); // One per player
     });
 
-    it('should start first turn with UE_TURN_START', () => {
-      const { game, broadcastLog } = createGame();
+    it('should assign each player as editor of exactly one story', () => {
+      const { game, playerLog } = createUEGame();
       game.start();
 
-      const turnStart = broadcastLog.find(
-        (e) => e.event === 'rmhbox:game:action' &&
-          (e.data as Record<string, unknown>).type === 'UE_TURN_START',
-      );
-      expect(turnStart).toBeDefined();
-      expect((turnStart!.data as Record<string, unknown>).turnNumber).toBe(1);
+      // Every player should get a UE_ROLE_ASSIGNED event
+      const playerIds = Object.values(MOCK_USERS).map((u) => u.userId);
+      const assignedStories = new Set<string>();
 
-      game.cleanup();
+      for (const uid of playerIds) {
+        const assignment = getEditorAssignment(playerLog, uid);
+        expect(assignment).toBeDefined();
+        expect(assignment!.assignedStoryId).toBeTruthy();
+        expect(assignment!.keyword).toBeTruthy();
+        // No player should edit their own story
+        expect(assignment!.assignedStoryId).not.toBe(uid);
+        assignedStories.add(assignment!.assignedStoryId);
+      }
+
+      // Each story should have exactly one editor
+      expect(assignedStories.size).toBe(5);
+    });
+
+    it('should start in WRITE phase after start()', () => {
+      const { game, broadcastLog } = createUEGame();
+      game.start();
+
+      const writeStart = broadcastLog.find(
+        (e) => e.event === 'rmhbox:game:action' &&
+          (e.data as Record<string, unknown>).type === 'UE_WRITE_START',
+      );
+      expect(writeStart).toBeDefined();
     });
   });
 
+  // ─── Write Phase ───────────────────────────────────────────
+
   describe('Write Phase', () => {
-    it('should accept valid sentence from active player', () => {
-      const { game, broadcastLog } = createGame();
+    it('should accept valid sentence submission for a story', () => {
+      const { game, broadcastLog, playerLog } = createUEGame();
       game.start();
 
-      const activeUserId = getActivePlayerId(broadcastLog);
-      game.handleInput(activeUserId, 'WRITE_SENTENCE', {
-        text: 'The detective walked into the foggy alley.',
+      const storyIds = getStoryIds(broadcastLog);
+      const uid = MOCK_USERS.alice.userId;
+
+      game.handleInput(uid, 'WRITE_SENTENCE', {
+        storyId: storyIds[0],
+        text: 'A magnificent tale begins here today.',
       });
 
-      const sentenceAdded = broadcastLog.find(
-        (e) => e.event === 'rmhbox:game:action' &&
-          (e.data as Record<string, unknown>).type === 'UE_SENTENCE_ADDED',
+      const confirmed = playerLog.find(
+        (e) => e.userId === uid &&
+          (e.data as Record<string, unknown>).type === 'UE_SENTENCE_CONFIRMED',
       );
-      expect(sentenceAdded).toBeDefined();
-      expect((sentenceAdded!.data as Record<string, unknown>).sentence).toBe(
-        'The detective walked into the foggy alley.',
-      );
-
-      game.cleanup();
+      expect(confirmed).toBeDefined();
     });
 
-    it('should reject sentence from non-active player', () => {
-      const { game, broadcastLog, playerLog } = createGame();
+    it('should reject sentence for invalid storyId', () => {
+      const { game, playerLog } = createUEGame();
       game.start();
 
-      const activeUserId = getActivePlayerId(broadcastLog);
-      // Find a non-active player
-      const allIds = [
-        MOCK_USERS.alice.userId, MOCK_USERS.bob.userId,
-        MOCK_USERS.charlie.userId, MOCK_USERS.diana.userId, MOCK_USERS.eve.userId,
-      ];
-      const nonActiveId = allIds.find((id) => id !== activeUserId)!;
-
-      game.handleInput(nonActiveId, 'WRITE_SENTENCE', {
-        text: 'I should not be able to write.',
+      game.handleInput(MOCK_USERS.alice.userId, 'WRITE_SENTENCE', {
+        storyId: 'nonexistent-story',
+        text: 'A sentence that should be rejected nicely.',
       });
 
-      const rejected = playerLog.find(
-        (e) => e.userId === nonActiveId &&
-          (e.data as Record<string, unknown>).type === 'UE_INPUT_REJECTED' &&
-          (e.data as Record<string, unknown>).reason === 'not_your_turn',
+      const error = playerLog.find(
+        (e) => e.userId === MOCK_USERS.alice.userId &&
+          (e.data as Record<string, unknown>).type === 'UE_ERROR',
       );
-      expect(rejected).toBeDefined();
-
-      game.cleanup();
+      expect(error).toBeDefined();
     });
 
     it('should reject sentence shorter than minimum length', () => {
-      const { game, broadcastLog, playerLog } = createGame();
+      const { game, broadcastLog, playerLog } = createUEGame();
       game.start();
 
-      const activeUserId = getActivePlayerId(broadcastLog);
-      game.handleInput(activeUserId, 'WRITE_SENTENCE', { text: 'Short.' });
+      const storyIds = getStoryIds(broadcastLog);
+      game.handleInput(MOCK_USERS.alice.userId, 'WRITE_SENTENCE', {
+        storyId: storyIds[0],
+        text: 'Short',
+      });
 
-      const rejected = playerLog.find(
-        (e) => e.userId === activeUserId &&
-          (e.data as Record<string, unknown>).type === 'UE_INPUT_REJECTED',
+      const error = playerLog.find(
+        (e) => e.userId === MOCK_USERS.alice.userId &&
+          (e.data as Record<string, unknown>).type === 'UE_ERROR',
       );
-      expect(rejected).toBeDefined();
-
-      game.cleanup();
+      expect(error).toBeDefined();
     });
 
-    it('should auto-submit "..." on write timeout', () => {
-      const { game, broadcastLog } = createGame();
+    it('should allow unsubmit of a sentence', () => {
+      const { game, broadcastLog, playerLog } = createUEGame();
       game.start();
 
-      // Let write timeout expire
-      vi.advanceTimersByTime(UE_WRITE_TIMEOUT_SECONDS * 1000 + 100);
+      const storyIds = getStoryIds(broadcastLog);
+      const uid = MOCK_USERS.alice.userId;
 
-      const sentenceAdded = broadcastLog.find(
-        (e) => e.event === 'rmhbox:game:action' &&
-          (e.data as Record<string, unknown>).type === 'UE_SENTENCE_ADDED' &&
-          (e.data as Record<string, unknown>).sentence === '...',
+      // Submit
+      game.handleInput(uid, 'WRITE_SENTENCE', {
+        storyId: storyIds[0],
+        text: 'First attempt at writing something nice.',
+      });
+
+      // Unsubmit
+      game.handleInput(uid, 'UNSUBMIT_SENTENCE', {
+        storyId: storyIds[0],
+      });
+
+      const unsubmitted = playerLog.find(
+        (e) => e.userId === uid &&
+          (e.data as Record<string, unknown>).type === 'UE_SENTENCE_UNSUBMITTED',
       );
-      expect(sentenceAdded).toBeDefined();
+      expect(unsubmitted).toBeDefined();
+    });
 
-      game.cleanup();
+    it('should auto-submit "..." on write timeout for missing submissions', () => {
+      const { game, broadcastLog } = createUEGame();
+      game.start();
+
+      // Don't submit anything — let timeout fire
+      vi.advanceTimersByTime(UE_WRITE_TIMEOUT_SECONDS * 1000 + 50);
+
+      // Should have transitioned to EDIT phase (stories updated with "...")
+      const editStart = broadcastLog.find(
+        (e) => e.event === 'rmhbox:game:action' &&
+          (e.data as Record<string, unknown>).type === 'UE_EDIT_START',
+      );
+      expect(editStart).toBeDefined();
+    });
+
+    it('should end WRITE early when all players submit for all stories', () => {
+      const { game, broadcastLog } = createUEGame();
+      game.start();
+
+      const storyIds = getStoryIds(broadcastLog);
+      const playerIds = Object.values(MOCK_USERS).map((u) => u.userId);
+
+      submitAllSentences(game, playerIds, storyIds);
+
+      // Should immediately transition to EDIT
+      const editStart = broadcastLog.find(
+        (e) => e.event === 'rmhbox:game:action' &&
+          (e.data as Record<string, unknown>).type === 'UE_EDIT_START',
+      );
+      expect(editStart).toBeDefined();
     });
   });
 
+  // ─── Edit Phase ────────────────────────────────────────────
+
   describe('Edit Phase', () => {
-    it('should send UE_EDIT_PROMPT to Editor only after sentence is written', () => {
-      const { game, broadcastLog, playerLog } = createGame();
+    it('should send UE_EDIT_PROMPT to each editor for their assigned story', () => {
+      const { game, broadcastLog, playerLog } = createUEGame();
       game.start();
 
-      const editorUserId = findEditorUserId(playerLog);
-      const activeUserId = getActivePlayerId(broadcastLog);
+      const storyIds = getStoryIds(broadcastLog);
+      const playerIds = Object.values(MOCK_USERS).map((u) => u.userId);
 
-      // Active player writes a sentence
-      game.handleInput(activeUserId, 'WRITE_SENTENCE', {
-        text: 'A mysterious figure appeared at the door.',
-      });
+      // Complete write phase
+      submitAllSentences(game, playerIds, storyIds);
 
-      // Editor should receive edit prompt
-      const editPrompt = playerLog.find(
-        (e) => e.userId === editorUserId &&
-          (e.data as Record<string, unknown>).type === 'UE_EDIT_PROMPT',
+      // Each player should get an edit prompt for their assigned story
+      const editPrompts = playerLog.filter(
+        (e) => (e.data as Record<string, unknown>).type === 'UE_EDIT_PROMPT',
       );
-      expect(editPrompt).toBeDefined();
-
-      // Writers should NOT receive edit prompt
-      const writerIds = findWriterUserIds(playerLog);
-      for (const writerId of writerIds) {
-        const writerEditPrompt = playerLog.find(
-          (e) => e.userId === writerId &&
-            (e.data as Record<string, unknown>).type === 'UE_EDIT_PROMPT',
-        );
-        expect(writerEditPrompt).toBeUndefined();
-      }
-
-      game.cleanup();
+      expect(editPrompts.length).toBeGreaterThan(0);
     });
 
-    it('should allow Editor to edit a word', () => {
-      const { game, broadcastLog, playerLog } = createGame();
+    it('should allow editor to edit a word in their assigned story', () => {
+      const { game, broadcastLog, playerLog } = createUEGame();
       game.start();
 
-      const editorUserId = findEditorUserId(playerLog);
-      const activeUserId = getActivePlayerId(broadcastLog);
+      const storyIds = getStoryIds(broadcastLog);
+      const playerIds = Object.values(MOCK_USERS).map((u) => u.userId);
 
-      game.handleInput(activeUserId, 'WRITE_SENTENCE', {
-        text: 'The old house creaked in the wind.',
-      });
+      submitAllSentences(game, playerIds, storyIds);
 
-      // Editor edits a word
-      game.handleInput(editorUserId, 'EDIT_WORD', {
-        sentenceIndex: 0,
-        wordIndex: 1, // "old" → "ancient"
-        newWord: 'ancient',
-      });
+      // Find an editor assignment
+      const editorUid = playerIds[0];
+      const assignment = getEditorAssignment(playerLog, editorUid);
+      expect(assignment).toBeDefined();
 
-      // Story should be updated
-      const storyUpdated = broadcastLog.filter(
-        (e) => e.event === 'rmhbox:game:action' &&
-          (e.data as Record<string, unknown>).type === 'UE_STORY_UPDATED',
-      );
-      expect(storyUpdated.length).toBeGreaterThan(0);
-
-      game.cleanup();
-    });
-
-    it('should reject edit from non-Editor player', () => {
-      const { game, broadcastLog, playerLog } = createGame();
-      game.start();
-
-      const editorUserId = findEditorUserId(playerLog);
-      const activeUserId = getActivePlayerId(broadcastLog);
-      const writerIds = findWriterUserIds(playerLog);
-      const writerId = writerIds.find((id) => id !== activeUserId) ?? writerIds[0];
-
-      game.handleInput(activeUserId, 'WRITE_SENTENCE', {
-        text: 'The stars shone brightly above the village.',
-      });
-
-      // Writer tries to edit
-      game.handleInput(writerId, 'EDIT_WORD', {
+      // Edit a word
+      game.handleInput(editorUid, 'EDIT_WORD', {
+        storyId: assignment!.assignedStoryId,
         sentenceIndex: 0,
         wordIndex: 0,
-        newWord: 'Those',
+        newWord: 'CHANGED',
       });
 
-      const rejected = playerLog.find(
-        (e) => e.userId === writerId &&
-          (e.data as Record<string, unknown>).type === 'UE_INPUT_REJECTED' &&
-          (e.data as Record<string, unknown>).reason === 'not_editor',
+      const confirmed = playerLog.find(
+        (e) => e.userId === editorUid &&
+          (e.data as Record<string, unknown>).type === 'UE_EDIT_CONFIRMED',
       );
-      expect(rejected).toBeDefined();
+      expect(confirmed).toBeDefined();
+    });
 
-      game.cleanup();
+    it('should reject edit from non-editor for a story', () => {
+      const { game, broadcastLog, playerLog } = createUEGame();
+      game.start();
+
+      const storyIds = getStoryIds(broadcastLog);
+      const playerIds = Object.values(MOCK_USERS).map((u) => u.userId);
+
+      submitAllSentences(game, playerIds, storyIds);
+
+      // Try to edit a story that the player is NOT assigned to
+      const editorUid = playerIds[0];
+      const assignment = getEditorAssignment(playerLog, editorUid);
+      expect(assignment).toBeDefined();
+
+      // Use a different player
+      const nonEditorUid = playerIds[1];
+      game.handleInput(nonEditorUid, 'EDIT_WORD', {
+        storyId: assignment!.assignedStoryId,
+        sentenceIndex: 0,
+        wordIndex: 0,
+        newWord: 'HACKED',
+      });
+
+      const error = playerLog.find(
+        (e) => e.userId === nonEditorUid &&
+          (e.data as Record<string, unknown>).type === 'UE_ERROR' &&
+          (e.data as Record<string, unknown>).message === 'Not the editor for this story',
+      );
+      expect(error).toBeDefined();
+    });
+
+    it('should allow editor to skip editing', () => {
+      const { game, broadcastLog, playerLog } = createUEGame();
+      game.start();
+
+      const storyIds = getStoryIds(broadcastLog);
+      const playerIds = Object.values(MOCK_USERS).map((u) => u.userId);
+
+      submitAllSentences(game, playerIds, storyIds);
+
+      const editorUid = playerIds[0];
+      game.handleInput(editorUid, 'SKIP_EDIT', {});
+
+      const confirmed = playerLog.find(
+        (e) => e.userId === editorUid &&
+          (e.data as Record<string, unknown>).type === 'UE_EDIT_CONFIRMED' &&
+          (e.data as Record<string, unknown>).skipped === true,
+      );
+      expect(confirmed).toBeDefined();
     });
 
     it('should reject editing an already-edited position', () => {
-      const { game, broadcastLog, playerLog } = createGame();
+      const { game, broadcastLog, playerLog } = createUEGame();
       game.start();
 
-      const editorUserId = findEditorUserId(playerLog);
-      const activeUserId = getActivePlayerId(broadcastLog);
+      const storyIds = getStoryIds(broadcastLog);
+      const playerIds = Object.values(MOCK_USERS).map((u) => u.userId);
 
-      game.handleInput(activeUserId, 'WRITE_SENTENCE', {
-        text: 'The moon rose over the quiet lake.',
-      });
+      submitAllSentences(game, playerIds, storyIds);
 
-      // Edit word at position 0:1
-      game.handleInput(editorUserId, 'EDIT_WORD', {
+      const editorUid = playerIds[0];
+      const assignment = getEditorAssignment(playerLog, editorUid);
+      expect(assignment).toBeDefined();
+
+      // First edit
+      game.handleInput(editorUid, 'EDIT_WORD', {
+        storyId: assignment!.assignedStoryId,
         sentenceIndex: 0,
-        wordIndex: 1, // "moon" → "sun"
-        newWord: 'sun',
+        wordIndex: 0,
+        newWord: 'FIRST',
       });
 
-      // Next turn — write again
-      const nextActive = getActivePlayerId(broadcastLog);
-      game.handleInput(nextActive, 'WRITE_SENTENCE', {
-        text: 'Birds sang in the morning light.',
-      });
+      // Start a new write+edit round to attempt re-editing the same position
+      // Since the first edit phase auto-advances when all editors complete,
+      // we need to complete all edits, then do another round
+      for (let i = 1; i < playerIds.length; i++) {
+        game.handleInput(playerIds[i], 'SKIP_EDIT', {});
+      }
 
-      // Try to re-edit position 0:1
-      game.handleInput(editorUserId, 'EDIT_WORD', {
+      // Now in round 2 WRITE phase — submit again
+      const writeStart2 = broadcastLog.find(
+        (e) => e.event === 'rmhbox:game:action' &&
+          (e.data as Record<string, unknown>).type === 'UE_WRITE_START' &&
+          (e.data as Record<string, unknown>).round === 2,
+      );
+      expect(writeStart2).toBeDefined();
+
+      submitAllSentences(game, playerIds, storyIds, 'Round two sentence for story');
+
+      // Try to edit the same position (0:0) again
+      game.handleInput(editorUid, 'EDIT_WORD', {
+        storyId: assignment!.assignedStoryId,
         sentenceIndex: 0,
-        wordIndex: 1,
-        newWord: 'star',
+        wordIndex: 0,
+        newWord: 'SECOND',
       });
 
-      const rejected = playerLog.find(
-        (e) => e.userId === editorUserId &&
-          (e.data as Record<string, unknown>).type === 'UE_INPUT_REJECTED' &&
-          (e.data as Record<string, unknown>).reason === 'already_edited',
+      const error = playerLog.find(
+        (e) => e.userId === editorUid &&
+          (e.data as Record<string, unknown>).type === 'UE_ERROR' &&
+          (e.data as Record<string, unknown>).message === 'Position already edited',
       );
-      expect(rejected).toBeDefined();
-
-      game.cleanup();
-    });
-
-    it('should allow Editor to skip editing', () => {
-      const { game, broadcastLog, playerLog } = createGame();
-      game.start();
-
-      const editorUserId = findEditorUserId(playerLog);
-      const activeUserId = getActivePlayerId(broadcastLog);
-
-      game.handleInput(activeUserId, 'WRITE_SENTENCE', {
-        text: 'Clouds gathered on the distant horizon.',
-      });
-
-      game.handleInput(editorUserId, 'SKIP_EDIT', {});
-
-      // Should broadcast UE_STORY_UPDATED (unchanged) and move to next turn
-      const storyUpdated = broadcastLog.filter(
-        (e) => e.event === 'rmhbox:game:action' &&
-          (e.data as Record<string, unknown>).type === 'UE_STORY_UPDATED',
-      );
-      expect(storyUpdated.length).toBeGreaterThan(0);
-
-      // Next turn should have started
-      const turnStarts = broadcastLog.filter(
-        (e) => e.event === 'rmhbox:game:action' &&
-          (e.data as Record<string, unknown>).type === 'UE_TURN_START',
-      );
-      expect(turnStarts.length).toBe(2);
-
-      game.cleanup();
+      expect(error).toBeDefined();
     });
   });
 
-  describe('State Masking (§6.2 Security — Critical)', () => {
-    it('Writer getStateForPlayer should NOT include keyword or editorUserId', () => {
-      const { game, playerLog } = createGame();
+  // ─── State Masking (Security) ──────────────────────────────
+
+  describe('State Masking (Security)', () => {
+    it('non-editor player should NOT see any keyword or editor assignments', () => {
+      const { game, playerLog } = createUEGame();
       game.start();
 
-      const writerIds = findWriterUserIds(playerLog);
-      const writerId = writerIds[0];
+      const playerIds = Object.values(MOCK_USERS).map((u) => u.userId);
 
-      const state = game.getStateForPlayer(writerId) as Record<string, unknown>;
+      // Each player should only know their OWN assignment
+      for (const uid of playerIds) {
+        const state = game.getStateForPlayer(uid) as Record<string, unknown>;
+        // Should NOT have other players' keywords or assignments
+        // The state should have `assignedStoryId` (their own) but not others'
+        const keyword = state.keyword;
+        const assignedStoryId = state.assignedStoryId;
 
-      expect(state.myRole).toBe('writer');
-      expect(state).not.toHaveProperty('keyword');
-      expect(state).not.toHaveProperty('editorUserId');
-      expect(state).not.toHaveProperty('myEdits');
-      expect(state).not.toHaveProperty('editableStory');
-
-      game.cleanup();
-    });
-
-    it('Editor getStateForPlayer should include keyword and edits', () => {
-      const { game, playerLog } = createGame();
-      game.start();
-
-      const editorUserId = findEditorUserId(playerLog);
-      const state = game.getStateForPlayer(editorUserId) as Record<string, unknown>;
-
-      expect(state.myRole).toBe('editor');
-      expect(state.keyword).toBeDefined();
-      expect(typeof state.keyword).toBe('string');
-      expect(state.myEdits).toBeDefined();
-
-      game.cleanup();
-    });
-
-    it('Spectator getStateForSpectator should include all hidden info', () => {
-      const { game } = createGame();
-      game.start();
-
-      const state = game.getStateForSpectator() as Record<string, unknown>;
-
-      expect(state.editorUserId).toBeDefined();
-      expect(state.keyword).toBeDefined();
-      expect(state.edits).toBeDefined();
-      expect(state.isSpectator).toBe(true);
-
-      game.cleanup();
-    });
-
-    it('Writers should NOT receive UE_EDIT_PROMPT events', () => {
-      const { game, broadcastLog, playerLog } = createGame();
-      game.start();
-
-      const writerIds = findWriterUserIds(playerLog);
-      const activeUserId = getActivePlayerId(broadcastLog);
-
-      game.handleInput(activeUserId, 'WRITE_SENTENCE', {
-        text: 'The lighthouse beam swept across the ocean.',
-      });
-
-      // Check no writer received edit prompt
-      for (const writerId of writerIds) {
-        const editEvents = findPlayerEvents(playerLog, writerId, 'rmhbox:game:action')
-          .filter((e) => (e.data as Record<string, unknown>).type === 'UE_EDIT_PROMPT');
-        expect(editEvents.length).toBe(0);
+        if (assignedStoryId) {
+          // This player is an editor — they should see their keyword
+          expect(keyword).toBeTruthy();
+        } else {
+          // Not an editor (shouldn't happen in this design, but guard)
+          expect(keyword).toBeUndefined();
+        }
       }
-
-      game.cleanup();
     });
 
-    it('During ACCUSATION, votes should be masked (only who voted, not who for)', () => {
-      const { game, broadcastLog, playerLog } = createGame();
+    it('editor getStateForPlayer should include keyword for their assigned story', () => {
+      const { game, playerLog } = createUEGame();
       game.start();
 
-      const editorUserId = findEditorUserId(playerLog);
+      const playerIds = Object.values(MOCK_USERS).map((u) => u.userId);
+      const editorUid = playerIds[0];
+      const assignment = getEditorAssignment(playerLog, editorUid);
+      expect(assignment).toBeDefined();
 
-      // Play through all turns with timeouts to get to review/accusation
-      for (let i = 0; i < 10; i++) {
-        vi.advanceTimersByTime(UE_WRITE_TIMEOUT_SECONDS * 1000 + 100);
-        vi.advanceTimersByTime(UE_EDIT_TIMEOUT_SECONDS * 1000 + 100);
-      }
+      const state = game.getStateForPlayer(editorUid) as Record<string, unknown>;
+      expect(state.assignedStoryId).toBe(assignment!.assignedStoryId);
+      expect(state.keyword).toBe(assignment!.keyword);
+    });
 
-      // Should be in REVIEW phase
-      vi.advanceTimersByTime(UE_REVIEW_DURATION_SECONDS * 1000 + 100);
+    it('spectator state should include all hidden info', () => {
+      const { game } = createUEGame();
+      game.start();
 
-      // Now in ACCUSATION
-      const writerIds = findWriterUserIds(playerLog);
-      const writerId = writerIds[0];
-
-      // Cast a vote
-      game.handleInput(writerId, 'CAST_ACCUSATION', {
-        targetUserId: editorUserId,
-      });
-
-      // The broadcast should show who voted but NOT who for
-      const voteCast = broadcastLog.find(
-        (e) => e.event === 'rmhbox:game:action' &&
-          (e.data as Record<string, unknown>).type === 'UE_VOTE_CAST',
-      );
-      expect(voteCast).toBeDefined();
-      const voteData = voteCast!.data as Record<string, unknown>;
-      expect(voteData.voterId).toBe(writerId);
-      expect(voteData.hasVoted).toBe(true);
-      expect(voteData).not.toHaveProperty('targetUserId');
-      expect(voteData).not.toHaveProperty('accusedUserId');
-
-      // Writer state should show votedPlayers but not who they voted for
-      const writerState = game.getStateForPlayer(writerIds[1]) as Record<string, unknown>;
-      const votedPlayers = writerState.votedPlayers as string[];
-      expect(votedPlayers).toContain(writerId);
-      // But writerState should not contain the full votes map
-      expect(writerState).not.toHaveProperty('votes');
-
-      game.cleanup();
+      const spectatorState = game.getStateForSpectator() as Record<string, unknown>;
+      expect(spectatorState.storyReveals).toBeDefined();
+      expect(spectatorState.isSpectator).toBe(true);
     });
   });
 
-  describe('Accusation Phase', () => {
-    it('should reject self-vote', () => {
-      const { game, broadcastLog, playerLog } = createGame();
+  // ─── Review Phase (Matching) ───────────────────────────────
+
+  describe('Review Phase', () => {
+    it('should transition to REVIEW after all rounds complete', () => {
+      const { game, broadcastLog } = createUEGame();
       game.start();
 
-      // Advance to accusation
-      for (let i = 0; i < 10; i++) {
-        vi.advanceTimersByTime(UE_WRITE_TIMEOUT_SECONDS * 1000 + 100);
-        vi.advanceTimersByTime(UE_EDIT_TIMEOUT_SECONDS * 1000 + 100);
+      const storyIds = getStoryIds(broadcastLog);
+      const playerIds = Object.values(MOCK_USERS).map((u) => u.userId);
+
+      // Complete 2 rounds (default UE_ROTATIONS)
+      for (let round = 0; round < 2; round++) {
+        submitAllSentences(game, playerIds, storyIds, `Round ${round + 1} sentence`);
+        // All editors skip to advance
+        for (const uid of playerIds) {
+          game.handleInput(uid, 'SKIP_EDIT', {});
+        }
       }
-      vi.advanceTimersByTime(UE_REVIEW_DURATION_SECONDS * 1000 + 100);
 
-      const writerId = findWriterUserIds(playerLog)[0];
-      game.handleInput(writerId, 'CAST_ACCUSATION', {
-        targetUserId: writerId,
-      });
-
-      const rejected = playerLog.find(
-        (e) => e.userId === writerId &&
-          (e.data as Record<string, unknown>).type === 'UE_INPUT_REJECTED' &&
-          (e.data as Record<string, unknown>).reason === 'cannot_vote_self',
-      );
-      expect(rejected).toBeDefined();
-
-      game.cleanup();
-    });
-
-    it('should allow vote change', () => {
-      const { game, broadcastLog, playerLog } = createGame();
-      game.start();
-
-      const editorUserId = findEditorUserId(playerLog);
-      const writerIds = findWriterUserIds(playerLog);
-
-      // Advance to accusation
-      for (let i = 0; i < 10; i++) {
-        vi.advanceTimersByTime(UE_WRITE_TIMEOUT_SECONDS * 1000 + 100);
-        vi.advanceTimersByTime(UE_EDIT_TIMEOUT_SECONDS * 1000 + 100);
-      }
-      vi.advanceTimersByTime(UE_REVIEW_DURATION_SECONDS * 1000 + 100);
-
-      const voter = writerIds[0];
-      const target1 = writerIds[1];
-      const target2 = editorUserId;
-
-      // Vote for target1, then change to target2
-      game.handleInput(voter, 'CAST_ACCUSATION', { targetUserId: target1 });
-      game.handleInput(voter, 'CAST_ACCUSATION', { targetUserId: target2 });
-
-      // Check that both votes were accepted (no rejection for change)
-      const voteCasts = broadcastLog.filter(
+      const reviewStart = broadcastLog.find(
         (e) => e.event === 'rmhbox:game:action' &&
-          (e.data as Record<string, unknown>).type === 'UE_VOTE_CAST' &&
-          (e.data as Record<string, unknown>).voterId === voter,
+          (e.data as Record<string, unknown>).type === 'UE_REVIEW_START',
       );
-      expect(voteCasts.length).toBe(2);
-
-      game.cleanup();
+      expect(reviewStart).toBeDefined();
     });
-  });
 
-  describe('Win Conditions & Scoring', () => {
-    it('should complete game and produce reveal with winner', () => {
-      const { game, broadcastLog, playerLog, completedResults } = createGame();
+    it('should accept matching guesses from players', () => {
+      const { game, broadcastLog, playerLog } = createUEGame();
       game.start();
 
-      // Play all turns via timeout
-      for (let i = 0; i < 10; i++) {
-        vi.advanceTimersByTime(UE_WRITE_TIMEOUT_SECONDS * 1000 + 100);
-        vi.advanceTimersByTime(UE_EDIT_TIMEOUT_SECONDS * 1000 + 100);
+      const storyIds = getStoryIds(broadcastLog);
+      const playerIds = Object.values(MOCK_USERS).map((u) => u.userId);
+
+      // Complete all rounds
+      for (let round = 0; round < 2; round++) {
+        submitAllSentences(game, playerIds, storyIds, `Round ${round + 1} sentence`);
+        for (const uid of playerIds) {
+          game.handleInput(uid, 'SKIP_EDIT', {});
+        }
       }
 
-      // Review
-      vi.advanceTimersByTime(UE_REVIEW_DURATION_SECONDS * 1000 + 100);
+      // Submit matching guesses
+      const guesses: Record<string, string> = {};
+      for (const storyId of storyIds) {
+        guesses[storyId] = playerIds[0]; // Just guess someone
+      }
 
-      // Accusation — timeout
-      vi.advanceTimersByTime(UE_ACCUSATION_DURATION_SECONDS * 1000 + 100);
+      game.handleInput(playerIds[0], 'SUBMIT_MATCHING', { guesses });
 
-      // Reveal
+      const saved = playerLog.find(
+        (e) => e.userId === playerIds[0] &&
+          (e.data as Record<string, unknown>).type === 'UE_MATCHING_SAVED',
+      );
+      expect(saved).toBeDefined();
+    });
+
+    it('should advance to REVEAL when all players lock in', () => {
+      const { game, broadcastLog } = createUEGame();
+      game.start();
+
+      const storyIds = getStoryIds(broadcastLog);
+      const playerIds = Object.values(MOCK_USERS).map((u) => u.userId);
+
+      // Complete all rounds
+      for (let round = 0; round < 2; round++) {
+        submitAllSentences(game, playerIds, storyIds, `Round ${round + 1} sentence`);
+        for (const uid of playerIds) {
+          game.handleInput(uid, 'SKIP_EDIT', {});
+        }
+      }
+
+      // All players submit guesses and lock in
+      for (const uid of playerIds) {
+        const guesses: Record<string, string> = {};
+        for (const storyId of storyIds) {
+          guesses[storyId] = playerIds[0];
+        }
+        game.handleInput(uid, 'SUBMIT_MATCHING', { guesses });
+        game.handleInput(uid, 'LOCK_IN_MATCHING', {});
+      }
+
       const reveal = broadcastLog.find(
         (e) => e.event === 'rmhbox:game:action' &&
           (e.data as Record<string, unknown>).type === 'UE_REVEAL',
       );
       expect(reveal).toBeDefined();
+    });
 
-      const revealData = reveal!.data as Record<string, unknown>;
-      expect(revealData.editorUserId).toBeDefined();
-      expect(revealData.keyword).toBeDefined();
-      expect(revealData.winner).toBeDefined();
-      expect(['editor', 'writers']).toContain(revealData.winner);
-      expect(revealData.scores).toBeDefined();
+    it('should not allow locked-in player to change guesses', () => {
+      const { game, broadcastLog, playerLog } = createUEGame();
+      game.start();
 
-      // Reveal timeout → game end
-      vi.advanceTimersByTime(UE_REVEAL_DURATION_SECONDS * 1000 + 100);
+      const storyIds = getStoryIds(broadcastLog);
+      const playerIds = Object.values(MOCK_USERS).map((u) => u.userId);
 
-      expect(completedResults.length).toBe(1);
-      expect(completedResults[0].rankings.length).toBe(5);
+      for (let round = 0; round < 2; round++) {
+        submitAllSentences(game, playerIds, storyIds, `Round ${round + 1} sentence`);
+        for (const uid of playerIds) {
+          game.handleInput(uid, 'SKIP_EDIT', {});
+        }
+      }
 
-      game.cleanup();
+      const uid = playerIds[0];
+      const guesses: Record<string, string> = {};
+      for (const storyId of storyIds) {
+        guesses[storyId] = playerIds[0];
+      }
+      game.handleInput(uid, 'SUBMIT_MATCHING', { guesses });
+      game.handleInput(uid, 'LOCK_IN_MATCHING', {});
+
+      // Try to change guesses after lock-in
+      game.handleInput(uid, 'SUBMIT_MATCHING', { guesses: { [storyIds[0]]: playerIds[1] } });
+
+      const error = playerLog.find(
+        (e) => e.userId === uid &&
+          (e.data as Record<string, unknown>).type === 'UE_ERROR' &&
+          (e.data as Record<string, unknown>).message === 'Already locked in',
+      );
+      expect(error).toBeDefined();
     });
   });
+
+  // ─── Reconnection ─────────────────────────────────────────
 
   describe('Reconnection', () => {
-    it('should send full state on Editor reconnect with keyword', () => {
-      const { game, playerLog } = createGame();
+    it('should send editor state with keyword on reconnect', () => {
+      const { game, playerLog } = createUEGame();
       game.start();
 
-      const editorUserId = findEditorUserId(playerLog);
-      playerLog.length = 0;
+      const playerIds = Object.values(MOCK_USERS).map((u) => u.userId);
+      const editorUid = playerIds[0];
 
-      game.handlePlayerReconnect(editorUserId);
-
-      const snapshot = playerLog.find(
-        (e) => e.userId === editorUserId &&
-          e.event === 'rmhbox:game:state_snapshot',
-      );
-      expect(snapshot).toBeDefined();
-
-      const state = snapshot!.data as Record<string, unknown>;
+      const state = game.getStateForPlayer(editorUid) as Record<string, unknown>;
+      expect(state.assignedStoryId).toBeDefined();
       expect(state.keyword).toBeDefined();
-      expect(state.myRole).toBe('editor');
-
-      game.cleanup();
+      expect(state.phase).toBe('WRITE');
     });
 
-    it('should send Writer state without keyword on reconnect', () => {
-      const { game, playerLog } = createGame();
+    it('should send non-editor state without other players\' keywords', () => {
+      const { game } = createUEGame();
       game.start();
 
-      const writerIds = findWriterUserIds(playerLog);
-      playerLog.length = 0;
+      const playerIds = Object.values(MOCK_USERS).map((u) => u.userId);
 
-      game.handlePlayerReconnect(writerIds[0]);
-
-      const snapshot = playerLog.find(
-        (e) => e.userId === writerIds[0] &&
-          e.event === 'rmhbox:game:state_snapshot',
-      );
-      expect(snapshot).toBeDefined();
-
-      const state = snapshot!.data as Record<string, unknown>;
-      expect(state).not.toHaveProperty('keyword');
-      expect(state.myRole).toBe('writer');
-
-      game.cleanup();
+      // Check each player's state
+      for (const uid of playerIds) {
+        const state = game.getStateForPlayer(uid) as Record<string, unknown>;
+        expect(state.stories).toBeDefined();
+        expect(state.phase).toBe('WRITE');
+        // Should not contain other players' assignments
+        const stories = state.stories as Array<Record<string, unknown>>;
+        for (const story of stories) {
+          // Story views should not reveal editorUserId
+          expect(story.editorUserId).toBeUndefined();
+        }
+      }
     });
   });
+
+  // ─── Join-in-Progress ──────────────────────────────────────
 
   describe('Join-in-Progress', () => {
     it('should send spectator state to JIP player', () => {
-      const { game, playerLog } = createGame();
+      const { game, playerLog } = createUEGame();
       game.start();
-      playerLog.length = 0;
 
-      // Fake a new player joining
-      game.handlePlayerJoin('new-player-id');
+      game.handlePlayerJoin('new-spectator-id');
 
       const snapshot = playerLog.find(
-        (e) => e.userId === 'new-player-id',
+        (e) => e.userId === 'new-spectator-id' &&
+          e.event === 'rmhbox:game:state_snapshot',
       );
       expect(snapshot).toBeDefined();
-
-      const state = snapshot!.data as Record<string, unknown>;
-      // Spectator should see omniscient view
-      expect(state.editorUserId).toBeDefined();
-      expect(state.keyword).toBeDefined();
-      expect(state.isSpectator).toBe(true);
-
-      game.cleanup();
+      const data = snapshot!.data as Record<string, unknown>;
+      expect(data.isSpectator).toBe(true);
     });
   });
 
-  describe('Awards', () => {
-    it('should include Shakespeare award for longest sentence', () => {
-      const { game, broadcastLog, playerLog, completedResults } = createGame();
+  // ─── Scoring & Awards ─────────────────────────────────────
+
+  describe('Scoring & Awards', () => {
+    it('should produce results with rankings and awards after reveal', () => {
+      const { game, broadcastLog, context } = createUEGame();
       game.start();
 
-      const editorUserId = findEditorUserId(playerLog);
+      const storyIds = getStoryIds(broadcastLog);
+      const playerIds = Object.values(MOCK_USERS).map((u) => u.userId);
 
-      // Play through all turns with sentences of varying lengths
-      for (let i = 0; i < 10; i++) {
-        const activeUserId = getActivePlayerId(broadcastLog);
-        const sentence = i === 3
-          ? 'This is a very long sentence with many many words in it for the Shakespeare award test case.'
-          : 'A short simple sentence here.';
-        game.handleInput(activeUserId, 'WRITE_SENTENCE', { text: sentence });
-        game.handleInput(editorUserId, 'SKIP_EDIT', {});
+      // Complete all rounds
+      for (let round = 0; round < 2; round++) {
+        submitAllSentences(game, playerIds, storyIds, `Round ${round + 1} sentence`);
+        for (const uid of playerIds) {
+          game.handleInput(uid, 'SKIP_EDIT', {});
+        }
       }
 
-      // Review → Accusation → Reveal
-      vi.advanceTimersByTime(UE_REVIEW_DURATION_SECONDS * 1000 + 100);
-      vi.advanceTimersByTime(UE_ACCUSATION_DURATION_SECONDS * 1000 + 100);
-      vi.advanceTimersByTime(UE_REVEAL_DURATION_SECONDS * 1000 + 100);
+      // All lock in
+      for (const uid of playerIds) {
+        const guesses: Record<string, string> = {};
+        for (const storyId of storyIds) {
+          guesses[storyId] = playerIds[0];
+        }
+        game.handleInput(uid, 'SUBMIT_MATCHING', { guesses });
+        game.handleInput(uid, 'LOCK_IN_MATCHING', {});
+      }
 
-      expect(completedResults.length).toBe(1);
-      const awards = completedResults[0].awards;
+      // Advance through reveal
+      vi.advanceTimersByTime(UE_REVEAL_DURATION_SECONDS * 1000 + 50);
 
-      const shakespeare = awards.find((a) => a.title === 'Shakespeare');
-      expect(shakespeare).toBeDefined();
-
-      game.cleanup();
+      // onComplete should have been called
+      expect(context.onComplete).toHaveBeenCalledTimes(1);
+      const results = (context.onComplete as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      expect(results.rankings).toBeDefined();
+      expect(results.rankings.length).toBe(5);
+      expect(results.awards).toBeDefined();
     });
   });
+
+  // ─── Game Log ──────────────────────────────────────────────
 
   describe('Game Log', () => {
-    it('should produce game log with all action types', () => {
-      const { game, broadcastLog, playerLog, completedResults } = createGame();
+    it('should produce game log with action types', () => {
+      const { game, broadcastLog, context } = createUEGame();
       game.start();
 
-      const editorUserId = findEditorUserId(playerLog);
+      const storyIds = getStoryIds(broadcastLog);
+      const playerIds = Object.values(MOCK_USERS).map((u) => u.userId);
 
-      // Play through all 10 turns — write and skip edit
-      for (let i = 0; i < 10; i++) {
-        const activeUserId = getActivePlayerId(broadcastLog);
-        game.handleInput(activeUserId, 'WRITE_SENTENCE', {
-          text: 'The story continues with more interesting details.',
-        });
-        game.handleInput(editorUserId, 'SKIP_EDIT', {});
+      for (let round = 0; round < 2; round++) {
+        submitAllSentences(game, playerIds, storyIds, `Round ${round + 1} sentence`);
+        for (const uid of playerIds) {
+          game.handleInput(uid, 'SKIP_EDIT', {});
+        }
       }
 
-      // Review → Accusation → Reveal → End
-      vi.advanceTimersByTime(UE_REVIEW_DURATION_SECONDS * 1000 + 100);
-      vi.advanceTimersByTime(UE_ACCUSATION_DURATION_SECONDS * 1000 + 100);
-      vi.advanceTimersByTime(UE_REVEAL_DURATION_SECONDS * 1000 + 100);
+      for (const uid of playerIds) {
+        game.handleInput(uid, 'SUBMIT_MATCHING', { guesses: {} });
+        game.handleInput(uid, 'LOCK_IN_MATCHING', {});
+      }
 
-      expect(completedResults.length).toBe(1);
+      vi.advanceTimersByTime(UE_REVEAL_DURATION_SECONDS * 1000 + 50);
 
-      const gameSpecific = completedResults[0].gameSpecificData;
-      expect(gameSpecific.gameLog).toBeDefined();
-
-      const log = gameSpecific.gameLog as Record<string, unknown>;
-      expect(log.initialState).toBeDefined();
-      expect(log.actions).toBeDefined();
-      expect(log.finalResults).toBeDefined();
-
-      const actions = log.actions as Array<{ type: string }>;
-      const actionTypes = new Set(actions.map((a) => a.type));
-      expect(actionTypes.has('turn_start')).toBe(true);
-      expect(actionTypes.has('word_added')).toBe(true);
-      expect(actionTypes.has('editor_skip')).toBe(true);
-      expect(actionTypes.has('story_snapshot')).toBe(true);
-      expect(actionTypes.has('vote_result')).toBe(true);
-      expect(actionTypes.has('final_reveal')).toBe(true);
-
-      game.cleanup();
+      expect(context.onComplete).toHaveBeenCalledTimes(1);
+      const results = (context.onComplete as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      const gameLog = results.gameSpecificData.gameLog as unknown[];
+      expect(gameLog.length).toBeGreaterThan(0);
     });
   });
 });

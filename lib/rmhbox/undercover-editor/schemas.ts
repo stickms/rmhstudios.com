@@ -4,6 +4,9 @@
  * Validates all client→server payloads and data file entries
  * for the Undercover Editor collaborative writing minigame.
  *
+ * Parallel design: all players write for all stories simultaneously.
+ * Each player is the undercover editor for exactly one story.
+ *
  * Reference: docs/rmhbox/design-spec/minigames-2.md §2.5
  */
 
@@ -16,13 +19,20 @@ import {
 
 // ─── Client→Server Input Schemas ────────────────────────────────
 
-/** Validates a player's sentence submission during WRITE phase. */
+/** Validates a player's sentence submission during WRITE phase (per-story). */
 export const WriteSentenceSchema = z.object({
+  storyId: z.string().min(1),
   text: z.string().min(UE_MIN_SENTENCE_LENGTH).max(UE_MAX_SENTENCE_LENGTH),
+});
+
+/** Validates unsubmitting a sentence (returns to editing within time limit). */
+export const UnsubmitSentenceSchema = z.object({
+  storyId: z.string().min(1),
 });
 
 /** Validates the Editor's word edit during EDIT phase. */
 export const EditWordSchema = z.object({
+  storyId: z.string().min(1),
   sentenceIndex: z.number().int().min(0),
   wordIndex: z.number().int().min(0),
   newWord: z.string().min(1).max(UE_MAX_EDIT_WORD_LENGTH).regex(/^\S+$/),
@@ -31,10 +41,14 @@ export const EditWordSchema = z.object({
 /** Validates the Editor's choice to skip editing this turn. */
 export const SkipEditSchema = z.object({});
 
-/** Validates a player's accusation vote during ACCUSATION phase. */
-export const CastAccusationSchema = z.object({
-  targetUserId: z.string().min(1),
+/** Validates a player's matching guess during REVIEW phase. */
+export const SubmitMatchingSchema = z.object({
+  /** Map of storyId → guessedEditorUserId. */
+  guesses: z.record(z.string().min(1), z.string().min(1)),
 });
+
+/** Validates lock-in of matching during REVIEW phase. */
+export const LockInMatchingSchema = z.object({});
 
 // ─── Data Validation Schemas ────────────────────────────────────
 

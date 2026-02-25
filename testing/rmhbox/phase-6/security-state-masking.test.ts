@@ -22,9 +22,6 @@ import { UndercoverEditorGame } from '../../../server/rmhbox/minigames/undercove
 import {
   FF_QUESTION_REVEAL_SECONDS,
   FF_ANSWER_DURATION_SECONDS,
-  UE_WRITE_TIMEOUT_SECONDS,
-  UE_EDIT_TIMEOUT_SECONDS,
-  UE_REVIEW_DURATION_SECONDS,
 } from '../../../lib/rmhbox/constants';
 import {
   MOCK_USERS,
@@ -140,62 +137,54 @@ describe('Security: State Masking (Phase 6)', () => {
       const { game, playerLog } = createUEGame();
       game.start();
 
-      const writerIds = playerLog
-        .filter(
-          (e) => (e.data as Record<string, unknown>).type === 'UE_ROLE_ASSIGNED' &&
-            (e.data as Record<string, unknown>).role === 'writer',
-        )
-        .map((e) => e.userId);
+      // In the parallel design, every player is an editor for ONE story.
+      // They should only see the keyword for THEIR assigned story, not others'.
+      const allIds = Object.values(MOCK_USERS).map((u) => u.userId);
 
-      for (const writerId of writerIds) {
-        const state = game.getStateForPlayer(writerId) as Record<string, unknown>;
-        expect(state).not.toHaveProperty('keyword');
-        expect(state).not.toHaveProperty('editorUserId');
-        expect(state).not.toHaveProperty('myEdits');
-        expect(state).not.toHaveProperty('editableStory');
-      }
+      for (const uid of allIds) {
+        const state = game.getStateForPlayer(uid) as Record<string, unknown>;
+        const assignedStoryId = state.assignedStoryId as string | null;
+        const keyword = state.keyword as string | null;
 
-      game.cleanup();
-    });
+        if (assignedStoryId) {
+          // This player should see THEIR keyword
+          expect(keyword).toBeTruthy();
+        }
 
-    it('Writer MUST NEVER see keyword via WebSocket events (inspecting all player events)', () => {
-      const { game, playerLog, broadcastLog } = createUEGame();
-      game.start();
-
-      const writerIds = playerLog
-        .filter(
-          (e) => (e.data as Record<string, unknown>).type === 'UE_ROLE_ASSIGNED' &&
-            (e.data as Record<string, unknown>).role === 'writer',
-        )
-        .map((e) => e.userId);
-
-      const editorId = playerLog
-        .find(
-          (e) => (e.data as Record<string, unknown>).type === 'UE_ROLE_ASSIGNED' &&
-            (e.data as Record<string, unknown>).role === 'editor',
-        )?.userId ?? '';
-
-      // Check ALL events sent to writers — none should contain keyword
-      for (const writerId of writerIds) {
-        const writerEvents = playerLog.filter((e) => e.userId === writerId);
-        for (const event of writerEvents) {
-          const data = event.data as Record<string, unknown>;
-          if (data.type === 'UE_ROLE_ASSIGNED') {
-            expect(data).not.toHaveProperty('keyword');
+        // Player should NOT see other stories' keywords or editor assignments
+        const stories = state.stories as Array<Record<string, unknown>>;
+        if (stories) {
+          for (const story of stories) {
+            // Story views should never expose editorUserId or keyword
+            expect(story).not.toHaveProperty('editorUserId');
+            expect(story).not.toHaveProperty('keyword');
           }
         }
       }
 
+      game.cleanup();
+    });
+
+    it('No player MUST see another player\'s keyword via WebSocket events', () => {
+      const { game, playerLog, broadcastLog } = createUEGame();
+      game.start();
+
       // Broadcast events should NOT contain keyword or editorUserId
       for (const event of broadcastLog) {
         const data = event.data as Record<string, unknown>;
-        // UE_GAME_START should not have keyword
         if (data.type === 'UE_GAME_START') {
           expect(data).not.toHaveProperty('keyword');
           expect(data).not.toHaveProperty('editorUserId');
+          // stories should not have keywords or editor IDs
+          const stories = data.stories as Array<Record<string, unknown>> | undefined;
+          if (stories) {
+            for (const story of stories) {
+              expect(story).not.toHaveProperty('keyword');
+              expect(story).not.toHaveProperty('editorUserId');
+            }
+          }
         }
-        // UE_TURN_START should not have keyword
-        if (data.type === 'UE_TURN_START') {
+        if (data.type === 'UE_WRITE_START') {
           expect(data).not.toHaveProperty('keyword');
         }
       }
@@ -203,14 +192,19 @@ describe('Security: State Masking (Phase 6)', () => {
       game.cleanup();
     });
 
-    it('Spectator MUST see keyword, editorUserId, and edits', () => {
+    it('Spectator MUST see all story reveals with keywords and editors', () => {
       const { game } = createUEGame();
       game.start();
 
       const spectatorState = game.getStateForSpectator() as Record<string, unknown>;
-      expect(spectatorState.editorUserId).toBeDefined();
-      expect(spectatorState.keyword).toBeDefined();
-      expect(spectatorState.edits).toBeDefined();
+      const storyReveals = spectatorState.storyReveals as Array<Record<string, unknown>>;
+      expect(storyReveals).toBeDefined();
+      expect(storyReveals.length).toBeGreaterThan(0);
+      // Each reveal should have editorUserId and keyword
+      for (const reveal of storyReveals) {
+        expect(reveal.editorUserId).toBeDefined();
+        expect(reveal.keyword).toBeDefined();
+      }
       expect(spectatorState.isSpectator).toBe(true);
 
       game.cleanup();
@@ -220,40 +214,28 @@ describe('Security: State Masking (Phase 6)', () => {
       const { game, playerLog } = createUEGame();
       game.start();
 
-      const editorId = playerLog
-        .find(
-          (e) => (e.data as Record<string, unknown>).type === 'UE_ROLE_ASSIGNED' &&
-            (e.data as Record<string, unknown>).role === 'editor',
-        )?.userId ?? '';
+      // In the parallel design, all players are editors. Pick any one.
+      const anyEditorId = Object.values(MOCK_USERS)[0].userId;
 
-      const editorState = game.getStateForPlayer(editorId) as Record<string, unknown>;
+      const editorState = game.getStateForPlayer(anyEditorId) as Record<string, unknown>;
       expect(editorState.keyword).toBeDefined();
-      expect(editorState.myRole).toBe('editor');
+      expect(editorState.assignedStoryId).toBeDefined();
       expect(editorState.myEdits).toBeDefined();
 
       game.cleanup();
     });
 
-    it('Edit-related events MUST NOT be sent to Writers', () => {
-      const { game, playerLog, broadcastLog } = createUEGame();
+    it('UE_EDIT_PROMPT events MUST NOT be broadcast to all players', () => {
+      const { game, broadcastLog } = createUEGame();
       game.start();
 
-      const writerIds = playerLog
-        .filter(
-          (e) => (e.data as Record<string, unknown>).type === 'UE_ROLE_ASSIGNED' &&
-            (e.data as Record<string, unknown>).role === 'writer',
-        )
-        .map((e) => e.userId);
-
-      // Check: UE_EDIT_PROMPT is only sent to editor, not broadcast
-      // It should appear in playerLog for editor only
-      for (const writerId of writerIds) {
-        const writerEditPrompts = playerLog.filter(
-          (e) => e.userId === writerId &&
-            (e.data as Record<string, unknown>).type === 'UE_EDIT_PROMPT',
-        );
-        expect(writerEditPrompts.length).toBe(0);
-      }
+      // UE_EDIT_PROMPT should never appear in broadcastLog (lobby-wide)
+      // It should only appear in playerLog (per-player)
+      const editPromptBroadcasts = broadcastLog.filter(
+        (e) => e.event === 'rmhbox:game:action' &&
+          (e.data as Record<string, unknown>).type === 'UE_EDIT_PROMPT',
+      );
+      expect(editPromptBroadcasts.length).toBe(0);
 
       game.cleanup();
     });

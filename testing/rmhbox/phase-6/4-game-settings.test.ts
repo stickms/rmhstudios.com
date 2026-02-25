@@ -119,8 +119,8 @@ describe('Game Settings Integration (§6.6)', () => {
           (e.data as Record<string, unknown>).type === 'UE_GAME_START',
       );
       expect(gameStart).toBeDefined();
-      // 5 players × 1 rotation = 5 turns
-      expect((gameStart!.data as Record<string, unknown>).totalTurns).toBe(5);
+      // With rotations=1, totalRounds should be 1
+      expect((gameStart!.data as Record<string, unknown>).totalRounds).toBe(1);
 
       game.cleanup();
     });
