@@ -53,6 +53,13 @@ export interface WikiRaceState {
   cumulativeScores: Map<string, number>;
   /** Previously used pair keys (to avoid repeats) */
   usedPairKeys: string[];
+  /** Per-round article pair metadata for history reconstruction */
+  roundArticlePairs: Array<{
+    round: number;
+    startArticle: string;
+    targetArticle: string;
+    difficulty: string;
+  }>;
 }
 
 // ─── Per-player rate-limit tracking ──────────────────────────────
