@@ -11,6 +11,7 @@
 
 import { useRef, useEffect, useCallback, useState, useImperativeHandle, forwardRef } from 'react';
 import dynamic from 'next/dynamic';
+import type ReactPlayerType from 'react-player';
 import { useRmhTubeStore } from '@/lib/rmhtube/store';
 import { emit } from '@/lib/rmhtube/socket';
 import { C2S } from '@/lib/rmhtube/events';
@@ -31,7 +32,7 @@ export interface VideoPlayerHandle {
 
 const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
   function VideoPlayer({ url, isHost, onEnded }, ref) {
-  const playerRef = useRef<ReactPlayer>(null);
+  const playerRef = useRef<ReactPlayerType>(null);
   const videoState = useRmhTubeStore((s) => s.room?.videoState);
   const masterVolume = useRmhTubeStore((s) => s.settings.masterVolume);
   const muted = useRmhTubeStore((s) => s.settings.muted);
@@ -46,7 +47,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
   const [playerMuted, setPlayerMuted] = useState(muted);
   const volumeRef = useRef({ volume: masterVolume, muted });
   const nativeAdjustingRef = useRef(false);
-  const volumeDebounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const volumeDebounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   // Sync store → local (skip during native slider interaction)
   useEffect(() => {
