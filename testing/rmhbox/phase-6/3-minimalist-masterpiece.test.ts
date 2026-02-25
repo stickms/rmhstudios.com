@@ -44,6 +44,7 @@ import {
   MM_DRAWING_DURATION_SECONDS,
   MM_GALLERY_DURATION_SECONDS,
   MM_AUCTION_DURATION_SECONDS,
+  MM_RESULTS_DURATION_SECONDS,
   MM_STARTING_CURRENCY,
   MM_BID_INCREMENT,
   MM_RANK_1_POINTS,
@@ -522,16 +523,18 @@ describe('Minimalist Masterpiece Server Handler (§6.3)', () => {
     });
 
     it('should give tied drawings the same rank and same rank points', () => {
-      const { game } = createGame();
+      const { game, broadcastLog } = createGame();
       game.start();
       advanceToAuction(game, ALL_PLAYER_IDS);
 
       // No bids → all have market value 0 → all tied at rank 1
       vi.advanceTimersByTime(MM_AUCTION_DURATION_SECONDS * 1000);
 
-      const results = game.computeResults();
-      const gameData = results.gameSpecificData as Record<string, unknown>;
-      const mmRankings = gameData.mmRankings as Array<Record<string, unknown>>;
+      // Check the MM_RESULTS broadcast for rankings
+      const resultsBroadcast = findLastActionBroadcast(broadcastLog, 'MM_RESULTS');
+      expect(resultsBroadcast).toBeDefined();
+      const mmRankings = resultsBroadcast!.data.rankings as Array<Record<string, unknown>>;
+      expect(mmRankings).toBeDefined();
 
       // All tied at the same rank
       const ranks = mmRankings.map((r) => r.rank);
@@ -545,7 +548,7 @@ describe('Minimalist Masterpiece Server Handler (§6.3)', () => {
     });
 
     it('should compute investment bonuses for bidders on the winning drawing', () => {
-      const { game } = createGame();
+      const { game, broadcastLog } = createGame();
       game.start();
       advanceToAuction(game, ALL_PLAYER_IDS);
 
@@ -561,9 +564,10 @@ describe('Minimalist Masterpiece Server Handler (§6.3)', () => {
 
       vi.advanceTimersByTime(MM_AUCTION_DURATION_SECONDS * 1000);
 
-      const results = game.computeResults();
-      const gameData = results.gameSpecificData as Record<string, unknown>;
-      const bonuses = gameData.investmentBonuses as Array<Record<string, unknown>>;
+      // Check the MM_RESULTS broadcast for investment bonuses
+      const resultsBroadcast = findLastActionBroadcast(broadcastLog, 'MM_RESULTS');
+      expect(resultsBroadcast).toBeDefined();
+      const bonuses = resultsBroadcast!.data.investmentBonuses as Array<Record<string, unknown>>;
 
       expect(bonuses.length).toBeGreaterThan(0);
       const aliceBonus = bonuses.find((b) => b.userId === MOCK_USERS.alice.userId);
@@ -876,6 +880,116 @@ describe('Minimalist Masterpiece Server Handler (§6.3)', () => {
         expect(typeof r.artistUserName).toBe('string');
         expect((r.artistUserName as string).length).toBeGreaterThan(0);
       }
+    });
+  });
+
+  // ───────────────────────────────────────────────────────────────
+  // 11. Multi-Round Support
+  // ───────────────────────────────────────────────────────────────
+  describe('Multi-Round Support', () => {
+    it('should default to 3 rounds', () => {
+      const { game, broadcastLog } = createGame();
+      game.start();
+
+      const promptBroadcast = findLastActionBroadcast(broadcastLog, 'MM_PROMPT');
+      expect(promptBroadcast).toBeDefined();
+      expect(promptBroadcast!.data.totalRounds).toBe(3);
+    });
+
+    it('should use custom roundCount from gameSettings', () => {
+      const ctx = createMockContext();
+      ctx.context.gameSettings = { roundCount: 2 };
+      const game = new MinimalistMasterpieceGame(ctx.context);
+      game.start();
+
+      const promptBroadcast = findLastActionBroadcast(ctx.broadcastLog, 'MM_PROMPT');
+      expect(promptBroadcast).toBeDefined();
+      expect(promptBroadcast!.data.totalRounds).toBe(2);
+    });
+
+    it('should proceed to next round after RESULTS phase', () => {
+      const ctx = createMockContext();
+      ctx.context.gameSettings = { roundCount: 2 };
+      const game = new MinimalistMasterpieceGame(ctx.context);
+      game.start();
+
+      // Complete round 1
+      advanceToAuction(game, ALL_PLAYER_IDS);
+      vi.advanceTimersByTime(MM_AUCTION_DURATION_SECONDS * 1000);
+      // Skip RESULTS timer
+      vi.advanceTimersByTime(MM_RESULTS_DURATION_SECONDS * 1000);
+
+      // Should now be in round 2 with a new MM_PROMPT broadcast
+      const prompts = ctx.broadcastLog
+        .filter((e) => {
+          const d = e.data as Record<string, unknown>;
+          return d.type === 'MM_PROMPT';
+        });
+      expect(prompts.length).toBe(2);
+
+      // Second prompt should have round=2
+      const secondPrompt = prompts[1].data as Record<string, unknown>;
+      expect(secondPrompt.round).toBe(2);
+    });
+
+    it('should end the game after the last round', () => {
+      const ctx = createMockContext();
+      ctx.context.gameSettings = { roundCount: 1 };
+      const game = new MinimalistMasterpieceGame(ctx.context);
+      game.start();
+
+      // Complete single round
+      advanceToAuction(game, ALL_PLAYER_IDS);
+      vi.advanceTimersByTime(MM_AUCTION_DURATION_SECONDS * 1000);
+      vi.advanceTimersByTime(MM_RESULTS_DURATION_SECONDS * 1000);
+
+      // Game should be complete
+      expect(ctx.completedResults.length).toBe(1);
+    });
+
+    it('should accumulate scores across rounds', () => {
+      const ctx = createMockContext();
+      ctx.context.gameSettings = { roundCount: 2 };
+      const game = new MinimalistMasterpieceGame(ctx.context);
+      game.start();
+
+      // Complete round 1
+      advanceToAuction(game, ALL_PLAYER_IDS);
+      vi.advanceTimersByTime(MM_AUCTION_DURATION_SECONDS * 1000);
+      vi.advanceTimersByTime(MM_RESULTS_DURATION_SECONDS * 1000);
+
+      // Complete round 2
+      vi.advanceTimersByTime(MM_PROMPT_REVEAL_SECONDS * 1000); // PROMPT_REVEAL
+      for (const uid of ALL_PLAYER_IDS) {
+        game.handleInput(uid, 'SUBMIT_DRAWING', createValidDrawing());
+      }
+      vi.advanceTimersByTime(MM_GALLERY_DURATION_SECONDS * 1000); // skip GALLERY
+      vi.advanceTimersByTime(MM_AUCTION_DURATION_SECONDS * 1000); // AUCTION
+      vi.advanceTimersByTime(MM_RESULTS_DURATION_SECONDS * 1000); // RESULTS
+
+      // Game should be complete with cumulative scores
+      expect(ctx.completedResults.length).toBe(1);
+      const results = ctx.completedResults[0];
+      // All players should have scores (from 2 rounds of rank points)
+      for (const r of results.rankings) {
+        expect(r.score).toBeGreaterThan(0);
+      }
+    });
+
+    it('game log should include round count', () => {
+      const ctx = createMockContext();
+      ctx.context.gameSettings = { roundCount: 1 };
+      const game = new MinimalistMasterpieceGame(ctx.context);
+      game.start();
+
+      advanceToAuction(game, ALL_PLAYER_IDS);
+      vi.advanceTimersByTime(MM_AUCTION_DURATION_SECONDS * 1000);
+      vi.advanceTimersByTime(MM_RESULTS_DURATION_SECONDS * 1000);
+
+      const results = ctx.completedResults[0];
+      const gameData = results.gameSpecificData as Record<string, unknown>;
+      expect(gameData.totalRounds).toBe(1);
+      expect(gameData.roundsPlayed).toBe(1);
     });
   });
 });

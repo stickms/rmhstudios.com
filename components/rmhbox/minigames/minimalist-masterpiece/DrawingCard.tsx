@@ -39,8 +39,7 @@ function strokeToPath(stroke: MMStroke): string {
 export default function DrawingCard({ strokes, label, className = '' }: DrawingCardProps) {
   return (
     <div className={`flex flex-col items-center gap-1 ${className}`}>
-      <div className="aspect-square rounded-lg border border-(--rmhbox-border) bg-white overflow-hidden"
-        style={{ width: '100%', maxWidth: '12rem' }}>
+      <div className="aspect-square rounded-lg border border-(--rmhbox-border) bg-white overflow-hidden max-w-48">
         <svg viewBox="0 0 300 300" className="w-full h-full" preserveAspectRatio="xMidYMid meet">
           {strokes.map((stroke) => (
             <path

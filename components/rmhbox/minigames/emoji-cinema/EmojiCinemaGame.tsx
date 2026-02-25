@@ -135,14 +135,14 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
           const correctGuessers = (data.correctGuessers ?? []) as Array<{ userId: string; userName: string; rank: number }>;
           const roundScores = (data.roundScores ?? {}) as Record<string, number>;
           
-          // Produce player results from roundScores
+          // Extract producer points first
+          setResultsProducerPoints(roundScores[producerId] ?? 0);
+          setResultsProducerName(producerName);
+
+          // Build audience player results from roundScores (exclude producer)
           const playerResults: PlayerResult[] = [];
           for (const [uid, pts] of Object.entries(roundScores)) {
-            // Skip producer
-            if (uid === producerId) {
-              setResultsProducerPoints(pts);
-              continue;
-            }
+            if (uid === producerId) continue;
             const cg = correctGuessers.find((g) => g.userId === uid);
             playerResults.push({
               userId: uid,
@@ -152,7 +152,6 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
               guessNumber: cg?.rank,
             });
           }
-          setResultsProducerName(producerName);
           setResultsPlayers(data.results as PlayerResult[] ?? playerResults);
           setNoEmojisSkipped(!!data.noEmojis);
           setPhase('ROUND_RESULTS');
@@ -170,7 +169,7 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
         }
       }
     },
-    [phase, roundNumber],
+    [phase, roundNumber, producerId, producerName],
   );
 
   // Subscribe to socket events

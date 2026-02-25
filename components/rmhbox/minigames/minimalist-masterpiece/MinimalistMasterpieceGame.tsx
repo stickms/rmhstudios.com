@@ -69,7 +69,8 @@ const STROKE_WIDTHS = [2, 4, 6, 10];
 // Background color options
 const BG_COLORS = ['#ffffff', '#f5f5dc', '#ffe4e1', '#e0f7fa', '#f0e68c', '#e8e8e8', '#1a1a2e'];
 
-export default function MinimalistMasterpieceGame({ playerId, playerName: _playerName }: MinigameProps) {
+export default function MinimalistMasterpieceGame({ playerId: _playerId, playerName: _playerName }: MinigameProps) {
+  void _playerId;
   void _playerName;
 
   const [phase, setPhase] = useState<MMPhase>('PROMPT_REVEAL');
@@ -194,7 +195,7 @@ export default function MinimalistMasterpieceGame({ playerId, playerName: _playe
         }
       }
     },
-    [playerId],
+    [],
   );
 
   // Subscribe to socket events

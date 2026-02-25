@@ -106,8 +106,8 @@ describe('Cross-Game Integration (§6.5)', () => {
   });
 
   describe('Settings Schemas', () => {
-    it('MINIMALIST_MASTERPIECE_SETTINGS should have 5 entries', () => {
-      expect(MINIMALIST_MASTERPIECE_SETTINGS).toHaveLength(5);
+    it('MINIMALIST_MASTERPIECE_SETTINGS should have 6 entries', () => {
+      expect(MINIMALIST_MASTERPIECE_SETTINGS).toHaveLength(6);
     });
 
     it('EMOJI_CINEMA_SETTINGS should have 4 entries', () => {

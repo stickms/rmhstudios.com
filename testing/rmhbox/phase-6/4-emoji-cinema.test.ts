@@ -872,7 +872,7 @@ describe('Emoji Cinema Server Handler (§6.4)', () => {
       // Round should have ended
       const roundOver = findLastActionBroadcast(broadcastLog, 'EC_ROUND_OVER');
       expect(roundOver).toBeDefined();
-      expect(roundOver!.data.reason).toBe('timeout');
+      expect(roundOver!.data.reason).toBe('no_emojis');
     });
 
     it('should cancel skip if producer reconnects before wait period', () => {
@@ -1022,6 +1022,57 @@ describe('Emoji Cinema Server Handler (§6.4)', () => {
       expect(results.awards).toBeDefined();
       expect(results.duration).toBeGreaterThan(0);
       expect(results.gameSpecificData).toBeDefined();
+    });
+  });
+
+  // ───────────────────────────────────────────────────────────────
+  // 12. No-Emoji Producer Skip
+  // ───────────────────────────────────────────────────────────────
+  describe('No-Emoji Producer Skip', () => {
+    it('should report noEmojis=true when producer submits no emojis', () => {
+      const { game, broadcastLog } = createGame();
+      game.start();
+      advanceToConstruction(game);
+
+      // Let the round time out without the producer adding any emojis
+      vi.advanceTimersByTime(EC_ROUND_DURATION_SECONDS * 1000);
+
+      const roundOver = findLastActionBroadcast(broadcastLog, 'EC_ROUND_OVER');
+      expect(roundOver).toBeDefined();
+      expect(roundOver!.data.noEmojis).toBe(true);
+      expect(roundOver!.data.reason).toBe('no_emojis');
+    });
+
+    it('should NOT report noEmojis when producer did add emojis', () => {
+      const { game, broadcastLog } = createGame();
+      game.start();
+      const producerId = getProducerFromLog(broadcastLog);
+      advanceToConstruction(game);
+
+      // Producer adds one emoji
+      game.handleInput(producerId, 'ADD_EMOJI', { emoji: '🎬', position: 0 });
+
+      vi.advanceTimersByTime(EC_ROUND_DURATION_SECONDS * 1000);
+
+      const roundOver = findLastActionBroadcast(broadcastLog, 'EC_ROUND_OVER');
+      expect(roundOver).toBeDefined();
+      expect(roundOver!.data.noEmojis).toBe(false);
+      expect(roundOver!.data.reason).toBe('timeout');
+    });
+
+    it('should give no points when producer submits no emojis', () => {
+      const { game, broadcastLog } = createGame();
+      game.start();
+      advanceToConstruction(game);
+
+      vi.advanceTimersByTime(EC_ROUND_DURATION_SECONDS * 1000);
+
+      const roundOver = findLastActionBroadcast(broadcastLog, 'EC_ROUND_OVER');
+      const roundScores = roundOver!.data.roundScores as Record<string, number>;
+      // All scores should be 0 since no one could guess
+      for (const pts of Object.values(roundScores)) {
+        expect(pts).toBe(0);
+      }
     });
   });
 });
