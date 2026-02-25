@@ -41,7 +41,7 @@ export function MerchSection() {
       <div className="container mx-auto max-w-6xl relative z-10">
         <SectionHeading
           title="Official Merch"
-          subtitle="Wear the code. Drink the bugs. Stick the glitz."
+          subtitle="Wear the code. Drink the bugs. Own the noobs."
           className="mb-16"
         />
 
