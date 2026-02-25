@@ -39,6 +39,9 @@ export default function LobbyPage({ params }: { params: Promise<{ lobbyId: strin
   const lobby = useRMHboxStore((s) => s.lobby);
   const connectionStatus = useRMHboxStore((s) => s.connectionStatus);
 
+  const backlinkLabel = "Leave";
+  const backlinkHref = '/rmhbox';
+
   // Voting state (received via separate events)
   const [voteCandidates, setVoteCandidates] = useState<VoteCandidate[]>([]);
   const [voteDuration, setVoteDuration] = useState(30);
@@ -181,7 +184,7 @@ export default function LobbyPage({ params }: { params: Promise<{ lobbyId: strin
   if (connectionStatus === 'connecting' || connectionStatus === 'disconnected') {
     return (
       <div className="flex h-screen flex-col">
-        <RMHboxHeader backLabel="← Leave"/>
+        <RMHboxHeader backLabel={backlinkLabel} backHref={backlinkHref}/>
         <div className="flex flex-1 items-center justify-center">
           <div className="text-center">
             <div className="text-2xl mb-4 text-(--rmhbox-text)">Connecting...</div>
@@ -196,7 +199,7 @@ export default function LobbyPage({ params }: { params: Promise<{ lobbyId: strin
   if (connectionStatus === 'error') {
     return (
       <div className="flex h-screen flex-col">
-        <RMHboxHeader backLabel="← Leave"/>
+        <RMHboxHeader backLabel={backlinkLabel} backHref={backlinkHref}/>
         <div className="flex flex-1 items-center justify-center">
           <div className="text-center">
             <div className="text-2xl mb-4 text-(--rmhbox-danger)">
@@ -218,7 +221,7 @@ export default function LobbyPage({ params }: { params: Promise<{ lobbyId: strin
   if (!lobby) {
     return (
       <div className="flex h-screen flex-col">
-        <RMHboxHeader backLabel="← Leave"/>
+        <RMHboxHeader backLabel={backlinkLabel} backHref={backlinkHref}/>
         <div className="flex flex-1 items-center justify-center">
           <div className="text-center">
             <div className="text-2xl mb-4 text-(--rmhbox-text)">Joining lobby {lobbyId}...</div>
@@ -244,7 +247,8 @@ export default function LobbyPage({ params }: { params: Promise<{ lobbyId: strin
       <RMHboxHeader
         context={headerContext}
         title={headerTitle}
-        backLabel="← Leave"
+        backLabel={backlinkLabel}
+        backHref={backlinkHref}
       />
 
       {/* Content area below header */}

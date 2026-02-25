@@ -193,8 +193,8 @@ export default function MinigameHistoryPage() {
     <div className="flex h-screen flex-col">
       <RMHboxHeader
         context="history"
+        backLabel="Minigames"
         backHref="/rmhbox/minigames"
-        backLabel="← Minigames"
         title={game?.displayName ?? minigameId}
       />
 

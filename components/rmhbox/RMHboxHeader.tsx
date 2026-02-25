@@ -20,7 +20,8 @@
 
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Circle, Infinity, Pause, Play } from 'lucide-react';
+import Link from 'next/link';
+import { ArrowLeft, Circle, Infinity, Pause, Play } from 'lucide-react';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { emit } from '@/lib/rmhbox/socket';
 import { C2S } from '@/lib/rmhbox/events';
@@ -46,7 +47,7 @@ function TimerRing({
   const [hovered, setHovered] = useState(false);
 
   const totalRadius = 20; // SVG viewBox is 40x40, so radius is half minus stroke width
-  const strokeWidth = 3;
+  const strokeWidth = 4;
 
   const radius = totalRadius - strokeWidth / 2;
   const circumference = 2 * Math.PI * radius;
@@ -173,9 +174,9 @@ export default function RMHboxHeader({
       {/* Left side */}
       <div className="flex items-center gap-2 z-10">
         {hasBackLink && (
-          <a
-            href={backHref ?? (isLanding ? '/games' : '/rmhbox')}
-            className="text-sm font-medium text-(--rmhbox-text-muted) hover:text-(--rmhbox-accent) transition-colors"
+          <Link
+            href={backHref ?? '/rmhbox'}
+            className="text-sm font-medium text-(--rmhbox-text-muted) hover:text-(--rmhbox-accent) transition-colors text-nowrap"
             // when in a lobby, the back link becomes a "Leave" action that also disconnects from the lobby
             onClick={(e) => {
               if (context === 'lobby') {
@@ -187,8 +188,11 @@ export default function RMHboxHeader({
               }
             }}
           >
-            {backLabel ?? ('← Back')}
-          </a>
+            <span className="flex items-center gap-1">
+              <ArrowLeft size={16} />
+              {backLabel ?? 'Back'}
+            </span>
+          </Link>
         )}
         {showTimer && (
           <TimerRing
