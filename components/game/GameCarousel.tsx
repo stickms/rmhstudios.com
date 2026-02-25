@@ -12,8 +12,8 @@ interface GameCarouselProps {
 }
 
 export function GameCarousel({ games }: GameCarouselProps) {
-    const [emblaRef, emblaApi] = useEmblaCarousel({ 
-        loop: true, 
+    const [emblaRef, emblaApi] = useEmblaCarousel({
+        loop: true,
         align: 'center',
         slidesToScroll: 1,
         breakpoints: {
@@ -43,12 +43,11 @@ export function GameCarousel({ games }: GameCarouselProps) {
         setProgress(0);
     }, []);
 
-    // Custom Autoplay Logic - Perfectly Synced with Progress
     useEffect(() => {
         if (!emblaApi || !isInView || isPaused) return;
 
-        const duration = 5000; // 5 seconds
-        const intervalTime = 20; // Update every 20ms
+        const duration = 5000;
+        const intervalTime = 20;
         const step = (intervalTime / duration) * 100;
 
         const timer = setInterval(() => {
@@ -74,7 +73,7 @@ export function GameCarousel({ games }: GameCarouselProps) {
     }, [emblaApi, onInit, onSelect]);
 
     return (
-        <div 
+        <div
             ref={containerRef}
             className="relative w-screen left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] group/carousel"
             onMouseEnter={() => setIsPaused(true)}
@@ -92,7 +91,7 @@ export function GameCarousel({ games }: GameCarouselProps) {
 
             {/* Navigation Buttons */}
             <button
-                className="absolute left-4 md:left-12 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-slate-900/80 border border-slate-700 text-white flex items-center justify-center transition-all hover:bg-slate-800 hover:border-cyan-500/50 hover:shadow-[0_0_20px_rgba(34,211,238,0.2)] z-10 backdrop-blur-sm"
+                className="absolute left-4 md:left-12 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-(--site-surface)/80 border border-site-border text-site-text flex items-center justify-center transition-all hover:bg-site-accent hover:border-site-accent hover:text-white z-10 backdrop-blur-sm"
                 onClick={scrollPrev}
                 aria-label="Previous slide"
             >
@@ -100,7 +99,7 @@ export function GameCarousel({ games }: GameCarouselProps) {
             </button>
 
             <button
-                className="absolute right-4 md:right-12 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-slate-900/80 border border-slate-700 text-white flex items-center justify-center transition-all hover:bg-slate-800 hover:border-cyan-500/50 hover:shadow-[0_0_20px_rgba(34,211,238,0.2)] z-10 backdrop-blur-sm"
+                className="absolute right-4 md:right-12 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-(--site-surface)/80 border border-site-border text-site-text flex items-center justify-center transition-all hover:bg-site-accent hover:border-site-accent hover:text-white z-10 backdrop-blur-sm"
                 onClick={scrollNext}
                 aria-label="Next slide"
             >
@@ -108,17 +107,17 @@ export function GameCarousel({ games }: GameCarouselProps) {
             </button>
 
             {/* Pagination Dots */}
-            <div className="mt-8 flex justify-center gap-2 items-center bg-slate-900/40 p-2 rounded-full border border-white/5 backdrop-blur-sm w-fit mx-auto">
+            <div className="mt-8 flex justify-center gap-2 items-center bg-(--site-surface)/40 p-2 rounded-full border border-(--site-border)/50 backdrop-blur-sm w-fit mx-auto">
                 {scrollSnaps.map((_, index) => (
                     <button
                         key={index}
                         onClick={() => scrollTo(index)}
-                        className={`relative h-1.5 rounded-full overflow-hidden bg-white/10 transition-all duration-500 ease-out ${index === selectedIndex ? "w-12" : "w-1.5"}`}
+                        className={`relative h-1.5 rounded-full overflow-hidden bg-site-border transition-all duration-500 ease-out ${index === selectedIndex ? "w-12" : "w-1.5"}`}
                         aria-label={`Go to slide ${index + 1}`}
                     >
                         {index === selectedIndex && (
-                          <div 
-                              className="absolute inset-0 bg-cyan-500"
+                          <div
+                              className="absolute inset-0 bg-site-accent"
                               style={{ width: `${progress}%` }}
                           />
                         )}

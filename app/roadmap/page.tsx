@@ -1,5 +1,4 @@
 import { RoadmapSection } from "@/components/roadmap/RoadmapSection";
-import { ParticleField } from "@/components/effects/ParticleField";
 
 export const metadata = {
   title: "Roadmap | RMH Studios",
@@ -9,8 +8,7 @@ export const metadata = {
 
 export default function RoadmapPage() {
   return (
-    <main className="min-h-screen bg-background text-white">
-      <ParticleField />
+    <main className="min-h-screen bg-site-bg text-site-text">
       <RoadmapSection />
     </main>
   );

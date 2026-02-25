@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { BouncyCard } from "@/components/ui/BouncyCard";
-import { ProximityText } from "@/components/ui/ProximityText";
+import { SurfaceCard } from "@/components/ui/SurfaceCard";
+import { SectionHeading } from "@/components/ui/SectionHeading";
 import { Star } from "lucide-react";
 
 const ALL_TESTIMONIALS = [
@@ -108,70 +108,45 @@ export function TestimonialsSection() {
   return (
     <section
       id="testimonials"
-      className="relative min-h-screen flex flex-col pt-20 overflow-hidden bg-linear-to-b from-(--neon-cyan)/20 to-(--neon-pink)/20"
+      className="relative min-h-screen flex flex-col pt-20 overflow-hidden bg-site-bg-subtle"
     >
-      {/* Subtle Divider */}
-      <div className="absolute top-0 left-0 w-full h-px bg-linear-to-r from-transparent via-(--neon-cyan)/50 to-transparent opacity-50" />
-
-      {/* Background Ambience */}
-      <div className="absolute inset-0 pointer-events-none" />
+      {/* Subtle top divider */}
+      <div className="absolute top-0 left-0 w-full h-px bg-linear-to-r from-transparent via-site-border to-transparent" />
 
       <div className="grow flex flex-col justify-center px-4 py-20 relative z-10">
         <div className="max-w-6xl mx-auto w-full">
-          {/* Section header */}
-          <motion.div
-            className="text-center mb-12"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          >
-            <h2 className="text-4xl md:text-5xl lg:text-6xl font-black">
-              <ProximityText maxScale={1.3} proximity={150}>
-                What People Say
-              </ProximityText>
-            </h2>
-            <p className="mt-4 text-white/60 text-lg md:text-xl max-w-2xl mx-auto">
-              Real feedback from players, creators, and the community.
-            </p>
-          </motion.div>
+          <SectionHeading
+            title="What People Say"
+            subtitle="Real feedback from players, creators, and the community."
+            className="mb-12"
+          />
 
           {/* Testimonials grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
             {testimonials.map((t, index) => (
-              <motion.div
-                key={t.id}
-                initial={{ opacity: 0, y: 40 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-              >
-                <BouncyCard className="h-full flex flex-col justify-between p-8">
-                  <div>
-                    <div className="flex gap-0.5 mb-4">
-                      {Array.from({ length: t.stars }).map((_, i) => (
-                        <Star key={i} className="w-4 h-4 fill-(--neon-cyan) text-(--neon-cyan)" />
-                      ))}
-                    </div>
-                    <p className="text-lg text-white/90 italic leading-relaxed mb-6">
-                      &ldquo;{t.quote}&rdquo;
-                    </p>
+              <SurfaceCard key={t.id} delay={index * 0.1} className="h-full flex flex-col justify-between">
+                <div>
+                  <div className="flex gap-0.5 mb-4">
+                    {Array.from({ length: t.stars }).map((_, i) => (
+                      <Star key={i} className="w-4 h-4 fill-site-accent text-site-accent" />
+                    ))}
                   </div>
+                  <p className="text-lg text-site-text/90 italic leading-relaxed mb-6">
+                    &ldquo;{t.quote}&rdquo;
+                  </p>
+                </div>
 
-                  <div className="border-t border-white/10 pt-4 mt-auto">
-                    <div className="font-bold text-(--neon-pink)">
-                      {t.author}
-                    </div>
-                    <div className="text-sm text-white/50">{t.role}</div>
+                <div className="border-t border-site-border pt-4 mt-auto">
+                  <div className="font-bold text-site-accent">
+                    {t.author}
                   </div>
-                </BouncyCard>
-              </motion.div>
+                  <div className="text-sm text-site-text-dim">{t.role}</div>
+                </div>
+              </SurfaceCard>
             ))}
           </div>
         </div>
       </div>
-
-      {/* Navigation buttons - REMOVED for Global Button */}
     </section>
   );
 }

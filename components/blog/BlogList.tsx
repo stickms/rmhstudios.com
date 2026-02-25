@@ -7,7 +7,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Search, Calendar, Filter, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, X } from "lucide-react";
 import { ShareButton } from "@/components/blog/ShareButton";
 import { Post } from "@/lib/blog";
-import { ProximityText } from "@/components/ui/ProximityText";
 
 const POSTS_PER_PAGE = 12;
 
@@ -28,7 +27,6 @@ export function BlogList({ initialPosts }: BlogListProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Read initial state from URL params
   const [searchInput, setSearchInput] = useState(searchParams.get("q") || "");
   const debouncedSearch = useDebounce(searchInput, 250);
   const [selectedTag, setSelectedTag] = useState<string | null>(searchParams.get("tag") || null);
@@ -39,7 +37,6 @@ export function BlogList({ initialPosts }: BlogListProps) {
   const [showAllTags, setShowAllTags] = useState(false);
   const gridRef = useRef<HTMLDivElement>(null);
 
-  // Sync URL params when filters change
   const updateURL = useCallback((params: Record<string, string | null>) => {
     const url = new URLSearchParams(searchParams.toString());
     Object.entries(params).forEach(([key, value]) => {
@@ -53,7 +50,6 @@ export function BlogList({ initialPosts }: BlogListProps) {
     router.replace(`/blog${qs ? `?${qs}` : ""}`, { scroll: false });
   }, [router, searchParams]);
 
-  // Extract all unique tags, sorted by frequency
   const allTags = useMemo(() => {
     const tagCounts = new Map<string, number>();
     initialPosts.forEach(post => {
@@ -64,11 +60,9 @@ export function BlogList({ initialPosts }: BlogListProps) {
       .map(([tag]) => tag);
   }, [initialPosts]);
 
-  // Filter and Sort
   const filteredPosts = useMemo(() => {
     let result = [...initialPosts];
 
-    // Search (uses debounced value)
     if (debouncedSearch) {
       const q = debouncedSearch.toLowerCase();
       const terms = q.split(/\s+/).filter(Boolean);
@@ -81,12 +75,10 @@ export function BlogList({ initialPosts }: BlogListProps) {
       );
     }
 
-    // Tag Filter
     if (selectedTag) {
       result = result.filter(post => post.tags?.includes(selectedTag));
     }
 
-    // Sort
     result.sort((a, b) => {
       if (sortMode === "newest") return new Date(b.date!).getTime() - new Date(a.date!).getTime();
       if (sortMode === "oldest") return new Date(a.date!).getTime() - new Date(b.date!).getTime();
@@ -98,17 +90,14 @@ export function BlogList({ initialPosts }: BlogListProps) {
     return result;
   }, [initialPosts, debouncedSearch, selectedTag, sortMode]);
 
-  // Pagination
   const totalPages = Math.max(1, Math.ceil(filteredPosts.length / POSTS_PER_PAGE));
 
-  // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
     updateURL({ q: debouncedSearch || null, tag: selectedTag, sort: sortMode, page: null });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch, selectedTag, sortMode]);
 
-  // Clamp page on filter changes
   const safePage = Math.min(currentPage, totalPages);
   useEffect(() => {
     if (currentPage !== safePage) setCurrentPage(safePage);
@@ -126,7 +115,6 @@ export function BlogList({ initialPosts }: BlogListProps) {
     gridRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [totalPages, updateURL, debouncedSearch, selectedTag, sortMode]);
 
-  // Generate page numbers with ellipsis
   const pageNumbers = useMemo(() => {
     const pages: (number | "...")[] = [];
     if (totalPages <= 7) {
@@ -153,9 +141,9 @@ export function BlogList({ initialPosts }: BlogListProps) {
 
   return (
     <div className="container mx-auto max-w-6xl relative z-10">
-      
+
       {/* Header & Controls */}
-      <motion.div 
+      <motion.div
         className="mb-12 space-y-8"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -163,16 +151,16 @@ export function BlogList({ initialPosts }: BlogListProps) {
       >
         <div className="flex flex-col md:flex-row gap-6 justify-between items-end">
           <div>
-            <Link href="/" className="inline-flex items-center gap-2 text-white/50 hover:text-white mb-6 transition-colors">
+            <Link href="/" className="inline-flex items-center gap-2 text-site-text-dim hover:text-site-text mb-6 transition-colors">
               <ArrowLeft className="w-4 h-4" /> Back to Home
             </Link>
-            <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight">
-              <ProximityText>The Archive</ProximityText>
+            <h1 className="text-4xl md:text-5xl font-black text-site-text tracking-tight font-(family-name:--font-nunito)">
+              The Archive
             </h1>
-            <p className="text-white/60 mt-2 text-lg">
+            <p className="text-site-text-muted mt-2 text-lg">
               {filteredPosts.length} {filteredPosts.length === 1 ? "entry" : "entries"} found
               {filteredPosts.length !== initialPosts.length && (
-                <span className="text-white/30"> of {initialPosts.length} total</span>
+                <span className="text-site-text-dim"> of {initialPosts.length} total</span>
               )}
             </p>
           </div>
@@ -180,19 +168,19 @@ export function BlogList({ initialPosts }: BlogListProps) {
           {/* Search Bar */}
           <div className="w-full md:w-96 relative">
              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-5 w-5 text-white/30" />
+                <Search className="h-5 w-5 text-site-text-dim" />
              </div>
              <input
                 type="text"
                 placeholder="Search titles, descriptions, tags..."
-                className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-10 text-white placeholder-white/30 focus:outline-none focus:border-(--neon-pink) focus:ring-1 focus:ring-(--neon-pink) transition-all"
+                className="w-full bg-site-surface border border-site-border rounded-xl py-3 pl-10 pr-10 text-site-text placeholder-site-text-dim focus:outline-none focus:border-site-accent focus:ring-1 focus:ring-site-accent transition-all"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
              />
              {searchInput && (
                <button
                  onClick={() => setSearchInput("")}
-                 className="absolute inset-y-0 right-0 pr-3 flex items-center text-white/30 hover:text-white transition-colors"
+                 className="absolute inset-y-0 right-0 pr-3 flex items-center text-site-text-dim hover:text-site-text transition-colors"
                >
                  <X className="h-4 w-4" />
                </button>
@@ -201,16 +189,16 @@ export function BlogList({ initialPosts }: BlogListProps) {
         </div>
 
         {/* Filters Row */}
-        <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center bg-white/5 p-4 rounded-xl border border-white/10 backdrop-blur-sm">
-           
+        <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center bg-site-surface p-4 rounded-xl border border-site-border backdrop-blur-sm">
+
            {/* Tags */}
            <div className="flex flex-wrap gap-2 items-center flex-1">
-              <div className="flex items-center gap-2 text-sm text-(--neon-cyan) mr-2 whitespace-nowrap">
+              <div className="flex items-center gap-2 text-sm text-site-accent mr-2 whitespace-nowrap">
                 <Filter className="w-4 h-4" /> Filters:
               </div>
               <button
                 onClick={() => setSelectedTag(null)}
-                className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${!selectedTag ? "bg-(--neon-pink) text-white" : "bg-white/10 text-white/50 hover:bg-white/20"}`}
+                className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${!selectedTag ? "bg-site-accent text-white" : "bg-site-bg text-site-text-muted hover:bg-site-surface-hover"}`}
               >
                 All
               </button>
@@ -218,7 +206,7 @@ export function BlogList({ initialPosts }: BlogListProps) {
                 <button
                     key={tag}
                     onClick={() => setSelectedTag(tag === selectedTag ? null : tag)}
-                    className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${selectedTag === tag ? "bg-(--neon-pink) text-white" : "bg-white/10 text-white/50 hover:bg-white/20"}`}
+                    className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${selectedTag === tag ? "bg-site-accent text-white" : "bg-site-bg text-site-text-muted hover:bg-site-surface-hover"}`}
                 >
                     {tag}
                 </button>
@@ -226,7 +214,7 @@ export function BlogList({ initialPosts }: BlogListProps) {
               {!showAllTags && allTags.length > 5 && (
                   <button
                     onClick={() => setShowAllTags(true)}
-                    className="text-xs text-(--neon-cyan) hover:text-white transition-colors ml-1 font-mono"
+                    className="text-xs text-site-accent hover:text-site-text transition-colors ml-1 font-mono"
                   >
                     (+ {allTags.length - 5} more)
                   </button>
@@ -234,7 +222,7 @@ export function BlogList({ initialPosts }: BlogListProps) {
               {showAllTags && allTags.length > 5 && (
                   <button
                     onClick={() => setShowAllTags(false)}
-                    className="text-xs text-(--neon-cyan) hover:text-white transition-colors ml-1 font-mono"
+                    className="text-xs text-site-accent hover:text-site-text transition-colors ml-1 font-mono"
                   >
                     (show less)
                   </button>
@@ -246,16 +234,16 @@ export function BlogList({ initialPosts }: BlogListProps) {
               {hasActiveFilters && (
                 <button
                   onClick={clearAllFilters}
-                  className="text-xs text-(--neon-pink) hover:text-white transition-colors font-mono flex items-center gap-1"
+                  className="text-xs text-site-danger hover:text-site-text transition-colors font-mono flex items-center gap-1"
                 >
                   <X className="w-3 h-3" /> Clear all
                 </button>
               )}
-              <span className="text-sm text-white/40">Sort by:</span>
-              <select 
+              <span className="text-sm text-site-text-dim">Sort by:</span>
+              <select
                 value={sortMode}
                 onChange={(e) => setSortMode(e.target.value as "newest" | "oldest" | "az" | "za")}
-                className="bg-black/40 border border-white/10 rounded-lg py-1 px-3 text-sm text-white focus:outline-none focus:border-(--neon-pink)"
+                className="bg-site-bg border border-site-border rounded-lg py-1 px-3 text-sm text-site-text focus:outline-none focus:border-site-accent"
               >
                 <option value="newest">Newest</option>
                 <option value="oldest">Oldest</option>
@@ -267,7 +255,7 @@ export function BlogList({ initialPosts }: BlogListProps) {
 
         {/* Pagination Info */}
         {totalPages > 1 && (
-          <div className="text-sm text-white/40 font-mono">
+          <div className="text-sm text-site-text-dim font-mono">
             Showing {(safePage - 1) * POSTS_PER_PAGE + 1}-{Math.min(safePage * POSTS_PER_PAGE, filteredPosts.length)} of {filteredPosts.length}
           </div>
         )}
@@ -285,46 +273,46 @@ export function BlogList({ initialPosts }: BlogListProps) {
               exit={{ opacity: 0, scale: 0.9 }}
               transition={{ duration: 0.3 }}
             >
-               <div className="bg-black/40 border border-white/10 rounded-2xl overflow-hidden hover:border-(--neon-cyan) transition-colors duration-300 h-full flex flex-col group relative">
+               <div data-slot="card" className="bg-site-surface border border-site-border overflow-hidden hover:border-site-accent/50 transition-colors h-full flex flex-col group relative" style={{ borderRadius: "var(--site-radius)", borderWidth: "var(--site-border-width)", transitionDuration: "var(--site-transition-speed)" }}>
                   <Link href={`/blog/${post.slug}`} className="absolute inset-0 z-0" />
-                  
-                  {/* Share Button (Above Link Z-Index) */}
+
+                  {/* Share Button */}
                   <ShareButton slug={post.slug!} className="absolute top-3 right-3 z-10" />
 
                   {/* Image Placeholder */}
-                  <div className="h-40 bg-white/5 relative overflow-hidden shrink-0">
-                    <div className="absolute inset-0 flex items-center justify-center text-white/10 font-mono text-xs p-4 text-center">
+                  <div className="h-40 bg-site-surface-hover relative overflow-hidden shrink-0">
+                    <div className="absolute inset-0 flex items-center justify-center text-site-text-dim font-mono text-xs p-4 text-center">
                         {post.title}
                     </div>
-                     <div className="absolute inset-0 bg-linear-to-t from-black/80 to-transparent" />
+                     <div className="absolute inset-0 bg-linear-to-t from-site-surface to-transparent" />
                   </div>
 
                   <div className="p-5 flex flex-col flex-1 relative pointer-events-none">
-                    <div className="flex items-center gap-2 text-(--neon-pink) text-xs font-mono mb-2">
+                    <div className="flex items-center gap-2 text-site-accent text-xs font-mono mb-2">
                         <Calendar className="w-3 h-3" />
                         {post.date}
                     </div>
-                    
-                    <h3 className="text-xl font-bold text-white mb-2 leading-tight">
-                        <ProximityText>{post.title || ""}</ProximityText>
+
+                    <h3 className="text-xl font-bold text-site-text mb-2 leading-tight group-hover:text-site-accent transition-colors">
+                        {post.title}
                     </h3>
 
                     {/* Tags */}
                     {post.tags && (
                         <div className="flex flex-wrap gap-2 mb-4">
                             {post.tags.map(tag => (
-                                <span key={tag} className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-sm bg-white/5 text-white/40 border border-white/5">
+                                <span key={tag} className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-sm bg-site-bg text-site-text-dim border border-site-border">
                                     {tag}
                                 </span>
                             ))}
                         </div>
                     )}
-                    
-                    <p className="text-white/50 text-sm line-clamp-3 mb-4">
+
+                    <p className="text-site-text-muted text-sm line-clamp-3 mb-4">
                         {post.description}
                     </p>
-                    
-                    <div className="mt-auto flex items-center text-(--neon-cyan) text-xs font-bold uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
+
+                    <div className="mt-auto flex items-center text-site-accent text-xs font-bold uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
                         Read Entry &rarr;
                     </div>
                   </div>
@@ -332,16 +320,16 @@ export function BlogList({ initialPosts }: BlogListProps) {
             </motion.div>
           ))}
         </AnimatePresence>
-        
+
         {filteredPosts.length === 0 && (
-            <div className="col-span-full text-center py-20 text-white/30">
+            <div className="col-span-full text-center py-20 text-site-text-dim">
                 <p className="text-lg">No logs found matching your filters.</p>
                 {debouncedSearch && (
                   <p className="mt-2 text-sm">Try different search terms or fewer filters.</p>
                 )}
-                <button 
+                <button
                     onClick={clearAllFilters}
-                    className="mt-4 text-(--neon-pink) hover:underline"
+                    className="mt-4 text-site-accent hover:underline"
                 >
                     Clear All Filters
                 </button>
@@ -358,38 +346,35 @@ export function BlogList({ initialPosts }: BlogListProps) {
           transition={{ delay: 0.3 }}
         >
           <div className="flex items-center gap-1 sm:gap-2">
-            {/* First page */}
             <button
               onClick={() => goToPage(1)}
               disabled={safePage === 1}
-              className="p-2 rounded-lg text-white/50 hover:text-white hover:bg-white/10 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+              className="p-2 rounded-lg text-site-text-dim hover:text-site-text hover:bg-site-surface disabled:opacity-20 disabled:cursor-not-allowed transition-all"
               aria-label="First page"
             >
               <ChevronsLeft className="w-4 h-4" />
             </button>
 
-            {/* Previous */}
             <button
               onClick={() => goToPage(safePage - 1)}
               disabled={safePage === 1}
-              className="p-2 rounded-lg text-white/50 hover:text-white hover:bg-white/10 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+              className="p-2 rounded-lg text-site-text-dim hover:text-site-text hover:bg-site-surface disabled:opacity-20 disabled:cursor-not-allowed transition-all"
               aria-label="Previous page"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
 
-            {/* Page numbers */}
             {pageNumbers.map((page, i) =>
               page === "..." ? (
-                <span key={`ellipsis-${i}`} className="px-2 text-white/30 text-sm">...</span>
+                <span key={`ellipsis-${i}`} className="px-2 text-site-text-dim text-sm">...</span>
               ) : (
                 <button
                   key={page}
                   onClick={() => goToPage(page as number)}
                   className={`w-9 h-9 rounded-lg text-sm font-bold transition-all ${
                     safePage === page
-                      ? "bg-(--neon-pink) text-white shadow-lg shadow-(--neon-pink)/25"
-                      : "text-white/50 hover:text-white hover:bg-white/10"
+                      ? "bg-site-accent text-white"
+                      : "text-site-text-dim hover:text-site-text hover:bg-site-surface"
                   }`}
                 >
                   {page}
@@ -397,28 +382,26 @@ export function BlogList({ initialPosts }: BlogListProps) {
               )
             )}
 
-            {/* Next */}
             <button
               onClick={() => goToPage(safePage + 1)}
               disabled={safePage === totalPages}
-              className="p-2 rounded-lg text-white/50 hover:text-white hover:bg-white/10 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+              className="p-2 rounded-lg text-site-text-dim hover:text-site-text hover:bg-site-surface disabled:opacity-20 disabled:cursor-not-allowed transition-all"
               aria-label="Next page"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
 
-            {/* Last page */}
             <button
               onClick={() => goToPage(totalPages)}
               disabled={safePage === totalPages}
-              className="p-2 rounded-lg text-white/50 hover:text-white hover:bg-white/10 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+              className="p-2 rounded-lg text-site-text-dim hover:text-site-text hover:bg-site-surface disabled:opacity-20 disabled:cursor-not-allowed transition-all"
               aria-label="Last page"
             >
               <ChevronsRight className="w-4 h-4" />
             </button>
           </div>
 
-          <p className="text-xs text-white/30 font-mono">
+          <p className="text-xs text-site-text-dim font-mono">
             Page {safePage} of {totalPages}
           </p>
         </motion.div>
