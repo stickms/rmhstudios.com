@@ -55,9 +55,10 @@ model User {
   // RMH Job Search Relations
   jobApplications JobApplication[]
 
-  // RMH Utils (Docs/Sheets/Slides) Relations
-  documents          Document[]
-  docCollaborations  DocumentCollaborator[]
+  // RmhTube Relations
+  rmhtubeHostedRooms   RmhTubeRoom[]        @relation("RmhTubeHostedRooms")
+  rmhtubeRoomMembers   RmhTubeRoomMember[]
+  rmhtubeQueueItems    RmhTubeQueueItem[]
 
   @@map("user")
 }
@@ -682,75 +683,6 @@ model Assessment {
   @@map("assessment")
 }
 
-// ─── RMH Utils (Docs / Sheets / Slides) ───
-
-enum DocumentType {
-  DOC
-  SHEET
-  SLIDE
-}
-
-enum CollaboratorRole {
-  VIEWER
-  EDITOR
-  OWNER
-}
-
-model Document {
-  id         String       @id @default(cuid())
-  type       DocumentType
-  title      String       @default("Untitled")
-  userId     String
-  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  yjsState   Bytes?
-  metadata   Json?
-
-  isDeleted  Boolean      @default(false)
-  deletedAt  DateTime?
-  isFavorite Boolean      @default(false)
-
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @updatedAt
-
-  collaborators DocumentCollaborator[]
-  versions      DocumentVersion[]
-
-  @@index([userId])
-  @@index([userId, type])
-  @@index([userId, isDeleted])
-  @@map("document")
-}
-
-model DocumentCollaborator {
-  id         String           @id @default(cuid())
-  documentId String
-  document   Document         @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  userId     String
-  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role       CollaboratorRole @default(EDITOR)
-  addedAt    DateTime         @default(now())
-
-  @@unique([documentId, userId])
-  @@index([userId])
-  @@index([documentId])
-  @@map("document_collaborator")
-}
-
-model DocumentVersion {
-  id         String   @id @default(cuid())
-  documentId String
-  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  title      String
-  yjsState   Bytes
-  createdBy  String
-  createdAt  DateTime @default(now())
-
-  @@index([documentId])
-  @@index([documentId, createdAt])
-  @@map("document_version")
-}
-
 // --- RMHbox Models ---
 
 model RMHboxProfile {
@@ -811,5 +743,79 @@ model RMHboxMatchPlayer {
   @@index([userId])
   @@index([createdAt(sort: Desc)])
   @@map("rmhbox_match_player")
+}
+
+// ─── RmhTube Models ─────────────────────────────────────────
+
+model RmhTubeRoom {
+  id              String    @id                    // 6-char room code
+  name            String?
+  hostId          String
+  isPublic        Boolean   @default(true)
+  password        String?
+  maxMembers      Int       @default(20)
+  allowMemberQueue Boolean  @default(true)
+  allowMemberSkip  Boolean  @default(true)
+  autoPlay        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  closedAt        DateTime?
+
+  host     User                  @relation("RmhTubeHostedRooms", fields: [hostId], references: [id])
+  members  RmhTubeRoomMember[]
+  messages RmhTubeChatMessage[]
+  queue    RmhTubeQueueItem[]
+
+  @@index([isPublic, closedAt])
+  @@map("rmhtube_room")
+}
+
+model RmhTubeRoomMember {
+  id       String    @id @default(cuid())
+  roomId   String
+  userId   String
+  joinedAt DateTime  @default(now())
+  leftAt   DateTime?
+
+  room RmhTubeRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user User         @relation(fields: [userId], references: [id])
+
+  @@unique([roomId, userId])
+  @@map("rmhtube_room_member")
+}
+
+model RmhTubeChatMessage {
+  id        String   @id @default(cuid())
+  roomId    String
+  userId    String
+  userName  String
+  content   String
+  createdAt DateTime @default(now())
+
+  room RmhTubeRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@index([roomId, createdAt])
+  @@map("rmhtube_chat_message")
+}
+
+model RmhTubeQueueItem {
+  id           String    @id @default(cuid())
+  roomId       String
+  url          String
+  mediaType    String
+  title        String
+  duration     Int?
+  thumbnailUrl String?
+  addedById    String
+  addedByName  String
+  position     Int
+  playedAt     DateTime?
+  createdAt    DateTime  @default(now())
+
+  room    RmhTubeRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  addedBy User        @relation(fields: [addedById], references: [id])
+
+  @@index([roomId, position])
+  @@map("rmhtube_queue_item")
 }
 

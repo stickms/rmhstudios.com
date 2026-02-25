@@ -28,6 +28,23 @@ export interface GameInfo {
  */
 export const games: GameInfo[] = [
     {
+        id: 'rmhtube',
+        title: 'RmhTube',
+        description: 'Watch together! Create a room, share a link, and enjoy synced video with friends.',
+        longDescription:
+            'Host a synchronized watch party with friends. Create a room, share the invite link, and watch YouTube, Twitch, or direct video links together in perfect sync. Features real-time chat, a shared media queue, emoji reactions, vote-to-skip, and host controls.',
+        href: '/rmhtube',
+        status: 'Playable',
+        cta: 'Watch Together',
+        isSteam: false,
+        gradient: 'from-red-500 to-orange-500',
+        iconName: 'MonitorPlay',
+        imagePath: '/images/games/rmhtube.png',
+        color: 'from-red-500/20 to-orange-500/20 hover:border-red-500/50',
+        tags: ['Multiplayer', 'Social', 'Watch Party'],
+        authGate: true,
+    },
+    {
         id: 'rmhbox',
         title: 'RMHbox',
         description: 'Party game madness! Join a lobby and play 16+ minigames with friends.',

@@ -1,0 +1,180 @@
+/**
+ * RmhTube — Dedicated Theme Stylesheet
+ *
+ * Provides a fully isolated visual identity for the RmhTube watch party platform.
+ * Includes dark/light theme support, custom scrollbar, and utility animations.
+ */
+
+/* ─── Dark Theme (default) ──────────────────────────────────────── */
+
+.rmhtube-theme {
+  --rmhtube-bg: #1a1b1e;
+  --rmhtube-bg-subtle: #202124;
+  --rmhtube-surface: #27282c;
+  --rmhtube-surface-hover: #313238;
+  --rmhtube-surface-active: #3a3b42;
+  --rmhtube-border: #3a3b42;
+  --rmhtube-border-bright: #4a4b54;
+  --rmhtube-text: #e8e8ec;
+  --rmhtube-text-muted: #9a9ba4;
+  --rmhtube-text-dim: #6a6b74;
+  --rmhtube-accent: #d96e6e;
+  --rmhtube-accent-hover: #c85b5b;
+  --rmhtube-accent-dim: rgba(217, 110, 110, 0.12);
+  --rmhtube-success: #7bc88a;
+  --rmhtube-success-dim: rgba(123, 200, 138, 0.12);
+  --rmhtube-danger: #d98a8a;
+  --rmhtube-danger-dim: rgba(217, 138, 138, 0.12);
+  --rmhtube-warning: #d9c36e;
+  --rmhtube-warning-dim: rgba(217, 195, 110, 0.12);
+  --rmhtube-info: #7cacd4;
+  --rmhtube-info-dim: rgba(124, 172, 212, 0.12);
+  --rmhtube-font-display: 'Nunito', 'Segoe UI', system-ui, sans-serif;
+  --rmhtube-font-body: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --rmhtube-font-mono: 'JetBrains Mono', 'Cascadia Code', monospace;
+  --rmhtube-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+  --rmhtube-radius: 12px;
+  --rmhtube-radius-sm: 8px;
+  --rmhtube-toast-bg: #2a2b30;
+}
+
+/* ─── Light Theme ───────────────────────────────────────────────── */
+
+.rmhtube-theme.rmhtube-light {
+  --rmhtube-bg: #f5f5f7;
+  --rmhtube-bg-subtle: #ededf0;
+  --rmhtube-surface: #ffffff;
+  --rmhtube-surface-hover: #f0f0f4;
+  --rmhtube-surface-active: #e6e6ec;
+  --rmhtube-border: #d4d4da;
+  --rmhtube-border-bright: #bfbfc8;
+  --rmhtube-text: #2a2b30;
+  --rmhtube-text-muted: #6a6b74;
+  --rmhtube-text-dim: #9a9ba4;
+  --rmhtube-accent: #b54f4f;
+  --rmhtube-accent-hover: #a04040;
+  --rmhtube-accent-dim: rgba(181, 79, 79, 0.08);
+  --rmhtube-success: #5aad6a;
+  --rmhtube-success-dim: rgba(90, 173, 106, 0.08);
+  --rmhtube-danger: #c46c6c;
+  --rmhtube-danger-dim: rgba(196, 108, 108, 0.08);
+  --rmhtube-warning: #c4a94a;
+  --rmhtube-warning-dim: rgba(196, 169, 74, 0.08);
+  --rmhtube-info: #5a96c0;
+  --rmhtube-info-dim: rgba(90, 150, 192, 0.08);
+  --rmhtube-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  --rmhtube-toast-bg: #ffffff;
+}
+
+/* ─── Base Styles ───────────────────────────────────────────────── */
+
+.rmhtube-theme {
+  background-color: var(--rmhtube-bg);
+  color: var(--rmhtube-text);
+  font-family: var(--rmhtube-font-body);
+  min-height: 100vh;
+}
+
+/* ─── Scrollbar ─────────────────────────────────────────────────── */
+
+.rmhtube-theme ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.rmhtube-theme ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.rmhtube-theme ::-webkit-scrollbar-thumb {
+  background: var(--rmhtube-border);
+  border-radius: 3px;
+}
+
+.rmhtube-theme ::-webkit-scrollbar-thumb:hover {
+  background: var(--rmhtube-accent);
+}
+
+.rmhtube-theme {
+  scrollbar-width: thin;
+  scrollbar-color: var(--rmhtube-border) transparent;
+}
+
+/* ─── Selection ─────────────────────────────────────────────────── */
+
+.rmhtube-theme ::selection {
+  background: var(--rmhtube-accent-dim);
+  color: var(--rmhtube-text);
+}
+
+/* ─── Focus ─────────────────────────────────────────────────────── */
+
+.rmhtube-theme :focus-visible {
+  outline: 2px solid var(--rmhtube-accent);
+  outline-offset: 2px;
+}
+
+/* ─── Toast Animations ──────────────────────────────────────────── */
+
+.rmhtube-toast-enter {
+  animation: rmhtube-toast-in 250ms ease-out forwards;
+}
+
+.rmhtube-toast-exit {
+  animation: rmhtube-toast-out 200ms ease-in forwards;
+}
+
+@keyframes rmhtube-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes rmhtube-toast-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.95);
+  }
+}
+
+/* ─── Glass Utility ─────────────────────────────────────────────── */
+
+.rmhtube-glass {
+  background: rgba(39, 40, 44, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.rmhtube-theme.rmhtube-light .rmhtube-glass {
+  background: rgba(255, 255, 255, 0.85);
+}
+
+/* ─── Reaction Float Animation ──────────────────────────────────── */
+
+@keyframes rmhtube-reaction-float {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  70% {
+    opacity: 1;
+    transform: translateY(-80px) scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-120px) scale(0.8);
+  }
+}
+
+.rmhtube-reaction-float {
+  animation: rmhtube-reaction-float 2s ease-out forwards;
+}

@@ -1,0 +1,141 @@
+/**
+ * VideoPlayer — Multi-platform video player with sync integration.
+ *
+ * Uses react-player for unified YouTube/Twitch/Vimeo/direct video support.
+ * When the current user is the host, player state changes are emitted to the server.
+ * When the current user is a non-host viewer, playback syncs to the host's state.
+ */
+'use client';
+
+import { useRef, useEffect, useCallback, useState } from 'react';
+import ReactPlayer from 'react-player';
+import { useRmhTubeStore } from '@/lib/rmhtube/store';
+import { emit } from '@/lib/rmhtube/socket';
+import { C2S } from '@/lib/rmhtube/events';
+import { HOST_STATE_INTERVAL_MS, SYNC_TOLERANCE_S } from '@/lib/rmhtube/constants';
+
+interface VideoPlayerProps {
+  url: string | null;
+  isHost: boolean;
+  onEnded?: () => void;
+}
+
+export default function VideoPlayer({ url, isHost, onEnded }: VideoPlayerProps) {
+  const playerRef = useRef<ReactPlayer>(null);
+  const videoState = useRmhTubeStore((s) => s.room?.videoState);
+  const [ready, setReady] = useState(false);
+  const lastSyncRef = useRef(0);
+
+  // ─── Host: Periodic state report ──────────────────────────────
+
+  useEffect(() => {
+    if (!isHost || !url) return;
+
+    const interval = setInterval(() => {
+      const player = playerRef.current;
+      if (!player) return;
+
+      emit(C2S.SYNC_HOST_STATE, {
+        playing: !player.props.playing === false, // Check the internal state
+        currentTime: player.getCurrentTime() ?? 0,
+        playbackRate: 1,
+        timestamp: Date.now(),
+      });
+    }, HOST_STATE_INTERVAL_MS);
+
+    return () => clearInterval(interval);
+  }, [isHost, url]);
+
+  // ─── Non-host: Sync to server state ──────────────────────────
+
+  useEffect(() => {
+    if (isHost || !videoState || !ready) return;
+    const player = playerRef.current;
+    if (!player) return;
+
+    const now = Date.now();
+    // Debounce sync checks
+    if (now - lastSyncRef.current < 500) return;
+    lastSyncRef.current = now;
+
+    const latency = (now - videoState.updatedAt) / 2;
+    const expectedTime = videoState.currentTime + (videoState.playing ? latency / 1000 : 0);
+    const localTime = player.getCurrentTime() ?? 0;
+    const drift = Math.abs(localTime - expectedTime);
+
+    if (drift > SYNC_TOLERANCE_S) {
+      player.seekTo(expectedTime, 'seconds');
+    }
+  }, [isHost, videoState, ready]);
+
+  // ─── Host: Emit play/pause/seek ──────────────────────────────
+
+  const handlePlay = useCallback(() => {
+    if (isHost) {
+      emit(C2S.SYNC_PLAY, {});
+    }
+  }, [isHost]);
+
+  const handlePause = useCallback(() => {
+    if (isHost) {
+      emit(C2S.SYNC_PAUSE, {});
+    }
+  }, [isHost]);
+
+  const handleSeek = useCallback((seconds: number) => {
+    if (isHost) {
+      emit(C2S.SYNC_SEEK, { time: seconds });
+    }
+  }, [isHost]);
+
+  const handleReady = useCallback(() => {
+    setReady(true);
+  }, []);
+
+  const handleEnded = useCallback(() => {
+    onEnded?.();
+  }, [onEnded]);
+
+  if (!url) {
+    return (
+      <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-(--rmhtube-surface) flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-lg font-medium text-(--rmhtube-text-muted)">No video playing</p>
+          <p className="text-sm text-(--rmhtube-text-dim) mt-1">
+            {isHost ? 'Add a video to the queue to get started' : 'Waiting for the host to play a video'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-black">
+      <ReactPlayer
+        ref={playerRef}
+        url={url}
+        playing={videoState?.playing ?? false}
+        controls={isHost}
+        width="100%"
+        height="100%"
+        onPlay={handlePlay}
+        onPause={handlePause}
+        onSeek={handleSeek}
+        onReady={handleReady}
+        onEnded={handleEnded}
+        config={{
+          youtube: {
+            playerVars: {
+              modestbranding: 1,
+              rel: 0,
+            },
+          },
+        }}
+      />
+      {/* Non-host overlay to prevent accidental player interaction */}
+      {!isHost && (
+        <div className="absolute inset-0" style={{ pointerEvents: 'auto' }} />
+      )}
+    </div>
+  );
+}
