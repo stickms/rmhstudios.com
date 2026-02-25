@@ -973,6 +973,9 @@ export class UndercoverEditorGame extends BaseMinigame {
       Math.ceil((this.state.phaseEndsAt - Date.now()) / 1000),
     );
 
+    const activePlayer = this.context.players.get(activeUserId);
+    const activeUserName = activePlayer?.userName ?? 'Unknown';
+
     const base = {
       storyPrompt: this.state.storyPrompt,
       myRole: isEditor ? 'editor' : 'writer',
@@ -981,6 +984,8 @@ export class UndercoverEditorGame extends BaseMinigame {
       totalTurns: this.state.totalTurns,
       phase: this.state.phase,
       story: this.buildStoryView(),
+      activeUserId,
+      activeUserName,
       isMyTurn: userId === activeUserId,
       timeRemaining,
       myVote: this.state.votes.get(userId) ?? null,

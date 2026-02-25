@@ -159,9 +159,13 @@ export default function UndercoverEditorGame({
         case 'UE_TURN_START': {
           setPhase('WRITE');
           setActiveTurnUserId(data.activeUserId as string);
-          setCurrentTurnIndex((data.turnIndex as number) ?? currentTurnIndex + 1);
-          if (typeof data.timeRemaining === 'number') {
-            setTimeRemaining(data.timeRemaining as number);
+          // Server sends `turnNumber` (1-based), not `turnIndex`
+          if (typeof data.turnNumber === 'number') {
+            setCurrentTurnIndex((data.turnNumber as number) - 1);
+          }
+          // Server sends `writeDurationSeconds`, not `timeRemaining`
+          if (typeof data.writeDurationSeconds === 'number') {
+            setTimeRemaining(data.writeDurationSeconds as number);
           }
           if ((data.activeUserId as string) === playerId) {
             playSound('chime');
@@ -169,23 +173,28 @@ export default function UndercoverEditorGame({
           break;
         }
         case 'UE_SENTENCE_ADDED': {
-          const newSentence: Sentence = {
-            authorId: data.authorId as string,
-            authorName: data.authorName as string,
-            text: data.text as string,
-            turnNumber: data.turnNumber as number,
-          };
-          setStory((prev) => [...prev, newSentence]);
+          // Server sends fullStory (array of StorySentenceView), use it to replace story
+          const fullStory = data.fullStory as Array<{ authorName: string; text: string; turnNumber: number }> | undefined;
+          if (fullStory) {
+            setStory(fullStory.map((s) => ({
+              authorId: '',
+              authorName: s.authorName,
+              text: s.text,
+              turnNumber: s.turnNumber,
+            })));
+          }
           playSound('click');
           break;
         }
         case 'UE_EDIT_PROMPT': {
           setPhase('EDIT');
-          if (data.editableStory) {
-            setEditableStory(data.editableStory as EditableStory);
+          // Server sends editableStory as `story`, not `editableStory`
+          if (data.story) {
+            setEditableStory(data.story as EditableStory);
           }
-          if (typeof data.timeRemaining === 'number') {
-            setTimeRemaining(data.timeRemaining as number);
+          // Server sends `editDurationSeconds`, not `timeRemaining`
+          if (typeof data.editDurationSeconds === 'number') {
+            setTimeRemaining(data.editDurationSeconds as number);
           }
           if (role === 'editor') {
             playSound('chime');
@@ -193,19 +202,33 @@ export default function UndercoverEditorGame({
           break;
         }
         case 'UE_STORY_UPDATED': {
-          // Editor made changes — update the story for review
-          if (data.sentences) {
-            setStory(data.sentences as Sentence[]);
+          // Server sends `fullStory`, not `sentences`
+          const updated = data.fullStory as Array<{ authorName: string; text: string; turnNumber: number }> | undefined;
+          if (updated) {
+            setStory(updated.map((s) => ({
+              authorId: '',
+              authorName: s.authorName,
+              text: s.text,
+              turnNumber: s.turnNumber,
+            })));
           }
           break;
         }
         case 'UE_REVIEW_START': {
           setPhase('REVIEW');
-          if (data.sentences) {
-            setStory(data.sentences as Sentence[]);
+          // Server sends `fullStory`, not `sentences`
+          const reviewStory = data.fullStory as Array<{ authorName: string; text: string; turnNumber: number }> | undefined;
+          if (reviewStory) {
+            setStory(reviewStory.map((s) => ({
+              authorId: '',
+              authorName: s.authorName,
+              text: s.text,
+              turnNumber: s.turnNumber,
+            })));
           }
-          if (typeof data.timeRemaining === 'number') {
-            setTimeRemaining(data.timeRemaining as number);
+          // Server sends `reviewDurationSeconds`, not `timeRemaining`
+          if (typeof data.reviewDurationSeconds === 'number') {
+            setTimeRemaining(data.reviewDurationSeconds as number);
           }
           playSound('swoosh');
           break;
@@ -214,9 +237,13 @@ export default function UndercoverEditorGame({
           setPhase('ACCUSATION');
           setMyVote(null);
           setVotedPlayers([]);
-          if (typeof data.timeRemaining === 'number') {
-            setTimeRemaining(data.timeRemaining as number);
+          // Server sends `accusationDurationSeconds`, not `timeRemaining`
+          if (typeof data.accusationDurationSeconds === 'number') {
+            setTimeRemaining(data.accusationDurationSeconds as number);
           }
+          // Server sends `players` array with player list
+          const accPlayers = data.players as PlayerEntry[] | undefined;
+          if (accPlayers) setGamePlayers(accPlayers);
           playSound('swoosh');
           break;
         }
@@ -309,38 +336,50 @@ export default function UndercoverEditorGame({
     };
   }, [handleGameAction, handleRoundResults]);
 
-  // Hydrate from Zustand gameState snapshot on mount
+  // Hydrate from Zustand gameState snapshot on mount.
+  // The server snapshot (getStateForPlayer) sends data with specific field names.
   useEffect(() => {
     const snapshot = useRMHboxStore.getState().gameState;
     if (!snapshot || !snapshot.phase) return;
 
     const p = snapshot.phase as string;
     if (['LOBBY', 'WRITE', 'EDIT', 'REVIEW', 'ACCUSATION', 'REVEAL', 'GAME_OVER'].includes(p)) {
-      setPhase(p as Phase);
+      // Map SETUP → LOBBY since the client uses LOBBY for the initial state
+      setPhase(p === 'SETUP' ? 'LOBBY' : p as Phase);
     }
     if (snapshot.storyPrompt) setStoryPrompt(snapshot.storyPrompt as string);
     if (snapshot.timeRemaining != null) setTimeRemaining(snapshot.timeRemaining as number);
-    if (snapshot.role) setRole(snapshot.role as 'writer' | 'editor');
+    // Server sends role as `myRole`, not `role`
+    if (snapshot.myRole) setRole(snapshot.myRole as 'writer' | 'editor');
     if (snapshot.keyword) setKeyword(snapshot.keyword as string);
-    if (Array.isArray(snapshot.story)) setStory(snapshot.story as Sentence[]);
+    // Server sends story as `story` (array of StorySentenceView)
+    if (Array.isArray(snapshot.story)) {
+      setStory((snapshot.story as Array<{ authorName: string; text: string; turnNumber: number }>).map((s) => ({
+        authorId: '',
+        authorName: s.authorName,
+        text: s.text,
+        turnNumber: s.turnNumber,
+      })));
+    }
     if (Array.isArray(snapshot.turnOrder)) setTurnOrder(snapshot.turnOrder as string[]);
-    if (snapshot.activeTurnUserId) setActiveTurnUserId(snapshot.activeTurnUserId as string);
+    // Server sends `activeUserId` for the currently active player
+    if (snapshot.activeUserId) setActiveTurnUserId(snapshot.activeUserId as string);
     if (snapshot.currentTurnIndex != null) setCurrentTurnIndex(snapshot.currentTurnIndex as number);
     if (snapshot.totalTurns != null) setTotalTurns(snapshot.totalTurns as number);
   }, []);
 
-  // Submit a sentence
+  // Submit a sentence (server expects 'WRITE_SENTENCE')
   const handleSubmitSentence = useCallback(
     (text: string) => {
-      emitGameInput('SUBMIT_SENTENCE', { text });
+      emitGameInput('WRITE_SENTENCE', { text });
     },
     [],
   );
 
-  // Submit an edit
+  // Submit an edit (server expects 'EDIT_WORD')
   const handleEdit = useCallback(
     (sentenceIndex: number, wordIndex: number, newWord: string) => {
-      emitGameInput('SUBMIT_EDIT', { sentenceIndex, wordIndex, newWord });
+      emitGameInput('EDIT_WORD', { sentenceIndex, wordIndex, newWord });
     },
     [],
   );
@@ -350,11 +389,11 @@ export default function UndercoverEditorGame({
     emitGameInput('SKIP_EDIT', {});
   }, []);
 
-  // Cast a vote
+  // Cast a vote (server expects 'CAST_ACCUSATION')
   const handleVote = useCallback(
     (targetUserId: string) => {
       setMyVote(targetUserId);
-      emitGameInput('CAST_VOTE', { targetUserId });
+      emitGameInput('CAST_ACCUSATION', { targetUserId });
     },
     [],
   );
