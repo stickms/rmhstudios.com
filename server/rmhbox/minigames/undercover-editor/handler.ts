@@ -1041,12 +1041,11 @@ export class UndercoverEditorGame extends BaseMinigame {
       }
     }
     if (bestDetective && bestDetective.correct > 0) {
-      const player = this.context.players.get(bestDetective.userId);
       awards.push({
         userId: bestDetective.userId,
-        userName: player?.userName ?? 'Unknown',
         title: 'Best Detective',
         description: `Correctly identified ${bestDetective.correct} editor(s)`,
+        icon: '🔍',
       });
     }
 
@@ -1064,12 +1063,11 @@ export class UndercoverEditorGame extends BaseMinigame {
       }
     }
     if (sneakiest && sneakiest.fooled > 0) {
-      const player = this.context.players.get(sneakiest.userId);
       awards.push({
         userId: sneakiest.userId,
-        userName: player?.userName ?? 'Unknown',
         title: 'Sneakiest Editor',
         description: `Fooled ${sneakiest.fooled} player(s)`,
+        icon: '🥷',
       });
     }
 

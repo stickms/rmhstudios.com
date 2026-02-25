@@ -661,7 +661,12 @@ registerHistoryDisplay({
 ## 6.2 Undercover Editor
 
 **Game ID:** `undercover-editor` | **Category:** `social-deduction` | **Icon:** `pencil`
-**Players:** 4–10 | **Duration:** ~variable (turn-based, 2 rotations)
+**Players:** 4–10 | **Duration:** ~variable (parallel writing, 2 rounds)
+
+> **Parallel Design:** All players write sentences for ALL stories simultaneously.
+> Each player is secretly assigned as the undercover editor of one story.
+> After writing rounds, players review all stories and try to match each
+> story with its undercover editor in an infinite-time review phase.
 
 ---
 
