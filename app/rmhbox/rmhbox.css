@@ -32,7 +32,7 @@
   --rmhbox-info-dim: rgba(124, 172, 212, 0.12);
   --rmhbox-rare: #b58ad9;
   --rmhbox-rare-dim: rgba(181, 138, 217, 0.12);
-  --rmhbox-font-display: 'Nunito', 'Segoe UI', system-ui, sans-serif;
+  --rmhbox-font-display: 'Inter', 'Segoe UI', system-ui, sans-serif;
   --rmhbox-font-body: 'Inter', 'Segoe UI', system-ui, sans-serif;
   --rmhbox-font-mono: 'JetBrains Mono', 'Cascadia Code', monospace;
   --rmhbox-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
