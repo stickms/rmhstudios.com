@@ -149,7 +149,7 @@ export function BlogList({ initialPosts }: BlogListProps) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
       >
-        <div className="flex flex-col md:flex-row gap-6 justify-between items-end">
+        <div className="flex flex-col md:flex-row gap-6 justify-between items-start md:items-end">
           <div>
             <Link href="/" className="inline-flex items-center gap-2 text-site-text-dim hover:text-site-text mb-6 transition-colors">
               <ArrowLeft className="w-4 h-4" /> Back to Home
