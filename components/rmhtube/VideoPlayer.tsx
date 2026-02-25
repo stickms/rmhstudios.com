@@ -27,6 +27,7 @@ export default function VideoPlayer({ url, isHost, onEnded }: VideoPlayerProps) 
   const masterVolume = useRmhTubeStore((s) => s.settings.masterVolume);
   const muted = useRmhTubeStore((s) => s.settings.muted);
   const captionsEnabled = useRmhTubeStore((s) => s.settings.captionsEnabled);
+  const updateSettings = useRmhTubeStore((s) => s.updateSettings);
   const [ready, setReady] = useState(false);
   const lastSyncRef = useRef(0);
 
@@ -107,6 +108,76 @@ export default function VideoPlayer({ url, isHost, onEnded }: VideoPlayerProps) 
       }
     }
   }, [captionsEnabled, ready, url]);
+
+  // ─── Sync native player volume/captions back to store ─────────
+  useEffect(() => {
+    if (!ready || !url || !isHost) return;
+    const internal = playerRef.current?.getInternalPlayer();
+    if (!internal) return;
+
+    const mediaType = detectMediaType(url);
+    const cleanups: (() => void)[] = [];
+
+    if (mediaType === 'youtube') {
+      // YouTube volume change event
+      if (typeof internal.addEventListener === 'function') {
+        const onVolumeChange = (e: { data: { volume: number; muted: boolean } }) => {
+          const vol = e.data.volume / 100;
+          const s = useRmhTubeStore.getState().settings;
+          if (Math.abs(vol - s.masterVolume) > 0.01 || e.data.muted !== s.muted) {
+            updateSettings({ masterVolume: vol, muted: e.data.muted });
+          }
+        };
+        internal.addEventListener('onVolumeChange', onVolumeChange);
+        cleanups.push(() => {
+          try { internal.removeEventListener('onVolumeChange', onVolumeChange); } catch {}
+        });
+      }
+
+      // Poll for caption changes (YouTube has no caption toggle event)
+      if (typeof internal.getOptions === 'function') {
+        const id = setInterval(() => {
+          try {
+            const opts = internal.getOptions();
+            if (opts?.includes('captions')) {
+              const track = internal.getOption('captions', 'track');
+              const isOn = Boolean(track?.languageCode);
+              const { captionsEnabled: current } = useRmhTubeStore.getState().settings;
+              if (isOn !== current) {
+                updateSettings({ captionsEnabled: isOn });
+              }
+            }
+          } catch {}
+        }, 1000);
+        cleanups.push(() => clearInterval(id));
+      }
+    } else if (internal instanceof HTMLMediaElement) {
+      // HTML5 volume change
+      const onVolumeChange = () => {
+        const s = useRmhTubeStore.getState().settings;
+        if (Math.abs(internal.volume - s.masterVolume) > 0.01 || internal.muted !== s.muted) {
+          updateSettings({ masterVolume: internal.volume, muted: internal.muted });
+        }
+      };
+      internal.addEventListener('volumechange', onVolumeChange);
+      cleanups.push(() => internal.removeEventListener('volumechange', onVolumeChange));
+
+      // HTML5 caption track change
+      if (internal.textTracks) {
+        const onTrackChange = () => {
+          const hasActive = Array.from(internal.textTracks).some(t => t.mode === 'showing');
+          const { captionsEnabled: current } = useRmhTubeStore.getState().settings;
+          if (hasActive !== current) {
+            updateSettings({ captionsEnabled: hasActive });
+          }
+        };
+        internal.textTracks.addEventListener('change', onTrackChange);
+        cleanups.push(() => internal.textTracks.removeEventListener('change', onTrackChange));
+      }
+    }
+
+    return () => cleanups.forEach(fn => fn());
+  }, [ready, url, isHost, updateSettings]);
 
   const handleReady = useCallback(() => {
     setReady(true);
