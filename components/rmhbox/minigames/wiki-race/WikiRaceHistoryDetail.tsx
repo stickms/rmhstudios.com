@@ -1,47 +1,117 @@
 /**
  * WikiRaceHistoryDetail — Expanded history view for Wiki-Race games.
  *
- * Shows start/target articles, each player's navigation path as
- * breadcrumbs, back-click events, path length and time comparison,
- * finishers vs timeouts, and game end summary.
+ * Multi-round aware: groups actions by round, displays per-round
+ * article pairs, player paths (breadcrumbs), back-click events,
+ * path length and time comparison, finishers vs timeouts, round
+ * scores, and cumulative final scores.
+ *
+ * Backward compatible with single-round game logs that lack the
+ * `rounds` array in initialState or per-action `round` fields.
  *
  * Reference: docs/rmhbox/design-spec/minigames-1.md §4.17
  */
 'use client';
 
-import type { HistoryDetailProps } from '@/lib/rmhbox/history-display-registry';
+import { useMemo } from 'react';
+import type { HistoryDetailProps, GameLog } from '@/lib/rmhbox/history-display-registry';
 
-export default function WikiRaceHistoryDetail({
-  gameLog,
-  currentUserId,
-  players,
-}: HistoryDetailProps) {
+// ─── Round data extraction ───────────────────────────────────────
+
+interface RoundInfo {
+  round: number;
+  startArticle: string;
+  targetArticle: string;
+  difficulty: string | undefined;
+}
+
+type Action = GameLog['actions'][number];
+
+interface ParsedRound extends RoundInfo {
+  navigations: Action[];
+  backClicks: Action[];
+  finishes: Action[];
+  timeouts: Action[];
+  endAction: Action | undefined;
+  roundEndAction: Action | undefined;
+  /** Per-player paths built from navigate actions (or overridden by finish/timeout paths) */
+  playerPaths: Record<string, string[]>;
+  /** Per-player back-click counts */
+  playerBackClicks: Record<string, number>;
+}
+
+/** Derive round metadata from initialState.rounds or round_start actions. */
+function extractRoundInfos(gameLog: GameLog): RoundInfo[] {
+  const initRounds = gameLog.initialState?.rounds as RoundInfo[] | undefined;
+  if (initRounds && initRounds.length > 0) return initRounds;
+
+  // Fallback: build from round_start actions
   const roundStarts = gameLog.actions.filter((a) => a.type === 'round_start');
-  const navigations = gameLog.actions.filter((a) => a.type === 'navigate');
-  const backClicks = gameLog.actions.filter((a) => a.type === 'back_click' || a.type === 'go_back');
-  const finishes = gameLog.actions.filter((a) => a.type === 'player_finish' || a.type === 'player_finished');
-  const timeouts = gameLog.actions.filter((a) => a.type === 'player_timeout');
-  const endAction = gameLog.actions.find((a) => a.type === 'game_end');
+  if (roundStarts.length > 0) {
+    return roundStarts.map((rs) => ({
+      round: (rs.payload.round as number) ?? 1,
+      startArticle: (rs.payload.startArticle as string) ?? '?',
+      targetArticle: (rs.payload.targetArticle as string) ?? '?',
+      difficulty: rs.payload.difficulty as string | undefined,
+    }));
+  }
 
-  // Get article pair from initialState or round_start
-  const startArticle =
-    (gameLog.initialState?.startArticle as string) ??
-    (roundStarts[0]?.payload.startArticle as string) ??
-    '?';
-  const targetArticle =
-    (gameLog.initialState?.targetArticle as string) ??
-    (roundStarts[0]?.payload.targetArticle as string) ??
-    '?';
-  const difficulty = gameLog.initialState?.difficulty as string | undefined;
-  const timeLimit = gameLog.initialState?.timeLimitSeconds as number | undefined;
+  // Single-round fallback from initialState flat fields
+  return [{
+    round: 1,
+    startArticle: (gameLog.initialState?.startArticle as string) ?? '?',
+    targetArticle: (gameLog.initialState?.targetArticle as string) ?? '?',
+    difficulty: gameLog.initialState?.difficulty as string | undefined,
+  }];
+}
 
-  // Build path per player from navigate actions
+/** Group actions by round number. Uses payload.round if available, otherwise
+ *  falls back to positional grouping between consecutive round_start actions. */
+function groupActionsByRound(actions: Action[], totalRounds: number): Map<number, Action[]> {
+  const groups = new Map<number, Action[]>();
+  for (let r = 1; r <= totalRounds; r++) groups.set(r, []);
+
+  const hasRoundField = actions.some((a) => a.payload.round !== undefined);
+
+  if (hasRoundField) {
+    for (const action of actions) {
+      const round = (action.payload.round as number) ?? 1;
+      if (!groups.has(round)) groups.set(round, []);
+      groups.get(round)!.push(action);
+    }
+  } else {
+    // Positional: everything before the first round_start (or the first
+    // round_start itself) belongs to round 1. Each subsequent round_start
+    // begins a new group.
+    let currentRound = 1;
+    for (const action of actions) {
+      if (action.type === 'round_start') {
+        currentRound = (action.payload.round as number) ?? currentRound + 1;
+        if (!groups.has(currentRound)) groups.set(currentRound, []);
+      }
+      groups.get(currentRound)?.push(action);
+    }
+  }
+
+  return groups;
+}
+
+/** Build a parsed round with player paths, finishes, etc. */
+function buildParsedRound(info: RoundInfo, actions: Action[]): ParsedRound {
+  const navigations = actions.filter((a) => a.type === 'navigate');
+  const backClicks = actions.filter((a) => a.type === 'back_click' || a.type === 'go_back');
+  const finishes = actions.filter((a) => a.type === 'player_finish' || a.type === 'player_finished');
+  const timeouts = actions.filter((a) => a.type === 'player_timeout');
+  const endAction = actions.find((a) => a.type === 'game_end');
+  const roundEndAction = actions.find((a) => a.type === 'round_end');
+
+  // Build paths from navigate actions
   const playerPaths: Record<string, string[]> = {};
   const playerBackClicks: Record<string, number> = {};
 
   for (const nav of navigations) {
     const userId = nav.payload.userId as string;
-    if (!playerPaths[userId]) playerPaths[userId] = [startArticle];
+    if (!playerPaths[userId]) playerPaths[userId] = [info.startArticle];
     const toArticle = (nav.payload.toArticle as string) ?? (nav.payload.targetTitle as string) ?? '';
     playerPaths[userId].push(toArticle);
   }
@@ -50,7 +120,7 @@ export default function WikiRaceHistoryDetail({
     playerBackClicks[userId] = (playerBackClicks[userId] ?? 0) + 1;
   }
 
-  // Override paths from player_finish/player_timeout if available (more accurate)
+  // Override paths from finish/timeout if available (more accurate)
   for (const f of finishes) {
     const path = f.payload.path as string[] | undefined;
     if (path && path.length > 0) {
@@ -64,55 +134,189 @@ export default function WikiRaceHistoryDetail({
     }
   }
 
-  // Sort players: finishers first (by rank), then timeouts
-  const sortedPlayers = [...players].sort((a, b) => {
-    const aFinish = finishes.find((f) => f.payload.userId === a.userId);
-    const bFinish = finishes.find((f) => f.payload.userId === b.userId);
-    if (aFinish && !bFinish) return -1;
-    if (!aFinish && bFinish) return 1;
-    if (aFinish && bFinish) {
-      return ((aFinish.payload.rank as number) ?? 0) - ((bFinish.payload.rank as number) ?? 0);
-    }
-    return 0;
-  });
+  return {
+    ...info,
+    navigations,
+    backClicks,
+    finishes,
+    timeouts,
+    endAction,
+    roundEndAction,
+    playerPaths,
+    playerBackClicks,
+  };
+}
+
+// ─── Component ───────────────────────────────────────────────────
+
+export default function WikiRaceHistoryDetail({
+  gameLog,
+  currentUserId,
+  players,
+}: HistoryDetailProps) {
+  const rounds = useMemo(() => {
+    const roundInfos = extractRoundInfos(gameLog);
+    const grouped = groupActionsByRound(gameLog.actions, roundInfos.length);
+    return roundInfos.map((info) =>
+      buildParsedRound(info, grouped.get(info.round) ?? []),
+    );
+  }, [gameLog]);
+
+  const totalRounds = rounds.length;
+  const isMultiRound = totalRounds > 1;
+  const timeLimit = gameLog.initialState?.timeLimitSeconds as number | undefined;
 
   return (
     <div className="space-y-4" data-testid="wiki-race-history-detail">
-      {/* Race Info */}
+      {/* Game-level header */}
+      {isMultiRound && (
+        <div className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-3">
+          <div className="flex items-center justify-between">
+            <h4 className="text-xs font-semibold text-(--rmhbox-text-muted) uppercase">
+              Wiki-Race — {totalRounds} Rounds
+            </h4>
+            {timeLimit && (
+              <span className="text-xs text-(--rmhbox-text-muted)">
+                {timeLimit}s per round
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Per-round details */}
+      {rounds.map((round) => (
+        <RoundSection
+          key={round.round}
+          round={round}
+          showRoundHeader={isMultiRound}
+          currentUserId={currentUserId}
+          players={players}
+          timeLimit={timeLimit}
+        />
+      ))}
+
+      {/* Final scores */}
+      <div className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-4">
+        <h4 className="text-sm font-semibold text-(--rmhbox-text-muted) mb-2">
+          {isMultiRound ? 'Cumulative Scores' : 'Final Scores'}
+        </h4>
+        <div className="space-y-1">
+          {[...players]
+            .sort((a, b) => a.rank - b.rank)
+            .map((p) => (
+              <div
+                key={p.userId}
+                className={`flex justify-between text-sm ${
+                  p.userId === currentUserId
+                    ? 'text-(--rmhbox-accent) font-semibold'
+                    : 'text-(--rmhbox-text)'
+                }`}
+              >
+                <span>
+                  #{p.rank} {p.userName}
+                </span>
+                <span className="font-mono">{p.score}</span>
+              </div>
+            ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Round Section ───────────────────────────────────────────────
+
+function RoundSection({
+  round,
+  showRoundHeader,
+  currentUserId,
+  players,
+  timeLimit,
+}: {
+  round: ParsedRound;
+  showRoundHeader: boolean;
+  currentUserId: string;
+  players: HistoryDetailProps['players'];
+  timeLimit: number | undefined;
+}) {
+  // Sort players for this round: finishers first (by rank), then timeouts
+  const sortedPlayers = useMemo(() => {
+    return [...players].sort((a, b) => {
+      const aFinish = round.finishes.find((f) => f.payload.userId === a.userId);
+      const bFinish = round.finishes.find((f) => f.payload.userId === b.userId);
+      if (aFinish && !bFinish) return -1;
+      if (!aFinish && bFinish) return 1;
+      if (aFinish && bFinish) {
+        return (
+          ((aFinish.payload.rank as number) ?? 0) -
+          ((bFinish.payload.rank as number) ?? 0)
+        );
+      }
+      return 0;
+    });
+  }, [players, round.finishes]);
+
+  // Per-round scores from round_end action
+  const roundScores = round.roundEndAction?.payload.scores as
+    | Record<string, number>
+    | undefined;
+
+  return (
+    <div className="space-y-3">
+      {/* Race Info / Round header */}
       <div className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-4">
         <div className="flex items-center justify-between mb-2">
-          <h4 className="text-xs font-semibold text-(--rmhbox-text-muted) uppercase">Race Details</h4>
-          {difficulty && (
-            <span className={`text-xs px-2 py-0.5 rounded-full ${
-              difficulty === 'hard' ? 'bg-red-500/20 text-red-400' :
-              difficulty === 'extreme' ? 'bg-purple-500/20 text-purple-400' :
-              'bg-yellow-500/20 text-yellow-400'
-            }`}>
-              {difficulty}
-            </span>
-          )}
+          <h4 className="text-xs font-semibold text-(--rmhbox-text-muted) uppercase">
+            {showRoundHeader ? `Round ${round.round}` : 'Race Details'}
+          </h4>
+          <div className="flex items-center gap-2">
+            {round.difficulty && (
+              <span
+                className={`text-xs px-2 py-0.5 rounded-full ${
+                  round.difficulty === 'hard'
+                    ? 'bg-red-500/20 text-red-400'
+                    : round.difficulty === 'extreme'
+                      ? 'bg-purple-500/20 text-purple-400'
+                      : 'bg-yellow-500/20 text-yellow-400'
+                }`}
+              >
+                {round.difficulty}
+              </span>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-2 text-sm">
-          <span className="font-medium text-(--rmhbox-text)">{startArticle}</span>
+          <span className="font-medium text-(--rmhbox-text)">
+            {round.startArticle}
+          </span>
           <span className="text-(--rmhbox-text-muted)">→</span>
-          <span className="font-bold text-(--rmhbox-accent)">{targetArticle}</span>
+          <span className="font-bold text-(--rmhbox-accent)">
+            {round.targetArticle}
+          </span>
         </div>
-        {timeLimit && (
+        {!showRoundHeader && timeLimit && (
           <div className="text-xs text-(--rmhbox-text-muted) mt-1">
             Time limit: {timeLimit}s
           </div>
         )}
       </div>
 
-      {/* Player paths */}
+      {/* Player paths for this round */}
       <div className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-4">
-        <h4 className="text-sm font-semibold text-(--rmhbox-text-muted) mb-3">Player Paths</h4>
+        <h4 className="text-sm font-semibold text-(--rmhbox-text-muted) mb-3">
+          Player Paths
+        </h4>
         <div className="space-y-3">
           {sortedPlayers.map((p) => {
-            const path = playerPaths[p.userId] ?? [startArticle];
-            const finish = finishes.find((f) => f.payload.userId === p.userId);
-            const timeout = timeouts.find((t) => t.payload.userId === p.userId);
-            const backs = playerBackClicks[p.userId] ?? 0;
+            const path = round.playerPaths[p.userId] ?? [round.startArticle];
+            const finish = round.finishes.find(
+              (f) => f.payload.userId === p.userId,
+            );
+            const timeout = round.timeouts.find(
+              (t) => t.payload.userId === p.userId,
+            );
+            const backs = round.playerBackClicks[p.userId] ?? 0;
             const isMe = p.userId === currentUserId;
 
             return (
@@ -129,25 +333,44 @@ export default function WikiRaceHistoryDetail({
                       isMe ? 'text-(--rmhbox-accent)' : 'text-(--rmhbox-text)'
                     }`}
                   >
-                    {finish && <span className="mr-1">#{finish.payload.rank as number}</span>}
+                    {finish && (
+                      <span className="mr-1">
+                        #{finish.payload.rank as number}
+                      </span>
+                    )}
                     {p.userName}
                   </span>
                   <div className="flex items-center gap-2 text-xs">
                     {finish ? (
                       <span className="text-green-400 font-medium">
-                        ✓ Finished — {path.length - 1} clicks •{' '}
-                        {Math.round((finish.payload.timeMs as number) / 1000)}s
+                        ✓ Finished — {path.length - 1} clicks
+                        {(finish.payload.timeMs as number) != null && (
+                          <>
+                            {' • '}
+                            {Math.round(
+                              (finish.payload.timeMs as number) / 1000,
+                            )}
+                            s
+                          </>
+                        )}
                       </span>
                     ) : timeout ? (
                       <span className="text-red-400 font-medium">
                         ✗ Timeout — {path.length - 1} clicks
                       </span>
                     ) : (
-                      <span className="text-(--rmhbox-text-muted)">In progress</span>
+                      <span className="text-(--rmhbox-text-muted)">
+                        In progress
+                      </span>
                     )}
                     {backs > 0 && (
                       <span className="text-(--rmhbox-text-muted)">
                         ({backs} back)
+                      </span>
+                    )}
+                    {roundScores?.[p.userId] != null && (
+                      <span className="text-(--rmhbox-text-muted) font-mono">
+                        +{roundScores[p.userId]}
                       </span>
                     )}
                   </div>
@@ -157,12 +380,16 @@ export default function WikiRaceHistoryDetail({
                 <div className="flex flex-wrap items-center gap-0.5 text-xs text-(--rmhbox-text-muted)">
                   {path.map((article, ai) => (
                     <span key={ai} className="flex items-center">
-                      {ai > 0 && <span className="mx-0.5 text-(--rmhbox-text-muted)/50">→</span>}
+                      {ai > 0 && (
+                        <span className="mx-0.5 text-(--rmhbox-text-muted)/50">
+                          →
+                        </span>
+                      )}
                       <span
                         className={
-                          article === targetArticle
+                          article === round.targetArticle
                             ? 'text-green-400 font-semibold'
-                            : article === startArticle
+                            : article === round.startArticle
                               ? 'text-(--rmhbox-text) font-medium'
                               : ''
                         }
@@ -178,41 +405,23 @@ export default function WikiRaceHistoryDetail({
         </div>
       </div>
 
-      {/* Game End Summary */}
-      {endAction && (
+      {/* Round End Summary */}
+      {round.endAction && (
         <div className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-3">
-          <h4 className="text-xs font-semibold text-(--rmhbox-text-muted) uppercase mb-1">Game End</h4>
+          <h4 className="text-xs font-semibold text-(--rmhbox-text-muted) uppercase mb-1">
+            {showRoundHeader ? `Round ${round.round} End` : 'Game End'}
+          </h4>
           <div className="text-xs text-(--rmhbox-text-muted)">
             <span className="text-(--rmhbox-text)">
-              {(endAction.payload.reason as string)?.replace(/_/g, ' ') ?? 'Game over'}
+              {(round.endAction.payload.reason as string)?.replace(/_/g, ' ') ??
+                'Game over'}
             </span>
             {' — '}
-            {endAction.payload.finishedCount as number}/{endAction.payload.totalPlayers as number} players finished
+            {round.endAction.payload.finishedCount as number}/
+            {round.endAction.payload.totalPlayers as number} players finished
           </div>
         </div>
       )}
-
-      {/* Final scores */}
-      <div className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-4">
-        <h4 className="text-sm font-semibold text-(--rmhbox-text-muted) mb-2">Final Scores</h4>
-        <div className="space-y-1">
-          {players
-            .sort((a, b) => a.rank - b.rank)
-            .map((p) => (
-              <div
-                key={p.userId}
-                className={`flex justify-between text-sm ${
-                  p.userId === currentUserId ? 'text-(--rmhbox-accent) font-semibold' : 'text-(--rmhbox-text)'
-                }`}
-              >
-                <span>
-                  #{p.rank} {p.userName}
-                </span>
-                <span className="font-mono">{p.score}</span>
-              </div>
-            ))}
-        </div>
-      </div>
     </div>
   );
 }

@@ -136,6 +136,12 @@ export class WikiRaceMinigame extends BaseMinigame {
       totalRounds,
       cumulativeScores,
       usedPairKeys: [pairKey(articlePair)],
+      roundArticlePairs: [{
+        round: 1,
+        startArticle: articlePair.startArticle.title,
+        targetArticle: articlePair.targetArticle.title,
+        difficulty: articlePair.difficulty,
+      }],
     };
   }
 
@@ -201,6 +207,20 @@ export class WikiRaceMinigame extends BaseMinigame {
     // Clear the phase timer
     this.clearPhaseTimer();
 
+    // Log timeout for unfinished players in this round (before state
+    // is reset by startNextRound). This ensures every round's DNF
+    // players are recorded, not just the last round's.
+    for (const [userId, ps] of this.state.playerStates) {
+      if (!ps.hasFinished) {
+        this.logAction('player_timeout', {
+          userId,
+          lastArticle: ps.currentArticleTitle,
+          pathLength: ps.path.length,
+          path: [...ps.path],
+        });
+      }
+    }
+
     this.logAction('game_end', {
       reason: 'time_expired',
       finishedCount: this.state.finishCounter,
@@ -227,6 +247,17 @@ export class WikiRaceMinigame extends BaseMinigame {
       const prev = this.state.cumulativeScores.get(userId) ?? 0;
       this.state.cumulativeScores.set(userId, prev + ps.score);
     }
+
+    // Log round_end with per-round scores for history reconstruction
+    const roundScores: Record<string, number> = {};
+    for (const [userId, ps] of this.state.playerStates) {
+      roundScores[userId] = ps.score;
+    }
+    this.logAction('round_end', {
+      finishedCount: this.state.finishCounter,
+      totalPlayers: this.state.playerStates.size,
+      scores: roundScores,
+    });
 
     // Build results payload with all player data visible
     const playerResults: Record<string, unknown> = {};
@@ -274,6 +305,14 @@ export class WikiRaceMinigame extends BaseMinigame {
     this.state.usedPairKeys.push(pairKey(newPair));
     this.state.articlePair = newPair;
     this.state.finishCounter = 0;
+
+    // Track the new round's article pair for history reconstruction
+    this.state.roundArticlePairs.push({
+      round: this.state.currentRound,
+      startArticle: newPair.startArticle.title,
+      targetArticle: newPair.targetArticle.title,
+      difficulty: newPair.difficulty,
+    });
 
     // Reset player states for the new round
     for (const [userId, ps] of this.state.playerStates) {
@@ -546,7 +585,7 @@ export class WikiRaceMinigame extends BaseMinigame {
     this.logAction('player_finish', {
       userId,
       pathLength: ps.path.length,
-      timeMs: (ps.finishedAt ?? Date.now()) - this.startedAt,
+      timeMs: (ps.finishedAt ?? Date.now()) - this.navigationStartedAt,
       path: [...ps.path],
       rank: ps.finishRank,
       clickCount: ps.clickCount,
@@ -932,14 +971,13 @@ export class WikiRaceMinigame extends BaseMinigame {
   // ─── Action Log / Game Log ───────────────────────────────────
 
   private actionSeq = 0;
-  private timeoutEventsAdded = false;
 
   private logAction(type: string, payload: Record<string, unknown>): void {
     this.state.actionLog.push({
       seq: ++this.actionSeq,
       type,
       timestamp: Date.now(),
-      payload,
+      payload: { ...payload, round: this.state.currentRound },
     });
   }
 
@@ -949,25 +987,8 @@ export class WikiRaceMinigame extends BaseMinigame {
       userName: p.userName,
     }));
 
-    // Build player timeout events for those who didn't finish (only on first call)
-    if (!this.timeoutEventsAdded) {
-      this.timeoutEventsAdded = true;
-      for (const [userId, ps] of this.state.playerStates) {
-        if (!ps.hasFinished) {
-          this.state.actionLog.push({
-            seq: ++this.actionSeq,
-            type: 'player_timeout',
-            timestamp: Date.now(),
-            payload: {
-              userId,
-              lastArticle: ps.currentArticleTitle,
-              pathLength: ps.path.length,
-              path: [...ps.path],
-            },
-          });
-        }
-      }
-    }
+    // Timeout events are now logged inline at the end of each round
+    // (in endNavigation), so no need to add them here.
 
     return {
       lobbyId: this.context.lobbyId,
@@ -979,8 +1000,10 @@ export class WikiRaceMinigame extends BaseMinigame {
       players,
       initialState: {
         totalRounds: this.state.totalRounds,
-        currentRound: this.state.currentRound,
         timeLimitSeconds: this.getSetting('navDuration', WR_NAV_DURATION),
+        // Per-round article pairs for history reconstruction
+        rounds: this.state.roundArticlePairs,
+        // Backward-compat: keep flat fields pointing to the last round
         startArticle: this.state.articlePair.startArticle.title,
         targetArticle: this.state.articlePair.targetArticle.title,
         difficulty: this.state.articlePair.difficulty,
