@@ -11,7 +11,7 @@
     "rmhtube-server": "npx tsx watch --include \"server/rmhtube/**/*\" server/rmhtube/index.ts",
     "lint": "eslint",
     "postinstall": "prisma generate",
-    "db:push": "prisma db push",
+    "db:push": "prisma db push --accept-data-loss",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:migrate:prod": "prisma migrate deploy",
