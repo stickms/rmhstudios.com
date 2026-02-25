@@ -2,10 +2,14 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import { prisma } from '@/lib/prisma';
+import { rateLimit } from '@/lib/rate-limit';
 
 export async function GET() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const { allowed, retryAfter } = rateLimit(session.user.id, { limit: 5, windowMs: 3_600_000, prefix: 'notes-export' });
+  if (!allowed) return NextResponse.json({ error: 'Too many exports. Try again later.' }, { status: 429, headers: { 'Retry-After': String(retryAfter) } });
 
   const [notes, folders, tags, reminders, templates, moods] = await Promise.all([
     prisma.note.findMany({

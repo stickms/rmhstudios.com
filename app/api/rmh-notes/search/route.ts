@@ -30,9 +30,15 @@ export async function GET(req: Request) {
   if (folderId) where.folderId = folderId;
   if (dateFrom || dateTo) {
     const createdAt: Record<string, Date> = {};
-    if (dateFrom) createdAt.gte = new Date(dateFrom);
-    if (dateTo) createdAt.lte = new Date(dateTo);
-    where.createdAt = createdAt;
+    if (dateFrom) {
+      const d = new Date(dateFrom);
+      if (!isNaN(d.getTime())) createdAt.gte = d;
+    }
+    if (dateTo) {
+      const d = new Date(dateTo);
+      if (!isNaN(d.getTime())) createdAt.lte = d;
+    }
+    if (Object.keys(createdAt).length > 0) where.createdAt = createdAt;
   }
   if (hasReminder) {
     where.reminders = { some: { isCompleted: false } };

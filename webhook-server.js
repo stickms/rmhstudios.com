@@ -2,7 +2,11 @@ const http = require('http');
 const crypto = require('crypto');
 const { spawn } = require('child_process');
 
-const SECRET = process.env.WEBHOOK_SECRET || 'change-me';
+const SECRET = process.env.WEBHOOK_SECRET;
+if (!SECRET || SECRET === 'change-me') {
+  console.error('FATAL: WEBHOOK_SECRET must be set to a secure value');
+  process.exit(1);
+}
 const PORT = 7002;
 const DEPLOY_SCRIPT = '/home/rmhstudios/rmhstudios.com/deploy.sh';
 const LOG_FILE = '/home/rmhstudios/webhook.log';

@@ -43,12 +43,17 @@ export async function POST(req: Request) {
   const note = await prisma.note.findFirst({ where: { id: body.noteId, userId: session.user.id } });
   if (!note) return NextResponse.json({ error: 'Note not found' }, { status: 404 });
 
+  const dueAt = new Date(body.dueAt);
+  if (isNaN(dueAt.getTime())) {
+    return NextResponse.json({ error: 'Invalid date format for dueAt' }, { status: 400 });
+  }
+
   const reminder = await prisma.noteReminder.create({
     data: {
       noteId: body.noteId,
       userId: session.user.id,
-      title: body.title ?? null,
-      dueAt: new Date(body.dueAt),
+      title: body.title ? (body.title as string).slice(0, 500) : null,
+      dueAt,
       repeatRule: body.repeatRule ?? null,
     },
     include: { note: { select: { id: true, title: true, color: true } } },

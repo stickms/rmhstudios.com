@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import { prisma } from '@/lib/prisma';
 import { rollOutcome } from '@/lib/rmh-jobs/outcomes';
+import { rateLimit, getClientIp } from '@/lib/rate-limit';
 
 export async function POST(req: Request) {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -10,7 +11,18 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await req.json();
+    const ip = getClientIp(req);
+    const { allowed, retryAfter } = rateLimit(ip, { limit: 10, windowMs: 60_000, prefix: 'jobs-apply' });
+    if (!allowed) {
+        return NextResponse.json({ error: 'Too many requests' }, { status: 429, headers: { 'Retry-After': String(retryAfter) } });
+    }
+
+    let body: { jobId?: string };
+    try {
+        body = await req.json();
+    } catch {
+        return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+    }
     const { jobId } = body;
 
     if (!jobId || typeof jobId !== 'string') {

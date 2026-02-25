@@ -46,7 +46,12 @@ export function rateLimit(ip: string, opts: RateLimitOptions): { allowed: boolea
     return { allowed: true, retryAfter: 0 };
 }
 
-/** Extract real IP from Next.js request, handling proxies */
+/**
+ * Extract real client IP from Next.js request.
+ * IMPORTANT: This trusts X-Forwarded-For, which is only safe behind a trusted
+ * reverse proxy (nginx, Cloudflare) that sets/overwrites this header.
+ * Without a trusted proxy, clients can spoof this header to bypass rate limits.
+ */
 export function getClientIp(req: Request): string {
     const headers = req.headers;
     return (

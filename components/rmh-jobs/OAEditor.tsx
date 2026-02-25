@@ -445,11 +445,12 @@ export function OAEditor({
 }
 
 function formatProblemDescription(md: string): string {
-    return md
+    const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    return esc(md)
         .replace(/^# (.+)$/gm, '<h2 class="text-lg font-bold mb-3">$1</h2>')
         .replace(/^## (.+)$/gm, '<h3 class="text-base font-semibold mt-4 mb-2">$1</h3>')
         .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
         .replace(/`(.+?)`/g, '<code style="background:var(--jobs-surface-2);padding:1px 4px;border-radius:3px;font-size:0.85em">$1</code>')
-        .replace(/^> (.+)$/gm, '<blockquote style="border-left:2px solid var(--jobs-accent);padding-left:12px;color:var(--jobs-text-muted);font-style:italic;margin:8px 0">$1</blockquote>')
+        .replace(/^&gt; (.+)$/gm, '<blockquote style="border-left:2px solid var(--jobs-accent);padding-left:12px;color:var(--jobs-text-muted);font-style:italic;margin:8px 0">$1</blockquote>')
         .replace(/\n\n/g, '<br/><br/>');
 }

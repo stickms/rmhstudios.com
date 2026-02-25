@@ -47,7 +47,11 @@ export default function SharedNoteView({ token }: Props) {
           if (mt === 'strike') text = `<s>${text}</s>`;
           if (mt === 'code') text = `<code>${text}</code>`;
           if (mt === 'highlight') text = `<mark>${text}</mark>`;
-          if (mt === 'link') text = `<a href="${(m.attrs as Record<string, unknown>)?.href}" target="_blank" rel="noopener">${text}</a>`;
+          if (mt === 'link') {
+            const rawHref = String((m.attrs as Record<string, unknown>)?.href ?? '');
+            const safeHref = /^javascript:/i.test(rawHref) ? '#' : escapeHtml(rawHref);
+            text = `<a href="${safeHref}" target="_blank" rel="noopener">${text}</a>`;
+          }
         }
         return text;
       }
@@ -60,7 +64,7 @@ export default function SharedNoteView({ token }: Props) {
       case 'taskItem': return `<li class="task-item"><input type="checkbox" disabled ${attrs.checked ? 'checked' : ''}> ${children}</li>`;
       case 'blockquote': return `<blockquote>${children}</blockquote>`;
       case 'codeBlock': return `<pre><code>${children}</code></pre>`;
-      case 'image': return `<img src="${attrs.src}" alt="${attrs.alt ?? ''}" style="max-width:100%">`;
+      case 'image': return `<img src="${escapeHtml(String(attrs.src ?? ''))}" alt="${escapeHtml(String(attrs.alt ?? ''))}" style="max-width:100%">`;
       case 'ogPreview': {
         const url = escapeHtml((attrs.url as string) ?? '');
         const title = escapeHtml((attrs.title as string) ?? url);
@@ -84,7 +88,7 @@ export default function SharedNoteView({ token }: Props) {
     }
   };
 
-  const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
   if (loading) {
     return (

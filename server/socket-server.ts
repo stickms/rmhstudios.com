@@ -2,11 +2,17 @@ import 'dotenv/config';
 import { Server, Socket } from "socket.io";
 import { createServer } from "http";
 
+const CORS_ORIGIN = process.env.SOCKET_CORS_ORIGIN;
+if (!CORS_ORIGIN) {
+    console.error("FATAL: SOCKET_CORS_ORIGIN environment variable is required");
+    process.exit(1);
+}
+
 const httpServer = createServer();
 const io = new Server(httpServer, {
     path: "/socket/",
     cors: {
-        origin: process.env.SOCKET_CORS_ORIGIN || "*",
+        origin: CORS_ORIGIN.split(","),
         methods: ["GET", "POST"]
     }
 });

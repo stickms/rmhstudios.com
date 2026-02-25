@@ -13,7 +13,7 @@ function LoginForm() {
     const rawCallback = searchParams.get("callbackURL") || searchParams.get("callbackUrl") || searchParams.get("next");
 
     const [callbackURL, setCallbackURL] = useState(() =>
-        rawCallback?.startsWith("/") ? rawCallback : "/games"
+        rawCallback?.startsWith("/") && !rawCallback.startsWith("//") ? rawCallback : "/games"
     );
 
     useEffect(() => {

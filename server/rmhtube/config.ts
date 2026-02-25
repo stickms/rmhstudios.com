@@ -20,7 +20,7 @@ export const config = {
   // ─── Network ───
   PORT: envInt('RMHTUBE_PORT', 7003),
   SOCKET_PATH: envString('RMHTUBE_SOCKET_PATH', '/rmhtube-ws/'),
-  CORS_ORIGIN: envString('RMHTUBE_CORS_ORIGIN', process.env.SOCKET_CORS_ORIGIN || '*'),
+  CORS_ORIGIN: envString('RMHTUBE_CORS_ORIGIN', process.env.SOCKET_CORS_ORIGIN || ''),
 
   // ─── Socket.io Tuning ───
   MAX_HTTP_BUFFER_SIZE: envInt('RMHTUBE_MAX_BUFFER', 1_048_576), // 1 MB

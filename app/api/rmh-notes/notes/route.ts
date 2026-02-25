@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import { prisma } from '@/lib/prisma';
+import { rateLimit, getClientIp } from '@/lib/rate-limit';
 
 export async function GET(req: Request) {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -50,6 +51,10 @@ export async function POST(req: Request) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+  const ip = getClientIp(req);
+  const { allowed, retryAfter } = rateLimit(ip, { limit: 30, windowMs: 60_000, prefix: 'notes-create' });
+  if (!allowed) return NextResponse.json({ error: 'Too many requests' }, { status: 429, headers: { 'Retry-After': String(retryAfter) } });
+
   let body: { title?: string; content?: string; folderId?: string; color?: string; templateId?: string } = {};
   try { body = await req.json(); } catch { /* empty */ }
 
@@ -66,7 +71,7 @@ export async function POST(req: Request) {
   const note = await prisma.note.create({
     data: {
       userId: session.user.id,
-      title: body.title ?? 'Untitled',
+      title: (body.title ?? 'Untitled').slice(0, 500),
       content,
       folderId: body.folderId ?? null,
       color: body.color ?? null,

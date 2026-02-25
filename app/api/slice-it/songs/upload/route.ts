@@ -41,9 +41,10 @@ export async function POST(req: NextRequest) {
 
         const formData = await req.formData();
         const file = formData.get("file") as File;
-        const title = formData.get("title") as string;
-        const artist = formData.get("artist") as string;
-        const bpm = parseFloat(formData.get("bpm") as string) || 0;
+        const title = ((formData.get("title") as string) || "").trim().slice(0, 200);
+        const artist = ((formData.get("artist") as string) || "").trim().slice(0, 200);
+        const rawBpm = parseFloat(formData.get("bpm") as string);
+        const bpm = (Number.isFinite(rawBpm) && rawBpm > 0 && rawBpm < 999) ? rawBpm : 0;
         const coverFile = formData.get("cover") as File | null;
 
         if (!file) {
@@ -109,7 +110,7 @@ export async function POST(req: NextRequest) {
             coverUrl = `/api/slice-it/songs/cover/${coverFileName}`;
         }
 
-        const description = (formData.get("description") as string) || "";
+        const description = ((formData.get("description") as string) || "").trim().slice(0, 2000);
         
         let analysisData: any = null;
         let finalBpm = bpm;

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import { prisma } from '@/lib/prisma';
+import { encrypt } from '@/lib/encryption';
 
 export async function GET() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -50,10 +51,11 @@ export async function POST(req: Request) {
 
   const ghUser = await ghRes.json() as { login: string };
 
+  const encryptedToken = encrypt(token.trim());
   await prisma.userGitHubToken.upsert({
     where: { userId: session.user.id },
-    create: { userId: session.user.id, token: token.trim(), login: ghUser.login },
-    update: { token: token.trim(), login: ghUser.login },
+    create: { userId: session.user.id, token: encryptedToken, login: ghUser.login },
+    update: { token: encryptedToken, login: ghUser.login },
   });
 
   return NextResponse.json({ success: true, login: ghUser.login });

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import { prisma } from '@/lib/prisma';
+import { decrypt } from '@/lib/encryption';
 
 export async function GET() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -22,7 +23,7 @@ export async function GET() {
     'https://api.github.com/user/repos?per_page=100&sort=updated&affiliation=owner,collaborator',
     {
       headers: {
-        Authorization: `Bearer ${tokenRecord.token}`,
+        Authorization: `Bearer ${decrypt(tokenRecord.token)}`,
         Accept: 'application/vnd.github+json',
         'X-GitHub-Api-Version': '2022-11-28',
       },

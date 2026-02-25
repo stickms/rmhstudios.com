@@ -22,6 +22,11 @@ import { cleanupRateLimits } from './rate-limit';
 import { disconnectPrisma } from './prisma-client';
 import { logger } from './logger';
 
+if (!config.CORS_ORIGIN) {
+  logger.error({ event: 'fatal_missing_cors', message: 'CORS_ORIGIN must be set (RMHTUBE_CORS_ORIGIN or SOCKET_CORS_ORIGIN)' });
+  process.exit(1);
+}
+
 // ─── Health-check HTTP handler ───────────────────────────────────
 
 function requestHandler(req: IncomingMessage, res: ServerResponse): void {

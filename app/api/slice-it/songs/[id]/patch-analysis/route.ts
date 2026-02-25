@@ -41,12 +41,23 @@ export async function POST(
             return NextResponse.json({ error: "Missing analysisData" }, { status: 400 });
         }
 
+        // Validate body size (max 1MB)
+        const bodyStr = JSON.stringify(body);
+        if (bodyStr.length > 1_000_000) {
+            return NextResponse.json({ error: "Payload too large" }, { status: 413 });
+        }
+
         const song = await prisma.song.findUnique({
-            where: { id }
+            where: { id },
+            select: { id: true, uploadedBy: true, analysisData: true },
         });
 
         if (!song) {
             return NextResponse.json({ error: "Song not found" }, { status: 404 });
+        }
+
+        if (song.uploadedBy !== session.user?.id) {
+            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
         }
 
         // We only allow patching if analysisData is currently null or empty
