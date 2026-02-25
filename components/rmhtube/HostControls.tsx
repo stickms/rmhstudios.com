@@ -1,18 +1,19 @@
 /**
  * HostControls — Playback control bar below the video player.
  *
- * Play/pause and skip are host-only.
- * Volume and captions are always available to all users,
+ * Play/pause, skip, and speed are host-only.
+ * Volume, captions, and PiP are always available to all users,
  * even when the host disables player controls.
  */
 'use client';
 
-import { useCallback } from 'react';
-import { Play, Pause, SkipForward, Volume2, VolumeX, Volume1, Subtitles } from 'lucide-react';
+import { useCallback, useState, useRef, useEffect } from 'react';
+import { Play, Pause, SkipForward, Volume2, VolumeX, Volume1, Subtitles, Gauge, PictureInPicture2 } from 'lucide-react';
 import { emit } from '@/lib/rmhtube/socket';
 import { C2S } from '@/lib/rmhtube/events';
 import { useRmhTubeStore } from '@/lib/rmhtube/store';
 import { formatDuration } from '@/lib/rmhtube/utils';
+import { PLAYBACK_SPEEDS } from '@/lib/rmhtube/constants';
 import type { VideoState, ClientQueueItem } from '@/lib/rmhtube/types';
 
 interface HostControlsProps {
@@ -20,17 +21,34 @@ interface HostControlsProps {
   videoState: VideoState | null;
   currentItem: ClientQueueItem | null;
   onSkip?: () => void;
+  onPiP?: () => void;
 }
 
-export default function HostControls({ isHost, videoState, currentItem, onSkip }: HostControlsProps) {
+export default function HostControls({ isHost, videoState, currentItem, onSkip, onPiP }: HostControlsProps) {
   const playing = videoState?.playing ?? false;
   const currentTime = videoState?.currentTime ?? 0;
   const duration = currentItem?.duration ?? null;
+  const currentSpeed = videoState?.playbackRate ?? 1;
 
   const masterVolume = useRmhTubeStore((s) => s.settings.masterVolume);
   const muted = useRmhTubeStore((s) => s.settings.muted);
   const captionsEnabled = useRmhTubeStore((s) => s.settings.captionsEnabled);
   const updateSettings = useRmhTubeStore((s) => s.updateSettings);
+
+  const [showSpeedMenu, setShowSpeedMenu] = useState(false);
+  const speedMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close speed menu when clicking outside
+  useEffect(() => {
+    if (!showSpeedMenu) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (speedMenuRef.current && !speedMenuRef.current.contains(e.target as Node)) {
+        setShowSpeedMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showSpeedMenu]);
 
   const handlePlayPause = useCallback(() => {
     if (!isHost) return;
@@ -56,6 +74,23 @@ export default function HostControls({ isHost, videoState, currentItem, onSkip }
     updateSettings({ captionsEnabled: !captionsEnabled });
   }, [captionsEnabled, updateSettings]);
 
+  const handleSpeedSelect = useCallback((speed: number) => {
+    if (!isHost) return;
+    emit(C2S.SYNC_SET_SPEED, { speed });
+    setShowSpeedMenu(false);
+  }, [isHost]);
+
+  const handleSpeedCycle = useCallback(() => {
+    if (!isHost) return;
+    const idx = PLAYBACK_SPEEDS.indexOf(currentSpeed as typeof PLAYBACK_SPEEDS[number]);
+    const nextIdx = idx === -1 ? 2 : (idx + 1) % PLAYBACK_SPEEDS.length; // default to 1x then next
+    emit(C2S.SYNC_SET_SPEED, { speed: PLAYBACK_SPEEDS[nextIdx] });
+  }, [isHost, currentSpeed]);
+
+  const handlePiP = useCallback(() => {
+    onPiP?.();
+  }, [onPiP]);
+
   if (!currentItem) return null;
 
   const VolumeIcon = muted || masterVolume === 0
@@ -63,6 +98,8 @@ export default function HostControls({ isHost, videoState, currentItem, onSkip }
     : masterVolume < 0.5
       ? Volume1
       : Volume2;
+
+  const pipSupported = typeof document !== 'undefined' && document.pictureInPictureEnabled;
 
   return (
     <div className="flex items-center gap-3 px-4 py-2 border-b border-(--rmhtube-border) bg-(--rmhtube-bg-subtle)">
@@ -119,6 +156,53 @@ export default function HostControls({ isHost, videoState, currentItem, onSkip }
       >
         <Subtitles className="h-4 w-4" />
       </button>
+
+      {/* Playback Speed — host can change, non-host reads current speed */}
+      <div className="relative shrink-0" ref={speedMenuRef}>
+        <button
+          onClick={isHost ? () => setShowSpeedMenu((v) => !v) : undefined}
+          onDoubleClick={isHost ? handleSpeedCycle : undefined}
+          className={`rounded-md p-2 transition-colors flex items-center gap-1 ${
+            currentSpeed !== 1
+              ? 'text-(--rmhtube-accent) bg-(--rmhtube-accent-dim)'
+              : 'text-(--rmhtube-text-muted) hover:text-(--rmhtube-text) hover:bg-(--rmhtube-surface-hover)'
+          } ${!isHost ? 'cursor-default' : ''}`}
+          title={isHost ? `Playback speed: ${currentSpeed}x (click to change)` : `Playback speed: ${currentSpeed}x`}
+        >
+          <Gauge className="h-4 w-4" />
+          <span className="text-xs font-medium">{currentSpeed}x</span>
+        </button>
+
+        {/* Speed dropdown — host only */}
+        {isHost && showSpeedMenu && (
+          <div className="absolute bottom-full mb-1 right-0 z-50 rounded-lg border border-(--rmhtube-border) bg-(--rmhtube-surface) shadow-lg py-1 min-w-25">
+            {PLAYBACK_SPEEDS.map((speed) => (
+              <button
+                key={speed}
+                onClick={() => handleSpeedSelect(speed)}
+                className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${
+                  speed === currentSpeed
+                    ? 'text-(--rmhtube-accent) bg-(--rmhtube-accent-dim) font-medium'
+                    : 'text-(--rmhtube-text) hover:bg-(--rmhtube-surface-hover)'
+                }`}
+              >
+                {speed}x
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* PiP — always visible (when browser supports it) */}
+      {pipSupported && (
+        <button
+          onClick={handlePiP}
+          className="shrink-0 rounded-md p-2 transition-colors text-(--rmhtube-text-muted) hover:text-(--rmhtube-text) hover:bg-(--rmhtube-surface-hover)"
+          title="Picture-in-Picture"
+        >
+          <PictureInPicture2 className="h-4 w-4" />
+        </button>
+      )}
 
       {/* Skip — host only */}
       {isHost && (

@@ -34,6 +34,25 @@ export const C2S = {
 
   // Reactions
   REACTION_SEND:        'rmhtube:reaction:send',
+
+  // Phase 1: Chat features
+  CHAT_TYPING:          'rmhtube:chat:typing',
+  CHAT_REACT:           'rmhtube:chat:react',
+  CHAT_PIN:             'rmhtube:chat:pin',
+
+  // Phase 2: Synced Playback Speed
+  SYNC_SET_SPEED:       'rmhtube:sync:set_speed',
+
+  // Phase 3: Queue features
+  QUEUE_VOTE:           'rmhtube:queue:vote',
+  QUEUE_SHUFFLE:        'rmhtube:queue:shuffle',
+
+  // Phase 4: Room & Social features
+  ROOM_SET_ROLE:        'rmhtube:room:set_role',
+  ROOM_BAN:             'rmhtube:room:ban',
+  ROOM_UNBAN:           'rmhtube:room:unban',
+  ROOM_CREATE_INVITE:   'rmhtube:room:create_invite',
+  ROOM_SET_STATUS:      'rmhtube:room:set_status',
 } as const;
 
 // ─── Server → Client Events ─────────────────────────────────────
@@ -63,4 +82,13 @@ export const S2C = {
 
   // Errors
   ERROR:                'rmhtube:error',
+
+  // Phase 1: Typing Indicators
+  CHAT_TYPING_INDICATOR: 'rmhtube:chat:typing_indicator',
+
+  // Phase 2: Synced Playback Speed
+  SYNC_SPEED_CHANGED:   'rmhtube:sync:speed_changed',
+
+  // Phase 4: Invite Links
+  ROOM_INVITE_CREATED:  'rmhtube:room:invite_created',
 } as const;

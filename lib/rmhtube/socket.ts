@@ -124,7 +124,7 @@ export async function connectToRmhTube(): Promise<Socket> {
     }
   });
 
-  socket.on(S2C.SYNC_MEDIA_CHANGED, (data) => {
+  socket.on(S2C.SYNC_MEDIA_CHANGED, () => {
     // Media change comes as a room action — the full sync handles it
     // But we also reset video state immediately
     useRmhTubeStore.getState().updateVideoState({
@@ -133,6 +133,51 @@ export async function connectToRmhTube(): Promise<Socket> {
       playbackRate: 1,
       updatedAt: Date.now(),
     });
+  });
+
+  // ─── Phase 2: Synced Playback Speed ─────────────────────────
+
+  socket.on(S2C.SYNC_SPEED_CHANGED, (data: { speed: number }) => {
+    const room = useRmhTubeStore.getState().room;
+    if (room) {
+      useRmhTubeStore.getState().updateVideoState({
+        ...room.videoState,
+        playbackRate: data.speed,
+        updatedAt: Date.now(),
+      });
+    }
+  });
+
+  // ─── Phase 1: Typing Indicators ─────────────────────────────
+
+  socket.on(S2C.CHAT_TYPING_INDICATOR, (data: { userId: string; userName: string }) => {
+    const room = useRmhTubeStore.getState().room;
+    if (!room) return;
+    // Add to typing users (if not already present)
+    const typingUsers = room.typingUsers.includes(data.userId)
+      ? room.typingUsers
+      : [...room.typingUsers, data.userId];
+    useRmhTubeStore.setState({
+      room: { ...room, typingUsers },
+    });
+    // Auto-clear after 3 seconds
+    setTimeout(() => {
+      const currentRoom = useRmhTubeStore.getState().room;
+      if (currentRoom) {
+        useRmhTubeStore.setState({
+          room: {
+            ...currentRoom,
+            typingUsers: currentRoom.typingUsers.filter((id) => id !== data.userId),
+          },
+        });
+      }
+    }, 3000);
+  });
+
+  // ─── Phase 4: Invite Links ──────────────────────────────────
+
+  socket.on(S2C.ROOM_INVITE_CREATED, (data: { code: string; expiresAt: number; maxUses: number }) => {
+    toast.success(`Invite created: ${data.code}`);
   });
 
   // ─── Queue ──────────────────────────────────────────────────

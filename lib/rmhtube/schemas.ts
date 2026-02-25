@@ -15,6 +15,10 @@ export const RoomSettingsSchema = z.object({
   allowMemberSkip: z.boolean().optional(),
   autoPlay: z.boolean().optional(),
   password: z.string().max(64).nullable().optional(),
+  queueVoting: z.boolean().optional(),
+  autoSortByVotes: z.boolean().optional(),
+  loopQueue: z.boolean().optional(),
+  customReactions: z.array(z.string().min(1).max(8)).min(4).max(12).nullable().optional(),
 });
 
 // ─── Client → Server Event Payloads ──────────────────────────────
@@ -43,6 +47,9 @@ export const UpdateSettingsSchema = z.object({
 
 export const ChatSchema = z.object({
   content: z.string().min(1).max(300).transform((s) => s.trim()).pipe(z.string().min(1)),
+  replyToId: z.string().optional(),
+  mentions: z.array(z.string()).max(20).optional(),
+  timestamp: z.number().min(0).nullable().optional(),
 });
 
 export const BrowseRoomsSchema = z.object({
@@ -60,6 +67,10 @@ export const HostStateSchema = z.object({
 
 export const SeekSchema = z.object({
   time: z.number().min(0),
+});
+
+export const SetSpeedSchema = z.object({
+  speed: z.number().min(0.25).max(4),
 });
 
 // ─── Queue Payloads ──────────────────────────────────────────────
@@ -82,8 +93,56 @@ export const QueuePlayItemSchema = z.object({
   itemId: z.string(),
 });
 
+export const QueueVoteSchema = z.object({
+  itemId: z.string(),
+});
+
 // ─── Reaction Payloads ───────────────────────────────────────────
 
 export const ReactionSchema = z.object({
   emoji: z.string().min(1).max(8),
+});
+
+// ─── Phase 1: Chat Reactions ─────────────────────────────────────
+
+export const ChatReactSchema = z.object({
+  messageId: z.string(),
+  emoji: z.string().min(1).max(8),
+});
+
+// ─── Phase 1: Pin Message ────────────────────────────────────────
+
+export const ChatPinSchema = z.object({
+  messageId: z.string().nullable(),
+});
+
+// ─── Phase 4: Role Management ────────────────────────────────────
+
+export const SetRoleSchema = z.object({
+  targetUserId: z.string(),
+  role: z.enum(['moderator', 'member']),
+});
+
+// ─── Phase 4: Ban Management ─────────────────────────────────────
+
+export const BanSchema = z.object({
+  targetUserId: z.string(),
+  reason: z.string().max(100).optional(),
+});
+
+export const UnbanSchema = z.object({
+  targetUserId: z.string(),
+});
+
+// ─── Phase 4: Invite Links ──────────────────────────────────────
+
+export const CreateInviteSchema = z.object({
+  expiresIn: z.enum(['1h', '6h', '24h', '7d', 'never']).optional().default('24h'),
+  maxUses: z.number().int().min(0).max(100).optional().default(0),
+});
+
+// ─── Phase 4: User Status ───────────────────────────────────────
+
+export const SetStatusSchema = z.object({
+  status: z.enum(['watching', 'afk', 'brb']),
 });

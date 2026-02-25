@@ -4,10 +4,12 @@
  * Uses react-player for unified YouTube/Twitch/Vimeo/direct video support.
  * When the current user is the host, player state changes are emitted to the server.
  * When the current user is a non-host viewer, playback syncs to the host's state.
+ *
+ * Phase 2: Playback rate sync, PiP support.
  */
 'use client';
 
-import { useRef, useEffect, useCallback, useState } from 'react';
+import { useRef, useEffect, useCallback, useState, useImperativeHandle, forwardRef } from 'react';
 import ReactPlayer from 'react-player';
 import { useRmhTubeStore } from '@/lib/rmhtube/store';
 import { emit } from '@/lib/rmhtube/socket';
@@ -21,7 +23,12 @@ interface VideoPlayerProps {
   onEnded?: () => void;
 }
 
-export default function VideoPlayer({ url, isHost, onEnded }: VideoPlayerProps) {
+export interface VideoPlayerHandle {
+  togglePiP: () => Promise<void>;
+}
+
+const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
+  function VideoPlayer({ url, isHost, onEnded }, ref) {
   const playerRef = useRef<ReactPlayer>(null);
   const videoState = useRmhTubeStore((s) => s.room?.videoState);
   const masterVolume = useRmhTubeStore((s) => s.settings.masterVolume);
@@ -30,6 +37,35 @@ export default function VideoPlayer({ url, isHost, onEnded }: VideoPlayerProps) 
   const updateSettings = useRmhTubeStore((s) => s.updateSettings);
   const [ready, setReady] = useState(false);
   const lastSyncRef = useRef(0);
+
+  // ─── Phase 2.5: PiP — expose toggle via imperative handle ────
+
+  useImperativeHandle(ref, () => ({
+    togglePiP: async () => {
+      const internal = playerRef.current?.getInternalPlayer();
+      if (!internal) return;
+
+      // Get the actual HTMLVideoElement (may be the internal player itself or nested)
+      const videoEl: HTMLVideoElement | null =
+        internal instanceof HTMLVideoElement
+          ? internal
+          : internal.getIframe?.()
+            ? null // YouTube iframes cannot use PiP directly via this API
+            : (internal as HTMLVideoElement);
+
+      if (!videoEl || typeof videoEl.requestPictureInPicture !== 'function') return;
+
+      try {
+        if (document.pictureInPictureElement === videoEl) {
+          await document.exitPictureInPicture();
+        } else {
+          await videoEl.requestPictureInPicture();
+        }
+      } catch {
+        // PiP request may fail if user gesture is required or not supported
+      }
+    },
+  }), []);
 
   // ─── Host: Periodic state report ──────────────────────────────
 
@@ -40,10 +76,19 @@ export default function VideoPlayer({ url, isHost, onEnded }: VideoPlayerProps) 
       const player = playerRef.current;
       if (!player) return;
 
+      // Phase 2: Report actual playback rate from the internal player
+      const internal = player.getInternalPlayer();
+      let actualRate = 1;
+      if (internal instanceof HTMLMediaElement) {
+        actualRate = internal.playbackRate;
+      } else if (typeof internal?.getPlaybackRate === 'function') {
+        actualRate = internal.getPlaybackRate() ?? 1;
+      }
+
       emit(C2S.SYNC_HOST_STATE, {
         playing: !player.props.playing === false, // Check the internal state
         currentTime: player.getCurrentTime() ?? 0,
-        playbackRate: 1,
+        playbackRate: actualRate,
         timestamp: Date.now(),
       });
     }, HOST_STATE_INTERVAL_MS);
@@ -206,6 +251,7 @@ export default function VideoPlayer({ url, isHost, onEnded }: VideoPlayerProps) 
         ref={playerRef}
         url={url}
         playing={videoState?.playing ?? false}
+        playbackRate={videoState?.playbackRate ?? 1}
         controls={isHost}
         volume={masterVolume}
         muted={muted}
@@ -232,4 +278,6 @@ export default function VideoPlayer({ url, isHost, onEnded }: VideoPlayerProps) 
       )}
     </div>
   );
-}
+});
+
+export default VideoPlayer;

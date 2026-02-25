@@ -1,9 +1,10 @@
 /**
- * QueueItem — Individual queue entry with thumbnail, title, duration, and remove button.
+ * QueueItem — Individual queue entry with thumbnail, title, duration,
+ * voting (Phase 3.5), and remove button.
  */
 'use client';
 
-import { X, GripVertical, Play } from 'lucide-react';
+import { X, GripVertical, Play, ThumbsUp } from 'lucide-react';
 import { formatDuration } from '@/lib/rmhtube/utils';
 import type { ClientQueueItem } from '@/lib/rmhtube/types';
 
@@ -12,11 +13,13 @@ interface QueueItemProps {
   isActive: boolean;
   isHost: boolean;
   canRemove: boolean;
+  queueVoting: boolean;
   onRemove: () => void;
   onPlay: () => void;
+  onVote: () => void;
 }
 
-export default function QueueItem({ item, isActive, isHost, canRemove, onRemove, onPlay }: QueueItemProps) {
+export default function QueueItem({ item, isActive, isHost, canRemove, queueVoting, onRemove, onPlay, onVote }: QueueItemProps) {
   return (
     <div
       className={`flex items-center gap-3 p-2 rounded-lg transition-colors ${
@@ -54,6 +57,22 @@ export default function QueueItem({ item, isActive, isHost, canRemove, onRemove,
           {item.addedByName} · {formatDuration(item.duration)}
         </p>
       </div>
+
+      {/* Vote (Phase 3.5) */}
+      {queueVoting && (
+        <button
+          onClick={onVote}
+          className={`shrink-0 flex items-center gap-1 rounded px-1.5 py-1 text-xs transition-colors ${
+            item.votedByMe
+              ? 'text-(--rmhtube-accent) bg-(--rmhtube-accent-dim)'
+              : 'text-(--rmhtube-text-dim) hover:text-(--rmhtube-accent) hover:bg-(--rmhtube-accent-dim)'
+          }`}
+          title="Vote for this item"
+        >
+          <ThumbsUp className="h-3.5 w-3.5" />
+          {item.votes > 0 && <span>{item.votes}</span>}
+        </button>
+      )}
 
       {/* Remove */}
       {canRemove && (

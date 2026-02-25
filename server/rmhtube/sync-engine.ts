@@ -14,7 +14,7 @@ import { config } from './config';
 import { logger } from './logger';
 import { validated } from './schemas';
 import { C2S, S2C } from '../../lib/rmhtube/events';
-import { HostStateSchema, SeekSchema } from '../../lib/rmhtube/schemas';
+import { HostStateSchema, SeekSchema, SetSpeedSchema } from '../../lib/rmhtube/schemas';
 import type { RoomManager } from './room-manager';
 import { z } from 'zod';
 
@@ -44,6 +44,10 @@ export class SyncEngine {
     socket.on(
       C2S.SYNC_SEEK,
       validated(socket, C2S.SYNC_SEEK, SeekSchema, (s, p) => this.onSeek(s, p)),
+    );
+    socket.on(
+      C2S.SYNC_SET_SPEED,
+      validated(socket, C2S.SYNC_SET_SPEED, SetSpeedSchema, (s, p) => this.onSetSpeed(s, p)),
     );
   }
 
@@ -102,6 +106,18 @@ export class SyncEngine {
     room.lastActivityAt = Date.now();
 
     socket.to(room.id).emit(S2C.SYNC_SEEK, { time: payload.time });
+  }
+
+  private onSetSpeed(socket: Socket, payload: { speed: number }): void {
+    const userId = socket.data.userId as string;
+    const room = this.roomManager.getRoomForUser(userId);
+    if (!room || room.hostUserId !== userId) return;
+
+    room.videoState.playbackRate = payload.speed;
+    room.videoState.updatedAt = Date.now();
+    room.lastActivityAt = Date.now();
+
+    this.io.to(room.id).emit(S2C.SYNC_SPEED_CHANGED, { speed: payload.speed });
   }
 
   // ─── Heartbeat ───────────────────────────────────────────────

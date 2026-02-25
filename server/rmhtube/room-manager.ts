@@ -22,9 +22,14 @@ import {
   TransferHostSchema,
   UpdateSettingsSchema,
   BrowseRoomsSchema,
+  SetRoleSchema,
+  BanSchema,
+  UnbanSchema,
+  CreateInviteSchema,
+  SetStatusSchema,
 } from '../../lib/rmhtube/schemas';
 import { generateRoomCode, sanitizeString } from '../../lib/rmhtube/utils';
-import type { RmhTubeRoom, RmhTubeMember, VideoState, RoomSettings, ChatMessage, QueueItem } from './types';
+import type { RmhTubeRoom, RmhTubeMember, VideoState, RoomSettings, ChatMessage, QueueItem, BannedUser, InviteLink } from './types';
 import type { ClientRoomState, ClientMemberInfo, ClientQueueItem, PublicRoomInfo } from '../../lib/rmhtube/types';
 
 export class RoomManager {
@@ -49,6 +54,13 @@ export class RoomManager {
     socket.on(C2S.ROOM_TRANSFER_HOST, validated(socket, C2S.ROOM_TRANSFER_HOST, TransferHostSchema, (s, p) => this.transferHost(s, p)));
     socket.on(C2S.ROOM_UPDATE_SETTINGS, validated(socket, C2S.ROOM_UPDATE_SETTINGS, UpdateSettingsSchema, (s, p) => this.updateSettings(s, p)));
     socket.on(C2S.ROOM_BROWSE, validated(socket, C2S.ROOM_BROWSE, BrowseRoomsSchema, (s, p) => this.browseRooms(s, p)));
+
+    // Phase 4: Role management, bans, invites, status
+    socket.on(C2S.ROOM_SET_ROLE, validated(socket, C2S.ROOM_SET_ROLE, SetRoleSchema, (s, p) => this.setRole(s, p)));
+    socket.on(C2S.ROOM_BAN, validated(socket, C2S.ROOM_BAN, BanSchema, (s, p) => this.banMember(s, p)));
+    socket.on(C2S.ROOM_UNBAN, validated(socket, C2S.ROOM_UNBAN, UnbanSchema, (s, p) => this.unbanMember(s, p)));
+    socket.on(C2S.ROOM_CREATE_INVITE, validated(socket, C2S.ROOM_CREATE_INVITE, CreateInviteSchema, (s, p) => this.createInvite(s, p)));
+    socket.on(C2S.ROOM_SET_STATUS, validated(socket, C2S.ROOM_SET_STATUS, SetStatusSchema, (s, p) => this.setStatus(s, p)));
   }
 
   handleDisconnect(socket: Socket): void {
@@ -109,6 +121,10 @@ export class RoomManager {
       allowMemberSkip: payload.settings?.allowMemberSkip ?? true,
       autoPlay: payload.settings?.autoPlay ?? true,
       password: payload.settings?.password ?? null,
+      queueVoting: payload.settings?.queueVoting ?? false,
+      autoSortByVotes: payload.settings?.autoSortByVotes ?? false,
+      loopQueue: payload.settings?.loopQueue ?? false,
+      customReactions: payload.settings?.customReactions ?? null,
     };
 
     const now = Date.now();
@@ -121,6 +137,7 @@ export class RoomManager {
       joinedAt: now,
       lastSeenAt: now,
       role: 'host',
+      status: 'watching',
     };
 
     const room: RmhTubeRoom = {
@@ -138,6 +155,13 @@ export class RoomManager {
       createdAt: now,
       lastActivityAt: now,
       seq: 0,
+      pinnedMessage: null,
+      typingTimers: new Map(),
+      chatReactions: new Map(),
+      queueVotes: new Map(),
+      playedItems: [],
+      bannedUsers: [],
+      inviteLinks: [],
     };
 
     this.rooms.set(roomId, room);
@@ -214,6 +238,12 @@ export class RoomManager {
       return;
     }
 
+    // Check ban list before allowing entry
+    if (room.bannedUsers.some((b) => b.userId === userId)) {
+      socket.emit(S2C.ERROR, { code: 'BANNED', message: 'You are banned from this room.' });
+      return;
+    }
+
     if (room.settings.password && room.settings.password !== payload.password) {
       socket.emit(S2C.ERROR, { code: 'WRONG_PASSWORD', message: 'Incorrect room password.' });
       return;
@@ -226,6 +256,8 @@ export class RoomManager {
     }
 
     const now = Date.now();
+    // Restore host role if this user is the room's host (e.g. solo host left and rejoined)
+    const isReturningHost = room.hostUserId === userId;
     const member: RmhTubeMember = {
       userId,
       userName,
@@ -234,7 +266,8 @@ export class RoomManager {
       isConnected: true,
       joinedAt: now,
       lastSeenAt: now,
-      role: 'member',
+      role: isReturningHost ? 'host' : 'member',
+      status: 'watching',
     };
 
     room.members.set(userId, member);
@@ -328,13 +361,25 @@ export class RoomManager {
     if (!roomId) return;
 
     const room = this.rooms.get(roomId);
-    if (!room || room.hostUserId !== userId) {
-      socket.emit(S2C.ERROR, { code: 'NOT_HOST', message: 'Only the host can kick members.' });
+    if (!room) return;
+
+    // Allow host or moderators to kick
+    if (!this.isHostOrMod(room, userId)) {
+      socket.emit(S2C.ERROR, { code: 'NOT_HOST', message: 'Only the host or moderators can kick members.' });
       return;
     }
 
     const target = room.members.get(payload.targetUserId);
     if (!target) return;
+
+    // Moderators cannot kick the host or other moderators
+    const kicker = room.members.get(userId);
+    if (kicker?.role === 'moderator') {
+      if (target.role === 'host' || target.role === 'moderator') {
+        socket.emit(S2C.ERROR, { code: 'NOT_HOST', message: 'Moderators cannot kick the host or other moderators.' });
+        return;
+      }
+    }
 
     // Notify the kicked user
     if (target.socketId) {
@@ -393,6 +438,10 @@ export class RoomManager {
     if (s.allowMemberSkip !== undefined) room.settings.allowMemberSkip = s.allowMemberSkip;
     if (s.autoPlay !== undefined) room.settings.autoPlay = s.autoPlay;
     if (s.password !== undefined) room.settings.password = s.password;
+    if (s.queueVoting !== undefined) room.settings.queueVoting = s.queueVoting;
+    if (s.autoSortByVotes !== undefined) room.settings.autoSortByVotes = s.autoSortByVotes;
+    if (s.loopQueue !== undefined) room.settings.loopQueue = s.loopQueue;
+    if (s.customReactions !== undefined) room.settings.customReactions = s.customReactions;
 
     room.lastActivityAt = Date.now();
 
@@ -403,6 +452,248 @@ export class RoomManager {
       logger.error({ event: 'db_settings_update_failed', roomId, error: String(err) });
     });
   }
+
+  // ─── Phase 4.1: Co-Host / Moderator Role ─────────────────────
+
+  private setRole(
+    socket: Socket,
+    payload: { targetUserId: string; role: 'moderator' | 'member' },
+  ): void {
+    const userId = socket.data.userId as string;
+    const roomId = this.userRoomIndex.get(userId);
+    if (!roomId) return;
+
+    const room = this.rooms.get(roomId);
+    if (!room || room.hostUserId !== userId) {
+      socket.emit(S2C.ERROR, { code: 'NOT_HOST', message: 'Only the host can set roles.' });
+      return;
+    }
+
+    const target = room.members.get(payload.targetUserId);
+    if (!target) return;
+
+    // Cannot change host's role via this handler
+    if (payload.targetUserId === room.hostUserId) {
+      socket.emit(S2C.ERROR, { code: 'INVALID_PAYLOAD', message: 'Cannot change the host\'s role.' });
+      return;
+    }
+
+    if (payload.role === 'moderator') {
+      // Max 5 moderators
+      const currentMods = Array.from(room.members.values()).filter((m) => m.role === 'moderator');
+      if (currentMods.length >= 5) {
+        socket.emit(S2C.ERROR, { code: 'INVALID_PAYLOAD', message: 'Maximum of 5 moderators reached.' });
+        return;
+      }
+
+      target.role = 'moderator';
+      this.broadcastAction(room, 'MEMBER_PROMOTED', {
+        userId: payload.targetUserId,
+        userName: target.userName,
+        role: 'moderator',
+      });
+    } else {
+      target.role = 'member';
+      this.broadcastAction(room, 'MEMBER_DEMOTED', {
+        userId: payload.targetUserId,
+        userName: target.userName,
+        role: 'member',
+      });
+    }
+
+    room.lastActivityAt = Date.now();
+
+    logger.info({ event: 'role_changed', roomId, targetUserId: payload.targetUserId, newRole: payload.role, byUserId: userId });
+  }
+
+  // ─── Phase 4.2: Ban List ──────────────────────────────────────
+
+  private banMember(
+    socket: Socket,
+    payload: { targetUserId: string; reason?: string },
+  ): void {
+    const userId = socket.data.userId as string;
+    const roomId = this.userRoomIndex.get(userId);
+    if (!roomId) return;
+
+    const room = this.rooms.get(roomId);
+    if (!room) return;
+
+    if (!this.isHostOrMod(room, userId)) {
+      socket.emit(S2C.ERROR, { code: 'NOT_HOST', message: 'Only the host or moderators can ban members.' });
+      return;
+    }
+
+    // Cannot ban the host
+    if (payload.targetUserId === room.hostUserId) {
+      socket.emit(S2C.ERROR, { code: 'INVALID_PAYLOAD', message: 'Cannot ban the host.' });
+      return;
+    }
+
+    // Moderators cannot ban other moderators
+    const banner = room.members.get(userId);
+    const target = room.members.get(payload.targetUserId);
+    if (banner?.role === 'moderator' && target?.role === 'moderator') {
+      socket.emit(S2C.ERROR, { code: 'NOT_HOST', message: 'Moderators cannot ban other moderators.' });
+      return;
+    }
+
+    // Check if already banned
+    if (room.bannedUsers.some((b) => b.userId === payload.targetUserId)) {
+      socket.emit(S2C.ERROR, { code: 'INVALID_PAYLOAD', message: 'User is already banned.' });
+      return;
+    }
+
+    const targetMember = room.members.get(payload.targetUserId);
+    const bannedUser: BannedUser = {
+      userId: payload.targetUserId,
+      userName: targetMember?.userName ?? 'Unknown',
+      bannedAt: Date.now(),
+      bannedBy: userId,
+      reason: payload.reason ?? null,
+    };
+
+    room.bannedUsers.push(bannedUser);
+
+    // Notify the banned user and disconnect them
+    if (targetMember?.socketId) {
+      const targetSocket = this.io.sockets.sockets.get(targetMember.socketId);
+      targetSocket?.emit(S2C.ROOM_KICKED, { reason: 'banned' });
+    }
+
+    // Remove from room (this also handles socket leave and index cleanup)
+    if (room.members.has(payload.targetUserId)) {
+      this.removeMember(roomId, payload.targetUserId, 'kicked');
+    }
+
+    this.broadcastAction(room, 'MEMBER_BANNED', {
+      userId: payload.targetUserId,
+      userName: bannedUser.userName,
+      reason: payload.reason ?? null,
+    });
+
+    room.lastActivityAt = Date.now();
+
+    logger.info({ event: 'member_banned', roomId, targetUserId: payload.targetUserId, byUserId: userId });
+  }
+
+  private unbanMember(
+    socket: Socket,
+    payload: { targetUserId: string },
+  ): void {
+    const userId = socket.data.userId as string;
+    const roomId = this.userRoomIndex.get(userId);
+    if (!roomId) return;
+
+    const room = this.rooms.get(roomId);
+    if (!room) return;
+
+    if (!this.isHostOrMod(room, userId)) {
+      socket.emit(S2C.ERROR, { code: 'NOT_HOST', message: 'Only the host or moderators can unban members.' });
+      return;
+    }
+
+    const idx = room.bannedUsers.findIndex((b) => b.userId === payload.targetUserId);
+    if (idx === -1) {
+      socket.emit(S2C.ERROR, { code: 'INVALID_PAYLOAD', message: 'User is not banned.' });
+      return;
+    }
+
+    const unbannedUser = room.bannedUsers[idx];
+    room.bannedUsers.splice(idx, 1);
+
+    this.broadcastAction(room, 'MEMBER_UNBANNED', {
+      userId: payload.targetUserId,
+      userName: unbannedUser.userName,
+    });
+
+    room.lastActivityAt = Date.now();
+
+    logger.info({ event: 'member_unbanned', roomId, targetUserId: payload.targetUserId, byUserId: userId });
+  }
+
+  // ─── Phase 4.3: Invite Links ──────────────────────────────────
+
+  private createInvite(
+    socket: Socket,
+    payload: { expiresIn: '1h' | '6h' | '24h' | '7d' | 'never'; maxUses: number },
+  ): void {
+    const userId = socket.data.userId as string;
+    const roomId = this.userRoomIndex.get(userId);
+    if (!roomId) return;
+
+    const room = this.rooms.get(roomId);
+    if (!room) return;
+
+    if (!this.isHostOrMod(room, userId)) {
+      socket.emit(S2C.ERROR, { code: 'NOT_HOST', message: 'Only the host or moderators can create invites.' });
+      return;
+    }
+
+    // Max 10 active invites
+    if (room.inviteLinks.length >= 10) {
+      socket.emit(S2C.ERROR, { code: 'INVALID_PAYLOAD', message: 'Maximum of 10 active invites reached.' });
+      return;
+    }
+
+    const expiresInMs: Record<string, number> = {
+      '1h': 60 * 60 * 1000,
+      '6h': 6 * 60 * 60 * 1000,
+      '24h': 24 * 60 * 60 * 1000,
+      '7d': 7 * 24 * 60 * 60 * 1000,
+      'never': 0,
+    };
+
+    const now = Date.now();
+    const ttl = expiresInMs[payload.expiresIn] ?? expiresInMs['24h'];
+    const expiresAt = ttl === 0 ? 0 : now + ttl;
+
+    const invite: InviteLink = {
+      code: nanoid(8),
+      roomId,
+      createdBy: userId,
+      expiresAt,
+      maxUses: payload.maxUses,
+      useCount: 0,
+    };
+
+    room.inviteLinks.push(invite);
+
+    socket.emit(S2C.ROOM_INVITE_CREATED, invite);
+
+    room.lastActivityAt = Date.now();
+
+    logger.info({ event: 'invite_created', roomId, code: invite.code, byUserId: userId });
+  }
+
+  // ─── Phase 4.7: User Presence Status ──────────────────────────
+
+  private setStatus(
+    socket: Socket,
+    payload: { status: 'watching' | 'afk' | 'brb' },
+  ): void {
+    const userId = socket.data.userId as string;
+    const roomId = this.userRoomIndex.get(userId);
+    if (!roomId) return;
+
+    const room = this.rooms.get(roomId);
+    if (!room) return;
+
+    const member = room.members.get(userId);
+    if (!member) return;
+
+    member.status = payload.status;
+    room.lastActivityAt = Date.now();
+
+    this.broadcastAction(room, 'MEMBER_STATUS_CHANGED', {
+      userId,
+      status: payload.status,
+    });
+
+    logger.info({ event: 'status_changed', roomId, userId, status: payload.status });
+  }
+
+  // ─── Room Browsing ────────────────────────────────────────────
 
   private browseRooms(socket: Socket, payload: { limit: number }): void {
     const publicRooms: PublicRoomInfo[] = [];
@@ -422,6 +713,7 @@ export class RoomManager {
         maxMembers: room.settings.maxMembers,
         currentVideo: room.currentItem?.title ?? null,
         hasPassword: !!room.settings.password,
+        scheduledFor: null,
       });
     }
 
@@ -479,9 +771,11 @@ export class RoomManager {
       avatarUrl: m.avatarUrl,
       isConnected: m.isConnected,
       isHost: m.userId === room.hostUserId,
+      role: m.role,
+      status: m.status,
     }));
 
-    const queue: ClientQueueItem[] = room.queue.map((q) => ({
+    const mapQueueItem = (q: QueueItem): ClientQueueItem => ({
       id: q.id,
       url: q.url,
       mediaType: q.mediaType,
@@ -492,22 +786,21 @@ export class RoomManager {
       addedByName: q.addedByName,
       addedAt: q.addedAt,
       position: q.position,
-    }));
+      votes: room.queueVotes.get(q.id)?.size ?? 0,
+      votedByMe: room.queueVotes.get(q.id)?.has(forUserId) ?? false,
+    });
+
+    const queue: ClientQueueItem[] = room.queue.map(mapQueueItem);
 
     const currentItem: ClientQueueItem | null = room.currentItem
-      ? {
-          id: room.currentItem.id,
-          url: room.currentItem.url,
-          mediaType: room.currentItem.mediaType,
-          title: room.currentItem.title,
-          duration: room.currentItem.duration,
-          thumbnailUrl: room.currentItem.thumbnailUrl,
-          addedBy: room.currentItem.addedBy,
-          addedByName: room.currentItem.addedByName,
-          addedAt: room.currentItem.addedAt,
-          position: room.currentItem.position,
-        }
+      ? mapQueueItem(room.currentItem)
       : null;
+
+    // Only expose ban list to host or moderators
+    const requestingMember = room.members.get(forUserId);
+    const isHostOrMod = requestingMember
+      ? requestingMember.role === 'host' || requestingMember.role === 'moderator'
+      : false;
 
     return {
       roomId: room.id,
@@ -519,10 +812,32 @@ export class RoomManager {
       currentItem,
       currentIndex: room.currentIndex,
       videoState: { ...room.videoState },
-      chat: room.chat.slice(-200),
+      chat: room.chat.slice(-200).map((msg) => {
+        const reactions: Record<string, string[]> = {};
+        const msgReactions = room.chatReactions.get(msg.id);
+        if (msgReactions) {
+          for (const [emoji, users] of msgReactions) {
+            reactions[emoji] = Array.from(users);
+          }
+        }
+        return { ...msg, reactions };
+      }),
       skipVotes: Array.from(room.skipVotes),
       myUserId: forUserId,
       seq: room.seq,
+      typingUsers: [],
+      pinnedMessage: room.pinnedMessage ? (() => {
+        const reactions: Record<string, string[]> = {};
+        const msgReactions = room.chatReactions.get(room.pinnedMessage!.id);
+        if (msgReactions) {
+          for (const [emoji, users] of msgReactions) {
+            reactions[emoji] = Array.from(users);
+          }
+        }
+        return { ...room.pinnedMessage!, reactions };
+      })() : null,
+      playedItems: room.playedItems.slice(-50).map(mapQueueItem),
+      bannedUsers: isHostOrMod ? room.bannedUsers : [],
     };
   }
 
@@ -560,6 +875,13 @@ export class RoomManager {
   getRoomForUser(userId: string): RmhTubeRoom | null {
     const roomId = this.userRoomIndex.get(userId);
     return roomId ? this.rooms.get(roomId) ?? null : null;
+  }
+
+  /** Returns true if user is the host or a moderator in the given room. */
+  isHostOrMod(room: RmhTubeRoom, userId: string): boolean {
+    if (room.hostUserId === userId) return true;
+    const member = room.members.get(userId);
+    return member?.role === 'moderator' || member?.role === 'host';
   }
 
   // ─── Database Restoration ────────────────────────────────────
@@ -612,6 +934,7 @@ export class RoomManager {
           joinedAt: dbMember.joinedAt.getTime(),
           lastSeenAt: now,
           role: dbMember.userId === dbRoom.hostId ? 'host' : 'member',
+          status: 'watching',
         });
       }
 
@@ -635,6 +958,11 @@ export class RoomManager {
           userName: m.userName,
           content: m.content,
           createdAt: m.createdAt.getTime(),
+          replyToId: (m as Record<string, unknown>).replyToId as string | null ?? null,
+          replyToContent: null,
+          replyToUserName: null,
+          mentions: [],
+          timestamp: null,
         }))
         .reverse(); // DB ordered desc, we need asc
 
@@ -649,6 +977,10 @@ export class RoomManager {
           allowMemberSkip: dbRoom.allowMemberSkip,
           autoPlay: dbRoom.autoPlay,
           password: dbRoom.password,
+          queueVoting: false,
+          autoSortByVotes: false,
+          loopQueue: false,
+          customReactions: null,
         },
         members,
         queue,
@@ -660,6 +992,13 @@ export class RoomManager {
         createdAt: dbRoom.createdAt.getTime(),
         lastActivityAt: dbRoom.updatedAt.getTime(),
         seq: 0,
+        pinnedMessage: null,
+        typingTimers: new Map(),
+        chatReactions: new Map(),
+        queueVotes: new Map(),
+        playedItems: [],
+        bannedUsers: [],
+        inviteLinks: [],
       };
 
       this.rooms.set(dbRoom.id, room);
@@ -720,6 +1059,7 @@ export class RoomManager {
         joinedAt: dbMember.joinedAt.getTime(),
         lastSeenAt: now,
         role: dbMember.userId === dbRoom.hostId ? 'host' : 'member',
+        status: 'watching',
       });
     }
 
@@ -743,6 +1083,11 @@ export class RoomManager {
         userName: m.userName,
         content: m.content,
         createdAt: m.createdAt.getTime(),
+        replyToId: (m as Record<string, unknown>).replyToId as string | null ?? null,
+        replyToContent: null,
+        replyToUserName: null,
+        mentions: [],
+        timestamp: null,
       }))
       .reverse();
 
@@ -757,6 +1102,10 @@ export class RoomManager {
         allowMemberSkip: dbRoom.allowMemberSkip,
         autoPlay: dbRoom.autoPlay,
         password: dbRoom.password,
+        queueVoting: false,
+        autoSortByVotes: false,
+        loopQueue: false,
+        customReactions: null,
       },
       members,
       queue,
@@ -768,6 +1117,13 @@ export class RoomManager {
       createdAt: dbRoom.createdAt.getTime(),
       lastActivityAt: dbRoom.updatedAt.getTime(),
       seq: 0,
+      pinnedMessage: null,
+      typingTimers: new Map(),
+      chatReactions: new Map(),
+      queueVotes: new Map(),
+      playedItems: [],
+      bannedUsers: [],
+      inviteLinks: [],
     };
 
     this.rooms.set(dbRoom.id, room);

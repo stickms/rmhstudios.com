@@ -59,6 +59,8 @@ model User {
   rmhtubeHostedRooms   RmhTubeRoom[]        @relation("RmhTubeHostedRooms")
   rmhtubeRoomMembers   RmhTubeRoomMember[]
   rmhtubeQueueItems    RmhTubeQueueItem[]
+  rmhtubePlaylists     RmhTubePlaylist[]
+  rmhtubeStats         RmhTubeUserStats?
 
   @@map("user")
 }
@@ -757,6 +759,8 @@ model RmhTubeRoom {
   allowMemberQueue Boolean  @default(true)
   allowMemberSkip  Boolean  @default(true)
   autoPlay        Boolean   @default(true)
+  scheduledFor    DateTime?
+  description     String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   closedAt        DateTime?
@@ -785,14 +789,17 @@ model RmhTubeRoomMember {
 }
 
 model RmhTubeChatMessage {
-  id        String   @id @default(cuid())
-  roomId    String
-  userId    String
-  userName  String
-  content   String
-  createdAt DateTime @default(now())
+  id             String   @id @default(cuid())
+  roomId         String
+  userId         String
+  userName       String
+  content        String
+  replyToId      String?
+  createdAt      DateTime @default(now())
 
-  room RmhTubeRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  room    RmhTubeRoom         @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  replyTo RmhTubeChatMessage? @relation("ChatReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies RmhTubeChatMessage[] @relation("ChatReplies")
 
   @@index([roomId, createdAt])
   @@map("rmhtube_chat_message")
@@ -817,5 +824,50 @@ model RmhTubeQueueItem {
 
   @@index([roomId, position])
   @@map("rmhtube_queue_item")
+}
+
+model RmhTubePlaylist {
+  id        String   @id @default(cuid())
+  name      String
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User                  @relation(fields: [userId], references: [id])
+  items RmhTubePlaylistItem[]
+
+  @@index([userId])
+  @@map("rmhtube_playlist")
+}
+
+model RmhTubePlaylistItem {
+  id           String  @id @default(cuid())
+  playlistId   String
+  url          String
+  mediaType    String
+  title        String
+  duration     Int?
+  thumbnailUrl String?
+  position     Int
+
+  playlist RmhTubePlaylist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+
+  @@index([playlistId, position])
+  @@map("rmhtube_playlist_item")
+}
+
+model RmhTubeUserStats {
+  userId              String   @id
+  totalWatchTimeMinutes Int    @default(0)
+  videosWatched       Int      @default(0)
+  roomsCreated        Int      @default(0)
+  roomsJoined         Int      @default(0)
+  messagesSent        Int      @default(0)
+  reactionsUsed       Int      @default(0)
+  updatedAt           DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("rmhtube_user_stats")
 }
 

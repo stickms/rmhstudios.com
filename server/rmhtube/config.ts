@@ -53,6 +53,17 @@ export const config = {
     'rmhtube:queue:add':       { max: 20,  windowMs: 60_000 },
     'rmhtube:queue:vote_skip': { max: 10,  windowMs: 60_000 },
     'rmhtube:reaction:send':   { max: 30,  windowMs: 60_000 },
+    'rmhtube:chat:typing':     { max: 30,  windowMs: 60_000 },
+    'rmhtube:chat:react':      { max: 30,  windowMs: 60_000 },
+    'rmhtube:chat:pin':        { max: 10,  windowMs: 60_000 },
+    'rmhtube:sync:set_speed':  { max: 10,  windowMs: 60_000 },
+    'rmhtube:queue:vote':      { max: 20,  windowMs: 60_000 },
+    'rmhtube:queue:shuffle':   { max: 5,   windowMs: 60_000 },
+    'rmhtube:room:set_role':   { max: 10,  windowMs: 60_000 },
+    'rmhtube:room:ban':        { max: 10,  windowMs: 60_000 },
+    'rmhtube:room:unban':      { max: 10,  windowMs: 60_000 },
+    'rmhtube:room:create_invite': { max: 5, windowMs: 3_600_000 },
+    'rmhtube:room:set_status': { max: 10,  windowMs: 60_000 },
   } as Record<string, { max: number; windowMs: number }>,
 
   // ─── Shutdown ───

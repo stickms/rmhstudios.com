@@ -2,7 +2,8 @@
  * RmhTube — Media Queue Manager
  *
  * Handles the video queue: add, remove, reorder, skip, auto-advance,
- * and vote-to-skip. Persists queue items to the database.
+ * vote-to-skip, queue voting, shuffle, loop, and history.
+ * Persists queue items to the database.
  */
 
 import type { Server, Socket } from 'socket.io';
@@ -17,12 +18,13 @@ import {
   QueueRemoveSchema,
   QueueReorderSchema,
   QueuePlayItemSchema,
+  QueueVoteSchema,
   ReactionSchema,
 } from '../../lib/rmhtube/schemas';
 import { detectMediaType, extractYouTubeId, youtubeThumbUrl } from '../../lib/rmhtube/utils';
 import type { RoomManager } from './room-manager';
 import type { SyncEngine } from './sync-engine';
-import type { QueueItem } from './types';
+import type { QueueItem, RmhTubeRoom } from './types';
 import { z } from 'zod';
 
 const EmptySchema = z.object({}).optional();
@@ -42,6 +44,18 @@ export class MediaQueue {
     socket.on(C2S.QUEUE_SKIP, validated(socket, C2S.QUEUE_SKIP, EmptySchema, (s) => this.skipCurrent(s)));
     socket.on(C2S.QUEUE_VOTE_SKIP, validated(socket, C2S.QUEUE_VOTE_SKIP, EmptySchema, (s) => this.voteSkip(s)));
     socket.on(C2S.REACTION_SEND, validated(socket, C2S.REACTION_SEND, ReactionSchema, (s, p) => this.sendReaction(s, p)));
+
+    // Phase 3: Queue voting & shuffle
+    socket.on(C2S.QUEUE_VOTE, validated(socket, C2S.QUEUE_VOTE, QueueVoteSchema, (s, p) => this.voteForItem(s, p)));
+    socket.on(C2S.QUEUE_SHUFFLE, validated(socket, C2S.QUEUE_SHUFFLE, EmptySchema, (s) => this.shuffleQueue(s)));
+  }
+
+  // ─── Helper: Host or Moderator Check ────────────────────────
+
+  private isHostOrMod(room: RmhTubeRoom, userId: string): boolean {
+    if (room.hostUserId === userId) return true;
+    const member = room.members.get(userId);
+    return member?.role === 'moderator';
   }
 
   // ─── Add to Queue ────────────────────────────────────────────
@@ -248,6 +262,152 @@ export class MediaQueue {
     }
   }
 
+  // ─── Queue Voting (Phase 3.3) ───────────────────────────────
+
+  private voteForItem(socket: Socket, payload: { itemId: string }): void {
+    const userId = socket.data.userId as string;
+    const room = this.roomManager.getRoomForUser(userId);
+    if (!room) return;
+
+    if (!room.settings.queueVoting) {
+      socket.emit(S2C.ERROR, { code: 'VOTING_DISABLED', message: 'Queue voting is disabled.' });
+      return;
+    }
+
+    // Verify the item exists in the queue
+    const itemExists = room.queue.some((q) => q.id === payload.itemId);
+    if (!itemExists) {
+      socket.emit(S2C.ERROR, { code: 'ITEM_NOT_FOUND', message: 'Queue item not found.' });
+      return;
+    }
+
+    // Toggle vote: remove if already voted, add otherwise
+    let voters = room.queueVotes.get(payload.itemId);
+    if (!voters) {
+      voters = new Set<string>();
+      room.queueVotes.set(payload.itemId, voters);
+    }
+
+    if (voters.has(userId)) {
+      voters.delete(userId);
+    } else {
+      voters.add(userId);
+    }
+
+    room.lastActivityAt = Date.now();
+
+    // Broadcast vote update
+    this.roomManager.broadcastAction(room, 'QUEUE_VOTE_UPDATED', {
+      itemId: payload.itemId,
+      votes: voters.size,
+      voters: Array.from(voters),
+    });
+
+    // Auto-sort by votes if enabled
+    if (room.settings.autoSortByVotes) {
+      this.sortQueueByVotes(room);
+    }
+
+    logger.info({
+      event: 'queue_vote',
+      roomId: room.id,
+      userId,
+      itemId: payload.itemId,
+      votes: voters.size,
+    });
+  }
+
+  /**
+   * Sorts queue items by vote count (descending). Items at or before
+   * currentIndex are left in place; only items after are sorted.
+   * Broadcasts QUEUE_REORDERED and persists new positions.
+   */
+  private sortQueueByVotes(room: RmhTubeRoom): void {
+    const startIndex = room.currentIndex + 1;
+    if (startIndex >= room.queue.length) return;
+
+    const unsorted = room.queue.slice(startIndex);
+    unsorted.sort((a, b) => {
+      const votesA = room.queueVotes.get(a.id)?.size ?? 0;
+      const votesB = room.queueVotes.get(b.id)?.size ?? 0;
+      // Descending by votes; ties keep original order (stable sort)
+      return votesB - votesA;
+    });
+
+    // Replace the sortable portion
+    room.queue.splice(startIndex, unsorted.length, ...unsorted);
+    room.queue.forEach((q, i) => { q.position = i; });
+
+    this.roomManager.broadcastAction(room, 'QUEUE_REORDERED', {
+      queue: room.queue.map((q) => ({
+        id: q.id,
+        url: q.url,
+        mediaType: q.mediaType,
+        title: q.title,
+        duration: q.duration,
+        thumbnailUrl: q.thumbnailUrl,
+        addedBy: q.addedBy,
+        addedByName: q.addedByName,
+        addedAt: q.addedAt,
+        position: q.position,
+      })),
+    });
+
+    // Persist updated positions
+    this.persistQueuePositions(room.queue).catch((err) => {
+      logger.error({ event: 'db_queue_vote_sort_failed', roomId: room.id, error: String(err) });
+    });
+  }
+
+  // ─── Queue Shuffle (Phase 3.4) ──────────────────────────────
+
+  private shuffleQueue(socket: Socket): void {
+    const userId = socket.data.userId as string;
+    const room = this.roomManager.getRoomForUser(userId);
+    if (!room) return;
+
+    // Host or moderator only
+    if (!this.isHostOrMod(room, userId)) {
+      socket.emit(S2C.ERROR, { code: 'NOT_AUTHORIZED', message: 'Only the host or a moderator can shuffle the queue.' });
+      return;
+    }
+
+    const startIndex = room.currentIndex + 1;
+    if (startIndex >= room.queue.length) return; // Nothing to shuffle
+
+    // Fisher-Yates shuffle on items after currentIndex
+    for (let i = room.queue.length - 1; i > startIndex; i--) {
+      const j = startIndex + Math.floor(Math.random() * (i - startIndex + 1));
+      [room.queue[i], room.queue[j]] = [room.queue[j], room.queue[i]];
+    }
+
+    // Reindex positions
+    room.queue.forEach((q, i) => { q.position = i; });
+    room.lastActivityAt = Date.now();
+
+    this.roomManager.broadcastAction(room, 'QUEUE_REORDERED', {
+      queue: room.queue.map((q) => ({
+        id: q.id,
+        url: q.url,
+        mediaType: q.mediaType,
+        title: q.title,
+        duration: q.duration,
+        thumbnailUrl: q.thumbnailUrl,
+        addedBy: q.addedBy,
+        addedByName: q.addedByName,
+        addedAt: q.addedAt,
+        position: q.position,
+      })),
+    });
+
+    // Persist updated positions
+    this.persistQueuePositions(room.queue).catch((err) => {
+      logger.error({ event: 'db_queue_shuffle_failed', roomId: room.id, error: String(err) });
+    });
+
+    logger.info({ event: 'queue_shuffled', roomId: room.id, userId });
+  }
+
   // ─── Reactions ───────────────────────────────────────────────
 
   private sendReaction(socket: Socket, payload: { emoji: string }): void {
@@ -265,11 +425,33 @@ export class MediaQueue {
 
   // ─── Queue Advancement ───────────────────────────────────────
 
-  advanceQueue(room: import('./types').RmhTubeRoom): void {
+  advanceQueue(room: RmhTubeRoom): void {
     room.skipVotes.clear();
 
-    // Mark current as played in DB
+    // Phase 3.9: Push current item to history before advancing
     if (room.currentItem) {
+      room.playedItems.push({ ...room.currentItem });
+      // Keep history capped at 50 items (FIFO)
+      if (room.playedItems.length > 50) {
+        room.playedItems.splice(0, room.playedItems.length - 50);
+      }
+
+      this.roomManager.broadcastAction(room, 'QUEUE_HISTORY_UPDATED', {
+        playedItems: room.playedItems.map((q) => ({
+          id: q.id,
+          url: q.url,
+          mediaType: q.mediaType,
+          title: q.title,
+          duration: q.duration,
+          thumbnailUrl: q.thumbnailUrl,
+          addedBy: q.addedBy,
+          addedByName: q.addedByName,
+          addedAt: q.addedAt,
+          position: q.position,
+        })),
+      });
+
+      // Mark current as played in DB
       this.persistQueuePlayed(room.currentItem.id).catch((err) => {
         logger.error({ event: 'db_queue_played_failed', roomId: room.id, error: String(err) });
       });
@@ -278,6 +460,10 @@ export class MediaQueue {
     const nextIndex = room.currentIndex + 1;
     if (nextIndex < room.queue.length) {
       this.playAtIndex(room, nextIndex);
+    } else if (room.settings.loopQueue && room.queue.length > 0) {
+      // Phase 3.5: Loop — reset to beginning of queue
+      this.playAtIndex(room, 0);
+      logger.info({ event: 'queue_looped', roomId: room.id });
     } else {
       // Queue exhausted
       room.currentItem = null;
@@ -290,7 +476,7 @@ export class MediaQueue {
 
   // ─── Internal Play Helper ────────────────────────────────────
 
-  private playAtIndex(room: import('./types').RmhTubeRoom, index: number): void {
+  private playAtIndex(room: RmhTubeRoom, index: number): void {
     if (index < 0 || index >= room.queue.length) return;
 
     room.currentItem = room.queue[index];
@@ -310,11 +496,20 @@ export class MediaQueue {
 
   /**
    * Called when the host's video player reports the video has ended.
-   * Auto-advances the queue if enabled.
+   * Auto-advances the queue if autoPlay is enabled.
+   * Supports loop mode via advanceQueue (Phase 3.5).
    */
-  handleVideoEnded(room: import('./types').RmhTubeRoom): void {
+  handleVideoEnded(room: RmhTubeRoom): void {
     if (room.settings.autoPlay) {
       this.advanceQueue(room);
+    } else if (room.settings.loopQueue && room.queue.length > 0) {
+      // Even without autoPlay, if loop is enabled and we're at the end,
+      // loop back to the first item
+      const nextIndex = room.currentIndex + 1;
+      if (nextIndex >= room.queue.length) {
+        this.playAtIndex(room, 0);
+        logger.info({ event: 'queue_looped_on_end', roomId: room.id });
+      }
     }
   }
 
