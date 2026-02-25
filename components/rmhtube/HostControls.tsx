@@ -52,6 +52,15 @@ export default function HostControls({ isHost, videoState, currentItem, onSkip, 
 
   const handlePlayPause = useCallback(() => {
     if (!isHost) return;
+    // Optimistically update local state so the UI responds immediately
+    const room = useRmhTubeStore.getState().room;
+    if (room) {
+      useRmhTubeStore.getState().updateVideoState({
+        ...room.videoState,
+        playing: !playing,
+        updatedAt: Date.now(),
+      });
+    }
     emit(playing ? C2S.SYNC_PAUSE : C2S.SYNC_PLAY, {});
   }, [isHost, playing]);
 
