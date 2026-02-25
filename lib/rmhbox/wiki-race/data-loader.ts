@@ -16,20 +16,27 @@ export interface WikiArticleRef {
 export interface ArticlePair {
   startArticle: WikiArticleRef;
   targetArticle: WikiArticleRef;
-  difficulty: 'medium' | 'hard' | 'extreme';
+  difficulty: 'easy' | 'medium' | 'hard';
   tags: string[];
+  minPathLength: number; 
+  path: string[]; // Precomputed shortest path for reference (not revealed to players)
 }
 
 let cachedPairs: ArticlePair[] | null = null;
 
 export function loadArticlePairs(): ArticlePair[] {
   if (cachedPairs) return cachedPairs;
-  const raw = fs.readFileSync(
-    path.join(process.cwd(), 'data', 'rmhbox', 'wiki-race', 'article-pairs.json'),
-    'utf-8',
-  );
-  cachedPairs = JSON.parse(raw) as ArticlePair[];
-  return cachedPairs;
+  // load all pairs from the three difficulty files and combine into one array
+  const pairs: ArticlePair[] = [];
+  const difficulties: Array<ArticlePair['difficulty']> = ['easy', 'medium', 'hard'];
+  for (const diff of difficulties) {
+    const filePath = path.join(process.cwd(), 'data', 'wiki-race', `${diff}-pairs.json`);
+    const fileContent = fs.readFileSync(filePath, 'utf-8');
+    const parsed: ArticlePair[] = JSON.parse(fileContent);
+    pairs.push(...parsed);
+  }
+  cachedPairs = pairs;
+  return cachedPairs!;
 }
 
 /** Returns a unique key for a pair based on article titles. */

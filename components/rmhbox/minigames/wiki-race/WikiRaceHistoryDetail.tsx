@@ -262,6 +262,12 @@ function RoundSection({
     | Record<string, number>
     | undefined;
 
+  const difficultyColors: Record<string, string> = {
+    easy: 'bg-green-500/20 text-green-400',
+    medium: 'bg-amber-500/20 text-amber-400',
+    hard: 'bg-red-500/20 text-red-400',
+  };
+
   return (
     <div className="space-y-3">
       {/* Race Info / Round header */}
@@ -274,11 +280,7 @@ function RoundSection({
             {round.difficulty && (
               <span
                 className={`text-xs px-2 py-0.5 rounded-full ${
-                  round.difficulty === 'hard'
-                    ? 'bg-red-500/20 text-red-400'
-                    : round.difficulty === 'extreme'
-                      ? 'bg-purple-500/20 text-purple-400'
-                      : 'bg-yellow-500/20 text-yellow-400'
+                  difficultyColors[round.difficulty]
                 }`}
               >
                 {round.difficulty}
