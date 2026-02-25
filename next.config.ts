@@ -24,7 +24,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: "Content-Security-Policy",
-            value: `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: https://media.tenor.com https://media1.giphy.com https://i.giphy.com; font-src 'self' data:; connect-src 'self' wss: ws: ${process.env.NEXT_PUBLIC_RMHTUBE_SOCKET_URL || 'http://localhost:7003'} ${(process.env.NEXT_PUBLIC_RMHTUBE_SOCKET_URL || 'http://localhost:7003').replace(/^http/, 'ws')}; frame-ancestors 'none';`,
+            value: `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: https://media.tenor.com https://media1.giphy.com https://i.giphy.com; font-src 'self' data:; connect-src 'self' wss: ws: ${process.env.NEXT_PUBLIC_RMHTUBE_SOCKET_URL || 'http://localhost:7003'} ${(process.env.NEXT_PUBLIC_RMHTUBE_SOCKET_URL || 'http://localhost:7003').replace(/^http/, 'ws')} ${process.env.NEXT_PUBLIC_RMHBOX_SOCKET_URL || 'http://localhost:7676'} ${(process.env.NEXT_PUBLIC_RMHBOX_SOCKET_URL || 'http://localhost:7676').replace(/^http/, 'ws')}; frame-ancestors 'none';`,
           },
         ],
       },
