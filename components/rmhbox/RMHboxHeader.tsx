@@ -19,6 +19,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { Circle, Infinity, Pause, Play } from 'lucide-react';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { emit } from '@/lib/rmhbox/socket';
@@ -43,7 +44,11 @@ function TimerRing({
   lobbyId: string | null;
 }) {
   const [hovered, setHovered] = useState(false);
-  const radius = 15;
+
+  const totalRadius = 20; // SVG viewBox is 40x40, so radius is half minus stroke width
+  const strokeWidth = 3;
+
+  const radius = totalRadius - strokeWidth / 2;
   const circumference = 2 * Math.PI * radius;
 
   // Infinite → full ring; otherwise deplete as normal
@@ -80,13 +85,13 @@ function TimerRing({
           cx="20" cy="20" r={radius}
           fill="none"
           stroke="var(--rmhbox-border)"
-          strokeWidth="2.5"
+          strokeWidth={strokeWidth}
         />
         <circle
           cx="20" cy="20" r={radius}
           fill="none"
           stroke={strokeColor}
-          strokeWidth="2.5"
+          strokeWidth={strokeWidth}
           strokeDasharray={circumference}
           strokeDashoffset={offset}
           strokeLinecap="round"
@@ -137,6 +142,7 @@ export default function RMHboxHeader({
   const updateSettings = useRMHboxStore((s) => s.updateSettings);
   const timerInfo = useRMHboxStore((s) => s.timerInfo);
   const lobby = useRMHboxStore((s) => s.lobby);
+  const router = useRouter();
 
   const handleToggleTheme = useCallback(() => {
     updateSettings({ theme: theme === 'dark' ? 'light' : 'dark' });
@@ -144,7 +150,7 @@ export default function RMHboxHeader({
 
   const isGame = context === 'game';
   const isLanding = context === 'landing';
-  const hasBackLink = isLanding || context === 'minigames' || context === 'history';
+  const hasBackLink = isLanding || context === 'minigames' || context === 'history' || context === 'lobby';
   const showConnection = context !== 'minigames' && context !== 'history';
   const showTimer = timerInfo !== null;
   const isHost = !!(lobby && lobby.hostUserId === lobby.myUserId);
@@ -166,18 +172,33 @@ export default function RMHboxHeader({
     <header className="relative flex shrink-0 items-center border-b border-(--rmhbox-border) bg-(--rmhbox-bg)/90 px-3 py-3 h-16 backdrop-blur-sm">
       {/* Left side */}
       <div className="flex items-center gap-2 z-10">
-        {hasBackLink ? (
+        {hasBackLink && (
           <a
             href={backHref ?? (isLanding ? '/games' : '/rmhbox')}
             className="text-sm font-medium text-(--rmhbox-text-muted) hover:text-(--rmhbox-accent) transition-colors"
+            // when in a lobby, the back link becomes a "Leave" action that also disconnects from the lobby
+            onClick={(e) => {
+              if (context === 'lobby') {
+                e.preventDefault();
+                if (!lobby) return;
+                emit(C2S.LOBBY_LEAVE, { lobbyId: lobby.lobbyId });
+                useRMHboxStore.getState().leaveLobby();
+                router.push('/rmhbox');
+              }
+            }}
           >
-            {backLabel ?? (isLanding ? '← Games' : '← Home')}
+            {backLabel ?? ('← Back')}
           </a>
-        ) : (
-          <>
-            <SettingsMenu theme={theme} onToggleTheme={handleToggleTheme} />
-            <HostControlModal />
-          </>
+        )}
+        {showTimer && (
+          <TimerRing
+            seconds={timerInfo.remaining}
+            total={timerInfo.total}
+            paused={timerInfo.paused}
+            infinite={timerInfo.infinite}
+            isHost={isHost}
+            lobbyId={lobby?.lobbyId ?? null}
+          />
         )}
       </div>
 
@@ -196,19 +217,13 @@ export default function RMHboxHeader({
         {showConnection && (
           <span className="flex items-center gap-1.5 text-sm text-(--rmhbox-text-muted)" title={statusText}>
             {statusIcon}
-            {!isGame && !showTimer && <span className="hidden sm:inline">{statusText}</span>}
+            {!isGame && !showTimer && !hasBackLink && <span className="hidden sm:inline">{statusText}</span>}
           </span>
         )}
-        {showTimer && (
-          <TimerRing
-            seconds={timerInfo.remaining}
-            total={timerInfo.total}
-            paused={timerInfo.paused}
-            infinite={timerInfo.infinite}
-            isHost={isHost}
-            lobbyId={lobby?.lobbyId ?? null}
-          />
-        )}
+        <>
+          <HostControlModal />
+          <SettingsMenu theme={theme} onToggleTheme={handleToggleTheme} />
+        </>
       </div>
     </header>
   );
