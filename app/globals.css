@@ -1522,6 +1522,80 @@
 }
 
 
+/* ==================== MOBILE THEME ADJUSTMENTS ==================== */
+@media (max-width: 767px) {
+  /* Hide background pseudo-elements on mobile — they eat GPU and overflow */
+  .style-gamer body::before,
+  .style-gamer body::after,
+  .style-hyperpop body::before,
+  .style-hyperpop body::after,
+  .style-cinema body::before {
+    display: none;
+  }
+
+  /* Tone down anime blobs on mobile */
+  .style-anime body::before {
+    width: 60vw;
+    height: 60vw;
+    opacity: 0.08;
+  }
+  .style-anime body::after {
+    width: 50vw;
+    height: 50vw;
+    opacity: 0.06;
+  }
+
+  /* Cinema — smaller letterbox bars on mobile */
+  .style-cinema [data-slot="hero"]::before,
+  .style-cinema [data-slot="hero"]::after {
+    height: 4vh;
+  }
+
+  /* Comic Book — reduce border/shadow intensity on small screens */
+  .style-comic-book [data-slot="card"] {
+    border-width: 2px;
+    box-shadow: 2px 2px 0 #1a1a2e;
+  }
+  .style-comic-book [data-slot="card"]:hover {
+    box-shadow: 3px 3px 0 #1a1a2e;
+  }
+  .style-comic-book [data-slot="button"] {
+    border-width: 2px;
+    box-shadow: 2px 2px 0 #1a1a2e;
+  }
+  .style-comic-book [data-slot="navbar"] {
+    border-bottom-width: 2px;
+  }
+
+  /* Comic Book hero — reduce text-stroke on mobile */
+  .style-comic-book [data-slot="hero"] h1 {
+    -webkit-text-stroke: 1px #1a1a2e;
+    text-shadow: 2px 2px 0 #1a1a2e;
+    transform: skewX(-1deg);
+  }
+
+  /* Hyperpop — reduce transform on mobile */
+  .style-hyperpop [data-slot="hero"] h1 {
+    transform: rotate(-0.5deg);
+  }
+
+  /* Gamer — reduce glow intensity */
+  .style-gamer [data-slot="card"]:hover {
+    box-shadow: 0 0 6px rgba(0, 255, 102, 0.2);
+  }
+
+  /* Wide letter-spacing themes — tighten on mobile to prevent wrapping */
+  .style-cinema [data-slot="hero"] h1,
+  .style-cinema [data-slot="section-heading"] h2 {
+    letter-spacing: 0.04em;
+  }
+  .style-gamer [data-slot="hero"] h1,
+  .style-gamer [data-slot="section-heading"] h2 {
+    letter-spacing: 0.02em;
+  }
+}
+
+
 /* ==================== REDUCED MOTION ==================== */
 @media (prefers-reduced-motion: reduce) {
 
@@ -2096,4 +2170,13 @@ body {
   99% {
     opacity: 0.45;
   }
+}
+
+/* Twemoji — consistent cross-platform emoji rendering */
+img.emoji {
+  height: 1.2em;
+  width: 1.2em;
+  margin: 0 0.05em 0 0.1em;
+  vertical-align: -0.2em;
+  display: inline-block;
 }

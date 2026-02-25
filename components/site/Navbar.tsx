@@ -17,17 +17,23 @@ export function Navbar() {
   const [mounted, setMounted] = useState(false);
   const { style, setStyle } = useThemeStore();
   const styleMenuRef = useRef<HTMLDivElement>(null);
+  const mobileStyleRef = useRef<HTMLDivElement>(null);
+  const mobilePaletteBtnRef = useRef<HTMLButtonElement>(null);
 
   const { data: session, isPending } = authClient.useSession();
 
   useEffect(() => { setMounted(true); }, []);
 
-  // Close style menu on outside click
+  // Close style menu on outside click — check both desktop and mobile refs
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (styleMenuRef.current && !styleMenuRef.current.contains(e.target as Node)) {
-        setShowStyleMenu(false);
-      }
+      const target = e.target as Node;
+      if (
+        styleMenuRef.current?.contains(target) ||
+        mobileStyleRef.current?.contains(target) ||
+        mobilePaletteBtnRef.current?.contains(target)
+      ) return;
+      setShowStyleMenu(false);
     }
     if (showStyleMenu) document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
@@ -183,6 +189,7 @@ export function Navbar() {
           {/* Mobile Menu Button */}
           <div className="-mr-2 flex md:hidden items-center gap-2">
             <button
+              ref={mobilePaletteBtnRef}
               onClick={() => setShowStyleMenu(!showStyleMenu)}
               className="p-2 rounded-lg text-(--site-text-muted) hover:text-(--site-text) hover:bg-(--site-surface) transition-colors"
               aria-label="Change site style"
@@ -201,16 +208,13 @@ export function Navbar() {
 
       {/* Mobile Style Picker (shown when palette is tapped on mobile) */}
       {showStyleMenu && (
-        <div className="md:hidden bg-(--site-bg-subtle) border-b border-(--site-border) px-2 py-2">
-          <div className="flex flex-wrap gap-1">
+        <div ref={mobileStyleRef} className="md:hidden bg-(--site-bg-subtle) border-b border-(--site-border) px-3 py-3">
+          <div className="flex flex-wrap gap-1.5">
             {SITE_STYLES.map((s) => (
               <button
                 key={s.id}
-                onClick={() => {
-                  setStyle(s.id);
-                  setShowStyleMenu(false);
-                }}
-                className={`px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition-colors ${
+                onClick={() => setStyle(s.id)}
+                className={`px-3 py-2 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors ${
                   style === s.id
                     ? 'text-(--site-accent) bg-(--site-accent-dim) border border-(--site-accent)/30'
                     : 'text-(--site-text-muted) hover:text-(--site-text) bg-(--site-surface) border border-(--site-border)'

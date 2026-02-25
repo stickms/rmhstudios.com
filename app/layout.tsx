@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Nunito, Inter, JetBrains_Mono, Playfair_Display, Bangers } from "next/font/google";
 import { Providers } from "@/components/Providers";
 import { Shell } from '@/components/site/Shell';
+import { TwemojiProvider } from "@/components/ui/TwemojiProvider";
 import "./globals.css";
 
 const nunito = Nunito({
@@ -51,9 +52,11 @@ export default function RootLayout({
         className={`${nunito.variable} ${inter.variable} ${jetbrainsMono.variable} ${playfairDisplay.variable} ${bangers.variable} antialiased`}
       >
         <Providers>
-          <Shell>
-            {children}
-          </Shell>
+          <TwemojiProvider tag="div">
+            <Shell>
+              {children}
+            </Shell>
+          </TwemojiProvider>
         </Providers>
       </body>
     </html>
