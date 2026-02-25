@@ -116,8 +116,9 @@ export default function FactOrFrictionGame({ playerId, playerName: _playerName }
         }
         case 'FF_ANSWER_PHASE': {
           setPhase('ANSWER');
-          if (typeof data.timeRemaining === 'number') {
-            setTimeRemaining(data.timeRemaining as number);
+          // Server sends `duration` (total answer time), not `timeRemaining`
+          if (typeof data.duration === 'number') {
+            setTimeRemaining(data.duration as number);
           }
           break;
         }
@@ -226,7 +227,9 @@ export default function FactOrFrictionGame({ playerId, playerName: _playerName }
     };
   }, [handleGameAction, handleRoundResults]);
 
-  // Hydrate from Zustand gameState snapshot on mount
+  // Hydrate from Zustand gameState snapshot on mount.
+  // The server snapshot (getStateForPlayer) sends question data under `question`,
+  // scores under `scores`, and timing under `phaseStartedAt` / `phaseEndsAt`.
   useEffect(() => {
     const snapshot = useRMHboxStore.getState().gameState;
     if (!snapshot || !snapshot.phase) return;
@@ -237,8 +240,26 @@ export default function FactOrFrictionGame({ playerId, playerName: _playerName }
     }
     if (snapshot.potValue != null) setPotValue(snapshot.potValue as number);
     if (snapshot.timeRemaining != null) setTimeRemaining(snapshot.timeRemaining as number);
-    if (snapshot.questionData) setQuestionData(snapshot.questionData as QuestionData);
-  }, []);
+
+    // Server sends question as nested object with {id, question, options, category, difficulty, source}
+    const qObj = snapshot.question as Record<string, unknown> | undefined;
+    if (qObj && qObj.question) {
+      setQuestionData({
+        question: qObj.question as string,
+        category: qObj.category as string,
+        difficulty: qObj.difficulty as string,
+        options: qObj.options as string[],
+        questionIndex: (snapshot.currentQuestionIndex as number) ?? 0,
+        totalQuestions: (snapshot.totalQuestions as number) ?? 8,
+      });
+    }
+
+    // Restore scores
+    if (snapshot.scores) {
+      const sc = snapshot.scores as Record<string, number>;
+      if (sc[playerId] != null) setMyScore(sc[playerId]);
+    }
+  }, [playerId]);
 
   // Submit an answer
   const handleAnswer = useCallback(
