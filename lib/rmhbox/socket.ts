@@ -55,14 +55,23 @@ export async function connectToRMHbox(): Promise<Socket> {
   const store = useRMHboxStore.getState();
   store.setConnectionStatus('connecting');
 
-  // Retry session fetch — on fresh page loads the auth client may not
-  // have hydrated cookies yet, causing the first attempt to return null.
+  // Fetch session directly — authClient.getSession() can return null on
+  // fresh page loads when no useSession() hook has primed the cache
+  // (the Navbar that normally does this is excluded on app routes).
   let token: string | undefined;
-  for (let attempt = 0; attempt < 3; attempt++) {
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL || ''}/api/auth/get-session`,
+      { credentials: 'include' },
+    );
+    if (res.ok) {
+      const data = await res.json();
+      token = data?.session?.token ?? data?.token;
+    }
+  } catch {
+    // fall back to authClient
     const session = await authClient.getSession();
     token = session?.data?.session?.token;
-    if (token) break;
-    if (attempt < 2) await new Promise((r) => setTimeout(r, 500));
   }
   if (!token) {
     store.setConnectionStatus('error');
