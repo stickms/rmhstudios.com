@@ -20,7 +20,6 @@ interface DrawingCanvasProps {
   selectedWidth: number;
   backgroundColor: string;
   maxStrokes: number;
-  hasSubmitted: boolean;
   onSubmit: () => void;
   onUndo: () => void;
 }
@@ -37,7 +36,6 @@ export default function DrawingCanvas({
   selectedWidth,
   backgroundColor,
   maxStrokes,
-  hasSubmitted,
   onUndo,
 }: DrawingCanvasProps) {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -49,7 +47,7 @@ export default function DrawingCanvas({
   const isDragging = useRef(false);
   const dragStart = useRef<Point | null>(null);
 
-  const canDraw = !hasSubmitted && strokes.length < maxStrokes;
+  const canDraw = strokes.length < maxStrokes;
 
   const getSvgPoint = useCallback((e: React.PointerEvent<SVGSVGElement> | React.MouseEvent<SVGSVGElement>): Point => {
     const svg = svgRef.current;
@@ -203,7 +201,7 @@ export default function DrawingCanvas({
       </svg>
 
       {/* Undo button */}
-      {!hasSubmitted && strokes.length > 0 && (
+      {strokes.length > 0 && (
         <button
           onClick={onUndo}
           className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-(--rmhbox-surface)/80 border border-(--rmhbox-border) text-(--rmhbox-text) text-sm hover:bg-(--rmhbox-border) transition-colors"

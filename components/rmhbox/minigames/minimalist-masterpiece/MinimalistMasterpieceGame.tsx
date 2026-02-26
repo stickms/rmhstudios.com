@@ -323,7 +323,6 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
             selectedWidth={selectedWidth}
             backgroundColor={backgroundColor}
             maxStrokes={maxStrokes}
-            hasSubmitted={hasSubmitted}
             onSubmit={() => {}}
             onUndo={handleUndo}
           />
