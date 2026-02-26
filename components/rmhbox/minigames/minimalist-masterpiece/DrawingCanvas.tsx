@@ -152,7 +152,7 @@ export default function DrawingCanvas({
   const previewStart = pendingStart ?? dragStart.current;
 
   return (
-    <div className="relative" tabIndex={0} onKeyDown={handleKeyDown}>
+    <div className="relative" tabIndex={0} onKeyDown={handleKeyDown} role="application" aria-label="Drawing canvas — place straight lines">
       <svg
         ref={svgRef}
         viewBox="0 0 300 300"

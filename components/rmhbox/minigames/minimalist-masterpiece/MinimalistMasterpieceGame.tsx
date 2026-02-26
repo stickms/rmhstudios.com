@@ -323,7 +323,7 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
           </div>
 
           {/* Stroke width slider */}
-          <div className="flex items-center gap-2 w-64">
+          <div className="flex items-center gap-2 w-full max-w-64">
             <span className="text-xs text-(--rmhbox-text-muted)">Width:</span>
             <input
               type="range"
