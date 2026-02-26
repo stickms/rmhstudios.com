@@ -1,74 +1,69 @@
+/**
+ * EmojiKeyboard — Emoji picker using emoji-mart with twemoji for
+ * a unified look across all platforms.
+ *
+ * Respects RMHbox theming (light/dark mode, accent color).
+ * Replaces the previous static palette with a full emoji picker.
+ */
 'use client';
 
-import { useState, useMemo } from 'react';
-
-const EMOJI_PALETTE: Record<string, string[]> = {
-  'Faces': ['😀','😂','😍','😎','😱','😭','🤔','😡','🥳','😴','🤢','👻','💀','🤖','👽','🤡'],
-  'People': ['👤','👫','👨‍👩‍👧','🧑‍🚀','🧙','🦸','🧛','🧟','💃','🕺','👑','💍','👶','🧓','🙋','🤷'],
-  'Animals': ['🐶','🐱','🐭','🐰','🦊','🐻','🐼','🐸','🐵','🦁','🐯','🐮','🐷','🐙','🦈','🦋'],
-  'Nature': ['🌲','🌊','🌙','⭐','☀️','🌈','🔥','❄️','🌸','🍀','🌵','🍄','🌋','⛰️','🏝️','🌪️'],
-  'Food': ['🍕','🍔','🍟','🌮','🍣','🍩','🎂','🍎','🍌','🍷','☕','🍿','🧁','🍫','🥩','🍗'],
-  'Travel': ['🚗','✈️','🚀','🚢','🏠','🏰','🗽','🗼','🎡','🚂','🛸','🚁','🏎️','🛶','🚲','🏕️'],
-  'Objects': ['💰','💎','🔫','🗡️','💣','🔮','📱','💻','📷','🎸','🎹','🎤','📚','✉️','🔑','⏰'],
-  'Symbols': ['❤️','💔','✨','💥','💫','🎵','🎶','⚡','🔒','🔓','⚠️','🏴‍☠️','🎯','♟️','🧩','🎲'],
-  'Activities': ['🎬','🎭','🎪','🏆','🥇','⚽','🏀','🎳','🎮','🎰','🎻','🎨','🎤','🎧','📺','🎥'],
-};
+import { useCallback, useRef, useEffect } from 'react';
+import { useRMHboxStore } from '@/lib/rmhbox/store';
+import data from '@emoji-mart/data';
 
 interface EmojiKeyboardProps {
   onSelect: (emoji: string) => void;
 }
 
-export default function EmojiKeyboard({ onSelect }: EmojiKeyboardProps) {
-  const categories = Object.keys(EMOJI_PALETTE);
-  const [activeCategory, setActiveCategory] = useState(categories[0]);
-  const [search, setSearch] = useState('');
+// Emoji-mart provides its own Picker component via dynamic import or init
+// We use the web component approach for maximum compatibility
 
-  const displayEmojis = useMemo(() => {
-    if (search.trim()) {
-      return Object.values(EMOJI_PALETTE).flat().filter((e) =>
-        e.includes(search.trim()),
-      );
-    }
-    return EMOJI_PALETTE[activeCategory] ?? [];
-  }, [activeCategory, search]);
+export default function EmojiKeyboard({ onSelect }: EmojiKeyboardProps) {
+  const pickerRef = useRef<HTMLDivElement>(null);
+  const theme = useRMHboxStore((s) => s.settings.theme) ?? 'dark';
+  const callbackRef = useRef(onSelect);
+  callbackRef.current = onSelect;
+
+  const initPicker = useCallback(async () => {
+    const container = pickerRef.current;
+    if (!container) return;
+
+    // Dynamically import emoji-mart to avoid SSR issues
+    const { Picker } = await import('emoji-mart');
+
+    // Clear any previous picker
+    container.innerHTML = '';
+
+    // Create the picker instance as a web component
+    const picker = new Picker({
+      data,
+      onEmojiSelect: (emoji: { native: string }) => {
+        callbackRef.current(emoji.native);
+      },
+      set: 'twitter', // Use Twitter emoji set (Twemoji)
+      theme: theme === 'light' ? 'light' : 'dark',
+      previewPosition: 'none',
+      skinTonePosition: 'search',
+      maxFrequentRows: 2,
+      perLine: 8,
+      emojiSize: 28,
+      emojiButtonSize: 36,
+      dynamicWidth: true,
+    });
+
+    container.appendChild(picker as unknown as Node);
+  }, [theme]);
+
+  useEffect(() => {
+    initPicker();
+  }, [initPicker]);
 
   return (
-    <div className="flex flex-col gap-2 w-full">
-      <input
-        type="text"
-        placeholder="Search emojis…"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="w-full px-3 py-1.5 rounded-lg bg-(--rmhbox-surface) text-(--rmhbox-text) border border-(--rmhbox-border) text-sm outline-none"
+    <div className="w-full flex flex-col gap-2">
+      <div
+        ref={pickerRef}
+        className="w-full [&>em-emoji-picker]:w-full [&>em-emoji-picker]:max-h-[280px] [&>em-emoji-picker]:border-none"
       />
-      {!search && (
-        <div className="flex gap-1 overflow-x-auto pb-1">
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setActiveCategory(cat)}
-              className={`px-2 py-1 text-xs rounded-md whitespace-nowrap transition-colors ${
-                activeCategory === cat
-                  ? 'bg-(--rmhbox-accent) text-white'
-                  : 'bg-(--rmhbox-surface) text-(--rmhbox-text-muted) hover:bg-(--rmhbox-border)'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-      )}
-      <div className="grid grid-cols-8 gap-1 max-h-48 overflow-y-auto p-1">
-        {displayEmojis.map((emoji, i) => (
-          <button
-            key={`${emoji}-${i}`}
-            onClick={() => onSelect(emoji)}
-            className="text-2xl p-1 rounded hover:bg-(--rmhbox-surface) transition-colors"
-          >
-            {emoji}
-          </button>
-        ))}
-      </div>
     </div>
   );
 }

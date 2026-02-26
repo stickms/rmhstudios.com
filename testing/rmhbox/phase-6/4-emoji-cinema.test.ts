@@ -503,7 +503,7 @@ describe('Emoji Cinema Server Handler (§6.4)', () => {
       expect(rejected!.data.reason).toBe('max_guesses');
     });
 
-    it('first correct guess broadcasts EC_CORRECT_GUESS and triggers end window', () => {
+    it('first correct guess broadcasts EC_CORRECT_GUESS with correct guesser list', () => {
       const { game, broadcastLog, playerLog } = createGame();
       game.start();
       const producerId = getProducerFromLog(broadcastLog);
@@ -516,9 +516,27 @@ describe('Emoji Cinema Server Handler (§6.4)', () => {
       const correctBroadcast = findLastActionBroadcast(broadcastLog, 'EC_CORRECT_GUESS');
       expect(correctBroadcast).toBeDefined();
       expect(correctBroadcast!.data.rank).toBe(1);
+      expect(correctBroadcast!.data.correctGuessers).toBeDefined();
+      expect(correctBroadcast!.data.correctGuessers.length).toBe(1);
 
-      // After 3-second window, round should end
-      vi.advanceTimersByTime(3000);
+      // Round should NOT end yet — other audience members haven't guessed
+      const roundOver = findLastActionBroadcast(broadcastLog, 'EC_ROUND_OVER');
+      expect(roundOver).toBeUndefined();
+    });
+
+    it('round ends when ALL audience members guess correctly', () => {
+      const { game, broadcastLog, playerLog } = createGame();
+      game.start();
+      const producerId = getProducerFromLog(broadcastLog);
+      const movieTitle = getMovieTitleFromPlayerLog(playerLog, producerId);
+      const audienceIds = getAudienceIds(producerId);
+      advanceToConstruction(game);
+
+      // All audience members guess correctly
+      for (const uid of audienceIds) {
+        game.handleInput(uid, 'SUBMIT_GUESS', { guess: movieTitle });
+      }
+
       const roundOver = findLastActionBroadcast(broadcastLog, 'EC_ROUND_OVER');
       expect(roundOver).toBeDefined();
       expect(roundOver!.data.reason).toBe('guessed');
@@ -553,15 +571,14 @@ describe('Emoji Cinema Server Handler (§6.4)', () => {
       const audienceIds = getAudienceIds(producerId);
       advanceToConstruction(game);
 
-      // One correct guess
-      game.handleInput(audienceIds[0], 'SUBMIT_GUESS', { guess: movieTitle });
-
-      // Let the round end via the correct guess window
-      vi.advanceTimersByTime(3000);
+      // All audience members guess correctly to end the round
+      for (const uid of audienceIds) {
+        game.handleInput(uid, 'SUBMIT_GUESS', { guess: movieTitle });
+      }
 
       const roundOver = findLastActionBroadcast(broadcastLog, 'EC_ROUND_OVER');
       const roundScores = roundOver!.data.roundScores as Record<string, number>;
-      const expectedProducer = EC_PRODUCER_BASE_POINTS + 1 * EC_PRODUCER_SPEED_BONUS;
+      const expectedProducer = EC_PRODUCER_BASE_POINTS + audienceIds.length * EC_PRODUCER_SPEED_BONUS;
       expect(roundScores[producerId]).toBe(expectedProducer);
     });
 
@@ -705,7 +722,7 @@ describe('Emoji Cinema Server Handler (§6.4)', () => {
       const { game, broadcastLog, playerLog, completedResults } = createGame();
       game.start();
 
-      // Play all 4 rounds — for each round the audience guesses correctly
+      // Play all 4 rounds — for each round only one audience member guesses correctly
       for (let r = 0; r < 4; r++) {
         const producerId = getProducerFromLog(broadcastLog);
         const movieTitle = getMovieTitleFromPlayerLog(playerLog, producerId);
@@ -713,18 +730,16 @@ describe('Emoji Cinema Server Handler (§6.4)', () => {
         advanceToConstruction(game);
 
         // Only the first audience member guesses correctly every round
-        // Find a consistent player (the one who is never producer in any round is tricky,
-        // so we just let the first non-producer guess)
         game.handleInput(audienceIds[0], 'SUBMIT_GUESS', { guess: movieTitle });
 
-        // Let round end
-        vi.advanceTimersByTime(3000);
+        // Let round end via timer (no longer a 3-second window)
+        vi.advanceTimersByTime(EC_ROUND_DURATION_SECONDS * 1000);
         vi.advanceTimersByTime(EC_ROUND_RESULTS_SECONDS * 1000);
         vi.advanceTimersByTime(EC_TRANSITION_SECONDS * 1000);
       }
 
       expect(completedResults.length).toBe(1);
-      const movieBuff = completedResults[0].awards.find((a) => a.title === 'Movie Buff');
+      const movieBuff = completedResults[0].awards.find((a: { title: string }) => a.title === 'Movie Buff');
       expect(movieBuff).toBeDefined();
     });
 
@@ -743,7 +758,7 @@ describe('Emoji Cinema Server Handler (§6.4)', () => {
           game.handleInput(uid, 'SUBMIT_GUESS', { guess: movieTitle });
         }
 
-        vi.advanceTimersByTime(3000);
+        // Round ends immediately when all audience members guess correctly
         vi.advanceTimersByTime(EC_ROUND_RESULTS_SECONDS * 1000);
         vi.advanceTimersByTime(EC_TRANSITION_SECONDS * 1000);
       }
@@ -770,11 +785,10 @@ describe('Emoji Cinema Server Handler (§6.4)', () => {
           firstProducerId = producerId;
           vi.advanceTimersByTime(EC_ROUND_DURATION_SECONDS * 1000);
         } else {
-          // Everyone guesses correctly
+          // Everyone guesses correctly → round ends early
           for (const uid of audienceIds) {
             game.handleInput(uid, 'SUBMIT_GUESS', { guess: movieTitle });
           }
-          vi.advanceTimersByTime(3000);
         }
         vi.advanceTimersByTime(EC_ROUND_RESULTS_SECONDS * 1000);
         vi.advanceTimersByTime(EC_TRANSITION_SECONDS * 1000);
@@ -801,8 +815,12 @@ describe('Emoji Cinema Server Handler (§6.4)', () => {
       vi.advanceTimersByTime(1000);
       game.handleInput(audienceIds[1], 'SUBMIT_GUESS', { guess: movieTitle });
 
-      // End the round and remaining rounds
-      vi.advanceTimersByTime(2000); // finish correct guess window
+      // Remaining audience members guess to end the round
+      for (let i = 2; i < audienceIds.length; i++) {
+        game.handleInput(audienceIds[i], 'SUBMIT_GUESS', { guess: movieTitle });
+      }
+
+      // Round ends immediately when all guess correctly
       vi.advanceTimersByTime(EC_ROUND_RESULTS_SECONDS * 1000);
       vi.advanceTimersByTime(EC_TRANSITION_SECONDS * 1000);
 
@@ -812,7 +830,7 @@ describe('Emoji Cinema Server Handler (§6.4)', () => {
       }
 
       expect(completedResults.length).toBe(1);
-      const speedGuesser = completedResults[0].awards.find((a) => a.title === 'Speed Guesser');
+      const speedGuesser = completedResults[0].awards.find((a: { title: string }) => a.title === 'Speed Guesser');
       expect(speedGuesser).toBeDefined();
       expect(speedGuesser!.userId).toBe(audienceIds[0]);
     });

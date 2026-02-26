@@ -59,8 +59,6 @@ export interface EmojiCinemaState {
   phaseStartedAt: number;
   phaseEndsAt: number;
   actionLog: Array<{ seq: number; type: string; timestamp: number; payload: Record<string, unknown> }>;
-  /** Timer handle for the brief window after first correct guess */
-  correctGuessWindowTimer: NodeJS.Timeout | null;
   /** Timer handle for producer disconnect wait */
   producerDisconnectTimer: NodeJS.Timeout | null;
 }

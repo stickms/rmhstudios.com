@@ -1,8 +1,8 @@
 /**
  * RMHbox — Emoji Cinema Data Loader
  *
- * Loads and caches movies and emoji palette from static JSON files.
- * Provides selection logic for picking movies and validating emojis.
+ * Loads and caches movies from static JSON files.
+ * Provides selection logic for picking movies for each game.
  *
  * Reference: docs/rmhbox/design-spec/minigames-2.md §4.3
  */
@@ -24,15 +24,6 @@ export interface MovieEntry {
   popularity: number;
 }
 
-export interface EmojiCategory {
-  name: string;
-  emojis: string[];
-}
-
-export interface EmojiPalette {
-  categories: EmojiCategory[];
-}
-
 export interface ECRoundData {
   movie: MovieEntry;
   producerUserId: string;
@@ -41,10 +32,6 @@ export interface ECRoundData {
 // ─── Singleton Caches ────────────────────────────────────────────
 
 let cachedMovies: MovieEntry[] | null = null;
-let cachedPalette: EmojiPalette | null = null;
-/** Flat set of all allowed emojis for fast validation. */
-let cachedEmojiSet: Set<string> | null = null;
-let cachedEmojiPaletteRef: EmojiPalette | null = null;
 
 /**
  * Load movies from the static JSON file.
@@ -53,23 +40,10 @@ let cachedEmojiPaletteRef: EmojiPalette | null = null;
 export function loadMovies(): MovieEntry[] {
   if (cachedMovies) return cachedMovies;
 
-  const filePath = path.join(process.cwd(), 'public/data/rmhbox/emoji-cinema/movies.json');
+  const filePath = path.join(process.cwd(), 'data/rmhbox/emoji-cinema/movies.json');
   const raw = fs.readFileSync(filePath, 'utf-8');
   cachedMovies = JSON.parse(raw) as MovieEntry[];
   return cachedMovies;
-}
-
-/**
- * Load the curated emoji palette from the static JSON file.
- * Caches the result as a singleton.
- */
-export function loadEmojiPalette(): EmojiPalette {
-  if (cachedPalette) return cachedPalette;
-
-  const filePath = path.join(process.cwd(), 'public/data/rmhbox/emoji-cinema/emoji-palette.json');
-  const raw = fs.readFileSync(filePath, 'utf-8');
-  cachedPalette = JSON.parse(raw) as EmojiPalette;
-  return cachedPalette;
 }
 
 /**
@@ -101,17 +75,13 @@ export function selectMoviesForGame(
 }
 
 /**
- * Validate that an emoji is in the curated palette.
+ * Validate that a string looks like a valid emoji (single grapheme cluster).
+ * We no longer restrict to a static palette — emoji-mart handles the UI selection.
  */
-export function validateEmoji(emoji: string, palette: EmojiPalette): boolean {
-  if (!cachedEmojiSet || cachedEmojiPaletteRef !== palette) {
-    cachedEmojiSet = new Set<string>();
-    cachedEmojiPaletteRef = palette;
-    for (const cat of palette.categories) {
-      for (const e of cat.emojis) {
-        cachedEmojiSet.add(e);
-      }
-    }
-  }
-  return cachedEmojiSet.has(emoji);
+export function validateEmoji(emoji: string): boolean {
+  if (!emoji || typeof emoji !== 'string') return false;
+  // Accept any non-empty string that is <= 8 chars (emoji grapheme clusters)
+  // and does not contain typical ASCII-only content
+  if (emoji.length > 8) return false;
+  return true;
 }

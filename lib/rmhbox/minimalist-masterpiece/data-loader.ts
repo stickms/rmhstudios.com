@@ -30,7 +30,7 @@ let cachedPrompts: DrawingPrompt[] | null = null;
 export function loadPrompts(): DrawingPrompt[] {
   if (cachedPrompts) return cachedPrompts;
 
-  const filePath = path.join(process.cwd(), 'public/data/rmhbox/minimalist-masterpiece/prompts.json');
+  const filePath = path.join(process.cwd(), 'data/rmhbox/minimalist-masterpiece/prompts.json');
   const raw = fs.readFileSync(filePath, 'utf-8');
   cachedPrompts = JSON.parse(raw) as DrawingPrompt[];
   return cachedPrompts;

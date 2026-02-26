@@ -31,6 +31,13 @@ interface PlayerResult {
   guessNumber?: number;
 }
 
+/** A player who has guessed correctly this round */
+export interface CorrectGuesserInfo {
+  userId: string;
+  userName: string;
+  rank: number;
+}
+
 /** Helper: emit a game input action */
 function emitGameInput(action: string, data: unknown = {}) {
   const lobbyId = useRMHboxStore.getState().lobby?.lobbyId;
@@ -51,7 +58,7 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [roundNumber, setRoundNumber] = useState(1);
   const [notification, setNotification] = useState('');
-
+  const [correctGuessers, setCorrectGuessers] = useState<CorrectGuesserInfo[]>([]);
   // Round results state
   const [resultsMovieTitle, setResultsMovieTitle] = useState('');
   const [resultsEmojis, setResultsEmojis] = useState<string[]>([]);
@@ -85,6 +92,7 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
           setHasGuessedCorrectly(false);
           setGuessCount(0);
           setCorrectCount(0);
+          setCorrectGuessers([]);
           setPhase('PRODUCER_ASSIGNMENT');
           break;
         }
@@ -117,6 +125,11 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
         }
         case 'EC_CORRECT_GUESS': {
           setNotification(`✅ ${data.userName as string} guessed correctly!`);
+          // Server now sends the full list of correct guessers
+          if (Array.isArray(data.correctGuessers)) {
+            setCorrectGuessers(data.correctGuessers as CorrectGuesserInfo[]);
+          }
+          setCorrectCount((data.correctGuessers as CorrectGuesserInfo[] | undefined)?.length ?? 0);
           break;
         }
         case 'EC_GUESS_COUNT': {
@@ -207,31 +220,36 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
     else if (snapshot.roundNumber) setRoundNumber(snapshot.roundNumber as number);
   }, []);
 
-  // Producer actions
+  // Producer actions — emit is outside the state updater to avoid
+  // double-firing in React StrictMode
   const handleAddEmoji = useCallback(
     (emoji: string) => {
+      if (emojis.length >= MAX_EMOJIS) return;
+      const position = emojis.length;
       setEmojis((prev) => {
         if (prev.length >= MAX_EMOJIS) return prev;
-        const next = [...prev, emoji];
-        // Server expects ADD_EMOJI with { emoji, position }
-        emitGameInput('ADD_EMOJI', { emoji, position: next.length - 1 });
-        return next;
+        return [...prev, emoji];
       });
+      emitGameInput('ADD_EMOJI', { emoji, position });
     },
-    [],
+    [emojis.length],
   );
 
   const handleRemoveEmoji = useCallback(
     (index: number) => {
-      setEmojis((prev) => {
-        const next = prev.filter((_, i) => i !== index);
-        // Server expects REMOVE_EMOJI with { position }
-        emitGameInput('REMOVE_EMOJI', { position: index });
-        return next;
-      });
+      setEmojis((prev) => prev.filter((_, i) => i !== index));
+      emitGameInput('REMOVE_EMOJI', { position: index });
     },
     [],
   );
+
+  /** Remove the most recently added emoji (backspace/delete) */
+  const handleRemoveLastEmoji = useCallback(() => {
+    if (emojis.length === 0) return;
+    const lastIndex = emojis.length - 1;
+    setEmojis((prev) => prev.slice(0, -1));
+    emitGameInput('REMOVE_EMOJI', { position: lastIndex });
+  }, [emojis.length]);
 
   // Audience actions
   const handleSubmitGuess = useCallback(
@@ -273,6 +291,7 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
               maxEmojis={MAX_EMOJIS}
               onAddEmoji={handleAddEmoji}
               onRemoveEmoji={handleRemoveEmoji}
+              onRemoveLastEmoji={handleRemoveLastEmoji}
               guessCount={guessCount}
               correctCount={correctCount}
               timeRemaining={timeRemaining}
@@ -288,6 +307,7 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
               hasGuessedCorrectly={hasGuessedCorrectly}
               onSubmitGuess={handleSubmitGuess}
               timeRemaining={timeRemaining}
+              correctGuessers={correctGuessers}
             />
           )}
         </div>

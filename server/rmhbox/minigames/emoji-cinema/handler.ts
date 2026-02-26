@@ -19,10 +19,9 @@ import Fuse from 'fuse.js';
 import { BaseMinigame } from '../base-minigame';
 import type { MinigameContext, MinigameResults } from '../base-minigame';
 import type { PlayerRanking, Award } from '@/lib/rmhbox/types';
-import type { MovieEntry, EmojiPalette } from '@/lib/rmhbox/emoji-cinema/data-loader';
+import type { MovieEntry } from '@/lib/rmhbox/emoji-cinema/data-loader';
 import {
   loadMovies,
-  loadEmojiPalette,
   selectMoviesForGame,
   validateEmoji,
 } from '@/lib/rmhbox/emoji-cinema/data-loader';
@@ -57,11 +56,6 @@ import type {
   EmojiCinemaState,
 } from './types';
 
-// ─── Constants ───────────────────────────────────────────────────
-
-/** Window (ms) after the first correct guess before the round ends. */
-const EC_CORRECT_GUESS_WINDOW_MS = 3000;
-
 // ─── Helpers ─────────────────────────────────────────────────────
 
 /** Strip leading articles ("the", "a", "an") and lowercase. */
@@ -82,7 +76,6 @@ function shuffle<T>(arr: T[]): T[] {
 
 export class EmojiCinemaGame extends BaseMinigame {
   private moviePool: MovieEntry[];
-  private emojiPalette: EmojiPalette;
   private usedMovieIds: Set<string> = new Set();
   private state!: EmojiCinemaState;
   private startedAt: number = 0;
@@ -91,7 +84,6 @@ export class EmojiCinemaGame extends BaseMinigame {
   constructor(context: MinigameContext) {
     super(context);
     this.moviePool = loadMovies();
-    this.emojiPalette = loadEmojiPalette();
   }
 
   // ─── Lifecycle ───────────────────────────────────────────────
@@ -127,7 +119,6 @@ export class EmojiCinemaGame extends BaseMinigame {
       phaseStartedAt: now,
       phaseEndsAt: now,
       actionLog: [],
-      correctGuessWindowTimer: null,
       producerDisconnectTimer: null,
     };
 
@@ -164,7 +155,6 @@ export class EmojiCinemaGame extends BaseMinigame {
     this.state.emojiSequence = [];
     this.state.correctGuessers = [];
     this.state.closeGuessCount = 0;
-    this.state.correctGuessWindowTimer = null;
 
     // Reset guesses for this round
     this.state.guesses = new Map();
@@ -248,12 +238,6 @@ export class EmojiCinemaGame extends BaseMinigame {
     if (this.state.phase === 'ROUND_RESULTS' || this.state.phase === 'TRANSITION') return;
 
     this.clearPhaseTimer();
-
-    // Clear the correct-guess window timer if still pending
-    if (this.state.correctGuessWindowTimer) {
-      this.clearTrackedTimeout(this.state.correctGuessWindowTimer);
-      this.state.correctGuessWindowTimer = null;
-    }
 
     // If no emojis were submitted, notify all players and skip to next round
     const noEmojis = this.state.emojiSequence.length === 0 && reason === 'timeout';
@@ -379,7 +363,7 @@ export class EmojiCinemaGame extends BaseMinigame {
 
     const { emoji, position } = parsed.data;
 
-    if (!validateEmoji(emoji, this.emojiPalette)) {
+    if (!validateEmoji(emoji)) {
       this.context.sendToPlayer(userId, 'rmhbox:game:action', {
         type: 'EC_EMOJI_REJECTED',
         reason: 'invalid_emoji',
@@ -550,19 +534,22 @@ export class EmojiCinemaGame extends BaseMinigame {
       };
       this.state.correctGuessers.push(guesser);
 
+      // Broadcast correct guess + updated list of all correct guessers to everyone
       this.context.broadcastToLobby('rmhbox:game:action', {
         type: 'EC_CORRECT_GUESS',
         userId,
         userName: guesser.userName,
         rank,
+        correctGuessers: this.state.correctGuessers.map((g) => ({
+          userId: g.userId,
+          userName: g.userName,
+          rank: g.rank,
+        })),
       });
 
-      // On first correct guess, start the 3-second window
-      if (rank === 1 && !this.state.correctGuessWindowTimer) {
-        this.state.correctGuessWindowTimer = this.setTimeout(
-          () => this.endRound('guessed'),
-          EC_CORRECT_GUESS_WINDOW_MS,
-        );
+      // Check if ALL audience players have guessed correctly → end round
+      if (this.allAudienceGuessedCorrectly()) {
+        this.endRound('guessed');
       }
     } else if (result === 'close') {
       this.state.closeGuessCount++;
@@ -705,6 +692,8 @@ export class EmojiCinemaGame extends BaseMinigame {
       myGuesses: myGuesses?.guesses ?? [],
       correctGuessers: safeGuessers,
       closeGuessCount: this.state.closeGuessCount,
+      // Send all movie titles for client-side fuzzy autocomplete
+      movieTitles: this.moviePool.map((m) => m.title),
       ...(revealMovie
         ? {
             movie: {
@@ -1036,11 +1025,17 @@ export class EmojiCinemaGame extends BaseMinigame {
     return total;
   }
 
-  override cleanup(): void {
-    if (this.state?.correctGuessWindowTimer) {
-      this.clearTrackedTimeout(this.state.correctGuessWindowTimer);
-      this.state.correctGuessWindowTimer = null;
+  /** Check if every audience member (non-producer) has guessed correctly. */
+  private allAudienceGuessedCorrectly(): boolean {
+    const correctSet = new Set(this.state.correctGuessers.map((g) => g.userId));
+    for (const [uid] of this.context.players) {
+      if (uid === this.state.currentProducerUserId) continue; // skip producer
+      if (!correctSet.has(uid)) return false;
     }
+    return true;
+  }
+
+  override cleanup(): void {
     if (this.state?.producerDisconnectTimer) {
       this.clearTrackedTimeout(this.state.producerDisconnectTimer);
       this.state.producerDisconnectTimer = null;

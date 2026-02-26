@@ -9,6 +9,7 @@ interface ProducerViewProps {
   maxEmojis: number;
   onAddEmoji: (emoji: string) => void;
   onRemoveEmoji: (index: number) => void;
+  onRemoveLastEmoji: () => void;
   guessCount: number;
   correctCount: number;
   timeRemaining: number;
@@ -20,6 +21,7 @@ export default function ProducerView({
   maxEmojis,
   onAddEmoji,
   onRemoveEmoji,
+  onRemoveLastEmoji,
   guessCount,
   correctCount,
   timeRemaining,
@@ -33,11 +35,25 @@ export default function ProducerView({
 
       <h2 className="text-xl font-bold text-(--rmhbox-accent) text-center">{movieTitle}</h2>
 
-      <EmojiSentence
-        emojis={emojis}
-        maxEmojis={maxEmojis}
-        onRemove={onRemoveEmoji}
-      />
+      <div className="flex items-end gap-2 w-full">
+        <div className="flex-1">
+          <EmojiSentence
+            emojis={emojis}
+            maxEmojis={maxEmojis}
+            onRemove={onRemoveEmoji}
+          />
+        </div>
+        {emojis.length > 0 && (
+          <button
+            onClick={onRemoveLastEmoji}
+            className="shrink-0 px-3 py-2 rounded-lg bg-(--rmhbox-surface) border border-(--rmhbox-border) text-(--rmhbox-text) text-sm hover:bg-(--rmhbox-border) transition-colors"
+            title="Delete last emoji (Backspace)"
+            aria-label="Delete last emoji"
+          >
+            ⌫
+          </button>
+        )}
+      </div>
 
       <EmojiKeyboard onSelect={onAddEmoji} />
 
