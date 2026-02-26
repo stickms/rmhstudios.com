@@ -10,7 +10,7 @@
  */
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { HexColorPicker } from 'react-colorful';
 import { getSocket, emit } from '@/lib/rmhbox/socket';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
@@ -100,6 +100,22 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [showStrokeColorPicker, setShowStrokeColorPicker] = useState(false);
   const [showBgColorPicker, setShowBgColorPicker] = useState(false);
+  const strokePickerRef = useRef<HTMLDivElement>(null);
+  const bgPickerRef = useRef<HTMLDivElement>(null);
+
+  // Close color pickers on outside click
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (showStrokeColorPicker && strokePickerRef.current && !strokePickerRef.current.contains(e.target as Node)) {
+        setShowStrokeColorPicker(false);
+      }
+      if (showBgColorPicker && bgPickerRef.current && !bgPickerRef.current.contains(e.target as Node)) {
+        setShowBgColorPicker(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showStrokeColorPicker, showBgColorPicker]);
 
   /** Reset drawing state for a new round */
   const resetDrawingState = useCallback(() => {
@@ -322,7 +338,7 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
               selectedColor={selectedColor}
               onSelect={(c) => { setSelectedColor(c); setShowStrokeColorPicker(false); }}
             />
-            <div className="relative">
+            <div className="relative" ref={strokePickerRef}>
               <button
                 className="w-8 h-8 rounded-full border-2 border-(--rmhbox-border) hover:scale-105 transition-transform"
                 style={{ backgroundColor: selectedColor }}
@@ -382,7 +398,7 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
                 aria-label={`Background color ${c}`}
               />
             ))}
-            <div className="relative">
+            <div className="relative" ref={bgPickerRef}>
               <button
                 className="w-6 h-6 rounded-full border-2 border-(--rmhbox-border) hover:scale-105 transition-transform"
                 style={{ backgroundColor }}
