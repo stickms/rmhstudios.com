@@ -345,8 +345,18 @@ export class RhymeTimeMinigame extends BaseMinigame {
       isMultiSyllable: multiSyllable,
     });
 
-    // Notify the submitter only
+    // Notify the submitter
     this.context.sendToPlayer(userId, 'rmhbox:game:action', {
+      type: 'RT_RHYME_SUBMITTED',
+      word,
+      isValid,
+      invalidReason,
+      submissionCount: playerSubs.length,
+      maxSubmissions: this.getSetting('maxSubmissions', RT_MAX_SUBMISSIONS),
+    });
+
+    // Mirror to spectators following this player
+    this.context.sendToSpectatorFollowers(userId, 'rmhbox:game:action', {
       type: 'RT_RHYME_SUBMITTED',
       word,
       isValid,

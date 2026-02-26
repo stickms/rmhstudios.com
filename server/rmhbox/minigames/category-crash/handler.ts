@@ -421,6 +421,12 @@ export class CategoryCrashMinigame extends BaseMinigame {
       type: 'CC_ANSWERS_SAVED',
       answers: this.state.answers[userId],
     });
+
+    // Mirror to spectators following this player
+    this.context.sendToSpectatorFollowers(userId, 'rmhbox:game:action', {
+      type: 'CC_ANSWERS_SAVED',
+      answers: this.state.answers[userId],
+    });
   }
 
   /** Lock final answers — notify all players. */
@@ -459,6 +465,11 @@ export class CategoryCrashMinigame extends BaseMinigame {
 
     // Notify submitter
     this.context.sendToPlayer(userId, 'rmhbox:game:action', {
+      type: 'CC_ANSWERS_SUBMITTED',
+    });
+
+    // Mirror to spectators following this player
+    this.context.sendToSpectatorFollowers(userId, 'rmhbox:game:action', {
       type: 'CC_ANSWERS_SUBMITTED',
     });
 
@@ -573,6 +584,13 @@ export class CategoryCrashMinigame extends BaseMinigame {
       targetUserId,
       categoryIndex,
     });
+
+    // Mirror to spectators following this player
+    this.context.sendToSpectatorFollowers(userId, 'rmhbox:game:action', {
+      type: 'CC_CRASH_RECORDED',
+      targetUserId,
+      categoryIndex,
+    });
   }
 
   /** Remove a crash vote during PEER_REVIEW. */
@@ -616,6 +634,13 @@ export class CategoryCrashMinigame extends BaseMinigame {
     });
 
     this.context.sendToPlayer(userId, 'rmhbox:game:action', {
+      type: 'CC_UNCRASH_RECORDED',
+      targetUserId,
+      categoryIndex,
+    });
+
+    // Mirror to spectators following this player
+    this.context.sendToSpectatorFollowers(userId, 'rmhbox:game:action', {
       type: 'CC_UNCRASH_RECORDED',
       targetUserId,
       categoryIndex,

@@ -523,6 +523,13 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
       strokeCount: strokes.length,
     });
 
+    // Mirror to spectators following this player
+    this.context.sendToSpectatorFollowers(userId, 'rmhbox:game:action', {
+      type: 'MM_DRAWING_ACCEPTED',
+      drawingId: drawing.drawingId,
+      strokeCount: strokes.length,
+    });
+
     if (isFirstSubmission) {
       // Broadcast submission count to all
       const submittedCount = Array.from(this.state.drawings.values())
@@ -633,6 +640,14 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
 
     // Confirm to the bidder
     this.context.sendToPlayer(userId, 'rmhbox:game:action', {
+      type: 'MM_BID_ACCEPTED',
+      drawingId,
+      myBidAmount: bidInfo.bidders.get(userId) ?? 0,
+      currency: this.state.playerCurrencies.get(userId) ?? 0,
+    });
+
+    // Mirror to spectators following this player
+    this.context.sendToSpectatorFollowers(userId, 'rmhbox:game:action', {
       type: 'MM_BID_ACCEPTED',
       drawingId,
       myBidAmount: bidInfo.bidders.get(userId) ?? 0,
