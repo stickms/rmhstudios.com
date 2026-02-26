@@ -93,7 +93,7 @@ export class WikiRaceMinigame extends BaseMinigame {
     // Phase 1: ARTICLE_REVEAL
     this.state.phase = WikiRacePhase.ARTICLE_REVEAL;
 
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'WR_ARTICLES_REVEALED',
       startArticle: {
         title: this.state.articlePair.startArticle.title,
@@ -172,7 +172,7 @@ export class WikiRaceMinigame extends BaseMinigame {
       duration: this.getSetting('navDuration', WR_NAV_DURATION),
     });
 
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'WR_NAVIGATION_START',
       duration: this.getSetting('navDuration', WR_NAV_DURATION),
       timeRemaining: this.getSetting('navDuration', WR_NAV_DURATION),
@@ -287,7 +287,7 @@ export class WikiRaceMinigame extends BaseMinigame {
 
     const hasMoreRounds = this.state.currentRound < this.state.totalRounds;
 
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'WR_RESULTS',
       playerResults,
       duration: WR_RESULTS,
@@ -355,7 +355,7 @@ export class WikiRaceMinigame extends BaseMinigame {
 
     // Enter ARTICLE_REVEAL for the new round
     this.state.phase = WikiRacePhase.ARTICLE_REVEAL;
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'WR_ARTICLES_REVEALED',
       startArticle: {
         title: newPair.startArticle.title,
@@ -455,7 +455,7 @@ export class WikiRaceMinigame extends BaseMinigame {
     });
 
     // Broadcast progress (title hidden from other players — they see click count only)
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'WR_PLAYER_PROGRESS',
       userId,
       clickCount: ps.clickCount,
@@ -482,7 +482,7 @@ export class WikiRaceMinigame extends BaseMinigame {
         type: 'WR_NAVIGATE_REJECTED',
         reason: 'This article is unavailable. Try another link.',
       });
-      this.context.broadcastToLobby('rmhbox:game:action', {
+      this.broadcastGameAction({
         type: 'WR_PLAYER_PROGRESS',
         userId,
         clickCount: currentPs.clickCount,
@@ -562,7 +562,7 @@ export class WikiRaceMinigame extends BaseMinigame {
     });
 
     // Broadcast progress
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'WR_PLAYER_PROGRESS',
       userId,
       clickCount: ps.clickCount,
@@ -611,7 +611,7 @@ export class WikiRaceMinigame extends BaseMinigame {
       clickCount: ps.clickCount,
     });
 
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'WR_PLAYER_FINISHED',
       userId,
       rank: ps.finishRank,

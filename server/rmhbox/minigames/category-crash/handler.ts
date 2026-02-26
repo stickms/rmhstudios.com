@@ -169,7 +169,7 @@ export class CategoryCrashMinigame extends BaseMinigame {
     // Broadcast sub-round to the footer counter
     this.broadcastRound(this.state.currentRound, this.state.totalRounds);
 
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'CC_ROUND_START',
       round: this.state.currentRound,
       totalRounds: this.state.totalRounds,
@@ -201,7 +201,7 @@ export class CategoryCrashMinigame extends BaseMinigame {
       duration: scaledInputDuration,
     });
 
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'CC_INPUT_START',
       duration: scaledInputDuration,
       timeRemaining: scaledInputDuration,
@@ -264,7 +264,7 @@ export class CategoryCrashMinigame extends BaseMinigame {
 
     const anonymizedAnswers = this.getAnonymizedAnswers();
 
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'CC_PEER_REVIEW_START',
       duration: scaledReviewDuration,
       timeRemaining: scaledReviewDuration,
@@ -304,7 +304,7 @@ export class CategoryCrashMinigame extends BaseMinigame {
       totalCrashes: this.state.crashes.length,
     });
 
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'CC_CRASH_RESOLUTION_START',
       duration: CC_CRASH_RESOLUTION,
     });
@@ -349,7 +349,7 @@ export class CategoryCrashMinigame extends BaseMinigame {
       round: this.state.currentRound,
     });
 
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'CC_ROUND_RESULTS',
       round: this.state.currentRound,
       results: roundResult,
@@ -466,7 +466,7 @@ export class CategoryCrashMinigame extends BaseMinigame {
     const lockedCount = Object.values(this.state.locked).filter(Boolean).length;
     const totalPlayers = Object.keys(this.state.answers).length;
 
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'CC_LOCK_STATUS',
       lockedCount,
       totalPlayers,

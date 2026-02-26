@@ -177,7 +177,7 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
       promptText: roundPrompt.text,
     });
 
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'MM_PROMPT',
       prompt: { text: roundPrompt.text, category: roundPrompt.category, difficulty: roundPrompt.difficulty },
       maxStrokes: this.getSetting('maxStrokes', MM_MAX_STROKES),
@@ -206,7 +206,7 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
       duration: drawingDuration,
     });
 
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'MM_DRAWING_START',
       duration: drawingDuration,
       maxStrokes,
@@ -253,7 +253,7 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
       drawingCount: galleryDrawings.length,
     });
 
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'MM_GALLERY_START',
       duration: MM_GALLERY_DURATION_SECONDS,
       drawings: galleryDrawings,
@@ -414,7 +414,7 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
       duration: MM_RESULTS_DURATION_SECONDS,
     });
 
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'MM_RESULTS',
       rankings: this.state.rankings,
       scoreBreakdowns,
@@ -527,7 +527,7 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
       // Broadcast submission count to all
       const submittedCount = Array.from(this.state.drawings.values())
         .filter((d) => d.submittedAt !== null).length;
-      this.context.broadcastToLobby('rmhbox:game:action', {
+      this.broadcastGameAction({
         type: 'MM_SUBMISSION_COUNT',
         submitted: submittedCount,
         total: this.state.drawings.size,
@@ -640,7 +640,7 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
     });
 
     // Broadcast updated totals (not who bid) to all
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'MM_BID_UPDATE',
       drawingId,
       currentBidTotal: bidInfo.totalValue,
