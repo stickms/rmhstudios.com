@@ -98,7 +98,6 @@ export default function MinimalistMasterpieceHistoryDetail({ gameLog, players }:
                       strokes={d.strokes ?? []}
                       backgroundColor={d.backgroundColor ?? '#ffffff'}
                       label={player?.userName ?? d.artistUserName ?? 'Unknown'}
-                      className={ranking ? '' : ''}
                     />
                   );
                 })}

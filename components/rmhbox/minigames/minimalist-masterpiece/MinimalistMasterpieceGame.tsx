@@ -154,7 +154,7 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
           break;
         }
         case 'MM_DRAWING_ACCEPTED': {
-          // Sent to the submitting player — auto-save acknowledged
+          // Sent to the submitting player — Auto-save acknowledged
           playSound('click');
           break;
         }
