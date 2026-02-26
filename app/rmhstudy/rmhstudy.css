@@ -1,0 +1,177 @@
+/**
+ * RMH Study — Dedicated Theme Stylesheet
+ *
+ * Warm amber/orange color scheme for cozy study sessions.
+ */
+
+/* ─── Dark Theme (default) ──────────────────────────────────────── */
+
+.rmhstudy-theme {
+  --rmhstudy-bg: #1a1510;
+  --rmhstudy-bg-subtle: #211c14;
+  --rmhstudy-surface: #2a2318;
+  --rmhstudy-surface-hover: #352c1e;
+  --rmhstudy-surface-active: #403526;
+  --rmhstudy-border: #403526;
+  --rmhstudy-border-bright: #544832;
+  --rmhstudy-text: #f2ece4;
+  --rmhstudy-text-muted: #b0a490;
+  --rmhstudy-text-dim: #7a6e5a;
+  --rmhstudy-accent: #f59e0b;
+  --rmhstudy-accent-hover: #d97706;
+  --rmhstudy-accent-dim: rgba(245, 158, 11, 0.12);
+  --rmhstudy-success: #34d399;
+  --rmhstudy-success-dim: rgba(52, 211, 153, 0.12);
+  --rmhstudy-danger: #f87171;
+  --rmhstudy-danger-dim: rgba(248, 113, 113, 0.12);
+  --rmhstudy-warning: #fbbf24;
+  --rmhstudy-warning-dim: rgba(251, 191, 36, 0.12);
+  --rmhstudy-info: #38bdf8;
+  --rmhstudy-info-dim: rgba(56, 189, 248, 0.12);
+  --rmhstudy-work: #f59e0b;
+  --rmhstudy-break: #34d399;
+  --rmhstudy-long-break: #818cf8;
+  --rmhstudy-font-display: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --rmhstudy-font-body: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --rmhstudy-font-mono: 'JetBrains Mono', 'Cascadia Code', monospace;
+  --rmhstudy-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  --rmhstudy-radius: 12px;
+  --rmhstudy-radius-sm: 8px;
+  --rmhstudy-toast-bg: #2a2318;
+}
+
+/* ─── Light Theme ───────────────────────────────────────────────── */
+
+.rmhstudy-theme.rmhstudy-light {
+  --rmhstudy-bg: #fffbeb;
+  --rmhstudy-bg-subtle: #fef3c7;
+  --rmhstudy-surface: #ffffff;
+  --rmhstudy-surface-hover: #fef9e8;
+  --rmhstudy-surface-active: #fef3d0;
+  --rmhstudy-border: #e8d8a8;
+  --rmhstudy-border-bright: #d4c088;
+  --rmhstudy-text: #2a2010;
+  --rmhstudy-text-muted: #6a5a3a;
+  --rmhstudy-text-dim: #9a8a6a;
+  --rmhstudy-accent: #d97706;
+  --rmhstudy-accent-hover: #b45309;
+  --rmhstudy-accent-dim: rgba(217, 119, 6, 0.08);
+  --rmhstudy-success: #059669;
+  --rmhstudy-success-dim: rgba(5, 150, 105, 0.08);
+  --rmhstudy-danger: #dc2626;
+  --rmhstudy-danger-dim: rgba(220, 38, 38, 0.08);
+  --rmhstudy-warning: #d97706;
+  --rmhstudy-warning-dim: rgba(217, 119, 6, 0.08);
+  --rmhstudy-info: #0284c7;
+  --rmhstudy-info-dim: rgba(2, 132, 199, 0.08);
+  --rmhstudy-work: #d97706;
+  --rmhstudy-break: #059669;
+  --rmhstudy-long-break: #6366f1;
+  --rmhstudy-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  --rmhstudy-toast-bg: #ffffff;
+}
+
+/* ─── Base Styles ───────────────────────────────────────────────── */
+
+.rmhstudy-theme {
+  background-color: var(--rmhstudy-bg);
+  color: var(--rmhstudy-text);
+  font-family: var(--rmhstudy-font-body);
+  min-height: 100vh;
+}
+
+/* ─── Scrollbar ─────────────────────────────────────────────────── */
+
+.rmhstudy-theme ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.rmhstudy-theme ::-webkit-scrollbar-track {
+  background: var(--rmhstudy-bg-subtle);
+  border-radius: 4px;
+}
+
+.rmhstudy-theme ::-webkit-scrollbar-thumb {
+  background: var(--rmhstudy-border-bright);
+  border-radius: 4px;
+}
+
+.rmhstudy-theme ::-webkit-scrollbar-thumb:hover {
+  background: var(--rmhstudy-accent);
+}
+
+.rmhstudy-theme {
+  scrollbar-width: thin;
+  scrollbar-color: var(--rmhstudy-border-bright) var(--rmhstudy-bg-subtle);
+}
+
+/* ─── Selection ─────────────────────────────────────────────────── */
+
+.rmhstudy-theme ::selection {
+  background: var(--rmhstudy-accent);
+  color: #ffffff;
+}
+
+/* ─── Focus ─────────────────────────────────────────────────────── */
+
+.rmhstudy-theme :focus-visible {
+  outline: 2px solid var(--rmhstudy-accent);
+  outline-offset: 2px;
+}
+
+/* ─── Buttons ───────────────────────────────────────────────────── */
+
+.rmhstudy-theme button:not(:disabled) {
+  cursor: pointer;
+}
+
+/* ─── Toast Animations ──────────────────────────────────────────── */
+
+@keyframes rmhstudy-toast-in {
+  from { opacity: 0; transform: translateY(-12px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes rmhstudy-toast-out {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(-12px) scale(0.96); }
+}
+
+.rmhstudy-toast-enter {
+  animation: rmhstudy-toast-in 0.25s ease-out forwards;
+}
+
+.rmhstudy-toast-exit {
+  animation: rmhstudy-toast-out 0.2s ease-in forwards;
+}
+
+/* ─── Timer ─────────────────────────────────────────────────────── */
+
+.rmhstudy-timer-ring {
+  transition: stroke-dashoffset 1s linear;
+}
+
+.rmhstudy-phase-working {
+  color: var(--rmhstudy-work);
+}
+
+.rmhstudy-phase-short_break {
+  color: var(--rmhstudy-break);
+}
+
+.rmhstudy-phase-long_break {
+  color: var(--rmhstudy-long-break);
+}
+
+/* ─── Utilities ─────────────────────────────────────────────────── */
+
+.rmhstudy-glass {
+  background: rgba(42, 35, 24, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.rmhstudy-light .rmhstudy-glass {
+  background: rgba(255, 255, 255, 0.85);
+}

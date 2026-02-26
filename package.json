@@ -4,9 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "concurrently \"next dev -p 7005\" \"pnpm run socket-server\" \"pnpm run rmhbox-server\" \"pnpm run rmhtube-server\"",
-    "build": "next build && esbuild server/socket-server.ts server/rmhbox/index.ts server/rmhtube/index.ts --bundle --platform=node --outdir=dist-server --outbase=. --format=cjs --packages=external --tsconfig=tsconfig.server.json",
-    "start": "concurrently \"next start -p 7005\" \"node dist-server/server/socket-server.js\" \"node dist-server/server/rmhbox/index.js\" \"node dist-server/server/rmhtube/index.js\"",
-    "socket-server": "npx tsx watch --include \"server/socket-server.ts\" server/socket-server.ts",
+    "build": "next build && esbuild server/socket-server/index.ts server/rmhbox/index.ts server/rmhtube/index.ts --bundle --platform=node --outdir=dist-server --outbase=. --format=cjs --packages=external --tsconfig=tsconfig.server.json",
+    "start": "concurrently \"next start -p 7005\" \"node dist-server/server/socket-server/index.js\" \"node dist-server/server/rmhbox/index.js\" \"node dist-server/server/rmhtube/index.js\"",
+    "socket-server": "npx tsx watch --include \"server/socket-server/**/*\" server/socket-server/index.ts",
     "rmhbox-server": "npx tsx watch --include \"server/rmhbox/**/*\" server/rmhbox/index.ts",
     "rmhtube-server": "npx tsx watch --include \"server/rmhtube/**/*\" server/rmhtube/index.ts",
     "lint": "eslint",

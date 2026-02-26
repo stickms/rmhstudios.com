@@ -31,7 +31,9 @@ model User {
   neonDriftwayProfile NeonDriftwayPlayer?
   synapseStormProfile SynapseStormPlayer?
   rmhboxProfile  RMHboxProfile?
-  
+  rmhtypeProfile RmhTypeProfile?
+  rmhstudyProfile RmhStudyProfile?
+
   // Slice-It Library Relations
   uploadedSongs  Song[]        @relation("SongUploader")
   songLikes      SongLike[]
@@ -871,3 +873,110 @@ model RmhTubeUserStats {
   @@map("rmhtube_user_stats")
 }
 
+// ─── RMH Type Models ───────────────────────────────────────
+
+model RmhTypeProfile {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  totalGamesPlayed Int      @default(0)
+  totalWins        Int      @default(0)
+  bestWpm          Float    @default(0)
+  avgWpm           Float    @default(0)
+  bestAccuracy     Float    @default(0)
+  avgAccuracy      Float    @default(0)
+  totalCharsTyped  Int      @default(0)
+  totalTimeMs      Int      @default(0)
+  currentStreak    Int      @default(0)
+  bestStreak       Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  matches          RmhTypeMatchPlayer[]
+
+  @@index([bestWpm(sort: Desc)])
+  @@index([totalWins(sort: Desc)])
+  @@map("rmhtype_profile")
+}
+
+model RmhTypeMatch {
+  id            String    @id @default(cuid())
+  roomId        String
+  difficulty    String
+  passageId     String
+  passageLength String
+  rounds        Int
+  startedAt     DateTime  @default(now())
+  endedAt       DateTime?
+  durationMs    Int?
+  winnerUserId  String?
+  playerCount   Int
+  isSolo        Boolean   @default(false)
+  results       Json
+  players       RmhTypeMatchPlayer[]
+
+  @@index([startedAt(sort: Desc)])
+  @@index([winnerUserId])
+  @@map("rmhtype_match")
+}
+
+model RmhTypeMatchPlayer {
+  id        String         @id @default(cuid())
+  matchId   String
+  match     RmhTypeMatch   @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  profileId String
+  profile   RmhTypeProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  userId    String
+  userName  String
+  rank      Int
+  wpm       Float
+  accuracy  Float
+  timeMs    Int
+  score     Int
+  wasWinner Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@unique([matchId, userId])
+  @@index([profileId])
+  @@index([userId])
+  @@index([wpm(sort: Desc)])
+  @@map("rmhtype_match_player")
+}
+
+// ─── RMH Study Models ──────────────────────────────────────
+
+model RmhStudyProfile {
+  id                String    @id @default(cuid())
+  userId            String    @unique
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  totalFocusTimeMs  BigInt    @default(0)
+  sessionsCompleted Int       @default(0)
+  currentStreak     Int       @default(0)
+  longestStreak     Int       @default(0)
+  lastStudyDate     DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  sessions          RmhStudySession[]
+
+  @@index([totalFocusTimeMs(sort: Desc)])
+  @@index([sessionsCompleted(sort: Desc)])
+  @@index([currentStreak(sort: Desc)])
+  @@map("rmhstudy_profile")
+}
+
+model RmhStudySession {
+  id            String          @id @default(cuid())
+  profileId     String
+  profile       RmhStudyProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  userId        String
+  roomId        String?
+  focusTimeMs   Int
+  breakTimeMs   Int
+  sessionsInRun Int
+  startedAt     DateTime        @default(now())
+  endedAt       DateTime?
+
+  @@index([profileId])
+  @@index([userId])
+  @@index([startedAt(sort: Desc)])
+  @@map("rmhstudy_session")
+}
