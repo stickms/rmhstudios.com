@@ -32,25 +32,8 @@ export async function connectToRmhTube(): Promise<Socket> {
   const store = useRmhTubeStore.getState();
   store.setConnectionStatus('connecting');
 
-  // Fetch auth session for socket authentication
-  let token: string | undefined;
-  try {
-    const url = `${(process.env.NEXT_PUBLIC_BETTER_AUTH_URL || '').replace(/\/$/, '')}/api/auth/get-session`;
-    console.log('[RmhTube] Fetching session from:', url);
-    const res = await fetch(url, { credentials: 'include' });
-    console.log('[RmhTube] Session response status:', res.status);
-    if (res.ok) {
-      const data = await res.json();
-      console.log('[RmhTube] Session data keys:', Object.keys(data));
-      token = data?.session?.token ?? data?.token;
-      console.log('[RmhTube] Token found:', !!token);
-    }
-  } catch (err) {
-    console.error('[RmhTube] Direct fetch failed, trying authClient:', err);
-    const session = await authClient.getSession();
-    console.log('[RmhTube] authClient session:', JSON.stringify(session?.data));
-    token = session?.data?.session?.token;
-  }
+  const session = await authClient.getSession();
+  const token = session?.data?.session?.token;
   if (!token) {
     store.setConnectionStatus('error');
     throw new Error('Not authenticated');
