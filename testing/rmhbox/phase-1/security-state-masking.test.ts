@@ -121,6 +121,7 @@ describe('Security: State-Masking Verification', () => {
       broadcastAction: vi.fn(),
       sendToPlayer: vi.fn(),
       sendToSpectators: vi.fn(),
+      sendToSpectatorFollowers: vi.fn(),
       onComplete: vi.fn(),
       onError: vi.fn(),
     };
@@ -176,6 +177,7 @@ describe('Security: State-Masking Verification', () => {
       broadcastAction: vi.fn(),
       sendToPlayer: vi.fn(),
       sendToSpectators: vi.fn(),
+      sendToSpectatorFollowers: vi.fn(),
       onComplete: vi.fn(),
       onError: vi.fn(),
     };
@@ -214,6 +216,7 @@ describe('Security: State-Masking Verification', () => {
       broadcastAction: vi.fn(),
       sendToPlayer,
       sendToSpectators: vi.fn(),
+      sendToSpectatorFollowers: vi.fn(),
       onComplete: vi.fn(),
       onError: vi.fn(),
     };

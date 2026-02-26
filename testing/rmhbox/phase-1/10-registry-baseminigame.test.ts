@@ -97,6 +97,7 @@ function createTestContext(overrides: Partial<MinigameContext> = {}): MinigameCo
     broadcastAction: vi.fn(),
     sendToPlayer: vi.fn(),
     sendToSpectators: vi.fn(),
+    sendToSpectatorFollowers: vi.fn(),
     onComplete: vi.fn(),
     onError: vi.fn(),
     ...overrides,

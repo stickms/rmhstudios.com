@@ -1010,6 +1010,15 @@ export class GameCoordinator {
       sendToSpectators: (event: string, data: unknown) => {
         this.lobbyManager.broadcastToSpectators(lobby.id, event, data);
       },
+      sendToSpectatorFollowers: (targetPlayerId: string, event: string, data: unknown) => {
+        const targets = this.spectatorTargets.get(lobby.id);
+        if (!targets) return;
+        for (const [spectatorId, followedPlayerId] of targets) {
+          if (followedPlayerId === targetPlayerId) {
+            this.lobbyManager.sendToPlayer(lobby.id, spectatorId, event, data);
+          }
+        }
+      },
       onComplete: (results: MinigameResults) => {
         this.handleGameComplete(lobby.id, results);
       },

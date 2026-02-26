@@ -110,6 +110,9 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
   const [myAnonymousLabel, setMyAnonymousLabel] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  // Track spectator status
+  const isSpectator = useRMHboxStore((s) => s.lobby?.myRole === 'spectator');
+
   const players = useRMHboxStore((s) => s.lobby?.players);
 
   /** Handle incremental GAME_ACTION events */
@@ -298,17 +301,20 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
   // ─── Action Handlers ────────────────────────────────────────────
 
   const handleSaveAnswers = useCallback((answers: (string | null)[]) => {
+    if (isSpectator) return;
     setMyAnswers(answers);
     emitGameInput('SAVE_ANSWERS', { answers });
-  }, []);
+  }, [isSpectator]);
 
   const handleCrash = useCallback((targetUserId: string, categoryIndex: number) => {
+    if (isSpectator) return;
     emitGameInput('CRASH_ANSWER', { targetUserId, categoryIndex });
-  }, []);
+  }, [isSpectator]);
 
   const handleUncrash = useCallback((targetUserId: string, categoryIndex: number) => {
+    if (isSpectator) return;
     emitGameInput('UNCRASH_ANSWER', { targetUserId, categoryIndex });
-  }, []);
+  }, [isSpectator]);
 
   // Player name lookup
   const getPlayerName = useCallback(

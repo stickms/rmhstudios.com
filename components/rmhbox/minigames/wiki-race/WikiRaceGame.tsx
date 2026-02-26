@@ -91,7 +91,9 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
   const [hasFinished, setHasFinished] = useState(false);
   const [finishRank, setFinishRank] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
-  const [isSpectator, setIsSpectator] = useState(false);
+
+  // Track spectator status from the store (not from snapshot data)
+  const isSpectator = useRMHboxStore((s) => s.lobby?.myRole === 'spectator');
 
   // Other players
   const [otherPlayers, setOtherPlayers] = useState<Record<string, OtherPlayer>>({});
@@ -215,7 +217,7 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
     [playerId],
   );
 
-  /** Handle full state snapshot (reconnection) */
+  /** Handle full state snapshot (reconnection / spectator player switch) */
   const handleStateSnapshot = useCallback(
     (data: Record<string, unknown>) => {
       setPhase(data.phase as Phase);
@@ -236,9 +238,6 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
         setClickCount(myState.clickCount as number);
         setHasFinished(myState.hasFinished as boolean);
         setFinishRank(myState.finishRank as number);
-        setIsSpectator(false);
-      } else {
-        setIsSpectator(true);
       }
 
       const other = data.otherPlayers as Record<string, OtherPlayer> | undefined;

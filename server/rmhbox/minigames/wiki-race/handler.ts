@@ -67,6 +67,16 @@ export class WikiRaceMinigame extends BaseMinigame {
 
   // ─── Lifecycle ───────────────────────────────────────────────
 
+  /**
+   * Send article content to a player and any spectators following them.
+   * This ensures spectators in competitive-individual mode see the same
+   * article content as the player they are watching.
+   */
+  private sendArticleToPlayerAndFollowers(userId: string, data: unknown): void {
+    this.context.sendToPlayer(userId, 'rmhbox:game:action', data);
+    this.context.sendToSpectatorFollowers(userId, 'rmhbox:game:action', data);
+  }
+
   start(): void {
     this.isRunning = true;
     this.startedAt = Date.now();
@@ -183,9 +193,9 @@ export class WikiRaceMinigame extends BaseMinigame {
       for (const ps of this.state.playerStates.values()) {
         ps.currentArticleLinks = new Set(article.links);
       }
-      // Send article content to each player privately
+      // Send article content to each player and their spectator followers
       for (const userId of this.state.playerStates.keys()) {
-        this.context.sendToPlayer(userId, 'rmhbox:game:action', {
+        this.sendArticleToPlayerAndFollowers(userId, {
           type: 'WR_ARTICLE_CONTENT',
           title: article.title,
           html: article.sanitizedHtml,
@@ -445,7 +455,7 @@ export class WikiRaceMinigame extends BaseMinigame {
     });
 
     // Broadcast progress (title hidden from other players — they see click count only)
-    this.context.broadcastToPlayers('rmhbox:game:action', {
+    this.context.broadcastToLobby('rmhbox:game:action', {
       type: 'WR_PLAYER_PROGRESS',
       userId,
       clickCount: ps.clickCount,
@@ -472,7 +482,7 @@ export class WikiRaceMinigame extends BaseMinigame {
         type: 'WR_NAVIGATE_REJECTED',
         reason: 'This article is unavailable. Try another link.',
       });
-      this.context.broadcastToPlayers('rmhbox:game:action', {
+      this.context.broadcastToLobby('rmhbox:game:action', {
         type: 'WR_PLAYER_PROGRESS',
         userId,
         clickCount: currentPs.clickCount,
@@ -490,7 +500,7 @@ export class WikiRaceMinigame extends BaseMinigame {
       const currentPs = this.state.playerStates.get(userId);
       if (!currentPs || currentPs.currentArticleTitle !== targetTitle) return;
       currentPs.currentArticleLinks = new Set(article.links);
-      this.context.sendToPlayer(userId, 'rmhbox:game:action', {
+      this.sendArticleToPlayerAndFollowers(userId, {
         type: 'WR_ARTICLE_CONTENT',
         title: article.title,
         html: article.sanitizedHtml,
@@ -552,7 +562,7 @@ export class WikiRaceMinigame extends BaseMinigame {
     });
 
     // Broadcast progress
-    this.context.broadcastToPlayers('rmhbox:game:action', {
+    this.context.broadcastToLobby('rmhbox:game:action', {
       type: 'WR_PLAYER_PROGRESS',
       userId,
       clickCount: ps.clickCount,
@@ -565,7 +575,7 @@ export class WikiRaceMinigame extends BaseMinigame {
       const currentPs = this.state.playerStates.get(userId);
       if (!currentPs || currentPs.currentArticleTitle !== targetTitle) return;
       currentPs.currentArticleLinks = new Set(article.links);
-      this.context.sendToPlayer(userId, 'rmhbox:game:action', {
+      this.sendArticleToPlayerAndFollowers(userId, {
         type: 'WR_ARTICLE_CONTENT',
         title: article.title,
         html: article.sanitizedHtml,
@@ -615,7 +625,7 @@ export class WikiRaceMinigame extends BaseMinigame {
     const targetTitle = this.state.articlePair.targetArticle.title;
     this.fetchAndSendArticle(targetTitle).then((article) => {
       if (!article) return;
-      this.context.sendToPlayer(userId, 'rmhbox:game:action', {
+      this.sendArticleToPlayerAndFollowers(userId, {
         type: 'WR_ARTICLE_CONTENT',
         title: article.title,
         html: article.sanitizedHtml,
@@ -846,7 +856,7 @@ export class WikiRaceMinigame extends BaseMinigame {
         const currentPs = this.state.playerStates.get(userId);
         if (!currentPs || currentPs.currentArticleTitle !== ps.currentArticleTitle) return;
         currentPs.currentArticleLinks = new Set(article.links);
-        this.context.sendToPlayer(userId, 'rmhbox:game:action', {
+        this.sendArticleToPlayerAndFollowers(userId, {
           type: 'WR_ARTICLE_CONTENT',
           title: article.title,
           html: article.sanitizedHtml,

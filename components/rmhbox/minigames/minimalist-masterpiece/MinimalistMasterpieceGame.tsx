@@ -111,6 +111,9 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
   const [scoreBreakdowns, setScoreBreakdowns] = useState<PlayerScoreBreakdown[]>([]);
   const [timeRemaining, setTimeRemaining] = useState(0);
 
+  // Track spectator status
+  const isSpectator = useRMHboxStore((s) => s.lobby?.myRole === 'spectator');
+
   // Auto-submit: track whether we've auto-submitted
   const autoSubmittedRef = useRef(false);
 
@@ -239,50 +242,66 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
     [resetDrawingState],
   );
 
+  /** Handle full state snapshot (reconnection / spectator player switch) */
+  const handleStateSnapshot = useCallback(
+    (data: Record<string, unknown>) => {
+      const p = data.phase as string;
+      if (p === 'PROMPT_REVEAL' || p === 'DRAWING' || p === 'GALLERY' || p === 'AUCTION' || p === 'RESULTS') {
+        setPhase(p as MMPhase);
+      }
+      if (data.prompt) {
+        const pr = data.prompt as { text: string } | string;
+        setPrompt(typeof pr === 'string' ? pr : pr.text);
+      }
+      if (data.maxStrokes) setMaxStrokes(data.maxStrokes as number);
+      if (Array.isArray(data.colorPalette)) {
+        const palette = data.colorPalette as string[];
+        setColorPalette(palette);
+        if (palette.length > 0) {
+          setSelectedColor(palette[0]);
+        }
+      }
+      if (Array.isArray(data.galleryDrawings)) setGalleryDrawings(data.galleryDrawings as GalleryDrawing[]);
+      if (Array.isArray(data.auctionDrawings)) setAuctionDrawings(data.auctionDrawings as AuctionDrawing[]);
+      if (typeof data.currency === 'number') setCurrency(data.currency as number);
+      if (Array.isArray(data.rankings)) setRankings(data.rankings as MMRanking[]);
+    },
+    [],
+  );
+
   // Subscribe to socket events
   useEffect(() => {
     const socket = getSocket();
     if (!socket) return;
 
     socket.on(S2C.GAME_ACTION, handleGameAction);
+    socket.on(S2C.GAME_STATE_SNAPSHOT, handleStateSnapshot);
     return () => {
       socket.off(S2C.GAME_ACTION, handleGameAction);
+      socket.off(S2C.GAME_STATE_SNAPSHOT, handleStateSnapshot);
     };
-  }, [handleGameAction]);
+  }, [handleGameAction, handleStateSnapshot]);
 
   // Hydrate from Zustand gameState snapshot on mount
   useEffect(() => {
     const snapshot = useRMHboxStore.getState().gameState;
-    if (!snapshot || !snapshot.phase) return;
-
-    const p = snapshot.phase as string;
-    if (p === 'PROMPT_REVEAL' || p === 'DRAWING' || p === 'GALLERY' || p === 'AUCTION' || p === 'RESULTS') {
-      setPhase(p as MMPhase);
+    if (snapshot && Object.keys(snapshot).length > 0 && snapshot.phase) {
+      handleStateSnapshot(snapshot as Record<string, unknown>);
     }
-    if (snapshot.prompt) {
-      const pr = snapshot.prompt as { text: string } | string;
-      setPrompt(typeof pr === 'string' ? pr : pr.text);
-    }
-    if (snapshot.maxStrokes) setMaxStrokes(snapshot.maxStrokes as number);
-    if (Array.isArray(snapshot.colorPalette)) {
-      const palette = snapshot.colorPalette as string[];
-      setColorPalette(palette);
-      if (palette.length > 0) {
-        setSelectedColor(palette[0]);
-      }
-    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Auto-save: whenever strokes or backgroundColor changes during the DRAWING phase,
   // automatically submit the drawing to the server. Always runs (server allows re-submissions).
+  // Spectators should not auto-submit drawings.
   useEffect(() => {
-    if (phase !== 'DRAWING') return;
+    if (phase !== 'DRAWING' || isSpectator) return;
     // Debounce auto-submit to avoid spamming on rapid changes
     const timeout = setTimeout(() => {
       emitGameInput('SUBMIT_DRAWING', { strokes, backgroundColor });
     }, 500);
     return () => clearTimeout(timeout);
-  }, [phase, strokes, backgroundColor]);
+  }, [phase, strokes, backgroundColor, isSpectator]);
 
   // Undo: restore the previous edit history state.
   // Auto-save allows re-submissions, so undo works throughout the drawing phase.
@@ -308,8 +327,9 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
   );
 
   const handlePlaceBid = useCallback((drawingId: string, amount: number) => {
+    if (isSpectator) return;
     emitGameInput('PLACE_BID', { drawingId, amount });
-  }, []);
+  }, [isSpectator]);
 
   // Render based on phase
   switch (phase) {

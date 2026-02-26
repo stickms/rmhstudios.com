@@ -61,6 +61,9 @@ export default function RhymeTimeGame({ playerId, playerName: _playerName }: Rhy
   const [standings, setStandings] = useState<Standing[]>([]);
   const [awards, setAwards] = useState<AwardEntry[]>([]);
 
+  // Track spectator status
+  const isSpectator = useRMHboxStore((s) => s.lobby?.myRole === 'spectator');
+
   // Lookup map from userId → userName for building breakdowns
   const players = useRMHboxStore((s) => s.lobby?.players);
 
@@ -288,6 +291,35 @@ export default function RhymeTimeGame({ playerId, playerName: _playerName }: Rhy
     [],
   );
 
+  /** Handle full state snapshot (reconnection / spectator player switch) */
+  const handleStateSnapshot = useCallback(
+    (data: Record<string, unknown>) => {
+      const p = data.phase as string;
+      if (p === 'ROUND_START' || p === 'INPUT' || p === 'SCORING' || p === 'INTERMISSION' || p === 'GAME_OVER') {
+        setPhase(p);
+      }
+      if (data.currentRound) setCurrentRound(data.currentRound as number);
+      if (data.totalRounds) setTotalRounds(data.totalRounds as number);
+      if (data.timeRemaining != null) setTimeRemaining(data.timeRemaining as number);
+      if (data.rootWord) {
+        const rw = data.rootWord;
+        setRootWord(typeof rw === 'string' ? rw : (rw as Record<string, unknown>)?.word as string ?? '');
+      }
+      if (Array.isArray(data.mySubmissions)) {
+        setMySubmissions(
+          (data.mySubmissions as Array<Record<string, unknown>>).map((s) => ({
+            word: s.word as string,
+            status: (s.isValid as boolean) ? 'valid' as const : 'invalid' as const,
+            invalidReason: s.invalidReason as string | undefined,
+          })),
+        );
+      } else {
+        setMySubmissions([]);
+      }
+    },
+    [],
+  );
+
   // Subscribe to socket events
   useEffect(() => {
     const socket = getSocket();
@@ -295,47 +327,32 @@ export default function RhymeTimeGame({ playerId, playerName: _playerName }: Rhy
 
     socket.on(S2C.GAME_ACTION, handleGameAction);
     socket.on(S2C.GAME_ROUND_RESULTS, handleRoundResults);
+    socket.on(S2C.GAME_STATE_SNAPSHOT, handleStateSnapshot);
     return () => {
       socket.off(S2C.GAME_ACTION, handleGameAction);
       socket.off(S2C.GAME_ROUND_RESULTS, handleRoundResults);
+      socket.off(S2C.GAME_STATE_SNAPSHOT, handleStateSnapshot);
     };
-  }, [handleGameAction, handleRoundResults]);
+  }, [handleGameAction, handleRoundResults, handleStateSnapshot]);
 
   // Hydrate from the Zustand gameState snapshot on mount.
   // This fixes the race condition where the server broadcasts initial game state
   // (e.g. RT_ROUND_START) before the lazy-loaded component has mounted.
   useEffect(() => {
     const snapshot = useRMHboxStore.getState().gameState;
-    if (!snapshot || !snapshot.phase) return;
-
-    const p = snapshot.phase as string;
-    if (p === 'ROUND_START' || p === 'INPUT' || p === 'SCORING' || p === 'INTERMISSION' || p === 'GAME_OVER') {
-      setPhase(p);
+    if (snapshot && Object.keys(snapshot).length > 0 && snapshot.phase) {
+      handleStateSnapshot(snapshot as Record<string, unknown>);
     }
-    if (snapshot.currentRound) setCurrentRound(snapshot.currentRound as number);
-    if (snapshot.totalRounds) setTotalRounds(snapshot.totalRounds as number);
-    if (snapshot.timeRemaining != null) setTimeRemaining(snapshot.timeRemaining as number);
-    if (snapshot.rootWord) {
-      const rw = snapshot.rootWord;
-      setRootWord(typeof rw === 'string' ? rw : (rw as Record<string, unknown>)?.word as string ?? '');
-    }
-    if (Array.isArray(snapshot.mySubmissions) && snapshot.mySubmissions.length > 0) {
-      setMySubmissions(
-        (snapshot.mySubmissions as Array<Record<string, unknown>>).map((s) => ({
-          word: s.word as string,
-          status: (s.isValid as boolean) ? 'valid' as const : 'invalid' as const,
-          invalidReason: s.invalidReason as string | undefined,
-        })),
-      );
-    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Submit a word
+  // Submit a word (disabled for spectators)
   const handleSubmitWord = useCallback(
     (word: string) => {
+      if (isSpectator) return;
       emitGameInput('SUBMIT_RHYME', { word });
     },
-    [],
+    [isSpectator],
   );
 
   return (
@@ -381,6 +398,7 @@ export default function RhymeTimeGame({ playerId, playerName: _playerName }: Rhy
             totalDuration={totalDuration}
             mySubmissions={mySubmissions}
             submissionCounts={submissionCounts}
+            disabled={isSpectator}
             onSubmit={handleSubmitWord}
           />
         </motion.div>

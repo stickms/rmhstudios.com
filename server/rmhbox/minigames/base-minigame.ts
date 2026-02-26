@@ -36,6 +36,12 @@ export interface MinigameContext {
   broadcastAction: (action: { type: string; payload?: unknown }) => void;
   sendToPlayer: (userId: string, event: string, data: unknown) => void;
   sendToSpectators: (event: string, data: unknown) => void;
+  /**
+   * Send data to all spectators who are currently following a specific player.
+   * Used by competitive-individual games to forward per-player events to
+   * spectators viewing that player's state.
+   */
+  sendToSpectatorFollowers: (targetPlayerId: string, event: string, data: unknown) => void;
   onComplete: (results: MinigameResults) => void;
   onError: (error: Error) => void;
 }

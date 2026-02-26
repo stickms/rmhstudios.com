@@ -40,6 +40,7 @@ interface RhymeTimeInputProps {
   mySubmissions: Submission[];
   submissionCounts: PlayerSubmissionCount[];
   maxSubmissions?: number;
+  disabled?: boolean;
   onSubmit: (word: string) => void;
 }
 
@@ -50,11 +51,12 @@ export default function RhymeTimeInput({
   mySubmissions,
   submissionCounts,
   maxSubmissions = 30,
+  disabled = false,
   onSubmit,
 }: RhymeTimeInputProps) {
   const [value, setValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
-  const atLimit = mySubmissions.length >= maxSubmissions;
+  const atLimit = mySubmissions.length >= maxSubmissions || disabled;
 
   // Auto-focus the input on mount
   useEffect(() => {
