@@ -29,7 +29,7 @@ export function FooterSection() {
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
         >
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-black font-(family-name:--font-nunito) text-site-text">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-black font-(family-name:--site-font-display) text-site-text">
             Get In Touch
           </h2>
           <p className="mt-4 text-site-text-muted text-lg md:text-xl max-w-2xl mx-auto">
@@ -69,7 +69,7 @@ export function FooterSection() {
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
             >
-              <span className="text-2xl font-black font-(family-name:--font-nunito) text-site-text">
+              <span className="text-2xl font-black font-(family-name:--site-font-display) text-site-text">
                 RMH <span className="text-site-accent">STUDIOS</span>
               </span>
             </motion.div>

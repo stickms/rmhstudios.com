@@ -109,7 +109,7 @@ export const WeatherDashboard = () => {
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-4 w-full flex-1">
             <Link
-              href="/"
+              href="/secret"
               className="p-4 bg-weather-glass border border-weather rounded-2xl hover:bg-weather-glass-hover transition-all backdrop-blur-md shrink-0"
               title="Back to homepage"
             >
@@ -328,7 +328,7 @@ export const WeatherDashboard = () => {
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-4 w-full flex-1">
             <Link
-              href="/"
+              href="/secret"
               className="p-4 bg-weather-glass border border-weather rounded-2xl hover:bg-weather-glass-hover transition-all backdrop-blur-md shrink-0"
               title="Back to homepage"
             >

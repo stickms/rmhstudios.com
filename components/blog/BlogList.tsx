@@ -154,7 +154,7 @@ export function BlogList({ initialPosts }: BlogListProps) {
             <Link href="/" className="inline-flex items-center gap-2 text-site-text-dim hover:text-site-text mb-6 transition-colors">
               <ArrowLeft className="w-4 h-4" /> Back to Home
             </Link>
-            <h1 className="text-4xl md:text-5xl font-black text-site-text tracking-tight font-(family-name:--font-nunito)">
+            <h1 className="text-4xl md:text-5xl font-black text-site-text tracking-tight font-(family-name:--site-font-display)">
               The Archive
             </h1>
             <p className="text-site-text-muted mt-2 text-lg">

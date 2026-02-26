@@ -102,7 +102,7 @@ export default function RMHEatsApp() {
                         {/* Back to site + Logo + In-app back */}
                         <div className="flex items-center gap-1 shrink-0">
                             <Link
-                                href="/apps"
+                                href="/secret"
                                 className="flex items-center justify-center h-8 w-8 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
                                 title="Back to apps"
                             >

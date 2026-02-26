@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useNotesStore, NoteView } from '@/lib/store/useNotesStore';
+import { useNotesDataStore } from '@/lib/store/useNotesDataStore';
 import { NoteFolder, NoteTag, NoteReminder } from './types';
 import { toast } from 'sonner';
 
@@ -20,6 +21,7 @@ interface Props {
 
 export default function NotesSidebar({ folders, tags, reminders, overdueCount, onFoldersChange, onTagsChange, onCreateNote }: Props) {
   const { selectedView, setView, isDarkMode, setDarkMode } = useNotesStore();
+  const dataStore = useNotesDataStore();
   const [addingFolder, setAddingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [newFolderColor, setNewFolderColor] = useState(FOLDER_COLORS[0]);
@@ -55,45 +57,35 @@ export default function NotesSidebar({ folders, tags, reminders, overdueCount, o
     );
   };
 
-  const createFolder = async () => {
+  const createFolder = () => {
     if (!newFolderName.trim()) return;
-    const res = await fetch('/api/rmh-notes/folders', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: newFolderName.trim(), color: newFolderColor }),
-    });
-    if (res.ok) {
-      setNewFolderName('');
-      setAddingFolder(false);
-      onFoldersChange();
-    }
+    dataStore.createFolder(newFolderName.trim(), newFolderColor);
+    setNewFolderName('');
+    setAddingFolder(false);
+    onFoldersChange();
   };
 
-  const createTag = async () => {
+  const createTag = () => {
     if (!newTagName.trim()) return;
-    const res = await fetch('/api/rmh-notes/tags', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: newTagName.trim() }),
-    });
-    if (res.ok) {
-      setNewTagName('');
-      setAddingTag(false);
-      onTagsChange();
-    }
+    dataStore.createTag(newTagName.trim());
+    setNewTagName('');
+    setAddingTag(false);
+    onTagsChange();
   };
 
-  const deleteFolder = async (id: string, e: React.MouseEvent) => {
+  const deleteFolder = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!confirm('Delete this folder? Notes inside will be moved to root.')) return;
-    const res = await fetch(`/api/rmh-notes/folders/${id}`, { method: 'DELETE' });
-    if (res.ok) { onFoldersChange(); toast.success('Folder deleted'); }
+    dataStore.deleteFolder(id);
+    onFoldersChange();
+    toast.success('Folder deleted');
   };
 
-  const deleteTag = async (id: string, e: React.MouseEvent) => {
+  const deleteTag = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    const res = await fetch(`/api/rmh-notes/tags/${id}`, { method: 'DELETE' });
-    if (res.ok) { onTagsChange(); toast.success('Tag deleted'); }
+    dataStore.deleteTag(id);
+    onTagsChange();
+    toast.success('Tag deleted');
   };
 
   return (
@@ -104,7 +96,7 @@ export default function NotesSidebar({ folders, tags, reminders, overdueCount, o
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid var(--notes-sidebar-border)' }}>
         <div className="flex items-center gap-2">
-          <Link href="/" className="text-base hover:opacity-70 transition-opacity" title="Back to home" style={{ color: 'var(--notes-text-muted)' }}>←</Link>
+          <Link href="/secret" className="text-base hover:opacity-70 transition-opacity" title="Back to home" style={{ color: 'var(--notes-text-muted)' }}>←</Link>
           <span className="text-xl">📓</span>
           <span className="font-bold text-sm tracking-wide" style={{ color: 'var(--notes-text)' }}>RMHNotes</span>
         </div>

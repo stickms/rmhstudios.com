@@ -1,53 +1,32 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNotesDataStore } from '@/lib/store/useNotesDataStore';
 import { MOOD_OPTIONS } from './types';
 import { toast } from 'sonner';
 
-interface MoodEntry {
-  id: string;
-  emoji: string;
-  color: string;
-  note: string | null;
-  date: string;
-}
-
 export default function MoodPanel() {
-  const [moods, setMoods] = useState<MoodEntry[]>([]);
-  const [todayMood, setTodayMood] = useState<MoodEntry | null>(null);
-  const [loading, setLoading] = useState(true);
+  const logMood = useNotesDataStore((s) => s.logMood);
+  const getMoods = useNotesDataStore((s) => s.getMoods);
+
+  const { moods, todayMood } = getMoods();
+
   const [selectedMood, setSelectedMood] = useState<typeof MOOD_OPTIONS[number] | null>(null);
   const [moodNote, setMoodNote] = useState('');
-  const [saving, setSaving] = useState(false);
 
-  const load = async () => {
-    setLoading(true);
-    const res = await fetch('/api/rmh-notes/mood');
-    if (res.ok) {
-      const d = await res.json();
-      setMoods(d.moods ?? []);
-      setTodayMood(d.todayMood ?? null);
-      if (d.todayMood) {
-        const option = MOOD_OPTIONS.find((m) => m.emoji === d.todayMood.emoji);
-        if (option) setSelectedMood(option);
-        setMoodNote(d.todayMood.note ?? '');
-      }
+  // Initialize from today's mood if it exists
+  useEffect(() => {
+    if (todayMood) {
+      const option = MOOD_OPTIONS.find((m) => m.emoji === todayMood.emoji);
+      if (option) setSelectedMood(option);
+      setMoodNote(todayMood.note ?? '');
     }
-    setLoading(false);
-  };
+  }, [todayMood]);
 
-  useEffect(() => { load(); }, []);
-
-  const saveMood = async () => {
+  const saveMood = () => {
     if (!selectedMood) return;
-    setSaving(true);
-    const res = await fetch('/api/rmh-notes/mood', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ emoji: selectedMood.emoji, color: selectedMood.color, note: moodNote || null }),
-    });
-    setSaving(false);
-    if (res.ok) { await load(); toast.success('Mood logged! 🌈'); }
+    logMood(selectedMood.emoji, selectedMood.color, moodNote || null);
+    toast.success('Mood logged! 🌈');
   };
 
   const todayLabel = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
@@ -91,11 +70,10 @@ export default function MoodPanel() {
             />
             <button
               onClick={saveMood}
-              disabled={saving}
               className="px-4 py-2 rounded-lg text-sm font-semibold"
               style={{ background: selectedMood.color, color: '#fff' }}
             >
-              {saving ? 'Saving...' : todayMood ? '✓ Update mood' : '✓ Log mood'}
+              {todayMood ? '✓ Update mood' : '✓ Log mood'}
             </button>
           </>
         )}
@@ -123,7 +101,7 @@ export default function MoodPanel() {
         </div>
       )}
 
-      {!loading && moods.length === 0 && (
+      {moods.length === 0 && (
         <div className="text-center py-8">
           <p className="text-4xl mb-3">🌱</p>
           <p className="text-sm" style={{ color: 'var(--notes-text-muted)' }}>Start tracking your mood daily</p>

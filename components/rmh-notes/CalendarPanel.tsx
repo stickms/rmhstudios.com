@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useState } from 'react';
+import { useNotesDataStore } from '@/lib/store/useNotesDataStore';
 import { NoteReminder } from './types';
 import { toast } from 'sonner';
 
@@ -9,36 +10,19 @@ interface Props {
 }
 
 export default function CalendarPanel({ onSelectNote }: Props) {
-  const [reminders, setReminders] = useState<NoteReminder[]>([]);
+  const reminders = useNotesDataStore((s) => s.reminders);
+  const updateReminder = useNotesDataStore((s) => s.updateReminder);
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [loading, setLoading] = useState(true);
   const [view, setView] = useState<'calendar' | 'agenda' | 'overdue'>('agenda');
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    const res = await fetch('/api/rmh-notes/reminders?view=all');
-    if (res.ok) setReminders((await res.json()).reminders ?? []);
-    setLoading(false);
-  }, []);
-
-  useEffect(() => { load(); }, [load]);
-
-  const handleComplete = async (id: string) => {
-    const res = await fetch(`/api/rmh-notes/reminders/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ isCompleted: true }),
-    });
-    if (res.ok) { load(); toast.success('Reminder completed!'); }
+  const handleComplete = (id: string) => {
+    updateReminder(id, { isCompleted: true });
+    toast.success('Reminder completed!');
   };
 
-  const handleSnooze = async (id: string, minutes: number) => {
-    const res = await fetch(`/api/rmh-notes/reminders/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ snoozeMinutes: minutes }),
-    });
-    if (res.ok) { load(); toast.success(`Snoozed ${minutes < 60 ? minutes + 'm' : minutes / 60 + 'h'}`); }
+  const handleSnooze = (id: string, minutes: number) => {
+    updateReminder(id, { snoozeMinutes: minutes } as Record<string, unknown>);
+    toast.success(`Snoozed ${minutes < 60 ? minutes + 'm' : minutes / 60 + 'h'}`);
   };
 
   const now = new Date();
@@ -109,9 +93,7 @@ export default function CalendarPanel({ onSelectNote }: Props) {
         </div>
       </div>
 
-      {loading ? (
-        <div style={{ color: 'var(--notes-text-muted)' }}>Loading...</div>
-      ) : view === 'agenda' ? (
+      {view === 'agenda' ? (
         <div className="space-y-2">
           {overdue.length > 0 && (
             <>

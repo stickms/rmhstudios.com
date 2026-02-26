@@ -23,6 +23,7 @@ import { Note, NoteFolder, NoteTag, NOTE_COLORS } from './types';
 import { OGPreviewExtension } from './OGPreviewExtension';
 import EditorToolbar from './EditorToolbar';
 import { useNotesStore } from '@/lib/store/useNotesStore';
+import { useNotesDataStore } from '@/lib/store/useNotesDataStore';
 import { toast } from 'sonner';
 
 // Lazy-loaded panels
@@ -55,6 +56,7 @@ interface Props {
 
 export default function NoteEditor({ note, onUpdate, onDelete, onRefresh, tags, folders }: Props) {
   const { readingMode, markdownMode, toggleReadingMode, toggleMarkdownMode } = useNotesStore();
+  const dataStore = useNotesDataStore();
   const [title, setTitle] = useState(note.title);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [saving, setSaving] = useState(false);
@@ -114,26 +116,7 @@ export default function NoteEditor({ note, onUpdate, onDelete, onRefresh, tags, 
 
         dispatch(state.tr.replaceSelectionWith(node));
 
-        // Async-fetch OG data and update the node once we have it
-        fetch(`/api/rmh-notes/og-preview?url=${encodeURIComponent(text)}`)
-          .then((r) => r.json())
-          .then((data) => {
-            const { state: s } = view;
-            s.doc.descendants((n, pos) => {
-              if (n.type.name === 'ogPreview' && n.attrs.url === text && n.attrs.title === text) {
-                view.dispatch(s.tr.setNodeMarkup(pos, undefined, {
-                  url: data.url ?? text,
-                  title: data.title ?? text,
-                  description: data.description ?? null,
-                  image: data.image ?? null,
-                  siteName: data.siteName ?? null,
-                }));
-                return false;
-              }
-            });
-          })
-          .catch(() => {}); // keep URL as title on network error
-
+        // In offline mode, just display the URL as-is (no OG fetch)
         return true;
       },
     },
@@ -157,24 +140,24 @@ export default function NoteEditor({ note, onUpdate, onDelete, onRefresh, tags, 
     saveTimer.current = setTimeout(doSave, AUTOSAVE_DELAY);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const doSave = useCallback(async () => {
+  const doSave = useCallback(() => {
     if (!editor) return;
     const content = JSON.stringify(editor.getJSON());
     const wordCount = editor.storage.characterCount?.words() ?? 0;
     const charCount = editor.storage.characterCount?.characters() ?? 0;
     setSaving(true);
-    const res = await fetch(`/api/rmh-notes/notes/${currentNoteId.current}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title: titleRef.current, content, wordCount, charCount }),
+    const updated = dataStore.updateNote(currentNoteId.current, {
+      title: titleRef.current,
+      content,
+      wordCount,
+      charCount,
     });
-    if (res.ok) {
-      const { note: updated } = await res.json();
+    if (updated) {
       onUpdate(updated);
       setSavedAt(new Date());
     }
     setSaving(false);
-  }, [editor, onUpdate]);
+  }, [editor, onUpdate, dataStore]);
 
   // Save on title change
   const handleTitleChange = (v: string) => {
@@ -204,74 +187,45 @@ export default function NoteEditor({ note, onUpdate, onDelete, onRefresh, tags, 
     return () => window.removeEventListener('keydown', handler);
   }, [doSave, toggleReadingMode, toggleMarkdownMode]);
 
-  const handleColorChange = async (colorId: string) => {
+  const handleColorChange = (colorId: string) => {
     setShowColorPicker(false);
     const color = colorId === 'none' ? null : colorId;
-    const res = await fetch(`/api/rmh-notes/notes/${note.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ color }),
-    });
-    if (res.ok) { const { note: u } = await res.json(); onUpdate(u); }
+    const updated = dataStore.updateNote(note.id, { color });
+    if (updated) onUpdate(updated);
   };
 
-  const handleTagsChange = async (tagIds: string[]) => {
-    const res = await fetch(`/api/rmh-notes/notes/${note.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tagIds }),
-    });
-    if (res.ok) { const { note: u } = await res.json(); onUpdate(u); onRefresh(); }
+  const handleTagsChange = (tagIds: string[]) => {
+    const updated = dataStore.updateNote(note.id, { tagIds });
+    if (updated) { onUpdate(updated); onRefresh(); }
   };
 
-  const handleFolderChange = async (folderId: string | null) => {
+  const handleFolderChange = (folderId: string | null) => {
     setShowFolderSelector(false);
-    const res = await fetch(`/api/rmh-notes/notes/${note.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ folderId }),
-    });
-    if (res.ok) { const { note: u } = await res.json(); onUpdate(u); }
+    const updated = dataStore.updateNote(note.id, { folderId });
+    if (updated) onUpdate(updated);
   };
 
-  const handlePin = async () => {
-    const res = await fetch(`/api/rmh-notes/notes/${note.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ isPinned: !note.isPinned }),
-    });
-    if (res.ok) { const { note: u } = await res.json(); onUpdate(u); }
+  const handlePin = () => {
+    const updated = dataStore.updateNote(note.id, { isPinned: !note.isPinned });
+    if (updated) onUpdate(updated);
   };
 
-  const handleFav = async () => {
-    const res = await fetch(`/api/rmh-notes/notes/${note.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ isFavorite: !note.isFavorite }),
-    });
-    if (res.ok) { const { note: u } = await res.json(); onUpdate(u); }
+  const handleFav = () => {
+    const updated = dataStore.updateNote(note.id, { isFavorite: !note.isFavorite });
+    if (updated) onUpdate(updated);
   };
 
-  const handleTrash = async () => {
-    const res = await fetch(`/api/rmh-notes/notes/${note.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ isDeleted: true }),
-    });
-    if (res.ok) { onDelete(note.id); toast.success('Moved to trash'); }
+  const handleTrash = () => {
+    const updated = dataStore.softDeleteNote(note.id);
+    if (updated) { onDelete(note.id); toast.success('Moved to trash'); }
   };
 
-  const handleVersionRestore = async (versionId: string) => {
-    const res = await fetch(`/api/rmh-notes/notes/${note.id}/versions`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ versionId }),
-    });
-    if (res.ok) {
-      const { note: u } = await res.json();
-      onUpdate(u);
+  const handleVersionRestore = (versionId: string) => {
+    const updated = dataStore.restoreVersion(note.id, versionId);
+    if (updated) {
+      onUpdate(updated);
       setShowVersions(false);
-      const content = (() => { try { return JSON.parse(u.content); } catch { return EMPTY_DOC; } })();
+      const content = (() => { try { return JSON.parse(updated.content); } catch { return EMPTY_DOC; } })();
       editor?.commands.setContent(content, { emitUpdate: false });
       toast.success('Version restored');
     }
@@ -366,12 +320,8 @@ export default function NoteEditor({ note, onUpdate, onDelete, onRefresh, tags, 
           <MarkdownEditor
             content={note.content}
             onSave={async (content) => {
-              const res = await fetch(`/api/rmh-notes/notes/${note.id}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ content }),
-              });
-              if (res.ok) { const { note: u } = await res.json(); onUpdate(u); setSavedAt(new Date()); }
+              const updated = dataStore.updateNote(note.id, { content });
+              if (updated) { onUpdate(updated); setSavedAt(new Date()); }
             }}
           />
         ) : (
@@ -413,7 +363,7 @@ export default function NoteEditor({ note, onUpdate, onDelete, onRefresh, tags, 
       )}
       {showTemplates && (
         <TemplateSelector
-          onSelect={async (content) => {
+          onSelect={(content) => {
             editor?.commands.setContent(JSON.parse(content), { emitUpdate: false });
             setShowTemplates(false);
             scheduleSave();

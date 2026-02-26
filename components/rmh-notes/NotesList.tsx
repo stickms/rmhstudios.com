@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback } from 'react';
 import { useNotesStore } from '@/lib/store/useNotesStore';
+import { useNotesDataStore } from '@/lib/store/useNotesDataStore';
 import { Note, NoteFolder, NoteTag, NOTE_COLORS } from './types';
 import NoteCard from './NoteCard';
 import { toast } from 'sonner';
@@ -23,6 +24,7 @@ type SortBy = 'updated' | 'created' | 'title' | 'manual';
 
 export default function NotesList({ notes, loading, selectedNoteId, onSelect, onCreateNote, onUpdateNote, onDeleteNote, onRefresh, folders, tags }: Props) {
   const { selectedView, setView, toggleSearch, sidebarOpen, toggleSidebar } = useNotesStore();
+  const dataStore = useNotesDataStore();
   const [sortBy, setSortBy] = useState<SortBy>('updated');
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const dragNoteId = useRef<string | null>(null);
@@ -62,7 +64,7 @@ export default function NotesList({ notes, loading, selectedNoteId, onSelect, on
   // Drag-and-drop reordering
   const handleDragStart = (id: string) => { dragNoteId.current = id; };
   const handleDragOver = (e: React.DragEvent, id: string) => { e.preventDefault(); setDragOverId(id); };
-  const handleDrop = async (targetId: string) => {
+  const handleDrop = (targetId: string) => {
     setDragOverId(null);
     const fromId = dragNoteId.current;
     if (!fromId || fromId === targetId) return;
@@ -73,58 +75,49 @@ export default function NotesList({ notes, loading, selectedNoteId, onSelect, on
     const reordered = [...sorted];
     const [moved] = reordered.splice(fromIdx, 1);
     reordered.splice(toIdx, 0, moved);
-    await Promise.all(
-      reordered.map((n, i) =>
-        fetch(`/api/rmh-notes/notes/${n.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sortOrder: i }),
-        })
-      )
-    );
-    onRefresh();
+    dataStore.reorderNotes(reordered.map((n) => n.id));
     setSortBy('manual');
     dragNoteId.current = null;
   };
 
-  const quickAction = useCallback(async (note: Note, action: string) => {
-    const patches: Partial<Note> = {};
-    if (action === 'pin') patches.isPinned = !note.isPinned;
-    if (action === 'fav') patches.isFavorite = !note.isFavorite;
-    if (action === 'archive') patches.isArchived = !note.isArchived;
-    if (action === 'trash') patches.isDeleted = true;
-    if (action === 'restore') { patches.isDeleted = false; patches.isArchived = false; }
-    if (action === 'delete') {
-      const res = await fetch(`/api/rmh-notes/notes/${note.id}`, { method: 'DELETE' });
-      if (res.ok) { onDeleteNote(note.id); toast.success('Note deleted permanently'); }
-      return;
-    }
-
-    const res = await fetch(`/api/rmh-notes/notes/${note.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(patches),
-    });
-    if (res.ok) {
-      const { note: updated } = await res.json();
-      if (patches.isDeleted || patches.isArchived) {
+  const quickAction = useCallback((note: Note, action: string) => {
+    if (action === 'pin') {
+      const updated = dataStore.updateNote(note.id, { isPinned: !note.isPinned });
+      if (updated) onUpdateNote(updated);
+    } else if (action === 'fav') {
+      const updated = dataStore.updateNote(note.id, { isFavorite: !note.isFavorite });
+      if (updated) onUpdateNote(updated);
+    } else if (action === 'archive') {
+      const updated = dataStore.updateNote(note.id, { isArchived: !note.isArchived });
+      if (updated) {
         onDeleteNote(note.id);
-        toast.success(patches.isDeleted ? 'Moved to trash' : 'Archived');
-      } else {
-        onUpdateNote(updated);
+        toast.success('Archived');
       }
+    } else if (action === 'trash') {
+      const updated = dataStore.softDeleteNote(note.id);
+      if (updated) {
+        onDeleteNote(note.id);
+        toast.success('Moved to trash');
+      }
+    } else if (action === 'restore') {
+      const updated = dataStore.restoreNote(note.id);
+      if (updated) {
+        onDeleteNote(note.id); // remove from current view
+        toast.success('Restored');
+      }
+    } else if (action === 'delete') {
+      dataStore.deleteNote(note.id);
+      onDeleteNote(note.id);
+      toast.success('Note deleted permanently');
     }
-  }, [onDeleteNote, onUpdateNote]);
+  }, [dataStore, onDeleteNote, onUpdateNote]);
 
-  const duplicateNote = useCallback(async (id: string) => {
-    const res = await fetch(`/api/rmh-notes/notes/${id}/duplicate`, { method: 'POST' });
-    if (res.ok) {
-      const { note } = await res.json();
-      onUpdateNote(note); // will be added by refresh
-      onRefresh();
+  const duplicateNote = useCallback((id: string) => {
+    const note = dataStore.duplicateNote(id);
+    if (note) {
       toast.success('Note duplicated');
     }
-  }, [onRefresh, onUpdateNote]);
+  }, [dataStore]);
 
   const randomNote = () => {
     if (notes.length === 0) return;

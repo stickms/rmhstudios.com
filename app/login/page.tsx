@@ -112,7 +112,7 @@ function LoginForm() {
         <div className="min-h-screen flex items-center justify-center bg-site-bg text-site-text p-4 font-sans">
             <div className="w-full max-w-md bg-site-surface border border-site-border rounded-2xl p-8 shadow-lg">
                 <div className="text-center mb-8">
-                    <h1 className="text-3xl font-black font-(family-name:--font-nunito) text-site-text mb-2">
+                    <h1 className="text-3xl font-black font-(family-name:--site-font-display) text-site-text mb-2">
                         RMH <span className="text-site-accent">Auth</span>
                     </h1>
                     <p className="text-site-text-muted text-sm">

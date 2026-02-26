@@ -61,11 +61,11 @@ export function Navbar() {
   const currentStyle = SITE_STYLES.find((s) => s.id === style) ?? SITE_STYLES[0];
 
   // Group styles by category
-  const groups = [
-    { label: 'Base', styles: SITE_STYLES.filter((s) => s.group === 'Base') },
-    { label: 'Vibes', styles: SITE_STYLES.filter((s) => s.group === 'Vibes') },
-    { label: 'Culture', styles: SITE_STYLES.filter((s) => s.group === 'Culture') },
-  ];
+  const groupOrder = ['Base', 'Vibes', 'Culture', 'Zodiac', 'Seasons', 'School'] as const;
+  const groups = groupOrder.map((label) => ({
+    label,
+    styles: SITE_STYLES.filter((s) => s.group === label),
+  }));
 
   return (
     <nav data-slot="navbar" className="fixed top-0 left-0 right-0 z-1000 bg-(--site-bg)/85 backdrop-blur-md border-b border-site-border">
@@ -74,7 +74,7 @@ export function Navbar() {
 
           {/* Logo */}
           <Link href="/" className="shrink-0">
-            <span className="font-[family-name:var(--font-nunito)] font-bold text-xl text-(--site-text)">
+            <span className="font-(family-name:--site-font-display) font-bold text-xl text-site-text">
               RMH<span className="text-(--site-accent)">STUDIOS</span>
             </span>
           </Link>
@@ -112,7 +112,7 @@ export function Navbar() {
               </button>
 
               {showStyleMenu && (
-                <div className="absolute right-0 mt-2 w-52 bg-(--site-surface) border border-(--site-border) rounded-xl shadow-lg py-1 max-h-80 overflow-y-auto">
+                <div className="absolute right-0 mt-2 w-52 bg-(--site-surface) border border-(--site-border) rounded-xl shadow-lg py-1 max-h-[70vh] overflow-y-auto">
                   {groups.map((group) => (
                     <div key={group.label}>
                       <div className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-(--site-text-dim)">
@@ -208,23 +208,28 @@ export function Navbar() {
 
       {/* Mobile Style Picker (shown when palette is tapped on mobile) */}
       {showStyleMenu && (
-        <div ref={mobileStyleRef} className="md:hidden bg-(--site-bg-subtle) border-b border-(--site-border) px-3 py-3">
-          <div className="flex flex-wrap gap-1.5">
-            {SITE_STYLES.map((s) => (
-              <button
-                key={s.id}
-                onClick={() => setStyle(s.id)}
-                className={`px-3 py-2 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors ${
-                  style === s.id
-                    ? 'text-(--site-accent) bg-(--site-accent-dim) border border-(--site-accent)/30'
-                    : 'text-(--site-text-muted) hover:text-(--site-text) bg-(--site-surface) border border-(--site-border)'
-                }`}
-              >
-                <span>{s.icon}</span>
-                <span>{s.label}</span>
-              </button>
-            ))}
-          </div>
+        <div ref={mobileStyleRef} className="md:hidden bg-(--site-bg-subtle) border-b border-(--site-border) px-3 py-3 max-h-[60vh] overflow-y-auto">
+          {groups.map((group) => (
+            <div key={group.label} className="mb-2">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-(--site-text-dim) mb-1">{group.label}</div>
+              <div className="flex flex-wrap gap-1.5">
+                {group.styles.map((s) => (
+                  <button
+                    key={s.id}
+                    onClick={() => setStyle(s.id)}
+                    className={`px-3 py-2 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors ${
+                      style === s.id
+                        ? 'text-(--site-accent) bg-(--site-accent-dim) border border-(--site-accent)/30'
+                        : 'text-(--site-text-muted) hover:text-(--site-text) bg-(--site-surface) border border-(--site-border)'
+                    }`}
+                  >
+                    <span>{s.icon}</span>
+                    <span>{s.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       )}
 

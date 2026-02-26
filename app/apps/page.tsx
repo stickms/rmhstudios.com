@@ -13,7 +13,7 @@ export default function AppsPage() {
 
                 {/* Header */}
                 <div className="text-center space-y-4 pt-8 pb-4">
-                    <h1 className="text-4xl md:text-6xl font-black tracking-tighter font-(family-name:--font-nunito) text-site-text">
+                    <h1 className="text-4xl md:text-6xl font-black tracking-tighter font-(family-name:--site-font-display) text-site-text">
                         RMH <span className="text-site-accent">APPS</span>
                     </h1>
                     <p className="text-site-text-muted max-w-2xl mx-auto text-lg">

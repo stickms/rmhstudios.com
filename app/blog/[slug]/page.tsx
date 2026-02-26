@@ -66,7 +66,7 @@ export default async function BlogPost({ params }: Props) {
                     </div>
                     <ShareButton slug={slug} />
                 </div>
-                <h1 className="text-4xl md:text-5xl font-black text-site-text mb-6 tracking-tight leading-tight font-(family-name:--font-nunito) animate-in fade-in slide-in-from-bottom-6 duration-700 delay-150 fill-mode-both">
+                <h1 className="text-4xl md:text-5xl font-black text-site-text mb-6 tracking-tight leading-tight font-(family-name:--site-font-display) animate-in fade-in slide-in-from-bottom-6 duration-700 delay-150 fill-mode-both">
                     {post.title}
                 </h1>
                 <p className="text-xl text-site-text-muted leading-relaxed border-l-4 border-site-accent pl-6 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-300 fill-mode-both">

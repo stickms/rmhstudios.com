@@ -170,7 +170,7 @@
   --site-radius: 4px;
   --site-radius-sm: 2px;
   --site-border-width: 2px;
-  --site-font-display: var(--font-nunito), monospace;
+  --site-font-display: var(--font-orbitron), monospace;
   --site-font-body: var(--font-jetbrains-mono), monospace;
   --site-card-transform: translateY(0);
   --site-transition-speed: 100ms;
@@ -257,6 +257,7 @@
   --site-radius: 0px;
   --site-radius-sm: 0px;
   --site-border-width: 3px;
+  --site-font-display: var(--font-permanent-marker), cursive;
   --site-card-transform: rotate(-0.5deg) scale(1.01);
   --site-transition-speed: 80ms;
   --site-glow: 0 0 20px rgba(255, 0, 255, 0.3), 0 0 40px rgba(255, 0, 255, 0.1);
@@ -316,44 +317,13 @@
   --site-shadow: 0 4px 24px rgba(200, 168, 74, 0.06);
   --site-radius: 2px;
   --site-radius-sm: 1px;
-  --site-font-display: var(--font-playfair), Georgia, serif;
+  --site-font-display: var(--font-cinzel), Georgia, serif;
   --site-border-width: 1px;
   --site-card-transform: translateY(-1px);
   --site-transition-speed: 400ms;
   --site-glow: none;
   --site-text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
   --site-letter-spacing: 0.12em;
-}
-
-/* Israeli — Mediterranean blue and white */
-.style-israeli {
-  --site-bg: #f0f4f8;
-  --site-bg-subtle: #e8eef4;
-  --site-surface: #ffffff;
-  --site-surface-hover: #f0f6ff;
-  --site-surface-active: #e0ecf8;
-  --site-border: #c0d4e8;
-  --site-border-bright: #a0b8d4;
-  --site-text: #1a2a40;
-  --site-text-muted: #506070;
-  --site-text-dim: #8090a0;
-  --site-accent: #0038b8;
-  --site-accent-hover: #002890;
-  --site-accent-dim: rgba(0, 56, 184, 0.06);
-  --site-success: #4aaa5a;
-  --site-danger: #cc4444;
-  --site-warning: #d4a020;
-  --site-shadow: 0 4px 24px rgba(0, 56, 184, 0.06);
-  --background: #f0f4f8;
-  --foreground: #1a2a40;
-  --site-radius: 10px;
-  --site-radius-sm: 6px;
-  --site-border-width: 1px;
-  --site-card-transform: translateY(-2px);
-  --site-transition-speed: 200ms;
-  --site-glow: none;
-  --site-text-shadow: none;
-  --site-letter-spacing: -0.01em;
 }
 
 /* Gen Z — lavender tint with sage green accent, soft aesthetic */
@@ -374,6 +344,7 @@
   --site-shadow: 0 4px 24px rgba(160, 216, 176, 0.06);
   --site-radius: 16px;
   --site-radius-sm: 10px;
+  --site-font-display: var(--font-space-grotesk), system-ui, sans-serif;
   --site-border-width: 1px;
   --site-card-transform: scale(1.01);
   --site-transition-speed: 250ms;
@@ -413,6 +384,589 @@
   --site-glow: none;
   --site-text-shadow: none;
   --site-letter-spacing: 0em;
+}
+
+/* ==================== ZODIAC THEMES ==================== */
+
+/* Aries — aggressive crimson fire on charcoal, bold and fast */
+.style-aries {
+  --site-bg: #1a0a0a;
+  --site-bg-subtle: #241010;
+  --site-surface: #2e1414;
+  --site-surface-hover: #3c1c1c;
+  --site-surface-active: #4a2424;
+  --site-border: #4a2020;
+  --site-border-bright: #6a3030;
+  --site-text: #ffe8e0;
+  --site-text-muted: #c08070;
+  --site-text-dim: #805040;
+  --site-accent: #ff3030;
+  --site-accent-hover: #e02020;
+  --site-accent-dim: rgba(255, 48, 48, 0.12);
+  --site-shadow: 0 4px 24px rgba(255, 48, 48, 0.1);
+  --site-radius: 4px;
+  --site-radius-sm: 2px;
+  --site-border-width: 2px;
+  --site-font-display: var(--font-bebas-neue), Impact, sans-serif;
+  --site-card-transform: translateX(2px);
+  --site-transition-speed: 100ms;
+  --site-glow: 0 0 16px rgba(255, 48, 48, 0.25);
+  --site-text-shadow: 0 0 8px rgba(255, 48, 48, 0.4);
+  --site-letter-spacing: 0.04em;
+  --site-heading-transform: uppercase;
+}
+
+/* Taurus — rich forest green on warm brown earth, grounded */
+.style-taurus {
+  --site-bg: #141a10;
+  --site-bg-subtle: #1c2218;
+  --site-surface: #242e1e;
+  --site-surface-hover: #2e3828;
+  --site-surface-active: #384432;
+  --site-border: #384430;
+  --site-border-bright: #4a5a40;
+  --site-text: #e8f0e0;
+  --site-text-muted: #90a880;
+  --site-text-dim: #607850;
+  --site-accent: #5a9e3a;
+  --site-accent-hover: #4a8e2a;
+  --site-accent-dim: rgba(90, 158, 58, 0.1);
+  --site-shadow: 0 4px 24px rgba(90, 158, 58, 0.06);
+  --site-radius: 14px;
+  --site-radius-sm: 8px;
+  --site-border-width: 2px;
+  --site-card-transform: translateY(-1px);
+  --site-transition-speed: 350ms;
+  --site-glow: none;
+  --site-text-shadow: none;
+  --site-letter-spacing: 0em;
+}
+
+/* Gemini — split dual-tone, electric yellow on indigo night */
+.style-gemini {
+  --site-bg: #0e0e22;
+  --site-bg-subtle: #14142e;
+  --site-surface: #1c1c3a;
+  --site-surface-hover: #26264a;
+  --site-surface-active: #30305a;
+  --site-border: #30305a;
+  --site-border-bright: #444478;
+  --site-text: #f0f0ff;
+  --site-text-muted: #a0a0d0;
+  --site-text-dim: #6868a0;
+  --site-accent: #f0d020;
+  --site-accent-hover: #e0c010;
+  --site-accent-dim: rgba(240, 208, 32, 0.1);
+  --site-shadow: 0 4px 24px rgba(240, 208, 32, 0.08);
+  --site-radius: 8px;
+  --site-radius-sm: 4px;
+  --site-font-display: var(--font-space-grotesk), system-ui, sans-serif;
+  --site-font-body: var(--font-jetbrains-mono), monospace;
+  --site-border-width: 1px;
+  --site-card-transform: rotate(0.3deg);
+  --site-transition-speed: 150ms;
+  --site-glow: 0 0 12px rgba(240, 208, 32, 0.15);
+  --site-text-shadow: 0 0 6px rgba(240, 208, 32, 0.3);
+  --site-letter-spacing: 0.01em;
+}
+
+/* Cancer — pearlescent moonlit silver on midnight blue */
+.style-cancer {
+  --site-bg: #0c1018;
+  --site-bg-subtle: #101822;
+  --site-surface: #18202e;
+  --site-surface-hover: #1e2838;
+  --site-surface-active: #243244;
+  --site-border: #243244;
+  --site-border-bright: #344460;
+  --site-text: #e0e8f4;
+  --site-text-muted: #8898b0;
+  --site-text-dim: #586880;
+  --site-accent: #b0c8e8;
+  --site-accent-hover: #98b8e0;
+  --site-accent-dim: rgba(176, 200, 232, 0.1);
+  --site-shadow: 0 4px 24px rgba(176, 200, 232, 0.06);
+  --site-radius: 20px;
+  --site-radius-sm: 12px;
+  --site-font-display: var(--font-playfair), Georgia, serif;
+  --site-border-width: 1px;
+  --site-card-transform: translateY(-2px);
+  --site-transition-speed: 400ms;
+  --site-glow: 0 0 24px rgba(176, 200, 232, 0.08);
+  --site-text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --site-letter-spacing: 0.01em;
+}
+
+/* Leo — luxurious gold on deep regal purple, bold and proud */
+.style-leo {
+  --site-bg: #140e1e;
+  --site-bg-subtle: #1e1428;
+  --site-surface: #281a34;
+  --site-surface-hover: #342244;
+  --site-surface-active: #402c54;
+  --site-border: #3a2650;
+  --site-border-bright: #503870;
+  --site-text: #fff4e0;
+  --site-text-muted: #c0a070;
+  --site-text-dim: #887050;
+  --site-accent: #ffc830;
+  --site-accent-hover: #f0b820;
+  --site-accent-dim: rgba(255, 200, 48, 0.12);
+  --site-shadow: 0 4px 24px rgba(255, 200, 48, 0.1);
+  --site-radius: 6px;
+  --site-radius-sm: 3px;
+  --site-font-display: var(--font-cinzel), Georgia, serif;
+  --site-border-width: 2px;
+  --site-card-transform: scale(1.01);
+  --site-transition-speed: 200ms;
+  --site-glow: 0 0 20px rgba(255, 200, 48, 0.2);
+  --site-text-shadow: 0 0 10px rgba(255, 200, 48, 0.35);
+  --site-letter-spacing: 0.06em;
+  --site-heading-transform: uppercase;
+}
+
+/* Virgo — clean sage on off-white, precise and minimal */
+.style-virgo {
+  --site-bg: #f4f6f2;
+  --site-bg-subtle: #eceee8;
+  --site-surface: #ffffff;
+  --site-surface-hover: #f0f4ee;
+  --site-surface-active: #e4eae0;
+  --site-border: #ccd4c8;
+  --site-border-bright: #b0bca8;
+  --site-text: #2a3028;
+  --site-text-muted: #5a6458;
+  --site-text-dim: #8a9488;
+  --site-accent: #5a8a50;
+  --site-accent-hover: #4a7a40;
+  --site-accent-dim: rgba(90, 138, 80, 0.06);
+  --site-success: #4a8a3a;
+  --site-danger: #b05050;
+  --site-warning: #b09030;
+  --site-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  --background: #f4f6f2;
+  --foreground: #2a3028;
+  --site-radius: 6px;
+  --site-radius-sm: 3px;
+  --site-font-display: var(--font-space-grotesk), system-ui, sans-serif;
+  --site-font-body: var(--font-space-grotesk), system-ui, sans-serif;
+  --site-border-width: 1px;
+  --site-card-transform: translateY(-1px);
+  --site-transition-speed: 200ms;
+  --site-glow: none;
+  --site-text-shadow: none;
+  --site-letter-spacing: -0.01em;
+}
+
+/* Libra — balanced rose quartz and soft lavender, harmonious */
+.style-libra {
+  --site-bg: #f8f0f6;
+  --site-bg-subtle: #f0e8ee;
+  --site-surface: #ffffff;
+  --site-surface-hover: #f8f0f8;
+  --site-surface-active: #f0e4f0;
+  --site-border: #e0c8dc;
+  --site-border-bright: #d0b0cc;
+  --site-text: #3a2838;
+  --site-text-muted: #7a5878;
+  --site-text-dim: #a080a0;
+  --site-accent: #c47ab0;
+  --site-accent-hover: #b468a0;
+  --site-accent-dim: rgba(196, 122, 176, 0.08);
+  --site-success: #6aaa7a;
+  --site-danger: #c06868;
+  --site-warning: #c4a050;
+  --site-shadow: 0 4px 20px rgba(196, 122, 176, 0.06);
+  --background: #f8f0f6;
+  --foreground: #3a2838;
+  --site-radius: 24px;
+  --site-radius-sm: 14px;
+  --site-font-display: var(--font-dancing-script), cursive;
+  --site-border-width: 1px;
+  --site-card-transform: translateY(-2px);
+  --site-transition-speed: 300ms;
+  --site-glow: 0 0 16px rgba(196, 122, 176, 0.08);
+  --site-text-shadow: none;
+  --site-letter-spacing: 0.02em;
+}
+
+/* Scorpio — venomous deep maroon on near-black, intense and sharp */
+.style-scorpio {
+  --site-bg: #0e0608;
+  --site-bg-subtle: #180a0e;
+  --site-surface: #221016;
+  --site-surface-hover: #2e1620;
+  --site-surface-active: #3a1e2a;
+  --site-border: #3a1e28;
+  --site-border-bright: #582e3e;
+  --site-text: #f0e0e4;
+  --site-text-muted: #a07080;
+  --site-text-dim: #704858;
+  --site-accent: #c01040;
+  --site-accent-hover: #a00830;
+  --site-accent-dim: rgba(192, 16, 64, 0.12);
+  --site-shadow: 0 4px 24px rgba(192, 16, 64, 0.1);
+  --site-radius: 2px;
+  --site-radius-sm: 1px;
+  --site-font-display: var(--font-bebas-neue), Impact, sans-serif;
+  --site-font-body: var(--font-jetbrains-mono), monospace;
+  --site-border-width: 1px;
+  --site-card-transform: translateY(0);
+  --site-transition-speed: 150ms;
+  --site-glow: 0 0 12px rgba(192, 16, 64, 0.2);
+  --site-text-shadow: 0 0 6px rgba(192, 16, 64, 0.3);
+  --site-letter-spacing: 0.03em;
+}
+
+/* Sagittarius — adventurous violet on dark blue, expansive */
+.style-sagittarius {
+  --site-bg: #100c1e;
+  --site-bg-subtle: #181228;
+  --site-surface: #201a36;
+  --site-surface-hover: #2a2244;
+  --site-surface-active: #362c54;
+  --site-border: #302850;
+  --site-border-bright: #443c6a;
+  --site-text: #ece4ff;
+  --site-text-muted: #a898cc;
+  --site-text-dim: #706898;
+  --site-accent: #9050e0;
+  --site-accent-hover: #7e40d0;
+  --site-accent-dim: rgba(144, 80, 224, 0.1);
+  --site-shadow: 0 4px 24px rgba(144, 80, 224, 0.08);
+  --site-radius: 10px;
+  --site-radius-sm: 6px;
+  --site-font-display: var(--font-pacifico), cursive;
+  --site-border-width: 1px;
+  --site-card-transform: translateY(-3px);
+  --site-transition-speed: 200ms;
+  --site-glow: 0 0 18px rgba(144, 80, 224, 0.15);
+  --site-text-shadow: 0 0 8px rgba(144, 80, 224, 0.3);
+  --site-letter-spacing: 0.01em;
+}
+
+/* Capricorn — cold granite grey on dark charcoal, structured and sharp */
+.style-capricorn {
+  --site-bg: #141416;
+  --site-bg-subtle: #1a1a1e;
+  --site-surface: #222228;
+  --site-surface-hover: #2c2c34;
+  --site-surface-active: #36363e;
+  --site-border: #36363e;
+  --site-border-bright: #4a4a54;
+  --site-text: #e0e0e4;
+  --site-text-muted: #8a8a94;
+  --site-text-dim: #5a5a64;
+  --site-accent: #8090a0;
+  --site-accent-hover: #708090;
+  --site-accent-dim: rgba(128, 144, 160, 0.1);
+  --site-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+  --site-radius: 3px;
+  --site-radius-sm: 1px;
+  --site-font-display: var(--font-space-grotesk), system-ui, sans-serif;
+  --site-border-width: 1px;
+  --site-card-transform: translateY(-1px);
+  --site-transition-speed: 200ms;
+  --site-glow: none;
+  --site-text-shadow: none;
+  --site-letter-spacing: 0.06em;
+  --site-heading-transform: uppercase;
+}
+
+/* Aquarius — electric cyan-blue on deep space navy */
+.style-aquarius {
+  --site-bg: #060e18;
+  --site-bg-subtle: #0a1424;
+  --site-surface: #101c30;
+  --site-surface-hover: #18263e;
+  --site-surface-active: #20304c;
+  --site-border: #1e2e4a;
+  --site-border-bright: #2e4068;
+  --site-text: #e0f0ff;
+  --site-text-muted: #70a0d0;
+  --site-text-dim: #4070a0;
+  --site-accent: #00c8ff;
+  --site-accent-hover: #00b0e8;
+  --site-accent-dim: rgba(0, 200, 255, 0.1);
+  --site-shadow: 0 4px 24px rgba(0, 200, 255, 0.08);
+  --site-radius: 8px;
+  --site-radius-sm: 4px;
+  --site-font-display: var(--font-orbitron), monospace;
+  --site-font-body: var(--font-jetbrains-mono), monospace;
+  --site-border-width: 1px;
+  --site-card-transform: translateY(-2px);
+  --site-transition-speed: 180ms;
+  --site-glow: 0 0 20px rgba(0, 200, 255, 0.2);
+  --site-text-shadow: 0 0 8px rgba(0, 200, 255, 0.35);
+  --site-letter-spacing: 0.02em;
+}
+
+/* Pisces — dreamy teal-to-lavender on deep ocean, ethereal */
+.style-pisces {
+  --site-bg: #0c1018;
+  --site-bg-subtle: #101820;
+  --site-surface: #161e2c;
+  --site-surface-hover: #1e283a;
+  --site-surface-active: #283248;
+  --site-border: #243040;
+  --site-border-bright: #344460;
+  --site-text: #e4ecf8;
+  --site-text-muted: #88a0c0;
+  --site-text-dim: #587090;
+  --site-accent: #60b8b8;
+  --site-accent-hover: #50a8a8;
+  --site-accent-dim: rgba(96, 184, 184, 0.1);
+  --site-shadow: 0 4px 24px rgba(96, 184, 184, 0.06);
+  --site-radius: 22px;
+  --site-radius-sm: 14px;
+  --site-font-display: var(--font-caveat), cursive;
+  --site-border-width: 1px;
+  --site-card-transform: translateY(-2px);
+  --site-transition-speed: 450ms;
+  --site-glow: 0 0 24px rgba(96, 184, 184, 0.1), 0 0 48px rgba(140, 120, 200, 0.05);
+  --site-text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  --site-letter-spacing: 0.01em;
+}
+
+/* ==================== SEASON THEMES ==================== */
+
+/* Spring — fresh cherry blossom pink on soft mint green */
+.style-spring {
+  --site-bg: #f2f8f0;
+  --site-bg-subtle: #e8f2e4;
+  --site-surface: #ffffff;
+  --site-surface-hover: #f0faf0;
+  --site-surface-active: #e4f4e0;
+  --site-border: #c0e0b8;
+  --site-border-bright: #a4d098;
+  --site-text: #1e3020;
+  --site-text-muted: #4a6848;
+  --site-text-dim: #7a9878;
+  --site-accent: #e06888;
+  --site-accent-hover: #d05878;
+  --site-accent-dim: rgba(224, 104, 136, 0.08);
+  --site-success: #5aaa5a;
+  --site-danger: #d06060;
+  --site-warning: #c4a040;
+  --site-shadow: 0 4px 20px rgba(100, 180, 80, 0.06);
+  --background: #f2f8f0;
+  --foreground: #1e3020;
+  --site-radius: 18px;
+  --site-radius-sm: 10px;
+  --site-font-display: var(--font-dancing-script), cursive;
+  --site-border-width: 1px;
+  --site-card-transform: translateY(-2px);
+  --site-transition-speed: 300ms;
+  --site-glow: 0 0 16px rgba(224, 104, 136, 0.08);
+  --site-text-shadow: none;
+  --site-letter-spacing: -0.01em;
+}
+
+/* Summer — hot amber/orange sun on bright sand, warm and vivid */
+.style-summer {
+  --site-bg: #fff8f0;
+  --site-bg-subtle: #fff0e0;
+  --site-surface: #ffffff;
+  --site-surface-hover: #fff4e8;
+  --site-surface-active: #ffe8d0;
+  --site-border: #f0d0a0;
+  --site-border-bright: #e0b878;
+  --site-text: #3a2810;
+  --site-text-muted: #7a6040;
+  --site-text-dim: #a89070;
+  --site-accent: #f08020;
+  --site-accent-hover: #e07010;
+  --site-accent-dim: rgba(240, 128, 32, 0.08);
+  --site-success: #5aaa4a;
+  --site-danger: #d05040;
+  --site-warning: #e0a010;
+  --site-shadow: 0 4px 20px rgba(240, 128, 32, 0.08);
+  --background: #fff8f0;
+  --foreground: #3a2810;
+  --site-radius: 12px;
+  --site-radius-sm: 6px;
+  --site-font-display: var(--font-pacifico), cursive;
+  --site-border-width: 2px;
+  --site-card-transform: translateY(-2px);
+  --site-transition-speed: 200ms;
+  --site-glow: 0 0 12px rgba(240, 128, 32, 0.1);
+  --site-text-shadow: none;
+  --site-letter-spacing: 0em;
+}
+
+/* Autumn — warm rust/copper on dark chocolate brown, cozy */
+.style-autumn {
+  --site-bg: #1a1410;
+  --site-bg-subtle: #221a14;
+  --site-surface: #2c2218;
+  --site-surface-hover: #382a20;
+  --site-surface-active: #443428;
+  --site-border: #443420;
+  --site-border-bright: #5a4830;
+  --site-text: #f0e4d0;
+  --site-text-muted: #b89870;
+  --site-text-dim: #887050;
+  --site-accent: #d07030;
+  --site-accent-hover: #c06020;
+  --site-accent-dim: rgba(208, 112, 48, 0.1);
+  --site-shadow: 0 4px 24px rgba(208, 112, 48, 0.06);
+  --site-radius: 8px;
+  --site-radius-sm: 4px;
+  --site-font-display: var(--font-playfair), Georgia, serif;
+  --site-border-width: 1px;
+  --site-card-transform: translateY(-1px);
+  --site-transition-speed: 300ms;
+  --site-glow: 0 0 14px rgba(208, 112, 48, 0.1);
+  --site-text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --site-letter-spacing: 0.01em;
+}
+
+/* Winter — icy blue on deep frost, crisp and cold */
+.style-winter {
+  --site-bg: #0a0e14;
+  --site-bg-subtle: #10141c;
+  --site-surface: #161c28;
+  --site-surface-hover: #1e2434;
+  --site-surface-active: #262e40;
+  --site-border: #243040;
+  --site-border-bright: #344460;
+  --site-text: #e8f0f8;
+  --site-text-muted: #88a0c0;
+  --site-text-dim: #506888;
+  --site-accent: #70b8f0;
+  --site-accent-hover: #58a8e8;
+  --site-accent-dim: rgba(112, 184, 240, 0.1);
+  --site-shadow: 0 4px 24px rgba(112, 184, 240, 0.06);
+  --site-radius: 4px;
+  --site-radius-sm: 2px;
+  --site-border-width: 1px;
+  --site-card-transform: translateY(-1px);
+  --site-transition-speed: 250ms;
+  --site-glow: 0 0 20px rgba(112, 184, 240, 0.08);
+  --site-text-shadow: 0 0 6px rgba(112, 184, 240, 0.15);
+  --site-letter-spacing: 0.03em;
+}
+
+/* ==================== SCHOOL THEMES ==================== */
+
+/* Elementary — bright crayon colors on warm paper, playful and chunky */
+.style-elementary {
+  --site-bg: #fffef4;
+  --site-bg-subtle: #fff8e0;
+  --site-surface: #ffffff;
+  --site-surface-hover: #fffde8;
+  --site-surface-active: #fff6d0;
+  --site-border: #f0d888;
+  --site-border-bright: #e0c868;
+  --site-text: #2a2420;
+  --site-text-muted: #6a5a44;
+  --site-text-dim: #9a8a70;
+  --site-accent: #2288dd;
+  --site-accent-hover: #1878cc;
+  --site-accent-dim: rgba(34, 136, 221, 0.06);
+  --site-success: #22aa44;
+  --site-danger: #ee3344;
+  --site-warning: #ffaa00;
+  --site-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  --background: #fffef4;
+  --foreground: #2a2420;
+  --site-radius: 20px;
+  --site-radius-sm: 12px;
+  --site-font-display: var(--font-bangers), 'Comic Sans MS', cursive;
+  --site-border-width: 3px;
+  --site-card-transform: rotate(0.5deg) scale(1.01);
+  --site-transition-speed: 200ms;
+  --site-glow: none;
+  --site-text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.08);
+  --site-letter-spacing: 0.02em;
+}
+
+/* Middle School — teal notebook on dark denim, youthful edge */
+.style-middle-school {
+  --site-bg: #181e24;
+  --site-bg-subtle: #1e262e;
+  --site-surface: #242e38;
+  --site-surface-hover: #2e3844;
+  --site-surface-active: #384450;
+  --site-border: #344050;
+  --site-border-bright: #485868;
+  --site-text: #e4ecf0;
+  --site-text-muted: #8aa0b0;
+  --site-text-dim: #5a7080;
+  --site-accent: #20b0a0;
+  --site-accent-hover: #18a090;
+  --site-accent-dim: rgba(32, 176, 160, 0.1);
+  --site-shadow: 0 4px 24px rgba(32, 176, 160, 0.06);
+  --site-radius: 10px;
+  --site-radius-sm: 6px;
+  --site-font-display: var(--font-permanent-marker), cursive;
+  --site-border-width: 2px;
+  --site-card-transform: translateY(-2px);
+  --site-transition-speed: 200ms;
+  --site-glow: 0 0 10px rgba(32, 176, 160, 0.12);
+  --site-text-shadow: none;
+  --site-letter-spacing: 0em;
+}
+
+/* High School — varsity red on dark slate, bold and confident */
+.style-high-school {
+  --site-bg: #121418;
+  --site-bg-subtle: #1a1c22;
+  --site-surface: #22242c;
+  --site-surface-hover: #2c2e38;
+  --site-surface-active: #363844;
+  --site-border: #343640;
+  --site-border-bright: #484a58;
+  --site-text: #f0eee8;
+  --site-text-muted: #a0a0a8;
+  --site-text-dim: #686870;
+  --site-accent: #cc2244;
+  --site-accent-hover: #b01838;
+  --site-accent-dim: rgba(204, 34, 68, 0.1);
+  --site-shadow: 0 4px 24px rgba(204, 34, 68, 0.06);
+  --site-radius: 6px;
+  --site-radius-sm: 3px;
+  --site-font-display: var(--font-bebas-neue), Impact, sans-serif;
+  --site-border-width: 2px;
+  --site-card-transform: translateY(-2px);
+  --site-transition-speed: 180ms;
+  --site-glow: 0 0 12px rgba(204, 34, 68, 0.1);
+  --site-text-shadow: none;
+  --site-letter-spacing: 0.04em;
+  --site-heading-transform: uppercase;
+}
+
+/* University — classic navy and cream, scholarly with serif elegance */
+.style-university {
+  --site-bg: #f5f0e8;
+  --site-bg-subtle: #ede6d8;
+  --site-surface: #fffdf5;
+  --site-surface-hover: #f8f2e8;
+  --site-surface-active: #f0e8d8;
+  --site-border: #c8b898;
+  --site-border-bright: #b0a080;
+  --site-text: #1a2030;
+  --site-text-muted: #4a5468;
+  --site-text-dim: #7a8498;
+  --site-accent: #1a3a6a;
+  --site-accent-hover: #102a58;
+  --site-accent-dim: rgba(26, 58, 106, 0.06);
+  --site-success: #3a7a4a;
+  --site-danger: #a03a3a;
+  --site-warning: #b08830;
+  --site-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  --background: #f5f0e8;
+  --foreground: #1a2030;
+  --site-radius: 4px;
+  --site-radius-sm: 2px;
+  --site-font-display: var(--font-cinzel), Georgia, serif;
+  --site-font-body: Georgia, 'Times New Roman', serif;
+  --site-border-width: 1px;
+  --site-card-transform: translateY(-1px);
+  --site-transition-speed: 250ms;
+  --site-glow: none;
+  --site-text-shadow: none;
+  --site-letter-spacing: 0.01em;
 }
 
 @theme inline {

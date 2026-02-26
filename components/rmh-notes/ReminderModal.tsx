@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useNotesDataStore } from '@/lib/store/useNotesDataStore';
 import { Note, NoteReminder } from './types';
 import { toast } from 'sonner';
 import Modal from './Modal';
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export default function ReminderModal({ note, onClose, onSaved }: Props) {
+  const dataStore = useNotesDataStore();
   const [title, setTitle] = useState('');
   const [date, setDate] = useState(() => {
     const d = new Date();
@@ -19,41 +21,34 @@ export default function ReminderModal({ note, onClose, onSaved }: Props) {
     return d.toISOString().slice(0, 16);
   });
   const [repeat, setRepeat] = useState<string>('');
-  const [saving, setSaving] = useState(false);
 
-  const handleSave = async () => {
-    setSaving(true);
-    const res = await fetch('/api/rmh-notes/reminders', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ noteId: note.id, title: title || note.title, dueAt: date, repeatRule: repeat || undefined }),
+  const handleSave = () => {
+    dataStore.createReminder({
+      noteId: note.id,
+      title: title || note.title,
+      dueAt: date,
+      repeatRule: repeat || undefined,
     });
-    setSaving(false);
-    if (res.ok) { onSaved(); onClose(); toast.success('Reminder set!'); }
-    else toast.error('Failed to set reminder');
+    onSaved();
+    onClose();
+    toast.success('Reminder set!');
   };
 
-  const handleSnooze = async (reminder: NoteReminder, minutes: number) => {
-    const res = await fetch(`/api/rmh-notes/reminders/${reminder.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ snoozeMinutes: minutes }),
-    });
-    if (res.ok) { onSaved(); toast.success(`Snoozed for ${minutes >= 60 ? `${minutes / 60}h` : `${minutes}m`}`); }
+  const handleSnooze = (reminder: NoteReminder, minutes: number) => {
+    dataStore.updateReminder(reminder.id, { snoozeMinutes: minutes } as Record<string, unknown>);
+    onSaved();
+    toast.success(`Snoozed for ${minutes >= 60 ? `${minutes / 60}h` : `${minutes}m`}`);
   };
 
-  const handleComplete = async (id: string) => {
-    const res = await fetch(`/api/rmh-notes/reminders/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ isCompleted: true }),
-    });
-    if (res.ok) { onSaved(); toast.success('Reminder completed!'); }
+  const handleComplete = (id: string) => {
+    dataStore.updateReminder(id, { isCompleted: true });
+    onSaved();
+    toast.success('Reminder completed!');
   };
 
-  const handleDelete = async (id: string) => {
-    const res = await fetch(`/api/rmh-notes/reminders/${id}`, { method: 'DELETE' });
-    if (res.ok) { onSaved(); }
+  const handleDelete = (id: string) => {
+    dataStore.deleteReminder(id);
+    onSaved();
   };
 
   return (
@@ -123,8 +118,8 @@ export default function ReminderModal({ note, onClose, onSaved }: Props) {
 
       <div className="flex justify-end gap-2 mt-4">
         <button onClick={onClose} className="px-4 py-2 rounded-lg text-sm" style={{ background: 'var(--notes-surface-2)', color: 'var(--notes-text-muted)' }}>Cancel</button>
-        <button onClick={handleSave} disabled={saving} className="px-4 py-2 rounded-lg text-sm font-semibold" style={{ background: 'var(--notes-accent)', color: 'var(--notes-accent-fg)' }}>
-          {saving ? 'Saving...' : 'Set Reminder'}
+        <button onClick={handleSave} className="px-4 py-2 rounded-lg text-sm font-semibold" style={{ background: 'var(--notes-accent)', color: 'var(--notes-accent-fg)' }}>
+          Set Reminder
         </button>
       </div>
     </Modal>
