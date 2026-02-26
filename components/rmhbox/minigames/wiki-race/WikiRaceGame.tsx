@@ -25,9 +25,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Flag } from 'lucide-react';
-import { getSocket, emit } from '@/lib/rmhbox/socket';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
-import { S2C, C2S } from '@/lib/rmhbox/events';
+import { emitGameInput, useGameSocket, extractTimerTick } from '@/lib/rmhbox/minigame-client';
 import ArticleReveal from './ArticleReveal';
 import WikiFrame from './WikiFrame';
 import BreadcrumbTrail from './BreadcrumbTrail';
@@ -59,13 +58,6 @@ interface WRPlayerResult {
   hasFinished: boolean;
   finishRank: number;
   score: number;
-}
-
-/** Helper: emit a game input action */
-function emitGameInput(action: string, data: unknown = {}) {
-  const lobbyId = useRMHboxStore.getState().lobby?.lobbyId;
-  if (!lobbyId) return;
-  emit(C2S.GAME_INPUT, { lobbyId, action, data });
 }
 
 interface WikiRaceGameProps {
@@ -207,9 +199,8 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
           break;
         }
         case 'TIMER_TICK': {
-          const pl = data.payload as Record<string, unknown> | undefined;
-          const remaining = (pl?.timeRemaining ?? data.timeRemaining) as number;
-          if (typeof remaining === 'number') setTimeRemaining(remaining);
+          const remaining = extractTimerTick(data);
+          if (remaining !== undefined) setTimeRemaining(remaining);
           break;
         }
       }
@@ -246,28 +237,11 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
     [],
   );
 
-  // Subscribe to socket events
-  useEffect(() => {
-    const socket = getSocket();
-    if (!socket) return;
-    socket.on(S2C.GAME_ACTION, handleGameAction);
-    socket.on(S2C.GAME_STATE_SNAPSHOT, handleStateSnapshot);
-    return () => {
-      socket.off(S2C.GAME_ACTION, handleGameAction);
-      socket.off(S2C.GAME_STATE_SNAPSHOT, handleStateSnapshot);
-    };
-  }, [handleGameAction, handleStateSnapshot]);
-
-  // Hydrate from the Zustand gameState snapshot on mount.
-  // This fixes the race condition where the server broadcasts initial game state
-  // before the lazy-loaded component has mounted and subscribed to socket events.
-  useEffect(() => {
-    const snapshot = useRMHboxStore.getState().gameState;
-    if (snapshot && Object.keys(snapshot).length > 0 && snapshot.phase) {
-      handleStateSnapshot(snapshot as Record<string, unknown>);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // Subscribe to socket events and hydrate from store on mount
+  useGameSocket({
+    onGameAction: handleGameAction,
+    onStateSnapshot: handleStateSnapshot,
+  });
 
   // ─── Action Handlers ────────────────────────────────────────────
 

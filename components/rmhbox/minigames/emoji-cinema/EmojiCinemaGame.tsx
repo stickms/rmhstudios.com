@@ -9,9 +9,10 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { getSocket, emit } from '@/lib/rmhbox/socket';
+import { getSocket } from '@/lib/rmhbox/socket';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
-import { S2C, C2S } from '@/lib/rmhbox/events';
+import { S2C } from '@/lib/rmhbox/events';
+import { emitGameInput, extractTimerTick } from '@/lib/rmhbox/minigame-client';
 import type { MinigameProps } from '../MinigameRenderer';
 import ProducerView from './ProducerView';
 import AudienceView from './AudienceView';
@@ -36,13 +37,6 @@ export interface CorrectGuesserInfo {
   userId: string;
   userName: string;
   rank: number;
-}
-
-/** Helper: emit a game input action */
-function emitGameInput(action: string, data: unknown = {}) {
-  const lobbyId = useRMHboxStore.getState().lobby?.lobbyId;
-  if (!lobbyId) return;
-  emit(C2S.GAME_INPUT, { lobbyId, action, data });
 }
 
 export default function EmojiCinemaGame({ playerId }: MinigameProps) {
@@ -187,9 +181,8 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
           break;
         }
         case 'TIMER_TICK': {
-          const pl = data.payload as Record<string, unknown> | undefined;
-          const remaining = (pl?.timeRemaining ?? data.timeRemaining) as number;
-          if (typeof remaining === 'number') setTimeRemaining(remaining);
+          const remaining = extractTimerTick(data);
+          if (remaining !== undefined) setTimeRemaining(remaining);
           break;
         }
       }

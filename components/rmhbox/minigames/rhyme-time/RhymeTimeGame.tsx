@@ -20,11 +20,10 @@
  */
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getSocket, emit } from '@/lib/rmhbox/socket';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
-import { S2C, C2S } from '@/lib/rmhbox/events';
+import { emitGameInput, useGameSocket, extractTimerTick } from '@/lib/rmhbox/minigame-client';
 import RhymeTimeInput from './RhymeTimeInput';
 import RhymeTimeResults from './RhymeTimeResults';
 import RhymeTimeScoreboard from './RhymeTimeScoreboard';
@@ -33,13 +32,6 @@ import type { WordResult, PlayerBreakdown } from './RhymeTimeResults';
 import type { Standing, AwardEntry } from './RhymeTimeScoreboard';
 
 type Phase = 'ROUND_START' | 'INPUT' | 'SCORING' | 'INTERMISSION' | 'GAME_OVER';
-
-/** Helper: emit a game input action with the correct GameInputSchema shape */
-function emitGameInput(action: string, data: unknown = {}) {
-  const lobbyId = useRMHboxStore.getState().lobby?.lobbyId;
-  if (!lobbyId) return;
-  emit(C2S.GAME_INPUT, { lobbyId, action, data });
-}
 
 interface RhymeTimeGameProps {
   playerId: string;
@@ -239,10 +231,8 @@ export default function RhymeTimeGame({ playerId, playerName: _playerName }: Rhy
           break;
         }
         case 'TIMER_TICK': {
-          // Timer now comes from broadcastAction with payload wrapping
-          const pl = data.payload as Record<string, unknown> | undefined;
-          const remaining = (pl?.timeRemaining ?? data.timeRemaining) as number;
-          if (typeof remaining === 'number') setTimeRemaining(remaining);
+          const remaining = extractTimerTick(data);
+          if (remaining !== undefined) setTimeRemaining(remaining);
           break;
         }
       }
@@ -320,30 +310,12 @@ export default function RhymeTimeGame({ playerId, playerName: _playerName }: Rhy
     [],
   );
 
-  // Subscribe to socket events
-  useEffect(() => {
-    const socket = getSocket();
-    if (!socket) return;
-
-    socket.on(S2C.GAME_ACTION, handleGameAction);
-    socket.on(S2C.GAME_ROUND_RESULTS, handleRoundResults);
-    socket.on(S2C.GAME_STATE_SNAPSHOT, handleStateSnapshot);
-    return () => {
-      socket.off(S2C.GAME_ACTION, handleGameAction);
-      socket.off(S2C.GAME_ROUND_RESULTS, handleRoundResults);
-      socket.off(S2C.GAME_STATE_SNAPSHOT, handleStateSnapshot);
-    };
-  }, [handleGameAction, handleRoundResults, handleStateSnapshot]);
-
-  // Hydrate from the Zustand gameState snapshot on mount.
-  // This fixes the race condition where the server broadcasts initial game state
-  // (e.g. RT_ROUND_START) before the lazy-loaded component has mounted.
-  useEffect(() => {
-    const snapshot = useRMHboxStore.getState().gameState;
-    if (snapshot && Object.keys(snapshot).length > 0 && snapshot.phase) {
-      handleStateSnapshot(snapshot as Record<string, unknown>);
-    }
-  }, [handleStateSnapshot]);
+  // Subscribe to socket events and hydrate from store on mount
+  useGameSocket({
+    onGameAction: handleGameAction,
+    onStateSnapshot: handleStateSnapshot,
+    onRoundResults: handleRoundResults,
+  });
 
   // Submit a word (disabled for spectators)
   const handleSubmitWord = useCallback(

@@ -27,9 +27,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Eye, Shuffle } from 'lucide-react';
-import { getSocket, emit } from '@/lib/rmhbox/socket';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
-import { S2C, C2S } from '@/lib/rmhbox/events';
+import { emitGameInput, useGameSocket, extractTimerTick } from '@/lib/rmhbox/minigame-client';
 import GridBoard from './GridBoard';
 import ClueInput from './ClueInput';
 import ClueDisplay from './ClueDisplay';
@@ -67,13 +66,6 @@ export interface ActiveClue {
   number: number | 'unlimited';
   teamId: Team;
   guessesUsed: number;
-}
-
-/** Helper: emit a game input action with standard GameInputSchema shape */
-function emitGameInput(action: string, data: unknown = {}) {
-  const lobbyId = useRMHboxStore.getState().lobby?.lobbyId;
-  if (!lobbyId) return;
-  emit(C2S.GAME_INPUT, { lobbyId, action, data });
 }
 
 interface UndercoverAgentGameProps {
@@ -367,9 +359,8 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
           break;
         }
         case 'TIMER_TICK': {
-          const pl = data.payload as Record<string, unknown> | undefined;
-          const remaining = (pl?.timeRemaining ?? data.timeRemaining) as number;
-          if (typeof remaining === 'number') setTimeRemaining(remaining);
+          const remaining = extractTimerTick(data);
+          if (remaining !== undefined) setTimeRemaining(remaining);
           break;
         }
       }
@@ -412,28 +403,11 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
     [deriveRole, syncGameLog],
   );
 
-  // Subscribe to socket events
-  useEffect(() => {
-    const socket = getSocket();
-    if (!socket) return;
-    socket.on(S2C.GAME_ACTION, handleGameAction);
-    socket.on(S2C.GAME_STATE_SNAPSHOT, handleStateSnapshot);
-    return () => {
-      socket.off(S2C.GAME_ACTION, handleGameAction);
-      socket.off(S2C.GAME_STATE_SNAPSHOT, handleStateSnapshot);
-    };
-  }, [handleGameAction, handleStateSnapshot]);
-
-  // Hydrate from the Zustand gameState snapshot on mount.
-  // This fixes the race condition where the server broadcasts initial game state
-  // before the lazy-loaded component has mounted and subscribed to socket events.
-  useEffect(() => {
-    const snapshot = useRMHboxStore.getState().gameState;
-    if (snapshot && Object.keys(snapshot).length > 0 && snapshot.phase) {
-      handleStateSnapshot(snapshot as Record<string, unknown>);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // Subscribe to socket events and hydrate from store on mount
+  useGameSocket({
+    onGameAction: handleGameAction,
+    onStateSnapshot: handleStateSnapshot,
+  });
 
   // ─── Action Handlers ────────────────────────────────────────────
 
