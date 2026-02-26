@@ -29,14 +29,14 @@ export type SoundName =
   | 'swoosh';
 
 const SOUND_PATHS: Record<SoundName, string> = {
-  chime: '/music/rmhbox/chime.mp3',
-  click: '/music/rmhbox/click.mp3',
-  countdownBeep: '/music/rmhbox/countdown-beep.mp3',
-  goFanfare: '/music/rmhbox/go-fanfare.mp3',
-  scoreDing: '/music/rmhbox/score-ding.mp3',
-  buzzer: '/music/rmhbox/buzzer.mp3',
-  victoryFanfare: '/music/rmhbox/victory-fanfare.mp3',
-  swoosh: '/music/rmhbox/swoosh.mp3',
+  chime: '/music/rmhbox/sfx/chime.mp3',
+  click: '/music/rmhbox/sfx/click.mp3',
+  countdownBeep: '/music/rmhbox/sfx/countdown-beep.mp3',
+  goFanfare: '/music/rmhbox/sfx/go-fanfare.mp3',
+  scoreDing: '/music/rmhbox/sfx/score-ding.mp3',
+  buzzer: '/music/rmhbox/sfx/buzzer.mp3',
+  victoryFanfare: '/music/rmhbox/sfx/victory-fanfare.mp3',
+  swoosh: '/music/rmhbox/sfx/swoosh.mp3',
 };
 
 // ─── Sound Cache ────────────────────────────────────────────────
