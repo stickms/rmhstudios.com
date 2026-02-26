@@ -1049,20 +1049,22 @@ export class GameCoordinator {
 
       // For spectators, use the unified getSpectatorSnapshot which
       // dispatches based on spectatorMode. For competitive-individual games,
-      // auto-assign the first player as the default target if none is set.
+      // auto-assign the host as the default target if none is set.
       for (const [spectatorId] of lobby.spectators) {
         try {
           let targetPlayerId = this.getSpectatorTarget(lobby.id, spectatorId);
           if (gameInstance.spectatorMode === 'competitive-individual') {
-            // Auto-assign first player if no target selected
+            // Auto-assign host as default target if no valid target selected
             if (!targetPlayerId || !lobby.players.has(targetPlayerId)) {
-              const firstPlayer = lobby.players.keys().next().value as string | undefined;
-              if (firstPlayer) {
-                targetPlayerId = firstPlayer;
+              const defaultTarget = lobby.players.has(lobby.hostUserId)
+                ? lobby.hostUserId
+                : lobby.players.keys().next().value as string | undefined;
+              if (defaultTarget) {
+                targetPlayerId = defaultTarget;
                 if (!this.spectatorTargets.has(lobby.id)) {
                   this.spectatorTargets.set(lobby.id, new Map());
                 }
-                this.spectatorTargets.get(lobby.id)!.set(spectatorId, firstPlayer);
+                this.spectatorTargets.get(lobby.id)!.set(spectatorId, defaultTarget);
               }
             }
             // Send target info alongside game state

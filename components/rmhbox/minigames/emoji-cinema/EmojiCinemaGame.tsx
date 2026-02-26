@@ -69,6 +69,9 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
   const [resultsPlayers, setResultsPlayers] = useState<PlayerResult[]>([]);
   const [noEmojisSkipped, setNoEmojisSkipped] = useState(false);
 
+  // Track spectator status for shared-privileged view
+  const isSpectator = useRMHboxStore((s) => s.lobby?.myRole === 'spectator');
+
   const isProducer = playerId === producerId;
 
   const handleGameAction = useCallback(
@@ -342,19 +345,28 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
               timeRemaining={timeRemaining}
             />
           ) : (
-            <AudienceView
-              emojis={emojis}
-              maxEmojis={MAX_EMOJIS}
-              producerName={producerName}
-              roundNumber={roundNumber}
-              guesses={guesses}
-              maxGuesses={MAX_GUESSES}
-              hasGuessedCorrectly={hasGuessedCorrectly}
-              onSubmitGuess={handleSubmitGuess}
-              timeRemaining={timeRemaining}
-              correctGuessers={correctGuessers}
-              movieTitles={movieTitles}
-            />
+            <>
+              {/* Spectators see the movie title as a privileged info banner */}
+              {isSpectator && movieTitle && (
+                <div className="mx-auto mb-3 flex w-full max-w-md items-center gap-2 rounded-lg border border-(--rmhbox-accent)/30 bg-(--rmhbox-accent)/10 px-4 py-2 text-center">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-(--rmhbox-accent)">🎬 Answer:</span>
+                  <span className="font-bold text-(--rmhbox-text)">{movieTitle}</span>
+                </div>
+              )}
+              <AudienceView
+                emojis={emojis}
+                maxEmojis={MAX_EMOJIS}
+                producerName={producerName}
+                roundNumber={roundNumber}
+                guesses={guesses}
+                maxGuesses={MAX_GUESSES}
+                hasGuessedCorrectly={hasGuessedCorrectly}
+                onSubmitGuess={handleSubmitGuess}
+                timeRemaining={timeRemaining}
+                correctGuessers={correctGuessers}
+                movieTitles={movieTitles}
+              />
+            </>
           )}
         </div>
       );

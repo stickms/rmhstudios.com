@@ -775,7 +775,7 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
             <GridBoard
               grid={grid}
               canGuess={canGuess}
-              isSpymaster={myRole === 'spymaster' || phase === 'BOARD_REVEAL'}
+              isSpymaster={myRole === 'spymaster' || myRole === 'spectator' || phase === 'BOARD_REVEAL'}
               highlightCounts={highlightCounts}
               onTileClick={handleGuessTile}
               onHighlightChange={handleHighlightTile}
