@@ -1,28 +1,25 @@
 /**
  * RMH Type Landing Page
  *
- * Create rooms, join with code, or start a solo typing session.
+ * Mode selection and leaderboard.
  */
 
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Keyboard, Users, User, Trophy, Globe } from 'lucide-react';
+import Link from 'next/link';
+import { Keyboard, Users, User, Trophy } from 'lucide-react';
 import { connectToRmhType, getSocket, disconnectFromRmhType, emit } from '@/lib/rmhtype/socket';
 import { useRmhTypeStore } from '@/lib/rmhtype/store';
 import { C2S, S2C } from '@/lib/rmhtype/events';
 import { toast } from '@/lib/rmhtype/toast-store';
 import RmhTypeHeader from '@/components/rmhtype/RmhTypeHeader';
-import type { Difficulty, PassageLength, PublicRoomInfo } from '@/lib/rmhtype/types';
+import type { Difficulty } from '@/lib/rmhtype/types';
 
 export default function RmhTypeLanding() {
   const router = useRouter();
   const connectionStatus = useRmhTypeStore((s) => s.connectionStatus);
-  const settings = useRmhTypeStore((s) => s.settings);
-  const updateSettings = useRmhTypeStore((s) => s.updateSettings);
-  const [joinCode, setJoinCode] = useState('');
-  const [mode, setMode] = useState<'menu' | 'solo' | 'multiplayer'>('menu');
 
   // Leaderboard
   interface LeaderboardEntry {
@@ -42,18 +39,6 @@ export default function RmhTypeLanding() {
   const [leaderboardLoading, setLeaderboardLoading] = useState(true);
   const [leaderboardDifficulty, setLeaderboardDifficulty] = useState<Difficulty>('medium');
 
-  // Solo settings (local)
-  const [soloDifficulty, setSoloDifficulty] = useState<Difficulty>(settings.soloDifficulty);
-  const [soloLength, setSoloLength] = useState<PassageLength>(settings.soloPassageLength);
-
-  // Multiplayer settings
-  const [roomDifficulty, setRoomDifficulty] = useState<Difficulty>('medium');
-  const [roomLength, setRoomLength] = useState<PassageLength>('medium');
-  const [roomRounds, setRoomRounds] = useState(3);
-
-  // Public rooms
-  const [publicRooms, setPublicRooms] = useState<PublicRoomInfo[]>([]);
-
   useEffect(() => {
     let mounted = true;
 
@@ -67,25 +52,12 @@ export default function RmhTypeLanding() {
           return;
         }
 
-        socket.on(S2C.ROOM_STATE, (data: { roomCode: string }) => {
-          if (mounted && data.roomCode) {
-            router.push(`/rmhtype/${data.roomCode}`);
-          }
-        });
-
         socket.on(S2C.LEADERBOARD_DATA, (data: { leaderboard: LeaderboardEntry[]; difficulty?: string }) => {
           if (mounted) {
             setLeaderboard(data.leaderboard);
             setLeaderboardLoading(false);
           }
         });
-
-        // Browse public rooms
-        socket.on(S2C.ROOM_BROWSE_RESULT, (data: { rooms: PublicRoomInfo[] }) => {
-          if (mounted) setPublicRooms(data.rooms ?? []);
-        });
-
-        emit(C2S.ROOM_BROWSE, {});
       } catch (err) {
         if (mounted) {
           toast.error(err instanceof Error ? err.message : 'Connection failed');
@@ -96,12 +68,7 @@ export default function RmhTypeLanding() {
 
     connect();
 
-    // Refresh public rooms every 10 seconds
-    const browseInterval = setInterval(() => {
-      if (mounted) emit(C2S.ROOM_BROWSE, {});
-    }, 10_000);
-
-    return () => { mounted = false; clearInterval(browseInterval); };
+    return () => { mounted = false; };
   }, [router]);
 
   // Fetch leaderboard when difficulty tab changes or connection ready
@@ -120,32 +87,6 @@ export default function RmhTypeLanding() {
     };
   }, []);
 
-  const handleCreateRoom = useCallback(() => {
-    const sent = emit(C2S.ROOM_CREATE, {
-      settings: { difficulty: roomDifficulty, passageLength: roomLength, rounds: roomRounds },
-    });
-    if (!sent) {
-      toast.error('Not connected to server. Try refreshing the page.');
-    }
-  }, [roomDifficulty, roomLength, roomRounds]);
-
-  const handleJoinRoom = useCallback(() => {
-    const code = joinCode.trim().toUpperCase();
-    if (code.length !== 6) {
-      toast.warning('Room code must be 6 characters');
-      return;
-    }
-    if (!emit(C2S.ROOM_JOIN, { roomCode: code })) {
-      toast.error('Not connected to server. Try refreshing the page.');
-    }
-  }, [joinCode]);
-
-  const handleSoloStart = useCallback(() => {
-    updateSettings({ soloDifficulty, soloPassageLength: soloLength });
-    useRmhTypeStore.getState().clearSolo();
-    router.push('/rmhtype/solo');
-  }, [soloDifficulty, soloLength, updateSettings, router]);
-
   return (
     <div className="flex h-screen flex-col">
       <RmhTypeHeader backLabel="Apps" backHref="/apps" />
@@ -153,319 +94,115 @@ export default function RmhTypeLanding() {
       <div className="flex-1 overflow-y-auto p-4 md:p-8" style={{ scrollbarGutter: 'stable both-edges' }}>
         <div className="max-w-4xl mx-auto space-y-8">
 
-          {mode === 'menu' && (
-            <>
-              {/* Mode Selection */}
-              <div className="text-center py-8">
-                <div className="inline-flex items-center gap-2 mb-4">
-                  <Keyboard className="h-8 w-8 text-(--rmhtype-accent)" />
-                  <h2 className="text-3xl font-bold">RMH Type</h2>
-                </div>
-                <p className="text-(--rmhtype-text-muted) max-w-md mx-auto">
-                  Test your typing speed solo or race against friends in real-time.
-                </p>
-              </div>
+          {/* Mode Selection */}
+          <div className="text-center py-8">
+            <div className="inline-flex items-center gap-2 mb-4">
+              <Keyboard className="h-8 w-8 text-(--rmhtype-accent)" />
+              <h2 className="text-3xl font-bold">RMH Type</h2>
+            </div>
+            <p className="text-(--rmhtype-text-muted) max-w-md mx-auto">
+              Test your typing speed solo or race against friends in real-time.
+            </p>
+          </div>
 
-              <div className="grid md:grid-cols-2 gap-6">
-                <button
-                  onClick={() => setMode('solo')}
-                  className="rounded-xl border border-(--rmhtype-border) bg-(--rmhtype-surface) p-8 text-left transition-all hover:border-(--rmhtype-accent) hover:bg-(--rmhtype-surface-hover)"
-                >
-                  <User className="h-8 w-8 mb-4 text-(--rmhtype-accent)" />
-                  <h3 className="text-xl font-semibold mb-2">Solo Practice</h3>
-                  <p className="text-sm text-(--rmhtype-text-muted)">
-                    Practice typing at your own pace. Track your WPM and accuracy, and compete on the leaderboard.
-                  </p>
-                </button>
+          <div className="grid md:grid-cols-2 gap-6">
+            <Link
+              href="/rmhtype/solo"
+              className="rounded-xl border border-(--rmhtype-border) bg-(--rmhtype-surface) p-8 text-left transition-all hover:border-(--rmhtype-accent) hover:bg-(--rmhtype-surface-hover)"
+            >
+              <User className="h-8 w-8 mb-4 text-(--rmhtype-accent)" />
+              <h3 className="text-xl font-semibold mb-2">Solo Practice</h3>
+              <p className="text-sm text-(--rmhtype-text-muted)">
+                Practice typing at your own pace. Track your WPM and accuracy, and compete on the leaderboard.
+              </p>
+            </Link>
 
-                <button
-                  onClick={() => setMode('multiplayer')}
-                  className="rounded-xl border border-(--rmhtype-border) bg-(--rmhtype-surface) p-8 text-left transition-all hover:border-(--rmhtype-accent) hover:bg-(--rmhtype-surface-hover)"
-                >
-                  <Users className="h-8 w-8 mb-4 text-(--rmhtype-accent)" />
-                  <h3 className="text-xl font-semibold mb-2">Multiplayer Race</h3>
-                  <p className="text-sm text-(--rmhtype-text-muted)">
-                    Create a room or join a friend. Race on the same passage and see who types fastest.
-                  </p>
-                </button>
-              </div>
+            <Link
+              href="/rmhtype/multiplayer"
+              className="rounded-xl border border-(--rmhtype-border) bg-(--rmhtype-surface) p-8 text-left transition-all hover:border-(--rmhtype-accent) hover:bg-(--rmhtype-surface-hover)"
+            >
+              <Users className="h-8 w-8 mb-4 text-(--rmhtype-accent)" />
+              <h3 className="text-xl font-semibold mb-2">Multiplayer Race</h3>
+              <p className="text-sm text-(--rmhtype-text-muted)">
+                Create a room or join a friend. Race on the same passage and see who types fastest.
+              </p>
+            </Link>
+          </div>
 
-              {/* Leaderboard */}
-              <div className="rounded-xl border border-(--rmhtype-border) bg-(--rmhtype-surface) p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold flex items-center gap-2">
-                    <Trophy className="h-5 w-5 text-(--rmhtype-accent)" />
-                    Leaderboard
-                  </h3>
-                  <div className="flex gap-1">
-                    {(['easy', 'medium', 'hard'] as Difficulty[]).map((d) => (
-                      <button
-                        key={d}
-                        onClick={() => setLeaderboardDifficulty(d)}
-                        className={`px-3 py-1 rounded-lg text-xs font-medium capitalize transition-colors ${
-                          leaderboardDifficulty === d
-                            ? 'bg-(--rmhtype-accent) text-white'
-                            : 'bg-(--rmhtype-bg) text-(--rmhtype-text-muted) hover:bg-(--rmhtype-surface-hover)'
-                        }`}
-                      >
-                        {d}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {leaderboardLoading ? (
-                  <p className="text-sm text-(--rmhtype-text-muted) text-center py-4">Loading...</p>
-                ) : leaderboard.length === 0 ? (
-                  <p className="text-sm text-(--rmhtype-text-muted) text-center py-4">No scores yet. Be the first!</p>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="text-(--rmhtype-text-muted) border-b border-(--rmhtype-border)">
-                          <th className="text-left py-2 pr-3 font-medium">#</th>
-                          <th className="text-left py-2 pr-3 font-medium">Player</th>
-                          <th className="text-right py-2 pr-3 font-medium">Best WPM</th>
-                          <th className="text-right py-2 pr-3 font-medium">Avg WPM</th>
-                          <th className="text-right py-2 pr-3 font-medium">Accuracy</th>
-                          <th className="text-right py-2 font-medium">Games</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {leaderboard.map((entry) => (
-                          <tr key={entry.userId} className="border-b border-(--rmhtype-border)/50 last:border-b-0">
-                            <td className="py-2.5 pr-3 font-mono text-(--rmhtype-text-muted)">
-                              {entry.rank <= 3 ? ['🥇', '🥈', '🥉'][entry.rank - 1] : entry.rank}
-                            </td>
-                            <td className="py-2.5 pr-3 flex items-center gap-2">
-                              {entry.avatarUrl ? (
-                                <img src={entry.avatarUrl} alt="" className="h-5 w-5 rounded-full" />
-                              ) : (
-                                <div className="h-5 w-5 rounded-full bg-(--rmhtype-accent)/20" />
-                              )}
-                              <span className="truncate max-w-35">{entry.userName}</span>
-                            </td>
-                            <td className="py-2.5 pr-3 text-right font-mono font-semibold text-(--rmhtype-accent)">
-                              {entry.bestWpm.toFixed(2)}
-                            </td>
-                            <td className="py-2.5 pr-3 text-right font-mono text-(--rmhtype-text-muted)">
-                              {entry.avgWpm.toFixed(2)}
-                            </td>
-                            <td className="py-2.5 pr-3 text-right font-mono text-(--rmhtype-text-muted)">
-                              {entry.bestAccuracy.toFixed(2)}%
-                            </td>
-                            <td className="py-2.5 text-right font-mono text-(--rmhtype-text-muted)">
-                              {entry.totalGamesPlayed}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-
-          {mode === 'solo' && (
-            <>
-              <button onClick={() => setMode('menu')} className="text-sm text-(--rmhtype-text-muted) hover:text-(--rmhtype-text)">
-                &larr; Back
-              </button>
-
-              <div className="rounded-xl border border-(--rmhtype-border) bg-(--rmhtype-surface) p-6 max-w-lg mx-auto">
-                <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
-                  <User className="h-5 w-5 text-(--rmhtype-accent)" />
-                  Solo Practice
-                </h2>
-
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2 text-(--rmhtype-text-muted)">Difficulty</label>
-                    <div className="flex gap-2">
-                      {(['easy', 'medium', 'hard'] as Difficulty[]).map((d) => (
-                        <button
-                          key={d}
-                          onClick={() => setSoloDifficulty(d)}
-                          className={`flex-1 py-2 rounded-lg text-sm font-medium capitalize transition-colors ${
-                            soloDifficulty === d
-                              ? 'bg-(--rmhtype-accent) text-white'
-                              : 'bg-(--rmhtype-bg) text-(--rmhtype-text-muted) hover:bg-(--rmhtype-surface-hover)'
-                          }`}
-                        >
-                          {d}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-2 text-(--rmhtype-text-muted)">Passage Length</label>
-                    <div className="flex gap-2">
-                      {(['short', 'medium', 'long'] as PassageLength[]).map((l) => (
-                        <button
-                          key={l}
-                          onClick={() => setSoloLength(l)}
-                          className={`flex-1 py-2 rounded-lg text-sm font-medium capitalize transition-colors ${
-                            soloLength === l
-                              ? 'bg-(--rmhtype-accent) text-white'
-                              : 'bg-(--rmhtype-bg) text-(--rmhtype-text-muted) hover:bg-(--rmhtype-surface-hover)'
-                          }`}
-                        >
-                          {l}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
+          {/* Leaderboard */}
+          <div className="rounded-xl border border-(--rmhtype-border) bg-(--rmhtype-surface) p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <Trophy className="h-5 w-5 text-(--rmhtype-accent)" />
+                Leaderboard
+              </h3>
+              <div className="flex gap-1">
+                {(['easy', 'medium', 'hard'] as Difficulty[]).map((d) => (
                   <button
-                    onClick={handleSoloStart}
-                    disabled={connectionStatus !== 'connected'}
-                    className="w-full py-3 mt-4 rounded-lg font-semibold text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--rmhtype-accent) hover:bg-(--rmhtype-accent-hover)"
+                    key={d}
+                    onClick={() => setLeaderboardDifficulty(d)}
+                    className={`px-3 py-1 rounded-lg text-xs font-medium capitalize transition-colors ${
+                      leaderboardDifficulty === d
+                        ? 'bg-(--rmhtype-accent) text-white'
+                        : 'bg-(--rmhtype-bg) text-(--rmhtype-text-muted) hover:bg-(--rmhtype-surface-hover)'
+                    }`}
                   >
-                    Start Typing
+                    {d}
                   </button>
-                </div>
+                ))}
               </div>
-            </>
-          )}
+            </div>
 
-          {mode === 'multiplayer' && (
-            <>
-              <button onClick={() => setMode('menu')} className="text-sm text-(--rmhtype-text-muted) hover:text-(--rmhtype-text)">
-                &larr; Back
-              </button>
-
-              <div className="grid md:grid-cols-2 gap-6">
-                {/* Create Room */}
-                <div className="rounded-xl border border-(--rmhtype-border) bg-(--rmhtype-surface) p-6">
-                  <h2 className="text-xl font-semibold mb-4">Create Room</h2>
-
-                  <div className="space-y-3 mb-4">
-                    <div>
-                      <label className="block text-xs font-medium mb-1 text-(--rmhtype-text-muted)">Difficulty</label>
-                      <div className="flex gap-1">
-                        {(['easy', 'medium', 'hard'] as Difficulty[]).map((d) => (
-                          <button
-                            key={d}
-                            onClick={() => setRoomDifficulty(d)}
-                            className={`flex-1 py-1.5 rounded text-xs font-medium capitalize transition-colors ${
-                              roomDifficulty === d
-                                ? 'bg-(--rmhtype-accent) text-white'
-                                : 'bg-(--rmhtype-bg) text-(--rmhtype-text-muted) hover:bg-(--rmhtype-surface-hover)'
-                            }`}
-                          >
-                            {d}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-medium mb-1 text-(--rmhtype-text-muted)">Length</label>
-                      <div className="flex gap-1">
-                        {(['short', 'medium', 'long'] as PassageLength[]).map((l) => (
-                          <button
-                            key={l}
-                            onClick={() => setRoomLength(l)}
-                            className={`flex-1 py-1.5 rounded text-xs font-medium capitalize transition-colors ${
-                              roomLength === l
-                                ? 'bg-(--rmhtype-accent) text-white'
-                                : 'bg-(--rmhtype-bg) text-(--rmhtype-text-muted) hover:bg-(--rmhtype-surface-hover)'
-                            }`}
-                          >
-                            {l}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-medium mb-1 text-(--rmhtype-text-muted)">Rounds: {roomRounds}</label>
-                      <input
-                        type="range"
-                        min={1}
-                        max={10}
-                        value={roomRounds}
-                        onChange={(e) => setRoomRounds(Number(e.target.value))}
-                        className="w-full accent-(--rmhtype-accent)"
-                      />
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={handleCreateRoom}
-                    disabled={connectionStatus !== 'connected'}
-                    className="w-full py-3 rounded-lg font-semibold text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--rmhtype-accent) hover:bg-(--rmhtype-accent-hover)"
-                  >
-                    Create Room
-                  </button>
-                </div>
-
-                {/* Join Room */}
-                <div className="rounded-xl border border-(--rmhtype-border) bg-(--rmhtype-surface) p-6">
-                  <h2 className="text-xl font-semibold mb-4">Join Room</h2>
-                  <p className="text-sm mb-4 text-(--rmhtype-text-muted)">
-                    Enter a 6-character room code to join a friend.
-                  </p>
-                  <form onSubmit={(e) => { e.preventDefault(); handleJoinRoom(); }} className="flex gap-2">
-                    <input
-                      type="text"
-                      maxLength={6}
-                      value={joinCode}
-                      onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                      placeholder="ABCDEF"
-                      className="w-10 min-w-0 flex-1 px-4 py-3 rounded-lg font-mono text-lg uppercase tracking-widest text-center border border-(--rmhtype-border) bg-(--rmhtype-bg) text-(--rmhtype-text) placeholder:text-(--rmhtype-text-dim) outline-none focus:ring-1 focus:ring-(--rmhtype-accent)"
-                    />
-                    <button
-                      type="submit"
-                      disabled={connectionStatus !== 'connected' || joinCode.trim().length !== 6}
-                      className="px-6 py-3 rounded-lg font-semibold text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--rmhtype-accent) hover:bg-(--rmhtype-accent-hover)"
-                    >
-                      Join
-                    </button>
-                  </form>
-                </div>
-              </div>
-
-              {/* Public Rooms */}
-              <div className="rounded-xl border border-(--rmhtype-border) bg-(--rmhtype-surface) p-6">
-                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                  <Globe className="h-5 w-5 text-(--rmhtype-accent)" />
-                  Public Rooms
-                </h2>
-                {publicRooms.length === 0 ? (
-                  <p className="text-sm text-(--rmhtype-text-muted) text-center py-4">
-                    No public rooms available. Create one!
-                  </p>
-                ) : (
-                  <div className="space-y-2">
-                    {publicRooms.map((r) => (
-                      <button
-                        key={r.roomId}
-                        onClick={() => emit(C2S.ROOM_JOIN, { roomCode: r.roomId })}
-                        className="w-full flex items-center justify-between p-3 rounded-lg bg-(--rmhtype-bg) border border-(--rmhtype-border) hover:border-(--rmhtype-accent) transition-colors text-left"
-                      >
-                        <div>
-                          <div className="font-medium text-sm">{r.hostUserName}&apos;s room</div>
-                          <div className="text-xs text-(--rmhtype-text-muted) mt-0.5">
-                            <span className="capitalize">{r.difficulty}</span>
-                            {' · '}
-                            <span className="capitalize">{r.passageLength}</span>
-                            {' · '}
-                            {r.rounds} {r.rounds === 1 ? 'round' : 'rounds'}
-                          </div>
-                        </div>
-                        <div className="text-xs font-mono text-(--rmhtype-text-muted)">
-                          {r.playerCount}/{r.maxPlayers}
-                        </div>
-                      </button>
+            {leaderboardLoading ? (
+              <p className="text-sm text-(--rmhtype-text-muted) text-center py-4">Loading...</p>
+            ) : leaderboard.length === 0 ? (
+              <p className="text-sm text-(--rmhtype-text-muted) text-center py-4">No scores yet. Be the first!</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-(--rmhtype-text-muted) border-b border-(--rmhtype-border)">
+                      <th className="text-left py-2 pr-3 font-medium">#</th>
+                      <th className="text-left py-2 pr-3 font-medium">Player</th>
+                      <th className="text-right py-2 pr-3 font-medium">Best WPM</th>
+                      <th className="text-right py-2 pr-3 font-medium">Avg WPM</th>
+                      <th className="text-right py-2 pr-3 font-medium">Accuracy</th>
+                      <th className="text-right py-2 font-medium">Games</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {leaderboard.map((entry) => (
+                      <tr key={entry.userId} className="border-b border-(--rmhtype-border)/50 last:border-b-0">
+                        <td className="py-2.5 pr-3 font-mono text-(--rmhtype-text-muted)">
+                          {entry.rank <= 3 ? ['🥇', '🥈', '🥉'][entry.rank - 1] : entry.rank}
+                        </td>
+                        <td className="py-2.5 pr-3 flex items-center gap-2">
+                          {entry.avatarUrl ? (
+                            <img src={entry.avatarUrl} alt="" className="h-5 w-5 rounded-full" />
+                          ) : (
+                            <div className="h-5 w-5 rounded-full bg-(--rmhtype-accent)/20" />
+                          )}
+                          <span className="truncate max-w-35">{entry.userName}</span>
+                        </td>
+                        <td className="py-2.5 pr-3 text-right font-mono font-semibold text-(--rmhtype-accent)">
+                          {entry.bestWpm.toFixed(2)}
+                        </td>
+                        <td className="py-2.5 pr-3 text-right font-mono text-(--rmhtype-text-muted)">
+                          {entry.avgWpm.toFixed(2)}
+                        </td>
+                        <td className="py-2.5 pr-3 text-right font-mono text-(--rmhtype-text-muted)">
+                          {entry.bestAccuracy.toFixed(2)}%
+                        </td>
+                        <td className="py-2.5 text-right font-mono text-(--rmhtype-text-muted)">
+                          {entry.totalGamesPlayed}
+                        </td>
+                      </tr>
                     ))}
-                  </div>
-                )}
+                  </tbody>
+                </table>
               </div>
-            </>
-          )}
+            )}
+          </div>
 
         </div>
       </div>

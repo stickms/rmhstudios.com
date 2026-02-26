@@ -19,8 +19,12 @@ let socket: Socket | null = null;
 
 // ─── Connection ─────────────────────────────────────────────────
 
-export async function connectToRmhType(): Promise<Socket> {
-  if (socket?.connected) return socket;
+export async function connectToRmhType(roomCode?: string): Promise<Socket> {
+  if (socket?.connected) {
+    // Already connected — join room immediately if requested
+    if (roomCode) socket.emit('rmhtype:room:join', { roomCode });
+    return socket;
+  }
 
   if (socket) {
     socket.removeAllListeners();
@@ -56,8 +60,19 @@ export async function connectToRmhType(): Promise<Socket> {
   });
 
   // ─── Connection lifecycle ───────────────────────────────────
+  // Track a pending room code for join-on-connect
+  let pendingRoomCode: string | null = roomCode ?? null;
+
   socket.on('connect', () => {
-    useRmhTypeStore.getState().setConnectionStatus('connected');
+    const store = useRmhTypeStore.getState();
+    store.setConnectionStatus('connected');
+
+    // Re-join room on reconnect (socket ID changed, server lost our mapping)
+    const code = store.room?.roomCode || pendingRoomCode;
+    if (code) {
+      socket!.emit('rmhtype:room:join', { roomCode: code });
+      pendingRoomCode = null;
+    }
   });
 
   socket.on('disconnect', (reason) => {
@@ -73,6 +88,14 @@ export async function connectToRmhType(): Promise<Socket> {
       useRmhTypeStore.getState().setConnectionStatus('error');
     }
   });
+
+  // Reconnect when returning from background (phone sleep, tab switch)
+  const handleVisibility = () => {
+    if (document.visibilityState === 'visible' && socket && !socket.connected) {
+      socket.connect();
+    }
+  };
+  document.addEventListener('visibilitychange', handleVisibility);
 
   // ─── Room state ───────────────────────────────────────────────
   socket.on(S2C.ROOM_STATE, (state) => {

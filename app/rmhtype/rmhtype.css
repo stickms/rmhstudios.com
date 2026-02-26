@@ -159,12 +159,16 @@
   letter-spacing: 0.02em;
 }
 
-@media (max-width: 768px) {
-  .rmhtype-passage-scroll {
-    max-height: 30vh;
-    overflow-y: auto;
-    scroll-behavior: smooth;
-    -webkit-overflow-scrolling: touch;
+.rmhtype-passage-scroll {
+  overflow-y: auto;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Use dynamic viewport height that adjusts for mobile keyboard */
+@supports (height: 100dvh) {
+  .rmhtype-typing-view {
+    height: 100dvh !important;
   }
 }
 

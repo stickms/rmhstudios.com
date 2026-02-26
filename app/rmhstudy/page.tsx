@@ -8,7 +8,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { BookOpen, Clock, Users, Globe } from 'lucide-react';
+import { BookOpen, Clock, Users, Globe, RefreshCw } from 'lucide-react';
 import { connectToRmhStudy, getSocket, disconnectFromRmhStudy, emit } from '@/lib/rmhstudy/socket';
 import { useRmhStudyStore } from '@/lib/rmhstudy/store';
 import { C2S, S2C } from '@/lib/rmhstudy/events';
@@ -242,10 +242,19 @@ export default function RmhStudyLanding() {
 
           {/* Public Rooms */}
           <div className="rounded-xl border border-(--rmhstudy-border) bg-(--rmhstudy-surface) p-6">
-            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <Globe className="h-5 w-5 text-(--rmhstudy-accent)" />
-              Public Study Rooms
-            </h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <Globe className="h-5 w-5 text-(--rmhstudy-accent)" />
+                Public Study Rooms
+              </h2>
+              <button
+                onClick={() => emit(C2S.ROOM_BROWSE, {})}
+                className="p-1.5 rounded-lg text-(--rmhstudy-text-muted) hover:text-(--rmhstudy-text) hover:bg-(--rmhstudy-surface-hover) transition-colors"
+                title="Refresh"
+              >
+                <RefreshCw className="h-4 w-4" />
+              </button>
+            </div>
             {publicRooms.length === 0 ? (
               <p className="text-sm text-(--rmhstudy-text-muted) text-center py-4">
                 No public rooms available. Create one!

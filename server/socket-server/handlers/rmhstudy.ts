@@ -571,7 +571,7 @@ export function registerRmhStudyHandlers(io: Server, socket: Socket): void {
     while (rooms.has(code) && attempts < 20) { code = generateRoomCode(6); attempts++; }
 
     const settings = parseSettings(payload?.settings);
-    const isPublic = typeof payload?.isPublic === 'boolean' ? payload.isPublic : true;
+    const isPublic = typeof payload?.isPublic === 'boolean' ? payload.isPublic : false;
 
     const room: StudyRoom = {
       code,

@@ -67,6 +67,7 @@ interface TypeRoom {
   seq: number;
   countdownTimer: ReturnType<typeof setTimeout> | null;
   progressBroadcastTimer: ReturnType<typeof setInterval> | null;
+  nextRoundTimer: ReturnType<typeof setTimeout> | null;
   roundResults: Array<{ rankings: any[] }>;
 }
 
@@ -88,11 +89,12 @@ const MAX_PLAYERS = 16;
 const ROUND_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 const COUNTDOWN_SECONDS = 5;
 const PROGRESS_BROADCAST_INTERVAL_MS = 200;
+const NEXT_ROUND_DELAY_MS = 5_000;
 const DISCONNECT_REMOVE_DELAY_MS = 30_000;
 const ROOM_CLEANUP_DELAY_MS = 60_000;
 
 const DEFAULT_SETTINGS: RoomSettings = {
-  isPublic: true,
+  isPublic: false,
   maxPlayers: 8,
   difficulty: 'medium',
   passageLength: 'medium',
@@ -435,6 +437,10 @@ function cleanupRoomTimers(room: TypeRoom): void {
     clearInterval(room.progressBroadcastTimer);
     room.progressBroadcastTimer = null;
   }
+  if (room.nextRoundTimer) {
+    clearTimeout(room.nextRoundTimer);
+    room.nextRoundTimer = null;
+  }
 }
 
 function removeRoom(roomId: string): void {
@@ -656,13 +662,74 @@ function endRound(io: Server, room: TypeRoom): void {
   } else {
     room.state = 'ROUND_RESULTS';
 
-    // Next round auto-starts after delay — will be triggered by game:start from host
-    // or we could auto-start here. For now, go back to waiting-like state.
-    // Reset ready states for next round
-    for (const player of room.players.values()) {
-      player.isReady = player.isHost;
-    }
+    // Auto-start next round after a short delay
+    room.nextRoundTimer = setTimeout(() => {
+      room.nextRoundTimer = null;
+      if (room.state !== 'ROUND_RESULTS') return;
+      startRound(io, room);
+    }, NEXT_ROUND_DELAY_MS);
   }
+}
+
+function startRound(io: Server, room: TypeRoom): void {
+  // Clear any pending next-round timer
+  if (room.nextRoundTimer) {
+    clearTimeout(room.nextRoundTimer);
+    room.nextRoundTimer = null;
+  }
+
+  const passage = selectPassage(room.settings);
+  room.passage = passage.text;
+  room.passageId = passage.id;
+  room.currentRound++;
+
+  // Reset player state for new round
+  resetPlayersForRound(room);
+
+  // Countdown phase
+  room.state = 'COUNTDOWN';
+
+  let remaining = COUNTDOWN_SECONDS;
+  io.to(`rmhtype:${room.roomId}`).emit('rmhtype:game:countdown', { seconds: remaining });
+  const countdownInterval = setInterval(() => {
+    remaining--;
+    if (remaining > 0 && room.state === 'COUNTDOWN') {
+      io.to(`rmhtype:${room.roomId}`).emit('rmhtype:game:countdown', { seconds: remaining });
+    } else {
+      clearInterval(countdownInterval);
+    }
+  }, 1000);
+
+  room.countdownTimer = setTimeout(() => {
+    room.countdownTimer = null;
+    clearInterval(countdownInterval);
+
+    if (room.state !== 'COUNTDOWN') return;
+
+    room.state = 'TYPING';
+    room.roundStartTime = Date.now();
+
+    io.to(`rmhtype:${room.roomId}`).emit('rmhtype:game:passage', {
+      passageId: room.passageId,
+      text: room.passage,
+      round: room.currentRound,
+      totalRounds: room.totalRounds,
+    });
+
+    startProgressBroadcast(io, room);
+
+    // Round timeout
+    setTimeout(() => {
+      if (room.state === 'TYPING') {
+        logger.info({ event: 'rmhtype_round_timeout', roomId: room.roomId, round: room.currentRound });
+        endRound(io, room);
+      }
+    }, ROUND_TIMEOUT_MS);
+
+    logger.info({ event: 'rmhtype_round_started', roomId: room.roomId, round: room.currentRound, passageId: passage.id });
+  }, COUNTDOWN_SECONDS * 1000);
+
+  logger.info({ event: 'rmhtype_countdown_started', roomId: room.roomId, round: room.currentRound });
 }
 
 // ─── DB Persistence ─────────────────────────────────────────
@@ -985,6 +1052,7 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
       seq: 0,
       countdownTimer: null,
       progressBroadcastTimer: null,
+      nextRoundTimer: null,
       roundResults: [],
     };
 
@@ -1344,61 +1412,7 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
       }
     }
 
-    // Select passage
-    const passage = selectPassage(room.settings);
-    room.passage = passage.text;
-    room.passageId = passage.id;
-    room.currentRound++;
-
-    // Reset player state for new round
-    resetPlayersForRound(room);
-
-    // Countdown phase
-    room.state = 'COUNTDOWN';
-
-    // Emit countdown ticks each second
-    let remaining = COUNTDOWN_SECONDS;
-    io.to(`rmhtype:${roomId}`).emit('rmhtype:game:countdown', { seconds: remaining });
-    const countdownInterval = setInterval(() => {
-      remaining--;
-      if (remaining > 0 && room.state === 'COUNTDOWN') {
-        io.to(`rmhtype:${roomId}`).emit('rmhtype:game:countdown', { seconds: remaining });
-      } else {
-        clearInterval(countdownInterval);
-      }
-    }, 1000);
-
-    room.countdownTimer = setTimeout(() => {
-      room.countdownTimer = null;
-      clearInterval(countdownInterval);
-
-      if (room.state !== 'COUNTDOWN') return;
-
-      room.state = 'TYPING';
-      room.roundStartTime = Date.now();
-
-      io.to(`rmhtype:${roomId}`).emit('rmhtype:game:passage', {
-        passageId: room.passageId,
-        text: room.passage,
-        round: room.currentRound,
-        totalRounds: room.totalRounds,
-      });
-
-      // Start progress broadcast interval
-      startProgressBroadcast(io, room);
-
-      // Round timeout (5 minutes)
-      setTimeout(() => {
-        if (room.state === 'TYPING') {
-          logger.info({ event: 'rmhtype_round_timeout', roomId: room.roomId, round: room.currentRound });
-          endRound(io, room);
-        }
-      }, ROUND_TIMEOUT_MS);
-
-      logger.info({ event: 'rmhtype_round_started', roomId: room.roomId, round: room.currentRound, passageId: passage.id });
-    }, COUNTDOWN_SECONDS * 1000);
-
-    logger.info({ event: 'rmhtype_countdown_started', roomId, round: room.currentRound });
+    startRound(io, room);
   });
 
   socket.on('rmhtype:game:progress', (payload?: { position?: number; errors?: number }) => {
@@ -1511,6 +1525,7 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
       seq: 0,
       countdownTimer: null,
       progressBroadcastTimer: null,
+      nextRoundTimer: null,
       roundResults: [],
       bannedUsers: [],
     };

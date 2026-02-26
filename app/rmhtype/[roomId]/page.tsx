@@ -17,6 +17,7 @@ import RmhTypeHeader from '@/components/rmhtype/RmhTypeHeader';
 import BanListModal from '@/components/rmhtype/BanListModal';
 import ChatPanel from '@/components/shared/ChatPanel';
 import type { ChatPanelMessage } from '@/components/shared/ChatPanel';
+import type { Difficulty, PassageLength } from '@/lib/rmhtype/types';
 
 export default function RmhTypeRoom() {
   const params = useParams();
@@ -32,34 +33,56 @@ export default function RmhTypeRoom() {
   const inputRef = useRef<HTMLInputElement>(null);
   const passageRef = useRef<HTMLDivElement>(null);
 
+  // Next round countdown
+  const [nextRoundCountdown, setNextRoundCountdown] = useState<number | null>(null);
+
   // Moderation state
   const [banTarget, setBanTarget] = useState<{ userId: string; userName: string } | null>(null);
   const [banReason, setBanReason] = useState('');
   const [showBanList, setShowBanList] = useState(false);
 
-  // Connect and join on mount
+  // Tick down next-round countdown while in ROUND_RESULTS
+  useEffect(() => {
+    if (room?.status !== 'ROUND_RESULTS' || room.roundResults?.isLastRound) {
+      setNextRoundCountdown(null);
+      return;
+    }
+    setNextRoundCountdown(5);
+    const interval = setInterval(() => {
+      setNextRoundCountdown((prev) => (prev !== null && prev > 1 ? prev - 1 : null));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [room?.status, room?.roundResults?.isLastRound]);
+
+  // Connect and join on mount (roomCode passed to connect so the socket's connect handler auto-joins)
   useEffect(() => {
     let mounted = true;
     async function init() {
       try {
-        await connectToRmhType();
-        if (mounted && roomCode) {
-          emit(C2S.ROOM_JOIN, { roomCode });
-        }
+        await connectToRmhType(roomCode);
       } catch (err) {
         if (mounted) toast.error(err instanceof Error ? err.message : 'Connection failed');
       }
     }
-    init();
+    if (roomCode) init();
     return () => { mounted = false; };
   }, [roomCode]);
 
-  // Auto-scroll passage to keep cursor visible (mobile keyboard)
+  // Auto-scroll passage to keep cursor visible (scoped to container only)
   useEffect(() => {
-    if (!passageRef.current) return;
-    const cursor = passageRef.current.querySelector('.rmhtype-cursor');
-    if (cursor) {
-      cursor.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    const container = passageRef.current;
+    if (!container) return;
+    const cursor = container.querySelector('.rmhtype-cursor') as HTMLElement | null;
+    if (!cursor) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const cursorRect = cursor.getBoundingClientRect();
+
+    if (cursorRect.bottom > containerRect.bottom - 16) {
+      container.scrollTop += cursorRect.bottom - containerRect.bottom + 48;
+    }
+    if (cursorRect.top < containerRect.top + 16) {
+      container.scrollTop -= containerRect.top - cursorRect.top + 48;
     }
   }, [typedText]);
 
@@ -156,8 +179,10 @@ export default function RmhTypeRoom() {
   const allReady = room.players.length > 1 && room.players.every((p) => p.isReady || p.isHost);
   const myPlayer = room.players.find((p) => p.userId === room.myUserId);
 
+  const isTyping = room.status === 'TYPING';
+
   return (
-    <div className="flex h-screen flex-col">
+    <div className={`flex h-screen flex-col ${isTyping ? 'rmhtype-typing-view' : ''}`}>
       <RmhTypeHeader
         backLabel="Leave"
         onBack={handleLeave}
@@ -165,8 +190,8 @@ export default function RmhTypeRoom() {
         onCopyCode={handleCopyCode}
       />
 
-      <div className="flex-1 overflow-y-auto p-4 md:p-6" style={{ scrollbarGutter: 'stable both-edges' }}>
-        <div className="max-w-5xl mx-auto space-y-6">
+      <div className={`flex-1 ${isTyping ? 'min-h-0 flex flex-col' : 'overflow-y-auto'} p-4 md:p-6`} style={isTyping ? undefined : { scrollbarGutter: 'stable both-edges' }}>
+        <div className={`${isTyping ? 'max-w-3xl flex-1 min-h-0 flex flex-col gap-4' : 'max-w-5xl space-y-6'} mx-auto w-full`}>
 
           {/* WAITING — Lobby */}
           {room.status === 'WAITING' && (
@@ -174,13 +199,24 @@ export default function RmhTypeRoom() {
               <div className="rounded-xl border border-(--rmhtype-border) bg-(--rmhtype-surface) p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-semibold">Players ({room.players.length}/8)</h2>
-                  <button
-                    onClick={handleCopyCode}
-                    className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg bg-(--rmhtype-bg) text-(--rmhtype-text-muted) hover:text-(--rmhtype-text)"
-                  >
-                    <Copy className="h-3.5 w-3.5" />
-                    {roomCode}
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {isHost && (
+                      <button
+                        onClick={handleTogglePublic}
+                        className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg transition-colors bg-(--rmhtype-bg) text-(--rmhtype-text-muted) hover:text-(--rmhtype-text)"
+                      >
+                        {room.isPublic ? <Globe className="h-3.5 w-3.5" /> : <GlobeLock className="h-3.5 w-3.5" />}
+                        {room.isPublic ? 'Public' : 'Private'}
+                      </button>
+                    )}
+                    <button
+                      onClick={handleCopyCode}
+                      className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg bg-(--rmhtype-bg) text-(--rmhtype-text-muted) hover:text-(--rmhtype-text)"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                      {roomCode}
+                    </button>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   {room.players.map((p) => (
@@ -240,41 +276,84 @@ export default function RmhTypeRoom() {
                 </div>
 
                 <div className="mt-4 p-3 rounded-lg bg-(--rmhtype-bg) text-sm text-(--rmhtype-text-muted)">
-                  <div className="grid grid-cols-3 gap-2 text-center">
-                    <div>
-                      <div className="text-xs uppercase tracking-wide">Difficulty</div>
-                      <div className="font-medium text-(--rmhtype-text) capitalize">{room.settings.difficulty}</div>
+                  {isHost ? (
+                    <div className="space-y-3">
+                      <div>
+                        <div className="text-xs uppercase tracking-wide mb-1">Difficulty</div>
+                        <div className="flex gap-1">
+                          {(['easy', 'medium', 'hard'] as Difficulty[]).map((d) => (
+                            <button
+                              key={d}
+                              onClick={() => emit(C2S.ROOM_UPDATE_SETTINGS, { settings: { difficulty: d } })}
+                              className={`flex-1 py-1.5 rounded text-xs font-medium capitalize transition-colors ${
+                                room.settings.difficulty === d
+                                  ? 'bg-(--rmhtype-accent) text-white'
+                                  : 'bg-(--rmhtype-surface) text-(--rmhtype-text-muted) hover:bg-(--rmhtype-surface-hover)'
+                              }`}
+                            >
+                              {d}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs uppercase tracking-wide mb-1">Length</div>
+                        <div className="flex gap-1">
+                          {(['short', 'medium', 'long'] as PassageLength[]).map((l) => (
+                            <button
+                              key={l}
+                              onClick={() => emit(C2S.ROOM_UPDATE_SETTINGS, { settings: { passageLength: l } })}
+                              className={`flex-1 py-1.5 rounded text-xs font-medium capitalize transition-colors ${
+                                room.settings.passageLength === l
+                                  ? 'bg-(--rmhtype-accent) text-white'
+                                  : 'bg-(--rmhtype-surface) text-(--rmhtype-text-muted) hover:bg-(--rmhtype-surface-hover)'
+                              }`}
+                            >
+                              {l}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs uppercase tracking-wide mb-1">Rounds: {room.totalRounds}</div>
+                        <input
+                          type="range"
+                          min={1}
+                          max={10}
+                          value={room.totalRounds}
+                          onChange={(e) => emit(C2S.ROOM_UPDATE_SETTINGS, { settings: { rounds: Number(e.target.value) } })}
+                          className="w-full accent-(--rmhtype-accent)"
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <div className="text-xs uppercase tracking-wide">Length</div>
-                      <div className="font-medium text-(--rmhtype-text) capitalize">{room.settings.passageLength}</div>
+                  ) : (
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      <div>
+                        <div className="text-xs uppercase tracking-wide">Difficulty</div>
+                        <div className="font-medium text-(--rmhtype-text) capitalize">{room.settings.difficulty}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs uppercase tracking-wide">Length</div>
+                        <div className="font-medium text-(--rmhtype-text) capitalize">{room.settings.passageLength}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs uppercase tracking-wide">Rounds</div>
+                        <div className="font-medium text-(--rmhtype-text)">{room.totalRounds}</div>
+                      </div>
                     </div>
-                    <div>
-                      <div className="text-xs uppercase tracking-wide">Rounds</div>
-                      <div className="font-medium text-(--rmhtype-text)">{room.totalRounds}</div>
-                    </div>
-                  </div>
+                  )}
                 </div>
 
-                {/* Host controls: visibility + ban list */}
-                {isHost && (
-                  <div className="mt-4 flex items-center justify-between">
+                {/* Host controls: ban list */}
+                {isHost && room.bannedUsers.length > 0 && (
+                  <div className="mt-4 flex items-center justify-end">
                     <button
-                      onClick={handleTogglePublic}
+                      onClick={() => setShowBanList(true)}
                       className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-colors bg-(--rmhtype-bg) text-(--rmhtype-text-muted) hover:text-(--rmhtype-text)"
                     >
-                      {room.isPublic ? <Globe className="h-3.5 w-3.5" /> : <GlobeLock className="h-3.5 w-3.5" />}
-                      {room.isPublic ? 'Public' : 'Private'}
+                      <Ban className="h-3.5 w-3.5" />
+                      {room.bannedUsers.length} banned
                     </button>
-                    {room.bannedUsers.length > 0 && (
-                      <button
-                        onClick={() => setShowBanList(true)}
-                        className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-colors bg-(--rmhtype-bg) text-(--rmhtype-text-muted) hover:text-(--rmhtype-text)"
-                      >
-                        <Ban className="h-3.5 w-3.5" />
-                        {room.bannedUsers.length} banned
-                      </button>
-                    )}
                   </div>
                 )}
               </div>
@@ -313,12 +392,12 @@ export default function RmhTypeRoom() {
           {/* TYPING */}
           {room.status === 'TYPING' && room.passage && (
             <>
-              <div className="text-sm text-(--rmhtype-text-muted) text-center">
+              <div className="shrink-0 text-sm text-(--rmhtype-text-muted) text-center">
                 Round {room.currentRound} of {room.totalRounds}
               </div>
 
-              {/* Passage display */}
-              <div ref={passageRef} className="rounded-xl border border-(--rmhtype-border) bg-(--rmhtype-surface) p-6 rmhtype-passage-scroll">
+              {/* Passage display — fills remaining space, scrolls internally */}
+              <div ref={passageRef} className="flex-1 min-h-0 rounded-xl border border-(--rmhtype-border) bg-(--rmhtype-surface) p-6 rmhtype-passage-scroll">
                 <div className="rmhtype-passage select-none">
                   {[...room.passage].map((char, i) => {
                     let className = 'rmhtype-char-untyped';
@@ -335,20 +414,20 @@ export default function RmhTypeRoom() {
                 </div>
               </div>
 
-              {/* Hidden input for capturing keystrokes */}
+              {/* Input — pinned below passage */}
               <input
                 ref={inputRef}
                 type="text"
                 value={typedText}
                 onChange={handleTyping}
                 disabled={finished}
-                className="w-full px-4 py-3 rounded-lg font-mono border border-(--rmhtype-border) bg-(--rmhtype-bg) text-(--rmhtype-text) outline-none focus:ring-1 focus:ring-(--rmhtype-accent)"
+                className="shrink-0 w-full px-4 py-3 rounded-lg font-mono border border-(--rmhtype-border) bg-(--rmhtype-bg) text-(--rmhtype-text) outline-none focus:ring-1 focus:ring-(--rmhtype-accent)"
                 autoFocus
                 placeholder={finished ? 'Waiting for others...' : 'Start typing...'}
               />
 
-              {/* Progress bars */}
-              <div className="space-y-2">
+              {/* Progress bars — pinned at bottom */}
+              <div className="shrink-0 space-y-2">
                 {room.progress.map((p) => (
                   <div key={p.userId} className="flex items-center gap-3">
                     <span className="text-sm font-medium w-24 truncate text-(--rmhtype-text-muted)">{p.userName}</span>
@@ -392,8 +471,8 @@ export default function RmhTypeRoom() {
                 ))}
               </div>
               {!room.roundResults.isLastRound && (
-                <p className="text-center text-sm mt-4 text-(--rmhtype-text-muted) animate-pulse">
-                  Next round starting soon...
+                <p className="text-center text-sm mt-4 text-(--rmhtype-text-muted)">
+                  Next round starting in <span className="font-bold text-(--rmhtype-accent)">{nextRoundCountdown ?? '...'}</span>...
                 </p>
               )}
             </div>

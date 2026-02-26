@@ -19,8 +19,12 @@ let socket: Socket | null = null;
 
 // ─── Connection ─────────────────────────────────────────────────
 
-export async function connectToRmhStudy(): Promise<Socket> {
-  if (socket?.connected) return socket;
+export async function connectToRmhStudy(roomCode?: string): Promise<Socket> {
+  if (socket?.connected) {
+    // Already connected — join room immediately if requested
+    if (roomCode) socket.emit('rmhstudy:room:join', { roomCode });
+    return socket;
+  }
 
   if (socket) {
     socket.removeAllListeners();
@@ -56,14 +60,18 @@ export async function connectToRmhStudy(): Promise<Socket> {
   });
 
   // ─── Connection lifecycle ───────────────────────────────────
+  // Track a pending room code for join-on-connect
+  let pendingRoomCode: string | null = roomCode ?? null;
+
   socket.on('connect', () => {
     const store = useRmhStudyStore.getState();
     store.setConnectionStatus('connected');
 
     // Re-join room on reconnect (socket ID changed, server lost our mapping)
-    const room = store.room;
-    if (room?.roomCode) {
-      socket!.emit('rmhstudy:room:join', { roomCode: room.roomCode });
+    const roomCode = store.room?.roomCode || pendingRoomCode;
+    if (roomCode) {
+      socket!.emit('rmhstudy:room:join', { roomCode });
+      pendingRoomCode = null;
     }
   });
 
@@ -80,6 +88,14 @@ export async function connectToRmhStudy(): Promise<Socket> {
       useRmhStudyStore.getState().setConnectionStatus('error');
     }
   });
+
+  // Reconnect when returning from background (phone sleep, tab switch)
+  const handleVisibility = () => {
+    if (document.visibilityState === 'visible' && socket && !socket.connected) {
+      socket.connect();
+    }
+  };
+  document.addEventListener('visibilitychange', handleVisibility);
 
   // ─── Room state ───────────────────────────────────────────────
   socket.on(S2C.ROOM_STATE, (state) => {

@@ -13,6 +13,7 @@ interface RmhStudyHeaderProps {
   onBack?: () => void;
   roomCode?: string;
   onCopyCode?: () => void;
+  leftActions?: React.ReactNode;
 }
 
 export default function RmhStudyHeader({
@@ -21,6 +22,7 @@ export default function RmhStudyHeader({
   onBack,
   roomCode,
   onCopyCode,
+  leftActions,
 }: RmhStudyHeaderProps) {
   const connectionStatus = useRmhStudyStore((s) => s.connectionStatus);
 
@@ -52,6 +54,7 @@ export default function RmhStudyHeader({
             {backLabel}
           </button>
         )}
+        {leftActions}
       </div>
 
       <div className="absolute inset-x-0 flex justify-center pointer-events-none">
