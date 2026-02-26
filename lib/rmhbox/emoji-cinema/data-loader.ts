@@ -75,13 +75,16 @@ export function selectMoviesForGame(
 }
 
 /**
- * Validate that a string looks like a valid emoji (single grapheme cluster).
+ * Validate that a string is a valid emoji character (Unicode grapheme cluster).
  * We no longer restrict to a static palette — emoji-mart handles the UI selection.
+ * Server-side validation ensures the input is actually an emoji, not arbitrary text.
  */
 export function validateEmoji(emoji: string): boolean {
   if (!emoji || typeof emoji !== 'string') return false;
-  // Accept any non-empty string that is <= 8 chars (emoji grapheme clusters)
-  // and does not contain typical ASCII-only content
+  // Accept any non-empty string that is <= 8 chars (emoji grapheme clusters can be multi-codepoint)
   if (emoji.length > 8) return false;
-  return true;
+  // Must contain at least one emoji codepoint (U+2000+ range covers most emoji)
+  // This regex matches common emoji ranges: emoticons, dingbats, symbols, supplementary
+  const emojiPattern = /[\u{1F000}-\u{1FFFF}]|[\u{2600}-\u{27FF}]|[\u{2300}-\u{23FF}]|[\u{FE00}-\u{FEFF}]|[\u{200D}]|[\u{20E3}]|[\u{E0020}-\u{E007F}]/u;
+  return emojiPattern.test(emoji);
 }

@@ -224,13 +224,14 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
   // double-firing in React StrictMode
   const handleAddEmoji = useCallback(
     (emoji: string) => {
-      if (emojis.length >= MAX_EMOJIS) return;
       const position = emojis.length;
       setEmojis((prev) => {
         if (prev.length >= MAX_EMOJIS) return prev;
         return [...prev, emoji];
       });
-      emitGameInput('ADD_EMOJI', { emoji, position });
+      if (emojis.length < MAX_EMOJIS) {
+        emitGameInput('ADD_EMOJI', { emoji, position });
+      }
     },
     [emojis.length],
   );
