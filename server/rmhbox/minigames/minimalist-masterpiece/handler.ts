@@ -55,6 +55,8 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
   private startedAt: number = 0;
   private actionSeq = 0;
 
+  get spectatorMode(): 'competitive-individual' { return 'competitive-individual'; }
+
   constructor(context: MinigameContext) {
     super(context);
     this.promptPool = loadPrompts();
@@ -773,7 +775,6 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
   }
 
   handlePlayerReconnect(userId: string): void {
-    this.context.sendToPlayer(userId, 'rmhbox:game:state_snapshot', this.getStateForPlayer(userId));
     logger.info({
       event: 'mm:player_reconnect',
       lobbyId: this.context.lobbyId,

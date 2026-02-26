@@ -1253,6 +1253,7 @@ export class LobbyManager {
         timeRemaining: null,
         publicState: (typeof gameState === 'object' && gameState !== null ? gameState : {}) as Record<string, unknown>,
         privateState: {}, // Phase 3: placeholder for future per-player private state
+        spectatorMode: handler?.spectatorMode ?? null,
       };
     }
 

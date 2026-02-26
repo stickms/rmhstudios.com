@@ -63,6 +63,8 @@ export class CategoryCrashMinigame extends BaseMinigame {
   private state!: CategoryCrashState;
   private startedAt: number = 0;
 
+  get spectatorMode(): 'competitive-individual' { return 'competitive-individual'; }
+
   constructor(context: MinigameContext) {
     super(context);
   }
@@ -983,12 +985,6 @@ export class CategoryCrashMinigame extends BaseMinigame {
   }
 
   handlePlayerReconnect(userId: string): void {
-    this.context.sendToPlayer(
-      userId,
-      'rmhbox:game:state_snapshot',
-      this.getStateForPlayer(userId),
-    );
-
     logger.info({
       event: 'category_crash:player_reconnect',
       lobbyId: this.context.lobbyId,

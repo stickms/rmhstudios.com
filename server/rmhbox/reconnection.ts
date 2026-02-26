@@ -18,15 +18,25 @@ import { LobbyManager } from './lobby-manager';
 import { StateSyncService } from './state-sync';
 import { S2C } from '../../lib/rmhbox/events';
 
+/** Callback to resolve a spectator's target player for competitive-individual games. */
+export type SpectatorTargetResolver = (lobbyId: string, spectatorUserId: string) => string | undefined;
+
 export class ReconnectionHandler {
   private readonly io: Server;
   private readonly lobbyManager: LobbyManager;
   private readonly stateSync: StateSyncService;
+  private readonly resolveSpectatorTarget: SpectatorTargetResolver;
 
-  constructor(io: Server, lobbyManager: LobbyManager, stateSync: StateSyncService) {
+  constructor(
+    io: Server,
+    lobbyManager: LobbyManager,
+    stateSync: StateSyncService,
+    resolveSpectatorTarget: SpectatorTargetResolver = () => undefined,
+  ) {
     this.io = io;
     this.lobbyManager = lobbyManager;
     this.stateSync = stateSync;
+    this.resolveSpectatorTarget = resolveSpectatorTarget;
   }
 
   // ─── Reconnect Attempt (§4.2) ─────────────────────────────────
@@ -94,13 +104,27 @@ export class ReconnectionHandler {
     // ─── Game-Specific State ─────────────────────────────────
     if (lobby.currentGame?.handler && lobby.state === 'PLAYING') {
       try {
+        const handler = lobby.currentGame.handler;
+        const isSpectator = !player;
+        const targetPlayerId = isSpectator
+          ? this.resolveSpectatorTarget(lobby.id, userId)
+          : undefined;
+        const gameState = handler.buildReconnectionSnapshot(userId, isSpectator, targetPlayerId);
+        socket.emit(S2C.GAME_STATE_SNAPSHOT, gameState);
+
+        // Notify the handler for game-specific side effects (e.g. wiki-race article re-fetch)
         if (player) {
-          const gameState = lobby.currentGame.handler.getStateForPlayer(userId);
-          socket.emit(S2C.GAME_STATE_SNAPSHOT, gameState);
-          lobby.currentGame.handler.handlePlayerReconnect(userId);
-        } else {
-          const gameState = lobby.currentGame.handler.getStateForSpectator();
-          socket.emit(S2C.GAME_STATE_SNAPSHOT, gameState);
+          handler.handlePlayerReconnect(userId);
+        }
+
+        // For competitive-individual spectators, also send target info
+        if (isSpectator && handler.spectatorMode === 'competitive-individual') {
+          const targetPlayer = targetPlayerId ? lobby.players.get(targetPlayerId) : undefined;
+          socket.emit(S2C.SPECTATOR_TARGET_STATE, {
+            targetPlayerId: targetPlayerId ?? null,
+            targetPlayerName: targetPlayer?.userName ?? null,
+            availablePlayers: handler.getViewablePlayers(),
+          });
         }
       } catch (err) {
         logger.error({ event: 'reconnect_game_state_error', userId, lobbyId: lobby.id, error: String(err) });

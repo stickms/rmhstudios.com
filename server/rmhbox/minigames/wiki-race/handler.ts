@@ -58,6 +58,8 @@ export class WikiRaceMinigame extends BaseMinigame {
   private rateLimits: Map<string, RateLimitEntry> = new Map();
   private navigationTimeoutHandle: NodeJS.Timeout | null = null;
 
+  get spectatorMode(): 'competitive-individual' { return 'competitive-individual'; }
+
   constructor(context: MinigameContext) {
     super(context);
     this.articleCache = createArticleCache();
@@ -834,11 +836,9 @@ export class WikiRaceMinigame extends BaseMinigame {
   }
 
   handlePlayerReconnect(userId: string): void {
-    // NOTE: The full game state snapshot (including cached article HTML)
-    // is already emitted by ReconnectionHandler.attemptReconnect() before
-    // this method is called. We only need to re-fetch the article here
-    // to restore server-side currentArticleLinks for anti-cheat validation
-    // and as a fallback if the article wasn't in the cache at snapshot time.
+    // Re-fetch current article HTML so the player has content to click
+    // and restore server-side currentArticleLinks for anti-cheat validation.
+    // State snapshot delivery is handled centrally by ReconnectionHandler.
 
     // Re-fetch current article HTML so the player has content to click
     const ps = this.state.playerStates.get(userId);

@@ -84,6 +84,8 @@ export class EmojiCinemaGame extends BaseMinigame {
   private actionSeq = 0;
   private constructionTimeoutHandle: NodeJS.Timeout | null = null;
 
+  get spectatorMode(): 'shared-privileged' { return 'shared-privileged'; }
+
   constructor(context: MinigameContext) {
     super(context);
     this.moviePool = loadMovies();
@@ -927,8 +929,6 @@ export class EmojiCinemaGame extends BaseMinigame {
         userId,
       });
     }
-
-    this.context.sendToPlayer(userId, 'rmhbox:game:state_snapshot', this.getStateForPlayer(userId));
 
     logger.info({
       event: 'ec:player_reconnect',

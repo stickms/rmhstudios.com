@@ -61,6 +61,8 @@ export class UndercoverAgentMinigame extends BaseMinigame {
   private turnTimer: NodeJS.Timeout | null = null;
   private disconnectTimers: Map<string, NodeJS.Timeout> = new Map();
 
+  get spectatorMode(): 'shared-privileged' { return 'shared-privileged'; }
+
   /** Operative tile highlights: position → Set<userId> */
   private highlights: Map<number, Set<string>> = new Map();
 
@@ -1294,12 +1296,6 @@ export class UndercoverAgentMinigame extends BaseMinigame {
   }
 
   handlePlayerReconnect(userId: string): void {
-    this.context.sendToPlayer(
-      userId,
-      'rmhbox:game:state_snapshot',
-      this.getStateForPlayer(userId),
-    );
-
     logger.info({
       event: 'undercover_agent:player_reconnect',
       lobbyId: this.context.lobbyId,

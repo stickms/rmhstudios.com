@@ -36,6 +36,7 @@ export const C2S = {
   GAME_CONFIRM_SETTINGS:  'rmhbox:game:confirm_settings',
   GAME_RESET_SETTINGS:    'rmhbox:game:reset_settings',
   LEADERBOARD_FETCH:      'rmhbox:leaderboard:fetch',
+  SPECTATOR_SELECT_PLAYER:'rmhbox:spectator:select_player',
 } as const;
 
 // ─── Server → Client Events ─────────────────────────────────────
@@ -61,6 +62,7 @@ export const S2C = {
   GAME_SETTINGS_OPENED:   'rmhbox:game:settings_opened',
   GAME_SETTINGS_UPDATED:  'rmhbox:game:settings_updated',
   LEADERBOARD_DATA:       'rmhbox:leaderboard:data',
+  SPECTATOR_TARGET_STATE: 'rmhbox:spectator:target_state',
   NOT_IN_LOBBY:           'rmhbox:lobby:not_in_lobby',
   ERROR:                  'rmhbox:error',
 } as const;

@@ -57,6 +57,8 @@ export class RhymeTimeMinigame extends BaseMinigame {
   private state!: RhymeTimeState;
   private startedAt: number = 0;
 
+  get spectatorMode(): 'competitive-individual' { return 'competitive-individual'; }
+
   constructor(context: MinigameContext) {
     super(context);
     this.rootWords = loadRootWords();
@@ -568,13 +570,6 @@ export class RhymeTimeMinigame extends BaseMinigame {
   }
 
   handlePlayerReconnect(userId: string): void {
-    // Preserve submissions; send full state
-    this.context.sendToPlayer(
-      userId,
-      'rmhbox:game:state_snapshot',
-      this.getStateForPlayer(userId),
-    );
-
     logger.info({
       event: 'rhyme_time:player_reconnect',
       lobbyId: this.context.lobbyId,

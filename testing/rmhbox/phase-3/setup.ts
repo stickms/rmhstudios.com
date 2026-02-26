@@ -315,6 +315,8 @@ export class TestGame extends BaseMinigame {
   public started = false;
   public cleanedUp = false;
 
+  get spectatorMode(): 'competitive-individual' { return 'competitive-individual'; }
+
   constructor(context: MinigameContext, autoCompleteDuration = 100) {
     super(context);
     this.autoCompleteDuration = autoCompleteDuration;
