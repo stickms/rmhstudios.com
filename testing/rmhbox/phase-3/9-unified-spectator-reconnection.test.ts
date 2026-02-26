@@ -510,3 +510,109 @@ describe('Spectator Target Auto-Assignment', () => {
     expect(lobby.players.has(target!)).toBe(true);
   });
 });
+
+// ─── Mid-Game Spectator Join ─────────────────────────────────────
+
+describe('Mid-Game Spectator Join', () => {
+  it('should assign spectator target when joining mid-game for competitive-individual games', () => {
+    // Setup lobby with only 2 players (no spectator yet)
+    socketA = createMockSocket(MOCK_USERS.alice);
+    socketB = createMockSocket(MOCK_USERS.bob);
+    registerSocket(serverData, socketA);
+    registerSocket(serverData, socketB);
+
+    lobbyManager.handleConnection(socketA.socket as unknown as Socket);
+    gameCoordinator.handleConnection(socketA.socket as unknown as Socket);
+    lobbyManager.handleConnection(socketB.socket as unknown as Socket);
+    gameCoordinator.handleConnection(socketB.socket as unknown as Socket);
+
+    callEvent(socketA, 'rmhbox:lobby:create', {});
+    lobbyId = (findLastEmitted(socketA.emitted, S2C.LOBBY_CREATED)!.data as { lobbyId: string }).lobbyId;
+    callEvent(socketB, 'rmhbox:lobby:join', { lobbyId, asSpectator: false });
+
+    // Start a competitive-individual game
+    MINIGAME_SERVER_REGISTRY.set('rhyme-time', CompetitiveTestGame);
+    gameCoordinator.startGameFlow(lobbyId, 'rhyme-time');
+    vi.advanceTimersByTime(16_000);
+    callEvent(socketA, 'rmhbox:game:ready_to_render', { lobbyId });
+    callEvent(socketB, 'rmhbox:game:ready_to_render', { lobbyId });
+    vi.advanceTimersByTime(4_000);
+
+    const lobby = lobbyManager.getLobby(lobbyId)!;
+    expect(lobby.state).toBe('PLAYING');
+
+    // Now a new spectator joins mid-game
+    socketSpec = createMockSocket(MOCK_USERS.charlie);
+    registerSocket(serverData, socketSpec);
+    lobbyManager.handleConnection(socketSpec.socket as unknown as Socket);
+    gameCoordinator.handleConnection(socketSpec.socket as unknown as Socket);
+
+    callEvent(socketSpec, 'rmhbox:lobby:join', { lobbyId, asSpectator: true });
+
+    // Spectator should be in the lobby
+    expect(lobby.spectators.has(MOCK_USERS.charlie.userId)).toBe(true);
+
+    // Spectator should have a target assigned
+    const target = gameCoordinator.getSpectatorTarget(lobbyId, MOCK_USERS.charlie.userId);
+    expect(target).toBeDefined();
+    expect(lobby.players.has(target!)).toBe(true);
+
+    // Spectator should have received SPECTATOR_TARGET_STATE
+    const targetState = findLastEmitted(socketSpec.emitted, S2C.SPECTATOR_TARGET_STATE);
+    expect(targetState).toBeDefined();
+    const targetData = targetState!.data as { targetPlayerId: string | null };
+    expect(targetData.targetPlayerId).toBeDefined();
+    expect(targetData.targetPlayerId).not.toBeNull();
+
+    // Spectator should have received GAME_STATE_SNAPSHOT
+    const gameSnapshot = findLastEmitted(socketSpec.emitted, S2C.GAME_STATE_SNAPSHOT);
+    expect(gameSnapshot).toBeDefined();
+  });
+
+  it('should send game state when joining mid-game for shared-privileged games', () => {
+    socketA = createMockSocket(MOCK_USERS.alice);
+    socketB = createMockSocket(MOCK_USERS.bob);
+    registerSocket(serverData, socketA);
+    registerSocket(serverData, socketB);
+
+    lobbyManager.handleConnection(socketA.socket as unknown as Socket);
+    gameCoordinator.handleConnection(socketA.socket as unknown as Socket);
+    lobbyManager.handleConnection(socketB.socket as unknown as Socket);
+    gameCoordinator.handleConnection(socketB.socket as unknown as Socket);
+
+    callEvent(socketA, 'rmhbox:lobby:create', {});
+    lobbyId = (findLastEmitted(socketA.emitted, S2C.LOBBY_CREATED)!.data as { lobbyId: string }).lobbyId;
+    callEvent(socketB, 'rmhbox:lobby:join', { lobbyId, asSpectator: false });
+
+    // Start a shared-privileged game
+    MINIGAME_SERVER_REGISTRY.set('rhyme-time', SharedPrivilegedTestGame);
+    gameCoordinator.startGameFlow(lobbyId, 'rhyme-time');
+    vi.advanceTimersByTime(16_000);
+    callEvent(socketA, 'rmhbox:game:ready_to_render', { lobbyId });
+    callEvent(socketB, 'rmhbox:game:ready_to_render', { lobbyId });
+    vi.advanceTimersByTime(4_000);
+
+    const lobby = lobbyManager.getLobby(lobbyId)!;
+    expect(lobby.state).toBe('PLAYING');
+
+    // New spectator joins mid-game
+    socketSpec = createMockSocket(MOCK_USERS.charlie);
+    registerSocket(serverData, socketSpec);
+    lobbyManager.handleConnection(socketSpec.socket as unknown as Socket);
+    gameCoordinator.handleConnection(socketSpec.socket as unknown as Socket);
+
+    callEvent(socketSpec, 'rmhbox:lobby:join', { lobbyId, asSpectator: true });
+
+    expect(lobby.spectators.has(MOCK_USERS.charlie.userId)).toBe(true);
+
+    // Should NOT get SPECTATOR_TARGET_STATE (shared-privileged doesn't use targets)
+    const targetState = findLastEmitted(socketSpec.emitted, S2C.SPECTATOR_TARGET_STATE);
+    expect(targetState).toBeUndefined();
+
+    // Should get GAME_STATE_SNAPSHOT with omniscient view
+    const gameSnapshot = findLastEmitted(socketSpec.emitted, S2C.GAME_STATE_SNAPSHOT);
+    expect(gameSnapshot).toBeDefined();
+    const gameData = gameSnapshot!.data as { type: string };
+    expect(gameData.type).toBe('spectator-omniscient');
+  });
+});

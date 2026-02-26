@@ -99,6 +99,11 @@ export class GameCoordinator {
     this.lobbyManager = lobbyManager;
     this.stateSync = stateSync;
     this.leaderboardService = leaderboardService ?? new LeaderboardService();
+
+    // Register callback so new mid-game spectators get a target + game state
+    this.lobbyManager.onSpectatorJoinedMidGame = (lobbyId, spectatorUserId, socket) => {
+      this.handleSpectatorJoinedMidGame(lobbyId, spectatorUserId, socket);
+    };
   }
 
   // ─── Connection Handler (§2.6) ────────────────────────────────
@@ -186,6 +191,51 @@ export class GameCoordinator {
       if (connectedCount >= def.minPlayers) {
         this.cancelDisconnectGrace(lobby.id);
       }
+    }
+  }
+
+  // ─── Spectator Mid-Game Join ──────────────────────────────────
+
+  /**
+   * Called by the lobby manager when a new spectator joins a lobby that is
+   * currently in PLAYING state. Assigns a default spectator target (for
+   * competitive-individual games) and sends GAME_STATE_SNAPSHOT +
+   * SPECTATOR_TARGET_STATE so the new spectator can render the game.
+   */
+  private handleSpectatorJoinedMidGame(lobbyId: string, spectatorUserId: string, socket: Socket): void {
+    const lobby = this.lobbyManager.getLobby(lobbyId);
+    if (!lobby || lobby.state !== 'PLAYING' || !lobby.currentGame?.handler) return;
+
+    const handler = lobby.currentGame.handler;
+
+    try {
+      let targetPlayerId: string | undefined;
+
+      if (handler.spectatorMode === 'competitive-individual') {
+        // Auto-assign host as default target (same logic as game start)
+        const defaultTarget = lobby.players.has(lobby.hostUserId)
+          ? lobby.hostUserId
+          : lobby.players.keys().next().value as string | undefined;
+        if (defaultTarget) {
+          targetPlayerId = defaultTarget;
+          if (!this.spectatorTargets.has(lobbyId)) {
+            this.spectatorTargets.set(lobbyId, new Map());
+          }
+          this.spectatorTargets.get(lobbyId)!.set(spectatorUserId, defaultTarget);
+        }
+
+        const targetPlayer = targetPlayerId ? lobby.players.get(targetPlayerId) : undefined;
+        socket.emit(S2C.SPECTATOR_TARGET_STATE, {
+          targetPlayerId: targetPlayerId ?? null,
+          targetPlayerName: targetPlayer?.userName ?? null,
+          availablePlayers: handler.getViewablePlayers(),
+        });
+      }
+
+      const spectatorState = handler.getSpectatorSnapshot(targetPlayerId);
+      socket.emit(S2C.GAME_STATE_SNAPSHOT, spectatorState);
+    } catch (err) {
+      logger.error({ event: 'spectator_mid_game_join_error', lobbyId, spectatorUserId, error: String(err) });
     }
   }
 
