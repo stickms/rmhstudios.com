@@ -30,7 +30,7 @@ export function loadArticlePairs(): ArticlePair[] {
   const pairs: ArticlePair[] = [];
   const difficulties: Array<ArticlePair['difficulty']> = ['easy', 'medium', 'hard'];
   for (const diff of difficulties) {
-    const filePath = path.join(process.cwd(), 'data', 'wiki-race', `${diff}-pairs.json`);
+    const filePath = path.join(process.cwd(), 'data', 'rmhbox', 'wiki-race', `${diff}-pairs.json`);
     const fileContent = fs.readFileSync(filePath, 'utf-8');
     const parsed: ArticlePair[] = JSON.parse(fileContent);
     pairs.push(...parsed);

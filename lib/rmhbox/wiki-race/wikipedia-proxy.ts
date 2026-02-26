@@ -114,6 +114,20 @@ export async function fetchArticle(
           // Strip non-wiki links
           return { tagName: 'span', attribs: { class: 'stripped-link' } };
         },
+        img: (_tagName: string, attribs: sanitizeHtml.Attributes): sanitizeHtml.Tag => {
+          let src = attribs.src || '';
+          // Ensure all image URLs use HTTPS (Wikipedia may serve
+          // protocol-relative //upload.wikimedia.org/… URLs)
+          if (src.startsWith('//')) {
+            src = 'https:' + src;
+          } else if (src.startsWith('http://')) {
+            src = src.replace(/^http:\/\//, 'https://');
+          }
+          return {
+            tagName: 'img',
+            attribs: { ...attribs, src },
+          };
+        },
       },
       exclusiveFilter: (frame) => {
         // Remove nav, footer, script, style, edit links
