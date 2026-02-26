@@ -8,17 +8,19 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { BookOpen, Clock, Users } from 'lucide-react';
+import { BookOpen, Clock, Users, Globe } from 'lucide-react';
 import { connectToRmhStudy, getSocket, disconnectFromRmhStudy, emit } from '@/lib/rmhstudy/socket';
 import { useRmhStudyStore } from '@/lib/rmhstudy/store';
 import { C2S, S2C } from '@/lib/rmhstudy/events';
 import { toast } from '@/lib/rmhstudy/toast-store';
 import RmhStudyHeader from '@/components/rmhstudy/RmhStudyHeader';
+import type { PublicStudyRoomInfo } from '@/lib/rmhstudy/types';
 
 export default function RmhStudyLanding() {
   const router = useRouter();
   const connectionStatus = useRmhStudyStore((s) => s.connectionStatus);
   const [joinCode, setJoinCode] = useState('');
+  const [publicRooms, setPublicRooms] = useState<PublicStudyRoomInfo[]>([]);
   const [workMinutes, setWorkMinutes] = useState(25);
   const [shortBreakMinutes, setShortBreakMinutes] = useState(5);
   const [longBreakMinutes, setLongBreakMinutes] = useState(15);
@@ -44,14 +46,28 @@ export default function RmhStudyLanding() {
         }
 
         socket.on(S2C.ROOM_STATE, onRoomState);
+
+        // Browse public rooms
+        socket.on(S2C.ROOM_BROWSE_RESULT, (data: { rooms: PublicStudyRoomInfo[] }) => {
+          if (mounted) setPublicRooms(data.rooms ?? []);
+        });
+
+        emit(C2S.ROOM_BROWSE, {});
       } catch (err) {
         if (mounted) toast.error(err instanceof Error ? err.message : 'Connection failed');
       }
     }
 
     connect();
+
+    // Refresh public rooms every 10 seconds
+    const browseInterval = setInterval(() => {
+      if (mounted) emit(C2S.ROOM_BROWSE, {});
+    }, 10_000);
+
     return () => {
       mounted = false;
+      clearInterval(browseInterval);
       // Clean up the listener so it doesn't fire after navigation
       getSocket()?.off(S2C.ROOM_STATE, onRoomState);
     };
@@ -222,6 +238,43 @@ export default function RmhStudyLanding() {
                 </ul>
               </div>
             </div>
+          </div>
+
+          {/* Public Rooms */}
+          <div className="rounded-xl border border-(--rmhstudy-border) bg-(--rmhstudy-surface) p-6">
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Globe className="h-5 w-5 text-(--rmhstudy-accent)" />
+              Public Study Rooms
+            </h2>
+            {publicRooms.length === 0 ? (
+              <p className="text-sm text-(--rmhstudy-text-muted) text-center py-4">
+                No public rooms available. Create one!
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {publicRooms.map((r) => (
+                  <button
+                    key={r.roomCode}
+                    onClick={() => emit(C2S.ROOM_JOIN, { roomCode: r.roomCode })}
+                    className="w-full flex items-center justify-between p-3 rounded-lg bg-(--rmhstudy-bg) border border-(--rmhstudy-border) hover:border-(--rmhstudy-accent) transition-colors text-left"
+                  >
+                    <div>
+                      <div className="font-medium text-sm">{r.hostUserName}&apos;s room</div>
+                      <div className="text-xs text-(--rmhstudy-text-muted) mt-0.5">
+                        {Math.round(r.workDurationMs / 60_000)} min focus
+                        {' · '}
+                        {r.timerPhase === 'idle' ? 'Waiting' :
+                         r.timerPhase === 'working' ? 'Focusing' :
+                         r.timerPhase === 'short_break' ? 'Short break' : 'Long break'}
+                      </div>
+                    </div>
+                    <div className="text-xs font-mono text-(--rmhstudy-text-muted)">
+                      {r.memberCount}/{r.maxMembers}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
         </div>

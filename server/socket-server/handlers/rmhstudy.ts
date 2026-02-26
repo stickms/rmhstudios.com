@@ -62,13 +62,23 @@ interface RoomMember {
   joinedAt: number;
 }
 
+interface BannedUser {
+  userId: string;
+  userName: string;
+  bannedAt: number;
+  bannedBy: string;
+  reason: string | null;
+}
+
 interface StudyRoom {
   code: string;
   hostUserId: string;
+  isPublic: boolean;
   settings: TimerSettings;
   timer: TimerState;
   timerInterval: NodeJS.Timeout | null;
   members: Map<string, RoomMember>;   // keyed by userId
+  bannedUsers: BannedUser[];
   chat: ChatMessage[];
   chatReactions: Map<string, Map<string, Set<string>>>;  // messageId -> emoji -> userIds
   workPhaseStartedAt: number | null;  // tracks when current work phase started (for DB)
@@ -148,7 +158,9 @@ function buildRoomState(room: StudyRoom, userId: string): Record<string, unknown
   return {
     roomCode: room.code,
     hostUserId: room.hostUserId,
+    isPublic: room.isPublic,
     settings: room.settings,
+    bannedUsers: room.bannedUsers,
     timer: {
       phase: room.timer.phase,
       remainingMs: room.timer.remainingMs,
@@ -541,7 +553,9 @@ export function registerRmhStudyHandlers(io: Server, socket: Socket): void {
     const userId = typeof payload?.userId === 'string' && payload.userId.trim()
       ? payload.userId.trim()
       : (socket.data.userId as string) ?? '';
-    const userName = sanitizeUserName(payload?.userName) || (socket.data.userName as string) || 'Player';
+    const userName = typeof payload?.userName === 'string' && payload.userName.trim()
+      ? sanitizeUserName(payload.userName)
+      : (socket.data.userName as string) || 'Player';
     if (!userId) { emitError(socket, 'Not authenticated'); return; }
 
     // Remove from any existing room
@@ -556,10 +570,12 @@ export function registerRmhStudyHandlers(io: Server, socket: Socket): void {
     while (rooms.has(code) && attempts < 20) { code = generateRoomCode(6); attempts++; }
 
     const settings = parseSettings(payload?.settings);
+    const isPublic = typeof payload?.isPublic === 'boolean' ? payload.isPublic : true;
 
     const room: StudyRoom = {
       code,
       hostUserId: userId,
+      isPublic,
       settings,
       timer: {
         phase: 'idle',
@@ -571,6 +587,7 @@ export function registerRmhStudyHandlers(io: Server, socket: Socket): void {
       },
       timerInterval: null,
       members: new Map(),
+      bannedUsers: [],
       chat: [],
       chatReactions: new Map(),
       workPhaseStartedAt: null,
@@ -614,11 +631,20 @@ export function registerRmhStudyHandlers(io: Server, socket: Socket): void {
     const userId = typeof payload?.userId === 'string' && payload.userId.trim()
       ? payload.userId.trim()
       : (socket.data.userId as string) ?? '';
-    const userName = sanitizeUserName(payload?.userName) || (socket.data.userName as string) || 'Player';
+    const userName = typeof payload?.userName === 'string' && payload.userName.trim()
+      ? sanitizeUserName(payload.userName)
+      : (socket.data.userName as string) || 'Player';
     if (!roomCode || !userId) { emitError(socket, 'Missing roomCode or not authenticated'); return; }
 
     const room = getRoomByCode(roomCode);
     if (!room) { emitError(socket, 'Room not found'); return; }
+
+    // Ban check
+    if (room.bannedUsers.some((b) => b.userId === userId)) {
+      socket.emit('rmhstudy:error', { code: 'BANNED', message: 'You are banned from this room' });
+      return;
+    }
+
     if (room.members.size >= MAX_ROOM_MEMBERS && !room.members.has(userId)) {
       emitError(socket, 'Room is full');
       return;
@@ -799,6 +825,12 @@ export function registerRmhStudyHandlers(io: Server, socket: Socket): void {
 
     room.settings = parseSettings(payload?.settings);
     room.timer.totalSessions = room.settings.sessionsBeforeLongBreak;
+
+    // Handle isPublic toggle
+    const rawSettings = payload?.settings;
+    if (rawSettings && typeof rawSettings === 'object' && typeof (rawSettings as Record<string, unknown>).isPublic === 'boolean') {
+      room.isPublic = (rawSettings as Record<string, unknown>).isPublic as boolean;
+    }
 
     broadcastRoomState(io, room);
     logger.info({ event: 'rmhstudy_settings_updated', roomCode, userId });
@@ -1091,6 +1123,154 @@ export function registerRmhStudyHandlers(io: Server, socket: Socket): void {
 
     socket.emit('rmhstudy:task:list', { tasks: member.tasks });
     broadcastRoomState(io, room);
+  });
+
+  // ─── Browse Public Rooms ───
+  socket.on('rmhstudy:room:browse', () => {
+    const publicRooms = Array.from(rooms.values())
+      .filter((r) => r.isPublic && r.members.size > 0)
+      .map((r) => ({
+        roomCode: r.code,
+        hostUserName: r.members.get(r.hostUserId)?.userName ?? 'Unknown',
+        memberCount: r.members.size,
+        maxMembers: MAX_ROOM_MEMBERS,
+        timerPhase: r.timer.phase,
+        workDurationMs: r.settings.workDurationMs,
+      }));
+
+    socket.emit('rmhstudy:room:browse_result', { rooms: publicRooms });
+  });
+
+  // ─── Kick Member ───
+  socket.on('rmhstudy:room:kick', (payload?: { targetUserId?: string }) => {
+    const roomCode = socketRoomMap.get(socket.id);
+    if (!roomCode) return;
+
+    const room = getRoomByCode(roomCode);
+    if (!room) return;
+
+    const userId = socketUserMap.get(socket.id);
+    if (!userId || room.hostUserId !== userId) return;
+
+    const targetUserId = typeof payload?.targetUserId === 'string' ? payload.targetUserId : '';
+    if (!targetUserId || targetUserId === userId) return;
+
+    const targetMember = room.members.get(targetUserId);
+    if (!targetMember) return;
+
+    // Notify the kicked member
+    const targetSocketId = userSocketMap.get(targetUserId);
+    if (targetSocketId) {
+      const targetSocket = io.sockets.sockets.get(targetSocketId);
+      if (targetSocket) {
+        targetSocket.emit('rmhstudy:room:kicked', { roomCode });
+        targetSocket.leave(socketRoom(roomCode));
+        socketRoomMap.delete(targetSocketId);
+        socketUserMap.delete(targetSocketId);
+      }
+    }
+
+    room.members.delete(targetUserId);
+    userSocketMap.delete(targetUserId);
+    clearDisconnectTimer(targetUserId);
+    broadcastRoomState(io, room);
+
+    logger.info({ event: 'rmhstudy_member_kicked', roomCode, targetUserId, hostUserId: userId });
+  });
+
+  // ─── Ban Member ───
+  socket.on('rmhstudy:room:ban', (payload?: { targetUserId?: string; reason?: string }) => {
+    const roomCode = socketRoomMap.get(socket.id);
+    if (!roomCode) return;
+
+    const room = getRoomByCode(roomCode);
+    if (!room) return;
+
+    const userId = socketUserMap.get(socket.id);
+    if (!userId || room.hostUserId !== userId) return;
+
+    const targetUserId = typeof payload?.targetUserId === 'string' ? payload.targetUserId : '';
+    if (!targetUserId || targetUserId === userId) return;
+
+    const targetMember = room.members.get(targetUserId);
+    if (!targetMember) return;
+
+    // Already banned?
+    if (room.bannedUsers.some((b) => b.userId === targetUserId)) return;
+
+    // Add to ban list
+    room.bannedUsers.push({
+      userId: targetUserId,
+      userName: targetMember.userName,
+      bannedAt: Date.now(),
+      bannedBy: userId,
+      reason: typeof payload?.reason === 'string' && payload.reason.trim() ? payload.reason.trim().slice(0, 200) : null,
+    });
+
+    // Kick the member
+    const targetSocketId = userSocketMap.get(targetUserId);
+    if (targetSocketId) {
+      const targetSocket = io.sockets.sockets.get(targetSocketId);
+      if (targetSocket) {
+        targetSocket.emit('rmhstudy:room:kicked', { roomCode, reason: 'banned' });
+        targetSocket.leave(socketRoom(roomCode));
+        socketRoomMap.delete(targetSocketId);
+        socketUserMap.delete(targetSocketId);
+      }
+    }
+
+    room.members.delete(targetUserId);
+    userSocketMap.delete(targetUserId);
+    clearDisconnectTimer(targetUserId);
+    broadcastRoomState(io, room);
+
+    logger.info({ event: 'rmhstudy_member_banned', roomCode, targetUserId, hostUserId: userId });
+  });
+
+  // ─── Unban Member ───
+  socket.on('rmhstudy:room:unban', (payload?: { targetUserId?: string }) => {
+    const roomCode = socketRoomMap.get(socket.id);
+    if (!roomCode) return;
+
+    const room = getRoomByCode(roomCode);
+    if (!room) return;
+
+    const userId = socketUserMap.get(socket.id);
+    if (!userId || room.hostUserId !== userId) return;
+
+    const targetUserId = typeof payload?.targetUserId === 'string' ? payload.targetUserId : '';
+    if (!targetUserId) return;
+
+    const index = room.bannedUsers.findIndex((b) => b.userId === targetUserId);
+    if (index === -1) return;
+
+    room.bannedUsers.splice(index, 1);
+    broadcastRoomState(io, room);
+
+    logger.info({ event: 'rmhstudy_member_unbanned', roomCode, targetUserId, hostUserId: userId });
+  });
+
+  // ─── Transfer Host ───
+  socket.on('rmhstudy:room:transfer_host', (payload?: { targetUserId?: string }) => {
+    const roomCode = socketRoomMap.get(socket.id);
+    if (!roomCode) return;
+
+    const room = getRoomByCode(roomCode);
+    if (!room) return;
+
+    const userId = socketUserMap.get(socket.id);
+    if (!userId || room.hostUserId !== userId) return;
+
+    const targetUserId = typeof payload?.targetUserId === 'string' ? payload.targetUserId : '';
+    if (!targetUserId || targetUserId === userId) return;
+
+    const targetMember = room.members.get(targetUserId);
+    if (!targetMember || !targetMember.isConnected) return;
+
+    room.hostUserId = targetUserId;
+    broadcastRoomState(io, room);
+
+    logger.info({ event: 'rmhstudy_host_transferred', roomCode, from: userId, to: targetUserId });
   });
 }
 

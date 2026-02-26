@@ -8,12 +8,13 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Crown, Check, Copy } from 'lucide-react';
+import { Crown, Check, Copy, UserX, Ban, Globe, GlobeLock } from 'lucide-react';
 import { connectToRmhType, emit, getSocket } from '@/lib/rmhtype/socket';
 import { useRmhTypeStore } from '@/lib/rmhtype/store';
 import { C2S } from '@/lib/rmhtype/events';
 import { toast } from '@/lib/rmhtype/toast-store';
 import RmhTypeHeader from '@/components/rmhtype/RmhTypeHeader';
+import BanListModal from '@/components/rmhtype/BanListModal';
 import ChatPanel from '@/components/shared/ChatPanel';
 import type { ChatPanelMessage } from '@/components/shared/ChatPanel';
 
@@ -30,6 +31,11 @@ export default function RmhTypeRoom() {
   const [finished, setFinished] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const passageRef = useRef<HTMLDivElement>(null);
+
+  // Moderation state
+  const [banTarget, setBanTarget] = useState<{ userId: string; userName: string } | null>(null);
+  const [banReason, setBanReason] = useState('');
+  const [showBanList, setShowBanList] = useState(false);
 
   // Connect and join on mount
   useEffect(() => {
@@ -57,6 +63,15 @@ export default function RmhTypeRoom() {
     }
   }, [typedText]);
 
+  // Redirect to landing page when kicked (room becomes null)
+  const prevRoomRef = useRef(room);
+  useEffect(() => {
+    if (prevRoomRef.current && !room) {
+      router.push('/rmhtype');
+    }
+    prevRoomRef.current = room;
+  }, [room, router]);
+
   // Reset typing state on new passage
   useEffect(() => {
     if (room?.status === 'TYPING' && room.passage) {
@@ -74,8 +89,9 @@ export default function RmhTypeRoom() {
   }, [roomCode, router]);
 
   const handleCopyCode = useCallback(() => {
-    navigator.clipboard.writeText(roomCode);
-    toast.info('Room code copied!');
+    const url = `${window.location.origin}/rmhtype/${roomCode}`;
+    navigator.clipboard.writeText(url);
+    toast.info('Invite link copied!');
   }, [roomCode]);
 
   const handleReady = useCallback(() => {
@@ -100,6 +116,22 @@ export default function RmhTypeRoom() {
       emit(C2S.GAME_FINISH, { position: value.length, errors });
     }
   }, [room?.passage, finished, roomCode]);
+
+  const handleKick = useCallback((targetUserId: string) => {
+    emit(C2S.ROOM_KICK, { targetUserId });
+  }, []);
+
+  const handleBanConfirm = useCallback(() => {
+    if (!banTarget) return;
+    emit(C2S.ROOM_BAN, { targetUserId: banTarget.userId, reason: banReason.trim() || undefined });
+    setBanTarget(null);
+    setBanReason('');
+  }, [banTarget, banReason]);
+
+  const handleTogglePublic = useCallback(() => {
+    if (!room) return;
+    emit(C2S.ROOM_UPDATE_SETTINGS, { settings: { isPublic: !room.isPublic } });
+  }, [room]);
 
   const handleSendChat = useCallback((message: string) => {
     emit(C2S.ROOM_CHAT, { roomCode, message });
@@ -156,8 +188,29 @@ export default function RmhTypeRoom() {
                       <div className="flex items-center gap-2">
                         {p.isHost && <Crown className="h-4 w-4 text-(--rmhtype-accent)" />}
                         <span className="font-medium">{p.userName}</span>
+                        {p.userId === room.myUserId && <span className="text-xs text-(--rmhtype-text-dim)">(you)</span>}
                       </div>
-                      {p.isReady && <Check className="h-4 w-4 text-(--rmhtype-success)" />}
+                      <div className="flex items-center gap-2">
+                        {p.isReady && <Check className="h-4 w-4 text-(--rmhtype-success)" />}
+                        {isHost && p.userId !== room.myUserId && (
+                          <div className="flex gap-1">
+                            <button
+                              onClick={() => handleKick(p.userId)}
+                              className="rounded p-1 text-(--rmhtype-text-dim) hover:text-(--rmhtype-danger) transition-colors"
+                              title="Kick"
+                            >
+                              <UserX className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              onClick={() => setBanTarget({ userId: p.userId, userName: p.userName })}
+                              className="rounded p-1 text-(--rmhtype-text-dim) hover:text-(--rmhtype-danger) transition-colors"
+                              title="Ban"
+                            >
+                              <Ban className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -202,6 +255,28 @@ export default function RmhTypeRoom() {
                     </div>
                   </div>
                 </div>
+
+                {/* Host controls: visibility + ban list */}
+                {isHost && (
+                  <div className="mt-4 flex items-center justify-between">
+                    <button
+                      onClick={handleTogglePublic}
+                      className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-colors bg-(--rmhtype-bg) text-(--rmhtype-text-muted) hover:text-(--rmhtype-text)"
+                    >
+                      {room.isPublic ? <Globe className="h-3.5 w-3.5" /> : <GlobeLock className="h-3.5 w-3.5" />}
+                      {room.isPublic ? 'Public' : 'Private'}
+                    </button>
+                    {room.bannedUsers.length > 0 && (
+                      <button
+                        onClick={() => setShowBanList(true)}
+                        className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-colors bg-(--rmhtype-bg) text-(--rmhtype-text-muted) hover:text-(--rmhtype-text)"
+                      >
+                        <Ban className="h-3.5 w-3.5" />
+                        {room.bannedUsers.length} banned
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Chat */}
@@ -357,6 +432,44 @@ export default function RmhTypeRoom() {
 
         </div>
       </div>
+
+      {/* Ban confirm dialog */}
+      {banTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60" onClick={() => { setBanTarget(null); setBanReason(''); }} />
+          <div className="relative w-full max-w-sm rounded-xl border border-(--rmhtype-border) bg-(--rmhtype-surface) p-6 shadow-xl">
+            <h3 className="text-lg font-semibold mb-2">Ban {banTarget.userName}?</h3>
+            <p className="text-sm text-(--rmhtype-text-muted) mb-4">
+              This player will be removed and cannot rejoin this room.
+            </p>
+            <input
+              type="text"
+              value={banReason}
+              onChange={(e) => setBanReason(e.target.value)}
+              placeholder="Reason (optional)"
+              maxLength={200}
+              className="w-full px-3 py-2 rounded-lg text-sm border border-(--rmhtype-border) bg-(--rmhtype-bg) text-(--rmhtype-text) placeholder:text-(--rmhtype-text-dim) outline-none focus:ring-1 focus:ring-(--rmhtype-accent) mb-4"
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setBanTarget(null); setBanReason(''); }}
+                className="flex-1 py-2 rounded-lg font-medium text-sm transition-colors bg-(--rmhtype-bg) text-(--rmhtype-text-muted) hover:text-(--rmhtype-text)"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBanConfirm}
+                className="flex-1 py-2 rounded-lg font-medium text-sm text-white transition-colors bg-(--rmhtype-danger) hover:opacity-90"
+              >
+                Ban
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Ban list modal */}
+      {showBanList && <BanListModal onClose={() => setShowBanList(false)} />}
     </div>
   );
 }

@@ -66,11 +66,30 @@ export interface Task {
   createdAt: number;
 }
 
+export interface BannedUser {
+  userId: string;
+  userName: string;
+  bannedAt: number;
+  bannedBy: string;
+  reason: string | null;
+}
+
+export interface PublicStudyRoomInfo {
+  roomCode: string;
+  hostUserName: string;
+  memberCount: number;
+  maxMembers: number;
+  timerPhase: TimerPhase;
+  workDurationMs: number;
+}
+
 export interface ClientRoomState {
   roomCode: string;
   hostUserId: string;
+  isPublic: boolean;
   settings: TimerSettings;
   members: RoomMember[];
+  bannedUsers: BannedUser[];
   chat: ChatMessage[];
   timer: TimerState;
   myUserId: string;
@@ -93,4 +112,5 @@ export type RmhStudyErrorCode =
   | 'NOT_HOST'
   | 'INVALID_PAYLOAD'
   | 'RATE_LIMITED'
-  | 'TIMER_ACTIVE';
+  | 'TIMER_ACTIVE'
+  | 'BANNED';

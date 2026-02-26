@@ -6,14 +6,15 @@
 
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Crown, Copy, Play, Pause, SkipForward, RotateCcw, Plus, Check, Trash2, Circle } from 'lucide-react';
+import { Crown, Copy, Play, Pause, SkipForward, RotateCcw, Plus, Check, Trash2, Circle, UserX, Ban, Globe, GlobeLock } from 'lucide-react';
 import { connectToRmhStudy, emit, getSocket } from '@/lib/rmhstudy/socket';
 import { useRmhStudyStore } from '@/lib/rmhstudy/store';
 import { C2S } from '@/lib/rmhstudy/events';
 import { toast } from '@/lib/rmhstudy/toast-store';
 import RmhStudyHeader from '@/components/rmhstudy/RmhStudyHeader';
+import BanListModal from '@/components/rmhstudy/BanListModal';
 import ChatPanel from '@/components/shared/ChatPanel';
 import type { ChatPanelMessage } from '@/components/shared/ChatPanel';
 import type { TimerPhase } from '@/lib/rmhstudy/types';
@@ -55,6 +56,11 @@ export default function RmhStudyRoom() {
 
   const [newTask, setNewTask] = useState('');
 
+  // Moderation state
+  const [banTarget, setBanTarget] = useState<{ userId: string; userName: string } | null>(null);
+  const [banReason, setBanReason] = useState('');
+  const [showBanList, setShowBanList] = useState(false);
+
   // Connect and join
   useEffect(() => {
     let mounted = true;
@@ -71,6 +77,15 @@ export default function RmhStudyRoom() {
     init();
     return () => { mounted = false; };
   }, [roomCode]);
+
+  // Redirect to landing page when kicked (room becomes null)
+  const prevRoomRef = useRef(room);
+  useEffect(() => {
+    if (prevRoomRef.current && !room) {
+      router.push('/rmhstudy');
+    }
+    prevRoomRef.current = room;
+  }, [room, router]);
 
   // Clear phase complete notification
   useEffect(() => {
@@ -89,8 +104,9 @@ export default function RmhStudyRoom() {
   }, [roomCode, router]);
 
   const handleCopyCode = useCallback(() => {
-    navigator.clipboard.writeText(roomCode);
-    toast.info('Room code copied!');
+    const url = `${window.location.origin}/rmhstudy/${roomCode}`;
+    navigator.clipboard.writeText(url);
+    toast.info('Invite link copied!');
   }, [roomCode]);
 
   const handleSendChat = useCallback((message: string) => {
@@ -100,6 +116,22 @@ export default function RmhStudyRoom() {
   const handleReact = useCallback((messageId: string, emoji: string) => {
     emit(C2S.CHAT_REACT, { messageId, emoji });
   }, []);
+
+  const handleKick = useCallback((targetUserId: string) => {
+    emit(C2S.ROOM_KICK, { roomCode, targetUserId });
+  }, [roomCode]);
+
+  const handleBanConfirm = useCallback(() => {
+    if (!banTarget) return;
+    emit(C2S.ROOM_BAN, { roomCode, targetUserId: banTarget.userId, reason: banReason.trim() || undefined });
+    setBanTarget(null);
+    setBanReason('');
+  }, [banTarget, banReason, roomCode]);
+
+  const handleTogglePublic = useCallback(() => {
+    if (!room) return;
+    emit(C2S.ROOM_SETTINGS, { roomCode, settings: { isPublic: !room.isPublic } });
+  }, [room, roomCode]);
 
   const handleAddTask = useCallback((e: React.FormEvent) => {
     e.preventDefault();
@@ -279,7 +311,7 @@ export default function RmhStudyRoom() {
             </h3>
             <div className="space-y-1">
               {room.members.map((m) => (
-                <div key={m.userId} className="flex items-center gap-2 py-1">
+                <div key={m.userId} className="flex items-center gap-2 py-1 group/member">
                   <Circle className={`h-2 w-2 fill-current shrink-0 ${
                     m.status === 'studying' ? 'text-(--rmhstudy-work)' :
                     m.status === 'break' ? 'text-(--rmhstudy-break)' :
@@ -293,9 +325,49 @@ export default function RmhStudyRoom() {
                       {m.tasksCompleted}/{m.tasksTotal}
                     </span>
                   )}
+                  {isHost && m.userId !== room.myUserId && (
+                    <div className="flex gap-0.5 ml-auto opacity-0 group-hover/member:opacity-100">
+                      <button
+                        onClick={() => handleKick(m.userId)}
+                        className="rounded p-0.5 text-(--rmhstudy-text-dim) hover:text-(--rmhstudy-danger) transition-colors"
+                        title="Kick"
+                      >
+                        <UserX className="h-3 w-3" />
+                      </button>
+                      <button
+                        onClick={() => setBanTarget({ userId: m.userId, userName: m.userName })}
+                        className="rounded p-0.5 text-(--rmhstudy-text-dim) hover:text-(--rmhstudy-danger) transition-colors"
+                        title="Ban"
+                      >
+                        <Ban className="h-3 w-3" />
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
+
+            {/* Host controls: visibility + ban list */}
+            {isHost && (
+              <div className="mt-3 flex items-center justify-between">
+                <button
+                  onClick={handleTogglePublic}
+                  className="flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg transition-colors bg-(--rmhstudy-bg) text-(--rmhstudy-text-muted) hover:text-(--rmhstudy-text)"
+                >
+                  {room.isPublic ? <Globe className="h-3 w-3" /> : <GlobeLock className="h-3 w-3" />}
+                  {room.isPublic ? 'Public' : 'Private'}
+                </button>
+                {room.bannedUsers.length > 0 && (
+                  <button
+                    onClick={() => setShowBanList(true)}
+                    className="flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg transition-colors bg-(--rmhstudy-bg) text-(--rmhstudy-text-muted) hover:text-(--rmhstudy-text)"
+                  >
+                    <Ban className="h-3 w-3" />
+                    {room.bannedUsers.length} banned
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Chat */}
@@ -312,6 +384,44 @@ export default function RmhStudyRoom() {
           />
         </div>
       </div>
+
+      {/* Ban confirm dialog */}
+      {banTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60" onClick={() => { setBanTarget(null); setBanReason(''); }} />
+          <div className="relative w-full max-w-sm rounded-xl border border-(--rmhstudy-border) bg-(--rmhstudy-surface) p-6 shadow-xl">
+            <h3 className="text-lg font-semibold mb-2">Ban {banTarget.userName}?</h3>
+            <p className="text-sm text-(--rmhstudy-text-muted) mb-4">
+              This member will be removed and cannot rejoin this room.
+            </p>
+            <input
+              type="text"
+              value={banReason}
+              onChange={(e) => setBanReason(e.target.value)}
+              placeholder="Reason (optional)"
+              maxLength={200}
+              className="w-full px-3 py-2 rounded-lg text-sm border border-(--rmhstudy-border) bg-(--rmhstudy-bg) text-(--rmhstudy-text) placeholder:text-(--rmhstudy-text-dim) outline-none focus:ring-1 focus:ring-(--rmhstudy-accent) mb-4"
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setBanTarget(null); setBanReason(''); }}
+                className="flex-1 py-2 rounded-lg font-medium text-sm transition-colors bg-(--rmhstudy-bg) text-(--rmhstudy-text-muted) hover:text-(--rmhstudy-text)"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBanConfirm}
+                className="flex-1 py-2 rounded-lg font-medium text-sm text-white transition-colors bg-(--rmhstudy-danger) hover:opacity-90"
+              >
+                Ban
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Ban list modal */}
+      {showBanList && <BanListModal onClose={() => setShowBanList(false)} />}
     </div>
   );
 }

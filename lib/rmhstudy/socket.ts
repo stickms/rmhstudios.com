@@ -122,6 +122,12 @@ export async function connectToRmhStudy(): Promise<Socket> {
     useRmhStudyStore.getState().setTasks(data.tasks);
   });
 
+  // ─── Kicked ──────────────────────────────────────────────────
+  socket.on(S2C.ROOM_KICKED, () => {
+    useRmhStudyStore.getState().leaveRoom();
+    toast.warning('You have been kicked from the room.');
+  });
+
   // ─── Errors ───────────────────────────────────────────────────
   socket.on(S2C.ERROR, (error: { message?: string }) => {
     const message = error?.message ?? 'An error occurred.';

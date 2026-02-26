@@ -42,12 +42,21 @@ interface TypePlayer {
   finishRank: number;
 }
 
+interface BannedUser {
+  userId: string;
+  userName: string;
+  bannedAt: number;
+  bannedBy: string;
+  reason: string | null;
+}
+
 interface TypeRoom {
   roomId: string;
   hostUserId: string;
   state: RoomState;
   settings: RoomSettings;
   players: Map<string, TypePlayer>;
+  bannedUsers: BannedUser[];
   currentRound: number;
   totalRounds: number;
   passage: string | null;
@@ -323,12 +332,15 @@ function buildStateSnapshot(room: TypeRoom, userId: string) {
   const passageLen = room.passage?.length ?? 0;
   return {
     roomCode: room.roomId,
+    hostUserId: room.hostUserId,
+    isPublic: room.settings.isPublic,
     status: room.state,
     settings: {
       difficulty: room.settings.difficulty,
       passageLength: room.settings.passageLength,
       rounds: room.settings.rounds,
     },
+    bannedUsers: room.bannedUsers,
     players: Array.from(room.players.values()).map((p) => ({
       userId: p.userId,
       userName: p.userName,
@@ -962,6 +974,7 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
       state: 'WAITING',
       settings,
       players: new Map([[userId, player]]),
+      bannedUsers: [],
       currentRound: 0,
       totalRounds: settings.rounds,
       passage: null,
@@ -1000,6 +1013,12 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
     const room = rooms.get(roomId);
     if (!room) {
       socket.emit('rmhtype:error', { message: 'Room not found' });
+      return;
+    }
+
+    // Ban check
+    if (room.bannedUsers.some((b) => b.userId === userId)) {
+      socket.emit('rmhtype:error', { code: 'BANNED', message: 'You are banned from this room' });
       return;
     }
 
@@ -1110,6 +1129,67 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
     broadcastRoomState(io, room);
 
     logger.info({ event: 'rmhtype_player_kicked', roomId, targetUserId, hostUserId: userId });
+  });
+
+  socket.on('rmhtype:room:ban', (payload?: { targetUserId?: string; reason?: string }) => {
+    const roomId = socketRoomMap.get(socket.id);
+    if (!roomId) return;
+
+    const room = rooms.get(roomId);
+    if (!room || room.hostUserId !== userId) return;
+
+    const targetUserId = typeof payload?.targetUserId === 'string' ? payload.targetUserId : '';
+    if (!targetUserId || targetUserId === userId) return;
+
+    const targetPlayer = room.players.get(targetUserId);
+    if (!targetPlayer) return;
+
+    // Already banned?
+    if (room.bannedUsers.some((b) => b.userId === targetUserId)) return;
+
+    // Add to ban list
+    room.bannedUsers.push({
+      userId: targetUserId,
+      userName: targetPlayer.userName,
+      bannedAt: Date.now(),
+      bannedBy: userId,
+      reason: typeof payload?.reason === 'string' && payload.reason.trim() ? payload.reason.trim().slice(0, 200) : null,
+    });
+
+    // Kick the player
+    const targetSocketId = userSocketMap.get(targetUserId);
+    if (targetSocketId) {
+      const targetSocket = io.sockets.sockets.get(targetSocketId);
+      if (targetSocket) {
+        targetSocket.emit('rmhtype:room:kicked', { roomId, reason: 'banned' });
+        targetSocket.leave(`rmhtype:${roomId}`);
+        socketRoomMap.delete(targetSocketId);
+      }
+    }
+
+    room.players.delete(targetUserId);
+    broadcastRoomState(io, room);
+
+    logger.info({ event: 'rmhtype_player_banned', roomId, targetUserId, hostUserId: userId });
+  });
+
+  socket.on('rmhtype:room:unban', (payload?: { targetUserId?: string }) => {
+    const roomId = socketRoomMap.get(socket.id);
+    if (!roomId) return;
+
+    const room = rooms.get(roomId);
+    if (!room || room.hostUserId !== userId) return;
+
+    const targetUserId = typeof payload?.targetUserId === 'string' ? payload.targetUserId : '';
+    if (!targetUserId) return;
+
+    const index = room.bannedUsers.findIndex((b) => b.userId === targetUserId);
+    if (index === -1) return;
+
+    room.bannedUsers.splice(index, 1);
+    broadcastRoomState(io, room);
+
+    logger.info({ event: 'rmhtype_player_unbanned', roomId, targetUserId, hostUserId: userId });
   });
 
   socket.on('rmhtype:room:transfer_host', (payload?: { targetUserId?: string }) => {

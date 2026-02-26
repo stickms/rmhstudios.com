@@ -60,6 +60,24 @@ export interface FinalResults {
   rankings: (PlayerResult & { totalScore: number })[];
 }
 
+export interface BannedUser {
+  userId: string;
+  userName: string;
+  bannedAt: number;
+  bannedBy: string;
+  reason: string | null;
+}
+
+export interface PublicRoomInfo {
+  roomId: string;
+  hostUserName: string;
+  playerCount: number;
+  maxPlayers: number;
+  difficulty: Difficulty;
+  passageLength: PassageLength;
+  rounds: number;
+}
+
 export interface ChatMessage {
   id: string;
   userId: string;
@@ -71,9 +89,12 @@ export interface ChatMessage {
 
 export interface ClientRoomState {
   roomCode: string;
+  hostUserId: string;
+  isPublic: boolean;
   status: RoomStatus;
   settings: RoomSettings;
   players: RoomPlayer[];
+  bannedUsers: BannedUser[];
   chat: ChatMessage[];
   myUserId: string;
   // Game state
@@ -105,4 +126,5 @@ export type RmhTypeErrorCode =
   | 'NOT_HOST'
   | 'INVALID_PAYLOAD'
   | 'RATE_LIMITED'
-  | 'GAME_IN_PROGRESS';
+  | 'GAME_IN_PROGRESS'
+  | 'BANNED';

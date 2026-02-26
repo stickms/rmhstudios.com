@@ -8,13 +8,13 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Keyboard, Users, User, Trophy } from 'lucide-react';
+import { Keyboard, Users, User, Trophy, Globe } from 'lucide-react';
 import { connectToRmhType, getSocket, disconnectFromRmhType, emit } from '@/lib/rmhtype/socket';
 import { useRmhTypeStore } from '@/lib/rmhtype/store';
 import { C2S, S2C } from '@/lib/rmhtype/events';
 import { toast } from '@/lib/rmhtype/toast-store';
 import RmhTypeHeader from '@/components/rmhtype/RmhTypeHeader';
-import type { Difficulty, PassageLength } from '@/lib/rmhtype/types';
+import type { Difficulty, PassageLength, PublicRoomInfo } from '@/lib/rmhtype/types';
 
 export default function RmhTypeLanding() {
   const router = useRouter();
@@ -51,6 +51,9 @@ export default function RmhTypeLanding() {
   const [roomLength, setRoomLength] = useState<PassageLength>('medium');
   const [roomRounds, setRoomRounds] = useState(3);
 
+  // Public rooms
+  const [publicRooms, setPublicRooms] = useState<PublicRoomInfo[]>([]);
+
   useEffect(() => {
     let mounted = true;
 
@@ -76,6 +79,13 @@ export default function RmhTypeLanding() {
             setLeaderboardLoading(false);
           }
         });
+
+        // Browse public rooms
+        socket.on(S2C.ROOM_BROWSE_RESULT, (data: { rooms: PublicRoomInfo[] }) => {
+          if (mounted) setPublicRooms(data.rooms ?? []);
+        });
+
+        emit(C2S.ROOM_BROWSE, {});
       } catch (err) {
         if (mounted) {
           toast.error(err instanceof Error ? err.message : 'Connection failed');
@@ -85,7 +95,13 @@ export default function RmhTypeLanding() {
     }
 
     connect();
-    return () => { mounted = false; };
+
+    // Refresh public rooms every 10 seconds
+    const browseInterval = setInterval(() => {
+      if (mounted) emit(C2S.ROOM_BROWSE, {});
+    }, 10_000);
+
+    return () => { mounted = false; clearInterval(browseInterval); };
   }, [router]);
 
   // Fetch leaderboard when difficulty tab changes or connection ready
@@ -410,6 +426,43 @@ export default function RmhTypeLanding() {
                     </button>
                   </form>
                 </div>
+              </div>
+
+              {/* Public Rooms */}
+              <div className="rounded-xl border border-(--rmhtype-border) bg-(--rmhtype-surface) p-6">
+                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <Globe className="h-5 w-5 text-(--rmhtype-accent)" />
+                  Public Rooms
+                </h2>
+                {publicRooms.length === 0 ? (
+                  <p className="text-sm text-(--rmhtype-text-muted) text-center py-4">
+                    No public rooms available. Create one!
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {publicRooms.map((r) => (
+                      <button
+                        key={r.roomId}
+                        onClick={() => emit(C2S.ROOM_JOIN, { roomCode: r.roomId })}
+                        className="w-full flex items-center justify-between p-3 rounded-lg bg-(--rmhtype-bg) border border-(--rmhtype-border) hover:border-(--rmhtype-accent) transition-colors text-left"
+                      >
+                        <div>
+                          <div className="font-medium text-sm">{r.hostUserName}&apos;s room</div>
+                          <div className="text-xs text-(--rmhtype-text-muted) mt-0.5">
+                            <span className="capitalize">{r.difficulty}</span>
+                            {' · '}
+                            <span className="capitalize">{r.passageLength}</span>
+                            {' · '}
+                            {r.rounds} {r.rounds === 1 ? 'round' : 'rounds'}
+                          </div>
+                        </div>
+                        <div className="text-xs font-mono text-(--rmhtype-text-muted)">
+                          {r.playerCount}/{r.maxPlayers}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </>
           )}
