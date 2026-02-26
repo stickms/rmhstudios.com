@@ -47,6 +47,8 @@ import { RhymeTimeMinigame } from './minigames/rhyme-time';
 import { UndercoverAgentMinigame } from './minigames/undercover-agent';
 import { CategoryCrashMinigame } from './minigames/category-crash';
 import { WikiRaceMinigame } from './minigames/wiki-race';
+import { MinimalistMasterpieceGame } from './minigames/minimalist-masterpiece';
+import { EmojiCinemaGame } from './minigames/emoji-cinema';
 
 // ─── Minigame Server Registry ────────────────────────────────────
 
@@ -62,6 +64,8 @@ export const MINIGAME_SERVER_REGISTRY = new Map<
   ['undercover-agent', UndercoverAgentMinigame],
   ['category-crash', CategoryCrashMinigame],
   ['wiki-race', WikiRaceMinigame],
+  ['minimalist-masterpiece', MinimalistMasterpieceGame],
+  ['emoji-cinema', EmojiCinemaGame],
 ]);
 
 // ─── Per-lobby lifecycle tracking ────────────────────────────────
@@ -1014,7 +1018,23 @@ export class GameCoordinator {
 
     this.lobbyManager.broadcastAction(lobbyId, { type: 'STATE_CHANGED', payload: { state: 'ROUND_RESULTS' } });
 
-    // Build session standings (cumulative scores sorted)
+    // Add to match history BEFORE building session standings so the current game's
+    // winner is included in the win counts.
+    const serverMatch: ServerMatchSummary = {
+      minigameId: lobby.currentGame?.minigameId ?? '',
+      roundNumber: lobby.roundNumber,
+      startedAt: lobby.currentGame?.startedAt ?? Date.now(),
+      endedAt: Date.now(),
+      standings: results.rankings.map((r) => ({
+        userId: r.userId,
+        userName: r.userName,
+        score: r.score,
+        rank: r.rank,
+      })),
+    };
+    lobby.matchHistory.push(serverMatch);
+
+    // Build session standings (cumulative scores sorted, wins include current game)
     const sessionStandings: SessionStanding[] = Array.from(lobby.players.values())
       .sort((a, b) => b.score - a.score)
       .map((p, idx) => ({
@@ -1035,21 +1055,6 @@ export class GameCoordinator {
     };
 
     this.io.to(`lobby:${lobbyId}`).emit(S2C.GAME_ROUND_RESULTS, roundResults);
-
-    // Add to match history (using ServerMatchSummary format)
-    const serverMatch: ServerMatchSummary = {
-      minigameId: lobby.currentGame?.minigameId ?? '',
-      roundNumber: lobby.roundNumber,
-      startedAt: lobby.currentGame?.startedAt ?? Date.now(),
-      endedAt: Date.now(),
-      standings: results.rankings.map((r) => ({
-        userId: r.userId,
-        userName: r.userName,
-        score: r.score,
-        rank: r.rank,
-      })),
-    };
-    lobby.matchHistory.push(serverMatch);
 
     // Async persistence — fire-and-forget, never blocks game flow
     const gameLog = (results.gameSpecificData?.gameLog as GameLog) ?? null;

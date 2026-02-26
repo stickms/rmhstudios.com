@@ -137,3 +137,58 @@ export const WR_CACHE_MAX = 500;
 export const WR_CACHE_TTL = 600000;
 export const WR_NAV_RATE_LIMIT = 3;
 export const WR_MAX_PAIR_POOL = 200;
+
+// ─── Minimalist Masterpiece (MM) ────────────────────────────────
+
+export const MM_PROMPT_REVEAL_SECONDS = 3;
+export const MM_DRAWING_DURATION_SECONDS = 60;
+export const MM_GALLERY_DURATION_SECONDS = 15;
+export const MM_AUCTION_DURATION_SECONDS = 60;
+export const MM_RESULTS_DURATION_SECONDS = 10;
+export const MM_DEFAULT_ROUNDS = 3;
+export const MM_MAX_STROKES = 5;
+export const MM_CANVAS_SIZE = 400;
+export const MM_STROKE_WIDTH = 4;
+export const MM_MIN_POINTS_PER_STROKE = 2;
+export const MM_MAX_POINTS_PER_STROKE = 2;
+export const MM_MIN_STROKE_DURATION_MS = 100;
+export const MM_COLOR_PALETTE = [
+  '#1a1a2e',
+  '#e0e0f0',
+  '#f87171',
+  '#4ade80',
+  '#60a5fa',
+  '#fbbf24',
+  '#fb923c',
+  '#c084fc',
+];
+export const MM_STARTING_CURRENCY = 1000;
+export const MM_BID_INCREMENT = 50;
+export const MM_RANK_1_POINTS = 500;
+export const MM_RANK_2_POINTS = 350;
+export const MM_RANK_3_POINTS = 250;
+export const MM_PARTICIPATION_POINTS = 100;
+export const MM_INVESTMENT_BONUS = 50;
+
+// ─── Emoji Cinema (EC) ─────────────────────────────────────────
+
+export const EC_MAX_ROUNDS = 6;
+export const EC_PRODUCER_ASSIGNMENT_SECONDS = 2;
+export const EC_MOVIE_SELECTION_SECONDS = 15;
+export const EC_MOVIE_CHOICES_COUNT = 3;
+export const EC_ROUND_DURATION_SECONDS = 45;
+export const EC_ROUND_RESULTS_SECONDS = 5;
+export const EC_TRANSITION_SECONDS = 1;
+export const EC_MAX_EMOJIS = 12;
+export const EC_MAX_GUESSES_PER_PLAYER = 15;
+export const EC_MAX_GUESS_LENGTH = 200;
+export const EC_FUZZY_MATCH_THRESHOLD = 0.80;
+export const EC_CLOSE_THRESHOLD = 0.60;
+export const EC_MIN_POPULARITY = 40;
+export const EC_PRODUCER_BASE_POINTS = 100;
+export const EC_PRODUCER_SPEED_BONUS = 10;
+export const EC_FIRST_GUESS_POINTS = 300;
+export const EC_SECOND_GUESS_POINTS = 150;
+export const EC_OTHER_GUESS_POINTS = 75;
+export const EC_PRODUCER_DISCONNECT_WAIT_SECONDS = 10;
+export const EC_EMOJI_PALETTE_SIZE = 200;

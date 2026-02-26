@@ -2,7 +2,8 @@
  * RMHbox — History Display Registrations (Phase 5 Minigames)
  *
  * Registers the history display configurations for
- * Rhyme Time, Undercover Agent, Category Crash, and Wiki-Race.
+ * Rhyme Time, Undercover Agent, Category Crash, Wiki-Race,
+ * Minimalist Masterpiece, and Emoji Cinema.
  *
  * Reference: docs/rmhbox/design-spec/core.md §14A.5
  */
@@ -14,6 +15,8 @@ import RhymeTimeHistoryDetail from '@/components/rmhbox/minigames/rhyme-time/Rhy
 import UndercoverAgentHistoryDetail from '@/components/rmhbox/minigames/undercover-agent/UndercoverAgentHistoryDetail';
 import CategoryCrashHistoryDetail from '@/components/rmhbox/minigames/category-crash/CategoryCrashHistoryDetail';
 import WikiRaceHistoryDetail from '@/components/rmhbox/minigames/wiki-race/WikiRaceHistoryDetail';
+import MinimalistMasterpieceHistoryDetail from '@/components/rmhbox/minigames/minimalist-masterpiece/MinimalistMasterpieceHistoryDetail';
+import EmojiCinemaHistoryDetail from '@/components/rmhbox/minigames/emoji-cinema/EmojiCinemaHistoryDetail';
 
 // ─── Rhyme Time ──────────────────────────────────────────────────
 
@@ -193,5 +196,100 @@ registerHistoryDisplay({
   getSummary: (log: GameLog) => {
     const start = log.actions.find((a) => a.type === 'round_start');
     return `${start?.payload.startArticle ?? '?'} → ${start?.payload.targetArticle ?? '?'}`;
+  },
+});
+
+// ─── Minimalist Masterpiece ──────────────────────────────────────
+
+registerHistoryDisplay({
+  minigameId: 'minimalist-masterpiece',
+  DetailComponent: MinimalistMasterpieceHistoryDetail,
+  searchableFields: [
+    {
+      key: 'prompts',
+      label: 'Prompts',
+      extract: (log: GameLog) =>
+        log.actions
+          .filter((a) => a.type === 'round_start')
+          .map((a) => a.payload.promptText as string)
+          .filter(Boolean),
+    },
+  ],
+  filterableFields: [
+    { key: 'auctionWin', label: 'Won Auction', type: 'boolean' },
+    { key: 'roundCount', label: 'Rounds Played', type: 'range', valuePath: 'roundsPlayed' },
+  ],
+  getSummary: (log: GameLog) => {
+    const prompts = log.actions
+      .filter((a) => a.type === 'round_start')
+      .map((a) => a.payload.promptText as string)
+      .filter(Boolean);
+    if (prompts.length === 0) return 'Minimalist Masterpiece game';
+    if (prompts.length === 1) return `Prompt: "${prompts[0]}"`;
+    return `${prompts.length} rounds — ${prompts.join(', ')}`;
+  },
+});
+
+// ─── Emoji Cinema ────────────────────────────────────────────────
+
+registerHistoryDisplay({
+  minigameId: 'emoji-cinema',
+  DetailComponent: EmojiCinemaHistoryDetail,
+  searchableFields: [
+    {
+      key: 'movieTitles',
+      label: 'Movie Titles',
+      extract: (log: GameLog) => {
+        // Movie titles from movie_selected or round_end actions
+        const fromSelected = log.actions
+          .filter((a) => a.type === 'movie_selected')
+          .map((a) => a.payload.movieTitle as string);
+        const fromRoundEnd = log.actions
+          .filter((a) => a.type === 'round_end')
+          .map((a) => a.payload.movieTitle as string);
+        return [...new Set([...fromSelected, ...fromRoundEnd])].filter(Boolean);
+      },
+    },
+    {
+      key: 'guesses',
+      label: 'Guesses',
+      extract: (log: GameLog) =>
+        log.actions
+          .filter((a) => a.type === 'submit_guess')
+          .map((a) => a.payload.guess as string)
+          .filter(Boolean),
+    },
+    {
+      key: 'emojiSequences',
+      label: 'Emoji Sequences',
+      extract: (log: GameLog) =>
+        log.actions
+          .filter((a) => a.type === 'round_end')
+          .flatMap((a) => {
+            const seq = a.payload.emojiSequence;
+            return Array.isArray(seq) ? (seq as string[]) : [];
+          }),
+    },
+  ],
+  filterableFields: [
+    { key: 'wasCreator', label: 'Was Creator', type: 'boolean' },
+    { key: 'guessedCorrectly', label: 'Guessed Correctly', type: 'boolean' },
+    {
+      key: 'roundCount',
+      label: 'Rounds Played',
+      type: 'range',
+      valuePath: 'roundsPlayed',
+    },
+  ],
+  getSummary: (log: GameLog) => {
+    const movies = log.actions
+      .filter((a) => a.type === 'movie_selected')
+      .map((a) => a.payload.movieTitle as string)
+      .filter(Boolean);
+    if (movies.length === 0) {
+      const rounds = log.actions.filter((a) => a.type === 'round_start');
+      return `${rounds.length} rounds — Movie emoji challenge`;
+    }
+    return `${movies.length} rounds — ${movies.join(', ')}`;
   },
 });
