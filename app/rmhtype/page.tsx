@@ -133,7 +133,7 @@ export default function RmhTypeLanding() {
 
   return (
     <div className="flex h-screen flex-col">
-      <RmhTypeHeader backLabel="Games" backHref="/games" />
+      <RmhTypeHeader backLabel="Apps" backHref="/apps" />
 
       <div className="flex-1 overflow-y-auto p-4 md:p-8" style={{ scrollbarGutter: 'stable both-edges' }}>
         <div className="max-w-4xl mx-auto space-y-8">

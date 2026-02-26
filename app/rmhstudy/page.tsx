@@ -84,7 +84,7 @@ export default function RmhStudyLanding() {
 
   return (
     <div className="flex h-screen flex-col">
-      <RmhStudyHeader backLabel="Games" backHref="/games" />
+      <RmhStudyHeader backLabel="Apps" backHref="/apps" />
 
       <div className="flex-1 overflow-y-auto p-4 md:p-8" style={{ scrollbarGutter: 'stable both-edges' }}>
         <div className="max-w-4xl mx-auto space-y-8">
