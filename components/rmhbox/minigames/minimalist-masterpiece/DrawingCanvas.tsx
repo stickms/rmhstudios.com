@@ -11,6 +11,7 @@
 'use client';
 
 import { useRef, useState, useCallback } from 'react';
+import { Undo2 } from 'lucide-react';
 import type { MMStroke } from './DrawingCard';
 
 interface DrawingCanvasProps {
@@ -204,11 +205,11 @@ export default function DrawingCanvas({
       {strokes.length > 0 && (
         <button
           onClick={onUndo}
-          className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-(--rmhbox-surface)/80 border border-(--rmhbox-border) text-(--rmhbox-text) text-sm hover:bg-(--rmhbox-border) transition-colors"
+          className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-(--rmhbox-surface)/80 border border-(--rmhbox-border) text-(--rmhbox-text) hover:bg-(--rmhbox-border) transition-colors"
           title="Undo last stroke"
           aria-label="Undo last stroke"
         >
-          ↩
+          <Undo2 size={16} />
         </button>
       )}
 

@@ -276,13 +276,15 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
     return () => clearTimeout(timeout);
   }, [phase, strokes, backgroundColor]);
 
-  // Undo: restore the previous edit history state
+  // Undo: restore the previous edit history state.
+  // Note: hasSubmitted is not checked because auto-save marks submission immediately,
+  // and we allow continued editing + re-submissions throughout the drawing phase.
   const handleUndo = useCallback(() => {
-    if (hasSubmitted || editHistory.length === 0) return;
+    if (editHistory.length === 0) return;
     const prev = editHistory[editHistory.length - 1];
     setEditHistory((h) => h.slice(0, -1));
     setStrokes(prev);
-  }, [hasSubmitted, editHistory]);
+  }, [editHistory]);
 
   // Track edit history: save state before each new stroke is added
   const trackingSetStrokes: React.Dispatch<React.SetStateAction<MMStroke[]>> = useCallback(
