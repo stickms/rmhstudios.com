@@ -56,15 +56,34 @@ export interface MMRanking {
   points: number;
   strokes: MMStroke[];
   backgroundColor: string;
+  /** Who won the painting in the auction (highest bidder) */
+  winnerId?: string;
+  winnerName?: string;
+  /** What the winner paid */
+  winnerPaid?: number;
 }
 
-// ─── Investment Bonus ────────────────────────────────────────────
+// ─── Score Breakdown ─────────────────────────────────────────────
 
-export interface InvestmentBonus {
+/** Per-player score breakdown under the second-price auction model. */
+export interface PlayerScoreBreakdown {
   userId: string;
   userName: string;
-  bonusPoints: number;
-  investedIn: string;
+  /** Market values of paintings they painted (artist credit) */
+  paintedValue: number;
+  /** Market values of paintings they won in auction */
+  ownedValue: number;
+  /** Total score = paintedValue + ownedValue */
+  totalScore: number;
+}
+
+// ─── Auction Winner ──────────────────────────────────────────────
+
+export interface AuctionWinner {
+  drawingId: string;
+  winnerId: string;
+  winnerName: string;
+  amountPaid: number;
 }
 
 // ─── Gallery / Auction Drawing ───────────────────────────────────
@@ -95,6 +114,8 @@ export interface MinimalistMasterpieceState {
   playerCurrencies: Map<string, number>;
   bids: Map<string, DrawingBids>;
   marketValues: Map<string, number>;
+  /** Winner of each painting in the auction (highest bidder). */
+  auctionWinners: Map<string, AuctionWinner>;
   rankings: MMRanking[] | null;
   /** Cumulative player scores across all rounds. */
   cumulativeScores: Map<string, number>;

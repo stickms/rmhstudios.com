@@ -1,5 +1,9 @@
 /**
- * MarketResultsScreen — Final rankings with de-anonymization and investment bonuses.
+ * MarketResultsScreen — Final rankings with de-anonymization and score breakdowns.
+ *
+ * New scoring model:
+ * - Market value of a painting = second highest bid on it (0 if ≤1 bidder)
+ * - Player score = sum of market values of paintings they painted + market values of paintings they won
  */
 'use client';
 
@@ -15,24 +19,30 @@ interface MMRanking {
   points: number;
   strokes: MMStroke[];
   backgroundColor?: string;
+  /** Who won the painting in the auction (if anyone) */
+  winnerId?: string;
+  winnerName?: string;
+  /** What the winner paid */
+  winnerPaid?: number;
 }
 
-interface InvestmentBonus {
+interface PlayerScoreBreakdown {
   userId: string;
   userName: string;
-  bonusPoints: number;
-  investedIn: string;
+  paintedValue: number;
+  ownedValue: number;
+  totalScore: number;
 }
 
 interface MarketResultsScreenProps {
   rankings: MMRanking[];
-  investmentBonuses: InvestmentBonus[];
+  scoreBreakdowns: PlayerScoreBreakdown[];
   prompt: string;
 }
 
 export default function MarketResultsScreen({
   rankings,
-  investmentBonuses,
+  scoreBreakdowns,
   prompt,
 }: MarketResultsScreenProps) {
   return (
@@ -40,7 +50,7 @@ export default function MarketResultsScreen({
       <h2 className="text-xl font-bold text-(--rmhbox-text)">Market Results</h2>
       <p className="text-sm text-(--rmhbox-text-muted)">Prompt: &quot;{prompt}&quot;</p>
 
-      {/* Rankings */}
+      {/* Painting Rankings (by market value) */}
       <div className="w-full max-w-md space-y-3">
         {rankings.map((r) => (
           <div
@@ -56,31 +66,47 @@ export default function MarketResultsScreen({
                 {r.artistUserName}
               </p>
               <p className="text-xs text-(--rmhbox-text-muted)">
-                Market value: {r.marketValue} • +{r.points} pts
+                Market value: {r.marketValue}
               </p>
+              {r.winnerId && (
+                <p className="text-xs text-(--rmhbox-text-muted)">
+                  Won by {r.winnerName} for {r.winnerPaid}
+                </p>
+              )}
+              {!r.winnerId && r.marketValue === 0 && (
+                <p className="text-xs text-(--rmhbox-text-muted) italic">No bids</p>
+              )}
             </div>
           </div>
         ))}
       </div>
 
-      {/* Investment bonuses */}
-      {investmentBonuses.length > 0 && (
+      {/* Player Score Breakdowns */}
+      {scoreBreakdowns.length > 0 && (
         <div className="w-full max-w-md">
           <h3 className="text-sm font-semibold text-(--rmhbox-text) mb-2">
-            Investment Bonuses
+            Score Breakdown
           </h3>
-          <div className="space-y-1">
-            {investmentBonuses.map((b, i) => (
-              <div
-                key={`${b.userId}-${i}`}
-                className="flex justify-between text-xs text-(--rmhbox-text-muted)"
-              >
-                <span>
-                  {b.userName} invested in {b.investedIn}
-                </span>
-                <span className="text-(--rmhbox-accent)">+{b.bonusPoints} pts</span>
-              </div>
-            ))}
+          <div className="space-y-2">
+            {scoreBreakdowns
+              .sort((a, b) => b.totalScore - a.totalScore)
+              .map((sb) => (
+                <div
+                  key={sb.userId}
+                  className="flex justify-between items-center text-sm px-3 py-2 rounded-lg bg-(--rmhbox-surface) border border-(--rmhbox-border)"
+                >
+                  <span className="font-medium text-(--rmhbox-text)">{sb.userName}</span>
+                  <div className="flex items-center gap-3 text-xs">
+                    {sb.paintedValue > 0 && (
+                      <span className="text-(--rmhbox-text-muted)">Painted: {sb.paintedValue}</span>
+                    )}
+                    {sb.ownedValue > 0 && (
+                      <span className="text-(--rmhbox-text-muted)">Owned: {sb.ownedValue}</span>
+                    )}
+                    <span className="font-bold text-(--rmhbox-accent)">{sb.totalScore} pts</span>
+                  </div>
+                </div>
+              ))}
           </div>
         </div>
       )}

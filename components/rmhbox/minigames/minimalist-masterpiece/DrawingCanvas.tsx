@@ -61,17 +61,20 @@ export default function DrawingCanvas({
     };
   }, []);
 
-  /** Create a finalized line stroke from two points. */
-  const createStroke = useCallback((start: Point, end: Point): MMStroke => ({
-    id: `stroke-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-    points: [
-      { x: start.x, y: start.y, pressure: 0.5 },
-      { x: end.x, y: end.y, pressure: 0.5 },
-    ],
-    color: selectedColor,
-    width: selectedWidth,
-    timestamp: Date.now(),
-  }), [selectedColor, selectedWidth]);
+  /** Create a finalized line stroke from two points. Returns null if either point is missing. */
+  const createStroke = useCallback((start: Point | null, end: Point | null): MMStroke | null => {
+    if (!start || !end) return null;
+    return {
+      id: `stroke-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      points: [
+        { x: start.x, y: start.y, pressure: 0.5 },
+        { x: end.x, y: end.y, pressure: 0.5 },
+      ],
+      color: selectedColor,
+      width: selectedWidth,
+      timestamp: Date.now(),
+    };
+  }, [selectedColor, selectedWidth]);
 
   const handlePointerDown = useCallback((e: React.PointerEvent<SVGSVGElement>) => {
     if (!canDraw) return;
@@ -82,7 +85,8 @@ export default function DrawingCanvas({
 
     if (pendingStart) {
       // Click-click mode: second click places endpoint
-      setStrokes((prev) => [...prev, createStroke(pendingStart, pt)]);
+      const stroke = createStroke(pendingStart, pt);
+      if (stroke) setStrokes((prev) => [...prev, stroke]);
       setPendingStart(null);
       setPreviewEnd(null);
       return;
@@ -118,7 +122,8 @@ export default function DrawingCanvas({
     if (dragStart.current) {
       if (isDragging.current) {
         // Drag mode: finalize line from dragStart to current position
-        setStrokes((prev) => [...prev, createStroke(dragStart.current!, pt)]);
+        const stroke = createStroke(dragStart.current, pt);
+        if (stroke) setStrokes((prev) => [...prev, stroke]);
         setPreviewEnd(null);
       } else {
         // Click without drag: enter click-click mode (first click sets start)

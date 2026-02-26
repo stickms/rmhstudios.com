@@ -11,6 +11,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { HexColorPicker } from 'react-colorful';
 import { getSocket, emit } from '@/lib/rmhbox/socket';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { S2C, C2S } from '@/lib/rmhbox/events';
@@ -49,11 +50,16 @@ interface MMRanking {
   backgroundColor?: string;
 }
 
-interface InvestmentBonus {
+/** Per-player score breakdown for the new auction/scoring model */
+interface PlayerScoreBreakdown {
   userId: string;
   userName: string;
-  bonusPoints: number;
-  investedIn: string;
+  /** Market values of paintings they painted (artist credit) */
+  paintedValue: number;
+  /** Market values of paintings they won in auction */
+  ownedValue: number;
+  /** Total score = paintedValue + ownedValue */
+  totalScore: number;
 }
 
 type MMPhase = 'PROMPT_REVEAL' | 'DRAWING' | 'GALLERY' | 'AUCTION' | 'RESULTS';
@@ -90,8 +96,10 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
   const [auctionDrawings, setAuctionDrawings] = useState<AuctionDrawing[]>([]);
   const [currency, setCurrency] = useState(1000);
   const [rankings, setRankings] = useState<MMRanking[]>([]);
-  const [investmentBonuses, setInvestmentBonuses] = useState<InvestmentBonus[]>([]);
+  const [scoreBreakdowns, setScoreBreakdowns] = useState<PlayerScoreBreakdown[]>([]);
   const [timeRemaining, setTimeRemaining] = useState(0);
+  const [showStrokeColorPicker, setShowStrokeColorPicker] = useState(false);
+  const [showBgColorPicker, setShowBgColorPicker] = useState(false);
 
   /** Reset drawing state for a new round */
   const resetDrawingState = useCallback(() => {
@@ -197,7 +205,9 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
         }
         case 'MM_RESULTS': {
           setRankings(data.rankings as MMRanking[]);
-          setInvestmentBonuses(data.investmentBonuses as InvestmentBonus[]);
+          if (Array.isArray(data.scoreBreakdowns)) {
+            setScoreBreakdowns(data.scoreBreakdowns as PlayerScoreBreakdown[]);
+          }
           setPhase('RESULTS');
           playSound('victoryFanfare');
           break;
@@ -304,22 +314,28 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
             onUndo={handleUndo}
           />
 
-          {/* Stroke color: palette swatches + color picker */}
+          {/* Stroke color: palette swatches + react-colorful picker */}
           <div className="flex items-center gap-2 flex-wrap justify-center">
             <span className="text-xs text-(--rmhbox-text-muted)">Color:</span>
             <ColorPalette
               colors={colorPalette}
               selectedColor={selectedColor}
-              onSelect={setSelectedColor}
+              onSelect={(c) => { setSelectedColor(c); setShowStrokeColorPicker(false); }}
             />
-            <input
-              type="color"
-              value={selectedColor}
-              onChange={(e) => setSelectedColor(e.target.value)}
-              className="w-8 h-8 rounded-full border border-(--rmhbox-border) cursor-pointer p-0 bg-transparent"
-              title="Custom stroke color"
-              aria-label="Custom stroke color"
-            />
+            <div className="relative">
+              <button
+                className="w-8 h-8 rounded-full border-2 border-(--rmhbox-border) hover:scale-105 transition-transform"
+                style={{ backgroundColor: selectedColor }}
+                onClick={() => setShowStrokeColorPicker((v) => !v)}
+                title="Custom stroke color"
+                aria-label="Custom stroke color"
+              />
+              {showStrokeColorPicker && (
+                <div className="absolute z-50 top-10 left-1/2 -translate-x-1/2 p-2 rounded-lg bg-(--rmhbox-surface) border border-(--rmhbox-border) shadow-lg">
+                  <HexColorPicker color={selectedColor} onChange={setSelectedColor} />
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Stroke width slider */}
@@ -350,13 +366,13 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
             </span>
           </div>
 
-          {/* Background color: preset swatches + color picker */}
+          {/* Background color: preset swatches + react-colorful picker */}
           <div className="flex items-center gap-2 flex-wrap justify-center">
             <span className="text-xs text-(--rmhbox-text-muted)">Background:</span>
             {BG_COLORS.map((c) => (
               <button
                 key={c}
-                onClick={() => setBackgroundColor(c)}
+                onClick={() => { setBackgroundColor(c); setShowBgColorPicker(false); }}
                 className={`w-6 h-6 rounded-full border-2 transition-transform ${
                   backgroundColor === c
                     ? 'border-(--rmhbox-accent) scale-110 ring-2 ring-(--rmhbox-accent)/40'
@@ -366,14 +382,20 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
                 aria-label={`Background color ${c}`}
               />
             ))}
-            <input
-              type="color"
-              value={backgroundColor}
-              onChange={(e) => setBackgroundColor(e.target.value)}
-              className="w-6 h-6 rounded-full border border-(--rmhbox-border) cursor-pointer p-0 bg-transparent"
-              title="Custom background color"
-              aria-label="Custom background color"
-            />
+            <div className="relative">
+              <button
+                className="w-6 h-6 rounded-full border-2 border-(--rmhbox-border) hover:scale-105 transition-transform"
+                style={{ backgroundColor }}
+                onClick={() => setShowBgColorPicker((v) => !v)}
+                title="Custom background color"
+                aria-label="Custom background color"
+              />
+              {showBgColorPicker && (
+                <div className="absolute z-50 top-8 left-1/2 -translate-x-1/2 p-2 rounded-lg bg-(--rmhbox-surface) border border-(--rmhbox-border) shadow-lg">
+                  <HexColorPicker color={backgroundColor} onChange={setBackgroundColor} />
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="flex items-center gap-4">
@@ -421,7 +443,7 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
       return (
         <MarketResultsScreen
           rankings={rankings}
-          investmentBonuses={investmentBonuses}
+          scoreBreakdowns={scoreBreakdowns}
           prompt={prompt}
         />
       );

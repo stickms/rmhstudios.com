@@ -32,11 +32,6 @@ import {
   MM_COLOR_PALETTE,
   MM_STARTING_CURRENCY,
   MM_BID_INCREMENT,
-  MM_RANK_1_POINTS,
-  MM_RANK_2_POINTS,
-  MM_RANK_3_POINTS,
-  MM_PARTICIPATION_POINTS,
-  MM_INVESTMENT_BONUS,
 } from '@/lib/rmhbox/constants';
 import { logger } from '../../logger';
 import type {
@@ -45,7 +40,8 @@ import type {
   PlayerDrawing,
   DrawingBids,
   MMRanking,
-  InvestmentBonus,
+  AuctionWinner,
+  PlayerScoreBreakdown,
   GalleryDrawing,
   AuctionDrawing,
   MinimalistMasterpieceState,
@@ -95,6 +91,7 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
       playerCurrencies: new Map(),
       bids: new Map(),
       marketValues: new Map(),
+      auctionWinners: new Map(),
       rankings: null,
       cumulativeScores,
       phaseStartedAt: now,
@@ -158,6 +155,7 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
     this.state.playerCurrencies = playerCurrencies;
     this.state.bids = bids;
     this.state.marketValues = new Map();
+    this.state.auctionWinners = new Map();
     this.state.rankings = null;
 
     const now = Date.now();
@@ -309,14 +307,44 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
     if (!this.isRunning) return;
     this.clearPhaseTimer();
 
-    // Calculate market values from bids
+    // New auction model: second-price auction
+    // Winner = highest bidder on each drawing; pays their bid amount
+    // Market value = second highest bid (or 0 if ≤1 bidder)
     for (const [drawingId, bidInfo] of this.state.bids) {
-      this.state.marketValues.set(drawingId, bidInfo.totalValue);
+      const sortedBids = Array.from(bidInfo.bidders.entries())
+        .filter(([, amount]) => amount > 0)
+        .sort(([, a], [, b]) => b - a);
+
+      if (sortedBids.length === 0) {
+        // No bids: market value = 0, no winner
+        this.state.marketValues.set(drawingId, 0);
+        continue;
+      }
+
+      const [winnerId, winnerBidAmount] = sortedBids[0];
+      const secondHighest = sortedBids.length >= 2 ? sortedBids[1][1] : 0;
+      this.state.marketValues.set(drawingId, secondHighest);
+
+      const winnerPlayer = this.context.players.get(winnerId);
+      this.state.auctionWinners.set(drawingId, {
+        drawingId,
+        winnerId,
+        winnerName: winnerPlayer?.userName ?? 'Unknown',
+        amountPaid: winnerBidAmount,
+      });
+
+      this.logAction('auction_winner', {
+        drawingId,
+        winnerId,
+        amountPaid: winnerBidAmount,
+        marketValue: secondHighest,
+      });
     }
 
     logger.info({
       event: 'mm:auction_phase_end',
       lobbyId: this.context.lobbyId,
+      winnersCount: this.state.auctionWinners.size,
     });
 
     this.startResultsPhase();
@@ -329,19 +357,13 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
 
     const mmRankings = this.buildMMRankings();
     this.state.rankings = mmRankings.length > 0 ? mmRankings : null;
-    const investmentBonuses = this.computeInvestmentBonuses();
+    const scoreBreakdowns = this.computeScoreBreakdowns();
 
     // Accumulate round scores into cumulative totals
-    for (const r of mmRankings) {
+    for (const sb of scoreBreakdowns) {
       this.state.cumulativeScores.set(
-        r.artistUserId,
-        (this.state.cumulativeScores.get(r.artistUserId) ?? 0) + r.points,
-      );
-    }
-    for (const b of investmentBonuses) {
-      this.state.cumulativeScores.set(
-        b.userId,
-        (this.state.cumulativeScores.get(b.userId) ?? 0) + b.bonusPoints,
+        sb.userId,
+        (this.state.cumulativeScores.get(sb.userId) ?? 0) + sb.totalScore,
       );
     }
 
@@ -366,7 +388,7 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
     this.context.broadcastToLobby('rmhbox:game:action', {
       type: 'MM_RESULTS',
       rankings: this.state.rankings,
-      investmentBonuses,
+      scoreBreakdowns,
       round: this.state.currentRound,
       totalRounds: this.state.totalRounds,
       duration: MM_RESULTS_DURATION_SECONDS,
@@ -653,7 +675,7 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
         return {
           ...base,
           rankings: this.state.rankings,
-          investmentBonuses: this.computeInvestmentBonuses(),
+          scoreBreakdowns: this.computeScoreBreakdowns(),
         };
 
       default:
@@ -709,7 +731,7 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
         return {
           ...base,
           rankings: this.state.rankings,
-          investmentBonuses: this.computeInvestmentBonuses(),
+          scoreBreakdowns: this.computeScoreBreakdowns(),
         };
 
       default:
@@ -762,10 +784,10 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
   }
 
   private buildMMRankings(): MMRanking[] {
-    // Sort drawings by market value descending
+    // Sort drawings by market value descending (market value = second highest bid)
     const entries: Array<{ drawingId: string; userId: string; marketValue: number }> = [];
     for (const [drawingId, userId] of this.state.drawingIdToUserId) {
-      const marketValue = this.state.marketValues.get(drawingId) ?? this.state.bids.get(drawingId)?.totalValue ?? 0;
+      const marketValue = this.state.marketValues.get(drawingId) ?? 0;
       entries.push({ drawingId, userId, marketValue });
     }
     entries.sort((a, b) => b.marketValue - a.marketValue);
@@ -780,62 +802,62 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
       }
       const player = this.context.players.get(entry.userId);
       const drawing = this.state.drawings.get(entry.userId);
+      const winner = this.state.auctionWinners.get(entry.drawingId);
+
+      // Points = market value itself (under new scoring model)
       rankings.push({
         drawingId: entry.drawingId,
         artistUserId: entry.userId,
         artistUserName: player?.userName ?? 'Unknown',
         marketValue: entry.marketValue,
         rank: currentRank,
-        points: this.pointsForRank(currentRank),
+        points: entry.marketValue,
         strokes: drawing?.strokes ?? [],
         backgroundColor: drawing?.backgroundColor ?? '#ffffff',
+        winnerId: winner?.winnerId,
+        winnerName: winner?.winnerName,
+        winnerPaid: winner?.amountPaid,
       });
     }
     return rankings;
   }
 
-  private pointsForRank(rank: number): number {
-    switch (rank) {
-      case 1: return MM_RANK_1_POINTS;
-      case 2: return MM_RANK_2_POINTS;
-      case 3: return MM_RANK_3_POINTS;
-      default: return MM_PARTICIPATION_POINTS;
-    }
-  }
+  /**
+   * Compute score breakdowns under the second-price auction model.
+   * Each player's score = sum of market values of paintings they painted +
+   *                       sum of market values of paintings they won in auction.
+   */
+  private computeScoreBreakdowns(): PlayerScoreBreakdown[] {
+    const breakdowns: PlayerScoreBreakdown[] = [];
 
-  private computeInvestmentBonuses(): InvestmentBonus[] {
-    // Find the highest-valued drawing
-    let highestDrawingId: string | null = null;
-    let highestValue = -1;
-    for (const [drawingId, bidInfo] of this.state.bids) {
-      if (bidInfo.totalValue > highestValue) {
-        highestValue = bidInfo.totalValue;
-        highestDrawingId = drawingId;
+    for (const userId of this.context.players.keys()) {
+      const player = this.context.players.get(userId)!;
+      let paintedValue = 0;
+      let ownedValue = 0;
+
+      // Value of paintings this player painted (as artist)
+      const myDrawingId = this.state.userIdToDrawingId.get(userId);
+      if (myDrawingId) {
+        paintedValue += this.state.marketValues.get(myDrawingId) ?? 0;
       }
-    }
 
-    if (!highestDrawingId || highestValue <= 0) return [];
-
-    const bidInfo = this.state.bids.get(highestDrawingId)!;
-    const totalBid = bidInfo.totalValue;
-    const bonuses: InvestmentBonus[] = [];
-    const investmentBonus = this.getSetting('investmentBonus', MM_INVESTMENT_BONUS);
-
-    for (const [bidderId, playerBid] of bidInfo.bidders) {
-      if (playerBid <= 0) continue;
-      const bonusPoints = Math.floor(investmentBonus * (playerBid / totalBid));
-      if (bonusPoints > 0) {
-        const player = this.context.players.get(bidderId);
-        bonuses.push({
-          userId: bidderId,
-          userName: player?.userName ?? 'Unknown',
-          bonusPoints,
-          investedIn: highestDrawingId,
-        });
+      // Value of paintings this player won in auction
+      for (const [drawingId, winner] of this.state.auctionWinners) {
+        if (winner.winnerId === userId) {
+          ownedValue += this.state.marketValues.get(drawingId) ?? 0;
+        }
       }
+
+      breakdowns.push({
+        userId,
+        userName: player.userName,
+        paintedValue,
+        ownedValue,
+        totalScore: paintedValue + ownedValue,
+      });
     }
 
-    return bonuses;
+    return breakdowns;
   }
 
   private computeRankings(): PlayerRanking[] {
@@ -869,9 +891,9 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
   private computeAwards(): Award[] {
     const awards: Award[] = [];
     const mmRankings = this.buildMMRankings();
-    const investmentBonuses = this.computeInvestmentBonuses();
+    const scoreBreakdowns = this.computeScoreBreakdowns();
 
-    // 1. Gallery Star — highest market value
+    // 1. Gallery Star — highest market value painting
     if (mmRankings.length > 0 && mmRankings[0].marketValue > 0) {
       awards.push({
         userId: mmRankings[0].artistUserId,
@@ -881,24 +903,23 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
       });
     }
 
-    // 2. Art Collector — highest total spending (sum of all bids placed)
-    let topSpenderId: string | null = null;
-    let topSpending = 0;
-    for (const userId of this.context.players.keys()) {
-      let totalSpent = 0;
-      for (const [, bidInfo] of this.state.bids) {
-        totalSpent += bidInfo.bidders.get(userId) ?? 0;
-      }
-      if (totalSpent > topSpending) {
-        topSpending = totalSpent;
-        topSpenderId = userId;
+    // 2. Art Collector — most paintings won in auction
+    let topCollectorId: string | null = null;
+    let topCollectedCount = 0;
+    const winCounts = new Map<string, number>();
+    for (const [, winner] of this.state.auctionWinners) {
+      const count = (winCounts.get(winner.winnerId) ?? 0) + 1;
+      winCounts.set(winner.winnerId, count);
+      if (count > topCollectedCount) {
+        topCollectedCount = count;
+        topCollectorId = winner.winnerId;
       }
     }
-    if (topSpenderId && topSpending > 0) {
+    if (topCollectorId && topCollectedCount > 0) {
       awards.push({
-        userId: topSpenderId,
+        userId: topCollectorId,
         title: 'Art Collector',
-        description: `Invested ${topSpending} coins across all artworks`,
+        description: `Won ${topCollectedCount} painting${topCollectedCount === 1 ? '' : 's'} at auction`,
         icon: 'palette',
       });
     }
@@ -921,17 +942,17 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
       });
     }
 
-    // 4. Smart Investor — largest investment bonus
-    if (investmentBonuses.length > 0) {
-      const topInvestor = investmentBonuses.reduce((a, b) => a.bonusPoints > b.bonusPoints ? a : b);
-      if (topInvestor.bonusPoints > 0) {
-        awards.push({
-          userId: topInvestor.userId,
-          title: 'Smart Investor',
-          description: `Earned ${topInvestor.bonusPoints} bonus points from investing`,
-          icon: 'trending-up',
-        });
-      }
+    // 4. Smart Investor — highest owned painting value (from winning auctions)
+    const topInvestor = scoreBreakdowns
+      .filter((sb) => sb.ownedValue > 0)
+      .sort((a, b) => b.ownedValue - a.ownedValue)[0];
+    if (topInvestor) {
+      awards.push({
+        userId: topInvestor.userId,
+        title: 'Smart Investor',
+        description: `Owns paintings worth ${topInvestor.ownedValue} in market value`,
+        icon: 'trending-up',
+      });
     }
 
     // 5. Speed Painter — fastest submission time

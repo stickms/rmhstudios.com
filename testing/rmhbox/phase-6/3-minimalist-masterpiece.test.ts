@@ -47,8 +47,6 @@ import {
   MM_RESULTS_DURATION_SECONDS,
   MM_STARTING_CURRENCY,
   MM_BID_INCREMENT,
-  MM_RANK_1_POINTS,
-  MM_INVESTMENT_BONUS,
 } from '../../../lib/rmhbox/constants';
 
 // ─── Helpers ─────────────────────────────────────────────────────
@@ -120,6 +118,27 @@ const ALL_PLAYER_IDS = [
   MOCK_USERS.charlie.userId,
   MOCK_USERS.diana.userId,
 ];
+
+/**
+ * Find a drawing ID that both bidder1 and bidder2 can bid on
+ * (i.e., it belongs to neither of them).
+ */
+function findBiddableDrawing(
+  game: MinimalistMasterpieceGame,
+  bidder1Id: string,
+  bidder2Id: string,
+): string {
+  const state1 = game.getStateForPlayer(bidder1Id) as Record<string, unknown>;
+  const drawings1 = state1.drawings as Array<Record<string, unknown>>;
+  const state2 = game.getStateForPlayer(bidder2Id) as Record<string, unknown>;
+  const drawings2 = state2.drawings as Array<Record<string, unknown>>;
+
+  const mine1 = (drawings1.find((d) => d.isMine) as Record<string, unknown>)?.drawingId as string;
+  const mine2 = (drawings2.find((d) => d.isMine) as Record<string, unknown>)?.drawingId as string;
+
+  const target = drawings1.find((d) => d.drawingId !== mine1 && d.drawingId !== mine2);
+  return target!.drawingId as string;
+}
 
 // ─── Tests ───────────────────────────────────────────────────────
 
@@ -480,42 +499,34 @@ describe('Minimalist Masterpiece Server Handler (§6.3)', () => {
   });
 
   // ───────────────────────────────────────────────────────────────
-  // 5. Scoring / Results
+  // 5. Scoring / Results (Second-Price Auction Model)
   // ───────────────────────────────────────────────────────────────
   describe('Scoring & Results', () => {
-    it('should rank drawings by market value in descending order', () => {
+    it('should rank drawings by market value (second highest bid) in descending order', () => {
       const { game } = createGame();
       game.start();
       advanceToAuction(game, ALL_PLAYER_IDS);
 
-      // Place different bids on different drawings
-      const aliceState = game.getStateForPlayer(MOCK_USERS.alice.userId) as Record<string, unknown>;
-      const drawings = aliceState.drawings as Array<Record<string, unknown>>;
-      const othersDrawings = drawings.filter((d) => !d.isMine);
+      const targetId = findBiddableDrawing(game, MOCK_USERS.alice.userId, MOCK_USERS.bob.userId);
 
-      // Alice bids heavily on the first non-mine drawing
       game.handleInput(MOCK_USERS.alice.userId, 'PLACE_BID', {
-        drawingId: othersDrawings[0].drawingId,
-        amount: MM_BID_INCREMENT * 4,
+        drawingId: targetId,
+        amount: MM_BID_INCREMENT * 6, // 300 — Alice wins
       });
-      // Bob bids less on the same drawing
       game.handleInput(MOCK_USERS.bob.userId, 'PLACE_BID', {
-        drawingId: othersDrawings[0].drawingId,
-        amount: MM_BID_INCREMENT * 2,
+        drawingId: targetId,
+        amount: MM_BID_INCREMENT * 2, // 100 — second highest → market value = 100
       });
 
-      // Advance to results
       vi.advanceTimersByTime(MM_AUCTION_DURATION_SECONDS * 1000);
 
       const results = game.computeResults();
       expect(results.rankings.length).toBe(4);
-      // The drawing with the most bids should be rank 1
-      const rank1 = results.rankings.find((r) => r.rank === 1);
-      expect(rank1).toBeDefined();
-      expect(rank1!.score).toBeGreaterThanOrEqual(MM_RANK_1_POINTS);
+      const topScore = Math.max(...results.rankings.map((r) => r.score));
+      expect(topScore).toBeGreaterThan(0);
     });
 
-    it('should give tied drawings the same rank and same rank points', () => {
+    it('should give tied drawings the same rank when all have zero market value', () => {
       const { game, broadcastLog } = createGame();
       game.start();
       advanceToAuction(game, ALL_PLAYER_IDS);
@@ -534,39 +545,40 @@ describe('Minimalist Masterpiece Server Handler (§6.3)', () => {
       expect(new Set(ranks).size).toBe(1);
       expect(ranks[0]).toBe(1);
 
-      // All get the same points (rank 1 points)
+      // All get the same points (0 under second-price model with no bids)
       const points = mmRankings.map((r) => r.points);
       expect(new Set(points).size).toBe(1);
-      expect(points[0]).toBe(MM_RANK_1_POINTS);
+      expect(points[0]).toBe(0);
     });
 
-    it('should compute investment bonuses for bidders on the winning drawing', () => {
+    it('should compute score breakdowns with painted + owned values', () => {
       const { game, broadcastLog } = createGame();
       game.start();
       advanceToAuction(game, ALL_PLAYER_IDS);
 
-      const aliceState = game.getStateForPlayer(MOCK_USERS.alice.userId) as Record<string, unknown>;
-      const drawings = aliceState.drawings as Array<Record<string, unknown>>;
-      const targetDrawing = drawings.find((d) => !d.isMine)!;
+      const targetId = findBiddableDrawing(game, MOCK_USERS.alice.userId, MOCK_USERS.bob.userId);
 
-      // Alice bids 500 on one drawing
       game.handleInput(MOCK_USERS.alice.userId, 'PLACE_BID', {
-        drawingId: targetDrawing.drawingId,
-        amount: MM_BID_INCREMENT * 10,
+        drawingId: targetId,
+        amount: MM_BID_INCREMENT * 10, // 500 — Alice wins
+      });
+      game.handleInput(MOCK_USERS.bob.userId, 'PLACE_BID', {
+        drawingId: targetId,
+        amount: MM_BID_INCREMENT * 4, // 200 — second highest → market value = 200
       });
 
       vi.advanceTimersByTime(MM_AUCTION_DURATION_SECONDS * 1000);
 
-      // Check the MM_RESULTS broadcast for investment bonuses
       const resultsBroadcast = findLastActionBroadcast(broadcastLog, 'MM_RESULTS');
       expect(resultsBroadcast).toBeDefined();
-      const bonuses = resultsBroadcast!.data.investmentBonuses as Array<Record<string, unknown>>;
+      const breakdowns = resultsBroadcast!.data.scoreBreakdowns as Array<Record<string, unknown>>;
+      expect(breakdowns).toBeDefined();
+      expect(breakdowns.length).toBe(4);
 
-      expect(bonuses.length).toBeGreaterThan(0);
-      const aliceBonus = bonuses.find((b) => b.userId === MOCK_USERS.alice.userId);
-      expect(aliceBonus).toBeDefined();
-      // She's the only bidder so she gets 100% of the bonus
-      expect(aliceBonus!.bonusPoints).toBe(MM_INVESTMENT_BONUS);
+      // Alice owns the target drawing whose market value = 200
+      const aliceBreakdown = breakdowns.find((b) => b.userId === MOCK_USERS.alice.userId);
+      expect(aliceBreakdown).toBeDefined();
+      expect(aliceBreakdown!.ownedValue).toBe(200);
     });
   });
 
@@ -687,13 +699,15 @@ describe('Minimalist Masterpiece Server Handler (§6.3)', () => {
       game.start();
       advanceToAuction(game, ALL_PLAYER_IDS);
 
-      // Bob bids on a specific drawing
-      const bobState = game.getStateForPlayer(MOCK_USERS.bob.userId) as Record<string, unknown>;
-      const drawings = bobState.drawings as Array<Record<string, unknown>>;
-      const target = drawings.find((d) => !d.isMine)!;
+      const targetId = findBiddableDrawing(game, MOCK_USERS.bob.userId, MOCK_USERS.alice.userId);
+
       game.handleInput(MOCK_USERS.bob.userId, 'PLACE_BID', {
-        drawingId: target.drawingId,
-        amount: MM_BID_INCREMENT * 4,
+        drawingId: targetId,
+        amount: MM_BID_INCREMENT * 6, // 300
+      });
+      game.handleInput(MOCK_USERS.alice.userId, 'PLACE_BID', {
+        drawingId: targetId,
+        amount: MM_BID_INCREMENT * 2, // 100 → market value = 100
       });
 
       vi.advanceTimersByTime(MM_AUCTION_DURATION_SECONDS * 1000);
@@ -749,31 +763,21 @@ describe('Minimalist Masterpiece Server Handler (§6.3)', () => {
       expect(minimalistMaster!.userId).toBe(MOCK_USERS.alice.userId);
     });
 
-    it('should award "Smart Investor" to the player with the largest investment bonus', () => {
+    it('should award "Smart Investor" to the player with the highest owned painting value', () => {
       const { game } = createGame();
       game.start();
       advanceToAuction(game, ALL_PLAYER_IDS);
 
-      // Everyone bids on the same drawing to create investment bonuses
-      const bobState = game.getStateForPlayer(MOCK_USERS.bob.userId) as Record<string, unknown>;
-      const drawings = bobState.drawings as Array<Record<string, unknown>>;
-      const target = drawings.find((d) => !d.isMine)!;
+      const targetId = findBiddableDrawing(game, MOCK_USERS.bob.userId, MOCK_USERS.alice.userId);
 
       game.handleInput(MOCK_USERS.bob.userId, 'PLACE_BID', {
-        drawingId: target.drawingId,
-        amount: MM_BID_INCREMENT * 6,
+        drawingId: targetId,
+        amount: MM_BID_INCREMENT * 6, // 300 — Bob wins
       });
-
-      // Only Alice should also get a chance if the drawing is not hers
-      const aliceState = game.getStateForPlayer(MOCK_USERS.alice.userId) as Record<string, unknown>;
-      const aliceDrawings = aliceState.drawings as Array<Record<string, unknown>>;
-      const sameTarget = aliceDrawings.find((d) => d.drawingId === target.drawingId);
-      if (sameTarget && !sameTarget.isMine) {
-        game.handleInput(MOCK_USERS.alice.userId, 'PLACE_BID', {
-          drawingId: target.drawingId as string,
-          amount: MM_BID_INCREMENT * 2,
-        });
-      }
+      game.handleInput(MOCK_USERS.alice.userId, 'PLACE_BID', {
+        drawingId: targetId,
+        amount: MM_BID_INCREMENT * 2, // 100 → market value = 100
+      });
 
       vi.advanceTimersByTime(MM_AUCTION_DURATION_SECONDS * 1000);
       const results = game.computeResults();
@@ -946,8 +950,19 @@ describe('Minimalist Masterpiece Server Handler (§6.3)', () => {
       const game = new MinimalistMasterpieceGame(ctx.context);
       game.start();
 
-      // Complete round 1
+      // Complete round 1 — place 2-bidder auction to generate second-price market value
       advanceToAuction(game, ALL_PLAYER_IDS);
+
+      const targetId = findBiddableDrawing(game, MOCK_USERS.alice.userId, MOCK_USERS.bob.userId);
+      game.handleInput(MOCK_USERS.alice.userId, 'PLACE_BID', {
+        drawingId: targetId,
+        amount: MM_BID_INCREMENT * 4, // 200
+      });
+      game.handleInput(MOCK_USERS.bob.userId, 'PLACE_BID', {
+        drawingId: targetId,
+        amount: MM_BID_INCREMENT * 2, // 100 → market value = 100
+      });
+
       vi.advanceTimersByTime(MM_AUCTION_DURATION_SECONDS * 1000);
       vi.advanceTimersByTime(MM_RESULTS_DURATION_SECONDS * 1000);
 
@@ -963,10 +978,10 @@ describe('Minimalist Masterpiece Server Handler (§6.3)', () => {
       // Game should be complete with cumulative scores
       expect(ctx.completedResults.length).toBe(1);
       const results = ctx.completedResults[0];
-      // All players should have scores (from 2 rounds of rank points)
-      for (const r of results.rankings) {
-        expect(r.score).toBeGreaterThan(0);
-      }
+      // At least one player should have scores from round 1 bids
+      const scores = results.rankings.map((r) => r.score);
+      const maxScore = Math.max(...scores);
+      expect(maxScore).toBeGreaterThan(0);
     });
 
     it('game log should include round count', () => {
