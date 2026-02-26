@@ -348,9 +348,16 @@ export class EmojiCinemaGame extends BaseMinigame {
     this.logAction('round_end', {
       round: this.state.currentRound,
       reason: effectiveReason,
-      correctGuessers: this.state.correctGuessers.length,
+      producerUserId: this.state.currentProducerUserId,
+      correctGuessers: this.state.correctGuessers.map((cg) => ({
+        userId: cg.userId,
+        userName: cg.userName,
+        rank: cg.rank,
+      })),
+      correctGuessCount: this.state.correctGuessers.length,
       closeGuessCount: this.state.closeGuessCount,
       movieTitle: this.state.currentMovie.title,
+      emojiSequence: [...this.state.emojiSequence],
       noEmojis,
     });
 
@@ -1025,7 +1032,7 @@ export class EmojiCinemaGame extends BaseMinigame {
           const producerId = this.state.rounds[roundIdx].producerUserId;
           if (stats[producerId]) {
             stats[producerId].producerRounds++;
-            stats[producerId].producerCorrectGuessersTotal += (entry.payload.correctGuessers as number) ?? 0;
+            stats[producerId].producerCorrectGuessersTotal += (entry.payload.correctGuessCount as number) ?? 0;
           }
         }
       }

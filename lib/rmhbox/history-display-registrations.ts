@@ -208,23 +208,25 @@ registerHistoryDisplay({
     {
       key: 'prompts',
       label: 'Prompts',
-      extract: (log: GameLog) => {
-        const prompts: string[] = [];
-        if (typeof log.initialState.prompt === 'string') prompts.push(log.initialState.prompt);
-        for (const a of log.actions) {
-          if (typeof a.payload.prompt === 'string') prompts.push(a.payload.prompt);
-        }
-        return prompts.filter(Boolean);
-      },
+      extract: (log: GameLog) =>
+        log.actions
+          .filter((a) => a.type === 'round_start')
+          .map((a) => a.payload.promptText as string)
+          .filter(Boolean),
     },
   ],
   filterableFields: [
     { key: 'auctionWin', label: 'Won Auction', type: 'boolean' },
-    { key: 'galleryVotes', label: 'Gallery Votes', type: 'range', valuePath: 'galleryVotes' },
+    { key: 'roundCount', label: 'Rounds Played', type: 'range', valuePath: 'roundsPlayed' },
   ],
   getSummary: (log: GameLog) => {
-    const prompt = (log.initialState.prompt as string) ?? 'Unknown prompt';
-    return `Prompt: "${prompt}"`;
+    const prompts = log.actions
+      .filter((a) => a.type === 'round_start')
+      .map((a) => a.payload.promptText as string)
+      .filter(Boolean);
+    if (prompts.length === 0) return 'Minimalist Masterpiece game';
+    if (prompts.length === 1) return `Prompt: "${prompts[0]}"`;
+    return `${prompts.length} rounds — ${prompts.join(', ')}`;
   },
 });
 
@@ -237,18 +239,23 @@ registerHistoryDisplay({
     {
       key: 'movieTitles',
       label: 'Movie Titles',
-      extract: (log: GameLog) =>
-        log.actions
-          .filter((a) => a.type === 'round_start')
-          .map((a) => a.payload.movieTitle as string)
-          .filter(Boolean),
+      extract: (log: GameLog) => {
+        // Movie titles from movie_selected or round_end actions
+        const fromSelected = log.actions
+          .filter((a) => a.type === 'movie_selected')
+          .map((a) => a.payload.movieTitle as string);
+        const fromRoundEnd = log.actions
+          .filter((a) => a.type === 'round_end')
+          .map((a) => a.payload.movieTitle as string);
+        return [...new Set([...fromSelected, ...fromRoundEnd])].filter(Boolean);
+      },
     },
     {
       key: 'guesses',
       label: 'Guesses',
       extract: (log: GameLog) =>
         log.actions
-          .filter((a) => a.type === 'guess')
+          .filter((a) => a.type === 'submit_guess')
           .map((a) => a.payload.guess as string)
           .filter(Boolean),
     },
@@ -257,7 +264,7 @@ registerHistoryDisplay({
       label: 'Emoji Sequences',
       extract: (log: GameLog) =>
         log.actions
-          .filter((a) => a.type === 'round_result')
+          .filter((a) => a.type === 'round_end')
           .flatMap((a) => {
             const seq = a.payload.emojiSequence;
             return Array.isArray(seq) ? (seq as string[]) : [];
@@ -268,18 +275,21 @@ registerHistoryDisplay({
     { key: 'wasCreator', label: 'Was Creator', type: 'boolean' },
     { key: 'guessedCorrectly', label: 'Guessed Correctly', type: 'boolean' },
     {
-      key: 'difficulty',
-      label: 'Difficulty',
-      type: 'select',
-      options: (log: GameLog) =>
-        log.actions
-          .filter((a) => a.type === 'round_start')
-          .map((a) => a.payload.difficulty as string)
-          .filter(Boolean),
+      key: 'roundCount',
+      label: 'Rounds Played',
+      type: 'range',
+      valuePath: 'roundsPlayed',
     },
   ],
   getSummary: (log: GameLog) => {
-    const rounds = log.actions.filter((a) => a.type === 'round_start');
-    return `${rounds.length} rounds — Movie emoji challenge`;
+    const movies = log.actions
+      .filter((a) => a.type === 'movie_selected')
+      .map((a) => a.payload.movieTitle as string)
+      .filter(Boolean);
+    if (movies.length === 0) {
+      const rounds = log.actions.filter((a) => a.type === 'round_start');
+      return `${rounds.length} rounds — Movie emoji challenge`;
+    }
+    return `${movies.length} rounds — ${movies.join(', ')}`;
   },
 });

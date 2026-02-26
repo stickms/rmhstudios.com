@@ -367,11 +367,23 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
 
     this.logAction('round_end', {
       round: this.state.currentRound,
+      promptText: this.state.prompt.text,
       rankings: mmRankings.map((r) => ({
         artistUserId: r.artistUserId,
+        artistUserName: r.artistUserName,
         marketValue: r.marketValue,
         rank: r.rank,
         points: r.points,
+        winnerId: r.winnerId,
+        winnerName: r.winnerName,
+        winnerPaid: r.winnerPaid,
+      })),
+      scoreBreakdowns: scoreBreakdowns.map((sb) => ({
+        userId: sb.userId,
+        userName: sb.userName,
+        paintedValue: sb.paintedValue,
+        ownedValue: sb.ownedValue,
+        totalScore: sb.totalScore,
       })),
     });
 
