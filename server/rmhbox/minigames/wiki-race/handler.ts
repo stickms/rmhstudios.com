@@ -839,8 +839,6 @@ export class WikiRaceMinigame extends BaseMinigame {
     // Re-fetch current article HTML so the player has content to click
     // and restore server-side currentArticleLinks for anti-cheat validation.
     // State snapshot delivery is handled centrally by ReconnectionHandler.
-
-    // Re-fetch current article HTML so the player has content to click
     const ps = this.state.playerStates.get(userId);
     if (ps && !ps.hasFinished && this.state.phase === WikiRacePhase.NAVIGATION) {
       this.fetchAndSendArticle(ps.currentArticleTitle).then((article) => {

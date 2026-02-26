@@ -370,7 +370,7 @@ describe('Spectator Input Gating (Unified)', () => {
   });
 });
 
-// ─── Reconnection with Spectator Target ──────────────────────────
+// ─── Reconnection with Spectator State ───────────────────────────
 
 describe('Reconnection with Spectator State', () => {
   it('should send game state snapshot to reconnecting player', () => {
