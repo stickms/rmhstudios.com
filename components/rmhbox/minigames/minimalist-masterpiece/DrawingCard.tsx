@@ -22,6 +22,7 @@ export interface MMStroke {
 
 interface DrawingCardProps {
   strokes: MMStroke[];
+  backgroundColor?: string;
   label?: string;
   className?: string;
 }
@@ -36,11 +37,12 @@ function strokeToPath(stroke: MMStroke): string {
   return d;
 }
 
-export default function DrawingCard({ strokes, label, className = '' }: DrawingCardProps) {
+export default function DrawingCard({ strokes, backgroundColor = '#ffffff', label, className = '' }: DrawingCardProps) {
   return (
     <div className={`flex flex-col items-center gap-1 ${className}`}>
-      <div className="aspect-square rounded-lg border border-(--rmhbox-border) bg-white overflow-hidden max-w-48">
-        <svg viewBox="0 0 300 300" className="w-full h-full" preserveAspectRatio="xMidYMid meet">
+      <div className="aspect-square rounded-lg border border-(--rmhbox-border) overflow-hidden max-w-48">
+        <svg viewBox="0 0 300 300" className="w-full h-full" preserveAspectRatio="xMidYMid meet"
+          style={{ backgroundColor }}>
           {strokes.map((stroke) => (
             <path
               key={stroke.id}

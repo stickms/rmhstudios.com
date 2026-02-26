@@ -29,7 +29,6 @@ import {
   MM_RESULTS_DURATION_SECONDS,
   MM_DEFAULT_ROUNDS,
   MM_MAX_STROKES,
-  MM_MIN_STROKE_DURATION_MS,
   MM_COLOR_PALETTE,
   MM_STARTING_CURRENCY,
   MM_BID_INCREMENT,
@@ -143,6 +142,7 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
       drawings.set(userId, {
         drawingId,
         strokes: [],
+        backgroundColor: '#ffffff',
         submittedAt: null,
         strokeCount: 0,
       });
@@ -438,11 +438,11 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
       return;
     }
 
-    const { strokes } = parsed.data;
+    const { strokes, backgroundColor } = parsed.data;
 
-    // Anti-bot: validate colors against palette
+    // Anti-bot: validate stroke colors against palette or valid hex
     for (const stroke of strokes) {
-      if (!MM_COLOR_PALETTE.includes(stroke.color)) {
+      if (!MM_COLOR_PALETTE.includes(stroke.color) && !/^#[0-9a-fA-F]{6}$/.test(stroke.color)) {
         this.context.sendToPlayer(userId, 'rmhbox:game:action', {
           type: 'MM_DRAWING_REJECTED',
           reason: 'invalid_color',
@@ -451,34 +451,9 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
       }
     }
 
-    // Anti-bot: validate stroke duration
-    const minDuration = this.getSetting('minStrokeDuration', MM_MIN_STROKE_DURATION_MS);
-    for (const stroke of strokes) {
-      if (stroke.points.length >= 2) {
-        const firstPoint = stroke.points[0];
-        const lastPoint = stroke.points[stroke.points.length - 1];
-        // Use timestamp on the stroke itself as a single value; duration check
-        // is based on the number of points as a proxy for drawing speed
-        if (firstPoint && lastPoint && stroke.points.length < 2) {
-          // Single-point strokes are dots, allowed
-          continue;
-        }
-      }
-      // Check stroke has minimum duration using point count as proxy
-      if (stroke.points.length >= 2) {
-        const duration = stroke.points.length; // Each point ~16ms at 60fps
-        if (duration * 16 < minDuration) {
-          this.context.sendToPlayer(userId, 'rmhbox:game:action', {
-            type: 'MM_DRAWING_REJECTED',
-            reason: 'stroke_too_fast',
-          });
-          return;
-        }
-      }
-    }
-
     // Accept the drawing
     drawing.strokes = strokes as MMStroke[];
+    drawing.backgroundColor = backgroundColor;
     drawing.strokeCount = strokes.length;
     drawing.submittedAt = Date.now();
 
@@ -813,6 +788,7 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
         rank: currentRank,
         points: this.pointsForRank(currentRank),
         strokes: drawing?.strokes ?? [],
+        backgroundColor: drawing?.backgroundColor ?? '#ffffff',
       });
     }
     return rankings;
@@ -1001,6 +977,7 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
         drawingId: drawing.drawingId,
         label: `Artist ${index}`,
         strokes: drawing.strokes,
+        backgroundColor: drawing.backgroundColor,
       });
       index++;
     }

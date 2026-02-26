@@ -29,6 +29,7 @@ interface GalleryDrawing {
   drawingId: string;
   label: string;
   strokes: MMStroke[];
+  backgroundColor?: string;
 }
 
 interface AuctionDrawing extends GalleryDrawing {
@@ -45,6 +46,7 @@ interface MMRanking {
   rank: number;
   points: number;
   strokes: MMStroke[];
+  backgroundColor?: string;
 }
 
 interface InvestmentBonus {
@@ -63,11 +65,12 @@ function emitGameInput(action: string, data: unknown = {}) {
   emit(C2S.GAME_INPUT, { lobbyId, action, data });
 }
 
-// Stroke width presets for the width selector
-const STROKE_WIDTHS = [2, 4, 6, 10];
-
-// Background color options
+// Background color preset options
 const BG_COLORS = ['#ffffff', '#f5f5dc', '#ffe4e1', '#e0f7fa', '#f0e68c', '#e8e8e8', '#1a1a2e'];
+
+// Stroke width slider range
+const MIN_WIDTH = 1;
+const MAX_WIDTH = 16;
 
 export default function MinimalistMasterpieceGame({ playerId: _playerId, playerName: _playerName }: MinigameProps) {
   void _playerId;
@@ -90,6 +93,16 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
   const [investmentBonuses, setInvestmentBonuses] = useState<InvestmentBonus[]>([]);
   const [timeRemaining, setTimeRemaining] = useState(0);
 
+  /** Reset drawing state for a new round */
+  const resetDrawingState = useCallback(() => {
+    setStrokes([]);
+    setEditHistory([]);
+    setHasSubmitted(false);
+    setBackgroundColor('#ffffff');
+    setSelectedColor('#1a1a2e');
+    setSelectedWidth(4);
+  }, []);
+
   // Handle incoming game actions from the server
   const handleGameAction = useCallback(
     (data: Record<string, unknown>) => {
@@ -105,6 +118,8 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
             setColorPalette(palette);
             if (palette.length > 0) setSelectedColor(palette[0]);
           }
+          // Clear canvas for new round
+          resetDrawingState();
           setPhase('PROMPT_REVEAL');
           playSound('goFanfare');
           break;
@@ -195,7 +210,7 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
         }
       }
     },
-    [],
+    [resetDrawingState],
   );
 
   // Subscribe to socket events
@@ -245,13 +260,11 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
     setStrokes(prev);
   }, [hasSubmitted, editHistory]);
 
-  // Track edit history whenever strokes change (but not during active drawing)
+  // Track edit history: save state before each new stroke is added
   const trackingSetStrokes: React.Dispatch<React.SetStateAction<MMStroke[]>> = useCallback(
     (action) => {
       setStrokes((prevStrokes) => {
         const next = typeof action === 'function' ? action(prevStrokes) : action;
-        // Only save to history when a stroke is completed (not during pointer move)
-        // We track history on pointer down — save the state before the new stroke begins
         if (next.length > prevStrokes.length) {
           setEditHistory((h) => [...h, prevStrokes]);
         }
@@ -290,40 +303,55 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
             onSubmit={handleSubmitDrawing}
             onUndo={handleUndo}
           />
-          <ColorPalette
-            colors={colorPalette}
-            selectedColor={selectedColor}
-            onSelect={setSelectedColor}
-          />
 
-          {/* Stroke width selector */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-(--rmhbox-text-muted)">Width:</span>
-            {STROKE_WIDTHS.map((w) => (
-              <button
-                key={w}
-                onClick={() => setSelectedWidth(w)}
-                className={`flex items-center justify-center w-8 h-8 rounded-full border transition-transform ${
-                  selectedWidth === w
-                    ? 'border-(--rmhbox-accent) scale-110 ring-2 ring-(--rmhbox-accent)/40'
-                    : 'border-(--rmhbox-border) hover:scale-105'
-                }`}
-                aria-label={`Stroke width ${w}`}
-              >
-                <span
-                  className="rounded-full"
-                  style={{
-                    width: `${Math.min(w * 2, 20)}px`,
-                    height: `${Math.min(w * 2, 20)}px`,
-                    backgroundColor: selectedColor,
-                  }}
-                />
-              </button>
-            ))}
+          {/* Stroke color: palette swatches + color picker */}
+          <div className="flex items-center gap-2 flex-wrap justify-center">
+            <span className="text-xs text-(--rmhbox-text-muted)">Color:</span>
+            <ColorPalette
+              colors={colorPalette}
+              selectedColor={selectedColor}
+              onSelect={setSelectedColor}
+            />
+            <input
+              type="color"
+              value={selectedColor}
+              onChange={(e) => setSelectedColor(e.target.value)}
+              className="w-8 h-8 rounded-full border border-(--rmhbox-border) cursor-pointer p-0 bg-transparent"
+              title="Custom stroke color"
+              aria-label="Custom stroke color"
+            />
           </div>
 
-          {/* Background color selector */}
-          <div className="flex items-center gap-2">
+          {/* Stroke width slider */}
+          <div className="flex items-center gap-2 w-64">
+            <span className="text-xs text-(--rmhbox-text-muted)">Width:</span>
+            <input
+              type="range"
+              min={MIN_WIDTH}
+              max={MAX_WIDTH}
+              step={1}
+              value={selectedWidth}
+              onChange={(e) => setSelectedWidth(Number(e.target.value))}
+              className="flex-1 accent-(--rmhbox-accent)"
+              aria-label="Stroke width"
+            />
+            <span
+              className="flex items-center justify-center w-8 h-8"
+              title={`Width: ${selectedWidth}px`}
+            >
+              <span
+                className="rounded-full"
+                style={{
+                  width: `${Math.min(selectedWidth * 2, 24)}px`,
+                  height: `${Math.min(selectedWidth * 2, 24)}px`,
+                  backgroundColor: selectedColor,
+                }}
+              />
+            </span>
+          </div>
+
+          {/* Background color: preset swatches + color picker */}
+          <div className="flex items-center gap-2 flex-wrap justify-center">
             <span className="text-xs text-(--rmhbox-text-muted)">Background:</span>
             {BG_COLORS.map((c) => (
               <button
@@ -338,6 +366,14 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
                 aria-label={`Background color ${c}`}
               />
             ))}
+            <input
+              type="color"
+              value={backgroundColor}
+              onChange={(e) => setBackgroundColor(e.target.value)}
+              className="w-6 h-6 rounded-full border border-(--rmhbox-border) cursor-pointer p-0 bg-transparent"
+              title="Custom background color"
+              aria-label="Custom background color"
+            />
           </div>
 
           <div className="flex items-center gap-4">

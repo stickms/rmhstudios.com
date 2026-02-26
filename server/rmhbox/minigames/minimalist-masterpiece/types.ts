@@ -32,6 +32,7 @@ export interface MMStroke {
 export interface PlayerDrawing {
   drawingId: string;
   strokes: MMStroke[];
+  backgroundColor: string;
   submittedAt: number | null;
   strokeCount: number;
 }
@@ -54,6 +55,7 @@ export interface MMRanking {
   rank: number;
   points: number;
   strokes: MMStroke[];
+  backgroundColor: string;
 }
 
 // ─── Investment Bonus ────────────────────────────────────────────
@@ -71,6 +73,7 @@ export interface GalleryDrawing {
   drawingId: string;
   label: string;
   strokes: MMStroke[];
+  backgroundColor: string;
 }
 
 export interface AuctionDrawing extends GalleryDrawing {

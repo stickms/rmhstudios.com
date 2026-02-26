@@ -32,6 +32,7 @@ export const StrokeSchema = z.object({
 
 export const SubmitDrawingSchema = z.object({
   strokes: z.array(StrokeSchema).max(MM_MAX_STROKES),
+  backgroundColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().default('#ffffff'),
 });
 
 // ─── Place Bid Schema ────────────────────────────────────────────

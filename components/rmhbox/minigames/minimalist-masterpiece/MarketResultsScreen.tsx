@@ -14,6 +14,7 @@ interface MMRanking {
   rank: number;
   points: number;
   strokes: MMStroke[];
+  backgroundColor?: string;
 }
 
 interface InvestmentBonus {
@@ -49,7 +50,7 @@ export default function MarketResultsScreen({
             <span className="text-2xl font-bold text-(--rmhbox-accent) w-8 text-center">
               #{r.rank}
             </span>
-            <DrawingCard strokes={r.strokes} className="w-16 shrink-0" />
+            <DrawingCard strokes={r.strokes} backgroundColor={r.backgroundColor} className="w-16 shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-(--rmhbox-text) truncate">
                 {r.artistUserName}

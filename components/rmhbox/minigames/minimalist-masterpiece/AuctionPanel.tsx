@@ -13,6 +13,7 @@ interface AuctionDrawing {
   drawingId: string;
   label: string;
   strokes: MMStroke[];
+  backgroundColor?: string;
   currentBidTotal: number;
   myBidAmount: number;
   isMine: boolean;
@@ -42,7 +43,7 @@ export default function AuctionPanel({ drawings, currency, onBid }: AuctionPanel
               : 'border-(--rmhbox-border)'
           }`}
         >
-          <DrawingCard strokes={drawing.strokes} label={drawing.label} />
+          <DrawingCard strokes={drawing.strokes} backgroundColor={drawing.backgroundColor} label={drawing.label} />
           <p className="text-xs text-(--rmhbox-text-muted)">
             Market value: {drawing.currentBidTotal}
           </p>

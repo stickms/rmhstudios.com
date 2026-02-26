@@ -149,8 +149,8 @@ export const MM_DEFAULT_ROUNDS = 3;
 export const MM_MAX_STROKES = 5;
 export const MM_CANVAS_SIZE = 400;
 export const MM_STROKE_WIDTH = 4;
-export const MM_MIN_POINTS_PER_STROKE = 5;
-export const MM_MAX_POINTS_PER_STROKE = 500;
+export const MM_MIN_POINTS_PER_STROKE = 2;
+export const MM_MAX_POINTS_PER_STROKE = 2;
 export const MM_MIN_STROKE_DURATION_MS = 100;
 export const MM_COLOR_PALETTE = [
   '#1a1a2e',

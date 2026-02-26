@@ -10,6 +10,7 @@ interface GalleryDrawing {
   drawingId: string;
   label: string;
   strokes: MMStroke[];
+  backgroundColor?: string;
 }
 
 interface GalleryCarouselProps {
@@ -29,6 +30,7 @@ export default function GalleryCarousel({ drawings }: GalleryCarouselProps) {
         <DrawingCard
           key={drawing.drawingId}
           strokes={drawing.strokes}
+          backgroundColor={drawing.backgroundColor}
           label={drawing.label}
         />
       ))}

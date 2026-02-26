@@ -62,11 +62,10 @@ function createGame(ctxData?: MockContextData) {
 function createValidStroke(overrides = {}): Record<string, unknown> {
   return {
     id: crypto.randomUUID(),
-    points: Array.from({ length: 10 }, (_, i) => ({
-      x: i * 40,
-      y: i * 40,
-      pressure: 0.5,
-    })),
+    points: [
+      { x: 50, y: 50, pressure: 0.5 },
+      { x: 200, y: 200, pressure: 0.5 },
+    ],
     color: '#1a1a2e',
     width: 4,
     timestamp: Date.now(),
@@ -74,9 +73,10 @@ function createValidStroke(overrides = {}): Record<string, unknown> {
   };
 }
 
-function createValidDrawing(strokeCount = 3): { strokes: Record<string, unknown>[] } {
+function createValidDrawing(strokeCount = 3): { strokes: Record<string, unknown>[]; backgroundColor: string } {
   return {
     strokes: Array.from({ length: strokeCount }, () => createValidStroke()),
+    backgroundColor: '#ffffff',
   };
 }
 
@@ -274,39 +274,32 @@ describe('Minimalist Masterpiece Server Handler (§6.3)', () => {
       expect(rejected!.data.reason).toBe('invalid_input');
     });
 
-    it('should reject a stroke with a color not in the palette', () => {
+    it('should reject a stroke with an invalid color format', () => {
       const { game, playerLog } = createGame();
       game.start();
       advanceToDrawing(game);
 
       const uid = MOCK_USERS.charlie.userId;
-      const badStroke = createValidStroke({ color: '#ff00ff' });
-      game.handleInput(uid, 'SUBMIT_DRAWING', { strokes: [badStroke] });
+      // Not a valid hex color — will fail Zod regex validation
+      const badStroke = createValidStroke({ color: 'not-a-color' });
+      game.handleInput(uid, 'SUBMIT_DRAWING', { strokes: [badStroke], backgroundColor: '#ffffff' });
 
       const rejected = findLastPlayerAction(playerLog, uid, 'MM_DRAWING_REJECTED');
       expect(rejected).toBeDefined();
-      expect(rejected!.data.reason).toBe('invalid_color');
+      expect(rejected!.data.reason).toBe('invalid_input');
     });
 
-    it('should reject a stroke drawn too fast (anti-bot: <100ms duration)', () => {
+    it('should accept a valid hex color not in the default palette', () => {
       const { game, playerLog } = createGame();
       game.start();
       advanceToDrawing(game);
 
       const uid = MOCK_USERS.diana.userId;
-      // 5 points × 16ms = 80ms < 100ms threshold → rejected
-      const fastStroke = createValidStroke({
-        points: Array.from({ length: 5 }, (_, i) => ({
-          x: i * 40,
-          y: i * 40,
-          pressure: 0.5,
-        })),
-      });
-      game.handleInput(uid, 'SUBMIT_DRAWING', { strokes: [fastStroke] });
+      const customColorStroke = createValidStroke({ color: '#abcdef' });
+      game.handleInput(uid, 'SUBMIT_DRAWING', { strokes: [customColorStroke], backgroundColor: '#ffffff' });
 
-      const rejected = findLastPlayerAction(playerLog, uid, 'MM_DRAWING_REJECTED');
-      expect(rejected).toBeDefined();
-      expect(rejected!.data.reason).toBe('stroke_too_fast');
+      const accepted = findLastPlayerAction(playerLog, uid, 'MM_DRAWING_ACCEPTED');
+      expect(accepted).toBeDefined();
     });
 
     it('should reject duplicate submission from the same player', () => {
