@@ -13,7 +13,7 @@ export default function EmojiSentence({ emojis, maxEmojis, onRemove, readOnly = 
 
   return (
     <div className="flex flex-col items-center gap-2 w-full">
-      <div className="flex items-center gap-1 min-h-[3.5rem] p-3 rounded-xl bg-(--rmhbox-surface) border border-(--rmhbox-border) w-full overflow-x-auto">
+      <div className="flex items-center gap-1 min-h-14 p-3 rounded-xl bg-(--rmhbox-surface) border border-(--rmhbox-border) w-full overflow-x-auto">
         {safeEmojis.length === 0 ? (
           <span className="text-(--rmhbox-text-muted) text-sm italic mx-auto">
             {readOnly ? 'Waiting for emojis…' : 'Tap emojis below to build your clue'}
