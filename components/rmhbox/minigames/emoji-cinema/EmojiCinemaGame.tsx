@@ -13,6 +13,7 @@ import { getSocket } from '@/lib/rmhbox/socket';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { S2C } from '@/lib/rmhbox/events';
 import { emitGameInput, extractTimerTick } from '@/lib/rmhbox/minigame-client';
+import { playSound } from '@/lib/rmhbox/audio';
 import type { MinigameProps } from '../MinigameRenderer';
 import ProducerView from './ProducerView';
 import AudienceView from './AudienceView';
@@ -87,6 +88,7 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
           setCorrectCount(0);
           setCorrectGuessers([]);
           setPhase('PRODUCER_ASSIGNMENT');
+          playSound('swoosh');
           break;
         }
         case 'EC_MOVIE_CHOICES': {
@@ -118,6 +120,7 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
           const seq = (data.emojiSequence ?? data.emojis) as string[] | undefined;
           setEmojis(seq ?? []);
           if (phase !== 'EMOJI_CONSTRUCTION') setPhase('EMOJI_CONSTRUCTION');
+          playSound('click');
           break;
         }
         case 'EC_GUESS_RESULT': {
@@ -128,6 +131,7 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
         }
         case 'EC_CLOSE_GUESS': {
           // Close guesses are not displayed as a notification
+          playSound('chime');
           break;
         }
         case 'EC_CORRECT_GUESS': {
@@ -136,6 +140,7 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
             setCorrectGuessers(data.correctGuessers as CorrectGuesserInfo[]);
           }
           setCorrectCount((data.correctGuessers as CorrectGuesserInfo[] | undefined)?.length ?? 0);
+          playSound('scoreDing');
           break;
         }
         case 'EC_GUESS_COUNT': {
@@ -174,6 +179,7 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
           setResultsPlayers(data.results as PlayerResult[] ?? playerResults);
           setNoEmojisSkipped(!!data.noEmojis);
           setPhase('ROUND_RESULTS');
+          playSound('victoryFanfare');
           break;
         }
         case 'EC_TRANSITION': {
@@ -182,7 +188,10 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
         }
         case 'TIMER_TICK': {
           const remaining = extractTimerTick(data);
-          if (remaining !== undefined) setTimeRemaining(remaining);
+          if (remaining !== undefined) {
+            setTimeRemaining(remaining);
+            if (remaining <= 5 && remaining > 0) playSound('countdownBeep');
+          }
           break;
         }
       }

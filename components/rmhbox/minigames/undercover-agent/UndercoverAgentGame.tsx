@@ -28,6 +28,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Eye, Shuffle } from 'lucide-react';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
+import { playSound } from '@/lib/rmhbox/audio';
 import { emitGameInput, useGameSocket, extractTimerTick } from '@/lib/rmhbox/minigame-client';
 import GridBoard from './GridBoard';
 import ClueInput from './ClueInput';
@@ -239,6 +240,7 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
           const { role, team } = deriveRole(rawTeams);
           setMyRole(role);
           setMyTeam(team);
+          playSound('swoosh');
           break;
         }
         case 'UA_KEY_CARD': {
@@ -282,6 +284,7 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
           setTimeRemaining(data.timeout as number);
           // Transition to GUESS phase when clue is received
           setPhase('GUESS');
+          playSound('click');
           break;
         }
         case 'UA_TILE_REVEALED': {
@@ -293,6 +296,7 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
               t.position === pos ? { ...t, type: tileType, state: 'REVEALED' as const, revealedBy } : t,
             ),
           );
+          playSound(tileType === 'RED_AGENT' || tileType === 'BLUE_AGENT' ? 'scoreDing' : 'buzzer');
           break;
         }
         case 'UA_GUESS_RESULT': {
@@ -314,6 +318,7 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
           setTurnEndReason(reason);
           setPhase('TURN_TRANSITION');
           setCurrentClue(null);
+          playSound('swoosh');
           break;
         }
         case 'UA_TIMEOUT': {
@@ -339,6 +344,7 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
           const gameReason = data.reason as string;
           setWinner(gameWinner);
           setWinReason(gameReason);
+          playSound('victoryFanfare');
           break;
         }
         case 'UA_HIGHLIGHTS': {
@@ -360,7 +366,10 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
         }
         case 'TIMER_TICK': {
           const remaining = extractTimerTick(data);
-          if (remaining !== undefined) setTimeRemaining(remaining);
+          if (remaining !== undefined) {
+            setTimeRemaining(remaining);
+            if (remaining <= 5 && remaining > 0) playSound('countdownBeep');
+          }
           break;
         }
       }

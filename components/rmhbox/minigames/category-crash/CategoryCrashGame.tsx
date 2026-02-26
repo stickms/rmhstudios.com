@@ -32,6 +32,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Flame } from 'lucide-react';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { emitGameInput, useGameSocket, extractTimerTick } from '@/lib/rmhbox/minigame-client';
+import { playSound } from '@/lib/rmhbox/audio';
 import CategoryInput from './CategoryInput';
 import PeerReview from './PeerReview';
 import CategoryCrashResults from './CategoryCrashResults';
@@ -127,6 +128,7 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
           setRoundResults(null);
           setAnonymizedAnswers([]);
           // Server will send CC_INPUT_START when the reveal period ends
+          playSound('goFanfare');
           break;
         }
         case 'CC_INPUT_START': {
@@ -141,6 +143,7 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
         }
         case 'CC_ANSWERS_SUBMITTED': {
           setIsLocked(true);
+          playSound('click');
           break;
         }
         case 'CC_LOCK_STATUS': {
@@ -155,6 +158,7 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
           if (data.categories) setCategories(data.categories as Category[]);
           if (data.letter) setLetter(data.letter as string);
           setMyCrashes([]);
+          playSound('swoosh');
           break;
         }
         case 'CC_MY_ANONYMOUS_LABEL': {
@@ -167,6 +171,7 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
             categoryIndex: data.categoryIndex as number,
           };
           setMyCrashes((prev) => [...prev, entry]);
+          playSound('buzzer');
           break;
         }
         case 'CC_UNCRASH_RECORDED': {
@@ -185,6 +190,7 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
         case 'CC_ROUND_RESULTS': {
           setPhase('ROUND_RESULTS');
           setRoundResults(data.results as CCRoundResults);
+          playSound('victoryFanfare');
           const newScores = data.scores as Record<string, number>;
           setScores(newScores);
           setAnonymizationMap(data.anonymizationMap as Record<string, string> ?? {});
@@ -225,7 +231,10 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
         }
         case 'TIMER_TICK': {
           const remaining = extractTimerTick(data);
-          if (remaining !== undefined) setTimeRemaining(remaining);
+          if (remaining !== undefined) {
+            setTimeRemaining(remaining);
+            if (remaining <= 5 && remaining > 0) playSound('countdownBeep');
+          }
           break;
         }
       }

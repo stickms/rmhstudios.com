@@ -31,11 +31,11 @@ export type SoundName =
 const SOUND_PATHS: Record<SoundName, string> = {
   chime: '/music/rmhbox/sfx/chime.mp3',
   click: '/music/rmhbox/sfx/click.mp3',
-  countdownBeep: '/music/rmhbox/sfx/countdown-beep.mp3',
-  goFanfare: '/music/rmhbox/sfx/go-fanfare.mp3',
-  scoreDing: '/music/rmhbox/sfx/score-ding.mp3',
+  countdownBeep: '/music/rmhbox/sfx/countdownBeep.mp3',
+  goFanfare: '/music/rmhbox/sfx/goFanfare.mp3',
+  scoreDing: '/music/rmhbox/sfx/scoreDing.mp3',
   buzzer: '/music/rmhbox/sfx/buzzer.mp3',
-  victoryFanfare: '/music/rmhbox/sfx/victory-fanfare.mp3',
+  victoryFanfare: '/music/rmhbox/sfx/victoryFanfare.mp3',
   swoosh: '/music/rmhbox/sfx/swoosh.mp3',
 };
 

@@ -225,7 +225,10 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
         }
         case 'TIMER_TICK': {
           const remaining = extractTimerTick(data);
-          if (remaining !== undefined) setTimeRemaining(remaining);
+          if (remaining !== undefined) {
+            setTimeRemaining(remaining);
+            if (remaining <= 5 && remaining > 0) playSound('countdownBeep');
+          }
           break;
         }
       }

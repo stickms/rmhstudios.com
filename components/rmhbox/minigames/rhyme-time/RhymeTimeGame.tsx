@@ -24,6 +24,7 @@ import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { emitGameInput, useGameSocket, extractTimerTick } from '@/lib/rmhbox/minigame-client';
+import { playSound } from '@/lib/rmhbox/audio';
 import RhymeTimeInput from './RhymeTimeInput';
 import RhymeTimeResults from './RhymeTimeResults';
 import RhymeTimeScoreboard from './RhymeTimeScoreboard';
@@ -78,6 +79,7 @@ export default function RhymeTimeGame({ playerId, playerName: _playerName }: Rhy
           setMySubmissions([]);
           setSubmissionCounts([]);
           // Server will send RT_INPUT_START when the reveal period ends
+          playSound('goFanfare');
           break;
         }
         case 'RT_INPUT_START': {
@@ -104,6 +106,7 @@ export default function RhymeTimeGame({ playerId, playerName: _playerName }: Rhy
                 : undefined,
           };
           setMySubmissions((prev) => [...prev, sub]);
+          playSound(data.isValid ? 'scoreDing' : 'buzzer');
           break;
         }
         case 'RT_SUBMISSION_COUNT': {
@@ -128,6 +131,7 @@ export default function RhymeTimeGame({ playerId, playerName: _playerName }: Rhy
           // Server sends: { type, round, results: RoundResult, scores, duration }
           // RoundResult.playerResults: Record<string, { userId, userName, breakdown: WordBreakdown[], roundScore, validCount, invalidCount }>
           setPhase('SCORING');
+          playSound('victoryFanfare');
           const results = data.results as Record<string, unknown>;
           const playerResults = results?.playerResults as Record<
             string,
@@ -204,6 +208,7 @@ export default function RhymeTimeGame({ playerId, playerName: _playerName }: Rhy
         case 'RT_INTERMISSION': {
           // Server sends: { type, duration, nextRound, scores: Record<string,number> }
           setPhase('INTERMISSION');
+          playSound('swoosh');
           const scores = data.scores as Record<string, number> | undefined;
           if (scores) {
             const standingsList: Standing[] = Object.entries(scores).map(([uid, sc]) => {
@@ -232,7 +237,10 @@ export default function RhymeTimeGame({ playerId, playerName: _playerName }: Rhy
         }
         case 'TIMER_TICK': {
           const remaining = extractTimerTick(data);
-          if (remaining !== undefined) setTimeRemaining(remaining);
+          if (remaining !== undefined) {
+            setTimeRemaining(remaining);
+            if (remaining <= 5 && remaining > 0) playSound('countdownBeep');
+          }
           break;
         }
       }

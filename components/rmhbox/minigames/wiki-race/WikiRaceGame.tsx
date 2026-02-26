@@ -27,6 +27,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Flag } from 'lucide-react';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { emitGameInput, useGameSocket, extractTimerTick } from '@/lib/rmhbox/minigame-client';
+import { playSound } from '@/lib/rmhbox/audio';
 import ArticleReveal from './ArticleReveal';
 import WikiFrame from './WikiFrame';
 import BreadcrumbTrail from './BreadcrumbTrail';
@@ -118,6 +119,7 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
           setResults(null);
           setArticleHtml('');
           setOtherPlayers({});
+          playSound('swoosh');
           break;
         }
         case 'WR_NAVIGATION_START': {
@@ -178,17 +180,20 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
               },
             }));
           }
+          playSound('scoreDing');
           break;
         }
         case 'WR_RESULTS': {
           setPhase('RESULTS');
           setResults(data.playerResults as Record<string, WRPlayerResult>);
+          playSound('victoryFanfare');
           break;
         }
         case 'WR_NAVIGATE_REJECTED': {
           setIsLoading(false);
           setErrorMsg(data.reason as string);
           globalThis.setTimeout(() => setErrorMsg(null), 2000);
+          playSound('buzzer');
           break;
         }
         case 'TIMER_START': {
@@ -200,7 +205,10 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
         }
         case 'TIMER_TICK': {
           const remaining = extractTimerTick(data);
-          if (remaining !== undefined) setTimeRemaining(remaining);
+          if (remaining !== undefined) {
+            setTimeRemaining(remaining);
+            if (remaining <= 5 && remaining > 0) playSound('countdownBeep');
+          }
           break;
         }
       }
@@ -249,6 +257,7 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
     if (hasFinished || isSpectator) return;
     setIsLoading(true);
     emitGameInput('NAVIGATE', { targetTitle });
+    playSound('click');
   }, [hasFinished, isSpectator]);
 
   const handleGoBack = useCallback((targetTitle: string, pathIndex: number) => {
