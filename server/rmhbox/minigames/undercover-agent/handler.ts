@@ -1532,7 +1532,7 @@ export class UndercoverAgentMinigame extends BaseMinigame {
   private actionSeq = 0;
 
   /** Broadcast a game action to all players, always including the full actionLog */
-  private broadcastGameAction(data: Record<string, unknown>): void {
+  protected override broadcastGameAction(data: Record<string, unknown>): void {
     this.context.broadcastToLobby('rmhbox:game:action', {
       ...data,
       actionLog: this.state.actionLog,

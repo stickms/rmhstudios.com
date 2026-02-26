@@ -328,6 +328,15 @@ export abstract class BaseMinigame {
   }
 
   /**
+   * Broadcast a game action to all lobby members (players + spectators).
+   * Convenience wrapper around `this.context.broadcastToLobby('rmhbox:game:action', data)`.
+   * Subclasses can override to attach additional metadata (e.g. actionLog).
+   */
+  protected broadcastGameAction(data: Record<string, unknown>): void {
+    this.context.broadcastToLobby('rmhbox:game:action', data);
+  }
+
+  /**
    * Force-end the game early (e.g., not enough players remain).
    * Cleans up resources and delivers partial results.
    */
