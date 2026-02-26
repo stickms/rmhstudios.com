@@ -288,8 +288,7 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
     if (snapshot && Object.keys(snapshot).length > 0 && snapshot.phase) {
       handleStateSnapshot(snapshot as Record<string, unknown>);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [handleStateSnapshot]);
 
   // Auto-save: whenever strokes or backgroundColor changes during the DRAWING phase,
   // automatically submit the drawing to the server. Always runs (server allows re-submissions).

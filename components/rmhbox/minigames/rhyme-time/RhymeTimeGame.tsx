@@ -343,8 +343,7 @@ export default function RhymeTimeGame({ playerId, playerName: _playerName }: Rhy
     if (snapshot && Object.keys(snapshot).length > 0 && snapshot.phase) {
       handleStateSnapshot(snapshot as Record<string, unknown>);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [handleStateSnapshot]);
 
   // Submit a word (disabled for spectators)
   const handleSubmitWord = useCallback(
