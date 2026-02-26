@@ -40,7 +40,6 @@ import type {
   PlayerDrawing,
   DrawingBids,
   MMRanking,
-  AuctionWinner,
   PlayerScoreBreakdown,
   GalleryDrawing,
   AuctionDrawing,
@@ -384,6 +383,14 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
         paintedValue: sb.paintedValue,
         ownedValue: sb.ownedValue,
         totalScore: sb.totalScore,
+      })),
+      // Store actual drawing data for history reconstruction
+      drawings: mmRankings.map((r) => ({
+        drawingId: r.drawingId,
+        artistUserId: r.artistUserId,
+        artistUserName: r.artistUserName,
+        strokes: r.strokes,
+        backgroundColor: r.backgroundColor,
       })),
     });
 

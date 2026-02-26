@@ -76,9 +76,18 @@ const DEFAULT_COLOR_PALETTE = ['#1a1a2e', '#e94560', '#0f3460', '#16213e', '#533
 // Background color preset options
 const BG_COLORS = ['#ffffff', '#f5f5dc', '#ffe4e1', '#e0f7fa', '#f0e68c', '#e8e8e8', '#1a1a2e'];
 
-// Stroke width slider range
+// Stroke width slider range (SVG viewBox is 300×300, so max ≈ half-canvas = 150)
 const MIN_WIDTH = 1;
-const MAX_WIDTH = 16;
+const MAX_WIDTH = 150;
+
+/** Check if a hex color is "light" (luminance > 0.5) for contrast purposes. */
+function isLightColor(hex: string): boolean {
+  const c = hex.replace('#', '');
+  const r = parseInt(c.slice(0, 2), 16) / 255;
+  const g = parseInt(c.slice(2, 4), 16) / 255;
+  const b = parseInt(c.slice(4, 6), 16) / 255;
+  return 0.299 * r + 0.587 * g + 0.114 * b > 0.5;
+}
 
 export default function MinimalistMasterpieceGame({ playerId: _playerId, playerName: _playerName }: MinigameProps) {
   void _playerId;
@@ -93,7 +102,6 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
   const [backgroundColor, setBackgroundColor] = useState('#ffffff');
   const [strokes, setStrokes] = useState<MMStroke[]>([]);
   const [editHistory, setEditHistory] = useState<MMStroke[][]>([]);
-  const [hasSubmitted, setHasSubmitted] = useState(false);
   const [galleryDrawings, setGalleryDrawings] = useState<GalleryDrawing[]>([]);
   const [auctionDrawings, setAuctionDrawings] = useState<AuctionDrawing[]>([]);
   const [currency, setCurrency] = useState(1000);
@@ -108,7 +116,6 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
   const resetDrawingState = useCallback(() => {
     setStrokes([]);
     setEditHistory([]);
-    setHasSubmitted(false);
     setBackgroundColor('#ffffff');
     setSelectedColor(colorPalette[0] ?? DEFAULT_COLOR_PALETTE[0]);
     setSelectedWidth(4);
@@ -147,8 +154,7 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
           break;
         }
         case 'MM_DRAWING_ACCEPTED': {
-          // Sent to the submitting player
-          setHasSubmitted(true);
+          // Sent to the submitting player — auto-save acknowledged
           playSound('click');
           break;
         }
@@ -277,8 +283,7 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
   }, [phase, strokes, backgroundColor]);
 
   // Undo: restore the previous edit history state.
-  // Note: hasSubmitted is not checked because auto-save marks submission immediately,
-  // and we allow continued editing + re-submissions throughout the drawing phase.
+  // Auto-save allows re-submissions, so undo works throughout the drawing phase.
   const handleUndo = useCallback(() => {
     if (editHistory.length === 0) return;
     const prev = editHistory[editHistory.length - 1];
@@ -338,7 +343,7 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
           />
 
           {/* Stroke width slider */}
-          <div className="flex items-center gap-2 w-full max-w-64">
+          <div className="flex items-center gap-2 w-full max-w-72">
             <span className="text-xs text-(--rmhbox-text-muted)">Width:</span>
             <input
               type="range"
@@ -350,15 +355,22 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
               className="flex-1 accent-(--rmhbox-accent)"
               aria-label="Stroke width"
             />
+            {/* Preview dot: SVG viewBox 300 renders in 288px, so scale = 288/300.
+                Clamp to max 36px display size. Contrasting circular background for visibility. */}
             <span
-              className="flex items-center justify-center w-8 h-8"
-              title={`Width: ${selectedWidth}px`}
+              className="flex items-center justify-center rounded-full border border-(--rmhbox-border)"
+              style={{
+                width: '40px',
+                height: '40px',
+                backgroundColor: isLightColor(selectedColor) ? '#333' : '#eee',
+              }}
+              title={`Width: ${selectedWidth}`}
             >
               <span
                 className="rounded-full"
                 style={{
-                  width: `${Math.min(selectedWidth * 2, 24)}px`,
-                  height: `${Math.min(selectedWidth * 2, 24)}px`,
+                  width: `${Math.min(selectedWidth * (288 / 300), 36)}px`,
+                  height: `${Math.min(selectedWidth * (288 / 300), 36)}px`,
                   backgroundColor: selectedColor,
                 }}
               />

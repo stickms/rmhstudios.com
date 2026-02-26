@@ -2,20 +2,21 @@
  * Minimalist Masterpiece — History Detail Component
  *
  * Renders the expanded game log for a Minimalist Masterpiece match.
- * Shows per-round prompt, drawing submissions, auction winners,
+ * Shows per-round prompt, reconstructed drawing images, auction winners,
  * market value rankings, score breakdowns, and cumulative scores.
  *
  * Data sources (from actionLog):
  *   - round_start: { round, promptText }
  *   - submit_drawing: { userId, drawingId, strokeCount }
- *   - auction_winner: { drawingId, winnerId, amountPaid, marketValue }
- *   - round_end: { round, promptText, rankings[], scoreBreakdowns[] }
+ *   - round_end: { round, promptText, rankings[], scoreBreakdowns[], drawings[] }
  *
  * Reference: docs/rmhbox/design-spec/minigames-2.md §3.15
  */
 'use client';
 
 import type { HistoryDetailProps } from '@/lib/rmhbox/history-display-registry';
+import DrawingCard from './DrawingCard';
+import type { MMStroke } from './DrawingCard';
 
 interface RoundRanking {
   artistUserId: string;
@@ -36,14 +37,22 @@ interface ScoreBreakdown {
   totalScore: number;
 }
 
+/** Drawing data stored in the round_end log action for history reconstruction. */
+interface LoggedDrawing {
+  drawingId: string;
+  artistUserId: string;
+  artistUserName: string;
+  strokes: MMStroke[];
+  backgroundColor: string;
+}
+
 export default function MinimalistMasterpieceHistoryDetail({ gameLog, players }: HistoryDetailProps) {
   // Extract round data from action log
   const roundStarts = gameLog.actions.filter((a) => a.type === 'round_start');
   const roundEnds = gameLog.actions.filter((a) => a.type === 'round_end');
-  const drawingSubmissions = gameLog.actions.filter((a) => a.type === 'submit_drawing');
 
   // Cumulative scores from top-level game log field
-  const cumulativeScores = (gameLog as Record<string, unknown>).cumulativeScores as Record<string, number> | undefined;
+  const cumulativeScores = (gameLog as unknown as Record<string, unknown>).cumulativeScores as Record<string, number> | undefined;
 
   // Total rounds info
   const totalRounds = roundStarts.length;
@@ -62,16 +71,7 @@ export default function MinimalistMasterpieceHistoryDetail({ gameLog, players }:
         const roundEnd = roundEnds.find((re) => re.payload.round === roundNum);
         const rankings = (roundEnd?.payload.rankings as RoundRanking[]) ?? [];
         const scoreBreakdowns = (roundEnd?.payload.scoreBreakdowns as ScoreBreakdown[]) ?? [];
-
-        // Drawings submitted in this round
-        const roundDrawings = drawingSubmissions.filter((d) => {
-          // Match by position: drawings between this round_start and the next
-          const startIdx = gameLog.actions.indexOf(roundStart);
-          const nextStart = roundStarts[i + 1];
-          const endIdx = nextStart ? gameLog.actions.indexOf(nextStart) : gameLog.actions.length;
-          const drawIdx = gameLog.actions.indexOf(d);
-          return drawIdx > startIdx && drawIdx < endIdx;
-        });
+        const drawings = (roundEnd?.payload.drawings as LoggedDrawing[]) ?? [];
 
         return (
           <div key={roundNum} className="rounded-lg border border-(--rmhbox-border) p-4 space-y-3">
@@ -79,25 +79,27 @@ export default function MinimalistMasterpieceHistoryDetail({ gameLog, players }:
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold text-(--rmhbox-text)">Round {roundNum}</span>
               <span className="text-xs text-(--rmhbox-text-muted)">
-                {roundDrawings.length} drawing{roundDrawings.length !== 1 ? 's' : ''}
+                {drawings.length} drawing{drawings.length !== 1 ? 's' : ''}
               </span>
             </div>
 
             {/* Prompt */}
             <div className="text-sm text-(--rmhbox-accent)">&quot;{promptText}&quot;</div>
 
-            {/* Drawings */}
-            {roundDrawings.length > 0 && (
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                {roundDrawings.map((d, j) => {
-                  const userId = d.payload.userId as string;
-                  const player = players.find((p) => p.userId === userId);
-                  const strokeCount = (d.payload.strokeCount as number) ?? 0;
+            {/* Reconstructed drawing images */}
+            {drawings.length > 0 && (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {drawings.map((d) => {
+                  const player = players.find((p) => p.userId === d.artistUserId);
+                  const ranking = rankings.find((r) => r.artistUserId === d.artistUserId);
                   return (
-                    <div key={j} className="rounded-lg border border-(--rmhbox-border) p-2 text-center text-xs">
-                      <div className="font-medium text-(--rmhbox-text)">{player?.userName ?? 'Unknown'}</div>
-                      <div className="text-(--rmhbox-text-muted)">{strokeCount} stroke{strokeCount !== 1 ? 's' : ''}</div>
-                    </div>
+                    <DrawingCard
+                      key={d.drawingId}
+                      strokes={d.strokes ?? []}
+                      backgroundColor={d.backgroundColor ?? '#ffffff'}
+                      label={player?.userName ?? d.artistUserName ?? 'Unknown'}
+                      className={ranking ? '' : ''}
+                    />
                   );
                 })}
               </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import MovieReveal from './MovieReveal';
+import { getEmojiUrl } from '@/lib/rmhbox/emoji-cinema/twemoji-url';
 
 interface PlayerResult {
   userId: string;
@@ -37,10 +38,15 @@ export default function RoundResults({
 
       <MovieReveal title={movieTitle} />
 
-      <div className="flex gap-1 text-2xl">
-        {(emojis ?? []).map((e, i) => (
-          <span key={i}>{e}</span>
-        ))}
+      <div className="flex gap-1 flex-wrap justify-center">
+        {(emojis ?? []).map((e, i) => {
+          const url = getEmojiUrl(e);
+          return url ? (
+            <img key={i} src={url} alt={e} className="w-8 h-8 inline-block" draggable={false} />
+          ) : (
+            <span key={i} className="text-2xl">{e}</span>
+          );
+        })}
       </div>
 
       <div className="text-sm text-(--rmhbox-text-muted)">

@@ -2,8 +2,8 @@
  * Emoji Cinema — History Detail Component
  *
  * Renders the expanded game log for an Emoji Cinema match.
- * Shows round-by-round review: producer, movie title, emoji sequence,
- * correct guessers, and scores.
+ * Shows round-by-round review: producer, movie title, emoji sequence
+ * (rendered as Twemoji images), correct guessers, and scores.
  *
  * Data sources (from actionLog):
  *   - round_start: { round, producerUserId }
@@ -16,6 +16,7 @@
 'use client';
 
 import type { HistoryDetailProps } from '@/lib/rmhbox/history-display-registry';
+import { getEmojiUrl } from '@/lib/rmhbox/emoji-cinema/twemoji-url';
 
 interface LogCorrectGuesser {
   userId: string;
@@ -29,7 +30,7 @@ export default function EmojiCinemaHistoryDetail({ gameLog, players }: HistoryDe
   const movieSelections = gameLog.actions.filter((a) => a.type === 'movie_selected');
 
   // Final scores from top-level game log field
-  const finalScores = (gameLog as Record<string, unknown>).finalScores as Record<string, number> | undefined;
+  const finalScores = (gameLog as unknown as Record<string, unknown>).finalScores as Record<string, number> | undefined;
 
   return (
     <div className="space-y-4">
@@ -74,11 +75,20 @@ export default function EmojiCinemaHistoryDetail({ gameLog, players }: HistoryDe
               </span>
             </div>
 
-            {/* Emoji sequence */}
+            {/* Emoji sequence rendered as Twemoji images */}
             {noEmojis ? (
               <div className="text-sm text-(--rmhbox-text-muted) italic">Round skipped (no emojis placed)</div>
             ) : (
-              <div className="text-lg">{emojiSeq.length > 0 ? emojiSeq.join(' ') : '(no emojis)'}</div>
+              <div className="flex gap-1 flex-wrap">
+                {emojiSeq.length > 0 ? emojiSeq.map((emoji, j) => {
+                  const url = getEmojiUrl(emoji);
+                  return url ? (
+                    <img key={j} src={url} alt={emoji} className="w-7 h-7 inline-block" draggable={false} />
+                  ) : (
+                    <span key={j} className="text-xl">{emoji}</span>
+                  );
+                }) : <span className="text-sm text-(--rmhbox-text-muted)">(no emojis)</span>}
+              </div>
             )}
 
             {/* Movie title */}
