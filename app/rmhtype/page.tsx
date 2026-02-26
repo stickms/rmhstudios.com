@@ -40,6 +40,7 @@ export default function RmhTypeLanding() {
   }
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(true);
+  const [leaderboardDifficulty, setLeaderboardDifficulty] = useState<Difficulty>('medium');
 
   // Solo settings (local)
   const [soloDifficulty, setSoloDifficulty] = useState<Difficulty>(settings.soloDifficulty);
@@ -69,21 +70,12 @@ export default function RmhTypeLanding() {
           }
         });
 
-        socket.on(S2C.LEADERBOARD_DATA, (data: { leaderboard: LeaderboardEntry[] }) => {
+        socket.on(S2C.LEADERBOARD_DATA, (data: { leaderboard: LeaderboardEntry[]; difficulty?: string }) => {
           if (mounted) {
             setLeaderboard(data.leaderboard);
             setLeaderboardLoading(false);
           }
         });
-
-        // Fetch leaderboard once connected (socket may not be connected yet)
-        if (socket.connected) {
-          emit(C2S.LEADERBOARD_FETCH, { limit: 20 });
-        } else {
-          socket.once('connect', () => {
-            if (mounted) emit(C2S.LEADERBOARD_FETCH, { limit: 20 });
-          });
-        }
       } catch (err) {
         if (mounted) {
           toast.error(err instanceof Error ? err.message : 'Connection failed');
@@ -95,6 +87,13 @@ export default function RmhTypeLanding() {
     connect();
     return () => { mounted = false; };
   }, [router]);
+
+  // Fetch leaderboard when difficulty tab changes or connection ready
+  useEffect(() => {
+    if (connectionStatus !== 'connected') return;
+    setLeaderboardLoading(true);
+    emit(C2S.LEADERBOARD_FETCH, { limit: 20, difficulty: leaderboardDifficulty });
+  }, [leaderboardDifficulty, connectionStatus]);
 
   useEffect(() => {
     return () => {
@@ -177,10 +176,27 @@ export default function RmhTypeLanding() {
 
               {/* Leaderboard */}
               <div className="rounded-xl border border-(--rmhtype-border) bg-(--rmhtype-surface) p-6">
-                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                  <Trophy className="h-5 w-5 text-(--rmhtype-accent)" />
-                  Leaderboard
-                </h3>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <Trophy className="h-5 w-5 text-(--rmhtype-accent)" />
+                    Leaderboard
+                  </h3>
+                  <div className="flex gap-1">
+                    {(['easy', 'medium', 'hard'] as Difficulty[]).map((d) => (
+                      <button
+                        key={d}
+                        onClick={() => setLeaderboardDifficulty(d)}
+                        className={`px-3 py-1 rounded-lg text-xs font-medium capitalize transition-colors ${
+                          leaderboardDifficulty === d
+                            ? 'bg-(--rmhtype-accent) text-white'
+                            : 'bg-(--rmhtype-bg) text-(--rmhtype-text-muted) hover:bg-(--rmhtype-surface-hover)'
+                        }`}
+                      >
+                        {d}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
                 {leaderboardLoading ? (
                   <p className="text-sm text-(--rmhtype-text-muted) text-center py-4">Loading...</p>

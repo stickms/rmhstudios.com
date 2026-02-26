@@ -57,7 +57,14 @@ export async function connectToRmhStudy(): Promise<Socket> {
 
   // ─── Connection lifecycle ───────────────────────────────────
   socket.on('connect', () => {
-    useRmhStudyStore.getState().setConnectionStatus('connected');
+    const store = useRmhStudyStore.getState();
+    store.setConnectionStatus('connected');
+
+    // Re-join room on reconnect (socket ID changed, server lost our mapping)
+    const room = store.room;
+    if (room?.roomCode) {
+      socket!.emit('rmhstudy:room:join', { roomCode: room.roomCode });
+    }
   });
 
   socket.on('disconnect', (reason) => {

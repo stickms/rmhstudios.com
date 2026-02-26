@@ -98,6 +98,7 @@ const rooms = new Map<string, StudyRoom>();
 const userSocketMap = new Map<string, string>();   // userId -> socketId
 const socketUserMap = new Map<string, string>();   // socketId -> userId
 const socketRoomMap = new Map<string, string>();   // socketId -> roomCode
+const disconnectTimers = new Map<string, NodeJS.Timeout>();  // userId -> grace-period timer
 
 // ─── Helper Functions ───
 
@@ -440,18 +441,21 @@ function persistWorkSession(room: StudyRoom): void {
 
 // ─── Room Cleanup ───
 
-function removePlayerFromRoom(io: Server, socketId: string): void {
-  const userId = socketUserMap.get(socketId);
-  const roomCode = socketRoomMap.get(socketId);
-  if (!userId || !roomCode) return;
-
+/** Immediately remove a player (used for explicit leave or grace-period expiry). */
+function removePlayerFromRoom(io: Server, userId: string, roomCode: string): void {
   const room = rooms.get(roomCode);
   if (!room) return;
 
+  // Clean up socket maps for the member's current socketId
+  const member = room.members.get(userId);
+  if (member) {
+    socketUserMap.delete(member.socketId);
+    socketRoomMap.delete(member.socketId);
+  }
+
   room.members.delete(userId);
   userSocketMap.delete(userId);
-  socketUserMap.delete(socketId);
-  socketRoomMap.delete(socketId);
+  clearDisconnectTimer(userId);
 
   if (room.members.size === 0) {
     // Room empty — clean up entirely
@@ -461,9 +465,10 @@ function removePlayerFromRoom(io: Server, socketId: string): void {
     return;
   }
 
-  // Host migration
+  // Host migration — only pick from connected members first, then any member
   if (room.hostUserId === userId) {
-    const newHost = room.members.values().next().value;
+    const connected = Array.from(room.members.values()).find(m => m.isConnected);
+    const newHost = connected ?? room.members.values().next().value;
     if (newHost) {
       room.hostUserId = newHost.userId;
       logger.info({ event: 'rmhstudy_host_migrated', roomCode, newHostUserId: newHost.userId });
@@ -471,6 +476,51 @@ function removePlayerFromRoom(io: Server, socketId: string): void {
   }
 
   broadcastRoomState(io, room);
+}
+
+/** Mark a member as disconnected and start the grace-period timer. */
+function markMemberDisconnected(io: Server, socketId: string): void {
+  const userId = socketUserMap.get(socketId);
+  const roomCode = socketRoomMap.get(socketId);
+  if (!userId || !roomCode) return;
+
+  const room = rooms.get(roomCode);
+  if (!room) return;
+
+  const member = room.members.get(userId);
+  if (!member) return;
+
+  // Mark as disconnected but keep in the room
+  member.isConnected = false;
+
+  // Clean old socket mappings
+  socketUserMap.delete(socketId);
+  socketRoomMap.delete(socketId);
+
+  // Broadcast the updated state (member shows as disconnected)
+  broadcastRoomState(io, room);
+
+  // Start grace-period timer — remove if they don't reconnect
+  clearDisconnectTimer(userId);
+  const timer = setTimeout(() => {
+    disconnectTimers.delete(userId);
+    // Check they're still disconnected before removing
+    const r = rooms.get(roomCode);
+    const m = r?.members.get(userId);
+    if (r && m && !m.isConnected) {
+      removePlayerFromRoom(io, userId, roomCode);
+      logger.info({ event: 'rmhstudy_grace_expired', roomCode, userId });
+    }
+  }, config.DISCONNECT_GRACE_PERIOD_MS);
+  disconnectTimers.set(userId, timer);
+}
+
+function clearDisconnectTimer(userId: string): void {
+  const existing = disconnectTimers.get(userId);
+  if (existing) {
+    clearTimeout(existing);
+    disconnectTimers.delete(userId);
+  }
 }
 
 // ─── Event Handlers ───
@@ -495,7 +545,10 @@ export function registerRmhStudyHandlers(io: Server, socket: Socket): void {
     if (!userId) { emitError(socket, 'Not authenticated'); return; }
 
     // Remove from any existing room
-    removePlayerFromRoom(io, socket.id);
+    const existingRoomCode = socketRoomMap.get(socket.id);
+    if (existingRoomCode) {
+      removePlayerFromRoom(io, userId, existingRoomCode);
+    }
 
     // Generate unique room code
     let code = generateRoomCode(6);
@@ -574,8 +627,11 @@ export function registerRmhStudyHandlers(io: Server, socket: Socket): void {
     // If already in a different room, leave it first
     const existingCode = socketRoomMap.get(socket.id);
     if (existingCode && existingCode !== roomCode) {
-      removePlayerFromRoom(io, socket.id);
+      removePlayerFromRoom(io, userId, existingCode);
     }
+
+    // Cancel any pending disconnect grace-period timer (user reconnected)
+    clearDisconnectTimer(userId);
 
     // Handle reconnect: if this userId already has a socket, clean up old mappings
     const oldSocketId = userSocketMap.get(userId);
@@ -616,8 +672,12 @@ export function registerRmhStudyHandlers(io: Server, socket: Socket): void {
   // ─── Leave Room ───
   socket.on('rmhstudy:room:leave', (payload: { roomCode?: string }) => {
     const roomCode = (typeof payload?.roomCode === 'string' ? payload.roomCode : '').toUpperCase().trim();
-    removePlayerFromRoom(io, socket.id);
-    if (roomCode) socket.leave(socketRoom(roomCode));
+    const userId = socketUserMap.get(socket.id);
+    const resolvedCode = roomCode || socketRoomMap.get(socket.id) || '';
+    if (userId && resolvedCode) {
+      removePlayerFromRoom(io, userId, resolvedCode);
+    }
+    if (resolvedCode) socket.leave(socketRoom(resolvedCode));
   });
 
   // ─── Chat ───
@@ -1043,7 +1103,8 @@ export function handleRmhStudyDisconnect(io: Server, socket: Socket): void {
   const roomCode = socketRoomMap.get(socket.id);
   if (!roomCode) return;
 
-  removePlayerFromRoom(io, socket.id);
+  // Use grace period — mark disconnected, remove later if they don't reconnect
+  markMemberDisconnected(io, socket.id);
 
   logger.info({ event: 'rmhstudy_player_disconnected', roomCode, userId });
 }

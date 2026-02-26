@@ -29,6 +29,7 @@ export default function RmhTypeRoom() {
   const [startTime, setStartTime] = useState<number | null>(null);
   const [finished, setFinished] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const passageRef = useRef<HTMLDivElement>(null);
 
   // Connect and join on mount
   useEffect(() => {
@@ -46,6 +47,15 @@ export default function RmhTypeRoom() {
     init();
     return () => { mounted = false; };
   }, [roomCode]);
+
+  // Auto-scroll passage to keep cursor visible (mobile keyboard)
+  useEffect(() => {
+    if (!passageRef.current) return;
+    const cursor = passageRef.current.querySelector('.rmhtype-cursor');
+    if (cursor) {
+      cursor.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  }, [typedText]);
 
   // Reset typing state on new passage
   useEffect(() => {
@@ -233,7 +243,7 @@ export default function RmhTypeRoom() {
               </div>
 
               {/* Passage display */}
-              <div className="rounded-xl border border-(--rmhtype-border) bg-(--rmhtype-surface) p-6">
+              <div ref={passageRef} className="rounded-xl border border-(--rmhtype-border) bg-(--rmhtype-surface) p-6 rmhtype-passage-scroll">
                 <div className="rmhtype-passage select-none">
                   {[...room.passage].map((char, i) => {
                     let className = 'rmhtype-char-untyped';

@@ -27,6 +27,12 @@ export default function RmhStudyLanding() {
   useEffect(() => {
     let mounted = true;
 
+    function onRoomState(data: { roomCode: string }) {
+      if (mounted && data.roomCode) {
+        router.push(`/rmhstudy/${data.roomCode}`);
+      }
+    }
+
     async function connect() {
       try {
         const socket = await connectToRmhStudy();
@@ -37,18 +43,18 @@ export default function RmhStudyLanding() {
           return;
         }
 
-        socket.on(S2C.ROOM_STATE, (data: { roomCode: string }) => {
-          if (mounted && data.roomCode) {
-            router.push(`/rmhstudy/${data.roomCode}`);
-          }
-        });
+        socket.on(S2C.ROOM_STATE, onRoomState);
       } catch (err) {
         if (mounted) toast.error(err instanceof Error ? err.message : 'Connection failed');
       }
     }
 
     connect();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+      // Clean up the listener so it doesn't fire after navigation
+      getSocket()?.off(S2C.ROOM_STATE, onRoomState);
+    };
   }, [router]);
 
   useEffect(() => {

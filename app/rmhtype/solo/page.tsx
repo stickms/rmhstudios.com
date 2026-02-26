@@ -29,6 +29,7 @@ export default function RmhTypeSolo() {
   const [startTime, setStartTime] = useState<number | null>(null);
   const [finished, setFinished] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const passageRef = useRef<HTMLDivElement>(null);
 
   // Connect on mount
   useEffect(() => {
@@ -50,6 +51,15 @@ export default function RmhTypeSolo() {
     init();
     return () => { mounted = false; };
   }, []);
+
+  // Auto-scroll passage to keep cursor visible (mobile keyboard)
+  useEffect(() => {
+    if (!passageRef.current) return;
+    const cursor = passageRef.current.querySelector('.rmhtype-cursor');
+    if (cursor) {
+      cursor.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  }, [typedText]);
 
   // Focus input when passage arrives
   useEffect(() => {
@@ -189,7 +199,7 @@ export default function RmhTypeSolo() {
               )}
 
               {/* Passage */}
-              <div className="rounded-xl border border-(--rmhtype-border) bg-(--rmhtype-surface) p-6">
+              <div ref={passageRef} className="rounded-xl border border-(--rmhtype-border) bg-(--rmhtype-surface) p-6 rmhtype-passage-scroll">
                 <div className="rmhtype-passage select-none">
                   {[...soloPassage].map((char, i) => {
                     let className = 'rmhtype-char-untyped';

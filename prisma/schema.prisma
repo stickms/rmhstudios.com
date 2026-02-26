@@ -31,7 +31,7 @@ model User {
   neonDriftwayProfile NeonDriftwayPlayer?
   synapseStormProfile SynapseStormPlayer?
   rmhboxProfile  RMHboxProfile?
-  rmhtypeProfile RmhTypeProfile?
+  rmhtypeProfiles RmhTypeProfile[]
   rmhstudyProfile RmhStudyProfile?
 
   // Slice-It Library Relations
@@ -599,7 +599,8 @@ model RmhTubeUserStats {
 
 model RmhTypeProfile {
   id               String   @id @default(cuid())
-  userId           String   @unique
+  userId           String
+  difficulty       String   @default("medium")
   user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   totalGamesPlayed Int      @default(0)
   totalWins        Int      @default(0)
@@ -615,7 +616,8 @@ model RmhTypeProfile {
   updatedAt        DateTime @updatedAt
   matches          RmhTypeMatchPlayer[]
 
-  @@index([bestWpm(sort: Desc)])
+  @@unique([userId, difficulty])
+  @@index([difficulty, bestWpm(sort: Desc)])
   @@index([totalWins(sort: Desc)])
   @@map("rmhtype_profile")
 }

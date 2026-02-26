@@ -624,10 +624,23 @@ function endRound(io: Server, room: TypeRoom): void {
       })),
     });
 
-    // Persist match to DB (fire-and-forget)
-    persistMatchResults(room, finalResults).catch((err) => {
-      logger.error({ event: 'rmhtype_persist_match_error', roomId: room.roomId, error: String(err) });
-    });
+    // Persist match to DB, then broadcast updated leaderboard
+    persistMatchResults(room, finalResults)
+      .then(async () => {
+        try {
+          const prisma = getPrismaClient();
+          const leaderboard = await fetchLeaderboard(prisma, room.settings.difficulty, 20);
+          io.to(`rmhtype:${room.roomId}`).emit('rmhtype:leaderboard:data', {
+            leaderboard,
+            difficulty: room.settings.difficulty,
+          });
+        } catch (err) {
+          logger.error({ event: 'rmhtype_leaderboard_broadcast_error', roomId: room.roomId, error: String(err) });
+        }
+      })
+      .catch((err) => {
+        logger.error({ event: 'rmhtype_persist_match_error', roomId: room.roomId, error: String(err) });
+      });
   } else {
     room.state = 'ROUND_RESULTS';
 
@@ -673,11 +686,13 @@ async function persistMatchResults(room: TypeRoom, finalResults: any): Promise<v
       const player = room.players.get(standing.userId);
       if (!player) continue;
 
-      // Upsert profile
+      // Upsert profile (per-difficulty)
+      const difficulty = room.settings.difficulty;
       const profile = await (prisma as any).rmhTypeProfile.upsert({
-        where: { userId: standing.userId },
+        where: { userId_difficulty: { userId: standing.userId, difficulty } },
         create: {
           userId: standing.userId,
+          difficulty,
           totalGamesPlayed: 1,
           totalWins: standing.finalRank === 1 ? 1 : 0,
           bestWpm: standing.avgWpm,
@@ -777,11 +792,12 @@ async function persistSoloResult(
       },
     });
 
-    // Upsert profile
+    // Upsert profile (per-difficulty)
     const profile = await (prisma as any).rmhTypeProfile.upsert({
-      where: { userId },
+      where: { userId_difficulty: { userId, difficulty } },
       create: {
         userId,
+        difficulty,
         totalGamesPlayed: 1,
         totalWins: 1,
         bestWpm: wpm,
@@ -837,6 +853,46 @@ async function persistSoloResult(
   } catch (err) {
     logger.error({ event: 'rmhtype_solo_persist_error', userId, error: String(err) });
   }
+}
+
+// ─── Leaderboard Query ───────────────────────────────────────
+
+async function fetchLeaderboard(prisma: any, difficulty: string, limit: number) {
+  const profiles: any[] = await prisma.rmhTypeProfile.findMany({
+    where: { difficulty },
+    orderBy: { bestWpm: 'desc' },
+    take: limit,
+    select: {
+      userId: true,
+      bestWpm: true,
+      avgWpm: true,
+      bestAccuracy: true,
+      avgAccuracy: true,
+      totalGamesPlayed: true,
+      totalWins: true,
+      bestStreak: true,
+      user: {
+        select: {
+          name: true,
+          image: true,
+        },
+      },
+    },
+  });
+
+  return profiles.map((p, index) => ({
+    rank: index + 1,
+    userId: p.userId,
+    userName: p.user.name ?? 'Unknown',
+    avatarUrl: p.user.image ?? null,
+    bestWpm: p.bestWpm,
+    avgWpm: p.avgWpm,
+    bestAccuracy: p.bestAccuracy,
+    avgAccuracy: p.avgAccuracy,
+    totalGamesPlayed: p.totalGamesPlayed,
+    totalWins: p.totalWins,
+    bestStreak: p.bestStreak,
+  }));
 }
 
 // ─── Main Handler Registration ──────────────────────────────
@@ -1487,47 +1543,16 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
 
   // ─── Leaderboard ────────────────────────────────────────
 
-  socket.on('rmhtype:leaderboard:fetch', async (payload?: { limit?: number }) => {
+  socket.on('rmhtype:leaderboard:fetch', async (payload?: { limit?: number; difficulty?: string }) => {
     try {
       const prisma = getPrismaClient();
       const limit = Math.min(100, Math.max(1, typeof payload?.limit === 'number' ? payload.limit : 50));
+      const difficulty = ['easy', 'medium', 'hard'].includes(payload?.difficulty ?? '')
+        ? payload!.difficulty!
+        : 'medium';
 
-      const profiles: any[] = await (prisma as any).rmhTypeProfile.findMany({
-        orderBy: { bestWpm: 'desc' },
-        take: limit,
-        select: {
-          userId: true,
-          bestWpm: true,
-          avgWpm: true,
-          bestAccuracy: true,
-          avgAccuracy: true,
-          totalGamesPlayed: true,
-          totalWins: true,
-          bestStreak: true,
-          user: {
-            select: {
-              name: true,
-              image: true,
-            },
-          },
-        },
-      });
-
-      const leaderboard = profiles.map((p, index) => ({
-        rank: index + 1,
-        userId: p.userId,
-        userName: p.user.name ?? 'Unknown',
-        avatarUrl: p.user.image ?? null,
-        bestWpm: p.bestWpm,
-        avgWpm: p.avgWpm,
-        bestAccuracy: p.bestAccuracy,
-        avgAccuracy: p.avgAccuracy,
-        totalGamesPlayed: p.totalGamesPlayed,
-        totalWins: p.totalWins,
-        bestStreak: p.bestStreak,
-      }));
-
-      socket.emit('rmhtype:leaderboard:data', { leaderboard });
+      const leaderboard = await fetchLeaderboard(prisma, difficulty, limit);
+      socket.emit('rmhtype:leaderboard:data', { leaderboard, difficulty });
     } catch (err) {
       logger.error({ event: 'rmhtype_leaderboard_fetch_error', error: String(err) });
       socket.emit('rmhtype:error', { message: 'Failed to fetch leaderboard' });
