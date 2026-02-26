@@ -38,6 +38,7 @@ export default function LobbyPage({ params }: { params: Promise<{ lobbyId: strin
   const router = useRouter();
   const lobby = useRMHboxStore((s) => s.lobby);
   const connectionStatus = useRMHboxStore((s) => s.connectionStatus);
+  const spectatorTarget = useRMHboxStore((s) => s.spectatorTarget);
 
   const backlinkLabel = "Leave";
   const backlinkHref = '/rmhbox';
@@ -234,7 +235,6 @@ export default function LobbyPage({ params }: { params: Promise<{ lobbyId: strin
 
   const isSpectator = lobby.myRole === 'spectator';
   const isHost = lobby.hostUserId === lobby.myUserId;
-  const spectatorTarget = useRMHboxStore((s) => s.spectatorTarget);
   const spectatorMode = lobby.currentGame?.spectatorMode ?? null;
 
   // Determine header context and title based on current lobby state
