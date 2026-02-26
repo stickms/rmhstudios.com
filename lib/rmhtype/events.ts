@@ -16,6 +16,7 @@ export const C2S = {
   GAME_FINISH:    'rmhtype:game:finish',
   SOLO_START:     'rmhtype:solo:start',
   SOLO_FINISH:    'rmhtype:solo:finish',
+  LEADERBOARD_FETCH: 'rmhtype:leaderboard:fetch',
 } as const;
 
 // ─── Server → Client Events ─────────────────────────────────────
@@ -32,5 +33,6 @@ export const S2C = {
   SOLO_COUNTDOWN:      'rmhtype:solo:countdown',
   SOLO_STARTED:        'rmhtype:solo:started',
   SOLO_RESULT:         'rmhtype:solo:result',
+  LEADERBOARD_DATA:    'rmhtype:leaderboard:data',
   ERROR:               'rmhtype:error',
 } as const;

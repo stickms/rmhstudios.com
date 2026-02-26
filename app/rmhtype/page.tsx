@@ -24,6 +24,23 @@ export default function RmhTypeLanding() {
   const [joinCode, setJoinCode] = useState('');
   const [mode, setMode] = useState<'menu' | 'solo' | 'multiplayer'>('menu');
 
+  // Leaderboard
+  interface LeaderboardEntry {
+    rank: number;
+    userId: string;
+    userName: string;
+    avatarUrl: string | null;
+    bestWpm: number;
+    avgWpm: number;
+    bestAccuracy: number;
+    avgAccuracy: number;
+    totalGamesPlayed: number;
+    totalWins: number;
+    bestStreak: number;
+  }
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(true);
+
   // Solo settings (local)
   const [soloDifficulty, setSoloDifficulty] = useState<Difficulty>(settings.soloDifficulty);
   const [soloLength, setSoloLength] = useState<PassageLength>(settings.soloPassageLength);
@@ -51,6 +68,22 @@ export default function RmhTypeLanding() {
             router.push(`/rmhtype/${data.roomCode}`);
           }
         });
+
+        socket.on(S2C.LEADERBOARD_DATA, (data: { leaderboard: LeaderboardEntry[] }) => {
+          if (mounted) {
+            setLeaderboard(data.leaderboard);
+            setLeaderboardLoading(false);
+          }
+        });
+
+        // Fetch leaderboard once connected (socket may not be connected yet)
+        if (socket.connected) {
+          emit(C2S.LEADERBOARD_FETCH, { limit: 20 });
+        } else {
+          socket.once('connect', () => {
+            if (mounted) emit(C2S.LEADERBOARD_FETCH, { limit: 20 });
+          });
+        }
       } catch (err) {
         if (mounted) toast.error(err instanceof Error ? err.message : 'Connection failed');
       }
@@ -132,6 +165,64 @@ export default function RmhTypeLanding() {
                     Create a room or join a friend. Race on the same passage and see who types fastest.
                   </p>
                 </button>
+              </div>
+
+              {/* Leaderboard */}
+              <div className="rounded-xl border border-(--rmhtype-border) bg-(--rmhtype-surface) p-6">
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <Trophy className="h-5 w-5 text-(--rmhtype-accent)" />
+                  Leaderboard
+                </h3>
+
+                {leaderboardLoading ? (
+                  <p className="text-sm text-(--rmhtype-text-muted) text-center py-4">Loading...</p>
+                ) : leaderboard.length === 0 ? (
+                  <p className="text-sm text-(--rmhtype-text-muted) text-center py-4">No scores yet. Be the first!</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-(--rmhtype-text-muted) border-b border-(--rmhtype-border)">
+                          <th className="text-left py-2 pr-3 font-medium">#</th>
+                          <th className="text-left py-2 pr-3 font-medium">Player</th>
+                          <th className="text-right py-2 pr-3 font-medium">Best WPM</th>
+                          <th className="text-right py-2 pr-3 font-medium">Avg WPM</th>
+                          <th className="text-right py-2 pr-3 font-medium">Accuracy</th>
+                          <th className="text-right py-2 font-medium">Games</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {leaderboard.map((entry) => (
+                          <tr key={entry.userId} className="border-b border-(--rmhtype-border)/50 last:border-b-0">
+                            <td className="py-2.5 pr-3 font-mono text-(--rmhtype-text-muted)">
+                              {entry.rank <= 3 ? ['🥇', '🥈', '🥉'][entry.rank - 1] : entry.rank}
+                            </td>
+                            <td className="py-2.5 pr-3 flex items-center gap-2">
+                              {entry.avatarUrl ? (
+                                <img src={entry.avatarUrl} alt="" className="h-5 w-5 rounded-full" />
+                              ) : (
+                                <div className="h-5 w-5 rounded-full bg-(--rmhtype-accent)/20" />
+                              )}
+                              <span className="truncate max-w-35">{entry.userName}</span>
+                            </td>
+                            <td className="py-2.5 pr-3 text-right font-mono font-semibold text-(--rmhtype-accent)">
+                              {entry.bestWpm.toFixed(2)}
+                            </td>
+                            <td className="py-2.5 pr-3 text-right font-mono text-(--rmhtype-text-muted)">
+                              {entry.avgWpm.toFixed(2)}
+                            </td>
+                            <td className="py-2.5 pr-3 text-right font-mono text-(--rmhtype-text-muted)">
+                              {entry.bestAccuracy.toFixed(2)}%
+                            </td>
+                            <td className="py-2.5 text-right font-mono text-(--rmhtype-text-muted)">
+                              {entry.totalGamesPlayed}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             </>
           )}
