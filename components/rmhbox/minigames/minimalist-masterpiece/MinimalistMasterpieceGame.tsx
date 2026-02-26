@@ -265,17 +265,16 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
     }
   }, []);
 
-  // Auto-save and auto-submit: whenever strokes or backgroundColor changes during
-  // the DRAWING phase, automatically submit the drawing to the server
+  // Auto-save: whenever strokes or backgroundColor changes during the DRAWING phase,
+  // automatically submit the drawing to the server. Always runs (server allows re-submissions).
   useEffect(() => {
     if (phase !== 'DRAWING') return;
-    if (hasSubmitted) return;
     // Debounce auto-submit to avoid spamming on rapid changes
     const timeout = setTimeout(() => {
       emitGameInput('SUBMIT_DRAWING', { strokes, backgroundColor });
     }, 500);
     return () => clearTimeout(timeout);
-  }, [phase, strokes, backgroundColor, hasSubmitted]);
+  }, [phase, strokes, backgroundColor]);
 
   // Undo: restore the previous edit history state
   const handleUndo = useCallback(() => {

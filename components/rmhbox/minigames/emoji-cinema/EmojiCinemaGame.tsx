@@ -58,7 +58,6 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
   const [correctCount, setCorrectCount] = useState(0);
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [roundNumber, setRoundNumber] = useState(1);
-  const [notification, setNotification] = useState('');
   const [correctGuessers, setCorrectGuessers] = useState<CorrectGuesserInfo[]>([]);
   // Movie titles for fuzzy autocomplete
   const [movieTitles, setMovieTitles] = useState<string[]>([]);
@@ -71,13 +70,6 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
   const [noEmojisSkipped, setNoEmojisSkipped] = useState(false);
 
   const isProducer = playerId === producerId;
-
-  // Clear notifications after a delay
-  useEffect(() => {
-    if (!notification) return;
-    const t = setTimeout(() => setNotification(''), 3000);
-    return () => clearTimeout(t);
-  }, [notification]);
 
   const handleGameAction = useCallback(
     (data: Record<string, unknown>) => {
@@ -138,11 +130,10 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
           break;
         }
         case 'EC_CLOSE_GUESS': {
-          setNotification(`🔥 ${data.userName as string} is close!`);
+          // Close guesses are not displayed as a notification
           break;
         }
         case 'EC_CORRECT_GUESS': {
-          setNotification(`✅ ${data.userName as string} guessed correctly!`);
           // Server now sends the full list of correct guessers
           if (Array.isArray(data.correctGuessers)) {
             setCorrectGuessers(data.correctGuessers as CorrectGuesserInfo[]);
@@ -339,11 +330,6 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
     case 'EMOJI_CONSTRUCTION':
       return (
         <div className="relative">
-          {notification && (
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 z-10 px-4 py-2 rounded-lg bg-(--rmhbox-surface) border border-(--rmhbox-border) text-sm text-(--rmhbox-text) shadow-lg animate-in fade-in slide-in-from-top">
-              {notification}
-            </div>
-          )}
           {isProducer ? (
             <ProducerView
               movieTitle={movieTitle}

@@ -502,15 +502,9 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
         total: this.state.drawings.size,
       });
 
-      // If ALL players submitted early, immediately end drawing phase
-      if (submittedCount === this.state.drawings.size) {
-        logger.info({
-          event: 'mm:all_drawings_submitted_early',
-          lobbyId: this.context.lobbyId,
-        });
-        this.clearPhaseTimer();
-        this.endDrawingPhase();
-      }
+      // Always allow the full drawing phase timer — no early end.
+      // Auto-save means every player submits almost immediately,
+      // but they should still have the full time to keep editing.
     }
   }
 

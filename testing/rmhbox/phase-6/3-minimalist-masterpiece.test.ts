@@ -83,13 +83,14 @@ function advanceToDrawing(_game: MinimalistMasterpieceGame): void {
   vi.advanceTimersByTime(MM_PROMPT_REVEAL_SECONDS * 1000);
 }
 
-/** Advance into the GALLERY phase (submits for all players first). */
+/** Advance into the GALLERY phase (submits for all players, then advances the timer). */
 function advanceToGallery(game: MinimalistMasterpieceGame, playerIds: string[]): void {
   advanceToDrawing(game);
   for (const uid of playerIds) {
     game.handleInput(uid, 'SUBMIT_DRAWING', createValidDrawing());
   }
-  // All submitted → handler ends drawing early and starts gallery
+  // Drawing phase always runs for the full duration (no early end)
+  vi.advanceTimersByTime(MM_DRAWING_DURATION_SECONDS * 1000);
 }
 
 /** Advance into the AUCTION phase. */
@@ -352,7 +353,7 @@ describe('Minimalist Masterpiece Server Handler (§6.3)', () => {
       expect(rejected).toBeUndefined();
     });
 
-    it('should end the drawing phase early when all players submit', () => {
+    it('should NOT end the drawing phase early when all players submit (full timer always runs)', () => {
       const { game, broadcastLog } = createGame();
       game.start();
       advanceToDrawing(game);
@@ -361,10 +362,15 @@ describe('Minimalist Masterpiece Server Handler (§6.3)', () => {
         game.handleInput(uid, 'SUBMIT_DRAWING', createValidDrawing());
       }
 
-      // Gallery should have started without waiting for timer
+      // Gallery should NOT have started — drawing phase always runs for the full duration
       const galleryStart = findLastActionBroadcast(broadcastLog, 'MM_GALLERY_START');
-      expect(galleryStart).toBeDefined();
-      expect((game.getStateForPlayer(ALL_PLAYER_IDS[0]) as Record<string, unknown>).phase).toBe('GALLERY');
+      expect(galleryStart).toBeUndefined();
+      expect((game.getStateForPlayer(ALL_PLAYER_IDS[0]) as Record<string, unknown>).phase).toBe('DRAWING');
+
+      // Advance past the drawing timer to reach GALLERY
+      vi.advanceTimersByTime(MM_DRAWING_DURATION_SECONDS * 1000);
+      const galleryAfterTimer = findLastActionBroadcast(broadcastLog, 'MM_GALLERY_START');
+      expect(galleryAfterTimer).toBeDefined();
     });
   });
 
@@ -974,6 +980,7 @@ describe('Minimalist Masterpiece Server Handler (§6.3)', () => {
       for (const uid of ALL_PLAYER_IDS) {
         game.handleInput(uid, 'SUBMIT_DRAWING', createValidDrawing());
       }
+      vi.advanceTimersByTime(MM_DRAWING_DURATION_SECONDS * 1000); // DRAWING (full timer)
       vi.advanceTimersByTime(MM_GALLERY_DURATION_SECONDS * 1000); // skip GALLERY
       vi.advanceTimersByTime(MM_AUCTION_DURATION_SECONDS * 1000); // AUCTION
       vi.advanceTimersByTime(MM_RESULTS_DURATION_SECONDS * 1000); // RESULTS
