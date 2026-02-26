@@ -32,22 +32,23 @@ export async function connectToRmhTube(): Promise<Socket> {
   const store = useRmhTubeStore.getState();
   store.setConnectionStatus('connecting');
 
-  // Fetch session directly — authClient.getSession() can return null on
-  // fresh page loads when no useSession() hook has primed the cache
-  // (the Navbar that normally does this is excluded on app routes).
+  // Fetch auth session for socket authentication
   let token: string | undefined;
   try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL || ''}/api/auth/get-session`,
-      { credentials: 'include' },
-    );
+    const url = `${(process.env.NEXT_PUBLIC_BETTER_AUTH_URL || '').replace(/\/$/, '')}/api/auth/get-session`;
+    console.log('[RmhTube] Fetching session from:', url);
+    const res = await fetch(url, { credentials: 'include' });
+    console.log('[RmhTube] Session response status:', res.status);
     if (res.ok) {
       const data = await res.json();
+      console.log('[RmhTube] Session data keys:', Object.keys(data));
       token = data?.session?.token ?? data?.token;
+      console.log('[RmhTube] Token found:', !!token);
     }
-  } catch {
-    // fall back to authClient
+  } catch (err) {
+    console.error('[RmhTube] Direct fetch failed, trying authClient:', err);
     const session = await authClient.getSession();
+    console.log('[RmhTube] authClient session:', JSON.stringify(session?.data));
     token = session?.data?.session?.token;
   }
   if (!token) {
