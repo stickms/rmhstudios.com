@@ -588,6 +588,12 @@ describe('Minimalist Masterpiece Server Handler (§6.3)', () => {
       const aliceBreakdown = breakdowns.find((b) => b.userId === MOCK_USERS.alice.userId);
       expect(aliceBreakdown).toBeDefined();
       expect(aliceBreakdown!.ownedValue).toBe(200);
+      // Alice bid 500, second highest is 200 → overbid penalty = 0.5 × (500 - 200) = 150
+      expect(aliceBreakdown!.overbidPenalty).toBe(150);
+      // Total = paintedValue + ownedValue - overbidPenalty
+      expect(aliceBreakdown!.totalScore).toBe(
+        (aliceBreakdown!.paintedValue as number) + 200 - 150,
+      );
     });
   });
 

@@ -304,9 +304,10 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
     if (!this.isRunning) return;
     this.clearPhaseTimer();
 
-    // New auction model: second-price auction
+    // Second-price auction model:
     // Winner = highest bidder on each drawing; pays their bid amount
     // Market value = second highest bid (or 0 if ≤1 bidder)
+    // Overbid penalty = 0.5 × (winnerBid - secondHighestBid)
     for (const [drawingId, bidInfo] of this.state.bids) {
       const sortedBids = Array.from(bidInfo.bidders.entries())
         .filter(([, amount]) => amount > 0)
@@ -322,12 +323,14 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
       const secondHighest = sortedBids.length >= 2 ? sortedBids[1][1] : 0;
       this.state.marketValues.set(drawingId, secondHighest);
 
+      const overbidPenalty = Math.floor(0.5 * (winnerBidAmount - secondHighest));
       const winnerPlayer = this.context.players.get(winnerId);
       this.state.auctionWinners.set(drawingId, {
         drawingId,
         winnerId,
         winnerName: winnerPlayer?.userName ?? 'Unknown',
         amountPaid: winnerBidAmount,
+        overbidPenalty,
       });
 
       this.logAction('auction_winner', {
@@ -335,6 +338,7 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
         winnerId,
         amountPaid: winnerBidAmount,
         marketValue: secondHighest,
+        overbidPenalty,
       });
     }
 
@@ -376,12 +380,16 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
         winnerId: r.winnerId,
         winnerName: r.winnerName,
         winnerPaid: r.winnerPaid,
+        overbidPenalty: r.winnerId
+          ? (this.state.auctionWinners.get(r.drawingId)?.overbidPenalty ?? 0)
+          : 0,
       })),
       scoreBreakdowns: scoreBreakdowns.map((sb) => ({
         userId: sb.userId,
         userName: sb.userName,
         paintedValue: sb.paintedValue,
         ownedValue: sb.ownedValue,
+        overbidPenalty: sb.overbidPenalty,
         totalScore: sb.totalScore,
       })),
       // Store actual drawing data for history reconstruction
@@ -833,7 +841,8 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
   /**
    * Compute score breakdowns under the second-price auction model.
    * Each player's score = sum of market values of paintings they painted +
-   *                       sum of market values of paintings they won in auction.
+   *                       sum of market values of paintings they won in auction -
+   *                       sum of overbid penalties on paintings they won.
    */
   private computeScoreBreakdowns(): PlayerScoreBreakdown[] {
     const breakdowns: PlayerScoreBreakdown[] = [];
@@ -842,6 +851,7 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
       const player = this.context.players.get(userId)!;
       let paintedValue = 0;
       let ownedValue = 0;
+      let overbidPenalty = 0;
 
       // Value of paintings this player painted (as artist)
       const myDrawingId = this.state.userIdToDrawingId.get(userId);
@@ -849,10 +859,11 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
         paintedValue += this.state.marketValues.get(myDrawingId) ?? 0;
       }
 
-      // Value of paintings this player won in auction
+      // Value of paintings this player won in auction + overbid penalties
       for (const [drawingId, winner] of this.state.auctionWinners) {
         if (winner.winnerId === userId) {
           ownedValue += this.state.marketValues.get(drawingId) ?? 0;
+          overbidPenalty += winner.overbidPenalty;
         }
       }
 
@@ -861,7 +872,8 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
         userName: player.userName,
         paintedValue,
         ownedValue,
-        totalScore: paintedValue + ownedValue,
+        overbidPenalty,
+        totalScore: paintedValue + ownedValue - overbidPenalty,
       });
     }
 

@@ -44,6 +44,8 @@ export default function DrawingCanvas({
   const [pendingStart, setPendingStart] = useState<Point | null>(null);
   // Preview endpoint (current mouse position while placing a line)
   const [previewEnd, setPreviewEnd] = useState<Point | null>(null);
+  // Hover position for cursor preview circle (shown when idle on canvas)
+  const [hoverPoint, setHoverPoint] = useState<Point | null>(null);
   // Whether the user is currently dragging
   const isDragging = useRef(false);
   const dragStart = useRef<Point | null>(null);
@@ -79,6 +81,7 @@ export default function DrawingCanvas({
     if (!canDraw) return;
     e.preventDefault();
     (e.target as Element).setPointerCapture(e.pointerId);
+    setHoverPoint(null);
 
     const pt = getSvgPoint(e);
 
@@ -103,6 +106,7 @@ export default function DrawingCanvas({
     if (pendingStart) {
       // Click-click mode: show preview from pending start to current mouse
       setPreviewEnd(pt);
+      setHoverPoint(null);
       return;
     }
 
@@ -110,8 +114,15 @@ export default function DrawingCanvas({
       // Drag mode: track as dragging once the mouse moves
       isDragging.current = true;
       setPreviewEnd(pt);
+      setHoverPoint(null);
+      return;
     }
-  }, [getSvgPoint, pendingStart]);
+
+    // Idle hover: show cursor preview circle
+    if (canDraw) {
+      setHoverPoint(pt);
+    }
+  }, [getSvgPoint, pendingStart, canDraw]);
 
   const handlePointerUp = useCallback((e: React.PointerEvent<SVGSVGElement>) => {
     if (pendingStart) return; // Click-click mode is handled in pointerDown
@@ -135,6 +146,7 @@ export default function DrawingCanvas({
   }, [getSvgPoint, pendingStart, createStroke, setStrokes]);
 
   const handlePointerLeave = useCallback(() => {
+    setHoverPoint(null);
     // Cancel drag if mouse leaves canvas
     if (dragStart.current && isDragging.current) {
       dragStart.current = null;
@@ -199,6 +211,18 @@ export default function DrawingCanvas({
             strokeDasharray="6 4"
           />
         )}
+
+        {/* Hover cursor preview circle — shows current color/width when idle on canvas */}
+        {canDraw && hoverPoint && !previewStart && (
+          <circle
+            cx={hoverPoint.x}
+            cy={hoverPoint.y}
+            r={selectedWidth / 2}
+            fill={selectedColor}
+            opacity={0.4}
+            pointerEvents="none"
+          />
+        )}
       </svg>
 
       {/* Undo button */}
@@ -213,9 +237,9 @@ export default function DrawingCanvas({
         </button>
       )}
 
-      {/* Pending indicator */}
+      {/* Pending indicator — pointer-events-none so it doesn't block endpoint placement */}
       {pendingStart && (
-        <span className="absolute bottom-2 left-2 text-xs text-(--rmhbox-text-muted) bg-(--rmhbox-surface)/80 px-2 py-0.5 rounded">
+        <span className="absolute bottom-2 left-2 text-xs text-(--rmhbox-text-muted) bg-(--rmhbox-surface)/80 px-2 py-0.5 rounded pointer-events-none select-none">
           Click to place endpoint (Esc to cancel)
         </span>
       )}

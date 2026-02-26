@@ -31,6 +31,7 @@ interface PlayerScoreBreakdown {
   userName: string;
   paintedValue: number;
   ownedValue: number;
+  overbidPenalty: number;
   totalScore: number;
 }
 
@@ -102,6 +103,9 @@ export default function MarketResultsScreen({
                     )}
                     {sb.ownedValue > 0 && (
                       <span className="text-(--rmhbox-text-muted)">Owned: {sb.ownedValue}</span>
+                    )}
+                    {sb.overbidPenalty > 0 && (
+                      <span className="text-red-500">Penalty: -{sb.overbidPenalty}</span>
                     )}
                     <span className="font-bold text-(--rmhbox-accent)">{sb.totalScore} pts</span>
                   </div>

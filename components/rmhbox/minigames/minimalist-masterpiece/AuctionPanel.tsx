@@ -33,7 +33,7 @@ export default function AuctionPanel({ drawings, currency, onBid }: AuctionPanel
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-3xl">
       {drawings.map((drawing) => (
         <div
           key={drawing.drawingId}
@@ -44,9 +44,6 @@ export default function AuctionPanel({ drawings, currency, onBid }: AuctionPanel
           }`}
         >
           <DrawingCard strokes={drawing.strokes} backgroundColor={drawing.backgroundColor} label={drawing.label} />
-          <p className="text-xs text-(--rmhbox-text-muted)">
-            Market value: {drawing.currentBidTotal}
-          </p>
           {drawing.isMine ? (
             <span className="text-xs text-(--rmhbox-text-muted) italic">Your drawing</span>
           ) : (

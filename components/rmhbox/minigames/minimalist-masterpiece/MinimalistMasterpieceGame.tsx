@@ -57,7 +57,9 @@ interface PlayerScoreBreakdown {
   paintedValue: number;
   /** Market values of paintings they won in auction */
   ownedValue: number;
-  /** Total score = paintedValue + ownedValue */
+  /** Penalty for overbidding: 0.5 × (winnerBid - secondHighestBid) */
+  overbidPenalty: number;
+  /** Total score = paintedValue + ownedValue - overbidPenalty */
   totalScore: number;
 }
 
@@ -355,26 +357,44 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
               className="flex-1 accent-(--rmhbox-accent)"
               aria-label="Stroke width"
             />
-            {/* Preview dot: SVG viewBox 300 renders in 288px, so scale = 288/300.
-                Clamp to max 36px display size. Contrasting circular background for visibility. */}
-            <span
-              className="flex items-center justify-center rounded-full border border-(--rmhbox-border)"
-              style={{
-                width: '40px',
-                height: '40px',
-                backgroundColor: isLightColor(selectedColor) ? '#333' : '#eee',
-              }}
-              title={`Width: ${selectedWidth}`}
-            >
-              <span
-                className="rounded-full"
-                style={{
-                  width: `${Math.min(selectedWidth * (288 / 300), 36)}px`,
-                  height: `${Math.min(selectedWidth * (288 / 300), 36)}px`,
-                  backgroundColor: selectedColor,
-                }}
-              />
-            </span>
+            {/* Preview: shows a colored dot scaled to the actual rendered width.
+                When the dot exceeds 36px, display the numerical width instead.
+                Contrasting circular background for visibility in all themes. */}
+            {(() => {
+              const scaledWidth = selectedWidth * (288 / 300);
+              const showNumber = scaledWidth > 36;
+              const contrastBg = isLightColor(selectedColor) ? '#333' : '#eee';
+              const contrastText = isLightColor(selectedColor) ? '#eee' : '#333';
+              return (
+                <span
+                  className="flex items-center justify-center rounded-full border border-(--rmhbox-border)"
+                  style={{
+                    width: '40px',
+                    height: '40px',
+                    backgroundColor: contrastBg,
+                  }}
+                  title={`Width: ${selectedWidth}`}
+                >
+                  {showNumber ? (
+                    <span
+                      className="text-xs font-bold"
+                      style={{ color: contrastText }}
+                    >
+                      {selectedWidth}
+                    </span>
+                  ) : (
+                    <span
+                      className="rounded-full"
+                      style={{
+                        width: `${Math.min(scaledWidth, 36)}px`,
+                        height: `${Math.min(scaledWidth, 36)}px`,
+                        backgroundColor: selectedColor,
+                      }}
+                    />
+                  )}
+                </span>
+              );
+            })()}
           </div>
 
           {/* Background color: preset swatches + react-colorful picker */}

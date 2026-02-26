@@ -73,7 +73,9 @@ export interface PlayerScoreBreakdown {
   paintedValue: number;
   /** Market values of paintings they won in auction */
   ownedValue: number;
-  /** Total score = paintedValue + ownedValue */
+  /** Penalty for overbidding: 0.5 × (winnerBid - secondHighestBid) */
+  overbidPenalty: number;
+  /** Total score = paintedValue + ownedValue - overbidPenalty */
   totalScore: number;
 }
 
@@ -84,6 +86,8 @@ export interface AuctionWinner {
   winnerId: string;
   winnerName: string;
   amountPaid: number;
+  /** Overbid penalty: 0.5 × (amountPaid - marketValue) */
+  overbidPenalty: number;
 }
 
 // ─── Gallery / Auction Drawing ───────────────────────────────────

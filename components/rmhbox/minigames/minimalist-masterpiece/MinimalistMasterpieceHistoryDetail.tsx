@@ -27,6 +27,7 @@ interface RoundRanking {
   winnerId?: string;
   winnerName?: string;
   winnerPaid?: number;
+  overbidPenalty?: number;
 }
 
 interface ScoreBreakdown {
@@ -34,6 +35,7 @@ interface ScoreBreakdown {
   userName: string;
   paintedValue: number;
   ownedValue: number;
+  overbidPenalty: number;
   totalScore: number;
 }
 
@@ -115,7 +117,12 @@ export default function MinimalistMasterpieceHistoryDetail({ gameLog, players }:
                       <div className="flex flex-col">
                         <span className="text-(--rmhbox-text)">#{r.rank} {artist?.userName ?? r.artistUserName ?? 'Unknown'}</span>
                         {r.winnerName && (
-                          <span className="text-xs text-(--rmhbox-text-muted)">Won by {r.winnerName} for {r.winnerPaid} coins</span>
+                          <span className="text-xs text-(--rmhbox-text-muted)">
+                            Won by {r.winnerName} for {r.winnerPaid} coins
+                            {(r.overbidPenalty ?? 0) > 0 && (
+                              <span className="text-red-500 ml-1">(penalty: -{r.overbidPenalty})</span>
+                            )}
+                          </span>
                         )}
                       </div>
                       <span className="font-medium text-(--rmhbox-accent)">{r.marketValue} coins</span>
@@ -137,6 +144,9 @@ export default function MinimalistMasterpieceHistoryDetail({ gameLog, players }:
                       <div className="flex gap-3 text-(--rmhbox-text-muted)">
                         <span>Painted: {sb.paintedValue}</span>
                         <span>Owned: {sb.ownedValue}</span>
+                        {sb.overbidPenalty > 0 && (
+                          <span className="text-red-500">Penalty: -{sb.overbidPenalty}</span>
+                        )}
                         <span className="font-medium text-(--rmhbox-accent)">Total: {sb.totalScore}</span>
                       </div>
                     </div>
