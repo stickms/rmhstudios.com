@@ -733,6 +733,17 @@ export class WikiRaceMinigame extends BaseMinigame {
       };
     }
 
+    // Include current article HTML from cache so reconnecting clients
+    // can render immediately without waiting for an async fetch.
+    let currentArticleHtml: string | undefined;
+    if (ps && this.state.phase === WikiRacePhase.NAVIGATION) {
+      const normalizedTitle = ps.currentArticleTitle.replace(/ /g, '_');
+      const cached = this.articleCache.get(normalizedTitle);
+      if (cached) {
+        currentArticleHtml = cached.sanitizedHtml;
+      }
+    }
+
     const base: Record<string, unknown> = {
       phase: this.state.phase,
       startArticle: {
@@ -750,6 +761,7 @@ export class WikiRaceMinigame extends BaseMinigame {
       myState: ps
         ? {
             currentArticleTitle: ps.currentArticleTitle,
+            currentArticleHtml,
             path: ps.path,
             clickCount: ps.clickCount,
             hasFinished: ps.hasFinished,
@@ -822,12 +834,11 @@ export class WikiRaceMinigame extends BaseMinigame {
   }
 
   handlePlayerReconnect(userId: string): void {
-    // Send full state snapshot
-    this.context.sendToPlayer(
-      userId,
-      'rmhbox:game:state_snapshot',
-      this.getStateForPlayer(userId),
-    );
+    // NOTE: The full game state snapshot (including cached article HTML)
+    // is already emitted by ReconnectionHandler.attemptReconnect() before
+    // this method is called. We only need to re-fetch the article here
+    // to restore server-side currentArticleLinks for anti-cheat validation
+    // and as a fallback if the article wasn't in the cache at snapshot time.
 
     // Re-fetch current article HTML so the player has content to click
     const ps = this.state.playerStates.get(userId);

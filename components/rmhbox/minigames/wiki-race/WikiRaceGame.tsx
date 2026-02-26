@@ -227,6 +227,11 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
       const myState = data.myState as Record<string, unknown> | null;
       if (myState) {
         setCurrentTitle(myState.currentArticleTitle as string);
+        // Restore article HTML from the snapshot so the page renders
+        // immediately on reconnect without waiting for an async fetch.
+        if (myState.currentArticleHtml) {
+          setArticleHtml(myState.currentArticleHtml as string);
+        }
         setPath(myState.path as string[]);
         setClickCount(myState.clickCount as number);
         setHasFinished(myState.hasFinished as boolean);
