@@ -16,6 +16,7 @@ import {
   CC_TOTAL_ROUNDS, CC_INPUT_DURATION, CC_CATEGORIES_PER_ROUND,
   CC_PEER_REVIEW_DURATION, CC_CRASH_THRESHOLD_PERCENT,
   WR_NAV_DURATION, WR_EFFICIENCY_BONUS, WR_ONE_AWAY, WR_TOTAL_ROUNDS,
+  WWL_TOTAL_ROUNDS, WWL_WRITING_DURATION, WWL_VOTING_DURATION,
 } from './constants';
 
 // ─── Per-Minigame Settings Schemas ───────────────────────────────
@@ -46,6 +47,12 @@ export const WIKI_RACE_SETTINGS: GameSettingsSchema = [
   { key: 'navDuration', type: 'integer', label: 'Race Duration (seconds)', description: 'Total time to navigate from start article to target', default: WR_NAV_DURATION, min: 60, max: 300, step: 15 },
   { key: 'enableEfficiencyBonus', type: 'boolean', label: 'Efficiency Bonus', description: 'Award bonus points for reaching the target in fewer clicks', default: WR_EFFICIENCY_BONUS > 0 },
   { key: 'enableOneAwayPoints', type: 'boolean', label: '"One Away" Points', description: 'Award consolation points to players who were one click from the target', default: WR_ONE_AWAY > 0 },
+];
+
+export const WIT_WAR_LASH_SETTINGS: GameSettingsSchema = [
+  { key: 'totalRounds', type: 'integer', label: 'Number of Rounds', description: 'How many rounds of prompt matchups to play', default: WWL_TOTAL_ROUNDS, min: 1, max: 3, step: 1 },
+  { key: 'writingDuration', type: 'integer', label: 'Writing Duration (seconds)', description: 'Time players have to write answers to their prompts', default: WWL_WRITING_DURATION, min: 30, max: 120, step: 10 },
+  { key: 'votingDuration', type: 'integer', label: 'Voting Duration (seconds)', description: 'Time to vote on each head-to-head matchup', default: WWL_VOTING_DURATION, min: 10, max: 30, step: 5 },
 ];
 
 // ─── Registry ────────────────────────────────────────────────────
@@ -114,6 +121,22 @@ export const MINIGAME_REGISTRY: Record<string, MinigameDefinition> = {
     joinInProgressPolicy: 'spectate_only',
     tags: ['trivia', 'race'],
     settingsSchema: WIKI_RACE_SETTINGS,
+  },
+  'wit-war-lash': {
+    id: 'wit-war-lash',
+    displayName: 'Wit War Lash',
+    description: 'Quiplash-style battle of wits! Write funny answers to prompts, then vote head-to-head for the best response.',
+    category: 'word',
+    icon: 'swords',
+    minPlayers: 3,
+    maxPlayers: 16,
+    estimatedDurationSeconds: 240,
+    supportsTeams: false,
+    instructionDurationSeconds: 15,
+    preloadAssets: { images: [], sounds: [], data: [], estimatedSizeBytes: 0 },
+    joinInProgressPolicy: 'spectate_only',
+    tags: ['word', 'creative', 'voting', 'comedy'],
+    settingsSchema: WIT_WAR_LASH_SETTINGS,
   },
   // ─── Unimplemented Minigames (commented out until server handlers exist) ───
   // 'fact-or-friction': {

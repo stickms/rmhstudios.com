@@ -14,6 +14,7 @@ import RhymeTimeHistoryDetail from '@/components/rmhbox/minigames/rhyme-time/Rhy
 import UndercoverAgentHistoryDetail from '@/components/rmhbox/minigames/undercover-agent/UndercoverAgentHistoryDetail';
 import CategoryCrashHistoryDetail from '@/components/rmhbox/minigames/category-crash/CategoryCrashHistoryDetail';
 import WikiRaceHistoryDetail from '@/components/rmhbox/minigames/wiki-race/WikiRaceHistoryDetail';
+import WitWarLashHistoryDetail from '@/components/rmhbox/minigames/wit-war-lash/WitWarLashHistoryDetail';
 
 // ─── Rhyme Time ──────────────────────────────────────────────────
 
@@ -193,5 +194,41 @@ registerHistoryDisplay({
   getSummary: (log: GameLog) => {
     const start = log.actions.find((a) => a.type === 'round_start');
     return `${start?.payload.startArticle ?? '?'} → ${start?.payload.targetArticle ?? '?'}`;
+  },
+});
+
+// ─── Wit War Lash ────────────────────────────────────────────────
+
+registerHistoryDisplay({
+  minigameId: 'wit-war-lash',
+  DetailComponent: WitWarLashHistoryDetail,
+  searchableFields: [
+    {
+      key: 'prompts',
+      label: 'Prompts',
+      extract: (log: GameLog) =>
+        log.actions
+          .filter((a) => a.type === 'matchup_resolved')
+          .map((a) => a.payload.prompt as string)
+          .filter(Boolean),
+    },
+    {
+      key: 'answers',
+      label: 'Answers',
+      extract: (log: GameLog) =>
+        log.actions
+          .filter((a) => a.type === 'matchup_resolved')
+          .flatMap((a) => [a.payload.answerA as string, a.payload.answerB as string])
+          .filter(Boolean),
+    },
+  ],
+  filterableFields: [
+    { key: 'hadQuiplash', label: 'Had Quiplash', type: 'boolean' },
+    { key: 'matchupWins', label: 'Matchup Wins', type: 'range', valuePath: 'matchupWins' },
+  ],
+  getSummary: (log: GameLog) => {
+    const matchups = log.actions.filter((a) => a.type === 'matchup_resolved');
+    const quiplashes = matchups.filter((a) => a.payload.isQuiplash);
+    return `${matchups.length} matchups — ${quiplashes.length} quiplash${quiplashes.length !== 1 ? 'es' : ''}`;
   },
 });

@@ -128,6 +128,7 @@ const MINIGAME_COMPONENTS: Record<string, React.LazyExoticComponent<ComponentTyp
   'undercover-agent':       lazy(() => import('./undercover-agent/UndercoverAgentGame')),
   'category-crash':         lazy(() => import('./category-crash/CategoryCrashGame')),
   'wiki-race':              lazy(() => import('./wiki-race/WikiRaceGame')),
+  'wit-war-lash':           lazy(() => import('./wit-war-lash/WitWarLashGame')),
   'fact-or-friction':       lazy(() => Promise.resolve({ default: createStub('Fact or Friction') })),
   'undercover-editor':      lazy(() => Promise.resolve({ default: createStub('Undercover Editor') })),
   'minimalist-masterpiece': lazy(() => Promise.resolve({ default: createStub('Minimalist Masterpiece') })),
