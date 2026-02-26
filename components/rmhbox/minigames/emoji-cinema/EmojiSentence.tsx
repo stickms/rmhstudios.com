@@ -1,5 +1,7 @@
 'use client';
 
+import { useState, useCallback } from 'react';
+
 interface EmojiSentenceProps {
   emojis: string[];
   maxEmojis: number;
@@ -15,6 +17,12 @@ interface EmojiSentenceProps {
 export default function EmojiSentence({ emojis, maxEmojis, onRemove, readOnly = false }: EmojiSentenceProps) {
   // Defensive: ensure emojis is always an array
   const safeEmojis = Array.isArray(emojis) ? emojis : [];
+  // Track which emojis failed to load Twemoji images
+  const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
+
+  const handleImageError = useCallback((emoji: string) => {
+    setFailedImages((prev) => new Set(prev).add(emoji));
+  }, []);
 
   return (
     <div className="flex flex-col items-center gap-2 w-full">
@@ -37,23 +45,17 @@ export default function EmojiSentence({ emojis, maxEmojis, onRemove, readOnly = 
               style={{ width: '3rem', height: '3rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               title={readOnly ? undefined : 'Click to remove'}
             >
-              <img
-                src={`https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/72x72/${emojiToTwemojiCode(emoji)}.png`}
-                alt={emoji}
-                className="w-8 h-8"
-                draggable={false}
-                onError={(e) => {
-                  // Fallback to native emoji if Twemoji image fails
-                  const target = e.currentTarget;
-                  target.style.display = 'none';
-                  if (target.parentElement) {
-                    const span = document.createElement('span');
-                    span.textContent = emoji;
-                    span.className = 'text-3xl';
-                    target.parentElement.appendChild(span);
-                  }
-                }}
-              />
+              {failedImages.has(emoji) ? (
+                <span className="text-3xl">{emoji}</span>
+              ) : (
+                <img
+                  src={`https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/72x72/${emojiToTwemojiCode(emoji)}.png`}
+                  alt={emoji}
+                  className="w-8 h-8"
+                  draggable={false}
+                  onError={() => handleImageError(emoji)}
+                />
+              )}
             </button>
           ))
         )}
@@ -71,8 +73,8 @@ export default function EmojiSentence({ emojis, maxEmojis, onRemove, readOnly = 
  */
 function emojiToTwemojiCode(emoji: string): string {
   const codePoints: string[] = [];
-  for (const codePoint of emoji) {
-    const hex = codePoint.codePointAt(0)?.toString(16);
+  for (const char of emoji) {
+    const hex = char.codePointAt(0)?.toString(16);
     if (hex) codePoints.push(hex);
   }
   // Filter out variation selectors (fe0f) for simpler matching
