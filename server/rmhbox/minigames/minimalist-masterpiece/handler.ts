@@ -323,7 +323,9 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
       const secondHighest = sortedBids.length >= 2 ? sortedBids[1][1] : 0;
       this.state.marketValues.set(drawingId, secondHighest);
 
-      const overbidPenalty = Math.floor(0.5 * (winnerBidAmount - secondHighest));
+      const overbidPenalty = sortedBids.length >= 2
+        ? Math.floor(0.5 * (winnerBidAmount - secondHighest))
+        : 0;
       const winnerPlayer = this.context.players.get(winnerId);
       this.state.auctionWinners.set(drawingId, {
         drawingId,
