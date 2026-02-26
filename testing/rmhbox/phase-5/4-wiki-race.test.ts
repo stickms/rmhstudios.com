@@ -360,19 +360,18 @@ describe('Wiki-Race Server Handler (§5.4)', () => {
   });
 
   describe('Reconnection (§5.4.6.11)', () => {
-    it('should send player state snapshot on reconnect', () => {
-      const { game, playerLog } = createGame();
+    it('should return player state snapshot via buildReconnectionSnapshot', () => {
+      const { game } = createGame();
       game.start();
       vi.advanceTimersByTime(6000);
 
       const userId = MOCK_USERS.alice.userId;
       game.handlePlayerDisconnect(userId);
-      game.handlePlayerReconnect(userId);
 
-      const snapshot = playerLog.find(
-        (e) => e.userId === userId && e.event === 'rmhbox:game:state_snapshot',
-      );
+      // buildReconnectionSnapshot (used by ReconnectionHandler) returns full state
+      const snapshot = game.buildReconnectionSnapshot(userId, false);
       expect(snapshot).toBeDefined();
+      expect(snapshot).toHaveProperty('myState');
     });
   });
 });
