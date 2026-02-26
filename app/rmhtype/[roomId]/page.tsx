@@ -204,6 +204,7 @@ export default function RmhTypeRoom() {
                   showReactions={false}
                   showMediaEmbeds
                   placeholder="Type a message..."
+                  className="h-full"
                 />
               </div>
             </>

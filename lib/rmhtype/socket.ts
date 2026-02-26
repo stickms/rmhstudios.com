@@ -151,10 +151,11 @@ export function disconnectFromRmhType(): void {
 
 // ─── Emit Helper ─────────────────────────────────────────────────
 
-export function emit(event: string, data?: unknown): void {
+export function emit(event: string, data?: unknown): boolean {
   if (!socket?.connected) {
     console.warn(`[RmhType] Cannot emit "${event}" — not connected`);
-    return;
+    return false;
   }
   socket.emit(event, data);
+  return true;
 }

@@ -85,7 +85,10 @@ export default function RmhTypeLanding() {
           });
         }
       } catch (err) {
-        if (mounted) toast.error(err instanceof Error ? err.message : 'Connection failed');
+        if (mounted) {
+          toast.error(err instanceof Error ? err.message : 'Connection failed');
+          setLeaderboardLoading(false);
+        }
       }
     }
 
@@ -103,9 +106,12 @@ export default function RmhTypeLanding() {
   }, []);
 
   const handleCreateRoom = useCallback(() => {
-    emit(C2S.ROOM_CREATE, {
+    const sent = emit(C2S.ROOM_CREATE, {
       settings: { difficulty: roomDifficulty, passageLength: roomLength, rounds: roomRounds },
     });
+    if (!sent) {
+      toast.error('Not connected to server. Try refreshing the page.');
+    }
   }, [roomDifficulty, roomLength, roomRounds]);
 
   const handleJoinRoom = useCallback(() => {
@@ -114,7 +120,9 @@ export default function RmhTypeLanding() {
       toast.warning('Room code must be 6 characters');
       return;
     }
-    emit(C2S.ROOM_JOIN, { roomCode: code });
+    if (!emit(C2S.ROOM_JOIN, { roomCode: code })) {
+      toast.error('Not connected to server. Try refreshing the page.');
+    }
   }, [joinCode]);
 
   const handleSoloStart = useCallback(() => {
