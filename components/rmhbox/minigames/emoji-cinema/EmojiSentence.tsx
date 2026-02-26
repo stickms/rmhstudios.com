@@ -26,7 +26,7 @@ export default function EmojiSentence({ emojis, maxEmojis, onRemove, readOnly = 
 
   return (
     <div className="flex flex-col items-center gap-2 w-full">
-      <div className="flex flex-wrap items-center gap-1 min-h-[3.5rem] p-3 rounded-xl bg-(--rmhbox-surface) border border-(--rmhbox-border) w-full"
+      <div className="flex flex-wrap items-center gap-1 min-h-14 p-3 rounded-xl bg-(--rmhbox-surface) border border-(--rmhbox-border) w-full"
         style={{ maxWidth: '24rem' }}
       >
         {safeEmojis.length === 0 ? (

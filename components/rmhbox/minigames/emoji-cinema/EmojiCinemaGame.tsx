@@ -263,14 +263,6 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
     [],
   );
 
-  /** Remove the most recently added emoji (backspace/delete) */
-  const handleRemoveLastEmoji = useCallback(() => {
-    if (emojis.length === 0) return;
-    const lastIndex = emojis.length - 1;
-    setEmojis((prev) => prev.slice(0, -1));
-    emitGameInput('REMOVE_EMOJI', { position: lastIndex });
-  }, [emojis.length]);
-
   // Audience actions
   const handleSubmitGuess = useCallback(
     (guess: string) => {
@@ -359,7 +351,6 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
               maxEmojis={MAX_EMOJIS}
               onAddEmoji={handleAddEmoji}
               onRemoveEmoji={handleRemoveEmoji}
-              onRemoveLastEmoji={handleRemoveLastEmoji}
               guessCount={guessCount}
               correctCount={correctCount}
               timeRemaining={timeRemaining}
