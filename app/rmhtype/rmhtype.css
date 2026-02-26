@@ -172,6 +172,40 @@
   }
 }
 
+/* ─── Short viewport (mobile with keyboard up) ────────────────── */
+
+@media (max-height: 32rem) {
+  .rmhtype-typing-view .rmhtype-wpm-display,
+  .rmhtype-typing-view .rmhtype-round-info {
+    display: none;
+  }
+
+  .rmhtype-typing-view .rmhtype-progress-section {
+    display: none;
+  }
+
+  .rmhtype-typing-view .rmhtype-passage {
+    font-size: 1rem;
+    line-height: 1.75;
+  }
+
+  .rmhtype-typing-view .rmhtype-passage-scroll {
+    padding: 0.75rem !important;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    border-bottom: none;
+  }
+
+  .rmhtype-typing-view .rmhtype-typing-input {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
+
+  .rmhtype-typing-view .rmhtype-typing-area {
+    gap: 0 !important;
+  }
+}
+
 .rmhtype-char-correct {
   color: var(--rmhtype-correct);
 }

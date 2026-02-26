@@ -50,7 +50,9 @@ export default function RmhTypeSolo() {
     return () => { mounted = false; };
   }, []);
 
-  // Auto-scroll passage to keep cursor visible (scoped to container only)
+  // Auto-scroll passage to keep cursor visible
+  // On short containers (mobile with keyboard), proactively position cursor
+  // higher so the next line of text is always visible below
   useEffect(() => {
     const container = passageRef.current;
     if (!container) return;
@@ -59,14 +61,23 @@ export default function RmhTypeSolo() {
 
     const containerRect = container.getBoundingClientRect();
     const cursorRect = cursor.getBoundingClientRect();
+    const containerHeight = containerRect.height;
 
-    // Scroll down if cursor is below visible area
-    if (cursorRect.bottom > containerRect.bottom - 16) {
-      container.scrollTop += cursorRect.bottom - containerRect.bottom + 48;
-    }
-    // Scroll up if cursor is above visible area
-    if (cursorRect.top < containerRect.top + 16) {
-      container.scrollTop -= containerRect.top - cursorRect.top + 48;
+    if (containerHeight < 200) {
+      // Short container: keep cursor at ~40% from top so next lines are visible
+      const targetY = containerRect.top + containerHeight * 0.4;
+      const diff = cursorRect.top - targetY;
+      if (Math.abs(diff) > 4) {
+        container.scrollTop += diff;
+      }
+    } else {
+      // Normal: scroll when cursor approaches edges
+      if (cursorRect.bottom > containerRect.bottom - 16) {
+        container.scrollTop += cursorRect.bottom - containerRect.bottom + 48;
+      }
+      if (cursorRect.top < containerRect.top + 16) {
+        container.scrollTop -= containerRect.top - cursorRect.top + 48;
+      }
     }
   }, [typedText]);
 
@@ -275,7 +286,7 @@ export default function RmhTypeSolo() {
       <RmhTypeHeader backLabel="Back" onBack={handleBackToSettings} />
 
       <div className="flex-1 min-h-0 flex flex-col p-4 md:p-8">
-        <div className="max-w-3xl w-full mx-auto flex-1 min-h-0 flex flex-col gap-4">
+        <div className="max-w-3xl w-full mx-auto flex-1 min-h-0 flex flex-col gap-4 rmhtype-typing-area">
           {!soloPassage ? (
             <div className="flex-1 flex items-center justify-center">
               <div className="animate-pulse text-(--rmhtype-text-muted)">
@@ -284,9 +295,9 @@ export default function RmhTypeSolo() {
             </div>
           ) : (
             <>
-              {/* Live WPM / prompt — always rendered to avoid layout shift */}
+              {/* Live WPM / prompt — hidden on short viewports via CSS */}
               {!finished && (
-                <div className="text-center shrink-0">
+                <div className="text-center shrink-0 rmhtype-wpm-display">
                   <span className="text-2xl font-bold font-mono text-(--rmhtype-accent)">
                     {startTime
                       ? `${Math.round(((typedText.length / 5) / ((Date.now() - startTime) / 60000)) || 0)} WPM`
@@ -313,20 +324,20 @@ export default function RmhTypeSolo() {
                 </div>
               </div>
 
-              {/* Input — pinned below passage */}
+              {/* Input — pinned below passage, seamless on mobile */}
               <input
                 ref={inputRef}
                 type="text"
                 value={typedText}
                 onChange={handleTyping}
                 disabled={finished}
-                className="shrink-0 w-full px-4 py-3 rounded-lg font-mono border border-(--rmhtype-border) bg-(--rmhtype-bg) text-(--rmhtype-text) outline-none focus:ring-1 focus:ring-(--rmhtype-accent)"
+                className="shrink-0 w-full px-4 py-3 rounded-lg font-mono border border-(--rmhtype-border) bg-(--rmhtype-bg) text-(--rmhtype-text) outline-none focus:ring-1 focus:ring-(--rmhtype-accent) rmhtype-typing-input"
                 autoFocus
                 placeholder="Start typing..."
               />
 
-              {/* Progress */}
-              <div className="shrink-0 rmhtype-progress-bar">
+              {/* Progress — hidden on short viewports via CSS */}
+              <div className="shrink-0 rmhtype-progress-bar rmhtype-progress-section">
                 <div
                   className="rmhtype-progress-fill"
                   style={{ width: `${(typedText.length / soloPassage.length) * 100}%` }}

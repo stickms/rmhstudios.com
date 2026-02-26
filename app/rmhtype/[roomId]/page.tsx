@@ -68,7 +68,9 @@ export default function RmhTypeRoom() {
     return () => { mounted = false; };
   }, [roomCode]);
 
-  // Auto-scroll passage to keep cursor visible (scoped to container only)
+  // Auto-scroll passage to keep cursor visible
+  // On short containers (mobile with keyboard), proactively position cursor
+  // higher so the next line of text is always visible below
   useEffect(() => {
     const container = passageRef.current;
     if (!container) return;
@@ -77,12 +79,23 @@ export default function RmhTypeRoom() {
 
     const containerRect = container.getBoundingClientRect();
     const cursorRect = cursor.getBoundingClientRect();
+    const containerHeight = containerRect.height;
 
-    if (cursorRect.bottom > containerRect.bottom - 16) {
-      container.scrollTop += cursorRect.bottom - containerRect.bottom + 48;
-    }
-    if (cursorRect.top < containerRect.top + 16) {
-      container.scrollTop -= containerRect.top - cursorRect.top + 48;
+    if (containerHeight < 200) {
+      // Short container: keep cursor at ~40% from top so next lines are visible
+      const targetY = containerRect.top + containerHeight * 0.4;
+      const diff = cursorRect.top - targetY;
+      if (Math.abs(diff) > 4) {
+        container.scrollTop += diff;
+      }
+    } else {
+      // Normal: scroll when cursor approaches edges
+      if (cursorRect.bottom > containerRect.bottom - 16) {
+        container.scrollTop += cursorRect.bottom - containerRect.bottom + 48;
+      }
+      if (cursorRect.top < containerRect.top + 16) {
+        container.scrollTop -= containerRect.top - cursorRect.top + 48;
+      }
     }
   }, [typedText]);
 
@@ -191,7 +204,7 @@ export default function RmhTypeRoom() {
       />
 
       <div className={`flex-1 ${isTyping ? 'min-h-0 flex flex-col' : 'overflow-y-auto'} p-4 md:p-6`} style={isTyping ? undefined : { scrollbarGutter: 'stable both-edges' }}>
-        <div className={`${isTyping ? 'max-w-3xl flex-1 min-h-0 flex flex-col gap-4' : 'max-w-5xl space-y-6'} mx-auto w-full`}>
+        <div className={`${isTyping ? 'max-w-3xl flex-1 min-h-0 flex flex-col gap-4 rmhtype-typing-area' : 'max-w-5xl space-y-6'} mx-auto w-full`}>
 
           {/* WAITING — Lobby */}
           {room.status === 'WAITING' && (
@@ -392,7 +405,7 @@ export default function RmhTypeRoom() {
           {/* TYPING */}
           {room.status === 'TYPING' && room.passage && (
             <>
-              <div className="shrink-0 text-sm text-(--rmhtype-text-muted) text-center">
+              <div className="shrink-0 text-sm text-(--rmhtype-text-muted) text-center rmhtype-round-info">
                 Round {room.currentRound} of {room.totalRounds}
               </div>
 
@@ -414,20 +427,20 @@ export default function RmhTypeRoom() {
                 </div>
               </div>
 
-              {/* Input — pinned below passage */}
+              {/* Input — pinned below passage, seamless on mobile */}
               <input
                 ref={inputRef}
                 type="text"
                 value={typedText}
                 onChange={handleTyping}
                 disabled={finished}
-                className="shrink-0 w-full px-4 py-3 rounded-lg font-mono border border-(--rmhtype-border) bg-(--rmhtype-bg) text-(--rmhtype-text) outline-none focus:ring-1 focus:ring-(--rmhtype-accent)"
+                className="shrink-0 w-full px-4 py-3 rounded-lg font-mono border border-(--rmhtype-border) bg-(--rmhtype-bg) text-(--rmhtype-text) outline-none focus:ring-1 focus:ring-(--rmhtype-accent) rmhtype-typing-input"
                 autoFocus
                 placeholder={finished ? 'Waiting for others...' : 'Start typing...'}
               />
 
-              {/* Progress bars — pinned at bottom */}
-              <div className="shrink-0 space-y-2">
+              {/* Progress bars — hidden on short viewports via CSS */}
+              <div className="shrink-0 space-y-2 rmhtype-progress-section">
                 {room.progress.map((p) => (
                   <div key={p.userId} className="flex items-center gap-3">
                     <span className="text-sm font-medium w-24 truncate text-(--rmhtype-text-muted)">{p.userName}</span>
