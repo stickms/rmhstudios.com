@@ -174,6 +174,8 @@ export const MM_INVESTMENT_BONUS = 50;
 
 export const EC_MAX_ROUNDS = 6;
 export const EC_PRODUCER_ASSIGNMENT_SECONDS = 2;
+export const EC_MOVIE_SELECTION_SECONDS = 15;
+export const EC_MOVIE_CHOICES_COUNT = 3;
 export const EC_ROUND_DURATION_SECONDS = 45;
 export const EC_ROUND_RESULTS_SECONDS = 5;
 export const EC_TRANSITION_SECONDS = 1;

@@ -18,7 +18,7 @@ import AudienceView from './AudienceView';
 import RoundResults from './RoundResults';
 import type { GuessEntry } from './GuessHistory';
 
-type ECPhase = 'PRODUCER_ASSIGNMENT' | 'EMOJI_CONSTRUCTION' | 'ROUND_RESULTS' | 'TRANSITION';
+type ECPhase = 'PRODUCER_ASSIGNMENT' | 'MOVIE_SELECTION' | 'EMOJI_CONSTRUCTION' | 'ROUND_RESULTS' | 'TRANSITION';
 
 const MAX_EMOJIS = 12;
 const MAX_GUESSES = 5;
@@ -50,6 +50,7 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
   const [producerId, setProducerId] = useState('');
   const [producerName, setProducerName] = useState('');
   const [movieTitle, setMovieTitle] = useState('');
+  const [movieChoices, setMovieChoices] = useState<Array<{ title: string; year: number; genre: string[]; difficulty: string }>>([]);
   const [emojis, setEmojis] = useState<string[]>([]);
   const [guesses, setGuesses] = useState<GuessEntry[]>([]);
   const [hasGuessedCorrectly, setHasGuessedCorrectly] = useState(false);
@@ -59,6 +60,8 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
   const [roundNumber, setRoundNumber] = useState(1);
   const [notification, setNotification] = useState('');
   const [correctGuessers, setCorrectGuessers] = useState<CorrectGuesserInfo[]>([]);
+  // Movie titles for fuzzy autocomplete
+  const [movieTitles, setMovieTitles] = useState<string[]>([]);
   // Round results state
   const [resultsMovieTitle, setResultsMovieTitle] = useState('');
   const [resultsEmojis, setResultsEmojis] = useState<string[]>([]);
@@ -87,6 +90,7 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
           setProducerName((data.producerUserName ?? data.producerName) as string);
           setRoundNumber(data.round as number ?? roundNumber);
           setMovieTitle('');
+          setMovieChoices([]);
           setEmojis([]);
           setGuesses([]);
           setHasGuessedCorrectly(false);
@@ -96,15 +100,29 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
           setPhase('PRODUCER_ASSIGNMENT');
           break;
         }
+        case 'EC_MOVIE_CHOICES': {
+          // Producer receives 3 movie choices
+          const movies = data.movies as Array<{ title: string; year: number; genre: string[]; difficulty: string }>;
+          setMovieChoices(movies ?? []);
+          setPhase('MOVIE_SELECTION');
+          break;
+        }
+        case 'EC_MOVIE_SELECTION_START': {
+          // Audience notification that producer is picking
+          if (!isProducer) setPhase('MOVIE_SELECTION');
+          break;
+        }
         case 'EC_MOVIE_ASSIGNED': {
           // Server sends data.movie.title or data.movieTitle
           const movie = data.movie as { title?: string } | undefined;
           setMovieTitle((movie?.title ?? data.movieTitle) as string);
+          setMovieChoices([]);
           setPhase('EMOJI_CONSTRUCTION');
           break;
         }
         case 'EC_CONSTRUCTION_START':
           // Marks the start of the emoji construction phase — transition audience too
+          if (Array.isArray(data.movieTitles)) setMovieTitles(data.movieTitles as string[]);
           if (phase !== 'EMOJI_CONSTRUCTION') setPhase('EMOJI_CONSTRUCTION');
           break;
         case 'EC_EMOJI_UPDATED': {
@@ -182,7 +200,7 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
         }
       }
     },
-    [phase, roundNumber, producerId, producerName],
+    [phase, roundNumber, producerId, producerName, isProducer],
   );
 
   // Subscribe to socket events
@@ -202,7 +220,7 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
     if (!snapshot || !snapshot.phase) return;
 
     const p = snapshot.phase as string;
-    if (p === 'PRODUCER_ASSIGNMENT' || p === 'EMOJI_CONSTRUCTION' || p === 'ROUND_RESULTS' || p === 'TRANSITION') {
+    if (p === 'PRODUCER_ASSIGNMENT' || p === 'MOVIE_SELECTION' || p === 'EMOJI_CONSTRUCTION' || p === 'ROUND_RESULTS' || p === 'TRANSITION') {
       setPhase(p as ECPhase);
     }
     if (snapshot.producerUserId) setProducerId(snapshot.producerUserId as string);
@@ -214,6 +232,7 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
       const m = snapshot.movie as { title?: string };
       if (m.title) setMovieTitle(m.title);
     }
+    if (Array.isArray(snapshot.movieTitles)) setMovieTitles(snapshot.movieTitles as string[]);
     const seq = (snapshot.emojiSequence ?? snapshot.emojis) as string[] | undefined;
     if (Array.isArray(seq)) setEmojis(seq);
     if (snapshot.currentRound) setRoundNumber(snapshot.currentRound as number);
@@ -260,6 +279,14 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
     [],
   );
 
+  // Movie selection action (producer picks from 3 choices)
+  const handleSelectMovie = useCallback(
+    (title: string) => {
+      emitGameInput('SELECT_MOVIE', { movieTitle: title });
+    },
+    [],
+  );
+
   // Render based on phase
   switch (phase) {
     case 'PRODUCER_ASSIGNMENT':
@@ -271,9 +298,49 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
           </h2>
           <p className="text-sm text-(--rmhbox-text-muted)">
             {isProducer
-              ? 'You will get a movie to describe with emojis'
+              ? 'You will pick a movie to describe with emojis'
               : 'Get ready to guess the movie from emojis'}
           </p>
+        </div>
+      );
+
+    case 'MOVIE_SELECTION':
+      return (
+        <div className="flex flex-col items-center justify-center gap-4 p-8 text-center animate-in fade-in">
+          {isProducer ? (
+            <>
+              <span className="text-4xl">🎥</span>
+              <h2 className="text-xl font-bold text-(--rmhbox-text)">Choose Your Movie</h2>
+              <p className="text-sm text-(--rmhbox-text-muted) mb-2">
+                Pick the movie you want to describe with emojis
+              </p>
+              <div className="flex flex-col gap-3 w-full max-w-sm">
+                {movieChoices.map((movie) => (
+                  <button
+                    key={movie.title}
+                    onClick={() => handleSelectMovie(movie.title)}
+                    className="p-4 rounded-xl bg-(--rmhbox-surface) border border-(--rmhbox-border) hover:border-(--rmhbox-accent) hover:bg-(--rmhbox-border) transition-all text-left"
+                  >
+                    <div className="font-semibold text-(--rmhbox-text)">{movie.title} ({movie.year})</div>
+                    <div className="text-xs text-(--rmhbox-text-muted) mt-1">
+                      {movie.genre.join(', ')} • {movie.difficulty}
+                    </div>
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-(--rmhbox-text-muted)">
+                {timeRemaining}s remaining
+              </p>
+            </>
+          ) : (
+            <>
+              <span className="text-4xl">🤔</span>
+              <h2 className="text-xl font-bold text-(--rmhbox-text)">
+                {producerName} is choosing a movie…
+              </h2>
+              <p className="text-sm text-(--rmhbox-text-muted)">Get ready to guess!</p>
+            </>
+          )}
         </div>
       );
 
@@ -309,6 +376,7 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
               onSubmitGuess={handleSubmitGuess}
               timeRemaining={timeRemaining}
               correctGuessers={correctGuessers}
+              movieTitles={movieTitles}
             />
           )}
         </div>

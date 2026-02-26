@@ -28,8 +28,8 @@ import {
 
 vi.mock('@/lib/rmhbox/minimalist-masterpiece/data-loader', () => ({
   loadPrompts: () => [
-    { id: 'test-1', text: 'A house on a hill', category: 'Landscape', difficulty: 'easy' },
-    { id: 'test-2', text: 'A smiling cat', category: 'Animal', difficulty: 'medium' },
+    { text: 'A house on a hill', category: 'Landscape', difficulty: 'easy' },
+    { text: 'A smiling cat', category: 'Animal', difficulty: 'medium' },
   ],
   selectPromptForGame: (pool: unknown[]) => pool[0],
 }));
@@ -321,18 +321,21 @@ describe('Minimalist Masterpiece Server Handler (§6.3)', () => {
       expect(accepted).toBeDefined();
     });
 
-    it('should reject duplicate submission from the same player', () => {
+    it('should accept re-submission from the same player (auto-save)', () => {
       const { game, playerLog } = createGame();
       game.start();
       advanceToDrawing(game);
 
       const uid = MOCK_USERS.alice.userId;
       game.handleInput(uid, 'SUBMIT_DRAWING', createValidDrawing());
-      game.handleInput(uid, 'SUBMIT_DRAWING', createValidDrawing());
+      game.handleInput(uid, 'SUBMIT_DRAWING', createValidDrawing(2));
 
+      // Both submissions should be accepted (no rejection)
       const rejections = findPlayerActions(playerLog, uid, 'MM_DRAWING_REJECTED');
-      expect(rejections.length).toBe(1);
-      expect(rejections[0].data.reason).toBe('already_submitted');
+      expect(rejections.length).toBe(0);
+
+      const acceptances = findPlayerActions(playerLog, uid, 'MM_DRAWING_ACCEPTED');
+      expect(acceptances.length).toBe(2);
     });
 
     it('should ignore drawing submission outside the DRAWING phase', () => {

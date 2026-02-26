@@ -25,6 +25,7 @@ interface AudienceViewProps {
   onSubmitGuess: (guess: string) => void;
   timeRemaining: number;
   correctGuessers: CorrectGuesserInfo[];
+  movieTitles?: string[];
 }
 
 export default function AudienceView({
@@ -38,14 +39,15 @@ export default function AudienceView({
   onSubmitGuess,
   timeRemaining,
   correctGuessers,
+  movieTitles: propMovieTitles,
 }: AudienceViewProps) {
   const disabled = hasGuessedCorrectly || guesses.length >= maxGuesses;
-  const [movieTitles, setMovieTitles] = useState<string[]>([]);
+  const [movieTitles, setMovieTitles] = useState<string[]>(propMovieTitles ?? []);
 
-  // Load movie titles from state snapshot for fuzzy autocomplete
+  // Load movie titles from state snapshot for fuzzy autocomplete (fallback if not passed via props)
   const loadMovieTitles = useCallback(async () => {
+    if (movieTitles.length > 0) return; // Already have titles from props
     try {
-      // Try to fetch from the API or use preloaded state
       const { useRMHboxStore } = await import('@/lib/rmhbox/store');
       const snapshot = useRMHboxStore.getState().gameState;
       if (snapshot && Array.isArray(snapshot.movieTitles)) {
@@ -54,7 +56,7 @@ export default function AudienceView({
     } catch {
       // Ignore — will work without autocomplete
     }
-  }, []);
+  }, [movieTitles.length]);
 
   useEffect(() => {
     loadMovieTitles();

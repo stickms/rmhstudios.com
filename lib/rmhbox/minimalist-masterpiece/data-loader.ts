@@ -13,7 +13,6 @@ import fs from 'fs';
 // ─── Types ───────────────────────────────────────────────────────
 
 export interface DrawingPrompt {
-  id: string;
   text: string;
   category: string;
   difficulty: 'easy' | 'medium' | 'hard';
@@ -40,11 +39,11 @@ export function loadPrompts(): DrawingPrompt[] {
  * Select a random prompt not in the used set.
  * Falls back to the full pool if all prompts have been used.
  */
-export function selectPromptForGame(pool: DrawingPrompt[], usedIds: Set<string>): DrawingPrompt {
+export function selectPromptForGame(pool: DrawingPrompt[], usedTexts: Set<string>): DrawingPrompt {
   if (pool.length === 0) {
     throw new Error('Cannot select a prompt from an empty pool');
   }
-  const available = pool.filter((p) => !usedIds.has(p.id));
+  const available = pool.filter((p) => !usedTexts.has(p.text));
   const selection = available.length > 0 ? available : pool;
   return selection[Math.floor(Math.random() * selection.length)];
 }

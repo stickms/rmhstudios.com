@@ -51,7 +51,7 @@ import type {
 
 export class MinimalistMasterpieceGame extends BaseMinigame {
   private promptPool: DrawingPrompt[];
-  private usedPromptIds: Set<string> = new Set();
+  private usedPromptTexts: Set<string> = new Set();
   private state!: MinimalistMasterpieceState;
   private startedAt: number = 0;
   private actionSeq = 0;
@@ -77,8 +77,8 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
 
     const now = Date.now();
     // Use a placeholder prompt — will be set properly in startRound()
-    const prompt = selectPromptForGame(this.promptPool, this.usedPromptIds);
-    this.usedPromptIds.add(prompt.id);
+    const prompt = selectPromptForGame(this.promptPool, this.usedPromptTexts);
+    this.usedPromptTexts.add(prompt.text);
 
     this.state = {
       prompt,
@@ -121,8 +121,8 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
 
     this.state.currentRound++;
 
-    const roundPrompt = prompt ?? selectPromptForGame(this.promptPool, this.usedPromptIds);
-    if (!prompt) this.usedPromptIds.add(roundPrompt.id);
+    const roundPrompt = prompt ?? selectPromptForGame(this.promptPool, this.usedPromptTexts);
+    if (!prompt) this.usedPromptTexts.add(roundPrompt.text);
     this.state.prompt = roundPrompt;
 
     // Re-initialize per-round state
@@ -168,19 +168,17 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
       lobbyId: this.context.lobbyId,
       round: this.state.currentRound,
       totalRounds: this.state.totalRounds,
-      promptId: roundPrompt.id,
       promptText: roundPrompt.text,
     });
 
     this.logAction('round_start', {
       round: this.state.currentRound,
-      promptId: roundPrompt.id,
       promptText: roundPrompt.text,
     });
 
     this.context.broadcastToLobby('rmhbox:game:action', {
       type: 'MM_PROMPT',
-      prompt: { id: roundPrompt.id, text: roundPrompt.text, category: roundPrompt.category, difficulty: roundPrompt.difficulty },
+      prompt: { text: roundPrompt.text, category: roundPrompt.category, difficulty: roundPrompt.difficulty },
       maxStrokes: this.getSetting('maxStrokes', MM_MAX_STROKES),
       colorPalette: MM_COLOR_PALETTE,
       round: this.state.currentRound,
@@ -443,14 +441,6 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
     const drawing = this.state.drawings.get(userId);
     if (!drawing) return;
 
-    if (drawing.submittedAt !== null) {
-      this.context.sendToPlayer(userId, 'rmhbox:game:action', {
-        type: 'MM_DRAWING_REJECTED',
-        reason: 'already_submitted',
-      });
-      return;
-    }
-
     const parsed = SubmitDrawingSchema.safeParse(data);
     if (!parsed.success) {
       this.context.sendToPlayer(userId, 'rmhbox:game:action', {
@@ -473,25 +463,28 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
       }
     }
 
-    // Accept the drawing
+    // Accept the drawing (allow re-submissions for auto-save)
+    const isFirstSubmission = drawing.submittedAt === null;
     drawing.strokes = strokes as MMStroke[];
     drawing.backgroundColor = backgroundColor;
     drawing.strokeCount = strokes.length;
     drawing.submittedAt = Date.now();
 
-    this.logAction('submit_drawing', {
-      userId,
-      drawingId: drawing.drawingId,
-      strokeCount: strokes.length,
-    });
+    if (isFirstSubmission) {
+      this.logAction('submit_drawing', {
+        userId,
+        drawingId: drawing.drawingId,
+        strokeCount: strokes.length,
+      });
 
-    logger.info({
-      event: 'mm:drawing_submitted',
-      lobbyId: this.context.lobbyId,
-      userId,
-      drawingId: drawing.drawingId,
-      strokeCount: strokes.length,
-    });
+      logger.info({
+        event: 'mm:drawing_submitted',
+        lobbyId: this.context.lobbyId,
+        userId,
+        drawingId: drawing.drawingId,
+        strokeCount: strokes.length,
+      });
+    }
 
     this.context.sendToPlayer(userId, 'rmhbox:game:action', {
       type: 'MM_DRAWING_ACCEPTED',
@@ -499,23 +492,25 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
       strokeCount: strokes.length,
     });
 
-    // Broadcast submission count to all
-    const submittedCount = Array.from(this.state.drawings.values())
-      .filter((d) => d.submittedAt !== null).length;
-    this.context.broadcastToLobby('rmhbox:game:action', {
-      type: 'MM_SUBMISSION_COUNT',
-      submitted: submittedCount,
-      total: this.state.drawings.size,
-    });
-
-    // If ALL players submitted early, immediately end drawing phase
-    if (submittedCount === this.state.drawings.size) {
-      logger.info({
-        event: 'mm:all_drawings_submitted_early',
-        lobbyId: this.context.lobbyId,
+    if (isFirstSubmission) {
+      // Broadcast submission count to all
+      const submittedCount = Array.from(this.state.drawings.values())
+        .filter((d) => d.submittedAt !== null).length;
+      this.context.broadcastToLobby('rmhbox:game:action', {
+        type: 'MM_SUBMISSION_COUNT',
+        submitted: submittedCount,
+        total: this.state.drawings.size,
       });
-      this.clearPhaseTimer();
-      this.endDrawingPhase();
+
+      // If ALL players submitted early, immediately end drawing phase
+      if (submittedCount === this.state.drawings.size) {
+        logger.info({
+          event: 'mm:all_drawings_submitted_early',
+          lobbyId: this.context.lobbyId,
+        });
+        this.clearPhaseTimer();
+        this.endDrawingPhase();
+      }
     }
   }
 
@@ -632,7 +627,7 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
   getStateForPlayer(userId: string): unknown {
     const base = {
       phase: this.state.phase,
-      prompt: { id: this.state.prompt.id, text: this.state.prompt.text, category: this.state.prompt.category },
+      prompt: { text: this.state.prompt.text, category: this.state.prompt.category },
       currentRound: this.state.currentRound,
       totalRounds: this.state.totalRounds,
       phaseStartedAt: this.state.phaseStartedAt,
@@ -686,7 +681,7 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
   getStateForSpectator(): unknown {
     const base = {
       phase: this.state.phase,
-      prompt: { id: this.state.prompt.id, text: this.state.prompt.text, category: this.state.prompt.category },
+      prompt: { text: this.state.prompt.text, category: this.state.prompt.category },
       phaseStartedAt: this.state.phaseStartedAt,
       phaseEndsAt: this.state.phaseEndsAt,
     };

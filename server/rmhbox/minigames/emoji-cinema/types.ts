@@ -9,7 +9,7 @@ import type { MovieEntry } from '@/lib/rmhbox/emoji-cinema/data-loader';
 
 // ─── Phase ───────────────────────────────────────────────────────
 
-export type ECPhase = 'PRODUCER_ASSIGNMENT' | 'EMOJI_CONSTRUCTION' | 'ROUND_RESULTS' | 'TRANSITION';
+export type ECPhase = 'PRODUCER_ASSIGNMENT' | 'MOVIE_SELECTION' | 'EMOJI_CONSTRUCTION' | 'ROUND_RESULTS' | 'TRANSITION';
 
 // ─── Round Data ──────────────────────────────────────────────────
 
@@ -51,6 +51,8 @@ export interface EmojiCinemaState {
   phase: ECPhase;
   currentProducerUserId: string;
   currentMovie: MovieEntry;
+  /** Three movie choices presented to the producer at MOVIE_SELECTION phase */
+  movieChoices: MovieEntry[];
   emojiSequence: string[];
   guesses: Map<string, ECPlayerGuesses>;
   correctGuessers: CorrectGuesser[];

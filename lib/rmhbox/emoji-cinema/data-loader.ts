@@ -14,7 +14,6 @@ import { EC_MAX_ROUNDS } from '../constants';
 // ─── Types ───────────────────────────────────────────────────────
 
 export interface MovieEntry {
-  id: string;
   title: string;
   titleNormalized: string;
   alternativeTitles: string[];
@@ -53,11 +52,11 @@ export function loadMovies(): MovieEntry[] {
 export function selectMoviesForGame(
   pool: MovieEntry[],
   playerCount: number,
-  usedIds: Set<string>,
+  usedTitles: Set<string>,
   producerOrder: string[],
 ): ECRoundData[] {
   const totalRounds = Math.min(playerCount, EC_MAX_ROUNDS);
-  const available = pool.filter((m) => !usedIds.has(m.id));
+  const available = pool.filter((m) => !usedTitles.has(m.title));
   const selection = available.length >= totalRounds ? available : pool;
 
   // Fisher-Yates shuffle and pick

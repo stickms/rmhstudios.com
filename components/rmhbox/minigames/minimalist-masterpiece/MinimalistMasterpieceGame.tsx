@@ -11,7 +11,6 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { HexColorPicker } from 'react-colorful';
 import { getSocket, emit } from '@/lib/rmhbox/socket';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { S2C, C2S } from '@/lib/rmhbox/events';
@@ -71,6 +70,9 @@ function emitGameInput(action: string, data: unknown = {}) {
   emit(C2S.GAME_INPUT, { lobbyId, action, data });
 }
 
+// Default color palette (fallback if server hasn't sent one yet)
+const DEFAULT_COLOR_PALETTE = ['#1a1a2e', '#e94560', '#0f3460', '#16213e', '#533483', '#2b9348', '#fca311'];
+
 // Background color preset options
 const BG_COLORS = ['#ffffff', '#f5f5dc', '#ffe4e1', '#e0f7fa', '#f0e68c', '#e8e8e8', '#1a1a2e'];
 
@@ -85,8 +87,8 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
   const [phase, setPhase] = useState<MMPhase>('PROMPT_REVEAL');
   const [prompt, setPrompt] = useState<string>('');
   const [maxStrokes, setMaxStrokes] = useState(5);
-  const [colorPalette, setColorPalette] = useState<string[]>([]);
-  const [selectedColor, setSelectedColor] = useState('#1a1a2e');
+  const [colorPalette, setColorPalette] = useState<string[]>(DEFAULT_COLOR_PALETTE);
+  const [selectedColor, setSelectedColor] = useState(DEFAULT_COLOR_PALETTE[0]);
   const [selectedWidth, setSelectedWidth] = useState(4);
   const [backgroundColor, setBackgroundColor] = useState('#ffffff');
   const [strokes, setStrokes] = useState<MMStroke[]>([]);
@@ -98,24 +100,9 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
   const [rankings, setRankings] = useState<MMRanking[]>([]);
   const [scoreBreakdowns, setScoreBreakdowns] = useState<PlayerScoreBreakdown[]>([]);
   const [timeRemaining, setTimeRemaining] = useState(0);
-  const [showStrokeColorPicker, setShowStrokeColorPicker] = useState(false);
-  const [showBgColorPicker, setShowBgColorPicker] = useState(false);
-  const strokePickerRef = useRef<HTMLDivElement>(null);
-  const bgPickerRef = useRef<HTMLDivElement>(null);
 
-  // Close color pickers on outside click
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (showStrokeColorPicker && strokePickerRef.current && !strokePickerRef.current.contains(e.target as Node)) {
-        setShowStrokeColorPicker(false);
-      }
-      if (showBgColorPicker && bgPickerRef.current && !bgPickerRef.current.contains(e.target as Node)) {
-        setShowBgColorPicker(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showStrokeColorPicker, showBgColorPicker]);
+  // Auto-submit: track whether we've auto-submitted
+  const autoSubmittedRef = useRef(false);
 
   /** Reset drawing state for a new round */
   const resetDrawingState = useCallback(() => {
@@ -123,9 +110,10 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
     setEditHistory([]);
     setHasSubmitted(false);
     setBackgroundColor('#ffffff');
-    setSelectedColor('#1a1a2e');
+    setSelectedColor(colorPalette[0] ?? DEFAULT_COLOR_PALETTE[0]);
     setSelectedWidth(4);
-  }, []);
+    autoSubmittedRef.current = false;
+  }, [colorPalette]);
 
   // Handle incoming game actions from the server
   const handleGameAction = useCallback(
@@ -151,6 +139,10 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
         case 'MM_DRAWING_START':
         case 'MM_DRAWING_PHASE': {
           if (typeof data.maxStrokes === 'number') setMaxStrokes(data.maxStrokes as number);
+          if (Array.isArray(data.colorPalette)) {
+            const palette = data.colorPalette as string[];
+            setColorPalette(palette);
+          }
           setPhase('DRAWING');
           break;
         }
@@ -265,18 +257,25 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
     }
     if (snapshot.maxStrokes) setMaxStrokes(snapshot.maxStrokes as number);
     if (Array.isArray(snapshot.colorPalette)) {
-      setColorPalette(snapshot.colorPalette as string[]);
-      if ((snapshot.colorPalette as string[]).length > 0) {
-        setSelectedColor((snapshot.colorPalette as string[])[0]);
+      const palette = snapshot.colorPalette as string[];
+      setColorPalette(palette);
+      if (palette.length > 0) {
+        setSelectedColor(palette[0]);
       }
     }
   }, []);
 
-  const handleSubmitDrawing = useCallback(() => {
+  // Auto-save and auto-submit: whenever strokes or backgroundColor changes during
+  // the DRAWING phase, automatically submit the drawing to the server
+  useEffect(() => {
+    if (phase !== 'DRAWING') return;
     if (hasSubmitted) return;
-    emitGameInput('SUBMIT_DRAWING', { strokes, backgroundColor });
-    setHasSubmitted(true);
-  }, [hasSubmitted, strokes, backgroundColor]);
+    // Debounce auto-submit to avoid spamming on rapid changes
+    const timeout = setTimeout(() => {
+      emitGameInput('SUBMIT_DRAWING', { strokes, backgroundColor });
+    }, 500);
+    return () => clearTimeout(timeout);
+  }, [phase, strokes, backgroundColor, hasSubmitted]);
 
   // Undo: restore the previous edit history state
   const handleUndo = useCallback(() => {
@@ -326,33 +325,17 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
             backgroundColor={backgroundColor}
             maxStrokes={maxStrokes}
             hasSubmitted={hasSubmitted}
-            onSubmit={handleSubmitDrawing}
+            onSubmit={() => {}}
             onUndo={handleUndo}
           />
 
           {/* Stroke color: palette swatches + react-colorful picker */}
-          <div className="flex items-center gap-2 flex-wrap justify-center">
-            <span className="text-xs text-(--rmhbox-text-muted)">Color:</span>
-            <ColorPalette
-              colors={colorPalette}
-              selectedColor={selectedColor}
-              onSelect={(c) => { setSelectedColor(c); setShowStrokeColorPicker(false); }}
-            />
-            <div className="relative" ref={strokePickerRef}>
-              <button
-                className="w-8 h-8 rounded-full border-2 border-(--rmhbox-border) hover:scale-105 transition-transform"
-                style={{ backgroundColor: selectedColor }}
-                onClick={() => setShowStrokeColorPicker((v) => !v)}
-                title="Custom stroke color"
-                aria-label="Custom stroke color"
-              />
-              {showStrokeColorPicker && (
-                <div className="absolute z-50 top-10 left-1/2 -translate-x-1/2 p-2 rounded-lg bg-(--rmhbox-surface) border border-(--rmhbox-border) shadow-lg">
-                  <HexColorPicker color={selectedColor} onChange={setSelectedColor} />
-                </div>
-              )}
-            </div>
-          </div>
+          <ColorPalette
+            colors={colorPalette}
+            selectedColor={selectedColor}
+            onSelect={setSelectedColor}
+            label="Color:"
+          />
 
           {/* Stroke width slider */}
           <div className="flex items-center gap-2 w-full max-w-64">
@@ -383,50 +366,19 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
           </div>
 
           {/* Background color: preset swatches + react-colorful picker */}
-          <div className="flex items-center gap-2 flex-wrap justify-center">
-            <span className="text-xs text-(--rmhbox-text-muted)">Background:</span>
-            {BG_COLORS.map((c) => (
-              <button
-                key={c}
-                onClick={() => { setBackgroundColor(c); setShowBgColorPicker(false); }}
-                className={`w-6 h-6 rounded-full border-2 transition-transform ${
-                  backgroundColor === c
-                    ? 'border-(--rmhbox-accent) scale-110 ring-2 ring-(--rmhbox-accent)/40'
-                    : 'border-(--rmhbox-border) hover:scale-105'
-                }`}
-                style={{ backgroundColor: c }}
-                aria-label={`Background color ${c}`}
-              />
-            ))}
-            <div className="relative" ref={bgPickerRef}>
-              <button
-                className="w-6 h-6 rounded-full border-2 border-(--rmhbox-border) hover:scale-105 transition-transform"
-                style={{ backgroundColor }}
-                onClick={() => setShowBgColorPicker((v) => !v)}
-                title="Custom background color"
-                aria-label="Custom background color"
-              />
-              {showBgColorPicker && (
-                <div className="absolute z-50 top-8 left-1/2 -translate-x-1/2 p-2 rounded-lg bg-(--rmhbox-surface) border border-(--rmhbox-border) shadow-lg">
-                  <HexColorPicker color={backgroundColor} onChange={setBackgroundColor} />
-                </div>
-              )}
-            </div>
-          </div>
+          <ColorPalette
+            colors={BG_COLORS}
+            selectedColor={backgroundColor}
+            onSelect={setBackgroundColor}
+            swatchSize="w-6 h-6"
+            label="Background:"
+          />
 
           <div className="flex items-center gap-4">
             <StrokeCounter current={strokes.length} max={maxStrokes} />
-            {!hasSubmitted && (
-              <button
-                className="px-4 py-2 rounded-lg bg-(--rmhbox-accent) text-white font-semibold"
-                onClick={handleSubmitDrawing}
-              >
-                Submit Drawing
-              </button>
-            )}
-            {hasSubmitted && (
-              <span className="text-sm text-(--rmhbox-text-muted)">Drawing submitted ✓</span>
-            )}
+            <span className="text-xs text-(--rmhbox-text-muted)">
+              Auto-saving • {timeRemaining}s
+            </span>
           </div>
         </div>
       );

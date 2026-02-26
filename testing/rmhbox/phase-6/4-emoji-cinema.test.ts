@@ -30,12 +30,12 @@ import {
 
 vi.mock('@/lib/rmhbox/emoji-cinema/data-loader', () => ({
   loadMovies: () => [
-    { id: 'ec-1', title: 'The Lion King', titleNormalized: 'lion king', alternativeTitles: [], year: 1994, genre: ['animation'], difficulty: 'easy', popularity: 95 },
-    { id: 'ec-2', title: 'Jurassic Park', titleNormalized: 'jurassic park', alternativeTitles: [], year: 1993, genre: ['adventure'], difficulty: 'easy', popularity: 90 },
-    { id: 'ec-3', title: 'The Matrix', titleNormalized: 'matrix', alternativeTitles: ['Matrix'], year: 1999, genre: ['sci-fi'], difficulty: 'medium', popularity: 85 },
-    { id: 'ec-4', title: 'Inception', titleNormalized: 'inception', alternativeTitles: [], year: 2010, genre: ['sci-fi'], difficulty: 'medium', popularity: 88 },
-    { id: 'ec-5', title: 'Frozen', titleNormalized: 'frozen', alternativeTitles: [], year: 2013, genre: ['animation'], difficulty: 'easy', popularity: 92 },
-    { id: 'ec-6', title: 'Interstellar', titleNormalized: 'interstellar', alternativeTitles: [], year: 2014, genre: ['sci-fi'], difficulty: 'hard', popularity: 80 },
+    { title: 'The Lion King', titleNormalized: 'lion king', alternativeTitles: [], year: 1994, genre: ['animation'], difficulty: 'easy', popularity: 95 },
+    { title: 'Jurassic Park', titleNormalized: 'jurassic park', alternativeTitles: [], year: 1993, genre: ['adventure'], difficulty: 'easy', popularity: 90 },
+    { title: 'The Matrix', titleNormalized: 'matrix', alternativeTitles: ['Matrix'], year: 1999, genre: ['sci-fi'], difficulty: 'medium', popularity: 85 },
+    { title: 'Inception', titleNormalized: 'inception', alternativeTitles: [], year: 2010, genre: ['sci-fi'], difficulty: 'medium', popularity: 88 },
+    { title: 'Frozen', titleNormalized: 'frozen', alternativeTitles: [], year: 2013, genre: ['animation'], difficulty: 'easy', popularity: 92 },
+    { title: 'Interstellar', titleNormalized: 'interstellar', alternativeTitles: [], year: 2014, genre: ['sci-fi'], difficulty: 'hard', popularity: 80 },
   ],
   loadEmojiPalette: () => ({
     categories: [
@@ -64,6 +64,7 @@ import { EmojiCinemaGame } from '../../../server/rmhbox/minigames/emoji-cinema';
 import {
   EC_MAX_ROUNDS,
   EC_PRODUCER_ASSIGNMENT_SECONDS,
+  EC_MOVIE_SELECTION_SECONDS,
   EC_ROUND_DURATION_SECONDS,
   EC_ROUND_RESULTS_SECONDS,
   EC_TRANSITION_SECONDS,
@@ -94,9 +95,12 @@ const ALL_PLAYER_IDS = [
   MOCK_USERS.diana.userId,
 ];
 
-/** Advance past PRODUCER_ASSIGNMENT into EMOJI_CONSTRUCTION. */
+/** Advance past PRODUCER_ASSIGNMENT and MOVIE_SELECTION into EMOJI_CONSTRUCTION. */
 function advanceToConstruction(_game: EmojiCinemaGame): void {
+  // Past PRODUCER_ASSIGNMENT → MOVIE_SELECTION
   vi.advanceTimersByTime(EC_PRODUCER_ASSIGNMENT_SECONDS * 1000);
+  // Past MOVIE_SELECTION → auto-selects first movie → EMOJI_CONSTRUCTION
+  vi.advanceTimersByTime(EC_MOVIE_SELECTION_SECONDS * 1000);
 }
 
 /** Get the producer userId for the current round from the broadcast log. */
@@ -130,9 +134,10 @@ function addEmojis(game: EmojiCinemaGame, producerId: string, count: number): vo
   }
 }
 
-/** Advance through one full round (assignment + construction timeout + results + transition). */
+/** Advance through one full round (assignment + movie selection + construction timeout + results + transition). */
 function advancePastRound(): void {
   vi.advanceTimersByTime(EC_PRODUCER_ASSIGNMENT_SECONDS * 1000);
+  vi.advanceTimersByTime(EC_MOVIE_SELECTION_SECONDS * 1000);
   vi.advanceTimersByTime(EC_ROUND_DURATION_SECONDS * 1000);
   vi.advanceTimersByTime(EC_ROUND_RESULTS_SECONDS * 1000);
   vi.advanceTimersByTime(EC_TRANSITION_SECONDS * 1000);
@@ -278,12 +283,15 @@ describe('Emoji Cinema Server Handler (§6.4)', () => {
       }
     });
 
-    it('should send EC_MOVIE_ASSIGNED ONLY to the producer', () => {
+    it('should send EC_MOVIE_ASSIGNED ONLY to the producer (after movie selection)', () => {
       const { game, playerLog, broadcastLog } = createGame();
       game.start();
 
       const producerId = getProducerFromLog(broadcastLog);
       const audienceIds = getAudienceIds(producerId);
+
+      // Advance past PRODUCER_ASSIGNMENT and through MOVIE_SELECTION (auto-select)
+      advanceToConstruction(game);
 
       // Producer should have received movie assignment
       const producerMovieEvent = findLastPlayerAction(playerLog, producerId, 'EC_MOVIE_ASSIGNED');
@@ -412,9 +420,9 @@ describe('Emoji Cinema Server Handler (§6.4)', () => {
       const { game, broadcastLog, playerLog } = createGame();
       game.start();
       const producerId = getProducerFromLog(broadcastLog);
+      advanceToConstruction(game);
       const movieTitle = getMovieTitleFromPlayerLog(playerLog, producerId);
       const audienceIds = getAudienceIds(producerId);
-      advanceToConstruction(game);
 
       game.handleInput(audienceIds[0], 'SUBMIT_GUESS', { guess: movieTitle });
 
@@ -427,9 +435,9 @@ describe('Emoji Cinema Server Handler (§6.4)', () => {
       const { game, broadcastLog, playerLog } = createGame();
       game.start();
       const producerId = getProducerFromLog(broadcastLog);
+      advanceToConstruction(game);
       const movieTitle = getMovieTitleFromPlayerLog(playerLog, producerId);
       const audienceIds = getAudienceIds(producerId);
-      advanceToConstruction(game);
 
       game.handleInput(audienceIds[0], 'SUBMIT_GUESS', { guess: movieTitle.toLowerCase() });
 
@@ -442,9 +450,9 @@ describe('Emoji Cinema Server Handler (§6.4)', () => {
       const { game, broadcastLog, playerLog } = createGame();
       game.start();
       const producerId = getProducerFromLog(broadcastLog);
+      advanceToConstruction(game);
       const movieTitle = getMovieTitleFromPlayerLog(playerLog, producerId);
       const audienceIds = getAudienceIds(producerId);
-      advanceToConstruction(game);
 
       // Strip leading article if present
       const stripped = movieTitle.replace(/^(The|A|An)\s+/i, '');
@@ -507,9 +515,9 @@ describe('Emoji Cinema Server Handler (§6.4)', () => {
       const { game, broadcastLog, playerLog } = createGame();
       game.start();
       const producerId = getProducerFromLog(broadcastLog);
+      advanceToConstruction(game);
       const movieTitle = getMovieTitleFromPlayerLog(playerLog, producerId);
       const audienceIds = getAudienceIds(producerId);
-      advanceToConstruction(game);
 
       game.handleInput(audienceIds[0], 'SUBMIT_GUESS', { guess: movieTitle });
 
@@ -517,7 +525,7 @@ describe('Emoji Cinema Server Handler (§6.4)', () => {
       expect(correctBroadcast).toBeDefined();
       expect(correctBroadcast!.data.rank).toBe(1);
       expect(correctBroadcast!.data.correctGuessers).toBeDefined();
-      expect(correctBroadcast!.data.correctGuessers.length).toBe(1);
+      expect((correctBroadcast!.data.correctGuessers as unknown[]).length).toBe(1);
 
       // Round should NOT end yet — other audience members haven't guessed
       const roundOver = findLastActionBroadcast(broadcastLog, 'EC_ROUND_OVER');
@@ -528,9 +536,9 @@ describe('Emoji Cinema Server Handler (§6.4)', () => {
       const { game, broadcastLog, playerLog } = createGame();
       game.start();
       const producerId = getProducerFromLog(broadcastLog);
+      advanceToConstruction(game);
       const movieTitle = getMovieTitleFromPlayerLog(playerLog, producerId);
       const audienceIds = getAudienceIds(producerId);
-      advanceToConstruction(game);
 
       // All audience members guess correctly
       for (const uid of audienceIds) {
@@ -546,9 +554,9 @@ describe('Emoji Cinema Server Handler (§6.4)', () => {
       const { game, broadcastLog, playerLog } = createGame();
       game.start();
       const producerId = getProducerFromLog(broadcastLog);
+      advanceToConstruction(game);
       const movieTitle = getMovieTitleFromPlayerLog(playerLog, producerId);
       const audienceIds = getAudienceIds(producerId);
-      advanceToConstruction(game);
 
       game.handleInput(audienceIds[0], 'SUBMIT_GUESS', { guess: movieTitle });
       game.handleInput(audienceIds[0], 'SUBMIT_GUESS', { guess: movieTitle });
@@ -567,9 +575,9 @@ describe('Emoji Cinema Server Handler (§6.4)', () => {
       const { game, broadcastLog, playerLog } = createGame();
       game.start();
       const producerId = getProducerFromLog(broadcastLog);
+      advanceToConstruction(game);
       const movieTitle = getMovieTitleFromPlayerLog(playerLog, producerId);
       const audienceIds = getAudienceIds(producerId);
-      advanceToConstruction(game);
 
       // All audience members guess correctly to end the round
       for (const uid of audienceIds) {
@@ -600,9 +608,9 @@ describe('Emoji Cinema Server Handler (§6.4)', () => {
       const { game, broadcastLog, playerLog } = createGame();
       game.start();
       const producerId = getProducerFromLog(broadcastLog);
+      advanceToConstruction(game);
       const movieTitle = getMovieTitleFromPlayerLog(playerLog, producerId);
       const audienceIds = getAudienceIds(producerId);
-      advanceToConstruction(game);
 
       // All audience members guess correctly
       for (const uid of audienceIds) {
@@ -725,9 +733,9 @@ describe('Emoji Cinema Server Handler (§6.4)', () => {
       // Play all 4 rounds — for each round only one audience member guesses correctly
       for (let r = 0; r < 4; r++) {
         const producerId = getProducerFromLog(broadcastLog);
+        advanceToConstruction(game);
         const movieTitle = getMovieTitleFromPlayerLog(playerLog, producerId);
         const audienceIds = getAudienceIds(producerId);
-        advanceToConstruction(game);
 
         // Only the first audience member guesses correctly every round
         game.handleInput(audienceIds[0], 'SUBMIT_GUESS', { guess: movieTitle });
@@ -750,9 +758,9 @@ describe('Emoji Cinema Server Handler (§6.4)', () => {
       // Play all 4 rounds — in each round all audience guesses correctly
       for (let r = 0; r < 4; r++) {
         const producerId = getProducerFromLog(broadcastLog);
+        advanceToConstruction(game);
         const movieTitle = getMovieTitleFromPlayerLog(playerLog, producerId);
         const audienceIds = getAudienceIds(producerId);
-        advanceToConstruction(game);
 
         for (const uid of audienceIds) {
           game.handleInput(uid, 'SUBMIT_GUESS', { guess: movieTitle });
@@ -776,9 +784,9 @@ describe('Emoji Cinema Server Handler (§6.4)', () => {
       let firstProducerId: string | null = null;
       for (let r = 0; r < 4; r++) {
         const producerId = getProducerFromLog(broadcastLog);
+        advanceToConstruction(game);
         const movieTitle = getMovieTitleFromPlayerLog(playerLog, producerId);
         const audienceIds = getAudienceIds(producerId);
-        advanceToConstruction(game);
 
         if (r === 0) {
           // Nobody guesses → stumper
@@ -805,9 +813,9 @@ describe('Emoji Cinema Server Handler (§6.4)', () => {
       game.start();
 
       const producerId = getProducerFromLog(broadcastLog);
+      advanceToConstruction(game);
       const movieTitle = getMovieTitleFromPlayerLog(playerLog, producerId);
       const audienceIds = getAudienceIds(producerId);
-      advanceToConstruction(game);
 
       // First audience member guesses immediately
       game.handleInput(audienceIds[0], 'SUBMIT_GUESS', { guess: movieTitle });
@@ -840,9 +848,9 @@ describe('Emoji Cinema Server Handler (§6.4)', () => {
       game.start();
 
       const producerId = getProducerFromLog(broadcastLog);
+      advanceToConstruction(game);
       const movieTitle = getMovieTitleFromPlayerLog(playerLog, producerId);
       const audienceIds = getAudienceIds(producerId);
-      advanceToConstruction(game);
 
       // Submit multiple close guesses (slightly misspelled)
       // Use partial title to get a "close" match

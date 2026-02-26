@@ -22,7 +22,6 @@ import type { PlayerRanking, Award } from '@/lib/rmhbox/types';
 import type { MovieEntry } from '@/lib/rmhbox/emoji-cinema/data-loader';
 import {
   loadMovies,
-  selectMoviesForGame,
   validateEmoji,
 } from '@/lib/rmhbox/emoji-cinema/data-loader';
 import {
@@ -30,10 +29,13 @@ import {
   RemoveEmojiSchema,
   ReorderEmojiSchema,
   SubmitGuessSchema,
+  SelectMovieSchema,
 } from '@/lib/rmhbox/emoji-cinema/schemas';
 import {
   EC_MAX_ROUNDS,
   EC_PRODUCER_ASSIGNMENT_SECONDS,
+  EC_MOVIE_SELECTION_SECONDS,
+  EC_MOVIE_CHOICES_COUNT,
   EC_ROUND_DURATION_SECONDS,
   EC_ROUND_RESULTS_SECONDS,
   EC_TRANSITION_SECONDS,
@@ -76,10 +78,11 @@ function shuffle<T>(arr: T[]): T[] {
 
 export class EmojiCinemaGame extends BaseMinigame {
   private moviePool: MovieEntry[];
-  private usedMovieIds: Set<string> = new Set();
+  private usedMovieTitles: Set<string> = new Set();
   private state!: EmojiCinemaState;
   private startedAt: number = 0;
   private actionSeq = 0;
+  private constructionTimeoutHandle: NodeJS.Timeout | null = null;
 
   constructor(context: MinigameContext) {
     super(context);
@@ -96,8 +99,11 @@ export class EmojiCinemaGame extends BaseMinigame {
     const producerOrder = shuffle([...playerIds]);
     const totalRounds = Math.min(playerIds.length, this.getSetting('maxRounds', EC_MAX_ROUNDS));
 
-    const rounds = selectMoviesForGame(this.moviePool, totalRounds, this.usedMovieIds, producerOrder);
-    for (const r of rounds) this.usedMovieIds.add(r.movie.id);
+    // Pre-assign producer order but NOT movies — movies are chosen per round
+    const rounds: import('./types').ECRoundData[] = producerOrder.slice(0, totalRounds).map((uid) => ({
+      movie: this.moviePool[0], // placeholder — will be set during MOVIE_SELECTION
+      producerUserId: uid,
+    }));
 
     const playerScores = new Map<string, number>();
     for (const uid of playerIds) playerScores.set(uid, 0);
@@ -110,7 +116,8 @@ export class EmojiCinemaGame extends BaseMinigame {
       producerOrder,
       phase: 'PRODUCER_ASSIGNMENT',
       currentProducerUserId: '',
-      currentMovie: rounds[0].movie,
+      currentMovie: this.moviePool[0],
+      movieChoices: [],
       emojiSequence: [],
       guesses: new Map(),
       correctGuessers: [],
@@ -151,10 +158,10 @@ export class EmojiCinemaGame extends BaseMinigame {
 
     const roundData = this.state.rounds[this.state.currentRound - 1];
     this.state.currentProducerUserId = roundData.producerUserId;
-    this.state.currentMovie = roundData.movie;
     this.state.emojiSequence = [];
     this.state.correctGuessers = [];
     this.state.closeGuessCount = 0;
+    this.state.movieChoices = [];
 
     // Reset guesses for this round
     this.state.guesses = new Map();
@@ -173,13 +180,11 @@ export class EmojiCinemaGame extends BaseMinigame {
       lobbyId: this.context.lobbyId,
       round: this.state.currentRound,
       producerUserId: roundData.producerUserId,
-      movieTitle: roundData.movie.title,
     });
 
     this.logAction('round_start', {
       round: this.state.currentRound,
       producerUserId: roundData.producerUserId,
-      movieId: roundData.movie.id,
     });
 
     this.broadcastRound(this.state.currentRound, this.state.totalRounds);
@@ -194,20 +199,100 @@ export class EmojiCinemaGame extends BaseMinigame {
       duration: EC_PRODUCER_ASSIGNMENT_SECONDS,
     });
 
-    // Send the movie assignment ONLY to the producer
-    this.context.sendToPlayer(roundData.producerUserId, 'rmhbox:game:action', {
+    this.startPhaseTimer(EC_PRODUCER_ASSIGNMENT_SECONDS);
+    this.setTimeout(() => this.startMovieSelection(), EC_PRODUCER_ASSIGNMENT_SECONDS * 1000);
+  }
+
+  /** MOVIE_SELECTION phase: present producer with 3 movie choices */
+  private startMovieSelection(): void {
+    if (!this.isRunning) return;
+
+    // Pick 3 random movies from the pool that haven't been used
+    const available = this.moviePool.filter((m) => !this.usedMovieTitles.has(m.title));
+    const pool = available.length >= EC_MOVIE_CHOICES_COUNT ? available : this.moviePool;
+    const shuffled = shuffle([...pool]);
+    const choices = shuffled.slice(0, EC_MOVIE_CHOICES_COUNT);
+    this.state.movieChoices = choices;
+
+    this.setPhase('MOVIE_SELECTION', EC_MOVIE_SELECTION_SECONDS);
+
+    logger.info({
+      event: 'ec:movie_selection_start',
+      lobbyId: this.context.lobbyId,
+      round: this.state.currentRound,
+      choiceCount: choices.length,
+    });
+
+    // Send movie choices ONLY to the producer
+    this.context.sendToPlayer(this.state.currentProducerUserId, 'rmhbox:game:action', {
+      type: 'EC_MOVIE_CHOICES',
+      movies: choices.map((m) => ({
+        title: m.title,
+        year: m.year,
+        genre: m.genre,
+        difficulty: m.difficulty,
+      })),
+      duration: EC_MOVIE_SELECTION_SECONDS,
+    });
+
+    // Notify audience that producer is picking a movie
+    this.context.broadcastToLobby('rmhbox:game:action', {
+      type: 'EC_MOVIE_SELECTION_START',
+      duration: EC_MOVIE_SELECTION_SECONDS,
+    });
+
+    this.startPhaseTimer(EC_MOVIE_SELECTION_SECONDS);
+    this.setTimeout(() => this.autoSelectMovie(), EC_MOVIE_SELECTION_SECONDS * 1000);
+  }
+
+  /** Auto-select the first movie if producer doesn't choose in time */
+  private autoSelectMovie(): void {
+    if (!this.isRunning) return;
+    if (this.state.phase !== 'MOVIE_SELECTION') return;
+
+    // Pick the first choice by default
+    const movie = this.state.movieChoices[0];
+    if (movie) {
+      this.selectMovie(movie);
+    }
+  }
+
+  /** Finalize the selected movie and proceed to emoji construction */
+  private selectMovie(movie: import('@/lib/rmhbox/emoji-cinema/data-loader').MovieEntry): void {
+    this.state.currentMovie = movie;
+    this.usedMovieTitles.add(movie.title);
+
+    // Update the round data with the selected movie
+    const roundIdx = this.state.currentRound - 1;
+    if (roundIdx >= 0 && roundIdx < this.state.rounds.length) {
+      this.state.rounds[roundIdx].movie = movie;
+    }
+
+    logger.info({
+      event: 'ec:movie_selected',
+      lobbyId: this.context.lobbyId,
+      round: this.state.currentRound,
+      movieTitle: movie.title,
+    });
+
+    this.logAction('movie_selected', {
+      round: this.state.currentRound,
+      movieTitle: movie.title,
+    });
+
+    // Send the selected movie ONLY to the producer
+    this.context.sendToPlayer(this.state.currentProducerUserId, 'rmhbox:game:action', {
       type: 'EC_MOVIE_ASSIGNED',
       movie: {
-        id: roundData.movie.id,
-        title: roundData.movie.title,
-        year: roundData.movie.year,
-        genre: roundData.movie.genre,
-        difficulty: roundData.movie.difficulty,
+        title: movie.title,
+        year: movie.year,
+        genre: movie.genre,
+        difficulty: movie.difficulty,
       },
     });
 
-    this.startPhaseTimer(EC_PRODUCER_ASSIGNMENT_SECONDS);
-    this.setTimeout(() => this.startEmojiConstruction(), EC_PRODUCER_ASSIGNMENT_SECONDS * 1000);
+    this.clearPhaseTimer();
+    this.startEmojiConstruction();
   }
 
   private startEmojiConstruction(): void {
@@ -227,10 +312,11 @@ export class EmojiCinemaGame extends BaseMinigame {
       type: 'EC_CONSTRUCTION_START',
       duration: roundDuration,
       maxEmojis: EC_MAX_EMOJIS,
+      movieTitles: this.moviePool.map((m) => m.title),
     });
 
     this.startPhaseTimer(roundDuration);
-    this.setTimeout(() => this.endRound('timeout'), roundDuration * 1000);
+    this.constructionTimeoutHandle = this.setTimeout(() => this.endRound('timeout'), roundDuration * 1000);
   }
 
   private endRound(reason: 'timeout' | 'guessed' | 'no_emojis'): void {
@@ -238,6 +324,12 @@ export class EmojiCinemaGame extends BaseMinigame {
     if (this.state.phase === 'ROUND_RESULTS' || this.state.phase === 'TRANSITION') return;
 
     this.clearPhaseTimer();
+
+    // Cancel the construction timeout if still pending
+    if (this.constructionTimeoutHandle) {
+      this.clearTrackedTimeout(this.constructionTimeoutHandle);
+      this.constructionTimeoutHandle = null;
+    }
 
     // If no emojis were submitted, notify all players and skip to next round
     const noEmojis = this.state.emojiSequence.length === 0 && reason === 'timeout';
@@ -284,7 +376,6 @@ export class EmojiCinemaGame extends BaseMinigame {
       reason: effectiveReason,
       noEmojis,
       movie: {
-        id: this.state.currentMovie.id,
         title: this.state.currentMovie.title,
         year: this.state.currentMovie.year,
         genre: this.state.currentMovie.genre,
@@ -333,6 +424,9 @@ export class EmojiCinemaGame extends BaseMinigame {
 
   handleInput(userId: string, action: string, data: unknown): void {
     switch (action) {
+      case 'SELECT_MOVIE':
+        this.handleSelectMovie(userId, data);
+        break;
       case 'ADD_EMOJI':
         this.handleAddEmoji(userId, data);
         break;
@@ -346,6 +440,26 @@ export class EmojiCinemaGame extends BaseMinigame {
         this.handleSubmitGuess(userId, data);
         break;
     }
+  }
+
+  private handleSelectMovie(userId: string, data: unknown): void {
+    if (this.state.phase !== 'MOVIE_SELECTION') return;
+    if (userId !== this.state.currentProducerUserId) return;
+
+    const parsed = SelectMovieSchema.safeParse(data);
+    if (!parsed.success) return;
+
+    const { movieTitle } = parsed.data;
+    const choice = this.state.movieChoices.find((m) => m.title === movieTitle);
+    if (!choice) {
+      this.context.sendToPlayer(userId, 'rmhbox:game:action', {
+        type: 'EC_MOVIE_REJECTED',
+        reason: 'invalid_choice',
+      });
+      return;
+    }
+
+    this.selectMovie(choice);
   }
 
   private handleAddEmoji(userId: string, data: unknown): void {
@@ -662,7 +776,6 @@ export class EmojiCinemaGame extends BaseMinigame {
         ...base,
         role: 'producer',
         movie: {
-          id: this.state.currentMovie.id,
           title: this.state.currentMovie.title,
           year: this.state.currentMovie.year,
           genre: this.state.currentMovie.genre,
@@ -697,7 +810,6 @@ export class EmojiCinemaGame extends BaseMinigame {
       ...(revealMovie
         ? {
             movie: {
-              id: this.state.currentMovie.id,
               title: this.state.currentMovie.title,
               year: this.state.currentMovie.year,
               genre: this.state.currentMovie.genre,
@@ -729,7 +841,6 @@ export class EmojiCinemaGame extends BaseMinigame {
       phaseStartedAt: this.state.phaseStartedAt,
       phaseEndsAt: this.state.phaseEndsAt,
       movie: {
-        id: this.state.currentMovie.id,
         title: this.state.currentMovie.title,
         year: this.state.currentMovie.year,
         genre: this.state.currentMovie.genre,

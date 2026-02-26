@@ -30,6 +30,12 @@ export const ReorderEmojiSchema = z.object({
   toIndex: z.number().int().min(0).max(EC_MAX_EMOJIS - 1),
 });
 
+// ─── Select Movie Schema (MOVIE_SELECTION phase) ─────────────────
+
+export const SelectMovieSchema = z.object({
+  movieTitle: z.string().min(1).max(300),
+});
+
 // ─── Submit Guess Schema ────────────────────────────────────────
 
 export const SubmitGuessSchema = z.object({
