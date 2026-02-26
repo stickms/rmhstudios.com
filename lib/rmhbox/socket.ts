@@ -55,9 +55,15 @@ export async function connectToRMHbox(): Promise<Socket> {
   const store = useRMHboxStore.getState();
   store.setConnectionStatus('connecting');
 
-  // Verify the user is authenticated before attempting to connect
-  const session = await authClient.getSession();
-  const token = session?.data?.session?.token;
+  // Retry session fetch — on fresh page loads the auth client may not
+  // have hydrated cookies yet, causing the first attempt to return null.
+  let token: string | undefined;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const session = await authClient.getSession();
+    token = session?.data?.session?.token;
+    if (token) break;
+    if (attempt < 2) await new Promise((r) => setTimeout(r, 500));
+  }
   if (!token) {
     store.setConnectionStatus('error');
     throw new Error('Not authenticated');
