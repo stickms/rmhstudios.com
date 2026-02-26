@@ -18,6 +18,8 @@ import { useRMHboxStore } from './store';
 import { S2C } from './events';
 import { toast } from './toast-store';
 
+console.log('[RMHbox] socket.ts module loaded');
+
 // ─── Module-Level Socket Reference ──────────────────────────────
 
 let socket: Socket | null = null;
