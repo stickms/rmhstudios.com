@@ -1087,15 +1087,10 @@ export class GameCoordinator {
       };
       gameInstance.start();
 
-      // Send initial game state snapshot to every player and spectator.
-      // This ensures the client has the game state in the Zustand store
-      // BEFORE the lazy-loaded minigame component mounts and subscribes.
-      for (const [playerId] of lobby.players) {
-        try {
-          const playerState = gameInstance.getStateForPlayer(playerId);
-          this.lobbyManager.sendToPlayer(lobby.id, playerId, S2C.GAME_STATE_SNAPSHOT, playerState);
-        } catch { /* ignore — player may not be connected */ }
-      }
+      // Send initial game state snapshot to every player via the base-class
+      // helper. This ensures the client's Zustand store has the full game
+      // state BEFORE the lazy-loaded minigame component mounts and subscribes.
+      gameInstance.broadcastInitialState(S2C.GAME_STATE_SNAPSHOT);
 
       // For spectators, use the unified getSpectatorSnapshot which
       // dispatches based on spectatorMode. For competitive-individual games,

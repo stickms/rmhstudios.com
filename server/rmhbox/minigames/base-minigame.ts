@@ -167,6 +167,32 @@ export abstract class BaseMinigame {
     }));
   }
 
+  // ─── Initial State Broadcast ────────────────────────────────────
+
+  /**
+   * Send the initial GAME_STATE_SNAPSHOT to every player after start().
+   *
+   * Called by GameCoordinator.startPlaying() immediately after start() so
+   * the client's Zustand store has the full game state *before* the
+   * lazy-loaded minigame component mounts and subscribes to socket events.
+   *
+   * This centralises the "first-round initialisation" delivery that all
+   * minigames require, preventing the race condition where the component
+   * misses the initial broadcast.  Future minigames inherit this for free.
+   *
+   * @param snapshotEvent — the socket event name (S2C.GAME_STATE_SNAPSHOT)
+   */
+  broadcastInitialState(snapshotEvent: string): void {
+    for (const [playerId] of this.context.players) {
+      try {
+        const playerState = this.getStateForPlayer(playerId);
+        this.context.sendToPlayer(playerId, snapshotEvent, playerState);
+      } catch {
+        // Ignore — player may not be connected yet
+      }
+    }
+  }
+
   // ─── Unified Reconnection ─────────────────────────────────────
 
   /**

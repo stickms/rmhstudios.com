@@ -8,11 +8,9 @@
  */
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { getSocket } from '@/lib/rmhbox/socket';
+import { useState, useCallback } from 'react';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
-import { S2C } from '@/lib/rmhbox/events';
-import { emitGameInput, extractTimerTick } from '@/lib/rmhbox/minigame-client';
+import { emitGameInput, useGameSocket, extractTimerTick } from '@/lib/rmhbox/minigame-client';
 import { playSound } from '@/lib/rmhbox/audio';
 import type { MinigameProps } from '../MinigameRenderer';
 import ProducerView from './ProducerView';
@@ -199,41 +197,38 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
     [phase, roundNumber, producerId, producerName, isProducer],
   );
 
-  // Subscribe to socket events
-  useEffect(() => {
-    const socket = getSocket();
-    if (!socket) return;
+  // Hydrate full game state from a GAME_STATE_SNAPSHOT (initial delivery
+  // or reconnection). Matches the pattern used by all other minigames via
+  // useGameSocket().
+  const handleStateSnapshot = useCallback(
+    (snapshot: Record<string, unknown>) => {
+      const p = snapshot.phase as string;
+      if (p === 'PRODUCER_ASSIGNMENT' || p === 'MOVIE_SELECTION' || p === 'EMOJI_CONSTRUCTION' || p === 'ROUND_RESULTS' || p === 'TRANSITION') {
+        setPhase(p as ECPhase);
+      }
+      if (snapshot.producerUserId) setProducerId(snapshot.producerUserId as string);
+      else if (snapshot.producerId) setProducerId(snapshot.producerId as string);
+      if (snapshot.producerUserName) setProducerName(snapshot.producerUserName as string);
+      else if (snapshot.producerName) setProducerName(snapshot.producerName as string);
+      if (snapshot.movieTitle) setMovieTitle(snapshot.movieTitle as string);
+      else if (snapshot.movie && typeof snapshot.movie === 'object') {
+        const m = snapshot.movie as { title?: string };
+        if (m.title) setMovieTitle(m.title);
+      }
+      if (Array.isArray(snapshot.movieTitles)) setMovieTitles(snapshot.movieTitles as string[]);
+      const seq = (snapshot.emojiSequence ?? snapshot.emojis) as string[] | undefined;
+      if (Array.isArray(seq)) setEmojis(seq);
+      if (snapshot.currentRound) setRoundNumber(snapshot.currentRound as number);
+      else if (snapshot.roundNumber) setRoundNumber(snapshot.roundNumber as number);
+    },
+    [],
+  );
 
-    socket.on(S2C.GAME_ACTION, handleGameAction);
-    return () => {
-      socket.off(S2C.GAME_ACTION, handleGameAction);
-    };
-  }, [handleGameAction]);
-
-  // Hydrate from Zustand gameState snapshot on mount
-  useEffect(() => {
-    const snapshot = useRMHboxStore.getState().gameState;
-    if (!snapshot || !snapshot.phase) return;
-
-    const p = snapshot.phase as string;
-    if (p === 'PRODUCER_ASSIGNMENT' || p === 'MOVIE_SELECTION' || p === 'EMOJI_CONSTRUCTION' || p === 'ROUND_RESULTS' || p === 'TRANSITION') {
-      setPhase(p as ECPhase);
-    }
-    if (snapshot.producerUserId) setProducerId(snapshot.producerUserId as string);
-    else if (snapshot.producerId) setProducerId(snapshot.producerId as string);
-    if (snapshot.producerUserName) setProducerName(snapshot.producerUserName as string);
-    else if (snapshot.producerName) setProducerName(snapshot.producerName as string);
-    if (snapshot.movieTitle) setMovieTitle(snapshot.movieTitle as string);
-    else if (snapshot.movie && typeof snapshot.movie === 'object') {
-      const m = snapshot.movie as { title?: string };
-      if (m.title) setMovieTitle(m.title);
-    }
-    if (Array.isArray(snapshot.movieTitles)) setMovieTitles(snapshot.movieTitles as string[]);
-    const seq = (snapshot.emojiSequence ?? snapshot.emojis) as string[] | undefined;
-    if (Array.isArray(seq)) setEmojis(seq);
-    if (snapshot.currentRound) setRoundNumber(snapshot.currentRound as number);
-    else if (snapshot.roundNumber) setRoundNumber(snapshot.roundNumber as number);
-  }, []);
+  // Subscribe to socket events and hydrate from store on mount
+  useGameSocket({
+    onGameAction: handleGameAction,
+    onStateSnapshot: handleStateSnapshot,
+  });
 
   // Producer actions — emit is outside the state updater to avoid
   // double-firing in React StrictMode
