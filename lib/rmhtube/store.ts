@@ -92,6 +92,7 @@ export interface RmhTubeStore {
   reset: () => void;
   // Phase 4: Room History
   addRoomToHistory: (entry: RoomHistoryEntry) => void;
+  removeRoomFromHistory: (roomId: string) => void;
   toggleFavoriteRoom: (roomId: string) => void;
 }
 
@@ -182,6 +183,16 @@ export const useRmhTubeStore = create<RmhTubeStore>()(
             },
           };
         });
+      },
+
+      removeRoomFromHistory: (roomId) => {
+        set((state) => ({
+          settings: {
+            ...state.settings,
+            roomHistory: state.settings.roomHistory.filter((r) => r.roomId !== roomId),
+            favoriteRooms: state.settings.favoriteRooms.filter((id) => id !== roomId),
+          },
+        }));
       },
 
       toggleFavoriteRoom: (roomId) => {

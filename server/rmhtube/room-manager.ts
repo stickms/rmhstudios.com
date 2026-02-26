@@ -234,7 +234,7 @@ export class RoomManager {
     }
 
     if (!room) {
-      socket.emit(S2C.ERROR, { code: 'ROOM_NOT_FOUND', message: 'Room not found.' });
+      socket.emit(S2C.ERROR, { code: 'ROOM_NOT_FOUND', message: 'Room not found.', roomId });
       return;
     }
 

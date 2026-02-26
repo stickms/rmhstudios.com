@@ -193,11 +193,15 @@ export async function connectToRmhTube(): Promise<Socket> {
 
   // ─── Errors ─────────────────────────────────────────────────
 
-  socket.on(S2C.ERROR, (error: { code?: string; message?: string }) => {
+  socket.on(S2C.ERROR, (error: { code?: string; message?: string; roomId?: string }) => {
     const code = error?.code ?? 'UNKNOWN';
     const message = error?.message ?? 'An unknown error occurred.';
     console.error(`[RmhTube] Server error [${code}]: ${message}`);
     toast.error(message);
+
+    if (code === 'ROOM_NOT_FOUND' && error.roomId) {
+      useRmhTubeStore.getState().removeRoomFromHistory(error.roomId);
+    }
   });
 
   socket.on(S2C.NOT_IN_ROOM, () => {
