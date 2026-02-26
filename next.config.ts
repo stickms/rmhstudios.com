@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  deploymentId: process.env.NEXT_DEPLOYMENT_ID || `v-${Date.now()}`,
+  deploymentId: process.env.NEXT_DEPLOYMENT_ID,
   serverExternalPackages: [
     "audio-decode",
     "wasm-audio-decoders",
