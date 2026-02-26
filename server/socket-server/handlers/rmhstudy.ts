@@ -544,6 +544,7 @@ export function registerRmhStudyHandlers(io: Server, socket: Socket): void {
     userId?: string;
     userName?: string;
     settings?: Record<string, unknown>;
+    isPublic?: boolean;
   }) => {
     if (!checkRateLimit(socket.id, 'rmhstudy:room:create')) {
       emitError(socket, 'Rate limited. Please wait before creating another room.');

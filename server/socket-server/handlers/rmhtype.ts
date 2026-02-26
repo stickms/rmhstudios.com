@@ -1512,6 +1512,7 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
       countdownTimer: null,
       progressBroadcastTimer: null,
       roundResults: [],
+      bannedUsers: [],
     };
 
     rooms.set(soloRoomId, soloRoom);
