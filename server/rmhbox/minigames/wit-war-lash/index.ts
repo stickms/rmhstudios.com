@@ -1,0 +1,1 @@
+export { WitWarLashMinigame } from './handler';
