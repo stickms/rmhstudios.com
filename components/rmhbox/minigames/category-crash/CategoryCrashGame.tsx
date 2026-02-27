@@ -77,6 +77,12 @@ interface CrashEntry {
   categoryIndex: number;
 }
 
+interface VoteEntry {
+  targetUserId: string;
+  categoryIndex: number;
+  vote: 'crash' | 'safe';
+}
+
 interface CategoryCrashGameProps {
   playerId: string;
   playerName: string;
@@ -97,6 +103,9 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
   const [totalPlayers, setTotalPlayers] = useState(0);
   const [anonymizedAnswers, setAnonymizedAnswers] = useState<AnonymizedAnswerSet[]>([]);
   const [myCrashes, setMyCrashes] = useState<CrashEntry[]>([]);
+  const [myVotes, setMyVotes] = useState<VoteEntry[]>([]);
+  const [voteTallies, setVoteTallies] = useState<Record<string, { crash: number; safe: number }>>({});
+  const [currentVotingCategoryIndex, setCurrentVotingCategoryIndex] = useState(0);
   const [scores, setScores] = useState<Record<string, number>>({});
   const [roundResults, setRoundResults] = useState<CCRoundResults | null>(null);
   const [anonymizationMap, setAnonymizationMap] = useState<Record<string, string>>({});
@@ -105,6 +114,7 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
 
   // Track spectator status
   const isSpectator = useRMHboxStore((s) => s.lobby?.myRole === 'spectator');
+  const isHost = useRMHboxStore((s) => !!(s.lobby && s.lobby.hostUserId === s.lobby.myUserId));
 
   const players = useRMHboxStore((s) => s.lobby?.players);
 
@@ -157,12 +167,40 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
           setTimeRemaining(data.duration as number ?? data.timeRemaining as number);
           if (data.categories) setCategories(data.categories as Category[]);
           if (data.letter) setLetter(data.letter as string);
+          setCurrentVotingCategoryIndex(data.currentVotingCategoryIndex as number ?? 0);
           setMyCrashes([]);
+          setMyVotes([]);
+          setVoteTallies({});
           playSound('swoosh');
           break;
         }
         case 'CC_MY_ANONYMOUS_LABEL': {
           setMyAnonymousLabel(data.myAnonymousLabel as string);
+          break;
+        }
+        case 'CC_VOTE_RECORDED': {
+          const entry: VoteEntry = {
+            targetUserId: data.targetUserId as string,
+            categoryIndex: data.categoryIndex as number,
+            vote: data.vote as 'crash' | 'safe',
+          };
+          setMyVotes((prev) => {
+            const filtered = prev.filter(
+              (v) => !(v.targetUserId === entry.targetUserId && v.categoryIndex === entry.categoryIndex),
+            );
+            return [...filtered, entry];
+          });
+          playSound(entry.vote === 'crash' ? 'buzzer' : 'click');
+          break;
+        }
+        case 'CC_VOTE_TALLIES': {
+          setVoteTallies(data.tallies as Record<string, { crash: number; safe: number }>);
+          break;
+        }
+        case 'CC_VOTING_CATEGORY_CHANGED': {
+          setCurrentVotingCategoryIndex(data.currentVotingCategoryIndex as number);
+          setVoteTallies({});
+          playSound('swoosh');
           break;
         }
         case 'CC_CRASH_RECORDED': {
@@ -258,6 +296,9 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
       if (data.totalPlayers !== undefined) setTotalPlayers(data.totalPlayers as number);
       if (data.anonymizedAnswers) setAnonymizedAnswers(data.anonymizedAnswers as AnonymizedAnswerSet[]);
       if (data.myCrashes) setMyCrashes(data.myCrashes as CrashEntry[]);
+      if (data.myVotes) setMyVotes(data.myVotes as VoteEntry[]);
+      if (data.voteTallies) setVoteTallies(data.voteTallies as Record<string, { crash: number; safe: number }>);
+      if (data.currentVotingCategoryIndex !== undefined) setCurrentVotingCategoryIndex(data.currentVotingCategoryIndex as number);
       if (data.myAnonymousLabel) setMyAnonymousLabel(data.myAnonymousLabel as string);
       if (data.roundResults) setRoundResults(data.roundResults as CCRoundResults);
       if (data.anonymizationMap) setAnonymizationMap(data.anonymizationMap as Record<string, string>);
@@ -297,6 +338,16 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
     if (isSpectator) return;
     emitGameInput('UNCRASH_ANSWER', { targetUserId, categoryIndex });
   }, [isSpectator]);
+
+  const handleVote = useCallback((targetUserId: string, categoryIndex: number, vote: 'crash' | 'safe') => {
+    if (isSpectator) return;
+    emitGameInput('VOTE_ANSWER', { targetUserId, categoryIndex, vote });
+  }, [isSpectator]);
+
+  const handleAdvanceVoting = useCallback(() => {
+    if (!isHost) return;
+    emitGameInput('ADVANCE_VOTING', {});
+  }, [isHost]);
 
   // Player name lookup
   const getPlayerName = useCallback(
@@ -377,7 +428,7 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
           </motion.div>
         )}
 
-        {/* PEER_REVIEW — Crash other players' answers */}
+        {/* PEER_REVIEW — Vote crash/safe on other players' answers */}
         {phase === 'PEER_REVIEW' && (
           <motion.div
             key="peer-review"
@@ -390,11 +441,17 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
               categories={categories}
               anonymizedAnswers={anonymizedAnswers}
               myCrashes={myCrashes}
+              myVotes={myVotes}
+              voteTallies={voteTallies}
+              currentVotingCategoryIndex={currentVotingCategoryIndex}
               timeRemaining={timeRemaining}
               currentUserId={playerId}
               myAnonymousLabel={myAnonymousLabel}
+              isHost={isHost}
               onCrash={handleCrash}
               onUncrash={handleUncrash}
+              onVote={handleVote}
+              onAdvanceVoting={handleAdvanceVoting}
             />
           </motion.div>
         )}

@@ -31,6 +31,7 @@ import {
   SubmitAnswersSchema,
   CrashAnswerSchema,
   UncrashAnswerSchema,
+  VoteAnswerSchema,
 } from '@/lib/rmhbox/category-crash/schemas';
 import {
   CC_TOTAL_ROUNDS,
@@ -52,6 +53,7 @@ import {
   CategoryCrashPhase,
   type AnonymizedAnswerSet,
   type CrashRecord,
+  type VoteRecord,
   type CCPlayerResult,
   type CCRoundResults,
   type CategoryCrashState,
@@ -101,6 +103,8 @@ export class CategoryCrashMinigame extends BaseMinigame {
       answers: {},
       locked: {},
       crashes: [],
+      votes: [],
+      currentVotingCategoryIndex: 0,
       anonymizationMap: {},
       reverseAnonymizationMap: {},
       scores,
@@ -137,6 +141,8 @@ export class CategoryCrashMinigame extends BaseMinigame {
     this.state.answers = {};
     this.state.locked = {};
     this.state.crashes = [];
+    this.state.votes = [];
+    this.state.currentVotingCategoryIndex = 0;
     this.state.anonymizationMap = {};
     this.state.reverseAnonymizationMap = {};
     this.state.crashCounts = {};
@@ -246,11 +252,8 @@ export class CategoryCrashMinigame extends BaseMinigame {
     if (!this.isRunning) return;
 
     this.state.phase = CategoryCrashPhase.PEER_REVIEW;
-
-    // Scale peer review duration by player count: 30s base, +10s per player beyond 2, max 90s
-    const playerCount = this.context.players.size;
-    const scaledReviewDuration = Math.min(90, this.getSetting('peerReviewDuration', CC_PEER_REVIEW_DURATION) + Math.max(0, playerCount - 2) * 10);
-    this.state.timeRemaining = scaledReviewDuration;
+    this.state.currentVotingCategoryIndex = 0;
+    this.state.votes = [];
 
     // Build anonymization map
     this.buildAnonymizationMap();
@@ -259,21 +262,21 @@ export class CategoryCrashMinigame extends BaseMinigame {
       event: 'category_crash:peer_review_start',
       lobbyId: this.context.lobbyId,
       round: this.state.currentRound,
-      duration: scaledReviewDuration,
     });
 
     const anonymizedAnswers = this.getAnonymizedAnswers();
 
     this.broadcastGameAction({
       type: 'CC_PEER_REVIEW_START',
-      duration: scaledReviewDuration,
-      timeRemaining: scaledReviewDuration,
+      duration: -1,
+      timeRemaining: -1,
       anonymizedAnswers,
       categories: this.state.categories,
       letter: this.state.letter,
+      currentVotingCategoryIndex: 0,
     });
 
-    // Tell each player their own anonymous label so the UI can prevent self-crashing
+    // Tell each player their own anonymous label so the UI can prevent self-voting
     for (const userId of Object.keys(this.state.answers)) {
       const label = this.state.anonymizationMap[userId];
       if (label) {
@@ -284,10 +287,8 @@ export class CategoryCrashMinigame extends BaseMinigame {
       }
     }
 
-    // Drive the header timer ring for the peer review phase
-    this.startPhaseTimer(scaledReviewDuration);
-
-    this.setTimeout(() => this.startCrashResolution(), scaledReviewDuration * 1000);
+    // Infinite phase timer — host advances with ADVANCE_VOTING
+    this.startInfinitePhaseTimer(false);
   }
 
   private startCrashResolution(): void {
@@ -395,6 +396,10 @@ export class CategoryCrashMinigame extends BaseMinigame {
         return this.handleCrashAnswer(userId, data);
       case 'UNCRASH_ANSWER':
         return this.handleUncrashAnswer(userId, data);
+      case 'VOTE_ANSWER':
+        return this.handleVoteAnswer(userId, data);
+      case 'ADVANCE_VOTING':
+        return this.handleAdvanceVoting(userId);
       default:
         return;
     }
@@ -647,6 +652,153 @@ export class CategoryCrashMinigame extends BaseMinigame {
     });
   }
 
+  /** Vote crash or safe on another player's answer during PEER_REVIEW. */
+  private handleVoteAnswer(userId: string, data: unknown): void {
+    if (this.state.phase !== CategoryCrashPhase.PEER_REVIEW) return;
+
+    const parsed = VoteAnswerSchema.safeParse(data);
+    if (!parsed.success) {
+      this.context.sendToPlayer(userId, 'rmhbox:game:action', {
+        type: 'CC_CRASH_REJECTED',
+        reason: 'invalid_input',
+      });
+      return;
+    }
+
+    const { targetUserId, categoryIndex, vote } = parsed.data;
+
+    // Must vote on the current category
+    if (categoryIndex !== this.state.currentVotingCategoryIndex) {
+      this.context.sendToPlayer(userId, 'rmhbox:game:action', {
+        type: 'CC_CRASH_REJECTED',
+        reason: 'wrong_category',
+      });
+      return;
+    }
+
+    // Resolve anonymous label to real userId
+    const realTargetId = this.state.reverseAnonymizationMap[targetUserId] ?? targetUserId;
+
+    // Cannot vote on own answers
+    if (realTargetId === userId) {
+      this.context.sendToPlayer(userId, 'rmhbox:game:action', {
+        type: 'CC_CRASH_REJECTED',
+        reason: 'cannot_vote_self',
+      });
+      return;
+    }
+
+    // Target must be a participant
+    if (!this.state.answers[realTargetId]) {
+      this.context.sendToPlayer(userId, 'rmhbox:game:action', {
+        type: 'CC_CRASH_REJECTED',
+        reason: 'invalid_target',
+      });
+      return;
+    }
+
+    // Remove any existing vote from this voter on the same target+category
+    this.state.votes = this.state.votes.filter(
+      (v) => !(v.voterId === userId && v.targetUserId === realTargetId && v.categoryIndex === categoryIndex),
+    );
+
+    // Record the new vote
+    const voteRecord: VoteRecord = {
+      voterId: userId,
+      targetUserId: realTargetId,
+      categoryIndex,
+      vote,
+    };
+    this.state.votes.push(voteRecord);
+
+    // Also maintain legacy crashes array for backward compatibility
+    if (vote === 'crash') {
+      const alreadyCrashed = this.state.crashes.some(
+        (c) => c.crasherId === userId && c.targetUserId === realTargetId && c.categoryIndex === categoryIndex,
+      );
+      if (!alreadyCrashed) {
+        this.state.crashes.push({ crasherId: userId, targetUserId: realTargetId, categoryIndex });
+      }
+    } else {
+      this.state.crashes = this.state.crashes.filter(
+        (c) => !(c.crasherId === userId && c.targetUserId === realTargetId && c.categoryIndex === categoryIndex),
+      );
+    }
+
+    logger.info({
+      event: 'category_crash:vote',
+      lobbyId: this.context.lobbyId,
+      voterId: userId,
+      targetUserId: realTargetId,
+      categoryIndex,
+      vote,
+      round: this.state.currentRound,
+    });
+
+    // Confirm to the voter
+    this.context.sendToPlayer(userId, 'rmhbox:game:action', {
+      type: 'CC_VOTE_RECORDED',
+      targetUserId,
+      categoryIndex,
+      vote,
+    });
+
+    // Broadcast live vote tallies for this category to all players
+    this.broadcastVoteTallies(categoryIndex);
+  }
+
+  /** Host advances to the next voting category. */
+  private handleAdvanceVoting(userId: string): void {
+    if (this.state.phase !== CategoryCrashPhase.PEER_REVIEW) return;
+
+    // Only the host can advance
+    if (userId !== this.context.getHostId()) return;
+
+    const nextIndex = this.state.currentVotingCategoryIndex + 1;
+
+    if (nextIndex >= this.state.categories.length) {
+      // All categories voted on — move to crash resolution
+      this.clearPhaseTimer();
+      this.startCrashResolution();
+    } else {
+      this.state.currentVotingCategoryIndex = nextIndex;
+
+      logger.info({
+        event: 'category_crash:advance_voting',
+        lobbyId: this.context.lobbyId,
+        newCategoryIndex: nextIndex,
+        round: this.state.currentRound,
+      });
+
+      this.broadcastGameAction({
+        type: 'CC_VOTING_CATEGORY_CHANGED',
+        currentVotingCategoryIndex: nextIndex,
+      });
+    }
+  }
+
+  /** Broadcast live vote tallies for a specific category to all players. */
+  private broadcastVoteTallies(categoryIndex: number): void {
+    const tallies: Record<string, { crash: number; safe: number }> = {};
+
+    for (const answerSet of Object.keys(this.state.answers)) {
+      const anonLabel = this.state.anonymizationMap[answerSet] ?? answerSet;
+      const crashCount = this.state.votes.filter(
+        (v) => v.targetUserId === answerSet && v.categoryIndex === categoryIndex && v.vote === 'crash',
+      ).length;
+      const safeCount = this.state.votes.filter(
+        (v) => v.targetUserId === answerSet && v.categoryIndex === categoryIndex && v.vote === 'safe',
+      ).length;
+      tallies[anonLabel] = { crash: crashCount, safe: safeCount };
+    }
+
+    this.broadcastGameAction({
+      type: 'CC_VOTE_TALLIES',
+      categoryIndex,
+      tallies,
+    });
+  }
+
   // ─── Anonymization ──────────────────────────────────────────
 
   private buildAnonymizationMap(): void {
@@ -677,11 +829,10 @@ export class CategoryCrashMinigame extends BaseMinigame {
   // ─── Scoring ─────────────────────────────────────────────────
 
   private computeRoundResults(): CCRoundResults {
-    const playerCount = Object.keys(this.state.answers).length;
-    const crashThreshold = Math.ceil(((playerCount - 1) * this.getSetting('crashThreshold', CC_CRASH_THRESHOLD_PERCENT)) / 100);
     const letter = this.state.letter;
 
-    // Determine which answers are crashed (met threshold)
+    // Determine which answers are crashed using vote-based system:
+    // An answer is crashed if crash votes > safe votes. Ties are safe.
     const crashedMap: Record<string, Set<number>> = {};
     for (const userId of Object.keys(this.state.answers)) {
       crashedMap[userId] = new Set();
@@ -689,10 +840,14 @@ export class CategoryCrashMinigame extends BaseMinigame {
 
     for (let catIdx = 0; catIdx < CC_CATEGORIES_PER_ROUND; catIdx++) {
       for (const userId of Object.keys(this.state.answers)) {
-        const crashCount = this.state.crashes.filter(
-          (c) => c.targetUserId === userId && c.categoryIndex === catIdx,
+        const crashVotes = this.state.votes.filter(
+          (v) => v.targetUserId === userId && v.categoryIndex === catIdx && v.vote === 'crash',
         ).length;
-        if (crashCount >= crashThreshold) {
+        const safeVotes = this.state.votes.filter(
+          (v) => v.targetUserId === userId && v.categoryIndex === catIdx && v.vote === 'safe',
+        ).length;
+        // Crashed only if strictly more crash votes than safe votes
+        if (crashVotes > safeVotes) {
           crashedMap[userId].add(catIdx);
         }
       }
@@ -783,7 +938,7 @@ export class CategoryCrashMinigame extends BaseMinigame {
       }
 
       // Crash bonus/penalty
-      const crashBonus = this.computeCrashBonus(userId, crashedMap, crashThreshold);
+      const crashBonus = this.computeCrashBonus(userId, crashedMap, 0);
       roundScore += crashBonus;
 
       playerResults[userId] = {
@@ -852,7 +1007,7 @@ export class CategoryCrashMinigame extends BaseMinigame {
     return groups;
   }
 
-  /** Compute crash bonus/penalty for a player who issued crashes this round. */
+  /** Compute crash bonus/penalty for a player based on their votes this round. */
   private computeCrashBonus(
     userId: string,
     crashedMap: Record<string, Set<number>>,
@@ -860,13 +1015,13 @@ export class CategoryCrashMinigame extends BaseMinigame {
   ): number {
     let bonus = 0;
 
-    const playerCrashes = this.state.crashes.filter((c) => c.crasherId === userId);
-    for (const crash of playerCrashes) {
-      if (crashedMap[crash.targetUserId]?.has(crash.categoryIndex)) {
-        // Successful crash — answer was upheld as invalid
+    const playerVotes = this.state.votes.filter((v) => v.voterId === userId && v.vote === 'crash');
+    for (const vote of playerVotes) {
+      if (crashedMap[vote.targetUserId]?.has(vote.categoryIndex)) {
+        // Voted crash on an answer that ended up crashed — bonus
         bonus += CC_CRASH_BONUS;
       } else {
-        // Failed crash — penalty
+        // Voted crash on an answer that was safe — penalty
         bonus += CC_CRASH_PENALTY;
       }
     }
@@ -905,11 +1060,33 @@ export class CategoryCrashMinigame extends BaseMinigame {
           totalPlayers: Object.keys(this.state.answers).length,
         };
 
-      case CategoryCrashPhase.PEER_REVIEW:
+      case CategoryCrashPhase.PEER_REVIEW: {
+        // Build vote tallies for the current voting category
+        const catIdx = this.state.currentVotingCategoryIndex;
+        const voteTallies: Record<string, { crash: number; safe: number }> = {};
+        for (const answerId of Object.keys(this.state.answers)) {
+          const anonLabel = this.state.anonymizationMap[answerId] ?? answerId;
+          const crashCount = this.state.votes.filter(
+            (v) => v.targetUserId === answerId && v.categoryIndex === catIdx && v.vote === 'crash',
+          ).length;
+          const safeCount = this.state.votes.filter(
+            (v) => v.targetUserId === answerId && v.categoryIndex === catIdx && v.vote === 'safe',
+          ).length;
+          voteTallies[anonLabel] = { crash: crashCount, safe: safeCount };
+        }
         return {
           ...base,
           anonymizedAnswers: this.getAnonymizedAnswers(),
           myAnonymousLabel: this.state.anonymizationMap[userId] ?? null,
+          currentVotingCategoryIndex: this.state.currentVotingCategoryIndex,
+          myVotes: this.state.votes
+            .filter((v) => v.voterId === userId)
+            .map((v) => ({
+              targetUserId: this.state.anonymizationMap[v.targetUserId] ?? v.targetUserId,
+              categoryIndex: v.categoryIndex,
+              vote: v.vote,
+            })),
+          voteTallies,
           myCrashes: this.state.crashes
             .filter((c) => c.crasherId === userId)
             .map((c) => ({
@@ -918,6 +1095,7 @@ export class CategoryCrashMinigame extends BaseMinigame {
             })),
           crashesUsed: this.state.crashCounts[userId] ?? 0,
         };
+      }
 
       case CategoryCrashPhase.CRASH_RESOLUTION:
         return {
@@ -961,6 +1139,7 @@ export class CategoryCrashMinigame extends BaseMinigame {
       return {
         ...base,
         anonymizedAnswers: this.getAnonymizedAnswers(),
+        currentVotingCategoryIndex: this.state.currentVotingCategoryIndex,
       };
     }
 
