@@ -333,14 +333,21 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
           >
             {/* Target reminder + timer */}
             <div className="flex items-center justify-between rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-surface) px-4 py-2">
-              <div className="flex items-center gap-2 text-sm">
-                <span className="text-(--rmhbox-text-muted)">Target:</span>
-                <span className="font-bold text-(--rmhbox-accent)">
-                  {targetArticle?.title}
-                </span>
+              <div className="flex flex-col gap-0.5 text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="text-(--rmhbox-text-muted)">Target:</span>
+                  <span className="font-bold text-(--rmhbox-accent)">
+                    {targetArticle?.title}
+                  </span>
+                </div>
+                {targetArticle?.description && (
+                  <span className="text-xs text-(--rmhbox-text-muted) italic">
+                    {targetArticle.description}
+                  </span>
+                )}
               </div>
               <div
-                className={`rounded-lg px-3 py-1 text-sm font-medium ${
+                className={`shrink-0 rounded-lg px-3 py-1 text-sm font-medium ${
                   timeRemaining <= 15
                     ? 'bg-(--rmhbox-danger-dim) text-(--rmhbox-danger) animate-pulse'
                     : 'bg-(--rmhbox-surface) text-(--rmhbox-text-muted)'
