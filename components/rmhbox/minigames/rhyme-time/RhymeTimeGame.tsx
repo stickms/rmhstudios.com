@@ -144,7 +144,7 @@ export default function RhymeTimeGame({ playerId, playerName: _playerName }: Rhy
                 invalidReason?: string;
                 rarity: number;
                 basePoints: number;
-                multiSyllableMultiplier: number;
+                multiSyllableBonus: number;
                 speedBonus: number;
                 totalPoints: number;
                 submitterCount: number;
