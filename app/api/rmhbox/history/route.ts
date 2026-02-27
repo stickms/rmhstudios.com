@@ -121,6 +121,7 @@ export async function GET(req: NextRequest) {
         winnerUserId: m.winnerUserId,
         playerCount: m.playerCount,
         players: m.players,
+        gameLog: m.gameLog ?? null,
       })),
       total,
       limit,

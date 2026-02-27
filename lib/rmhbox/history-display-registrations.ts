@@ -84,19 +84,30 @@ registerHistoryDisplay({
       key: 'winCondition',
       label: 'Win Condition',
       type: 'select',
-      options: () => ['all_found', 'assassin', 'stalemate'],
+      options: (log: GameLog) => {
+        const endAction = log.actions.find((a) => a.type === 'game_end');
+        const condition = endAction?.payload.winCondition as string | undefined;
+        return condition ? [condition] : [];
+      },
     },
     {
-      key: 'team',
-      label: 'Your Team',
+      key: 'winningTeam',
+      label: 'Winning Team',
       type: 'select',
-      options: () => ['A', 'B'],
+      options: (log: GameLog) => {
+        const endAction = log.actions.find((a) => a.type === 'game_end');
+        const team = endAction?.payload.winningTeam as string | undefined;
+        return team ? [team] : [];
+      },
     },
     {
-      key: 'role',
-      label: 'Your Role',
+      key: 'startingTeam',
+      label: 'Starting Team',
       type: 'select',
-      options: () => ['spymaster', 'operative'],
+      options: (log: GameLog) => {
+        const team = log.initialState.startingTeam as string | undefined;
+        return team ? [team] : [];
+      },
     },
   ],
   getSummary: (log: GameLog) => {
@@ -185,18 +196,22 @@ registerHistoryDisplay({
     { key: 'finished', label: 'Completed Race', type: 'boolean' },
     { key: 'pathLength', label: 'Path Length', type: 'range', valuePath: 'pathLength' },
     {
-      key: 'round',
-      label: 'Round Number',
+      key: 'roundCount',
+      label: 'Rounds Played',
       type: 'select',
-      options: (log: GameLog) =>
-        log.actions
-          .filter((a) => a.type === 'round_start')
-          .map((a) => String(a.payload.round)),
+      options: (log: GameLog) => [
+        String(log.actions.filter((a) => a.type === 'round_start').length),
+      ],
     },
   ],
   getSummary: (log: GameLog) => {
-    const start = log.actions.find((a) => a.type === 'round_start');
-    return `${start?.payload.startArticle ?? '?'} → ${start?.payload.targetArticle ?? '?'}`;
+    const rounds = log.actions.filter((a) => a.type === 'round_start');
+    if (rounds.length === 0) return 'Wiki-Race game';
+    const pairs = rounds.map(
+      (r) => `${r.payload.startArticle ?? '?'} → ${r.payload.targetArticle ?? '?'}`,
+    );
+    if (pairs.length === 1) return pairs[0];
+    return `${pairs.length} rounds — ${pairs.join(', ')}`;
   },
 });
 

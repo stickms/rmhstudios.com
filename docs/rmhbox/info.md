@@ -688,6 +688,16 @@ After each game completes, the `LeaderboardService` persists:
 
 All minigames register their history display in `lib/rmhbox/history-display-registrations.ts`.
 
+### History Page UI (`app/rmhbox/minigames/[minigameId]/history/page.tsx`)
+
+The history page consumes the registered `HistoryDisplayConfig` to provide:
+- **Search bar** — Searches player names, dates, and all `searchableFields` extracted from each match's `gameLog`. Placeholder text lists available searchable fields.
+- **Filter controls** — Renders `select`-type `filterableFields` as dropdowns, with options aggregated from all loaded match game logs.
+- **Summary display** — Each match entry row shows the `getSummary()` result from the game log for quick recall.
+- **Detail expansion** — Clicking a match loads the full `gameLog` and renders the minigame's `DetailComponent`.
+
+The list API (`GET /api/rmhbox/history`) includes `gameLog` in list responses to support client-side search, filtering, and summary computation.
+
 ### REST APIs
 
 - `GET /api/rmhbox/history` — Paginated match history with optional match detail
