@@ -7,7 +7,7 @@
 
 import { Camera } from './types';
 import { worldToScreen } from './camera';
-import { getTileSheet, getPropSheet, TILE_FRAMES, PROP_FRAMES, PROP_DAMAGED_FRAMES, PROP_SCALE } from './sprites/sprite-defs';
+import { getTileSheet, getPropSheet, TILE_FRAMES, ALL_TILE_FRAMES, PROP_FRAMES, PROP_DAMAGED_FRAMES, PROP_SCALE } from './sprites/sprite-defs';
 import { drawTileSprite, drawSprite } from './sprites/sprite-renderer';
 
 // ---- Types ------------------------------------------------------------------
@@ -342,10 +342,20 @@ export class TileGenerator {
   private generateTile(tx: number, ty: number, key: string): void {
     const h = hashCoord(tx, ty);
 
-    // All tiles are dark_grass (other types looked like holes/obstacles)
-    const type: Tile['type'] = 'dark_grass';
+    // Pick a random tile frame from all valid frames (excludes obstacle-looking tiles)
+    const frameIdx = ALL_TILE_FRAMES[h % ALL_TILE_FRAMES.length];
 
-    const variant = (h >> 8) & 3; // 0-3
+    // Determine which tile type this frame belongs to and its variant index
+    let type: Tile['type'] = 'dark_grass';
+    let variant = 0;
+    for (const [tileType, frames] of Object.entries(TILE_FRAMES)) {
+      const idx = frames.indexOf(frameIdx);
+      if (idx !== -1) {
+        type = tileType as Tile['type'];
+        variant = idx;
+        break;
+      }
+    }
 
     const tile: Tile = { x: tx, y: ty, type, variant };
     this.tiles.set(key, tile);

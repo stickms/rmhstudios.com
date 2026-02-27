@@ -450,6 +450,10 @@ function handleCollisions(
     const hb = world.meleeHitboxes[hi];
     hb.lifetime -= delta;
 
+    // Track player position so the hitbox moves with the player
+    hb.x = world.player.x;
+    hb.y = world.player.y;
+
     if (hb.lifetime <= 0) {
       world.meleeHitboxes.splice(hi, 1);
       continue;

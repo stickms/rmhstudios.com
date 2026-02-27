@@ -199,6 +199,7 @@ function fireMeleeSweep(
     arc,
     damage,
     lifetime: 0.2,
+    maxLifetime: 0.2,
     hitEnemyIds: new Set(),
     weaponId: ws.weaponId,
   };
@@ -414,6 +415,7 @@ function fireCircularCleave(
     arc: Math.PI * 2, // Full 360°
     damage,
     lifetime: 0.25,
+    maxLifetime: 0.25,
     hitEnemyIds: new Set(),
     weaponId: ws.weaponId,
   };
@@ -558,6 +560,7 @@ function fireLash(
         arc,
         damage,
         lifetime: 0.15,
+        maxLifetime: 0.15,
         hitEnemyIds: new Set(),
         weaponId: ws.weaponId,
       };
@@ -572,6 +575,7 @@ function fireLash(
       arc,
       damage,
       lifetime: 0.15,
+      maxLifetime: 0.15,
       hitEnemyIds: new Set(),
       weaponId: ws.weaponId,
     };

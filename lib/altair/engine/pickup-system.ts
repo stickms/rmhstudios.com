@@ -18,6 +18,9 @@ export interface PickupEvents {
   vacuumActivated: boolean;
   rosaryActivated: boolean;
   chestOpened: boolean;
+  clockActivated: boolean;
+  shieldOrbCollected: boolean;
+  bombActivated: boolean;
 }
 
 // ---- Constants --------------------------------------------------------------
@@ -33,6 +36,13 @@ const MAGNET_DROP_CHANCE = 0.005;
 const VACUUM_DROP_CHANCE = 0.002;
 const ROSARY_DROP_CHANCE = 0.001;
 const CHEST_DROP_CHANCE = 0.001;
+const CLOCK_DROP_CHANCE = 0.003;
+const SHIELD_ORB_DROP_CHANCE = 0.002;
+const BOMB_DROP_CHANCE = 0.002;
+const CLOCK_SLOW_DURATION = 5; // seconds
+const SHIELD_ORB_AMOUNT = 30;
+const BOMB_RADIUS = 200;
+const BOMB_DAMAGE = 50;
 
 // ---- Spawn Pickups ----------------------------------------------------------
 
@@ -105,6 +115,15 @@ export function spawnEnemyDrops(
   }
   if (Math.random() < CHEST_DROP_CHANCE * luck) {
     spawnPickup(world, x, y, 'chest', 0);
+  }
+  if (Math.random() < CLOCK_DROP_CHANCE * luck) {
+    spawnPickup(world, x, y, 'clock', 0);
+  }
+  if (Math.random() < SHIELD_ORB_DROP_CHANCE * luck) {
+    spawnPickup(world, x, y, 'shield_orb', 0);
+  }
+  if (Math.random() < BOMB_DROP_CHANCE * luck) {
+    spawnPickup(world, x, y, 'bomb', 0);
   }
 }
 
@@ -189,6 +208,9 @@ export function updatePickups(
     vacuumActivated: false,
     rosaryActivated: false,
     chestOpened: false,
+    clockActivated: false,
+    shieldOrbCollected: false,
+    bombActivated: false,
   };
 
   const pl = world.player;
@@ -263,6 +285,36 @@ export function updatePickups(
           events.xpGained += 25;
           events.chestOpened = true;
           break;
+        case 'clock':
+          // Slow all enemies for a duration
+          for (const e of world.enemies) {
+            e.statusEffects.push({
+              type: 'slow',
+              duration: CLOCK_SLOW_DURATION,
+              magnitude: 0.5, // 50% slow
+            });
+          }
+          events.clockActivated = true;
+          break;
+        case 'shield_orb':
+          // Grant player a temporary shield
+          pl.shieldHp = Math.max(pl.shieldHp, SHIELD_ORB_AMOUNT);
+          events.shieldOrbCollected = true;
+          break;
+        case 'bomb': {
+          // Damage all enemies in radius
+          const bx = pl.x;
+          const by = pl.y;
+          for (const e of world.enemies) {
+            const edx = e.x - bx;
+            const edy = e.y - by;
+            if (edx * edx + edy * edy <= BOMB_RADIUS * BOMB_RADIUS) {
+              e.hp -= BOMB_DAMAGE;
+            }
+          }
+          events.bombActivated = true;
+          break;
+        }
       }
 
       world.pickups.splice(i, 1);

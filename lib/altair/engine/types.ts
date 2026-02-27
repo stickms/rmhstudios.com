@@ -93,7 +93,10 @@ export interface PickupEntity extends Entity {
     | 'magnet'
     | 'vacuum'
     | 'rosary'
-    | 'chest';
+    | 'chest'
+    | 'clock'      // temporary enemy slow
+    | 'shield_orb' // grants temporary shield
+    | 'bomb';      // AoE damage to nearby enemies
   value: number;
   magnetized: boolean; // being pulled toward player
 }
@@ -135,6 +138,7 @@ export interface MeleeHitbox {
   arc: number; // total arc in radians (e.g., Math.PI for 180 degrees)
   damage: number;
   lifetime: number;
+  maxLifetime: number; // initial lifetime for animation progress
   hitEnemyIds: Set<number>;
   weaponId: string;
 }

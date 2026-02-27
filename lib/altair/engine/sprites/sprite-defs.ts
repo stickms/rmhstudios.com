@@ -284,10 +284,13 @@ export const PICKUP_FRAMES: Record<string, number> = {
 //   Row 2: graveyard_path variants (8-11)
 
 export const TILE_FRAMES: Record<string, number[]> = {
-  dark_grass: [0, 1, 2, 3],
+  dark_grass: [0, 1, 2],         // frame 3 excluded (looks like obstacle)
   cracked_stone: [4, 5, 6, 7],
-  graveyard_path: [8, 9],  // frames 10,11 removed (looked like obstacles)
+  graveyard_path: [8, 9],        // frames 10,11 excluded (look like obstacles)
 };
+
+/** Flat list of all valid tile frame indices for direct random selection. */
+export const ALL_TILE_FRAMES: number[] = [0, 1, 2, 4, 5, 6, 7, 8, 9];
 
 // =============================================================================
 // PROP FRAME MAPPING

@@ -3,11 +3,12 @@
  */
 'use client';
 
-import { useState } from 'react';
-import { Lock, Swords, Shield, Zap } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Lock, Swords, Shield, Zap, Coins } from 'lucide-react';
 import { CLASSES, ClassDef } from '@/lib/altair/data/classes';
 import { WEAPONS } from '@/lib/altair/data/weapons';
 import { useAltairMetaStore } from '@/lib/altair/stores/meta-store';
+import { useAltairSettingsStore } from '@/lib/altair/stores/settings-store';
 import SpriteIcon from '@/components/altair/hud/SpriteIcon';
 
 interface ClassSelectScreenProps {
@@ -38,6 +39,9 @@ function ClassSprite({ classId, size = 48 }: { classId: string; size?: number })
 export default function ClassSelectScreen({ onSelect, onBack }: ClassSelectScreenProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const unlockedClasses = useAltairMetaStore((s) => s.unlockedClasses);
+  const doubleTimeUnlocked = useAltairMetaStore((s) => s.doubleTimeUnlocked);
+  const doubleTime = useAltairSettingsStore((s) => s.doubleTime);
+  const setDoubleTime = useAltairSettingsStore((s) => s.setDoubleTime);
 
   const selectedClass = CLASSES.find((c) => c.id === selectedId);
   const startingWeapon = selectedClass ? WEAPONS.find((w) => w.id === selectedClass.startingWeaponId) : null;
@@ -68,9 +72,7 @@ export default function ClassSelectScreen({ onSelect, onBack }: ClassSelectScree
               style={isSelected ? { borderColor: cls.color, boxShadow: `0 0 20px ${cls.color}30` } : {}}
             >
               {!isUnlocked && (
-                <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/40 z-10">
-                  <Lock size={20} className="text-(--altair-text-dim)" />
-                </div>
+                <LockOverlay cls={cls} />
               )}
               <ClassSprite classId={cls.id} size={40} />
               <h3 className="font-bold text-sm mt-2" style={{ color: cls.color }}>
@@ -135,6 +137,13 @@ export default function ClassSelectScreen({ onSelect, onBack }: ClassSelectScree
         </div>
       )}
 
+      {/* Double-time toggle */}
+      <DoubleTimeToggle
+        unlocked={doubleTimeUnlocked}
+        enabled={doubleTime}
+        onToggle={() => setDoubleTime(!doubleTime)}
+      />
+
       {/* Action buttons */}
       <div className="mt-auto flex gap-3">
         <button
@@ -155,6 +164,157 @@ export default function ClassSelectScreen({ onSelect, onBack }: ClassSelectScree
           Begin Run
         </button>
       </div>
+    </div>
+  );
+}
+
+// ── Lock overlay with popover ──────────────────────────────────────────
+
+function LockOverlay({ cls }: { cls: ClassDef }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Close popover when clicking outside
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  // Raise parent card z-index so popover draws over sibling cards
+  useEffect(() => {
+    const card = ref.current?.closest('button') as HTMLElement | null;
+    if (!card) return;
+    if (open) {
+      card.style.zIndex = '20';
+      card.style.position = 'relative';
+      card.style.opacity = '1';
+    } else {
+      card.style.zIndex = '';
+      card.style.opacity = '';
+    }
+  }, [open]);
+
+  return (
+    <div
+      ref={ref}
+      className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/50 z-10"
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+      onClick={(e) => {
+        e.stopPropagation();
+        setOpen((v) => !v);
+      }}
+    >
+      <Lock size={20} className="text-(--altair-text-dim)" />
+
+      {open && (
+        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50 w-48 p-3 rounded-lg bg-(--altair-surface) border border-(--altair-border) shadow-xl pointer-events-auto">
+          {/* Arrow */}
+          <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 bg-(--altair-surface) border-l border-t border-(--altair-border)" />
+
+          <div className="relative flex flex-col items-center text-center gap-2">
+            <Lock size={14} className="text-(--altair-text-dim)" />
+            <span className="text-xs font-semibold text-(--altair-text)">
+              {cls.name}
+            </span>
+            <p className="text-[11px] text-(--altair-text-muted) leading-snug">
+              {cls.unlockCondition}
+            </p>
+            {cls.unlockCost > 0 && (
+              <span className="flex items-center gap-1 text-[11px] font-bold text-(--altair-warning)">
+                <Coins size={12} />
+                {cls.unlockCost} coins
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Double-time toggle (locked or unlocked) ─────────────────────────
+
+function DoubleTimeToggle({
+  unlocked,
+  enabled,
+  onToggle,
+}: {
+  unlocked: boolean;
+  enabled: boolean;
+  onToggle: () => void;
+}) {
+  const [popoverOpen, setPopoverOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Close popover on outside click
+  useEffect(() => {
+    if (!popoverOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setPopoverOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [popoverOpen]);
+
+  if (unlocked) {
+    return (
+      <button
+        onClick={onToggle}
+        className="flex items-center gap-3 px-4 py-3 rounded-xl bg-(--altair-surface) border border-(--altair-border) mb-4 cursor-pointer select-none hover:bg-(--altair-surface-hover) transition-colors w-full text-left"
+      >
+        <div className={`w-9 h-5 rounded-full relative transition-colors ${enabled ? 'bg-(--altair-warning)' : 'bg-(--altair-surface-active)'}`}>
+          <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${enabled ? 'translate-x-4' : ''}`} />
+        </div>
+        <div className="flex items-center gap-2">
+          <Zap size={16} className={enabled ? 'text-(--altair-warning)' : 'text-(--altair-text-dim)'} />
+          <span className="text-sm font-semibold text-(--altair-text)">Double Time</span>
+          <span className="text-[10px] text-(--altair-text-dim)">2x game speed</span>
+        </div>
+      </button>
+    );
+  }
+
+  return (
+    <div
+      ref={ref}
+      className="relative mb-4"
+      onMouseEnter={() => setPopoverOpen(true)}
+      onMouseLeave={() => setPopoverOpen(false)}
+      onClick={() => setPopoverOpen((v) => !v)}
+    >
+      <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-(--altair-surface) border border-(--altair-border) opacity-50 cursor-pointer select-none">
+        <div className="w-9 h-5 rounded-full relative bg-(--altair-surface-active)">
+          <div className="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white/50" />
+        </div>
+        <div className="flex items-center gap-2">
+          <Lock size={14} className="text-(--altair-text-dim)" />
+          <span className="text-sm font-semibold text-(--altair-text-dim)">Double Time</span>
+          <span className="text-[10px] text-(--altair-text-dim)">Locked</span>
+        </div>
+      </div>
+
+      {popoverOpen && (
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 w-56 p-3 rounded-lg bg-(--altair-surface) border border-(--altair-border) shadow-xl">
+          {/* Arrow */}
+          <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 bg-(--altair-surface) border-r border-b border-(--altair-border)" />
+          <div className="relative flex flex-col items-center text-center gap-1.5">
+            <Zap size={16} className="text-(--altair-warning)" />
+            <span className="text-xs font-bold text-(--altair-text)">Double Time</span>
+            <p className="text-[11px] text-(--altair-text-muted) leading-snug">
+              Complete a run (survive 20:00) to unlock 2x game speed mode
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

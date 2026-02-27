@@ -131,6 +131,11 @@ export function renderFrame(
   if (world.bossWarning) {
     renderBossWarning(ctx, world, camera);
   }
+
+  // 12. Minimap (shown while Tab is held)
+  if (world.inputState.keys.has('tab')) {
+    renderMinimap(ctx, world, camera);
+  }
 }
 
 // ---- Pickups ----------------------------------------------------------------
@@ -201,6 +206,54 @@ function renderPickups(
         ctx.fillStyle = '#8b6914';
         ctx.fillRect(-2, -2, 4, 4);
         break;
+      case 'clock':
+        // Hourglass shape
+        ctx.fillStyle = '#66ccff';
+        ctx.beginPath();
+        ctx.arc(0, 0, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#3399cc';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(-1, -4, 2, 8);
+        ctx.fillRect(-3, -1, 6, 2);
+        break;
+      case 'shield_orb':
+        // Blue glowing orb
+        ctx.fillStyle = '#66aaff';
+        ctx.beginPath();
+        ctx.arc(0, 0, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#88ccff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(255,255,255,0.4)';
+        ctx.beginPath();
+        ctx.arc(-1, -2, 2, 0, Math.PI * 2);
+        ctx.fill();
+        break;
+      case 'bomb':
+        // Red bomb
+        ctx.fillStyle = '#333333';
+        ctx.beginPath();
+        ctx.arc(0, 1, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#ff4444';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        // Fuse
+        ctx.strokeStyle = '#ff6600';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(2, -5);
+        ctx.lineTo(4, -8);
+        ctx.stroke();
+        ctx.fillStyle = '#ffaa00';
+        ctx.beginPath();
+        ctx.arc(4, -8, 2, 0, Math.PI * 2);
+        ctx.fill();
+        break;
     }
 
     ctx.restore();
@@ -259,20 +312,68 @@ function renderMeleeHitboxes(
     if (!isVisible(camera, h.x, h.y, h.radius)) continue;
     const s = worldToScreen(camera, h.x, h.y);
 
+    const progress = 1 - h.lifetime / (h.maxLifetime || 0.2); // 0 → 1
+    const fadeOut = Math.max(0, 1 - progress * 1.5); // fades in last third
+
     ctx.save();
-    ctx.globalAlpha = 0.25;
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.moveTo(s.x, s.y);
-    ctx.arc(
-      s.x,
-      s.y,
-      h.radius,
-      h.angle - h.arc / 2,
-      h.angle + h.arc / 2,
-    );
-    ctx.closePath();
-    ctx.fill();
+
+    if (h.arc >= Math.PI * 1.9) {
+      // Full 360° cleave: expanding ring
+      const ringRadius = h.radius * (0.3 + 0.7 * progress);
+      const ringWidth = h.radius * 0.15 * fadeOut;
+
+      ctx.globalAlpha = 0.4 * fadeOut;
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = ringWidth;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, ringRadius, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.globalAlpha = 0.15 * fadeOut;
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, ringRadius, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      // Directional slash: animated arc sweep
+      const sweepProgress = Math.min(1, progress * 2);
+      const startAngle = h.angle - h.arc / 2;
+      const sweepArc = h.arc * sweepProgress;
+
+      const innerR = h.radius * 0.4;
+      const outerR = h.radius * (0.6 + 0.4 * sweepProgress);
+      const trailWidth = (outerR - innerR) * fadeOut;
+
+      // Main slash arc
+      ctx.globalAlpha = 0.6 * fadeOut;
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = trailWidth;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, (innerR + outerR) / 2, startAngle, startAngle + sweepArc);
+      ctx.stroke();
+
+      // Glow behind the slash
+      ctx.globalAlpha = 0.2 * fadeOut;
+      ctx.lineWidth = trailWidth * 2;
+      ctx.strokeStyle = '#aaccff';
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, (innerR + outerR) / 2, startAngle, startAngle + sweepArc);
+      ctx.stroke();
+
+      // Leading edge spark
+      if (sweepProgress < 0.9) {
+        const edgeAngle = startAngle + sweepArc;
+        const edgeX = s.x + Math.cos(edgeAngle) * outerR;
+        const edgeY = s.y + Math.sin(edgeAngle) * outerR;
+        ctx.globalAlpha = 0.8 * fadeOut;
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(edgeX, edgeY, 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
     ctx.restore();
   }
 }
@@ -521,18 +622,39 @@ function renderPools(
     const radius = p.poolRadius || p.radius;
     if (!isVisible(camera, p.x, p.y, radius)) continue;
     const s = worldToScreen(camera, p.x, p.y);
+    const color = p.color || '#44ff44';
 
     ctx.save();
-    ctx.globalAlpha = 0.3;
-    ctx.fillStyle = p.color || '#44ff44';
+
+    // Pulsing animation based on pool timer
+    const pulse = 0.9 + 0.1 * Math.sin((p.poolTimer ?? 0) * 8);
+
+    // Radial gradient fill for depth
+    const grad = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, radius * pulse);
+    grad.addColorStop(0, color + 'AA');   // 67% center opacity
+    grad.addColorStop(0.5, color + '66'); // 40% mid
+    grad.addColorStop(1, color + '22');   // 13% edge
+
+    ctx.fillStyle = grad;
     ctx.beginPath();
-    ctx.arc(s.x, s.y, radius, 0, Math.PI * 2);
+    ctx.arc(s.x, s.y, radius * pulse, 0, Math.PI * 2);
     ctx.fill();
 
+    // Concentric ring for visibility
     ctx.globalAlpha = 0.5;
-    ctx.strokeStyle = p.color || '#44ff44';
-    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, radius * pulse, 0, Math.PI * 2);
     ctx.stroke();
+
+    // Inner ring
+    ctx.globalAlpha = 0.3;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, radius * 0.5 * pulse, 0, Math.PI * 2);
+    ctx.stroke();
+
     ctx.restore();
   }
 }
@@ -755,6 +877,87 @@ function renderBossWarning(
 
     ctx.restore();
   }
+}
+
+// ---- Minimap ----------------------------------------------------------------
+
+const MINIMAP_SIZE = 200;
+const MINIMAP_RANGE = 2000; // world units visible on minimap
+
+function renderMinimap(
+  ctx: CanvasRenderingContext2D,
+  world: GameWorld,
+  camera: Camera,
+): void {
+  const mx = camera.width - MINIMAP_SIZE - 12;
+  const my = camera.height - MINIMAP_SIZE - 12;
+  const scale = MINIMAP_SIZE / (MINIMAP_RANGE * 2);
+  const px = world.player.x;
+  const py = world.player.y;
+
+  ctx.save();
+
+  // Background
+  ctx.globalAlpha = 0.75;
+  ctx.fillStyle = '#111118';
+  ctx.beginPath();
+  ctx.arc(mx + MINIMAP_SIZE / 2, my + MINIMAP_SIZE / 2, MINIMAP_SIZE / 2, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Clip to circle
+  ctx.beginPath();
+  ctx.arc(mx + MINIMAP_SIZE / 2, my + MINIMAP_SIZE / 2, MINIMAP_SIZE / 2 - 2, 0, Math.PI * 2);
+  ctx.clip();
+  ctx.globalAlpha = 1;
+
+  // Enemies (red dots)
+  ctx.fillStyle = '#ff4444';
+  for (const e of world.enemies) {
+    const ex = (e.x - px) * scale + MINIMAP_SIZE / 2;
+    const ey = (e.y - py) * scale + MINIMAP_SIZE / 2;
+    if (ex < -5 || ex > MINIMAP_SIZE + 5 || ey < -5 || ey > MINIMAP_SIZE + 5) continue;
+    const dotSize = e.isBoss ? 4 : 1.5;
+    ctx.fillRect(mx + ex - dotSize / 2, my + ey - dotSize / 2, dotSize, dotSize);
+  }
+
+  // Pickups (colored dots)
+  for (const p of world.pickups) {
+    const pkx = (p.x - px) * scale + MINIMAP_SIZE / 2;
+    const pky = (p.y - py) * scale + MINIMAP_SIZE / 2;
+    if (pkx < -5 || pkx > MINIMAP_SIZE + 5 || pky < -5 || pky > MINIMAP_SIZE + 5) continue;
+    switch (p.type) {
+      case 'chest': ctx.fillStyle = '#c8a23c'; break;
+      case 'coin': ctx.fillStyle = '#ffd700'; break;
+      case 'food': ctx.fillStyle = '#ff3333'; break;
+      default: ctx.fillStyle = '#4488ff'; break;
+    }
+    ctx.fillRect(mx + pkx - 1, my + pky - 1, 2, 2);
+  }
+
+  // Player (white dot, center)
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.arc(mx + MINIMAP_SIZE / 2, my + MINIMAP_SIZE / 2, 3, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+
+  // Border ring
+  ctx.save();
+  ctx.globalAlpha = 0.6;
+  ctx.strokeStyle = '#aaaacc';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(mx + MINIMAP_SIZE / 2, my + MINIMAP_SIZE / 2, MINIMAP_SIZE / 2, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // Label
+  ctx.globalAlpha = 0.5;
+  ctx.fillStyle = '#ffffff';
+  ctx.font = '10px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('TAB — Minimap', mx + MINIMAP_SIZE / 2, my - 4);
+  ctx.restore();
 }
 
 // ---- Animation update helpers (called from game-loop) -----------------------

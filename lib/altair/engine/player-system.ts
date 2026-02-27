@@ -605,6 +605,7 @@ function handleArcanist(
       arc: 2 * Math.PI,
       damage,
       lifetime: 0.3, // brief visual
+      maxLifetime: 0.3,
       hitEnemyIds: new Set(),
       weaponId: 'arcane_nova',
     };
@@ -1174,6 +1175,7 @@ function handleHemomancer(
       arc: 2 * Math.PI,
       damage,
       lifetime: 0.3,
+      maxLifetime: 0.3,
       hitEnemyIds: new Set(),
       weaponId: 'blood_nova',
     };

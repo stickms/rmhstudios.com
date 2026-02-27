@@ -44,9 +44,9 @@ export function setupInputListeners(
       onPause();
     }
 
-    // Prevent arrow keys / space from scrolling the page
+    // Prevent arrow keys / space / tab from scrolling/switching focus
     if (
-      ['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(key)
+      ['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' ', 'tab'].includes(key)
     ) {
       e.preventDefault();
     }

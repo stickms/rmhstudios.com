@@ -87,88 +87,94 @@ export default function GameHUD() {
         </div>
       </div>
 
-      {/* Weapon slots - bottom left */}
-      <div className="absolute bottom-4 left-3 flex gap-1.5 pointer-events-auto">
-        {Array.from({ length: 6 }).map((_, i) => {
-          const w = weapons[i];
-          const def = w ? WEAPON_MAP.get(w.weaponId) : null;
-          const color = def?.color ?? '#666';
-          return (
-            <div
-              key={i}
-              className={`relative w-10 h-10 rounded-md border flex items-center justify-center overflow-hidden ${
-                w
-                  ? w.evolved
-                    ? 'border-(--altair-warning)'
-                    : 'border-(--altair-border-bright)'
-                  : 'border-(--altair-border) bg-black/30'
-              }`}
-              title={w ? `${def?.name ?? w.weaponId} Lv.${w.level}` : 'Empty'}
-            >
-              {w ? (
-                <>
-                  <div
-                    className="absolute inset-0"
-                    style={{ backgroundColor: `${color}25` }}
-                  />
-                  <SpriteIcon
-                    sheetSrc={WEAPON_ICON_SRC}
-                    frameIndex={def?.iconFrame ?? 0}
-                    size={28}
-                  />
-                  <span
-                    className="absolute bottom-0 right-0 text-[7px] font-bold bg-black/70 px-0.5 leading-tight rounded-tl-sm text-white/90"
-                  >
-                    {w.level}{w.evolved ? '★' : ''}
-                  </span>
-                </>
-              ) : (
-                <span className="text-white/20 text-[10px]">—</span>
-              )}
-            </div>
-          );
-        })}
-      </div>
+      {/* Weapon & passive slots — below header bar */}
+      <div className="flex items-center justify-center gap-4 px-3 py-1.5 bg-black/30 pointer-events-auto">
+        {/* Weapon slots */}
+        <div className="flex gap-1">
+          {Array.from({ length: 6 }).map((_, i) => {
+            const w = weapons[i];
+            const def = w ? WEAPON_MAP.get(w.weaponId) : null;
+            const color = def?.color ?? '#666';
+            return (
+              <div
+                key={`w${i}`}
+                className={`relative w-9 h-9 rounded-md border flex items-center justify-center overflow-hidden ${
+                  w
+                    ? w.evolved
+                      ? 'border-(--altair-warning)'
+                      : 'border-(--altair-border-bright)'
+                    : 'border-(--altair-border) bg-black/30'
+                }`}
+                title={w ? `${def?.name ?? w.weaponId} Lv.${w.level}` : 'Empty'}
+              >
+                {w ? (
+                  <>
+                    <div
+                      className="absolute inset-0"
+                      style={{ backgroundColor: `${color}25` }}
+                    />
+                    <SpriteIcon
+                      sheetSrc={WEAPON_ICON_SRC}
+                      frameIndex={def?.iconFrame ?? 0}
+                      size={24}
+                    />
+                    <span
+                      className="absolute bottom-0 right-0 text-[7px] font-bold bg-black/70 px-0.5 leading-tight rounded-tl-sm text-white/90"
+                    >
+                      {w.level}{w.evolved ? '★' : ''}
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-white/20 text-[9px]">—</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
 
-      {/* Passive slots - bottom right */}
-      <div className="absolute bottom-4 right-3 flex gap-1.5 pointer-events-auto">
-        {Array.from({ length: 6 }).map((_, i) => {
-          const p = passives[i];
-          const def = p ? PASSIVE_MAP.get(p.passiveId) : null;
-          const color = def?.color ?? '#888';
-          return (
-            <div
-              key={i}
-              className={`relative w-10 h-10 rounded-md border flex items-center justify-center overflow-hidden ${
-                p
-                  ? 'border-(--altair-rare)'
-                  : 'border-(--altair-border) bg-black/30'
-              }`}
-              title={p ? `${def?.name ?? p.passiveId} Lv.${p.level}` : 'Empty'}
-            >
-              {p ? (
-                <>
-                  <div
-                    className="absolute inset-0"
-                    style={{ backgroundColor: `${color}20` }}
-                  />
-                  <SpriteIcon
-                    sheetSrc={PASSIVE_ICON_SRC}
-                    frameIndex={def?.iconFrame ?? 0}
-                    size={28}
-                  />
-                  <span
-                    className="absolute bottom-0 right-0 text-[7px] font-bold bg-black/70 px-0.5 leading-tight rounded-tl-sm text-white/90"
-                  >
-                    {p.level}
-                  </span>
-                </>
-              ) : (
-                <span className="text-white/20 text-[10px]">—</span>
-              )}
-            </div>
-          );
-        })}
+        {/* Divider */}
+        <div className="w-px h-6 bg-white/20" />
+
+        {/* Passive slots */}
+        <div className="flex gap-1">
+          {Array.from({ length: 6 }).map((_, i) => {
+            const p = passives[i];
+            const def = p ? PASSIVE_MAP.get(p.passiveId) : null;
+            const color = def?.color ?? '#888';
+            return (
+              <div
+                key={`p${i}`}
+                className={`relative w-9 h-9 rounded-md border flex items-center justify-center overflow-hidden ${
+                  p
+                    ? 'border-(--altair-rare)'
+                    : 'border-(--altair-border) bg-black/30'
+                }`}
+                title={p ? `${def?.name ?? p.passiveId} Lv.${p.level}` : 'Empty'}
+              >
+                {p ? (
+                  <>
+                    <div
+                      className="absolute inset-0"
+                      style={{ backgroundColor: `${color}20` }}
+                    />
+                    <SpriteIcon
+                      sheetSrc={PASSIVE_ICON_SRC}
+                      frameIndex={def?.iconFrame ?? 0}
+                      size={24}
+                    />
+                    <span
+                      className="absolute bottom-0 right-0 text-[7px] font-bold bg-black/70 px-0.5 leading-tight rounded-tl-sm text-white/90"
+                    >
+                      {p.level}
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-white/20 text-[9px]">—</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
