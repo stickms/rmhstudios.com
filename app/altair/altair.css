@@ -1,0 +1,263 @@
+/**
+ * Altair — Dedicated Theme Stylesheet
+ *
+ * Provides a fully isolated visual identity for the Altair survivor roguelite.
+ * Medieval/fantasy palette with warm earthy tones, dark/light theme support,
+ * custom scrollbar, selection colors, and utility animations.
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap');
+
+/* ─── Dark Theme (default) ──────────────────────────────────────── */
+
+.altair-theme {
+  /* Backgrounds — dark aged wood / stone */
+  --altair-bg: #1a1410;
+  --altair-bg-subtle: #201a14;
+  --altair-surface: #2a2218;
+  --altair-surface-hover: #342a1e;
+  --altair-surface-active: #3e3224;
+
+  /* Borders — weathered bronze */
+  --altair-border: #3e3224;
+  --altair-border-bright: #5a4a36;
+
+  /* Text — parchment tones */
+  --altair-text: #e8dcc8;
+  --altair-text-muted: #a89878;
+  --altair-text-dim: #786850;
+
+  /* Accent — burnished gold */
+  --altair-accent: #c8a44a;
+  --altair-accent-hover: #d4b45a;
+  --altair-accent-dim: rgba(200, 164, 74, 0.15);
+
+  /* Semantic colors */
+  --altair-success: #5a9a4a;
+  --altair-success-dim: rgba(90, 154, 74, 0.12);
+  --altair-danger: #b84a3a;
+  --altair-danger-dim: rgba(184, 74, 58, 0.12);
+  --altair-warning: #d4a030;
+  --altair-warning-dim: rgba(212, 160, 48, 0.12);
+  --altair-info: #5a8ab4;
+  --altair-info-dim: rgba(90, 138, 180, 0.12);
+  --altair-rare: #8a5aaa;
+  --altair-rare-dim: rgba(138, 90, 170, 0.12);
+
+  /* Fonts */
+  --altair-font-display: 'MedievalSharp', 'Georgia', serif;
+  --altair-font-body: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --altair-font-mono: 'JetBrains Mono', 'Cascadia Code', monospace;
+
+  /* Layout */
+  --altair-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+  --altair-radius: 8px;
+  --altair-radius-sm: 4px;
+  --altair-toast-bg: #2a2218;
+}
+
+/* ─── Light Theme ───────────────────────────────────────────────── */
+
+.altair-theme.altair-light {
+  --altair-bg: #f5f0e8;
+  --altair-bg-subtle: #ede5d8;
+  --altair-surface: #faf6f0;
+  --altair-surface-hover: #f0ead8;
+  --altair-surface-active: #e4dcc8;
+  --altair-border: #d2c8b0;
+  --altair-border-bright: #b8a888;
+  --altair-text: #2a2010;
+  --altair-text-muted: #6a5840;
+  --altair-text-dim: #9a8868;
+  --altair-accent: #a88830;
+  --altair-accent-hover: #8e7420;
+  --altair-accent-dim: rgba(168, 136, 48, 0.10);
+  --altair-success: #408a40;
+  --altair-success-dim: rgba(64, 138, 64, 0.08);
+  --altair-danger: #a04030;
+  --altair-danger-dim: rgba(160, 64, 48, 0.08);
+  --altair-warning: #b09020;
+  --altair-warning-dim: rgba(176, 144, 32, 0.08);
+  --altair-info: #4a78a0;
+  --altair-info-dim: rgba(74, 120, 160, 0.08);
+  --altair-rare: #7a4a9a;
+  --altair-rare-dim: rgba(122, 74, 154, 0.08);
+  --altair-shadow: 0 4px 24px rgba(40, 30, 10, 0.08);
+  --altair-toast-bg: #faf6f0;
+}
+
+/* ─── Base Styles ───────────────────────────────────────────────── */
+
+.altair-theme {
+  background-color: var(--altair-bg);
+  color: var(--altair-text);
+  font-family: var(--altair-font-body);
+  min-height: 100vh;
+}
+
+/* ─── Scrollbar ─────────────────────────────────────────────────── */
+
+.altair-theme ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.altair-theme ::-webkit-scrollbar-track {
+  background: var(--altair-bg-subtle);
+  border-radius: 4px;
+}
+
+.altair-theme ::-webkit-scrollbar-thumb {
+  background: var(--altair-border-bright);
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.altair-theme ::-webkit-scrollbar-thumb:hover {
+  background: var(--altair-accent);
+}
+
+.altair-theme ::-webkit-scrollbar-corner {
+  background: var(--altair-bg-subtle);
+}
+
+/* Firefox scrollbar */
+.altair-theme {
+  scrollbar-width: thin;
+  scrollbar-color: var(--altair-border-bright) var(--altair-bg-subtle);
+}
+
+/* ─── Selection ─────────────────────────────────────────────────── */
+
+.altair-theme ::selection {
+  background: var(--altair-accent);
+  color: #ffffff;
+}
+
+.altair-theme ::-moz-selection {
+  background: var(--altair-accent);
+  color: #ffffff;
+}
+
+/* ─── Focus ─────────────────────────────────────────────────────── */
+
+.altair-theme :focus-visible {
+  outline: 2px solid var(--altair-accent);
+  outline-offset: 2px;
+}
+
+/* ─── Buttons ───────────────────────────────────────────────────── */
+
+.altair-theme button:not(:disabled) {
+  cursor: pointer;
+}
+
+/* ─── Toast Animations ──────────────────────────────────────────── */
+
+@keyframes altair-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes altair-toast-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.96);
+  }
+}
+
+.altair-toast-enter {
+  animation: altair-toast-in 0.25s ease-out forwards;
+}
+
+.altair-toast-exit {
+  animation: altair-toast-out 0.2s ease-in forwards;
+}
+
+/* ─── Modal Overlay ─────────────────────────────────────────────── */
+
+@keyframes altair-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes altair-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.altair-overlay {
+  animation: altair-fade-in 0.2s ease-out;
+}
+
+.altair-modal {
+  animation: altair-slide-up 0.25s ease-out;
+}
+
+/* ─── Utilities ─────────────────────────────────────────────────── */
+
+.altair-glass {
+  background: rgba(42, 34, 24, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.altair-light .altair-glass {
+  background: rgba(250, 246, 240, 0.88);
+}
+
+/* ─── Parchment / Paper Texture ────────────────────────────────── */
+
+.altair-parchment,
+.altair-parchment-surface {
+  position: relative;
+  isolation: isolate;
+}
+
+.altair-parchment::after,
+.altair-parchment-surface::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  border-radius: inherit;
+  mix-blend-mode: soft-light;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 200px 200px;
+}
+
+.altair-parchment::after {
+  opacity: 0.08;
+}
+
+.altair-parchment-surface::after {
+  opacity: 0.05;
+}
+
+.altair-light .altair-parchment::after {
+  opacity: 0.06;
+  mix-blend-mode: multiply;
+}
+
+.altair-light .altair-parchment-surface::after {
+  opacity: 0.04;
+  mix-blend-mode: multiply;
+}

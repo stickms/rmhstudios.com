@@ -243,6 +243,12 @@ export default function RmhTypeSolo() {
                 <p className="text-sm text-(--rmhtype-text-muted) mb-4">Time ran out!</p>
               )}
 
+              {soloResult.scorePosted === false && (
+                <p className="text-sm text-red-400 mb-4">
+                  Score not posted — 90% accuracy required for leaderboard
+                </p>
+              )}
+
               <div className="grid grid-cols-3 gap-4 mb-6">
                 <div className="p-4 rounded-lg bg-(--rmhtype-bg)">
                   <div className="text-3xl font-bold text-(--rmhtype-accent)">{soloResult.wpm}</div>

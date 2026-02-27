@@ -16,7 +16,7 @@ Playable Games (8 currently):
 Slice-It (/slice-it) - Rhythm game with custom songs
 Signal Forge (/signal-forge) - Roguelike deck-building game
 Temple of Joy (/temple-of-joy) - Incremental/progression game
-Echoes (/echoes) - 3D dungeon crawler with combat
+Altair (/echoes) - 3D dungeon crawler with combat
 Neon Driftway (/neon-driftway) - Racing game (multiplayer support)
 Vega (/vega) - Loop-based roguelike
 Laundry Sort (/laundry-sort) - Puzzle game
@@ -61,7 +61,7 @@ Account - OAuth providers (Discord)
 Verification - Email verification tokens
 Game Profile Models (all linked to User):
 
-EchoesPlayer - bestTime, totalKills, totalXP
+AltairPlayer - bestTime, totalKills, totalXP
 LaundryPlayer - highScore, gamesPlayed
 Player (Slice-It) - totalScore, gamesPlayed
 VegaPlayer - highestLoop, highestLevel
@@ -102,7 +102,7 @@ Code
                       TestimonialsSection, BlogSection, MerchSection, FooterSection
   /effects/          - ParticleField, FloatingShapes
   /blog/             - BlogList, MDXAnimations, ShareButton
-  /[game-name]/      - Game-specific: EchoesGame, SignalForgeGame, 
+  /[game-name]/      - Game-specific: AltairGame, SignalForgeGame, 
                       TempleOfJoyGame, NeonDriftwayGame, etc.
   /Providers.tsx     - Root context/provider setup
 Game-Specific Components:
@@ -110,7 +110,7 @@ Game-Specific Components:
 Slice-It: GameCanvas, HUD, SongLibrary, CalibrationScreen, MultiplayerSidebar, MiniTrack
 Signal Forge: SignalForgeGame + 8 UI screens (Landing, Combat HUD, Pause Menu, Victory, CardModals, etc.) + canvas helpers
 Temple of Joy: TempleOfJoyGame + 13 UI panels (Upgrades, Relics, Events, Achievements, Stats, etc.)
-Echoes: 3D/2D modes with GameCanvas3D, PlayerController, EnemyManager, DungeonGenerator, LeaderboardUI
+Altair: 3D/2D modes with GameCanvas3D, PlayerController, EnemyManager, DungeonGenerator, LeaderboardUI
 Neon Driftway: NeonDriftwayGame + MultiplayerLobby
 9. Public Assets (/public/)
 Structure:
@@ -132,7 +132,7 @@ Game-specific:
 /slice-it/ - Slice-It specific logic
 /signal-forge/ - Signal Forge specific logic
 /temple-of-joy/ - Temple of Joy logic
-/echoes/, /neon-driftway/, /vega/, /cursed-logic/, /house-always-wins/ - Game logic
+/altair/, /neon-driftway/, /vega/, /cursed-logic/, /house-always-wins/ - Game logic
 11. API Endpoints (/app/api/)
 Game Scores:
 

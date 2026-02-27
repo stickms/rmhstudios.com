@@ -20,7 +20,7 @@ const roadmap: YearSection[] = [
     milestones: [
       {
         title: "Web catalog",
-        body: "Ship and polish Slice It!, Laundry Sort, Signal Forge, Cursed Logic, Echoes, and Project Vega.",
+        body: "Ship and polish Slice It!, Laundry Sort, Signal Forge, Cursed Logic, Altair, and Project Vega.",
       },
       {
         title: "House Always Wins",
@@ -58,7 +58,7 @@ const roadmap: YearSection[] = [
       },
       {
         title: "Catalog updates",
-        body: "Major content updates across the web catalog and ongoing support for House Always Wins, Echoes, and others.",
+        body: "Major content updates across the web catalog and ongoing support for House Always Wins, Altair, and others.",
       },
       {
         title: "Resoundings of Calamity",
@@ -84,7 +84,7 @@ const roadmap: YearSection[] = [
     milestones: [
       {
         title: "Resoundings of Calamity",
-        body: "Release on PC and consoles. Continued support for House Always Wins, Echoes, and the rest of the catalog.",
+        body: "Release on PC and consoles. Continued support for House Always Wins, Altair, and the rest of the catalog.",
       },
       {
         title: "VR demo",

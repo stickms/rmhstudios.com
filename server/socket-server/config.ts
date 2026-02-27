@@ -49,6 +49,14 @@ export const config = {
     'rmhstudy:timer:start':   { max: 10,  windowMs: 60_000 },
     'rmhstudy:task:add':      { max: 30,  windowMs: 60_000 },
     'rmhstudy:chat:react':    { max: 30,  windowMs: 60_000 },
+    'altair:lobby:create':    { max: 3,   windowMs: 60_000 },
+    'altair:lobby:join':      { max: 10,  windowMs: 60_000 },
+    'altair:lobby:browse':    { max: 20,  windowMs: 60_000 },
+    'altair:lobby:chat':      { max: 30,  windowMs: 60_000 },
+    'altair:game:input':      { max: 1200, windowMs: 60_000 },
+    'altair:game:state_snapshot': { max: 1200, windowMs: 60_000 },
+    'altair:game:ping':       { max: 30,  windowMs: 60_000 },
+    'altair:game:quick_chat': { max: 20,  windowMs: 60_000 },
   } as Record<string, { max: number; windowMs: number }>,
 
   // ─── Shutdown ───
