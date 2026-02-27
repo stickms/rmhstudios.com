@@ -8,7 +8,7 @@
 
 import { motion } from 'framer-motion';
 import { Sparkles } from 'lucide-react';
-import type { PromptAssignment } from './WitWarLashGame';
+import type { PromptAssignment } from './WitWarGame';
 
 interface PromptRevealProps {
   prompts: PromptAssignment[];

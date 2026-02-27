@@ -1,1 +1,1 @@
-export { WitWarLashMinigame } from './handler';
+export { WitWarMinigame } from './handler';

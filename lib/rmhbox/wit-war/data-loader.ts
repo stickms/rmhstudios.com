@@ -1,5 +1,5 @@
 /**
- * Wit War Lash — Data Loader
+ * Wit-War — Data Loader
  *
  * Loads prompts.json and provides helpers for selecting round prompts
  * and assigning prompt pairs to players.
@@ -14,7 +14,7 @@ let cachedPrompts: string[] | null = null;
 export function loadPrompts(): string[] {
   if (cachedPrompts) return cachedPrompts;
   const raw = fs.readFileSync(
-    path.join(process.cwd(), 'data', 'rmhbox', 'wit-war-lash', 'prompts.json'),
+    path.join(process.cwd(), 'data', 'rmhbox', 'wit-war', 'prompts.json'),
     'utf-8',
   );
   cachedPrompts = JSON.parse(raw) as string[];
@@ -64,7 +64,7 @@ export function assignPromptsToPlayers(
   playerB: string;
 }> {
   const n = playerIds.length;
-  if (n < 3) throw new Error('Wit War Lash requires at least 3 players');
+  if (n < 3) throw new Error('Wit-War requires at least 3 players');
 
   const matchups: Array<{
     promptIndex: number;

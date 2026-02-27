@@ -3,13 +3,13 @@
  *
  * Shows a vote percentage bar splitting between the two answers,
  * reveals author names, and triggers a special animation for
- * unanimous "Wit War Lash!" victories.
+ * unanimous "Wit-War!" victories.
  */
 'use client';
 
 import { motion } from 'framer-motion';
 import { Zap, Trophy } from 'lucide-react';
-import type { MatchupData } from './WitWarLashGame';
+import type { MatchupData } from './WitWarGame';
 
 interface MatchupResultProps {
   matchup: MatchupData;
@@ -43,7 +43,7 @@ export default function MatchupResult({ matchup }: MatchupResultProps) {
         >
           <Zap className="h-6 w-6 text-yellow-400" />
           <span className="text-lg font-black text-yellow-400 tracking-wide">
-            WIT WAR LASH!
+            WIT-WAR!
           </span>
           <Zap className="h-6 w-6 text-yellow-400" />
         </motion.div>

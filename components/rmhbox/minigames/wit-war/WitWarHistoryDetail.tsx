@@ -1,5 +1,5 @@
 /**
- * WitWarLashHistoryDetail — Expanded history view for Wit War Lash games.
+ * WitWarHistoryDetail — Expanded history view for Wit-War games.
  *
  * Shows per-round matchup breakdowns with prompts, answers, vote splits,
  * author names, and quiplash badges.
@@ -26,7 +26,7 @@ interface MatchupAction {
   };
 }
 
-export default function WitWarLashHistoryDetail({
+export default function WitWarHistoryDetail({
   gameLog,
   currentUserId,
   players,
@@ -65,7 +65,7 @@ export default function WitWarLashHistoryDetail({
   }
 
   return (
-    <div className="space-y-4" data-testid="wit-war-lash-history-detail">
+    <div className="space-y-4" data-testid="wit-war-history-detail">
       {gameLog.initialState && (
         <div className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-3">
           <h4 className="text-xs font-semibold text-(--rmhbox-text-muted) uppercase mb-1">
@@ -115,7 +115,7 @@ export default function WitWarLashHistoryDetail({
                 </div>
                 {m.payload.isQuiplash && (
                   <div className="flex items-center gap-1 mt-1 text-xs text-yellow-400 font-bold">
-                    <Zap className="h-3 w-3" /> WIT WAR LASH!
+                    <Zap className="h-3 w-3" /> WIT-WAR!
                   </div>
                 )}
               </div>

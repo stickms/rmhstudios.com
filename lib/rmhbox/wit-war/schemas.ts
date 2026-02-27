@@ -1,5 +1,5 @@
 /**
- * Wit War Lash — Zod Validation Schemas
+ * Wit-War — Zod Validation Schemas
  *
  * Input validation for answer submission and vote casting.
  */

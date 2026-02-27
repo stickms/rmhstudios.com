@@ -50,7 +50,7 @@ import { CategoryCrashMinigame } from './minigames/category-crash';
 import { WikiRaceMinigame } from './minigames/wiki-race';
 import { MinimalistMasterpieceGame } from './minigames/minimalist-masterpiece';
 import { EmojiCinemaGame } from './minigames/emoji-cinema';
-import { WitWarLashMinigame } from './minigames/wit-war-lash';
+import { WitWarMinigame } from './minigames/wit-war';
 
 // ─── Minigame Server Registry ────────────────────────────────────
 
@@ -68,7 +68,7 @@ export const MINIGAME_SERVER_REGISTRY = new Map<
   ['wiki-race', WikiRaceMinigame],
   ['minimalist-masterpiece', MinimalistMasterpieceGame],
   ['emoji-cinema', EmojiCinemaGame],
-  ['wit-war-lash', WitWarLashMinigame],
+  ['wit-war', WitWarMinigame],
 ]);
 
 // ─── Per-lobby lifecycle tracking ────────────────────────────────

@@ -11,7 +11,7 @@ import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Send, Check, Pencil } from 'lucide-react';
 import { WW_MAX_ANSWER_LENGTH } from '@/lib/rmhbox/constants';
-import type { PromptAssignment } from './WitWarLashGame';
+import type { PromptAssignment } from './WitWarGame';
 
 interface WritingPhaseProps {
   prompts: PromptAssignment[];

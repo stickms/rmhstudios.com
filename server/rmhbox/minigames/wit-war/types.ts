@@ -1,6 +1,6 @@
 // ─── Phase Enum ──────────────────────────────────────────────────
 
-export enum WitWarLashPhase {
+export enum WitWarPhase {
   PROMPT_REVEAL = 'PROMPT_REVEAL',
   WRITING = 'WRITING',
   VOTING = 'VOTING',
@@ -12,7 +12,7 @@ export enum WitWarLashPhase {
 // ─── Type Definitions ────────────────────────────────────────────
 
 /** A single head-to-head matchup between two players on one prompt. */
-export interface WWLMatchup {
+export interface WWMatchup {
   promptIndex: number;
   promptText: string;
   playerA: string;
@@ -30,7 +30,7 @@ export interface WWLMatchup {
 }
 
 /** Prompt assignment for a single player. */
-export interface WWLPromptAssignment {
+export interface WWPromptAssignment {
   promptIndex: number;
   promptText: string;
   opponentId: string;
@@ -45,15 +45,15 @@ export interface ActionLogEntry {
   payload: Record<string, unknown>;
 }
 
-/** Full internal state of the Wit War Lash minigame. */
-export interface WitWarLashState {
-  phase: WitWarLashPhase;
+/** Full internal state of the Wit-War minigame. */
+export interface WitWarState {
+  phase: WitWarPhase;
   currentRound: number;
   totalRounds: number;
   /** All matchups for the current round. */
-  matchups: WWLMatchup[];
+  matchups: WWMatchup[];
   /** Per-player prompt assignments for the current round. */
-  assignments: Record<string, WWLPromptAssignment[]>;
+  assignments: Record<string, WWPromptAssignment[]>;
   /** Players who have submitted all their answers this round. */
   submitted: Set<string>;
   /** The index of the matchup currently being voted on. */
@@ -63,7 +63,7 @@ export interface WitWarLashState {
   /** Prompt indices already used across rounds. */
   usedPromptIndices: Set<number>;
   /** Per-round matchup results history. */
-  roundMatchups: WWLMatchup[][];
+  roundMatchups: WWMatchup[][];
   /** Game action log. */
   actionLog: ActionLogEntry[];
   timeRemaining: number;

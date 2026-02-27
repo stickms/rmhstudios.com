@@ -1,29 +1,32 @@
 /**
- * WitWarLashGame — Phase router for the Wit War Lash minigame.
+ * WitWarGame — Phase router for the Wit-War minigame.
  *
  * A Quiplash-style game where players write funny answers to prompts,
  * then the audience votes head-to-head on which answer is better.
  *
- * Subscribes to game action events and routes to the correct
- * sub-component based on the current phase:
+ * Subscribes to WW_* and TIMER_TICK events via useGameSocket().
+ * Routes to the correct sub-component based on the current phase:
  *   PROMPT_REVEAL   → PromptReveal
  *   WRITING         → WritingPhase
  *   VOTING          → VotingPhase
  *   MATCHUP_RESULTS → MatchupResult
- *   ROUND_RESULTS   → WitWarLashResults
+ *   ROUND_RESULTS   → WitWarResults
+ *
+ * Reference: docs/rmhbox/design-spec/wit-war.md
  */
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
-import { S2C, C2S } from '@/lib/rmhbox/events';
-import { emit } from '@/lib/rmhbox/socket';
+import { emitGameInput, useGameSocket, extractTimerTick } from '@/lib/rmhbox/minigame-client';
+import { playSound } from '@/lib/rmhbox/audio';
+import type { MinigameProps } from '../MinigameRenderer';
 import PromptReveal from './PromptReveal';
 import WritingPhase from './WritingPhase';
 import VotingPhase from './VotingPhase';
 import MatchupResult from './MatchupResult';
-import WitWarLashResults from './WitWarLashResults';
+import WitWarResults from './WitWarResults';
 
 // ─── Types ───────────────────────────────────────────────────────
 
@@ -49,20 +52,7 @@ export interface MatchupData {
   isQuiplash: boolean;
 }
 
-function emitGameInput(action: string, data: unknown = {}) {
-  const lobbyId = useRMHboxStore.getState().lobby?.lobbyId;
-  if (!lobbyId) return;
-  emit(C2S.GAME_INPUT, { lobbyId, action, data });
-}
-
-interface WitWarLashGameProps {
-  playerId: string;
-  playerName: string;
-}
-
-export default function WitWarLashGame({ playerId, playerName: _playerName }: WitWarLashGameProps) {
-  void _playerName;
-
+export default function WitWarGame({ playerId }: MinigameProps) {
   const [phase, setPhase] = useState<Phase>('PROMPT_REVEAL');
   const [currentRound, setCurrentRound] = useState(1);
   const [totalRounds, setTotalRounds] = useState(2);
@@ -80,7 +70,6 @@ export default function WitWarLashGame({ playerId, playerName: _playerName }: Wi
   const [myVote, setMyVote] = useState<string | null>(null);
   const [voteCount, setVoteCount] = useState(0);
   const [totalVoters, setTotalVoters] = useState(0);
-  const [votingDuration, setVotingDuration] = useState(15);
 
   // Matchup results state
   const [matchupResult, setMatchupResult] = useState<MatchupData | null>(null);
@@ -95,7 +84,7 @@ export default function WitWarLashGame({ playerId, playerName: _playerName }: Wi
       const type = data.type as string;
 
       switch (type) {
-        case 'WWL_PROMPT_REVEAL': {
+        case 'WW_PROMPT_REVEAL': {
           const payload = data.payload as {
             round: number;
             totalRounds: number;
@@ -107,10 +96,11 @@ export default function WitWarLashGame({ playerId, playerName: _playerName }: Wi
           setPrompts(payload.prompts);
           setHasSubmitted(false);
           setMyVote(null);
+          playSound('swoosh');
           break;
         }
 
-        case 'WWL_PHASE_CHANGE': {
+        case 'WW_PHASE_CHANGE': {
           const payload = data.payload as { phase: string; round: number };
           if (payload.phase === 'PROMPT_REVEAL') {
             setPhase('PROMPT_REVEAL');
@@ -119,30 +109,28 @@ export default function WitWarLashGame({ playerId, playerName: _playerName }: Wi
           break;
         }
 
-        case 'WWL_WRITING_START': {
-          const payload = data.payload as { durationSeconds: number };
+        case 'WW_WRITING_START': {
           setPhase('WRITING');
-          void payload;
+          playSound('chime');
           break;
         }
 
-        case 'WWL_WRITING_END':
+        case 'WW_WRITING_END':
           break;
 
-        case 'WWL_SUBMIT_COUNT': {
+        case 'WW_SUBMIT_COUNT': {
           const payload = data.payload as { submittedCount: number; totalPlayers: number };
           setSubmittedCount(payload.submittedCount);
           setTotalPlayers(payload.totalPlayers);
           break;
         }
 
-        case 'WWL_ANSWER_ACCEPTED': {
-          const payload = data.payload as { promptIndex: number };
-          void payload;
+        case 'WW_ANSWER_ACCEPTED': {
+          playSound('click');
           break;
         }
 
-        case 'WWL_MATCHUP_START': {
+        case 'WW_MATCHUP_START': {
           const payload = data.payload as {
             matchupIndex: number;
             totalMatchups: number;
@@ -171,11 +159,11 @@ export default function WitWarLashGame({ playerId, playerName: _playerName }: Wi
           setMyVote(null);
           setVoteCount(0);
           setTotalVoters(Math.max((players?.length ?? 0) - 2, 1));
-          setVotingDuration(payload.durationSeconds);
+          playSound('swoosh');
           break;
         }
 
-        case 'WWL_VOTE_COUNT': {
+        case 'WW_VOTE_COUNT': {
           const payload = data.payload as {
             matchupIndex: number;
             voteCount: number;
@@ -186,7 +174,7 @@ export default function WitWarLashGame({ playerId, playerName: _playerName }: Wi
           break;
         }
 
-        case 'WWL_MATCHUP_RESULT': {
+        case 'WW_MATCHUP_RESULT': {
           const payload = data.payload as {
             matchupIndex: number;
             promptText: string;
@@ -217,10 +205,11 @@ export default function WitWarLashGame({ playerId, playerName: _playerName }: Wi
             isQuiplash: payload.isQuiplash,
           });
           setScores(payload.scores);
+          playSound(payload.isQuiplash ? 'victoryFanfare' : 'scoreDing');
           break;
         }
 
-        case 'WWL_ROUND_RESULTS': {
+        case 'WW_ROUND_RESULTS': {
           const payload = data.payload as {
             round: number;
             totalRounds: number;
@@ -232,6 +221,15 @@ export default function WitWarLashGame({ playerId, playerName: _playerName }: Wi
           setRoundMatchups(payload.matchups);
           setCurrentRound(payload.round);
           setTotalRounds(payload.totalRounds);
+          playSound('scoreDing');
+          break;
+        }
+
+        case 'TIMER_TICK': {
+          const remaining = extractTimerTick(data);
+          if (remaining !== undefined && remaining <= 5 && remaining > 0) {
+            playSound('countdownBeep');
+          }
           break;
         }
 
@@ -242,26 +240,32 @@ export default function WitWarLashGame({ playerId, playerName: _playerName }: Wi
     [playerId, players],
   );
 
-  useEffect(() => {
-    const store = useRMHboxStore.getState();
-    const gameState = store.gameState;
-
-    if (gameState.lastAction) {
-      handleGameAction(gameState.lastAction as Record<string, unknown>);
-    }
-  }, [handleGameAction]);
-
-  useEffect(() => {
-    const unsub = useRMHboxStore.subscribe((state, prevState) => {
-      if (state.gameState.lastAction !== prevState.gameState.lastAction && state.gameState.lastAction) {
-        handleGameAction(state.gameState.lastAction as Record<string, unknown>);
+  const handleStateSnapshot = useCallback(
+    (snapshot: Record<string, unknown>) => {
+      const p = snapshot.phase as string;
+      if (p) {
+        setPhase(p as Phase);
       }
-    });
-    return unsub;
-  }, [handleGameAction]);
+      if (snapshot.currentRound) setCurrentRound(snapshot.currentRound as number);
+      if (snapshot.totalRounds) setTotalRounds(snapshot.totalRounds as number);
+      if (snapshot.scores) setScores(snapshot.scores as Record<string, number>);
+      if (Array.isArray(snapshot.prompts)) setPrompts(snapshot.prompts as PromptAssignment[]);
+      if (typeof snapshot.submittedCount === 'number') setSubmittedCount(snapshot.submittedCount as number);
+      if (typeof snapshot.totalPlayers === 'number') setTotalPlayers(snapshot.totalPlayers as number);
+      if (typeof snapshot.hasSubmitted === 'boolean') setHasSubmitted(snapshot.hasSubmitted as boolean);
+      if (typeof snapshot.matchupIndex === 'number') setMatchupIndex(snapshot.matchupIndex as number);
+      if (typeof snapshot.totalMatchups === 'number') setTotalMatchups(snapshot.totalMatchups as number);
+    },
+    [],
+  );
+
+  useGameSocket({
+    onGameAction: handleGameAction,
+    onStateSnapshot: handleStateSnapshot,
+  });
 
   const handleSubmitAnswer = useCallback((promptIndex: number, answer: string) => {
-    emitGameInput('WWL_SUBMIT_ANSWER', { promptIndex, answer });
+    emitGameInput('WW_SUBMIT_ANSWER', { promptIndex, answer });
   }, []);
 
   const handleSubmitAllAnswers = useCallback(() => {
@@ -269,8 +273,9 @@ export default function WitWarLashGame({ playerId, playerName: _playerName }: Wi
   }, []);
 
   const handleCastVote = useCallback((votedForUserId: string) => {
-    emitGameInput('WWL_CAST_VOTE', { matchupIndex, votedForUserId });
+    emitGameInput('WW_CAST_VOTE', { matchupIndex, votedForUserId });
     setMyVote(votedForUserId);
+    playSound('click');
   }, [matchupIndex]);
 
   return (
@@ -352,7 +357,7 @@ export default function WitWarLashGame({ playerId, playerName: _playerName }: Wi
             exit={{ opacity: 0, y: -20 }}
             className="w-full"
           >
-            <WitWarLashResults
+            <WitWarResults
               scores={scores}
               matchups={roundMatchups}
               round={currentRound}
