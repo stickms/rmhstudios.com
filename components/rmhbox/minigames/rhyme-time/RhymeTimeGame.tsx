@@ -144,7 +144,7 @@ export default function RhymeTimeGame({ playerId, playerName: _playerName }: Rhy
                 invalidReason?: string;
                 rarity: number;
                 basePoints: number;
-                multiSyllableMultiplier: number;
+                multiSyllableBonus: number;
                 speedBonus: number;
                 totalPoints: number;
                 submitterCount: number;
@@ -178,23 +178,19 @@ export default function RhymeTimeGame({ playerId, playerName: _playerName }: Rhy
 
                   words.push({
                     word: wb.word,
-                    submittedBy: pr.userName,
-                    userId: pr.userId,
+                    submitters: [{ userId: pr.userId, userName: pr.userName, speedBonus: wb.speedBonus > 0 }],
                     rarity,
-                    points: wb.totalPoints,
+                    points: wb.basePoints + (wb.multiSyllableBonus ?? 0),
                     multiSyllable: wb.isMultiSyllable,
-                    speedBonus: wb.speedBonus > 0,
                   });
                 } else {
                   // Invalid words: not_in_dictionary or does_not_rhyme
                   words.push({
                     word: wb.word,
-                    submittedBy: pr.userName,
-                    userId: pr.userId,
+                    submitters: [{ userId: pr.userId, userName: pr.userName, speedBonus: false }],
                     rarity: wb.invalidReason === 'not_in_dictionary' ? 'not_in_dict' : 'does_not_rhyme',
                     points: wb.totalPoints,
                     multiSyllable: false,
-                    speedBonus: false,
                   });
                 }
               }

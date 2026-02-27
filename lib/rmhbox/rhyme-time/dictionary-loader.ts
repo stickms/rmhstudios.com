@@ -71,7 +71,9 @@ export function isValidRhyme(word: string, rootWord: string): boolean {
   if (!wordParts || wordParts.length === 0) return false; // word not in dictionary
   const rootParts = rhymingPart(rootWord, { multiple: true }) as string[];
   if (!rootParts || rootParts.length === 0) return false;
-  return wordParts.some((wp) => rootParts.includes(wp));
+  // Strip lexical stress markers (0, 1, 2) before comparing rhyming parts
+  const strip = (s: string) => s.replace(/[012]/g, '');
+  return wordParts.some((wp) => rootParts.some((rp) => strip(wp) === strip(rp)));
 }
 
 /**

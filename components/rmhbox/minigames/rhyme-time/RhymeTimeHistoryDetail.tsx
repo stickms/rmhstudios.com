@@ -1,13 +1,16 @@
 /**
  * RhymeTimeHistoryDetail — Expanded history view for Rhyme Time games.
  *
- * Renders each round with root word, submissions grouped by rarity,
- * per-player score breakdown, and round winners.
+ * Renders each round with root word, submissions grouped by rarity.
+ * Each unique word is displayed once with all submitters listed.
+ * A ⚡ icon appears next to the player who received the speed bonus.
+ * Per-player score breakdown and round winners are shown.
  *
  * Reference: docs/rmhbox/design-spec/minigames-1.md §1.16
  */
 'use client';
 
+import { Zap } from 'lucide-react';
 import type { HistoryDetailProps } from '@/lib/rmhbox/history-display-registry';
 
 interface SubmissionEntry {
@@ -17,6 +20,58 @@ interface SubmissionEntry {
   rarityTier: string;
   score: number;
   isMultiSyllable?: boolean;
+}
+
+interface DeduplicatedWord {
+  word: string;
+  tier: string;
+  score: number;
+  isMultiSyllable: boolean;
+  submitters: Array<{ userId: string; isSpeedBonus: boolean }>;
+}
+
+/** Deduplicate submissions: group by word, merge submitters, mark the first submitter for speed bonus. */
+function deduplicateSubmissions(subs: SubmissionEntry[]): DeduplicatedWord[] {
+  const map = new Map<string, DeduplicatedWord>();
+  // Track submission order to determine who was first per word
+  const wordFirstSubmitter = new Map<string, string>();
+  for (const sub of subs) {
+    if (sub.valid === false) continue;
+    if (!wordFirstSubmitter.has(sub.word)) {
+      wordFirstSubmitter.set(sub.word, sub.userId);
+    }
+  }
+
+  for (const sub of subs) {
+    const key = `${sub.word}::${sub.valid}`;
+    const existing = map.get(key);
+    if (existing) {
+      if (!existing.submitters.some((s) => s.userId === sub.userId)) {
+        existing.submitters.push({ userId: sub.userId, isSpeedBonus: false });
+      }
+    } else {
+      map.set(key, {
+        word: sub.word,
+        tier: sub.valid === false ? 'invalid' : (sub.rarityTier ?? 'common'),
+        score: sub.score,
+        isMultiSyllable: sub.isMultiSyllable ?? false,
+        submitters: [{ userId: sub.userId, isSpeedBonus: false }],
+      });
+    }
+  }
+
+  // Mark speed bonus: for non-unique valid words (>1 submitter), the first submitter gets the icon
+  for (const dw of map.values()) {
+    if (dw.tier !== 'invalid' && dw.submitters.length > 1) {
+      const first = wordFirstSubmitter.get(dw.word);
+      if (first) {
+        const s = dw.submitters.find((s) => s.userId === first);
+        if (s) s.isSpeedBonus = true;
+      }
+    }
+  }
+
+  return Array.from(map.values());
 }
 
 export default function RhymeTimeHistoryDetail({
@@ -75,15 +130,15 @@ export default function RhymeTimeHistoryDetail({
             }));
 
         const roundSubs = enrichedSubs.length > 0 ? enrichedSubs : fallbackSubs;
+        const dedupedWords = deduplicateSubmissions(roundSubs);
 
-        // Group submissions by rarity tier
-        const byRarity: Record<string, SubmissionEntry[]> = {
+        // Group deduplicated words by rarity tier
+        const byRarity: Record<string, DeduplicatedWord[]> = {
           rare: [], uncommon: [], common: [], invalid: [],
         };
-        for (const sub of roundSubs) {
-          const tier = sub.valid === false ? 'invalid' : (sub.rarityTier ?? 'common');
-          if (byRarity[tier]) byRarity[tier].push(sub);
-          else byRarity[tier] = [sub];
+        for (const dw of dedupedWords) {
+          if (byRarity[dw.tier]) byRarity[dw.tier].push(dw);
+          else byRarity[dw.tier] = [dw];
         }
 
         // Compute per-player scores for this round
@@ -122,8 +177,8 @@ export default function RhymeTimeHistoryDetail({
 
             {/* Submissions by rarity tier */}
             {(['rare', 'uncommon', 'common', 'invalid'] as const).map((tier) => {
-              const tierSubs = byRarity[tier] ?? [];
-              if (tierSubs.length === 0) return null;
+              const tierWords = byRarity[tier] ?? [];
+              if (tierWords.length === 0) return null;
               const tierColors: Record<string, string> = {
                 rare: 'text-yellow-500',
                 uncommon: 'text-blue-400',
@@ -139,32 +194,37 @@ export default function RhymeTimeHistoryDetail({
               return (
                 <div key={tier} className="mb-2">
                   <span className={`text-xs font-medium uppercase ${tierColors[tier]}`}>
-                    {tierLabels[tier]} ({tierSubs.length})
+                    {tierLabels[tier]} ({tierWords.length})
                   </span>
                   <div className="flex flex-wrap gap-1 mt-1">
-                    {tierSubs.map((sub, si) => {
-                      const isMe = sub.userId === currentUserId;
-                      const playerName = players.find((p) => p.userId === sub.userId)?.userName;
+                    {tierWords.map((dw) => {
+                      const isMe = dw.submitters.some((s) => s.userId === currentUserId);
+                      const submitterNames = dw.submitters.map((s) => {
+                        const name = players.find((p) => p.userId === s.userId)?.userName ?? s.userId;
+                        return { name, isSpeedBonus: s.isSpeedBonus };
+                      });
                       return (
                         <span
-                          key={si}
+                          key={dw.word}
                           className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs ${
                             isMe
                               ? 'bg-(--rmhbox-accent)/20 text-(--rmhbox-accent) font-semibold'
                               : 'bg-(--rmhbox-surface-hover) text-(--rmhbox-text-muted)'
                           } ${tier === 'invalid' ? 'line-through' : ''}`}
-                          title={playerName ? `Submitted by ${playerName}` : undefined}
                         >
-                          {sub.word}
-                          {sub.isMultiSyllable && <span className="ml-0.5 text-yellow-400">✦</span>}
+                          {dw.word}
+                          {dw.isMultiSyllable && <span className="ml-0.5 text-yellow-400">✦</span>}
                           <span className="ml-1 opacity-60">
-                            {sub.score > 0 ? '+' : ''}{sub.score}
+                            {dw.score > 0 ? '+' : ''}{dw.score}
                           </span>
-                          {playerName && (
-                            <span className="ml-1 opacity-40 text-[10px]">
-                              ({playerName})
-                            </span>
-                          )}
+                          <span className="ml-1 opacity-40 text-[10px]">
+                            ({submitterNames.map((s, i) => (
+                              <span key={i}>
+                                {i > 0 && ', '}{s.name}
+                                {s.isSpeedBonus && <Zap className="inline h-2.5 w-2.5 text-yellow-400 ml-0.5" />}
+                              </span>
+                            ))})
+                          </span>
                         </span>
                       );
                     })}
