@@ -191,7 +191,7 @@ export const MINIGAME_REGISTRY: Record<string, MinigameDefinition> = {
   'minimalist-masterpiece': {
     id: 'minimalist-masterpiece',
     displayName: 'Minimalist Masterpiece',
-    description: 'Draw with only 5 strokes, then bid on the art you think is best! The highest market value wins.',
+    description: 'Draw with a limited number of strokes, then bid to invest in the art you think is best! The best painters and savviest investors win.',
     category: 'creative',
     icon: 'brush',
     minPlayers: 3,
