@@ -49,6 +49,9 @@ model User {
   rmhtubePlaylists     RmhTubePlaylist[]
   rmhtubeStats         RmhTubeUserStats?
 
+  // Site Feedback
+  feedbacks            Feedback[]
+
   @@map("user")
 }
 
@@ -703,4 +706,18 @@ model RmhStudySession {
   @@index([userId])
   @@index([startedAt(sort: Desc)])
   @@map("rmhstudy_session")
+}
+
+// ─── Site Feedback ──────────────────────────────────────────────────
+model Feedback {
+  id        String   @id @default(cuid())
+  category  String
+  message   String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt(sort: Desc)])
+  @@map("feedback")
 }
