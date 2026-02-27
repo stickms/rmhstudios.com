@@ -254,6 +254,9 @@ export class WitWarMinigame extends BaseMinigame {
       },
     });
 
+    // Update spectator state for reconnection
+    this.context.sendToSpectators('rmhbox:game:state_snapshot', this.getStateForSpectator());
+
     this.startPhaseTimer(duration);
 
     this.setTimeout(() => this.endMatchupVoting(), duration * 1000);
@@ -306,6 +309,7 @@ export class WitWarMinigame extends BaseMinigame {
     this.state.scores[matchup.playerB] = (this.state.scores[matchup.playerB] ?? 0) + scoreB + bonusB;
 
     this.logAction('matchup_resolved', {
+      round: this.state.currentRound,
       matchupIndex: this.state.currentMatchupIndex,
       prompt: matchup.promptText,
       playerA: matchup.playerA,

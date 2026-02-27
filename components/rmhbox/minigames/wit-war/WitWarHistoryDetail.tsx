@@ -45,23 +45,16 @@ export default function WitWarHistoryDetail({
     rounds.push([]);
   }
 
-  let currentRoundIdx = 0;
-  const promptReveals = gameLog.actions.filter((a) => a.type === 'prompt_reveal');
+  // Group matchup_resolved actions by their round field
   for (const m of matchupActions) {
-    const roundForMatchup = promptReveals.findIndex(
-      (pr) => (pr.payload.round as number) > currentRoundIdx + 1,
-    );
-    if (roundForMatchup > 0 && currentRoundIdx < totalRounds - 1) {
-      currentRoundIdx++;
+    const round = (m.payload.round as number | undefined) ?? 0;
+    const roundIdx = round > 0 ? round - 1 : 0;
+    if (rounds[roundIdx]) {
+      rounds[roundIdx].push(m);
+    } else if (rounds.length > 0) {
+      // Fallback: if round index is out of bounds, put in last round
+      rounds[rounds.length - 1].push(m);
     }
-    if (rounds[currentRoundIdx]) {
-      rounds[currentRoundIdx].push(m);
-    }
-  }
-
-  // Fallback: if round distribution didn't work, put all in first
-  if (rounds.every((r) => r.length === 0) && matchupActions.length > 0) {
-    rounds[0] = matchupActions;
   }
 
   return (

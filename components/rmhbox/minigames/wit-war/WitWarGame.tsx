@@ -255,8 +255,65 @@ export default function WitWarGame({ playerId }: MinigameProps) {
       if (typeof snapshot.hasSubmitted === 'boolean') setHasSubmitted(snapshot.hasSubmitted as boolean);
       if (typeof snapshot.matchupIndex === 'number') setMatchupIndex(snapshot.matchupIndex as number);
       if (typeof snapshot.totalMatchups === 'number') setTotalMatchups(snapshot.totalMatchups as number);
+
+      // Reconstruct matchup data from spectator/reconnection snapshots
+      if (p === 'VOTING') {
+        // Spectator snapshot uses `currentMatchup`; player snapshot uses flat fields
+        const cm = snapshot.currentMatchup as Record<string, unknown> | undefined;
+        if (cm && typeof cm === 'object') {
+          setCurrentMatchup({
+            promptText: (cm.promptText as string) ?? '',
+            answerA: (cm.answerA as string) ?? '',
+            answerB: (cm.answerB as string) ?? '',
+            playerA: (cm.playerA as string) ?? '',
+            playerB: (cm.playerB as string) ?? '',
+            playerAName: cm.playerAName as string | undefined,
+            playerBName: cm.playerBName as string | undefined,
+            votePercentA: (cm.votePercentA as number) ?? 0,
+            votePercentB: (cm.votePercentB as number) ?? 0,
+            winnerId: (cm.winnerId as string | null) ?? null,
+            isQuiplash: (cm.isQuiplash as boolean) ?? false,
+          });
+          setIsAuthor((cm.playerA as string) === playerId || (cm.playerB as string) === playerId);
+        } else if (snapshot.promptText) {
+          // Player snapshot: flat fields
+          setCurrentMatchup({
+            promptText: (snapshot.promptText as string) ?? '',
+            answerA: (snapshot.answerA as string) ?? '',
+            answerB: (snapshot.answerB as string) ?? '',
+            playerA: (snapshot.playerA as string) ?? '',
+            playerB: (snapshot.playerB as string) ?? '',
+            votePercentA: 0,
+            votePercentB: 0,
+            winnerId: null,
+            isQuiplash: false,
+          });
+        }
+        if (typeof snapshot.isAuthor === 'boolean') setIsAuthor(snapshot.isAuthor as boolean);
+        if (typeof snapshot.voteCount === 'number') setVoteCount(snapshot.voteCount as number);
+        if (typeof snapshot.totalVoters === 'number') setTotalVoters(snapshot.totalVoters as number);
+        setMyVote((snapshot.myVote as string | null) ?? null);
+      } else if (p === 'MATCHUP_RESULTS') {
+        // Spectator snapshot uses `currentMatchup`; player snapshot uses `matchup`
+        const cm = (snapshot.currentMatchup ?? snapshot.matchup) as Record<string, unknown> | undefined;
+        if (cm && typeof cm === 'object') {
+          setMatchupResult({
+            promptText: (cm.promptText as string) ?? '',
+            answerA: (cm.answerA as string) ?? '',
+            answerB: (cm.answerB as string) ?? '',
+            playerA: (cm.playerA as string) ?? '',
+            playerB: (cm.playerB as string) ?? '',
+            playerAName: cm.playerAName as string | undefined,
+            playerBName: cm.playerBName as string | undefined,
+            votePercentA: (cm.votePercentA as number) ?? 0,
+            votePercentB: (cm.votePercentB as number) ?? 0,
+            winnerId: (cm.winnerId as string | null) ?? null,
+            isQuiplash: (cm.isQuiplash as boolean) ?? false,
+          });
+        }
+      }
     },
-    [],
+    [playerId],
   );
 
   useGameSocket({
