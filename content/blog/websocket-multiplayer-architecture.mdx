@@ -1,0 +1,97 @@
+---
+title: "Real-Time Multiplayer in the Browser: Our WebSocket Architecture"
+date: "2024-09-16"
+description: "How we handle real-time multiplayer for 16+ concurrent minigames using Socket.io and WebSockets."
+tags: ["Technology", "Multiplayer"]
+---
+
+## The Challenge of Browser Multiplayer
+
+Real-time multiplayer is hard. Real-time multiplayer *in the browser* is harder. Native games benefit from raw TCP/UDP sockets, dedicated server infrastructure designed for gaming workloads, and networking libraries battle-tested over decades. Browser games operate under tighter constraints: the WebSocket protocol, browser security sandboxing, garbage collection pauses, and an execution environment that was originally designed for rendering documents, not synchronizing game state at 60fps.
+
+At RMH Studios, multiplayer isn't a nice-to-have — it's central to our identity. **RMHbox** is a party game platform running sixteen or more concurrent minigames. **RMHTube** synchronizes video playback across multiple viewers in real time. **RMH Type** manages competitive typing races with precise timing. Each of these products demands reliable, low-latency real-time communication, and we deliver it entirely through the browser.
+
+Here's how.
+
+## WebSockets: The Foundation
+
+The **WebSocket protocol** (RFC 6455, standardized in 2011) provides full-duplex communication channels over a single TCP connection. Unlike HTTP's request-response model, WebSockets keep a persistent connection open between client and server, allowing both sides to send messages at any time without the overhead of establishing new connections.
+
+For game development, WebSockets offer several critical properties:
+
+- **Low latency** — no HTTP handshake overhead on each message
+- **Bidirectional** — server can push state updates without the client polling
+- **Persistent** — connection stays open for the duration of the session
+- **Binary support** — raw ArrayBuffer data can be sent alongside text/JSON
+
+The protocol isn't perfect for all gaming scenarios. WebSockets run over TCP, which means **head-of-line blocking** is a reality — if a packet is lost, all subsequent packets are held until retransmission completes. For twitch-reaction shooters, this is a dealbreaker; those games need UDP-based solutions (and WebRTC's data channels can provide that). For the kinds of games we build — party games, turn-influenced mechanics, social experiences — TCP's reliability guarantees are worth the tradeoff.
+
+## Socket.io: Our Transport Layer
+
+We use **Socket.io** as our WebSocket abstraction layer. Socket.io provides several features on top of raw WebSockets that make production multiplayer significantly more manageable:
+
+### Automatic Reconnection
+
+Browser connections drop. Phones switch from WiFi to cellular. Laptops go to sleep and wake up. Socket.io's built-in reconnection logic handles these scenarios gracefully, with configurable backoff strategies and state reconciliation on reconnect.
+
+For RMHbox, this means a player whose connection blips during a minigame doesn't lose their session. The client reconnects, receives the current game state, and resumes play — often without the player even noticing the interruption.
+
+### Room-Based Architecture
+
+Socket.io's room system maps naturally onto game lobbies. Each RMHbox game session is a room; each RMHTube watch party is a room; each RMH Type race is a room. Rooms provide namespaced broadcasting — when we need to send a game state update, it goes only to the players in that specific room, not to every connected client.
+
+### Namespace Isolation
+
+We use Socket.io namespaces to isolate different applications sharing the same server infrastructure. RMHbox traffic, RMHTube traffic, and RMH Type traffic are logically separated even when they're running on the same server process, preventing cross-contamination and simplifying debugging.
+
+## RMHbox: Multiplayer at Scale
+
+RMHbox is our most architecturally complex multiplayer system. A single game session can involve multiple players cycling through a rotation of different minigames, each with its own rules, state shape, and timing requirements.
+
+### The State Synchronization Model
+
+We use an **authoritative server** model. The server maintains the canonical game state for every active session. Clients send inputs (button presses, selections, timing data), the server validates those inputs, updates the state, and broadcasts the new state to all players.
+
+This architecture has a key advantage: **cheat resistance.** Because the server owns the game state, a malicious client can't simply declare "I won" or "I have 999 points." Every state transition is validated server-side. We'll explore our anti-cheat philosophy in more detail in a future post on leaderboard integrity.
+
+### Minigame Hot-Swapping
+
+One of RMHbox's distinctive features is that it can transition between completely different minigames within a single session. From a networking perspective, this means the state schema changes mid-connection. One moment we're synchronizing drawing coordinates for a Pictionary-style game; the next, we're synchronizing reaction times for a quick-fire challenge.
+
+We handle this through a **message envelope pattern**: every WebSocket message includes a type identifier and a payload, and the client-side handler dispatches to the appropriate minigame's state reducer based on that type. The server manages the minigame lifecycle — initialization, state transitions, scoring, and cleanup — and clients react to the authoritative state they receive.
+
+### Latency Management
+
+For most RMHbox minigames, we target **under 100ms round-trip latency** from input to visual feedback. We achieve this through:
+
+- **Delta compression** — sending only the state that changed, not the entire game state
+- **Client-side prediction** — for certain interactions, the client updates immediately and reconciles when the server response arrives
+- **Adaptive tick rates** — minigames that need faster updates (e.g., real-time movement) run at higher server tick rates than turn-based minigames
+
+## RMHTube: Synchronized Playback
+
+RMHTube presents a different synchronization challenge: keeping video playback in sync across multiple clients, each with different network latencies and device performance characteristics.
+
+The core mechanism is a **server-authoritative playhead**. The server maintains the reference timestamp for the currently playing video. Clients periodically report their local playhead position, and the server calculates drift. If a client drifts beyond a configurable threshold (we use 500ms), the server sends a correction, and the client adjusts its playback speed slightly to resynchronize without a jarring jump.
+
+Playback controls (play, pause, seek, queue management) are all routed through the server to ensure consistency. When any user pauses the video, the server broadcasts the pause event and all clients respond simultaneously.
+
+## Scaling Considerations
+
+Browser multiplayer at our scale doesn't require the massive infrastructure of a AAA multiplayer game, but it does require thoughtful architecture:
+
+- **Horizontal scaling** — we use Socket.io's Redis adapter to distribute connections across multiple server processes, allowing us to scale horizontally as concurrent sessions grow
+- **Connection limits** — each Node.js process can handle thousands of concurrent WebSocket connections, but we monitor memory and CPU usage and spin up additional processes well before hitting limits
+- **Geographic distribution** — for latency-sensitive experiences, server location matters. We deploy to regions that minimize round-trip time for the majority of our players
+
+## What We've Learned
+
+Building multiplayer browser games has taught us several lessons:
+
+**Simplicity wins.** The most reliable networking code is the code that doesn't exist. We resist adding networking complexity unless a specific game mechanic demands it.
+
+**Test on bad networks.** Our development machines have fast, stable connections. Our players don't always. We test with throttled connections, simulated packet loss, and real mobile networks.
+
+**The server is always right.** Client-side prediction makes games feel responsive, but the server's state is canonical. This principle has saved us from countless potential desync issues and cheating vectors.
+
+Browser multiplayer in 2024 is a solved problem in terms of capability — the protocols and libraries exist. The craft is in the architecture: designing systems that are fast, reliable, and honest about their constraints. That's the craft we practice every day at RMH Studios.

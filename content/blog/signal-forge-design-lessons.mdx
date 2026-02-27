@@ -1,0 +1,86 @@
+---
+title: "Design Lessons from Building Signal Forge"
+date: "2024-10-08"
+description: "What we learned building a roguelike deckbuilder with a waveform-matching twist."
+tags: ["Signal Forge", "Design"]
+---
+
+## Standing on the Shoulders of Giants
+
+You can't build a roguelike deckbuilder in 2024 without acknowledging the genre's defining work: **Slay the Spire.** Released in early access in November 2017 and fully launched in January 2019 by MegaCrit, Slay the Spire didn't invent the concept of combining roguelike structure with card game mechanics, but it codified the genre so thoroughly that everything after it is measured against its standard.
+
+Slay the Spire proved that the combination of strategic deckbuilding, procedurally generated runs, and permadeath creates one of the most compelling gameplay loops in modern gaming. It sold over 7 million copies and spawned an entire genre: Inscryption, Monster Train, Griftlands, Roguebook — the list is long and growing.
+
+Then came **Balatro** in February 2024, and the genre leveled up again. LocalThunk's poker-themed roguelike deckbuilder became one of the year's biggest breakout hits, selling over 1 million copies in its first month. Balatro showed that the roguelike deckbuilder template could accommodate radically different core mechanics — its poker hand evaluation system is nothing like Slay the Spire's combat, yet the meta-structure of runs, upgrades, and strategic choices maps perfectly.
+
+Balatro's success reinforced a lesson we'd already intuited: **the roguelike deckbuilder is a genre defined by its structure, not its skin.** The specific mechanic you build the deck around matters less than the depth of strategic choices that mechanic enables.
+
+That understanding is at the heart of **Signal Forge.**
+
+## The Waveform-Matching Mechanic
+
+Signal Forge's core mechanic is waveform matching. Instead of dealing damage to enemies by playing attack cards, players construct waveforms — combinations of frequency, amplitude, and phase — to match target signal patterns. Each card in your deck modifies a property of the signal you're building. A successful match "forges" the signal and advances you through the run.
+
+Here's why we chose this mechanic:
+
+### Mathematical Depth Without Math Anxiety
+
+Waveform composition has genuine mathematical depth — combining sine waves involves constructive and destructive interference, harmonic relationships, and signal processing concepts that form the basis of real-world physics and engineering. But you don't need to know any of that to play Signal Forge. The game presents waveforms visually: you see the target shape, you see the shape your cards are creating, and you intuitively adjust to match.
+
+This is a design principle we're proud of: **hidden complexity, visible clarity.** The game is deep enough for players who want to optimize their signal compositions mathematically, but accessible enough for players who just enjoy the visual puzzle of making shapes match.
+
+### A Unique Design Space
+
+The roguelike deckbuilder genre has explored many combat metaphors — fantasy battles, poker hands, word games, even cooking. But as far as we know, no one had built one around signal processing. This gave us a wide-open design space for card effects, enemy types, and run modifiers.
+
+Cards in Signal Forge can:
+
+- **Add frequency components** (adding a new sine wave to your composite signal)
+- **Modify amplitude** (boosting or attenuating parts of the signal)
+- **Shift phase** (offsetting waveform components to change interference patterns)
+- **Apply filters** (low-pass, high-pass, band-pass — removing or emphasizing frequency ranges)
+- **Introduce noise** (adding random elements that can be either helpful or harmful)
+
+Each card type creates a different kind of strategic decision, and the interactions between cards produce emergent complexity that keeps runs feeling fresh.
+
+## Lessons Learned
+
+Building Signal Forge has taught us several design lessons that we think are broadly applicable to roguelike deckbuilders and game design in general.
+
+### Lesson 1: The First Run Must Teach Without Tutorials
+
+Slay the Spire handles this brilliantly — the Ironclad's starting deck is a self-contained tutorial in how combat works. By the end of your first fight, you understand the basic loop even if you've never played a deckbuilder before.
+
+We initially underestimated how important this was for Signal Forge. Our waveform mechanic is more abstract than "play attack card, deal damage," which meant our first run had to do more heavy lifting to communicate the core loop.
+
+Our solution was to design the first few encounters of every run to produce visually dramatic results with simple card plays. Early target waveforms are basic sine waves or square waves that can be matched with two or three cards. The visual feedback — watching your constructed waveform converge on the target — does the teaching that a tutorial would otherwise handle. By the third encounter, players understand the mechanic intuitively.
+
+### Lesson 2: Card Removal Is as Important as Card Addition
+
+This is conventional wisdom in the deckbuilder genre, but it's worth emphasizing because we learned it the hard way. Early builds of Signal Forge showered players with new cards but provided few opportunities to thin their deck. The result was bloated decks where players couldn't reliably draw the combinations they needed to match complex waveforms.
+
+Slay the Spire uses shops and events as deck-thinning opportunities. Balatro has its own trim mechanics. In Signal Forge, we introduced **signal attenuators** — events between encounters where players can remove cards from their deck, conceptualized as filtering noise from their signal library. The thematic framing (removing noise to clean your signal) reinforced the game's identity while solving a mechanical problem.
+
+### Lesson 3: Difficulty Must Be Legible
+
+One of Balatro's strongest design decisions is that difficulty escalation is transparent. You can see the target score rising, you can count your resources, and when you lose, you can usually identify what went wrong. The game is hard, but it's rarely *confusing.*
+
+Early versions of Signal Forge had an opacity problem. Complex target waveforms looked intimidating, and players couldn't easily distinguish between "I don't have the right cards" and "I'm playing my cards in the wrong order." We addressed this by adding a **signal analysis overlay** that breaks complex targets into their component frequencies. Players can see exactly what pieces they need to match, turning an opaque visual challenge into a legible strategic puzzle.
+
+### Lesson 4: Synergies Make the Genre
+
+The magic of roguelike deckbuilders lives in synergies — the moment where two cards or relics interact in a way that's more powerful than either alone. Slay the Spire's Shiv build, Balatro's Joker combinations, Inscryption's bone economy — these emergent strategies are what keep players coming back for "just one more run."
+
+In Signal Forge, synergies emerge from the physics of wave interaction. A card that adds a harmonic frequency becomes dramatically more powerful when combined with a card that amplifies that specific frequency range. A phase-shift card is mediocre alone but enables entirely new matching strategies when paired with multi-component signal cards. We don't script these synergies — they're natural consequences of how waveforms work, which gives them a satisfying internal logic.
+
+### Lesson 5: The Browser Is a Feature, Not a Constraint
+
+Signal Forge exists in the browser, and that's a strength. The "one more run" psychology of roguelike deckbuilders is amplified when there's zero startup friction. No launcher, no loading screen — just a tab you can open, play a 15-minute run, and close. We've watched playtest sessions where players planned to try one run and played for hours, precisely because the barrier to starting was so low.
+
+## What's Next for Signal Forge
+
+We're continuing to expand Signal Forge's card pool, encounter variety, and meta-progression systems. The waveform-matching mechanic has proven to be a rich design space, and we're nowhere near exhausting it.
+
+We're also learning from the community. Open development means we see which strategies players discover, which encounters frustrate them, and which card combinations produce the most satisfying moments. That feedback loop — made faster by the browser's instant-update capability — is our most valuable design tool.
+
+**Signal Forge is our love letter to the roguelike deckbuilder genre, and our proof that the genre's structure can accommodate mechanics no one has tried before.** We're grateful to the games that paved the way, and we're excited to carve our own path in the signal space.
