@@ -1,8 +1,17 @@
 "use client";
 
-import { useState, useCallback, type FormEvent } from "react";
+import { useState, useEffect, useCallback, type FormEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageSquarePlus, Send, CheckCircle2, Loader2 } from "lucide-react";
+import {
+  MessageSquarePlus,
+  Send,
+  Loader2,
+  LogIn,
+  Bug,
+  Lightbulb,
+  MessageCircle,
+  HelpCircle,
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -11,53 +20,104 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   feedbackSchema,
   FEEDBACK_CATEGORIES,
   type FeedbackCategory,
 } from "@/lib/feedback-schema";
+import { authClient } from "@/lib/auth-client";
 import { toast } from "sonner";
+import Link from "next/link";
 
 type FieldErrors = Partial<Record<string, string>>;
 
-const CATEGORY_LABELS: Record<FeedbackCategory, string> = {
-  bug: "Bug Report",
-  feature: "Feature Request",
-  general: "General Feedback",
-  other: "Other",
+interface FeedbackItem {
+  id: string;
+  category: string;
+  message: string;
+  createdAt: string;
+  user: { name: string; image: string | null };
+}
+
+const CATEGORY_CONFIG: Record<
+  FeedbackCategory,
+  { label: string; icon: typeof Bug; color: string }
+> = {
+  bug: { label: "Bug", icon: Bug, color: "text-red-400 bg-red-400/10" },
+  feature: {
+    label: "Feature",
+    icon: Lightbulb,
+    color: "text-amber-400 bg-amber-400/10",
+  },
+  general: {
+    label: "General",
+    icon: MessageCircle,
+    color: "text-blue-400 bg-blue-400/10",
+  },
+  other: {
+    label: "Other",
+    icon: HelpCircle,
+    color: "text-site-text-muted bg-site-text-muted/10",
+  },
 };
+
+function timeAgo(dateStr: string): string {
+  const seconds = Math.floor(
+    (Date.now() - new Date(dateStr).getTime()) / 1000
+  );
+  if (seconds < 60) return "just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days}d ago`;
+  const months = Math.floor(days / 30);
+  return `${months}mo ago`;
+}
 
 export function FeedbackModal() {
   const [open, setOpen] = useState(false);
   const [sending, setSending] = useState(false);
-  const [sent, setSent] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
+  const [feedbacks, setFeedbacks] = useState<FeedbackItem[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
   const [category, setCategory] = useState<FeedbackCategory | "">("");
   const [message, setMessage] = useState("");
-  const [honeypot, setHoneypot] = useState("");
+
+  const { data: session } = authClient.useSession();
+
+  const fetchFeedbacks = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/feedback");
+      if (res.ok) {
+        setFeedbacks(await res.json());
+      }
+    } catch {
+      // silently fail on load
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (open) fetchFeedbacks();
+  }, [open, fetchFeedbacks]);
 
   const resetForm = useCallback(() => {
-    setName("");
-    setEmail("");
     setCategory("");
     setMessage("");
-    setHoneypot("");
     setErrors({});
     setSending(false);
-    setSent(false);
   }, []);
 
   const handleOpenChange = useCallback(
     (next: boolean) => {
       setOpen(next);
-      if (!next) {
-        setTimeout(resetForm, 200);
-      }
+      if (!next) setTimeout(resetForm, 200);
     },
     [resetForm]
   );
@@ -68,11 +128,8 @@ export function FeedbackModal() {
       setErrors({});
 
       const parsed = feedbackSchema.safeParse({
-        name,
-        email,
         category: category || undefined,
         message,
-        honeypot,
       });
 
       if (!parsed.success) {
@@ -98,9 +155,10 @@ export function FeedbackModal() {
           throw new Error(data?.error ?? "Failed to send feedback");
         }
 
-        setSent(true);
-        toast.success("Feedback sent — thank you!");
-        setTimeout(() => handleOpenChange(false), 1800);
+        const newItem: FeedbackItem = await res.json();
+        setFeedbacks((prev) => [newItem, ...prev]);
+        resetForm();
+        toast.success("Feedback posted!");
       } catch (err) {
         toast.error(
           err instanceof Error ? err.message : "Something went wrong"
@@ -109,7 +167,7 @@ export function FeedbackModal() {
         setSending(false);
       }
     },
-    [name, email, category, message, honeypot, handleOpenChange]
+    [category, message, resetForm]
   );
 
   return (
@@ -123,191 +181,172 @@ export function FeedbackModal() {
         transition={{ delay: 1, type: "spring", stiffness: 260, damping: 20 }}
         whileHover={{ scale: 1.08 }}
         whileTap={{ scale: 0.95 }}
-        aria-label="Send feedback"
+        aria-label="Feedback"
       >
         <MessageSquarePlus className="h-5 w-5 md:h-6 md:w-6" />
       </motion.button>
 
       {/* Modal */}
       <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogContent className="bg-site-surface border-site-border text-site-text sm:max-w-md">
+        <DialogContent className="bg-site-surface border-site-border text-site-text sm:max-w-lg max-h-[85vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="text-site-text font-(family-name:--font-nunito) text-xl font-bold">
-              Send Feedback
+              Feedback Board
             </DialogTitle>
             <DialogDescription className="text-site-text-muted">
-              Bug, idea, or just want to say hi? We&apos;d love to hear from
-              you.
+              See what others are saying, or share your own thoughts.
             </DialogDescription>
           </DialogHeader>
 
-          <AnimatePresence mode="wait">
-            {sent ? (
-              <motion.div
-                key="success"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className="flex flex-col items-center gap-3 py-8"
-              >
-                <CheckCircle2 className="h-12 w-12 text-green-400" />
-                <p className="text-lg font-semibold text-site-text">
-                  Thank you!
-                </p>
-                <p className="text-sm text-site-text-muted">
-                  Your feedback has been sent.
-                </p>
-              </motion.div>
+          {/* Feedback list */}
+          <div className="flex-1 min-h-0 overflow-y-auto space-y-3 pr-1 -mr-1">
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-5 w-5 animate-spin text-site-text-dim" />
+              </div>
+            ) : feedbacks.length === 0 ? (
+              <p className="text-center text-site-text-dim py-8 text-sm">
+                No feedback yet. Be the first!
+              </p>
             ) : (
-              <motion.form
-                key="form"
-                onSubmit={handleSubmit}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className="flex flex-col gap-4"
-              >
-                {/* Honeypot — hidden from humans */}
-                <div className="absolute opacity-0 pointer-events-none h-0 overflow-hidden" aria-hidden="true">
-                  <input
-                    type="text"
-                    name="website"
-                    tabIndex={-1}
-                    autoComplete="off"
-                    value={honeypot}
-                    onChange={(e) => setHoneypot(e.target.value)}
-                  />
-                </div>
-
-                {/* Name */}
-                <div className="space-y-1.5">
-                  <label
-                    htmlFor="fb-name"
-                    className="text-sm font-medium text-site-text-muted"
-                  >
-                    Name{" "}
-                    <span className="text-site-text-dim text-xs">
-                      (optional)
-                    </span>
-                  </label>
-                  <Input
-                    id="fb-name"
-                    placeholder="Your name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="bg-site-bg border-site-border text-site-text placeholder:text-site-text-dim focus-visible:ring-(--site-accent)"
-                  />
-                  {errors.name && (
-                    <p className="text-xs text-red-400">{errors.name}</p>
-                  )}
-                </div>
-
-                {/* Email */}
-                <div className="space-y-1.5">
-                  <label
-                    htmlFor="fb-email"
-                    className="text-sm font-medium text-site-text-muted"
-                  >
-                    Email <span className="text-red-400">*</span>
-                  </label>
-                  <Input
-                    id="fb-email"
-                    type="email"
-                    required
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="bg-site-bg border-site-border text-site-text placeholder:text-site-text-dim focus-visible:ring-(--site-accent)"
-                  />
-                  {errors.email && (
-                    <p className="text-xs text-red-400">{errors.email}</p>
-                  )}
-                </div>
-
-                {/* Category */}
-                <div className="space-y-1.5">
-                  <label
-                    htmlFor="fb-category"
-                    className="text-sm font-medium text-site-text-muted"
-                  >
-                    Category <span className="text-red-400">*</span>
-                  </label>
-                  <select
-                    id="fb-category"
-                    required
-                    value={category}
-                    onChange={(e) =>
-                      setCategory(e.target.value as FeedbackCategory)
-                    }
-                    className="flex h-10 w-full rounded-md border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--site-accent) focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <option value="" disabled>
-                      Select a category...
-                    </option>
-                    {FEEDBACK_CATEGORIES.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {CATEGORY_LABELS[cat]}
-                      </option>
-                    ))}
-                  </select>
-                  {errors.category && (
-                    <p className="text-xs text-red-400">{errors.category}</p>
-                  )}
-                </div>
-
-                {/* Message */}
-                <div className="space-y-1.5">
-                  <label
-                    htmlFor="fb-message"
-                    className="text-sm font-medium text-site-text-muted"
-                  >
-                    Message <span className="text-red-400">*</span>
-                  </label>
-                  <Textarea
-                    id="fb-message"
-                    required
-                    rows={4}
-                    placeholder="Tell us what's on your mind..."
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    className="bg-site-bg border-site-border text-site-text placeholder:text-site-text-dim focus-visible:ring-(--site-accent) resize-none"
-                  />
-                  <div className="flex items-center justify-between">
-                    {errors.message ? (
-                      <p className="text-xs text-red-400">{errors.message}</p>
-                    ) : (
-                      <span />
-                    )}
-                    <span
-                      className={`text-xs ${message.length > 2000 ? "text-red-400" : "text-site-text-dim"}`}
+              <AnimatePresence initial={false}>
+                {feedbacks.map((fb, i) => {
+                  const config =
+                    CATEGORY_CONFIG[fb.category as FeedbackCategory] ??
+                    CATEGORY_CONFIG.other;
+                  const Icon = config.icon;
+                  return (
+                    <motion.div
+                      key={fb.id}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i < 10 ? i * 0.03 : 0 }}
+                      className="rounded-lg border border-site-border bg-site-bg p-3"
                     >
-                      {message.length}/2000
-                    </span>
-                  </div>
-                </div>
-
-                {/* Submit */}
-                <Button
-                  type="submit"
-                  variant="accent"
-                  disabled={sending}
-                  className="w-full"
-                >
-                  {sending ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Sending...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="h-4 w-4" />
-                      Send Feedback
-                    </>
-                  )}
-                </Button>
-              </motion.form>
+                      <div className="flex items-start gap-3">
+                        {/* Avatar */}
+                        {fb.user.image ? (
+                          <img
+                            src={fb.user.image}
+                            alt=""
+                            className="h-8 w-8 rounded-full shrink-0"
+                          />
+                        ) : (
+                          <div className="h-8 w-8 rounded-full bg-site-accent/20 flex items-center justify-center text-xs font-bold text-site-accent shrink-0">
+                            {fb.user.name.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-sm font-semibold text-site-text truncate">
+                              {fb.user.name}
+                            </span>
+                            <span
+                              className={`inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full ${config.color}`}
+                            >
+                              <Icon className="h-3 w-3" />
+                              {config.label}
+                            </span>
+                            <span className="text-xs text-site-text-dim ml-auto shrink-0">
+                              {timeAgo(fb.createdAt)}
+                            </span>
+                          </div>
+                          <p className="text-sm text-site-text-muted mt-1 whitespace-pre-wrap break-words">
+                            {fb.message}
+                          </p>
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
             )}
-          </AnimatePresence>
+          </div>
+
+          {/* Divider */}
+          <div className="h-px bg-site-border -mx-6 my-1" />
+
+          {/* Form / Sign-in prompt */}
+          {session ? (
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <div className="flex gap-2">
+                <select
+                  value={category}
+                  onChange={(e) =>
+                    setCategory(e.target.value as FeedbackCategory)
+                  }
+                  className="h-9 rounded-md border border-site-border bg-site-bg px-2 text-sm text-site-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--site-accent)"
+                >
+                  <option value="" disabled>
+                    Category
+                  </option>
+                  {FEEDBACK_CATEGORIES.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {CATEGORY_CONFIG[cat].label}
+                    </option>
+                  ))}
+                </select>
+                {errors.category && (
+                  <p className="text-xs text-red-400 self-center">
+                    {errors.category}
+                  </p>
+                )}
+              </div>
+              <div className="space-y-1">
+                <Textarea
+                  rows={2}
+                  placeholder="Share your feedback..."
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  className="bg-site-bg border-site-border text-site-text placeholder:text-site-text-dim focus-visible:ring-(--site-accent) resize-none text-sm"
+                />
+                <div className="flex items-center justify-between">
+                  {errors.message ? (
+                    <p className="text-xs text-red-400">{errors.message}</p>
+                  ) : (
+                    <span />
+                  )}
+                  <span
+                    className={`text-xs ${message.length > 2000 ? "text-red-400" : "text-site-text-dim"}`}
+                  >
+                    {message.length}/2000
+                  </span>
+                </div>
+              </div>
+              <Button
+                type="submit"
+                variant="accent"
+                size="sm"
+                disabled={sending}
+                className="w-full"
+              >
+                {sending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Posting...
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4" />
+                    Post Feedback
+                  </>
+                )}
+              </Button>
+            </form>
+          ) : (
+            <div className="flex items-center justify-center gap-2 py-3">
+              <LogIn className="h-4 w-4 text-site-text-dim" />
+              <span className="text-sm text-site-text-muted">
+                <Link
+                  href="/login"
+                  className="text-site-accent hover:underline font-medium"
+                >
+                  Sign in
+                </Link>{" "}
+                to leave feedback
+              </span>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </>
