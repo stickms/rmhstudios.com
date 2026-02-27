@@ -56,8 +56,6 @@ export default function MinigameHistoryPage() {
   const [sortKey, setSortKey] = useState<SortKey>('date');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [expandedLog, setExpandedLog] = useState<GameLog | null>(null);
-  const [loadingDetail, setLoadingDetail] = useState(false);
   const [offset, setOffset] = useState(0);
   const [activeFilters, setActiveFilters] = useState<Record<string, string>>({});
   const limit = 20;
@@ -84,33 +82,11 @@ export default function MinigameHistoryPage() {
     fetchMatches();
   }, [fetchMatches]);
 
-  const fetchMatchDetail = useCallback(async (matchId: string) => {
-    setLoadingDetail(true);
-    try {
-      const res = await fetch(`/api/rmhbox/history?matchId=${encodeURIComponent(matchId)}`);
-      if (res.ok) {
-        const data = await res.json();
-        setExpandedLog(data.match?.gameLog ?? null);
-      }
-    } catch {
-      // Silently fail
-    } finally {
-      setLoadingDetail(false);
-    }
-  }, []);
-
   const handleExpand = useCallback(
     (matchId: string) => {
-      if (expandedId === matchId) {
-        setExpandedId(null);
-        setExpandedLog(null);
-      } else {
-        setExpandedId(matchId);
-        setExpandedLog(null);
-        fetchMatchDetail(matchId);
-      }
+      setExpandedId((prev) => (prev === matchId ? null : matchId));
     },
-    [expandedId, fetchMatchDetail],
+    [],
   );
 
   const handleSort = useCallback(
@@ -380,19 +356,15 @@ export default function MinigameHistoryPage() {
                     {/* Expanded detail */}
                     {isExpanded && (
                       <div className="border-t border-(--rmhbox-border) p-4 bg-(--rmhbox-bg)">
-                        {loadingDetail ? (
-                          <p className="text-sm text-center py-4 text-(--rmhbox-text-muted)">
-                            Loading details…
-                          </p>
-                        ) : expandedLog && DetailComponent ? (
+                        {match.gameLog && DetailComponent ? (
                           <DetailComponent
-                            gameLog={expandedLog}
+                            gameLog={match.gameLog}
                             currentUserId=""
                             players={match.players}
                           />
-                        ) : expandedLog ? (
+                        ) : match.gameLog ? (
                           <pre className="text-xs overflow-auto text-(--rmhbox-text-muted) max-h-64">
-                            {JSON.stringify(expandedLog, null, 2)}
+                            {JSON.stringify(match.gameLog, null, 2)}
                           </pre>
                         ) : (
                           <p className="text-sm text-center py-4 text-(--rmhbox-text-muted)">
