@@ -1112,6 +1112,12 @@ export class LobbyManager {
       return;
     }
 
+    // Only allow promotion in WAITING or ROUND_RESULTS states
+    if (lobby.state !== 'WAITING' && lobby.state !== 'ROUND_RESULTS') {
+      socket.emit(S2C.ERROR, { code: 'LOBBY_IN_GAME', message: 'Promotion is only allowed between rounds.' });
+      return;
+    }
+
     const spectator = lobby.spectators.get(payload.userId);
     if (!spectator) {
       socket.emit(S2C.ERROR, { code: 'INVALID_PAYLOAD', message: 'That user is not a spectator.' });
