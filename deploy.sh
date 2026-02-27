@@ -66,7 +66,7 @@ start_apps() {
         --name "$APP_SOCKET" \
         --restart-delay=3000 \
         --max-restarts=5 \
-        -- dist-server/server/socket-server.js
+        -- dist-server/server/socket-server/index.js
 
     log "Starting RMHbox WebSocket server on port $PORT_RMHBOX..."
     "$PM2_BIN" start "$NODE_BIN" \
@@ -114,7 +114,7 @@ log "Building..."
 "$PNPM_BIN" run build || { log "ERROR: Build failed."; exit 1; }
 
 [ -d ".next" ] || { log "ERROR: .next missing after build."; exit 1; }
-[ -f "dist-server/server/socket-server.js" ] || { log "ERROR: socket-server.js missing after build."; exit 1; }
+[ -f "dist-server/server/socket-server/index.js" ] || { log "ERROR: socket-server/index.js missing after build."; exit 1; }
 [ -f "dist-server/server/rmhbox/index.js" ] || { log "ERROR: rmhbox/index.js missing after build."; exit 1; }
 [ -f "dist-server/server/rmhtube/index.js" ] || { log "ERROR: rmhtube/index.js missing after build."; exit 1; }
 

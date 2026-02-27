@@ -136,7 +136,7 @@ function useTenorResolve(url: string | null): { src: string | null; loading: boo
     setLoading(true);
     let cancelled = false;
 
-    fetch(`/api/rmhtube/oembed?url=${encodeURIComponent(url)}`)
+    fetch(`/api/oembed?url=${encodeURIComponent(url)}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (cancelled) return;

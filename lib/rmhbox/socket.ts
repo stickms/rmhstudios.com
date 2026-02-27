@@ -18,8 +18,6 @@ import { useRMHboxStore } from './store';
 import { S2C } from './events';
 import { toast } from './toast-store';
 
-console.log('[RMHbox] socket.ts module loaded');
-
 // ─── Module-Level Socket Reference ──────────────────────────────
 
 let socket: Socket | null = null;
@@ -57,25 +55,9 @@ export async function connectToRMHbox(): Promise<Socket> {
   const store = useRMHboxStore.getState();
   store.setConnectionStatus('connecting');
 
-  // Fetch auth session for socket authentication
-  let token: string | undefined;
-  try {
-    const url = `${(process.env.NEXT_PUBLIC_BETTER_AUTH_URL || '').replace(/\/$/, '')}/api/auth/get-session`;
-    console.log('[RMHbox] Fetching session from:', url);
-    const res = await fetch(url, { credentials: 'include' });
-    console.log('[RMHbox] Session response status:', res.status);
-    if (res.ok) {
-      const data = await res.json();
-      console.log('[RMHbox] Session data keys:', Object.keys(data));
-      token = data?.session?.token ?? data?.token;
-      console.log('[RMHbox] Token found:', !!token);
-    }
-  } catch (err) {
-    console.error('[RMHbox] Direct fetch failed, trying authClient:', err);
-    const session = await authClient.getSession();
-    console.log('[RMHbox] authClient session:', JSON.stringify(session?.data));
-    token = session?.data?.session?.token;
-  }
+  // Verify the user is authenticated before attempting to connect
+  const session = await authClient.getSession();
+  const token = session?.data?.session?.token;
   if (!token) {
     store.setConnectionStatus('error');
     throw new Error('Not authenticated');

@@ -17,6 +17,7 @@ import CategoryCrashHistoryDetail from '@/components/rmhbox/minigames/category-c
 import WikiRaceHistoryDetail from '@/components/rmhbox/minigames/wiki-race/WikiRaceHistoryDetail';
 import MinimalistMasterpieceHistoryDetail from '@/components/rmhbox/minigames/minimalist-masterpiece/MinimalistMasterpieceHistoryDetail';
 import EmojiCinemaHistoryDetail from '@/components/rmhbox/minigames/emoji-cinema/EmojiCinemaHistoryDetail';
+import WitWarLashHistoryDetail from '@/components/rmhbox/minigames/wit-war-lash/WitWarLashHistoryDetail';
 
 // ─── Rhyme Time ──────────────────────────────────────────────────
 
@@ -291,5 +292,41 @@ registerHistoryDisplay({
       return `${rounds.length} rounds — Movie emoji challenge`;
     }
     return `${movies.length} rounds — ${movies.join(', ')}`;
+  },
+});
+
+// ─── Wit War Lash ────────────────────────────────────────────────
+
+registerHistoryDisplay({
+  minigameId: 'wit-war-lash',
+  DetailComponent: WitWarLashHistoryDetail,
+  searchableFields: [
+    {
+      key: 'prompts',
+      label: 'Prompts',
+      extract: (log: GameLog) =>
+        log.actions
+          .filter((a) => a.type === 'matchup_resolved')
+          .map((a) => a.payload.prompt as string)
+          .filter(Boolean),
+    },
+    {
+      key: 'answers',
+      label: 'Answers',
+      extract: (log: GameLog) =>
+        log.actions
+          .filter((a) => a.type === 'matchup_resolved')
+          .flatMap((a) => [a.payload.answerA as string, a.payload.answerB as string])
+          .filter(Boolean),
+    },
+  ],
+  filterableFields: [
+    { key: 'hadQuiplash', label: 'Had Quiplash', type: 'boolean' },
+    { key: 'matchupWins', label: 'Matchup Wins', type: 'range', valuePath: 'matchupWins' },
+  ],
+  getSummary: (log: GameLog) => {
+    const matchups = log.actions.filter((a) => a.type === 'matchup_resolved');
+    const quiplashes = matchups.filter((a) => a.payload.isQuiplash);
+    return `${matchups.length} matchups — ${quiplashes.length} quiplash${quiplashes.length !== 1 ? 'es' : ''}`;
   },
 });

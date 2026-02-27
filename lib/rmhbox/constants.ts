@@ -192,3 +192,17 @@ export const EC_SECOND_GUESS_POINTS = 150;
 export const EC_OTHER_GUESS_POINTS = 75;
 export const EC_PRODUCER_DISCONNECT_WAIT_SECONDS = 10;
 export const EC_EMOJI_PALETTE_SIZE = 200;
+
+// ─── Wit War Lash (WWL) ─────────────────────────────────────────
+
+export const WWL_TOTAL_ROUNDS = 2;
+export const WWL_PROMPTS_PER_PLAYER = 2;
+export const WWL_WRITING_DURATION = 60;
+export const WWL_VOTING_DURATION = 15;
+export const WWL_MATCHUP_RESULTS_DURATION = 5;
+export const WWL_ROUND_RESULTS_DURATION = 8;
+export const WWL_PROMPT_REVEAL_DURATION = 3;
+export const WWL_MAX_ANSWER_LENGTH = 200;
+export const WWL_MAX_MATCHUP_POINTS = 1000;
+export const WWL_QUIPLASH_BONUS = 500;
+export const WWL_SAFETY_QUIP = '(no answer submitted)';

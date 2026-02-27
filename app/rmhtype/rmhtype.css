@@ -1,0 +1,246 @@
+/**
+ * RMH Type — Dedicated Theme Stylesheet
+ *
+ * Emerald/teal/cyan color scheme for competitive typing.
+ */
+
+/* ─── Dark Theme (default) ──────────────────────────────────────── */
+
+.rmhtype-theme {
+  --rmhtype-bg: #0f1419;
+  --rmhtype-bg-subtle: #151b22;
+  --rmhtype-surface: #1c2530;
+  --rmhtype-surface-hover: #243040;
+  --rmhtype-surface-active: #2c3a4c;
+  --rmhtype-border: #2c3a4c;
+  --rmhtype-border-bright: #3a4d64;
+  --rmhtype-text: #e8edf2;
+  --rmhtype-text-muted: #8a9bb0;
+  --rmhtype-text-dim: #5a6d82;
+  --rmhtype-accent: #34d399;
+  --rmhtype-accent-hover: #2cc08a;
+  --rmhtype-accent-dim: rgba(52, 211, 153, 0.12);
+  --rmhtype-success: #34d399;
+  --rmhtype-success-dim: rgba(52, 211, 153, 0.12);
+  --rmhtype-danger: #f87171;
+  --rmhtype-danger-dim: rgba(248, 113, 113, 0.12);
+  --rmhtype-warning: #fbbf24;
+  --rmhtype-warning-dim: rgba(251, 191, 36, 0.12);
+  --rmhtype-info: #38bdf8;
+  --rmhtype-info-dim: rgba(56, 189, 248, 0.12);
+  --rmhtype-font-display: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --rmhtype-font-body: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --rmhtype-font-mono: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', monospace;
+  --rmhtype-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  --rmhtype-radius: 12px;
+  --rmhtype-radius-sm: 8px;
+  --rmhtype-toast-bg: #1c2530;
+
+  /* Typing specific */
+  --rmhtype-cursor: #34d399;
+  --rmhtype-correct: #34d399;
+  --rmhtype-incorrect: #f87171;
+  --rmhtype-untyped: #5a6d82;
+}
+
+/* ─── Light Theme ───────────────────────────────────────────────── */
+
+.rmhtype-theme.rmhtype-light {
+  --rmhtype-bg: #f0fdf4;
+  --rmhtype-bg-subtle: #e8f8ee;
+  --rmhtype-surface: #ffffff;
+  --rmhtype-surface-hover: #f0f9f4;
+  --rmhtype-surface-active: #e4f2ea;
+  --rmhtype-border: #c8e6d2;
+  --rmhtype-border-bright: #a8d4b8;
+  --rmhtype-text: #1a2e24;
+  --rmhtype-text-muted: #5a7a6a;
+  --rmhtype-text-dim: #8aa89a;
+  --rmhtype-accent: #059669;
+  --rmhtype-accent-hover: #047857;
+  --rmhtype-accent-dim: rgba(5, 150, 105, 0.08);
+  --rmhtype-success: #059669;
+  --rmhtype-success-dim: rgba(5, 150, 105, 0.08);
+  --rmhtype-danger: #dc2626;
+  --rmhtype-danger-dim: rgba(220, 38, 38, 0.08);
+  --rmhtype-warning: #d97706;
+  --rmhtype-warning-dim: rgba(217, 119, 6, 0.08);
+  --rmhtype-info: #0284c7;
+  --rmhtype-info-dim: rgba(2, 132, 199, 0.08);
+  --rmhtype-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  --rmhtype-toast-bg: #ffffff;
+  --rmhtype-cursor: #059669;
+  --rmhtype-correct: #059669;
+  --rmhtype-incorrect: #dc2626;
+  --rmhtype-untyped: #8aa89a;
+}
+
+/* ─── Base Styles ───────────────────────────────────────────────── */
+
+.rmhtype-theme {
+  background-color: var(--rmhtype-bg);
+  color: var(--rmhtype-text);
+  font-family: var(--rmhtype-font-body);
+  min-height: 100vh;
+}
+
+/* ─── Scrollbar ─────────────────────────────────────────────────── */
+
+.rmhtype-theme ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.rmhtype-theme ::-webkit-scrollbar-track {
+  background: var(--rmhtype-bg-subtle);
+  border-radius: 4px;
+}
+
+.rmhtype-theme ::-webkit-scrollbar-thumb {
+  background: var(--rmhtype-border-bright);
+  border-radius: 4px;
+}
+
+.rmhtype-theme ::-webkit-scrollbar-thumb:hover {
+  background: var(--rmhtype-accent);
+}
+
+.rmhtype-theme {
+  scrollbar-width: thin;
+  scrollbar-color: var(--rmhtype-border-bright) var(--rmhtype-bg-subtle);
+}
+
+/* ─── Selection ─────────────────────────────────────────────────── */
+
+.rmhtype-theme ::selection {
+  background: var(--rmhtype-accent);
+  color: #ffffff;
+}
+
+/* ─── Focus ─────────────────────────────────────────────────────── */
+
+.rmhtype-theme :focus-visible {
+  outline: 2px solid var(--rmhtype-accent);
+  outline-offset: 2px;
+}
+
+/* ─── Buttons ───────────────────────────────────────────────────── */
+
+.rmhtype-theme button:not(:disabled) {
+  cursor: pointer;
+}
+
+/* ─── Toast Animations ──────────────────────────────────────────── */
+
+@keyframes rmhtype-toast-in {
+  from { opacity: 0; transform: translateY(-12px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes rmhtype-toast-out {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(-12px) scale(0.96); }
+}
+
+.rmhtype-toast-enter {
+  animation: rmhtype-toast-in 0.25s ease-out forwards;
+}
+
+.rmhtype-toast-exit {
+  animation: rmhtype-toast-out 0.2s ease-in forwards;
+}
+
+/* ─── Typing Area ───────────────────────────────────────────────── */
+
+.rmhtype-passage {
+  font-family: var(--rmhtype-font-mono);
+  font-size: 1.25rem;
+  line-height: 2;
+  letter-spacing: 0.02em;
+}
+
+.rmhtype-passage-scroll {
+  overflow-y: auto;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Use dynamic viewport height that adjusts for mobile keyboard */
+@supports (height: 100dvh) {
+  .rmhtype-typing-view {
+    height: 100dvh !important;
+  }
+}
+
+/* ─── Short viewport (mobile with keyboard up) ────────────────── */
+
+@media (max-height: 32rem) {
+  .rmhtype-typing-view .rmhtype-wpm-display,
+  .rmhtype-typing-view .rmhtype-round-info {
+    display: none;
+  }
+
+  .rmhtype-typing-view .rmhtype-progress-section {
+    display: none;
+  }
+
+  .rmhtype-typing-view .rmhtype-passage {
+    font-size: 1rem;
+    line-height: 1.75;
+  }
+
+  .rmhtype-typing-view .rmhtype-passage-scroll {
+    padding: 0.75rem !important;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    border-bottom: none;
+  }
+
+  .rmhtype-typing-view .rmhtype-typing-input {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
+
+  .rmhtype-typing-view .rmhtype-typing-area {
+    gap: 0 !important;
+  }
+}
+
+.rmhtype-char-correct {
+  color: var(--rmhtype-correct);
+}
+
+.rmhtype-char-incorrect {
+  color: var(--rmhtype-incorrect);
+  text-decoration: underline;
+  text-decoration-color: var(--rmhtype-incorrect);
+}
+
+.rmhtype-char-untyped {
+  color: var(--rmhtype-untyped);
+}
+
+.rmhtype-cursor {
+  border-left: 2px solid var(--rmhtype-cursor);
+  animation: rmhtype-blink 1s step-end infinite;
+}
+
+@keyframes rmhtype-blink {
+  50% { border-color: transparent; }
+}
+
+/* ─── Progress Bar ──────────────────────────────────────────────── */
+
+.rmhtype-progress-bar {
+  background: var(--rmhtype-accent-dim);
+  border-radius: 999px;
+  overflow: hidden;
+  height: 8px;
+}
+
+.rmhtype-progress-fill {
+  background: var(--rmhtype-accent);
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}

@@ -15,24 +15,6 @@ export async function POST(req: Request) {
     }
 
     try {
-        const body = await req.json();
-        const { username, timeSurvived, kills, totalXP } = body;
-
-        if (!username || typeof username !== 'string' || username.length > 32 || username.length < 2) {
-            return NextResponse.json({ error: 'Invalid username' }, { status: 400 });
-        }
-        if (typeof timeSurvived !== 'number' || timeSurvived < 0 || timeSurvived > 86400) {
-            return NextResponse.json({ error: 'Invalid time' }, { status: 400 });
-        }
-        if (typeof kills !== 'number' || kills < 0 || kills > 1_000_000) {
-            return NextResponse.json({ error: 'Invalid kills' }, { status: 400 });
-        }
-        if (typeof totalXP !== 'number' || totalXP < 0 || totalXP > 100_000_000) {
-            return NextResponse.json({ error: 'Invalid XP' }, { status: 400 });
-        }
-
-        const cleanUsername = username.trim().replace(/[^a-zA-Z0-9_\-. ]/g, '').slice(0, 32);
-
         // Auth Check
         const session = await auth.api.getSession({
             headers: await headers()
@@ -43,8 +25,24 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
+        const body = await req.json();
+        const { timeSurvived, kills, totalXP } = body;
+
+        if (typeof timeSurvived !== 'number' || timeSurvived < 0 || timeSurvived > 86400) {
+            return NextResponse.json({ error: 'Invalid time' }, { status: 400 });
+        }
+        if (typeof kills !== 'number' || kills < 0 || kills > 1_000_000) {
+            return NextResponse.json({ error: 'Invalid kills' }, { status: 400 });
+        }
+        if (typeof totalXP !== 'number' || totalXP < 0 || totalXP > 100_000_000) {
+            return NextResponse.json({ error: 'Invalid XP' }, { status: 400 });
+        }
+
+        // Get username from auth session
+        const username = (session.user.name || (session.user as any).username || 'Player').slice(0, 32);
+
         const existingProfile = await prisma.echoesPlayer.findUnique({ where: { userId } });
-        
+
         if (existingProfile) {
             await prisma.echoesPlayer.update({
                 where: { id: existingProfile.id },
@@ -54,23 +52,17 @@ export async function POST(req: Request) {
                     totalXP: { increment: totalXP },
                     gamesPlayed: { increment: 1 },
                     updatedAt: new Date(),
-                    username: cleanUsername // Allow name update
+                    username, // Keep username in sync with auth
                 }
             });
             return NextResponse.json({ success: true, linked: true });
-        }
-
-        // Check if username taken by another user
-        const usernameConfig = await prisma.echoesPlayer.findUnique({ where: { username: cleanUsername } });
-        if (usernameConfig) {
-             return NextResponse.json({ error: 'Username taken by another user.' }, { status: 409 });
         }
 
         // Create new
         await prisma.echoesPlayer.create({
             data: {
                 userId,
-                username: cleanUsername,
+                username,
                 bestTime: timeSurvived,
                 totalKills: kills,
                 totalXP: totalXP,

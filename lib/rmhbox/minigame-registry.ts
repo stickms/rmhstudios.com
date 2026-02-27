@@ -19,6 +19,7 @@ import {
   MM_DRAWING_DURATION_SECONDS, MM_MAX_STROKES, MM_AUCTION_DURATION_SECONDS,
   MM_STARTING_CURRENCY, MM_BID_INCREMENT, MM_DEFAULT_ROUNDS,
   EC_MAX_ROUNDS, EC_ROUND_DURATION_SECONDS, EC_MAX_EMOJIS, EC_MAX_GUESSES_PER_PLAYER,
+  WWL_TOTAL_ROUNDS, WWL_WRITING_DURATION, WWL_VOTING_DURATION,
 } from './constants';
 
 // ─── Per-Minigame Settings Schemas ───────────────────────────────
@@ -65,6 +66,12 @@ export const EMOJI_CINEMA_SETTINGS: GameSettingsSchema = [
   { key: 'roundDuration', type: 'integer', label: 'Encoding Duration (seconds)', description: 'Time the encoder has to build their emoji sequence', default: EC_ROUND_DURATION_SECONDS, min: 20, max: 90, step: 5 },
   { key: 'maxEmojis', type: 'integer', label: 'Max Emojis', description: 'Maximum number of emojis the encoder can use', default: EC_MAX_EMOJIS, min: 3, max: 8, step: 1 },
   { key: 'maxGuessesPerPlayer', type: 'integer', label: 'Guesses Per Player', description: 'Maximum guesses each player can submit per round', default: EC_MAX_GUESSES_PER_PLAYER, min: 1, max: 5, step: 1 },
+];
+
+export const WIT_WAR_LASH_SETTINGS: GameSettingsSchema = [
+  { key: 'totalRounds', type: 'integer', label: 'Number of Rounds', description: 'How many rounds of prompt matchups to play', default: WWL_TOTAL_ROUNDS, min: 1, max: 3, step: 1 },
+  { key: 'writingDuration', type: 'integer', label: 'Writing Duration (seconds)', description: 'Time players have to write answers to their prompts', default: WWL_WRITING_DURATION, min: 30, max: 120, step: 10 },
+  { key: 'votingDuration', type: 'integer', label: 'Voting Duration (seconds)', description: 'Time to vote on each head-to-head matchup', default: WWL_VOTING_DURATION, min: 10, max: 30, step: 5 },
 ];
 
 // ─── Registry ────────────────────────────────────────────────────
@@ -133,6 +140,22 @@ export const MINIGAME_REGISTRY: Record<string, MinigameDefinition> = {
     joinInProgressPolicy: 'spectate_only',
     tags: ['trivia', 'race'],
     settingsSchema: WIKI_RACE_SETTINGS,
+  },
+  'wit-war-lash': {
+    id: 'wit-war-lash',
+    displayName: 'Wit War Lash',
+    description: 'Quiplash-style battle of wits! Write funny answers to prompts, then vote head-to-head for the best response.',
+    category: 'word',
+    icon: 'swords',
+    minPlayers: 3,
+    maxPlayers: 16,
+    estimatedDurationSeconds: 240,
+    supportsTeams: false,
+    instructionDurationSeconds: 15,
+    preloadAssets: { images: [], sounds: [], data: [], estimatedSizeBytes: 0 },
+    joinInProgressPolicy: 'spectate_only',
+    tags: ['word', 'creative', 'voting', 'comedy'],
+    settingsSchema: WIT_WAR_LASH_SETTINGS,
   },
   // ─── Phase 6 Minigames ───────────────────────────────────────────
   // 'fact-or-friction': {

@@ -13,6 +13,8 @@ import MobileDPad from '@/components/echoes/2d/MobileDPad';
 import { useGameStore } from '@/lib/echoes/game2d/GameStore';
 import { AbilityState, makeAbilityStates } from '@/lib/echoes/game2d/ClassStore';
 import type { GameClass } from '@/lib/echoes/game2d/ClassStore';
+import { authClient } from '@/lib/auth-client';
+import { Loader2 } from 'lucide-react';
 
 const EchoesGame = dynamic(() => import('@/components/echoes/2d/EchoesGame'), {
     ssr: false,
@@ -24,7 +26,8 @@ const EchoesGame = dynamic(() => import('@/components/echoes/2d/EchoesGame'), {
 });
 
 export default function EchoesPage() {
-    const { phase, showClassSelect, startGame, togglePause } = useGameStore();
+    const { phase, showClassSelect, startGame, togglePause, setUserName } = useGameStore();
+    const session = authClient.useSession();
     const [mobileInput, setMobileInput] = useState({ dx: 0, dy: 0 });
     const [showDPad, setShowDPad] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
@@ -33,6 +36,14 @@ export default function EchoesPage() {
     const abilityTriggerSeq = useRef(0);
 
     const selectedClass = useGameStore(s => s.selectedClass);
+
+    // Set username from auth session
+    useEffect(() => {
+        if (session.data?.user) {
+            const name = session.data.user.name || (session.data.user as any).username || 'OPERATOR';
+            setUserName(name);
+        }
+    }, [session.data, setUserName]);
 
     useEffect(() => {
         const isTouchDevice = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
@@ -46,6 +57,23 @@ export default function EchoesPage() {
         window.addEventListener('keydown', onKey);
         return () => { window.removeEventListener('touchstart', onTouch); window.removeEventListener('keydown', onKey); };
     }, [togglePause]);
+
+    // Auth gate: redirect to login if not authenticated
+    if (session.isPending) {
+        return (
+            <main className="fixed inset-0 bg-black flex items-center justify-center">
+                <Loader2 className="w-12 h-12 text-purple-500 animate-spin" />
+            </main>
+        );
+    }
+    if (!session.data) {
+        window.location.href = '/login?callbackURL=/echoes';
+        return (
+            <main className="fixed inset-0 bg-black flex items-center justify-center">
+                <Loader2 className="w-12 h-12 text-purple-500 animate-spin" />
+            </main>
+        );
+    }
 
     const handleDPad = useCallback((dx: number, dy: number) => setMobileInput({ dx, dy }), []);
 
