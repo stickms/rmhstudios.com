@@ -152,11 +152,11 @@ function getXPOrbColor(value: number): string {
 
 /** Get XP orb render size based on accumulated value. */
 function getXPOrbSize(value: number): number {
-  if (value >= 50) return 7;
-  if (value >= 25) return 6;
-  if (value >= 10) return 5;
-  if (value >= 5) return 4;
-  return 3;
+  if (value >= 50) return 11;
+  if (value >= 25) return 10;
+  if (value >= 10) return 9;
+  if (value >= 5) return 8;
+  return 6;
 }
 
 function isXPPickup(p: PickupEntity): boolean {
@@ -658,7 +658,7 @@ function renderPools(
     ctx.save();
 
     // Pulsing animation based on pool timer
-    const pulse = 0.9 + 0.1 * Math.sin((p.poolTimer ?? 0) * 8);
+    const pulse = 0.97 + 0.03 * Math.sin((p.poolTimer ?? 0) * 3);
 
     // Radial gradient fill for depth
     const grad = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, radius * pulse);

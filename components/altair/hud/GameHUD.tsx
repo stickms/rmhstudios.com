@@ -1,6 +1,7 @@
 /**
  * GameHUD — In-game heads-up display.
  * Shows HP bar, XP bar, timer, kills, weapon slots, and passive slots.
+ * Hovering (desktop) or tapping (mobile) a slot shows a tooltip popover.
  */
 'use client';
 
@@ -9,6 +10,7 @@ import { WEAPONS, EVOLVED_WEAPONS } from '@/lib/altair/data/weapons';
 import { PASSIVES } from '@/lib/altair/data/passives';
 import SpriteIcon from '@/components/altair/hud/SpriteIcon';
 import { WEAPON_ICON_SRC, PASSIVE_ICON_SRC } from '@/lib/altair/engine/sprites/sprite-defs';
+import { useState, useCallback, useEffect, useRef, useLayoutEffect } from 'react';
 
 function formatTime(seconds: number): string {
   const m = Math.floor(seconds / 60);
@@ -16,11 +18,32 @@ function formatTime(seconds: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-const WEAPON_MAP = new Map<string, { name: string; color: string; iconFrame: number }>();
-for (const w of WEAPONS) WEAPON_MAP.set(w.id, { name: w.name, color: w.color, iconFrame: w.iconFrame });
-for (const w of EVOLVED_WEAPONS) WEAPON_MAP.set(w.id, { name: w.name, color: w.color, iconFrame: w.iconFrame });
+const WEAPON_MAP = new Map(
+  [...WEAPONS, ...EVOLVED_WEAPONS].map((w) => [
+    w.id,
+    { name: w.name, color: w.color, iconFrame: w.iconFrame, description: w.description },
+  ] as const),
+);
 
-const PASSIVE_MAP = new Map(PASSIVES.map((p) => [p.id, { name: p.name, color: p.color, iconFrame: p.iconFrame }] as const));
+const PASSIVE_MAP = new Map(
+  PASSIVES.map((p) => [
+    p.id,
+    { name: p.name, color: p.color, iconFrame: p.iconFrame, description: p.description },
+  ] as const),
+);
+
+type TooltipInfo = {
+  kind: 'weapon' | 'passive';
+  index: number;
+  name: string;
+  level: number;
+  description: string;
+  evolved?: boolean;
+  anchorEl: HTMLElement;
+} | null;
+
+const TOOLTIP_WIDTH = 224; // w-56 = 14rem = 224px
+const TOOLTIP_MARGIN = 8;
 
 export default function GameHUD() {
   const hp = useAltairGameStore((s) => s.hp);
@@ -33,11 +56,64 @@ export default function GameHUD() {
   const weapons = useAltairGameStore((s) => s.weapons);
   const passives = useAltairGameStore((s) => s.passives);
 
+  const [tooltip, setTooltip] = useState<TooltipInfo>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const barRef = useRef<HTMLDivElement>(null);
+  const [tooltipStyle, setTooltipStyle] = useState<React.CSSProperties>({});
+
   const xpNeeded = xpRequired(level);
   const hpPercent = Math.max(0, Math.min(100, (hp / maxHp) * 100));
   const xpPercent = Math.max(0, Math.min(100, (xp / xpNeeded) * 100));
 
   const hpColor = hpPercent > 50 ? 'var(--altair-success)' : hpPercent > 25 ? 'var(--altair-warning)' : 'var(--altair-danger)';
+
+  const showTooltip = useCallback((info: Omit<NonNullable<TooltipInfo>, 'anchorEl'>, el: HTMLElement) => {
+    setTooltip({ ...info, anchorEl: el });
+  }, []);
+
+  const toggleTooltip = useCallback((info: Omit<NonNullable<TooltipInfo>, 'anchorEl'>, el: HTMLElement) => {
+    setTooltip((prev) =>
+      prev && prev.kind === info.kind && prev.index === info.index
+        ? null
+        : { ...info, anchorEl: el },
+    );
+  }, []);
+
+  // Position tooltip below the anchor slot, clamped to viewport
+  useLayoutEffect(() => {
+    if (!tooltip || !tooltipRef.current) return;
+
+    const anchorRect = tooltip.anchorEl.getBoundingClientRect();
+    const anchorCenterX = anchorRect.left + anchorRect.width / 2;
+    const topY = anchorRect.bottom + 4;
+
+    // Center tooltip on anchor, then clamp
+    let left = anchorCenterX - TOOLTIP_WIDTH / 2;
+    const maxLeft = window.innerWidth - TOOLTIP_WIDTH - TOOLTIP_MARGIN;
+    left = Math.max(TOOLTIP_MARGIN, Math.min(left, maxLeft));
+
+    setTooltipStyle({
+      position: 'fixed',
+      top: topY,
+      left,
+      width: TOOLTIP_WIDTH,
+    });
+  }, [tooltip]);
+
+  // Close tooltip on tap outside (mobile)
+  useEffect(() => {
+    if (!tooltip) return;
+    const handler = (e: PointerEvent) => {
+      if (
+        barRef.current && !barRef.current.contains(e.target as Node) &&
+        tooltipRef.current && !tooltipRef.current.contains(e.target as Node)
+      ) {
+        setTooltip(null);
+      }
+    };
+    document.addEventListener('pointerdown', handler);
+    return () => document.removeEventListener('pointerdown', handler);
+  }, [tooltip]);
 
   return (
     <div className="absolute inset-0 z-30 pointer-events-none">
@@ -88,24 +164,38 @@ export default function GameHUD() {
       </div>
 
       {/* Weapon & passive slots — below header bar */}
-      <div className="flex items-center justify-center gap-2 sm:gap-4 px-2 sm:px-3 py-1.5 bg-black/30 pointer-events-auto">
+      <div
+        ref={barRef}
+        className="relative flex items-center justify-center gap-2 sm:gap-4 px-2 sm:px-3 py-1.5 bg-black/30 pointer-events-auto"
+      >
         {/* Weapon slots */}
         <div className="flex gap-0.5 sm:gap-1">
           {Array.from({ length: 6 }).map((_, i) => {
             const w = weapons[i];
             const def = w ? WEAPON_MAP.get(w.weaponId) : null;
             const color = def?.color ?? '#666';
+            const info = w && def
+              ? { kind: 'weapon' as const, index: i, name: def.name, level: w.level, description: def.description, evolved: w.evolved }
+              : null;
             return (
               <div
                 key={`w${i}`}
-                className={`relative w-7 h-7 sm:w-9 sm:h-9 rounded-md border flex items-center justify-center overflow-hidden ${
+                className={`relative w-7 h-7 sm:w-9 sm:h-9 rounded-md border flex items-center justify-center overflow-hidden cursor-pointer ${
                   w
                     ? w.evolved
                       ? 'border-(--altair-warning)'
                       : 'border-(--altair-border-bright)'
                     : 'border-(--altair-border) bg-black/30'
                 }`}
-                title={w ? `${def?.name ?? w.weaponId} Lv.${w.level}` : 'Empty'}
+                onPointerEnter={(e) => {
+                  if (info) showTooltip(info, e.currentTarget);
+                }}
+                onPointerLeave={() => {
+                  setTooltip((prev) => (prev?.kind === 'weapon' && prev.index === i ? null : prev));
+                }}
+                onClick={(e) => {
+                  if (info) toggleTooltip(info, e.currentTarget);
+                }}
               >
                 {w ? (
                   <>
@@ -141,15 +231,26 @@ export default function GameHUD() {
             const p = passives[i];
             const def = p ? PASSIVE_MAP.get(p.passiveId) : null;
             const color = def?.color ?? '#888';
+            const info = p && def
+              ? { kind: 'passive' as const, index: i, name: def.name, level: p.level, description: def.description }
+              : null;
             return (
               <div
                 key={`p${i}`}
-                className={`relative w-7 h-7 sm:w-9 sm:h-9 rounded-md border flex items-center justify-center overflow-hidden ${
+                className={`relative w-7 h-7 sm:w-9 sm:h-9 rounded-md border flex items-center justify-center overflow-hidden cursor-pointer ${
                   p
                     ? 'border-(--altair-rare)'
                     : 'border-(--altair-border) bg-black/30'
                 }`}
-                title={p ? `${def?.name ?? p.passiveId} Lv.${p.level}` : 'Empty'}
+                onPointerEnter={(e) => {
+                  if (info) showTooltip(info, e.currentTarget);
+                }}
+                onPointerLeave={() => {
+                  setTooltip((prev) => (prev?.kind === 'passive' && prev.index === i ? null : prev));
+                }}
+                onClick={(e) => {
+                  if (info) toggleTooltip(info, e.currentTarget);
+                }}
               >
                 {p ? (
                   <>
@@ -176,6 +277,24 @@ export default function GameHUD() {
           })}
         </div>
       </div>
+
+      {/* Tooltip popover — rendered fixed so it can be clamped to viewport */}
+      {tooltip && (
+        <div
+          ref={tooltipRef}
+          className="rounded-lg bg-black/85 backdrop-blur-sm border border-white/15 px-3 py-2 text-left pointer-events-auto z-50"
+          style={tooltipStyle}
+        >
+          <div className="flex items-baseline gap-1.5 mb-1">
+            <span className="text-xs font-bold text-white/95">{tooltip.name}</span>
+            <span className="text-[10px] font-mono text-white/50">
+              Lv.{tooltip.level}{tooltip.evolved ? ' ★' : ''}
+            </span>
+          </div>
+          <p className="text-[10px] leading-relaxed text-white/65">{tooltip.description}</p>
+        </div>
+      )}
+
     </div>
   );
 }

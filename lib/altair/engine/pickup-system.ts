@@ -188,7 +188,7 @@ export function spawnPickup(
     id: createId(world),
     x,
     y,
-    radius: type === 'xp_small' ? 3 : type === 'xp_medium' ? 4 : type === 'xp_large' ? 6 : type === 'coin' ? 5 : 7,
+    radius: type === 'xp_small' ? 4 : type === 'xp_medium' ? 6 : type === 'xp_large' ? 8 : type === 'coin' ? 5 : 7,
     type,
     value,
     magnetized: false,
@@ -208,9 +208,9 @@ function getXPType(value: number): PickupEntity['type'] {
 }
 
 function getXPRadius(value: number): number {
-  if (value >= 25) return 6;
-  if (value >= 5) return 4;
-  return 3;
+  if (value >= 25) return 8;
+  if (value >= 5) return 6;
+  return 4;
 }
 
 /** Merge nearby non-magnetized XP orbs into single higher-value orbs. */

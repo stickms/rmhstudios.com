@@ -3,7 +3,7 @@
  */
 'use client';
 
-import { useRef, useCallback, useState } from 'react';
+import { useRef, useCallback, useEffect } from 'react';
 
 interface MobileDPadProps {
   onChange: (dx: number, dy: number) => void;
@@ -12,49 +12,52 @@ interface MobileDPadProps {
 
 export default function MobileDPad({ onChange, side = 'left' }: MobileDPadProps) {
   const padRef = useRef<HTMLDivElement>(null);
-  const activeRef = useRef(false);
-  const [thumbOffset, setThumbOffset] = useState({ x: 0, y: 0 });
+  const thumbRef = useRef<HTMLDivElement>(null);
+  const onChangeRef = useRef(onChange);
 
-  const handleTouch = useCallback(
-    (e: React.TouchEvent) => {
-      e.preventDefault();
-      const pad = padRef.current;
-      if (!pad) return;
+  // Keep callback ref fresh without re-creating touch handlers
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
 
-      const rect = pad.getBoundingClientRect();
-      const centerX = rect.left + rect.width / 2;
-      const centerY = rect.top + rect.height / 2;
-      const touch = e.touches[0];
-      if (!touch) {
-        onChange(0, 0);
-        setThumbOffset({ x: 0, y: 0 });
-        return;
-      }
+  const handleTouch = useCallback((e: React.TouchEvent) => {
+    e.preventDefault();
+    const pad = padRef.current;
+    const thumb = thumbRef.current;
+    if (!pad || !thumb) return;
 
-      const rawDx = (touch.clientX - centerX) / (rect.width / 2);
-      const rawDy = (touch.clientY - centerY) / (rect.height / 2);
-      const len = Math.sqrt(rawDx * rawDx + rawDy * rawDy);
-      const capped = Math.min(len, 1);
-      const dx = len > 0.1 ? (rawDx / len) * capped : 0;
-      const dy = len > 0.1 ? (rawDy / len) * capped : 0;
+    const touch = e.touches[0];
+    if (!touch) {
+      onChangeRef.current(0, 0);
+      thumb.style.transform = 'translate(0px, 0px)';
+      return;
+    }
 
-      // Max thumb travel = outer radius (64px) - thumb radius (24px) = 40px
-      const maxTravel = 40;
-      const thumbX = len > 0 ? (rawDx / len) * Math.min(len, 1) * maxTravel : 0;
-      const thumbY = len > 0 ? (rawDy / len) * Math.min(len, 1) * maxTravel : 0;
-      setThumbOffset({ x: thumbX, y: thumbY });
+    const rect = pad.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
 
-      onChange(dx, dy);
-      activeRef.current = true;
-    },
-    [onChange]
-  );
+    const rawDx = (touch.clientX - centerX) / (rect.width / 2);
+    const rawDy = (touch.clientY - centerY) / (rect.height / 2);
+    const len = Math.sqrt(rawDx * rawDx + rawDy * rawDy);
+    const capped = Math.min(len, 1);
+    const dx = len > 0.1 ? (rawDx / len) * capped : 0;
+    const dy = len > 0.1 ? (rawDy / len) * capped : 0;
+
+    // Update thumb position directly on the DOM element (no React re-render)
+    const maxTravel = 40;
+    const thumbX = len > 0 ? (rawDx / len) * capped * maxTravel : 0;
+    const thumbY = len > 0 ? (rawDy / len) * capped * maxTravel : 0;
+    thumb.style.transform = `translate(${thumbX}px, ${thumbY}px)`;
+
+    onChangeRef.current(dx, dy);
+  }, []);
 
   const handleEnd = useCallback(() => {
-    onChange(0, 0);
-    setThumbOffset({ x: 0, y: 0 });
-    activeRef.current = false;
-  }, [onChange]);
+    onChangeRef.current(0, 0);
+    const thumb = thumbRef.current;
+    if (thumb) thumb.style.transform = 'translate(0px, 0px)';
+  }, []);
 
   return (
     <div className={`absolute bottom-8 z-40 pointer-events-auto ${side === 'left' ? 'left-8' : 'right-8'}`}>
@@ -67,8 +70,9 @@ export default function MobileDPad({ onChange, side = 'left' }: MobileDPadProps)
         onTouchCancel={handleEnd}
       >
         <div
-          className="w-12 h-12 rounded-full bg-white/20 border border-white/30 transition-transform duration-75"
-          style={{ transform: `translate(${thumbOffset.x}px, ${thumbOffset.y}px)` }}
+          ref={thumbRef}
+          className="w-12 h-12 rounded-full bg-white/20 border border-white/30"
+          style={{ willChange: 'transform' }}
         />
       </div>
     </div>

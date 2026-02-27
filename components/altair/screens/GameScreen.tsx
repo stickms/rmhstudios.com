@@ -375,12 +375,12 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
         />
       )}
 
-      {/* Mobile controls */}
+      {/* Pause button (all devices) */}
+      {phase === 'playing' && <MobileControls onPause={togglePause} />}
+
+      {/* Mobile joystick */}
       {isMobile && phase === 'playing' && (
-        <>
-          <MobileDPad onChange={handleDPad} side={joystickSide} />
-          <MobileControls onPause={togglePause} />
-        </>
+        <MobileDPad onChange={handleDPad} side={joystickSide} />
       )}
     </div>
   );
