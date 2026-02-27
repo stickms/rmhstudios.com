@@ -37,6 +37,7 @@ export default function WritingPhase({
   const [sentPrompts, setSentPrompts] = useState<Set<number>>(new Set());
   const answersRef = useRef(answers);
   const sentPromptsRef = useRef(sentPrompts);
+  const hasAutoSubmittedRef = useRef(false);
 
   // Keep refs in sync with state for use in auto-submit effect
   useEffect(() => { answersRef.current = answers; }, [answers]);
@@ -44,7 +45,8 @@ export default function WritingPhase({
 
   // Auto-submit all typed but unsent answers when the writing timer expires
   useEffect(() => {
-    if (!writingTimeUp || hasSubmitted) return;
+    if (!writingTimeUp || hasSubmitted || hasAutoSubmittedRef.current) return;
+    hasAutoSubmittedRef.current = true;
     const currentAnswers = answersRef.current;
     const currentSent = sentPromptsRef.current;
     for (const prompt of prompts) {
