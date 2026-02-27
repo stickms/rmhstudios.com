@@ -92,8 +92,8 @@ function shuffleArray<T>(arr: T[]): T[] {
 export class UndercoverEditorGame extends BaseMinigame {
   private promptPool: StoryPrompt[];
   private keywordPool: Keyword[];
-  private usedPromptIds: Set<string> = new Set();
-  private usedKeywordIds: Set<string> = new Set();
+  private usedPromptIndices: Set<number> = new Set();
+  private usedKeywordIndices: Set<number> = new Set();
   private state!: UndercoverEditorState;
   private startedAt: number = 0;
   private actionLog: GameLogAction[] = [];
@@ -133,10 +133,10 @@ export class UndercoverEditorGame extends BaseMinigame {
       const editorId = playerIds[(i + 1) % playerIds.length];
       const ownerPlayer = this.context.players.get(ownerId);
 
-      const prompt = selectPromptForGame(this.promptPool, this.usedPromptIds);
-      this.usedPromptIds.add(prompt.id);
-      const keyword = selectKeywordForGame(this.keywordPool, this.usedKeywordIds);
-      this.usedKeywordIds.add(keyword.id);
+      const prompt = selectPromptForGame(this.promptPool, this.usedPromptIndices);
+      this.usedPromptIndices.add(prompt.poolIndex);
+      const keyword = selectKeywordForGame(this.keywordPool, this.usedKeywordIndices);
+      this.usedKeywordIndices.add(keyword.poolIndex);
 
       stories.set(ownerId, {
         storyId: ownerId,

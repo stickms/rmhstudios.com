@@ -59,7 +59,7 @@ const DIFFICULTY_MULTIPLIERS: Record<string, number> = {
 
 export class FactOrFrictionGame extends BaseMinigame {
   private questionPool: TriviaQuestion[];
-  private usedQuestionIds: Set<string> = new Set();
+  private usedQuestionIndices: Set<number> = new Set();
   private state!: FactOrFrictionState;
   private startedAt: number = 0;
   private potInterval: ReturnType<typeof globalThis.setInterval> | null = null;
@@ -101,10 +101,10 @@ export class FactOrFrictionGame extends BaseMinigame {
     this.startedAt = Date.now();
 
     const totalQuestions = this.getSetting('totalQuestions', FF_TOTAL_QUESTIONS);
-    const questions = selectQuestionsForGame(this.questionPool, this.usedQuestionIds);
+    const questions = selectQuestionsForGame(this.questionPool, this.usedQuestionIndices);
     const selected = questions.slice(0, totalQuestions);
     for (const q of selected) {
-      this.usedQuestionIds.add(q.id);
+      this.usedQuestionIndices.add(q.poolIndex);
     }
 
     const playerScores = new Map<string, number>();
@@ -161,7 +161,6 @@ export class FactOrFrictionGame extends BaseMinigame {
 
     this.logAction('question_start', {
       questionIndex: this.state.currentQuestionIndex,
-      questionId: question.id,
       questionText: question.question,
       options: question.options,
       correctIndex: question.correctIndex,
@@ -173,7 +172,6 @@ export class FactOrFrictionGame extends BaseMinigame {
       event: 'fact_or_friction:question_reveal',
       lobbyId: this.context.lobbyId,
       questionIndex: this.state.currentQuestionIndex,
-      questionId: question.id,
       difficulty: question.difficulty,
     });
 
@@ -185,7 +183,6 @@ export class FactOrFrictionGame extends BaseMinigame {
       questionIndex: this.state.currentQuestionIndex,
       totalQuestions: this.state.totalQuestions,
       question: {
-        id: question.id,
         question: question.question,
         options: question.options,
         category: question.category,
@@ -652,7 +649,6 @@ export class FactOrFrictionGame extends BaseMinigame {
       return {
         ...base,
         question: {
-          id: question.id,
           question: question.question,
           options: question.options,
           category: question.category,
@@ -666,7 +662,6 @@ export class FactOrFrictionGame extends BaseMinigame {
     return {
       ...base,
       question: {
-        id: question.id,
         question: question.question,
         options: question.options,
         correctIndex: question.correctIndex,
@@ -704,7 +699,6 @@ export class FactOrFrictionGame extends BaseMinigame {
       return {
         ...base,
         question: {
-          id: question.id,
           question: question.question,
           options: question.options,
           category: question.category,
@@ -717,7 +711,6 @@ export class FactOrFrictionGame extends BaseMinigame {
     return {
       ...base,
       question: {
-        id: question.id,
         question: question.question,
         options: question.options,
         correctIndex: question.correctIndex,

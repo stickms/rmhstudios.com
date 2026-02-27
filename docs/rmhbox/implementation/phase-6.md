@@ -56,14 +56,13 @@
 
 ### 6.1.3 Create Static Data Files
 
-- [x] Create directory `public/data/rmhbox/fact-or-friction/`
+- [x] Create directory `data/rmhbox/fact-or-friction/`
   **Verification:** Directory exists on disk.
 
-- [x] Create `public/data/rmhbox/fact-or-friction/questions.json` — curated trivia question pool
+- [x] Create `data/rmhbox/fact-or-friction/questions.json` — curated trivia question pool
   - Each entry follows the `TriviaQuestion` interface:
     ```ts
     {
-      id: string;
       question: string;
       options: string[];           // exactly 4 options (A, B, C, D)
       correctIndex: number;        // 0–3
@@ -709,14 +708,13 @@ registerHistoryDisplay({
 
 ### 6.2.3 Create Static Data Files
 
-- [x] Create directory `public/data/rmhbox/undercover-editor/`
+- [x] Create directory `data/rmhbox/undercover-editor/`
   **Verification:** Directory exists on disk.
 
-- [x] Create `public/data/rmhbox/undercover-editor/prompts.json` — curated story prompts
+- [x] Create `data/rmhbox/undercover-editor/prompts.json` — curated story prompts
   - Each entry follows:
     ```ts
     {
-      id: string;
       text: string;             // e.g., "A detective arrives at an abandoned mansion on a stormy night."
       genre: string;            // e.g., "Mystery", "Sci-Fi", "Comedy"
       mood: string;             // e.g., "tense", "lighthearted", "dramatic"
@@ -727,11 +725,10 @@ registerHistoryDisplay({
   - [ ] No duplicate prompts
   **Verification:** Parse JSON; validate every entry against schema; confirm ≥50 entries; confirm ≥6 unique genres.
 
-- [x] Create `public/data/rmhbox/undercover-editor/keywords.json` — curated keyword pool
+- [x] Create `data/rmhbox/undercover-editor/keywords.json` — curated keyword pool
   - Each entry follows:
     ```ts
     {
-      id: string;
       word: string;              // the secret keyword, e.g., "shadow"
       category: string;          // e.g., "Nature", "Emotion", "Object"
       difficulty: "easy" | "medium" | "hard";

@@ -23,7 +23,6 @@ export const PassQuestionSchema = z.object({});
 
 /** Schema for each trivia question in questions.json. */
 export const TriviaQuestionSchema = z.object({
-  id: z.string().min(1),
   question: z.string().min(10),
   options: z.array(z.string().min(1)).length(4),
   correctIndex: z.number().int().min(0).max(3),

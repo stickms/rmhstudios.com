@@ -54,7 +54,6 @@ export const LockInMatchingSchema = z.object({});
 
 /** Schema for each story prompt in prompts.json. */
 export const StoryPromptSchema = z.object({
-  id: z.string().min(1),
   text: z.string().min(10),
   genre: z.string().min(1),
   mood: z.string().min(1),
@@ -62,7 +61,6 @@ export const StoryPromptSchema = z.object({
 
 /** Schema for each keyword in keywords.json. */
 export const KeywordSchema = z.object({
-  id: z.string().min(1),
   word: z.string().min(1),
   category: z.string().min(1),
   difficulty: z.enum(['easy', 'medium', 'hard']),

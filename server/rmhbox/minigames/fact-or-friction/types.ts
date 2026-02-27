@@ -4,7 +4,7 @@
  * Phase type, interfaces, and type definitions for the Fact or Friction minigame.
  */
 
-import type { TriviaQuestion } from '@/lib/rmhbox/fact-or-friction/schemas';
+import type { IndexedQuestion } from '@/lib/rmhbox/fact-or-friction/question-loader';
 
 // ─── Phase Type ──────────────────────────────────────────────────
 
@@ -25,7 +25,7 @@ export interface PlayerAnswer {
 
 export interface QuestionResult {
   questionIndex: number;
-  question: TriviaQuestion;
+  question: IndexedQuestion;
   playerAnswers: PlayerAnswer[];
   fastestCorrectUserId: string | null;
   correctCount: number;
@@ -34,7 +34,7 @@ export interface QuestionResult {
 }
 
 export interface FactOrFrictionState {
-  questions: TriviaQuestion[];
+  questions: IndexedQuestion[];
   currentQuestionIndex: number;
   totalQuestions: number;
   phase: FFPhase;

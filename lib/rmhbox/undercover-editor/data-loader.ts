@@ -5,6 +5,8 @@
  * Provides selection logic for picking a prompt and keyword per game,
  * excluding previously used ones within the lobby session.
  *
+ * Uses array indices for deduplication (no id fields in data).
+ *
  * Reference: docs/rmhbox/design-spec/minigames-2.md §2.3
  */
 
@@ -25,7 +27,7 @@ let cachedKeywords: Keyword[] | null = null;
 export function loadPrompts(): StoryPrompt[] {
   if (cachedPrompts) return cachedPrompts;
 
-  const filePath = join(process.cwd(), 'public', 'data', 'rmhbox', 'undercover-editor', 'prompts.json');
+  const filePath = join(process.cwd(), 'data', 'rmhbox', 'undercover-editor', 'prompts.json');
   const raw = JSON.parse(readFileSync(filePath, 'utf-8')) as unknown[];
 
   const valid: StoryPrompt[] = [];
@@ -54,7 +56,7 @@ export function loadPrompts(): StoryPrompt[] {
 export function loadKeywords(): Keyword[] {
   if (cachedKeywords) return cachedKeywords;
 
-  const filePath = join(process.cwd(), 'public', 'data', 'rmhbox', 'undercover-editor', 'keywords.json');
+  const filePath = join(process.cwd(), 'data', 'rmhbox', 'undercover-editor', 'keywords.json');
   const raw = JSON.parse(readFileSync(filePath, 'utf-8')) as unknown[];
 
   const valid: Keyword[] = [];
@@ -84,33 +86,49 @@ export function resetDataCache(): void {
   cachedKeywords = null;
 }
 
+// ─── Indexed types for deduplication ─────────────────────────────
+
+/** A prompt tagged with its original pool index for deduplication. */
+export type IndexedPrompt = StoryPrompt & { poolIndex: number };
+
+/** A keyword tagged with its original pool index for deduplication. */
+export type IndexedKeyword = Keyword & { poolIndex: number };
+
 // ─── Selection ───────────────────────────────────────────────────
 
 /**
- * Select a random story prompt not in the used set.
+ * Select a random story prompt not in the used index set.
  */
-export function selectPromptForGame(pool: StoryPrompt[], usedIds: Set<string>): StoryPrompt {
+export function selectPromptForGame(pool: StoryPrompt[], usedIndices: Set<number>): IndexedPrompt {
   if (pool.length === 0) {
     throw new Error('Cannot select prompt from empty pool');
   }
-  const available = pool.filter((p) => !usedIds.has(p.id));
+  const available: IndexedPrompt[] = pool
+    .map((p, index) => ({ ...p, poolIndex: index }))
+    .filter((p) => !usedIndices.has(p.poolIndex));
+
   if (available.length === 0) {
     // Fall back to any prompt if all are used
-    return pool[Math.floor(Math.random() * pool.length)];
+    const idx = Math.floor(Math.random() * pool.length);
+    return { ...pool[idx], poolIndex: idx };
   }
   return available[Math.floor(Math.random() * available.length)];
 }
 
 /**
- * Select a random keyword not in the used set.
+ * Select a random keyword not in the used index set.
  */
-export function selectKeywordForGame(pool: Keyword[], usedIds: Set<string>): Keyword {
+export function selectKeywordForGame(pool: Keyword[], usedIndices: Set<number>): IndexedKeyword {
   if (pool.length === 0) {
     throw new Error('Cannot select keyword from empty pool');
   }
-  const available = pool.filter((k) => !usedIds.has(k.id));
+  const available: IndexedKeyword[] = pool
+    .map((k, index) => ({ ...k, poolIndex: index }))
+    .filter((k) => !usedIndices.has(k.poolIndex));
+
   if (available.length === 0) {
-    return pool[Math.floor(Math.random() * pool.length)];
+    const idx = Math.floor(Math.random() * pool.length);
+    return { ...pool[idx], poolIndex: idx };
   }
   return available[Math.floor(Math.random() * available.length)];
 }
