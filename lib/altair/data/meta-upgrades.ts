@@ -36,8 +36,8 @@ export const META_UPGRADES: readonly MetaUpgradeDef[] = [
     name: 'Might Up',
     maxLevel: 5,
     costs: [100, 200, 350, 500, 750],
-    effectPerLevel: { mightPercent: 5 },
-    description: '+5% Might per level.',
+    effectPerLevel: { mightPercent: 4 },
+    description: '+4% Might per level.',
   },
   {
     id: 'meta_move_speed',
@@ -60,8 +60,8 @@ export const META_UPGRADES: readonly MetaUpgradeDef[] = [
     name: 'Growth Up',
     maxLevel: 5,
     costs: [100, 200, 350, 500, 750],
-    effectPerLevel: { growthPercent: 8 },
-    description: '+8% Growth per level.',
+    effectPerLevel: { growthPercent: 6 },
+    description: '+6% Growth per level.',
   },
   {
     id: 'meta_greed',

@@ -20,6 +20,7 @@ export interface PlayerStats {
   cdr: number; // cooldown reduction multiplier (lower = faster)
   revival: number; // number of revives
   growth: number; // XP value multiplier
+  pierce: number; // NEW v1.1: projectile pass-through targets
 }
 
 export const GLOBAL_BASE_STATS: PlayerStats = {
@@ -38,6 +39,7 @@ export const GLOBAL_BASE_STATS: PlayerStats = {
   cdr: 1.0,
   revival: 0,
   growth: 1.0,
+  pierce: 0,
 };
 
 // Stat caps from GDD Section 2
@@ -50,6 +52,7 @@ export const STAT_SOFT_CAPS: Partial<Record<keyof PlayerStats, number>> = {
   armor: 10,
   cdr: 0.5,
   growth: 3.0,
+  pierce: 5,
 };
 
 export const STAT_HARD_CAPS: Partial<Record<keyof PlayerStats, number>> = {
@@ -62,6 +65,7 @@ export const STAT_HARD_CAPS: Partial<Record<keyof PlayerStats, number>> = {
   cdr: 0.25,
   revival: 3,
   growth: 5.0,
+  pierce: 10,
 };
 
 export interface WeaponSlot {
@@ -92,9 +96,9 @@ export type GamePhase =
   | 'victory'
   | 'meta_shop';
 
-/** XP required to go from `level` to `level+1` (GDD Section 3) */
+/** XP required to go from `level` to `level+1` — v1.1 — steeper cubic XP curve */
 export function xpRequired(level: number): number {
-  return Math.floor(5 + level * 3 + level * level * 0.4);
+  return Math.floor(8 + level * 4 + level * level * 0.6 + level * level * level * 0.008);
 }
 
 interface CoinBreakdown {
@@ -461,17 +465,17 @@ export const useAltairGameStore = create<GameState>((set, get) => ({
   victory: () => {
     const s = get();
     // Completion bonus
-    get().addCoins(100, 'completionBonus');
+    get().addCoins(150, 'completionBonus');
     set({ phase: 'victory' });
   },
 
   checkKillMilestones: () => {
     const s = get();
     const milestones = [
-      { kills: 500, coins: 10 },
-      { kills: 1500, coins: 25 },
-      { kills: 3000, coins: 50 },
-      { kills: 5000, coins: 100 },
+      { kills: 500, coins: 15 },
+      { kills: 1500, coins: 35 },
+      { kills: 3000, coins: 60 },
+      { kills: 5000, coins: 120 },
     ];
 
     for (const m of milestones) {

@@ -7,7 +7,14 @@
 
 import { GameWorld, EnemyEntity, createId } from './types';
 import { ENEMIES, EnemyDef } from '../data/enemies';
-import { WAVE_TIMELINE, ENEMY_THREAT_COSTS, MAX_ACTIVE_ENEMIES } from '../data/waves';
+import {
+  WAVE_TIMELINE,
+  ENEMY_THREAT_COSTS,
+  MAX_ACTIVE_ENEMIES,
+  HORDE_SURGES,
+  HORDE_SURGE_MIN_RADIUS,
+  HORDE_SURGE_MAX_RADIUS,
+} from '../data/waves';
 import { getHPScale, getDamageScale, getSpeedScale, getXPScale } from '../data/scaling';
 
 // ---- Types ------------------------------------------------------------------
@@ -17,6 +24,7 @@ export interface WaveDirectorState {
   lastSpawnTime: number;
   bossSpawned: Set<string>;
   surgeTimer: number;
+  nextSurgeIndex: number;
 }
 
 export interface WaveDirectorEvents {
@@ -33,6 +41,7 @@ export function createWaveDirectorState(): WaveDirectorState {
     lastSpawnTime: 0,
     bossSpawned: new Set(),
     surgeTimer: 0,
+    nextSurgeIndex: 0,
   };
 }
 
@@ -329,6 +338,28 @@ export function updateWaveDirector(
 
   // Cap budget accumulator so it doesn't endlessly grow
   state.budgetAccumulator = Math.min(state.budgetAccumulator, 50);
+
+  // Horde surge spawning (v1.1) -- additive, ignores budget and MAX_ACTIVE_ENEMIES
+  while (state.nextSurgeIndex < HORDE_SURGES.length) {
+    const surge = HORDE_SURGES[state.nextSurgeIndex];
+    if (timeSeconds < surge.time) break;
+
+    // Spawn all enemies in the surge composition in a ring around the player
+    for (const [enemyId, count] of Object.entries(surge.composition)) {
+      for (let i = 0; i < count; i++) {
+        const pos = getRandomSpawnPosition(
+          world.player.x,
+          world.player.y,
+          HORDE_SURGE_MIN_RADIUS,
+          HORDE_SURGE_MAX_RADIUS,
+        );
+        const enemy = spawnEnemy(world, enemyId, pos.x, pos.y, 1);
+        if (enemy) world.enemies.push(enemy);
+      }
+    }
+
+    state.nextSurgeIndex++;
+  }
 
   // Despawn excess Tier 1 enemies
   despawnExcess(world);

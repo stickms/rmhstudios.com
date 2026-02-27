@@ -54,9 +54,9 @@ function findWeaponDef(
   return WEAPONS.find((w) => w.id === weaponId);
 }
 
-/** Calculate level-scaled damage. */
+/** Calculate level-scaled damage (v1.1: +10% per level, down from +15%). */
 function levelDamage(baseDamage: number, level: number, might: number): number {
-  return baseDamage * Math.pow(1.15, level - 1) * might;
+  return baseDamage * Math.pow(1.10, level - 1) * might;
 }
 
 /** Calculate effective cooldown. */
@@ -64,12 +64,11 @@ function effectiveCooldown(baseCooldown: number, stats: PlayerStats): number {
   return baseCooldown * stats.cdr / stats.attackSpeed;
 }
 
-/** Calculate bonus projectile/effect count from leveling (levels 2, 4, 6 each give +1). */
+/** Calculate bonus projectile/effect count from leveling (v1.1: levels 2, 5 each give +1). */
 function levelBonusCount(level: number): number {
   let bonus = 0;
   if (level >= 2) bonus++;
-  if (level >= 4) bonus++;
-  if (level >= 6) bonus++;
+  if (level >= 5) bonus++;
   return bonus;
 }
 

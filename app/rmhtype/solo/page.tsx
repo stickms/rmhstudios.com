@@ -336,6 +336,9 @@ export default function RmhTypeSolo() {
                 type="text"
                 value={typedText}
                 onChange={handleTyping}
+                onPaste={(e) => e.preventDefault()}
+                onCopy={(e) => e.preventDefault()}
+                onCut={(e) => e.preventDefault()}
                 disabled={finished}
                 className="shrink-0 w-full px-4 py-3 rounded-lg font-mono border border-(--rmhtype-border) bg-(--rmhtype-bg) text-(--rmhtype-text) outline-none focus:ring-1 focus:ring-(--rmhtype-accent) rmhtype-typing-input"
                 autoFocus

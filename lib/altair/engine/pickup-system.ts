@@ -43,6 +43,9 @@ const CLOCK_SLOW_DURATION = 5; // seconds
 const SHIELD_ORB_AMOUNT = 30;
 const BOMB_RADIUS = 200;
 const BOMB_DAMAGE = 50;
+const XP_MERGE_RADIUS = 25; // px — orbs within this distance merge
+const XP_MERGE_INTERVAL = 0.5; // seconds between merge passes
+let mergeTimer = 0;
 
 // ---- Spawn Pickups ----------------------------------------------------------
 
@@ -185,11 +188,60 @@ export function spawnPickup(
     id: createId(world),
     x,
     y,
-    radius: type === 'xp_small' ? 4 : type === 'xp_medium' ? 6 : type === 'xp_large' ? 8 : type === 'coin' ? 5 : 7,
+    radius: type === 'xp_small' ? 3 : type === 'xp_medium' ? 4 : type === 'xp_large' ? 6 : type === 'coin' ? 5 : 7,
     type,
     value,
     magnetized: false,
   });
+}
+
+// ---- XP Orb Merging ---------------------------------------------------------
+
+function isXPOrb(p: PickupEntity): boolean {
+  return p.type === 'xp_small' || p.type === 'xp_medium' || p.type === 'xp_large';
+}
+
+function getXPType(value: number): PickupEntity['type'] {
+  if (value >= 25) return 'xp_large';
+  if (value >= 5) return 'xp_medium';
+  return 'xp_small';
+}
+
+function getXPRadius(value: number): number {
+  if (value >= 25) return 6;
+  if (value >= 5) return 4;
+  return 3;
+}
+
+/** Merge nearby non-magnetized XP orbs into single higher-value orbs. */
+function mergeNearbyXPOrbs(world: GameWorld): void {
+  const pickups = world.pickups;
+  const removed = new Set<number>();
+
+  for (let i = 0; i < pickups.length; i++) {
+    if (removed.has(i)) continue;
+    const a = pickups[i];
+    if (!isXPOrb(a) || a.magnetized) continue;
+
+    for (let j = i + 1; j < pickups.length; j++) {
+      if (removed.has(j)) continue;
+      const b = pickups[j];
+      if (!isXPOrb(b) || b.magnetized) continue;
+
+      const dx = a.x - b.x;
+      const dy = a.y - b.y;
+      if (dx * dx + dy * dy <= XP_MERGE_RADIUS * XP_MERGE_RADIUS) {
+        a.value += b.value;
+        a.type = getXPType(a.value);
+        a.radius = getXPRadius(a.value);
+        removed.add(j);
+      }
+    }
+  }
+
+  if (removed.size > 0) {
+    world.pickups = pickups.filter((_, i) => !removed.has(i));
+  }
 }
 
 // ---- Update Pickups ---------------------------------------------------------
@@ -212,6 +264,13 @@ export function updatePickups(
     shieldOrbCollected: false,
     bombActivated: false,
   };
+
+  // Periodically merge nearby XP orbs
+  mergeTimer -= delta;
+  if (mergeTimer <= 0) {
+    mergeTimer = XP_MERGE_INTERVAL;
+    mergeNearbyXPOrbs(world);
+  }
 
   const pl = world.player;
   const pickupRange = stats.pickupRange;

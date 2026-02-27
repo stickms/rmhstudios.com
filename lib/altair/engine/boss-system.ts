@@ -34,6 +34,12 @@ export interface BossState {
   staggered?: boolean;
   orbitAngle?: number;
   soulStormAngle?: number;
+  // v1.1 balance fields
+  hpSnapshot: number;             // HP before collisions (set each frame for DPS cap)
+  damageTakenThisSecond: number;   // cumulative damage in current 1-second window
+  damageWindowTimer: number;       // countdown for the 1-second damage window
+  timeSinceSpawn: number;          // total time since boss spawned (for enrage timer)
+  enraged: boolean;                // whether the boss has enraged
 }
 
 export interface BossSystemEvents {
@@ -212,6 +218,12 @@ export function spawnBoss(world: GameWorld, bossId: string): BossState | null {
     phaseState,
     orbitAngle: 0,
     soulStormAngle: 0,
+    // v1.1 balance fields
+    hpSnapshot: 0,
+    damageTakenThisSecond: 0,
+    damageWindowTimer: 0,
+    timeSinceSpawn: 0,
+    enraged: false,
   };
 
   return state;
@@ -235,10 +247,58 @@ export function updateBoss(
   const entity = state.entity;
   const dmgScale = entity.aiParams.damageScale ?? 1;
 
+  // --- HP Regeneration (v1.1) ---
+  if (def.hpRegenPerSecond > 0 && entity.hp > 0) {
+    entity.hp = Math.min(entity.maxHp, entity.hp + def.hpRegenPerSecond * delta);
+  }
+
   // --- Check for defeat ---
   if (entity.hp <= 0) {
     events.bossDefeated = state.bossId;
     return events;
+  }
+
+  // --- Enrage Timer (v1.1) ---
+  state.timeSinceSpawn += delta;
+  if (def.enrageTime > 0 && state.timeSinceSpawn >= def.enrageTime && !state.enraged) {
+    state.enraged = true;
+    events.screenShake = 10;
+
+    // Boss-specific enrage behavior
+    switch (state.bossId) {
+      case 'hollow_king': {
+        // +50% speed, Cleave every 2s, Bone Spikes every 4s
+        entity.speed *= 1.5;
+        state.attackTimers['hk_cleave'] = Math.min(state.attackTimers['hk_cleave'] ?? 2, 2);
+        state.attackTimers['hk_cleave_p2'] = Math.min(state.attackTimers['hk_cleave_p2'] ?? 2, 2);
+        state.attackTimers['hk_bone_spikes'] = Math.min(state.attackTimers['hk_bone_spikes'] ?? 4, 4);
+        break;
+      }
+      case 'crimson_countess': {
+        // Swoops every 1.5s, constant blood rain
+        entity.speed *= 1.3;
+        break;
+      }
+      case 'elder_lich_malachar': {
+        // Transition to Enrage phase (phase index 1)
+        const enragePhaseIndex = def.phases.findIndex((p) => p.name === 'Enrage');
+        if (enragePhaseIndex >= 0) {
+          state.currentPhase = enragePhaseIndex;
+          entity.bossPhase = enragePhaseIndex;
+          events.bossPhaseChanged = {
+            phase: enragePhaseIndex,
+            name: def.phases[enragePhaseIndex].name,
+          };
+          // Resurrect phylacteries at full HP per enrage modifiers
+          const resHp = def.phases[enragePhaseIndex].modifiers.resurrectedPhylacteryHp ?? 100;
+          state.phaseState.innerPhylacteryHp = resHp;
+          state.phaseState.middlePhylacteryHp = resHp;
+          state.phaseState.outerPhylacteryHp = resHp;
+        }
+        break;
+      }
+      // Terminus has enrageTime 0, so no enrage behavior needed
+    }
   }
 
   // --- Phase transition check ---
@@ -387,7 +447,7 @@ function updateHollowKing(
     switch (attack.id) {
       // Phase 1 attacks
       case 'hk_cleave': {
-        state.attackTimers[timerId] = attack.cooldown;
+        state.attackTimers[timerId] = state.enraged ? 2 : attack.cooldown;
         // 180-degree melee arc, 150px range
         const arcRad = ((attack.params.arc ?? 180) * Math.PI) / 180;
         const range = attack.params.range ?? 150;
@@ -430,7 +490,7 @@ function updateHollowKing(
       }
 
       case 'hk_bone_spikes': {
-        state.attackTimers[timerId] = attack.cooldown;
+        state.attackTimers[timerId] = state.enraged ? 4 : attack.cooldown;
         const spikeCount = attack.params.spikeCount ?? 5;
         const spacing = attack.params.spikeSpacing ?? 40;
         const ndx = dx / dist;
@@ -456,7 +516,7 @@ function updateHollowKing(
 
       // Phase 2 attacks
       case 'hk_cleave_p2': {
-        state.attackTimers[timerId] = attack.cooldown;
+        state.attackTimers[timerId] = state.enraged ? 2 : attack.cooldown;
         const range = attack.params.range ?? 150;
         if (dist <= range) {
           const angle = Math.atan2(dy, dx);
@@ -657,7 +717,7 @@ function updateCrimsonCountess(
 
       // Phase 3 attacks
       case 'cc_crimson_fury': {
-        state.attackTimers[timerId] = attack.cooldown;
+        state.attackTimers[timerId] = state.enraged ? 1.5 : attack.cooldown;
         const swoopDist = attack.params.swoopDistance ?? 300;
         const swoopDuration = attack.params.swoopDuration ?? 0.5;
         const swoopSpeed = swoopDist / swoopDuration;
@@ -669,7 +729,7 @@ function updateCrimsonCountess(
       }
 
       case 'cc_blood_rain_constant': {
-        state.attackTimers[timerId] = attack.cooldown;
+        state.attackTimers[timerId] = state.enraged ? 1 : attack.cooldown;
         const radius = attack.params.radius ?? 200;
         const dropCount = attack.params.dropletCount ?? 5;
         for (let i = 0; i < dropCount; i++) {
@@ -1467,6 +1527,49 @@ export function processBossDamage(
       return processTerminusDamage(state, damage, weaponId);
     default:
       return damage;
+  }
+}
+
+// =============================================================================
+// DPS Cap: snapshot & enforce (v1.1)
+// =============================================================================
+
+/**
+ * Snapshot the boss's current HP before collisions run.
+ * Must be called each frame BEFORE handleCollisions in the game loop.
+ */
+export function snapshotBossHp(state: BossState): void {
+  state.hpSnapshot = state.entity.hp;
+}
+
+/**
+ * Enforce the per-second DPS cap after collisions have dealt damage.
+ * Must be called each frame AFTER handleCollisions in the game loop.
+ *
+ * Tracks cumulative damage in a rolling 1-second window. If the total
+ * damage exceeds dpsCapPerSecond, the excess HP is restored to the boss.
+ */
+export function enforceBossDpsCap(state: BossState, delta: number): void {
+  const def = BOSSES[state.defIndex];
+  if (!def) return;
+
+  // Calculate damage taken this frame (from collision system)
+  const frameDamage = Math.max(0, state.hpSnapshot - state.entity.hp);
+  state.damageTakenThisSecond += frameDamage;
+
+  // Advance the 1-second damage window
+  state.damageWindowTimer += delta;
+  if (state.damageWindowTimer >= 1.0) {
+    state.damageWindowTimer -= 1.0;
+    state.damageTakenThisSecond = 0;
+  }
+
+  // Enforce the cap: if cumulative damage this second exceeds the cap, restore excess HP
+  if (def.dpsCapPerSecond > 0 && state.damageTakenThisSecond > def.dpsCapPerSecond) {
+    const excess = state.damageTakenThisSecond - def.dpsCapPerSecond;
+    state.entity.hp += excess;
+    state.entity.hp = Math.min(state.entity.hp, state.entity.maxHp);
+    state.damageTakenThisSecond = def.dpsCapPerSecond;
   }
 }
 

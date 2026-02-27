@@ -6,11 +6,11 @@
 // =============================================================================
 
 /**
- * Enemy HP multiplier: 1 + (n-1) × 0.65
- * 1-player: 1.00×, 2: 1.65×, 3: 2.30×, 4: 2.95×
+ * Enemy HP multiplier: 1 + (n-1) × 0.55
+ * 1-player: 1.00×, 2: 1.55×, 3: 2.10×, 4: 2.65×
  */
 export function getEnemyHpMultiplier(playerCount: number): number {
-  return 1 + (playerCount - 1) * 0.65;
+  return 1 + (playerCount - 1) * 0.55;
 }
 
 /**
@@ -30,21 +30,21 @@ export function getSpawnBudgetMultiplier(playerCount: number): number {
 }
 
 /**
- * Boss HP multiplier (steeper than regular enemies): 1 + (n-1) × 0.80
- * 1-player: 1.00×, 2: 1.80×, 3: 2.60×, 4: 3.40×
+ * Boss HP multiplier (steeper than regular enemies): 1 + (n-1) × 0.70
+ * 1-player: 1.00×, 2: 1.70×, 3: 2.40×, 4: 3.10×
  */
 export function getBossHpMultiplier(playerCount: number): number {
-  return 1 + (playerCount - 1) * 0.80;
+  return 1 + (playerCount - 1) * 0.70;
 }
 
 /**
  * Max enemies on screen per player count.
  */
 const MAX_ENEMIES_BY_COUNT: Record<number, number> = {
-  1: 300,
-  2: 400,
-  3: 475,
-  4: 550,
+  1: 450,
+  2: 550,
+  3: 650,
+  4: 750,
 };
 
 export function getMaxEnemies(playerCount: number): number {
@@ -132,3 +132,11 @@ export const BOSS_MULTIPLAYER_CONFIG = {
     amalgamationIntervalBase: 8, // ÷ player count (min 2)
   },
 } as const;
+
+/**
+ * Boss DPS cap scaling for multiplayer (v1.1).
+ * formula: base_cap × (1 + (n-1) × 0.60)
+ */
+export function getBossDpsCapMultiplier(playerCount: number): number {
+  return 1 + (playerCount - 1) * 0.60;
+}

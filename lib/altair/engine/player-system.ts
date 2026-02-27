@@ -245,6 +245,7 @@ export function computeEffectiveStats(
   let flatMaxHp = 0;
   let flatHpRegen = 0;
   let flatPickupRange = 0;
+  let flatPierce = 0;
 
   let pctMight = 0;
   let pctArea = 0;
@@ -282,6 +283,9 @@ export function computeEffectiveStats(
           break;
         case 'pickupRange':
           flatPickupRange += total;
+          break;
+        case 'pierce':
+          flatPierce += total;
           break;
 
         // Percentage bonuses (accumulated as percentages, applied as multipliers)
@@ -322,6 +326,7 @@ export function computeEffectiveStats(
   s.maxHp += flatMaxHp;
   s.hpRegen += flatHpRegen;
   s.pickupRange += flatPickupRange;
+  s.pierce += flatPierce;
 
   // Apply percentage bonuses as multipliers
   s.might *= 1 + pctMight / 100;
@@ -333,6 +338,11 @@ export function computeEffectiveStats(
   s.maxHp *= 1 + pctMaxHp / 100;
   s.luck *= 1 + pctLuck / 100;
   s.growth *= 1 + pctGrowth / 100;
+
+  // v1.1: Growth diminishing returns above 1.5×
+  if (s.growth > 1.5) {
+    s.growth = 1.5 + (s.growth - 1.5) * 0.4;
+  }
 
   // Round maxHp to integer after percentage
   s.maxHp = Math.floor(s.maxHp);
@@ -358,6 +368,9 @@ export function computeEffectiveStats(
         break;
       case 'revival':
         s.revival += value;
+        break;
+      case 'pierce':
+        s.pierce += value;
         break;
 
       // Percent meta bonuses (applied as multipliers)
@@ -389,6 +402,11 @@ export function computeEffectiveStats(
         s.growth *= 1 + value / 100;
         break;
     }
+  }
+
+  // Re-apply growth diminishing returns after meta bonuses
+  if (s.growth > 1.5) {
+    s.growth = 1.5 + (s.growth - 1.5) * 0.4;
   }
 
   // Step 5: Apply soft caps and hard caps

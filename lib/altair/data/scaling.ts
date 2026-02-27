@@ -7,38 +7,38 @@
 
 /**
  * HP scaling formula.
- * Scales quadratically -- enemies become significantly tougher over time.
+ * Scales with quadratic + cubic component -- enemies become significantly tougher over time.
  *
  * @param timeMinutes - elapsed game time in minutes
  * @returns multiplier to apply to base HP
  *
  * Examples:
- *   0:00 -> 1.00x
- *   5:00 -> 1.80x
- *  10:00 -> 3.00x
- *  15:00 -> 4.60x
- *  20:00 -> 6.60x
+ *   0:00 ->  1.00x
+ *   5:00 ->  2.15x
+ *  10:00 ->  4.50x
+ *  15:00 ->  8.35x
+ *  20:00 -> 14.56x
  */
 export function getHPScale(timeMinutes: number): number {
-  return 1 + timeMinutes * 0.12 + timeMinutes * timeMinutes * 0.008;
+  return 1 + timeMinutes * 0.15 + timeMinutes * timeMinutes * 0.014 + timeMinutes * timeMinutes * timeMinutes * 0.0004;
 }
 
 /**
  * Damage scaling formula.
- * Scales linearly and more slowly than HP to prevent one-shot deaths.
+ * Scales linearly with small quadratic component to prevent one-shot deaths.
  *
  * @param timeMinutes - elapsed game time in minutes
  * @returns multiplier to apply to base damage
  *
  * Examples:
  *   0:00 -> 1.00x
- *   5:00 -> 1.30x
- *  10:00 -> 1.60x
- *  15:00 -> 1.90x
- *  20:00 -> 2.20x
+ *   5:00 -> 1.43x
+ *  10:00 -> 1.90x
+ *  15:00 -> 2.43x
+ *  20:00 -> 3.00x
  */
 export function getDamageScale(timeMinutes: number): number {
-  return 1 + timeMinutes * 0.06;
+  return 1 + timeMinutes * 0.08 + timeMinutes * timeMinutes * 0.001;
 }
 
 /**
@@ -50,27 +50,22 @@ export function getDamageScale(timeMinutes: number): number {
  *
  * Examples:
  *   0:00 -> 1.00x
- *  10:00 -> 1.15x
- *  20:00 -> 1.30x
+ *  10:00 -> 1.25x
+ *  15:00 -> 1.41x
+ *  20:00 -> 1.60x
  */
 export function getSpeedScale(timeMinutes: number): number {
-  return 1 + timeMinutes * 0.015;
+  return 1 + timeMinutes * 0.02 + timeMinutes * timeMinutes * 0.0005;
 }
 
 /**
- * XP gem value scaling formula.
- * Ensures the player can keep leveling at a reasonable pace as enemies become harder.
+ * REMOVED in v1.1 — XP gems give flat values, no time-based multiplier.
  *
  * @param timeMinutes - elapsed game time in minutes
- * @returns multiplier to apply to base XP drop value
- *
- * Examples:
- *   0:00 -> 1.00x
- *  10:00 -> 1.50x
- *  20:00 -> 2.00x
+ * @returns always 1
  */
 export function getXPScale(timeMinutes: number): number {
-  return 1 + timeMinutes * 0.05;
+  return 1;
 }
 
 /**
@@ -81,16 +76,16 @@ export function getXPScale(timeMinutes: number): number {
  * @returns threat points budget per second
  *
  * Examples:
- *   0:00 ->  2.0
- *   2:00 ->  5.6
- *   5:00 -> 13.3
- *   8:00 -> 23.6
- *  10:00 -> 32.0
- *  12:00 -> 42.0
- *  15:00 -> 58.3
- *  18:00 -> 78.0
- *  20:00 -> 92.0
+ *   0:00 ->   3.0
+ *   2:00 ->   8.1
+ *   5:00 ->  19.9
+ *   8:00 ->  35.8
+ *  10:00 ->  48.5
+ *  12:00 ->  65.6
+ *  15:00 -> 100.9
+ *  18:00 -> 145.0
+ *  20:00 -> 178.0
  */
 export function getSpawnBudget(timeMinutes: number): number {
-  return 2 + timeMinutes * 1.5 + timeMinutes * timeMinutes * 0.15;
+  return 3 + timeMinutes * 2.0 + timeMinutes * timeMinutes * 0.25 + timeMinutes * timeMinutes * timeMinutes * 0.005;
 }

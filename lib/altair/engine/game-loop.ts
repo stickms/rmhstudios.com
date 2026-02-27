@@ -27,7 +27,7 @@ import { tickStatusEffects, processEnemyStatusDamage, getMarkMultiplier } from '
 import { updatePickups as updatePickupSystem, spawnEnemyDrops, spawnBossDrops, spawnPropDrops, spawnPickup } from './pickup-system';
 import { updateWaveDirector as updateWaveDirectorSystem, createWaveDirectorState, spawnEnemyAt } from './wave-director';
 import { updateEnemyAI as updateEnemyAISystem, setEnemyPropHash } from './enemy-system';
-import { spawnBoss, updateBoss, BossState } from './boss-system';
+import { spawnBoss, updateBoss, snapshotBossHp, enforceBossDpsCap, BossState } from './boss-system';
 import { SpatialHash } from './spatial-hash';
 import { DestructibleProp, PROP_COLLISION_OFFSET_Y } from './tile-generator';
 
@@ -167,6 +167,13 @@ export function createTileGenerator(): TileGenerator {
 
 // ---- Collision System (inline) ----------------------------------------------
 
+/** v1.1: AoE diminishing returns. When hitting >12 enemies, damage is reduced. */
+const AOE_DR_THRESHOLD = 12;
+function aoeDiminishingFactor(enemiesHit: number): number {
+  if (enemiesHit <= AOE_DR_THRESHOLD) return 1;
+  return AOE_DR_THRESHOLD / enemiesHit;
+}
+
 function handleCollisions(
   world: GameWorld,
   stats: PlayerStats,
@@ -263,16 +270,22 @@ function handleCollisions(
         if (proj.pierceLeft <= 0) {
           // AoE on impact
           if (proj.aoeRadius && proj.aoeRadius > 0) {
+            // v1.1: Two-pass AoE diminishing returns
+            const aoeTargets: EnemyEntity[] = [];
             for (const ae of world.enemies) {
               if (ae.id === e.id || ae.intangible) continue;
               const adx = ae.x - proj.x;
               const ady = ae.y - proj.y;
               if (adx * adx + ady * ady <= proj.aoeRadius * proj.aoeRadius) {
-                const aoeDmg = Math.max(1, proj.damage * 0.6 - ae.armor);
-                ae.hp -= aoeDmg;
-                ae.flashTimer = 0.05;
-                totalDamageDealt += aoeDmg;
+                aoeTargets.push(ae);
               }
+            }
+            const aoeDrFactor = aoeDiminishingFactor(aoeTargets.length);
+            for (const ae of aoeTargets) {
+              const aoeDmg = Math.max(1, proj.damage * 0.6 * aoeDrFactor - ae.armor);
+              ae.hp -= aoeDmg;
+              ae.flashTimer = 0.05;
+              totalDamageDealt += aoeDmg;
             }
           }
           world.projectiles.splice(pi, 1);
@@ -393,17 +406,23 @@ function handleCollisions(
         proj.poolTimer += proj.poolTickInterval;
         const poolR = proj.poolRadius || proj.radius;
 
+        // v1.1: Two-pass AoE diminishing returns for pool ticks
+        const poolTargets: EnemyEntity[] = [];
         for (const e of world.enemies) {
           if (e.intangible) continue;
           const dx = e.x - proj.x;
           const dy = e.y - proj.y;
           if (dx * dx + dy * dy <= (poolR + e.radius) * (poolR + e.radius)) {
-            const dmg = proj.poolDamagePerTick || proj.damage;
-            const effectiveDmg = Math.max(1, dmg - e.armor);
-            e.hp -= effectiveDmg;
-            e.flashTimer = 0.05;
-            totalDamageDealt += effectiveDmg;
+            poolTargets.push(e);
           }
+        }
+        const poolDrFactor = aoeDiminishingFactor(poolTargets.length);
+        for (const e of poolTargets) {
+          const dmg = proj.poolDamagePerTick || proj.damage;
+          const effectiveDmg = Math.max(1, dmg * poolDrFactor - e.armor);
+          e.hp -= effectiveDmg;
+          e.flashTimer = 0.05;
+          totalDamageDealt += effectiveDmg;
         }
       }
     }
@@ -460,6 +479,9 @@ function handleCollisions(
       continue;
     }
 
+    // v1.1: Two-pass AoE diminishing returns for melee hitboxes
+    // Pass 1: Collect all new enemies in range and within arc
+    const meleeTargets: EnemyEntity[] = [];
     for (const e of world.enemies) {
       if (e.intangible) continue;
       if (hb.hitEnemyIds.has(e.id)) continue;
@@ -475,15 +497,21 @@ function handleCollisions(
         while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
 
         if (Math.abs(angleDiff) <= hb.arc / 2) {
-          hb.hitEnemyIds.add(e.id);
-          const markMul = getMarkMultiplier(e.statusEffects, e.isBoss);
-          const effectiveDmg = Math.max(1, hb.damage * markMul - e.armor);
-          e.hp -= effectiveDmg;
-          e.flashTimer = 0.1;
-          totalDamageDealt += effectiveDmg;
-          spawnDamageNumber(world, e.x, e.y - e.radius, effectiveDmg, false);
+          meleeTargets.push(e);
         }
       }
+    }
+
+    // Pass 2: Apply damage with DR factor based on how many new enemies are hit
+    const meleeDrFactor = aoeDiminishingFactor(meleeTargets.length);
+    for (const e of meleeTargets) {
+      hb.hitEnemyIds.add(e.id);
+      const markMul = getMarkMultiplier(e.statusEffects, e.isBoss);
+      const effectiveDmg = Math.max(1, hb.damage * markMul * meleeDrFactor - e.armor);
+      e.hp -= effectiveDmg;
+      e.flashTimer = 0.1;
+      totalDamageDealt += effectiveDmg;
+      spawnDamageNumber(world, e.x, e.y - e.radius, effectiveDmg, false);
     }
   }
 
@@ -526,17 +554,23 @@ function handleCollisions(
       aura.timer += aura.tickInterval;
       aura.tickHitEnemyIds.clear();
 
+      // v1.1: Two-pass AoE diminishing returns for aura ticks
+      const auraTargets: EnemyEntity[] = [];
       for (const e of world.enemies) {
         if (e.intangible) continue;
         const dx = e.x - aura.x;
         const dy = e.y - aura.y;
         if (dx * dx + dy * dy <= (aura.radius + e.radius) * (aura.radius + e.radius)) {
-          const effectiveDmg = Math.max(1, aura.damagePerTick - e.armor);
-          e.hp -= effectiveDmg;
-          e.flashTimer = 0.05;
-          aura.tickHitEnemyIds.add(e.id);
-          totalDamageDealt += effectiveDmg;
+          auraTargets.push(e);
         }
+      }
+      const auraDrFactor = aoeDiminishingFactor(auraTargets.length);
+      for (const e of auraTargets) {
+        const effectiveDmg = Math.max(1, aura.damagePerTick * auraDrFactor - e.armor);
+        e.hp -= effectiveDmg;
+        e.flashTimer = 0.05;
+        aura.tickHitEnemyIds.add(e.id);
+        totalDamageDealt += effectiveDmg;
       }
     }
   }
@@ -858,8 +892,14 @@ export function createGameLoop(
       }
     }
 
+    // 6c. Snapshot boss HP before collisions (for DPS cap enforcement)
+    if (bossState) snapshotBossHp(bossState);
+
     // 7. Collisions + enemy death processing
     const damageDealt = handleCollisions(world, stats, scaledDelta, abilityState, callbacks, tileGen, propHash);
+
+    // 7b. Enforce boss DPS cap after collisions
+    if (bossState) enforceBossDpsCap(bossState, scaledDelta);
 
     // 8. Hemomancer lifesteal
     if (world.classId === 'hemomancer' && damageDealt > 0) {

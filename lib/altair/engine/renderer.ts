@@ -140,6 +140,29 @@ export function renderFrame(
 
 // ---- Pickups ----------------------------------------------------------------
 
+/** Get XP orb color based on accumulated value (combined orbs look different). */
+function getXPOrbColor(value: number): string {
+  if (value >= 50) return '#ff4444'; // red — massive combined
+  if (value >= 25) return '#ff8800'; // orange — large
+  if (value >= 10) return '#ffcc00'; // yellow — combined medium
+  if (value >= 5) return '#44cc44';  // green — medium
+  if (value >= 3) return '#66bbff';  // bright blue — combined small
+  return '#4488ff';                  // blue — single small
+}
+
+/** Get XP orb render size based on accumulated value. */
+function getXPOrbSize(value: number): number {
+  if (value >= 50) return 7;
+  if (value >= 25) return 6;
+  if (value >= 10) return 5;
+  if (value >= 5) return 4;
+  return 3;
+}
+
+function isXPPickup(p: PickupEntity): boolean {
+  return p.type === 'xp_small' || p.type === 'xp_medium' || p.type === 'xp_large';
+}
+
 function renderPickups(
   ctx: CanvasRenderingContext2D,
   pickups: PickupEntity[],
@@ -147,116 +170,124 @@ function renderPickups(
 ): void {
   const pickupSheet = getPickupSheet();
 
-  for (const p of pickups) {
-    if (!isVisible(camera, p.x, p.y, 20)) continue;
-    const s = worldToScreen(camera, p.x, p.y);
+  // Two-pass: XP orbs first (below), then non-XP pickups on top
+  for (let pass = 0; pass < 2; pass++) {
+    for (const p of pickups) {
+      const isXP = isXPPickup(p);
+      if (pass === 0 && !isXP) continue;  // first pass: XP only
+      if (pass === 1 && isXP) continue;   // second pass: non-XP only
 
-    // Try sprite rendering
-    if (pickupSheet) {
-      const frameIndex = PICKUP_FRAMES[p.type];
-      if (frameIndex !== undefined) {
-        drawSprite(ctx, pickupSheet, frameIndex, s.x, s.y, PICKUP_SCALE, false);
-        continue;
+      if (!isVisible(camera, p.x, p.y, 20)) continue;
+      const s = worldToScreen(camera, p.x, p.y);
+
+      // For non-XP pickups, try sprite rendering
+      if (!isXP && pickupSheet) {
+        const frameIndex = PICKUP_FRAMES[p.type];
+        if (frameIndex !== undefined) {
+          drawSprite(ctx, pickupSheet, frameIndex, s.x, s.y, PICKUP_SCALE, false);
+          continue;
+        }
       }
+
+      // Vector rendering
+      ctx.save();
+      ctx.translate(s.x, s.y);
+
+      if (isXP) {
+        // XP orbs: color and size based on accumulated value
+        const color = getXPOrbColor(p.value);
+        const size = getXPOrbSize(p.value);
+        drawDiamond(ctx, size, color);
+
+        // Subtle glow for combined orbs (value > base)
+        if (p.value >= 5) {
+          ctx.globalAlpha = 0.2;
+          drawDiamond(ctx, size + 2, color);
+          ctx.globalAlpha = 1;
+        }
+      } else {
+        switch (p.type) {
+          case 'coin':
+            ctx.fillStyle = '#ffd700';
+            ctx.beginPath();
+            ctx.arc(0, 0, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#b8960f';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            break;
+          case 'food':
+            ctx.fillStyle = '#ff3333';
+            ctx.fillRect(-2, -6, 4, 12);
+            ctx.fillRect(-6, -2, 12, 4);
+            break;
+          case 'magnet':
+            drawDiamond(ctx, 6, '#ff6600');
+            break;
+          case 'vacuum':
+            drawDiamond(ctx, 7, '#cc00ff');
+            break;
+          case 'rosary':
+            drawDiamond(ctx, 7, '#ffffff');
+            break;
+          case 'chest':
+            ctx.fillStyle = '#c8a23c';
+            ctx.fillRect(-8, -6, 16, 12);
+            ctx.strokeStyle = '#8b6914';
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(-8, -6, 16, 12);
+            ctx.fillStyle = '#8b6914';
+            ctx.fillRect(-2, -2, 4, 4);
+            break;
+          case 'clock':
+            ctx.fillStyle = '#66ccff';
+            ctx.beginPath();
+            ctx.arc(0, 0, 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#3399cc';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(-1, -4, 2, 8);
+            ctx.fillRect(-3, -1, 6, 2);
+            break;
+          case 'shield_orb':
+            ctx.fillStyle = '#66aaff';
+            ctx.beginPath();
+            ctx.arc(0, 0, 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#88ccff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.fillStyle = 'rgba(255,255,255,0.4)';
+            ctx.beginPath();
+            ctx.arc(-1, -2, 2, 0, Math.PI * 2);
+            ctx.fill();
+            break;
+          case 'bomb':
+            ctx.fillStyle = '#333333';
+            ctx.beginPath();
+            ctx.arc(0, 1, 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#ff4444';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+            ctx.strokeStyle = '#ff6600';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(2, -5);
+            ctx.lineTo(4, -8);
+            ctx.stroke();
+            ctx.fillStyle = '#ffaa00';
+            ctx.beginPath();
+            ctx.arc(4, -8, 2, 0, Math.PI * 2);
+            ctx.fill();
+            break;
+        }
+      }
+
+      ctx.restore();
     }
-
-    // Vector fallback
-    ctx.save();
-    ctx.translate(s.x, s.y);
-
-    switch (p.type) {
-      case 'xp_small':
-        drawDiamond(ctx, 4, '#4488ff');
-        break;
-      case 'xp_medium':
-        drawDiamond(ctx, 6, '#44cc44');
-        break;
-      case 'xp_large':
-        drawDiamond(ctx, 8, '#ff4444');
-        break;
-      case 'coin':
-        ctx.fillStyle = '#ffd700';
-        ctx.beginPath();
-        ctx.arc(0, 0, 5, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = '#b8960f';
-        ctx.lineWidth = 1;
-        ctx.stroke();
-        break;
-      case 'food':
-        ctx.fillStyle = '#ff3333';
-        ctx.fillRect(-2, -6, 4, 12);
-        ctx.fillRect(-6, -2, 12, 4);
-        break;
-      case 'magnet':
-        drawDiamond(ctx, 6, '#ff6600');
-        break;
-      case 'vacuum':
-        drawDiamond(ctx, 7, '#cc00ff');
-        break;
-      case 'rosary':
-        drawDiamond(ctx, 7, '#ffffff');
-        break;
-      case 'chest':
-        ctx.fillStyle = '#c8a23c';
-        ctx.fillRect(-8, -6, 16, 12);
-        ctx.strokeStyle = '#8b6914';
-        ctx.lineWidth = 1.5;
-        ctx.strokeRect(-8, -6, 16, 12);
-        ctx.fillStyle = '#8b6914';
-        ctx.fillRect(-2, -2, 4, 4);
-        break;
-      case 'clock':
-        // Hourglass shape
-        ctx.fillStyle = '#66ccff';
-        ctx.beginPath();
-        ctx.arc(0, 0, 6, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = '#3399cc';
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(-1, -4, 2, 8);
-        ctx.fillRect(-3, -1, 6, 2);
-        break;
-      case 'shield_orb':
-        // Blue glowing orb
-        ctx.fillStyle = '#66aaff';
-        ctx.beginPath();
-        ctx.arc(0, 0, 6, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = '#88ccff';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        ctx.fillStyle = 'rgba(255,255,255,0.4)';
-        ctx.beginPath();
-        ctx.arc(-1, -2, 2, 0, Math.PI * 2);
-        ctx.fill();
-        break;
-      case 'bomb':
-        // Red bomb
-        ctx.fillStyle = '#333333';
-        ctx.beginPath();
-        ctx.arc(0, 1, 6, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = '#ff4444';
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-        // Fuse
-        ctx.strokeStyle = '#ff6600';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(2, -5);
-        ctx.lineTo(4, -8);
-        ctx.stroke();
-        ctx.fillStyle = '#ffaa00';
-        ctx.beginPath();
-        ctx.arc(4, -8, 2, 0, Math.PI * 2);
-        ctx.fill();
-        break;
-    }
-
-    ctx.restore();
   }
 }
 

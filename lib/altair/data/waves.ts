@@ -1,9 +1,9 @@
 // =============================================================================
-// ALTAIR -- Wave Timeline & Director System (GDD Section 11)
+// ALTAIR -- Wave Timeline & Director System (GDD Section 11) -- Balance v1.1
 // =============================================================================
 // The game uses a Wave Director that controls spawn rates, enemy composition,
 // and intensity based on elapsed time. Full 20-minute timeline below.
-// Hard cap of 300 active enemies for performance. Tier 1 enemies farthest from
+// Hard cap of 450 active enemies for performance. Tier 1 enemies farthest from
 // player are despawned first to make room for higher-tier spawns.
 // =============================================================================
 
@@ -13,7 +13,7 @@ export interface WaveEvent {
   description: string;
   enemyComposition: string[];
   spawnRateMultiplier: number;
-  specialEvent?: 'boss_spawn' | 'pre_boss_ramp' | 'post_boss_recovery' | 'calm_before_storm' | 'surge';
+  specialEvent?: 'boss_spawn' | 'pre_boss_ramp' | 'post_boss_recovery' | 'calm_before_storm' | 'surge' | 'horde_surge' | 'elite_gauntlet';
   bossId?: string;
 }
 
@@ -21,13 +21,13 @@ export interface WaveEvent {
  * Spawn budget per second for the Wave Director.
  * Determines how many "threat points" of enemies can spawn each second.
  *
- * budget_per_second(t) = 2 + (t_minutes * 1.5) + (t_minutes^2 * 0.15)
+ * budget_per_second(t) = 3 + (t_minutes * 2.0) + (t_minutes^2 * 0.25) + (t_minutes^3 * 0.005)
  *
  * @param timeMinutes - elapsed game time in minutes
  * @returns threat points budget per second
  */
 export function getSpawnBudget(timeMinutes: number): number {
-  return 2 + timeMinutes * 1.5 + timeMinutes * timeMinutes * 0.15;
+  return 3 + timeMinutes * 2.0 + timeMinutes * timeMinutes * 0.25 + timeMinutes * timeMinutes * timeMinutes * 0.005;
 }
 
 /**
@@ -60,42 +60,49 @@ export const ENEMY_THREAT_COSTS: Record<string, number> = {
  */
 export const WAVE_TIMELINE: readonly WaveEvent[] = [
   // ===========================================================================
-  // Minutes 0:00 - 5:00 (Tier 1-2 introduction, first boss)
+  // Minutes 0:00 - 5:00 (v1.1: faster enemy introductions, earlier pressure)
   // ===========================================================================
   {
     startTime: 0,
-    endTime: 60,
-    description: 'Calm start. Shamblers only, low density. Let player acclimate.',
+    endTime: 45,
+    description: 'Calm start. Shamblers only, low density.',
     enemyComposition: ['shambler'],
     spawnRateMultiplier: 1.0,
   },
   {
-    startTime: 60,
-    endTime: 120,
-    description: 'First swarm. Shamblers and Bats. Bat packs of 3-5 every 10 seconds.',
+    startTime: 45,
+    endTime: 90,
+    description: 'First swarm. Shamblers and Bats. Bat packs of 4-6.',
     enemyComposition: ['shambler', 'bat'],
     spawnRateMultiplier: 1.0,
   },
   {
-    startTime: 120,
-    endTime: 180,
-    description: 'Tier 2 intro. Skeleton Warriors begin spawning (1 per 8 seconds). Shamblers increase.',
+    startTime: 90,
+    endTime: 150,
+    description: 'Tier 2 intro. Skeleton Warriors (1 per 6s).',
     enemyComposition: ['shambler', 'bat', 'skeleton_warrior'],
     spawnRateMultiplier: 1.0,
   },
   {
-    startTime: 180,
-    endTime: 240,
-    description: 'Ghost arrival. Ghosts appear (1 per 10 seconds). First mixed groups.',
+    startTime: 150,
+    endTime: 210,
+    description: 'Ghost arrival. Ghosts appear (1 per 8s). First mixed groups.',
     enemyComposition: ['shambler', 'bat', 'skeleton_warrior', 'ghost'],
+    spawnRateMultiplier: 1.0,
+  },
+  {
+    startTime: 210,
+    endTime: 240,
+    description: 'Swarm Rat debut. Packs every 12s. Early AoE check.',
+    enemyComposition: ['shambler', 'bat', 'skeleton_warrior', 'ghost', 'swarm_rat'],
     spawnRateMultiplier: 1.0,
   },
   {
     startTime: 240,
     endTime: 300,
-    description: 'Pre-boss ramp. All Tier 1-2 enemies. Density spikes by 30% for 30 seconds before boss.',
-    enemyComposition: ['shambler', 'bat', 'skeleton_warrior', 'ghost'],
-    spawnRateMultiplier: 1.3,
+    description: 'Pre-boss ramp. 1.5x budget. First Cultist spawns (1 per 15s).',
+    enemyComposition: ['shambler', 'bat', 'skeleton_warrior', 'ghost', 'swarm_rat', 'cultist'],
+    spawnRateMultiplier: 1.5,
     specialEvent: 'pre_boss_ramp',
   },
 
@@ -106,50 +113,50 @@ export const WAVE_TIMELINE: readonly WaveEvent[] = [
     startTime: 300,
     endTime: 300,
     description: 'BOSS: The Hollow King spawns.',
-    enemyComposition: ['shambler', 'bat', 'skeleton_warrior', 'ghost'],
+    enemyComposition: ['shambler', 'bat', 'skeleton_warrior', 'ghost', 'swarm_rat', 'cultist'],
     spawnRateMultiplier: 0.7,
     specialEvent: 'boss_spawn',
     bossId: 'hollow_king',
   },
 
   // ===========================================================================
-  // Minutes 5:00 - 10:00 (Tier 3 introduction, second boss)
+  // Minutes 5:00 - 10:00 (v1.1: shorter recovery, Tier 4 earlier)
   // ===========================================================================
   {
     startTime: 300,
-    endTime: 360,
-    description: 'Post-boss recovery. Spawn rate drops to 50% for 30 seconds after boss dies, then resumes.',
-    enemyComposition: ['shambler', 'bat', 'skeleton_warrior', 'ghost'],
-    spawnRateMultiplier: 0.5,
+    endTime: 320,
+    description: 'Post-boss recovery. 0.4x budget for 20 seconds.',
+    enemyComposition: ['shambler', 'bat', 'skeleton_warrior', 'ghost', 'swarm_rat', 'cultist'],
+    spawnRateMultiplier: 0.4,
     specialEvent: 'post_boss_recovery',
   },
   {
-    startTime: 360,
-    endTime: 420,
-    description: 'Tier 3 intro. Werewolves (1 per 12s), Cultists (1 per 10s) begin. Swarm Rats debut (pack every 15s).',
-    enemyComposition: ['shambler', 'bat', 'skeleton_warrior', 'ghost', 'werewolf', 'cultist', 'swarm_rat'],
+    startTime: 320,
+    endTime: 390,
+    description: 'Tier 3 intro. Werewolves (1 per 10s). All Tier 1-3 active.',
+    enemyComposition: ['shambler', 'bat', 'skeleton_warrior', 'ghost', 'swarm_rat', 'cultist', 'werewolf'],
     spawnRateMultiplier: 1.0,
   },
   {
-    startTime: 420,
-    endTime: 480,
-    description: 'Escalation. All Tier 1-3 active. Bat swarms increase. Cultist pairs start appearing.',
-    enemyComposition: ['shambler', 'bat', 'skeleton_warrior', 'ghost', 'werewolf', 'cultist', 'swarm_rat'],
+    startTime: 390,
+    endTime: 450,
+    description: 'Witch and Shadow debut. Witches (1 per 18s), Shadows (1 per 12s).',
+    enemyComposition: ['shambler', 'bat', 'skeleton_warrior', 'ghost', 'swarm_rat', 'cultist', 'werewolf', 'witch', 'shadow'],
     spawnRateMultiplier: 1.0,
   },
   {
-    startTime: 480,
-    endTime: 540,
-    description: 'Tier 4 intro. Witches appear (1 per 20s). Bone Golems (1 per 25s). Shadows (1 per 15s).',
-    enemyComposition: ['shambler', 'bat', 'skeleton_warrior', 'ghost', 'werewolf', 'cultist', 'swarm_rat', 'witch', 'bone_golem', 'shadow'],
+    startTime: 450,
+    endTime: 510,
+    description: 'Bone Golem debut (1 per 20s). Cultist pairs start.',
+    enemyComposition: ['shambler', 'bat', 'skeleton_warrior', 'ghost', 'swarm_rat', 'cultist', 'werewolf', 'witch', 'shadow', 'bone_golem'],
     spawnRateMultiplier: 1.0,
   },
   {
-    startTime: 540,
+    startTime: 510,
     endTime: 600,
-    description: 'Pre-boss ramp. Density spikes 40%. Witch+Werewolf combos. Double Bone Golem spawns.',
-    enemyComposition: ['shambler', 'bat', 'skeleton_warrior', 'ghost', 'werewolf', 'cultist', 'swarm_rat', 'witch', 'bone_golem', 'shadow'],
-    spawnRateMultiplier: 1.4,
+    description: 'Pre-boss ramp. 1.5x budget. Witch+Werewolf combos. Double Bone Golems.',
+    enemyComposition: ['shambler', 'bat', 'skeleton_warrior', 'ghost', 'swarm_rat', 'cultist', 'werewolf', 'witch', 'shadow', 'bone_golem'],
+    spawnRateMultiplier: 1.5,
     specialEvent: 'pre_boss_ramp',
   },
 
@@ -160,50 +167,57 @@ export const WAVE_TIMELINE: readonly WaveEvent[] = [
     startTime: 600,
     endTime: 600,
     description: 'BOSS: The Crimson Countess spawns.',
-    enemyComposition: ['shambler', 'bat', 'skeleton_warrior', 'ghost', 'werewolf', 'cultist', 'swarm_rat', 'witch', 'bone_golem', 'shadow'],
+    enemyComposition: ['shambler', 'bat', 'skeleton_warrior', 'ghost', 'swarm_rat', 'cultist', 'werewolf', 'witch', 'shadow', 'bone_golem'],
     spawnRateMultiplier: 0.6,
     specialEvent: 'boss_spawn',
     bossId: 'crimson_countess',
   },
 
   // ===========================================================================
-  // Minutes 10:00 - 15:00 (Tier 5 introduction, third boss)
+  // Minutes 10:00 - 15:00 (v1.1: very short recovery, Tier 5 earlier)
   // ===========================================================================
   {
     startTime: 600,
-    endTime: 660,
-    description: 'Post-boss recovery. Spawn rate drops to 40% for 30 seconds.',
-    enemyComposition: ['shambler', 'bat', 'skeleton_warrior', 'ghost', 'werewolf', 'cultist', 'swarm_rat', 'witch', 'bone_golem', 'shadow'],
-    spawnRateMultiplier: 0.4,
+    endTime: 615,
+    description: 'Post-boss recovery. 0.3x budget for 15 seconds.',
+    enemyComposition: ['shambler', 'bat', 'skeleton_warrior', 'ghost', 'swarm_rat', 'cultist', 'werewolf', 'witch', 'shadow', 'bone_golem'],
+    spawnRateMultiplier: 0.3,
     specialEvent: 'post_boss_recovery',
   },
   {
+    startTime: 615,
+    endTime: 660,
+    description: 'Vampire Noble debut (1 per 25s). Multiple Witches, Shadow packs.',
+    enemyComposition: ['shambler', 'bat', 'skeleton_warrior', 'ghost', 'swarm_rat', 'cultist', 'werewolf', 'witch', 'shadow', 'bone_golem', 'vampire_noble'],
+    spawnRateMultiplier: 1.0,
+  },
+  {
     startTime: 660,
-    endTime: 720,
-    description: 'Pressure builds. All Tier 1-4 active. Multiple Witches at once. Shadow packs of 2-3.',
-    enemyComposition: ['shambler', 'bat', 'skeleton_warrior', 'ghost', 'werewolf', 'cultist', 'swarm_rat', 'witch', 'bone_golem', 'shadow'],
+    endTime: 690,
+    description: 'Arcane Construct debut (1 per 18s).',
+    enemyComposition: ['shambler', 'bat', 'skeleton_warrior', 'ghost', 'swarm_rat', 'cultist', 'werewolf', 'witch', 'shadow', 'bone_golem', 'vampire_noble', 'arcane_construct'],
     spawnRateMultiplier: 1.0,
   },
   {
-    startTime: 720,
-    endTime: 780,
-    description: 'Tier 5 intro. Vampire Nobles appear (1 per 30s). Arcane Constructs (1 per 20s).',
-    enemyComposition: ['shambler', 'bat', 'skeleton_warrior', 'ghost', 'werewolf', 'cultist', 'swarm_rat', 'witch', 'bone_golem', 'shadow', 'vampire_noble', 'arcane_construct'],
+    startTime: 690,
+    endTime: 750,
+    description: 'Plague Bearer debut (1 per 12s). Poison zones everywhere.',
+    enemyComposition: ['shambler', 'bat', 'skeleton_warrior', 'ghost', 'swarm_rat', 'cultist', 'werewolf', 'witch', 'shadow', 'bone_golem', 'vampire_noble', 'arcane_construct', 'plague_bearer'],
     spawnRateMultiplier: 1.0,
   },
   {
-    startTime: 780,
-    endTime: 840,
-    description: 'Nightmare fuel. Plague Bearers arrive (1 per 15s). Poison zones dominate the map.',
-    enemyComposition: ['shambler', 'bat', 'skeleton_warrior', 'ghost', 'werewolf', 'cultist', 'swarm_rat', 'witch', 'bone_golem', 'shadow', 'vampire_noble', 'arcane_construct', 'plague_bearer'],
+    startTime: 750,
+    endTime: 810,
+    description: 'Pressure mounts. Vampire Noble pairs.',
+    enemyComposition: ['shambler', 'bat', 'skeleton_warrior', 'ghost', 'swarm_rat', 'cultist', 'werewolf', 'witch', 'shadow', 'bone_golem', 'vampire_noble', 'arcane_construct', 'plague_bearer'],
     spawnRateMultiplier: 1.0,
   },
   {
-    startTime: 840,
+    startTime: 810,
     endTime: 900,
-    description: 'Pre-boss ramp. Density spikes 50%. Vampire Noble + Witch combos. Triple Cultist formations.',
-    enemyComposition: ['shambler', 'bat', 'skeleton_warrior', 'ghost', 'werewolf', 'cultist', 'swarm_rat', 'witch', 'bone_golem', 'shadow', 'vampire_noble', 'arcane_construct', 'plague_bearer'],
-    spawnRateMultiplier: 1.5,
+    description: 'Pre-boss ramp. 1.6x budget. Triple Cultist formations. Vampire Noble pairs.',
+    enemyComposition: ['shambler', 'bat', 'skeleton_warrior', 'ghost', 'swarm_rat', 'cultist', 'werewolf', 'witch', 'shadow', 'bone_golem', 'vampire_noble', 'arcane_construct', 'plague_bearer'],
+    spawnRateMultiplier: 1.6,
     specialEvent: 'pre_boss_ramp',
   },
 
@@ -214,51 +228,66 @@ export const WAVE_TIMELINE: readonly WaveEvent[] = [
     startTime: 900,
     endTime: 900,
     description: 'BOSS: Elder Lich Malachar spawns.',
-    enemyComposition: ['shambler', 'bat', 'skeleton_warrior', 'ghost', 'werewolf', 'cultist', 'swarm_rat', 'witch', 'bone_golem', 'shadow', 'vampire_noble', 'arcane_construct', 'plague_bearer'],
+    enemyComposition: ['shambler', 'bat', 'skeleton_warrior', 'ghost', 'swarm_rat', 'cultist', 'werewolf', 'witch', 'shadow', 'bone_golem', 'vampire_noble', 'arcane_construct', 'plague_bearer'],
     spawnRateMultiplier: 0.5,
     specialEvent: 'boss_spawn',
     bossId: 'elder_lich_malachar',
   },
 
   // ===========================================================================
-  // Minutes 15:00 - 20:00 (Tier 6 introduction, final boss)
+  // Minutes 15:00 - 20:00 (v1.1: minimal recovery, aggressive Tier 6, The Flood + Elite Gauntlet)
   // ===========================================================================
   {
     startTime: 900,
-    endTime: 960,
-    description: 'Post-boss recovery. Spawn rate drops to 30% for 30 seconds.',
-    enemyComposition: ['shambler', 'bat', 'skeleton_warrior', 'ghost', 'werewolf', 'cultist', 'swarm_rat', 'witch', 'bone_golem', 'shadow', 'vampire_noble', 'arcane_construct', 'plague_bearer'],
-    spawnRateMultiplier: 0.3,
+    endTime: 910,
+    description: 'Post-boss recovery. 0.2x budget for 10 seconds. Barely any breathing room.',
+    enemyComposition: ['shambler', 'bat', 'skeleton_warrior', 'ghost', 'swarm_rat', 'cultist', 'werewolf', 'witch', 'shadow', 'bone_golem', 'vampire_noble', 'arcane_construct', 'plague_bearer'],
+    spawnRateMultiplier: 0.2,
     specialEvent: 'post_boss_recovery',
+  },
+  {
+    startTime: 910,
+    endTime: 960,
+    description: 'Tier 6 intro. Death Knights (1 per 20s). Banshees (1 per 25s).',
+    enemyComposition: ['shambler', 'bat', 'skeleton_warrior', 'ghost', 'swarm_rat', 'cultist', 'werewolf', 'witch', 'shadow', 'bone_golem', 'vampire_noble', 'arcane_construct', 'plague_bearer', 'death_knight', 'banshee'],
+    spawnRateMultiplier: 1.0,
   },
   {
     startTime: 960,
     endTime: 1020,
-    description: 'Tier 6 intro. Death Knights appear (1 per 25s). Banshees (1 per 30s).',
-    enemyComposition: ['shambler', 'bat', 'skeleton_warrior', 'ghost', 'werewolf', 'cultist', 'swarm_rat', 'witch', 'bone_golem', 'shadow', 'vampire_noble', 'arcane_construct', 'plague_bearer', 'death_knight', 'banshee'],
+    description: 'Lich debut (1 per 35s). All enemy types active. Multiple Banshees.',
+    enemyComposition: ['shambler', 'bat', 'skeleton_warrior', 'ghost', 'swarm_rat', 'cultist', 'werewolf', 'witch', 'shadow', 'bone_golem', 'vampire_noble', 'arcane_construct', 'plague_bearer', 'death_knight', 'banshee', 'lich'],
     spawnRateMultiplier: 1.0,
   },
   {
     startTime: 1020,
     endTime: 1080,
-    description: 'Hellscape. All enemy types active. Lich appears (1 per 45s). Multiple Banshees possible.',
-    enemyComposition: ['shambler', 'bat', 'skeleton_warrior', 'ghost', 'werewolf', 'cultist', 'swarm_rat', 'witch', 'bone_golem', 'shadow', 'vampire_noble', 'arcane_construct', 'plague_bearer', 'death_knight', 'banshee', 'lich'],
+    description: 'Maximum variety. Lich rate increases (1 per 25s). Death Knight pairs.',
+    enemyComposition: ['shambler', 'bat', 'skeleton_warrior', 'ghost', 'swarm_rat', 'cultist', 'werewolf', 'witch', 'shadow', 'bone_golem', 'vampire_noble', 'arcane_construct', 'plague_bearer', 'death_knight', 'banshee', 'lich'],
     spawnRateMultiplier: 1.0,
   },
   {
     startTime: 1080,
     endTime: 1140,
-    description: 'Maximum pressure. Spawn budget at near-max. Wave compositions actively target player weaknesses.',
-    enemyComposition: ['shambler', 'bat', 'skeleton_warrior', 'ghost', 'werewolf', 'cultist', 'swarm_rat', 'witch', 'bone_golem', 'shadow', 'vampire_noble', 'arcane_construct', 'plague_bearer', 'death_knight', 'banshee', 'lich'],
+    description: 'Overwhelming pressure. Budget near max. Constant Tier 5-6 with massive Tier 1 swarms.',
+    enemyComposition: ['shambler', 'bat', 'skeleton_warrior', 'ghost', 'swarm_rat', 'cultist', 'werewolf', 'witch', 'shadow', 'bone_golem', 'vampire_noble', 'arcane_construct', 'plague_bearer', 'death_knight', 'banshee', 'lich'],
     spawnRateMultiplier: 1.0,
   },
   {
     startTime: 1140,
-    endTime: 1190,
-    description: 'Final crescendo. Budget at maximum. Every 10 seconds, a surge of 30+ Tier 1 enemies + 3-5 Tier 4-5 enemies simultaneously.',
-    enemyComposition: ['shambler', 'bat', 'skeleton_warrior', 'ghost', 'werewolf', 'cultist', 'swarm_rat', 'witch', 'bone_golem', 'shadow', 'vampire_noble', 'arcane_construct', 'plague_bearer', 'death_knight', 'banshee', 'lich'],
+    endTime: 1170,
+    description: 'The Flood: 40+ Shamblers/Bats every 5s, mixed with 5-8 Tier 4-6 enemies every 8s.',
+    enemyComposition: ['shambler', 'bat', 'skeleton_warrior', 'ghost', 'swarm_rat', 'cultist', 'werewolf', 'witch', 'shadow', 'bone_golem', 'vampire_noble', 'arcane_construct', 'plague_bearer', 'death_knight', 'banshee', 'lich'],
     spawnRateMultiplier: 1.0,
     specialEvent: 'surge',
+  },
+  {
+    startTime: 1170,
+    endTime: 1190,
+    description: 'Elite Gauntlet: Flood stops. Rapid back-to-back Tier 5-6 only. 3 Death Knights, 2 Liches, 2 Banshees, 4 Vampire Nobles every 10s.',
+    enemyComposition: ['vampire_noble', 'arcane_construct', 'plague_bearer', 'death_knight', 'banshee', 'lich'],
+    spawnRateMultiplier: 1.0,
+    specialEvent: 'elite_gauntlet',
   },
   {
     startTime: 1190,
@@ -276,7 +305,7 @@ export const WAVE_TIMELINE: readonly WaveEvent[] = [
     startTime: 1200,
     endTime: 1200,
     description: 'BOSS: Terminus, The Undying spawns. Regular enemy spawning resumes at 60% during Phase 1-2, stops in Phase 3.',
-    enemyComposition: ['shambler', 'bat', 'skeleton_warrior', 'ghost', 'werewolf', 'cultist', 'swarm_rat', 'witch', 'bone_golem', 'shadow', 'vampire_noble', 'arcane_construct', 'plague_bearer', 'death_knight', 'banshee', 'lich'],
+    enemyComposition: ['shambler', 'bat', 'skeleton_warrior', 'ghost', 'swarm_rat', 'cultist', 'werewolf', 'witch', 'shadow', 'bone_golem', 'vampire_noble', 'arcane_construct', 'plague_bearer', 'death_knight', 'banshee', 'lich'],
     spawnRateMultiplier: 0.6,
     specialEvent: 'boss_spawn',
     bossId: 'terminus',
@@ -284,4 +313,31 @@ export const WAVE_TIMELINE: readonly WaveEvent[] = [
 ] as const;
 
 /** Maximum number of active enemies on screen at once */
-export const MAX_ACTIVE_ENEMIES = 300;
+export const MAX_ACTIVE_ENEMIES = 450;
+
+/**
+ * Horde Surge configuration (v1.1).
+ * Starting at minute 8, a Horde Surge triggers every 90 seconds.
+ * Instantly spawns a ring of enemies around the player at 500-700px.
+ * Surges are additive to the regular spawn budget.
+ */
+export interface HordeSurge {
+  time: number; // seconds
+  totalCount: number;
+  composition: Record<string, number>;
+}
+
+export const HORDE_SURGES: readonly HordeSurge[] = [
+  { time: 480, totalCount: 50, composition: { shambler: 40, bat: 10 } },
+  { time: 570, totalCount: 55, composition: { shambler: 35, bat: 15, skeleton_warrior: 5 } },
+  { time: 660, totalCount: 65, composition: { shambler: 40, bat: 15, skeleton_warrior: 10 } },
+  { time: 750, totalCount: 70, composition: { shambler: 35, bat: 15, skeleton_warrior: 10, swarm_rat: 10 } },
+  { time: 840, totalCount: 75, composition: { shambler: 30, bat: 15, skeleton_warrior: 10, swarm_rat: 12, ghost: 8 } },
+  { time: 930, totalCount: 80, composition: { shambler: 30, bat: 15, skeleton_warrior: 10, swarm_rat: 12, ghost: 8, werewolf: 4, shadow: 1 } },
+  { time: 1020, totalCount: 80, composition: { shambler: 28, bat: 15, skeleton_warrior: 10, swarm_rat: 12, ghost: 8, werewolf: 4, shadow: 2, witch: 1 } },
+  { time: 1110, totalCount: 80, composition: { shambler: 26, bat: 15, skeleton_warrior: 10, swarm_rat: 12, ghost: 8, werewolf: 4, shadow: 2, witch: 2, bone_golem: 1 } },
+] as const;
+
+/** Horde surge spawn ring distance range. */
+export const HORDE_SURGE_MIN_RADIUS = 500;
+export const HORDE_SURGE_MAX_RADIUS = 700;

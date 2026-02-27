@@ -189,22 +189,27 @@ function weightChoices(
 
 // ---- Evolution Check --------------------------------------------------------
 
+/** Minimum passive level required for weapon evolution (v1.1). */
+const MIN_PASSIVE_LEVEL_FOR_EVOLUTION = 3;
+
 /**
  * Check if any weapons can evolve.
- * A weapon evolves when it reaches level 8 and the player holds the matching passive.
+ * v1.1: A weapon evolves when it reaches level 8 and the player holds
+ * the matching passive at level 3 or higher.
  * Returns the evolution to perform, or null.
  */
 export function checkEvolution(
   weapons: WeaponState[],
   passives: PassiveState[],
 ): { weaponId: string; evolvedId: string } | null {
-  const passiveIds = new Set(passives.map((p) => p.passiveId));
+  const passiveMap = new Map(passives.map((p) => [p.passiveId, p.level]));
 
   for (const w of weapons) {
     if (w.level >= MAX_WEAPON_LEVEL && !w.evolved) {
       const wDef = WEAPONS.find((d) => d.id === w.weaponId);
       if (wDef?.evolutionPassiveId && wDef.evolvedWeaponId) {
-        if (passiveIds.has(wDef.evolutionPassiveId)) {
+        const passiveLevel = passiveMap.get(wDef.evolutionPassiveId);
+        if (passiveLevel !== undefined && passiveLevel >= MIN_PASSIVE_LEVEL_FOR_EVOLUTION) {
           return {
             weaponId: w.weaponId,
             evolvedId: wDef.evolvedWeaponId,
