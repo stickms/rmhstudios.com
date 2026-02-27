@@ -8,6 +8,7 @@
 import {
   GameWorld,
   EnemyEntity,
+  PickupEntity,
   createId,
 } from './types';
 import { createCamera, updateCamera } from './camera';
@@ -23,7 +24,7 @@ import { initAllSpriteSheets } from './sprites/sprite-defs';
 import { updatePlayer, computeEffectiveStats, updateClassAbilities, createClassAbilityState, ClassAbilityState, tryRaiseDead, processSanguineFeast, getBerserkerBonuses, getKnightSpeedBonus, reportBloodNovaKill } from './player-system';
 import { fireWeapons, updateBoomerangs } from './weapon-system';
 import { tickStatusEffects, processEnemyStatusDamage, getMarkMultiplier } from './status-effects';
-import { updatePickups as updatePickupSystem, spawnEnemyDrops, spawnBossDrops, spawnPropDrops } from './pickup-system';
+import { updatePickups as updatePickupSystem, spawnEnemyDrops, spawnBossDrops, spawnPropDrops, spawnPickup } from './pickup-system';
 import { updateWaveDirector as updateWaveDirectorSystem, createWaveDirectorState, spawnEnemyAt } from './wave-director';
 import { updateEnemyAI as updateEnemyAISystem, setEnemyPropHash } from './enemy-system';
 import { spawnBoss, updateBoss, BossState } from './boss-system';
@@ -958,6 +959,11 @@ export function createGameLoop(
     // 13. Camera
     updateCamera(world.camera, world.player, delta);
     tileGen.update(world.camera);
+
+    // 13b. Spawn structure pickups queued by tile generator
+    for (const pp of tileGen.drainPendingPickups()) {
+      spawnPickup(world, pp.x, pp.y, pp.type as PickupEntity['type'], pp.value);
+    }
 
     // 14. Render
     renderFrame(ctx, world, tileGen);

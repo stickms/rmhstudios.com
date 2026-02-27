@@ -174,7 +174,7 @@ export function spawnBossDrops(
   spawnPickup(world, x, y + 20, 'xp_large', XP_LARGE_VALUE);
 }
 
-function spawnPickup(
+export function spawnPickup(
   world: GameWorld,
   x: number,
   y: number,

@@ -124,6 +124,10 @@ const TILE_SHEET_FILE = `${BASE}/tiles/tileset.png`;
 let propSheet: SpriteSheet | null = null;
 const PROP_SHEET_FILE = `${BASE}/props/props.png`;
 
+// ---- Structure prop sheet ----
+let structurePropSheet: SpriteSheet | null = null;
+const STRUCTURE_PROP_SHEET_FILE = `${BASE}/props/structures.png`;
+
 // ---- Pickup sheets ----
 let pickupSheet: SpriteSheet | null = null;
 const PICKUP_SHEET_FILE = `${BASE}/pickups/pickups.png`;
@@ -173,6 +177,8 @@ export function initAllSpriteSheets(): void {
   projectileSheet = loadSpriteSheet(PROJECTILE_SHEET_FILE, 8, 8);
   // Summons
   summonSheet = loadSpriteSheet(SUMMON_SHEET_FILE, FRAME_SIZE, FRAME_SIZE);
+  // Structure props (16x16) — optional, vector fallback works without it
+  structurePropSheet = loadSpriteSheet(STRUCTURE_PROP_SHEET_FILE, FRAME_SIZE, FRAME_SIZE);
   // Item icons (16x16)
   weaponIconSheet = loadSpriteSheet(WEAPON_ICON_SHEET_FILE, FRAME_SIZE, FRAME_SIZE);
   passiveIconSheet = loadSpriteSheet(PASSIVE_ICON_SHEET_FILE, FRAME_SIZE, FRAME_SIZE);
@@ -193,6 +199,7 @@ export function getAllSpriteEntries(): { src: string; frameWidth: number; frameH
   }
   entries.push({ src: TILE_SHEET_FILE, frameWidth: FRAME_SIZE, frameHeight: FRAME_SIZE });
   entries.push({ src: PROP_SHEET_FILE, frameWidth: FRAME_SIZE, frameHeight: FRAME_SIZE });
+  entries.push({ src: STRUCTURE_PROP_SHEET_FILE, frameWidth: FRAME_SIZE, frameHeight: FRAME_SIZE });
   entries.push({ src: PICKUP_SHEET_FILE, frameWidth: FRAME_SIZE, frameHeight: FRAME_SIZE });
   entries.push({ src: PROJECTILE_SHEET_FILE, frameWidth: 8, frameHeight: 8 });
   entries.push({ src: WEAPON_ICON_SHEET_FILE, frameWidth: FRAME_SIZE, frameHeight: FRAME_SIZE });
@@ -235,6 +242,11 @@ export function getTileSheet(): SpriteSheet | null {
 /** Get the prop sprite sheet. */
 export function getPropSheet(): SpriteSheet | null {
   return propSheet?.loaded ? propSheet : null;
+}
+
+/** Get the structure prop sprite sheet. */
+export function getStructurePropSheet(): SpriteSheet | null {
+  return structurePropSheet?.loaded ? structurePropSheet : null;
 }
 
 /** Get the pickup sprite sheet. */
@@ -309,6 +321,31 @@ export const PROP_DAMAGED_FRAMES: Record<string, number> = {
   tombstone: 3,
   barrel: 4,
   urn: 5,
+};
+
+// ---- Structure prop frames (structures.png) ----
+// Layout: 0=fence_h 1=fence_v 2=fence_post 3=wall 4=wall_v 5=hedge 6=crate 7=well
+// 8-15 = damaged variants
+export const STRUCTURE_PROP_FRAMES: Record<string, number> = {
+  fence_h: 0,
+  fence_v: 1,
+  fence_post: 2,
+  wall: 3,
+  wall_v: 4,
+  hedge: 5,
+  crate: 6,
+  well: 7,
+};
+
+export const STRUCTURE_PROP_DAMAGED_FRAMES: Record<string, number> = {
+  fence_h: 8,
+  fence_v: 9,
+  fence_post: 10,
+  wall: 11,
+  wall_v: 12,
+  hedge: 13,
+  crate: 14,
+  well: 15,
 };
 
 // =============================================================================
