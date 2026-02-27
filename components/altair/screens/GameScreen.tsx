@@ -42,6 +42,7 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
   const togglePause = useAltairGameStore((s) => s.togglePause);
 
   const keybinds = useAltairSettingsStore((s) => s.keybinds);
+  const joystickSide = useAltairSettingsStore((s) => s.joystickSide);
   const addToast = useAltairToastStore((s) => s.addToast);
 
   const [isMobile, setIsMobile] = useState(false);
@@ -377,7 +378,7 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
       {/* Mobile controls */}
       {isMobile && phase === 'playing' && (
         <>
-          <MobileDPad onChange={handleDPad} />
+          <MobileDPad onChange={handleDPad} side={joystickSide} />
           <MobileControls onPause={togglePause} />
         </>
       )}

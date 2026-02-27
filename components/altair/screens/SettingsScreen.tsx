@@ -4,7 +4,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { Sun, Moon, RotateCcw } from 'lucide-react';
+import { Sun, Moon, RotateCcw, ArrowLeft, ArrowRight } from 'lucide-react';
 import { useAltairSettingsStore, Keybinds } from '@/lib/altair/stores/settings-store';
 import { useAltairMetaStore } from '@/lib/altair/stores/meta-store';
 
@@ -24,9 +24,14 @@ function keyLabel(code: string): string {
 }
 
 export default function SettingsScreen({ onBack }: SettingsScreenProps) {
-  const { theme, keybinds, screenShake, doubleTime, setTheme, setKeybind, resetKeybinds, setScreenShake, setDoubleTime } = useAltairSettingsStore();
+  const { theme, keybinds, screenShake, doubleTime, joystickSide, setTheme, setKeybind, resetKeybinds, setScreenShake, setDoubleTime, setJoystickSide } = useAltairSettingsStore();
   const doubleTimeUnlocked = useAltairMetaStore((s) => s.doubleTimeUnlocked);
   const [rebinding, setRebinding] = useState<keyof Keybinds | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    setIsMobile(window.matchMedia('(hover: none) and (pointer: coarse)').matches);
+  }, []);
 
   useEffect(() => {
     if (!rebinding) return;
@@ -140,6 +145,40 @@ export default function SettingsScreen({ onBack }: SettingsScreenProps) {
           )}
         </div>
       </section>
+
+      {/* Mobile */}
+      {isMobile && (
+        <section className="mb-6">
+          <h3 className="text-sm font-semibold text-(--altair-text-muted) uppercase tracking-wider mb-3">Mobile</h3>
+          <div className="flex flex-col gap-2">
+            <div className="py-2.5 px-4 rounded-lg bg-(--altair-surface) border border-(--altair-border)">
+              <span className="text-sm text-(--altair-text) block mb-2">Joystick Side</span>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setJoystickSide('left')}
+                  className={`flex-1 py-2 rounded-lg border font-medium transition-colors flex items-center justify-center gap-2 text-sm ${
+                    joystickSide === 'left'
+                      ? 'border-(--altair-accent) bg-(--altair-accent-dim) text-(--altair-accent)'
+                      : 'border-(--altair-border) bg-(--altair-surface) text-(--altair-text-muted) hover:bg-(--altair-surface-hover)'
+                  }`}
+                >
+                  <ArrowLeft size={14} /> Left
+                </button>
+                <button
+                  onClick={() => setJoystickSide('right')}
+                  className={`flex-1 py-2 rounded-lg border font-medium transition-colors flex items-center justify-center gap-2 text-sm ${
+                    joystickSide === 'right'
+                      ? 'border-(--altair-accent) bg-(--altair-accent-dim) text-(--altair-accent)'
+                      : 'border-(--altair-border) bg-(--altair-surface) text-(--altair-text-muted) hover:bg-(--altair-surface-hover)'
+                  }`}
+                >
+                  Right <ArrowRight size={14} />
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Back button */}
       <button

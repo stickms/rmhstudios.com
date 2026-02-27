@@ -26,6 +26,7 @@ interface AltairSettingsState {
   keybinds: Keybinds;
   doubleTime: boolean;
   screenShake: boolean;
+  joystickSide: 'left' | 'right';
 
   setTheme: (theme: 'dark' | 'light') => void;
   toggleTheme: () => void;
@@ -33,6 +34,7 @@ interface AltairSettingsState {
   resetKeybinds: () => void;
   setDoubleTime: (enabled: boolean) => void;
   setScreenShake: (enabled: boolean) => void;
+  setJoystickSide: (side: 'left' | 'right') => void;
 }
 
 export const useAltairSettingsStore = create<AltairSettingsState>()(
@@ -42,6 +44,7 @@ export const useAltairSettingsStore = create<AltairSettingsState>()(
       keybinds: { ...DEFAULT_KEYBINDS },
       doubleTime: false,
       screenShake: true,
+      joystickSide: 'left',
 
       setTheme: (theme) => set({ theme }),
       toggleTheme: () => set((s) => ({ theme: s.theme === 'dark' ? 'light' : 'dark' })),
@@ -50,6 +53,7 @@ export const useAltairSettingsStore = create<AltairSettingsState>()(
       resetKeybinds: () => set({ keybinds: { ...DEFAULT_KEYBINDS } }),
       setDoubleTime: (enabled) => set({ doubleTime: enabled }),
       setScreenShake: (enabled) => set({ screenShake: enabled }),
+      setJoystickSide: (side) => set({ joystickSide: side }),
     }),
     {
       name: 'altair-settings',
@@ -58,6 +62,7 @@ export const useAltairSettingsStore = create<AltairSettingsState>()(
         keybinds: s.keybinds,
         doubleTime: s.doubleTime,
         screenShake: s.screenShake,
+        joystickSide: s.joystickSide,
       }),
     }
   )
