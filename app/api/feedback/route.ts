@@ -1,16 +1,52 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Resend } from "resend";
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { headers } from "next/headers";
 import { feedbackSchema } from "@/lib/feedback-schema";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
-const resend = process.env.RESEND_API_KEY
-  ? new Resend(process.env.RESEND_API_KEY)
-  : null;
+export async function GET() {
+  try {
+    const feedbacks = await prisma.feedback.findMany({
+      orderBy: { createdAt: "desc" },
+      include: {
+        user: {
+          select: { name: true, username: true, image: true },
+        },
+      },
+    });
 
-const RECIPIENT = "hello@rmhstudios.com";
+    const formatted = feedbacks.map((f: any) => ({
+      id: f.id,
+      category: f.category,
+      message: f.message,
+      createdAt: f.createdAt,
+      user: {
+        name: f.user.name || f.user.username || "Unknown",
+        image: f.user.image,
+      },
+    }));
+
+    return NextResponse.json(formatted);
+  } catch (error) {
+    console.error("Fetch feedback error:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const ip = getClientIp(req);
     const { allowed, retryAfter } = rateLimit(ip, {
       limit: 3,
@@ -32,69 +68,36 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: firstError }, { status: 400 });
     }
 
-    const { name, email, category, message, honeypot } = result.data;
+    const { category, message } = result.data;
 
-    if (honeypot) {
-      return NextResponse.json({ success: true });
-    }
-
-    if (!resend) {
-      console.error("RESEND_API_KEY is not configured — feedback email not sent");
-      return NextResponse.json(
-        { error: "Feedback service is temporarily unavailable." },
-        { status: 503 }
-      );
-    }
-
-    const displayName = name?.trim() || "Anonymous";
-    const categoryLabel = category.charAt(0).toUpperCase() + category.slice(1);
-
-    await resend.emails.send({
-      from: "RMH Studios Feedback <noreply@rmhstudios.com>",
-      to: RECIPIENT,
-      replyTo: email,
-      subject: `[Feedback - ${categoryLabel}] from ${displayName}`,
-      html: `
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #9b7ad8; margin-bottom: 24px;">New Feedback Received</h2>
-          <table style="width: 100%; border-collapse: collapse;">
-            <tr>
-              <td style="padding: 8px 12px; font-weight: 600; color: #666; vertical-align: top;">Name</td>
-              <td style="padding: 8px 12px;">${escapeHtml(displayName)}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px 12px; font-weight: 600; color: #666; vertical-align: top;">Email</td>
-              <td style="padding: 8px 12px;"><a href="mailto:${escapeHtml(email)}">${escapeHtml(email)}</a></td>
-            </tr>
-            <tr>
-              <td style="padding: 8px 12px; font-weight: 600; color: #666; vertical-align: top;">Category</td>
-              <td style="padding: 8px 12px;">${escapeHtml(categoryLabel)}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px 12px; font-weight: 600; color: #666; vertical-align: top;">Message</td>
-              <td style="padding: 8px 12px; white-space: pre-wrap;">${escapeHtml(message)}</td>
-            </tr>
-          </table>
-          <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
-          <p style="color: #999; font-size: 12px;">Sent from the RMH Studios feedback form &middot; IP: ${ip}</p>
-        </div>
-      `,
+    const feedback = await prisma.feedback.create({
+      data: {
+        category,
+        message,
+        userId: session.user.id,
+      },
+      include: {
+        user: {
+          select: { name: true, username: true, image: true },
+        },
+      },
     });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({
+      id: feedback.id,
+      category: feedback.category,
+      message: feedback.message,
+      createdAt: feedback.createdAt,
+      user: {
+        name: feedback.user.name || feedback.user.username || "Unknown",
+        image: feedback.user.image,
+      },
+    });
   } catch (error) {
-    console.error("Feedback submission error:", error);
+    console.error("Post feedback error:", error);
     return NextResponse.json(
       { error: "Something went wrong. Please try again." },
       { status: 500 }
     );
   }
-}
-
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
 }
