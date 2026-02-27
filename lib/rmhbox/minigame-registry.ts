@@ -30,7 +30,7 @@ export const RHYME_TIME_SETTINGS: GameSettingsSchema = [
   { key: 'maxSubmissions', type: 'integer', label: 'Max Submissions', description: 'Maximum number of rhymes a player can submit per round', default: RT_MAX_SUBMISSIONS, min: 10, max: 50, step: 5 },
   { key: 'enableSpeedBonus', type: 'boolean', label: 'Speed Bonus', description: 'Award bonus points for submitting rare rhymes first', default: RT_SPEED_BONUS > 0 },
   { key: 'enableMultiSyllableBonus', type: 'boolean', label: 'Multi-Syllable Bonus', description: 'Award bonus points for rhymes with more syllables than the root word', default: RT_MULTI_SYLLABLE_BONUS > 0 },
-  { key: 'invalidPenalty', type: 'integer', label: 'Invalid Rhyme Penalty', description: 'Points deducted for submitting a non-rhyming word', default: RT_INVALID_PENALTY, min: -5, max: 0, step: 1 },
+  { key: 'invalidPenalty', type: 'integer', label: 'Invalid Rhyme Penalty', description: 'Points deducted for submitting a non-rhyming word', default: RT_INVALID_PENALTY, min: -50, max: 0, step: 10 },
 ];
 
 export const UNDERCOVER_AGENT_SETTINGS: GameSettingsSchema = [
@@ -64,7 +64,7 @@ export const MINIMALIST_MASTERPIECE_SETTINGS: GameSettingsSchema = [
 export const EMOJI_CINEMA_SETTINGS: GameSettingsSchema = [
   { key: 'maxRounds', type: 'integer', label: 'Number of Rounds', description: 'Number of emoji-encoding rounds to play', default: EC_MAX_ROUNDS, min: 2, max: 6, step: 1 },
   { key: 'roundDuration', type: 'integer', label: 'Encoding Duration (seconds)', description: 'Time the encoder has to build their emoji sequence', default: EC_ROUND_DURATION_SECONDS, min: 20, max: 90, step: 5 },
-  { key: 'maxEmojis', type: 'integer', label: 'Max Emojis', description: 'Maximum number of emojis the encoder can use', default: EC_MAX_EMOJIS, min: 3, max: 8, step: 1 },
+  { key: 'maxEmojis', type: 'integer', label: 'Max Emojis', description: 'Maximum number of emojis the encoder can use', default: EC_MAX_EMOJIS, min: 3, max: 12, step: 1 },
   { key: 'maxGuessesPerPlayer', type: 'integer', label: 'Guesses Per Player', description: 'Maximum guesses each player can submit per round', default: EC_MAX_GUESSES_PER_PLAYER, min: 1, max: 5, step: 1 },
 ];
 
