@@ -65,6 +65,8 @@ export class FactOrFrictionGame extends BaseMinigame {
   private potInterval: ReturnType<typeof globalThis.setInterval> | null = null;
   private actionLog: GameLogAction[] = [];
   private jipQueue: Set<string> = new Set();
+  /** Handle for the current phase-transition timeout; cancelled on early transitions. */
+  private phaseTransitionHandle: NodeJS.Timeout | null = null;
 
   constructor(context: MinigameContext) {
     super(context);
@@ -78,6 +80,18 @@ export class FactOrFrictionGame extends BaseMinigame {
    */
   get spectatorMode(): 'shared-privileged' {
     return 'shared-privileged';
+  }
+
+  // ─── Phase Transition Scheduling ──────────────────────────────
+
+  /**
+   * Schedule a phase transition callback, cancelling any pending one first.
+   * This prevents zombie timers from firing after early phase transitions
+   * (e.g. when all players answer before the timer expires).
+   */
+  private schedulePhaseTransition(callback: () => void, delayMs: number): void {
+    this.clearTrackedTimeout(this.phaseTransitionHandle);
+    this.phaseTransitionHandle = this.setTimeout(callback, delayMs);
   }
 
   // ─── Lifecycle ───────────────────────────────────────────────
@@ -148,6 +162,9 @@ export class FactOrFrictionGame extends BaseMinigame {
     this.logAction('question_start', {
       questionIndex: this.state.currentQuestionIndex,
       questionId: question.id,
+      questionText: question.question,
+      options: question.options,
+      correctIndex: question.correctIndex,
       difficulty: question.difficulty,
       category: question.category,
     });
@@ -173,12 +190,13 @@ export class FactOrFrictionGame extends BaseMinigame {
         difficulty: question.difficulty,
         source: question.source,
       },
+      potStartValue: this.state.potValue,
       duration: FF_QUESTION_REVEAL_SECONDS,
     });
 
     this.startPhaseTimer(FF_QUESTION_REVEAL_SECONDS);
 
-    this.setTimeout(() => this.startAnswerPhase(), FF_QUESTION_REVEAL_SECONDS * 1000);
+    this.schedulePhaseTransition(() => this.startAnswerPhase(), FF_QUESTION_REVEAL_SECONDS * 1000);
   }
 
   private startAnswerPhase(): void {
@@ -207,31 +225,37 @@ export class FactOrFrictionGame extends BaseMinigame {
 
     this.startPhaseTimer(answerDuration);
 
-    // Pot drain interval
+    // Pot drain interval — use broadcastGameAction for consistency
     this.potInterval = this.setInterval(() => {
       if (this.state.phase !== 'ANSWER') return;
       this.state.potValue = Math.max(
         this.state.potValue - FF_POT_TICK_VALUE,
         FF_POT_MIN_VALUE,
       );
-      this.context.broadcastAction({
+      this.broadcastGameAction({
         type: 'FF_POT_TICK',
-        payload: { potValue: this.state.potValue },
+        potValue: this.state.potValue,
       });
     }, FF_POT_TICK_INTERVAL_MS);
 
-    this.setTimeout(() => this.endAnswerPhase(), answerDuration * 1000);
+    this.schedulePhaseTransition(() => this.endAnswerPhase(), answerDuration * 1000);
   }
 
   private endAnswerPhase(): void {
     if (!this.isRunning) return;
+    // Phase guard: prevent re-entry from zombie timers
+    if (this.state.phase !== 'ANSWER') return;
+
+    // Cancel any pending phase transition (e.g. the answer-phase timeout)
+    this.clearTrackedTimeout(this.phaseTransitionHandle);
+    this.phaseTransitionHandle = null;
 
     this.clearPhaseTimer();
     this.stopPotInterval();
 
     const question = this.state.questions[this.state.currentQuestionIndex];
 
-    // Handle unanswered players as pass
+    // Handle unanswered players as timed-out pass
     for (const userId of this.context.players.keys()) {
       if (!this.state.playerAnswers.has(userId) && !this.jipQueue.has(userId)) {
         const passAnswer: PlayerAnswer = {
@@ -241,6 +265,7 @@ export class FactOrFrictionGame extends BaseMinigame {
           submittedAt: Date.now(),
           isCorrect: false,
           scoreChange: 0,
+          timedOut: true,
         };
         this.state.playerAnswers.set(userId, passAnswer);
 
@@ -275,13 +300,23 @@ export class FactOrFrictionGame extends BaseMinigame {
       });
     }
 
-    this.logAction('question_result', {
+    // Log answer_reveal with per-player results for history display
+    this.logAction('answer_reveal', {
       questionIndex: this.state.currentQuestionIndex,
       correctIndex: question.correctIndex,
       correctCount: questionResult.correctCount,
       incorrectCount: questionResult.incorrectCount,
       passCount: questionResult.passCount,
       fastestCorrectUserId: questionResult.fastestCorrectUserId,
+      playerResults: Array.from(this.state.playerAnswers.values()).map((answer) => ({
+        userId: answer.userId,
+        selectedIndex: answer.selectedIndex,
+        isCorrect: answer.isCorrect,
+        scoreChange: answer.scoreChange,
+        isFirst: answer.userId === questionResult.fastestCorrectUserId,
+        passed: answer.selectedIndex === null && !answer.timedOut,
+        timedOut: answer.timedOut,
+      })),
     });
 
     logger.info({
@@ -314,7 +349,7 @@ export class FactOrFrictionGame extends BaseMinigame {
 
     this.startPhaseTimer(FF_ANSWER_REVEAL_SECONDS);
 
-    this.setTimeout(() => this.startPause(), FF_ANSWER_REVEAL_SECONDS * 1000);
+    this.schedulePhaseTransition(() => this.startPause(), FF_ANSWER_REVEAL_SECONDS * 1000);
   }
 
   private startPause(): void {
@@ -349,7 +384,7 @@ export class FactOrFrictionGame extends BaseMinigame {
 
     this.startPhaseTimer(FF_PAUSE_SECONDS);
 
-    this.setTimeout(() => {
+    this.schedulePhaseTransition(() => {
       if (this.state.currentQuestionIndex + 1 >= this.state.totalQuestions) {
         this.endGame();
       } else {
@@ -430,6 +465,7 @@ export class FactOrFrictionGame extends BaseMinigame {
       submittedAt: Date.now(),
       isCorrect,
       scoreChange,
+      timedOut: false,
     };
     this.state.playerAnswers.set(userId, answer);
 
@@ -509,6 +545,7 @@ export class FactOrFrictionGame extends BaseMinigame {
       submittedAt: Date.now(),
       isCorrect: false,
       scoreChange: 0,
+      timedOut: false,
     };
     this.state.playerAnswers.set(userId, passAnswer);
 

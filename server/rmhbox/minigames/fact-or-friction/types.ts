@@ -19,6 +19,8 @@ export interface PlayerAnswer {
   submittedAt: number;
   isCorrect: boolean;
   scoreChange: number;
+  /** Whether this answer was auto-set because the player didn't answer in time. */
+  timedOut: boolean;
 }
 
 export interface QuestionResult {

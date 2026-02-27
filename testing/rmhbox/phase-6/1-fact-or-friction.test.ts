@@ -127,9 +127,8 @@ describe('Fact or Friction Server Handler (§6.1)', () => {
       expect(potTicks.length).toBeGreaterThan(0);
 
       const lastTick = potTicks[potTicks.length - 1].data as Record<string, unknown>;
-      const payload = lastTick.payload as Record<string, unknown>;
-      expect(payload.potValue).toBeDefined();
-      expect(typeof payload.potValue).toBe('number');
+      expect(lastTick.potValue).toBeDefined();
+      expect(typeof lastTick.potValue).toBe('number');
 
       game.cleanup();
     });
@@ -144,8 +143,8 @@ describe('Fact or Friction Server Handler (§6.1)', () => {
 
       const potTicks = findActionBroadcasts(broadcastLog, 'FF_POT_TICK');
       expect(potTicks.length).toBeGreaterThanOrEqual(1);
-      const payload = potTicks[0].data.payload as Record<string, unknown>;
-      expect(payload.potValue).toBe(FF_POT_START_VALUE - FF_POT_TICK_VALUE);
+      const tickData = potTicks[0].data as Record<string, unknown>;
+      expect(tickData.potValue).toBe(FF_POT_START_VALUE - FF_POT_TICK_VALUE);
 
       game.cleanup();
     });
@@ -161,8 +160,8 @@ describe('Fact or Friction Server Handler (§6.1)', () => {
       vi.advanceTimersByTime(FF_POT_TICK_INTERVAL_MS * (ticksToMin + 5));
 
       const potTicks = findActionBroadcasts(broadcastLog, 'FF_POT_TICK');
-      const lastPayload = potTicks[potTicks.length - 1].data.payload as Record<string, unknown>;
-      expect(lastPayload.potValue).toBe(FF_POT_MIN_VALUE);
+      const lastTickData = potTicks[potTicks.length - 1].data as Record<string, unknown>;
+      expect(lastTickData.potValue).toBe(FF_POT_MIN_VALUE);
 
       game.cleanup();
     });
@@ -615,6 +614,243 @@ describe('Fact or Friction Server Handler (§6.1)', () => {
           (e.data as Record<string, unknown>).type === 'FF_QUESTION',
       );
       expect(questionEvents.length).toBe(8);
+    });
+  });
+
+  describe('Phase Transition Safety (zombie timer prevention)', () => {
+    it('should not call endAnswerPhase twice when all answer early', () => {
+      const { game, broadcastLog } = createGame();
+      game.start();
+      advanceToAnswerPhase();
+      broadcastLog.length = 0;
+
+      // All players answer early → triggers immediate endAnswerPhase
+      game.handleInput(MOCK_USERS.alice.userId, 'SUBMIT_ANSWER', { selectedIndex: 0 });
+      game.handleInput(MOCK_USERS.bob.userId, 'SUBMIT_ANSWER', { selectedIndex: 1 });
+      game.handleInput(MOCK_USERS.charlie.userId, 'SUBMIT_ANSWER', { selectedIndex: 0 });
+      game.handleInput(MOCK_USERS.diana.userId, 'SUBMIT_ANSWER', { selectedIndex: 0 });
+
+      // Count ANSWER_REVEAL events so far (should be exactly 1)
+      const reveals1 = findActionBroadcasts(broadcastLog, 'FF_ANSWER_REVEAL');
+      expect(reveals1.length).toBe(1);
+
+      // Now advance past the FULL answer duration — the zombie timeout should NOT
+      // fire endAnswerPhase again because schedulePhaseTransition cancelled it
+      vi.advanceTimersByTime(FF_ANSWER_DURATION_SECONDS * 1000);
+
+      const reveals2 = findActionBroadcasts(broadcastLog, 'FF_ANSWER_REVEAL');
+      // Still exactly 1 ANSWER_REVEAL — no zombie duplicate
+      expect(reveals2.length).toBe(1);
+
+      game.cleanup();
+    });
+
+    it('should not create duplicate pot intervals after early answer', () => {
+      const { game, broadcastLog } = createGame();
+      game.start();
+      advanceToAnswerPhase();
+      broadcastLog.length = 0;
+
+      // All answer early
+      game.handleInput(MOCK_USERS.alice.userId, 'SUBMIT_ANSWER', { selectedIndex: 0 });
+      game.handleInput(MOCK_USERS.bob.userId, 'SUBMIT_ANSWER', { selectedIndex: 1 });
+      game.handleInput(MOCK_USERS.charlie.userId, 'SUBMIT_ANSWER', { selectedIndex: 0 });
+      game.handleInput(MOCK_USERS.diana.userId, 'SUBMIT_ANSWER', { selectedIndex: 0 });
+
+      // Advance through ANSWER_REVEAL + PAUSE → next QUESTION_REVEAL → ANSWER
+      vi.advanceTimersByTime(
+        FF_ANSWER_REVEAL_SECONDS * 1000 +
+        FF_PAUSE_SECONDS * 1000 +
+        FF_QUESTION_REVEAL_SECONDS * 1000 + 100,
+      );
+      broadcastLog.length = 0;
+
+      // Now in Q2 ANSWER phase — count pot ticks over a short interval
+      vi.advanceTimersByTime(FF_POT_TICK_INTERVAL_MS * 3);
+      const potTicks = findActionBroadcasts(broadcastLog, 'FF_POT_TICK');
+
+      // Should be exactly 3 ticks — NOT 6 (which would happen with 2 intervals)
+      expect(potTicks.length).toBe(3);
+
+      // Verify pot drained at consistent rate
+      const tData0 = potTicks[0].data as Record<string, unknown>;
+      const tData2 = potTicks[2].data as Record<string, unknown>;
+      expect(tData0.potValue).toBe(FF_POT_START_VALUE - FF_POT_TICK_VALUE);
+      expect(tData2.potValue).toBe(FF_POT_START_VALUE - FF_POT_TICK_VALUE * 3);
+
+      game.cleanup();
+    });
+  });
+
+  describe('Game Log Accuracy (history display)', () => {
+    it('should include questionText, options, and correctIndex in question_start actions', () => {
+      const { game, completedResults } = createGame();
+      game.start();
+
+      // Play through all 8 questions
+      for (let i = 0; i < 8; i++) {
+        advanceToAnswerPhase();
+        vi.advanceTimersByTime(FF_ANSWER_DURATION_SECONDS * 1000 + 50);
+        advanceToNextQuestion();
+      }
+
+      expect(completedResults.length).toBe(1);
+      const gameLog = completedResults[0].gameSpecificData.gameLog as {
+        actions: Array<{ type: string; payload: Record<string, unknown> }>;
+      };
+      const questionStarts = gameLog.actions.filter((a) => a.type === 'question_start');
+      expect(questionStarts.length).toBe(8);
+
+      for (const qs of questionStarts) {
+        expect(qs.payload.questionText).toBeDefined();
+        expect(typeof qs.payload.questionText).toBe('string');
+        expect(Array.isArray(qs.payload.options)).toBe(true);
+        expect(typeof qs.payload.correctIndex).toBe('number');
+        expect(qs.payload.category).toBeDefined();
+        expect(qs.payload.difficulty).toBeDefined();
+      }
+
+      game.cleanup();
+    });
+
+    it('should include answer_reveal actions with per-player results', () => {
+      const { game, completedResults } = createGame();
+      game.start();
+
+      // Play through all questions with some answering
+      for (let i = 0; i < 8; i++) {
+        advanceToAnswerPhase();
+        game.handleInput(MOCK_USERS.alice.userId, 'SUBMIT_ANSWER', { selectedIndex: 0 });
+        vi.advanceTimersByTime(FF_ANSWER_DURATION_SECONDS * 1000 + 50);
+        advanceToNextQuestion();
+      }
+
+      expect(completedResults.length).toBe(1);
+      const gameLog = completedResults[0].gameSpecificData.gameLog as {
+        actions: Array<{ type: string; payload: Record<string, unknown> }>;
+      };
+      const answerReveals = gameLog.actions.filter((a) => a.type === 'answer_reveal');
+      expect(answerReveals.length).toBe(8);
+
+      for (const ar of answerReveals) {
+        expect(typeof ar.payload.correctIndex).toBe('number');
+        const results = ar.payload.playerResults as Array<Record<string, unknown>>;
+        expect(results.length).toBe(4); // 4 players
+
+        for (const r of results) {
+          expect(r).toHaveProperty('userId');
+          expect(r).toHaveProperty('isCorrect');
+          expect(r).toHaveProperty('scoreChange');
+          expect(r).toHaveProperty('isFirst');
+          expect(r).toHaveProperty('passed');
+          expect(r).toHaveProperty('timedOut');
+        }
+      }
+
+      game.cleanup();
+    });
+
+    it('should distinguish passed vs timedOut players in answer_reveal', () => {
+      const { game, completedResults } = createGame();
+      game.start();
+      advanceToAnswerPhase();
+
+      // Alice answers, Bob passes explicitly, Charlie & Diana time out
+      game.handleInput(MOCK_USERS.alice.userId, 'SUBMIT_ANSWER', { selectedIndex: 0 });
+      game.handleInput(MOCK_USERS.bob.userId, 'PASS_QUESTION', {});
+
+      // Advance past answer duration → Charlie & Diana auto-pass as timeout
+      vi.advanceTimersByTime(FF_ANSWER_DURATION_SECONDS * 1000 + 50);
+
+      // Advance through remaining questions quickly
+      for (let i = 1; i < 8; i++) {
+        advanceToNextQuestion();
+        advanceToAnswerPhase();
+        vi.advanceTimersByTime(FF_ANSWER_DURATION_SECONDS * 1000 + 50);
+      }
+      advanceToNextQuestion();
+
+      expect(completedResults.length).toBe(1);
+      const gameLog = completedResults[0].gameSpecificData.gameLog as {
+        actions: Array<{ type: string; payload: Record<string, unknown> }>;
+      };
+      const firstReveal = gameLog.actions.find((a) => a.type === 'answer_reveal');
+      expect(firstReveal).toBeDefined();
+
+      const results = firstReveal!.payload.playerResults as Array<{
+        userId: string;
+        passed: boolean;
+        timedOut: boolean;
+        selectedIndex: number | null;
+      }>;
+
+      const alice = results.find((r) => r.userId === MOCK_USERS.alice.userId)!;
+      const bob = results.find((r) => r.userId === MOCK_USERS.bob.userId)!;
+      const charlie = results.find((r) => r.userId === MOCK_USERS.charlie.userId)!;
+
+      // Alice submitted an answer — neither passed nor timedOut
+      expect(alice.passed).toBe(false);
+      expect(alice.timedOut).toBe(false);
+      expect(alice.selectedIndex).not.toBeNull();
+
+      // Bob explicitly passed — passed=true, timedOut=false
+      expect(bob.passed).toBe(true);
+      expect(bob.timedOut).toBe(false);
+      expect(bob.selectedIndex).toBeNull();
+
+      // Charlie timed out — passed=false, timedOut=true
+      expect(charlie.passed).toBe(false);
+      expect(charlie.timedOut).toBe(true);
+      expect(charlie.selectedIndex).toBeNull();
+
+      game.cleanup();
+    });
+
+    it('should mark isFirst correctly for fastest correct answer', () => {
+      const { game, completedResults } = createGame();
+      game.start();
+      advanceToAnswerPhase();
+
+      // Alice answers first (correct or not depends on question data)
+      game.handleInput(MOCK_USERS.alice.userId, 'SUBMIT_ANSWER', { selectedIndex: 0 });
+      vi.advanceTimersByTime(100);
+      game.handleInput(MOCK_USERS.bob.userId, 'SUBMIT_ANSWER', { selectedIndex: 0 });
+      vi.advanceTimersByTime(100);
+      game.handleInput(MOCK_USERS.charlie.userId, 'SUBMIT_ANSWER', { selectedIndex: 0 });
+      game.handleInput(MOCK_USERS.diana.userId, 'SUBMIT_ANSWER', { selectedIndex: 0 });
+
+      // Play through remaining questions
+      for (let i = 1; i < 8; i++) {
+        vi.advanceTimersByTime(FF_ANSWER_REVEAL_SECONDS * 1000 + FF_PAUSE_SECONDS * 1000 + 200);
+        advanceToAnswerPhase();
+        vi.advanceTimersByTime(FF_ANSWER_DURATION_SECONDS * 1000 + 50);
+      }
+      vi.advanceTimersByTime(FF_ANSWER_REVEAL_SECONDS * 1000 + FF_PAUSE_SECONDS * 1000 + 200);
+
+      expect(completedResults.length).toBe(1);
+      const gameLog = completedResults[0].gameSpecificData.gameLog as {
+        actions: Array<{ type: string; payload: Record<string, unknown> }>;
+      };
+
+      const firstReveal = gameLog.actions.find((a) => a.type === 'answer_reveal');
+      expect(firstReveal).toBeDefined();
+
+      const results = firstReveal!.payload.playerResults as Array<{
+        userId: string;
+        isFirst: boolean;
+        isCorrect: boolean;
+      }>;
+
+      // At most one player should be marked isFirst
+      const firstPlayers = results.filter((r) => r.isFirst);
+      expect(firstPlayers.length).toBeLessThanOrEqual(1);
+
+      // If any player is isFirst, they must also be isCorrect
+      for (const fp of firstPlayers) {
+        expect(fp.isCorrect).toBe(true);
+      }
+
+      game.cleanup();
     });
   });
 });

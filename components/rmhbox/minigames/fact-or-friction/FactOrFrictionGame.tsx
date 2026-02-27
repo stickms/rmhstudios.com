@@ -123,36 +123,31 @@ export default function FactOrFrictionGame({ playerId, playerName: _playerName }
           break;
         }
         case 'FF_POT_TICK': {
-          const pl = data.payload as Record<string, unknown> | undefined;
-          const newPot = (pl?.potValue ?? data.potValue) as number;
+          const newPot = data.potValue as number;
           if (typeof newPot === 'number') setPotValue(newPot);
           break;
         }
         case 'FF_ANSWER_LOCKED': {
           // Confirmation that our answer was accepted
-          const pl = data.payload as Record<string, unknown> | undefined;
-          const locked = (pl?.potValue ?? data.potValue) as number | undefined;
+          const locked = data.potValueAtSubmission as number | undefined;
           if (typeof locked === 'number') setLockedPotValue(locked);
           playSound('click');
           break;
         }
         case 'FF_PLAYER_ANSWERED': {
-          const pl = data.payload as Record<string, unknown> | undefined;
-          const count = (pl?.answeredCount ?? data.answeredCount) as number | undefined;
-          if (typeof count === 'number') setPlayersAnswered(count);
+          // Another player answered — increment count
+          setPlayersAnswered((prev) => prev + 1);
           break;
         }
         case 'FF_ANSWER_REVEAL': {
           setPhase('ANSWER_REVEAL');
-          const pl = data.payload as Record<string, unknown> | undefined;
-          const raw = pl ?? data;
-          const cIdx = raw.correctIndex as number;
-          const opts = raw.options as string[];
-          const results = raw.playerResults as PlayerResult[] ?? [];
+          const cIdx = data.correctIndex as number;
+          const opts = (data.options as string[]) ?? questionData?.options ?? [];
+          const results = (data.playerResults as PlayerResult[]) ?? [];
           setRevealData({
             correctIndex: cIdx,
-            correctAnswer: opts?.[cIdx] ?? '',
-            options: opts ?? questionData?.options ?? [],
+            correctAnswer: opts[cIdx] ?? '',
+            options: opts,
             playerResults: results,
           });
 
@@ -166,9 +161,7 @@ export default function FactOrFrictionGame({ playerId, playerName: _playerName }
           break;
         }
         case 'FF_SCORE_UPDATE': {
-          const pl = data.payload as Record<string, unknown> | undefined;
-          const raw = pl ?? data;
-          const scores = raw.scores as Record<string, number> | undefined;
+          const scores = data.scores as Record<string, number> | undefined;
           if (scores && scores[playerId] != null) {
             const newScore = scores[playerId];
             const delta = newScore - myScore;
