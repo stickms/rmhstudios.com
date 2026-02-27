@@ -2,16 +2,16 @@
  * RhymeTimeResults — Round results display for Rhyme Time.
  *
  * Shows all submitted words grouped by rarity tier (rare → uncommon → common).
- * Each word entry includes the word text, who submitted it, a color-coded
- * rarity badge, points earned, and a multi-syllable indicator.
- * The current player's words are highlighted. Speed bonus indicators
- * are shown where applicable. An animated score tally and per-player
- * breakdown (valid/invalid counts, round score) are displayed at the bottom.
+ * Each unique word is displayed once with all submitters listed alongside it.
+ * A Lucide Zap icon appears next to the player who received the speed bonus.
+ * Multi-syllable indicators and rarity badges are shown per word.
+ * An animated score tally and per-player breakdown (valid/invalid counts,
+ * round score) are displayed at the bottom.
  *
  * Props:
  *   rootWord: string — The root word for this round
  *   currentUserId: string — ID of the viewing player (to highlight own words)
- *   wordResults: WordResult[] — All scored words across all players
+ *   wordResults: WordResult[] — All unique scored words with their submitters
  *   playerBreakdowns: PlayerBreakdown[] — Per-player summary stats
  *   roundNumber: number — Current round number
  */
@@ -22,14 +22,18 @@ import { Sparkles, Zap, Star } from 'lucide-react';
 
 export type RarityTier = 'rare' | 'uncommon' | 'common' | 'does_not_rhyme' | 'not_in_dict';
 
+export interface WordSubmitter {
+  userId: string;
+  userName: string;
+  speedBonus: boolean;
+}
+
 export interface WordResult {
   word: string;
-  submittedBy: string;
-  userId: string;
+  submitters: WordSubmitter[];
   rarity: RarityTier;
   points: number;
   multiSyllable: boolean;
-  speedBonus: boolean;
 }
 
 export interface PlayerBreakdown {
@@ -75,9 +79,12 @@ export default function RhymeTimeResults({
   playerBreakdowns,
   roundNumber,
 }: RhymeTimeResultsProps) {
+  // Deduplicate words: group by word string so each word appears once
+  const uniqueWords = deduplicateWords(wordResults);
+
   const groupedByRarity = TIER_ORDER.map((tier) => ({
     tier,
-    words: wordResults.filter((w) => w.rarity === tier),
+    words: uniqueWords.filter((w) => w.rarity === tier),
   })).filter((g) => g.words.length > 0);
 
   return (
@@ -110,11 +117,11 @@ export default function RhymeTimeResults({
               {config.label} — {words.length} word{words.length !== 1 ? 's' : ''}
             </h3>
             <ul className="space-y-1">
-              {words.map((w, i) => {
-                const isOwn = w.userId === currentUserId;
+              {words.map((w) => {
+                const isOwn = w.submitters.some((s) => s.userId === currentUserId);
                 return (
                   <li
-                    key={`${w.word}-${i}`}
+                    key={w.word}
                     className={`flex gap-3 items-center justify-between rounded-lg px-3 py-1.5 text-sm ${
                       isOwn ? 'bg-(--rmhbox-accent)/10 ring-1 ring-(--rmhbox-accent)/30' : ''
                     } ${isInvalid ? 'opacity-60' : ''}`}
@@ -128,15 +135,24 @@ export default function RhymeTimeResults({
                           multi
                         </span>
                       )}
-                      {w.speedBonus && (
-                        <span title="Speed bonus"><Zap className="h-3.5 w-3.5 text-(--rmhbox-warning)" /></span>
-                      )}
                       <span className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${config.bg} ${config.color}`}>
                         {config.label}
                       </span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-xs text-(--rmhbox-text-muted)">{w.submittedBy}</span>
+                      <span className="flex items-center gap-1.5 text-xs text-(--rmhbox-text-muted)">
+                        {w.submitters.map((s, si) => (
+                          <span key={s.userId} className="inline-flex items-center gap-0.5">
+                            {si > 0 && <span className="text-(--rmhbox-text-dim)">,</span>}
+                            <span className={s.userId === currentUserId ? 'font-semibold text-(--rmhbox-accent)' : ''}>
+                              {s.userName}
+                            </span>
+                            {s.speedBonus && (
+                              <span title="Speed bonus"><Zap className="inline h-3 w-3 text-(--rmhbox-warning)" /></span>
+                            )}
+                          </span>
+                        ))}
+                      </span>
                       <span className={`font-mono font-semibold ${w.points < 0 ? 'text-(--rmhbox-danger)' : w.points === 0 ? 'text-(--rmhbox-text-dim)' : 'text-(--rmhbox-accent)'}`}>
                         {w.points > 0 ? '+' : ''}{w.points}
                       </span>
@@ -187,4 +203,23 @@ export default function RhymeTimeResults({
       </motion.div>
     </motion.div>
   );
+}
+
+/** Deduplicate word results: merge entries with the same word into one, combining submitters. */
+function deduplicateWords(wordResults: WordResult[]): WordResult[] {
+  const map = new Map<string, WordResult>();
+  for (const wr of wordResults) {
+    const existing = map.get(wr.word);
+    if (existing) {
+      // Merge submitters (avoid duplicate userIds)
+      for (const s of wr.submitters) {
+        if (!existing.submitters.some((es) => es.userId === s.userId)) {
+          existing.submitters.push(s);
+        }
+      }
+    } else {
+      map.set(wr.word, { ...wr, submitters: [...wr.submitters] });
+    }
+  }
+  return Array.from(map.values());
 }
