@@ -22,15 +22,15 @@ import type { PlayerRanking, Award } from '@/lib/rmhbox/types';
 import { selectRoundPrompts, assignPromptsToPlayers } from '@/lib/rmhbox/wit-war-lash/data-loader';
 import { SubmitAnswerSchema, CastVoteSchema } from '@/lib/rmhbox/wit-war-lash/schemas';
 import {
-  WWL_TOTAL_ROUNDS,
-  WWL_WRITING_DURATION,
-  WWL_VOTING_DURATION,
-  WWL_MATCHUP_RESULTS_DURATION,
-  WWL_ROUND_RESULTS_DURATION,
-  WWL_PROMPT_REVEAL_DURATION,
-  WWL_MAX_MATCHUP_POINTS,
-  WWL_QUIPLASH_BONUS,
-  WWL_SAFETY_QUIP,
+  WW_TOTAL_ROUNDS,
+  WW_WRITING_DURATION,
+  WW_VOTING_DURATION,
+  WW_MATCHUP_RESULTS_DURATION,
+  WW_ROUND_RESULTS_DURATION,
+  WW_PROMPT_REVEAL_DURATION,
+  WW_MAX_MATCHUP_POINTS,
+  WW_QUIPLASH_BONUS,
+  WW_SAFETY_QUIP,
 } from '@/lib/rmhbox/constants';
 import { logger } from '../../logger';
 import {
@@ -61,7 +61,7 @@ export class WitWarLashMinigame extends BaseMinigame {
     logger.info({
       event: 'wit_war_lash:start',
       lobbyId: this.context.lobbyId,
-      totalRounds: this.getSetting('totalRounds', WWL_TOTAL_ROUNDS),
+      totalRounds: this.getSetting('totalRounds', WW_TOTAL_ROUNDS),
       playerCount: this.context.players.size,
     });
 
@@ -77,7 +77,7 @@ export class WitWarLashMinigame extends BaseMinigame {
     this.state = {
       phase: WitWarLashPhase.PROMPT_REVEAL,
       currentRound: 0,
-      totalRounds: this.getSetting('totalRounds', WWL_TOTAL_ROUNDS),
+      totalRounds: this.getSetting('totalRounds', WW_TOTAL_ROUNDS),
       matchups: [],
       assignments: {},
       submitted: new Set(),
@@ -181,12 +181,12 @@ export class WitWarLashMinigame extends BaseMinigame {
       matchupCount: this.state.matchups.length,
     });
 
-    this.setTimeout(() => this.startWritingPhase(), WWL_PROMPT_REVEAL_DURATION * 1000);
+    this.setTimeout(() => this.startWritingPhase(), WW_PROMPT_REVEAL_DURATION * 1000);
   }
 
   private startWritingPhase(): void {
     this.state.phase = WitWarLashPhase.WRITING;
-    const duration = this.getSetting('writingDuration', WWL_WRITING_DURATION);
+    const duration = this.getSetting('writingDuration', WW_WRITING_DURATION);
 
     this.context.broadcastAction({
       type: 'WWL_WRITING_START',
@@ -203,8 +203,8 @@ export class WitWarLashMinigame extends BaseMinigame {
 
     // Fill in safety quips for missing answers
     for (const matchup of this.state.matchups) {
-      if (!matchup.answerA) matchup.answerA = WWL_SAFETY_QUIP;
-      if (!matchup.answerB) matchup.answerB = WWL_SAFETY_QUIP;
+      if (!matchup.answerA) matchup.answerA = WW_SAFETY_QUIP;
+      if (!matchup.answerB) matchup.answerB = WW_SAFETY_QUIP;
     }
 
     this.context.broadcastAction({
@@ -230,7 +230,7 @@ export class WitWarLashMinigame extends BaseMinigame {
 
     this.state.phase = WitWarLashPhase.VOTING;
     const matchup = this.state.matchups[this.state.currentMatchupIndex];
-    const duration = this.getSetting('votingDuration', WWL_VOTING_DURATION);
+    const duration = this.getSetting('votingDuration', WW_VOTING_DURATION);
 
     this.context.broadcastAction({
       type: 'WWL_MATCHUP_START',
@@ -285,14 +285,14 @@ export class WitWarLashMinigame extends BaseMinigame {
     }
 
     // Award points
-    const isSafetyA = matchup.answerA === WWL_SAFETY_QUIP;
-    const isSafetyB = matchup.answerB === WWL_SAFETY_QUIP;
+    const isSafetyA = matchup.answerA === WW_SAFETY_QUIP;
+    const isSafetyB = matchup.answerB === WW_SAFETY_QUIP;
 
-    const scoreA = isSafetyA ? 0 : Math.round((matchup.votePercentA / 100) * WWL_MAX_MATCHUP_POINTS);
-    const scoreB = isSafetyB ? 0 : Math.round((matchup.votePercentB / 100) * WWL_MAX_MATCHUP_POINTS);
+    const scoreA = isSafetyA ? 0 : Math.round((matchup.votePercentA / 100) * WW_MAX_MATCHUP_POINTS);
+    const scoreB = isSafetyB ? 0 : Math.round((matchup.votePercentB / 100) * WW_MAX_MATCHUP_POINTS);
 
-    const bonusA = matchup.isQuiplash && matchup.winnerId === matchup.playerA ? WWL_QUIPLASH_BONUS : 0;
-    const bonusB = matchup.isQuiplash && matchup.winnerId === matchup.playerB ? WWL_QUIPLASH_BONUS : 0;
+    const bonusA = matchup.isQuiplash && matchup.winnerId === matchup.playerA ? WW_QUIPLASH_BONUS : 0;
+    const bonusB = matchup.isQuiplash && matchup.winnerId === matchup.playerB ? WW_QUIPLASH_BONUS : 0;
 
     this.state.scores[matchup.playerA] = (this.state.scores[matchup.playerA] ?? 0) + scoreA + bonusA;
     this.state.scores[matchup.playerB] = (this.state.scores[matchup.playerB] ?? 0) + scoreB + bonusB;
@@ -341,7 +341,7 @@ export class WitWarLashMinigame extends BaseMinigame {
     this.setTimeout(() => {
       this.state.currentMatchupIndex++;
       this.startMatchupVoting();
-    }, WWL_MATCHUP_RESULTS_DURATION * 1000);
+    }, WW_MATCHUP_RESULTS_DURATION * 1000);
   }
 
   // ─── Round Results ──────────────────────────────────────────
@@ -373,7 +373,7 @@ export class WitWarLashMinigame extends BaseMinigame {
       },
     });
 
-    this.startPhaseTimer(WWL_ROUND_RESULTS_DURATION);
+    this.startPhaseTimer(WW_ROUND_RESULTS_DURATION);
 
     this.setTimeout(() => {
       this.clearPhaseTimer();
@@ -382,7 +382,7 @@ export class WitWarLashMinigame extends BaseMinigame {
       } else {
         this.endGame();
       }
-    }, WWL_ROUND_RESULTS_DURATION * 1000);
+    }, WW_ROUND_RESULTS_DURATION * 1000);
   }
 
   private endGame(): void {
@@ -615,12 +615,12 @@ export class WitWarLashMinigame extends BaseMinigame {
         let roundScore = 0;
         for (const m of matchups) {
           if (m.playerA === userId) {
-            const pts = m.answerA === WWL_SAFETY_QUIP ? 0 : Math.round((m.votePercentA / 100) * WWL_MAX_MATCHUP_POINTS);
-            const bonus = m.isQuiplash && m.winnerId === userId ? WWL_QUIPLASH_BONUS : 0;
+            const pts = m.answerA === WW_SAFETY_QUIP ? 0 : Math.round((m.votePercentA / 100) * WW_MAX_MATCHUP_POINTS);
+            const bonus = m.isQuiplash && m.winnerId === userId ? WW_QUIPLASH_BONUS : 0;
             roundScore += pts + bonus;
           } else if (m.playerB === userId) {
-            const pts = m.answerB === WWL_SAFETY_QUIP ? 0 : Math.round((m.votePercentB / 100) * WWL_MAX_MATCHUP_POINTS);
-            const bonus = m.isQuiplash && m.winnerId === userId ? WWL_QUIPLASH_BONUS : 0;
+            const pts = m.answerB === WW_SAFETY_QUIP ? 0 : Math.round((m.votePercentB / 100) * WW_MAX_MATCHUP_POINTS);
+            const bonus = m.isQuiplash && m.winnerId === userId ? WW_QUIPLASH_BONUS : 0;
             roundScore += pts + bonus;
           }
         }
@@ -671,7 +671,7 @@ export class WitWarLashMinigame extends BaseMinigame {
       if (stats[m.playerA]) {
         stats[m.playerA].matchupsPlayed++;
         stats[m.playerA].totalVotePct += m.votePercentA;
-        if (m.answerA === WWL_SAFETY_QUIP) stats[m.playerA].safetyQuips++;
+        if (m.answerA === WW_SAFETY_QUIP) stats[m.playerA].safetyQuips++;
         if (m.isQuiplash && m.winnerId === m.playerA) stats[m.playerA].quiplashWins++;
         if (m.votePercentA > 50 && m.votePercentA > stats[m.playerA].biggestUpset) {
           stats[m.playerA].biggestUpset = m.votePercentA;
@@ -680,7 +680,7 @@ export class WitWarLashMinigame extends BaseMinigame {
       if (stats[m.playerB]) {
         stats[m.playerB].matchupsPlayed++;
         stats[m.playerB].totalVotePct += m.votePercentB;
-        if (m.answerB === WWL_SAFETY_QUIP) stats[m.playerB].safetyQuips++;
+        if (m.answerB === WW_SAFETY_QUIP) stats[m.playerB].safetyQuips++;
         if (m.isQuiplash && m.winnerId === m.playerB) stats[m.playerB].quiplashWins++;
         if (m.votePercentB > 50 && m.votePercentB > stats[m.playerB].biggestUpset) {
           stats[m.playerB].biggestUpset = m.votePercentB;

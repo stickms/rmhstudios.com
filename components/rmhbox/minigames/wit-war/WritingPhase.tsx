@@ -10,7 +10,7 @@
 import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Send, Check, Pencil } from 'lucide-react';
-import { WWL_MAX_ANSWER_LENGTH } from '@/lib/rmhbox/constants';
+import { WW_MAX_ANSWER_LENGTH } from '@/lib/rmhbox/constants';
 import type { PromptAssignment } from './WitWarLashGame';
 
 interface WritingPhaseProps {
@@ -95,7 +95,7 @@ export default function WritingPhase({
                 <textarea
                   value={value}
                   onChange={(e) => handleChange(prompt.promptIndex, e.target.value)}
-                  maxLength={WWL_MAX_ANSWER_LENGTH}
+                  maxLength={WW_MAX_ANSWER_LENGTH}
                   disabled={hasSubmitted || isSent}
                   placeholder="Type your answer..."
                   rows={2}
@@ -103,7 +103,7 @@ export default function WritingPhase({
                 />
                 <div className="flex items-center justify-between mt-1">
                   <span className="text-xs text-(--rmhbox-text-muted)">
-                    {value.length}/{WWL_MAX_ANSWER_LENGTH}
+                    {value.length}/{WW_MAX_ANSWER_LENGTH}
                   </span>
                   {isSent ? (
                     <span className="flex items-center gap-1 text-xs text-green-500">

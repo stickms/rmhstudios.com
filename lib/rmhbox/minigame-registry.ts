@@ -19,7 +19,7 @@ import {
   MM_DRAWING_DURATION_SECONDS, MM_MAX_STROKES, MM_AUCTION_DURATION_SECONDS,
   MM_STARTING_CURRENCY, MM_BID_INCREMENT, MM_DEFAULT_ROUNDS,
   EC_MAX_ROUNDS, EC_ROUND_DURATION_SECONDS, EC_MAX_EMOJIS, EC_MAX_GUESSES_PER_PLAYER,
-  WWL_TOTAL_ROUNDS, WWL_WRITING_DURATION, WWL_VOTING_DURATION,
+  WW_TOTAL_ROUNDS, WW_WRITING_DURATION, WW_VOTING_DURATION,
 } from './constants';
 
 // ─── Per-Minigame Settings Schemas ───────────────────────────────
@@ -69,9 +69,9 @@ export const EMOJI_CINEMA_SETTINGS: GameSettingsSchema = [
 ];
 
 export const WIT_WAR_LASH_SETTINGS: GameSettingsSchema = [
-  { key: 'totalRounds', type: 'integer', label: 'Number of Rounds', description: 'How many rounds of prompt matchups to play', default: WWL_TOTAL_ROUNDS, min: 1, max: 3, step: 1 },
-  { key: 'writingDuration', type: 'integer', label: 'Writing Duration (seconds)', description: 'Time players have to write answers to their prompts', default: WWL_WRITING_DURATION, min: 30, max: 120, step: 10 },
-  { key: 'votingDuration', type: 'integer', label: 'Voting Duration (seconds)', description: 'Time to vote on each head-to-head matchup', default: WWL_VOTING_DURATION, min: 10, max: 30, step: 5 },
+  { key: 'totalRounds', type: 'integer', label: 'Number of Rounds', description: 'How many rounds of prompt matchups to play', default: WW_TOTAL_ROUNDS, min: 1, max: 3, step: 1 },
+  { key: 'writingDuration', type: 'integer', label: 'Writing Duration (seconds)', description: 'Time players have to write answers to their prompts', default: WW_WRITING_DURATION, min: 30, max: 120, step: 10 },
+  { key: 'votingDuration', type: 'integer', label: 'Voting Duration (seconds)', description: 'Time to vote on each head-to-head matchup', default: WW_VOTING_DURATION, min: 10, max: 30, step: 5 },
 ];
 
 // ─── Registry ────────────────────────────────────────────────────

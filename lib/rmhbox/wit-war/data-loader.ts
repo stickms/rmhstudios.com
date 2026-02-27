@@ -7,7 +7,7 @@
 
 import fs from 'fs';
 import path from 'path';
-import { WWL_PROMPTS_PER_PLAYER } from '../constants';
+import { WW_PROMPTS_PER_PLAYER } from '../constants';
 
 let cachedPrompts: string[] | null = null;
 
@@ -47,7 +47,7 @@ export function selectRoundPrompts(
  * Assigns prompts to player pairs for head-to-head matchups.
  *
  * With N players, creates N matchups. Each player gets exactly
- * WWL_PROMPTS_PER_PLAYER (2) prompts. Each prompt is assigned to
+ * WW_PROMPTS_PER_PLAYER (2) prompts. Each prompt is assigned to
  * exactly 2 different players.
  *
  * Uses a round-robin pairing: player i is paired with player
@@ -80,7 +80,7 @@ export function assignPromptsToPlayers(
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
 
-  // Each player gets exactly WWL_PROMPTS_PER_PLAYER prompts.
+  // Each player gets exactly WW_PROMPTS_PER_PLAYER prompts.
   // Total prompt slots = N * 2 = 2N, and each prompt fills 2 slots,
   // so we need exactly N prompts for N matchups.
   for (let i = 0; i < n; i++) {
