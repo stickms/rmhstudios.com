@@ -193,6 +193,8 @@ describe('Host-Initiated Spectator Promotion (§8.2)', () => {
 
     const error = findLastEmitted(socketA.emitted, S2C.ERROR);
     expect((error!.data as { code: string }).code).toBe('LOBBY_IN_GAME');
+    expect(lobby.spectators.has(MOCK_USERS.charlie.userId)).toBe(true);
+    expect(lobby.players.has(MOCK_USERS.charlie.userId)).toBe(false);
   });
 
   it('should reject host promotion during COUNTDOWN state', () => {
@@ -203,6 +205,8 @@ describe('Host-Initiated Spectator Promotion (§8.2)', () => {
 
     const error = findLastEmitted(socketA.emitted, S2C.ERROR);
     expect((error!.data as { code: string }).code).toBe('LOBBY_IN_GAME');
+    expect(lobby.spectators.has(MOCK_USERS.charlie.userId)).toBe(true);
+    expect(lobby.players.has(MOCK_USERS.charlie.userId)).toBe(false);
   });
 
   it('should allow host promotion during WAITING state', () => {
