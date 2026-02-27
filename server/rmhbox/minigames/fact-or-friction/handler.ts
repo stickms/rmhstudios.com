@@ -177,7 +177,9 @@ export class FactOrFrictionGame extends BaseMinigame {
       difficulty: question.difficulty,
     });
 
-    // Broadcast question WITHOUT correctIndex
+    // Broadcast question WITHOUT correctIndex; include potStartValue so
+    // the client can set the pot display max (may differ from default if
+    // the host configured a custom setting).
     this.broadcastGameAction({
       type: 'FF_QUESTION',
       questionIndex: this.state.currentQuestionIndex,
