@@ -104,6 +104,14 @@ export class UndercoverEditorGame extends BaseMinigame {
     this.keywordPool = loadKeywords();
   }
 
+  /**
+   * Spectator mode: shared-privileged — all spectators see the same
+   * omniscient state (editor identity, keywords, edit history all visible).
+   */
+  get spectatorMode(): 'shared-privileged' {
+    return 'shared-privileged';
+  }
+
   // ─── Lifecycle ───────────────────────────────────────────────
 
   start(): void {
@@ -187,7 +195,7 @@ export class UndercoverEditorGame extends BaseMinigame {
       prompt: s.prompt,
     }));
 
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'UE_GAME_START',
       stories: storyList,
       players: playerInfos,
@@ -248,7 +256,7 @@ export class UndercoverEditorGame extends BaseMinigame {
       writeTimeout,
     });
 
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'UE_WRITE_START',
       round: this.state.currentRound,
       totalRounds: this.state.totalRounds,
@@ -320,7 +328,7 @@ export class UndercoverEditorGame extends BaseMinigame {
     });
 
     // Broadcast EDIT phase start to all — writers see waiting state
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'UE_EDIT_START',
       round: this.state.currentRound,
       editDurationSeconds: editTimeout,
@@ -406,7 +414,7 @@ export class UndercoverEditorGame extends BaseMinigame {
     const allStories = this.buildAllStoryViews();
     const playerInfos = this.buildPlayerInfos();
 
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'UE_REVIEW_START',
       stories: allStories,
       players: playerInfos,
@@ -474,7 +482,7 @@ export class UndercoverEditorGame extends BaseMinigame {
       storyCount: storyReveals.length,
     });
 
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'UE_REVEAL',
       storyReveals,
       matchResults,
@@ -811,7 +819,7 @@ export class UndercoverEditorGame extends BaseMinigame {
     const player = this.context.players.get(userId);
     const userName = player?.userName ?? 'Unknown';
 
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'UE_PLAYER_LOCKED_IN',
       userId,
       userName,
@@ -995,6 +1003,31 @@ export class UndercoverEditorGame extends BaseMinigame {
       'rmhbox:game:state_snapshot',
       this.getStateForSpectator(),
     );
+
+    logger.info({
+      event: 'undercover_editor:player_join',
+      lobbyId: this.context.lobbyId,
+      userId,
+      phase: this.state.phase,
+    });
+  }
+
+  handlePlayerDisconnect(userId: string): void {
+    // During EDIT, auto-complete the editor's edit if they disconnect
+    if (this.state.phase === 'EDIT') {
+      const assignedStoryId = this.state.editorAssignments.get(userId);
+      if (assignedStoryId && !this.state.roundEditsDone.get(assignedStoryId)) {
+        this.state.roundEditsDone.set(assignedStoryId, true);
+        this.checkEditComplete();
+      }
+    }
+
+    logger.info({
+      event: 'undercover_editor:player_disconnect',
+      lobbyId: this.context.lobbyId,
+      userId,
+      phase: this.state.phase,
+    });
   }
 
   handlePlayerReconnect(userId: string): void {
@@ -1003,6 +1036,13 @@ export class UndercoverEditorGame extends BaseMinigame {
       'rmhbox:game:state_snapshot',
       this.getStateForPlayer(userId),
     );
+
+    logger.info({
+      event: 'undercover_editor:player_reconnect',
+      lobbyId: this.context.lobbyId,
+      userId,
+      phase: this.state.phase,
+    });
   }
 
   // ─── Results ──────────────────────────────────────────────────
@@ -1104,7 +1144,7 @@ export class UndercoverEditorGame extends BaseMinigame {
   // ─── Helper: Broadcast ────────────────────────────────────────
 
   private broadcastAllStories(): void {
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'UE_STORIES_UPDATED',
       stories: this.buildAllStoryViews(),
     });

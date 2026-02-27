@@ -399,16 +399,19 @@ registerHistoryDisplay({
       label: 'Story Sentences',
       extract: (log: GameLog) =>
         log.actions
-          .filter((a) => a.type === 'word_added')
-          .map((a) => (a.payload as Record<string, unknown>).word as string)
+          .filter((a) => a.type === 'sentence_submitted')
+          .map((a) => (a.payload as Record<string, unknown>).text as string)
           .filter(Boolean),
     },
     {
       key: 'keyword',
       label: 'Keyword',
       extract: (log: GameLog) => {
-        const reveal = log.actions.find((a) => a.type === 'final_reveal');
-        return reveal ? [(reveal.payload as Record<string, unknown>).keyword as string] : [];
+        const reveal = log.actions.find((a) => a.type === 'reveal');
+        if (!reveal) return [];
+        const payload = reveal.payload as Record<string, unknown>;
+        const reveals = payload.storyReveals as Array<Record<string, unknown>> | undefined;
+        return reveals?.map((r) => r.keyword as string).filter(Boolean) ?? [];
       },
     },
   ],
@@ -423,91 +426,11 @@ registerHistoryDisplay({
     { key: 'keywordInStory', label: 'Keyword in Story', type: 'boolean' },
   ],
   getSummary: (log: GameLog) => {
-    const endAction = log.actions.find((a) => a.type === 'final_reveal');
-    if (!endAction) return 'Undercover Editor game';
-    const payload = endAction.payload as Record<string, unknown>;
-    return `Editor ${payload.editorCaught ? 'caught' : 'escaped'} — Keyword: "${payload.keyword ?? '?'}"`;
-  },
-});
-
-// ─── Fact or Friction ────────────────────────────────────────────
-
-registerHistoryDisplay({
-  minigameId: 'fact-or-friction',
-  DetailComponent: FactOrFrictionHistoryDetail,
-  searchableFields: [
-    {
-      key: 'questions',
-      label: 'Questions',
-      extract: (log: GameLog) =>
-        log.actions
-          .filter((a) => a.type === 'question_start')
-          .map((a) => (a.payload as Record<string, unknown>).questionText as string)
-          .filter(Boolean),
-    },
-    {
-      key: 'categories',
-      label: 'Categories',
-      extract: (log: GameLog) =>
-        log.actions
-          .filter((a) => a.type === 'question_start')
-          .map((a) => (a.payload as Record<string, unknown>).category as string)
-          .filter(Boolean),
-    },
-  ],
-  filterableFields: [
-    {
-      key: 'difficulty',
-      label: 'Difficulty',
-      type: 'select',
-      options: () => ['easy', 'medium', 'hard'],
-    },
-    { key: 'correctCount', label: 'Questions Correct', type: 'range', valuePath: 'correctCount' },
-  ],
-  getSummary: (log: GameLog) => {
-    const questions = log.actions.filter((a) => a.type === 'question_start');
-    return `${questions.length} questions — Trivia challenge`;
-  },
-});
-
-// ─── Undercover Editor ───────────────────────────────────────────
-
-registerHistoryDisplay({
-  minigameId: 'undercover-editor',
-  DetailComponent: UndercoverEditorHistoryDetail,
-  searchableFields: [
-    {
-      key: 'sentences',
-      label: 'Story Sentences',
-      extract: (log: GameLog) =>
-        log.actions
-          .filter((a) => a.type === 'word_added')
-          .map((a) => (a.payload as Record<string, unknown>).word as string)
-          .filter(Boolean),
-    },
-    {
-      key: 'keyword',
-      label: 'Keyword',
-      extract: (log: GameLog) => {
-        const reveal = log.actions.find((a) => a.type === 'final_reveal');
-        return reveal ? [(reveal.payload as Record<string, unknown>).keyword as string] : [];
-      },
-    },
-  ],
-  filterableFields: [
-    {
-      key: 'role',
-      label: 'Your Role',
-      type: 'select',
-      options: () => ['editor', 'writer'],
-    },
-    { key: 'editorCaught', label: 'Editor Caught', type: 'boolean' },
-    { key: 'keywordInStory', label: 'Keyword in Story', type: 'boolean' },
-  ],
-  getSummary: (log: GameLog) => {
-    const endAction = log.actions.find((a) => a.type === 'final_reveal');
-    if (!endAction) return 'Undercover Editor game';
-    const payload = endAction.payload as Record<string, unknown>;
-    return `Editor ${payload.editorCaught ? 'caught' : 'escaped'} — Keyword: "${payload.keyword ?? '?'}"`;
+    const reveal = log.actions.find((a) => a.type === 'reveal');
+    if (!reveal) return 'Undercover Editor game';
+    const payload = reveal.payload as Record<string, unknown>;
+    const reveals = payload.storyReveals as Array<Record<string, unknown>> | undefined;
+    const count = reveals?.length ?? 0;
+    return `${count} parallel stories — Social deduction`;
   },
 });

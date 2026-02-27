@@ -78,15 +78,19 @@ describe('History Display Configuration (§6.7)', () => {
       const mockLog = {
         actions: [
           {
-            type: 'final_reveal',
-            payload: { editorCaught: true, keyword: 'shadow' },
+            type: 'reveal',
+            payload: {
+              storyReveals: [
+                { storyId: 'story1', keyword: 'shadow', keywordInStory: true },
+                { storyId: 'story2', keyword: 'light', keywordInStory: false },
+              ],
+            },
           },
         ],
       };
       const summary = config!.getSummary(mockLog as unknown as never);
       expect(typeof summary).toBe('string');
-      expect(summary).toContain('caught');
-      expect(summary).toContain('shadow');
+      expect(summary).toContain('2 parallel stories');
     });
   });
 });

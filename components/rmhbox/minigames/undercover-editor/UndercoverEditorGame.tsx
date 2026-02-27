@@ -111,6 +111,9 @@ export default function UndercoverEditorGame({
 }: UndercoverEditorGameProps) {
   void _playerName;
 
+  // ─── Spectator Mode ────────────────────────────────────────
+  const isSpectator = useRMHboxStore((s) => s.lobby?.myRole === 'spectator');
+
   // ─── State ─────────────────────────────────────────────────
   const [phase, setPhase] = useState<Phase>('LOBBY');
   const [assignedStoryId, setAssignedStoryId] = useState<string | null>(null);
@@ -139,6 +142,9 @@ export default function UndercoverEditorGame({
   const [storyReveals, setStoryReveals] = useState<StoryRevealInfo[]>([]);
   const [matchResults, setMatchResults] = useState<Record<string, MatchResult[]>>({});
   const [scores, setScores] = useState<ScoreEntry[]>([]);
+
+  // Error toast
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Currently focused story for writing (tab index)
   const [activeStoryIndex, setActiveStoryIndex] = useState(0);
@@ -275,11 +281,16 @@ export default function UndercoverEditorGame({
           if (mr) setMatchResults(mr);
           const sc = data.scores as ScoreEntry[] | undefined;
           if (sc) setScores(sc);
-          playSound('scoreDing');
+          playSound('victoryFanfare');
           break;
         }
         case 'UE_ERROR': {
-          // Could display an error toast
+          const msg = data.message as string | undefined;
+          if (msg) {
+            setErrorMessage(msg);
+            // Auto-clear after 3 seconds
+            setTimeout(() => setErrorMessage(null), 3000);
+          }
           break;
         }
         case 'UE_GAME_OVER': {
@@ -362,32 +373,36 @@ export default function UndercoverEditorGame({
 
   const handleSubmitSentence = useCallback(
     (storyId: string, text: string) => {
+      if (isSpectator) return;
       emitGameInput('WRITE_SENTENCE', { storyId, text });
     },
-    [],
+    [isSpectator],
   );
 
   const handleUnsubmitSentence = useCallback(
     (storyId: string) => {
+      if (isSpectator) return;
       emitGameInput('UNSUBMIT_SENTENCE', { storyId });
     },
-    [],
+    [isSpectator],
   );
 
   const handleEdit = useCallback(
     (sentenceIndex: number, wordIndex: number, newWord: string) => {
-      if (!assignedStoryId) return;
+      if (isSpectator || !assignedStoryId) return;
       emitGameInput('EDIT_WORD', { storyId: assignedStoryId, sentenceIndex, wordIndex, newWord });
     },
-    [assignedStoryId],
+    [isSpectator, assignedStoryId],
   );
 
   const handleSkipEdit = useCallback(() => {
+    if (isSpectator) return;
     emitGameInput('SKIP_EDIT', {});
-  }, []);
+  }, [isSpectator]);
 
   const handleGuessChange = useCallback(
     (storyId: string, guessedEditorId: string) => {
+      if (isSpectator) return;
       setMatchGuesses((prev) => {
         const next = { ...prev, [storyId]: guessedEditorId };
         // Auto-save to server
@@ -395,13 +410,14 @@ export default function UndercoverEditorGame({
         return next;
       });
     },
-    [],
+    [isSpectator],
   );
 
   const handleLockIn = useCallback(() => {
+    if (isSpectator) return;
     emitGameInput('LOCK_IN_MATCHING', {});
     setIsLockedIn(true);
-  }, []);
+  }, [isSpectator]);
 
   // ─── Derived Values ────────────────────────────────────────
 
@@ -414,8 +430,22 @@ export default function UndercoverEditorGame({
 
   return (
     <div className="flex w-full flex-col items-center gap-4">
+      {/* Spectator indicator */}
+      {isSpectator && (
+        <div className="rounded-lg bg-purple-500/10 border border-purple-500/30 px-3 py-1.5 text-xs font-medium text-purple-400">
+          👁 Spectating
+        </div>
+      )}
+
+      {/* Error toast */}
+      {errorMessage && (
+        <div className="rounded-lg bg-red-500/10 border border-red-500/30 px-3 py-1.5 text-xs text-red-400">
+          {errorMessage}
+        </div>
+      )}
+
       {/* Persistent role badge — shows assigned story and keyword */}
-      {assignedStoryId && keyword && (
+      {assignedStoryId && keyword && !isSpectator && (
         <div className="self-end">
           <RoleBadge role="editor" keyword={keyword} />
         </div>
@@ -499,8 +529,12 @@ export default function UndercoverEditorGame({
                   )}
                 </div>
 
-                {/* Write input or submitted indicator */}
-                {mySubmissions[activeStory.storyId] ? (
+                {/* Write input or submitted indicator (hidden for spectators) */}
+                {isSpectator ? (
+                  <p className="text-xs text-(--rmhbox-text-muted) italic text-center">
+                    Watching players write…
+                  </p>
+                ) : mySubmissions[activeStory.storyId] ? (
                   <div className="flex items-center gap-2">
                     <p className="flex-1 rounded-lg bg-green-500/10 border border-green-500/30 px-3 py-2 text-sm text-green-400">
                       ✓ {mySubmissions[activeStory.storyId]}
@@ -580,7 +614,7 @@ export default function UndercoverEditorGame({
               players={gamePlayers}
               myPlayerId={playerId}
               currentGuesses={matchGuesses}
-              lockedIn={isLockedIn}
+              lockedIn={isLockedIn || isSpectator}
               lockedInPlayers={lockedInPlayers}
               onGuessChange={handleGuessChange}
               onLockIn={handleLockIn}

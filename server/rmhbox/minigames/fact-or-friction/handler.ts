@@ -71,6 +71,15 @@ export class FactOrFrictionGame extends BaseMinigame {
     this.questionPool = loadQuestions();
   }
 
+  /**
+   * Spectator mode: shared-privileged — all spectators see the same
+   * omniscient state (correct answer is masked during the answer phase,
+   * matching the player experience).
+   */
+  get spectatorMode(): 'shared-privileged' {
+    return 'shared-privileged';
+  }
+
   // ─── Lifecycle ───────────────────────────────────────────────
 
   start(): void {
@@ -152,7 +161,7 @@ export class FactOrFrictionGame extends BaseMinigame {
     });
 
     // Broadcast question WITHOUT correctIndex
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'FF_QUESTION',
       questionIndex: this.state.currentQuestionIndex,
       totalQuestions: this.state.totalQuestions,
@@ -190,7 +199,7 @@ export class FactOrFrictionGame extends BaseMinigame {
       potValue: this.state.potValue,
     });
 
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'FF_ANSWER_PHASE',
       duration: answerDuration,
       potValue: this.state.potValue,
@@ -285,7 +294,7 @@ export class FactOrFrictionGame extends BaseMinigame {
       passCount: questionResult.passCount,
     });
 
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'FF_ANSWER_REVEAL',
       questionIndex: this.state.currentQuestionIndex,
       correctIndex: question.correctIndex,
@@ -298,7 +307,7 @@ export class FactOrFrictionGame extends BaseMinigame {
     for (const [userId, score] of this.state.playerScores) {
       scores[userId] = score;
     }
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'FF_SCORE_UPDATE',
       scores,
     });
@@ -442,7 +451,7 @@ export class FactOrFrictionGame extends BaseMinigame {
     });
 
     // Broadcast to all that a player has answered (without revealing what)
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'FF_PLAYER_ANSWERED',
       userId,
     });
@@ -517,7 +526,7 @@ export class FactOrFrictionGame extends BaseMinigame {
     });
 
     // Broadcast to all
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'FF_PLAYER_ANSWERED',
       userId,
     });
