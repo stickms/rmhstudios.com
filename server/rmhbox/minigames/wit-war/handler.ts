@@ -1,10 +1,10 @@
 /**
  * RMHbox — Wit-War Minigame Server Handler
  *
- * A Quiplash-style party game. Players receive prompts, write funny
+ * A party game of wits. Players receive prompts, write funny
  * answers, then answers face off head-to-head while the audience votes.
  * Points are awarded based on vote percentage; a unanimous vote triggers
- * a "Wit-War!" bonus.
+ * a "Wit-Wham!" bonus.
  *
  * Phases per round:
  *   PROMPT_REVEAL → WRITING → VOTING (per matchup) → MATCHUP_RESULTS
@@ -32,7 +32,7 @@ import {
   WW_ROUND_RESULTS_DURATION,
   WW_PROMPT_REVEAL_DURATION,
   WW_MAX_MATCHUP_POINTS,
-  WW_QUIPLASH_BONUS,
+  WW_WITWHAM_BONUS,
   WW_SAFETY_QUIP,
 } from '@/lib/rmhbox/constants';
 import { logger } from '../../logger';
@@ -124,7 +124,7 @@ export class WitWarMinigame extends BaseMinigame {
       votePercentA: 0,
       votePercentB: 0,
       winnerId: null,
-      isQuiplash: false,
+      isWitWham: false,
     }));
 
     this.state.matchups = matchups;
@@ -285,7 +285,7 @@ export class WitWarMinigame extends BaseMinigame {
       matchup.votePercentA = 50;
       matchup.votePercentB = 50;
       matchup.winnerId = null;
-      matchup.isQuiplash = false;
+      matchup.isWitWham = false;
     } else {
       matchup.votePercentA = Math.round((votesForA / totalVotes) * 100);
       matchup.votePercentB = 100 - matchup.votePercentA;
@@ -298,7 +298,7 @@ export class WitWarMinigame extends BaseMinigame {
         matchup.winnerId = null;
       }
 
-      matchup.isQuiplash = totalVotes >= 2 && (votesForA === totalVotes || votesForB === totalVotes);
+      matchup.isWitWham = totalVotes >= 2 && (votesForA === totalVotes || votesForB === totalVotes);
     }
 
     // Award points
@@ -308,8 +308,8 @@ export class WitWarMinigame extends BaseMinigame {
     const scoreA = isSafetyA ? 0 : Math.round((matchup.votePercentA / 100) * WW_MAX_MATCHUP_POINTS);
     const scoreB = isSafetyB ? 0 : Math.round((matchup.votePercentB / 100) * WW_MAX_MATCHUP_POINTS);
 
-    const bonusA = matchup.isQuiplash && matchup.winnerId === matchup.playerA ? WW_QUIPLASH_BONUS : 0;
-    const bonusB = matchup.isQuiplash && matchup.winnerId === matchup.playerB ? WW_QUIPLASH_BONUS : 0;
+    const bonusA = matchup.isWitWham && matchup.winnerId === matchup.playerA ? WW_WITWHAM_BONUS : 0;
+    const bonusB = matchup.isWitWham && matchup.winnerId === matchup.playerB ? WW_WITWHAM_BONUS : 0;
 
     this.state.scores[matchup.playerA] = (this.state.scores[matchup.playerA] ?? 0) + scoreA + bonusA;
     this.state.scores[matchup.playerB] = (this.state.scores[matchup.playerB] ?? 0) + scoreB + bonusB;
@@ -325,7 +325,7 @@ export class WitWarMinigame extends BaseMinigame {
       votePercentA: matchup.votePercentA,
       votePercentB: matchup.votePercentB,
       winnerId: matchup.winnerId,
-      isQuiplash: matchup.isQuiplash,
+      isWitWham: matchup.isWitWham,
       scoreA: scoreA + bonusA,
       scoreB: scoreB + bonusB,
     });
@@ -351,7 +351,7 @@ export class WitWarMinigame extends BaseMinigame {
         votePercentA: matchup.votePercentA,
         votePercentB: matchup.votePercentB,
         winnerId: matchup.winnerId,
-        isQuiplash: matchup.isQuiplash,
+        isWitWham: matchup.isWitWham,
         scores: { ...this.state.scores },
       },
     });
@@ -386,7 +386,7 @@ export class WitWarMinigame extends BaseMinigame {
           votePercentA: m.votePercentA,
           votePercentB: m.votePercentB,
           winnerId: m.winnerId,
-          isQuiplash: m.isQuiplash,
+          isWitWham: m.isWitWham,
         })),
       },
     });
@@ -582,7 +582,7 @@ export class WitWarMinigame extends BaseMinigame {
             votePercentA: matchup.votePercentA,
             votePercentB: matchup.votePercentB,
             winnerId: matchup.winnerId,
-            isQuiplash: matchup.isQuiplash,
+            isWitWham: matchup.isWitWham,
           } : null,
         };
       }
@@ -609,7 +609,7 @@ export class WitWarMinigame extends BaseMinigame {
       votePercentA: m.votePercentA,
       votePercentB: m.votePercentB,
       winnerId: m.winnerId,
-      isQuiplash: m.isQuiplash,
+      isWitWham: m.isWitWham,
     }));
 
     return {
@@ -634,7 +634,7 @@ export class WitWarMinigame extends BaseMinigame {
         votePercentA: matchup.votePercentA,
         votePercentB: matchup.votePercentB,
         winnerId: matchup.winnerId,
-        isQuiplash: matchup.isQuiplash,
+        isWitWham: matchup.isWitWham,
         votes: matchup.votes,
       } : null,
     };
@@ -672,11 +672,11 @@ export class WitWarMinigame extends BaseMinigame {
         for (const m of matchups) {
           if (m.playerA === userId) {
             const pts = m.answerA === WW_SAFETY_QUIP ? 0 : Math.round((m.votePercentA / 100) * WW_MAX_MATCHUP_POINTS);
-            const bonus = m.isQuiplash && m.winnerId === userId ? WW_QUIPLASH_BONUS : 0;
+            const bonus = m.isWitWham && m.winnerId === userId ? WW_WITWHAM_BONUS : 0;
             roundScore += pts + bonus;
           } else if (m.playerB === userId) {
             const pts = m.answerB === WW_SAFETY_QUIP ? 0 : Math.round((m.votePercentB / 100) * WW_MAX_MATCHUP_POINTS);
-            const bonus = m.isQuiplash && m.winnerId === userId ? WW_QUIPLASH_BONUS : 0;
+            const bonus = m.isWitWham && m.winnerId === userId ? WW_WITWHAM_BONUS : 0;
             roundScore += pts + bonus;
           }
         }
@@ -708,7 +708,7 @@ export class WitWarMinigame extends BaseMinigame {
     const stats: Record<string, {
       totalVotePct: number;
       matchupsPlayed: number;
-      quiplashWins: number;
+      witWhamWins: number;
       biggestUpset: number;
       safetyQuips: number;
     }> = {};
@@ -717,7 +717,7 @@ export class WitWarMinigame extends BaseMinigame {
       stats[userId] = {
         totalVotePct: 0,
         matchupsPlayed: 0,
-        quiplashWins: 0,
+        witWhamWins: 0,
         biggestUpset: 0,
         safetyQuips: 0,
       };
@@ -728,7 +728,7 @@ export class WitWarMinigame extends BaseMinigame {
         stats[m.playerA].matchupsPlayed++;
         stats[m.playerA].totalVotePct += m.votePercentA;
         if (m.answerA === WW_SAFETY_QUIP) stats[m.playerA].safetyQuips++;
-        if (m.isQuiplash && m.winnerId === m.playerA) stats[m.playerA].quiplashWins++;
+        if (m.isWitWham && m.winnerId === m.playerA) stats[m.playerA].witWhamWins++;
         if (m.votePercentA > 50 && m.votePercentA > stats[m.playerA].biggestUpset) {
           stats[m.playerA].biggestUpset = m.votePercentA;
         }
@@ -737,7 +737,7 @@ export class WitWarMinigame extends BaseMinigame {
         stats[m.playerB].matchupsPlayed++;
         stats[m.playerB].totalVotePct += m.votePercentB;
         if (m.answerB === WW_SAFETY_QUIP) stats[m.playerB].safetyQuips++;
-        if (m.isQuiplash && m.winnerId === m.playerB) stats[m.playerB].quiplashWins++;
+        if (m.isWitWham && m.winnerId === m.playerB) stats[m.playerB].witWhamWins++;
         if (m.votePercentB > 50 && m.votePercentB > stats[m.playerB].biggestUpset) {
           stats[m.playerB].biggestUpset = m.votePercentB;
         }
@@ -762,18 +762,18 @@ export class WitWarMinigame extends BaseMinigame {
       });
     }
 
-    // Wit-War! — most unanimous wins
-    let witWarChamp: { userId: string; count: number } | null = null;
+    // Wit-Wham! — most unanimous wins
+    let witWhamChamp: { userId: string; count: number } | null = null;
     for (const [userId, s] of Object.entries(stats)) {
-      if (s.quiplashWins > 0 && (!witWarChamp || s.quiplashWins > witWarChamp.count)) {
-        witWarChamp = { userId, count: s.quiplashWins };
+      if (s.witWhamWins > 0 && (!witWhamChamp || s.witWhamWins > witWhamChamp.count)) {
+        witWhamChamp = { userId, count: s.witWhamWins };
       }
     }
-    if (witWarChamp) {
+    if (witWhamChamp) {
       awards.push({
-        userId: witWarChamp.userId,
-        title: 'Wit-War!',
-        description: `Won ${witWarChamp.count} matchup${witWarChamp.count > 1 ? 's' : ''} unanimously`,
+        userId: witWhamChamp.userId,
+        title: 'Wit-Wham!',
+        description: `Won ${witWhamChamp.count} matchup${witWhamChamp.count > 1 ? 's' : ''} unanimously`,
         icon: 'zap',
       });
     }

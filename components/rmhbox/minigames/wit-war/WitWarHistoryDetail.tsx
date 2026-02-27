@@ -2,7 +2,7 @@
  * WitWarHistoryDetail — Expanded history view for Wit-War games.
  *
  * Shows per-round matchup breakdowns with prompts, answers, vote splits,
- * author names, and quiplash badges.
+ * author names, and Wit-Wham! badges.
  */
 'use client';
 
@@ -21,7 +21,7 @@ interface MatchupAction {
     votePercentA?: number;
     votePercentB?: number;
     winnerId?: string | null;
-    isQuiplash?: boolean;
+    isWitWham?: boolean;
     round?: number;
   };
 }
@@ -106,9 +106,9 @@ export default function WitWarHistoryDetail({
                     </span>
                   </div>
                 </div>
-                {m.payload.isQuiplash && (
+                {m.payload.isWitWham && (
                   <div className="flex items-center gap-1 mt-1 text-xs text-yellow-400 font-bold">
-                    <Zap className="h-3 w-3" /> WIT-WAR!
+                    <Zap className="h-3 w-3" /> WIT-WHAM!
                   </div>
                 )}
               </div>
@@ -120,6 +120,28 @@ export default function WitWarHistoryDetail({
           )}
         </div>
       ))}
+
+      {/* Final scores */}
+      <div className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-4">
+        <h4 className="text-sm font-semibold text-(--rmhbox-text-muted) mb-2">Final Scores</h4>
+        <div className="space-y-1">
+          {players
+            .sort((a, b) => a.rank - b.rank)
+            .map((p) => (
+              <div
+                key={p.userId}
+                className={`flex justify-between text-sm ${
+                  p.userId === currentUserId ? 'text-(--rmhbox-accent) font-semibold' : 'text-(--rmhbox-text)'
+                }`}
+              >
+                <span>
+                  #{p.rank} {p.userName}
+                </span>
+                <span className="font-mono">{p.score}</span>
+              </div>
+            ))}
+        </div>
+      </div>
     </div>
   );
 }

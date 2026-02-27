@@ -117,9 +117,9 @@ export default function WitWarResults({
                   </span>
                 </div>
               </div>
-              {m.isQuiplash && (
+              {m.isWitWham && (
                 <div className="flex items-center gap-1 mt-1 text-xs text-yellow-400 font-bold">
-                  <Zap className="h-3 w-3" /> WIT-WAR!
+                  <Zap className="h-3 w-3" /> WIT-WHAM!
                 </div>
               )}
             </motion.div>

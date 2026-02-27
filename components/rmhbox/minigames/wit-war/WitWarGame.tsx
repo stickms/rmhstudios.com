@@ -1,7 +1,7 @@
 /**
  * WitWarGame — Phase router for the Wit-War minigame.
  *
- * A Quiplash-style game where players write funny answers to prompts,
+ * A party game of wits where players write funny answers to prompts,
  * then the audience votes head-to-head on which answer is better.
  *
  * Subscribes to WW_* and TIMER_TICK events via useGameSocket().
@@ -49,7 +49,7 @@ export interface MatchupData {
   votePercentA: number;
   votePercentB: number;
   winnerId: string | null;
-  isQuiplash: boolean;
+  isWitWham: boolean;
 }
 
 /** Extract MatchupData from a snapshot object (spectator or player format). */
@@ -65,7 +65,7 @@ function extractMatchupFromSnapshot(obj: Record<string, unknown>): MatchupData {
     votePercentA: (obj.votePercentA as number) ?? 0,
     votePercentB: (obj.votePercentB as number) ?? 0,
     winnerId: (obj.winnerId as string | null) ?? null,
-    isQuiplash: (obj.isQuiplash as boolean) ?? false,
+    isWitWham: (obj.isWitWham as boolean) ?? false,
   };
 }
 
@@ -173,7 +173,7 @@ export default function WitWarGame({ playerId }: MinigameProps) {
             votePercentA: 0,
             votePercentB: 0,
             winnerId: null,
-            isQuiplash: false,
+            isWitWham: false,
           });
           setIsAuthor(payload.playerA === playerId || payload.playerB === playerId);
           setMyVote(null);
@@ -207,7 +207,7 @@ export default function WitWarGame({ playerId }: MinigameProps) {
             votePercentA: number;
             votePercentB: number;
             winnerId: string | null;
-            isQuiplash: boolean;
+            isWitWham: boolean;
             scores: Record<string, number>;
           };
           setPhase('MATCHUP_RESULTS');
@@ -222,10 +222,10 @@ export default function WitWarGame({ playerId }: MinigameProps) {
             votePercentA: payload.votePercentA,
             votePercentB: payload.votePercentB,
             winnerId: payload.winnerId,
-            isQuiplash: payload.isQuiplash,
+            isWitWham: payload.isWitWham,
           });
           setScores(payload.scores);
-          playSound(payload.isQuiplash ? 'victoryFanfare' : 'scoreDing');
+          playSound(payload.isWitWham ? 'victoryFanfare' : 'scoreDing');
           break;
         }
 

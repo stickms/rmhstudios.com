@@ -38,7 +38,7 @@ The seven currently implemented minigames are:
 - **Wiki-Race** — Navigate Wikipedia from a start article to a target
 - **Minimalist Masterpiece** — Draw with limited strokes, then art auction
 - **Emoji Cinema** — Describe movies with emojis, others guess
-- **Wit-War** — Quiplash-style battle of wits with head-to-head voting
+- **Wit-War** — Battle of wits with head-to-head voting
 
 ---
 

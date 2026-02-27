@@ -26,7 +26,7 @@ export interface WWMatchup {
   /** Computed after voting: percentage of votes for player B (0-100). */
   votePercentB: number;
   winnerId: string | null;
-  isQuiplash: boolean;
+  isWitWham: boolean;
 }
 
 /** Prompt assignment for a single player. */

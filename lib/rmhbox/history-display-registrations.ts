@@ -336,12 +336,12 @@ registerHistoryDisplay({
     },
   ],
   filterableFields: [
-    { key: 'hadQuiplash', label: 'Had Quiplash', type: 'boolean' },
+    { key: 'hadWitWham', label: 'Had Wit-Wham!', type: 'boolean' },
     { key: 'matchupWins', label: 'Matchup Wins', type: 'range', valuePath: 'matchupWins' },
   ],
   getSummary: (log: GameLog) => {
     const matchups = log.actions.filter((a) => a.type === 'matchup_resolved');
-    const quiplashes = matchups.filter((a) => a.payload.isQuiplash);
-    return `${matchups.length} matchups — ${quiplashes.length} quiplash${quiplashes.length !== 1 ? 'es' : ''}`;
+    const witWhams = matchups.filter((a) => a.payload.isWitWham);
+    return `${matchups.length} matchups — ${witWhams.length} Wit-Wham${witWhams.length !== 1 ? 's' : ''}`;
   },
 });

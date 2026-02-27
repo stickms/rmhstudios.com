@@ -204,5 +204,5 @@ export const WW_ROUND_RESULTS_DURATION = 8;
 export const WW_PROMPT_REVEAL_DURATION = 3;
 export const WW_MAX_ANSWER_LENGTH = 200;
 export const WW_MAX_MATCHUP_POINTS = 1000;
-export const WW_QUIPLASH_BONUS = 500;
+export const WW_WITWHAM_BONUS = 500;
 export const WW_SAFETY_QUIP = '(no answer submitted)';

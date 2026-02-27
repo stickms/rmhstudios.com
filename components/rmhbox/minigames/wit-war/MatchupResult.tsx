@@ -3,7 +3,7 @@
  *
  * Shows a vote percentage bar splitting between the two answers,
  * reveals author names, and triggers a special animation for
- * unanimous "Wit-War!" victories.
+ * unanimous "Wit-Wham!" victories.
  */
 'use client';
 
@@ -26,7 +26,7 @@ export default function MatchupResult({ matchup }: MatchupResultProps) {
     votePercentB,
     winnerId,
     playerA,
-    isQuiplash,
+    isWitWham,
   } = matchup;
 
   const winnerIsA = winnerId === playerA;
@@ -34,7 +34,7 @@ export default function MatchupResult({ matchup }: MatchupResultProps) {
 
   return (
     <div className="flex flex-col gap-5 py-4">
-      {isQuiplash && (
+      {isWitWham && (
         <motion.div
           initial={{ opacity: 0, scale: 0.5 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -43,7 +43,7 @@ export default function MatchupResult({ matchup }: MatchupResultProps) {
         >
           <Zap className="h-6 w-6 text-yellow-400" />
           <span className="text-lg font-black text-yellow-400 tracking-wide">
-            WIT-WAR!
+            WIT-WHAM!
           </span>
           <Zap className="h-6 w-6 text-yellow-400" />
         </motion.div>

@@ -47,7 +47,7 @@
 
 ## 2. Game Concept
 
-Wit-War is a Quiplash-style party game where players write funny or clever answers to prompts, then answers face off in head-to-head matchups while other players vote for their favorite. Points are awarded based on vote percentage, and a unanimous vote triggers a special "Wit-War!" bonus.
+Wit-War is a party game where players write funny or clever answers to prompts, then answers face off in head-to-head matchups while other players vote for their favorite. Points are awarded based on vote percentage, and a unanimous vote triggers a special "Wit-Wham!" bonus.
 
 The game emphasizes creativity, humor, and audience appeal. Players who don't submit answers receive a safety quip ("(no answer submitted)") that earns no points.
 
@@ -87,7 +87,7 @@ At the start of each round:
 After voting closes for each matchup:
 - Vote percentages are calculated for each answer
 - The winner is the answer with more votes (ties result in no winner)
-- A "Wit-War!" bonus is triggered when one answer gets 100% of the votes (minimum 2 voters)
+- A "Wit-Wham!" bonus is triggered when one answer gets 100% of the votes (minimum 2 voters)
 - Points are awarded based on vote percentage (proportional to `WW_MAX_MATCHUP_POINTS`)
 - Safety quip answers always receive 0 points
 - Results are revealed with vote percentage bars and author names
@@ -133,7 +133,7 @@ After the final round: `ROUND_RESULTS → GAME_OVER`
 - Duration: `WW_MATCHUP_RESULTS_DURATION` (5 seconds)
 - Vote percentages revealed with animated bar
 - Author names revealed
-- Winner highlighted; "Wit-War!" banner for unanimous wins
+- Winner highlighted; "Wit-Wham!" banner for unanimous wins
 - Updated cumulative scores broadcasted
 
 ### 4.5 ROUND_RESULTS
@@ -156,7 +156,7 @@ After the final round: `ROUND_RESULTS → GAME_OVER`
 | Event | Points |
 |---|---|
 | Answer vote share | `(votePercent / 100) × WW_MAX_MATCHUP_POINTS` (up to 1000) |
-| Wit-War! bonus (100% of votes, ≥2 voters) | `WW_QUIPLASH_BONUS` (500) |
+| Wit-Wham! bonus (100% of votes, ≥2 voters) | `WW_WITWHAM_BONUS` (500) |
 | Safety quip (no answer) | 0 (always) |
 
 Points are cumulative across rounds. Ties in voting result in a 50/50 split (500 points each if non-safety).
@@ -178,7 +178,7 @@ All constants are defined in `lib/rmhbox/constants.ts` with the `WW_` prefix:
 | `WW_PROMPT_REVEAL_DURATION` | 3 | Prompt reveal animation duration (seconds) |
 | `WW_MAX_ANSWER_LENGTH` | 200 | Maximum characters per answer |
 | `WW_MAX_MATCHUP_POINTS` | 1000 | Maximum points per matchup |
-| `WW_QUIPLASH_BONUS` | 500 | Bonus for unanimous victory |
+| `WW_WITWHAM_BONUS` | 500 | Bonus for unanimous victory |
 | `WW_SAFETY_QUIP` | `'(no answer submitted)'` | Placeholder for missing answers |
 
 ---
@@ -292,7 +292,7 @@ The client plays sound effects at key moments using `playSound()` from `lib/rmhb
 | New matchup starts | `swoosh` |
 | Vote cast | `click` |
 | Matchup result revealed | `scoreDing` |
-| Wit-War! unanimous win | `victoryFanfare` |
+| Wit-Wham! unanimous win | `victoryFanfare` |
 | Round results | `scoreDing` |
 | Timer countdown (≤5 seconds) | `countdownBeep` |
 
@@ -325,15 +325,15 @@ The game log stored in match history has type `'wit-war'` and includes:
 Registered in `lib/rmhbox/history-display-registrations.ts` with:
 - **DetailComponent**: `WitWarHistoryDetail` — Per-round matchup replay viewer
 - **Searchable fields**: Prompts, Answers
-- **Filterable fields**: Had Quiplash (boolean), Matchup Wins (range)
-- **getSummary**: "X matchups — Y quiplashes"
+- **Filterable fields**: Had Wit-Wham! (boolean), Matchup Wins (range)
+- **getSummary**: "X matchups — Y Wit-Whams"
 
 ### 12.3 Awards
 
 | Award | Criteria | Icon |
 |---|---|---|
 | **Crowd Pleaser** | Highest average vote percentage per matchup | `heart` |
-| **Wit-War!** | Most unanimous matchup wins | `zap` |
+| **Wit-Wham!** | Most unanimous matchup wins | `zap` |
 | **Dark Horse** | Won a single matchup with >75% of the vote | `trending-up` |
 
 ---

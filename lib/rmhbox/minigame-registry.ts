@@ -144,7 +144,7 @@ export const MINIGAME_REGISTRY: Record<string, MinigameDefinition> = {
   'wit-war': {
     id: 'wit-war',
     displayName: 'Wit-War',
-    description: 'Quiplash-style battle of wits! Write funny answers to prompts, then vote head-to-head for the best response.',
+    description: 'Battle of wits! Write funny answers to prompts, then vote head-to-head for the best response.',
     category: 'word',
     icon: 'swords',
     minPlayers: 3,
