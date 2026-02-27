@@ -1,5 +1,5 @@
 /**
- * Wit War Lash — Data Loader
+ * Wit-War — Data Loader
  *
  * Loads prompts.json and provides helpers for selecting round prompts
  * and assigning prompt pairs to players.
@@ -7,14 +7,14 @@
 
 import fs from 'fs';
 import path from 'path';
-import { WWL_PROMPTS_PER_PLAYER } from '../constants';
+import { WW_PROMPTS_PER_PLAYER } from '../constants';
 
 let cachedPrompts: string[] | null = null;
 
 export function loadPrompts(): string[] {
   if (cachedPrompts) return cachedPrompts;
   const raw = fs.readFileSync(
-    path.join(process.cwd(), 'data', 'rmhbox', 'wit-war-lash', 'prompts.json'),
+    path.join(process.cwd(), 'data', 'rmhbox', 'wit-war', 'prompts.json'),
     'utf-8',
   );
   cachedPrompts = JSON.parse(raw) as string[];
@@ -47,7 +47,7 @@ export function selectRoundPrompts(
  * Assigns prompts to player pairs for head-to-head matchups.
  *
  * With N players, creates N matchups. Each player gets exactly
- * WWL_PROMPTS_PER_PLAYER (2) prompts. Each prompt is assigned to
+ * WW_PROMPTS_PER_PLAYER (2) prompts. Each prompt is assigned to
  * exactly 2 different players.
  *
  * Uses a round-robin pairing: player i is paired with player
@@ -64,7 +64,7 @@ export function assignPromptsToPlayers(
   playerB: string;
 }> {
   const n = playerIds.length;
-  if (n < 3) throw new Error('Wit War Lash requires at least 3 players');
+  if (n < 3) throw new Error('Wit-War requires at least 3 players');
 
   const matchups: Array<{
     promptIndex: number;
@@ -80,7 +80,7 @@ export function assignPromptsToPlayers(
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
 
-  // Each player gets exactly WWL_PROMPTS_PER_PLAYER prompts.
+  // Each player gets exactly WW_PROMPTS_PER_PLAYER prompts.
   // Total prompt slots = N * 2 = 2N, and each prompt fills 2 slots,
   // so we need exactly N prompts for N matchups.
   for (let i = 0; i < n; i++) {

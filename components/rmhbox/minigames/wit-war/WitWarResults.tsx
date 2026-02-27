@@ -1,5 +1,5 @@
 /**
- * WitWarLashResults — Round/final leaderboard and matchup summary.
+ * WitWarResults — Round/final leaderboard and matchup summary.
  *
  * Shows the current standings sorted by score, with per-round deltas.
  * Also displays a summary of all matchups for the round.
@@ -9,9 +9,9 @@
 import { motion } from 'framer-motion';
 import { Trophy, Crown, Zap } from 'lucide-react';
 import type { ClientPlayerInfo } from '@/lib/rmhbox/types';
-import type { MatchupData } from './WitWarLashGame';
+import type { MatchupData } from './WitWarGame';
 
-interface WitWarLashResultsProps {
+interface WitWarResultsProps {
   scores: Record<string, number>;
   matchups: MatchupData[];
   round: number;
@@ -20,14 +20,14 @@ interface WitWarLashResultsProps {
   players: ClientPlayerInfo[];
 }
 
-export default function WitWarLashResults({
+export default function WitWarResults({
   scores,
   matchups,
   round,
   totalRounds,
   isGameOver,
   players,
-}: WitWarLashResultsProps) {
+}: WitWarResultsProps) {
   const ranked = Object.entries(scores)
     .map(([userId, score]) => {
       const player = players.find((p) => p.userId === userId);
@@ -119,7 +119,7 @@ export default function WitWarLashResults({
               </div>
               {m.isQuiplash && (
                 <div className="flex items-center gap-1 mt-1 text-xs text-yellow-400 font-bold">
-                  <Zap className="h-3 w-3" /> WIT WAR LASH!
+                  <Zap className="h-3 w-3" /> WIT-WAR!
                 </div>
               )}
             </motion.div>

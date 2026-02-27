@@ -9,7 +9,7 @@
 
 import { motion } from 'framer-motion';
 import { Vote, Eye } from 'lucide-react';
-import type { MatchupData } from './WitWarLashGame';
+import type { MatchupData } from './WitWarGame';
 
 interface VotingPhaseProps {
   matchup: MatchupData;

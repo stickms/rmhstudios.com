@@ -29,15 +29,16 @@
 
 ## Overview
 
-RMHbox is a real-time multiplayer party game platform built on Next.js (frontend) and a standalone Socket.io WebSocket server (backend). Players create or join lobbies via room codes, vote on or select minigames, and play together in real time. The platform supports 6 implemented minigames, spectator modes, host controls, match history, leaderboards, and reconnection.
+RMHbox is a real-time multiplayer party game platform built on Next.js (frontend) and a standalone Socket.io WebSocket server (backend). Players create or join lobbies via room codes, vote on or select minigames, and play together in real time. The platform supports 7 implemented minigames, spectator modes, host controls, match history, leaderboards, and reconnection.
 
-The six currently implemented minigames are:
+The seven currently implemented minigames are:
 - **Rhyme Time** — Speed-based vocabulary rhyming game
 - **Undercover Agent** — Team-based word-association deduction (like Codenames)
 - **Category Crash** — Brainstorming showdown with peer review
 - **Wiki-Race** — Navigate Wikipedia from a start article to a target
 - **Minimalist Masterpiece** — Draw with limited strokes, then art auction
 - **Emoji Cinema** — Describe movies with emojis, others guess
+- **Wit-War** — Quiplash-style battle of wits with head-to-head voting
 
 ---
 
@@ -860,7 +861,7 @@ Security state masking tests (`security-state-masking.test.ts`) exist in each ph
 ### Constants
 
 - **Centralized** — All tuning constants (timers, scoring, limits) live in `lib/rmhbox/constants.ts`
-- **Per-minigame prefix** — Minigame constants use a 2-letter prefix (e.g., `RT_` for Rhyme Time, `UA_` for Undercover Agent, `CC_` for Category Crash, `WR_` for Wiki-Race, `MM_` for Minimalist Masterpiece, `EC_` for Emoji Cinema)
+- **Per-minigame prefix** — Minigame constants use a 2-letter prefix (e.g., `RT_` for Rhyme Time, `UA_` for Undercover Agent, `CC_` for Category Crash, `WR_` for Wiki-Race, `MM_` for Minimalist Masterpiece, `EC_` for Emoji Cinema, `WW_` for Wit-War)
 - **Server config** — Server-specific runtime configuration (env vars, ports) lives in `server/rmhbox/config.ts`
 
 ### Adding New Features

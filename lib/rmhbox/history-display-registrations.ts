@@ -17,7 +17,7 @@ import CategoryCrashHistoryDetail from '@/components/rmhbox/minigames/category-c
 import WikiRaceHistoryDetail from '@/components/rmhbox/minigames/wiki-race/WikiRaceHistoryDetail';
 import MinimalistMasterpieceHistoryDetail from '@/components/rmhbox/minigames/minimalist-masterpiece/MinimalistMasterpieceHistoryDetail';
 import EmojiCinemaHistoryDetail from '@/components/rmhbox/minigames/emoji-cinema/EmojiCinemaHistoryDetail';
-import WitWarLashHistoryDetail from '@/components/rmhbox/minigames/wit-war-lash/WitWarLashHistoryDetail';
+import WitWarHistoryDetail from '@/components/rmhbox/minigames/wit-war/WitWarHistoryDetail';
 
 // ─── Rhyme Time ──────────────────────────────────────────────────
 
@@ -310,11 +310,11 @@ registerHistoryDisplay({
   },
 });
 
-// ─── Wit War Lash ────────────────────────────────────────────────
+// ─── Wit-War ─────────────────────────────────────────────────────
 
 registerHistoryDisplay({
-  minigameId: 'wit-war-lash',
-  DetailComponent: WitWarLashHistoryDetail,
+  minigameId: 'wit-war',
+  DetailComponent: WitWarHistoryDetail,
   searchableFields: [
     {
       key: 'prompts',

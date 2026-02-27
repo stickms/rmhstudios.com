@@ -1,0 +1,1 @@
+export { WitWarMinigame } from './handler';

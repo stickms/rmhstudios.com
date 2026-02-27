@@ -1,5 +1,5 @@
 /**
- * WitWarLashHistoryDetail — Expanded history view for Wit War Lash games.
+ * WitWarHistoryDetail — Expanded history view for Wit-War games.
  *
  * Shows per-round matchup breakdowns with prompts, answers, vote splits,
  * author names, and quiplash badges.
@@ -26,7 +26,7 @@ interface MatchupAction {
   };
 }
 
-export default function WitWarLashHistoryDetail({
+export default function WitWarHistoryDetail({
   gameLog,
   currentUserId,
   players,
@@ -45,27 +45,20 @@ export default function WitWarLashHistoryDetail({
     rounds.push([]);
   }
 
-  let currentRoundIdx = 0;
-  const promptReveals = gameLog.actions.filter((a) => a.type === 'prompt_reveal');
+  // Group matchup_resolved actions by their round field
   for (const m of matchupActions) {
-    const roundForMatchup = promptReveals.findIndex(
-      (pr) => (pr.payload.round as number) > currentRoundIdx + 1,
-    );
-    if (roundForMatchup > 0 && currentRoundIdx < totalRounds - 1) {
-      currentRoundIdx++;
+    const round = (m.payload.round as number | undefined) ?? 0;
+    const roundIdx = round > 0 ? round - 1 : 0;
+    if (rounds[roundIdx]) {
+      rounds[roundIdx].push(m);
+    } else if (rounds.length > 0) {
+      // Fallback: if round index is out of bounds, put in last round
+      rounds[rounds.length - 1].push(m);
     }
-    if (rounds[currentRoundIdx]) {
-      rounds[currentRoundIdx].push(m);
-    }
-  }
-
-  // Fallback: if round distribution didn't work, put all in first
-  if (rounds.every((r) => r.length === 0) && matchupActions.length > 0) {
-    rounds[0] = matchupActions;
   }
 
   return (
-    <div className="space-y-4" data-testid="wit-war-lash-history-detail">
+    <div className="space-y-4" data-testid="wit-war-history-detail">
       {gameLog.initialState && (
         <div className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-3">
           <h4 className="text-xs font-semibold text-(--rmhbox-text-muted) uppercase mb-1">
@@ -115,7 +108,7 @@ export default function WitWarLashHistoryDetail({
                 </div>
                 {m.payload.isQuiplash && (
                   <div className="flex items-center gap-1 mt-1 text-xs text-yellow-400 font-bold">
-                    <Zap className="h-3 w-3" /> WIT WAR LASH!
+                    <Zap className="h-3 w-3" /> WIT-WAR!
                   </div>
                 )}
               </div>
