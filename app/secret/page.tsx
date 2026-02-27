@@ -10,10 +10,13 @@ import {
     Presentation,
     Table2,
     ArrowLeft,
+    Swords,
+    BrainCircuit,
+    Crown,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
-interface SecretApp {
+interface SecretItem {
     id: string;
     name: string;
     desc: string;
@@ -22,7 +25,14 @@ interface SecretApp {
     href: string;
 }
 
-const secretApps: SecretApp[] = [
+const secretGames: SecretItem[] = [
+    { id: 'house-always-wins', name: 'House Always Wins', desc: 'A dark casino Metroidvania', icon: Crown, accent: '#d97706', href: '/secret/house-always-wins' },
+    { id: 'satans-library', name: "Satan's Library", desc: 'Survival horror — lock in or lose', icon: BookOpen, accent: '#dc2626', href: '#' },
+    { id: 'vega', name: 'Project Vega', desc: 'Clinical horror tower defense', icon: BrainCircuit, accent: '#16a34a', href: '/secret/vega' },
+    { id: 'cursed-logic', name: 'Cursed Logic', desc: 'Psychological duel vs. rogue AI', icon: Swords, accent: '#ca8a04', href: '/secret/cursed-logic' },
+];
+
+const secretApps: SecretItem[] = [
     { id: 'jobs', name: 'RMH Jobs', desc: 'Job search platform (rejection guaranteed)', icon: Briefcase, accent: '#00ff88', href: '/secret/jobs' },
     { id: 'notes', name: 'RMH Notes', desc: 'Cozy notes & reminders', icon: BookOpen, accent: '#C17F3A', href: '/secret/notes' },
     { id: 'weather', name: 'RMH Weather', desc: 'Premium weather dashboard', icon: Cloud, accent: '#64748b', href: '/secret/weather' },
@@ -31,6 +41,33 @@ const secretApps: SecretApp[] = [
     { id: 'slides', name: 'RMH Slides', desc: 'Presentation editor', icon: Presentation, accent: '#f97316', href: '/secret/slides' },
     { id: 'sheets', name: 'RMH Sheets', desc: 'Spreadsheet editor', icon: Table2, accent: '#10b981', href: '/secret/sheets' },
 ];
+
+function ItemCard({ item }: { item: SecretItem }) {
+    const Icon = item.icon;
+    return (
+        <Link
+            href={item.href}
+            className="group relative overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.03] p-6 transition-all duration-300 hover:border-white/[0.12] hover:bg-white/[0.06]"
+        >
+            <div
+                className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                style={{
+                    background: `radial-gradient(ellipse at center, ${item.accent}08 0%, transparent 70%)`,
+                }}
+            />
+            <div className="relative">
+                <div
+                    className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg"
+                    style={{ backgroundColor: `${item.accent}15`, color: item.accent }}
+                >
+                    <Icon className="h-5 w-5" />
+                </div>
+                <h2 className="mb-1 text-lg font-semibold">{item.name}</h2>
+                <p className="text-sm text-white/40">{item.desc}</p>
+            </div>
+        </Link>
+    );
+}
 
 export default function SecretPage() {
     return (
@@ -46,38 +83,26 @@ export default function SecretPage() {
 
                 <div className="mb-12 text-center">
                     <h1 className="mb-2 text-4xl font-bold tracking-tight">The Vault</h1>
-                    <p className="text-white/40">Experimental apps. All data saved locally in your browser.</p>
+                    <p className="text-white/40">Experimental projects. Enter at your own risk.</p>
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {secretApps.map((app) => {
-                        const Icon = app.icon;
-                        return (
-                            <Link
-                                key={app.id}
-                                href={app.href}
-                                className="group relative overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.03] p-6 transition-all duration-300 hover:border-white/[0.12] hover:bg-white/[0.06]"
-                            >
-                                <div
-                                    className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-                                    style={{
-                                        background: `radial-gradient(ellipse at center, ${app.accent}08 0%, transparent 70%)`,
-                                    }}
-                                />
-                                <div className="relative">
-                                    <div
-                                        className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg"
-                                        style={{ backgroundColor: `${app.accent}15`, color: app.accent }}
-                                    >
-                                        <Icon className="h-5 w-5" />
-                                    </div>
-                                    <h2 className="mb-1 text-lg font-semibold">{app.name}</h2>
-                                    <p className="text-sm text-white/40">{app.desc}</p>
-                                </div>
-                            </Link>
-                        );
-                    })}
-                </div>
+                <section className="mb-12">
+                    <h2 className="mb-4 text-lg font-semibold text-white/60">Games</h2>
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        {secretGames.map((item) => (
+                            <ItemCard key={item.id} item={item} />
+                        ))}
+                    </div>
+                </section>
+
+                <section>
+                    <h2 className="mb-4 text-lg font-semibold text-white/60">Apps</h2>
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        {secretApps.map((item) => (
+                            <ItemCard key={item.id} item={item} />
+                        ))}
+                    </div>
+                </section>
             </div>
         </div>
     );
