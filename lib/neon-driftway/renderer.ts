@@ -504,7 +504,7 @@ export class NeonDriftwayRenderer {
       ctx.fillText('PAUSED', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 20);
       ctx.font = '16px monospace';
       ctx.fillStyle = '#aaaaaa';
-      ctx.fillText('Press ESC to resume', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 20);
+      ctx.fillText('Tap screen or press ESC', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 20);
     }
   }
 

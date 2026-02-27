@@ -2,10 +2,25 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { NeonDriftwayGame } from '@/components/neon-driftway/NeonDriftwayGame';
+import type { Metadata, Viewport } from 'next';
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
+
+export const metadata: Metadata = {
+  title: 'Neon Driftway — RMH Studios',
+};
 
 export default function NeonDriftwayPage() {
   return (
-    <main className="fixed inset-0 bg-black flex flex-col overflow-hidden">
+    <main
+      className="fixed inset-0 bg-black flex flex-col overflow-hidden"
+      style={{ touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none' }}
+    >
       <div className="absolute top-3 left-3 z-50">
         <Link href="/games">
           <Button
@@ -19,7 +34,7 @@ export default function NeonDriftwayPage() {
         </Link>
       </div>
 
-      <div className="grow relative flex items-center justify-center">
+      <div className="grow relative flex items-center justify-center overflow-hidden">
         <NeonDriftwayGame />
       </div>
     </main>

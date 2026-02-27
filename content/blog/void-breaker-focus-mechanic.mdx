@@ -1,0 +1,81 @@
+---
+title: "Designing Focus: Bullet-Time as Emotional Punctuation"
+date: "2026-02-27"
+description: "Why we added a slow-motion mechanic to an arcade shooter, how it interacts with the shard and combo systems, and what Wong Kar-Wai taught us about pacing."
+tags: ["Void Breaker", "Game Design"]
+---
+
+## Slow Motion in a Fast Game
+
+Adding slow motion to an arcade shooter sounds like a contradiction. The whole point of the genre is speed — reflexes, pattern recognition, split-second decisions. Slowing things down should break the flow, right?
+
+Wrong. And Wong Kar-Wai's films are the proof.
+
+Watch any action sequence in **Fallen Angels** or **Chungking Express**. WKW doesn't use slow motion to make things easier to follow. He uses it to make moments *matter*. The hitman pulling a trigger. A woman turning to look back. Time stretches not to reduce tension, but to amplify it — to force you to sit inside the moment and feel its weight.
+
+That's what Focus does in Void Breaker.
+
+## How It Works
+
+Press F. The world drops to 30% speed. Your player drops to 60% speed — still slower, but relatively twice as fast as everything else. For 2.5 seconds, you are the fastest thing in the arena.
+
+The numbers are deliberate. At 30% world speed, enemy projectiles crawl. You can weave between spread shots that would normally be impossible to dodge. Enemies drift toward you in slow motion, their attack patterns suddenly readable. It feels like seeing the Matrix.
+
+But you're not invincible. You're still at 60% of your normal speed. You can still make mistakes. And the window is short — 2.5 seconds sounds generous until you're in the middle of it, watching the timer drain, knowing you need to make every moment count.
+
+```typescript
+// Time dilation — one line changes everything
+const worldDt = player.focusActive ? dt * FOCUS_WORLD_SLOW : dt;
+const playerDt = player.focusActive ? dt * FOCUS_PLAYER_SLOW : dt;
+
+this.updatePlayer(playerDt, dt, input);
+this.updateProjectiles(worldDt);
+this.updateEnemies(worldDt);
+```
+
+The implementation is elegant: we simply multiply `dt` by different factors for different entity categories. The player gets one time scale, everything else gets another. No special-case logic, no state machines for slow-mo — just math.
+
+## The Combo Synergy
+
+Here's where it gets interesting. Focus has a 12-second cooldown. That's long. In a game where waves can overwhelm you in seconds, 12 seconds feels like forever. But the cooldown **reduces by 0.5 seconds per combo kill.**
+
+Think about what that means. If you activate Focus and chain-kill 6 enemies during the slow-motion window, you've already cut 3 seconds off your next Focus cooldown. If you're maintaining a combo outside of Focus (which you should be), you're shaving it down further. A player who's killing aggressively can get Focus back in 6-7 seconds instead of 12.
+
+This creates a virtuous cycle: aggression fuels Focus, Focus fuels aggression. Passive players barely get to use Focus. Aggressive players have it available for almost every dangerous moment. The mechanic rewards exactly the playstyle we want to encourage.
+
+## Double Shards During Focus
+
+Enemies killed during Focus drop double shards. This is the cherry on top — it means Focus isn't just a defensive tool. It's a multiplier accelerator. Pop Focus, chain-kill a cluster of enemies, collect 15 shards in 2 seconds instead of 7. Your multiplier jumps, your score jumps, your shield gets thicker.
+
+But remember: using Focus for farming means you won't have it available when the boss shows up. The risk/reward question pervades every system in this game. Nothing is free.
+
+## The Visual Treatment
+
+When Focus activates, the film grain shader cranks up. The vignette gets heavier. The screen border glows cyan. The player's ship turns blue-white. The rain seems to hang in the air. A cyan border frames the screen with a subtle inner glow.
+
+It looks like a still frame from a WKW film. That's not accidental.
+
+We considered adding a desaturation effect — pulling the color out of the world during Focus, making it feel more "cinematic." We tried it. It looked cool for about 10 seconds and then it made the game harder to read. Neon signs need their color. Enemy types are color-coded. Desaturation murdered visual clarity. We cut it.
+
+The lesson: style serves gameplay, never the other way around.
+
+## Why 12 Seconds?
+
+The cooldown went through four iterations:
+
+- **5 seconds** — way too spammable. Players used Focus for everything. It stopped feeling special.
+- **20 seconds** — too punishing. Players forgot they had it. When they remembered, it felt like a panic button rather than a strategic tool.
+- **8 seconds** — close, but combo-reduction made it effectively infinite for good players. No tension.
+- **12 seconds** — the sweet spot. Long enough that you have to choose your moments. Short enough that you can plan around it. With combo reduction, a good player can get it to ~7 seconds, which feels earned rather than broken.
+
+Game design is mostly just testing numbers until the feel is right. We tested a lot of numbers.
+
+## What Focus Tells Us About Pacing
+
+The best thing Focus does isn't mechanical — it's emotional. It gives the game *pacing*. Without Focus, Void Breaker is relentless. Wave after wave, enemies everywhere, constant dodging and shooting. It's exhausting in a way that eventually becomes numbing.
+
+Focus creates breaths. These 2.5-second windows where the chaos slows down and you can *think*. Where you can read the battlefield, plan your next move, appreciate how far you've come. And then it ends and the world snaps back to full speed and you're in it again.
+
+That rhythm — tension, release, tension, release — is what separates good arcade games from great ones. Wong Kar-Wai understood it. His films breathe. They give you moments of stillness inside the chaos. Focus is Void Breaker's way of doing the same thing.
+
+Press F. Watch the rain hang. Feel the moment. Then let it go.

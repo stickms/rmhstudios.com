@@ -147,6 +147,23 @@ export const games: GameInfo[] = [
         authGate: true,
     },
     {
+        id: 'void-breaker',
+        title: 'Void Breaker',
+        description: 'Obsidian and gold arena shooter. Collect void shards, dash, slow time with Focus, detonate when overwhelmed.',
+        longDescription:
+            'Survive waves of enemies in a dark arena. Collect void shards that orbit you as a shield and score multiplier. Activate Focus for bullet-time. Dash to dodge. Detonate your shard ring for a devastating Void Burst. Boss fights every 5 waves.',
+        href: '/void-breaker',
+        status: 'Playable',
+        cta: 'Play',
+        isSteam: false,
+        gradient: 'from-orange-500 to-pink-600',
+        iconName: 'Crosshair',
+        color: 'from-orange-500/20 to-pink-600/20 hover:border-orange-500/50',
+        tags: ['Arcade', 'Shooter', '3D', 'Survival'],
+        imagePath: '/images/games/voidbreaker.png',
+        authGate: true,
+    },
+    {
         id: 'neon-driftway',
         title: 'Neon Driftway',
         description: 'An endless highway survival racer featuring high-speed drifting and close-call mechanics.',

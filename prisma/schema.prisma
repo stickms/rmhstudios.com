@@ -33,6 +33,7 @@ model User {
   rmhboxProfile  RMHboxProfile?
   rmhtypeProfiles RmhTypeProfile[]
   rmhstudyProfile RmhStudyProfile?
+  voidBreakerProfile VoidBreakerPlayer?
 
   // Slice-It Library Relations
   uploadedSongs  Song[]        @relation("SongUploader")
@@ -205,6 +206,22 @@ model NeonDriftwayPlayer {
   user          User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([highScore(sort: Desc)], map: "idx_neon_driftway_high_score")
+}
+
+model VoidBreakerPlayer {
+  id            String   @id @default(uuid())
+  username      String   @unique
+  highScore     Int      @default(0)
+  bestWave      Int      @default(0)
+  totalKills    Int      @default(0)
+  bestTimeMs    Int      @default(0)
+  gamesPlayed   Int      @default(1)
+  updatedAt     DateTime @default(now()) @updatedAt
+
+  userId        String?  @unique
+  user          User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([highScore(sort: Desc)], map: "idx_void_breaker_high_score")
 }
 
 // --- Slice-It Music Library Models ---

@@ -7,8 +7,10 @@ import { SpriteSheet } from '@/lib/neon-driftway/sprites';
 import { CANVAS_WIDTH, CANVAS_HEIGHT, CANVAS_DPI_SCALE, LEVELS, LEVEL_COMPLETE_DISTANCE, LEVEL_2_UNLOCK_DISTANCE, LEVEL_3_UNLOCK_DISTANCE } from '@/lib/neon-driftway/constants';
 import type { InputState, LevelId, RunStats, RemoteCar } from '@/lib/neon-driftway/types';
 import { NeonDriftwayUI } from './NeonDriftwayUI';
+import { NeonDriftwayTouchControls } from './NeonDriftwayTouchControls';
 import { NDWMultiplayerLobby } from './NDWMultiplayerLobby';
 import { NDWMultiplayerClient } from '@/lib/neon-driftway/multiplayer';
+import type { GameState } from '@/lib/neon-driftway/types';
 
 const STORAGE_KEY = 'neon-driftway.unlocks';
 
@@ -48,15 +50,17 @@ export function NeonDriftwayGame() {
   const [runStats, setRunStats] = useState<RunStats | null>(null);
   const [currentLevel, setCurrentLevel] = useState<LevelId>(1);
   const [multiplayerRankings, setMultiplayerRankings] = useState<{ id: string; name: string; score: number; rank: number }[]>([]);
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
 
   // Multiplayer refs
   const multiplayerRoomRef = useRef<string | null>(null);
   const positionTickRef = useRef(0);
   const scoreTickRef = useRef(0);
 
-  // Load unlocks on mount
+  // Load unlocks and detect touch on mount
   useEffect(() => {
     setUnlockedLevels(loadUnlocks());
+    setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
   }, []);
 
   // Multiplayer event handlers
@@ -198,12 +202,10 @@ export function NeonDriftwayGame() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Set up DPI scaling for smoother rendering
+    // Set up DPI scaling for smoother rendering (CSS handles display size)
     const dpr = CANVAS_DPI_SCALE;
     canvas.width = CANVAS_WIDTH * dpr;
     canvas.height = CANVAS_HEIGHT * dpr;
-    canvas.style.width = `${CANVAS_WIDTH}px`;
-    canvas.style.height = `${CANVAS_HEIGHT}px`;
     ctx.scale(dpr, dpr);
 
     if (!gameRef.current) {
@@ -333,6 +335,21 @@ export function NeonDriftwayGame() {
     gameRef.current?.resume();
   }, []);
 
+  const handleTouchPause = useCallback(() => {
+    const game = gameRef.current;
+    if (!game) return;
+    if (game.state === 'playing') {
+      game.state = 'paused' as GameState;
+    } else if (game.state === 'paused') {
+      game.resume();
+    }
+  }, []);
+
+  const handleCanvasTouch = useCallback(() => {
+    const game = gameRef.current;
+    if (game?.state === 'paused') game.resume();
+  }, []);
+
   const handleContinueEndless = useCallback(() => {
     const game = gameRef.current;
     if (!game) return;
@@ -363,12 +380,33 @@ export function NeonDriftwayGame() {
     setUiState('menu');
   }, []);
 
+  const showTouchControls = isTouchDevice && (
+    uiState === 'playing' || uiState === 'multiplayerPlaying'
+  );
+
   return (
-    <div className="w-full h-full relative bg-black flex flex-col items-center justify-center overflow-hidden">
+    <div
+      className="w-full h-full relative bg-black flex flex-col items-center justify-center overflow-hidden"
+      style={{ touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none' }}
+    >
       <canvas
         ref={canvasRef}
-        className="border-2 border-cyan-500/50 max-w-full max-h-full"
-        style={{ imageRendering: 'auto', aspectRatio: `${CANVAS_WIDTH}/${CANVAS_HEIGHT}` }}
+        className="border border-cyan-500/30 sm:border-2 sm:border-cyan-500/50"
+        onTouchEnd={handleCanvasTouch}
+        style={{
+          width: '100%',
+          maxWidth: `${CANVAS_WIDTH}px`,
+          maxHeight: '100%',
+          aspectRatio: `${CANVAS_WIDTH}/${CANVAS_HEIGHT}`,
+          touchAction: 'none',
+        }}
+      />
+
+      {/* Mobile touch controls */}
+      <NeonDriftwayTouchControls
+        inputRef={inputRef}
+        onPause={handleTouchPause}
+        visible={showTouchControls}
       />
 
       {/* Multiplayer lobby overlay */}
