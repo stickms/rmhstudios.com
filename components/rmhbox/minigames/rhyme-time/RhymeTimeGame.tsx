@@ -180,7 +180,7 @@ export default function RhymeTimeGame({ playerId, playerName: _playerName }: Rhy
                     word: wb.word,
                     submitters: [{ userId: pr.userId, userName: pr.userName, speedBonus: wb.speedBonus > 0 }],
                     rarity,
-                    points: wb.basePoints,
+                    points: wb.basePoints + (wb.multiSyllableBonus ?? 0),
                     multiSyllable: wb.isMultiSyllable,
                   });
                 } else {
