@@ -41,7 +41,7 @@ import {
   SpectatorSelectPlayerSchema,
 } from './schemas';
 import { getDefaultSettings, validateGameSettings, mergeGameSettings } from '../../lib/rmhbox/game-settings';
-import type { MinigameDefinition, RoundResultsPayload, SessionStanding, GameSettingValues } from '../../lib/rmhbox/types';
+import type { MinigameDefinition, RoundResultsPayload, SessionStanding } from '../../lib/rmhbox/types';
 import type { RMHboxLobby, ServerMatchSummary } from './types';
 import type { BaseMinigame, MinigameContext, MinigameResults } from './minigames/base-minigame';
 import { RhymeTimeMinigame } from './minigames/rhyme-time';

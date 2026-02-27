@@ -41,7 +41,6 @@ import {
   type WWMatchup,
   type WWPromptAssignment,
   type WitWarState,
-  type ActionLogEntry,
 } from './types';
 
 // ─── Wit-War Minigame ───────────────────────────────────────────
@@ -52,7 +51,7 @@ export class WitWarMinigame extends BaseMinigame {
   /** Handle for the current voting timeout, so early-end can cancel it. */
   private votingTimeoutHandle: NodeJS.Timeout | null = null;
 
-  get spectatorMode(): 'shared-privileged' { return 'shared-privileged'; }
+  get spectatorMode(): 'competitive-individual' { return 'competitive-individual'; }
 
   constructor(context: MinigameContext) {
     super(context);

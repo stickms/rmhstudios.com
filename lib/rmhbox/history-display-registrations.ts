@@ -3,7 +3,7 @@
  *
  * Registers the history display configurations for
  * Rhyme Time, Undercover Agent, Category Crash, Wiki-Race,
- * Minimalist Masterpiece, and Emoji Cinema.
+ * Minimalist Masterpiece, Emoji Cinema, and Wit-War.
  *
  * Reference: docs/rmhbox/design-spec/core.md §14A.5
  */
