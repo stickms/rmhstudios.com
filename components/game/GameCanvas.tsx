@@ -60,6 +60,7 @@ export function GameCanvas() {
     const [engine, setEngine] = useState<GameEngine | null>(null);
     const rafRef = useRef<number | null>(null);
     const [showMobileButtons, setShowMobileButtons] = useState(false);
+    const [isPortrait, setIsPortrait] = useState(false);
 
     // Input device detection
     // Assume keyboard exists on non-touch devices to avoid a flash of "no input" warning
@@ -114,6 +115,14 @@ export function GameCanvas() {
         const ro = new ResizeObserver(sync);
         ro.observe(wrapper);
         return () => ro.disconnect();
+    }, []);
+
+    // ── Detect portrait orientation ─────────────────────────────────────────────
+    useEffect(() => {
+        const checkPortrait = () => setIsPortrait(window.innerHeight > window.innerWidth * 1.1);
+        checkPortrait();
+        window.addEventListener('resize', checkPortrait);
+        return () => window.removeEventListener('resize', checkPortrait);
     }, []);
 
     // ── Detect touch device ────────────────────────────────────────────────────
@@ -486,11 +495,16 @@ export function GameCanvas() {
                 return;
             }
 
-            // Touch: use Y-position for lane
-            const clientY = (e as TouchEvent).touches[0].clientY;
+            // Touch: detect lane by position
             const rect = canvasRef.current?.getBoundingClientRect();
             if (!rect) return;
-            const lane = (clientY - rect.top) < rect.height / 2 ? 0 : 1;
+            const touch = (e as TouchEvent).touches[0];
+            // Mobile vertical: left/right halves = lane 0/1
+            // Desktop/landscape: top/bottom halves = lane 0/1
+            const isMobileV = rect.height > rect.width;
+            const lane = isMobileV
+                ? ((touch.clientX - rect.left) < rect.width / 2 ? 0 : 1)
+                : ((touch.clientY - rect.top) < rect.height / 2 ? 0 : 1);
             handleInput(lane);
         };
 
@@ -512,10 +526,13 @@ export function GameCanvas() {
             }
 
             if (!(e as TouchEvent).changedTouches?.length) return;
-            const clientY = (e as TouchEvent).changedTouches[0].clientY;
             const rect = canvasRef.current?.getBoundingClientRect();
             if (!rect) return;
-            const lane = (clientY - rect.top) < rect.height / 2 ? 0 : 1;
+            const touch = (e as TouchEvent).changedTouches[0];
+            const isMobileV = rect.height > rect.width;
+            const lane = isMobileV
+                ? ((touch.clientX - rect.left) < rect.width / 2 ? 0 : 1)
+                : ((touch.clientY - rect.top) < rect.height / 2 ? 0 : 1);
             handleInputRelease(lane);
         };
 
@@ -628,45 +645,71 @@ export function GameCanvas() {
 
         // Constants - SCALING UPDATE
         // We want ~3 seconds visibility at 1.0x speed.
-        // PPS = Width / 3.0, scaled by speed modifier so notes visually move faster/slower.
+        // PPS = scroll-axis-length / 3.0, scaled by speed modifier.
         const speedMod = useGameStore.getState().modifiers.speed || 1.0;
-        const PPS        = (w / 3.0) * speedMod; 
-        
-        const CURSOR_X   = w * 0.15; // Hit line at 15% width
         const isOneTrack = useGameStore.getState().modifiers.oneTrack;
-        const LANE_Y     = isOneTrack ? [h * 0.5] : [h * 0.3, h * 0.7];
-        const BAR_H      = Math.max(15, h * 0.04); 
-        const CURSOR_R   = Math.max(10, w * 0.008); 
+        const isMobileV = h > w; // portrait canvas = mobile vertical mode
         const currentTime = AudioManager.getInstance().getCurrentTime();
+
+        // In mobile vertical mode, notes scroll top-to-bottom with lanes left/right.
+        // In desktop mode, notes scroll right-to-left with lanes top/bottom.
+        const PPS = isMobileV ? (h / 3.0) * speedMod : (w / 3.0) * speedMod;
+        const CURSOR_MAIN = isMobileV ? h * 0.85 : w * 0.15;
+        const LANE_POS = isMobileV
+            ? (isOneTrack ? [w * 0.5] : [w * 0.3, w * 0.7])
+            : (isOneTrack ? [h * 0.5] : [h * 0.3, h * 0.7]);
+        const BAR_H = isMobileV ? Math.max(15, w * 0.06) : Math.max(15, h * 0.04);
+        const CURSOR_R = isMobileV ? Math.max(10, h * 0.008) : Math.max(10, w * 0.008);
+
+        // Helper: convert scroll-axis + lane-axis to canvas (x, y)
+        const toCanvas = (scrollVal: number, laneVal: number) =>
+            isMobileV ? { x: laneVal, y: scrollVal } : { x: scrollVal, y: laneVal };
+
+        // Helper: compute scroll position from time delta
+        const scrollPos = (timeDelta: number) =>
+            isMobileV ? CURSOR_MAIN - timeDelta * PPS : CURSOR_MAIN + timeDelta * PPS;
 
         // 1. Draw Tracks (Neumorphic Trough)
         const shadowDark = canvasStyle.getPropertyValue('--slice-shadow-dark').trim() || '#a3b1c6';
         const shadowLight = canvasStyle.getPropertyValue('--slice-shadow-light').trim() || '#ffffff';
-        LANE_Y.forEach((y, i) => {
-            // "Inset" effect: Top shadow dark, Bottom shadow light
-            const trackHeight = BAR_H * 1.5;
+        LANE_POS.forEach((laneVal, i) => {
+            const trackThickness = BAR_H * 1.5;
 
-            // Dark Shadow (Top Left)
-            ctx.shadowColor = shadowDark;
-            ctx.shadowBlur = 10;
-            ctx.shadowOffsetX = 3;
-            ctx.shadowOffsetY = 3;
-            ctx.fillStyle = bgColor;
-            ctx.fillRect(0, y - trackHeight/2, w, trackHeight);
-
-            // Light Highlight (Bottom Right)
-            ctx.shadowColor = shadowLight;
-            ctx.shadowBlur = 10;
-            ctx.shadowOffsetX = -3;
-            ctx.shadowOffsetY = -3;
-            ctx.fillRect(0, y - trackHeight/2, w, trackHeight);
-            
-            ctx.shadowColor = 'transparent'; // Reset shadow
-            
-            // Guide Line
-            ctx.strokeStyle = '#cbd5e0';
-            ctx.lineWidth = 2;
-            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+            if (isMobileV) {
+                // Vertical tracks running top-to-bottom
+                ctx.shadowColor = shadowDark;
+                ctx.shadowBlur = 10;
+                ctx.shadowOffsetX = 3;
+                ctx.shadowOffsetY = 3;
+                ctx.fillStyle = bgColor;
+                ctx.fillRect(laneVal - trackThickness/2, 0, trackThickness, h);
+                ctx.shadowColor = shadowLight;
+                ctx.shadowBlur = 10;
+                ctx.shadowOffsetX = -3;
+                ctx.shadowOffsetY = -3;
+                ctx.fillRect(laneVal - trackThickness/2, 0, trackThickness, h);
+                ctx.shadowColor = 'transparent';
+                ctx.strokeStyle = '#cbd5e0';
+                ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.moveTo(laneVal, 0); ctx.lineTo(laneVal, h); ctx.stroke();
+            } else {
+                // Horizontal tracks running left-to-right (desktop)
+                ctx.shadowColor = shadowDark;
+                ctx.shadowBlur = 10;
+                ctx.shadowOffsetX = 3;
+                ctx.shadowOffsetY = 3;
+                ctx.fillStyle = bgColor;
+                ctx.fillRect(0, laneVal - trackThickness/2, w, trackThickness);
+                ctx.shadowColor = shadowLight;
+                ctx.shadowBlur = 10;
+                ctx.shadowOffsetX = -3;
+                ctx.shadowOffsetY = -3;
+                ctx.fillRect(0, laneVal - trackThickness/2, w, trackThickness);
+                ctx.shadowColor = 'transparent';
+                ctx.strokeStyle = '#cbd5e0';
+                ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.moveTo(0, laneVal); ctx.lineTo(w, laneVal); ctx.stroke();
+            }
         });
 
         // 2. Render Check & Spawn Particles
@@ -677,15 +720,17 @@ export function GameCanvas() {
         if (latestFeedback && latestFeedback.time > lastHitTimeRef.current) {
              lastHitTimeRef.current = latestFeedback.time;
              if (latestFeedback.text !== 'MISS' && latestFeedback.text !== 'BAD' && latestFeedback.text !== 'RELEASED') {
-                 const particleLaneIdx = Math.max(0, Math.min(latestFeedback.lane, LANE_Y.length - 1));
-                 const particleLaneY = isOneTrack ? LANE_Y[0] : LANE_Y[particleLaneIdx];
-                 
-                 // If the note was hit early/late, offset particle emission from CURSOR_X
-                 // offset is (current - slice.time). If positive (late), note is left of cursor.
-                 // So we subtract (offset * PPS) to get spatial position.
-                 const particleX = CURSOR_X - (latestFeedback.offset || 0) * PPS;
-                 
-                 spawnParticles(particleX, particleLaneY, latestFeedback.color, latestFeedback.text);
+                 const particleLaneIdx = Math.max(0, Math.min(latestFeedback.lane, LANE_POS.length - 1));
+                 const particleLaneVal = isOneTrack ? LANE_POS[0] : LANE_POS[particleLaneIdx];
+
+                 // Offset particle emission based on timing offset
+                 const offsetPixels = (latestFeedback.offset || 0) * PPS;
+                 const particleScroll = isMobileV
+                     ? CURSOR_MAIN + offsetPixels   // late = below cursor in vertical
+                     : CURSOR_MAIN - offsetPixels;   // late = left of cursor in horizontal
+                 const { x: particleX, y: particleY } = toCanvas(particleScroll, particleLaneVal);
+
+                 spawnParticles(particleX, particleY, latestFeedback.color, latestFeedback.text);
              }
         }
 
@@ -708,12 +753,13 @@ export function GameCanvas() {
             (map.slices as Slice[]).forEach(slice => {
                 ctx.globalAlpha = 1;
 
-                // Determine X position (clamped to CURSOR_X if it's currently being held during its duration)
-                let sliceX = CURSOR_X + (slice.time - currentTime) * PPS;
-                // If this is a LONG note that has been hit and is active, left edge clamps to cursor
+                // Compute scroll position along the movement axis
+                const timeDelta = slice.time - currentTime;
+                let scrollVal = scrollPos(timeDelta);
+                // If this is a LONG note that has been hit and is active, clamp to cursor
                 const isHeldActive = slice.hit && slice.type === 'LONG' && currentTime >= slice.time && currentTime <= slice.time + (slice.duration || 0);
                 if (isHeldActive) {
-                    sliceX = CURSOR_X;
+                    scrollVal = CURSOR_MAIN;
                 }
 
                 // Fade out on hit (50ms) or spatially behind the reticle
@@ -722,16 +768,24 @@ export function GameCanvas() {
                     const elapsed = performance.now() - (slice.hitTime ?? 0);
                     noteAlpha = Math.max(0, 1 - elapsed / 50);
                     if (noteAlpha <= 0) return; // Fully faded
-                } else if (sliceX < CURSOR_X && !isHeldActive) {
-                    const distBehind = CURSOR_X - sliceX;
-                    const fadeDist = w * 0.08; // Fade over 8% of the screen width
-                    noteAlpha *= Math.max(0, 1 - (distBehind / fadeDist));
-                    if (noteAlpha <= 0) return; // Completely faded out or too far behind
+                } else {
+                    // Check if note is behind the cursor
+                    const distBehind = isMobileV
+                        ? scrollVal - CURSOR_MAIN   // past notes are below cursor in vertical
+                        : CURSOR_MAIN - scrollVal;   // past notes are left of cursor in horizontal
+                    if (distBehind > 0 && !isHeldActive) {
+                        const fadeDist = (isMobileV ? h : w) * 0.08;
+                        noteAlpha *= Math.max(0, 1 - (distBehind / fadeDist));
+                        if (noteAlpha <= 0) return;
+                    }
                 }
 
-                // Cull off-screen to the right
-                const rightBoundary = slice.type === 'LONG' ? sliceX + ((slice.duration || 0) * PPS) : sliceX;
-                if (sliceX > w + 100) return;
+                // Cull off-screen in the "future" direction
+                if (isMobileV) {
+                    if (scrollVal < -100) return; // above screen
+                } else {
+                    if (scrollVal > w + 100) return; // right of screen
+                }
 
                 // Compute effective lane (SWITCH notes flip lanes near the hit line)
                 let effectiveLane = slice.lane;
@@ -740,23 +794,25 @@ export function GameCanvas() {
                     const switchLeadTime = 0.8 / speedMod;
                     const switchTime = slice.time - switchLeadTime;
                     const timeUntilSwitch = switchTime - currentTime;
-                    const animDuration = 0.15 / speedMod; // animation duration in audio-seconds
+                    const animDuration = 0.15 / speedMod;
                     if (currentTime >= switchTime) {
                         switchProgress = 1;
                         effectiveLane = slice.lane === 0 ? 1 : 0;
                     } else if (timeUntilSwitch < animDuration) {
-                        // Animating between lanes
                         switchProgress = 1 - (timeUntilSwitch / animDuration);
-                        effectiveLane = slice.lane; // still in original for hit detection purposes
+                        effectiveLane = slice.lane;
                     }
                 }
 
-                // Interpolate Y position for switch animation
-                const origY = isOneTrack ? LANE_Y[0] : LANE_Y[slice.lane];
-                const destY = isOneTrack ? LANE_Y[0] : LANE_Y[slice.lane === 0 ? 1 : 0];
-                const y = slice.type === 'SWITCH' && !isOneTrack
-                    ? origY + (destY - origY) * switchProgress
-                    : isOneTrack ? LANE_Y[0] : LANE_Y[slice.lane];
+                // Interpolate lane position for switch animation
+                const origLane = isOneTrack ? LANE_POS[0] : LANE_POS[slice.lane];
+                const destLane = isOneTrack ? LANE_POS[0] : LANE_POS[slice.lane === 0 ? 1 : 0];
+                const laneVal = slice.type === 'SWITCH' && !isOneTrack
+                    ? origLane + (destLane - origLane) * switchProgress
+                    : isOneTrack ? LANE_POS[0] : LANE_POS[slice.lane];
+
+                // Convert to canvas coordinates
+                const { x: nx, y: ny } = toCanvas(scrollVal, laneVal);
 
                 // Invisible modifier: notes fade out as they approach the hit line
                 // Similar to osu! Hidden — notes appear, then fade to invisible
@@ -810,11 +866,15 @@ export function GameCanvas() {
                     ctx.beginPath();
                     if (slice.type === 'LONG') {
                         const len = (slice.duration || 0.5) * PPS;
-                        ctx.roundRect(sliceX - 2, y - BAR_H / 2 - 2, len + 4, BAR_H + 4, 12);
+                        if (isMobileV) {
+                            ctx.roundRect(nx - BAR_H / 2 - 2, ny - len - 2, BAR_H + 4, len + 4, 12);
+                        } else {
+                            ctx.roundRect(nx - 2, ny - BAR_H / 2 - 2, len + 4, BAR_H + 4, 12);
+                        }
                     } else if (slice.type === 'SWITCH') {
-                        ctx.arc(sliceX, y, BAR_H * 0.7, 0, Math.PI * 2);
+                        ctx.arc(nx, ny, BAR_H * 0.7, 0, Math.PI * 2);
                     } else {
-                        ctx.arc(sliceX, y, BAR_H * 0.7, 0, Math.PI * 2);
+                        ctx.arc(nx, ny, BAR_H * 0.7, 0, Math.PI * 2);
                     }
                     ctx.fill();
                     ctx.restore();
@@ -829,72 +889,77 @@ export function GameCanvas() {
 
                 if (slice.type === 'BOMB') {
                     ctx.beginPath();
-                    ctx.arc(sliceX, y, CURSOR_R, 0, Math.PI * 2);
+                    ctx.arc(nx, ny, CURSOR_R, 0, Math.PI * 2);
                     ctx.fill();
-                    
+
                     if (isTargeted) {
                         ctx.save();
-                        ctx.strokeStyle = 'rgba(239, 68, 68, 0.8)'; // Red
+                        ctx.strokeStyle = 'rgba(239, 68, 68, 0.8)';
                         ctx.lineWidth = 3;
                         ctx.shadowColor = '#ef4444';
                         ctx.shadowBlur = 12;
                         ctx.beginPath();
-                        ctx.arc(sliceX, y, CURSOR_R + 6, 0, Math.PI * 2);
+                        ctx.arc(nx, ny, CURSOR_R + 6, 0, Math.PI * 2);
                         ctx.stroke();
                         ctx.restore();
-                        
-                        // Restore the normal note shadow
+
                         ctx.shadowColor = 'rgba(163, 177, 198, 0.6)';
                         ctx.shadowBlur = 8;
                         ctx.shadowOffsetX = 4;
                         ctx.shadowOffsetY = 4;
                     }
-                    
+
                     ctx.fillStyle = 'white';
                     ctx.font = 'bold 20px sans-serif';
                     ctx.textAlign = 'center';
-                    ctx.fillText('!', sliceX, y + 7);
+                    ctx.fillText('!', nx, ny + 7);
                  } else if (slice.type === 'LONG') {
-                     // Long note logic
-                     
-                     // Calculate total and remaining length
+                     // Long note: tail extends in the "future" direction from the head
                      let remainingDuration = slice.duration || 0.5;
                      if (isHeldActive) {
                          remainingDuration = (slice.time + (slice.duration || 0)) - currentTime;
                      }
-                     
+
                      if (remainingDuration > 0) {
                          const len = remainingDuration * PPS;
-                         
-                         // 1. Draw the white tail (body of the hold)
-                         // It extends to the right of the start sliceX
                          const trailColor = getComputedStyle(document.documentElement).getPropertyValue('--slice-hold-trail').trim() || 'rgba(255, 255, 255, 0.5)';
-                          ctx.fillStyle = isHeldActive ? trailColor.replace(/,\s*[\d.]+\)$/, ', 0.9)') : trailColor;
-                          ctx.globalAlpha = noteAlpha;
-                         ctx.beginPath();
-                         ctx.roundRect(sliceX, y - (BAR_H * 0.3), len, BAR_H * 0.6, 4);
-                         ctx.fill();
-                         
-                         // 2. Draw the tall, narrow colored start rectangle (head of the hold)
-                         // We make it slightly taller than a normal note (BAR_H) and quite narrow
-                         const headWidth = Math.max(8, BAR_H * 0.4);
-                         const headHeight = BAR_H * 1.4;
-                         
-                         ctx.fillStyle = color; // Uses lane color
+                         ctx.fillStyle = isHeldActive ? trailColor.replace(/,\s*[\d.]+\)$/, ', 0.9)') : trailColor;
                          ctx.globalAlpha = noteAlpha;
-                         
-                         // Optional glow if held
+                         ctx.beginPath();
+                         if (isMobileV) {
+                             // Tail extends upward from head
+                             ctx.roundRect(nx - (BAR_H * 0.3), ny - len, BAR_H * 0.6, len, 4);
+                         } else {
+                             // Tail extends rightward from head
+                             ctx.roundRect(nx, ny - (BAR_H * 0.3), len, BAR_H * 0.6, 4);
+                         }
+                         ctx.fill();
+
+                         // Head of the hold note
+                         ctx.fillStyle = color;
+                         ctx.globalAlpha = noteAlpha;
+                         let headW: number, headH: number;
+                         if (isMobileV) {
+                             // Horizontal bar head for vertical mode
+                             headW = BAR_H * 1.4;
+                             headH = Math.max(8, BAR_H * 0.4);
+                         } else {
+                             // Tall narrow head for horizontal mode
+                             headW = Math.max(8, BAR_H * 0.4);
+                             headH = BAR_H * 1.4;
+                         }
+
                          if (isHeldActive) {
                              ctx.save();
                              ctx.shadowColor = color;
                              ctx.shadowBlur = 10;
                              ctx.beginPath();
-                             ctx.roundRect(sliceX - headWidth/2, y - headHeight/2, headWidth, headHeight, 4);
+                             ctx.roundRect(nx - headW/2, ny - headH/2, headW, headH, 4);
                              ctx.fill();
                              ctx.restore();
                          } else {
                              ctx.beginPath();
-                             ctx.roundRect(sliceX - headWidth/2, y - headHeight/2, headWidth, headHeight, 4);
+                             ctx.roundRect(nx - headW/2, ny - headH/2, headW, headH, 4);
                              ctx.fill();
                          }
                      }
@@ -902,34 +967,34 @@ export function GameCanvas() {
                     // Switch Note — diamond shape with arrow indicator
                     const size = BAR_H;
                     ctx.save();
-                    ctx.translate(sliceX, y);
+                    ctx.translate(nx, ny);
                     ctx.rotate(Math.PI / 4);
                     ctx.beginPath();
                     ctx.roundRect(-size / 2, -size / 2, size, size, 4);
                     ctx.fill();
                     ctx.restore();
-                    // Arrow symbol pointing toward destination lane
                     ctx.fillStyle = 'rgba(255,255,255,0.85)';
                     ctx.font = `bold ${Math.round(size * 0.55)}px sans-serif`;
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
                     const arrow = switchProgress < 1
-                        ? (slice.lane === 0 ? '↓' : '↑')   // pre-switch: arrow pointing to destination
-                        : '⇄';                               // post-switch: settled
-                    ctx.fillText(arrow, sliceX, y);
+                        ? (isMobileV
+                            ? (slice.lane === 0 ? '→' : '←')   // mobile: lanes are left/right
+                            : (slice.lane === 0 ? '↓' : '↑'))  // desktop: lanes are top/bottom
+                        : '⇄';
+                    ctx.fillText(arrow, nx, ny);
                     ctx.textBaseline = 'alphabetic';
                 } else {
                     // Standard Note
                     const size = BAR_H;
                     ctx.beginPath();
-                    // Rounded Cube
-                    ctx.roundRect(sliceX - size/2, y - size/2, size, size, 8);
+                    ctx.roundRect(nx - size/2, ny - size/2, size, size, 8);
                     ctx.fill();
-                    
+
                     // Shine
                     ctx.fillStyle = 'rgba(255,255,255,0.3)';
                     ctx.beginPath();
-                    ctx.arc(sliceX - size*0.15, y - size*0.15, size/4, 0, Math.PI*2);
+                    ctx.arc(nx - size*0.15, ny - size*0.15, size/4, 0, Math.PI*2);
                     ctx.fill();
                 }
 
@@ -961,104 +1026,87 @@ export function GameCanvas() {
         if (latestFeedback && performance.now() - latestFeedback.time < 1000) {
             const timeDiff = performance.now() - latestFeedback.time;
             const alpha = 1 - Math.pow(timeDiff / 1000, 3); // Fade out
-            
+
             ctx.save();
             ctx.globalAlpha = alpha;
             ctx.textAlign = 'center';
-            
-            // Position feedback above the track in one-track mode, centered otherwise
-            const feedbackY = isOneTrack ? LANE_Y[0] - BAR_H * 1.5 - 40 : h * 0.5;
 
-            // Judgment
+            // Position feedback: above hit line on mobile, centered on desktop
+            const feedbackX = w / 2;
+            const feedbackY = isMobileV
+                ? CURSOR_MAIN - BAR_H * 2 - 50
+                : (isOneTrack ? LANE_POS[0] - BAR_H * 1.5 - 40 : h * 0.5);
+
             ctx.fillStyle = latestFeedback.color;
-            ctx.font = '900 32px sans-serif';
+            ctx.font = `900 ${isMobileV ? 28 : 32}px sans-serif`;
             ctx.shadowColor = latestFeedback.color;
             ctx.shadowBlur = 6;
-            ctx.fillText(latestFeedback.text, w / 2, feedbackY);
-            
-            // Reset shadow completely before drawing offset text
+            ctx.fillText(latestFeedback.text, feedbackX, feedbackY);
+
             ctx.shadowColor = 'transparent';
             ctx.shadowBlur = 0;
             ctx.shadowOffsetX = 0;
             ctx.shadowOffsetY = 0;
 
-            // Milliseconds Offset
             if (latestFeedback.offset !== undefined) {
                  const ms = Math.round(latestFeedback.offset * 1000);
                  const sign = ms > 0 ? '+' : '';
                  const offsetText = `${sign}${ms}ms`;
-                 
+
                  ctx.font = 'bold 16px monospace';
                  ctx.fillStyle = Math.abs(ms) < 20 ? '#334155' : '#64748b';
-                 ctx.fillText(offsetText, w / 2, feedbackY + 30);
+                 ctx.fillText(offsetText, feedbackX, feedbackY + 30);
             }
-            
+
             ctx.restore();
         }
 
         // 5. Cursors (Receptors)
         const textColor = canvasStyle.getPropertyValue('--slice-text-muted').trim() || '#64748b';
         const textShadowColor = canvasStyle.getPropertyValue('--slice-text-shadow').trim() || 'rgba(0,0,0,0.3)';
-        if (isOneTrack) {
-            // One-track mode: draw a single receptor
-            const y = LANE_Y[0];
-            const cx = CURSOR_X;
+
+        const drawCursor = (cx: number, cy: number, color: string, label?: string) => {
             ctx.shadowColor = shadowLight;
             ctx.shadowBlur = 5;
             ctx.shadowOffsetX = -2;
             ctx.shadowOffsetY = -2;
             ctx.strokeStyle = bgColor;
             ctx.lineWidth = 4;
-            ctx.beginPath(); ctx.arc(cx, y, CURSOR_R * 1.5, 0, Math.PI * 2); ctx.stroke();
+            ctx.beginPath(); ctx.arc(cx, cy, CURSOR_R * 1.5, 0, Math.PI * 2); ctx.stroke();
             ctx.shadowColor = shadowDark;
             ctx.shadowBlur = 5;
             ctx.shadowOffsetX = 2;
             ctx.shadowOffsetY = 2;
             ctx.stroke();
             ctx.shadowColor = 'transparent';
-            ctx.strokeStyle = shadowLight;
+            ctx.strokeStyle = color;
             ctx.lineWidth = 3;
-            ctx.beginPath(); ctx.arc(cx, y, CURSOR_R * 1.5, 0, Math.PI * 2); ctx.stroke();
-            ctx.fillStyle = textColor;
-            ctx.font = 'bold 10px sans-serif';
-            ctx.textAlign = 'center';
-            const bind1 = currentKeybinds.lane1.replace('Mouse0','LMB').replace('Mouse1','MMB').replace('Mouse2','RMB').replace('Key','').replace('Arrow','');
-            const bind2 = currentKeybinds.lane2.replace('Mouse0','LMB').replace('Mouse1','MMB').replace('Mouse2','RMB').replace('Key','').replace('Arrow','');
-            ctx.shadowColor = textShadowColor;
-            ctx.shadowBlur = 2;
-            ctx.shadowOffsetX = 1;
-            ctx.shadowOffsetY = 1;
-            ctx.fillText(`${bind1}/${bind2}`, cx, y + 4);
-            ctx.shadowColor = 'transparent';
-        } else {
-            LANE_Y.forEach((y, i) => {
-                const color = i === 0 ? COLORS.lane1 : COLORS.lane2;
-                ctx.shadowColor = shadowLight;
-                ctx.shadowBlur = 5;
-                ctx.shadowOffsetX = -2;
-                ctx.shadowOffsetY = -2;
-                ctx.strokeStyle = bgColor;
-                ctx.lineWidth = 4;
-                ctx.beginPath(); ctx.arc(CURSOR_X, y, CURSOR_R * 1.5, 0, Math.PI * 2); ctx.stroke();
-                ctx.shadowColor = shadowDark;
-                ctx.shadowBlur = 5;
-                ctx.shadowOffsetX = 2;
-                ctx.shadowOffsetY = 2;
-                ctx.stroke();
-                ctx.shadowColor = 'transparent';
-                ctx.strokeStyle = color;
-                ctx.lineWidth = 3;
-                ctx.beginPath(); ctx.arc(CURSOR_X, y, CURSOR_R * 1.5, 0, Math.PI * 2); ctx.stroke();
+            ctx.beginPath(); ctx.arc(cx, cy, CURSOR_R * 1.5, 0, Math.PI * 2); ctx.stroke();
+            if (label) {
                 ctx.fillStyle = textColor;
                 ctx.font = 'bold 12px sans-serif';
                 ctx.textAlign = 'center';
-                const bind = i === 0 ? currentKeybinds.lane1 : currentKeybinds.lane2;
                 ctx.shadowColor = textShadowColor;
                 ctx.shadowBlur = 2;
                 ctx.shadowOffsetX = 1;
                 ctx.shadowOffsetY = 1;
-                ctx.fillText(bind.replace('Mouse0','LMB').replace('Mouse1','MMB').replace('Mouse2','RMB').replace('ArrowUp', '↑').replace('ArrowDown', '↓').replace('ArrowLeft', '←').replace('ArrowRight', '→').replace('Key', '') , CURSOR_X, y + 4);
+                ctx.fillText(label, cx, cy + 4);
                 ctx.shadowColor = 'transparent';
+            }
+        };
+
+        const formatBind = (b: string) => b.replace('Mouse0','LMB').replace('Mouse1','MMB').replace('Mouse2','RMB').replace('ArrowUp', '↑').replace('ArrowDown', '↓').replace('ArrowLeft', '←').replace('ArrowRight', '→').replace('Key', '');
+
+        if (isOneTrack) {
+            const { x: cx, y: cy } = toCanvas(CURSOR_MAIN, LANE_POS[0]);
+            const label = isMobileV ? undefined : `${formatBind(currentKeybinds.lane1)}/${formatBind(currentKeybinds.lane2)}`;
+            drawCursor(cx, cy, shadowLight, label);
+        } else {
+            LANE_POS.forEach((laneVal, i) => {
+                const { x: cx, y: cy } = toCanvas(CURSOR_MAIN, laneVal);
+                const color = i === 0 ? COLORS.lane1 : COLORS.lane2;
+                const label = isMobileV ? undefined : formatBind(i === 0 ? currentKeybinds.lane1 : currentKeybinds.lane2);
+                drawCursor(cx, cy, color, label);
             });
         }
 
@@ -1068,40 +1116,40 @@ export function GameCanvas() {
     return (
         <div className="flex w-full h-full bg-slice-bg">
             {/* Game Area Container - Flex Grow */}
-            <div className="flex-1 flex items-center justify-center p-4 min-w-0 bg-slice-shadow-dark/30">
+            <div className={`flex-1 flex items-center justify-center min-w-0 bg-slice-shadow-dark/30 ${isPortrait ? 'p-1' : 'p-4'}`}>
                 <div
                     ref={wrapperRef}
-                    className="relative w-full aspect-video bg-slice-bg rounded-[2rem] shadow-[20px_20px_60px_var(--slice-shadow-dark),-20px_-20px_60px_var(--slice-shadow-light)] overflow-hidden border-4 border-slice-shadow-light/40 max-w-[min(1400px,calc((100vh-6rem)*16/9))]"
+                    className={`relative w-full bg-slice-bg overflow-hidden border-4 border-slice-shadow-light/40 shadow-[20px_20px_60px_var(--slice-shadow-dark),-20px_-20px_60px_var(--slice-shadow-light)] ${isPortrait ? 'h-full rounded-2xl' : 'aspect-video rounded-[2rem] max-w-[min(1400px,calc((100vh-6rem)*16/9))]'}`}
                 >
                     <canvas
                         ref={canvasRef}
                         className="w-full h-full cursor-pointer block"
                     />
 
-                    {/* Mobile Buttons */}
+                    {/* Mobile Buttons — left/right split for portrait, top/bottom for landscape */}
                     {showMobileButtons && status === 'PLAYING' && !isPaused && countdown === 0 && (
-                        <div data-mobile-btn className="absolute inset-0 pointer-events-none flex flex-col">
+                        <div data-mobile-btn className="absolute inset-0 pointer-events-none flex flex-row">
                             <button
                                 data-mobile-btn
-                                className="pointer-events-auto flex-1 w-full flex items-center justify-end pr-6 opacity-0 active:opacity-100 transition-opacity"
+                                className="pointer-events-auto flex-1 h-full flex items-end justify-center pb-4 opacity-0 active:opacity-30 transition-opacity"
                                 onTouchStart={e => { e.preventDefault(); handleInput(0); }}
                                 onTouchEnd={e => { e.preventDefault(); handleInputRelease(0); }}
                                 onMouseDown={e => { e.preventDefault(); handleInput(0); }}
                                 onMouseUp={e => { e.preventDefault(); handleInputRelease(0); }}
                                 onMouseLeave={e => { e.preventDefault(); handleInputRelease(0); }}
                             >
-                                <div className="w-16 h-16 rounded-full bg-blue-500/20 border-2 border-blue-500 flex items-center justify-center text-blue-500 text-2xl font-black">↑</div>
+                                <div className="w-12 h-12 rounded-full bg-blue-500/20 border-2 border-blue-500 flex items-center justify-center text-blue-500 text-lg font-black">L</div>
                             </button>
                             <button
                                 data-mobile-btn
-                                className="pointer-events-auto flex-1 w-full flex items-center justify-end pr-6 opacity-0 active:opacity-100 transition-opacity"
+                                className="pointer-events-auto flex-1 h-full flex items-end justify-center pb-4 opacity-0 active:opacity-30 transition-opacity"
                                 onTouchStart={e => { e.preventDefault(); handleInput(1); }}
                                 onTouchEnd={e => { e.preventDefault(); handleInputRelease(1); }}
                                 onMouseDown={e => { e.preventDefault(); handleInput(1); }}
                                 onMouseUp={e => { e.preventDefault(); handleInputRelease(1); }}
                                 onMouseLeave={e => { e.preventDefault(); handleInputRelease(1); }}
                             >
-                                <div className="w-16 h-16 rounded-full bg-pink-500/20 border-2 border-pink-500 flex items-center justify-center text-pink-500 text-2xl font-black">↓</div>
+                                <div className="w-12 h-12 rounded-full bg-pink-500/20 border-2 border-pink-500 flex items-center justify-center text-pink-500 text-lg font-black">R</div>
                             </button>
                         </div>
                     )}

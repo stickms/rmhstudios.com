@@ -29,6 +29,7 @@ interface LobbyWaitingProps {
 
 export default function LobbyWaiting({ lobbyId, onLeave }: LobbyWaitingProps) {
   const lobby = useAltairMultiplayerStore((s) => s.lobby);
+  const classSelections = useAltairMultiplayerStore((s) => s.classSelections);
   const [codeCopied, setCodeCopied] = useState(false);
   const [editingSettings, setEditingSettings] = useState(false);
 
@@ -114,6 +115,7 @@ export default function LobbyWaiting({ lobbyId, onLeave }: LobbyWaitingProps) {
                 <PlayerRow
                   key={player.userId}
                   player={player}
+                  resolvedClassId={classSelections[player.userId] ?? player.classId}
                   isLocalPlayer={player.userId === lobby.myUserId}
                   isHost={isHost}
                   onKick={() => handleKick(player.userId)}
@@ -136,7 +138,7 @@ export default function LobbyWaiting({ lobbyId, onLeave }: LobbyWaitingProps) {
           {/* Class Selection */}
           <ClassPicker
             lobbyId={lobbyId}
-            currentClassId={players.find((p) => p.userId === lobby.myUserId)?.classId ?? null}
+            currentClassId={classSelections[lobby.myUserId] ?? players.find((p) => p.userId === lobby.myUserId)?.classId ?? null}
             onSelect={handleSelectClass}
           />
 
@@ -290,18 +292,20 @@ export default function LobbyWaiting({ lobbyId, onLeave }: LobbyWaitingProps) {
 
 function PlayerRow({
   player,
+  resolvedClassId,
   isLocalPlayer,
   isHost,
   onKick,
   onTransferHost,
 }: {
   player: AltairClientPlayer;
+  resolvedClassId: string | null;
   isLocalPlayer: boolean;
   isHost: boolean;
   onKick: () => void;
   onTransferHost: () => void;
 }) {
-  const classDef = player.classId ? CLASS_MAP.get(player.classId) : null;
+  const classDef = resolvedClassId ? CLASS_MAP.get(resolvedClassId) : null;
 
   return (
     <div

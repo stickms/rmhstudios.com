@@ -90,11 +90,11 @@ export default function LevelUpScreen({ onReroll }: LevelUpScreenProps) {
   if (phase !== 'upgrading' || choices.length === 0) return null;
 
   return (
-    <div className="absolute inset-0 z-50 flex items-center justify-center altair-overlay">
+    <div className="absolute inset-0 z-50 flex items-center justify-center altair-overlay overflow-y-auto">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
-      <div className="relative z-10 w-full max-w-2xl mx-4">
+      <div className="relative z-10 w-full max-w-2xl mx-4 my-4 sm:my-0">
         {/* Title */}
-        <div className="text-center mb-6">
+        <div className="text-center mb-4 sm:mb-6">
           <div className="text-xs font-mono text-(--altair-text-dim) uppercase tracking-[0.3em] mb-1">
             Level Up!
           </div>
@@ -105,14 +105,14 @@ export default function LevelUpScreen({ onReroll }: LevelUpScreenProps) {
         </div>
 
         {/* Choice cards */}
-        <div className="flex gap-3 justify-center flex-wrap">
+        <div className="flex gap-2 sm:gap-3 justify-center flex-wrap">
           {choices.map((choice, i) => {
             const info = getChoiceInfo(choice);
             return (
               <div key={i} className="relative group">
                 <button
                   onClick={() => pickUpgrade(i)}
-                  className="altair-parchment-surface w-44 p-4 rounded-xl border border-(--altair-border) bg-(--altair-surface) hover:bg-(--altair-surface-hover) hover:border-(--altair-border-bright) transition-all text-left altair-modal"
+                  className="altair-parchment-surface w-36 sm:w-44 p-3 sm:p-4 rounded-xl border border-(--altair-border) bg-(--altair-surface) hover:bg-(--altair-surface-hover) hover:border-(--altair-border-bright) transition-all text-left altair-modal"
                   style={{ animationDelay: `${i * 0.05}s` }}
                 >
                   {/* Icon */}

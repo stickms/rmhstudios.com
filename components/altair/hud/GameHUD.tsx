@@ -88,9 +88,9 @@ export default function GameHUD() {
       </div>
 
       {/* Weapon & passive slots — below header bar */}
-      <div className="flex items-center justify-center gap-4 px-3 py-1.5 bg-black/30 pointer-events-auto">
+      <div className="flex items-center justify-center gap-2 sm:gap-4 px-2 sm:px-3 py-1.5 bg-black/30 pointer-events-auto">
         {/* Weapon slots */}
-        <div className="flex gap-1">
+        <div className="flex gap-0.5 sm:gap-1">
           {Array.from({ length: 6 }).map((_, i) => {
             const w = weapons[i];
             const def = w ? WEAPON_MAP.get(w.weaponId) : null;
@@ -98,7 +98,7 @@ export default function GameHUD() {
             return (
               <div
                 key={`w${i}`}
-                className={`relative w-9 h-9 rounded-md border flex items-center justify-center overflow-hidden ${
+                className={`relative w-7 h-7 sm:w-9 sm:h-9 rounded-md border flex items-center justify-center overflow-hidden ${
                   w
                     ? w.evolved
                       ? 'border-(--altair-warning)'
@@ -133,10 +133,10 @@ export default function GameHUD() {
         </div>
 
         {/* Divider */}
-        <div className="w-px h-6 bg-white/20" />
+        <div className="w-px h-5 sm:h-6 bg-white/20" />
 
         {/* Passive slots */}
-        <div className="flex gap-1">
+        <div className="flex gap-0.5 sm:gap-1">
           {Array.from({ length: 6 }).map((_, i) => {
             const p = passives[i];
             const def = p ? PASSIVE_MAP.get(p.passiveId) : null;
@@ -144,7 +144,7 @@ export default function GameHUD() {
             return (
               <div
                 key={`p${i}`}
-                className={`relative w-9 h-9 rounded-md border flex items-center justify-center overflow-hidden ${
+                className={`relative w-7 h-7 sm:w-9 sm:h-9 rounded-md border flex items-center justify-center overflow-hidden ${
                   p
                     ? 'border-(--altair-rare)'
                     : 'border-(--altair-border) bg-black/30'
