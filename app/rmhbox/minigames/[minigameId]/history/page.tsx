@@ -10,9 +10,9 @@
 
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams } from 'next/navigation';
-import { ChevronDown, ChevronUp, Search, ArrowUpDown } from 'lucide-react';
+import { ChevronDown, ChevronUp, Search, ArrowUpDown, Filter } from 'lucide-react';
 import RMHboxHeader from '@/components/rmhbox/RMHboxHeader';
 import { MINIGAME_REGISTRY } from '@/lib/rmhbox/minigame-registry';
 import { getHistoryDisplay } from '@/lib/rmhbox/history-display-registry';
@@ -59,6 +59,7 @@ export default function MinigameHistoryPage() {
   const [expandedLog, setExpandedLog] = useState<GameLog | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [offset, setOffset] = useState(0);
+  const [activeFilters, setActiveFilters] = useState<Record<string, string>>({});
   const limit = 20;
 
   const fetchMatches = useCallback(async () => {
@@ -147,16 +148,73 @@ export default function MinigameHistoryPage() {
     }
   });
 
-  // Filter by search
-  const filteredMatches = searchQuery
-    ? sortedMatches.filter((m) => {
-        const q = searchQuery.toLowerCase();
-        return (
+  // Filter by search (using minigame searchable fields + player names + date)
+  const filteredMatches = useMemo(() => {
+    let result = sortedMatches;
+
+    // Text search
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter((m) => {
+        // Always search player names and date
+        if (
           m.players.some((p) => p.userName.toLowerCase().includes(q)) ||
           m.startedAt.toLowerCase().includes(q)
-        );
-      })
-    : sortedMatches;
+        ) {
+          return true;
+        }
+        // Search through minigame-specific searchable fields
+        if (m.gameLog && historyConfig) {
+          for (const field of historyConfig.searchableFields) {
+            const values = field.extract(m.gameLog);
+            if (values.some((v) => v.toLowerCase().includes(q))) {
+              return true;
+            }
+          }
+        }
+        return false;
+      });
+    }
+
+    // Apply active filters (select-type filterable fields)
+    if (historyConfig && Object.keys(activeFilters).length > 0) {
+      result = result.filter((m) => {
+        if (!m.gameLog) return true;
+        for (const [filterKey, filterValue] of Object.entries(activeFilters)) {
+          if (!filterValue) continue;
+          const field = historyConfig.filterableFields.find((f) => f.key === filterKey);
+          if (!field) continue;
+          if (field.type === 'select' && field.options) {
+            const matchOptions = field.options(m.gameLog);
+            if (!matchOptions.includes(filterValue)) return false;
+          }
+        }
+        return true;
+      });
+    }
+
+    return result;
+  }, [sortedMatches, searchQuery, historyConfig, activeFilters]);
+
+  // Compute available filter options from all loaded gameLogs
+  const filterOptions = useMemo(() => {
+    if (!historyConfig) return {};
+    const options: Record<string, string[]> = {};
+    for (const field of historyConfig.filterableFields) {
+      if (field.type === 'select' && field.options) {
+        const allValues = new Set<string>();
+        for (const m of matches) {
+          if (m.gameLog) {
+            for (const val of field.options(m.gameLog)) {
+              allValues.add(val);
+            }
+          }
+        }
+        options[field.key] = [...allValues].sort();
+      }
+    }
+    return options;
+  }, [historyConfig, matches]);
 
   const formatDate = (iso: string) => {
     const d = new Date(iso);
@@ -207,7 +265,11 @@ export default function MinigameHistoryPage() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search games..."
+              placeholder={
+                historyConfig?.searchableFields.length
+                  ? `Search by ${historyConfig.searchableFields.map((f) => f.label.toLowerCase()).join(', ')}, players…`
+                  : 'Search games...'
+              }
               className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) text-(--rmhbox-text) placeholder:text-(--rmhbox-text-dim) outline-none focus:ring-1 focus:ring-(--rmhbox-accent) text-sm"
               data-testid="history-search"
             />
@@ -222,12 +284,47 @@ export default function MinigameHistoryPage() {
             <SortButton label="Duration" field="duration" />
           </div>
 
+          {/* Filter controls */}
+          {historyConfig && historyConfig.filterableFields.some((f) => f.type === 'select' && filterOptions[f.key]?.length) && (
+            <div className="flex flex-wrap items-center gap-3 mb-4 px-1" data-testid="history-filters">
+              <Filter className="h-3.5 w-3.5 text-(--rmhbox-text-muted)" />
+              {historyConfig.filterableFields
+                .filter((f) => f.type === 'select' && filterOptions[f.key]?.length)
+                .map((field) => (
+                  <select
+                    key={field.key}
+                    value={activeFilters[field.key] ?? ''}
+                    onChange={(e) =>
+                      setActiveFilters((prev) => {
+                        const next = { ...prev };
+                        if (e.target.value) {
+                          next[field.key] = e.target.value;
+                        } else {
+                          delete next[field.key];
+                        }
+                        return next;
+                      })
+                    }
+                    className="text-xs px-2 py-1.5 rounded-md border border-(--rmhbox-border) bg-(--rmhbox-bg) text-(--rmhbox-text) outline-none focus:ring-1 focus:ring-(--rmhbox-accent)"
+                    data-testid={`history-filter-${field.key}`}
+                  >
+                    <option value="">{field.label}: All</option>
+                    {(filterOptions[field.key] ?? []).map((opt) => (
+                      <option key={opt} value={opt}>
+                        {field.label}: {opt}
+                      </option>
+                    ))}
+                  </select>
+                ))}
+            </div>
+          )}
+
           {/* Match list */}
           {loading ? (
             <p className="text-sm text-center py-12 text-(--rmhbox-text-muted)">Loading history…</p>
           ) : filteredMatches.length === 0 ? (
             <p className="text-sm text-center py-12 text-(--rmhbox-text-muted)">
-              {searchQuery ? 'No matches found.' : 'No game history yet.'}
+              {searchQuery || Object.keys(activeFilters).length > 0 ? 'No matches found.' : 'No game history yet.'}
             </p>
           ) : (
             <div className="space-y-2">
@@ -254,6 +351,14 @@ export default function MinigameHistoryPage() {
                           <span className="text-(--rmhbox-text-muted)">·</span>
                           <span className="text-(--rmhbox-text-muted)">{formatDuration(match.durationMs)}</span>
                         </div>
+                        {match.gameLog && historyConfig && (
+                          <p
+                            className="text-sm mt-1 text-(--rmhbox-text) truncate"
+                            data-testid={`history-summary-${match.id}`}
+                          >
+                            {historyConfig.getSummary(match.gameLog)}
+                          </p>
+                        )}
                         <div className="text-xs mt-1 text-(--rmhbox-text-muted)">
                           Winner:{' '}
                           <span className="text-(--rmhbox-accent) font-medium">

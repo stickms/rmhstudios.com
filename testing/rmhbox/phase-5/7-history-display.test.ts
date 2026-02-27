@@ -314,9 +314,25 @@ describe('Wiki-Race History Display (§4.17)', () => {
     expect(extracted).toEqual(['Cat', 'Moon']);
   });
 
-  it('should generate correct summary', () => {
+  it('should generate correct summary for single round', () => {
     const summary = config.getSummary(log);
     expect(summary).toBe('Cat → Moon');
+  });
+
+  it('should generate correct summary for multiple rounds', () => {
+    const multiRoundLog: GameLog = {
+      ...log,
+      initialState: { rounds: 2, timeLimitSeconds: 120 },
+      actions: [
+        { seq: 1, timestamp: 0, type: 'round_start', payload: { round: 1, startArticle: 'Cat', targetArticle: 'Moon' } },
+        { seq: 2, timestamp: 120000, type: 'round_end', payload: { round: 1, finishers: [] } },
+        { seq: 3, timestamp: 121000, type: 'round_start', payload: { round: 2, startArticle: 'Python', targetArticle: 'Mathematics' } },
+        { seq: 4, timestamp: 240000, type: 'round_end', payload: { round: 2, finishers: [] } },
+        { seq: 5, timestamp: 240000, type: 'game_end', payload: { finalScores: [] } },
+      ],
+    };
+    const summary = config.getSummary(multiRoundLog);
+    expect(summary).toBe('2 rounds — Cat → Moon, Python → Mathematics');
   });
 
   it('should have correct filterable fields', () => {

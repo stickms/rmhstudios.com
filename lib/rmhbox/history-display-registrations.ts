@@ -195,8 +195,13 @@ registerHistoryDisplay({
     },
   ],
   getSummary: (log: GameLog) => {
-    const start = log.actions.find((a) => a.type === 'round_start');
-    return `${start?.payload.startArticle ?? '?'} → ${start?.payload.targetArticle ?? '?'}`;
+    const rounds = log.actions.filter((a) => a.type === 'round_start');
+    if (rounds.length === 0) return 'Wiki-Race game';
+    const pairs = rounds.map(
+      (r) => `${r.payload.startArticle ?? '?'} → ${r.payload.targetArticle ?? '?'}`,
+    );
+    if (pairs.length === 1) return pairs[0];
+    return `${pairs.length} rounds — ${pairs.join(', ')}`;
   },
 });
 
