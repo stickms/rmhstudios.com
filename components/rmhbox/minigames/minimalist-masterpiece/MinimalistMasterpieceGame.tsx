@@ -450,7 +450,7 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
           <p className="text-sm text-(--rmhbox-text-muted)">
             Remaining: {currency} coins • Time: {timeRemaining}s
             {bidSubmitStatus && (
-              <span className="ml-2">
+              <span className="ml-2" aria-label={`${bidSubmitStatus.submitted} of ${bidSubmitStatus.total} players submitted bids`}>
                 • {bidSubmitStatus.submitted}/{bidSubmitStatus.total} submitted
               </span>
             )}

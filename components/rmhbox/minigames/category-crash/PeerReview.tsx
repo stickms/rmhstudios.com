@@ -216,7 +216,7 @@ export default function PeerReview({
                     <span className="flex items-center gap-1 text-xs text-(--rmhbox-text-muted)">
                       <Flame className="h-3 w-3 text-(--rmhbox-danger)" />
                       {crashCount}
-                      <Shield className="h-3 w-3 text-green-500 ml-1" />
+                      <Shield className="h-3 w-3 text-(--rmhbox-success) ml-1" />
                       {safeCount}
                     </span>
                     {/* Crash button */}
@@ -238,8 +238,8 @@ export default function PeerReview({
                       onClick={() => onVote(answerSet.anonymousLabel, activeCatIndex, 'safe')}
                       className={`flex items-center gap-1 rounded px-2 py-1 text-xs font-medium transition-colors ${
                         myVote === 'safe'
-                          ? 'bg-green-500/30 text-green-400 border border-green-500/40'
-                          : 'bg-(--rmhbox-surface) text-(--rmhbox-text-muted) border border-(--rmhbox-border) hover:bg-green-500/10 hover:text-green-400'
+                          ? 'bg-(--rmhbox-success)/30 text-(--rmhbox-success) border border-(--rmhbox-success)/40'
+                          : 'bg-(--rmhbox-surface) text-(--rmhbox-text-muted) border border-(--rmhbox-border) hover:bg-(--rmhbox-success-dim) hover:text-(--rmhbox-success)'
                       }`}
                     >
                       <Shield className="h-3 w-3" />

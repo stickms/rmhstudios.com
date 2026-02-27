@@ -708,7 +708,7 @@ export class CategoryCrashMinigame extends BaseMinigame {
     };
     this.state.votes.push(voteRecord);
 
-    // Also maintain legacy crashes array for backward compatibility
+    // Maintain legacy crashes array for state masking (myCrashes in getStateForPlayer)
     if (vote === 'crash') {
       const alreadyCrashed = this.state.crashes.some(
         (c) => c.crasherId === userId && c.targetUserId === realTargetId && c.categoryIndex === categoryIndex,
