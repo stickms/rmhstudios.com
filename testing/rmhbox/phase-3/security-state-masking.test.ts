@@ -36,6 +36,8 @@ let gameCoordinator: GameCoordinator;
 class SecretGame extends BaseMinigame {
   private secrets = new Map<string, string>();
 
+  get spectatorMode(): 'competitive-individual' { return 'competitive-individual'; }
+
   start(): void {
     this.isRunning = true;
     // Assign a unique secret to each player

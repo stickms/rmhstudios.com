@@ -38,6 +38,7 @@ export default function LobbyPage({ params }: { params: Promise<{ lobbyId: strin
   const router = useRouter();
   const lobby = useRMHboxStore((s) => s.lobby);
   const connectionStatus = useRMHboxStore((s) => s.connectionStatus);
+  const spectatorTarget = useRMHboxStore((s) => s.spectatorTarget);
 
   const backlinkLabel = "Leave";
   const backlinkHref = '/rmhbox';
@@ -234,6 +235,7 @@ export default function LobbyPage({ params }: { params: Promise<{ lobbyId: strin
 
   const isSpectator = lobby.myRole === 'spectator';
   const isHost = lobby.hostUserId === lobby.myUserId;
+  const spectatorMode = lobby.currentGame?.spectatorMode ?? null;
 
   // Determine header context and title based on current lobby state
   const isGamePhase = lobby.state === 'PLAYING' || lobby.state === 'COUNTDOWN'
@@ -258,6 +260,9 @@ export default function LobbyPage({ params }: { params: Promise<{ lobbyId: strin
           <SpectatorBanner
             lobbyState={lobby.state}
             onRequestPromotion={() => emit(C2S.LOBBY_REQUEST_PROMOTION, { lobbyId })}
+            spectatorTarget={spectatorTarget}
+            spectatorMode={spectatorMode}
+            onSelectPlayer={(targetPlayerId) => emit(C2S.SPECTATOR_SELECT_PLAYER, { lobbyId, targetPlayerId })}
           />
         )}
 

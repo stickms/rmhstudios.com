@@ -57,6 +57,9 @@ export class LobbyManager {
 
   private gcInterval: ReturnType<typeof setInterval> | null = null;
 
+  /** Optional callback invoked when a new spectator joins a lobby mid-game. */
+  onSpectatorJoinedMidGame?: (lobbyId: string, spectatorUserId: string, socket: Socket) => void;
+
   constructor(io: Server) {
     this.io = io;
   }
@@ -455,6 +458,11 @@ export class LobbyManager {
         pending.push(userId);
         this.pendingJoinPlayers.set(lobby.id, pending);
         logger.info({ event: 'pending_join_player_added', lobbyId: lobby.id, userId });
+      }
+
+      // Notify game coordinator so it can assign a spectator target and send game state
+      if (lobby.state === 'PLAYING' && this.onSpectatorJoinedMidGame) {
+        this.onSpectatorJoinedMidGame(lobby.id, userId, socket);
       }
 
       logger.info({ event: 'spectator_joined', lobbyId: lobby.id, userId, userName });
@@ -1253,6 +1261,7 @@ export class LobbyManager {
         timeRemaining: null,
         publicState: (typeof gameState === 'object' && gameState !== null ? gameState : {}) as Record<string, unknown>,
         privateState: {}, // Phase 3: placeholder for future per-player private state
+        spectatorMode: handler?.spectatorMode ?? null,
       };
     }
 

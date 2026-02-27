@@ -84,6 +84,8 @@ export class EmojiCinemaGame extends BaseMinigame {
   private actionSeq = 0;
   private constructionTimeoutHandle: NodeJS.Timeout | null = null;
 
+  get spectatorMode(): 'shared-privileged' { return 'shared-privileged'; }
+
   constructor(context: MinigameContext) {
     super(context);
     this.moviePool = loadMovies();
@@ -190,7 +192,7 @@ export class EmojiCinemaGame extends BaseMinigame {
     this.broadcastRound(this.state.currentRound, this.state.totalRounds);
 
     // Notify all players of the producer assignment
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'EC_PRODUCER_ASSIGNED',
       round: this.state.currentRound,
       totalRounds: this.state.totalRounds,
@@ -236,7 +238,7 @@ export class EmojiCinemaGame extends BaseMinigame {
     });
 
     // Notify audience that producer is picking a movie
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'EC_MOVIE_SELECTION_START',
       duration: EC_MOVIE_SELECTION_SECONDS,
     });
@@ -308,7 +310,7 @@ export class EmojiCinemaGame extends BaseMinigame {
       duration: roundDuration,
     });
 
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'EC_CONSTRUCTION_START',
       duration: roundDuration,
       maxEmojis: EC_MAX_EMOJIS,
@@ -377,7 +379,7 @@ export class EmojiCinemaGame extends BaseMinigame {
     const roundScoresObj: Record<string, number> = {};
     for (const [uid, s] of roundScores) roundScoresObj[uid] = s;
 
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'EC_ROUND_OVER',
       round: this.state.currentRound,
       reason: effectiveReason,
@@ -404,7 +406,7 @@ export class EmojiCinemaGame extends BaseMinigame {
 
     this.setPhase('TRANSITION', EC_TRANSITION_SECONDS);
 
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'EC_TRANSITION',
       nextRound: this.state.currentRound + 1,
       totalRounds: this.state.totalRounds,
@@ -506,7 +508,7 @@ export class EmojiCinemaGame extends BaseMinigame {
 
     this.logAction('add_emoji', { userId, emoji, position: insertPos });
 
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'EC_EMOJI_UPDATED',
       emojiSequence: this.state.emojiSequence,
     });
@@ -539,7 +541,7 @@ export class EmojiCinemaGame extends BaseMinigame {
 
     this.logAction('remove_emoji', { userId, position });
 
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'EC_EMOJI_UPDATED',
       emojiSequence: this.state.emojiSequence,
     });
@@ -576,7 +578,7 @@ export class EmojiCinemaGame extends BaseMinigame {
 
     this.logAction('reorder_emoji', { userId, fromIndex, toIndex });
 
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'EC_EMOJI_UPDATED',
       emojiSequence: this.state.emojiSequence,
     });
@@ -656,7 +658,7 @@ export class EmojiCinemaGame extends BaseMinigame {
       this.state.correctGuessers.push(guesser);
 
       // Broadcast correct guess + updated list of all correct guessers to everyone
-      this.context.broadcastToLobby('rmhbox:game:action', {
+      this.broadcastGameAction({
         type: 'EC_CORRECT_GUESS',
         userId,
         userName: guesser.userName,
@@ -674,7 +676,7 @@ export class EmojiCinemaGame extends BaseMinigame {
       }
     } else if (result === 'close') {
       this.state.closeGuessCount++;
-      this.context.broadcastToLobby('rmhbox:game:action', {
+      this.broadcastGameAction({
         type: 'EC_CLOSE_GUESS',
         userId,
         closeGuessCount: this.state.closeGuessCount,
@@ -682,7 +684,7 @@ export class EmojiCinemaGame extends BaseMinigame {
     } else {
       // Wrong — broadcast total guess count for the round
       const totalGuesses = this.getTotalGuessCount();
-      this.context.broadcastToLobby('rmhbox:game:action', {
+      this.broadcastGameAction({
         type: 'EC_GUESS_COUNT',
         totalGuesses,
       });
@@ -927,8 +929,6 @@ export class EmojiCinemaGame extends BaseMinigame {
         userId,
       });
     }
-
-    this.context.sendToPlayer(userId, 'rmhbox:game:state_snapshot', this.getStateForPlayer(userId));
 
     logger.info({
       event: 'ec:player_reconnect',

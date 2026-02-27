@@ -20,6 +20,7 @@ import type {
   GameAction,
   GameSettingsSchema,
   GameSettingValues,
+  SpectatorTargetInfo,
 } from './types';
 
 // ─── Game Settings State ────────────────────────────────────────────
@@ -93,6 +94,8 @@ export interface RMHboxStore {
   minigameRound: MinigameRoundInfo | null;
   /** Game settings for pre-launch modal and GAME_SETTINGS phase (§12A) */
   gameSettingsState: GameSettingsState | null;
+  /** Info about which player a spectator is currently following (competitive-individual games) */
+  spectatorTarget: SpectatorTargetInfo | null;
 
   // Actions
   setConnectionStatus: (status: RMHboxStore['connectionStatus']) => void;
@@ -103,6 +106,7 @@ export interface RMHboxStore {
   setMinigameRound: (info: MinigameRoundInfo | null) => void;
   setGameSettingsState: (state: GameSettingsState | null) => void;
   updateGameSettingsValues: (values: GameSettingValues) => void;
+  setSpectatorTarget: (target: SpectatorTargetInfo | null) => void;
   updateSettings: (partial: Partial<RMHboxUserSettings>) => void;
   leaveLobby: () => void;
   reset: () => void;
@@ -121,6 +125,7 @@ export const useRMHboxStore = create<RMHboxStore>()(
       timerInfo: null,
       minigameRound: null,
       gameSettingsState: null,
+      spectatorTarget: null,
 
       setConnectionStatus: (status) => set({ connectionStatus: status }),
 
@@ -193,6 +198,8 @@ export const useRMHboxStore = create<RMHboxStore>()(
         }));
       },
 
+      setSpectatorTarget: (target) => set({ spectatorTarget: target }),
+
       updateSettings: (partial) => {
         set((state) => ({
           settings: { ...state.settings, ...partial },
@@ -206,6 +213,7 @@ export const useRMHboxStore = create<RMHboxStore>()(
         timerInfo: null,
         minigameRound: null,
         gameSettingsState: null,
+        spectatorTarget: null,
       }),
 
       reset: () => set({
@@ -216,6 +224,7 @@ export const useRMHboxStore = create<RMHboxStore>()(
         timerInfo: null,
         minigameRound: null,
         gameSettingsState: null,
+        spectatorTarget: null,
       }),
     }),
     {

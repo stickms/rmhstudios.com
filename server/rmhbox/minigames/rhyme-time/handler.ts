@@ -57,6 +57,8 @@ export class RhymeTimeMinigame extends BaseMinigame {
   private state!: RhymeTimeState;
   private startedAt: number = 0;
 
+  get spectatorMode(): 'competitive-individual' { return 'competitive-individual'; }
+
   constructor(context: MinigameContext) {
     super(context);
     this.rootWords = loadRootWords();
@@ -136,7 +138,7 @@ export class RhymeTimeMinigame extends BaseMinigame {
     // Broadcast sub-round to the footer counter
     this.broadcastRound(this.state.currentRound, this.state.totalRounds);
 
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'RT_ROUND_START',
       round: this.state.currentRound,
       totalRounds: this.state.totalRounds,
@@ -164,7 +166,7 @@ export class RhymeTimeMinigame extends BaseMinigame {
       duration: inputDuration,
     });
 
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'RT_INPUT_START',
       duration: inputDuration,
       timeRemaining: inputDuration,
@@ -219,7 +221,7 @@ export class RhymeTimeMinigame extends BaseMinigame {
       round: this.state.currentRound,
     });
 
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'RT_ROUND_RESULTS',
       round: this.state.currentRound,
       results: roundResult,
@@ -251,7 +253,7 @@ export class RhymeTimeMinigame extends BaseMinigame {
       round: this.state.currentRound,
     });
 
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'RT_INTERMISSION',
       duration: RT_INTERMISSION_DURATION,
       nextRound: this.state.currentRound + 1,
@@ -343,8 +345,18 @@ export class RhymeTimeMinigame extends BaseMinigame {
       isMultiSyllable: multiSyllable,
     });
 
-    // Notify the submitter only
+    // Notify the submitter
     this.context.sendToPlayer(userId, 'rmhbox:game:action', {
+      type: 'RT_RHYME_SUBMITTED',
+      word,
+      isValid,
+      invalidReason,
+      submissionCount: playerSubs.length,
+      maxSubmissions: this.getSetting('maxSubmissions', RT_MAX_SUBMISSIONS),
+    });
+
+    // Mirror to spectators following this player
+    this.context.sendToSpectatorFollowers(userId, 'rmhbox:game:action', {
       type: 'RT_RHYME_SUBMITTED',
       word,
       isValid,
@@ -355,7 +367,7 @@ export class RhymeTimeMinigame extends BaseMinigame {
 
     // Broadcast valid submission count to all
     const validCount = playerSubs.filter((s) => s.isValid).length;
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'RT_SUBMISSION_COUNT',
       userId,
       count: validCount,
@@ -568,13 +580,6 @@ export class RhymeTimeMinigame extends BaseMinigame {
   }
 
   handlePlayerReconnect(userId: string): void {
-    // Preserve submissions; send full state
-    this.context.sendToPlayer(
-      userId,
-      'rmhbox:game:state_snapshot',
-      this.getStateForPlayer(userId),
-    );
-
     logger.info({
       event: 'rhyme_time:player_reconnect',
       lobbyId: this.context.lobbyId,

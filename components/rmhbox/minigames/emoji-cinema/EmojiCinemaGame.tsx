@@ -8,10 +8,10 @@
  */
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { getSocket, emit } from '@/lib/rmhbox/socket';
+import { useState, useCallback } from 'react';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
-import { S2C, C2S } from '@/lib/rmhbox/events';
+import { emitGameInput, useGameSocket, extractTimerTick } from '@/lib/rmhbox/minigame-client';
+import { playSound } from '@/lib/rmhbox/audio';
 import type { MinigameProps } from '../MinigameRenderer';
 import ProducerView from './ProducerView';
 import AudienceView from './AudienceView';
@@ -38,13 +38,6 @@ export interface CorrectGuesserInfo {
   rank: number;
 }
 
-/** Helper: emit a game input action */
-function emitGameInput(action: string, data: unknown = {}) {
-  const lobbyId = useRMHboxStore.getState().lobby?.lobbyId;
-  if (!lobbyId) return;
-  emit(C2S.GAME_INPUT, { lobbyId, action, data });
-}
-
 export default function EmojiCinemaGame({ playerId }: MinigameProps) {
   const [phase, setPhase] = useState<ECPhase>('PRODUCER_ASSIGNMENT');
   const [producerId, setProducerId] = useState('');
@@ -69,6 +62,9 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
   const [resultsPlayers, setResultsPlayers] = useState<PlayerResult[]>([]);
   const [noEmojisSkipped, setNoEmojisSkipped] = useState(false);
 
+  // Track spectator status for shared-privileged view
+  const isSpectator = useRMHboxStore((s) => s.lobby?.myRole === 'spectator');
+
   const isProducer = playerId === producerId;
 
   const handleGameAction = useCallback(
@@ -90,6 +86,7 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
           setCorrectCount(0);
           setCorrectGuessers([]);
           setPhase('PRODUCER_ASSIGNMENT');
+          playSound('swoosh');
           break;
         }
         case 'EC_MOVIE_CHOICES': {
@@ -121,6 +118,7 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
           const seq = (data.emojiSequence ?? data.emojis) as string[] | undefined;
           setEmojis(seq ?? []);
           if (phase !== 'EMOJI_CONSTRUCTION') setPhase('EMOJI_CONSTRUCTION');
+          playSound('click');
           break;
         }
         case 'EC_GUESS_RESULT': {
@@ -131,6 +129,7 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
         }
         case 'EC_CLOSE_GUESS': {
           // Close guesses are not displayed as a notification
+          playSound('chime');
           break;
         }
         case 'EC_CORRECT_GUESS': {
@@ -139,6 +138,7 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
             setCorrectGuessers(data.correctGuessers as CorrectGuesserInfo[]);
           }
           setCorrectCount((data.correctGuessers as CorrectGuesserInfo[] | undefined)?.length ?? 0);
+          playSound('scoreDing');
           break;
         }
         case 'EC_GUESS_COUNT': {
@@ -177,6 +177,7 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
           setResultsPlayers(data.results as PlayerResult[] ?? playerResults);
           setNoEmojisSkipped(!!data.noEmojis);
           setPhase('ROUND_RESULTS');
+          playSound('victoryFanfare');
           break;
         }
         case 'EC_TRANSITION': {
@@ -184,9 +185,11 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
           break;
         }
         case 'TIMER_TICK': {
-          const pl = data.payload as Record<string, unknown> | undefined;
-          const remaining = (pl?.timeRemaining ?? data.timeRemaining) as number;
-          if (typeof remaining === 'number') setTimeRemaining(remaining);
+          const remaining = extractTimerTick(data);
+          if (remaining !== undefined) {
+            setTimeRemaining(remaining);
+            if (remaining <= 5 && remaining > 0) playSound('countdownBeep');
+          }
           break;
         }
       }
@@ -194,41 +197,38 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
     [phase, roundNumber, producerId, producerName, isProducer],
   );
 
-  // Subscribe to socket events
-  useEffect(() => {
-    const socket = getSocket();
-    if (!socket) return;
+  // Hydrate full game state from a GAME_STATE_SNAPSHOT (initial delivery
+  // or reconnection). Matches the pattern used by all other minigames via
+  // useGameSocket().
+  const handleStateSnapshot = useCallback(
+    (snapshot: Record<string, unknown>) => {
+      const p = snapshot.phase as string;
+      if (p === 'PRODUCER_ASSIGNMENT' || p === 'MOVIE_SELECTION' || p === 'EMOJI_CONSTRUCTION' || p === 'ROUND_RESULTS' || p === 'TRANSITION') {
+        setPhase(p as ECPhase);
+      }
+      if (snapshot.producerUserId) setProducerId(snapshot.producerUserId as string);
+      else if (snapshot.producerId) setProducerId(snapshot.producerId as string);
+      if (snapshot.producerUserName) setProducerName(snapshot.producerUserName as string);
+      else if (snapshot.producerName) setProducerName(snapshot.producerName as string);
+      if (snapshot.movieTitle) setMovieTitle(snapshot.movieTitle as string);
+      else if (snapshot.movie && typeof snapshot.movie === 'object') {
+        const m = snapshot.movie as { title?: string };
+        if (m.title) setMovieTitle(m.title);
+      }
+      if (Array.isArray(snapshot.movieTitles)) setMovieTitles(snapshot.movieTitles as string[]);
+      const seq = (snapshot.emojiSequence ?? snapshot.emojis) as string[] | undefined;
+      if (Array.isArray(seq)) setEmojis(seq);
+      if (snapshot.currentRound) setRoundNumber(snapshot.currentRound as number);
+      else if (snapshot.roundNumber) setRoundNumber(snapshot.roundNumber as number);
+    },
+    [],
+  );
 
-    socket.on(S2C.GAME_ACTION, handleGameAction);
-    return () => {
-      socket.off(S2C.GAME_ACTION, handleGameAction);
-    };
-  }, [handleGameAction]);
-
-  // Hydrate from Zustand gameState snapshot on mount
-  useEffect(() => {
-    const snapshot = useRMHboxStore.getState().gameState;
-    if (!snapshot || !snapshot.phase) return;
-
-    const p = snapshot.phase as string;
-    if (p === 'PRODUCER_ASSIGNMENT' || p === 'MOVIE_SELECTION' || p === 'EMOJI_CONSTRUCTION' || p === 'ROUND_RESULTS' || p === 'TRANSITION') {
-      setPhase(p as ECPhase);
-    }
-    if (snapshot.producerUserId) setProducerId(snapshot.producerUserId as string);
-    else if (snapshot.producerId) setProducerId(snapshot.producerId as string);
-    if (snapshot.producerUserName) setProducerName(snapshot.producerUserName as string);
-    else if (snapshot.producerName) setProducerName(snapshot.producerName as string);
-    if (snapshot.movieTitle) setMovieTitle(snapshot.movieTitle as string);
-    else if (snapshot.movie && typeof snapshot.movie === 'object') {
-      const m = snapshot.movie as { title?: string };
-      if (m.title) setMovieTitle(m.title);
-    }
-    if (Array.isArray(snapshot.movieTitles)) setMovieTitles(snapshot.movieTitles as string[]);
-    const seq = (snapshot.emojiSequence ?? snapshot.emojis) as string[] | undefined;
-    if (Array.isArray(seq)) setEmojis(seq);
-    if (snapshot.currentRound) setRoundNumber(snapshot.currentRound as number);
-    else if (snapshot.roundNumber) setRoundNumber(snapshot.roundNumber as number);
-  }, []);
+  // Subscribe to socket events and hydrate from store on mount
+  useGameSocket({
+    onGameAction: handleGameAction,
+    onStateSnapshot: handleStateSnapshot,
+  });
 
   // Producer actions — emit is outside the state updater to avoid
   // double-firing in React StrictMode
@@ -342,19 +342,28 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
               timeRemaining={timeRemaining}
             />
           ) : (
-            <AudienceView
-              emojis={emojis}
-              maxEmojis={MAX_EMOJIS}
-              producerName={producerName}
-              roundNumber={roundNumber}
-              guesses={guesses}
-              maxGuesses={MAX_GUESSES}
-              hasGuessedCorrectly={hasGuessedCorrectly}
-              onSubmitGuess={handleSubmitGuess}
-              timeRemaining={timeRemaining}
-              correctGuessers={correctGuessers}
-              movieTitles={movieTitles}
-            />
+            <>
+              {/* Spectators see the movie title as a privileged info banner */}
+              {isSpectator && movieTitle && (
+                <div className="mx-auto mb-3 flex w-full max-w-md items-center gap-2 rounded-lg border border-(--rmhbox-accent)/30 bg-(--rmhbox-accent)/10 px-4 py-2 text-center">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-(--rmhbox-accent)">🎬 Answer:</span>
+                  <span className="font-bold text-(--rmhbox-text)">{movieTitle}</span>
+                </div>
+              )}
+              <AudienceView
+                emojis={emojis}
+                maxEmojis={MAX_EMOJIS}
+                producerName={producerName}
+                roundNumber={roundNumber}
+                guesses={guesses}
+                maxGuesses={MAX_GUESSES}
+                hasGuessedCorrectly={hasGuessedCorrectly}
+                onSubmitGuess={handleSubmitGuess}
+                timeRemaining={timeRemaining}
+                correctGuessers={correctGuessers}
+                movieTitles={movieTitles}
+              />
+            </>
           )}
         </div>
       );

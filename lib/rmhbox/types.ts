@@ -21,6 +21,17 @@ export type LobbyState =
   | 'SESSION_RESULTS'
   | 'DISBANDED';
 
+// ─── Spectator Mode ──────────────────────────────────────────────
+
+/**
+ * Determines how spectators view game state:
+ * - 'shared-privileged': Spectators receive the highest-level/omniscient view
+ *   (e.g. spymaster view in Undercover Agent, producer view in Emoji Cinema).
+ * - 'competitive-individual': All players compete on equal footing; spectators
+ *   pick a player to follow and see that player's state.
+ */
+export type SpectatorMode = 'shared-privileged' | 'competitive-individual';
+
 // ─── Lobby Settings ──────────────────────────────────────────────
 
 export interface LobbySettings {
@@ -78,6 +89,18 @@ export interface ClientGameInfo {
   timeRemaining: number | null;
   publicState: Record<string, unknown>;
   privateState: Record<string, unknown>;
+  /** How spectators view this game's state. Null when no handler is active. */
+  spectatorMode: SpectatorMode | null;
+}
+
+/** Info about the player a spectator is currently following (competitive games). */
+export interface SpectatorTargetInfo {
+  /** The userId of the player the spectator is viewing */
+  targetPlayerId: string;
+  /** Display name of the target player */
+  targetPlayerName: string;
+  /** All players available for spectating */
+  availablePlayers: Array<{ userId: string; userName: string }>;
 }
 
 // ─── Public Lobby Info (for lobby browser) ───────────────────────

@@ -1016,4 +1016,44 @@ describe('Minimalist Masterpiece Server Handler (§6.3)', () => {
       expect(gameData.roundsPlayed).toBe(1);
     });
   });
+
+  describe('Spectator Follower Forwarding', () => {
+    it('should forward MM_DRAWING_ACCEPTED to spectator followers', () => {
+      const { game, context, spectatorLog } = createGame();
+      game.start();
+      advanceToDrawing(game);
+
+      const userId = MOCK_USERS.alice.userId;
+      game.handleInput(userId, 'SUBMIT_DRAWING', createValidDrawing());
+
+      expect(context.sendToSpectatorFollowers).toHaveBeenCalled();
+      const drawingAccepted = spectatorLog.find(
+        (e) => (e.data as Record<string, unknown>).type === 'MM_DRAWING_ACCEPTED',
+      );
+      expect(drawingAccepted).toBeDefined();
+    });
+
+    it('should forward MM_BID_ACCEPTED to spectator followers', () => {
+      const { game, context, spectatorLog } = createGame();
+      game.start();
+      advanceToAuction(game, ALL_PLAYER_IDS);
+
+      const bidderId = MOCK_USERS.alice.userId;
+      const auctionState = game.getStateForPlayer(bidderId) as Record<string, unknown>;
+      const drawings = auctionState.drawings as Array<Record<string, unknown>>;
+      const targetDrawing = drawings.find((d) => !d.isMine)!;
+
+      game.handleInput(bidderId, 'PLACE_BID', {
+        drawingId: targetDrawing.drawingId,
+        amount: MM_BID_INCREMENT,
+      });
+
+      expect(context.sendToSpectatorFollowers).toHaveBeenCalled();
+      const bidAccepted = spectatorLog.find(
+        (e) => (e.data as Record<string, unknown>).type === 'MM_BID_ACCEPTED',
+      );
+      expect(bidAccepted).toBeDefined();
+      expect((bidAccepted!.data as Record<string, unknown>).drawingId).toBe(targetDrawing.drawingId);
+    });
+  });
 });

@@ -70,6 +70,7 @@ describe('Security: State-Masking Verification (Phase 4)', () => {
         timeRemaining: 30,
         publicState: { round: 1 },
         privateState: { myWord: 'apple' }, // Alice's private word
+        spectatorMode: null,
       },
     });
 

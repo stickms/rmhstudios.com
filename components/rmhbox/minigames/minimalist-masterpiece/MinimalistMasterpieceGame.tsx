@@ -11,10 +11,9 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { getSocket, emit } from '@/lib/rmhbox/socket';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
-import { S2C, C2S } from '@/lib/rmhbox/events';
 import { playSound } from '@/lib/rmhbox/audio';
+import { emitGameInput, useGameSocket, extractTimerTick } from '@/lib/rmhbox/minigame-client';
 import type { MinigameProps } from '../MinigameRenderer';
 import DrawingCanvas from './DrawingCanvas';
 import ColorPalette from './ColorPalette';
@@ -65,13 +64,6 @@ interface PlayerScoreBreakdown {
 
 type MMPhase = 'PROMPT_REVEAL' | 'DRAWING' | 'GALLERY' | 'AUCTION' | 'RESULTS';
 
-/** Helper: emit a game input action with the correct GameInputSchema shape */
-function emitGameInput(action: string, data: unknown = {}) {
-  const lobbyId = useRMHboxStore.getState().lobby?.lobbyId;
-  if (!lobbyId) return;
-  emit(C2S.GAME_INPUT, { lobbyId, action, data });
-}
-
 // Default color palette (fallback if server hasn't sent one yet)
 const DEFAULT_COLOR_PALETTE = ['#1a1a2e', '#e94560', '#0f3460', '#16213e', '#533483', '#2b9348', '#fca311'];
 
@@ -110,6 +102,9 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
   const [rankings, setRankings] = useState<MMRanking[]>([]);
   const [scoreBreakdowns, setScoreBreakdowns] = useState<PlayerScoreBreakdown[]>([]);
   const [timeRemaining, setTimeRemaining] = useState(0);
+
+  // Track spectator status
+  const isSpectator = useRMHboxStore((s) => s.lobby?.myRole === 'spectator');
 
   // Auto-submit: track whether we've auto-submitted
   const autoSubmittedRef = useRef(false);
@@ -229,9 +224,11 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
           break;
         }
         case 'TIMER_TICK': {
-          const pl = data.payload as Record<string, unknown> | undefined;
-          const remaining = (pl?.timeRemaining ?? data.timeRemaining) as number;
-          if (typeof remaining === 'number') setTimeRemaining(remaining);
+          const remaining = extractTimerTick(data);
+          if (remaining !== undefined) {
+            setTimeRemaining(remaining);
+            if (remaining <= 5 && remaining > 0) playSound('countdownBeep');
+          }
           break;
         }
       }
@@ -239,50 +236,50 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
     [resetDrawingState],
   );
 
-  // Subscribe to socket events
-  useEffect(() => {
-    const socket = getSocket();
-    if (!socket) return;
-
-    socket.on(S2C.GAME_ACTION, handleGameAction);
-    return () => {
-      socket.off(S2C.GAME_ACTION, handleGameAction);
-    };
-  }, [handleGameAction]);
-
-  // Hydrate from Zustand gameState snapshot on mount
-  useEffect(() => {
-    const snapshot = useRMHboxStore.getState().gameState;
-    if (!snapshot || !snapshot.phase) return;
-
-    const p = snapshot.phase as string;
-    if (p === 'PROMPT_REVEAL' || p === 'DRAWING' || p === 'GALLERY' || p === 'AUCTION' || p === 'RESULTS') {
-      setPhase(p as MMPhase);
-    }
-    if (snapshot.prompt) {
-      const pr = snapshot.prompt as { text: string } | string;
-      setPrompt(typeof pr === 'string' ? pr : pr.text);
-    }
-    if (snapshot.maxStrokes) setMaxStrokes(snapshot.maxStrokes as number);
-    if (Array.isArray(snapshot.colorPalette)) {
-      const palette = snapshot.colorPalette as string[];
-      setColorPalette(palette);
-      if (palette.length > 0) {
-        setSelectedColor(palette[0]);
+  /** Handle full state snapshot (reconnection / spectator player switch) */
+  const handleStateSnapshot = useCallback(
+    (data: Record<string, unknown>) => {
+      const p = data.phase as string;
+      if (p === 'PROMPT_REVEAL' || p === 'DRAWING' || p === 'GALLERY' || p === 'AUCTION' || p === 'RESULTS') {
+        setPhase(p as MMPhase);
       }
-    }
-  }, []);
+      if (data.prompt) {
+        const pr = data.prompt as { text: string } | string;
+        setPrompt(typeof pr === 'string' ? pr : pr.text);
+      }
+      if (data.maxStrokes) setMaxStrokes(data.maxStrokes as number);
+      if (Array.isArray(data.colorPalette)) {
+        const palette = data.colorPalette as string[];
+        setColorPalette(palette);
+        if (palette.length > 0) {
+          setSelectedColor(palette[0]);
+        }
+      }
+      if (Array.isArray(data.galleryDrawings)) setGalleryDrawings(data.galleryDrawings as GalleryDrawing[]);
+      if (Array.isArray(data.auctionDrawings)) setAuctionDrawings(data.auctionDrawings as AuctionDrawing[]);
+      if (typeof data.currency === 'number') setCurrency(data.currency as number);
+      if (Array.isArray(data.rankings)) setRankings(data.rankings as MMRanking[]);
+    },
+    [],
+  );
+
+  // Subscribe to socket events and hydrate from store on mount
+  useGameSocket({
+    onGameAction: handleGameAction,
+    onStateSnapshot: handleStateSnapshot,
+  });
 
   // Auto-save: whenever strokes or backgroundColor changes during the DRAWING phase,
   // automatically submit the drawing to the server. Always runs (server allows re-submissions).
+  // Spectators should not auto-submit drawings.
   useEffect(() => {
-    if (phase !== 'DRAWING') return;
+    if (phase !== 'DRAWING' || isSpectator) return;
     // Debounce auto-submit to avoid spamming on rapid changes
     const timeout = setTimeout(() => {
       emitGameInput('SUBMIT_DRAWING', { strokes, backgroundColor });
     }, 500);
     return () => clearTimeout(timeout);
-  }, [phase, strokes, backgroundColor]);
+  }, [phase, strokes, backgroundColor, isSpectator]);
 
   // Undo: restore the previous edit history state.
   // Auto-save allows re-submissions, so undo works throughout the drawing phase.
@@ -308,8 +305,9 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
   );
 
   const handlePlaceBid = useCallback((drawingId: string, amount: number) => {
+    if (isSpectator) return;
     emitGameInput('PLACE_BID', { drawingId, amount });
-  }, []);
+  }, [isSpectator]);
 
   // Render based on phase
   switch (phase) {

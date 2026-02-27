@@ -27,6 +27,48 @@ export default function RestaurantDetail({ restaurantId }: { restaurantId: strin
     const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
     const [search, setSearch] = useState('');
 
+    // Unique allergens across the whole restaurant menu
+    const allAllergens = useMemo(() => {
+        if (!restaurant) return [];
+        const set = new Set<string>();
+        restaurant.menu.forEach((item) => item.allergens.forEach((a) => set.add(a)));
+        return [...set].sort();
+    }, [restaurant]);
+
+    // Remaining calorie budget after what's already in the cart
+    const remainingCalories = calorieBudget != null ? calorieBudget - cartCalories() : null;
+
+    const categories = restaurant ? ['All', ...restaurant.categories] : ['All'];
+
+    const menuItems = useMemo(() => {
+        if (!restaurant) return [];
+        return restaurant.menu.filter((item) => {
+            const matchesCat = selectedCategory === 'All' || item.category === selectedCategory;
+            const matchesSearch =
+                search.trim() === '' ||
+                item.name.toLowerCase().includes(search.toLowerCase()) ||
+                item.description.toLowerCase().includes(search.toLowerCase());
+            const matchesDiet =
+                (!dietFilters.vegetarian || item.vegetarian) &&
+                (!dietFilters.vegan || item.vegan) &&
+                (!dietFilters.spicy || item.spicy);
+            return matchesCat && matchesSearch && matchesDiet;
+        });
+    }, [restaurant, selectedCategory, search, dietFilters]);
+
+    const groupedItems = useMemo(() => {
+        if (!restaurant) return {};
+        if (selectedCategory !== 'All') {
+            return { [selectedCategory]: menuItems };
+        }
+        const grouped: Record<string, MenuItem[]> = {};
+        for (const cat of restaurant.categories) {
+            const items = menuItems.filter((i) => i.category === cat);
+            if (items.length > 0) grouped[cat] = items;
+        }
+        return grouped;
+    }, [menuItems, selectedCategory, restaurant]);
+
     useEffect(() => {
         recordView(restaurantId);
     }, [restaurantId, recordView]);
@@ -47,45 +89,6 @@ export default function RestaurantDetail({ restaurantId }: { restaurantId: strin
     const activeDietFilters = (Object.entries(dietFilters) as [keyof typeof dietFilters, boolean][])
         .filter(([, v]) => v)
         .map(([k]) => k);
-
-    // Unique allergens across the whole restaurant menu
-    const allAllergens = useMemo(() => {
-        const set = new Set<string>();
-        restaurant.menu.forEach((item) => item.allergens.forEach((a) => set.add(a)));
-        return [...set].sort();
-    }, [restaurant.menu]);
-
-    // Remaining calorie budget after what's already in the cart
-    const remainingCalories = calorieBudget != null ? calorieBudget - cartCalories() : null;
-
-    const categories = ['All', ...restaurant.categories];
-
-    const menuItems = useMemo(() => {
-        return restaurant.menu.filter((item) => {
-            const matchesCat = selectedCategory === 'All' || item.category === selectedCategory;
-            const matchesSearch =
-                search.trim() === '' ||
-                item.name.toLowerCase().includes(search.toLowerCase()) ||
-                item.description.toLowerCase().includes(search.toLowerCase());
-            const matchesDiet =
-                (!dietFilters.vegetarian || item.vegetarian) &&
-                (!dietFilters.vegan || item.vegan) &&
-                (!dietFilters.spicy || item.spicy);
-            return matchesCat && matchesSearch && matchesDiet;
-        });
-    }, [restaurant.menu, selectedCategory, search, dietFilters]);
-
-    const groupedItems = useMemo(() => {
-        if (selectedCategory !== 'All') {
-            return { [selectedCategory]: menuItems };
-        }
-        const grouped: Record<string, MenuItem[]> = {};
-        for (const cat of restaurant.categories) {
-            const items = menuItems.filter((i) => i.category === cat);
-            if (items.length > 0) grouped[cat] = items;
-        }
-        return grouped;
-    }, [menuItems, selectedCategory, restaurant.categories]);
 
     return (
         <div className="flex flex-col gap-0">

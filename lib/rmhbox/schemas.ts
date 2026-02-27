@@ -131,3 +131,8 @@ export const FetchLeaderboardSchema = z.object({
   minigame: z.string().optional(),
   limit: z.number().int().min(1).max(100).optional(),
 });
+
+export const SpectatorSelectPlayerSchema = z.object({
+  lobbyId: z.string(),
+  targetPlayerId: z.string(),
+});
