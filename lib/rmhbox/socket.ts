@@ -117,6 +117,10 @@ export async function connectToRMHbox(): Promise<Socket> {
     useRMHboxStore.getState().setGameState(gameState);
   });
 
+  socket.on(S2C.SPECTATOR_TARGET_STATE, (targetInfo: import('./types').SpectatorTargetInfo) => {
+    useRMHboxStore.getState().setSpectatorTarget(targetInfo);
+  });
+
   socket.on(S2C.ERROR, (error: { code?: string; message?: string }) => {
     const code = error?.code ?? 'UNKNOWN';
     const message = error?.message ?? 'An unknown error occurred.';

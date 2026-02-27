@@ -74,6 +74,7 @@ export default function HostControlModal() {
 
   const otherPlayers = lobby.players.filter((p) => p.userId !== lobby.myUserId);
   const isInGame = lobby.state === 'PLAYING' || lobby.state === 'COUNTDOWN' || lobby.state === 'INSTRUCTIONS' || lobby.state === 'PRELOADING' || lobby.state === 'ROUND_RESULTS';
+  const canPromoteSpectators = lobby.state === 'WAITING' || lobby.state === 'ROUND_RESULTS';
 
   return (
     <>
@@ -214,13 +215,15 @@ export default function HostControlModal() {
                       <span className="flex-1 truncate text-sm text-(--rmhbox-text-muted)">
                         {spec.userName}
                       </span>
-                      <button
-                        onClick={() => handlePromote(spec.userId, spec.userName)}
-                        className="rounded p-1.5 text-(--rmhbox-success) transition-colors hover:bg-(--rmhbox-success-dim)"
-                        title="Promote to player"
-                      >
-                        <UserPlus className="h-3.5 w-3.5" />
-                      </button>
+                      {canPromoteSpectators && (
+                        <button
+                          onClick={() => handlePromote(spec.userId, spec.userName)}
+                          className="rounded p-1.5 text-(--rmhbox-success) transition-colors hover:bg-(--rmhbox-success-dim)"
+                          title="Promote to player"
+                        >
+                          <UserPlus className="h-3.5 w-3.5" />
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>

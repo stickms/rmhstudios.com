@@ -75,7 +75,10 @@ const leaderboard     = new LeaderboardService();
 const gameCoordinator = new GameCoordinator(io, lobbyManager, stateSyncService, leaderboard);
 const voteManager     = new VoteManager(io, lobbyManager, gameCoordinator);
 const chatHandler     = new ChatHandler(io, lobbyManager);
-const reconnection    = new ReconnectionHandler(io, lobbyManager, stateSyncService);
+const reconnection    = new ReconnectionHandler(
+  io, lobbyManager, stateSyncService,
+  (lobbyId, spectatorUserId) => gameCoordinator.getSpectatorTarget(lobbyId, spectatorUserId),
+);
 
 // ─── Connection handler ─────────────────────────────────────────
 

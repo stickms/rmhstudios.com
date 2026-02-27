@@ -9,7 +9,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
-const cssPath = resolve(__dirname, '../../../app/globals.css');
+const cssPath = resolve(__dirname, '../../../app/rmhbox/rmhbox.css');
 const cssContent = readFileSync(cssPath, 'utf-8');
 
 describe('UI Design System (§8)', () => {
@@ -58,8 +58,8 @@ describe('UI Design System (§8)', () => {
     expect(cssContent).toContain('--rmhbox-font-mono:');
   });
 
-  it('should use Nunito for display font', () => {
-    expect(cssContent).toMatch(/--rmhbox-font-display:.*Nunito/);
+  it('should use Inter for display font', () => {
+    expect(cssContent).toMatch(/--rmhbox-font-display:.*Inter/);
   });
 
   it('should use Inter for body font', () => {
@@ -71,10 +71,10 @@ describe('UI Design System (§8)', () => {
   });
 
   it('should have correct accent color hex value', () => {
-    expect(cssContent).toContain('#7c5cfc');
+    expect(cssContent).toContain('#6ea8d9');
   });
 
   it('should have correct bg color hex value', () => {
-    expect(cssContent).toContain('#0f0f1a');
+    expect(cssContent).toContain('#1a1b1e');
   });
 });

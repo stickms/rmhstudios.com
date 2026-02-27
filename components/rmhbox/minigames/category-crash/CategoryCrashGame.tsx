@@ -27,12 +27,12 @@
  */
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Flame } from 'lucide-react';
-import { getSocket, emit } from '@/lib/rmhbox/socket';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
-import { S2C, C2S } from '@/lib/rmhbox/events';
+import { emitGameInput, useGameSocket, extractTimerTick } from '@/lib/rmhbox/minigame-client';
+import { playSound } from '@/lib/rmhbox/audio';
 import CategoryInput from './CategoryInput';
 import PeerReview from './PeerReview';
 import CategoryCrashResults from './CategoryCrashResults';
@@ -77,13 +77,6 @@ interface CrashEntry {
   categoryIndex: number;
 }
 
-/** Helper: emit a game input action */
-function emitGameInput(action: string, data: unknown = {}) {
-  const lobbyId = useRMHboxStore.getState().lobby?.lobbyId;
-  if (!lobbyId) return;
-  emit(C2S.GAME_INPUT, { lobbyId, action, data });
-}
-
 interface CategoryCrashGameProps {
   playerId: string;
   playerName: string;
@@ -110,6 +103,9 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
   const [myAnonymousLabel, setMyAnonymousLabel] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  // Track spectator status
+  const isSpectator = useRMHboxStore((s) => s.lobby?.myRole === 'spectator');
+
   const players = useRMHboxStore((s) => s.lobby?.players);
 
   /** Handle incremental GAME_ACTION events */
@@ -132,6 +128,7 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
           setRoundResults(null);
           setAnonymizedAnswers([]);
           // Server will send CC_INPUT_START when the reveal period ends
+          playSound('goFanfare');
           break;
         }
         case 'CC_INPUT_START': {
@@ -146,6 +143,7 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
         }
         case 'CC_ANSWERS_SUBMITTED': {
           setIsLocked(true);
+          playSound('click');
           break;
         }
         case 'CC_LOCK_STATUS': {
@@ -160,6 +158,7 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
           if (data.categories) setCategories(data.categories as Category[]);
           if (data.letter) setLetter(data.letter as string);
           setMyCrashes([]);
+          playSound('swoosh');
           break;
         }
         case 'CC_MY_ANONYMOUS_LABEL': {
@@ -172,6 +171,7 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
             categoryIndex: data.categoryIndex as number,
           };
           setMyCrashes((prev) => [...prev, entry]);
+          playSound('buzzer');
           break;
         }
         case 'CC_UNCRASH_RECORDED': {
@@ -190,6 +190,7 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
         case 'CC_ROUND_RESULTS': {
           setPhase('ROUND_RESULTS');
           setRoundResults(data.results as CCRoundResults);
+          playSound('victoryFanfare');
           const newScores = data.scores as Record<string, number>;
           setScores(newScores);
           setAnonymizationMap(data.anonymizationMap as Record<string, string> ?? {});
@@ -229,9 +230,11 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
           break;
         }
         case 'TIMER_TICK': {
-          const pl = data.payload as Record<string, unknown> | undefined;
-          const remaining = (pl?.timeRemaining ?? data.timeRemaining) as number;
-          if (typeof remaining === 'number') setTimeRemaining(remaining);
+          const remaining = extractTimerTick(data);
+          if (remaining !== undefined) {
+            setTimeRemaining(remaining);
+            if (remaining <= 5 && remaining > 0) playSound('countdownBeep');
+          }
           break;
         }
       }
@@ -270,45 +273,30 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
     [],
   );
 
-  // Subscribe to socket events
-  useEffect(() => {
-    const socket = getSocket();
-    if (!socket) return;
-    socket.on(S2C.GAME_ACTION, handleGameAction);
-    socket.on(S2C.GAME_STATE_SNAPSHOT, handleStateSnapshot);
-    socket.on(S2C.GAME_ROUND_RESULTS, handleRoundResults);
-    return () => {
-      socket.off(S2C.GAME_ACTION, handleGameAction);
-      socket.off(S2C.GAME_STATE_SNAPSHOT, handleStateSnapshot);
-      socket.off(S2C.GAME_ROUND_RESULTS, handleRoundResults);
-    };
-  }, [handleGameAction, handleStateSnapshot, handleRoundResults]);
-
-  // Hydrate from the Zustand gameState snapshot on mount.
-  // This fixes the race condition where the server broadcasts initial game state
-  // before the lazy-loaded component has mounted and subscribed to socket events.
-  useEffect(() => {
-    const snapshot = useRMHboxStore.getState().gameState;
-    if (snapshot && Object.keys(snapshot).length > 0 && snapshot.phase) {
-      handleStateSnapshot(snapshot as Record<string, unknown>);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // Subscribe to socket events and hydrate from store on mount
+  useGameSocket({
+    onGameAction: handleGameAction,
+    onStateSnapshot: handleStateSnapshot,
+    onRoundResults: handleRoundResults,
+  });
 
   // ─── Action Handlers ────────────────────────────────────────────
 
   const handleSaveAnswers = useCallback((answers: (string | null)[]) => {
+    if (isSpectator) return;
     setMyAnswers(answers);
     emitGameInput('SAVE_ANSWERS', { answers });
-  }, []);
+  }, [isSpectator]);
 
   const handleCrash = useCallback((targetUserId: string, categoryIndex: number) => {
+    if (isSpectator) return;
     emitGameInput('CRASH_ANSWER', { targetUserId, categoryIndex });
-  }, []);
+  }, [isSpectator]);
 
   const handleUncrash = useCallback((targetUserId: string, categoryIndex: number) => {
+    if (isSpectator) return;
     emitGameInput('UNCRASH_ANSWER', { targetUserId, categoryIndex });
-  }, []);
+  }, [isSpectator]);
 
   // Player name lookup
   const getPlayerName = useCallback(

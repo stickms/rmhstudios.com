@@ -116,6 +116,7 @@ describe('Shared Type Definitions (§2.1)', () => {
       timeRemaining: 60,
       publicState: {},
       privateState: {},
+      spectatorMode: null,
     };
     expect(game.phase).toBe('playing');
   });

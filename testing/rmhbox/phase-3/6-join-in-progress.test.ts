@@ -204,12 +204,14 @@ describe('BaseMinigame.handlePlayerJoin', () => {
       broadcastAction: vi.fn(),
       sendToPlayer: vi.fn(),
       sendToSpectators: vi.fn(),
+      sendToSpectatorFollowers: vi.fn(),
       onComplete: vi.fn(),
       onError: vi.fn(),
     };
 
     // Create a concrete implementation to test
     class ConcreteGame extends BaseMinigame {
+      get spectatorMode(): 'competitive-individual' { return 'competitive-individual'; }
       start(): void { /* no-op */ }
       handleInput(): void { /* no-op */ }
       getStateForPlayer(): unknown { return {}; }

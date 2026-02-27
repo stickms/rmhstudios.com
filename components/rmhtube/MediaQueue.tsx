@@ -19,35 +19,32 @@ export default function MediaQueue() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
 
-  if (!room) return null;
-
-  const isHost = room.myUserId === room.hostUserId;
-  const canAdd = isHost || room.settings.allowMemberQueue;
-
   // Total queue duration (sum of all item durations)
   const totalDuration = useMemo(() => {
+    if (!room) return 0;
     return room.queue.reduce((sum, item) => sum + (item.duration ?? 0), 0);
-  }, [room.queue]);
+  }, [room]);
 
   const handleRemove = useCallback((itemId: string) => {
     emit(C2S.QUEUE_REMOVE, { itemId });
   }, []);
 
   const handlePlayItem = useCallback((itemId: string) => {
-    if (isHost) {
+    if (room && room.myUserId === room.hostUserId) {
       emit(C2S.QUEUE_PLAY_ITEM, { itemId });
     }
-  }, [isHost]);
+  }, [room]);
 
   const handleShuffle = useCallback(() => {
     emit(C2S.QUEUE_SHUFFLE);
   }, []);
 
   const handleLoopToggle = useCallback(() => {
+    if (!room) return;
     emit(C2S.ROOM_UPDATE_SETTINGS, {
       settings: { loopQueue: !room.settings.loopQueue },
     });
-  }, [room.settings.loopQueue]);
+  }, [room]);
 
   const handleVote = useCallback((itemId: string) => {
     emit(C2S.QUEUE_VOTE, { itemId });
@@ -56,6 +53,11 @@ export default function MediaQueue() {
   const handleReAddFromHistory = useCallback((url: string, title: string) => {
     emit(C2S.QUEUE_ADD, { url, title });
   }, []);
+
+  if (!room) return null;
+
+  const isHost = room.myUserId === room.hostUserId;
+  const canAdd = isHost || room.settings.allowMemberQueue;
 
   return (
     <div className="flex flex-col h-full">

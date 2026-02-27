@@ -26,6 +26,8 @@ import type { RMHboxPlayer } from '../../../server/rmhbox/types';
 class SecretWordGame extends BaseMinigame {
   private secretWords = new Map<string, string>();
 
+  get spectatorMode(): 'competitive-individual' { return 'competitive-individual'; }
+
   start(): void {
     this.isRunning = true;
     // Assign a secret word to each player
@@ -119,6 +121,7 @@ describe('Security: State-Masking Verification', () => {
       broadcastAction: vi.fn(),
       sendToPlayer: vi.fn(),
       sendToSpectators: vi.fn(),
+      sendToSpectatorFollowers: vi.fn(),
       onComplete: vi.fn(),
       onError: vi.fn(),
     };
@@ -174,6 +177,7 @@ describe('Security: State-Masking Verification', () => {
       broadcastAction: vi.fn(),
       sendToPlayer: vi.fn(),
       sendToSpectators: vi.fn(),
+      sendToSpectatorFollowers: vi.fn(),
       onComplete: vi.fn(),
       onError: vi.fn(),
     };
@@ -212,6 +216,7 @@ describe('Security: State-Masking Verification', () => {
       broadcastAction: vi.fn(),
       sendToPlayer,
       sendToSpectators: vi.fn(),
+      sendToSpectatorFollowers: vi.fn(),
       onComplete: vi.fn(),
       onError: vi.fn(),
     };
@@ -219,19 +224,14 @@ describe('Security: State-Masking Verification', () => {
     const game = new SecretWordGame(ctx);
     game.start();
 
-    // Simulate Player A reconnecting
-    game.handlePlayerReconnect('player-a');
+    // buildReconnectionSnapshot returns per-player scoped state
+    const snapshot = game.buildReconnectionSnapshot('player-a', false) as Record<string, unknown>;
 
-    // Should send state to player-a specifically
-    expect(sendToPlayer).toHaveBeenCalledWith(
-      'player-a',
-      'rmhbox:game:state_snapshot',
-      expect.objectContaining({ myWord: 'apple' }),
-    );
+    // Should contain player-a's own word
+    expect(snapshot.myWord).toBe('apple');
 
     // The sent state should not contain other players' words
-    const sentState = sendToPlayer.mock.calls[0][2] as Record<string, unknown>;
-    for (const other of sentState.otherPlayers as Array<Record<string, unknown>>) {
+    for (const other of snapshot.otherPlayers as Array<Record<string, unknown>>) {
       expect(other).not.toHaveProperty('myWord');
       expect(other).not.toHaveProperty('secretWord');
     }

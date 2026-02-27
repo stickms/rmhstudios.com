@@ -20,7 +20,7 @@ import { LobbyManager } from './lobby-manager';
 import { StateSyncService, TimerHandle } from './state-sync';
 import { LeaderboardService, type GameLog } from './leaderboard';
 import { logger } from './logger';
-import { S2C } from '../../lib/rmhbox/events';
+import { S2C, C2S } from '../../lib/rmhbox/events';
 import { MINIGAME_REGISTRY } from '../../lib/rmhbox/minigame-registry';
 import {
   COUNTDOWN_SECONDS,
@@ -38,15 +38,19 @@ import {
   UpdateGameSettingsSchema,
   ConfirmGameSettingsSchema,
   ResetGameSettingsSchema,
+  SpectatorSelectPlayerSchema,
 } from './schemas';
 import { getDefaultSettings, validateGameSettings, mergeGameSettings } from '../../lib/rmhbox/game-settings';
-import type { MinigameDefinition, RoundResultsPayload, SessionStanding, GameSettingValues } from '../../lib/rmhbox/types';
+import type { MinigameDefinition, RoundResultsPayload, SessionStanding } from '../../lib/rmhbox/types';
 import type { RMHboxLobby, ServerMatchSummary } from './types';
 import type { BaseMinigame, MinigameContext, MinigameResults } from './minigames/base-minigame';
 import { RhymeTimeMinigame } from './minigames/rhyme-time';
 import { UndercoverAgentMinigame } from './minigames/undercover-agent';
 import { CategoryCrashMinigame } from './minigames/category-crash';
 import { WikiRaceMinigame } from './minigames/wiki-race';
+import { MinimalistMasterpieceGame } from './minigames/minimalist-masterpiece';
+import { EmojiCinemaGame } from './minigames/emoji-cinema';
+import { WitWarMinigame } from './minigames/wit-war';
 
 // ─── Minigame Server Registry ────────────────────────────────────
 
@@ -62,6 +66,9 @@ export const MINIGAME_SERVER_REGISTRY = new Map<
   ['undercover-agent', UndercoverAgentMinigame],
   ['category-crash', CategoryCrashMinigame],
   ['wiki-race', WikiRaceMinigame],
+  ['minimalist-masterpiece', MinimalistMasterpieceGame],
+  ['emoji-cinema', EmojiCinemaGame],
+  ['wit-war', WitWarMinigame],
 ]);
 
 // ─── Per-lobby lifecycle tracking ────────────────────────────────
@@ -86,12 +93,19 @@ export class GameCoordinator {
   private readonly lifecycles = new Map<string, LifecycleState>();
   /** Per-lobby grace timers for in-game disconnects (cleared on reconnect or game end) */
   private readonly disconnectGraceTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  /** Spectator target player selections: lobbyId → Map<spectatorUserId, targetPlayerId> */
+  private readonly spectatorTargets = new Map<string, Map<string, string>>();
 
   constructor(io: Server, lobbyManager: LobbyManager, stateSync: StateSyncService, leaderboardService?: LeaderboardService) {
     this.io = io;
     this.lobbyManager = lobbyManager;
     this.stateSync = stateSync;
     this.leaderboardService = leaderboardService ?? new LeaderboardService();
+
+    // Register callback so new mid-game spectators get a target + game state
+    this.lobbyManager.onSpectatorJoinedMidGame = (lobbyId, spectatorUserId, socket) => {
+      this.handleSpectatorJoinedMidGame(lobbyId, spectatorUserId, socket);
+    };
   }
 
   // ─── Connection Handler (§2.6) ────────────────────────────────
@@ -106,6 +120,7 @@ export class GameCoordinator {
     socket.on('rmhbox:game:update_settings', validated(socket, 'rmhbox:game:update_settings', UpdateGameSettingsSchema, (s, d) => this.onUpdateGameSettings(s, d)));
     socket.on('rmhbox:game:confirm_settings', validated(socket, 'rmhbox:game:confirm_settings', ConfirmGameSettingsSchema, (s, d) => this.onConfirmGameSettings(s, d)));
     socket.on('rmhbox:game:reset_settings', validated(socket, 'rmhbox:game:reset_settings', ResetGameSettingsSchema, (s, d) => this.onResetGameSettings(s, d)));
+    socket.on(C2S.SPECTATOR_SELECT_PLAYER, validated(socket, C2S.SPECTATOR_SELECT_PLAYER, SpectatorSelectPlayerSchema, (s, d) => this.onSpectatorSelectPlayer(s, d)));
   }
 
   // ─── Disconnect Handler (§2.8) ────────────────────────────────
@@ -178,6 +193,51 @@ export class GameCoordinator {
       if (connectedCount >= def.minPlayers) {
         this.cancelDisconnectGrace(lobby.id);
       }
+    }
+  }
+
+  // ─── Spectator Mid-Game Join ──────────────────────────────────
+
+  /**
+   * Called by the lobby manager when a new spectator joins a lobby that is
+   * currently in PLAYING state. Assigns a default spectator target (for
+   * competitive-individual games) and sends GAME_STATE_SNAPSHOT +
+   * SPECTATOR_TARGET_STATE so the new spectator can render the game.
+   */
+  private handleSpectatorJoinedMidGame(lobbyId: string, spectatorUserId: string, socket: Socket): void {
+    const lobby = this.lobbyManager.getLobby(lobbyId);
+    if (!lobby || lobby.state !== 'PLAYING' || !lobby.currentGame?.handler) return;
+
+    const handler = lobby.currentGame.handler;
+
+    try {
+      let targetPlayerId: string | undefined;
+
+      if (handler.spectatorMode === 'competitive-individual') {
+        // Auto-assign host as default target (same logic as game start)
+        const defaultTarget = lobby.players.has(lobby.hostUserId)
+          ? lobby.hostUserId
+          : lobby.players.keys().next().value as string | undefined;
+        if (defaultTarget) {
+          targetPlayerId = defaultTarget;
+          if (!this.spectatorTargets.has(lobbyId)) {
+            this.spectatorTargets.set(lobbyId, new Map());
+          }
+          this.spectatorTargets.get(lobbyId)!.set(spectatorUserId, defaultTarget);
+        }
+
+        const targetPlayer = targetPlayerId ? lobby.players.get(targetPlayerId) : undefined;
+        socket.emit(S2C.SPECTATOR_TARGET_STATE, {
+          targetPlayerId: targetPlayerId ?? null,
+          targetPlayerName: targetPlayer?.userName ?? null,
+          availablePlayers: handler.getViewablePlayers(),
+        });
+      }
+
+      const spectatorState = handler.getSpectatorSnapshot(targetPlayerId);
+      socket.emit(S2C.GAME_STATE_SNAPSHOT, spectatorState);
+    } catch (err) {
+      logger.error({ event: 'spectator_mid_game_join_error', lobbyId, spectatorUserId, error: String(err) });
     }
   }
 
@@ -445,6 +505,67 @@ export class GameCoordinator {
     } catch (err) {
       logger.error({ event: 'game_input_error', lobbyId: lobby.id, userId, action: payload.action, error: String(err) });
     }
+  }
+
+  // ─── Spectator Player Selection ────────────────────────────────
+
+  /**
+   * Handles a spectator selecting which player to follow in a
+   * competitive-individual game. Stores the selection and sends
+   * the selected player's state + target info to the spectator.
+   */
+  private onSpectatorSelectPlayer(socket: Socket, payload: { lobbyId: string; targetPlayerId: string }): void {
+    const userId = socket.data.userId as string;
+    const lobby = this.lobbyManager.getLobbyByUserId(userId);
+
+    if (!lobby || lobby.id !== payload.lobbyId) return;
+
+    // Only spectators can use this
+    if (!lobby.spectators.has(userId)) {
+      socket.emit(S2C.ERROR, { code: 'NOT_SPECTATOR', message: 'Only spectators can select a player to follow.' });
+      return;
+    }
+
+    // Validate target is an active player
+    if (!lobby.players.has(payload.targetPlayerId)) {
+      socket.emit(S2C.ERROR, { code: 'INVALID_TARGET', message: 'Target player not found.' });
+      return;
+    }
+
+    // Store selection
+    if (!this.spectatorTargets.has(lobby.id)) {
+      this.spectatorTargets.set(lobby.id, new Map());
+    }
+    this.spectatorTargets.get(lobby.id)!.set(userId, payload.targetPlayerId);
+
+    // If game is active and is competitive-individual, send the target player's state
+    if (lobby.state === 'PLAYING' && lobby.currentGame?.handler) {
+      const handler = lobby.currentGame.handler;
+      if (handler.spectatorMode === 'competitive-individual') {
+        try {
+          const targetState = handler.getSpectatorSnapshot(payload.targetPlayerId);
+          const targetPlayer = lobby.players.get(payload.targetPlayerId);
+          this.lobbyManager.sendToPlayer(lobby.id, userId, S2C.GAME_STATE_SNAPSHOT, targetState);
+          this.lobbyManager.sendToPlayer(lobby.id, userId, S2C.SPECTATOR_TARGET_STATE, {
+            targetPlayerId: payload.targetPlayerId,
+            targetPlayerName: targetPlayer?.userName ?? 'Unknown',
+            availablePlayers: handler.getViewablePlayers(),
+          });
+        } catch (err) {
+          logger.error({ event: 'spectator_select_player_error', lobbyId: lobby.id, userId, targetPlayerId: payload.targetPlayerId, error: String(err) });
+        }
+      }
+    }
+
+    logger.info({ event: 'spectator_select_player', lobbyId: lobby.id, spectatorId: userId, targetPlayerId: payload.targetPlayerId });
+  }
+
+  /**
+   * Get the spectator's currently selected target player for a lobby.
+   * Returns undefined if no selection has been made.
+   */
+  getSpectatorTarget(lobbyId: string, spectatorUserId: string): string | undefined {
+    return this.spectatorTargets.get(lobbyId)?.get(spectatorUserId);
   }
 
   // ─── Game Settings Phase (§12A) ─────────────────────────────────
@@ -941,6 +1062,15 @@ export class GameCoordinator {
       sendToSpectators: (event: string, data: unknown) => {
         this.lobbyManager.broadcastToSpectators(lobby.id, event, data);
       },
+      sendToSpectatorFollowers: (targetPlayerId: string, event: string, data: unknown) => {
+        const targets = this.spectatorTargets.get(lobby.id);
+        if (!targets) return;
+        for (const [spectatorId, followedPlayerId] of targets) {
+          if (followedPlayerId === targetPlayerId) {
+            this.lobbyManager.sendToPlayer(lobby.id, spectatorId, event, data);
+          }
+        }
+      },
       onComplete: (results: MinigameResults) => {
         this.handleGameComplete(lobby.id, results);
       },
@@ -959,18 +1089,40 @@ export class GameCoordinator {
       };
       gameInstance.start();
 
-      // Send initial game state snapshot to every player and spectator.
-      // This ensures the client has the game state in the Zustand store
-      // BEFORE the lazy-loaded minigame component mounts and subscribes.
-      for (const [playerId] of lobby.players) {
-        try {
-          const playerState = gameInstance.getStateForPlayer(playerId);
-          this.lobbyManager.sendToPlayer(lobby.id, playerId, S2C.GAME_STATE_SNAPSHOT, playerState);
-        } catch { /* ignore — player may not be connected */ }
-      }
+      // Send initial game state snapshot to every player via the base-class
+      // helper. This ensures the client's Zustand store has the full game
+      // state BEFORE the lazy-loaded minigame component mounts and subscribes.
+      gameInstance.broadcastInitialState(S2C.GAME_STATE_SNAPSHOT);
+
+      // For spectators, use the unified getSpectatorSnapshot which
+      // dispatches based on spectatorMode. For competitive-individual games,
+      // auto-assign the host as the default target if none is set.
       for (const [spectatorId] of lobby.spectators) {
         try {
-          const spectatorState = gameInstance.getStateForSpectator();
+          let targetPlayerId = this.getSpectatorTarget(lobby.id, spectatorId);
+          if (gameInstance.spectatorMode === 'competitive-individual') {
+            // Auto-assign host as default target if no valid target selected
+            if (!targetPlayerId || !lobby.players.has(targetPlayerId)) {
+              const defaultTarget = lobby.players.has(lobby.hostUserId)
+                ? lobby.hostUserId
+                : lobby.players.keys().next().value as string | undefined;
+              if (defaultTarget) {
+                targetPlayerId = defaultTarget;
+                if (!this.spectatorTargets.has(lobby.id)) {
+                  this.spectatorTargets.set(lobby.id, new Map());
+                }
+                this.spectatorTargets.get(lobby.id)!.set(spectatorId, defaultTarget);
+              }
+            }
+            // Send target info alongside game state
+            const targetPlayer = targetPlayerId ? lobby.players.get(targetPlayerId) : undefined;
+            this.lobbyManager.sendToPlayer(lobby.id, spectatorId, S2C.SPECTATOR_TARGET_STATE, {
+              targetPlayerId: targetPlayerId ?? null,
+              targetPlayerName: targetPlayer?.userName ?? null,
+              availablePlayers: gameInstance.getViewablePlayers(),
+            });
+          }
+          const spectatorState = gameInstance.getSpectatorSnapshot(targetPlayerId);
           this.lobbyManager.sendToPlayer(lobby.id, spectatorId, S2C.GAME_STATE_SNAPSHOT, spectatorState);
         } catch { /* ignore */ }
       }
@@ -1014,7 +1166,23 @@ export class GameCoordinator {
 
     this.lobbyManager.broadcastAction(lobbyId, { type: 'STATE_CHANGED', payload: { state: 'ROUND_RESULTS' } });
 
-    // Build session standings (cumulative scores sorted)
+    // Add to match history BEFORE building session standings so the current game's
+    // winner is included in the win counts.
+    const serverMatch: ServerMatchSummary = {
+      minigameId: lobby.currentGame?.minigameId ?? '',
+      roundNumber: lobby.roundNumber,
+      startedAt: lobby.currentGame?.startedAt ?? Date.now(),
+      endedAt: Date.now(),
+      standings: results.rankings.map((r) => ({
+        userId: r.userId,
+        userName: r.userName,
+        score: r.score,
+        rank: r.rank,
+      })),
+    };
+    lobby.matchHistory.push(serverMatch);
+
+    // Build session standings (cumulative scores sorted, wins include current game)
     const sessionStandings: SessionStanding[] = Array.from(lobby.players.values())
       .sort((a, b) => b.score - a.score)
       .map((p, idx) => ({
@@ -1035,21 +1203,6 @@ export class GameCoordinator {
     };
 
     this.io.to(`lobby:${lobbyId}`).emit(S2C.GAME_ROUND_RESULTS, roundResults);
-
-    // Add to match history (using ServerMatchSummary format)
-    const serverMatch: ServerMatchSummary = {
-      minigameId: lobby.currentGame?.minigameId ?? '',
-      roundNumber: lobby.roundNumber,
-      startedAt: lobby.currentGame?.startedAt ?? Date.now(),
-      endedAt: Date.now(),
-      standings: results.rankings.map((r) => ({
-        userId: r.userId,
-        userName: r.userName,
-        score: r.score,
-        rank: r.rank,
-      })),
-    };
-    lobby.matchHistory.push(serverMatch);
 
     // Async persistence — fire-and-forget, never blocks game flow
     const gameLog = (results.gameSpecificData?.gameLog as GameLog) ?? null;
@@ -1120,6 +1273,7 @@ export class GameCoordinator {
     // Clean up lifecycle tracking
     this.clearLifecycleTimers(lobbyId);
     this.lifecycles.delete(lobbyId);
+    this.spectatorTargets.delete(lobbyId);
   }
 
   // ─── Return to Waiting ────────────────────────────────────────
@@ -1191,6 +1345,7 @@ export class GameCoordinator {
     this.clearLifecycleTimers(lobby.id);
     this.lifecycles.delete(lobby.id);
     this.cancelDisconnectGrace(lobby.id);
+    this.spectatorTargets.delete(lobby.id);
 
     logger.info({ event: 'returned_to_waiting', lobbyId: lobby.id });
   }

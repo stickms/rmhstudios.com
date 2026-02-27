@@ -63,6 +63,8 @@ export class CategoryCrashMinigame extends BaseMinigame {
   private state!: CategoryCrashState;
   private startedAt: number = 0;
 
+  get spectatorMode(): 'competitive-individual' { return 'competitive-individual'; }
+
   constructor(context: MinigameContext) {
     super(context);
   }
@@ -167,7 +169,7 @@ export class CategoryCrashMinigame extends BaseMinigame {
     // Broadcast sub-round to the footer counter
     this.broadcastRound(this.state.currentRound, this.state.totalRounds);
 
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'CC_ROUND_START',
       round: this.state.currentRound,
       totalRounds: this.state.totalRounds,
@@ -199,7 +201,7 @@ export class CategoryCrashMinigame extends BaseMinigame {
       duration: scaledInputDuration,
     });
 
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'CC_INPUT_START',
       duration: scaledInputDuration,
       timeRemaining: scaledInputDuration,
@@ -262,7 +264,7 @@ export class CategoryCrashMinigame extends BaseMinigame {
 
     const anonymizedAnswers = this.getAnonymizedAnswers();
 
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'CC_PEER_REVIEW_START',
       duration: scaledReviewDuration,
       timeRemaining: scaledReviewDuration,
@@ -302,7 +304,7 @@ export class CategoryCrashMinigame extends BaseMinigame {
       totalCrashes: this.state.crashes.length,
     });
 
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'CC_CRASH_RESOLUTION_START',
       duration: CC_CRASH_RESOLUTION,
     });
@@ -347,7 +349,7 @@ export class CategoryCrashMinigame extends BaseMinigame {
       round: this.state.currentRound,
     });
 
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'CC_ROUND_RESULTS',
       round: this.state.currentRound,
       results: roundResult,
@@ -419,6 +421,12 @@ export class CategoryCrashMinigame extends BaseMinigame {
       type: 'CC_ANSWERS_SAVED',
       answers: this.state.answers[userId],
     });
+
+    // Mirror to spectators following this player
+    this.context.sendToSpectatorFollowers(userId, 'rmhbox:game:action', {
+      type: 'CC_ANSWERS_SAVED',
+      answers: this.state.answers[userId],
+    });
   }
 
   /** Lock final answers — notify all players. */
@@ -460,11 +468,16 @@ export class CategoryCrashMinigame extends BaseMinigame {
       type: 'CC_ANSWERS_SUBMITTED',
     });
 
+    // Mirror to spectators following this player
+    this.context.sendToSpectatorFollowers(userId, 'rmhbox:game:action', {
+      type: 'CC_ANSWERS_SUBMITTED',
+    });
+
     // Notify all players about lock status
     const lockedCount = Object.values(this.state.locked).filter(Boolean).length;
     const totalPlayers = Object.keys(this.state.answers).length;
 
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'CC_LOCK_STATUS',
       lockedCount,
       totalPlayers,
@@ -571,6 +584,13 @@ export class CategoryCrashMinigame extends BaseMinigame {
       targetUserId,
       categoryIndex,
     });
+
+    // Mirror to spectators following this player
+    this.context.sendToSpectatorFollowers(userId, 'rmhbox:game:action', {
+      type: 'CC_CRASH_RECORDED',
+      targetUserId,
+      categoryIndex,
+    });
   }
 
   /** Remove a crash vote during PEER_REVIEW. */
@@ -614,6 +634,13 @@ export class CategoryCrashMinigame extends BaseMinigame {
     });
 
     this.context.sendToPlayer(userId, 'rmhbox:game:action', {
+      type: 'CC_UNCRASH_RECORDED',
+      targetUserId,
+      categoryIndex,
+    });
+
+    // Mirror to spectators following this player
+    this.context.sendToSpectatorFollowers(userId, 'rmhbox:game:action', {
       type: 'CC_UNCRASH_RECORDED',
       targetUserId,
       categoryIndex,
@@ -983,12 +1010,6 @@ export class CategoryCrashMinigame extends BaseMinigame {
   }
 
   handlePlayerReconnect(userId: string): void {
-    this.context.sendToPlayer(
-      userId,
-      'rmhbox:game:state_snapshot',
-      this.getStateForPlayer(userId),
-    );
-
     logger.info({
       event: 'category_crash:player_reconnect',
       lobbyId: this.context.lobbyId,
