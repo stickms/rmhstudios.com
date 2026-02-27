@@ -1060,7 +1060,7 @@
   --color-slice-shadow-light: var(--slice-shadow-light);
   --color-slice-card-bg: var(--slice-card-bg);
 
-  /* Echoes Specific */
+  /* Altair Specific */
   --color-neon-glow: #d8b4fe;
   --animate-pulse-slow: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   --shadow-neon: 0 0 10px var(--neon-purple), 0 0 20px var(--neon-purple);

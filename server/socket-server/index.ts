@@ -4,7 +4,7 @@
  * Unified WebSocket server for all mini-games and real-time apps.
  * Runs as a separate Node.js process on port 7001.
  *
- * Games: Slice It, Neon Driftway, Synapse Storm, RMH Type, RMH Study
+ * Games: Slice It, Neon Driftway, Synapse Storm, RMH Type, RMH Study, Altair
  */
 
 import 'dotenv/config';
@@ -21,6 +21,7 @@ import { registerNeonDriftwayHandlers, handleNeonDriftwayDisconnect } from './ha
 import { registerSynapseStormHandlers, handleSynapseStormDisconnect } from './handlers/synapse-storm';
 import { registerRmhTypeHandlers, handleRmhTypeDisconnect } from './handlers/rmhtype';
 import { registerRmhStudyHandlers, handleRmhStudyDisconnect } from './handlers/rmhstudy';
+import { registerAltairHandlers, handleAltairDisconnect } from './handlers/altair';
 
 // ─── Startup validation ─────────────────────────────────────────
 
@@ -138,6 +139,7 @@ io.on('connection', (socket) => {
   registerSynapseStormHandlers(io, socket);
   registerRmhTypeHandlers(io, socket);
   registerRmhStudyHandlers(io, socket);
+  registerAltairHandlers(io, socket);
 
   // Disconnect cleanup
   socket.on('disconnect', (reason) => {
@@ -148,6 +150,7 @@ io.on('connection', (socket) => {
     handleNeonDriftwayDisconnect(io, socket);
     handleRmhTypeDisconnect(io, socket);
     handleRmhStudyDisconnect(io, socket);
+    handleAltairDisconnect(io, socket);
 
     cleanupRateLimits(socket.id);
   });

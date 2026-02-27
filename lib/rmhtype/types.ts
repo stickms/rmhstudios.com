@@ -115,6 +115,7 @@ export interface SoloResult {
   accuracy: number;
   timeMs: number;
   timedOut: boolean;
+  scorePosted?: boolean;
 }
 
 // ─── Errors ─────────────────────────────────────────────────────

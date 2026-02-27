@@ -60,7 +60,7 @@ CREATE TABLE "verification" (
 );
 
 -- CreateTable
-CREATE TABLE "EchoesPlayer" (
+CREATE TABLE "AltairPlayer" (
     "id" TEXT NOT NULL,
     "username" TEXT NOT NULL,
     "bestTime" DOUBLE PRECISION NOT NULL DEFAULT 0,
@@ -70,7 +70,7 @@ CREATE TABLE "EchoesPlayer" (
     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "userId" TEXT,
 
-    CONSTRAINT "EchoesPlayer_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "AltairPlayer_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -192,19 +192,19 @@ CREATE UNIQUE INDEX "user_email_key" ON "user"("email");
 CREATE UNIQUE INDEX "session_token_key" ON "session"("token");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "EchoesPlayer_username_key" ON "EchoesPlayer"("username");
+CREATE UNIQUE INDEX "AltairPlayer_username_key" ON "AltairPlayer"("username");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "EchoesPlayer_userId_key" ON "EchoesPlayer"("userId");
+CREATE UNIQUE INDEX "AltairPlayer_userId_key" ON "AltairPlayer"("userId");
 
 -- CreateIndex
-CREATE INDEX "idx_echoes_best_time" ON "EchoesPlayer"("bestTime" DESC);
+CREATE INDEX "idx_altair_best_time" ON "AltairPlayer"("bestTime" DESC);
 
 -- CreateIndex
-CREATE INDEX "idx_echoes_kills" ON "EchoesPlayer"("totalKills" DESC);
+CREATE INDEX "idx_altair_kills" ON "AltairPlayer"("totalKills" DESC);
 
 -- CreateIndex
-CREATE INDEX "idx_echoes_xp" ON "EchoesPlayer"("totalXP" DESC);
+CREATE INDEX "idx_altair_xp" ON "AltairPlayer"("totalXP" DESC);
 
 -- CreateIndex
 CREATE UNIQUE INDEX "LaundryPlayer_username_key" ON "LaundryPlayer"("username");
@@ -267,7 +267,7 @@ ALTER TABLE "session" ADD CONSTRAINT "session_userId_fkey" FOREIGN KEY ("userId"
 ALTER TABLE "account" ADD CONSTRAINT "account_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "EchoesPlayer" ADD CONSTRAINT "EchoesPlayer_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "AltairPlayer" ADD CONSTRAINT "AltairPlayer_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "LaundryPlayer" ADD CONSTRAINT "LaundryPlayer_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;

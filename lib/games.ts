@@ -95,13 +95,13 @@ export const games: GameInfo[] = [
         authGate: true,
     },
     {
-        id: 'echoes',
-        title: 'Echoes of the Spire',
+        id: 'altair',
+        title: 'Altair',
         description:
             'A narrative-driven extraction thriller set on a fragmented deep space mining rig.',
         longDescription:
             'Navigate Outpost 13, a reality-glitched mining station overrun by "Echoes." Use your neural link to piece together fragmented memories, manage cryo-sickness, and survive the shadows in this narrative-heavy survival experience.',
-        href: '/echoes',
+        href: '/altair',
         status: 'Playable',
         cta: 'Play Now',
         isSteam: false,
@@ -109,7 +109,7 @@ export const games: GameInfo[] = [
         iconName: 'Brain',
         color: 'from-cyan-500/20 to-blue-600/20 hover:border-cyan-500/50',
         tags: ['Deckbuilder', 'Roguelike', 'Strategy'],
-        imagePath: '/images/games/echoes_of_the_spire.png',
+        imagePath: '/images/games/altair.png',
         authGate: true,
     },
     {
