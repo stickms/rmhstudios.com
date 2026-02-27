@@ -49,6 +49,8 @@ import {
 export class WitWarMinigame extends BaseMinigame {
   private state!: WitWarState;
   private startedAt: number = 0;
+  /** Handle for the current voting timeout, so early-end can cancel it. */
+  private votingTimeoutHandle: NodeJS.Timeout | null = null;
 
   get spectatorMode(): 'shared-privileged' { return 'shared-privileged'; }
 
@@ -209,23 +211,27 @@ export class WitWarMinigame extends BaseMinigame {
   private endWritingPhase(): void {
     this.clearPhaseTimer();
 
-    // Fill in safety quips for missing answers
-    for (const matchup of this.state.matchups) {
-      if (!matchup.answerA) matchup.answerA = WW_SAFETY_QUIP;
-      if (!matchup.answerB) matchup.answerB = WW_SAFETY_QUIP;
-    }
-
+    // Broadcast writing end so clients can auto-submit typed answers
     this.context.broadcastAction({
       type: 'WW_WRITING_END',
     });
 
-    this.logAction('writing_end', {
-      round: this.state.currentRound,
-      submittedCount: this.state.submitted.size,
-      totalPlayers: this.context.players.size,
-    });
+    // Brief grace period for client auto-submitted answers to arrive
+    this.setTimeout(() => {
+      // Fill in safety quips for still-missing answers
+      for (const matchup of this.state.matchups) {
+        if (!matchup.answerA) matchup.answerA = WW_SAFETY_QUIP;
+        if (!matchup.answerB) matchup.answerB = WW_SAFETY_QUIP;
+      }
 
-    this.startMatchupVoting();
+      this.logAction('writing_end', {
+        round: this.state.currentRound,
+        submittedCount: this.state.submitted.size,
+        totalPlayers: this.context.players.size,
+      });
+
+      this.startMatchupVoting();
+    }, 1000);
   }
 
   // ─── Voting Flow ────────────────────────────────────────────
@@ -259,10 +265,11 @@ export class WitWarMinigame extends BaseMinigame {
 
     this.startPhaseTimer(duration);
 
-    this.setTimeout(() => this.endMatchupVoting(), duration * 1000);
+    this.votingTimeoutHandle = this.setTimeout(() => this.endMatchupVoting(), duration * 1000);
   }
 
   private endMatchupVoting(): void {
+    this.votingTimeoutHandle = null;
     this.clearPhaseTimer();
     const matchup = this.state.matchups[this.state.currentMatchupIndex];
 
@@ -505,6 +512,12 @@ export class WitWarMinigame extends BaseMinigame {
         totalVoters: Math.max(voterCount, 1),
       },
     });
+
+    // End voting early if all eligible voters have voted
+    if (voteCount >= Math.max(voterCount, 1) && this.votingTimeoutHandle) {
+      this.clearTrackedTimeout(this.votingTimeoutHandle);
+      this.endMatchupVoting();
+    }
   }
 
   // ─── State Getters ──────────────────────────────────────────

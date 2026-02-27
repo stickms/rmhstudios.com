@@ -7,7 +7,7 @@
  */
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Send, Check, Pencil } from 'lucide-react';
 import { WW_MAX_ANSWER_LENGTH } from '@/lib/rmhbox/constants';
@@ -20,6 +20,8 @@ interface WritingPhaseProps {
   hasSubmitted: boolean;
   submittedCount: number;
   totalPlayers: number;
+  /** When true, auto-submit all typed but unsent answers (timer expired). */
+  writingTimeUp?: boolean;
 }
 
 export default function WritingPhase({
@@ -29,9 +31,30 @@ export default function WritingPhase({
   hasSubmitted,
   submittedCount,
   totalPlayers,
+  writingTimeUp = false,
 }: WritingPhaseProps) {
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [sentPrompts, setSentPrompts] = useState<Set<number>>(new Set());
+  const answersRef = useRef(answers);
+  const sentPromptsRef = useRef(sentPrompts);
+
+  // Keep refs in sync with state for use in auto-submit effect
+  useEffect(() => { answersRef.current = answers; }, [answers]);
+  useEffect(() => { sentPromptsRef.current = sentPrompts; }, [sentPrompts]);
+
+  // Auto-submit all typed but unsent answers when the writing timer expires
+  useEffect(() => {
+    if (!writingTimeUp || hasSubmitted) return;
+    const currentAnswers = answersRef.current;
+    const currentSent = sentPromptsRef.current;
+    for (const prompt of prompts) {
+      const answer = currentAnswers[prompt.promptIndex]?.trim();
+      if (answer && !currentSent.has(prompt.promptIndex)) {
+        onSubmitAnswer(prompt.promptIndex, answer);
+      }
+    }
+    onSubmitAll();
+  }, [writingTimeUp, hasSubmitted, prompts, onSubmitAnswer, onSubmitAll]);
 
   const handleChange = useCallback((promptIndex: number, value: string) => {
     setAnswers((prev) => ({ ...prev, [promptIndex]: value }));

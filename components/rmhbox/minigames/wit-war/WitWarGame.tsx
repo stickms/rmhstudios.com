@@ -78,6 +78,7 @@ export default function WitWarGame({ playerId }: MinigameProps) {
   const [totalPlayers, setTotalPlayers] = useState(0);
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [scores, setScores] = useState<Record<string, number>>({});
+  const [writingTimeUp, setWritingTimeUp] = useState(false);
 
   // Voting state
   const [matchupIndex, setMatchupIndex] = useState(0);
@@ -113,6 +114,7 @@ export default function WitWarGame({ playerId }: MinigameProps) {
           setPrompts(payload.prompts);
           setHasSubmitted(false);
           setMyVote(null);
+          setWritingTimeUp(false);
           playSound('swoosh');
           break;
         }
@@ -133,6 +135,7 @@ export default function WitWarGame({ playerId }: MinigameProps) {
         }
 
         case 'WW_WRITING_END':
+          setWritingTimeUp(true);
           break;
 
         case 'WW_SUBMIT_COUNT': {
@@ -352,6 +355,7 @@ export default function WitWarGame({ playerId }: MinigameProps) {
               hasSubmitted={hasSubmitted}
               submittedCount={submittedCount}
               totalPlayers={totalPlayers}
+              writingTimeUp={writingTimeUp}
             />
           </motion.div>
         )}
