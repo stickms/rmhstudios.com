@@ -52,6 +52,23 @@ export interface MatchupData {
   isQuiplash: boolean;
 }
 
+/** Extract MatchupData from a snapshot object (spectator or player format). */
+function extractMatchupFromSnapshot(obj: Record<string, unknown>): MatchupData {
+  return {
+    promptText: (obj.promptText as string) ?? '',
+    answerA: (obj.answerA as string) ?? '',
+    answerB: (obj.answerB as string) ?? '',
+    playerA: (obj.playerA as string) ?? '',
+    playerB: (obj.playerB as string) ?? '',
+    playerAName: obj.playerAName as string | undefined,
+    playerBName: obj.playerBName as string | undefined,
+    votePercentA: (obj.votePercentA as number) ?? 0,
+    votePercentB: (obj.votePercentB as number) ?? 0,
+    winnerId: (obj.winnerId as string | null) ?? null,
+    isQuiplash: (obj.isQuiplash as boolean) ?? false,
+  };
+}
+
 export default function WitWarGame({ playerId }: MinigameProps) {
   const [phase, setPhase] = useState<Phase>('PROMPT_REVEAL');
   const [currentRound, setCurrentRound] = useState(1);
@@ -261,33 +278,11 @@ export default function WitWarGame({ playerId }: MinigameProps) {
         // Spectator snapshot uses `currentMatchup`; player snapshot uses flat fields
         const cm = snapshot.currentMatchup as Record<string, unknown> | undefined;
         if (cm && typeof cm === 'object') {
-          setCurrentMatchup({
-            promptText: (cm.promptText as string) ?? '',
-            answerA: (cm.answerA as string) ?? '',
-            answerB: (cm.answerB as string) ?? '',
-            playerA: (cm.playerA as string) ?? '',
-            playerB: (cm.playerB as string) ?? '',
-            playerAName: cm.playerAName as string | undefined,
-            playerBName: cm.playerBName as string | undefined,
-            votePercentA: (cm.votePercentA as number) ?? 0,
-            votePercentB: (cm.votePercentB as number) ?? 0,
-            winnerId: (cm.winnerId as string | null) ?? null,
-            isQuiplash: (cm.isQuiplash as boolean) ?? false,
-          });
+          setCurrentMatchup(extractMatchupFromSnapshot(cm));
           setIsAuthor((cm.playerA as string) === playerId || (cm.playerB as string) === playerId);
         } else if (snapshot.promptText) {
           // Player snapshot: flat fields
-          setCurrentMatchup({
-            promptText: (snapshot.promptText as string) ?? '',
-            answerA: (snapshot.answerA as string) ?? '',
-            answerB: (snapshot.answerB as string) ?? '',
-            playerA: (snapshot.playerA as string) ?? '',
-            playerB: (snapshot.playerB as string) ?? '',
-            votePercentA: 0,
-            votePercentB: 0,
-            winnerId: null,
-            isQuiplash: false,
-          });
+          setCurrentMatchup(extractMatchupFromSnapshot(snapshot));
         }
         if (typeof snapshot.isAuthor === 'boolean') setIsAuthor(snapshot.isAuthor as boolean);
         if (typeof snapshot.voteCount === 'number') setVoteCount(snapshot.voteCount as number);
@@ -297,19 +292,7 @@ export default function WitWarGame({ playerId }: MinigameProps) {
         // Spectator snapshot uses `currentMatchup`; player snapshot uses `matchup`
         const cm = (snapshot.currentMatchup ?? snapshot.matchup) as Record<string, unknown> | undefined;
         if (cm && typeof cm === 'object') {
-          setMatchupResult({
-            promptText: (cm.promptText as string) ?? '',
-            answerA: (cm.answerA as string) ?? '',
-            answerB: (cm.answerB as string) ?? '',
-            playerA: (cm.playerA as string) ?? '',
-            playerB: (cm.playerB as string) ?? '',
-            playerAName: cm.playerAName as string | undefined,
-            playerBName: cm.playerBName as string | undefined,
-            votePercentA: (cm.votePercentA as number) ?? 0,
-            votePercentB: (cm.votePercentB as number) ?? 0,
-            winnerId: (cm.winnerId as string | null) ?? null,
-            isQuiplash: (cm.isQuiplash as boolean) ?? false,
-          });
+          setMatchupResult(extractMatchupFromSnapshot(cm));
         }
       }
     },

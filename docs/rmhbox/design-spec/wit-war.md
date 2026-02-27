@@ -274,7 +274,7 @@ Wit-War uses **shared-privileged** spectator mode. Spectators see the same omnis
 - Vote counts and percentages
 - Full matchup results
 
-Spectator state is sent during prompt reveals and is available via `getStateForSpectator()` for reconnection.
+Spectator state is sent during prompt reveals and voting phase starts, and is available via `getStateForSpectator()` for reconnection. The client's `handleStateSnapshot` reconstructs matchup data from the spectator snapshot (using the `currentMatchup` field) to support mid-game spectator joins and reconnections.
 
 ---
 
@@ -316,7 +316,7 @@ Settings are read via `this.getSetting(key, fallback)` in the handler.
 
 The game log stored in match history has type `'wit-war'` and includes:
 - `initialState` — `totalRounds`, `playerCount`
-- `actions` — Sequenced log of `prompt_reveal`, `writing_end`, `answer_submitted`, `matchup_resolved` events
+- `actions` — Sequenced log of `prompt_reveal`, `writing_end`, `answer_submitted`, `matchup_resolved` events. Each `matchup_resolved` action includes a `round` field for proper round-grouping in the history viewer.
 
 ### 12.2 History Display
 
