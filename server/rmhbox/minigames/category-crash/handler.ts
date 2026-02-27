@@ -37,13 +37,10 @@ import {
   CC_TOTAL_ROUNDS,
   CC_CATEGORIES_PER_ROUND,
   CC_INPUT_DURATION,
-  CC_PEER_REVIEW_DURATION,
   CC_CRASH_RESOLUTION,
   CC_ROUND_RESULTS,
   CC_REVEAL,
-  CC_CRASH_THRESHOLD_PERCENT,
   CC_UNIQUE_POINTS,
-  CC_SHARED_POINTS,
   CC_CRASH_BONUS,
   CC_CRASH_PENALTY,
   CC_FUZZY_THRESHOLD,
@@ -938,7 +935,7 @@ export class CategoryCrashMinigame extends BaseMinigame {
       }
 
       // Crash bonus/penalty
-      const crashBonus = this.computeCrashBonus(userId, crashedMap, 0);
+      const crashBonus = this.computeCrashBonus(userId, crashedMap);
       roundScore += crashBonus;
 
       playerResults[userId] = {
@@ -1011,7 +1008,6 @@ export class CategoryCrashMinigame extends BaseMinigame {
   private computeCrashBonus(
     userId: string,
     crashedMap: Record<string, Set<number>>,
-    _crashThreshold: number,
   ): number {
     let bonus = 0;
 
