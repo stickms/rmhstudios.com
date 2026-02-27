@@ -1,0 +1,85 @@
+---
+title: "Why AAA Studios Are Eyeing Browser Distribution"
+date: "2025-08-30"
+description: "Cloud gaming stumbles, but the browser as a game platform is gaining traction — for reasons the industry didn't expect."
+tags: ["Industry", "Browser Gaming", "Cloud Gaming"]
+---
+
+## The Cloud Gaming Graveyard
+
+On January 18, 2023, **Google Stadia officially shut down**. The service, launched in November 2019 with enormous fanfare and Google's characteristic confidence, had promised to be the future of gaming: AAA titles streaming from Google's data centers to any device with a Chrome browser.
+
+Google invested heavily — acquiring studios, signing exclusivity deals, building custom server hardware. And then, less than three and a half years later, they killed it. Google refunded all hardware and game purchases, a move that cost them hundreds of millions and served as a final, expensive acknowledgment that the product hadn't found a market.
+
+Stadia's failure wasn't primarily technical. The streaming technology worked reasonably well on fast connections. The failure was **product-market fit**: players didn't want to buy games on a platform they didn't trust Google to maintain (a justified concern, as it turned out), the latency was noticeable enough to frustrate core gamers, and the value proposition over owning a console or PC was unclear.
+
+But Stadia's death didn't kill cloud gaming. It just clarified who the real players are.
+
+## The Survivors
+
+**Xbox Cloud Gaming (xCloud)** has emerged as the most credible cloud gaming platform, largely because Microsoft made a strategic decision that Google didn't: they bundled it into an existing subscription. Xbox Game Pass Ultimate subscribers get cloud gaming as a perk, not a standalone purchase. This means players aren't betting on a new platform — they're getting a bonus feature on a service they already pay for.
+
+xCloud now supports hundreds of titles playable via browser, and Microsoft has been steadily improving stream quality and reducing latency. In 2024, they began testing cloud gaming on Samsung smart TVs and Amazon Fire TV devices, expanding access beyond traditional gaming hardware.
+
+**NVIDIA GeForce Now** has carved out a different niche: it lets players stream games they already own on Steam, Epic, and other PC storefronts. This solves the library problem that plagued Stadia — you're not rebuying games on a new platform. GeForce Now's highest tier offers RTX 4080 equivalent performance, making it a viable option for players who want to play graphically demanding games without a $2,000 GPU.
+
+**Netflix** entered the cloud gaming conversation in 2024, announcing its push into cloud-streamed games accessible through its app and website. Netflix's approach leverages its massive subscriber base and frictionless access model — the same logic that makes Xbox's bundling strategy work.
+
+The pattern is clear: cloud gaming survives not as a standalone product, but as a feature of a larger ecosystem.
+
+## The Latency Problem Nobody Can Solve
+
+Here's the fundamental issue with cloud gaming that no amount of server infrastructure can fix: **physics**.
+
+When you stream a game from a data center, every input must travel from your device to the server, the server must process a frame, and the rendered frame must travel back. Even at the speed of light, a round trip from New York to a data center in Virginia takes roughly 10 milliseconds — and real-world networking adds processing delays, routing hops, and jitter that push total input latency to 40-80 milliseconds on a good connection.
+
+For some games, this is acceptable. Turn-based strategy games, narrative adventures, and slower-paced RPGs can tolerate 60ms of latency without degraded experience. For others — fighting games, rhythm games, competitive shooters, platformers — it's a dealbreaker. Professional fighting game players can detect latency as low as 3-4 frames (50-67ms at 60fps), and competitive shooters require sub-30ms response times for responsive aiming.
+
+This isn't a problem that faster internet or closer data centers will fully solve. Light has a speed limit, and real-world networks have overhead. Cloud gaming will always have a latency floor that local execution doesn't.
+
+## The Browser-Native Alternative
+
+This is where our perspective comes in, and it's why we think AAA studios should be paying attention to browser-native games, not just cloud streaming.
+
+**A browser-native game runs locally.** The code downloads to the player's device — JavaScript, WebAssembly, assets — and executes on their hardware. Input latency is identical to a native application: the frame loop reads input, updates state, and renders in the same process. There's no server round-trip for gameplay.
+
+The advantages are significant:
+
+### Zero latency penalty
+The game runs on the player's device. Input response is limited only by the device's processing speed and display refresh rate, not by network conditions.
+
+### No server infrastructure costs for single-player
+Cloud gaming requires expensive GPU servers running 24/7. A browser-native game requires only a web server to deliver static files (HTML, JS, WASM, assets), which can be served from a CDN for pennies per gigabyte.
+
+### Works offline
+Progressive Web App (PWA) technologies allow browser games to cache assets and run without an internet connection. Cloud-streamed games require a constant, high-bandwidth connection.
+
+### Scales with player hardware
+As devices get faster — better mobile GPUs, more RAM, more CPU cores — browser-native games automatically benefit. Cloud games are limited by the server hardware the provider allocates, and upgrades require capital expenditure.
+
+### Universal access
+Any device with a modern browser can play. No app store approval. No platform-specific builds. No compatibility matrices. One codebase, every platform.
+
+## Why AAA Studios Are Paying Attention
+
+Several trends are converging:
+
+**Distribution costs are rising.** Steam takes 30%. Apple takes 30%. Google takes 30% (reduced to 15% for the first million in some cases). Console licensing fees add more. For a AAA studio shipping a $70 game, platform fees represent an enormous cost. A browser game distributed through the studio's own website pays zero platform fees.
+
+**Web technology is maturing.** WebGPU, WebAssembly, WebTransport, WebCodecs — the browser is gaining capabilities that were previously exclusive to native platforms. The gap between what you can build in a browser and what you can build natively is shrinking with every Chrome release.
+
+**Player behavior is shifting.** Younger players are accustomed to playing games in browsers (Roblox's web client), on phones (mobile-first markets), and through links shared in social platforms. The expectation that a "real game" requires a 100GB download and a $500 console is generational, and it's fading.
+
+**Instant play is a competitive advantage.** When Fortnite launched on iOS via xCloud after being banned from the App Store, players could access it through a browser bookmark. The experience wasn't as polished as a native app, but the *access* was instant. That matters.
+
+## The Hybrid Future
+
+We don't think cloud gaming and browser-native gaming are competitors. They're complementary approaches to the same goal: **getting games to players with minimal friction**.
+
+Cloud gaming is the right approach for graphically demanding AAA titles that require hardware players don't own. If you want to play a game that needs an RTX 4080 and you have a Chromebook, cloud streaming is the only option.
+
+Browser-native gaming is the right approach for games designed for the web — games that are built to run on the hardware people actually have, that prioritize accessibility and instant access, and that don't need photorealistic rendering to deliver compelling experiences.
+
+At RMH Studios, we've bet on browser-native. Our games — party games, rhythm games, puzzle games, narrative games, competitive typing — run on any device with a browser. They load in seconds. They don't buffer. They don't lag because someone between you and a data center is downloading a movie.
+
+When AAA studios look at the browser, they see what we've seen for years: a distribution channel with zero platform fees, universal reach, and instant access. The tools to build great games on it already exist. The audience is already there. The only thing left is the ambition to build for it.

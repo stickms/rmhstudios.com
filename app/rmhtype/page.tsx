@@ -1,7 +1,7 @@
 /**
  * RMH Type Landing Page
  *
- * Mode selection and leaderboard.
+ * Mode selection and leaderboards for all difficulties.
  */
 
 'use client';
@@ -17,27 +17,92 @@ import { toast } from '@/lib/rmhtype/toast-store';
 import RmhTypeHeader from '@/components/rmhtype/RmhTypeHeader';
 import type { Difficulty } from '@/lib/rmhtype/types';
 
+interface LeaderboardEntry {
+  rank: number;
+  userId: string;
+  userName: string;
+  avatarUrl: string | null;
+  bestWpm: number;
+  bestWpmAccuracy: number;
+  leaderboardScore: number;
+  avgWpm: number;
+  bestAccuracy: number;
+  avgAccuracy: number;
+  totalGamesPlayed: number;
+  totalWins: number;
+  bestStreak: number;
+}
+
+const DIFFICULTIES: Difficulty[] = ['easy', 'medium', 'hard'];
+
+function LeaderboardTable({ entries, loading }: { entries: LeaderboardEntry[]; loading: boolean }) {
+  if (loading) {
+    return <p className="text-sm text-(--rmhtype-text-muted) text-center py-4">Loading...</p>;
+  }
+  if (entries.length === 0) {
+    return <p className="text-sm text-(--rmhtype-text-muted) text-center py-4">No scores yet. Be the first!</p>;
+  }
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="text-(--rmhtype-text-muted) border-b border-(--rmhtype-border)">
+            <th className="text-left py-2 pr-3 font-medium">#</th>
+            <th className="text-left py-2 pr-3 font-medium">Player</th>
+            <th className="text-right py-2 pr-3 font-medium">Score</th>
+            <th className="text-right py-2 pr-3 font-medium">Best WPM</th>
+            <th className="text-right py-2 pr-3 font-medium">Accuracy</th>
+            <th className="text-right py-2 font-medium">Games</th>
+          </tr>
+        </thead>
+        <tbody>
+          {entries.map((entry) => (
+            <tr key={entry.userId} className="border-b border-(--rmhtype-border)/50 last:border-b-0">
+              <td className="py-2.5 pr-3 font-mono text-(--rmhtype-text-muted)">
+                {entry.rank <= 3 ? ['🥇', '🥈', '🥉'][entry.rank - 1] : entry.rank}
+              </td>
+              <td className="py-2.5 pr-3 flex items-center gap-2">
+                {entry.avatarUrl ? (
+                  <img src={entry.avatarUrl} alt="" className="h-5 w-5 rounded-full" />
+                ) : (
+                  <div className="h-5 w-5 rounded-full bg-(--rmhtype-accent)/20" />
+                )}
+                <span className="truncate max-w-35">{entry.userName}</span>
+              </td>
+              <td className="py-2.5 pr-3 text-right font-mono font-semibold text-(--rmhtype-accent)">
+                {entry.leaderboardScore.toFixed(1)}
+              </td>
+              <td className="py-2.5 pr-3 text-right font-mono text-(--rmhtype-text-muted)">
+                {entry.bestWpm.toFixed(1)}
+              </td>
+              <td className="py-2.5 pr-3 text-right font-mono text-(--rmhtype-text-muted)">
+                {entry.bestWpmAccuracy.toFixed(1)}%
+              </td>
+              <td className="py-2.5 text-right font-mono text-(--rmhtype-text-muted)">
+                {entry.totalGamesPlayed}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export default function RmhTypeLanding() {
   const router = useRouter();
   const connectionStatus = useRmhTypeStore((s) => s.connectionStatus);
 
-  // Leaderboard
-  interface LeaderboardEntry {
-    rank: number;
-    userId: string;
-    userName: string;
-    avatarUrl: string | null;
-    bestWpm: number;
-    avgWpm: number;
-    bestAccuracy: number;
-    avgAccuracy: number;
-    totalGamesPlayed: number;
-    totalWins: number;
-    bestStreak: number;
-  }
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-  const [leaderboardLoading, setLeaderboardLoading] = useState(true);
-  const [leaderboardDifficulty, setLeaderboardDifficulty] = useState<Difficulty>('medium');
+  const [leaderboards, setLeaderboards] = useState<Record<Difficulty, LeaderboardEntry[]>>({
+    easy: [],
+    medium: [],
+    hard: [],
+  });
+  const [loadingStates, setLoadingStates] = useState<Record<Difficulty, boolean>>({
+    easy: true,
+    medium: true,
+    hard: true,
+  });
 
   useEffect(() => {
     let mounted = true;
@@ -53,15 +118,16 @@ export default function RmhTypeLanding() {
         }
 
         socket.on(S2C.LEADERBOARD_DATA, (data: { leaderboard: LeaderboardEntry[]; difficulty?: string }) => {
-          if (mounted) {
-            setLeaderboard(data.leaderboard);
-            setLeaderboardLoading(false);
-          }
+          if (!mounted || !data.difficulty) return;
+          const diff = data.difficulty as Difficulty;
+          if (!DIFFICULTIES.includes(diff)) return;
+          setLeaderboards((prev) => ({ ...prev, [diff]: data.leaderboard }));
+          setLoadingStates((prev) => ({ ...prev, [diff]: false }));
         });
       } catch (err) {
         if (mounted) {
           toast.error(err instanceof Error ? err.message : 'Connection failed');
-          setLeaderboardLoading(false);
+          setLoadingStates({ easy: false, medium: false, hard: false });
         }
       }
     }
@@ -71,12 +137,13 @@ export default function RmhTypeLanding() {
     return () => { mounted = false; };
   }, [router]);
 
-  // Fetch leaderboard when difficulty tab changes or connection ready
+  // Fetch all 3 leaderboards when connected
   useEffect(() => {
     if (connectionStatus !== 'connected') return;
-    setLeaderboardLoading(true);
-    emit(C2S.LEADERBOARD_FETCH, { limit: 20, difficulty: leaderboardDifficulty });
-  }, [leaderboardDifficulty, connectionStatus]);
+    for (const d of DIFFICULTIES) {
+      emit(C2S.LEADERBOARD_FETCH, { limit: 20, difficulty: d });
+    }
+  }, [connectionStatus]);
 
   useEffect(() => {
     return () => {
@@ -129,79 +196,25 @@ export default function RmhTypeLanding() {
             </Link>
           </div>
 
-          {/* Leaderboard */}
-          <div className="rounded-xl border border-(--rmhtype-border) bg-(--rmhtype-surface) p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                <Trophy className="h-5 w-5 text-(--rmhtype-accent)" />
-                Leaderboard
-              </h3>
-              <div className="flex gap-1">
-                {(['easy', 'medium', 'hard'] as Difficulty[]).map((d) => (
-                  <button
-                    key={d}
-                    onClick={() => setLeaderboardDifficulty(d)}
-                    className={`px-3 py-1 rounded-lg text-xs font-medium capitalize transition-colors ${
-                      leaderboardDifficulty === d
-                        ? 'bg-(--rmhtype-accent) text-white'
-                        : 'bg-(--rmhtype-bg) text-(--rmhtype-text-muted) hover:bg-(--rmhtype-surface-hover)'
-                    }`}
-                  >
-                    {d}
-                  </button>
-                ))}
-              </div>
+          {/* Leaderboards — all 3 difficulties */}
+          <div className="space-y-6">
+            <div className="flex items-center gap-2">
+              <Trophy className="h-5 w-5 text-(--rmhtype-accent)" />
+              <h3 className="text-lg font-semibold">Leaderboards</h3>
+              <span className="text-xs text-(--rmhtype-text-muted) ml-auto">Ranked by WPM &times; Accuracy</span>
             </div>
 
-            {leaderboardLoading ? (
-              <p className="text-sm text-(--rmhtype-text-muted) text-center py-4">Loading...</p>
-            ) : leaderboard.length === 0 ? (
-              <p className="text-sm text-(--rmhtype-text-muted) text-center py-4">No scores yet. Be the first!</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-(--rmhtype-text-muted) border-b border-(--rmhtype-border)">
-                      <th className="text-left py-2 pr-3 font-medium">#</th>
-                      <th className="text-left py-2 pr-3 font-medium">Player</th>
-                      <th className="text-right py-2 pr-3 font-medium">Best WPM</th>
-                      <th className="text-right py-2 pr-3 font-medium">Avg WPM</th>
-                      <th className="text-right py-2 pr-3 font-medium">Accuracy</th>
-                      <th className="text-right py-2 font-medium">Games</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {leaderboard.map((entry) => (
-                      <tr key={entry.userId} className="border-b border-(--rmhtype-border)/50 last:border-b-0">
-                        <td className="py-2.5 pr-3 font-mono text-(--rmhtype-text-muted)">
-                          {entry.rank <= 3 ? ['🥇', '🥈', '🥉'][entry.rank - 1] : entry.rank}
-                        </td>
-                        <td className="py-2.5 pr-3 flex items-center gap-2">
-                          {entry.avatarUrl ? (
-                            <img src={entry.avatarUrl} alt="" className="h-5 w-5 rounded-full" />
-                          ) : (
-                            <div className="h-5 w-5 rounded-full bg-(--rmhtype-accent)/20" />
-                          )}
-                          <span className="truncate max-w-35">{entry.userName}</span>
-                        </td>
-                        <td className="py-2.5 pr-3 text-right font-mono font-semibold text-(--rmhtype-accent)">
-                          {entry.bestWpm.toFixed(2)}
-                        </td>
-                        <td className="py-2.5 pr-3 text-right font-mono text-(--rmhtype-text-muted)">
-                          {entry.avgWpm.toFixed(2)}
-                        </td>
-                        <td className="py-2.5 pr-3 text-right font-mono text-(--rmhtype-text-muted)">
-                          {entry.bestAccuracy.toFixed(2)}%
-                        </td>
-                        <td className="py-2.5 text-right font-mono text-(--rmhtype-text-muted)">
-                          {entry.totalGamesPlayed}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            {DIFFICULTIES.map((d) => (
+              <div key={d} className="rounded-xl border border-(--rmhtype-border) bg-(--rmhtype-surface) p-5">
+                <h4 className="text-sm font-semibold capitalize mb-3 flex items-center gap-2">
+                  <span className={`inline-block w-2 h-2 rounded-full ${
+                    d === 'easy' ? 'bg-green-400' : d === 'medium' ? 'bg-yellow-400' : 'bg-red-400'
+                  }`} />
+                  {d}
+                </h4>
+                <LeaderboardTable entries={leaderboards[d]} loading={loadingStates[d]} />
               </div>
-            )}
+            ))}
           </div>
 
         </div>

@@ -29,7 +29,7 @@ import {
   RT_INPUT_DURATION,
   RT_MAX_SUBMISSIONS,
   RT_INVALID_PENALTY,
-  RT_MULTI_SYLLABLE_MULT,
+  RT_MULTI_SYLLABLE_BONUS,
   RT_SPEED_BONUS,
   CC_TOTAL_ROUNDS,
   CC_CATEGORIES_PER_ROUND,
@@ -84,7 +84,7 @@ describe('Game Settings Utilities (§12A)', () => {
       expect(defaults.inputDuration).toBe(RT_INPUT_DURATION);
       expect(defaults.maxSubmissions).toBe(RT_MAX_SUBMISSIONS);
       expect(defaults.invalidPenalty).toBe(RT_INVALID_PENALTY);
-      expect(defaults.enableMultiSyllableBonus).toBe(RT_MULTI_SYLLABLE_MULT > 1);
+      expect(defaults.enableMultiSyllableBonus).toBe(RT_MULTI_SYLLABLE_BONUS > 0);
       expect(defaults.enableSpeedBonus).toBe(RT_SPEED_BONUS > 0);
     });
   });

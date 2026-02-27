@@ -34,7 +34,7 @@ export interface WordBreakdown {
   invalidReason?: 'does_not_rhyme' | 'not_in_dictionary';
   rarity: 'common' | 'uncommon' | 'rare' | null;
   basePoints: number;
-  multiSyllableMultiplier: number;
+  multiSyllableBonus: number;
   speedBonus: number;
   totalPoints: number;
   submitterCount: number;

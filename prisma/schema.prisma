@@ -22,7 +22,9 @@ model User {
   accounts      Account[]
 
   // Game Relations (Progression linked to User)
-  echoesProfile  EchoesPlayer?
+  altairProfile  AltairPlayer?
+  altairCoopProfile AltairCoopProfile?
+  altairMatchPlayers AltairMatchPlayer[]
   laundryProfile LaundryPlayer?
   sliceItProfile Player?
   vegaProfile    VegaPlayer?
@@ -49,6 +51,9 @@ model User {
   rmhtubeQueueItems    RmhTubeQueueItem[]
   rmhtubePlaylists     RmhTubePlaylist[]
   rmhtubeStats         RmhTubeUserStats?
+
+  // Site Feedback
+  feedbacks            Feedback[]
 
   @@map("user")
 }
@@ -102,22 +107,26 @@ model Verification {
 
 // --- Game Models ---
 
-model EchoesPlayer {
-  id            String   @id @default(uuid())
-  username      String   @unique
-  bestTime      Float    @default(0)
-  totalKills    Int      @default(0)
-  totalXP       Int      @default(0)
-  gamesPlayed   Int      @default(1)
-  updatedAt     DateTime @default(now()) @updatedAt
+model AltairPlayer {
+  id                String   @id @default(uuid())
+  username          String   @unique
+  bestTime          Float    @default(0)
+  totalKills        Int      @default(0)
+  totalXP           Int      @default(0)
+  totalGold         Int      @default(0)
+  totalTimeSurvived Float    @default(0)
+  gamesPlayed       Int      @default(1)
+  updatedAt         DateTime @default(now()) @updatedAt
 
   // Link to Auth User
   userId        String?  @unique
   user          User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([bestTime(sort: Desc)], map: "idx_echoes_best_time")
-  @@index([totalKills(sort: Desc)], map: "idx_echoes_kills")
-  @@index([totalXP(sort: Desc)], map: "idx_echoes_xp")
+  @@index([bestTime(sort: Desc)], map: "idx_altair_best_time")
+  @@index([totalKills(sort: Desc)], map: "idx_altair_kills")
+  @@index([totalXP(sort: Desc)], map: "idx_altair_xp")
+  @@index([totalGold(sort: Desc)], map: "idx_altair_gold")
+  @@index([totalTimeSurvived(sort: Desc)], map: "idx_altair_survival")
 }
 
 model LaundryPlayer {
@@ -622,6 +631,7 @@ model RmhTypeProfile {
   totalGamesPlayed Int      @default(0)
   totalWins        Int      @default(0)
   bestWpm          Float    @default(0)
+  bestWpmAccuracy  Float    @default(0)
   avgWpm           Float    @default(0)
   bestAccuracy     Float    @default(0)
   avgAccuracy      Float    @default(0)
@@ -720,4 +730,84 @@ model RmhStudySession {
   @@index([userId])
   @@index([startedAt(sort: Desc)])
   @@map("rmhstudy_session")
+}
+
+// ─── Site Feedback ──────────────────────────────────────────────────
+model Feedback {
+  id        String   @id @default(cuid())
+  category  String
+  message   String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt(sort: Desc)])
+  @@map("feedback")
+}
+
+// ─── Altair Multiplayer (Co-op) Models ────────────────────────
+
+model AltairCoopProfile {
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  totalCoopRuns      Int      @default(0)
+  totalCoopWins      Int      @default(0)
+  totalRevivesGiven  Int      @default(0)
+  totalRevivesReceived Int    @default(0)
+  totalCoopKills     Int      @default(0)
+  totalCoopCoins     Int      @default(0)
+  favoriteClassId    String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([totalCoopWins(sort: Desc)])
+  @@index([totalRevivesGiven(sort: Desc)])
+  @@map("altair_coop_profile")
+}
+
+model AltairMatch {
+  id             String    @id @default(cuid())
+  lobbyId        String
+  startedAt      DateTime  @default(now())
+  endedAt        DateTime?
+  durationMs     Int?
+  playerCount    Int
+  doubleTime     Boolean   @default(false)
+  victory        Boolean   @default(false)
+  sharedKills    Int       @default(0)
+  bossesDefeated String[]  @default([])
+  results        Json?
+  players        AltairMatchPlayer[]
+
+  @@index([startedAt(sort: Desc)])
+  @@index([lobbyId])
+  @@map("altair_match")
+}
+
+model AltairMatchPlayer {
+  id              String      @id @default(cuid())
+  matchId         String
+  match           AltairMatch @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userName        String
+  classId         String
+  slot            Int
+  finalLevel      Int         @default(1)
+  kills           Int         @default(0)
+  coinsEarned     Int         @default(0)
+  timeSurvived    Float       @default(0)
+  wasDowned       Boolean     @default(false)
+  wasRevived      Boolean     @default(false)
+  revivesGiven    Int         @default(0)
+  wasAliveAtEnd   Boolean     @default(true)
+  stats           Json        @default("{}")
+  createdAt       DateTime    @default(now())
+
+  @@unique([matchId, userId])
+  @@index([userId])
+  @@index([createdAt(sort: Desc)])
+  @@map("altair_match_player")
 }

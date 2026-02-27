@@ -2,6 +2,7 @@
 
 import { ReactNode, useEffect } from "react";
 import { usePathname } from "next/navigation";
+import { Toaster } from "sonner";
 import { useThemeStore, SITE_STYLES, SiteStyle } from "@/stores/themeStore";
 import { games } from "@/lib/games";
 import { apps } from "@/lib/apps";
@@ -46,5 +47,20 @@ export function Providers({ children }: ProvidersProps) {
     localStorage.setItem("rmh-style", style);
   }, [style, isAppRoute]);
 
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      <Toaster
+        theme="dark"
+        position="bottom-left"
+        toastOptions={{
+          style: {
+            background: "var(--site-surface)",
+            border: "1px solid var(--site-border)",
+            color: "var(--site-text)",
+          },
+        }}
+      />
+    </>
+  );
 }

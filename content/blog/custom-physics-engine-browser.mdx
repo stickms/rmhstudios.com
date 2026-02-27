@@ -1,0 +1,119 @@
+---
+title: "Building a Custom Physics Engine for the Browser"
+date: "2025-09-12"
+description: "Why we built our own physics system for Laundry Sort instead of using an off-the-shelf engine — and what we learned."
+tags: ["Technology", "Physics", "Laundry Sort"]
+---
+
+## Why Not Just Use a Library?
+
+This is the first question any reasonable developer asks. And it's a good question, because the answer to "should I build my own physics engine?" is almost always "no."
+
+Mature physics libraries exist for the browser. **Matter.js**, originally created by Liam Brummitt, is the most popular 2D physics engine in the JavaScript ecosystem. It handles rigid body dynamics, collision detection, constraint solving, and basic material properties. It's well-documented, widely used, and battle-tested.
+
+**Rapier**, developed by Dimforge, is a newer entrant — a high-performance physics engine written in Rust with first-class WebAssembly support. Rapier offers 2D and 3D simulation, deterministic physics, and performance that significantly exceeds what pure JavaScript engines can achieve.
+
+We evaluated both for **Laundry Sort**, our physics-based sorting game where players manipulate and sort clothing items in real-time. And then we built our own. Here's why.
+
+## The Requirements That Pushed Us Custom
+
+### Performance on Low-End Devices
+
+Laundry Sort needs to simulate dozens of soft-bodied clothing items interacting simultaneously — colliding with each other, with baskets, with the player's cursor. The target is a smooth 60fps on mid-range mobile devices, because a significant portion of our players access the game through mobile browsers.
+
+Matter.js struggled with this workload on lower-end devices. At 30-40 active bodies with complex collision geometries, frame times spiked on devices like budget Android phones. Rapier performed better (roughly 2-3x faster for equivalent scenes), but the WASM module added approximately 800KB to the initial download — a meaningful cost for a game we want to load in under 2 seconds.
+
+Our custom engine is tuned specifically for Laundry Sort's needs. We don't simulate joints, motors, or general-purpose constraints. We simulate a specific set of interactions (clothing items, containers, cursor forces) with optimized code paths for each.
+
+### Determinism
+
+We wanted frame-perfect deterministic simulation — given the same inputs, the simulation produces exactly the same outputs, regardless of frame rate or hardware. Determinism enables replay systems, server-side validation (we can replay a player's inputs on the server to verify scores), and consistent behavior across devices.
+
+Achieving determinism in a physics engine requires fixed-point or carefully managed floating-point arithmetic, fixed timestep integration, and deterministic ordering of collision resolution. Matter.js doesn't guarantee determinism. Rapier does, but integrating Rapier's determinism guarantees with our specific game logic added complexity that rivaled building the physics ourselves.
+
+### Creative Control Over "Feel"
+
+Physics in a game isn't about simulating reality — it's about simulating **fun**. Real clothing physics involves complex deformable body dynamics that would melt a browser's CPU. Game clothing physics involves simplified rigid or semi-rigid shapes that *feel* cloth-like through carefully tuned parameters.
+
+We needed the ability to:
+
+- Adjust drag, friction, and restitution per-frame based on game state
+- Apply non-physical forces (the "snap" when an item lands in the correct basket)
+- Override collision responses for gameplay purposes (items should jostle but not permanently entangle)
+- Implement custom damping curves that feel satisfying rather than physically accurate
+
+With a custom engine, every parameter is exposed and every behavior is modifiable. With a library, you're fighting the abstraction when you need non-standard behavior.
+
+## The Math Under the Hood
+
+For those curious about the implementation, here's a high-level overview of the core systems:
+
+### Collision Detection: Broad Phase
+
+The first step in collision detection is figuring out which bodies *might* be colliding, without doing expensive per-polygon checks on every pair.
+
+We use a **spatial hash grid**. The simulation space is divided into cells, and each body is inserted into every cell it overlaps. Bodies that share a cell are potential collision pairs. This reduces the number of pair checks from O(n²) to roughly O(n) for uniformly distributed objects.
+
+For Laundry Sort specifically, the spatial hash cell size is tuned to the median clothing item size, which means most items occupy 1-4 cells. The overhead is minimal and the pruning is significant.
+
+### Collision Detection: Narrow Phase
+
+For potential collision pairs, we use the **Separating Axis Theorem (SAT)** for convex polygon collisions. SAT projects both shapes onto every potential separating axis (the normals of both polygons' edges) and checks for overlap on each axis. If any axis has no overlap, the shapes don't collide. If all axes overlap, the axis with the smallest overlap is the collision normal, and the overlap distance is the penetration depth.
+
+For circular shapes (used for some rounded items), we use circle-circle and circle-polygon specialized routines that are faster than general SAT.
+
+### Integration
+
+We use **Verlet integration** rather than the more common Euler integration. Verlet integration stores position and previous position rather than position and velocity. The update is:
+
+```
+newPosition = 2 * currentPosition - previousPosition + acceleration * dt²
+```
+
+Verlet has several advantages for our use case:
+
+- **Inherent stability.** Verlet integration is more numerically stable than Euler for constrained systems, which means fewer explosion-on-collision bugs.
+- **Easy constraints.** Distance constraints (keeping items a fixed distance apart) reduce to simply adjusting positions, without needing to compute constraint forces.
+- **Simple damping.** Damping is applied by blending the previous position toward the current position, which naturally decelerates objects without explicit friction forces.
+
+### Constraint Solving
+
+When items collide, we need to separate them (resolve penetration) and adjust their velocities (apply impulses). We use an **iterative constraint solver** that runs multiple passes per frame:
+
+1. **Penetration resolution.** Move colliding bodies apart along the collision normal, proportional to their inverse masses.
+2. **Velocity correction.** Apply impulses to simulate restitution (bounciness) and friction.
+3. **Position correction.** A second pass ensures that resolving one collision didn't create new penetrations elsewhere.
+
+Three to four iterations per frame are sufficient for Laundry Sort's typical scene complexity. More iterations would produce more physically accurate behavior, but we're optimizing for feel, not accuracy.
+
+## The Tradeoffs We Accept
+
+Building a custom physics engine means accepting real costs:
+
+- **Maintenance burden.** Every bug is ours to fix. There's no community, no Stack Overflow answers, no GitHub issues to reference. When a clothing item clips through a basket in a way that only happens on Safari iOS at a specific viewport width, we're on our own.
+
+- **Feature scope.** Our engine does what Laundry Sort needs and nothing more. If we wanted to add rope physics, breakable objects, or fluid simulation, we'd be building those systems from scratch. A library like Matter.js or Rapier would provide them out of the box.
+
+- **Opportunity cost.** The weeks we spent building and tuning the physics engine were weeks we didn't spend on other features, other games, or other improvements. For a small studio, time is the scarcest resource.
+
+- **Testing complexity.** Physics engines need extensive testing — edge cases around collision corners, tunneling at high velocities, numerical stability at extreme values. We maintain a suite of automated physics tests, but the test surface area is large.
+
+## When to Go Custom, When to Use a Library
+
+Based on our experience, here's our honest framework:
+
+**Use a library when:**
+- Your physics needs are general-purpose (platformers, top-down games, basic simulations)
+- Performance on target hardware is adequate with the library
+- You don't need frame-perfect determinism
+- Your team's time is better spent on gameplay than engine work
+
+**Consider custom when:**
+- You have a very specific simulation domain with unusual requirements
+- Performance is critical and you can outperform general-purpose solutions by specializing
+- Determinism is a hard requirement
+- The "feel" of the physics is the core of your game and you need total control over every parameter
+
+For most browser games, Matter.js or Rapier will serve you well. For Laundry Sort, the specific combination of requirements — mobile performance, determinism, and deeply customized feel — justified the investment in a custom solution.
+
+We don't regret it. The physics *feel* right, and in a game where physics is the entire mechanic, that's everything.

@@ -767,6 +767,7 @@ async function persistMatchResults(room: TypeRoom, finalResults: any): Promise<v
 
       // Upsert profile (per-difficulty)
       const difficulty = room.settings.difficulty;
+      const qualifies = standing.avgAccuracy >= MIN_LEADERBOARD_ACCURACY;
       const profile = await (prisma as any).rmhTypeProfile.upsert({
         where: { userId_difficulty: { userId: standing.userId, difficulty } },
         create: {
@@ -774,7 +775,8 @@ async function persistMatchResults(room: TypeRoom, finalResults: any): Promise<v
           difficulty,
           totalGamesPlayed: 1,
           totalWins: standing.finalRank === 1 ? 1 : 0,
-          bestWpm: standing.avgWpm,
+          bestWpm: qualifies ? standing.avgWpm : 0,
+          bestWpmAccuracy: qualifies ? standing.avgAccuracy : 0,
           avgWpm: standing.avgWpm,
           bestAccuracy: standing.avgAccuracy,
           avgAccuracy: standing.avgAccuracy,
@@ -794,7 +796,10 @@ async function persistMatchResults(room: TypeRoom, finalResults: any): Promise<v
 
       // Manual best-of and average updates
       const updates: Record<string, any> = {};
-      if (standing.avgWpm > profile.bestWpm) updates.bestWpm = standing.avgWpm;
+      if (qualifies && standing.avgWpm > profile.bestWpm) {
+        updates.bestWpm = standing.avgWpm;
+        updates.bestWpmAccuracy = standing.avgAccuracy;
+      }
       if (standing.avgAccuracy > profile.bestAccuracy) updates.bestAccuracy = standing.avgAccuracy;
 
       // Running average: new_avg = ((old_avg * (n-1)) + new_value) / n
@@ -840,6 +845,8 @@ async function persistMatchResults(room: TypeRoom, finalResults: any): Promise<v
   }
 }
 
+const MIN_LEADERBOARD_ACCURACY = 90;
+
 async function persistSoloResult(
   userId: string,
   userName: string,
@@ -850,9 +857,10 @@ async function persistSoloResult(
   accuracy: number,
   timeMs: number,
   charsTyped: number,
-): Promise<void> {
+): Promise<boolean> {
   try {
     const prisma = getPrismaClient();
+    const qualifies = accuracy >= MIN_LEADERBOARD_ACCURACY;
 
     // Create solo match record
     const match = await (prisma as any).rmhTypeMatch.create({
@@ -872,22 +880,25 @@ async function persistSoloResult(
     });
 
     // Upsert profile (per-difficulty)
+    const createData: Record<string, any> = {
+      userId,
+      difficulty,
+      totalGamesPlayed: 1,
+      totalWins: 1,
+      bestWpm: qualifies ? wpm : 0,
+      bestWpmAccuracy: qualifies ? accuracy : 0,
+      avgWpm: wpm,
+      bestAccuracy: accuracy,
+      avgAccuracy: accuracy,
+      totalCharsTyped: charsTyped,
+      totalTimeMs: timeMs,
+      currentStreak: 1,
+      bestStreak: 1,
+    };
+
     const profile = await (prisma as any).rmhTypeProfile.upsert({
       where: { userId_difficulty: { userId, difficulty } },
-      create: {
-        userId,
-        difficulty,
-        totalGamesPlayed: 1,
-        totalWins: 1,
-        bestWpm: wpm,
-        avgWpm: wpm,
-        bestAccuracy: accuracy,
-        avgAccuracy: accuracy,
-        totalCharsTyped: charsTyped,
-        totalTimeMs: timeMs,
-        currentStreak: 1,
-        bestStreak: 1,
-      },
+      create: createData,
       update: {
         totalGamesPlayed: { increment: 1 },
         totalCharsTyped: { increment: charsTyped },
@@ -898,7 +909,10 @@ async function persistSoloResult(
 
     // Manual best-of and average updates
     const updates: Record<string, any> = {};
-    if (wpm > profile.bestWpm) updates.bestWpm = wpm;
+    if (qualifies && wpm > profile.bestWpm) {
+      updates.bestWpm = wpm;
+      updates.bestWpmAccuracy = accuracy;
+    }
     if (accuracy > profile.bestAccuracy) updates.bestAccuracy = accuracy;
 
     const n = profile.totalGamesPlayed;
@@ -928,22 +942,26 @@ async function persistSoloResult(
       },
     });
 
-    logger.info({ event: 'rmhtype_solo_persisted', matchId: match.id, userId });
+    logger.info({ event: 'rmhtype_solo_persisted', matchId: match.id, userId, scorePosted: qualifies });
+    return qualifies;
   } catch (err) {
     logger.error({ event: 'rmhtype_solo_persist_error', userId, error: String(err) });
+    return false;
   }
 }
 
 // ─── Leaderboard Query ───────────────────────────────────────
 
 async function fetchLeaderboard(prisma: any, difficulty: string, limit: number) {
+  // Fetch extra to account for reordering by formula
   const profiles: any[] = await prisma.rmhTypeProfile.findMany({
-    where: { difficulty },
+    where: { difficulty, bestWpm: { gt: 0 } },
     orderBy: { bestWpm: 'desc' },
-    take: limit,
+    take: limit * 2,
     select: {
       userId: true,
       bestWpm: true,
+      bestWpmAccuracy: true,
       avgWpm: true,
       bestAccuracy: true,
       avgAccuracy: true,
@@ -959,19 +977,25 @@ async function fetchLeaderboard(prisma: any, difficulty: string, limit: number) 
     },
   });
 
-  return profiles.map((p, index) => ({
-    rank: index + 1,
-    userId: p.userId,
-    userName: p.user.name ?? 'Unknown',
-    avatarUrl: p.user.image ?? null,
-    bestWpm: p.bestWpm,
-    avgWpm: p.avgWpm,
-    bestAccuracy: p.bestAccuracy,
-    avgAccuracy: p.avgAccuracy,
-    totalGamesPlayed: p.totalGamesPlayed,
-    totalWins: p.totalWins,
-    bestStreak: p.bestStreak,
-  }));
+  // Rank by formula: bestWpm * (bestWpmAccuracy / 100)
+  return profiles
+    .map((p) => ({
+      userId: p.userId,
+      userName: p.user.name ?? 'Unknown',
+      avatarUrl: p.user.image ?? null,
+      bestWpm: p.bestWpm,
+      bestWpmAccuracy: p.bestWpmAccuracy,
+      leaderboardScore: Math.round(p.bestWpm * (p.bestWpmAccuracy / 100) * 100) / 100,
+      avgWpm: p.avgWpm,
+      bestAccuracy: p.bestAccuracy,
+      avgAccuracy: p.avgAccuracy,
+      totalGamesPlayed: p.totalGamesPlayed,
+      totalWins: p.totalWins,
+      bestStreak: p.bestStreak,
+    }))
+    .sort((a, b) => b.leaderboardScore - a.leaderboardScore)
+    .slice(0, limit)
+    .map((p, index) => ({ ...p, rank: index + 1 }));
 }
 
 // ─── Main Handler Registration ──────────────────────────────
@@ -1572,6 +1596,7 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
               accuracy: Math.round(soloPlayer.accuracy * 100) / 100,
               timeMs: ROUND_TIMEOUT_MS,
               timedOut: true,
+              scorePosted: soloPlayer.accuracy >= MIN_LEADERBOARD_ACCURACY,
             });
             cleanupSoloRoom(soloRoomId, socket);
           }
@@ -1610,16 +1635,17 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
       player.accuracy = 100;
     }
 
-    const result = {
+    const result: Record<string, any> = {
       wpm: Math.round(player.wpm * 100) / 100,
       accuracy: Math.round(player.accuracy * 100) / 100,
       timeMs: player.finishTime,
       timedOut: false,
+      scorePosted: player.accuracy >= MIN_LEADERBOARD_ACCURACY,
     };
 
     socket.emit('rmhtype:solo:result', result);
 
-    // Persist solo result to DB (fire-and-forget)
+    // Persist solo result to DB
     persistSoloResult(
       userId,
       userName,

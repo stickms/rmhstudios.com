@@ -35,7 +35,7 @@ import {
   RT_COMMON_POINTS,
   RT_UNCOMMON_POINTS,
   RT_RARE_POINTS,
-  RT_MULTI_SYLLABLE_MULT,
+  RT_MULTI_SYLLABLE_BONUS,
   RT_SPEED_BONUS,
   RT_INVALID_PENALTY,
 } from '@/lib/rmhbox/constants';
@@ -399,7 +399,6 @@ export class RhymeTimeMinigame extends BaseMinigame {
       }
     }
 
-    const totalPlayers = Object.keys(this.state.submissions).length;
     const playerResults: Record<string, PlayerRoundResult> = {};
 
     for (const [userId, subs] of Object.entries(this.state.submissions)) {
@@ -425,7 +424,7 @@ export class RhymeTimeMinigame extends BaseMinigame {
             invalidReason: sub.invalidReason,
             rarity: null,
             basePoints: penalty,
-            multiSyllableMultiplier: 1,
+            multiSyllableBonus: 0,
             speedBonus: 0,
             totalPoints: penalty,
             submitterCount: 0,
@@ -437,29 +436,30 @@ export class RhymeTimeMinigame extends BaseMinigame {
 
         validCount++;
         const submitterCount = wordSubmitterCounts[sub.word] ?? 1;
-        const rarity = this.computeRarity(submitterCount, totalPlayers);
+        const rarity = this.computeRarity(submitterCount);
         const basePoints = this.getBasePoints(rarity);
         const isMultiSyllable = sub.isMultiSyllable;
-        const enableMultiSyllable = this.getSetting('enableMultiSyllableBonus', RT_MULTI_SYLLABLE_MULT > 1);
-        const multiSyllableMultiplier = (isMultiSyllable && enableMultiSyllable) ? RT_MULTI_SYLLABLE_MULT : 1;
+        const enableMultiSyllable = this.getSetting('enableMultiSyllableBonus', RT_MULTI_SYLLABLE_BONUS > 0);
+        const multiSyllableBonus = (isMultiSyllable && enableMultiSyllable) ? RT_MULTI_SYLLABLE_BONUS : 0;
 
-        // Speed bonus: first submitter of a word
+        // Speed bonus: first submitter of a non-unique word
+        // (when multiple players submit the same word, the first one gets +10)
         const enableSpeed = this.getSetting('enableSpeedBonus', RT_SPEED_BONUS > 0);
         let speedBonus = 0;
-        if (enableSpeed && submitterCount === 1) {
+        if (enableSpeed && submitterCount > 1) {
           const first = wordFirstSubmitter[sub.word];
           if (first && first.userId === userId) {
             speedBonus = RT_SPEED_BONUS;
           }
         }
 
-        const totalPoints = basePoints * multiSyllableMultiplier + speedBonus;
+        const totalPoints = basePoints + multiSyllableBonus + speedBonus;
         breakdown.push({
           word: sub.word,
           isValid: true,
           rarity,
           basePoints,
-          multiSyllableMultiplier,
+          multiSyllableBonus,
           speedBonus,
           totalPoints,
           submitterCount,
@@ -487,13 +487,10 @@ export class RhymeTimeMinigame extends BaseMinigame {
 
   private computeRarity(
     submitterCount: number,
-    totalPlayers: number,
   ): 'common' | 'uncommon' | 'rare' {
-    if (totalPlayers <= 1) return 'rare';
-    const ratio = submitterCount / totalPlayers;
-    if (ratio > 0.5) return 'common';
-    if (ratio > 0.2) return 'uncommon';
-    return 'rare';
+    if (submitterCount <= 1) return 'rare';
+    if (submitterCount === 2) return 'uncommon';
+    return 'common';
   }
 
   private getBasePoints(rarity: 'common' | 'uncommon' | 'rare'): number {

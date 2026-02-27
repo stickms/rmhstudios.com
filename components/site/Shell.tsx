@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { Navbar } from './Navbar';
+import { FeedbackModal } from './FeedbackModal';
 import { games } from '@/lib/games';
 import { apps } from '@/lib/apps';
 
@@ -31,6 +32,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       <main className="pt-20 min-h-screen">
         {children}
       </main>
+      <FeedbackModal />
     </>
   );
 }

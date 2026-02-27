@@ -1,0 +1,103 @@
+---
+title: "When Server-Side Rendering Meets Real-Time Gaming"
+date: "2025-08-18"
+description: "How we use Next.js to serve instant page loads and SEO-friendly marketing alongside fully interactive client-side games."
+tags: ["Technology", "Next.js", "Architecture"]
+---
+
+## The React Evolution
+
+To understand why our architecture looks the way it does, you need to understand how React got here.
+
+**2013-2018: The class component era.** React launched with class-based components, lifecycle methods (`componentDidMount`, `shouldComponentUpdate`), and a mental model centered on objects with state. It was revolutionary for building interactive UIs, but the patterns were verbose and the lifecycle model created subtle bugs.
+
+**2019-2021: The hooks era.** React 16.8 introduced hooks — `useState`, `useEffect`, `useContext` — which allowed functional components to manage state and side effects. Hooks simplified component logic, improved code reuse through custom hooks, and quickly became the standard way to write React. For game UI, hooks were a significant improvement: game state could be managed with `useReducer`, animation loops with `useRef` and `useEffect`, and shared state with context.
+
+**2022-present: The server components era.** React Server Components (RSC), introduced alongside Next.js 13's App Router, fundamentally changed React's rendering model. Components could now run on the server, fetch data directly, and send rendered HTML to the client — with zero JavaScript for components that don't need interactivity.
+
+This last evolution is the one that matters most for our architecture.
+
+## The Hybrid Model
+
+Next.js App Router gives us a **hybrid rendering model** that maps perfectly to the dual nature of a game studio's website:
+
+### Server-side: Marketing, Content, and Discovery
+
+Most of what visitors encounter on rmhstudios.com is static or near-static content: game descriptions, blog posts (like this one), changelogs, documentation, the studio's about page. This content has two requirements:
+
+1. **It needs to load instantly.** A player clicking a link to one of our games should see content in milliseconds, not seconds. Server-side rendering delivers fully formed HTML on the first response — no loading spinners, no layout shift, no waiting for JavaScript to hydrate before content appears.
+
+2. **It needs to be indexable.** Search engines are how new players discover our games. When someone searches "browser party games" or "online rhythm game," we need our pages to appear in results. Server-rendered HTML is immediately readable by search crawlers. Client-rendered JavaScript SPAs, despite improvements in Google's rendering pipeline, still suffer from indexing delays and inconsistencies.
+
+With the App Router, our marketing pages, game landing pages, and blog content are **React Server Components by default**. They render on the server, ship minimal JavaScript, and deliver fast, SEO-friendly pages.
+
+### Client-side: The Games Themselves
+
+Games are the opposite of static content. They require:
+
+- **Real-time state management** — positions, scores, timers, physics state updating at 60fps
+- **Direct DOM/Canvas/WebGL manipulation** — rendering that bypasses React's virtual DOM for performance
+- **Browser API access** — Web Audio API, WebSocket connections, gamepad input, pointer lock, fullscreen
+- **Low-latency input handling** — a 16ms frame budget leaves no room for server round-trips
+
+Our games are `"use client"` components. They hydrate on the client, establish their own rendering loops (typically via `requestAnimationFrame`), manage their own state (often outside React entirely, in plain TypeScript state machines), and communicate with game servers over WebSockets.
+
+## The Architecture in Practice
+
+Here's how a typical player journey flows through our architecture:
+
+**1. Discovery (SSR)**
+A player finds us through Google, social media, or a shared link. The initial page load is server-rendered HTML — fast, lightweight, and content-rich. The page includes the game's description, instructions, screenshots, and a prominent "Play" button.
+
+**2. Transition (Hydration)**
+When the player clicks "Play," the client-side game component hydrates. This is where React's selective hydration shines — we don't hydrate the entire page, just the game container. The marketing content above and below the game remains static HTML.
+
+**3. Gameplay (Client-side)**
+The game takes over its container. It initializes its own rendering pipeline (Canvas 2D, WebGL via Three.js, or DOM-based depending on the game), connects to game servers if multiplayer, and runs entirely on the client. React is still present for UI overlays — scoreboards, menus, chat — but the game loop itself is framework-independent.
+
+**4. Return (SSR again)**
+When the player finishes and navigates to another page — another game, a blog post, the homepage — they get another server-rendered page load. The experience feels like a fast, modern website punctuated by rich interactive experiences.
+
+## The Technical Details That Matter
+
+### Streaming and Suspense
+
+Next.js App Router supports **React Suspense** for streaming server-rendered content. We use this to deliver page shells immediately while slower data (leaderboard rankings, player profiles, dynamic content) streams in. The player sees a complete layout instantly, with data-dependent sections filling in within milliseconds.
+
+### Route Groups and Layouts
+
+We organize our codebase using Next.js **route groups** to separate marketing layouts from game layouts. Marketing pages use a layout with navigation, footer, and SEO metadata. Game pages use a minimal layout — no navigation chrome during gameplay, just the game and essential controls.
+
+### Static Generation for Content
+
+Blog posts and documentation use **Static Site Generation (SSG)** via `generateStaticParams`. These pages are built at deploy time and served from the CDN edge, achieving sub-50ms time-to-first-byte globally. The MDX content pipeline renders markdown with custom components — code blocks with syntax highlighting, embedded demos, interactive examples — all at build time.
+
+### Dynamic Routes for Game Rooms
+
+Multiplayer games like RMHbox use **dynamic routes** (`/play/rmhbox/[roomId]`) that combine server-rendered lobby UI with client-side game state. The room page is server-rendered with the room's metadata (game mode, player count, settings), then hydrates to establish a WebSocket connection and join the live game.
+
+## SEO: Why It Matters More Than You Think
+
+For a browser game studio, **SEO is distribution**. We don't have a presence on Steam. We're not in the App Store. Our games are discovered through search engines, social sharing, and direct links.
+
+Server-side rendering gives us:
+
+- **Immediate content indexing.** Google receives fully rendered HTML with proper heading hierarchy, meta descriptions, structured data, and internal links.
+- **Fast Core Web Vitals.** Largest Contentful Paint (LCP), First Input Delay (FID), and Cumulative Layout Shift (CLS) — Google's ranking signals for page experience — are all significantly better with SSR than client-side rendering.
+- **Social media previews.** When someone shares a link to one of our games on Discord, Twitter, or iMessage, the Open Graph tags in our server-rendered HTML generate rich previews with titles, descriptions, and images. This matters enormously for viral sharing.
+
+## The Tradeoffs
+
+We're honest about the costs of this architecture:
+
+- **Complexity.** Maintaining a clear boundary between server and client components requires discipline. Every time we add a feature, we need to ask: does this run on the server, the client, or both? The `"use client"` directive is simple in concept but nuanced in practice.
+- **Build times.** Static generation of hundreds of pages, combined with MDX processing and image optimization, means our builds aren't instant. We've invested in incremental static regeneration and selective rebuilds to keep deployment times reasonable.
+- **Mental model overhead.** New developers joining the team need to understand both server-side and client-side patterns, plus the boundary between them. This is a real onboarding cost.
+
+## Why We're Committed to This Approach
+
+Despite the complexity, the hybrid model is the right architecture for what we're building. We're not just shipping games — we're shipping a **platform** where games live alongside content, community features, and tools.
+
+The web's unique advantage is that a URL can be anything: a blog post, a multiplayer game lobby, a study room, a typing competition. Our architecture lets each of those things use the rendering model that suits it best, all within a single, coherent application.
+
+Server-side rendering for content. Client-side rendering for games. The best of both worlds, delivered through a browser.

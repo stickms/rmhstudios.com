@@ -1,0 +1,98 @@
+---
+title: "Building Leaderboards Players Can Trust"
+date: "2024-11-26"
+description: "Server-validated scoring, rate limiting, and anti-cheat philosophy — how we keep competition honest."
+tags: ["Technology", "Competitive"]
+---
+
+## The Problem with Leaderboards
+
+A leaderboard is a promise: **the person at the top earned their place.** When that promise is broken — when cheaters, exploiters, or bots dominate the rankings — the entire competitive ecosystem collapses. Legitimate players lose motivation, competitive integrity evaporates, and the leaderboard becomes a monument to who cheated most effectively rather than who played best.
+
+This problem is endemic in gaming, and competitive browser games face it in an especially acute form because the client is inherently untrustworthy. But before we discuss our solutions, let's look at why this matters.
+
+## Cheating Scandals and Trust Erosion
+
+Competitive gaming has been rocked by cheating controversies that illustrate how fragile leaderboard trust can be.
+
+### The Minecraft Speedrun Controversy
+
+In December 2020, the Minecraft speedrun moderation team published a detailed statistical analysis alleging that popular streamer Dream had manipulated the game's random number generation during his speedruns. The analysis — which calculated the probability of Dream's lucky drops at roughly 1 in 7.5 trillion — sparked months of intense community debate.
+
+Dream initially denied the allegations, then hired a statistician to produce a counter-analysis, then eventually acknowledged in June 2021 that he had inadvertently used a mod that altered drop rates. The episode exposed the fragility of trust in competitive communities: once suspicion takes hold, even legitimate achievements are viewed skeptically. The Minecraft speedrun community spent months relitigating results, and the broader speedrunning community tightened verification standards as a result.
+
+### CS2 and the Perpetual Arms Race
+
+**Counter-Strike's** relationship with cheating is a decades-long saga. Despite Valve's VAC (Valve Anti-Cheat) system and the more aggressive Vanguard anti-cheat introduced with CS2, cheating remains pervasive at all levels of play. Professional matches have been tainted by coaching bugs and alleged aim assistance. Ranked matchmaking is a constant battle against wallhacks and aimbots.
+
+The CS2 case illustrates an important truth: **anti-cheat is not a problem you solve once.** It's an ongoing arms race between cheat developers and anti-cheat engineers. Every detection method is eventually circumvented, requiring new detection methods, which are circumvented in turn. For a small studio, engaging in this arms race with the same tools (kernel-level anti-cheat, hardware bans) isn't feasible. We need a different approach.
+
+## Our Anti-Cheat Philosophy
+
+RMH Studios takes a fundamentally different approach to competitive integrity, built on three principles:
+
+### Principle 1: The Server Is the Authority
+
+In our competitive games — RMH Type, the scored minigames in RMHbox, and our daily challenge games like RMHdle and RMH Connections — **the server validates every score.** The client never self-reports a result that the server trusts without verification.
+
+For RMH Type, this means the server sends the typing prompt, records keystroke timestamps, and calculates words-per-minute and accuracy server-side. A modified client that sends fake "I typed 200 WPM" messages is ignored because the server independently verifies the timing data against the text that was actually presented.
+
+For RMHbox minigames, game logic runs authoritatively on the server. The client sends inputs; the server processes those inputs, updates the game state, and calculates scores. The client is a display layer and input device — it has no authority over the competitive outcome.
+
+This is the single most important architectural decision we've made regarding leaderboard integrity: **never trust the client.** Not with scores, not with timing, not with game state. The client is a window into the game, not the game itself.
+
+### Principle 2: Statistical Anomaly Detection
+
+Even with server-validated scoring, sophisticated cheating is possible. A bot could send perfectly timed keystrokes to RMH Type, achieving superhuman typing speeds with inputs that are technically valid from the server's perspective.
+
+We address this through statistical analysis:
+
+- **Input pattern analysis.** Human typing has characteristic patterns: inter-key intervals follow predictable distributions with natural variation. Bot inputs tend to be unnaturally consistent or follow mechanical patterns that diverge from human baselines.
+- **Performance distribution monitoring.** We track score distributions across the player population. Scores that fall outside statistical norms are flagged for review, not automatically removed — false positives are their own form of injustice.
+- **Session behavior analysis.** Play patterns, session lengths, and performance trajectories all provide signal. A player who jumps from average to world-record overnight with no improvement curve warrants investigation.
+
+### Principle 3: Rate Limiting and Abuse Prevention
+
+Beyond cheating on individual scores, leaderboard abuse can take the form of spam submissions, automated grinding, and denial-of-service against the scoring system itself.
+
+We implement rate limiting at multiple levels:
+
+- **Submission rate limits** — a maximum number of score submissions per time window, tuned to each game's natural play pace
+- **Session validation** — scores are tied to authenticated sessions with verifiable play duration
+- **Replay validation** — for critical scores, we can reconstruct the game from the input log and verify the outcome matches the submitted score
+
+## The Transparency Dimension
+
+Here's where our anti-cheat philosophy connects to our broader commitment to honesty: **we tell players how our systems work.**
+
+Many anti-cheat systems rely on security through obscurity — the assumption that if cheaters don't know how detection works, they can't circumvent it. There's validity to this approach for complex kernel-level anti-cheat in AAA games. But for our server-validated model, transparency actually strengthens the system.
+
+When players know that scores are server-validated, they trust the leaderboard more. When they know that statistical anomalies are monitored, they trust that even sophisticated cheating will be caught. When they know that the server — not their browser — is the authority on their score, they understand that the leaderboard reflects genuine achievement.
+
+We're not publishing our exact detection thresholds (that would be handing cheaters a specification to meet), but we're transparent about the architecture and the principles. **Players deserve to know why they can trust the numbers they're competing against.**
+
+## Honesty as a Competitive Advantage
+
+In a market full of leaderboards that players have learned to distrust, **a leaderboard that demonstrably works is a competitive advantage.** Players who care about legitimate competition will gravitate toward platforms where they know their achievements are real and their competitors earned their rankings.
+
+This is especially true for our competitive products:
+
+- **RMH Type** attracts players who care about their genuine typing speed — they want to know their 120 WPM is a real 120 WPM, not an inflated number from a system that can be easily gamed
+- **RMHdle and RMH Connections** as daily challenge games depend on the integrity of completion statistics and streaks
+- **RMHbox** tournament modes need leaderboards that participants trust, because competitive party games are only fun when the competition is fair
+
+## What We Can't Prevent (And How We're Honest About It)
+
+No anti-cheat system is perfect, and we want to be transparent about the limitations of ours.
+
+**We can't prevent a human player from having someone else play on their account.** Account sharing is a social engineering problem, not a technical one. We mitigate it through session-based statistics rather than purely cumulative rankings, but we can't fully solve it.
+
+**We can't guarantee detection of highly sophisticated bots** that perfectly mimic human input patterns. Our statistical detection improves over time as we gather more data, but a sufficiently advanced bot that emulates human variability might evade detection. This is honest, and we'd rather acknowledge it than pretend our systems are infallible.
+
+**We can't prevent legitimate players from being falsely flagged.** Any statistical threshold produces false positives. Our review process includes human judgment, not just automated enforcement, to minimize this — but we acknowledge that imperfect detection is a real cost.
+
+## The Standard We Set
+
+Leaderboard integrity is a microcosm of everything RMH Studios believes about building games: **systems should be honest, transparent, and designed to serve players rather than exploit them.** A leaderboard that players can trust is a small thing in the grand scheme of game development. But small things, done with integrity, compound into something larger.
+
+Our leaderboards aren't just rankings. They're a promise. And we intend to keep it.
