@@ -23,9 +23,10 @@ interface AuctionPanelProps {
   drawings: AuctionDrawing[];
   currency: number;
   onBid: (drawingId: string, amount: number) => void;
+  disabled?: boolean;
 }
 
-export default function AuctionPanel({ drawings, currency, onBid }: AuctionPanelProps) {
+export default function AuctionPanel({ drawings, currency, onBid, disabled }: AuctionPanelProps) {
   if (drawings.length === 0) {
     return (
       <p className="text-sm text-(--rmhbox-text-muted)">No drawings available.</p>
@@ -51,6 +52,7 @@ export default function AuctionPanel({ drawings, currency, onBid }: AuctionPanel
               currentBid={drawing.myBidAmount}
               currency={currency}
               onBid={(amount) => onBid(drawing.drawingId, amount)}
+              disabled={disabled}
             />
           )}
         </div>

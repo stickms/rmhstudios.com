@@ -57,8 +57,8 @@ export default function DrawingCanvas({
     if (!svg) return { x: 0, y: 0 };
     const rect = svg.getBoundingClientRect();
     return {
-      x: ((e.clientX - rect.left) / rect.width) * 300,
-      y: ((e.clientY - rect.top) / rect.height) * 300,
+      x: Math.max(0, Math.min(300, ((e.clientX - rect.left) / rect.width) * 300)),
+      y: Math.max(0, Math.min(300, ((e.clientY - rect.top) / rect.height) * 300)),
     };
   }, []);
 

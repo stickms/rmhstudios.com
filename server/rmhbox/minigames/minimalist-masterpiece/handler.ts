@@ -94,6 +94,7 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
       marketValues: new Map(),
       auctionWinners: new Map(),
       rankings: null,
+      bidSubmissions: new Set(),
       cumulativeScores,
       phaseStartedAt: now,
       phaseEndsAt: now,
@@ -158,6 +159,7 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
     this.state.marketValues = new Map();
     this.state.auctionWinners = new Map();
     this.state.rankings = null;
+    this.state.bidSubmissions = new Set();
 
     const now = Date.now();
     this.state.phase = 'PROMPT_REVEAL';
@@ -463,6 +465,9 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
       case 'PLACE_BID':
         this.handlePlaceBid(userId, data);
         break;
+      case 'SUBMIT_BIDS':
+        this.handleSubmitBids(userId);
+        break;
     }
   }
 
@@ -549,6 +554,7 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
   private handlePlaceBid(userId: string, data: unknown): void {
     if (this.state.phase !== 'AUCTION') return;
     if (!this.context.players.has(userId)) return;
+    if (this.state.bidSubmissions.has(userId)) return;
 
     const parsed = PlaceBidSchema.safeParse(data);
     if (!parsed.success) {
@@ -660,6 +666,41 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
       drawingId,
       currentBidTotal: bidInfo.totalValue,
     });
+  }
+
+  private handleSubmitBids(userId: string): void {
+    if (this.state.phase !== 'AUCTION') return;
+    if (!this.context.players.has(userId)) return;
+    if (this.state.bidSubmissions.has(userId)) return;
+
+    this.state.bidSubmissions.add(userId);
+
+    logger.info({
+      event: 'mm:bids_submitted',
+      lobbyId: this.context.lobbyId,
+      userId,
+    });
+
+    // Confirm to the submitter
+    this.context.sendToPlayer(userId, 'rmhbox:game:action', {
+      type: 'MM_BID_SUBMITTED',
+    });
+
+    // Broadcast submission count
+    const submittedCount = this.state.bidSubmissions.size;
+    const totalPlayers = this.context.players.size;
+
+    this.broadcastGameAction({
+      type: 'MM_BID_SUBMIT_STATUS',
+      submitted: submittedCount,
+      total: totalPlayers,
+    });
+
+    // End auction early if all players submitted
+    if (submittedCount >= totalPlayers) {
+      this.clearPhaseTimer();
+      this.endAuctionPhase();
+    }
   }
 
   // ─── State Masking ───────────────────────────────────────────

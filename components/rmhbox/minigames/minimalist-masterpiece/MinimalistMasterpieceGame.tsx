@@ -102,6 +102,8 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
   const [rankings, setRankings] = useState<MMRanking[]>([]);
   const [scoreBreakdowns, setScoreBreakdowns] = useState<PlayerScoreBreakdown[]>([]);
   const [timeRemaining, setTimeRemaining] = useState(0);
+  const [bidSubmitted, setBidSubmitted] = useState(false);
+  const [bidSubmitStatus, setBidSubmitStatus] = useState<{ submitted: number; total: number } | null>(null);
 
   // Track spectator status
   const isSpectator = useRMHboxStore((s) => s.lobby?.myRole === 'spectator');
@@ -170,6 +172,8 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
           setAuctionDrawings(data.drawings as AuctionDrawing[]);
           // Server sends 'currency', client previously expected 'startingCurrency'
           setCurrency((data.currency ?? data.startingCurrency) as number);
+          setBidSubmitted(false);
+          setBidSubmitStatus(null);
           setPhase('AUCTION');
           playSound('goFanfare');
           break;
@@ -212,6 +216,18 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
                 : d,
             ),
           );
+          break;
+        }
+        case 'MM_BID_SUBMITTED': {
+          setBidSubmitted(true);
+          playSound('click');
+          break;
+        }
+        case 'MM_BID_SUBMIT_STATUS': {
+          setBidSubmitStatus({
+            submitted: data.submitted as number,
+            total: data.total as number,
+          });
           break;
         }
         case 'MM_RESULTS': {
@@ -308,6 +324,11 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
     if (isSpectator) return;
     emitGameInput('PLACE_BID', { drawingId, amount });
   }, [isSpectator]);
+
+  const handleSubmitBids = useCallback(() => {
+    if (isSpectator || bidSubmitted) return;
+    emitGameInput('SUBMIT_BIDS', {});
+  }, [isSpectator, bidSubmitted]);
 
   // Render based on phase
   switch (phase) {
@@ -428,12 +449,31 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
           <h2 className="text-xl font-bold text-(--rmhbox-text)">Auction Phase</h2>
           <p className="text-sm text-(--rmhbox-text-muted)">
             Remaining: {currency} coins • Time: {timeRemaining}s
+            {bidSubmitStatus && (
+              <span className="ml-2">
+                • {bidSubmitStatus.submitted}/{bidSubmitStatus.total} submitted
+              </span>
+            )}
           </p>
           <AuctionPanel
             drawings={auctionDrawings}
             currency={currency}
             onBid={handlePlaceBid}
+            disabled={bidSubmitted}
           />
+          {!isSpectator && (
+            <button
+              onClick={handleSubmitBids}
+              disabled={bidSubmitted}
+              className={`mt-2 rounded-lg px-6 py-2 text-sm font-semibold transition-colors ${
+                bidSubmitted
+                  ? 'bg-(--rmhbox-border) text-(--rmhbox-text-muted) cursor-not-allowed'
+                  : 'bg-(--rmhbox-accent) text-white hover:opacity-90'
+              }`}
+            >
+              {bidSubmitted ? 'Bids Submitted ✓' : 'Submit Bids'}
+            </button>
+          )}
         </div>
       );
 
