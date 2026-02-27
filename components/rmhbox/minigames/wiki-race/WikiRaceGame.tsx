@@ -25,9 +25,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Flag } from 'lucide-react';
-import { getSocket, emit } from '@/lib/rmhbox/socket';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
-import { S2C, C2S } from '@/lib/rmhbox/events';
+import { emitGameInput, useGameSocket, extractTimerTick } from '@/lib/rmhbox/minigame-client';
+import { playSound } from '@/lib/rmhbox/audio';
 import ArticleReveal from './ArticleReveal';
 import WikiFrame from './WikiFrame';
 import BreadcrumbTrail from './BreadcrumbTrail';
@@ -61,13 +61,6 @@ interface WRPlayerResult {
   score: number;
 }
 
-/** Helper: emit a game input action */
-function emitGameInput(action: string, data: unknown = {}) {
-  const lobbyId = useRMHboxStore.getState().lobby?.lobbyId;
-  if (!lobbyId) return;
-  emit(C2S.GAME_INPUT, { lobbyId, action, data });
-}
-
 interface WikiRaceGameProps {
   playerId: string;
   playerName: string;
@@ -91,7 +84,9 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
   const [hasFinished, setHasFinished] = useState(false);
   const [finishRank, setFinishRank] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
-  const [isSpectator, setIsSpectator] = useState(false);
+
+  // Track spectator status from the store (not from snapshot data)
+  const isSpectator = useRMHboxStore((s) => s.lobby?.myRole === 'spectator');
 
   // Other players
   const [otherPlayers, setOtherPlayers] = useState<Record<string, OtherPlayer>>({});
@@ -124,6 +119,7 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
           setResults(null);
           setArticleHtml('');
           setOtherPlayers({});
+          playSound('swoosh');
           break;
         }
         case 'WR_NAVIGATION_START': {
@@ -184,17 +180,20 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
               },
             }));
           }
+          playSound('scoreDing');
           break;
         }
         case 'WR_RESULTS': {
           setPhase('RESULTS');
           setResults(data.playerResults as Record<string, WRPlayerResult>);
+          playSound('victoryFanfare');
           break;
         }
         case 'WR_NAVIGATE_REJECTED': {
           setIsLoading(false);
           setErrorMsg(data.reason as string);
           globalThis.setTimeout(() => setErrorMsg(null), 2000);
+          playSound('buzzer');
           break;
         }
         case 'TIMER_START': {
@@ -205,9 +204,11 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
           break;
         }
         case 'TIMER_TICK': {
-          const pl = data.payload as Record<string, unknown> | undefined;
-          const remaining = (pl?.timeRemaining ?? data.timeRemaining) as number;
-          if (typeof remaining === 'number') setTimeRemaining(remaining);
+          const remaining = extractTimerTick(data);
+          if (remaining !== undefined) {
+            setTimeRemaining(remaining);
+            if (remaining <= 5 && remaining > 0) playSound('countdownBeep');
+          }
           break;
         }
       }
@@ -215,7 +216,7 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
     [playerId],
   );
 
-  /** Handle full state snapshot (reconnection) */
+  /** Handle full state snapshot (reconnection / spectator player switch) */
   const handleStateSnapshot = useCallback(
     (data: Record<string, unknown>) => {
       setPhase(data.phase as Phase);
@@ -227,13 +228,15 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
       const myState = data.myState as Record<string, unknown> | null;
       if (myState) {
         setCurrentTitle(myState.currentArticleTitle as string);
+        // Restore article HTML from the snapshot so the page renders
+        // immediately on reconnect without waiting for an async fetch.
+        if (myState.currentArticleHtml) {
+          setArticleHtml(myState.currentArticleHtml as string);
+        }
         setPath(myState.path as string[]);
         setClickCount(myState.clickCount as number);
         setHasFinished(myState.hasFinished as boolean);
         setFinishRank(myState.finishRank as number);
-        setIsSpectator(false);
-      } else {
-        setIsSpectator(true);
       }
 
       const other = data.otherPlayers as Record<string, OtherPlayer> | undefined;
@@ -242,28 +245,11 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
     [],
   );
 
-  // Subscribe to socket events
-  useEffect(() => {
-    const socket = getSocket();
-    if (!socket) return;
-    socket.on(S2C.GAME_ACTION, handleGameAction);
-    socket.on(S2C.GAME_STATE_SNAPSHOT, handleStateSnapshot);
-    return () => {
-      socket.off(S2C.GAME_ACTION, handleGameAction);
-      socket.off(S2C.GAME_STATE_SNAPSHOT, handleStateSnapshot);
-    };
-  }, [handleGameAction, handleStateSnapshot]);
-
-  // Hydrate from the Zustand gameState snapshot on mount.
-  // This fixes the race condition where the server broadcasts initial game state
-  // before the lazy-loaded component has mounted and subscribed to socket events.
-  useEffect(() => {
-    const snapshot = useRMHboxStore.getState().gameState;
-    if (snapshot && Object.keys(snapshot).length > 0 && snapshot.phase) {
-      handleStateSnapshot(snapshot as Record<string, unknown>);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // Subscribe to socket events and hydrate from store on mount
+  useGameSocket({
+    onGameAction: handleGameAction,
+    onStateSnapshot: handleStateSnapshot,
+  });
 
   // ─── Action Handlers ────────────────────────────────────────────
 
@@ -271,6 +257,7 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
     if (hasFinished || isSpectator) return;
     setIsLoading(true);
     emitGameInput('NAVIGATE', { targetTitle });
+    playSound('click');
   }, [hasFinished, isSpectator]);
 
   const handleGoBack = useCallback((targetTitle: string, pathIndex: number) => {

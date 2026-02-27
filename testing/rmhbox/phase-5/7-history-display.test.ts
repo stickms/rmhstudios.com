@@ -243,9 +243,19 @@ describe('Undercover Agent History Display (§2.17)', () => {
 
   it('should have correct filterable fields', () => {
     expect(config.filterableFields).toHaveLength(3);
-    expect(config.filterableFields.map((f) => f.key)).toEqual(['winCondition', 'team', 'role']);
+    expect(config.filterableFields.map((f) => f.key)).toEqual(['winCondition', 'winningTeam', 'startingTeam']);
     expect(config.filterableFields[0].type).toBe('select');
-    expect(config.filterableFields[0].options!(log)).toEqual(['all_found', 'assassin', 'stalemate']);
+    expect(config.filterableFields[0].options!(log)).toEqual(['all_found']);
+  });
+
+  it('should extract winning team from game log for filter', () => {
+    const teamField = config.filterableFields.find((f) => f.key === 'winningTeam')!;
+    expect(teamField.options!(log)).toEqual(['A']);
+  });
+
+  it('should extract starting team from game log for filter', () => {
+    const startField = config.filterableFields.find((f) => f.key === 'startingTeam')!;
+    expect(startField.options!(log)).toEqual(['A']);
   });
 });
 
@@ -314,18 +324,51 @@ describe('Wiki-Race History Display (§4.17)', () => {
     expect(extracted).toEqual(['Cat', 'Moon']);
   });
 
-  it('should generate correct summary', () => {
+  it('should generate correct summary for single round', () => {
     const summary = config.getSummary(log);
     expect(summary).toBe('Cat → Moon');
   });
 
+  it('should generate correct summary for multiple rounds', () => {
+    const multiRoundLog: GameLog = {
+      ...log,
+      initialState: { rounds: 2, timeLimitSeconds: 120 },
+      actions: [
+        { seq: 1, timestamp: 0, type: 'round_start', payload: { round: 1, startArticle: 'Cat', targetArticle: 'Moon' } },
+        { seq: 2, timestamp: 120000, type: 'round_end', payload: { round: 1, finishers: [] } },
+        { seq: 3, timestamp: 121000, type: 'round_start', payload: { round: 2, startArticle: 'Python', targetArticle: 'Mathematics' } },
+        { seq: 4, timestamp: 240000, type: 'round_end', payload: { round: 2, finishers: [] } },
+        { seq: 5, timestamp: 240000, type: 'game_end', payload: { finalScores: [] } },
+      ],
+    };
+    const summary = config.getSummary(multiRoundLog);
+    expect(summary).toBe('2 rounds — Cat → Moon, Python → Mathematics');
+  });
+
   it('should have correct filterable fields', () => {
     expect(config.filterableFields).toHaveLength(3);
-    expect(config.filterableFields.map((f) => f.key)).toEqual(['finished', 'pathLength', 'round']);
+    expect(config.filterableFields.map((f) => f.key)).toEqual(['finished', 'pathLength', 'roundCount']);
     expect(config.filterableFields[0].type).toBe('boolean');
     expect(config.filterableFields[1].type).toBe('range');
     expect(config.filterableFields[2].type).toBe('select');
     expect(config.filterableFields[2].options!(log)).toEqual(['1']);
+  });
+
+  it('should return correct round count for multi-round game filter', () => {
+    const multiRoundLog: GameLog = {
+      ...log,
+      actions: [
+        { seq: 1, timestamp: 0, type: 'round_start', payload: { round: 1, startArticle: 'Cat', targetArticle: 'Moon' } },
+        { seq: 2, timestamp: 120000, type: 'round_end', payload: { round: 1, finishers: [] } },
+        { seq: 3, timestamp: 121000, type: 'round_start', payload: { round: 2, startArticle: 'Python', targetArticle: 'Mathematics' } },
+        { seq: 4, timestamp: 240000, type: 'round_end', payload: { round: 2, finishers: [] } },
+        { seq: 5, timestamp: 241000, type: 'round_start', payload: { round: 3, startArticle: 'Sun', targetArticle: 'Moon' } },
+        { seq: 6, timestamp: 360000, type: 'round_end', payload: { round: 3, finishers: [] } },
+        { seq: 7, timestamp: 360000, type: 'game_end', payload: { finalScores: [] } },
+      ],
+    };
+    const roundCountField = config.filterableFields.find((f) => f.key === 'roundCount')!;
+    expect(roundCountField.options!(multiRoundLog)).toEqual(['3']);
   });
 });
 

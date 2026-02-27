@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNotesStore } from '@/lib/store/useNotesStore';
+import { useNotesDataStore } from '@/lib/store/useNotesDataStore';
 import dynamic from 'next/dynamic';
-import { Note, NoteFolder, NoteTag, NoteReminder } from './types';
+import { Note } from './types';
 import { toast } from 'sonner';
 
 // Always-visible panels: static imports are fine (lightweight)
@@ -21,18 +22,24 @@ const MoodPanel = dynamic(() => import('./MoodPanel'), { ssr: false });
 export default function NotesApp() {
   const { isDarkMode, selectedView, selectedNoteId, sidebarOpen, searchOpen, quickCaptureOpen, toggleSearch, toggleQuickCapture, selectNote } = useNotesStore();
 
+  const dataStore = useNotesDataStore();
+
+  // Wait for client mount to avoid hydration mismatch (persisted stores differ server vs client)
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   // Determine effective dark mode
   const [systemDark, setSystemDark] = useState(false);
   const effectiveDark = isDarkMode === null ? systemDark : isDarkMode;
 
-  const [notes, setNotes] = useState<Note[]>([]);
-  const [folders, setFolders] = useState<NoteFolder[]>([]);
-  const [tags, setTags] = useState<NoteTag[]>([]);
-  const [reminders, setReminders] = useState<NoteReminder[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [authed, setAuthed] = useState<boolean | null>(null);
-
   const appRef = useRef<HTMLDivElement>(null);
+
+  // Derive data from store
+  const { recentNoteIds } = useNotesStore.getState();
+  const notes = dataStore.getFilteredNotes(selectedView, recentNoteIds);
+  const folders = dataStore.folders;
+  const tags = dataStore.tags;
+  const reminders = dataStore.reminders;
 
   // System dark mode
   useEffect(() => {
@@ -42,76 +49,6 @@ export default function NotesApp() {
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
   }, []);
-
-  // Check auth
-  useEffect(() => {
-    fetch('/api/rmh-notes/notes').then((r) => {
-      if (r.status === 401) setAuthed(false);
-      else setAuthed(true);
-    });
-  }, []);
-
-  // Load folders + tags once
-  const loadMeta = useCallback(async () => {
-    const [fRes, tRes] = await Promise.all([
-      fetch('/api/rmh-notes/folders'),
-      fetch('/api/rmh-notes/tags'),
-    ]);
-    if (fRes.ok) setFolders((await fRes.json()).folders);
-    if (tRes.ok) setTags((await tRes.json()).tags);
-  }, []);
-
-  // Load notes based on current view
-  const loadNotes = useCallback(async () => {
-    const { recentNoteIds } = useNotesStore.getState();
-    // Special views that don't need API fetching
-    if (['stats', 'calendar', 'reminders', 'overdue', 'mood'].includes(selectedView)) {
-      setLoading(false);
-      return;
-    }
-    // Recently viewed: fetch specific note IDs
-    if (selectedView === 'recent') {
-      if (recentNoteIds.length === 0) { setNotes([]); setLoading(false); return; }
-      setLoading(true);
-      const res = await fetch('/api/rmh-notes/notes?view=all');
-      if (res.ok) {
-        const all: Note[] = (await res.json()).notes;
-        const ordered = recentNoteIds.map((id) => all.find((n) => n.id === id)).filter(Boolean) as Note[];
-        setNotes(ordered);
-      }
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    try {
-      let url = '/api/rmh-notes/notes?';
-      if (selectedView === 'archive') url += 'view=archive';
-      else if (selectedView === 'trash') url += 'view=trash';
-      else if (selectedView === 'pinned') url += 'view=pinned';
-      else if (selectedView === 'favorites') url += 'view=favorites';
-      else if (selectedView.startsWith('folder:')) url += `folderId=${selectedView.slice(7)}`;
-      else if (selectedView.startsWith('tag:')) url += `tagId=${selectedView.slice(4)}`;
-      else url += 'view=all';
-      const res = await fetch(url);
-      if (res.ok) setNotes((await res.json()).notes);
-    } finally {
-      setLoading(false);
-    }
-  }, [selectedView]);
-
-  // Load reminders (upcoming + overdue count)
-  const loadReminders = useCallback(async () => {
-    const res = await fetch('/api/rmh-notes/reminders?view=all');
-    if (res.ok) setReminders((await res.json()).reminders);
-  }, []);
-
-  useEffect(() => {
-    if (authed) { loadMeta(); loadReminders(); }
-  }, [authed, loadMeta, loadReminders]);
-
-  useEffect(() => {
-    if (authed) loadNotes();
-  }, [authed, loadNotes, selectedView]);
 
   // Global keyboard shortcuts
   useEffect(() => {
@@ -155,51 +92,33 @@ export default function NotesApp() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const createNote = useCallback(async (overrides?: Partial<{ title: string; folderId: string; templateId: string }>) => {
+  const createNote = useCallback((overrides?: Partial<{ title: string; folderId: string; templateId: string }>) => {
     const folderId = selectedView.startsWith('folder:') ? selectedView.slice(7) : undefined;
-    const res = await fetch('/api/rmh-notes/notes', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ folderId, ...overrides }),
-    });
-    if (res.ok) {
-      const { note } = await res.json();
-      setNotes((prev) => [note, ...prev]);
-      selectNote(note.id);
-    }
-  }, [selectedView, selectNote]);
+    const note = dataStore.createNote({ folderId, ...overrides });
+    selectNote(note.id);
+  }, [selectedView, selectNote, dataStore]);
 
   const updateNote = useCallback((updated: Note) => {
-    setNotes((prev) => prev.map((n) => (n.id === updated.id ? updated : n)));
-  }, []);
+    dataStore.updateNote(updated.id, updated);
+  }, [dataStore]);
 
   const deleteNote = useCallback((id: string) => {
-    setNotes((prev) => prev.filter((n) => n.id !== id));
     if (selectedNoteId === id) selectNote(null);
   }, [selectedNoteId, selectNote]);
 
   const refreshAll = useCallback(() => {
-    loadNotes();
-    loadMeta();
-    loadReminders();
-  }, [loadNotes, loadMeta, loadReminders]);
+    // No-op: data is reactive from the store
+  }, []);
 
-  if (authed === false) {
+  const selectedNote = notes.find((n) => n.id === selectedNoteId) ?? null;
+
+  if (!mounted) {
     return (
-      <div className="notes-theme flex items-center justify-center h-screen" style={{ background: 'var(--notes-bg)', color: 'var(--notes-text)' }}>
-        <div className="text-center space-y-4">
-          <div className="text-5xl">📓</div>
-          <h1 className="text-2xl font-bold">RMHNotes</h1>
-          <p style={{ color: 'var(--notes-text-muted)' }}>Please sign in to access your notes.</p>
-          <a href="/login" className="inline-block px-5 py-2.5 rounded-lg font-semibold text-sm" style={{ background: 'var(--notes-accent)', color: 'var(--notes-accent-fg)' }}>
-            Sign in
-          </a>
-        </div>
+      <div className="notes-theme flex h-screen items-center justify-center" style={{ background: 'var(--notes-bg)', color: 'var(--notes-text)' }}>
+        <div className="animate-pulse text-sm opacity-50">Loading notes...</div>
       </div>
     );
   }
-
-  const selectedNote = notes.find((n) => n.id === selectedNoteId) ?? null;
 
   return (
     <div
@@ -213,8 +132,8 @@ export default function NotesApp() {
           folders={folders}
           tags={tags}
           reminders={reminders}
-          onFoldersChange={loadMeta}
-          onTagsChange={loadMeta}
+          onFoldersChange={refreshAll}
+          onTagsChange={refreshAll}
           onCreateNote={createNote}
           overdueCount={reminders.filter((r) => !r.isCompleted && new Date(r.dueAt) < new Date()).length}
         />
@@ -223,7 +142,7 @@ export default function NotesApp() {
       {/* Note List */}
       <NotesList
         notes={notes}
-        loading={loading}
+        loading={false}
         selectedNoteId={selectedNoteId}
         onSelect={selectNote}
         onCreateNote={createNote}
@@ -268,16 +187,8 @@ export default function NotesApp() {
       {quickCaptureOpen && (
         <QuickCaptureModal
           onSave={async (title, content) => {
-            const res = await fetch('/api/rmh-notes/notes', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ title, content }),
-            });
-            if (res.ok) {
-              const { note } = await res.json();
-              setNotes((prev) => [note, ...prev]);
-              toast.success('Note captured!');
-            }
+            dataStore.createNote({ title, content });
+            toast.success('Note captured!');
             toggleQuickCapture();
           }}
           onClose={toggleQuickCapture}

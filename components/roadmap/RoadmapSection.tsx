@@ -1,10 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ProximityText } from "@/components/ui/ProximityText";
-import { PulsatingOrb } from "@/components/ui/PulsatingOrb";
-
-type YearAccent = "var(--neon-cyan)" | "var(--neon-purple)" | "var(--neon-pink)";
 
 type Milestone = {
   title: string;
@@ -14,7 +10,6 @@ type Milestone = {
 type YearSection = {
   year: string;
   tagline: string;
-  accent: YearAccent;
   milestones: Milestone[];
 };
 
@@ -22,7 +17,6 @@ const roadmap: YearSection[] = [
   {
     year: "Year 1",
     tagline: "Foundation",
-    accent: "var(--neon-cyan)",
     milestones: [
       {
         title: "Web catalog",
@@ -57,7 +51,6 @@ const roadmap: YearSection[] = [
   {
     year: "Year 2",
     tagline: "Scale & variety",
-    accent: "var(--neon-cyan)",
     milestones: [
       {
         title: "Satan's Library",
@@ -88,7 +81,6 @@ const roadmap: YearSection[] = [
   {
     year: "Year 3",
     tagline: "Releases & hub",
-    accent: "var(--neon-purple)",
     milestones: [
       {
         title: "Resoundings of Calamity",
@@ -115,7 +107,6 @@ const roadmap: YearSection[] = [
   {
     year: "Year 4",
     tagline: "Expansion",
-    accent: "var(--neon-purple)",
     milestones: [
       {
         title: "Multiplayer & expansions",
@@ -138,7 +129,6 @@ const roadmap: YearSection[] = [
   {
     year: "Year 5",
     tagline: "Transmedia",
-    accent: "var(--neon-pink)",
     milestones: [
       {
         title: "New IP & genres",
@@ -159,13 +149,12 @@ const roadmap: YearSection[] = [
     ],
   },
   {
-    year: "Years 6–7",
+    year: "Years 6\u20137",
     tagline: "Global reach",
-    accent: "var(--neon-cyan)",
     milestones: [
       {
         title: "Third major IP",
-        body: "Launch a new franchise in an unexplored genre—strategy, open-world, or life-sim—built on proprietary engine tech.",
+        body: "Launch a new franchise in an unexplored genre\u2014strategy, open-world, or life-sim\u2014built on proprietary engine tech.",
       },
       {
         title: "Localization at scale",
@@ -181,14 +170,13 @@ const roadmap: YearSection[] = [
       },
       {
         title: "Developer tools",
-        body: "Open-source internal tools—level editors, procedural generators, narrative scripting frameworks—for the modding community.",
+        body: "Open-source internal tools\u2014level editors, procedural generators, narrative scripting frameworks\u2014for the modding community.",
       },
     ],
   },
   {
-    year: "Years 8–10",
+    year: "Years 8\u201310",
     tagline: "Industry pillar",
-    accent: "var(--neon-purple)",
     milestones: [
       {
         title: "RMH Engine",
@@ -196,7 +184,7 @@ const roadmap: YearSection[] = [
       },
       {
         title: "Education initiative",
-        body: "Launch RMH Academy—free courses, mentorships, and game jams for aspiring developers. Partner with schools worldwide.",
+        body: "Launch RMH Academy\u2014free courses, mentorships, and game jams for aspiring developers. Partner with schools worldwide.",
       },
       {
         title: "Theme park attraction",
@@ -208,7 +196,7 @@ const roadmap: YearSection[] = [
       },
       {
         title: "Publishing arm",
-        body: "Begin publishing select indie titles under the RMH banner—funding, QA, marketing, and distribution support.",
+        body: "Begin publishing select indie titles under the RMH banner\u2014funding, QA, marketing, and distribution support.",
       },
       {
         title: "Live service mastery",
@@ -217,9 +205,8 @@ const roadmap: YearSection[] = [
     ],
   },
   {
-    year: "Years 11–15",
+    year: "Years 11\u201315",
     tagline: "Next frontier",
-    accent: "var(--neon-pink)",
     milestones: [
       {
         title: "Persistent open world",
@@ -248,13 +235,12 @@ const roadmap: YearSection[] = [
     ],
   },
   {
-    year: "Years 16–20",
+    year: "Years 16\u201320",
     tagline: "Beyond gaming",
-    accent: "var(--neon-cyan)",
     milestones: [
       {
         title: "Neural interface R&D",
-        body: "Partner with BCI researchers to prototype thought-assisted controls—accessibility-first, then mainstream.",
+        body: "Partner with BCI researchers to prototype thought-assisted controls\u2014accessibility-first, then mainstream.",
       },
       {
         title: "Digital twin cities",
@@ -266,7 +252,7 @@ const roadmap: YearSection[] = [
       },
       {
         title: "RMH Pictures",
-        body: "Full-fledged film and animation studio producing theatrical releases, streaming series, and shorts—all set in RMH universes.",
+        body: "Full-fledged film and animation studio producing theatrical releases, streaming series, and shorts\u2014all set in RMH universes.",
       },
       {
         title: "Space partnership",
@@ -275,9 +261,8 @@ const roadmap: YearSection[] = [
     ],
   },
   {
-    year: "Years 21–25",
+    year: "Years 21\u201325",
     tagline: "Living worlds",
-    accent: "var(--neon-purple)",
     milestones: [
       {
         title: "Full-dive prototype",
@@ -289,11 +274,11 @@ const roadmap: YearSection[] = [
       },
       {
         title: "AI co-directors",
-        body: "AI systems that dynamically author narrative arcs tailored to each player's history, choices, and emotional state.",
+        body: "AI systems that dynamically author narrative arcs tailored to each player\u2019s history, choices, and emotional state.",
       },
       {
         title: "Cultural institution",
-        body: "RMH works archived in museums and libraries. Academic programs study the studio's worlds as modern mythology.",
+        body: "RMH works archived in museums and libraries. Academic programs study the studio\u2019s worlds as modern mythology.",
       },
       {
         title: "Decentralized governance",
@@ -302,9 +287,8 @@ const roadmap: YearSection[] = [
     ],
   },
   {
-    year: "Years 26–30",
+    year: "Years 26\u201330",
     tagline: "Legacy",
-    accent: "var(--neon-pink)",
     milestones: [
       {
         title: "Consciousness playground",
@@ -324,7 +308,7 @@ const roadmap: YearSection[] = [
       },
       {
         title: "The mission",
-        body: "Thirty years in, the mission is the same: build worlds worth living in. Every pixel, every note, every story—crafted so someone, somewhere, feels less alone.",
+        body: "Thirty years in, the mission is the same: build worlds worth living in. Every pixel, every note, every story\u2014crafted so someone, somewhere, feels less alone.",
       },
     ],
   },
@@ -333,47 +317,36 @@ const roadmap: YearSection[] = [
 function MilestoneCard({
   title,
   body,
-  accent,
   index,
 }: {
   title: string;
   body: string;
-  accent: YearAccent;
   index: number;
 }) {
   return (
     <motion.div
-      className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm p-5 transition-colors hover:border-white/20 hover:bg-white/[0.07]"
+      data-slot="card"
+      className="border border-site-border bg-site-surface backdrop-blur-sm p-5 transition-colors hover:border-site-accent/30 hover:bg-site-surface-hover"
+      style={{
+        borderRadius: "var(--site-radius)",
+        borderWidth: "var(--site-border-width)",
+      }}
       initial={{ opacity: 0, y: 16 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-24px" }}
       transition={{ duration: 0.35, delay: index * 0.04 }}
     >
-      <h3
-        className="text-xs font-bold uppercase tracking-wider mb-2"
-        style={{ color: accent }}
-      >
+      <h3 className="text-xs font-bold uppercase tracking-wider mb-2 text-site-accent">
         {title}
       </h3>
-      <p className="text-white/80 text-sm leading-relaxed">{body}</p>
+      <p className="text-site-text-muted text-sm leading-relaxed">{body}</p>
     </motion.div>
   );
 }
 
 export function RoadmapSection() {
   return (
-    <section className="relative min-h-screen pt-24 pb-32 overflow-hidden bg-background noise">
-      <PulsatingOrb
-        className="absolute top-1/4 right-0 translate-x-1/2 opacity-50"
-        color="cyan"
-        size="lg"
-      />
-      <PulsatingOrb
-        className="absolute bottom-1/3 left-0 -translate-x-1/2 opacity-50"
-        color="purple"
-        size="lg"
-      />
-
+    <section className="relative min-h-screen pt-24 pb-32 overflow-hidden bg-site-bg">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 relative z-10">
         {/* Header */}
         <motion.div
@@ -382,24 +355,22 @@ export function RoadmapSection() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tighter mb-3">
-            <ProximityText maxScale={1.2} proximity={150}>
-              The Road Ahead
-            </ProximityText>
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tighter mb-3 font-(family-name:--site-font-display) text-site-text">
+            The Road <span className="text-site-accent">Ahead</span>
           </h1>
-          <p className="text-lg text-white/70 max-w-xl mx-auto">
+          <p className="text-lg text-site-text-muted max-w-xl mx-auto">
             Games, community, immersive tech, and film—one step at a time.
           </p>
         </motion.div>
 
         {/* Intro */}
         <motion.div
-          className="mb-16 rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm p-5 md:p-6"
+          className="mb-16 rounded-xl border border-site-border bg-site-surface backdrop-blur-sm p-5 md:p-6"
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
         >
-          <p className="text-white/85 text-sm md:text-base leading-relaxed">
+          <p className="text-site-text-muted text-sm md:text-base leading-relaxed">
             We&apos;re an indie studio building rhythm games, deckbuilders,
             narrative horror, and more. Our roadmap isn&apos;t tied to one
             title—we&apos;re growing the catalog, Discord, and new worlds in
@@ -419,17 +390,11 @@ export function RoadmapSection() {
               transition={{ duration: 0.45, delay: sectionIndex * 0.06 }}
             >
               {/* Year label */}
-              <div
-                className="flex flex-wrap items-baseline gap-2 mb-6 pl-4 border-l-2"
-                style={{ borderLeftColor: section.accent }}
-              >
-                <span
-                  className="text-2xl md:text-3xl font-black text-white"
-                  style={{ color: section.accent }}
-                >
+              <div className="flex flex-wrap items-baseline gap-2 mb-6 pl-4 border-l-2 border-site-accent">
+                <span className="text-2xl md:text-3xl font-black text-site-accent">
                   {section.year}
                 </span>
-                <span className="text-white/50 font-mono text-sm uppercase tracking-wider">
+                <span className="text-site-text-dim font-mono text-sm uppercase tracking-wider">
                   {section.tagline}
                 </span>
               </div>
@@ -441,7 +406,6 @@ export function RoadmapSection() {
                     key={`${section.year}-${i}`}
                     title={milestone.title}
                     body={milestone.body}
-                    accent={section.accent}
                     index={i}
                   />
                 ))}
@@ -451,7 +415,7 @@ export function RoadmapSection() {
         </div>
 
         <motion.p
-          className="text-center text-white/40 text-xs mt-14"
+          className="text-center text-site-text-dim text-xs mt-14"
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}

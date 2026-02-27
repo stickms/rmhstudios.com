@@ -1,0 +1,429 @@
+/**
+ * RmhTube — Dedicated Theme Stylesheet
+ *
+ * Provides a fully isolated visual identity for the RmhTube watch party platform.
+ * Includes dark/light theme support, custom scrollbar, and utility animations.
+ */
+
+/* ─── Dark Theme (default) ──────────────────────────────────────── */
+
+.rmhtube-theme {
+  --rmhtube-bg: #1a1b1e;
+  --rmhtube-bg-subtle: #202124;
+  --rmhtube-surface: #27282c;
+  --rmhtube-surface-hover: #313238;
+  --rmhtube-surface-active: #3a3b42;
+  --rmhtube-border: #3a3b42;
+  --rmhtube-border-bright: #4a4b54;
+  --rmhtube-text: #e8e8ec;
+  --rmhtube-text-muted: #9a9ba4;
+  --rmhtube-text-dim: #6a6b74;
+  --rmhtube-accent: #d96e6e;
+  --rmhtube-accent-hover: #c85b5b;
+  --rmhtube-accent-dim: rgba(217, 110, 110, 0.12);
+  --rmhtube-success: #7bc88a;
+  --rmhtube-success-dim: rgba(123, 200, 138, 0.12);
+  --rmhtube-danger: #d98a8a;
+  --rmhtube-danger-dim: rgba(217, 138, 138, 0.12);
+  --rmhtube-warning: #d9c36e;
+  --rmhtube-warning-dim: rgba(217, 195, 110, 0.12);
+  --rmhtube-info: #7cacd4;
+  --rmhtube-info-dim: rgba(124, 172, 212, 0.12);
+  --rmhtube-font-display: 'Nunito', 'Segoe UI', system-ui, sans-serif;
+  --rmhtube-font-body: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --rmhtube-font-mono: 'JetBrains Mono', 'Cascadia Code', monospace;
+  --rmhtube-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+  --rmhtube-radius: 12px;
+  --rmhtube-radius-sm: 8px;
+  --rmhtube-toast-bg: #2a2b30;
+}
+
+/* ─── Light Theme ───────────────────────────────────────────────── */
+
+.rmhtube-theme.rmhtube-light {
+  --rmhtube-bg: #f5f5f7;
+  --rmhtube-bg-subtle: #ededf0;
+  --rmhtube-surface: #ffffff;
+  --rmhtube-surface-hover: #f0f0f4;
+  --rmhtube-surface-active: #e6e6ec;
+  --rmhtube-border: #d4d4da;
+  --rmhtube-border-bright: #bfbfc8;
+  --rmhtube-text: #2a2b30;
+  --rmhtube-text-muted: #6a6b74;
+  --rmhtube-text-dim: #9a9ba4;
+  --rmhtube-accent: #b54f4f;
+  --rmhtube-accent-hover: #a04040;
+  --rmhtube-accent-dim: rgba(181, 79, 79, 0.08);
+  --rmhtube-success: #5aad6a;
+  --rmhtube-success-dim: rgba(90, 173, 106, 0.08);
+  --rmhtube-danger: #c46c6c;
+  --rmhtube-danger-dim: rgba(196, 108, 108, 0.08);
+  --rmhtube-warning: #c4a94a;
+  --rmhtube-warning-dim: rgba(196, 169, 74, 0.08);
+  --rmhtube-info: #5a96c0;
+  --rmhtube-info-dim: rgba(90, 150, 192, 0.08);
+  --rmhtube-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  --rmhtube-toast-bg: #ffffff;
+}
+
+/* ─── Base Styles ───────────────────────────────────────────────── */
+
+.rmhtube-theme {
+  background-color: var(--rmhtube-bg);
+  color: var(--rmhtube-text);
+  font-family: var(--rmhtube-font-body);
+  min-height: 100vh;
+}
+
+/* ─── Scrollbar ─────────────────────────────────────────────────── */
+
+.rmhtube-theme ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.rmhtube-theme ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.rmhtube-theme ::-webkit-scrollbar-thumb {
+  background: var(--rmhtube-border);
+  border-radius: 3px;
+}
+
+.rmhtube-theme ::-webkit-scrollbar-thumb:hover {
+  background: var(--rmhtube-accent);
+}
+
+.rmhtube-theme {
+  scrollbar-width: thin;
+  scrollbar-color: var(--rmhtube-border) transparent;
+}
+
+/* ─── Selection ─────────────────────────────────────────────────── */
+
+.rmhtube-theme ::selection {
+  background: var(--rmhtube-accent-dim);
+  color: var(--rmhtube-text);
+}
+
+/* ─── Focus ─────────────────────────────────────────────────────── */
+
+.rmhtube-theme :focus-visible {
+  outline: 2px solid var(--rmhtube-accent);
+  outline-offset: 2px;
+}
+
+/* ─── Toast Animations ──────────────────────────────────────────── */
+
+.rmhtube-toast-enter {
+  animation: rmhtube-toast-in 250ms ease-out forwards;
+}
+
+.rmhtube-toast-exit {
+  animation: rmhtube-toast-out 200ms ease-in forwards;
+}
+
+@keyframes rmhtube-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes rmhtube-toast-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.95);
+  }
+}
+
+/* ─── Glass Utility ─────────────────────────────────────────────── */
+
+.rmhtube-glass {
+  background: rgba(39, 40, 44, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.rmhtube-theme.rmhtube-light .rmhtube-glass {
+  background: rgba(255, 255, 255, 0.85);
+}
+
+/* ─── Reaction Float Animation ──────────────────────────────────── */
+
+@keyframes rmhtube-reaction-float {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  70% {
+    opacity: 1;
+    transform: translateY(-80px) scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-120px) scale(0.8);
+  }
+}
+
+.rmhtube-reaction-float {
+  animation: rmhtube-reaction-float 2s ease-out forwards;
+}
+
+/* ─── High-Contrast Theme (Phase 5) ───────────────────────────── */
+
+.rmhtube-theme.rmhtube-high-contrast {
+  --rmhtube-bg: #000000;
+  --rmhtube-bg-subtle: #0a0a0a;
+  --rmhtube-surface: #1a1a1a;
+  --rmhtube-surface-hover: #2a2a2a;
+  --rmhtube-surface-active: #3a3a3a;
+  --rmhtube-border: #555555;
+  --rmhtube-border-bright: #777777;
+  --rmhtube-text: #ffffff;
+  --rmhtube-text-muted: #cccccc;
+  --rmhtube-text-dim: #999999;
+  --rmhtube-accent: #ff6b6b;
+  --rmhtube-accent-hover: #ff4f4f;
+  --rmhtube-accent-dim: rgba(255, 107, 107, 0.2);
+  --rmhtube-success: #4cff7c;
+  --rmhtube-success-dim: rgba(76, 255, 124, 0.2);
+  --rmhtube-danger: #ff6b6b;
+  --rmhtube-danger-dim: rgba(255, 107, 107, 0.2);
+  --rmhtube-warning: #ffd93d;
+  --rmhtube-warning-dim: rgba(255, 217, 61, 0.2);
+  --rmhtube-info: #6bc5ff;
+  --rmhtube-info-dim: rgba(107, 197, 255, 0.2);
+  --rmhtube-shadow: 0 4px 24px rgba(0, 0, 0, 0.6);
+  --rmhtube-toast-bg: #1a1a1a;
+}
+
+.rmhtube-theme.rmhtube-high-contrast :focus-visible {
+  outline: 3px solid var(--rmhtube-accent);
+  outline-offset: 2px;
+}
+
+/* ─── Layout Density (Phase 5) ─────────────────────────────────── */
+
+.rmhtube-theme {
+  --rmhtube-density-gap: 0.5rem;
+  --rmhtube-density-padding: 0.75rem;
+  --rmhtube-density-text: 0.875rem;
+}
+
+.rmhtube-theme.rmhtube-compact {
+  --rmhtube-density-gap: 0.25rem;
+  --rmhtube-density-padding: 0.5rem;
+  --rmhtube-density-text: 0.8125rem;
+}
+
+.rmhtube-theme.rmhtube-spacious {
+  --rmhtube-density-gap: 0.75rem;
+  --rmhtube-density-padding: 1rem;
+  --rmhtube-density-text: 0.9375rem;
+}
+
+/* ─── Theater Mode (Phase 2) ──────────────────────────────────── */
+
+.rmhtube-theater-mode .rmhtube-video-container {
+  max-height: 85vh !important;
+}
+
+.rmhtube-theater-mode .rmhtube-sidebar {
+  position: fixed;
+  right: 0;
+  top: 4rem;
+  bottom: 0;
+  width: 320px;
+  z-index: 30;
+  background: var(--rmhtube-bg);
+  border-left: 1px solid var(--rmhtube-border);
+  transform: translateX(100%);
+  transition: transform 200ms ease-out;
+}
+
+.rmhtube-theater-mode .rmhtube-sidebar.rmhtube-sidebar-open {
+  transform: translateX(0);
+}
+
+/* ─── Skeleton Loading Animations (Phase 5) ───────────────────── */
+
+@keyframes rmhtube-skeleton-pulse {
+  0%, 100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.rmhtube-skeleton {
+  background: var(--rmhtube-surface-hover);
+  border-radius: var(--rmhtube-radius-sm);
+  animation: rmhtube-skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+.rmhtube-skeleton-text {
+  height: 0.875rem;
+  margin-bottom: 0.375rem;
+  border-radius: 4px;
+}
+
+.rmhtube-skeleton-avatar {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9999px;
+}
+
+.rmhtube-skeleton-thumbnail {
+  width: 4rem;
+  height: 2.25rem;
+  border-radius: 4px;
+}
+
+/* ─── Reduced Motion (Phase 5) ─────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .rmhtube-theme *,
+  .rmhtube-theme *::before,
+  .rmhtube-theme *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .rmhtube-reaction-float {
+    animation: none !important;
+    opacity: 0;
+  }
+
+  .rmhtube-toast-enter,
+  .rmhtube-toast-exit {
+    animation: none !important;
+  }
+
+  .rmhtube-skeleton {
+    animation: none !important;
+    opacity: 0.5;
+  }
+}
+
+/* ─── Typing Indicator Animation (Phase 1) ─────────────────────── */
+
+@keyframes rmhtube-typing-dot {
+  0%, 60%, 100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+}
+
+.rmhtube-typing-dot {
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--rmhtube-text-dim);
+  animation: rmhtube-typing-dot 1.4s ease-in-out infinite;
+}
+
+.rmhtube-typing-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.rmhtube-typing-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+/* ─── Mention Highlight (Phase 1) ──────────────────────────────── */
+
+.rmhtube-mention {
+  color: var(--rmhtube-accent);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.rmhtube-mention:hover {
+  text-decoration: underline;
+}
+
+/* ─── Pinned Message Banner (Phase 1) ──────────────────────────── */
+
+.rmhtube-pinned-banner {
+  background: var(--rmhtube-accent-dim);
+  border-left: 3px solid var(--rmhtube-accent);
+  padding: 0.375rem 0.75rem;
+  font-size: 0.8125rem;
+}
+
+/* ─── Chat Reaction Badges (Phase 1) ──────────────────────────── */
+
+.rmhtube-chat-reaction {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 6px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  border: 1px solid var(--rmhtube-border);
+  background: var(--rmhtube-bg);
+  cursor: pointer;
+  transition: all 150ms;
+}
+
+.rmhtube-chat-reaction:hover {
+  border-color: var(--rmhtube-accent);
+  background: var(--rmhtube-accent-dim);
+}
+
+.rmhtube-chat-reaction.rmhtube-chat-reaction-active {
+  border-color: var(--rmhtube-accent);
+  background: var(--rmhtube-accent-dim);
+}
+
+/* ─── Keyboard Shortcuts Overlay (Phase 2) ─────────────────────── */
+
+.rmhtube-shortcuts-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rmhtube-shortcuts-overlay kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+  border: 1px solid var(--rmhtube-border-bright);
+  background: var(--rmhtube-surface);
+  font-family: var(--rmhtube-font-mono);
+  font-size: 0.75rem;
+  color: var(--rmhtube-text-muted);
+}
+
+/* ─── System Message (Phase 1) ─────────────────────────────────── */
+
+.rmhtube-system-message {
+  text-align: center;
+  font-size: 0.75rem;
+  font-style: italic;
+  color: var(--rmhtube-text-dim);
+  padding: 0.125rem 0;
+}

@@ -2,22 +2,21 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { motion, useInView } from "framer-motion";
-import { ProximityText } from "@/components/ui/ProximityText";
+import { SectionHeading } from "@/components/ui/SectionHeading";
 import Link from "next/link";
 import { ArrowRight, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { Post } from "@/lib/blog";
-import { NeonButton } from "@/components/ui/NeonButton";
+import { Button } from "@/components/ui/button";
 import useEmblaCarousel from "embla-carousel-react";
 
-
-const EMBLA_OPTIONS = { 
-  loop: true, 
-  align: "center" as const, 
+const EMBLA_OPTIONS = {
+  loop: true,
+  align: "center" as const,
   slidesToScroll: 1,
   breakpoints: {
     "(min-width: 768px)": { slidesToScroll: 1 },
-    "(min-width: 1024px)": { slidesToScroll: 1 }
-  }
+    "(min-width: 1024px)": { slidesToScroll: 1 },
+  },
 };
 
 interface BlogSectionProps {
@@ -39,8 +38,8 @@ export function BlogSection({ posts }: BlogSectionProps) {
   useEffect(() => {
     if (!emblaApi || !isInView || isPaused) return;
 
-    const duration = 5000; // 5 seconds
-    const intervalTime = 20; // Update every 20ms
+    const duration = 5000;
+    const intervalTime = 20;
     const step = (intervalTime / duration) * 100;
 
     const timer = setInterval(() => {
@@ -79,123 +78,121 @@ export function BlogSection({ posts }: BlogSectionProps) {
   }, [emblaApi, onInit, onSelect]);
 
   return (
-    <section id="blog" ref={containerRef} className="relative py-20 overflow-hidden bg-linear-to-b from-(--neon-pink)/20 to-(--neon-purple)/20 min-h-screen flex flex-col justify-center">
-      {/* Subtle Divider */}
-      <div className="absolute top-0 left-0 w-full h-px bg-linear-to-r from-transparent via-(--neon-pink)/50 to-transparent opacity-50" />
-      
+    <section
+      id="blog"
+      ref={containerRef}
+      className="relative py-20 overflow-hidden bg-site-bg min-h-screen flex flex-col justify-center"
+    >
+      {/* Subtle top divider */}
+      <div className="absolute top-0 left-0 w-full h-px bg-linear-to-r from-transparent via-site-border to-transparent" />
+
       <div className="container mx-auto max-w-7xl relative z-10 px-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="text-center mb-12"
-        >
-          <h2 className="text-4xl md:text-6xl font-black mb-4 tracking-tighter">
-            <ProximityText>Devlog</ProximityText>
-          </h2>
-          <p className="text-white/60 text-lg md:text-xl max-w-2xl mx-auto">
-            Updates, deep dives, and behind-the-scenes looks at what we&apos;re building.
-          </p>
-        </motion.div>
+        <SectionHeading
+          title="Devlog"
+          subtitle="Updates, deep dives, and behind-the-scenes looks at what we're building."
+          className="mb-12"
+        />
       </div>
 
       {/* Full Width Carousel Container */}
-      <div 
+      <div
         className="relative w-full group"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
       >
-          {/* Left Grid Overlay */}
-          <div className="absolute inset-y-0 left-0 w-24 md:w-48 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-size-[24px_24px] mask-[linear-gradient(to_right,black,transparent)] z-20 pointer-events-none" />
-          {/* Right Grid Overlay */}
-          <div className="absolute inset-y-0 right-0 w-24 md:w-48 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-size-[24px_24px] mask-[linear-gradient(to_left,black,transparent)] z-20 pointer-events-none" />
-
-          <div className="overflow-visible" ref={emblaRef}>
-              <div className="flex touch-pan-y">
-                  {posts.map((post, index) => (
-                      <div 
-                          key={post.slug} 
-                          className="flex-[0_0_80%] md:flex-[0_0_45%] lg:flex-[0_0_25%] min-w-0 px-4 transition-opacity duration-300"
-                      >
-                          <div
-                              className={`h-full transition-all duration-500 ease-out ${index === selectedIndex ? "scale-100 opacity-100 z-10" : "scale-[0.85] opacity-30 grayscale-50"}`}
-                          >
-                              <Link href={`/blog/${post.slug}`} className="block group/card h-full">
-                                  <div className="bg-black/60 border border-white/10 rounded-2xl overflow-hidden hover:border-(--neon-pink) transition-all duration-300 h-full flex flex-col hover:shadow-[0_0_40px_rgba(255,0,255,0.2)] relative backdrop-blur-sm">
-                                  
-                                  {/* Image Placeholder */}
-                                  <div className="h-48 md:h-64 bg-white/5 relative overflow-hidden group-hover/card:scale-105 transition-transform duration-700">
-                                      <div className="absolute inset-0 flex items-center justify-center text-white/20 font-mono text-sm px-4 text-center">
-                                          [Image: {post.title}]
-                                      </div>
-                                      <div className="absolute inset-0 bg-linear-to-t from-black/90 to-transparent" />
-                                  </div>
-
-                                  <div className="p-6 flex flex-col flex-1 relative z-10">
-                                      <div className="flex items-center gap-2 text-(--neon-cyan) text-xs md:text-sm font-mono mb-3">
-                                          <Calendar className="w-3 h-3 md:w-4 md:h-4" />
-                                          {post.date}
-                                      </div>
-                                      
-                                      <h3 className="text-xl md:text-2xl font-bold text-white mb-3 group-hover/card:text-(--neon-pink) transition-colors line-clamp-2">
-                                          {post.title}
-                                      </h3>
-                                      
-                                      <p className="text-white/60 mb-6 flex-1 line-clamp-3 text-sm md:text-base">
-                                          {post.description}
-                                      </p>
-
-                                      <div className="flex items-center gap-2 text-sm font-bold text-white/80 group-hover/card:gap-3 transition-all mt-auto">
-                                          Read Update <ArrowRight className="w-4 h-4" />
-                                      </div>
-                                  </div>
-                                  </div>
-                              </Link>
-                          </div>
+        <div className="overflow-visible" ref={emblaRef}>
+          <div className="flex touch-pan-y">
+            {posts.map((post, index) => (
+              <div
+                key={post.slug}
+                className="flex-[0_0_80%] md:flex-[0_0_45%] lg:flex-[0_0_25%] min-w-0 px-4 transition-opacity duration-300"
+              >
+                <div
+                  className={`h-full transition-all duration-500 ease-out ${
+                    index === selectedIndex
+                      ? "scale-100 opacity-100 z-10"
+                      : "scale-[0.85] opacity-30 grayscale-50"
+                  }`}
+                >
+                  <Link href={`/blog/${post.slug}`} className="block group/card h-full">
+                    <div className="bg-site-surface border border-site-border rounded-2xl overflow-hidden hover:border-site-accent transition-all duration-300 h-full flex flex-col hover:shadow-(--site-shadow) relative backdrop-blur-sm">
+                      {/* Image Placeholder */}
+                      <div className="h-48 md:h-64 bg-site-surface-hover relative overflow-hidden group-hover/card:scale-105 transition-transform duration-700">
+                        <div className="absolute inset-0 flex items-center justify-center text-site-text-dim text-sm px-4 text-center">
+                          [Image: {post.title}]
+                        </div>
+                        <div className="absolute inset-0 bg-linear-to-t from-site-surface to-transparent" />
                       </div>
-                  ))}
+
+                      <div className="p-6 flex flex-col flex-1 relative z-10">
+                        <div className="flex items-center gap-2 text-site-accent text-xs md:text-sm font-medium mb-3">
+                          <Calendar className="w-3 h-3 md:w-4 md:h-4" />
+                          {post.date}
+                        </div>
+
+                        <h3 className="text-xl md:text-2xl font-bold text-site-text mb-3 group-hover/card:text-site-accent transition-colors line-clamp-2">
+                          {post.title}
+                        </h3>
+
+                        <p className="text-site-text-muted mb-6 flex-1 line-clamp-3 text-sm md:text-base">
+                          {post.description}
+                        </p>
+
+                        <div className="flex items-center gap-2 text-sm font-bold text-site-text-muted group-hover/card:gap-3 transition-all mt-auto">
+                          Read Update <ArrowRight className="w-4 h-4" />
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                </div>
               </div>
+            ))}
           </div>
-          
-          {/* Custom Navigation Controls */}
-          <button 
-              onClick={scrollPrev} 
-              className="absolute left-2 sm:left-4 md:left-[10%] lg:left-[30%] top-1/2 -translate-y-1/2 z-30 p-2 sm:p-3 rounded-full bg-black/50 border border-white/10 text-white hover:bg-(--neon-pink) hover:border-(--neon-pink) transition-all flex backdrop-blur-md"
-              aria-label="Previous Slide"
-          >
-              <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
-          </button>
-          <button 
-              onClick={scrollNext} 
-              className="absolute right-2 sm:right-4 md:right-[10%] lg:right-[30%] top-1/2 -translate-y-1/2 z-30 p-2 sm:p-3 rounded-full bg-black/50 border border-white/10 text-white hover:bg-(--neon-pink) hover:border-(--neon-pink) transition-all flex backdrop-blur-md"
-              aria-label="Next Slide"
-          >
-              <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
-          </button>
+        </div>
+
+        {/* Custom Navigation Controls */}
+        <button
+          onClick={scrollPrev}
+          className="absolute left-2 sm:left-4 md:left-[10%] lg:left-[30%] top-1/2 -translate-y-1/2 z-30 p-2 sm:p-3 rounded-full bg-site-surface border border-site-border text-site-text hover:bg-site-accent hover:border-site-accent hover:text-white transition-all flex backdrop-blur-md"
+          aria-label="Previous Slide"
+        >
+          <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
+        </button>
+        <button
+          onClick={scrollNext}
+          className="absolute right-2 sm:right-4 md:right-[10%] lg:right-[30%] top-1/2 -translate-y-1/2 z-30 p-2 sm:p-3 rounded-full bg-site-surface border border-site-border text-site-text hover:bg-site-accent hover:border-site-accent hover:text-white transition-all flex backdrop-blur-md"
+          aria-label="Next Slide"
+        >
+          <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
+        </button>
       </div>
 
       <div className="container mx-auto max-w-7xl relative z-10 px-4">
         {/* Pagination Dots & See All */}
         <div className="mt-6 flex flex-col items-center gap-4">
-            <div className="flex gap-2 items-center bg-black/40 p-2 rounded-full border border-white/5 backdrop-blur-sm">
-                {scrollSnaps.map((_, index) => (
-                    <button
-                        key={index}
-                        onClick={() => scrollTo(index)}
-                        className={`relative h-1.5 rounded-full overflow-hidden bg-white/10 transition-all duration-500 ease-out ${index === selectedIndex ? "w-12" : "w-1.5"}`}
-                        aria-label={`Go to slide ${index + 1}`}
-                    >
-                        {index === selectedIndex && (
-                          <div 
-                              className="absolute inset-0 bg-(--neon-pink)"
-                              style={{ width: `${progress}%` }}
-                          />
-                        )}
-                    </button>
-                ))}
-            </div>
+          <div className="flex gap-2 items-center bg-site-surface/40 p-2 rounded-full border border-site-border/50 backdrop-blur-sm">
+            {scrollSnaps.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => scrollTo(index)}
+                className={`relative h-1.5 rounded-full overflow-hidden bg-site-border transition-all duration-500 ease-out ${
+                  index === selectedIndex ? "w-12" : "w-1.5"
+                }`}
+                aria-label={`Go to slide ${index + 1}`}
+              >
+                {index === selectedIndex && (
+                  <div
+                    className="absolute inset-0 bg-site-accent"
+                    style={{ width: `${progress}%` }}
+                  />
+                )}
+              </button>
+            ))}
+          </div>
 
-            <NeonButton href="/blog">See All Logs</NeonButton>
+          <Link href="/blog">
+            <Button variant="accent-outline">See All Logs</Button>
+          </Link>
         </div>
       </div>
     </section>

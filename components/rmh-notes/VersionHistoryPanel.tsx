@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useNotesDataStore } from '@/lib/store/useNotesDataStore';
 import { NoteVersion } from './types';
 import Modal from './Modal';
 
@@ -11,16 +12,8 @@ interface Props {
 }
 
 export default function VersionHistoryPanel({ noteId, onRestore, onClose }: Props) {
-  const [versions, setVersions] = useState<NoteVersion[]>([]);
-  const [loading, setLoading] = useState(true);
+  const versions = useNotesDataStore((s) => s.getVersions)(noteId);
   const [preview, setPreview] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetch(`/api/rmh-notes/notes/${noteId}/versions`)
-      .then((r) => r.json())
-      .then((d) => setVersions(d.versions ?? []))
-      .finally(() => setLoading(false));
-  }, [noteId]);
 
   const getPreview = (content: string) => {
     try {
@@ -51,9 +44,7 @@ export default function VersionHistoryPanel({ noteId, onRestore, onClose }: Prop
 
   return (
     <Modal title="🕐 Version History" onClose={onClose} wide>
-      {loading ? (
-        <div className="text-center py-8" style={{ color: 'var(--notes-text-muted)' }}>Loading versions...</div>
-      ) : versions.length === 0 ? (
+      {versions.length === 0 ? (
         <div className="text-center py-8">
           <p className="text-3xl mb-2">📭</p>
           <p className="text-sm" style={{ color: 'var(--notes-text-muted)' }}>No versions saved yet. Versions are saved automatically when you edit.</p>

@@ -147,6 +147,9 @@ export function createMockContext(
     sendToSpectators: vi.fn((event: string, data: unknown) => {
       spectatorLog.push({ event, data });
     }),
+    sendToSpectatorFollowers: vi.fn((_targetPlayerId: string, event: string, data: unknown) => {
+      spectatorLog.push({ event, data });
+    }),
     onComplete: vi.fn((results: MinigameResults) => {
       completedResults.push(results);
     }),

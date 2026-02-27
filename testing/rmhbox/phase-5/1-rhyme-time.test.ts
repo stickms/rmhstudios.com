@@ -95,6 +95,25 @@ describe('Rhyme Time Server Handler (§5.1)', () => {
       );
       expect(hasResponse).toBe(true);
     });
+
+    it('should forward RT_RHYME_SUBMITTED to spectator followers', () => {
+      const { game, context, spectatorLog } = createGame();
+      game.start();
+      vi.advanceTimersByTime(3000);
+
+      const userId = MOCK_USERS.alice.userId;
+      game.handleInput(userId, 'SUBMIT_RHYME', { word: 'testword' });
+
+      // sendToSpectatorFollowers should have been called
+      expect(context.sendToSpectatorFollowers).toHaveBeenCalled();
+
+      // The spectator log should contain the RT_RHYME_SUBMITTED event
+      const spectatorSubmission = spectatorLog.find(
+        (e) => (e.data as Record<string, unknown>).type === 'RT_RHYME_SUBMITTED',
+      );
+      expect(spectatorSubmission).toBeDefined();
+      expect((spectatorSubmission!.data as Record<string, unknown>).word).toBe('testword');
+    });
   });
 
   describe('State Masking (§5.1 Security)', () => {

@@ -1,0 +1,657 @@
+[
+  {
+    "text": "A house on a hill",
+    "category": "Landscape",
+    "difficulty": "easy"
+  },
+  {
+    "text": "A rising sun",
+    "category": "Nature",
+    "difficulty": "easy"
+  },
+  {
+    "text": "A fish",
+    "category": "Animal",
+    "difficulty": "easy"
+  },
+  {
+    "text": "A cup",
+    "category": "Object",
+    "difficulty": "easy"
+  },
+  {
+    "text": "A car",
+    "category": "Vehicle",
+    "difficulty": "easy"
+  },
+  {
+    "text": "An apple",
+    "category": "Food",
+    "difficulty": "easy"
+  },
+  {
+    "text": "A tent",
+    "category": "Building",
+    "difficulty": "easy"
+  },
+  {
+    "text": "A stick figure",
+    "category": "Person",
+    "difficulty": "easy"
+  },
+  {
+    "text": "A basketball",
+    "category": "Sport",
+    "difficulty": "easy"
+  },
+  {
+    "text": "A cloud",
+    "category": "Weather",
+    "difficulty": "easy"
+  },
+  {
+    "text": "A drum",
+    "category": "Musical",
+    "difficulty": "easy"
+  },
+  {
+    "text": "A hammer",
+    "category": "Tool",
+    "difficulty": "easy"
+  },
+  {
+    "text": "A star",
+    "category": "Nature",
+    "difficulty": "easy"
+  },
+  {
+    "text": "A tree",
+    "category": "Nature",
+    "difficulty": "easy"
+  },
+  {
+    "text": "A kite",
+    "category": "Object",
+    "difficulty": "easy"
+  },
+  {
+    "text": "A boat",
+    "category": "Vehicle",
+    "difficulty": "easy"
+  },
+  {
+    "text": "A mountain",
+    "category": "Landscape",
+    "difficulty": "easy"
+  },
+  {
+    "text": "A bone",
+    "category": "Object",
+    "difficulty": "easy"
+  },
+  {
+    "text": "An ice cream cone",
+    "category": "Food",
+    "difficulty": "easy"
+  },
+  {
+    "text": "A crescent moon",
+    "category": "Nature",
+    "difficulty": "easy"
+  },
+  {
+    "text": "A ladder",
+    "category": "Tool",
+    "difficulty": "easy"
+  },
+  {
+    "text": "A snowman",
+    "category": "Weather",
+    "difficulty": "easy"
+  },
+  {
+    "text": "A flag",
+    "category": "Object",
+    "difficulty": "easy"
+  },
+  {
+    "text": "An arrow",
+    "category": "Object",
+    "difficulty": "easy"
+  },
+  {
+    "text": "A pizza slice",
+    "category": "Food",
+    "difficulty": "easy"
+  },
+  {
+    "text": "A heart",
+    "category": "Object",
+    "difficulty": "easy"
+  },
+  {
+    "text": "A bird",
+    "category": "Animal",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A cat face",
+    "category": "Animal",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A lighthouse",
+    "category": "Building",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A sailboat on water",
+    "category": "Vehicle",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A cactus in a desert",
+    "category": "Landscape",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A slice of cake",
+    "category": "Food",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A wrench",
+    "category": "Tool",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A guitar",
+    "category": "Musical",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A person running",
+    "category": "Person",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A tennis racket",
+    "category": "Sport",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A lightning bolt",
+    "category": "Weather",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A whale",
+    "category": "Animal",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A helicopter",
+    "category": "Vehicle",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A church",
+    "category": "Building",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A volcano",
+    "category": "Landscape",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A cupcake",
+    "category": "Food",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A trumpet",
+    "category": "Musical",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A saw",
+    "category": "Tool",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A person waving",
+    "category": "Person",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A soccer goal",
+    "category": "Sport",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A rainbow",
+    "category": "Weather",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A snake",
+    "category": "Animal",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A rocket",
+    "category": "Vehicle",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A bridge",
+    "category": "Building",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A river between hills",
+    "category": "Landscape",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A donut",
+    "category": "Food",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A pair of scissors",
+    "category": "Tool",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A palm tree",
+    "category": "Nature",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A bicycle",
+    "category": "Vehicle",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A penguin",
+    "category": "Animal",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A baseball bat",
+    "category": "Sport",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A barn",
+    "category": "Building",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A harp",
+    "category": "Musical",
+    "difficulty": "medium"
+  },
+  {
+    "text": "An umbrella",
+    "category": "Weather",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A castle on a cliff",
+    "category": "Landscape",
+    "difficulty": "hard"
+  },
+  {
+    "text": "An elephant",
+    "category": "Animal",
+    "difficulty": "hard"
+  },
+  {
+    "text": "A violin",
+    "category": "Musical",
+    "difficulty": "hard"
+  },
+  {
+    "text": "A skyscraper",
+    "category": "Building",
+    "difficulty": "hard"
+  },
+  {
+    "text": "A person surfing",
+    "category": "Sport",
+    "difficulty": "hard"
+  },
+  {
+    "text": "A tornado",
+    "category": "Weather",
+    "difficulty": "hard"
+  },
+  {
+    "text": "A bulldozer",
+    "category": "Vehicle",
+    "difficulty": "hard"
+  },
+  {
+    "text": "A hamburger",
+    "category": "Food",
+    "difficulty": "hard"
+  },
+  {
+    "text": "A person dancing",
+    "category": "Person",
+    "difficulty": "hard"
+  },
+  {
+    "text": "A Swiss army knife",
+    "category": "Tool",
+    "difficulty": "hard"
+  },
+  {
+    "text": "A sunset over the ocean",
+    "category": "Landscape",
+    "difficulty": "hard"
+  },
+  {
+    "text": "A giraffe",
+    "category": "Animal",
+    "difficulty": "hard"
+  },
+  {
+    "text": "A drum kit",
+    "category": "Musical",
+    "difficulty": "hard"
+  },
+  {
+    "text": "A windmill",
+    "category": "Building",
+    "difficulty": "hard"
+  },
+  {
+    "text": "A person skiing",
+    "category": "Sport",
+    "difficulty": "hard"
+  },
+  {
+    "text": "A snowflake",
+    "category": "Weather",
+    "difficulty": "hard"
+  },
+  {
+    "text": "A hot air balloon",
+    "category": "Vehicle",
+    "difficulty": "hard"
+  },
+  {
+    "text": "A bunch of grapes",
+    "category": "Food",
+    "difficulty": "hard"
+  },
+  {
+    "text": "A person on a horse",
+    "category": "Person",
+    "difficulty": "hard"
+  },
+  {
+    "text": "A corkscrew",
+    "category": "Tool",
+    "difficulty": "hard"
+  },
+  {
+    "text": "A waterfall",
+    "category": "Nature",
+    "difficulty": "hard"
+  },
+  {
+    "text": "A scorpion",
+    "category": "Animal",
+    "difficulty": "hard"
+  },
+  {
+    "text": "A saxophone",
+    "category": "Musical",
+    "difficulty": "hard"
+  },
+  {
+    "text": "A person doing a handstand",
+    "category": "Person",
+    "difficulty": "hard"
+  },
+  {
+    "text": "A frying pan with an egg",
+    "category": "Food",
+    "difficulty": "hard"
+  },
+  {
+    "text": "An hourglass",
+    "category": "Object",
+    "difficulty": "easy"
+  },
+  {
+    "text": "A crown",
+    "category": "Object",
+    "difficulty": "easy"
+  },
+  {
+    "text": "A key",
+    "category": "Object",
+    "difficulty": "easy"
+  },
+  {
+    "text": "A diamond",
+    "category": "Object",
+    "difficulty": "easy"
+  },
+  {
+    "text": "A candy cane",
+    "category": "Food",
+    "difficulty": "easy"
+  },
+  {
+    "text": "A paper airplane",
+    "category": "Object",
+    "difficulty": "easy"
+  },
+  {
+    "text": "A flower",
+    "category": "Nature",
+    "difficulty": "easy"
+  },
+  {
+    "text": "A dog bone",
+    "category": "Animal",
+    "difficulty": "easy"
+  },
+  {
+    "text": "A lighthouse at night",
+    "category": "Building",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A pencil",
+    "category": "Object",
+    "difficulty": "easy"
+  },
+  {
+    "text": "A clock showing midnight",
+    "category": "Object",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A tent in the woods",
+    "category": "Landscape",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A trophy",
+    "category": "Object",
+    "difficulty": "easy"
+  },
+  {
+    "text": "A pair of sunglasses",
+    "category": "Object",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A satellite",
+    "category": "Vehicle",
+    "difficulty": "hard"
+  },
+  {
+    "text": "An envelope",
+    "category": "Object",
+    "difficulty": "easy"
+  },
+  {
+    "text": "A campfire",
+    "category": "Nature",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A piano",
+    "category": "Musical",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A spider web",
+    "category": "Nature",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A crown on a throne",
+    "category": "Object",
+    "difficulty": "hard"
+  },
+  {
+    "text": "A rocking chair",
+    "category": "Object",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A spiral staircase",
+    "category": "Building",
+    "difficulty": "hard"
+  },
+  {
+    "text": "A compass",
+    "category": "Object",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A catapult",
+    "category": "Object",
+    "difficulty": "hard"
+  },
+  {
+    "text": "A birdhouse",
+    "category": "Building",
+    "difficulty": "medium"
+  },
+  {
+    "text": "An igloo",
+    "category": "Building",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A treehouse",
+    "category": "Building",
+    "difficulty": "hard"
+  },
+  {
+    "text": "A jellyfish",
+    "category": "Animal",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A dragon",
+    "category": "Animal",
+    "difficulty": "hard"
+  },
+  {
+    "text": "A flying saucer",
+    "category": "Vehicle",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A surfboard on a wave",
+    "category": "Sport",
+    "difficulty": "hard"
+  },
+  {
+    "text": "A beehive",
+    "category": "Nature",
+    "difficulty": "medium"
+  },
+  {
+    "text": "An octopus",
+    "category": "Animal",
+    "difficulty": "hard"
+  },
+  {
+    "text": "A ferris wheel",
+    "category": "Building",
+    "difficulty": "hard"
+  },
+  {
+    "text": "A telescope",
+    "category": "Object",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A mailbox",
+    "category": "Object",
+    "difficulty": "easy"
+  },
+  {
+    "text": "A mushroom",
+    "category": "Nature",
+    "difficulty": "easy"
+  },
+  {
+    "text": "A flamingo",
+    "category": "Animal",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A train",
+    "category": "Vehicle",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A basketball hoop",
+    "category": "Sport",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A stoplight",
+    "category": "Object",
+    "difficulty": "easy"
+  },
+  {
+    "text": "A megaphone",
+    "category": "Object",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A crab",
+    "category": "Animal",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A diving board",
+    "category": "Sport",
+    "difficulty": "medium"
+  },
+  {
+    "text": "A scarecrow",
+    "category": "Landscape",
+    "difficulty": "hard"
+  },
+  {
+    "text": "A dragonfly",
+    "category": "Animal",
+    "difficulty": "hard"
+  }
+]

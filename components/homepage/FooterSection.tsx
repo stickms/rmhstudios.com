@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ProximityText } from "@/components/ui/ProximityText";
 import { FaTwitter, FaDiscord, FaYoutube, FaReddit } from "react-icons/fa";
 
 const socialLinks = [
@@ -13,32 +12,34 @@ const socialLinks = [
 
 export function FooterSection() {
   return (
-    <footer id="contact" className="relative min-h-screen flex flex-col justify-center px-4 py-20 pb-28 md:pb-20 overflow-hidden pb-safe bg-linear-to-b from-(--neon-blue)/20 to-black">
-      {/* Subtle Divider */}
-      <div className="absolute top-0 left-0 w-full h-px bg-linear-to-r from-transparent via-(--neon-cyan)/50 to-transparent opacity-50" />
-      
+    <footer
+      id="contact"
+      data-slot="footer"
+      className="relative px-4 py-16 pb-28 md:pb-16 overflow-hidden bg-site-bg pb-safe"
+    >
+      {/* Top divider */}
+      <div className="absolute top-0 left-0 w-full h-px bg-linear-to-r from-transparent via-site-border to-transparent" />
+
       <div className="max-w-6xl mx-auto w-full">
         {/* Section header */}
         <motion.div
-          className="text-center mb-16"
-          initial={{ opacity: 0, y: 30 }}
+          className="text-center mb-12"
+          initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.5 }}
         >
-          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black">
-            <ProximityText maxScale={1.3} proximity={150}>
-              Get In Touch
-            </ProximityText>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-black font-(family-name:--site-font-display) text-site-text">
+            Get In Touch
           </h2>
-          <p className="mt-4 text-white/60 text-lg md:text-xl max-w-2xl mx-auto">
+          <p className="mt-4 text-site-text-muted text-lg md:text-xl max-w-2xl mx-auto">
             Let&apos;s create something amazing together
           </p>
         </motion.div>
 
-        <div className="flex flex-col items-center gap-12">
+        <div className="flex flex-col items-center gap-10">
           {/* Social links */}
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4">
             {socialLinks.map((link, index) => {
               const IconComponent = link.icon;
               return (
@@ -46,12 +47,12 @@ export function FooterSection() {
                   key={link.name}
                   href={link.href}
                   aria-label={link.name}
-                  className="w-12 h-12 rounded-full border border-white/20 flex items-center justify-center text-white/60 hover:text-white hover:border-(--neon-pink) hover:shadow-[0_0_20px_var(--neon-pink)] transition-all duration-300"
-                  initial={{ opacity: 0, y: 20 }}
+                  className="w-12 h-12 rounded-full border border-site-border flex items-center justify-center text-site-text-dim hover:text-site-accent hover:border-site-accent transition-all duration-200"
+                  initial={{ opacity: 0, y: 16 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.4, delay: index * 0.1 }}
-                  whileHover={{ scale: 1.1, y: -5 }}
+                  transition={{ duration: 0.3, delay: index * 0.08 }}
+                  whileHover={{ scale: 1.05, y: -2 }}
                   whileTap={{ scale: 0.95 }}
                 >
                   <IconComponent />
@@ -61,17 +62,15 @@ export function FooterSection() {
           </div>
 
           {/* Info Row: Logo and Contact */}
-          <div className="w-full max-w-4xl flex flex-col md:flex-row items-center justify-between gap-8 px-4">
+          <div className="w-full max-w-4xl flex flex-col md:flex-row items-center justify-between gap-6 px-4">
             {/* Logo */}
             <motion.div
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
             >
-              <span className="text-2xl font-black">
-                <ProximityText maxScale={1.15} proximity={80}>
-                  RMH STUDIOS
-                </ProximityText>
+              <span className="text-2xl font-black font-(family-name:--site-font-display) text-site-text">
+                RMH <span className="text-site-accent">STUDIOS</span>
               </span>
             </motion.div>
 
@@ -81,14 +80,14 @@ export function FooterSection() {
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
-              transition={{ delay: 0.3 }}
+              transition={{ delay: 0.2 }}
             >
               <a
                 href="mailto:hello@rmhstudios.com"
-                className="text-white/60 hover:text-white transition-colors relative group"
+                className="text-site-text-muted hover:text-site-accent transition-colors relative group"
               >
                 hello@rmhstudios.com
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-linear-to-r from-(--neon-pink) to-(--neon-cyan) group-hover:w-full transition-all duration-300" />
+                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-site-accent group-hover:w-full transition-all duration-300" />
               </a>
             </motion.div>
           </div>
@@ -96,25 +95,17 @@ export function FooterSection() {
 
         {/* Copyright */}
         <motion.div
-          className="mt-12 text-center"
+          className="mt-10 text-center"
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
-          transition={{ delay: 0.4 }}
+          transition={{ delay: 0.3 }}
         >
-          <p className="text-white/40 text-sm">
-            &copy; {new Date().getFullYear()}{" "}
-            <span className="text-white/60">
-              <ProximityText maxScale={1.1} proximity={60}>
-                RMH Studios
-              </ProximityText>
-            </span>
-            . All rights reserved.
+          <p className="text-site-text-dim text-sm">
+            &copy; {new Date().getFullYear()} RMH Studios. All rights reserved.
           </p>
         </motion.div>
       </div>
-
-      {/* Back to top button - REMOVED for Global Button */}
     </footer>
   );
 }

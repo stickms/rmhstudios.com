@@ -172,3 +172,57 @@ describe('Spectator Promotion (§8.1)', () => {
     expect(socketC.socket.join).toHaveBeenCalledWith(`lobby:${lobbyId}:players`);
   });
 });
+
+describe('Host-Initiated Spectator Promotion (§8.2)', () => {
+  let socketA: MockSocketData;
+  let socketC: MockSocketData;
+  let lobbyId: string;
+
+  beforeEach(() => {
+    socketA = setupSocket(MOCK_USERS.alice);
+    lobbyId = createLobbyAndGetId(socketA);
+    socketC = setupSocket(MOCK_USERS.charlie);
+    callEvent(socketC, 'rmhbox:lobby:join', { lobbyId, asSpectator: true });
+  });
+
+  it('should reject host promotion during PLAYING state', () => {
+    const lobby = lobbyManager.getLobby(lobbyId)!;
+    lobby.state = 'PLAYING';
+
+    callEvent(socketA, 'rmhbox:lobby:promote_spectator', { lobbyId, userId: MOCK_USERS.charlie.userId });
+
+    const error = findLastEmitted(socketA.emitted, S2C.ERROR);
+    expect((error!.data as { code: string }).code).toBe('LOBBY_IN_GAME');
+    expect(lobby.spectators.has(MOCK_USERS.charlie.userId)).toBe(true);
+    expect(lobby.players.has(MOCK_USERS.charlie.userId)).toBe(false);
+  });
+
+  it('should reject host promotion during COUNTDOWN state', () => {
+    const lobby = lobbyManager.getLobby(lobbyId)!;
+    lobby.state = 'COUNTDOWN';
+
+    callEvent(socketA, 'rmhbox:lobby:promote_spectator', { lobbyId, userId: MOCK_USERS.charlie.userId });
+
+    const error = findLastEmitted(socketA.emitted, S2C.ERROR);
+    expect((error!.data as { code: string }).code).toBe('LOBBY_IN_GAME');
+    expect(lobby.spectators.has(MOCK_USERS.charlie.userId)).toBe(true);
+    expect(lobby.players.has(MOCK_USERS.charlie.userId)).toBe(false);
+  });
+
+  it('should allow host promotion during WAITING state', () => {
+    callEvent(socketA, 'rmhbox:lobby:promote_spectator', { lobbyId, userId: MOCK_USERS.charlie.userId });
+
+    const lobby = lobbyManager.getLobby(lobbyId)!;
+    expect(lobby.players.has(MOCK_USERS.charlie.userId)).toBe(true);
+    expect(lobby.spectators.has(MOCK_USERS.charlie.userId)).toBe(false);
+  });
+
+  it('should allow host promotion during ROUND_RESULTS state', () => {
+    const lobby = lobbyManager.getLobby(lobbyId)!;
+    lobby.state = 'ROUND_RESULTS';
+
+    callEvent(socketA, 'rmhbox:lobby:promote_spectator', { lobbyId, userId: MOCK_USERS.charlie.userId });
+
+    expect(lobby.players.has(MOCK_USERS.charlie.userId)).toBe(true);
+  });
+});

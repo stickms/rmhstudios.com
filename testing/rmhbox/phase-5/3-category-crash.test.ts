@@ -329,4 +329,40 @@ describe('Category Crash Server Handler (§5.3)', () => {
       expect(bobAnswers.length).toBe(CC_CATEGORIES_PER_ROUND);
     });
   });
+
+  describe('Spectator Follower Forwarding', () => {
+    it('should forward CC_ANSWERS_SAVED to spectator followers', () => {
+      const { game, context, spectatorLog } = createGame();
+      game.start();
+      vi.advanceTimersByTime(5000);
+
+      const userId = MOCK_USERS.alice.userId;
+      game.handleInput(userId, 'SAVE_ANSWERS', {
+        answers: ['Apple', 'Bear', null, 'Dog', 'Elephant'],
+      });
+
+      expect(context.sendToSpectatorFollowers).toHaveBeenCalled();
+      const saved = spectatorLog.find(
+        (e) => (e.data as Record<string, unknown>).type === 'CC_ANSWERS_SAVED',
+      );
+      expect(saved).toBeDefined();
+    });
+
+    it('should forward CC_ANSWERS_SUBMITTED to spectator followers', () => {
+      const { game, context, spectatorLog } = createGame();
+      game.start();
+      vi.advanceTimersByTime(5000);
+
+      const userId = MOCK_USERS.alice.userId;
+      game.handleInput(userId, 'SUBMIT_ANSWERS', {
+        answers: ['Apple', 'Bear', 'Cat', 'Dog', 'Elephant'],
+      });
+
+      expect(context.sendToSpectatorFollowers).toHaveBeenCalled();
+      const submitted = spectatorLog.find(
+        (e) => (e.data as Record<string, unknown>).type === 'CC_ANSWERS_SUBMITTED',
+      );
+      expect(submitted).toBeDefined();
+    });
+  });
 });

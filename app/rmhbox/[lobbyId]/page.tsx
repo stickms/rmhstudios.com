@@ -38,6 +38,10 @@ export default function LobbyPage({ params }: { params: Promise<{ lobbyId: strin
   const router = useRouter();
   const lobby = useRMHboxStore((s) => s.lobby);
   const connectionStatus = useRMHboxStore((s) => s.connectionStatus);
+  const spectatorTarget = useRMHboxStore((s) => s.spectatorTarget);
+
+  const backlinkLabel = "Leave";
+  const backlinkHref = '/rmhbox';
 
   // Voting state (received via separate events)
   const [voteCandidates, setVoteCandidates] = useState<VoteCandidate[]>([]);
@@ -181,7 +185,7 @@ export default function LobbyPage({ params }: { params: Promise<{ lobbyId: strin
   if (connectionStatus === 'connecting' || connectionStatus === 'disconnected') {
     return (
       <div className="flex h-screen flex-col">
-        <RMHboxHeader />
+        <RMHboxHeader backLabel={backlinkLabel} backHref={backlinkHref}/>
         <div className="flex flex-1 items-center justify-center">
           <div className="text-center">
             <div className="text-2xl mb-4 text-(--rmhbox-text)">Connecting...</div>
@@ -196,7 +200,7 @@ export default function LobbyPage({ params }: { params: Promise<{ lobbyId: strin
   if (connectionStatus === 'error') {
     return (
       <div className="flex h-screen flex-col">
-        <RMHboxHeader />
+        <RMHboxHeader backLabel={backlinkLabel} backHref={backlinkHref}/>
         <div className="flex flex-1 items-center justify-center">
           <div className="text-center">
             <div className="text-2xl mb-4 text-(--rmhbox-danger)">
@@ -218,7 +222,7 @@ export default function LobbyPage({ params }: { params: Promise<{ lobbyId: strin
   if (!lobby) {
     return (
       <div className="flex h-screen flex-col">
-        <RMHboxHeader />
+        <RMHboxHeader backLabel={backlinkLabel} backHref={backlinkHref}/>
         <div className="flex flex-1 items-center justify-center">
           <div className="text-center">
             <div className="text-2xl mb-4 text-(--rmhbox-text)">Joining lobby {lobbyId}...</div>
@@ -231,6 +235,7 @@ export default function LobbyPage({ params }: { params: Promise<{ lobbyId: strin
 
   const isSpectator = lobby.myRole === 'spectator';
   const isHost = lobby.hostUserId === lobby.myUserId;
+  const spectatorMode = lobby.currentGame?.spectatorMode ?? null;
 
   // Determine header context and title based on current lobby state
   const isGamePhase = lobby.state === 'PLAYING' || lobby.state === 'COUNTDOWN'
@@ -244,6 +249,8 @@ export default function LobbyPage({ params }: { params: Promise<{ lobbyId: strin
       <RMHboxHeader
         context={headerContext}
         title={headerTitle}
+        backLabel={backlinkLabel}
+        backHref={backlinkHref}
       />
 
       {/* Content area below header */}
@@ -253,6 +260,9 @@ export default function LobbyPage({ params }: { params: Promise<{ lobbyId: strin
           <SpectatorBanner
             lobbyState={lobby.state}
             onRequestPromotion={() => emit(C2S.LOBBY_REQUEST_PROMOTION, { lobbyId })}
+            spectatorTarget={spectatorTarget}
+            spectatorMode={spectatorMode}
+            onSelectPlayer={(targetPlayerId) => emit(C2S.SPECTATOR_SELECT_PLAYER, { lobbyId, targetPlayerId })}
           />
         )}
 

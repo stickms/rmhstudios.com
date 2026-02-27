@@ -1407,51 +1407,51 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 
 ### 6.3.1 Install NPM Packages
 
-- [ ] Install `perfect-freehand` (smooth stroke rendering, ~5KB gzipped, MIT license)
+- [x] Install `perfect-freehand` (smooth stroke rendering, ~5KB gzipped, MIT license)
   ```bash
   pnpm add perfect-freehand
   ```
   **Verification:** Run `pnpm ls perfect-freehand` and confirm version is listed.
 
-- [ ] Verify TypeScript types work: create a scratch `.ts` file, import `getStroke` from `perfect-freehand`, confirm no type errors
+- [x] Verify TypeScript types work: create a scratch `.ts` file, import `getStroke` from `perfect-freehand`, confirm no type errors
   **Verification:** `tsc --noEmit` passes with the import.
 
 ---
 
 ### 6.3.2 Add Constants to `lib/rmhbox/constants.ts`
 
-- [ ] Add `MM_PROMPT_REVEAL_SECONDS = 3` — prompt display duration
-- [ ] Add `MM_DRAWING_DURATION_SECONDS = 60` — drawing phase duration
-- [ ] Add `MM_GALLERY_DURATION_SECONDS = 15` — gallery walk duration
-- [ ] Add `MM_AUCTION_DURATION_SECONDS = 60` — auction bidding duration
-- [ ] Add `MM_RESULTS_DURATION_SECONDS = 10` — results display duration
-- [ ] Add `MM_MAX_STROKES = 5` — maximum strokes per drawing
-- [ ] Add `MM_CANVAS_SIZE = 400` — logical canvas size (px)
-- [ ] Add `MM_STROKE_WIDTH = 4` — fixed stroke width (px)
-- [ ] Add `MM_MIN_POINTS_PER_STROKE = 5` — minimum points for a valid stroke (anti-bot)
-- [ ] Add `MM_MAX_POINTS_PER_STROKE = 500` — maximum points per stroke (DoS prevention)
-- [ ] Add `MM_MIN_STROKE_DURATION_MS = 100` — minimum time between first and last point of a stroke (anti-bot)
-- [ ] Add `MM_COLOR_PALETTE`:
+- [x] Add `MM_PROMPT_REVEAL_SECONDS = 3` — prompt display duration
+- [x] Add `MM_DRAWING_DURATION_SECONDS = 60` — drawing phase duration
+- [x] Add `MM_GALLERY_DURATION_SECONDS = 15` — gallery walk duration
+- [x] Add `MM_AUCTION_DURATION_SECONDS = 60` — auction bidding duration
+- [x] Add `MM_RESULTS_DURATION_SECONDS = 10` — results display duration
+- [x] Add `MM_MAX_STROKES = 5` — maximum strokes per drawing
+- [x] Add `MM_CANVAS_SIZE = 400` — logical canvas size (px)
+- [x] Add `MM_STROKE_WIDTH = 4` — fixed stroke width (px)
+- [x] Add `MM_MIN_POINTS_PER_STROKE = 5` — minimum points for a valid stroke (anti-bot)
+- [x] Add `MM_MAX_POINTS_PER_STROKE = 500` — maximum points per stroke (DoS prevention)
+- [x] Add `MM_MIN_STROKE_DURATION_MS = 100` — minimum time between first and last point of a stroke (anti-bot)
+- [x] Add `MM_COLOR_PALETTE`:
   ```ts
   ['#1a1a2e', '#e0e0f0', '#f87171', '#4ade80', '#60a5fa', '#fbbf24', '#fb923c', '#c084fc']
   ```
-- [ ] Add `MM_STARTING_CURRENCY = 1000` — fake auction currency per player
-- [ ] Add `MM_BID_INCREMENT = 50` — minimum bid increment
-- [ ] Add `MM_RANK_1_POINTS = 500` — points for 1st place market value
-- [ ] Add `MM_RANK_2_POINTS = 350` — points for 2nd place
-- [ ] Add `MM_RANK_3_POINTS = 250` — points for 3rd place
-- [ ] Add `MM_PARTICIPATION_POINTS = 100` — points for all other ranks
-- [ ] Add `MM_INVESTMENT_BONUS = 50` — bonus for investing in the top-valued drawing
-- [ ] **Verification:** Import all `MM_*` constants; confirm correct types and values. Confirm `MM_COLOR_PALETTE` has 8 entries.
+- [x] Add `MM_STARTING_CURRENCY = 1000` — fake auction currency per player
+- [x] Add `MM_BID_INCREMENT = 50` — minimum bid increment
+- [x] Add `MM_RANK_1_POINTS = 500` — points for 1st place market value
+- [x] Add `MM_RANK_2_POINTS = 350` — points for 2nd place
+- [x] Add `MM_RANK_3_POINTS = 250` — points for 3rd place
+- [x] Add `MM_PARTICIPATION_POINTS = 100` — points for all other ranks
+- [x] Add `MM_INVESTMENT_BONUS = 50` — bonus for investing in the top-valued drawing
+- [x] **Verification:** Import all `MM_*` constants; confirm correct types and values. Confirm `MM_COLOR_PALETTE` has 8 entries.
 
 ---
 
 ### 6.3.3 Create Static Data Files
 
-- [ ] Create directory `public/data/rmhbox/minimalist-masterpiece/`
+- [x] Create directory `public/data/rmhbox/minimalist-masterpiece/`
   **Verification:** Directory exists on disk.
 
-- [ ] Create `public/data/rmhbox/minimalist-masterpiece/prompts.json` — curated drawing prompts
+- [x] Create `public/data/rmhbox/minimalist-masterpiece/prompts.json` — curated drawing prompts
   - Each entry follows:
     ```ts
     {
@@ -1472,9 +1472,9 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 
 ### 6.3.4 Define Zod Validation Schemas
 
-- [ ] Create `lib/rmhbox/minimalist-masterpiece/schemas.ts`
+- [x] Create `lib/rmhbox/minimalist-masterpiece/schemas.ts`
 
-- [ ] Define `PointSchema`:
+- [x] Define `PointSchema`:
   ```ts
   const PointSchema = z.object({
     x: z.number().min(0).max(MM_CANVAS_SIZE),
@@ -1483,7 +1483,7 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
   });
   ```
 
-- [ ] Define `StrokeSchema`:
+- [x] Define `StrokeSchema`:
   ```ts
   const StrokeSchema = z.object({
     id: z.string().min(1).max(36),
@@ -1494,7 +1494,7 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
   });
   ```
 
-- [ ] Define `SubmitDrawingSchema`:
+- [x] Define `SubmitDrawingSchema`:
   ```ts
   const SubmitDrawingSchema = z.object({
     strokes: z.array(StrokeSchema).max(MM_MAX_STROKES),
@@ -1502,7 +1502,7 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
   ```
   **Verification:** Valid: 5 strokes with 10+ points each, valid hex colors. Invalid: 6 strokes (exceeds max), stroke with 3 points (below min), point x=500 (out of range), color "#gggggg" (invalid hex).
 
-- [ ] Define `PlaceBidSchema`:
+- [x] Define `PlaceBidSchema`:
   ```ts
   const PlaceBidSchema = z.object({
     drawingId: z.string().min(1).max(36),
@@ -1515,7 +1515,7 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 
 ### 6.3.5 Create Data Loader
 
-- [ ] Create `lib/rmhbox/minimalist-masterpiece/data-loader.ts`
+- [x] Create `lib/rmhbox/minimalist-masterpiece/data-loader.ts`
   - [ ] Export `loadPrompts(): DrawingPrompt[]` — reads and parses `prompts.json`, caches as singleton
   - [ ] Export `selectPromptForGame(pool: DrawingPrompt[], usedIds: Set<string>): DrawingPrompt` — selects a random prompt not in `usedIds`
   **Verification:** Unit test: loader caches. Selection excludes used IDs.
@@ -1524,17 +1524,17 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 
 ### 6.3.6 Implement Server Handler
 
-- [ ] Create `server/rmhbox/minigames/minimalist-masterpiece.ts`
+- [x] Create `server/rmhbox/minigames/minimalist-masterpiece.ts`
 
 #### 6.3.6.1 Type Definitions
 
-- [ ] Define `MMPhase` type:
+- [x] Define `MMPhase` type:
   ```ts
   type MMPhase = 'PROMPT_REVEAL' | 'DRAWING' | 'GALLERY' | 'AUCTION' | 'RESULTS';
   ```
   **Verification:** Type has exactly 5 values matching spec.
 
-- [ ] Define `PlayerDrawing` type:
+- [x] Define `PlayerDrawing` type:
   ```ts
   type PlayerDrawing = {
     drawingId: string;
@@ -1544,7 +1544,7 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
   };
   ```
 
-- [ ] Define `DrawingBids` type:
+- [x] Define `DrawingBids` type:
   ```ts
   type DrawingBids = {
     drawingId: string;
@@ -1553,7 +1553,7 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
   };
   ```
 
-- [ ] Define `MMRanking` type:
+- [x] Define `MMRanking` type:
   ```ts
   type MMRanking = {
     drawingId: string;
@@ -1566,7 +1566,7 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
   };
   ```
 
-- [ ] Define `MinimalistMasterpieceState` type:
+- [x] Define `MinimalistMasterpieceState` type:
   ```ts
   type MinimalistMasterpieceState = {
     prompt: DrawingPrompt;
@@ -1586,37 +1586,37 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 
 #### 6.3.6.2 Class: `MinimalistMasterpieceGame extends BaseMinigame`
 
-- [ ] Constructor: call `super(context)`; load prompts via data loader
+- [x] Constructor: call `super(context)`; load prompts via data loader
   **Verification:** Instantiate class; confirm no errors.
 
 #### 6.3.6.3 State Initialization (`start()`)
 
-- [ ] Select prompt via `selectPromptForGame()`
-- [ ] Generate anonymous `drawingId` for each player (e.g., nanoid)
-- [ ] Build `drawingIdToUserId` and `userIdToDrawingId` maps (randomized assignment — NOT in player order)
-- [ ] Initialize empty `drawings` map with one `PlayerDrawing` per player (empty strokes)
-- [ ] Initialize `playerCurrencies` = `MM_STARTING_CURRENCY` for each player
-- [ ] Initialize empty `bids` map with one `DrawingBids` per drawing (totalValue=0, empty bidders)
-- [ ] Set `phase = 'PROMPT_REVEAL'`
-- [ ] Emit `MM_PROMPT` to all: `{ prompt, drawingDurationSeconds: MM_DRAWING_DURATION_SECONDS, maxStrokes: MM_MAX_STROKES, colorPalette: MM_COLOR_PALETTE }`
-- [ ] Schedule `startDrawingPhase()` after `MM_PROMPT_REVEAL_SECONDS`
+- [x] Select prompt via `selectPromptForGame()`
+- [x] Generate anonymous `drawingId` for each player (e.g., nanoid)
+- [x] Build `drawingIdToUserId` and `userIdToDrawingId` maps (randomized assignment — NOT in player order)
+- [x] Initialize empty `drawings` map with one `PlayerDrawing` per player (empty strokes)
+- [x] Initialize `playerCurrencies` = `MM_STARTING_CURRENCY` for each player
+- [x] Initialize empty `bids` map with one `DrawingBids` per drawing (totalValue=0, empty bidders)
+- [x] Set `phase = 'PROMPT_REVEAL'`
+- [x] Emit `MM_PROMPT` to all: `{ prompt, drawingDurationSeconds: MM_DRAWING_DURATION_SECONDS, maxStrokes: MM_MAX_STROKES, colorPalette: MM_COLOR_PALETTE }`
+- [x] Schedule `startDrawingPhase()` after `MM_PROMPT_REVEAL_SECONDS`
   **Verification:** Unit test with 4 players: 4 drawing IDs generated, maps correct, all currencies = 1000. Prompt event emitted.
 
 #### 6.3.6.4 Phase Management
 
-- [ ] `startDrawingPhase()`:
+- [x] `startDrawingPhase()`:
   - Set `phase = 'DRAWING'`
   - Start `TIMER_TICK` interval (1s)
   - Schedule `endDrawingPhase()` after `MM_DRAWING_DURATION_SECONDS`
   **Verification:** Phase transitions. Timer ticks emit.
 
-- [ ] `endDrawingPhase()`:
+- [x] `endDrawingPhase()`:
   - Stop timer
   - For any player who hasn't submitted, submit their current strokes as-is (even if 0 strokes)
   - Call `startGalleryPhase()`
   **Verification:** Unsubmitted drawings finalized. Gallery starts.
 
-- [ ] `startGalleryPhase()`:
+- [x] `startGalleryPhase()`:
   - Set `phase = 'GALLERY'`
   - Build gallery view: all drawings with anonymous labels ("Artist 1", "Artist 2", ...) and stroke data
   - Emit `MM_GALLERY` to all: `{ drawings: GalleryDrawing[], galleryDurationSeconds: MM_GALLERY_DURATION_SECONDS }`
@@ -1624,7 +1624,7 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
   - Schedule `startAuctionPhase()` after `MM_GALLERY_DURATION_SECONDS`
   **Verification:** Gallery includes all drawings with anonymous labels. Labels are randomized (not correlated with player order).
 
-- [ ] `startAuctionPhase()`:
+- [x] `startAuctionPhase()`:
   - Set `phase = 'AUCTION'`
   - Build auction drawing list per player (mark `isMine` based on `userIdToDrawingId`)
   - Emit `MM_AUCTION_START` to each player individually:
@@ -1637,60 +1637,60 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
   - Schedule `endAuctionPhase()` after `MM_AUCTION_DURATION_SECONDS`
   **Verification:** Each player sees `isMine` on their own drawing. Currency starts at 1000.
 
-- [ ] `endAuctionPhase()`:
+- [x] `endAuctionPhase()`:
   - Stop timer
   - Call `computeResults()`
   **Verification:** Results computed after auction ends.
 
 #### 6.3.6.5 Input Handling — `SUBMIT_DRAWING`
 
-- [ ] Validate phase is `'DRAWING'`; reject if not
-- [ ] Parse input through `SubmitDrawingSchema`; reject on validation failure
-- [ ] Check player hasn't already submitted; reject if duplicate
-- [ ] **Anti-bot validation for each stroke:**
+- [x] Validate phase is `'DRAWING'`; reject if not
+- [x] Parse input through `SubmitDrawingSchema`; reject on validation failure
+- [x] Check player hasn't already submitted; reject if duplicate
+- [x] **Anti-bot validation for each stroke:**
   - [ ] Verify `points.length >= MM_MIN_POINTS_PER_STROKE` (already in schema, but double-check)
   - [ ] Verify time between first and last point timestamps ≥ `MM_MIN_STROKE_DURATION_MS`
   - [ ] Verify `points.length <= MM_MAX_POINTS_PER_STROKE`
   - [ ] Verify `color` is in `MM_COLOR_PALETTE`
-- [ ] Store strokes in `drawings` map
-- [ ] Emit `MM_DRAWING_SUBMITTED` to all: `{ userId }` (NOT the drawing data — other players can't see during drawing phase)
-- [ ] If ALL players have submitted, immediately call `endDrawingPhase()`
+- [x] Store strokes in `drawings` map
+- [x] Emit `MM_DRAWING_SUBMITTED` to all: `{ userId }` (NOT the drawing data — other players can't see during drawing phase)
+- [x] If ALL players have submitted, immediately call `endDrawingPhase()`
   **Verification:** Unit test: valid 5-stroke drawing → accepted. 6-stroke drawing → schema rejects. Stroke with 3 points → schema rejects. Color not in palette → rejected. Anti-bot: stroke with 50ms duration → rejected.
 
 #### 6.3.6.6 Input Handling — `PLACE_BID`
 
-- [ ] Validate phase is `'AUCTION'`; reject if not
-- [ ] Parse input through `PlaceBidSchema`; reject on validation failure
-- [ ] Validate `drawingId` exists in `drawings` map
-- [ ] Check player is NOT bidding on their own drawing (via `drawingIdToUserId`); reject if self-bid
-- [ ] Calculate effective amount:
+- [x] Validate phase is `'AUCTION'`; reject if not
+- [x] Parse input through `PlaceBidSchema`; reject on validation failure
+- [x] Validate `drawingId` exists in `drawings` map
+- [x] Check player is NOT bidding on their own drawing (via `drawingIdToUserId`); reject if self-bid
+- [x] Calculate effective amount:
   - If `amount > 0` (adding bid): verify player has sufficient currency (`playerCurrencies[userId] >= amount`); deduct from currency
   - If `amount < 0` (retracting bid): verify player has bid at least `|amount|` on this drawing; refund to currency
-- [ ] Update `bids` map: add/subtract from bidder's amount for this drawing; recalculate `totalValue`
-- [ ] Emit `MM_BID_UPDATE` to the bidding player ONLY:
+- [x] Update `bids` map: add/subtract from bidder's amount for this drawing; recalculate `totalValue`
+- [x] Emit `MM_BID_UPDATE` to the bidding player ONLY:
   ```ts
   { drawingId, totalValue, myBid: updatedBidAmount, myRemainingCurrency }
   ```
-- [ ] Emit `MM_BID_BROADCAST` to ALL: `{ drawingId, totalValue }` (public total value only — NOT who bid)
+- [x] Emit `MM_BID_BROADCAST` to ALL: `{ drawingId, totalValue }` (public total value only — NOT who bid)
   **Verification:** Unit test: bid 200 on drawing → currency = 800, totalValue increases. Retract 100 → currency = 900. Self-bid rejected. Insufficient currency rejected. Non-multiple-of-50 rejected.
 
 #### 6.3.6.7 Scoring Computation (`computeResults()`)
 
-- [ ] Calculate `marketValues`: for each drawing, sum all bids (already tracked in `bids` map)
-- [ ] Rank drawings by `marketValue` descending
-- [ ] Assign points:
+- [x] Calculate `marketValues`: for each drawing, sum all bids (already tracked in `bids` map)
+- [x] Rank drawings by `marketValue` descending
+- [x] Assign points:
   - Rank 1: `MM_RANK_1_POINTS` (500)
   - Rank 2: `MM_RANK_2_POINTS` (350)
   - Rank 3: `MM_RANK_3_POINTS` (250)
   - Rank 4+: `MM_PARTICIPATION_POINTS` (100)
-- [ ] Handle ties: tied drawings share the higher rank (both get the higher point value)
-- [ ] Compute investment bonuses:
+- [x] Handle ties: tied drawings share the higher rank (both get the higher point value)
+- [x] Compute investment bonuses:
   - Find the drawing with the highest market value
   - For each player who bid on it: `bonusPoints = floor(MM_INVESTMENT_BONUS × (playerBid / totalBid))`
   - Add bonus points to those players' scores
-- [ ] Build `MMRanking[]` array
-- [ ] De-anonymize: reveal artist identity (drawingId → userId mapping)
-- [ ] Emit `MM_RESULTS` to all:
+- [x] Build `MMRanking[]` array
+- [x] De-anonymize: reveal artist identity (drawingId → userId mapping)
+- [x] Emit `MM_RESULTS` to all:
   ```ts
   { rankings: MMRanking[], investmentBonuses: InvestmentBonus[] }
   ```
@@ -1698,28 +1698,28 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 
 #### 6.3.6.8 `getStateForPlayer(userId)`
 
-- [ ] During PROMPT_REVEAL:
+- [x] During PROMPT_REVEAL:
   ```ts
   { prompt, phase, maxStrokes, colorPalette, timeRemaining }
   ```
-- [ ] During DRAWING:
+- [x] During DRAWING:
   ```ts
   { prompt, phase, myStrokes: Stroke[], myStrokeCount, hasSubmitted, timeRemaining,
     submittedPlayers: string[] }  // who has submitted (not their drawings)
   ```
   - Other players' drawings are NOT included
-- [ ] During GALLERY:
+- [x] During GALLERY:
   ```ts
   { prompt, phase, drawings: GalleryDrawing[], timeRemaining }
   ```
   - Anonymous labels only — no player identity mapping
-- [ ] During AUCTION:
+- [x] During AUCTION:
   ```ts
   { prompt, phase, drawings: AuctionDrawing[], myCurrency, timeRemaining }
   ```
   - `isMine` flag on own drawing; `myBidAmount` per drawing; public `currentBidTotal`
   - Other players' individual bids NOT visible (only totals)
-- [ ] During RESULTS:
+- [x] During RESULTS:
   ```ts
   { prompt, phase, rankings: MMRanking[], investmentBonuses: InvestmentBonus[] }
   ```
@@ -1728,50 +1728,50 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 
 #### 6.3.6.9 `getStateForSpectator()`
 
-- [ ] During DRAWING: sees all players' canvases live (all strokes as they're drawn)
-- [ ] During GALLERY: same as player (anonymous)
-- [ ] During AUCTION: sees all individual bids (who bid what on which drawing), knows which drawing belongs to which player
-- [ ] During RESULTS: same as player
+- [x] During DRAWING: sees all players' canvases live (all strokes as they're drawn)
+- [x] During GALLERY: same as player (anonymous)
+- [x] During AUCTION: sees all individual bids (who bid what on which drawing), knows which drawing belongs to which player
+- [x] During RESULTS: same as player
   **Verification:** Spectator sees all canvases during drawing and all individual bids during auction.
 
 #### 6.3.6.10 Join-in-Progress Handling
 
-- [ ] Policy: `spectate_only`
-- [ ] Players who join after DRAWING cannot draw; they spectate from GALLERY onward
-- [ ] They cannot bid during AUCTION (no currency allocation)
-- [ ] Send spectator state on join
+- [x] Policy: `spectate_only`
+- [x] Players who join after DRAWING cannot draw; they spectate from GALLERY onward
+- [x] They cannot bid during AUCTION (no currency allocation)
+- [x] Send spectator state on join
   **Verification:** JIP during AUCTION → spectator only, no bidding capability.
 
 #### 6.3.6.11 Reconnection Handling (`handlePlayerReconnect(userId)`)
 
-- [ ] During DRAWING: send current strokes (server has any saved strokes); player can continue drawing
-- [ ] During GALLERY/AUCTION: send gallery data and current bid state (their currency, their bids)
-- [ ] Stroke data is preserved server-side even if client disconnects mid-draw
+- [x] During DRAWING: send current strokes (server has any saved strokes); player can continue drawing
+- [x] During GALLERY/AUCTION: send gallery data and current bid state (their currency, their bids)
+- [x] Stroke data is preserved server-side even if client disconnects mid-draw
   **Verification:** Reconnect during DRAWING → strokes restored. Reconnect during AUCTION → currency and bids restored.
 
 #### 6.3.6.12 Disconnect Handling (`handlePlayerDisconnect(userId)`)
 
-- [ ] Drawing phase: whatever strokes exist are preserved; at phase end, auto-submitted as-is
-- [ ] Auction phase: existing bids preserved; currency frozen (can't bid while disconnected)
-- [ ] No special cleanup needed
+- [x] Drawing phase: whatever strokes exist are preserved; at phase end, auto-submitted as-is
+- [x] Auction phase: existing bids preserved; currency frozen (can't bid while disconnected)
+- [x] No special cleanup needed
   **Verification:** Disconnect during DRAWING → strokes auto-submitted at phase end. Bids preserved.
 
 #### 6.3.6.13 `computeResults()` and Awards
 
-- [ ] Compute final rankings by market value (descending)
-- [ ] Compute awards:
+- [x] Compute final rankings by market value (descending)
+- [x] Compute awards:
   - [ ] **Minimalist Master** — highest market value (winner); icon: `crown`
   - [ ] **Patron of the Arts** — player who spent the most total coins across all drawings; icon: `banknote`
   - [ ] **One Stroke Wonder** — drawing with highest market value that used ≤ 3 strokes; icon: `star`
   - [ ] **Undervalued Gem** — drawing that received bids from the most different players; icon: `gem`
   - [ ] **Shrewd Investor** — player who earned the highest investment bonus; icon: `trending-up`
-- [ ] Return `MinigameResults` with rankings, awards, and `gameSpecificData` containing drawings + bids
+- [x] Return `MinigameResults` with rankings, awards, and `gameSpecificData` containing drawings + bids
   **Verification:** Unit test: scenarios triggering each award → all 5 awards assigned correctly.
 
 #### 6.3.6.14 `buildGameLog()`
 
-- [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
-- [ ] Build `GameLog` conforming to core.md §13.3, including `gameSettings` per §12A.11
+- [x] Maintain an `actionLog: GameLogAction[]` array on the game instance
+- [x] Build `GameLog` conforming to core.md §13.3, including `gameSettings` per §12A.11
 
 **`initialState` (from minigames-2.md §3.14):**
 
@@ -1799,16 +1799,16 @@ interface MMInitialState {
 | `auction_close` | `{ drawingOwnerId: string; winnerId: string; finalPrice: number }` | Bidding closes on a piece |
 | `market_values` | `{ rankings: Array<{ userId: string; marketValue: number; rank: number }> }` | Final valuations computed |
 
-- [ ] Include all drawing stroke data in game log for gallery replay
-- [ ] In `computeResults()`, build `GameLog` with `initialState`, full action log, and `finalResults`
-- [ ] Return `GameLog` from `buildGameLog()`
+- [x] Include all drawing stroke data in game log for gallery replay
+- [x] In `computeResults()`, build `GameLog` with `initialState`, full action log, and `finalResults`
+- [x] Return `GameLog` from `buildGameLog()`
   **Verification:** Unit test: 5-player game, verify all 5 drawings captured in log with stroke data, bids recorded, auction results present, `initialState` has prompt and canvas config.
 
 ---
 
 ### 6.3.7 Register Game in Minigame Registry
 
-- [ ] Add entry to `lib/rmhbox/minigame-registry.ts`:
+- [x] Add entry to `lib/rmhbox/minigame-registry.ts`:
   ```ts
   {
     id: "minimalist-masterpiece",
@@ -1828,14 +1828,14 @@ interface MMInitialState {
   ```
   **Verification:** Registry lookup for `"minimalist-masterpiece"` returns correct metadata.
 
-- [ ] Register server handler in `MINIGAME_SERVER_REGISTRY` (in `server/rmhbox/game-coordinator.ts`):
+- [x] Register server handler in `MINIGAME_SERVER_REGISTRY` (in `server/rmhbox/game-coordinator.ts`):
   ```ts
   import { MinimalistMasterpieceGame } from './minigames/minimalist-masterpiece';
   MINIGAME_SERVER_REGISTRY.set('minimalist-masterpiece', MinimalistMasterpieceGame);
   ```
   **Verification:** `MINIGAME_SERVER_REGISTRY.get('minimalist-masterpiece')` returns the `MinimalistMasterpieceGame` class. `GameCoordinator` can instantiate it with a valid `MinigameContext`.
 
-- [ ] Add lazy-load entry in `components/rmhbox/MinigameRenderer.tsx`:
+- [x] Add lazy-load entry in `components/rmhbox/MinigameRenderer.tsx`:
   ```tsx
   'minimalist-masterpiece': lazy(() => import('./minigames/minimalist-masterpiece/MinimalistMasterpieceGame')),
   ```
@@ -1847,17 +1847,17 @@ interface MMInitialState {
 
 #### 6.3.8.1 `components/rmhbox/minigames/minimalist-masterpiece/MinimalistMasterpieceGame.tsx`
 
-- [ ] Phase router — renders based on `phase`
-- [ ] Subscribe to all `MM_*` and `TIMER_TICK` events
-- [ ] Maintain local state: prompt, phase, strokes, gallery, bids, currency, rankings
-- [ ] Handle `MM_PROMPT` → store prompt, transition to prompt reveal
-- [ ] Handle `MM_DRAWING_SUBMITTED` → update submitted players list
-- [ ] Handle `MM_GALLERY` → store gallery drawings, transition to gallery
-- [ ] Handle `MM_AUCTION_START` → store auction data, initialize bid tracking
-- [ ] Handle `MM_BID_UPDATE` → update own bid state and currency
-- [ ] Handle `MM_BID_BROADCAST` → update public bid totals
-- [ ] Handle `MM_RESULTS` → store rankings, trigger reveal animation
-- [ ] Conditional rendering:
+- [x] Phase router — renders based on `phase`
+- [x] Subscribe to all `MM_*` and `TIMER_TICK` events
+- [x] Maintain local state: prompt, phase, strokes, gallery, bids, currency, rankings
+- [x] Handle `MM_PROMPT` → store prompt, transition to prompt reveal
+- [x] Handle `MM_DRAWING_SUBMITTED` → update submitted players list
+- [x] Handle `MM_GALLERY` → store gallery drawings, transition to gallery
+- [x] Handle `MM_AUCTION_START` → store auction data, initialize bid tracking
+- [x] Handle `MM_BID_UPDATE` → update own bid state and currency
+- [x] Handle `MM_BID_BROADCAST` → update public bid totals
+- [x] Handle `MM_RESULTS` → store rankings, trigger reveal animation
+- [x] Conditional rendering:
   - `PROMPT_REVEAL` → prompt card with entrance animation
   - `DRAWING` → `<DrawingCanvas />` + `<ColorPalette />` + `<StrokeCounter />`
   - `GALLERY` → `<GalleryCarousel />`
@@ -1867,87 +1867,87 @@ interface MMInitialState {
 
 #### 6.3.8.2 `components/rmhbox/minigames/minimalist-masterpiece/DrawingCanvas.tsx`
 
-- [ ] HTML5 `<canvas>` element sized at `MM_CANVAS_SIZE × MM_CANVAS_SIZE` (scaled for display)
-- [ ] Pointer/touch event handling:
+- [x] HTML5 `<canvas>` element sized at `MM_CANVAS_SIZE × MM_CANVAS_SIZE` (scaled for display)
+- [x] Pointer/touch event handling:
   - `pointerdown` → start new stroke (if < 5 strokes)
   - `pointermove` → sample points into current stroke array (throttle to ~60fps)
   - `pointerup` → finalize stroke, validate anti-bot requirements client-side
-- [ ] Use `perfect-freehand` `getStroke()` to convert raw points into smooth rendered paths
-- [ ] Render strokes as SVG `<path>` elements overlaid on canvas (or draw directly on canvas with path data)
-- [ ] Support pressure sensitivity where available (fallback `pressure = 1`)
-- [ ] Undo last stroke button (removes last stroke, allows re-drawing — total stays ≤ 5)
-- [ ] Clear all button (removes all strokes, starts over)
-- [ ] Submit button (sends all strokes to server via `SUBMIT_DRAWING` action)
-- [ ] Auto-submit when 5th stroke completed (with brief confirmation)
-- [ ] Touch-friendly: prevent scroll during drawing, handle multi-touch gracefully (ignore extra fingers)
+- [x] Use `perfect-freehand` `getStroke()` to convert raw points into smooth rendered paths
+- [x] Render strokes as SVG `<path>` elements overlaid on canvas (or draw directly on canvas with path data)
+- [x] Support pressure sensitivity where available (fallback `pressure = 1`)
+- [x] Undo last stroke button (removes last stroke, allows re-drawing — total stays ≤ 5)
+- [x] Clear all button (removes all strokes, starts over)
+- [x] Submit button (sends all strokes to server via `SUBMIT_DRAWING` action)
+- [x] Auto-submit when 5th stroke completed (with brief confirmation)
+- [x] Touch-friendly: prevent scroll during drawing, handle multi-touch gracefully (ignore extra fingers)
   **Verification:** Draw 5 strokes → renders smoothly. Undo removes last. Submit sends correct data. Pressure affects stroke width via `perfect-freehand`.
 
 #### 6.3.8.3 `components/rmhbox/minigames/minimalist-masterpiece/ColorPalette.tsx`
 
-- [ ] Horizontal strip of 8 color swatches from `MM_COLOR_PALETTE`
-- [ ] Active color has highlight ring
-- [ ] Tap to select; updates current drawing color
-- [ ] Default: first color (dark navy)
+- [x] Horizontal strip of 8 color swatches from `MM_COLOR_PALETTE`
+- [x] Active color has highlight ring
+- [x] Tap to select; updates current drawing color
+- [x] Default: first color (dark navy)
   **Verification:** 8 colors rendered. Selection updates drawing color.
 
 #### 6.3.8.4 `components/rmhbox/minigames/minimalist-masterpiece/StrokeCounter.tsx`
 
-- [ ] Display "3/5 strokes used"
-- [ ] Visual indicator (dots or progress bar)
-- [ ] Warning when at 4/5 or 5/5
+- [x] Display "3/5 strokes used"
+- [x] Visual indicator (dots or progress bar)
+- [x] Warning when at 4/5 or 5/5
   **Verification:** Counter updates on each stroke. Warning at 4/5.
 
 #### 6.3.8.5 `components/rmhbox/minigames/minimalist-masterpiece/GalleryCarousel.tsx`
 
-- [ ] Scrollable/swipeable gallery of all drawings
-- [ ] Desktop: grid layout (2–3 columns)
-- [ ] Mobile: horizontal swipeable carousel (one drawing at a time)
-- [ ] Each drawing rendered via `<DrawingCard />`
-- [ ] Anonymous labels: "Artist 1", "Artist 2", etc.
+- [x] Scrollable/swipeable gallery of all drawings
+- [x] Desktop: grid layout (2–3 columns)
+- [x] Mobile: horizontal swipeable carousel (one drawing at a time)
+- [x] Each drawing rendered via `<DrawingCard />`
+- [x] Anonymous labels: "Artist 1", "Artist 2", etc.
   **Verification:** Gallery renders all drawings. Mobile swipe works. Labels anonymous.
 
 #### 6.3.8.6 `components/rmhbox/minigames/minimalist-masterpiece/DrawingCard.tsx`
 
-- [ ] Single drawing display with stroke rendering via `perfect-freehand`
-- [ ] Anonymous label
-- [ ] During AUCTION: show current bid total, bid controls
-- [ ] During RESULTS: show artist name, rank, market value, rank badge
-- [ ] Highlight for "isMine" (subtle border or badge)
+- [x] Single drawing display with stroke rendering via `perfect-freehand`
+- [x] Anonymous label
+- [x] During AUCTION: show current bid total, bid controls
+- [x] During RESULTS: show artist name, rank, market value, rank badge
+- [x] Highlight for "isMine" (subtle border or badge)
   **Verification:** Renders strokes correctly. Bid info displays during auction. De-anonymized during results.
 
 #### 6.3.8.7 `components/rmhbox/minigames/minimalist-masterpiece/AuctionPanel.tsx`
 
-- [ ] Bidding interface displayed below/beside each drawing card
-- [ ] Show current bid total prominently
-- [ ] `<BidControls />` with +/- bid buttons
-- [ ] Remaining currency display
-- [ ] Disabled for own drawing (can't self-bid)
+- [x] Bidding interface displayed below/beside each drawing card
+- [x] Show current bid total prominently
+- [x] `<BidControls />` with +/- bid buttons
+- [x] Remaining currency display
+- [x] Disabled for own drawing (can't self-bid)
   **Verification:** Bid buttons emit `PLACE_BID`. Disabled on own drawing. Currency updates on bid.
 
 #### 6.3.8.8 `components/rmhbox/minigames/minimalist-masterpiece/BidControls.tsx`
 
-- [ ] "+" button: increase bid by `MM_BID_INCREMENT` (50)
-- [ ] "−" button: decrease bid by `MM_BID_INCREMENT` (50, minimum 0)
-- [ ] Custom amount input (optional, multiples of 50)
-- [ ] "+" disabled when currency = 0
-- [ ] "−" disabled when own bid on this drawing = 0
-- [ ] Touch-friendly sizing
+- [x] "+" button: increase bid by `MM_BID_INCREMENT` (50)
+- [x] "−" button: decrease bid by `MM_BID_INCREMENT` (50, minimum 0)
+- [x] Custom amount input (optional, multiples of 50)
+- [x] "+" disabled when currency = 0
+- [x] "−" disabled when own bid on this drawing = 0
+- [x] Touch-friendly sizing
   **Verification:** Increment/decrement work correctly. Currency constraints enforced.
 
 #### 6.3.8.9 `components/rmhbox/minigames/minimalist-masterpiece/MarketResultsScreen.tsx`
 
-- [ ] Rankings podium showing top 3 drawings with artist reveal
-- [ ] Each drawing with market value, rank badge, score
-- [ ] Investment bonus callouts for players who earned them
-- [ ] De-anonymized: "Artist 1 was [Player Name]!"
-- [ ] Framer Motion animations for rank reveals (staggered)
-- [ ] canvas-confetti for winner
+- [x] Rankings podium showing top 3 drawings with artist reveal
+- [x] Each drawing with market value, rank badge, score
+- [x] Investment bonus callouts for players who earned them
+- [x] De-anonymized: "Artist 1 was [Player Name]!"
+- [x] Framer Motion animations for rank reveals (staggered)
+- [x] canvas-confetti for winner
   **Verification:** Rankings display correctly. De-anonymization correct. Confetti on winner.
 
 #### 6.3.8.10 Sound Effect Integration
 
-- [ ] Import `playSound` from `@/lib/rmhbox/audio`
-- [ ] Trigger sounds in `MinimalistMasterpieceGame.tsx` event handlers:
+- [x] Import `playSound` from `@/lib/rmhbox/audio`
+- [x] Trigger sounds in `MinimalistMasterpieceGame.tsx` event handlers:
   - [ ] `MM_PROMPT` → `playSound('goFanfare')`
   - [ ] `MM_DRAWING_SUBMITTED` → `playSound('click')`
   - [ ] `MM_GALLERY` → `playSound('swoosh')`
@@ -1958,19 +1958,19 @@ interface MMInitialState {
 
 #### 6.3.8.11 Zustand Store Integration
 
-- [ ] Read game state via `useRMHboxStore()`:
+- [x] Read game state via `useRMHboxStore()`:
   - [ ] `gameState.lastAction` for reacting to `MM_*` events
   - [ ] `lobby.currentGame.timeRemaining` for countdown
   - [ ] `lobby.currentGame.publicState` for gallery and auction data
   - [ ] `lobby.currentGame.privateState` for drawing state
-- [ ] Detect spectator mode: render live multi-canvas view during drawing phase
+- [x] Detect spectator mode: render live multi-canvas view during drawing phase
   **Verification:** Component re-renders on store updates. Spectator sees all canvases live but cannot draw or bid.
 
 ---
 
 ### 6.3.9 Integration Testing
 
-- [ ] End-to-end test: 4 players → start Minimalist Masterpiece → draw → gallery → auction → results
+- [x] End-to-end test: 4 players → start Minimalist Masterpiece → draw → gallery → auction → results
   - [ ] Verify all players receive same prompt
   - [ ] Verify exactly 5 strokes max enforced (server rejects 6th)
   - [ ] Verify anti-bot validation: strokes need ≥5 points and ≥100ms duration
@@ -1983,23 +1983,23 @@ interface MMInitialState {
   - [ ] Verify de-anonymization during results
   **Verification:** All assertions pass.
 
-- [ ] Anonymity test:
+- [x] Anonymity test:
   - [ ] Confirm `drawingIdToUserId` mapping is NOT in any player-facing event
   - [ ] Confirm gallery and auction views use anonymous labels only
   - [ ] Confirm de-anonymization happens ONLY in `MM_RESULTS`
   **Verification:** Network inspector confirms no identity leakage before results.
 
-- [ ] Auction dynamics test:
+- [x] Auction dynamics test:
   - [ ] Player A bids 200 on Drawing 1, 300 on Drawing 2 → currency = 500
   - [ ] Player A retracts 100 from Drawing 1 → currency = 600, Drawing 1 total decreases
   - [ ] Player B bids 500 on Drawing 1 → Drawing 1 total increases
   - [ ] At end: market values computed correctly
   **Verification:** Currency and bid totals match expected values.
 
-- [ ] Empty drawing test: Player doesn't draw → empty drawing entered in auction → likely gets 0 bids → ranks last
+- [x] Empty drawing test: Player doesn't draw → empty drawing entered in auction → likely gets 0 bids → ranks last
   **Verification:** Empty drawing handled gracefully; no errors.
 
-- [ ] Reconnection test: Player disconnects during DRAWING (has 3 strokes), reconnects → strokes restored, can continue
+- [x] Reconnection test: Player disconnects during DRAWING (has 3 strokes), reconnects → strokes restored, can continue
   **Verification:** Strokes preserved and restored.
 
 ### 6.3.10 Game Settings Integration (§12A)
@@ -2008,13 +2008,13 @@ Integrate host-configurable settings using the §12A system.
 
 #### Registry Entry
 
-- [ ] Export `MINIMALIST_MASTERPIECE_SETTINGS: GameSettingsSchema` in `lib/rmhbox/minigame-registry.ts` with 5 entries:
+- [x] Export `MINIMALIST_MASTERPIECE_SETTINGS: GameSettingsSchema` in `lib/rmhbox/minigame-registry.ts` with 5 entries:
   - `drawingDuration` (integer, default `45`, min 20, max 90, step 5)
   - `maxStrokes` (integer, default `15`, min 5, max 30, step 5)
   - `auctionDuration` (integer, default `30`, min 15, max 60, step 5)
   - `startingCurrency` (integer, default `500`, min 200, max 1000, step 50)
   - `bidIncrement` (integer, default `25`, min 10, max 100, step 5)
-- [ ] Attach `settingsSchema: MINIMALIST_MASTERPIECE_SETTINGS` to the `minimalist-masterpiece` `MinigameDefinition`.
+- [x] Attach `settingsSchema: MINIMALIST_MASTERPIECE_SETTINGS` to the `minimalist-masterpiece` `MinigameDefinition`.
   **Verification:** Registry lookup returns definition with `settingsSchema` containing 5 entries.
 
 #### Handler `getSetting()` Integration
@@ -2051,11 +2051,11 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 
 #### 6.3.11.3 Tests
 
-- [ ] Verify `getHistoryDisplay('minimalist-masterpiece')` returns a valid config
-- [ ] Verify searchable fields extract prompts from a mock game log
-- [ ] Verify filterable fields include auctionWin (boolean) and galleryVotes (range)
-- [ ] Verify `getSummary()` returns a meaningful string for a mock game log
-- [ ] Verify `DetailComponent` renders without errors when given a valid game log
+- [x] Verify `getHistoryDisplay('minimalist-masterpiece')` returns a valid config
+- [x] Verify searchable fields extract prompts from a mock game log
+- [x] Verify filterable fields include auctionWin (boolean) and galleryVotes (range)
+- [x] Verify `getSummary()` returns a meaningful string for a mock game log
+- [x] Verify `DetailComponent` renders without errors when given a valid game log
 
 ---
 
@@ -2068,49 +2068,49 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 
 ### 6.4.1 Install NPM Packages
 
-- [ ] Evaluate emoji picker approach — decide between `emoji-mart` and a custom curated subset:
+- [x] Evaluate emoji picker approach — decide between `emoji-mart` and a custom curated subset:
   - **Option A: `emoji-mart`** (~30KB gzipped) — full-featured emoji picker with search, categories, skin tones
   - **Option B: Custom curated 200-emoji JSON** — minimal bundle, tailored palette excluding letter/flag emojis
   - Recommended: **Option B** for tighter control over allowed emojis and smaller bundle
-- [ ] If Option A chosen: install `emoji-mart`
+- [x] If Option A chosen: install `emoji-mart`
   ```bash
   pnpm add emoji-mart @emoji-mart/data @emoji-mart/react
   ```
-- [ ] If Option B chosen: no NPM package needed; create static emoji palette JSON
+- [x] If Option B chosen: no NPM package needed; create static emoji palette JSON
   **Verification:** Chosen approach works: emoji picker renders, search/filter functional.
 
 ---
 
 ### 6.4.2 Add Constants to `lib/rmhbox/constants.ts`
 
-- [ ] Add `EC_MAX_ROUNDS = 6` — cap even if more players
-- [ ] Add `EC_PRODUCER_ASSIGNMENT_SECONDS = 2` — Producer announcement duration
-- [ ] Add `EC_ROUND_DURATION_SECONDS = 45` — emoji construction + guessing duration
-- [ ] Add `EC_ROUND_RESULTS_SECONDS = 5` — round results display duration
-- [ ] Add `EC_TRANSITION_SECONDS = 1` — brief transition between rounds
-- [ ] Add `EC_MAX_EMOJIS = 12` — max emojis the Producer can place per round
-- [ ] Add `EC_MAX_GUESSES_PER_PLAYER = 15` — max guesses per audience member per round
-- [ ] Add `EC_MAX_GUESS_LENGTH = 200` — max characters per guess
-- [ ] Add `EC_FUZZY_MATCH_THRESHOLD = 0.80` — fuse.js threshold for correct guess
-- [ ] Add `EC_CLOSE_THRESHOLD = 0.60` — fuse.js threshold for "close" hint
-- [ ] Add `EC_MIN_POPULARITY = 40` — minimum movie popularity score for selection
-- [ ] Add `EC_PRODUCER_BASE_POINTS = 100` — guaranteed Producer points if someone guesses correctly
-- [ ] Add `EC_PRODUCER_SPEED_BONUS = 10` — bonus per second remaining when first correct guess
-- [ ] Add `EC_FIRST_GUESS_POINTS = 300` — points for first correct guesser
-- [ ] Add `EC_SECOND_GUESS_POINTS = 150` — points for second correct guesser
-- [ ] Add `EC_OTHER_GUESS_POINTS = 75` — points for 3rd+ correct guessers
-- [ ] Add `EC_PRODUCER_DISCONNECT_WAIT_SECONDS = 10` — wait before skipping Producer's round
-- [ ] Add `EC_EMOJI_PALETTE_SIZE = 200` — number of curated emojis in the palette
-- [ ] **Verification:** Import all `EC_*` constants; confirm correct types. Confirm `EC_FUZZY_MATCH_THRESHOLD > EC_CLOSE_THRESHOLD`.
+- [x] Add `EC_MAX_ROUNDS = 6` — cap even if more players
+- [x] Add `EC_PRODUCER_ASSIGNMENT_SECONDS = 2` — Producer announcement duration
+- [x] Add `EC_ROUND_DURATION_SECONDS = 45` — emoji construction + guessing duration
+- [x] Add `EC_ROUND_RESULTS_SECONDS = 5` — round results display duration
+- [x] Add `EC_TRANSITION_SECONDS = 1` — brief transition between rounds
+- [x] Add `EC_MAX_EMOJIS = 12` — max emojis the Producer can place per round
+- [x] Add `EC_MAX_GUESSES_PER_PLAYER = 15` — max guesses per audience member per round
+- [x] Add `EC_MAX_GUESS_LENGTH = 200` — max characters per guess
+- [x] Add `EC_FUZZY_MATCH_THRESHOLD = 0.80` — fuse.js threshold for correct guess
+- [x] Add `EC_CLOSE_THRESHOLD = 0.60` — fuse.js threshold for "close" hint
+- [x] Add `EC_MIN_POPULARITY = 40` — minimum movie popularity score for selection
+- [x] Add `EC_PRODUCER_BASE_POINTS = 100` — guaranteed Producer points if someone guesses correctly
+- [x] Add `EC_PRODUCER_SPEED_BONUS = 10` — bonus per second remaining when first correct guess
+- [x] Add `EC_FIRST_GUESS_POINTS = 300` — points for first correct guesser
+- [x] Add `EC_SECOND_GUESS_POINTS = 150` — points for second correct guesser
+- [x] Add `EC_OTHER_GUESS_POINTS = 75` — points for 3rd+ correct guessers
+- [x] Add `EC_PRODUCER_DISCONNECT_WAIT_SECONDS = 10` — wait before skipping Producer's round
+- [x] Add `EC_EMOJI_PALETTE_SIZE = 200` — number of curated emojis in the palette
+- [x] **Verification:** Import all `EC_*` constants; confirm correct types. Confirm `EC_FUZZY_MATCH_THRESHOLD > EC_CLOSE_THRESHOLD`.
 
 ---
 
 ### 6.4.3 Create Static Data Files
 
-- [ ] Create directory `public/data/rmhbox/emoji-cinema/`
+- [x] Create directory `public/data/rmhbox/emoji-cinema/`
   **Verification:** Directory exists on disk.
 
-- [ ] Create `public/data/rmhbox/emoji-cinema/movies.json` — curated movie database
+- [x] Create `public/data/rmhbox/emoji-cinema/movies.json` — curated movie database
   - Each entry follows:
     ```ts
     {
@@ -2133,7 +2133,7 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
   - [ ] No duplicate movie `id` values
   **Verification:** Parse JSON; validate all entries; confirm ≥200 movies, all popularity ≥ 40, balanced difficulty, diverse genres.
 
-- [ ] Create `public/data/rmhbox/emoji-cinema/emoji-palette.json` — curated emoji subset (if Option B chosen)
+- [x] Create `public/data/rmhbox/emoji-cinema/emoji-palette.json` — curated emoji subset (if Option B chosen)
   - Structure:
     ```ts
     {
@@ -2153,9 +2153,9 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 
 ### 6.4.4 Define Zod Validation Schemas
 
-- [ ] Create `lib/rmhbox/emoji-cinema/schemas.ts`
+- [x] Create `lib/rmhbox/emoji-cinema/schemas.ts`
 
-- [ ] Define `AddEmojiSchema`:
+- [x] Define `AddEmojiSchema`:
   ```ts
   const AddEmojiSchema = z.object({
     emoji: z.string().min(1).max(10),
@@ -2163,14 +2163,14 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
   });
   ```
 
-- [ ] Define `RemoveEmojiSchema`:
+- [x] Define `RemoveEmojiSchema`:
   ```ts
   const RemoveEmojiSchema = z.object({
     position: z.number().int().min(0).max(EC_MAX_EMOJIS - 1),
   });
   ```
 
-- [ ] Define `ReorderEmojiSchema`:
+- [x] Define `ReorderEmojiSchema`:
   ```ts
   const ReorderEmojiSchema = z.object({
     fromIndex: z.number().int().min(0).max(EC_MAX_EMOJIS - 1),
@@ -2178,7 +2178,7 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
   });
   ```
 
-- [ ] Define `SubmitGuessSchema`:
+- [x] Define `SubmitGuessSchema`:
   ```ts
   const SubmitGuessSchema = z.object({
     guess: z.string().min(1).max(EC_MAX_GUESS_LENGTH).transform(s => s.trim()),
@@ -2190,7 +2190,7 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 
 ### 6.4.5 Create Data Loader
 
-- [ ] Create `lib/rmhbox/emoji-cinema/data-loader.ts`
+- [x] Create `lib/rmhbox/emoji-cinema/data-loader.ts`
   - [ ] Export `loadMovies(): MovieEntry[]` — reads and parses `movies.json`, caches as singleton
   - [ ] Export `loadEmojiPalette(): EmojiPalette` — reads and parses `emoji-palette.json`, caches as singleton
   - [ ] Export `selectMoviesForGame(pool: MovieEntry[], playerCount: number, usedIds: Set<string>): ECRoundData[]`
@@ -2205,17 +2205,17 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 
 ### 6.4.6 Implement Server Handler
 
-- [ ] Create `server/rmhbox/minigames/emoji-cinema.ts`
+- [x] Create `server/rmhbox/minigames/emoji-cinema.ts`
 
 #### 6.4.6.1 Type Definitions
 
-- [ ] Define `ECPhase` type:
+- [x] Define `ECPhase` type:
   ```ts
   type ECPhase = 'PRODUCER_ASSIGNMENT' | 'EMOJI_CONSTRUCTION' | 'ROUND_RESULTS' | 'TRANSITION';
   ```
   **Verification:** Type has exactly 4 values matching spec.
 
-- [ ] Define `ECRoundData` type:
+- [x] Define `ECRoundData` type:
   ```ts
   type ECRoundData = {
     movie: MovieEntry;
@@ -2223,7 +2223,7 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
   };
   ```
 
-- [ ] Define `ECPlayerGuesses` type:
+- [x] Define `ECPlayerGuesses` type:
   ```ts
   type ECPlayerGuesses = {
     userId: string;
@@ -2235,7 +2235,7 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
   };
   ```
 
-- [ ] Define `CorrectGuesser` type:
+- [x] Define `CorrectGuesser` type:
   ```ts
   type CorrectGuesser = {
     userId: string;
@@ -2246,7 +2246,7 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
   };
   ```
 
-- [ ] Define `EmojiCinemaState` type:
+- [x] Define `EmojiCinemaState` type:
   ```ts
   type EmojiCinemaState = {
     rounds: ECRoundData[];
@@ -2269,22 +2269,22 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 
 #### 6.4.6.2 Class: `EmojiCinemaGame extends BaseMinigame`
 
-- [ ] Constructor: call `super(context)`; load movies and emoji palette via data loader
+- [x] Constructor: call `super(context)`; load movies and emoji palette via data loader
   **Verification:** Instantiate class; confirm no errors.
 
 #### 6.4.6.3 State Initialization (`start()`)
 
-- [ ] Compute `producerOrder`: shuffle player list
-- [ ] Compute `totalRounds = Math.min(context.players.length, EC_MAX_ROUNDS)`
-- [ ] Select movies via `selectMoviesForGame()` — one per round, assigned to the Producer in rotation
-- [ ] Initialize `playerScores` with 0 for all players
-- [ ] Set `currentRound = -1`
-- [ ] Call `startNextRound()`
+- [x] Compute `producerOrder`: shuffle player list
+- [x] Compute `totalRounds = Math.min(context.players.length, EC_MAX_ROUNDS)`
+- [x] Select movies via `selectMoviesForGame()` — one per round, assigned to the Producer in rotation
+- [x] Initialize `playerScores` with 0 for all players
+- [x] Set `currentRound = -1`
+- [x] Call `startNextRound()`
   **Verification:** Unit test with 4 players: 4 rounds. With 8 players: 6 rounds (capped). Movies selected, Producer rotation set.
 
 #### 6.4.6.4 Round Lifecycle
 
-- [ ] `startNextRound()`:
+- [x] `startNextRound()`:
   - Increment `currentRound`
   - If `currentRound >= totalRounds`, call `endGame()`; return
   - Set `phase = 'PRODUCER_ASSIGNMENT'`
@@ -2296,13 +2296,13 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
   - Schedule `startEmojiConstruction()` after `EC_PRODUCER_ASSIGNMENT_SECONDS`
   **Verification:** Unit test: round starts. Producer gets movie; others do NOT. Phase is PRODUCER_ASSIGNMENT.
 
-- [ ] `startEmojiConstruction()`:
+- [x] `startEmojiConstruction()`:
   - Set `phase = 'EMOJI_CONSTRUCTION'`
   - Start `TIMER_TICK` interval (1s)
   - Schedule `endRound()` after `EC_ROUND_DURATION_SECONDS`
   **Verification:** Phase transitions. Timer runs.
 
-- [ ] `endRound(reason: 'timeout' | 'guessed')`:
+- [x] `endRound(reason: 'timeout' | 'guessed')`:
   - Stop timer
   - Compute round scores:
     - If at least one correct guess:
@@ -2321,7 +2321,7 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
   - Schedule `startTransition()` after `EC_ROUND_RESULTS_SECONDS`
   **Verification:** Scores computed correctly. Movie title revealed to all. Rankings by guess timestamp.
 
-- [ ] `startTransition()`:
+- [x] `startTransition()`:
   - Set `phase = 'TRANSITION'`
   - Check for pending JIP players; add them to audience pool
   - Schedule `startNextRound()` after `EC_TRANSITION_SECONDS`
@@ -2329,66 +2329,66 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 
 #### 6.4.6.5 Input Handling — `ADD_EMOJI`
 
-- [ ] Validate phase is `'EMOJI_CONSTRUCTION'`; reject if not
-- [ ] Validate sender is the current Producer; reject if not
-- [ ] Parse through `AddEmojiSchema`; reject on validation failure
-- [ ] Validate emoji is in the curated palette via `validateEmoji()`; reject if not
-- [ ] Validate `emojiSequence.length < EC_MAX_EMOJIS`; reject if at capacity
-- [ ] Insert emoji at specified position (splice into array)
-- [ ] Emit `EC_EMOJI_UPDATED` to ALL: `{ emojiSequence }` — live broadcast
+- [x] Validate phase is `'EMOJI_CONSTRUCTION'`; reject if not
+- [x] Validate sender is the current Producer; reject if not
+- [x] Parse through `AddEmojiSchema`; reject on validation failure
+- [x] Validate emoji is in the curated palette via `validateEmoji()`; reject if not
+- [x] Validate `emojiSequence.length < EC_MAX_EMOJIS`; reject if at capacity
+- [x] Insert emoji at specified position (splice into array)
+- [x] Emit `EC_EMOJI_UPDATED` to ALL: `{ emojiSequence }` — live broadcast
   **Verification:** Unit test: Producer adds emoji → broadcast to all. 13th emoji rejected. Non-palette emoji rejected. Non-Producer rejected.
 
 #### 6.4.6.6 Input Handling — `REMOVE_EMOJI`
 
-- [ ] Validate phase is `'EMOJI_CONSTRUCTION'` and sender is Producer
-- [ ] Parse through `RemoveEmojiSchema`
-- [ ] Validate position is within current sequence bounds
-- [ ] Remove emoji at position (splice from array)
-- [ ] Emit `EC_EMOJI_UPDATED` to ALL: `{ emojiSequence }`
+- [x] Validate phase is `'EMOJI_CONSTRUCTION'` and sender is Producer
+- [x] Parse through `RemoveEmojiSchema`
+- [x] Validate position is within current sequence bounds
+- [x] Remove emoji at position (splice from array)
+- [x] Emit `EC_EMOJI_UPDATED` to ALL: `{ emojiSequence }`
   **Verification:** Unit test: remove valid position → sequence shrinks. Out-of-bounds position rejected.
 
 #### 6.4.6.7 Input Handling — `REORDER_EMOJI`
 
-- [ ] Validate phase is `'EMOJI_CONSTRUCTION'` and sender is Producer
-- [ ] Parse through `ReorderEmojiSchema`
-- [ ] Validate both indices are within sequence bounds
-- [ ] Perform array reorder (remove from `fromIndex`, insert at `toIndex`)
-- [ ] Emit `EC_EMOJI_UPDATED` to ALL: `{ emojiSequence }`
+- [x] Validate phase is `'EMOJI_CONSTRUCTION'` and sender is Producer
+- [x] Parse through `ReorderEmojiSchema`
+- [x] Validate both indices are within sequence bounds
+- [x] Perform array reorder (remove from `fromIndex`, insert at `toIndex`)
+- [x] Emit `EC_EMOJI_UPDATED` to ALL: `{ emojiSequence }`
   **Verification:** Reorder works correctly. Out-of-bounds indices rejected.
 
 #### 6.4.6.8 Input Handling — `SUBMIT_GUESS`
 
-- [ ] Validate phase is `'EMOJI_CONSTRUCTION'`; reject if not
-- [ ] Validate sender is NOT the current Producer; reject if Producer tries to guess
-- [ ] Parse through `SubmitGuessSchema`
-- [ ] Check player hasn't exceeded `EC_MAX_GUESSES_PER_PLAYER`; reject if exceeded
-- [ ] Initialize `fuse.js` instance for current movie:
+- [x] Validate phase is `'EMOJI_CONSTRUCTION'`; reject if not
+- [x] Validate sender is NOT the current Producer; reject if Producer tries to guess
+- [x] Parse through `SubmitGuessSchema`
+- [x] Check player hasn't exceeded `EC_MAX_GUESSES_PER_PLAYER`; reject if exceeded
+- [x] Initialize `fuse.js` instance for current movie:
   - Fuse list: `[currentMovie.title, currentMovie.titleNormalized, ...currentMovie.alternativeTitles]`
   - Options: `{ threshold: EC_CLOSE_THRESHOLD, includeScore: true }`
-- [ ] Normalize guess: trim, lowercase, strip leading articles ("the ", "a ", "an ")
-- [ ] Run fuse search against normalized guess
-- [ ] Determine result:
+- [x] Normalize guess: trim, lowercase, strip leading articles ("the ", "a ", "an ")
+- [x] Run fuse search against normalized guess
+- [x] Determine result:
   - If best match score ≤ `1 - EC_FUZZY_MATCH_THRESHOLD` (fuse.js uses inverse scoring — lower = better match): **CORRECT**
   - Else if best match score ≤ `1 - EC_CLOSE_THRESHOLD`: **CLOSE**
   - Else: **WRONG**
-- [ ] Record guess in `guesses` map
-- [ ] Emit `EC_GUESS_RESULT` to guesser ONLY: `{ guess, result }`
-- [ ] If CORRECT:
+- [x] Record guess in `guesses` map
+- [x] Emit `EC_GUESS_RESULT` to guesser ONLY: `{ guess, result }`
+- [x] If CORRECT:
   - Add to `correctGuessers` with timestamp and rank (1st, 2nd, etc.)
   - Emit `EC_CORRECT_GUESS` to ALL: `{ userId, userName, rank }`
   - If this is the first correct guess, start a brief window (3s) for others to also guess, then call `endRound('guessed')`
   - OR immediately end if all audience members have guessed correctly
-- [ ] If CLOSE:
+- [x] If CLOSE:
   - Increment `closeGuessCount`
   - Emit `EC_CLOSE_GUESS` to ALL: `{ userId, userName }` — NOT the guess text
-- [ ] If WRONG:
+- [x] If WRONG:
   - No public broadcast (only `EC_GUESS_COUNT` update)
   - Emit `EC_GUESS_COUNT` to ALL: `{ userId, count }` — how many guesses this player has made
   **Verification:** Unit test: "The Lion King" guessed as "lion king" → CORRECT (normalized). "Simba" → WRONG. "The Loin King" (typo) → CLOSE (fuzzy match between thresholds). Second correct guesser gets rank 2. Guess count tracked. Producer cannot guess.
 
 #### 6.4.6.9 `getStateForPlayer(userId)`
 
-- [ ] If Producer:
+- [x] If Producer:
   ```ts
   {
     phase, currentRound, totalRounds,
@@ -2403,7 +2403,7 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
   }
   ```
   - Movie title IS visible to Producer
-- [ ] If Audience:
+- [x] If Audience:
   ```ts
   {
     phase, currentRound, totalRounds,
@@ -2419,57 +2419,57 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
   ```
   - Movie title is NOT visible
   - Other players' guess text NOT visible (only counts)
-- [ ] During ROUND_RESULTS: movie title revealed to all
+- [x] During ROUND_RESULTS: movie title revealed to all
   **Verification:** Producer gets movie title. Audience does not (until ROUND_RESULTS). Other players' guess text never visible.
 
 #### 6.4.6.10 `getStateForSpectator()`
 
-- [ ] Omniscient view: movie title visible, all guess text from all players visible, emoji sequence visible
-- [ ] Full experience: spectators see the movie title and watch guesses roll in — "omniscient director" experience
+- [x] Omniscient view: movie title visible, all guess text from all players visible, emoji sequence visible
+- [x] Full experience: spectators see the movie title and watch guesses roll in — "omniscient director" experience
   **Verification:** Spectator state includes movie title and all guesses.
 
 #### 6.4.6.11 Join-in-Progress Handling
 
-- [ ] Policy: `join_next_subround`
-- [ ] JIP players join as audience at the start of the next round (during TRANSITION)
-- [ ] They do NOT get a Producer turn unless the rotation hasn't passed them yet
-- [ ] If all original players have been Producer, JIP players are audience-only for remaining rounds
-- [ ] Send full state on join
+- [x] Policy: `join_next_subround`
+- [x] JIP players join as audience at the start of the next round (during TRANSITION)
+- [x] They do NOT get a Producer turn unless the rotation hasn't passed them yet
+- [x] If all original players have been Producer, JIP players are audience-only for remaining rounds
+- [x] Send full state on join
   **Verification:** JIP during round 3 → joins audience at round 4. Does not become Producer.
 
 #### 6.4.6.12 Reconnection Handling (`handlePlayerReconnect(userId)`)
 
-- [ ] Producer: receives movie title, current emoji sequence, guess status
-- [ ] Audience: receives emoji sequence, own guesses, timer
-- [ ] All state preserved server-side
+- [x] Producer: receives movie title, current emoji sequence, guess status
+- [x] Audience: receives emoji sequence, own guesses, timer
+- [x] All state preserved server-side
   **Verification:** Producer reconnects → movie title and emoji sequence restored. Audience reconnects → guesses restored.
 
 #### 6.4.6.13 Disconnect Handling (`handlePlayerDisconnect(userId)`)
 
-- [ ] If Producer disconnects:
+- [x] If Producer disconnects:
   - Wait `EC_PRODUCER_DISCONNECT_WAIT_SECONDS` (10s)
   - If not reconnected, skip the round (no points awarded to anyone for this round)
   - Move to next round
-- [ ] If audience member disconnects:
+- [x] If audience member disconnects:
   - No impact on round; they miss guessing opportunity
   **Verification:** Producer disconnect → round skipped after 10s. Audience disconnect → no effect.
 
 #### 6.4.6.14 `computeResults()` and Awards
 
-- [ ] Compute final rankings by cumulative `playerScores` (descending)
-- [ ] Compute awards:
+- [x] Compute final rankings by cumulative `playerScores` (descending)
+- [x] Compute awards:
   - [ ] **Movie Buff** — most correct guesses across all rounds; icon: `film`
   - [ ] **Emoji Picasso** — Producer whose round was guessed the fastest (best emoji description); icon: `palette`
   - [ ] **Stumper** — Producer whose movie was never guessed (timeout); icon: `lock`
   - [ ] **Speed Guesser** — fastest correct guess (earliest timestamp across all rounds); icon: `zap`
   - [ ] **Close but No Cigar** — player with the most "close" guesses that never converted to correct in the same round; icon: `cigarette`
-- [ ] Return `MinigameResults` with rankings, awards, and `gameSpecificData` containing rounds summary
+- [x] Return `MinigameResults` with rankings, awards, and `gameSpecificData` containing rounds summary
   **Verification:** Unit test: scenarios triggering each award → all 5 awards assigned correctly.
 
 #### 6.4.6.15 `buildGameLog()`
 
-- [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
-- [ ] Build `GameLog` conforming to core.md §13.3, including `gameSettings` per §12A.11
+- [x] Maintain an `actionLog: GameLogAction[]` array on the game instance
+- [x] Build `GameLog` conforming to core.md §13.3, including `gameSettings` per §12A.11
 
 **`initialState` (from minigames-2.md §4.16):**
 
@@ -2495,15 +2495,15 @@ interface ECInitialState {
 | `round_timeout` | `{ finalSequence: string[]; totalGuesses: number }` | Round ends with no correct guess |
 | `round_result` | `{ movieTitle: string; emojiSequence: string[]; correctGuesserId: string \| null; producerScore: number; guesserScores: Record<string, number> }` | Round scoring summary |
 
-- [ ] In `computeResults()`, build `GameLog` with `initialState`, full action log, and `finalResults`
-- [ ] Return `GameLog` from `buildGameLog()`
+- [x] In `computeResults()`, build `GameLog` with `initialState`, full action log, and `finalResults`
+- [x] Return `GameLog` from `buildGameLog()`
   **Verification:** Unit test: 4-round game, verify log contains `round_start`/`round_result` per round with movie titles and emoji sequences, `initialState` has movie pool and round config.
 
 ---
 
 ### 6.4.7 Register Game in Minigame Registry
 
-- [ ] Add entry to `lib/rmhbox/minigame-registry.ts`:
+- [x] Add entry to `lib/rmhbox/minigame-registry.ts`:
   ```ts
   {
     id: "emoji-cinema",
@@ -2523,14 +2523,14 @@ interface ECInitialState {
   ```
   **Verification:** Registry lookup for `"emoji-cinema"` returns correct metadata.
 
-- [ ] Register server handler in `MINIGAME_SERVER_REGISTRY` (in `server/rmhbox/game-coordinator.ts`):
+- [x] Register server handler in `MINIGAME_SERVER_REGISTRY` (in `server/rmhbox/game-coordinator.ts`):
   ```ts
   import { EmojiCinemaGame } from './minigames/emoji-cinema';
   MINIGAME_SERVER_REGISTRY.set('emoji-cinema', EmojiCinemaGame);
   ```
   **Verification:** `MINIGAME_SERVER_REGISTRY.get('emoji-cinema')` returns the `EmojiCinemaGame` class. `GameCoordinator` can instantiate it with a valid `MinigameContext`.
 
-- [ ] Add lazy-load entry in `components/rmhbox/MinigameRenderer.tsx`:
+- [x] Add lazy-load entry in `components/rmhbox/MinigameRenderer.tsx`:
   ```tsx
   'emoji-cinema': lazy(() => import('./minigames/emoji-cinema/EmojiCinemaGame')),
   ```
@@ -2542,18 +2542,18 @@ interface ECInitialState {
 
 #### 6.4.8.1 `components/rmhbox/minigames/emoji-cinema/EmojiCinemaGame.tsx`
 
-- [ ] Phase router — renders based on `phase` and player role (Producer vs Audience)
-- [ ] Subscribe to all `EC_*` and `TIMER_TICK` events
-- [ ] Maintain local state: round, phase, role, movie (Producer only), emoji sequence, guesses, scores
-- [ ] Handle `EC_PRODUCER_ASSIGNED` → update Producer info, reset round state
-- [ ] Handle `EC_MOVIE_ASSIGNED` → (Producer only) store movie title
-- [ ] Handle `EC_EMOJI_UPDATED` → update emoji sequence display (live)
-- [ ] Handle `EC_GUESS_RESULT` → add to own guess history
-- [ ] Handle `EC_CLOSE_GUESS` → show "close" notification
-- [ ] Handle `EC_CORRECT_GUESS` → show "correct" notification with player name
-- [ ] Handle `EC_GUESS_COUNT` → update guess counts
-- [ ] Handle `EC_ROUND_OVER` → store results, transition to results view
-- [ ] Conditional rendering:
+- [x] Phase router — renders based on `phase` and player role (Producer vs Audience)
+- [x] Subscribe to all `EC_*` and `TIMER_TICK` events
+- [x] Maintain local state: round, phase, role, movie (Producer only), emoji sequence, guesses, scores
+- [x] Handle `EC_PRODUCER_ASSIGNED` → update Producer info, reset round state
+- [x] Handle `EC_MOVIE_ASSIGNED` → (Producer only) store movie title
+- [x] Handle `EC_EMOJI_UPDATED` → update emoji sequence display (live)
+- [x] Handle `EC_GUESS_RESULT` → add to own guess history
+- [x] Handle `EC_CLOSE_GUESS` → show "close" notification
+- [x] Handle `EC_CORRECT_GUESS` → show "correct" notification with player name
+- [x] Handle `EC_GUESS_COUNT` → update guess counts
+- [x] Handle `EC_ROUND_OVER` → store results, transition to results view
+- [x] Conditional rendering:
   - `PRODUCER_ASSIGNMENT` → Producer announcement animation
   - `EMOJI_CONSTRUCTION` (Producer) → `<ProducerView />`
   - `EMOJI_CONSTRUCTION` (Audience) → `<AudienceView />`
@@ -2563,87 +2563,87 @@ interface ECInitialState {
 
 #### 6.4.8.2 `components/rmhbox/minigames/emoji-cinema/EmojiKeyboard.tsx`
 
-- [ ] Categorized emoji grid from the curated palette
-- [ ] Category tabs/pills for navigation: People, Animals, Nature, Food, Objects, Symbols, Activities, Travel
-- [ ] Text search/filter input: typing filters emojis (e.g., "fire" shows 🔥)
-- [ ] Tap emoji → emits `ADD_EMOJI` action with current position (append to end)
-- [ ] Scrollable grid within each category
-- [ ] Touch-friendly emoji sizing (min 40px tap targets)
-- [ ] Visual feedback on tap (brief scale animation)
+- [x] Categorized emoji grid from the curated palette
+- [x] Category tabs/pills for navigation: People, Animals, Nature, Food, Objects, Symbols, Activities, Travel
+- [x] Text search/filter input: typing filters emojis (e.g., "fire" shows 🔥)
+- [x] Tap emoji → emits `ADD_EMOJI` action with current position (append to end)
+- [x] Scrollable grid within each category
+- [x] Touch-friendly emoji sizing (min 40px tap targets)
+- [x] Visual feedback on tap (brief scale animation)
   **Verification:** All 200 emojis render. Category tabs filter correctly. Search filters by keyword. Tap emits correct event.
 
 #### 6.4.8.3 `components/rmhbox/minigames/emoji-cinema/EmojiSentence.tsx`
 
-- [ ] Horizontal display bar showing the current emoji sequence
-- [ ] Emojis displayed large (≥32px)
-- [ ] Drag-and-drop reordering (emits `REORDER_EMOJI`)
-- [ ] Tap to remove (emits `REMOVE_EMOJI`)
-- [ ] Counter: "4/12 emojis"
-- [ ] Empty state placeholder: "Tap emojis below to describe the movie"
+- [x] Horizontal display bar showing the current emoji sequence
+- [x] Emojis displayed large (≥32px)
+- [x] Drag-and-drop reordering (emits `REORDER_EMOJI`)
+- [x] Tap to remove (emits `REMOVE_EMOJI`)
+- [x] Counter: "4/12 emojis"
+- [x] Empty state placeholder: "Tap emojis below to describe the movie"
   **Verification:** Emojis render in order. Drag reorder works. Tap to remove works. Counter accurate.
 
 #### 6.4.8.4 `components/rmhbox/minigames/emoji-cinema/GuessInput.tsx`
 
-- [ ] Text input for movie title guesses
-- [ ] Submit on Enter key press
-- [ ] Clear input after submission
-- [ ] Disabled when max guesses reached
-- [ ] Remaining guesses counter: "12/15 guesses left"
-- [ ] Disabled when player has already guessed correctly
+- [x] Text input for movie title guesses
+- [x] Submit on Enter key press
+- [x] Clear input after submission
+- [x] Disabled when max guesses reached
+- [x] Remaining guesses counter: "12/15 guesses left"
+- [x] Disabled when player has already guessed correctly
   **Verification:** Submit emits `SUBMIT_GUESS`. Disabled at max guesses. Clears after submit.
 
 #### 6.4.8.5 `components/rmhbox/minigames/emoji-cinema/GuessHistory.tsx`
 
-- [ ] Scrollable list of own guesses with result indicators
-- [ ] ✅ Correct (green), 🔥 Close (orange), ❌ Wrong (red/gray)
-- [ ] Most recent guess at top
-- [ ] Auto-scroll to show newest entry
+- [x] Scrollable list of own guesses with result indicators
+- [x] ✅ Correct (green), 🔥 Close (orange), ❌ Wrong (red/gray)
+- [x] Most recent guess at top
+- [x] Auto-scroll to show newest entry
   **Verification:** History renders with correct indicators. Scrolls on new entry.
 
 #### 6.4.8.6 `components/rmhbox/minigames/emoji-cinema/ProducerView.tsx`
 
-- [ ] Full Producer interface combining:
+- [x] Full Producer interface combining:
   - Movie title and year display (prominent, private)
   - `<EmojiSentence />` for the built sequence
   - `<EmojiKeyboard />` for selection
   - Guess activity indicators: "2 guesses so far | 0 close"
   - Timer display
-- [ ] NO guess input (Producer can't guess their own movie)
+- [x] NO guess input (Producer can't guess their own movie)
   **Verification:** Movie title visible. Emoji keyboard functional. Guess counts update live.
 
 #### 6.4.8.7 `components/rmhbox/minigames/emoji-cinema/AudienceView.tsx`
 
-- [ ] Audience interface combining:
+- [x] Audience interface combining:
   - Large emoji sequence display (live-updating as Producer adds emojis)
   - `<GuessInput />`
   - `<GuessHistory />`
   - Producer name and round counter
   - Close/correct notification toasts
   - Timer display
-- [ ] NO emoji keyboard (Audience can only guess)
+- [x] NO emoji keyboard (Audience can only guess)
   **Verification:** Emoji sequence updates live. Guess input works. Toasts appear on close/correct events.
 
 #### 6.4.8.8 `components/rmhbox/minigames/emoji-cinema/RoundResults.tsx`
 
-- [ ] Movie title reveal: "The movie was... [Title]! ([Year])"
-- [ ] Emoji recap: show the emoji sequence that was built
-- [ ] Results table: who guessed correctly, their rank, points earned
-- [ ] Producer score display
-- [ ] Framer Motion entrance animation (movie poster reveal effect)
+- [x] Movie title reveal: "The movie was... [Title]! ([Year])"
+- [x] Emoji recap: show the emoji sequence that was built
+- [x] Results table: who guessed correctly, their rank, points earned
+- [x] Producer score display
+- [x] Framer Motion entrance animation (movie poster reveal effect)
   **Verification:** All round data displays correctly. Animation plays.
 
 #### 6.4.8.9 `components/rmhbox/minigames/emoji-cinema/MovieReveal.tsx`
 
-- [ ] Animated movie title reveal component
-- [ ] Staggered letter reveal or fade-in effect
-- [ ] Emoji sequence displayed below title
-- [ ] Year and genre badges
+- [x] Animated movie title reveal component
+- [x] Staggered letter reveal or fade-in effect
+- [x] Emoji sequence displayed below title
+- [x] Year and genre badges
   **Verification:** Animation plays smoothly. Title, year, genre visible.
 
 #### 6.4.8.10 Sound Effect Integration
 
-- [ ] Import `playSound` from `@/lib/rmhbox/audio`
-- [ ] Trigger sounds in `EmojiCinemaGame.tsx` event handlers:
+- [x] Import `playSound` from `@/lib/rmhbox/audio`
+- [x] Trigger sounds in `EmojiCinemaGame.tsx` event handlers:
   - [ ] `EC_PRODUCER_ASSIGNED` → `playSound('swoosh')`
   - [ ] `EC_EMOJI_UPDATED` → `playSound('click')`
   - [ ] `EC_CLOSE_GUESS` → `playSound('chime')`
@@ -2654,19 +2654,19 @@ interface ECInitialState {
 
 #### 6.4.8.11 Zustand Store Integration
 
-- [ ] Read game state via `useRMHboxStore()`:
+- [x] Read game state via `useRMHboxStore()`:
   - [ ] `gameState.lastAction` for reacting to `EC_*` events
   - [ ] `lobby.currentGame.timeRemaining` for countdown
   - [ ] `lobby.currentGame.publicState` for emoji sequence
   - [ ] `lobby.currentGame.privateState` for role (Producer/Audience)
-- [ ] Detect spectator mode: render omniscient view showing movie title and all guesses
+- [x] Detect spectator mode: render omniscient view showing movie title and all guesses
   **Verification:** Component re-renders on store updates. Spectator sees movie title and all guesses but cannot interact.
 
 ---
 
 ### 6.4.9 Integration Testing
 
-- [ ] End-to-end test: 4 players → start Emoji Cinema → play 4 rounds (each player is Producer once)
+- [x] End-to-end test: 4 players → start Emoji Cinema → play 4 rounds (each player is Producer once)
   - [ ] Verify each player is Producer exactly once
   - [ ] Verify Producer receives movie title; Audience does NOT
   - [ ] Verify emoji additions are broadcast live to all players
@@ -2677,13 +2677,13 @@ interface ECInitialState {
   - [ ] Verify max guesses per player enforced
   **Verification:** All assertions pass. Scores match manual calculation.
 
-- [ ] Information masking test:
+- [x] Information masking test:
   - [ ] During EMOJI_CONSTRUCTION: movie title ONLY in Producer's socket events/state
   - [ ] Other players' guess TEXT not in any Audience-facing event (only counts)
   - [ ] Correct answer revealed to all ONLY in `EC_ROUND_OVER`
   **Verification:** Zero movie title leakage to Audience. Zero guess text leakage between players.
 
-- [ ] Fuzzy matching test:
+- [x] Fuzzy matching test:
   - [ ] "The Lion King" → "lion king" = CORRECT (normalized)
   - [ ] "The Lion King" → "Loin King" = CLOSE (typo, within 0.60–0.80 range)
   - [ ] "The Lion King" → "Madagascar" = WRONG
@@ -2691,20 +2691,20 @@ interface ECInitialState {
   - [ ] Alternative title match: if "Avengers: Endgame" has alt title "Avengers Endgame" → "avengers endgame" = CORRECT
   **Verification:** All fuzzy match results match expected outcomes.
 
-- [ ] Anti-cheat test:
+- [x] Anti-cheat test:
   - [ ] Non-palette emoji rejected (if Producer somehow sends one)
   - [ ] Letter emojis (🅰️🅱️) not in palette → can't spell titles
   - [ ] Max 12 emojis enforced
   - [ ] Max 15 guesses enforced
   **Verification:** All anti-cheat measures work.
 
-- [ ] Producer disconnect test: Producer disconnects → round skipped after 10s → next round starts
+- [x] Producer disconnect test: Producer disconnects → round skipped after 10s → next round starts
   **Verification:** Round skipped cleanly. No errors.
 
-- [ ] JIP test: Player joins during round 2 → joins Audience at round 3 → can guess but not be Producer
+- [x] JIP test: Player joins during round 2 → joins Audience at round 3 → can guess but not be Producer
   **Verification:** JIP player can guess starting round 3.
 
-- [ ] Max rounds cap test: 8 players → only 6 rounds (capped at `EC_MAX_ROUNDS`)
+- [x] Max rounds cap test: 8 players → only 6 rounds (capped at `EC_MAX_ROUNDS`)
   **Verification:** Only 6 rounds played even with 8 players.
 
 ### 6.4.10 Game Settings Integration (§12A)
@@ -2713,12 +2713,12 @@ Integrate host-configurable settings using the §12A system.
 
 #### Registry Entry
 
-- [ ] Export `EMOJI_CINEMA_SETTINGS: GameSettingsSchema` in `lib/rmhbox/minigame-registry.ts` with 4 entries:
+- [x] Export `EMOJI_CINEMA_SETTINGS: GameSettingsSchema` in `lib/rmhbox/minigame-registry.ts` with 4 entries:
   - `maxRounds` (integer, default `4`, min 2, max 6, step 1)
   - `roundDuration` (integer, default `45`, min 20, max 90, step 5)
   - `maxEmojis` (integer, default `5`, min 3, max 8, step 1)
   - `maxGuessesPerPlayer` (integer, default `3`, min 1, max 5, step 1)
-- [ ] Attach `settingsSchema: EMOJI_CINEMA_SETTINGS` to the `emoji-cinema` `MinigameDefinition`.
+- [x] Attach `settingsSchema: EMOJI_CINEMA_SETTINGS` to the `emoji-cinema` `MinigameDefinition`.
   **Verification:** Registry lookup returns definition with `settingsSchema` containing 4 entries.
 
 #### Handler `getSetting()` Integration
@@ -2754,11 +2754,11 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 
 #### 6.4.11.3 Tests
 
-- [ ] Verify `getHistoryDisplay('emoji-cinema')` returns a valid config
-- [ ] Verify searchable fields extract movie titles, guesses, and emoji sequences from a mock game log
-- [ ] Verify filterable fields include wasCreator (boolean), guessedCorrectly (boolean), difficulty (select)
-- [ ] Verify `getSummary()` returns a meaningful string for a mock game log
-- [ ] Verify `DetailComponent` renders without errors when given a valid game log
+- [x] Verify `getHistoryDisplay('emoji-cinema')` returns a valid config
+- [x] Verify searchable fields extract movie titles, guesses, and emoji sequences from a mock game log
+- [x] Verify filterable fields include wasCreator (boolean), guessedCorrectly (boolean), difficulty (select)
+- [x] Verify `getSummary()` returns a meaningful string for a mock game log
+- [x] Verify `DetailComponent` renders without errors when given a valid game log
 
 ---
 
@@ -2864,8 +2864,8 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 - [ ] **MINIGAME_SERVER_REGISTRY completeness:** verify all 4 Phase 6 handlers registered
   - [ ] `MINIGAME_SERVER_REGISTRY.get('fact-or-friction')` → `FactOrFrictionGame`
   - [ ] `MINIGAME_SERVER_REGISTRY.get('undercover-editor')` → `UndercoverEditorGame`
-  - [ ] `MINIGAME_SERVER_REGISTRY.get('minimalist-masterpiece')` → `MinimalistMasterpieceGame`
-  - [ ] `MINIGAME_SERVER_REGISTRY.get('emoji-cinema')` → `EmojiCinemaGame`
+  - [x] `MINIGAME_SERVER_REGISTRY.get('minimalist-masterpiece')` → `MinimalistMasterpieceGame`
+  - [x] `MINIGAME_SERVER_REGISTRY.get('emoji-cinema')` → `EmojiCinemaGame`
   **Verification:** All 4 handlers instantiate and implement `BaseMinigame` interface.
 
 > **Note on parallel development:** Phase 6 can be implemented fully in parallel with Phase 7 and Phase 8 after Phase 5 is complete. The coexistence test above (6.5.8) should be run once Phase 5 is available. If Phase 7 or Phase 8 are also complete, run a combined coexistence test covering all deployed phases.

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useNotesDataStore } from '@/lib/store/useNotesDataStore';
 import { Note, NoteFolder, NoteTag } from './types';
 
 interface Props {
@@ -20,6 +21,8 @@ export default function SearchPanel({ onSelect, onClose, tags, folders }: Props)
   const inputRef = useRef<HTMLInputElement>(null);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const searchNotes = useNotesDataStore((s) => s.searchNotes);
+
   useEffect(() => { inputRef.current?.focus(); }, []);
 
   useEffect(() => {
@@ -29,16 +32,15 @@ export default function SearchPanel({ onSelect, onClose, tags, folders }: Props)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, selectedTagId, selectedFolderId, hasReminder]);
 
-  const doSearch = async () => {
+  const doSearch = () => {
     if (!query && !selectedTagId && !selectedFolderId && !hasReminder) { setResults([]); return; }
     setLoading(true);
-    const params = new URLSearchParams();
-    if (query) params.set('q', query);
-    if (selectedTagId) params.set('tagId', selectedTagId);
-    if (selectedFolderId) params.set('folderId', selectedFolderId);
-    if (hasReminder) params.set('hasReminder', 'true');
-    const res = await fetch(`/api/rmh-notes/search?${params}`);
-    if (res.ok) setResults((await res.json()).notes ?? []);
+    const found = searchNotes(query, {
+      tagId: selectedTagId || undefined,
+      folderId: selectedFolderId || undefined,
+      hasReminder: hasReminder || undefined,
+    });
+    setResults(found);
     setLoading(false);
   };
 

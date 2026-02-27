@@ -8,15 +8,15 @@ export const metadata = {
 
 export default function AppsPage() {
     return (
-        <div className="min-h-screen bg-slate-950 text-white p-4 md:p-8">
+        <div className="min-h-screen bg-site-bg text-site-text p-4 md:p-8">
             <div className="max-w-7xl mx-auto space-y-12">
 
                 {/* Header */}
                 <div className="text-center space-y-4 pt-8 pb-4">
-                    <h1 className="text-4xl md:text-6xl font-bold tracking-tighter bg-linear-to-r from-white to-slate-400 bg-clip-text text-transparent font-mono">
-                        RMH APPS
+                    <h1 className="text-4xl md:text-6xl font-black tracking-tighter font-(family-name:--site-font-display) text-site-text">
+                        RMH <span className="text-site-accent">APPS</span>
                     </h1>
-                    <p className="text-slate-400 max-w-2xl mx-auto text-lg">
+                    <p className="text-site-text-muted max-w-2xl mx-auto text-lg">
                         Our suite of digital tools and utilities. From developer environments to community experiments.
                     </p>
                 </div>

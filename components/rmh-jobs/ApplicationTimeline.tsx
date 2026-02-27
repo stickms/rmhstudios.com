@@ -60,7 +60,7 @@ function ApplicationCard({ application: app }: { application: Application }) {
             <div className="flex items-start justify-between gap-3 mb-3">
                 <div>
                     <Link
-                        href={`/rmh-jobs/${app.job.id}`}
+                        href={`/secret/jobs/${app.job.id}`}
                         className="font-semibold hover:text-(--jobs-accent) transition-colors"
                     >
                         {app.job.title}
@@ -115,7 +115,7 @@ function ApplicationCard({ application: app }: { application: Application }) {
             {/* OA action button */}
             {app.assessment && !app.assessment.submittedAt && app.status === 'oa_invited' && (
                 <Link
-                    href={`/rmh-jobs/assessment/${app.assessment.id}`}
+                    href={`/secret/jobs/assessment/${app.assessment.id}`}
                     className="jobs-btn-primary inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm"
                     style={{ borderRadius: 'var(--jobs-radius-sm)' }}
                 >

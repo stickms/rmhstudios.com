@@ -15,7 +15,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
     .map(app => app.href)
     .filter(href => href.startsWith('/'));
 
-  const isExcludedPage = [...gameRoutes, ...appRoutes].some(route => pathname?.startsWith(route));
+  const isExcludedPage = [...gameRoutes, ...appRoutes, '/secret'].some(route => pathname?.startsWith(route));
 
   if (isExcludedPage) {
     return (

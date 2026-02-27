@@ -5,6 +5,7 @@ import { Clock, Play, Send, ChevronDown, Check } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { FakeTestResults } from './FakeTestResults';
+import { useJobsDataStore } from '@/lib/store/useJobsDataStore';
 
 const MonacoEditor = dynamic(() => import('@monaco-editor/react').then((m) => m.default), {
     ssr: false,
@@ -131,6 +132,8 @@ export function OAEditor({
         setShowConfirm(true);
     };
 
+    const submitAssessment = useJobsDataStore((s) => s.submitAssessment);
+
     const doSubmit = async () => {
         if (isSubmitted || isSubmitting) return;
         setShowConfirm(false);
@@ -138,17 +141,10 @@ export function OAEditor({
         setIsRunning(false);
 
         try {
-            const res = await fetch(`/api/rmh-jobs/assessment/${assessmentId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ code, language }),
-            });
-
-            if (res.ok) {
-                setIsSubmitted(true);
-                setShowSuccess(true);
-                setTimeout(() => setCheckAnimated(true), 100);
-            }
+            submitAssessment(assessmentId, code, language);
+            setIsSubmitted(true);
+            setShowSuccess(true);
+            setTimeout(() => setCheckAnimated(true), 100);
         } catch {
             // Ignore
         } finally {
@@ -193,14 +189,14 @@ export function OAEditor({
                     </p>
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                         <Link
-                            href="/rmh-jobs"
+                            href="/secret/jobs"
                             className="jobs-btn-primary px-6 py-2.5 rounded-lg text-sm inline-block"
                             style={{ borderRadius: 'var(--jobs-radius)' }}
                         >
                             Return to RMH Jobs Portal
                         </Link>
                         <Link
-                            href="/rmh-jobs/applications"
+                            href="/secret/jobs/applications"
                             className="jobs-btn-secondary px-6 py-2.5 rounded-lg text-sm inline-block"
                             style={{ borderRadius: 'var(--jobs-radius)' }}
                         >
@@ -445,11 +441,12 @@ export function OAEditor({
 }
 
 function formatProblemDescription(md: string): string {
-    return md
+    const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    return esc(md)
         .replace(/^# (.+)$/gm, '<h2 class="text-lg font-bold mb-3">$1</h2>')
         .replace(/^## (.+)$/gm, '<h3 class="text-base font-semibold mt-4 mb-2">$1</h3>')
         .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
         .replace(/`(.+?)`/g, '<code style="background:var(--jobs-surface-2);padding:1px 4px;border-radius:3px;font-size:0.85em">$1</code>')
-        .replace(/^> (.+)$/gm, '<blockquote style="border-left:2px solid var(--jobs-accent);padding-left:12px;color:var(--jobs-text-muted);font-style:italic;margin:8px 0">$1</blockquote>')
+        .replace(/^&gt; (.+)$/gm, '<blockquote style="border-left:2px solid var(--jobs-accent);padding-left:12px;color:var(--jobs-text-muted);font-style:italic;margin:8px 0">$1</blockquote>')
         .replace(/\n\n/g, '<br/><br/>');
 }

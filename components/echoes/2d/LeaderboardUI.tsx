@@ -1,52 +1,12 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '@/lib/echoes/game2d/GameStore';
-import { getStoredUsername, setStoredUsername, fetchLeaderboard, LeaderboardEntry, LeaderboardSort } from '@/lib/echoes/game2d/UserStore';
+import { fetchLeaderboard, LeaderboardEntry, LeaderboardSort } from '@/lib/echoes/game2d/UserStore';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-
-// ─── Username Prompt ──────────────────────────────────────────────────────────
-export function UsernamePrompt({ onSet }: { onSet: (name: string) => void }) {
-    const [value, setValue] = useState('');
-    const [error, setError] = useState('');
-    const inputRef = useRef<HTMLInputElement>(null);
-    useEffect(() => { inputRef.current?.focus(); }, []);
-
-    const { setUserName } = useGameStore();
-    const submit = () => {
-        const clean = value.trim().replace(/[^a-zA-Z0-9_\-. ]/g, '').slice(0, 32);
-        if (clean.length < 2) { setError('At least 2 characters'); return; }
-        setStoredUsername(clean);
-        setUserName(clean);
-        onSet(clean);
-    };
-
-    return (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            className="absolute inset-0 flex items-center justify-center bg-black/90 backdrop-blur-md z-50">
-            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }}
-                className="bg-white/5 border border-white/10 rounded-2xl p-8 w-80 text-center">
-                <div className="text-4xl mb-4">🎮</div>
-                <h2 className="text-white font-black text-xl mb-1">Choose Your Callsign</h2>
-                <p className="text-white/40 text-sm mb-6">Appears on the leaderboard</p>
-                <input ref={inputRef} value={value}
-                    onChange={e => { setValue(e.target.value); setError(''); }}
-                    onKeyDown={e => e.key === 'Enter' && submit()}
-                    maxLength={32} placeholder="e.g. ShadowRunner"
-                    className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/30 font-mono text-sm outline-none focus:border-purple-500 transition-colors mb-2"
-                />
-                {error && <p className="text-red-400 text-xs mb-2">{error}</p>}
-                <button onClick={submit}
-                    className="w-full py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg transition-colors mt-2">
-                    Confirm
-                </button>
-            </motion.div>
-        </motion.div>
-    );
-}
 
 // ─── Leaderboard Panel ────────────────────────────────────────────────────────
 const TABS: { key: LeaderboardSort; label: string; format: (e: LeaderboardEntry) => string; sub: (e: LeaderboardEntry) => string }[] = [
@@ -122,24 +82,7 @@ export function LeaderboardPanel({ username }: { username: string }) {
 
 // ─── Start Screen ─────────────────────────────────────────────────────────────
 export function StartScreen() {
-    const { phase, showClassSelect, userName: storeUserName, setUserName } = useGameStore();
-    const [username, setUsername] = useState<string | null>(null);
-    const [showPrompt, setShowPrompt] = useState(false);
-
-    useEffect(() => {
-        const stored = getStoredUsername();
-        if (stored) {
-            setUsername(stored);
-            setUserName(stored);
-        } else {
-            setShowPrompt(true);
-        }
-    }, [setUserName]);
-
-    const handleSetUsername = (name: string) => {
-        setUsername(name);
-        setShowPrompt(false);
-    };
+    const { phase, showClassSelect, userName } = useGameStore();
 
     return (
         <AnimatePresence>
@@ -157,7 +100,7 @@ export function StartScreen() {
                     </div>
 
                     {/* Left: title */}
-                    <div className="flex-1 flex flex-col items-center justify-center p-8 shrink-0 min-h-[500px]">
+                    <div className="flex-1 flex flex-col items-center justify-center p-8 shrink-0 min-h-125">
                         <div className="text-white/30 text-xs font-mono tracking-[0.5em] uppercase mb-4">Project Biohazard</div>
                         <h1 className="text-5xl lg:text-7xl font-black text-white mb-2 tracking-tight text-center">ECHOES</h1>
                         <p className="text-purple-400 text-sm tracking-[0.3em] uppercase mb-8">Survive the Void</p>
@@ -166,25 +109,22 @@ export function StartScreen() {
                             <div>Kill enemies → XP → Level up → Choose upgrades</div>
                             <div>Q / E / R — Activate class abilities</div>
                         </div>
-                        {username && (
+                        {userName && (
                             <div className="flex items-center gap-2 mb-6">
                                 <span className="text-white/40 text-sm font-mono">Playing as</span>
-                                <span className="text-purple-300 font-bold font-mono">{username}</span>
-                                <button onClick={() => setShowPrompt(true)}
-                                    className="text-white/20 hover:text-white/50 text-xs underline transition-colors ml-1">change</button>
+                                <span className="text-purple-300 font-bold font-mono">{userName}</span>
                             </div>
                         )}
                         <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}
-                            onClick={showClassSelect} disabled={!username}
-                            className="px-8 lg:px-12 py-3 lg:py-4 bg-purple-600 hover:bg-purple-500 disabled:opacity-40 text-white font-bold text-lg rounded-lg tracking-widest uppercase transition-colors">
+                            onClick={showClassSelect}
+                            className="px-8 lg:px-12 py-3 lg:py-4 bg-purple-600 hover:bg-purple-500 text-white font-bold text-lg rounded-lg tracking-widest uppercase transition-colors">
                             Select Class
                         </motion.button>
                     </div>
                     {/* Right: leaderboard */}
                     <div className="w-full lg:w-96 border-t lg:border-t-0 lg:border-l border-white/10 p-6 flex flex-col justify-center bg-white/5 lg:bg-transparent shrink-0">
-                        {username && <LeaderboardPanel username={username} />}
+                        <LeaderboardPanel username={userName} />
                     </div>
-                    {showPrompt && <UsernamePrompt onSet={handleSetUsername} />}
                 </motion.div>
             )}
         </AnimatePresence>
@@ -196,7 +136,6 @@ export function StartScreen() {
 export function GameOverScreen() {
     const { phase, kills, timeSurvived, level, xp, showClassSelect, userName } = useGameStore();
     const [submitted, setSubmitted] = useState(false);
-    const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
 
     // Accumulate total XP across the run (level * xpToNextLevel is approximate — use kills*xpPerKill instead)
     // We track it via the store's xp + level as a proxy
@@ -208,12 +147,11 @@ export function GameOverScreen() {
         fetch('/api/echoes/score', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: userName, timeSurvived, kills, totalXP }),
+            body: JSON.stringify({ timeSurvived, kills, totalXP }),
         }).then(() => {
             setSubmitted(true);
-            fetchLeaderboard('time').then(setEntries);
         }).catch(() => setSubmitted(true));
-    }, [phase, userName, timeSurvived, kills, totalXP]);
+    }, [phase, timeSurvived, kills, totalXP]);
 
     const mins = Math.floor(timeSurvived / 60).toString().padStart(2, '0');
     const secs = Math.floor(timeSurvived % 60).toString().padStart(2, '0');
@@ -224,7 +162,7 @@ export function GameOverScreen() {
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                     className="absolute inset-0 flex flex-col lg:flex-row z-50 bg-black/95 backdrop-blur-md overflow-y-auto">
                     {/* Left: stats */}
-                    <div className="flex-1 flex flex-col items-center justify-center p-8 shrink-0 min-h-[400px]">
+                    <div className="flex-1 flex flex-col items-center justify-center p-8 shrink-0 min-h-100">
                         <div className="text-red-500 text-xs font-mono tracking-[0.4em] uppercase mb-3">Signal Lost</div>
                         <h2 className="text-5xl font-black text-white mb-8 text-center">GAME OVER</h2>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8 text-center">

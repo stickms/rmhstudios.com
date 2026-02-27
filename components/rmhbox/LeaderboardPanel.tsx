@@ -1,9 +1,10 @@
 /**
  * LeaderboardPanel — Fetches and displays leaderboard entries.
  *
- * Shows rank, name, and score columns. Fetches data via socket event.
+ * Shows rank, name, and score columns. Fetches data via HTTP API on mount,
+ * then listens for real-time updates via socket events.
  *
- * Props: none (fetches data itself via socket events)
+ * Props: none (fetches data itself)
  */
 'use client';
 
@@ -17,6 +18,26 @@ export default function LeaderboardPanel() {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Fetch initial data via HTTP API
+  useEffect(() => {
+    async function fetchLeaderboard() {
+      try {
+        const response = await fetch('/api/rmhbox/leaderboard?period=all-time&metric=score&limit=10');
+        if (response.ok) {
+          const data = await response.json();
+          setEntries(data.entries || []);
+        }
+      } catch (err) {
+        console.error('[LeaderboardPanel] Failed to fetch leaderboard:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchLeaderboard();
+  }, []);
+
+  // Listen for real-time updates via WebSocket
   useEffect(() => {
     const socket = getSocket();
     if (!socket) return;
