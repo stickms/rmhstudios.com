@@ -285,12 +285,15 @@ export default function MinigameHistoryPage() {
           </div>
 
           {/* Filter controls */}
-          {historyConfig && historyConfig.filterableFields.some((f) => f.type === 'select' && filterOptions[f.key]?.length) && (
-            <div className="flex flex-wrap items-center gap-3 mb-4 px-1" data-testid="history-filters">
-              <Filter className="h-3.5 w-3.5 text-(--rmhbox-text-muted)" />
-              {historyConfig.filterableFields
-                .filter((f) => f.type === 'select' && filterOptions[f.key]?.length)
-                .map((field) => (
+          {(() => {
+            const selectFields = historyConfig?.filterableFields.filter(
+              (f) => f.type === 'select' && filterOptions[f.key]?.length,
+            );
+            if (!selectFields?.length) return null;
+            return (
+              <div className="flex flex-wrap items-center gap-3 mb-4 px-1" data-testid="history-filters">
+                <Filter className="h-3.5 w-3.5 text-(--rmhbox-text-muted)" />
+                {selectFields.map((field) => (
                   <select
                     key={field.key}
                     value={activeFilters[field.key] ?? ''}
@@ -316,8 +319,9 @@ export default function MinigameHistoryPage() {
                     ))}
                   </select>
                 ))}
-            </div>
-          )}
+              </div>
+            );
+          })()}
 
           {/* Match list */}
           {loading ? (
