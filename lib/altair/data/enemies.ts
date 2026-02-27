@@ -75,7 +75,7 @@ export const ENEMIES: readonly EnemyDef[] = [
     behavior: 'sinusoidal',
     shape: 'triangle',
     color: '#4A4A4A',
-    radius: 8,
+    radius: 13,
     description: 'Small dark bat with erratic flight. Moves in sinusoidal wave pattern, harder to hit with narrow projectiles.',
     specialParams: {
       waveAmplitude: 40,
@@ -188,7 +188,7 @@ export const ENEMIES: readonly EnemyDef[] = [
     behavior: 'swarm',
     shape: 'circle',
     color: '#A0522D',
-    radius: 6,
+    radius: 9,
     description: 'Tiny scurrying rat. Always spawns in packs of 8-12 with slightly randomized speed (+/-20%). Moves directly toward player.',
     specialParams: {
       packSizeMin: 8,
