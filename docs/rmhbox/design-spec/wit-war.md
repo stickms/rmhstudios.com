@@ -118,6 +118,7 @@ After the final round: `ROUND_RESULTS → GAME_OVER`
 - Players write and submit answers individually
 - Submit count broadcasted in real-time (`WW_SUBMIT_COUNT`)
 - Per-player acceptance confirmation (`WW_ANSWER_ACCEPTED`)
+- **Auto-submit on timer expiry:** When the timer expires, the server broadcasts `WW_WRITING_END` and the client auto-submits all typed but unsent answers. The server allows a 1-second grace period for these late submissions before filling in safety quips for any still-missing answers.
 
 ### 4.3 VOTING
 
@@ -125,6 +126,7 @@ After the final round: `ROUND_RESULTS → GAME_OVER`
 - Phase timer displayed per matchup
 - One matchup at a time, cycled through sequentially
 - Live vote count broadcasted (`WW_VOTE_COUNT`)
+- **Early end:** When all eligible voters (total players minus the 2 matchup authors) have voted, the voting phase ends immediately without waiting for the timer.
 
 ### 4.4 MATCHUP_RESULTS
 
