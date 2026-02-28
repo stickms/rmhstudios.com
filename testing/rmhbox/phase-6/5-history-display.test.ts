@@ -54,23 +54,22 @@ describe('History Display Configuration (§6.7)', () => {
       expect(config).toBeDefined();
     });
 
-    it('should have searchable fields including sentences and keyword', () => {
+    it('should have searchable fields including sentences and editors', () => {
       const config = getHistoryDisplay('undercover-editor');
       expect(config!.searchableFields).toBeDefined();
 
       const keys = config!.searchableFields.map((f) => f.key);
       expect(keys).toContain('sentences');
-      expect(keys).toContain('keyword');
+      expect(keys).toContain('editors');
     });
 
-    it('should have filterable fields including role, editorCaught, keywordInStory', () => {
+    it('should have filterable fields including role and editorCaught', () => {
       const config = getHistoryDisplay('undercover-editor');
       expect(config!.filterableFields).toBeDefined();
 
       const keys = config!.filterableFields.map((f) => f.key);
       expect(keys).toContain('role');
       expect(keys).toContain('editorCaught');
-      expect(keys).toContain('keywordInStory');
     });
 
     it('getSummary should return descriptive string for a mock game log', () => {
@@ -81,8 +80,8 @@ describe('History Display Configuration (§6.7)', () => {
             type: 'reveal',
             payload: {
               storyReveals: [
-                { storyId: 'story1', keyword: 'shadow', keywordInStory: true },
-                { storyId: 'story2', keyword: 'light', keywordInStory: false },
+                { storyId: 'story1', editorUserId: 'editor1', editorName: 'Alice' },
+                { storyId: 'story2', editorUserId: 'editor2', editorName: 'Bob' },
               ],
             },
           },

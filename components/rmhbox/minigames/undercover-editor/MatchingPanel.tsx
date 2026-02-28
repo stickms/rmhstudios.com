@@ -60,7 +60,7 @@ export interface MatchingPanelProps {
 export default function MatchingPanel({
   stories,
   players,
-  myPlayerId,
+  myPlayerId: _myPlayerId,
   myEditedStoryId,
   currentGuesses,
   lockedIn,
@@ -68,6 +68,7 @@ export default function MatchingPanel({
   onGuessChange,
   onLockIn,
 }: MatchingPanelProps) {
+  void _myPlayerId; // Available for future use
   // Stories the player can guess on (exclude the one they edited)
   const guessableStories = useMemo(
     () => stories.filter((s) => s.storyId !== myEditedStoryId),

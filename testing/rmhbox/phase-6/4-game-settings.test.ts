@@ -72,18 +72,14 @@ describe('Game Settings Integration (§6.6)', () => {
 
     it('should export UNDERCOVER_EDITOR_SETTINGS with expected keys', () => {
       const keys = UNDERCOVER_EDITOR_SETTINGS.map((s) => s.key);
-      expect(keys).toContain('rotations');
       expect(keys).toContain('writeTimeout');
       expect(keys).toContain('editTimeout');
-      expect(keys).toContain('accusationDuration');
     });
 
     it('should produce valid default settings', () => {
       const defaults = getDefaultSettings(UNDERCOVER_EDITOR_SETTINGS);
-      expect(defaults.rotations).toBe(2);
       expect(defaults.writeTimeout).toBe(45);
       expect(defaults.editTimeout).toBe(30);
-      expect(defaults.accusationDuration).toBe(30);
     });
   });
 
@@ -106,21 +102,20 @@ describe('Game Settings Integration (§6.6)', () => {
       game.cleanup();
     });
 
-    it('UE handler should respect custom rotations setting', () => {
+    it('UE handler should respect custom writeTimeout setting', () => {
       const ctx = createMockContext([
         MOCK_USERS.alice, MOCK_USERS.bob, MOCK_USERS.charlie, MOCK_USERS.diana, MOCK_USERS.eve,
       ]);
-      ctx.context.gameSettings = { rotations: 1 };
+      ctx.context.gameSettings = { writeTimeout: 60 };
       const game = new UndercoverEditorGame(ctx.context);
       game.start();
 
-      const gameStart = ctx.broadcastLog.find(
+      const writeStart = ctx.broadcastLog.find(
         (e) => e.event === 'rmhbox:game:action' &&
-          (e.data as Record<string, unknown>).type === 'UE_GAME_START',
+          (e.data as Record<string, unknown>).type === 'UE_WRITE_START',
       );
-      expect(gameStart).toBeDefined();
-      // With rotations=1, totalRounds should be 1
-      expect((gameStart!.data as Record<string, unknown>).totalRounds).toBe(1);
+      expect(writeStart).toBeDefined();
+      expect((writeStart!.data as Record<string, unknown>).writeDurationSeconds).toBe(60);
 
       game.cleanup();
     });

@@ -15,7 +15,6 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { motion } from 'framer-motion';
 import { Clock, Check, X, SkipForward, Send } from 'lucide-react';
 
 interface EditableWord {

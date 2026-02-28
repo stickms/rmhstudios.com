@@ -1,9 +1,13 @@
 /**
- * RMHbox Phase 6 — Undercover Editor Tests (Parallel Design)
+ * RMHbox Phase 6 — Undercover Editor Tests (Round-Robin Design)
  *
- * Tests for the parallel-writing Undercover Editor minigame where
- * all players write for all stories simultaneously, each player
- * secretly edits one story, and players match stories to editors.
+ * Tests for the round-robin Undercover Editor minigame where:
+ * - N players create N stories over 2N steps (N write + N edit)
+ * - Each round, every player writes ONE sentence for ONE story
+ * - After each write, editors secretly change 2 words
+ * - READING phase: host-driven sentence reveal
+ * - REVIEW: match stories to editors (1-to-1)
+ * - REVEAL: scores computed
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -11,13 +15,10 @@ import { UndercoverEditorGame } from '../../../server/rmhbox/minigames/undercove
 import {
   MOCK_USERS,
   createMockContext,
-  findBroadcasts,
-  findPlayerEvents,
   type MockContextData,
 } from './setup';
 import {
   UE_WRITE_TIMEOUT_SECONDS,
-  UE_EDIT_TIMEOUT_SECONDS,
   UE_REVEAL_DURATION_SECONDS,
 } from '../../../lib/rmhbox/constants';
 
@@ -30,23 +31,6 @@ function createUEGame(ctxData?: MockContextData) {
   ]);
   const game = new UndercoverEditorGame(data.context);
   return { game, ...data };
-}
-
-/** Advance all players through a WRITE phase by submitting sentences for all stories. */
-function submitAllSentences(
-  game: UndercoverEditorGame,
-  playerIds: string[],
-  storyIds: string[],
-  prefix = 'This is a test sentence for the story',
-) {
-  for (const storyId of storyIds) {
-    for (const uid of playerIds) {
-      game.handleInput(uid, 'WRITE_SENTENCE', {
-        storyId,
-        text: `${prefix} from ${uid} round`,
-      });
-    }
-  }
 }
 
 /** Find all story IDs from the broadcast log. */
@@ -64,7 +48,7 @@ function getStoryIds(broadcastLog: Array<{ event: string; data: unknown }>): str
 function getEditorAssignment(
   playerLog: Array<{ userId: string; event: string; data: unknown }>,
   userId: string,
-): { assignedStoryId: string; keyword: string } | null {
+): { assignedStoryId: string } | null {
   const roleEvent = playerLog.find(
     (e) => e.userId === userId &&
       e.event === 'rmhbox:game:action' &&
@@ -74,13 +58,68 @@ function getEditorAssignment(
   const d = roleEvent.data as Record<string, unknown>;
   return {
     assignedStoryId: d.assignedStoryId as string,
-    keyword: d.keyword as string,
   };
+}
+
+/** Get the write assignment for a player from the player log. */
+function getWriteAssignment(
+  playerLog: Array<{ userId: string; event: string; data: unknown }>,
+  userId: string,
+  afterIndex = 0,
+): { storyId: string } | null {
+  const writeEvent = playerLog.slice(afterIndex).find(
+    (e) => e.userId === userId &&
+      e.event === 'rmhbox:game:action' &&
+      (e.data as Record<string, unknown>).type === 'UE_WRITE_ASSIGNMENT',
+  );
+  if (!writeEvent) return null;
+  return { storyId: (writeEvent.data as Record<string, unknown>).storyId as string };
+}
+
+/**
+ * Submit sentences for all players for their current round-robin assignments.
+ * Each player writes for exactly one story per round.
+ */
+function submitAllForCurrentRound(
+  game: UndercoverEditorGame,
+  playerIds: string[],
+  playerLog: Array<{ userId: string; event: string; data: unknown }>,
+  prefix = 'This is a test sentence for the story',
+) {
+  for (const uid of playerIds) {
+    // Find the most recent write assignment for this player
+    const assignments = playerLog.filter(
+      (e) => e.userId === uid &&
+        e.event === 'rmhbox:game:action' &&
+        (e.data as Record<string, unknown>).type === 'UE_WRITE_ASSIGNMENT',
+    );
+    const latestAssignment = assignments[assignments.length - 1];
+    if (!latestAssignment) continue;
+    const storyId = (latestAssignment.data as Record<string, unknown>).storyId as string;
+    game.handleInput(uid, 'WRITE_SENTENCE', {
+      storyId,
+      text: `${prefix} from ${uid}`,
+    });
+  }
+}
+
+/** Complete one full write→edit cycle for a round. */
+function completeOneRound(
+  game: UndercoverEditorGame,
+  playerIds: string[],
+  playerLog: Array<{ userId: string; event: string; data: unknown }>,
+  prefix = 'Round sentence',
+) {
+  submitAllForCurrentRound(game, playerIds, playerLog, prefix);
+  // All editors skip to advance
+  for (const uid of playerIds) {
+    game.handleInput(uid, 'SKIP_EDIT', {});
+  }
 }
 
 // ─── Tests ───────────────────────────────────────────────────────
 
-describe('Undercover Editor Server Handler — Parallel Design (§6.2)', () => {
+describe('Undercover Editor Server Handler — Round-Robin Design (§6.2)', () => {
   beforeEach(() => {
     vi.useFakeTimers();
   });
@@ -106,15 +145,17 @@ describe('Undercover Editor Server Handler — Parallel Design (§6.2)', () => {
           (e.data as Record<string, unknown>).type === 'UE_GAME_START',
       );
       expect(gameStart).toBeDefined();
-      const stories = (gameStart!.data as Record<string, unknown>).stories as unknown[];
-      expect(stories.length).toBe(5); // One per player
+      const data = gameStart!.data as Record<string, unknown>;
+      const stories = data.stories as unknown[];
+      expect(stories.length).toBe(5);
+      expect(data.numPlayers).toBe(5);
+      expect(data.totalSteps).toBe(10); // 2*N = 10
     });
 
-    it('should assign each player as editor of exactly one story', () => {
+    it('should assign each player as editor of exactly one story (not their own)', () => {
       const { game, playerLog } = createUEGame();
       game.start();
 
-      // Every player should get a UE_ROLE_ASSIGNED event
       const playerIds = Object.values(MOCK_USERS).map((u) => u.userId);
       const assignedStories = new Set<string>();
 
@@ -122,8 +163,7 @@ describe('Undercover Editor Server Handler — Parallel Design (§6.2)', () => {
         const assignment = getEditorAssignment(playerLog, uid);
         expect(assignment).toBeDefined();
         expect(assignment!.assignedStoryId).toBeTruthy();
-        expect(assignment!.keyword).toBeTruthy();
-        // No player should edit their own story
+        // No player should edit their own story (storyId = ownerUserId)
         expect(assignment!.assignedStoryId).not.toBe(uid);
         assignedStories.add(assignment!.assignedStoryId);
       }
@@ -132,8 +172,8 @@ describe('Undercover Editor Server Handler — Parallel Design (§6.2)', () => {
       expect(assignedStories.size).toBe(5);
     });
 
-    it('should start in WRITE phase after start()', () => {
-      const { game, broadcastLog } = createUEGame();
+    it('should start in WRITE phase after start() with round-robin assignments', () => {
+      const { game, broadcastLog, playerLog } = createUEGame();
       game.start();
 
       const writeStart = broadcastLog.find(
@@ -141,21 +181,32 @@ describe('Undercover Editor Server Handler — Parallel Design (§6.2)', () => {
           (e.data as Record<string, unknown>).type === 'UE_WRITE_START',
       );
       expect(writeStart).toBeDefined();
+      const data = writeStart!.data as Record<string, unknown>;
+      expect(data.writeRound).toBe(1);
+      expect(data.step).toBe(1);
+
+      // Each player should have received a UE_WRITE_ASSIGNMENT
+      const playerIds = Object.values(MOCK_USERS).map((u) => u.userId);
+      for (const uid of playerIds) {
+        const assignment = getWriteAssignment(playerLog, uid);
+        expect(assignment).toBeDefined();
+      }
     });
   });
 
   // ─── Write Phase ───────────────────────────────────────────
 
-  describe('Write Phase', () => {
-    it('should accept valid sentence submission for a story', () => {
-      const { game, broadcastLog, playerLog } = createUEGame();
+  describe('Write Phase (Round-Robin)', () => {
+    it('should accept valid sentence submission for assigned story', () => {
+      const { game, playerLog } = createUEGame();
       game.start();
 
-      const storyIds = getStoryIds(broadcastLog);
       const uid = MOCK_USERS.alice.userId;
+      const assignment = getWriteAssignment(playerLog, uid);
+      expect(assignment).toBeDefined();
 
       game.handleInput(uid, 'WRITE_SENTENCE', {
-        storyId: storyIds[0],
+        storyId: assignment!.storyId,
         text: 'A magnificent tale begins here today.',
       });
 
@@ -166,7 +217,7 @@ describe('Undercover Editor Server Handler — Parallel Design (§6.2)', () => {
       expect(confirmed).toBeDefined();
     });
 
-    it('should reject sentence for invalid storyId', () => {
+    it('should reject sentence for non-assigned story', () => {
       const { game, playerLog } = createUEGame();
       game.start();
 
@@ -183,38 +234,38 @@ describe('Undercover Editor Server Handler — Parallel Design (§6.2)', () => {
     });
 
     it('should reject sentence shorter than minimum length', () => {
-      const { game, broadcastLog, playerLog } = createUEGame();
+      const { game, playerLog } = createUEGame();
       game.start();
 
-      const storyIds = getStoryIds(broadcastLog);
-      game.handleInput(MOCK_USERS.alice.userId, 'WRITE_SENTENCE', {
-        storyId: storyIds[0],
+      const uid = MOCK_USERS.alice.userId;
+      const assignment = getWriteAssignment(playerLog, uid);
+
+      game.handleInput(uid, 'WRITE_SENTENCE', {
+        storyId: assignment!.storyId,
         text: 'Short',
       });
 
       const error = playerLog.find(
-        (e) => e.userId === MOCK_USERS.alice.userId &&
+        (e) => e.userId === uid &&
           (e.data as Record<string, unknown>).type === 'UE_ERROR',
       );
       expect(error).toBeDefined();
     });
 
     it('should allow unsubmit of a sentence', () => {
-      const { game, broadcastLog, playerLog } = createUEGame();
+      const { game, playerLog } = createUEGame();
       game.start();
 
-      const storyIds = getStoryIds(broadcastLog);
       const uid = MOCK_USERS.alice.userId;
+      const assignment = getWriteAssignment(playerLog, uid)!;
 
-      // Submit
       game.handleInput(uid, 'WRITE_SENTENCE', {
-        storyId: storyIds[0],
+        storyId: assignment.storyId,
         text: 'First attempt at writing something nice.',
       });
 
-      // Unsubmit
       game.handleInput(uid, 'UNSUBMIT_SENTENCE', {
-        storyId: storyIds[0],
+        storyId: assignment.storyId,
       });
 
       const unsubmitted = playerLog.find(
@@ -224,14 +275,12 @@ describe('Undercover Editor Server Handler — Parallel Design (§6.2)', () => {
       expect(unsubmitted).toBeDefined();
     });
 
-    it('should auto-submit "..." on write timeout for missing submissions', () => {
+    it('should auto-submit "..." on write timeout', () => {
       const { game, broadcastLog } = createUEGame();
       game.start();
 
-      // Don't submit anything — let timeout fire
       vi.advanceTimersByTime(UE_WRITE_TIMEOUT_SECONDS * 1000 + 50);
 
-      // Should have transitioned to EDIT phase (stories updated with "...")
       const editStart = broadcastLog.find(
         (e) => e.event === 'rmhbox:game:action' &&
           (e.data as Record<string, unknown>).type === 'UE_EDIT_START',
@@ -239,16 +288,13 @@ describe('Undercover Editor Server Handler — Parallel Design (§6.2)', () => {
       expect(editStart).toBeDefined();
     });
 
-    it('should end WRITE early when all players submit for all stories', () => {
-      const { game, broadcastLog } = createUEGame();
+    it('should end WRITE early when all players submit', () => {
+      const { game, broadcastLog, playerLog } = createUEGame();
       game.start();
 
-      const storyIds = getStoryIds(broadcastLog);
       const playerIds = Object.values(MOCK_USERS).map((u) => u.userId);
+      submitAllForCurrentRound(game, playerIds, playerLog);
 
-      submitAllSentences(game, playerIds, storyIds);
-
-      // Should immediately transition to EDIT
       const editStart = broadcastLog.find(
         (e) => e.event === 'rmhbox:game:action' &&
           (e.data as Record<string, unknown>).type === 'UE_EDIT_START',
@@ -259,44 +305,55 @@ describe('Undercover Editor Server Handler — Parallel Design (§6.2)', () => {
 
   // ─── Edit Phase ────────────────────────────────────────────
 
-  describe('Edit Phase', () => {
-    it('should send UE_EDIT_PROMPT to each editor for their assigned story', () => {
-      const { game, broadcastLog, playerLog } = createUEGame();
+  describe('Edit Phase (2-Word Edits)', () => {
+    it('should send UE_EDIT_PROMPT to editors after write phase', () => {
+      const { game, playerLog } = createUEGame();
       game.start();
 
-      const storyIds = getStoryIds(broadcastLog);
       const playerIds = Object.values(MOCK_USERS).map((u) => u.userId);
+      submitAllForCurrentRound(game, playerIds, playerLog);
 
-      // Complete write phase
-      submitAllSentences(game, playerIds, storyIds);
-
-      // Each player should get an edit prompt for their assigned story
       const editPrompts = playerLog.filter(
         (e) => (e.data as Record<string, unknown>).type === 'UE_EDIT_PROMPT',
       );
       expect(editPrompts.length).toBeGreaterThan(0);
+
+      // Each edit prompt should have an editableSentence with words
+      for (const prompt of editPrompts) {
+        const data = prompt.data as Record<string, unknown>;
+        const story = data.story as Record<string, unknown>;
+        expect(story).toBeDefined();
+        expect(story.editableSentence).toBeDefined();
+        const editableSentence = story.editableSentence as Record<string, unknown>;
+        expect(editableSentence.words).toBeDefined();
+        expect(Array.isArray(editableSentence.words)).toBe(true);
+      }
     });
 
-    it('should allow editor to edit a word in their assigned story', () => {
-      const { game, broadcastLog, playerLog } = createUEGame();
+    it('should allow editor to submit 2-word edit', () => {
+      const { game, playerLog } = createUEGame();
       game.start();
 
-      const storyIds = getStoryIds(broadcastLog);
       const playerIds = Object.values(MOCK_USERS).map((u) => u.userId);
+      submitAllForCurrentRound(game, playerIds, playerLog);
 
-      submitAllSentences(game, playerIds, storyIds);
-
-      // Find an editor assignment
       const editorUid = playerIds[0];
       const assignment = getEditorAssignment(playerLog, editorUid);
       expect(assignment).toBeDefined();
 
-      // Edit a word
-      game.handleInput(editorUid, 'EDIT_WORD', {
+      // Find the edit prompt to get word indices
+      const editPrompt = playerLog.find(
+        (e) => e.userId === editorUid &&
+          (e.data as Record<string, unknown>).type === 'UE_EDIT_PROMPT',
+      );
+      expect(editPrompt).toBeDefined();
+
+      game.handleInput(editorUid, 'EDIT_TWO_WORDS', {
         storyId: assignment!.assignedStoryId,
-        sentenceIndex: 0,
-        wordIndex: 0,
-        newWord: 'CHANGED',
+        edits: [
+          { wordIndex: 0, newWord: 'CHANGED1' },
+          { wordIndex: 1, newWord: 'CHANGED2' },
+        ],
       });
 
       const confirmed = playerLog.find(
@@ -307,26 +364,27 @@ describe('Undercover Editor Server Handler — Parallel Design (§6.2)', () => {
     });
 
     it('should reject edit from non-editor for a story', () => {
-      const { game, broadcastLog, playerLog } = createUEGame();
+      const { game, playerLog } = createUEGame();
       game.start();
 
-      const storyIds = getStoryIds(broadcastLog);
       const playerIds = Object.values(MOCK_USERS).map((u) => u.userId);
+      submitAllForCurrentRound(game, playerIds, playerLog);
 
-      submitAllSentences(game, playerIds, storyIds);
-
-      // Try to edit a story that the player is NOT assigned to
       const editorUid = playerIds[0];
       const assignment = getEditorAssignment(playerLog, editorUid);
       expect(assignment).toBeDefined();
 
       // Use a different player
-      const nonEditorUid = playerIds[1];
-      game.handleInput(nonEditorUid, 'EDIT_WORD', {
+      const nonEditorUid = playerIds.find(
+        (uid) => getEditorAssignment(playerLog, uid)?.assignedStoryId !== assignment!.assignedStoryId,
+      ) ?? playerIds[1];
+
+      game.handleInput(nonEditorUid, 'EDIT_TWO_WORDS', {
         storyId: assignment!.assignedStoryId,
-        sentenceIndex: 0,
-        wordIndex: 0,
-        newWord: 'HACKED',
+        edits: [
+          { wordIndex: 0, newWord: 'HACKED1' },
+          { wordIndex: 1, newWord: 'HACKED2' },
+        ],
       });
 
       const error = playerLog.find(
@@ -338,13 +396,11 @@ describe('Undercover Editor Server Handler — Parallel Design (§6.2)', () => {
     });
 
     it('should allow editor to skip editing', () => {
-      const { game, broadcastLog, playerLog } = createUEGame();
+      const { game, playerLog } = createUEGame();
       game.start();
 
-      const storyIds = getStoryIds(broadcastLog);
       const playerIds = Object.values(MOCK_USERS).map((u) => u.userId);
-
-      submitAllSentences(game, playerIds, storyIds);
+      submitAllForCurrentRound(game, playerIds, playerLog);
 
       const editorUid = playerIds[0];
       game.handleInput(editorUid, 'SKIP_EDIT', {});
@@ -357,56 +413,28 @@ describe('Undercover Editor Server Handler — Parallel Design (§6.2)', () => {
       expect(confirmed).toBeDefined();
     });
 
-    it('should reject editing an already-edited position', () => {
-      const { game, broadcastLog, playerLog } = createUEGame();
+    it('should reject 2-word edit with same word index', () => {
+      const { game, playerLog } = createUEGame();
       game.start();
 
-      const storyIds = getStoryIds(broadcastLog);
       const playerIds = Object.values(MOCK_USERS).map((u) => u.userId);
-
-      submitAllSentences(game, playerIds, storyIds);
+      submitAllForCurrentRound(game, playerIds, playerLog);
 
       const editorUid = playerIds[0];
-      const assignment = getEditorAssignment(playerLog, editorUid);
-      expect(assignment).toBeDefined();
+      const assignment = getEditorAssignment(playerLog, editorUid)!;
 
-      // First edit
-      game.handleInput(editorUid, 'EDIT_WORD', {
-        storyId: assignment!.assignedStoryId,
-        sentenceIndex: 0,
-        wordIndex: 0,
-        newWord: 'FIRST',
-      });
-
-      // Start a new write+edit round to attempt re-editing the same position
-      // Since the first edit phase auto-advances when all editors complete,
-      // we need to complete all edits, then do another round
-      for (let i = 1; i < playerIds.length; i++) {
-        game.handleInput(playerIds[i], 'SKIP_EDIT', {});
-      }
-
-      // Now in round 2 WRITE phase — submit again
-      const writeStart2 = broadcastLog.find(
-        (e) => e.event === 'rmhbox:game:action' &&
-          (e.data as Record<string, unknown>).type === 'UE_WRITE_START' &&
-          (e.data as Record<string, unknown>).round === 2,
-      );
-      expect(writeStart2).toBeDefined();
-
-      submitAllSentences(game, playerIds, storyIds, 'Round two sentence for story');
-
-      // Try to edit the same position (0:0) again
-      game.handleInput(editorUid, 'EDIT_WORD', {
-        storyId: assignment!.assignedStoryId,
-        sentenceIndex: 0,
-        wordIndex: 0,
-        newWord: 'SECOND',
+      game.handleInput(editorUid, 'EDIT_TWO_WORDS', {
+        storyId: assignment.assignedStoryId,
+        edits: [
+          { wordIndex: 0, newWord: 'SAME' },
+          { wordIndex: 0, newWord: 'SAME' },
+        ],
       });
 
       const error = playerLog.find(
         (e) => e.userId === editorUid &&
           (e.data as Record<string, unknown>).type === 'UE_ERROR' &&
-          (e.data as Record<string, unknown>).message === 'Position already edited',
+          (e.data as Record<string, unknown>).message === 'Must edit two different words',
       );
       expect(error).toBeDefined();
     });
@@ -415,31 +443,25 @@ describe('Undercover Editor Server Handler — Parallel Design (§6.2)', () => {
   // ─── State Masking (Security) ──────────────────────────────
 
   describe('State Masking (Security)', () => {
-    it('non-editor player should NOT see any keyword or editor assignments', () => {
-      const { game, playerLog } = createUEGame();
+    it('player state should NOT reveal editor assignments for other stories', () => {
+      const { game } = createUEGame();
       game.start();
 
       const playerIds = Object.values(MOCK_USERS).map((u) => u.userId);
 
-      // Each player should only know their OWN assignment
       for (const uid of playerIds) {
         const state = game.getStateForPlayer(uid) as Record<string, unknown>;
-        // Should NOT have other players' keywords or assignments
-        // The state should have `assignedStoryId` (their own) but not others'
-        const keyword = state.keyword;
-        const assignedStoryId = state.assignedStoryId;
-
-        if (assignedStoryId) {
-          // This player is an editor — they should see their keyword
-          expect(keyword).toBeTruthy();
-        } else {
-          // Not an editor (shouldn't happen in this design, but guard)
-          expect(keyword).toBeUndefined();
+        // Stories should not expose editorUserId
+        const stories = state.stories as Array<Record<string, unknown>>;
+        if (stories) {
+          for (const story of stories) {
+            expect(story).not.toHaveProperty('editorUserId');
+          }
         }
       }
     });
 
-    it('editor getStateForPlayer should include keyword for their assigned story', () => {
+    it('editor should see their assignedStoryId in getStateForPlayer', () => {
       const { game, playerLog } = createUEGame();
       game.start();
 
@@ -450,7 +472,6 @@ describe('Undercover Editor Server Handler — Parallel Design (§6.2)', () => {
 
       const state = game.getStateForPlayer(editorUid) as Record<string, unknown>;
       expect(state.assignedStoryId).toBe(assignment!.assignedStoryId);
-      expect(state.keyword).toBe(assignment!.keyword);
     });
 
     it('spectator state should include all hidden info', () => {
@@ -460,54 +481,127 @@ describe('Undercover Editor Server Handler — Parallel Design (§6.2)', () => {
       const spectatorState = game.getStateForSpectator() as Record<string, unknown>;
       expect(spectatorState.storyReveals).toBeDefined();
       expect(spectatorState.isSpectator).toBe(true);
+
+      // Each reveal should have editorUserId
+      const reveals = spectatorState.storyReveals as Array<Record<string, unknown>>;
+      for (const reveal of reveals) {
+        expect(reveal.editorUserId).toBeDefined();
+      }
+    });
+  });
+
+  // ─── Reading Phase ─────────────────────────────────────────
+
+  describe('Reading Phase (Host-Driven)', () => {
+    it('should transition to READING after all write/edit rounds', () => {
+      const { game, broadcastLog, playerLog } = createUEGame();
+      game.start();
+
+      const playerIds = Object.values(MOCK_USERS).map((u) => u.userId);
+
+      // N = 5 write/edit rounds
+      for (let round = 0; round < 5; round++) {
+        completeOneRound(game, playerIds, playerLog, `Round ${round + 1} sentence`);
+      }
+
+      const readingStart = broadcastLog.find(
+        (e) => e.event === 'rmhbox:game:action' &&
+          (e.data as Record<string, unknown>).type === 'UE_READING_START',
+      );
+      expect(readingStart).toBeDefined();
+    });
+
+    it('host should be able to advance sentences', () => {
+      const { game, broadcastLog, playerLog, context } = createUEGame();
+      game.start();
+
+      const playerIds = Object.values(MOCK_USERS).map((u) => u.userId);
+      const hostId = context.getHostId();
+
+      for (let round = 0; round < 5; round++) {
+        completeOneRound(game, playerIds, playerLog, `Round ${round + 1} sentence`);
+      }
+
+      // Advance first sentence
+      game.handleInput(hostId, 'NEXT_SENTENCE', {});
+
+      const sentenceEvent = broadcastLog.find(
+        (e) => e.event === 'rmhbox:game:action' &&
+          (e.data as Record<string, unknown>).type === 'UE_READING_SENTENCE',
+      );
+      expect(sentenceEvent).toBeDefined();
+    });
+
+    it('non-host should NOT be able to advance', () => {
+      const { game, playerLog, context } = createUEGame();
+      game.start();
+
+      const playerIds = Object.values(MOCK_USERS).map((u) => u.userId);
+      const hostId = context.getHostId();
+      const nonHostId = playerIds.find((uid) => uid !== hostId)!;
+
+      for (let round = 0; round < 5; round++) {
+        completeOneRound(game, playerIds, playerLog, `Round ${round + 1} sentence`);
+      }
+
+      game.handleInput(nonHostId, 'NEXT_SENTENCE', {});
+
+      const error = playerLog.find(
+        (e) => e.userId === nonHostId &&
+          (e.data as Record<string, unknown>).type === 'UE_ERROR' &&
+          (e.data as Record<string, unknown>).message === 'Only the host can advance',
+      );
+      expect(error).toBeDefined();
     });
   });
 
   // ─── Review Phase (Matching) ───────────────────────────────
 
   describe('Review Phase', () => {
-    it('should transition to REVIEW after all rounds complete', () => {
-      const { game, broadcastLog } = createUEGame();
-      game.start();
+    /** Helper: advance through all N rounds + reading to reach REVIEW. */
+    function advanceToReview(
+      game: UndercoverEditorGame,
+      playerIds: string[],
+      playerLog: Array<{ userId: string; event: string; data: unknown }>,
+      broadcastLog: Array<{ event: string; data: unknown }>,
+      context: { getHostId: () => string },
+    ) {
+      const hostId = context.getHostId();
 
-      const storyIds = getStoryIds(broadcastLog);
-      const playerIds = Object.values(MOCK_USERS).map((u) => u.userId);
-
-      // Complete 2 rounds (default UE_ROTATIONS)
-      for (let round = 0; round < 2; round++) {
-        submitAllSentences(game, playerIds, storyIds, `Round ${round + 1} sentence`);
-        // All editors skip to advance
-        for (const uid of playerIds) {
-          game.handleInput(uid, 'SKIP_EDIT', {});
-        }
+      // Complete N write/edit rounds
+      for (let round = 0; round < 5; round++) {
+        completeOneRound(game, playerIds, playerLog, `Round ${round + 1} sentence`);
       }
 
-      const reviewStart = broadcastLog.find(
+      // Advance through READING: step through all sentences of all stories
+      const readingStart = broadcastLog.find(
         (e) => e.event === 'rmhbox:game:action' &&
-          (e.data as Record<string, unknown>).type === 'UE_REVIEW_START',
+          (e.data as Record<string, unknown>).type === 'UE_READING_START',
       );
-      expect(reviewStart).toBeDefined();
-    });
+      expect(readingStart).toBeDefined();
+      const readingStories = (readingStart!.data as Record<string, unknown>).stories as Array<{ sentenceCount: number }>;
+
+      for (let si = 0; si < readingStories.length; si++) {
+        const storyMeta = readingStories[si];
+        for (let senti = 0; senti < storyMeta.sentenceCount; senti++) {
+          game.handleInput(hostId, 'NEXT_SENTENCE', {});
+        }
+        // Advance to next story (last one transitions to REVIEW)
+        game.handleInput(hostId, 'NEXT_STORY', {});
+      }
+    }
 
     it('should accept matching guesses from players', () => {
-      const { game, broadcastLog, playerLog } = createUEGame();
+      const { game, broadcastLog, playerLog, context } = createUEGame();
       game.start();
 
-      const storyIds = getStoryIds(broadcastLog);
       const playerIds = Object.values(MOCK_USERS).map((u) => u.userId);
+      advanceToReview(game, playerIds, playerLog, broadcastLog, context);
 
-      // Complete all rounds
-      for (let round = 0; round < 2; round++) {
-        submitAllSentences(game, playerIds, storyIds, `Round ${round + 1} sentence`);
-        for (const uid of playerIds) {
-          game.handleInput(uid, 'SKIP_EDIT', {});
-        }
-      }
-
-      // Submit matching guesses
+      const storyIds = getStoryIds(broadcastLog);
       const guesses: Record<string, string> = {};
       for (const storyId of storyIds) {
-        guesses[storyId] = playerIds[0]; // Just guess someone
+        guesses[storyId] = playerIds[0];
       }
 
       game.handleInput(playerIds[0], 'SUBMIT_MATCHING', { guesses });
@@ -520,21 +614,14 @@ describe('Undercover Editor Server Handler — Parallel Design (§6.2)', () => {
     });
 
     it('should advance to REVEAL when all players lock in', () => {
-      const { game, broadcastLog } = createUEGame();
+      const { game, broadcastLog, playerLog, context } = createUEGame();
       game.start();
 
-      const storyIds = getStoryIds(broadcastLog);
       const playerIds = Object.values(MOCK_USERS).map((u) => u.userId);
+      advanceToReview(game, playerIds, playerLog, broadcastLog, context);
 
-      // Complete all rounds
-      for (let round = 0; round < 2; round++) {
-        submitAllSentences(game, playerIds, storyIds, `Round ${round + 1} sentence`);
-        for (const uid of playerIds) {
-          game.handleInput(uid, 'SKIP_EDIT', {});
-        }
-      }
+      const storyIds = getStoryIds(broadcastLog);
 
-      // All players submit guesses and lock in
       for (const uid of playerIds) {
         const guesses: Record<string, string> = {};
         for (const storyId of storyIds) {
@@ -552,19 +639,13 @@ describe('Undercover Editor Server Handler — Parallel Design (§6.2)', () => {
     });
 
     it('should not allow locked-in player to change guesses', () => {
-      const { game, broadcastLog, playerLog } = createUEGame();
+      const { game, broadcastLog, playerLog, context } = createUEGame();
       game.start();
 
-      const storyIds = getStoryIds(broadcastLog);
       const playerIds = Object.values(MOCK_USERS).map((u) => u.userId);
+      advanceToReview(game, playerIds, playerLog, broadcastLog, context);
 
-      for (let round = 0; round < 2; round++) {
-        submitAllSentences(game, playerIds, storyIds, `Round ${round + 1} sentence`);
-        for (const uid of playerIds) {
-          game.handleInput(uid, 'SKIP_EDIT', {});
-        }
-      }
-
+      const storyIds = getStoryIds(broadcastLog);
       const uid = playerIds[0];
       const guesses: Record<string, string> = {};
       for (const storyId of storyIds) {
@@ -573,7 +654,6 @@ describe('Undercover Editor Server Handler — Parallel Design (§6.2)', () => {
       game.handleInput(uid, 'SUBMIT_MATCHING', { guesses });
       game.handleInput(uid, 'LOCK_IN_MATCHING', {});
 
-      // Try to change guesses after lock-in
       game.handleInput(uid, 'SUBMIT_MATCHING', { guesses: { [storyIds[0]]: playerIds[1] } });
 
       const error = playerLog.find(
@@ -588,8 +668,8 @@ describe('Undercover Editor Server Handler — Parallel Design (§6.2)', () => {
   // ─── Reconnection ─────────────────────────────────────────
 
   describe('Reconnection', () => {
-    it('should send editor state with keyword on reconnect', () => {
-      const { game, playerLog } = createUEGame();
+    it('should send editor state on reconnect', () => {
+      const { game } = createUEGame();
       game.start();
 
       const playerIds = Object.values(MOCK_USERS).map((u) => u.userId);
@@ -597,25 +677,21 @@ describe('Undercover Editor Server Handler — Parallel Design (§6.2)', () => {
 
       const state = game.getStateForPlayer(editorUid) as Record<string, unknown>;
       expect(state.assignedStoryId).toBeDefined();
-      expect(state.keyword).toBeDefined();
       expect(state.phase).toBe('WRITE');
     });
 
-    it('should send non-editor state without other players\' keywords', () => {
+    it('should send non-editor state without other players\' assignments', () => {
       const { game } = createUEGame();
       game.start();
 
       const playerIds = Object.values(MOCK_USERS).map((u) => u.userId);
 
-      // Check each player's state
       for (const uid of playerIds) {
         const state = game.getStateForPlayer(uid) as Record<string, unknown>;
         expect(state.stories).toBeDefined();
         expect(state.phase).toBe('WRITE');
-        // Should not contain other players' assignments
         const stories = state.stories as Array<Record<string, unknown>>;
         for (const story of stories) {
-          // Story views should not reveal editorUserId
           expect(story.editorUserId).toBeUndefined();
         }
       }
@@ -645,21 +721,32 @@ describe('Undercover Editor Server Handler — Parallel Design (§6.2)', () => {
 
   describe('Scoring & Awards', () => {
     it('should produce results with rankings and awards after reveal', () => {
-      const { game, broadcastLog, context } = createUEGame();
+      const { game, broadcastLog, playerLog, context } = createUEGame();
       game.start();
 
-      const storyIds = getStoryIds(broadcastLog);
       const playerIds = Object.values(MOCK_USERS).map((u) => u.userId);
+      const hostId = context.getHostId();
 
-      // Complete all rounds
-      for (let round = 0; round < 2; round++) {
-        submitAllSentences(game, playerIds, storyIds, `Round ${round + 1} sentence`);
-        for (const uid of playerIds) {
-          game.handleInput(uid, 'SKIP_EDIT', {});
+      // Complete all write/edit rounds
+      for (let round = 0; round < 5; round++) {
+        completeOneRound(game, playerIds, playerLog, `Round ${round + 1} sentence`);
+      }
+
+      // Advance through reading
+      const readingStart = broadcastLog.find(
+        (e) => e.event === 'rmhbox:game:action' &&
+          (e.data as Record<string, unknown>).type === 'UE_READING_START',
+      );
+      const readingStories = (readingStart!.data as Record<string, unknown>).stories as Array<{ sentenceCount: number }>;
+      for (let si = 0; si < readingStories.length; si++) {
+        for (let senti = 0; senti < readingStories[si].sentenceCount; senti++) {
+          game.handleInput(hostId, 'NEXT_SENTENCE', {});
         }
+        game.handleInput(hostId, 'NEXT_STORY', {});
       }
 
       // All lock in
+      const storyIds = getStoryIds(broadcastLog);
       for (const uid of playerIds) {
         const guesses: Record<string, string> = {};
         for (const storyId of storyIds) {
@@ -672,7 +759,6 @@ describe('Undercover Editor Server Handler — Parallel Design (§6.2)', () => {
       // Advance through reveal
       vi.advanceTimersByTime(UE_REVEAL_DURATION_SECONDS * 1000 + 50);
 
-      // onComplete should have been called
       expect(context.onComplete).toHaveBeenCalledTimes(1);
       const results = (context.onComplete as ReturnType<typeof vi.fn>).mock.calls[0][0];
       expect(results.rankings).toBeDefined();
@@ -685,17 +771,27 @@ describe('Undercover Editor Server Handler — Parallel Design (§6.2)', () => {
 
   describe('Game Log', () => {
     it('should produce game log with action types', () => {
-      const { game, broadcastLog, context } = createUEGame();
+      const { game, broadcastLog, playerLog, context } = createUEGame();
       game.start();
 
-      const storyIds = getStoryIds(broadcastLog);
       const playerIds = Object.values(MOCK_USERS).map((u) => u.userId);
+      const hostId = context.getHostId();
 
-      for (let round = 0; round < 2; round++) {
-        submitAllSentences(game, playerIds, storyIds, `Round ${round + 1} sentence`);
-        for (const uid of playerIds) {
-          game.handleInput(uid, 'SKIP_EDIT', {});
+      for (let round = 0; round < 5; round++) {
+        completeOneRound(game, playerIds, playerLog, `Round ${round + 1} sentence`);
+      }
+
+      // Advance through reading
+      const readingStart = broadcastLog.find(
+        (e) => e.event === 'rmhbox:game:action' &&
+          (e.data as Record<string, unknown>).type === 'UE_READING_START',
+      );
+      const readingStories = (readingStart!.data as Record<string, unknown>).stories as Array<{ sentenceCount: number }>;
+      for (let si = 0; si < readingStories.length; si++) {
+        for (let senti = 0; senti < readingStories[si].sentenceCount; senti++) {
+          game.handleInput(hostId, 'NEXT_SENTENCE', {});
         }
+        game.handleInput(hostId, 'NEXT_STORY', {});
       }
 
       for (const uid of playerIds) {
@@ -707,8 +803,9 @@ describe('Undercover Editor Server Handler — Parallel Design (§6.2)', () => {
 
       expect(context.onComplete).toHaveBeenCalledTimes(1);
       const results = (context.onComplete as ReturnType<typeof vi.fn>).mock.calls[0][0];
-      const gameLog = results.gameSpecificData.gameLog as unknown[];
-      expect(gameLog.length).toBeGreaterThan(0);
+      const gameLog = results.gameSpecificData.gameLog as Record<string, unknown>;
+      expect(gameLog.actions).toBeDefined();
+      expect((gameLog.actions as unknown[]).length).toBeGreaterThan(0);
     });
   });
 });

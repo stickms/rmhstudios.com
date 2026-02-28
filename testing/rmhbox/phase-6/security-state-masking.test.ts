@@ -365,32 +365,25 @@ describe('Security: State Masking (Phase 6)', () => {
     });
   });
 
-  describe('Undercover Editor — role & keyword masking', () => {
-    it('Writer MUST NEVER see the keyword in getStateForPlayer', () => {
-      const { game, playerLog } = createUEGame();
+  describe('Undercover Editor — role & assignment masking', () => {
+    it('No player state should reveal editor assignments for other stories', () => {
+      const { game } = createUEGame();
       game.start();
 
-      // In the parallel design, every player is an editor for ONE story.
-      // They should only see the keyword for THEIR assigned story, not others'.
       const allIds = Object.values(MOCK_USERS).map((u) => u.userId);
 
       for (const uid of allIds) {
         const state = game.getStateForPlayer(uid) as Record<string, unknown>;
         const assignedStoryId = state.assignedStoryId as string | null;
-        const keyword = state.keyword as string | null;
 
-        if (assignedStoryId) {
-          // This player should see THEIR keyword
-          expect(keyword).toBeTruthy();
-        }
+        // Player should see their own assignment
+        expect(assignedStoryId).toBeTruthy();
 
-        // Player should NOT see other stories' keywords or editor assignments
+        // Story views should never expose editorUserId
         const stories = state.stories as Array<Record<string, unknown>>;
         if (stories) {
           for (const story of stories) {
-            // Story views should never expose editorUserId or keyword
             expect(story).not.toHaveProperty('editorUserId');
-            expect(story).not.toHaveProperty('keyword');
           }
         }
       }
@@ -398,34 +391,31 @@ describe('Security: State Masking (Phase 6)', () => {
       game.cleanup();
     });
 
-    it('No player MUST see another player\'s keyword via WebSocket events', () => {
-      const { game, playerLog, broadcastLog } = createUEGame();
+    it('No player MUST see another player\'s editor assignment via WebSocket events', () => {
+      const { game, broadcastLog } = createUEGame();
       game.start();
 
-      // Broadcast events should NOT contain keyword or editorUserId
+      // Broadcast events should NOT contain editorUserId
       for (const event of broadcastLog) {
         const data = event.data as Record<string, unknown>;
         if (data.type === 'UE_GAME_START') {
-          expect(data).not.toHaveProperty('keyword');
           expect(data).not.toHaveProperty('editorUserId');
-          // stories should not have keywords or editor IDs
           const stories = data.stories as Array<Record<string, unknown>> | undefined;
           if (stories) {
             for (const story of stories) {
-              expect(story).not.toHaveProperty('keyword');
               expect(story).not.toHaveProperty('editorUserId');
             }
           }
         }
         if (data.type === 'UE_WRITE_START') {
-          expect(data).not.toHaveProperty('keyword');
+          expect(data).not.toHaveProperty('editorUserId');
         }
       }
 
       game.cleanup();
     });
 
-    it('Spectator MUST see all story reveals with keywords and editors', () => {
+    it('Spectator MUST see all story reveals with editors', () => {
       const { game } = createUEGame();
       game.start();
 
@@ -433,27 +423,22 @@ describe('Security: State Masking (Phase 6)', () => {
       const storyReveals = spectatorState.storyReveals as Array<Record<string, unknown>>;
       expect(storyReveals).toBeDefined();
       expect(storyReveals.length).toBeGreaterThan(0);
-      // Each reveal should have editorUserId and keyword
       for (const reveal of storyReveals) {
         expect(reveal.editorUserId).toBeDefined();
-        expect(reveal.keyword).toBeDefined();
       }
       expect(spectatorState.isSpectator).toBe(true);
 
       game.cleanup();
     });
 
-    it('Editor MUST see keyword in getStateForPlayer', () => {
-      const { game, playerLog } = createUEGame();
+    it('Editor MUST see assignedStoryId in getStateForPlayer', () => {
+      const { game } = createUEGame();
       game.start();
 
-      // In the parallel design, all players are editors. Pick any one.
       const anyEditorId = Object.values(MOCK_USERS)[0].userId;
 
       const editorState = game.getStateForPlayer(anyEditorId) as Record<string, unknown>;
-      expect(editorState.keyword).toBeDefined();
       expect(editorState.assignedStoryId).toBeDefined();
-      expect(editorState.myEdits).toBeDefined();
 
       game.cleanup();
     });
@@ -462,8 +447,6 @@ describe('Security: State Masking (Phase 6)', () => {
       const { game, broadcastLog } = createUEGame();
       game.start();
 
-      // UE_EDIT_PROMPT should never appear in broadcastLog (lobby-wide)
-      // It should only appear in playerLog (per-player)
       const editPromptBroadcasts = broadcastLog.filter(
         (e) => e.event === 'rmhbox:game:action' &&
           (e.data as Record<string, unknown>).type === 'UE_EDIT_PROMPT',
