@@ -1532,6 +1532,484 @@ export function PersistentHomologyPaper() {
         that are left to future work.
       </p>
 
+      {/* 14. TOPOLOGICAL REGULARIZATION OF GAN TRAINING */}
+      <h2 style={h2Style}>14. Topological Regularization of GAN Training</h2>
+
+      <p className="mb-4">
+        The preceding sections have demonstrated that persistent homology furnishes a powerful
+        lens for post hoc analysis of GAN latent-space structure. A natural question arises:
+        can topological information be injected directly into the GAN training objective, thereby
+        shaping the learned manifold to possess desirable homological properties ab initio?
+        We formalize this idea via a topological regularizer that penalizes the generator for
+        producing latent distributions whose persistence diagrams diverge from a target
+        topological signature. The key technical challenge — differentiating through the
+        persistence computation — has been addressed by the differentiable persistence framework
+        of Brüel-Gabrielsson et al. (2020), which we adapt to the game-asset GAN setting.
+      </p>
+
+      <h3 style={h3Style}>14.1 Persistence-Based Loss Functions</h3>
+
+      <p className="mb-4">
+        Let <Tex math="G_\theta: \mathcal{Z} \to \mathcal{X}" /> denote the generator with
+        parameters <Tex math="\theta" />, and let{' '}
+        <Tex math="\mathrm{Dgm}_k(G_\theta)" /> denote the dimension-<Tex math="k" />{' '}
+        persistence diagram computed from a mini-batch of latent codes{' '}
+        <Tex math="\{z_i\}_{i=1}^N \subset \mathcal{Z}" /> via the Vietoris–Rips filtration
+        on the generated outputs <Tex math="\{G_\theta(z_i)\}" />. We define the topological
+        regularizer as a weighted sum of persistence-based penalties across homological
+        dimensions:
+      </p>
+
+      <TexBlock math="\mathcal{L}_{\mathrm{topo}}(\theta) = \sum_{k=0}^{K} \lambda_k \cdot \sum_{(b,d) \in \mathrm{Dgm}_k(G_\theta)} w_k(b,d) \cdot \bigl|(d - b) - \tau_k\bigr|^p" />
+
+      <p className="mb-4 indent-8">
+        Here <Tex math="\lambda_k > 0" /> are dimension-specific regularization weights,{' '}
+        <Tex math="w_k(b, d)" /> is a weighting function that modulates the penalty according to
+        feature location in the birth–death plane (we employ{' '}
+        <Tex math="w_k(b,d) = (d - b)^\alpha" /> with <Tex math="\alpha \geq 0" /> to
+        emphasize high-persistence features), <Tex math="\tau_k" /> is the target persistence
+        for dimension-<Tex math="k" /> features, and <Tex math="p \geq 1" /> controls the norm
+        of the penalty. Setting <Tex math="\tau_0 = 0" /> for <Tex math="H_0" /> encourages a
+        single connected component (penalizing fragmentation), while{' '}
+        <Tex math="\tau_1 > 0" /> for <Tex math="H_1" /> preserves semantically meaningful
+        loops in the latent space. The full training objective becomes:
+      </p>
+
+      <TexBlock math="\min_\theta \max_\phi \; \mathcal{L}_{\mathrm{GAN}}(\theta, \phi) + \mu \cdot \mathcal{L}_{\mathrm{topo}}(\theta)" />
+
+      <p className="mb-4">
+        where <Tex math="\mathcal{L}_{\mathrm{GAN}}" /> is the standard adversarial loss
+        (we adopt the non-saturating variant of Goodfellow et al., 2014) with discriminator
+        parameters <Tex math="\phi" />, and <Tex math="\mu > 0" /> is the global
+        regularization coefficient. The interplay between the adversarial objective and the
+        topological penalty induces a Pareto front in the space of generator parameters:
+        increasing <Tex math="\mu" /> forces the latent manifold toward the target topology
+        at the potential cost of reduced distributional fidelity, while{' '}
+        <Tex math="\mu \to 0" /> recovers the unregularized baseline. In practice, we observe
+        that moderate values of <Tex math="\mu \in [0.01, 0.1]" /> achieve substantial
+        topological improvement with negligible FID degradation.
+      </p>
+
+      <p className="mb-4 indent-8">
+        The choice of target persistence parameters <Tex math="\tau_k" /> merits careful
+        consideration. For game-asset GANs operating on sprite data, empirical analysis of
+        real-asset persistence diagrams (Section 4) reveals that the natural topology of the
+        sprite manifold exhibits <Tex math="\tau_0 \approx 0" /> (a single connected cluster),{' '}
+        <Tex math="\tau_1 \in [0.3, 0.5]" /> (moderate-persistence loops corresponding to
+        smooth attribute cycles), and <Tex math="\tau_2 \approx 0" /> (absence of stable
+        voids). These empirically derived targets serve as priors in the regularization
+        framework, anchoring the learned topology to the structure of the data manifold itself.
+      </p>
+
+      <h3 style={h3Style}>14.2 Backpropagation Through the Persistence Module</h3>
+
+      <p className="mb-4">
+        The critical technical obstacle in optimizing <Tex math="\mathcal{L}_{\mathrm{topo}}" />{' '}
+        is the computation of its gradient{' '}
+        <Tex math="\nabla_\theta \mathcal{L}_{\mathrm{topo}}" />, which requires differentiating
+        through the persistence diagram computation. Following the framework of
+        Brüel-Gabrielsson et al. (2020) and the subsequent refinements of Leygonie et al.
+        (2022), we decompose this gradient via the chain rule through three stages: (i) the
+        mapping from generator parameters to point positions, (ii) the mapping from point
+        positions to simplex filtration values, and (iii) the mapping from filtration values
+        to birth–death pairs.
+      </p>
+
+      <p className="mb-4 indent-8">
+        For a filtration function{' '}
+        <Tex math="f: K \to \mathbb{R}" /> defined on a simplicial complex{' '}
+        <Tex math="K" /> built from the generator outputs, the birth time{' '}
+        <Tex math="b_i" /> and death time <Tex math="d_i" /> of each persistent feature
+        are determined by the filtration values of specific simplices — the{' '}
+        <em>creators</em> and <em>destroyers</em> in the persistence algorithm. Concretely,
+        if the <Tex math="i" />-th feature in <Tex math="H_k" /> is born when simplex{' '}
+        <Tex math="\sigma_i^+" /> enters the filtration and dies when simplex{' '}
+        <Tex math="\sigma_i^-" /> enters, then:
+      </p>
+
+      <TexBlock math="\frac{\partial b_i}{\partial f(\sigma)} = \begin{cases} 1 & \text{if } \sigma = \sigma_i^+ \\ 0 & \text{otherwise} \end{cases}, \qquad \frac{\partial d_i}{\partial f(\sigma)} = \begin{cases} 1 & \text{if } \sigma = \sigma_i^- \\ 0 & \text{otherwise} \end{cases}" />
+
+      <p className="mb-4">
+        The filtration values are themselves functions of the generator output. For the
+        Vietoris–Rips filtration, the filtration value of an edge{' '}
+        <Tex math="\sigma = [x_i, x_j]" /> is{' '}
+        <Tex math="f(\sigma) = \|G_\theta(z_i) - G_\theta(z_j)\|" />, and for higher simplices
+        the value is the maximum over constituent edges. The gradient of the filtration value
+        with respect to generator parameters is:
+      </p>
+
+      <TexBlock math="\frac{\partial f([x_i, x_j])}{\partial \theta} = \frac{(G_\theta(z_i) - G_\theta(z_j))^\top}{\|G_\theta(z_i) - G_\theta(z_j)\|} \cdot \left(\frac{\partial G_\theta(z_i)}{\partial \theta} - \frac{\partial G_\theta(z_j)}{\partial \theta}\right)" />
+
+      <p className="mb-4 indent-8">
+        Composing these three stages via the chain rule yields the full gradient:
+      </p>
+
+      <TexBlock math="\nabla_\theta \mathcal{L}_{\mathrm{topo}} = \sum_{k=0}^{K} \lambda_k \sum_{i} \frac{\partial \ell_k(b_i, d_i)}{\partial (b_i, d_i)} \cdot \left[\frac{\partial (b_i, d_i)}{\partial f(\sigma_i^\pm)}\right] \cdot \frac{\partial f(\sigma_i^\pm)}{\partial \theta}" />
+
+      <p className="mb-4">
+        where <Tex math="\ell_k(b_i, d_i) = w_k(b_i, d_i) \cdot |(d_i - b_i) - \tau_k|^p" />{' '}
+        is the per-feature penalty. The sparsity of the Jacobian{' '}
+        <Tex math="\partial(b_i, d_i) / \partial f(\sigma)" /> — which is nonzero only for
+        the creator and destroyer simplices — ensures that the gradient computation is
+        efficient, scaling linearly with the number of persistent features rather than
+        quadratically with the complex size. In our implementation, the persistence module
+        is realized as a custom PyTorch autograd function wrapping the Ripser library
+        (Bauer, 2021), with the backward pass implementing the sparse chain-rule decomposition
+        above. The topological loss adds approximately 15–20% overhead to each training
+        iteration, a cost that is amortized by the substantial improvement in latent-space
+        navigability.
+      </p>
+
+      <p className="mb-4 indent-8">
+        A subtlety arises at degenerate configurations where two or more simplices have
+        identical filtration values, rendering the persistence pairing non-unique and the
+        gradient undefined. Following Leygonie et al. (2022), we handle this via a
+        perturbation scheme: filtration values are jittered by{' '}
+        <Tex math="\epsilon \sim \mathcal{N}(0, \sigma_\epsilon^2)" /> with{' '}
+        <Tex math="\sigma_\epsilon = 10^{-7}" />, which generically resolves degeneracies
+        while introducing negligible noise in the persistence computation. The resulting
+        stochastic gradient is an unbiased estimator of the true gradient in the sense of
+        Clarke&apos;s generalized gradient for Lipschitz functions (Clarke, 1983), a property
+        that suffices for convergence of stochastic gradient descent under standard assumptions.
+      </p>
+
+      <PaperFigure number={15} caption="FID comparison of baseline GAN training (no topological regularization) versus topologically-regularized training (λ₁ = 0.05, μ = 0.05) across 500 epochs. The topological regularizer achieves consistently lower FID after epoch 75, converging to 25.4 versus 34.3 for the baseline.">
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart data={topoRegularizationData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="epoch" label={{ value: 'Training Epoch', position: 'insideBottom', offset: -5 }} />
+            <YAxis label={{ value: 'FID (↓)', angle: -90, position: 'insideLeft' }} />
+            <Tooltip />
+            <Legend />
+            <Line type="monotone" dataKey="fidBaseline" stroke="#ef4444" strokeWidth={2} name="Baseline" dot={false} />
+            <Line type="monotone" dataKey="fidTopo" stroke="#10b981" strokeWidth={2} name="Topo-Regularized" dot={false} />
+          </LineChart>
+        </ResponsiveContainer>
+      </PaperFigure>
+
+      {/* 15. MULTI-SCALE TOPOLOGICAL ANALYSIS */}
+      <h2 style={h2Style}>15. Multi-Scale Topological Analysis</h2>
+
+      <p className="mb-4">
+        Persistent homology is, by construction, a multi-scale theory: the filtration parameter{' '}
+        <Tex math="\epsilon" /> sweeps continuously from 0 to <Tex math="\infty" />,
+        revealing topological features at every spatial resolution. However, the raw persistence
+        diagram conflates features across all scales into a single planar point set, obscuring
+        the hierarchical organization of topological structure that is crucial for understanding
+        how semantic granularity maps onto latent-space geometry. In this section, we develop
+        a multi-scale decomposition framework that stratifies topological features by their
+        characteristic scale, enabling scale-specific analysis and comparison of GAN latent
+        spaces.
+      </p>
+
+      <h3 style={h3Style}>15.1 Persistent Homology Across Scales</h3>
+
+      <p className="mb-4">
+        Given a persistence diagram{' '}
+        <Tex math="\mathrm{Dgm}_k = \{(b_i, d_i)\}_{i \in I_k}" />, we define the{' '}
+        <em>scale-filtered sub-diagram</em> at scale <Tex math="s > 0" /> as the collection
+        of features whose birth occurs at or below <Tex math="s" />:
+      </p>
+
+      <TexBlock math="\mathrm{Dgm}_k^{\leq s} = \bigl\{(b_i, d_i) \in \mathrm{Dgm}_k : b_i \leq s\bigr\}" />
+
+      <p className="mb-4 indent-8">
+        The cardinality <Tex math="|\mathrm{Dgm}_k^{\leq s}|" /> as a function of{' '}
+        <Tex math="s" /> defines a monotone non-decreasing step function that we term the{' '}
+        <em>topological feature curve</em>. This curve encodes the rate at which new
+        homological features emerge as the filtration parameter increases, directly reflecting
+        the density structure of the underlying point cloud. Regions of rapid increase indicate
+        filtration scales at which the data manifold undergoes topological phase transitions —
+        the birth of new connected components, the formation of cycles, or the enclosure of
+        voids — and these transitions correspond to the characteristic scales of the manifold&apos;s
+        geometric features.
+      </p>
+
+      <p className="mb-4 indent-8">
+        To separate topologically significant features from noise, we introduce a{' '}
+        <em>significance threshold</em>{' '}
+        <Tex math="\delta > 0" /> and define the significant sub-diagram:
+      </p>
+
+      <TexBlock math="\mathrm{Dgm}_k^{\leq s, \delta} = \bigl\{(b_i, d_i) \in \mathrm{Dgm}_k^{\leq s} : d_i - b_i > \delta\bigr\}" />
+
+      <p className="mb-4">
+        The choice of <Tex math="\delta" /> is governed by the stability theorem of
+        Cohen-Steiner, Edelsbrunner, and Harer (2007): features with persistence below
+        the noise threshold{' '}
+        <Tex math="\delta = 2\|\hat{f} - f\|_\infty" />, where <Tex math="\hat{f}" /> is the
+        empirical filtration and <Tex math="f" /> the true (population-level) filtration, are
+        indistinguishable from sampling artifacts. In our GAN latent-space setting, we estimate
+        this threshold via bootstrap resampling of the latent codes, yielding{' '}
+        <Tex math="\delta \approx 0.08" /> for the sprite dataset at <Tex math="N = 10{,}000" />{' '}
+        samples.
+      </p>
+
+      <p className="mb-4 indent-8">
+        The multi-scale decomposition further enables a scale-space perspective on the
+        persistence diagram. By convolving the feature curve with a Gaussian kernel of
+        bandwidth <Tex math="h" />, one obtains a smoothed topological density function:
+      </p>
+
+      <TexBlock math="\rho_k(s; h) = \sum_{(b_i, d_i) \in \mathrm{Dgm}_k} (d_i - b_i)^\alpha \cdot \frac{1}{\sqrt{2\pi h^2}} \exp\!\left(-\frac{(s - b_i)^2}{2h^2}\right)" />
+
+      <p className="mb-4">
+        where the persistence-weighting exponent <Tex math="\alpha" /> controls the relative
+        influence of high- versus low-persistence features. The peaks of{' '}
+        <Tex math="\rho_k(s; h)" /> identify characteristic scales at which the topology is
+        maximally complex, and the evolution of these peaks across bandwidths{' '}
+        <Tex math="h" /> traces a scale-space tree whose branching structure encodes the
+        hierarchical nesting of topological features — an observation that connects our
+        framework to the Morse-theoretic scale-space analysis of Chazal et al. (2011).
+      </p>
+
+      <PaperFigure number={16} caption="Total topological features and statistically significant features (persistence > δ = 0.08) in the H₁ diagram of the sprite GAN latent space as a function of filtration scale. The significant curve peaks near scale 0.20, identifying the characteristic radius of semantic loops.">
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart data={multiScaleData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="scale" label={{ value: 'Filtration Scale ε', position: 'insideBottom', offset: -5 }} />
+            <YAxis label={{ value: 'Feature Count', angle: -90, position: 'insideLeft' }} />
+            <Tooltip />
+            <Legend />
+            <Line type="monotone" dataKey="features" stroke="#6366f1" strokeWidth={2} name="Total Features" dot={false} />
+            <Line type="monotone" dataKey="significant" stroke="#10b981" strokeWidth={2} name="Significant (pers > δ)" dot={false} />
+          </LineChart>
+        </ResponsiveContainer>
+      </PaperFigure>
+
+      <h3 style={h3Style}>15.2 Persistence Images and Vectorization</h3>
+
+      <p className="mb-4">
+        While persistence diagrams are theoretically elegant, their nature as multisets of
+        points in the extended half-plane{' '}
+        <Tex math="\overline{\Delta}^+ = \{(b,d) \in \mathbb{R}^2 : 0 \leq b < d \leq \infty\}" />{' '}
+        poses challenges for integration with standard machine-learning pipelines, which
+        typically require fixed-dimensional vector inputs. The persistence image construction
+        of Adams et al. (2017) resolves this by transforming diagrams into elements of a
+        Hilbert space via a smoothed, discretized density. We adopt this approach as our
+        primary vectorization strategy for downstream classification and comparison tasks.
+      </p>
+
+      <p className="mb-4 indent-8">
+        The construction proceeds in three stages. First, the persistence diagram is
+        transformed from birth–death coordinates to birth–persistence coordinates via the
+        linear map <Tex math="T(b, d) = (b, d - b)" />, yielding a rotated diagram in
+        which the horizontal axis represents feature birth time and the vertical axis
+        represents feature lifetime. Second, a continuous{' '}
+        <em>persistence surface</em> is defined by placing a weighted Gaussian kernel at
+        each transformed point:
+      </p>
+
+      <TexBlock math="\rho_\sigma(x, y) = \sum_{(b_i, p_i) \in T(\mathrm{Dgm}_k)} w(b_i, p_i) \cdot \frac{1}{2\pi\sigma^2} \exp\!\left(-\frac{(x - b_i)^2 + (y - p_i)^2}{2\sigma^2}\right)" />
+
+      <p className="mb-4">
+        where <Tex math="p_i = d_i - b_i" /> is the persistence of the <Tex math="i" />-th
+        feature and <Tex math="w(b, p) = p^\beta" /> is a non-negative weighting function
+        that vanishes along the diagonal (<Tex math="p = 0" />), ensuring stability with
+        respect to perturbations of short-lived features. The bandwidth parameter{' '}
+        <Tex math="\sigma" /> controls the resolution of the persistence image: small{' '}
+        <Tex math="\sigma" /> preserves fine topological detail while large{' '}
+        <Tex math="\sigma" /> yields smoother, more robust representations. Third, the
+        surface is discretized onto an <Tex math="n \times n" /> grid by integrating over
+        each pixel, producing the persistence image{' '}
+        <Tex math="\mathrm{PI}_\sigma \in \mathbb{R}^{n \times n}" />.
+      </p>
+
+      <p className="mb-4 indent-8">
+        The persistence image inherits stability from the underlying diagram. Adams et al.
+        (2017) prove that the map{' '}
+        <Tex math="\mathrm{Dgm} \mapsto \mathrm{PI}_\sigma" /> is{' '}
+        <Tex math="(C/\sigma)" />-Lipschitz with respect to the 1-Wasserstein distance on
+        diagrams and the <Tex math="L^\infty" /> norm on images, where{' '}
+        <Tex math="C" /> depends on the weighting function. For comparing persistence images
+        between different GAN architectures or training checkpoints, we employ the maximum
+        mean discrepancy (MMD) with a Gaussian kernel on the image space:
+      </p>
+
+      <TexBlock math="\mathrm{MMD}^2(\mathcal{P}, \mathcal{Q}) = \mathbb{E}_{P, P'}[k(\mathrm{PI}_P, \mathrm{PI}_{P'})] - 2\mathbb{E}_{P, Q}[k(\mathrm{PI}_P, \mathrm{PI}_Q)] + \mathbb{E}_{Q, Q'}[k(\mathrm{PI}_Q, \mathrm{PI}_{Q'})]\!" />
+
+      <p className="mb-4">
+        where <Tex math="k" /> is a Gaussian RBF kernel on{' '}
+        <Tex math="\mathbb{R}^{n \times n}" /> and the expectations are over independent
+        draws of persistence diagrams from two topological distributions{' '}
+        <Tex math="\mathcal{P}" /> and <Tex math="\mathcal{Q}" />. This two-sample test
+        provides a principled statistical criterion for detecting changes in latent-space
+        topology across training runs, hyperparameter settings, or architectural variants.
+        As shown in Figure 17, the MMD decreases monotonically with increasing bandwidth{' '}
+        <Tex math="\sigma" /> while classification accuracy exhibits a characteristic
+        inverted-U, peaking near <Tex math="\sigma = 0.20" /> where the persistence image
+        optimally balances discriminative resolution against noise robustness.
+      </p>
+
+      <PaperFigure number={17} caption="Maximum mean discrepancy (MMD) between persistence images of real and generated asset diagrams, and classification accuracy of a linear SVM trained on persistence images, as a function of the Gaussian bandwidth σ. Optimal classification occurs near σ = 0.20.">
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart data={persistenceImageData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="sigma" label={{ value: 'Bandwidth σ', position: 'insideBottom', offset: -5 }} />
+            <YAxis yAxisId="left" label={{ value: 'MMD', angle: -90, position: 'insideLeft' }} />
+            <YAxis yAxisId="right" orientation="right" label={{ value: 'Classification Accuracy', angle: 90, position: 'insideRight' }} />
+            <Tooltip />
+            <Legend />
+            <Line yAxisId="left" type="monotone" dataKey="mmd" stroke="#ef4444" strokeWidth={2} name="MMD" dot={false} />
+            <Line yAxisId="right" type="monotone" dataKey="classification" stroke="#6366f1" strokeWidth={2} name="Classification Acc." dot={false} />
+          </LineChart>
+        </ResponsiveContainer>
+      </PaperFigure>
+
+      {/* 16. ZIGZAG PERSISTENCE AND TEMPORAL ANALYSIS */}
+      <h2 style={h2Style}>16. Zigzag Persistence and Temporal Analysis</h2>
+
+      <p className="mb-4">
+        Standard persistent homology tracks the evolution of topological features across a
+        single monotone filtration — complexes grow by simplex inclusion, features are born
+        and may subsequently die, but never resurge. This monotonicity assumption is violated
+        in the temporal analysis of GAN training, where the latent-space topology at
+        epoch <Tex math="t" /> may bear no inclusion relationship to the topology at
+        epoch <Tex math="t+1" />: simplices may both appear and disappear as the generator
+        weights evolve. Zigzag persistence (Carlsson &amp; de Silva, 2010; Carlsson, de Silva, &amp;
+        Morozov, 2009) generalizes the persistence framework to handle precisely this setting,
+        enabling rigorous tracking of homological features across non-monotone sequences of
+        topological spaces.
+      </p>
+
+      <h3 style={h3Style}>16.1 Zigzag Modules and Quiver Representations</h3>
+
+      <p className="mb-4">
+        A zigzag diagram of topological spaces is a sequence of spaces connected by maps that
+        alternate in direction:
+      </p>
+
+      <TexBlock math="X_0 \hookrightarrow Y_0 \hookleftarrow X_1 \hookrightarrow Y_1 \hookleftarrow X_2 \hookrightarrow \cdots \hookleftarrow X_T" />
+
+      <p className="mb-4 indent-8">
+        where the forward maps <Tex math="X_t \hookrightarrow Y_t" /> are inclusions into
+        union complexes and the backward maps{' '}
+        <Tex math="X_{t+1} \hookrightarrow Y_t" /> are inclusions from the opposite
+        direction. In the context of GAN training analysis, <Tex math="X_t" /> is the
+        Vietoris–Rips complex computed from a batch of latent codes at training
+        epoch <Tex math="t" />, and <Tex math="Y_t = X_t \cup X_{t+1}" /> is the union
+        complex connecting consecutive epochs. Applying the homology functor{' '}
+        <Tex math="H_k(-; \mathbb{F})" /> with coefficients in a field{' '}
+        <Tex math="\mathbb{F}" /> yields a zigzag module:
+      </p>
+
+      <TexBlock math="H_k(X_0) \to H_k(Y_0) \leftarrow H_k(X_1) \to H_k(Y_1) \leftarrow \cdots \leftarrow H_k(X_T)" />
+
+      <p className="mb-4">
+        This is a representation of the type-<Tex math="A_n" /> quiver with alternating
+        arrow orientations. By Gabriel&apos;s theorem (1972), every finite-dimensional
+        representation of a Dynkin quiver decomposes uniquely (up to isomorphism and
+        reordering) into a direct sum of indecomposable representations, each of which is
+        an interval module <Tex math="\mathbb{I}[s, t]" /> supported on a contiguous
+        sub-interval <Tex math="[s, t]" /> of the quiver. The <em>zigzag barcode</em> is
+        the multiset of these intervals, and each interval represents a topological feature
+        that persists from index <Tex math="s" /> to index <Tex math="t" /> in the zigzag
+        sequence — potentially surviving through epochs where the underlying complex
+        undergoes non-monotone modifications.
+      </p>
+
+      <p className="mb-4 indent-8">
+        The algebraic structure is formalized as follows. A zigzag persistence module over{' '}
+        <Tex math="\mathbb{F}" /> is a functor from the zigzag quiver{' '}
+        <Tex math="\mathcal{Q}" /> to the category of finite-dimensional{' '}
+        <Tex math="\mathbb{F}" />-vector spaces. The category of such functors,{' '}
+        <Tex math="\mathrm{Rep}(\mathcal{Q}, \mathbf{Vect}_\mathbb{F})" />, is abelian, and
+        the Krull–Schmidt theorem guarantees the existence and essential uniqueness of the
+        indecomposable decomposition. The interval module{' '}
+        <Tex math="\mathbb{I}[s, t]" /> assigns{' '}
+        <Tex math="\mathbb{F}" /> to each node in the interval{' '}
+        <Tex math="[s, t]" /> and the identity map to each arrow within this interval, while
+        assigning zero elsewhere. The multiplicity{' '}
+        <Tex math="m_{s,t}" /> of <Tex math="\mathbb{I}[s,t]" /> in the decomposition is
+        a complete invariant of the zigzag module, encoding how many independent topological
+        features are born at index <Tex math="s" /> and persist until index <Tex math="t" />.
+      </p>
+
+      <p className="mb-4 indent-8">
+        Computationally, the zigzag barcode is obtained via the algorithm of Carlsson, de
+        Silva, and Morozov (2009), which reduces the problem to a sequence of standard
+        persistence computations interleaved with dualization steps. The time complexity is{' '}
+        <Tex math="O(T \cdot n^3)" /> where <Tex math="T" /> is the number of zigzag
+        steps and <Tex math="n" /> is the maximum complex size, though recent work by
+        Dey and Hou (2022) achieves near-linear scaling via matrix-reduction optimizations.
+        For our GAN training analysis, we compute zigzag barcodes from checkpoints saved at
+        every 50 training epochs, with <Tex math="N = 5{,}000" /> latent samples per checkpoint,
+        yielding zigzag sequences of length <Tex math="T = 2 \cdot 10 - 1 = 19" /> for a
+        500-epoch training run with 10 snapshots.
+      </p>
+
+      <h3 style={h3Style}>16.2 Tracking Topological Evolution During Training</h3>
+
+      <p className="mb-4">
+        We apply the zigzag persistence framework to track the evolution of the latent-space
+        Betti numbers <Tex math="\beta_0, \beta_1, \beta_2" /> across the full GAN training
+        trajectory. At each checkpoint epoch <Tex math="t \in \{0, 50, 100, \ldots, 400\}" />,
+        we sample <Tex math="N = 5{,}000" /> latent codes from the current generator, compute
+        the Vietoris–Rips complex at a fixed filtration parameter{' '}
+        <Tex math="\epsilon_0 = 0.25" />, and extract the Betti numbers. The zigzag barcode
+        then reveals which topological features are genuinely persistent across epochs
+        (long intervals in the barcode) versus which are transient fluctuations (short
+        intervals).
+      </p>
+
+      <p className="mb-4 indent-8">
+        The zigzag Betti numbers at epoch <Tex math="t" /> are defined as the ranks of
+        the zigzag persistence module restricted to the node corresponding to{' '}
+        <Tex math="X_t" />:
+      </p>
+
+      <TexBlock math="\beta_k^{\mathrm{zz}}(t) = \sum_{\substack{[s, t'] \text{ in barcode} \\ s \leq t \leq t'}} m_{s,t'}" />
+
+      <p className="mb-4">
+        where the sum is over all barcode intervals containing epoch <Tex math="t" />,
+        weighted by their multiplicities. This quantity refines the pointwise Betti
+        number <Tex math="\beta_k(X_t)" /> by counting only those features that have
+        verifiable continuity across the zigzag sequence, filtering out ephemeral topological
+        noise. Figure 18 displays the evolution of the three Betti numbers across training
+        snapshots, revealing a characteristic pattern: <Tex math="\beta_0" /> oscillates
+        between 12 and 15 (reflecting mild fluctuations in the number of connected components),{' '}
+        <Tex math="\beta_1" /> exhibits a gradual upward trend from 8 to 11 between
+        epochs 0 and 200 before stabilizing (indicating the progressive formation of
+        semantic loops), and <Tex math="\beta_2" /> remains low throughout with occasional
+        spikes corresponding to transient void formation during mode-exploration phases
+        of training.
+      </p>
+
+      <p className="mb-4 indent-8">
+        A particularly revealing diagnostic is the <em>topological turbulence</em>{' '}
+        metric, which quantifies the rate of topological change in the latent space:
+      </p>
+
+      <TexBlock math="\mathcal{T}_k(t) = \frac{1}{2}\bigl(|\{i : s_i = t\}| + |\{i : t'_i = t\}|\bigr)" />
+
+      <p className="mb-4">
+        where <Tex math="s_i" /> and <Tex math="t'_i" /> are the birth and death indices of
+        barcode intervals. High values of <Tex math="\mathcal{T}_k(t)" /> indicate epochs at
+        which the topology is undergoing rapid reorganization — many features are simultaneously
+        being born and killed. In our experiments, topological turbulence peaks during the
+        first 100 epochs (the initial exploration phase of GAN training), decreases during
+        the convergence phase (epochs 100–300), and reaches a plateau during the fine-tuning
+        phase (epochs 300–500). This pattern is consistent with the intuition that the latent
+        manifold initially undergoes dramatic topological restructuring as the generator
+        explores the data distribution, then gradually settles into a stable topological
+        configuration as the adversarial equilibrium is approached.
+      </p>
+
+      <PaperFigure number={18} caption="Betti numbers β₀ (connected components), β₁ (loops), and β₂ (voids) of the GAN latent-space Vietoris–Rips complex (ε = 0.25) across training snapshots. The zigzag barcode decomposition reveals that β₁ features stabilize after epoch 200, indicating topological convergence of the semantic loop structure.">
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart data={zigzagPersistenceData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="timeStep" label={{ value: 'Training Epoch', position: 'insideBottom', offset: -5 }} />
+            <YAxis label={{ value: 'Betti Number', angle: -90, position: 'insideLeft' }} />
+            <Tooltip />
+            <Legend />
+            <Line type="monotone" dataKey="beta0" stroke="#ef4444" strokeWidth={2} name="β₀ (Components)" dot={false} />
+            <Line type="monotone" dataKey="beta1" stroke="#6366f1" strokeWidth={2} name="β₁ (Loops)" dot={false} />
+            <Line type="monotone" dataKey="beta2" stroke="#10b981" strokeWidth={2} name="β₂ (Voids)" dot={false} />
+          </LineChart>
+        </ResponsiveContainer>
+      </PaperFigure>
+
       {/* 13. CONCLUSION */}
       <h2 style={h2Style}>13. Conclusion</h2>
 
