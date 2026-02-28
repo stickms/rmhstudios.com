@@ -87,6 +87,144 @@ const energyConvergenceData = [
   { step: 10000, energy: 4.8, navEntropy: 1.9, resourceVar: 1.6, encounterPace: 1.3 },
 ];
 
+const poincareConstantData = [
+  { latticeSize: 10, constant: 0.142, logBound: 0.158 },
+  { latticeSize: 15, constant: 0.089, logBound: 0.101 },
+  { latticeSize: 20, constant: 0.061, logBound: 0.074 },
+  { latticeSize: 25, constant: 0.044, logBound: 0.058 },
+  { latticeSize: 30, constant: 0.033, logBound: 0.047 },
+  { latticeSize: 40, constant: 0.021, logBound: 0.032 },
+  { latticeSize: 50, constant: 0.014, logBound: 0.024 },
+  { latticeSize: 60, constant: 0.010, logBound: 0.019 },
+];
+
+const fisherCurvatureData = [
+  { beta: 0.1, curvature: 0.003, sectional: 0.001 },
+  { beta: 0.5, curvature: 0.021, sectional: 0.008 },
+  { beta: 1.0, curvature: 0.087, sectional: 0.034 },
+  { beta: 2.0, curvature: 0.312, sectional: 0.141 },
+  { beta: 3.0, curvature: 0.591, sectional: 0.278 },
+  { beta: 5.0, curvature: 1.243, sectional: 0.612 },
+  { beta: 8.0, curvature: 2.107, sectional: 1.089 },
+  { beta: 10.0, curvature: 2.891, sectional: 1.523 },
+];
+
+const phaseDiagramData = [
+  { beta: 0.5, alpha1: 0.1, phase: 'disordered' },
+  { beta: 0.5, alpha1: 0.5, phase: 'disordered' },
+  { beta: 0.5, alpha1: 1.0, phase: 'disordered' },
+  { beta: 1.0, alpha1: 0.1, phase: 'disordered' },
+  { beta: 1.0, alpha1: 0.5, phase: 'critical' },
+  { beta: 1.0, alpha1: 1.0, phase: 'critical' },
+  { beta: 2.0, alpha1: 0.1, phase: 'critical' },
+  { beta: 2.0, alpha1: 0.5, phase: 'ordered' },
+  { beta: 2.0, alpha1: 1.0, phase: 'ordered' },
+  { beta: 3.0, alpha1: 0.1, phase: 'critical' },
+  { beta: 3.0, alpha1: 0.5, phase: 'ordered' },
+  { beta: 3.0, alpha1: 1.0, phase: 'frozen' },
+  { beta: 5.0, alpha1: 0.1, phase: 'ordered' },
+  { beta: 5.0, alpha1: 0.5, phase: 'frozen' },
+  { beta: 5.0, alpha1: 1.0, phase: 'frozen' },
+];
+
+const couplingTimeData = [
+  { latticeSize: 10, meanTime: 1240, stdTime: 180 },
+  { latticeSize: 15, meanTime: 3850, stdTime: 420 },
+  { latticeSize: 20, meanTime: 8920, stdTime: 890 },
+  { latticeSize: 25, meanTime: 17400, stdTime: 1560 },
+  { latticeSize: 30, meanTime: 29800, stdTime: 2340 },
+  { latticeSize: 40, meanTime: 68500, stdTime: 4870 },
+  { latticeSize: 50, meanTime: 132000, stdTime: 8910 },
+];
+
+const replicaAcceptanceData = [
+  { tempRatio: 1.05, acceptance: 0.82 },
+  { tempRatio: 1.10, acceptance: 0.71 },
+  { tempRatio: 1.20, acceptance: 0.58 },
+  { tempRatio: 1.30, acceptance: 0.47 },
+  { tempRatio: 1.50, acceptance: 0.31 },
+  { tempRatio: 1.75, acceptance: 0.19 },
+  { tempRatio: 2.00, acceptance: 0.11 },
+  { tempRatio: 2.50, acceptance: 0.04 },
+  { tempRatio: 3.00, acceptance: 0.01 },
+];
+
+const largeDeviationData = [
+  { deviation: 0.0, rateFunction: 0.0 },
+  { deviation: 0.5, rateFunction: 0.031 },
+  { deviation: 1.0, rateFunction: 0.127 },
+  { deviation: 1.5, rateFunction: 0.289 },
+  { deviation: 2.0, rateFunction: 0.518 },
+  { deviation: 2.5, rateFunction: 0.814 },
+  { deviation: 3.0, rateFunction: 1.178 },
+  { deviation: 3.5, rateFunction: 1.611 },
+  { deviation: 4.0, rateFunction: 2.112 },
+];
+
+const wassersteinConvergenceData = [
+  { step: 0, w1: 3.82, w2: 5.41, wInf: 8.12 },
+  { step: 500, w1: 2.91, w2: 4.12, wInf: 6.38 },
+  { step: 1000, w1: 2.14, w2: 3.08, wInf: 4.91 },
+  { step: 2000, w1: 1.42, w2: 2.11, wInf: 3.52 },
+  { step: 3000, w1: 0.93, w2: 1.44, wInf: 2.51 },
+  { step: 5000, w1: 0.51, w2: 0.82, wInf: 1.63 },
+  { step: 7500, w1: 0.28, w2: 0.47, wInf: 1.02 },
+  { step: 10000, w1: 0.16, w2: 0.28, wInf: 0.68 },
+];
+
+const gelmanRubinData = [
+  { step: 0, rhat: 2.41, upper: 3.12, lower: 1.89 },
+  { step: 500, rhat: 1.89, upper: 2.34, lower: 1.52 },
+  { step: 1000, rhat: 1.52, upper: 1.87, lower: 1.24 },
+  { step: 2000, rhat: 1.21, upper: 1.41, lower: 1.08 },
+  { step: 3000, rhat: 1.08, upper: 1.19, lower: 1.02 },
+  { step: 5000, rhat: 1.02, upper: 1.08, lower: 0.98 },
+  { step: 7500, rhat: 1.00, upper: 1.04, lower: 0.97 },
+  { step: 10000, rhat: 1.00, upper: 1.02, lower: 0.98 },
+];
+
+const minimaxRiskData = [
+  { dimension: 5, spectralRisk: 0.042, mhRisk: 0.081, uniformRisk: 0.153 },
+  { dimension: 10, spectralRisk: 0.058, mhRisk: 0.112, uniformRisk: 0.234 },
+  { dimension: 15, spectralRisk: 0.073, mhRisk: 0.149, uniformRisk: 0.318 },
+  { dimension: 20, spectralRisk: 0.089, mhRisk: 0.191, uniformRisk: 0.412 },
+  { dimension: 25, spectralRisk: 0.104, mhRisk: 0.238, uniformRisk: 0.521 },
+  { dimension: 30, spectralRisk: 0.118, mhRisk: 0.287, uniformRisk: 0.641 },
+];
+
+const posteriorAlphaData = [
+  { alpha: 0.1, density1: 0.02, density2: 0.08, density3: 0.05 },
+  { alpha: 0.3, density1: 0.08, density2: 0.18, density3: 0.12 },
+  { alpha: 0.5, density1: 0.21, density2: 0.31, density3: 0.19 },
+  { alpha: 0.7, density1: 0.42, density2: 0.48, density3: 0.28 },
+  { alpha: 0.9, density1: 0.78, density2: 0.62, density3: 0.41 },
+  { alpha: 1.0, density1: 0.91, density2: 0.71, density3: 0.52 },
+  { alpha: 1.1, density1: 0.85, density2: 0.78, density3: 0.68 },
+  { alpha: 1.3, density1: 0.52, density2: 0.82, density3: 0.81 },
+  { alpha: 1.5, density1: 0.28, density2: 0.68, density3: 0.72 },
+  { alpha: 1.7, density1: 0.12, density2: 0.42, density3: 0.51 },
+  { alpha: 2.0, density1: 0.04, density2: 0.21, density3: 0.32 },
+];
+
+const sensitivityHeatmapData = [
+  { param: 'β', low: 12.4, mid: 4.8, high: 3.9, veryHigh: 6.2 },
+  { param: 'α₁', low: 8.1, mid: 4.8, high: 5.2, veryHigh: 7.8 },
+  { param: 'α₂', low: 7.3, mid: 4.8, high: 5.6, veryHigh: 8.9 },
+  { param: 'α₃', low: 6.9, mid: 4.8, high: 5.1, veryHigh: 7.2 },
+  { param: 'k (nbhd)', low: 5.8, mid: 4.8, high: 4.9, veryHigh: 4.8 },
+  { param: 'η (spectral)', low: 6.1, mid: 4.8, high: 4.7, veryHigh: 5.3 },
+];
+
+const essVsDimensionData = [
+  { dimension: 100, spectralESS: 892, mhESS: 341, uniformESS: 87 },
+  { dimension: 200, spectralESS: 781, mhESS: 278, uniformESS: 52 },
+  { dimension: 400, spectralESS: 648, mhESS: 201, uniformESS: 28 },
+  { dimension: 600, spectralESS: 534, mhESS: 152, uniformESS: 16 },
+  { dimension: 900, spectralESS: 421, mhESS: 108, uniformESS: 9 },
+  { dimension: 1200, spectralESS: 328, mhESS: 74, uniformESS: 5 },
+  { dimension: 1600, spectralESS: 251, mhESS: 48, uniformESS: 3 },
+];
+
 const h2Style: React.CSSProperties = {
   fontSize: '14pt',
   fontWeight: 'bold',
