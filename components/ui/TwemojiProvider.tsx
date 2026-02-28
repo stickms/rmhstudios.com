@@ -9,7 +9,15 @@ interface TwemojiProviderProps {
   tag?: keyof HTMLElementTagNameMap;
 }
 
-const PARSE_OPTIONS = { folder: 'svg', ext: '.svg' } as const;
+const twemojiCallback = (icon: string): string | false => {
+  // ignore hookrightarrow and hookleftarrow for math formulas, as they look weird in Twemoji
+  if (icon === '21aa' || icon === '21a9') {
+    return false;
+  }
+  return `https://twemoji.maxcdn.com/v/latest/svg/${icon}.svg`;
+}
+
+const PARSE_OPTIONS = { folder: 'svg', ext: '.svg', callback: twemojiCallback } as const;
 
 /**
  * Wraps its children and replaces native emoji characters with Twemoji SVGs
