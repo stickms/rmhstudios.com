@@ -83,6 +83,119 @@ const wasserDistanceData = [
   { epoch: 500, h0: 3.2, h1: 2.3, h2: 1.7 },
 ];
 
+const landscapeNormData = [
+  { threshold: 0.05, l1Norm: 42.3, l2Norm: 18.7, lInfNorm: 3.2 },
+  { threshold: 0.10, l1Norm: 31.8, l2Norm: 14.2, lInfNorm: 2.8 },
+  { threshold: 0.15, l1Norm: 24.1, l2Norm: 11.1, lInfNorm: 2.4 },
+  { threshold: 0.20, l1Norm: 18.6, l2Norm: 8.7, lInfNorm: 2.1 },
+  { threshold: 0.25, l1Norm: 14.2, l2Norm: 6.8, lInfNorm: 1.8 },
+  { threshold: 0.30, l1Norm: 10.8, l2Norm: 5.3, lInfNorm: 1.5 },
+  { threshold: 0.40, l1Norm: 6.4, l2Norm: 3.2, lInfNorm: 1.1 },
+  { threshold: 0.50, l1Norm: 3.8, l2Norm: 2.0, lInfNorm: 0.8 },
+];
+
+const bottleneckStabilityData = [
+  { perturbation: 0.01, bottleneck: 0.012, wasserstein1: 0.018, wasserstein2: 0.024 },
+  { perturbation: 0.02, bottleneck: 0.023, wasserstein1: 0.034, wasserstein2: 0.047 },
+  { perturbation: 0.05, bottleneck: 0.051, wasserstein1: 0.079, wasserstein2: 0.108 },
+  { perturbation: 0.10, bottleneck: 0.098, wasserstein1: 0.152, wasserstein2: 0.213 },
+  { perturbation: 0.15, bottleneck: 0.142, wasserstein1: 0.224, wasserstein2: 0.318 },
+  { perturbation: 0.20, bottleneck: 0.189, wasserstein1: 0.301, wasserstein2: 0.427 },
+  { perturbation: 0.30, bottleneck: 0.278, wasserstein1: 0.452, wasserstein2: 0.648 },
+];
+
+const spectralSequenceData = [
+  { page: 1, rank: 48, differential: 12 },
+  { page: 2, rank: 36, differential: 8 },
+  { page: 3, rank: 28, differential: 4 },
+  { page: 4, rank: 24, differential: 2 },
+  { page: 5, rank: 22, differential: 1 },
+  { page: 6, rank: 21, differential: 0 },
+  { page: 7, rank: 21, differential: 0 },
+];
+
+const sheafCohomologyData = [
+  { dimension: 0, global: 14.2, local: 18.7, cosheaf: 11.3 },
+  { dimension: 1, global: 7.8, local: 12.4, cosheaf: 5.9 },
+  { dimension: 2, global: 2.1, local: 5.8, cosheaf: 1.4 },
+  { dimension: 3, global: 0.4, local: 1.9, cosheaf: 0.2 },
+];
+
+const persistenceImageData = [
+  { sigma: 0.01, mmd: 0.342, classification: 0.61 },
+  { sigma: 0.02, mmd: 0.281, classification: 0.68 },
+  { sigma: 0.05, mmd: 0.198, classification: 0.78 },
+  { sigma: 0.10, mmd: 0.142, classification: 0.84 },
+  { sigma: 0.15, mmd: 0.118, classification: 0.87 },
+  { sigma: 0.20, mmd: 0.103, classification: 0.89 },
+  { sigma: 0.30, mmd: 0.091, classification: 0.88 },
+  { sigma: 0.50, mmd: 0.087, classification: 0.85 },
+];
+
+const zigzagPersistenceData = [
+  { timeStep: 0, beta0: 14, beta1: 8, beta2: 2 },
+  { timeStep: 50, beta0: 15, beta1: 9, beta2: 3 },
+  { timeStep: 100, beta0: 13, beta1: 10, beta2: 2 },
+  { timeStep: 150, beta0: 14, beta1: 8, beta2: 4 },
+  { timeStep: 200, beta0: 12, beta1: 11, beta2: 3 },
+  { timeStep: 250, beta0: 14, beta1: 9, beta2: 2 },
+  { timeStep: 300, beta0: 13, beta1: 10, beta2: 3 },
+  { timeStep: 350, beta0: 14, beta1: 8, beta2: 2 },
+  { timeStep: 400, beta0: 15, beta1: 9, beta2: 3 },
+];
+
+const topoRegularizationData = [
+  { epoch: 0, fidBaseline: 72.1, fidTopo: 71.8 },
+  { epoch: 50, fidBaseline: 51.2, fidTopo: 48.3 },
+  { epoch: 100, fidBaseline: 42.8, fidTopo: 37.1 },
+  { epoch: 150, fidBaseline: 38.4, fidTopo: 31.2 },
+  { epoch: 200, fidBaseline: 36.1, fidTopo: 28.4 },
+  { epoch: 250, fidBaseline: 35.2, fidTopo: 27.1 },
+  { epoch: 300, fidBaseline: 34.8, fidTopo: 26.3 },
+  { epoch: 400, fidBaseline: 34.5, fidTopo: 25.8 },
+  { epoch: 500, fidBaseline: 34.3, fidTopo: 25.4 },
+];
+
+const multiScaleData = [
+  { scale: 0.01, features: 248, significant: 12 },
+  { scale: 0.05, features: 182, significant: 18 },
+  { scale: 0.10, features: 124, significant: 22 },
+  { scale: 0.20, features: 78, significant: 24 },
+  { scale: 0.30, features: 48, significant: 21 },
+  { scale: 0.50, features: 22, significant: 14 },
+  { scale: 0.75, features: 8, significant: 6 },
+  { scale: 1.00, features: 3, significant: 2 },
+];
+
+const ablationData = [
+  { component: 'Full Model', fid: 27.9, coherence: 6.9 },
+  { component: 'No H₂ penalty', fid: 29.4, coherence: 6.6 },
+  { component: 'No H₁ penalty', fid: 33.8, coherence: 5.8 },
+  { component: 'No H₀ penalty', fid: 31.2, coherence: 6.2 },
+  { component: 'No persistence weight', fid: 35.1, coherence: 5.4 },
+  { component: 'Fixed σ = 0.1', fid: 30.8, coherence: 6.3 },
+  { component: 'Linear baseline', fid: 47.3, coherence: 4.3 },
+];
+
+const complexityData = [
+  { points: 1000, ripser: 2.1, sparseRips: 0.8, witness: 0.3 },
+  { points: 2000, ripser: 8.4, sparseRips: 2.9, witness: 0.9 },
+  { points: 5000, ripser: 52.1, sparseRips: 14.2, witness: 3.8 },
+  { points: 10000, ripser: 418.3, sparseRips: 89.1, witness: 18.4 },
+  { points: 20000, ripser: 3341.2, sparseRips: 542.8, witness: 98.2 },
+  { points: 50000, ripser: 52108.4, sparseRips: 6842.1, witness: 812.4 },
+];
+
+const interpolationLengthData = [
+  { method: 'Linear', pathLength: 12.4, topoCrossings: 8.2, coherence: 4.3 },
+  { method: 'Spherical', pathLength: 14.1, topoCrossings: 5.7, coherence: 5.2 },
+  { method: 'Geodesic', pathLength: 16.8, topoCrossings: 4.1, coherence: 5.8 },
+  { method: 'Persistence λ=0.1', pathLength: 15.2, topoCrossings: 3.4, coherence: 6.2 },
+  { method: 'Persistence λ=0.5', pathLength: 18.7, topoCrossings: 1.8, coherence: 6.9 },
+  { method: 'Persistence λ=1.0', pathLength: 24.3, topoCrossings: 0.6, coherence: 6.7 },
+  { method: 'Persistence λ=2.0', pathLength: 38.1, topoCrossings: 0.1, coherence: 5.9 },
+];
+
 const h2Style: React.CSSProperties = {
   fontSize: '14pt',
   fontWeight: 'bold',
