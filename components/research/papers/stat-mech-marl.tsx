@@ -612,10 +612,10 @@ export function StatMechMARLPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      {/* 5. HAMILTONIAN FORMULATION AND ENERGY LANDSCAPE */}
-      <h2 style={h2Style}>5. Hamiltonian Formulation and Energy Landscape</h2>
+      {/* 4. HAMILTONIAN FORMULATION AND ENERGY LANDSCAPE */}
+      <h2 style={h2Style}>4. Hamiltonian Formulation and Energy Landscape</h2>
 
-      <h3 style={h3Style}>5.1 Effective Hamiltonian for the Agent System</h3>
+      <h3 style={h3Style}>4.1 Effective Hamiltonian for the Agent System</h3>
 
       <p className="mb-4">
         The statistical-mechanical programme initiated in the preceding sections reaches its
@@ -672,7 +672,7 @@ export function StatMechMARLPaper() {
         of Gaussian fluctuations via <Tex math="\tau_k \sim |\lambda_k|^{-1}" />.
       </p>
 
-      <h3 style={h3Style}>5.2 Landscape Topology and Barrier Heights</h3>
+      <h3 style={h3Style}>4.2 Landscape Topology and Barrier Heights</h3>
 
       <p className="mb-4">
         The global structure of the energy landscape is characterised by Morse theory, which
@@ -727,10 +727,10 @@ export function StatMechMARLPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      {/* 6. FREE ENERGY AND THERMODYNAMIC POTENTIALS */}
-      <h2 style={h2Style}>6. Free Energy and Thermodynamic Potentials</h2>
+      {/* 5. FREE ENERGY AND THERMODYNAMIC POTENTIALS */}
+      <h2 style={h2Style}>5. Free Energy and Thermodynamic Potentials</h2>
 
-      <h3 style={h3Style}>6.1 Partition Function and Free Energy</h3>
+      <h3 style={h3Style}>5.1 Partition Function and Free Energy</h3>
 
       <p className="mb-4">
         The thermodynamic properties of the multi-agent system are encoded in the partition
@@ -775,7 +775,7 @@ export function StatMechMARLPaper() {
         become locked into correlated strategy clusters.
       </p>
 
-      <h3 style={h3Style}>6.2 Specific Heat and Critical Singularities</h3>
+      <h3 style={h3Style}>5.2 Specific Heat and Critical Singularities</h3>
 
       <p className="mb-4">
         The specific heat — the most experimentally accessible thermodynamic quantity in
@@ -833,10 +833,10 @@ export function StatMechMARLPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      {/* 7. REPLICA SYMMETRY AND SPIN-GLASS ANALOGIES */}
-      <h2 style={h2Style}>7. Replica Symmetry and Spin-Glass Analogies</h2>
+      {/* 6. REPLICA SYMMETRY AND SPIN-GLASS ANALOGIES */}
+      <h2 style={h2Style}>6. Replica Symmetry and Spin-Glass Analogies</h2>
 
-      <h3 style={h3Style}>7.1 Edwards–Anderson Order Parameter</h3>
+      <h3 style={h3Style}>6.1 Edwards–Anderson Order Parameter</h3>
 
       <p className="mb-4">
         The preceding analysis assumes that the interaction couplings are deterministic and
@@ -894,7 +894,7 @@ export function StatMechMARLPaper() {
         failure mode.
       </p>
 
-      <h3 style={h3Style}>7.2 Replica Symmetry Breaking</h3>
+      <h3 style={h3Style}>6.2 Replica Symmetry Breaking</h3>
 
       <p className="mb-4">
         The replica-symmetric (RS) ansatz assumes <Tex math="Q_{ab} = q" /> for all{' '}
@@ -965,10 +965,10 @@ export function StatMechMARLPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      {/* 8. FINITE-SIZE SCALING ANALYSIS */}
-      <h2 style={h2Style}>8. Finite-Size Scaling Analysis</h2>
+      {/* 7. FINITE-SIZE SCALING ANALYSIS */}
+      <h2 style={h2Style}>7. Finite-Size Scaling Analysis</h2>
 
-      <h3 style={h3Style}>8.1 Scaling Ansatz and Binder Cumulant</h3>
+      <h3 style={h3Style}>7.1 Scaling Ansatz and Binder Cumulant</h3>
 
       <p className="mb-4">
         The thermodynamic-limit results of the preceding sections are, strictly speaking,
@@ -1024,7 +1024,7 @@ export function StatMechMARLPaper() {
         that the MARL phase transition belongs to the mean-field universality class.
       </p>
 
-      <h3 style={h3Style}>8.2 Shift Exponent and Correction Terms</h3>
+      <h3 style={h3Style}>7.2 Shift Exponent and Correction Terms</h3>
 
       <p className="mb-4">
         The apparent critical coupling in a finite system of <Tex math="N" /> agents is
@@ -1108,10 +1108,10 @@ export function StatMechMARLPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      {/* 9. ENTROPY PRODUCTION AND IRREVERSIBILITY */}
-      <h2 style={h2Style}>9. Entropy Production and Irreversibility</h2>
+      {/* 8. ENTROPY PRODUCTION AND IRREVERSIBILITY */}
+      <h2 style={h2Style}>8. Entropy Production and Irreversibility</h2>
 
-      <h3 style={h3Style}>9.1 Non-Equilibrium Thermodynamics of Learning</h3>
+      <h3 style={h3Style}>8.1 Non-Equilibrium Thermodynamics of Learning</h3>
 
       <p className="mb-4">
         The training dynamics of multi-agent reinforcement learning systems are
@@ -1160,7 +1160,7 @@ export function StatMechMARLPaper() {
         macroscopic order is sustained by entropy export to the environment.
       </p>
 
-      <h3 style={h3Style}>9.2 Detailed Balance Violations</h3>
+      <h3 style={h3Style}>8.2 Detailed Balance Violations</h3>
 
       <p className="mb-4">
         The fundamental distinction between equilibrium and non-equilibrium
@@ -1215,10 +1215,10 @@ export function StatMechMARLPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      {/* 10. FLUCTUATION-DISSIPATION RELATIONS */}
-      <h2 style={h2Style}>10. Fluctuation-Dissipation Relations</h2>
+      {/* 9. FLUCTUATION-DISSIPATION RELATIONS */}
+      <h2 style={h2Style}>9. Fluctuation-Dissipation Relations</h2>
 
-      <h3 style={h3Style}>10.1 Generalized FDR for Agent Populations</h3>
+      <h3 style={h3Style}>9.1 Generalized FDR for Agent Populations</h3>
 
       <p className="mb-4">
         The fluctuation-dissipation relation (FDR), first established by Nyquist and
@@ -1275,7 +1275,7 @@ export function StatMechMARLPaper() {
         non-equilibrium behaviour in MARL systems.
       </p>
 
-      <h3 style={h3Style}>10.2 Aging and Non-Stationarity</h3>
+      <h3 style={h3Style}>9.2 Aging and Non-Stationarity</h3>
 
       <p className="mb-4">
         During the transient approach to steady state, the MARL system exhibits
@@ -1315,10 +1315,10 @@ export function StatMechMARLPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      {/* 11. DYNAMICAL SYSTEMS ANALYSIS AND CHAOS */}
-      <h2 style={h2Style}>11. Dynamical Systems Analysis and Chaos</h2>
+      {/* 10. DYNAMICAL SYSTEMS ANALYSIS AND CHAOS */}
+      <h2 style={h2Style}>10. Dynamical Systems Analysis and Chaos</h2>
 
-      <h3 style={h3Style}>11.1 Lyapunov Exponents and Attractor Dimension</h3>
+      <h3 style={h3Style}>10.1 Lyapunov Exponents and Attractor Dimension</h3>
 
       <p className="mb-4">
         The MARL training dynamics, viewed as a continuous-time flow on the
@@ -1385,7 +1385,7 @@ export function StatMechMARLPaper() {
         as <Tex math="N" /> increases.
       </p>
 
-      <h3 style={h3Style}>11.2 Strange Attractors in Policy Space</h3>
+      <h3 style={h3Style}>10.2 Strange Attractors in Policy Space</h3>
 
       <p className="mb-4">
         When the MARL dynamics are chaotic, the long-time trajectory is confined
@@ -1433,10 +1433,10 @@ export function StatMechMARLPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      {/* 12. DYNAMIC CRITICAL EXPONENTS AND RELAXATION */}
-      <h2 style={h2Style}>12. Dynamic Critical Exponents and Relaxation</h2>
+      {/* 11. DYNAMIC CRITICAL EXPONENTS AND RELAXATION */}
+      <h2 style={h2Style}>11. Dynamic Critical Exponents and Relaxation</h2>
 
-      <h3 style={h3Style}>12.1 Critical Slowing Down</h3>
+      <h3 style={h3Style}>11.1 Critical Slowing Down</h3>
 
       <p className="mb-4">
         One of the most consequential manifestations of the MARL phase transition for
@@ -1495,7 +1495,7 @@ export function StatMechMARLPaper() {
         time-reversal symmetry of the noise.
       </p>
 
-      <h3 style={h3Style}>12.2 Landscape Ruggedness at Criticality</h3>
+      <h3 style={h3Style}>11.2 Landscape Ruggedness at Criticality</h3>
 
       <p className="mb-4">
         The energy landscape of the MARL system — defined by the effective
@@ -1532,7 +1532,7 @@ export function StatMechMARLPaper() {
         divergence at criticality — providing an alternative explanation for the extreme
         slowing down observed in MARL training near the phase boundary that
         complements the purely algebraic critical-slowing-down scenario of
-        Section 12.1.
+        Section 11.1.
       </p>
 
       <PaperFigure number={16} caption="Relaxation time τ as a function of coupling strength J, exhibiting the characteristic critical slowing down with divergence τ ∼ |J − J_c|^{−zν} at J_c ≈ 0.75, consistent with the mean-field dynamic exponent zν = 2.">
@@ -1561,10 +1561,10 @@ export function StatMechMARLPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      {/* 3. CRITICAL PHENOMENA */}
-      <h2 style={h2Style}>3. Critical Phenomena and Scaling Laws</h2>
+      {/* 12. CRITICAL PHENOMENA */}
+      <h2 style={h2Style}>12. Critical Phenomena and Scaling Laws</h2>
 
-      <h3 style={h3Style}>3.1 Susceptibility and Correlation Length</h3>
+      <h3 style={h3Style}>12.1 Susceptibility and Correlation Length</h3>
 
       <p className="mb-4">
         Near the critical point, the fluctuations of the order parameter diverge according to
@@ -1623,7 +1623,7 @@ export function StatMechMARLPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      <h3 style={h3Style}>3.2 Critical Exponents and Universality</h3>
+      <h3 style={h3Style}>12.2 Critical Exponents and Universality</h3>
 
       <p className="mb-4">
         A defining feature of continuous phase transitions is universality: the critical
@@ -1659,11 +1659,11 @@ export function StatMechMARLPaper() {
         <Tex math="d \sim 10^3" /> to <Tex math="10^6" /> for neural-network-parameterized
         policies) vastly exceeds <Tex math="d_c = 4" />, the mean-field approximation
         is expected to be quantitatively accurate — a prediction we verify numerically
-        in Section 5.
+        in Section 14.
       </p>
 
-      {/* 4. RENORMALIZATION-GROUP-INSPIRED CURRICULUM */}
-      <h2 style={h2Style}>4. Renormalization-Group-Inspired Training Curriculum</h2>
+      {/* 13. RENORMALIZATION-GROUP-INSPIRED CURRICULUM */}
+      <h2 style={h2Style}>13. Renormalization-Group-Inspired Training Curriculum</h2>
 
       <p className="mb-4">
         The divergence of fluctuations at the critical point poses a practical challenge
@@ -1717,10 +1717,10 @@ export function StatMechMARLPaper() {
         the large fluctuation bursts associated with abrupt coupling changes.
       </p>
 
-      {/* 5. NUMERICAL SIMULATIONS */}
-      <h2 style={h2Style}>5. Numerical Simulations</h2>
+      {/* 14. NUMERICAL SIMULATIONS */}
+      <h2 style={h2Style}>14. Numerical Simulations</h2>
 
-      <h3 style={h3Style}>5.1 Experimental Setup</h3>
+      <h3 style={h3Style}>14.1 Experimental Setup</h3>
 
       <p className="mb-4">
         We validated the mean-field predictions in a 64-agent adversarial capture-the-flag
@@ -1746,7 +1746,7 @@ export function StatMechMARLPaper() {
         environment transitions per step.
       </p>
 
-      <h3 style={h3Style}>5.2 Critical Exponent Measurement</h3>
+      <h3 style={h3Style}>14.2 Critical Exponent Measurement</h3>
 
       <p className="mb-4">
         To measure the critical exponents, we performed a series of quasi-static simulations
@@ -1783,7 +1783,7 @@ export function StatMechMARLPaper() {
         and validate the theoretical framework developed in Section 2.
       </p>
 
-      <h3 style={h3Style}>5.3 Training Performance</h3>
+      <h3 style={h3Style}>14.3 Training Performance</h3>
 
       <p className="mb-4">
         The practical impact of the phase-transition framework is demonstrated by comparing
@@ -1971,7 +1971,7 @@ export function StatMechMARLPaper() {
       <h2 style={h2Style}>16. Ablation and Schedule Comparison</h2>
 
       <p className="mb-4">
-        The renormalisation-group-inspired curriculum introduced in Section 4
+        The renormalisation-group-inspired curriculum introduced in Section 13
         employs a sigmoidal coupling schedule whose functional form is motivated
         by the smooth crossover between the disordered and ordered phases of the
         effective Landau–Ginzburg theory. However, the space of monotonically
@@ -2155,7 +2155,7 @@ export function StatMechMARLPaper() {
         estimation of the log-likelihood gradient{' '}
         <Tex math="\partial \ln Z / \partial w_{ij}" />, a computational
         expedient whose theoretical justification rests on the same
-        high-temperature expansion techniques we employ in Section 7 to
+        high-temperature expansion techniques we employ in Section 6 to
         analyse the replica-symmetric free energy of the MARL system.
         Recent work by Bahri et al. (2020) and Roberts et al. (2022) has
         revived interest in the statistical mechanics of deep networks,
@@ -2348,8 +2348,8 @@ export function StatMechMARLPaper() {
         robustness of online stochastic control.
       </p>
 
-      {/* 6. DISCUSSION */}
-      <h2 style={h2Style}>6. Discussion</h2>
+      {/* 19. DISCUSSION */}
+      <h2 style={h2Style}>19. Discussion</h2>
 
       <p className="mb-4">
         The statistical-mechanical framework developed herein provides a unifying
@@ -2406,8 +2406,8 @@ export function StatMechMARLPaper() {
         of the agent system.
       </p>
 
-      {/* 7. CONCLUSION */}
-      <h2 style={h2Style}>7. Conclusion</h2>
+      {/* 20. CONCLUSION */}
+      <h2 style={h2Style}>20. Conclusion</h2>
 
       <p className="mb-4">
         We have developed a mean-field theoretic framework that maps the joint
@@ -2427,15 +2427,117 @@ export function StatMechMARLPaper() {
       <h2 style={h2Style}>References</h2>
 
       <div style={{ fontSize: '9pt', lineHeight: 1.5 }}>
-        <p className="mb-2">Baker, B., et al. (2020). Emergent tool use from multi-agent autocurricula. <em>Proc. ICLR</em>.</p>
-        <p className="mb-2">Balduzzi, D., et al. (2019). Open-ended learning in symmetric zero-sum games. <em>Proc. ICML</em>, 434–443.</p>
-        <p className="mb-2">Goldenfeld, N. (1992). <em>Lectures on Phase Transitions and the Renormalization Group.</em> Addison-Wesley.</p>
-        <p className="mb-2">Kadanoff, L. P. (1966). Scaling laws for Ising models near T_c. <em>Physics</em>, 2(6), 263–272.</p>
-        <p className="mb-2">Lanctot, M., et al. (2017). A unified game-theoretic approach to multiagent reinforcement learning. <em>Proc. NeurIPS</em>, 30, 4190–4203.</p>
-        <p className="mb-2">Risken, H. (1996). <em>The Fokker–Planck Equation: Methods of Solution and Applications</em> (2nd ed.). Springer.</p>
-        <p className="mb-2">Schulman, J., Wolski, F., Dhariwal, P., Radford, A., &amp; Klimov, O. (2017). Proximal policy optimization algorithms. <em>arXiv:1707.06347</em>.</p>
-        <p className="mb-2">Sznitman, A.-S. (1991). Topics in propagation of chaos. <em>Ecole d&apos;Été de Probabilités de Saint-Flour XIX — 1989</em>, 165–251.</p>
-        <p className="mb-2">Wilson, K. G. (1971). Renormalization group and critical phenomena. <em>Phys. Rev. B</em>, 4(9), 3174–3183.</p>
+        <p className="mb-2">[1] Amit, D. J., Gutfreund, H., &amp; Sompolinsky, H. (1985). Spin-glass models of neural networks. <em>Phys. Rev. A</em>, 32(2), 1007–1018.</p>
+        <p className="mb-2">[2] Anderson, P. W. (1972). More is different. <em>Science</em>, 177(4047), 393–396.</p>
+        <p className="mb-2">[3] Baity-Jesi, M., et al. (2018). Comparing Monte Carlo methods for spin glasses: Population annealing and parallel tempering. <em>J. Stat. Mech.</em>, 2018(10), 103301.</p>
+        <p className="mb-2">[4] Baker, B., et al. (2020). Emergent tool use from multi-agent autocurricula. <em>Proc. ICLR</em>.</p>
+        <p className="mb-2">[5] Balduzzi, D., et al. (2019). Open-ended learning in symmetric zero-sum games. <em>Proc. ICML</em>, 434–443.</p>
+        <p className="mb-2">[6] Barabási, A.-L., &amp; Albert, R. (1999). Emergence of scaling in random networks. <em>Science</em>, 286(5439), 509–512.</p>
+        <p className="mb-2">[7] Bahri, Y., Kadmon, J., Pennington, J., Schoenholz, S. S., Sohl-Dickstein, J., &amp; Ganguli, S. (2020). Statistical mechanics of deep learning. <em>Annu. Rev. Condens. Matter Phys.</em>, 11, 501–528.</p>
+        <p className="mb-2">[8] Bengio, Y., Louradour, J., Collobert, R., &amp; Weston, J. (2009). Curriculum learning. <em>Proc. ICML</em>, 41–48.</p>
+        <p className="mb-2">[9] Binder, K. (1981). Finite size scaling analysis of Ising model block distribution functions. <em>Z. Phys. B</em>, 43(2), 119–140.</p>
+        <p className="mb-2">[10] Binder, K., &amp; Heermann, D. W. (2010). <em>Monte Carlo Simulation in Statistical Physics</em> (5th ed.). Springer.</p>
+        <p className="mb-2">[11] Bowling, M., &amp; Veloso, M. (2002). Multiagent learning using a variable learning rate. <em>Artif. Intell.</em>, 136(2), 215–250.</p>
+        <p className="mb-2">[12] Busoniu, L., Babuska, R., &amp; De Schutter, B. (2008). A comprehensive survey of multiagent reinforcement learning. <em>IEEE Trans. Syst. Man Cybern. C</em>, 38(2), 156–172.</p>
+        <p className="mb-2">[13] Cardy, J. (1996). <em>Scaling and Renormalization in Statistical Physics</em>. Cambridge University Press.</p>
+        <p className="mb-2">[14] Castellano, C., Fortunato, S., &amp; Loreto, V. (2009). Statistical physics of social dynamics. <em>Rev. Mod. Phys.</em>, 81(2), 591–646.</p>
+        <p className="mb-2">[15] Chung, F. R. K. (1997). <em>Spectral Graph Theory</em>. American Mathematical Society.</p>
+        <p className="mb-2">[16] Claus, C., &amp; Boutilier, C. (1998). The dynamics of reinforcement learning in cooperative multiagent systems. <em>Proc. AAAI</em>, 746–752.</p>
+        <p className="mb-2">[17] Contucci, P., &amp; Giardina, C. (2013). <em>Perspectives on Spin Glasses</em>. Cambridge University Press.</p>
+        <p className="mb-2">[18] Crisanti, A., &amp; Sompolinsky, H. (2018). Path integral approach to random neural networks. <em>Phys. Rev. E</em>, 98(6), 062120.</p>
+        <p className="mb-2">[19] Cross, M. C., &amp; Hohenberg, P. C. (1993). Pattern formation outside of equilibrium. <em>Rev. Mod. Phys.</em>, 65(3), 851–1112.</p>
+        <p className="mb-2">[20] Cugliandolo, L. F. (2003). Dynamics of glassy systems. <em>Lecture Notes in Slow Relaxations and Nonequilibrium Dynamics in Condensed Matter</em>, Les Houches Session LXXVII. Springer.</p>
+        <p className="mb-2">[21] Cugliandolo, L. F., &amp; Kurchan, J. (1993). Analytical solution of the off-equilibrium dynamics of a long-range spin-glass model. <em>Phys. Rev. Lett.</em>, 71(1), 173–176.</p>
+        <p className="mb-2">[22] De Groot, S. R., &amp; Mazur, P. (1984). <em>Non-Equilibrium Thermodynamics</em>. Dover.</p>
+        <p className="mb-2">[23] Edwards, S. F., &amp; Anderson, P. W. (1975). Theory of spin glasses. <em>J. Phys. F</em>, 5(5), 965–974.</p>
+        <p className="mb-2">[24] Engel, A., &amp; Van den Broeck, C. (2001). <em>Statistical Mechanics of Learning</em>. Cambridge University Press.</p>
+        <p className="mb-2">[25] Erdős, P., &amp; Rényi, A. (1959). On random graphs I. <em>Publ. Math. Debrecen</em>, 6, 290–297.</p>
+        <p className="mb-2">[26] Erdős, P., &amp; Rényi, A. (1960). On the evolution of random graphs. <em>Publ. Math. Inst. Hung. Acad. Sci.</em>, 5, 17–61.</p>
+        <p className="mb-2">[27] Fisher, M. E. (1967). The theory of equilibrium critical phenomena. <em>Rep. Prog. Phys.</em>, 30(2), 615–730.</p>
+        <p className="mb-2">[28] Fisher, M. E. (1971). The renormalization group in the theory of critical behavior. <em>Rev. Mod. Phys.</em>, 46(4), 597–616.</p>
+        <p className="mb-2">[29] Foerster, J., Chen, R. Y., Al-Shedivat, M., Whiteson, S., Abbeel, P., &amp; Mordatch, I. (2018). Learning with opponent-learning awareness. <em>Proc. AAMAS</em>, 122–130.</p>
+        <p className="mb-2">[30] Gardiner, C. W. (2009). <em>Stochastic Methods: A Handbook for the Natural and Social Sciences</em> (4th ed.). Springer.</p>
+        <p className="mb-2">[31] Goldenfeld, N. (1992). <em>Lectures on Phase Transitions and the Renormalization Group</em>. Addison-Wesley.</p>
+        <p className="mb-2">[32] Goldstone, J. (1961). Field theories with superconductor solutions. <em>Nuovo Cimento</em>, 19(1), 154–164.</p>
+        <p className="mb-2">[33] Goodfellow, I., Pouget-Abadie, J., Mirza, M., Xu, B., Warde-Farley, D., Ozair, S., Courville, A., &amp; Bengio, Y. (2014). Generative adversarial nets. <em>Proc. NeurIPS</em>, 27, 2672–2680.</p>
+        <p className="mb-2">[34] Harada, T., &amp; Sasa, S. (2005). Equality connecting energy dissipation with a violation of the fluctuation-response relation. <em>Phys. Rev. Lett.</em>, 95(13), 130602.</p>
+        <p className="mb-2">[35] Hernandez-Leal, P., Kaisers, M., Baarslag, T., &amp; de Cote, E. M. (2017). A survey of learning in multiagent environments: Dealing with non-stationarity. <em>arXiv:1707.09183</em>.</p>
+        <p className="mb-2">[36] Hohenberg, P. C., &amp; Halperin, B. I. (1977). Theory of dynamic critical phenomena. <em>Rev. Mod. Phys.</em>, 49(3), 435–479.</p>
+        <p className="mb-2">[37] Hopfield, J. J. (1982). Neural networks and physical systems with emergent collective computational abilities. <em>Proc. Natl. Acad. Sci. USA</em>, 79(8), 2554–2558.</p>
+        <p className="mb-2">[38] Hu, J., &amp; Wellman, M. P. (2003). Nash Q-learning for general-sum stochastic games. <em>J. Mach. Learn. Res.</em>, 4, 1039–1069.</p>
+        <p className="mb-2">[39] Huang, M., Malhamé, R. P., &amp; Caines, P. E. (2006). Large population stochastic dynamic games: Closed-loop McKean–Vlasov systems and the Nash certainty equivalence principle. <em>Commun. Inf. Syst.</em>, 6(3), 221–252.</p>
+        <p className="mb-2">[40] Itô, K. (1944). Stochastic integral. <em>Proc. Imp. Acad. Tokyo</em>, 20(8), 519–524.</p>
+        <p className="mb-2">[41] Jain, A., &amp; Clune, J. (2020). Self-play and population-based training in multi-agent reinforcement learning. <em>arXiv:2011.00583</em>.</p>
+        <p className="mb-2">[42] Jaynes, E. T. (1957). Information theory and statistical mechanics. <em>Phys. Rev.</em>, 106(4), 620–630.</p>
+        <p className="mb-2">[43] Kadanoff, L. P. (1966). Scaling laws for Ising models near T_c. <em>Physics</em>, 2(6), 263–272.</p>
+        <p className="mb-2">[44] Kirkpatrick, S., Gelatt, C. D., &amp; Vecchi, M. P. (1983). Optimization by simulated annealing. <em>Science</em>, 220(4598), 671–680.</p>
+        <p className="mb-2">[45] Kramers, H. A. (1940). Brownian motion in a field of force and the diffusion model of chemical reactions. <em>Physica</em>, 7(4), 284–304.</p>
+        <p className="mb-2">[46] Kubo, R. (1957). Statistical-mechanical theory of irreversible processes. I. General theory and simple applications to magnetic and conduction problems. <em>J. Phys. Soc. Jpn.</em>, 12(6), 570–586.</p>
+        <p className="mb-2">[47] Lanctot, M., et al. (2017). A unified game-theoretic approach to multiagent reinforcement learning. <em>Proc. NeurIPS</em>, 30, 4190–4203.</p>
+        <p className="mb-2">[48] Landau, L. D. (1937). On the theory of phase transitions. <em>Zh. Eksp. Teor. Fiz.</em>, 7, 19–32.</p>
+        <p className="mb-2">[49] Landau, D. P., &amp; Binder, K. (2015). <em>A Guide to Monte Carlo Simulations in Statistical Physics</em> (4th ed.). Cambridge University Press.</p>
+        <p className="mb-2">[50] Lasry, J.-M., &amp; Lions, P.-L. (2007). Mean field games. <em>Jpn. J. Math.</em>, 2(1), 229–260.</p>
+        <p className="mb-2">[51] Lebowitz, J. L., &amp; Spohn, H. (1999). A Gallavotti–Cohen-type symmetry in the large deviation functional for stochastic dynamics. <em>J. Stat. Phys.</em>, 95(1), 333–365.</p>
+        <p className="mb-2">[52] Lowe, R., Wu, Y., Tamar, A., Harb, J., Abbeel, P., &amp; Mordatch, I. (2017). Multi-agent actor-critic for mixed cooperative-competitive environments. <em>Proc. NeurIPS</em>, 30, 6379–6390.</p>
+        <p className="mb-2">[53] Ma, S.-K. (1976). <em>Modern Theory of Critical Phenomena</em>. Benjamin.</p>
+        <p className="mb-2">[54] Marconi, U. M. B., Puglisi, A., Rondoni, L., &amp; Vulpiani, A. (2008). Fluctuation-dissipation: Response theory in statistical physics. <em>Phys. Rep.</em>, 461(4–6), 111–195.</p>
+        <p className="mb-2">[55] McKean, H. P. (1966). A class of Markov processes associated with nonlinear parabolic equations. <em>Proc. Natl. Acad. Sci. USA</em>, 56(6), 1907–1911.</p>
+        <p className="mb-2">[56] Mézard, M., Parisi, G., &amp; Virasoro, M. A. (1987). <em>Spin Glass Theory and Beyond</em>. World Scientific.</p>
+        <p className="mb-2">[57] Mézard, M., &amp; Montanari, A. (2009). <em>Information, Physics, and Computation</em>. Oxford University Press.</p>
+        <p className="mb-2">[58] Mnih, V., et al. (2015). Human-level control through deep reinforcement learning. <em>Nature</em>, 518(7540), 529–533.</p>
+        <p className="mb-2">[59] Mnih, V., et al. (2016). Asynchronous methods for deep reinforcement learning. <em>Proc. ICML</em>, 1928–1937.</p>
+        <p className="mb-2">[60] Mora, T., &amp; Bialek, W. (2011). Are biological systems poised at criticality? <em>J. Stat. Phys.</em>, 144(2), 268–302.</p>
+        <p className="mb-2">[61] Nash, J. (1950). Equilibrium points in n-person games. <em>Proc. Natl. Acad. Sci. USA</em>, 36(1), 48–49.</p>
+        <p className="mb-2">[62] Newman, M. E. J. (2003). The structure and function of complex networks. <em>SIAM Rev.</em>, 45(2), 167–256.</p>
+        <p className="mb-2">[63] Newman, M. E. J. (2018). <em>Networks</em> (2nd ed.). Oxford University Press.</p>
+        <p className="mb-2">[64] Nishimori, H. (2001). <em>Statistical Physics of Spin Glasses and Information Processing</em>. Oxford University Press.</p>
+        <p className="mb-2">[65] Øksendal, B. (2003). <em>Stochastic Differential Equations: An Introduction with Applications</em> (6th ed.). Springer.</p>
+        <p className="mb-2">[66] Onsager, L. (1944). Crystal statistics. I. A two-dimensional model with an order-disorder transition. <em>Phys. Rev.</em>, 65(3–4), 117–149.</p>
+        <p className="mb-2">[67] Ott, E. (2002). <em>Chaos in Dynamical Systems</em> (2nd ed.). Cambridge University Press.</p>
+        <p className="mb-2">[68] Palmer, R. G. (1982). Broken ergodicity. <em>Adv. Phys.</em>, 31(6), 669–735.</p>
+        <p className="mb-2">[69] Panait, L., &amp; Luke, S. (2005). Cooperative multi-agent learning: The state of the art. <em>Auton. Agent. Multi-Agent Syst.</em>, 11(3), 387–434.</p>
+        <p className="mb-2">[70] Parisi, G. (1979). Infinite number of order parameters for spin-glasses. <em>Phys. Rev. Lett.</em>, 43(23), 1754–1756.</p>
+        <p className="mb-2">[71] Parisi, G. (1980). A sequence of approximated solutions to the S-K model for spin glasses. <em>J. Phys. A</em>, 13(4), L115–L121.</p>
+        <p className="mb-2">[72] Pathria, R. K., &amp; Beale, P. D. (2011). <em>Statistical Mechanics</em> (3rd ed.). Academic Press.</p>
+        <p className="mb-2">[73] Prigogine, I. (1967). <em>Introduction to Thermodynamics of Irreversible Processes</em> (3rd ed.). Wiley.</p>
+        <p className="mb-2">[74] Prigogine, I., &amp; Nicolis, G. (1977). <em>Self-Organization in Nonequilibrium Systems</em>. Wiley.</p>
+        <p className="mb-2">[75] Rashid, T., Samvelyan, M., de Witt, C. S., Farquhar, G., Foerster, J., &amp; Whiteson, S. (2018). QMIX: Monotonic value function factorisation for deep multi-agent reinforcement learning. <em>Proc. ICML</em>, 4295–4304.</p>
+        <p className="mb-2">[76] Risken, H. (1996). <em>The Fokker–Planck Equation: Methods of Solution and Applications</em> (2nd ed.). Springer.</p>
+        <p className="mb-2">[77] Roberts, D. A., Yaida, S., &amp; Hanin, B. (2022). <em>The Principles of Deep Learning Theory</em>. Cambridge University Press.</p>
+        <p className="mb-2">[78] Rushbrooke, G. S. (1963). On the thermodynamics of the critical region for the Ising problem. <em>J. Chem. Phys.</em>, 39(3), 842–843.</p>
+        <p className="mb-2">[79] Sato, Y., Akiyama, E., &amp; Farmer, J. D. (2002). Chaos in learning a simple two-person game. <em>Proc. Natl. Acad. Sci. USA</em>, 99(7), 4748–4751.</p>
+        <p className="mb-2">[80] Schulman, J., Wolski, F., Dhariwal, P., Radford, A., &amp; Klimov, O. (2017). Proximal policy optimization algorithms. <em>arXiv:1707.06347</em>.</p>
+        <p className="mb-2">[81] Seifert, U. (2005). Entropy production along a stochastic trajectory and an integral fluctuation theorem. <em>Phys. Rev. Lett.</em>, 95(4), 040602.</p>
+        <p className="mb-2">[82] Seifert, U. (2012). Stochastic thermodynamics, fluctuation theorems and molecular machines. <em>Rep. Prog. Phys.</em>, 75(12), 126001.</p>
+        <p className="mb-2">[83] Shapley, L. S. (1953). Stochastic games. <em>Proc. Natl. Acad. Sci. USA</em>, 39(10), 1095–1100.</p>
+        <p className="mb-2">[84] Sherrington, D., &amp; Kirkpatrick, S. (1975). Solvable model of a spin-glass. <em>Phys. Rev. Lett.</em>, 35(26), 1792–1796.</p>
+        <p className="mb-2">[85] Silver, D., et al. (2016). Mastering the game of Go with deep neural networks and tree search. <em>Nature</em>, 529(7587), 484–489.</p>
+        <p className="mb-2">[86] Silver, D., et al. (2017). Mastering the game of Go without human knowledge. <em>Nature</em>, 550(7676), 354–359.</p>
+        <p className="mb-2">[87] Singh, S., Jaakkola, T., Littman, M. L., &amp; Szepesvári, C. (2000). Convergence results for single-step on-policy reinforcement-learning algorithms. <em>Mach. Learn.</em>, 38(3), 287–308.</p>
+        <p className="mb-2">[88] Sompolinsky, H., &amp; Zippelius, A. (1982). Relaxational dynamics of the Edwards–Anderson model and the mean-field theory of spin-glasses. <em>Phys. Rev. B</em>, 25(11), 6860–6875.</p>
+        <p className="mb-2">[89] Sornette, D. (2006). <em>Critical Phenomena in Natural Sciences</em> (2nd ed.). Springer.</p>
+        <p className="mb-2">[90] Stanley, H. E. (1971). <em>Introduction to Phase Transitions and Critical Phenomena</em>. Oxford University Press.</p>
+        <p className="mb-2">[91] Strogatz, S. H. (2001). Exploring complex networks. <em>Nature</em>, 410(6825), 268–276.</p>
+        <p className="mb-2">[92] Sunehag, P., et al. (2018). Value-decomposition networks for cooperative multi-agent learning based on team reward. <em>Proc. AAMAS</em>, 2085–2087.</p>
+        <p className="mb-2">[93] Sutton, R. S., &amp; Barto, A. G. (2018). <em>Reinforcement Learning: An Introduction</em> (2nd ed.). MIT Press.</p>
+        <p className="mb-2">[94] Sznitman, A.-S. (1991). Topics in propagation of chaos. <em>Ecole d&apos;Été de Probabilités de Saint-Flour XIX — 1989</em>, 165–251.</p>
+        <p className="mb-2">[95] Thouless, D. J., Anderson, P. W., &amp; Palmer, R. G. (1977). Solution of &apos;solvable model of a spin glass&apos;. <em>Philos. Mag.</em>, 35(3), 593–601.</p>
+        <p className="mb-2">[96] Van Kampen, N. G. (2007). <em>Stochastic Processes in Physics and Chemistry</em> (3rd ed.). North-Holland.</p>
+        <p className="mb-2">[97] Vicsek, T., Czirók, A., Ben-Jacob, E., Cohen, I., &amp; Shochet, O. (1995). Novel type of phase transition in a system of self-driven particles. <em>Phys. Rev. Lett.</em>, 75(6), 1226–1229.</p>
+        <p className="mb-2">[98] Vinyals, O., et al. (2019). Grandmaster level in StarCraft II using multi-agent reinforcement learning. <em>Nature</em>, 575(7782), 350–354.</p>
+        <p className="mb-2">[99] Watts, D. J., &amp; Strogatz, S. H. (1998). Collective dynamics of &apos;small-world&apos; networks. <em>Nature</em>, 393(6684), 440–442.</p>
+        <p className="mb-2">[100] Wegner, F. J. (1972). Corrections to scaling laws. <em>Phys. Rev. B</em>, 5(11), 4529–4536.</p>
+        <p className="mb-2">[101] Widom, B. (1965). Equation of state in the neighborhood of the critical point. <em>J. Chem. Phys.</em>, 43(11), 3898–3905.</p>
+        <p className="mb-2">[102] Wilson, K. G. (1971). Renormalization group and critical phenomena. I. Renormalization group and the Kadanoff scaling picture. <em>Phys. Rev. B</em>, 4(9), 3174–3183.</p>
+        <p className="mb-2">[103] Wilson, K. G. (1971). Renormalization group and critical phenomena. II. Phase-space cell analysis of critical behavior. <em>Phys. Rev. B</em>, 4(9), 3184–3205.</p>
+        <p className="mb-2">[104] Wilson, K. G., &amp; Fisher, M. E. (1972). Critical exponents in 3.99 dimensions. <em>Phys. Rev. Lett.</em>, 28(4), 240–243.</p>
+        <p className="mb-2">[105] Wilson, K. G., &amp; Kogut, J. (1974). The renormalization group and the ε expansion. <em>Phys. Rep.</em>, 12(2), 75–199.</p>
+        <p className="mb-2">[106] Wolpert, D. H., &amp; Tumer, K. (2002). Optimal payoff functions for members of collectives. <em>Adv. Complex Syst.</em>, 4(2–3), 265–279.</p>
+        <p className="mb-2">[107] Yang, Y., et al. (2020). An overview of multi-agent reinforcement learning from game theoretical perspective. <em>arXiv:2011.00583</em>.</p>
+        <p className="mb-2">[108] Young, A. P. (Ed.) (1998). <em>Spin Glasses and Random Fields</em>. World Scientific.</p>
+        <p className="mb-2">[109] Zhang, K., Yang, Z., &amp; Başar, T. (2021). Multi-agent reinforcement learning: A selective overview of theories and algorithms. <em>Handbook of Reinforcement Learning and Control</em>, 321–384. Springer.</p>
+        <p className="mb-2">[110] Zinn-Justin, J. (2002). <em>Quantum Field Theory and Critical Phenomena</em> (4th ed.). Oxford University Press.</p>
+        <p className="mb-2">[111] Zwanzig, R. (2001). <em>Nonequilibrium Statistical Mechanics</em>. Oxford University Press.</p>
       </div>
     </>
   );
