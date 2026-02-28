@@ -20,7 +20,7 @@ import type { MinigameContext, MinigameResults } from '../base-minigame';
 import type { PlayerRanking, Award } from '@/lib/rmhbox/types';
 import type { DrawingPrompt } from '@/lib/rmhbox/minimalist-masterpiece/data-loader';
 import { loadPrompts, selectPromptForGame } from '@/lib/rmhbox/minimalist-masterpiece/data-loader';
-import { SubmitDrawingSchema, PlaceBidSchema } from '@/lib/rmhbox/minimalist-masterpiece/schemas';
+import { SubmitDrawingSchema, SaveDrawingSchema, PlaceBidSchema } from '@/lib/rmhbox/minimalist-masterpiece/schemas';
 import {
   MM_PROMPT_REVEAL_SECONDS,
   MM_DRAWING_DURATION_SECONDS,
@@ -94,6 +94,8 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
       marketValues: new Map(),
       auctionWinners: new Map(),
       rankings: null,
+      bidSubmissions: new Set(),
+      drawingSubmissions: new Set(),
       cumulativeScores,
       phaseStartedAt: now,
       phaseEndsAt: now,
@@ -158,6 +160,8 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
     this.state.marketValues = new Map();
     this.state.auctionWinners = new Map();
     this.state.rankings = null;
+    this.state.bidSubmissions = new Set();
+    this.state.drawingSubmissions = new Set();
 
     const now = Date.now();
     this.state.phase = 'PROMPT_REVEAL';
@@ -457,17 +461,66 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
 
   handleInput(userId: string, action: string, data: unknown): void {
     switch (action) {
+      case 'SAVE_DRAWING':
+        this.handleSaveDrawing(userId, data);
+        break;
       case 'SUBMIT_DRAWING':
         this.handleSubmitDrawing(userId, data);
         break;
       case 'PLACE_BID':
         this.handlePlaceBid(userId, data);
         break;
+      case 'SUBMIT_BIDS':
+        this.handleSubmitBids(userId);
+        break;
     }
   }
 
+  /** Auto-save drawing — updates drawing data without locking or tracking for early end. */
+  private handleSaveDrawing(userId: string, data: unknown): void {
+    if (this.state.phase !== 'DRAWING') return;
+    if (this.state.drawingSubmissions.has(userId)) return; // Already submitted, no more saves
+
+    const drawing = this.state.drawings.get(userId);
+    if (!drawing) return;
+
+    const parsed = SaveDrawingSchema.safeParse(data);
+    if (!parsed.success) return; // Silently reject invalid auto-saves
+
+    const { strokes, backgroundColor } = parsed.data;
+
+    // Validate stroke colors
+    for (const stroke of strokes) {
+      if (!MM_COLOR_PALETTE.includes(stroke.color) && !/^#[0-9a-fA-F]{6}$/.test(stroke.color)) {
+        return;
+      }
+    }
+
+    // Update the drawing data (no submittedAt change, no locking)
+    drawing.strokes = strokes as MMStroke[];
+    drawing.backgroundColor = backgroundColor;
+    drawing.strokeCount = strokes.length;
+
+    this.context.sendToPlayer(userId, 'rmhbox:game:action', {
+      type: 'MM_DRAWING_SAVED',
+      drawingId: drawing.drawingId,
+      strokeCount: strokes.length,
+    });
+
+    // Mirror to spectators following this player so they see live updates
+    this.context.sendToSpectatorFollowers(userId, 'rmhbox:game:action', {
+      type: 'MM_DRAWING_SAVED',
+      drawingId: drawing.drawingId,
+      strokes: drawing.strokes,
+      backgroundColor: drawing.backgroundColor,
+      strokeCount: strokes.length,
+    });
+  }
+
+  /** Explicit submit — locks the drawing and tracks for early phase end. */
   private handleSubmitDrawing(userId: string, data: unknown): void {
     if (this.state.phase !== 'DRAWING') return;
+    if (this.state.drawingSubmissions.has(userId)) return; // Already submitted
 
     const drawing = this.state.drawings.get(userId);
     if (!drawing) return;
@@ -494,61 +547,60 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
       }
     }
 
-    // Accept the drawing (allow re-submissions for auto-save)
-    const isFirstSubmission = drawing.submittedAt === null;
+    // Save and lock the drawing
     drawing.strokes = strokes as MMStroke[];
     drawing.backgroundColor = backgroundColor;
     drawing.strokeCount = strokes.length;
     drawing.submittedAt = Date.now();
+    this.state.drawingSubmissions.add(userId);
 
-    if (isFirstSubmission) {
-      this.logAction('submit_drawing', {
-        userId,
-        drawingId: drawing.drawingId,
-        strokeCount: strokes.length,
-      });
+    this.logAction('submit_drawing', {
+      userId,
+      drawingId: drawing.drawingId,
+      strokeCount: strokes.length,
+    });
 
-      logger.info({
-        event: 'mm:drawing_submitted',
-        lobbyId: this.context.lobbyId,
-        userId,
-        drawingId: drawing.drawingId,
-        strokeCount: strokes.length,
-      });
-    }
+    logger.info({
+      event: 'mm:drawing_submitted',
+      lobbyId: this.context.lobbyId,
+      userId,
+      drawingId: drawing.drawingId,
+      strokeCount: strokes.length,
+    });
 
     this.context.sendToPlayer(userId, 'rmhbox:game:action', {
-      type: 'MM_DRAWING_ACCEPTED',
+      type: 'MM_DRAWING_SUBMITTED',
       drawingId: drawing.drawingId,
       strokeCount: strokes.length,
     });
 
     // Mirror to spectators following this player
     this.context.sendToSpectatorFollowers(userId, 'rmhbox:game:action', {
-      type: 'MM_DRAWING_ACCEPTED',
+      type: 'MM_DRAWING_SUBMITTED',
       drawingId: drawing.drawingId,
       strokeCount: strokes.length,
     });
 
-    if (isFirstSubmission) {
-      // Broadcast submission count to all
-      const submittedCount = Array.from(this.state.drawings.values())
-        .filter((d) => d.submittedAt !== null).length;
-      this.broadcastGameAction({
-        type: 'MM_SUBMISSION_COUNT',
-        submitted: submittedCount,
-        total: this.state.drawings.size,
-      });
+    // Broadcast submission count to all
+    const submittedCount = this.state.drawingSubmissions.size;
+    const totalPlayers = this.state.drawings.size;
+    this.broadcastGameAction({
+      type: 'MM_DRAWING_SUBMIT_STATUS',
+      submitted: submittedCount,
+      total: totalPlayers,
+    });
 
-      // Always allow the full drawing phase timer — no early end.
-      // Auto-save means every player submits almost immediately,
-      // but they should still have the full time to keep editing.
+    // End drawing phase early if all players submitted
+    if (submittedCount >= totalPlayers) {
+      this.clearPhaseTimer();
+      this.endDrawingPhase();
     }
   }
 
   private handlePlaceBid(userId: string, data: unknown): void {
     if (this.state.phase !== 'AUCTION') return;
     if (!this.context.players.has(userId)) return;
+    if (this.state.bidSubmissions.has(userId)) return;
 
     const parsed = PlaceBidSchema.safeParse(data);
     if (!parsed.success) {
@@ -662,6 +714,41 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
     });
   }
 
+  private handleSubmitBids(userId: string): void {
+    if (this.state.phase !== 'AUCTION') return;
+    if (!this.context.players.has(userId)) return;
+    if (this.state.bidSubmissions.has(userId)) return;
+
+    this.state.bidSubmissions.add(userId);
+
+    logger.info({
+      event: 'mm:bids_submitted',
+      lobbyId: this.context.lobbyId,
+      userId,
+    });
+
+    // Confirm to the submitter
+    this.context.sendToPlayer(userId, 'rmhbox:game:action', {
+      type: 'MM_BID_SUBMITTED',
+    });
+
+    // Broadcast submission count
+    const submittedCount = this.state.bidSubmissions.size;
+    const totalPlayers = this.context.players.size;
+
+    this.broadcastGameAction({
+      type: 'MM_BID_SUBMIT_STATUS',
+      submitted: submittedCount,
+      total: totalPlayers,
+    });
+
+    // End auction early if all players submitted
+    if (submittedCount >= totalPlayers) {
+      this.clearPhaseTimer();
+      this.endAuctionPhase();
+    }
+  }
+
   // ─── State Masking ───────────────────────────────────────────
 
   getStateForPlayer(userId: string): unknown {
@@ -679,16 +766,24 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
         return { ...base };
 
       case 'DRAWING': {
-        // Only show the player's own strokes
+        // Show the player's own drawing data (strokes + background) for reconnection
         const myDrawing = this.state.drawings.get(userId);
         return {
           ...base,
           myDrawing: myDrawing
-            ? { drawingId: myDrawing.drawingId, strokes: myDrawing.strokes, strokeCount: myDrawing.strokeCount, submitted: myDrawing.submittedAt !== null }
+            ? {
+                drawingId: myDrawing.drawingId,
+                strokes: myDrawing.strokes,
+                backgroundColor: myDrawing.backgroundColor,
+                strokeCount: myDrawing.strokeCount,
+                submitted: this.state.drawingSubmissions.has(userId),
+              }
             : null,
           maxStrokes: MM_MAX_STROKES,
-          submittedCount: Array.from(this.state.drawings.values()).filter((d) => d.submittedAt !== null).length,
-          totalPlayers: this.state.drawings.size,
+          drawingSubmitStatus: {
+            submitted: this.state.drawingSubmissions.size,
+            total: this.state.drawings.size,
+          },
         };
       }
 
@@ -739,11 +834,14 @@ export class MinimalistMasterpieceGame extends BaseMinigame {
             userName: this.context.players.get(uid)?.userName ?? 'Unknown',
             drawingId: d.drawingId,
             strokes: d.strokes,
+            backgroundColor: d.backgroundColor,
             strokeCount: d.strokeCount,
-            submitted: d.submittedAt !== null,
+            submitted: this.state.drawingSubmissions.has(uid),
           })),
-          submittedCount: Array.from(this.state.drawings.values()).filter((d) => d.submittedAt !== null).length,
-          totalPlayers: this.state.drawings.size,
+          drawingSubmitStatus: {
+            submitted: this.state.drawingSubmissions.size,
+            total: this.state.drawings.size,
+          },
         };
 
       case 'GALLERY':

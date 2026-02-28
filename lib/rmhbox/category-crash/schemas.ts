@@ -38,3 +38,10 @@ export const UncrashAnswerSchema = z.object({
   targetUserId: z.string().min(1),
   categoryIndex: z.number().int().min(0).max(CC_CATEGORIES_PER_ROUND - 1),
 });
+
+/** Schema for voting crash or safe on another player's answer. */
+export const VoteAnswerSchema = z.object({
+  targetUserId: z.string().min(1),
+  categoryIndex: z.number().int().min(0).max(CC_CATEGORIES_PER_ROUND - 1),
+  vote: z.enum(['crash', 'safe']),
+});

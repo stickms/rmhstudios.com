@@ -343,6 +343,24 @@ export abstract class BaseMinigame {
   }
 
   /**
+   * Return the current phase timer state so it can be sent to a
+   * reconnecting player or a spectator switching targets, avoiding
+   * the "full timer" flash before the next tick.
+   */
+  getPhaseTimerSnapshot(): { total: number; remaining: number; paused: boolean; infinite: boolean; showSkip: boolean } | null {
+    // No active timer
+    if (!this.phaseTimerInterval && this.phaseTimerRemaining === 0) return null;
+    const infinite = this.phaseTimerRemaining === -1;
+    return {
+      total: infinite ? -1 : this.phaseTimerRemaining,
+      remaining: this.phaseTimerRemaining,
+      paused: this.phaseTimerPaused,
+      infinite,
+      showSkip: false,
+    };
+  }
+
+  /**
    * Broadcast the current minigame sub-round (e.g. "Round 2/3") to all
    * clients, updating the footer round counter via the store.
    */

@@ -37,8 +37,25 @@ export default function PlayerList({ players, hostUserId, isHost, myUserId, onKi
             key={player.userId}
             className="flex items-center gap-3 rounded-lg bg-(--rmhbox-bg) border border-(--rmhbox-border) px-4 py-3 transition-colors hover:bg-(--rmhbox-surface-hover)"
           >
-            {/* Avatar placeholder */}
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-(--rmhbox-accent) text-sm font-bold text-white">
+            {/* Avatar */}
+            {player.avatarUrl ? (
+              <img
+                src={player.avatarUrl}
+                alt={player.userName}
+                className="h-9 w-9 shrink-0 rounded-full object-cover"
+                loading="lazy"
+                onError={(e) => {
+                  const target = e.currentTarget;
+                  const fallback = target.nextElementSibling as HTMLElement | null;
+                  target.style.display = 'none';
+                  if (fallback) fallback.style.display = '';
+                }}
+              />
+            ) : null}
+            <div
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-(--rmhbox-accent) text-sm font-bold text-white"
+              style={player.avatarUrl ? { display: 'none' } : undefined}
+            >
               {player.userName.charAt(0).toUpperCase()}
             </div>
 

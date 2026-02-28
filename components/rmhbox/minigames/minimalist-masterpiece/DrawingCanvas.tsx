@@ -23,6 +23,7 @@ interface DrawingCanvasProps {
   maxStrokes: number;
   onSubmit: () => void;
   onUndo: () => void;
+  disabled?: boolean;
 }
 
 interface Point {
@@ -38,6 +39,7 @@ export default function DrawingCanvas({
   backgroundColor,
   maxStrokes,
   onUndo,
+  disabled,
 }: DrawingCanvasProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   // Pending first endpoint for click-click mode
@@ -50,15 +52,15 @@ export default function DrawingCanvas({
   const isDragging = useRef(false);
   const dragStart = useRef<Point | null>(null);
 
-  const canDraw = strokes.length < maxStrokes;
+  const canDraw = !disabled && strokes.length < maxStrokes;
 
   const getSvgPoint = useCallback((e: React.PointerEvent<SVGSVGElement> | React.MouseEvent<SVGSVGElement>): Point => {
     const svg = svgRef.current;
     if (!svg) return { x: 0, y: 0 };
     const rect = svg.getBoundingClientRect();
     return {
-      x: ((e.clientX - rect.left) / rect.width) * 300,
-      y: ((e.clientY - rect.top) / rect.height) * 300,
+      x: Math.max(0, Math.min(300, ((e.clientX - rect.left) / rect.width) * 300)),
+      y: Math.max(0, Math.min(300, ((e.clientY - rect.top) / rect.height) * 300)),
     };
   }, []);
 
@@ -226,7 +228,7 @@ export default function DrawingCanvas({
       </svg>
 
       {/* Undo button */}
-      {strokes.length > 0 && (
+      {strokes.length > 0 && !disabled && (
         <button
           onClick={onUndo}
           className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-(--rmhbox-surface)/80 border border-(--rmhbox-border) text-(--rmhbox-text) hover:bg-(--rmhbox-border) transition-colors"

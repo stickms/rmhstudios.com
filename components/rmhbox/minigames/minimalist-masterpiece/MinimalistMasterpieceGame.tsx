@@ -10,7 +10,7 @@
  */
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { playSound } from '@/lib/rmhbox/audio';
 import { emitGameInput, useGameSocket, extractTimerTick } from '@/lib/rmhbox/minigame-client';
@@ -102,12 +102,13 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
   const [rankings, setRankings] = useState<MMRanking[]>([]);
   const [scoreBreakdowns, setScoreBreakdowns] = useState<PlayerScoreBreakdown[]>([]);
   const [timeRemaining, setTimeRemaining] = useState(0);
+  const [bidSubmitted, setBidSubmitted] = useState(false);
+  const [bidSubmitStatus, setBidSubmitStatus] = useState<{ submitted: number; total: number } | null>(null);
+  const [drawingSubmitted, setDrawingSubmitted] = useState(false);
+  const [drawingSubmitStatus, setDrawingSubmitStatus] = useState<{ submitted: number; total: number } | null>(null);
 
   // Track spectator status
   const isSpectator = useRMHboxStore((s) => s.lobby?.myRole === 'spectator');
-
-  // Auto-submit: track whether we've auto-submitted
-  const autoSubmittedRef = useRef(false);
 
   /** Reset drawing state for a new round */
   const resetDrawingState = useCallback(() => {
@@ -116,7 +117,8 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
     setBackgroundColor('#ffffff');
     setSelectedColor(colorPalette[0] ?? DEFAULT_COLOR_PALETTE[0]);
     setSelectedWidth(4);
-    autoSubmittedRef.current = false;
+    setDrawingSubmitted(false);
+    setDrawingSubmitStatus(null);
   }, [colorPalette]);
 
   // Handle incoming game actions from the server
@@ -150,13 +152,32 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
           setPhase('DRAWING');
           break;
         }
-        case 'MM_DRAWING_ACCEPTED': {
-          // Sent to the submitting player — Auto-save acknowledged
+        case 'MM_DRAWING_SAVED': {
+          // Auto-save acknowledged. If the event includes drawing data
+          // (sent to spectators following this player), update the canvas.
+          if (Array.isArray(data.strokes)) {
+            setStrokes(data.strokes as MMStroke[]);
+          }
+          if (typeof data.backgroundColor === 'string') {
+            setBackgroundColor(data.backgroundColor as string);
+          }
+          break;
+        }
+        case 'MM_DRAWING_SUBMITTED': {
+          // Explicit drawing submission confirmed
+          setDrawingSubmitted(true);
           playSound('click');
           break;
         }
+        case 'MM_DRAWING_SUBMIT_STATUS': {
+          setDrawingSubmitStatus({
+            submitted: data.submitted as number,
+            total: data.total as number,
+          });
+          break;
+        }
         case 'MM_SUBMISSION_COUNT': {
-          // Broadcast to all: { submitted, total }
+          // Legacy broadcast — ignore
           break;
         }
         case 'MM_GALLERY_START':
@@ -170,6 +191,8 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
           setAuctionDrawings(data.drawings as AuctionDrawing[]);
           // Server sends 'currency', client previously expected 'startingCurrency'
           setCurrency((data.currency ?? data.startingCurrency) as number);
+          setBidSubmitted(false);
+          setBidSubmitStatus(null);
           setPhase('AUCTION');
           playSound('goFanfare');
           break;
@@ -214,6 +237,18 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
           );
           break;
         }
+        case 'MM_BID_SUBMITTED': {
+          setBidSubmitted(true);
+          playSound('click');
+          break;
+        }
+        case 'MM_BID_SUBMIT_STATUS': {
+          setBidSubmitStatus({
+            submitted: data.submitted as number,
+            total: data.total as number,
+          });
+          break;
+        }
         case 'MM_RESULTS': {
           setRankings(data.rankings as MMRanking[]);
           if (Array.isArray(data.scoreBreakdowns)) {
@@ -255,6 +290,16 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
           setSelectedColor(palette[0]);
         }
       }
+      // Restore drawing data from snapshot (reconnection / spectator switch)
+      if (data.myDrawing) {
+        const d = data.myDrawing as { strokes?: MMStroke[]; backgroundColor?: string; submitted?: boolean };
+        if (Array.isArray(d.strokes)) setStrokes(d.strokes);
+        if (d.backgroundColor) setBackgroundColor(d.backgroundColor);
+        if (d.submitted) setDrawingSubmitted(true);
+      }
+      if (data.drawingSubmitStatus) {
+        setDrawingSubmitStatus(data.drawingSubmitStatus as { submitted: number; total: number });
+      }
       if (Array.isArray(data.galleryDrawings)) setGalleryDrawings(data.galleryDrawings as GalleryDrawing[]);
       if (Array.isArray(data.auctionDrawings)) setAuctionDrawings(data.auctionDrawings as AuctionDrawing[]);
       if (typeof data.currency === 'number') setCurrency(data.currency as number);
@@ -270,16 +315,17 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
   });
 
   // Auto-save: whenever strokes or backgroundColor changes during the DRAWING phase,
-  // automatically submit the drawing to the server. Always runs (server allows re-submissions).
-  // Spectators should not auto-submit drawings.
+  // automatically save the drawing to the server. This is distinct from submitting —
+  // saving preserves the drawing for reconnection and spectator viewing without locking it.
+  // Spectators should not auto-save drawings.
   useEffect(() => {
-    if (phase !== 'DRAWING' || isSpectator) return;
-    // Debounce auto-submit to avoid spamming on rapid changes
+    if (phase !== 'DRAWING' || isSpectator || drawingSubmitted) return;
+    // Debounce auto-save to avoid spamming on rapid changes
     const timeout = setTimeout(() => {
-      emitGameInput('SUBMIT_DRAWING', { strokes, backgroundColor });
+      emitGameInput('SAVE_DRAWING', { strokes, backgroundColor });
     }, 500);
     return () => clearTimeout(timeout);
-  }, [phase, strokes, backgroundColor, isSpectator]);
+  }, [phase, strokes, backgroundColor, isSpectator, drawingSubmitted]);
 
   // Undo: restore the previous edit history state.
   // Auto-save allows re-submissions, so undo works throughout the drawing phase.
@@ -309,6 +355,16 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
     emitGameInput('PLACE_BID', { drawingId, amount });
   }, [isSpectator]);
 
+  const handleSubmitDrawing = useCallback(() => {
+    if (isSpectator || drawingSubmitted) return;
+    emitGameInput('SUBMIT_DRAWING', { strokes, backgroundColor });
+  }, [isSpectator, drawingSubmitted, strokes, backgroundColor]);
+
+  const handleSubmitBids = useCallback(() => {
+    if (isSpectator || bidSubmitted) return;
+    emitGameInput('SUBMIT_BIDS', {});
+  }, [isSpectator, bidSubmitted]);
+
   // Render based on phase
   switch (phase) {
     case 'PROMPT_REVEAL':
@@ -332,6 +388,7 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
             maxStrokes={maxStrokes}
             onSubmit={() => {}}
             onUndo={handleUndo}
+            disabled={drawingSubmitted}
           />
 
           {/* Stroke color: palette swatches + react-colorful picker */}
@@ -408,8 +465,26 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
             <StrokeCounter current={strokes.length} max={maxStrokes} />
             <span className="text-xs text-(--rmhbox-text-muted)">
               Auto-saving • {timeRemaining}s
+              {drawingSubmitStatus && (
+                <span className="ml-2">
+                  • {drawingSubmitStatus.submitted}/{drawingSubmitStatus.total} submitted
+                </span>
+              )}
             </span>
           </div>
+          {!isSpectator && (
+            <button
+              onClick={handleSubmitDrawing}
+              disabled={drawingSubmitted}
+              className={`mt-1 rounded-lg px-6 py-2 text-sm font-semibold transition-colors ${
+                drawingSubmitted
+                  ? 'bg-(--rmhbox-border) text-(--rmhbox-text-muted) cursor-not-allowed'
+                  : 'bg-(--rmhbox-accent) text-white hover:opacity-90'
+              }`}
+            >
+              {drawingSubmitted ? 'Drawing Submitted ✓' : 'Submit Drawing'}
+            </button>
+          )}
         </div>
       );
 
@@ -428,12 +503,31 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
           <h2 className="text-xl font-bold text-(--rmhbox-text)">Auction Phase</h2>
           <p className="text-sm text-(--rmhbox-text-muted)">
             Remaining: {currency} coins • Time: {timeRemaining}s
+            {bidSubmitStatus && (
+              <span className="ml-2" aria-label={`${bidSubmitStatus.submitted} of ${bidSubmitStatus.total} players submitted bids`}>
+                • {bidSubmitStatus.submitted}/{bidSubmitStatus.total} submitted
+              </span>
+            )}
           </p>
           <AuctionPanel
             drawings={auctionDrawings}
             currency={currency}
             onBid={handlePlaceBid}
+            disabled={bidSubmitted}
           />
+          {!isSpectator && (
+            <button
+              onClick={handleSubmitBids}
+              disabled={bidSubmitted}
+              className={`mt-2 rounded-lg px-6 py-2 text-sm font-semibold transition-colors ${
+                bidSubmitted
+                  ? 'bg-(--rmhbox-border) text-(--rmhbox-text-muted) cursor-not-allowed'
+                  : 'bg-(--rmhbox-accent) text-white hover:opacity-90'
+              }`}
+            >
+              {bidSubmitted ? 'Bids Submitted ✓' : 'Submit Bids'}
+            </button>
+          )}
         </div>
       );
 
