@@ -167,6 +167,8 @@ export default function FactOrFrictionGame({ playerId, playerName: _playerName }
             const delta = newScore - myScore;
             setMyScore(newScore);
             if (delta !== 0) setScoreChange(delta);
+            // Update live score in the GameShell footer
+            useRMHboxStore.getState().setLiveMinigameScore(newScore);
           }
           break;
         }
@@ -176,6 +178,8 @@ export default function FactOrFrictionGame({ playerId, playerName: _playerName }
         }
         case 'FF_GAME_OVER': {
           setPhase('GAME_OVER');
+          // Clear live score — coordinator handles final score update
+          useRMHboxStore.getState().setLiveMinigameScore(null);
           break;
         }
         case 'TIMER_START': {
@@ -203,6 +207,7 @@ export default function FactOrFrictionGame({ playerId, playerName: _playerName }
   const handleRoundResults = useCallback(
     (_data: Record<string, unknown>) => {
       setPhase('GAME_OVER');
+      useRMHboxStore.getState().setLiveMinigameScore(null);
     },
     [],
   );
@@ -217,6 +222,8 @@ export default function FactOrFrictionGame({ playerId, playerName: _playerName }
     return () => {
       socket.off(S2C.GAME_ACTION, handleGameAction);
       socket.off(S2C.GAME_ROUND_RESULTS, handleRoundResults);
+      // Clear live score when this minigame unmounts
+      useRMHboxStore.getState().setLiveMinigameScore(null);
     };
   }, [handleGameAction, handleRoundResults]);
 
@@ -250,7 +257,11 @@ export default function FactOrFrictionGame({ playerId, playerName: _playerName }
     // Restore scores
     if (snapshot.scores) {
       const sc = snapshot.scores as Record<string, number>;
-      if (sc[playerId] != null) setMyScore(sc[playerId]);
+      if (sc[playerId] != null) {
+        setMyScore(sc[playerId]);
+        // Sync live score to footer
+        useRMHboxStore.getState().setLiveMinigameScore(sc[playerId]);
+      }
     }
   }, [playerId]);
 

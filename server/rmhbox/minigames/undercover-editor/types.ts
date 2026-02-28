@@ -1,17 +1,25 @@
 /**
- * RMHbox — Undercover Editor Minigame Types (Parallel Design)
+ * RMHbox — Undercover Editor Minigame Types (Redesigned)
  *
- * All players write sentences for ALL stories simultaneously.
- * Each player is assigned as the secret "undercover editor" of one
- * other player's story. After writing rounds, players review all
- * stories and try to match each story with its undercover editor.
+ * Round-robin writing: each round, every player writes one sentence for
+ * exactly one story. Over N writing rounds (N = number of players), every
+ * player writes one sentence for every story.
  *
- * Phases: SETUP → WRITE → EDIT → (repeat) → REVIEW → REVEAL
+ * Alternating write/edit rounds (2N total):
+ *   WRITE → EDIT → WRITE → EDIT → … → READING → REVIEW → REVEAL
+ *
+ * Editing: the editor must change exactly 2 words in the most recent
+ * sentence of their assigned story.
+ *
+ * Reading: infinite-time, host-driven phase where sentences are revealed
+ * one at a time for each story.
+ *
+ * Review: players match stories to their undercover editors (1-to-1).
  */
 
 // ─── Phase Type ──────────────────────────────────────────────────
 
-export type UEPhase = 'SETUP' | 'WRITE' | 'EDIT' | 'REVIEW' | 'REVEAL';
+export type UEPhase = 'SETUP' | 'WRITE' | 'EDIT' | 'READING' | 'REVIEW' | 'REVEAL';
 
 // ─── Core State Types ────────────────────────────────────────────
 
@@ -20,12 +28,15 @@ export interface StorySentence {
   authorUserId: string;
   authorName: string;
   text: string;
+  /** Original text before any editor edits. */
   originalText: string;
-  turnNumber: number;
+  /** Which writing round this sentence was added in (1-indexed). */
+  roundNumber: number;
+  /** Tokenized words array (used for word-level editing). */
   words: string[];
 }
 
-/** A complete parallel story, owned by one player, edited by another. */
+/** A complete story, owned by one player, edited by another. */
 export interface ParallelStory {
   /** Story ID (same as ownerUserId for simplicity). */
   storyId: string;
@@ -34,40 +45,40 @@ export interface ParallelStory {
   /** The player whose "story" this is (their name appears as story owner). */
   ownerUserId: string;
   ownerName: string;
-  /** The keyword the editor must sneak into this story. */
-  keyword: string;
   /** The player secretly assigned to undercover-edit this story. */
   editorUserId: string;
   /** All sentences written so far (by various players). */
   sentences: StorySentence[];
   /** Edits made by the undercover editor. */
   edits: WordEdit[];
-  /** Set of "sentenceIndex:wordIndex" positions already edited (prevents re-editing). */
-  editedWordPositions: Set<string>;
-  /** Whether the keyword was found in the final story (set during reveal). */
-  keywordInStory: boolean;
 }
 
 /** A record of a word edit by the undercover editor. */
 export interface WordEdit {
+  /** Which sentence was edited (index in sentences array). */
   sentenceIndex: number;
   wordIndex: number;
   originalWord: string;
   newWord: string;
-  editedOnTurn: number;
+  /** Which edit round this change was made in. */
+  editedOnRound: number;
 }
 
 /**
- * Full state for the parallel Undercover Editor game.
+ * Full state for the Undercover Editor game.
  * Managed entirely on the server; clients receive masked views.
  */
 export interface UndercoverEditorState {
-  /** All players in this game (shuffled turn order). */
+  /** All players in this game (shuffled order). */
   playerIds: string[];
-  /** Number of writing rounds. */
-  totalRounds: number;
-  /** Current round (0-based). */
-  currentRound: number;
+  /** Number of players (= number of stories = number of writing rounds). */
+  numPlayers: number;
+  /** Current writing round (1-indexed, up to numPlayers). */
+  currentWriteRound: number;
+  /** Current overall step (1-indexed, up to 2*numPlayers; odd=WRITE, even=EDIT). */
+  currentStep: number;
+  /** Total steps: 2 * numPlayers. */
+  totalSteps: number;
   /** Current phase. */
   phase: UEPhase;
   /** One story per player, indexed by storyId (= ownerUserId). */
@@ -78,19 +89,23 @@ export interface UndercoverEditorState {
    */
   editorAssignments: Map<string, string>;
   /**
-   * Per-round write submissions. Map<storyId, Map<authorUserId, sentenceText>>.
-   * Tracks who has submitted for the current round.
+   * Round-robin write assignment for the current write round.
+   * Map<playerId, storyId> — which story each player writes for this round.
    */
-  roundSubmissions: Map<string, Map<string, string>>;
+  writeAssignments: Map<string, string>;
   /**
-   * Per-round edit submissions. Map<storyId, boolean>.
-   * Tracks which editors have completed/skipped their edit.
+   * Per-round write submissions. Map<playerId, sentenceText>.
+   * Only one story per player per round.
+   */
+  roundSubmissions: Map<string, string>;
+  /**
+   * Per-round edit status. Map<editorUserId, boolean>.
+   * Tracks which editors have completed their edit for this round.
    */
   roundEditsDone: Map<string, boolean>;
   /**
    * Matching guesses during REVIEW phase.
    * Map<guesserId, Map<storyId, guessedEditorUserId>>.
-   * Each player submits a mapping of storyId→editorId.
    */
   matchGuesses: Map<string, Map<string, string>>;
   /** Players who have confirmed their matching is done. */
@@ -100,6 +115,10 @@ export interface UndercoverEditorState {
   /** Phase timing. */
   phaseStartedAt: number;
   phaseEndsAt: number;
+  /** READING phase: which story is currently being read (index into story list). */
+  readingStoryIndex: number;
+  /** READING phase: how many sentences have been revealed for the current story. */
+  readingSentenceIndex: number;
 }
 
 // ─── Client View Types ───────────────────────────────────────────
@@ -108,7 +127,7 @@ export interface UndercoverEditorState {
 export interface StorySentenceView {
   authorName: string;
   text: string;
-  turnNumber: number;
+  roundNumber: number;
 }
 
 /** A story as seen by clients during play. */
@@ -119,12 +138,17 @@ export interface StoryView {
   sentences: StorySentenceView[];
 }
 
-/** Word in an editable story (editor's view). */
+/** Word in an editable story (editor's view during EDIT phase). */
 export interface EditableWord {
   word: string;
   index: number;
+}
+
+/** Editor's view of the most recent sentence for editing. */
+export interface EditableSentence {
+  authorName: string;
   sentenceIndex: number;
-  isEditable: boolean;
+  words: EditableWord[];
 }
 
 /** Editor's view of the story they're editing. */
@@ -132,11 +156,10 @@ export interface EditableStory {
   storyId: string;
   ownerName: string;
   prompt: string;
-  keyword: string;
-  sentences: Array<{
-    authorName: string;
-    words: EditableWord[];
-  }>;
+  /** The most recent sentence available for editing. */
+  editableSentence: EditableSentence;
+  /** Full story text so far (for context). */
+  sentences: StorySentenceView[];
 }
 
 /** Edit info for the reveal screen. */
@@ -146,7 +169,7 @@ export interface WordEditView {
   sentenceAuthor: string;
   originalWord: string;
   newWord: string;
-  editedOnTurn: number;
+  editedOnRound: number;
 }
 
 /** Per-story reveal info. */
@@ -155,8 +178,6 @@ export interface StoryRevealInfo {
   ownerName: string;
   editorUserId: string;
   editorName: string;
-  keyword: string;
-  keywordInStory: boolean;
   edits: WordEditView[];
   sentences: StorySentenceView[];
 }

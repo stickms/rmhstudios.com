@@ -249,6 +249,7 @@ export class UndercoverEditorGame extends BaseMinigame {
 
     for (let pi = 0; pi < this.state.playerIds.length; pi++) {
       const playerId = this.state.playerIds[pi];
+      // currentWriteRound is 1-indexed; subtract 1 to make the rotation 0-based
       const assignedStoryId = storyIds[(pi + this.state.currentWriteRound - 1) % this.state.numPlayers];
       this.state.writeAssignments.set(playerId, assignedStoryId);
     }
@@ -876,7 +877,14 @@ export class UndercoverEditorGame extends BaseMinigame {
 
     const storyIds = Array.from(this.state.stories.keys());
     const currentStory = this.state.stories.get(storyIds[this.state.readingStoryIndex]);
-    if (!currentStory) return;
+    if (!currentStory) {
+      logger.warn({
+        event: 'undercover_editor:reading_story_not_found',
+        lobbyId: this.context.lobbyId,
+        readingStoryIndex: this.state.readingStoryIndex,
+      });
+      return;
+    }
 
     if (this.state.readingSentenceIndex >= currentStory.sentences.length) {
       this.sendError(userId, 'All sentences revealed for this story');

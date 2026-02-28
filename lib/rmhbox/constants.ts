@@ -228,24 +228,17 @@ export const FF_QUESTION_DISTRIBUTION = { easy: 3, medium: 3, hard: 2 };
 
 export const UE_MIN_PLAYERS = 4;
 export const UE_MAX_PLAYERS = 10;
-export const UE_ROTATIONS = 2;
 export const UE_WRITE_TIMEOUT_SECONDS = 45;
 export const UE_EDIT_TIMEOUT_SECONDS = 30;
-export const UE_REVIEW_DURATION_SECONDS = 20;
-export const UE_ACCUSATION_DURATION_SECONDS = 30;
 export const UE_REVEAL_DURATION_SECONDS = 10;
 export const UE_DISCONNECT_TURN_WAIT_SECONDS = 15;
 export const UE_MIN_SENTENCE_LENGTH = 10;
 export const UE_MAX_SENTENCE_LENGTH = 200;
 export const UE_MAX_EDIT_WORD_LENGTH = 30;
+/** Number of words the editor must change in the most recent sentence per edit round. */
+export const UE_REQUIRED_EDITS_PER_ROUND = 2;
 export const UE_WRITER_MAJOR_WIN = 400;
-export const UE_WRITER_MINOR_WIN = 250;
 export const UE_WRITER_LOSS = 50;
-export const UE_WRITER_MINOR_LOSS = 100;
 export const UE_EDITOR_MAJOR_WIN = 600;
-export const UE_EDITOR_MINOR_WIN = 300;
-export const UE_EDITOR_PARTIAL = 200;
 export const UE_EDITOR_LOSS = 50;
 export const UE_CORRECT_VOTE_BONUS = 100;
-export const UE_KEYWORD_PROXIMITY_BONUS = 50;
-export const UE_KEYWORD_FUZZY_THRESHOLD = 0.7;
