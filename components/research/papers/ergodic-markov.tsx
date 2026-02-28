@@ -471,10 +471,10 @@ export function ErgodicMarkovPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      {/* 3. SPECTRAL ANALYSIS */}
-      <h2 style={h2Style}>3. Spectral Analysis of Tile-Adjacency Graphs</h2>
+      {/* 4. SPECTRAL ANALYSIS */}
+      <h2 style={h2Style}>4. Spectral Analysis of Tile-Adjacency Graphs</h2>
 
-      <h3 style={h3Style}>3.1 Eigenvalue Decomposition and the Spectral Gap</h3>
+      <h3 style={h3Style}>4.1 Eigenvalue Decomposition and the Spectral Gap</h3>
 
       <p className="mb-4">
         The transition matrix <Tex math="P" /> of a reversible Markov chain on a finite state
@@ -511,7 +511,7 @@ export function ErgodicMarkovPaper() {
         level sample can be produced in <Tex math="O(\gamma^{-1} \log |\Omega_A|)" /> steps.
       </p>
 
-      <h3 style={h3Style}>3.2 Cheeger Inequality and Conductance</h3>
+      <h3 style={h3Style}>4.2 Cheeger Inequality and Conductance</h3>
 
       <p className="mb-4">
         A powerful tool for bounding the spectral gap from below is the Cheeger inequality, which
@@ -954,8 +954,8 @@ export function ErgodicMarkovPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      {/* 4. LUDOMETRIC ENERGY FUNCTIONALS */}
-      <h2 style={h2Style}>4. Ludometric Energy Functionals</h2>
+      {/* 7. LUDOMETRIC ENERGY FUNCTIONALS */}
+      <h2 style={h2Style}>7. Ludometric Energy Functionals</h2>
 
       <p className="mb-4">
         The target distribution <Tex math="\pi" /> is specified as a Gibbs measure whose energy
@@ -979,7 +979,7 @@ export function ErgodicMarkovPaper() {
         weights and the individual terms are defined below.
       </p>
 
-      <h3 style={h3Style}>4.1 Navigational Entropy</h3>
+      <h3 style={h3Style}>7.1 Navigational Entropy</h3>
 
       <p className="mb-4">
         The navigational entropy quantifies the diversity of shortest-path routes between
@@ -1010,7 +1010,7 @@ export function ErgodicMarkovPaper() {
         random generation.
       </p>
 
-      <h3 style={h3Style}>4.2 Resource-Density Variance</h3>
+      <h3 style={h3Style}>7.2 Resource-Density Variance</h3>
 
       <p className="mb-4">
         Let <Tex math="\rho(x, r)" /> denote the density of resource type{' '}
@@ -1034,7 +1034,7 @@ export function ErgodicMarkovPaper() {
         during MCMC transitions at <Tex math="O(1)" /> cost per single-site flip.
       </p>
 
-      <h3 style={h3Style}>4.3 Encounter-Pacing Regularity</h3>
+      <h3 style={h3Style}>7.3 Encounter-Pacing Regularity</h3>
 
       <p className="mb-4">
         The encounter-pacing functional <Tex math="\Phi_{\text{enc}}(x)" /> quantifies the
@@ -1076,10 +1076,10 @@ export function ErgodicMarkovPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      {/* 5. MCMC SAMPLING AND MIXING */}
-      <h2 style={h2Style}>5. MCMC Sampling and Mixing</h2>
+      {/* 8. MCMC SAMPLING AND MIXING */}
+      <h2 style={h2Style}>8. MCMC Sampling and Mixing</h2>
 
-      <h3 style={h3Style}>5.1 Metropolis–Hastings on the Configuration Space</h3>
+      <h3 style={h3Style}>8.1 Metropolis–Hastings on the Configuration Space</h3>
 
       <p className="mb-4">
         The standard Metropolis–Hastings (MH) algorithm applied to our configuration space
@@ -1101,7 +1101,7 @@ export function ErgodicMarkovPaper() {
         <Tex math="\exp(-\beta \Delta E)" />.
       </p>
 
-      <h3 style={h3Style}>5.2 Spectral-Gap-Guided Acceleration</h3>
+      <h3 style={h3Style}>8.2 Spectral-Gap-Guided Acceleration</h3>
 
       <p className="mb-4">
         Vanilla MH sampling suffers from slow mixing when the energy landscape contains
@@ -1149,10 +1149,10 @@ export function ErgodicMarkovPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      {/* 8. GIBBS MEASURES AND PHASE TRANSITIONS */}
-      <h2 style={h2Style}>8. Gibbs Measures and Phase Transitions in the Design Space</h2>
+      {/* 9. GIBBS MEASURES AND PHASE TRANSITIONS */}
+      <h2 style={h2Style}>9. Gibbs Measures and Phase Transitions in the Design Space</h2>
 
-      <h3 style={h3Style}>8.1 Partition Function Asymptotics</h3>
+      <h3 style={h3Style}>9.1 Partition Function Asymptotics</h3>
 
       <p className="mb-4">
         The thermodynamic behavior of the tile-configuration Gibbs measure is governed by the
@@ -1239,7 +1239,7 @@ export function ErgodicMarkovPaper() {
         <Tex math="\beta \lesssim 0.8" /> for our tile-configuration energies.
       </p>
 
-      <h3 style={h3Style}>8.2 Critical Temperature and Metastability</h3>
+      <h3 style={h3Style}>9.2 Critical Temperature and Metastability</h3>
 
       <p className="mb-4">
         The phase structure of the tile-configuration model bears a deep analogy with the
@@ -2281,10 +2281,10 @@ export function ErgodicMarkovPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      {/* 6. EXPERIMENTAL EVALUATION */}
-      <h2 style={h2Style}>6. Experimental Evaluation</h2>
+      {/* 15. EXPERIMENTAL EVALUATION */}
+      <h2 style={h2Style}>15. Experimental Evaluation</h2>
 
-      <h3 style={h3Style}>6.1 Testbed and Methodology</h3>
+      <h3 style={h3Style}>15.1 Testbed and Methodology</h3>
 
       <p className="mb-4">
         We implemented the spectral-gap-guided MCMC sampler in a custom dungeon-generation
@@ -2302,7 +2302,7 @@ export function ErgodicMarkovPaper() {
         <Tex math="\Phi_{\text{enc}}" />, and the composite energy <Tex math="E(x)" />.
       </p>
 
-      <h3 style={h3Style}>6.2 Autocorrelation Analysis</h3>
+      <h3 style={h3Style}>15.2 Autocorrelation Analysis</h3>
 
       <p className="mb-4">
         A primary measure of sampler efficiency is the autocorrelation function of the energy
@@ -2337,7 +2337,7 @@ export function ErgodicMarkovPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      <h3 style={h3Style}>6.3 Quality Metric Distributions</h3>
+      <h3 style={h3Style}>15.3 Quality Metric Distributions</h3>
 
       <p className="mb-4">
         Across the 50,000-sample corpus, spectral-guided sampling produced levels with
@@ -2357,8 +2357,8 @@ export function ErgodicMarkovPaper() {
         optimum, consistent with the theoretical predictions of Section 3.
       </p>
 
-      {/* 7. HUMAN PLAYTESTING */}
-      <h2 style={h2Style}>7. Human Playtesting</h2>
+      {/* 16. HUMAN PLAYTESTING */}
+      <h2 style={h2Style}>16. Human Playtesting</h2>
 
       <p className="mb-4">
         To validate the ecological relevance of the automated quality metrics, we conducted a
@@ -2410,8 +2410,8 @@ export function ErgodicMarkovPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      {/* 16. ASYMPTOTIC OPTIMALITY AND MINIMAX ANALYSIS */}
-      <h2 style={h2Style}>16. Asymptotic Optimality and Minimax Analysis</h2>
+      {/* 17. ASYMPTOTIC OPTIMALITY AND MINIMAX ANALYSIS */}
+      <h2 style={h2Style}>17. Asymptotic Optimality and Minimax Analysis</h2>
 
       <p className="mb-4">
         The sampling efficiency improvements documented in the preceding sections raise a natural
@@ -2424,7 +2424,7 @@ export function ErgodicMarkovPaper() {
         nonparametric class of Gibbs measures indexed by the ludometric energy parameters.
       </p>
 
-      <h3 style={h3Style}>16.1 Minimax Risk for Level Quality Estimation</h3>
+      <h3 style={h3Style}>17.1 Minimax Risk for Level Quality Estimation</h3>
 
       <p className="mb-4">
         Let <Tex math="\mathcal{P}_\Theta = \{\pi_\theta : \theta \in \Theta \subseteq \mathbb{R}^d\}" />{' '}
@@ -2498,7 +2498,7 @@ export function ErgodicMarkovPaper() {
         empirical estimate from the truncated eigendecomposition.
       </p>
 
-      <h3 style={h3Style}>16.2 Asymptotic Efficiency of Spectral-Guided Sampling</h3>
+      <h3 style={h3Style}>17.2 Asymptotic Efficiency of Spectral-Guided Sampling</h3>
 
       <p className="mb-4">
         The asymptotic relative efficiency (ARE) of the spectral-guided estimator relative to
@@ -2557,8 +2557,8 @@ export function ErgodicMarkovPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      {/* 17. BAYESIAN HIERARCHICAL MODEL OF PLAYER PREFERENCES */}
-      <h2 style={h2Style}>17. Bayesian Hierarchical Model of Player Preferences</h2>
+      {/* 18. BAYESIAN HIERARCHICAL MODEL OF PLAYER PREFERENCES */}
+      <h2 style={h2Style}>18. Bayesian Hierarchical Model of Player Preferences</h2>
 
       <p className="mb-4">
         The ludometric energy functional <Tex math="\mathcal{E}(\sigma)" /> introduced in
@@ -2572,7 +2572,7 @@ export function ErgodicMarkovPaper() {
         conducted via Hamiltonian Monte Carlo (HMC) on the augmented parameter space.
       </p>
 
-      <h3 style={h3Style}>17.1 Hierarchical Likelihood Specification</h3>
+      <h3 style={h3Style}>18.1 Hierarchical Likelihood Specification</h3>
 
       <p className="mb-4">
         Let <Tex math="i = 1, \ldots, I" /> index players and{' '}
@@ -2632,7 +2632,7 @@ export function ErgodicMarkovPaper() {
         <Tex math="(\mu_\alpha, \Sigma_\alpha, \phi, \mathbf{c}, \alpha_1, \ldots, \alpha_I)" />.
       </p>
 
-      <h3 style={h3Style}>17.2 Posterior Inference via Hamiltonian Monte Carlo</h3>
+      <h3 style={h3Style}>18.2 Posterior Inference via Hamiltonian Monte Carlo</h3>
 
       <p className="mb-4">
         We employ Hamiltonian Monte Carlo (HMC) with the No-U-Turn Sampler (NUTS) adaptation
@@ -2706,8 +2706,8 @@ export function ErgodicMarkovPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      {/* 18. SENSITIVITY ANALYSIS AND ROBUSTNESS */}
-      <h2 style={h2Style}>18. Sensitivity Analysis and Robustness</h2>
+      {/* 19. SENSITIVITY ANALYSIS AND ROBUSTNESS */}
+      <h2 style={h2Style}>19. Sensitivity Analysis and Robustness</h2>
 
       <p className="mb-4">
         The practical deployment of the spectral-guided MCMC sampler depends on the specification
@@ -2723,7 +2723,7 @@ export function ErgodicMarkovPaper() {
         uncertainty.
       </p>
 
-      <h3 style={h3Style}>18.1 Local Sensitivity via Fisher Score</h3>
+      <h3 style={h3Style}>19.1 Local Sensitivity via Fisher Score</h3>
 
       <p className="mb-4">
         The local sensitivity of the expected energy{' '}
@@ -2791,7 +2791,7 @@ export function ErgodicMarkovPaper() {
         configurations.
       </p>
 
-      <h3 style={h3Style}>18.2 Global Sensitivity Analysis (Sobol Indices)</h3>
+      <h3 style={h3Style}>19.2 Global Sensitivity Analysis (Sobol Indices)</h3>
 
       <p className="mb-4">
         While the Fisher score captures infinitesimal sensitivities, global sensitivity
@@ -2872,8 +2872,8 @@ export function ErgodicMarkovPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      {/* 19. RELATED WORK */}
-      <h2 style={h2Style}>19. Related Work</h2>
+      {/* 20. RELATED WORK */}
+      <h2 style={h2Style}>20. Related Work</h2>
 
       <p className="mb-4">
         Procedural content generation (PCG) in games has evolved along several complementary trajectories.
@@ -2964,8 +2964,8 @@ export function ErgodicMarkovPaper() {
         sensitivity of the generated level distribution to perturbations of the energy weights.
       </p>
 
-      {/* 20. FUTURE DIRECTIONS */}
-      <h2 style={h2Style}>20. Future Directions</h2>
+      {/* 21. FUTURE DIRECTIONS */}
+      <h2 style={h2Style}>21. Future Directions</h2>
 
       <p className="mb-4">
         Several promising extensions of the present framework merit investigation. First,
@@ -3037,8 +3037,8 @@ export function ErgodicMarkovPaper() {
         and procedural terrain with provable quality guarantees.
       </p>
 
-      {/* 8. DISCUSSION */}
-      <h2 style={h2Style}>8. Discussion</h2>
+      {/* 22. DISCUSSION */}
+      <h2 style={h2Style}>22. Discussion</h2>
 
       <p className="mb-4">
         The foregoing results substantiate the hypothesis that spectral-theoretic methods applied
@@ -3086,8 +3086,8 @@ export function ErgodicMarkovPaper() {
         of level quality to parameter perturbations.
       </p>
 
-      {/* 9. CONCLUSION */}
-      <h2 style={h2Style}>9. Conclusion</h2>
+      {/* 23. CONCLUSION */}
+      <h2 style={h2Style}>23. Conclusion</h2>
 
       <p className="mb-4">
         We have presented a rigorous mathematical framework for procedural level generation
