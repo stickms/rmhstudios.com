@@ -4,7 +4,7 @@
  * Tests for the round-robin Undercover Editor minigame where:
  * - N players create N stories over 2N steps (N write + N edit)
  * - Each round, every player writes ONE sentence for ONE story
- * - After each write, editors secretly change 2 words
+ * - After each write, editors secretly change 1 or 2 words
  * - READING phase: host-driven sentence reveal
  * - REVIEW: match stories to editors (1-to-1)
  * - REVEAL: scores computed
@@ -353,6 +353,31 @@ describe('Undercover Editor Server Handler — Round-Robin Design (§6.2)', () =
         edits: [
           { wordIndex: 0, newWord: 'CHANGED1' },
           { wordIndex: 1, newWord: 'CHANGED2' },
+        ],
+      });
+
+      const confirmed = playerLog.find(
+        (e) => e.userId === editorUid &&
+          (e.data as Record<string, unknown>).type === 'UE_EDIT_CONFIRMED',
+      );
+      expect(confirmed).toBeDefined();
+    });
+
+    it('should allow editor to submit 1-word edit', () => {
+      const { game, playerLog } = createUEGame();
+      game.start();
+
+      const playerIds = Object.values(MOCK_USERS).map((u) => u.userId);
+      submitAllForCurrentRound(game, playerIds, playerLog);
+
+      const editorUid = playerIds[0];
+      const assignment = getEditorAssignment(playerLog, editorUid);
+      expect(assignment).toBeDefined();
+
+      game.handleInput(editorUid, 'EDIT_TWO_WORDS', {
+        storyId: assignment!.assignedStoryId,
+        edits: [
+          { wordIndex: 0, newWord: 'ONLYONE' },
         ],
       });
 

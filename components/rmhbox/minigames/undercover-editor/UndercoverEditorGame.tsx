@@ -26,7 +26,7 @@ import WriteInput from './WriteInput';
 import StoryEditor from './StoryEditor';
 import type { EditableStory } from './StoryEditor';
 import MatchingPanel from './MatchingPanel';
-import RoleBadge from './RoleBadge';
+
 import { ChevronRight } from 'lucide-react';
 
 // ─── Types ───────────────────────────────────────────────────────
@@ -107,7 +107,7 @@ export default function UndercoverEditorGame({
 
   // ─── Spectator / Host ──────────────────────────────────────
   const isSpectator = useRMHboxStore((s) => s.lobby?.myRole === 'spectator');
-  const isHost = useRMHboxStore((s) => s.lobby?.hostId === s.lobby?.myUserId);
+  const isHost = useRMHboxStore((s) => s.lobby?.hostUserId === s.lobby?.myUserId);
 
   // ─── State ─────────────────────────────────────────────────
   const [phase, setPhase] = useState<Phase>('LOBBY');
@@ -462,22 +462,15 @@ export default function UndercoverEditorGame({
     <div className="flex w-full flex-col items-center gap-4">
       {/* Spectator indicator */}
       {isSpectator && (
-        <div className="rounded-lg bg-purple-500/10 border border-purple-500/30 px-3 py-1.5 text-xs font-medium text-purple-400">
+        <div className="rounded-lg bg-(--rmhbox-rare-dim) border border-(--rmhbox-rare)/30 px-3 py-1.5 text-xs font-medium text-(--rmhbox-rare)">
           👁 Spectating
         </div>
       )}
 
       {/* Error toast */}
       {errorMessage && (
-        <div className="rounded-lg bg-red-500/10 border border-red-500/30 px-3 py-1.5 text-xs text-red-400">
+        <div className="rounded-lg bg-(--rmhbox-danger-dim) border border-(--rmhbox-danger)/30 px-3 py-1.5 text-xs text-(--rmhbox-danger)">
           {errorMessage}
-        </div>
-      )}
-
-      {/* Persistent role badge — shows assigned story */}
-      {assignedStoryId && !isSpectator && (
-        <div className="self-end">
-          <RoleBadge role="editor" />
         </div>
       )}
 
@@ -539,7 +532,7 @@ export default function UndercoverEditorGame({
                 {/* Write input or submitted indicator */}
                 {mySubmission ? (
                   <div className="flex items-center gap-2">
-                    <p className="flex-1 rounded-lg bg-green-500/10 border border-green-500/30 px-3 py-2 text-sm text-green-400">
+                    <p className="flex-1 rounded-lg bg-(--rmhbox-success-dim) border border-(--rmhbox-success)/30 px-3 py-2 text-sm text-(--rmhbox-success)">
                       ✓ {mySubmission}
                     </p>
                     <button
@@ -598,7 +591,7 @@ export default function UndercoverEditorGame({
               />
             ) : editDone ? (
               <div className="flex flex-col items-center gap-3 p-8">
-                <p className="text-lg font-bold text-green-400">✓ Edit Complete</p>
+                <p className="text-lg font-bold text-(--rmhbox-success)">✓ Edit Complete</p>
                 <p className="text-sm text-(--rmhbox-text-muted)">
                   Waiting for other editors…
                 </p>
@@ -750,8 +743,8 @@ export default function UndercoverEditorGame({
                         {myGuess && (
                           <span className={`text-xs px-2 py-0.5 rounded-full ${
                             myGuess.correct
-                              ? 'bg-green-500/20 text-green-400'
-                              : 'bg-red-500/20 text-red-400'
+                              ? 'bg-(--rmhbox-success-dim) text-(--rmhbox-success)'
+                              : 'bg-(--rmhbox-danger-dim) text-(--rmhbox-danger)'
                           }`}>
                             {myGuess.correct ? '✓ Correct' : '✗ Wrong'}
                           </span>
@@ -765,9 +758,9 @@ export default function UndercoverEditorGame({
                           <p className="font-medium mb-1">Edits made:</p>
                           {reveal.edits.map((edit, i) => (
                             <p key={i}>
-                              <span className="line-through text-red-400">{edit.originalWord}</span>
+                              <span className="line-through text-(--rmhbox-danger)">{edit.originalWord}</span>
                               {' → '}
-                              <span className="text-green-400">{edit.newWord}</span>
+                              <span className="text-(--rmhbox-success)">{edit.newWord}</span>
                             </p>
                           ))}
                         </div>

@@ -87,11 +87,11 @@ export default function UndercoverEditorHistoryDetail({
                       {sentenceEdits.map((edit, ei) => (
                         <span
                           key={ei}
-                          className="inline-flex items-center gap-1 rounded-full bg-purple-500/15 px-2 py-0.5 text-[10px]"
+                          className="inline-flex items-center gap-1 rounded-full bg-(--rmhbox-rare-dim) px-2 py-0.5 text-[10px]"
                         >
-                          <span className="line-through text-red-400">{edit.originalWord}</span>
+                          <span className="line-through text-(--rmhbox-danger)">{edit.originalWord}</span>
                           <span className="text-(--rmhbox-text-muted)">→</span>
-                          <span className="text-green-400 font-medium">{edit.newWord}</span>
+                          <span className="text-(--rmhbox-success) font-medium">{edit.newWord}</span>
                         </span>
                       ))}
                     </div>
@@ -111,7 +111,7 @@ export default function UndercoverEditorHistoryDetail({
             <p className="text-(--rmhbox-text)">
               Editor:{' '}
               <span className={`font-bold ${
-                reveal.editorUserId === currentUserId ? 'text-(--rmhbox-accent)' : 'text-purple-400'
+                reveal.editorUserId === currentUserId ? 'text-(--rmhbox-accent)' : 'text-(--rmhbox-rare)'
               }`}>
                 {reveal.editorName}
               </span>

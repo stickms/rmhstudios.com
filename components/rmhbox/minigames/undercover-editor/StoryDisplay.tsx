@@ -68,9 +68,9 @@ function renderSentenceText(
         key={keyIdx++}
         className="inline-flex items-center gap-1"
       >
-        <span className="line-through text-red-400/70 text-sm">{edit.originalWord}</span>
-        <span className="font-semibold text-green-400">→</span>
-        <span className="font-semibold text-green-400 underline decoration-green-400/50">
+        <span className="line-through text-(--rmhbox-danger)/70 text-sm">{edit.originalWord}</span>
+        <span className="font-semibold text-(--rmhbox-success)">→</span>
+        <span className="font-semibold text-(--rmhbox-success) underline decoration-(--rmhbox-success)/50">
           {edit.newWord}
         </span>
       </span>,

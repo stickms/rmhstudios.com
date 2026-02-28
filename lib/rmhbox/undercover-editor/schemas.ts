@@ -33,16 +33,16 @@ export const UnsubmitSentenceSchema = z.object({
 });
 
 /**
- * Validates the Editor's 2-word edit during EDIT phase.
- * The editor must change exactly 2 words in the most recent sentence.
- * Both edits are submitted together as a single action.
+ * Validates the Editor's word edit during EDIT phase.
+ * The editor must change 1 or 2 words in the most recent sentence.
+ * All edits are submitted together as a single action.
  */
 export const EditTwoWordsSchema = z.object({
   storyId: z.string().min(1),
   edits: z.array(z.object({
     wordIndex: z.number().int().min(0),
     newWord: z.string().min(1).max(UE_MAX_EDIT_WORD_LENGTH).regex(/^\S+$/),
-  })).length(2),
+  })).min(1).max(2),
 });
 
 /** Validates the Editor's choice to skip editing this round. */

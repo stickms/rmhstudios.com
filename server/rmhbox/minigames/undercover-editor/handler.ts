@@ -766,13 +766,13 @@ export class UndercoverEditorGame extends BaseMinigame {
       }
     }
 
-    // The two edits must target different words
-    if (edits[0].wordIndex === edits[1].wordIndex) {
+    // If 2 edits, they must target different words
+    if (edits.length === 2 && edits[0].wordIndex === edits[1].wordIndex) {
       this.sendError(userId, 'Must edit two different words');
       return;
     }
 
-    // Apply both edits atomically
+    // Apply edits atomically
     for (const edit of edits) {
       const originalWord = sentence.words[edit.wordIndex];
       const newWord = sanitizeString(edit.newWord);

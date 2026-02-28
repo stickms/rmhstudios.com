@@ -24,8 +24,8 @@ export default function RoleBadge({ role }: RoleBadgeProps) {
       animate={{ opacity: 1, y: 0 }}
       className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${
         isEditor
-          ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-          : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+          ? 'bg-(--rmhbox-rare-dim) text-(--rmhbox-rare) border border-(--rmhbox-rare)/30'
+          : 'bg-(--rmhbox-accent-dim) text-(--rmhbox-accent) border border-(--rmhbox-accent)/30'
       }`}
     >
       <span>{isEditor ? '✏️' : '🔎'}</span>

@@ -103,8 +103,8 @@ export default function WriteInput({
             charCount < MIN_LENGTH
               ? 'text-(--rmhbox-text-muted)'
               : charCount >= MAX_LENGTH
-                ? 'text-red-400'
-                : 'text-green-400'
+                ? 'text-(--rmhbox-danger)'
+                : 'text-(--rmhbox-success)'
           }`}
         >
           {charCount}/{MAX_LENGTH}

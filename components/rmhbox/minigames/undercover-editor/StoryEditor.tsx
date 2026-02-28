@@ -1,15 +1,15 @@
 /**
- * StoryEditor — Editor's secret 2-word edit UI for Undercover Editor.
+ * StoryEditor — Editor's secret word-edit UI for Undercover Editor.
  *
- * The editor must select and change exactly 2 different words in the most
- * recent sentence. Displays the story for context with the editable sentence
- * highlighted. Each word is a tappable token; clicking a word opens an inline
- * replacement input. After selecting 2 edits, the editor submits them together.
+ * The editor must select and change 1 or 2 different words in the most
+ * recent sentence. Displays the story prompt and context with the editable
+ * sentence highlighted. Each word is a tappable token; clicking a word opens
+ * an inline replacement input.
  *
  * Props:
  *   editableStory: EditableStory — Story with word tokens for the last sentence
  *   timeRemaining: number — Seconds left for the edit phase
- *   onEdit: (storyId, edits) => void — Submit the 2-word edit
+ *   onEdit: (storyId, edits) => void — Submit word edits (1 or 2)
  *   onSkip: () => void — Skip editing this round
  */
 'use client';
@@ -56,7 +56,8 @@ interface StoryEditorProps {
 }
 
 const MAX_WORD_LENGTH = 30;
-const REQUIRED_EDITS = 2;
+const MIN_EDITS = 1;
+const MAX_EDITS = 2;
 
 export default function StoryEditor({
   editableStory,
@@ -64,7 +65,7 @@ export default function StoryEditor({
   onEdit,
   onSkip,
 }: StoryEditorProps) {
-  // Track the 2 pending edits (submitted together)
+  // Track the 1–2 pending edits (submitted together)
   const [pendingEdits, setPendingEdits] = useState<PendingEdit[]>([]);
   const [editingWordIndex, setEditingWordIndex] = useState<number | null>(null);
   const [editValue, setEditValue] = useState('');
@@ -75,7 +76,7 @@ export default function StoryEditor({
   const handleWordClick = useCallback((wordIndex: number, currentWord: string) => {
     // Don't allow editing a word that already has a pending edit
     if (pendingEdits.some((e) => e.wordIndex === wordIndex)) return;
-    if (pendingEdits.length >= REQUIRED_EDITS) return;
+    if (pendingEdits.length >= MAX_EDITS) return;
     setEditingWordIndex(wordIndex);
     setEditValue(currentWord);
   }, [pendingEdits]);
@@ -105,7 +106,7 @@ export default function StoryEditor({
   }, []);
 
   const handleSubmitEdits = useCallback(() => {
-    if (pendingEdits.length !== REQUIRED_EDITS || submitted) return;
+    if (pendingEdits.length < MIN_EDITS || pendingEdits.length > MAX_EDITS || submitted) return;
     setSubmitted(true);
     onEdit(
       editableStory.storyId,
@@ -122,18 +123,18 @@ export default function StoryEditor({
     }
   };
 
-  const canSelectMore = pendingEdits.length < REQUIRED_EDITS;
+  const canSelectMore = pendingEdits.length < MAX_EDITS;
 
   return (
     <div className="flex w-full max-w-2xl flex-col gap-4 text-(--rmhbox-text)">
       {/* Header with timer */}
-      <div className="flex items-center justify-between rounded-xl border border-purple-500/30 bg-purple-500/10 p-3">
+      <div className="flex items-center justify-between rounded-xl border border-(--rmhbox-rare)/30 bg-(--rmhbox-rare-dim) p-3">
         <div className="flex items-center gap-2">
-          <span className="text-xs uppercase tracking-wider text-purple-300">
+          <span className="text-xs uppercase tracking-wider text-(--rmhbox-rare)">
             ✏️ Secret Editor
           </span>
-          <span className="rounded-md bg-purple-500/30 px-2 py-0.5 text-xs text-purple-200">
-            {pendingEdits.length}/{REQUIRED_EDITS} edits selected
+          <span className="rounded-md bg-(--rmhbox-rare)/30 px-2 py-0.5 text-xs text-(--rmhbox-rare)">
+            {pendingEdits.length}/{MAX_EDITS} edits selected
           </span>
         </div>
         <div className="flex items-center gap-1.5 text-sm text-(--rmhbox-text-muted)">
@@ -144,11 +145,17 @@ export default function StoryEditor({
 
       {/* Instructions */}
       <p className="text-center text-xs text-(--rmhbox-text-muted)">
-        Select exactly <span className="font-bold text-purple-300">2 words</span> in the latest sentence to replace.
+        Select <span className="font-bold text-(--rmhbox-rare)">1 or 2 words</span> in the latest sentence to replace.
         {canSelectMore
           ? ` Tap an underlined word to edit it.`
           : ' Ready to submit!'}
       </p>
+
+      {/* Story prompt */}
+      <div className="rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) p-3">
+        <p className="text-[10px] uppercase tracking-wider text-(--rmhbox-text-muted) mb-1">Prompt</p>
+        <p className="text-sm italic text-(--rmhbox-accent)">&ldquo;{editableStory.prompt}&rdquo;</p>
+      </div>
 
       {/* Story context (previous sentences — read only) */}
       {editableStory.sentences.length > 1 && (
@@ -165,7 +172,7 @@ export default function StoryEditor({
       )}
 
       {/* Editable sentence — word-level tokens */}
-      <div className="rounded-xl border border-purple-500/30 bg-(--rmhbox-surface) p-4">
+      <div className="rounded-xl border border-(--rmhbox-rare)/30 bg-(--rmhbox-surface) p-4">
         <p className="mb-2 text-[10px] text-(--rmhbox-text-muted)">
           Latest sentence — by {editableSentence.authorName}
         </p>
@@ -186,18 +193,18 @@ export default function StoryEditor({
                     }
                     onKeyDown={handleKeyDown}
                     autoFocus
-                    className="w-24 rounded border border-purple-500/50 bg-(--rmhbox-surface) px-1.5 py-0.5 text-sm text-(--rmhbox-text) focus:outline-none focus:ring-1 focus:ring-purple-500"
+                    className="w-24 rounded border border-(--rmhbox-rare)/50 bg-(--rmhbox-surface) px-1.5 py-0.5 text-sm text-(--rmhbox-text) focus:outline-none focus:ring-1 focus:ring-(--rmhbox-rare)"
                   />
                   <button
                     onClick={handleConfirmWord}
                     disabled={!editValue.trim() || editValue.trim().includes(' ')}
-                    className="rounded p-0.5 text-green-400 hover:bg-green-400/20 disabled:opacity-30"
+                    className="rounded p-0.5 text-(--rmhbox-success) hover:bg-(--rmhbox-success-dim) disabled:opacity-30"
                   >
                     <Check className="h-3.5 w-3.5" />
                   </button>
                   <button
                     onClick={handleCancelWord}
-                    className="rounded p-0.5 text-red-400 hover:bg-red-400/20"
+                    className="rounded p-0.5 text-(--rmhbox-danger) hover:bg-(--rmhbox-danger-dim)"
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
@@ -209,12 +216,12 @@ export default function StoryEditor({
               return (
                 <span
                   key={token.index}
-                  className="inline-flex items-center gap-1 rounded bg-purple-500/20 px-1 py-0.5 cursor-pointer"
+                  className="inline-flex items-center gap-1 rounded bg-(--rmhbox-rare-dim) px-1 py-0.5 cursor-pointer"
                   onClick={() => handleRemovePendingEdit(token.index)}
                   title="Click to undo this edit"
                 >
-                  <span className="line-through text-red-400/70 text-sm">{pendingEdit!.originalWord}</span>
-                  <span className="text-green-400 font-semibold text-sm">{pendingEdit!.newWord}</span>
+                  <span className="line-through text-(--rmhbox-danger)/70 text-sm">{pendingEdit!.originalWord}</span>
+                  <span className="text-(--rmhbox-success) font-semibold text-sm">{pendingEdit!.newWord}</span>
                   <X className="h-3 w-3 text-(--rmhbox-text-muted)" />
                 </span>
               );
@@ -230,7 +237,7 @@ export default function StoryEditor({
                 }
                 className={`text-sm ${
                   canSelectMore
-                    ? 'cursor-pointer underline decoration-purple-400/50 text-(--rmhbox-text) hover:bg-purple-500/20 rounded px-0.5 transition-colors'
+                    ? 'cursor-pointer underline decoration-(--rmhbox-rare)/50 text-(--rmhbox-text) hover:bg-(--rmhbox-rare-dim) rounded px-0.5 transition-colors'
                     : 'text-(--rmhbox-text) opacity-60'
                 }`}
               >
@@ -247,11 +254,11 @@ export default function StoryEditor({
           {pendingEdits.map((edit) => (
             <span
               key={edit.wordIndex}
-              className="inline-flex items-center gap-1 rounded-full bg-purple-500/15 px-2 py-0.5 text-xs"
+              className="inline-flex items-center gap-1 rounded-full bg-(--rmhbox-rare-dim) px-2 py-0.5 text-xs"
             >
-              <span className="line-through text-red-400">{edit.originalWord}</span>
+              <span className="line-through text-(--rmhbox-danger)">{edit.originalWord}</span>
               <span className="text-(--rmhbox-text-muted)">→</span>
-              <span className="text-green-400 font-medium">{edit.newWord}</span>
+              <span className="text-(--rmhbox-success) font-medium">{edit.newWord}</span>
             </span>
           ))}
         </div>
@@ -261,7 +268,7 @@ export default function StoryEditor({
       <div className="flex items-center justify-center gap-3">
         <button
           onClick={handleSubmitEdits}
-          disabled={pendingEdits.length !== REQUIRED_EDITS || submitted}
+          disabled={pendingEdits.length < MIN_EDITS || pendingEdits.length > MAX_EDITS || submitted}
           className="flex items-center justify-center gap-2 rounded-lg bg-(--rmhbox-accent) px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40"
         >
           <Send className="h-4 w-4" />

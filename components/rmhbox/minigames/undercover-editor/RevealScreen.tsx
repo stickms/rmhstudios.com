@@ -83,8 +83,8 @@ export default function RevealScreen({
               {myGuess && (
                 <span className={`text-xs px-2 py-0.5 rounded-full ${
                   myGuess.correct
-                    ? 'bg-green-500/20 text-green-400'
-                    : 'bg-red-500/20 text-red-400'
+                    ? 'bg-(--rmhbox-success-dim) text-(--rmhbox-success)'
+                    : 'bg-(--rmhbox-danger-dim) text-(--rmhbox-danger)'
                 }`}>
                   {myGuess.correct ? '✓ Correct' : '✗ Wrong'}
                 </span>
@@ -93,9 +93,9 @@ export default function RevealScreen({
 
             {/* Editor reveal */}
             <div className="flex items-center gap-2 mb-2">
-              <Eye className="h-4 w-4 text-purple-400" />
+              <Eye className="h-4 w-4 text-(--rmhbox-rare)" />
               <span className="text-sm text-(--rmhbox-text-muted)">Editor:</span>
-              <span className="font-bold text-purple-400">{reveal.editorName}</span>
+              <span className="font-bold text-(--rmhbox-rare)">{reveal.editorName}</span>
             </div>
 
             {/* Edits */}
@@ -110,9 +110,9 @@ export default function RevealScreen({
                       <span className="text-(--rmhbox-text-muted) text-xs">
                         ({edit.sentenceAuthor})
                       </span>
-                      <span className="line-through text-red-400">{edit.originalWord}</span>
+                      <span className="line-through text-(--rmhbox-danger)">{edit.originalWord}</span>
                       <span className="text-(--rmhbox-text-muted)">→</span>
-                      <span className="font-semibold text-green-400">{edit.newWord}</span>
+                      <span className="font-semibold text-(--rmhbox-success)">{edit.newWord}</span>
                     </div>
                   ))}
                 </div>

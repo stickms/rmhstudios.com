@@ -198,7 +198,7 @@ export default function MatchingPanel({
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-            className="flex items-center gap-1.5 rounded-full bg-green-500/15 px-4 py-1.5 text-sm font-semibold text-green-400"
+            className="flex items-center gap-1.5 rounded-full bg-(--rmhbox-success-dim) px-4 py-1.5 text-sm font-semibold text-(--rmhbox-success)"
           >
             ✓ Locked In
           </motion.div>
