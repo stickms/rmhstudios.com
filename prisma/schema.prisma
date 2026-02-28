@@ -36,7 +36,6 @@ model User {
   rmhtypeProfiles RmhTypeProfile[]
   rmhstudyProfile RmhStudyProfile?
   voidBreakerProfile VoidBreakerPlayer?
-  lightsOutScores LightsOutScore[]
 
   // Slice-It Library Relations
   uploadedSongs  Song[]        @relation("SongUploader")
@@ -142,23 +141,6 @@ model LaundryPlayer {
   user          User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([highScore(sort: Desc)], map: "idx_laundry_high_score")
-}
-
-model LightsOutScore {
-  id        String   @id @default(cuid())
-  userId    String
-  dateKey   String   // YYYY-MM-DD
-  moves     Int      @default(0)
-  hintUsed  Boolean  @default(false)
-  dnf       Boolean  @default(false)
-  createdAt DateTime @default(now()) @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, dateKey])
-  @@index([dateKey, moves(sort: Asc)])
-  @@index([dateKey, dnf(sort: Asc)])
-  @@map("lights_out_score")
 }
 
 // Slice It Player Model
