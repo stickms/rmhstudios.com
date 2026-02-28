@@ -17,6 +17,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
     .filter(href => href.startsWith('/'));
 
   const isExcludedPage = [...gameRoutes, ...appRoutes, '/secret'].some(route => pathname?.startsWith(route));
+  const isHomepage = pathname === '/';
 
   if (isExcludedPage) {
     return (
@@ -24,6 +25,11 @@ export function Shell({ children }: { children: React.ReactNode }) {
             {children}
         </main>
     );
+  }
+
+  // Homepage and profile pages use their own FeedLayout (no Navbar/Footer)
+  if (isHomepage || pathname?.startsWith('/profile')) {
+    return <>{children}</>;
   }
 
   return (

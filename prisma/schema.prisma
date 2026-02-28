@@ -58,6 +58,18 @@ model User {
   // Site Feedback
   feedbacks            Feedback[]
 
+  // RMHeet (Feed) Relations
+  rmheets              RMHeet[]
+  rmheetLikes          RMHeetLike[]
+  rmheetComments       RMHeetComment[]
+  rmheetReposts        RMHeetRepost[]
+  rmheetViews          RMHeetView[]
+
+  // Profile & Social
+  profile              UserProfile?
+  followers            Follow[]    @relation("UserFollowing")
+  following            Follow[]    @relation("UserFollowers")
+
   @@map("user")
 }
 
@@ -858,4 +870,123 @@ model AltairMatchPlayer {
   @@index([userId])
   @@index([createdAt(sort: Desc)])
   @@map("altair_match_player")
+}
+
+// ─── RMHeet (Feed) Models ─────────────────────────────────────────
+
+model RMHeet {
+  id        String   @id @default(cuid())
+  userId    String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  likes     RMHeetLike[]
+  comments  RMHeetComment[]
+  reposts   RMHeetRepost[]
+  views     RMHeetView[]
+
+  // Self-relation for reposts (quote-repost displays the original inline)
+  originalId String?
+  original   RMHeet?  @relation("RMHeetReposts", fields: [originalId], references: [id], onDelete: SetNull)
+  repostedBy RMHeet[] @relation("RMHeetReposts")
+
+  @@index([userId])
+  @@index([createdAt(sort: Desc)])
+  @@map("rmheet")
+}
+
+model RMHeetLike {
+  id        String   @id @default(cuid())
+  rmheetId  String
+  userId    String
+  createdAt DateTime @default(now())
+
+  rmheet    RMHeet   @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([rmheetId, userId])
+  @@map("rmheet_like")
+}
+
+model RMHeetComment {
+  id        String   @id @default(cuid())
+  rmheetId  String
+  userId    String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  rmheet    RMHeet   @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Optional threaded replies
+  parentId  String?
+  parent    RMHeetComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: SetNull)
+  replies   RMHeetComment[] @relation("CommentReplies")
+
+  @@index([rmheetId, createdAt(sort: Desc)])
+  @@map("rmheet_comment")
+}
+
+model RMHeetRepost {
+  id        String   @id @default(cuid())
+  rmheetId  String
+  userId    String
+  createdAt DateTime @default(now())
+
+  rmheet    RMHeet   @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([rmheetId, userId])
+  @@map("rmheet_repost")
+}
+
+model RMHeetView {
+  id        String   @id @default(cuid())
+  rmheetId  String
+  userId    String?
+  ipHash    String?
+  createdAt DateTime @default(now())
+
+  rmheet    RMHeet   @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([rmheetId, userId])
+  @@unique([rmheetId, ipHash])
+  @@index([rmheetId])
+  @@map("rmheet_view")
+}
+
+// ─── User Profile (Social) ──────────────────────────────────────
+
+model UserProfile {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bio       String?  @db.VarChar(160)
+  location  String?  @db.VarChar(100)
+  website   String?  @db.VarChar(200)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("user_profile")
+}
+
+// ─── Follow Relation ─────────────────────────────────────────────
+
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  follower  User @relation("UserFollowers", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("UserFollowing", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+  @@map("follow")
 }

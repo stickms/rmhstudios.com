@@ -100,8 +100,8 @@ const dancingScript = Dancing_Script({
 });
 
 export const metadata: Metadata = {
-  title: "RMH Studios | Game Development Studio",
-  description: "RMH Studios - Crafting Digital Worlds. An indie game development studio with exciting projects in the works.",
+  title: "RMH | The Everything Platform",
+  description: "RMH - The Everything Platform. Games, apps, research, and more.",
 };
 
 /**

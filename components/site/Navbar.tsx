@@ -44,9 +44,9 @@ export function Navbar() {
     { href: '/games', label: 'Games' },
     { href: '/apps', label: 'Apps' },
     { href: '/news', label: 'News' },
-    { href: '/roadmap', label: 'Roadmap' },
     { href: '/research', label: 'Research' },
     { href: '/blog', label: 'Blog' },
+    { href: '/roadmap', label: 'Roadmap' },
   ];
 
   const handleSignOut = async () => {
