@@ -25,6 +25,14 @@ export interface CrashRecord {
   categoryIndex: number;
 }
 
+/** A vote (crash or safe) on a player's answer during peer review. */
+export interface VoteRecord {
+  voterId: string;
+  targetUserId: string;
+  categoryIndex: number;
+  vote: 'crash' | 'safe';
+}
+
 /** Per-player result for a single round. */
 export interface CCPlayerResult {
   userId: string;
@@ -65,8 +73,12 @@ export interface CategoryCrashState {
   answers: Record<string, (string | null)[]>;
   /** Whether a player's answers are locked (submitted). */
   locked: Record<string, boolean>;
-  /** Crash votes for the current round. */
+  /** Crash votes for the current round (legacy). */
   crashes: CrashRecord[];
+  /** Crash/safe votes for the current round. */
+  votes: VoteRecord[];
+  /** The category index currently being voted on (host-directed, one at a time). */
+  currentVotingCategoryIndex: number;
   /** Anonymization mapping: real userId → anonymous label (set during PEER_REVIEW). */
   anonymizationMap: Record<string, string>;
   /** Reverse map: anonymous label → real userId. */

@@ -121,6 +121,10 @@ export interface MinimalistMasterpieceState {
   /** Winner of each painting in the auction (highest bidder). */
   auctionWinners: Map<string, AuctionWinner>;
   rankings: MMRanking[] | null;
+  /** Players who have submitted (finalized) their bids in the auction phase. */
+  bidSubmissions: Set<string>;
+  /** Players who have explicitly submitted (locked in) their drawing. */
+  drawingSubmissions: Set<string>;
   /** Cumulative player scores across all rounds. */
   cumulativeScores: Map<string, number>;
   phaseStartedAt: number;

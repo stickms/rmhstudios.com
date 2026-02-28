@@ -78,7 +78,31 @@ export default function LeaderboardPanel() {
             {entries.map((entry) => (
               <tr key={entry.userId} className="border-t border-(--rmhbox-border)">
                 <td className="py-1.5 pr-2 font-bold text-(--rmhbox-accent)">{entry.rank}</td>
-                <td className="py-1.5 pr-2 text-(--rmhbox-text)">{entry.userName}</td>
+                <td className="py-1.5 pr-2 text-(--rmhbox-text)">
+                  <div className="flex items-center gap-2">
+                    {entry.avatarUrl ? (
+                      <img
+                        src={entry.avatarUrl}
+                        alt={entry.userName}
+                        className="h-6 w-6 shrink-0 rounded-full object-cover"
+                        loading="lazy"
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          const fallback = target.nextElementSibling as HTMLElement | null;
+                          target.style.display = 'none';
+                          if (fallback) fallback.style.display = '';
+                        }}
+                      />
+                    ) : null}
+                    <div
+                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-(--rmhbox-accent) text-[10px] font-bold text-white"
+                      style={entry.avatarUrl ? { display: 'none' } : undefined}
+                    >
+                      {entry.userName.charAt(0).toUpperCase()}
+                    </div>
+                    <span className="truncate">{entry.userName}</span>
+                  </div>
+                </td>
                 <td className="py-1.5 text-right font-mono text-(--rmhbox-text)">{entry.value}</td>
               </tr>
             ))}

@@ -340,13 +340,27 @@ describe('Category Crash Settings Integration (§5.3 × §12A)', () => {
     return { game, ...ctx };
   }
 
+  /** Advance a CC game past the peer review phase by having the host advance through all voting categories. */
+  function advancePastPeerReview(game: CategoryCrashMinigame, hostId: string, categoryCount: number) {
+    for (let i = 0; i < categoryCount; i++) {
+      game.handleInput(hostId, 'ADVANCE_VOTING', {});
+    }
+  }
+
   describe('totalRounds setting', () => {
     it('should use default total rounds when no settings provided', () => {
       const { game, broadcastLog } = createCCGame();
       game.start();
 
-      // Advance through the full game
-      vi.advanceTimersByTime(600_000);
+      // Advance through the full game (with host-directed peer review)
+      for (let round = 0; round < CC_TOTAL_ROUNDS; round++) {
+        // Advance past REVEAL + INPUT phases
+        vi.advanceTimersByTime(200_000);
+        // Host advances through all 5 voting categories in peer review
+        advancePastPeerReview(game, MOCK_USERS.alice.userId, CC_CATEGORIES_PER_ROUND);
+        // Advance past CRASH_RESOLUTION + ROUND_RESULTS
+        vi.advanceTimersByTime(200_000);
+      }
 
       const roundStarts = findActionBroadcasts(broadcastLog, 'CC_ROUND_START');
       expect(roundStarts.length).toBe(CC_TOTAL_ROUNDS);
@@ -356,7 +370,12 @@ describe('Category Crash Settings Integration (§5.3 × §12A)', () => {
       const { game, broadcastLog } = createCCGame({ totalRounds: 1 });
       game.start();
 
-      vi.advanceTimersByTime(600_000);
+      // Advance past REVEAL + INPUT phases
+      vi.advanceTimersByTime(200_000);
+      // Host advances through all voting categories in peer review
+      advancePastPeerReview(game, MOCK_USERS.alice.userId, CC_CATEGORIES_PER_ROUND);
+      // Advance past CRASH_RESOLUTION + ROUND_RESULTS
+      vi.advanceTimersByTime(200_000);
 
       const roundStarts = findActionBroadcasts(broadcastLog, 'CC_ROUND_START');
       expect(roundStarts.length).toBe(1);

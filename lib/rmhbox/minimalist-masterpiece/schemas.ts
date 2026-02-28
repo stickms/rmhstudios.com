@@ -35,6 +35,9 @@ export const SubmitDrawingSchema = z.object({
   backgroundColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().default('#ffffff'),
 });
 
+/** Auto-save schema — same shape as submit but does not lock the drawing. */
+export const SaveDrawingSchema = SubmitDrawingSchema;
+
 // ─── Place Bid Schema ────────────────────────────────────────────
 
 export const PlaceBidSchema = z.object({
