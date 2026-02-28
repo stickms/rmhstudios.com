@@ -8,6 +8,7 @@ import {
   Home, Gamepad2, AppWindow, Newspaper, Map, FlaskConical, BookOpen,
   Palette, ChevronDown, LogOut, PenSquare, User,
 } from 'lucide-react';
+import { ComposeModal } from './ComposeModal';
 import { Button } from '@/components/ui/button';
 import { useThemeStore, SITE_STYLES } from '@/stores/themeStore';
 
@@ -34,6 +35,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
   const [showStyleMenu, setShowStyleMenu] = useState(false);
+  const [composeOpen, setComposeOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const { style, setStyle } = useThemeStore();
   const styleMenuRef = useRef<HTMLDivElement>(null);
@@ -208,19 +210,25 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
 
       {/* Post CTA */}
       {mounted && session && (
-        <Button
-          variant="accent"
-          className="mt-3 w-full"
-          onClick={() => {
-            // Scroll to compose box and focus it
-            const el = document.getElementById('compose-box');
-            el?.scrollIntoView({ behavior: 'smooth' });
-            el?.focus();
-          }}
-        >
-          <PenSquare className={`w-4 h-4 ${iconMrClass}`} />
-          <span className={labelClass}>Post</span>
-        </Button>
+        <>
+          <Button
+            variant="accent"
+            className="mt-3 w-full"
+            onClick={() => {
+              const el = document.getElementById('compose-box');
+              if (el && el.getBoundingClientRect().top < window.innerHeight) {
+                el.scrollIntoView({ behavior: 'smooth' });
+                el.focus();
+              } else {
+                setComposeOpen(true);
+              }
+            }}
+          >
+            <PenSquare className={`w-4 h-4 ${iconMrClass}`} />
+            <span className={labelClass}>Post</span>
+          </Button>
+          <ComposeModal open={composeOpen} onClose={() => setComposeOpen(false)} />
+        </>
       )}
     </div>
   );

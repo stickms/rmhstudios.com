@@ -346,83 +346,66 @@ function MilestoneCard({
 
 export function RoadmapSection() {
   return (
-    <section className="relative min-h-screen pt-20 md:pt-24 pb-32 overflow-hidden bg-site-bg">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 relative z-10">
-        {/* Header */}
-        <motion.div
-          className="text-center mb-14"
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tighter mb-3 font-(family-name:--site-font-display) text-site-text">
-            The Road <span className="text-site-accent">Ahead</span>
-          </h1>
-          <p className="text-lg text-site-text-muted max-w-xl mx-auto">
-            Games, community, immersive tech, and film—one step at a time.
-          </p>
-        </motion.div>
+    <div className="px-4 py-4">
+      {/* Intro */}
+      <motion.div
+        className="mb-6 rounded-xl border border-site-border bg-site-surface backdrop-blur-sm p-4"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <p className="text-site-text-muted text-sm leading-relaxed">
+          We&apos;re an indie studio building rhythm games, deckbuilders,
+          narrative horror, and more. Our roadmap isn&apos;t tied to one
+          title—we&apos;re growing the catalog, Discord, and new worlds in
+          parallel. Timelines are guides, not promises.
+        </p>
+      </motion.div>
 
-        {/* Intro */}
-        <motion.div
-          className="mb-16 rounded-xl border border-site-border bg-site-surface backdrop-blur-sm p-5 md:p-6"
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-        >
-          <p className="text-site-text-muted text-sm md:text-base leading-relaxed">
-            We&apos;re an indie studio building rhythm games, deckbuilders,
-            narrative horror, and more. Our roadmap isn&apos;t tied to one
-            title—we&apos;re growing the catalog, Discord, and new worlds in
-            parallel. Timelines are guides, not promises.
-          </p>
-        </motion.div>
+      {/* Year sections */}
+      <div className="space-y-10">
+        {roadmap.map((section, sectionIndex) => (
+          <motion.section
+            key={section.year}
+            className="relative"
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-40px" }}
+            transition={{ duration: 0.45, delay: sectionIndex * 0.06 }}
+          >
+            {/* Year label */}
+            <div className="flex flex-wrap items-baseline gap-2 mb-4 pl-3 border-l-2 border-site-accent">
+              <span className="text-xl font-black text-site-accent">
+                {section.year}
+              </span>
+              <span className="text-site-text-dim font-mono text-xs uppercase tracking-wider">
+                {section.tagline}
+              </span>
+            </div>
 
-        {/* Year sections */}
-        <div className="space-y-16">
-          {roadmap.map((section, sectionIndex) => (
-            <motion.section
-              key={section.year}
-              className="relative"
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-40px" }}
-              transition={{ duration: 0.45, delay: sectionIndex * 0.06 }}
-            >
-              {/* Year label */}
-              <div className="flex flex-wrap items-baseline gap-2 mb-6 pl-4 border-l-2 border-site-accent">
-                <span className="text-2xl md:text-3xl font-black text-site-accent">
-                  {section.year}
-                </span>
-                <span className="text-site-text-dim font-mono text-sm uppercase tracking-wider">
-                  {section.tagline}
-                </span>
-              </div>
-
-              {/* Milestone grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {section.milestones.map((milestone, i) => (
-                  <MilestoneCard
-                    key={`${section.year}-${i}`}
-                    title={milestone.title}
-                    body={milestone.body}
-                    index={i}
-                  />
-                ))}
-              </div>
-            </motion.section>
-          ))}
-        </div>
-
-        <motion.p
-          className="text-center text-site-text-dim text-xs mt-14"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-        >
-          We&apos;ll update this as we ship.
-        </motion.p>
+            {/* Milestone grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {section.milestones.map((milestone, i) => (
+                <MilestoneCard
+                  key={`${section.year}-${i}`}
+                  title={milestone.title}
+                  body={milestone.body}
+                  index={i}
+                />
+              ))}
+            </div>
+          </motion.section>
+        ))}
       </div>
-    </section>
+
+      <motion.p
+        className="text-center text-site-text-dim text-xs mt-10 pb-4"
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
+      >
+        We&apos;ll update this as we ship.
+      </motion.p>
+    </div>
   );
 }

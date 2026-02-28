@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Search, Calendar, Filter, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, X } from "lucide-react";
+import { Search, Calendar, Filter, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, X } from "lucide-react";
 import { ShareButton } from "@/components/blog/ShareButton";
 import { Post } from "@/lib/blog";
 
@@ -21,9 +21,10 @@ function useDebounce<T>(value: T, delay: number): T {
 
 interface BlogListProps {
   initialPosts: Partial<Post>[];
+  filtersOpen?: boolean;
 }
 
-export function BlogList({ initialPosts }: BlogListProps) {
+export function BlogList({ initialPosts, filtersOpen = false }: BlogListProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -140,129 +141,111 @@ export function BlogList({ initialPosts }: BlogListProps) {
   const hasActiveFilters = searchInput || selectedTag || sortMode !== "newest";
 
   return (
-    <div className="container mx-auto max-w-6xl relative z-10">
-
-      {/* Header & Controls */}
-      <motion.div
-        className="mb-12 space-y-8"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-      >
-        <div className="flex flex-col md:flex-row gap-6 justify-between items-start md:items-end">
-          <div>
-            <Link href="/" className="inline-flex items-center gap-2 text-site-text-dim hover:text-site-text mb-6 transition-colors">
-              <ArrowLeft className="w-4 h-4" /> Back to Home
-            </Link>
-            <h1 className="text-4xl md:text-5xl font-black text-site-text tracking-tight font-(family-name:--site-font-display)">
-              The Archive
-            </h1>
-            <p className="text-site-text-muted mt-2 text-lg">
-              {filteredPosts.length} {filteredPosts.length === 1 ? "entry" : "entries"} found
-              {filteredPosts.length !== initialPosts.length && (
-                <span className="text-site-text-dim"> of {initialPosts.length} total</span>
-              )}
-            </p>
+    <div className="px-4 py-4">
+      {/* Filter Controls - collapsible */}
+      {filtersOpen && (
+      <div className="mb-4 space-y-3 border-b border-site-border pb-4">
+        {/* Search Bar */}
+        <div className="relative w-full">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Search className="h-4 w-4 text-site-text-dim" />
           </div>
-
-          {/* Search Bar */}
-          <div className="w-full md:w-96 relative">
-             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-5 w-5 text-site-text-dim" />
-             </div>
-             <input
-                type="text"
-                placeholder="Search titles, descriptions, tags..."
-                className="w-full bg-site-surface border border-site-border rounded-xl py-3 pl-10 pr-10 text-site-text placeholder-site-text-dim focus:outline-none focus:border-site-accent focus:ring-1 focus:ring-site-accent transition-all"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-             />
-             {searchInput && (
-               <button
-                 onClick={() => setSearchInput("")}
-                 className="absolute inset-y-0 right-0 pr-3 flex items-center text-site-text-dim hover:text-site-text transition-colors"
-               >
-                 <X className="h-4 w-4" />
-               </button>
-             )}
-          </div>
+          <input
+            type="text"
+            placeholder="Search titles, descriptions, tags..."
+            className="w-full bg-site-surface border border-site-border rounded-xl py-2.5 pl-9 pr-9 text-sm text-site-text placeholder-site-text-dim focus:outline-none focus:border-site-accent focus:ring-1 focus:ring-site-accent transition-all"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+          />
+          {searchInput && (
+            <button
+              onClick={() => setSearchInput("")}
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-site-text-dim hover:text-site-text transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
         </div>
 
         {/* Filters Row */}
-        <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center bg-site-surface p-4 rounded-xl border border-site-border backdrop-blur-sm">
-
-           {/* Tags */}
-           <div className="flex flex-wrap gap-2 items-center flex-1">
-              <div className="flex items-center gap-2 text-sm text-site-accent mr-2 whitespace-nowrap">
-                <Filter className="w-4 h-4" /> Filters:
-              </div>
+        <div className="bg-site-surface p-3 rounded-xl border border-site-border space-y-3">
+          {/* Tags */}
+          <div className="flex flex-wrap gap-2 items-center">
+            <div className="flex items-center gap-1.5 text-xs text-site-accent mr-1 whitespace-nowrap">
+              <Filter className="w-3.5 h-3.5" /> Tags:
+            </div>
+            <button
+              onClick={() => setSelectedTag(null)}
+              className={`px-2.5 py-1 rounded-full text-xs font-bold transition-all ${!selectedTag ? "bg-site-accent text-white" : "bg-site-bg text-site-text-muted hover:bg-site-surface-hover"}`}
+            >
+              All
+            </button>
+            {(showAllTags ? allTags : allTags.slice(0, 5)).map(tag => (
               <button
-                onClick={() => setSelectedTag(null)}
-                className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${!selectedTag ? "bg-site-accent text-white" : "bg-site-bg text-site-text-muted hover:bg-site-surface-hover"}`}
+                key={tag}
+                onClick={() => setSelectedTag(tag === selectedTag ? null : tag)}
+                className={`px-2.5 py-1 rounded-full text-xs font-bold transition-all ${selectedTag === tag ? "bg-site-accent text-white" : "bg-site-bg text-site-text-muted hover:bg-site-surface-hover"}`}
               >
-                All
+                {tag}
               </button>
-              {(showAllTags ? allTags : allTags.slice(0, 5)).map(tag => (
-                <button
-                    key={tag}
-                    onClick={() => setSelectedTag(tag === selectedTag ? null : tag)}
-                    className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${selectedTag === tag ? "bg-site-accent text-white" : "bg-site-bg text-site-text-muted hover:bg-site-surface-hover"}`}
-                >
-                    {tag}
-                </button>
-              ))}
-              {!showAllTags && allTags.length > 5 && (
-                  <button
-                    onClick={() => setShowAllTags(true)}
-                    className="text-xs text-site-accent hover:text-site-text transition-colors ml-1 font-mono"
-                  >
-                    (+ {allTags.length - 5} more)
-                  </button>
-              )}
-              {showAllTags && allTags.length > 5 && (
-                  <button
-                    onClick={() => setShowAllTags(false)}
-                    className="text-xs text-site-accent hover:text-site-text transition-colors ml-1 font-mono"
-                  >
-                    (show less)
-                  </button>
-              )}
-           </div>
-
-           {/* Sort + Clear */}
-           <div className="flex items-center gap-3 whitespace-nowrap shrink-0">
-              {hasActiveFilters && (
-                <button
-                  onClick={clearAllFilters}
-                  className="text-xs text-site-danger hover:text-site-text transition-colors font-mono flex items-center gap-1"
-                >
-                  <X className="w-3 h-3" /> Clear all
-                </button>
-              )}
-              <span className="text-sm text-site-text-dim">Sort by:</span>
-              <select
-                value={sortMode}
-                onChange={(e) => setSortMode(e.target.value as "newest" | "oldest" | "az" | "za")}
-                className="bg-site-bg border border-site-border rounded-lg py-1 px-3 text-sm text-site-text focus:outline-none focus:border-site-accent"
+            ))}
+            {!showAllTags && allTags.length > 5 && (
+              <button
+                onClick={() => setShowAllTags(true)}
+                className="text-xs text-site-accent hover:text-site-text transition-colors ml-1 font-mono"
               >
-                <option value="newest">Newest</option>
-                <option value="oldest">Oldest</option>
-                <option value="az">A-Z</option>
-                <option value="za">Z-A</option>
-              </select>
-           </div>
-        </div>
-
-        {/* Pagination Info */}
-        {totalPages > 1 && (
-          <div className="text-sm text-site-text-dim font-mono">
-            Showing {(safePage - 1) * POSTS_PER_PAGE + 1}-{Math.min(safePage * POSTS_PER_PAGE, filteredPosts.length)} of {filteredPosts.length}
+                +{allTags.length - 5}
+              </button>
+            )}
+            {showAllTags && allTags.length > 5 && (
+              <button
+                onClick={() => setShowAllTags(false)}
+                className="text-xs text-site-accent hover:text-site-text transition-colors ml-1 font-mono"
+              >
+                less
+              </button>
+            )}
           </div>
-        )}
-      </motion.div>
+
+          {/* Sort + Clear + Count */}
+          <div className="flex items-center gap-3 whitespace-nowrap">
+            {hasActiveFilters && (
+              <button
+                onClick={clearAllFilters}
+                className="text-xs text-site-danger hover:text-site-text transition-colors font-mono flex items-center gap-1"
+              >
+                <X className="w-3 h-3" /> Clear
+              </button>
+            )}
+            <span className="text-xs text-site-text-dim">Sort:</span>
+            <select
+              value={sortMode}
+              onChange={(e) => setSortMode(e.target.value as "newest" | "oldest" | "az" | "za")}
+              className="bg-site-bg border border-site-border rounded-lg py-1 px-2 text-xs text-site-text focus:outline-none focus:border-site-accent"
+            >
+              <option value="newest">Newest</option>
+              <option value="oldest">Oldest</option>
+              <option value="az">A-Z</option>
+              <option value="za">Z-A</option>
+            </select>
+            <span className="text-xs text-site-text-dim font-mono ml-auto">
+              {filteredPosts.length} {filteredPosts.length === 1 ? "entry" : "entries"}
+            </span>
+          </div>
+        </div>
+      </div>
+      )}
+
+      {/* Active filter indicator when collapsed */}
+      {!filtersOpen && hasActiveFilters && (
+        <div className="mb-3 flex items-center gap-2 text-xs text-site-text-dim">
+          <span className="font-mono">{filteredPosts.length} results</span>
+          <button onClick={clearAllFilters} className="text-site-accent hover:underline">Clear filters</button>
+        </div>
+      )}
 
       {/* Grid */}
-      <div ref={gridRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 scroll-mt-8">
+      <div ref={gridRef} className="grid grid-cols-1 sm:grid-cols-2 gap-4 scroll-mt-8">
         <AnimatePresence mode="popLayout">
           {paginatedPosts.map((post) => (
             <motion.div
@@ -340,7 +323,7 @@ export function BlogList({ initialPosts }: BlogListProps) {
       {/* Pagination Controls */}
       {totalPages > 1 && (
         <motion.div
-          className="mt-12 flex flex-col items-center gap-4"
+          className="mt-8 flex flex-col items-center gap-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}

@@ -2,9 +2,8 @@
 
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, Search, X, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { Search, X, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { NewsCard } from './NewsCard';
 import { NewsHero } from './NewsHero';
 import { NewsCategoryTabs } from './NewsCategoryTabs';
@@ -24,9 +23,10 @@ function useDebounce<T>(value: T, delay: number): T {
 interface NewsListProps {
     initialArticles: Partial<NewsArticle>[];
     featuredArticles: Partial<NewsArticle>[];
+    filtersOpen?: boolean;
 }
 
-export function NewsList({ initialArticles, featuredArticles }: NewsListProps) {
+export function NewsList({ initialArticles, featuredArticles, filtersOpen = false }: NewsListProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
 
@@ -141,78 +141,76 @@ export function NewsList({ initialArticles, featuredArticles }: NewsListProps) {
     };
 
     return (
-        <div className="container mx-auto max-w-6xl relative z-10">
-            {/* Header */}
-            <motion.div className="mb-8" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-                <Link href="/" className="inline-flex items-center gap-2 text-(--site-text-dim) hover:text-(--site-text) mb-6 transition-colors">
-                    <ArrowLeft className="w-4 h-4" /> Back to Home
-                </Link>
-                <h1
-                    className="text-4xl md:text-6xl font-black tracking-tighter text-(--site-text) mb-4"
-                    style={{ fontFamily: 'var(--site-font-display)', textShadow: 'var(--site-text-shadow)', letterSpacing: 'var(--site-letter-spacing)' }}
-                >
-                    RMH <span className="text-(--site-accent)">News</span>
-                </h1>
-                <p className="text-(--site-text-muted) text-lg max-w-2xl">
-                    Curated news and commentary on AI, gaming, neuroscience, tech, science, and culture.
-                </p>
-            </motion.div>
-
+        <div className="px-4 py-4">
             {/* Featured Hero */}
-            {!hasActiveFilters && featuredArticles.length > 0 && <NewsHero articles={featuredArticles} />}
+            {!hasActiveFilters && featuredArticles.length > 0 && (
+                <div className="mb-4">
+                    <NewsHero articles={featuredArticles} />
+                </div>
+            )}
 
-            {/* Controls */}
-            <motion.div className="mb-8 space-y-4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }}>
-                {/* Category Tabs */}
-                <NewsCategoryTabs activeCategory={selectedCategory} onCategoryChange={setSelectedCategory} availableCategories={availableCategories} />
+            {/* Filter Controls - collapsible */}
+            {filtersOpen && (
+                <div className="mb-4 space-y-3 border-b border-(--site-border) pb-4">
+                    {/* Category Tabs */}
+                    <NewsCategoryTabs activeCategory={selectedCategory} onCategoryChange={setSelectedCategory} availableCategories={availableCategories} />
 
-                {/* Search + Sort Row */}
-                <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between bg-(--site-surface) p-4 rounded-xl border border-(--site-border)">
-                    <div className="relative w-full sm:w-80">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <Search className="h-4 w-4 text-(--site-text-dim)" />
+                    {/* Search + Sort Row */}
+                    <div className="flex flex-col gap-3 bg-(--site-surface) p-3 rounded-xl border border-(--site-border)">
+                        <div className="relative w-full">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <Search className="h-4 w-4 text-(--site-text-dim)" />
+                            </div>
+                            <input
+                                type="text"
+                                placeholder="Search articles..."
+                                className="w-full bg-(--site-bg) border border-(--site-border) rounded-lg py-2 pl-9 pr-9 text-sm text-(--site-text) placeholder-(--site-text-dim) focus:outline-none focus:border-(--site-accent) focus:ring-1 focus:ring-(--site-accent) transition-all"
+                                value={searchInput}
+                                onChange={(e) => setSearchInput(e.target.value)}
+                            />
+                            {searchInput && (
+                                <button
+                                    onClick={() => setSearchInput('')}
+                                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-(--site-text-dim) hover:text-(--site-text) transition-colors"
+                                >
+                                    <X className="h-3 w-3" />
+                                </button>
+                            )}
                         </div>
-                        <input
-                            type="text"
-                            placeholder="Search articles..."
-                            className="w-full bg-(--site-bg) border border-(--site-border) rounded-lg py-2 pl-9 pr-9 text-sm text-(--site-text) placeholder-(--site-text-dim) focus:outline-none focus:border-(--site-accent) focus:ring-1 focus:ring-(--site-accent) transition-all"
-                            value={searchInput}
-                            onChange={(e) => setSearchInput(e.target.value)}
-                        />
-                        {searchInput && (
-                            <button
-                                onClick={() => setSearchInput('')}
-                                className="absolute inset-y-0 right-0 pr-3 flex items-center text-(--site-text-dim) hover:text-(--site-text) transition-colors"
-                            >
-                                <X className="h-3 w-3" />
-                            </button>
-                        )}
-                    </div>
 
-                    <div className="flex items-center gap-3 whitespace-nowrap shrink-0">
-                        {hasActiveFilters && (
-                            <button onClick={clearAllFilters} className="text-xs text-(--site-danger) hover:text-(--site-text) transition-colors font-mono flex items-center gap-1">
-                                <X className="w-3 h-3" /> Clear
-                            </button>
-                        )}
-                        <span className="text-sm text-(--site-text-dim)">Sort:</span>
-                        <select
-                            value={sortMode}
-                            onChange={(e) => setSortMode(e.target.value as 'newest' | 'oldest')}
-                            className="bg-(--site-bg) border border-(--site-border) rounded-lg py-1 px-3 text-sm text-(--site-text) focus:outline-none focus:border-(--site-accent)"
-                        >
-                            <option value="newest">Newest</option>
-                            <option value="oldest">Oldest</option>
-                        </select>
-                        <span className="text-sm text-(--site-text-dim) font-mono">
-                            {filteredArticles.length} {filteredArticles.length === 1 ? 'article' : 'articles'}
-                        </span>
+                        <div className="flex items-center gap-3 whitespace-nowrap">
+                            {hasActiveFilters && (
+                                <button onClick={clearAllFilters} className="text-xs text-(--site-danger) hover:text-(--site-text) transition-colors font-mono flex items-center gap-1">
+                                    <X className="w-3 h-3" /> Clear
+                                </button>
+                            )}
+                            <span className="text-sm text-(--site-text-dim)">Sort:</span>
+                            <select
+                                value={sortMode}
+                                onChange={(e) => setSortMode(e.target.value as 'newest' | 'oldest')}
+                                className="bg-(--site-bg) border border-(--site-border) rounded-lg py-1 px-3 text-sm text-(--site-text) focus:outline-none focus:border-(--site-accent)"
+                            >
+                                <option value="newest">Newest</option>
+                                <option value="oldest">Oldest</option>
+                            </select>
+                            <span className="text-sm text-(--site-text-dim) font-mono ml-auto">
+                                {filteredArticles.length} {filteredArticles.length === 1 ? 'article' : 'articles'}
+                            </span>
+                        </div>
                     </div>
                 </div>
-            </motion.div>
+            )}
+
+            {/* Active filter indicator when collapsed */}
+            {!filtersOpen && hasActiveFilters && (
+                <div className="mb-3 flex items-center gap-2 text-xs text-(--site-text-dim)">
+                    <span className="font-mono">{filteredArticles.length} results</span>
+                    <button onClick={clearAllFilters} className="text-(--site-accent) hover:underline">Clear filters</button>
+                </div>
+            )}
 
             {/* Grid */}
-            <div ref={gridRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 scroll-mt-8">
+            <div ref={gridRef} className="grid grid-cols-1 sm:grid-cols-2 gap-4 scroll-mt-8">
                 <AnimatePresence mode="popLayout">
                     {paginatedArticles.map((article, i) => (
                         <motion.div key={article.slug} layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.25 }}>
@@ -233,7 +231,7 @@ export function NewsList({ initialArticles, featuredArticles }: NewsListProps) {
 
             {/* Pagination */}
             {totalPages > 1 && (
-                <motion.div className="mt-12 flex flex-col items-center gap-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
+                <motion.div className="mt-8 flex flex-col items-center gap-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
                     <div className="flex items-center gap-1 sm:gap-2">
                         <button onClick={() => goToPage(1)} disabled={safePage === 1} className="p-2 rounded-lg text-(--site-text-dim) hover:text-(--site-text) hover:bg-(--site-surface) disabled:opacity-20 disabled:cursor-not-allowed transition-all" aria-label="First page">
                             <ChevronsLeft className="w-4 h-4" />

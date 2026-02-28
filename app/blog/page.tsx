@@ -1,6 +1,7 @@
-import { Suspense } from "react";
 import { getAllPosts } from "@/lib/blog";
-import { BlogList } from "@/components/blog/BlogList";
+import { getSidebarData } from '@/lib/sidebar-data';
+import { BlogRightSidebar } from './sidebar';
+import { BlogPageContent } from './content';
 
 export const metadata = {
   title: "Devlog | RMH Studios",
@@ -9,16 +10,16 @@ export const metadata = {
 
 export default function BlogIndexPage() {
   const posts = getAllPosts(["title", "date", "slug", "description", "image", "tags"]);
+  const { newsArticles, researchArticles } = getSidebarData();
+
+  const allTags = Array.from(
+    new Set(posts.flatMap(p => p.tags ?? []))
+  ).slice(0, 10);
 
   return (
-    <main className="min-h-screen pt-32 pb-20 px-4 bg-site-bg relative overflow-hidden">
-        <Suspense fallback={
-          <div className="container mx-auto max-w-6xl relative z-10 text-center py-20">
-            <div className="text-site-text-dim animate-pulse">Loading archive...</div>
-          </div>
-        }>
-          <BlogList initialPosts={posts} />
-        </Suspense>
-    </main>
+    <BlogPageContent
+      posts={posts}
+      rightSidebar={<BlogRightSidebar newsArticles={newsArticles} researchArticles={researchArticles} tags={allTags} />}
+    />
   );
 }
