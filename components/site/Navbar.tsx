@@ -44,6 +44,7 @@ export function Navbar() {
     { href: '/games', label: 'Games' },
     { href: '/apps', label: 'Apps' },
     { href: '/roadmap', label: 'Roadmap' },
+    { href: '/research', label: 'Research' },
     { href: '/blog', label: 'Blog' },
   ];
 

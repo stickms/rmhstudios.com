@@ -236,6 +236,7 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
       },
       onBossKill: (bossId) => {
         useAltairGameStore.getState().setBossActive(false);
+        useAltairGameStore.getState().recordBossKill(bossId);
         setBossInfo(null);
         const bossDef = BOSSES.find((b) => b.id === bossId);
         addToast(`${bossDef?.name ?? 'Boss'} defeated!`, 'success');

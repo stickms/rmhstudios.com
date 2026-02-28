@@ -57,6 +57,12 @@ export default function AltairPage() {
   // Track whether score has been submitted for this run to prevent duplicates
   const scoreSubmittedRef = useRef(false);
 
+  // Retroactive unlock check — runs on mount and when entering class select
+  // so players who already met conditions (e.g. after condition changes) get their unlocks
+  useEffect(() => {
+    useAltairMetaStore.getState().checkUnlocks();
+  }, [phase]);
+
   const handleGameEnd = useCallback(() => {
     const gameState = useAltairGameStore.getState();
     const meta = useAltairMetaStore.getState();
@@ -72,8 +78,15 @@ export default function AltairPage() {
         useAltairGameStore.getState().addCoins(bonus, 'firstClearBonus');
       }
       meta.unlockDoubleTime();
-      meta.unlockClass('hemomancer');
     }
+
+    // Persist best run stats and check all unlock conditions (retroactive)
+    meta.updateRunStats(
+      gameState.timeSurvived,
+      gameState.kills,
+      gameState.bossesDefeatedThisRun,
+    );
+    meta.checkUnlocks();
 
     meta.addCoins(finalCoins);
 

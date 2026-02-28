@@ -9,6 +9,7 @@ import { CLASSES, ClassDef } from '@/lib/altair/data/classes';
 import { WEAPONS } from '@/lib/altair/data/weapons';
 import { useAltairMetaStore } from '@/lib/altair/stores/meta-store';
 import { useAltairSettingsStore } from '@/lib/altair/stores/settings-store';
+import { useAltairToastStore } from '@/lib/altair/stores/toast-store';
 import SpriteIcon from '@/components/altair/hud/SpriteIcon';
 
 interface ClassSelectScreenProps {
@@ -173,6 +174,21 @@ export default function ClassSelectScreen({ onSelect, onBack }: ClassSelectScree
 function LockOverlay({ cls }: { cls: ClassDef }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const coins = useAltairMetaStore((s) => s.coins);
+  const purchaseClassUnlock = useAltairMetaStore((s) => s.purchaseClassUnlock);
+  const addToast = useAltairToastStore((s) => s.addToast);
+
+  const canPurchase = cls.unlockCost > 0 && coins >= cls.unlockCost;
+
+  const handlePurchase = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (purchaseClassUnlock(cls.id, cls.unlockCost)) {
+      addToast(`${cls.name} unlocked!`, 'success');
+      setOpen(false);
+    } else {
+      addToast('Not enough coins!', 'error');
+    }
+  };
 
   // Close popover when clicking outside
   useEffect(() => {
@@ -227,10 +243,23 @@ function LockOverlay({ cls }: { cls: ClassDef }) {
               {cls.unlockCondition}
             </p>
             {cls.unlockCost > 0 && (
-              <span className="flex items-center gap-1 text-[11px] font-bold text-(--altair-warning)">
-                <Coins size={12} />
-                {cls.unlockCost} coins
-              </span>
+              <>
+                <span className="flex items-center gap-1 text-[11px] font-bold text-(--altair-warning)">
+                  <Coins size={12} />
+                  {cls.unlockCost} coins
+                </span>
+                <button
+                  onClick={handlePurchase}
+                  disabled={!canPurchase}
+                  className={`w-full mt-1 py-1.5 rounded-lg text-[11px] font-semibold transition-colors ${
+                    canPurchase
+                      ? 'bg-(--altair-accent) hover:bg-(--altair-accent-hover) text-white'
+                      : 'bg-(--altair-surface-active) text-(--altair-text-dim) cursor-not-allowed'
+                  }`}
+                >
+                  {canPurchase ? 'Purchase' : 'Not enough coins'}
+                </button>
+              </>
             )}
           </div>
         </div>

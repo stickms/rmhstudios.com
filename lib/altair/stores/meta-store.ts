@@ -13,14 +13,21 @@ interface AltairMetaState {
   doubleTimeUnlocked: boolean;
   classFirstClears: string[]; // classIds that have had a first 20:00 clear
   totalRunsPlayed: number;
+  // Persistent best-run stats for retroactive unlock checks
+  bestTimeSurvived: number;
+  bestKills: number;
+  bossesDefeated: string[];
 
   addCoins: (amount: number) => void;
   spendCoins: (amount: number) => boolean;
   purchaseUpgrade: (id: string) => boolean;
+  purchaseClassUnlock: (classId: string, cost: number) => boolean;
   unlockClass: (id: string) => void;
   unlockDoubleTime: () => void;
   recordFirstClear: (classId: string) => number; // returns bonus coins
   incrementRuns: () => void;
+  updateRunStats: (timeSurvived: number, kills: number, bossesDefeated: string[]) => void;
+  checkUnlocks: () => void;
   getUpgradeLevel: (id: string) => number;
   getMetaStatBonuses: () => Record<string, number>;
 }
@@ -34,6 +41,9 @@ export const useAltairMetaStore = create<AltairMetaState>()(
       doubleTimeUnlocked: false,
       classFirstClears: [],
       totalRunsPlayed: 0,
+      bestTimeSurvived: 0,
+      bestKills: 0,
+      bossesDefeated: [],
 
       addCoins: (amount) => set((s) => ({ coins: s.coins + amount })),
 
@@ -58,6 +68,17 @@ export const useAltairMetaStore = create<AltairMetaState>()(
         return true;
       },
 
+      purchaseClassUnlock: (classId, cost) => {
+        const s = get();
+        if (s.unlockedClasses.includes(classId)) return false;
+        if (s.coins < cost) return false;
+        set({
+          coins: s.coins - cost,
+          unlockedClasses: [...s.unlockedClasses, classId],
+        });
+        return true;
+      },
+
       unlockClass: (id) =>
         set((s) => ({
           unlockedClasses: s.unlockedClasses.includes(id)
@@ -75,6 +96,39 @@ export const useAltairMetaStore = create<AltairMetaState>()(
       },
 
       incrementRuns: () => set((s) => ({ totalRunsPlayed: s.totalRunsPlayed + 1 })),
+
+      updateRunStats: (timeSurvived, kills, bossesDefeated) => {
+        const s = get();
+        const newBosses = [...s.bossesDefeated];
+        for (const b of bossesDefeated) {
+          if (!newBosses.includes(b)) newBosses.push(b);
+        }
+        set({
+          bestTimeSurvived: Math.max(s.bestTimeSurvived, timeSurvived),
+          bestKills: Math.max(s.bestKills, kills),
+          bossesDefeated: newBosses,
+        });
+      },
+
+      checkUnlocks: () => {
+        const s = get();
+        // Plague Doctor: survive 10 minutes (600s)
+        if (s.bestTimeSurvived >= 600 && !s.unlockedClasses.includes('plague_doctor')) {
+          get().unlockClass('plague_doctor');
+        }
+        // Berserker: kill 3,000 enemies in one run
+        if (s.bestKills >= 3000 && !s.unlockedClasses.includes('berserker')) {
+          get().unlockClass('berserker');
+        }
+        // Chronomancer: defeat the 15-minute boss (Elder Lich Malachar)
+        if (s.bossesDefeated.includes('elder_lich_malachar') && !s.unlockedClasses.includes('chronomancer')) {
+          get().unlockClass('chronomancer');
+        }
+        // Hemomancer: complete a full 20:00 run (victory)
+        if (s.bestTimeSurvived >= 1200 && !s.unlockedClasses.includes('hemomancer')) {
+          get().unlockClass('hemomancer');
+        }
+      },
 
       getUpgradeLevel: (id) => get().upgrades[id] || 0,
 
@@ -101,6 +155,9 @@ export const useAltairMetaStore = create<AltairMetaState>()(
         doubleTimeUnlocked: s.doubleTimeUnlocked,
         classFirstClears: s.classFirstClears,
         totalRunsPlayed: s.totalRunsPlayed,
+        bestTimeSurvived: s.bestTimeSurvived,
+        bestKills: s.bestKills,
+        bossesDefeated: s.bossesDefeated,
       }),
     }
   )

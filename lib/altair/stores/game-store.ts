@@ -132,6 +132,7 @@ interface GameState {
   banishedIds: Set<string>;
   revivalsRemaining: number;
   bossActive: boolean;
+  bossesDefeatedThisRun: string[];
   doubleTime: boolean;
   killMilestonesHit: number[]; // which milestones already awarded
   previousPhase: GamePhase; // for unpausing
@@ -158,6 +159,7 @@ interface GameState {
   upgradePassive: (passiveId: string) => void;
   setEffectiveStats: (stats: PlayerStats) => void;
   setBossActive: (active: boolean) => void;
+  recordBossKill: (bossId: string) => void;
   togglePause: () => void;
   revive: () => void;
   die: () => void;
@@ -194,6 +196,7 @@ export const useAltairGameStore = create<GameState>((set, get) => ({
   banishedIds: new Set(),
   revivalsRemaining: 0,
   bossActive: false,
+  bossesDefeatedThisRun: [],
   doubleTime: false,
   killMilestonesHit: [],
   previousPhase: 'menu',
@@ -220,6 +223,7 @@ export const useAltairGameStore = create<GameState>((set, get) => ({
     upgradeChoices: [],
     banishedIds: new Set(),
     bossActive: false,
+    bossesDefeatedThisRun: [],
     killMilestonesHit: [],
   }),
 
@@ -251,6 +255,7 @@ export const useAltairGameStore = create<GameState>((set, get) => ({
       banishedIds: new Set(),
       revivalsRemaining: metaRevival,
       bossActive: false,
+      bossesDefeatedThisRun: [],
       killMilestonesHit: [],
     });
   },
@@ -443,6 +448,14 @@ export const useAltairGameStore = create<GameState>((set, get) => ({
   setEffectiveStats: (stats) => set({ effectiveStats: stats, maxHp: stats.maxHp }),
 
   setBossActive: (active) => set({ bossActive: active }),
+
+  recordBossKill: (bossId) => {
+    set((s) => ({
+      bossesDefeatedThisRun: s.bossesDefeatedThisRun.includes(bossId)
+        ? s.bossesDefeatedThisRun
+        : [...s.bossesDefeatedThisRun, bossId],
+    }));
+  },
 
   togglePause: () => {
     const s = get();
