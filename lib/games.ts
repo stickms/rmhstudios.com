@@ -80,6 +80,23 @@ export const games: GameInfo[] = [
         authGate: false,
     },
     {
+        id: 'versecraft',
+        title: 'Versecraft',
+        description: 'A poetry puzzle visual novel. Compose poems, romance characters, and unravel literary mysteries.',
+        longDescription:
+            'Join the Ivory Quill Society and discover the power of words. Select words to compose poems, arrange lines for maximum impact, and watch as six unique characters react to your literary creations. A DDLC-inspired visual novel where every word matters.',
+        href: '/versecraft',
+        status: 'Playable',
+        cta: 'Play Now',
+        isSteam: false,
+        gradient: 'from-amber-700 to-purple-800',
+        iconName: 'Feather',
+        color: 'from-amber-700/20 to-purple-800/20 hover:border-amber-500/50',
+        tags: ['Visual Novel', 'Puzzle', 'Poetry'],
+        imagePath: '/images/games/versecraft.png',
+        authGate: false,
+    },
+    {
         id: 'slice-it',
         title: 'Slice It!',
         description: 'A high-octane neon rhythm game where you slice through beats in a pulse-pounding world.',
