@@ -160,15 +160,21 @@ export default function HostControlModal() {
                           src={player.avatarUrl}
                           alt={player.userName}
                           className="h-7 w-7 shrink-0 rounded-full object-cover"
+                          loading="lazy"
+                          onError={(e) => {
+                            const target = e.currentTarget;
+                            const fallback = target.nextElementSibling as HTMLElement | null;
+                            target.style.display = 'none';
+                            if (fallback) fallback.style.display = '';
+                          }}
                         />
-                      ) : (
-                        <div
-                          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
-                          style={{ backgroundColor: 'var(--rmhbox-accent)' }}
-                        >
-                          {player.userName.charAt(0).toUpperCase()}
-                        </div>
-                      )}
+                      ) : null}
+                      <div
+                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
+                        style={player.avatarUrl ? { display: 'none', backgroundColor: 'var(--rmhbox-accent)' } : { backgroundColor: 'var(--rmhbox-accent)' }}
+                      >
+                        {player.userName.charAt(0).toUpperCase()}
+                      </div>
 
                       {/* Name */}
                       <span className="flex-1 truncate text-sm font-medium text-(--rmhbox-text)">
@@ -219,15 +225,21 @@ export default function HostControlModal() {
                           src={spec.avatarUrl}
                           alt={spec.userName}
                           className="h-7 w-7 shrink-0 rounded-full object-cover"
+                          loading="lazy"
+                          onError={(e) => {
+                            const target = e.currentTarget;
+                            const fallback = target.nextElementSibling as HTMLElement | null;
+                            target.style.display = 'none';
+                            if (fallback) fallback.style.display = '';
+                          }}
                         />
-                      ) : (
-                        <div
-                          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
-                          style={{ backgroundColor: 'var(--rmhbox-text-muted)' }}
-                        >
-                          {spec.userName.charAt(0).toUpperCase()}
-                        </div>
-                      )}
+                      ) : null}
+                      <div
+                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
+                        style={spec.avatarUrl ? { display: 'none', backgroundColor: 'var(--rmhbox-text-muted)' } : { backgroundColor: 'var(--rmhbox-text-muted)' }}
+                      >
+                        {spec.userName.charAt(0).toUpperCase()}
+                      </div>
                       <span className="flex-1 truncate text-sm text-(--rmhbox-text-muted)">
                         {spec.userName}
                       </span>

@@ -85,12 +85,21 @@ export default function LeaderboardPanel() {
                         src={entry.avatarUrl}
                         alt={entry.userName}
                         className="h-6 w-6 shrink-0 rounded-full object-cover"
+                        loading="lazy"
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          const fallback = target.nextElementSibling as HTMLElement | null;
+                          target.style.display = 'none';
+                          if (fallback) fallback.style.display = '';
+                        }}
                       />
-                    ) : (
-                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-(--rmhbox-accent) text-[10px] font-bold text-white">
-                        {entry.userName.charAt(0).toUpperCase()}
-                      </div>
-                    )}
+                    ) : null}
+                    <div
+                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-(--rmhbox-accent) text-[10px] font-bold text-white"
+                      style={entry.avatarUrl ? { display: 'none' } : undefined}
+                    >
+                      {entry.userName.charAt(0).toUpperCase()}
+                    </div>
                     <span className="truncate">{entry.userName}</span>
                   </div>
                 </td>

@@ -43,12 +43,21 @@ export default function PlayerList({ players, hostUserId, isHost, myUserId, onKi
                 src={player.avatarUrl}
                 alt={player.userName}
                 className="h-9 w-9 shrink-0 rounded-full object-cover"
+                loading="lazy"
+                onError={(e) => {
+                  const target = e.currentTarget;
+                  const fallback = target.nextElementSibling as HTMLElement | null;
+                  target.style.display = 'none';
+                  if (fallback) fallback.style.display = '';
+                }}
               />
-            ) : (
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-(--rmhbox-accent) text-sm font-bold text-white">
-                {player.userName.charAt(0).toUpperCase()}
-              </div>
-            )}
+            ) : null}
+            <div
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-(--rmhbox-accent) text-sm font-bold text-white"
+              style={player.avatarUrl ? { display: 'none' } : undefined}
+            >
+              {player.userName.charAt(0).toUpperCase()}
+            </div>
 
             {/* Name + host crown */}
             <div className="flex min-w-0 flex-1 items-center gap-2">
