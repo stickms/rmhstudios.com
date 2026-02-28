@@ -19,7 +19,7 @@ export function PaperViewer({ article }: { article: ResearchArticle }) {
   const handlePrint = () => window.print();
 
   return (
-    <div data-paper-viewer className="min-h-screen bg-[#525659]">
+    <div data-paper-viewer data-no-twemoji className="min-h-screen bg-[#525659]">
       {/* Print styles */}
       <style>{`
         @media print {

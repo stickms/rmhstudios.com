@@ -1282,12 +1282,12 @@ export function StatMechMARLPaper() {
       </p>
       <TexBlock math="W[\theta(\cdot)] = \int_0^{\tau} \frac{\partial \mathcal{H}}{\partial J}\bigg|_{\theta(t)} \dot{J}(t)\, dt," />
       <p className="mb-4 indent-8">
-        and the Jarzynski equality asserts that
-        <Tex math="\langle e^{-\beta W} \rangle = e^{-\beta \Delta F}" />, where
+        and the Jarzynski equality asserts that{' '}
+        <Tex math="\langle e^{-\beta W} \rangle = e^{-\beta \Delta F}" />, where{' '}
         <Tex math="\Delta F = F(J_1) - F(J_0)" /> is the equilibrium free-energy difference.
-        By Jensen{"'"}s inequality, this immediately yields the second-law bound
+        By Jensen{"'"}s inequality, this immediately yields the second-law bound{' '}
         <Tex math="\langle W \rangle \geq \Delta F" />, with equality only for quasi-static
-        (infinitely slow) protocols. The excess work
+        (infinitely slow) protocols. The excess work{' '}
         <Tex math="W_{\mathrm{diss}} = \langle W \rangle - \Delta F \geq 0" /> quantifies the
         irreversible entropy production incurred by finite-speed training, and its minimization
         under protocol constraints constitutes an optimal-control problem with direct
@@ -1303,11 +1303,11 @@ export function StatMechMARLPaper() {
       </p>
       <TexBlock math="\frac{P_F(W)}{P_R(-W)} = \exp\!\bigl[\beta(W - \Delta F)\bigr]," />
       <p className="mb-4 indent-8">
-        which implies that forward and reverse work distributions intersect precisely at
+        which implies that forward and reverse work distributions intersect precisely at{' '}
         <Tex math="W = \Delta F" />. This identity enables the estimation of free-energy
         landscapes from bidirectional training experiments via the Bennett acceptance ratio
         method, which minimizes the statistical variance of the <Tex math="\Delta F" /> estimator.
-        We exploit this technique to reconstruct the free-energy profile
+        We exploit this technique to reconstruct the free-energy profile{' '}
         <Tex math="F(J)" /> as a function of coupling strength with substantially greater
         precision than is achievable from forward-only runs, revealing the double-well
         structure characteristic of the first-order-like crossover in finite systems.
@@ -1320,13 +1320,13 @@ export function StatMechMARLPaper() {
       </p>
       <TexBlock math="\Delta s_{\mathrm{tot}}[\theta(\cdot)] = \Delta s_{\mathrm{sys}} + \Delta s_{\mathrm{med}} = -\ln\frac{\rho(\theta(\tau), \tau)}{\rho(\theta(0), 0)} + \beta\, Q[\theta(\cdot)]," />
       <p className="mb-4 indent-8">
-        where <Tex math="\Delta s_{\mathrm{sys}}" /> is the change in system (Shannon) entropy and
+        where <Tex math="\Delta s_{\mathrm{sys}}" /> is the change in system (Shannon) entropy and{' '}
         <Tex math="Q[\theta(\cdot)]" /> is the heat dissipated into the gradient-noise bath.
         The integral fluctuation theorem <Tex math="\langle e^{-\Delta s_{\mathrm{tot}}} \rangle = 1" />
         holds exactly for arbitrary non-equilibrium protocols and subsumes both the Jarzynski
         equality and the Crooks theorem as special cases. The probability of observing
         trajectories with negative entropy production (transient violations of the second law)
-        is exponentially suppressed with system size:
+        is exponentially suppressed with system size:{' '}
         <Tex math="\mathrm{Prob}(\Delta s_{\mathrm{tot}} < -A) \leq e^{-A}" /> for <Tex math="A > 0" />,
         providing rigorous large-deviation bounds on anomalous training trajectories that
         temporarily decrease the collective reward.
@@ -1367,7 +1367,7 @@ export function StatMechMARLPaper() {
         serve as a direct probe of the departure from equilibrium. In the disordered
         (convergent) phase, where the MARL dynamics approximately satisfy detailed
         balance, <Tex math="T_{\mathrm{eff}}(\omega) \approx T" /> across all
-        frequencies. In the cooperative phase, particularly near the critical point,
+        frequencies. In the cooperative phase, particularly near the critical point,{' '}
         <Tex math="T_{\mathrm{eff}}" /> develops a pronounced frequency dependence:
         the low-frequency modes (corresponding to collective, long-wavelength strategy
         rearrangements) exhibit <Tex math="T_{\mathrm{eff}} \gg T" />, indicating that
@@ -1412,7 +1412,7 @@ export function StatMechMARLPaper() {
         persists and the system&apos;s relaxation dynamics slow down as it ages. The
         aging scaling hypothesis, validated extensively in mean-field spin-glass
         models by Cugliandolo and Kurchan, asserts that in the aging regime the
-        correlation function decomposes into a stationary and an aging part:
+        correlation function decomposes into a stationary and an aging part:{' '}
         <Tex math="C(t_w + \tau,\, t_w) = C_{\mathrm{stat}}(\tau) + C_{\mathrm{age}}(\tau/t_w^{\mu})" />,
         where <Tex math="\mu" /> is the aging exponent. For simple aging, <Tex math="\mu = 1" />;
         sub-aging (<Tex math="\mu < 1" />) indicates partial equilibration of fast modes.
@@ -1512,9 +1512,9 @@ export function StatMechMARLPaper() {
         by the generalised (Rényi) dimensions <Tex math="D_q" />, which form
         a non-increasing spectrum interpolating between the box-counting
         dimension <Tex math="D_0" />, the information dimension <Tex math="D_1" />,
-        and the correlation dimension <Tex math="D_2" />. The multifractal spectrum
+        and the correlation dimension <Tex math="D_2" />. The multifractal spectrum{' '}
         <Tex math="f(\alpha)" />, obtained via the Legendre transform of the
-        Rényi dimensions, encodes the distribution of local scaling exponents
+        Rényi dimensions, encodes the distribution of local scaling exponents{' '}
         <Tex math="\alpha" /> on the attractor:
       </p>
 
@@ -1630,7 +1630,7 @@ export function StatMechMARLPaper() {
 
       <p className="mb-4 indent-8">
         where the sum runs over all stationary points <Tex math="\alpha" />,{' '}
-        <Tex math="\Sigma(\cdot)" /> is the complexity (logarithmic density of states), and
+        <Tex math="\Sigma(\cdot)" /> is the complexity (logarithmic density of states), and{' '}
         <Tex math="E_0(J)" /> is the ground-state energy. At the critical
         coupling <Tex math="J = J_c" />, the complexity function develops a
         singular structure: the threshold energy <Tex math="E_{\mathrm{th}}" /> at which
@@ -1794,7 +1794,7 @@ export function StatMechMARLPaper() {
         ordered (<Tex math="+" />) and disordered (<Tex math="-" />) phases. In the MARL context,
         the reduced temperature <Tex math="t" /> measures the deviation of the reward coupling
         from criticality, while the external field <Tex math="h" /> represents any explicit
-        symmetry-breaking bias in the reward structure. The hyperscaling relation
+        symmetry-breaking bias in the reward structure. The hyperscaling relation{' '}
         <Tex math="2 - \alpha = \nu d_{\mathrm{eff}}" /> connects the thermodynamic exponents to
         the correlation-length exponent and spatial dimension, and is satisfied within
         numerical precision across all environments tested.
@@ -1811,7 +1811,7 @@ export function StatMechMARLPaper() {
         where <Tex math="\Lambda" /> is the ultraviolet cutoff determined by the policy
         parameterization. Fixed points <Tex math="\mathcal{H}^*" /> of this flow correspond to
         scale-invariant theories whose basin of attraction defines a universality class.
-        The linearized RG transformation about <Tex math="\mathcal{H}^*" /> yields eigenoperators
+        The linearized RG transformation about <Tex math="\mathcal{H}^*" /> yields eigenoperators{' '}
         <Tex math="\mathcal{O}_i" /> with scaling dimensions <Tex math="y_i" />; relevant
         operators (<Tex math="y_i > 0" />) control the approach to criticality, while
         irrelevant operators (<Tex math="y_i < 0" />) are responsible for corrections to
@@ -1826,38 +1826,38 @@ export function StatMechMARLPaper() {
         Beyond the static critical exponents, the dynamic universality class is specified by
         the dynamic critical exponent <Tex math="z" /> relating the divergence of the relaxation
         time to the correlation length: <Tex math="\tau \sim \xi^z" />. For Model A dynamics
-        (non-conserved order parameter with purely dissipative relaxation), one obtains
+        (non-conserved order parameter with purely dissipative relaxation), one obtains{' '}
         <Tex math="z \approx 2 + c\eta" /> where <Tex math="\eta" /> is the anomalous dimension
-        and <Tex math="c" /> is a model-dependent constant. The Rushbrooke inequality
-        <Tex math="\alpha + 2\beta + \gamma \geq 2" /> and Griffiths inequality
+        and <Tex math="c" /> is a model-dependent constant. The Rushbrooke inequality{' '}
+        <Tex math="\alpha + 2\beta + \gamma \geq 2" /> and Griffiths inequality{' '}
         <Tex math="\alpha + \beta(1 + \delta) \geq 2" /> are both satisfied as equalities
         in the mean-field regime (<Tex math="d_{\mathrm{eff}} \geq d_c = 4" />), yielding
-        the classical exponent values <Tex math="\alpha = 0" />, <Tex math="\beta = 1/2" />,
+        the classical exponent values <Tex math="\alpha = 0" />, <Tex math="\beta = 1/2" />,{' '}
         <Tex math="\gamma = 1" />, <Tex math="\delta = 3" />. For lower-dimensional policy
-        spaces, one must apply the <Tex math="\epsilon" />-expansion with
+        spaces, one must apply the <Tex math="\epsilon" />-expansion with{' '}
         <Tex math="\epsilon = 4 - d_{\mathrm{eff}}" /> to obtain systematic corrections,
         a program we outline in Section 13.
       </p>
 
       <p className="mb-4 indent-8">
         The finite-size scaling hypothesis provides the bridge between the thermodynamic-limit
-        critical exponents and the finite-population numerical data. For a system of
-        <Tex math="N" /> agents, the singular part of any thermodynamic density
+        critical exponents and the finite-population numerical data. For a system of{' '}
+        <Tex math="N" /> agents, the singular part of any thermodynamic density{' '}
         <Tex math="\mathcal{O}" /> satisfies the scaling ansatz
       </p>
       <TexBlock math="\mathcal{O}(t, N) = N^{x_{\mathcal{O}} / d_{\mathrm{eff}} \nu}\, \tilde{\mathcal{O}}\!\left(t\, N^{1/d_{\mathrm{eff}} \nu}\right)," />
       <p className="mb-4 indent-8">
-        where <Tex math="x_{\mathcal{O}}" /> is the scaling dimension of the observable and
+        where <Tex math="x_{\mathcal{O}}" /> is the scaling dimension of the observable and{' '}
         <Tex math="\tilde{\mathcal{O}}" /> is a universal scaling function. The data-collapse
         technique — plotting <Tex math="N^{-x_{\mathcal{O}} / d_{\mathrm{eff}} \nu}\, \mathcal{O}" />
         against <Tex math="t\, N^{1/d_{\mathrm{eff}} \nu}" /> — produces a single master curve
         when the correct exponents are used, providing a stringent test of universality.
-        The quality of the collapse is quantified by the residual
+        The quality of the collapse is quantified by the residual{' '}
         <Tex math="\mathcal{S} = \sum_{i} \min_j \bigl\|\vec{x}_i - \vec{x}_j\bigr\|^2" />,
         which is minimized over the exponents <Tex math="(\nu, \beta, \gamma)" /> via the
         Nelder–Mead simplex algorithm. The resulting optimal exponents, together with their
         bootstrap confidence intervals, are reported in Table 2 and constitute the primary
-        quantitative result of the finite-size scaling analysis. The Josephson identity
+        quantitative result of the finite-size scaling analysis. The Josephson identity{' '}
         <Tex math="\nu d_{\mathrm{eff}} = 2 - \alpha" /> provides an independent consistency
         check that is satisfied to within 1.2% across all environments, further corroborating
         the universality-class assignment.
@@ -1871,11 +1871,11 @@ export function StatMechMARLPaper() {
       <TexBlock math="\mathcal{O}(t, N) = N^{x_{\mathcal{O}} / d_{\mathrm{eff}} \nu}\!\left[\tilde{\mathcal{O}}_0(t N^{1/d_{\mathrm{eff}} \nu}) + N^{\omega / d_{\mathrm{eff}}}\, \tilde{\mathcal{O}}_1(t N^{1/d_{\mathrm{eff}} \nu}) + \cdots\right]," />
       <p className="mb-4 indent-8">
         where <Tex math="\omega > 0" /> is the correction-to-scaling exponent determined by the
-        leading irrelevant eigenvalue of the RG linearization. For mean-field systems,
+        leading irrelevant eigenvalue of the RG linearization. For mean-field systems,{' '}
         <Tex math="\omega = \epsilon = 4 - d_{\mathrm{eff}}" />, which is small for
         high-dimensional policy spaces, explaining the rapid convergence of the finite-size
         scaling fits observed empirically. Including the correction term reduces the
-        systematic error in the estimated critical coupling from <Tex math="\sim 3\%" /> to
+        systematic error in the estimated critical coupling from <Tex math="\sim 3\%" /> to{' '}
         <Tex math="\sim 0.3\%" /> for populations as small as <Tex math="N = 16" />, demonstrating
         the practical utility of the RG-informed fitting procedure.
       </p>
@@ -1937,20 +1937,20 @@ export function StatMechMARLPaper() {
 
       <p className="mb-4 indent-8">
         The RG flow in coupling-constant space admits a rigorous formulation through the
-        Callan–Symanzik equation adapted to the MARL Hamiltonian. Denoting by
+        Callan–Symanzik equation adapted to the MARL Hamiltonian. Denoting by{' '}
         <Tex math="\{g_k\}_{k=1}^{K}" /> the set of coupling constants parameterizing the effective
         reward interaction, the beta functions governing their flow under the scale
         transformation <Tex math="\mu \to \mu e^{-\ell}" /> are
       </p>
       <TexBlock math="\beta_k(g) = \mu \frac{\partial g_k}{\partial \mu}\bigg|_{\text{bare}}, \qquad \frac{dg_k}{d\ell} = \beta_k(g_1, \ldots, g_K)." />
       <p className="mb-4 indent-8">
-        At a fixed point <Tex math="g^*" /> satisfying <Tex math="\beta_k(g^*) = 0" /> for all
+        At a fixed point <Tex math="g^*" /> satisfying <Tex math="\beta_k(g^*) = 0" /> for all{' '}
         <Tex math="k" />, the system exhibits scale invariance and the critical exponents are
-        determined by the eigenvalues of the stability matrix
-        <Tex math="B_{kj} = \partial \beta_k / \partial g_j |_{g^*}" />. The eigenvalues
-        <Tex math="\lambda_k" /> of <Tex math="B" /> yield the scaling dimensions
+        determined by the eigenvalues of the stability matrix{' '}
+        <Tex math="B_{kj} = \partial \beta_k / \partial g_j |_{g^*}" />. The eigenvalues{' '}
+        <Tex math="\lambda_k" /> of <Tex math="B" /> yield the scaling dimensions{' '}
         <Tex math="y_k = -\lambda_k" />, with relevant directions (<Tex math="y_k > 0" />)
-        spanning the critical surface. In the one-loop approximation for the quartic
+        spanning the critical surface. In the one-loop approximation for the quartic{' '}
         <Tex math="\phi^4" />-type interaction characteristic of symmetric MARL, the
         beta function takes the Wilson–Fisher form
       </p>
@@ -1960,7 +1960,7 @@ export function StatMechMARLPaper() {
         and <Tex math="N" /> here denotes the number of components of the order parameter (not agents).
         The non-trivial fixed point <Tex math="g^* = \epsilon / A + \mathcal{O}(\epsilon^2)" />
         governs the critical behavior for <Tex math="\epsilon > 0" /> and yields the anomalous
-        dimension <Tex math="\eta = \mathcal{O}(\epsilon^2)" /> and the correlation-length exponent
+        dimension <Tex math="\eta = \mathcal{O}(\epsilon^2)" /> and the correlation-length exponent{' '}
         <Tex math="\nu^{-1} = 2 - \epsilon(N+2)/(N+8) + \mathcal{O}(\epsilon^2)" />. These
         perturbative results provide quantitative predictions for the critical slowing down
         observed during MARL training in low-dimensional policy spaces.
@@ -1968,17 +1968,17 @@ export function StatMechMARLPaper() {
 
       <p className="mb-4 indent-8">
         The coarse-graining procedure underlying the RG transformation has a direct
-        algorithmic realization in the training curriculum. At each RG step indexed by
-        <Tex math="\ell" />, we partition the agent population into blocks of size
+        algorithmic realization in the training curriculum. At each RG step indexed by{' '}
+        <Tex math="\ell" />, we partition the agent population into blocks of size{' '}
         <Tex math="b^{d_{\mathrm{eff}}}" /> and replace each block by a single effective agent
         whose policy parameters are obtained through a weighted average:
       </p>
       <TexBlock math="\theta'_{\alpha}(\ell + 1) = \frac{1}{|\mathcal{B}_\alpha|} \sum_{i \in \mathcal{B}_\alpha} \theta_i(\ell) + \zeta_\alpha, \qquad \zeta_\alpha \sim \mathcal{N}(0, \sigma^2_{\mathrm{cg}} \mathbf{I})," />
       <p className="mb-4 indent-8">
-        where <Tex math="\mathcal{B}_\alpha" /> denotes the <Tex math="\alpha" />-th block and
+        where <Tex math="\mathcal{B}_\alpha" /> denotes the <Tex math="\alpha" />-th block and{' '}
         <Tex math="\sigma^2_{\mathrm{cg}}" /> is a noise term accounting for the information lost
-        during coarse-graining. The effective coupling at scale <Tex math="\ell" /> then obeys
-        <Tex math="J_{\mathrm{eff}}(\ell) = b^{y_t} J_{\mathrm{eff}}(\ell - 1)" />, where
+        during coarse-graining. The effective coupling at scale <Tex math="\ell" /> then obeys{' '}
+        <Tex math="J_{\mathrm{eff}}(\ell) = b^{y_t} J_{\mathrm{eff}}(\ell - 1)" />, where{' '}
         <Tex math="y_t = 1/\nu" /> is the thermal scaling dimension. This geometric progression
         in the effective coupling precisely implements the slow annealing schedule derived from
         the Kibble–Zurek analysis and ensures that defect density remains bounded as the
@@ -1986,7 +1986,7 @@ export function StatMechMARLPaper() {
       </p>
 
       <p className="mb-4 indent-8">
-        The fixed-point analysis also reveals the existence of a crossover scale
+        The fixed-point analysis also reveals the existence of a crossover scale{' '}
         <Tex math="\ell^*" /> at which the running coupling transitions from the Gaussian
         fixed-point regime to the Wilson–Fisher regime. For <Tex math="\ell < \ell^*" />,
         the system behaves as if mean-field theory were exact, and corrections to scaling
@@ -2112,9 +2112,9 @@ export function StatMechMARLPaper() {
 
       <p className="mb-4 indent-8">
         The convergence criteria employed throughout the numerical campaign deserve careful
-        explication. For each simulation run, we monitor the Gelman–Rubin diagnostic
+        explication. For each simulation run, we monitor the Gelman–Rubin diagnostic{' '}
         <Tex math="\hat{R}" /> computed across <Tex math="M = 8" /> independent chains initialized
-        from dispersed points in policy space. Convergence is declared when
+        from dispersed points in policy space. Convergence is declared when{' '}
         <Tex math="\hat{R} < 1.01" /> for all scalar observables simultaneously, a criterion
         more stringent than the customary <Tex math="\hat{R} < 1.1" /> threshold. Additionally,
         we compute the effective sample size
@@ -2122,7 +2122,7 @@ export function StatMechMARLPaper() {
       <TexBlock math="n_{\mathrm{eff}} = \frac{M \cdot T_{\mathrm{chain}}}{1 + 2 \sum_{k=1}^{K_{\max}} \hat{\rho}_k}, \qquad \hat{\rho}_k = \frac{1}{M} \sum_{m=1}^{M} \frac{\mathrm{Cov}(\theta^{(m)}_t, \theta^{(m)}_{t+k})}{\mathrm{Var}(\theta^{(m)}_t)}," />
       <p className="mb-4 indent-8">
         where <Tex math="T_{\mathrm{chain}}" /> is the chain length and <Tex math="\hat{\rho}_k" /> is the
-        estimated autocorrelation at lag <Tex math="k" />. The summation is truncated at
+        estimated autocorrelation at lag <Tex math="k" />. The summation is truncated at{' '}
         <Tex math="K_{\max}" /> determined by the initial positive sequence estimator of Geyer (1992).
         We require <Tex math="n_{\mathrm{eff}} > 500" /> per observable to ensure that Monte Carlo
         error is subdominant to the systematic uncertainties arising from finite population
@@ -2140,10 +2140,10 @@ export function StatMechMARLPaper() {
       <TexBlock math="\Lambda = -2 \ln \frac{\mathcal{L}(\hat{\beta}_{\mathrm{MF}}, \hat{\gamma}_{\mathrm{MF}}, \hat{\nu}_{\mathrm{MF}})}{\mathcal{L}(\hat{\beta}, \hat{\gamma}, \hat{\nu})}, \qquad \Lambda \sim \chi^2_3 \text{ under } H_0," />
       <p className="mb-4 indent-8">
         where <Tex math="\mathcal{L}" /> denotes the profile likelihood of the scaling collapse.
-        In all environments with <Tex math="d_{\mathrm{eff}} \geq 4" />, the test fails to reject
+        In all environments with <Tex math="d_{\mathrm{eff}} \geq 4" />, the test fails to reject{' '}
         <Tex math="H_0" /> at the 5% level (<Tex math="p > 0.15" /> in every case), confirming
         the mean-field universality class. For the reduced two-dimensional policy
-        parameterization, we observe statistically significant deviations with
+        parameterization, we observe statistically significant deviations with{' '}
         <Tex math="p < 0.001" />, consistent with the <Tex math="\epsilon" />-expansion
         predictions of Section 12.
       </p>
@@ -2151,8 +2151,8 @@ export function StatMechMARLPaper() {
       <p className="mb-4 indent-8">
         To guard against finite-time artifacts, we perform a systematic study of the
         dependence of the estimated critical coupling <Tex math="\hat{J}_c(T_{\mathrm{sim}})" />
-        on the total simulation time <Tex math="T_{\mathrm{sim}}" />. Extrapolation to
-        <Tex math="T_{\mathrm{sim}} \to \infty" /> is accomplished via the ansatz
+        on the total simulation time <Tex math="T_{\mathrm{sim}}" />. Extrapolation to{' '}
+        <Tex math="T_{\mathrm{sim}} \to \infty" /> is accomplished via the ansatz{' '}
         <Tex math="\hat{J}_c(T) = J_c + a\, T^{-1/\nu z} + b\, T^{-2/\nu z}" />, where the
         dynamic critical exponent <Tex math="z" /> is treated as a free parameter. The
         resulting estimate <Tex math="J_c = 0.2713 \pm 0.0008" /> for the Predator-Prey
@@ -2687,7 +2687,7 @@ export function StatMechMARLPaper() {
       <p className="mb-4 indent-8">
         A particularly promising frontier lies at the intersection of quantum game theory
         and many-body physics. In the quantum extension of the MARL framework, each agent{"'"}s
-        policy is represented by a density operator <Tex math="\hat{\rho}_i" /> on a Hilbert space
+        policy is represented by a density operator <Tex math="\hat{\rho}_i" /> on a Hilbert space{' '}
         <Tex math="\mathcal{H}_i" />, and the joint policy state is an element of the tensor-product
         space <Tex math="\mathcal{H} = \bigotimes_{i=1}^{N} \mathcal{H}_i" />. The quantum
         partition function becomes a trace over this space:
@@ -2699,8 +2699,8 @@ export function StatMechMARLPaper() {
         quantum fluctuations analogous to exploration noise. The quantum phase transition
         at <Tex math="\Gamma_c" /> maps onto a classical transition in <Tex math="(d+1)" /> dimensions
         via the Suzuki–Trotter decomposition, potentially enabling quantum speedup in
-        traversing the critical region. The entanglement entropy
-        <Tex math="S_{\mathrm{ent}} = -\mathrm{Tr}(\hat{\rho}_A \ln \hat{\rho}_A)" /> of a subsystem
+        traversing the critical region. The entanglement entropy{' '}
+        <Tex math="S_{\mathrm{ent}} = -\mathrm{Tr}(\hat{\rho}_A \ln \hat{\rho}_A)" /> of a subsystem{' '}
         <Tex math="A" /> of agents exhibits area-law scaling in the ordered phase and logarithmic
         violations at criticality, providing an intrinsically quantum diagnostic for the
         phase structure.
@@ -2720,8 +2720,8 @@ export function StatMechMARLPaper() {
         MARL Hamiltonians, with computational cost scaling as <Tex math="\mathcal{O}(N \chi^3 d_s^2)" />
         where <Tex math="d_s" /> is the local strategy-space dimension. For higher-dimensional
         interaction topologies, the projected entangled pair state (PEPS) generalization applies,
-        albeit with increased computational complexity. The truncation error
-        <Tex math="\epsilon_{\chi} = 1 - \sum_{k=1}^{\chi} \lambda_k^2" />, where
+        albeit with increased computational complexity. The truncation error{' '}
+        <Tex math="\epsilon_{\chi} = 1 - \sum_{k=1}^{\chi} \lambda_k^2" />, where{' '}
         <Tex math="\lambda_k" /> are the Schmidt coefficients, provides a rigorous bound on the
         approximation quality.
       </p>
@@ -2730,21 +2730,21 @@ export function StatMechMARLPaper() {
         Finally, conformal field theory (CFT) provides exact analytical results at the
         critical point, where scale invariance is enhanced to the full conformal group.
         In <Tex math="d = 2" /> (one spatial dimension plus imaginary time), the infinite-dimensional
-        Virasoro algebra constrains the form of all correlation functions. The central charge
+        Virasoro algebra constrains the form of all correlation functions. The central charge{' '}
         <Tex math="c" /> of the CFT classifies the universality class and determines the
         finite-size scaling of the free energy:
       </p>
       <TexBlock math="f(L) = f_{\infty} - \frac{\pi c}{6 L^2} + \mathcal{O}(L^{-4})," />
       <p className="mb-4 indent-8">
         where <Tex math="L" /> is the system size (number of agents on a ring). The operator
-        content of the CFT — the spectrum of scaling dimensions
+        content of the CFT — the spectrum of scaling dimensions{' '}
         <Tex math="\{(\Delta_k, \bar{\Delta}_k)\}" /> — determines all critical exponents via
-        the relations <Tex math="\eta = 2\Delta_{\sigma}" /> and
-        <Tex math="\nu^{-1} = d - \Delta_{\epsilon}" />, where <Tex math="\sigma" /> and
+        the relations <Tex math="\eta = 2\Delta_{\sigma}" /> and{' '}
+        <Tex math="\nu^{-1} = d - \Delta_{\epsilon}" />, where <Tex math="\sigma" /> and{' '}
         <Tex math="\epsilon" /> denote the spin and energy operators respectively. For the
         Ising universality class relevant to two-strategy MARL, <Tex math="c = 1/2" /> and the
-        exact exponents <Tex math="\beta = 1/8" />, <Tex math="\gamma = 7/4" />,
-        <Tex math="\nu = 1" /> follow from the Kac table of the minimal model
+        exact exponents <Tex math="\beta = 1/8" />, <Tex math="\gamma = 7/4" />,{' '}
+        <Tex math="\nu = 1" /> follow from the Kac table of the minimal model{' '}
         <Tex math="\mathcal{M}(3,4)" />. This CFT machinery offers the tantalizing prospect
         of exact, non-perturbative results for MARL phase transitions in low-dimensional
         policy spaces.
@@ -2810,13 +2810,13 @@ export function StatMechMARLPaper() {
 
       <p className="mb-4 indent-8">
         The connections to information geometry deserve particular emphasis. The Fisher
-        information metric on the policy manifold
+        information metric on the policy manifold{' '}
         <Tex math="g_{\mu\nu}(\theta) = \mathbb{E}\!\left[\partial_\mu \ln \pi(a|s;\theta)\, \partial_\nu \ln \pi(a|s;\theta)\right]" />
         endows the parameter space with a Riemannian structure whose geodesics correspond to
-        paths of minimum information loss. The natural gradient
+        paths of minimum information loss. The natural gradient{' '}
         <Tex math="\tilde{\nabla} J = g^{-1} \nabla J" /> descends along these geodesics,
         and the resulting dynamics can be interpreted as motion on a curved manifold subject
-        to the thermodynamic forces identified in our framework. The scalar curvature
+        to the thermodynamic forces identified in our framework. The scalar curvature{' '}
         <Tex math="R(\theta)" /> of the Fisher metric diverges at the phase transition, signaling
         a singularity in the information-geometric structure that corresponds precisely to
         the divergence of the susceptibility <Tex math="\chi" />. The relation
@@ -2832,7 +2832,7 @@ export function StatMechMARLPaper() {
       <p className="mb-4 indent-8">
         The thermodynamic computing paradigm offers another lens through which to interpret
         our results. In this framework, computation is viewed as a physical process subject
-        to fundamental thermodynamic constraints. The Landauer bound
+        to fundamental thermodynamic constraints. The Landauer bound{' '}
         <Tex math="\Delta Q \geq k_B T \ln 2" /> per bit of information erased imposes a minimum
         energy cost on irreversible computation, and the training of a MARL system —
         which progressively selects a low-entropy coordinated policy from a high-entropy
@@ -2844,8 +2844,8 @@ export function StatMechMARLPaper() {
         shows that the actual dissipation exceeds this bound by a factor proportional to
         the integrated rate of entropy production, providing a thermodynamic efficiency
         metric <Tex math="\eta_{\mathrm{thermo}} = \Delta S_{\mathrm{sys}} / \Delta s_{\mathrm{tot}} \leq 1" />
-        for training algorithms. The RG curriculum achieves
-        <Tex math="\eta_{\mathrm{thermo}} \approx 0.72" />, compared to
+        for training algorithms. The RG curriculum achieves{' '}
+        <Tex math="\eta_{\mathrm{thermo}} \approx 0.72" />, compared to{' '}
         <Tex math="\eta_{\mathrm{thermo}} \approx 0.41" /> for linear annealing, indicating
         substantially more efficient use of the computational resources.
       </p>
@@ -2897,7 +2897,7 @@ export function StatMechMARLPaper() {
       <p className="mb-4 indent-8">
         where <Tex math="\Gamma" /> is the effective action and <Tex math="W" /> the Schwinger
         functional, organizes the perturbative expansion systematically and makes the
-        connection to the renormalization group manifest. The vertex functions
+        connection to the renormalization group manifest. The vertex functions{' '}
         <Tex math="\Gamma^{(n)}" /> encode the irreducible <Tex math="n" />-point interactions among
         agents and satisfy exact flow equations (Wetterstein functional RG) that interpolate
         between the bare microscopic theory and the fully dressed macroscopic behavior.
@@ -2910,10 +2910,10 @@ export function StatMechMARLPaper() {
         convergence time are not incremental improvements but rather qualitative changes
         in the training dynamics, eliminating the catastrophic variance spikes that plague
         standard independent-learner and parameter-sharing baselines at the critical coupling.
-        The theoretical prediction that the optimal annealing schedule obeys
-        <Tex math="J(t) = J_c\!\left[1 - (t_c / t)^{1/\nu z}\right]" /> for
+        The theoretical prediction that the optimal annealing schedule obeys{' '}
+        <Tex math="J(t) = J_c\!\left[1 - (t_c / t)^{1/\nu z}\right]" /> for{' '}
         <Tex math="t > t_c" /> is validated to within statistical precision, with fitted
-        exponents <Tex math="1/\nu z = 0.50 \pm 0.03" /> consistent with the mean-field values
+        exponents <Tex math="1/\nu z = 0.50 \pm 0.03" /> consistent with the mean-field values{' '}
         <Tex math="\nu = 1/2" />, <Tex math="z = 2" />. This constitutes, to our knowledge,
         the first empirical verification of Kibble–Zurek scaling in a machine learning context.
       </p>
@@ -2921,11 +2921,11 @@ export function StatMechMARLPaper() {
       <p className="mb-4 indent-8">
         Third, the universality-class identification opens the door to transferring
         quantitative predictions across superficially dissimilar environments. Once the
-        symmetry group <Tex math="\mathcal{G}" /> and effective dimensionality
+        symmetry group <Tex math="\mathcal{G}" /> and effective dimensionality{' '}
         <Tex math="d_{\mathrm{eff}}" /> of a new MARL problem are determined, the critical
         exponents, scaling functions, and optimal curriculum parameters follow immediately
         from the known results for that universality class, without the need for expensive
-        environment-specific hyperparameter searches. The free-energy landscape
+        environment-specific hyperparameter searches. The free-energy landscape{' '}
         <Tex math="F(J)" />, reconstructed via the Crooks fluctuation theorem, provides
         a complete thermodynamic characterization of the training process and identifies
         metastable traps, barrier heights, and the optimal path through configuration space.
