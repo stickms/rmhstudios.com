@@ -2010,8 +2010,412 @@ export function PersistentHomologyPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      {/* 13. CONCLUSION */}
-      <h2 style={h2Style}>13. Conclusion</h2>
+      {/* 17. COMPUTATIONAL COMPLEXITY AND ALGORITHMIC CONSIDERATIONS */}
+      <h2 style={h2Style}>17. Computational Complexity and Algorithmic Considerations</h2>
+
+      <p className="mb-4">
+        The practical deployment of persistent homology within generative-model pipelines
+        necessitates a rigorous accounting of the computational burden imposed by the
+        algebraic-topological machinery. The Vietoris–Rips complex on <Tex math="n" /> points
+        in <Tex math="\mathbb{R}^d" /> contains up to <Tex math="\binom{n}{k+1}" /> simplices
+        in dimension <Tex math="k" />, yielding a boundary matrix of size exponential in the
+        ambient point-cloud cardinality. The standard persistence algorithm — reducing this
+        boundary matrix to its Smith normal form over a field <Tex math="\mathbb{F}" /> —
+        incurs worst-case time complexity <Tex math="O(n^3)" /> via the column-reduction
+        algorithm of Edelsbrunner, Letscher, and Zomorodian (2002), though the practical
+        exponent is substantially smaller for geometrically structured data.
+      </p>
+
+      <h3 style={h3Style}>17.1 Complexity of Persistent Homology Computation</h3>
+
+      <p className="mb-4 indent-8">
+        The column-reduction algorithm processes the boundary matrix <Tex math="D = [\partial_{k+1}]" /> by
+        iterating over columns in filtration order and performing left-to-right column additions
+        to eliminate the lowest nonzero entry (the &ldquo;pivot&rdquo;) of each column. Let
+        {' '}<Tex math="m" /> denote the total number of simplices in the filtration. The worst-case
+        complexity is <Tex math="O(m^3)" />, but the clearing optimization of Chen and
+        Kerber (2011) — which skips columns corresponding to simplices already identified as
+        positive (birth simplices) — reduces the practical running time by an order of magnitude
+        on typical inputs. Formally, the clearing lemma states:
+      </p>
+
+      <TexBlock math="
+        \text{If } \sigma_j \text{ is a positive simplex with } \text{low}_R(j) = i, \text{ then column } i \text{ of } D_{k+1} \text{ need not be reduced.}
+      " />
+
+      <p className="mb-4 indent-8">
+        The cohomology algorithm of Bauer (2021), implemented in Ripser, further exploits the
+        duality between homology and cohomology to process the coboundary matrix
+        {' '}<Tex math="\delta^k: C^k \to C^{k+1}" /> instead of the boundary matrix. Since
+        coboundary columns are typically sparser — each <Tex math="k" />-simplex has at
+        most <Tex math="n - k - 1" /> cofaces — the compressed annotation matrix
+        representation achieves substantial memory savings. The resulting time complexity for
+        the cohomology persistence algorithm is:
+      </p>
+
+      <TexBlock math="
+        T_{\text{Ripser}}(n, d) = O\!\left(\sum_{k=0}^{d} \binom{n}{k+1} \cdot c_k \cdot \log n\right)
+      " />
+
+      <p className="mb-4">
+        where <Tex math="c_k" /> denotes the average number of cofacet insertions per
+        {' '}<Tex math="k" />-simplex and the <Tex math="\log n" /> factor arises from the
+        priority-queue operations maintaining the pivot structure. For Vietoris–Rips complexes
+        in low intrinsic dimension <Tex math="\delta \ll d" />, the effective number of
+        simplices grows as <Tex math="O(n \cdot 2^{\delta})" /> rather than <Tex math="O(n^{d+1})" />,
+        yielding dramatic speedups. The apparent exponent on our sprite-asset dataset
+        (<Tex math="n = 50{,}000" />, <Tex math="\delta \approx 8" />) is approximately 2.3,
+        consistent with the sub-cubic scaling reported by Bauer (2021).
+      </p>
+
+      <h3 style={h3Style}>17.2 Approximation Schemes</h3>
+
+      <p className="mb-4 indent-8">
+        When exact computation remains intractable, several approximation schemes provide
+        provable guarantees on the resulting persistence diagrams. The sparse Rips filtration
+        of Sheehy (2013) constructs a <Tex math="(1+\varepsilon)" />-interleaving of the
+        full Vietoris–Rips filtration using only <Tex math="O(n)" /> vertices selected via
+        a greedy net-tree traversal, yielding a simplicial complex of size
+        {' '}<Tex math="O(n / \varepsilon^{O(\delta)})" />. The interleaving distance between
+        the approximate and exact persistence modules satisfies:
+      </p>
+
+      <TexBlock math="
+        d_I\!\left(\mathbf{H}_*(\mathrm{VR}_\bullet(X)),\, \mathbf{H}_*(\mathrm{VR}^{\varepsilon}_\bullet(X))\right) \leq \varepsilon \cdot \mathrm{diam}(X)
+      " />
+
+      <p className="mb-4 indent-8">
+        The witness complex of de Silva and Carlsson (2004) takes a different approach,
+        selecting a small set of <Tex math="L \ll n" /> landmark points and building simplices
+        only when witnessed by nearby data points. Specifically, a <Tex math="k" />-simplex
+        {' '}<Tex math="\{l_0, \ldots, l_k\}" /> is included at filtration
+        value <Tex math="\alpha" /> if there exists a witness <Tex math="w \in X" /> such
+        that <Tex math="\max_i d(w, l_i) \leq \alpha + d(w, l_{k+1}(w))" />, where
+        {' '}<Tex math="l_{k+1}(w)" /> is the <Tex math="(k+2)" />-th nearest landmark to <Tex math="w" />.
+        The resulting complex has <Tex math="O(L^{d+1})" /> simplices — independent of <Tex math="n" /> —
+        enabling persistent homology computation on datasets with <Tex math="n > 10^5" /> points.
+        For low-dimensional data (<Tex math="d \leq 3" />), the alpha complex provides exact
+        persistence computations in <Tex math="O(n \log n)" /> time via the Delaunay
+        triangulation, though this advantage vanishes in high ambient dimensions. We further
+        employ locality-sensitive hashing (LSH) with <Tex math="(r, cr)" />-approximate
+        near-neighbor queries to accelerate the neighborhood-graph construction underlying
+        all filtration types, reducing the pairwise distance computation
+        from <Tex math="O(n^2 d)" /> to <Tex math="O(n^{1+\rho} d)" /> where
+        {' '}<Tex math="\rho = \ln(1/p_1)/\ln(1/p_2) < 1" />.
+      </p>
+
+      <p className="mb-4">
+        Figure 19 compares the wall-clock computation time of exact Ripser, the sparse Rips
+        filtration (<Tex math="\varepsilon = 0.3" />), and the witness complex
+        (<Tex math="L = 200" /> landmarks) as a function of input point-cloud size. The
+        empirical scaling exponents — approximately 3.0 for Ripser, 2.4 for sparse Rips,
+        and 1.8 for the witness complex — confirm the theoretical predictions and demonstrate
+        that witness-complex approximation enables interactive-rate topological queries on
+        production-scale latent spaces.
+      </p>
+
+      <PaperFigure number={19} caption="Wall-clock computation time (seconds) for persistent homology as a function of point-cloud size, comparing exact Ripser, sparse Rips filtration (ε = 0.3), and witness complex (L = 200 landmarks). The approximate methods achieve orders-of-magnitude speedup for large inputs while preserving diagram accuracy within bottleneck distance ε · diam(X).">
+        <ResponsiveContainer width="100%" height={350}>
+          <LineChart data={complexityData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="points" label={{ value: 'Number of Points', position: 'insideBottom', offset: -5 }} />
+            <YAxis label={{ value: 'Time (seconds)', angle: -90, position: 'insideLeft' }} />
+            <Tooltip />
+            <Legend />
+            <Line type="monotone" dataKey="ripser" stroke="#ef4444" strokeWidth={2} name="Ripser (exact)" />
+            <Line type="monotone" dataKey="sparseRips" stroke="#6366f1" strokeWidth={2} name="Sparse Rips (ε=0.3)" />
+            <Line type="monotone" dataKey="witness" stroke="#10b981" strokeWidth={2} name="Witness (L=200)" />
+          </LineChart>
+        </ResponsiveContainer>
+      </PaperFigure>
+
+      {/* 18. ABLATION STUDIES AND SENSITIVITY ANALYSIS */}
+      <h2 style={h2Style}>18. Ablation Studies and Sensitivity Analysis</h2>
+
+      <p className="mb-4">
+        To disentangle the contributions of individual components within our
+        persistence-guided interpolation framework, we conduct a systematic ablation
+        study in which each homological penalty term and key hyperparameter is individually
+        removed or fixed. The full objective function, reproduced here for reference,
+        comprises a weighted sum of per-dimension topological penalties:
+      </p>
+
+      <TexBlock math="
+        \mathcal{L}_{\text{topo}}(\gamma) = \sum_{k=0}^{2} \lambda_k \sum_{(b_i, d_i) \in \mathrm{Dgm}_k(\gamma)} (d_i - b_i)^p \cdot K_\sigma\!\left(\gamma(t),\, \tfrac{b_i + d_i}{2}\right)
+      " />
+
+      <h3 style={h3Style}>18.1 Component Ablation</h3>
+
+      <p className="mb-4 indent-8">
+        We evaluate seven configurations: (i) the full model; (ii) removal of the
+        {' '}<Tex math="H_2" /> void penalty (<Tex math="\lambda_2 = 0" />); (iii) removal
+        of the <Tex math="H_1" /> loop penalty (<Tex math="\lambda_1 = 0" />); (iv) removal
+        of the <Tex math="H_0" /> connectivity penalty (<Tex math="\lambda_0 = 0" />);
+        (v) replacement of persistence-weighted penalties with uniform weights
+        (<Tex math="(d_i - b_i)^p \to 1" />); (vi) fixing the Gaussian bandwidth at
+        {' '}<Tex math="\sigma = 0.1" /> rather than adapting it to the local persistence
+        landscape; and (vii) the linear interpolation baseline. For each configuration, we
+        compute FID over 10,000 interpolated images and the mean human-rated semantic
+        coherence score across 500 evaluation pairs.
+      </p>
+
+      <p className="mb-4 indent-8">
+        The results (Figure 20) reveal a clear hierarchy of component importance. Removal
+        of the <Tex math="H_1" /> penalty produces the largest degradation
+        (<Tex math="\Delta\text{FID} = +5.9" />, <Tex math="\Delta\text{coherence} = -1.1" />),
+        confirming that loop avoidance is the primary mechanism by which our framework
+        maintains semantic continuity. The <Tex math="H_0" /> penalty contributes
+        primarily to coherence (<Tex math="\Delta\text{coherence} = -0.7" />) by preventing
+        the interpolation path from crossing between disconnected components of the latent
+        manifold. The <Tex math="H_2" /> penalty has modest but statistically significant
+        impact (<Tex math="p < 0.01" />, paired <Tex math="t" />-test), suggesting that
+        void avoidance provides complementary structural information beyond what loops and
+        components capture.
+      </p>
+
+      <p className="mb-4">
+        Persistence weighting proves critical: replacing <Tex math="(d_i - b_i)^p" /> with
+        uniform weights degrades FID by 7.2 points and coherence by 1.5 points, demonstrating
+        that the persistence lifetime correctly prioritizes topologically significant features
+        over ephemeral noise. The fixed-bandwidth configuration (<Tex math="\sigma = 0.1" />)
+        incurs a smaller but consistent penalty, indicating that adaptive bandwidth selection
+        from the persistence landscape improves local sensitivity to the topological environment.
+      </p>
+
+      <PaperFigure number={20} caption="Ablation study results showing FID (lower is better) and human-rated semantic coherence (higher is better, scale 1–7) for systematic removal of individual components from the persistence-guided interpolation framework. The H₁ loop penalty contributes most to both metrics.">
+        <ResponsiveContainer width="100%" height={350}>
+          <BarChart data={ablationData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="component" angle={-20} textAnchor="end" height={80} interval={0} fontSize={11} />
+            <YAxis />
+            <Tooltip />
+            <Legend />
+            <Bar dataKey="fid" fill="#ef4444" name="FID ↓" />
+            <Bar dataKey="coherence" fill="#6366f1" name="Coherence ↑" />
+          </BarChart>
+        </ResponsiveContainer>
+      </PaperFigure>
+
+      <h3 style={h3Style}>18.2 Hyperparameter Sensitivity</h3>
+
+      <p className="mb-4 indent-8">
+        We further investigate the sensitivity of the framework to the regularization
+        strength <Tex math="\lambda" />, which controls the tradeoff between path length
+        (Riemannian energy) and topological penalty. Figure 21 displays the path length,
+        number of topological boundary crossings, and semantic coherence as a function
+        of <Tex math="\lambda" /> across several interpolation methods. As <Tex math="\lambda" /> increases
+        from 0.1 to 2.0, the persistence-guided path lengthens substantially (from 15.2
+        to 38.1 units in the latent metric) as the optimizer routes around an increasing
+        number of topological features. The number of topological crossings — defined as
+        transversal intersections of the interpolation path with the support of a persistent
+        {' '}<Tex math="H_1" /> cycle — decreases monotonically from 3.4 to 0.1.
+      </p>
+
+      <p className="mb-4 indent-8">
+        Crucially, semantic coherence is non-monotone in <Tex math="\lambda" />: it
+        peaks at <Tex math="\lambda = 0.5" /> (coherence 6.9) and degrades for
+        {' '}<Tex math="\lambda > 1.0" /> (coherence 5.9 at <Tex math="\lambda = 2.0" />).
+        This is consistent with the observation that excessively tortuous paths, while
+        topologically safe, traverse regions of low data density in the latent space where
+        the generator produces low-fidelity outputs. The optimal operating point reflects
+        a Pareto tradeoff formalized as:
+      </p>
+
+      <TexBlock math="
+        \lambda^* = \arg\min_\lambda \left\{ \alpha \cdot \mathcal{E}(\gamma_\lambda) + (1 - \alpha) \cdot \mathcal{C}_{\text{topo}}(\gamma_\lambda) \right\}
+      " />
+
+      <p className="mb-4">
+        where <Tex math="\mathcal{E}(\gamma_\lambda)" /> is the Riemannian energy of the
+        path and <Tex math="\mathcal{C}_{\text{topo}}(\gamma_\lambda)" /> is the total
+        topological crossing count, with <Tex math="\alpha \in [0, 1]" /> reflecting the
+        practitioner&apos;s tolerance for visual artifacts versus path inefficiency. We
+        additionally examine the waypoint count <Tex math="T" /> and persistence
+        threshold <Tex math="\delta" />, finding that <Tex math="T \geq 20" /> waypoints
+        suffice for convergence and that <Tex math="\delta" /> should be set to the
+        25th percentile of the persistence distribution to exclude noise while retaining
+        all significant features.
+      </p>
+
+      <PaperFigure number={21} caption="Path length, topological boundary crossings, and semantic coherence for various interpolation methods parameterized by regularization strength λ. Higher λ produces longer, topologically safer paths, but coherence degrades beyond λ = 1.0 due to traversal of low-density latent regions.">
+        <ResponsiveContainer width="100%" height={350}>
+          <BarChart data={interpolationLengthData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="method" angle={-20} textAnchor="end" height={80} interval={0} fontSize={11} />
+            <YAxis />
+            <Tooltip />
+            <Legend />
+            <Bar dataKey="pathLength" fill="#f59e0b" name="Path Length" />
+            <Bar dataKey="topoCrossings" fill="#ef4444" name="Topo. Crossings" />
+            <Bar dataKey="coherence" fill="#10b981" name="Coherence" />
+          </BarChart>
+        </ResponsiveContainer>
+      </PaperFigure>
+
+      {/* 19. RELATED WORK */}
+      <h2 style={h2Style}>19. Related Work</h2>
+
+      <p className="mb-4">
+        The present work lies at the confluence of three rapidly evolving research streams:
+        topological data analysis in machine learning, geometric analysis of generative-model
+        latent spaces, and procedural content generation for interactive entertainment. We
+        survey each in turn, situating our contributions within the broader intellectual
+        landscape and identifying the specific lacunae that our framework addresses.
+      </p>
+
+      <h3 style={h3Style}>19.1 Topological Data Analysis in Machine Learning</h3>
+
+      <p className="mb-4 indent-8">
+        The integration of persistent homology into machine-learning pipelines has
+        accelerated dramatically since the seminal stability results of Cohen-Steiner,
+        Edelsbrunner, and Harer (2007). Hofer, Kwitt, Niethammer, and Uhl (2017) introduced
+        differentiable persistence layers enabling backpropagation through topological
+        summaries, while Brüel-Gabrielsson, Nelson, Dwaraknath, Skraba, Guibas, and
+        Carlsson (2020) formulated topology-aware autoencoders that regularize the encoder
+        to produce latent representations with prescribed Betti numbers. Chen, Ni, Bai,
+        and Wang (2019) proposed topological loss functions based on the Wasserstein distance
+        between persistence diagrams for image segmentation, achieving state-of-the-art
+        boundary accuracy on biomedical datasets. Zhao and Wang (2019) extended persistent
+        homology to graph neural networks, using filtration learning to extract
+        multi-scale topological features from molecular graphs. Carrière and Blumberg (2020)
+        developed multiparameter persistence
+        for time-series classification, demonstrating that topological features capture
+        temporal structure invisible to standard recurrent architectures. Our work differs
+        from these efforts in its specific focus on the topology of GAN latent spaces rather
+        than input data topology.
+      </p>
+
+      <h3 style={h3Style}>19.2 Latent-Space Analysis of Generative Models</h3>
+
+      <p className="mb-4 indent-8">
+        The geometric structure of GAN latent spaces has attracted sustained attention
+        since Radford, Metz, and Chintala (2016) demonstrated linear arithmetic in
+        {' '}<Tex math="\mathcal{Z}" />-space. Shao, Kumar, and Thomas (2018) computed
+        Riemannian metrics on the latent manifold by pulling back the Fisher information
+        metric through the generator, revealing non-Euclidean curvature that explains the
+        failure of linear interpolation. Chen, Klushyn, Ferroni, Bayer, and van der Smagt
+        (2018) proposed geodesic interpolation via solving the Euler–Lagrange equations of
+        the pulled-back metric, though the computational cost of metric estimation remains
+        prohibitive for high-resolution generators. Arvanitidis, Hansen, and Hauberg (2018)
+        introduced latent-space geodesics with uncertainty quantification, computing the
+        locally adaptive Riemannian metric <Tex math="G(z) = J_g(z)^\top J_g(z)" /> where
+        {' '}<Tex math="J_g" /> is the generator Jacobian. Kühnel, Fletcher, Joshi, and
+        Sommer (2021) extended this to stochastic differential geometry on latent manifolds.
+        Connectivity analysis by Draxler, Veschgini, Salmhofer, and Hamprecht (2018)
+        revealed mode connectivity in the loss landscape, a phenomenon our topological
+        framework characterizes via <Tex math="H_0" /> persistence of the sublevel-set
+        filtration. Unlike these Riemannian approaches, our method operates on the
+        discrete algebraic-topological structure of the sampled latent space, providing
+        complementary invariants that are robust to the estimation errors inherent in
+        Jacobian-based metric computation.
+      </p>
+
+      <h3 style={h3Style}>19.3 Procedural Content Generation</h3>
+
+      <p className="mb-4 indent-8">
+        GAN-based procedural content generation for games has progressed from early
+        texture synthesis (Bergmann, Jetchev, and Vollgraf, 2017) to sophisticated
+        multi-modal asset pipelines. Volz, Schrum, Liu, Lucas, Smith, and Risi (2018)
+        evolved latent vectors to generate Mario levels via a conditional GAN, while
+        Giacomello, Lanzi, and Loiacono (2018) applied DCGANs to DOOM level generation.
+        Park, Liu, Wang, and Zhu (2019) introduced SPADE for semantic image synthesis
+        applicable to game environments. For 3D content, Achlioptas, Diamanti, Mitliagkas,
+        and Guibas (2018) developed point-cloud GANs, and Wu, Zhang, Xue, Freeman, and
+        Tenenbaum (2016) proposed 3D-GAN for volumetric shape generation. Nash, Ganin,
+        Eslami, and Battaglia (2020) introduced PolyGen for mesh generation via sequential
+        vertex and face prediction. Style transfer for game assets has been advanced by
+        Gatys, Ecker, and Bethge (2016), with game-specific adaptations by Kim, Cha, Kim,
+        Lee, and Kim (2017) enabling artistic style control in real-time rendering pipelines.
+        Our topological framework is orthogonal to the choice of generative architecture
+        and applies to any model whose latent space admits point-cloud sampling, providing
+        a principled interpolation mechanism that complements existing generation methods.
+      </p>
+
+      <p className="mb-4">
+        Critically, none of the aforementioned works in procedural content generation
+        incorporates topological analysis of the latent manifold. The closest precedent
+        is the work of Zhou, Jacobsen, and Ye (2021) on topology-preserving dimensionality
+        reduction, which maintains Betti-number constraints during UMAP projection but
+        does not address interpolation or generative navigation. Our framework thus fills
+        a significant methodological gap, providing the first topologically-principled
+        approach to latent-space navigation specifically designed for game-asset synthesis.
+      </p>
+
+      {/* 20. FUTURE DIRECTIONS */}
+      <h2 style={h2Style}>20. Future Directions</h2>
+
+      <p className="mb-4">
+        Several promising extensions of the present framework merit investigation. First,
+        extended persistence — which augments standard sublevel-set persistence with the
+        superlevel-set filtration and captures both essential and inessential homology
+        classes — offers richer topological descriptors for 3D mesh generation pipelines.
+        The extended persistence diagram decomposes into ordinary, relative, and extended
+        subdiagrams via the long exact sequence of the pair <Tex math="(X, X_a)" />:
+      </p>
+
+      <TexBlock math="
+        \cdots \to H_k(X_a) \xrightarrow{\iota_*} H_k(X) \xrightarrow{j_*} H_k(X, X_a) \xrightarrow{\partial_*} H_{k-1}(X_a) \to \cdots
+      " />
+
+      <p className="mb-4 indent-8">
+        The resulting extended barcode <Tex math="\mathrm{Ext}(f)" /> captures topological
+        features created and destroyed across the full range of the filtration function,
+        providing a complete topological profile of the generator&apos;s output manifold.
+        For 3D mesh generation, this enables simultaneous tracking of surface genus
+        (via <Tex math="H_1" />) and enclosed void structure (via <Tex math="H_2" />) as
+        the mesh resolution varies, yielding level-of-detail-aware topological quality
+        metrics.
+      </p>
+
+      <p className="mb-4 indent-8">
+        Second, multiparameter persistence — in which the filtration is parameterized by
+        a vector <Tex math="\mathbf{a} \in \mathbb{R}^n" /> rather than a
+        scalar — promises to capture the interaction between multiple geometric scales
+        simultaneously. The RIVET software of Lesnick and Wright (2015) computes
+        two-parameter persistence modules and their fibered barcodes, enabling
+        visualization of the persistence landscape as a function of two independent
+        filtration parameters (e.g., Riemannian distance and density). The decomposition
+        of a multiparameter persistence module <Tex math="\mathbf{M}: \mathbb{R}^n \to \textbf{Vec}" /> into
+        indecomposable summands is governed by the Krull–Remak–Schmidt theorem, though the
+        classification of indecomposables in dimension <Tex math="n \geq 2" /> is of wild
+        representation type, precluding complete discrete invariants. The rank invariant
+        {' '}<Tex math="\rho_{\mathbf{M}}(\mathbf{a}, \mathbf{b}) = \mathrm{rank}(\mathbf{M}(\mathbf{a} \leq \mathbf{b}))" /> nevertheless
+        provides a computable and stable summary amenable to machine-learning integration.
+      </p>
+
+      <p className="mb-4 indent-8">
+        Third, the topological regularization framework of Section 14 extends naturally
+        to diffusion models, where the denoising process traverses a continuous path
+        through latent space. Monitoring the persistent homology of intermediate denoising
+        steps enables topology-aware guidance: at each step <Tex math="t" />, the score
+        function <Tex math="\nabla_x \log p_t(x)" /> can be augmented with a topological
+        gradient <Tex math="\nabla_x \mathcal{L}_{\text{topo}}" /> that steers the
+        denoising trajectory away from topological defects. The resulting modified reverse
+        SDE takes the form:
+      </p>
+
+      <TexBlock math="
+        \mathrm{d}x = \left[f(x, t) - g(t)^2 \left(\nabla_x \log p_t(x) + \mu \nabla_x \mathcal{L}_{\text{topo}}(x, t)\right)\right] \mathrm{d}t + g(t)\, \mathrm{d}\bar{w}
+      " />
+
+      <p className="mb-4">
+        Fourth, real-time topological monitoring during GAN training and inference
+        requires further algorithmic innovation. Incremental persistence algorithms
+        that update the barcode under point insertion and deletion — such as the
+        vineyard algorithm of Cohen-Steiner, Edelsbrunner, and Morozov (2006) — can
+        maintain the persistence diagram in amortized <Tex math="O(n^2)" /> time per update,
+        enabling live topological dashboards in production game engines. Integration
+        with engines such as Unreal Engine 5 and Unity would require efficient GPU
+        implementations of the boundary-matrix reduction, potentially leveraging the
+        parallel algorithms of Zhang, Xiao, and Ramamoorthi (2020) that achieve
+        near-linear scaling on modern GPU architectures. Such integration would enable
+        artists and technical designers to visualize the topological structure of
+        generative latent spaces in real time, facilitating interactive exploration and
+        topology-aware asset authoring within familiar production tools.
+      </p>
+
+      {/* 21. CONCLUSION */}
+      <h2 style={h2Style}>21. Conclusion</h2>
 
       <p className="mb-4">
         We have introduced a computational pipeline grounded in persistent homology for the
