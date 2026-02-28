@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { headers } from "next/headers";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { resolveUserDisplay } from "@/lib/user-display";
 
 const MAX_COMMENT_LENGTH = 2000;
 
@@ -18,20 +19,23 @@ export async function GET(
             orderBy: { createdAt: 'desc' },
             include: {
                 user: {
-                    select: { name: true, username: true, image: true }
+                    select: { name: true, username: true, image: true, profile: { select: { displayName: true, customImage: true } } }
                 }
             }
         });
 
-        const formatted = comments.map((c: any) => ({
-            id: c.id,
-            content: c.content,
-            createdAt: c.createdAt,
-            user: {
-                name: c.user.name || c.user.username || "Unknown",
-                image: c.user.image
-            }
-        }));
+        const formatted = comments.map((c: any) => {
+            const resolved = resolveUserDisplay(c.user);
+            return {
+                id: c.id,
+                content: c.content,
+                createdAt: c.createdAt,
+                user: {
+                    name: resolved.name || c.user.username || "Unknown",
+                    image: resolved.image
+                }
+            };
+        });
 
         return NextResponse.json(formatted);
     } catch (error) {
@@ -92,18 +96,19 @@ export async function POST(
             },
             include: {
                 user: {
-                    select: { name: true, username: true, image: true }
+                    select: { name: true, username: true, image: true, profile: { select: { displayName: true, customImage: true } } }
                 }
             }
         });
 
+        const resolved = resolveUserDisplay(comment.user);
         return NextResponse.json({
             id: comment.id,
             content: comment.content,
             createdAt: comment.createdAt,
             user: {
-                name: comment.user.name || comment.user.username || "Unknown",
-                image: comment.user.image
+                name: resolved.name || comment.user.username || "Unknown",
+                image: resolved.image
             }
         });
 

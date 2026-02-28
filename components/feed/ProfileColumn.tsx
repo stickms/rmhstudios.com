@@ -424,15 +424,26 @@ export function ProfileColumn({ userId }: { userId: string }) {
           open={showEdit}
           onClose={() => setShowEdit(false)}
           initial={{
+            name: profile.name,
+            image: profile.image,
             bio: profile.bio,
             location: profile.location,
             website: profile.website,
             showLikes: profile.showLikes,
           }}
           onSaved={(data) => {
-            setProfile((prev) =>
-              prev ? { ...prev, ...data } : prev
-            );
+            setProfile((prev) => {
+              if (!prev) return prev;
+              return {
+                ...prev,
+                ...(data.displayName !== undefined ? { name: data.displayName } : {}),
+                ...(data.image !== undefined ? { image: data.image } : {}),
+                bio: data.bio,
+                location: data.location,
+                website: data.website,
+                showLikes: data.showLikes,
+              };
+            });
           }}
         />
       )}

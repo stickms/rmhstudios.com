@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
+import { resolveUserDisplay } from '@/lib/user-display';
 
 export async function GET(req: Request) {
     try {
@@ -24,23 +25,26 @@ export async function GET(req: Request) {
                         name: true,
                         username: true,
                         image: true,
+                        profile: { select: { displayName: true, customImage: true } },
                     },
                 },
             },
         });
 
-        const leaderboard = entries.map((e: (typeof entries)[number], i: number) => ({
+        const leaderboard = entries.map((e: (typeof entries)[number], i: number) => {
+            const resolved = e.user ? resolveUserDisplay(e.user) : { name: null, image: null };
+            return {
             rank: i + 1,
             userId: e.userId,
-            displayName: e.user?.username || e.user?.name || 'Anonymous',
-            avatar: e.user?.image || null,
+            displayName: e.user?.username || resolved.name || 'Anonymous',
+            avatar: resolved.image || null,
             highScore: e.highScore,
             maxCombo: e.maxCombo,
             puzzlesSolved: e.puzzlesSolved,
             peakDifficulty: e.peakDifficulty,
             totalTime: e.totalTime,
             updatedAt: e.updatedAt.toISOString(),
-        }));
+        }});
 
         return NextResponse.json({ leaderboard });
     } catch (error) {

@@ -965,6 +965,9 @@ model UserProfile {
   id        String   @id @default(cuid())
   userId    String   @unique
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  displayName         String?  @db.VarChar(50)
+  customImage         String?
+  customImageSizeBytes Int?
   bio       String?  @db.VarChar(160)
   location  String?  @db.VarChar(100)
   website   String?  @db.VarChar(200)

@@ -36,18 +36,20 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
-    const { bio, location, website, showLikes } = parsed.data;
+    const { displayName, bio, location, website, showLikes } = parsed.data;
 
     const profile = await prisma.userProfile.upsert({
       where: { userId: session.user.id },
       create: {
         userId: session.user.id,
+        displayName: displayName ?? null,
         bio: bio ?? null,
         location: location ?? null,
         website: website || null,
         showLikes: showLikes ?? false,
       },
       update: {
+        ...(displayName !== undefined ? { displayName: displayName ?? null } : {}),
         bio: bio ?? null,
         location: location ?? null,
         website: website || null,
@@ -56,6 +58,7 @@ export async function PATCH(req: NextRequest) {
     });
 
     return NextResponse.json({
+      displayName: profile.displayName,
       bio: profile.bio,
       location: profile.location,
       website: profile.website,

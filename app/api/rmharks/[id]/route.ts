@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { headers } from "next/headers";
+import { userDisplaySelect, resolveUser } from "@/lib/user-display";
 
 export const runtime = "nodejs";
 
@@ -23,7 +24,7 @@ export async function GET(
     const rmhark = await prisma.rMHark.findUnique({
       where: { id },
       include: {
-        user: { select: { id: true, name: true, image: true, username: true } },
+        user: { select: userDisplaySelect },
         _count: { select: { likes: true, comments: true, reposts: true, views: true } },
         ...(userId
           ? {
@@ -33,7 +34,7 @@ export async function GET(
           : {}),
         original: {
           include: {
-            user: { select: { id: true, name: true, image: true, username: true } },
+            user: { select: userDisplaySelect },
             _count: { select: { likes: true, comments: true, reposts: true, views: true } },
           },
         },
@@ -49,7 +50,7 @@ export async function GET(
       type: "rmhark",
       createdAt: rmhark.createdAt.toISOString(),
       content: rmhark.content,
-      user: rmhark.user,
+      user: resolveUser(rmhark.user),
       likeCount: rmhark._count.likes,
       commentCount: rmhark._count.comments,
       repostCount: rmhark._count.reposts,
@@ -62,7 +63,7 @@ export async function GET(
             type: "rmhark",
             createdAt: rmhark.original.createdAt.toISOString(),
             content: rmhark.original.content,
-            user: rmhark.original.user,
+            user: resolveUser(rmhark.original.user),
             likeCount: rmhark.original._count.likes,
             commentCount: rmhark.original._count.comments,
             repostCount: rmhark.original._count.reposts,

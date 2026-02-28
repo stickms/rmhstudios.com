@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { formatDateKey } from '@/lib/daily-puzzle/seed';
+import { resolveUserDisplay } from '@/lib/user-display';
 
 export async function GET(req: Request) {
     const ip = getClientIp(req);
@@ -40,20 +41,23 @@ export async function GET(req: Request) {
                         name: true,
                         username: true,
                         image: true,
+                        profile: { select: { displayName: true, customImage: true } },
                     },
                 },
             },
         });
 
-        const leaderboard = entries.map((e, i) => ({
+        const leaderboard = entries.map((e, i) => {
+            const resolved = e.user ? resolveUserDisplay(e.user) : { name: null, image: null };
+            return {
             rank: i + 1,
             moves: e.moves,
             dnf: e.dnf ?? false,
             hintUsed: e.hintUsed ?? false,
-            displayName: e.user?.username || e.user?.name || 'Anonymous',
-            avatar: e.user?.image || null,
+            displayName: e.user?.username || resolved.name || 'Anonymous',
+            avatar: resolved.image || null,
             solvedAt: e.createdAt.toISOString(),
-        }));
+        }});
 
         return NextResponse.json({ leaderboard, dateKey });
     } catch (e) {

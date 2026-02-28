@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { headers } from "next/headers";
+import { resolveUserDisplay } from "@/lib/user-display";
 
 export const runtime = "nodejs";
 
@@ -30,7 +31,7 @@ export async function GET(
         image: true,
         createdAt: true,
         profile: {
-          select: { bio: true, location: true, website: true, showLikes: true },
+          select: { displayName: true, customImage: true, bio: true, location: true, website: true, showLikes: true },
         },
         _count: {
           select: {
@@ -54,11 +55,13 @@ export async function GET(
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
+    const resolved = resolveUserDisplay(user);
+
     return NextResponse.json({
       id: user.id,
-      name: user.name,
+      name: resolved.name,
       username: user.username,
-      image: user.image,
+      image: resolved.image,
       createdAt: user.createdAt.toISOString(),
       bio: user.profile?.bio ?? null,
       location: user.profile?.location ?? null,

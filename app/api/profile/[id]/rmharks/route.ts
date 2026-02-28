@@ -3,11 +3,12 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { headers } from "next/headers";
 import type { FeedItem } from "@/lib/feed-types";
+import { userDisplaySelect, resolveUser } from "@/lib/user-display";
 
 export const runtime = "nodejs";
 
 const rmharkInclude = (viewerId: string | null) => ({
-  user: { select: { id: true, name: true, image: true, username: true } },
+  user: { select: userDisplaySelect },
   _count: { select: { likes: true, comments: true, reposts: true, views: true } },
   ...(viewerId
     ? {
@@ -17,20 +18,20 @@ const rmharkInclude = (viewerId: string | null) => ({
     : {}),
   original: {
     include: {
-      user: { select: { id: true, name: true, image: true, username: true } },
+      user: { select: userDisplaySelect },
       _count: { select: { likes: true, comments: true, reposts: true, views: true } },
     },
   },
 });
 
-function mapOriginal(original: { id: string; createdAt: Date; content: string; user: { id: string; name: string | null; image: string | null; username: string | null }; _count: { likes: number; comments: number; reposts: number; views: number } } | null): FeedItem | undefined {
+function mapOriginal(original: { id: string; createdAt: Date; content: string; user: Parameters<typeof resolveUser>[0]; _count: { likes: number; comments: number; reposts: number; views: number } } | null): FeedItem | undefined {
   if (!original) return undefined;
   return {
     id: original.id,
     type: "rmhark" as const,
     createdAt: original.createdAt.toISOString(),
     content: original.content,
-    user: original.user,
+    user: resolveUser(original.user),
     likeCount: original._count.likes,
     commentCount: original._count.comments,
     repostCount: original._count.reposts,
@@ -78,7 +79,7 @@ export async function GET(
         orderBy: { createdAt: "desc" },
         take: limit,
         include: {
-          user: { select: { id: true, name: true, image: true, username: true } },
+          user: { select: userDisplaySelect },
           rmhark: {
             include: rmharkInclude(viewerId),
           },
@@ -92,7 +93,7 @@ export async function GET(
       type: "rmhark" as const,
       createdAt: r.createdAt.toISOString(),
       content: r.content,
-      user: r.user,
+      user: resolveUser(r.user),
       likeCount: r._count.likes,
       commentCount: r._count.comments,
       repostCount: r._count.reposts,
@@ -111,14 +112,14 @@ export async function GET(
         createdAt: rp.createdAt.toISOString(),
         actualId: r.id,
         content: r.content,
-        user: r.user,
+        user: resolveUser(r.user),
         likeCount: r._count.likes,
         commentCount: r._count.comments,
         repostCount: r._count.reposts,
         viewCount: r._count.views,
         liked: viewerId ? r.likes.length > 0 : false,
         reposted: viewerId ? r.reposts.length > 0 : false,
-        repostedBy: rp.user,
+        repostedBy: resolveUser(rp.user),
         original: mapOriginal(r.original),
       };
     });

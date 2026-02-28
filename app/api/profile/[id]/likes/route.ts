@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { headers } from "next/headers";
 import type { FeedItem } from "@/lib/feed-types";
+import { userDisplaySelect, resolveUser } from "@/lib/user-display";
 
 export const runtime = "nodejs";
 
@@ -48,7 +49,7 @@ export async function GET(
       include: {
         rmhark: {
           include: {
-            user: { select: { id: true, name: true, image: true, username: true } },
+            user: { select: userDisplaySelect },
             _count: { select: { likes: true, comments: true, reposts: true, views: true } },
             ...(viewerId
               ? {
@@ -58,7 +59,7 @@ export async function GET(
               : {}),
             original: {
               include: {
-                user: { select: { id: true, name: true, image: true, username: true } },
+                user: { select: userDisplaySelect },
                 _count: { select: { likes: true, comments: true, reposts: true, views: true } },
               },
             },
@@ -74,7 +75,7 @@ export async function GET(
         type: "rmhark" as const,
         createdAt: l.createdAt.toISOString(),
         content: r.content,
-        user: r.user,
+        user: resolveUser(r.user),
         likeCount: r._count.likes,
         commentCount: r._count.comments,
         repostCount: r._count.reposts,
@@ -87,7 +88,7 @@ export async function GET(
               type: "rmhark" as const,
               createdAt: r.original.createdAt.toISOString(),
               content: r.original.content,
-              user: r.original.user,
+              user: resolveUser(r.original.user),
               likeCount: r.original._count.likes,
               commentCount: r.original._count.comments,
               repostCount: r.original._count.reposts,

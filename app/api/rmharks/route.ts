@@ -10,6 +10,7 @@ import { getAllPosts } from "@/lib/blog";
 import { getAllNewsArticles } from "@/lib/news";
 import { getAllArticles } from "@/lib/research";
 import type { FeedItem, FeedFilter } from "@/lib/feed-types";
+import { userDisplaySelect, resolveUser } from "@/lib/user-display";
 
 export const runtime = "nodejs";
 
@@ -130,7 +131,7 @@ export async function GET(req: NextRequest) {
     const cursorDate = cursor ? new Date(cursor) : undefined;
 
     const rmharkInclude = {
-      user: { select: { id: true, name: true, image: true, username: true } },
+      user: { select: userDisplaySelect },
       _count: { select: { likes: true, comments: true, reposts: true, views: true } },
       ...(userId
         ? {
@@ -140,7 +141,7 @@ export async function GET(req: NextRequest) {
         : {}),
       original: {
         include: {
-          user: { select: { id: true, name: true, image: true, username: true } },
+          user: { select: userDisplaySelect },
           _count: { select: { likes: true, comments: true, reposts: true, views: true } },
         },
       },
@@ -159,7 +160,7 @@ export async function GET(req: NextRequest) {
           orderBy: { createdAt: "desc" },
           take: limit,
           include: {
-            user: { select: { id: true, name: true, image: true, username: true } },
+            user: { select: userDisplaySelect },
             rmhark: { include: rmharkInclude },
           },
         }),
@@ -172,7 +173,7 @@ export async function GET(req: NextRequest) {
               type: "rmhark" as const,
               createdAt: o.createdAt.toISOString(),
               content: o.content,
-              user: o.user,
+              user: resolveUser(o.user),
               likeCount: o._count.likes,
               commentCount: o._count.comments,
               repostCount: o._count.reposts,
@@ -185,7 +186,7 @@ export async function GET(req: NextRequest) {
         type: "rmhark" as const,
         createdAt: r.createdAt.toISOString(),
         content: r.content,
-        user: r.user,
+        user: resolveUser(r.user),
         likeCount: r._count.likes,
         commentCount: r._count.comments,
         repostCount: r._count.reposts,
@@ -203,14 +204,14 @@ export async function GET(req: NextRequest) {
           createdAt: rp.createdAt.toISOString(),
           actualId: r.id,
           content: r.content,
-          user: r.user,
+          user: resolveUser(r.user),
           likeCount: r._count.likes,
           commentCount: r._count.comments,
           repostCount: r._count.reposts,
           viewCount: r._count.views,
           liked: userId ? r.likes.length > 0 : false,
           reposted: userId ? r.reposts.length > 0 : false,
-          repostedBy: rp.user,
+          repostedBy: resolveUser(rp.user),
           original: mapOriginal(r.original),
         };
       });
@@ -314,7 +315,7 @@ export async function POST(req: NextRequest) {
         userId: session.user.id,
       },
       include: {
-        user: { select: { id: true, name: true, image: true, username: true } },
+        user: { select: userDisplaySelect },
       },
     });
 
@@ -323,7 +324,7 @@ export async function POST(req: NextRequest) {
       type: "rmhark",
       createdAt: rmhark.createdAt.toISOString(),
       content: rmhark.content,
-      user: rmhark.user,
+      user: resolveUser(rmhark.user),
       likeCount: 0,
       commentCount: 0,
       repostCount: 0,

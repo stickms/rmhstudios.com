@@ -59,7 +59,7 @@ export function ComposeModal({ open, onClose }: ComposeModalProps) {
       />
 
       {/* Modal */}
-      <div className="absolute inset-x-4 top-[10vh] mx-auto max-w-lg bg-site-bg border border-site-border rounded-2xl shadow-xl animate-in zoom-in-95 fade-in duration-200">
+      <div className="absolute inset-x-4 top-[5vh] sm:top-[10vh] mx-auto max-w-lg bg-site-bg border border-site-border rounded-2xl shadow-xl animate-in zoom-in-95 fade-in duration-200">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-site-border">
           <button

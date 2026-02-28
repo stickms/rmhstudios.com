@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { headers } from "next/headers";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { createCommentSchema } from "@/lib/rmhark-schema";
+import { userDisplaySelect, resolveUser } from "@/lib/user-display";
 
 export const runtime = "nodejs";
 
@@ -18,17 +19,23 @@ export async function GET(
       where: { rmheetId: id, parentId: null },
       orderBy: { createdAt: "desc" },
       include: {
-        user: { select: { id: true, name: true, image: true, username: true } },
+        user: { select: userDisplaySelect },
         replies: {
           orderBy: { createdAt: "asc" },
           include: {
-            user: { select: { id: true, name: true, image: true, username: true } },
+            user: { select: userDisplaySelect },
           },
         },
       },
     });
 
-    return NextResponse.json(comments);
+    const resolved = comments.map((c) => ({
+      ...c,
+      user: resolveUser(c.user),
+      replies: c.replies.map((r) => ({ ...r, user: resolveUser(r.user) })),
+    }));
+
+    return NextResponse.json(resolved);
   } catch (error) {
     console.error("Fetch comments error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
@@ -76,11 +83,11 @@ export async function POST(
         parentId: parsed.data.parentId ?? null,
       },
       include: {
-        user: { select: { id: true, name: true, image: true, username: true } },
+        user: { select: userDisplaySelect },
       },
     });
 
-    return NextResponse.json(comment, { status: 201 });
+    return NextResponse.json({ ...comment, user: resolveUser(comment.user) }, { status: 201 });
   } catch (error) {
     console.error("Post comment error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
