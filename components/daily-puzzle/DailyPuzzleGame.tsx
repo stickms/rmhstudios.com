@@ -397,7 +397,7 @@ export function DailyPuzzleGame() {
                                 <span className="text-site-text font-medium flex-1 truncate">{e.displayName}</span>
                                 <span className="flex items-center gap-1.5">
                                     {e.hintUsed && (
-                                        <Lightbulb className="w-3.5 h-3.5 text-cyan-400 shrink-0" title="Used hint" />
+                                        <span title="Used hint"><Lightbulb className="w-3.5 h-3.5 text-cyan-400 shrink-0" aria-hidden /></span>
                                     )}
                                     <span
                                         className={`font-mono font-semibold ${

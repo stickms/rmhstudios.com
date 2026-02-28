@@ -1,4 +1,5 @@
 import katex from 'katex';
+import 'katex/dist/katex.min.css';
 
 /**
  * Pre-render a LaTeX formula to an HTML string using KaTeX.

@@ -57,7 +57,7 @@ export async function POST(req: Request) {
             if (existing.dnf) {
                 await prisma.lightsOutScore.update({
                     where: { id: existing.id },
-                    data: { moves, hintUsed, dnf: false, updatedAt: new Date() },
+                    data: { moves, hintUsed, dnf: false },
                 });
                 return NextResponse.json({ success: true, improved: true });
             }
@@ -66,7 +66,7 @@ export async function POST(req: Request) {
             }
             await prisma.lightsOutScore.update({
                 where: { id: existing.id },
-                data: { moves, hintUsed, updatedAt: new Date() },
+                data: { moves, hintUsed },
             });
             return NextResponse.json({ success: true, improved: true });
         }
