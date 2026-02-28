@@ -61,6 +61,25 @@ export async function fetchArticle(
 
     if (!response.ok) return null;
 
+    // Detect redirects: extract the canonical title from the final URL.
+    // Wikipedia's REST API follows redirects (e.g. Stem_cells → Stem_cell),
+    // so response.url contains the actual article path.
+    let canonicalTitle = normalizedTitle;
+    const urlMatch = response.url.match(/\/page\/html\/([^?#]+)$/);
+    if (urlMatch) {
+      canonicalTitle = decodeURIComponent(urlMatch[1]);
+    }
+
+    // Check cache for the canonical title in case it was already fetched
+    if (canonicalTitle !== normalizedTitle && cache) {
+      const cachedCanonical = cache.get(canonicalTitle);
+      if (cachedCanonical) {
+        // Also cache under the original title for future lookups
+        cache.set(normalizedTitle, cachedCanonical);
+        return cachedCanonical;
+      }
+    }
+
     const rawHtml = await response.text();
 
     // Yield to the event loop before CPU-intensive parsing
@@ -141,13 +160,20 @@ export async function fetchArticle(
     });
 
     const article: CachedArticle = {
-      title: normalizedTitle,
+      title: canonicalTitle,
       sanitizedHtml: sanitized,
       links,
       fetchedAt: Date.now(),
     };
 
-    if (cache) cache.set(normalizedTitle, article);
+    if (cache) {
+      cache.set(canonicalTitle, article);
+      // Also cache under the original title so future lookups for the
+      // redirect source resolve instantly.
+      if (canonicalTitle !== normalizedTitle) {
+        cache.set(normalizedTitle, article);
+      }
+    }
     return article;
   } catch {
     return null;

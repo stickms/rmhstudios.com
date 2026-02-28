@@ -56,6 +56,7 @@ import type {
   ECPlayerGuess,
   CorrectGuesser,
   EmojiCinemaState,
+  GuessLogEntry,
 } from './types';
 
 // ─── Helpers ─────────────────────────────────────────────────────
@@ -124,6 +125,7 @@ export class EmojiCinemaGame extends BaseMinigame {
       guesses: new Map(),
       correctGuessers: [],
       closeGuessCount: 0,
+      guessLog: [],
       playerScores,
       phaseStartedAt: now,
       phaseEndsAt: now,
@@ -163,6 +165,7 @@ export class EmojiCinemaGame extends BaseMinigame {
     this.state.emojiSequence = [];
     this.state.correctGuessers = [];
     this.state.closeGuessCount = 0;
+    this.state.guessLog = [];
     this.state.movieChoices = [];
 
     // Reset guesses for this round
@@ -645,12 +648,29 @@ export class EmojiCinemaGame extends BaseMinigame {
       maxGuesses,
     });
 
+    // Broadcast a public guess log entry to all players (producer + audience)
+    const player = this.context.players.get(userId);
+    const userName = player?.userName ?? 'Unknown';
+    const logEntry: GuessLogEntry = {
+      userId,
+      userName,
+      // Only include the guess text for wrong/close guesses — correct guesses
+      // must not reveal the answer.
+      ...(result !== 'correct' ? { guessText: guess } : {}),
+      isCorrect: result === 'correct',
+      timestamp: now,
+    };
+    this.state.guessLog.push(logEntry);
+    this.broadcastGameAction({
+      type: 'EC_GUESS_LOG_ENTRY',
+      ...logEntry,
+    });
+
     if (result === 'correct') {
-      const player = this.context.players.get(userId);
       const rank = this.state.correctGuessers.length + 1;
       const guesser: CorrectGuesser = {
         userId,
-        userName: player?.userName ?? 'Unknown',
+        userName,
         guessText: guess,
         timestamp: now,
         rank,
@@ -793,6 +813,7 @@ export class EmojiCinemaGame extends BaseMinigame {
         correctGuessers: this.state.correctGuessers,
         closeGuessCount: this.state.closeGuessCount,
         totalGuesses: this.getTotalGuessCount(),
+        guessLog: this.state.guessLog,
       };
     }
 
@@ -816,6 +837,7 @@ export class EmojiCinemaGame extends BaseMinigame {
       closeGuessCount: this.state.closeGuessCount,
       // Send all movie titles for client-side fuzzy autocomplete
       movieTitles: this.moviePool.map((m) => m.title),
+      guessLog: this.state.guessLog,
       ...(revealMovie
         ? {
             movie: {
@@ -859,6 +881,7 @@ export class EmojiCinemaGame extends BaseMinigame {
       correctGuessers: this.state.correctGuessers,
       closeGuessCount: this.state.closeGuessCount,
       totalGuesses: this.getTotalGuessCount(),
+      guessLog: this.state.guessLog,
     };
   }
 

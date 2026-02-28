@@ -17,6 +17,7 @@ import ProducerView from './ProducerView';
 import AudienceView from './AudienceView';
 import RoundResults from './RoundResults';
 import type { GuessEntry } from './GuessHistory';
+import type { GuessLogEntry } from './GuessLog';
 
 type ECPhase = 'PRODUCER_ASSIGNMENT' | 'MOVIE_SELECTION' | 'EMOJI_CONSTRUCTION' | 'ROUND_RESULTS' | 'TRANSITION';
 
@@ -54,6 +55,8 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
   const [correctGuessers, setCorrectGuessers] = useState<CorrectGuesserInfo[]>([]);
   // Movie titles for fuzzy autocomplete
   const [movieTitles, setMovieTitles] = useState<string[]>([]);
+  // Public guess log visible to all players
+  const [guessLog, setGuessLog] = useState<GuessLogEntry[]>([]);
   // Round results state
   const [resultsMovieTitle, setResultsMovieTitle] = useState('');
   const [resultsEmojis, setResultsEmojis] = useState<string[]>([]);
@@ -85,6 +88,7 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
           setGuessCount(0);
           setCorrectCount(0);
           setCorrectGuessers([]);
+          setGuessLog([]);
           setPhase('PRODUCER_ASSIGNMENT');
           playSound('swoosh');
           break;
@@ -144,6 +148,15 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
         case 'EC_GUESS_COUNT': {
           setGuessCount(data.totalGuesses as number);
           setCorrectCount(data.correctGuesses as number);
+          break;
+        }
+        case 'EC_GUESS_LOG_ENTRY': {
+          setGuessLog((prev) => [...prev, {
+            userId: data.userId as string,
+            userName: data.userName as string,
+            guessText: data.guessText as string | undefined,
+            isCorrect: data.isCorrect as boolean,
+          }]);
           break;
         }
         case 'EC_ROUND_OVER': {
@@ -220,6 +233,7 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
       if (Array.isArray(seq)) setEmojis(seq);
       if (snapshot.currentRound) setRoundNumber(snapshot.currentRound as number);
       else if (snapshot.roundNumber) setRoundNumber(snapshot.roundNumber as number);
+      if (Array.isArray(snapshot.guessLog)) setGuessLog(snapshot.guessLog as GuessLogEntry[]);
     },
     [],
   );
@@ -340,6 +354,7 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
               guessCount={guessCount}
               correctCount={correctCount}
               timeRemaining={timeRemaining}
+              guessLog={guessLog}
             />
           ) : (
             <>
@@ -362,6 +377,7 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
                 timeRemaining={timeRemaining}
                 correctGuessers={correctGuessers}
                 movieTitles={movieTitles}
+                guessLog={guessLog}
               />
             </>
           )}

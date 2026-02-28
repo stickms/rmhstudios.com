@@ -500,9 +500,31 @@ export class WikiRaceMinigame extends BaseMinigame {
       const currentPs = this.state.playerStates.get(userId);
       if (!currentPs || currentPs.currentArticleTitle !== targetTitle) return;
       currentPs.currentArticleLinks = new Set(article.links);
+
+      // Handle redirects: if the fetched article has a different canonical
+      // title (e.g. "Stem_cells" → "Stem_cell"), update path and title.
+      const canonicalTitle = article.title;
+      if (canonicalTitle !== targetTitle) {
+        currentPs.path[currentPs.path.length - 1] = canonicalTitle;
+        currentPs.currentArticleTitle = canonicalTitle;
+
+        // Check if the canonical (redirected) title matches the target article
+        const targetArticleTitle = this.state.articlePair.targetArticle.title;
+        if (canonicalTitle === targetArticleTitle) {
+          this.sendArticleToPlayerAndFollowers(userId, {
+            type: 'WR_ARTICLE_CONTENT',
+            title: canonicalTitle,
+            html: article.sanitizedHtml,
+            linkCount: article.links.size,
+          });
+          this.handlePlayerFinished(userId, currentPs);
+          return;
+        }
+      }
+
       this.sendArticleToPlayerAndFollowers(userId, {
         type: 'WR_ARTICLE_CONTENT',
-        title: article.title,
+        title: canonicalTitle,
         html: article.sanitizedHtml,
         linkCount: article.links.size,
       });
