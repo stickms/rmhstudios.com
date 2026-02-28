@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Brain, Cpu, Activity } from 'lucide-react';
+import { Brain, Cpu, Activity, Sigma, Hexagon, Atom } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { ResearchArticle } from '@/lib/research';
 
@@ -9,6 +9,9 @@ const iconMap: Record<string, React.ElementType> = {
   Brain,
   Cpu,
   Activity,
+  Sigma,
+  Hexagon,
+  Atom,
 };
 
 export function ResearchCard({

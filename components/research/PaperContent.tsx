@@ -12,11 +12,23 @@ const RLRoguelikePaper = dynamic(() =>
 const AdaptiveDifficultyPaper = dynamic(() =>
   import('./papers/adaptive-difficulty').then((m) => m.AdaptiveDifficultyPaper)
 );
+const ErgodicMarkovPaper = dynamic(() =>
+  import('./papers/ergodic-markov').then((m) => m.ErgodicMarkovPaper)
+);
+const PersistentHomologyPaper = dynamic(() =>
+  import('./papers/persistent-homology').then((m) => m.PersistentHomologyPaper)
+);
+const StatMechMARLPaper = dynamic(() =>
+  import('./papers/stat-mech-marl').then((m) => m.StatMechMARLPaper)
+);
 
 const paperComponents: Record<string, React.ComponentType> = {
   'neural-correlates-flow-states': FlowStatesPaper,
   'reinforcement-learning-roguelike': RLRoguelikePaper,
   'adaptive-difficulty-player-retention': AdaptiveDifficultyPaper,
+  'ergodic-markov-level-design': ErgodicMarkovPaper,
+  'persistent-homology-gan-assets': PersistentHomologyPaper,
+  'statistical-mechanics-multiagent-rl': StatMechMARLPaper,
 };
 
 export function PaperContent({ article }: { article: ResearchArticle }) {
