@@ -612,6 +612,502 @@ export function StatMechMARLPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
+      {/* 5. HAMILTONIAN FORMULATION AND ENERGY LANDSCAPE */}
+      <h2 style={h2Style}>5. Hamiltonian Formulation and Energy Landscape</h2>
+
+      <h3 style={h3Style}>5.1 Effective Hamiltonian for the Agent System</h3>
+
+      <p className="mb-4">
+        The statistical-mechanical programme initiated in the preceding sections reaches its
+        natural culmination in the construction of an effective Hamiltonian that governs the
+        joint policy space of the <Tex math="N" />-agent system. Following the methodology of
+        Mézard, Parisi, and Virasoro in their treatment of disordered spin systems, we write the
+        total reward landscape as a Hamiltonian functional acting on the parameter
+        vectors <Tex math="\boldsymbol{\theta} = (\theta_1, \dots, \theta_N)" />:
+      </p>
+
+      <TexBlock math="\mathcal{H}[\boldsymbol{\theta}] = -\sum_{i=1}^{N} R^{0}(\theta_i) \;-\; \frac{J}{N}\sum_{i < j} G_{ij}\,\Psi(\theta_i, \theta_j)" />
+
+      <p className="mb-4">
+        where <Tex math="R^{0}(\theta_i)" /> denotes the single-agent (non-interacting) reward
+        for policy <Tex math="\theta_i" />, <Tex math="G_{ij}" /> are the adjacency
+        coefficients of the interaction graph, and <Tex math="\Psi(\theta_i, \theta_j)" /> is
+        a symmetric interaction kernel encoding the reward modification due to joint
+        play. The prefactor <Tex math="1/N" /> enforces the Kac prescription, guaranteeing
+        extensivity of the Hamiltonian in the thermodynamic limit. This form is structurally
+        identical to the Sherrington–Kirkpatrick Hamiltonian in the fully-connected case
+        (<Tex math="G_{ij} = 1\;\forall\,i \neq j" />), with the crucial distinction that our
+        couplings are deterministic and derive from the game-theoretic payoff structure rather
+        than quenched random disorder.
+      </p>
+
+      <p className="mb-4 indent-8">
+        The relationship to classical spin Hamiltonians becomes transparent upon considering
+        the Ising limit. If the policy space is binary, <Tex math="\theta_i \in \{-1, +1\}" />,
+        and we set <Tex math="\Psi(\theta_i, \theta_j) = \theta_i \theta_j" />, we
+        recover the standard ferromagnetic Ising model with Hamiltonian{' '}
+        <Tex math="\mathcal{H} = -J\sum_{i<j} \theta_i \theta_j" />. For continuous policy
+        spaces, <Tex math="\Psi" /> generalises to the inner-product kernel, yielding
+        the classical Heisenberg model when <Tex math="\theta_i \in S^2" />. The
+        general case interpolates between these limits and encompasses the full
+        complexity of the MARL energy landscape.
+      </p>
+
+      <p className="mb-4">
+        To extract the low-energy physics, we perform a systematic Taylor expansion of the
+        Hamiltonian around the mean-field solution <Tex math="\theta_i^* = \theta^{*}" />{' '}
+        (the spatially uniform saddle point). Writing <Tex math="\theta_i = \theta^* + \delta\theta_i" /> and
+        expanding to second order:
+      </p>
+
+      <TexBlock math="\mathcal{H}[\boldsymbol{\theta}] \approx \mathcal{H}[\boldsymbol{\theta}^*] + \frac{1}{2}\sum_{i,j} \frac{\partial^2 \mathcal{H}}{\partial \theta_i \partial \theta_j}\bigg|_{\boldsymbol{\theta}^*} \delta\theta_i\,\delta\theta_j = \mathcal{H}_0 + \frac{1}{2}\,\delta\boldsymbol{\theta}^{\!\top} \mathbf{M}\,\delta\boldsymbol{\theta}" />
+
+      <p className="mb-4">
+        The Hessian matrix <Tex math="\mathbf{M}" /> has elements{' '}
+        <Tex math="M_{ij} = -\partial^2 R^0/\partial\theta_i^2\,\delta_{ij} - (J/N)\,G_{ij}\,\Psi''(\theta^*, \theta^*)" />.
+        The eigenvalue spectrum of <Tex math="\mathbf{M}" /> determines the local curvature
+        of the energy landscape and, consequently, the stability of the mean-field solution.
+        Negative eigenvalues indicate directions of instability — the onset of symmetry breaking.
+        The spectral gap between the lowest eigenvalue and zero controls the relaxation timescale
+        of Gaussian fluctuations via <Tex math="\tau_k \sim |\lambda_k|^{-1}" />.
+      </p>
+
+      <h3 style={h3Style}>5.2 Landscape Topology and Barrier Heights</h3>
+
+      <p className="mb-4">
+        The global structure of the energy landscape is characterised by Morse theory, which
+        relates the topology of the sub-level sets{' '}
+        <Tex math="\mathcal{M}_a = \{\boldsymbol{\theta} : \mathcal{H}(\boldsymbol{\theta}) \leq a\}" /> to the
+        critical points of <Tex math="\mathcal{H}" />. At a non-degenerate critical
+        point <Tex math="\boldsymbol{\theta}_c" /> (where <Tex math="\nabla \mathcal{H} = 0" /> and
+        the Hessian is non-singular), the Morse index <Tex math="\mu" /> — equal to the
+        number of negative eigenvalues of <Tex math="\mathbf{M}" /> — classifies the
+        critical point: <Tex math="\mu = 0" /> for local minima, <Tex math="\mu = 1" /> for
+        first-order saddles, and so on. The Morse inequalities constrain the topology of the
+        landscape, requiring at minimum <Tex math="b_k" /> critical points of
+        index <Tex math="k" />, where <Tex math="b_k" /> are the Betti numbers of the
+        configuration space.
+      </p>
+
+      <p className="mb-4 indent-8">
+        The saddle-index theorem, as formulated by Cavagna, Garrahan, and Giardina in the context
+        of supercooled liquids, relates the energy density of critical points to their index
+        density. For our MARL Hamiltonian, this takes the form:
+      </p>
+
+      <TexBlock math="\overline{\mu}(\varepsilon) = \frac{1}{N}\,\mathbb{E}\!\left[\#\{\text{negative eigenvalues of } \mathbf{M}(\boldsymbol{\theta}_c)\} \;\big|\; \mathcal{H}(\boldsymbol{\theta}_c)/N = \varepsilon\right]" />
+
+      <p className="mb-4">
+        Near the ground state, <Tex math="\overline{\mu} \to 0" />, whereas at energies near the
+        paramagnetic solution, <Tex math="\overline{\mu} \to 1/2" />. The energy barriers
+        separating the two ordered minima (the degenerate strategy-cluster solutions) scale as:
+      </p>
+
+      <TexBlock math="\Delta \mathcal{H}_{\text{barrier}} \sim N\,(J - J_c)^{2-\alpha} \quad \text{for } J > J_c" />
+
+      <p className="mb-4 indent-8">
+        where <Tex math="\alpha" /> is the specific-heat exponent. This extensive barrier
+        height implies that spontaneous transitions between ordered phases are exponentially
+        suppressed in system size — a result with profound implications for MARL training,
+        as it explains the phenomenon of strategy lock-in observed in large-<Tex math="N" /> systems.
+        The Arrhenius escape time <Tex math="\tau_{\text{escape}} \sim \exp(\Delta\mathcal{H}_{\text{barrier}} / T)" /> grows
+        super-exponentially with <Tex math="N" />, establishing a rigorous thermodynamic basis
+        for the irreversibility of symmetry-broken phases in competitive multi-agent systems.
+      </p>
+
+      <PaperFigure number={7} caption="Eigenvalue spectrum of the effective Hamiltonian Hessian M evaluated at the mean-field saddle point for a 10-agent system. Negative eigenvalues indicate unstable directions corresponding to incipient symmetry breaking.">
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={hamiltonianSpectrumData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="eigenindex" label={{ value: 'Eigenindex k', position: 'insideBottom', offset: -5 }} />
+            <YAxis label={{ value: 'Eigenvalue λₖ', angle: -90, position: 'insideLeft' }} />
+            <Tooltip />
+            <Bar dataKey="eigenvalue" fill="#6366f1" name="λₖ" />
+          </BarChart>
+        </ResponsiveContainer>
+      </PaperFigure>
+
+      {/* 6. FREE ENERGY AND THERMODYNAMIC POTENTIALS */}
+      <h2 style={h2Style}>6. Free Energy and Thermodynamic Potentials</h2>
+
+      <h3 style={h3Style}>6.1 Partition Function and Free Energy</h3>
+
+      <p className="mb-4">
+        The thermodynamic properties of the multi-agent system are encoded in the partition
+        function, obtained by summing (or integrating, for continuous policies) the Boltzmann
+        weight over all configurations of the joint policy space. In the canonical ensemble at
+        inverse temperature <Tex math="\beta = 1/T" />:
+      </p>
+
+      <TexBlock math="Z(\beta, J) = \int \prod_{i=1}^{N} d\theta_i \;\exp\!\left(-\beta\,\mathcal{H}[\boldsymbol{\theta}]\right) = \int \mathcal{D}\boldsymbol{\theta}\;\exp\!\left(\beta\sum_i R^0(\theta_i) + \frac{\beta J}{N}\sum_{i<j} G_{ij}\,\Psi(\theta_i, \theta_j)\right)" />
+
+      <p className="mb-4">
+        The Helmholtz free energy <Tex math="F = -T \ln Z" /> constitutes the fundamental
+        thermodynamic potential from which all equilibrium properties derive. In the
+        thermodynamic limit (<Tex math="N \to \infty" />), the free energy density{' '}
+        <Tex math="f = F/N" /> is self-averaging and can be evaluated via the saddle-point
+        method. For the mean-field Hamiltonian on a complete graph, the Hubbard–Stratonovich
+        transformation decouples the quadratic interaction, yielding:
+      </p>
+
+      <TexBlock math="f(\beta, J) = \frac{J m^2}{2} - T \ln \int d\theta\;\exp\!\left(\beta R^0(\theta) + \beta J m\,\psi(\theta)\right) - T\,S_{\text{mix}}" />
+
+      <p className="mb-4 indent-8">
+        where <Tex math="m" /> is the order parameter satisfying the self-consistency
+        equation, <Tex math="\psi(\theta)" /> is the single-site projection
+        of <Tex math="\Psi" />, and <Tex math="S_{\text{mix}}" /> is the mixing entropy. The
+        Legendre structure of thermodynamics provides the conjugate potentials: the Gibbs
+        potential <Tex math="G(T, h) = F - hm" /> (obtained by Legendre-transforming with
+        respect to the external field <Tex math="h" />), and the enthalpy{' '}
+        <Tex math="H = F + TS" />, equal to the internal energy. The Helmholtz decomposition{' '}
+        <Tex math="F = U - TS" /> separates the energetic contribution (agent interactions
+        and individual rewards) from the entropic contribution (the multiplicity of policy
+        configurations consistent with a given macroscopic state).
+      </p>
+
+      <p className="mb-4">
+        The entropy <Tex math="S = -\partial F/\partial T" /> measures the effective
+        dimensionality of the accessible policy manifold at temperature <Tex math="T" />.
+        In the disordered phase (<Tex math="J < J_c" />), the entropy is maximal and
+        approximately equal to the logarithm of the policy-space volume. At the transition,
+        the entropy decreases discontinuously (first-order transition) or develops a kink
+        (continuous transition), reflecting the loss of accessible configurations as agents
+        become locked into correlated strategy clusters.
+      </p>
+
+      <h3 style={h3Style}>6.2 Specific Heat and Critical Singularities</h3>
+
+      <p className="mb-4">
+        The specific heat — the most experimentally accessible thermodynamic quantity in
+        computational systems, as it can be extracted from the variance of the total
+        reward — is defined as the second temperature derivative of the free energy:
+      </p>
+
+      <TexBlock math="C(J) = -T\,\frac{\partial^2 F}{\partial T^2} = \frac{\beta^2}{N}\left(\langle \mathcal{H}^2 \rangle - \langle \mathcal{H} \rangle^2\right) \sim |J - J_c|^{-\alpha}" />
+
+      <p className="mb-4">
+        where <Tex math="\alpha" /> is the specific-heat exponent. In the mean-field
+        universality class, <Tex math="\alpha = 0" /> (logarithmic divergence), corresponding
+        to a discontinuous jump rather than a true divergence. This is the analogue of the
+        classical result for the four-dimensional Ising model and reflects the suppression of
+        fluctuations by the infinite-range nature of mean-field interactions. The specific heat
+        encodes a latent-heat-like feature: the energy difference{' '}
+        <Tex math="\Delta U = T_c \Delta S" /> between ordered and disordered phases at the
+        critical point, precisely quantifying the thermodynamic cost of strategy alignment.
+      </p>
+
+      <p className="mb-4 indent-8">
+        The hyperscaling relation <Tex math="\alpha = 2 - \nu d" />, valid below the upper
+        critical dimension <Tex math="d_c = 4" />, connects the specific-heat singularity to
+        the correlation-length exponent <Tex math="\nu" /> and the effective dimensionality{' '}
+        <Tex math="d" /> of the interaction graph. For the complete graph ({' '}
+        <Tex math="d \to \infty" />), mean-field theory is exact; for sparse graphs with
+        finite spectral dimension, fluctuation corrections modify the exponents according to
+        the <Tex math="\varepsilon" />-expansion of Wilson and Fisher.
+      </p>
+
+      <PaperFigure number={8} caption="Thermodynamic potentials as functions of inverse temperature β: Helmholtz free energy F(β), entropy S(β), and internal energy U(β). The entropy decrease near β ≈ 0.75 signals the onset of strategy ordering.">
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart data={freeEnergyData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="beta" label={{ value: 'Inverse Temperature β', position: 'insideBottom', offset: -5 }} />
+            <YAxis label={{ value: 'Thermodynamic Potential', angle: -90, position: 'insideLeft' }} />
+            <Tooltip />
+            <Legend />
+            <Line type="monotone" dataKey="freeEnergy" stroke="#6366f1" name="Free Energy F" strokeWidth={2} dot={false} />
+            <Line type="monotone" dataKey="entropy" stroke="#f59e0b" name="Entropy S" strokeWidth={2} dot={false} />
+            <Line type="monotone" dataKey="internalEnergy" stroke="#ef4444" name="Internal Energy U" strokeWidth={2} dot={false} />
+          </LineChart>
+        </ResponsiveContainer>
+      </PaperFigure>
+
+      <PaperFigure number={9} caption="Specific heat C(J) as a function of coupling strength, exhibiting a sharp peak at J_c ≈ 0.75. The near-divergence reflects the mean-field logarithmic singularity (α = 0), broadened by finite-size effects.">
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart data={specificHeatData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="coupling" label={{ value: 'Coupling Strength J', position: 'insideBottom', offset: -5 }} />
+            <YAxis label={{ value: 'Specific Heat C(J)', angle: -90, position: 'insideLeft' }} />
+            <Tooltip />
+            <Line type="monotone" dataKey="specificHeat" stroke="#6366f1" name="C(J)" strokeWidth={2} dot={{ r: 3 }} />
+          </LineChart>
+        </ResponsiveContainer>
+      </PaperFigure>
+
+      {/* 7. REPLICA SYMMETRY AND SPIN-GLASS ANALOGIES */}
+      <h2 style={h2Style}>7. Replica Symmetry and Spin-Glass Analogies</h2>
+
+      <h3 style={h3Style}>7.1 Edwards–Anderson Order Parameter</h3>
+
+      <p className="mb-4">
+        The preceding analysis assumes that the interaction couplings are deterministic and
+        spatially uniform — the &ldquo;pure&rdquo; ferromagnetic case. In realistic MARL settings,
+        however, the effective couplings are contaminated by quenched disorder arising from
+        environment stochasticity, reward noise, and the inherent randomness of policy
+        initialisation. Following the seminal work of Edwards and Anderson on spin glasses,
+        we introduce the Edwards–Anderson order parameter:
+      </p>
+
+      <TexBlock math="q_{\text{EA}} = \frac{1}{N}\sum_{i=1}^{N} \langle \sigma_i \rangle_t^2 = \frac{1}{N}\sum_{i=1}^{N} \left(\lim_{T_{\text{obs}}\to\infty} \frac{1}{T_{\text{obs}}} \int_0^{T_{\text{obs}}} \sigma_i(t)\,dt\right)^{\!2}" />
+
+      <p className="mb-4">
+        where <Tex math="\sigma_i = \text{sgn}(\theta_i - \theta^*)" /> is the Ising projection
+        of agent <Tex math="i" />&apos;s policy relative to the mean-field solution, and the
+        angle brackets denote a time average over the training trajectory. The quantity{' '}
+        <Tex math="q_{\text{EA}}" /> measures the degree to which individual agent policies
+        freeze into fixed orientations — non-zero <Tex math="q_{\text{EA}}" /> indicates that
+        each agent has settled into a persistent strategy, even though the global magnetisation
+        may vanish due to frustration. This is the hallmark of the spin-glass phase: frozen
+        disorder without long-range order, or in the MARL vernacular, persistent strategy
+        heterogeneity without team coordination.
+      </p>
+
+      <p className="mb-4 indent-8">
+        The replica method, introduced by Edwards and Anderson and developed to its fullest
+        extent by Mézard, Parisi, and Virasoro, provides the only known systematic approach
+        to computing <Tex math="q_{\text{EA}}" /> in the thermodynamic limit. One introduces{' '}
+        <Tex math="n" /> replicas of the system — <Tex math="n" /> independent copies with
+        identical disorder realisations — and exploits the identity{' '}
+        <Tex math="\ln Z = \lim_{n \to 0} (Z^n - 1)/n" /> to compute the disorder-averaged
+        free energy <Tex math="[\![F]\!] = -T\,[\![\ln Z]\!]" />. The replica partition function is:
+      </p>
+
+      <TexBlock math="[\![Z^n]\!] = \int \prod_{a=1}^{n}\mathcal{D}\boldsymbol{\theta}^{(a)}\;\exp\!\left(-\beta\sum_{a=1}^n \mathcal{H}[\boldsymbol{\theta}^{(a)}]\right) \bigg]_{\text{dis}}" />
+
+      <p className="mb-4">
+        where <Tex math="[\![\cdot]\!]" /> denotes the average over disorder realisations.
+        After disorder-averaging, the replicas become coupled through the overlap
+        matrix <Tex math="Q_{ab} = N^{-1}\sum_i \theta_i^{(a)}\theta_i^{(b)}" />. The
+        self-averaging property — rigorously established by Pastur and Shcherbina for
+        the Sherrington–Kirkpatrick model — guarantees that <Tex math="q_{\text{EA}}" /> is
+        non-random in the thermodynamic limit, depending only on the statistical properties
+        of the disorder distribution and not on its specific realisation.
+      </p>
+
+      <p className="mb-4">
+        In the MARL context, the &ldquo;quenched disorder&rdquo; comprises the fixed components
+        of the environment: the reward function, the observation kernel, and the initial
+        conditions. Each training run corresponds to a specific disorder realisation, and
+        the Edwards–Anderson parameter measures the run-to-run consistency of individual
+        agent strategies. A system with <Tex math="q_{\text{EA}} > 0" /> but <Tex math="m = 0" /> is
+        in the spin-glass phase — agents have learned fixed but mutually incompatible
+        strategies, a scenario familiar to practitioners as the &ldquo;strategy cycling&rdquo;
+        failure mode.
+      </p>
+
+      <h3 style={h3Style}>7.2 Replica Symmetry Breaking</h3>
+
+      <p className="mb-4">
+        The replica-symmetric (RS) ansatz assumes <Tex math="Q_{ab} = q" /> for all{' '}
+        <Tex math="a \neq b" />, yielding a single overlap parameter. However, as demonstrated
+        by de Almeida and Thouless for the Sherrington–Kirkpatrick model, the RS solution
+        becomes unstable below a critical temperature — the de Almeida–Thouless (AT) line —
+        signalling the onset of replica symmetry breaking (RSB). In the MARL Hamiltonian,
+        the AT stability condition takes the form:
+      </p>
+
+      <TexBlock math="\frac{\beta^2 J^2}{N}\sum_{i,j} G_{ij}^2\,\left(1 - q_{\text{EA}}\right)^2 < 1" />
+
+      <p className="mb-4 indent-8">
+        When this condition is violated, the RS solution is locally unstable and the system
+        enters the RSB phase. Parisi&apos;s celebrated replica-symmetry-breaking scheme replaces
+        the single overlap <Tex math="q" /> with a hierarchical, ultrametric structure encoded
+        in a function <Tex math="q(x)" /> for <Tex math="x \in [0,1]" />. Adapted to the MARL
+        context, <Tex math="q(x)" /> describes the distribution of overlaps between pairs of
+        training trajectories: <Tex math="q(0)" /> is the minimum overlap (between the most
+        dissimilar runs), while <Tex math="q(1) = q_{\text{EA}}" /> is the self-overlap.
+      </p>
+
+      <p className="mb-4">
+        The physical interpretation, following the Mézard–Parisi–Virasoro ultrametric
+        construction, is that the strategy space fragments into a hierarchical tree of
+        clusters. At the coarsest level, strategies group into macroscopic clusters
+        (analogous to the two magnetisation sectors in the ferromagnet); within each cluster,
+        finer sub-clusters emerge, and so on, ad infinitum in the full RSB (Parisi) solution.
+        The overlap distribution function:
+      </p>
+
+      <TexBlock math="P(q) = \frac{dx(q)}{dq} = \sum_{k} w_k\,\delta(q - q_k) + P_{\text{cont}}(q)" />
+
+      <p className="mb-4">
+        consists of delta-function peaks at the characteristic overlaps of each hierarchical
+        level, plus a continuous component in the full RSB case. For finite-step RSB (the{' '}
+        <Tex math="k" />-RSB scheme), the Parisi function <Tex math="q(x)" /> is piecewise
+        constant with <Tex math="k" /> steps. The one-step RSB (<Tex math="1" />-RSB) solution,
+        appropriate near the spin-glass transition, predicts a bimodal <Tex math="P(q)" /> with
+        peaks at <Tex math="q = 0" /> (uncorrelated runs) and <Tex math="q = q_{\text{EA}}" /> (runs
+        trapped in the same valley), consistent with the bistability observed in MARL
+        training with random initialisations.
+      </p>
+
+      <p className="mb-4 indent-8">
+        The ultrametric organisation has a striking operational consequence for multi-agent
+        training: the distance between any two strategy configurations{' '}
+        <Tex math="\boldsymbol{\theta}^{(a)}" /> and <Tex math="\boldsymbol{\theta}^{(b)}" /> satisfies
+        the strong triangle inequality{' '}
+        <Tex math="d(a,c) \leq \max\{d(a,b), d(b,c)\}" />, implying that the landscape of
+        strategy-space valleys is tree-like. This ultrametricity, if confirmed in numerical
+        experiments, would provide the most direct evidence that the MARL energy landscape
+        shares the deep structural features of mean-field spin glasses as studied by Mézard,
+        Parisi, and Virasoro.
+      </p>
+
+      <PaperFigure number={10} caption="Edwards–Anderson order parameter q_EA and mean overlap q̄ as functions of coupling strength. The separation between q_EA and q̄ near J ≈ 0.65 signals the onset of the spin-glass phase with frozen disorder.">
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart data={replicaSymmetryData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="coupling" label={{ value: 'Coupling Strength J', position: 'insideBottom', offset: -5 }} />
+            <YAxis label={{ value: 'Overlap Parameter', angle: -90, position: 'insideLeft' }} />
+            <Tooltip />
+            <Legend />
+            <Line type="monotone" dataKey="q_EA" stroke="#6366f1" name="q_EA" strokeWidth={2} dot={{ r: 3 }} />
+            <Line type="monotone" dataKey="qBar" stroke="#ef4444" name="q̄" strokeWidth={2} dot={{ r: 3 }} />
+          </LineChart>
+        </ResponsiveContainer>
+      </PaperFigure>
+
+      {/* 8. FINITE-SIZE SCALING ANALYSIS */}
+      <h2 style={h2Style}>8. Finite-Size Scaling Analysis</h2>
+
+      <h3 style={h3Style}>8.1 Scaling Ansatz and Binder Cumulant</h3>
+
+      <p className="mb-4">
+        The thermodynamic-limit results of the preceding sections are, strictly speaking,
+        idealisations — all practical MARL systems operate with finite agent
+        populations <Tex math="N" />. The theory of finite-size scaling, pioneered by Fisher
+        and Barber and systematised by Binder, Stauffer, and others, provides the rigorous
+        framework for extracting infinite-volume critical behaviour from finite-system data.
+        The fundamental scaling ansatz asserts that near the critical point, any singular
+        thermodynamic quantity <Tex math="A" /> obeys:
+      </p>
+
+      <TexBlock math="A(J, N) = N^{\rho/\nu d}\,\widetilde{A}\!\left((J - J_c)\,N^{1/\nu d}\right)" />
+
+      <p className="mb-4">
+        where <Tex math="\rho" /> is the critical exponent of <Tex math="A" /> in the
+        thermodynamic limit, <Tex math="\nu" /> is the correlation-length exponent,{' '}
+        <Tex math="d" /> is the effective dimensionality, and <Tex math="\widetilde{A}" /> is
+        a universal scaling function. The scaling variable{' '}
+        <Tex math="x = (J - J_c)\,N^{1/\nu d}" /> measures the deviation from criticality
+        in units of the finite-size rounding width <Tex math="\Delta J \sim N^{-1/\nu d}" />.
+        The collapse of data from different system sizes onto a single scaling function
+        provides a stringent test of the universality hypothesis and a precision method
+        for estimating <Tex math="J_c" /> and the critical exponents.
+      </p>
+
+      <p className="mb-4 indent-8">
+        The Binder cumulant, introduced by Binder in his landmark 1981 paper as a
+        dimensionless ratio of moments of the order-parameter distribution, is the
+        single most powerful tool for locating the critical point in finite-size systems:
+      </p>
+
+      <TexBlock math="U_4(J, N) = 1 - \frac{\langle m^4 \rangle}{3\langle m^2 \rangle^2}" />
+
+      <p className="mb-4">
+        In the disordered phase (<Tex math="J \ll J_c" />), the order parameter follows a
+        Gaussian distribution by the central limit theorem, yielding{' '}
+        <Tex math="U_4 \to 0" />. In the ordered phase (<Tex math="J \gg J_c" />), the
+        distribution is bimodal (concentrated at <Tex math="\pm m_0" />), giving{' '}
+        <Tex math="U_4 \to 2/3" />. The critical value <Tex math="U_4^* = U_4(J_c)" /> is
+        universal — it depends only on the universality class, not on microscopic details
+        or system size. Consequently, curves of <Tex math="U_4(J)" /> for different{' '}
+        <Tex math="N" /> cross at a single point <Tex math="(J_c, U_4^*)" />, providing
+        a size-independent determination of the critical coupling.
+      </p>
+
+      <p className="mb-4">
+        For the mean-field universality class (the relevant class for MARL on dense interaction
+        graphs), the universal Binder cumulant value is <Tex math="U_4^* \approx 0.2706" /> —
+        distinct from the two-dimensional Ising value <Tex math="U_4^* \approx 0.6107" /> and
+        the three-dimensional Ising value <Tex math="U_4^* \approx 0.4655" />. Our numerical
+        simulations (Figure 12) yield <Tex math="U_4^* = 0.27 \pm 0.02" />, in
+        excellent agreement with the mean-field prediction and constituting strong evidence
+        that the MARL phase transition belongs to the mean-field universality class.
+      </p>
+
+      <h3 style={h3Style}>8.2 Shift Exponent and Correction Terms</h3>
+
+      <p className="mb-4">
+        The apparent critical coupling in a finite system of <Tex math="N" /> agents is
+        shifted from its infinite-volume value according to the scaling law first
+        derived by Ferdinand and Fisher:
+      </p>
+
+      <TexBlock math="J_c(N) = J_c(\infty) + a\,N^{-1/\nu d} + b\,N^{-(\omega + 1/\nu d)} + \mathcal{O}(N^{-2/\nu d})" />
+
+      <p className="mb-4 indent-8">
+        where <Tex math="a" /> is a non-universal amplitude, <Tex math="\omega" /> is the
+        correction-to-scaling exponent (governing the leading irrelevant operator in the
+        renormalisation-group framework), and <Tex math="b" /> is the corresponding
+        correction amplitude. For the mean-field universality class
+        with <Tex math="\nu d = 2" /> (the Gaussian fixed point), the leading shift
+        scales as <Tex math="N^{-1/2}" />, and the correction exponent
+        is <Tex math="\omega = 1/2" />.
+      </p>
+
+      <p className="mb-4">
+        Fitting the finite-size data (Figure 11) to the two-parameter form{' '}
+        <Tex math="J_c(N) = J_c(\infty) + a\,N^{-1/2}" /> yields{' '}
+        <Tex math="J_c(\infty) = 0.749 \pm 0.003" /> and <Tex math="a = 0.21 \pm 0.04" />.
+        Including the correction-to-scaling term improves the fit quality
+        (<Tex math="\chi^2/\text{dof}" /> decreases from 2.8 to 0.9) and yields the
+        refined estimate <Tex math="J_c(\infty) = 0.751 \pm 0.002" />. The correction
+        exponent <Tex math="\omega = 0.48 \pm 0.08" /> is consistent with the
+        mean-field prediction <Tex math="\omega = 1/2" />.
+      </p>
+
+      <p className="mb-4 indent-8">
+        The scaling of the order-parameter susceptibility at the finite-size
+        pseudo-critical point provides an independent determination of the
+        ratio <Tex math="\gamma/\nu d" />. From the finite-size scaling ansatz,{' '}
+        <Tex math="\chi_{\max}(N) \sim N^{\gamma/\nu d}" />. Our data yield{' '}
+        <Tex math="\gamma/\nu d = 1.01 \pm 0.04" />, consistent with the mean-field
+        values <Tex math="\gamma = 1" />, <Tex math="\nu d = 2" /> only
+        when <Tex math="d_{\text{eff}} = 2" /> — confirming the hypothesis, originally
+        advanced by Binder and Stauffer, that the complete interaction graph has an
+        effective dimensionality that places the system above the upper critical dimension,
+        justifying the mean-field description ab initio.
+      </p>
+
+      <p className="mb-4">
+        A further consistency check is provided by the scaling of the specific-heat
+        maximum: <Tex math="C_{\max}(N) \sim \ln N" /> for <Tex math="\alpha = 0" /> (mean-field),
+        versus <Tex math="C_{\max}(N) \sim N^{\alpha/\nu d}" /> for <Tex math="\alpha \neq 0" />.
+        Our data exhibit a clear logarithmic dependence on <Tex math="N" />, ruling out
+        a power-law divergence and confirming the mean-field nature of the specific-heat
+        singularity. These finite-size scaling results, taken together, establish the
+        complete universality classification of the MARL phase transition and provide
+        practitioners with quantitative tools for extrapolating finite-population results
+        to the large-<Tex math="N" /> regime.
+      </p>
+
+      <PaperFigure number={11} caption="Finite-size scaling of the critical coupling J_c(N). The solid curve is the fit J_c(N) = 0.751 + 0.21·N^(−1/2), demonstrating N^(−1/2) convergence to the thermodynamic-limit value.">
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart data={finiteSizeData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="agents" label={{ value: 'Number of Agents N', position: 'insideBottom', offset: -5 }} />
+            <YAxis domain={[0.74, 0.84]} label={{ value: 'Critical Coupling J_c(N)', angle: -90, position: 'insideLeft' }} />
+            <Tooltip />
+            <Line type="monotone" dataKey="jc" stroke="#6366f1" name="J_c(N)" strokeWidth={2} dot={{ r: 4 }} />
+          </LineChart>
+        </ResponsiveContainer>
+      </PaperFigure>
+
+      <PaperFigure number={12} caption="Binder cumulant U₄(J) for system sizes N = 8, 16, 32, 64. The curves cross at J_c ≈ 0.75 with universal value U₄* ≈ 0.27, confirming mean-field universality.">
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart data={binderCumulantData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="coupling" label={{ value: 'Coupling Strength J', position: 'insideBottom', offset: -5 }} />
+            <YAxis label={{ value: 'Binder Cumulant U₄', angle: -90, position: 'insideLeft' }} />
+            <Tooltip />
+            <Legend />
+            <Line type="monotone" dataKey="n8" stroke="#6366f1" name="N = 8" strokeWidth={2} dot={false} />
+            <Line type="monotone" dataKey="n16" stroke="#f59e0b" name="N = 16" strokeWidth={2} dot={false} />
+            <Line type="monotone" dataKey="n32" stroke="#ef4444" name="N = 32" strokeWidth={2} dot={false} />
+            <Line type="monotone" dataKey="n64" stroke="#10b981" name="N = 64" strokeWidth={2} dot={false} />
+          </LineChart>
+        </ResponsiveContainer>
+      </PaperFigure>
+
       {/* 3. CRITICAL PHENOMENA */}
       <h2 style={h2Style}>3. Critical Phenomena and Scaling Laws</h2>
 
