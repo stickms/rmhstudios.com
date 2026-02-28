@@ -2872,6 +2872,171 @@ export function ErgodicMarkovPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
+      {/* 19. RELATED WORK */}
+      <h2 style={h2Style}>19. Related Work</h2>
+
+      <p className="mb-4">
+        Procedural content generation (PCG) in games has evolved along several complementary trajectories.
+        Wave Function Collapse (WFC), introduced by Gumin (2016) and subsequently formalized by Karth
+        and Smith (2017), generates locally consistent tile configurations by iteratively collapsing
+        superposition states in a manner analogous to constraint propagation. While WFC produces
+        visually coherent outputs, it lacks a principled mechanism for encoding global quality
+        objectives — the acceptance or rejection of a generated artifact is binary rather than
+        graded. Answer Set Programming (ASP) approaches, pioneered by Smith and Mateas (2011),
+        cast level generation as a declarative constraint satisfaction problem, enabling designers
+        to specify complex structural requirements in first-order logic. However, ASP solvers
+        enumerate feasible solutions without weighting them by desirability, and the computational
+        cost grows prohibitively for large configuration spaces. Our Markov-chain framework
+        subsumes these methods by defining a smooth energy landscape whose stationary distribution
+        concentrates probability mass on configurations satisfying both local constraints (via
+        hard compatibility potentials) and global quality criteria (via soft ludometric terms).
+      </p>
+
+      <p className="mb-4 indent-8">
+        Experience-driven PCG (Yannakakis &amp; Togelius, 2011) and search-based PCG (Togelius et al.,
+        2011) represent a paradigm shift toward player-centric content generation. In
+        experience-driven PCG, player affect models — learned from physiological signals, behavioral
+        traces, or self-reports — serve as fitness functions that guide an evolutionary search
+        toward levels eliciting target emotional responses. Search-based PCG employs
+        metaheuristics (genetic algorithms, novelty search, MAP-Elites) to explore the space of
+        content artifacts. Notably, Summerville et al. (2018) applied LSTMs trained on existing
+        levels to produce new level segments, while Khalifa et al. (2020) combined constrained
+        optimization with quality-diversity algorithms. Our approach complements these methods by
+        providing a probabilistic sampling framework with provable convergence guarantees —
+        the spectral gap bounds developed in Sections 3–5 ensure that the sampler explores the
+        full design space rather than becoming trapped in local optima, a common failure mode
+        of evolutionary and gradient-based approaches. The ludometric energy functional
+        (Section 4) can incorporate any differentiable quality metric, including learned
+        player models, as a potential term.
+      </p>
+
+      <p className="mb-4 indent-8">
+        Markov chain methods have a long and storied history in combinatorial optimization.
+        Simulated annealing (Kirkpatrick, Gelatt, &amp; Vecchi, 1983) was among the first
+        algorithms to exploit the connection between statistical mechanics and optimization,
+        using a slowly decreasing temperature schedule to guide a Metropolis chain toward
+        low-energy configurations. The rigorous analysis of MCMC convergence for combinatorial
+        structures was advanced by Jerrum and Sinclair (1989, 1996), who developed the
+        canonical path method for bounding conductance, and by Diaconis and Stroock (1991),
+        who introduced geometric techniques for spectral gap estimation. Randall and Tetali
+        (2000) extended these tools to lattice models from statistical physics. Our
+        contribution extends this line of work by (i) constructing domain-specific energy
+        functionals that encode game-design quality rather than generic optimization objectives,
+        (ii) exploiting the spectral structure of tile-adjacency graphs to design
+        informed proposal distributions, and (iii) providing end-to-end mixing time guarantees
+        that account for the particular geometry of level-design configuration spaces.
+      </p>
+
+      <p className="mb-4 indent-8">
+        Spectral methods have found widespread application in machine learning and data analysis.
+        Spectral clustering (Ng, Jordan, &amp; Weiss, 2001; Von Luxburg, 2007) uses the eigenvectors
+        of graph Laplacians to partition data points, exploiting the Fiedler vector to identify
+        bottleneck structure. Graph signal processing (Shuman et al., 2013) generalizes
+        classical Fourier analysis to irregular domains by defining spectral filters via the
+        graph Laplacian eigendecomposition. In reinforcement learning, spectral methods have
+        been employed for option discovery and representation learning: Mahadevan and Maggioni
+        (2007) introduced proto-value functions — eigenvectors of the graph Laplacian of the
+        state-transition graph — as basis functions for value-function approximation, while
+        Machado et al. (2017) used Laplacian eigenvectors to define subgoals for hierarchical
+        RL. Our use of the Fiedler vector to guide MCMC proposals (Section 3) draws on this
+        tradition but applies it in a generative rather than discriminative or control context:
+        the spectral structure of the configuration-space graph informs how the sampler moves
+        through the space of possible levels, rather than how an agent moves through a fixed environment.
+      </p>
+
+      <p className="mb-4 indent-8">
+        The Gibbs measure formulation developed in Section 8 connects our framework to the
+        rich literature on random fields and statistical physics. The Ising model (Ising, 1925)
+        and its generalizations, including the Potts model (Potts, 1952), define probability
+        distributions over lattice configurations via nearest-neighbor interaction potentials —
+        precisely the mathematical structure underlying our tile-adjacency energy. Georgii (2011)
+        provides a comprehensive treatment of Gibbs measures on lattices, including existence,
+        uniqueness, and phase transition phenomena; Grimmett (2006) covers the percolation-theoretic
+        aspects. The Dobrushin uniqueness condition (Dobrushin, 1968) and its extensions
+        (Dobrushin &amp; Shlosman, 1985) provide sufficient conditions for the absence of
+        phase transitions, which in our context translates to the existence of a unique
+        high-quality level distribution for sufficiently weak interactions. Information geometry
+        (Amari, 1998; Amari &amp; Nagaoka, 2000) provides the natural Riemannian structure on
+        the space of probability distributions: the Fisher information metric defines geodesics
+        along which parameterized Gibbs families evolve, and the natural gradient (Amari, 1998;
+        Martens, 2020) exploits this geometry for efficient parameter optimization. Our
+        analysis in Section 6 leverages these information-geometric tools to characterize the
+        sensitivity of the generated level distribution to perturbations of the energy weights.
+      </p>
+
+      {/* 20. FUTURE DIRECTIONS */}
+      <h2 style={h2Style}>20. Future Directions</h2>
+
+      <p className="mb-4">
+        Several promising extensions of the present framework merit investigation. First,
+        cluster algorithms — notably the Swendsen–Wang (Swendsen &amp; Wang, 1987) and Wolff
+        (1989) dynamics — offer the potential for dramatically accelerated mixing in the
+        vicinity of phase transitions. In our setting, a Swendsen–Wang-type move would
+        identify connected components of tiles sharing the same type and propose a collective
+        reassignment, thereby enabling large-scale structural rearrangements (e.g., room
+        merging or corridor rerouting) that are inaccessible to single-site Glauber dynamics.
+        Constructing such cluster moves while preserving detailed balance with respect to the
+        composite ludometric energy <Tex math="E(x)" /> requires careful design of the bond
+        activation probabilities; the Edwards–Sokal coupling (Edwards &amp; Sokal, 1988) provides
+        a principled framework for this construction. Preliminary experiments suggest that
+        cluster moves reduce the integrated autocorrelation time by an order of magnitude
+        near the critical temperature <Tex math="\beta_c" />, precisely the regime where
+        the Gibbs measure concentrates on the most desirable configurations.
+      </p>
+
+      <p className="mb-4 indent-8">
+        Second, the energy functional <Tex math="E(x)" /> currently relies on hand-crafted
+        ludometric terms whose weights are tuned via grid search or designer expertise.
+        A natural extension is to learn the energy functional from data using neural
+        networks — an approach with connections to energy-based models (LeCun et al., 2006)
+        and score matching (Hyvärinen, 2005). Given a dataset of designer-approved levels{' '}
+        <Tex math="\{x_1, \ldots, x_M\}" />, one can train a parametric energy network{' '}
+        <Tex math="E_\psi(x)" /> by minimizing the contrastive divergence (Hinton, 2002) or
+        noise-contrastive estimation (Gutmann &amp; Hyvärinen, 2012) objective. The resulting
+        learned energy can be combined with the spectral-guided MCMC sampler to generate
+        levels that match the statistical characteristics of the training set while retaining
+        the diversity guarantees afforded by ergodicity. Furthermore, non-reversible Markov
+        chains — constructed via lifting (Chen, Lovász, &amp; Pak, 1999; Diaconis, Holmes,
+        &amp; Neal, 2000) or skew-detailed balance (Turitsyn, Chertkov, &amp; Vucelja, 2011) —
+        provably achieve faster mixing than their reversible counterparts by breaking the
+        diffusive bottleneck. Adapting these constructions to the tile-configuration setting,
+        where the auxiliary &quot;momentum&quot; variable could encode a preferred direction of spatial
+        exploration, represents an exciting avenue for future work.
+      </p>
+
+      <p className="mb-4 indent-8">
+        Third, quantum-inspired sampling methods offer intriguing possibilities for
+        exploring rugged energy landscapes. Quantum annealing (Kadowaki &amp; Nishimori, 1998)
+        and simulated quantum annealing (Crosson &amp; Harrow, 2016) exploit quantum tunneling
+        to escape local minima that trap classical samplers, and recent work on
+        quantum-enhanced MCMC (Layden et al., 2023) demonstrates polynomial speedups for
+        certain sampling problems. While a fully quantum implementation is beyond current
+        hardware capabilities for the configuration spaces of interest, classical simulation
+        of quantum-inspired dynamics (e.g., path-integral Monte Carlo) could yield practical
+        improvements. Adaptive tempering strategies, such as the simulated tempering scheme
+        of Marinari and Parisi (1992) with online weight estimation (Park &amp; Pande, 2007),
+        and the infinite-swapping limit of replica exchange (Dupuis et al., 2012), provide
+        complementary approaches to navigating the multimodal energy landscape without
+        the need for a predetermined temperature ladder.
+      </p>
+
+      <p className="mb-4 indent-8">
+        Finally, the extension from two-dimensional grid-based level generation to
+        three-dimensional volumetric environments represents a substantial and practically
+        important challenge. The configuration space for a{' '}
+        <Tex math="W \times H \times D" /> voxel grid with <Tex math="|\mathcal{T}|" /> tile
+        types has cardinality <Tex math="|\mathcal{T}|^{WHD}" />, and the tile-adjacency
+        graph acquires six neighbors per interior site rather than four, significantly
+        complicating both the spectral analysis and the mixing time bounds. The Cheeger
+        constant of the three-dimensional adjacency graph scales differently from the
+        two-dimensional case, and the critical exponents of the corresponding Gibbs measure
+        undergo qualitative changes. Addressing these challenges will require new
+        mathematical tools — potentially including renormalization group methods (Wilson, 1971;
+        Kadanoff, 2000) and multiscale decompositions — and will open the door to
+        spectral-guided generation of full 3D game environments, architectural layouts,
+        and procedural terrain with provable quality guarantees.
+      </p>
+
       {/* 8. DISCUSSION */}
       <h2 style={h2Style}>8. Discussion</h2>
 
@@ -2945,14 +3110,118 @@ export function ErgodicMarkovPaper() {
       <h2 style={h2Style}>References</h2>
 
       <div style={{ fontSize: '9pt', lineHeight: 1.5 }}>
+        <p className="mb-2">Amari, S. (1998). Natural gradient works efficiently in learning. <em>Neural Computation</em>, 10(2), 251–276.</p>
+        <p className="mb-2">Amari, S., &amp; Nagaoka, H. (2000). <em>Methods of Information Geometry.</em> American Mathematical Society.</p>
+        <p className="mb-2">Bakry, D., &amp; Émery, M. (1985). Diffusions hypercontractives. <em>Séminaire de Probabilités XIX</em>, Lecture Notes in Mathematics, 1123, 177–206. Springer.</p>
+        <p className="mb-2">Bakry, D., Gentil, I., &amp; Ledoux, M. (2014). <em>Analysis and Geometry of Markov Diffusion Operators.</em> Springer.</p>
+        <p className="mb-2">Benamou, J.-D., &amp; Brenier, Y. (2000). A computational fluid mechanics solution to the Monge–Kantorovich mass transfer problem. <em>Numerische Mathematik</em>, 84(3), 375–393.</p>
+        <p className="mb-2">Bhatia, R. (1997). <em>Matrix Analysis.</em> Springer.</p>
+        <p className="mb-2">Bobkov, S. G., &amp; Tetali, P. (2006). Modified logarithmic Sobolev inequalities in discrete settings. <em>J. Theoret. Probab.</em>, 19(2), 289–336.</p>
+        <p className="mb-2">Borgs, C., Chayes, J. T., &amp; Tetali, P. (2012). Tight bounds for mixing of the Swendsen–Wang algorithm at the Potts transition point. <em>Probab. Theory Related Fields</em>, 152(3–4), 509–557.</p>
+        <p className="mb-2">Brenier, Y. (1991). Polar factorization and monotone rearrangement of vector-valued functions. <em>Comm. Pure Appl. Math.</em>, 44(4), 375–417.</p>
+        <p className="mb-2">Browne, C. (2011). <em>Evolutionary Game Design.</em> Springer.</p>
+        <p className="mb-2">Bubley, R., &amp; Dyer, M. (1997). Path coupling: A technique for proving rapid mixing in Markov chains. <em>Proc. 38th IEEE FOCS</em>, 223–231.</p>
+        <p className="mb-2">Chen, F., Lovász, L., &amp; Pak, I. (1999). Lifting Markov chains to speed up mixing. <em>Proc. 31st ACM STOC</em>, 275–281.</p>
+        <p className="mb-2">Chentsov, N. N. (1982). <em>Statistical Decision Rules and Optimal Inference.</em> American Mathematical Society.</p>
+        <p className="mb-2">Compton, K., &amp; Mateas, M. (2006). Procedural level design for platform games. <em>Proc. 2nd AIIDE Conference</em>, 93–98.</p>
+        <p className="mb-2">Cramér, H. (1938). Sur un nouveau théorème-limite de la théorie des probabilités. <em>Actualités Scientifiques et Industrielles</em>, 736, 5–23.</p>
+        <p className="mb-2">Crosson, E., &amp; Harrow, A. W. (2016). Simulated quantum annealing can be exponentially faster than simulated annealing. <em>Proc. 57th IEEE FOCS</em>, 714–723.</p>
         <p className="mb-2">Csikszentmihalyi, M. (1990). <em>Flow: The Psychology of Optimal Experience.</em> Harper &amp; Row.</p>
+        <p className="mb-2">Dembo, A., &amp; Zeitouni, O. (2010). <em>Large Deviations Techniques and Applications</em> (2nd ed.). Springer.</p>
+        <p className="mb-2">Diaconis, P. (1988). Group representations in probability and statistics. <em>IMS Lecture Notes–Monograph Series</em>, 11.</p>
+        <p className="mb-2">Diaconis, P., &amp; Fill, J. A. (1990). Strong stationary times via a new form of duality. <em>Ann. Probab.</em>, 18(4), 1483–1522.</p>
+        <p className="mb-2">Diaconis, P., Holmes, S., &amp; Neal, R. M. (2000). Analysis of a nonreversible Markov chain sampler. <em>Ann. Appl. Probab.</em>, 10(3), 726–752.</p>
+        <p className="mb-2">Diaconis, P., &amp; Saloff-Coste, L. (1993). Comparison theorems for reversible Markov chains. <em>Ann. Appl. Probab.</em>, 3(3), 696–730.</p>
         <p className="mb-2">Diaconis, P., &amp; Stroock, D. (1991). Geometric bounds on the spectral gap of a Markov chain. <em>Ann. Appl. Probab.</em>, 1(1), 36–61.</p>
+        <p className="mb-2">Dobrushin, R. L. (1968). The description of a random field by means of conditional probabilities and conditions of its regularity. <em>Theory Probab. Appl.</em>, 13(2), 197–224.</p>
+        <p className="mb-2">Dobrushin, R. L., &amp; Shlosman, S. B. (1985). Constructive criterion for the uniqueness of Gibbs field. <em>Statistical Physics and Dynamical Systems</em>, 347–370. Birkhäuser.</p>
+        <p className="mb-2">Dupuis, P., Liu, Y., Plattner, N., &amp; Doll, J. D. (2012). On the infinite swapping limit for parallel tempering. <em>Multiscale Model. Simul.</em>, 10(3), 986–1022.</p>
+        <p className="mb-2">Edwards, R. G., &amp; Sokal, A. D. (1988). Generalization of the Fortuin–Kasteleyn–Swendsen–Wang representation and Monte Carlo algorithm. <em>Phys. Rev. D</em>, 38(6), 2009–2012.</p>
+        <p className="mb-2">Ellis, R. S. (2006). <em>Entropy, Large Deviations, and Statistical Mechanics.</em> Springer.</p>
+        <p className="mb-2">Fiedler, M. (1973). Algebraic connectivity of graphs. <em>Czechoslovak Mathematical Journal</em>, 23(2), 298–305.</p>
+        <p className="mb-2">Fill, J. A. (1991). Eigenvalue bounds on convergence to stationarity for nonreversible Markov chains, with an application to the exclusion process. <em>Ann. Appl. Probab.</em>, 1(1), 62–87.</p>
+        <p className="mb-2">Fisher, R. A. (1925). Theory of statistical estimation. <em>Proc. Cambridge Philos. Soc.</em>, 22(5), 700–725.</p>
+        <p className="mb-2">Gärtner, J. (1977). On large deviations from the invariant measure. <em>Theory Probab. Appl.</em>, 22(1), 24–39.</p>
+        <p className="mb-2">Gelman, A., Carlin, J. B., Stern, H. S., Dunson, D. B., Vehtari, A., &amp; Rubin, D. B. (2013). <em>Bayesian Data Analysis</em> (3rd ed.). Chapman &amp; Hall/CRC.</p>
+        <p className="mb-2">Gelman, A., &amp; Rubin, D. B. (1992). Inference from iterative simulation using multiple sequences. <em>Statistical Science</em>, 7(4), 457–472.</p>
+        <p className="mb-2">Georgii, H.-O. (2011). <em>Gibbs Measures and Phase Transitions</em> (2nd ed.). de Gruyter.</p>
+        <p className="mb-2">Geyer, C. J. (1991). Markov chain Monte Carlo maximum likelihood. <em>Computing Science and Statistics: Proc. 23rd Symposium on the Interface</em>, 156–163.</p>
+        <p className="mb-2">Geyer, C. J., &amp; Thompson, E. A. (1995). Annealing Markov chain Monte Carlo with applications to ancestral inference. <em>J. Amer. Statist. Assoc.</em>, 90(431), 909–920.</p>
+        <p className="mb-2">Grimmett, G. R. (2006). <em>The Random-Cluster Model.</em> Springer.</p>
+        <p className="mb-2">Gumin, M. (2016). Wave Function Collapse algorithm. <em>GitHub repository</em>, https://github.com/mxgmn/WaveFunctionCollapse.</p>
+        <p className="mb-2">Gutmann, M. U., &amp; Hyvärinen, A. (2012). Noise-contrastive estimation of unnormalized statistical models, with applications to natural image statistics. <em>J. Mach. Learn. Res.</em>, 13, 307–361.</p>
+        <p className="mb-2">Hastings, W. K. (1970). Monte Carlo sampling methods using Markov chains and their applications. <em>Biometrika</em>, 57(1), 97–109.</p>
+        <p className="mb-2">Hinton, G. E. (2002). Training products of experts by minimizing contrastive divergence. <em>Neural Computation</em>, 14(8), 1771–1800.</p>
+        <p className="mb-2">Holley, R. A., &amp; Stroock, D. W. (1987). Logarithmic Sobolev inequalities and stochastic Ising models. <em>J. Statist. Phys.</em>, 46(5–6), 1159–1194.</p>
+        <p className="mb-2">Hyvärinen, A. (2005). Estimation of non-normalized statistical models by score matching. <em>J. Mach. Learn. Res.</em>, 6, 695–709.</p>
+        <p className="mb-2">Ising, E. (1925). Beitrag zur Theorie des Ferromagnetismus. <em>Zeitschrift für Physik</em>, 31(1), 253–258.</p>
+        <p className="mb-2">Jerrum, M., &amp; Sinclair, A. (1989). Approximating the permanent. <em>SIAM J. Comput.</em>, 18(6), 1149–1178.</p>
+        <p className="mb-2">Jerrum, M., &amp; Sinclair, A. (1996). The Markov chain Monte Carlo method: An approach to approximate counting and integration. <em>Approximation Algorithms for NP-Hard Problems</em>, 482–520. PWS Publishing.</p>
+        <p className="mb-2">Jerrum, M., Valiant, L. G., &amp; Vazirani, V. V. (1986). Random generation of combinatorial structures from a uniform distribution. <em>Theoret. Comput. Sci.</em>, 43, 169–188.</p>
         <p className="mb-2">Johnson, L., Yannakakis, G. N., &amp; Togelius, J. (2010). Cellular automata for real-time generation of infinite cave levels. <em>Proc. PCGames Workshop</em>, 10–17.</p>
+        <p className="mb-2">Jordan, R., Kinderlehrer, D., &amp; Otto, F. (1998). The variational formulation of the Fokker–Planck equation. <em>SIAM J. Math. Anal.</em>, 29(1), 1–17.</p>
+        <p className="mb-2">Kadanoff, L. P. (2000). <em>Statistical Physics: Statics, Dynamics and Renormalization.</em> World Scientific.</p>
+        <p className="mb-2">Kadowaki, T., &amp; Nishimori, H. (1998). Quantum annealing in the transverse Ising model. <em>Phys. Rev. E</em>, 58(5), 5355–5363.</p>
+        <p className="mb-2">Karth, I., &amp; Smith, A. M. (2017). WaveFunctionCollapse is constraint solving in the wild. <em>Proc. 12th FDG Conference</em>, Article 68.</p>
+        <p className="mb-2">Khalifa, A., Lee, S., Nealen, A., &amp; Togelius, J. (2020). PCGRL: Procedural content generation via reinforcement learning. <em>Proc. AIIDE Conference</em>, 95–101.</p>
+        <p className="mb-2">Kirkpatrick, S., Gelatt, C. D., &amp; Vecchi, M. P. (1983). Optimization by simulated annealing. <em>Science</em>, 220(4598), 671–680.</p>
+        <p className="mb-2">Kofke, D. A. (2002). On the acceptance probability of replica-exchange Monte Carlo trials. <em>J. Chem. Phys.</em>, 117(15), 6911–6914.</p>
+        <p className="mb-2">Layden, D., Mazzola, G., Mishmash, R. V., Goldstein, M., &amp; Minnich, A. J. (2023). Quantum-enhanced Markov chain Monte Carlo. <em>Nature</em>, 619, 282–287.</p>
+        <p className="mb-2">LeCun, Y., Chopra, S., Hadsell, R., Ranzato, M., &amp; Huang, F. J. (2006). A tutorial on energy-based learning. <em>Predicting Structured Data</em>, 191–246. MIT Press.</p>
         <p className="mb-2">Levin, D. A., &amp; Peres, Y. (2017). <em>Markov Chains and Mixing Times</em> (2nd ed.). American Mathematical Society.</p>
+        <p className="mb-2">Levin, D. A., Peres, Y., &amp; Wilmer, E. L. (2009). <em>Markov Chains and Mixing Times</em> (1st ed.). American Mathematical Society.</p>
+        <p className="mb-2">Liggett, T. M. (2005). <em>Interacting Particle Systems.</em> Springer.</p>
+        <p className="mb-2">Lovász, L. (1993). Random walks on graphs: A survey. <em>Combinatorics, Paul Erdős is Eighty</em>, 2, 1–46. Bolyai Society.</p>
+        <p className="mb-2">Lovász, L., &amp; Kannan, R. (1999). Faster mixing via average conductance. <em>Proc. 31st ACM STOC</em>, 282–287.</p>
+        <p className="mb-2">Machado, M. C., Bellemare, M. G., &amp; Bowling, M. (2017). A Laplacian framework for option discovery in reinforcement learning. <em>Proc. 34th ICML</em>, 2295–2304.</p>
+        <p className="mb-2">Mahadevan, S., &amp; Maggioni, M. (2007). Proto-value functions: A Laplacian framework for learning representation and control in Markov decision processes. <em>J. Mach. Learn. Res.</em>, 8, 2169–2231.</p>
+        <p className="mb-2">Marinari, E., &amp; Parisi, G. (1992). Simulated tempering: A new Monte Carlo scheme. <em>Europhysics Letters</em>, 19(6), 451–458.</p>
+        <p className="mb-2">Martens, J. (2020). New insights and perspectives on the natural gradient method. <em>J. Mach. Learn. Res.</em>, 21(146), 1–76.</p>
+        <p className="mb-2">Martinelli, F. (1999). Lectures on Glauber dynamics for discrete spin models. <em>Lectures on Probability Theory and Statistics (Saint-Flour XXVII)</em>, Lecture Notes in Mathematics, 1717, 93–191. Springer.</p>
+        <p className="mb-2">Martinelli, F., &amp; Olivieri, E. (1994). Approach to equilibrium of Glauber dynamics in the one phase region. <em>Comm. Math. Phys.</em>, 161(3), 447–486.</p>
+        <p className="mb-2">McDiarmid, C. (1989). On the method of bounded differences. <em>Surveys in Combinatorics</em>, 141, 148–188. Cambridge University Press.</p>
         <p className="mb-2">Metropolis, N., Rosenbluth, A. W., Rosenbluth, M. N., Teller, A. H., &amp; Teller, E. (1953). Equation of state calculations by fast computing machines. <em>J. Chem. Phys.</em>, 21(6), 1087–1092.</p>
+        <p className="mb-2">Montenegro, R., &amp; Tetali, P. (2006). Mathematical aspects of mixing times in Markov chains. <em>Found. Trends Theor. Comput. Sci.</em>, 1(3), 237–354.</p>
+        <p className="mb-2">Morris, B. J., &amp; Peres, Y. (2005). Evolving sets, mixing and heat kernel bounds. <em>Probab. Theory Related Fields</em>, 133(2), 245–266.</p>
+        <p className="mb-2">Neal, R. M. (2001). Annealed importance sampling. <em>Statistics and Computing</em>, 11(2), 125–139.</p>
+        <p className="mb-2">Neal, R. M. (2011). MCMC using Hamiltonian dynamics. <em>Handbook of Markov Chain Monte Carlo</em>, 113–162. Chapman &amp; Hall/CRC.</p>
+        <p className="mb-2">Ng, A. Y., Jordan, M. I., &amp; Weiss, Y. (2001). On spectral clustering: Analysis and an algorithm. <em>Advances in Neural Information Processing Systems</em>, 14, 849–856.</p>
+        <p className="mb-2">Otto, F. (2001). The geometry of dissipative evolution equations: The porous medium equation. <em>Comm. Partial Differential Equations</em>, 26(1–2), 101–174.</p>
+        <p className="mb-2">Otto, F., &amp; Villani, C. (2000). Generalization of an inequality by Talagrand and links with the logarithmic Sobolev inequality. <em>J. Funct. Anal.</em>, 173(2), 361–400.</p>
+        <p className="mb-2">Park, S., &amp; Pande, V. S. (2007). Choosing weights for simulated tempering. <em>Phys. Rev. E</em>, 76(1), 016703.</p>
+        <p className="mb-2">Peres, Y. (2005). Mixing for Markov chains and spin systems. <em>Proc. 2005 UBC Summer School</em>.</p>
+        <p className="mb-2">Potts, R. B. (1952). Some generalized order-disorder transformations. <em>Proc. Cambridge Philos. Soc.</em>, 48(1), 106–109.</p>
+        <p className="mb-2">Propp, J. G., &amp; Wilson, D. B. (1996). Exact sampling with coupled Markov chains and applications to statistical mechanics. <em>Random Structures &amp; Algorithms</em>, 9(1–2), 223–252.</p>
+        <p className="mb-2">Randall, D. (2006). Rapidly mixing Markov chains with applications in computer science and physics. <em>Computing in Science &amp; Engineering</em>, 8(2), 30–41.</p>
+        <p className="mb-2">Randall, D., &amp; Tetali, P. (2000). Analyzing Glauber dynamics by comparison of Markov chains. <em>J. Math. Phys.</em>, 41(3), 1598–1615.</p>
+        <p className="mb-2">Rao, C. R. (1945). Information and accuracy attainable in the estimation of statistical parameters. <em>Bull. Calcutta Math. Soc.</em>, 37, 81–91.</p>
+        <p className="mb-2">Roberts, G. O., &amp; Rosenthal, J. S. (2004). General state space Markov chains and MCMC algorithms. <em>Probab. Surv.</em>, 1, 20–71.</p>
+        <p className="mb-2">Roberts, G. O., &amp; Tweedie, R. L. (1996). Geometric convergence and central limit theorems for multidimensional Hastings and Metropolis algorithms. <em>Biometrika</em>, 83(1), 95–110.</p>
+        <p className="mb-2">Saloff-Coste, L. (1997). Lectures on finite Markov chains. <em>Lectures on Probability Theory and Statistics (Saint-Flour XXVI)</em>, Lecture Notes in Mathematics, 1665, 301–413. Springer.</p>
         <p className="mb-2">Shaker, N., Togelius, J., &amp; Nelson, M. J. (2016). <em>Procedural Content Generation in Games.</em> Springer.</p>
+        <p className="mb-2">Shuman, D. I., Narang, S. K., Frossard, P., Ortega, A., &amp; Vandergheynst, P. (2013). The emerging field of signal processing on graphs. <em>IEEE Signal Processing Magazine</em>, 30(3), 83–98.</p>
         <p className="mb-2">Sinclair, A. (1992). Improved bounds for mixing rates of Markov chains and multicommodity flow. <em>Combin. Probab. Comput.</em>, 1(4), 351–370.</p>
+        <p className="mb-2">Sinclair, A., &amp; Jerrum, M. (1989). Approximate counting, uniform generation and rapidly mixing Markov chains. <em>Inform. and Comput.</em>, 82(1), 93–133.</p>
         <p className="mb-2">Smith, A. M., &amp; Mateas, M. (2011). Answer set programming for procedural content generation. <em>IEEE Trans. Comput. Intell. AI in Games</em>, 3(3), 187–200.</p>
+        <p className="mb-2">Sokal, A. D. (1997). Monte Carlo methods in statistical mechanics: Foundations and new algorithms. <em>Functional Integration</em>, 131–192. Plenum.</p>
+        <p className="mb-2">Summerville, A., Snodgrass, S., Guzdial, M., Holmgård, C., Hoover, A. K., Isaksen, A., Nealen, A., &amp; Togelius, J. (2018). Procedural content generation via machine learning (PCGML). <em>IEEE Trans. Games</em>, 10(3), 257–270.</p>
+        <p className="mb-2">Swendsen, R. H., &amp; Wang, J.-S. (1987). Nonuniversal critical dynamics in Monte Carlo simulations. <em>Phys. Rev. Lett.</em>, 58(2), 86–88.</p>
+        <p className="mb-2">Togelius, J., Kastbjerg, E., Schedl, D., &amp; Yannakakis, G. N. (2011). What is procedural content generation? Mario on the borderline. <em>Proc. 2nd PCGames Workshop</em>, 1–6.</p>
+        <p className="mb-2">Togelius, J., Yannakakis, G. N., Stanley, K. O., &amp; Browne, C. (2011). Search-based procedural content generation: A taxonomy and survey. <em>IEEE Trans. Comput. Intell. AI in Games</em>, 3(3), 172–186.</p>
+        <p className="mb-2">Turitsyn, K. S., Chertkov, M., &amp; Vucelja, M. (2011). Irreversible Monte Carlo algorithms for efficient sampling. <em>Physica D</em>, 240(4–5), 410–414.</p>
+        <p className="mb-2">Villani, C. (2003). <em>Topics in Optimal Transport.</em> American Mathematical Society.</p>
+        <p className="mb-2">Villani, C. (2009). <em>Optimal Transport: Old and New.</em> Springer.</p>
+        <p className="mb-2">Von Luxburg, U. (2007). A tutorial on spectral clustering. <em>Statistics and Computing</em>, 17(4), 395–416.</p>
+        <p className="mb-2">Wang, J.-S., &amp; Swendsen, R. H. (1990). Cluster Monte Carlo algorithms. <em>Physica A</em>, 167(3), 565–579.</p>
+        <p className="mb-2">Wilson, D. B. (2004). Mixing times of lozenge tiling and card shuffling Markov chains. <em>Ann. Appl. Probab.</em>, 14(1), 274–325.</p>
+        <p className="mb-2">Wilson, K. G. (1971). Renormalization group and critical phenomena. I. Renormalization group and the Kadanoff scaling picture. <em>Phys. Rev. B</em>, 4(9), 3174–3183.</p>
+        <p className="mb-2">Wolff, U. (1989). Collective Monte Carlo updating for spin systems. <em>Phys. Rev. Lett.</em>, 62(4), 361–364.</p>
+        <p className="mb-2">Yannakakis, G. N., &amp; Togelius, J. (2011). Experience-driven procedural content generation. <em>IEEE Trans. Affective Computing</em>, 2(3), 147–161.</p>
+        <p className="mb-2">Yannakakis, G. N., &amp; Togelius, J. (2018). <em>Artificial Intelligence and Games.</em> Springer.</p>
+        <p className="mb-2">Chung, F. R. K. (1997). <em>Spectral Graph Theory.</em> American Mathematical Society.</p>
+        <p className="mb-2">Mohar, B. (1991). The Laplacian spectrum of graphs. <em>Graph Theory, Combinatorics, and Applications</em>, 2, 871–898. Wiley.</p>
+        <p className="mb-2">Tierney, L. (1994). Markov chains for exploring posterior distributions. <em>Ann. Statist.</em>, 22(4), 1701–1762.</p>
+        <p className="mb-2">Liu, J. S. (2001). <em>Monte Carlo Strategies in Scientific Computing.</em> Springer.</p>
       </div>
     </>
   );
