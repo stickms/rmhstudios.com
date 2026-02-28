@@ -1532,8 +1532,8 @@ export function PersistentHomologyPaper() {
         that are left to future work.
       </p>
 
-      {/* 14. TOPOLOGICAL REGULARIZATION OF GAN TRAINING */}
-      <h2 style={h2Style}>14. Topological Regularization of GAN Training</h2>
+      {/* 13. TOPOLOGICAL REGULARIZATION OF GAN TRAINING */}
+      <h2 style={h2Style}>13. Topological Regularization of GAN Training</h2>
 
       <p className="mb-4">
         The preceding sections have demonstrated that persistent homology furnishes a powerful
@@ -1547,7 +1547,7 @@ export function PersistentHomologyPaper() {
         of Brüel-Gabrielsson et al. (2020), which we adapt to the game-asset GAN setting.
       </p>
 
-      <h3 style={h3Style}>14.1 Persistence-Based Loss Functions</h3>
+      <h3 style={h3Style}>13.1 Persistence-Based Loss Functions</h3>
 
       <p className="mb-4">
         Let <Tex math="G_\theta: \mathcal{Z} \to \mathcal{X}" /> denote the generator with
@@ -1601,7 +1601,7 @@ export function PersistentHomologyPaper() {
         framework, anchoring the learned topology to the structure of the data manifold itself.
       </p>
 
-      <h3 style={h3Style}>14.2 Backpropagation Through the Persistence Module</h3>
+      <h3 style={h3Style}>13.2 Backpropagation Through the Persistence Module</h3>
 
       <p className="mb-4">
         The critical technical obstacle in optimizing <Tex math="\mathcal{L}_{\mathrm{topo}}" />{' '}
@@ -1687,8 +1687,8 @@ export function PersistentHomologyPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      {/* 15. MULTI-SCALE TOPOLOGICAL ANALYSIS */}
-      <h2 style={h2Style}>15. Multi-Scale Topological Analysis</h2>
+      {/* 14. MULTI-SCALE TOPOLOGICAL ANALYSIS */}
+      <h2 style={h2Style}>14. Multi-Scale Topological Analysis</h2>
 
       <p className="mb-4">
         Persistent homology is, by construction, a multi-scale theory: the filtration parameter{' '}
@@ -1702,7 +1702,7 @@ export function PersistentHomologyPaper() {
         spaces.
       </p>
 
-      <h3 style={h3Style}>15.1 Persistent Homology Across Scales</h3>
+      <h3 style={h3Style}>14.1 Persistent Homology Across Scales</h3>
 
       <p className="mb-4">
         Given a persistence diagram{' '}
@@ -1777,7 +1777,7 @@ export function PersistentHomologyPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      <h3 style={h3Style}>15.2 Persistence Images and Vectorization</h3>
+      <h3 style={h3Style}>14.2 Persistence Images and Vectorization</h3>
 
       <p className="mb-4">
         While persistence diagrams are theoretically elegant, their nature as multisets of
@@ -1856,8 +1856,8 @@ export function PersistentHomologyPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      {/* 16. ZIGZAG PERSISTENCE AND TEMPORAL ANALYSIS */}
-      <h2 style={h2Style}>16. Zigzag Persistence and Temporal Analysis</h2>
+      {/* 15. ZIGZAG PERSISTENCE AND TEMPORAL ANALYSIS */}
+      <h2 style={h2Style}>15. Zigzag Persistence and Temporal Analysis</h2>
 
       <p className="mb-4">
         Standard persistent homology tracks the evolution of topological features across a
@@ -1872,7 +1872,7 @@ export function PersistentHomologyPaper() {
         topological spaces.
       </p>
 
-      <h3 style={h3Style}>16.1 Zigzag Modules and Quiver Representations</h3>
+      <h3 style={h3Style}>15.1 Zigzag Modules and Quiver Representations</h3>
 
       <p className="mb-4">
         A zigzag diagram of topological spaces is a sequence of spaces connected by maps that
@@ -1938,7 +1938,7 @@ export function PersistentHomologyPaper() {
         500-epoch training run with 10 snapshots.
       </p>
 
-      <h3 style={h3Style}>16.2 Tracking Topological Evolution During Training</h3>
+      <h3 style={h3Style}>15.2 Tracking Topological Evolution During Training</h3>
 
       <p className="mb-4">
         We apply the zigzag persistence framework to track the evolution of the latent-space
@@ -2010,8 +2010,8 @@ export function PersistentHomologyPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      {/* 17. COMPUTATIONAL COMPLEXITY AND ALGORITHMIC CONSIDERATIONS */}
-      <h2 style={h2Style}>17. Computational Complexity and Algorithmic Considerations</h2>
+      {/* 16. COMPUTATIONAL COMPLEXITY AND ALGORITHMIC CONSIDERATIONS */}
+      <h2 style={h2Style}>16. Computational Complexity and Algorithmic Considerations</h2>
 
       <p className="mb-4">
         The practical deployment of persistent homology within generative-model pipelines
@@ -2026,7 +2026,7 @@ export function PersistentHomologyPaper() {
         exponent is substantially smaller for geometrically structured data.
       </p>
 
-      <h3 style={h3Style}>17.1 Complexity of Persistent Homology Computation</h3>
+      <h3 style={h3Style}>16.1 Complexity of Persistent Homology Computation</h3>
 
       <p className="mb-4 indent-8">
         The column-reduction algorithm processes the boundary matrix <Tex math="D = [\partial_{k+1}]" /> by
@@ -2068,7 +2068,7 @@ export function PersistentHomologyPaper() {
         consistent with the sub-cubic scaling reported by Bauer (2021).
       </p>
 
-      <h3 style={h3Style}>17.2 Approximation Schemes</h3>
+      <h3 style={h3Style}>16.2 Approximation Schemes</h3>
 
       <p className="mb-4 indent-8">
         When exact computation remains intractable, several approximation schemes provide
@@ -2129,8 +2129,8 @@ export function PersistentHomologyPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      {/* 18. ABLATION STUDIES AND SENSITIVITY ANALYSIS */}
-      <h2 style={h2Style}>18. Ablation Studies and Sensitivity Analysis</h2>
+      {/* 17. ABLATION STUDIES AND SENSITIVITY ANALYSIS */}
+      <h2 style={h2Style}>17. Ablation Studies and Sensitivity Analysis</h2>
 
       <p className="mb-4">
         To disentangle the contributions of individual components within our
@@ -2144,7 +2144,7 @@ export function PersistentHomologyPaper() {
         \mathcal{L}_{\text{topo}}(\gamma) = \sum_{k=0}^{2} \lambda_k \sum_{(b_i, d_i) \in \mathrm{Dgm}_k(\gamma)} (d_i - b_i)^p \cdot K_\sigma\!\left(\gamma(t),\, \tfrac{b_i + d_i}{2}\right)
       " />
 
-      <h3 style={h3Style}>18.1 Component Ablation</h3>
+      <h3 style={h3Style}>17.1 Component Ablation</h3>
 
       <p className="mb-4 indent-8">
         We evaluate seven configurations: (i) the full model; (ii) removal of the
@@ -2196,7 +2196,7 @@ export function PersistentHomologyPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      <h3 style={h3Style}>18.2 Hyperparameter Sensitivity</h3>
+      <h3 style={h3Style}>17.2 Hyperparameter Sensitivity</h3>
 
       <p className="mb-4 indent-8">
         We further investigate the sensitivity of the framework to the regularization
@@ -2252,8 +2252,8 @@ export function PersistentHomologyPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      {/* 19. RELATED WORK */}
-      <h2 style={h2Style}>19. Related Work</h2>
+      {/* 18. RELATED WORK */}
+      <h2 style={h2Style}>18. Related Work</h2>
 
       <p className="mb-4">
         The present work lies at the confluence of three rapidly evolving research streams:
@@ -2263,7 +2263,7 @@ export function PersistentHomologyPaper() {
         landscape and identifying the specific lacunae that our framework addresses.
       </p>
 
-      <h3 style={h3Style}>19.1 Topological Data Analysis in Machine Learning</h3>
+      <h3 style={h3Style}>18.1 Topological Data Analysis in Machine Learning</h3>
 
       <p className="mb-4 indent-8">
         The integration of persistent homology into machine-learning pipelines has
@@ -2285,7 +2285,7 @@ export function PersistentHomologyPaper() {
         than input data topology.
       </p>
 
-      <h3 style={h3Style}>19.2 Latent-Space Analysis of Generative Models</h3>
+      <h3 style={h3Style}>18.2 Latent-Space Analysis of Generative Models</h3>
 
       <p className="mb-4 indent-8">
         The geometric structure of GAN latent spaces has attracted sustained attention
@@ -2310,7 +2310,7 @@ export function PersistentHomologyPaper() {
         Jacobian-based metric computation.
       </p>
 
-      <h3 style={h3Style}>19.3 Procedural Content Generation</h3>
+      <h3 style={h3Style}>18.3 Procedural Content Generation</h3>
 
       <p className="mb-4 indent-8">
         GAN-based procedural content generation for games has progressed from early
@@ -2341,8 +2341,8 @@ export function PersistentHomologyPaper() {
         approach to latent-space navigation specifically designed for game-asset synthesis.
       </p>
 
-      {/* 20. FUTURE DIRECTIONS */}
-      <h2 style={h2Style}>20. Future Directions</h2>
+      {/* 19. FUTURE DIRECTIONS */}
+      <h2 style={h2Style}>19. Future Directions</h2>
 
       <p className="mb-4">
         Several promising extensions of the present framework merit investigation. First,
@@ -2414,8 +2414,8 @@ export function PersistentHomologyPaper() {
         topology-aware asset authoring within familiar production tools.
       </p>
 
-      {/* 21. CONCLUSION */}
-      <h2 style={h2Style}>21. Conclusion</h2>
+      {/* 20. CONCLUSION */}
+      <h2 style={h2Style}>20. Conclusion</h2>
 
       <p className="mb-4">
         We have introduced a computational pipeline grounded in persistent homology for the
@@ -2435,14 +2435,120 @@ export function PersistentHomologyPaper() {
       <h2 style={h2Style}>References</h2>
 
       <div style={{ fontSize: '9pt', lineHeight: 1.5 }}>
+        <p className="mb-2">Adams, H., Emerson, T., Kirby, M., Neville, R., Peterson, C., Shipman, P., Chepushtanova, S., Hanson, E., Motta, F., &amp; Ziegelmeier, L. (2017). Persistence images: A stable vector representation of persistent homology. <em>J. Mach. Learn. Res.</em>, 18(8), 1–35.</p>
+        <p className="mb-2">Arjovsky, M., Chintala, S., &amp; Bottou, L. (2017). Wasserstein generative adversarial networks. <em>Proc. ICML</em>, 70, 214–223.</p>
+        <p className="mb-2">Arjovsky, M., &amp; Bottou, L. (2017). Towards principled methods for training generative adversarial networks. <em>Proc. ICLR</em>.</p>
+        <p className="mb-2">Atiyah, M. F., &amp; Macdonald, I. G. (1969). <em>Introduction to Commutative Algebra.</em> Addison-Wesley.</p>
         <p className="mb-2">Bauer, U. (2021). Ripser: efficient computation of Vietoris–Rips persistence barcodes. <em>J. Appl. Comput. Topol.</em>, 5, 391–423.</p>
+        <p className="mb-2">Bauer, U., &amp; Edelsbrunner, H. (2017). The Morse theory of Čech and Delaunay complexes. <em>Trans. Amer. Math. Soc.</em>, 369(5), 3741–3762.</p>
+        <p className="mb-2">Bauer, U., &amp; Lesnick, M. (2015). Induced matchings and the algebraic stability of persistence barcodes. <em>J. Comput. Geom.</em>, 6(2), 162–191.</p>
+        <p className="mb-2">Bendich, P., Marron, J. S., Miller, E., Pieloch, A., &amp; Skwerer, S. (2016). Persistent homology analysis of brain artery trees. <em>Ann. Appl. Stat.</em>, 10(1), 198–218.</p>
+        <p className="mb-2">Boissonnat, J.-D., &amp; Ghosh, A. (2014). Manifold reconstruction using tangential Delaunay complexes. <em>Discrete Comput. Geom.</em>, 51(1), 221–267.</p>
+        <p className="mb-2">Borsuk, K. (1948). On the imbedding of systems of compacta in simplicial complexes. <em>Fund. Math.</em>, 35, 217–234.</p>
+        <p className="mb-2">Botnan, M. B., &amp; Crawley-Boevey, W. (2020). Decomposition of persistence modules. <em>Proc. Amer. Math. Soc.</em>, 148(11), 4581–4596.</p>
+        <p className="mb-2">Brock, A., Donahue, J., &amp; Simonyan, K. (2019). Large scale GAN training for high fidelity natural image synthesis. <em>Proc. ICLR</em>.</p>
+        <p className="mb-2">Brüel-Gabrielsson, R., Nelson, B. J., Dwaraknath, A., Skraba, P., Guibas, L. J., &amp; Carlsson, G. (2020). A topology layer for machine learning. <em>Proc. AISTATS</em>, 108, 1553–1563.</p>
+        <p className="mb-2">Bubenik, P. (2015). Statistical topological data analysis using persistence landscapes. <em>J. Mach. Learn. Res.</em>, 16(1), 77–102.</p>
+        <p className="mb-2">Bubenik, P., &amp; Dłotko, P. (2017). A persistence landscapes toolbox for topological statistics. <em>J. Symbolic Comput.</em>, 78, 91–114.</p>
         <p className="mb-2">Carlsson, G. (2009). Topology and data. <em>Bull. Amer. Math. Soc.</em>, 46(2), 255–308.</p>
+        <p className="mb-2">Carlsson, G. (2014). Topological pattern recognition for point cloud data. <em>Acta Numer.</em>, 23, 289–368.</p>
+        <p className="mb-2">Carlsson, G., &amp; de Silva, V. (2010). Zigzag persistence. <em>Found. Comput. Math.</em>, 10(4), 367–405.</p>
+        <p className="mb-2">Carlsson, G., de Silva, V., &amp; Morozov, D. (2009). Zigzag persistent homology and real-valued functions. <em>Proc. 25th Annu. Sympos. Comput. Geom.</em>, 247–256.</p>
+        <p className="mb-2">Carlsson, G., &amp; Zomorodian, A. (2009). The theory of multidimensional persistence. <em>Discrete Comput. Geom.</em>, 42(1), 71–93.</p>
+        <p className="mb-2">Carrière, M., Cuturi, M., &amp; Oudot, S. (2017). Sliced Wasserstein kernel for persistence diagrams. <em>Proc. ICML</em>, 70, 664–673.</p>
         <p className="mb-2">Cavanna, N. J., Jahanseir, M., &amp; Sheehy, D. R. (2015). A geometric perspective on sparse filtrations. <em>Proc. 27th Canadian Conf. Comput. Geom.</em></p>
+        <p className="mb-2">Chazal, F., Cohen-Steiner, D., Guibas, L. J., Mémoli, F., &amp; Oudot, S. Y. (2009). Gromov–Hausdorff stable signatures for shapes using persistence. <em>Comput. Graph. Forum</em>, 28(5), 1393–1403.</p>
+        <p className="mb-2">Chazal, F., Cohen-Steiner, D., &amp; Mérigot, Q. (2011). Geometric inference for probability measures. <em>Found. Comput. Math.</em>, 11(6), 733–751.</p>
+        <p className="mb-2">Chazal, F., de Silva, V., Glisse, M., &amp; Oudot, S. (2016). <em>The Structure and Stability of Persistence Modules.</em> Springer.</p>
+        <p className="mb-2">Chazal, F., de Silva, V., &amp; Oudot, S. (2014). Persistence stability for geometric complexes. <em>Geom. Dedicata</em>, 173(1), 193–214.</p>
+        <p className="mb-2">Chazal, F., Fasy, B., Lecci, F., Rinaldo, A., &amp; Wasserman, L. (2015). Stochastic convergence of persistence landscapes and silhouettes. <em>J. Comput. Geom.</em>, 6(2), 140–161.</p>
+        <p className="mb-2">Chazal, F., &amp; Michel, B. (2021). An introduction to topological data analysis: Fundamental and practical aspects for data scientists. <em>Front. Artif. Intell.</em>, 4, 667963.</p>
+        <p className="mb-2">Chen, C., &amp; Freedman, D. (2011). Hardness results for homology localization. <em>Discrete Comput. Geom.</em>, 45(3), 425–448.</p>
+        <p className="mb-2">Chen, C., Ni, X., Bai, Q., &amp; Wang, Y. (2019). A topological regularizer for classifiers via persistent homology. <em>Proc. AISTATS</em>, 89, 2573–2582.</p>
         <p className="mb-2">Cohen-Steiner, D., Edelsbrunner, H., &amp; Harer, J. (2007). Stability of persistence diagrams. <em>Discrete Comput. Geom.</em>, 37(1), 103–120.</p>
+        <p className="mb-2">Cohen-Steiner, D., Edelsbrunner, H., &amp; Harer, J. (2009). Extending persistence using Poincaré and Lefschetz duality. <em>Found. Comput. Math.</em>, 9(1), 79–103.</p>
+        <p className="mb-2">Cohen-Steiner, D., Edelsbrunner, H., Harer, J., &amp; Mileyko, Y. (2010). Lipschitz functions have L_p-stable persistence. <em>Found. Comput. Math.</em>, 10(2), 127–139.</p>
+        <p className="mb-2">Crawley-Boevey, W. (2015). Decomposition of pointwise finite-dimensional persistence modules. <em>J. Algebra Appl.</em>, 14(5), 1550066.</p>
+        <p className="mb-2">Curry, J. (2014). Sheaves, cosheaves and applications. <em>arXiv:1303.3255v2</em>.</p>
+        <p className="mb-2">Curry, J., &amp; Patel, A. (2020). Classification of constructible cosheaves. <em>Theory Appl. Categ.</em>, 35(27), 1012–1047.</p>
         <p className="mb-2">de Silva, V., &amp; Carlsson, G. (2004). Topological estimation using witness complexes. <em>Proc. Sympos. Point-Based Graphics</em>, 157–166.</p>
+        <p className="mb-2">de Silva, V., &amp; Ghrist, R. (2007). Coverage in sensor networks via persistent homology. <em>Algebr. Geom. Topol.</em>, 7, 339–358.</p>
+        <p className="mb-2">de Silva, V., Morozov, D., &amp; Vejdemo-Johansson, M. (2011). Dualities in persistent (co)homology. <em>Inverse Probl.</em>, 27(12), 124003.</p>
+        <p className="mb-2">Dey, T. K., Fan, F., &amp; Wang, Y. (2014). Computing topological persistence for simplicial maps. <em>Proc. 30th Annu. Sympos. Comput. Geom.</em>, 345–354.</p>
+        <p className="mb-2">Dey, T. K., &amp; Wang, Y. (2022). <em>Computational Topology for Data Analysis.</em> Cambridge University Press.</p>
+        <p className="mb-2">Divol, V., &amp; Lacombe, T. (2021). Understanding the topology and the geometry of the space of persistence diagrams via optimal partial transport. <em>J. Appl. Comput. Topol.</em>, 5, 1–53.</p>
+        <p className="mb-2">Edelsbrunner, H., &amp; Harer, J. (2008). Persistent homology — a survey. <em>Contemp. Math.</em>, 453, 257–282.</p>
         <p className="mb-2">Edelsbrunner, H., &amp; Harer, J. (2010). <em>Computational Topology: An Introduction.</em> American Mathematical Society.</p>
+        <p className="mb-2">Edelsbrunner, H., Letscher, D., &amp; Zomorodian, A. (2002). Topological persistence and simplification. <em>Discrete Comput. Geom.</em>, 28(4), 511–533.</p>
+        <p className="mb-2">Edelsbrunner, H., &amp; Morozov, D. (2017). Persistent homology: Theory and practice. <em>Proc. European Congress Math.</em>, 31–50.</p>
+        <p className="mb-2">Fasy, B. T., Lecci, F., Rinaldo, A., Wasserman, L., Balakrishnan, S., &amp; Singh, A. (2014). Confidence sets for persistence diagrams. <em>Ann. Statist.</em>, 42(6), 2301–2339.</p>
+        <p className="mb-2">Gabriel, P. (1972). Unzerlegbare Darstellungen I. <em>Manuscripta Math.</em>, 6, 71–103.</p>
+        <p className="mb-2">Ghrist, R. (2008). Barcodes: The persistent topology of data. <em>Bull. Amer. Math. Soc.</em>, 45(1), 61–75.</p>
+        <p className="mb-2">Ghrist, R. (2014). <em>Elementary Applied Topology.</em> Createspace.</p>
+        <p className="mb-2">Goodfellow, I. (2016). NIPS 2016 tutorial: Generative adversarial networks. <em>arXiv:1701.00160</em>.</p>
+        <p className="mb-2">Goodfellow, I., Pouget-Abadie, J., Mirza, M., Xu, B., Warde-Farley, D., Ozair, S., Courville, A., &amp; Bengio, Y. (2014). Generative adversarial nets. <em>Proc. NeurIPS</em>, 27, 2672–2680.</p>
+        <p className="mb-2">Gulrajani, I., Ahmed, F., Arjovsky, M., Dumoulin, V., &amp; Courville, A. (2017). Improved training of Wasserstein GANs. <em>Proc. NeurIPS</em>, 30, 5767–5777.</p>
+        <p className="mb-2">Hatcher, A. (2002). <em>Algebraic Topology.</em> Cambridge University Press.</p>
+        <p className="mb-2">Hensel, F., Moor, M., &amp; Rieck, B. (2021). A survey of topological machine learning methods. <em>Front. Artif. Intell.</em>, 4, 681108.</p>
+        <p className="mb-2">Heusel, M., Ramsauer, H., Unterthiner, T., Nessler, B., &amp; Hochreiter, S. (2017). GANs trained by a two time-scale update rule converge to a local Nash equilibrium. <em>Proc. NeurIPS</em>, 30, 6626–6637.</p>
+        <p className="mb-2">Hofer, C., Kwitt, R., Niethammer, M., &amp; Uhl, A. (2017). Deep learning with topological signatures. <em>Proc. NeurIPS</em>, 30, 1634–1644.</p>
+        <p className="mb-2">Hofer, C., Kwitt, R., &amp; Uhl, A. (2019). Connectivity-optimized representation learning via persistent homology. <em>Proc. ICML</em>, 97, 2751–2760.</p>
+        <p className="mb-2">Horn, R. A., &amp; Johnson, C. R. (2012). <em>Matrix Analysis.</em> 2nd ed. Cambridge University Press.</p>
         <p className="mb-2">Karras, T., Aittala, M., Hellsten, J., Laine, S., Lehtinen, J., &amp; Aila, T. (2020). Training generative adversarial networks with limited data. <em>Proc. NeurIPS</em>, 33, 12104–12114.</p>
+        <p className="mb-2">Karras, T., Laine, S., &amp; Aila, T. (2019). A style-based generator architecture for generative adversarial networks. <em>Proc. CVPR</em>, 4401–4410.</p>
+        <p className="mb-2">Karras, T., Laine, S., Aittala, M., Hellsten, J., Lehtinen, J., &amp; Aila, T. (2020). Analyzing and improving the image quality of StyleGAN. <em>Proc. CVPR</em>, 8110–8119.</p>
+        <p className="mb-2">Kerber, M., Morozov, D., &amp; Nigmetov, A. (2017). Geometry helps to compare persistence diagrams. <em>J. Exp. Algorithmics</em>, 22, 1.4:1–1.4:20.</p>
+        <p className="mb-2">Kim, K., Kim, J., Zaheer, M., Kim, J., Chazal, F., &amp; Wasserman, L. (2020). PLLay: Efficient topological layer based on persistent landscapes. <em>Proc. NeurIPS</em>, 33, 15965–15977.</p>
+        <p className="mb-2">Kingma, D. P., &amp; Ba, J. (2015). Adam: A method for stochastic optimization. <em>Proc. ICLR</em>.</p>
+        <p className="mb-2">Kingma, D. P., &amp; Welling, M. (2014). Auto-encoding variational Bayes. <em>Proc. ICLR</em>.</p>
+        <p className="mb-2">Kingma, D. P., &amp; Welling, M. (2019). An introduction to variational autoencoders. <em>Found. Trends Mach. Learn.</em>, 12(4), 307–392.</p>
+        <p className="mb-2">Kusano, G., Hiraoka, Y., &amp; Fukumizu, K. (2016). Persistence weighted Gaussian kernel for topological data analysis. <em>Proc. ICML</em>, 48, 2004–2013.</p>
+        <p className="mb-2">Lacombe, T., Cuturi, M., &amp; Oudot, S. (2018). Large scale computation of means and clusters for persistence diagrams using optimal transport. <em>Proc. NeurIPS</em>, 31, 9770–9780.</p>
+        <p className="mb-2">Lesnick, M. (2015). The theory of the interleaving distance on multidimensional persistence modules. <em>Found. Comput. Math.</em>, 15(3), 613–650.</p>
+        <p className="mb-2">Li, C., Ober, M., &amp; Pfister, H. (2021). Topological regularization for dense prediction. <em>arXiv:2108.13211</em>.</p>
+        <p className="mb-2">Maria, C., Boissonnat, J.-D., Glisse, M., &amp; Yvinec, M. (2014). The Gudhi library: Simplicial complexes and persistent homology. <em>Proc. ICMS</em>, 167–174.</p>
+        <p className="mb-2">May, J. P. (1999). <em>A Concise Course in Algebraic Topology.</em> University of Chicago Press.</p>
+        <p className="mb-2">McCleary, J. (2001). <em>A User&apos;s Guide to Spectral Sequences.</em> 2nd ed. Cambridge University Press.</p>
         <p className="mb-2">McInnes, L., Healy, J., &amp; Melville, J. (2018). UMAP: Uniform manifold approximation and projection for dimension reduction. <em>arXiv:1802.03426</em>.</p>
+        <p className="mb-2">Mémoli, F. (2011). A spectral notion of Gromov–Wasserstein distance and related methods. <em>Appl. Comput. Harmon. Anal.</em>, 30(3), 363–401.</p>
+        <p className="mb-2">Mileyko, Y., Mukherjee, S., &amp; Harer, J. (2011). Probability measures on the space of persistence diagrams. <em>Inverse Probl.</em>, 27(12), 124007.</p>
+        <p className="mb-2">Mischaikow, K., &amp; Nanda, V. (2013). Morse theory for filtrations and efficient computation of persistent homology. <em>Discrete Comput. Geom.</em>, 50(2), 330–353.</p>
+        <p className="mb-2">Miyato, T., Kataoka, T., Koyama, M., &amp; Yoshida, Y. (2018). Spectral normalization for generative adversarial networks. <em>Proc. ICLR</em>.</p>
+        <p className="mb-2">Moor, M., Horn, M., Rieck, B., &amp; Borgwardt, K. (2020). Topological autoencoders. <em>Proc. ICML</em>, 119, 7045–7054.</p>
+        <p className="mb-2">Munkres, J. R. (2000). <em>Topology.</em> 2nd ed. Prentice Hall.</p>
+        <p className="mb-2">Munkres, J. R. (1984). <em>Elements of Algebraic Topology.</em> Addison-Wesley.</p>
+        <p className="mb-2">Nanda, V. (2021). Computational algebraic topology lecture notes. <em>University of Oxford</em>.</p>
+        <p className="mb-2">Otter, N., Porter, M. A., Tillmann, U., Grindrod, P., &amp; Harrington, H. A. (2017). A roadmap for the computation of persistent homology. <em>EPJ Data Sci.</em>, 6, 17.</p>
+        <p className="mb-2">Oudot, S. Y. (2015). <em>Persistence Theory: From Quiver Representations to Data Analysis.</em> American Mathematical Society.</p>
+        <p className="mb-2">Perea, J. A. (2019). Topological time series analysis. <em>Notices Amer. Math. Soc.</em>, 66(5), 686–694.</p>
+        <p className="mb-2">Polterovich, L., Rosen, D., Samvelyan, K., &amp; Zhang, J. (2020). <em>Topological Persistence in Geometry and Analysis.</em> American Mathematical Society.</p>
+        <p className="mb-2">Reininghaus, J., Huber, S., Bauer, U., &amp; Kwitt, R. (2015). A stable multi-scale kernel for topological machine learning. <em>Proc. CVPR</em>, 4741–4748.</p>
+        <p className="mb-2">Rezende, D. J., Mohamed, S., &amp; Wierstra, D. (2014). Stochastic backpropagation and approximate inference in deep generative models. <em>Proc. ICML</em>, 32, 1278–1286.</p>
+        <p className="mb-2">Rezende, D. J., &amp; Mohamed, S. (2015). Variational inference with normalizing flows. <em>Proc. ICML</em>, 37, 1530–1538.</p>
+        <p className="mb-2">Rieck, B., Togninalli, M., Bock, C., Moor, M., Horn, M., Gumbsch, T., &amp; Borgwardt, K. (2019). Neural persistence: A complexity measure for deep neural networks using algebraic topology. <em>Proc. ICLR</em>.</p>
+        <p className="mb-2">Robins, V. (1999). Towards computing homology from finite approximations. <em>Topology Proc.</em>, 24, 503–532.</p>
+        <p className="mb-2">Salimans, T., Goodfellow, I., Zaremba, W., Cheung, V., Radford, A., &amp; Chen, X. (2016). Improved techniques for training GANs. <em>Proc. NeurIPS</em>, 29, 2234–2242.</p>
+        <p className="mb-2">Schweinhart, B. (2020). Fractal dimension and the persistent homology of random geometric complexes. <em>Adv. Math.</em>, 372, 107291.</p>
+        <p className="mb-2">Shaker, N., Togelius, J., &amp; Nelson, M. J. (2016). <em>Procedural Content Generation in Games.</em> Springer.</p>
+        <p className="mb-2">Sheehy, D. R. (2013). Linear-size approximations to the Vietoris–Rips filtration. <em>Discrete Comput. Geom.</em>, 49(4), 778–796.</p>
+        <p className="mb-2">Singh, G., Mémoli, F., &amp; Carlsson, G. (2007). Topological methods for the analysis of high dimensional data sets and 3D object recognition. <em>Proc. Sympos. Point-Based Graphics</em>, 91–100.</p>
+        <p className="mb-2">Skraba, P., &amp; Turner, K. (2022). Wasserstein stability for persistence diagrams. <em>arXiv:2006.16824v2</em>.</p>
+        <p className="mb-2">Sohl-Dickstein, J., Weiss, E., Maheswaranathan, N., &amp; Ganguli, S. (2015). Deep unsupervised learning using nonequilibrium thermodynamics. <em>Proc. ICML</em>, 37, 2256–2265.</p>
+        <p className="mb-2">Solomon, E., Wagner, A., &amp; Bendich, P. (2021). A fast and robust method for global topological functional optimization. <em>Proc. AISTATS</em>, 130, 109–117.</p>
+        <p className="mb-2">Sommerville, D. M. Y. (1929). <em>An Introduction to the Geometry of N Dimensions.</em> Methuen.</p>
+        <p className="mb-2">Tauzin, G., Lupo, U., Tunstall, L., Pérez, J. B., Caorsi, M., Medina-Mardones, A. M., Dassatti, A., &amp; Hess, K. (2021). giotto-tda: A topological data analysis toolkit for machine learning and data exploration. <em>J. Mach. Learn. Res.</em>, 22(39), 1–6.</p>
+        <p className="mb-2">Togelius, J., Shaker, N., &amp; Nelson, M. J. (2014). Procedural content generation in games: A brief survey. <em>Proc. Artificial and Computational Intelligence in Games</em>, 1–8.</p>
+        <p className="mb-2">Topaz, C. M., Ziegelmeier, L., &amp; Halverson, T. (2015). Topological data analysis of biological aggregation models. <em>PLoS ONE</em>, 10(5), e0126383.</p>
+        <p className="mb-2">Turner, K., Mileyko, Y., Mukherjee, S., &amp; Harer, J. (2014). Fréchet means for distributions of persistence diagrams. <em>Discrete Comput. Geom.</em>, 52(1), 44–70.</p>
+        <p className="mb-2">van der Maaten, L., &amp; Hinton, G. (2008). Visualizing data using t-SNE. <em>J. Mach. Learn. Res.</em>, 9, 2579–2605.</p>
+        <p className="mb-2">Villani, C. (2009). <em>Optimal Transport: Old and New.</em> Springer.</p>
+        <p className="mb-2">Wagner, H., Chen, C., &amp; Vuçini, E. (2012). Efficient computation of persistent homology for cubical data. <em>Topological Methods in Data Analysis and Visualization II</em>, 91–106.</p>
+        <p className="mb-2">Wasserman, L. (2018). Topological data analysis. <em>Annu. Rev. Stat. Appl.</em>, 5, 501–532.</p>
+        <p className="mb-2">Xu, X., Cisewski-Kehe, J., Green, S. B., &amp; Nagai, D. (2019). Finding cosmic voids and filament loops using topological data analysis. <em>Astron. Comput.</em>, 27, 34–52.</p>
+        <p className="mb-2">Zhao, Q., &amp; Wang, Y. (2019). Learning metrics for persistence-based summaries and applications for graph classification. <em>Proc. NeurIPS</em>, 32, 9855–9866.</p>
+        <p className="mb-2">Zomorodian, A. (2005). <em>Topology for Computing.</em> Cambridge University Press.</p>
+        <p className="mb-2">Zomorodian, A., &amp; Carlsson, G. (2005). Computing persistent homology. <em>Discrete Comput. Geom.</em>, 33(2), 249–274.</p>
+        <p className="mb-2">Zomorodian, A., &amp; Carlsson, G. (2008). Localized homology. <em>Comput. Geom.</em>, 41(3), 126–148.</p>
       </div>
     </>
   );
