@@ -147,6 +147,23 @@ export const games: GameInfo[] = [
         authGate: true,
     },
     {
+        id: 'daily-puzzle',
+        title: 'Lights Out',
+        description: 'A new logic puzzle every day. Turn off all the lights—one tap at a time.',
+        longDescription:
+            'Classic Lights Out: tap a cell to toggle it and its neighbors. Solve in as few moves as possible. A fresh puzzle appears each day. No account needed.',
+        href: '/daily-puzzle',
+        status: 'Playable',
+        cta: 'Play',
+        isSteam: false,
+        gradient: 'from-amber-500 to-orange-600',
+        iconName: 'Sparkles',
+        color: 'from-amber-500/20 to-orange-600/20 hover:border-amber-500/50',
+        tags: ['Puzzle', 'Daily', 'Logic'],
+        imagePath: '/images/games/lights_out.png',
+        authGate: false,
+    },
+    {
         id: 'void-breaker',
         title: 'Void Breaker',
         description: 'Obsidian and gold arena shooter. Collect void shards, dash, slow time with Focus, detonate when overwhelmed.',
