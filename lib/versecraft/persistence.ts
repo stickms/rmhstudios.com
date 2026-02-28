@@ -100,7 +100,7 @@ export async function dbSave(state: GameState): Promise<boolean> {
         totalPlaytime: state.playtime,
       },
     };
-    const res = await fetch('/api/rmhpoetry/save', {
+    const res = await fetch('/api/versecraft/save', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -113,7 +113,7 @@ export async function dbSave(state: GameState): Promise<boolean> {
 
 export async function dbLoad(): Promise<DbLoadResponse | null> {
   try {
-    const res = await fetch('/api/rmhpoetry/save');
+    const res = await fetch('/api/versecraft/save');
     if (!res.ok) return null;
     return await res.json() as DbLoadResponse;
   } catch {

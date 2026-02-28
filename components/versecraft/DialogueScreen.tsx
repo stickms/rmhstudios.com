@@ -2,13 +2,13 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useGameStore } from '@/lib/rmhpoetry/store';
+import { useGameStore } from '@/lib/versecraft/store';
 import Image from 'next/image';
-import { CHARACTERS, getCharacterFirstName } from '@/lib/rmhpoetry/characters';
-import { CHAPTER_1, CH01_PUZZLE, CH01_POST_PUZZLE_SCENES } from '@/lib/rmhpoetry/chapters/ch01';
-import { getWordPool } from '@/lib/rmhpoetry/words';
-import { getSpritePath } from '@/lib/rmhpoetry/sprites';
-import type { DialogueNode, Scene } from '@/lib/rmhpoetry/types';
+import { CHARACTERS, getCharacterFirstName } from '@/lib/versecraft/characters';
+import { CHAPTER_1, CH01_PUZZLE, CH01_POST_PUZZLE_SCENES } from '@/lib/versecraft/chapters/ch01';
+import { getWordPool } from '@/lib/versecraft/words';
+import { getSpritePath } from '@/lib/versecraft/sprites';
+import type { DialogueNode, Scene } from '@/lib/versecraft/types';
 
 // Background image presets (Sutemo VN backgrounds)
 const BG_BASE = '/sprites/versecraft/backgrounds';

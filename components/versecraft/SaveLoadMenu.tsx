@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useGameStore } from '@/lib/rmhpoetry/store';
-import { getAllSaves, formatPlaytime, formatTimestamp, deleteSave } from '@/lib/rmhpoetry/persistence';
-import type { SaveFile } from '@/lib/rmhpoetry/types';
+import { useGameStore } from '@/lib/versecraft/store';
+import { getAllSaves, formatPlaytime, formatTimestamp, deleteSave } from '@/lib/versecraft/persistence';
+import type { SaveFile } from '@/lib/versecraft/types';
 
 export function SaveLoadMenu({ mode }: { mode: 'save' | 'load' }) {
   const saveToSlot = useGameStore(s => s.saveToSlot);

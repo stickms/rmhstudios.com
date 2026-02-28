@@ -4,7 +4,7 @@ import dynamic from 'next/dynamic';
 import { Suspense } from 'react';
 
 const VersecraftGame = dynamic(
-  () => import('@/components/rmhpoetry/VersecraftGame').then(m => ({ default: m.VersecraftGame })),
+  () => import('@/components/versecraft/VersecraftGame').then(m => ({ default: m.VersecraftGame })),
   { ssr: false }
 );
 

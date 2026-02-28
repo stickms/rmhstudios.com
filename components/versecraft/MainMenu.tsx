@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useGameStore } from '@/lib/rmhpoetry/store';
-import { loadGame } from '@/lib/rmhpoetry/persistence';
+import { useGameStore } from '@/lib/versecraft/store';
+import { loadGame } from '@/lib/versecraft/persistence';
 
 const FLOATING_WORDS = [
   'whisper', 'shadow', 'bloom', 'echo', 'ember',
@@ -65,7 +65,7 @@ export function MainMenu() {
       // Check DB if logged in
       if (isLoggedIn) {
         try {
-          const res = await fetch('/api/rmhpoetry/save');
+          const res = await fetch('/api/versecraft/save');
           if (res.ok) {
             const data = await res.json();
             if (!cancelled && data?.saveData) setHasSave(true);

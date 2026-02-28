@@ -2,8 +2,8 @@
 
 import { useEffect, useCallback, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useGameStore } from '@/lib/rmhpoetry/store';
-import { loadGame } from '@/lib/rmhpoetry/persistence';
+import { useGameStore } from '@/lib/versecraft/store';
+import { loadGame } from '@/lib/versecraft/persistence';
 import { MainMenu } from './MainMenu';
 import { SettingsMenu } from './SettingsMenu';
 import { DialogueScreen } from './DialogueScreen';
@@ -14,7 +14,7 @@ import { ChapterSummary } from './ChapterSummary';
 import { PoemJournal } from './PoemJournal';
 import { SaveLoadMenu } from './SaveLoadMenu';
 import { ProgressScreen } from './ProgressScreen';
-import type { GameScreen } from '@/lib/rmhpoetry/types';
+import type { GameScreen } from '@/lib/versecraft/types';
 
 // Screens that are safe to restore on refresh (not mid-puzzle or transient)
 const RESTORABLE_SCREENS = new Set<GameScreen>([
@@ -67,9 +67,9 @@ export function VersecraftGame({ isLoggedIn }: { isLoggedIn: boolean }) {
     const params = new URLSearchParams(window.location.search);
     const currentUrlScreen = params.get('s');
     if (screen !== 'menu' && currentUrlScreen !== screen) {
-      router.replace(`/rmhpoetry?s=${screen}`, { scroll: false });
+      router.replace(`/versecraft?s=${screen}`, { scroll: false });
     } else if (screen === 'menu' && currentUrlScreen) {
-      router.replace('/rmhpoetry', { scroll: false });
+      router.replace('/versecraft', { scroll: false });
     }
   }, [screen, router]);
 

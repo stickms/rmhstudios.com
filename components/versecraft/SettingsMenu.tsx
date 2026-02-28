@@ -2,10 +2,10 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useGameStore } from '@/lib/rmhpoetry/store';
-import { CHARACTERS } from '@/lib/rmhpoetry/characters';
-import { SPRITE_PACKS } from '@/lib/rmhpoetry/sprites';
-import type { GenderPresentation, SpritePack } from '@/lib/rmhpoetry/types';
+import { useGameStore } from '@/lib/versecraft/store';
+import { CHARACTERS } from '@/lib/versecraft/characters';
+import { SPRITE_PACKS } from '@/lib/versecraft/sprites';
+import type { GenderPresentation, SpritePack } from '@/lib/versecraft/types';
 
 export function SettingsMenu() {
   const settings = useGameStore(s => s.settings);

@@ -2,9 +2,9 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useGameStore } from '@/lib/rmhpoetry/store';
-import { CHARACTERS, getCharacterFirstName } from '@/lib/rmhpoetry/characters';
-import type { PoemRecord, Grade } from '@/lib/rmhpoetry/types';
+import { useGameStore } from '@/lib/versecraft/store';
+import { CHARACTERS, getCharacterFirstName } from '@/lib/versecraft/characters';
+import type { PoemRecord, Grade } from '@/lib/versecraft/types';
 
 const GRADE_COLORS: Record<Grade, string> = {
   S: '#FFD700', A: '#4CAF50', B: '#2196F3',

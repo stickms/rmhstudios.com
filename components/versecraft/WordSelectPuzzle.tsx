@@ -2,11 +2,11 @@
 
 import { useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useGameStore } from '@/lib/rmhpoetry/store';
-import { CHARACTERS, getCharacterFirstName } from '@/lib/rmhpoetry/characters';
-import { scoreWordSelectPoem } from '@/lib/rmhpoetry/scoring';
-import { getWordsByIds } from '@/lib/rmhpoetry/words';
-import type { WordSelectPuzzleData, Word } from '@/lib/rmhpoetry/types';
+import { useGameStore } from '@/lib/versecraft/store';
+import { CHARACTERS, getCharacterFirstName } from '@/lib/versecraft/characters';
+import { scoreWordSelectPoem } from '@/lib/versecraft/scoring';
+import { getWordsByIds } from '@/lib/versecraft/words';
+import type { WordSelectPuzzleData, Word } from '@/lib/versecraft/types';
 
 function WordTile({ word, isSelected, onToggle, disabled }: {
   word: Word;

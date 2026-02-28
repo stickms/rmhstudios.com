@@ -2,14 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useGameStore } from '@/lib/rmhpoetry/store';
-import { CHARACTERS } from '@/lib/rmhpoetry/characters';
-import { formatPlaytime } from '@/lib/rmhpoetry/persistence';
+import { useGameStore } from '@/lib/versecraft/store';
+import { CHARACTERS } from '@/lib/versecraft/characters';
+import { formatPlaytime } from '@/lib/versecraft/persistence';
 import {
   ALL_CHAPTERS, ALL_ROUTES, ALL_ENDINGS,
   getProgressPercentage, DEFAULT_PROGRESS,
   type ProgressData,
-} from '@/lib/rmhpoetry/progress';
+} from '@/lib/versecraft/progress';
 
 export function ProgressScreen() {
   const setScreen = useGameStore(s => s.setScreen);
@@ -26,7 +26,7 @@ export function ProgressScreen() {
   useEffect(() => {
     if (!isLoggedIn) return;
     setLoading(true);
-    fetch('/api/rmhpoetry/progress')
+    fetch('/api/versecraft/progress')
       .then(r => r.ok ? r.json() : null)
       .then(data => {
         if (data?.progress) setDbProgress(data.progress);

@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useGameStore } from '@/lib/rmhpoetry/store';
-import { CHARACTERS, getCharacterFirstName } from '@/lib/rmhpoetry/characters';
-import type { Grade } from '@/lib/rmhpoetry/types';
+import { useGameStore } from '@/lib/versecraft/store';
+import { CHARACTERS, getCharacterFirstName } from '@/lib/versecraft/characters';
+import type { Grade } from '@/lib/versecraft/types';
 
 const GRADE_STYLES: Record<Grade, { color: string; label: string; bg: string }> = {
   S: { color: '#FFD700', label: 'Masterpiece', bg: 'rgba(255, 215, 0, 0.15)' },

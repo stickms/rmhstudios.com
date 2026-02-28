@@ -19,9 +19,9 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { useGameStore } from '@/lib/rmhpoetry/store';
-import { scoreLineArrangePoem } from '@/lib/rmhpoetry/scoring';
-import type { LineArrangePuzzleData, PoemLine } from '@/lib/rmhpoetry/types';
+import { useGameStore } from '@/lib/versecraft/store';
+import { scoreLineArrangePoem } from '@/lib/versecraft/scoring';
+import type { LineArrangePuzzleData, PoemLine } from '@/lib/versecraft/types';
 
 function SortableLine({ line, index }: { line: PoemLine; index: number }) {
   const {

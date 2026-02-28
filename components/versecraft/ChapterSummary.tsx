@@ -1,10 +1,10 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useGameStore } from '@/lib/rmhpoetry/store';
-import { CHARACTERS, getCharacterFirstName } from '@/lib/rmhpoetry/characters';
-import { formatPlaytime } from '@/lib/rmhpoetry/persistence';
-import { CHAPTER_1 } from '@/lib/rmhpoetry/chapters/ch01';
+import { useGameStore } from '@/lib/versecraft/store';
+import { CHARACTERS, getCharacterFirstName } from '@/lib/versecraft/characters';
+import { formatPlaytime } from '@/lib/versecraft/persistence';
+import { CHAPTER_1 } from '@/lib/versecraft/chapters/ch01';
 
 export function ChapterSummary() {
   const { affinity, poemHistory, totalPoemsWritten, playtime, settings, setScreen } = useGameStore();
