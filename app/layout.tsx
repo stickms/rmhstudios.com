@@ -3,6 +3,7 @@ import {
   Nunito, Inter, JetBrains_Mono, Playfair_Display, Bangers,
   Bebas_Neue, Orbitron, Cinzel, Pacifico,
   Space_Grotesk, Permanent_Marker, Caveat, Dancing_Script,
+  Patrick_Hand,
 } from "next/font/google";
 import { Providers } from "@/components/Providers";
 import { Shell } from '@/components/site/Shell';
@@ -85,6 +86,13 @@ const caveat = Caveat({
   display: "swap",
 });
 
+const patrickHand = Patrick_Hand({
+  variable: "--font-patrick-hand",
+  weight: "400",
+  subsets: ["latin"],
+  display: "swap",
+});
+
 const dancingScript = Dancing_Script({
   variable: "--font-dancing-script",
   subsets: ["latin"],
@@ -119,7 +127,7 @@ export default function RootLayout({
         <ThemeScript />
       </head>
       <body
-        className={`${nunito.variable} ${inter.variable} ${jetbrainsMono.variable} ${playfairDisplay.variable} ${bangers.variable} ${bebasNeue.variable} ${orbitron.variable} ${cinzel.variable} ${pacifico.variable} ${spaceGrotesk.variable} ${permanentMarker.variable} ${caveat.variable} ${dancingScript.variable} antialiased`}
+        className={`${nunito.variable} ${inter.variable} ${jetbrainsMono.variable} ${playfairDisplay.variable} ${bangers.variable} ${bebasNeue.variable} ${orbitron.variable} ${cinzel.variable} ${pacifico.variable} ${spaceGrotesk.variable} ${permanentMarker.variable} ${caveat.variable} ${dancingScript.variable} ${patrickHand.variable} antialiased`}
       >
         <Providers>
           <TwemojiProvider tag="div">
