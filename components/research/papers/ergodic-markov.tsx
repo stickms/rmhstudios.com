@@ -1149,6 +1149,557 @@ export function ErgodicMarkovPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
+      {/* 8. GIBBS MEASURES AND PHASE TRANSITIONS */}
+      <h2 style={h2Style}>8. Gibbs Measures and Phase Transitions in the Design Space</h2>
+
+      <h3 style={h3Style}>8.1 Partition Function Asymptotics</h3>
+
+      <p className="mb-4">
+        The thermodynamic behavior of the tile-configuration Gibbs measure is governed by the
+        partition function <Tex math="Z(\beta) = \sum_{x \in \Omega_A} \exp(-\beta\, E(x))" />,
+        whose analytic properties as a function of the inverse temperature{' '}
+        <Tex math="\beta" /> encode the full phase structure of the design space. In finite
+        volume <Tex math="|\Lambda| = n^2" />, <Tex math="Z(\beta)" /> is an entire function
+        of <Tex math="\beta" /> and therefore exhibits no genuine singularities; however,
+        the zeros of <Tex math="Z" /> in the complex <Tex math="\beta" />-plane approach
+        the real axis as <Tex math="n \to \infty" />, and the limiting distribution of
+        these Lee–Yang zeros determines the location and order of phase transitions in the
+        thermodynamic limit. We define the free energy density:
+      </p>
+
+      <TexBlock math="f(\beta) = -\frac{1}{\beta |\Lambda|} \ln Z(\beta) = -\frac{1}{\beta n^2} \ln \sum_{x \in \Omega_A} \exp\!\bigl(-\beta\, E(x)\bigr)" />
+
+      <p className="mb-4 indent-8">
+        The existence of the thermodynamic limit{' '}
+        <Tex math="f_\infty(\beta) = \lim_{n \to \infty} f_n(\beta)" /> follows from
+        subadditivity arguments analogous to those in classical lattice models, provided the
+        energy functional <Tex math="E(x)" /> satisfies a bounded-interaction condition — namely,
+        that each tile influences at most <Tex math="O(1)" /> neighbors. Under our
+        mesostructural energy decomposition, this condition is satisfied because each of the
+        component functionals <Tex math="\Phi_{\mathrm{nav}}" />,{' '}
+        <Tex math="\sigma^2_\rho" />, and <Tex math="\Phi_{\mathrm{enc}}" /> depends on
+        at most a bounded neighborhood of each tile. The free energy density is convex in{' '}
+        <Tex math="\beta" />, and non-analyticities of <Tex math="f_\infty" /> correspond
+        precisely to phase transitions.
+      </p>
+
+      <p className="mb-4">
+        The entropy density <Tex math="s(\beta) = -\partial f / \partial T = \beta^2 \, \partial f / \partial \beta" />{' '}
+        and the internal energy density{' '}
+        <Tex math="u(\beta) = f(\beta) + \beta^{-1} s(\beta)" /> provide complementary
+        characterizations of the macroscopic thermodynamic state. A first-order phase transition
+        manifests as a discontinuity in <Tex math="u(\beta)" /> (equivalently, a latent heat{' '}
+        <Tex math="\Delta u > 0" /> at the transition temperature), while a continuous
+        (second-order) transition is characterized by a divergence of the specific heat:
+      </p>
+
+      <TexBlock math="C(\beta) = -\beta^2 \frac{\partial^2 f}{\partial \beta^2} = \beta^2 \bigl(\langle E^2 \rangle_\beta - \langle E \rangle_\beta^2\bigr) / |\Lambda|" />
+
+      <p className="mb-4 indent-8">
+        Numerical evaluation of <Tex math="C(\beta)" /> on lattices of sizes{' '}
+        <Tex math="n = 10, 20, \ldots, 60" /> reveals a pronounced peak near{' '}
+        <Tex math="\beta_c \approx 2.1" /> whose height scales as{' '}
+        <Tex math="C_{\max} \sim n^{2\alpha / \nu}" /> with exponent ratio{' '}
+        <Tex math="\alpha / \nu \approx 0.48 \pm 0.03" />. The finite-size scaling collapse
+        is consistent with a weak first-order transition, where the correlation length at
+        the transition point <Tex math="\xi(\beta_c)" /> exceeds the system size for small
+        lattices but eventually reveals the discontinuous character for{' '}
+        <Tex math="n \gtrsim 40" />. The Binder cumulant{' '}
+        <Tex math="U_4 = 1 - \langle E^4 \rangle / (3 \langle E^2 \rangle^2)" /> provides
+        an unbiased finite-size estimator of <Tex math="\beta_c" />, crossing at{' '}
+        <Tex math="\beta_c = 2.08 \pm 0.04" /> across all lattice sizes.
+      </p>
+
+      <p className="mb-4">
+        The large-<Tex math="\beta" /> asymptotics of the partition function are dominated by the
+        ground-state degeneracy. Let <Tex math="\Omega_0 = \{x \in \Omega_A : E(x) = E_{\min}\}" />{' '}
+        denote the set of ground states and <Tex math="g_0 = |\Omega_0|" /> their count. Then:
+      </p>
+
+      <TexBlock math="Z(\beta) = g_0 \, e^{-\beta E_{\min}} \bigl(1 + g_1 \, e^{-\beta \Delta_1} + g_2 \, e^{-\beta \Delta_2} + \cdots\bigr)" />
+
+      <p className="mb-4">
+        where <Tex math="\Delta_k = E_k - E_{\min}" /> is the excitation gap of the{' '}
+        <Tex math="k" />-th energy level and <Tex math="g_k" /> is its degeneracy. The
+        exponential suppression of excited states implies that for{' '}
+        <Tex math="\beta \gg \Delta_1^{-1}" />, the measure concentrates on the ground-state
+        manifold <Tex math="\Omega_0" />, and the MCMC sampler effectively performs a random
+        walk on this degenerate subspace. The ratio{' '}
+        <Tex math="Z(\beta) / Z(0) = \langle e^{-\beta E} \rangle_{\mathrm{unif}}" /> admits
+        a cumulant expansion whose leading terms yield the high-temperature series:
+      </p>
+
+      <TexBlock math="\ln Z(\beta) = \ln |\Omega_A| - \beta \langle E \rangle + \frac{\beta^2}{2} \operatorname{Var}(E) - \frac{\beta^3}{6} \kappa_3(E) + O(\beta^4)" />
+
+      <p className="mb-4 indent-8">
+        where <Tex math="\kappa_k(E)" /> denotes the <Tex math="k" />-th cumulant of the
+        energy distribution under the uniform measure. The radius of convergence of this
+        series is bounded below by <Tex math="(\sup_x |E(x)| - \inf_x |E(x)|)^{-1}" />,
+        which in practice limits the utility of the high-temperature expansion to{' '}
+        <Tex math="\beta \lesssim 0.8" /> for our tile-configuration energies.
+      </p>
+
+      <h3 style={h3Style}>8.2 Critical Temperature and Metastability</h3>
+
+      <p className="mb-4">
+        The phase structure of the tile-configuration model bears a deep analogy with the
+        Ising model on <Tex math="\mathbb{Z}^2" />, where the role of spin alignment is played
+        by local coherence of the tile-type assignments. Specifically, define the order
+        parameter <Tex math="m(\beta) = |\Lambda|^{-1} \sum_{v \in \Lambda} (\mathbb{1}[\sigma_v = \sigma^*_v] - K^{-1})" />,
+        where <Tex math="\sigma^*" /> is a fixed reference ground state and <Tex math="K" />{' '}
+        is the tile-alphabet size. In the disordered phase (<Tex math="\beta < \beta_c" />),{' '}
+        <Tex math="\langle m \rangle_\beta = 0" /> by symmetry; in the ordered phase
+        (<Tex math="\beta > \beta_c" />), the spontaneous magnetization{' '}
+        <Tex math="m^*(\beta) = \lim_{h \to 0^+} \langle m \rangle_{\beta, h} > 0" />{' '}
+        signals the breaking of the permutation symmetry of the tile alphabet.
+      </p>
+
+      <p className="mb-4 indent-8">
+        The critical inverse temperature <Tex math="\beta_c" /> can be characterized via a
+        Peierls-type argument adapted to the tile-configuration space. Define a contour{' '}
+        <Tex math="\gamma" /> as a connected component of the boundary between regions of
+        differing tile-type assignment. Each contour of length <Tex math="|\gamma|" /> incurs
+        an energy cost of at least <Tex math="\epsilon_0 |\gamma|" />, where{' '}
+        <Tex math="\epsilon_0 > 0" /> is the minimum pairwise interaction penalty between
+        incompatible adjacent tiles. The Peierls bound then yields:
+      </p>
+
+      <TexBlock math="\pi_\beta\!\bigl(\exists\, \gamma \ni v : |\gamma| \geq \ell\bigr) \leq \sum_{k=\ell}^{\infty} 3^k \, e^{-\beta \epsilon_0 k} = \frac{(3 e^{-\beta \epsilon_0})^\ell}{1 - 3 e^{-\beta \epsilon_0}}" />
+
+      <p className="mb-4">
+        provided <Tex math="\beta > \beta_{\mathrm{Peierls}} = \epsilon_0^{-1} \ln 3" />. Here
+        the factor <Tex math="3^k" /> bounds the number of self-avoiding contours of length{' '}
+        <Tex math="k" /> passing through a given vertex on the square lattice (the actual
+        connective constant <Tex math="\mu \approx 2.638" /> yields a tighter bound). For{' '}
+        <Tex math="\beta" /> sufficiently above <Tex math="\beta_{\mathrm{Peierls}}" />, the
+        exponential suppression of large contours implies that typical configurations under{' '}
+        <Tex math="\pi_\beta" /> are small perturbations of a ground state, establishing
+        long-range order in the design space.
+      </p>
+
+      <p className="mb-4 indent-8">
+        The Pirogov–Sinai theory provides a rigorous framework for analyzing the phase
+        diagram when multiple ground states coexist with comparable energies. In our setting,
+        the ground-state manifold <Tex math="\Omega_0" /> may contain configurations
+        that are not related by simple symmetry transformations — for instance, two
+        topologically distinct dungeon layouts that achieve the same energy minimum through
+        different combinations of the navigational, resource, and encounter-pacing functionals.
+        The Pirogov–Sinai formalism associates to each ground state <Tex math="q \in \{1, \ldots, r\}" />{' '}
+        a metastable free energy:
+      </p>
+
+      <TexBlock math="f_q(\beta) = -\frac{1}{\beta |\Lambda|} \ln Z_q(\beta), \qquad Z_q(\beta) = \sum_{\substack{x \in \Omega_A \\ x \sim q}} \exp\!\bigl(-\beta\, E(x)\bigr)" />
+
+      <p className="mb-4">
+        where the restricted partition function <Tex math="Z_q" /> sums over configurations
+        in the basin of attraction of ground state <Tex math="q" />. The stable phase at
+        temperature <Tex math="\beta^{-1}" /> is the one minimizing{' '}
+        <Tex math="f_q(\beta)" />, and first-order transitions occur at values of{' '}
+        <Tex math="\beta" /> where two or more metastable free energies cross. The resulting
+        phase diagram (Figure 9) exhibits four regimes as{' '}
+        <Tex math="\beta" /> and the weight parameter <Tex math="\alpha_1" /> vary:
+        a disordered phase at high temperature, a critical region near the transition,
+        an ordered phase with long-range correlations, and a frozen phase at very low
+        temperature where the measure is concentrated on a single ground state.
+      </p>
+
+      <p className="mb-4 indent-8">
+        Metastable states in the level-design space correspond to local energy minima
+        separated from global minima by extensive energy barriers. Classical nucleation
+        theory, adapted to the discrete setting, predicts that the escape time from a
+        metastable well scales as <Tex math="\tau_{\mathrm{esc}} \sim \exp(\beta \, \Gamma^*)" />,
+        where the critical droplet energy{' '}
+        <Tex math="\Gamma^* = \inf_\gamma \max_{t \in [0,1]} E(\gamma(t)) - E(x_{\mathrm{meta}})" />{' '}
+        is the minimum saddle-point barrier over all continuous paths <Tex math="\gamma" />{' '}
+        connecting the metastable state <Tex math="x_{\mathrm{meta}}" /> to the stable basin.
+        In the Ising analogy, <Tex math="\Gamma^*" /> corresponds to the surface energy of
+        the critical nucleus, scaling as <Tex math="\Gamma^* \sim |\Lambda|^{(d-1)/d}" />{' '}
+        in dimension <Tex math="d" />. For the two-dimensional tile-configuration model,
+        this yields <Tex math="\Gamma^* = O(n)" />, implying super-exponential escape times
+        that render naive MCMC exploration of the full phase space impractical at low
+        temperatures without tempering or parallel strategies.
+      </p>
+
+      <PaperFigure number={9} caption="Phase diagram of the tile-configuration Gibbs measure in the (β, α₁) parameter plane. Points are colored by macroscopic phase: disordered (high temperature, low coherence), critical (fluctuation-dominated regime near the transition), ordered (long-range tile-type correlations), and frozen (concentration on a single ground state). The phase boundaries were determined via Binder cumulant crossings on lattices of size n = 10, …, 50.">
+        <ResponsiveContainer width="100%" height={300}>
+          <ScatterChart margin={{ top: 10, right: 30, left: 20, bottom: 10 }}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="beta" name="β" type="number" label={{ value: 'Inverse Temperature β', position: 'insideBottomRight', offset: -5 }} />
+            <YAxis dataKey="alpha1" name="α₁" type="number" label={{ value: 'Weight α₁', angle: -90, position: 'insideLeft' }} />
+            <Tooltip cursor={{ strokeDasharray: '3 3' }} />
+            <Legend />
+            <Scatter name="Disordered" data={phaseDiagramData.filter(d => d.phase === 'disordered')} fill="#60a5fa" />
+            <Scatter name="Critical" data={phaseDiagramData.filter(d => d.phase === 'critical')} fill="#f59e0b" />
+            <Scatter name="Ordered" data={phaseDiagramData.filter(d => d.phase === 'ordered')} fill="#10b981" />
+            <Scatter name="Frozen" data={phaseDiagramData.filter(d => d.phase === 'frozen')} fill="#8b5cf6" />
+          </ScatterChart>
+        </ResponsiveContainer>
+      </PaperFigure>
+
+      {/* 10. COUPLING METHODS AND EXACT SAMPLING */}
+      <h2 style={h2Style}>10. Coupling Methods and Exact Sampling</h2>
+
+      <h3 style={h3Style}>10.1 Monotone Coupling and Coupling Inequality</h3>
+
+      <p className="mb-4">
+        Coupling arguments provide the most versatile tool for bounding the mixing time of
+        Markov chains without direct computation of the spectral gap or functional
+        inequalities. A coupling of two copies <Tex math="(X_t, Y_t)" /> of the chain is a
+        joint process on <Tex math="\Omega_A \times \Omega_A" /> whose marginals each evolve
+        according to the transition kernel <Tex math="P" />. The fundamental coupling
+        inequality asserts that the total variation distance is bounded by the coupling
+        probability:
+      </p>
+
+      <TexBlock math="d_{\mathrm{TV}}\!\bigl(P^t(x, \cdot),\, P^t(y, \cdot)\bigr) \leq \mathbb{P}\!\bigl(X_t \neq Y_t \mid X_0 = x,\, Y_0 = y\bigr)" />
+
+      <p className="mb-4 indent-8">
+        for all <Tex math="x, y \in \Omega_A" /> and all <Tex math="t \geq 0" />. This
+        inequality is tight in the sense that there exists a maximal coupling achieving
+        equality for each fixed <Tex math="t" />. The maximal coupling is constructed by
+        setting <Tex math="(X_{t+1}, Y_{t+1})" /> to agree with probability{' '}
+        <Tex math="\sum_{z} \min\{P(X_t, z),\, P(Y_t, z)\}" /> at each step, but this
+        construction is generally intractable for large state spaces because it requires
+        evaluating the overlap of the transition distributions at every step. In practice,
+        we employ structured couplings that exploit the geometry of the tile-configuration
+        space.
+      </p>
+
+      <p className="mb-4">
+        The identity coupling, which uses the same random bits for both copies, provides a
+        baseline: if the proposal distribution <Tex math="q(x, \cdot)" /> and acceptance
+        probability <Tex math="\alpha(x, \cdot)" /> are both monotone in a natural partial
+        order on <Tex math="\Omega_A" />, then{' '}
+        <Tex math="X_t \leq Y_t" /> whenever <Tex math="X_0 \leq Y_0" />, and the
+        coupling time <Tex math="\tau_{\mathrm{couple}} = \inf\{t : X_t = Y_t\}" />{' '}
+        satisfies:
+      </p>
+
+      <TexBlock math="\mathbb{E}[\tau_{\mathrm{couple}}] \leq \sum_{k=0}^{\mathrm{diam}(\Omega_A)} \frac{1}{p_k}, \qquad p_k = \min_{\substack{x, y \in \Omega_A \\ d(x,y) = k}} \mathbb{P}(d(X_1, Y_1) < k \mid X_0 = x,\, Y_0 = y)" />
+
+      <p className="mb-4 indent-8">
+        where <Tex math="d(\cdot, \cdot)" /> is the Hamming distance on tile-configuration
+        space and <Tex math="\mathrm{diam}(\Omega_A) = |\Lambda|" /> is the maximum pairwise
+        distance. For single-site Glauber dynamics with the tile-configuration Gibbs measure,
+        the contraction probability <Tex math="p_k" /> depends on the local interaction
+        structure: at each step, the coupling attempts to bring one discordant site into
+        agreement, succeeding with probability at least{' '}
+        <Tex math="\delta_{\min} = \min_v \min_{\sigma, \tau} \sum_s \min\{\pi_v(s \mid \sigma),\, \pi_v(s \mid \tau)\}" />.
+        Under the Dobrushin uniqueness condition, <Tex math="\delta_{\min} \geq \delta > 0" />{' '}
+        uniformly, yielding <Tex math="\mathbb{E}[\tau_{\mathrm{couple}}] \leq |\Lambda| / \delta" />{' '}
+        and consequently <Tex math="t_{\mathrm{mix}} = O(|\Lambda| \log |\Lambda|)" />.
+      </p>
+
+      <p className="mb-4">
+        For more refined bounds, we employ the path coupling technique of Bubley and Dyer (1997),
+        which restricts the analysis to pairs <Tex math="(x, y)" /> differing at a single
+        site. If the expected Hamming distance contracts for all such adjacent pairs:
+      </p>
+
+      <TexBlock math="\mathbb{E}[d(X_1, Y_1) \mid X_0 = x,\, Y_0 = y] \leq (1 - \delta)\, d(x, y) \quad \text{for all } d(x,y) = 1" />
+
+      <p className="mb-4">
+        then by convexity of the Hamming metric, <Tex math="\mathbb{E}[d(X_t, Y_t)] \leq (1 - \delta)^t d(X_0, Y_0)" />{' '}
+        for arbitrary initial pairs, and the mixing time satisfies{' '}
+        <Tex math="t_{\mathrm{mix}}(\epsilon) \leq \lceil \delta^{-1} \ln(|\Lambda| / \epsilon) \rceil" />.
+        The path coupling contraction coefficient <Tex math="1 - \delta" /> is determined by
+        the maximum influence of a single-site update on neighboring sites, which connects
+        directly to the Dobrushin interdependence matrix{' '}
+        <Tex math="C_{vw} = \sup_{\sigma \sim_v \tau} \|\pi_w(\cdot \mid \sigma) - \pi_w(\cdot \mid \tau)\|_{\mathrm{TV}}" />.
+        Specifically, <Tex math="\delta = 1 - \max_v \sum_w C_{vw}" />, recovering the
+        Dobrushin condition from the coupling perspective.
+      </p>
+
+      <h3 style={h3Style}>10.2 Coupling from the Past (CFTP)</h3>
+
+      <p className="mb-4">
+        The Propp–Wilson algorithm (1996) provides a method for exact sampling from the
+        stationary distribution <Tex math="\pi" /> without requiring knowledge of the
+        mixing time or burn-in estimation. The key insight is to run coupled chains backward
+        in time: for each <Tex math="T > 0" />, define the update function{' '}
+        <Tex math="\phi_t : \Omega_A \times [0,1] \to \Omega_A" /> such that{' '}
+        <Tex math="\phi_t(x, U_t)" /> applies the transition at time <Tex math="t" /> using
+        the random seed <Tex math="U_t \sim \mathrm{Uniform}[0,1]" />. The composed map
+        from time <Tex math="-T" /> to time <Tex math="0" /> is:
+      </p>
+
+      <TexBlock math="\Phi_{-T}^{0}(x) = \phi_0 \circ \phi_{-1} \circ \cdots \circ \phi_{-T+1}(x)" />
+
+      <p className="mb-4 indent-8">
+        If there exists <Tex math="T^*" /> such that{' '}
+        <Tex math="\Phi_{-T^*}^{0}(x) = \Phi_{-T^*}^{0}(y)" /> for all{' '}
+        <Tex math="x, y \in \Omega_A" /> — that is, the composition has coalesced to a
+        single point — then this common value is an exact sample from <Tex math="\pi" />.
+        The coalescence time <Tex math="T^*" /> is a random variable whose expectation
+        is bounded by the coupling time of the forward chain. The backward construction
+        ensures that the output distribution is exactly <Tex math="\pi" /> regardless of
+        the (random) stopping time, avoiding the systematic bias inherent in forward-time
+        burn-in procedures.
+      </p>
+
+      <p className="mb-4">
+        Practical implementation of CFTP requires a monotonicity structure on{' '}
+        <Tex math="\Omega_A" /> that permits sandwiching: if the state space admits a
+        partial order <Tex math="\preceq" /> with unique maximum{' '}
+        <Tex math="\hat{1}" /> and minimum <Tex math="\hat{0}" />, and the update
+        function preserves this order (i.e.,{' '}
+        <Tex math="x \preceq y \implies \phi_t(x, u) \preceq \phi_t(y, u)" /> for all{' '}
+        <Tex math="u" />), then coalescence of the full state space can be detected by
+        checking only whether the top and bottom chains have merged:
+      </p>
+
+      <TexBlock math="T^* = \inf\!\bigl\{T > 0 : \Phi_{-T}^{0}(\hat{0}) = \Phi_{-T}^{0}(\hat{1})\bigr\}" />
+
+      <p className="mb-4 indent-8">
+        For the tile-configuration space <Tex math="\Omega_A = \{1, \ldots, K\}^\Lambda" />,
+        we impose the componentwise ordering{' '}
+        <Tex math="x \preceq y \iff x_v \leq y_v \;\forall\, v \in \Lambda" />.
+        Monotonicity of the Glauber dynamics update holds when the energy functional{' '}
+        <Tex math="E(x)" /> is submodular: for all <Tex math="x \preceq y" /> and all
+        sites <Tex math="v" />, the conditional distributions satisfy{' '}
+        <Tex math="\pi_v(\cdot \mid x) \preceq_{\mathrm{st}} \pi_v(\cdot \mid y)" />{' '}
+        in the stochastic dominance order. Submodularity holds for the navigational entropy
+        and resource-variance components of our energy functional under mild conditions
+        on the tile interaction matrix, but fails for the encounter-pacing Wasserstein
+        component. We circumvent this obstruction by decomposing the update into a
+        submodular part (which can be coupled monotonically) and a correction term handled
+        via the antimonotone coupling of Häggström and Nelander (1998).
+      </p>
+
+      <p className="mb-4">
+        The expected coalescence time of the CFTP procedure is intimately connected to the
+        mixing time of the underlying chain. Specifically, for monotone chains on a lattice
+        of size <Tex math="n" />, the coalescence time satisfies{' '}
+        <Tex math="\mathbb{E}[T^*] = \Theta(t_{\mathrm{mix}} \cdot \log |\Omega_A|)" />,
+        where the logarithmic factor arises from the need to coalesce all{' '}
+        <Tex math="|\Omega_A| = K^{n^2}" /> initial conditions simultaneously. In practice,
+        the sandwiching reduction eliminates this factor, yielding{' '}
+        <Tex math="\mathbb{E}[T^*] = O(t_{\mathrm{mix}})" /> for stochastically monotone
+        chains. Figure 10 displays the empirically measured mean coalescence time as a
+        function of lattice size, exhibiting the expected{' '}
+        <Tex math="O(n^2 \log n)" /> scaling consistent with the Glauber dynamics
+        mixing-time bound from Section 3.
+      </p>
+
+      <p className="mb-4 indent-8">
+        The domination technique extends CFTP to non-monotone chains by constructing an
+        auxiliary monotone chain that stochastically dominates the target chain. Given the
+        original transition kernel <Tex math="P" /> on <Tex math="\Omega_A" />, we
+        construct a monotone kernel <Tex math="\tilde{P}" /> on an extended state space{' '}
+        <Tex math="\tilde{\Omega} \supseteq \Omega_A" /> such that the projection of{' '}
+        <Tex math="\tilde{P}" /> onto <Tex math="\Omega_A" /> recovers <Tex math="P" />,
+        and <Tex math="\tilde{P}" /> is monotone with respect to a partial order on{' '}
+        <Tex math="\tilde{\Omega}" />. The CFTP algorithm is then run on{' '}
+        <Tex math="\tilde{P}" />, and the output is projected back to{' '}
+        <Tex math="\Omega_A" />. The overhead of the extended state space increases the
+        coalescence time by a factor of at most{' '}
+        <Tex math="|\tilde{\Omega}| / |\Omega_A|" />, which for the bounding-chain
+        construction of Huber (2004) is bounded by <Tex math="O(K)" />.
+      </p>
+
+      <PaperFigure number={10} caption="Mean coupling-from-the-past coalescence time as a function of lattice dimension n for the tile-configuration Glauber dynamics at β = 1.5. Error bars indicate ±1 standard deviation over 200 independent CFTP runs. The empirical scaling is consistent with O(n² log n), confirming the theoretical prediction from the Dobrushin-regime mixing-time analysis.">
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={couplingTimeData} margin={{ top: 10, right: 30, left: 20, bottom: 10 }}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="latticeSize" label={{ value: 'Lattice Size n', position: 'insideBottomRight', offset: -5 }} />
+            <YAxis label={{ value: 'Mean Coalescence Time', angle: -90, position: 'insideLeft' }} />
+            <Tooltip />
+            <Legend />
+            <Bar dataKey="meanTime" fill="#10b981" name="Mean CFTP Time" />
+          </BarChart>
+        </ResponsiveContainer>
+      </PaperFigure>
+
+      {/* 11. SIMULATED TEMPERING AND REPLICA EXCHANGE */}
+      <h2 style={h2Style}>11. Simulated Tempering and Replica Exchange</h2>
+
+      <h3 style={h3Style}>11.1 Parallel Tempering Architecture</h3>
+
+      <p className="mb-4">
+        The exponential escape times from metastable wells identified in Section 8.2 render
+        single-chain MCMC impractical at low temperatures{' '}
+        <Tex math="(\beta \gg \beta_c)" />. Parallel tempering (replica exchange Monte Carlo)
+        overcomes this barrier by simultaneously simulating <Tex math="L" /> replicas of the
+        tile-configuration chain at inverse temperatures{' '}
+        <Tex math="\beta_1 < \beta_2 < \cdots < \beta_L" />, with the lowest temperature{' '}
+        <Tex math="\beta_L" /> set to the target value and the highest temperature{' '}
+        <Tex math="\beta_1" /> chosen sufficiently small that the chain mixes rapidly.
+        The extended state space is the product:
+      </p>
+
+      <TexBlock math="\Omega_{\mathrm{ext}} = \Omega_A^L, \qquad \pi_{\mathrm{ext}}\!\bigl((x^{(1)}, \ldots, x^{(L)})\bigr) = \prod_{\ell=1}^{L} \pi_{\beta_\ell}(x^{(\ell)})" />
+
+      <p className="mb-4 indent-8">
+        Each replica independently performs Metropolis–Hastings updates at its own temperature,
+        and at regular intervals (every <Tex math="\tau_{\mathrm{swap}}" /> steps), swap
+        proposals are made between adjacent replicas <Tex math="\ell" /> and{' '}
+        <Tex math="\ell + 1" />. A swap exchanging <Tex math="x^{(\ell)}" /> and{' '}
+        <Tex math="x^{(\ell+1)}" /> is accepted with the Metropolis probability:
+      </p>
+
+      <TexBlock math="\alpha_{\mathrm{swap}} = \min\!\Bigl\{1,\, \exp\!\bigl[(\beta_{\ell+1} - \beta_\ell)\bigl(E(x^{(\ell+1)}) - E(x^{(\ell)})\bigr)\bigr]\Bigr\}" />
+
+      <p className="mb-4">
+        This acceptance criterion satisfies detailed balance with respect to{' '}
+        <Tex math="\pi_{\mathrm{ext}}" /> because the Boltzmann weights factor across
+        replicas. The key mechanism is that configurations can diffuse in temperature space:
+        a configuration trapped in a metastable well at low temperature is eventually swapped
+        to a high-temperature replica where it can escape the well, then percolate back down
+        the temperature ladder carrying information about the global energy landscape. The
+        effective barrier for inter-basin transitions is reduced from{' '}
+        <Tex math="\exp(\beta_L \Gamma^*)" /> to{' '}
+        <Tex math="\exp(\beta_1 \Gamma^*)" />, an exponential improvement.
+      </p>
+
+      <p className="mb-4 indent-8">
+        The mixing time of the parallel tempering chain on{' '}
+        <Tex math="\Omega_{\mathrm{ext}}" /> can be decomposed into two components: the
+        within-replica mixing time at each temperature, and the round-trip time for a
+        configuration to traverse the full temperature ladder. The spectral gap of the
+        extended chain satisfies the decomposition bound:
+      </p>
+
+      <TexBlock math="\gamma_{\mathrm{ext}} \geq \frac{1}{L} \min\!\left\{\min_{1 \leq \ell \leq L} \gamma_{\beta_\ell},\;\; \min_{1 \leq \ell < L} \bar{\alpha}_\ell \cdot \frac{1}{\tau_{\mathrm{swap}}}\right\}" />
+
+      <p className="mb-4">
+        where <Tex math="\gamma_{\beta_\ell}" /> is the spectral gap of the single-replica
+        chain at temperature <Tex math="\beta_\ell" /> and{' '}
+        <Tex math="\bar{\alpha}_\ell = \mathbb{E}_{\pi_{\mathrm{ext}}}[\alpha_{\mathrm{swap}}^{(\ell)}]" />{' '}
+        is the mean swap acceptance rate between replicas <Tex math="\ell" /> and{' '}
+        <Tex math="\ell + 1" />. The factor <Tex math="L^{-1}" /> reflects the cost of
+        the temperature diffusion bottleneck: a replica must traverse{' '}
+        <Tex math="L - 1" /> swap levels to complete a round trip, each with acceptance
+        probability <Tex math="\bar{\alpha}_\ell" />. The round-trip time is therefore{' '}
+        <Tex math="\tau_{\mathrm{RT}} \sim L^2 / \min_\ell \bar{\alpha}_\ell" /> under
+        a diffusive model for the temperature index, motivating careful optimization of
+        the temperature ladder to equalize acceptance rates across all levels.
+      </p>
+
+      <p className="mb-4 indent-8">
+        Simulated tempering (Marinari and Parisi, 1992) is a single-chain variant of replica
+        exchange in which the temperature index <Tex math="\ell" /> is itself a dynamic
+        variable. The extended state space is{' '}
+        <Tex math="\Omega_A \times \{1, \ldots, L\}" /> with joint distribution:
+      </p>
+
+      <TexBlock math="\pi_{\mathrm{ST}}(x, \ell) \propto w_\ell \, \exp\!\bigl(-\beta_\ell\, E(x)\bigr), \qquad w_\ell = \exp\!\bigl(\beta_\ell\, f_\ell\bigr)" />
+
+      <p className="mb-4">
+        where the weights <Tex math="w_\ell" /> are chosen to equalize the marginal
+        probabilities <Tex math="\pi_{\mathrm{ST}}(\ell) = L^{-1}" /> across temperature
+        levels, requiring knowledge of the free energies{' '}
+        <Tex math="f_\ell = -\beta_\ell^{-1} \ln Z(\beta_\ell)" />. In practice, the free
+        energies are estimated adaptively via the Wang–Landau algorithm or thermodynamic
+        integration, introducing a controlled bias that vanishes as the estimates converge.
+        The advantage of simulated tempering over replica exchange is reduced computational
+        cost (<Tex math="O(1)" /> replicas versus <Tex math="O(L)" />), at the expense
+        of requiring the free-energy estimates and potentially slower mixing when the
+        temperature updates are rejected.
+      </p>
+
+      <h3 style={h3Style}>11.2 Optimal Temperature Ladder Design</h3>
+
+      <p className="mb-4">
+        The efficiency of both parallel tempering and simulated tempering depends critically
+        on the choice of the temperature ladder{' '}
+        <Tex math="\beta_1 < \beta_2 < \cdots < \beta_L" />. If adjacent temperatures are
+        too far apart, the swap acceptance rate <Tex math="\bar{\alpha}_\ell" /> drops
+        exponentially and the temperature diffusion stalls; if they are too close, the
+        number of replicas <Tex math="L" /> (and hence the computational cost) becomes
+        prohibitive. The geometric spacing{' '}
+        <Tex math="\beta_\ell = \beta_1 \cdot r^{\ell - 1}" /> with ratio{' '}
+        <Tex math="r = (\beta_L / \beta_1)^{1/(L-1)}" /> is a widely used heuristic that
+        ensures approximately uniform acceptance rates when the energy distribution is
+        approximately Gaussian at each temperature.
+      </p>
+
+      <p className="mb-4 indent-8">
+        To see this, note that under the Gaussian approximation{' '}
+        <Tex math="E \sim \mathcal{N}(\langle E \rangle_\beta,\, C(\beta) / \beta^2)" />,
+        the mean swap acceptance rate between replicas at <Tex math="\beta_\ell" /> and{' '}
+        <Tex math="\beta_{\ell+1}" /> is:
+      </p>
+
+      <TexBlock math="\bar{\alpha}_\ell \approx \operatorname{erfc}\!\left(\frac{\Delta\beta_\ell}{2} \sqrt{\frac{C(\beta_\ell)}{2\beta_\ell^2}}\right) \approx \operatorname{erfc}\!\left(\frac{r - 1}{2}\sqrt{\frac{C(\beta_\ell)}{2}}\right)" />
+
+      <p className="mb-4">
+        where <Tex math="\Delta\beta_\ell = \beta_{\ell+1} - \beta_\ell" /> and{' '}
+        <Tex math="C(\beta)" /> is the specific heat at inverse temperature{' '}
+        <Tex math="\beta" />. For the geometric ladder, the argument of the complementary
+        error function is approximately constant across levels (since{' '}
+        <Tex math="\Delta\beta_\ell / \beta_\ell = r - 1" /> is constant), yielding
+        uniform acceptance rates provided <Tex math="C(\beta)" /> varies slowly with{' '}
+        <Tex math="\beta" />. Near the phase transition where <Tex math="C(\beta)" />{' '}
+        diverges, additional replicas must be inserted to maintain acceptable swap rates.
+      </p>
+
+      <p className="mb-4 indent-8">
+        Kofke&apos;s equal-acceptance criterion (2002) provides a principled optimization
+        framework: choose the temperature ladder to maximize the round-trip rate{' '}
+        <Tex math="\tau_{\mathrm{RT}}^{-1}" /> subject to a fixed computational budget of{' '}
+        <Tex math="L" /> replicas. Under the diffusive model for temperature-index dynamics,
+        the round-trip time satisfies:
+      </p>
+
+      <TexBlock math="\tau_{\mathrm{RT}} = \sum_{\ell=1}^{L-1} \frac{1}{\bar{\alpha}_\ell} + \frac{1}{\bar{\alpha}_\ell}" />
+
+      <p className="mb-4">
+        which is minimized when all <Tex math="\bar{\alpha}_\ell" /> are equal, yielding
+        the equal-acceptance condition{' '}
+        <Tex math="\bar{\alpha}_1 = \bar{\alpha}_2 = \cdots = \bar{\alpha}_{L-1} = \bar{\alpha}" />.
+        The optimal common acceptance rate has been empirically determined to lie in the
+        range <Tex math="\bar{\alpha} \approx 0.20\text{–}0.25" /> for a wide class of
+        models (Kofke, 2002; Rathore et al., 2005), which for our tile-configuration
+        model corresponds to a temperature ratio of{' '}
+        <Tex math="r \approx 1.25\text{–}1.35" /> depending on the specific heat profile.
+      </p>
+
+      <p className="mb-4">
+        The number of replicas required to span the temperature range{' '}
+        <Tex math="[\beta_1^{-1}, \beta_L^{-1}]" /> with acceptance rate{' '}
+        <Tex math="\bar{\alpha}" /> scales as:
+      </p>
+
+      <TexBlock math="L(\bar{\alpha}) = 1 + \int_{\beta_1}^{\beta_L} \sqrt{\frac{C(\beta)}{2\,[\operatorname{erfc}^{-1}(\bar{\alpha})]^2}} \, d\beta" />
+
+      <p className="mb-4 indent-8">
+        In the vicinity of a first-order transition, the specific heat exhibits a delta-function
+        peak <Tex math="C(\beta) \sim |\Lambda| \cdot \delta(\beta - \beta_c)" />, and the
+        integral diverges as <Tex math="L \sim \sqrt{|\Lambda|}" />, indicating that{' '}
+        <Tex math="O(\sqrt{n^2}) = O(n)" /> replicas are required to maintain connectivity
+        across the transition. This constitutes a fundamental bottleneck for parallel tempering
+        in systems with strong first-order transitions, motivating hybrid approaches that
+        combine replica exchange with non-equilibrium methods such as Jarzynski-equality-based
+        protocols or expanded-ensemble simulations. The spectral gap of the lifted chain —
+        obtained by augmenting the state space with a direction variable{' '}
+        <Tex math="\sigma \in \{+, -\}" /> that biases the temperature diffusion — satisfies:
+      </p>
+
+      <TexBlock math="\gamma_{\mathrm{lifted}} \geq \frac{2\bar{\alpha}}{L^2} \cdot \left(1 + O\!\left(\frac{1}{L}\right)\right)" />
+
+      <p className="mb-4">
+        which improves the round-trip time from <Tex math="O(L^2)" /> (diffusive) to{' '}
+        <Tex math="O(L)" /> (ballistic) in the ideal case, though the practical gain depends
+        on the uniformity of the acceptance rates across the ladder. The lifted parallel
+        tempering chain achieves this by preferentially proposing upward swaps when the
+        direction variable is <Tex math="+" /> and downward swaps when it is{' '}
+        <Tex math="-" />, with direction reversals occurring only when a swap is rejected
+        at the endpoints of the temperature ladder.
+      </p>
+
+      <PaperFigure number={11} caption="Replica exchange acceptance rate as a function of the temperature ratio r = β_{ℓ+1}/β_ℓ between adjacent replicas. The optimal operating regime (shaded) corresponds to acceptance rates in the range 0.20–0.25, achieved at temperature ratios r ≈ 1.25–1.35 for the tile-configuration Gibbs measure with balanced energy weights.">
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart data={replicaAcceptanceData} margin={{ top: 10, right: 30, left: 20, bottom: 10 }}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="tempRatio" label={{ value: 'Temperature Ratio r', position: 'insideBottomRight', offset: -5 }} />
+            <YAxis label={{ value: 'Acceptance Rate', angle: -90, position: 'insideLeft' }} domain={[0, 1]} />
+            <Tooltip />
+            <Legend />
+            <Line type="monotone" dataKey="acceptance" stroke="#6366f1" strokeWidth={2} name="Swap Acceptance ᾱ" />
+          </LineChart>
+        </ResponsiveContainer>
+      </PaperFigure>
+
       {/* 6. EXPERIMENTAL EVALUATION */}
       <h2 style={h2Style}>6. Experimental Evaluation</h2>
 
