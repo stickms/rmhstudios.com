@@ -293,8 +293,100 @@ export function ErgodicMarkovPaper() {
         yields superior level quality by both automated metrics and subjective human judgment.
       </p>
 
-      {/* 2. MATHEMATICAL FRAMEWORK */}
-      <h2 style={h2Style}>2. Mathematical Framework</h2>
+      {/* 2. NOTATION AND PRELIMINARIES */}
+      <h2 style={h2Style}>2. Notation and Preliminaries</h2>
+
+      <p className="mb-4">
+        We establish here the notational conventions and measure-theoretic foundations that undergird
+        the subsequent development. Throughout, <Tex math="\mathcal{T}" /> denotes a finite tile palette,{' '}
+        <Tex math="\Lambda \subset \mathbb{Z}^d" /> a rectangular lattice of dimension <Tex math="d" /> (typically <Tex math="d = 2" />),
+        and <Tex math="\Omega = \mathcal{T}^\Lambda" /> the full configuration space equipped with the product
+        discrete topology. For a probability measure <Tex math="\mu" /> on <Tex math="\Omega" /> and a
+        measurable function <Tex math="f: \Omega \to \mathbb{R}" />, we write{' '}
+        <Tex math="\mu(f) = \sum_{x \in \Omega} f(x)\,\mu(x)" /> for the expectation and{' '}
+        <Tex math="\text{Var}_\mu(f) = \mu(f^2) - \mu(f)^2" /> for the variance. The total variation
+        distance between measures <Tex math="\mu" /> and <Tex math="\nu" /> is denoted{' '}
+        <Tex math="\|\mu - \nu\|_{\text{TV}} = \frac{1}{2} \sum_{x \in \Omega} |\mu(x) - \nu(x)|" />.
+      </p>
+
+      <h3 style={h3Style}>2.1 Operator-Theoretic Notation</h3>
+
+      <p className="mb-4">
+        For a reversible Markov chain with transition kernel <Tex math="P" /> and stationary measure{' '}
+        <Tex math="\pi" />, we define the Hilbert space <Tex math="L^2(\pi) = \{f: \Omega \to \mathbb{R} \mid \sum_x f(x)^2 \pi(x) < \infty\}" />{' '}
+        with inner product <Tex math="\langle f, g \rangle_\pi = \sum_{x} f(x)\,g(x)\,\pi(x)" />.
+        The transition operator acts on <Tex math="L^2(\pi)" /> via{' '}
+        <Tex math="(Pf)(x) = \sum_y P(x, y)\,f(y)" />, and reversibility ensures that <Tex math="P" /> is
+        self-adjoint with respect to <Tex math="\langle \cdot, \cdot \rangle_\pi" />. We denote by{' '}
+        <Tex math="\sigma(P)" /> the spectrum of <Tex math="P" /> and by{' '}
+        <Tex math="\lambda_1 \geq \lambda_2 \geq \cdots \geq \lambda_{|\Omega|}" /> its ordered eigenvalues.
+        The Dirichlet form associated with <Tex math="P" /> is:
+      </p>
+
+      <TexBlock math="\mathcal{E}(f, f) = \langle f, (I - P)f \rangle_\pi = \frac{1}{2} \sum_{x, y} \pi(x)\,P(x, y)\,(f(x) - f(y))^2" />
+
+      <p className="mb-4 indent-8">
+        This quadratic form plays a central role in the variational characterization of the spectral gap.
+        By the Courant–Fischer minimax theorem (Bhatia, 1997), the spectral gap admits the representation:
+      </p>
+
+      <TexBlock math="\gamma = \inf_{\substack{f \in L^2(\pi) \\ \text{Var}_\pi(f) > 0}} \frac{\mathcal{E}(f, f)}{\text{Var}_\pi(f)}" />
+
+      <p className="mb-4">
+        which identifies <Tex math="\gamma" /> as the smallest constant <Tex math="c > 0" /> satisfying the
+        Poincaré inequality <Tex math="\text{Var}_\pi(f) \leq c^{-1}\,\mathcal{E}(f, f)" /> for all{' '}
+        <Tex math="f \in L^2(\pi)" />. This variational characterization provides the bridge between spectral
+        theory and the functional-analytic machinery developed in Sections 5 and 10.
+      </p>
+
+      <h3 style={h3Style}>2.2 Graph-Theoretic Conventions</h3>
+
+      <p className="mb-4">
+        We employ standard graph-theoretic terminology throughout. A graph <Tex math="G = (V, E)" /> is
+        a pair consisting of a vertex set <Tex math="V" /> and an edge set{' '}
+        <Tex math="E \subseteq \binom{V}{2}" />. For weighted graphs, we associate a weight function{' '}
+        <Tex math="w: E \to \mathbb{R}_{>0}" />. The degree of a vertex <Tex math="v" /> is{' '}
+        <Tex math="\deg(v) = \sum_{u: \{u,v\} \in E} w(\{u,v\})" />. The graph Laplacian is the operator{' '}
+        <Tex math="L = D - W" />, where <Tex math="D" /> is the diagonal degree matrix and{' '}
+        <Tex math="W" /> the weighted adjacency matrix. The normalized Laplacian is{' '}
+        <Tex math="\mathcal{L} = D^{-1/2} L\, D^{-1/2} = I - D^{-1/2} W D^{-1/2}" />, whose eigenvalues
+        satisfy <Tex math="0 = \mu_1 \leq \mu_2 \leq \cdots \leq \mu_{|V|} \leq 2" />.
+        The algebraic connectivity <Tex math="\mu_2" /> (Fiedler, 1973) of the configuration-space graph
+        is intimately related to the spectral gap of the lazy random walk:{' '}
+        <Tex math="\gamma = \mu_2 / 2" /> when <Tex math="P = (I + D^{-1}W)/2" />.
+      </p>
+
+      <h3 style={h3Style}>2.3 Measure-Theoretic Foundations</h3>
+
+      <p className="mb-4">
+        The Gibbs measure framework requires careful specification of the underlying sigma-algebra
+        and the notion of conditional expectations. On the discrete configuration space{' '}
+        <Tex math="\Omega_A" />, we equip <Tex math="\Omega_A" /> with the power-set sigma-algebra{' '}
+        <Tex math="\mathcal{F} = 2^{\Omega_A}" />. For a subset <Tex math="\Lambda' \subset \Lambda" /> of
+        lattice sites, the sub-sigma-algebra <Tex math="\mathcal{F}_{\Lambda'}" /> is generated by the
+        projections <Tex math="\{x \mapsto x(v) : v \in \Lambda'\}" />. A probability measure{' '}
+        <Tex math="\pi" /> on <Tex math="(\Omega_A, \mathcal{F})" /> is a Gibbs measure for a
+        specification <Tex math="\gamma = (\gamma_{\Lambda'})_{\Lambda' \Subset \Lambda}" /> if for every
+        finite <Tex math="\Lambda' \Subset \Lambda" /> and every boundary condition{' '}
+        <Tex math="\omega \in \Omega_A" />:
+      </p>
+
+      <TexBlock math="\pi\bigl(x_{\Lambda'} = \sigma_{\Lambda'} \mid \mathcal{F}_{\Lambda \setminus \Lambda'}\bigr) = \gamma_{\Lambda'}(\sigma_{\Lambda'} \mid \omega_{\Lambda \setminus \Lambda'}) \qquad \pi\text{-a.s.}" />
+
+      <p className="mb-4 indent-8">
+        The DLR (Dobrushin–Lanford–Ruelle) equations (Georgii, 2011) provide the consistency conditions
+        for such specifications. In our finite-volume setting, the Gibbs measure is unique for all
+        parameter values (since phase transitions require the thermodynamic limit{' '}
+        <Tex math="|\Lambda| \to \infty" />), but the effective behavior on large lattices exhibits
+        phenomena — metastability, slow mixing, critical slowing-down — that motivate the spectral
+        and information-geometric analyses developed below. The Hammersley–Clifford theorem (Grimmett, 1973)
+        guarantees that a strictly positive probability measure on <Tex math="\Omega_A" /> is a Gibbs
+        measure if and only if it is a Markov random field with respect to the neighborhood
+        structure induced by the lattice adjacency.
+      </p>
+
+      {/* 3. MATHEMATICAL FRAMEWORK */}
+      <h2 style={h2Style}>3. Mathematical Framework</h2>
 
       <h3 style={h3Style}>2.1 Tile-Adjacency Graphs and State Spaces</h3>
 
