@@ -8,7 +8,7 @@ import { ARENA_W, ARENA_H, ARENA_HW, ARENA_HH } from './constants';
 export interface Obstacle {
     id: number;
     x: number; y: number; w: number; h: number;
-    type: 'building' | 'debris' | 'barrier' | 'tree' | 'terminal' | 'hazard';
+    type: 'building' | 'debris' | 'barrier' | 'tree' | 'terminal' | 'hazard' | 'billboard';
     destructible: boolean;
     hp: number; maxHp: number;
     active: boolean;
@@ -58,6 +58,12 @@ export const MAP_1: MapConfig = {
         { x: 950, y: 678, w: 110, h: 22, type: 'barrier', destructible: false, hp: 999, maxHp: 999 },
         // Research terminal — environmental storytelling
         { x: 460, y: 460, w: 38, h: 38, type: 'terminal', destructible: false, hp: 999, maxHp: 999, glowColor: '#00ff88' },
+        // Neon billboards (decorative, non-collidable)
+        { x: 80, y: 42, w: 90, h: 28, type: 'billboard', destructible: false, hp: 999, maxHp: 999, glowColor: '#00f5ff' },
+        { x: 1430, y: 42, w: 80, h: 25, type: 'billboard', destructible: false, hp: 999, maxHp: 999, glowColor: '#ff00cc' },
+        { x: 690, y: 42, w: 50, h: 22, type: 'billboard', destructible: false, hp: 999, maxHp: 999, glowColor: '#ff6820' },
+        { x: 80, y: 930, w: 70, h: 24, type: 'billboard', destructible: false, hp: 999, maxHp: 999, glowColor: '#d4af37' },
+        { x: 1440, y: 930, w: 85, h: 26, type: 'billboard', destructible: false, hp: 999, maxHp: 999, glowColor: '#39ff14' },
     ],
 };
 
@@ -85,6 +91,11 @@ export const MAP_2: MapConfig = {
         { x: 1055, y: 815, w: 45, h: 45, type: 'debris', destructible: true, hp: 2, maxHp: 2 },
         // Void terminal
         { x: 760, y: 468, w: 38, h: 38, type: 'terminal', destructible: false, hp: 999, maxHp: 999, glowColor: '#ff6600' },
+        // Neon billboards
+        { x: 100, y: 100, w: 80, h: 26, type: 'billboard', destructible: false, hp: 999, maxHp: 999, glowColor: '#ff00cc' },
+        { x: 1340, y: 100, w: 75, h: 24, type: 'billboard', destructible: false, hp: 999, maxHp: 999, glowColor: '#ff6820' },
+        { x: 700, y: 100, w: 60, h: 22, type: 'billboard', destructible: false, hp: 999, maxHp: 999, glowColor: '#aa44ff' },
+        { x: 100, y: 870, w: 90, h: 28, type: 'billboard', destructible: false, hp: 999, maxHp: 999, glowColor: '#00f5ff' },
     ],
 };
 
@@ -108,6 +119,11 @@ export const MAP_3: MapConfig = {
         { x: 470, y: 430, w: 55, h: 55, type: 'hazard', destructible: false, hp: 999, maxHp: 999, glowColor: '#ff0044' },
         { x: 1075, y: 515, w: 55, h: 55, type: 'hazard', destructible: false, hp: 999, maxHp: 999, glowColor: '#ff0044' },
         { x: 760, y: 440, w: 55, h: 55, type: 'hazard', destructible: false, hp: 999, maxHp: 999, glowColor: '#ff2200' },
+        // Neon billboards
+        { x: 200, y: 150, w: 70, h: 24, type: 'billboard', destructible: false, hp: 999, maxHp: 999, glowColor: '#ff0044' },
+        { x: 1340, y: 150, w: 80, h: 26, type: 'billboard', destructible: false, hp: 999, maxHp: 999, glowColor: '#cc00ff' },
+        { x: 680, y: 160, w: 55, h: 20, type: 'billboard', destructible: false, hp: 999, maxHp: 999, glowColor: '#ffffff' },
+        { x: 1340, y: 760, w: 75, h: 24, type: 'billboard', destructible: false, hp: 999, maxHp: 999, glowColor: '#ff0044' },
     ],
 };
 
@@ -143,7 +159,7 @@ export function resolveObstacleCollision(
 ): { x: number; y: number } {
     let x = cx, y = cy;
     for (const o of obstacles) {
-        if (!o.active || o.type === 'hazard') continue;
+        if (!o.active || o.type === 'hazard' || o.type === 'billboard') continue;
         if (!circleAABBOverlaps(x, y, cr, o.x, o.y, o.w, o.h)) continue;
         const nearX = Math.max(o.x, Math.min(o.x + o.w, x));
         const nearY = Math.max(o.y, Math.min(o.y + o.h, y));
@@ -170,14 +186,14 @@ export function steerAroundObstacles(
     const lookahead = 70;
     const lx = ex + nx * lookahead, ly = ey + ny * lookahead;
     for (const o of obstacles) {
-        if (!o.active || o.type === 'hazard') continue;
+        if (!o.active || o.type === 'hazard' || o.type === 'billboard') continue;
         if (circleAABBOverlaps(lx, ly, er + 12, o.x, o.y, o.w, o.h)) {
             // Steer perpendicular — pick whichever side clears
             const perpL = { nx: -ny, ny: nx };
             const perpR = { nx: ny, ny: -nx };
             const testL = { x: ex + perpL.nx * lookahead, y: ey + perpL.ny * lookahead };
             const clearL = !obstacles.some(oo =>
-                oo.active && oo.type !== 'hazard' &&
+                oo.active && oo.type !== 'hazard' && oo.type !== 'billboard' &&
                 circleAABBOverlaps(testL.x, testL.y, er + 12, oo.x, oo.y, oo.w, oo.h)
             );
             const perp = clearL ? perpL : perpR;

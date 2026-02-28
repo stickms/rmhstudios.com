@@ -8,6 +8,7 @@ import type { InputState, RunStats, GameState, HUDState } from '@/lib/void-break
 import { VoidBreakerUI } from './VoidBreakerUI';
 import { VoidBreakerTouchControls } from './VoidBreakerTouchControls';
 import { saveGame, loadGame, deleteSave, getSaveInfo } from '@/lib/void-breaker/saveSystem';
+import { ABILITY_COOLDOWNS } from '@/lib/void-breaker/abilityProgression';
 
 /** Background music track path */
 const MUSIC_SRC = '/music/VoidBreaker/cold coffee - lofi rap beat (FREE FOR PROFIT USE).mp3';
@@ -28,6 +29,8 @@ const EMPTY_HUD: HUDState = {
   voidPulseReady: false, phaseShiftReady: false, phaseShiftActive: false,
   reflectShieldReady: false, reflectShieldActive: false,
   allySynergyReady: false, allySynergyActive: false,
+  voidPulseCooldownFraction: 0, phaseShiftCooldownFraction: 0,
+  reflectShieldCooldownFraction: 0, allySynergyCooldownFraction: 0,
   pendingUnlock: null,
 };
 
@@ -289,6 +292,10 @@ export function VoidBreakerGame() {
             reflectShieldActive: ab.reflectShieldActive,
             allySynergyReady: ab.unlockedIds.has('ally_synergy') && ab.allySynergyCooldown <= 0 && !ab.allySynergyActive,
             allySynergyActive: ab.allySynergyActive,
+            voidPulseCooldownFraction: ab.unlockedIds.has('void_pulse') ? Math.max(0, ab.voidPulseCooldown / ABILITY_COOLDOWNS.void_pulse) : 0,
+            phaseShiftCooldownFraction: ab.unlockedIds.has('phase_shift') ? Math.max(0, ab.phaseShiftCooldown / ABILITY_COOLDOWNS.phase_shift) : 0,
+            reflectShieldCooldownFraction: ab.unlockedIds.has('reflect_shield') ? Math.max(0, ab.reflectShieldCooldown / ABILITY_COOLDOWNS.reflect_shield) : 0,
+            allySynergyCooldownFraction: ab.unlockedIds.has('ally_synergy') ? Math.max(0, ab.allySynergyCooldown / ABILITY_COOLDOWNS.ally_synergy) : 0,
             pendingUnlock,
           });
         }
@@ -330,19 +337,8 @@ export function VoidBreakerGame() {
   const handleSaveAndQuit = useCallback(() => {
     const game = gameRef.current;
     if (game) {
-      saveGame({
-        wave: game.wave,
-        score: Math.round(game.score),
-        playerHp: game.player.hp,
-        playerMaxHp: game.player.maxHp,
-        shards: game.player.shards,
-        abilitiesUnlocked: [],
-        storyFlags: {},
-        bossesKilled: game.bossesKilled,
-        enemiesKilled: game.enemiesKilled,
-        focusUsed: game.focusUsed,
-        detonations: game.detonations,
-      });
+      const stateBlob = game.serializeGameState();
+      saveGame(stateBlob as Record<string, unknown>);
     }
     setShowPauseMenu(false);
     showPauseMenuRef.current = false;
@@ -386,6 +382,22 @@ export function VoidBreakerGame() {
     setMusicVolume(v);
     localStorage.setItem('vb-music-volume', String(v));
   }, []);
+
+  /** Load saved game and resume play. */
+  const handleContinue = useCallback(() => {
+    const save = loadGame();
+    if (!save || !save.stateJson) return;
+    const game = gameRef.current;
+    if (!game) return;
+    const ok = game.hydrateGameState(save.stateJson as Record<string, unknown>);
+    if (ok) {
+      setRunStats(null);
+      setUiState('playing');
+      setShowPauseMenu(false);
+      showPauseMenuRef.current = false;
+      playMusic();
+    }
+  }, [playMusic]);
 
   const showGame = uiState === 'playing';
 
@@ -439,15 +451,19 @@ export function VoidBreakerGame() {
 
             {/* HP hearts */}
             <div className="bg-black/70 rounded px-2 py-1 text-right border border-[#00f5ff]/20 backdrop-blur-sm">
-              <div className="text-sm sm:text-base">
+              <div className="text-[9px] font-mono text-zinc-500 mb-0.5">HP</div>
+              <div className="text-sm sm:text-base flex items-center gap-0.5">
                 {Array.from({ length: hud.maxHp }, (_, i) => (
                   <span key={i} className={i < hud.hp
                     ? 'text-[#ff00cc] drop-shadow-[0_0_6px_rgba(255,0,204,0.8)]'
                     : 'text-zinc-800'
                   }>
-                    {'♦'}
+                    {'♥'}
                   </span>
                 ))}
+                <span className="text-[10px] font-mono text-zinc-500 ml-1">
+                  {hud.hp}/{hud.maxHp}
+                </span>
               </div>
             </div>
           </div>
@@ -527,6 +543,84 @@ export function VoidBreakerGame() {
                 />
               )}
             </div>
+
+            {/* Void Pulse — Q (wave 8) */}
+            {hud.voidPulseReady !== undefined && (
+              <div className={`relative w-10 h-10 rounded-lg flex flex-col items-center justify-center border text-[8px] font-mono font-bold
+                ${hud.voidPulseReady
+                  ? 'border-[#00f5ff]/60 text-[#00f5ff] bg-black/60'
+                  : 'border-zinc-700/40 text-zinc-600 bg-black/40'
+                }`}>
+                <span className="text-[7px]">Q</span>
+                <span>PULSE</span>
+                {!hud.voidPulseReady && hud.voidPulseCooldownFraction > 0 && (
+                  <div
+                    className="absolute inset-0 rounded-lg bg-zinc-800/40"
+                    style={{ clipPath: `inset(${(1 - hud.voidPulseCooldownFraction) * 100}% 0 0 0)` }}
+                  />
+                )}
+              </div>
+            )}
+
+            {/* Phase Shift — E (wave 15) */}
+            {hud.phaseShiftReady !== undefined && (
+              <div className={`relative w-10 h-10 rounded-lg flex flex-col items-center justify-center border text-[8px] font-mono font-bold
+                ${hud.phaseShiftActive
+                  ? 'border-white text-white bg-white/10 animate-pulse'
+                  : hud.phaseShiftReady
+                    ? 'border-[#00f5ff]/60 text-[#00f5ff] bg-black/60'
+                    : 'border-zinc-700/40 text-zinc-600 bg-black/40'
+                }`}>
+                <span className="text-[7px]">E</span>
+                <span>PHASE</span>
+                {!hud.phaseShiftReady && !hud.phaseShiftActive && hud.phaseShiftCooldownFraction > 0 && (
+                  <div
+                    className="absolute inset-0 rounded-lg bg-zinc-800/40"
+                    style={{ clipPath: `inset(${(1 - hud.phaseShiftCooldownFraction) * 100}% 0 0 0)` }}
+                  />
+                )}
+              </div>
+            )}
+
+            {/* Reflect Shield — R (wave 30) */}
+            {hud.reflectShieldReady !== undefined && (
+              <div className={`relative w-10 h-10 rounded-lg flex flex-col items-center justify-center border text-[8px] font-mono font-bold
+                ${hud.reflectShieldActive
+                  ? 'border-[#00ffcc] text-[#00ffcc] bg-[#00ffcc]/10 animate-pulse'
+                  : hud.reflectShieldReady
+                    ? 'border-[#00f5ff]/60 text-[#00f5ff] bg-black/60'
+                    : 'border-zinc-700/40 text-zinc-600 bg-black/40'
+                }`}>
+                <span className="text-[7px]">R</span>
+                <span>SHIELD</span>
+                {!hud.reflectShieldReady && !hud.reflectShieldActive && hud.reflectShieldCooldownFraction > 0 && (
+                  <div
+                    className="absolute inset-0 rounded-lg bg-zinc-800/40"
+                    style={{ clipPath: `inset(${(1 - hud.reflectShieldCooldownFraction) * 100}% 0 0 0)` }}
+                  />
+                )}
+              </div>
+            )}
+
+            {/* Ally Synergy — T (wave 35) */}
+            {hud.allySynergyReady !== undefined && hud.allyActive && (
+              <div className={`relative w-10 h-10 rounded-lg flex flex-col items-center justify-center border text-[8px] font-mono font-bold
+                ${hud.allySynergyActive
+                  ? 'border-[#00ff88] text-[#00ff88] bg-[#00ff88]/10 animate-pulse'
+                  : hud.allySynergyReady
+                    ? 'border-[#00ff88]/60 text-[#00ff88] bg-black/60'
+                    : 'border-zinc-700/40 text-zinc-600 bg-black/40'
+                }`}>
+                <span className="text-[7px]">T</span>
+                <span>ALLY</span>
+                {!hud.allySynergyReady && !hud.allySynergyActive && hud.allySynergyCooldownFraction > 0 && (
+                  <div
+                    className="absolute inset-0 rounded-lg bg-zinc-800/40"
+                    style={{ clipPath: `inset(${(1 - hud.allySynergyCooldownFraction) * 100}% 0 0 0)` }}
+                  />
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -679,6 +773,7 @@ export function VoidBreakerGame() {
         onMusicVolumeChange={setVolume}
         saveInfo={saveInfo}
         onClearSave={() => { deleteSave(); setSaveInfo(null); }}
+        onContinueGame={saveInfo ? handleContinue : undefined}
       />
     </div>
   );

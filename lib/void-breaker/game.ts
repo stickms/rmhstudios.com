@@ -1,6 +1,6 @@
 import type {
   GameState, Player, Enemy, Projectile, Shard, Particle,
-  Popup, InputState, RunStats, EnemyType, BossPhase,
+  Popup, InputState, RunStats, EnemyType, BossPhase, HeartPickup,
 } from './types';
 import {
   ARENA_W, ARENA_H, ARENA_HW, ARENA_HH,
@@ -24,7 +24,11 @@ import {
   MAX_WAVE, VOID_PULSE_RADIUS, VOID_PULSE_DAMAGE,
   ALLY_PROJ_SPEED, ALLY_PROJ_DAMAGE,
   MAP_DOOR_X_FRAC, MAP_TRANSITION_DURATION,
+  DROP_HEART_CHANCE, HEART_PICKUP_LIFETIME, HEART_HEAL_AMOUNT,
+  MAX_HEART_PICKUPS, HEART_MAGNET_RANGE, HEART_PULL_SPEED,
 } from './constants';
+import { preloadAll } from './SpriteLoader';
+import { getAllSpriteUrls } from './sprites';
 import { DialogueManager } from './dialogueManager';
 import {
   getScaledEnemyHp, getScaledProjSpeed, getScaledBossHp,
@@ -59,6 +63,7 @@ export class VoidBreakerEngine {
   shards: Shard[] = [];
   particles: Particle[] = [];
   popups: Popup[] = [];
+  heartPickups: HeartPickup[] = [];
 
   wave = 0;
   waveBreakTimer = 0;
@@ -130,6 +135,11 @@ export class VoidBreakerEngine {
       active: false, x: 0, y: 0, vx: 0, vy: 0,
       life: 0, maxLife: 0, color: '', size: 0,
     }));
+    this.heartPickups = Array.from({ length: MAX_HEART_PICKUPS }, () => ({
+      active: false, x: 0, y: 0, lifetime: 0, maxLifetime: HEART_PICKUP_LIFETIME,
+    }));
+    // Preload sprite assets
+    preloadAll(getAllSpriteUrls());
   }
 
   private emptyEnemy(id: number): Enemy {
@@ -143,6 +153,7 @@ export class VoidBreakerEngine {
       bossPhase: 1, tentacleAngle: 0, tentacleTimer: 0,
       telegraphTimer: 0, isElite: false,
       bossSpecialTimer: 0, bossSpecialActive: false, bossSpecialAngle: 0,
+      hitFlashUntil: 0,
     };
   }
 
@@ -157,12 +168,14 @@ export class VoidBreakerEngine {
       dashCooldown: 0, dashActive: false,
       dashTimer: 0, dashVx: 0, dashVy: 0,
       focusCooldown: 0, focusActive: false, focusTimer: 0,
+      hitFlashUntil: 0,
     };
 
     for (const e of this.enemies) e.active = false;
     for (const p of this.projectiles) p.active = false;
     for (const s of this.shards) { s.active = false; s.collected = false; }
     for (const p of this.particles) p.active = false;
+    for (const h of this.heartPickups) h.active = false;
     this.popups = [];
 
     this.wave = 0;
@@ -271,6 +284,7 @@ export class VoidBreakerEngine {
       this.checkEnemyProjHits();
       this.checkContact();
       this.updateCombo(dt);
+      this.updateHeartPickups(worldDt);
       this.updateParticles(dt);
       this.updatePopups(dt);
       this.updateShake(dt);
@@ -898,6 +912,24 @@ export class VoidBreakerEngine {
       p.life -= dt;
       if (p.x < -20 || p.x > ARENA_W + 20 || p.y < -20 || p.y > ARENA_H + 20 || p.life <= 0) {
         p.active = false;
+        continue;
+      }
+      // Obstacle collision — buildings, barriers, debris block shots
+      for (const o of this.obstacles) {
+        if (!o.active) continue;
+        if (o.type === 'hazard' || o.type === 'terminal' || o.type === 'billboard') continue;
+        if (circleAABBOverlaps(p.x, p.y, p.radius, o.x, o.y, o.w, o.h)) {
+          p.active = false;
+          this.spawnParticles(p.x, p.y, p.isPlayer ? '#44ddff' : '#ff00cc', 3, 60);
+          if (o.destructible) {
+            o.hp -= p.damage;
+            if (o.hp <= 0) {
+              o.active = false;
+              this.spawnParticles(o.x + o.w / 2, o.y + o.h / 2, '#888888', 10, 100);
+            }
+          }
+          break;
+        }
       }
     }
   }
@@ -912,6 +944,7 @@ export class VoidBreakerEngine {
         if (dist(p.x, p.y, e.x, e.y) < p.radius + e.radius) {
           p.active = false;
           e.hp -= p.damage;
+          e.hitFlashUntil = this.elapsedMs + 80;
           this.spawnParticles(p.x, p.y, e.color, 4, 100);
           if (e.hp <= 0) this.killEnemy(e);
           break;
@@ -961,9 +994,17 @@ export class VoidBreakerEngine {
   private damagePlayer(dmg: number): void {
     const p = this.player;
     p.hp -= dmg;
+    p.hitFlashUntil = this.elapsedMs + 80;
     p.invincibleUntil = this.elapsedMs + INVINCIBILITY_MS;
     this.triggerShake(5, 300);
     this.spawnParticles(p.x, p.y, '#ff4444', 10, 120);
+    // Damage feedback popup
+    this.popups.push({
+      text: `-${dmg} HP`,
+      x: p.x, y: p.y - 30,
+      life: 1.0, maxLife: 1.0,
+      color: '#ff2244',
+    });
     if (p.hp <= 0) { p.hp = 0; this.state = 'gameOver'; }
   }
 
@@ -982,6 +1023,11 @@ export class VoidBreakerEngine {
 
     const shardMul = this.player.focusActive ? 2 : 1;
     for (let i = 0; i < e.shardCount * shardMul; i++) this.spawnShard(e.x, e.y);
+
+    // Heart drop (8% chance)
+    if (Math.random() < DROP_HEART_CHANCE) {
+      this.spawnHeartPickup(e.x, e.y);
+    }
 
     if (e.type === 'splitter' && !e.isBoss) {
       for (let i = 0; i < 2; i++) {
@@ -1261,5 +1307,150 @@ export class VoidBreakerEngine {
     this.startNextWave();
     this.state = 'playing';
   }
+
+  // ── Heart Pickups ─────────────────────────────────────────────────────────
+
+  /** Spawn a heart pickup at the given position. */
+  private spawnHeartPickup(x: number, y: number): void {
+    const slot = this.heartPickups.find(h => !h.active);
+    if (!slot) return;
+    slot.active = true;
+    slot.x = x + (Math.random() - 0.5) * 20;
+    slot.y = y + (Math.random() - 0.5) * 20;
+    slot.lifetime = HEART_PICKUP_LIFETIME;
+    slot.maxLifetime = HEART_PICKUP_LIFETIME;
+  }
+
+  /** Update heart pickups: magnet pull, collision, lifetime. */
+  private updateHeartPickups(dt: number): void {
+    const p = this.player;
+    for (const h of this.heartPickups) {
+      if (!h.active) continue;
+      h.lifetime -= dt;
+      if (h.lifetime <= 0) { h.active = false; continue; }
+
+      // Magnet pull toward player
+      let d = dist(h.x, h.y, p.x, p.y);
+      if (d < HEART_MAGNET_RANGE && d > 1) {
+        const [nx, ny] = norm(p.x - h.x, p.y - h.y);
+        h.x += nx * HEART_PULL_SPEED * dt;
+        h.y += ny * HEART_PULL_SPEED * dt;
+        // Recompute distance AFTER magnet pull
+        d = dist(h.x, h.y, p.x, p.y);
+      }
+
+      // Collision — ALWAYS collect, heal only if HP not full
+      const pickupRadius = p.radius + 18;
+      if (d < pickupRadius) {
+        h.active = false;
+        this.spawnParticles(h.x, h.y, '#ff00cc', 8, 100);
+        if (p.hp < p.maxHp) {
+          p.hp = Math.min(p.hp + HEART_HEAL_AMOUNT, p.maxHp);
+          this.popups.push({
+            text: '+1 HP', x: p.x, y: p.y - 25,
+            life: 0.8, maxLife: 0.8, color: '#ff00cc',
+          });
+        } else {
+          this.popups.push({
+            text: 'FULL HP', x: p.x, y: p.y - 25,
+            life: 0.6, maxLife: 0.6, color: '#888888',
+          });
+        }
+      }
+    }
+  }
+
+  // ── Serialization (Save/Load) ─────────────────────────────────────────────
+
+  /** Serialize full game state for save system. */
+  serializeGameState(): object {
+    return {
+      meta: { version: 2, savedAt: Date.now() },
+      run: { wave: this.wave, maxWave: MAX_WAVE, mapId: this.currentMapConfig.id },
+      player: {
+        hp: this.player.hp,
+        maxHp: this.player.maxHp,
+        x: this.player.x,
+        y: this.player.y,
+        shards: this.player.shards,
+      },
+      abilities: Array.from(this.abilityProg.abilities.unlockedIds),
+      score: Math.round(this.score),
+      stats: {
+        enemiesKilled: this.enemiesKilled,
+        bossesKilled: this.bossesKilled,
+        focusUsed: this.focusUsed,
+        detonations: this.detonations,
+        shardsCollected: this.shardsCollected,
+        elapsedMs: this.elapsedMs,
+      },
+      ally: {
+        active: this.allyCtrl.ally.active,
+        hp: this.allyCtrl.ally.hp,
+      },
+    };
+  }
+
+  /** Hydrate game state from a save blob. Call before starting game loop. */
+  hydrateGameState(save: Record<string, unknown>): boolean {
+    try {
+      const meta = save.meta as { version: number };
+      if (!meta || meta.version < 2) {
+        console.warn('[VoidBreaker] Save version mismatch');
+        return false;
+      }
+
+      const run = save.run as { wave: number; mapId: number };
+      const playerData = save.player as { hp: number; maxHp: number; x: number; y: number; shards: number };
+      const abilities = save.abilities as string[];
+      const stats = save.stats as Record<string, number>;
+      const ally = save.ally as { active: boolean; hp: number } | undefined;
+
+      // Reset first
+      this.startGame();
+
+      // Restore run state
+      this.wave = run.wave;
+      this.currentMapConfig = getMapForWave(run.wave);
+      this.obstacles = buildObstacles(this.currentMapConfig);
+
+      // Restore player
+      this.player.hp = playerData.hp;
+      this.player.maxHp = playerData.maxHp;
+      this.player.x = playerData.x;
+      this.player.y = playerData.y;
+      this.player.shards = playerData.shards;
+
+      // Restore score + stats
+      this.score = (save.score as number) || 0;
+      this.enemiesKilled = stats.enemiesKilled || 0;
+      this.bossesKilled = stats.bossesKilled || 0;
+      this.focusUsed = stats.focusUsed || 0;
+      this.detonations = stats.detonations || 0;
+      this.shardsCollected = stats.shardsCollected || 0;
+      this.elapsedMs = stats.elapsedMs || 0;
+
+      // Restore abilities
+      for (const id of abilities) {
+        this.abilityProg.abilities.unlockedIds.add(id as never);
+      }
+
+      // Restore ally
+      if (ally?.active) {
+        this.allyCtrl.spawn(this.player.x - 80, this.player.y);
+        if (typeof ally.hp === 'number') this.allyCtrl.ally.hp = ally.hp;
+      }
+
+      // Jump to playing state at saved wave
+      this.state = 'playing';
+      this.startNextWave();
+
+      return true;
+    } catch (err) {
+      console.error('[VoidBreaker] Failed to hydrate save:', err);
+      return false;
+    }
+  }
 }
+
 

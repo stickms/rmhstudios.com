@@ -8,8 +8,10 @@ import type { VoidBreakerEngine } from './game';
 import {
   CANVAS_WIDTH, CANVAS_HEIGHT,
   ARENA_W, ARENA_H, ARENA_HW, ARENA_HH,
-  MAX_SHARDS,
+  MAX_SHARDS, BOSS_WAVE_INTERVAL,
 } from './constants';
+import { drawSprite, drawPickupSprite } from './drawSprite';
+import { PLAYER_SPRITE, ENEMY_SPRITES, BOSS_SPRITES, HEART_PICKUP_SPRITE } from './sprites';
 
 // ── Neon Palette ──────────────────────────────────────────────────────────────
 const BG_DEEP = '#050508';
@@ -23,11 +25,12 @@ const NEON_GREEN = '#39ff14';
 const PLAYER_GLOW = '#44ddff';
 const BOSS_RED = '#ff2244';
 
+// ── Seeded pseudo-random for deterministic per-frame visuals ─────────────────
+const seed = (n: number) => Math.abs(Math.sin(n * 127.1 + 311.7) * 43758.5453) % 1;
+
 // ── Parallax city silhouette segments ────────────────────────────────────────
 interface Building { x: number; w: number; h: number; depth: number; }
 const CITY_BUILDINGS: Building[] = (() => {
-  // Precomputed seeded pseudo-random layout
-  const seed = (n: number) => Math.abs(Math.sin(n * 127.1 + 311.7) * 43758.5453) % 1;
   const buildings: Building[] = [];
   for (let i = 0; i < 28; i++) {
     buildings.push({
@@ -40,9 +43,26 @@ const CITY_BUILDINGS: Building[] = (() => {
   return buildings;
 })();
 
+// ── Second parallax layer (distant, dimmer) ──────────────────────────────────
+const CITY_BUILDINGS_FAR: Building[] = (() => {
+  const buildings: Building[] = [];
+  for (let i = 0; i < 20; i++) {
+    buildings.push({
+      x: seed(i * 5 + 100) * CANVAS_WIDTH,
+      w: 15 + seed(i * 5 + 101) * 25,
+      h: 20 + seed(i * 5 + 102) * 40,
+      depth: 0.05 + seed(i + 100) * 0.1,
+    });
+  }
+  return buildings;
+})();
+
+// ── Billboard ad texts ───────────────────────────────────────────────────────
+const AD_TEXTS = ['零号区', 'VOID™', '夜市', 'ネオン', 'RUN.', '虚空', 'BREACH', '堕落', '███', 'NEON'];
+
 // ── Void dust particle system (atmospheric bg) ───────────────────────────────
 interface VoidDust { x: number; y: number; vy: number; alpha: number; size: number; }
-const VOID_DUST: VoidDust[] = Array.from({ length: 60 }, (_, i) => ({
+const VOID_DUST: VoidDust[] = Array.from({ length: 30 }, (_, i) => ({
   x: (Math.abs(Math.sin(i * 47.1)) % 1) * CANVAS_WIDTH,
   y: (Math.abs(Math.sin(i * 91.7)) % 1) * CANVAS_HEIGHT,
   vy: 0.15 + (Math.abs(Math.sin(i * 3.7)) % 1) * 0.25,
@@ -64,8 +84,8 @@ export class VoidBreakerRenderer {
 
   getAimPoint(canvasX: number, canvasY: number, game: VoidBreakerEngine): { x: number; y: number } {
     const p = game.player;
-    const viewW = ARENA_W * 0.6;
-    const viewH = ARENA_H * 0.6;
+    const viewW = ARENA_W * 0.4;
+    const viewH = ARENA_H * 0.4;
     const scale = Math.min(CANVAS_WIDTH / viewW, CANVAS_HEIGHT / viewH);
     const camX = p.x - viewW / 2;
     const camY = p.y - viewH / 2;
@@ -80,8 +100,8 @@ export class VoidBreakerRenderer {
   draw(game: VoidBreakerEngine, dt: number): void {
     this.time += dt;
     const p = game.player;
-    const viewW = ARENA_W * 0.6;
-    const viewH = ARENA_H * 0.6;
+    const viewW = ARENA_W * 0.4;
+    const viewH = ARENA_H * 0.4;
     const scale = Math.min(CANVAS_WIDTH / viewW, CANVAS_HEIGHT / viewH);
     const camX = p.x - viewW / 2 + game.shakeX * 4;
     const camY = p.y - viewH / 2 + game.shakeY * 4;
@@ -146,12 +166,9 @@ export class VoidBreakerRenderer {
 
     // ── 7. Arena border — map-themed ────────────────────────────────────────
     const borderColor = game.currentMapConfig.borderColor;
-    ctx.shadowColor = borderColor;
-    ctx.shadowBlur = 10;
     ctx.strokeStyle = borderColor + '88';
     ctx.lineWidth = 1.5;
     ctx.strokeRect(tl.x, tl.y, br.x - tl.x, br.y - tl.y);
-    ctx.shadowBlur = 0;
 
     // ── Map transition door (right edge, wave == transitionWave) ────────────
     if (game.currentMapConfig.transitionWave === game.wave && game.state === 'playing') {
@@ -160,8 +177,6 @@ export class VoidBreakerRenderer {
       const dpos = toScreen(doorX, doorY);
       const pulse = 0.6 + Math.sin(t * 4) * 0.4;
       ctx.fillStyle = `rgba(0, 245, 255, ${0.15 * pulse})`;
-      ctx.shadowColor = NEON_CYAN;
-      ctx.shadowBlur = 20 * pulse;
       const dw = 24 * scale, dh = 56 * scale;
       ctx.fillRect(dpos.x - dw / 2, dpos.y - dh / 2, dw, dh);
       ctx.strokeStyle = NEON_CYAN;
@@ -170,10 +185,8 @@ export class VoidBreakerRenderer {
       ctx.font = `bold ${Math.ceil(8 * scale)}px monospace`;
       ctx.fillStyle = NEON_CYAN;
       ctx.textAlign = 'center';
-      ctx.shadowBlur = 0;
       ctx.fillText('ADVANCE', dpos.x, dpos.y - dh / 2 - 6);
       ctx.textAlign = 'left';
-      ctx.shadowBlur = 0;
     }
 
     // ── 8. Central rift ────────────────────────────────────────────────────
@@ -189,35 +202,64 @@ export class VoidBreakerRenderer {
     ctx.fill();
     ctx.strokeStyle = NEON_CYAN + '44';
     ctx.lineWidth = 1;
-    ctx.shadowColor = NEON_CYAN;
-    ctx.shadowBlur = 8;
     ctx.stroke();
-    ctx.shadowBlur = 0;
 
-    // ── 8. Obstacles ─────────────────────────────────────────────────────────
+    // ── 8. Obstacles ─────────────────────────────────────────────────────────────────
     for (const o of game.obstacles) {
       if (!o.active) continue;
       const otl = toScreen(o.x, o.y);
       const orw = (o.w) * scale, orh = (o.h) * scale;
       switch (o.type) {
-        case 'building': case 'barrier':
+        case 'building': case 'barrier': {
+          // Shadow offset for depth
+          ctx.fillStyle = 'rgba(0,0,0,0.3)';
+          ctx.fillRect(otl.x + 3, otl.y + 3, orw, orh);
+          // Building fill (flat, no per-frame gradient)
           ctx.fillStyle = '#111118';
           ctx.fillRect(otl.x, otl.y, orw, orh);
+          // Procedural window lights (seeded by obstacle ID)
+          const wCols = Math.floor(orw / 8);
+          const wRows = Math.floor(orh / 10);
+          for (let wr = 0; wr < wRows; wr++) {
+            for (let wc = 0; wc < wCols; wc++) {
+              const wSeed = seed(o.id * 100 + wr * 20 + wc);
+              if (wSeed > 0.5) {
+                const colors = ['rgba(0,245,255,0.4)', 'rgba(255,200,80,0.35)', 'rgba(255,0,204,0.25)'];
+                ctx.fillStyle = colors[Math.floor(wSeed * 3)];
+                ctx.fillRect(otl.x + wc * 8 + 2, otl.y + wr * 10 + 3, 3, 4);
+              }
+            }
+          }
+          // Border
           ctx.strokeStyle = game.currentMapConfig.borderColor + '55';
           ctx.lineWidth = 1;
           ctx.strokeRect(otl.x, otl.y, orw, orh);
+          // Neon rooftop strip
+          ctx.fillStyle = game.currentMapConfig.borderColor + '44';
+          ctx.fillRect(otl.x, otl.y, orw, 2);
           break;
-        case 'debris':
+        }
+        case 'debris': {
           ctx.fillStyle = '#1a1420';
           ctx.fillRect(otl.x, otl.y, orw, orh);
+          // Faint embedded circuit lines
+          ctx.strokeStyle = 'rgba(0,245,255,0.1)';
+          ctx.lineWidth = 0.5;
+          for (let dl = 0; dl < 3; dl++) {
+            const dx = otl.x + seed(o.id * 30 + dl) * orw;
+            const dy = otl.y + seed(o.id * 30 + dl + 10) * orh;
+            ctx.beginPath(); ctx.moveTo(dx, dy); ctx.lineTo(dx + orw * 0.4, dy + orh * 0.3); ctx.stroke();
+          }
           break;
+        }
         case 'tree': {
           const hp_frac = o.hp / o.maxHp;
-          ctx.fillStyle = '#0a1f0a';
-          ctx.shadowColor = `rgba(0, 200, 60, ${hp_frac * 0.5})`;
-          ctx.shadowBlur = 6;
+          ctx.fillStyle = `rgba(10, 31, 10, ${0.5 + hp_frac * 0.5})`;
           ctx.fillRect(otl.x, otl.y, orw, orh);
-          ctx.shadowBlur = 0;
+          // Green border glow substitute
+          ctx.strokeStyle = `rgba(0, 200, 60, ${hp_frac * 0.4})`;
+          ctx.lineWidth = 1;
+          ctx.strokeRect(otl.x, otl.y, orw, orh);
           break;
         }
         case 'terminal': {
@@ -227,30 +269,47 @@ export class VoidBreakerRenderer {
           ctx.fillRect(otl.x, otl.y, orw, orh);
           ctx.strokeStyle = glow;
           ctx.lineWidth = 1.5;
-          ctx.shadowColor = glow;
-          ctx.shadowBlur = 12 * pulse;
           ctx.strokeRect(otl.x, otl.y, orw, orh);
-          // Flicker holographic indicator
           ctx.fillStyle = glow + Math.floor(pulse * 100).toString(16).padStart(2, '0');
           const cx = otl.x + orw / 2, cy = otl.y + orh / 2;
           ctx.font = `${Math.ceil(7 * scale)}px monospace`;
           ctx.textAlign = 'center';
           ctx.fillText('LOG', cx, cy + 3);
           ctx.textAlign = 'left';
-          ctx.shadowBlur = 0;
           break;
         }
         case 'hazard': {
           const hglow = o.glowColor ?? '#ff00cc';
           const hpulse = 0.5 + Math.sin(t * 2.5 + o.id * 0.7) * 0.5;
           ctx.fillStyle = hglow + '22';
-          ctx.shadowColor = hglow;
-          ctx.shadowBlur = 20 * hpulse;
           ctx.fillRect(otl.x, otl.y, orw, orh);
-          ctx.strokeStyle = hglow + '88';
+          ctx.strokeStyle = hglow + Math.floor(hpulse * 136 + 50).toString(16).padStart(2, '0');
           ctx.lineWidth = 2;
           ctx.strokeRect(otl.x, otl.y, orw, orh);
-          ctx.shadowBlur = 0;
+          break;
+        }
+        case 'billboard': {
+          const bGlow = o.glowColor ?? NEON_CYAN;
+          const bPulse = 0.7 + Math.sin(t * 2 + o.id * 1.3) * 0.3;
+          // Panel background
+          ctx.fillStyle = '#0a0a18';
+          ctx.fillRect(otl.x, otl.y, orw, orh);
+          // Glowing border (no shadowBlur)
+          ctx.strokeStyle = bGlow;
+          ctx.lineWidth = 1.5;
+          ctx.strokeRect(otl.x, otl.y, orw, orh);
+          // Neon text ad
+          const adIndex = o.id % AD_TEXTS.length;
+          ctx.font = `bold ${Math.ceil(Math.min(orh * 0.55, 10 * scale))}px monospace`;
+          ctx.fillStyle = bGlow + Math.floor(bPulse * 200 + 55).toString(16).padStart(2, '0');
+          ctx.textAlign = 'center';
+          ctx.fillText(AD_TEXTS[adIndex], otl.x + orw / 2, otl.y + orh * 0.72);
+          ctx.textAlign = 'left';
+          // Occasional flicker
+          if (Math.sin(t * 7 + o.id * 3.7) > 0.92) {
+            ctx.fillStyle = bGlow + '22';
+            ctx.fillRect(otl.x, otl.y, orw, orh);
+          }
           break;
         }
       }
@@ -263,15 +322,12 @@ export class VoidBreakerRenderer {
       const sz = (s.collected ? 3 : 5) * scale;
       const pulse = s.collected ? 1 : 0.7 + Math.sin(t * 4 + s.orbitAngle) * 0.3;
       ctx.fillStyle = s.collected ? NEON_GOLD : NEON_CYAN;
-      ctx.shadowColor = s.collected ? NEON_GOLD : NEON_CYAN;
-      ctx.shadowBlur = 10 * pulse;
       ctx.beginPath();
       ctx.moveTo(pos.x + sz, pos.y);
       ctx.lineTo(pos.x - sz * 0.5, pos.y + sz * 0.87);
       ctx.lineTo(pos.x - sz * 0.5, pos.y - sz * 0.87);
       ctx.closePath();
       ctx.fill();
-      ctx.shadowBlur = 0;
     }
 
     // ── 10. Enemies ─────────────────────────────────────────────────────────
@@ -286,16 +342,13 @@ export class VoidBreakerRenderer {
 
       // Boss telegraph ring (phase 3 slam warning)
       if (e.isBoss && e.telegraphTimer > 0) {
-        const telegraphRadius = 120 * scale; // visual warning radius
+        const telegraphRadius = 120 * scale;
         const telegraphAlpha = Math.min(1, e.telegraphTimer * 2);
         ctx.strokeStyle = `rgba(255, 0, 80, ${telegraphAlpha})`;
         ctx.lineWidth = 3;
-        ctx.shadowColor = '#ff0055';
-        ctx.shadowBlur = 16;
         ctx.beginPath();
         ctx.arc(pos.x, pos.y, telegraphRadius, 0, Math.PI * 2);
         ctx.stroke();
-        ctx.shadowBlur = 0;
       }
 
       // Boss phase ring indicator
@@ -308,24 +361,40 @@ export class VoidBreakerRenderer {
         ctx.stroke();
       }
 
-      ctx.fillStyle = baseColor;
-      ctx.shadowColor = glowColor;
-      ctx.shadowBlur = e.isBoss ? 20 : (e.isElite ? 14 : 8);
-      ctx.beginPath();
-      ctx.arc(pos.x, pos.y, r, 0, Math.PI * 2);
-      ctx.fill();
+      // Attempt sprite rendering first
+      const spriteConfig = e.isBoss
+        ? BOSS_SPRITES[Math.floor(game.wave / BOSS_WAVE_INTERVAL)]
+        : ENEMY_SPRITES[e.type];
+
+      const spriteDrawn = spriteConfig ? drawSprite(ctx, spriteConfig, {
+        x: pos.x, y: pos.y,
+        radius: r,
+        angle: e.angle,
+        vx: e.vx, vy: e.vy,
+        hitFlashUntil: e.hitFlashUntil,
+        aimAngle: Math.atan2(game.player.y - e.y, game.player.x - e.x),
+      }, game.elapsedMs, 1) : false;
+
+      if (!spriteDrawn) {
+        // Fallback: original shape rendering
+        ctx.fillStyle = baseColor;
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
 
       // Boss crown effect
       if (e.isBoss) {
         ctx.strokeStyle = NEON_GOLD + 'aa';
         ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, r, 0, Math.PI * 2);
         ctx.stroke();
         // Phase text badge
         if (e.bossPhase > 1) {
           ctx.font = `bold ${Math.ceil(8 * scale)}px monospace`;
           ctx.fillStyle = e.bossPhase === 3 ? '#ff3355' : '#ff8844';
           ctx.textAlign = 'center';
-          ctx.shadowBlur = 0;
           ctx.fillText(`P${e.bossPhase}`, pos.x, pos.y - r - 4);
         }
       }
@@ -337,13 +406,10 @@ export class VoidBreakerRenderer {
         ctx.rotate(e.tentacleAngle);
         ctx.strokeStyle = 'rgba(255, 0, 80, 0.35)';
         ctx.lineWidth = 4 * scale;
-        ctx.shadowColor = '#ff0055';
-        ctx.shadowBlur = 10;
         ctx.beginPath();
         ctx.arc(0, 0, r + 20 * scale, -0.4, 0.4);
         ctx.stroke();
         ctx.restore();
-        ctx.shadowBlur = 0;
       }
 
       // HP bar for enemies with scaled HP (wave 3+)
@@ -358,7 +424,6 @@ export class VoidBreakerRenderer {
         ctx.fillRect(bx, by, barW * (e.hp / e.maxHp), barH);
       }
 
-      ctx.shadowBlur = 0;
       ctx.textAlign = 'left';
     }
 
@@ -367,19 +432,10 @@ export class VoidBreakerRenderer {
       if (!pr.active) continue;
       const pos = toScreen(pr.x, pr.y);
       const r = Math.max(2, pr.radius * scale);
-      if (pr.isPlayer) {
-        ctx.fillStyle = NEON_CYAN;
-        ctx.shadowColor = NEON_CYAN;
-        ctx.shadowBlur = 8;
-      } else {
-        ctx.fillStyle = NEON_MAGENTA;
-        ctx.shadowColor = NEON_MAGENTA;
-        ctx.shadowBlur = 6;
-      }
+      ctx.fillStyle = pr.isPlayer ? NEON_CYAN : NEON_MAGENTA;
       ctx.beginPath();
       ctx.arc(pos.x, pos.y, r, 0, Math.PI * 2);
       ctx.fill();
-      ctx.shadowBlur = 0;
     }
 
     // ── 12. Particles ────────────────────────────────────────────────────────
@@ -388,13 +444,10 @@ export class VoidBreakerRenderer {
       const pos = toScreen(pt.x, pt.y);
       const alpha = pt.life / pt.maxLife;
       ctx.fillStyle = pt.color + Math.floor(alpha * 255).toString(16).padStart(2, '0');
-      ctx.shadowColor = pt.color;
-      ctx.shadowBlur = 4;
       ctx.beginPath();
       ctx.arc(pos.x, pos.y, pt.size * scale, 0, Math.PI * 2);
       ctx.fill();
     }
-    ctx.shadowBlur = 0;
 
     // ── 13. Player ───────────────────────────────────────────────────────────
     const playerPos = toScreen(p.x, p.y);
@@ -412,17 +465,23 @@ export class VoidBreakerRenderer {
         ctx.fill();
       }
 
-      // Dash trail glow
-      const playerColor = p.dashActive ? '#ffffff' : p.focusActive ? PLAYER_GLOW : NEON_GOLD;
-      const glowIntensity = p.dashActive ? 20 : p.focusActive ? 16 : 12;
+      // Attempt sprite rendering for player
+      const playerSpriteDrawn = drawSprite(ctx, PLAYER_SPRITE, {
+        x: playerPos.x, y: playerPos.y,
+        radius: pr,
+        angle: p.aimAngle,
+        aimAngle: p.aimAngle,
+        hitFlashUntil: p.hitFlashUntil,
+      }, game.elapsedMs, 1);
 
-      ctx.fillStyle = playerColor;
-      ctx.shadowColor = playerColor;
-      ctx.shadowBlur = glowIntensity;
-      ctx.beginPath();
-      ctx.arc(playerPos.x, playerPos.y, pr, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.shadowBlur = 0;
+      if (!playerSpriteDrawn) {
+        // Fallback: original shape rendering
+        const playerColor = p.dashActive ? '#ffffff' : p.focusActive ? PLAYER_GLOW : NEON_GOLD;
+        ctx.fillStyle = playerColor;
+        ctx.beginPath();
+        ctx.arc(playerPos.x, playerPos.y, pr, 0, Math.PI * 2);
+        ctx.fill();
+      }
 
       // Wings
       const wingScale = Math.min(p.shards / MAX_SHARDS, 1);
@@ -430,15 +489,48 @@ export class VoidBreakerRenderer {
         const wingPulse = wingScale * (0.8 + Math.sin(t * 4) * 0.2);
         ctx.strokeStyle = NEON_CYAN + Math.floor(wingPulse * 180).toString(16).padStart(2, '0');
         ctx.lineWidth = 1.5;
-        ctx.shadowColor = NEON_CYAN;
-        ctx.shadowBlur = 8 * wingScale;
         ctx.beginPath();
         ctx.moveTo(playerPos.x - pr * 0.5, playerPos.y);
         ctx.lineTo(playerPos.x - pr * 1.4, playerPos.y - pr * wingScale * 1.2);
         ctx.moveTo(playerPos.x - pr * 0.5, playerPos.y);
         ctx.lineTo(playerPos.x - pr * 1.4, playerPos.y + pr * wingScale * 1.2);
         ctx.stroke();
-        ctx.shadowBlur = 0;
+      }
+    }
+
+    // ── Player HP Bar (always visible, drawn after player) ───────────────────
+    if (game.state === 'playing') {
+      const hpBarWidth = 40 * scale;
+      const hpBarHeight = 4 * scale;
+      const hpBarX = playerPos.x - hpBarWidth / 2;
+      const hpBarY = playerPos.y + pr + 6;
+      const hpFraction = p.hp / p.maxHp;
+      // Background
+      ctx.fillStyle = 'rgba(20, 20, 30, 0.7)';
+      ctx.fillRect(hpBarX, hpBarY, hpBarWidth, hpBarHeight);
+      // HP fill — color by level
+      let hpBarColor: string;
+      if (hpFraction > 0.6) hpBarColor = '#00ff88';
+      else if (hpFraction > 0.3) hpBarColor = '#ffaa00';
+      else hpBarColor = '#ff2244';
+      ctx.fillStyle = hpBarColor;
+      ctx.fillRect(hpBarX, hpBarY, hpBarWidth * hpFraction, hpBarHeight);
+      // Border
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+      ctx.lineWidth = 0.5;
+      ctx.strokeRect(hpBarX, hpBarY, hpBarWidth, hpBarHeight);
+      // Numeric readout
+      ctx.font = `bold ${Math.ceil(7 * scale)}px monospace`;
+      ctx.fillStyle = hpBarColor;
+      ctx.textAlign = 'center';
+      ctx.fillText(`${p.hp}/${p.maxHp}`, playerPos.x, hpBarY + hpBarHeight + 9);
+      ctx.textAlign = 'left';
+      // Hit flash pulse
+      const recentlyHit = game.elapsedMs < p.hitFlashUntil + 200;
+      if (recentlyHit) {
+        const flashAlpha = 0.3 + Math.sin(game.elapsedMs * 0.02) * 0.3;
+        ctx.fillStyle = `rgba(255, 0, 50, ${flashAlpha})`;
+        ctx.fillRect(hpBarX - 2, hpBarY - 1, hpBarWidth + 4, hpBarHeight + 2);
       }
     }
 
@@ -452,19 +544,10 @@ export class VoidBreakerRenderer {
         ? 0.4 + Math.sin(t * 6) * 0.4
         : 0.8 + Math.sin(ally.phase * 4) * 0.2;
 
-      if (isDowned) {
-        ctx.fillStyle = `rgba(100, 100, 100, ${allyPulse})`;
-        ctx.shadowColor = '#888888';
-        ctx.shadowBlur = 8;
-      } else {
-        ctx.fillStyle = '#00ff88';
-        ctx.shadowColor = '#00ff88';
-        ctx.shadowBlur = 12 * allyPulse;
-      }
+      ctx.fillStyle = isDowned ? `rgba(100, 100, 100, ${allyPulse})` : '#00ff88';
       ctx.beginPath();
       ctx.arc(apos.x, apos.y, ar, 0, Math.PI * 2);
       ctx.fill();
-      ctx.shadowBlur = 0;
 
       // HP bar
       if (!isDowned) {
@@ -485,66 +568,130 @@ export class VoidBreakerRenderer {
       ctx.textAlign = 'left';
     }
 
-    // ── 15. Popups ───────────────────────────────────────────────────────────
+    // ── 15. Heart Pickups ─────────────────────────────────────────────────────
+    for (const h of game.heartPickups) {
+      if (!h.active) continue;
+      const hpos = toScreen(h.x, h.y);
+      const fadeAlpha = Math.min(1, h.lifetime / 3);
+      ctx.globalAlpha = fadeAlpha;
+      const drawn = drawPickupSprite(ctx, HEART_PICKUP_SPRITE, hpos.x, hpos.y, t, scale);
+      if (!drawn) {
+        // Fallback: draw a simple magenta diamond
+        const bob = Math.sin(t * 3) * 3;
+        ctx.fillStyle = '#ff00cc';
+        ctx.save();
+        ctx.translate(hpos.x, hpos.y + bob);
+        ctx.rotate(Math.PI / 4);
+        ctx.fillRect(-5 * scale, -5 * scale, 10 * scale, 10 * scale);
+        ctx.restore();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    // ── 16. Popups ────────────────────────────────────────────────────────────
 
     for (const pop of game.popups) {
       const pos = toScreen(pop.x, pop.y);
       const alpha = pop.life / pop.maxLife;
       ctx.font = 'bold 14px monospace';
       ctx.fillStyle = pop.color + Math.floor(alpha * 255).toString(16).padStart(2, '0');
-      ctx.shadowColor = pop.color;
-      ctx.shadowBlur = 8;
       ctx.textAlign = 'center';
       ctx.fillText(pop.text, pos.x, pos.y);
     }
     ctx.textAlign = 'left';
-    ctx.shadowBlur = 0;
 
-    // ── 15. Scanline overlay ─────────────────────────────────────────────────
+    // ── 17. Scanline overlay ─────────────────────────────────────────────────
     this.drawScanlines(ctx);
 
-    // ── 16. Vignette ─────────────────────────────────────────────────────────
+    // ── 18. Vignette ─────────────────────────────────────────────────────────
     this.drawVignette(ctx);
   }
 
   /** Parallax city silhouettes — two depth layers, scroll with arenaPhase. */
   private drawCitySilhouettes(ctx: CanvasRenderingContext2D, phase: number): void {
-    for (const b of CITY_BUILDINGS) {
+    // Far layer (dimmer, slower)
+    for (const b of CITY_BUILDINGS_FAR) {
+      const scrollX = (phase * 4 * b.depth) % (CANVAS_WIDTH + b.w) - b.w;
+      const x = (b.x + scrollX) % (CANVAS_WIDTH + b.w);
+      ctx.fillStyle = `rgba(6, 6, 16, ${0.5 + b.depth * 0.3})`;
+      ctx.fillRect(x, CANVAS_HEIGHT - b.h, b.w, b.h);
+    }
+    // Near layer
+    for (let i = 0; i < CITY_BUILDINGS.length; i++) {
+      const b = CITY_BUILDINGS[i];
       const scrollX = (phase * 12 * b.depth) % (CANVAS_WIDTH + b.w) - b.w;
       const x = (b.x + scrollX) % (CANVAS_WIDTH + b.w);
-      // Dim silhouette
+      // Building silhouette with stepped profile for some
       ctx.fillStyle = `rgba(10, 10, 22, ${0.6 + b.depth * 0.4})`;
-      ctx.fillRect(x, CANVAS_HEIGHT - b.h, b.w, b.h);
-      // Tiny window lights
-      if (Math.random() < 0.003) {
-        ctx.fillStyle = Math.random() < 0.5 ? 'rgba(0, 255, 200, 0.5)' : 'rgba(255, 100, 200, 0.4)';
-        ctx.fillRect(
-          x + Math.random() * b.w * 0.8,
-          CANVAS_HEIGHT - b.h + Math.random() * b.h * 0.7,
-          2, 3
-        );
+      if (i % 4 === 0) {
+        // Stepped building
+        ctx.fillRect(x, CANVAS_HEIGHT - b.h, b.w * 0.6, b.h);
+        ctx.fillRect(x + b.w * 0.3, CANVAS_HEIGHT - b.h * 0.7, b.w * 0.7, b.h * 0.7);
+      } else {
+        ctx.fillRect(x, CANVAS_HEIGHT - b.h, b.w, b.h);
       }
+      // Antenna spike on every 3rd building
+      if (i % 3 === 0) {
+        ctx.fillStyle = 'rgba(20, 20, 40, 0.8)';
+        ctx.fillRect(x + b.w * 0.4, CANVAS_HEIGHT - b.h - 12, 2, 12);
+      }
+      // Window lights (seeded, deterministic)
+      for (let wl = 0; wl < 5; wl++) {
+        const ws = seed(i * 50 + wl);
+        if (ws > 0.4) {
+          const wColor = ws > 0.7 ? 'rgba(0, 255, 200, 0.5)' : 'rgba(255, 100, 200, 0.4)';
+          ctx.fillStyle = wColor;
+          ctx.fillRect(
+            x + ws * b.w * 0.8,
+            CANVAS_HEIGHT - b.h + seed(i * 50 + wl + 20) * b.h * 0.7,
+            2, 3
+          );
+        }
+      }
+      // Neon sign patch on every 5th building
+      if (i % 5 === 0) {
+        const signColor = i % 2 === 0 ? 'rgba(0, 245, 255, 0.3)' : 'rgba(255, 0, 204, 0.25)';
+        ctx.fillStyle = signColor;
+        ctx.fillRect(x + 2, CANVAS_HEIGHT - b.h + 4, Math.min(b.w - 4, 18), 5);
+      }
+    }
+    // Rain streaks
+    ctx.strokeStyle = 'rgba(100, 200, 255, 0.04)';
+    ctx.lineWidth = 0.5;
+    const t = this.time;
+    for (let i = 0; i < 40; i++) {
+      const rx = (seed(i * 17 + 200) * CANVAS_WIDTH + t * 60) % CANVAS_WIDTH;
+      const ry = (seed(i * 23 + 200) * CANVAS_HEIGHT + t * 120) % CANVAS_HEIGHT;
+      ctx.beginPath();
+      ctx.moveTo(rx, ry);
+      ctx.lineTo(rx - 3, ry + 15);
+      ctx.stroke();
     }
   }
 
   /** Update and draw atmospheric void dust particles. */
   private updateAndDrawVoidDust(ctx: CanvasRenderingContext2D, dt: number): void {
-    for (const d of VOID_DUST) {
+    for (let i = 0; i < VOID_DUST.length; i++) {
+      const d = VOID_DUST[i];
       d.y += d.vy * dt * 60;
       if (d.y > CANVAS_HEIGHT) d.y = 0;
-      ctx.fillStyle = `rgba(0, 200, 255, ${d.alpha * 0.5})`;
+      // Color variety: cyan, magenta, white
+      let dustColor: string;
+      if (i % 5 === 0) dustColor = `rgba(255, 0, 204, ${d.alpha * 0.4})`;
+      else if (i % 7 === 0) dustColor = `rgba(255, 255, 255, ${d.alpha * 0.3})`;
+      else dustColor = `rgba(0, 200, 255, ${d.alpha * 0.5})`;
+      ctx.fillStyle = dustColor;
+      // Brief flare for every 11th particle
+      const sz = (i % 11 === 0 && Math.sin(this.time * 3 + i) > 0.8) ? d.size * 2 : d.size;
       ctx.beginPath();
-      ctx.arc(d.x, d.y, d.size, 0, Math.PI * 2);
+      ctx.arc(d.x, d.y, sz, 0, Math.PI * 2);
       ctx.fill();
     }
   }
 
-  /** Subtle CRT scanline overlay. */
-  private drawScanlines(ctx: CanvasRenderingContext2D): void {
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.04)';
-    for (let y = 0; y < CANVAS_HEIGHT; y += 4) {
-      ctx.fillRect(0, y, CANVAS_WIDTH, 2);
-    }
+  /** Subtle CRT scanline overlay — DISABLED for performance. */
+  private drawScanlines(_ctx: CanvasRenderingContext2D): void {
+    // Disabled: drawing 135+ rects per frame tanks FPS
   }
 
   /** Radial vignette to darken corners. */

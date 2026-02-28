@@ -1,5 +1,5 @@
-export const CANVAS_WIDTH = 960;
-export const CANVAS_HEIGHT = 540;
+export const CANVAS_WIDTH = 1280;
+export const CANVAS_HEIGHT = 720;
 
 /** Maximum wave — game ends on clearing wave 40 */
 export const MAX_WAVE = 40;
@@ -90,6 +90,20 @@ export const ALLY_PROJ_DAMAGE = 1;
 /** Player must reach this X coordinate (fraction of ARENA_W) to trigger map advance */
 export const MAP_DOOR_X_FRAC = 0.92;     // 92% of arena width
 export const MAP_TRANSITION_DURATION = 1.8; // seconds for fade
+
+// ── Heart Drops ──────────────────────────────────────────────────────────────
+/** Chance an enemy drops a heart on death (8%) */
+export const DROP_HEART_CHANCE = 0.08;
+/** How long a heart pickup persists before despawning (seconds) */
+export const HEART_PICKUP_LIFETIME = 12;
+/** HP restored when picking up a heart */
+export const HEART_HEAL_AMOUNT = 1;
+/** Max number of heart pickups in pool */
+export const MAX_HEART_PICKUPS = 10;
+/** Magnet radius — heart starts pulling toward player */
+export const HEART_MAGNET_RANGE = 60;
+/** Speed at which heart is pulled toward player */
+export const HEART_PULL_SPEED = 200;
 
 export interface EnemyConfig {
   hp: number;

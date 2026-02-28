@@ -1,37 +1,39 @@
 /**
  * saveSystem.ts
  * Client-side save/load for Void Breaker using localStorage.
- * Persists: stage, player stats, shards, abilities, story flags.
+ * V2: Stores full game state blob from engine serialization.
  */
 
-const SAVE_KEY = 'voidbreaker-save-v1';
+const SAVE_KEY = 'voidbreaker-save-v2';
 
 export interface VoidBreakerSave {
     version: number;
     savedAt: number;          // timestamp (ms)
     wave: number;
     score: number;
-    playerHp: number;
-    playerMaxHp: number;
-    shards: number;
-    abilitiesUnlocked: string[];
-    storyFlags: Record<string, boolean>;
-    bossesKilled: number;
-    enemiesKilled: number;
-    focusUsed: number;
-    detonations: number;
+    /** Full serialized game state blob */
+    stateJson: Record<string, unknown>;
 }
 
-const CURRENT_VERSION = 1;
+const CURRENT_VERSION = 2;
 
-export function saveGame(data: Omit<VoidBreakerSave, 'version' | 'savedAt'>): void {
+export function saveGame(stateBlob: Record<string, unknown>): void {
     try {
+        const run = stateBlob.run as { wave: number } | undefined;
         const save: VoidBreakerSave = {
-            ...data,
             version: CURRENT_VERSION,
             savedAt: Date.now(),
+            wave: run?.wave ?? 0,
+            score: (stateBlob.score as number) ?? 0,
+            stateJson: stateBlob,
         };
-        localStorage.setItem(SAVE_KEY, JSON.stringify(save));
+        const json = JSON.stringify(save);
+        // Reject payloads > 200KB
+        if (json.length > 200_000) {
+            console.warn('[VoidBreaker] Save payload too large, rejected.');
+            return;
+        }
+        localStorage.setItem(SAVE_KEY, json);
     } catch (e) {
         console.warn('[VoidBreaker] Failed to save:', e);
     }
@@ -73,11 +75,13 @@ export function hasSave(): boolean {
 export function deleteSave(): void {
     try {
         localStorage.removeItem(SAVE_KEY);
+        // Also clean up v1 saves
+        localStorage.removeItem('voidbreaker-save-v1');
     } catch { /* ignore */ }
 }
 
-export function getSaveInfo(): { wave: number; savedAt: Date } | null {
+export function getSaveInfo(): { wave: number; savedAt: Date; score: number } | null {
     const save = loadGame();
     if (!save) return null;
-    return { wave: save.wave, savedAt: new Date(save.savedAt) };
+    return { wave: save.wave, savedAt: new Date(save.savedAt), score: save.score };
 }

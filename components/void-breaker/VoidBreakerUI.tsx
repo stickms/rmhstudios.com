@@ -12,7 +12,7 @@ type LBEntry = { username: string; highScore: number };
 
 export function VoidBreakerUI({
   uiState, runStats, onStartGame, onGoToMenu, muted, onToggleMute,
-  musicVolume, onMusicVolumeChange, saveInfo, onClearSave,
+  musicVolume, onMusicVolumeChange, saveInfo, onClearSave, onContinueGame,
 }: {
   uiState: 'menu' | 'playing' | 'gameOver';
   runStats: RunStats | null;
@@ -22,8 +22,9 @@ export function VoidBreakerUI({
   onToggleMute: () => void;
   musicVolume: number;
   onMusicVolumeChange: (v: number) => void;
-  saveInfo: { wave: number; savedAt: Date } | null;
+  saveInfo: { wave: number; savedAt: Date; score?: number } | null;
   onClearSave: () => void;
+  onContinueGame?: () => void;
 }) {
   const [lb, setLb] = useState<LBEntry[]>([]);
   const [submitted, setSubmitted] = useState(false);
@@ -257,6 +258,11 @@ export function VoidBreakerUI({
                 <div className="flex justify-between items-center">
                   <div>
                     <span className="text-zinc-300 text-sm">Wave {saveInfo.wave}</span>
+                    {saveInfo.score !== undefined && (
+                      <span className="text-[#d4af37] text-[10px] ml-2 font-mono">
+                        {saveInfo.score.toLocaleString()} pts
+                      </span>
+                    )}
                     <span className="text-zinc-600 text-[10px] ml-2 font-mono">
                       {saveInfo.savedAt.toLocaleDateString()}
                     </span>
@@ -268,6 +274,15 @@ export function VoidBreakerUI({
                     ✕ Clear
                   </button>
                 </div>
+                {onContinueGame && (
+                  <Button
+                    onClick={onContinueGame}
+                    className="w-full mt-2 py-2 bg-[#00f5ff]/10 hover:bg-[#00f5ff]/20 text-[#00f5ff] font-bold border border-[#00f5ff]/40 font-mono tracking-wider text-sm"
+                    style={{ boxShadow: '0 0 15px rgba(0,245,255,0.1)' }}
+                  >
+                    ▶ CONTINUE FROM WAVE {saveInfo.wave}
+                  </Button>
+                )}
               </div>
             )}
 

@@ -26,6 +26,8 @@ export interface Player {
   focusCooldown: number;
   focusActive: boolean;
   focusTimer: number;
+  /** Timestamp — draw hit flash until this time */
+  hitFlashUntil: number;
 }
 
 export interface Enemy {
@@ -67,6 +69,19 @@ export interface Enemy {
   bossSpecialActive: boolean;
   /** Angle used by laser/sweep specials */
   bossSpecialAngle: number;
+  /** Timestamp — draw hit flash until this time */
+  hitFlashUntil: number;
+}
+
+/** Heart pickup dropped by enemies — heals player by 1 HP */
+export interface HeartPickup {
+  active: boolean;
+  x: number;
+  y: number;
+  /** Time remaining before despawn (seconds) */
+  lifetime: number;
+  /** Max lifetime for rendering alpha fade */
+  maxLifetime: number;
 }
 
 export interface Projectile {
@@ -194,6 +209,11 @@ export interface HUDState {
   reflectShieldActive: boolean;
   allySynergyReady: boolean;
   allySynergyActive: boolean;
+  /** Cooldown fractions for new abilities (0.0 = ready, 1.0 = full cooldown) */
+  voidPulseCooldownFraction: number;
+  phaseShiftCooldownFraction: number;
+  reflectShieldCooldownFraction: number;
+  allySynergyCooldownFraction: number;
   /** Unlock toast — null when no pending unlock */
   pendingUnlock: { name: string; description: string; keybind: string } | null;
 }
