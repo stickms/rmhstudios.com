@@ -101,6 +101,7 @@ export default function CategoryCrashHistoryDetail({
             // New format: crash with targetUserId and category
             const targetUserId = crash.payload.targetUserId as string;
             const category = (crash.payload.category as string) ?? categories[crash.payload.categoryIndex as number] ?? '';
+            crashedSet.add(`${targetUserId}:${category}`);
             crashDetails.push({
               category,
               crashedAnswer: (crash.payload.crashedAnswer as string) ?? '',
@@ -163,9 +164,7 @@ export default function CategoryCrashHistoryDetail({
                                   ? 'line-through text-(--rmhbox-danger)'
                                   : isSafe
                                     ? 'text-(--rmhbox-success)'
-                                    : answer !== '—'
-                                      ? 'text-(--rmhbox-text-muted)'
-                                      : 'text-(--rmhbox-text-muted)'
+                                    : 'text-(--rmhbox-text-muted)'
                               }`}
                             >
                               {answer}
