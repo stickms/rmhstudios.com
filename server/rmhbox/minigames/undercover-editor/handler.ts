@@ -1,21 +1,23 @@
 /**
- * RMHbox — Undercover Editor Minigame Server Handler (Parallel Design)
+ * RMHbox — Undercover Editor Minigame Server Handler
  *
- * All players write sentences for ALL stories simultaneously each round.
- * Each player is secretly assigned as the "undercover editor" of exactly
- * one other player's story. After writing rounds, editors secretly edit
- * their assigned story. Players then review all completed stories and
- * try to match each story with its undercover editor.
+ * N players → N stories, 2N total steps (alternating WRITE and EDIT).
+ *
+ * Round-robin writing: each write round, every player writes ONE sentence
+ * for ONE story (assigned by rotation). After N write rounds, every player
+ * has contributed one sentence to every story.
+ *
+ * Editing: after each write round, ALL editors simultaneously change
+ * exactly 2 words in the most recent sentence of their assigned story.
  *
  * Phases:
- *   WRITE → EDIT → (repeat for N rounds) → REVIEW → REVEAL
+ *   SETUP → (WRITE → EDIT) × N → READING → REVIEW → REVEAL → END
  *
- * Key differences from the old sequential design:
- *   - N stories in parallel (one per player)
- *   - All players write on every round
- *   - Players can unsubmit/re-edit within the write timer
- *   - REVIEW is infinite-time (host or all-locked-in advances)
- *   - Players match stories to editors (not a single vote)
+ * READING: infinite-time, host-driven phase where sentences are revealed
+ * one at a time per story.
+ *
+ * REVIEW: infinite-time. Players match stories to their undercover editors
+ * (1-to-1 bijection, excluding stories they edited).
  *
  * Join-in-progress policy: spectate_only
  *
@@ -25,36 +27,29 @@
 import { BaseMinigame } from '../base-minigame';
 import type { MinigameContext, MinigameResults } from '../base-minigame';
 import type { PlayerRanking, Award } from '@/lib/rmhbox/types';
-import {
-  loadPrompts,
-  loadKeywords,
-  selectPromptForGame,
-  selectKeywordForGame,
-} from '@/lib/rmhbox/undercover-editor/data-loader';
+import { loadPrompts, selectPromptForGame } from '@/lib/rmhbox/undercover-editor/data-loader';
 import {
   WriteSentenceSchema,
   UnsubmitSentenceSchema,
-  EditWordSchema,
+  EditTwoWordsSchema,
   SkipEditSchema,
   SubmitMatchingSchema,
   LockInMatchingSchema,
+  NextSentenceSchema,
+  NextStorySchema,
 } from '@/lib/rmhbox/undercover-editor/schemas';
-import type { StoryPrompt, Keyword } from '@/lib/rmhbox/undercover-editor/schemas';
+import type { StoryPrompt } from '@/lib/rmhbox/undercover-editor/schemas';
 import {
-  UE_ROTATIONS,
   UE_WRITE_TIMEOUT_SECONDS,
   UE_EDIT_TIMEOUT_SECONDS,
   UE_REVEAL_DURATION_SECONDS,
   UE_CORRECT_VOTE_BONUS,
-  UE_KEYWORD_PROXIMITY_BONUS,
-  UE_KEYWORD_FUZZY_THRESHOLD,
   UE_EDITOR_MAJOR_WIN,
   UE_EDITOR_LOSS,
   UE_WRITER_MAJOR_WIN,
   UE_WRITER_LOSS,
 } from '@/lib/rmhbox/constants';
 import { logger } from '../../logger';
-import Fuse from 'fuse.js';
 import type {
   UEPhase,
   StorySentence,
@@ -62,6 +57,7 @@ import type {
   UndercoverEditorState,
   StorySentenceView,
   EditableStory,
+  EditableSentence,
   EditableWord,
   StoryView,
   WordEditView,
@@ -71,7 +67,7 @@ import type {
   GameLogAction,
 } from './types';
 
-// ─── Helpers ─────────────────────────────────────────────────────
+// ─── Helpers ─────────────────────────────────────────────────────────
 
 /** Strip HTML tags from user input. */
 function sanitizeString(input: string): string {
@@ -87,68 +83,72 @@ function shuffleArray<T>(arr: T[]): T[] {
   return arr;
 }
 
-// ─── Undercover Editor Minigame (Parallel) ───────────────────────
+// ─── Undercover Editor Minigame ──────────────────────────────────────────
 
 export class UndercoverEditorGame extends BaseMinigame {
   private promptPool: StoryPrompt[];
-  private keywordPool: Keyword[];
   private usedPromptIndices: Set<number> = new Set();
-  private usedKeywordIndices: Set<number> = new Set();
   private state!: UndercoverEditorState;
   private startedAt: number = 0;
   private actionLog: GameLogAction[] = [];
+  /** Handle for the current phase-transition timeout; cancelled on early transitions. */
+  private phaseTransitionHandle: NodeJS.Timeout | null = null;
 
   constructor(context: MinigameContext) {
     super(context);
     this.promptPool = loadPrompts();
-    this.keywordPool = loadKeywords();
   }
 
   /**
    * Spectator mode: shared-privileged — all spectators see the same
-   * omniscient state (editor identity, keywords, edit history all visible).
+   * omniscient state (editor identity, edit history all visible).
    */
   get spectatorMode(): 'shared-privileged' {
     return 'shared-privileged';
   }
 
-  // ─── Lifecycle ───────────────────────────────────────────────
+  // ─── Phase Transition Scheduling ──────────────────────────────────────────
+
+  /**
+   * Schedule a phase transition callback, cancelling any pending one first.
+   * This prevents zombie timers from firing after early phase transitions.
+   */
+  private schedulePhaseTransition(callback: () => void, delayMs: number): void {
+    this.clearTrackedTimeout(this.phaseTransitionHandle);
+    this.phaseTransitionHandle = this.setTimeout(callback, delayMs);
+  }
+
+  // ─── Lifecycle ────────────────────────────────────────────────────────
 
   start(): void {
     this.isRunning = true;
     this.startedAt = Date.now();
 
-    const rotations = this.getSetting('rotations', UE_ROTATIONS);
     const playerIds = Array.from(this.context.players.keys());
     shuffleArray(playerIds);
+    const numPlayers = playerIds.length;
 
-    // Select one prompt and one keyword per story (one story per player)
+    // Select one prompt per story (one story per player)
     const stories = new Map<string, ParallelStory>();
     const editorAssignments = new Map<string, string>();
 
-    // Create a cyclic editor assignment: player i edits player (i+1 mod N)'s story
-    // This ensures each player edits exactly one story and no one edits their own
-    for (let i = 0; i < playerIds.length; i++) {
+    // Cyclic editor assignment: player i edits player (i+1 mod N)'s story
+    for (let i = 0; i < numPlayers; i++) {
       const ownerId = playerIds[i];
-      const editorId = playerIds[(i + 1) % playerIds.length];
+      const editorId = playerIds[(i + 1) % numPlayers];
       const ownerPlayer = this.context.players.get(ownerId);
 
       const prompt = selectPromptForGame(this.promptPool, this.usedPromptIndices);
       this.usedPromptIndices.add(prompt.poolIndex);
-      const keyword = selectKeywordForGame(this.keywordPool, this.usedKeywordIndices);
-      this.usedKeywordIndices.add(keyword.poolIndex);
 
       stories.set(ownerId, {
         storyId: ownerId,
         prompt: prompt.text,
         ownerUserId: ownerId,
         ownerName: ownerPlayer?.userName ?? 'Unknown',
-        keyword: keyword.word,
         editorUserId: editorId,
         sentences: [],
         edits: [],
-        editedWordPositions: new Set(),
-        keywordInStory: false,
       });
 
       editorAssignments.set(editorId, ownerId);
@@ -163,11 +163,14 @@ export class UndercoverEditorGame extends BaseMinigame {
     const now = Date.now();
     this.state = {
       playerIds,
-      totalRounds: rotations,
-      currentRound: 0,
+      numPlayers,
+      currentWriteRound: 0,
+      currentStep: 0,
+      totalSteps: 2 * numPlayers,
       phase: 'SETUP' as UEPhase,
       stories,
       editorAssignments,
+      writeAssignments: new Map(),
       roundSubmissions: new Map(),
       roundEditsDone: new Map(),
       matchGuesses: new Map(),
@@ -175,20 +178,21 @@ export class UndercoverEditorGame extends BaseMinigame {
       playerScores,
       phaseStartedAt: now,
       phaseEndsAt: now,
+      readingStoryIndex: 0,
+      readingSentenceIndex: 0,
     };
 
     logger.info({
       event: 'undercover_editor:start',
       lobbyId: this.context.lobbyId,
-      playerCount: playerIds.length,
-      totalRounds: rotations,
+      playerCount: numPlayers,
+      totalSteps: this.state.totalSteps,
       storyCount: stories.size,
     });
 
-    // Build player info array for broadcasts
     const playerInfos = this.buildPlayerInfos();
 
-    // Broadcast game start to all — includes list of story prompts (no secret info)
+    // Broadcast game start — includes story prompts (no secret info)
     const storyList = Array.from(stories.values()).map((s) => ({
       storyId: s.storyId,
       ownerName: s.ownerName,
@@ -199,10 +203,11 @@ export class UndercoverEditorGame extends BaseMinigame {
       type: 'UE_GAME_START',
       stories: storyList,
       players: playerInfos,
-      totalRounds: rotations,
+      numPlayers,
+      totalSteps: this.state.totalSteps,
     });
 
-    // Send role assignments individually — each editor learns their story + keyword
+    // Send editor assignment individually — each editor learns their story
     for (const uid of playerIds) {
       const assignedStoryId = editorAssignments.get(uid);
       if (assignedStoryId) {
@@ -211,7 +216,6 @@ export class UndercoverEditorGame extends BaseMinigame {
           type: 'UE_ROLE_ASSIGNED',
           role: 'editor',
           assignedStoryId,
-          keyword: story.keyword,
           storyOwnerName: story.ownerName,
         });
       }
@@ -220,117 +224,146 @@ export class UndercoverEditorGame extends BaseMinigame {
     this.startWritePhase();
   }
 
-  // ─── Phase: WRITE ──────────────────────────────────────────────
+  // ─── Phase: WRITE ─────────────────────────────────────────────────────
 
   private startWritePhase(): void {
     if (!this.isRunning) return;
 
-    this.state.currentRound++;
-    if (this.state.currentRound > this.state.totalRounds) {
-      this.startReviewPhase();
+    this.state.currentWriteRound++;
+    if (this.state.currentWriteRound > this.state.numPlayers) {
+      this.startReadingPhase();
       return;
     }
 
+    this.state.currentStep++;
     this.state.phase = 'WRITE';
     const writeTimeout = this.getSetting('writeTimeout', UE_WRITE_TIMEOUT_SECONDS);
     const now = Date.now();
     this.state.phaseStartedAt = now;
     this.state.phaseEndsAt = now + writeTimeout * 1000;
 
-    // Reset per-round submissions
+    // Compute round-robin write assignments for this round
+    this.state.writeAssignments = new Map();
     this.state.roundSubmissions = new Map();
-    for (const storyId of this.state.stories.keys()) {
-      this.state.roundSubmissions.set(storyId, new Map());
+    const storyIds = Array.from(this.state.stories.keys());
+
+    for (let pi = 0; pi < this.state.playerIds.length; pi++) {
+      const playerId = this.state.playerIds[pi];
+      const assignedStoryId = storyIds[(pi + this.state.currentWriteRound - 1) % this.state.numPlayers];
+      this.state.writeAssignments.set(playerId, assignedStoryId);
     }
 
-    this.broadcastRound(this.state.currentRound, this.state.totalRounds);
+    this.broadcastRound(this.state.currentStep, this.state.totalSteps);
 
-    this.logAction('round_start', {
-      round: this.state.currentRound,
+    this.logAction('write_start', {
+      writeRound: this.state.currentWriteRound,
+      step: this.state.currentStep,
     });
 
     logger.info({
       event: 'undercover_editor:write_start',
       lobbyId: this.context.lobbyId,
-      round: this.state.currentRound,
+      writeRound: this.state.currentWriteRound,
+      step: this.state.currentStep,
       writeTimeout,
     });
 
+    // Broadcast WRITE phase to all
     this.broadcastGameAction({
       type: 'UE_WRITE_START',
-      round: this.state.currentRound,
-      totalRounds: this.state.totalRounds,
+      writeRound: this.state.currentWriteRound,
+      step: this.state.currentStep,
+      totalSteps: this.state.totalSteps,
       writeDurationSeconds: writeTimeout,
     });
 
-    this.startPhaseTimer(writeTimeout);
-    this.setTimeout(() => this.endWritePhase(), writeTimeout * 1000);
-  }
-
-  /** Called when write timer expires or all players have submitted for all stories. */
-  private endWritePhase(): void {
-    if (!this.isRunning || this.state.phase !== 'WRITE') return;
-    this.clearPhaseTimer();
-
-    // Add all submitted sentences to their stories, and default "..." for missing ones
-    for (const [storyId, submissions] of this.state.roundSubmissions) {
-      for (const uid of this.state.playerIds) {
-        const player = this.context.players.get(uid);
-        const authorName = player?.userName ?? 'Unknown';
-        const text = submissions.get(uid) ?? '...';
-        this.addSentenceToStory(storyId, uid, authorName, text);
-      }
+    // Send individual write assignments with story context
+    for (const [playerId, storyId] of this.state.writeAssignments) {
+      const story = this.state.stories.get(storyId);
+      this.context.sendToPlayer(playerId, 'rmhbox:game:action', {
+        type: 'UE_WRITE_ASSIGNMENT',
+        storyId,
+        storyOwnerName: story?.ownerName ?? 'Unknown',
+        prompt: story?.prompt ?? '',
+        sentences: story ? story.sentences.map((s): StorySentenceView => ({
+          authorName: s.authorName,
+          text: s.text,
+          roundNumber: s.roundNumber,
+        })) : [],
+      });
     }
 
-    // Broadcast updated stories to all
+    this.startPhaseTimer(writeTimeout);
+    this.schedulePhaseTransition(() => this.endWritePhase(), writeTimeout * 1000);
+  }
+
+  /** Called when write timer expires or all players have submitted. */
+  private endWritePhase(): void {
+    if (!this.isRunning) return;
+    // Phase guard: prevent re-entry from zombie timers
+    if (this.state.phase !== 'WRITE') return;
+
+    this.clearTrackedTimeout(this.phaseTransitionHandle);
+    this.phaseTransitionHandle = null;
+    this.clearPhaseTimer();
+
+    // Add submitted sentences (or default "..." for missing ones)
+    for (const [playerId, storyId] of this.state.writeAssignments) {
+      const text = this.state.roundSubmissions.get(playerId) ?? '...';
+      this.addSentenceToStory(storyId, playerId, text);
+    }
+
+    // Broadcast updated stories
     this.broadcastAllStories();
 
     logger.info({
       event: 'undercover_editor:write_end',
       lobbyId: this.context.lobbyId,
-      round: this.state.currentRound,
+      writeRound: this.state.currentWriteRound,
+      step: this.state.currentStep,
     });
 
     this.startEditPhase();
   }
 
-  /** Check if all players submitted for all stories; if so, end WRITE early. */
+  /** Check if all players submitted; end WRITE early if so. */
   private checkWriteComplete(): void {
-    for (const [, submissions] of this.state.roundSubmissions) {
-      if (submissions.size < this.state.playerIds.length) return;
+    if (this.state.roundSubmissions.size >= this.state.numPlayers) {
+      this.endWritePhase();
     }
-    // All players submitted for all stories — end early
-    this.endWritePhase();
   }
 
-  // ─── Phase: EDIT ──────────────────────────────────────────────
+  // ─── Phase: EDIT ──────────────────────────────────────────────────────
 
   private startEditPhase(): void {
     if (!this.isRunning) return;
 
+    this.state.currentStep++;
     this.state.phase = 'EDIT';
     const editTimeout = this.getSetting('editTimeout', UE_EDIT_TIMEOUT_SECONDS);
     const now = Date.now();
     this.state.phaseStartedAt = now;
     this.state.phaseEndsAt = now + editTimeout * 1000;
 
-    // Reset edit completion tracking
+    // Reset edit completion tracking (keyed by editorUserId)
     this.state.roundEditsDone = new Map();
-    for (const storyId of this.state.stories.keys()) {
-      this.state.roundEditsDone.set(storyId, false);
+    for (const editorId of this.state.editorAssignments.keys()) {
+      this.state.roundEditsDone.set(editorId, false);
     }
 
     logger.info({
       event: 'undercover_editor:edit_start',
       lobbyId: this.context.lobbyId,
-      round: this.state.currentRound,
+      writeRound: this.state.currentWriteRound,
+      step: this.state.currentStep,
       editTimeout,
     });
 
-    // Broadcast EDIT phase start to all — writers see waiting state
+    // Broadcast EDIT phase start — non-editors see a waiting state
     this.broadcastGameAction({
       type: 'UE_EDIT_START',
-      round: this.state.currentRound,
+      writeRound: this.state.currentWriteRound,
+      step: this.state.currentStep,
       editDurationSeconds: editTimeout,
     });
 
@@ -339,18 +372,21 @@ export class UndercoverEditorGame extends BaseMinigame {
       const editorPlayer = this.context.players.get(editorId);
       if (!editorPlayer || !editorPlayer.isConnected) {
         // Auto-skip for disconnected editors
-        this.state.roundEditsDone.set(storyId, true);
+        this.state.roundEditsDone.set(editorId, true);
         continue;
       }
-      this.context.sendToPlayer(editorId, 'rmhbox:game:action', {
-        type: 'UE_EDIT_PROMPT',
-        story: this.buildEditableStory(storyId),
-        editDurationSeconds: editTimeout,
-      });
+      const editableStory = this.buildEditableStory(storyId);
+      if (editableStory) {
+        this.context.sendToPlayer(editorId, 'rmhbox:game:action', {
+          type: 'UE_EDIT_PROMPT',
+          story: editableStory,
+          editDurationSeconds: editTimeout,
+        });
+      }
     }
 
     this.startPhaseTimer(editTimeout);
-    this.setTimeout(() => this.endEditPhase(), editTimeout * 1000);
+    this.schedulePhaseTransition(() => this.endEditPhase(), editTimeout * 1000);
 
     // Check if all editors are disconnected (auto-complete)
     this.checkEditComplete();
@@ -358,7 +394,12 @@ export class UndercoverEditorGame extends BaseMinigame {
 
   /** Called when edit timer expires or all editors have completed. */
   private endEditPhase(): void {
-    if (!this.isRunning || this.state.phase !== 'EDIT') return;
+    if (!this.isRunning) return;
+    // Phase guard: prevent re-entry from zombie timers
+    if (this.state.phase !== 'EDIT') return;
+
+    this.clearTrackedTimeout(this.phaseTransitionHandle);
+    this.phaseTransitionHandle = null;
     this.clearPhaseTimer();
 
     // Broadcast updated stories after edits
@@ -367,10 +408,11 @@ export class UndercoverEditorGame extends BaseMinigame {
     logger.info({
       event: 'undercover_editor:edit_end',
       lobbyId: this.context.lobbyId,
-      round: this.state.currentRound,
+      writeRound: this.state.currentWriteRound,
+      step: this.state.currentStep,
     });
 
-    // Next round or review
+    // Next write round (startWritePhase will transition to READING when rounds exhausted)
     this.startWritePhase();
   }
 
@@ -382,7 +424,50 @@ export class UndercoverEditorGame extends BaseMinigame {
     this.endEditPhase();
   }
 
-  // ─── Phase: REVIEW (Infinite Time) ────────────────────────────
+  // ─── Phase: READING (Infinite Time, Host-Driven) ──────────────────────────────
+
+  private startReadingPhase(): void {
+    if (!this.isRunning) return;
+
+    this.state.phase = 'READING';
+    const now = Date.now();
+    this.state.phaseStartedAt = now;
+    this.state.phaseEndsAt = 0; // infinite
+    this.state.readingStoryIndex = 0;
+    this.state.readingSentenceIndex = 0;
+
+    const storyIds = Array.from(this.state.stories.keys());
+    const storyList = storyIds.map((id) => {
+      const story = this.state.stories.get(id)!;
+      return {
+        storyId: story.storyId,
+        ownerName: story.ownerName,
+        prompt: story.prompt,
+        sentenceCount: story.sentences.length,
+      };
+    });
+
+    this.logAction('reading_start', {
+      storyCount: storyIds.length,
+    });
+
+    logger.info({
+      event: 'undercover_editor:reading_start',
+      lobbyId: this.context.lobbyId,
+      storyCount: storyIds.length,
+    });
+
+    this.broadcastGameAction({
+      type: 'UE_READING_START',
+      stories: storyList,
+      readingStoryIndex: 0,
+      readingSentenceIndex: 0,
+    });
+
+    this.startInfinitePhaseTimer(false);
+  }
+
+  // ─── Phase: REVIEW (Infinite Time) ────────────────────────────────────────
 
   private startReviewPhase(): void {
     if (!this.isRunning) return;
@@ -391,11 +476,6 @@ export class UndercoverEditorGame extends BaseMinigame {
     const now = Date.now();
     this.state.phaseStartedAt = now;
     this.state.phaseEndsAt = 0; // infinite
-
-    // Detect keywords in stories
-    for (const [storyId, story] of this.state.stories) {
-      story.keywordInStory = this.checkKeywordInStory(storyId);
-    }
 
     this.state.matchGuesses = new Map();
     this.state.matchLockedIn = new Set();
@@ -410,7 +490,6 @@ export class UndercoverEditorGame extends BaseMinigame {
       storyCount: this.state.stories.size,
     });
 
-    // Broadcast all stories for review + player list for matching
     const allStories = this.buildAllStoryViews();
     const playerInfos = this.buildPlayerInfos();
 
@@ -420,7 +499,7 @@ export class UndercoverEditorGame extends BaseMinigame {
       players: playerInfos,
     });
 
-    // Use infinite phase timer — host or all-locked-in advances
+    // Infinite phase timer — host or all-locked-in advances
     this.startInfinitePhaseTimer(true);
   }
 
@@ -433,7 +512,7 @@ export class UndercoverEditorGame extends BaseMinigame {
     this.startRevealPhase();
   }
 
-  // ─── Phase: REVEAL ────────────────────────────────────────────
+  // ─── Phase: REVEAL ────────────────────────────────────────────────────
 
   private startRevealPhase(): void {
     if (!this.isRunning) return;
@@ -447,7 +526,6 @@ export class UndercoverEditorGame extends BaseMinigame {
     // Score the game
     this.computeScoring();
 
-    // Build reveal data
     const storyReveals = this.buildStoryReveals();
     const scores = this.buildScoreResults();
 
@@ -471,7 +549,6 @@ export class UndercoverEditorGame extends BaseMinigame {
       storyReveals: storyReveals.map((s) => ({
         storyId: s.storyId,
         editorUserId: s.editorUserId,
-        keywordInStory: s.keywordInStory,
         editCount: s.edits.length,
       })),
     });
@@ -490,24 +567,24 @@ export class UndercoverEditorGame extends BaseMinigame {
     });
 
     this.startPhaseTimer(UE_REVEAL_DURATION_SECONDS);
-    this.setTimeout(() => this.endGame(), UE_REVEAL_DURATION_SECONDS * 1000);
+    this.schedulePhaseTransition(() => this.endGame(), UE_REVEAL_DURATION_SECONDS * 1000);
   }
 
-  // ─── End Game ─────────────────────────────────────────────────
+  // ─── End Game ─────────────────────────────────────────────────────
 
   private endGame(): void {
     if (!this.isRunning) return;
-    this.cleanup();
 
     logger.info({
       event: 'undercover_editor:game_end',
       lobbyId: this.context.lobbyId,
     });
 
+    this.cleanup();
     this.context.onComplete(this.computeResults());
   }
 
-  // ─── Input Handling ───────────────────────────────────────────
+  // ─── Input Handling ───────────────────────────────────────────────────
 
   handleInput(userId: string, action: string, data: unknown): void {
     switch (action) {
@@ -517,8 +594,8 @@ export class UndercoverEditorGame extends BaseMinigame {
       case 'UNSUBMIT_SENTENCE':
         this.handleUnsubmitSentence(userId, data);
         break;
-      case 'EDIT_WORD':
-        this.handleEditWord(userId, data);
+      case 'EDIT_TWO_WORDS':
+        this.handleEditTwoWords(userId, data);
         break;
       case 'SKIP_EDIT':
         this.handleSkipEdit(userId, data);
@@ -528,6 +605,12 @@ export class UndercoverEditorGame extends BaseMinigame {
         break;
       case 'LOCK_IN_MATCHING':
         this.handleLockInMatching(userId, data);
+        break;
+      case 'NEXT_SENTENCE':
+        this.handleNextSentence(userId, data);
+        break;
+      case 'NEXT_STORY':
+        this.handleNextStory(userId, data);
         break;
       default:
         logger.warn({
@@ -539,7 +622,7 @@ export class UndercoverEditorGame extends BaseMinigame {
     }
   }
 
-  // ─── WRITE Handlers ───────────────────────────────────────────
+  // ─── WRITE Handlers ───────────────────────────────────────────────────
 
   private handleWriteSentence(userId: string, data: unknown): void {
     if (this.state.phase !== 'WRITE') {
@@ -554,9 +637,11 @@ export class UndercoverEditorGame extends BaseMinigame {
     }
 
     const { storyId, text } = parsed.data;
-    const story = this.state.stories.get(storyId);
-    if (!story) {
-      this.sendError(userId, 'Invalid story ID');
+
+    // Verify this player is assigned to write for this story this round
+    const assignedStoryId = this.state.writeAssignments.get(userId);
+    if (assignedStoryId !== storyId) {
+      this.sendError(userId, 'Not assigned to this story this round');
       return;
     }
 
@@ -565,11 +650,8 @@ export class UndercoverEditorGame extends BaseMinigame {
       return;
     }
 
-    const submissions = this.state.roundSubmissions.get(storyId);
-    if (!submissions) return;
-
     const sanitized = sanitizeString(text).trim();
-    submissions.set(userId, sanitized);
+    this.state.roundSubmissions.set(userId, sanitized);
 
     const player = this.context.players.get(userId);
     const authorName = player?.userName ?? 'Unknown';
@@ -581,7 +663,6 @@ export class UndercoverEditorGame extends BaseMinigame {
       text: sanitized,
     });
 
-    // Broadcast progress (how many have submitted for each story)
     this.broadcastSubmissionProgress();
 
     this.logAction('sentence_submitted', {
@@ -591,7 +672,6 @@ export class UndercoverEditorGame extends BaseMinigame {
       textLength: sanitized.length,
     });
 
-    // Check if all submissions are complete
     this.checkWriteComplete();
   }
 
@@ -608,26 +688,22 @@ export class UndercoverEditorGame extends BaseMinigame {
     }
 
     const { storyId } = parsed.data;
-    const submissions = this.state.roundSubmissions.get(storyId);
-    if (!submissions) return;
 
-    // Check that not ALL players have submitted for ALL stories already
-    // (if they have, the phase would have ended — but guard just in case)
-    let allComplete = true;
-    for (const [, subs] of this.state.roundSubmissions) {
-      if (subs.size < this.state.playerIds.length) {
-        allComplete = false;
-        break;
-      }
+    // Verify assignment
+    const assignedStoryId = this.state.writeAssignments.get(userId);
+    if (assignedStoryId !== storyId) {
+      this.sendError(userId, 'Not assigned to this story this round');
+      return;
     }
-    if (allComplete) {
+
+    // Guard: can't unsubmit if all players have submitted (phase would end)
+    if (this.state.roundSubmissions.size >= this.state.numPlayers) {
       this.sendError(userId, 'Cannot unsubmit — all submissions are in');
       return;
     }
 
-    // Remove the submission
-    if (submissions.has(userId)) {
-      submissions.delete(userId);
+    if (this.state.roundSubmissions.has(userId)) {
+      this.state.roundSubmissions.delete(userId);
 
       this.context.sendToPlayer(userId, 'rmhbox:game:action', {
         type: 'UE_SENTENCE_UNSUBMITTED',
@@ -643,21 +719,21 @@ export class UndercoverEditorGame extends BaseMinigame {
     }
   }
 
-  // ─── EDIT Handlers ────────────────────────────────────────────
+  // ─── EDIT Handlers ────────────────────────────────────────────────────
 
-  private handleEditWord(userId: string, data: unknown): void {
+  private handleEditTwoWords(userId: string, data: unknown): void {
     if (this.state.phase !== 'EDIT') {
       this.sendError(userId, 'Not in EDIT phase');
       return;
     }
 
-    const parsed = EditWordSchema.safeParse(data);
+    const parsed = EditTwoWordsSchema.safeParse(data);
     if (!parsed.success) {
-      this.sendError(userId, 'Invalid edit');
+      this.sendError(userId, 'Invalid edit submission');
       return;
     }
 
-    const { storyId, sentenceIndex, wordIndex, newWord } = parsed.data;
+    const { storyId, edits } = parsed.data;
 
     // Verify this user is the editor for this story
     const assignedStoryId = this.state.editorAssignments.get(userId);
@@ -666,65 +742,79 @@ export class UndercoverEditorGame extends BaseMinigame {
       return;
     }
 
+    if (this.state.roundEditsDone.get(userId)) {
+      this.sendError(userId, 'Already edited this round');
+      return;
+    }
+
     const story = this.state.stories.get(storyId);
-    if (!story) return;
+    if (!story || story.sentences.length === 0) {
+      this.sendError(userId, 'No sentences to edit');
+      return;
+    }
 
+    // Target: the most recent sentence
+    const sentenceIndex = story.sentences.length - 1;
     const sentence = story.sentences[sentenceIndex];
-    if (!sentence) {
-      this.sendError(userId, 'Invalid sentence index');
+
+    // Validate both word indices
+    for (const edit of edits) {
+      if (edit.wordIndex < 0 || edit.wordIndex >= sentence.words.length) {
+        this.sendError(userId, 'Invalid word index');
+        return;
+      }
+    }
+
+    // The two edits must target different words
+    if (edits[0].wordIndex === edits[1].wordIndex) {
+      this.sendError(userId, 'Must edit two different words');
       return;
     }
 
-    if (wordIndex < 0 || wordIndex >= sentence.words.length) {
-      this.sendError(userId, 'Invalid word index');
-      return;
+    // Apply both edits atomically
+    for (const edit of edits) {
+      const originalWord = sentence.words[edit.wordIndex];
+      const newWord = sanitizeString(edit.newWord);
+      sentence.words[edit.wordIndex] = newWord;
+
+      story.edits.push({
+        sentenceIndex,
+        wordIndex: edit.wordIndex,
+        originalWord,
+        newWord,
+        editedOnRound: this.state.currentWriteRound,
+      });
     }
 
-    const posKey = `${sentenceIndex}:${wordIndex}`;
-    if (story.editedWordPositions.has(posKey)) {
-      this.sendError(userId, 'Position already edited');
-      return;
-    }
-
-    // Apply the edit
-    const originalWord = sentence.words[wordIndex];
-    sentence.words[wordIndex] = sanitizeString(newWord);
+    // Rebuild sentence text from words
     sentence.text = sentence.words.join(' ');
-    story.editedWordPositions.add(posKey);
-    story.edits.push({
-      sentenceIndex,
-      wordIndex,
-      originalWord,
-      newWord: sanitizeString(newWord),
-      editedOnTurn: this.state.currentRound,
-    });
+
+    // Mark editor as done
+    this.state.roundEditsDone.set(userId, true);
 
     this.logAction('edit_applied', {
       userId,
       storyId,
       sentenceIndex,
-      originalWord,
-      newWord,
+      edits: edits.map((e) => ({
+        wordIndex: e.wordIndex,
+        newWord: e.newWord,
+      })),
     });
 
     logger.info({
       event: 'undercover_editor:edit_applied',
       lobbyId: this.context.lobbyId,
-      round: this.state.currentRound,
+      writeRound: this.state.currentWriteRound,
       storyId,
       sentenceIndex,
-      originalWord,
-      newWord,
+      editCount: edits.length,
     });
 
-    // Mark this editor as done
-    this.state.roundEditsDone.set(storyId, true);
-
-    // Send updated editable story back to editor
+    // Confirm to editor
     this.context.sendToPlayer(userId, 'rmhbox:game:action', {
       type: 'UE_EDIT_CONFIRMED',
       storyId,
-      story: this.buildEditableStory(storyId),
     });
 
     this.checkEditComplete();
@@ -736,7 +826,7 @@ export class UndercoverEditorGame extends BaseMinigame {
       return;
     }
 
-    void SkipEditSchema.safeParse(data); // Validate but no fields needed
+    void SkipEditSchema.safeParse(data);
 
     const assignedStoryId = this.state.editorAssignments.get(userId);
     if (!assignedStoryId) {
@@ -744,18 +834,18 @@ export class UndercoverEditorGame extends BaseMinigame {
       return;
     }
 
-    this.state.roundEditsDone.set(assignedStoryId, true);
+    this.state.roundEditsDone.set(userId, true);
 
     this.logAction('edit_skipped', {
       userId,
       storyId: assignedStoryId,
-      round: this.state.currentRound,
+      writeRound: this.state.currentWriteRound,
     });
 
     logger.info({
       event: 'undercover_editor:edit_skipped',
       lobbyId: this.context.lobbyId,
-      round: this.state.currentRound,
+      writeRound: this.state.currentWriteRound,
       storyId: assignedStoryId,
     });
 
@@ -768,7 +858,100 @@ export class UndercoverEditorGame extends BaseMinigame {
     this.checkEditComplete();
   }
 
-  // ─── REVIEW Handlers ──────────────────────────────────────────
+  // ─── READING Handlers ─────────────────────────────────────────────────
+
+  private handleNextSentence(userId: string, data: unknown): void {
+    if (this.state.phase !== 'READING') {
+      this.sendError(userId, 'Not in READING phase');
+      return;
+    }
+
+    void NextSentenceSchema.safeParse(data);
+
+    // Only the host can advance
+    if (userId !== this.context.getHostId()) {
+      this.sendError(userId, 'Only the host can advance');
+      return;
+    }
+
+    const storyIds = Array.from(this.state.stories.keys());
+    const currentStory = this.state.stories.get(storyIds[this.state.readingStoryIndex]);
+    if (!currentStory) return;
+
+    if (this.state.readingSentenceIndex >= currentStory.sentences.length) {
+      this.sendError(userId, 'All sentences revealed for this story');
+      return;
+    }
+
+    const sentence = currentStory.sentences[this.state.readingSentenceIndex];
+    this.state.readingSentenceIndex++;
+
+    this.broadcastGameAction({
+      type: 'UE_READING_SENTENCE',
+      storyIndex: this.state.readingStoryIndex,
+      sentenceIndex: this.state.readingSentenceIndex - 1,
+      sentence: {
+        authorName: sentence.authorName,
+        text: sentence.text,
+        roundNumber: sentence.roundNumber,
+      } as StorySentenceView,
+    });
+
+    logger.info({
+      event: 'undercover_editor:reading_sentence',
+      lobbyId: this.context.lobbyId,
+      storyIndex: this.state.readingStoryIndex,
+      sentenceIndex: this.state.readingSentenceIndex - 1,
+    });
+  }
+
+  private handleNextStory(userId: string, data: unknown): void {
+    if (this.state.phase !== 'READING') {
+      this.sendError(userId, 'Not in READING phase');
+      return;
+    }
+
+    void NextStorySchema.safeParse(data);
+
+    // Only the host can advance
+    if (userId !== this.context.getHostId()) {
+      this.sendError(userId, 'Only the host can advance');
+      return;
+    }
+
+    const storyIds = Array.from(this.state.stories.keys());
+    this.state.readingStoryIndex++;
+    this.state.readingSentenceIndex = 0;
+
+    // All stories read — transition to REVIEW
+    if (this.state.readingStoryIndex >= storyIds.length) {
+      logger.info({
+        event: 'undercover_editor:reading_complete',
+        lobbyId: this.context.lobbyId,
+      });
+      this.startReviewPhase();
+      return;
+    }
+
+    const nextStory = this.state.stories.get(storyIds[this.state.readingStoryIndex]);
+
+    this.broadcastGameAction({
+      type: 'UE_READING_NEXT_STORY',
+      readingStoryIndex: this.state.readingStoryIndex,
+      storyId: storyIds[this.state.readingStoryIndex],
+      ownerName: nextStory?.ownerName ?? 'Unknown',
+      prompt: nextStory?.prompt ?? '',
+      sentenceCount: nextStory?.sentences.length ?? 0,
+    });
+
+    logger.info({
+      event: 'undercover_editor:reading_next_story',
+      lobbyId: this.context.lobbyId,
+      readingStoryIndex: this.state.readingStoryIndex,
+    });
+  }
+
+  // ─── REVIEW Handlers ──────────────────────────────────────────────────
 
   private handleSubmitMatching(userId: string, data: unknown): void {
     if (this.state.phase !== 'REVIEW') {
@@ -782,7 +965,6 @@ export class UndercoverEditorGame extends BaseMinigame {
       return;
     }
 
-    // Store guesses (can be updated until locked in)
     if (this.state.matchLockedIn.has(userId)) {
       this.sendError(userId, 'Already locked in');
       return;
@@ -840,12 +1022,13 @@ export class UndercoverEditorGame extends BaseMinigame {
     this.checkReviewComplete();
   }
 
-  // ─── Scoring ──────────────────────────────────────────────────
+  // ─── Scoring ────────────────────────────────────────────────────────
 
   private computeScoring(): void {
-    // For each player, award points based on correct matches
     for (const uid of this.state.playerIds) {
       let score = 0;
+
+      // Correct match: +UE_CORRECT_VOTE_BONUS per correct guess
       const guesses = this.state.matchGuesses.get(uid);
       if (guesses) {
         for (const [storyId, guessedEditorId] of guesses) {
@@ -856,54 +1039,25 @@ export class UndercoverEditorGame extends BaseMinigame {
         }
       }
 
-      // Bonus for being a good editor (keyword proximity)
-      const editorStoryId = this.state.editorAssignments.get(uid);
-      if (editorStoryId) {
-        const story = this.state.stories.get(editorStoryId);
-        if (story) {
-          if (story.keywordInStory) {
-            score += UE_KEYWORD_PROXIMITY_BONUS;
-          }
-        }
+      // Editor bonus/penalty: sneaky editor wins big, caught editor gets consolation
+      const editedStoryId = this.state.editorAssignments.get(uid);
+      if (editedStoryId) {
+        const wasCaught = this.wasEditorCaught(editedStoryId);
+        score += wasCaught ? UE_EDITOR_LOSS : UE_EDITOR_MAJOR_WIN;
       }
 
-      // Award points: editor who wasn't caught gets bonus, editor who was caught loses
-      const myStoryId = this.state.editorAssignments.get(uid);
-      if (myStoryId) {
-        const wasCaught = this.wasEditorCaught(myStoryId);
-        if (!wasCaught) {
-          score += UE_EDITOR_MAJOR_WIN;
-        } else {
-          score += UE_EDITOR_LOSS;
-        }
-      }
-
-      // Award points for story quality (how many people got your story's editor wrong)
-      // This rewards writers whose stories had well-hidden editors
-      const ownedStoryId = uid;
-      const ownedStory = this.state.stories.get(ownedStoryId);
+      // Writer bonus/penalty: if the editor of YOUR story was sneaky, you benefit
+      const ownedStory = this.state.stories.get(uid);
       if (ownedStory) {
-        let fooledCount = 0;
-        for (const [guesserId, guessMap] of this.state.matchGuesses) {
-          if (guesserId === uid) continue; // Skip self
-          const guessedEditor = guessMap.get(ownedStoryId);
-          if (guessedEditor && guessedEditor !== ownedStory.editorUserId) {
-            fooledCount++;
-          }
-        }
-        // Story owner gets bonus if their editor was sneaky
-        if (fooledCount > 0) {
-          score += UE_WRITER_MAJOR_WIN;
-        } else {
-          score += UE_WRITER_LOSS;
-        }
+        const wasCaught = this.wasEditorCaught(uid);
+        score += wasCaught ? UE_WRITER_LOSS : UE_WRITER_MAJOR_WIN;
       }
 
       this.state.playerScores.set(uid, (this.state.playerScores.get(uid) ?? 0) + score);
     }
   }
 
-  /** Check if the majority of players correctly identified the editor for a story. */
+  /** Check if the majority of guessers correctly identified the editor for a story. */
   private wasEditorCaught(storyId: string): boolean {
     const story = this.state.stories.get(storyId);
     if (!story) return false;
@@ -911,7 +1065,7 @@ export class UndercoverEditorGame extends BaseMinigame {
     let correctGuesses = 0;
     let totalGuessers = 0;
     for (const [guesserId, guessMap] of this.state.matchGuesses) {
-      // Skip the editor themselves
+      // Skip the editor themselves (they can't vote on their own edited story)
       if (guesserId === story.editorUserId) continue;
       const guess = guessMap.get(storyId);
       if (guess) {
@@ -925,7 +1079,7 @@ export class UndercoverEditorGame extends BaseMinigame {
     return totalGuessers > 0 && correctGuesses > totalGuessers / 2;
   }
 
-  // ─── State Views ──────────────────────────────────────────────
+  // ─── State Views ──────────────────────────────────────────────────────
 
   getStateForPlayer(userId: string): unknown {
     const timeRemaining = this.state.phaseEndsAt > 0
@@ -934,44 +1088,35 @@ export class UndercoverEditorGame extends BaseMinigame {
 
     const isEditor = this.state.editorAssignments.has(userId);
     const assignedStoryId = this.state.editorAssignments.get(userId) ?? null;
-
-    // Build submission progress (for WRITE phase)
-    const submissionProgress: Record<string, number> = {};
-    for (const [storyId, subs] of this.state.roundSubmissions) {
-      submissionProgress[storyId] = subs.size;
-    }
-
-    // Build list of my submitted stories
-    const mySubmissions: Record<string, string> = {};
-    for (const [storyId, subs] of this.state.roundSubmissions) {
-      const sub = subs.get(userId);
-      if (sub) mySubmissions[storyId] = sub;
-    }
+    const writeAssignment = this.state.writeAssignments.get(userId) ?? null;
 
     const base = {
       phase: this.state.phase,
-      currentRound: this.state.currentRound,
-      totalRounds: this.state.totalRounds,
+      currentWriteRound: this.state.currentWriteRound,
+      currentStep: this.state.currentStep,
+      totalSteps: this.state.totalSteps,
+      numPlayers: this.state.numPlayers,
       stories: this.buildAllStoryViews(),
       players: this.buildPlayerInfos(),
       timeRemaining,
-      submissionProgress,
-      mySubmissions,
+      submittedCount: this.state.roundSubmissions.size,
       totalPlayers: this.state.playerIds.length,
       matchLockedIn: Array.from(this.state.matchLockedIn),
       myMatchGuesses: this.state.matchGuesses.get(userId)
         ? Object.fromEntries(this.state.matchGuesses.get(userId)!)
         : null,
       isMatchLockedIn: this.state.matchLockedIn.has(userId),
+      readingStoryIndex: this.state.readingStoryIndex,
+      readingSentenceIndex: this.state.readingSentenceIndex,
+      myWriteAssignment: writeAssignment,
+      mySubmission: this.state.roundSubmissions.get(userId) ?? null,
     };
 
+    // Editor gets their assignment info; editable story only during EDIT phase
     if (isEditor && assignedStoryId) {
-      const story = this.state.stories.get(assignedStoryId);
       return {
         ...base,
         assignedStoryId,
-        keyword: story?.keyword ?? null,
-        myEdits: story?.edits ?? [],
         ...(this.state.phase === 'EDIT'
           ? { editableStory: this.buildEditableStory(assignedStoryId) }
           : {}),
@@ -982,20 +1127,24 @@ export class UndercoverEditorGame extends BaseMinigame {
   }
 
   getStateForSpectator(): unknown {
-    // Spectators see everything
+    // Spectators see everything including editor assignments and edits
     const storyReveals = this.buildStoryReveals();
     return {
       phase: this.state.phase,
-      currentRound: this.state.currentRound,
-      totalRounds: this.state.totalRounds,
+      currentWriteRound: this.state.currentWriteRound,
+      currentStep: this.state.currentStep,
+      totalSteps: this.state.totalSteps,
+      numPlayers: this.state.numPlayers,
       stories: this.buildAllStoryViews(),
       storyReveals,
       players: this.buildPlayerInfos(),
+      readingStoryIndex: this.state.readingStoryIndex,
+      readingSentenceIndex: this.state.readingSentenceIndex,
       isSpectator: true,
     };
   }
 
-  // ─── Join-in-Progress / Reconnection ──────────────────────────
+  // ─── Join-in-Progress / Reconnection / Disconnect ───────────────────────
 
   handlePlayerJoin(userId: string): void {
     this.context.sendToPlayer(
@@ -1015,9 +1164,8 @@ export class UndercoverEditorGame extends BaseMinigame {
   handlePlayerDisconnect(userId: string): void {
     // During EDIT, auto-complete the editor's edit if they disconnect
     if (this.state.phase === 'EDIT') {
-      const assignedStoryId = this.state.editorAssignments.get(userId);
-      if (assignedStoryId && !this.state.roundEditsDone.get(assignedStoryId)) {
-        this.state.roundEditsDone.set(assignedStoryId, true);
+      if (this.state.editorAssignments.has(userId) && !this.state.roundEditsDone.get(userId)) {
+        this.state.roundEditsDone.set(userId, true);
         this.checkEditComplete();
       }
     }
@@ -1045,12 +1193,11 @@ export class UndercoverEditorGame extends BaseMinigame {
     });
   }
 
-  // ─── Results ──────────────────────────────────────────────────
+  // ─── Results ────────────────────────────────────────────────────────
 
   computeResults(): MinigameResults {
     const duration = Date.now() - this.startedAt;
 
-    // Build rankings sorted by score desc
     const rankings: PlayerRanking[] = [];
     for (const uid of this.state.playerIds) {
       const player = this.context.players.get(uid);
@@ -1065,7 +1212,20 @@ export class UndercoverEditorGame extends BaseMinigame {
     rankings.sort((a, b) => b.score - a.score);
     rankings.forEach((r, i) => { r.rank = i + 1; });
 
-    // Awards
+    const awards = this.computeAwards();
+
+    return {
+      rankings,
+      awards,
+      gameSpecificData: {
+        storyReveals: this.buildStoryReveals(),
+        gameLog: this.buildGameLog(),
+      },
+      duration,
+    };
+  }
+
+  private computeAwards(): Award[] {
     const awards: Award[] = [];
 
     // Best Detective: player with the most correct matches
@@ -1085,84 +1245,117 @@ export class UndercoverEditorGame extends BaseMinigame {
         userId: bestDetective.userId,
         title: 'Best Detective',
         description: `Correctly identified ${bestDetective.correct} editor(s)`,
-        icon: '🔍',
+        icon: 'search',
       });
     }
 
-    // Sneakiest Editor: editor who fooled the most people
-    let sneakiest: { userId: string; fooled: number } | null = null;
+    // Master of Disguise: editor who fooled the most players
+    let bestDisguise: { userId: string; fooledCount: number } | null = null;
     for (const [editorId, storyId] of this.state.editorAssignments) {
-      let fooled = 0;
+      let fooledCount = 0;
       for (const [guesserId, guessMap] of this.state.matchGuesses) {
         if (guesserId === editorId) continue;
         const guess = guessMap.get(storyId);
-        if (guess && guess !== editorId) fooled++;
+        if (guess && guess !== editorId) fooledCount++;
       }
-      if (!sneakiest || fooled > sneakiest.fooled) {
-        sneakiest = { userId: editorId, fooled };
+      if (!bestDisguise || fooledCount > bestDisguise.fooledCount) {
+        bestDisguise = { userId: editorId, fooledCount };
       }
     }
-    if (sneakiest && sneakiest.fooled > 0) {
+    if (bestDisguise && bestDisguise.fooledCount > 0) {
       awards.push({
-        userId: sneakiest.userId,
-        title: 'Sneakiest Editor',
-        description: `Fooled ${sneakiest.fooled} player(s)`,
-        icon: '🥷',
+        userId: bestDisguise.userId,
+        title: 'Master of Disguise',
+        description: `Fooled ${bestDisguise.fooledCount} player(s) as editor`,
+        icon: 'mask',
       });
     }
 
-    return {
-      rankings,
-      awards,
-      gameSpecificData: {
-        gameLog: this.actionLog,
-        storyCount: this.state.stories.size,
-        totalRounds: this.state.totalRounds,
-      },
-      duration,
-    };
-  }
-
-  // ─── Helper: Add Sentence to Story ────────────────────────────
-
-  private addSentenceToStory(storyId: string, authorId: string, authorName: string, text: string): void {
-    const story = this.state.stories.get(storyId);
-    if (!story) return;
-
-    const words = text.split(/\s+/).filter((w) => w.length > 0);
-    const sentence: StorySentence = {
-      authorUserId: authorId,
-      authorName,
-      text,
-      originalText: text,
-      turnNumber: this.state.currentRound,
-      words,
-    };
-    story.sentences.push(sentence);
-  }
-
-  // ─── Helper: Broadcast ────────────────────────────────────────
-
-  private broadcastAllStories(): void {
-    this.broadcastGameAction({
-      type: 'UE_STORIES_UPDATED',
-      stories: this.buildAllStoryViews(),
-    });
-  }
-
-  private broadcastSubmissionProgress(): void {
-    const progress: Record<string, number> = {};
-    for (const [storyId, subs] of this.state.roundSubmissions) {
-      progress[storyId] = subs.size;
+    // Prolific Writer: player who wrote the most total characters
+    let prolificWriter: { userId: string; charCount: number } | null = null;
+    const charCounts = new Map<string, number>();
+    for (const story of this.state.stories.values()) {
+      for (const sentence of story.sentences) {
+        const current = charCounts.get(sentence.authorUserId) ?? 0;
+        charCounts.set(sentence.authorUserId, current + sentence.originalText.length);
+      }
     }
-    this.context.broadcastAction({
-      type: 'UE_SUBMISSION_PROGRESS',
-      payload: {
-        progress,
-        totalPlayers: this.state.playerIds.length,
-      },
+    for (const [uid, count] of charCounts) {
+      if (!prolificWriter || count > prolificWriter.charCount) {
+        prolificWriter = { userId: uid, charCount: count };
+      }
+    }
+    if (prolificWriter && prolificWriter.charCount > 0) {
+      awards.push({
+        userId: prolificWriter.userId,
+        title: 'Prolific Writer',
+        description: `Wrote ${prolificWriter.charCount} characters across all stories`,
+        icon: 'pen-tool',
+      });
+    }
+
+    return awards;
+  }
+
+  // ─── Force End ──────────────────────────────────────────────────────
+
+  forceEnd(reason: string): void {
+    if (this.state.phase === 'READING') {
+      // Host forcing READING to end — skip to REVIEW
+      logger.info({
+        event: 'undercover_editor:force_end_reading',
+        lobbyId: this.context.lobbyId,
+        reason,
+      });
+      this.startReviewPhase();
+    } else if (this.state.phase === 'REVIEW') {
+      // Host forcing REVIEW to end — skip to REVEAL
+      logger.info({
+        event: 'undercover_editor:force_end_review',
+        lobbyId: this.context.lobbyId,
+        reason,
+      });
+      this.startRevealPhase();
+    } else {
+      this.cleanup();
+      this.context.onComplete(this.computeResults());
+    }
+  }
+
+  // ─── Helper: Action Log ─────────────────────────────────────────────────
+
+  private logAction(type: string, payload: Record<string, unknown>): void {
+    this.actionLog.push({
+      type,
+      payload,
+      timestamp: Date.now(),
     });
   }
+
+  private buildGameLog(): Record<string, unknown> {
+    const players = Array.from(this.context.players.entries()).map(([userId, p]) => ({
+      userId,
+      userName: p.userName,
+    }));
+
+    return {
+      lobbyId: this.context.lobbyId,
+      startedAt: this.startedAt,
+      endedAt: Date.now(),
+      numPlayers: this.state.numPlayers,
+      totalSteps: this.state.totalSteps,
+      playerCount: this.context.players.size,
+      players,
+      actions: this.actionLog,
+      finalResults: this.state.playerIds.map((uid) => ({
+        userId: uid,
+        userName: this.context.players.get(uid)?.userName ?? 'Unknown',
+        score: this.state.playerScores.get(uid) ?? 0,
+      })),
+    };
+  }
+
+  // ─── Helper: Error Feedback ───────────────────────────────────────────────
 
   private sendError(userId: string, message: string): void {
     this.context.sendToPlayer(userId, 'rmhbox:game:action', {
@@ -1171,7 +1364,28 @@ export class UndercoverEditorGame extends BaseMinigame {
     });
   }
 
-  // ─── Helper: Build Views ──────────────────────────────────────
+  // ─── Helper: Add Sentence to Story ────────────────────────────────────────
+
+  private addSentenceToStory(storyId: string, authorUserId: string, text: string): void {
+    const story = this.state.stories.get(storyId);
+    if (!story) return;
+
+    const player = this.context.players.get(authorUserId);
+    const words = text.split(/\s+/).filter(Boolean);
+
+    const sentence: StorySentence = {
+      authorUserId,
+      authorName: player?.userName ?? 'Unknown',
+      text,
+      originalText: text,
+      roundNumber: this.state.currentWriteRound,
+      words,
+    };
+
+    story.sentences.push(sentence);
+  }
+
+  // ─── Helper: Build Views ──────────────────────────────────────────────────
 
   private buildAllStoryViews(): StoryView[] {
     const views: StoryView[] = [];
@@ -1183,7 +1397,7 @@ export class UndercoverEditorGame extends BaseMinigame {
         sentences: story.sentences.map((s): StorySentenceView => ({
           authorName: s.authorName,
           text: s.text,
-          turnNumber: s.turnNumber,
+          roundNumber: s.roundNumber,
         })),
       });
     }
@@ -1192,25 +1406,30 @@ export class UndercoverEditorGame extends BaseMinigame {
 
   private buildEditableStory(storyId: string): EditableStory | null {
     const story = this.state.stories.get(storyId);
-    if (!story) return null;
+    if (!story || story.sentences.length === 0) return null;
+
+    // Only the most recent sentence is editable
+    const lastIndex = story.sentences.length - 1;
+    const lastSentence = story.sentences[lastIndex];
+
+    const editableSentence: EditableSentence = {
+      authorName: lastSentence.authorName,
+      sentenceIndex: lastIndex,
+      words: lastSentence.words.map((word, index): EditableWord => ({
+        word,
+        index,
+      })),
+    };
 
     return {
       storyId: story.storyId,
       ownerName: story.ownerName,
       prompt: story.prompt,
-      keyword: story.keyword,
-      sentences: story.sentences.map((sentence, si) => ({
-        authorName: sentence.authorName,
-        words: sentence.words.map((word, wi): EditableWord => {
-          const posKey = `${si}:${wi}`;
-          const alreadyEdited = story.editedWordPositions.has(posKey);
-          return {
-            word,
-            index: wi,
-            sentenceIndex: si,
-            isEditable: !alreadyEdited,
-          };
-        }),
+      editableSentence,
+      sentences: story.sentences.map((s): StorySentenceView => ({
+        authorName: s.authorName,
+        text: s.text,
+        roundNumber: s.roundNumber,
       })),
     };
   }
@@ -1224,8 +1443,6 @@ export class UndercoverEditorGame extends BaseMinigame {
         ownerName: story.ownerName,
         editorUserId: story.editorUserId,
         editorName: editorPlayer?.userName ?? 'Unknown',
-        keyword: story.keyword,
-        keywordInStory: story.keywordInStory,
         edits: story.edits.map((e): WordEditView => {
           const sentence = story.sentences[e.sentenceIndex];
           return {
@@ -1234,13 +1451,13 @@ export class UndercoverEditorGame extends BaseMinigame {
             sentenceAuthor: sentence?.authorName ?? 'Unknown',
             originalWord: e.originalWord,
             newWord: e.newWord,
-            editedOnTurn: e.editedOnTurn,
+            editedOnRound: e.editedOnRound,
           };
         }),
         sentences: story.sentences.map((s): StorySentenceView => ({
           authorName: s.authorName,
           text: s.text,
-          turnNumber: s.turnNumber,
+          roundNumber: s.roundNumber,
         })),
       });
     }
@@ -1269,53 +1486,20 @@ export class UndercoverEditorGame extends BaseMinigame {
     });
   }
 
-  // ─── Helper: Keyword Detection ────────────────────────────────
-
-  private checkKeywordInStory(storyId: string): boolean {
-    const story = this.state.stories.get(storyId);
-    if (!story) return false;
-
-    const keyword = story.keyword.toLowerCase();
-    const allText = story.sentences.map((s) => s.text).join(' ').toLowerCase();
-
-    // Exact match check
-    if (allText.includes(keyword)) return true;
-
-    // Fuzzy match check using Fuse.js
-    const words = allText.split(/\s+/);
-    const fuse = new Fuse(words.map((w) => ({ word: w })), {
-      keys: ['word'],
-      threshold: UE_KEYWORD_FUZZY_THRESHOLD,
-      includeScore: true,
+  private broadcastAllStories(): void {
+    this.broadcastGameAction({
+      type: 'UE_STORIES_UPDATED',
+      stories: this.buildAllStoryViews(),
     });
-    const results = fuse.search(keyword);
-    return results.some((r) => (r.score ?? 1) <= UE_KEYWORD_FUZZY_THRESHOLD);
   }
 
-  // ─── Helper: Force End (host skip in REVIEW) ──────────────────
-
-  forceEnd(reason: string): void {
-    if (this.state.phase === 'REVIEW') {
-      // Host is forcing the review to end — go to reveal
-      logger.info({
-        event: 'undercover_editor:force_end_review',
-        lobbyId: this.context.lobbyId,
-        reason,
-      });
-      this.startRevealPhase();
-    } else {
-      this.cleanup();
-      this.context.onComplete(this.computeResults());
-    }
-  }
-
-  // ─── Helper: Action Log ───────────────────────────────────────
-
-  private logAction(type: string, payload: Record<string, unknown>): void {
-    this.actionLog.push({
-      type,
-      payload,
-      timestamp: Date.now(),
+  private broadcastSubmissionProgress(): void {
+    this.context.broadcastAction({
+      type: 'UE_SUBMISSION_PROGRESS',
+      payload: {
+        submittedCount: this.state.roundSubmissions.size,
+        totalPlayers: this.state.playerIds.length,
+      },
     });
   }
 }
