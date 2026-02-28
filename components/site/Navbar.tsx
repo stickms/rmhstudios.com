@@ -43,6 +43,7 @@ export function Navbar() {
     { href: '/', label: 'Home' },
     { href: '/games', label: 'Games' },
     { href: '/apps', label: 'Apps' },
+    { href: '/news', label: 'News' },
     { href: '/roadmap', label: 'Roadmap' },
     { href: '/research', label: 'Research' },
     { href: '/blog', label: 'Blog' },
@@ -126,11 +127,10 @@ export function Navbar() {
                             setStyle(s.id);
                             setShowStyleMenu(false);
                           }}
-                          className={`w-full text-left px-3 py-1.5 text-sm flex items-center gap-2 transition-colors ${
-                            style === s.id
+                          className={`w-full text-left px-3 py-1.5 text-sm flex items-center gap-2 transition-colors ${style === s.id
                               ? 'text-(--site-accent) bg-(--site-accent-dim)'
                               : 'text-(--site-text-muted) hover:text-(--site-text) hover:bg-(--site-surface-hover)'
-                          }`}
+                            }`}
                         >
                           <span className="text-base w-5 text-center">{s.icon}</span>
                           <span>{s.label}</span>
@@ -218,11 +218,10 @@ export function Navbar() {
                   <button
                     key={s.id}
                     onClick={() => setStyle(s.id)}
-                    className={`px-3 py-2 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors ${
-                      style === s.id
+                    className={`px-3 py-2 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors ${style === s.id
                         ? 'text-(--site-accent) bg-(--site-accent-dim) border border-(--site-accent)/30'
                         : 'text-(--site-text-muted) hover:text-(--site-text) bg-(--site-surface) border border-(--site-border)'
-                    }`}
+                      }`}
                   >
                     <span>{s.icon}</span>
                     <span>{s.label}</span>
