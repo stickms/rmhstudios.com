@@ -4,9 +4,10 @@
  */
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Play, ShoppingBag, Settings, Trophy, Zap, Users, Clock, Crosshair, Sparkles, Coins, RefreshCw, X } from 'lucide-react';
 import { useAltairMetaStore } from '@/lib/altair/stores/meta-store';
+import { useKeyboardNav } from '@/lib/altair/hooks/use-keyboard-nav';
 
 interface MenuScreenProps {
   onPlay: () => void;
@@ -20,6 +21,17 @@ export default function MenuScreen({ onPlay, onMultiplayer, onMetaShop, onSettin
   const doubleTimeUnlocked = useAltairMetaStore((s) => s.doubleTimeUnlocked);
   const totalRuns = useAltairMetaStore((s) => s.totalRunsPlayed);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
+
+  const menuActions = useMemo(() => [onPlay, onMultiplayer, onMetaShop, onSettings, () => setShowLeaderboard(true)], [onPlay, onMultiplayer, onMetaShop, onSettings]);
+  const { focusedIndex } = useKeyboardNav({
+    itemCount: 5,
+    onSelect: (i) => menuActions[i](),
+    orientation: 'vertical',
+    enabled: !showLeaderboard,
+  });
+
+  const focusClass = (i: number) =>
+    focusedIndex === i ? 'ring-2 ring-(--altair-accent)/50 scale-[1.02]' : '';
 
   return (
     <div className="altair-parchment flex flex-col items-center justify-center min-h-[calc(100vh-56px)] px-4 py-8">
@@ -48,7 +60,7 @@ export default function MenuScreen({ onPlay, onMultiplayer, onMetaShop, onSettin
       <div className="flex flex-col gap-3 w-full max-w-xs">
         <button
           onClick={onPlay}
-          className="flex items-center justify-center gap-2 py-4 rounded-lg font-bold text-white text-lg tracking-wider bg-(--altair-accent) hover:bg-(--altair-accent-hover) transition-colors shadow-lg"
+          className={`flex items-center justify-center gap-2 py-4 rounded-lg font-bold text-white text-lg tracking-wider bg-(--altair-accent) hover:bg-(--altair-accent-hover) transition-all shadow-lg ${focusClass(0)}`}
         >
           <Play size={20} />
           PLAY
@@ -56,7 +68,7 @@ export default function MenuScreen({ onPlay, onMultiplayer, onMetaShop, onSettin
 
         <button
           onClick={onMultiplayer}
-          className="flex items-center justify-center gap-2 py-3 rounded-lg font-bold text-white tracking-wider bg-(--altair-info) hover:brightness-110 transition-all shadow-md"
+          className={`flex items-center justify-center gap-2 py-3 rounded-lg font-bold text-white tracking-wider bg-(--altair-info) hover:brightness-110 transition-all shadow-md ${focusClass(1)}`}
         >
           <Users size={18} />
           MULTIPLAYER
@@ -64,7 +76,7 @@ export default function MenuScreen({ onPlay, onMultiplayer, onMetaShop, onSettin
 
         <button
           onClick={onMetaShop}
-          className="flex items-center gap-2 px-4 py-3 rounded-lg font-semibold text-(--altair-text) bg-(--altair-surface) border border-(--altair-border) hover:border-(--altair-border-bright) hover:bg-(--altair-surface-hover) transition-colors"
+          className={`flex items-center gap-2 px-4 py-3 rounded-lg font-semibold text-(--altair-text) bg-(--altair-surface) border border-(--altair-border) hover:border-(--altair-border-bright) hover:bg-(--altair-surface-hover) transition-all ${focusClass(2)}`}
         >
           <ShoppingBag size={18} />
           Meta Shop
@@ -73,7 +85,7 @@ export default function MenuScreen({ onPlay, onMultiplayer, onMetaShop, onSettin
 
         <button
           onClick={onSettings}
-          className="flex items-center justify-center gap-2 py-3 rounded-lg font-semibold text-(--altair-text) bg-(--altair-surface) border border-(--altair-border) hover:border-(--altair-border-bright) hover:bg-(--altair-surface-hover) transition-colors"
+          className={`flex items-center justify-center gap-2 py-3 rounded-lg font-semibold text-(--altair-text) bg-(--altair-surface) border border-(--altair-border) hover:border-(--altair-border-bright) hover:bg-(--altair-surface-hover) transition-all ${focusClass(3)}`}
         >
           <Settings size={18} />
           Settings
@@ -81,7 +93,7 @@ export default function MenuScreen({ onPlay, onMultiplayer, onMetaShop, onSettin
 
         <button
           onClick={() => setShowLeaderboard(!showLeaderboard)}
-          className="flex items-center justify-center gap-2 py-3 rounded-lg font-semibold text-(--altair-text) bg-(--altair-surface) border border-(--altair-border) hover:border-(--altair-border-bright) hover:bg-(--altair-surface-hover) transition-colors"
+          className={`flex items-center justify-center gap-2 py-3 rounded-lg font-semibold text-(--altair-text) bg-(--altair-surface) border border-(--altair-border) hover:border-(--altair-border-bright) hover:bg-(--altair-surface-hover) transition-all ${focusClass(4)}`}
         >
           <Trophy size={18} />
           Leaderboard

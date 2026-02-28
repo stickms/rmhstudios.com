@@ -3,13 +3,14 @@
  */
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Lock, Swords, Shield, Zap, Coins } from 'lucide-react';
 import { CLASSES, ClassDef } from '@/lib/altair/data/classes';
 import { WEAPONS } from '@/lib/altair/data/weapons';
 import { useAltairMetaStore } from '@/lib/altair/stores/meta-store';
 import { useAltairSettingsStore } from '@/lib/altair/stores/settings-store';
 import { useAltairToastStore } from '@/lib/altair/stores/toast-store';
+import { useKeyboardNav } from '@/lib/altair/hooks/use-keyboard-nav';
 import SpriteIcon from '@/components/altair/hud/SpriteIcon';
 
 interface ClassSelectScreenProps {
@@ -44,6 +45,37 @@ export default function ClassSelectScreen({ onSelect, onBack }: ClassSelectScree
   const doubleTime = useAltairSettingsStore((s) => s.doubleTime);
   const setDoubleTime = useAltairSettingsStore((s) => s.setDoubleTime);
 
+  const handleGridSelect = useCallback((i: number) => {
+    const cls = CLASSES[i];
+    if (!cls) return;
+    if (!unlockedClasses.includes(cls.id)) return;
+    // If already selected, start the run
+    if (selectedId === cls.id) {
+      onSelect(cls.id);
+    } else {
+      setSelectedId(cls.id);
+    }
+  }, [unlockedClasses, selectedId, onSelect]);
+
+  const { focusedIndex } = useKeyboardNav({
+    itemCount: CLASSES.length,
+    onSelect: handleGridSelect,
+    orientation: 'grid',
+    gridCols: 4,
+  });
+
+  // Escape to go back
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onBack();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [onBack]);
+
   const selectedClass = CLASSES.find((c) => c.id === selectedId);
   const startingWeapon = selectedClass ? WEAPONS.find((w) => w.id === selectedClass.startingWeaponId) : null;
 
@@ -54,9 +86,10 @@ export default function ClassSelectScreen({ onSelect, onBack }: ClassSelectScree
 
       {/* Class grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        {CLASSES.map((cls) => {
+        {CLASSES.map((cls, i) => {
           const isUnlocked = unlockedClasses.includes(cls.id);
           const isSelected = selectedId === cls.id;
+          const isFocused = focusedIndex === i && !isSelected;
 
           return (
             <button
@@ -66,9 +99,11 @@ export default function ClassSelectScreen({ onSelect, onBack }: ClassSelectScree
               className={`relative p-4 rounded-xl border text-left transition-all ${
                 isSelected
                   ? 'border-2 scale-[1.02] shadow-lg'
-                  : isUnlocked
-                    ? 'border-(--altair-border) hover:border-(--altair-border-bright) hover:bg-(--altair-surface-hover)'
-                    : 'border-(--altair-border) opacity-50 cursor-not-allowed'
+                  : isFocused
+                    ? 'border-2 border-(--altair-accent)/60 ring-1 ring-(--altair-accent)/30 bg-(--altair-surface-hover)'
+                    : isUnlocked
+                      ? 'border-(--altair-border) hover:border-(--altair-border-bright) hover:bg-(--altair-surface-hover)'
+                      : 'border-(--altair-border) opacity-50 cursor-not-allowed'
               } bg-(--altair-surface)`}
               style={isSelected ? { borderColor: cls.color, boxShadow: `0 0 20px ${cls.color}30` } : {}}
             >

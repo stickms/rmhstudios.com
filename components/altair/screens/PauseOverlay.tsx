@@ -3,6 +3,9 @@
  */
 'use client';
 
+import { useMemo } from 'react';
+import { useKeyboardNav } from '@/lib/altair/hooks/use-keyboard-nav';
+
 interface PauseOverlayProps {
   onResume: () => void;
   onSettings: () => void;
@@ -10,6 +13,16 @@ interface PauseOverlayProps {
 }
 
 export default function PauseOverlay({ onResume, onSettings, onQuit }: PauseOverlayProps) {
+  const actions = useMemo(() => [onResume, onSettings, onQuit], [onResume, onSettings, onQuit]);
+  const { focusedIndex } = useKeyboardNav({
+    itemCount: 3,
+    onSelect: (i) => actions[i](),
+    orientation: 'vertical',
+  });
+
+  const focusClass = (i: number) =>
+    focusedIndex === i ? 'ring-2 ring-(--altair-accent)/50 scale-[1.03]' : '';
+
   return (
     <div className="absolute inset-0 z-50 flex flex-col items-center justify-center altair-overlay">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
@@ -21,24 +34,24 @@ export default function PauseOverlay({ onResume, onSettings, onQuit }: PauseOver
         <div className="flex flex-col gap-3 w-56 sm:w-48">
           <button
             onClick={onResume}
-            className="py-3 bg-(--altair-accent) hover:bg-(--altair-accent-hover) text-white font-bold rounded-lg tracking-widest uppercase transition-colors"
+            className={`py-3 bg-(--altair-accent) hover:bg-(--altair-accent-hover) text-white font-bold rounded-lg tracking-widest uppercase transition-all ${focusClass(0)}`}
           >
             Resume
           </button>
           <button
             onClick={onSettings}
-            className="py-3 bg-(--altair-surface-hover) hover:bg-(--altair-surface) border border-(--altair-border) text-(--altair-text) font-bold rounded-lg tracking-widest uppercase transition-colors"
+            className={`py-3 bg-(--altair-surface-hover) hover:bg-(--altair-surface) border border-(--altair-border) text-(--altair-text) font-bold rounded-lg tracking-widest uppercase transition-all ${focusClass(1)}`}
           >
             Settings
           </button>
           <button
             onClick={onQuit}
-            className="py-3 bg-(--altair-surface-hover) hover:bg-(--altair-surface) border border-(--altair-border) text-(--altair-text-muted) hover:text-(--altair-text) font-bold rounded-lg tracking-widest uppercase transition-colors text-sm"
+            className={`py-3 bg-(--altair-surface-hover) hover:bg-(--altair-surface) border border-(--altair-border) text-(--altair-text-muted) hover:text-(--altair-text) font-bold rounded-lg tracking-widest uppercase transition-all text-sm ${focusClass(2)}`}
           >
             Quit to Menu
           </button>
         </div>
-        <div className="text-(--altair-text-dim) text-xs font-mono mt-6">[Esc] to resume</div>
+        <div className="text-(--altair-text-dim) text-xs font-mono mt-6">[Esc] resume · [W/S] navigate · [Space] select</div>
       </div>
     </div>
   );

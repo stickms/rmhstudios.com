@@ -4,9 +4,11 @@
  */
 'use client';
 
+import { useMemo } from 'react';
 import { useAltairGameStore } from '@/lib/altair/stores/game-store';
 import { useAltairMetaStore } from '@/lib/altair/stores/meta-store';
 import { Trophy, Skull, Coins, Clock, Crosshair, Layers } from 'lucide-react';
+import { useKeyboardNav } from '@/lib/altair/hooks/use-keyboard-nav';
 
 interface GameOverScreenProps {
   onPlayAgain: () => void;
@@ -21,6 +23,16 @@ function formatTime(seconds: number): string {
 }
 
 export default function GameOverScreen({ onPlayAgain, onMetaShop, onMenu }: GameOverScreenProps) {
+  const actions = useMemo(() => [onPlayAgain, onMetaShop, onMenu], [onPlayAgain, onMetaShop, onMenu]);
+  const { focusedIndex } = useKeyboardNav({
+    itemCount: 3,
+    onSelect: (i) => actions[i](),
+    orientation: 'vertical',
+  });
+
+  const focusClass = (i: number) =>
+    focusedIndex === i ? 'ring-2 ring-(--altair-accent)/50 scale-[1.02]' : '';
+
   const phase = useAltairGameStore((s) => s.phase);
   const kills = useAltairGameStore((s) => s.kills);
   const level = useAltairGameStore((s) => s.level);
@@ -161,19 +173,19 @@ export default function GameOverScreen({ onPlayAgain, onMetaShop, onMenu }: Game
         <div className="flex flex-col gap-2">
           <button
             onClick={onPlayAgain}
-            className="py-3 rounded-xl font-bold text-white bg-(--altair-accent) hover:bg-(--altair-accent-hover) transition-colors"
+            className={`py-3 rounded-xl font-bold text-white bg-(--altair-accent) hover:bg-(--altair-accent-hover) transition-all ${focusClass(0)}`}
           >
             Play Again
           </button>
           <button
             onClick={onMetaShop}
-            className="py-2.5 rounded-xl font-semibold text-(--altair-text) bg-(--altair-surface-hover) border border-(--altair-border) hover:bg-(--altair-surface-active) transition-colors"
+            className={`py-2.5 rounded-xl font-semibold text-(--altair-text) bg-(--altair-surface-hover) border border-(--altair-border) hover:bg-(--altair-surface-active) transition-all ${focusClass(1)}`}
           >
             Meta Shop
           </button>
           <button
             onClick={onMenu}
-            className="py-2 rounded-xl font-medium text-(--altair-text-muted) hover:text-(--altair-text) transition-colors text-sm"
+            className={`py-2 rounded-xl font-medium text-(--altair-text-muted) hover:text-(--altair-text) transition-all text-sm ${focusClass(2)}`}
           >
             Main Menu
           </button>

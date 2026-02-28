@@ -10,6 +10,7 @@ import { PASSIVES } from '@/lib/altair/data/passives';
 import { RotateCcw, X, Coins } from 'lucide-react';
 import SpriteIcon from '@/components/altair/hud/SpriteIcon';
 import { WEAPON_ICON_SRC, PASSIVE_ICON_SRC } from '@/lib/altair/engine/sprites/sprite-defs';
+import { useKeyboardNav } from '@/lib/altair/hooks/use-keyboard-nav';
 
 function getChoiceInfo(choice: UpgradeChoice): { name: string; description: string; levelText: string; color: string; isGold: boolean; iconFrame: number; iconType: 'weapon' | 'passive' | 'gold' } {
   switch (choice.type) {
@@ -87,7 +88,16 @@ export default function LevelUpScreen({ onReroll }: LevelUpScreenProps) {
   const banish = useAltairGameStore((s) => s.banish);
   const level = useAltairGameStore((s) => s.level);
 
-  if (phase !== 'upgrading' || choices.length === 0) return null;
+  const isActive = phase === 'upgrading' && choices.length > 0;
+  const { focusedIndex } = useKeyboardNav({
+    itemCount: choices.length,
+    onSelect: pickUpgrade,
+    orientation: 'horizontal',
+    enabled: isActive,
+    numberKeys: true,
+  });
+
+  if (!isActive) return null;
 
   return (
     <div className="absolute inset-0 z-50 flex items-center justify-center altair-overlay overflow-y-auto">
@@ -108,11 +118,14 @@ export default function LevelUpScreen({ onReroll }: LevelUpScreenProps) {
         <div className="flex gap-2 sm:gap-3 justify-center flex-wrap">
           {choices.map((choice, i) => {
             const info = getChoiceInfo(choice);
+            const isFocused = focusedIndex === i;
             return (
               <div key={i} className="relative group">
                 <button
                   onClick={() => pickUpgrade(i)}
-                  className="altair-parchment-surface w-36 sm:w-44 p-3 sm:p-4 rounded-xl border border-(--altair-border) bg-(--altair-surface) hover:bg-(--altair-surface-hover) hover:border-(--altair-border-bright) transition-all text-left altair-modal"
+                  className={`altair-parchment-surface w-36 sm:w-44 p-3 sm:p-4 rounded-xl border bg-(--altair-surface) hover:bg-(--altair-surface-hover) hover:border-(--altair-border-bright) transition-all text-left altair-modal ${
+                    isFocused ? 'border-2 border-(--altair-accent) ring-2 ring-(--altair-accent)/30 scale-[1.03]' : 'border-(--altair-border)'
+                  }`}
                   style={{ animationDelay: `${i * 0.05}s` }}
                 >
                   {/* Icon */}
@@ -161,6 +174,11 @@ export default function LevelUpScreen({ onReroll }: LevelUpScreenProps) {
               </div>
             );
           })}
+        </div>
+
+        {/* Keyboard hint */}
+        <div className="text-center mt-3 text-[10px] text-(--altair-text-dim) font-mono hidden sm:block">
+          [A/D] or [←/→] navigate · [Space] select · [1-{choices.length}] quick pick
         </div>
 
         {/* Reroll button */}
