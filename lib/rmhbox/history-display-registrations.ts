@@ -404,14 +404,14 @@ registerHistoryDisplay({
           .filter(Boolean),
     },
     {
-      key: 'keyword',
-      label: 'Keyword',
+      key: 'editors',
+      label: 'Editors',
       extract: (log: GameLog) => {
         const reveal = log.actions.find((a) => a.type === 'reveal');
         if (!reveal) return [];
         const payload = reveal.payload as Record<string, unknown>;
         const reveals = payload.storyReveals as Array<Record<string, unknown>> | undefined;
-        return reveals?.map((r) => r.keyword as string).filter(Boolean) ?? [];
+        return reveals?.map((r) => r.editorName as string).filter(Boolean) ?? [];
       },
     },
   ],
@@ -423,7 +423,6 @@ registerHistoryDisplay({
       options: () => ['editor', 'writer'],
     },
     { key: 'editorCaught', label: 'Editor Caught', type: 'boolean' },
-    { key: 'keywordInStory', label: 'Keyword in Story', type: 'boolean' },
   ],
   getSummary: (log: GameLog) => {
     const reveal = log.actions.find((a) => a.type === 'reveal');

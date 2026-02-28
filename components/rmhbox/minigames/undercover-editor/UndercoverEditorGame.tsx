@@ -1,49 +1,42 @@
 /**
- * UndercoverEditorGame — Phase router for the Undercover Editor minigame.
+ * UndercoverEditorGame — Main game component for the Undercover Editor minigame.
  *
- * Parallel design: all players write sentences for ALL stories simultaneously.
- * Each player is secretly assigned as the undercover editor of one story.
- * After writing rounds, players review all stories and try to match each
- * story with its undercover editor.
+ * Round-robin design: N players create N stories over 2N steps (N write + N edit).
+ * Each round, every player writes ONE sentence for ONE assigned story.
+ * After each write round, editors secretly change exactly 2 words.
+ * After all rounds: READING → REVIEW (match editors) → REVEAL.
  *
- * Phases:
- *   WRITE  → all players write a sentence for each story
- *   EDIT   → editors secretly edit their assigned story
- *   (repeat for N rounds)
- *   REVIEW → infinite-time matching phase
- *   REVEAL → dramatic reveal of editor assignments + scores
- *
- * Server actions handled:
- *   UE_GAME_START, UE_ROLE_ASSIGNED, UE_WRITE_START, UE_SENTENCE_CONFIRMED,
- *   UE_SENTENCE_UNSUBMITTED, UE_SUBMISSION_PROGRESS, UE_EDIT_START,
- *   UE_EDIT_PROMPT, UE_EDIT_CONFIRMED, UE_STORIES_UPDATED, UE_REVIEW_START,
- *   UE_MATCHING_SAVED, UE_PLAYER_LOCKED_IN, UE_REVEAL, UE_ERROR,
- *   TIMER_START, TIMER_TICK, MINIGAME_ROUND
+ * Server events handled:
+ *   UE_GAME_START, UE_ROLE_ASSIGNED, UE_WRITE_START, UE_WRITE_ASSIGNMENT,
+ *   UE_SENTENCE_CONFIRMED, UE_SENTENCE_UNSUBMITTED, UE_SUBMISSION_PROGRESS,
+ *   UE_EDIT_START, UE_EDIT_PROMPT, UE_EDIT_CONFIRMED, UE_STORIES_UPDATED,
+ *   UE_READING_START, UE_READING_SENTENCE, UE_READING_NEXT_STORY,
+ *   UE_REVIEW_START, UE_MATCHING_SAVED, UE_PLAYER_LOCKED_IN,
+ *   UE_REVEAL, UE_ERROR, TIMER_TICK
  */
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getSocket, emit } from '@/lib/rmhbox/socket';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
-import { S2C, C2S } from '@/lib/rmhbox/events';
+import { emitGameInput, useGameSocket, extractTimerTick } from '@/lib/rmhbox/minigame-client';
 import { playSound } from '@/lib/rmhbox/audio';
 import StoryDisplay from './StoryDisplay';
 import WriteInput from './WriteInput';
 import StoryEditor from './StoryEditor';
 import type { EditableStory } from './StoryEditor';
 import MatchingPanel from './MatchingPanel';
-import RevealScreen from './RevealScreen';
 import RoleBadge from './RoleBadge';
+import { ChevronRight } from 'lucide-react';
 
 // ─── Types ───────────────────────────────────────────────────────
 
-type Phase = 'LOBBY' | 'WRITE' | 'EDIT' | 'REVIEW' | 'REVEAL' | 'GAME_OVER';
+type Phase = 'LOBBY' | 'WRITE' | 'EDIT' | 'READING' | 'REVIEW' | 'REVEAL' | 'GAME_OVER';
 
 interface Sentence {
   authorName: string;
   text: string;
-  turnNumber: number;
+  roundNumber: number;
 }
 
 interface StoryData {
@@ -58,20 +51,21 @@ interface PlayerEntry {
   userName: string;
 }
 
+interface WordEditView {
+  storyId: string;
+  sentenceIndex: number;
+  sentenceAuthor: string;
+  originalWord: string;
+  newWord: string;
+  editedOnRound: number;
+}
+
 interface StoryRevealInfo {
   storyId: string;
   ownerName: string;
   editorUserId: string;
   editorName: string;
-  keyword: string;
-  keywordInStory: boolean;
-  edits: Array<{
-    storyId: string;
-    sentenceIndex: number;
-    sentenceAuthor: string;
-    originalWord: string;
-    newWord: string;
-  }>;
+  edits: WordEditView[];
   sentences: Sentence[];
 }
 
@@ -88,12 +82,12 @@ interface ScoreEntry {
   score: number;
 }
 
-// ─── Helper ──────────────────────────────────────────────────────
-
-function emitGameInput(action: string, data: unknown = {}) {
-  const lobbyId = useRMHboxStore.getState().lobby?.lobbyId;
-  if (!lobbyId) return;
-  emit(C2S.GAME_INPUT, { lobbyId, action, data });
+/** Story metadata used in READING phase (no sentences until revealed). */
+interface ReadingStoryMeta {
+  storyId: string;
+  ownerName: string;
+  prompt: string;
+  sentenceCount: number;
 }
 
 // ─── Props ───────────────────────────────────────────────────────
@@ -111,27 +105,40 @@ export default function UndercoverEditorGame({
 }: UndercoverEditorGameProps) {
   void _playerName;
 
-  // ─── Spectator Mode ────────────────────────────────────────
+  // ─── Spectator / Host ──────────────────────────────────────
   const isSpectator = useRMHboxStore((s) => s.lobby?.myRole === 'spectator');
+  const isHost = useRMHboxStore((s) => s.lobby?.hostId === s.lobby?.myUserId);
 
   // ─── State ─────────────────────────────────────────────────
   const [phase, setPhase] = useState<Phase>('LOBBY');
   const [assignedStoryId, setAssignedStoryId] = useState<string | null>(null);
-  const [keyword, setKeyword] = useState<string | null>(null);
   const [stories, setStories] = useState<StoryData[]>([]);
   const [gamePlayers, setGamePlayers] = useState<PlayerEntry[]>([]);
-  const [currentRound, setCurrentRound] = useState(0);
-  const [totalRounds, setTotalRounds] = useState(0);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [totalSteps, setTotalSteps] = useState(0);
+  const [writeRound, setWriteRound] = useState(0);
   const [timeRemaining, setTimeRemaining] = useState(45);
 
-  // Write phase: track which stories I've submitted for
-  const [mySubmissions, setMySubmissions] = useState<Record<string, string>>({});
-  const [submissionProgress, setSubmissionProgress] = useState<Record<string, number>>({});
+  // Write phase: ONE story assignment per round
+  const [myWriteAssignment, setMyWriteAssignment] = useState<{
+    storyId: string;
+    ownerName: string;
+    prompt: string;
+    sentences: Sentence[];
+  } | null>(null);
+  const [mySubmission, setMySubmission] = useState<string | null>(null);
+  const [submittedCount, setSubmittedCount] = useState(0);
   const [totalPlayers, setTotalPlayers] = useState(0);
 
   // Edit phase
   const [editableStory, setEditableStory] = useState<EditableStory | null>(null);
   const [editDone, setEditDone] = useState(false);
+
+  // Reading phase (host-driven sentence stepping)
+  const [readingStories, setReadingStories] = useState<ReadingStoryMeta[]>([]);
+  const [readingStoryIndex, setReadingStoryIndex] = useState(0);
+  const [readingSentenceIndex, setReadingSentenceIndex] = useState(0);
+  const [revealedSentences, setRevealedSentences] = useState<Sentence[]>([]);
 
   // Review phase: matching guesses
   const [matchGuesses, setMatchGuesses] = useState<Record<string, string>>({});
@@ -146,9 +153,6 @@ export default function UndercoverEditorGame({
   // Error toast
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Currently focused story for writing (tab index)
-  const [activeStoryIndex, setActiveStoryIndex] = useState(0);
-
   // ─── Event Handler ─────────────────────────────────────────
 
   const handleGameAction = useCallback(
@@ -162,66 +166,70 @@ export default function UndercoverEditorGame({
           if (s) setStories(s);
           const p = data.players as PlayerEntry[] | undefined;
           if (p) setGamePlayers(p);
-          setTotalRounds((data.totalRounds as number) ?? 0);
-          setMySubmissions({});
+          setTotalSteps((data.totalSteps as number) ?? 0);
+          setTotalPlayers((data.numPlayers as number) ?? 0);
+          // Reset all state
+          setMySubmission(null);
+          setMyWriteAssignment(null);
           setMatchGuesses({});
           setIsLockedIn(false);
           setLockedInPlayers([]);
           setScores([]);
           setStoryReveals([]);
+          setRevealedSentences([]);
           playSound('swoosh');
           break;
         }
         case 'UE_ROLE_ASSIGNED': {
           setAssignedStoryId(data.assignedStoryId as string);
-          setKeyword(data.keyword as string);
           playSound('chime');
           break;
         }
         case 'UE_WRITE_START': {
           setPhase('WRITE');
-          setCurrentRound((data.round as number) ?? currentRound + 1);
-          setTotalRounds((data.totalRounds as number) ?? totalRounds);
+          setWriteRound((data.writeRound as number) ?? 1);
+          setCurrentStep((data.step as number) ?? 1);
+          setTotalSteps((data.totalSteps as number) ?? totalSteps);
           if (typeof data.writeDurationSeconds === 'number') {
             setTimeRemaining(data.writeDurationSeconds as number);
           }
           // Reset write state for new round
-          setMySubmissions({});
-          setSubmissionProgress({});
-          setActiveStoryIndex(0);
+          setMySubmission(null);
+          setMyWriteAssignment(null);
+          setSubmittedCount(0);
           setEditDone(false);
           playSound('chime');
           break;
         }
+        case 'UE_WRITE_ASSIGNMENT': {
+          // Server tells each player which story to write for this round
+          setMyWriteAssignment({
+            storyId: data.storyId as string,
+            ownerName: data.storyOwnerName as string,
+            prompt: data.prompt as string,
+            sentences: (data.sentences as Sentence[]) ?? [],
+          });
+          break;
+        }
         case 'UE_SENTENCE_CONFIRMED': {
-          const storyId = data.storyId as string;
-          const text = data.text as string;
-          setMySubmissions((prev) => ({ ...prev, [storyId]: text }));
+          setMySubmission(data.text as string);
           playSound('click');
           break;
         }
         case 'UE_SENTENCE_UNSUBMITTED': {
-          const storyId = data.storyId as string;
-          setMySubmissions((prev) => {
-            const next = { ...prev };
-            delete next[storyId];
-            return next;
-          });
+          setMySubmission(null);
           break;
         }
         case 'UE_SUBMISSION_PROGRESS': {
-          const pl = data.payload as Record<string, unknown> | undefined;
-          if (pl) {
-            setSubmissionProgress(pl.progress as Record<string, number>);
-            if (typeof pl.totalPlayers === 'number') {
-              setTotalPlayers(pl.totalPlayers as number);
-            }
-          }
+          if (typeof data.submittedCount === 'number') setSubmittedCount(data.submittedCount as number);
+          if (typeof data.totalPlayers === 'number') setTotalPlayers(data.totalPlayers as number);
           break;
         }
         case 'UE_EDIT_START': {
           setPhase('EDIT');
+          setCurrentStep((data.step as number) ?? currentStep + 1);
           setEditDone(false);
+          setEditableStory(null);
           if (typeof data.editDurationSeconds === 'number') {
             setTimeRemaining(data.editDurationSeconds as number);
           }
@@ -236,10 +244,6 @@ export default function UndercoverEditorGame({
         }
         case 'UE_EDIT_CONFIRMED': {
           setEditDone(true);
-          // Update editable story if server sent it back
-          if (data.story) {
-            setEditableStory(data.story as EditableStory);
-          }
           playSound('click');
           break;
         }
@@ -248,6 +252,34 @@ export default function UndercoverEditorGame({
           if (updated) setStories(updated);
           break;
         }
+        // ─── READING Phase Events ───────────────────────────
+        case 'UE_READING_START': {
+          setPhase('READING');
+          const readStories = data.stories as ReadingStoryMeta[] | undefined;
+          if (readStories) setReadingStories(readStories);
+          setReadingStoryIndex((data.readingStoryIndex as number) ?? 0);
+          setReadingSentenceIndex((data.readingSentenceIndex as number) ?? 0);
+          setRevealedSentences([]);
+          playSound('swoosh');
+          break;
+        }
+        case 'UE_READING_SENTENCE': {
+          const sentence = data.sentence as Sentence | undefined;
+          if (sentence) {
+            setRevealedSentences((prev) => [...prev, sentence]);
+            setReadingSentenceIndex((data.sentenceIndex as number) + 1);
+          }
+          playSound('click');
+          break;
+        }
+        case 'UE_READING_NEXT_STORY': {
+          setReadingStoryIndex(data.readingStoryIndex as number);
+          setReadingSentenceIndex(0);
+          setRevealedSentences([]);
+          playSound('swoosh');
+          break;
+        }
+        // ─── REVIEW Phase Events ────────────────────────────
         case 'UE_REVIEW_START': {
           setPhase('REVIEW');
           const reviewStories = data.stories as StoryData[] | undefined;
@@ -273,6 +305,7 @@ export default function UndercoverEditorGame({
           playSound('click');
           break;
         }
+        // ─── REVEAL Phase ───────────────────────────────────
         case 'UE_REVEAL': {
           setPhase('REVEAL');
           const reveals = data.storyReveals as StoryRevealInfo[] | undefined;
@@ -288,7 +321,6 @@ export default function UndercoverEditorGame({
           const msg = data.message as string | undefined;
           if (msg) {
             setErrorMessage(msg);
-            // Auto-clear after 3 seconds
             setTimeout(() => setErrorMessage(null), 3000);
           }
           break;
@@ -297,32 +329,61 @@ export default function UndercoverEditorGame({
           setPhase('GAME_OVER');
           break;
         }
-        case 'TIMER_START': {
-          const pl = data.payload as Record<string, unknown> | undefined;
-          if (pl && typeof pl.timeRemaining === 'number') {
-            setTimeRemaining(pl.timeRemaining as number);
-          }
-          break;
-        }
         case 'TIMER_TICK': {
-          const pl = data.payload as Record<string, unknown> | undefined;
-          const remaining = (pl?.timeRemaining ?? data.timeRemaining) as number;
-          if (typeof remaining === 'number') {
+          const remaining = extractTimerTick(data);
+          if (remaining !== undefined) {
             setTimeRemaining(remaining);
             if (remaining <= 3 && remaining > 0) playSound('countdownBeep');
           }
           break;
         }
-        case 'MINIGAME_ROUND': {
-          const pl = data.payload as Record<string, unknown> | undefined;
-          if (pl && typeof pl.current === 'number') {
-            setCurrentRound(pl.current as number);
-          }
-          break;
-        }
       }
     },
-    [currentRound, totalRounds],
+    [totalSteps, currentStep],
+  );
+
+  // Handle full state snapshot (hydration / reconnection)
+  const handleStateSnapshot = useCallback(
+    (data: Record<string, unknown>) => {
+      const p = data.phase as string;
+      if (['WRITE', 'EDIT', 'READING', 'REVIEW', 'REVEAL', 'GAME_OVER'].includes(p)) {
+        setPhase(p as Phase);
+      } else if (p === 'SETUP') {
+        setPhase('LOBBY');
+      }
+      if (Array.isArray(data.stories)) setStories(data.stories as StoryData[]);
+      if (Array.isArray(data.players)) setGamePlayers(data.players as PlayerEntry[]);
+      if (data.assignedStoryId) setAssignedStoryId(data.assignedStoryId as string);
+      if (typeof data.currentStep === 'number') setCurrentStep(data.currentStep as number);
+      if (typeof data.totalSteps === 'number') setTotalSteps(data.totalSteps as number);
+      if (typeof data.currentWriteRound === 'number') setWriteRound(data.currentWriteRound as number);
+      if (typeof data.timeRemaining === 'number') setTimeRemaining(data.timeRemaining as number);
+      if (typeof data.submittedCount === 'number') setSubmittedCount(data.submittedCount as number);
+      if (typeof data.totalPlayers === 'number') setTotalPlayers(data.totalPlayers as number);
+      if (data.myWriteAssignment) {
+        // Reconstruct write assignment from snapshot
+        const assignStoryId = data.myWriteAssignment as string;
+        const storyList = data.stories as StoryData[] | undefined;
+        const assignedStory = storyList?.find((s) => s.storyId === assignStoryId);
+        if (assignedStory) {
+          setMyWriteAssignment({
+            storyId: assignedStory.storyId,
+            ownerName: assignedStory.ownerName,
+            prompt: assignedStory.prompt,
+            sentences: assignedStory.sentences,
+          });
+        }
+      }
+      if (typeof data.mySubmission === 'string') setMySubmission(data.mySubmission as string);
+      else setMySubmission(null);
+      if (data.editableStory) setEditableStory(data.editableStory as EditableStory);
+      if (data.myMatchGuesses) setMatchGuesses(data.myMatchGuesses as Record<string, string>);
+      if (data.isMatchLockedIn) setIsLockedIn(true);
+      if (Array.isArray(data.matchLockedIn)) setLockedInPlayers(data.matchLockedIn as string[]);
+      if (typeof data.readingStoryIndex === 'number') setReadingStoryIndex(data.readingStoryIndex as number);
+      if (typeof data.readingSentenceIndex === 'number') setReadingSentenceIndex(data.readingSentenceIndex as number);
+    },
+    [],
   );
 
   // Listen for GAME_ROUND_RESULTS for game-over
@@ -330,69 +391,34 @@ export default function UndercoverEditorGame({
     setPhase('GAME_OVER');
   }, []);
 
-  // Subscribe to socket events
-  useEffect(() => {
-    const socket = getSocket();
-    if (!socket) return;
-
-    socket.on(S2C.GAME_ACTION, handleGameAction);
-    socket.on(S2C.GAME_ROUND_RESULTS, handleRoundResults);
-    return () => {
-      socket.off(S2C.GAME_ACTION, handleGameAction);
-      socket.off(S2C.GAME_ROUND_RESULTS, handleRoundResults);
-    };
-  }, [handleGameAction, handleRoundResults]);
-
-  // Hydrate from Zustand gameState snapshot on mount
-  useEffect(() => {
-    const snapshot = useRMHboxStore.getState().gameState;
-    if (!snapshot || !snapshot.phase) return;
-
-    const p = snapshot.phase as string;
-    if (['WRITE', 'EDIT', 'REVIEW', 'REVEAL', 'GAME_OVER'].includes(p)) {
-      setPhase(p as Phase);
-    } else if (p === 'SETUP') {
-      setPhase('LOBBY');
-    }
-    if (Array.isArray(snapshot.stories)) setStories(snapshot.stories as StoryData[]);
-    if (Array.isArray(snapshot.players)) setGamePlayers(snapshot.players as PlayerEntry[]);
-    if (snapshot.assignedStoryId) setAssignedStoryId(snapshot.assignedStoryId as string);
-    if (snapshot.keyword) setKeyword(snapshot.keyword as string);
-    if (snapshot.currentRound != null) setCurrentRound(snapshot.currentRound as number);
-    if (snapshot.totalRounds != null) setTotalRounds(snapshot.totalRounds as number);
-    if (snapshot.timeRemaining != null) setTimeRemaining(snapshot.timeRemaining as number);
-    if (snapshot.mySubmissions) setMySubmissions(snapshot.mySubmissions as Record<string, string>);
-    if (snapshot.submissionProgress) setSubmissionProgress(snapshot.submissionProgress as Record<string, number>);
-    if (typeof snapshot.totalPlayers === 'number') setTotalPlayers(snapshot.totalPlayers as number);
-    if (snapshot.myMatchGuesses) setMatchGuesses(snapshot.myMatchGuesses as Record<string, string>);
-    if (snapshot.isMatchLockedIn) setIsLockedIn(true);
-    if (Array.isArray(snapshot.matchLockedIn)) setLockedInPlayers(snapshot.matchLockedIn as string[]);
-  }, []);
+  // Subscribe to socket events + hydrate from store
+  useGameSocket({
+    onGameAction: handleGameAction,
+    onStateSnapshot: handleStateSnapshot,
+    onRoundResults: handleRoundResults,
+  });
 
   // ─── Actions ───────────────────────────────────────────────
 
   const handleSubmitSentence = useCallback(
-    (storyId: string, text: string) => {
-      if (isSpectator) return;
-      emitGameInput('WRITE_SENTENCE', { storyId, text });
+    (text: string) => {
+      if (isSpectator || !myWriteAssignment) return;
+      emitGameInput('WRITE_SENTENCE', { storyId: myWriteAssignment.storyId, text });
     },
-    [isSpectator],
+    [isSpectator, myWriteAssignment],
   );
 
-  const handleUnsubmitSentence = useCallback(
-    (storyId: string) => {
+  const handleUnsubmitSentence = useCallback(() => {
+    if (isSpectator || !myWriteAssignment) return;
+    emitGameInput('UNSUBMIT_SENTENCE', { storyId: myWriteAssignment.storyId });
+  }, [isSpectator, myWriteAssignment]);
+
+  const handleEditTwoWords = useCallback(
+    (storyId: string, edits: Array<{ wordIndex: number; newWord: string }>) => {
       if (isSpectator) return;
-      emitGameInput('UNSUBMIT_SENTENCE', { storyId });
+      emitGameInput('EDIT_TWO_WORDS', { storyId, edits });
     },
     [isSpectator],
-  );
-
-  const handleEdit = useCallback(
-    (sentenceIndex: number, wordIndex: number, newWord: string) => {
-      if (isSpectator || !assignedStoryId) return;
-      emitGameInput('EDIT_WORD', { storyId: assignedStoryId, sentenceIndex, wordIndex, newWord });
-    },
-    [isSpectator, assignedStoryId],
   );
 
   const handleSkipEdit = useCallback(() => {
@@ -400,12 +426,19 @@ export default function UndercoverEditorGame({
     emitGameInput('SKIP_EDIT', {});
   }, [isSpectator]);
 
+  const handleNextSentence = useCallback(() => {
+    emitGameInput('NEXT_SENTENCE', {});
+  }, []);
+
+  const handleNextStory = useCallback(() => {
+    emitGameInput('NEXT_STORY', {});
+  }, []);
+
   const handleGuessChange = useCallback(
     (storyId: string, guessedEditorId: string) => {
       if (isSpectator) return;
       setMatchGuesses((prev) => {
         const next = { ...prev, [storyId]: guessedEditorId };
-        // Auto-save to server
         emitGameInput('SUBMIT_MATCHING', { guesses: next });
         return next;
       });
@@ -421,10 +454,7 @@ export default function UndercoverEditorGame({
 
   // ─── Derived Values ────────────────────────────────────────
 
-  const activeStory = stories[activeStoryIndex] ?? null;
-  const submittedCount = Object.keys(mySubmissions).length;
-  const totalStories = stories.length;
-  const allSubmitted = submittedCount === totalStories;
+  const currentReadingStory = readingStories[readingStoryIndex] ?? null;
 
   // ─── Render ────────────────────────────────────────────────
 
@@ -444,10 +474,10 @@ export default function UndercoverEditorGame({
         </div>
       )}
 
-      {/* Persistent role badge — shows assigned story and keyword */}
-      {assignedStoryId && keyword && !isSpectator && (
+      {/* Persistent role badge — shows assigned story */}
+      {assignedStoryId && !isSpectator && (
         <div className="self-end">
-          <RoleBadge role="editor" keyword={keyword} />
+          <RoleBadge role="editor" />
         </div>
       )}
 
@@ -468,7 +498,7 @@ export default function UndercoverEditorGame({
           </motion.div>
         )}
 
-        {/* WRITE — all players write for all stories */}
+        {/* WRITE — each player writes for one assigned story */}
         {phase === 'WRITE' && (
           <motion.div
             key="write"
@@ -481,85 +511,64 @@ export default function UndercoverEditorGame({
             {/* Round indicator */}
             <div className="text-center">
               <p className="text-xs font-medium text-(--rmhbox-text-muted) uppercase tracking-wider">
-                Round {currentRound} / {totalRounds}
+                Step {currentStep} / {totalSteps} · Writing Round {writeRound}
               </p>
               <p className="text-sm text-(--rmhbox-text-muted)">
-                Write a sentence for each story • {submittedCount}/{totalStories} done
+                {submittedCount}/{totalPlayers} players submitted
               </p>
             </div>
 
-            {/* Story tabs */}
-            <div className="flex gap-1 overflow-x-auto w-full justify-center flex-wrap">
-              {stories.map((story, idx) => {
-                const isSubmitted = !!mySubmissions[story.storyId];
-                return (
-                  <button
-                    key={story.storyId}
-                    onClick={() => setActiveStoryIndex(idx)}
-                    className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-                      idx === activeStoryIndex
-                        ? 'bg-(--rmhbox-accent) text-white'
-                        : isSubmitted
-                          ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                          : 'bg-(--rmhbox-surface) text-(--rmhbox-text-muted) border border-(--rmhbox-border)'
-                    }`}
-                  >
-                    {story.ownerName}
-                    {isSubmitted && ' ✓'}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Active story content */}
-            {activeStory && (
+            {/* Write assignment */}
+            {myWriteAssignment && !isSpectator ? (
               <div className="w-full max-w-lg flex flex-col gap-3">
                 <div className="rounded-xl bg-(--rmhbox-surface) p-3 border border-(--rmhbox-border)">
                   <p className="text-xs font-semibold text-(--rmhbox-accent) mb-1">
-                    {activeStory.ownerName}&apos;s Story
+                    {myWriteAssignment.ownerName}&apos;s Story
                   </p>
                   <p className="text-sm text-(--rmhbox-text-muted) italic mb-2">
-                    {activeStory.prompt}
+                    {myWriteAssignment.prompt}
                   </p>
-                  {activeStory.sentences.length > 0 && (
+                  {myWriteAssignment.sentences.length > 0 && (
                     <StoryDisplay
-                      sentences={activeStory.sentences}
-                      storyPrompt={activeStory.prompt}
+                      sentences={myWriteAssignment.sentences}
+                      storyPrompt={myWriteAssignment.prompt}
                     />
                   )}
                 </div>
 
-                {/* Write input or submitted indicator (hidden for spectators) */}
-                {isSpectator ? (
-                  <p className="text-xs text-(--rmhbox-text-muted) italic text-center">
-                    Watching players write…
-                  </p>
-                ) : mySubmissions[activeStory.storyId] ? (
+                {/* Write input or submitted indicator */}
+                {mySubmission ? (
                   <div className="flex items-center gap-2">
                     <p className="flex-1 rounded-lg bg-green-500/10 border border-green-500/30 px-3 py-2 text-sm text-green-400">
-                      ✓ {mySubmissions[activeStory.storyId]}
+                      ✓ {mySubmission}
                     </p>
-                    {!allSubmitted && (
-                      <button
-                        onClick={() => handleUnsubmitSentence(activeStory.storyId)}
-                        className="rounded-lg bg-(--rmhbox-surface) border border-(--rmhbox-border) px-3 py-2 text-xs text-(--rmhbox-text-muted) hover:bg-(--rmhbox-border) transition-colors"
-                      >
-                        Edit
-                      </button>
-                    )}
+                    <button
+                      onClick={handleUnsubmitSentence}
+                      className="rounded-lg bg-(--rmhbox-surface) border border-(--rmhbox-border) px-3 py-2 text-xs text-(--rmhbox-text-muted) hover:bg-(--rmhbox-border) transition-colors"
+                    >
+                      Edit
+                    </button>
                   </div>
                 ) : (
                   <WriteInput
-                    storyContext={activeStory.sentences.map((s) => ({
+                    storyContext={myWriteAssignment.sentences.map((s) => ({
                       authorName: s.authorName,
                       text: s.text,
                     }))}
-                    storyPrompt={activeStory.prompt}
+                    storyPrompt={myWriteAssignment.prompt}
                     timeRemaining={timeRemaining}
-                    onSubmit={(text) => handleSubmitSentence(activeStory.storyId, text)}
+                    onSubmit={handleSubmitSentence}
                   />
                 )}
               </div>
+            ) : isSpectator ? (
+              <p className="text-xs text-(--rmhbox-text-muted) italic text-center">
+                Watching players write…
+              </p>
+            ) : (
+              <p className="text-xs text-(--rmhbox-text-muted) italic text-center">
+                Waiting for assignment…
+              </p>
             )}
           </motion.div>
         )}
@@ -574,12 +583,17 @@ export default function UndercoverEditorGame({
             transition={{ duration: 0.3 }}
             className="flex w-full flex-col items-center gap-4"
           >
+            <div className="text-center">
+              <p className="text-xs font-medium text-(--rmhbox-text-muted) uppercase tracking-wider">
+                Step {currentStep} / {totalSteps} · Editing
+              </p>
+            </div>
+
             {editableStory && !editDone ? (
               <StoryEditor
                 editableStory={editableStory}
-                keyword={keyword ?? ''}
                 timeRemaining={timeRemaining}
-                onEdit={handleEdit}
+                onEdit={handleEditTwoWords}
                 onSkip={handleSkipEdit}
               />
             ) : editDone ? (
@@ -592,7 +606,86 @@ export default function UndercoverEditorGame({
             ) : (
               <div className="flex flex-col items-center gap-3 p-8">
                 <p className="text-sm text-(--rmhbox-text-muted) italic">
-                  Editors are reviewing the stories…
+                  {isSpectator ? 'Watching editors work…' : 'Editors are reviewing the stories…'}
+                </p>
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {/* READING — host-driven sentence reveal */}
+        {phase === 'READING' && (
+          <motion.div
+            key="reading"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="flex w-full flex-col items-center gap-4"
+          >
+            <div className="text-center">
+              <p className="text-xs font-medium text-(--rmhbox-text-muted) uppercase tracking-wider">
+                Reading Stories · {readingStoryIndex + 1} / {readingStories.length}
+              </p>
+            </div>
+
+            {currentReadingStory && (
+              <div className="w-full max-w-lg flex flex-col gap-3">
+                <div className="rounded-xl bg-(--rmhbox-surface) p-3 border border-(--rmhbox-border)">
+                  <p className="text-xs font-semibold text-(--rmhbox-accent) mb-1">
+                    {currentReadingStory.ownerName}&apos;s Story
+                  </p>
+                  <p className="text-sm text-(--rmhbox-text-muted) italic mb-2">
+                    {currentReadingStory.prompt}
+                  </p>
+
+                  {/* Revealed sentences */}
+                  {revealedSentences.length > 0 && (
+                    <StoryDisplay
+                      sentences={revealedSentences}
+                      storyPrompt={currentReadingStory.prompt}
+                    />
+                  )}
+
+                  {revealedSentences.length === 0 && (
+                    <p className="text-xs text-(--rmhbox-text-muted) italic py-4 text-center">
+                      Press &quot;Next Sentence&quot; to begin reading…
+                    </p>
+                  )}
+                </div>
+
+                {/* Host controls */}
+                {isHost && (
+                  <div className="flex items-center justify-center gap-3">
+                    {readingSentenceIndex < currentReadingStory.sentenceCount ? (
+                      <button
+                        onClick={handleNextSentence}
+                        className="flex items-center gap-1.5 rounded-lg bg-(--rmhbox-accent) px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity"
+                      >
+                        Next Sentence
+                        <ChevronRight className="h-4 w-4" />
+                      </button>
+                    ) : (
+                      <button
+                        onClick={handleNextStory}
+                        className="flex items-center gap-1.5 rounded-lg bg-(--rmhbox-accent) px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity"
+                      >
+                        {readingStoryIndex + 1 < readingStories.length ? 'Next Story' : 'Start Matching'}
+                        <ChevronRight className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {!isHost && (
+                  <p className="text-xs text-(--rmhbox-text-muted) italic text-center">
+                    The host is controlling the reading pace…
+                  </p>
+                )}
+
+                {/* Sentence progress indicator */}
+                <p className="text-xs text-(--rmhbox-text-muted) text-center">
+                  {readingSentenceIndex} / {currentReadingStory.sentenceCount} sentences revealed
                 </p>
               </div>
             )}
@@ -613,6 +706,7 @@ export default function UndercoverEditorGame({
               stories={stories}
               players={gamePlayers}
               myPlayerId={playerId}
+              myEditedStoryId={assignedStoryId}
               currentGuesses={matchGuesses}
               lockedIn={isLockedIn || isSpectator}
               lockedInPlayers={lockedInPlayers}
@@ -653,20 +747,18 @@ export default function UndercoverEditorGame({
                         <p className="font-semibold text-(--rmhbox-text)">
                           {reveal.ownerName}&apos;s Story
                         </p>
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${
-                          myGuess?.correct
-                            ? 'bg-green-500/20 text-green-400'
-                            : 'bg-red-500/20 text-red-400'
-                        }`}>
-                          {myGuess?.correct ? '✓ Correct' : '✗ Wrong'}
-                        </span>
+                        {myGuess && (
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${
+                            myGuess.correct
+                              ? 'bg-green-500/20 text-green-400'
+                              : 'bg-red-500/20 text-red-400'
+                          }`}>
+                            {myGuess.correct ? '✓ Correct' : '✗ Wrong'}
+                          </span>
+                        )}
                       </div>
                       <p className="text-sm text-(--rmhbox-text-muted) mb-1">
                         Editor: <span className="font-bold text-(--rmhbox-accent)">{reveal.editorName}</span>
-                      </p>
-                      <p className="text-sm text-(--rmhbox-text-muted) mb-1">
-                        Keyword: <span className="font-bold">{reveal.keyword}</span>
-                        {reveal.keywordInStory ? ' (found in story! 🎯)' : ''}
                       </p>
                       {reveal.edits.length > 0 && (
                         <div className="mt-2 text-xs text-(--rmhbox-text-muted)">

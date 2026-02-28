@@ -1,16 +1,15 @@
 /**
  * MatchingPanel — Review-phase UI for Undercover Editor.
  *
- * During the review phase each player reads through all N parallel stories
- * and tries to guess which player was the secret "undercover editor" for
- * each story.  A dropdown per story lets the player pick from every player
- * except that story's owner.  Once every story has a guess the player can
- * lock in.  A progress indicator shows how many players have locked in.
+ * Players page through all N stories and try to match each to its secret
+ * undercover editor. Each potential editor can only be assigned to one story
+ * (1-to-1 bijection). Players cannot guess on stories they edited.
  *
  * Props:
  *   stories          — The set of stories to review
  *   players          — Every player in the game
  *   myPlayerId       — Current user's player ID
+ *   myEditedStoryId  — The storyId the current player edited (excluded)
  *   currentGuesses   — Map of storyId → guessedEditorUserId
  *   lockedIn         — Whether the current player has locked in
  *   lockedInPlayers  — User IDs of players who have already locked in
@@ -33,7 +32,7 @@ interface Story {
   sentences: Array<{
     authorName: string;
     text: string;
-    turnNumber: number;
+    roundNumber: number;
   }>;
 }
 
@@ -46,6 +45,7 @@ export interface MatchingPanelProps {
   stories: Story[];
   players: Player[];
   myPlayerId: string;
+  myEditedStoryId: string | null;
   currentGuesses: Record<string, string>;
   lockedIn: boolean;
   lockedInPlayers: string[];
@@ -61,16 +61,32 @@ export default function MatchingPanel({
   stories,
   players,
   myPlayerId,
+  myEditedStoryId,
   currentGuesses,
   lockedIn,
   lockedInPlayers,
   onGuessChange,
   onLockIn,
 }: MatchingPanelProps) {
-  // True once every story has a guess assigned
+  // Stories the player can guess on (exclude the one they edited)
+  const guessableStories = useMemo(
+    () => stories.filter((s) => s.storyId !== myEditedStoryId),
+    [stories, myEditedStoryId],
+  );
+
+  // Set of editor IDs already assigned to other stories in guesses
+  const usedEditorIds = useMemo(() => {
+    const used = new Set<string>();
+    for (const [, editorId] of Object.entries(currentGuesses)) {
+      if (editorId) used.add(editorId);
+    }
+    return used;
+  }, [currentGuesses]);
+
+  // True once every guessable story has a guess
   const allGuessed = useMemo(
-    () => stories.every((s) => !!currentGuesses[s.storyId]),
-    [stories, currentGuesses],
+    () => guessableStories.every((s) => !!currentGuesses[s.storyId]),
+    [guessableStories, currentGuesses],
   );
 
   const totalPlayers = players.length;
@@ -100,13 +116,17 @@ export default function MatchingPanel({
 
       {/* Story cards */}
       <div className="flex w-full flex-col gap-4">
-        {stories.map((story, idx) => {
-          // Candidates: every player except the story owner
-          const candidates = players.filter(
-            (p) => p.userName !== story.ownerName,
-          );
-
+        {guessableStories.map((story, idx) => {
+          // Candidates: every player except the story owner (by userId)
+          // and enforce 1-to-1: exclude editors already used for other stories
           const selectedGuess = currentGuesses[story.storyId] ?? '';
+          const candidates = players.filter((p) => {
+            // Can't be the story owner
+            if (p.userId === story.storyId) return false;
+            // 1-to-1: can't be already used for a different story
+            if (usedEditorIds.has(p.userId) && p.userId !== selectedGuess) return false;
+            return true;
+          });
 
           return (
             <motion.div
@@ -135,7 +155,7 @@ export default function MatchingPanel({
               <div className="flex flex-col gap-1 rounded-lg bg-(--rmhbox-surface)/60 p-3 text-sm leading-relaxed">
                 {story.sentences
                   .slice()
-                  .sort((a, b) => a.turnNumber - b.turnNumber)
+                  .sort((a, b) => a.roundNumber - b.roundNumber)
                   .map((s, i) => (
                     <span key={i}>{s.text} </span>
                   ))}

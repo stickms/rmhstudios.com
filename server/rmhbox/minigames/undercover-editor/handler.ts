@@ -1502,12 +1502,10 @@ export class UndercoverEditorGame extends BaseMinigame {
   }
 
   private broadcastSubmissionProgress(): void {
-    this.context.broadcastAction({
+    this.broadcastGameAction({
       type: 'UE_SUBMISSION_PROGRESS',
-      payload: {
-        submittedCount: this.state.roundSubmissions.size,
-        totalPlayers: this.state.playerIds.length,
-      },
+      submittedCount: this.state.roundSubmissions.size,
+      totalPlayers: this.state.playerIds.length,
     });
   }
 }

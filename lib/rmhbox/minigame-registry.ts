@@ -21,7 +21,7 @@ import {
   EC_MAX_ROUNDS, EC_ROUND_DURATION_SECONDS, EC_MAX_EMOJIS, EC_MAX_GUESSES_PER_PLAYER,
   WW_TOTAL_ROUNDS, WW_WRITING_DURATION, WW_VOTING_DURATION,
   FF_TOTAL_QUESTIONS, FF_ANSWER_DURATION_SECONDS, FF_POT_START_VALUE,
-  UE_ROTATIONS, UE_WRITE_TIMEOUT_SECONDS, UE_EDIT_TIMEOUT_SECONDS, UE_ACCUSATION_DURATION_SECONDS,
+  UE_WRITE_TIMEOUT_SECONDS, UE_EDIT_TIMEOUT_SECONDS,
 } from './constants';
 
 // ─── Per-Minigame Settings Schemas ───────────────────────────────
@@ -85,10 +85,8 @@ export const FACT_OR_FRICTION_SETTINGS: GameSettingsSchema = [
 ];
 
 export const UNDERCOVER_EDITOR_SETTINGS: GameSettingsSchema = [
-  { key: 'rotations', type: 'integer', label: 'Rotations', description: 'Number of write-edit cycles before accusation', default: UE_ROTATIONS, min: 1, max: 3, step: 1 },
-  { key: 'writeTimeout', type: 'integer', label: 'Write Duration (seconds)', description: 'Time to write a sentence', default: UE_WRITE_TIMEOUT_SECONDS, min: 30, max: 90, step: 5 },
-  { key: 'editTimeout', type: 'integer', label: 'Edit Duration (seconds)', description: 'Time for the Editor to make their secret edit', default: UE_EDIT_TIMEOUT_SECONDS, min: 15, max: 60, step: 5 },
-  { key: 'accusationDuration', type: 'integer', label: 'Accusation Duration (seconds)', description: 'Time to vote on who the Editor was', default: UE_ACCUSATION_DURATION_SECONDS, min: 15, max: 60, step: 5 },
+  { key: 'writeTimeout', type: 'integer', label: 'Write Duration (seconds)', description: 'Time to write a sentence each round', default: UE_WRITE_TIMEOUT_SECONDS, min: 30, max: 90, step: 5 },
+  { key: 'editTimeout', type: 'integer', label: 'Edit Duration (seconds)', description: 'Time for the Editor to make their 2-word edit', default: UE_EDIT_TIMEOUT_SECONDS, min: 15, max: 60, step: 5 },
 ];
 
 // ─── Registry ────────────────────────────────────────────────────
@@ -193,7 +191,7 @@ export const MINIGAME_REGISTRY: Record<string, MinigameDefinition> = {
   'undercover-editor': {
     id: 'undercover-editor',
     displayName: 'Undercover Editor',
-    description: 'Write parallel stories together — but each story has a secret editor sneaking in a keyword. Can you match each story to its undercover editor?',
+    description: 'Write stories together — but each story has a secret editor making subtle changes. Can you figure out who edited which story?',
     category: 'creative',
     icon: 'pencil',
     minPlayers: 4,

@@ -1,12 +1,11 @@
 /**
  * RoleBadge — Persistent role indicator for Undercover Editor.
  *
- * Displays a small badge in the corner showing the player's role.
- * Writers see "🔎 Writer". Editors see "✏️ Editor | Keyword: [word]".
+ * Displays a small badge showing the player's role.
+ * Writers see "🔎 Writer". Editors see "✏️ Editor".
  *
  * Props:
  *   role: 'editor' | 'writer' — The player's assigned role
- *   keyword?: string — The secret keyword (editor only)
  */
 'use client';
 
@@ -14,10 +13,9 @@ import { motion } from 'framer-motion';
 
 interface RoleBadgeProps {
   role: 'editor' | 'writer';
-  keyword?: string;
 }
 
-export default function RoleBadge({ role, keyword }: RoleBadgeProps) {
+export default function RoleBadge({ role }: RoleBadgeProps) {
   const isEditor = role === 'editor';
 
   return (
@@ -32,13 +30,6 @@ export default function RoleBadge({ role, keyword }: RoleBadgeProps) {
     >
       <span>{isEditor ? '✏️' : '🔎'}</span>
       <span>{isEditor ? 'Editor' : 'Writer'}</span>
-      {isEditor && keyword && (
-        <>
-          <span className="opacity-40">|</span>
-          <span className="opacity-70">Keyword:</span>
-          <span className="font-semibold text-purple-200">{keyword}</span>
-        </>
-      )}
     </motion.div>
   );
 }
