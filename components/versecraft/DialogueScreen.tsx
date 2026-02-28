@@ -91,12 +91,13 @@ function TypewriterText({ text, speed, onComplete, skipRef }: {
 }
 
 // Character sprite with real images
-function CharacterSprite({ characterId, expression, position, isSpeaking, spritePack }: {
+function CharacterSprite({ characterId, expression, position, isSpeaking, spritePack, dialogueBoxHeight }: {
   characterId: string;
   expression?: string;
   position: 'left' | 'center' | 'right';
   isSpeaking?: boolean;
   spritePack?: 'default' | 'hoshiko';
+  dialogueBoxHeight: number;
 }) {
   const char = CHARACTERS[characterId];
   if (!char) return null;
@@ -106,21 +107,23 @@ function CharacterSprite({ characterId, expression, position, isSpeaking, sprite
 
   return (
     <motion.div
-      className="absolute bottom-8 flex flex-col items-center"
+      className="absolute flex flex-col items-center"
       style={{
         left: xPos,
         transform: 'translateX(-50%)',
         filter: isSpeaking ? 'none' : 'brightness(0.7)',
         zIndex: isSpeaking ? 10 : 5,
       }}
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 20, bottom: dialogueBoxHeight * 0.8 }}
       animate={{
         opacity: 1,
+        bottom: dialogueBoxHeight * 0.8,
         y: [0, -4, 0],
         scale: isSpeaking ? 1.02 : 0.98,
       }}
       transition={{
         opacity: { duration: 0.5 },
+        bottom: { type: 'spring', stiffness: 120, damping: 20 },
         y: { duration: 4, repeat: Infinity, ease: 'easeInOut' },
         scale: { duration: 0.3 },
       }}
@@ -164,6 +167,21 @@ export function DialogueScreen() {
 
   const [textComplete, setTextComplete] = useState(false);
   const skipTextRef = useRef<(() => boolean) | null>(null);
+  const dialogueBoxRef = useRef<HTMLDivElement>(null);
+  const [dialogueBoxHeight, setDialogueBoxHeight] = useState(0);
+
+  // Track dialogue box height so sprites stay above it
+  useEffect(() => {
+    const el = dialogueBoxRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setDialogueBoxHeight(entry.borderBoxSize?.[0]?.blockSize ?? entry.contentRect.height);
+      }
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   // Get all scenes in order (main scenes + post-puzzle scenes)
   const allScenes = useMemo(() => [
@@ -275,7 +293,7 @@ export function DialogueScreen() {
         />
       </div>
 
-      {/* Character sprites — z-10, overflow-hidden clips bottom of sprites */}
+      {/* Character sprites — z-10, behind dialogue box (z-20) */}
       <div className="absolute inset-0 z-10 pointer-events-none overflow-hidden">
         <AnimatePresence>
           {currentScene.charactersPresent.map((charId, i) => {
@@ -290,6 +308,7 @@ export function DialogueScreen() {
                 position={position}
                 isSpeaking={currentNode.speaker === charId}
                 spritePack={settings.spritePack}
+                dialogueBoxHeight={dialogueBoxHeight}
               />
             );
           })}
@@ -297,7 +316,7 @@ export function DialogueScreen() {
       </div>
 
       {/* Dialogue box — z-20, always above sprites */}
-      <div className="absolute bottom-0 left-0 right-0 z-20 p-4 md:p-6">
+      <div ref={dialogueBoxRef} className="absolute bottom-0 left-0 right-0 z-20 p-4 md:p-6">
         <motion.div
           className="max-w-4xl mx-auto rounded-lg p-4 md:p-6"
           style={{

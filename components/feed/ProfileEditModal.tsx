@@ -7,11 +7,12 @@ import { Button } from '@/components/ui/button';
 interface ProfileEditModalProps {
   open: boolean;
   onClose: () => void;
-  onSaved: (data: { bio: string | null; location: string | null; website: string | null }) => void;
+  onSaved: (data: { bio: string | null; location: string | null; website: string | null; showLikes: boolean }) => void;
   initial: {
     bio: string | null;
     location: string | null;
     website: string | null;
+    showLikes: boolean;
   };
 }
 
@@ -23,6 +24,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
   const [bio, setBio] = useState(initial.bio ?? '');
   const [location, setLocation] = useState(initial.location ?? '');
   const [website, setWebsite] = useState(initial.website ?? '');
+  const [showLikes, setShowLikes] = useState(initial.showLikes);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -48,6 +50,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
           bio: bio.trim() || null,
           location: location.trim() || null,
           website: website.trim() || null,
+          showLikes,
         }),
       });
 
@@ -130,6 +133,27 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
               maxLength={MAX_WEBSITE}
               className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-xl p-3 border border-site-border outline-none focus:border-site-accent transition-colors"
             />
+          </div>
+
+          {/* Show Likes toggle */}
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-site-text">Show liked posts</p>
+              <p className="text-xs text-site-text-dim mt-0.5">Let others see posts you&apos;ve liked</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowLikes(!showLikes)}
+              className={`relative w-10 h-5 rounded-full transition-colors ${
+                showLikes ? 'bg-site-accent' : 'bg-site-surface border border-site-border'
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${
+                  showLikes ? 'translate-x-5' : ''
+                }`}
+              />
+            </button>
           </div>
 
           {error && (

@@ -28,6 +28,8 @@ export interface FeedItem {
   liked?: boolean;
   reposted?: boolean;
   original?: FeedItem;
+  repostedBy?: FeedItemUser;
+  actualId?: string;
 
   // Announcement fields (games/apps/news/blog/research)
   title?: string;

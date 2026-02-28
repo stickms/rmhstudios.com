@@ -52,7 +52,7 @@ export function MobileSidebarDrawer({ open, onClose }: MobileSidebarDrawerProps)
           </button>
         </div>
         <div className="overflow-y-auto h-[calc(100%-56px)]">
-          <LeftSidebar />
+          <LeftSidebar expanded />
         </div>
       </div>
     </div>

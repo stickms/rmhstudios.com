@@ -27,8 +27,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Homepage and profile pages use their own FeedLayout (no Navbar/Footer)
-  if (isHomepage || pathname?.startsWith('/profile')) {
+  // Homepage, profile pages, and post detail pages use their own layout (no Navbar/Footer)
+  const isPostDetailPage = /^\/[^/]+\/post\/[^/]+$/.test(pathname ?? '');
+  if (isHomepage || pathname?.startsWith('/profile') || isPostDetailPage) {
     return <>{children}</>;
   }
 

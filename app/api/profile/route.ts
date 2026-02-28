@@ -36,7 +36,7 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
-    const { bio, location, website } = parsed.data;
+    const { bio, location, website, showLikes } = parsed.data;
 
     const profile = await prisma.userProfile.upsert({
       where: { userId: session.user.id },
@@ -45,11 +45,13 @@ export async function PATCH(req: NextRequest) {
         bio: bio ?? null,
         location: location ?? null,
         website: website || null,
+        showLikes: showLikes ?? false,
       },
       update: {
         bio: bio ?? null,
         location: location ?? null,
         website: website || null,
+        ...(showLikes !== undefined ? { showLikes } : {}),
       },
     });
 
@@ -57,6 +59,7 @@ export async function PATCH(req: NextRequest) {
       bio: profile.bio,
       location: profile.location,
       website: profile.website,
+      showLikes: profile.showLikes,
     });
   } catch (error) {
     console.error("Profile update error:", error);

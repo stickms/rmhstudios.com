@@ -127,31 +127,60 @@ export async function GET(req: NextRequest) {
     // Fetch RMHeets from DB
     const shouldFetchRmheets = filter === "all" || filter === "rmheet";
     let dbItems: FeedItem[] = [];
+    const cursorDate = cursor ? new Date(cursor) : undefined;
 
-    if (shouldFetchRmheets) {
-      const rmheets = await prisma.rMHeet.findMany({
-        where: cursor ? { createdAt: { lt: new Date(cursor) } } : undefined,
-        orderBy: { createdAt: "desc" },
-        take: limit,
+    const rmheetInclude = {
+      user: { select: { id: true, name: true, image: true, username: true } },
+      _count: { select: { likes: true, comments: true, reposts: true, views: true } },
+      ...(userId
+        ? {
+            likes: { where: { userId }, select: { id: true } },
+            reposts: { where: { userId }, select: { id: true } },
+          }
+        : {}),
+      original: {
         include: {
           user: { select: { id: true, name: true, image: true, username: true } },
           _count: { select: { likes: true, comments: true, reposts: true, views: true } },
-          ...(userId
-            ? {
-                likes: { where: { userId }, select: { id: true } },
-                reposts: { where: { userId }, select: { id: true } },
-              }
-            : {}),
-          original: {
-            include: {
-              user: { select: { id: true, name: true, image: true, username: true } },
-              _count: { select: { likes: true, comments: true, reposts: true, views: true } },
-            },
-          },
         },
-      });
+      },
+    } as const;
 
-      dbItems = rmheets.map((r) => ({
+    if (shouldFetchRmheets) {
+      const [rmheets, repostRecords] = await Promise.all([
+        prisma.rMHeet.findMany({
+          where: cursorDate ? { createdAt: { lt: cursorDate } } : undefined,
+          orderBy: { createdAt: "desc" },
+          take: limit,
+          include: rmheetInclude,
+        }),
+        prisma.rMHeetRepost.findMany({
+          where: cursorDate ? { createdAt: { lt: cursorDate } } : undefined,
+          orderBy: { createdAt: "desc" },
+          take: limit,
+          include: {
+            user: { select: { id: true, name: true, image: true, username: true } },
+            rmheet: { include: rmheetInclude },
+          },
+        }),
+      ]);
+
+      const mapOriginal = (o: typeof rmheets[0]["original"]) =>
+        o
+          ? {
+              id: o.id,
+              type: "rmheet" as const,
+              createdAt: o.createdAt.toISOString(),
+              content: o.content,
+              user: o.user,
+              likeCount: o._count.likes,
+              commentCount: o._count.comments,
+              repostCount: o._count.reposts,
+              viewCount: o._count.views,
+            }
+          : undefined;
+
+      const ownItems: FeedItem[] = rmheets.map((r) => ({
         id: r.id,
         type: "rmheet" as const,
         createdAt: r.createdAt.toISOString(),
@@ -163,20 +192,32 @@ export async function GET(req: NextRequest) {
         viewCount: r._count.views,
         liked: userId ? r.likes.length > 0 : false,
         reposted: userId ? r.reposts.length > 0 : false,
-        original: r.original
-          ? {
-              id: r.original.id,
-              type: "rmheet" as const,
-              createdAt: r.original.createdAt.toISOString(),
-              content: r.original.content,
-              user: r.original.user,
-              likeCount: r.original._count.likes,
-              commentCount: r.original._count.comments,
-              repostCount: r.original._count.reposts,
-              viewCount: r.original._count.views,
-            }
-          : undefined,
+        original: mapOriginal(r.original),
       }));
+
+      const repostItems: FeedItem[] = repostRecords.map((rp) => {
+        const r = rp.rmheet;
+        return {
+          id: `repost:${rp.id}`,
+          type: "rmheet" as const,
+          createdAt: rp.createdAt.toISOString(),
+          actualId: r.id,
+          content: r.content,
+          user: r.user,
+          likeCount: r._count.likes,
+          commentCount: r._count.comments,
+          repostCount: r._count.reposts,
+          viewCount: r._count.views,
+          liked: userId ? r.likes.length > 0 : false,
+          reposted: userId ? r.reposts.length > 0 : false,
+          repostedBy: rp.user,
+          original: mapOriginal(r.original),
+        };
+      });
+
+      dbItems = [...ownItems, ...repostItems]
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, limit);
     }
 
     // Get announcement items

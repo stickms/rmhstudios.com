@@ -30,7 +30,7 @@ export async function GET(
         image: true,
         createdAt: true,
         profile: {
-          select: { bio: true, location: true, website: true },
+          select: { bio: true, location: true, website: true, showLikes: true },
         },
         _count: {
           select: {
@@ -63,6 +63,7 @@ export async function GET(
       bio: user.profile?.bio ?? null,
       location: user.profile?.location ?? null,
       website: user.profile?.website ?? null,
+      showLikes: user.profile?.showLikes ?? false,
       followerCount: user._count.followers,
       followingCount: user._count.following,
       rmheetCount: user._count.rmheets,

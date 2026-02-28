@@ -3,6 +3,8 @@
 import type { FeedItem } from '@/lib/feed-types';
 import { RMHeetActions } from './RMHeetActions';
 import { useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import { Repeat2 } from 'lucide-react';
 import Link from 'next/link';
 
 interface RMHeetCardProps {
@@ -42,16 +44,42 @@ function UserAvatar({ user }: { user: FeedItem['user'] }) {
 
 export function RMHeetCard({ item }: RMHeetCardProps) {
   const viewTracked = useRef(false);
+  const router = useRouter();
+  const actualId = item.actualId ?? item.id;
 
   // Track view when card becomes visible
   useEffect(() => {
     if (viewTracked.current) return;
     viewTracked.current = true;
-    fetch(`/api/rmheets/${item.id}/view`, { method: 'POST' }).catch(() => {});
-  }, [item.id]);
+    fetch(`/api/rmheets/${actualId}/view`, { method: 'POST' }).catch(() => {});
+  }, [actualId]);
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.closest('a') || target.closest('button') || target.closest('[role="button"]')) {
+      return;
+    }
+    router.push(`/${item.user?.id}/post/${actualId}`);
+  };
 
   return (
-    <div className="px-4 py-3 border-b border-site-border hover:bg-site-surface/30 transition-colors">
+    <div
+      className="px-4 py-3 border-b border-site-border hover:bg-site-surface/30 transition-colors cursor-pointer"
+      onClick={handleCardClick}
+    >
+      {/* ReRMH'd label */}
+      {item.repostedBy && (
+        <div className="flex items-center gap-1.5 text-xs text-site-text-dim mb-2 ml-12">
+          <Repeat2 className="w-3.5 h-3.5" />
+          <Link
+            href={`/profile/${item.repostedBy.id}`}
+            className="hover:underline"
+          >
+            {item.repostedBy.name || item.repostedBy.username || 'Someone'} ReRMH&apos;d
+          </Link>
+        </div>
+      )}
+
       <div className="flex gap-3">
         <UserAvatar user={item.user} />
 

@@ -1,16 +1,16 @@
 import { LeftSidebar } from '@/components/feed/LeftSidebar';
 import { RightSidebar } from '@/components/feed/RightSidebar';
-import { ProfileColumn } from '@/components/feed/ProfileColumn';
+import { PostDetail } from '@/components/feed/PostDetail';
 import { MobileNav } from '@/components/feed/MobileNav';
 import { getAllNewsArticles } from '@/lib/news';
 import { getAllArticles } from '@/lib/research';
 
-export default async function ProfilePage({
+export default async function PostPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ postid: string }>;
 }) {
-  const { id: userId } = await params;
+  const { postid } = await params;
   const newsArticles = getAllNewsArticles([
     'title', 'date', 'slug', 'description', 'category', 'sourcePublisher', 'image',
   ]).slice(0, 5);
@@ -25,9 +25,9 @@ export default async function ProfilePage({
         </aside>
       </div>
 
-      {/* Center - Profile */}
+      {/* Center - Post Detail */}
       <main className="w-full max-w-162 min-w-0 border-r border-site-border pb-16 md:pb-0">
-        <ProfileColumn userId={userId} />
+        <PostDetail postId={postid} />
       </main>
 
       {/* Right Sidebar */}

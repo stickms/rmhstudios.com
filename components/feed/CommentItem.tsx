@@ -27,7 +27,12 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(months / 12)}y`;
 }
 
-export function CommentItem({ comment }: { comment: Comment }) {
+interface CommentItemProps {
+  comment: Comment;
+  onReply?: (commentId: string, userName: string) => void;
+}
+
+export function CommentItem({ comment, onReply }: CommentItemProps) {
   return (
     <div className="py-2">
       <div className="flex gap-2.5">
@@ -65,11 +70,21 @@ export function CommentItem({ comment }: { comment: Comment }) {
             {comment.content}
           </p>
 
+          {/* Reply button */}
+          {onReply && (
+            <button
+              onClick={() => onReply(comment.id, comment.user.name || 'Unknown')}
+              className="mt-1 text-xs text-site-text-dim hover:text-site-accent transition-colors"
+            >
+              Reply
+            </button>
+          )}
+
           {/* Threaded replies */}
           {comment.replies && comment.replies.length > 0 && (
             <div className="mt-2 ml-2 border-l-2 border-site-border pl-3 space-y-1">
               {comment.replies.map((reply) => (
-                <CommentItem key={reply.id} comment={reply} />
+                <CommentItem key={reply.id} comment={reply} onReply={onReply} />
               ))}
             </div>
           )}

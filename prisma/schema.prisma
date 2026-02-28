@@ -968,6 +968,7 @@ model UserProfile {
   bio       String?  @db.VarChar(160)
   location  String?  @db.VarChar(100)
   website   String?  @db.VarChar(200)
+  showLikes Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

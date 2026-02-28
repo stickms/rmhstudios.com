@@ -21,7 +21,16 @@ const navLinks = [
   { href: '/roadmap', label: 'Roadmap', icon: Map },
 ];
 
-export function LeftSidebar() {
+export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
+  // When expanded=true (e.g. in mobile drawer), always show labels.
+  // Otherwise, labels are hidden below lg breakpoint.
+  const labelClass = expanded ? '' : 'hidden lg:block';
+  const labelFlexClass = expanded ? 'flex items-center gap-1.5' : 'hidden lg:flex items-center gap-1.5';
+  const logoFullClass = expanded ? '' : 'hidden lg:block';
+  const logoShortClass = expanded ? 'hidden' : 'lg:hidden';
+  const paddingClass = expanded ? 'p-4' : 'p-3 lg:p-4';
+  const logoAlignClass = expanded ? 'justify-start' : 'justify-center lg:justify-start';
+  const iconMrClass = expanded ? 'mr-2' : 'lg:mr-2';
   const pathname = usePathname();
   const router = useRouter();
   const [showStyleMenu, setShowStyleMenu] = useState(false);
@@ -61,13 +70,13 @@ export function LeftSidebar() {
   }));
 
   return (
-    <div className="flex flex-col h-full p-3 lg:p-4">
+    <div className={`flex flex-col h-full ${paddingClass}`}>
       {/* Logo */}
-      <Link href="/" className="mb-6 flex items-center justify-center lg:justify-start">
-        <span className="font-(family-name:--site-font-display) font-bold text-xl text-site-text hidden lg:block">
+      <Link href="/" className={`mb-6 flex items-center ${logoAlignClass}`}>
+        <span className={`font-(family-name:--site-font-display) font-bold text-xl text-site-text ${logoFullClass}`}>
           RMH<span className="text-site-accent">Studios</span>
         </span>
-        <span className="font-(family-name:--site-font-display) font-bold text-xl text-site-text lg:hidden">
+        <span className={`font-(family-name:--site-font-display) font-bold text-xl text-site-text ${logoShortClass}`}>
           RMH
         </span>
       </Link>
@@ -89,7 +98,7 @@ export function LeftSidebar() {
               title={link.label}
             >
               <Icon className="w-5 h-5 shrink-0" />
-              <span className="hidden lg:block">{link.label}</span>
+              <span className={labelClass}>{link.label}</span>
             </Link>
           );
         })}
@@ -105,7 +114,7 @@ export function LeftSidebar() {
             title="Profile"
           >
             <User className="w-5 h-5 shrink-0" />
-            <span className="hidden lg:block">Profile</span>
+            <span className={labelClass}>Profile</span>
           </Link>
         )}
       </nav>
@@ -119,7 +128,7 @@ export function LeftSidebar() {
         >
           <Palette className="w-5 h-5 shrink-0" />
           {mounted && (
-            <span className="hidden lg:flex items-center gap-1.5">
+            <span className={labelFlexClass}>
               <span className="text-xs">{currentStyle.icon}</span>
               <span>{currentStyle.label}</span>
               <ChevronDown className={`w-3 h-3 ml-auto transition-transform ${showStyleMenu ? 'rotate-180' : ''}`} />
@@ -174,7 +183,7 @@ export function LeftSidebar() {
                   (session.user.name?.[0] || 'U').toUpperCase()
                 )}
               </div>
-              <span className="hidden lg:block text-sm text-site-text truncate max-w-[120px]">
+              <span className={`${labelClass} text-sm text-site-text truncate max-w-30`}>
                 {session.user.name}
               </span>
             </Link>
@@ -184,14 +193,14 @@ export function LeftSidebar() {
               title="Sign Out"
             >
               <LogOut className="w-4 h-4 shrink-0" />
-              <span className="hidden lg:block">Sign Out</span>
+              <span className={labelClass}>Sign Out</span>
             </button>
           </div>
         ) : (
           <Link href="/login">
             <Button variant="accent" size="sm" className="w-full">
-              <User className="w-4 h-4 lg:mr-2" />
-              <span className="hidden lg:block">Sign In</span>
+              <User className={`w-4 h-4 ${iconMrClass}`} />
+              <span className={labelClass}>Sign In</span>
             </Button>
           </Link>
         )}
@@ -209,8 +218,8 @@ export function LeftSidebar() {
             el?.focus();
           }}
         >
-          <PenSquare className="w-4 h-4 lg:mr-2" />
-          <span className="hidden lg:block">Post</span>
+          <PenSquare className={`w-4 h-4 ${iconMrClass}`} />
+          <span className={labelClass}>Post</span>
         </Button>
       )}
     </div>
