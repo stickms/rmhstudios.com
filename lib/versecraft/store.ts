@@ -298,11 +298,13 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
     }, 100);
   },
 
-  closePoemPresentation: () => set({
+  closePoemPresentation: () => set(s => ({
     currentPoemScore: null,
     currentPuzzle: null,
     screen: 'dialogue',
-  }),
+    currentSceneIndex: s.currentSceneIndex + 1,
+    currentDialogueIndex: 0,
+  })),
 
   // Affinity
   updateAffinity: (characterId, change) => set(s => {
