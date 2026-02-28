@@ -177,6 +177,18 @@ export default function PeerReview({
             const tally = voteTallies[answerSet.anonymousLabel];
             const crashCount = tally?.crash ?? 0;
             const safeCount = tally?.safe ?? 0;
+            const hasVotes = crashCount > 0 || safeCount > 0;
+
+            // Determine vote-status color for the answer text
+            let voteStatusColor = '';
+            if (!isEmpty && hasVotes && !isDuplicate) {
+              if (crashCount > safeCount) {
+                voteStatusColor = 'text-(--rmhbox-danger)';
+              } else if (safeCount > crashCount) {
+                voteStatusColor = 'text-(--rmhbox-success)';
+              }
+              // tied → normal color (no override)
+            }
 
             return (
               <div
@@ -192,7 +204,11 @@ export default function PeerReview({
                 }`}
               >
                 <span className="flex items-center gap-2 min-w-0 flex-1">
-                  <span className={`truncate ${!startsCorrectly && !isEmpty ? 'line-through text-(--rmhbox-danger)/70' : ''}`}>
+                  <span className={`truncate ${
+                    !startsCorrectly && !isEmpty
+                      ? 'line-through text-(--rmhbox-danger)/70'
+                      : voteStatusColor
+                  }`}>
                     {answer ?? '— empty —'}
                   </span>
                   {isOwn && (
@@ -201,7 +217,7 @@ export default function PeerReview({
                       (yours)
                     </span>
                   )}
-                  {isDuplicate && !isOwn && (
+                  {isDuplicate && (
                     <span className="flex items-center gap-0.5 text-[10px] font-medium text-(--rmhbox-warning) shrink-0">
                       <Copy className="h-2.5 w-2.5" />
                       Duplicate
@@ -209,8 +225,8 @@ export default function PeerReview({
                   )}
                 </span>
 
-                {/* Vote tallies + buttons */}
-                {!isEmpty && !isOwn && !isDuplicate && (
+                {/* Vote tallies (shown for all non-empty, non-duplicate answers including own) */}
+                {!isEmpty && !isDuplicate && (
                   <span className="flex items-center gap-1.5 shrink-0 ml-2">
                     {/* Live tally */}
                     <span className="flex items-center gap-1 text-xs text-(--rmhbox-text-muted)">
@@ -219,32 +235,35 @@ export default function PeerReview({
                       <Shield className="h-3 w-3 text-(--rmhbox-success) ml-1" />
                       {safeCount}
                     </span>
-                    {/* Crash button */}
-                    <button
-                      type="button"
-                      onClick={() => onVote(answerSet.anonymousLabel, activeCatIndex, 'crash')}
-                      className={`flex items-center gap-1 rounded px-2 py-1 text-xs font-medium transition-colors ${
-                        myVote === 'crash'
-                          ? 'bg-(--rmhbox-danger)/30 text-(--rmhbox-danger) border border-(--rmhbox-danger)/40'
-                          : 'bg-(--rmhbox-surface) text-(--rmhbox-text-muted) border border-(--rmhbox-border) hover:bg-(--rmhbox-danger-dim) hover:text-(--rmhbox-danger)'
-                      }`}
-                    >
-                      <Flame className="h-3 w-3" />
-                      Crash
-                    </button>
-                    {/* Safe button */}
-                    <button
-                      type="button"
-                      onClick={() => onVote(answerSet.anonymousLabel, activeCatIndex, 'safe')}
-                      className={`flex items-center gap-1 rounded px-2 py-1 text-xs font-medium transition-colors ${
-                        myVote === 'safe'
-                          ? 'bg-(--rmhbox-success)/30 text-(--rmhbox-success) border border-(--rmhbox-success)/40'
-                          : 'bg-(--rmhbox-surface) text-(--rmhbox-text-muted) border border-(--rmhbox-border) hover:bg-(--rmhbox-success-dim) hover:text-(--rmhbox-success)'
-                      }`}
-                    >
-                      <Shield className="h-3 w-3" />
-                      Safe
-                    </button>
+                    {/* Crash/Safe buttons (not shown for own answers) */}
+                    {!isOwn && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => onVote(answerSet.anonymousLabel, activeCatIndex, 'crash')}
+                          className={`flex items-center gap-1 rounded px-2 py-1 text-xs font-medium transition-colors ${
+                            myVote === 'crash'
+                              ? 'bg-(--rmhbox-danger)/30 text-(--rmhbox-danger) border border-(--rmhbox-danger)/40'
+                              : 'bg-(--rmhbox-surface) text-(--rmhbox-text-muted) border border-(--rmhbox-border) hover:bg-(--rmhbox-danger-dim) hover:text-(--rmhbox-danger)'
+                          }`}
+                        >
+                          <Flame className="h-3 w-3" />
+                          Crash
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onVote(answerSet.anonymousLabel, activeCatIndex, 'safe')}
+                          className={`flex items-center gap-1 rounded px-2 py-1 text-xs font-medium transition-colors ${
+                            myVote === 'safe'
+                              ? 'bg-(--rmhbox-success)/30 text-(--rmhbox-success) border border-(--rmhbox-success)/40'
+                              : 'bg-(--rmhbox-surface) text-(--rmhbox-text-muted) border border-(--rmhbox-border) hover:bg-(--rmhbox-success-dim) hover:text-(--rmhbox-success)'
+                          }`}
+                        >
+                          <Shield className="h-3 w-3" />
+                          Safe
+                        </button>
+                      </>
+                    )}
                   </span>
                 )}
               </div>

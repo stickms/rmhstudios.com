@@ -754,9 +754,9 @@ export class CategoryCrashMinigame extends BaseMinigame {
     const nextIndex = this.state.currentVotingCategoryIndex + 1;
 
     if (nextIndex >= this.state.categories.length) {
-      // All categories voted on — move to crash resolution
+      // All categories voted on — skip directly to round results
       this.clearPhaseTimer();
-      this.startCrashResolution();
+      this.showRoundResults();
     } else {
       this.state.currentVotingCategoryIndex = nextIndex;
 
@@ -933,10 +933,6 @@ export class CategoryCrashMinigame extends BaseMinigame {
           roundScore += CC_UNIQUE_POINTS;
         }
       }
-
-      // Crash bonus/penalty
-      const crashBonus = this.computeCrashBonus(userId, crashedMap);
-      roundScore += crashBonus;
 
       playerResults[userId] = {
         userId,

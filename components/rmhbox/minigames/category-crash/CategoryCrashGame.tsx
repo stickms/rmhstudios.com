@@ -29,7 +29,6 @@
 
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Flame } from 'lucide-react';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { emitGameInput, useGameSocket, extractTimerTick } from '@/lib/rmhbox/minigame-client';
 import { playSound } from '@/lib/rmhbox/audio';
@@ -221,8 +220,7 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
           break;
         }
         case 'CC_CRASH_RESOLUTION_START': {
-          setPhase('CRASH_RESOLUTION');
-          setTimeRemaining(data.duration as number ?? 5);
+          // Legacy: skip directly to results (phase removed)
           break;
         }
         case 'CC_ROUND_RESULTS': {
@@ -453,27 +451,6 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
               onVote={handleVote}
               onAdvanceVoting={handleAdvanceVoting}
             />
-          </motion.div>
-        )}
-
-        {/* CRASH_RESOLUTION — Animation of results */}
-        {phase === 'CRASH_RESOLUTION' && (
-          <motion.div
-            key="crash-resolution"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0 }}
-            className="flex flex-col items-center justify-center gap-3 py-12"
-          >
-            <motion.div
-              animate={{ rotate: [0, 10, -10, 0] }}
-              transition={{ repeat: Infinity, duration: 1 }}
-              className="text-4xl"
-            >
-              <Flame className="h-10 w-10 text-orange-400" />
-            </motion.div>
-            <h3 className="text-lg font-bold">Resolving Crashes…</h3>
-            <p className="text-sm text-(--rmhbox-text-muted)">Tallying votes and checking answers</p>
           </motion.div>
         )}
 

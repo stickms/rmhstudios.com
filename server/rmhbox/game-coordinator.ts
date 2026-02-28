@@ -551,6 +551,23 @@ export class GameCoordinator {
             targetPlayerName: targetPlayer?.userName ?? 'Unknown',
             availablePlayers: handler.getViewablePlayers(),
           });
+
+          // Send the current phase timer snapshot so the spectator's timer
+          // immediately reflects the correct remaining time instead of
+          // showing the full duration until the next TIMER_TICK.
+          const timerSnapshot = handler.getPhaseTimerSnapshot();
+          if (timerSnapshot) {
+            this.lobbyManager.sendToPlayer(lobby.id, userId, S2C.GAME_ACTION, {
+              type: 'TIMER_START',
+              payload: {
+                totalDuration: timerSnapshot.total,
+                timeRemaining: timerSnapshot.remaining,
+                showSkip: timerSnapshot.showSkip,
+              },
+              seq: 0,
+              timestamp: Date.now(),
+            });
+          }
         } catch (err) {
           logger.error({ event: 'spectator_select_player_error', lobbyId: lobby.id, userId, targetPlayerId: payload.targetPlayerId, error: String(err) });
         }
