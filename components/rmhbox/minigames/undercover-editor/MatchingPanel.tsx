@@ -60,7 +60,7 @@ export interface MatchingPanelProps {
 export default function MatchingPanel({
   stories,
   players,
-  myPlayerId: _myPlayerId,
+  myPlayerId,
   myEditedStoryId,
   currentGuesses,
   lockedIn,
@@ -68,7 +68,6 @@ export default function MatchingPanel({
   onGuessChange,
   onLockIn,
 }: MatchingPanelProps) {
-  void _myPlayerId; // Available for future use
   // Stories the player can guess on (exclude the one they edited)
   const guessableStories = useMemo(
     () => stories.filter((s) => s.storyId !== myEditedStoryId),
@@ -118,12 +117,16 @@ export default function MatchingPanel({
       {/* Story cards */}
       <div className="flex w-full flex-col gap-4">
         {guessableStories.map((story, idx) => {
-          // Candidates: every player except the story owner (by userId)
-          // and enforce 1-to-1: exclude editors already used for other stories
+          // Candidates: every player except the story owner and current player
+          // (you can't edit your own story, so you can't be that story's editor)
+          // Enforce 1-to-1: exclude editors already used for other stories
           const selectedGuess = currentGuesses[story.storyId] ?? '';
           const candidates = players.filter((p) => {
-            // Can't be the story owner
+            // Can't be the story owner (storyId = ownerUserId)
             if (p.userId === story.storyId) return false;
+            // Current player knows they edit myEditedStoryId, so they
+            // shouldn't appear as candidate for other stories
+            if (p.userId === myPlayerId && story.storyId !== myEditedStoryId) return false;
             // 1-to-1: can't be already used for a different story
             if (usedEditorIds.has(p.userId) && p.userId !== selectedGuess) return false;
             return true;
