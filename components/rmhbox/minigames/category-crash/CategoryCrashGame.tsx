@@ -38,7 +38,7 @@ import CategoryCrashResults from './CategoryCrashResults';
 
 // ─── Types ───────────────────────────────────────────────────────
 
-type Phase = 'REVEAL' | 'INPUT' | 'PEER_REVIEW' | 'CRASH_RESOLUTION' | 'ROUND_RESULTS' | 'GAME_OVER';
+type Phase = 'REVEAL' | 'INPUT' | 'PEER_REVIEW' | 'ROUND_RESULTS' | 'GAME_OVER';
 
 export interface Category {
   id: string;
@@ -217,10 +217,6 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
           setMyCrashes((prev) =>
             prev.filter((c) => !(c.targetUserId === target && c.categoryIndex === catIdx)),
           );
-          break;
-        }
-        case 'CC_CRASH_RESOLUTION_START': {
-          // Legacy: skip directly to results (phase removed)
           break;
         }
         case 'CC_ROUND_RESULTS': {

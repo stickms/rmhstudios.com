@@ -152,7 +152,6 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
           setPhase('DRAWING');
           break;
         }
-        case 'MM_DRAWING_ACCEPTED':
         case 'MM_DRAWING_SAVED': {
           // Auto-save acknowledged — no sound needed for saves
           break;

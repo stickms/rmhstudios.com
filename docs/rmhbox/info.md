@@ -34,9 +34,9 @@ RMHbox is a real-time multiplayer party game platform built on Next.js (frontend
 The seven currently implemented minigames are:
 - **Rhyme Time** — Speed-based vocabulary rhyming game
 - **Undercover Agent** — Team-based word-association deduction (like Codenames)
-- **Category Crash** — Brainstorming showdown with peer review
+- **Category Crash** — Brainstorming showdown with peer review. Phases: REVEAL → INPUT → PEER_REVIEW → ROUND_RESULTS. Voting is crash/safe; points come only from unique safe answers (no voting bonuses).
 - **Wiki-Race** — Navigate Wikipedia from a start article to a target
-- **Minimalist Masterpiece** — Draw with limited strokes, then art auction
+- **Minimalist Masterpiece** — Draw with limited strokes, then art auction. Drawing phase supports auto-save (`SAVE_DRAWING`) and explicit submit (`SUBMIT_DRAWING`). Auto-save preserves drawings for reconnection and spectator live updates without locking. Explicit submit locks the drawing and ends the phase early if all players submit.
 - **Emoji Cinema** — Describe movies with emojis, others guess
 - **Wit-War** — Battle of wits with head-to-head voting
 
@@ -667,6 +667,7 @@ Key API:
 - `SPECTATOR_TARGET_STATE` (S2C) — Server sends target player info
 - `sendToSpectatorFollowers(targetPlayerId, event, data)` — Forward per-player events to spectators following that player
 - `getSpectatorSnapshot(targetPlayerId?)` — Dispatches to the correct state method based on mode
+- `getPhaseTimerSnapshot()` — Returns current phase timer state; sent to the spectator on target switch so the timer immediately reflects the correct remaining time
 
 ---
 
