@@ -106,7 +106,7 @@ function CharacterSprite({ characterId, expression, position, isSpeaking, sprite
 
   return (
     <motion.div
-      className="absolute bottom-24 flex flex-col items-center"
+      className="absolute bottom-8 flex flex-col items-center"
       style={{
         left: xPos,
         transform: 'translateX(-50%)',
@@ -404,21 +404,26 @@ export function DialogueScreen() {
 
         {/* Quick action bar */}
         <div className="max-w-4xl mx-auto mt-2 flex gap-2 justify-end">
-          {(['save', 'journal'] as const).map(action => (
+          {([
+            { key: 'menu', label: 'Menu' },
+            { key: 'settings', label: 'Settings' },
+            { key: 'save', label: 'Save' },
+            { key: 'journal', label: 'Journal' },
+          ] as const).map(action => (
             <button
-              key={action}
+              key={action.key}
               onClick={(e) => {
                 e.stopPropagation();
-                setScreen(action);
+                setScreen(action.key);
               }}
-              className="text-xs px-3 py-1 rounded transition-all"
+              className="text-xs px-3 py-1 rounded transition-all hover:brightness-125"
               style={{
                 backgroundColor: 'rgba(26, 21, 32, 0.7)',
                 border: '1px solid rgba(196, 163, 90, 0.1)',
                 color: '#666',
               }}
             >
-              {action === 'save' ? 'Save' : 'Journal'}
+              {action.label}
             </button>
           ))}
         </div>
