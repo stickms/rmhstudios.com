@@ -36,7 +36,7 @@ export async function GET(
           select: {
             followers: true,
             following: true,
-            rmheets: true,
+            rmharks: true,
           },
         },
         ...(viewerId
@@ -66,7 +66,7 @@ export async function GET(
       showLikes: user.profile?.showLikes ?? false,
       followerCount: user._count.followers,
       followingCount: user._count.following,
-      rmheetCount: user._count.rmheets,
+      rmharkCount: user._count.rmharks,
       isFollowing: viewerId
         ? (user as Record<string, unknown>).followers
           ? ((user as Record<string, unknown>).followers as unknown[]).length > 0

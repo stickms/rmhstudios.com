@@ -58,12 +58,12 @@ model User {
   // Site Feedback
   feedbacks            Feedback[]
 
-  // RMHeet (Feed) Relations
-  rmheets              RMHeet[]
-  rmheetLikes          RMHeetLike[]
-  rmheetComments       RMHeetComment[]
-  rmheetReposts        RMHeetRepost[]
-  rmheetViews          RMHeetView[]
+  // RMHark (Feed) Relations
+  rmharks              RMHark[]
+  rmharkLikes          RMHarkLike[]
+  rmharkComments       RMHarkComment[]
+  rmharkReposts        RMHarkRepost[]
+  rmharkViews          RMHarkView[]
 
   // Profile & Social
   profile              UserProfile?
@@ -872,9 +872,9 @@ model AltairMatchPlayer {
   @@map("altair_match_player")
 }
 
-// ─── RMHeet (Feed) Models ─────────────────────────────────────────
+// ─── RMHark (Feed) Models ─────────────────────────────────────────
 
-model RMHeet {
+model RMHark {
   id        String   @id @default(cuid())
   userId    String
   content   String   @db.Text
@@ -882,35 +882,35 @@ model RMHeet {
   updatedAt DateTime @updatedAt
 
   user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  likes     RMHeetLike[]
-  comments  RMHeetComment[]
-  reposts   RMHeetRepost[]
-  views     RMHeetView[]
+  likes     RMHarkLike[]
+  comments  RMHarkComment[]
+  reposts   RMHarkRepost[]
+  views     RMHarkView[]
 
   // Self-relation for reposts (quote-repost displays the original inline)
   originalId String?
-  original   RMHeet?  @relation("RMHeetReposts", fields: [originalId], references: [id], onDelete: SetNull)
-  repostedBy RMHeet[] @relation("RMHeetReposts")
+  original   RMHark?  @relation("RMHarkReposts", fields: [originalId], references: [id], onDelete: SetNull)
+  repostedBy RMHark[] @relation("RMHarkReposts")
 
   @@index([userId])
   @@index([createdAt(sort: Desc)])
   @@map("rmheet")
 }
 
-model RMHeetLike {
+model RMHarkLike {
   id        String   @id @default(cuid())
   rmheetId  String
   userId    String
   createdAt DateTime @default(now())
 
-  rmheet    RMHeet   @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
+  rmhark    RMHark   @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([rmheetId, userId])
   @@map("rmheet_like")
 }
 
-model RMHeetComment {
+model RMHarkComment {
   id        String   @id @default(cuid())
   rmheetId  String
   userId    String
@@ -918,39 +918,39 @@ model RMHeetComment {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  rmheet    RMHeet   @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
+  rmhark    RMHark   @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Optional threaded replies
   parentId  String?
-  parent    RMHeetComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: SetNull)
-  replies   RMHeetComment[] @relation("CommentReplies")
+  parent    RMHarkComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: SetNull)
+  replies   RMHarkComment[] @relation("CommentReplies")
 
   @@index([rmheetId, createdAt(sort: Desc)])
   @@map("rmheet_comment")
 }
 
-model RMHeetRepost {
+model RMHarkRepost {
   id        String   @id @default(cuid())
   rmheetId  String
   userId    String
   createdAt DateTime @default(now())
 
-  rmheet    RMHeet   @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
+  rmhark    RMHark   @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([rmheetId, userId])
   @@map("rmheet_repost")
 }
 
-model RMHeetView {
+model RMHarkView {
   id        String   @id @default(cuid())
   rmheetId  String
   userId    String?
   ipHash    String?
   createdAt DateTime @default(now())
 
-  rmheet    RMHeet   @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
+  rmhark    RMHark   @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
   user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([rmheetId, userId])

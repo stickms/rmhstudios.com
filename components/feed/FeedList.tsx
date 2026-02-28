@@ -57,7 +57,7 @@ export function FeedList() {
         <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
           <p className="text-lg font-medium text-site-text mb-1">Nothing here yet</p>
           <p className="text-sm text-site-text-muted">
-            Be the first to post an RMHeet, or check back later!
+            Be the first to post an RMHark, or check back later!
           </p>
         </div>
       )}

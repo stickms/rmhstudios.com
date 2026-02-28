@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { headers } from "next/headers";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
-import { createRMHeetSchema } from "@/lib/rmheet-schema";
+import { createRMHarkSchema } from "@/lib/rmhark-schema";
 import { games } from "@/lib/games";
 import { apps } from "@/lib/apps";
 import { getAllPosts } from "@/lib/blog";
@@ -124,12 +124,12 @@ export async function GET(req: NextRequest) {
       // Not logged in, that's fine
     }
 
-    // Fetch RMHeets from DB
-    const shouldFetchRmheets = filter === "all" || filter === "rmheet";
+    // Fetch RMHarks from DB
+    const shouldFetchRmheets = filter === "all" || filter === "rmhark";
     let dbItems: FeedItem[] = [];
     const cursorDate = cursor ? new Date(cursor) : undefined;
 
-    const rmheetInclude = {
+    const rmharkInclude = {
       user: { select: { id: true, name: true, image: true, username: true } },
       _count: { select: { likes: true, comments: true, reposts: true, views: true } },
       ...(userId
@@ -147,29 +147,29 @@ export async function GET(req: NextRequest) {
     } as const;
 
     if (shouldFetchRmheets) {
-      const [rmheets, repostRecords] = await Promise.all([
-        prisma.rMHeet.findMany({
+      const [rmharks, repostRecords] = await Promise.all([
+        prisma.rMHark.findMany({
           where: cursorDate ? { createdAt: { lt: cursorDate } } : undefined,
           orderBy: { createdAt: "desc" },
           take: limit,
-          include: rmheetInclude,
+          include: rmharkInclude,
         }),
-        prisma.rMHeetRepost.findMany({
+        prisma.rMHarkRepost.findMany({
           where: cursorDate ? { createdAt: { lt: cursorDate } } : undefined,
           orderBy: { createdAt: "desc" },
           take: limit,
           include: {
             user: { select: { id: true, name: true, image: true, username: true } },
-            rmheet: { include: rmheetInclude },
+            rmhark: { include: rmharkInclude },
           },
         }),
       ]);
 
-      const mapOriginal = (o: typeof rmheets[0]["original"]) =>
+      const mapOriginal = (o: typeof rmharks[0]["original"]) =>
         o
           ? {
               id: o.id,
-              type: "rmheet" as const,
+              type: "rmhark" as const,
               createdAt: o.createdAt.toISOString(),
               content: o.content,
               user: o.user,
@@ -180,9 +180,9 @@ export async function GET(req: NextRequest) {
             }
           : undefined;
 
-      const ownItems: FeedItem[] = rmheets.map((r) => ({
+      const ownItems: FeedItem[] = rmharks.map((r) => ({
         id: r.id,
-        type: "rmheet" as const,
+        type: "rmhark" as const,
         createdAt: r.createdAt.toISOString(),
         content: r.content,
         user: r.user,
@@ -196,10 +196,10 @@ export async function GET(req: NextRequest) {
       }));
 
       const repostItems: FeedItem[] = repostRecords.map((rp) => {
-        const r = rp.rmheet;
+        const r = rp.rmhark;
         return {
           id: `repost:${rp.id}`,
-          type: "rmheet" as const,
+          type: "rmhark" as const,
           createdAt: rp.createdAt.toISOString(),
           actualId: r.id,
           content: r.content,
@@ -234,7 +234,7 @@ export async function GET(req: NextRequest) {
     let paginatedItems: FeedItem[];
 
     if (filter === "all") {
-      // Interleave: 3 RMHeets per 1 announcement to prioritize user content
+      // Interleave: 3 RMHarks per 1 announcement to prioritize user content
       const sortedAnnouncements = filteredAnnouncements.sort(
         (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
@@ -244,7 +244,7 @@ export async function GET(req: NextRequest) {
       let ai = 0;
 
       while (result.length < limit && (ri < dbItems.length || ai < sortedAnnouncements.length)) {
-        // Add up to 3 RMHeets
+        // Add up to 3 RMHarks
         for (let i = 0; i < 3 && ri < dbItems.length && result.length < limit; i++) {
           result.push(dbItems[ri++]);
         }
@@ -290,7 +290,7 @@ export async function POST(req: NextRequest) {
     const { allowed, retryAfter } = rateLimit(ip, {
       limit: 10,
       windowMs: 60_000,
-      prefix: "rmheet-create",
+      prefix: "rmhark-create",
     });
     if (!allowed) {
       return NextResponse.json(
@@ -300,7 +300,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const parsed = createRMHeetSchema.safeParse(body);
+    const parsed = createRMHarkSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
         { error: parsed.error.issues[0]?.message ?? "Invalid input" },
@@ -308,7 +308,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const rmheet = await prisma.rMHeet.create({
+    const rmhark = await prisma.rMHark.create({
       data: {
         content: parsed.data.content.trim(),
         userId: session.user.id,
@@ -319,11 +319,11 @@ export async function POST(req: NextRequest) {
     });
 
     const item: FeedItem = {
-      id: rmheet.id,
-      type: "rmheet",
-      createdAt: rmheet.createdAt.toISOString(),
-      content: rmheet.content,
-      user: rmheet.user,
+      id: rmhark.id,
+      type: "rmhark",
+      createdAt: rmhark.createdAt.toISOString(),
+      content: rmhark.content,
+      user: rmhark.user,
       likeCount: 0,
       commentCount: 0,
       repostCount: 0,
@@ -334,7 +334,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(item, { status: 201 });
   } catch (error) {
-    console.error("Create RMHeet error:", error);
+    console.error("Create RMHark error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { headers } from "next/headers";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
-import { createCommentSchema } from "@/lib/rmheet-schema";
+import { createCommentSchema } from "@/lib/rmhark-schema";
 
 export const runtime = "nodejs";
 
@@ -14,7 +14,7 @@ export async function GET(
   try {
     const { id } = await params;
 
-    const comments = await prisma.rMHeetComment.findMany({
+    const comments = await prisma.rMHarkComment.findMany({
       where: { rmheetId: id, parentId: null },
       orderBy: { createdAt: "desc" },
       include: {
@@ -49,7 +49,7 @@ export async function POST(
     const { allowed, retryAfter } = rateLimit(ip, {
       limit: 10,
       windowMs: 60_000,
-      prefix: "rmheet-comment",
+      prefix: "rmhark-comment",
     });
     if (!allowed) {
       return NextResponse.json(
@@ -68,7 +68,7 @@ export async function POST(
       );
     }
 
-    const comment = await prisma.rMHeetComment.create({
+    const comment = await prisma.rMHarkComment.create({
       data: {
         content: parsed.data.content.trim(),
         rmheetId: id,

@@ -1,12 +1,12 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { ArrowLeft, Loader2, Repeat2 } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { authClient } from '@/lib/auth-client';
-import { RMHeetActions } from './RMHeetActions';
+import { RMHarkActions } from './RMHarkActions';
 import { CommentItem } from './CommentItem';
-import { MAX_COMMENT_LENGTH } from '@/lib/rmheet-schema';
+import { MAX_COMMENT_LENGTH } from '@/lib/rmhark-schema';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { FeedItem } from '@/lib/feed-types';
@@ -32,14 +32,13 @@ export function PostDetail({ postId }: PostDetailProps) {
   const [notFound, setNotFound] = useState(false);
   const [commentContent, setCommentContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [replyTo, setReplyTo] = useState<{ id: string; name: string } | null>(null);
   const { data: session } = authClient.useSession();
   const remaining = MAX_COMMENT_LENGTH - commentContent.length;
 
   // Fetch post
   useEffect(() => {
     setLoading(true);
-    fetch(`/api/rmheets/${postId}`)
+    fetch(`/api/rmharks/${postId}`)
       .then(async (res) => {
         if (res.status === 404) { setNotFound(true); return; }
         const data = await res.json();
@@ -52,7 +51,7 @@ export function PostDetail({ postId }: PostDetailProps) {
   // Fetch comments
   useEffect(() => {
     setLoadingComments(true);
-    fetch(`/api/rmheets/${postId}/comment`)
+    fetch(`/api/rmharks/${postId}/comment`)
       .then((res) => res.json())
       .then((data) => setComments(data))
       .catch(console.error)
@@ -63,30 +62,15 @@ export function PostDetail({ postId }: PostDetailProps) {
     if (!commentContent.trim() || submitting) return;
     setSubmitting(true);
     try {
-      const res = await fetch(`/api/rmheets/${postId}/comment`, {
+      const res = await fetch(`/api/rmharks/${postId}/comment`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          content: commentContent.trim(),
-          ...(replyTo ? { parentId: replyTo.id } : {}),
-        }),
+        body: JSON.stringify({ content: commentContent.trim() }),
       });
       if (res.ok) {
         const comment = await res.json();
-        if (replyTo) {
-          // Add reply to the parent comment
-          setComments((prev) =>
-            prev.map((c) =>
-              c.id === replyTo.id
-                ? { ...c, replies: [...(c.replies ?? []), comment] }
-                : c
-            )
-          );
-        } else {
-          setComments((prev) => [comment, ...prev]);
-        }
+        setComments((prev) => [comment, ...prev]);
         setCommentContent('');
-        setReplyTo(null);
         setPost((prev) => prev ? { ...prev, commentCount: (prev.commentCount ?? 0) + 1 } : prev);
       }
     } catch (error) {
@@ -96,12 +80,19 @@ export function PostDetail({ postId }: PostDetailProps) {
     }
   };
 
-  const handleReply = useCallback((commentId: string, userName: string) => {
-    setReplyTo({ id: commentId, name: userName });
-    // Focus the textarea
-    setTimeout(() => {
-      document.getElementById('post-comment-input')?.focus();
-    }, 0);
+  const handleReplyAdded = useCallback((parentId: string, reply: Comment) => {
+    const addReplyDeep = (comments: Comment[]): Comment[] =>
+      comments.map((c) => {
+        if (c.id === parentId) {
+          return { ...c, replies: [...(c.replies ?? []), reply] };
+        }
+        if (c.replies?.length) {
+          return { ...c, replies: addReplyDeep(c.replies) };
+        }
+        return c;
+      });
+    setComments((prev) => addReplyDeep(prev));
+    setPost((prev) => prev ? { ...prev, commentCount: (prev.commentCount ?? 0) + 1 } : prev);
   }, []);
 
   const formatFullDate = (dateStr: string) => {
@@ -201,7 +192,7 @@ export function PostDetail({ postId }: PostDetailProps) {
         <div className="flex items-center gap-4 py-3 border-t border-site-border text-sm">
           <span>
             <span className="font-bold text-site-text">{post.repostCount ?? 0}</span>{' '}
-            <span className="text-site-text-dim">ReRMHs</span>
+            <span className="text-site-text-dim">reRMHarks</span>
           </span>
           <span>
             <span className="font-bold text-site-text">{post.likeCount ?? 0}</span>{' '}
@@ -215,7 +206,7 @@ export function PostDetail({ postId }: PostDetailProps) {
 
         {/* Actions */}
         <div className="border-t border-site-border pt-1">
-          <RMHeetActions
+          <RMHarkActions
             item={post}
             onUpdate={(_, updates) => setPost((prev) => prev ? { ...prev, ...updates } : prev)}
             onRemove={() => router.push('/')}
@@ -226,43 +217,44 @@ export function PostDetail({ postId }: PostDetailProps) {
       {/* Comment compose */}
       {session ? (
         <div className="px-4 py-3 border-b border-site-border">
-          {replyTo && (
-            <div className="flex items-center gap-2 mb-2 text-xs text-site-text-dim">
-              <span>Replying to <span className="text-site-accent">@{replyTo.name}</span></span>
-              <button
-                onClick={() => setReplyTo(null)}
-                className="text-site-text-dim hover:text-site-text"
-              >
-                Cancel
-              </button>
+          <div className="flex gap-3">
+            {/* User avatar */}
+            <div className="w-9 h-9 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-xs shrink-0">
+              {session.user?.image ? (
+                <img src={session.user.image} alt={session.user.name || 'You'} className="w-full h-full rounded-full object-cover" />
+              ) : (
+                (session.user?.name?.[0] || 'U').toUpperCase()
+              )}
             </div>
-          )}
-          <textarea
-            id="post-comment-input"
-            value={commentContent}
-            onChange={(e) => setCommentContent(e.target.value)}
-            placeholder={replyTo ? `Reply to @${replyTo.name}...` : 'Post your reply...'}
-            rows={2}
-            maxLength={MAX_COMMENT_LENGTH}
-            className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-xl p-3 border border-site-border resize-none outline-none focus:border-site-accent transition-colors"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-                handleSubmit();
-              }
-            }}
-          />
-          <div className="flex items-center justify-between mt-2">
-            <span className={`text-xs font-mono ${remaining <= 20 ? 'text-site-warning' : 'text-site-text-dim'}`}>
-              {remaining}
-            </span>
-            <Button
-              variant="accent"
-              size="sm"
-              disabled={!commentContent.trim() || remaining < 0 || submitting}
-              onClick={handleSubmit}
-            >
-              {submitting ? 'Posting...' : 'Reply'}
-            </Button>
+            <div className="flex-1 min-w-0">
+              <textarea
+                id="post-comment-input"
+                value={commentContent}
+                onChange={(e) => setCommentContent(e.target.value)}
+                placeholder="Post your reply..."
+                rows={2}
+                maxLength={MAX_COMMENT_LENGTH}
+                className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-xl p-3 border border-site-border resize-none outline-none focus:border-site-accent transition-colors"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                    handleSubmit();
+                  }
+                }}
+              />
+              <div className="flex items-center justify-between mt-2">
+                <span className={`text-xs font-mono ${remaining <= 20 ? 'text-site-warning' : 'text-site-text-dim'}`}>
+                  {remaining}
+                </span>
+                <Button
+                  variant="accent"
+                  size="sm"
+                  disabled={!commentContent.trim() || remaining < 0 || submitting}
+                  onClick={handleSubmit}
+                >
+                  {submitting ? 'Posting...' : 'Reply'}
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       ) : (
@@ -272,7 +264,7 @@ export function PostDetail({ postId }: PostDetailProps) {
       )}
 
       {/* Comments list */}
-      <div>
+      <div className="px-4">
         {loadingComments ? (
           <div className="flex justify-center py-8">
             <Loader2 className="w-6 h-6 text-site-accent animate-spin" />
@@ -282,12 +274,14 @@ export function PostDetail({ postId }: PostDetailProps) {
             No replies yet. Be the first!
           </p>
         ) : (
-          <div>
+          <div className="divide-y divide-site-border">
             {comments.map((comment) => (
               <CommentItem
                 key={comment.id}
                 comment={comment}
-                onReply={handleReply}
+                postId={postId}
+                sessionUser={session?.user}
+                onReplyAdded={handleReplyAdded}
               />
             ))}
           </div>

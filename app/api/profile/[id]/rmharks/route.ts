@@ -6,7 +6,7 @@ import type { FeedItem } from "@/lib/feed-types";
 
 export const runtime = "nodejs";
 
-const rmheetInclude = (viewerId: string | null) => ({
+const rmharkInclude = (viewerId: string | null) => ({
   user: { select: { id: true, name: true, image: true, username: true } },
   _count: { select: { likes: true, comments: true, reposts: true, views: true } },
   ...(viewerId
@@ -27,7 +27,7 @@ function mapOriginal(original: { id: string; createdAt: Date; content: string; u
   if (!original) return undefined;
   return {
     id: original.id,
-    type: "rmheet" as const,
+    type: "rmhark" as const,
     createdAt: original.createdAt.toISOString(),
     content: original.content,
     user: original.user,
@@ -59,18 +59,18 @@ export async function GET(
 
     const cursorDate = cursor ? new Date(cursor) : undefined;
 
-    // Fetch user's own RMHeets and their reposts in parallel
-    const [rmheets, reposts] = await Promise.all([
-      prisma.rMHeet.findMany({
+    // Fetch user's own RMHarks and their reposts in parallel
+    const [rmharks, reposts] = await Promise.all([
+      prisma.rMHark.findMany({
         where: {
           userId,
           ...(cursorDate ? { createdAt: { lt: cursorDate } } : {}),
         },
         orderBy: { createdAt: "desc" },
         take: limit,
-        include: rmheetInclude(viewerId),
+        include: rmharkInclude(viewerId),
       }),
-      prisma.rMHeetRepost.findMany({
+      prisma.rMHarkRepost.findMany({
         where: {
           userId,
           ...(cursorDate ? { createdAt: { lt: cursorDate } } : {}),
@@ -79,17 +79,17 @@ export async function GET(
         take: limit,
         include: {
           user: { select: { id: true, name: true, image: true, username: true } },
-          rmheet: {
-            include: rmheetInclude(viewerId),
+          rmhark: {
+            include: rmharkInclude(viewerId),
           },
         },
       }),
     ]);
 
-    // Map own RMHeets to FeedItems
-    const ownItems: FeedItem[] = rmheets.map((r) => ({
+    // Map own RMHarks to FeedItems
+    const ownItems: FeedItem[] = rmharks.map((r) => ({
       id: r.id,
-      type: "rmheet" as const,
+      type: "rmhark" as const,
       createdAt: r.createdAt.toISOString(),
       content: r.content,
       user: r.user,
@@ -104,10 +104,10 @@ export async function GET(
 
     // Map reposts to FeedItems with repostedBy
     const repostItems: FeedItem[] = reposts.map((rp) => {
-      const r = rp.rmheet;
+      const r = rp.rmhark;
       return {
         id: `repost:${rp.id}`,
-        type: "rmheet" as const,
+        type: "rmhark" as const,
         createdAt: rp.createdAt.toISOString(),
         actualId: r.id,
         content: r.content,
@@ -139,7 +139,7 @@ export async function GET(
       hasMore: merged.length === limit,
     });
   } catch (error) {
-    console.error("Profile rmheets fetch error:", error);
+    console.error("Profile rmharks fetch error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

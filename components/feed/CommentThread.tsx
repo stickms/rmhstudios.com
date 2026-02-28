@@ -5,7 +5,7 @@ import { X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { authClient } from '@/lib/auth-client';
 import { CommentItem } from './CommentItem';
-import { MAX_COMMENT_LENGTH } from '@/lib/rmheet-schema';
+import { MAX_COMMENT_LENGTH } from '@/lib/rmhark-schema';
 
 interface Comment {
   id: string;
@@ -16,13 +16,13 @@ interface Comment {
 }
 
 interface CommentThreadProps {
-  rmheetId: string;
+  rmharkId: string;
   open: boolean;
   onClose: () => void;
   onCommentAdded: () => void;
 }
 
-export function CommentThread({ rmheetId, open, onClose, onCommentAdded }: CommentThreadProps) {
+export function CommentThread({ rmharkId, open, onClose, onCommentAdded }: CommentThreadProps) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [content, setContent] = useState('');
@@ -33,18 +33,18 @@ export function CommentThread({ rmheetId, open, onClose, onCommentAdded }: Comme
   useEffect(() => {
     if (!open) return;
     setLoading(true);
-    fetch(`/api/rmheets/${rmheetId}/comment`)
+    fetch(`/api/rmharks/${rmharkId}/comment`)
       .then((res) => res.json())
       .then((data) => setComments(data))
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [rmheetId, open]);
+  }, [rmharkId, open]);
 
   const handleSubmit = async () => {
     if (!content.trim() || submitting) return;
     setSubmitting(true);
     try {
-      const res = await fetch(`/api/rmheets/${rmheetId}/comment`, {
+      const res = await fetch(`/api/rmharks/${rmharkId}/comment`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: content.trim() }),
@@ -104,7 +104,7 @@ export function CommentThread({ rmheetId, open, onClose, onCommentAdded }: Comme
             </p>
           ) : (
             comments.map((comment) => (
-              <CommentItem key={comment.id} comment={comment} />
+              <CommentItem key={comment.id} comment={comment} postId={rmharkId} />
             ))
           )}
         </div>

@@ -5,7 +5,7 @@ import type { FeedFilter } from '@/lib/feed-types';
 
 const tabs: { label: string; value: FeedFilter }[] = [
   { label: 'All', value: 'all' },
-  { label: 'RMHeets', value: 'rmheet' },
+  { label: 'RMHarks', value: 'rmhark' },
   { label: 'Games', value: 'game' },
   { label: 'Apps', value: 'app' },
   { label: 'News', value: 'news' },

@@ -20,7 +20,7 @@ export async function GET(
       // Not logged in
     }
 
-    const rmheet = await prisma.rMHeet.findUnique({
+    const rmhark = await prisma.rMHark.findUnique({
       where: { id },
       include: {
         user: { select: { id: true, name: true, image: true, username: true } },
@@ -40,38 +40,38 @@ export async function GET(
       },
     });
 
-    if (!rmheet) {
+    if (!rmhark) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
     return NextResponse.json({
-      id: rmheet.id,
-      type: "rmheet",
-      createdAt: rmheet.createdAt.toISOString(),
-      content: rmheet.content,
-      user: rmheet.user,
-      likeCount: rmheet._count.likes,
-      commentCount: rmheet._count.comments,
-      repostCount: rmheet._count.reposts,
-      viewCount: rmheet._count.views,
-      liked: userId ? rmheet.likes.length > 0 : false,
-      reposted: userId ? rmheet.reposts.length > 0 : false,
-      original: rmheet.original
+      id: rmhark.id,
+      type: "rmhark",
+      createdAt: rmhark.createdAt.toISOString(),
+      content: rmhark.content,
+      user: rmhark.user,
+      likeCount: rmhark._count.likes,
+      commentCount: rmhark._count.comments,
+      repostCount: rmhark._count.reposts,
+      viewCount: rmhark._count.views,
+      liked: userId ? rmhark.likes.length > 0 : false,
+      reposted: userId ? rmhark.reposts.length > 0 : false,
+      original: rmhark.original
         ? {
-            id: rmheet.original.id,
-            type: "rmheet",
-            createdAt: rmheet.original.createdAt.toISOString(),
-            content: rmheet.original.content,
-            user: rmheet.original.user,
-            likeCount: rmheet.original._count.likes,
-            commentCount: rmheet.original._count.comments,
-            repostCount: rmheet.original._count.reposts,
-            viewCount: rmheet.original._count.views,
+            id: rmhark.original.id,
+            type: "rmhark",
+            createdAt: rmhark.original.createdAt.toISOString(),
+            content: rmhark.original.content,
+            user: rmhark.original.user,
+            likeCount: rmhark.original._count.likes,
+            commentCount: rmhark.original._count.comments,
+            repostCount: rmhark.original._count.reposts,
+            viewCount: rmhark.original._count.views,
           }
         : undefined,
     });
   } catch (error) {
-    console.error("Get RMHeet error:", error);
+    console.error("Get RMHark error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
@@ -88,24 +88,24 @@ export async function DELETE(
 
     const { id } = await params;
 
-    const rmheet = await prisma.rMHeet.findUnique({
+    const rmhark = await prisma.rMHark.findUnique({
       where: { id },
       select: { userId: true },
     });
 
-    if (!rmheet) {
+    if (!rmhark) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    if (rmheet.userId !== session.user.id) {
+    if (rmhark.userId !== session.user.id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    await prisma.rMHeet.delete({ where: { id } });
+    await prisma.rMHark.delete({ where: { id } });
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Delete RMHeet error:", error);
+    console.error("Delete RMHark error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

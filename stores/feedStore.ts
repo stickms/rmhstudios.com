@@ -38,7 +38,7 @@ export const useFeedStore = create<FeedState>((set, get) => ({
       const params = new URLSearchParams({ limit: "20", filter });
       if (cursor) params.set("cursor", cursor);
 
-      const res = await fetch(`/api/rmheets?${params}`);
+      const res = await fetch(`/api/rmharks?${params}`);
       if (!res.ok) throw new Error("Failed to fetch feed");
 
       const data = await res.json();

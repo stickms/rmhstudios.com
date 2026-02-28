@@ -5,7 +5,7 @@ import { X } from 'lucide-react';
 import { authClient } from '@/lib/auth-client';
 import { Button } from '@/components/ui/button';
 import { useFeedStore } from '@/stores/feedStore';
-import { MAX_RMHEET_LENGTH } from '@/lib/rmheet-schema';
+import { MAX_RMHARK_LENGTH } from '@/lib/rmhark-schema';
 
 interface ComposeModalProps {
   open: boolean;
@@ -18,14 +18,14 @@ export function ComposeModal({ open, onClose }: ComposeModalProps) {
   const { prependItem } = useFeedStore();
   const { data: session } = authClient.useSession();
 
-  const remaining = MAX_RMHEET_LENGTH - content.length;
+  const remaining = MAX_RMHARK_LENGTH - content.length;
 
   const handleSubmit = async () => {
     if (!content.trim() || submitting) return;
 
     setSubmitting(true);
     try {
-      const res = await fetch('/api/rmheets', {
+      const res = await fetch('/api/rmharks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: content.trim() }),
@@ -101,7 +101,7 @@ export function ComposeModal({ open, onClose }: ComposeModalProps) {
                 onChange={(e) => setContent(e.target.value)}
                 placeholder="What's on your mind?"
                 rows={4}
-                maxLength={MAX_RMHEET_LENGTH}
+                maxLength={MAX_RMHARK_LENGTH}
                 className="w-full bg-transparent text-site-text placeholder:text-site-text-dim text-base resize-none border-none outline-none"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {

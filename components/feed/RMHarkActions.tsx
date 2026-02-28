@@ -6,7 +6,7 @@ import { useFeedStore } from '@/stores/feedStore';
 import { authClient } from '@/lib/auth-client';
 import type { FeedItem } from '@/lib/feed-types';
 
-interface RMHeetActionsProps {
+interface RMHarkActionsProps {
   item: FeedItem;
   onUpdate?: (id: string, updates: Partial<FeedItem>) => void;
   onRemove?: (id: string) => void;
@@ -19,7 +19,7 @@ function formatCount(n: number | undefined): string {
   return String(n);
 }
 
-export function RMHeetActions({ item, onUpdate, onRemove }: RMHeetActionsProps) {
+export function RMHarkActions({ item, onUpdate, onRemove }: RMHarkActionsProps) {
   const router = useRouter();
   const { updateItem: storeUpdate, removeItem: storeRemove } = useFeedStore();
   const { data: session } = authClient.useSession();
@@ -43,7 +43,7 @@ export function RMHeetActions({ item, onUpdate, onRemove }: RMHeetActionsProps) 
     });
 
     try {
-      const res = await fetch(`/api/rmheets/${actualId}/like`, { method: 'POST' });
+      const res = await fetch(`/api/rmharks/${actualId}/like`, { method: 'POST' });
       if (!res.ok) {
         updateItem(item.id, { liked: wasLiked, likeCount: item.likeCount });
       }
@@ -61,7 +61,7 @@ export function RMHeetActions({ item, onUpdate, onRemove }: RMHeetActionsProps) 
     });
 
     try {
-      const res = await fetch(`/api/rmheets/${actualId}/repost`, { method: 'POST' });
+      const res = await fetch(`/api/rmharks/${actualId}/repost`, { method: 'POST' });
       if (!res.ok) {
         updateItem(item.id, { reposted: wasReposted, repostCount: item.repostCount });
       }
@@ -71,10 +71,10 @@ export function RMHeetActions({ item, onUpdate, onRemove }: RMHeetActionsProps) 
   };
 
   const handleDelete = async () => {
-    if (!confirm('Delete this RMHeet?')) return;
+    if (!confirm('Delete this RMHark?')) return;
     removeItem(item.id);
     try {
-      await fetch(`/api/rmheets/${actualId}`, { method: 'DELETE' });
+      await fetch(`/api/rmharks/${actualId}`, { method: 'DELETE' });
     } catch {
       // Item already removed from UI
     }
@@ -91,7 +91,7 @@ export function RMHeetActions({ item, onUpdate, onRemove }: RMHeetActionsProps) 
         <span className="text-xs">{formatCount(item.commentCount)}</span>
       </button>
 
-      {/* ReRMH */}
+      {/* reRMHark */}
       <button
         onClick={toggleRepost}
         className={`flex items-center gap-1.5 px-2 py-1 rounded-full transition-colors group ${

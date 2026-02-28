@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { MapPin, Link as LinkIcon, Calendar, Loader2, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { authClient } from '@/lib/auth-client';
-import { RMHeetCard } from './RMHeetCard';
+import { RMHarkCard } from './RMHarkCard';
 import { ProfileEditModal } from './ProfileEditModal';
 import Link from 'next/link';
 import type { FeedItem } from '@/lib/feed-types';
@@ -21,21 +21,21 @@ interface ProfileData {
   showLikes: boolean;
   followerCount: number;
   followingCount: number;
-  rmheetCount: number;
+  rmharkCount: number;
   isFollowing: boolean;
   isOwnProfile: boolean;
 }
 
-type ProfileTab = 'rmheets' | 'likes';
+type ProfileTab = 'rmharks' | 'likes';
 
 export function ProfileColumn({ userId }: { userId: string }) {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
-  const [tab, setTab] = useState<ProfileTab>('rmheets');
+  const [tab, setTab] = useState<ProfileTab>('rmharks');
 
-  // RMHeet list state
+  // RMHark list state
   const [items, setItems] = useState<FeedItem[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
@@ -70,21 +70,21 @@ export function ProfileColumn({ userId }: { userId: string }) {
       .finally(() => setLoading(false));
   }, [userId]);
 
-  // Fetch RMHeets
-  const fetchRMHeets = useCallback(async () => {
+  // Fetch RMHarks
+  const fetchRMHarks = useCallback(async () => {
     if (loadingItems) return;
     setLoadingItems(true);
     try {
       const params = new URLSearchParams({ limit: '20' });
       if (cursor) params.set('cursor', cursor);
-      const res = await fetch(`/api/profile/${encodeURIComponent(userId)}/rmheets?${params}`);
+      const res = await fetch(`/api/profile/${encodeURIComponent(userId)}/rmharks?${params}`);
       if (!res.ok) return;
       const data = await res.json();
       setItems((prev) => [...prev, ...data.items]);
       setCursor(data.nextCursor);
       setHasMore(data.hasMore);
     } catch (error) {
-      console.error('Fetch rmheets error:', error);
+      console.error('Fetch rmharks error:', error);
     } finally {
       setLoadingItems(false);
     }
@@ -110,27 +110,27 @@ export function ProfileColumn({ userId }: { userId: string }) {
     }
   }, [userId, likedCursor, loadingLiked]);
 
-  // Initial fetch for RMHeets
+  // Initial fetch for RMHarks
   useEffect(() => {
     if (!initialFetched.current && !loading && profile) {
       initialFetched.current = true;
-      fetchRMHeets();
+      fetchRMHarks();
     }
-  }, [loading, profile, fetchRMHeets]);
+  }, [loading, profile, fetchRMHarks]);
 
-  // Infinite scroll for RMHeets
+  // Infinite scroll for RMHarks
   const observerCallback = useCallback(
     (entries: IntersectionObserverEntry[]) => {
       if (entries[0].isIntersecting && hasMore && !loadingItems) {
-        fetchRMHeets();
+        fetchRMHarks();
       }
     },
-    [hasMore, loadingItems, fetchRMHeets]
+    [hasMore, loadingItems, fetchRMHarks]
   );
 
   useEffect(() => {
     const sentinel = sentinelRef.current;
-    if (!sentinel || tab !== 'rmheets') return;
+    if (!sentinel || tab !== 'rmharks') return;
     const observer = new IntersectionObserver(observerCallback, { rootMargin: '200px' });
     observer.observe(sentinel);
     return () => observer.disconnect();
@@ -234,7 +234,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
             <h1 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text">
               {profile.name || profile.username || 'User'}
             </h1>
-            <p className="text-xs text-site-text-dim">{profile.rmheetCount} RMHeets</p>
+            <p className="text-xs text-site-text-dim">{profile.rmharkCount} RMHarks</p>
           </div>
         </div>
       </div>
@@ -326,14 +326,14 @@ export function ProfileColumn({ userId }: { userId: string }) {
       <div className="border-b border-site-border">
         <div className="flex">
           <button
-            onClick={() => handleTabChange('rmheets')}
+            onClick={() => handleTabChange('rmharks')}
             className={`flex-1 py-3 text-center text-sm font-bold transition-colors ${
-              tab === 'rmheets'
+              tab === 'rmharks'
                 ? 'text-site-accent border-b-2 border-site-accent'
                 : 'text-site-text-dim hover:text-site-text hover:bg-site-surface/50'
             }`}
           >
-            RMHeets
+            RMHarks
           </button>
           {showLikesTab && (
             <button
@@ -350,11 +350,11 @@ export function ProfileColumn({ userId }: { userId: string }) {
         </div>
       </div>
 
-      {/* RMHeets tab content */}
-      {tab === 'rmheets' && (
+      {/* RMHarks tab content */}
+      {tab === 'rmharks' && (
         <div>
           {items.map((item) => (
-            <RMHeetCard key={item.id} item={item} />
+            <RMHarkCard key={item.id} item={item} />
           ))}
 
           {loadingItems && (
@@ -365,11 +365,11 @@ export function ProfileColumn({ userId }: { userId: string }) {
 
           {!loadingItems && items.length === 0 && (
             <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-              <p className="text-lg font-medium text-site-text mb-1">No RMHeets yet</p>
+              <p className="text-lg font-medium text-site-text mb-1">No RMHarks yet</p>
               <p className="text-sm text-site-text-muted">
                 {profile.isOwnProfile
-                  ? "You haven't posted any RMHeets yet."
-                  : `@${profile.username} hasn't posted any RMHeets yet.`}
+                  ? "You haven't posted any RMHarks yet."
+                  : `@${profile.username} hasn't posted any RMHarks yet.`}
               </p>
             </div>
           )}
@@ -388,7 +388,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
       {tab === 'likes' && (
         <div>
           {likedItems.map((item) => (
-            <RMHeetCard key={item.id} item={item} />
+            <RMHarkCard key={item.id} item={item} />
           ))}
 
           {loadingLiked && (

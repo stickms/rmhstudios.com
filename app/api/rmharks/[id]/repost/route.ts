@@ -18,9 +18,9 @@ export async function POST(
 
     const ip = getClientIp(req);
     const { allowed, retryAfter } = rateLimit(ip, {
-      limit: 30,
+      limit: 20,
       windowMs: 60_000,
-      prefix: "rmheet-like",
+      prefix: "rmhark-repost",
     });
     if (!allowed) {
       return NextResponse.json(
@@ -32,19 +32,19 @@ export async function POST(
     const { id } = await params;
     const userId = session.user.id;
 
-    const existingLike = await prisma.rMHeetLike.findUnique({
+    const existingRepost = await prisma.rMHarkRepost.findUnique({
       where: { rmheetId_userId: { rmheetId: id, userId } },
     });
 
-    if (existingLike) {
-      await prisma.rMHeetLike.delete({ where: { id: existingLike.id } });
-      return NextResponse.json({ success: true, liked: false });
+    if (existingRepost) {
+      await prisma.rMHarkRepost.delete({ where: { id: existingRepost.id } });
+      return NextResponse.json({ success: true, reposted: false });
     } else {
-      await prisma.rMHeetLike.create({ data: { rmheetId: id, userId } });
-      return NextResponse.json({ success: true, liked: true });
+      await prisma.rMHarkRepost.create({ data: { rmheetId: id, userId } });
+      return NextResponse.json({ success: true, reposted: true });
     }
   } catch (error) {
-    console.error("Toggle like error:", error);
+    console.error("Toggle repost error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

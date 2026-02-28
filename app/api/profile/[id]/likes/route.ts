@@ -37,8 +37,8 @@ export async function GET(
       }
     }
 
-    // Fetch liked posts via RMHeetLike join
-    const likes = await prisma.rMHeetLike.findMany({
+    // Fetch liked posts via RMHarkLike join
+    const likes = await prisma.rMHarkLike.findMany({
       where: {
         userId: profileUserId,
         ...(cursor ? { createdAt: { lt: new Date(cursor) } } : {}),
@@ -46,7 +46,7 @@ export async function GET(
       orderBy: { createdAt: "desc" },
       take: limit,
       include: {
-        rmheet: {
+        rmhark: {
           include: {
             user: { select: { id: true, name: true, image: true, username: true } },
             _count: { select: { likes: true, comments: true, reposts: true, views: true } },
@@ -68,10 +68,10 @@ export async function GET(
     });
 
     const items: FeedItem[] = likes.map((l) => {
-      const r = l.rmheet;
+      const r = l.rmhark;
       return {
         id: r.id,
-        type: "rmheet" as const,
+        type: "rmhark" as const,
         createdAt: l.createdAt.toISOString(),
         content: r.content,
         user: r.user,
@@ -84,7 +84,7 @@ export async function GET(
         original: r.original
           ? {
               id: r.original.id,
-              type: "rmheet" as const,
+              type: "rmhark" as const,
               createdAt: r.original.createdAt.toISOString(),
               content: r.original.content,
               user: r.original.user,

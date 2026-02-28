@@ -1,5 +1,5 @@
 export type FeedItemType =
-  | "rmheet"
+  | "rmhark"
   | "game_announcement"
   | "app_announcement"
   | "news"
@@ -18,7 +18,7 @@ export interface FeedItem {
   type: FeedItemType;
   createdAt: string;
 
-  // RMHeet fields
+  // RMHark fields
   content?: string;
   user?: FeedItemUser;
   likeCount?: number;
@@ -45,7 +45,7 @@ export interface FeedItem {
 
 export type FeedFilter =
   | "all"
-  | "rmheet"
+  | "rmhark"
   | "game"
   | "app"
   | "news"

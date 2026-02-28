@@ -1,13 +1,13 @@
 'use client';
 
 import type { FeedItem } from '@/lib/feed-types';
-import { RMHeetActions } from './RMHeetActions';
+import { RMHarkActions } from './RMHarkActions';
 import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Repeat2 } from 'lucide-react';
 import Link from 'next/link';
 
-interface RMHeetCardProps {
+interface RMHarkCardProps {
   item: FeedItem;
 }
 
@@ -42,7 +42,7 @@ function UserAvatar({ user }: { user: FeedItem['user'] }) {
   return <Link href={`/profile/${user.id}`}>{avatar}</Link>;
 }
 
-export function RMHeetCard({ item }: RMHeetCardProps) {
+export function RMHarkCard({ item }: RMHarkCardProps) {
   const viewTracked = useRef(false);
   const router = useRouter();
   const actualId = item.actualId ?? item.id;
@@ -51,7 +51,7 @@ export function RMHeetCard({ item }: RMHeetCardProps) {
   useEffect(() => {
     if (viewTracked.current) return;
     viewTracked.current = true;
-    fetch(`/api/rmheets/${actualId}/view`, { method: 'POST' }).catch(() => {});
+    fetch(`/api/rmharks/${actualId}/view`, { method: 'POST' }).catch(() => {});
   }, [actualId]);
 
   const handleCardClick = (e: React.MouseEvent) => {
@@ -67,7 +67,7 @@ export function RMHeetCard({ item }: RMHeetCardProps) {
       className="px-4 py-3 border-b border-site-border hover:bg-site-surface/30 transition-colors cursor-pointer"
       onClick={handleCardClick}
     >
-      {/* ReRMH'd label */}
+      {/* reRMHark'd label */}
       {item.repostedBy && (
         <div className="flex items-center gap-1.5 text-xs text-site-text-dim mb-2 ml-12">
           <Repeat2 className="w-3.5 h-3.5" />
@@ -75,7 +75,7 @@ export function RMHeetCard({ item }: RMHeetCardProps) {
             href={`/profile/${item.repostedBy.id}`}
             className="hover:underline"
           >
-            {item.repostedBy.name || item.repostedBy.username || 'Someone'} ReRMH&apos;d
+            {item.repostedBy.name || item.repostedBy.username || 'Someone'} reRMHark&apos;d
           </Link>
         </div>
       )}
@@ -140,7 +140,7 @@ export function RMHeetCard({ item }: RMHeetCardProps) {
           )}
 
           {/* Actions */}
-          <RMHeetActions item={item} />
+          <RMHarkActions item={item} />
         </div>
       </div>
     </div>

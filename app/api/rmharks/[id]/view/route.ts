@@ -16,7 +16,7 @@ export async function POST(
     const { allowed } = rateLimit(ip, {
       limit: 60,
       windowMs: 60_000,
-      prefix: "rmheet-view",
+      prefix: "rmhark-view",
     });
     if (!allowed) {
       return NextResponse.json({ success: true }); // Silently accept
@@ -36,14 +36,14 @@ export async function POST(
 
     if (userId) {
       // Dedupe by userId
-      await prisma.rMHeetView.upsert({
+      await prisma.rMHarkView.upsert({
         where: { rmheetId_userId: { rmheetId: id, userId } },
         create: { rmheetId: id, userId },
         update: {},
       });
     } else {
       // Dedupe by IP hash
-      await prisma.rMHeetView.upsert({
+      await prisma.rMHarkView.upsert({
         where: { rmheetId_ipHash: { rmheetId: id, ipHash } },
         create: { rmheetId: id, ipHash },
         update: {},
