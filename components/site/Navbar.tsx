@@ -127,18 +127,10 @@ export function Navbar() {
                             setStyle(s.id);
                             setShowStyleMenu(false);
                           }}
-<<<<<<< HEAD
                           className={`w-full text-left px-3 py-1.5 text-sm flex items-center gap-2 transition-colors ${style === s.id
-                              ? 'text-(--site-accent) bg-(--site-accent-dim)'
-                              : 'text-(--site-text-muted) hover:text-(--site-text) hover:bg-(--site-surface-hover)'
-                            }`}
-=======
-                          className={`w-full text-left px-3 py-1.5 text-sm flex items-center gap-2 transition-colors ${
-                            style === s.id
                               ? 'text-site-accent bg-site-accent-dim'
                               : 'text-site-text-muted hover:text-site-text hover:bg-site-surface-hover'
-                          }`}
->>>>>>> 0c7075b231aae83618dbe4514632bec4a85d4107
+                            }`}
                         >
                           <span className="text-base w-5 text-center">{s.icon}</span>
                           <span>{s.label}</span>
@@ -157,7 +149,7 @@ export function Navbar() {
               <div className="relative">
                 <button
                   onClick={() => setShowUserMenu(!showUserMenu)}
-                  className="flex items-center gap-2 text-sm bg-site-surfacetext-site-text-muted hover:text-site-text transition-colors focus:outline-none"
+                  className="flex items-center gap-2 text-sm text-site-text-muted hover:text-site-text transition-colors focus:outline-none"
                 >
                   <div className="w-8 h-8 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-xs ring-2 ring-site-bg">
                     {session.user.image ? (
@@ -207,7 +199,7 @@ export function Navbar() {
             </button>
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="inline-flex items-center justify-center p-2 rounded-lg bg-site-surfacetext-site-text-muted hover:text-site-text hover:bg-site-surface focus:outline-none"
+              className="inline-flex items-center justify-center p-2 rounded-lg text-site-text-muted hover:text-site-text hover:bg-site-surface focus:outline-none"
             >
               {isOpen ? <X className="block h-6 w-6" /> : <Menu className="block h-6 w-6" />}
             </button>
@@ -226,18 +218,10 @@ export function Navbar() {
                   <button
                     key={s.id}
                     onClick={() => setStyle(s.id)}
-<<<<<<< HEAD
                     className={`px-3 py-2 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors ${style === s.id
-                        ? 'text-(--site-accent) bg-(--site-accent-dim) border border-(--site-accent)/30'
-                        : 'text-(--site-text-muted) hover:text-(--site-text) bg-(--site-surface) border border-(--site-border)'
-                      }`}
-=======
-                    className={`px-3 py-2 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors ${
-                      style === s.id
                         ? 'text-site-accent bg-site-accent-dim border border-site-accent/30'
-                        : 'bg-site-surfacetext-site-text-muted hover:text-site-text bg-site-surface border border-site-border'
-                    }`}
->>>>>>> 0c7075b231aae83618dbe4514632bec4a85d4107
+                        : 'text-site-text-muted hover:text-site-text bg-site-surface border border-site-border'
+                      }`}
                   >
                     <span>{s.icon}</span>
                     <span>{s.label}</span>
@@ -260,7 +244,7 @@ export function Navbar() {
                 onClick={() => setIsOpen(false)}
                 className={`block px-3 py-2 rounded-lg text-base font-medium ${pathname === link.href
                   ? 'text-site-accent bg-site-accent-dim'
-                  : 'bg-site-surfacetext-site-text-muted hover:text-site-text hover:bg-site-surface'
+                  : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
                   }`}
               >
                 {link.label}
