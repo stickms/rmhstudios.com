@@ -83,14 +83,13 @@ function advanceToDrawing(_game: MinimalistMasterpieceGame): void {
   vi.advanceTimersByTime(MM_PROMPT_REVEAL_SECONDS * 1000);
 }
 
-/** Advance into the GALLERY phase (submits for all players, then advances the timer). */
+/** Advance into the GALLERY phase (submits for all players, which ends the phase early). */
 function advanceToGallery(game: MinimalistMasterpieceGame, playerIds: string[]): void {
   advanceToDrawing(game);
   for (const uid of playerIds) {
     game.handleInput(uid, 'SUBMIT_DRAWING', createValidDrawing());
   }
-  // Drawing phase always runs for the full duration (no early end)
-  vi.advanceTimersByTime(MM_DRAWING_DURATION_SECONDS * 1000);
+  // All players submitted → drawing phase ends early → moves to GALLERY immediately
 }
 
 /** Advance into the AUCTION phase. */
@@ -102,11 +101,10 @@ function advanceToAuction(game: MinimalistMasterpieceGame, playerIds: string[]):
 /** Advance into the RESULTS phase (avoids early-end to prevent timeout double-fire). */
 function advanceToResults(game: MinimalistMasterpieceGame, playerIds: string[]): void {
   advanceToDrawing(game);
-  // Submit only N-1 players so early-end shortcut does NOT trigger
-  for (let i = 0; i < playerIds.length - 1; i++) {
-    game.handleInput(playerIds[i], 'SUBMIT_DRAWING', createValidDrawing());
+  // Use SAVE_DRAWING (auto-save) for all, then let drawing timer expire naturally
+  for (const uid of playerIds) {
+    game.handleInput(uid, 'SAVE_DRAWING', createValidDrawing());
   }
-  // Let drawing timer expire naturally (auto-submits the last player)
   vi.advanceTimersByTime(MM_DRAWING_DURATION_SECONDS * 1000);
   vi.advanceTimersByTime(MM_GALLERY_DURATION_SECONDS * 1000);
   vi.advanceTimersByTime(MM_AUCTION_DURATION_SECONDS * 1000);
@@ -255,9 +253,9 @@ describe('Minimalist Masterpiece Server Handler (§6.3)', () => {
       const uid = MOCK_USERS.alice.userId;
       game.handleInput(uid, 'SUBMIT_DRAWING', createValidDrawing(5));
 
-      const accepted = findLastPlayerAction(playerLog, uid, 'MM_DRAWING_ACCEPTED');
-      expect(accepted).toBeDefined();
-      expect(accepted!.data.strokeCount).toBe(5);
+      const submitted = findLastPlayerAction(playerLog, uid, 'MM_DRAWING_SUBMITTED');
+      expect(submitted).toBeDefined();
+      expect(submitted!.data.strokeCount).toBe(5);
     });
 
     it('should reject a 6-stroke drawing (exceeds MM_MAX_STROKES)', () => {
@@ -318,25 +316,41 @@ describe('Minimalist Masterpiece Server Handler (§6.3)', () => {
       const customColorStroke = createValidStroke({ color: '#abcdef' });
       game.handleInput(uid, 'SUBMIT_DRAWING', { strokes: [customColorStroke], backgroundColor: '#ffffff' });
 
-      const accepted = findLastPlayerAction(playerLog, uid, 'MM_DRAWING_ACCEPTED');
-      expect(accepted).toBeDefined();
+      const submitted = findLastPlayerAction(playerLog, uid, 'MM_DRAWING_SUBMITTED');
+      expect(submitted).toBeDefined();
     });
 
-    it('should accept re-submission from the same player (auto-save)', () => {
+    it('should allow re-saving from the same player (auto-save)', () => {
+      const { game, playerLog } = createGame();
+      game.start();
+      advanceToDrawing(game);
+
+      const uid = MOCK_USERS.alice.userId;
+      game.handleInput(uid, 'SAVE_DRAWING', createValidDrawing());
+      game.handleInput(uid, 'SAVE_DRAWING', createValidDrawing(2));
+
+      // Both saves should be accepted (no rejection)
+      const rejections = findPlayerActions(playerLog, uid, 'MM_DRAWING_REJECTED');
+      expect(rejections.length).toBe(0);
+
+      const saves = findPlayerActions(playerLog, uid, 'MM_DRAWING_SAVED');
+      expect(saves.length).toBe(2);
+    });
+
+    it('should block saves after explicit submit', () => {
       const { game, playerLog } = createGame();
       game.start();
       advanceToDrawing(game);
 
       const uid = MOCK_USERS.alice.userId;
       game.handleInput(uid, 'SUBMIT_DRAWING', createValidDrawing());
-      game.handleInput(uid, 'SUBMIT_DRAWING', createValidDrawing(2));
+      game.handleInput(uid, 'SAVE_DRAWING', createValidDrawing(2));
 
-      // Both submissions should be accepted (no rejection)
-      const rejections = findPlayerActions(playerLog, uid, 'MM_DRAWING_REJECTED');
-      expect(rejections.length).toBe(0);
-
-      const acceptances = findPlayerActions(playerLog, uid, 'MM_DRAWING_ACCEPTED');
-      expect(acceptances.length).toBe(2);
+      // Submit accepted, subsequent save ignored
+      const submissions = findPlayerActions(playerLog, uid, 'MM_DRAWING_SUBMITTED');
+      expect(submissions.length).toBe(1);
+      const saves = findPlayerActions(playerLog, uid, 'MM_DRAWING_SAVED');
+      expect(saves.length).toBe(0);
     });
 
     it('should ignore drawing submission outside the DRAWING phase', () => {
@@ -347,13 +361,13 @@ describe('Minimalist Masterpiece Server Handler (§6.3)', () => {
       const uid = MOCK_USERS.alice.userId;
       game.handleInput(uid, 'SUBMIT_DRAWING', createValidDrawing());
 
-      const accepted = findLastPlayerAction(playerLog, uid, 'MM_DRAWING_ACCEPTED');
+      const accepted = findLastPlayerAction(playerLog, uid, 'MM_DRAWING_SUBMITTED');
       const rejected = findLastPlayerAction(playerLog, uid, 'MM_DRAWING_REJECTED');
       expect(accepted).toBeUndefined();
       expect(rejected).toBeUndefined();
     });
 
-    it('should NOT end the drawing phase early when all players submit (full timer always runs)', () => {
+    it('should end the drawing phase early when all players submit', () => {
       const { game, broadcastLog } = createGame();
       game.start();
       advanceToDrawing(game);
@@ -362,15 +376,10 @@ describe('Minimalist Masterpiece Server Handler (§6.3)', () => {
         game.handleInput(uid, 'SUBMIT_DRAWING', createValidDrawing());
       }
 
-      // Gallery should NOT have started — drawing phase always runs for the full duration
+      // Gallery SHOULD have started — drawing phase ends early when all submit
       const galleryStart = findLastActionBroadcast(broadcastLog, 'MM_GALLERY_START');
-      expect(galleryStart).toBeUndefined();
-      expect((game.getStateForPlayer(ALL_PLAYER_IDS[0]) as Record<string, unknown>).phase).toBe('DRAWING');
-
-      // Advance past the drawing timer to reach GALLERY
-      vi.advanceTimersByTime(MM_DRAWING_DURATION_SECONDS * 1000);
-      const galleryAfterTimer = findLastActionBroadcast(broadcastLog, 'MM_GALLERY_START');
-      expect(galleryAfterTimer).toBeDefined();
+      expect(galleryStart).toBeDefined();
+      expect((game.getStateForPlayer(ALL_PLAYER_IDS[0]) as Record<string, unknown>).phase).toBe('GALLERY');
     });
   });
 
@@ -986,7 +995,7 @@ describe('Minimalist Masterpiece Server Handler (§6.3)', () => {
       for (const uid of ALL_PLAYER_IDS) {
         game.handleInput(uid, 'SUBMIT_DRAWING', createValidDrawing());
       }
-      vi.advanceTimersByTime(MM_DRAWING_DURATION_SECONDS * 1000); // DRAWING (full timer)
+      // Drawing phase ended early (all submitted) → now in GALLERY
       vi.advanceTimersByTime(MM_GALLERY_DURATION_SECONDS * 1000); // skip GALLERY
       vi.advanceTimersByTime(MM_AUCTION_DURATION_SECONDS * 1000); // AUCTION
       vi.advanceTimersByTime(MM_RESULTS_DURATION_SECONDS * 1000); // RESULTS
@@ -1018,7 +1027,7 @@ describe('Minimalist Masterpiece Server Handler (§6.3)', () => {
   });
 
   describe('Spectator Follower Forwarding', () => {
-    it('should forward MM_DRAWING_ACCEPTED to spectator followers', () => {
+    it('should forward MM_DRAWING_SUBMITTED to spectator followers', () => {
       const { game, context, spectatorLog } = createGame();
       game.start();
       advanceToDrawing(game);
@@ -1027,10 +1036,10 @@ describe('Minimalist Masterpiece Server Handler (§6.3)', () => {
       game.handleInput(userId, 'SUBMIT_DRAWING', createValidDrawing());
 
       expect(context.sendToSpectatorFollowers).toHaveBeenCalled();
-      const drawingAccepted = spectatorLog.find(
-        (e) => (e.data as Record<string, unknown>).type === 'MM_DRAWING_ACCEPTED',
+      const drawingSubmitted = spectatorLog.find(
+        (e) => (e.data as Record<string, unknown>).type === 'MM_DRAWING_SUBMITTED',
       );
-      expect(drawingAccepted).toBeDefined();
+      expect(drawingSubmitted).toBeDefined();
     });
 
     it('should forward MM_BID_ACCEPTED to spectator followers', () => {
