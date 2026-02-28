@@ -264,10 +264,239 @@ export function PersistentHomologyPaper() {
         analysis and control of generative latent spaces in game-asset production.
       </p>
 
-      {/* 2. ALGEBRAIC-TOPOLOGICAL PRELIMINARIES */}
-      <h2 style={h2Style}>2. Algebraic-Topological Preliminaries</h2>
+      {/* 2. NOTATION AND CATEGORICAL FOUNDATIONS */}
+      <h2 style={h2Style}>2. Notation and Categorical Foundations</h2>
 
-      <h3 style={h3Style}>2.1 Simplicial Complexes and Homology Groups</h3>
+      <h3 style={h3Style}>2.1 Category of Persistence Modules</h3>
+
+      <p className="mb-4">
+        Let <Tex math="(\mathbf{T}, \leq)" /> be a totally ordered set, which we regard as a thin
+        category whose objects are the elements of <Tex math="\mathbf{T}" /> and whose morphisms are
+        the unique arrows <Tex math="s \to t" /> whenever <Tex math="s \leq t" />. A{' '}
+        <em>persistence module</em> over <Tex math="\mathbf{T}" /> with coefficients in a field{' '}
+        <Tex math="\mathbb{k}" /> is a functor{' '}
+        <Tex math="M : \mathbf{T} \to \mathbf{Vec}_{\mathbb{k}}" />, i.e., a family of{' '}
+        <Tex math="\mathbb{k}" />-vector spaces <Tex math="\{M_t\}_{t \in \mathbf{T}}" /> together
+        with linear maps <Tex math="\varphi_M(s,t) : M_s \to M_t" /> for each <Tex math="s \leq t" />{' '}
+        satisfying the functoriality conditions <Tex math="\varphi_M(t,t) = \mathrm{id}_{M_t}" /> and{' '}
+        <Tex math="\varphi_M(s,u) = \varphi_M(t,u) \circ \varphi_M(s,t)" /> for all{' '}
+        <Tex math="s \leq t \leq u" />. We denote the category of all such persistence modules by{' '}
+        <Tex math="\mathbf{Pers}_{\mathbb{k}}(\mathbf{T})" />, where morphisms are natural
+        transformations <Tex math="\eta : M \Rightarrow N" /> consisting of component maps{' '}
+        <Tex math="\eta_t : M_t \to N_t" /> commuting with the structure maps.
+      </p>
+
+      <p className="mb-4 indent-8">
+        A morphism <Tex math="\eta : M \to N" /> in <Tex math="\mathbf{Pers}_{\mathbb{k}}(\mathbf{T})" />{' '}
+        is thus a collection <Tex math="\{\eta_t : M_t \to N_t\}_{t \in \mathbf{T}}" /> of linear maps
+        such that for every <Tex math="s \leq t" /> the diagram{' '}
+        <Tex math="\eta_t \circ \varphi_M(s,t) = \varphi_N(s,t) \circ \eta_s" /> commutes. The
+        category <Tex math="\mathbf{Pers}_{\mathbb{k}}(\mathbf{T})" /> is abelian when{' '}
+        <Tex math="\mathbf{T}" /> is small, inheriting kernels and cokernels pointwise from{' '}
+        <Tex math="\mathbf{Vec}_{\mathbb{k}}" />. When{' '}
+        <Tex math="\mathbf{T} = (\mathbb{R}, \leq)" />, this yields the standard category of
+        real-parameterized persistence modules central to topological data analysis.
+      </p>
+
+      <p className="mb-4 indent-8">
+        For <Tex math="\varepsilon \geq 0" />, an <em><Tex math="\varepsilon" />-interleaving</em>{' '}
+        between persistence modules <Tex math="M" /> and <Tex math="N" /> consists of families of
+        morphisms <Tex math="\Phi = \{\phi_t : M_t \to N_{t+\varepsilon}\}_{t \in \mathbb{R}}" />{' '}
+        and <Tex math="\Psi = \{\psi_t : N_t \to M_{t+\varepsilon}\}_{t \in \mathbb{R}}" /> such
+        that <Tex math="\psi_{t+\varepsilon} \circ \phi_t = \varphi_M(t, t+2\varepsilon)" /> and{' '}
+        <Tex math="\phi_{t+\varepsilon} \circ \psi_t = \varphi_N(t, t+2\varepsilon)" /> for all{' '}
+        <Tex math="t" />. The <em>interleaving distance</em> is defined as:
+      </p>
+
+      <TexBlock math="d_I(M, N) = \inf\{\varepsilon \geq 0 \mid \text{there exists an } \varepsilon\text{-interleaving between } M \text{ and } N\}" />
+
+      <p className="mb-4 indent-8">
+        This defines an extended pseudometric on the objects of{' '}
+        <Tex math="\mathbf{Pers}_{\mathbb{k}}(\mathbb{R})" />. By the algebraic stability theorem
+        (Chazal et al., 2009), the interleaving distance is equal to the bottleneck distance between
+        the corresponding persistence diagrams for pointwise finite-dimensional (<em>q-tame</em>)
+        modules. A central structural result is the <em>interval decomposition theorem</em>{' '}
+        (Crawley-Boevey, 2015): any pointwise finite-dimensional persistence module{' '}
+        <Tex math="M \in \mathbf{Pers}_{\mathbb{k}}(\mathbb{R})" /> decomposes as a direct sum{' '}
+        <Tex math="M \cong \bigoplus_{j \in J} \mathbb{I}_{[b_j, d_j)}" /> of interval modules{' '}
+        <Tex math="\mathbb{I}_{[b,d)}" />, where <Tex math="(\mathbb{I}_{[b,d)})_t = \mathbb{k}" />{' '}
+        if <Tex math="t \in [b,d)" /> and zero otherwise, and the decomposition is unique up to
+        isomorphism and permutation of summands.
+      </p>
+
+      <p className="mb-4 indent-8">
+        The multiset of intervals <Tex math="\{[b_j, d_j)\}_{j \in J}" /> is the{' '}
+        <em>barcode</em> of <Tex math="M" />, equivalently encoded as the persistence diagram{' '}
+        <Tex math="\mathrm{Dgm}(M) = \{(b_j, d_j)\}_{j \in J} \subset \overline{\mathbb{R}}^2" />.
+        The decomposition endows <Tex math="\mathbf{Pers}_{\mathbb{k}}(\mathbb{R})" /> with a
+        Krull–Schmidt property that is fundamental to all computational pipelines: the persistence
+        barcode is a <em>complete discrete invariant</em> of the isomorphism class of the module. We
+        note that this decomposition fails in general for multiparameter persistence (i.e., when{' '}
+        <Tex math="\mathbf{T} = \mathbb{R}^n" /> with <Tex math="n \geq 2" />), a fact of
+        considerable consequence for higher-dimensional topological feature analysis.
+      </p>
+
+      <h3 style={h3Style}>2.2 Derived Functors and Homological Algebra</h3>
+
+      <p className="mb-4">
+        Let <Tex math="C_\bullet = (\cdots \to C_{n+1} \xrightarrow{\partial_{n+1}} C_n \xrightarrow{\partial_n} C_{n-1} \to \cdots)" />{' '}
+        be a chain complex of <Tex math="\mathbb{k}" />-vector spaces. We write{' '}
+        <Tex math="Z_n = \ker \partial_n" /> for the <Tex math="n" />-cycles,{' '}
+        <Tex math="B_n = \mathrm{im}\,\partial_{n+1}" /> for the <Tex math="n" />-boundaries, and
+        define the <Tex math="n" />-th homology as the quotient{' '}
+        <Tex math="H_n(C_\bullet) = Z_n / B_n" />. A <em>filtered chain complex</em> is a family{' '}
+        <Tex math="\{C_\bullet^t\}_{t \in \mathbb{R}}" /> with inclusions{' '}
+        <Tex math="\iota^{s,t} : C_\bullet^s \hookrightarrow C_\bullet^t" /> for{' '}
+        <Tex math="s \leq t" />, inducing the persistence module structure{' '}
+        <Tex math="H_n^t := H_n(C_\bullet^t)" /> with maps{' '}
+        <Tex math="\iota^{s,t}_* : H_n^s \to H_n^t" /> on homology.
+      </p>
+
+      <p className="mb-4 indent-8">
+        The derived category <Tex math="D^b(\mathbf{Vec}_{\mathbb{k}})" /> of bounded chain
+        complexes provides the natural habitat for these constructions. Objects are chain complexes
+        and morphisms are equivalence classes of roofs under quasi-isomorphism. For a left-exact
+        functor <Tex math="F : \mathcal{A} \to \mathcal{B}" /> between abelian categories, the{' '}
+        <Tex math="n" />-th right derived functor <Tex math="R^n F" /> is computed via injective
+        resolutions: given <Tex math="A \in \mathcal{A}" />, choose an injective resolution{' '}
+        <Tex math="0 \to A \to I^0 \to I^1 \to \cdots" /> and set{' '}
+        <Tex math="R^n F(A) = H^n(F(I^\bullet))" />. In the persistence setting, the functor{' '}
+        <Tex math="H_n : \mathbf{Ch}(\mathbf{Vec}_{\mathbb{k}}) \to \mathbf{Vec}_{\mathbb{k}}" />{' '}
+        lifts to a functor on filtered complexes yielding persistence modules.
+      </p>
+
+      <p className="mb-4 indent-8">
+        A key algebraic perspective identifies a persistence module{' '}
+        <Tex math="M \in \mathbf{Pers}_{\mathbb{k}}(\mathbb{Z}_{\geq 0})" /> over the
+        non-negative integers with a <em>graded module</em> over the polynomial ring{' '}
+        <Tex math="\mathbb{k}[t]" />, where the indeterminate <Tex math="t" /> acts by the
+        structure map <Tex math="\varphi_M(n, n+1)" />. Explicitly, one forms{' '}
+        <Tex math="\widetilde{M} = \bigoplus_{n \geq 0} M_n" /> with the{' '}
+        <Tex math="\mathbb{k}[t]" />-action defined by{' '}
+        <Tex math="t \cdot m = \varphi_M(n, n+1)(m)" /> for <Tex math="m \in M_n" />. This
+        correspondence is an equivalence of categories:{' '}
+        <Tex math="\mathbf{Pers}_{\mathbb{k}}(\mathbb{Z}_{\geq 0}) \simeq \mathbf{grMod}_{\mathbb{k}[t]}" />.
+      </p>
+
+      <p className="mb-4 indent-8">
+        Since <Tex math="\mathbb{k}[t]" /> is a principal ideal domain (PID), the structure theorem
+        for finitely generated modules over PIDs provides the decomposition:
+      </p>
+
+      <TexBlock math="\widetilde{M} \cong \left(\bigoplus_{i=1}^{r} \Sigma^{a_i} \mathbb{k}[t]\right) \oplus \left(\bigoplus_{j=1}^{s} \Sigma^{b_j} \mathbb{k}[t]/(t^{n_j})\right)" />
+
+      <p className="mb-4 indent-8">
+        where <Tex math="\Sigma^a" /> denotes the grading shift by <Tex math="a" />. The free
+        summands <Tex math="\Sigma^{a_i} \mathbb{k}[t]" /> correspond to homology classes born at
+        index <Tex math="a_i" /> that persist to infinity (essential features), while the torsion
+        summands <Tex math="\Sigma^{b_j} \mathbb{k}[t]/(t^{n_j})" /> correspond to classes born at{' '}
+        <Tex math="b_j" /> and dying at <Tex math="b_j + n_j" /> (ephemeral features). This
+        algebraic decomposition is precisely the barcode of the module, now derived from the
+        classification of finitely generated modules rather than from a direct-sum decomposition of
+        functors. The Ext and Tor functors inherit persistence-module structure; in particular,{' '}
+        <Tex math="\mathrm{Tor}_1^{\mathbb{k}[t]}(\mathbb{k}, \widetilde{M})" /> recovers the
+        birth indices and <Tex math="\mathrm{Ext}^1_{\mathbb{k}[t]}(\mathbb{k}, \widetilde{M})" />{' '}
+        recovers the death indices of the barcode.
+      </p>
+
+      <p className="mb-4 indent-8">
+        The long exact sequence in persistent homology associated to a short exact sequence of
+        filtered complexes <Tex math="0 \to A_\bullet \to B_\bullet \to C_\bullet \to 0" /> yields
+        a long exact sequence of persistence modules{' '}
+        <Tex math="\cdots \to H_n(A) \to H_n(B) \to H_n(C) \xrightarrow{\delta_n} H_{n-1}(A) \to \cdots" />{' '}
+        where the connecting morphism <Tex math="\delta_n" /> is a morphism in{' '}
+        <Tex math="\mathbf{Pers}_{\mathbb{k}}(\mathbf{T})" />. This exactness is essential for the
+        Mayer–Vietoris spectral sequence in persistent homology, which we employ in Section 5 to
+        decompose the latent space into tractable open covers whose persistent homology can be
+        computed independently and then assembled via the spectral sequence differentials.
+      </p>
+
+      <h3 style={h3Style}>2.3 Metric Spaces of Persistence Diagrams</h3>
+
+      <p className="mb-4">
+        A <em>persistence diagram</em> is a multiset{' '}
+        <Tex math="D \subset \{(b, d) \in \overline{\mathbb{R}}^2 \mid b \leq d\}" /> where every
+        point on the diagonal <Tex math="\Delta = \{(x, x) \mid x \in \mathbb{R}\}" /> has
+        countably infinite multiplicity. We denote by <Tex math="\mathcal{D}" /> the space of all
+        persistence diagrams with finitely many off-diagonal points. The{' '}
+        <em>bottleneck distance</em> between <Tex math="D_1, D_2 \in \mathcal{D}" /> is defined as:
+      </p>
+
+      <TexBlock math="d_B(D_1, D_2) = \inf_{\gamma : D_1 \to D_2} \sup_{x \in D_1} \|x - \gamma(x)\|_\infty" />
+
+      <p className="mb-4 indent-8">
+        where the infimum is taken over all bijections{' '}
+        <Tex math="\gamma : D_1 \to D_2" /> (recalling that diagonal points provide an infinite
+        reservoir for partial matchings). More generally, for <Tex math="1 \leq p < \infty" />, the{' '}
+        <em><Tex math="p" />-Wasserstein distance</em> is:
+      </p>
+
+      <TexBlock math="W_p(D_1, D_2) = \left(\inf_{\gamma : D_1 \to D_2} \sum_{x \in D_1} \|x - \gamma(x)\|_\infty^p\right)^{1/p}" />
+
+      <p className="mb-4 indent-8">
+        and in the limit <Tex math="p \to \infty" /> we recover{' '}
+        <Tex math="W_\infty = d_B" />. The isometry theorem of Cohen-Steiner, Edelsbrunner, and
+        Harer (2007) establishes that the bottleneck distance between persistence diagrams equals
+        the interleaving distance between the corresponding persistence modules:{' '}
+        <Tex math="d_B(\mathrm{Dgm}(M), \mathrm{Dgm}(N)) = d_I(M, N)" /> for q-tame modules. This
+        is a categorical isometry between the quotient space of persistence modules modulo
+        isomorphism (equipped with <Tex math="d_I" />) and the space of persistence diagrams
+        (equipped with <Tex math="d_B" />).
+      </p>
+
+      <p className="mb-4 indent-8">
+        The metric space <Tex math="(\mathcal{D}, d_B)" /> is complete but not separable, whereas{' '}
+        <Tex math="(\mathcal{D}_p, W_p)" /> — the subspace of diagrams with finite{' '}
+        <Tex math="p" />-th total persistence{' '}
+        <Tex math="\mathrm{Pers}_p(D) = \left(\sum_{(b,d) \in D} (d - b)^p\right)^{1/p} < \infty" />{' '}
+        — is a complete separable metric space for each <Tex math="1 \leq p < \infty" />. The
+        topology induced by <Tex math="W_p" /> is strictly finer than that induced by{' '}
+        <Tex math="d_B" />; convergence in <Tex math="W_p" /> implies convergence in{' '}
+        <Tex math="d_B" /> but not conversely. The space{' '}
+        <Tex math="(\mathcal{D}_p, W_p)" /> admits a geodesic structure: for any{' '}
+        <Tex math="D_0, D_1 \in \mathcal{D}_p" /> with optimal matching{' '}
+        <Tex math="\gamma^*" />, the path{' '}
+        <Tex math="D_\alpha = \{(1-\alpha)x + \alpha \gamma^*(x) \mid x \in D_0\}" /> for{' '}
+        <Tex math="\alpha \in [0,1]" /> is a constant-speed geodesic with{' '}
+        <Tex math="W_p(D_0, D_\alpha) = \alpha \cdot W_p(D_0, D_1)" />.
+      </p>
+
+      <p className="mb-4 indent-8">
+        This geodesic structure in <Tex math="(\mathcal{D}_p, W_p)" /> is the theoretical
+        foundation for our persistence-guided interpolation scheme. The Wasserstein space possesses
+        non-negative Alexandrov curvature (it is a non-negatively curved length space in the sense
+        of Sturm, 2006), which guarantees that midpoints of geodesics depend continuously on
+        endpoints. Formally, for any <Tex math="\varepsilon > 0" /> and diagrams{' '}
+        <Tex math="D_0, D_0', D_1, D_1'" /> with{' '}
+        <Tex math="W_p(D_0, D_0') < \delta" /> and{' '}
+        <Tex math="W_p(D_1, D_1') < \delta" />, we have{' '}
+        <Tex math="W_p(D_{1/2}, D'_{1/2}) < \varepsilon" /> for sufficiently small{' '}
+        <Tex math="\delta" />. This Lipschitz stability of geodesic midpoints ensures that small
+        perturbations in the endpoint latent codes produce correspondingly small perturbations in
+        the interpolated topological descriptors, a property we exploit in Section 6 to construct
+        topologically smooth interpolation paths in the latent space of our generative model.
+      </p>
+
+      <p className="mb-4 indent-8">
+        We further note that the space <Tex math="(\mathcal{D}_p, W_p)" /> embeds isometrically
+        into a Hilbert space via the persistence landscape map{' '}
+        <Tex math="\lambda : \mathcal{D}_p \to L^p(\mathbb{N} \times \mathbb{R})" /> of Bubenik
+        (2015), where the <Tex math="k" />-th landscape function is{' '}
+        <Tex math="\lambda_k(t) = \mathrm{kmax}_{(b,d) \in D}\, \min(t - b, d - t)" /> (the{' '}
+        <Tex math="k" />-th largest value). This embedding preserves the metric structure and
+        provides a Banach-space-valued summary that is amenable to statistical analysis: means,
+        variances, and principal components of persistence diagrams can be computed in{' '}
+        <Tex math="L^p" /> and pulled back to <Tex math="\mathcal{D}_p" />. The landscape
+        embedding also furnishes a stable vectorization of persistence diagrams for input to the
+        neural network architectures described in Section 7, providing a rigorous bridge between
+        the metric geometry of persistence diagrams and the Euclidean geometry of feature vectors
+        consumed by gradient-based optimizers.
+      </p>
+
+      {/* 3. ALGEBRAIC-TOPOLOGICAL PRELIMINARIES */}
+      <h2 style={h2Style}>3. Algebraic-Topological Preliminaries</h2>
+
+      <h3 style={h3Style}>3.1 Simplicial Complexes and Homology Groups</h3>
 
       <p className="mb-4">
         A simplicial complex <Tex math="K" /> on a vertex set <Tex math="V" /> is a collection
@@ -303,7 +532,7 @@ export function PersistentHomologyPaper() {
         invariant under homeomorphism.
       </p>
 
-      <h3 style={h3Style}>2.2 Persistent Homology and Filtrations</h3>
+      <h3 style={h3Style}>3.2 Persistent Homology and Filtrations</h3>
 
       <p className="mb-4">
         Persistent homology extends classical homology to parameterized families of spaces
@@ -355,10 +584,10 @@ export function PersistentHomologyPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      {/* 3. LATENT-SPACE TOPOLOGY OF GAME-ASSET GANS */}
-      <h2 style={h2Style}>3. Latent-Space Topology of Game-Asset GANs</h2>
+      {/* 4. LATENT-SPACE TOPOLOGY OF GAME-ASSET GANS */}
+      <h2 style={h2Style}>4. Latent-Space Topology of Game-Asset GANs</h2>
 
-      <h3 style={h3Style}>3.1 Experimental Setup</h3>
+      <h3 style={h3Style}>4.1 Experimental Setup</h3>
 
       <p className="mb-4">
         We trained a StyleGAN2-ADA architecture (Karras et al., 2020) on a corpus of 80,000
@@ -388,7 +617,7 @@ export function PersistentHomologyPaper() {
         dense Vietoris–Rips complexes.
       </p>
 
-      <h3 style={h3Style}>3.2 Topological Feature Analysis</h3>
+      <h3 style={h3Style}>4.2 Topological Feature Analysis</h3>
 
       <p className="mb-4">
         The persistence diagrams reveal a rich topological structure in the GAN latent
@@ -425,10 +654,10 @@ export function PersistentHomologyPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      {/* 4. PERSISTENCE-GUIDED INTERPOLATION */}
-      <h2 style={h2Style}>4. Persistence-Guided Interpolation</h2>
+      {/* 5. PERSISTENCE-GUIDED INTERPOLATION */}
+      <h2 style={h2Style}>5. Persistence-Guided Interpolation</h2>
 
-      <h3 style={h3Style}>4.1 Formulation</h3>
+      <h3 style={h3Style}>5.1 Formulation</h3>
 
       <p className="mb-4">
         The standard approach to traversing the latent space between two encodings{' '}
@@ -472,7 +701,7 @@ export function PersistentHomologyPaper() {
         learning rate <Tex math="10^{-3}" />.
       </p>
 
-      <h3 style={h3Style}>4.2 Computational Considerations</h3>
+      <h3 style={h3Style}>5.2 Computational Considerations</h3>
 
       <p className="mb-4">
         The primary computational bottleneck is the evaluation of the representative cycles{' '}
@@ -525,10 +754,10 @@ export function PersistentHomologyPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      {/* 5. QUANTITATIVE EVALUATION */}
-      <h2 style={h2Style}>5. Quantitative Evaluation</h2>
+      {/* 6. QUANTITATIVE EVALUATION */}
+      <h2 style={h2Style}>6. Quantitative Evaluation</h2>
 
-      <h3 style={h3Style}>5.1 Fréchet Inception Distance</h3>
+      <h3 style={h3Style}>6.1 Fréchet Inception Distance</h3>
 
       <p className="mb-4">
         We evaluated the quality of interpolated assets using the Fréchet Inception Distance
@@ -570,7 +799,7 @@ export function PersistentHomologyPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      <h3 style={h3Style}>5.2 Wasserstein Distance Convergence</h3>
+      <h3 style={h3Style}>6.2 Wasserstein Distance Convergence</h3>
 
       <p className="mb-4">
         To assess the topological fidelity of the generated latent-space structure, we computed
@@ -607,8 +836,8 @@ export function PersistentHomologyPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      {/* 6. HUMAN EVALUATION */}
-      <h2 style={h2Style}>6. Human Evaluation</h2>
+      {/* 7. HUMAN EVALUATION */}
+      <h2 style={h2Style}>7. Human Evaluation</h2>
 
       <p className="mb-4">
         We conducted a human evaluation study with <Tex math="N = 85" /> participants
@@ -657,8 +886,8 @@ export function PersistentHomologyPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      {/* 7. DISCUSSION */}
-      <h2 style={h2Style}>7. Discussion</h2>
+      {/* 8. DISCUSSION */}
+      <h2 style={h2Style}>8. Discussion</h2>
 
       <p className="mb-4">
         The results presented herein establish persistent homology as a viable and effective
@@ -701,8 +930,8 @@ export function PersistentHomologyPaper() {
         that are left to future work.
       </p>
 
-      {/* 8. CONCLUSION */}
-      <h2 style={h2Style}>8. Conclusion</h2>
+      {/* 9. CONCLUSION */}
+      <h2 style={h2Style}>9. Conclusion</h2>
 
       <p className="mb-4">
         We have introduced a computational pipeline grounded in persistent homology for the
