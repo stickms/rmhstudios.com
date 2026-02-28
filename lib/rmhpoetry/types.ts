@@ -228,7 +228,8 @@ export type GameScreen =
   | 'summary'
   | 'journal'
   | 'save'
-  | 'load';
+  | 'load'
+  | 'progress';
 
 export type SpritePack = 'default' | 'hoshiko';
 

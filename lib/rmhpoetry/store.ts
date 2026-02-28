@@ -7,7 +7,7 @@ import type {
   GenderPresentation, DialogueChoice,
 } from './types';
 import { CHARACTERS, getAffinityLevel } from './characters';
-import { autoSave, loadGame, saveGame as persistSave } from './persistence';
+import { autoSave, loadGame, saveGame as persistSave, dbSave, dbLoad } from './persistence';
 
 function createInitialAffinity(): Record<string, CharacterAffinity> {
   const affinity: Record<string, CharacterAffinity> = {};
@@ -65,6 +65,18 @@ export function createInitialState(): GameState {
   };
 }
 
+// Debounce helper for DB saves
+let dbSaveTimer: ReturnType<typeof setTimeout> | null = null;
+function debouncedDbSave(getState: () => GameState & GameActions, delayMs = 2000) {
+  if (dbSaveTimer) clearTimeout(dbSaveTimer);
+  dbSaveTimer = setTimeout(() => {
+    const state = getState();
+    if (state.isLoggedIn && state.gameStarted) {
+      dbSave(state);
+    }
+  }, delayMs);
+}
+
 interface GameActions {
   // Navigation
   setScreen: (screen: GameScreen) => void;
@@ -97,12 +109,21 @@ interface GameActions {
   saveToSlot: (slotId: number) => boolean;
   loadFromSlot: (slotId: number) => boolean;
 
+  // DB persistence
+  isLoggedIn: boolean;
+  isSyncing: boolean;
+  setLoggedIn: (loggedIn: boolean) => void;
+  initFromServer: () => Promise<void>;
+  triggerAutoSave: () => void;
+
   // Playtime
   incrementPlaytime: () => void;
 }
 
 export const useGameStore = create<GameState & GameActions>()((set, get) => ({
   ...createInitialState(),
+  isLoggedIn: false,
+  isSyncing: false,
 
   // Navigation
   setScreen: (screen) => set(s => ({ screen, previousScreen: s.screen })),
@@ -113,10 +134,30 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
     ...createInitialState(),
     screen: 'settings',
     gameStarted: true,
+    isLoggedIn: get().isLoggedIn,
   }),
 
-  continueGame: () => {
-    const save = loadGame(0); // auto-save slot
+  continueGame: async () => {
+    const state = get();
+    // Try DB first if logged in
+    if (state.isLoggedIn) {
+      set({ isSyncing: true });
+      const data = await dbLoad();
+      set({ isSyncing: false });
+      if (data?.saveData) {
+        const savedState = data.saveData as GameState;
+        set({
+          ...savedState,
+          screen: 'dialogue',
+          previousScreen: null,
+          currentPoemScore: null,
+          isLoggedIn: true,
+        });
+        return;
+      }
+    }
+    // Fall back to localStorage
+    const save = loadGame(0);
     if (save) {
       set({
         ...save.state,
@@ -137,35 +178,47 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
   })),
 
   setDialogueIndex: (index) => set({ currentDialogueIndex: index }),
-  setSceneIndex: (index) => set({ currentSceneIndex: index, currentDialogueIndex: 0 }),
+  setSceneIndex: (index) => {
+    set({ currentSceneIndex: index, currentDialogueIndex: 0 });
+    // Auto-save on scene transition
+    const state = get();
+    if (state.gameStarted) {
+      autoSave(state);
+      debouncedDbSave(get);
+    }
+  },
 
-  applyChoiceEffects: (choice) => set(s => {
-    const newAffinity = { ...s.affinity };
-    if (choice.effects.affinity) {
-      for (const [charId, change] of Object.entries(choice.effects.affinity)) {
-        if (newAffinity[charId]) {
-          const curr = newAffinity[charId];
-          const newPoints = Math.max(0, curr.affinity + change);
-          newAffinity[charId] = {
-            ...curr,
-            affinity: newPoints,
-            level: getAffinityLevel(newPoints),
-          };
+  applyChoiceEffects: (choice) => {
+    set(s => {
+      const newAffinity = { ...s.affinity };
+      if (choice.effects.affinity) {
+        for (const [charId, change] of Object.entries(choice.effects.affinity)) {
+          if (newAffinity[charId]) {
+            const curr = newAffinity[charId];
+            const newPoints = Math.max(0, curr.affinity + change);
+            newAffinity[charId] = {
+              ...curr,
+              affinity: newPoints,
+              level: getAffinityLevel(newPoints),
+            };
+          }
         }
       }
-    }
-    const newFlags = { ...s.storyFlags };
-    if (choice.effects.flags) {
-      for (const [key, val] of Object.entries(choice.effects.flags)) {
-        newFlags[key] = val;
+      const newFlags = { ...s.storyFlags };
+      if (choice.effects.flags) {
+        for (const [key, val] of Object.entries(choice.effects.flags)) {
+          newFlags[key] = val;
+        }
       }
-    }
-    return {
-      affinity: newAffinity,
-      storyFlags: newFlags,
-      currentDialogueIndex: s.currentDialogueIndex + 1,
-    };
-  }),
+      return {
+        affinity: newAffinity,
+        storyFlags: newFlags,
+        currentDialogueIndex: s.currentDialogueIndex + 1,
+      };
+    });
+    // Auto-save on choices (debounced)
+    debouncedDbSave(get);
+  },
 
   setStoryFlag: (key, value) => set(s => ({
     storyFlags: { ...s.storyFlags, [key]: value },
@@ -237,8 +290,12 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
       screen: 'presentation',
     });
 
-    // Auto-save after poem
-    setTimeout(() => autoSave(get()), 100);
+    // Auto-save after poem (both localStorage and DB)
+    setTimeout(() => {
+      const s = get();
+      autoSave(s);
+      if (s.isLoggedIn) dbSave(s);
+    }, 100);
   },
 
   closePoemPresentation: () => set({
@@ -276,6 +333,33 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
       currentPoemScore: null,
     });
     return true;
+  },
+
+  // DB persistence
+  setLoggedIn: (loggedIn) => set({ isLoggedIn: loggedIn }),
+
+  initFromServer: async () => {
+    const state = get();
+    if (!state.isLoggedIn) return;
+
+    set({ isSyncing: true });
+    const data = await dbLoad();
+    set({ isSyncing: false });
+
+    if (data?.saveData) {
+      // Don't overwrite if user already started playing this session
+      if (!state.gameStarted) {
+        // Just store the fact that a save exists — don't auto-load
+        // The main menu will show "Continue" based on this
+      }
+    }
+  },
+
+  triggerAutoSave: () => {
+    const state = get();
+    if (!state.gameStarted) return;
+    autoSave(state);
+    debouncedDbSave(get);
   },
 
   // Playtime

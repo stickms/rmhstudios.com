@@ -37,6 +37,8 @@ model User {
   rmhstudyProfile RmhStudyProfile?
   voidBreakerProfile VoidBreakerPlayer?
   lightsOutScores LightsOutScore[]
+  versecraftSave  VersecraftSave?
+  versecraftProgress VersecraftProgress?
 
   // Slice-It Library Relations
   uploadedSongs  Song[]        @relation("SongUploader")
@@ -748,6 +750,34 @@ model RmhStudySession {
   @@index([userId])
   @@index([startedAt(sort: Desc)])
   @@map("rmhstudy_session")
+}
+
+// ─── Versecraft (Poetry VN) ─────────────────────────────────────────
+
+model VersecraftSave {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  saveData  Json
+  updatedAt DateTime @default(now()) @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("versecraft_save")
+}
+
+model VersecraftProgress {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  completedChapters Json     @default("[]")
+  unlockedEndings   Json     @default("[]")
+  completedRoutes   Json     @default("[]")
+  totalPoemsWritten Int      @default(0)
+  totalPlaytime     Int      @default(0)
+  updatedAt         DateTime @default(now()) @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("versecraft_progress")
 }
 
 // ─── Site Feedback ──────────────────────────────────────────────────

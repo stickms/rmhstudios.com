@@ -58,3 +58,65 @@ export function formatPlaytime(seconds: number): string {
 export function formatTimestamp(ts: number): string {
   return new Date(ts).toLocaleString();
 }
+
+// ─── Database Persistence (for logged-in users) ─────────────────────────────
+
+export interface DbSavePayload {
+  saveData: object;
+  progress?: {
+    completedChapters: string[];
+    unlockedEndings: string[];
+    completedRoutes: string[];
+    totalPoemsWritten: number;
+    totalPlaytime: number;
+  };
+}
+
+export interface DbLoadResponse {
+  saveData: GameState | null;
+  progress: {
+    completedChapters: string[];
+    unlockedEndings: string[];
+    completedRoutes: string[];
+    totalPoemsWritten: number;
+    totalPlaytime: number;
+  } | null;
+}
+
+export async function dbSave(state: GameState): Promise<boolean> {
+  try {
+    const { currentPoemScore, previousScreen, ...savableState } = state;
+    void currentPoemScore;
+    void previousScreen;
+    const payload: DbSavePayload = {
+      saveData: savableState,
+      progress: {
+        completedChapters: state.completedChapters,
+        unlockedEndings: [],  // TODO: track in state
+        completedRoutes: Object.entries(state.affinity)
+          .filter(([, a]) => a.routeCompleted)
+          .map(([id]) => id),
+        totalPoemsWritten: state.totalPoemsWritten,
+        totalPlaytime: state.playtime,
+      },
+    };
+    const res = await fetch('/api/rmhpoetry/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function dbLoad(): Promise<DbLoadResponse | null> {
+  try {
+    const res = await fetch('/api/rmhpoetry/save');
+    if (!res.ok) return null;
+    return await res.json() as DbLoadResponse;
+  } catch {
+    return null;
+  }
+}

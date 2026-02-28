@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '@/lib/rmhpoetry/store';
 import Image from 'next/image';
@@ -10,10 +10,32 @@ import { getWordPool } from '@/lib/rmhpoetry/words';
 import { getSpritePath } from '@/lib/rmhpoetry/sprites';
 import type { DialogueNode, Scene } from '@/lib/rmhpoetry/types';
 
-// Background gradient presets
-const BACKGROUNDS: Record<string, { gradient: string; label: string }> = {
-  school_hallway: { gradient: 'linear-gradient(180deg, #8B7355 0%, #6B5B45 40%, #4A3F35 100%)', label: 'School Hallway' },
-  club_room: { gradient: 'linear-gradient(180deg, #C4A35A 0%, #8B7355 30%, #4A3B6B 100%)', label: 'Club Room' },
+// Background image presets (Sutemo VN backgrounds)
+const BG_BASE = '/sprites/versecraft/backgrounds';
+const BACKGROUNDS: Record<string, { image: string; fallback: string }> = {
+  school_hallway: { image: `${BG_BASE}/school_hallway_day.png`, fallback: '#4A3F35' },
+  club_room:      { image: `${BG_BASE}/club_room_day.png`, fallback: '#4A3B6B' },
+  classroom:      { image: `${BG_BASE}/classroom_day.png`, fallback: '#5A4A3B' },
+  school_stairs:  { image: `${BG_BASE}/school_stairs_day.png`, fallback: '#6B5B45' },
+  school_gym:     { image: `${BG_BASE}/school_gym_day.png`, fallback: '#3A4A5B' },
+  park:           { image: `${BG_BASE}/park_day.png`, fallback: '#2A4A2B' },
+  cafe:           { image: `${BG_BASE}/cafe_day.png`, fallback: '#5A3A2B' },
+  personal_room:  { image: `${BG_BASE}/personal_room_day.png`, fallback: '#3A2A4B' },
+  beach:          { image: `${BG_BASE}/beach_day.png`, fallback: '#4A6A8B' },
+  city:           { image: `${BG_BASE}/city_day.png`, fallback: '#3A3A4B' },
+  forest:         { image: `${BG_BASE}/forest_night.png`, fallback: '#1A2A1B' },
+};
+
+// Time-of-day variants override the default image
+const TIME_BG_VARIANTS: Record<string, Record<string, string>> = {
+  school_hallway: { evening: `${BG_BASE}/school_hallway_evening.png` },
+  club_room:      { evening: `${BG_BASE}/club_room_evening.png` },
+  classroom:      { evening: `${BG_BASE}/classroom_evening.png`, night: `${BG_BASE}/classroom2_night.png` },
+  school_stairs:  { evening: `${BG_BASE}/school_stairs_evening.png` },
+  park:           { evening: `${BG_BASE}/park_evening.png`, night: `${BG_BASE}/park_night.png` },
+  cafe:           { night: `${BG_BASE}/cafe_night.png` },
+  personal_room:  { evening: `${BG_BASE}/personal_room_evening.png`, night: `${BG_BASE}/personal_room_night.png` },
+  city:           { night: `${BG_BASE}/city_night.png` },
 };
 
 const TIME_FILTERS: Record<string, string> = {
@@ -24,7 +46,10 @@ const TIME_FILTERS: Record<string, string> = {
 };
 
 // Typewriter text component
-function TypewriterText({ text, speed, onComplete }: { text: string; speed: number; onComplete: () => void }) {
+function TypewriterText({ text, speed, onComplete, skipRef }: {
+  text: string; speed: number; onComplete: () => void;
+  skipRef: React.MutableRefObject<(() => boolean) | null>;
+}) {
   const [displayedLength, setDisplayedLength] = useState(0);
   const [complete, setComplete] = useState(false);
 
@@ -35,22 +60,30 @@ function TypewriterText({ text, speed, onComplete }: { text: string; speed: numb
 
   useEffect(() => {
     if (displayedLength >= text.length) {
-      setComplete(true);
-      onComplete();
+      if (!complete) {
+        setComplete(true);
+        onComplete();
+      }
       return;
     }
     const timer = setTimeout(() => setDisplayedLength(d => d + 1), speed);
     return () => clearTimeout(timer);
-  }, [displayedLength, text, speed, onComplete]);
+  }, [displayedLength, text, speed, onComplete, complete]);
 
-  const skipToEnd = useCallback(() => {
-    if (!complete) {
-      setDisplayedLength(text.length);
-    }
-  }, [complete, text.length]);
+  // Expose skip function to parent via ref
+  useEffect(() => {
+    skipRef.current = () => {
+      if (!complete) {
+        setDisplayedLength(text.length);
+        return true; // consumed the click
+      }
+      return false; // text already complete, let parent handle
+    };
+    return () => { skipRef.current = null; };
+  }, [complete, text.length, skipRef]);
 
   return (
-    <span onClick={skipToEnd} className="cursor-pointer">
+    <span>
       {text.slice(0, displayedLength)}
       {!complete && <span className="animate-pulse">|</span>}
     </span>
@@ -73,17 +106,17 @@ function CharacterSprite({ characterId, expression, position, isSpeaking, sprite
 
   return (
     <motion.div
-      className="absolute bottom-40 flex flex-col items-center"
+      className="absolute bottom-24 flex flex-col items-center"
       style={{
         left: xPos,
         transform: 'translateX(-50%)',
         filter: isSpeaking ? 'none' : 'brightness(0.7)',
         zIndex: isSpeaking ? 10 : 5,
       }}
-      initial={{ opacity: 0, y: 40 }}
+      initial={{ opacity: 0, y: 20 }}
       animate={{
         opacity: 1,
-        y: [0, -3, 0],
+        y: [0, -4, 0],
         scale: isSpeaking ? 1.02 : 0.98,
       }}
       transition={{
@@ -130,6 +163,7 @@ export function DialogueScreen() {
   } = useGameStore();
 
   const [textComplete, setTextComplete] = useState(false);
+  const skipTextRef = useRef<(() => boolean) | null>(null);
 
   // Get all scenes in order (main scenes + post-puzzle scenes)
   const allScenes = useMemo(() => [
@@ -154,9 +188,14 @@ export function DialogueScreen() {
     ? CHARACTERS[currentNode.speaker]?.color || '#c4a35a'
     : '#c4a35a';
 
-  const handleAdvance = useCallback(() => {
+  const handleClick = useCallback(() => {
     if (!currentScene || !currentNode) return;
     if (currentNode.choices) return; // Don't advance if choices are showing
+
+    // First click while typing: skip to end
+    if (skipTextRef.current?.()) return;
+
+    // Second click (text complete): advance
     if (!textComplete) return;
 
     const nextIdx = currentDialogueIndex + 1;
@@ -196,12 +235,12 @@ export function DialogueScreen() {
     const handler = (e: KeyboardEvent) => {
       if (e.code === 'Space' || e.code === 'Enter') {
         e.preventDefault();
-        handleAdvance();
+        handleClick();
       }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [handleAdvance]);
+  }, [handleClick]);
 
   if (!currentScene || !currentNode) {
     return (
@@ -213,39 +252,52 @@ export function DialogueScreen() {
 
   const bg = BACKGROUNDS[currentScene.background] || BACKGROUNDS.club_room;
   const timeFilter = TIME_FILTERS[currentScene.timeOfDay] || '';
+  const timeBgVariant = TIME_BG_VARIANTS[currentScene.background]?.[currentScene.timeOfDay];
+  const bgImage = timeBgVariant || bg.image;
 
   return (
     <div
       className="relative w-full min-h-screen overflow-hidden cursor-pointer"
-      onClick={handleAdvance}
+      onClick={handleClick}
     >
-      {/* Background */}
+      {/* Background — z-0 */}
       <div
-        className="absolute inset-0 transition-all duration-1000"
-        style={{ background: bg.gradient, filter: timeFilter }}
-      />
+        className="absolute inset-0 z-0 transition-all duration-1000"
+        style={{ backgroundColor: bg.fallback, filter: timeFilter }}
+      >
+        <Image
+          src={bgImage}
+          alt=""
+          fill
+          className="object-cover"
+          sizes="100vw"
+          priority
+        />
+      </div>
 
-      {/* Character sprites */}
-      <AnimatePresence>
-        {currentScene.charactersPresent.map((charId, i) => {
-          const position = currentScene.charactersPresent.length === 1
-            ? 'center' as const
-            : i === 0 ? 'left' as const : i === 1 ? 'center' as const : 'right' as const;
-          return (
-            <CharacterSprite
-              key={charId}
-              characterId={charId}
-              expression={currentNode.speaker === charId ? currentNode.expression : undefined}
-              position={position}
-              isSpeaking={currentNode.speaker === charId}
-              spritePack={settings.spritePack}
-            />
-          );
-        })}
-      </AnimatePresence>
+      {/* Character sprites — z-10, overflow-hidden clips bottom of sprites */}
+      <div className="absolute inset-0 z-10 pointer-events-none overflow-hidden">
+        <AnimatePresence>
+          {currentScene.charactersPresent.map((charId, i) => {
+            const position = currentScene.charactersPresent.length === 1
+              ? 'center' as const
+              : i === 0 ? 'left' as const : i === 1 ? 'center' as const : 'right' as const;
+            return (
+              <CharacterSprite
+                key={charId}
+                characterId={charId}
+                expression={currentNode.speaker === charId ? currentNode.expression : undefined}
+                position={position}
+                isSpeaking={currentNode.speaker === charId}
+                spritePack={settings.spritePack}
+              />
+            );
+          })}
+        </AnimatePresence>
+      </div>
 
-      {/* Dialogue box */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6">
+      {/* Dialogue box — z-20, always above sprites */}
+      <div className="absolute bottom-0 left-0 right-0 z-20 p-4 md:p-6">
         <motion.div
           className="max-w-4xl mx-auto rounded-lg p-4 md:p-6"
           style={{
@@ -285,6 +337,7 @@ export function DialogueScreen() {
               text={currentNode.text}
               speed={textSpeed}
               onComplete={() => setTextComplete(true)}
+              skipRef={skipTextRef}
             />
           </div>
 
@@ -330,15 +383,22 @@ export function DialogueScreen() {
             )}
           </AnimatePresence>
 
-          {/* Click indicator */}
-          {textComplete && !currentNode.choices && (
-            <motion.div
-              className="text-right mt-2"
-              animate={{ opacity: [0.3, 0.8, 0.3] }}
-              transition={{ duration: 1.5, repeat: Infinity }}
-            >
-              <span className="text-xs" style={{ color: '#c4a35a' }}>▸ Click to continue</span>
-            </motion.div>
+          {/* Fixed-height indicator row — prevents layout shift */}
+          {!currentNode.choices && (
+            <div className="text-right mt-2 h-5">
+              {textComplete ? (
+                <motion.span
+                  className="text-xs"
+                  style={{ color: '#c4a35a' }}
+                  animate={{ opacity: [0.3, 0.8, 0.3] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                >
+                  ▸ Click to continue
+                </motion.span>
+              ) : (
+                <span className="text-xs" style={{ color: '#c4a35a40' }}>...</span>
+              )}
+            </div>
           )}
         </motion.div>
 

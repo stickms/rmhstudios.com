@@ -49,16 +49,41 @@ export function MainMenu() {
   const startNewGame = useGameStore(s => s.startNewGame);
   const continueGame = useGameStore(s => s.continueGame);
   const setScreen = useGameStore(s => s.setScreen);
+  const isLoggedIn = useGameStore(s => s.isLoggedIn);
   const [hasSave, setHasSave] = useState(false);
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    setHasSave(!!loadGame(0));
-  }, []);
+    let cancelled = false;
+
+    async function checkSave() {
+      // Check localStorage first (fast)
+      if (loadGame(0)) {
+        if (!cancelled) { setHasSave(true); setChecking(false); }
+        return;
+      }
+      // Check DB if logged in
+      if (isLoggedIn) {
+        try {
+          const res = await fetch('/api/rmhpoetry/save');
+          if (res.ok) {
+            const data = await res.json();
+            if (!cancelled && data?.saveData) setHasSave(true);
+          }
+        } catch { /* ignore */ }
+      }
+      if (!cancelled) setChecking(false);
+    }
+
+    checkSave();
+    return () => { cancelled = true; };
+  }, [isLoggedIn]);
 
   const menuItems = [
     { label: 'New Game', action: startNewGame, always: true },
-    { label: 'Continue', action: continueGame, always: false },
+    { label: 'Continue', action: () => continueGame(), always: false },
     { label: 'Load Save', action: () => setScreen('load'), always: false },
+    { label: 'Progress', action: () => setScreen('progress'), always: false },
     { label: 'Poem Journal', action: () => setScreen('journal'), always: false },
     { label: 'Settings', action: () => setScreen('settings'), always: true },
   ];
@@ -155,9 +180,22 @@ export function MainMenu() {
         </AnimatePresence>
       </motion.div>
 
+      {/* Sign-in hint */}
+      {!isLoggedIn && !checking && (
+        <motion.p
+          className="relative z-10 mt-6 text-xs text-center"
+          style={{ color: '#666' }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 0.7 }}
+          transition={{ delay: 1.5, duration: 1 }}
+        >
+          Sign in to save progress to the cloud
+        </motion.p>
+      )}
+
       {/* Tagline */}
       <motion.p
-        className="relative z-10 mt-12 text-sm italic text-center max-w-md px-4"
+        className="relative z-10 mt-6 text-sm italic text-center max-w-md px-4"
         style={{ color: '#a89888' }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 0.6 }}

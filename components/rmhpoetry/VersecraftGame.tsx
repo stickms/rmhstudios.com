@@ -1,7 +1,9 @@
 'use client';
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useGameStore } from '@/lib/rmhpoetry/store';
+import { loadGame } from '@/lib/rmhpoetry/persistence';
 import { MainMenu } from './MainMenu';
 import { SettingsMenu } from './SettingsMenu';
 import { DialogueScreen } from './DialogueScreen';
@@ -11,16 +13,80 @@ import { PoemPresentation } from './PoemPresentation';
 import { ChapterSummary } from './ChapterSummary';
 import { PoemJournal } from './PoemJournal';
 import { SaveLoadMenu } from './SaveLoadMenu';
+import { ProgressScreen } from './ProgressScreen';
+import type { GameScreen } from '@/lib/rmhpoetry/types';
 
-export function VersecraftGame() {
+// Screens that are safe to restore on refresh (not mid-puzzle or transient)
+const RESTORABLE_SCREENS = new Set<GameScreen>([
+  'dialogue', 'menu', 'journal', 'save', 'load', 'settings', 'progress',
+]);
+
+export function VersecraftGame({ isLoggedIn }: { isLoggedIn: boolean }) {
   const screen = useGameStore(s => s.screen);
+  const gameStarted = useGameStore(s => s.gameStarted);
   const incrementPlaytime = useGameStore(s => s.incrementPlaytime);
+  const setLoggedIn = useGameStore(s => s.setLoggedIn);
+  const setScreen = useGameStore(s => s.setScreen);
+  const triggerAutoSave = useGameStore(s => s.triggerAutoSave);
+
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const initializedRef = useRef(false);
+
+  // Set logged-in state on mount
+  useEffect(() => {
+    setLoggedIn(isLoggedIn);
+  }, [isLoggedIn, setLoggedIn]);
+
+  // Restore screen from URL on mount (once)
+  useEffect(() => {
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+
+    const urlScreen = searchParams.get('s') as GameScreen | null;
+    if (urlScreen && RESTORABLE_SCREENS.has(urlScreen) && urlScreen !== 'menu') {
+      // Only restore if there's a save to load
+      const hasSave = !!loadGame(0);
+      if (hasSave) {
+        // Load state from localStorage first, then set to the URL screen
+        const save = loadGame(0);
+        if (save) {
+          useGameStore.setState({
+            ...save.state,
+            screen: urlScreen,
+            previousScreen: null,
+            currentPoemScore: null,
+          });
+        }
+      }
+    }
+  }, [searchParams]);
+
+  // Sync screen state to URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const currentUrlScreen = params.get('s');
+    if (screen !== 'menu' && currentUrlScreen !== screen) {
+      router.replace(`/rmhpoetry?s=${screen}`, { scroll: false });
+    } else if (screen === 'menu' && currentUrlScreen) {
+      router.replace('/rmhpoetry', { scroll: false });
+    }
+  }, [screen, router]);
 
   // Track playtime every second
   useEffect(() => {
     const interval = setInterval(incrementPlaytime, 1000);
     return () => clearInterval(interval);
   }, [incrementPlaytime]);
+
+  // Auto-save before unload
+  useEffect(() => {
+    const handler = () => {
+      if (gameStarted) triggerAutoSave();
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [gameStarted, triggerAutoSave]);
 
   // Prevent default scroll on space
   useEffect(() => {
@@ -54,6 +120,8 @@ export function VersecraftGame() {
       case 'save':
       case 'load':
         return <SaveLoadMenu mode={screen === 'save' ? 'save' : 'load'} />;
+      case 'progress':
+        return <ProgressScreen />;
       default:
         return <MainMenu />;
     }
