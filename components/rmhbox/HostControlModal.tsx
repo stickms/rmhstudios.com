@@ -155,12 +155,20 @@ export default function HostControlModal() {
                       }}
                     >
                       {/* Avatar */}
-                      <div
-                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
-                        style={{ backgroundColor: 'var(--rmhbox-accent)' }}
-                      >
-                        {player.userName.charAt(0).toUpperCase()}
-                      </div>
+                      {player.avatarUrl ? (
+                        <img
+                          src={player.avatarUrl}
+                          alt={player.userName}
+                          className="h-7 w-7 shrink-0 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div
+                          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
+                          style={{ backgroundColor: 'var(--rmhbox-accent)' }}
+                        >
+                          {player.userName.charAt(0).toUpperCase()}
+                        </div>
+                      )}
 
                       {/* Name */}
                       <span className="flex-1 truncate text-sm font-medium text-(--rmhbox-text)">
@@ -206,12 +214,20 @@ export default function HostControlModal() {
                         border: '1px solid var(--rmhbox-border)',
                       }}
                     >
-                      <div
-                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
-                        style={{ backgroundColor: 'var(--rmhbox-text-muted)' }}
-                      >
-                        {spec.userName.charAt(0).toUpperCase()}
-                      </div>
+                      {spec.avatarUrl ? (
+                        <img
+                          src={spec.avatarUrl}
+                          alt={spec.userName}
+                          className="h-7 w-7 shrink-0 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div
+                          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
+                          style={{ backgroundColor: 'var(--rmhbox-text-muted)' }}
+                        >
+                          {spec.userName.charAt(0).toUpperCase()}
+                        </div>
+                      )}
                       <span className="flex-1 truncate text-sm text-(--rmhbox-text-muted)">
                         {spec.userName}
                       </span>

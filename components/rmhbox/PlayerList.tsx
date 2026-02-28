@@ -37,10 +37,18 @@ export default function PlayerList({ players, hostUserId, isHost, myUserId, onKi
             key={player.userId}
             className="flex items-center gap-3 rounded-lg bg-(--rmhbox-bg) border border-(--rmhbox-border) px-4 py-3 transition-colors hover:bg-(--rmhbox-surface-hover)"
           >
-            {/* Avatar placeholder */}
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-(--rmhbox-accent) text-sm font-bold text-white">
-              {player.userName.charAt(0).toUpperCase()}
-            </div>
+            {/* Avatar */}
+            {player.avatarUrl ? (
+              <img
+                src={player.avatarUrl}
+                alt={player.userName}
+                className="h-9 w-9 shrink-0 rounded-full object-cover"
+              />
+            ) : (
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-(--rmhbox-accent) text-sm font-bold text-white">
+                {player.userName.charAt(0).toUpperCase()}
+              </div>
+            )}
 
             {/* Name + host crown */}
             <div className="flex min-w-0 flex-1 items-center gap-2">
