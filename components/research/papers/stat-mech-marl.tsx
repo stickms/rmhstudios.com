@@ -99,6 +99,156 @@ const correlationLengthData = [
   { coupling: 1.0, length: 2.1 },
 ];
 
+const freeEnergyData = [
+  { beta: 0.1, freeEnergy: -0.42, entropy: 3.81, internalEnergy: -0.04 },
+  { beta: 0.3, freeEnergy: -1.24, entropy: 3.42, internalEnergy: -0.21 },
+  { beta: 0.5, freeEnergy: -2.01, entropy: 2.91, internalEnergy: -0.55 },
+  { beta: 0.7, freeEnergy: -2.78, entropy: 2.28, internalEnergy: -1.18 },
+  { beta: 0.75, freeEnergy: -3.12, entropy: 1.94, internalEnergy: -1.67 },
+  { beta: 0.8, freeEnergy: -3.48, entropy: 1.62, internalEnergy: -2.18 },
+  { beta: 1.0, freeEnergy: -4.21, entropy: 1.08, internalEnergy: -3.13 },
+  { beta: 1.5, freeEnergy: -5.42, entropy: 0.52, internalEnergy: -4.64 },
+  { beta: 2.0, freeEnergy: -6.18, entropy: 0.28, internalEnergy: -5.62 },
+];
+
+const specificHeatData = [
+  { coupling: 0.3, specificHeat: 0.42 },
+  { coupling: 0.4, specificHeat: 0.68 },
+  { coupling: 0.5, specificHeat: 1.12 },
+  { coupling: 0.6, specificHeat: 2.08 },
+  { coupling: 0.65, specificHeat: 3.21 },
+  { coupling: 0.7, specificHeat: 5.84 },
+  { coupling: 0.73, specificHeat: 9.12 },
+  { coupling: 0.75, specificHeat: 14.8 },
+  { coupling: 0.77, specificHeat: 8.92 },
+  { coupling: 0.8, specificHeat: 5.41 },
+  { coupling: 0.85, specificHeat: 2.84 },
+  { coupling: 0.9, specificHeat: 1.62 },
+  { coupling: 1.0, specificHeat: 0.81 },
+];
+
+const replicaSymmetryData = [
+  { coupling: 0.3, q_EA: 0.01, qBar: 0.0 },
+  { coupling: 0.5, q_EA: 0.04, qBar: 0.02 },
+  { coupling: 0.6, q_EA: 0.12, qBar: 0.08 },
+  { coupling: 0.7, q_EA: 0.31, qBar: 0.24 },
+  { coupling: 0.75, q_EA: 0.52, qBar: 0.48 },
+  { coupling: 0.8, q_EA: 0.68, qBar: 0.65 },
+  { coupling: 0.9, q_EA: 0.81, qBar: 0.79 },
+  { coupling: 1.0, q_EA: 0.88, qBar: 0.87 },
+];
+
+const finiteSizeData = [
+  { agents: 8, jc: 0.82, shift: 0.07 },
+  { agents: 16, jc: 0.79, shift: 0.04 },
+  { agents: 32, jc: 0.77, shift: 0.02 },
+  { agents: 64, jc: 0.76, shift: 0.01 },
+  { agents: 128, jc: 0.755, shift: 0.005 },
+  { agents: 256, jc: 0.752, shift: 0.002 },
+  { agents: 512, jc: 0.751, shift: 0.001 },
+];
+
+const entropyProductionData = [
+  { step: 0, production: 0.0, dissipation: 0.0 },
+  { step: 5000, production: 0.28, dissipation: 0.12 },
+  { step: 10000, production: 0.52, dissipation: 0.31 },
+  { step: 20000, production: 0.91, dissipation: 0.68 },
+  { step: 30000, production: 1.42, dissipation: 1.18 },
+  { step: 40000, production: 1.21, dissipation: 1.08 },
+  { step: 50000, production: 0.82, dissipation: 0.74 },
+  { step: 75000, production: 0.41, dissipation: 0.38 },
+  { step: 100000, production: 0.18, dissipation: 0.16 },
+];
+
+const fluctuationDissipationData = [
+  { frequency: 0.01, response: 12.4, correlation: 11.8 },
+  { frequency: 0.02, response: 9.8, correlation: 9.2 },
+  { frequency: 0.05, response: 6.4, correlation: 5.9 },
+  { frequency: 0.1, response: 3.8, correlation: 3.4 },
+  { frequency: 0.2, response: 2.1, correlation: 1.8 },
+  { frequency: 0.5, response: 0.82, correlation: 0.71 },
+  { frequency: 1.0, response: 0.31, correlation: 0.28 },
+  { frequency: 2.0, response: 0.12, correlation: 0.11 },
+];
+
+const binderCumulantData = [
+  { coupling: 0.5, n8: 0.62, n16: 0.61, n32: 0.60, n64: 0.60 },
+  { coupling: 0.6, n8: 0.58, n16: 0.56, n32: 0.54, n64: 0.53 },
+  { coupling: 0.65, n8: 0.52, n16: 0.48, n32: 0.44, n64: 0.42 },
+  { coupling: 0.7, n8: 0.44, n16: 0.38, n32: 0.32, n64: 0.28 },
+  { coupling: 0.75, n8: 0.34, n16: 0.28, n32: 0.24, n64: 0.22 },
+  { coupling: 0.8, n8: 0.28, n16: 0.24, n32: 0.22, n64: 0.21 },
+  { coupling: 0.9, n8: 0.24, n16: 0.22, n32: 0.21, n64: 0.20 },
+  { coupling: 1.0, n8: 0.22, n16: 0.21, n32: 0.20, n64: 0.20 },
+];
+
+const hamiltonianSpectrumData = [
+  { eigenindex: 1, eigenvalue: -4.21 },
+  { eigenindex: 2, eigenvalue: -3.84 },
+  { eigenindex: 3, eigenvalue: -3.12 },
+  { eigenindex: 4, eigenvalue: -2.48 },
+  { eigenindex: 5, eigenvalue: -1.92 },
+  { eigenindex: 6, eigenvalue: -1.34 },
+  { eigenindex: 7, eigenvalue: -0.81 },
+  { eigenindex: 8, eigenvalue: -0.28 },
+  { eigenindex: 9, eigenvalue: 0.14 },
+  { eigenindex: 10, eigenvalue: 0.72 },
+];
+
+const lyapunovData = [
+  { agents: 4, maxLyapunov: 0.042, kaplanYorke: 3.2 },
+  { agents: 8, maxLyapunov: 0.068, kaplanYorke: 5.8 },
+  { agents: 16, maxLyapunov: 0.091, kaplanYorke: 9.4 },
+  { agents: 32, maxLyapunov: 0.112, kaplanYorke: 16.2 },
+  { agents: 64, maxLyapunov: 0.128, kaplanYorke: 28.7 },
+  { agents: 128, maxLyapunov: 0.141, kaplanYorke: 52.4 },
+];
+
+const landscapeRuggednessData = [
+  { coupling: 0.1, ruggedness: 0.08, barriers: 1.2 },
+  { coupling: 0.3, ruggedness: 0.14, barriers: 2.1 },
+  { coupling: 0.5, ruggedness: 0.28, barriers: 4.8 },
+  { coupling: 0.7, ruggedness: 0.52, barriers: 9.2 },
+  { coupling: 0.75, ruggedness: 0.71, barriers: 14.8 },
+  { coupling: 0.8, ruggedness: 0.64, barriers: 11.4 },
+  { coupling: 0.9, ruggedness: 0.48, barriers: 7.1 },
+  { coupling: 1.0, ruggedness: 0.38, barriers: 4.8 },
+  { coupling: 1.2, ruggedness: 0.28, barriers: 3.2 },
+];
+
+const dynamicCriticalData = [
+  { coupling: 0.5, relaxTime: 120 },
+  { coupling: 0.6, relaxTime: 280 },
+  { coupling: 0.65, relaxTime: 520 },
+  { coupling: 0.7, relaxTime: 1240 },
+  { coupling: 0.72, relaxTime: 2180 },
+  { coupling: 0.74, relaxTime: 4820 },
+  { coupling: 0.75, relaxTime: 12400 },
+  { coupling: 0.76, relaxTime: 5210 },
+  { coupling: 0.78, relaxTime: 2420 },
+  { coupling: 0.8, relaxTime: 1180 },
+  { coupling: 0.85, relaxTime: 480 },
+  { coupling: 0.9, relaxTime: 260 },
+];
+
+const graphTopologyData = [
+  { topology: 'Complete', jc: 0.24, variance: 0.12, convergence: 42100 },
+  { topology: 'Erdős–Rényi', jc: 0.75, variance: 0.27, convergence: 58100 },
+  { topology: 'Barabási–Albert', jc: 0.61, variance: 0.21, convergence: 51200 },
+  { topology: 'Watts–Strogatz', jc: 0.82, variance: 0.31, convergence: 62400 },
+  { topology: 'Ring Lattice', jc: 1.12, variance: 0.42, convergence: 78200 },
+  { topology: 'Star', jc: 0.38, variance: 0.18, convergence: 48100 },
+];
+
+const ablationScheduleData = [
+  { schedule: 'Constant (J=1)', variance: 0.82, convergence: 89400, finalReturn: 798 },
+  { schedule: 'Linear', variance: 0.42, convergence: 71200, finalReturn: 821 },
+  { schedule: 'Sigmoid (RG)', variance: 0.27, convergence: 58100, finalReturn: 842 },
+  { schedule: 'Step Function', variance: 0.78, convergence: 84200, finalReturn: 802 },
+  { schedule: 'Cosine', variance: 0.38, convergence: 68400, finalReturn: 828 },
+  { schedule: 'Exponential', variance: 0.34, convergence: 64800, finalReturn: 834 },
+];
+
 const h2Style: React.CSSProperties = {
   fontSize: '14pt',
   fontWeight: 'bold',
@@ -168,10 +318,175 @@ export function StatMechMARLPaper() {
         establishing a direct practical benefit of the thermodynamic framework.
       </p>
 
-      {/* 2. THEORETICAL FRAMEWORK */}
-      <h2 style={h2Style}>2. Theoretical Framework</h2>
+      {/* 2. NOTATION AND MATHEMATICAL PRELIMINARIES */}
+      <h2 style={h2Style}>2. Notation and Mathematical Preliminaries</h2>
 
-      <h3 style={h3Style}>2.1 Agent Dynamics as Coupled Stochastic Processes</h3>
+      <p className="mb-4">
+        Before developing the statistical-mechanical theory of multi-agent learning, we
+        establish the mathematical apparatus and notational conventions that underpin the
+        remainder of this work. The framework draws on three pillars — stochastic analysis,
+        equilibrium statistical mechanics, and spectral graph theory — each of which
+        contributes essential machinery to the formulation of coupled learning dynamics as a
+        thermodynamic system. Readers fluent in all three disciplines may wish to skim this
+        section for notation and proceed directly to Section 3.
+      </p>
+
+      <h3 style={h3Style}>2.1 Stochastic Calculus and SDE Framework</h3>
+
+      <p className="mb-4">
+        Throughout this paper we work on a filtered probability space{' '}
+        <Tex math="(\Omega, \mathcal{F}, \{\mathcal{F}_t\}_{t \geq 0}, \mathbb{P})" /> satisfying the
+        usual conditions of completeness and right-continuity. A standard{' '}
+        <Tex math="d" />-dimensional Wiener process (Brownian motion){' '}
+        <Tex math="W_t = (W_t^1, \ldots, W_t^d)^\top" /> is an{' '}
+        <Tex math="\mathcal{F}_t" />-adapted process with independent increments,{' '}
+        <Tex math="W_0 = 0" />, and <Tex math="W_t - W_s \sim \mathcal{N}(0, (t-s)I_d)" /> for{' '}
+        <Tex math="0 \leq s < t" />. Itô&apos;s formula, the chain rule of stochastic calculus, states that
+        for <Tex math="f \in C^2(\mathbb{R}^d)" /> and an Itô process{' '}
+        <Tex math="dX_t = b(X_t)\,dt + \sigma(X_t)\,dW_t" /> one has (Øksendal, 2003):
+      </p>
+
+      <TexBlock math="df(X_t) = \left[ \sum_i b_i \frac{\partial f}{\partial x_i} + \frac{1}{2} \sum_{i,j} (\sigma \sigma^\top)_{ij} \frac{\partial^2 f}{\partial x_i \partial x_j} \right] dt + \sum_i \left( \sigma^\top \nabla f \right)_i dW_t^i" />
+
+      <p className="mb-4 indent-8">
+        The infinitesimal generator <Tex math="\mathcal{L}" /> of the diffusion process{' '}
+        <Tex math="X_t" /> is the second-order differential operator that captures the expected
+        instantaneous rate of change of smooth observables. For the Itô diffusion{' '}
+        <Tex math="dX_t = b(X_t)\,dt + \sigma(X_t)\,dW_t" />, the generator acts on{' '}
+        <Tex math="f \in C^2_c(\mathbb{R}^d)" /> as:
+      </p>
+
+      <TexBlock math="\mathcal{L}f(x) = \sum_{i=1}^{d} b_i(x)\,\frac{\partial f}{\partial x_i} + \frac{1}{2}\sum_{i,j=1}^{d} \bigl(\sigma\sigma^\top\bigr)_{ij}(x)\,\frac{\partial^2 f}{\partial x_i\,\partial x_j}" />
+
+      <p className="mb-4">
+        The dual of <Tex math="\mathcal{L}" /> governs the time evolution of the probability
+        density <Tex math="\rho(x,t)" /> of <Tex math="X_t" /> via the Fokker–Planck (forward
+        Kolmogorov) equation:
+      </p>
+
+      <TexBlock math="\frac{\partial \rho}{\partial t} = -\sum_i \frac{\partial}{\partial x_i}\bigl[b_i\,\rho\bigr] + \frac{1}{2}\sum_{i,j}\frac{\partial^2}{\partial x_i\,\partial x_j}\bigl[(\sigma\sigma^\top)_{ij}\,\rho\bigr]" />
+
+      <p className="mb-4 indent-8">
+        When the drift is derivable from a potential, <Tex math="b = -\nabla V" />, and the
+        diffusion is isotropic with coefficient <Tex math="D" />, the stationary solution of the
+        Fokker–Planck equation is the Gibbs–Boltzmann distribution{' '}
+        <Tex math="\rho_\text{eq}(x) \propto \exp(-V(x)/D)" />, forging the fundamental link between
+        stochastic dynamics and equilibrium statistical mechanics that we exploit throughout this
+        work (Risken, 1996).
+      </p>
+
+      <h3 style={h3Style}>2.2 Statistical Mechanics Preliminaries</h3>
+
+      <p className="mb-4">
+        We adopt the canonical-ensemble formulation of equilibrium statistical mechanics. A
+        system with microscopic state <Tex math="x \in \mathcal{X}" /> and energy function
+        (Hamiltonian) <Tex math="H(x)" /> in thermal contact with a reservoir at temperature{' '}
+        <Tex math="T" /> is described by the Gibbs canonical distribution{' '}
+        <Tex math="\rho_\beta(x) = Z(\beta)^{-1}\exp(-\beta H(x))" />, where{' '}
+        <Tex math="\beta = 1/T" /> is the inverse temperature (we set the Boltzmann constant{' '}
+        <Tex math="k_B = 1" /> throughout). The partition function <Tex math="Z(\beta)" /> encodes
+        the full thermodynamic content of the system:
+      </p>
+
+      <TexBlock math="Z(\beta) = \int_{\mathcal{X}} e^{-\beta H(x)}\,dx, \qquad F(\beta) = -T \ln Z(\beta) = -\frac{1}{\beta}\ln Z(\beta)" />
+
+      <p className="mb-4 indent-8">
+        The Helmholtz free energy <Tex math="F = U - TS" /> (with internal energy{' '}
+        <Tex math="U = \langle H \rangle" /> and entropy{' '}
+        <Tex math="S = -\langle \ln \rho \rangle" />) is the natural thermodynamic potential in
+        the canonical ensemble. Successive Legendre transforms yield the remaining potentials
+        of classical thermodynamics — the Gibbs free energy{' '}
+        <Tex math="G = F + PV" />, enthalpy <Tex math="H = U + PV" />, and grand potential{' '}
+        <Tex math="\Phi = F - \mu N" /> — each adapted to different external constraints. In the
+        multi-agent context the relevant Legendre structure connects the free energy (parameterized
+        by inverse temperature <Tex math="\beta" /> and coupling strength <Tex math="J" />) to
+        the order-parameter potential via the Legendre–Fenchel transform (Goldenfeld, 1992):
+      </p>
+
+      <TexBlock math="\Gamma(m) = \sup_{h}\bigl[\,h\,m - F(\beta, J, h)\,\bigr], \qquad m = -\frac{\partial F}{\partial h}\bigg|_{h=0}" />
+
+      <p className="mb-4">
+        Here <Tex math="h" /> is an external field conjugate to the order parameter{' '}
+        <Tex math="m" />, and <Tex math="\Gamma(m)" /> is the effective potential (Gibbs free
+        energy density) whose minima identify the stable macroscopic phases of the system. The
+        convexity properties of <Tex math="\Gamma" /> directly determine phase coexistence,
+        metastability, and spinodal boundaries — concepts that map precisely onto the convergence
+        landscape of the multi-agent system, as we shall demonstrate in subsequent sections.
+      </p>
+
+      <p className="mb-4 indent-8">
+        Thermal fluctuations around equilibrium are governed by the fluctuation-dissipation
+        relations. The susceptibility <Tex math="\chi" />, measuring the response of{' '}
+        <Tex math="m" /> to an infinitesimal external field, is related to the variance of the
+        order parameter by <Tex math="\chi = \beta\bigl(\langle m^2 \rangle - \langle m \rangle^2\bigr)" />.
+        At a continuous phase transition the susceptibility diverges as{' '}
+        <Tex math="\chi \sim |T - T_c|^{-\gamma}" />, signaling the onset of long-range
+        correlations. We will show that the analogous divergence in the multi-agent system
+        manifests as unbounded training variance near the critical coupling{' '}
+        <Tex math="J_c" />, providing a thermodynamic explanation for the empirically observed
+        instabilities in cooperative MARL training.
+      </p>
+
+      <h3 style={h3Style}>2.3 Graph-Theoretic Notation</h3>
+
+      <p className="mb-4">
+        The interaction topology of the agent population is encoded in an undirected graph{' '}
+        <Tex math="G = (V, E)" /> with vertex set <Tex math="V = \{1, \ldots, N\}" /> (agents)
+        and edge set <Tex math="E \subseteq V \times V" /> (pairwise interactions). The adjacency
+        matrix <Tex math="A \in \{0,1\}^{N \times N}" /> has entries{' '}
+        <Tex math="A_{ij} = \mathbf{1}_{(i,j) \in E}" />. We denote the degree of vertex{' '}
+        <Tex math="i" /> by <Tex math="d_i = \sum_j A_{ij}" /> and the degree matrix by{' '}
+        <Tex math="D = \operatorname{diag}(d_1, \ldots, d_N)" />. The combinatorial graph
+        Laplacian is <Tex math="L = D - A" />, a positive-semidefinite matrix whose spectral
+        properties control diffusive transport and synchronization phenomena on the network
+        (Chung, 1997).
+      </p>
+
+      <TexBlock math="L = D - A, \qquad 0 = \lambda_1 \leq \lambda_2 \leq \cdots \leq \lambda_N, \qquad L\,\mathbf{1} = 0" />
+
+      <p className="mb-4 indent-8">
+        The eigenvalues <Tex math="\{\lambda_k\}_{k=1}^N" /> of <Tex math="L" /> are
+        non-negative, with <Tex math="\lambda_1 = 0" /> corresponding to the constant
+        eigenvector. The algebraic connectivity <Tex math="\lambda_2" /> (the Fiedler value)
+        quantifies the bottleneck of information flow across the graph: a larger{' '}
+        <Tex math="\lambda_2" /> implies faster mixing and tighter synchronization of coupled
+        dynamics. The spectral gap <Tex math="\lambda_2" /> enters directly into the
+        convergence rate of the mean-field approximation; specifically, finite-size corrections
+        to the mean-field free energy scale as{' '}
+        <Tex math="O(\lambda_2^{-1} N^{-1})" />.
+      </p>
+
+      <TexBlock math="\rho_L(\lambda) = \frac{1}{N}\sum_{k=1}^{N}\delta(\lambda - \lambda_k), \qquad r(A) = \max_{k}|\mu_k| = \text{spectral radius}" />
+
+      <p className="mb-4">
+        The spectral density <Tex math="\rho_L(\lambda)" /> of the Laplacian characterizes the
+        global topology of the interaction graph in a manner invariant to vertex labeling. For
+        random Erdős–Rényi graphs with connection probability <Tex math="p" />, the spectral
+        density converges to a shifted semicircle law in the dense limit, while for sparse
+        graphs it exhibits heavy tails reflecting the presence of hub vertices. The spectral
+        radius <Tex math="r(A)" /> of the adjacency matrix — the largest eigenvalue in absolute
+        value — governs the critical coupling threshold: the mean-field phase transition occurs
+        at <Tex math="J_c = T / r(A)" />, establishing a direct link between network topology
+        and the onset of collective behavior in the agent population.
+      </p>
+
+      <p className="mb-4 indent-8">
+        For structured interaction topologies (lattices, small-world networks, scale-free
+        graphs), the spectral properties of <Tex math="L" /> and <Tex math="A" /> determine
+        the universality class of the phase transition and, consequently, the critical exponents
+        governing the divergence of training variance near <Tex math="J_c" />. We will
+        exploit the normalized Laplacian{' '}
+        <Tex math="\mathcal{L} = D^{-1/2}LD^{-1/2} = I - D^{-1/2}AD^{-1/2}" /> when analyzing
+        heterogeneous-degree graphs, as its spectrum is confined to{' '}
+        <Tex math="[0, 2]" /> and admits tighter perturbative bounds (Chung, 1997). The
+        interplay between spectral geometry and thermodynamic criticality constitutes one of
+        the central themes of this work.
+      </p>
+
+      {/* 3. THEORETICAL FRAMEWORK */}
+      <h2 style={h2Style}>3. Theoretical Framework</h2>
+
+      <h3 style={h3Style}>3.1 Agent Dynamics as Coupled Stochastic Processes</h3>
 
       <p className="mb-4">
         Consider a population of <Tex math="N" /> reinforcement learning agents, each
@@ -215,7 +530,7 @@ export function StatMechMARLPaper() {
         models in statistical physics.
       </p>
 
-      <h3 style={h3Style}>2.2 Mean-Field Reduction and the Fokker–Planck Equation</h3>
+      <h3 style={h3Style}>3.2 Mean-Field Reduction and the Fokker–Planck Equation</h3>
 
       <p className="mb-4">
         In the mean-field limit, each agent interacts not with specific neighbors but with the
@@ -245,7 +560,7 @@ export function StatMechMARLPaper() {
         self-consistent mean-field equation of the Curie–Weiss model in magnetism.
       </p>
 
-      <h3 style={h3Style}>2.3 Order Parameter and Self-Consistency</h3>
+      <h3 style={h3Style}>3.3 Order Parameter and Self-Consistency</h3>
 
       <p className="mb-4">
         To characterize the macroscopic state of the agent population, we introduce the
