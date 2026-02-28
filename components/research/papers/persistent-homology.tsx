@@ -18,9 +18,9 @@ import { PaperFigure } from '../PaperFigure';
 import { Tex, TexBlock } from '../Latex';
 
 const bettiNumberData = [
-  { dimension: 'β₀ (Components)', sprites: 14.2, textures: 8.7, meshes: 22.1 },
-  { dimension: 'β₁ (Loops)', sprites: 7.8, textures: 12.3, meshes: 5.4 },
-  { dimension: 'β₂ (Voids)', sprites: 2.1, textures: 4.6, meshes: 9.3 },
+  { dimension: 'β_0 (Components)', sprites: 14.2, textures: 8.7, meshes: 22.1 },
+  { dimension: 'β_1 (Loops)', sprites: 7.8, textures: 12.3, meshes: 5.4 },
+  { dimension: 'β_2 (Voids)', sprites: 2.1, textures: 4.6, meshes: 9.3 },
 ];
 
 const persistenceDiagramData = [
@@ -169,9 +169,9 @@ const multiScaleData = [
 
 const ablationData = [
   { component: 'Full Model', fid: 27.9, coherence: 6.9 },
-  { component: 'No H₂ penalty', fid: 29.4, coherence: 6.6 },
-  { component: 'No H₁ penalty', fid: 33.8, coherence: 5.8 },
-  { component: 'No H₀ penalty', fid: 31.2, coherence: 6.2 },
+  { component: 'No H_2 penalty', fid: 29.4, coherence: 6.6 },
+  { component: 'No H_1 penalty', fid: 33.8, coherence: 5.8 },
+  { component: 'No H_0 penalty', fid: 31.2, coherence: 6.2 },
   { component: 'No persistence weight', fid: 35.1, coherence: 5.4 },
   { component: 'Fixed σ = 0.1', fid: 30.8, coherence: 6.3 },
   { component: 'Linear baseline', fid: 47.3, coherence: 4.3 },
@@ -619,14 +619,14 @@ export function PersistentHomologyPaper() {
         stochastic latent-space samples that are inherently noisy.
       </p>
 
-      <PaperFigure number={1} caption="Persistence diagram of H₁ features (loops) in the latent space of a StyleGAN2 generator trained on 80,000 sprite assets. Each point represents a topological loop; high-persistence features (far from the diagonal) correspond to stable semantic boundaries.">
+      <PaperFigure number={1} caption="Persistence diagram of H_1 features (loops) in the latent space of a StyleGAN2 generator trained on 80,000 sprite assets. Each point represents a topological loop; high-persistence features (far from the diagonal) correspond to stable semantic boundaries.">
         <ResponsiveContainer width="100%" height={300}>
           <ScatterChart margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="birth" name="Birth ε" type="number" domain={[0, 1]} label={{ value: 'Birth ε', position: 'insideBottom', offset: -5 }} />
             <YAxis dataKey="death" name="Death ε" type="number" domain={[0, 1]} label={{ value: 'Death ε', angle: -90, position: 'insideLeft' }} />
             <Tooltip cursor={{ strokeDasharray: '3 3' }} />
-            <Scatter data={persistenceDiagramData} fill="#e11d48" name="H₁ features" />
+            <Scatter data={persistenceDiagramData} fill="#e11d48" name="H_1 features" />
           </ScatterChart>
         </ResponsiveContainer>
       </PaperFigure>
@@ -744,7 +744,7 @@ export function PersistentHomologyPaper() {
         corresponding to &quot;forbidden&quot; combinations of semantic attributes.
       </p>
 
-      <PaperFigure number={2} caption="Mean Betti numbers (β₀, β₁, β₂) with persistence threshold > 0.3 for three GAN architectures trained on different asset types. Error bars denote ±1 SD across 5 independent training runs.">
+      <PaperFigure number={2} caption="Mean Betti numbers (β_0, β_1, β_2) with persistence threshold > 0.3 for three GAN architectures trained on different asset types. Error bars denote ±1 SD across 5 independent training runs.">
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={bettiNumberData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -984,8 +984,8 @@ export function PersistentHomologyPaper() {
             <Tooltip />
             <Legend />
             <Line type="monotone" dataKey="bottleneck" stroke="#e11d48" strokeWidth={2} name="Bottleneck d_B" dot={false} />
-            <Line type="monotone" dataKey="wasserstein1" stroke="#6366f1" strokeWidth={2} name="Wasserstein W₁" dot={false} />
-            <Line type="monotone" dataKey="wasserstein2" stroke="#10b981" strokeWidth={2} name="Wasserstein W₂" dot={false} />
+            <Line type="monotone" dataKey="wasserstein1" stroke="#6366f1" strokeWidth={2} name="Wasserstein W_1" dot={false} />
+            <Line type="monotone" dataKey="wasserstein2" stroke="#10b981" strokeWidth={2} name="Wasserstein W_2" dot={false} />
           </LineChart>
         </ResponsiveContainer>
       </PaperFigure>
@@ -1117,7 +1117,7 @@ export function PersistentHomologyPaper() {
         of the asymptotic approximation for the sample sizes encountered in practice.
       </p>
 
-      <PaperFigure number={8} caption="Persistence landscape norms (L¹, L², L∞) as a function of persistence threshold for the H₁ features of the sprite GAN latent space. The decay rates characterize the distribution of topological feature significance.">
+      <PaperFigure number={8} caption="Persistence landscape norms (L¹, L², Linf) as a function of persistence threshold for the H_1 features of the sprite GAN latent space. The decay rates characterize the distribution of topological feature significance.">
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={landscapeNormData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -1127,7 +1127,7 @@ export function PersistentHomologyPaper() {
             <Legend />
             <Line type="monotone" dataKey="l1Norm" stroke="#e11d48" strokeWidth={2} name="L¹ Norm" dot={false} />
             <Line type="monotone" dataKey="l2Norm" stroke="#6366f1" strokeWidth={2} name="L² Norm" dot={false} />
-            <Line type="monotone" dataKey="lInfNorm" stroke="#10b981" strokeWidth={2} name="L∞ Norm" dot={false} />
+            <Line type="monotone" dataKey="lInfNorm" stroke="#10b981" strokeWidth={2} name="Linf Norm" dot={false} />
           </LineChart>
         </ResponsiveContainer>
       </PaperFigure>
@@ -1261,7 +1261,7 @@ export function PersistentHomologyPaper() {
 
       <TexBlock math="H_n(X, A) \;\xrightarrow{\;\partial_n\;}\; H_{n-1}(A) \;\xrightarrow{\;\iota_*\;}\; H_{n-1}(X) \;\xrightarrow{\;\pi_*\;}\; H_{n-1}(X, A) \;\xrightarrow{\;\partial_{n-1}\;}\; \cdots" />
 
-      <PaperFigure number={9} caption="Convergence of the Mayer–Vietoris spectral sequence for the latent-space decomposition into 8 semantic clusters. The total rank decreases as differentials annihilate spurious homological contributions, stabilizing at E₆ = E∞.">
+      <PaperFigure number={9} caption="Convergence of the Mayer–Vietoris spectral sequence for the latent-space decomposition into 8 semantic clusters. The total rank decreases as differentials annihilate spurious homological contributions, stabilizing at E_6 = Einf.">
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={spectralSequenceData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -1425,7 +1425,7 @@ export function PersistentHomologyPaper() {
             <YAxis label={{ value: 'Dimension', angle: -90, position: 'insideLeft' }} />
             <Tooltip />
             <Legend />
-            <Bar dataKey="global" fill="#e11d48" name="Global Sections H⁰(𝓕)" />
+            <Bar dataKey="global" fill="#e11d48" name="Global Sections H^0(F)" />
             <Bar dataKey="local" fill="#6366f1" name="Local Sections" />
             <Bar dataKey="cosheaf" fill="#10b981" name="Cosheaf Homology" />
           </BarChart>
@@ -1623,7 +1623,7 @@ export function PersistentHomologyPaper() {
           <BarChart data={fidComparisonData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="method" />
-            <YAxis label={{ value: 'FID (↓)', angle: -90, position: 'insideLeft' }} />
+            <YAxis label={{ value: 'FID (lower is better)', angle: -90, position: 'insideLeft' }} />
             <Tooltip />
             <Bar dataKey="fid" fill="#e11d48" name="FID Score" />
           </BarChart>
@@ -1652,17 +1652,17 @@ export function PersistentHomologyPaper() {
         aspects of the data distribution.
       </p>
 
-      <PaperFigure number={13} caption="Wasserstein-2 distance between persistence diagrams of real and generated latent encodings across GAN training epochs, for homological dimensions H₀, H₁, and H₂.">
+      <PaperFigure number={13} caption="Wasserstein-2 distance between persistence diagrams of real and generated latent encodings across GAN training epochs, for homological dimensions H_0, H_1, and H_2.">
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={wasserDistanceData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="epoch" label={{ value: 'Training Epoch', position: 'insideBottom', offset: -5 }} />
-            <YAxis label={{ value: 'W₂ Distance', angle: -90, position: 'insideLeft' }} />
+            <YAxis label={{ value: 'W_2 Distance', angle: -90, position: 'insideLeft' }} />
             <Tooltip />
             <Legend />
-            <Line type="monotone" dataKey="h0" stroke="#e11d48" strokeWidth={2} name="H₀" dot={false} />
-            <Line type="monotone" dataKey="h1" stroke="#6366f1" strokeWidth={2} name="H₁" dot={false} />
-            <Line type="monotone" dataKey="h2" stroke="#10b981" strokeWidth={2} name="H₂" dot={false} />
+            <Line type="monotone" dataKey="h0" stroke="#e11d48" strokeWidth={2} name="H_0" dot={false} />
+            <Line type="monotone" dataKey="h1" stroke="#6366f1" strokeWidth={2} name="H_1" dot={false} />
+            <Line type="monotone" dataKey="h2" stroke="#10b981" strokeWidth={2} name="H_2" dot={false} />
           </LineChart>
         </ResponsiveContainer>
       </PaperFigure>
@@ -2007,12 +2007,12 @@ export function PersistentHomologyPaper() {
         that suffices for convergence of stochastic gradient descent under standard assumptions.
       </p>
 
-      <PaperFigure number={15} caption="FID comparison of baseline GAN training (no topological regularization) versus topologically-regularized training (λ₁ = 0.05, μ = 0.05) across 500 epochs. The topological regularizer achieves consistently lower FID after epoch 75, converging to 25.4 versus 34.3 for the baseline.">
+      <PaperFigure number={15} caption="FID comparison of baseline GAN training (no topological regularization) versus topologically-regularized training (λ_1 = 0.05, μ = 0.05) across 500 epochs. The topological regularizer achieves consistently lower FID after epoch 75, converging to 25.4 versus 34.3 for the baseline.">
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={topoRegularizationData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="epoch" label={{ value: 'Training Epoch', position: 'insideBottom', offset: -5 }} />
-            <YAxis label={{ value: 'FID (↓)', angle: -90, position: 'insideLeft' }} />
+            <YAxis label={{ value: 'FID (lower is better)', angle: -90, position: 'insideLeft' }} />
             <Tooltip />
             <Legend />
             <Line type="monotone" dataKey="fidBaseline" stroke="#ef4444" strokeWidth={2} name="Baseline" dot={false} />
@@ -2097,7 +2097,7 @@ export function PersistentHomologyPaper() {
         framework to the Morse-theoretic scale-space analysis of Chazal et al. (2011).
       </p>
 
-      <PaperFigure number={16} caption="Total topological features and statistically significant features (persistence > δ = 0.08) in the H₁ diagram of the sprite GAN latent space as a function of filtration scale. The significant curve peaks near scale 0.20, identifying the characteristic radius of semantic loops.">
+      <PaperFigure number={16} caption="Total topological features and statistically significant features (persistence > δ = 0.08) in the H_1 diagram of the sprite GAN latent space as a function of filtration scale. The significant curve peaks near scale 0.20, identifying the characteristic radius of semantic loops.">
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={multiScaleData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -2329,7 +2329,7 @@ export function PersistentHomologyPaper() {
         configuration as the adversarial equilibrium is approached.
       </p>
 
-      <PaperFigure number={18} caption="Betti numbers β₀ (connected components), β₁ (loops), and β₂ (voids) of the GAN latent-space Vietoris–Rips complex (ε = 0.25) across training snapshots. The zigzag barcode decomposition reveals that β₁ features stabilize after epoch 200, indicating topological convergence of the semantic loop structure.">
+      <PaperFigure number={18} caption="Betti numbers β_0 (connected components), β_1 (loops), and β_2 (voids) of the GAN latent-space Vietoris–Rips complex (ε = 0.25) across training snapshots. The zigzag barcode decomposition reveals that β_1 features stabilize after epoch 200, indicating topological convergence of the semantic loop structure.">
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={zigzagPersistenceData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -2337,9 +2337,9 @@ export function PersistentHomologyPaper() {
             <YAxis label={{ value: 'Betti Number', angle: -90, position: 'insideLeft' }} />
             <Tooltip />
             <Legend />
-            <Line type="monotone" dataKey="beta0" stroke="#ef4444" strokeWidth={2} name="β₀ (Components)" dot={false} />
-            <Line type="monotone" dataKey="beta1" stroke="#6366f1" strokeWidth={2} name="β₁ (Loops)" dot={false} />
-            <Line type="monotone" dataKey="beta2" stroke="#10b981" strokeWidth={2} name="β₂ (Voids)" dot={false} />
+            <Line type="monotone" dataKey="beta0" stroke="#ef4444" strokeWidth={2} name="β_0 (Components)" dot={false} />
+            <Line type="monotone" dataKey="beta1" stroke="#6366f1" strokeWidth={2} name="β_1 (Loops)" dot={false} />
+            <Line type="monotone" dataKey="beta2" stroke="#10b981" strokeWidth={2} name="β_2 (Voids)" dot={false} />
           </LineChart>
         </ResponsiveContainer>
       </PaperFigure>
@@ -2516,7 +2516,7 @@ export function PersistentHomologyPaper() {
         from the persistence landscape improves local sensitivity to the topological environment.
       </p>
 
-      <PaperFigure number={20} caption="Ablation study results showing FID (lower is better) and human-rated semantic coherence (higher is better, scale 1–7) for systematic removal of individual components from the persistence-guided interpolation framework. The H₁ loop penalty contributes most to both metrics.">
+      <PaperFigure number={20} caption="Ablation study results showing FID (lower is better) and human-rated semantic coherence (higher is better, scale 1–7) for systematic removal of individual components from the persistence-guided interpolation framework. The H_1 loop penalty contributes most to both metrics.">
         <ResponsiveContainer width="100%" height={350}>
           <BarChart data={ablationData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -2524,8 +2524,8 @@ export function PersistentHomologyPaper() {
             <YAxis />
             <Tooltip />
             <Legend />
-            <Bar dataKey="fid" fill="#ef4444" name="FID ↓" />
-            <Bar dataKey="coherence" fill="#6366f1" name="Coherence ↑" />
+            <Bar dataKey="fid" fill="#ef4444" name="FID (lower)" />
+            <Bar dataKey="coherence" fill="#6366f1" name="Coherence (higher)" />
           </BarChart>
         </ResponsiveContainer>
       </PaperFigure>

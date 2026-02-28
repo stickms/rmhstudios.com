@@ -132,5 +132,8 @@ export function getArticleBySlug(slug: string): ResearchArticle | undefined {
 }
 
 export function getAllArticles(): ResearchArticle[] {
-  return articles;
+  return [...articles].sort((a, b) => {
+    if (a.volume !== b.volume) return b.volume - a.volume;
+    return b.issue - a.issue;
+  });
 }

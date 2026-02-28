@@ -657,7 +657,7 @@ export function StatMechMARLPaper() {
         two possible strategy-cluster orientations.
       </p>
 
-      <PaperFigure number={1} caption="Order parameter m as a function of reward-coupling strength J, showing the continuous phase transition at J_c ≈ 0.75. Data points are from 64-agent simulations; the solid curve is the mean-field prediction.">
+      <PaperFigure number={1} caption="Order parameter m as a function of reward-coupling strength J, showing the continuous phase transition at J_c ~ 0.75. Data points are from 64-agent simulations; the solid curve is the mean-field prediction.">
         <ResponsiveContainer width="100%" height={300}>
           <ScatterChart margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -777,9 +777,9 @@ export function StatMechMARLPaper() {
           <BarChart data={hamiltonianSpectrumData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="eigenindex" label={{ value: 'Eigenindex k', position: 'insideBottom', offset: -5 }} />
-            <YAxis label={{ value: 'Eigenvalue λₖ', angle: -90, position: 'insideLeft' }} />
+            <YAxis label={{ value: 'Eigenvalue λ_k', angle: -90, position: 'insideLeft' }} />
             <Tooltip />
-            <Bar dataKey="eigenvalue" fill="#6366f1" name="λₖ" />
+            <Bar dataKey="eigenvalue" fill="#6366f1" name="λ_k" />
           </BarChart>
         </ResponsiveContainer>
       </PaperFigure>
@@ -863,7 +863,7 @@ export function StatMechMARLPaper() {
         the <Tex math="\varepsilon" />-expansion of Wilson and Fisher.
       </p>
 
-      <PaperFigure number={8} caption="Thermodynamic potentials as functions of inverse temperature β: Helmholtz free energy F(β), entropy S(β), and internal energy U(β). The entropy decrease near β ≈ 0.75 signals the onset of strategy ordering.">
+      <PaperFigure number={8} caption="Thermodynamic potentials as functions of inverse temperature β: Helmholtz free energy F(β), entropy S(β), and internal energy U(β). The entropy decrease near β ~ 0.75 signals the onset of strategy ordering.">
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={freeEnergyData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -878,7 +878,7 @@ export function StatMechMARLPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      <PaperFigure number={9} caption="Specific heat C(J) as a function of coupling strength, exhibiting a sharp peak at J_c ≈ 0.75. The near-divergence reflects the mean-field logarithmic singularity (α = 0), broadened by finite-size effects.">
+      <PaperFigure number={9} caption="Specific heat C(J) as a function of coupling strength, exhibiting a sharp peak at J_c ~ 0.75. The near-divergence reflects the mean-field logarithmic singularity (α = 0), broadened by finite-size effects.">
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={specificHeatData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -1008,7 +1008,7 @@ export function StatMechMARLPaper() {
         Parisi, and Virasoro.
       </p>
 
-      <PaperFigure number={10} caption="Edwards–Anderson order parameter q_EA and mean overlap q̄ as functions of coupling strength. The separation between q_EA and q̄ near J ≈ 0.65 signals the onset of the spin-glass phase with frozen disorder.">
+      <PaperFigure number={10} caption="Edwards–Anderson order parameter q_EA and mean overlap q̄ as functions of coupling strength. The separation between q_EA and q̄ near J ~ 0.65 signals the onset of the spin-glass phase with frozen disorder.">
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={replicaSymmetryData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -1137,7 +1137,7 @@ export function StatMechMARLPaper() {
         to the large-<Tex math="N" /> regime.
       </p>
 
-      <PaperFigure number={11} caption="Finite-size scaling of the critical coupling J_c(N). The solid curve is the fit J_c(N) = 0.751 + 0.21·N^(−1/2), demonstrating N^(−1/2) convergence to the thermodynamic-limit value.">
+      <PaperFigure number={11} caption="Finite-size scaling of the critical coupling J_c(N). The solid curve is the fit J_c(N) = 0.751 + 0.21·N^(-1/2), demonstrating N^(-1/2) convergence to the thermodynamic-limit value.">
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={finiteSizeData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -1149,12 +1149,12 @@ export function StatMechMARLPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      <PaperFigure number={12} caption="Binder cumulant U₄(J) for system sizes N = 8, 16, 32, 64. The curves cross at J_c ≈ 0.75 with universal value U₄* ≈ 0.27, confirming mean-field universality.">
+      <PaperFigure number={12} caption="Binder cumulant U_4(J) for system sizes N = 8, 16, 32, 64. The curves cross at J_c ~ 0.75 with universal value U_4* ~ 0.27, confirming mean-field universality.">
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={binderCumulantData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="coupling" label={{ value: 'Coupling Strength J', position: 'insideBottom', offset: -5 }} />
-            <YAxis label={{ value: 'Binder Cumulant U₄', angle: -90, position: 'insideLeft' }} />
+            <YAxis label={{ value: 'Binder Cumulant U_4', angle: -90, position: 'insideLeft' }} />
             <Tooltip />
             <Legend />
             <Line type="monotone" dataKey="n8" stroke="#6366f1" name="N = 8" strokeWidth={2} dot={false} />
@@ -1258,7 +1258,7 @@ export function StatMechMARLPaper() {
         dramatic qualitative reorganisation.
       </p>
 
-      <PaperFigure number={13} caption="Entropy production rate σ(t) and environmental dissipation rate during MARL training. The peak near step 30,000 coincides with the onset of collective strategy formation; the subsequent relaxation toward σ ≈ 0 reflects approach to the non-equilibrium steady state.">
+      <PaperFigure number={13} caption="Entropy production rate σ(t) and environmental dissipation rate during MARL training. The peak near step 30,000 coincides with the onset of collective strategy formation; the subsequent relaxation toward σ ~ 0 reflects approach to the non-equilibrium steady state.">
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={entropyProductionData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -1418,7 +1418,7 @@ export function StatMechMARLPaper() {
         sub-aging (<Tex math="\mu < 1" />) indicates partial equilibration of fast modes.
       </p>
 
-      <PaperFigure number={14} caption="Comparison of the response function Im χ̂(ω) and the rescaled correlation spectrum ωĈ(ω)/2T. Deviations at low frequencies indicate FDR violation and yield an effective temperature T_eff ≈ 2.3T in the slow-mode sector.">
+      <PaperFigure number={14} caption="Comparison of the response function Im χ̂(ω) and the rescaled correlation spectrum ωĈ(ω)/2T. Deviations at low frequencies indicate FDR violation and yield an effective temperature T_eff ~ 2.3T in the slow-mode sector.">
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={fluctuationDissipationData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -1536,7 +1536,7 @@ export function StatMechMARLPaper() {
         embedded in the high-dimensional parameter space.
       </p>
 
-      <PaperFigure number={15} caption="Maximum Lyapunov exponent λ₁ and Kaplan–Yorke dimension D_KY as functions of agent population size N. The sub-linear growth of λ₁ ∼ N^{0.38} contrasts with the extensive scaling D_KY ∼ N, indicating extensively chaotic dynamics.">
+      <PaperFigure number={15} caption="Maximum Lyapunov exponent λ_1 and Kaplan–Yorke dimension D_KY as functions of agent population size N. The sub-linear growth of λ_1 ~ N^{0.38} contrasts with the extensive scaling D_KY ~ N, indicating extensively chaotic dynamics.">
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={lyapunovData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -1544,7 +1544,7 @@ export function StatMechMARLPaper() {
             <YAxis label={{ value: 'Exponent / Dimension', angle: -90, position: 'insideLeft' }} />
             <Tooltip />
             <Legend />
-            <Line type="monotone" dataKey="maxLyapunov" stroke="#6366f1" name="λ₁ (Max Lyapunov)" strokeWidth={2} dot={{ r: 3 }} />
+            <Line type="monotone" dataKey="maxLyapunov" stroke="#6366f1" name="λ_1 (Max Lyapunov)" strokeWidth={2} dot={{ r: 3 }} />
             <Line type="monotone" dataKey="kaplanYorke" stroke="#ef4444" name="D_KY (Kaplan–Yorke)" strokeWidth={2} dot={{ r: 3 }} />
           </LineChart>
         </ResponsiveContainer>
@@ -1652,7 +1652,7 @@ export function StatMechMARLPaper() {
         Section 11.1.
       </p>
 
-      <PaperFigure number={16} caption="Relaxation time τ as a function of coupling strength J, exhibiting the characteristic critical slowing down with divergence τ ∼ |J − J_c|^{−zν} at J_c ≈ 0.75, consistent with the mean-field dynamic exponent zν = 2.">
+      <PaperFigure number={16} caption="Relaxation time τ as a function of coupling strength J, exhibiting the characteristic critical slowing down with divergence τ ~ |J - J_c|^{-zν} at J_c ~ 0.75, consistent with the mean-field dynamic exponent zν = 2.">
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={dynamicCriticalData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -1664,7 +1664,7 @@ export function StatMechMARLPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      <PaperFigure number={17} caption="Landscape ruggedness (measured by the normalized complexity Σ) and mean barrier height ΔE as functions of coupling strength. Both quantities peak sharply at J_c ≈ 0.75, reflecting the maximally complex energy landscape at criticality.">
+      <PaperFigure number={17} caption="Landscape ruggedness (measured by the normalized complexity Σ) and mean barrier height ΔE as functions of coupling strength. Both quantities peak sharply at J_c ~ 0.75, reflecting the maximally complex energy landscape at criticality.">
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={landscapeRuggednessData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -1716,7 +1716,7 @@ export function StatMechMARLPaper() {
         gradient updates.
       </p>
 
-      <PaperFigure number={2} caption="Susceptibility χ as a function of coupling strength J, showing the characteristic divergence at the critical point J_c ≈ 0.75. The peak corresponds to maximal fluctuations in strategy alignment.">
+      <PaperFigure number={2} caption="Susceptibility χ as a function of coupling strength J, showing the characteristic divergence at the critical point J_c ~ 0.75. The peak corresponds to maximal fluctuations in strategy alignment.">
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={susceptibilityData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />

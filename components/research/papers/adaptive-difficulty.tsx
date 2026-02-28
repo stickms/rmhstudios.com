@@ -16,9 +16,9 @@ import {
 } from 'recharts';
 import { PaperFigure } from '../PaperFigure';
 
-/* ────────────────────────────────────────────
+/* --------------------------------------------
    Data for Figures
-   ──────────────────────────────────────────── */
+   -------------------------------------------- */
 
 const retentionData = [
   { day: 1, staticEasy: 100, staticHard: 100, reactiveDDA: 100, predictiveDDA: 100 },
@@ -51,9 +51,9 @@ const difficultyTrajectoryData = [
   { session: 20, reactive: 5.8, predictive: 6.4, playerSkill: 6.2 },
 ];
 
-/* ────────────────────────────────────────────
+/* --------------------------------------------
    Shared styles
-   ──────────────────────────────────────────── */
+   -------------------------------------------- */
 
 const h2Style: React.CSSProperties = {
   fontSize: '14pt',
@@ -91,14 +91,14 @@ const headerCell: React.CSSProperties = {
   backgroundColor: '#f9fafb',
 };
 
-/* ────────────────────────────────────────────
+/* --------------------------------------------
    Component
-   ──────────────────────────────────────────── */
+   -------------------------------------------- */
 
 export function AdaptiveDifficultyPaper() {
   return (
     <>
-      {/* ── 1  INTRODUCTION ─────────────────────────── */}
+      {/* -- 1  INTRODUCTION --------------------------- */}
       <h2 style={h2Style}>1. Introduction</h2>
 
       <p className="mb-4">
@@ -182,7 +182,7 @@ export function AdaptiveDifficultyPaper() {
         model-based DDA system superior to a simpler reactive DDA system on these outcomes?
       </p>
 
-      {/* ── 2  METHODS ──────────────────────────────── */}
+      {/* -- 2  METHODS -------------------------------- */}
       <h2 style={h2Style}>2. Methods</h2>
 
       <h3 style={h3Style}>2.1 Participants</h3>
@@ -329,7 +329,7 @@ export function AdaptiveDifficultyPaper() {
         time, and open-ended comments on their experience.
       </p>
 
-      {/* ── 3  RESULTS ──────────────────────────────── */}
+      {/* -- 3  RESULTS -------------------------------- */}
       <h2 style={h2Style}>3. Results</h2>
 
       <h3 style={h3Style}>3.1 Retention</h3>
@@ -612,7 +612,7 @@ export function AdaptiveDifficultyPaper() {
         steady, rewarding challenge escalation.
       </p>
 
-      {/* ── 4  DISCUSSION ───────────────────────────── */}
+      {/* -- 4  DISCUSSION ----------------------------- */}
       <h2 style={h2Style}>4. Discussion</h2>
 
       <p className="mb-4">
@@ -694,7 +694,7 @@ export function AdaptiveDifficultyPaper() {
         in multiplayer contexts represent important directions for future work.
       </p>
 
-      {/* ── 5  CONCLUSION ───────────────────────────── */}
+      {/* -- 5  CONCLUSION ----------------------------- */}
       <h2 style={h2Style}>5. Conclusion</h2>
 
       <p className="mb-4">
@@ -717,7 +717,7 @@ export function AdaptiveDifficultyPaper() {
         deployment across a wide range of game genres and platforms.
       </p>
 
-      {/* ── REFERENCES ──────────────────────────────── */}
+      {/* -- REFERENCES -------------------------------- */}
       <h2 style={h2Style}>References</h2>
 
       <div style={{ fontSize: '10pt', lineHeight: 1.5 }}>

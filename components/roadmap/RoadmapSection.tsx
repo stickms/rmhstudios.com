@@ -346,7 +346,7 @@ function MilestoneCard({
 
 export function RoadmapSection() {
   return (
-    <section className="relative min-h-screen pt-24 pb-32 overflow-hidden bg-site-bg">
+    <section className="relative min-h-screen pt-20 md:pt-24 pb-32 overflow-hidden bg-site-bg">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 relative z-10">
         {/* Header */}
         <motion.div

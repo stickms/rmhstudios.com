@@ -18,13 +18,13 @@ import { PaperFigure } from '../PaperFigure';
 import { Tex, TexBlock } from '../Latex';
 
 const spectralGapData = [
-  { config: 'α₁=1,α₂=0,α₃=0', gap: 0.032 },
-  { config: 'α₁=0,α₂=1,α₃=0', gap: 0.041 },
-  { config: 'α₁=0,α₂=0,α₃=1', gap: 0.028 },
-  { config: 'α₁=1,α₂=1,α₃=0', gap: 0.058 },
-  { config: 'α₁=1,α₂=0,α₃=1', gap: 0.051 },
-  { config: 'α₁=0,α₂=1,α₃=1', gap: 0.063 },
-  { config: 'α₁=1,α₂=1,α₃=1', gap: 0.087 },
+  { config: 'α_1=1,α_2=0,α_3=0', gap: 0.032 },
+  { config: 'α_1=0,α_2=1,α_3=0', gap: 0.041 },
+  { config: 'α_1=0,α_2=0,α_3=1', gap: 0.028 },
+  { config: 'α_1=1,α_2=1,α_3=0', gap: 0.058 },
+  { config: 'α_1=1,α_2=0,α_3=1', gap: 0.051 },
+  { config: 'α_1=0,α_2=1,α_3=1', gap: 0.063 },
+  { config: 'α_1=1,α_2=1,α_3=1', gap: 0.087 },
 ];
 
 const mixingTimeData = [
@@ -208,9 +208,9 @@ const posteriorAlphaData = [
 
 const sensitivityHeatmapData = [
   { param: 'β', low: 12.4, mid: 4.8, high: 3.9, veryHigh: 6.2 },
-  { param: 'α₁', low: 8.1, mid: 4.8, high: 5.2, veryHigh: 7.8 },
-  { param: 'α₂', low: 7.3, mid: 4.8, high: 5.6, veryHigh: 8.9 },
-  { param: 'α₃', low: 6.9, mid: 4.8, high: 5.1, veryHigh: 7.2 },
+  { param: 'α_1', low: 8.1, mid: 4.8, high: 5.2, veryHigh: 7.8 },
+  { param: 'α_2', low: 7.3, mid: 4.8, high: 5.6, veryHigh: 8.9 },
+  { param: 'α_3', low: 6.9, mid: 4.8, high: 5.1, veryHigh: 7.2 },
   { param: 'k (nbhd)', low: 5.8, mid: 4.8, high: 4.9, veryHigh: 4.8 },
   { param: 'η (spectral)', low: 6.1, mid: 4.8, high: 4.7, veryHigh: 5.3 },
 ];
@@ -459,7 +459,7 @@ export function ErgodicMarkovPaper() {
         spectral gap.
       </p>
 
-      <PaperFigure number={1} caption="Spectral gap of the transition matrix under different weight configurations for the ludometric energy functional. The balanced configuration (α₁ = α₂ = α₃ = 1) yields the largest spectral gap, indicating fastest mixing.">
+      <PaperFigure number={1} caption="Spectral gap of the transition matrix under different weight configurations for the ludometric energy functional. The balanced configuration (α_1 = α_2 = α_3 = 1) yields the largest spectral gap, indicating fastest mixing.">
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={spectralGapData} margin={{ top: 10, right: 30, left: 20, bottom: 40 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -940,7 +940,7 @@ export function ErgodicMarkovPaper() {
         phase transition in the tile-generation model.
       </p>
 
-      <PaperFigure number={8} caption="Fisher information curvature (Gaussian curvature K and sectional curvature K_σ) of the Gibbs parameter manifold as a function of inverse temperature β. The monotonic increase and divergent behavior near the critical temperature β_c ≈ 3.2 reflect the information-geometric signature of the order-disorder phase transition.">
+      <PaperFigure number={8} caption="Fisher information curvature (Gaussian curvature K and sectional curvature K_σ) of the Gibbs parameter manifold as a function of inverse temperature β. The monotonic increase and divergent behavior near the critical temperature β_c ~ 3.2 reflect the information-geometric signature of the order-disorder phase transition.">
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={fisherCurvatureData} margin={{ top: 10, right: 30, left: 20, bottom: 10 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -1320,12 +1320,12 @@ export function ErgodicMarkovPaper() {
         temperatures without tempering or parallel strategies.
       </p>
 
-      <PaperFigure number={9} caption="Phase diagram of the tile-configuration Gibbs measure in the (β, α₁) parameter plane. Points are colored by macroscopic phase: disordered (high temperature, low coherence), critical (fluctuation-dominated regime near the transition), ordered (long-range tile-type correlations), and frozen (concentration on a single ground state). The phase boundaries were determined via Binder cumulant crossings on lattices of size n = 10, …, 50.">
+      <PaperFigure number={9} caption="Phase diagram of the tile-configuration Gibbs measure in the (β, α_1) parameter plane. Points are colored by macroscopic phase: disordered (high temperature, low coherence), critical (fluctuation-dominated regime near the transition), ordered (long-range tile-type correlations), and frozen (concentration on a single ground state). The phase boundaries were determined via Binder cumulant crossings on lattices of size n = 10, ..., 50.">
         <ResponsiveContainer width="100%" height={300}>
           <ScatterChart margin={{ top: 10, right: 30, left: 20, bottom: 10 }}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="beta" name="β" type="number" label={{ value: 'Inverse Temperature β', position: 'insideBottomRight', offset: -5 }} />
-            <YAxis dataKey="alpha1" name="α₁" type="number" label={{ value: 'Weight α₁', angle: -90, position: 'insideLeft' }} />
+            <YAxis dataKey="alpha1" name="α_1" type="number" label={{ value: 'Weight α_1', angle: -90, position: 'insideLeft' }} />
             <Tooltip cursor={{ strokeDasharray: '3 3' }} />
             <Legend />
             <Scatter name="Disordered" data={phaseDiagramData.filter(d => d.phase === 'disordered')} fill="#60a5fa" />
@@ -1687,7 +1687,7 @@ export function ErgodicMarkovPaper() {
         at the endpoints of the temperature ladder.
       </p>
 
-      <PaperFigure number={11} caption="Replica exchange acceptance rate as a function of the temperature ratio r = β_{ℓ+1}/β_ℓ between adjacent replicas. The optimal operating regime (shaded) corresponds to acceptance rates in the range 0.20–0.25, achieved at temperature ratios r ≈ 1.25–1.35 for the tile-configuration Gibbs measure with balanced energy weights.">
+      <PaperFigure number={11} caption="Replica exchange acceptance rate as a function of the temperature ratio r = β_{l+1}/β_l between adjacent replicas. The optimal operating regime (shaded) corresponds to acceptance rates in the range 0.20–0.25, achieved at temperature ratios r ~ 1.25–1.35 for the tile-configuration Gibbs measure with balanced energy weights.">
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={replicaAcceptanceData} margin={{ top: 10, right: 30, left: 20, bottom: 10 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -1866,11 +1866,11 @@ export function ErgodicMarkovPaper() {
         below which the Gaussian regime dominates and above which the exponential tails take over.
       </p>
 
-      <PaperFigure number={12} caption="Empirical rate function I(e) for the energy observable under the tile-configuration Gibbs measure at inverse temperature β = 2.0, estimated from 10⁶ independent samples. The quadratic approximation (dashed) is accurate near the mean but underestimates the true rate function in the tails, confirming the relevance of higher-order large-deviation corrections.">
+      <PaperFigure number={12} caption="Empirical rate function I(e) for the energy observable under the tile-configuration Gibbs measure at inverse temperature β = 2.0, estimated from 10^6 independent samples. The quadratic approximation (dashed) is accurate near the mean but underestimates the true rate function in the tails, confirming the relevance of higher-order large-deviation corrections.">
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={largeDeviationData} margin={{ top: 10, right: 30, left: 20, bottom: 10 }}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="deviation" label={{ value: 'Energy Deviation (e − ⟨E⟩)', position: 'insideBottomRight', offset: -5 }} />
+            <XAxis dataKey="deviation" label={{ value: 'Energy Deviation (e - <E>)', position: 'insideBottomRight', offset: -5 }} />
             <YAxis label={{ value: 'Rate Function I(e)', angle: -90, position: 'insideLeft' }} />
             <Tooltip />
             <Legend />
@@ -2048,7 +2048,7 @@ export function ErgodicMarkovPaper() {
         chain&apos;s practical performance than the spectral gap alone.
       </p>
 
-      <PaperFigure number={13} caption="Convergence of the empirical chain distribution to the stationary Gibbs measure in Wasserstein-1 (W₁), Wasserstein-2 (W₂), and Wasserstein-∞ (W_∞) distances on a 20×20 tile-configuration lattice at β = 2.0. The W₂ metric exhibits the smoothest convergence profile, while W_∞ reveals persistent outlier configurations that are slow to equilibrate near the phase boundary.">
+      <PaperFigure number={13} caption="Convergence of the empirical chain distribution to the stationary Gibbs measure in Wasserstein-1 (W_1), Wasserstein-2 (W_2), and Wasserstein-inf (W_inf) distances on a 20×20 tile-configuration lattice at β = 2.0. The W_2 metric exhibits the smoothest convergence profile, while W_inf reveals persistent outlier configurations that are slow to equilibrate near the phase boundary.">
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={wassersteinConvergenceData} margin={{ top: 10, right: 30, left: 20, bottom: 10 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -2056,9 +2056,9 @@ export function ErgodicMarkovPaper() {
             <YAxis label={{ value: 'Wasserstein Distance', angle: -90, position: 'insideLeft' }} />
             <Tooltip />
             <Legend />
-            <Line type="monotone" dataKey="w1" stroke="#10b981" strokeWidth={2} name="W₁ Distance" />
-            <Line type="monotone" dataKey="w2" stroke="#3b82f6" strokeWidth={2} name="W₂ Distance" />
-            <Line type="monotone" dataKey="wInf" stroke="#ef4444" strokeWidth={2} name="W_∞ Distance" />
+            <Line type="monotone" dataKey="w1" stroke="#10b981" strokeWidth={2} name="W_1 Distance" />
+            <Line type="monotone" dataKey="w2" stroke="#3b82f6" strokeWidth={2} name="W_2 Distance" />
+            <Line type="monotone" dataKey="wInf" stroke="#ef4444" strokeWidth={2} name="W_inf Distance" />
           </LineChart>
         </ResponsiveContainer>
       </PaperFigure>
@@ -2322,12 +2322,12 @@ export function ErgodicMarkovPaper() {
         to a <Tex math="3.2\times" /> improvement in effective sample size.
       </p>
 
-      <PaperFigure number={4} caption="Normalized autocorrelation C(ℓ) as a function of lag for spectral-guided, vanilla Metropolis–Hastings, and uniform-random sampling. The spectral-guided sampler decorrelates approximately 3.2× faster than vanilla MH.">
+      <PaperFigure number={4} caption="Normalized autocorrelation C(l) as a function of lag for spectral-guided, vanilla Metropolis–Hastings, and uniform-random sampling. The spectral-guided sampler decorrelates approximately 3.2× faster than vanilla MH.">
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={autocorrelationData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="lag" label={{ value: 'Lag ℓ', position: 'insideBottom', offset: -5 }} />
-            <YAxis label={{ value: 'C(ℓ)', angle: -90, position: 'insideLeft' }} />
+            <XAxis dataKey="lag" label={{ value: 'Lag l', position: 'insideBottom', offset: -5 }} />
+            <YAxis label={{ value: 'C(l)', angle: -90, position: 'insideLeft' }} />
             <Tooltip />
             <Legend />
             <Line type="monotone" dataKey="spectral" stroke="#10b981" strokeWidth={2} name="Spectral-Guided" dot={false} />
@@ -2398,7 +2398,7 @@ export function ErgodicMarkovPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      <PaperFigure number={6} caption="Relationship between navigational entropy H_nav and mean player satisfaction score. The inverted-U shape indicates an optimal entropy range (≈ 2.5–3.1 nats) consistent with the flow-channel hypothesis.">
+      <PaperFigure number={6} caption="Relationship between navigational entropy H_nav and mean player satisfaction score. The inverted-U shape indicates an optimal entropy range (~ 2.5–3.1 nats) consistent with the flow-channel hypothesis.">
         <ResponsiveContainer width="100%" height={300}>
           <ScatterChart margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -2542,7 +2542,7 @@ export function ErgodicMarkovPaper() {
         convolution theorem for locally asymptotically normal (LAN) experiments.
       </p>
 
-      <PaperFigure number={16} caption="Minimax risk comparison for estimating the expected ludometric energy ψ(θ) as a function of lattice dimension d. The spectral-guided estimator (green) tracks the information-theoretic lower bound (not shown, proportional to d⁻¹) most closely, while the uniform sampler (red) exhibits risk scaling characteristic of the curse of dimensionality, consistent with the O(d⁻¹ γ⁻¹) rate predicted by the minimax analysis.">
+      <PaperFigure number={16} caption="Minimax risk comparison for estimating the expected ludometric energy ψ(θ) as a function of lattice dimension d. The spectral-guided estimator (green) tracks the information-theoretic lower bound (not shown, proportional to d-¹) most closely, while the uniform sampler (red) exhibits risk scaling characteristic of the curse of dimensionality, consistent with the O(d-¹ γ-¹) rate predicted by the minimax analysis.">
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={minimaxRiskData} margin={{ top: 10, right: 30, left: 20, bottom: 10 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -2691,7 +2691,7 @@ export function ErgodicMarkovPaper() {
         ludometric preferences.
       </p>
 
-      <PaperFigure number={17} caption="Posterior marginal densities of the population-level mean weight parameters μ_α = (μ₁, μ₂, μ₃) corresponding to navigational entropy (density1), resource-density variance (density2), and encounter-pacing cost (density3). The separation of the modes indicates distinct posterior-inferred preferences, with navigational complexity receiving the highest average weight. Densities estimated via kernel density estimation from 4,000 post-warmup HMC draws across 4 chains.">
+      <PaperFigure number={17} caption="Posterior marginal densities of the population-level mean weight parameters μ_α = (μ_1, μ_2, μ_3) corresponding to navigational entropy (density1), resource-density variance (density2), and encounter-pacing cost (density3). The separation of the modes indicates distinct posterior-inferred preferences, with navigational complexity receiving the highest average weight. Densities estimated via kernel density estimation from 4,000 post-warmup HMC draws across 4 chains.">
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={posteriorAlphaData} margin={{ top: 10, right: 30, left: 20, bottom: 10 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -2699,9 +2699,9 @@ export function ErgodicMarkovPaper() {
             <YAxis label={{ value: 'Posterior Density', angle: -90, position: 'insideLeft' }} />
             <Tooltip />
             <Legend />
-            <Line type="monotone" dataKey="density1" stroke="#3b82f6" strokeWidth={2} name="p(μ₁ | y) — Navigation" />
-            <Line type="monotone" dataKey="density2" stroke="#10b981" strokeWidth={2} name="p(μ₂ | y) — Resource" />
-            <Line type="monotone" dataKey="density3" stroke="#f59e0b" strokeWidth={2} name="p(μ₃ | y) — Encounter" />
+            <Line type="monotone" dataKey="density1" stroke="#3b82f6" strokeWidth={2} name="p(μ_1 | y) — Navigation" />
+            <Line type="monotone" dataKey="density2" stroke="#10b981" strokeWidth={2} name="p(μ_2 | y) — Resource" />
+            <Line type="monotone" dataKey="density3" stroke="#f59e0b" strokeWidth={2} name="p(μ_3 | y) — Encounter" />
           </LineChart>
         </ResponsiveContainer>
       </PaperFigure>
@@ -2856,7 +2856,7 @@ export function ErgodicMarkovPaper() {
         spectral-guided sampling.
       </p>
 
-      <PaperFigure number={18} caption="Sensitivity analysis of the mean ludometric energy to the six primary hyperparameters (β, α₁, α₂, α₃, k, η) across four operating regimes: low β (disordered), mid β (optimal), high β (ordered), and very high β (frozen). Bar heights represent the total-effect Sobol index S_i^T × 100. The inverse temperature β dominates at low values, while energy weights α₁, α₂ become the primary drivers in the ordered regime. The spectral parameter η exhibits low main effects but significant interactions, evidenced by the gap between S_i^T and S_i (not shown).">
+      <PaperFigure number={18} caption="Sensitivity analysis of the mean ludometric energy to the six primary hyperparameters (β, α_1, α_2, α_3, k, η) across four operating regimes: low β (disordered), mid β (optimal), high β (ordered), and very high β (frozen). Bar heights represent the total-effect Sobol index S_i^T × 100. The inverse temperature β dominates at low values, while energy weights α_1, α_2 become the primary drivers in the ordered regime. The spectral parameter η exhibits low main effects but significant interactions, evidenced by the gap between S_i^T and S_i (not shown).">
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={sensitivityHeatmapData} margin={{ top: 10, right: 30, left: 20, bottom: 10 }}>
             <CartesianGrid strokeDasharray="3 3" />
