@@ -191,7 +191,7 @@ export default function ClassSelectScreen({ onSelect, onBack }: ClassSelectScree
         <button
           onClick={() => selectedId && onSelect(selectedId)}
           disabled={!selectedId}
-          className={`flex-[2] py-3 rounded-xl font-bold text-white transition-colors ${
+          className={`flex-2 py-3 rounded-xl font-bold text-white transition-colors ${
             selectedId
               ? 'bg-(--altair-accent) hover:bg-(--altair-accent-hover)'
               : 'bg-(--altair-surface-active) text-(--altair-text-dim) cursor-not-allowed'

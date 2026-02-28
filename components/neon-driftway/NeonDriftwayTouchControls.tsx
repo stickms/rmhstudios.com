@@ -55,7 +55,7 @@ export function NeonDriftwayTouchControls({ inputRef, onPause, visible }: Props)
           {/* Left: steering */}
           <div className="pointer-events-auto flex gap-3 items-center">
             <button
-              className={`w-[4.25rem] h-[4.25rem] ${btnBase} bg-white/10 border border-white/20 active:bg-white/25`}
+              className={`w-17 h-17 ${btnBase} bg-white/10 border border-white/20 active:bg-white/25`}
               {...bind('left')}
               style={{ touchAction: 'none' }}
             >
@@ -64,7 +64,7 @@ export function NeonDriftwayTouchControls({ inputRef, onPause, visible }: Props)
               </svg>
             </button>
             <button
-              className={`w-[4.25rem] h-[4.25rem] ${btnBase} bg-white/10 border border-white/20 active:bg-white/25`}
+              className={`w-17 h-17 ${btnBase} bg-white/10 border border-white/20 active:bg-white/25`}
               {...bind('right')}
               style={{ touchAction: 'none' }}
             >
@@ -77,7 +77,7 @@ export function NeonDriftwayTouchControls({ inputRef, onPause, visible }: Props)
           {/* Center: boost */}
           <div className="pointer-events-auto mb-5">
             <button
-              className={`w-[3.75rem] h-[3.75rem] ${btnBase} bg-orange-500/20 border border-orange-400/35 active:bg-orange-500/40`}
+              className={`w-15 h-15 ${btnBase} bg-orange-500/20 border border-orange-400/35 active:bg-orange-500/40`}
               {...bind('boost')}
               style={{ touchAction: 'none' }}
             >
@@ -88,7 +88,7 @@ export function NeonDriftwayTouchControls({ inputRef, onPause, visible }: Props)
           {/* Right: gas + brake */}
           <div className="pointer-events-auto flex flex-col gap-3">
             <button
-              className={`w-[4.25rem] h-[4.25rem] ${btnBase} bg-green-500/15 border border-green-400/25 active:bg-green-500/30`}
+              className={`w-17 h-17 ${btnBase} bg-green-500/15 border border-green-400/25 active:bg-green-500/30`}
               {...bind('up')}
               style={{ touchAction: 'none' }}
             >
@@ -97,7 +97,7 @@ export function NeonDriftwayTouchControls({ inputRef, onPause, visible }: Props)
               </svg>
             </button>
             <button
-              className={`w-[4.25rem] h-[4.25rem] ${btnBase} bg-red-500/15 border border-red-400/25 active:bg-red-500/30`}
+              className={`w-17 h-17 ${btnBase} bg-red-500/15 border border-red-400/25 active:bg-red-500/30`}
               {...bind('down')}
               style={{ touchAction: 'none' }}
             >

@@ -69,14 +69,14 @@ export function Navbar() {
   }));
 
   return (
-    <nav data-slot="navbar" className="fixed top-0 left-0 right-0 z-1000 bg-(--site-bg)/85 backdrop-blur-md border-b border-site-border">
+    <nav data-slot="navbar" className="fixed top-0 left-0 right-0 z-1000 bg-site-bg/85 backdrop-blur-md border-b border-site-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
 
           {/* Logo */}
           <Link href="/" className="shrink-0">
             <span className="font-(family-name:--site-font-display) font-bold text-xl text-site-text">
-              RMH<span className="text-(--site-accent)">STUDIOS</span>
+              RMH<span className="text-site-accent">STUDIOS</span>
             </span>
           </Link>
 
@@ -88,8 +88,8 @@ export function Navbar() {
                   key={link.href}
                   href={link.href}
                   className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${pathname === link.href
-                    ? 'text-(--site-accent) bg-(--site-accent-dim)'
-                    : 'text-(--site-text-muted) hover:text-(--site-text) hover:bg-(--site-surface)'
+                    ? 'text-site-accent bg-site-accent-dim'
+                    : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
                     }`}
                 >
                   {link.label}
@@ -104,7 +104,7 @@ export function Navbar() {
             <div className="relative" ref={styleMenuRef}>
               <button
                 onClick={() => setShowStyleMenu(!showStyleMenu)}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm text-(--site-text-muted) hover:text-(--site-text) hover:bg-(--site-surface) transition-colors"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors"
                 aria-label="Change site style"
               >
                 <Palette className="w-4 h-4" />
@@ -113,10 +113,10 @@ export function Navbar() {
               </button>
 
               {showStyleMenu && (
-                <div className="absolute right-0 mt-2 w-52 bg-(--site-surface) border border-(--site-border) rounded-xl shadow-lg py-1 max-h-[70vh] overflow-y-auto">
+                <div className="absolute right-0 mt-2 w-52 bg-site-surface border border-site-border rounded-xl shadow-lg py-1 max-h-[70vh] overflow-y-auto">
                   {groups.map((group) => (
                     <div key={group.label}>
-                      <div className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-(--site-text-dim)">
+                      <div className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-site-text-dim">
                         {group.label}
                       </div>
                       {group.styles.map((s) => (
@@ -128,8 +128,8 @@ export function Navbar() {
                           }}
                           className={`w-full text-left px-3 py-1.5 text-sm flex items-center gap-2 transition-colors ${
                             style === s.id
-                              ? 'text-(--site-accent) bg-(--site-accent-dim)'
-                              : 'text-(--site-text-muted) hover:text-(--site-text) hover:bg-(--site-surface-hover)'
+                              ? 'text-site-accent bg-site-accent-dim'
+                              : 'text-site-text-muted hover:text-site-text hover:bg-site-surface-hover'
                           }`}
                         >
                           <span className="text-base w-5 text-center">{s.icon}</span>
@@ -144,14 +144,14 @@ export function Navbar() {
 
             {/* Auth */}
             {(!mounted || isPending) ? (
-              <div className="h-8 w-20 bg-(--site-surface) rounded-lg animate-pulse" />
+              <div className="h-8 w-20 bg-site-surface rounded-lg animate-pulse" />
             ) : session ? (
               <div className="relative">
                 <button
                   onClick={() => setShowUserMenu(!showUserMenu)}
-                  className="flex items-center gap-2 text-sm text-(--site-text-muted) hover:text-(--site-text) transition-colors focus:outline-none"
+                  className="flex items-center gap-2 text-sm bg-site-surfacetext-site-text-muted hover:text-site-text transition-colors focus:outline-none"
                 >
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-(--site-accent) to-(--site-accent-hover) flex items-center justify-center text-white font-bold text-xs ring-2 ring-(--site-bg)">
+                  <div className="w-8 h-8 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-xs ring-2 ring-site-bg">
                     {session.user.image ? (
                       <img src={session.user.image} alt={session.user.name || 'User'} className="w-full h-full rounded-full object-cover" />
                     ) : (
@@ -163,14 +163,14 @@ export function Navbar() {
                 </button>
 
                 {showUserMenu && (
-                  <div className="absolute right-0 mt-2 w-48 bg-(--site-surface) border border-(--site-border) rounded-xl shadow-lg py-1">
-                    <div className="px-4 py-2 border-b border-(--site-border)">
-                      <p className="text-xs text-(--site-text-dim)">Signed in as</p>
-                      <p className="text-sm font-bold text-(--site-text) truncate">{session.user.email}</p>
+                  <div className="absolute right-0 mt-2 w-48 bg-site-surface border border-site-border rounded-xl shadow-lg py-1">
+                    <div className="px-4 py-2 border-b border-site-border">
+                      <p className="text-xs text-site-text-dim">Signed in as</p>
+                      <p className="text-sm font-bold text-site-text truncate">{session.user.email}</p>
                     </div>
                     <button
                       onClick={handleSignOut}
-                      className="w-full text-left px-4 py-2 text-sm text-(--site-danger) hover:bg-(--site-surface-hover) flex items-center gap-2"
+                      className="w-full text-left px-4 py-2 text-sm text-site-danger hover:bg-site-surface-hover flex items-center gap-2"
                     >
                       <LogOut className="w-4 h-4" />
                       Sign Out
@@ -192,14 +192,14 @@ export function Navbar() {
             <button
               ref={mobilePaletteBtnRef}
               onClick={() => setShowStyleMenu(!showStyleMenu)}
-              className="p-2 rounded-lg text-(--site-text-muted) hover:text-(--site-text) hover:bg-(--site-surface) transition-colors"
+              className="p-2 rounded-lg text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors"
               aria-label="Change site style"
             >
               <Palette className="w-4 h-4" />
             </button>
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="inline-flex items-center justify-center p-2 rounded-lg text-(--site-text-muted) hover:text-(--site-text) hover:bg-(--site-surface) focus:outline-none"
+              className="inline-flex items-center justify-center p-2 rounded-lg bg-site-surfacetext-site-text-muted hover:text-site-text hover:bg-site-surface focus:outline-none"
             >
               {isOpen ? <X className="block h-6 w-6" /> : <Menu className="block h-6 w-6" />}
             </button>
@@ -209,10 +209,10 @@ export function Navbar() {
 
       {/* Mobile Style Picker (shown when palette is tapped on mobile) */}
       {showStyleMenu && (
-        <div ref={mobileStyleRef} className="md:hidden bg-(--site-bg-subtle) border-b border-(--site-border) px-3 py-3 max-h-[60vh] overflow-y-auto">
+        <div ref={mobileStyleRef} className="md:hidden bg-site-bg-subtle border-b border-site-border px-3 py-3 max-h-[60vh] overflow-y-auto">
           {groups.map((group) => (
             <div key={group.label} className="mb-2">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-(--site-text-dim) mb-1">{group.label}</div>
+              <div className="text-[10px] font-bold uppercase tracking-wider text-site-text-dim mb-1">{group.label}</div>
               <div className="flex flex-wrap gap-1.5">
                 {group.styles.map((s) => (
                   <button
@@ -220,8 +220,8 @@ export function Navbar() {
                     onClick={() => setStyle(s.id)}
                     className={`px-3 py-2 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors ${
                       style === s.id
-                        ? 'text-(--site-accent) bg-(--site-accent-dim) border border-(--site-accent)/30'
-                        : 'text-(--site-text-muted) hover:text-(--site-text) bg-(--site-surface) border border-(--site-border)'
+                        ? 'text-site-accent bg-site-accent-dim border border-site-accent/30'
+                        : 'bg-site-surfacetext-site-text-muted hover:text-site-text bg-site-surface border border-site-border'
                     }`}
                   >
                     <span>{s.icon}</span>
@@ -236,7 +236,7 @@ export function Navbar() {
 
       {/* Mobile Menu */}
       {isOpen && (
-        <div className="md:hidden bg-(--site-bg-subtle) border-b border-(--site-border)">
+        <div className="md:hidden bg-site-bg-subtle border-b border-site-border">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
             {links.map((link) => (
               <Link
@@ -244,8 +244,8 @@ export function Navbar() {
                 href={link.href}
                 onClick={() => setIsOpen(false)}
                 className={`block px-3 py-2 rounded-lg text-base font-medium ${pathname === link.href
-                  ? 'text-(--site-accent) bg-(--site-accent-dim)'
-                  : 'text-(--site-text-muted) hover:text-(--site-text) hover:bg-(--site-surface)'
+                  ? 'text-site-accent bg-site-accent-dim'
+                  : 'bg-site-surfacetext-site-text-muted hover:text-site-text hover:bg-site-surface'
                   }`}
               >
                 {link.label}
@@ -254,13 +254,13 @@ export function Navbar() {
           </div>
 
           {/* Mobile Auth */}
-          <div className="pt-4 pb-4 border-t border-(--site-border)">
+          <div className="pt-4 pb-4 border-t border-site-border">
             {(!mounted || isPending) ? (
-              <div className="px-4"><div className="h-10 w-full bg-(--site-surface) rounded-lg animate-pulse" /></div>
+              <div className="px-4"><div className="h-10 w-full bg-site-surface rounded-lg animate-pulse" /></div>
             ) : session ? (
               <div className="px-4 space-y-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-(--site-accent) to-(--site-accent-hover) flex items-center justify-center text-white font-bold ring-2 ring-(--site-bg)">
+                  <div className="w-10 h-10 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold ring-2 ring-site-bg">
                     {session.user.image ? (
                       <img src={session.user.image} alt={session.user.name || 'User'} className="w-full h-full rounded-full object-cover" />
                     ) : (
@@ -268,8 +268,8 @@ export function Navbar() {
                     )}
                   </div>
                   <div>
-                    <div className="text-base font-medium leading-none text-(--site-text)">{session.user.name}</div>
-                    <div className="text-sm font-medium leading-none text-(--site-text-dim) mt-1">{session.user.email}</div>
+                    <div className="text-base font-medium leading-none text-site-text">{session.user.name}</div>
+                    <div className="text-sm font-medium leading-none text-site-text-dim mt-1">{session.user.email}</div>
                   </div>
                 </div>
                 <button
@@ -277,7 +277,7 @@ export function Navbar() {
                     handleSignOut();
                     setIsOpen(false);
                   }}
-                  className="w-full mt-2 flex items-center justify-center gap-2 px-4 py-2 border border-(--site-border) rounded-lg shadow-sm text-sm font-medium text-(--site-danger) bg-(--site-surface) hover:bg-(--site-surface-hover)"
+                  className="w-full mt-2 flex items-center justify-center gap-2 px-4 py-2 border border-site-border rounded-lg shadow-sm text-sm font-medium text-site-danger bg-site-surface hover:bg-site-surface-hover"
                 >
                   <LogOut className="w-4 h-4" />
                   Sign Out

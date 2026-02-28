@@ -85,7 +85,7 @@ export function VoidBreakerTouchControls({ inputRef, onPause, visible }: Props) 
               <span className="text-[#d4af37]/80 font-black text-[9px] tracking-wider">SHIFT</span>
             </button>
             <button
-              className={`w-[4.5rem] h-[4.5rem] ${btn} bg-[#1a1a24]/80 border-2 border-[#c9a227]/50 active:bg-[#252530]`}
+              className={`w-18 h-18 ${btn} bg-[#1a1a24]/80 border-2 border-[#c9a227]/50 active:bg-[#252530]`}
               {...bind('detonate')} style={{ touchAction: 'none' }}
             >
               <span className="text-[#d4af37]/80 font-black text-[9px] tracking-wider leading-tight text-center">

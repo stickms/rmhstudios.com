@@ -251,7 +251,7 @@ export function FeedbackModal() {
                               {timeAgo(fb.createdAt)}
                             </span>
                           </div>
-                          <p className="text-sm text-site-text-muted mt-1 whitespace-pre-wrap break-words">
+                          <p className="text-sm text-site-text-muted mt-1 whitespace-pre-wrap wrap-break-word">
                             {fb.message}
                           </p>
                         </div>

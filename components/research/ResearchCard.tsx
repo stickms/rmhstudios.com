@@ -35,7 +35,7 @@ export function ResearchCard({
         >
           {/* Gradient hero */}
           <div
-            className={`relative h-40 bg-gradient-to-br ${article.heroColor} flex items-center justify-center overflow-hidden`}
+            className={`relative h-40 bg-linear-to-br ${article.heroColor} flex items-center justify-center overflow-hidden`}
           >
             <Icon className="w-16 h-16 text-white/80 group-hover:scale-110 transition-transform duration-300" />
             <div className="absolute inset-0 bg-black/10" />

@@ -478,9 +478,9 @@ export function VoidBreakerGame() {
               </div>
               <div className="h-2.5 bg-zinc-900/80 rounded-full overflow-hidden border border-red-900/50">
                 <div
-                  className={`h-full transition-all duration-150 rounded-full ${hud.bossPhase === 3 ? 'bg-gradient-to-r from-[#ff0033] to-[#ff00cc]' :
-                    hud.bossPhase === 2 ? 'bg-gradient-to-r from-red-600 to-orange-400' :
-                      'bg-gradient-to-r from-red-700 to-red-500'
+                  className={`h-full transition-all duration-150 rounded-full ${hud.bossPhase === 3 ? 'bg-linear-to-r from-[#ff0033] to-[#ff00cc]' :
+                    hud.bossPhase === 2 ? 'bg-linear-to-r from-red-600 to-orange-400' :
+                      'bg-linear-to-r from-red-700 to-red-500'
                     }`}
                   style={{ width: `${hud.bossMaxHp > 0 ? (hud.bossHp / hud.bossMaxHp) * 100 : 0}%` }}
                 />
