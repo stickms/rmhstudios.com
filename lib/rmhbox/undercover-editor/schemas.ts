@@ -33,11 +33,11 @@ export const UnsubmitSentenceSchema = z.object({
 });
 
 /**
- * Validates the Editor's word edit during EDIT phase.
+ * Validates the Editor's word edits during EDIT phase.
  * The editor must change 1 or 2 words in the most recent sentence.
  * All edits are submitted together as a single action.
  */
-export const EditTwoWordsSchema = z.object({
+export const EditWordsSchema = z.object({
   storyId: z.string().min(1),
   edits: z.array(z.object({
     wordIndex: z.number().int().min(0),

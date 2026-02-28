@@ -416,7 +416,7 @@ export default function UndercoverEditorGame({
   const handleEditTwoWords = useCallback(
     (storyId: string, edits: Array<{ wordIndex: number; newWord: string }>) => {
       if (isSpectator) return;
-      emitGameInput('EDIT_TWO_WORDS', { storyId, edits });
+      emitGameInput('EDIT_WORDS', { storyId, edits });
     },
     [isSpectator],
   );

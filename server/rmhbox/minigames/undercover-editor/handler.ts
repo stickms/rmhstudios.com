@@ -31,7 +31,7 @@ import { loadPrompts, selectPromptForGame } from '@/lib/rmhbox/undercover-editor
 import {
   WriteSentenceSchema,
   UnsubmitSentenceSchema,
-  EditTwoWordsSchema,
+  EditWordsSchema,
   SkipEditSchema,
   SubmitMatchingSchema,
   LockInMatchingSchema,
@@ -595,7 +595,7 @@ export class UndercoverEditorGame extends BaseMinigame {
       case 'UNSUBMIT_SENTENCE':
         this.handleUnsubmitSentence(userId, data);
         break;
-      case 'EDIT_TWO_WORDS':
+      case 'EDIT_WORDS':
         this.handleEditTwoWords(userId, data);
         break;
       case 'SKIP_EDIT':
@@ -728,7 +728,7 @@ export class UndercoverEditorGame extends BaseMinigame {
       return;
     }
 
-    const parsed = EditTwoWordsSchema.safeParse(data);
+    const parsed = EditWordsSchema.safeParse(data);
     if (!parsed.success) {
       this.sendError(userId, 'Invalid edit submission');
       return;

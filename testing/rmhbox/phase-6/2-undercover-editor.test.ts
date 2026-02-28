@@ -348,7 +348,7 @@ describe('Undercover Editor Server Handler — Round-Robin Design (§6.2)', () =
       );
       expect(editPrompt).toBeDefined();
 
-      game.handleInput(editorUid, 'EDIT_TWO_WORDS', {
+      game.handleInput(editorUid, 'EDIT_WORDS', {
         storyId: assignment!.assignedStoryId,
         edits: [
           { wordIndex: 0, newWord: 'CHANGED1' },
@@ -374,7 +374,7 @@ describe('Undercover Editor Server Handler — Round-Robin Design (§6.2)', () =
       const assignment = getEditorAssignment(playerLog, editorUid);
       expect(assignment).toBeDefined();
 
-      game.handleInput(editorUid, 'EDIT_TWO_WORDS', {
+      game.handleInput(editorUid, 'EDIT_WORDS', {
         storyId: assignment!.assignedStoryId,
         edits: [
           { wordIndex: 0, newWord: 'ONLYONE' },
@@ -404,7 +404,7 @@ describe('Undercover Editor Server Handler — Round-Robin Design (§6.2)', () =
         (uid) => getEditorAssignment(playerLog, uid)?.assignedStoryId !== assignment!.assignedStoryId,
       ) ?? playerIds[1];
 
-      game.handleInput(nonEditorUid, 'EDIT_TWO_WORDS', {
+      game.handleInput(nonEditorUid, 'EDIT_WORDS', {
         storyId: assignment!.assignedStoryId,
         edits: [
           { wordIndex: 0, newWord: 'HACKED1' },
@@ -448,7 +448,7 @@ describe('Undercover Editor Server Handler — Round-Robin Design (§6.2)', () =
       const editorUid = playerIds[0];
       const assignment = getEditorAssignment(playerLog, editorUid)!;
 
-      game.handleInput(editorUid, 'EDIT_TWO_WORDS', {
+      game.handleInput(editorUid, 'EDIT_WORDS', {
         storyId: assignment.assignedStoryId,
         edits: [
           { wordIndex: 0, newWord: 'SAME' },
