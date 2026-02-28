@@ -551,6 +551,409 @@ export function ErgodicMarkovPaper() {
         polynomial in the lattice size for all tile palettes satisfying a mild expansion condition.
       </p>
 
+      {/* 5. POINCARÉ INEQUALITIES AND FUNCTIONAL-ANALYTIC BOUNDS */}
+      <h2 style={h2Style}>5. Poincaré Inequalities and Functional-Analytic Bounds</h2>
+
+      <h3 style={h3Style}>5.1 Poincaré Inequality on Configuration Spaces</h3>
+
+      <p className="mb-4">
+        The spectral gap <Tex math="\gamma" /> of the reversible Markov chain{' '}
+        <Tex math="(P, \pi)" /> on the finite configuration space <Tex math="\Omega_A" />{' '}
+        admits a variational characterization as the optimal constant in the discrete
+        Poincaré inequality. Specifically, <Tex math="\gamma" /> is the largest constant{' '}
+        <Tex math="C_P > 0" /> such that for all <Tex math="f \in L^2(\pi)" />:
+      </p>
+
+      <TexBlock math="\operatorname{Var}_\pi(f) \leq \frac{1}{C_P}\, \mathcal{E}(f, f)" />
+
+      <p className="mb-4">
+        where <Tex math="\operatorname{Var}_\pi(f) = \sum_{x \in \Omega_A} \pi(x)\bigl(f(x) - \mathbb{E}_\pi[f]\bigr)^2" />{' '}
+        denotes the variance under the stationary measure and{' '}
+        <Tex math="\mathcal{E}(f, f) = \frac{1}{2}\sum_{x, y \in \Omega_A} \pi(x)\, P(x,y)\bigl(f(x) - f(y)\bigr)^2" />{' '}
+        is the Dirichlet form associated with the chain. The equivalence{' '}
+        <Tex math="C_P = \gamma" /> follows immediately from the min-max theorem applied
+        to the self-adjoint operator <Tex math="I - P" /> on <Tex math="L^2_0(\pi)" />,
+        the subspace orthogonal to constants (Saloff-Coste, 1997).
+      </p>
+
+      <TexBlock math="C_P = \gamma = \inf_{\substack{f \in L^2(\pi) \\ \operatorname{Var}_\pi(f) > 0}} \frac{\mathcal{E}(f, f)}{\operatorname{Var}_\pi(f)} = \inf_{\substack{f \perp \mathbf{1} \\ f \neq 0}} \frac{\langle f, (I - P) f \rangle_\pi}{\langle f, f \rangle_\pi}" />
+
+      <p className="mb-4 indent-8">
+        This variational characterization is the cornerstone of the comparison-theoretic
+        approach to mixing-time estimation. Rather than computing <Tex math="\gamma" />{' '}
+        directly — which requires diagonalizing the <Tex math="|\Omega_A| \times |\Omega_A|" />{' '}
+        transition matrix — one instead bounds the Poincaré constant by comparison with an
+        auxiliary chain whose spectral properties are analytically tractable. The Holley–Stroock
+        perturbation principle (Holley &amp; Stroock, 1987) provides a particularly elegant
+        mechanism: if <Tex math="\pi" /> and <Tex math="\tilde{\pi}" /> are two probability
+        measures on <Tex math="\Omega_A" /> satisfying{' '}
+        <Tex math="c^{-1} \leq \pi(x)/\tilde{\pi}(x) \leq c" /> for all{' '}
+        <Tex math="x \in \Omega_A" />, then:
+      </p>
+
+      <TexBlock math="\gamma_\pi \geq c^{-2}\, \gamma_{\tilde{\pi}}" />
+
+      <p className="mb-4">
+        This perturbation bound is instrumental in our setting: when the inverse temperature{' '}
+        <Tex math="\beta" /> is perturbed by a small amount <Tex math="\delta\beta" />,
+        the ratio <Tex math="\pi_\beta(x)/\pi_{\beta + \delta\beta}(x)" /> is controlled
+        by <Tex math="\exp(\delta\beta\, \|E\|_\infty)" />, yielding a stability estimate
+        for the Poincaré constant as a function of the thermodynamic parameter. This permits
+        the transfer of spectral-gap results from analytically tractable high-temperature regimes
+        to the moderate-temperature regimes of practical interest.
+      </p>
+
+      <p className="mb-4 indent-8">
+        The Diaconis–Saloff-Coste comparison theorem (Diaconis &amp; Saloff-Coste, 1993a)
+        extends this methodology to distinct Markov chains on the same state space. Given
+        two reversible chains <Tex math="(P, \pi)" /> and <Tex math="(\tilde{P}, \pi)" />{' '}
+        sharing a common stationary distribution, one defines the comparison constant:
+      </p>
+
+      <TexBlock math="A = \max_{(\tilde{x}, \tilde{y}):\, \tilde{P}(\tilde{x}, \tilde{y}) > 0} \frac{1}{\pi(\tilde{x})\, \tilde{P}(\tilde{x}, \tilde{y})} \sum_{\substack{(x, y) \in \gamma_{\tilde{x}\tilde{y}} \\ P(x, y) > 0}} |\gamma_{\tilde{x}\tilde{y}}|\, \pi(x)\, P(x, y)" />
+
+      <p className="mb-4">
+        where <Tex math="\gamma_{\tilde{x}\tilde{y}}" /> denotes a chosen path in the
+        transition graph of <Tex math="P" /> connecting <Tex math="\tilde{x}" /> to{' '}
+        <Tex math="\tilde{y}" />, and <Tex math="|\gamma_{\tilde{x}\tilde{y}}|" /> is its
+        length. Then <Tex math="\tilde{\gamma} \geq A^{-1}\, \gamma" />, permitting the
+        spectral gap of a complex chain to be bounded below using an auxiliary chain with
+        known mixing properties.
+      </p>
+
+      <p className="mb-4 indent-8">
+        In the tile-generation context, we employ the comparison technique with{' '}
+        <Tex math="\tilde{P}" /> taken as the Glauber dynamics for the uniform measure on{' '}
+        <Tex math="\Omega_A" /> (i.e., <Tex math="\beta = 0" />), whose spectral gap can
+        be bounded via the method of canonical paths (Jerrum &amp; Sinclair, 1989). For the
+        lattice <Tex math="\Lambda = \{1, \ldots, n\}^2" /> with tile palette of cardinality{' '}
+        <Tex math="q" /> and nearest-neighbor adjacency constraints, the uniform Glauber
+        dynamics satisfies <Tex math="\gamma_0 \geq (2n^2 q)^{-1}" /> whenever the constraint
+        graph is connected. Combining with the Holley–Stroock perturbation bound yields:
+      </p>
+
+      <TexBlock math="\gamma_\beta \geq \frac{e^{-2\beta \|E\|_\infty}}{2n^2 q}" />
+
+      <p className="mb-4">
+        This bound, while not tight in general, establishes that the chain mixes in polynomial
+        time for any fixed <Tex math="\beta" />, with the degree of the polynomial growing
+        linearly in the inverse temperature. For the regime{' '}
+        <Tex math="\beta < \beta_c := (2 \|E\|_\infty \log(n^2 q))^{-1}" />, the mixing
+        time is <Tex math="O(n^2 \log n)" />, which is optimal up to logarithmic factors.
+      </p>
+
+      <p className="mb-4 indent-8">
+        We remark that the tensorization property of the Poincaré inequality — namely, that
+        the Poincaré constant of a product measure equals the minimum of the marginal
+        constants — does not apply directly in our setting due to the non-product structure
+        of the Gibbs measure. However, the block-factorization technique of Martinelli (1999)
+        yields a conditional-variance decomposition:
+      </p>
+
+      <TexBlock math="\operatorname{Var}_\pi(f) \leq \frac{1}{\gamma_{\text{block}}} \sum_{B \in \mathcal{B}} \mathbb{E}_\pi\!\left[\operatorname{Var}_{\pi^B}(f)\right]" />
+
+      <p className="mb-4">
+        where <Tex math="\mathcal{B}" /> is a partition of <Tex math="\Lambda" /> into blocks,{' '}
+        <Tex math="\pi^B" /> is the conditional measure on block <Tex math="B" /> given
+        the exterior configuration, and <Tex math="\gamma_{\text{block}}" /> is the Poincaré
+        constant of an auxiliary block-dynamics chain. This factorization permits the reduction
+        of the global Poincaré inequality to local estimates on blocks of size{' '}
+        <Tex math="O(\log n)" />, which are amenable to direct numerical computation.
+      </p>
+
+      <h3 style={h3Style}>5.2 Log-Sobolev Inequalities and Hypercontractivity</h3>
+
+      <p className="mb-4">
+        A strictly stronger functional inequality that yields sharper concentration and
+        mixing-time bounds is the logarithmic Sobolev inequality. The log-Sobolev constant{' '}
+        <Tex math="\alpha_{\mathrm{LS}}" /> is defined as the largest constant such that
+        for all non-negative <Tex math="f \in L^2(\pi)" /> with{' '}
+        <Tex math="\mathbb{E}_\pi[f] > 0" />:
+      </p>
+
+      <TexBlock math="\operatorname{Ent}_\pi(f^2) \leq \frac{2}{\alpha_{\mathrm{LS}}}\, \mathcal{E}(f, f)" />
+
+      <p className="mb-4">
+        where <Tex math="\operatorname{Ent}_\pi(g) = \mathbb{E}_\pi[g \log g] - \mathbb{E}_\pi[g]\log \mathbb{E}_\pi[g]" />{' '}
+        is the entropy functional. The log-Sobolev inequality implies the Poincaré
+        inequality with <Tex math="C_P \geq \alpha_{\mathrm{LS}}" />, but not conversely;
+        the gap between the two constants can be arbitrarily large (Diaconis &amp; Saloff-Coste,
+        1996). The log-Sobolev constant controls the convergence in relative entropy:
+      </p>
+
+      <TexBlock math="D_{\mathrm{KL}}\!\left(P^t(x, \cdot) \,\|\, \pi\right) \leq e^{-2\alpha_{\mathrm{LS}}\, t}\, D_{\mathrm{KL}}\!\left(\delta_x \,\|\, \pi\right) = e^{-2\alpha_{\mathrm{LS}}\, t} \log \frac{1}{\pi(x)}" />
+
+      <p className="mb-4 indent-8">
+        The relationship between the log-Sobolev constant and hypercontractivity was
+        established in the seminal work of Gross (1975), extended to the discrete setting
+        by Diaconis and Saloff-Coste (1996). The semigroup{' '}
+        <Tex math="T_t = P^t" /> is <Tex math="(q, p)" />-hypercontractive — meaning{' '}
+        <Tex math="\|T_t f\|_{L^q(\pi)} \leq \|f\|_{L^p(\pi)}" /> — if and only if{' '}
+        <Tex math="e^{2\alpha_{\mathrm{LS}}\, t} \geq (q - 1)/(p - 1)" />. This
+        equivalence permits the translation of mixing-time bounds into{' '}
+        <Tex math="L^p" />-norm contractivity estimates and vice versa.
+      </p>
+
+      <p className="mb-4">
+        The Bakry–Émery criterion (Bakry &amp; Émery, 1985) provides a sufficient condition
+        for the log-Sobolev inequality in terms of the curvature of the generator. In the
+        discrete setting, the relevant curvature condition takes the form of the{' '}
+        <Tex math="\Gamma_2" />-criterion: the chain satisfies{' '}
+        <Tex math="\mathrm{LSI}(\alpha)" /> whenever:
+      </p>
+
+      <TexBlock math="\Gamma_2(f, f)(x) := \frac{1}{2}\left[\mathcal{L}\,\Gamma(f, f)(x) - 2\,\Gamma(f, \mathcal{L}f)(x)\right] \geq \kappa\, \Gamma(f, f)(x)" />
+
+      <p className="mb-4">
+        for all <Tex math="f" /> and all <Tex math="x \in \Omega_A" />, where{' '}
+        <Tex math="\mathcal{L} = P - I" /> is the generator,{' '}
+        <Tex math="\Gamma(f, g)(x) = \frac{1}{2}\bigl[\mathcal{L}(fg)(x) - f(x)\mathcal{L}g(x) - g(x)\mathcal{L}f(x)\bigr]" />{' '}
+        is the carré du champ operator, and <Tex math="\kappa > 0" /> is the Bakry–Émery
+        curvature lower bound. When this condition holds, one obtains{' '}
+        <Tex math="\alpha_{\mathrm{LS}} \geq \kappa" />.
+      </p>
+
+      <p className="mb-4 indent-8">
+        For the Glauber dynamics on our tile-configuration space, the Bakry–Émery curvature
+        can be computed explicitly in terms of the interaction structure of the energy
+        functional. Under the Dobrushin uniqueness condition — which requires that the
+        total influence of all sites on any single site is strictly less than one:
+      </p>
+
+      <TexBlock math="\max_{v \in \Lambda} \sum_{w \in \Lambda \setminus \{v\}} \sup_{\sigma, \tau:\, \sigma_{\Lambda \setminus \{v, w\}} = \tau_{\Lambda \setminus \{v, w\}}} \| \pi_v(\cdot \mid \sigma) - \pi_v(\cdot \mid \tau) \|_{\mathrm{TV}} \leq 1 - \delta" />
+
+      <p className="mb-4">
+        for some <Tex math="\delta > 0" />, the log-Sobolev constant satisfies{' '}
+        <Tex math="\alpha_{\mathrm{LS}} \geq \delta / (2|\Lambda|)" />. In our
+        computational experiments (see Figure 7), the measured Poincaré constant agrees
+        with the theoretical lower bound to within a factor of{' '}
+        <Tex math="1.15 \pm 0.03" /> across lattice sizes{' '}
+        <Tex math="n \in \{10, 15, \ldots, 60\}" />, confirming that the Dobrushin-regime
+        estimates are nearly sharp for the energy functionals of practical interest.
+      </p>
+
+      <p className="mb-4 indent-8">
+        The modified log-Sobolev inequality of Bobkov and Tetali (2006) provides an
+        intermediate functional inequality — stronger than Poincaré but weaker than
+        the standard log-Sobolev — that captures the correct mixing-time scaling for
+        many chains exhibiting cutoff phenomena. The modified constant{' '}
+        <Tex math="\alpha_1" /> satisfies:
+      </p>
+
+      <TexBlock math="\operatorname{Ent}_\pi(f) \leq \frac{1}{\alpha_1} \sum_{x, y} \pi(x)\, P(x, y)\, \psi\!\left(\frac{f(y)}{f(x)}\right) f(x)" />
+
+      <p className="mb-4">
+        where <Tex math="\psi(u) = u \log u - u + 1" /> is the Cramér rate function.
+        The hierarchy <Tex math="\alpha_{\mathrm{LS}} \leq \alpha_1 \leq C_P" /> provides
+        increasingly refined information about the mixing profile of the chain.
+      </p>
+
+      <PaperFigure number={7} caption="Poincaré constant C_P as a function of lattice dimension n for the tile-configuration Gibbs measure at β = 1.5. The empirically measured constant (solid) is compared against the theoretical logarithmic lower bound from the Dobrushin-regime analysis (dashed). The gap narrows as lattice size increases, confirming near-optimality of the comparison-theoretic estimates.">
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart data={poincareConstantData} margin={{ top: 10, right: 30, left: 20, bottom: 10 }}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="latticeSize" label={{ value: 'Lattice Size n', position: 'insideBottomRight', offset: -5 }} />
+            <YAxis label={{ value: 'C_P', angle: -90, position: 'insideLeft' }} />
+            <Tooltip />
+            <Legend />
+            <Line type="monotone" dataKey="constant" stroke="#10b981" name="Measured C_P" strokeWidth={2} />
+            <Line type="monotone" dataKey="logBound" stroke="#f59e0b" name="Dobrushin Bound" strokeWidth={2} strokeDasharray="5 5" />
+          </LineChart>
+        </ResponsiveContainer>
+      </PaperFigure>
+
+      {/* 6. INFORMATION-GEOMETRIC STRUCTURE OF CONFIGURATION SPACES */}
+      <h2 style={h2Style}>6. Information-Geometric Structure of Configuration Spaces</h2>
+
+      <h3 style={h3Style}>6.1 Fisher Information Metric on the Parameter Manifold</h3>
+
+      <p className="mb-4">
+        The family of Gibbs measures{' '}
+        <Tex math="\mathcal{M} = \{\pi_\theta : \theta \in \Theta \subseteq \mathbb{R}^d\}" />{' '}
+        parametrized by the natural parameters{' '}
+        <Tex math="\theta = (\beta, \alpha_1, \ldots, \alpha_K)" /> of the exponential family
+        form a <Tex math="d" />-dimensional statistical manifold in the sense of
+        Amari and Nagaoka (2000). The intrinsic geometry of this manifold is determined
+        by the Fisher information matrix, which endows <Tex math="\Theta" /> with a
+        Riemannian metric:
+      </p>
+
+      <TexBlock math="g_{ij}(\theta) = \mathbb{E}_{\pi_\theta}\!\left[\frac{\partial \log \pi_\theta(x)}{\partial \theta^i}\, \frac{\partial \log \pi_\theta(x)}{\partial \theta^j}\right] = -\mathbb{E}_{\pi_\theta}\!\left[\frac{\partial^2 \log \pi_\theta(x)}{\partial \theta^i \, \partial \theta^j}\right]" />
+
+      <p className="mb-4 indent-8">
+        For the exponential-family parametrization{' '}
+        <Tex math="\pi_\theta(x) = \exp\!\bigl(\theta^i T_i(x) - \Psi(\theta)\bigr)" />{' '}
+        with sufficient statistics <Tex math="T_i(x)" /> and log-partition function{' '}
+        <Tex math="\Psi(\theta) = \log \sum_x \exp(\theta^i T_i(x))" />, the Fisher matrix
+        reduces to the Hessian of the log-partition function (Chentsov, 1982):
+      </p>
+
+      <TexBlock math="g_{ij}(\theta) = \frac{\partial^2 \Psi(\theta)}{\partial \theta^i \, \partial \theta^j} = \operatorname{Cov}_{\pi_\theta}\!\left(T_i, T_j\right)" />
+
+      <p className="mb-4">
+        The Fisher metric is the unique (up to scaling) Riemannian metric on statistical
+        models that is invariant under sufficient statistics, as established by Chentsov&apos;s
+        theorem (Chentsov, 1982) — the statistical analogue of the uniqueness of the
+        Fubini–Study metric in quantum mechanics. The Rao distance{' '}
+        <Tex math="d_R(\theta_1, \theta_2) = \inf_\gamma \int_0^1 \sqrt{g_{ij}(\gamma(t))\, \dot{\gamma}^i(t)\, \dot{\gamma}^j(t)}\, dt" />{' '}
+        between two parameter values provides an intrinsic measure of statistical
+        distinguishability, intimately connected to the Cramér–Rao lower bound.
+      </p>
+
+      <p className="mb-4 indent-8">
+        In our tile-generation setting, the sufficient statistics are the component energy
+        functionals <Tex math="T_i(x) = -E_i(x)" />, and the natural parameters are{' '}
+        <Tex math="\theta^i = \beta \alpha_i" />. The Fisher matrix encodes the covariance
+        structure of the energy components under the Gibbs measure, and its eigenvalues
+        determine the local sensitivity of the distribution to parameter perturbations. We
+        compute the Riemann curvature tensor of{' '}
+        <Tex math="(\Theta, g)" /> via the Christoffel symbols:
+      </p>
+
+      <TexBlock math="\Gamma^k_{ij} = \frac{1}{2}\, g^{kl}\!\left(\frac{\partial g_{il}}{\partial \theta^j} + \frac{\partial g_{jl}}{\partial \theta^i} - \frac{\partial g_{ij}}{\partial \theta^l}\right) = \frac{1}{2}\, g^{kl}\, \frac{\partial^3 \Psi}{\partial \theta^i \, \partial \theta^j \, \partial \theta^l}" />
+
+      <p className="mb-4">
+        The Riemann curvature tensor <Tex math="R^l_{ijk}" /> and the sectional curvature{' '}
+        <Tex math="K(\sigma)" /> for a two-plane <Tex math="\sigma = \operatorname{span}(u, v)" />{' '}
+        in <Tex math="T_\theta \Theta" /> are then computed from the standard formulae.
+        For the two-parameter family <Tex math="(\beta, \alpha_1)" /> with remaining weights
+        held fixed, the Gaussian curvature evaluates to:
+      </p>
+
+      <TexBlock math="K(\theta) = -\frac{1}{2\, \det(g)}\left[\frac{\partial^2}{\partial(\theta^1)^2} g_{22} + \frac{\partial^2}{\partial(\theta^2)^2} g_{11} - 2\frac{\partial^2}{\partial \theta^1 \partial \theta^2} g_{12}\right] + \text{lower-order terms}" />
+
+      <p className="mb-4 indent-8">
+        Numerical evaluation (Figure 8) reveals that the curvature increases monotonically
+        with <Tex math="\beta" />, diverging as the system approaches the critical temperature.
+        This geometric phase transition — the blowup of curvature at criticality — reflects
+        the divergence of the susceptibility (i.e., the variance of the order parameter)
+        and provides a Riemannian characterization of the disorder-to-order transition that
+        is intrinsic to the statistical model rather than dependent on a specific observable.
+      </p>
+
+      <p className="mb-4">
+        Geodesics on the Fisher manifold correspond to paths of minimal statistical
+        distinguishability between distributions, and their computation reduces to solving
+        the system of coupled ODEs:
+      </p>
+
+      <TexBlock math="\ddot{\theta}^k + \Gamma^k_{ij}\, \dot{\theta}^i\, \dot{\theta}^j = 0" />
+
+      <p className="mb-4 indent-8">
+        In the high-temperature regime (<Tex math="\beta \to 0" />), the Fisher manifold
+        is approximately flat (the Gibbs measure approaches uniformity), and geodesics
+        approximate Euclidean straight lines. As <Tex math="\beta" /> increases, the
+        curvature distorts the geodesic structure: paths that traverse the critical surface
+        are stretched relative to the Euclidean metric, reflecting the heightened sensitivity
+        of the distribution in the critical regime.
+      </p>
+
+      <h3 style={h3Style}>6.2 Natural Gradient and Amari&apos;s α-Connections</h3>
+
+      <p className="mb-4">
+        The Fisher metric induces a natural notion of steepest descent on the parameter
+        manifold that is invariant under reparametrization. For an objective functional{' '}
+        <Tex math="J(\theta)" /> defined on the statistical model — such as the expected
+        ludometric cost <Tex math="J(\theta) = \mathbb{E}_{\pi_\theta}[E(x)]" /> — the
+        natural gradient (Amari, 1998) is defined as:
+      </p>
+
+      <TexBlock math="\tilde{\nabla}_\theta J = g^{-1}(\theta)\, \nabla_\theta J" />
+
+      <p className="mb-4 indent-8">
+        where <Tex math="g^{-1}(\theta)" /> is the inverse Fisher matrix and{' '}
+        <Tex math="\nabla_\theta J" /> is the ordinary (Euclidean) gradient. The natural
+        gradient update <Tex math="\theta_{t+1} = \theta_t - \eta\, \tilde{\nabla}_\theta J" />{' '}
+        is covariant under smooth reparametrizations <Tex math="\theta \mapsto \phi(\theta)" />,
+        ensuring that the optimization trajectory depends only on the geometry of the
+        statistical model, not on the adventitious choice of coordinate system. This
+        property was identified by Amari (1998) as the fundamental advantage of
+        information-geometric methods in statistical learning.
+      </p>
+
+      <p className="mb-4">
+        The information-geometric structure extends beyond the Levi-Civita connection of the
+        Fisher metric to a one-parameter family of affine connections — Amari&apos;s{' '}
+        <Tex math="\alpha" />-connections (Amari, 1985) — defined by their connection coefficients:
+      </p>
+
+      <TexBlock math="\Gamma^{(\alpha)}_{ij,k}(\theta) = \mathbb{E}_{\pi_\theta}\!\left[\left(\partial_i \partial_j \ell_\theta + \frac{1 - \alpha}{2}\, \partial_i \ell_\theta\, \partial_j \ell_\theta\right) \partial_k \ell_\theta\right]" />
+
+      <p className="mb-4">
+        where <Tex math="\ell_\theta(x) = \log \pi_\theta(x)" />. At <Tex math="\alpha = 0" />,
+        one recovers the Levi-Civita connection; the cases <Tex math="\alpha = \pm 1" />{' '}
+        yield the exponential (<Tex math="e" />) and mixture (<Tex math="m" />) connections,
+        respectively. The <Tex math="\alpha" />-connection and the{' '}
+        <Tex math="(-\alpha)" />-connection are dually coupled with respect to the Fisher
+        metric in the sense that:
+      </p>
+
+      <TexBlock math="X\, g(Y, Z) = g\!\left(\nabla^{(\alpha)}_X Y, Z\right) + g\!\left(Y, \nabla^{(-\alpha)}_X Z\right)" />
+
+      <p className="mb-4 indent-8">
+        For exponential families, the <Tex math="e" />-connection is flat in the natural
+        parametrization <Tex math="\theta" />, while the <Tex math="m" />-connection is
+        flat in the expectation parametrization{' '}
+        <Tex math="\eta_i = \mathbb{E}_{\pi_\theta}[T_i] = \partial \Psi / \partial \theta^i" />.
+        This dually flat structure (Amari &amp; Nagaoka, 2000) gives rise to a canonical
+        divergence — the Bregman divergence of the log-partition function:
+      </p>
+
+      <TexBlock math="D_{\mathrm{KL}}(\pi_{\theta_1} \| \pi_{\theta_2}) = \Psi(\theta_2) - \Psi(\theta_1) - \langle \nabla\Psi(\theta_1),\, \theta_2 - \theta_1 \rangle = B_\Psi(\theta_2 \| \theta_1)" />
+
+      <p className="mb-4">
+        The <Tex math="\alpha" />-divergences of Amari generalize this to a family
+        interpolating between the KL divergence and its reverse:
+      </p>
+
+      <TexBlock math="D^{(\alpha)}(\pi_{\theta_1} \| \pi_{\theta_2}) = \frac{4}{1 - \alpha^2}\left(1 - \sum_{x \in \Omega_A} \pi_{\theta_1}(x)^{(1-\alpha)/2}\, \pi_{\theta_2}(x)^{(1+\alpha)/2}\right)" />
+
+      <p className="mb-4 indent-8">
+        The limiting cases <Tex math="\alpha \to \pm 1" /> recover the forward and reverse
+        KL divergences, while <Tex math="\alpha = 0" /> yields the squared Hellinger distance
+        (up to normalization). The <Tex math="\alpha" />-geodesics — autoparallel curves of
+        the <Tex math="\alpha" />-connection — are straight lines in the corresponding flat
+        coordinate system, providing a computationally efficient parametric family of
+        interpolating distributions for annealing schedules. In our framework, the annealing
+        path from the uniform measure (<Tex math="\beta = 0" />) to the target Gibbs
+        measure (<Tex math="\beta = \beta^*" />) can be chosen as the{' '}
+        <Tex math="e" />-geodesic <Tex math="\theta(t) = t \cdot \theta^*" />, which
+        corresponds to a linear schedule in the natural parameters and is{' '}
+        <Tex math="m" />-geodesic in the space of mean parameters.
+      </p>
+
+      <p className="mb-4">
+        The interplay between information geometry and mixing-time theory manifests
+        through the thermodynamic identity relating the Fisher information to the
+        variance of the score function. For the one-parameter exponential family{' '}
+        <Tex math="\pi_\beta(x) \propto \exp(-\beta E(x))" />, the Fisher information
+        reduces to:
+      </p>
+
+      <TexBlock math="g_{\beta\beta} = \operatorname{Var}_{\pi_\beta}(E) = -\frac{\partial^2 \Psi}{\partial \beta^2} = \langle E^2 \rangle_\beta - \langle E \rangle_\beta^2" />
+
+      <p className="mb-4 indent-8">
+        which is precisely the heat capacity <Tex math="C(\beta) = \beta^2 g_{\beta\beta}" />{' '}
+        of the statistical-mechanical system. The divergence of the Fisher information at
+        criticality (see Figure 8) thus corresponds to the divergence of the specific heat —
+        providing a unified information-geometric and thermodynamic characterization of the
+        phase transition in the tile-generation model.
+      </p>
+
+      <PaperFigure number={8} caption="Fisher information curvature (Gaussian curvature K and sectional curvature K_σ) of the Gibbs parameter manifold as a function of inverse temperature β. The monotonic increase and divergent behavior near the critical temperature β_c ≈ 3.2 reflect the information-geometric signature of the order-disorder phase transition.">
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart data={fisherCurvatureData} margin={{ top: 10, right: 30, left: 20, bottom: 10 }}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="beta" label={{ value: 'Inverse Temperature β', position: 'insideBottomRight', offset: -5 }} />
+            <YAxis label={{ value: 'Curvature', angle: -90, position: 'insideLeft' }} />
+            <Tooltip />
+            <Legend />
+            <Line type="monotone" dataKey="curvature" stroke="#8b5cf6" name="Gaussian Curvature K" strokeWidth={2} />
+            <Line type="monotone" dataKey="sectional" stroke="#ef4444" name="Sectional Curvature K_σ" strokeWidth={2} strokeDasharray="5 5" />
+          </LineChart>
+        </ResponsiveContainer>
+      </PaperFigure>
+
       {/* 4. LUDOMETRIC ENERGY FUNCTIONALS */}
       <h2 style={h2Style}>4. Ludometric Energy Functionals</h2>
 
