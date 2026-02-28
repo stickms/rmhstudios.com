@@ -338,6 +338,10 @@ export class CategoryCrashMinigame extends BaseMinigame {
         duplicateAnswers: pr.duplicateIndices.length,
         duplicatedCategories: pr.duplicateIndices.map((i) =>
           this.state.categories[i]?.name ?? this.state.categories[i]?.id ?? ''),
+        crashedCategories: pr.crashedIndices.map((i) =>
+          this.state.categories[i]?.name ?? this.state.categories[i]?.id ?? ''),
+        uniqueCategories: pr.uniqueIndices.map((i) =>
+          this.state.categories[i]?.name ?? this.state.categories[i]?.id ?? ''),
       })),
     });
 

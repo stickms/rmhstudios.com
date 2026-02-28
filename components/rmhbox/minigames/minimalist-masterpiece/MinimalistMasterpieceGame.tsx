@@ -153,7 +153,14 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
           break;
         }
         case 'MM_DRAWING_SAVED': {
-          // Auto-save acknowledged — no sound needed for saves
+          // Auto-save acknowledged. If the event includes drawing data
+          // (sent to spectators following this player), update the canvas.
+          if (Array.isArray(data.strokes)) {
+            setStrokes(data.strokes as MMStroke[]);
+          }
+          if (typeof data.backgroundColor === 'string') {
+            setBackgroundColor(data.backgroundColor as string);
+          }
           break;
         }
         case 'MM_DRAWING_SUBMITTED': {

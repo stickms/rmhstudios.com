@@ -20,6 +20,8 @@ interface RoundScoreEntry {
   points: number;
   validAnswers?: number;
   crashedAnswers?: number;
+  crashedCategories?: string[];
+  uniqueCategories?: string[];
 }
 
 export default function CategoryCrashHistoryDetail({
@@ -71,8 +73,22 @@ export default function CategoryCrashHistoryDetail({
         // Build set of crashed answers for quick lookup
         // Supports both old format (crash_result with crashedPlayers) and new format (crash with targetUserId)
         const crashedSet = new Set<string>();
+        const safeSet = new Set<string>();
         const crashDetails: Array<{ category: string; crashedAnswer: string; crasher: string; target: string }> = [];
 
+        // Use round_end scored data for authoritative per-answer crash/safe status
+        for (const score of roundScores) {
+          const crashed = (score.crashedCategories ?? []) as string[];
+          const unique = (score.uniqueCategories ?? []) as string[];
+          for (const cat of crashed) {
+            crashedSet.add(`${score.userId}:${cat}`);
+          }
+          for (const cat of unique) {
+            safeSet.add(`${score.userId}:${cat}`);
+          }
+        }
+
+        // Fallback: also use crash actions for older logs without round_end per-category data
         for (const crash of roundCrashes) {
           if (crash.type === 'crash_result') {
             // Old format: crash_result with crashedPlayers array
@@ -85,7 +101,6 @@ export default function CategoryCrashHistoryDetail({
             // New format: crash with targetUserId and category
             const targetUserId = crash.payload.targetUserId as string;
             const category = (crash.payload.category as string) ?? categories[crash.payload.categoryIndex as number] ?? '';
-            crashedSet.add(`${targetUserId}:${category}`);
             crashDetails.push({
               category,
               crashedAnswer: (crash.payload.crashedAnswer as string) ?? '',
@@ -138,6 +153,7 @@ export default function CategoryCrashHistoryDetail({
                           const answers = (playerAnswer?.payload.answers as AnswerEntry[]) ?? [];
                           const answer = answers.find((a) => a.category === cat)?.answer ?? '—';
                           const isCrashed = crashedSet.has(`${p.userId}:${cat}`);
+                          const isSafe = safeSet.has(`${p.userId}:${cat}`);
 
                           return (
                             <td
@@ -145,9 +161,11 @@ export default function CategoryCrashHistoryDetail({
                               className={`py-1 px-2 ${
                                 isCrashed
                                   ? 'line-through text-(--rmhbox-danger)'
-                                  : answer !== '—'
-                                    ? 'text-(--rmhbox-accent)'
-                                    : 'text-(--rmhbox-text-muted)'
+                                  : isSafe
+                                    ? 'text-(--rmhbox-success)'
+                                    : answer !== '—'
+                                      ? 'text-(--rmhbox-text-muted)'
+                                      : 'text-(--rmhbox-text-muted)'
                               }`}
                             >
                               {answer}
