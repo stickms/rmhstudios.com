@@ -1532,6 +1532,58 @@ export function PersistentHomologyPaper() {
         that are left to future work.
       </p>
 
+      <p className="mb-4 indent-8">
+        The relationship between the information-theoretic properties of the GAN latent space
+        and its topological signature merits particular scrutiny. The mutual information{' '}
+        <Tex math="I(z; G(z))" /> between a latent vector and its generated output is bounded
+        above by the entropy of the latent prior; however, the effective dimensionality of
+        the learned manifold — as captured by the persistent Betti numbers at a characteristic
+        scale — may be substantially lower than the ambient dimension of{' '}
+        <Tex math="\mathcal{W}" />. Formally, if the persistence diagram{' '}
+        <Tex math="\text{Dgm}_0" /> contains <Tex math="\beta_0" /> features with persistence
+        exceeding <Tex math="\epsilon_0" />, then the intrinsic dimensionality of the
+        support of the generated distribution is at most <Tex math="\beta_0 - 1" /> at
+        scale <Tex math="\epsilon_0" />. This topological bound on effective dimensionality
+        complements the spectral estimates derived from the Jacobian singular-value spectrum
+        (Yang et al., 2021) and the local dimensionality probes based on nearest-neighbor
+        statistics (Facco et al., 2017).
+      </p>
+
+      <p className="mb-4 indent-8">
+        The persistence-guided interpolation framework admits a natural extension to
+        conditional generation settings, where the GAN is conditioned on auxiliary metadata
+        (e.g., asset category, animation state, environmental context). In the conditional
+        regime, the latent space decomposes into fiber bundles indexed by the conditioning
+        variable, and the persistence diagrams of individual fibers may differ markedly from
+        the aggregate diagram. The interpolation path <Tex math="\gamma^*(t)" /> must then
+        respect both the inter-fiber topology (governing transitions between conditioning
+        categories) and the intra-fiber topology (governing smooth variation within a
+        single category). The resulting bi-level topological optimization represents a
+        non-trivial generalization of the framework presented herein and connects to the
+        theory of fiberwise persistent homology developed by Berkouk and Petit (2021).
+        The sheaf-theoretic perspective of Section 8 provides a natural language for
+        formalizing such multi-level topological constraints, wherein the base space
+        corresponds to the space of conditioning variables and the stalks encode the
+        per-condition latent-space topology.
+      </p>
+
+      <p className="mb-4 indent-8">
+        From a practical standpoint, the computational overhead introduced by the topological
+        analysis pipeline is amortized across the asset-generation workflow. The initial
+        persistence computation — the dominant cost center — need only be performed once per
+        GAN checkpoint, and the resulting persistence diagrams and representative cycles
+        can be cached and incrementally updated as the model undergoes fine-tuning. The
+        per-interpolation cost of evaluating the topological penalty kernel is{' '}
+        <Tex math="O(T \cdot F \cdot \log n)" />, which for typical parameter settings
+        (waypoints <Tex math="T = 100" />, significant features{' '}
+        <Tex math="F \approx 24" />, cycle vertices <Tex math="n \approx 500" />)
+        translates to approximately 3 seconds of GPU time — well within the latency budget
+        of an interactive asset-exploration tool. The incremental landscape-monitoring
+        procedure described in Section 9.2 ensures that the topological cache remains
+        valid under model drift, triggering recomputation only when the integrated
+        landscape change exceeds a designer-specified tolerance.
+      </p>
+
       {/* 13. TOPOLOGICAL REGULARIZATION OF GAN TRAINING */}
       <h2 style={h2Style}>13. Topological Regularization of GAN Training</h2>
 
