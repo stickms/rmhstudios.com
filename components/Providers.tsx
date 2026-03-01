@@ -51,6 +51,7 @@ export function Providers({ children }: ProvidersProps) {
     // custom properties change via class toggling on an ancestor element.
     requestAnimationFrame(() => {
       const bg = getComputedStyle(html).getPropertyValue("--site-bg").trim();
+      html.style.backgroundColor = bg;
       document.body.style.backgroundColor = bg;
       // Update mobile browser chrome color
       let meta = document.querySelector<HTMLMetaElement>(
