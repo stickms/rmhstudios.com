@@ -26,15 +26,17 @@ DEPLOY_MSG_ID=""
 get_commit_info() {
     DEPLOY_SHORT_HASH=$("$GIT_BIN" rev-parse --short HEAD 2>/dev/null || echo "unknown")
     DEPLOY_COMMIT_MSG=$("$GIT_BIN" log -1 --pretty=%B 2>/dev/null || echo "(no commit message)")
-    # Escape special JSON characters in commit message
+    DEPLOY_AUTHOR=$("$GIT_BIN" log -1 --pretty='%an' 2>/dev/null || echo "unknown")
+    # Escape special JSON characters
     DEPLOY_COMMIT_MSG=$(printf '%s' "$DEPLOY_COMMIT_MSG" | sed 's/\\/\\\\/g; s/"/\\"/g' | tr '\n' ' ')
+    DEPLOY_AUTHOR=$(printf '%s' "$DEPLOY_AUTHOR" | sed 's/\\/\\\\/g; s/"/\\"/g')
 }
 
 send_deploy_started() {
     get_commit_info
     local payload
-    payload=$(printf '{"embeds":[{"title":"%s","description":"%s","color":%d}]}' \
-        "Commit $DEPLOY_SHORT_HASH - deploy started" "$DEPLOY_COMMIT_MSG" 16776960)
+    payload=$(printf '{"embeds":[{"title":"%s","description":"%s","color":%d,"footer":{"text":"%s"}}]}' \
+        "Commit $DEPLOY_SHORT_HASH - deploy started" "$DEPLOY_COMMIT_MSG" 16776960 "$DEPLOY_AUTHOR")
 
     local response
     response=$(curl -s -H "Content-Type: application/json" -d "$payload" "${DISCORD_WEBHOOK}?wait=true" 2>/dev/null)
@@ -53,16 +55,20 @@ update_deploy_status() {
     get_commit_info
 
     if [ "$status" = "success" ]; then
+        local elapsed mins secs
+        elapsed=$(( $(date +%s) - DEPLOY_START_TIME ))
+        mins=$(( elapsed / 60 ))
+        secs=$(( elapsed % 60 ))
         color=65280    # green
-        title="Commit $DEPLOY_SHORT_HASH - deploy succeeded"
+        title=$(printf 'Commit %s - deploy succeeded in %02d:%02d' "$DEPLOY_SHORT_HASH" "$mins" "$secs")
     else
         color=16711680 # red
         title="Commit $DEPLOY_SHORT_HASH - deploy failed: $reason"
     fi
 
     local payload
-    payload=$(printf '{"embeds":[{"title":"%s","description":"%s","color":%d}]}' \
-        "$title" "$DEPLOY_COMMIT_MSG" "$color")
+    payload=$(printf '{"embeds":[{"title":"%s","description":"%s","color":%d,"footer":{"text":"%s"}}]}' \
+        "$title" "$DEPLOY_COMMIT_MSG" "$color" "$DEPLOY_AUTHOR")
 
     if [ -n "$DEPLOY_MSG_ID" ]; then
         curl -s -X PATCH -H "Content-Type: application/json" \
@@ -152,6 +158,7 @@ fi
 touch "$LOCKFILE"
 
 log "=== Deploy triggered by webhook ==="
+DEPLOY_START_TIME=$(date +%s)
 
 log "Pulling latest code..."
 if ! "$GIT_BIN" pull "$REMOTE_REPO" "$BRANCH"; then
