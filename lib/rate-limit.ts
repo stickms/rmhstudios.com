@@ -1,6 +1,11 @@
 /**
- * Simple in-memory IP rate limiter for Next.js API routes.
- * Usage: const { allowed, retryAfter } = rateLimit(ip, { limit: 5, windowMs: 60_000 });
+ * In-memory IP rate limiter for Next.js API routes.
+ *
+ * Bounded Map with periodic GC prevents unbounded memory growth.
+ * Max store size caps memory at ~100 KB even under heavy abuse.
+ *
+ * Usage:
+ *   const { allowed, retryAfter } = rateLimit(ip, { limit: 5, windowMs: 60_000 });
  */
 
 interface RateLimitEntry {
@@ -8,15 +13,19 @@ interface RateLimitEntry {
     resetAt: number;
 }
 
+const MAX_STORE_SIZE = 10_000;
 const store = new Map<string, RateLimitEntry>();
 
-// Clean up old entries every 5 minutes
-setInterval(() => {
+// Sweep expired entries every 60s
+const gcTimer = setInterval(() => {
     const now = Date.now();
-    for (const [key, entry] of store.entries()) {
+    for (const [key, entry] of store) {
         if (entry.resetAt < now) store.delete(key);
     }
-}, 5 * 60 * 1000);
+}, 60_000);
+if (gcTimer && typeof gcTimer === 'object' && 'unref' in gcTimer) {
+    gcTimer.unref();
+}
 
 interface RateLimitOptions {
     /** Max requests per window */
@@ -33,6 +42,11 @@ export function rateLimit(ip: string, opts: RateLimitOptions): { allowed: boolea
     const entry = store.get(key);
 
     if (!entry || entry.resetAt < now) {
+        // Evict oldest entry if at capacity (FIFO — Map preserves insertion order)
+        if (store.size >= MAX_STORE_SIZE) {
+            const oldest = store.keys().next().value;
+            if (oldest !== undefined) store.delete(oldest);
+        }
         store.set(key, { count: 1, resetAt: now + opts.windowMs });
         return { allowed: true, retryAfter: 0 };
     }

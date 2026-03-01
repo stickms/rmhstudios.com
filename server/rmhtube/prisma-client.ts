@@ -1,39 +1,22 @@
 /**
  * RmhTube — Standalone Server Prisma Client
- *
- * Creates a dedicated PrismaClient instance for the standalone RmhTube
- * WebSocket server process. Used for persisting rooms, chat, and queue.
+ * Delegates to the shared factory for consistent pool configuration.
  */
-
-import { PrismaClient } from '@prisma/client';
-import { PrismaPg } from '@prisma/adapter-pg';
+import { createServerPrismaClient, disconnectPrisma as _disconnect } from '../shared/prisma-client';
 import { logger } from './logger';
 
-let prismaInstance: PrismaClient | null = null;
+let prismaInstance: ReturnType<typeof createServerPrismaClient> | null = null;
 
-export function getPrismaClient(): PrismaClient {
+export function getPrismaClient() {
   if (!prismaInstance) {
-    const connectionString = process.env.DATABASE_URL;
-    if (!connectionString) {
-      logger.error({ event: 'prisma_client_no_db_url', message: 'DATABASE_URL not set' });
-      throw new Error('DATABASE_URL environment variable is required');
-    }
-
-    const adapter = new PrismaPg({ connectionString });
-    prismaInstance = new PrismaClient({
-      adapter,
-      log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
-    });
-
-    logger.info({ event: 'prisma_client_created' });
+    prismaInstance = createServerPrismaClient(logger);
   }
   return prismaInstance;
 }
 
 export async function disconnectPrisma(): Promise<void> {
   if (prismaInstance) {
-    await prismaInstance.$disconnect();
+    await _disconnect(prismaInstance, logger);
     prismaInstance = null;
-    logger.info({ event: 'prisma_client_disconnected' });
   }
 }
