@@ -32,6 +32,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   const paddingClass = expanded ? 'p-4' : 'p-3 lg:p-4';
   const logoAlignClass = expanded ? 'justify-start' : 'justify-center lg:justify-start';
   const iconMrClass = expanded ? 'mr-2' : 'lg:mr-2';
+  const itemJustifyClass = expanded ? '' : 'md:justify-center lg:justify-start';
   const pathname = usePathname();
   const router = useRouter();
   const [showStyleMenu, setShowStyleMenu] = useState(false);
@@ -39,6 +40,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   const [mounted, setMounted] = useState(false);
   const { style, setStyle } = useThemeStore();
   const styleMenuRef = useRef<HTMLDivElement>(null);
+  const [popoverPos, setPopoverPos] = useState({ bottom: 0, left: 0 });
 
   const { data: session, isPending } = authClient.useSession();
 
@@ -92,7 +94,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
             <Link
               key={link.href}
               href={link.href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${itemJustifyClass} ${
                 isActive
                   ? 'text-site-accent bg-site-accent-dim'
                   : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
@@ -108,7 +110,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
         {mounted && session && (
           <Link
             href={`/profile/${session.user.id}`}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${itemJustifyClass} ${
               pathname?.startsWith('/profile')
                 ? 'text-site-accent bg-site-accent-dim'
                 : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
@@ -124,8 +126,17 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
       {/* Style Picker */}
       <div className="relative mt-auto" ref={styleMenuRef}>
         <button
-          onClick={() => setShowStyleMenu(!showStyleMenu)}
-          className="flex items-center gap-2 w-full px-3 py-2.5 rounded-xl text-sm text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors"
+          onClick={() => {
+            if (!showStyleMenu && styleMenuRef.current) {
+              const rect = styleMenuRef.current.getBoundingClientRect();
+              setPopoverPos({
+                bottom: window.innerHeight - rect.top + 8,
+                left: rect.left,
+              });
+            }
+            setShowStyleMenu(!showStyleMenu);
+          }}
+          className={`flex items-center gap-2 w-full px-3 py-2.5 rounded-xl text-sm text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors ${itemJustifyClass}`}
           title="Change site style"
         >
           <Palette className="w-5 h-5 shrink-0" />
@@ -139,7 +150,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
         </button>
 
         {showStyleMenu && (
-          <div className="absolute bottom-full left-0 mb-2 w-52 bg-site-surface border border-site-border rounded-xl shadow-lg py-1 max-h-[60vh] overflow-y-auto z-50">
+          <div className="fixed w-52 bg-site-surface border border-site-border rounded-xl shadow-lg py-1 max-h-[60vh] overflow-y-auto z-50" style={{ bottom: `${popoverPos.bottom}px`, left: `${popoverPos.left}px` }}>
             {groups.map((group) => (
               <div key={group.label}>
                 <div className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-site-text-dim">
@@ -176,7 +187,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
           <div className="flex flex-col gap-2">
             <Link
               href={`/profile/${session.user.id}`}
-              className="flex items-center gap-2 px-2 hover:bg-site-surface rounded-xl transition-colors py-1"
+              className={`flex items-center gap-2 px-2 hover:bg-site-surface rounded-xl transition-colors py-1 ${itemJustifyClass}`}
             >
               <div className="w-8 h-8 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-xs ring-2 ring-site-bg shrink-0">
                 {session.user.image ? (
@@ -191,7 +202,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
             </Link>
             <button
               onClick={handleSignOut}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-site-text-muted hover:text-site-danger hover:bg-site-surface transition-colors"
+              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-site-text-muted hover:text-site-danger hover:bg-site-surface transition-colors ${itemJustifyClass}`}
               title="Sign Out"
             >
               <LogOut className="w-4 h-4 shrink-0" />

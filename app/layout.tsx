@@ -135,6 +135,7 @@ export default function RootLayout({
       </head>
       <body
         className={`${nunito.variable} ${inter.variable} ${jetbrainsMono.variable} ${playfairDisplay.variable} ${bangers.variable} ${bebasNeue.variable} ${orbitron.variable} ${cinzel.variable} ${pacifico.variable} ${spaceGrotesk.variable} ${permanentMarker.variable} ${caveat.variable} ${dancingScript.variable} ${patrickHand.variable} antialiased`}
+        suppressHydrationWarning
       >
         {/* Set body.style.backgroundColor before React hydrates.
             iOS 26 Safari derives its bar tint from the body's background-color,
