@@ -1,6 +1,12 @@
 import type { NextConfig } from "next";
+import { resolve } from "path";
 
 const nextConfig: NextConfig = {
+  // ─── Fix Turbopack root to this project (avoids home-dir lockfile conflict) ───
+  turbopack: {
+    root: resolve(__dirname),
+  },
+
   // ─── Security: Remove the X-Powered-By header ───
   poweredByHeader: false,
 
@@ -21,7 +27,6 @@ const nextConfig: NextConfig = {
     // Tree-shake barrel exports for heavy packages — dramatically reduces
     // client bundle size by only importing the specific modules used.
     optimizePackageImports: [
-      "lucide-react",
       "react-icons",
       "framer-motion",
       "recharts",
@@ -140,7 +145,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: "Content-Security-Policy",
-            value: `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.youtube.com https://s.ytimg.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: https: https://upload.wikimedia.org https://media.tenor.com https://media1.giphy.com https://i.giphy.com; font-src 'self' data:; connect-src 'self' https://cloudflareinsights.com https://api.open-meteo.com https://geocoding-api.open-meteo.com wss: ws: ${process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:7001'} ${(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:7001').replace(/^http/, 'ws')} ${process.env.NEXT_PUBLIC_RMHTUBE_SOCKET_URL || 'http://localhost:7003'} ${(process.env.NEXT_PUBLIC_RMHTUBE_SOCKET_URL || 'http://localhost:7003').replace(/^http/, 'ws')} ${process.env.NEXT_PUBLIC_RMHBOX_SOCKET_URL || 'http://localhost:7676'} ${(process.env.NEXT_PUBLIC_RMHBOX_SOCKET_URL || 'http://localhost:7676').replace(/^http/, 'ws')}; frame-src https://www.youtube.com https://www.youtube-nocookie.com https://player.twitch.tv; frame-ancestors 'none';`,
+            value: `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.youtube.com https://s.ytimg.com https://static.cloudflareinsights.com https://open.spotify.com https://embed-cdn.spotifycdn.com; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: https: https://upload.wikimedia.org https://media.tenor.com https://media1.giphy.com https://i.giphy.com; font-src 'self' data:; connect-src 'self' https://cloudflareinsights.com https://api.open-meteo.com https://geocoding-api.open-meteo.com wss: ws: ${process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:7001'} ${(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:7001').replace(/^http/, 'ws')} ${process.env.NEXT_PUBLIC_RMHTUBE_SOCKET_URL || 'http://localhost:7003'} ${(process.env.NEXT_PUBLIC_RMHTUBE_SOCKET_URL || 'http://localhost:7003').replace(/^http/, 'ws')} ${process.env.NEXT_PUBLIC_RMHBOX_SOCKET_URL || 'http://localhost:7676'} ${(process.env.NEXT_PUBLIC_RMHBOX_SOCKET_URL || 'http://localhost:7676').replace(/^http/, 'ws')}; media-src 'self' https://p.scdn.co; frame-src https://www.youtube.com https://www.youtube-nocookie.com https://player.twitch.tv https://open.spotify.com; frame-ancestors 'none';`,
           },
         ],
       },

@@ -974,6 +974,11 @@ model UserProfile {
   location  String?  @db.VarChar(100)
   website   String?  @db.VarChar(200)
   showLikes Boolean  @default(false)
+  profileSongSpotifyId  String?  @db.VarChar(50)
+  profileSongTitle      String?  @db.VarChar(200)
+  profileSongArtist     String?  @db.VarChar(200)
+  profileSongPreviewUrl String?  @db.VarChar(500)
+  profileSongAlbumArt   String?  @db.VarChar(500)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

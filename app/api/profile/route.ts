@@ -36,7 +36,28 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
-    const { displayName, bio, location, website, showLikes } = parsed.data;
+    const {
+      displayName,
+      bio,
+      location,
+      website,
+      showLikes,
+      profileSongSpotifyId,
+      profileSongTitle,
+      profileSongArtist,
+      profileSongPreviewUrl,
+      profileSongAlbumArt,
+    } = parsed.data;
+
+    const songFields = profileSongSpotifyId !== undefined
+      ? {
+          profileSongSpotifyId: profileSongSpotifyId || null,
+          profileSongTitle: profileSongTitle || null,
+          profileSongArtist: profileSongArtist || null,
+          profileSongPreviewUrl: profileSongPreviewUrl || null,
+          profileSongAlbumArt: profileSongAlbumArt || null,
+        }
+      : {};
 
     const profile = await prisma.userProfile.upsert({
       where: { userId: session.user.id },
@@ -47,6 +68,7 @@ export async function PATCH(req: NextRequest) {
         location: location ?? null,
         website: website || null,
         showLikes: showLikes ?? false,
+        ...songFields,
       },
       update: {
         ...(displayName !== undefined ? { displayName: displayName ?? null } : {}),
@@ -54,6 +76,7 @@ export async function PATCH(req: NextRequest) {
         location: location ?? null,
         website: website || null,
         ...(showLikes !== undefined ? { showLikes } : {}),
+        ...songFields,
       },
     });
 
@@ -63,6 +86,11 @@ export async function PATCH(req: NextRequest) {
       location: profile.location,
       website: profile.website,
       showLikes: profile.showLikes,
+      profileSongSpotifyId: profile.profileSongSpotifyId,
+      profileSongTitle: profile.profileSongTitle,
+      profileSongArtist: profile.profileSongArtist,
+      profileSongPreviewUrl: profile.profileSongPreviewUrl,
+      profileSongAlbumArt: profile.profileSongAlbumArt,
     });
   } catch (error) {
     console.error("Profile update error:", error);

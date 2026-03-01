@@ -2716,3 +2716,9 @@ img.emoji {
   vertical-align: -0.2em;
   display: inline-block;
 }
+
+/* Profile song vinyl record */
+@keyframes vinyl-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

@@ -26,6 +26,23 @@ export const updateProfileSchema = z.object({
     .nullable()
     .or(z.literal("")),
   showLikes: z.boolean().optional(),
+  profileSongSpotifyId: z.string().max(50).optional().nullable(),
+  profileSongTitle: z.string().max(200).optional().nullable(),
+  profileSongArtist: z.string().max(200).optional().nullable(),
+  profileSongPreviewUrl: z
+    .string()
+    .max(500)
+    .url()
+    .optional()
+    .nullable()
+    .or(z.literal("")),
+  profileSongAlbumArt: z
+    .string()
+    .max(500)
+    .url()
+    .optional()
+    .nullable()
+    .or(z.literal("")),
 });
 
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;

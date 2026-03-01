@@ -4,6 +4,15 @@ import { useEffect, useRef, useState } from 'react';
 import { Camera, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ImageCropModal } from './ImageCropModal';
+import { SpotifySongSearch, type SpotifyTrack } from './SpotifySongSearch';
+
+interface ProfileSongData {
+  profileSongSpotifyId: string | null;
+  profileSongTitle: string | null;
+  profileSongArtist: string | null;
+  profileSongPreviewUrl: string | null;
+  profileSongAlbumArt: string | null;
+}
 
 interface ProfileEditModalProps {
   open: boolean;
@@ -15,7 +24,7 @@ interface ProfileEditModalProps {
     location: string | null;
     website: string | null;
     showLikes: boolean;
-  }) => void;
+  } & ProfileSongData) => void;
   initial: {
     name: string | null;
     image: string | null;
@@ -23,7 +32,7 @@ interface ProfileEditModalProps {
     location: string | null;
     website: string | null;
     showLikes: boolean;
-  };
+  } & ProfileSongData;
 }
 
 const MAX_NAME = 50;
@@ -44,6 +53,18 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [selectedSong, setSelectedSong] = useState<SpotifyTrack | null>(
+    initial.profileSongSpotifyId
+      ? {
+          id: initial.profileSongSpotifyId,
+          title: initial.profileSongTitle ?? '',
+          artist: initial.profileSongArtist ?? '',
+          previewUrl: initial.profileSongPreviewUrl ?? '',
+          albumArt: initial.profileSongAlbumArt,
+        }
+      : null
+  );
 
   const bioRemaining = MAX_BIO - bio.length;
   const nameRemaining = MAX_NAME - displayName.length;
@@ -142,7 +163,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
         newImageUrl = avatarData.image;
       }
 
-      // Step 2: Save text fields
+      // Step 2: Save text fields + song
       const res = await fetch('/api/profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -152,6 +173,11 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
           location: location.trim() || null,
           website: website.trim() || null,
           showLikes,
+          profileSongSpotifyId: selectedSong?.id ?? null,
+          profileSongTitle: selectedSong?.title ?? null,
+          profileSongArtist: selectedSong?.artist ?? null,
+          profileSongPreviewUrl: selectedSong?.previewUrl ?? null,
+          profileSongAlbumArt: selectedSong?.albumArt ?? null,
         }),
       });
 
@@ -303,6 +329,12 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
                 />
               </button>
             </div>
+
+            {/* Profile Song */}
+            <SpotifySongSearch
+              selected={selectedSong}
+              onSelect={setSelectedSong}
+            />
 
             {error && (
               <p className="text-sm text-site-danger">{error}</p>

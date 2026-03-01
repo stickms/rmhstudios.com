@@ -31,7 +31,19 @@ export async function GET(
         image: true,
         createdAt: true,
         profile: {
-          select: { displayName: true, customImage: true, bio: true, location: true, website: true, showLikes: true },
+          select: {
+            displayName: true,
+            customImage: true,
+            bio: true,
+            location: true,
+            website: true,
+            showLikes: true,
+            profileSongSpotifyId: true,
+            profileSongTitle: true,
+            profileSongArtist: true,
+            profileSongPreviewUrl: true,
+            profileSongAlbumArt: true,
+          },
         },
         _count: {
           select: {
@@ -67,6 +79,11 @@ export async function GET(
       location: user.profile?.location ?? null,
       website: user.profile?.website ?? null,
       showLikes: user.profile?.showLikes ?? false,
+      profileSongSpotifyId: user.profile?.profileSongSpotifyId ?? null,
+      profileSongTitle: user.profile?.profileSongTitle ?? null,
+      profileSongArtist: user.profile?.profileSongArtist ?? null,
+      profileSongPreviewUrl: user.profile?.profileSongPreviewUrl ?? null,
+      profileSongAlbumArt: user.profile?.profileSongAlbumArt ?? null,
       followerCount: user._count.followers,
       followingCount: user._count.following,
       rmharkCount: user._count.rmharks,

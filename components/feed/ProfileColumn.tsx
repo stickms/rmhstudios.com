@@ -7,6 +7,7 @@ import { authClient } from '@/lib/auth-client';
 import { RMHarkCard } from './RMHarkCard';
 import { ProfileEditModal } from './ProfileEditModal';
 import { SocialListModal } from './SocialListModal';
+import { VinylRecord } from './VinylRecord';
 import Link from 'next/link';
 import type { FeedItem } from '@/lib/feed-types';
 
@@ -20,6 +21,11 @@ interface ProfileData {
   location: string | null;
   website: string | null;
   showLikes: boolean;
+  profileSongSpotifyId: string | null;
+  profileSongTitle: string | null;
+  profileSongArtist: string | null;
+  profileSongPreviewUrl: string | null;
+  profileSongAlbumArt: string | null;
   followerCount: number;
   followingCount: number;
   rmharkCount: number;
@@ -53,6 +59,13 @@ export function ProfileColumn({ userId }: { userId: string }) {
   const likedSentinelRef = useRef<HTMLDivElement>(null);
   const likedInitialFetched = useRef(false);
 
+  // Spotify IFrame API state
+  const [isPlaying, setIsPlaying] = useState(false);
+  const embedContainerRef = useRef<HTMLDivElement>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const controllerRef = useRef<any>(null);
+  const scriptLoadedRef = useRef(false);
+
   const { data: session } = authClient.useSession();
 
   // Fetch profile
@@ -71,6 +84,58 @@ export function ProfileColumn({ userId }: { userId: string }) {
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [userId]);
+
+  // Spotify IFrame API — load script & create controller for profile song
+  useEffect(() => {
+    const spotifyId = profile?.profileSongSpotifyId;
+    if (!spotifyId) return;
+
+    let cancelled = false;
+
+    const initController = (IFrameAPI: { createController: Function }) => {
+      if (cancelled || !embedContainerRef.current) return;
+      IFrameAPI.createController(
+        embedContainerRef.current,
+        { uri: `spotify:track:${spotifyId}`, width: 1, height: 1 },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (ctrl: any) => {
+          if (cancelled) return;
+          controllerRef.current = ctrl;
+          ctrl.addListener('playback_update', (e: { data: { isPaused: boolean } }) => {
+            setIsPlaying(!e.data.isPaused);
+          });
+        },
+      );
+    };
+
+    // If the API is already loaded on the window, use it directly
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ((window as any).SpotifyIframeApi) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      initController((window as any).SpotifyIframeApi);
+    } else if (!scriptLoadedRef.current) {
+      scriptLoadedRef.current = true;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).onSpotifyIframeApiReady = (IFrameAPI: any) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (window as any).SpotifyIframeApi = IFrameAPI;
+        initController(IFrameAPI);
+      };
+      const script = document.createElement('script');
+      script.src = 'https://open.spotify.com/embed/iframe-api/v1';
+      script.async = true;
+      document.body.appendChild(script);
+    }
+
+    return () => {
+      cancelled = true;
+      controllerRef.current = null;
+    };
+  }, [profile?.profileSongSpotifyId]);
+
+  const handleTogglePlay = useCallback(() => {
+    controllerRef.current?.togglePlay();
+  }, []);
 
   // Fetch RMHarks
   const fetchRMHarks = useCallback(async () => {
@@ -244,11 +309,23 @@ export function ProfileColumn({ userId }: { userId: string }) {
       {/* Profile header */}
       <div className="px-4 pt-6 pb-4 border-b border-site-border">
         <div className="flex items-start justify-between mb-4">
-          <div className="w-20 h-20 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-2xl ring-4 ring-site-bg shrink-0">
-            {profile.image ? (
-              <img src={profile.image} alt={profile.name || 'User'} className="w-full h-full rounded-full object-cover" />
-            ) : (
-              (profile.name?.[0] || 'U').toUpperCase()
+          <div className="flex items-center gap-3">
+            <div className="w-20 h-20 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-2xl ring-4 ring-site-bg shrink-0">
+              {profile.image ? (
+                <img src={profile.image} alt={profile.name || 'User'} className="w-full h-full rounded-full object-cover" />
+              ) : (
+                (profile.name?.[0] || 'U').toUpperCase()
+              )}
+            </div>
+
+            {profile.profileSongSpotifyId && profile.profileSongAlbumArt && (
+              <VinylRecord
+                albumArt={profile.profileSongAlbumArt}
+                title={profile.profileSongTitle ?? 'Unknown'}
+                artist={profile.profileSongArtist ?? 'Unknown'}
+                isPlaying={isPlaying}
+                onToggle={handleTogglePlay}
+              />
             )}
           </div>
 
@@ -328,6 +405,15 @@ export function ProfileColumn({ userId }: { userId: string }) {
             <span className="text-site-text-dim">Followers</span>
           </button>
         </div>
+
+        {/* Hidden Spotify embed container (IFrame API injects here) */}
+        {profile.profileSongSpotifyId && (
+          <div
+            ref={embedContainerRef}
+            className="fixed -left-[9999px] -top-[9999px] w-px h-px overflow-hidden pointer-events-none"
+            aria-hidden="true"
+          />
+        )}
       </div>
 
       {/* Tab bar */}
@@ -438,6 +524,11 @@ export function ProfileColumn({ userId }: { userId: string }) {
             location: profile.location,
             website: profile.website,
             showLikes: profile.showLikes,
+            profileSongSpotifyId: profile.profileSongSpotifyId,
+            profileSongTitle: profile.profileSongTitle,
+            profileSongArtist: profile.profileSongArtist,
+            profileSongPreviewUrl: profile.profileSongPreviewUrl,
+            profileSongAlbumArt: profile.profileSongAlbumArt,
           }}
           onSaved={(data) => {
             setProfile((prev) => {
@@ -450,6 +541,11 @@ export function ProfileColumn({ userId }: { userId: string }) {
                 location: data.location,
                 website: data.website,
                 showLikes: data.showLikes,
+                profileSongSpotifyId: data.profileSongSpotifyId,
+                profileSongTitle: data.profileSongTitle,
+                profileSongArtist: data.profileSongArtist,
+                profileSongPreviewUrl: data.profileSongPreviewUrl,
+                profileSongAlbumArt: data.profileSongAlbumArt,
               };
             });
           }}
