@@ -29,6 +29,7 @@ export function SocialListModal({ open, onClose, userId, type }: SocialListModal
   const [followingInProgress, setFollowingInProgress] = useState<Set<string>>(new Set());
   const sentinelRef = useRef<HTMLDivElement>(null);
   const initialFetched = useRef(false);
+  const fetchingRef = useRef(false);
   const { data: session } = authClient.useSession();
 
   const title = type === 'followers' ? 'Followers' : 'Following';
@@ -48,11 +49,13 @@ export function SocialListModal({ open, onClose, userId, type }: SocialListModal
       setCursor(null);
       setHasMore(true);
       initialFetched.current = false;
+      fetchingRef.current = false;
     }
   }, [open, userId, type]);
 
   const fetchPage = useCallback(async (currentCursor: string | null) => {
-    if (loading) return;
+    if (fetchingRef.current) return;
+    fetchingRef.current = true;
     setLoading(true);
     try {
       const params = new URLSearchParams({ limit: '20' });
@@ -67,8 +70,9 @@ export function SocialListModal({ open, onClose, userId, type }: SocialListModal
       console.error('Fetch social list error:', error);
     } finally {
       setLoading(false);
+      fetchingRef.current = false;
     }
-  }, [endpoint, loading]);
+  }, [endpoint]);
 
   // Initial fetch
   useEffect(() => {
