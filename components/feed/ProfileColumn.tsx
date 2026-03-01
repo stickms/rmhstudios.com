@@ -96,7 +96,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
       if (cancelled || !embedContainerRef.current) return;
       IFrameAPI.createController(
         embedContainerRef.current,
-        { uri: `spotify:track:${spotifyId}`, width: 1, height: 1 },
+        { uri: `spotify:track:${spotifyId}`, width: 0, height: 0 },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (ctrl: any) => {
           if (cancelled) return;
