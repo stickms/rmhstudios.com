@@ -58,7 +58,7 @@ export default async function NewsArticlePage({ params }: Props) {
 
     if (!article) {
         return (
-            <main className="min-h-screen pt-32 pb-20 px-4 bg-(--site-bg)">
+            <main className="min-h-screen pt-20 pb-20 px-4 bg-(--site-bg)">
                 <div className="container mx-auto max-w-3xl text-center">
                     <h1 className="text-3xl font-bold text-(--site-text)">Article not found</h1>
                     <Link href="/news" className="text-(--site-accent) mt-4 inline-block hover:underline">
@@ -72,7 +72,7 @@ export default async function NewsArticlePage({ params }: Props) {
     const categoryColor = getCategoryColor(article.category as string ?? '');
 
     return (
-        <article className="min-h-screen pt-32 pb-20 px-4 bg-(--site-bg) relative overflow-hidden">
+        <article className="min-h-screen pt-20 pb-20 px-4 bg-(--site-bg) relative overflow-hidden">
             <div className="container mx-auto max-w-3xl relative z-10">
                 <Link
                     href="/news"

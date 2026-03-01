@@ -39,7 +39,7 @@ export function PaperViewer({ article }: { article: ResearchArticle }) {
       {/* Fixed toolbar */}
       <div
         data-paper-toolbar
-        className="fixed top-16 left-0 right-0 z-50 bg-[#323639] border-b border-[#1a1a1a] shadow-lg"
+        className="fixed top-0 left-0 right-0 z-50 bg-[#323639] border-b border-[#1a1a1a] shadow-lg"
       >
         <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-12">
           {/* Left: back + title */}
@@ -89,7 +89,7 @@ export function PaperViewer({ article }: { article: ResearchArticle }) {
       </div>
 
       {/* Paper container */}
-      <div className="pt-32 pb-16 flex justify-center overflow-x-auto">
+      <div className="pt-20 pb-16 flex justify-center overflow-x-auto">
         <div
           data-paper-page
           className="bg-white text-gray-900 shadow-2xl origin-top"

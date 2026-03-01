@@ -52,7 +52,7 @@ export default async function BlogPost({ params }: Props) {
   const post = getPostBySlug(slug, ["title", "date", "description", "content"]);
 
   return (
-    <article className="min-h-screen pt-32 pb-20 px-4 bg-site-bg relative overflow-hidden">
+    <article className="min-h-screen pt-20 pb-20 px-4 bg-site-bg relative overflow-hidden">
         <div className="container mx-auto max-w-3xl relative z-10">
             <Link href="/blog" className="inline-flex items-center gap-2 text-site-text-dim hover:text-site-text mb-8 transition-colors animate-in fade-in slide-in-from-left-4 duration-700">
                 <ArrowLeft className="w-4 h-4" /> Back to Logs

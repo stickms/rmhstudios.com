@@ -32,8 +32,8 @@ export function PageLayout({
       <main className="w-full max-w-162 min-w-0 border-r border-site-border pb-16 md:pb-0">
         <div className="flex flex-col">
           {/* Sticky Header */}
-          <div className="sticky top-0 z-10 bg-site-bg/85 backdrop-blur-md border-b border-site-border">
-            <div className="flex items-center justify-between px-4 py-3">
+          <div className="sticky top-0 z-10 h-15 bg-site-bg/85 backdrop-blur-md border-b border-site-border">
+            <div className="h-full flex items-center justify-between px-4 py-3">
               <h1 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text flex items-center gap-2">
                 <span className="md:hidden text-site-accent">RMH</span>
                 <span className="md:hidden w-px h-5 bg-site-border" aria-hidden="true" />
