@@ -12,11 +12,9 @@ function createPrismaClient() {
   // PrismaPg wraps a pg Pool — configure pool sizing for predictable behaviour under load.
   const adapter = new PrismaPg({
     connectionString,
-    options: {
-      max: parseInt(process.env.DATABASE_POOL_SIZE || '10', 10),
-      idleTimeoutMillis: 30_000,
-      connectionTimeoutMillis: 10_000,
-    },
+    max: parseInt(process.env.DATABASE_POOL_SIZE || '10', 10),
+    idleTimeoutMillis: 30_000,
+    connectionTimeoutMillis: 10_000,
   });
 
   return new PrismaClient({

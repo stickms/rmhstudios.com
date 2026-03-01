@@ -25,11 +25,9 @@ export function createServerPrismaClient(logger: Logger): PrismaClient {
 
   const adapter = new PrismaPg({
     connectionString,
-    options: {
-      max: parseInt(process.env.SERVER_DB_POOL_SIZE || '5', 10),
-      idleTimeoutMillis: 30_000,
-      connectionTimeoutMillis: 10_000,
-    },
+    max: parseInt(process.env.SERVER_DB_POOL_SIZE || '5', 10),
+    idleTimeoutMillis: 30_000,
+    connectionTimeoutMillis: 10_000,
   });
 
   const client = new PrismaClient({
