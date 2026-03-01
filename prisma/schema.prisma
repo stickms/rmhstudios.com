@@ -1,7 +1,7 @@
 generator client {
   provider        = "prisma-client-js"
   // Skip engine binary — the pg adapter uses the JS-based query engine
-  previewFeatures = ["driverAdapters", "metrics"]
+  previewFeatures = ["relationJoins"]
 }
 
 datasource db {
