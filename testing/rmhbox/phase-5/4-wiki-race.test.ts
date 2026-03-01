@@ -374,4 +374,63 @@ describe('Wiki-Race Server Handler (§5.4)', () => {
       expect(snapshot).toHaveProperty('myState');
     });
   });
+
+  describe('Redirect Handling', () => {
+    it('should update path and title when article redirects to a different title', async () => {
+      const { fetchArticle } = await import('../../../lib/rmhbox/wiki-race/wikipedia-proxy');
+      const mockFetch = fetchArticle as ReturnType<typeof vi.fn>;
+
+      const { game } = createGame();
+      game.start();
+      await vi.advanceTimersByTimeAsync(6000); // Enter navigation
+
+      // Override fetchArticle to return a redirected title for the next call
+      mockFetch.mockResolvedValueOnce({
+        title: 'Stem_cell',  // Canonical (redirected-to) title
+        sanitizedHtml: '<p>Stem cell article</p>',
+        links: new Set(['Biology', 'Cell_division']),
+      });
+
+      const userId = MOCK_USERS.alice.userId;
+      game.handleInput(userId, 'NAVIGATE', { targetTitle: 'Other_Article' });
+
+      // Flush microtasks so navigation fetch completes
+      await vi.advanceTimersByTimeAsync(0);
+
+      // Player state should have the canonical title
+      const state = game.getStateForPlayer(userId) as Record<string, unknown>;
+      const myState = state.myState as Record<string, unknown>;
+      expect(myState.currentArticleTitle).toBe('Stem_cell');
+      // Path should contain the canonical title, not the original link text
+      const path = myState.path as string[];
+      expect(path[path.length - 1]).toBe('Stem_cell');
+    });
+
+    it('should finish the game when a redirect resolves to the target article', async () => {
+      const { fetchArticle } = await import('../../../lib/rmhbox/wiki-race/wikipedia-proxy');
+      const mockFetch = fetchArticle as ReturnType<typeof vi.fn>;
+
+      const { game, broadcastLog } = createGame();
+      game.start();
+      await vi.advanceTimersByTimeAsync(6000); // Enter navigation
+
+      // Override fetchArticle: navigating to "Target_Articles" redirects to "Target_Article"
+      mockFetch.mockResolvedValueOnce({
+        title: 'Target_Article',  // Redirects to the actual target
+        sanitizedHtml: '<p>Target article content</p>',
+        links: new Set(['Some_Link']),
+      });
+
+      const userId = MOCK_USERS.alice.userId;
+      game.handleInput(userId, 'NAVIGATE', { targetTitle: 'Other_Article' });
+
+      // Flush microtasks so navigation fetch completes
+      await vi.advanceTimersByTimeAsync(0);
+
+      // Should broadcast WR_PLAYER_FINISHED
+      const finished = findLastActionBroadcast(broadcastLog, 'WR_PLAYER_FINISHED');
+      expect(finished).toBeDefined();
+      expect(finished!.data.userId).toBe(userId);
+    });
+  });
 });

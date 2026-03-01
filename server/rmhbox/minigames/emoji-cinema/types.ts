@@ -31,6 +31,18 @@ export interface ECPlayerGuesses {
   guesses: ECPlayerGuess[];
 }
 
+// ─── Guess Log ───────────────────────────────────────────────────
+
+/** An entry in the public guess log visible to all players. */
+export interface GuessLogEntry {
+  userId: string;
+  userName: string;
+  /** The guess text — omitted when the guess is correct to avoid revealing the answer. */
+  guessText?: string;
+  isCorrect: boolean;
+  timestamp: number;
+}
+
 // ─── Correct Guesser ─────────────────────────────────────────────
 
 export interface CorrectGuesser {
@@ -57,6 +69,8 @@ export interface EmojiCinemaState {
   guesses: Map<string, ECPlayerGuesses>;
   correctGuessers: CorrectGuesser[];
   closeGuessCount: number;
+  /** Public guess log broadcast to all players during the guessing phase. */
+  guessLog: GuessLogEntry[];
   playerScores: Map<string, number>;
   phaseStartedAt: number;
   phaseEndsAt: number;

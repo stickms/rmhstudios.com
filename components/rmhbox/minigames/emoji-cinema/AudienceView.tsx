@@ -11,8 +11,10 @@ import EmojiSentence from './EmojiSentence';
 import GuessInput from './GuessInput';
 import GuessHistory from './GuessHistory';
 import CorrectGuessersPanel from './CorrectGuessersPanel';
+import GuessLog from './GuessLog';
 import type { GuessEntry } from './GuessHistory';
 import type { CorrectGuesserInfo } from './EmojiCinemaGame';
+import type { GuessLogEntry } from './GuessLog';
 
 interface AudienceViewProps {
   emojis: string[];
@@ -26,6 +28,7 @@ interface AudienceViewProps {
   timeRemaining: number;
   correctGuessers: CorrectGuesserInfo[];
   movieTitles?: string[];
+  guessLog: GuessLogEntry[];
 }
 
 export default function AudienceView({
@@ -40,6 +43,7 @@ export default function AudienceView({
   timeRemaining,
   correctGuessers,
   movieTitles: propMovieTitles,
+  guessLog,
 }: AudienceViewProps) {
   const disabled = hasGuessedCorrectly || guesses.length >= maxGuesses;
   const [movieTitles, setMovieTitles] = useState<string[]>(propMovieTitles ?? []);
@@ -91,6 +95,8 @@ export default function AudienceView({
       <GuessHistory guesses={guesses} />
 
       <CorrectGuessersPanel correctGuessers={correctGuessers} />
+
+      <GuessLog entries={guessLog} />
     </div>
   );
 }

@@ -2,6 +2,8 @@
 
 import EmojiSentence from './EmojiSentence';
 import EmojiKeyboard from './EmojiKeyboard';
+import GuessLog from './GuessLog';
+import type { GuessLogEntry } from './GuessLog';
 
 interface ProducerViewProps {
   movieTitle: string;
@@ -12,6 +14,7 @@ interface ProducerViewProps {
   guessCount: number;
   correctCount: number;
   timeRemaining: number;
+  guessLog: GuessLogEntry[];
 }
 
 export default function ProducerView({
@@ -23,6 +26,7 @@ export default function ProducerView({
   guessCount,
   correctCount,
   timeRemaining,
+  guessLog,
 }: ProducerViewProps) {
   return (
     <div className="flex flex-col items-center gap-3 p-4 w-full max-w-md mx-auto">
@@ -49,6 +53,8 @@ export default function ProducerView({
         <span>Guesses: {guessCount}</span>
         <span>Correct: {correctCount}</span>
       </div>
+
+      <GuessLog entries={guessLog} />
     </div>
   );
 }
