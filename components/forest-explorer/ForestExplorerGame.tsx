@@ -4,6 +4,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { PointerLockControls, Sky, Stars } from '@react-three/drei';
 import { useRef, useState, useEffect, useMemo } from 'react';
 import * as THREE from 'three';
+import { useForestAudio } from './audio/useForestAudio';
 
 // ─── Module-level constants ───────────────────────────────────────────────────
 // Computed once at module load — mirrors ForestScene's deterministic RNG so
@@ -23,6 +24,71 @@ const TREE_SCALE = (s: number): number => {
         : 0.45 + SCENE_RNG(s + 2) * 0.90;  // 0.45 – 1.35
 };
 
+// ─── River data ──────────────────────────────────────────────────────────────
+// Gentle S-curve from SW to NE, avoiding the pond at (28, -22).
+// Must be defined BEFORE TREE_COLLIDERS so tree filtering can use distToRiver.
+
+const RIVER_POINTS: [number, number, number][] = [
+    [-85, 0, -85],
+    [-45, 0, -35],
+    [-20, 0, -5],
+    [10, 0, 15],
+    [35, 0, 40],
+    [85, 0, 85],
+];
+
+const RIVER_WIDTH = 8;
+const RIVER_HALF_WIDTH = RIVER_WIDTH / 2;
+
+const RIVER_CURVE = new THREE.CatmullRomCurve3(
+    RIVER_POINTS.map(([x, y, z]) => new THREE.Vector3(x, y, z)),
+    false,
+    'catmullrom',
+    0.5,
+);
+
+// Pre-sample curve for fast distance checks
+const RIVER_SAMPLES = 200;
+const RIVER_SAMPLE_POINTS: THREE.Vector3[] = [];
+for (let i = 0; i <= RIVER_SAMPLES; i++) {
+    RIVER_SAMPLE_POINTS.push(RIVER_CURVE.getPoint(i / RIVER_SAMPLES));
+}
+
+function distToRiver(x: number, z: number): number {
+    let minDist = Infinity;
+    for (const p of RIVER_SAMPLE_POINTS) {
+        const dx = x - p.x, dz = z - p.z;
+        const d = Math.sqrt(dx * dx + dz * dz);
+        if (d < minDist) minDist = d;
+    }
+    return minDist;
+}
+
+// Bridge positions along the curve (parameter 0-1)
+const BRIDGE_PARAMS = [0.25, 0.55, 0.80];
+const BRIDGE_WIDTH = 3.5;
+const BRIDGE_LENGTH = RIVER_WIDTH + 1.5;
+
+function isOnBridge(x: number, z: number): boolean {
+    for (const t of BRIDGE_PARAMS) {
+        const bp = RIVER_CURVE.getPoint(t);
+        const tangent = RIVER_CURVE.getTangent(t);
+        const dx = x - bp.x, dz = z - bp.z;
+        // Project onto tangent (along bridge) and perpendicular (across bridge)
+        const along = dx * tangent.x + dz * tangent.z;
+        const perp = dx * (-tangent.z) + dz * tangent.x;
+        if (Math.abs(along) < BRIDGE_WIDTH / 2 && Math.abs(perp) < BRIDGE_LENGTH / 2) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// ─── Player position (shared mutable ref for torch light culling) ────────────
+const PLAYER_POS = { x: 0, z: 0 };
+
+// ─── Tree colliders (filtered to exclude river overlap) ──────────────────────
+
 const TREE_COLLIDERS: { x: number; z: number; r: number }[] = (() => {
     const out: { x: number; z: number; r: number }[] = [];
     for (let i = 0; i < 240; i++) {
@@ -30,10 +96,13 @@ const TREE_COLLIDERS: { x: number; z: number; r: number }[] = (() => {
         const angle = SCENE_RNG(s) * Math.PI * 2;
         const minR = i < 30 ? 7 : 15;
         const radius = minR + SCENE_RNG(s + 1) * 95;
+        const x = Math.cos(angle) * radius;
+        const z = Math.sin(angle) * radius;
+        if (distToRiver(x, z) < RIVER_HALF_WIDTH + 1.5) continue;
         out.push({
-            x: Math.cos(angle) * radius,
-            z: Math.sin(angle) * radius,
-            r: 0.28 * TREE_SCALE(s) + 0.45, // trunk base + player capsule
+            x,
+            z,
+            r: 0.28 * TREE_SCALE(s) + 0.45,
         });
     }
     return out;
@@ -43,54 +112,79 @@ const TREE_COLLIDERS: { x: number; z: number; r: number }[] = (() => {
 
 type TimeOfDay = 'day' | 'night';
 
-// ─── Tree ─────────────────────────────────────────────────────────────────────
+// ─── Tree InstancedMesh helper ───────────────────────────────────────────────
+// Replaces individual Tree components with batched InstancedMesh for massive
+// draw-call reduction (960+ meshes → 4 draw calls per tree group).
 
-type TreeProps = {
-    position: [number, number, number];
-    scale?: number;
-    variety?: number;
-};
+const TRUNK_COLORS = ['#7a5c32', '#6b4423', '#8a6440'];
+const FOLIAGE_PALETTES: [string, string, string][] = [
+    ['#1a4d0f', '#276614', '#338019'],
+    ['#14402a', '#1e6040', '#288053'],
+    ['#2b4d14', '#3d6e1e', '#4f8a28'],
+];
 
-function Tree({ position, scale = 1, variety = 0 }: TreeProps) {
-    const groupRef = useRef<THREE.Group>(null);
-    const phase = useMemo(() => Math.random() * Math.PI * 2, []);
+type TreeData = { x: number; z: number; scale: number; variety: number };
 
-    useFrame((state) => {
-        if (groupRef.current) {
-            groupRef.current.rotation.z =
-                Math.sin(state.clock.elapsedTime * 0.7 + phase) * 0.012;
-        }
-    });
+function buildTreeInstancedMeshes(trees: TreeData[], enableShadows = true): THREE.InstancedMesh[] {
+    const count = trees.length;
+    if (count === 0) return [];
 
-    const trunkColors = ['#7a5c32', '#6b4423', '#8a6440'];
-    const foliagePalettes: [string, string, string][] = [
-        ['#1a4d0f', '#276614', '#338019'],
-        ['#14402a', '#1e6040', '#288053'],
-        ['#2b4d14', '#3d6e1e', '#4f8a28'],
-    ];
+    const trunkGeo = new THREE.CylinderGeometry(0.16, 0.26, 3, 7);
+    const foliage1Geo = new THREE.ConeGeometry(1.9, 2.8, 7);
+    const foliage2Geo = new THREE.ConeGeometry(1.35, 2.4, 7);
+    const foliage3Geo = new THREE.ConeGeometry(0.75, 2.0, 7);
 
-    const [dark, mid, light] = foliagePalettes[variety % 3];
+    const trunkMat = new THREE.MeshLambertMaterial();
+    const foliage1Mat = new THREE.MeshLambertMaterial();
+    const foliage2Mat = new THREE.MeshLambertMaterial();
+    const foliage3Mat = new THREE.MeshLambertMaterial();
 
-    return (
-        <group ref={groupRef} position={position}>
-            <mesh position={[0, 1.5 * scale, 0]} castShadow>
-                <cylinderGeometry args={[0.16 * scale, 0.26 * scale, 3 * scale, 7]} />
-                <meshLambertMaterial color={trunkColors[variety % 3]} />
-            </mesh>
-            <mesh position={[0, 3.6 * scale, 0]} castShadow>
-                <coneGeometry args={[1.9 * scale, 2.8 * scale, 7]} />
-                <meshLambertMaterial color={dark} />
-            </mesh>
-            <mesh position={[0, 5.3 * scale, 0]} castShadow>
-                <coneGeometry args={[1.35 * scale, 2.4 * scale, 7]} />
-                <meshLambertMaterial color={mid} />
-            </mesh>
-            <mesh position={[0, 6.8 * scale, 0]} castShadow>
-                <coneGeometry args={[0.75 * scale, 2.0 * scale, 7]} />
-                <meshLambertMaterial color={light} />
-            </mesh>
-        </group>
-    );
+    const trunkIM = new THREE.InstancedMesh(trunkGeo, trunkMat, count);
+    const foliage1IM = new THREE.InstancedMesh(foliage1Geo, foliage1Mat, count);
+    const foliage2IM = new THREE.InstancedMesh(foliage2Geo, foliage2Mat, count);
+    const foliage3IM = new THREE.InstancedMesh(foliage3Geo, foliage3Mat, count);
+
+    const meshes = [trunkIM, foliage1IM, foliage2IM, foliage3IM];
+    meshes.forEach(m => { m.castShadow = enableShadows; });
+
+    const dummy = new THREE.Object3D();
+    const col = new THREE.Color();
+
+    const trunkC = new Float32Array(count * 3);
+    const f1C = new Float32Array(count * 3);
+    const f2C = new Float32Array(count * 3);
+    const f3C = new Float32Array(count * 3);
+
+    // Y offsets for each part (relative to tree base, multiplied by scale)
+    const yOffsets = [1.5, 3.6, 5.3, 6.8];
+
+    for (let i = 0; i < count; i++) {
+        const { x, z, scale: s, variety: v } = trees[i];
+
+        [trunkIM, foliage1IM, foliage2IM, foliage3IM].forEach((im, partIdx) => {
+            dummy.position.set(x, yOffsets[partIdx] * s, z);
+            dummy.rotation.set(0, 0, 0);
+            dummy.scale.setScalar(s);
+            dummy.updateMatrix();
+            im.setMatrixAt(i, dummy.matrix);
+        });
+
+        // Per-instance colors
+        col.set(TRUNK_COLORS[v % 3]);
+        trunkC.set([col.r, col.g, col.b], i * 3);
+
+        const [dark, mid, light] = FOLIAGE_PALETTES[v % 3];
+        col.set(dark);  f1C.set([col.r, col.g, col.b], i * 3);
+        col.set(mid);   f2C.set([col.r, col.g, col.b], i * 3);
+        col.set(light);  f3C.set([col.r, col.g, col.b], i * 3);
+    }
+
+    trunkIM.instanceColor = new THREE.InstancedBufferAttribute(trunkC, 3);
+    foliage1IM.instanceColor = new THREE.InstancedBufferAttribute(f1C, 3);
+    foliage2IM.instanceColor = new THREE.InstancedBufferAttribute(f2C, 3);
+    foliage3IM.instanceColor = new THREE.InstancedBufferAttribute(f3C, 3);
+
+    return meshes;
 }
 
 // ─── Rock ─────────────────────────────────────────────────────────────────────
@@ -420,42 +514,31 @@ function Moon() {
 // movement area and the first trunk ring.  No animation — zero per-frame cost.
 
 function GrassBorder() {
-    const blades = useMemo(() => {
+    const groupRef = useRef<THREE.Group>(null);
+
+    const meshRef = useMemo(() => {
         const rng = (n: number) => { const x = Math.sin(n + 77) * 43758.5453; return x - Math.floor(x); };
-        const colors = ['#2d6020', '#3d7828', '#4a8a2a', '#234e18', '#3a6e24'];
-        const out: Array<{
-            id: number;
-            position: [number, number, number];
-            rotY: number;
-            rotX: number;
-            width: number;
-            height: number;
-            color: string;
-        }> = [];
+        const colorHexes = ['#2d6020', '#3d7828', '#4a8a2a', '#234e18', '#3a6e24'];
 
-        let id = 0;
+        // Collect blade data
+        const blades: Array<{ x: number; z: number; rotX: number; rotY: number; w: number; h: number; colorIdx: number }> = [];
 
-        // Ring 1 — inner boundary edge (r≈109–115), dense
         const ring1Count = 260;
         for (let c = 0; c < ring1Count; c++) {
             const baseAngle = (c / ring1Count) * Math.PI * 2;
-            for (let b = 0; b < 7; b++) {  // 7 blades per clump
+            for (let b = 0; b < 7; b++) {
                 const sc = c * 17.3 + b * 3.7;
                 const jitterAngle = baseAngle + (rng(sc) - 0.5) * 0.14;
                 const jitterR = 112 + (rng(sc + 1) - 0.5) * 6;
-                out.push({
-                    id: id++,
-                    position: [Math.cos(jitterAngle) * jitterR, 0, Math.sin(jitterAngle) * jitterR],
-                    rotY: rng(sc + 2) * Math.PI * 2,
-                    rotX: 0.08 + rng(sc + 3) * 0.18,
-                    width: 0.12 + rng(sc + 4) * 0.09,
-                    height: 1.4 + rng(sc + 5) * 1.2,
-                    color: colors[Math.floor(rng(sc + 6) * 5)],
+                blades.push({
+                    x: Math.cos(jitterAngle) * jitterR, z: Math.sin(jitterAngle) * jitterR,
+                    rotY: rng(sc + 2) * Math.PI * 2, rotX: 0.08 + rng(sc + 3) * 0.18,
+                    w: 0.12 + rng(sc + 4) * 0.09, h: 1.4 + rng(sc + 5) * 1.2,
+                    colorIdx: Math.floor(rng(sc + 6) * 5),
                 });
             }
         }
 
-        // Ring 2 — deeper, into the tree ring zone (r≈117–125), tall & wispy
         const ring2Count = 160;
         for (let c = 0; c < ring2Count; c++) {
             const baseAngle = (c / ring2Count) * Math.PI * 2 + Math.PI / ring2Count;
@@ -463,114 +546,244 @@ function GrassBorder() {
                 const sc = c * 23.7 + b * 5.1 + 9000;
                 const jitterAngle = baseAngle + (rng(sc) - 0.5) * 0.16;
                 const jitterR = 121 + (rng(sc + 1) - 0.5) * 8;
-                out.push({
-                    id: id++,
-                    position: [Math.cos(jitterAngle) * jitterR, 0, Math.sin(jitterAngle) * jitterR],
-                    rotY: rng(sc + 2) * Math.PI * 2,
-                    rotX: 0.05 + rng(sc + 3) * 0.12,
-                    width: 0.14 + rng(sc + 4) * 0.10,
-                    height: 2.0 + rng(sc + 5) * 1.5,  // taller between trunks
-                    color: colors[Math.floor(rng(sc + 6) * 5)],
+                blades.push({
+                    x: Math.cos(jitterAngle) * jitterR, z: Math.sin(jitterAngle) * jitterR,
+                    rotY: rng(sc + 2) * Math.PI * 2, rotX: 0.05 + rng(sc + 3) * 0.12,
+                    w: 0.14 + rng(sc + 4) * 0.10, h: 2.0 + rng(sc + 5) * 1.5,
+                    colorIdx: Math.floor(rng(sc + 6) * 5),
                 });
             }
         }
 
-        return out;
+        const count = blades.length;
+        const geo = new THREE.PlaneGeometry(1, 1);
+        const mat = new THREE.MeshLambertMaterial({ side: THREE.DoubleSide });
+        const im = new THREE.InstancedMesh(geo, mat, count);
+
+        const dummy = new THREE.Object3D();
+        const col = new THREE.Color();
+        const colors = new Float32Array(count * 3);
+
+        for (let i = 0; i < count; i++) {
+            const b = blades[i];
+            dummy.position.set(b.x, b.h / 2, b.z);
+            dummy.rotation.set(b.rotX, b.rotY, 0);
+            dummy.scale.set(b.w, b.h, 1);
+            dummy.updateMatrix();
+            im.setMatrixAt(i, dummy.matrix);
+
+            col.set(colorHexes[b.colorIdx]);
+            colors.set([col.r, col.g, col.b], i * 3);
+        }
+
+        im.instanceColor = new THREE.InstancedBufferAttribute(colors, 3);
+        return im;
     }, []);
 
-    return (
-        <>
-            {blades.map((b) => (
-                <mesh
-                    key={b.id}
-                    position={[b.position[0], b.height / 2, b.position[2]]}
-                    rotation={[b.rotX, b.rotY, 0]}
-                >
-                    <planeGeometry args={[b.width, b.height]} />
-                    <meshLambertMaterial color={b.color} side={THREE.DoubleSide} />
-                </mesh>
-            ))}
-        </>
-    );
+    useEffect(() => {
+        const group = groupRef.current;
+        if (!group || !meshRef) return;
+        group.add(meshRef);
+        return () => { group.remove(meshRef); };
+    }, [meshRef]);
+
+    return <group ref={groupRef} />;
 }
 
 // ─── Boundary Wall ────────────────────────────────────────────────────────────
 
 function BoundaryWall() {
-    const wallTrees = useMemo(() => {
+    const groupRef = useRef<THREE.Group>(null);
+
+    const meshes = useMemo(() => {
         const rng = (n: number) => { const x = Math.sin(n + 99) * 43758.5453; return x - Math.floor(x); };
-        const trees: Array<{ id: number; position: [number, number, number]; scale: number; variety: number }> = [];
+        const trees: TreeData[] = [];
 
-        // Ring 1: radius 118, spacing ~3.5 units
-        const r1 = 118;
-        const count1 = Math.floor((2 * Math.PI * r1) / 3.5);
-        for (let i = 0; i < count1; i++) {
-            const angle = (i / count1) * Math.PI * 2;
-            const spread = (rng(i * 3.7) - 0.5) * 2; // slight radial jitter
-            const r = r1 + spread;
-            trees.push({
-                id: i,
-                position: [Math.cos(angle) * r, 0, Math.sin(angle) * r],
-                scale: 2.0 + rng(i * 2.1) * 0.8,
-                variety: i % 3,
-            });
+        const rings = [
+            { radius: 118, spacing: 3.5, offset: 0, baseScale: 2.0, scaleRange: 0.8, seedOffset: 0, varietyOffset: 0 },
+            { radius: 122, spacing: 3.8, offset: 0, baseScale: 2.1, scaleRange: 0.9, seedOffset: 500, varietyOffset: 1 },
+            { radius: 126, spacing: 2.8, offset: 0, baseScale: 2.2, scaleRange: 0.7, seedOffset: 1000, varietyOffset: 2 },
+            { radius: 130, spacing: 3.2, offset: 0, baseScale: 2.0, scaleRange: 1.0, seedOffset: 1500, varietyOffset: 0 },
+        ];
+
+        // Compute offsets for rings 2-4
+        const count0 = Math.floor((2 * Math.PI * rings[0].radius) / rings[0].spacing);
+        rings[1].offset = Math.PI / Math.floor((2 * Math.PI * rings[1].radius) / rings[1].spacing);
+        rings[2].offset = (Math.PI * 0.7) / Math.floor((2 * Math.PI * rings[2].radius) / rings[2].spacing);
+        rings[3].offset = Math.PI / Math.floor((2 * Math.PI * rings[3].radius) / rings[3].spacing);
+
+        for (const ring of rings) {
+            const count = Math.floor((2 * Math.PI * ring.radius) / ring.spacing);
+            for (let i = 0; i < count; i++) {
+                const angle = (i / count) * Math.PI * 2 + ring.offset;
+                const spread = (rng(i * 3.7 + ring.seedOffset) - 0.5) * 2;
+                const r = ring.radius + spread;
+                trees.push({
+                    x: Math.cos(angle) * r,
+                    z: Math.sin(angle) * r,
+                    scale: ring.baseScale + rng(i * 2.1 + ring.seedOffset) * ring.scaleRange,
+                    variety: (i + ring.varietyOffset) % 3,
+                });
+            }
         }
 
-        // Ring 2: radius 122, offset by half a step
-        const r2 = 122;
-        const count2 = Math.floor((2 * Math.PI * r2) / 3.8);
-        const offset2 = Math.PI / count2;
-        for (let i = 0; i < count2; i++) {
-            const angle = (i / count2) * Math.PI * 2 + offset2;
-            const spread = (rng(i * 5.3 + 500) - 0.5) * 2;
-            const r = r2 + spread;
-            trees.push({
-                id: count1 + i,
-                position: [Math.cos(angle) * r, 0, Math.sin(angle) * r],
-                scale: 2.1 + rng(i * 3.3 + 500) * 0.9,
-                variety: (i + 1) % 3,
-            });
+        return buildTreeInstancedMeshes(trees, true);
+    }, []);
+
+    useEffect(() => {
+        const group = groupRef.current;
+        if (!group) return;
+        meshes.forEach(m => group.add(m));
+        return () => { meshes.forEach(m => group.remove(m)); };
+    }, [meshes]);
+
+    return <group ref={groupRef} />;
+}
+
+// ─── River ───────────────────────────────────────────────────────────────────
+
+function River() {
+    const waterRef = useRef<THREE.Mesh>(null);
+
+    const { waterGeo, bankGeoLeft, bankGeoRight } = useMemo(() => {
+        const segments = 120;
+        const positions: number[] = [];
+        const indices: number[] = [];
+
+        const bankLPositions: number[] = [];
+        const bankRPositions: number[] = [];
+        const bankLIndices: number[] = [];
+        const bankRIndices: number[] = [];
+        const bankWidth = 1.5;
+
+        for (let i = 0; i <= segments; i++) {
+            const t = i / segments;
+            const p = RIVER_CURVE.getPoint(t);
+            const tangent = RIVER_CURVE.getTangent(t);
+            const nx = -tangent.z, nz = tangent.x; // perpendicular in XZ
+
+            // Water ribbon
+            positions.push(
+                p.x + nx * RIVER_HALF_WIDTH, 0.08, p.z + nz * RIVER_HALF_WIDTH,
+                p.x - nx * RIVER_HALF_WIDTH, 0.08, p.z - nz * RIVER_HALF_WIDTH,
+            );
+
+            // Left bank (outer edge)
+            const lInner = RIVER_HALF_WIDTH;
+            const lOuter = RIVER_HALF_WIDTH + bankWidth;
+            bankLPositions.push(
+                p.x + nx * lInner, 0.05, p.z + nz * lInner,
+                p.x + nx * lOuter, 0.05, p.z + nz * lOuter,
+            );
+
+            // Right bank (outer edge)
+            bankRPositions.push(
+                p.x - nx * lInner, 0.05, p.z - nz * lInner,
+                p.x - nx * lOuter, 0.05, p.z - nz * lOuter,
+            );
+
+            if (i > 0) {
+                const v = (i - 1) * 2;
+                indices.push(v, v + 1, v + 2, v + 1, v + 3, v + 2);
+                bankLIndices.push(v, v + 1, v + 2, v + 1, v + 3, v + 2);
+                bankRIndices.push(v, v + 1, v + 2, v + 1, v + 3, v + 2);
+            }
         }
 
-        // Ring 3: radius 126, tighter spacing to fill gaps
-        const r3 = 126;
-        const count3 = Math.floor((2 * Math.PI * r3) / 2.8);
-        const offset3 = (Math.PI * 0.7) / count3;
-        for (let i = 0; i < count3; i++) {
-            const angle = (i / count3) * Math.PI * 2 + offset3;
-            const spread = (rng(i * 4.1 + 1000) - 0.5) * 1.5;
-            const r = r3 + spread;
-            trees.push({
-                id: count1 + count2 + i,
-                position: [Math.cos(angle) * r, 0, Math.sin(angle) * r],
-                scale: 2.2 + rng(i * 2.7 + 1000) * 0.7,
-                variety: (i + 2) % 3,
-            });
-        }
+        const wGeo = new THREE.BufferGeometry();
+        wGeo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+        wGeo.setIndex(indices);
+        wGeo.computeVertexNormals();
 
-        // Ring 4: radius 130, deepest ring — closes all remaining sight-lines
-        const r4 = 130;
-        const count4 = Math.floor((2 * Math.PI * r4) / 3.2);
-        const offset4 = Math.PI / count4;
-        for (let i = 0; i < count4; i++) {
-            const angle = (i / count4) * Math.PI * 2 + offset4;
-            const spread = (rng(i * 6.1 + 1500) - 0.5) * 1.8;
-            const r = r4 + spread;
-            trees.push({
-                id: count1 + count2 + count3 + i,
-                position: [Math.cos(angle) * r, 0, Math.sin(angle) * r],
-                scale: 2.0 + rng(i * 4.1 + 1500) * 1.0,
-                variety: i % 3,
-            });
-        }
+        const blGeo = new THREE.BufferGeometry();
+        blGeo.setAttribute('position', new THREE.Float32BufferAttribute(bankLPositions, 3));
+        blGeo.setIndex(bankLIndices);
+        blGeo.computeVertexNormals();
 
-        return trees;
+        const brGeo = new THREE.BufferGeometry();
+        brGeo.setAttribute('position', new THREE.Float32BufferAttribute(bankRPositions, 3));
+        brGeo.setIndex(bankRIndices);
+        brGeo.computeVertexNormals();
+
+        return { waterGeo: wGeo, bankGeoLeft: blGeo, bankGeoRight: brGeo };
+    }, []);
+
+    useFrame((state) => {
+        if (!waterRef.current) return;
+        const mat = waterRef.current.material as THREE.MeshStandardMaterial;
+        mat.opacity = 0.82 + Math.sin(state.clock.elapsedTime * 0.6) * 0.06;
+        mat.emissiveIntensity = 0.04 + Math.sin(state.clock.elapsedTime * 0.4) * 0.02;
+    });
+
+    return (
+        <group>
+            <mesh ref={waterRef} geometry={waterGeo}>
+                <meshStandardMaterial
+                    color="#1a4a6b"
+                    roughness={0.05}
+                    metalness={0.15}
+                    transparent
+                    opacity={0.88}
+                    emissive={new THREE.Color('#0a2030')}
+                    emissiveIntensity={0.04}
+                    side={THREE.DoubleSide}
+                />
+            </mesh>
+            <mesh geometry={bankGeoLeft}>
+                <meshLambertMaterial color="#1e3d28" side={THREE.DoubleSide} />
+            </mesh>
+            <mesh geometry={bankGeoRight}>
+                <meshLambertMaterial color="#1e3d28" side={THREE.DoubleSide} />
+            </mesh>
+        </group>
+    );
+}
+
+// ─── Bridges ─────────────────────────────────────────────────────────────────
+
+function Bridges() {
+    const bridges = useMemo(() => {
+        return BRIDGE_PARAMS.map(t => {
+            const pos = RIVER_CURVE.getPoint(t);
+            const tangent = RIVER_CURVE.getTangent(t);
+            const angle = Math.atan2(tangent.x, tangent.z) + Math.PI / 2;
+            return { position: [pos.x, 0.12, pos.z] as [number, number, number], rotY: angle };
+        });
     }, []);
 
     return (
         <>
-            {wallTrees.map((t) => (
-                <Tree key={t.id} position={t.position} scale={t.scale} variety={t.variety} />
+            {bridges.map((b, i) => (
+                <group key={i} position={b.position} rotation={[0, b.rotY, 0]}>
+                    {/* Bridge deck */}
+                    <mesh castShadow receiveShadow>
+                        <boxGeometry args={[BRIDGE_WIDTH, 0.12, BRIDGE_LENGTH]} />
+                        <meshLambertMaterial color="#8B6914" />
+                    </mesh>
+                    {/* Left railing */}
+                    <mesh position={[-BRIDGE_WIDTH / 2 + 0.05, 0.35, 0]}>
+                        <boxGeometry args={[0.1, 0.55, BRIDGE_LENGTH]} />
+                        <meshLambertMaterial color="#6b4423" />
+                    </mesh>
+                    {/* Right railing */}
+                    <mesh position={[BRIDGE_WIDTH / 2 - 0.05, 0.35, 0]}>
+                        <boxGeometry args={[0.1, 0.55, BRIDGE_LENGTH]} />
+                        <meshLambertMaterial color="#6b4423" />
+                    </mesh>
+                    {/* Railing posts */}
+                    {[-BRIDGE_LENGTH / 2 + 0.3, 0, BRIDGE_LENGTH / 2 - 0.3].map((zp, j) => (
+                        <group key={j}>
+                            <mesh position={[-BRIDGE_WIDTH / 2 + 0.05, 0.5, zp]}>
+                                <boxGeometry args={[0.12, 0.85, 0.12]} />
+                                <meshLambertMaterial color="#5a3a1a" />
+                            </mesh>
+                            <mesh position={[BRIDGE_WIDTH / 2 - 0.05, 0.5, zp]}>
+                                <boxGeometry args={[0.12, 0.85, 0.12]} />
+                                <meshLambertMaterial color="#5a3a1a" />
+                            </mesh>
+                        </group>
+                    ))}
+                </group>
             ))}
         </>
     );
@@ -579,25 +792,29 @@ function BoundaryWall() {
 // ─── Forest Scene ─────────────────────────────────────────────────────────────
 
 function ForestScene() {
-    const data = useMemo(() => {
+    const groupRef = useRef<THREE.Group>(null);
+
+    const { treeMeshes, rocks, mushrooms } = useMemo(() => {
         const rng = (n: number) => {
             const x = Math.sin(n + 1) * 43758.5453;
             return x - Math.floor(x);
         };
 
-        const trees: Array<{ id: number; position: [number, number, number]; scale: number; variety: number }> = [];
-        const rocks: Array<{ id: number; position: [number, number, number]; scale: number }> = [];
-        const mushrooms: Array<{ id: number; position: [number, number, number] }> = [];
+        const trees: TreeData[] = [];
+        const rockData: Array<{ id: number; position: [number, number, number]; scale: number }> = [];
+        const mushroomData: Array<{ id: number; position: [number, number, number] }> = [];
 
         for (let i = 0; i < 240; i++) {
             const s = i * 7.331;
             const angle = rng(s) * Math.PI * 2;
             const minR = i < 30 ? 7 : 15;
-            const radius = minR + rng(s + 1) * 95; // expanded from 72
+            const radius = minR + rng(s + 1) * 95;
+            const x = Math.cos(angle) * radius;
+            const z = Math.sin(angle) * radius;
+            if (distToRiver(x, z) < RIVER_HALF_WIDTH + 1.5) continue;
             trees.push({
-                id: i,
-                position: [Math.cos(angle) * radius, 0, Math.sin(angle) * radius],
-                scale: TREE_SCALE(s),  // uses module-level helper (in sync with TREE_COLLIDERS)
+                x, z,
+                scale: TREE_SCALE(s),
                 variety: Math.floor(rng(s + 3) * 3),
             });
         }
@@ -605,39 +822,42 @@ function ForestScene() {
         for (let i = 0; i < 45; i++) {
             const s = i * 13.71 + 1000;
             const angle = rng(s) * Math.PI * 2;
-            const radius = 4 + rng(s + 1) * 60; // expanded from 45
-            rocks.push({
-                id: i,
-                position: [Math.cos(angle) * radius, 0.18, Math.sin(angle) * radius],
-                scale: 0.5 + rng(s + 2) * 1.6,
-            });
+            const radius = 4 + rng(s + 1) * 60;
+            const x = Math.cos(angle) * radius;
+            const z = Math.sin(angle) * radius;
+            if (distToRiver(x, z) < RIVER_HALF_WIDTH + 1.0) continue;
+            rockData.push({ id: i, position: [x, 0.18, z], scale: 0.5 + rng(s + 2) * 1.6 });
         }
 
         for (let i = 0; i < 35; i++) {
             const s = i * 19.27 + 2000;
             const angle = rng(s) * Math.PI * 2;
-            const radius = 3 + rng(s + 1) * 45; // expanded from 30
-            mushrooms.push({
-                id: i,
-                position: [Math.cos(angle) * radius, 0, Math.sin(angle) * radius],
-            });
+            const radius = 3 + rng(s + 1) * 45;
+            const x = Math.cos(angle) * radius;
+            const z = Math.sin(angle) * radius;
+            if (distToRiver(x, z) < RIVER_HALF_WIDTH + 0.5) continue;
+            mushroomData.push({ id: i, position: [x, 0, z] });
         }
 
-        return { trees, rocks, mushrooms };
+        return { treeMeshes: buildTreeInstancedMeshes(trees), rocks: rockData, mushrooms: mushroomData };
     }, []);
 
+    useEffect(() => {
+        const group = groupRef.current;
+        if (!group) return;
+        treeMeshes.forEach(m => group.add(m));
+        return () => { treeMeshes.forEach(m => group.remove(m)); };
+    }, [treeMeshes]);
+
     return (
-        <>
-            {data.trees.map((t) => (
-                <Tree key={t.id} position={t.position} scale={t.scale} variety={t.variety} />
-            ))}
-            {data.rocks.map((r) => (
+        <group ref={groupRef}>
+            {rocks.map((r) => (
                 <Rock key={r.id} position={r.position} scale={r.scale} />
             ))}
-            {data.mushrooms.map((m) => (
+            {mushrooms.map((m) => (
                 <Mushroom key={m.id} position={m.position} />
             ))}
-        </>
+        </group>
     );
 }
 
@@ -668,8 +888,13 @@ function TikiTorch({ position, phase }: { position: [number, number, number]; ph
             const mat = glowRef.current.material as THREE.MeshStandardMaterial;
             mat.opacity = 0.18 + flicker * 0.10;
         }
+        // Distance-based light culling — only enable PointLight within 30 units
         if (lightRef.current) {
-            lightRef.current.intensity = 9 + flicker * 2;
+            const dx = position[0] - PLAYER_POS.x;
+            const dz = position[2] - PLAYER_POS.z;
+            const nearPlayer = dx * dx + dz * dz < 900; // 30²
+            lightRef.current.visible = nearPlayer;
+            if (nearPlayer) lightRef.current.intensity = 7 + flicker * 2;
         }
     });
 
@@ -721,7 +946,7 @@ function TikiTorch({ position, phase }: { position: [number, number, number]; ph
                 <meshStandardMaterial color="#ffaa00" transparent opacity={0.18} />
             </mesh>
             {/* Point light */}
-            <pointLight ref={lightRef} color="#ff8833" intensity={9} distance={44} decay={1.5} />
+            <pointLight ref={lightRef} color="#ff8833" intensity={7} distance={30} decay={1.5} />
         </group>
     );
 }
@@ -732,10 +957,10 @@ function TikiTorches() {
         // Four rings spread across the full map interior.
         // Each candidate position is nudged up to 8 times to avoid landing inside a tree trunk.
         const rings = [
-            { r: 8,  count: 6,  offset: 0 },
-            { r: 25, count: 8,  offset: Math.PI / 8 },
-            { r: 50, count: 12, offset: Math.PI / 12 },
-            { r: 80, count: 16, offset: Math.PI / 16 },
+            { r: 8,  count: 4,  offset: 0 },
+            { r: 25, count: 6,  offset: Math.PI / 6 },
+            { r: 50, count: 8,  offset: Math.PI / 8 },
+            { r: 80, count: 10, offset: Math.PI / 10 },
         ];
         let id = 0;
         for (const { r, count, offset } of rings) {
@@ -744,7 +969,8 @@ function TikiTorches() {
                 for (let attempt = 0; attempt <= 8; attempt++) {
                     const cx = Math.cos(angle) * r;
                     const cz = Math.sin(angle) * r;
-                    const blocked = TREE_COLLIDERS.some((t) => {
+                    const inRiver = distToRiver(cx, cz) < RIVER_HALF_WIDTH + 1.0;
+                    const blocked = inRiver || TREE_COLLIDERS.some((t) => {
                         const dx = cx - t.x, dz = cz - t.z;
                         return dx * dx + dz * dz < (t.r + 1.5) * (t.r + 1.5);
                     });
@@ -866,17 +1092,35 @@ function Player() {
         move.addScaledVector(camForward, localVel.current.y * delta);
         move.addScaledVector(camRight,   localVel.current.x * delta);
 
-        // Circular boundary (matches the circular tree wall) then tree collision
+        // Circular boundary (matches the circular tree wall) then collisions
         let nx = camera.position.x + move.x;
         let nz = camera.position.z + move.z;
         const boundDist = Math.sqrt(nx * nx + nz * nz);
         if (boundDist > 115) { nx = (nx / boundDist) * 115; nz = (nz / boundDist) * 115; }
 
+        // River collision — push to nearest edge unless on a bridge
+        const rDist = distToRiver(nx, nz);
+        if (rDist < RIVER_HALF_WIDTH && !isOnBridge(nx, nz)) {
+            let nearIdx = 0;
+            let nearDistSq = Infinity;
+            for (let i = 0; i < RIVER_SAMPLE_POINTS.length; i++) {
+                const p = RIVER_SAMPLE_POINTS[i];
+                const dx = nx - p.x, dz = nz - p.z;
+                const d = dx * dx + dz * dz;
+                if (d < nearDistSq) { nearDistSq = d; nearIdx = i; }
+            }
+            const nearP = RIVER_SAMPLE_POINTS[nearIdx];
+            const dx = nx - nearP.x, dz = nz - nearP.z;
+            const dist = Math.sqrt(dx * dx + dz * dz) || 0.001;
+            nx = nearP.x + (dx / dist) * RIVER_HALF_WIDTH;
+            nz = nearP.z + (dz / dist) * RIVER_HALF_WIDTH;
+        }
+
         for (const t of TREE_COLLIDERS) {
             const dx = nx - t.x;
             const dz = nz - t.z;
             const distSq = dx * dx + dz * dz;
-            if (distSq > 225 || distSq === 0) continue; // skip trees >15 units away
+            if (distSq > 225 || distSq === 0) continue;
             const minDist = t.r;
             if (distSq < minDist * minDist) {
                 const dist = Math.sqrt(distSq);
@@ -887,6 +1131,10 @@ function Player() {
 
         camera.position.x = nx;
         camera.position.z = nz;
+
+        // Update shared player position for torch light culling
+        PLAYER_POS.x = nx;
+        PLAYER_POS.z = nz;
 
         // Vertical physics
         if (!isGrounded.current) {
@@ -939,7 +1187,7 @@ function Scene({
                 intensity={night ? 0.18 : 1.6}
                 color={night ? '#8aa8d0' : '#fde68a'}
                 castShadow
-                shadow-mapSize={[2048, 2048] as unknown as number}
+                shadow-mapSize={[1024, 1024] as unknown as number}
                 shadow-camera-far={200}
                 shadow-camera-left={-100}
                 shadow-camera-right={100}
@@ -969,7 +1217,7 @@ function Scene({
             <Stars
                 radius={280}
                 depth={50}
-                count={night ? 3000 : 800}
+                count={night ? 1500 : 800}
                 factor={night ? 6 : 4}
                 fade
                 speed={0.5}
@@ -980,6 +1228,8 @@ function Scene({
 
             <Ground />
             <Pond />
+            <River />
+            <Bridges />
             <ForestScene />
             <GrassBorder />
             <BoundaryWall />
@@ -1004,6 +1254,9 @@ export function ForestExplorerGame() {
     const [mode, setMode] = useState<TimeOfDay>('day');
     const [flashlightOn, setFlashlightOn] = useState(false);
     const night = mode === 'night';
+
+    // Ambient audio (streaming mp3)
+    const { muted, toggleMute, volume, setVolume } = useForestAudio(mode, locked);
 
     // Stable refs so the keydown listener never needs to be re-added
     const nightRef  = useRef(night);
@@ -1084,6 +1337,33 @@ export function ForestExplorerGame() {
                                 <span className="text-zinc-200">ESC</span> — pause
                             </p>
                         </div>
+                        {/* Sound toggle + volume slider */}
+                        <button
+                            className={`w-full py-2 rounded-xl text-sm font-medium transition-colors cursor-pointer ${
+                                muted
+                                    ? 'bg-white/10 text-zinc-400 hover:bg-white/15'
+                                    : 'bg-green-700/60 text-green-200'
+                            }`}
+                            onClick={toggleMute}
+                        >
+                            {muted ? '🔇 Sound Off' : '🔊 Sound On'}
+                        </button>
+                        {!muted && (
+                            <div className="flex items-center gap-2 px-1">
+                                <span className="text-xs text-zinc-500">🔈</span>
+                                <input
+                                    type="range"
+                                    min={0}
+                                    max={1}
+                                    step={0.01}
+                                    value={volume}
+                                    onChange={(e) => setVolume(parseFloat(e.target.value))}
+                                    className="flex-1 h-1.5 appearance-none bg-white/20 rounded-full accent-green-500 cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-green-400"
+                                />
+                                <span className="text-xs text-zinc-500">🔊</span>
+                            </div>
+                        )}
+
                         <button
                             className="mt-2 w-full py-2.5 bg-green-800 hover:bg-green-700 active:bg-green-900 text-green-100 rounded-xl font-medium transition-colors text-sm cursor-pointer"
                             onClick={() => {
@@ -1117,6 +1397,12 @@ export function ForestExplorerGame() {
                         onClick={() => setMode((m) => m === 'day' ? 'night' : 'day')}
                     >
                         {night ? '☀ Day' : '☾ Night'}
+                    </button>
+                    <button
+                        className="px-3 py-1.5 rounded-lg bg-black/50 backdrop-blur-sm border border-white/10 text-white/60 hover:text-white text-xs font-medium transition-colors cursor-pointer"
+                        onClick={toggleMute}
+                    >
+                        {muted ? '🔇' : '🔊'}
                     </button>
                 </div>
             )}
