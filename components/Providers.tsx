@@ -81,20 +81,30 @@ export function Providers({ children }: ProvidersProps) {
     }
     localStorage.setItem("rmh-style", style);
 
-    // Use the hardcoded color map so we can update synchronously — no need
-    // to wait for CSS to resolve via getComputedStyle + rAF.
     const bg = THEME_BG[style] ?? THEME_BG.default;
     html.style.backgroundColor = bg;
     document.body.style.backgroundColor = bg;
 
-    // iOS Safari ignores in-place updates to theme-color meta content.
-    // Removing and re-inserting the tag forces it to pick up the change.
-    const old = document.querySelector('meta[name="theme-color"]');
-    if (old) old.remove();
-    const meta = document.createElement("meta");
-    meta.name = "theme-color";
-    meta.content = bg;
-    document.head.appendChild(meta);
+    // iOS Safari ignores same-tick remove + re-add of theme-color meta tags
+    // and may only honour the tag matching the active colour-scheme.
+    // 1. Remove every existing theme-color meta synchronously.
+    // 2. Re-insert in the next macrotask so Safari sees it as a new tag.
+    // 3. Cover both light & dark schemes so the system setting doesn't matter.
+    document
+      .querySelectorAll('meta[name="theme-color"]')
+      .forEach((el) => el.remove());
+
+    const tid = setTimeout(() => {
+      for (const scheme of ["light", "dark"] as const) {
+        const meta = document.createElement("meta");
+        meta.name = "theme-color";
+        meta.content = bg;
+        meta.media = `(prefers-color-scheme: ${scheme})`;
+        document.head.appendChild(meta);
+      }
+    }, 0);
+
+    return () => clearTimeout(tid);
   }, [style, isAppRoute]);
 
   return (
