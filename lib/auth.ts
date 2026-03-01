@@ -12,9 +12,14 @@ export const auth = betterAuth({
             clientSecret: process.env.DISCORD_CLIENT_SECRET!,
             overrideUserInfoOnSignIn: true,
         },
+        google: {
+            clientId: process.env.GOOGLE_CLIENT_ID!,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+            overrideUserInfoOnSignIn: true,
+        },
     },
     emailAndPassword: {
-        enabled: !!process.env.ALLOW_EMAIL_ONLY_AUTH,
+        enabled: true,
     },
     user: {
         additionalFields: {
