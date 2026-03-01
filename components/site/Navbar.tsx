@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
 import { authClient } from '@/lib/auth-client';
+import { useSession } from '@/components/Providers';
 import { Menu, X, User, LogOut, ChevronDown, Palette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useThemeStore, SITE_STYLES, SiteStyle } from '@/stores/themeStore';
@@ -20,7 +21,7 @@ export function Navbar() {
   const mobileStyleRef = useRef<HTMLDivElement>(null);
   const mobilePaletteBtnRef = useRef<HTMLButtonElement>(null);
 
-  const { data: session, isPending } = authClient.useSession();
+  const { data: session, isPending } = useSession();
 
   useEffect(() => { setMounted(true); }, []);
 

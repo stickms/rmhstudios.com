@@ -4,13 +4,13 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Home, AppWindow, Menu, Gamepad2, User, PenSquare } from 'lucide-react';
-import { authClient } from '@/lib/auth-client';
+import { useSession } from '@/components/Providers';
 import { MobileSidebarDrawer } from './MobileSidebarDrawer';
 import { ComposeModal } from './ComposeModal';
 
 export function MobileNav() {
   const pathname = usePathname();
-  const { data: session } = authClient.useSession();
+  const { data: session } = useSession();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [composeOpen, setComposeOpen] = useState(false);
 

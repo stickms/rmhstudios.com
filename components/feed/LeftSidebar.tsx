@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
 import { authClient } from '@/lib/auth-client';
+import { useSession } from '@/components/Providers';
 import {
   Home, Gamepad2, AppWindow, Newspaper, Map, FlaskConical, BookOpen,
   Palette, ChevronDown, LogOut, PenSquare, User,
@@ -42,7 +43,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   const styleMenuRef = useRef<HTMLDivElement>(null);
   const [popoverPos, setPopoverPos] = useState({ bottom: 0, left: 0 });
 
-  const { data: session, isPending } = authClient.useSession();
+  const { data: session, isPending } = useSession();
 
   useEffect(() => { setMounted(true); }, []);
 

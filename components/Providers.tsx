@@ -1,11 +1,26 @@
 "use client";
 
-import { ReactNode, useEffect, useRef } from "react";
+import { ReactNode, createContext, useContext, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { Toaster } from "sonner";
+import { authClient } from "@/lib/auth-client";
 import { useThemeStore, SITE_STYLES, SiteStyle } from "@/stores/themeStore";
 import { games } from "@/lib/games";
 import { apps } from "@/lib/apps";
+
+/* ------------------------------------------------------------------ */
+/*  Session context – single useSession() call shared across the app  */
+/* ------------------------------------------------------------------ */
+type SessionCtxValue = ReturnType<typeof authClient.useSession>;
+
+const SessionCtx = createContext<SessionCtxValue | null>(null);
+
+/** Use this instead of authClient.useSession() in navigation/shell components. */
+export function useSession() {
+  const ctx = useContext(SessionCtx);
+  if (!ctx) return { data: null as null, isPending: true };
+  return { data: ctx.data, isPending: ctx.isPending };
+}
 
 interface ProvidersProps {
   children: ReactNode;
@@ -55,6 +70,7 @@ const THEME_EXCLUDED_ROUTES = [
 ].filter((href) => href.startsWith("/"));
 
 export function Providers({ children }: ProvidersProps) {
+  const session = authClient.useSession();
   const style = useThemeStore((s) => s.style);
   const pathname = usePathname();
   const isFirstRun = useRef(true);
@@ -110,7 +126,7 @@ export function Providers({ children }: ProvidersProps) {
   }, [style, isAppRoute]);
 
   return (
-    <>
+    <SessionCtx.Provider value={session}>
       {children}
       <Toaster
         theme="dark"
@@ -123,6 +139,6 @@ export function Providers({ children }: ProvidersProps) {
           },
         }}
       />
-    </>
+    </SessionCtx.Provider>
   );
 }
