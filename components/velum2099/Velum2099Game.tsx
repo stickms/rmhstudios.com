@@ -16,7 +16,7 @@ export function Velum2099Game() {
 
         const init = async () => {
             // Load OpenCV.js optionally (graceful degradation if it fails)
-            if (!window.cv) {
+            if (!(window as any).cv) {
                 const script = document.createElement('script');
                 script.src = 'https://docs.opencv.org/4.10.0/opencv.js';
                 script.async = true;

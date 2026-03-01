@@ -27,7 +27,10 @@ PNPM_BIN=$(which pnpm 2>/dev/null) ; PNPM_BIN=${PNPM_BIN:-/home/rmhstudios/.nvm/
 PM2_BIN=$(which pm2 2>/dev/null)   ; PM2_BIN=${PM2_BIN:-/home/rmhstudios/.nvm/versions/node/v25.6.1/bin/pm2}
 NODE_BIN=$(which node 2>/dev/null) ; NODE_BIN=${NODE_BIN:-/home/rmhstudios/.nvm/versions/node/v25.6.1/bin/node}
 
-cleanup() { [ -f "$LOCKFILE" ] && rm -f "$LOCKFILE"; }
+cleanup() {
+    [ -f "$LOCKFILE" ] && rm -f "$LOCKFILE"
+    rm -rf "$REPO_DIR/.next-backup" "$REPO_DIR/dist-server-backup"
+}
 trap cleanup EXIT
 
 check_port() {
@@ -110,13 +113,42 @@ yes | "$PNPM_BIN" run db:push || {
     exit 1
 }
 
-log "Building..."
-"$PNPM_BIN" run build || { log "ERROR: Build failed."; exit 1; }
+log "Backing up current build artifacts..."
+[ -d ".next" ]       && cp -a .next .next-backup
+[ -d "dist-server" ] && cp -a dist-server dist-server-backup
 
-[ -d ".next" ] || { log "ERROR: .next missing after build."; exit 1; }
-[ -f "dist-server/server/socket-server/index.js" ] || { log "ERROR: socket-server/index.js missing after build."; exit 1; }
-[ -f "dist-server/server/rmhbox/index.js" ] || { log "ERROR: rmhbox/index.js missing after build."; exit 1; }
-[ -f "dist-server/server/rmhtube/index.js" ] || { log "ERROR: rmhtube/index.js missing after build."; exit 1; }
+restore_backup() {
+    log "Restoring previous build artifacts — current servers remain running."
+    if [ -d ".next-backup" ]; then
+        rm -rf .next
+        mv .next-backup .next
+    fi
+    if [ -d "dist-server-backup" ]; then
+        rm -rf dist-server
+        mv dist-server-backup dist-server
+    fi
+}
+
+log "Building..."
+if ! "$PNPM_BIN" run build; then
+    log "ERROR: Build failed."
+    restore_backup
+    exit 1
+fi
+
+build_ok=true
+[ -d ".next" ]                                      || { log "ERROR: .next missing after build.";                build_ok=false; }
+[ -f "dist-server/server/socket-server/index.js" ]  || { log "ERROR: socket-server/index.js missing after build."; build_ok=false; }
+[ -f "dist-server/server/rmhbox/index.js" ]          || { log "ERROR: rmhbox/index.js missing after build.";       build_ok=false; }
+[ -f "dist-server/server/rmhtube/index.js" ]         || { log "ERROR: rmhtube/index.js missing after build.";      build_ok=false; }
+
+if [ "$build_ok" != "true" ]; then
+    log "Build artifacts incomplete."
+    restore_backup
+    exit 1
+fi
+
+rm -rf .next-backup dist-server-backup
 
 log "Build successful. Swapping processes..."
 stop_apps
