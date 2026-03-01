@@ -73,6 +73,17 @@ export function Providers({ children }: ProvidersProps) {
 
   // Sync style class to <html> and persist
   useEffect(() => {
+    // On the very first render the Zustand store still holds "default"
+    // because localStorage hasn't hydrated yet. The inline ThemeScript
+    // already applied the correct class, background colour, and meta tag
+    // — touching ANYTHING here would flash the wrong colour and Safari
+    // (iOS 26+) derives its bar tint from the body background-color on
+    // the first paint, so a single wrong frame is enough to break it.
+    if (isFirstRun.current) {
+      isFirstRun.current = false;
+      return;
+    }
+
     const html = document.documentElement;
     // Remove all style classes
     html.classList.remove(...STYLE_CLASSES);
@@ -86,20 +97,7 @@ export function Providers({ children }: ProvidersProps) {
     html.style.backgroundColor = bg;
     document.body.style.backgroundColor = bg;
 
-    // On the very first render the Zustand store still holds its initial
-    // "default" value — localStorage hasn't hydrated yet. The inline
-    // ThemeScript already wrote the correct theme-color meta tag, so we
-    // must NOT touch it here or Safari will latch onto the wrong colour
-    // and never recover (it commits on first read).
-    if (isFirstRun.current) {
-      isFirstRun.current = false;
-      return;
-    }
-
-    // For subsequent (user-initiated) changes, update every existing
-    // theme-color meta tag in-place. Safari 15+ officially supports
-    // dynamic content changes — the earlier bug was caused by the
-    // hydration race clobbering the correct value on mount.
+    // Also update theme-color meta for older Safari / other browsers.
     const metas = document.querySelectorAll('meta[name="theme-color"]');
     if (metas.length > 0) {
       metas.forEach((m) => m.setAttribute("content", bg));
