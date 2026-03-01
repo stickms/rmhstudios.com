@@ -212,6 +212,7 @@ export const games: GameInfo[] = [
         iconName: 'TreePine',
         color: 'from-green-700/20 to-emerald-900/20 hover:border-green-500/50',
         tags: ['Exploration', '3D', 'Relaxing'],
+        imagePath: '/images/games/forest_explorer.jpg',
         authGate: false,
     },
     {
