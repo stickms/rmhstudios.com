@@ -5,7 +5,7 @@ import { Brain, Cpu, Activity, Sigma, Hexagon, Atom } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { ResearchArticle } from '@/lib/research';
 
-const iconMap: Record<string, React.ElementType> = {
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Brain,
   Cpu,
   Activity,
