@@ -30,7 +30,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   // Homepage, profile pages, post detail pages, and section pages use their own layout (no Navbar/Footer)
   const isPostDetailPage = /^\/[^/]+\/post\/[^/]+$/.test(pathname ?? '');
   const sectionPages = ['/games', '/apps', '/news', '/blog', '/research', '/roadmap'];
-  const isSectionPage = sectionPages.some(p => pathname === p);
+  const isSectionPage = sectionPages.some(p => pathname?.startsWith(p));
   if (isHomepage || pathname?.startsWith('/profile') || isPostDetailPage || isSectionPage) {
     return <>{children}</>;
   }
