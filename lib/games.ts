@@ -232,6 +232,23 @@ export const games: GameInfo[] = [
         imagePath: '/images/games/voidbreaker.png',
         authGate: true,
     },
+    {
+        id: 'kowloon-knockout',
+        title: 'Kowloon Knockout',
+        description: 'A 2D retro pixel-art boxing game set in 90s Hong Kong with combos, counter-strikes, and multiplayer.',
+        longDescription:
+            'Step into the neon-lit streets of Kowloon, 1997. Choose from three fighter classes — Power, Speed, or Resistance — master devastating combos, and battle AI opponents or challenge a friend in real-time versus mode over WebSocket.',
+        href: '/kowloon-knockout',
+        status: 'Playable',
+        cta: 'Fight Now',
+        isSteam: false,
+        gradient: 'from-pink-500 to-purple-600',
+        iconName: 'Swords',
+        color: 'from-pink-500/20 to-purple-600/20 hover:border-pink-500/50',
+        tags: ['Fighting', 'Multiplayer', 'Retro'],
+        imagePath: '/images/games/Kowloon-Knockout.png',
+        authGate: false,
+    },
 ];
 
 
