@@ -38,7 +38,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Navbar />
-      <main className="pt-16 min-h-screen">
+      <main className="pt-[calc(4rem+env(safe-area-inset-top,0px))] min-h-screen">
         {children}
       </main>
       <FeedbackModal />

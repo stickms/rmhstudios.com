@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import {
   Nunito, Inter, JetBrains_Mono, Playfair_Display, Bangers,
   Bebas_Neue, Orbitron, Cinzel, Pacifico,
@@ -98,6 +98,10 @@ const dancingScript = Dancing_Script({
   subsets: ["latin"],
   display: "swap",
 });
+
+export const viewport: Viewport = {
+  viewportFit: "cover",
+};
 
 export const metadata: Metadata = {
   title: "RMH | The Everything Platform",
