@@ -50,4 +50,5 @@ export type FeedFilter =
   | "app"
   | "news"
   | "blog"
-  | "research";
+  | "research"
+  | "friends";

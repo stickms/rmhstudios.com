@@ -125,6 +125,126 @@ export async function GET(req: NextRequest) {
       // Not logged in, that's fine
     }
 
+    // Handle "friends" filter: only posts from followed users
+    if (filter === "friends") {
+      if (!userId) {
+        return NextResponse.json({ items: [], nextCursor: null, hasMore: false });
+      }
+
+      const followRecords = await prisma.follow.findMany({
+        where: { followerId: userId },
+        select: { followingId: true },
+      });
+      const followingIds = followRecords.map((f) => f.followingId);
+
+      if (followingIds.length === 0) {
+        return NextResponse.json({ items: [], nextCursor: null, hasMore: false });
+      }
+
+      const cursorDate = cursor ? new Date(cursor) : undefined;
+      const rmharkInclude = {
+        user: { select: userDisplaySelect },
+        _count: { select: { likes: true, comments: true, reposts: true, views: true } },
+        likes: { where: { userId }, select: { id: true } },
+        reposts: { where: { userId }, select: { id: true } },
+        original: {
+          include: {
+            user: { select: userDisplaySelect },
+            _count: { select: { likes: true, comments: true, reposts: true, views: true } },
+          },
+        },
+      } as const;
+
+      const [rmharks, repostRecords] = await Promise.all([
+        prisma.rMHark.findMany({
+          where: {
+            userId: { in: followingIds },
+            ...(cursorDate ? { createdAt: { lt: cursorDate } } : {}),
+          },
+          orderBy: { createdAt: "desc" },
+          take: limit,
+          include: rmharkInclude,
+        }),
+        prisma.rMHarkRepost.findMany({
+          where: {
+            userId: { in: followingIds },
+            ...(cursorDate ? { createdAt: { lt: cursorDate } } : {}),
+          },
+          orderBy: { createdAt: "desc" },
+          take: limit,
+          include: {
+            user: { select: userDisplaySelect },
+            rmhark: { include: rmharkInclude },
+          },
+        }),
+      ]);
+
+      const mapOriginal = (o: typeof rmharks[0]["original"]) =>
+        o
+          ? {
+              id: o.id,
+              type: "rmhark" as const,
+              createdAt: o.createdAt.toISOString(),
+              content: o.content,
+              user: resolveUser(o.user),
+              likeCount: o._count.likes,
+              commentCount: o._count.comments,
+              repostCount: o._count.reposts,
+              viewCount: o._count.views,
+            }
+          : undefined;
+
+      const ownItems: FeedItem[] = rmharks.map((r) => ({
+        id: r.id,
+        type: "rmhark" as const,
+        createdAt: r.createdAt.toISOString(),
+        content: r.content,
+        user: resolveUser(r.user),
+        likeCount: r._count.likes,
+        commentCount: r._count.comments,
+        repostCount: r._count.reposts,
+        viewCount: r._count.views,
+        liked: r.likes.length > 0,
+        reposted: r.reposts.length > 0,
+        original: mapOriginal(r.original),
+      }));
+
+      const repostItems: FeedItem[] = repostRecords.map((rp) => {
+        const r = rp.rmhark;
+        return {
+          id: `repost:${rp.id}`,
+          type: "rmhark" as const,
+          createdAt: rp.createdAt.toISOString(),
+          actualId: r.id,
+          content: r.content,
+          user: resolveUser(r.user),
+          likeCount: r._count.likes,
+          commentCount: r._count.comments,
+          repostCount: r._count.reposts,
+          viewCount: r._count.views,
+          liked: r.likes.length > 0,
+          reposted: r.reposts.length > 0,
+          repostedBy: resolveUser(rp.user),
+          original: mapOriginal(r.original),
+        };
+      });
+
+      const friendsItems = [...ownItems, ...repostItems]
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, limit);
+
+      const nextCursor =
+        friendsItems.length === limit
+          ? friendsItems[friendsItems.length - 1].createdAt
+          : null;
+
+      return NextResponse.json({
+        items: friendsItems,
+        nextCursor,
+        hasMore: friendsItems.length === limit,
+      });
+    }
+
     // Fetch RMHarks from DB
     const shouldFetchRmheets = filter === "all" || filter === "rmhark";
     let dbItems: FeedItem[] = [];

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { authClient } from '@/lib/auth-client';
 import { RMHarkCard } from './RMHarkCard';
 import { ProfileEditModal } from './ProfileEditModal';
+import { SocialListModal } from './SocialListModal';
 import Link from 'next/link';
 import type { FeedItem } from '@/lib/feed-types';
 
@@ -34,6 +35,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
   const [notFound, setNotFound] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [tab, setTab] = useState<ProfileTab>('rmharks');
+  const [socialModal, setSocialModal] = useState<'followers' | 'following' | null>(null);
 
   // RMHark list state
   const [items, setItems] = useState<FeedItem[]>([]);
@@ -311,14 +313,20 @@ export function ProfileColumn({ userId }: { userId: string }) {
         </div>
 
         <div className="flex items-center gap-4 text-sm">
-          <span>
+          <button
+            onClick={() => setSocialModal('following')}
+            className="hover:underline text-left"
+          >
             <span className="font-bold text-site-text">{profile.followingCount}</span>{' '}
             <span className="text-site-text-dim">Following</span>
-          </span>
-          <span>
+          </button>
+          <button
+            onClick={() => setSocialModal('followers')}
+            className="hover:underline text-left"
+          >
             <span className="font-bold text-site-text">{profile.followerCount}</span>{' '}
             <span className="text-site-text-dim">Followers</span>
-          </span>
+          </button>
         </div>
       </div>
 
@@ -445,6 +453,16 @@ export function ProfileColumn({ userId }: { userId: string }) {
               };
             });
           }}
+        />
+      )}
+
+      {/* Followers / Following modal */}
+      {socialModal && (
+        <SocialListModal
+          open={socialModal !== null}
+          onClose={() => setSocialModal(null)}
+          userId={userId}
+          type={socialModal}
         />
       )}
     </div>
