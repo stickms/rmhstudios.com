@@ -15,9 +15,80 @@ PORT_RMHBOX=7676
 PORT_RMHTUBE=7003
 
 LOCKFILE="/tmp/autodeploy.lock"
+DISCORD_WEBHOOK="https://discord.com/api/webhooks/1477609590005829844/njhHGfYop87DbaGR5o4hCLBnpf3B5ZevYS0BR3kQViEZJktXSjb_SEVtj53WOv0cNxs5"
 
 log() {
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
+}
+
+DEPLOY_MSG_ID=""
+
+get_commit_info() {
+    DEPLOY_SHORT_HASH=$("$GIT_BIN" rev-parse --short HEAD 2>/dev/null || echo "unknown")
+    DEPLOY_COMMIT_MSG=$("$GIT_BIN" log -1 --pretty=%B 2>/dev/null || echo "(no commit message)")
+    # Escape special JSON characters in commit message
+    DEPLOY_COMMIT_MSG=$(echo "$DEPLOY_COMMIT_MSG" | sed 's/\\/\\\\/g; s/"/\\"/g' | tr '\n' ' ')
+}
+
+send_deploy_started() {
+    get_commit_info
+    local payload
+    payload=$(cat <<EOF
+{
+  "embeds": [{
+    "title": "Commit $DEPLOY_SHORT_HASH - deploy started",
+    "description": "$DEPLOY_COMMIT_MSG",
+    "color": 16776960
+  }]
+}
+EOF
+)
+
+    local response
+    response=$(curl -s -H "Content-Type: application/json" -d "$payload" "${DISCORD_WEBHOOK}?wait=true" 2>/dev/null)
+    DEPLOY_MSG_ID=$(echo "$response" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
+
+    if [ -z "$DEPLOY_MSG_ID" ]; then
+        log "WARNING: Failed to send or parse Discord webhook notification."
+    fi
+}
+
+update_deploy_status() {
+    local status="$1"  # "success" or "fail"
+    local reason="$2"  # optional failure reason
+    local color title
+
+    get_commit_info
+
+    if [ "$status" = "success" ]; then
+        color=65280    # green
+        title="Commit $DEPLOY_SHORT_HASH - deploy succeeded"
+    else
+        color=16711680 # red
+        title="Commit $DEPLOY_SHORT_HASH - deploy failed: $reason"
+    fi
+
+    local payload
+    payload=$(cat <<EOF
+{
+  "embeds": [{
+    "title": "$title",
+    "description": "$DEPLOY_COMMIT_MSG",
+    "color": $color
+  }]
+}
+EOF
+)
+
+    if [ -n "$DEPLOY_MSG_ID" ]; then
+        curl -s -X PATCH -H "Content-Type: application/json" \
+            -d "$payload" "${DISCORD_WEBHOOK}/messages/${DEPLOY_MSG_ID}" > /dev/null 2>&1 || \
+            log "WARNING: Failed to edit Discord webhook message."
+    else
+        curl -s -H "Content-Type: application/json" \
+            -d "$payload" "$DISCORD_WEBHOOK" > /dev/null 2>&1 || \
+            log "WARNING: Failed to send Discord webhook notification."
+    fi
 }
 
 export PATH="/home/rmhstudios/.nvm/versions/node/v25.6.1/bin:$PATH"
@@ -104,12 +175,15 @@ if ! "$GIT_BIN" pull "$REMOTE_REPO" "$BRANCH"; then
     exit 1
 fi
 
+send_deploy_started
+
 log "Installing dependencies..."
-"$PNPM_BIN" install --frozen-lockfile --production=false || { log "ERROR: pnpm install failed."; exit 1; }
+"$PNPM_BIN" install --frozen-lockfile --production=false || { log "ERROR: pnpm install failed."; update_deploy_status fail "pnpm install failed"; exit 1; }
 
 log "Syncing database schema..."
 yes | "$PNPM_BIN" run db:push || {
     log "ERROR: Database sync failed."
+    update_deploy_status fail "database sync failed"
     exit 1
 }
 
@@ -133,6 +207,7 @@ log "Building..."
 if ! "$PNPM_BIN" run build; then
     log "ERROR: Build failed."
     restore_backup
+    update_deploy_status fail "build failed"
     exit 1
 fi
 
@@ -143,8 +218,9 @@ build_ok=true
 [ -f "dist-server/server/rmhtube/index.js" ]         || { log "ERROR: rmhtube/index.js missing after build.";      build_ok=false; }
 
 if [ "$build_ok" != "true" ]; then
-    log "Build artifacts incomplete."
+    log "ERROR: Build artifacts incomplete."
     restore_backup
+    update_deploy_status fail "build artifacts incomplete"
     exit 1
 fi
 
@@ -169,7 +245,9 @@ if [ $ok -ne 0 ]; then
     "$PM2_BIN" logs "$APP_RMHBOX" --lines 50 --nostream
     log "--- PM2 logs ($APP_RMHTUBE) ---"
     "$PM2_BIN" logs "$APP_RMHTUBE" --lines 50 --nostream
+    update_deploy_status fail "port health check failed"
     exit 1
 fi
 
+update_deploy_status success
 log "=== Deployment complete (web: $PORT_WEB, socket: $PORT_SOCKET, rmhbox: $PORT_RMHBOX, rmhtube: $PORT_RMHTUBE) ==="
