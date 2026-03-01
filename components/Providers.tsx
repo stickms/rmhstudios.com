@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useEffect } from "react";
+import { ReactNode, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { Toaster } from "sonner";
 import { useThemeStore, SITE_STYLES, SiteStyle } from "@/stores/themeStore";
@@ -57,6 +57,7 @@ const THEME_EXCLUDED_ROUTES = [
 export function Providers({ children }: ProvidersProps) {
   const style = useThemeStore((s) => s.style);
   const pathname = usePathname();
+  const isFirstRun = useRef(true);
 
   const isAppRoute = THEME_EXCLUDED_ROUTES.some((route) =>
     pathname?.startsWith(route)
@@ -85,26 +86,29 @@ export function Providers({ children }: ProvidersProps) {
     html.style.backgroundColor = bg;
     document.body.style.backgroundColor = bg;
 
-    // iOS Safari ignores same-tick remove + re-add of theme-color meta tags
-    // and may only honour the tag matching the active colour-scheme.
-    // 1. Remove every existing theme-color meta synchronously.
-    // 2. Re-insert in the next macrotask so Safari sees it as a new tag.
-    // 3. Cover both light & dark schemes so the system setting doesn't matter.
-    document
-      .querySelectorAll('meta[name="theme-color"]')
-      .forEach((el) => el.remove());
+    // On the very first render the Zustand store still holds its initial
+    // "default" value — localStorage hasn't hydrated yet. The inline
+    // ThemeScript already wrote the correct theme-color meta tag, so we
+    // must NOT touch it here or Safari will latch onto the wrong colour
+    // and never recover (it commits on first read).
+    if (isFirstRun.current) {
+      isFirstRun.current = false;
+      return;
+    }
 
-    const tid = setTimeout(() => {
-      for (const scheme of ["light", "dark"] as const) {
-        const meta = document.createElement("meta");
-        meta.name = "theme-color";
-        meta.content = bg;
-        meta.media = `(prefers-color-scheme: ${scheme})`;
-        document.head.appendChild(meta);
-      }
-    }, 0);
-
-    return () => clearTimeout(tid);
+    // For subsequent (user-initiated) changes, update every existing
+    // theme-color meta tag in-place. Safari 15+ officially supports
+    // dynamic content changes — the earlier bug was caused by the
+    // hydration race clobbering the correct value on mount.
+    const metas = document.querySelectorAll('meta[name="theme-color"]');
+    if (metas.length > 0) {
+      metas.forEach((m) => m.setAttribute("content", bg));
+    } else {
+      const meta = document.createElement("meta");
+      meta.name = "theme-color";
+      meta.content = bg;
+      document.head.appendChild(meta);
+    }
   }, [style, isAppRoute]);
 
   return (
