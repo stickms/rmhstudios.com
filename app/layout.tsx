@@ -119,7 +119,7 @@ function ThemeScript() {
   // Apply persisted theme class AND set the theme-color meta tag before
   // React hydrates so iOS Safari paints the correct color outside the
   // safe area on the very first frame.
-  const script = `(function(){try{var m={default:"#1a1b1e",light:"#f5f5f7",gamer:"#0a0a0a",anime:"#fff5f9",musical:"#0c0e1a",hyperpop:"#120018","comic-book":"#fffde0",cinema:"#0a0a08","gen-z":"#1a1820",boomer:"#f5f0e8",aries:"#1a0a0a",taurus:"#141a10",gemini:"#0e0e22",cancer:"#0c1018",leo:"#140e1e",virgo:"#f4f6f2",libra:"#f8f0f6",scorpio:"#0e0608",sagittarius:"#100c1e",capricorn:"#141416",aquarius:"#060e18",pisces:"#0c1018",spring:"#f2f8f0",summer:"#fff8f0",autumn:"#1a1410",winter:"#0a0e14",elementary:"#fffef4","middle-school":"#181e24","high-school":"#121418",university:"#f5f0e8"};var s=localStorage.getItem("rmh-style");if(s&&s!=="default"){document.documentElement.classList.add("style-"+s)}var bg=m[s||"default"]||m.default;document.documentElement.style.backgroundColor=bg;document.body&&(document.body.style.backgroundColor=bg);var t=document.querySelector('meta[name="theme-color"]');if(t)t.content=bg;else{t=document.createElement("meta");t.name="theme-color";t.content=bg;document.head.appendChild(t)}}catch(e){}})()`;
+  const script = `(function(){try{var m={default:"#1a1b1e",light:"#f5f5f7",gamer:"#0a0a0a",anime:"#fff5f9",musical:"#0c0e1a",hyperpop:"#120018","comic-book":"#fffde0",cinema:"#0a0a08","gen-z":"#1a1820",boomer:"#f5f0e8",aries:"#1a0a0a",taurus:"#141a10",gemini:"#0e0e22",cancer:"#0c1018",leo:"#140e1e",virgo:"#f4f6f2",libra:"#f8f0f6",scorpio:"#0e0608",sagittarius:"#100c1e",capricorn:"#141416",aquarius:"#060e18",pisces:"#0c1018",spring:"#f2f8f0",summer:"#fff8f0",autumn:"#1a1410",winter:"#0a0e14",elementary:"#fffef4","middle-school":"#181e24","high-school":"#121418",university:"#f5f0e8"};var s=localStorage.getItem("rmh-style");if(s&&s!=="default"){document.documentElement.classList.add("style-"+s)}var bg=m[s||"default"]||m.default;window.__themeBg=bg;document.documentElement.style.backgroundColor=bg;var t=document.querySelector('meta[name="theme-color"]');if(t)t.content=bg;else{t=document.createElement("meta");t.name="theme-color";t.content=bg;document.head.appendChild(t)}}catch(e){}})()`;
   return <script dangerouslySetInnerHTML={{ __html: script }} />;
 }
 
@@ -136,6 +136,15 @@ export default function RootLayout({
       <body
         className={`${nunito.variable} ${inter.variable} ${jetbrainsMono.variable} ${playfairDisplay.variable} ${bangers.variable} ${bebasNeue.variable} ${orbitron.variable} ${cinzel.variable} ${pacifico.variable} ${spaceGrotesk.variable} ${permanentMarker.variable} ${caveat.variable} ${dancingScript.variable} ${patrickHand.variable} antialiased`}
       >
+        {/* Set body.style.backgroundColor before React hydrates.
+            iOS 26 Safari derives its bar tint from the body's background-color,
+            so this must happen on the very first frame. ThemeScript (in <head>)
+            stashed the resolved colour on window.__themeBg. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `if(window.__themeBg)document.body.style.backgroundColor=window.__themeBg`,
+          }}
+        />
         <Providers>
           <TwemojiProvider tag="div">
             <Shell>
