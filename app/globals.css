@@ -2191,7 +2191,6 @@ html {
   overflow-y: auto;
   min-height: 100%;
   background-color: var(--site-bg);
-  scrollbar-gutter: stable both-edges;
 }
 
 body {
