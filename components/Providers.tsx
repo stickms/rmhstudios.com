@@ -45,6 +45,24 @@ export function Providers({ children }: ProvidersProps) {
       html.classList.add(`style-${style}`);
     }
     localStorage.setItem("rmh-style", style);
+
+    // Force mobile browsers to immediately repaint the background.
+    // Some mobile browsers don't repaint body/html background when CSS
+    // custom properties change via class toggling on an ancestor element.
+    requestAnimationFrame(() => {
+      const bg = getComputedStyle(html).getPropertyValue("--site-bg").trim();
+      document.body.style.backgroundColor = bg;
+      // Update mobile browser chrome color
+      let meta = document.querySelector<HTMLMetaElement>(
+        'meta[name="theme-color"]'
+      );
+      if (!meta) {
+        meta = document.createElement("meta");
+        meta.name = "theme-color";
+        document.head.appendChild(meta);
+      }
+      meta.content = bg;
+    });
   }, [style, isAppRoute]);
 
   return (

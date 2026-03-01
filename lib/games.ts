@@ -114,6 +114,24 @@ export const games: GameInfo[] = [
         authGate: true,
     },
     {
+        id: 'velum2099',
+        title: 'VELUM2099',
+        description:
+            'A cyberpunk driving simulator featuring procedural city generation, drift physics, and VHS aesthetics.',
+        longDescription:
+            'Navigate neon-lit streets of a procedurally generated cyberpunk city. Features realistic drift physics, rain effects, procedural lo-fi/jazz radio, engine sound synthesis, and a full VHS post-processing pipeline with semantic segmentation.',
+        href: '/velum2099',
+        status: 'Playable',
+        cta: 'Drive Now',
+        isSteam: false,
+        gradient: 'from-cyan-500 to-purple-600',
+        iconName: 'Car',
+        color: 'from-cyan-500/20 to-purple-600/20 hover:border-cyan-500/50',
+        tags: ['Simulation', 'Driving', '3D', 'Cyberpunk'],
+        imagePath: '/images/games/velum2099.png',
+        authGate: false,
+    },
+    {
         id: 'synapse-storm',
         title: 'Synapse Storm',
         description: 'Juggle a storm of micro-challenges. Stay sharp.',

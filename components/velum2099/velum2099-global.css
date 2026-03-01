@@ -1,0 +1,56 @@
+/* ═══════════════════════════════════════════
+   NEURODRIVE — Global Styles
+   Scoped to .velum2099-root container
+   ═══════════════════════════════════════════ */
+
+.velum2099-root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #000;
+  font-family: 'VT323', 'Noto Sans SC', monospace;
+  color: #0f0;
+  cursor: none;
+}
+
+.velum2099-root *, .velum2099-root *::before, .velum2099-root *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.velum2099-root #game-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.velum2099-root #terminal-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  background: #000;
+}
+
+.velum2099-root ::selection {
+  background: #0f0;
+  color: #000;
+}
+
+.velum2099-root ::-webkit-scrollbar {
+  width: 4px;
+}
+
+.velum2099-root ::-webkit-scrollbar-track {
+  background: #000;
+}
+
+.velum2099-root ::-webkit-scrollbar-thumb {
+  background: #0f4;
+}
