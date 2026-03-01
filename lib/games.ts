@@ -181,6 +181,22 @@ export const games: GameInfo[] = [
         authGate: true,
     },
     {
+        id: 'forest-explorer',
+        title: 'Forest Explorer',
+        description: 'Wander a peaceful 3D ancient forest. Towering pines, glowing fireflies, golden light.',
+        longDescription:
+            'A tranquil first-person 3D experience. Roam freely through a dense ancient forest filled with towering conifers, glowing fireflies, low-lying mist, and dappled golden-hour sunlight. No objectives—just explore and breathe.',
+        href: '/forest-explorer',
+        status: 'Playable',
+        cta: 'Explore',
+        isSteam: false,
+        gradient: 'from-green-700 to-emerald-900',
+        iconName: 'TreePine',
+        color: 'from-green-700/20 to-emerald-900/20 hover:border-green-500/50',
+        tags: ['Exploration', '3D', 'Relaxing'],
+        authGate: false,
+    },
+    {
         id: 'void-breaker',
         title: 'Void Breaker',
         description: 'Obsidian and gold arena shooter. Collect void shards, dash, slow time with Focus, detonate when overwhelmed.',
