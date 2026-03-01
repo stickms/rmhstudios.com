@@ -27,26 +27,18 @@ get_commit_info() {
     DEPLOY_SHORT_HASH=$("$GIT_BIN" rev-parse --short HEAD 2>/dev/null || echo "unknown")
     DEPLOY_COMMIT_MSG=$("$GIT_BIN" log -1 --pretty=%B 2>/dev/null || echo "(no commit message)")
     # Escape special JSON characters in commit message
-    DEPLOY_COMMIT_MSG=$(echo "$DEPLOY_COMMIT_MSG" | sed 's/\\/\\\\/g; s/"/\\"/g' | tr '\n' ' ')
+    DEPLOY_COMMIT_MSG=$(printf '%s' "$DEPLOY_COMMIT_MSG" | sed 's/\\/\\\\/g; s/"/\\"/g' | tr '\n' ' ')
 }
 
 send_deploy_started() {
     get_commit_info
     local payload
-    payload=$(cat <<EOF
-{
-  "embeds": [{
-    "title": "Commit $DEPLOY_SHORT_HASH - deploy started",
-    "description": "$DEPLOY_COMMIT_MSG",
-    "color": 16776960
-  }]
-}
-EOF
-)
+    payload=$(printf '{"embeds":[{"title":"%s","description":"%s","color":%d}]}' \
+        "Commit $DEPLOY_SHORT_HASH - deploy started" "$DEPLOY_COMMIT_MSG" 16776960)
 
     local response
     response=$(curl -s -H "Content-Type: application/json" -d "$payload" "${DISCORD_WEBHOOK}?wait=true" 2>/dev/null)
-    DEPLOY_MSG_ID=$(echo "$response" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
+    DEPLOY_MSG_ID=$(printf '%s' "$response" | grep -o '"id": *"[^"]*"' | head -1 | cut -d'"' -f4)
 
     if [ -z "$DEPLOY_MSG_ID" ]; then
         log "WARNING: Failed to send or parse Discord webhook notification."
@@ -69,16 +61,8 @@ update_deploy_status() {
     fi
 
     local payload
-    payload=$(cat <<EOF
-{
-  "embeds": [{
-    "title": "$title",
-    "description": "$DEPLOY_COMMIT_MSG",
-    "color": $color
-  }]
-}
-EOF
-)
+    payload=$(printf '{"embeds":[{"title":"%s","description":"%s","color":%d}]}' \
+        "$title" "$DEPLOY_COMMIT_MSG" "$color")
 
     if [ -n "$DEPLOY_MSG_ID" ]; then
         curl -s -X PATCH -H "Content-Type: application/json" \
@@ -172,6 +156,7 @@ log "=== Deploy triggered by webhook ==="
 log "Pulling latest code..."
 if ! "$GIT_BIN" pull "$REMOTE_REPO" "$BRANCH"; then
     log "ERROR: git pull failed."
+    update_deploy_status fail "git pull failed"
     exit 1
 fi
 
