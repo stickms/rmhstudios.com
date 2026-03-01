@@ -1101,4 +1101,132 @@ describe('Emoji Cinema Server Handler (§6.4)', () => {
       }
     });
   });
+
+  // ───────────────────────────────────────────────────────────────
+  // Guess Log Broadcasting
+  // ───────────────────────────────────────────────────────────────
+  describe('Guess Log', () => {
+    it('broadcasts EC_GUESS_LOG_ENTRY for wrong guesses with guess text', () => {
+      const { game, broadcastLog, playerLog } = createGame();
+      game.start();
+      const producerId = getProducerFromLog(broadcastLog);
+      const audienceIds = getAudienceIds(producerId);
+      advanceToConstruction(game);
+
+      game.handleInput(audienceIds[0], 'SUBMIT_GUESS', { guess: 'Completely Wrong Guess XYZ' });
+
+      const logEntry = findLastActionBroadcast(broadcastLog, 'EC_GUESS_LOG_ENTRY');
+      expect(logEntry).toBeDefined();
+      expect(logEntry!.data.userId).toBe(audienceIds[0]);
+      expect(logEntry!.data.isCorrect).toBe(false);
+      expect(logEntry!.data.guessText).toBe('Completely Wrong Guess XYZ');
+      void playerLog;
+    });
+
+    it('broadcasts EC_GUESS_LOG_ENTRY for correct guesses WITHOUT guess text', () => {
+      const { game, broadcastLog, playerLog } = createGame();
+      game.start();
+      const producerId = getProducerFromLog(broadcastLog);
+      advanceToConstruction(game);
+      const movieTitle = getMovieTitleFromPlayerLog(playerLog, producerId);
+      const audienceIds = getAudienceIds(producerId);
+
+      game.handleInput(audienceIds[0], 'SUBMIT_GUESS', { guess: movieTitle });
+
+      const logEntry = findLastActionBroadcast(broadcastLog, 'EC_GUESS_LOG_ENTRY');
+      expect(logEntry).toBeDefined();
+      expect(logEntry!.data.userId).toBe(audienceIds[0]);
+      expect(logEntry!.data.isCorrect).toBe(true);
+      expect(logEntry!.data.guessText).toBeUndefined();
+    });
+
+    it('includes guess log in getStateForPlayer for producer', () => {
+      const { game, broadcastLog } = createGame();
+      game.start();
+      const producerId = getProducerFromLog(broadcastLog);
+      const audienceIds = getAudienceIds(producerId);
+      advanceToConstruction(game);
+
+      game.handleInput(audienceIds[0], 'SUBMIT_GUESS', { guess: 'wrong guess' });
+
+      const state = game.getStateForPlayer(producerId) as Record<string, unknown>;
+      const guessLog = state.guessLog as Array<Record<string, unknown>>;
+      expect(guessLog).toBeDefined();
+      expect(guessLog.length).toBe(1);
+      expect(guessLog[0].isCorrect).toBe(false);
+    });
+
+    it('includes guess log in getStateForPlayer for audience', () => {
+      const { game, broadcastLog } = createGame();
+      game.start();
+      const producerId = getProducerFromLog(broadcastLog);
+      const audienceIds = getAudienceIds(producerId);
+      advanceToConstruction(game);
+
+      game.handleInput(audienceIds[0], 'SUBMIT_GUESS', { guess: 'wrong guess' });
+
+      const state = game.getStateForPlayer(audienceIds[1]) as Record<string, unknown>;
+      const guessLog = state.guessLog as Array<Record<string, unknown>>;
+      expect(guessLog).toBeDefined();
+      expect(guessLog.length).toBe(1);
+    });
+
+    it('includes guess log in getStateForSpectator', () => {
+      const { game, broadcastLog } = createGame();
+      game.start();
+      const producerId = getProducerFromLog(broadcastLog);
+      const audienceIds = getAudienceIds(producerId);
+      advanceToConstruction(game);
+
+      game.handleInput(audienceIds[0], 'SUBMIT_GUESS', { guess: 'wrong guess' });
+
+      const state = game.getStateForSpectator() as Record<string, unknown>;
+      const guessLog = state.guessLog as Array<Record<string, unknown>>;
+      expect(guessLog).toBeDefined();
+      expect(guessLog.length).toBe(1);
+    });
+
+    it('resets guess log on new round', () => {
+      const { game, broadcastLog, playerLog } = createGame();
+      game.start();
+      const producerId = getProducerFromLog(broadcastLog);
+      const audienceIds = getAudienceIds(producerId);
+      advanceToConstruction(game);
+      const movieTitle = getMovieTitleFromPlayerLog(playerLog, producerId);
+
+      // Submit guesses
+      game.handleInput(audienceIds[0], 'SUBMIT_GUESS', { guess: 'wrong' });
+      game.handleInput(audienceIds[1], 'SUBMIT_GUESS', { guess: movieTitle });
+
+      // Let round end and advance to next round
+      vi.advanceTimersByTime(EC_ROUND_DURATION_SECONDS * 1000);
+      vi.advanceTimersByTime(EC_ROUND_RESULTS_SECONDS * 1000);
+      vi.advanceTimersByTime(EC_TRANSITION_SECONDS * 1000);
+
+      // New round: advance to construction
+      advanceToConstruction(game);
+
+      // The guess log should be fresh for the new round
+      const newProducerId = getProducerFromLog(broadcastLog);
+      const state = game.getStateForPlayer(newProducerId) as Record<string, unknown>;
+      const guessLog = state.guessLog as Array<Record<string, unknown>>;
+      expect(guessLog).toBeDefined();
+      expect(guessLog.length).toBe(0);
+    });
+
+    it('includes userName in guess log entries', () => {
+      const { game, broadcastLog } = createGame();
+      game.start();
+      const producerId = getProducerFromLog(broadcastLog);
+      const audienceIds = getAudienceIds(producerId);
+      advanceToConstruction(game);
+
+      game.handleInput(audienceIds[0], 'SUBMIT_GUESS', { guess: 'bad guess xyz' });
+
+      const logEntry = findLastActionBroadcast(broadcastLog, 'EC_GUESS_LOG_ENTRY');
+      expect(logEntry).toBeDefined();
+      expect(logEntry!.data.userName).toBeTruthy();
+      expect(typeof logEntry!.data.userName).toBe('string');
+    });
+  });
 });
