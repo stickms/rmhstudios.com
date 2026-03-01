@@ -49,20 +49,25 @@ export function Providers({ children }: ProvidersProps) {
     // Force mobile browsers to immediately repaint the background.
     // Some mobile browsers don't repaint body/html background when CSS
     // custom properties change via class toggling on an ancestor element.
+    // Double rAF ensures the class change has been painted before we read
+    // the resolved value.
     requestAnimationFrame(() => {
-      const bg = getComputedStyle(html).getPropertyValue("--site-bg").trim();
-      html.style.backgroundColor = bg;
-      document.body.style.backgroundColor = bg;
-      // Update mobile browser chrome color
-      let meta = document.querySelector<HTMLMetaElement>(
-        'meta[name="theme-color"]'
-      );
-      if (!meta) {
-        meta = document.createElement("meta");
+      requestAnimationFrame(() => {
+        const bg = getComputedStyle(html)
+          .getPropertyValue("--site-bg")
+          .trim();
+        html.style.backgroundColor = bg;
+        document.body.style.backgroundColor = bg;
+
+        // iOS Safari ignores in-place updates to theme-color meta content.
+        // Removing and re-inserting the tag forces it to pick up the change.
+        const old = document.querySelector('meta[name="theme-color"]');
+        if (old) old.remove();
+        const meta = document.createElement("meta");
         meta.name = "theme-color";
+        meta.content = bg;
         document.head.appendChild(meta);
-      }
-      meta.content = bg;
+      });
     });
   }, [style, isAppRoute]);
 
