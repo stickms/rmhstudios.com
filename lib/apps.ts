@@ -95,6 +95,23 @@ export const apps: AppInfo[] = [
         authGate: true,
     },
     {
+        id: 'rmhmusic',
+        title: 'RMHMusic',
+        description: 'Listen to Spotify together. Create rooms, share queues, and vibe with friends.',
+        longDescription:
+            'RMHMusic is a social music player powered by Spotify. Connect your Premium account, create a listening room, and enjoy synced playback with friends. Features a mesmerizing WebGL particle visualizer, shared queues, and real-time chat.',
+        href: '/rmhmusic',
+        status: 'Beta',
+        cta: 'Listen Together',
+        isSteam: false,
+        gradient: 'from-purple-500 via-violet-500 to-indigo-600',
+        iconName: 'Music',
+        color: 'from-purple-500/20 to-indigo-600/20 hover:border-purple-500/50',
+        tags: ['Music', 'Spotify', 'Real-time', 'Beta'],
+        imagePath: '/images/games/rmhmusic.png',
+        authGate: true,
+    },
+    {
         id: 'rmhstudy',
         title: 'RMH Study',
         description: 'Study together with synced Pomodoro timers, focus tracking, and ambient sounds.',
