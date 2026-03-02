@@ -59,6 +59,9 @@ export function useSpotifyPlayer() {
       const token = await fetchAccessToken();
       if (!token || cancelled) return;
 
+      // Mark as connected immediately so UI doesn't show the connect overlay
+      store.setSpotify({ isConnected: true });
+
       await loadSpotifySDK();
       if (cancelled) return;
 
