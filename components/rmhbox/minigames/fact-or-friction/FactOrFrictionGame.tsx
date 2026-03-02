@@ -168,7 +168,7 @@ export default function FactOrFrictionGame({ playerId, playerName: _playerName }
             setMyScore(newScore);
             if (delta !== 0) setScoreChange(delta);
             // Update live score in the GameShell footer
-            useRMHboxStore.getState().setLiveMinigameScore(newScore);
+            useRMHboxStore.setState({ liveMinigameScore: newScore });
           }
           break;
         }
@@ -179,7 +179,7 @@ export default function FactOrFrictionGame({ playerId, playerName: _playerName }
         case 'FF_GAME_OVER': {
           setPhase('GAME_OVER');
           // Clear live score — coordinator handles final score update
-          useRMHboxStore.getState().setLiveMinigameScore(null);
+          useRMHboxStore.setState({ liveMinigameScore: null });
           break;
         }
         case 'TIMER_START': {
@@ -207,7 +207,7 @@ export default function FactOrFrictionGame({ playerId, playerName: _playerName }
   const handleRoundResults = useCallback(
     (_data: Record<string, unknown>) => {
       setPhase('GAME_OVER');
-      useRMHboxStore.getState().setLiveMinigameScore(null);
+      useRMHboxStore.setState({ liveMinigameScore: null });
     },
     [],
   );
@@ -222,10 +222,16 @@ export default function FactOrFrictionGame({ playerId, playerName: _playerName }
     return () => {
       socket.off(S2C.GAME_ACTION, handleGameAction);
       socket.off(S2C.GAME_ROUND_RESULTS, handleRoundResults);
-      // Clear live score when this minigame unmounts
-      useRMHboxStore.getState().setLiveMinigameScore(null);
     };
   }, [handleGameAction, handleRoundResults]);
+
+  // Clear live score when the minigame unmounts (separate effect to avoid
+  // clearing on every handler re-subscription).
+  useEffect(() => {
+    return () => {
+      useRMHboxStore.setState({ liveMinigameScore: null });
+    };
+  }, []);
 
   // Hydrate from Zustand gameState snapshot on mount.
   // The server snapshot (getStateForPlayer) sends question data under `question`,
@@ -260,7 +266,7 @@ export default function FactOrFrictionGame({ playerId, playerName: _playerName }
       if (sc[playerId] != null) {
         setMyScore(sc[playerId]);
         // Sync live score to footer
-        useRMHboxStore.getState().setLiveMinigameScore(sc[playerId]);
+        useRMHboxStore.setState({ liveMinigameScore: sc[playerId] });
       }
     }
   }, [playerId]);
