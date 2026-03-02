@@ -73,6 +73,11 @@ const ENGINE_LABELS: Record<SearchEngine, string> = {
   duckduckgo: 'DuckDuckGo',
 };
 
+const PROFILE_COLORS = ['#6366f1', '#ef4444', '#f97316', '#22c55e', '#06b6d4', '#ec4899', '#8b5cf6'];
+
+/** Scale factor for zoom: width/height = ZOOM_BASE / zoomLevel percent */
+const ZOOM_BASE = 10000;
+
 /* ─── Helper: display URL prettily ──────────────────────────────── */
 
 function displayUrl(url: string): string {
@@ -292,8 +297,6 @@ function SettingsPanel() {
   const switchProfile = useRmhBrowserStore((s) => s.switchProfile);
 
   const [newProfileName, setNewProfileName] = useState('');
-
-  const PROFILE_COLORS = ['#6366f1', '#ef4444', '#f97316', '#22c55e', '#06b6d4', '#ec4899', '#8b5cf6'];
 
   return (
     <div
@@ -834,8 +837,8 @@ export default function BrowserUI() {
               backgroundColor: '#fff',
               transform: `scale(${settings.zoomLevel / 100})`,
               transformOrigin: 'top left',
-              width: `${10000 / settings.zoomLevel}%`,
-              height: `${10000 / settings.zoomLevel}%`,
+              width: `${ZOOM_BASE / settings.zoomLevel}%`,
+              height: `${ZOOM_BASE / settings.zoomLevel}%`,
             }}
             title="Browser content"
           />

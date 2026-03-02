@@ -20,6 +20,7 @@ interface ToastStore {
   dismissToast: (id: string) => void;
 }
 
+const MAX_VISIBLE_TOASTS = 5;
 let toastCounter = 0;
 
 export const useToastStore = create<ToastStore>((set) => ({
@@ -30,7 +31,7 @@ export const useToastStore = create<ToastStore>((set) => ({
     const newToast: Toast = { id, type, message, duration };
 
     set((state) => ({
-      toasts: [...state.toasts.slice(-4), newToast],
+      toasts: [...state.toasts.slice(-MAX_VISIBLE_TOASTS), newToast],
     }));
 
     setTimeout(() => {

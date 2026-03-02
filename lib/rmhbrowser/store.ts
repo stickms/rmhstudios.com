@@ -59,6 +59,9 @@ const SEARCH_URLS: Record<SearchEngine, string> = {
   duckduckgo: 'https://duckduckgo.com/?q=',
 };
 
+const MAX_HISTORY_ENTRIES = 500;
+const PERSISTED_HISTORY_ENTRIES = 200;
+
 /* ─── Helpers ───────────────────────────────────────────────────── */
 
 let tabCounter = 0;
@@ -323,7 +326,7 @@ export const useRmhBrowserStore = create<BrowserStore>()(
       addHistoryEntry: (url, title) => {
         const id = `hist-${Date.now()}`;
         set((s) => ({
-          history: [{ id, url, title, visitedAt: Date.now() }, ...s.history].slice(0, 500),
+          history: [{ id, url, title, visitedAt: Date.now() }, ...s.history].slice(0, MAX_HISTORY_ENTRIES),
         }));
       },
 
@@ -382,7 +385,7 @@ export const useRmhBrowserStore = create<BrowserStore>()(
       name: 'rmhbrowser-store',
       partialize: (s) => ({
         bookmarks: s.bookmarks,
-        history: s.history.slice(0, 200),
+        history: s.history.slice(0, PERSISTED_HISTORY_ENTRIES),
         profiles: s.profiles,
         activeProfileId: s.activeProfileId,
         settings: s.settings,
