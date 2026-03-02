@@ -29,8 +29,11 @@ function curlNoise(x: number, y: number, z: number, time: number): [number, numb
 
 function ParticleField({ colors, isPlaying }: { colors: [number, number, number][]; isPlaying: boolean }) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-  const count = isMobile ? MOBILE_PARTICLE_COUNT : PARTICLE_COUNT;
+  const [count, setCount] = useState(PARTICLE_COUNT);
+
+  useEffect(() => {
+    if (window.innerWidth < 768) setCount(MOBILE_PARTICLE_COUNT);
+  }, []);
 
   const { positions, velocities } = useMemo(() => {
     const positions = new Float32Array(count * 3);
