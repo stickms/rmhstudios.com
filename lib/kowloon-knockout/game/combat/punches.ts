@@ -26,7 +26,7 @@ export const PUNCH_DEFS: Record<PunchType, PunchDef> = {
     hook: {
         type: 'hook',
         baseDamage: 9,
-        speed: 20,
+        speed: 15,
         range: 42,      // wide arc, needs to be closer
         staminaCost: 15,
         knockback: 8,
@@ -35,7 +35,7 @@ export const PUNCH_DEFS: Record<PunchType, PunchDef> = {
     uppercut: {
         type: 'uppercut',
         baseDamage: 11,
-        speed: 28,      // slowest
+        speed: 20,      // slowest
         range: 40,      // shortest range — need to be very close
         staminaCost: 25,
         knockback: 10,
