@@ -54,3 +54,6 @@ dist-server/
 package-lock.json
 
 .pnpm-store/
+
+# Auto-generated news staging drafts (awaiting Discord approval)
+content/news/staging/*.mdx

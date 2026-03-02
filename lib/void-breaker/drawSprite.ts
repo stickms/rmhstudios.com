@@ -92,9 +92,30 @@ export function drawSprite(
     const drawSize = transform.radius * 2 * config.scale * scale;
     const halfSize = drawSize / 2;
 
-    // Calculate rotation
+    // Calculate rotation + facing for 'directional' mode
     let rotation = 0;
+    let flipX = false;
+    let activeImg: HTMLCanvasElement | HTMLImageElement = img;
+
     switch (config.rotationMode) {
+        case 'directional': {
+            const aimAngle = transform.aimAngle ?? transform.angle;
+            flipX = Math.cos(aimAngle) < 0;
+            if (flipX && config.leftUrl) {
+                // Use the dedicated left-facing sprite if available
+                const rawLeft = getCachedImage(config.leftUrl);
+                if (rawLeft) {
+                    const shouldClean = config.removeBackground !== false;
+                    activeImg = shouldClean ? getCleanedImage(rawLeft, config.leftUrl) : rawLeft;
+                }
+                // Compute tilt angle for left-facing: reflect across vertical axis
+                rotation = Math.atan2(Math.sin(aimAngle), -Math.cos(aimAngle));
+            } else {
+                // Right-facing: tilt is the raw aim angle (in −π/2 to π/2 when facing right)
+                rotation = aimAngle;
+            }
+            break;
+        }
         case 'aim':
             rotation = transform.aimAngle ?? transform.angle;
             break;
@@ -123,8 +144,10 @@ export function drawSprite(
         ctx.fill();
     }
 
-    // Glow effect — skip shadowBlur for performance
-    // (glow is handled by sprite itself)
+    // Apply horizontal flip for directional mode (before rotation so tilt is local)
+    if (flipX) {
+        ctx.scale(-1, 1);
+    }
 
     // Apply rotation
     if (rotation !== 0) {
@@ -133,7 +156,7 @@ export function drawSprite(
 
     // Draw the sprite
     ctx.drawImage(
-        img,
+        activeImg,
         -halfSize * config.anchorX * 2,
         -halfSize * config.anchorY * 2,
         drawSize,
@@ -146,7 +169,7 @@ export function drawSprite(
         ctx.globalCompositeOperation = 'lighter';
         ctx.globalAlpha = 0.6;
         ctx.drawImage(
-            img,
+            activeImg,
             -halfSize * config.anchorX * 2,
             -halfSize * config.anchorY * 2,
             drawSize,

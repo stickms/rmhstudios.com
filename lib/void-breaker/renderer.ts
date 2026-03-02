@@ -32,12 +32,12 @@ const seed = (n: number) => Math.abs(Math.sin(n * 127.1 + 311.7) * 43758.5453) %
 interface Building { x: number; w: number; h: number; depth: number; }
 const CITY_BUILDINGS: Building[] = (() => {
   const buildings: Building[] = [];
-  for (let i = 0; i < 28; i++) {
+  for (let i = 0; i < 44; i++) {
     buildings.push({
       x: seed(i * 3) * CANVAS_WIDTH,
-      w: 20 + seed(i * 3 + 1) * 40,
-      h: 40 + seed(i * 3 + 2) * 80,
-      depth: 0.15 + seed(i) * 0.25,
+      w: 24 + seed(i * 3 + 1) * 58,
+      h: 80 + seed(i * 3 + 2) * 220,
+      depth: 0.15 + seed(i) * 0.28,
     });
   }
   return buildings;
@@ -46,11 +46,11 @@ const CITY_BUILDINGS: Building[] = (() => {
 // ── Second parallax layer (distant, dimmer) ──────────────────────────────────
 const CITY_BUILDINGS_FAR: Building[] = (() => {
   const buildings: Building[] = [];
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < 30; i++) {
     buildings.push({
       x: seed(i * 5 + 100) * CANVAS_WIDTH,
-      w: 15 + seed(i * 5 + 101) * 25,
-      h: 20 + seed(i * 5 + 102) * 40,
+      w: 18 + seed(i * 5 + 101) * 40,
+      h: 50 + seed(i * 5 + 102) * 130,
       depth: 0.05 + seed(i + 100) * 0.1,
     });
   }
@@ -164,11 +164,22 @@ export class VoidBreakerRenderer {
       ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(e.x, e.y); ctx.stroke();
     }
 
-    // ── 7. Arena border — map-themed ────────────────────────────────────────
+    // ── 7. Arena border — glowing neon inset shadow ──────────────────────────
     const borderColor = game.currentMapConfig.borderColor;
-    ctx.strokeStyle = borderColor + '88';
-    ctx.lineWidth = 1.5;
-    ctx.strokeRect(tl.x, tl.y, br.x - tl.x, br.y - tl.y);
+    const borderPulse = 0.7 + Math.sin(t * 1.8) * 0.3;
+    const bw = br.x - tl.x, bh = br.y - tl.y;
+    // Multi-layer glow: outer → inner, decreasing alpha
+    const glowLayers = [
+      { offset: 4, alpha: 0.08 * borderPulse, lw: 8 },
+      { offset: 2, alpha: 0.15 * borderPulse, lw: 4 },
+      { offset: 1, alpha: 0.25 * borderPulse, lw: 2 },
+      { offset: 0, alpha: 0.70 * borderPulse, lw: 1.5 },
+    ];
+    for (const g of glowLayers) {
+      ctx.strokeStyle = borderColor + Math.floor(g.alpha * 255).toString(16).padStart(2, '0');
+      ctx.lineWidth = g.lw;
+      ctx.strokeRect(tl.x - g.offset, tl.y - g.offset, bw + g.offset * 2, bh + g.offset * 2);
+    }
 
     // ── Map transition door (right edge, wave == transitionWave) ────────────
     if (game.currentMapConfig.transitionWave === game.wave && game.state === 'playing') {
@@ -204,230 +215,412 @@ export class VoidBreakerRenderer {
     ctx.lineWidth = 1;
     ctx.stroke();
 
-    // ── 8. Obstacles ─────────────────────────────────────────────────────────────────
+    // ── 8. Pre-pass: obstacle ground shadows ─────────────────────────────────
     for (const o of game.obstacles) {
-      if (!o.active) continue;
-      const otl = toScreen(o.x, o.y);
-      const orw = (o.w) * scale, orh = (o.h) * scale;
-      switch (o.type) {
-        case 'building': case 'barrier': {
-          // Shadow offset for depth
-          ctx.fillStyle = 'rgba(0,0,0,0.3)';
-          ctx.fillRect(otl.x + 3, otl.y + 3, orw, orh);
-          // Building fill (flat, no per-frame gradient)
-          ctx.fillStyle = '#111118';
-          ctx.fillRect(otl.x, otl.y, orw, orh);
-          // Procedural window lights (seeded by obstacle ID)
-          const wCols = Math.floor(orw / 8);
-          const wRows = Math.floor(orh / 10);
-          for (let wr = 0; wr < wRows; wr++) {
-            for (let wc = 0; wc < wCols; wc++) {
-              const wSeed = seed(o.id * 100 + wr * 20 + wc);
-              if (wSeed > 0.5) {
-                const colors = ['rgba(0,245,255,0.4)', 'rgba(255,200,80,0.35)', 'rgba(255,0,204,0.25)'];
-                ctx.fillStyle = colors[Math.floor(wSeed * 3)];
-                ctx.fillRect(otl.x + wc * 8 + 2, otl.y + wr * 10 + 3, 3, 4);
-              }
-            }
-          }
-          // Border
-          ctx.strokeStyle = game.currentMapConfig.borderColor + '55';
-          ctx.lineWidth = 1;
-          ctx.strokeRect(otl.x, otl.y, orw, orh);
-          // Neon rooftop strip
-          ctx.fillStyle = game.currentMapConfig.borderColor + '44';
-          ctx.fillRect(otl.x, otl.y, orw, 2);
-          break;
-        }
-        case 'debris': {
-          ctx.fillStyle = '#1a1420';
-          ctx.fillRect(otl.x, otl.y, orw, orh);
-          // Faint embedded circuit lines
-          ctx.strokeStyle = 'rgba(0,245,255,0.1)';
-          ctx.lineWidth = 0.5;
-          for (let dl = 0; dl < 3; dl++) {
-            const dx = otl.x + seed(o.id * 30 + dl) * orw;
-            const dy = otl.y + seed(o.id * 30 + dl + 10) * orh;
-            ctx.beginPath(); ctx.moveTo(dx, dy); ctx.lineTo(dx + orw * 0.4, dy + orh * 0.3); ctx.stroke();
-          }
-          break;
-        }
-        case 'tree': {
-          const hp_frac = o.hp / o.maxHp;
-          ctx.fillStyle = `rgba(10, 31, 10, ${0.5 + hp_frac * 0.5})`;
-          ctx.fillRect(otl.x, otl.y, orw, orh);
-          // Green border glow substitute
-          ctx.strokeStyle = `rgba(0, 200, 60, ${hp_frac * 0.4})`;
-          ctx.lineWidth = 1;
-          ctx.strokeRect(otl.x, otl.y, orw, orh);
-          break;
-        }
-        case 'terminal': {
-          const glow = o.glowColor ?? '#00ff88';
-          const pulse = 0.6 + Math.sin(t * 3 + o.id) * 0.4;
-          ctx.fillStyle = '#0a100a';
-          ctx.fillRect(otl.x, otl.y, orw, orh);
-          ctx.strokeStyle = glow;
-          ctx.lineWidth = 1.5;
-          ctx.strokeRect(otl.x, otl.y, orw, orh);
-          ctx.fillStyle = glow + Math.floor(pulse * 100).toString(16).padStart(2, '0');
-          const cx = otl.x + orw / 2, cy = otl.y + orh / 2;
-          ctx.font = `${Math.ceil(7 * scale)}px monospace`;
-          ctx.textAlign = 'center';
-          ctx.fillText('LOG', cx, cy + 3);
-          ctx.textAlign = 'left';
-          break;
-        }
-        case 'hazard': {
-          const hglow = o.glowColor ?? '#ff00cc';
-          const hpulse = 0.5 + Math.sin(t * 2.5 + o.id * 0.7) * 0.5;
-          ctx.fillStyle = hglow + '22';
-          ctx.fillRect(otl.x, otl.y, orw, orh);
-          ctx.strokeStyle = hglow + Math.floor(hpulse * 136 + 50).toString(16).padStart(2, '0');
-          ctx.lineWidth = 2;
-          ctx.strokeRect(otl.x, otl.y, orw, orh);
-          break;
-        }
-        case 'billboard': {
-          const bGlow = o.glowColor ?? NEON_CYAN;
-          const bPulse = 0.7 + Math.sin(t * 2 + o.id * 1.3) * 0.3;
-          // Panel background
-          ctx.fillStyle = '#0a0a18';
-          ctx.fillRect(otl.x, otl.y, orw, orh);
-          // Glowing border (no shadowBlur)
-          ctx.strokeStyle = bGlow;
-          ctx.lineWidth = 1.5;
-          ctx.strokeRect(otl.x, otl.y, orw, orh);
-          // Neon text ad
-          const adIndex = o.id % AD_TEXTS.length;
-          ctx.font = `bold ${Math.ceil(Math.min(orh * 0.55, 10 * scale))}px monospace`;
-          ctx.fillStyle = bGlow + Math.floor(bPulse * 200 + 55).toString(16).padStart(2, '0');
-          ctx.textAlign = 'center';
-          ctx.fillText(AD_TEXTS[adIndex], otl.x + orw / 2, otl.y + orh * 0.72);
-          ctx.textAlign = 'left';
-          // Occasional flicker
-          if (Math.sin(t * 7 + o.id * 3.7) > 0.92) {
-            ctx.fillStyle = bGlow + '22';
-            ctx.fillRect(otl.x, otl.y, orw, orh);
-          }
-          break;
-        }
-      }
-    }
-
-    // ── 9. Shards ──────────────────────────────────────────────────────────
-    for (const s of game.shards) {
-      if (!s.active) continue;
-      const pos = toScreen(s.x, s.y);
-      const sz = (s.collected ? 3 : 5) * scale;
-      const pulse = s.collected ? 1 : 0.7 + Math.sin(t * 4 + s.orbitAngle) * 0.3;
-      ctx.fillStyle = s.collected ? NEON_GOLD : NEON_CYAN;
+      if (!o.active || !o.extrudeHeight) continue;
+      const base = toScreen(o.x + o.w / 2, o.y + o.h);
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.18)';
       ctx.beginPath();
-      ctx.moveTo(pos.x + sz, pos.y);
-      ctx.lineTo(pos.x - sz * 0.5, pos.y + sz * 0.87);
-      ctx.lineTo(pos.x - sz * 0.5, pos.y - sz * 0.87);
-      ctx.closePath();
+      ctx.ellipse(base.x, base.y + 6, o.w * scale * 0.55, 10, 0, 0, Math.PI * 2);
       ctx.fill();
     }
 
-    // ── 10. Enemies ─────────────────────────────────────────────────────────
+    // ── 8b. Enemy detection glow pre-pass (always visible through buildings) ──
     for (const e of game.enemies) {
       if (!e.active) continue;
       const pos = toScreen(e.x, e.y);
       const r = e.radius * scale;
-
-      // Elite glow
-      const baseColor = e.isElite ? NEON_MAGENTA : (e.color || '#cc4466');
-      const glowColor = e.isBoss ? BOSS_RED : (e.isElite ? NEON_MAGENTA : baseColor);
-
-      // Boss telegraph ring (phase 3 slam warning)
-      if (e.isBoss && e.telegraphTimer > 0) {
-        const telegraphRadius = 120 * scale;
-        const telegraphAlpha = Math.min(1, e.telegraphTimer * 2);
-        ctx.strokeStyle = `rgba(255, 0, 80, ${telegraphAlpha})`;
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.arc(pos.x, pos.y, telegraphRadius, 0, Math.PI * 2);
-        ctx.stroke();
-      }
-
-      // Boss phase ring indicator
-      if (e.isBoss && e.bossPhase > 1) {
-        const phaseColor = e.bossPhase === 3 ? '#ff0033' : '#ff6622';
-        ctx.strokeStyle = phaseColor + '60';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(pos.x, pos.y, r + 8, 0, Math.PI * 2);
-        ctx.stroke();
-      }
-
-      // Attempt sprite rendering first
-      const spriteConfig = e.isBoss
-        ? BOSS_SPRITES[Math.floor(game.wave / BOSS_WAVE_INTERVAL)]
-        : ENEMY_SPRITES[e.type];
-
-      const spriteDrawn = spriteConfig ? drawSprite(ctx, spriteConfig, {
-        x: pos.x, y: pos.y,
-        radius: r,
-        angle: e.angle,
-        vx: e.vx, vy: e.vy,
-        hitFlashUntil: e.hitFlashUntil,
-        aimAngle: Math.atan2(game.player.y - e.y, game.player.x - e.x),
-      }, game.elapsedMs, 1) : false;
-
-      if (!spriteDrawn) {
-        // Fallback: original shape rendering
-        ctx.fillStyle = baseColor;
-        ctx.beginPath();
-        ctx.arc(pos.x, pos.y, r, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      // Boss crown effect
-      if (e.isBoss) {
-        ctx.strokeStyle = NEON_GOLD + 'aa';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(pos.x, pos.y, r, 0, Math.PI * 2);
-        ctx.stroke();
-        // Phase text badge
-        if (e.bossPhase > 1) {
-          ctx.font = `bold ${Math.ceil(8 * scale)}px monospace`;
-          ctx.fillStyle = e.bossPhase === 3 ? '#ff3355' : '#ff8844';
-          ctx.textAlign = 'center';
-          ctx.fillText(`P${e.bossPhase}`, pos.x, pos.y - r - 4);
-        }
-      }
-
-      // Boss tentacle sweep (phase 3) — visual arc
-      if (e.isBoss && e.bossPhase === 3) {
-        ctx.save();
-        ctx.translate(pos.x, pos.y);
-        ctx.rotate(e.tentacleAngle);
-        ctx.strokeStyle = 'rgba(255, 0, 80, 0.35)';
-        ctx.lineWidth = 4 * scale;
-        ctx.beginPath();
-        ctx.arc(0, 0, r + 20 * scale, -0.4, 0.4);
-        ctx.stroke();
-        ctx.restore();
-      }
-
-      // HP bar for enemies with scaled HP (wave 3+)
-      if (!e.isBoss && e.hp < e.maxHp) {
-        const barW = r * 2;
-        const barH = 3;
-        const bx = pos.x - r;
-        const by = pos.y - r - 6;
-        ctx.fillStyle = '#333';
-        ctx.fillRect(bx, by, barW, barH);
-        ctx.fillStyle = e.isElite ? NEON_MAGENTA : NEON_CYAN;
-        ctx.fillRect(bx, by, barW * (e.hp / e.maxHp), barH);
-      }
-
-      ctx.textAlign = 'left';
+      const gc = e.isBoss ? BOSS_RED : e.isElite ? NEON_MAGENTA : (e.color || '#cc4466');
+      const glowGrad = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, r * 3.5);
+      glowGrad.addColorStop(0, gc + '55');
+      glowGrad.addColorStop(0.4, gc + '22');
+      glowGrad.addColorStop(1, gc + '00');
+      ctx.fillStyle = glowGrad;
+      ctx.beginPath();
+      ctx.arc(pos.x, pos.y, r * 3.5, 0, Math.PI * 2);
+      ctx.fill();
     }
 
-    // ── 11. Projectiles ─────────────────────────────────────────────────────
+    // ── 9. Y-sorted drawable pass (painter's algorithm) ──────────────────────
+    // Obstacles with sortY = o.y + o.h (south/front edge = building face)
+    // Entities with sortY = entity.y
+    // Objects drawn first (lower sortY) appear behind objects drawn later.
+    type Drawable = { sortY: number; draw: () => void };
+    const drawables: Drawable[] = [];
+    const mapBorder = game.currentMapConfig.borderColor;
+
+    // --- Obstacles ---
+    for (const o of game.obstacles) {
+      if (!o.active) continue;
+      drawables.push({
+        sortY: o.y + o.h,
+        draw: () => {
+          const otl = toScreen(o.x, o.y);
+          const obase = toScreen(o.x, o.y + o.h);
+          const orw = o.w * scale;
+          const orh = o.h * scale;
+          const extH = (o.extrudeHeight ?? 0) * scale;
+          switch (o.type) {
+            case 'building': case 'barrier': {
+              if (extH > 0) {
+                // Left-edge darkening (fake perspective side face) — from roof top to facade bottom
+                ctx.fillStyle = '#0b0b14';
+                ctx.fillRect(otl.x - 3, otl.y, 3, orh + extH);
+                // Facade fill — extends DOWNWARD from south (front) edge of footprint
+                ctx.fillStyle = '#111118';
+                ctx.fillRect(obase.x, obase.y, orw, extH);
+                // Facade window lights
+                const wColsF = Math.max(1, Math.floor(orw / 9));
+                const wRowsF = Math.max(1, Math.floor(extH / 11));
+                for (let wr = 0; wr < wRowsF; wr++) {
+                  for (let wc = 0; wc < wColsF; wc++) {
+                    const wSeed = seed(o.id * 100 + wr * 20 + wc + 500);
+                    if (wSeed > 0.45) {
+                      const wColors = [
+                        `rgba(0,245,255,${0.35 + wSeed * 0.2})`,
+                        `rgba(255,200,80,${0.3 + wSeed * 0.15})`,
+                        `rgba(255,140,30,${0.35 + wSeed * 0.15})`,
+                        `rgba(255,0,204,${0.2 + wSeed * 0.15})`,
+                      ];
+                      ctx.fillStyle = wColors[Math.floor(wSeed * 4)];
+                      ctx.fillRect(obase.x + wc * 9 + 2, obase.y + wr * 11 + 3, 4, 5);
+                    }
+                  }
+                }
+                // Facade border + neon strip at bottom of facade
+                ctx.strokeStyle = mapBorder + '44';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(obase.x, obase.y, orw, extH);
+                ctx.fillStyle = mapBorder + '33';
+                ctx.fillRect(obase.x, obase.y + extH - 2, orw, 2);
+                // Roof (footprint seen from above)
+                ctx.fillStyle = '#1a1a26';
+                ctx.fillRect(otl.x, otl.y, orw, orh);
+                const wCols = Math.max(1, Math.floor(orw / 8));
+                const wRows = Math.max(1, Math.floor(orh / 10));
+                for (let wr = 0; wr < wRows; wr++) {
+                  for (let wc = 0; wc < wCols; wc++) {
+                    const wSeed = seed(o.id * 100 + wr * 20 + wc);
+                    if (wSeed > 0.5) {
+                      const rColors = ['rgba(0,245,255,0.2)', 'rgba(255,200,80,0.16)', 'rgba(255,0,204,0.12)'];
+                      ctx.fillStyle = rColors[Math.floor(wSeed * 3)];
+                      ctx.fillRect(otl.x + wc * 8 + 2, otl.y + wr * 10 + 3, 3, 4);
+                    }
+                  }
+                }
+                ctx.fillStyle = mapBorder + '55';
+                ctx.fillRect(otl.x, otl.y, orw, 2);
+                ctx.strokeStyle = mapBorder + '33';
+                ctx.lineWidth = 0.5;
+                ctx.strokeRect(otl.x, otl.y, orw, orh);
+              } else {
+                // Flat fallback
+                ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                ctx.fillRect(otl.x + 3, otl.y + 3, orw, orh);
+                ctx.fillStyle = '#111118';
+                ctx.fillRect(otl.x, otl.y, orw, orh);
+                ctx.strokeStyle = mapBorder + '55';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(otl.x, otl.y, orw, orh);
+              }
+              break;
+            }
+            case 'debris': {
+              ctx.fillStyle = '#1a1420';
+              ctx.fillRect(otl.x, otl.y, orw, orh);
+              ctx.strokeStyle = 'rgba(0,245,255,0.1)';
+              ctx.lineWidth = 0.5;
+              for (let dl = 0; dl < 3; dl++) {
+                const dx = otl.x + seed(o.id * 30 + dl) * orw;
+                const dy = otl.y + seed(o.id * 30 + dl + 10) * orh;
+                ctx.beginPath(); ctx.moveTo(dx, dy); ctx.lineTo(dx + orw * 0.4, dy + orh * 0.3); ctx.stroke();
+              }
+              break;
+            }
+            case 'tree': {
+              const hp_frac = o.hp / o.maxHp;
+              const treeBase = obase;
+              const trunkW = 4 * scale;
+              const trunkH = extH * 0.35;
+              const canopyR = (orw * 0.8 + extH * 0.18) * Math.max(0.4, hp_frac);
+              // Trunk
+              ctx.fillStyle = `rgba(40, 22, 8, ${0.6 + hp_frac * 0.4})`;
+              ctx.fillRect(treeBase.x - trunkW / 2, treeBase.y - trunkH, trunkW, trunkH);
+              // Canopy
+              const canopyCY = treeBase.y - trunkH - canopyR * 0.5;
+              const treeGr = ctx.createRadialGradient(treeBase.x, canopyCY, 0, treeBase.x, canopyCY, canopyR);
+              treeGr.addColorStop(0, `rgba(20, 80, 20, ${0.9 * hp_frac})`);
+              treeGr.addColorStop(0.6, `rgba(10, 50, 10, ${0.7 * hp_frac})`);
+              treeGr.addColorStop(1, 'rgba(0, 30, 0, 0)');
+              ctx.fillStyle = treeGr;
+              ctx.beginPath();
+              ctx.arc(treeBase.x, canopyCY, canopyR, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.strokeStyle = `rgba(0, 200, 60, ${hp_frac * 0.35})`;
+              ctx.lineWidth = 1;
+              ctx.stroke();
+              break;
+            }
+            case 'terminal': {
+              const tGlow = o.glowColor ?? '#00ff88';
+              const tPulse = 0.6 + Math.sin(t * 3 + o.id) * 0.4;
+              ctx.fillStyle = '#0a100a';
+              ctx.fillRect(otl.x, otl.y, orw, orh);
+              ctx.strokeStyle = tGlow;
+              ctx.lineWidth = 1.5;
+              ctx.strokeRect(otl.x, otl.y, orw, orh);
+              ctx.fillStyle = tGlow + Math.floor(tPulse * 100).toString(16).padStart(2, '0');
+              ctx.font = `${Math.ceil(7 * scale)}px monospace`;
+              ctx.textAlign = 'center';
+              ctx.fillText('LOG', otl.x + orw / 2, otl.y + orh / 2 + 3);
+              ctx.textAlign = 'left';
+              break;
+            }
+            case 'hazard': {
+              const hglow = o.glowColor ?? '#ff00cc';
+              const hpulse = 0.5 + Math.sin(t * 2.5 + o.id * 0.7) * 0.5;
+              ctx.fillStyle = hglow + '22';
+              ctx.fillRect(otl.x, otl.y, orw, orh);
+              ctx.strokeStyle = hglow + Math.floor(hpulse * 136 + 50).toString(16).padStart(2, '0');
+              ctx.lineWidth = 2;
+              ctx.strokeRect(otl.x, otl.y, orw, orh);
+              break;
+            }
+            case 'billboard': {
+              const bGlow = o.glowColor ?? NEON_CYAN;
+              const bPulse = 0.7 + Math.sin(t * 2 + o.id * 1.3) * 0.3;
+              const poleW = Math.max(3, orw * 0.06);
+              const panelH = extH > 0 ? extH * 0.45 : orh;
+              const poleH = extH > 0 ? extH * 0.55 : 0;
+              const panelTop = obase.y - extH;
+              const poleCX = obase.x + orw / 2;
+              // Pole
+              if (poleH > 0) {
+                ctx.fillStyle = '#2a2a3a';
+                ctx.fillRect(poleCX - poleW / 2, obase.y - poleH, poleW, poleH);
+              }
+              // Panel
+              ctx.fillStyle = '#0a0a18';
+              ctx.fillRect(obase.x, panelTop, orw, panelH);
+              ctx.strokeStyle = bGlow;
+              ctx.lineWidth = 1.5;
+              ctx.strokeRect(obase.x, panelTop, orw, panelH);
+              const adIndex = o.id % AD_TEXTS.length;
+              ctx.font = `bold ${Math.ceil(Math.min(panelH * 0.55, 10 * scale))}px monospace`;
+              ctx.fillStyle = bGlow + Math.floor(bPulse * 200 + 55).toString(16).padStart(2, '0');
+              ctx.textAlign = 'center';
+              ctx.fillText(AD_TEXTS[adIndex], poleCX, panelTop + panelH * 0.72);
+              ctx.textAlign = 'left';
+              if (Math.sin(t * 7 + o.id * 3.7) > 0.92) {
+                ctx.fillStyle = bGlow + '22';
+                ctx.fillRect(obase.x, panelTop, orw, panelH);
+              }
+              break;
+            }
+          }
+        },
+      });
+    }
+
+    // --- Shards ---
+    for (const s of game.shards) {
+      if (!s.active) continue;
+      drawables.push({
+        sortY: s.y,
+        draw: () => {
+          const pos = toScreen(s.x, s.y);
+          const sz = (s.collected ? 3 : 5) * scale;
+          const pulse = s.collected ? 1 : 0.7 + Math.sin(t * 4 + s.orbitAngle) * 0.3;
+          ctx.globalAlpha = pulse;
+          ctx.fillStyle = s.collected ? NEON_GOLD : NEON_CYAN;
+          ctx.beginPath();
+          ctx.moveTo(pos.x + sz, pos.y);
+          ctx.lineTo(pos.x - sz * 0.5, pos.y + sz * 0.87);
+          ctx.lineTo(pos.x - sz * 0.5, pos.y - sz * 0.87);
+          ctx.closePath();
+          ctx.fill();
+          ctx.globalAlpha = 1;
+        },
+      });
+    }
+
+    // --- Enemies ---
+    for (const e of game.enemies) {
+      if (!e.active) continue;
+      drawables.push({
+        sortY: e.y,
+        draw: () => {
+          const pos = toScreen(e.x, e.y);
+          const r = e.radius * scale;
+          const baseColor = e.isElite ? NEON_MAGENTA : (e.color || '#cc4466');
+          if (e.isBoss && e.telegraphTimer > 0) {
+            const telegraphAlpha = Math.min(1, e.telegraphTimer * 2);
+            ctx.strokeStyle = `rgba(255, 0, 80, ${telegraphAlpha})`;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(pos.x, pos.y, 120 * scale, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+          if (e.isBoss && e.bossPhase > 1) {
+            ctx.strokeStyle = (e.bossPhase === 3 ? '#ff0033' : '#ff6622') + '60';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(pos.x, pos.y, r + 8, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+          const spriteConfig = e.isBoss
+            ? BOSS_SPRITES[Math.floor(game.wave / BOSS_WAVE_INTERVAL)]
+            : ENEMY_SPRITES[e.type];
+          const spriteDrawn = spriteConfig ? drawSprite(ctx, spriteConfig, {
+            x: pos.x, y: pos.y, radius: r, angle: e.angle, vx: e.vx, vy: e.vy,
+            hitFlashUntil: e.hitFlashUntil,
+            aimAngle: Math.atan2(game.player.y - e.y, game.player.x - e.x),
+          }, game.elapsedMs, 1) : false;
+          if (!spriteDrawn) {
+            ctx.fillStyle = baseColor;
+            ctx.beginPath();
+            ctx.arc(pos.x, pos.y, r, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          if (e.isBoss) {
+            ctx.strokeStyle = NEON_GOLD + 'aa';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(pos.x, pos.y, r, 0, Math.PI * 2);
+            ctx.stroke();
+            if (e.bossPhase > 1) {
+              ctx.font = `bold ${Math.ceil(8 * scale)}px monospace`;
+              ctx.fillStyle = e.bossPhase === 3 ? '#ff3355' : '#ff8844';
+              ctx.textAlign = 'center';
+              ctx.fillText(`P${e.bossPhase}`, pos.x, pos.y - r - 4);
+              ctx.textAlign = 'left';
+            }
+          }
+          if (e.isBoss && e.bossPhase === 3) {
+            ctx.save();
+            ctx.translate(pos.x, pos.y);
+            ctx.rotate(e.tentacleAngle);
+            ctx.strokeStyle = 'rgba(255, 0, 80, 0.35)';
+            ctx.lineWidth = 4 * scale;
+            ctx.beginPath();
+            ctx.arc(0, 0, r + 20 * scale, -0.4, 0.4);
+            ctx.stroke();
+            ctx.restore();
+          }
+          if (!e.isBoss && e.hp < e.maxHp) {
+            const barW = r * 2, barH = 3;
+            const bx = pos.x - r, by = pos.y - r - 6;
+            ctx.fillStyle = '#333';
+            ctx.fillRect(bx, by, barW, barH);
+            ctx.fillStyle = e.isElite ? NEON_MAGENTA : NEON_CYAN;
+            ctx.fillRect(bx, by, barW * (e.hp / e.maxHp), barH);
+          }
+        },
+      });
+    }
+
+    // --- Player ---
+    drawables.push({
+      sortY: p.y,
+      draw: () => {
+        const playerPos = toScreen(p.x, p.y);
+        const pr = p.radius * scale;
+        const isInvincible = game.elapsedMs < p.invincibleUntil && Math.floor(game.elapsedMs / 80) % 2 === 0;
+        if (!isInvincible) {
+          if (p.focusActive) {
+            const fGlow = ctx.createRadialGradient(playerPos.x, playerPos.y, 0, playerPos.x, playerPos.y, pr * 5);
+            fGlow.addColorStop(0, 'rgba(0, 240, 255, 0.25)');
+            fGlow.addColorStop(1, 'rgba(0, 240, 255, 0)');
+            ctx.fillStyle = fGlow;
+            ctx.beginPath();
+            ctx.arc(playerPos.x, playerPos.y, pr * 5, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          const playerSpriteDrawn = drawSprite(ctx, PLAYER_SPRITE, {
+            x: playerPos.x, y: playerPos.y, radius: pr,
+            angle: p.aimAngle, aimAngle: p.aimAngle,
+            hitFlashUntil: p.hitFlashUntil,
+          }, game.elapsedMs, 1);
+          if (!playerSpriteDrawn) {
+            const playerColor = p.dashActive ? '#ffffff' : p.focusActive ? PLAYER_GLOW : NEON_GOLD;
+            ctx.fillStyle = playerColor;
+            ctx.beginPath();
+            ctx.arc(playerPos.x, playerPos.y, pr, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          const wingScale = Math.min(p.shards / MAX_SHARDS, 1);
+          if (wingScale > 0) {
+            const wingPulse = wingScale * (0.8 + Math.sin(t * 4) * 0.2);
+            ctx.strokeStyle = NEON_CYAN + Math.floor(wingPulse * 180).toString(16).padStart(2, '0');
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(playerPos.x - pr * 0.5, playerPos.y);
+            ctx.lineTo(playerPos.x - pr * 1.4, playerPos.y - pr * wingScale * 1.2);
+            ctx.moveTo(playerPos.x - pr * 0.5, playerPos.y);
+            ctx.lineTo(playerPos.x - pr * 1.4, playerPos.y + pr * wingScale * 1.2);
+            ctx.stroke();
+          }
+        }
+      },
+    });
+
+    // --- Ally ---
+    const ally = game.allyCtrl.ally;
+    if (ally.active) {
+      drawables.push({
+        sortY: ally.y,
+        draw: () => {
+          const apos = toScreen(ally.x, ally.y);
+          const ar = ally.radius * scale;
+          const isDowned = ally.state === 'downed';
+          const allyPulse = isDowned ? 0.4 + Math.sin(t * 6) * 0.4 : 0.8 + Math.sin(ally.phase * 4) * 0.2;
+          ctx.fillStyle = isDowned ? `rgba(100, 100, 100, ${allyPulse})` : '#00ff88';
+          ctx.beginPath();
+          ctx.arc(apos.x, apos.y, ar, 0, Math.PI * 2);
+          ctx.fill();
+          if (!isDowned) {
+            const barW = ar * 2.5, bx = apos.x - barW / 2, by = apos.y - ar - 7;
+            ctx.fillStyle = '#333'; ctx.fillRect(bx, by, barW, 3);
+            ctx.fillStyle = '#00ff88'; ctx.fillRect(bx, by, barW * (ally.hp / ally.maxHp), 3);
+          }
+          ctx.font = `bold ${Math.ceil(7 * scale)}px monospace`;
+          ctx.fillStyle = isDowned ? '#888888' : '#00ff88';
+          ctx.textAlign = 'center';
+          ctx.fillText(isDowned ? 'DOWN' : 'LIN', apos.x, apos.y + ar + 10);
+          ctx.textAlign = 'left';
+        },
+      });
+    }
+
+    // --- Heart pickups ---
+    for (const h of game.heartPickups) {
+      if (!h.active) continue;
+      drawables.push({
+        sortY: h.y,
+        draw: () => {
+          const hpos = toScreen(h.x, h.y);
+          const fadeAlpha = Math.min(1, h.lifetime / 3);
+          ctx.globalAlpha = fadeAlpha;
+          const drawn = drawPickupSprite(ctx, HEART_PICKUP_SPRITE, hpos.x, hpos.y, t, scale);
+          if (!drawn) {
+            const bob = Math.sin(t * 3) * 3;
+            ctx.fillStyle = '#ff00cc';
+            ctx.save();
+            ctx.translate(hpos.x, hpos.y + bob);
+            ctx.rotate(Math.PI / 4);
+            ctx.fillRect(-5 * scale, -5 * scale, 10 * scale, 10 * scale);
+            ctx.restore();
+          }
+          ctx.globalAlpha = 1;
+        },
+      });
+    }
+
+    // Sort by world Y (ascending) and draw
+    drawables.sort((a, b) => a.sortY - b.sortY);
+    for (const d of drawables) d.draw();
+
+    // ── Post-sort: Projectiles (always on top of world objects) ──────────────
     for (const pr of game.projectiles) {
       if (!pr.active) continue;
       const pos = toScreen(pr.x, pr.y);
@@ -438,7 +631,7 @@ export class VoidBreakerRenderer {
       ctx.fill();
     }
 
-    // ── 12. Particles ────────────────────────────────────────────────────────
+    // ── Post-sort: Particles ─────────────────────────────────────────────────
     for (const pt of game.particles) {
       if (!pt.active) continue;
       const pos = toScreen(pt.x, pt.y);
@@ -449,143 +642,37 @@ export class VoidBreakerRenderer {
       ctx.fill();
     }
 
-    // ── 13. Player ───────────────────────────────────────────────────────────
-    const playerPos = toScreen(p.x, p.y);
-    const pr = p.radius * scale;
-    const isInvincible = game.elapsedMs < p.invincibleUntil && Math.floor(game.elapsedMs / 80) % 2 === 0;
-    if (!isInvincible) {
-      // Player glow burst when focus is active
-      if (p.focusActive) {
-        const fGlow = ctx.createRadialGradient(playerPos.x, playerPos.y, 0, playerPos.x, playerPos.y, pr * 5);
-        fGlow.addColorStop(0, 'rgba(0, 240, 255, 0.25)');
-        fGlow.addColorStop(1, 'rgba(0, 240, 255, 0)');
-        ctx.fillStyle = fGlow;
-        ctx.beginPath();
-        ctx.arc(playerPos.x, playerPos.y, pr * 5, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      // Attempt sprite rendering for player
-      const playerSpriteDrawn = drawSprite(ctx, PLAYER_SPRITE, {
-        x: playerPos.x, y: playerPos.y,
-        radius: pr,
-        angle: p.aimAngle,
-        aimAngle: p.aimAngle,
-        hitFlashUntil: p.hitFlashUntil,
-      }, game.elapsedMs, 1);
-
-      if (!playerSpriteDrawn) {
-        // Fallback: original shape rendering
-        const playerColor = p.dashActive ? '#ffffff' : p.focusActive ? PLAYER_GLOW : NEON_GOLD;
-        ctx.fillStyle = playerColor;
-        ctx.beginPath();
-        ctx.arc(playerPos.x, playerPos.y, pr, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      // Wings
-      const wingScale = Math.min(p.shards / MAX_SHARDS, 1);
-      if (wingScale > 0) {
-        const wingPulse = wingScale * (0.8 + Math.sin(t * 4) * 0.2);
-        ctx.strokeStyle = NEON_CYAN + Math.floor(wingPulse * 180).toString(16).padStart(2, '0');
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(playerPos.x - pr * 0.5, playerPos.y);
-        ctx.lineTo(playerPos.x - pr * 1.4, playerPos.y - pr * wingScale * 1.2);
-        ctx.moveTo(playerPos.x - pr * 0.5, playerPos.y);
-        ctx.lineTo(playerPos.x - pr * 1.4, playerPos.y + pr * wingScale * 1.2);
-        ctx.stroke();
-      }
-    }
-
-    // ── Player HP Bar (always visible, drawn after player) ───────────────────
+    // ── Post-sort: Player HP Bar (always on top) ─────────────────────────────
     if (game.state === 'playing') {
+      const playerPos = toScreen(p.x, p.y);
+      const pr = p.radius * scale;
       const hpBarWidth = 40 * scale;
       const hpBarHeight = 4 * scale;
       const hpBarX = playerPos.x - hpBarWidth / 2;
       const hpBarY = playerPos.y + pr + 6;
       const hpFraction = p.hp / p.maxHp;
-      // Background
       ctx.fillStyle = 'rgba(20, 20, 30, 0.7)';
       ctx.fillRect(hpBarX, hpBarY, hpBarWidth, hpBarHeight);
-      // HP fill — color by level
       let hpBarColor: string;
       if (hpFraction > 0.6) hpBarColor = '#00ff88';
       else if (hpFraction > 0.3) hpBarColor = '#ffaa00';
       else hpBarColor = '#ff2244';
       ctx.fillStyle = hpBarColor;
       ctx.fillRect(hpBarX, hpBarY, hpBarWidth * hpFraction, hpBarHeight);
-      // Border
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
       ctx.lineWidth = 0.5;
       ctx.strokeRect(hpBarX, hpBarY, hpBarWidth, hpBarHeight);
-      // Numeric readout
       ctx.font = `bold ${Math.ceil(7 * scale)}px monospace`;
       ctx.fillStyle = hpBarColor;
       ctx.textAlign = 'center';
       ctx.fillText(`${p.hp}/${p.maxHp}`, playerPos.x, hpBarY + hpBarHeight + 9);
       ctx.textAlign = 'left';
-      // Hit flash pulse
       const recentlyHit = game.elapsedMs < p.hitFlashUntil + 200;
       if (recentlyHit) {
         const flashAlpha = 0.3 + Math.sin(game.elapsedMs * 0.02) * 0.3;
         ctx.fillStyle = `rgba(255, 0, 50, ${flashAlpha})`;
         ctx.fillRect(hpBarX - 2, hpBarY - 1, hpBarWidth + 4, hpBarHeight + 2);
       }
-    }
-
-    // ── 14. Ally ────────────────────────────────────────────────────────────
-    const ally = game.allyCtrl.ally;
-    if (ally.active) {
-      const apos = toScreen(ally.x, ally.y);
-      const ar = ally.radius * scale;
-      const isDowned = ally.state === 'downed';
-      const allyPulse = isDowned
-        ? 0.4 + Math.sin(t * 6) * 0.4
-        : 0.8 + Math.sin(ally.phase * 4) * 0.2;
-
-      ctx.fillStyle = isDowned ? `rgba(100, 100, 100, ${allyPulse})` : '#00ff88';
-      ctx.beginPath();
-      ctx.arc(apos.x, apos.y, ar, 0, Math.PI * 2);
-      ctx.fill();
-
-      // HP bar
-      if (!isDowned) {
-        const barW = ar * 2.5;
-        const bx = apos.x - barW / 2;
-        const by = apos.y - ar - 7;
-        ctx.fillStyle = '#333';
-        ctx.fillRect(bx, by, barW, 3);
-        ctx.fillStyle = '#00ff88';
-        ctx.fillRect(bx, by, barW * (ally.hp / ally.maxHp), 3);
-      }
-
-      // Name tag
-      ctx.font = `bold ${Math.ceil(7 * scale)}px monospace`;
-      ctx.fillStyle = isDowned ? '#888888' : '#00ff88';
-      ctx.textAlign = 'center';
-      ctx.fillText(isDowned ? 'DOWN' : 'LIN', apos.x, apos.y + ar + 10);
-      ctx.textAlign = 'left';
-    }
-
-    // ── 15. Heart Pickups ─────────────────────────────────────────────────────
-    for (const h of game.heartPickups) {
-      if (!h.active) continue;
-      const hpos = toScreen(h.x, h.y);
-      const fadeAlpha = Math.min(1, h.lifetime / 3);
-      ctx.globalAlpha = fadeAlpha;
-      const drawn = drawPickupSprite(ctx, HEART_PICKUP_SPRITE, hpos.x, hpos.y, t, scale);
-      if (!drawn) {
-        // Fallback: draw a simple magenta diamond
-        const bob = Math.sin(t * 3) * 3;
-        ctx.fillStyle = '#ff00cc';
-        ctx.save();
-        ctx.translate(hpos.x, hpos.y + bob);
-        ctx.rotate(Math.PI / 4);
-        ctx.fillRect(-5 * scale, -5 * scale, 10 * scale, 10 * scale);
-        ctx.restore();
-      }
-      ctx.globalAlpha = 1;
     }
 
     // ── 16. Popups ────────────────────────────────────────────────────────────
@@ -607,64 +694,137 @@ export class VoidBreakerRenderer {
     this.drawVignette(ctx);
   }
 
-  /** Parallax city silhouettes — two depth layers, scroll with arenaPhase. */
+  /** Parallax city silhouettes — all 4 sides of the canvas for full atmosphere. */
   private drawCitySilhouettes(ctx: CanvasRenderingContext2D, phase: number): void {
-    // Far layer (dimmer, slower)
+    const t = this.time;
+
+    const drawBuildingRow = (
+      b: Building, i: number,
+      x: number, baseY: number, dir: 1 | -1, // dir: 1=down from top, -1=up from bottom
+    ) => {
+      const h = b.h;
+      const buildY = dir === -1 ? baseY - h : baseY;
+      const alpha = 0.55 + b.depth * 0.35;
+      ctx.fillStyle = `rgba(10, 10, 22, ${alpha})`;
+      if (i % 3 === 0) {
+        // Stepped profile
+        ctx.fillRect(x, buildY, b.w * 0.6, h);
+        ctx.fillRect(x + b.w * 0.25, buildY + (dir === -1 ? h * 0.35 : 0), b.w * 0.75, h * 0.65);
+      } else {
+        ctx.fillRect(x, buildY, b.w, h);
+      }
+      // Antenna
+      if (i % 3 === 0) {
+        ctx.fillStyle = 'rgba(20, 20, 40, 0.85)';
+        const antennaY = dir === -1 ? buildY - 16 : buildY + h;
+        ctx.fillRect(x + b.w * 0.4, antennaY + (dir === -1 ? 0 : -16), 2, 16);
+        // Antenna blink
+        if (Math.sin(t * 1.5 + i) > 0.7) {
+          ctx.fillStyle = 'rgba(255, 80, 80, 0.8)';
+          ctx.beginPath();
+          ctx.arc(x + b.w * 0.4 + 1, antennaY + (dir === -1 ? 0 : -16), 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      // Window lights
+      const windowY = dir === -1 ? buildY : buildY;
+      for (let wl = 0; wl < 8; wl++) {
+        const ws = seed(i * 50 + wl);
+        if (ws > 0.38) {
+          let wColor: string;
+          if (ws > 0.82) wColor = `rgba(255, 140, 30, ${0.55 + ws * 0.2})`; // amber
+          else if (ws > 0.65) wColor = `rgba(0, 255, 200, ${0.45 + ws * 0.15})`; // cyan
+          else wColor = `rgba(255, 80, 200, ${0.35 + ws * 0.2})`; // magenta
+          ctx.fillStyle = wColor;
+          ctx.fillRect(
+            x + seed(i * 50 + wl + 5) * (b.w - 4),
+            windowY + seed(i * 50 + wl + 20) * h * 0.75,
+            3, 4,
+          );
+        }
+      }
+      // Neon sign
+      if (i % 4 === 0) {
+        const signColors = ['rgba(0,245,255,0.35)', 'rgba(255,0,204,0.3)', 'rgba(255,140,30,0.3)'];
+        ctx.fillStyle = signColors[i % 3];
+        ctx.fillRect(x + 2, windowY + h * 0.15, Math.min(b.w - 4, 22), 6);
+      }
+    };
+
+    // ── BOTTOM edge — far layer ───────────────────────────────────────────────
     for (const b of CITY_BUILDINGS_FAR) {
       const scrollX = (phase * 4 * b.depth) % (CANVAS_WIDTH + b.w) - b.w;
       const x = (b.x + scrollX) % (CANVAS_WIDTH + b.w);
-      ctx.fillStyle = `rgba(6, 6, 16, ${0.5 + b.depth * 0.3})`;
+      ctx.fillStyle = `rgba(6, 6, 16, ${0.45 + b.depth * 0.25})`;
       ctx.fillRect(x, CANVAS_HEIGHT - b.h, b.w, b.h);
     }
-    // Near layer
+
+    // ── BOTTOM edge — near layer ──────────────────────────────────────────────
     for (let i = 0; i < CITY_BUILDINGS.length; i++) {
       const b = CITY_BUILDINGS[i];
       const scrollX = (phase * 12 * b.depth) % (CANVAS_WIDTH + b.w) - b.w;
       const x = (b.x + scrollX) % (CANVAS_WIDTH + b.w);
-      // Building silhouette with stepped profile for some
-      ctx.fillStyle = `rgba(10, 10, 22, ${0.6 + b.depth * 0.4})`;
-      if (i % 4 === 0) {
-        // Stepped building
-        ctx.fillRect(x, CANVAS_HEIGHT - b.h, b.w * 0.6, b.h);
-        ctx.fillRect(x + b.w * 0.3, CANVAS_HEIGHT - b.h * 0.7, b.w * 0.7, b.h * 0.7);
-      } else {
-        ctx.fillRect(x, CANVAS_HEIGHT - b.h, b.w, b.h);
-      }
-      // Antenna spike on every 3rd building
-      if (i % 3 === 0) {
-        ctx.fillStyle = 'rgba(20, 20, 40, 0.8)';
-        ctx.fillRect(x + b.w * 0.4, CANVAS_HEIGHT - b.h - 12, 2, 12);
-      }
-      // Window lights (seeded, deterministic)
+      drawBuildingRow(b, i, x, CANVAS_HEIGHT, -1);
+    }
+
+    // ── TOP edge — near layer (mirrored, slower parallax) ────────────────────
+    for (let i = 0; i < CITY_BUILDINGS.length; i++) {
+      const b = CITY_BUILDINGS[i];
+      const scrollX = -(phase * 8 * b.depth) % (CANVAS_WIDTH + b.w) + b.w;
+      const x = ((b.x + scrollX) % (CANVAS_WIDTH + b.w) + CANVAS_WIDTH + b.w) % (CANVAS_WIDTH + b.w);
+      const bTop = { ...b, h: b.h * 0.7 }; // top buildings slightly shorter
+      drawBuildingRow(bTop, i + 200, x, 0, 1);
+    }
+
+    // ── LEFT edge — vertical strip ────────────────────────────────────────────
+    const leftW = 80;
+    ctx.fillStyle = 'rgba(6, 6, 18, 0.85)';
+    ctx.fillRect(0, 0, leftW, CANVAS_HEIGHT);
+    for (let i = 0; i < 12; i++) {
+      const bh = 60 + seed(i * 7 + 400) * 200;
+      const by = seed(i * 7 + 401) * (CANVAS_HEIGHT - bh);
+      const bw = 30 + seed(i * 7 + 402) * 40;
+      ctx.fillStyle = `rgba(12, 12, 24, ${0.6 + seed(i * 7) * 0.3})`;
+      ctx.fillRect(leftW - bw, by, bw, bh);
+      // window lights
       for (let wl = 0; wl < 5; wl++) {
-        const ws = seed(i * 50 + wl);
-        if (ws > 0.4) {
-          const wColor = ws > 0.7 ? 'rgba(0, 255, 200, 0.5)' : 'rgba(255, 100, 200, 0.4)';
-          ctx.fillStyle = wColor;
-          ctx.fillRect(
-            x + ws * b.w * 0.8,
-            CANVAS_HEIGHT - b.h + seed(i * 50 + wl + 20) * b.h * 0.7,
-            2, 3
-          );
+        const ws = seed(i * 70 + wl + 500);
+        if (ws > 0.45) {
+          ctx.fillStyle = ws > 0.75 ? `rgba(0,245,255,0.4)` : `rgba(255,140,30,0.35)`;
+          ctx.fillRect(leftW - bw + seed(i * 70 + wl + 10) * (bw - 4), by + seed(i * 70 + wl + 20) * bh * 0.8, 3, 4);
         }
       }
-      // Neon sign patch on every 5th building
-      if (i % 5 === 0) {
-        const signColor = i % 2 === 0 ? 'rgba(0, 245, 255, 0.3)' : 'rgba(255, 0, 204, 0.25)';
-        ctx.fillStyle = signColor;
-        ctx.fillRect(x + 2, CANVAS_HEIGHT - b.h + 4, Math.min(b.w - 4, 18), 5);
+    }
+
+    // ── RIGHT edge — vertical strip ───────────────────────────────────────────
+    const rightX = CANVAS_WIDTH - leftW;
+    ctx.fillStyle = 'rgba(6, 6, 18, 0.85)';
+    ctx.fillRect(rightX, 0, leftW, CANVAS_HEIGHT);
+    for (let i = 0; i < 12; i++) {
+      const bh = 60 + seed(i * 11 + 600) * 200;
+      const by = seed(i * 11 + 601) * (CANVAS_HEIGHT - bh);
+      const bw = 30 + seed(i * 11 + 602) * 40;
+      ctx.fillStyle = `rgba(12, 12, 24, ${0.6 + seed(i * 11) * 0.3})`;
+      ctx.fillRect(rightX, by, bw, bh);
+      for (let wl = 0; wl < 5; wl++) {
+        const ws = seed(i * 80 + wl + 700);
+        if (ws > 0.45) {
+          ctx.fillStyle = ws > 0.75 ? `rgba(255,0,204,0.4)` : `rgba(255,200,80,0.35)`;
+          ctx.fillRect(rightX + seed(i * 80 + wl + 10) * (bw - 4), by + seed(i * 80 + wl + 20) * bh * 0.8, 3, 4);
+        }
       }
     }
-    // Rain streaks
-    ctx.strokeStyle = 'rgba(100, 200, 255, 0.04)';
-    ctx.lineWidth = 0.5;
-    const t = this.time;
-    for (let i = 0; i < 40; i++) {
-      const rx = (seed(i * 17 + 200) * CANVAS_WIDTH + t * 60) % CANVAS_WIDTH;
-      const ry = (seed(i * 23 + 200) * CANVAS_HEIGHT + t * 120) % CANVAS_HEIGHT;
+
+    // ── Rain streaks (denser, varied opacity) ─────────────────────────────────
+    for (let i = 0; i < 80; i++) {
+      const opacity = 0.03 + seed(i * 13 + 900) * 0.05;
+      ctx.strokeStyle = `rgba(100, 200, 255, ${opacity})`;
+      ctx.lineWidth = 0.5;
+      const rx = (seed(i * 17 + 200) * CANVAS_WIDTH + t * 55) % CANVAS_WIDTH;
+      const ry = (seed(i * 23 + 200) * CANVAS_HEIGHT + t * 110) % CANVAS_HEIGHT;
       ctx.beginPath();
       ctx.moveTo(rx, ry);
-      ctx.lineTo(rx - 3, ry + 15);
+      ctx.lineTo(rx - 4, ry + 18);
       ctx.stroke();
     }
   }
