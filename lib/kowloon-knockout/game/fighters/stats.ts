@@ -45,10 +45,10 @@ export const CLASS_STATS: Record<FighterClass, FighterStats> = {
         staminaRegen: 0.2,
     },
     power_red_phoenix: {
-        maxHealth: 55,
+        maxHealth: 50,
         power: 1.8,
         punchSpeed: 1.3,
-        defense: 0.5,
+        defense: 0.45,
         moveSpeed: 2.2,
         stamina: 90,
         staminaRegen: 0.35,
