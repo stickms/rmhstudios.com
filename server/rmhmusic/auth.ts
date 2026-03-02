@@ -23,7 +23,7 @@ export async function authenticateSocket(socket: Socket): Promise<AuthenticatedU
   const user = data?.user;
   if (!user?.id) throw new Error('Invalid user');
 
-  logger.info('Socket authenticated', { userId: user.id, userName: user.name });
+  logger.info({ event: 'socket_authenticated', userId: user.id, userName: user.name });
 
   return {
     userId: user.id,

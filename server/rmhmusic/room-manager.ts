@@ -103,9 +103,9 @@ export class RoomManager {
     const prisma = getPrismaClient();
     await prisma.rmhMusicRoom.create({
       data: { id: roomId, code, name, hostId: userId, isPublic: room.isPublic, password: room.password },
-    }).catch((err: Error) => logger.error('DB create room failed', { error: err }));
+    }).catch((err: Error) => logger.error({ event: 'db_create_room_failed', error: err.message }));
 
-    logger.info('Room created', { roomId, code, hostUserId: userId });
+    logger.info({ event: 'room_created', roomId, code, hostUserId: userId });
   }
 
   private async onJoin(
@@ -163,7 +163,7 @@ export class RoomManager {
       this.broadcastAction(room, 'MEMBER_JOINED', { userId, userName, avatarUrl });
     }
 
-    logger.info('User joined room', { roomId: room.id, userId });
+    logger.info({ event: 'user_joined_room', roomId: room.id, userId });
   }
 
   private onLeave(socket: Socket, userId: string) {
@@ -208,7 +208,7 @@ export class RoomManager {
 
     if (room.members.size === 0) {
       this.rooms.delete(roomId);
-      logger.info('Room deleted (empty)', { roomId });
+      logger.info({ event: 'room_deleted_empty', roomId });
       return;
     }
 
@@ -341,7 +341,7 @@ export class RoomManager {
       for (const [roomId, room] of this.rooms) {
         if (room.members.size === 0 && now - room.lastActivityAt > config.emptyTimeoutMs) {
           this.rooms.delete(roomId);
-          logger.info('GC: removed empty room', { roomId });
+          logger.info({ event: 'gc_removed_empty_room', roomId });
         }
       }
     }, config.gcIntervalMs);

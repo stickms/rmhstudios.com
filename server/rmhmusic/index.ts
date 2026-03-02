@@ -35,7 +35,7 @@ io.use(async (socket, next) => {
     socket.data = { ...socket.data, ...user };
     next();
   } catch (err) {
-    logger.warn('Auth failed', { error: err });
+    logger.warn({ event: 'auth_failed', error: err });
     next(new Error('unauthorized'));
   }
 });
@@ -43,7 +43,7 @@ io.use(async (socket, next) => {
 // ─── Connection ──────────────────────────────────────────────────
 
 io.on('connection', (socket) => {
-  logger.info('Client connected', { socketId: socket.id, userId: socket.data.userId });
+  logger.info({ event: 'client_connected', socketId: socket.id, userId: socket.data.userId });
 
   roomManager.handleConnection(socket);
   syncEngine.handleConnection(socket);
@@ -57,13 +57,13 @@ roomManager.startGC();
 syncEngine.startHeartbeat();
 
 httpServer.listen(config.port, () => {
-  logger.info(`RMHMusic server listening on port ${config.port}`);
+  logger.info({ event: 'server_started', port: config.port });
 });
 
 // ─── Graceful Shutdown ───────────────────────────────────────────
 
 function shutdown(signal: string) {
-  logger.info(`${signal} received, shutting down`);
+  logger.info({ event: 'shutdown', signal });
   syncEngine.stop();
   io.close();
   httpServer.close(() => process.exit(0));
