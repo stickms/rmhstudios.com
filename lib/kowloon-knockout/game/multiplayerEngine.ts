@@ -218,7 +218,16 @@ function initHostGame(
 
     const handleRemoteInput = (msg: ServerMessage) => {
         if (msg.type === 'input') {
-            remoteInput = msg.data;
+            // Held-state flags: overwrite directly
+            remoteInput.left = msg.data.left;
+            remoteInput.right = msg.data.right;
+            remoteInput.block = msg.data.block;
+            // Pressed flags: OR so a single-frame true isn't lost
+            // when a later false message arrives before the game loop reads it
+            remoteInput.jabPressed = remoteInput.jabPressed || msg.data.jabPressed;
+            remoteInput.crossPressed = remoteInput.crossPressed || msg.data.crossPressed;
+            remoteInput.hookPressed = remoteInput.hookPressed || msg.data.hookPressed;
+            remoteInput.uppercutPressed = remoteInput.uppercutPressed || msg.data.uppercutPressed;
         }
     };
     networkClient.on('input', handleRemoteInput);
