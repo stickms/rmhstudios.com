@@ -41,6 +41,7 @@ model User {
   lightsOutScores LightsOutScore[]
   versecraftSave  VersecraftSave?
   versecraftProgress VersecraftProgress?
+  forestExplorerSave ForestExplorerSave?
 
   // Slice-It Library Relations
   uploadedSongs  Song[]        @relation("SongUploader")
@@ -792,6 +793,19 @@ model VersecraftProgress {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("versecraft_progress")
+}
+
+// ─── Forest Explorer (Story Mode) ──────────────────────────────────
+
+model ForestExplorerSave {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  saveData  Json
+  updatedAt DateTime @default(now()) @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("forest_explorer_save")
 }
 
 // ─── Site Feedback ──────────────────────────────────────────────────

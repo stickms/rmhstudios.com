@@ -666,7 +666,7 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
                                 value={lobbyIdInput} 
                                 onChange={(e) => setLobbyIdInput(e.target.value)} 
                                 placeholder="Lobby Code"
-                                className="bg-(--slice-input-bg) border-(--slice-input-border) shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] rounded-xl uppercase text-center font-mono tracking-widest h-12"
+                                className="bg-(--slice-input-bg) border-(--slice-input-border) text-slice-text placeholder:text-slice-text-muted shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] rounded-xl uppercase text-center font-mono tracking-widest h-12"
                             />
                             <Button 
                                 className="bg-slice-bg text-blue-500 font-bold shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] active:shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)] rounded-xl"

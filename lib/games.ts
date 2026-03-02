@@ -201,9 +201,9 @@ export const games: GameInfo[] = [
     {
         id: 'forest-explorer',
         title: 'Forest Explorer',
-        description: 'Wander a peaceful 3D ancient forest. Towering pines, glowing fireflies, golden light.',
+        description: 'Wander a peaceful 3D ancient forest, or play the 3-act narrative story mode with puzzles and lore.',
         longDescription:
-            'A tranquil first-person 3D experience. Roam freely through a dense ancient forest filled with towering conifers, glowing fireflies, low-lying mist, and dappled golden-hour sunlight. No objectives—just explore and breathe.',
+            'A first-person 3D forest experience with two modes. Free Explore lets you roam through a dense ancient forest with towering conifers, glowing fireflies, and dappled sunlight. Story Mode is a 3-act narrative adventure featuring logic puzzles, environmental storytelling, and a discoverable journal system.',
         href: '/forest-explorer',
         status: 'Playable',
         cta: 'Explore',

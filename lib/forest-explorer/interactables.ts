@@ -1,0 +1,333 @@
+import type { InteractableDefinition } from './types';
+
+export const interactables: InteractableDefinition[] = [
+    // ─── Act 1: The Whispering Woods at Dusk ─────────────────────────────────
+
+    // Puzzle stones
+    {
+        id: 'act1_stone_circle_puzzle',
+        act: 'act1',
+        type: 'puzzle_stone',
+        label: 'Ancient Rune Stone',
+        position: [0, 0.5, -60],
+        revealMethod: 'flashlight_only',
+        interactionRadius: 4,
+        puzzleId: 'act1_rune_sequence',
+    },
+    {
+        id: 'act1_stargazer_puzzle',
+        act: 'act1',
+        type: 'puzzle_stone',
+        label: 'Star Chart',
+        position: [50, 0.3, -40],
+        revealMethod: 'flashlight_only',
+        interactionRadius: 4,
+        puzzleId: 'act1_constellation',
+    },
+    {
+        id: 'act1_shadow_puzzle',
+        act: 'act1',
+        type: 'puzzle_stone',
+        label: 'Shadow Totem',
+        position: [30, 0.5, 30],
+        revealMethod: 'flashlight_only',
+        interactionRadius: 4,
+        puzzleId: 'act1_shadow_match',
+    },
+    {
+        id: 'act1_gateway_puzzle',
+        act: 'act1',
+        type: 'puzzle_stone',
+        label: 'Ward Seal',
+        position: [-40, 1.0, 20],
+        revealMethod: 'always_visible',
+        interactionRadius: 5,
+        puzzleId: 'act1_ward_seal',
+    },
+
+    // Journal items
+    {
+        id: 'act1_journal_intro',
+        act: 'act1',
+        type: 'journal_item',
+        label: 'Worn Notebook',
+        position: [2, 0.3, 2],
+        revealMethod: 'always_visible',
+        interactionRadius: 3,
+        journalEntryId: 'act1_personal_intro',
+    },
+    {
+        id: 'act1_journal_stone_lore',
+        act: 'act1',
+        type: 'journal_item',
+        label: 'Carved Inscription',
+        position: [3, 0.5, -55],
+        revealMethod: 'flashlight_only',
+        interactionRadius: 3,
+        journalEntryId: 'act1_stone_lore',
+    },
+    {
+        id: 'act1_journal_star_map',
+        act: 'act1',
+        type: 'journal_item',
+        label: 'Tattered Map',
+        position: [45, 0.2, -38],
+        revealMethod: 'flashlight_only',
+        interactionRadius: 3,
+        journalEntryId: 'act1_star_map',
+    },
+    {
+        id: 'act1_journal_shadow_legend',
+        act: 'act1',
+        type: 'journal_item',
+        label: 'Faded Mural',
+        position: [28, 0.8, 28],
+        revealMethod: 'flashlight_only',
+        interactionRadius: 3,
+        journalEntryId: 'act1_shadow_legend',
+    },
+    {
+        id: 'act1_journal_ward',
+        act: 'act1',
+        type: 'journal_item',
+        label: 'Etched Pillar',
+        position: [-38, 0.6, 18],
+        revealMethod: 'flashlight_only',
+        interactionRadius: 3,
+        journalEntryId: 'act1_ward_inscription',
+    },
+    {
+        id: 'act1_journal_creature',
+        act: 'act1',
+        type: 'journal_item',
+        label: 'Strange Footprints',
+        position: [20, 0.1, -20],
+        revealMethod: 'flashlight_only',
+        interactionRadius: 3,
+        journalEntryId: 'act1_creature_tracks',
+    },
+
+    // Landmarks
+    {
+        id: 'act1_stone_circle_landmark',
+        act: 'act1',
+        type: 'landmark',
+        label: 'Stone Circle',
+        position: [0, 0, -60],
+        revealMethod: 'always_visible',
+        interactionRadius: 8,
+        journalEntryId: 'act1_landmark_stone_circle',
+    },
+    {
+        id: 'act1_gateway_landmark',
+        act: 'act1',
+        type: 'landmark',
+        label: 'Gateway Arch',
+        position: [-40, 0, 20],
+        revealMethod: 'always_visible',
+        interactionRadius: 8,
+        journalEntryId: 'act1_landmark_gateway_arch',
+    },
+
+    // Portal (spawned after act1_ward_seal solved)
+    {
+        id: 'act1_portal',
+        act: 'act1',
+        type: 'portal',
+        label: 'Enter the Shifting Woods',
+        position: [-40, 0, 20],
+        revealMethod: 'always_visible',
+        interactionRadius: 4,
+    },
+
+    // ─── Act 2: Confronting the Shifting Canopy ─────────────────────────────
+
+    {
+        id: 'act2_wind_puzzle',
+        act: 'act2',
+        type: 'puzzle_stone',
+        label: 'Wind Pipes',
+        position: [0, 0.5, -30],
+        revealMethod: 'flashlight_only',
+        interactionRadius: 4,
+        puzzleId: 'act2_sound_pipe',
+    },
+    {
+        id: 'act2_mirror_puzzle',
+        act: 'act2',
+        type: 'puzzle_stone',
+        label: 'Mirror Stone',
+        position: [-30, 0.3, -60],
+        revealMethod: 'flashlight_only',
+        interactionRadius: 4,
+        puzzleId: 'act2_reflection',
+    },
+    {
+        id: 'act2_echo_puzzle',
+        act: 'act2',
+        type: 'puzzle_stone',
+        label: 'Echo Crystal',
+        position: [40, 0.5, -20],
+        revealMethod: 'flashlight_only',
+        interactionRadius: 4,
+        puzzleId: 'act2_memory_echo',
+    },
+    {
+        id: 'act2_root_puzzle',
+        act: 'act2',
+        type: 'puzzle_stone',
+        label: 'Root Nexus',
+        position: [70, 0.5, -40],
+        revealMethod: 'always_visible',
+        interactionRadius: 5,
+        puzzleId: 'act2_root_network',
+    },
+
+    // Act 2 journal items
+    {
+        id: 'act2_journal_wind',
+        act: 'act2',
+        type: 'journal_item',
+        label: 'Hollow Bark Note',
+        position: [3, 0.3, -25],
+        revealMethod: 'flashlight_only',
+        interactionRadius: 3,
+        journalEntryId: 'act2_wind_song',
+    },
+    {
+        id: 'act2_journal_mirror',
+        act: 'act2',
+        type: 'journal_item',
+        label: 'Reflective Shard',
+        position: [-28, 0.4, -55],
+        revealMethod: 'flashlight_only',
+        interactionRadius: 3,
+        journalEntryId: 'act2_mirror_legend',
+    },
+    {
+        id: 'act2_journal_echo',
+        act: 'act2',
+        type: 'journal_item',
+        label: 'Humming Stone',
+        position: [38, 0.2, -18],
+        revealMethod: 'flashlight_only',
+        interactionRadius: 3,
+        journalEntryId: 'act2_echo_lore',
+    },
+    {
+        id: 'act2_journal_root',
+        act: 'act2',
+        type: 'journal_item',
+        label: 'Root Carving',
+        position: [65, 0.3, -38],
+        revealMethod: 'flashlight_only',
+        interactionRadius: 3,
+        journalEntryId: 'act2_root_history',
+    },
+
+    // Act 2 portal
+    {
+        id: 'act2_portal',
+        act: 'act2',
+        type: 'portal',
+        label: 'Enter the Tranquil Grove',
+        position: [70, 0, -40],
+        revealMethod: 'always_visible',
+        interactionRadius: 4,
+    },
+
+    // ─── Act 3: Sunrise Over the Tranquil Grove ─────────────────────────────
+
+    {
+        id: 'act3_glyph_puzzle',
+        act: 'act3',
+        type: 'puzzle_stone',
+        label: 'Shattered Glyph',
+        position: [20, 0.5, -40],
+        revealMethod: 'always_visible',
+        interactionRadius: 4,
+        puzzleId: 'act3_corrupted_glyph',
+    },
+    {
+        id: 'act3_star_puzzle',
+        act: 'act3',
+        type: 'puzzle_stone',
+        label: 'Dawn Star Chart',
+        position: [-20, 0.5, -80],
+        revealMethod: 'flashlight_only',
+        interactionRadius: 4,
+        puzzleId: 'act3_constellation',
+    },
+    {
+        id: 'act3_crystal_puzzle',
+        act: 'act3',
+        type: 'puzzle_stone',
+        label: 'Prismatic Crystal',
+        position: [0, 0.5, -50],
+        revealMethod: 'flashlight_only',
+        interactionRadius: 4,
+        puzzleId: 'act3_reflection',
+    },
+    {
+        id: 'act3_heartwood_puzzle',
+        act: 'act3',
+        type: 'puzzle_stone',
+        label: 'Heartwood Seal',
+        position: [40, 1.0, -70],
+        revealMethod: 'always_visible',
+        interactionRadius: 5,
+        puzzleId: 'act3_ward_seal',
+    },
+
+    // Act 3 journal items
+    {
+        id: 'act3_journal_monument',
+        act: 'act3',
+        type: 'journal_item',
+        label: 'Cracked Tablet',
+        position: [18, 0.3, -38],
+        revealMethod: 'flashlight_only',
+        interactionRadius: 3,
+        journalEntryId: 'act3_monument_lore',
+    },
+    {
+        id: 'act3_journal_star',
+        act: 'act3',
+        type: 'journal_item',
+        label: 'Astronomer\'s Notes',
+        position: [-18, 0.4, -78],
+        revealMethod: 'flashlight_only',
+        interactionRadius: 3,
+        journalEntryId: 'act3_final_star_map',
+    },
+    {
+        id: 'act3_journal_crystal',
+        act: 'act3',
+        type: 'journal_item',
+        label: 'Crystalline Inscription',
+        position: [2, 0.5, -48],
+        revealMethod: 'flashlight_only',
+        interactionRadius: 3,
+        journalEntryId: 'act3_crystal_legend',
+    },
+    {
+        id: 'act3_journal_heartwood',
+        act: 'act3',
+        type: 'journal_item',
+        label: 'Ancient Bark Scroll',
+        position: [38, 0.4, -68],
+        revealMethod: 'flashlight_only',
+        interactionRadius: 3,
+        journalEntryId: 'act3_heartwood_inscription',
+    },
+
+    // Act 3 (no portal - final act ends with cinematic)
+];
+
+export function getInteractablesByAct(act: import('./types').ActId): InteractableDefinition[] {
+    return interactables.filter(i => i.act === act);
+}
+
+export function getInteractableById(id: string): InteractableDefinition | undefined {
+    return interactables.find(i => i.id === id);
+}
