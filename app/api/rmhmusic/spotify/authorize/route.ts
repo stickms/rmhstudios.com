@@ -45,17 +45,7 @@ export async function POST() {
 
     const url = `https://accounts.spotify.com/authorize?${params.toString()}`;
 
-    // Store code verifier in httpOnly cookie so the callback route can access it
-    // regardless of which domain (localhost vs 127.0.0.1) Spotify redirects to
-    const response = NextResponse.json({ url, state });
-    response.cookies.set('spotify_code_verifier', codeVerifier, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 600, // 10 minutes
-      path: '/',
-    });
-    return response;
+    return NextResponse.json({ url, codeVerifier, state });
   } catch (err) {
     console.error('[rmhmusic] authorize error:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
