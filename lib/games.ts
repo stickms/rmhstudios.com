@@ -249,6 +249,24 @@ export const games: GameInfo[] = [
         imagePath: '/images/games/Kowloon-Knockout.png',
         authGate: false,
     },
+    {
+        id: 'dream-rift',
+        title: 'Dream Rift',
+        description:
+            'A Touhou-style bullet hell. Fight through six dream-themed stages to seal the rift between worlds.',
+        longDescription:
+            'Dream Rift is a classic 6-stage bullet hell set during a dream world invasion. Choose between two protagonists — Rei the power fighter or Yume the speed tactician — and battle through escalating danmaku patterns, each stage themed around a different dream archetype. Features melee combat, dash mechanics, spell cards, and a full story with branching routes.',
+        href: '/dream-rift',
+        status: 'Playable',
+        cta: 'Play Now',
+        isSteam: false,
+        gradient: 'from-violet-500 to-indigo-600',
+        iconName: 'Sparkles',
+        color: 'from-violet-500/20 to-indigo-600/20 hover:border-violet-500/50',
+        tags: ['Bullet Hell', 'Action', 'Story'],
+        imagePath: '/images/games/dream_rift.png',
+        authGate: false,
+    },
 ];
 
 
