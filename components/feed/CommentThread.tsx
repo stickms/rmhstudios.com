@@ -5,15 +5,8 @@ import { X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { authClient } from '@/lib/auth-client';
 import { CommentItem } from './CommentItem';
+import type { Comment } from './CommentItem';
 import { MAX_COMMENT_LENGTH } from '@/lib/rmhark-schema';
-
-interface Comment {
-  id: string;
-  content: string;
-  createdAt: string;
-  user: { id: string; name: string; image: string | null; username: string | null };
-  replies?: Comment[];
-}
 
 interface CommentThreadProps {
   rmharkId: string;

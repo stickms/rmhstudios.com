@@ -67,6 +67,9 @@ model User {
   rmharkComments       RMHarkComment[]
   rmharkReposts        RMHarkRepost[]
   rmharkViews          RMHarkView[]
+  rmharkCommentLikes   RMHarkCommentLike[]
+  rmharkCommentReposts RMHarkCommentRepost[]
+  rmharkCommentViews   RMHarkCommentView[]
 
   // Profile & Social
   profile              UserProfile?
@@ -942,8 +945,55 @@ model RMHarkComment {
   parent    RMHarkComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: SetNull)
   replies   RMHarkComment[] @relation("CommentReplies")
 
+  // Engagement
+  likes     RMHarkCommentLike[]
+  reposts   RMHarkCommentRepost[]
+  views     RMHarkCommentView[]
+
   @@index([rmheetId, createdAt(sort: Desc)])
   @@map("rmheet_comment")
+}
+
+model RMHarkCommentLike {
+  id        String   @id @default(cuid())
+  commentId String
+  userId    String
+  createdAt DateTime @default(now())
+
+  comment   RMHarkComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, userId])
+  @@map("rmheet_comment_like")
+}
+
+model RMHarkCommentRepost {
+  id        String   @id @default(cuid())
+  commentId String
+  userId    String
+  createdAt DateTime @default(now())
+
+  comment   RMHarkComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, userId])
+  @@map("rmheet_comment_repost")
+}
+
+model RMHarkCommentView {
+  id        String   @id @default(cuid())
+  commentId String
+  userId    String?
+  ipHash    String?
+  createdAt DateTime @default(now())
+
+  comment   RMHarkComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user      User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, userId])
+  @@unique([commentId, ipHash])
+  @@index([commentId])
+  @@map("rmheet_comment_view")
 }
 
 model RMHarkRepost {

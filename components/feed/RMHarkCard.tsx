@@ -6,6 +6,7 @@ import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Repeat2 } from 'lucide-react';
 import Link from 'next/link';
+import { RMHarkContent } from './RMHarkContent';
 
 interface RMHarkCardProps {
   item: FeedItem;
@@ -108,9 +109,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
           </div>
 
           {/* Content */}
-          <p className="text-site-text text-[15px] mt-1 whitespace-pre-wrap break-words">
-            {item.content}
-          </p>
+          <RMHarkContent text={item.content ?? ''} className="text-site-text text-[15px] mt-1 whitespace-pre-wrap break-words" />
 
           {/* Quoted original (if repost) */}
           {item.original && (
@@ -133,9 +132,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
                   </span>
                 )}
               </div>
-              <p className="text-site-text text-sm whitespace-pre-wrap break-words">
-                {item.original.content}
-              </p>
+              <RMHarkContent text={item.original.content ?? ''} className="text-site-text text-sm whitespace-pre-wrap break-words" />
             </div>
           )}
 

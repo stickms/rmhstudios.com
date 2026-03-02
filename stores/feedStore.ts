@@ -7,8 +7,10 @@ interface FeedState {
   hasMore: boolean;
   loading: boolean;
   filter: FeedFilter;
+  search: string | null;
 
   setFilter: (filter: FeedFilter) => void;
+  setSearch: (query: string | null) => void;
   fetchNextPage: () => Promise<void>;
   prependItem: (item: FeedItem) => void;
   updateItem: (id: string, updates: Partial<FeedItem>) => void;
@@ -22,21 +24,28 @@ export const useFeedStore = create<FeedState>((set, get) => ({
   hasMore: true,
   loading: false,
   filter: "all",
+  search: null,
 
   setFilter: (filter) => {
-    set({ filter, items: [], cursor: null, hasMore: true });
+    set({ filter, search: null, items: [], cursor: null, hasMore: true });
     // Fetch first page with new filter
     get().fetchNextPage();
   },
 
+  setSearch: (query) => {
+    set({ search: query, items: [], cursor: null, hasMore: true });
+    get().fetchNextPage();
+  },
+
   fetchNextPage: async () => {
-    const { loading, hasMore, cursor, filter } = get();
+    const { loading, hasMore, cursor, filter, search } = get();
     if (loading || !hasMore) return;
 
     set({ loading: true });
     try {
       const params = new URLSearchParams({ limit: "20", filter });
       if (cursor) params.set("cursor", cursor);
+      if (search) params.set("search", search);
 
       const res = await fetch(`/api/rmharks?${params}`);
       if (!res.ok) throw new Error("Failed to fetch feed");

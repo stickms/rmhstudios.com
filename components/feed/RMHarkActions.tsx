@@ -1,9 +1,11 @@
 'use client';
 
+import { useState } from 'react';
 import { MessageCircle, Repeat2, Heart, Eye, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useFeedStore } from '@/stores/feedStore';
 import { authClient } from '@/lib/auth-client';
+import { EngagementListModal } from './EngagementListModal';
 import type { FeedItem } from '@/lib/feed-types';
 
 interface RMHarkActionsProps {
@@ -23,6 +25,7 @@ export function RMHarkActions({ item, onUpdate, onRemove }: RMHarkActionsProps) 
   const router = useRouter();
   const { updateItem: storeUpdate, removeItem: storeRemove } = useFeedStore();
   const { data: session } = authClient.useSession();
+  const [engagementModal, setEngagementModal] = useState<'likes' | 'reposts' | null>(null);
 
   const updateItem = onUpdate ?? storeUpdate;
   const removeItem = onRemove ?? storeRemove;
@@ -80,59 +83,95 @@ export function RMHarkActions({ item, onUpdate, onRemove }: RMHarkActionsProps) 
     }
   };
 
-  return (
-    <div className="flex items-center justify-between mt-3 -ml-2 max-w-md">
-      {/* Comment */}
-      <button
-        onClick={handleCommentClick}
-        className="flex items-center gap-1.5 px-2 py-1 rounded-full text-site-text-dim hover:text-site-accent hover:bg-site-accent-dim/50 transition-colors group"
-      >
-        <MessageCircle className="w-4 h-4 group-hover:scale-110 transition-transform" />
-        <span className="text-xs">{formatCount(item.commentCount)}</span>
-      </button>
+  const likeCountStr = formatCount(item.likeCount);
+  const repostCountStr = formatCount(item.repostCount);
 
-      {/* reRMHark */}
-      <button
-        onClick={toggleRepost}
-        className={`flex items-center gap-1.5 px-2 py-1 rounded-full transition-colors group ${
+  return (
+    <>
+      <div className="flex items-center justify-between mt-3 -ml-2 max-w-md">
+        {/* Comment */}
+        <button
+          onClick={handleCommentClick}
+          className="flex items-center gap-1.5 px-2 py-1 rounded-full text-site-text-dim hover:text-site-accent hover:bg-site-accent-dim/50 transition-colors group"
+        >
+          <MessageCircle className="w-4 h-4 group-hover:scale-110 transition-transform" />
+          <span className="text-xs">{formatCount(item.commentCount)}</span>
+        </button>
+
+        {/* reRMHark — icon toggles, count opens modal */}
+        <div className={`flex items-center rounded-full transition-colors ${
           item.reposted
             ? 'text-emerald-400'
-            : 'text-site-text-dim hover:text-emerald-400 hover:bg-emerald-400/10'
-        }`}
-      >
-        <Repeat2 className="w-4 h-4 group-hover:scale-110 transition-transform" />
-        <span className="text-xs">{formatCount(item.repostCount)}</span>
-      </button>
+            : 'text-site-text-dim'
+        }`}>
+          <button
+            onClick={toggleRepost}
+            className="p-1 rounded-full hover:bg-emerald-400/10 transition-colors group"
+            title="reRMHark"
+          >
+            <Repeat2 className="w-4 h-4 group-hover:scale-110 transition-transform" />
+          </button>
+          {repostCountStr && (
+            <button
+              onClick={() => setEngagementModal('reposts')}
+              className="text-xs pr-1 hover:underline"
+              title="View reRMHarks"
+            >
+              {repostCountStr}
+            </button>
+          )}
+        </div>
 
-      {/* Like */}
-      <button
-        onClick={toggleLike}
-        className={`flex items-center gap-1.5 px-2 py-1 rounded-full transition-colors group ${
+        {/* Like — icon toggles, count opens modal */}
+        <div className={`flex items-center rounded-full transition-colors ${
           item.liked
             ? 'text-rose-400'
-            : 'text-site-text-dim hover:text-rose-400 hover:bg-rose-400/10'
-        }`}
-      >
-        <Heart className={`w-4 h-4 group-hover:scale-110 transition-transform ${item.liked ? 'fill-current' : ''}`} />
-        <span className="text-xs">{formatCount(item.likeCount)}</span>
-      </button>
+            : 'text-site-text-dim'
+        }`}>
+          <button
+            onClick={toggleLike}
+            className="p-1 rounded-full hover:bg-rose-400/10 transition-colors group"
+            title="Like"
+          >
+            <Heart className={`w-4 h-4 group-hover:scale-110 transition-transform ${item.liked ? 'fill-current' : ''}`} />
+          </button>
+          {likeCountStr && (
+            <button
+              onClick={() => setEngagementModal('likes')}
+              className="text-xs pr-1 hover:underline"
+              title="View likes"
+            >
+              {likeCountStr}
+            </button>
+          )}
+        </div>
 
-      {/* Views */}
-      <div className="flex items-center gap-1.5 px-2 py-1 text-site-text-dim">
-        <Eye className="w-4 h-4" />
-        <span className="text-xs">{formatCount(item.viewCount)}</span>
+        {/* Views */}
+        <div className="flex items-center gap-1.5 px-2 py-1 text-site-text-dim">
+          <Eye className="w-4 h-4" />
+          <span className="text-xs">{formatCount(item.viewCount)}</span>
+        </div>
+
+        {/* Delete (author only) */}
+        {isAuthor && (
+          <button
+            onClick={handleDelete}
+            className="flex items-center px-2 py-1 rounded-full text-site-text-dim hover:text-site-danger hover:bg-site-danger/10 transition-colors"
+            title="Delete"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
-      {/* Delete (author only) */}
-      {isAuthor && (
-        <button
-          onClick={handleDelete}
-          className="flex items-center px-2 py-1 rounded-full text-site-text-dim hover:text-site-danger hover:bg-site-danger/10 transition-colors"
-          title="Delete"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
+      {engagementModal && (
+        <EngagementListModal
+          open={engagementModal !== null}
+          onClose={() => setEngagementModal(null)}
+          postId={actualId}
+          type={engagementModal}
+        />
       )}
-    </div>
+    </>
   );
 }

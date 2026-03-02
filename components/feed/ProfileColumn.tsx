@@ -104,8 +104,8 @@ export function ProfileColumn({ userId }: { userId: string }) {
           ctrl.addListener('playback_update', (e: { data: { isPaused: boolean } }) => {
             setIsPlaying(!e.data.isPaused);
           });
-          ctrl.setVolume(0.05);
-          ctrl.play();
+          if (typeof ctrl.setVolume === 'function') ctrl.setVolume(0.05);
+          if (typeof ctrl.play === 'function') ctrl.play();
         },
       );
     };

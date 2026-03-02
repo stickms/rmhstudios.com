@@ -6,18 +6,12 @@ import { Button } from '@/components/ui/button';
 import { authClient } from '@/lib/auth-client';
 import { RMHarkActions } from './RMHarkActions';
 import { CommentItem } from './CommentItem';
+import type { Comment } from './CommentItem';
 import { MAX_COMMENT_LENGTH } from '@/lib/rmhark-schema';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { FeedItem } from '@/lib/feed-types';
-
-interface Comment {
-  id: string;
-  content: string;
-  createdAt: string;
-  user: { id: string; name: string; image: string | null; username: string | null };
-  replies?: Comment[];
-}
+import { RMHarkContent } from './RMHarkContent';
 
 interface PostDetailProps {
   postId: string;
@@ -95,6 +89,15 @@ export function PostDetail({ postId }: PostDetailProps) {
     setPost((prev) => prev ? { ...prev, commentCount: (prev.commentCount ?? 0) + 1 } : prev);
   }, []);
 
+  const handleCommentRemoved = useCallback((commentId: string) => {
+    const removeDeep = (comments: Comment[]): Comment[] =>
+      comments
+        .filter((c) => c.id !== commentId)
+        .map((c) => c.replies?.length ? { ...c, replies: removeDeep(c.replies) } : c);
+    setComments((prev) => removeDeep(prev));
+    setPost((prev) => prev ? { ...prev, commentCount: Math.max(0, (prev.commentCount ?? 0) - 1) } : prev);
+  }, []);
+
   const formatFullDate = (dateStr: string) => {
     const d = new Date(dateStr);
     return d.toLocaleDateString('en-US', {
@@ -162,9 +165,7 @@ export function PostDetail({ postId }: PostDetailProps) {
         </div>
 
         {/* Content - larger text for detail view */}
-        <p className="text-site-text text-[17px] leading-relaxed whitespace-pre-wrap break-words mb-3">
-          {post.content}
-        </p>
+        <RMHarkContent text={post.content ?? ''} className="text-site-text text-[17px] leading-relaxed whitespace-pre-wrap break-words mb-3" />
 
         {/* Quoted original */}
         {post.original && (
@@ -181,7 +182,7 @@ export function PostDetail({ postId }: PostDetailProps) {
                 <span className="font-bold text-site-text truncate">Unknown</span>
               )}
             </div>
-            <p className="text-site-text text-sm whitespace-pre-wrap break-words">{post.original.content}</p>
+            <RMHarkContent text={post.original.content ?? ''} className="text-site-text text-sm whitespace-pre-wrap break-words" />
           </div>
         )}
 
@@ -282,6 +283,7 @@ export function PostDetail({ postId }: PostDetailProps) {
                 postId={postId}
                 sessionUser={session?.user}
                 onReplyAdded={handleReplyAdded}
+                onCommentRemoved={handleCommentRemoved}
               />
             ))}
           </div>

@@ -1,19 +1,28 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { MessageCircle, Repeat2, Heart, Eye, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { MAX_COMMENT_LENGTH } from '@/lib/rmhark-schema';
+import { RMHarkContent } from './RMHarkContent';
 
-interface Comment {
+export interface Comment {
   id: string;
   content: string;
   createdAt: string;
+  userId: string;
   user: { id: string; name: string; image: string | null; username: string | null };
+  likeCount?: number;
+  repostCount?: number;
+  viewCount?: number;
+  liked?: boolean;
+  reposted?: boolean;
   replies?: Comment[];
 }
 
 interface SessionUser {
+  id?: string;
   name?: string | null;
   image?: string | null;
 }
@@ -35,18 +44,92 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(months / 12)}y`;
 }
 
+function formatCount(n: number | undefined): string {
+  if (!n) return '';
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+  return String(n);
+}
+
 interface CommentItemProps {
   comment: Comment;
   postId: string;
   sessionUser?: SessionUser | null;
   onReplyAdded?: (parentId: string, reply: Comment) => void;
+  onCommentRemoved?: (commentId: string) => void;
 }
 
-export function CommentItem({ comment, postId, sessionUser, onReplyAdded }: CommentItemProps) {
+export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onCommentRemoved }: CommentItemProps) {
   const [replyOpen, setReplyOpen] = useState(false);
   const [replyContent, setReplyContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const remaining = MAX_COMMENT_LENGTH - replyContent.length;
+
+  const [liked, setLiked] = useState(comment.liked ?? false);
+  const [likeCount, setLikeCount] = useState(comment.likeCount ?? 0);
+  const [reposted, setReposted] = useState(comment.reposted ?? false);
+  const [repostCount, setRepostCount] = useState(comment.repostCount ?? 0);
+  const [viewCount, setViewCount] = useState(comment.viewCount ?? 0);
+  const viewTracked = useRef(false);
+
+  const isAuthor = sessionUser?.id === comment.userId;
+
+  // Track view
+  useEffect(() => {
+    if (viewTracked.current) return;
+    viewTracked.current = true;
+    fetch(`/api/rmharks/${postId}/comment/${comment.id}/view`, { method: 'POST' })
+      .then(() => setViewCount((v) => v + 1))
+      .catch(() => {});
+  }, [postId, comment.id]);
+
+  const toggleLike = async () => {
+    if (!sessionUser) return;
+    const wasLiked = liked;
+    setLiked(!wasLiked);
+    setLikeCount((c) => c + (wasLiked ? -1 : 1));
+
+    try {
+      const res = await fetch(`/api/rmharks/${postId}/comment/${comment.id}/like`, { method: 'POST' });
+      if (!res.ok) {
+        setLiked(wasLiked);
+        setLikeCount(comment.likeCount ?? 0);
+      }
+    } catch {
+      setLiked(wasLiked);
+      setLikeCount(comment.likeCount ?? 0);
+    }
+  };
+
+  const toggleRepost = async () => {
+    if (!sessionUser) return;
+    const wasReposted = reposted;
+    setReposted(!wasReposted);
+    setRepostCount((c) => c + (wasReposted ? -1 : 1));
+
+    try {
+      const res = await fetch(`/api/rmharks/${postId}/comment/${comment.id}/repost`, { method: 'POST' });
+      if (!res.ok) {
+        setReposted(wasReposted);
+        setRepostCount(comment.repostCount ?? 0);
+      }
+    } catch {
+      setReposted(wasReposted);
+      setRepostCount(comment.repostCount ?? 0);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirm('Delete this reply?')) return;
+    try {
+      const res = await fetch(`/api/rmharks/${postId}/comment/${comment.id}`, { method: 'DELETE' });
+      if (res.ok) {
+        onCommentRemoved?.(comment.id);
+      }
+    } catch (error) {
+      console.error('Delete comment error:', error);
+    }
+  };
 
   const handleSubmitReply = async () => {
     if (!replyContent.trim() || submitting) return;
@@ -106,19 +189,71 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded }: Comm
           </div>
 
           {/* Content */}
-          <p className="text-sm text-site-text mt-0.5 whitespace-pre-wrap break-words">
-            {comment.content}
-          </p>
+          <RMHarkContent text={comment.content} className="text-sm text-site-text mt-0.5 whitespace-pre-wrap break-words" />
 
-          {/* Reply button */}
-          {sessionUser && (
-            <button
-              onClick={() => setReplyOpen((v) => !v)}
-              className="mt-1 text-xs text-site-text-dim hover:text-site-accent transition-colors"
-            >
-              Reply
-            </button>
-          )}
+          {/* Actions row */}
+          <div className="flex items-center gap-3 mt-1.5 -ml-1">
+            {/* Reply */}
+            {sessionUser && (
+              <button
+                onClick={() => setReplyOpen((v) => !v)}
+                className="flex items-center gap-1 px-1 py-0.5 rounded-full text-site-text-dim hover:text-site-accent transition-colors group"
+              >
+                <MessageCircle className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+              </button>
+            )}
+
+            {/* reRMHark */}
+            <div className={`flex items-center rounded-full transition-colors ${
+              reposted ? 'text-emerald-400' : 'text-site-text-dim'
+            }`}>
+              <button
+                onClick={toggleRepost}
+                className="p-0.5 rounded-full hover:bg-emerald-400/10 transition-colors group"
+                title="reRMHark"
+              >
+                <Repeat2 className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+              </button>
+              {formatCount(repostCount) && (
+                <span className="text-[11px] pr-0.5">{formatCount(repostCount)}</span>
+              )}
+            </div>
+
+            {/* Like */}
+            <div className={`flex items-center rounded-full transition-colors ${
+              liked ? 'text-rose-400' : 'text-site-text-dim'
+            }`}>
+              <button
+                onClick={toggleLike}
+                className="p-0.5 rounded-full hover:bg-rose-400/10 transition-colors group"
+                title="Like"
+              >
+                <Heart className={`w-3.5 h-3.5 group-hover:scale-110 transition-transform ${liked ? 'fill-current' : ''}`} />
+              </button>
+              {formatCount(likeCount) && (
+                <span className="text-[11px] pr-0.5">{formatCount(likeCount)}</span>
+              )}
+            </div>
+
+            {/* Views */}
+            <div className="flex items-center gap-0.5 text-site-text-dim">
+              <Eye className="w-3.5 h-3.5" />
+              {formatCount(viewCount) && (
+                <span className="text-[11px]">{formatCount(viewCount)}</span>
+              )}
+            </div>
+
+            {/* Delete */}
+            {isAuthor && (
+              <button
+                onClick={handleDelete}
+                className="p-0.5 rounded-full text-site-text-dim hover:text-site-danger hover:bg-site-danger/10 transition-colors"
+                title="Delete"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
 
           {/* Inline reply box */}
           {replyOpen && sessionUser && (
@@ -185,6 +320,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded }: Comm
                   postId={postId}
                   sessionUser={sessionUser}
                   onReplyAdded={onReplyAdded}
+                  onCommentRemoved={onCommentRemoved}
                 />
               ))}
             </div>

@@ -15,24 +15,57 @@ export async function GET(
   try {
     const { id } = await params;
 
+    // Get current user for liked/reposted status
+    let userId: string | null = null;
+    try {
+      const session = await auth.api.getSession({ headers: await headers() });
+      userId = session?.user?.id ?? null;
+    } catch {
+      // Not logged in
+    }
+
+    const commentInclude = {
+      user: { select: userDisplaySelect },
+      _count: { select: { likes: true, reposts: true, views: true } },
+      ...(userId
+        ? {
+            likes: { where: { userId }, select: { id: true } },
+            reposts: { where: { userId }, select: { id: true } },
+          }
+        : {}),
+    } as const;
+
     const comments = await prisma.rMHarkComment.findMany({
       where: { rmheetId: id, parentId: null },
       orderBy: { createdAt: "desc" },
       include: {
-        user: { select: userDisplaySelect },
+        ...commentInclude,
         replies: {
           orderBy: { createdAt: "asc" },
-          include: {
-            user: { select: userDisplaySelect },
-          },
+          include: commentInclude,
         },
       },
     });
 
-    const resolved = comments.map((c) => ({
-      ...c,
+    const resolveComment = (c: typeof comments[number] | typeof comments[number]["replies"][number]) => ({
+      id: c.id,
+      content: c.content,
+      createdAt: c.createdAt,
+      updatedAt: c.updatedAt,
+      rmheetId: c.rmheetId,
+      parentId: c.parentId,
+      userId: c.userId,
       user: resolveUser(c.user),
-      replies: c.replies.map((r) => ({ ...r, user: resolveUser(r.user) })),
+      likeCount: c._count.likes,
+      repostCount: c._count.reposts,
+      viewCount: c._count.views,
+      liked: userId ? ("likes" in c ? (c.likes as { id: string }[]).length > 0 : false) : false,
+      reposted: userId ? ("reposts" in c ? (c.reposts as { id: string }[]).length > 0 : false) : false,
+    });
+
+    const resolved = comments.map((c) => ({
+      ...resolveComment(c),
+      replies: "replies" in c ? c.replies.map(resolveComment) : [],
     }));
 
     return NextResponse.json(resolved);
@@ -87,7 +120,16 @@ export async function POST(
       },
     });
 
-    return NextResponse.json({ ...comment, user: resolveUser(comment.user) }, { status: 201 });
+    return NextResponse.json({
+      ...comment,
+      user: resolveUser(comment.user),
+      likeCount: 0,
+      repostCount: 0,
+      viewCount: 0,
+      liked: false,
+      reposted: false,
+      replies: [],
+    }, { status: 201 });
   } catch (error) {
     console.error("Post comment error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

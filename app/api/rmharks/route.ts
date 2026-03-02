@@ -126,6 +126,7 @@ export async function GET(req: NextRequest) {
     const cursor = searchParams.get("cursor");
     const limit = Math.min(parseInt(searchParams.get("limit") || "20"), 50);
     const filter = (searchParams.get("filter") || "all") as FeedFilter;
+    const search = searchParams.get("search");
 
     // Get current user session (optional, for liked/reposted status)
     let userId: string | null = null;
@@ -135,6 +136,11 @@ export async function GET(req: NextRequest) {
     } catch {
       // Not logged in, that's fine
     }
+
+    // Build content search filter
+    const contentWhere = search
+      ? { content: { contains: search, mode: "insensitive" as const } }
+      : {};
 
     // Handle "friends" filter: only posts from followed users
     if (filter === "friends") {
@@ -170,6 +176,7 @@ export async function GET(req: NextRequest) {
         prisma.rMHark.findMany({
           where: {
             userId: { in: followingIds },
+            ...contentWhere,
             ...(cursorDate ? { createdAt: { lt: cursorDate } } : {}),
           },
           orderBy: { createdAt: "desc" },
@@ -180,6 +187,7 @@ export async function GET(req: NextRequest) {
           where: {
             userId: { in: followingIds },
             ...(cursorDate ? { createdAt: { lt: cursorDate } } : {}),
+            ...(search ? { rmhark: contentWhere } : {}),
           },
           orderBy: { createdAt: "desc" },
           take: limit,
@@ -259,7 +267,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Fetch RMHarks from DB
-    const shouldFetchRmheets = filter === "all" || filter === "rmhark";
+    const shouldFetchRmheets = filter === "all" || filter === "rmhark" || !!search;
     let dbItems: FeedItem[] = [];
     const cursorDate = cursor ? new Date(cursor) : undefined;
 
@@ -281,15 +289,23 @@ export async function GET(req: NextRequest) {
     } as const;
 
     if (shouldFetchRmheets) {
+      const rmharkWhere = {
+        ...contentWhere,
+        ...(cursorDate ? { createdAt: { lt: cursorDate } } : {}),
+      };
+
       const [rmharks, repostRecords] = await Promise.all([
         prisma.rMHark.findMany({
-          where: cursorDate ? { createdAt: { lt: cursorDate } } : undefined,
+          where: Object.keys(rmharkWhere).length ? rmharkWhere : undefined,
           orderBy: { createdAt: "desc" },
           take: limit,
           include: rmharkInclude,
         }),
         prisma.rMHarkRepost.findMany({
-          where: cursorDate ? { createdAt: { lt: cursorDate } } : undefined,
+          where: {
+            ...(cursorDate ? { createdAt: { lt: cursorDate } } : {}),
+            ...(search ? { rmhark: contentWhere } : {}),
+          } as Record<string, unknown>,
           orderBy: { createdAt: "desc" },
           take: limit,
           include: {
@@ -356,8 +372,8 @@ export async function GET(req: NextRequest) {
       ).slice(0, limit);
     }
 
-    // Get announcement items
-    const announcements = await getAnnouncementItems(filter);
+    // Get announcement items (skip when searching — only RMHarks have content)
+    const announcements = search ? [] : await getAnnouncementItems(filter);
 
     // Filter announcements by cursor
     let filteredAnnouncements = announcements;
@@ -399,9 +415,14 @@ export async function GET(req: NextRequest) {
       paginatedItems = allItems.slice(0, limit);
     }
 
+    // Compute cursor from the last real DB item (RMHark), not announcements.
+    // Announcements have static dates that can break cursor-based pagination.
+    const lastDbItem = [...paginatedItems]
+      .reverse()
+      .find((i) => i.type === "rmhark" || i.type === "repost");
     const nextCursor =
-      paginatedItems.length === limit
-        ? paginatedItems[paginatedItems.length - 1].createdAt
+      paginatedItems.length === limit && lastDbItem
+        ? lastDbItem.createdAt
         : null;
 
     return NextResponse.json({
