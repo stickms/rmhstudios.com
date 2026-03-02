@@ -16,12 +16,18 @@ export default function ResultScreen() {
     } = useGameStore();
 
     const handleFightAgain = () => {
-        if (isMultiplayer) {
-            networkClient.disconnect();
+        if (isMultiplayer && networkClient.connected) {
+            // Stay in the room, go back to select to pick a new fighter
             networkClient.clearHandlers();
+            setPhase('select');
+        } else {
+            if (isMultiplayer) {
+                networkClient.disconnect();
+                networkClient.clearHandlers();
+            }
+            resetGame();
+            setPhase('select');
         }
-        resetGame();
-        setPhase('select');
     };
 
     const handleMainMenu = () => {

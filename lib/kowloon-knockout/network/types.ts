@@ -53,6 +53,10 @@ export interface RoomJoinedMsg {
     isHost: boolean;
 }
 
+export interface OpponentReadyMsg {
+    type: 'opponent_ready';
+}
+
 export interface OpponentDisconnectedMsg {
     type: 'opponent_disconnected';
 }
@@ -67,5 +71,6 @@ export type ServerMessage =
     | RoomJoinedMsg
     | InputMsg
     | GameStateMsg
+    | OpponentReadyMsg
     | OpponentDisconnectedMsg
     | ErrorMsg;

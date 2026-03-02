@@ -1,10 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '@/lib/kowloon-knockout/store';
 import { CLASS_DISPLAY, CLASS_STATS, ORDER_SUBCLASSES } from '@/lib/kowloon-knockout/game/fighters/stats';
+import { networkClient } from '@/lib/kowloon-knockout/network/client';
 import type { FighterClass } from '@/lib/kowloon-knockout/game/fighters/types';
+import type { ServerMessage } from '@/lib/kowloon-knockout/network/types';
 
 const ORDERS: FighterClass[] = ['power', 'speed', 'resistance'];
 
@@ -19,26 +21,79 @@ const ALL_FIGHTER_CLASSES: FighterClass[] = [
 ];
 
 export default function CharacterSelect() {
-    const { selectedClass, setSelectedClass, setOpponentClass, setPhase, isMultiplayer, resetMultiplayer } = useGameStore();
+    const {
+        selectedClass, setSelectedClass, setOpponentClass, setPhase,
+        isMultiplayer, resetMultiplayer, setIsHost, setConnectionStatus,
+    } = useGameStore();
     const [step, setStep] = useState<'order' | 'subclass'>('order');
     const [selectedOrder, setSelectedOrder] = useState<FighterClass | null>(null);
+    const [waitingForOpponent, setWaitingForOpponent] = useState(false);
+    const [opponentReady, setOpponentReady] = useState(false);
+    const cleanupRef = useRef(false);
+
+    // Whether we're in a rematch (multiplayer + already connected)
+    const isRematch = isMultiplayer && networkClient.connected;
+
+    // Listen for rematch events when in rematch mode
+    useEffect(() => {
+        if (!isRematch) return;
+
+        const onOpponentReady = (msg: ServerMessage) => {
+            if (msg.type === 'opponent_ready') {
+                setOpponentReady(true);
+            }
+        };
+
+        const onRoomJoined = (msg: ServerMessage) => {
+            if (msg.type === 'room_joined' && !cleanupRef.current) {
+                setIsHost(msg.isHost);
+                const oppClass = msg.isHost ? msg.guestClass : msg.hostClass;
+                setOpponentClass(oppClass);
+                setConnectionStatus('playing');
+                setPhase('fight');
+            }
+        };
+
+        const onDisconnect = (msg: ServerMessage) => {
+            if (msg.type === 'opponent_disconnected' && !cleanupRef.current) {
+                setWaitingForOpponent(false);
+                setOpponentReady(false);
+                resetMultiplayer();
+                setPhase('menu');
+            }
+        };
+
+        networkClient.on('opponent_ready', onOpponentReady);
+        networkClient.on('room_joined', onRoomJoined);
+        networkClient.on('opponent_disconnected', onDisconnect);
+
+        return () => {
+            cleanupRef.current = true;
+            networkClient.off('opponent_ready', onOpponentReady);
+            networkClient.off('room_joined', onRoomJoined);
+            networkClient.off('opponent_disconnected', onDisconnect);
+        };
+    }, [isRematch, setIsHost, setOpponentClass, setConnectionStatus, setPhase, resetMultiplayer]);
 
     const handleOrderSelect = (cls: FighterClass) => {
+        if (waitingForOpponent) return;
         const subclasses = ORDER_SUBCLASSES[cls];
         if (subclasses) {
-            // This order has subclasses — select the order and show subclass step
             setSelectedOrder(cls);
-            setSelectedClass(subclasses[0]); // default to first subclass
+            setSelectedClass(subclasses[0]);
             setStep('subclass');
         } else {
-            // No subclasses — select directly
             setSelectedOrder(null);
             setSelectedClass(cls);
         }
     };
 
     const handleFight = () => {
-        if (isMultiplayer) {
+        if (isRematch) {
+            // Send fighter selection and wait for opponent
+            networkClient.fighterReady(selectedClass);
+            setWaitingForOpponent(true);
+        } else if (isMultiplayer) {
             setPhase('lobby');
         } else {
             setOpponentClass(pickOpponent(ALL_FIGHTER_CLASSES));
@@ -47,11 +102,16 @@ export default function CharacterSelect() {
     };
 
     const handleBack = () => {
+        if (waitingForOpponent) return;
         if (step === 'subclass') {
             setStep('order');
             setSelectedOrder(null);
             setSelectedClass('power');
             return;
+        }
+        if (isRematch) {
+            networkClient.disconnect();
+            networkClient.clearHandlers();
         }
         resetMultiplayer();
         setPhase('menu');
@@ -69,7 +129,9 @@ export default function CharacterSelect() {
                         exit={{ opacity: 0, x: -30 }}
                         transition={{ duration: 0.3 }}
                     >
-                        <h1 className="select-title">CHOOSE YOUR ORDER</h1>
+                        <h1 className="select-title">
+                            {isRematch ? 'REMATCH — CHOOSE YOUR ORDER' : 'CHOOSE YOUR ORDER'}
+                        </h1>
 
                         <div className="fighters-row">
                             {ORDERS.map((cls, idx) => {
@@ -141,21 +203,14 @@ export default function CharacterSelect() {
                             })}
                         </div>
 
-                        <div className="select-actions">
-                            <button className="neon-button neon-button-back" onClick={handleBack}>
-                                BACK
-                            </button>
-                            {selectedClass && !selectedOrder && !ORDER_SUBCLASSES[selectedClass] && (
-                                <motion.button
-                                    className="neon-button neon-button-fight fight-button-large"
-                                    onClick={handleFight}
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                >
-                                    FIGHT!
-                                </motion.button>
-                            )}
-                        </div>
+                        <SelectActions
+                            showFight={!!selectedClass && !selectedOrder && !ORDER_SUBCLASSES[selectedClass]}
+                            waiting={waitingForOpponent}
+                            opponentReady={opponentReady}
+                            onFight={handleFight}
+                            onBack={handleBack}
+                            isRematch={isRematch}
+                        />
                     </motion.div>
                 ) : (
                     <motion.div
@@ -191,7 +246,7 @@ export default function CharacterSelect() {
                                             '--fighter-color': display.color,
                                             '--fighter-accent': display.accent,
                                         } as React.CSSProperties}
-                                        onClick={() => setSelectedClass(cls)}
+                                        onClick={() => { if (!waitingForOpponent) setSelectedClass(cls); }}
                                         initial={{ opacity: 0, y: 30 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ delay: idx * 0.12, duration: 0.4 }}
@@ -240,22 +295,52 @@ export default function CharacterSelect() {
                             })}
                         </div>
 
-                        <div className="select-actions">
-                            <button className="neon-button neon-button-back" onClick={handleBack}>
-                                BACK
-                            </button>
-                            <motion.button
-                                className="neon-button neon-button-fight fight-button-large"
-                                onClick={handleFight}
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                            >
-                                FIGHT!
-                            </motion.button>
-                        </div>
+                        <SelectActions
+                            showFight={true}
+                            waiting={waitingForOpponent}
+                            opponentReady={opponentReady}
+                            onFight={handleFight}
+                            onBack={handleBack}
+                            isRematch={isRematch}
+                        />
                     </motion.div>
                 )}
             </AnimatePresence>
+        </div>
+    );
+}
+
+function SelectActions({ showFight, waiting, opponentReady, onFight, onBack, isRematch }: {
+    showFight: boolean;
+    waiting: boolean;
+    opponentReady: boolean;
+    onFight: () => void;
+    onBack: () => void;
+    isRematch: boolean;
+}) {
+    return (
+        <div className="select-actions">
+            {!waiting && (
+                <button className="neon-button neon-button-back" onClick={onBack}>
+                    {isRematch ? 'LEAVE' : 'BACK'}
+                </button>
+            )}
+            {waiting ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                    <div className="lobby-status">
+                        {opponentReady ? 'OPPONENT READY — STARTING...' : 'WAITING FOR OPPONENT...'}
+                    </div>
+                </div>
+            ) : showFight ? (
+                <motion.button
+                    className="neon-button neon-button-fight fight-button-large"
+                    onClick={onFight}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                >
+                    {isRematch ? 'READY!' : 'FIGHT!'}
+                </motion.button>
+            ) : null}
         </div>
     );
 }

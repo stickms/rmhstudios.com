@@ -11,11 +11,12 @@ import { generateRoomCode } from '../utils';
 // ── Event Constants ────────────────────────────────────────────────
 
 const C2S = {
-    CREATE_ROOM: 'kk:create_room',
-    JOIN_ROOM:   'kk:join_room',
-    INPUT:       'kk:input',
-    GAME_STATE:  'kk:game_state',
-    LEAVE:       'kk:leave',
+    CREATE_ROOM:   'kk:create_room',
+    JOIN_ROOM:     'kk:join_room',
+    INPUT:         'kk:input',
+    GAME_STATE:    'kk:game_state',
+    FIGHTER_READY: 'kk:fighter_ready',
+    LEAVE:         'kk:leave',
 } as const;
 
 const S2C = {
@@ -23,6 +24,7 @@ const S2C = {
     ROOM_JOINED:           'kk:room_joined',
     INPUT:                 'kk:input',
     GAME_STATE:            'kk:game_state',
+    OPPONENT_READY:        'kk:opponent_ready',
     OPPONENT_DISCONNECTED: 'kk:opponent_disconnected',
     ERROR:                 'kk:error',
 } as const;
@@ -35,6 +37,11 @@ interface KKRoom {
     guestSocketId: string | null;
     hostClass: string;
     guestClass: string | null;
+    // Rematch: pending fighter selections
+    hostReady: boolean;
+    guestReady: boolean;
+    pendingHostClass: string | null;
+    pendingGuestClass: string | null;
 }
 
 // ── State ──────────────────────────────────────────────────────────
@@ -91,6 +98,10 @@ function onCreateRoom(socket: Socket, payload: any): void {
         guestSocketId: null,
         hostClass: payload?.fighterClass || 'power',
         guestClass: null,
+        hostReady: false,
+        guestReady: false,
+        pendingHostClass: null,
+        pendingGuestClass: null,
     };
 
     rooms.set(code, room);
@@ -157,6 +168,59 @@ function onGameState(socket: Socket, payload: any): void {
     }
 }
 
+function onFighterReady(socket: Socket, payload: any): void {
+    const roomCode = socketToRoom.get(socket.id);
+    if (!roomCode) return;
+    const room = rooms.get(roomCode);
+    if (!room || !room.guestSocketId) return;
+
+    const fighterClass = payload?.fighterClass || 'power';
+
+    if (room.hostSocketId === socket.id) {
+        room.pendingHostClass = fighterClass;
+        room.hostReady = true;
+        // Notify guest that host is ready
+        const guestSocket = ioRef.sockets.sockets.get(room.guestSocketId);
+        if (guestSocket) guestSocket.emit(S2C.OPPONENT_READY, {});
+    } else if (room.guestSocketId === socket.id) {
+        room.pendingGuestClass = fighterClass;
+        room.guestReady = true;
+        // Notify host that guest is ready
+        const hostSocket = ioRef.sockets.sockets.get(room.hostSocketId);
+        if (hostSocket) hostSocket.emit(S2C.OPPONENT_READY, {});
+    } else {
+        return;
+    }
+
+    // If both ready, start the rematch
+    if (room.hostReady && room.guestReady) {
+        room.hostClass = room.pendingHostClass!;
+        room.guestClass = room.pendingGuestClass!;
+        room.hostReady = false;
+        room.guestReady = false;
+        room.pendingHostClass = null;
+        room.pendingGuestClass = null;
+
+        const hostSocket = ioRef.sockets.sockets.get(room.hostSocketId);
+        const guestSocket = ioRef.sockets.sockets.get(room.guestSocketId);
+
+        if (hostSocket) {
+            hostSocket.emit(S2C.ROOM_JOINED, {
+                hostClass: room.hostClass,
+                guestClass: room.guestClass,
+                isHost: true,
+            });
+        }
+        if (guestSocket) {
+            guestSocket.emit(S2C.ROOM_JOINED, {
+                hostClass: room.hostClass,
+                guestClass: room.guestClass,
+                isHost: false,
+            });
+        }
+    }
+}
+
 function onLeave(socket: Socket): void {
     cleanupSocket(socket.id);
 }
@@ -170,6 +234,7 @@ export function registerKowloonKnockoutHandlers(io: Server, socket: Socket): voi
     socket.on(C2S.JOIN_ROOM, (payload) => onJoinRoom(socket, payload));
     socket.on(C2S.INPUT, (payload) => onInput(socket, payload));
     socket.on(C2S.GAME_STATE, (payload) => onGameState(socket, payload));
+    socket.on(C2S.FIGHTER_READY, (payload) => onFighterReady(socket, payload));
     socket.on(C2S.LEAVE, () => onLeave(socket));
 }
 

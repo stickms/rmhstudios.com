@@ -53,6 +53,10 @@ class NetworkClient {
                 this.dispatch({ type: 'game_state', data });
             });
 
+            this.socket.on('kk:opponent_ready', () => {
+                this.dispatch({ type: 'opponent_ready' });
+            });
+
             this.socket.on('kk:opponent_disconnected', () => {
                 this.dispatch({ type: 'opponent_disconnected' });
             });
@@ -111,6 +115,10 @@ class NetworkClient {
 
     joinRoom(code: string, fighterClass: FighterClass): void {
         this.socket?.emit('kk:join_room', { code, fighterClass });
+    }
+
+    fighterReady(fighterClass: FighterClass): void {
+        this.socket?.emit('kk:fighter_ready', { fighterClass });
     }
 
     sendInput(input: RemoteInputState): void {
