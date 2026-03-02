@@ -49,6 +49,34 @@ export type AthoraMessageType = "TEXT" | "IMAGE" | "LINK" | "EMOTE" | "SYSTEM";
 
 export type AthoraStandMediaType = "IMAGE" | "VIDEO" | "IFRAME" | "PDF" | "LINK";
 
+// ─── Tilemap Types ──────────────────────────────────────────────
+
+export interface TilesetDef {
+  /** Path to tileset PNG relative to /assets/athora/ */
+  src: string;
+  /** Pixel size of each tile in the source image (e.g. 32) */
+  tileSize: number;
+  /** Number of tile columns in the tileset image */
+  cols: number;
+  /** Number of tile rows in the tileset image */
+  rows: number;
+}
+
+export interface TileMapLayer {
+  /** 2D grid of tile indices into the tileset. -1 = empty/transparent */
+  tiles: number[][];
+  /** Optional z-offset for layering (default 0) */
+  zOffset?: number;
+}
+
+export interface TileMapData {
+  tileset: TilesetDef;
+  /** Pixel size to render each tile on screen */
+  renderSize: number;
+  /** Ordered layers, rendered bottom to top */
+  layers: TileMapLayer[];
+}
+
 // ─── Shared Payloads ─────────────────────────────────────────────
 
 export interface UserBrief {
@@ -63,7 +91,7 @@ export interface RoomConfig {
   mapWidth: number;
   mapHeight: number;
   template: AthoraRoomTemplate;
-  tileMapData: unknown;
+  tileMapData: TileMapData | null;
   backgroundUrl: string | null;
 }
 

@@ -8,6 +8,8 @@
 import * as PIXI from "pixi.js";
 import { getDepth } from "./IsometricUtils";
 import { CollisionGrid } from "./CollisionGrid";
+import { TilesetRenderer } from "./TilesetRenderer";
+import { generateTemplateTileMap } from "./TemplateTileMaps";
 import type { Socket } from "socket.io-client";
 import type {
   RoomStatePayload,
@@ -17,6 +19,7 @@ import type {
   CurrentUser,
   RoomConfig,
   AthoraDirection,
+  TileMapData,
 } from "@/types/athora";
 
 const MOVE_SPEED = 3;
@@ -72,6 +75,7 @@ export class RoomEngine {
   private stands: Map<string, StandDisplay> = new Map();
   private conversations: Map<string, ConversationDisplay> = new Map();
   private collisionGrid!: CollisionGrid;
+  private tilesetRenderer: TilesetRenderer;
   private socket: Socket;
   private currentUser: CurrentUser;
   private config: EngineConfig;
@@ -91,6 +95,7 @@ export class RoomEngine {
     this.socket = config.socket;
     this.currentUser = config.currentUser;
     this.config = config;
+    this.tilesetRenderer = new TilesetRenderer();
 
     const parent = config.canvas.parentElement!;
 
@@ -153,10 +158,30 @@ export class RoomEngine {
   // ── FLOOR RENDERING ────────────────────────────────────────────
 
   private drawFloor(room: RoomConfig): void {
+    // Try tileset-based rendering first
+    const tileMapData: TileMapData | null =
+      room.tileMapData ?? generateTemplateTileMap(room.template, room.mapWidth, room.mapHeight);
+
+    if (tileMapData) {
+      this.tilesetRenderer
+        .renderTileMap(tileMapData)
+        .then((floorContainer) => {
+          this.worldContainer.addChildAt(floorContainer, 0);
+        })
+        .catch(() => {
+          // Tileset failed to load — fall back to procedural grid
+          this.drawProceduralFloor(room);
+        });
+    } else {
+      this.drawProceduralFloor(room);
+    }
+  }
+
+  /** Fallback checkerboard floor when no tileset is available */
+  private drawProceduralFloor(room: RoomConfig): void {
     const floor = new PIXI.Container();
     floor.zIndex = -1000;
 
-    // Draw isometric grid
     const gridCols = Math.ceil(room.mapWidth / 64);
     const gridRows = Math.ceil(room.mapHeight / 64);
 
@@ -660,6 +685,7 @@ export class RoomEngine {
     this.conversations.forEach((c) =>
       c.container.destroy({ children: true })
     );
+    this.tilesetRenderer.destroy();
     this.app.destroy(true);
   }
 }
