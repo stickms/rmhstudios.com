@@ -11,7 +11,7 @@ export const COMBO_DEFS: ComboDef[] = [
     {
         name: 'one-two',
         sequence: ['jab', 'cross'],
-        bonusDamageMultiplier: 1.2,
+        bonusDamageMultiplier: 1.35,
         bonusStun: 4,
         displayName: 'ONE-TWO!',
     },
@@ -19,28 +19,28 @@ export const COMBO_DEFS: ComboDef[] = [
     {
         name: 'classic-triple',
         sequence: ['jab', 'cross', 'hook'],
-        bonusDamageMultiplier: 1.35,
+        bonusDamageMultiplier: 1.65,
         bonusStun: 8,
         displayName: 'CLASSIC TRIPLE!',
     },
     {
         name: 'body-breaker',
         sequence: ['jab', 'jab', 'uppercut'],
-        bonusDamageMultiplier: 1.3,
+        bonusDamageMultiplier: 1.60,
         bonusStun: 10,
         displayName: 'BODY BREAKER!',
     },
     {
         name: 'speedster',
         sequence: ['jab', 'jab', 'cross'],
-        bonusDamageMultiplier: 1.25,
+        bonusDamageMultiplier: 1.50,
         bonusStun: 6,
         displayName: 'SPEEDSTER!',
     },
     {
         name: 'haymaker-setup',
         sequence: ['cross', 'hook', 'uppercut'],
-        bonusDamageMultiplier: 1.5,
+        bonusDamageMultiplier: 1.90,
         bonusStun: 14,
         displayName: 'HAYMAKER!',
     },
@@ -48,7 +48,7 @@ export const COMBO_DEFS: ComboDef[] = [
     {
         name: 'fury-combo',
         sequence: ['jab', 'cross', 'hook', 'uppercut'],
-        bonusDamageMultiplier: 1.75,
+        bonusDamageMultiplier: 2.20,
         bonusStun: 20,
         displayName: '★ FURY COMBO! ★',
     },
@@ -59,7 +59,7 @@ export const COMBO_DEFS: ComboDef[] = [
     {
         name: 'iron-claw',
         sequence: ['hook', 'hook', 'uppercut'],
-        bonusDamageMultiplier: 1.4,
+        bonusDamageMultiplier: 1.75,
         bonusStun: 16,
         displayName: '★ IRON CLAW! ★',
         classRestriction: 'power_stone_tiger',
@@ -68,7 +68,7 @@ export const COMBO_DEFS: ComboDef[] = [
     {
         name: 'phoenix-strike',
         sequence: ['jab', 'cross', 'cross', 'uppercut'],
-        bonusDamageMultiplier: 1.55,
+        bonusDamageMultiplier: 2.00,
         bonusStun: 18,
         displayName: '★ PHOENIX STRIKE! ★',
         classRestriction: 'power_red_phoenix',
@@ -77,7 +77,7 @@ export const COMBO_DEFS: ComboDef[] = [
     {
         name: 'dragon-rising',
         sequence: ['cross', 'jab', 'hook', 'uppercut'],
-        bonusDamageMultiplier: 1.45,
+        bonusDamageMultiplier: 1.80,
         bonusStun: 14,
         displayName: '★ DRAGON RISING! ★',
         classRestriction: 'power_jade_dragon',
@@ -124,4 +124,34 @@ export function detectCombo(
     }
 
     return null;
+}
+
+/** Per-hit damage scaling within a combo sequence */
+const HIT_SCALE_PER_HIT = 0.12;
+
+/**
+ * Per-hit damage scale for mid-combo hits (index 0 = first hit, etc.)
+ * The finisher already gets the combo multiplier; this rewards earlier hits too.
+ */
+export function getComboHitScale(hitIndex: number): number {
+    return 1 + hitIndex * HIT_SCALE_PER_HIT;
+}
+
+/**
+ * Count how many consecutive within-window punches exist in recent history.
+ * Returns a 0-indexed hit position (0 = first hit, 1 = second, etc.)
+ */
+export function getHitIndexInCombo(
+    history: { type: PunchType; time: number }[],
+    currentTime: number,
+): number {
+    let count = 0;
+    for (let i = history.length - 1; i >= 0; i--) {
+        if (currentTime - history[i].time <= COMBO_WINDOW_MS) {
+            count++;
+        } else {
+            break;
+        }
+    }
+    return Math.max(0, count - 1); // 0-indexed: first hit = 0
 }

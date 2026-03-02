@@ -251,14 +251,16 @@ function updatePowerAI(
 function pickPowerPunch(distance: number): PunchType {
     if (distance < 32) {
         const roll = Math.random();
-        if (roll < 0.35) return 'uppercut';
-        if (roll < 0.65) return 'hook';
-        return 'cross';
+        if (roll < 0.20) return 'uppercut';
+        if (roll < 0.40) return 'hook';
+        if (roll < 0.70) return 'cross';
+        return 'jab';
     } else {
         const roll = Math.random();
-        if (roll < 0.4) return 'cross';
-        if (roll < 0.7) return 'hook';
-        return 'jab';
+        if (roll < 0.35) return 'jab';
+        if (roll < 0.65) return 'cross';
+        if (roll < 0.85) return 'hook';
+        return 'uppercut';
     }
 }
 
@@ -744,14 +746,16 @@ function updateStoneTigerAI(
 function pickStoneTigerPunch(distance: number): PunchType {
     if (distance < 32) {
         const roll = Math.random();
-        if (roll < 0.4) return 'hook';
-        if (roll < 0.7) return 'uppercut';
-        return 'cross';
+        if (roll < 0.25) return 'hook';
+        if (roll < 0.45) return 'uppercut';
+        if (roll < 0.75) return 'cross';
+        return 'jab';
     } else {
         const roll = Math.random();
-        if (roll < 0.4) return 'hook';
-        if (roll < 0.7) return 'cross';
-        return 'jab';
+        if (roll < 0.30) return 'jab';
+        if (roll < 0.60) return 'cross';
+        if (roll < 0.85) return 'hook';
+        return 'uppercut';
     }
 }
 

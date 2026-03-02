@@ -10,8 +10,8 @@ import {
     createFighter, startPunch, applyHit, updateFighter,
     moveFighter, setBlocking, checkHit, resetFighter,
 } from './fighters/fighter';
-import { HEAVY_PUNCH_BONUS } from './combat/punches';
-import { detectCombo } from './combat/combos';
+import { getStaleMoveMultiplier } from './combat/punches';
+import { detectCombo, getComboHitScale, getHitIndexInCombo } from './combat/combos';
 import { getCounterStrikeMultiplier, COUNTER_STRIKE_DISPLAY } from './combat/counterstrike';
 import { createInputState, attachInputListeners, clearPressedFlags } from './input';
 import { drawFighter, drawHitParticles } from './sprites';
@@ -321,13 +321,15 @@ function initHostGame(
         remoteInput.uppercutPressed = false;
 
         if (checkHit(player, opponent)) {
-            const combo = detectCombo(player.comboHistory, Date.now(), player.className);
+            const now = Date.now();
+            const combo = detectCombo(player.comboHistory, now, player.className);
             const comboMult = combo ? combo.bonusDamageMultiplier : 1.0;
+            const hitIndex = getHitIndexInCombo(player.comboHistory, now);
+            const comboHitScale = getComboHitScale(hitIndex);
             const punchType = player.currentPunch?.type;
-            const heavyBonus = punchType ? HEAVY_PUNCH_BONUS[punchType] : undefined;
-            const heavyMult = heavyBonus ? heavyBonus.multiplier : 1.0;
+            const staleMult = punchType ? getStaleMoveMultiplier(player.comboHistory, punchType) : 1.0;
             const counterStrike = getCounterStrikeMultiplier(opponent);
-            const finalMult = Math.min(2.5, comboMult * heavyMult * counterStrike.multiplier);
+            const finalMult = Math.min(2.5, comboMult * comboHitScale * staleMult * counterStrike.multiplier);
             const result = applyHit(opponent, player, finalMult);
             if (result.damage > 0 && !result.blocked) {
                 hitParticles.push({ x: opponent.x, y: opponent.y - 40, frame: 0, color: player.spriteAccentColor });
@@ -336,9 +338,6 @@ function initHostGame(
                     state.comboText = combo.displayName;
                     state.comboTextTimer = 90;
                     if (opponent.state === 'hit') { opponent.state = 'stunned'; opponent.stateFrame = 0; }
-                } else if (heavyBonus) {
-                    state.comboText = heavyBonus.displayName;
-                    state.comboTextTimer = 60;
                 } else if (counterStrike.isCounterStrike) {
                     state.comboText = COUNTER_STRIKE_DISPLAY;
                     state.comboTextTimer = 60;
@@ -347,18 +346,24 @@ function initHostGame(
         }
 
         if (checkHit(opponent, player)) {
-            const combo = detectCombo(opponent.comboHistory, Date.now(), opponent.className);
+            const now = Date.now();
+            const combo = detectCombo(opponent.comboHistory, now, opponent.className);
             const comboMult = combo ? combo.bonusDamageMultiplier : 1.0;
+            const hitIndex = getHitIndexInCombo(opponent.comboHistory, now);
+            const comboHitScale = getComboHitScale(hitIndex);
             const oppPunchType = opponent.currentPunch?.type;
-            const oppHeavyBonus = oppPunchType ? HEAVY_PUNCH_BONUS[oppPunchType] : undefined;
-            const oppHeavyMult = oppHeavyBonus ? oppHeavyBonus.multiplier : 1.0;
+            const staleMult = oppPunchType ? getStaleMoveMultiplier(opponent.comboHistory, oppPunchType) : 1.0;
             const oppCounterStrike = getCounterStrikeMultiplier(player);
-            const oppFinalMult = Math.min(2.5, comboMult * oppHeavyMult * oppCounterStrike.multiplier);
+            const oppFinalMult = Math.min(2.5, comboMult * comboHitScale * staleMult * oppCounterStrike.multiplier);
             const result = applyHit(player, opponent, oppFinalMult);
             if (result.damage > 0 && !result.blocked) {
                 hitParticles.push({ x: player.x, y: player.y - 40, frame: 0, color: opponent.spriteAccentColor });
                 state.screenShake = Math.min(8, result.damage * 0.3);
-                if (oppCounterStrike.isCounterStrike) {
+                if (combo) {
+                    state.comboText = combo.displayName;
+                    state.comboTextTimer = 90;
+                    if (player.state === 'hit') { player.state = 'stunned'; player.stateFrame = 0; }
+                } else if (oppCounterStrike.isCounterStrike) {
                     state.comboText = COUNTER_STRIKE_DISPLAY;
                     state.comboTextTimer = 60;
                 }

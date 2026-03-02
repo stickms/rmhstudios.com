@@ -7,7 +7,7 @@ import { PunchDef, PunchType } from '../fighters/types';
 export const PUNCH_DEFS: Record<PunchType, PunchDef> = {
     jab: {
         type: 'jab',
-        baseDamage: 5,
+        baseDamage: 4,
         speed: 8,       // fastest
         range: 48,      // longest reach — quick straight punch
         staminaCost: 5,
@@ -16,7 +16,7 @@ export const PUNCH_DEFS: Record<PunchType, PunchDef> = {
     },
     cross: {
         type: 'cross',
-        baseDamage: 10,
+        baseDamage: 7,
         speed: 14,
         range: 45,      // rear hand extension, slightly shorter than jab
         staminaCost: 10,
@@ -25,7 +25,7 @@ export const PUNCH_DEFS: Record<PunchType, PunchDef> = {
     },
     hook: {
         type: 'hook',
-        baseDamage: 15,
+        baseDamage: 9,
         speed: 20,
         range: 42,      // wide arc, needs to be closer
         staminaCost: 15,
@@ -34,19 +34,13 @@ export const PUNCH_DEFS: Record<PunchType, PunchDef> = {
     },
     uppercut: {
         type: 'uppercut',
-        baseDamage: 18,
+        baseDamage: 11,
         speed: 28,      // slowest
         range: 40,      // shortest range — need to be very close
         staminaCost: 25,
         knockback: 10,
         stunFrames: 14,
     },
-};
-
-/** Bonus multiplier for landing heavy punches (hook/uppercut) */
-export const HEAVY_PUNCH_BONUS: Partial<Record<PunchType, { multiplier: number; displayName: string }>> = {
-    hook: { multiplier: 1.15, displayName: 'HEAVY HOOK!' },
-    uppercut: { multiplier: 1.15, displayName: 'CRUSHING UPPERCUT!' },
 };
 
 /**
@@ -74,4 +68,24 @@ export function calculatePunchSpeed(punch: PunchDef, punchSpeedStat: number, mov
     const moveSpeedBonus = moveSpeed ? 1 + (moveSpeed - 2.0) * 0.2 : 1;
     const effectiveSpeed = punchSpeedStat * moveSpeedBonus;
     return Math.max(4, Math.floor(punch.speed / effectiveSpeed));
+}
+
+/** Stale move decay — repeated same punch type does diminishing damage */
+const STALE_MOVE_DECAY = [1.0, 0.85, 0.72, 0.60];
+
+/**
+ * Calculate stale move multiplier. Counts how many times the same punch type
+ * appears consecutively at the end of comboHistory.
+ */
+export function getStaleMoveMultiplier(
+    comboHistory: { type: PunchType; time: number }[],
+    currentPunchType: PunchType,
+): number {
+    let count = 0;
+    for (let i = comboHistory.length - 1; i >= 0; i--) {
+        if (comboHistory[i].type === currentPunchType) count++;
+        else break;
+    }
+    const idx = Math.min(count, STALE_MOVE_DECAY.length - 1);
+    return STALE_MOVE_DECAY[idx];
 }
