@@ -19,11 +19,10 @@
  */
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getSocket, emit } from '@/lib/rmhbox/socket';
-import { useRMHboxStore } from '@/lib/rmhbox/store';
-import { S2C, C2S } from '@/lib/rmhbox/events';
+import { emitGameInput, useGameSocket, extractTimerTick } from '@/lib/rmhbox/minigame-client';
+import { playSound } from '@/lib/rmhbox/audio';
 import { useHeaderTimer } from '../MinigameRenderer';
 import SentenceDisplay from './SentenceDisplay';
 import KeyAssignment from './KeyAssignment';
@@ -34,13 +33,6 @@ import HumanKeyboardResults from './HumanKeyboardResults';
 import type { PlayerResult, TeamPerformance } from './HumanKeyboardResults';
 
 type Phase = 'SENTENCE_REVEAL' | 'TYPING' | 'RESULTS';
-
-/** Helper: emit a game input action */
-function emitGameInput(action: string, data: unknown = {}) {
-  const lobbyId = useRMHboxStore.getState().lobby?.lobbyId;
-  if (!lobbyId) return;
-  emit(C2S.GAME_INPUT, { lobbyId, action, data });
-}
 
 interface HumanKeyboardGameProps {
   playerId: string;
@@ -98,6 +90,7 @@ export default function HumanKeyboardGame({ playerId, playerName: _playerName }:
           setWrongCount(0);
           setLocked(false);
           setCompleted(false);
+          playSound('goFanfare');
           if (typeof data.duration === 'number') {
             startTimer(data.duration as number);
           }
@@ -105,12 +98,12 @@ export default function HumanKeyboardGame({ playerId, playerName: _playerName }:
         }
         case 'HK_KEY_ASSIGNMENT': {
           setPhase('TYPING');
-          const keys = data.keys as string[];
+          const keys = data.myKeys as string[];
           if (keys) setMyKeys(keys.map((k) => k.toUpperCase()));
           break;
         }
         case 'HK_KEY_CORRECT': {
-          const pos = data.cursorPosition as number;
+          const pos = data.displayCursorPosition as number;
           if (typeof pos === 'number') setCursorPosition(pos);
           if (typeof data.progress === 'number') setProgress(data.progress as number);
           // If this player pressed the key
@@ -118,6 +111,7 @@ export default function HumanKeyboardGame({ playerId, playerName: _playerName }:
             setCorrectCount((c: number) => c + 1);
           }
           setLocked(false);
+          playSound('scoreDing');
           break;
         }
         case 'HK_KEY_WRONG': {
@@ -125,6 +119,7 @@ export default function HumanKeyboardGame({ playerId, playerName: _playerName }:
             setWrongCount((c: number) => c + 1);
             setWrongFlash(true);
             setTimeout(() => setWrongFlash(false), 300);
+            playSound('buzzer');
           }
           break;
         }
@@ -138,28 +133,32 @@ export default function HumanKeyboardGame({ playerId, playerName: _playerName }:
         }
         case 'HK_CURSOR_LOCKED': {
           setLocked(true);
+          playSound('buzzer');
           break;
         }
         case 'HK_SPACE_AUTO': {
-          const pos = data.cursorPosition as number;
+          const pos = data.newDisplayCursorPosition as number;
           if (typeof pos === 'number') setCursorPosition(pos);
           if (typeof data.progress === 'number') setProgress(data.progress as number);
+          playSound('click');
           break;
         }
         case 'HK_RESHUFFLE_WARNING': {
-          setReshuffleCountdown(data.seconds as number);
+          setReshuffleCountdown(data.secondsUntilReshuffle as number);
+          playSound('countdownBeep');
           break;
         }
         case 'HK_RESHUFFLE': {
+          // Reshuffle happened — keys arrive via a separate HK_KEY_ASSIGNMENT event
           setReshuffleCountdown(null);
-          const keys = data.keys as string[];
-          if (keys) setMyKeys(keys.map((k) => k.toUpperCase()));
+          playSound('swoosh');
           break;
         }
         case 'HK_COMPLETE': {
           setCompleted(true);
           setProgress(1);
           clearTimer();
+          playSound('victoryFanfare');
           break;
         }
         case 'HK_RESULTS': {
@@ -171,6 +170,7 @@ export default function HumanKeyboardGame({ playerId, playerName: _playerName }:
           if (data.teamPerformance) {
             setTeamPerformance(data.teamPerformance as TeamPerformance);
           }
+          playSound('victoryFanfare');
           break;
         }
         case 'TIMER_START': {
@@ -181,9 +181,8 @@ export default function HumanKeyboardGame({ playerId, playerName: _playerName }:
           break;
         }
         case 'TIMER_TICK': {
-          const pl = data.payload as Record<string, unknown> | undefined;
-          const remaining = (pl?.timeRemaining ?? data.timeRemaining) as number;
-          if (typeof remaining === 'number') tickTimer(remaining);
+          const remaining = extractTimerTick(data);
+          if (remaining != null) tickTimer(remaining);
           break;
         }
       }
@@ -191,31 +190,27 @@ export default function HumanKeyboardGame({ playerId, playerName: _playerName }:
     [playerId, startTimer, tickTimer, clearTimer],
   );
 
-  // Subscribe to socket events
-  useEffect(() => {
-    const socket = getSocket();
-    if (!socket) return;
+  /** Hydrate full state from a GAME_STATE_SNAPSHOT (reconnection / initial broadcast). */
+  const handleStateSnapshot = useCallback(
+    (snapshot: Record<string, unknown>) => {
+      if (!snapshot.phase) return;
+      const p = snapshot.phase as string;
+      if (p === 'SENTENCE_REVEAL' || p === 'TYPING' || p === 'RESULTS') {
+        setPhase(p);
+      }
+      if (snapshot.sentence) setSentence(snapshot.sentence as string);
+      if (typeof snapshot.displayCursorPosition === 'number') setCursorPosition(snapshot.displayCursorPosition as number);
+      if (typeof snapshot.progress === 'number') setProgress(snapshot.progress as number);
+      if (Array.isArray(snapshot.myKeys)) setMyKeys((snapshot.myKeys as string[]).map((k) => k.toUpperCase()));
+    },
+    [],
+  );
 
-    socket.on(S2C.GAME_ACTION, handleGameAction);
-    return () => {
-      socket.off(S2C.GAME_ACTION, handleGameAction);
-    };
-  }, [handleGameAction]);
-
-  // Hydrate from Zustand gameState snapshot on mount
-  useEffect(() => {
-    const snapshot = useRMHboxStore.getState().gameState;
-    if (!snapshot || !snapshot.phase) return;
-
-    const p = snapshot.phase as string;
-    if (p === 'SENTENCE_REVEAL' || p === 'TYPING' || p === 'RESULTS') {
-      setPhase(p);
-    }
-    if (snapshot.sentence) setSentence(snapshot.sentence as string);
-    if (typeof snapshot.cursorPosition === 'number') setCursorPosition(snapshot.cursorPosition as number);
-    if (typeof snapshot.progress === 'number') setProgress(snapshot.progress as number);
-    if (Array.isArray(snapshot.myKeys)) setMyKeys((snapshot.myKeys as string[]).map((k) => k.toUpperCase()));
-  }, []);
+  // Subscribe via the standard useGameSocket hook (GAME_ACTION + GAME_STATE_SNAPSHOT + hydration)
+  useGameSocket({
+    onGameAction: handleGameAction,
+    onStateSnapshot: handleStateSnapshot,
+  });
 
   // Handle player key press
   const handleKeyPress = useCallback(

@@ -69,6 +69,12 @@ export class SequenceSamGame extends BaseMinigame {
   /** Track if player survived a round with 1 strike remaining. */
   private ironWillPlayers: Set<string> = new Set();
 
+  /**
+   * Spectators see an omniscient view with all players' input progress,
+   * since individual player state (input index) is hidden between players.
+   */
+  get spectatorMode(): 'shared-privileged' { return 'shared-privileged'; }
+
   constructor(context: MinigameContext) {
     super(context);
   }
@@ -740,24 +746,9 @@ export class SequenceSamGame extends BaseMinigame {
   }
 
   handlePlayerReconnect(userId: string): void {
+    // State snapshot delivery is handled centrally by ReconnectionHandler
+    // via buildReconnectionSnapshot(). Only logging here.
     const ps = this.state.playerStates.get(userId);
-
-    if (ps?.isEliminated) {
-      // Reconnect as spectator
-      this.context.sendToPlayer(userId, 'rmhbox:game:state_snapshot', this.getStateForSpectator());
-    } else {
-      // Send current player state
-      this.context.sendToPlayer(userId, 'rmhbox:game:state_snapshot', this.getStateForPlayer(userId));
-    }
-
-    // Send current timer if INPUT phase
-    if (this.state.phase === 'INPUT') {
-      const remaining = Math.max(0, Math.ceil((this.state.phaseEndsAt - Date.now()) / 1000));
-      this.context.sendToPlayer(userId, 'rmhbox:game:action', {
-        type: 'TIMER_TICK',
-        payload: { timeRemaining: remaining },
-      });
-    }
 
     logger.info({
       event: 'sequence_sam:player_reconnect',

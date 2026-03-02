@@ -64,6 +64,12 @@ export class HumanKeyboardGame extends BaseMinigame {
   /** Reshuffle timer handle. */
   private reshuffleWarningTimer: ReturnType<typeof setTimeout> | null = null;
 
+  /**
+   * Spectators see an omniscient view with all players' key assignments
+   * and real-time stats, since individual key ownership is hidden between players.
+   */
+  get spectatorMode(): 'shared-privileged' { return 'shared-privileged'; }
+
   constructor(context: MinigameContext) {
     super(context);
     this.sentences = loadSentences();
@@ -765,8 +771,8 @@ export class HumanKeyboardGame extends BaseMinigame {
   }
 
   handlePlayerReconnect(userId: string): void {
-    this.context.sendToPlayer(userId, 'rmhbox:game:state_snapshot', this.getStateForPlayer(userId));
-
+    // State snapshot delivery is handled centrally by ReconnectionHandler
+    // via buildReconnectionSnapshot(). Only logging here.
     logger.info({
       event: 'human_keyboard:player_reconnect',
       lobbyId: this.context.lobbyId,

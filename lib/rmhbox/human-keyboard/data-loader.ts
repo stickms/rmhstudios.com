@@ -30,7 +30,7 @@ let cachedSentences: TargetSentence[] | null = null;
 export function loadSentences(): TargetSentence[] {
   if (cachedSentences) return cachedSentences;
 
-  const filePath = join(process.cwd(), 'public', 'data', 'rmhbox', 'human-keyboard', 'sentences.json');
+  const filePath = join(process.cwd(), 'data', 'rmhbox', 'human-keyboard', 'sentences.json');
   const raw = readFileSync(filePath, 'utf-8');
   cachedSentences = JSON.parse(raw) as TargetSentence[];
   return cachedSentences;

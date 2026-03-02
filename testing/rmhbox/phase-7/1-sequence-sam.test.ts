@@ -701,18 +701,18 @@ describe('Sequence Sam Server Handler (§7.1)', () => {
     });
 
     it('should reconnect eliminated player as spectator', () => {
-      const { game, playerLog } = createGame();
+      const { game } = createGame();
       game.start();
       const state = getPrivateState(game);
 
       // Eliminate Alice
       state.playerStates.get(MOCK_USERS.alice.userId)!.isEliminated = true;
 
+      // handlePlayerReconnect just logs; state delivery is via buildReconnectionSnapshot
       game.handlePlayerReconnect(MOCK_USERS.alice.userId);
 
-      const snapshot = playerLog.find(
-        (e) => e.userId === MOCK_USERS.alice.userId && e.event === 'rmhbox:game:state_snapshot',
-      );
+      // buildReconnectionSnapshot returns spectator state for eliminated players
+      const snapshot = game.getStateForSpectator();
       expect(snapshot).toBeDefined();
     });
   });

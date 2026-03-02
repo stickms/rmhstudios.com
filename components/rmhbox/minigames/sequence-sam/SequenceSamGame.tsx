@@ -12,11 +12,11 @@
  */
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getSocket, emit } from '@/lib/rmhbox/socket';
+import { emitGameInput, useGameSocket, extractTimerTick } from '@/lib/rmhbox/minigame-client';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
-import { S2C, C2S } from '@/lib/rmhbox/events';
+import { playSound } from '@/lib/rmhbox/audio';
 import GridDisplay from './GridDisplay';
 import StrikeIndicator from './StrikeIndicator';
 import ChaosOverlay from './ChaosOverlay';
@@ -38,13 +38,6 @@ interface PlayerStatus {
   userName: string;
   completed: boolean;
   strikes: number;
-}
-
-/** Helper: emit a game input action */
-function emitGameInput(action: string, data: unknown = {}) {
-  const lobbyId = useRMHboxStore.getState().lobby?.lobbyId;
-  if (!lobbyId) return;
-  emit(C2S.GAME_INPUT, { lobbyId, action, data });
 }
 
 interface SequenceSamGameProps {
@@ -83,15 +76,14 @@ export default function SequenceSamGame({ playerId, playerName: _playerName }: S
         case 'SS_ROUND_START': {
           setPhase('ROUND_START');
           setCurrentRound(data.round as number);
-          setIsChaos((data.isChaos as boolean) ?? false);
+          setIsChaos((data.isChaosRound as boolean) ?? false);
           setRotated(false);
           setTiles([...DEFAULT_TILES]);
           setProgress(0);
-          setPatternLength((data.patternLength as number) ?? 0);
+          setPatternLength((data.sequenceLength as number) ?? 0);
           if (data.maxStrikes != null) setMaxStrikes(data.maxStrikes as number);
           if (data.strikesRemaining != null) setStrikesRemaining(data.strikesRemaining as number);
-          // eslint-disable-next-line no-console
-          console.log('[playSound] round-start');
+          playSound('goFanfare');
           break;
         }
 
@@ -105,15 +97,13 @@ export default function SequenceSamGame({ playerId, playerName: _playerName }: S
             }
             return next;
           });
-          // eslint-disable-next-line no-console
-          console.log('[playSound] pattern-step');
+          playSound('click');
           break;
         }
 
         case 'SS_GRID_ROTATE': {
           setRotated(true);
-          // eslint-disable-next-line no-console
-          console.log('[playSound] grid-rotate');
+          playSound('swoosh');
           break;
         }
 
@@ -121,8 +111,7 @@ export default function SequenceSamGame({ playerId, playerName: _playerName }: S
           setPhase('INPUT');
           setTiles([...DEFAULT_TILES]);
           setProgress(0);
-          // eslint-disable-next-line no-console
-          console.log('[playSound] pattern-complete');
+          playSound('swoosh');
           break;
         }
 
@@ -140,12 +129,10 @@ export default function SequenceSamGame({ playerId, playerName: _playerName }: S
 
           if (correct) {
             setProgress((prev) => prev + 1);
-            // eslint-disable-next-line no-console
-            console.log('[playSound] tap-correct');
+            playSound('scoreDing');
           } else {
             setStrikesRemaining((prev) => Math.max(0, prev - 1));
-            // eslint-disable-next-line no-console
-            console.log('[playSound] tap-incorrect');
+            playSound('buzzer');
           }
 
           // Reset tile after brief delay
@@ -174,8 +161,7 @@ export default function SequenceSamGame({ playerId, playerName: _playerName }: S
             return [...prev, { userId, userName: p?.userName ?? userId, completed: true, strikes: 0 }];
           });
           if (userId === playerId) {
-            // eslint-disable-next-line no-console
-            console.log('[playSound] player-complete');
+            playSound('chime');
           }
           break;
         }
@@ -193,8 +179,7 @@ export default function SequenceSamGame({ playerId, playerName: _playerName }: S
             return [...prev, { userId, userName: p?.userName ?? userId, completed: false, strikes: (data.strikes as number) ?? 0 }];
           });
           if (userId === playerId) {
-            // eslint-disable-next-line no-console
-            console.log('[playSound] player-failed');
+            playSound('buzzer');
           }
           break;
         }
@@ -210,8 +195,7 @@ export default function SequenceSamGame({ playerId, playerName: _playerName }: S
             });
             setPlayerStatuses(statuses);
           }
-          // eslint-disable-next-line no-console
-          console.log('[playSound] round-results');
+          playSound('chime');
           break;
         }
 
@@ -221,8 +205,7 @@ export default function SequenceSamGame({ playerId, playerName: _playerName }: S
             setPhase('ELIMINATION');
             setEliminationRank((data.rank as number) ?? 0);
             setEliminationScore((data.score as number) ?? 0);
-            // eslint-disable-next-line no-console
-            console.log('[playSound] elimination');
+            playSound('buzzer');
           }
           break;
         }
@@ -257,15 +240,13 @@ export default function SequenceSamGame({ playerId, playerName: _playerName }: S
               })),
             );
           }
-          // eslint-disable-next-line no-console
-          console.log('[playSound] game-over');
+          playSound('victoryFanfare');
           break;
         }
 
         case 'TIMER_TICK': {
-          const pl = data.payload as Record<string, unknown> | undefined;
-          const remaining = (pl?.timeRemaining ?? data.timeRemaining) as number;
-          if (typeof remaining === 'number') setTimeRemaining(remaining);
+          const remaining = extractTimerTick(data);
+          if (remaining != null) setTimeRemaining(remaining);
           break;
         }
 
@@ -281,37 +262,34 @@ export default function SequenceSamGame({ playerId, playerName: _playerName }: S
     [players, playerId],
   );
 
-  useEffect(() => {
-    const socket = getSocket();
-    if (!socket) return;
+  /** Hydrate full state from a GAME_STATE_SNAPSHOT (reconnection / initial broadcast). */
+  const handleStateSnapshot = useCallback(
+    (snapshot: Record<string, unknown>) => {
+      if (!snapshot.phase) return;
+      const p = snapshot.phase as string;
+      if (
+        p === 'ROUND_START' ||
+        p === 'PATTERN_DISPLAY' ||
+        p === 'INPUT' ||
+        p === 'ROUND_RESULTS' ||
+        p === 'ELIMINATION' ||
+        p === 'GAME_OVER'
+      ) {
+        setPhase(p);
+      }
+      if (snapshot.currentRound) setCurrentRound(snapshot.currentRound as number);
+      if (snapshot.isChaosRound) setIsChaos(snapshot.isChaosRound as boolean);
+      if (snapshot.myStrikesRemaining != null) setStrikesRemaining(snapshot.myStrikesRemaining as number);
+      if (snapshot.sequenceLength != null) setPatternLength(snapshot.sequenceLength as number);
+    },
+    [],
+  );
 
-    socket.on(S2C.GAME_ACTION, handleGameAction);
-    return () => {
-      socket.off(S2C.GAME_ACTION, handleGameAction);
-    };
-  }, [handleGameAction]);
-
-  // Hydrate from store snapshot on mount
-  useEffect(() => {
-    const snapshot = useRMHboxStore.getState().gameState;
-    if (!snapshot || !snapshot.phase) return;
-
-    const p = snapshot.phase as string;
-    if (
-      p === 'ROUND_START' ||
-      p === 'PATTERN_DISPLAY' ||
-      p === 'INPUT' ||
-      p === 'ROUND_RESULTS' ||
-      p === 'ELIMINATION' ||
-      p === 'GAME_OVER'
-    ) {
-      setPhase(p);
-    }
-    if (snapshot.currentRound) setCurrentRound(snapshot.currentRound as number);
-    if (snapshot.isChaos) setIsChaos(snapshot.isChaos as boolean);
-    if (snapshot.strikesRemaining != null) setStrikesRemaining(snapshot.strikesRemaining as number);
-    if (snapshot.maxStrikes != null) setMaxStrikes(snapshot.maxStrikes as number);
-  }, []);
+  // Subscribe via the standard useGameSocket hook (GAME_ACTION + GAME_STATE_SNAPSHOT + hydration)
+  useGameSocket({
+    onGameAction: handleGameAction,
+    onStateSnapshot: handleStateSnapshot,
+  });
 
   const handleTileTap = useCallback(
     (tileIndex: number) => {

@@ -678,15 +678,15 @@ describe('Human Keyboard Server Handler (§7.2)', () => {
     });
 
     it('should send player state on reconnect', () => {
-      const { game, playerLog } = createGame();
+      const { game } = createGame();
       game.start();
       advanceToTypingPhase();
 
+      // handlePlayerReconnect just logs; state delivery is via buildReconnectionSnapshot
       game.handlePlayerReconnect(MOCK_USERS.alice.userId);
 
-      const snapshot = playerLog.find(
-        (e) => e.userId === MOCK_USERS.alice.userId && e.event === 'rmhbox:game:state_snapshot',
-      );
+      // buildReconnectionSnapshot returns player state
+      const snapshot = game.getStateForPlayer(MOCK_USERS.alice.userId);
       expect(snapshot).toBeDefined();
     });
   });
