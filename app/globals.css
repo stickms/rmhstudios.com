@@ -2193,9 +2193,13 @@
 html {
   scroll-behavior: smooth;
   overflow-y: auto;
-  scrollbar-gutter: stable;
   min-height: 100%;
   background-color: var(--site-bg);
+}
+
+/* Reserve scrollbar space on main UI pages to prevent layout shift */
+html:not(.app-route) {
+  scrollbar-gutter: stable;
 }
 
 body {

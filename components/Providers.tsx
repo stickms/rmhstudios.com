@@ -79,6 +79,11 @@ export function Providers({ children }: ProvidersProps) {
     pathname?.startsWith(route)
   );
 
+  // Toggle app-route class so CSS can disable scrollbar-gutter on game/app pages
+  useEffect(() => {
+    document.documentElement.classList.toggle("app-route", isAppRoute);
+  }, [isAppRoute]);
+
   // Hydrate style from localStorage on mount
   useEffect(() => {
     const stored = localStorage.getItem("rmh-style") as SiteStyle | null;
