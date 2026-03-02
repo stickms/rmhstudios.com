@@ -24,16 +24,18 @@ interface FaceRegion {
   visible: boolean;
 }
 
-// Face region definitions per direction (pixel coords within each 64×96 frame)
+// Face region definitions per direction (pixel coords within each 64×96 frame).
+// Bodies use LPC headless bases with 32px transparent padding at top.
+// The profile circle sits in this top pad area, centered above the neck.
 const FACE_REGIONS: Record<string, FaceRegion> = {
-  SOUTH: { x: 20, y: 8, w: 24, h: 24, scale: 1.0, visible: true },
-  SOUTHWEST: { x: 16, y: 8, w: 22, h: 24, scale: 0.95, visible: true },
-  WEST: { x: 12, y: 10, w: 18, h: 22, scale: 0.8, visible: true },
-  NORTHWEST: { x: 16, y: 10, w: 18, h: 22, scale: 0.75, visible: true },
-  NORTH: { x: 20, y: 10, w: 24, h: 24, scale: 0.0, visible: false },
-  NORTHEAST: { x: 30, y: 10, w: 18, h: 22, scale: 0.75, visible: true },
-  EAST: { x: 34, y: 10, w: 18, h: 22, scale: 0.8, visible: true },
-  SOUTHEAST: { x: 26, y: 8, w: 22, h: 24, scale: 0.95, visible: true },
+  SOUTH: { x: 18, y: 2, w: 28, h: 28, scale: 1.0, visible: true },
+  SOUTHWEST: { x: 14, y: 2, w: 26, h: 28, scale: 0.95, visible: true },
+  WEST: { x: 10, y: 4, w: 24, h: 26, scale: 0.85, visible: true },
+  NORTHWEST: { x: 14, y: 4, w: 24, h: 26, scale: 0.8, visible: true },
+  NORTH: { x: 18, y: 4, w: 28, h: 28, scale: 0.0, visible: false },
+  NORTHEAST: { x: 26, y: 4, w: 24, h: 26, scale: 0.8, visible: true },
+  EAST: { x: 30, y: 4, w: 24, h: 26, scale: 0.85, visible: true },
+  SOUTHEAST: { x: 22, y: 2, w: 26, h: 28, scale: 0.95, visible: true },
 };
 
 const DIRECTIONS = [
