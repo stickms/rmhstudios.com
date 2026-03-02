@@ -1,9 +1,10 @@
 /**
  * HostControls — Playback control bar below the video player.
  *
- * Play/pause, skip, and speed are host-only.
- * Volume, captions, and PiP are always available to all users,
- * even when the host disables player controls.
+ * All controls are visible to every user.
+ * Play/pause, skip, and speed changes are limited to host/moderators;
+ * regular members get a toast and are snapped back to the live state.
+ * Volume, captions, and PiP are local-only (always available).
  */
 'use client';
 
@@ -14,17 +15,20 @@ import { C2S } from '@/lib/rmhtube/events';
 import { useRmhTubeStore } from '@/lib/rmhtube/store';
 import { formatDuration } from '@/lib/rmhtube/utils';
 import { PLAYBACK_SPEEDS } from '@/lib/rmhtube/constants';
+import { toast } from '@/lib/rmhtube/toast-store';
 import type { VideoState, ClientQueueItem } from '@/lib/rmhtube/types';
 
 interface HostControlsProps {
   isHost: boolean;
+  isHostOrMod?: boolean;
   videoState: VideoState | null;
   currentItem: ClientQueueItem | null;
   onSkip?: () => void;
   onPiP?: () => void;
+  onFullscreen?: () => void;
 }
 
-export default function HostControls({ isHost, videoState, currentItem, onSkip, onPiP }: HostControlsProps) {
+export default function HostControls({ isHost, isHostOrMod = isHost, videoState, currentItem, onSkip, onPiP, onFullscreen }: HostControlsProps) {
   const playing = videoState?.playing ?? false;
   const currentTime = videoState?.currentTime ?? 0;
   const duration = currentItem?.duration ?? null;
@@ -59,24 +63,30 @@ export default function HostControls({ isHost, videoState, currentItem, onSkip, 
   }, [showSpeedMenu]);
 
   const handlePlayPause = useCallback(() => {
-    if (!isHost) return;
-    // Optimistically update local state so the UI responds immediately
-    const room = useRmhTubeStore.getState().room;
-    if (room) {
-      useRmhTubeStore.getState().updateVideoState({
-        ...room.videoState,
-        playing: !playing,
-        updatedAt: Date.now(),
-      });
+    if (isHostOrMod) {
+      // Optimistically update local state so the UI responds immediately
+      const room = useRmhTubeStore.getState().room;
+      if (room) {
+        useRmhTubeStore.getState().updateVideoState({
+          ...room.videoState,
+          playing: !playing,
+          updatedAt: Date.now(),
+        });
+      }
+      emit(playing ? C2S.SYNC_PAUSE : C2S.SYNC_PLAY, {});
+    } else {
+      toast.info('Only the host or moderators can control playback');
     }
-    emit(playing ? C2S.SYNC_PAUSE : C2S.SYNC_PLAY, {});
-  }, [isHost, playing]);
+  }, [isHostOrMod, playing]);
 
   const handleSkip = useCallback(() => {
-    if (!isHost) return;
-    emit(C2S.QUEUE_SKIP, {});
-    onSkip?.();
-  }, [isHost, onSkip]);
+    if (isHostOrMod) {
+      emit(C2S.QUEUE_SKIP, {});
+      onSkip?.();
+    } else {
+      toast.info('Only the host or moderators can skip');
+    }
+  }, [isHostOrMod, onSkip]);
 
   const handleMuteToggle = useCallback(() => {
     updateSettings({ muted: !muted });
@@ -92,29 +102,34 @@ export default function HostControls({ isHost, videoState, currentItem, onSkip, 
   }, [captionsEnabled, updateSettings]);
 
   const handleSpeedSelect = useCallback((speed: number) => {
-    if (!isHost) return;
+    if (!isHostOrMod) {
+      toast.info('Only the host or moderators can change speed');
+      return;
+    }
     emit(C2S.SYNC_SET_SPEED, { speed });
     setShowSpeedMenu(false);
-  }, [isHost]);
+  }, [isHostOrMod]);
 
   const handleSpeedCycle = useCallback(() => {
-    if (!isHost) return;
+    if (!isHostOrMod) return;
     const idx = PLAYBACK_SPEEDS.indexOf(currentSpeed as typeof PLAYBACK_SPEEDS[number]);
     const nextIdx = idx === -1 ? 2 : (idx + 1) % PLAYBACK_SPEEDS.length; // default to 1x then next
     emit(C2S.SYNC_SET_SPEED, { speed: PLAYBACK_SPEEDS[nextIdx] });
-  }, [isHost, currentSpeed]);
+  }, [isHostOrMod, currentSpeed]);
 
   const handlePiP = useCallback(() => {
     onPiP?.();
   }, [onPiP]);
 
   const handleFullscreenToggle = useCallback(() => {
-    if (document.fullscreenElement) {
+    if (onFullscreen) {
+      onFullscreen();
+    } else if (document.fullscreenElement) {
       document.exitFullscreen();
     } else {
       document.documentElement.requestFullscreen();
     }
-  }, []);
+  }, [onFullscreen]);
 
   if (!currentItem) return null;
 
@@ -128,15 +143,13 @@ export default function HostControls({ isHost, videoState, currentItem, onSkip, 
 
   return (
     <div className="flex items-center gap-3 px-4 py-2 border-b border-(--rmhtube-border) bg-(--rmhtube-bg-subtle)">
-      {/* Play/Pause — host only */}
-      {isHost && (
-        <button
-          onClick={handlePlayPause}
-          className="shrink-0 rounded-full p-2 transition-colors bg-(--rmhtube-accent) text-white hover:bg-(--rmhtube-accent-hover)"
-        >
-          {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-        </button>
-      )}
+      {/* Play/Pause — visible to all */}
+      <button
+        onClick={handlePlayPause}
+        className="shrink-0 rounded-full p-2 transition-colors bg-(--rmhtube-accent) text-white hover:bg-(--rmhtube-accent-hover)"
+      >
+        {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+      </button>
 
       {/* Now playing title */}
       <div className="flex-1 min-w-0">
@@ -185,21 +198,21 @@ export default function HostControls({ isHost, videoState, currentItem, onSkip, 
       {/* Playback Speed — host can change, non-host reads current speed */}
       <div className="relative shrink-0" ref={speedMenuRef}>
         <button
-          onClick={isHost ? () => setShowSpeedMenu((v) => !v) : undefined}
-          onDoubleClick={isHost ? handleSpeedCycle : undefined}
+          onClick={() => setShowSpeedMenu((v) => !v)}
+          onDoubleClick={isHostOrMod ? handleSpeedCycle : undefined}
           className={`rounded-md p-2 transition-colors flex items-center gap-1 ${
             currentSpeed !== 1
               ? 'text-(--rmhtube-accent) bg-(--rmhtube-accent-dim)'
               : 'text-(--rmhtube-text-muted) hover:text-(--rmhtube-text) hover:bg-(--rmhtube-surface-hover)'
-          } ${!isHost ? 'cursor-default' : ''}`}
-          title={isHost ? `Playback speed: ${currentSpeed}x (click to change)` : `Playback speed: ${currentSpeed}x`}
+          }`}
+          title={isHostOrMod ? `Playback speed: ${currentSpeed}x (click to change)` : `Playback speed: ${currentSpeed}x`}
         >
           <Gauge className="h-4 w-4" />
           <span className="text-xs font-medium">{currentSpeed}x</span>
         </button>
 
-        {/* Speed dropdown — host only */}
-        {isHost && showSpeedMenu && (
+        {/* Speed dropdown — visible to all, handler guards permissions */}
+        {showSpeedMenu && (
           <div className="absolute bottom-full mb-1 right-0 z-50 rounded-lg border border-(--rmhtube-border) bg-(--rmhtube-surface) shadow-lg py-1 min-w-25">
             {PLAYBACK_SPEEDS.map((speed) => (
               <button
@@ -238,16 +251,14 @@ export default function HostControls({ isHost, videoState, currentItem, onSkip, 
         {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
       </button>
 
-      {/* Skip — host only */}
-      {isHost && (
-        <button
-          onClick={handleSkip}
-          className="shrink-0 rounded-md p-2 transition-colors text-(--rmhtube-text-muted) hover:text-(--rmhtube-text) hover:bg-(--rmhtube-surface-hover)"
-          title="Skip to next"
-        >
-          <SkipForward className="h-4 w-4" />
-        </button>
-      )}
+      {/* Skip — visible to all */}
+      <button
+        onClick={handleSkip}
+        className="shrink-0 rounded-md p-2 transition-colors text-(--rmhtube-text-muted) hover:text-(--rmhtube-text) hover:bg-(--rmhtube-surface-hover)"
+        title="Skip to next"
+      >
+        <SkipForward className="h-4 w-4" />
+      </button>
     </div>
   );
 }

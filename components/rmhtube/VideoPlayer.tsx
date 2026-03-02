@@ -17,22 +17,26 @@ import { emit } from '@/lib/rmhtube/socket';
 import { C2S } from '@/lib/rmhtube/events';
 import { HOST_STATE_INTERVAL_MS, SYNC_TOLERANCE_S } from '@/lib/rmhtube/constants';
 import { detectMediaType } from '@/lib/rmhtube/utils';
+import { toast } from '@/lib/rmhtube/toast-store';
 
 const ReactPlayer = dynamic(() => import('react-player'), { ssr: false });
 
 interface VideoPlayerProps {
   url: string | null;
   isHost: boolean;
+  isHostOrMod?: boolean;
   onEnded?: () => void;
 }
 
 export interface VideoPlayerHandle {
   togglePiP: () => Promise<void>;
+  toggleFullscreen: () => Promise<void>;
 }
 
 const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
-  function VideoPlayer({ url, isHost, onEnded }, ref) {
+  function VideoPlayer({ url, isHost, isHostOrMod = isHost, onEnded }, ref) {
   const playerRef = useRef<ReactPlayerType>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const videoState = useRmhTubeStore((s) => s.room?.videoState);
   const masterVolume = useRmhTubeStore((s) => s.settings.masterVolume);
   const muted = useRmhTubeStore((s) => s.settings.muted);
@@ -89,11 +93,25 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         // PiP request may fail if user gesture is required or not supported
       }
     },
+    toggleFullscreen: async () => {
+      const el = containerRef.current;
+      if (!el) return;
+      try {
+        if (document.fullscreenElement === el) {
+          await document.exitFullscreen();
+        } else {
+          await el.requestFullscreen();
+        }
+      } catch {
+        // Fullscreen may not be available
+      }
+    },
   }), []);
 
   // ─── Host: Periodic state report ──────────────────────────────
 
   useEffect(() => {
+    // Only host reports periodic state (moderators control via explicit actions only)
     if (!isHost || !url) return;
 
     const interval = setInterval(() => {
@@ -145,7 +163,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
   // ─── Host: Emit play/pause/seek ──────────────────────────────
 
   const handlePlay = useCallback(() => {
-    if (isHost) {
+    if (isHostOrMod) {
       // Update local state immediately so the controlled `playing` prop
       // doesn't fight the user's click (server only broadcasts to others)
       const room = useRmhTubeStore.getState().room;
@@ -157,11 +175,19 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         });
       }
       emit(C2S.SYNC_PLAY, {});
+    } else {
+      // Snap non-privileged users back to the live state
+      const vs = useRmhTubeStore.getState().room?.videoState;
+      if (vs && !vs.playing) {
+        toast.info('Only the host or moderators can control playback');
+        // Force the player back to paused by re-applying the store state
+        useRmhTubeStore.getState().updateVideoState({ ...vs, updatedAt: Date.now() });
+      }
     }
-  }, [isHost]);
+  }, [isHostOrMod]);
 
   const handlePause = useCallback(() => {
-    if (isHost) {
+    if (isHostOrMod) {
       const room = useRmhTubeStore.getState().room;
       if (room) {
         useRmhTubeStore.getState().updateVideoState({
@@ -171,14 +197,29 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         });
       }
       emit(C2S.SYNC_PAUSE, {});
+    } else {
+      // Snap non-privileged users back to the live state
+      const vs = useRmhTubeStore.getState().room?.videoState;
+      if (vs && vs.playing) {
+        toast.info('Only the host or moderators can control playback');
+        useRmhTubeStore.getState().updateVideoState({ ...vs, updatedAt: Date.now() });
+      }
     }
-  }, [isHost]);
+  }, [isHostOrMod]);
 
   const handleSeek = useCallback((seconds: number) => {
-    if (isHost) {
+    if (isHostOrMod) {
       emit(C2S.SYNC_SEEK, { time: seconds });
+    } else {
+      // Snap non-privileged users back to the synced position
+      const vs = useRmhTubeStore.getState().room?.videoState;
+      if (vs) {
+        toast.info('Only the host or moderators can control playback');
+        const player = playerRef.current;
+        if (player) player.seekTo(vs.currentTime, 'seconds');
+      }
     }
-  }, [isHost]);
+  }, [isHostOrMod]);
 
   // ─── Captions: Toggle via YouTube internal player API ────────
   useEffect(() => {
@@ -198,7 +239,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
 
   // ─── Sync native player volume/captions back to store ─────────
   useEffect(() => {
-    if (!ready || !url || !isHost) return;
+    if (!ready || !url) return;
     const internal = playerRef.current?.getInternalPlayer();
     if (!internal) return;
 
@@ -291,7 +332,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     }
 
     return () => cleanups.forEach(fn => fn());
-  }, [ready, url, isHost, updateSettings]);
+  }, [ready, url, updateSettings]);
 
   const handleReady = useCallback(() => {
     setReady(true);
@@ -315,13 +356,13 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
   }
 
   return (
-    <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-black">
+    <div ref={containerRef} className="relative w-full aspect-video rounded-xl overflow-hidden bg-black">
       <ReactPlayer
         ref={playerRef}
         url={url}
         playing={videoState?.playing ?? false}
         playbackRate={videoState?.playbackRate ?? 1}
-        controls={isHost}
+        controls
         volume={playerVolume}
         muted={playerMuted}
         width="100%"
@@ -341,10 +382,6 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
           },
         }}
       />
-      {/* Non-host overlay to prevent accidental player interaction */}
-      {!isHost && (
-        <div className="absolute inset-0" style={{ pointerEvents: 'auto' }} />
-      )}
     </div>
   );
 });

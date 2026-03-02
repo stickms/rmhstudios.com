@@ -168,8 +168,8 @@ export class MediaQueue {
   private reorderQueue(socket: Socket, payload: { itemId: string; newPosition: number }): void {
     const userId = socket.data.userId as string;
     const room = this.roomManager.getRoomForUser(userId);
-    if (!room || room.hostUserId !== userId) {
-      socket.emit(S2C.ERROR, { code: 'NOT_HOST', message: 'Only the host can reorder the queue.' });
+    if (!room || !this.isHostOrMod(room, userId)) {
+      socket.emit(S2C.ERROR, { code: 'NOT_HOST', message: 'Only the host or moderators can reorder the queue.' });
       return;
     }
 
@@ -208,8 +208,8 @@ export class MediaQueue {
   private playItem(socket: Socket, payload: { itemId: string }): void {
     const userId = socket.data.userId as string;
     const room = this.roomManager.getRoomForUser(userId);
-    if (!room || room.hostUserId !== userId) {
-      socket.emit(S2C.ERROR, { code: 'NOT_HOST', message: 'Only the host can select a video.' });
+    if (!room || !this.isHostOrMod(room, userId)) {
+      socket.emit(S2C.ERROR, { code: 'NOT_HOST', message: 'Only the host or moderators can select a video.' });
       return;
     }
 
@@ -224,8 +224,8 @@ export class MediaQueue {
   private skipCurrent(socket: Socket): void {
     const userId = socket.data.userId as string;
     const room = this.roomManager.getRoomForUser(userId);
-    if (!room || room.hostUserId !== userId) {
-      socket.emit(S2C.ERROR, { code: 'NOT_HOST', message: 'Only the host can skip.' });
+    if (!room || !this.isHostOrMod(room, userId)) {
+      socket.emit(S2C.ERROR, { code: 'NOT_HOST', message: 'Only the host or moderators can skip.' });
       return;
     }
 
