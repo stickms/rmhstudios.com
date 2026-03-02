@@ -105,34 +105,37 @@ export function NewsHero({ articles }: NewsHeroProps) {
             {/* Navigation */}
             {articles.length > 1 && (
                 <>
-                    <button
-                        onClick={scrollPrev}
-                        className="absolute left-3 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-(--site-surface)/80 border border-(--site-border) text-(--site-text) hover:bg-(--site-accent) hover:border-(--site-accent) hover:text-white transition-all backdrop-blur-md"
-                        aria-label="Previous featured article"
-                    >
-                        <ChevronLeft className="w-5 h-5" />
-                    </button>
-                    <button
-                        onClick={scrollNext}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-(--site-surface)/80 border border-(--site-border) text-(--site-text) hover:bg-(--site-accent) hover:border-(--site-accent) hover:text-white transition-all backdrop-blur-md"
-                        aria-label="Next featured article"
-                    >
-                        <ChevronRight className="w-5 h-5" />
-                    </button>
+                    {/* Arrows + Dots */}
+                    <div className="flex justify-center items-center gap-3 mt-4">
+                        <button
+                            onClick={scrollPrev}
+                            className="p-1.5 rounded-full bg-(--site-surface)/80 border border-(--site-border) text-(--site-text) hover:bg-(--site-accent) hover:border-(--site-accent) hover:text-white transition-all backdrop-blur-md"
+                            aria-label="Previous featured article"
+                        >
+                            <ChevronLeft className="w-4 h-4" />
+                        </button>
 
-                    {/* Dots */}
-                    <div className="flex justify-center gap-2 mt-4">
-                        {scrollSnaps.map((_, index) => (
-                            <button
-                                key={index}
-                                onClick={() => scrollTo(index)}
-                                className={`h-1.5 rounded-full transition-all duration-300 ${index === selectedIndex
-                                        ? 'w-8 bg-(--site-accent)'
-                                        : 'w-1.5 bg-(--site-border) hover:bg-(--site-text-dim)'
-                                    }`}
-                                aria-label={`Go to featured article ${index + 1}`}
-                            />
-                        ))}
+                        <div className="flex items-center gap-2">
+                            {scrollSnaps.map((_, index) => (
+                                <button
+                                    key={index}
+                                    onClick={() => scrollTo(index)}
+                                    className={`h-1.5 rounded-full transition-all duration-300 ${index === selectedIndex
+                                            ? 'w-8 bg-(--site-accent)'
+                                            : 'w-1.5 bg-(--site-border) hover:bg-(--site-text-dim)'
+                                        }`}
+                                    aria-label={`Go to featured article ${index + 1}`}
+                                />
+                            ))}
+                        </div>
+
+                        <button
+                            onClick={scrollNext}
+                            className="p-1.5 rounded-full bg-(--site-surface)/80 border border-(--site-border) text-(--site-text) hover:bg-(--site-accent) hover:border-(--site-accent) hover:text-white transition-all backdrop-blur-md"
+                            aria-label="Next featured article"
+                        >
+                            <ChevronRight className="w-4 h-4" />
+                        </button>
                     </div>
                 </>
             )}
