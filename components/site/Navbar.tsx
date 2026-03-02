@@ -144,7 +144,7 @@ export function Navbar() {
             </div>
 
             {/* Auth */}
-            {(!mounted || isPending) ? (
+            {isPending ? (
               <div className="h-8 w-20 bg-site-surface rounded-lg animate-pulse" />
             ) : session ? (
               <div className="relative">
@@ -255,7 +255,7 @@ export function Navbar() {
 
           {/* Mobile Auth */}
           <div className="pt-4 pb-4 border-t border-site-border">
-            {(!mounted || isPending) ? (
+            {isPending ? (
               <div className="px-4"><div className="h-10 w-full bg-site-surface rounded-lg animate-pulse" /></div>
             ) : session ? (
               <div className="px-4 space-y-3">

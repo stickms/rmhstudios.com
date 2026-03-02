@@ -4,13 +4,36 @@ import { motion } from 'framer-motion';
 import { useGameStore } from '@/lib/versecraft/store';
 import { CHARACTERS, getCharacterFirstName } from '@/lib/versecraft/characters';
 import { formatPlaytime } from '@/lib/versecraft/persistence';
-import { CHAPTER_1 } from '@/lib/versecraft/chapters/ch01';
+import { getChapterEntry, getNextChapterId } from '@/lib/versecraft/chapters/registry';
+import { ALL_CHAPTERS } from '@/lib/versecraft/progress';
 
 export function ChapterSummary() {
-  const { affinity, poemHistory, totalPoemsWritten, playtime, settings, setScreen } = useGameStore();
+  const {
+    currentChapter, affinity, poemHistory, totalPoemsWritten,
+    playtime, settings, setScreen, completeChapter, advanceToNextChapter,
+  } = useGameStore();
+
+  // Look up chapter data from registry
+  const chapterEntry = getChapterEntry(currentChapter);
+  const chapterTitle = chapterEntry?.data.title
+    ?? ALL_CHAPTERS.find(c => c.id === currentChapter)?.title
+    ?? 'Unknown Chapter';
+
+  const nextChapterId = getNextChapterId(currentChapter);
+  const hasNextChapter = !!nextChapterId;
 
   // Get the latest poems from this chapter
-  const chapterPoems = poemHistory.filter(p => p.chapter === 'ch01');
+  const chapterPoems = poemHistory.filter(p => p.chapter === currentChapter);
+
+  const handleNextChapter = () => {
+    completeChapter();
+    advanceToNextChapter();
+  };
+
+  const handleMainMenu = () => {
+    completeChapter();
+    setScreen('menu');
+  };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4 md:p-6">
@@ -33,7 +56,7 @@ export function ChapterSummary() {
           className="text-center text-sm mb-6 italic"
           style={{ color: '#a89888', fontFamily: 'var(--font-playfair, serif)' }}
         >
-          {CHAPTER_1.title}
+          {chapterTitle}
         </p>
 
         {/* Stats */}
@@ -93,16 +116,41 @@ export function ChapterSummary() {
         {/* Actions */}
         <div className="flex gap-3 justify-center">
           <button
-            onClick={() => setScreen('menu')}
-            className="px-6 py-2.5 rounded text-sm font-semibold transition-all"
+            onClick={handleMainMenu}
+            className="px-6 py-2.5 rounded text-sm font-semibold transition-all hover:brightness-125"
             style={{
-              backgroundColor: 'rgba(196, 163, 90, 0.25)',
-              border: '1px solid rgba(196, 163, 90, 0.5)',
-              color: '#c4a35a',
+              backgroundColor: 'rgba(196, 163, 90, 0.15)',
+              border: '1px solid rgba(196, 163, 90, 0.3)',
+              color: '#a89888',
             }}
           >
             Main Menu
           </button>
+          {hasNextChapter ? (
+            <button
+              onClick={handleNextChapter}
+              className="px-6 py-2.5 rounded text-sm font-semibold transition-all hover:brightness-125"
+              style={{
+                backgroundColor: 'rgba(196, 163, 90, 0.25)',
+                border: '1px solid rgba(196, 163, 90, 0.5)',
+                color: '#c4a35a',
+              }}
+            >
+              Next Chapter
+            </button>
+          ) : (
+            <button
+              disabled
+              className="px-6 py-2.5 rounded text-sm font-semibold cursor-not-allowed opacity-50"
+              style={{
+                backgroundColor: 'rgba(196, 163, 90, 0.1)',
+                border: '1px solid rgba(196, 163, 90, 0.15)',
+                color: '#a89888',
+              }}
+            >
+              Coming Soon
+            </button>
+          )}
         </div>
       </motion.div>
     </div>

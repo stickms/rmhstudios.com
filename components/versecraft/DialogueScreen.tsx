@@ -5,10 +5,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '@/lib/versecraft/store';
 import Image from 'next/image';
 import { CHARACTERS, getCharacterFirstName } from '@/lib/versecraft/characters';
-import { CHAPTER_1, CH01_PUZZLE, CH01_POST_PUZZLE_SCENES } from '@/lib/versecraft/chapters/ch01';
+import { getChapterEntry } from '@/lib/versecraft/chapters/registry';
 import { getWordPool } from '@/lib/versecraft/words';
 import { getSpritePath } from '@/lib/versecraft/sprites';
-import type { DialogueNode, Scene } from '@/lib/versecraft/types';
+import type { DialogueNode, Scene, WordSelectPuzzleData } from '@/lib/versecraft/types';
 
 // Background image presets (Sutemo VN backgrounds)
 const BG_BASE = '/sprites/versecraft/backgrounds';
@@ -160,7 +160,7 @@ function CharacterSprite({ characterId, expression, position, isSpeaking, sprite
 
 export function DialogueScreen() {
   const {
-    currentSceneIndex, currentDialogueIndex, settings,
+    currentChapter, currentSceneIndex, currentDialogueIndex, settings,
     setScreen, advanceDialogue, applyChoiceEffects,
     setSceneIndex, startPuzzle,
   } = useGameStore();
@@ -183,11 +183,22 @@ export function DialogueScreen() {
     return () => observer.disconnect();
   }, []);
 
+  // Load chapter data from registry based on currentChapter
+  const chapterEntry = useMemo(() => getChapterEntry(currentChapter), [currentChapter]);
+
   // Get all scenes in order (main scenes + post-puzzle scenes)
-  const allScenes = useMemo(() => [
-    ...CHAPTER_1.scenes,
-    ...CH01_POST_PUZZLE_SCENES,
-  ], []);
+  const allScenes = useMemo(() => {
+    if (!chapterEntry) return [];
+    return [
+      ...chapterEntry.data.scenes,
+      ...chapterEntry.postPuzzleScenes,
+    ];
+  }, [chapterEntry]);
+
+  // The scene index where the puzzle should trigger (end of main scenes)
+  const puzzleTriggerIndex = chapterEntry
+    ? chapterEntry.data.scenes.length - 1
+    : -1;
 
   const currentScene = allScenes[currentSceneIndex] as Scene | undefined;
   const currentNode = currentScene?.dialogueNodes[currentDialogueIndex] as DialogueNode | undefined;
@@ -223,14 +234,22 @@ export function DialogueScreen() {
     } else {
       // Move to next scene
       const nextSceneIdx = currentSceneIndex + 1;
-      // Check if we need to trigger a puzzle (after scene 4 = index 3)
-      if (currentSceneIndex === 3) {
-        // Trigger the WordSelect puzzle
-        const pool = getWordPool(50, ['night', 'flowers', 'solitude', 'warmth', 'light']);
-        const puzzle = { ...CH01_PUZZLE, wordPool: pool };
-        startPuzzle(puzzle);
+
+      // Check if we need to trigger a puzzle (after the last main scene)
+      if (chapterEntry?.puzzle && currentSceneIndex === puzzleTriggerIndex) {
+        const puzzle = chapterEntry.puzzle;
+        if ('requiredWordCount' in puzzle) {
+          // WordSelect puzzle — populate word pool
+          const categories = chapterEntry.puzzleCategories ?? [];
+          const pool = getWordPool(50, categories);
+          startPuzzle({ ...(puzzle as WordSelectPuzzleData), wordPool: pool });
+        } else {
+          // LineArrange puzzle
+          startPuzzle(puzzle);
+        }
         return;
       }
+
       if (nextSceneIdx < allScenes.length) {
         setSceneIndex(nextSceneIdx);
         setTextComplete(false);
@@ -239,7 +258,7 @@ export function DialogueScreen() {
         setScreen('summary');
       }
     }
-  }, [currentScene, currentNode, currentDialogueIndex, currentSceneIndex, textComplete, advanceDialogue, setSceneIndex, allScenes.length, setScreen, startPuzzle]);
+  }, [currentScene, currentNode, currentDialogueIndex, currentSceneIndex, textComplete, advanceDialogue, setSceneIndex, allScenes.length, setScreen, startPuzzle, chapterEntry, puzzleTriggerIndex]);
 
   const handleChoice = useCallback((choiceIndex: number) => {
     if (!currentNode?.choices) return;

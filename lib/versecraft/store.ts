@@ -8,6 +8,7 @@ import type {
 } from './types';
 import { CHARACTERS, getAffinityLevel } from './characters';
 import { autoSave, loadGame, saveGame as persistSave, dbSave, dbLoad } from './persistence';
+import { getChapterEntry, getNextChapterId } from './chapters/registry';
 
 function createInitialAffinity(): Record<string, CharacterAffinity> {
   const affinity: Record<string, CharacterAffinity> = {};
@@ -101,6 +102,10 @@ interface GameActions {
   setArrangedLineIds: (ids: string[]) => void;
   submitPoem: (score: PoemScore, words: string[], text: string, puzzleType: 'word_select' | 'line_arrange') => void;
   closePoemPresentation: () => void;
+
+  // Chapter progression
+  completeChapter: () => void;
+  advanceToNextChapter: () => boolean;
 
   // Affinity
   updateAffinity: (characterId: string, change: number) => void;
@@ -305,6 +310,39 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
     currentSceneIndex: s.currentSceneIndex + 1,
     currentDialogueIndex: 0,
   })),
+
+  // Chapter progression
+  completeChapter: () => {
+    set(s => {
+      const completed = s.completedChapters.includes(s.currentChapter)
+        ? s.completedChapters
+        : [...s.completedChapters, s.currentChapter];
+      return { completedChapters: completed };
+    });
+    // Persist completion
+    const state = get();
+    autoSave(state);
+    if (state.isLoggedIn) dbSave(state);
+  },
+
+  advanceToNextChapter: () => {
+    const state = get();
+    const nextId = getNextChapterId(state.currentChapter);
+    if (!nextId || !getChapterEntry(nextId)) return false;
+    set({
+      currentChapter: nextId,
+      currentSceneIndex: 0,
+      currentDialogueIndex: 0,
+      currentPuzzle: null,
+      currentPoemScore: null,
+      screen: 'dialogue',
+    });
+    // Auto-save the new chapter start
+    const newState = get();
+    autoSave(newState);
+    debouncedDbSave(get);
+    return true;
+  },
 
   // Affinity
   updateAffinity: (characterId, change) => set(s => {

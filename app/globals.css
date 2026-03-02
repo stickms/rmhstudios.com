@@ -2193,6 +2193,7 @@
 html {
   scroll-behavior: smooth;
   overflow-y: auto;
+  scrollbar-gutter: stable;
   min-height: 100%;
   background-color: var(--site-bg);
 }

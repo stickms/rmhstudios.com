@@ -108,7 +108,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
           );
         })}
         {/* Dynamic Profile link (shown when logged in) */}
-        {mounted && session && (
+        {session && (
           <Link
             href={`/profile/${session.user.id}`}
             className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${itemJustifyClass} ${
@@ -182,7 +182,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
 
       {/* Auth Section */}
       <div className="mt-3 border-t border-site-border pt-3">
-        {(!mounted || isPending) ? (
+        {isPending ? (
           <div className="h-10 bg-site-surface rounded-xl animate-pulse" />
         ) : session ? (
           <div className="flex flex-col gap-2">
@@ -221,7 +221,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
       </div>
 
       {/* Post CTA */}
-      {mounted && session && (
+      {session && (
         <>
           <Button
             variant="accent"
