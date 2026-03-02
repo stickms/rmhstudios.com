@@ -111,4 +111,20 @@ export const apps: AppInfo[] = [
         imagePath: '/images/games/rmhstudy.png',
         authGate: true,
     },
+    {
+        id: 'rmhstudio',
+        title: 'RMHStudio',
+        description: 'A browser-based digital audio workstation for music production.',
+        longDescription:
+            'RMHStudio is a browser-based DAW inspired by FL Studio. Create beats with the step sequencer, synthesize drum sounds, mix with volume faders and pan knobs, and save projects locally. All powered by the Web Audio API.',
+        href: '/rmhstudio',
+        status: 'Alpha',
+        cta: 'Open Studio',
+        isSteam: false,
+        gradient: 'from-violet-500 via-purple-500 to-indigo-600',
+        iconName: 'Music',
+        color: 'from-violet-500/20 to-indigo-600/20 hover:border-violet-500/50',
+        tags: ['DAW', 'Music', 'Production', 'Alpha'],
+        authGate: true,
+    },
 ];

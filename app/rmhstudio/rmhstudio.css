@@ -1,0 +1,467 @@
+/**
+ * RMHStudio — Dedicated Theme Stylesheet
+ *
+ * Deep dark theme with purple/violet accent for music production.
+ */
+
+/* ─── Dark Theme (default) ──────────────────────────────────────── */
+
+.rmhstudio-theme {
+  --rstudio-bg: #0c0d14;
+  --rstudio-bg-subtle: #111219;
+  --rstudio-surface: #181a24;
+  --rstudio-surface-hover: #1f2230;
+  --rstudio-surface-active: #262a3a;
+  --rstudio-border: #262a3a;
+  --rstudio-border-bright: #363b52;
+  --rstudio-text: #e4e4ec;
+  --rstudio-text-muted: #8888a4;
+  --rstudio-text-dim: #55566e;
+  --rstudio-accent: #9b7ad8;
+  --rstudio-accent-hover: #b08ee8;
+  --rstudio-accent-dim: rgba(155, 122, 216, 0.12);
+  --rstudio-success: #5cc98a;
+  --rstudio-success-dim: rgba(92, 201, 138, 0.12);
+  --rstudio-danger: #e06070;
+  --rstudio-danger-dim: rgba(224, 96, 112, 0.12);
+  --rstudio-warning: #d9b84e;
+  --rstudio-warning-dim: rgba(217, 184, 78, 0.12);
+  --rstudio-info: #5aafe6;
+  --rstudio-info-dim: rgba(90, 175, 230, 0.12);
+  --rstudio-font-display: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --rstudio-font-body: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --rstudio-font-mono: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', monospace;
+  --rstudio-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+  --rstudio-radius: 10px;
+  --rstudio-radius-sm: 6px;
+}
+
+/* ─── Base Styles ───────────────────────────────────────────────── */
+
+.rmhstudio-theme {
+  background-color: var(--rstudio-bg);
+  color: var(--rstudio-text);
+  font-family: var(--rstudio-font-body);
+  min-height: 100vh;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ─── Scrollbar ─────────────────────────────────────────────────── */
+
+.rmhstudio-theme ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.rmhstudio-theme ::-webkit-scrollbar-track {
+  background: var(--rstudio-bg-subtle);
+}
+
+.rmhstudio-theme ::-webkit-scrollbar-thumb {
+  background: var(--rstudio-border-bright);
+  border-radius: 3px;
+}
+
+.rmhstudio-theme ::-webkit-scrollbar-thumb:hover {
+  background: var(--rstudio-accent);
+}
+
+.rmhstudio-theme {
+  scrollbar-width: thin;
+  scrollbar-color: var(--rstudio-border-bright) var(--rstudio-bg-subtle);
+}
+
+/* ─── Selection ─────────────────────────────────────────────────── */
+
+.rmhstudio-theme ::selection {
+  background: var(--rstudio-accent);
+  color: #ffffff;
+}
+
+/* ─── Focus ─────────────────────────────────────────────────────── */
+
+.rmhstudio-theme :focus-visible {
+  outline: 2px solid var(--rstudio-accent);
+  outline-offset: 2px;
+}
+
+/* ─── Buttons ───────────────────────────────────────────────────── */
+
+.rmhstudio-theme button:not(:disabled) {
+  cursor: pointer;
+}
+
+/* ─── Transport Bar ─────────────────────────────────────────────── */
+
+.rstudio-transport {
+  background: var(--rstudio-surface);
+  border-bottom: 1px solid var(--rstudio-border);
+  height: 48px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  gap: 8px;
+  z-index: 50;
+}
+
+.rstudio-transport-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--rstudio-radius-sm);
+  border: none;
+  background: transparent;
+  color: var(--rstudio-text-muted);
+  transition: all 0.15s ease;
+}
+
+.rstudio-transport-btn:hover {
+  background: var(--rstudio-surface-hover);
+  color: var(--rstudio-text);
+}
+
+.rstudio-transport-btn.active {
+  background: var(--rstudio-accent-dim);
+  color: var(--rstudio-accent);
+}
+
+.rstudio-transport-btn.playing {
+  color: var(--rstudio-success);
+}
+
+/* ─── BPM Control ───────────────────────────────────────────────── */
+
+.rstudio-bpm {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--rstudio-bg);
+  border: 1px solid var(--rstudio-border);
+  border-radius: var(--rstudio-radius-sm);
+  padding: 2px 8px;
+  font-family: var(--rstudio-font-mono);
+  font-size: 13px;
+  color: var(--rstudio-text);
+  min-width: 80px;
+  height: 32px;
+}
+
+.rstudio-bpm input {
+  background: transparent;
+  border: none;
+  color: var(--rstudio-text);
+  font-family: inherit;
+  font-size: inherit;
+  width: 48px;
+  text-align: center;
+  outline: none;
+}
+
+/* ─── Step Sequencer ────────────────────────────────────────────── */
+
+.rstudio-sequencer {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.rstudio-sequencer-canvas {
+  flex: 1;
+  display: block;
+  image-rendering: pixelated;
+}
+
+/* ─── Channel Rack ──────────────────────────────────────────────── */
+
+.rstudio-channel-rack {
+  width: 180px;
+  min-width: 180px;
+  background: var(--rstudio-surface);
+  border-right: 1px solid var(--rstudio-border);
+  overflow-y: auto;
+}
+
+.rstudio-channel-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px;
+  height: 32px;
+  border-bottom: 1px solid var(--rstudio-border);
+  font-size: 12px;
+  color: var(--rstudio-text-muted);
+  transition: background 0.1s ease;
+  cursor: pointer;
+}
+
+.rstudio-channel-item:hover {
+  background: var(--rstudio-surface-hover);
+}
+
+.rstudio-channel-item.selected {
+  background: var(--rstudio-surface-active);
+  color: var(--rstudio-text);
+}
+
+.rstudio-channel-color {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.rstudio-channel-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rstudio-channel-btn {
+  width: 20px;
+  height: 20px;
+  border-radius: 3px;
+  border: none;
+  background: transparent;
+  color: var(--rstudio-text-dim);
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.1s ease;
+}
+
+.rstudio-channel-btn:hover {
+  background: var(--rstudio-surface-hover);
+  color: var(--rstudio-text);
+}
+
+.rstudio-channel-btn.muted {
+  color: var(--rstudio-danger);
+}
+
+.rstudio-channel-btn.soloed {
+  color: var(--rstudio-warning);
+}
+
+/* ─── Mixer ─────────────────────────────────────────────────────── */
+
+.rstudio-mixer {
+  display: flex;
+  gap: 2px;
+  padding: 16px;
+  overflow-x: auto;
+  flex: 1;
+  align-items: flex-end;
+}
+
+.rstudio-mixer-strip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  background: var(--rstudio-surface);
+  border: 1px solid var(--rstudio-border);
+  border-radius: var(--rstudio-radius);
+  padding: 12px 8px;
+  width: 72px;
+  min-width: 72px;
+}
+
+.rstudio-mixer-strip.master {
+  background: var(--rstudio-surface-active);
+  border-color: var(--rstudio-accent-dim);
+  width: 88px;
+  min-width: 88px;
+}
+
+.rstudio-mixer-label {
+  font-size: 10px;
+  color: var(--rstudio-text-muted);
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+}
+
+/* ─── Fader ─────────────────────────────────────────────────────── */
+
+.rstudio-fader {
+  position: relative;
+  width: 28px;
+  height: 140px;
+  background: var(--rstudio-bg);
+  border: 1px solid var(--rstudio-border);
+  border-radius: 4px;
+  cursor: ns-resize;
+}
+
+.rstudio-fader-fill {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--rstudio-accent-dim);
+  border-radius: 0 0 3px 3px;
+  pointer-events: none;
+}
+
+.rstudio-fader-thumb {
+  position: absolute;
+  left: -2px;
+  right: -2px;
+  height: 6px;
+  background: var(--rstudio-accent);
+  border-radius: 3px;
+  pointer-events: none;
+}
+
+/* ─── VU Meter ──────────────────────────────────────────────────── */
+
+.rstudio-vu {
+  width: 8px;
+  height: 140px;
+  background: var(--rstudio-bg);
+  border: 1px solid var(--rstudio-border);
+  border-radius: 2px;
+  position: relative;
+  overflow: hidden;
+}
+
+.rstudio-vu-fill {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  transition: height 0.06s linear;
+}
+
+/* ─── View Tabs ─────────────────────────────────────────────────── */
+
+.rstudio-view-tab {
+  padding: 4px 12px;
+  border-radius: var(--rstudio-radius-sm);
+  border: none;
+  background: transparent;
+  color: var(--rstudio-text-muted);
+  font-size: 12px;
+  font-family: var(--rstudio-font-body);
+  transition: all 0.15s ease;
+}
+
+.rstudio-view-tab:hover {
+  background: var(--rstudio-surface-hover);
+  color: var(--rstudio-text);
+}
+
+.rstudio-view-tab.active {
+  background: var(--rstudio-accent-dim);
+  color: var(--rstudio-accent);
+}
+
+/* ─── Divider ───────────────────────────────────────────────────── */
+
+.rstudio-divider {
+  width: 1px;
+  height: 24px;
+  background: var(--rstudio-border);
+  margin: 0 4px;
+}
+
+/* ─── Project Dialog ────────────────────────────────────────────── */
+
+.rstudio-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rstudio-dialog {
+  background: var(--rstudio-surface);
+  border: 1px solid var(--rstudio-border);
+  border-radius: var(--rstudio-radius);
+  padding: 24px;
+  width: 480px;
+  max-width: 90vw;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: var(--rstudio-shadow);
+}
+
+.rstudio-dialog h2 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: var(--rstudio-text);
+}
+
+.rstudio-dialog-btn {
+  padding: 6px 16px;
+  border-radius: var(--rstudio-radius-sm);
+  border: 1px solid var(--rstudio-border);
+  background: var(--rstudio-surface-hover);
+  color: var(--rstudio-text);
+  font-size: 13px;
+  font-family: var(--rstudio-font-body);
+  transition: all 0.15s ease;
+}
+
+.rstudio-dialog-btn:hover {
+  background: var(--rstudio-surface-active);
+}
+
+.rstudio-dialog-btn.primary {
+  background: var(--rstudio-accent);
+  border-color: var(--rstudio-accent);
+  color: #fff;
+}
+
+.rstudio-dialog-btn.primary:hover {
+  background: var(--rstudio-accent-hover);
+}
+
+.rstudio-dialog-btn.danger {
+  color: var(--rstudio-danger);
+  border-color: var(--rstudio-danger-dim);
+}
+
+.rstudio-dialog-btn.danger:hover {
+  background: var(--rstudio-danger-dim);
+}
+
+.rstudio-project-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.rstudio-project-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: var(--rstudio-radius-sm);
+  background: var(--rstudio-bg);
+  border: 1px solid var(--rstudio-border);
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+
+.rstudio-project-item:hover {
+  border-color: var(--rstudio-accent);
+  background: var(--rstudio-surface-hover);
+}
+
+.rstudio-project-meta {
+  font-size: 11px;
+  color: var(--rstudio-text-dim);
+}
