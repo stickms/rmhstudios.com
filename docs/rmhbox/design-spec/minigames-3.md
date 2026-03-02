@@ -1,8 +1,8 @@
 # RMHbox — Minigame Design Specifications (Part 3)
 
 > **Version:** 1.0  
-> **Last Updated:** 2026-02-22  
-> **Status:** Draft  
+> **Last Updated:** 2026-03-02  
+> **Status:** Implemented (Sequence Sam, Human Keyboard) / Draft (Cursor Curling, Human Tetris)  
 > **Games Covered:** Sequence Sam, Human Keyboard, Cursor Curling, Human Tetris  
 > **Parent Document:** [design-spec-core.md](./design-spec-core.md)
 
@@ -51,17 +51,17 @@ The game consists of escalating rounds until all players are eliminated or `SS_M
 | Phase | Duration | Description |
 |---|---|---|
 | Pattern Display | Variable (depends on sequence length) | Grid tiles flash in sequence |
-| Input Phase | Variable (sequence length × `SS_INPUT_TIME_PER_STEP`) | Players repeat the pattern |
+| Input Phase | Variable (sequence length × `SS_INPUT_TIME_PER_STEP_MS`) | Players repeat the pattern |
 | Round Results | 2s | Show who got it right/wrong, eliminations |
 | Next Round Transition | 1s | Grid resets, next pattern prepares |
 
 **Pattern display timing:**
-- Each tile lights up for `SS_TILE_FLASH_DURATION` (default: **500ms**).
-- Gap between flashes: `SS_TILE_GAP` (default: **200ms**).
+- Each tile lights up for `SS_TILE_FLASH_DURATION_MS` (default: **500ms**).
+- Gap between flashes: `SS_TILE_GAP_MS` (default: **200ms**).
 - Total display time for a sequence of length N: `N × (500 + 200)` = `N × 700ms`.
 
 **Input phase timing:**
-- Players have `SS_INPUT_TIME_PER_STEP` (default: **1500ms**) per step in the sequence.
+- Players have `SS_INPUT_TIME_PER_STEP_MS` (default: **1500ms**) per step in the sequence.
 - Total input time for sequence length N: `N × 1500ms`.
 - A countdown timer is visible during input.
 
@@ -129,12 +129,12 @@ As the player clicks tiles:
 
 | Event | Points |
 |---|---|
-| Surviving a round | `SS_SURVIVE` (default: **50**) |
+| Surviving a round | `SS_SURVIVE_POINTS` (default: **50**) |
 | Perfect round (no wrong taps before correct completion) | `SS_PERFECT_ROUND_BONUS` (default: **25** bonus) |
 | Surviving a Chaos Round | `SS_CHAOS_SURVIVE_BONUS` (default: **50** bonus, on top of base survive) |
-| Speed bonus | `SS_SPEED_BONUS_PER` (default: **0.05** per ms under the time limit) |
+| Speed bonus | `SS_SPEED_BONUS_PER_MS` (default: **0.05** per ms under the time limit) |
 | Last player standing | `SS_WINNER_BONUS` (default: **200**) |
-| Elimination placement bonus | `SS_PLACEMENT` × (totalPlayers − rank + 1) (default: **20** × placement) |
+| Elimination placement bonus | `SS_PLACEMENT_POINTS` × (totalPlayers − rank + 1) (default: **20** × placement) |
 
 ### 1.4 Server-Side State Schema
 
@@ -300,7 +300,15 @@ Same as player but with additional data: each player's current `inputIndex` and 
 
 The sequence is cumulative and grows each round. A player joining in round 5 has no context for the first 4 steps and would be at a severe disadvantage. They spectate until the next game session.
 
+### 1.7A Spectator Mode
+
+**Mode:** `shared-privileged`
+
+Spectators see an omniscient view with all players' input progress (`currentInputIndex`, completion/failure status). Individual player input progress is hidden between players during the INPUT phase, but spectators can observe every player's taps in real-time. This creates dramatic tension as spectators watch multiple players racing through the sequence simultaneously.
+
 ### 1.8 Reconnection Behavior
+
+State snapshot delivery for reconnection is handled centrally by `ReconnectionHandler.attemptReconnect()` using `buildReconnectionSnapshot()` from the base class, NOT by direct sends in `handlePlayerReconnect()`. The `handlePlayerReconnect()` method should only contain logging and game-specific side effects (e.g., logging the reconnection event).
 
 On reconnect:
 1. If the pattern is still being displayed, the player re-sees the pattern from the current step onward (they miss earlier steps — this is a natural penalty for disconnecting).
@@ -367,18 +375,18 @@ export const SS_STARTING_LENGTH = 3;
 export const SS_MAX_STRIKES = 3;
 export const SS_CHAOS_INTERVAL = 4;              // every 4th round
 
-export const SS_TILE_FLASH_DURATION = 500;
-export const SS_TILE_GAP = 200;
-export const SS_INPUT_TIME_PER_STEP = 1500;
-export const SS_ROUND_RESULTS = 2;
-export const SS_TRANSITION = 1;
+export const SS_TILE_FLASH_DURATION_MS = 500;
+export const SS_TILE_GAP_MS = 200;
+export const SS_INPUT_TIME_PER_STEP_MS = 1500;
+export const SS_ROUND_RESULTS_SECONDS = 2;
+export const SS_TRANSITION_SECONDS = 1;
 
-export const SS_SURVIVE = 50;
+export const SS_SURVIVE_POINTS = 50;
 export const SS_PERFECT_ROUND_BONUS = 25;
 export const SS_CHAOS_SURVIVE_BONUS = 50;
-export const SS_SPEED_BONUS_PER = 0.05;
+export const SS_SPEED_BONUS_PER_MS = 0.05;
 export const SS_WINNER_BONUS = 200;
-export const SS_PLACEMENT = 20;
+export const SS_PLACEMENT_POINTS = 20;
 
 export const SS_GRID_SIZE = 9;                   // 3×3
 export const SS_GRID_COLS = 3;
@@ -498,23 +506,15 @@ SequenceSamHistoryDetail.tsx
 
 #### Client-Side Store Integration
 
-The client listens for the following server-dispatched action types and merges them into the minigame slice of the room store:
+The client uses `useGameSocket` from `@/lib/rmhbox/minigame-client` to subscribe to game actions and state snapshots, and `extractTimerTick` for timer updates:
 
 `SS_ROUND_START`, `SS_PATTERN_STEP`, `SS_PATTERN_COMPLETE`, `SS_GRID_ROTATE`, `SS_TAP_RESULT`, `SS_PLAYER_COMPLETE`, `SS_PLAYER_FAILED`, `SS_ROUND_RESULTS`, `SS_ELIMINATION`, `SS_GAME_OVER`, `TIMER_TICK`
 
 ```typescript
-useEffect(() => {
-  const handlers = [
-    'SS_ROUND_START', 'SS_PATTERN_STEP', 'SS_PATTERN_COMPLETE',
-    'SS_GRID_ROTATE', 'SS_TAP_RESULT', 'SS_PLAYER_COMPLETE',
-    'SS_PLAYER_FAILED', 'SS_ROUND_RESULTS', 'SS_ELIMINATION',
-    'SS_GAME_OVER', 'TIMER_TICK',
-  ];
-  handlers.forEach((type) =>
-    socket.on(type, (payload) => dispatch({ type, payload }))
-  );
-  return () => handlers.forEach((type) => socket.off(type));
-}, [socket, dispatch]);
+useGameSocket({
+  onGameAction: handleGameAction,
+  onStateSnapshot: handleStateSnapshot,
+});
 ```
 
 #### Client-Side Input Dispatch
@@ -525,9 +525,11 @@ Players tap a grid cell to reproduce the pattern. The only client-to-server mess
 
 ```typescript
 const handleTap = (index: number) => {
-  socket.emit('SS_TAP', { position: index });
+  emitGameInput('SS_TAP', { position: index });
 };
 ```
+
+> **Note:** `emitGameInput` is imported from `@/lib/rmhbox/minigame-client`.
 
 > **Security note:** The raw sequence is NEVER sent to the client. The pattern is displayed one step at a time via `SS_PATTERN_STEP` events. The server validates each tap against the expected sequence position.
 
@@ -551,8 +553,10 @@ MINIGAME_SERVER_REGISTRY.set('sequence-sam', SequenceSamGame);
 | Grid rotate (chaos) | `swoosh` | Chaos round tile remap |
 | Correct tap | `scoreDing` | Player tapped the right cell |
 | Wrong tap / strike | `buzzer` | Incorrect cell tapped |
+| Player complete (own) | `chime` | Player finished the sequence correctly |
+| Player failed (own) | `buzzer` | Player failed the sequence |
+| Round results | `chime` | Summary after each round |
 | Player eliminated | `buzzer` | Player exceeded max strikes |
-| Round results | `victoryFanfare` | Summary after each round |
 | Game over | `victoryFanfare` | Final standings revealed |
 
 #### Spectator Rendering
@@ -580,7 +584,7 @@ Spectators see pattern steps, all players' progress (completion status), and eli
 
 ### 2.2 Game Concept
 
-Chaotic cooperative spelling through distributed responsibility. A target sentence appears. The 26 letters of the alphabet are divided among the players — each player is responsible for a subset of keys. The group must collaboratively type the sentence in order, character by character. Every `HK_RESHUFFLE_INTERVAL` (default: **8 seconds**), the keyboard is reshuffled and assignments change.
+Chaotic cooperative spelling through distributed responsibility. A target sentence appears. The 26 letters of the alphabet are divided among the players — each player is responsible for a subset of keys. The group must collaboratively type the sentence in order, character by character. Every `HK_RESHUFFLE_INTERVAL_SECONDS` (default: **8 seconds**), the keyboard is reshuffled and assignments change.
 
 ### 2.3 Detailed Mechanics
 
@@ -639,11 +643,11 @@ function assignKeys(playerIds: string[]): Map<string, string[]> {
 
 For 5 players, each gets ~5 letters. For 3 players, each gets ~8–9 letters.
 
-**Spaces** are handled automatically — no player "owns" the space key. When the next character in the sentence is a space, the server auto-advances to the next letter after a short delay (`HK_SPACE_DELAY`, default: **200ms**), simulating an automatic space.
+**Spaces** are handled automatically — no player "owns" the space key. When the next character in the sentence is a space, the server auto-advances to the next letter after a short delay (`HK_SPACE_DELAY_MS`, default: **200ms**), simulating an automatic space.
 
 #### 2.3.4 Key Reshuffling
 
-Every `HK_RESHUFFLE_INTERVAL` (default: **8s**), the server:
+Every `HK_RESHUFFLE_INTERVAL_SECONDS` (default: **8s**), the server:
 
 1. Re-randomizes key assignments using the same algorithm.
 2. Broadcasts `HK_RESHUFFLE` with the new assignments.
@@ -661,7 +665,7 @@ Players must constantly check their UI to see which letters they currently own.
    - The server checks if the player is the one assigned to that key.
    - **Correct key by correct player:** Cursor advances. `HK_KEY_CORRECT` broadcast.
    - **Correct key by WRONG player:** The press is **rejected** (they don't own that letter right now). `HK_KEY_WRONG_PLAYER` sent to the pressing player only.
-   - **Wrong key entirely:** `HK_KEY_WRONG` sent to the pressing player. A small time penalty of `HK_WRONG_KEY_LOCK` (default: **500ms**) is added — the cursor is locked for that duration, and nobody can type. This discourages random key-mashing.
+   - **Wrong key entirely:** `HK_KEY_WRONG` sent to the pressing player. A small time penalty of `HK_WRONG_KEY_PENALTY_MS` (default: **500ms**) is added — the cursor is locked for that duration, and nobody can type. This discourages random key-mashing.
 
 **Input rate limit:** Each player can send at most `HK_INPUT_RATE_LIMIT` (default: **5**) key presses per second per player. This prevents rapid-fire guessing.
 
@@ -671,12 +675,12 @@ This game is **cooperative** — the group works together. However, individual c
 
 | Metric | Points |
 |---|---|
-| Each correct key press | `HK_CORRECT_KEY` (default: **20**) |
+| Each correct key press | `HK_CORRECT_KEY_POINTS` (default: **20**) |
 | No incorrect presses (personal accuracy = 100%) | `HK_PERFECT_ACCURACY_BONUS` (default: **200**) |
 | Team completes sentence | `HK_COMPLETION_BONUS` (default: **100** to each player) |
 | Time bonus (if completed) | `HK_TIME_BONUS_PER_SECOND` (default: **5**) × seconds remaining |
 | MVP bonus (most correct key presses) | `HK_MVP_BONUS` (default: **100**) |
-| Wrong key press | `HK_WRONG_KEY_PENALTY` (default: **-5**) |
+| Wrong key press | `HK_WRONG_KEY_PENALTY_POINTS` (default: **-5**) |
 
 **Group performance is ranked against a time/accuracy curve.** The team's performance is compared to an expected completion curve to derive overall quality:
 - If time ≤ 50% of limit → "Outstanding" (1.5× multiplier on all individual scores)
@@ -816,11 +820,19 @@ Full state including all players' key assignments and real-time stats. Spectator
 
 Key assignments are balanced at game start. Adding a player mid-game would require redistributing keys, which would disrupt the flow and confuse existing players.
 
+### 2.7A Spectator Mode
+
+**Mode:** `shared-privileged`
+
+Spectators see all key assignments for all players, real-time stats (correct/wrong counts) for all players, and which player owns the next expected letter. This creates dramatic tension as spectators can see who needs to type next and whether that player is paying attention.
+
 ### 2.8 Reconnection Behavior
+
+State snapshot delivery for reconnection is handled centrally by `ReconnectionHandler.attemptReconnect()` using `buildReconnectionSnapshot()` from the base class, NOT by direct sends in `handlePlayerReconnect()`. The `handlePlayerReconnect()` method should only contain logging and game-specific side effects.
 
 On reconnect:
 1. Player receives their current key assignment, cursor position, and sentence state.
-2. Their key pressees continue to be tracked.
+2. Their key presses continue to be tracked.
 3. If a reshuffle occurred while they were disconnected, they receive the latest assignment.
 
 ### 2.9 Player Disconnect Mid-Game
@@ -883,18 +895,19 @@ components/rmhbox/minigames/human-keyboard/
 ### 2.13 Constants
 
 ```typescript
-export const HK_TYPING_DURATION = 90;
-export const HK_SENTENCE_REVEAL = 3;
-export const HK_RESULTS = 5;
+export const HK_TYPING_DURATION_SECONDS = 90;
+export const HK_SENTENCE_REVEAL_SECONDS = 3;
+export const HK_RESULTS_SECONDS = 5;
 
-export const HK_RESHUFFLE_INTERVAL = 8;
-export const HK_RESHUFFLE_WARNING = 3;
-export const HK_SPACE_DELAY = 200;
-export const HK_WRONG_KEY_LOCK = 500;
+export const HK_RESHUFFLE_INTERVAL_SECONDS = 8;
+export const HK_RESHUFFLE_WARNING_SECONDS = 3;
+export const HK_SPACE_DELAY_MS = 200;
+export const HK_WRONG_KEY_PENALTY_MS = 500;
 export const HK_INPUT_RATE_LIMIT = 5;             // max presses per second per player
+export const HK_ENABLE_RESHUFFLE = true;
 
-export const HK_CORRECT_KEY = 20;
-export const HK_WRONG_KEY_PENALTY = -5;
+export const HK_CORRECT_KEY_POINTS = 20;
+export const HK_WRONG_KEY_PENALTY_POINTS = -5;
 export const HK_PERFECT_ACCURACY_BONUS = 200;
 export const HK_COMPLETION_BONUS = 100;
 export const HK_TIME_BONUS_PER_SECOND = 5;
@@ -908,19 +921,19 @@ Handlers read values via `this.getSetting(key, CONSTANT_DEFAULT)`.
 
 | Key | Type | Label | Description | Default | Constraints |
 |---|---|---|---|---|---|
-| `typingDuration` | `integer` | Typing Duration (seconds) | Time limit for each typing phrase | `60` | min: 30, max: 120, step: 10 |
+| `typingDuration` | `integer` | Typing Duration (seconds) | Time limit for each typing phrase | `90` | min: 30, max: 120, step: 10 |
 | `enableReshuffle` | `boolean` | Key Reshuffle | Periodically reassign key assignments during play | `true` | — |
-| `reshuffleInterval` | `integer` | Reshuffle Interval (seconds) | How often key assignments are shuffled | `20` | min: 10, max: 45, step: 5 |
+| `reshuffleInterval` | `integer` | Reshuffle Interval (seconds) | How often key assignments are shuffled | `8` | min: 10, max: 45, step: 5 |
 | `wrongKeyLockMs` | `integer` | Wrong Key Lock (ms) | How long a player is locked out after pressing the wrong key | `500` | min: 0, max: 2000, step: 100 |
 
 **Constant Mapping:**
 
 | Setting Key | Constant Override | Usage |
 |---|---|---|
-| `typingDuration` | `HK_TYPING_DURATION` | `this.getSetting('typingDuration', HK_TYPING_DURATION)` |
+| `typingDuration` | `HK_TYPING_DURATION_SECONDS` | `this.getSetting('typingDuration', HK_TYPING_DURATION_SECONDS)` |
 | `enableReshuffle` | `HK_ENABLE_RESHUFFLE` | If `false`, key assignments are fixed for the entire round |
-| `reshuffleInterval` | `HK_RESHUFFLE_INTERVAL` | `this.getSetting('reshuffleInterval', HK_RESHUFFLE_INTERVAL)` |
-| `wrongKeyLockMs` | `HK_WRONG_KEY_LOCK_MS` | `this.getSetting('wrongKeyLockMs', HK_WRONG_KEY_LOCK_MS)` |
+| `reshuffleInterval` | `HK_RESHUFFLE_INTERVAL_SECONDS` | `this.getSetting('reshuffleInterval', HK_RESHUFFLE_INTERVAL_SECONDS)` |
+| `wrongKeyLockMs` | `HK_WRONG_KEY_PENALTY_MS` | `this.getSetting('wrongKeyLockMs', HK_WRONG_KEY_PENALTY_MS)` |
 
 ### 2.15 Game History
 
@@ -983,8 +996,8 @@ Renders the expanded game log as a cooperative typing replay:
 
 ```typescript
 getSummary: (log) => {
-  const start = log.actions.find(a => a.type === 'sentence_reveal');
-  return `"${start?.payload.sentence ?? 'Unknown sentence'}"`;
+  const sentence = log.initialState?.sentence;
+  return typeof sentence === 'string' ? `"${sentence}"` : 'Human Keyboard game';
 }
 ```
 
@@ -1010,23 +1023,15 @@ HumanKeyboardHistoryDetail.tsx
 
 #### Client-Side Store Integration
 
-The client listens for the following server-dispatched action types and merges them into the minigame slice of the room store:
+The client uses `useGameSocket` from `@/lib/rmhbox/minigame-client` to subscribe to game actions and state snapshots, and `extractTimerTick` for timer updates:
 
 `HK_SENTENCE_REVEAL`, `HK_KEY_ASSIGNMENT`, `HK_KEY_CORRECT`, `HK_KEY_WRONG`, `HK_KEY_WRONG_PLAYER`, `HK_CURSOR_LOCKED`, `HK_SPACE_AUTO`, `HK_RESHUFFLE`, `HK_RESHUFFLE_WARNING`, `HK_COMPLETE`, `HK_RESULTS`, `TIMER_TICK`
 
 ```typescript
-useEffect(() => {
-  const handlers = [
-    'HK_SENTENCE_REVEAL', 'HK_KEY_ASSIGNMENT', 'HK_KEY_CORRECT',
-    'HK_KEY_WRONG', 'HK_KEY_WRONG_PLAYER', 'HK_CURSOR_LOCKED',
-    'HK_SPACE_AUTO', 'HK_RESHUFFLE', 'HK_RESHUFFLE_WARNING',
-    'HK_COMPLETE', 'HK_RESULTS', 'TIMER_TICK',
-  ];
-  handlers.forEach((type) =>
-    socket.on(type, (payload) => dispatch({ type, payload }))
-  );
-  return () => handlers.forEach((type) => socket.off(type));
-}, [socket, dispatch]);
+useGameSocket({
+  onGameAction: handleGameAction,
+  onStateSnapshot: handleStateSnapshot,
+});
 ```
 
 #### Client-Side Input Dispatch
@@ -1037,9 +1042,11 @@ Each player presses the key they are assigned. The only client-to-server message
 
 ```typescript
 const handleKeyPress = (key: string) => {
-  socket.emit('HK_PRESS', { key: key.toLowerCase() });
+  emitGameInput('HK_PRESS', { key: key.toLowerCase() });
 };
 ```
+
+> **Note:** `emitGameInput` is imported from `@/lib/rmhbox/minigame-client`.
 
 #### Server-Side Handler Registration
 
