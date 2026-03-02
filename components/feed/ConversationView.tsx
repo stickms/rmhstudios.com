@@ -183,9 +183,16 @@ export function ConversationView({ conversationId }: { conversationId: string })
 
     connect();
 
+    const onBeforeUnload = () => {
+      cancelled = true;
+      eventSource?.close();
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+
     return () => {
       cancelled = true;
       eventSource?.close();
+      window.removeEventListener('beforeunload', onBeforeUnload);
     };
   }, [session, conversationId, handleIncomingMessage]);
 

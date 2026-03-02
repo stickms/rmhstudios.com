@@ -145,9 +145,16 @@ export function MessagesColumn() {
 
     connect();
 
+    const onBeforeUnload = () => {
+      cancelled = true;
+      eventSource?.close();
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+
     return () => {
       cancelled = true;
       eventSource?.close();
+      window.removeEventListener('beforeunload', onBeforeUnload);
     };
   }, [session, fetchConversations]);
 

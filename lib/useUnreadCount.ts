@@ -74,10 +74,17 @@ export function useUnreadCount(isLoggedIn: boolean) {
 
     connectSSE();
 
+    const onBeforeUnload = () => {
+      cancelled = true;
+      eventSource?.close();
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+
     return () => {
       cancelled = true;
       eventSource?.close();
       if (fallbackInterval) clearInterval(fallbackInterval);
+      window.removeEventListener('beforeunload', onBeforeUnload);
     };
   }, [isLoggedIn]);
 
