@@ -77,9 +77,9 @@ export default function RevealScreen({
             transition={{ delay: ri * SECTION_DELAY, duration: 0.5 }}
             className="w-full rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) p-4"
           >
-            {/* Story header */}
+            {/* Story header — numbered */}
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-semibold">{reveal.ownerName}&apos;s Story</span>
+              <span className="text-sm font-semibold">Story {ri + 1}</span>
               {myGuess && (
                 <span className={`text-xs px-2 py-0.5 rounded-full ${
                   myGuess.correct

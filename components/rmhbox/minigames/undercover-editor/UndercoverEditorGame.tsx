@@ -21,7 +21,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { emitGameInput, useGameSocket, extractTimerTick } from '@/lib/rmhbox/minigame-client';
 import { playSound } from '@/lib/rmhbox/audio';
-import StoryDisplay from './StoryDisplay';
 import WriteInput from './WriteInput';
 import StoryEditor from './StoryEditor';
 import type { EditableStory } from './StoryEditor';
@@ -438,7 +437,18 @@ export default function UndercoverEditorGame({
     (storyId: string, guessedEditorId: string) => {
       if (isSpectator) return;
       setMatchGuesses((prev) => {
-        const next = { ...prev, [storyId]: guessedEditorId };
+        const next = { ...prev };
+        // If this editor was already assigned to a different story, remove that assignment
+        if (guessedEditorId) {
+          for (const [sid, eid] of Object.entries(next)) {
+            if (eid === guessedEditorId && sid !== storyId) {
+              delete next[sid];
+            }
+          }
+        }
+        next[storyId] = guessedEditorId;
+        // Remove empty selections
+        if (!guessedEditorId) delete next[storyId];
         emitGameInput('SUBMIT_MATCHING', { guesses: next });
         return next;
       });
@@ -455,6 +465,18 @@ export default function UndercoverEditorGame({
   // ─── Derived Values ────────────────────────────────────────
 
   const currentReadingStory = readingStories[readingStoryIndex] ?? null;
+
+  /** Map storyId → display number (1-indexed order from stories array). */
+  const getStoryNumber = useCallback(
+    (storyId: string): number => {
+      const idx = stories.findIndex((s) => s.storyId === storyId);
+      if (idx !== -1) return idx + 1;
+      // Fallback: check readingStories
+      const rIdx = readingStories.findIndex((s) => s.storyId === storyId);
+      return rIdx !== -1 ? rIdx + 1 : 1;
+    },
+    [stories, readingStories],
+  );
 
   // ─── Render ────────────────────────────────────────────────
 
@@ -511,24 +533,9 @@ export default function UndercoverEditorGame({
               </p>
             </div>
 
-            {/* Write assignment */}
+            {/* Write assignment — uses WriteInput which includes "Story so far" panel */}
             {myWriteAssignment && !isSpectator ? (
               <div className="w-full max-w-lg flex flex-col gap-3">
-                <div className="rounded-xl bg-(--rmhbox-surface) p-3 border border-(--rmhbox-border)">
-                  <p className="text-xs font-semibold text-(--rmhbox-accent) mb-1">
-                    {myWriteAssignment.ownerName}&apos;s Story
-                  </p>
-                  <p className="text-sm text-(--rmhbox-text-muted) italic mb-2">
-                    {myWriteAssignment.prompt}
-                  </p>
-                  {myWriteAssignment.sentences.length > 0 && (
-                    <StoryDisplay
-                      sentences={myWriteAssignment.sentences}
-                      storyPrompt={myWriteAssignment.prompt}
-                    />
-                  )}
-                </div>
-
                 {/* Write input or submitted indicator */}
                 {mySubmission ? (
                   <div className="flex items-center gap-2">
@@ -549,6 +556,7 @@ export default function UndercoverEditorGame({
                       text: s.text,
                     }))}
                     storyPrompt={myWriteAssignment.prompt}
+                    storyNumber={getStoryNumber(myWriteAssignment.storyId)}
                     timeRemaining={timeRemaining}
                     onSubmit={handleSubmitSentence}
                   />
@@ -624,24 +632,25 @@ export default function UndercoverEditorGame({
 
             {currentReadingStory && (
               <div className="w-full max-w-lg flex flex-col gap-3">
-                <div className="rounded-xl bg-(--rmhbox-surface) p-3 border border-(--rmhbox-border)">
-                  <p className="text-xs font-semibold text-(--rmhbox-accent) mb-1">
-                    {currentReadingStory.ownerName}&apos;s Story
+                {/* Slim "Story so far" panel — shows story number, prompt as sentence, revealed sentences */}
+                <div className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-surface) p-3">
+                  <p className="mb-2 text-[10px] uppercase tracking-wider text-(--rmhbox-text-muted)">
+                    Story {readingStoryIndex + 1}
                   </p>
-                  <p className="text-sm text-(--rmhbox-text-muted) italic mb-2">
-                    {currentReadingStory.prompt}
-                  </p>
-
-                  {/* Revealed sentences */}
-                  {revealedSentences.length > 0 && (
-                    <StoryDisplay
-                      sentences={revealedSentences}
-                      storyPrompt={currentReadingStory.prompt}
-                    />
-                  )}
+                  <div className="space-y-1.5">
+                    {/* Prompt shown as first sentence */}
+                    <p className="text-sm leading-relaxed text-(--rmhbox-text)">
+                      <span className="opacity-50 text-xs">(prompt)</span> {currentReadingStory.prompt}
+                    </p>
+                    {revealedSentences.map((s, i) => (
+                      <p key={i} className="text-sm leading-relaxed text-(--rmhbox-text)">
+                        <span className="opacity-50 text-xs">({s.authorName})</span> {s.text}
+                      </p>
+                    ))}
+                  </div>
 
                   {revealedSentences.length === 0 && (
-                    <p className="text-xs text-(--rmhbox-text-muted) italic py-4 text-center">
+                    <p className="mt-2 text-xs text-(--rmhbox-text-muted) italic text-center">
                       Press &quot;Next Sentence&quot; to begin reading…
                     </p>
                   )}
@@ -726,7 +735,7 @@ export default function UndercoverEditorGame({
 
               {/* Show each story's editor */}
               <div className="flex flex-col gap-4 w-full max-w-lg">
-                {storyReveals.map((reveal) => {
+                {storyReveals.map((reveal, revealIdx) => {
                   const myGuess = matchResults[playerId]?.find((r) => r.storyId === reveal.storyId);
                   return (
                     <motion.div
@@ -738,7 +747,7 @@ export default function UndercoverEditorGame({
                     >
                       <div className="flex items-center justify-between mb-2">
                         <p className="font-semibold text-(--rmhbox-text)">
-                          {reveal.ownerName}&apos;s Story
+                          Story {revealIdx + 1}
                         </p>
                         {myGuess && (
                           <span className={`text-xs px-2 py-0.5 rounded-full ${

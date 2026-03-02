@@ -2,7 +2,7 @@
  * UndercoverEditorHistoryDetail — History display for Undercover Editor games.
  *
  * Renders per-story views with highlighted edits, editor reveal,
- * and final scores. No keywords or votes in the redesigned game.
+ * and final scores. Stories are numbered, not player-named.
  *
  * Reference: docs/rmhbox/design-spec/minigames-2.md §2
  */
@@ -18,6 +18,7 @@ interface EditEntry {
 
 interface SentenceEntry {
   authorUserId: string;
+  authorName?: string;
   text: string;
   roundNumber: number;
 }
@@ -36,8 +37,9 @@ export default function UndercoverEditorHistoryDetail({
   currentUserId,
   players,
 }: HistoryDetailProps) {
+  // Full storyReveals from the 'reveal' action in gameLog
   const revealAction = gameLog.actions.find((a) => a.type === 'reveal');
-  const storyReveals = (revealAction?.payload.storyReveals ?? []) as StoryReveal[];
+  const storyReveals = (revealAction?.payload?.storyReveals ?? []) as StoryReveal[];
 
   const getName = (userId: string) =>
     players.find((p) => p.userId === userId)?.userName ?? userId;
@@ -61,14 +63,14 @@ export default function UndercoverEditorHistoryDetail({
         </div>
       )}
 
-      {/* Per-story display */}
-      {storyReveals.map((reveal) => (
+      {/* Per-story display — numbered instead of player-named */}
+      {storyReveals.map((reveal, idx) => (
         <div
           key={reveal.storyId}
           className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-4"
         >
           <h4 className="text-sm font-semibold text-(--rmhbox-text-muted) mb-3">
-            📖 {reveal.ownerName}&apos;s Story
+            📖 Story {idx + 1}
           </h4>
 
           {/* Sentences */}
@@ -76,6 +78,7 @@ export default function UndercoverEditorHistoryDetail({
             {reveal.sentences.map((s, i) => {
               const isMe = s.authorUserId === currentUserId;
               const sentenceEdits = reveal.edits.filter((e) => e.sentenceIndex === i);
+              const authorLabel = s.authorName || getName(s.authorUserId);
 
               return (
                 <div key={i} className="rounded-lg bg-(--rmhbox-surface) p-3">
@@ -99,7 +102,7 @@ export default function UndercoverEditorHistoryDetail({
                   <p className={`mt-1 text-[10px] ${
                     isMe ? 'text-(--rmhbox-accent) font-semibold' : 'text-(--rmhbox-text-muted)'
                   }`}>
-                    — {getName(s.authorUserId)} · Round {s.roundNumber}
+                    — {authorLabel} · Round {s.roundNumber}
                   </p>
                 </div>
               );

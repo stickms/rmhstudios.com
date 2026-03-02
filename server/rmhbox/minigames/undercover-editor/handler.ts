@@ -180,6 +180,9 @@ export class UndercoverEditorGame extends BaseMinigame {
       phaseEndsAt: now,
       readingStoryIndex: 0,
       readingSentenceIndex: 0,
+      // Independently shuffled story order for write assignments so the
+      // round in which an editor writes for their own edited story is random.
+      assignmentStoryOrder: shuffleArray(Array.from(stories.keys())),
     };
 
     logger.info({
@@ -243,14 +246,15 @@ export class UndercoverEditorGame extends BaseMinigame {
     this.state.phaseEndsAt = now + writeTimeout * 1000;
 
     // Compute round-robin write assignments for this round
+    // Uses assignmentStoryOrder (independently shuffled) so editor write-round is random
     this.state.writeAssignments = new Map();
     this.state.roundSubmissions = new Map();
-    const storyIds = Array.from(this.state.stories.keys());
+    const storyOrder = this.state.assignmentStoryOrder;
 
     for (let pi = 0; pi < this.state.playerIds.length; pi++) {
       const playerId = this.state.playerIds[pi];
       // currentWriteRound is 1-indexed; subtract 1 to make the rotation 0-based
-      const assignedStoryId = storyIds[(pi + this.state.currentWriteRound - 1) % this.state.numPlayers];
+      const assignedStoryId = storyOrder[(pi + this.state.currentWriteRound - 1) % this.state.numPlayers];
       this.state.writeAssignments.set(playerId, assignedStoryId);
     }
 
@@ -500,8 +504,8 @@ export class UndercoverEditorGame extends BaseMinigame {
       players: playerInfos,
     });
 
-    // Infinite phase timer — host or all-locked-in advances
-    this.startInfinitePhaseTimer(true);
+    // Infinite phase timer — no host skip; auto-advances when all locked in
+    this.startInfinitePhaseTimer(false);
   }
 
   /** Check if all players have locked in their matching. */
@@ -549,8 +553,21 @@ export class UndercoverEditorGame extends BaseMinigame {
     this.logAction('reveal', {
       storyReveals: storyReveals.map((s) => ({
         storyId: s.storyId,
+        ownerName: s.ownerName,
         editorUserId: s.editorUserId,
+        editorName: s.editorName,
         editCount: s.edits.length,
+        edits: s.edits.map((e) => ({
+          sentenceIndex: e.sentenceIndex,
+          originalWord: e.originalWord,
+          newWord: e.newWord,
+        })),
+        sentences: s.sentences.map((sent) => ({
+          authorUserId: this.findAuthorUserId(s.storyId, sent.roundNumber),
+          authorName: sent.authorName,
+          text: sent.text,
+          roundNumber: sent.roundNumber,
+        })),
       })),
     });
 
@@ -980,7 +997,7 @@ export class UndercoverEditorGame extends BaseMinigame {
 
     const guessMap = new Map<string, string>();
     for (const [storyId, guessedEditorId] of Object.entries(parsed.data.guesses)) {
-      guessMap.set(storyId, guessedEditorId);
+      guessMap.set(storyId, guessedEditorId as string);
     }
     this.state.matchGuesses.set(userId, guessMap);
 
@@ -1316,15 +1333,8 @@ export class UndercoverEditorGame extends BaseMinigame {
         reason,
       });
       this.startReviewPhase();
-    } else if (this.state.phase === 'REVIEW') {
-      // Host forcing REVIEW to end — skip to REVEAL
-      logger.info({
-        event: 'undercover_editor:force_end_review',
-        lobbyId: this.context.lobbyId,
-        reason,
-      });
-      this.startRevealPhase();
     } else {
+      // REVIEW auto-advances when all locked in; no host skip
       this.cleanup();
       this.context.onComplete(this.computeResults());
     }
@@ -1354,11 +1364,17 @@ export class UndercoverEditorGame extends BaseMinigame {
       totalSteps: this.state.totalSteps,
       playerCount: this.context.players.size,
       players,
+      initialState: {
+        numPlayers: this.state.numPlayers,
+        totalSteps: this.state.totalSteps,
+        storyCount: this.state.stories.size,
+      },
       actions: this.actionLog,
-      finalResults: this.state.playerIds.map((uid) => ({
+      finalResults: this.state.playerIds.map((uid, idx) => ({
         userId: uid,
         userName: this.context.players.get(uid)?.userName ?? 'Unknown',
         score: this.state.playerScores.get(uid) ?? 0,
+        rank: idx + 1,
       })),
     };
   }
@@ -1370,6 +1386,14 @@ export class UndercoverEditorGame extends BaseMinigame {
       type: 'UE_ERROR',
       message,
     });
+  }
+
+  /** Look up the authorUserId for a sentence in a story by roundNumber. */
+  private findAuthorUserId(storyId: string, roundNumber: number): string {
+    const story = this.state.stories.get(storyId);
+    if (!story) return '';
+    const sentence = story.sentences.find((s) => s.roundNumber === roundNumber);
+    return sentence?.authorUserId ?? '';
   }
 
   // ─── Helper: Add Sentence to Story ────────────────────────────────────────

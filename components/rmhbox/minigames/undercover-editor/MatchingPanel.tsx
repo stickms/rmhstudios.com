@@ -2,14 +2,15 @@
  * MatchingPanel — Review-phase UI for Undercover Editor.
  *
  * Players page through all N stories and try to match each to its secret
- * undercover editor. Each potential editor can only be assigned to one story
- * (1-to-1 bijection). Players cannot guess on stories they edited.
+ * undercover editor. Only the guessing player themselves is excluded from
+ * the dropdown. When a player is assigned to a new story, their previous
+ * assignment is automatically removed (reassignment, not 1-to-1 filtering).
  *
  * Props:
  *   stories          — The set of stories to review
  *   players          — Every player in the game
  *   myPlayerId       — Current user's player ID
- *   myEditedStoryId  — The storyId the current player edited (excluded)
+ *   myEditedStoryId  — The storyId the current player edited (excluded from guessing)
  *   currentGuesses   — Map of storyId → guessedEditorUserId
  *   lockedIn         — Whether the current player has locked in
  *   lockedInPlayers  — User IDs of players who have already locked in
@@ -74,14 +75,11 @@ export default function MatchingPanel({
     [stories, myEditedStoryId],
   );
 
-  // Set of editor IDs already assigned to other stories in guesses
-  const usedEditorIds = useMemo(() => {
-    const used = new Set<string>();
-    for (const [, editorId] of Object.entries(currentGuesses)) {
-      if (editorId) used.add(editorId);
-    }
-    return used;
-  }, [currentGuesses]);
+  // Candidate editors: everyone except the guessing player themselves
+  const candidates = useMemo(
+    () => players.filter((p) => p.userId !== myPlayerId),
+    [players, myPlayerId],
+  );
 
   // True once every guessable story has a guess
   const allGuessed = useMemo(
@@ -92,12 +90,16 @@ export default function MatchingPanel({
   const totalPlayers = players.length;
   const lockedCount = lockedInPlayers.length;
 
+  // Get player name by userId for lock-in display
+  const getPlayerName = (userId: string): string =>
+    players.find((p) => p.userId === userId)?.userName ?? userId;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="flex w-full max-w-2xl flex-col items-center gap-6 text-(--rmhbox-text)"
+      className="mx-auto flex w-full max-w-2xl flex-col items-center gap-6 text-(--rmhbox-text)"
     >
       {/* Header */}
       <div className="flex flex-col items-center gap-1">
@@ -108,29 +110,28 @@ export default function MatchingPanel({
       </div>
 
       {/* Lock-in progress */}
-      <div className="flex items-center gap-2 text-xs text-(--rmhbox-text-muted)">
+      <div className="flex flex-col items-center gap-1 text-xs text-(--rmhbox-text-muted)">
         <span>
           {lockedCount}/{totalPlayers} players locked in
         </span>
+        {lockedInPlayers.length > 0 && (
+          <div className="flex flex-wrap justify-center gap-1.5 mt-1">
+            {lockedInPlayers.map((uid) => (
+              <span
+                key={uid}
+                className="rounded-full bg-(--rmhbox-success-dim) px-2 py-0.5 text-[10px] text-(--rmhbox-success)"
+              >
+                ✓ {getPlayerName(uid)}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Story cards */}
       <div className="flex w-full flex-col gap-4">
         {guessableStories.map((story, idx) => {
-          // Candidates: every player except the story owner and current player
-          // (you can't edit your own story, so you can't be that story's editor)
-          // Enforce 1-to-1: exclude editors already used for other stories
           const selectedGuess = currentGuesses[story.storyId] ?? '';
-          const candidates = players.filter((p) => {
-            // Can't be the story owner (storyId = ownerUserId)
-            if (p.userId === story.storyId) return false;
-            // Current player knows they edit myEditedStoryId, so they
-            // shouldn't appear as candidate for other stories
-            if (p.userId === myPlayerId && story.storyId !== myEditedStoryId) return false;
-            // 1-to-1: can't be already used for a different story
-            if (usedEditorIds.has(p.userId) && p.userId !== selectedGuess) return false;
-            return true;
-          });
 
           return (
             <motion.div
@@ -140,23 +141,18 @@ export default function MatchingPanel({
               transition={{ delay: idx * 0.08, duration: 0.35 }}
               className="flex flex-col gap-3 rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) p-4"
             >
-              {/* Story header */}
+              {/* Story header — numbered */}
               <div className="flex items-center justify-between">
                 <span className="text-sm font-semibold">
-                  {story.ownerName}&apos;s Story
-                </span>
-                <span className="rounded-md bg-(--rmhbox-accent)/10 px-2 py-0.5 text-[10px] font-medium text-(--rmhbox-accent)">
-                  #{idx + 1}
+                  Story {idx + 1}
                 </span>
               </div>
 
-              {/* Prompt */}
-              <p className="text-xs italic text-(--rmhbox-text-muted)">
-                &ldquo;{story.prompt}&rdquo;
-              </p>
-
-              {/* Full story text */}
+              {/* Full story text with prompt as first sentence */}
               <div className="flex flex-col gap-1 rounded-lg bg-(--rmhbox-surface)/60 p-3 text-sm leading-relaxed">
+                <span className="text-(--rmhbox-text)">
+                  <span className="opacity-50 text-xs">(prompt)</span> {story.prompt}
+                </span>
                 {story.sentences
                   .slice()
                   .sort((a, b) => a.roundNumber - b.roundNumber)
@@ -165,7 +161,7 @@ export default function MatchingPanel({
                   ))}
               </div>
 
-              {/* Editor guess dropdown */}
+              {/* Editor guess dropdown — only excludes the guessing player */}
               <label className="flex flex-col gap-1">
                 <span className="text-xs font-medium text-(--rmhbox-text-muted)">
                   Who was the editor?

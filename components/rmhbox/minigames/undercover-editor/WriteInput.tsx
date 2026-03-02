@@ -1,13 +1,14 @@
 /**
  * WriteInput — Sentence composition for Undercover Editor.
  *
- * Displays previous sentences for context, a text input area
- * with character counter (10–200 chars), and a submit button
- * that is disabled until the minimum length is met.
+ * Displays a "Story so far" panel with the prompt shown as the first sentence
+ * (styled like player sentences), followed by all previous sentences, then
+ * a text input area with character counter (10–200 chars) and submit button.
  *
  * Props:
  *   storyContext: Array<{ authorName, text }> — Previous sentences
  *   storyPrompt: string — The story prompt/theme
+ *   storyNumber: number — The numbered story label (1-indexed)
  *   timeRemaining: number — Seconds left for this turn
  *   onSubmit: (text: string) => void — Callback when sentence is submitted
  */
@@ -24,6 +25,7 @@ interface StoryContextEntry {
 interface WriteInputProps {
   storyContext: StoryContextEntry[];
   storyPrompt: string;
+  storyNumber: number;
   timeRemaining: number;
   onSubmit: (text: string) => void;
 }
@@ -34,6 +36,7 @@ const MAX_LENGTH = 200;
 export default function WriteInput({
   storyContext,
   storyPrompt,
+  storyNumber,
   timeRemaining,
   onSubmit,
 }: WriteInputProps) {
@@ -69,21 +72,23 @@ export default function WriteInput({
         <span className="font-mono font-semibold">{timeRemaining}s</span>
       </div>
 
-      {/* Story context */}
-      {storyContext.length > 0 && (
-        <div className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-surface) p-3">
-          <p className="mb-2 text-[10px] uppercase tracking-wider text-(--rmhbox-text-muted)">
-            Story so far — {storyPrompt}
+      {/* Story so far — prompt shown as first sentence, full height */}
+      <div className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-surface) p-3">
+        <p className="mb-2 text-[10px] uppercase tracking-wider text-(--rmhbox-text-muted)">
+          Story {storyNumber} so far
+        </p>
+        <div className="space-y-1.5">
+          {/* Prompt displayed as a sentence */}
+          <p className="text-sm leading-relaxed text-(--rmhbox-text)">
+            <span className="opacity-50 text-xs">(prompt)</span> {storyPrompt}
           </p>
-          <div className="max-h-32 space-y-1.5 overflow-y-auto">
-            {storyContext.map((s, i) => (
-              <p key={i} className="text-sm leading-relaxed text-(--rmhbox-text)">
-                <span className="opacity-50 text-xs">({s.authorName})</span> {s.text}
-              </p>
-            ))}
-          </div>
+          {storyContext.map((s, i) => (
+            <p key={i} className="text-sm leading-relaxed text-(--rmhbox-text)">
+              <span className="opacity-50 text-xs">({s.authorName})</span> {s.text}
+            </p>
+          ))}
         </div>
-      )}
+      </div>
 
       {/* Text input */}
       <div className="relative">

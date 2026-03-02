@@ -119,6 +119,12 @@ export interface UndercoverEditorState {
   readingStoryIndex: number;
   /** READING phase: how many sentences have been revealed for the current story. */
   readingSentenceIndex: number;
+  /**
+   * Shuffled story-ID order used for write-round assignments.
+   * Independently shuffled from playerIds so the round in which an editor
+   * writes for their own edited story is random.
+   */
+  assignmentStoryOrder: string[];
 }
 
 // ─── Client View Types ───────────────────────────────────────────
