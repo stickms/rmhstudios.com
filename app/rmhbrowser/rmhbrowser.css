@@ -1,0 +1,269 @@
+/**
+ * RMHbrowser — Dedicated Theme Stylesheet
+ *
+ * Indigo/blue/violet color scheme for a web browser experience.
+ * Five themes: dark (default), light, ocean, sunset, forest.
+ */
+
+/* ─── Dark Theme (default) ──────────────────────────────────────── */
+
+.rmhbrowser-theme {
+  --rb-bg: #0e1117;
+  --rb-bg-subtle: #161b22;
+  --rb-surface: #1c2130;
+  --rb-surface-hover: #242b3a;
+  --rb-surface-active: #2d3548;
+  --rb-border: #2d3548;
+  --rb-border-bright: #3d4a60;
+  --rb-text: #e6edf3;
+  --rb-text-muted: #8b949e;
+  --rb-text-dim: #596575;
+  --rb-accent: #6366f1;
+  --rb-accent-hover: #818cf8;
+  --rb-accent-dim: rgba(99, 102, 241, 0.12);
+  --rb-success: #34d399;
+  --rb-success-dim: rgba(52, 211, 153, 0.12);
+  --rb-danger: #f87171;
+  --rb-danger-dim: rgba(248, 113, 113, 0.12);
+  --rb-warning: #fbbf24;
+  --rb-warning-dim: rgba(251, 191, 36, 0.12);
+  --rb-info: #38bdf8;
+  --rb-info-dim: rgba(56, 189, 248, 0.12);
+  --rb-font: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --rb-font-mono: 'JetBrains Mono', 'Cascadia Code', monospace;
+  --rb-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  --rb-radius: 10px;
+  --rb-radius-sm: 6px;
+  --rb-toast-bg: #1c2130;
+  --rb-tab-bg: #161b22;
+  --rb-tab-active: #1c2130;
+  --rb-toolbar-bg: #161b22;
+  --rb-addressbar-bg: #0e1117;
+}
+
+/* ─── Light Theme ───────────────────────────────────────────────── */
+
+.rmhbrowser-theme.rmhbrowser-light {
+  --rb-bg: #f8fafc;
+  --rb-bg-subtle: #f1f5f9;
+  --rb-surface: #ffffff;
+  --rb-surface-hover: #f1f5f9;
+  --rb-surface-active: #e2e8f0;
+  --rb-border: #e2e8f0;
+  --rb-border-bright: #cbd5e1;
+  --rb-text: #0f172a;
+  --rb-text-muted: #64748b;
+  --rb-text-dim: #94a3b8;
+  --rb-accent: #4f46e5;
+  --rb-accent-hover: #4338ca;
+  --rb-accent-dim: rgba(79, 70, 229, 0.08);
+  --rb-success: #059669;
+  --rb-success-dim: rgba(5, 150, 105, 0.08);
+  --rb-danger: #dc2626;
+  --rb-danger-dim: rgba(220, 38, 38, 0.08);
+  --rb-warning: #d97706;
+  --rb-warning-dim: rgba(217, 119, 6, 0.08);
+  --rb-info: #0284c7;
+  --rb-info-dim: rgba(2, 132, 199, 0.08);
+  --rb-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  --rb-toast-bg: #ffffff;
+  --rb-tab-bg: #f1f5f9;
+  --rb-tab-active: #ffffff;
+  --rb-toolbar-bg: #f1f5f9;
+  --rb-addressbar-bg: #e2e8f0;
+}
+
+/* ─── Ocean Theme ───────────────────────────────────────────────── */
+
+.rmhbrowser-theme.rmhbrowser-ocean {
+  --rb-bg: #0a192f;
+  --rb-bg-subtle: #112240;
+  --rb-surface: #172a45;
+  --rb-surface-hover: #1d3557;
+  --rb-surface-active: #234068;
+  --rb-border: #234068;
+  --rb-border-bright: #2d5280;
+  --rb-text: #ccd6f6;
+  --rb-text-muted: #8892b0;
+  --rb-text-dim: #5e6a89;
+  --rb-accent: #64ffda;
+  --rb-accent-hover: #4ad8b8;
+  --rb-accent-dim: rgba(100, 255, 218, 0.1);
+  --rb-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+  --rb-toast-bg: #172a45;
+  --rb-tab-bg: #112240;
+  --rb-tab-active: #172a45;
+  --rb-toolbar-bg: #112240;
+  --rb-addressbar-bg: #0a192f;
+}
+
+/* ─── Sunset Theme ──────────────────────────────────────────────── */
+
+.rmhbrowser-theme.rmhbrowser-sunset {
+  --rb-bg: #1a0f0f;
+  --rb-bg-subtle: #241414;
+  --rb-surface: #2e1a1a;
+  --rb-surface-hover: #3a2222;
+  --rb-surface-active: #462a2a;
+  --rb-border: #462a2a;
+  --rb-border-bright: #5c3838;
+  --rb-text: #f5e6e0;
+  --rb-text-muted: #b89a90;
+  --rb-text-dim: #7a5f55;
+  --rb-accent: #f97316;
+  --rb-accent-hover: #fb923c;
+  --rb-accent-dim: rgba(249, 115, 22, 0.12);
+  --rb-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+  --rb-toast-bg: #2e1a1a;
+  --rb-tab-bg: #241414;
+  --rb-tab-active: #2e1a1a;
+  --rb-toolbar-bg: #241414;
+  --rb-addressbar-bg: #1a0f0f;
+}
+
+/* ─── Forest Theme ──────────────────────────────────────────────── */
+
+.rmhbrowser-theme.rmhbrowser-forest {
+  --rb-bg: #0f1a0f;
+  --rb-bg-subtle: #142414;
+  --rb-surface: #1a2e1a;
+  --rb-surface-hover: #223a22;
+  --rb-surface-active: #2a462a;
+  --rb-border: #2a462a;
+  --rb-border-bright: #385c38;
+  --rb-text: #e0f5e0;
+  --rb-text-muted: #90b890;
+  --rb-text-dim: #557a55;
+  --rb-accent: #22c55e;
+  --rb-accent-hover: #4ade80;
+  --rb-accent-dim: rgba(34, 197, 94, 0.12);
+  --rb-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+  --rb-toast-bg: #1a2e1a;
+  --rb-tab-bg: #142414;
+  --rb-tab-active: #1a2e1a;
+  --rb-toolbar-bg: #142414;
+  --rb-addressbar-bg: #0f1a0f;
+}
+
+/* ─── Base Styles ───────────────────────────────────────────────── */
+
+.rmhbrowser-theme {
+  background-color: var(--rb-bg);
+  color: var(--rb-text);
+  font-family: var(--rb-font);
+  min-height: 100vh;
+}
+
+/* ─── Scrollbar ─────────────────────────────────────────────────── */
+
+.rmhbrowser-theme ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.rmhbrowser-theme ::-webkit-scrollbar-track {
+  background: var(--rb-bg-subtle);
+  border-radius: 4px;
+}
+
+.rmhbrowser-theme ::-webkit-scrollbar-thumb {
+  background: var(--rb-border-bright);
+  border-radius: 4px;
+}
+
+.rmhbrowser-theme ::-webkit-scrollbar-thumb:hover {
+  background: var(--rb-accent);
+}
+
+.rmhbrowser-theme {
+  scrollbar-width: thin;
+  scrollbar-color: var(--rb-border-bright) var(--rb-bg-subtle);
+}
+
+/* ─── Selection ─────────────────────────────────────────────────── */
+
+.rmhbrowser-theme ::selection {
+  background: var(--rb-accent);
+  color: #ffffff;
+}
+
+/* ─── Focus ─────────────────────────────────────────────────────── */
+
+.rmhbrowser-theme :focus-visible {
+  outline: 2px solid var(--rb-accent);
+  outline-offset: 2px;
+}
+
+/* ─── Buttons ───────────────────────────────────────────────────── */
+
+.rmhbrowser-theme button:not(:disabled) {
+  cursor: pointer;
+}
+
+/* ─── Toast Animations ──────────────────────────────────────────── */
+
+@keyframes rmhbrowser-toast-in {
+  from { opacity: 0; transform: translateY(-12px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes rmhbrowser-toast-out {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(-12px) scale(0.96); }
+}
+
+.rmhbrowser-toast-enter {
+  animation: rmhbrowser-toast-in 0.25s ease-out forwards;
+}
+
+.rmhbrowser-toast-exit {
+  animation: rmhbrowser-toast-out 0.2s ease-in forwards;
+}
+
+/* ─── Tab Bar ───────────────────────────────────────────────────── */
+
+.rmhbrowser-tab {
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.rmhbrowser-tab:hover {
+  background-color: var(--rb-surface-hover);
+}
+
+.rmhbrowser-tab.active {
+  background-color: var(--rb-tab-active);
+}
+
+/* ─── Loading Animation ─────────────────────────────────────────── */
+
+@keyframes rmhbrowser-loading {
+  0% { width: 0%; left: 0; }
+  50% { width: 60%; left: 20%; }
+  100% { width: 0%; left: 100%; }
+}
+
+.rmhbrowser-loading-bar {
+  animation: rmhbrowser-loading 1.5s ease-in-out infinite;
+}
+
+/* ─── New Tab Grid ──────────────────────────────────────────────── */
+
+.rmhbrowser-quick-link {
+  transition: transform 0.15s, background-color 0.15s;
+}
+
+.rmhbrowser-quick-link:hover {
+  transform: translateY(-2px);
+  background-color: var(--rb-surface-hover);
+}
+
+/* ─── Panel Slide ───────────────────────────────────────────────── */
+
+@keyframes rmhbrowser-panel-in {
+  from { opacity: 0; transform: translateX(16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.rmhbrowser-panel {
+  animation: rmhbrowser-panel-in 0.2s ease-out;
+}

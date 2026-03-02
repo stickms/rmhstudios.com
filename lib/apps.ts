@@ -95,6 +95,23 @@ export const apps: AppInfo[] = [
         authGate: true,
     },
     {
+        id: 'rmhbrowser',
+        title: 'RMHbrowser',
+        description: 'A full-featured web browser with tabs, bookmarks, history, and multiple themes.',
+        longDescription:
+            'RMHbrowser is a web-app internet browser built right into the platform. Browse the web with a tabbed interface, save bookmarks, track history, customize your experience with five themes, and manage multiple profiles — all without leaving RMH Studios.',
+        href: '/rmhbrowser',
+        status: 'Beta',
+        cta: 'Start Browsing',
+        isSteam: false,
+        gradient: 'from-indigo-500 via-violet-500 to-purple-600',
+        iconName: 'Globe',
+        color: 'from-indigo-500/20 to-purple-600/20 hover:border-indigo-500/50',
+        tags: ['Browser', 'Utility', 'Productivity', 'Beta'],
+        imagePath: '/images/games/rmhbrowser.png',
+        authGate: true,
+    },
+    {
         id: 'rmhstudy',
         title: 'RMH Study',
         description: 'Study together with synced Pomodoro timers, focus tracking, and ambient sounds.',
