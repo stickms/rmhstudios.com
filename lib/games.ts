@@ -63,12 +63,12 @@ export const games: GameInfo[] = [
         authGate: true,
     },
     {
-        id: 'daily-puzzle',
+        id: 'lights-out',
         title: 'Lights Out',
         description: 'A new logic puzzle every day. Turn off all the lights—one tap at a time.',
         longDescription:
             'Classic Lights Out: tap a cell to toggle it and its neighbors. Solve in as few moves as possible. A fresh puzzle appears each day. No account needed.',
-        href: '/daily-puzzle',
+        href: '/lights-out',
         status: 'Playable',
         cta: 'Play',
         isSteam: false,
