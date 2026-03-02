@@ -337,8 +337,8 @@ function updateBat(
   _events: EnemySystemEvents,
 ): void {
   const speed = getEffectiveSpeed(enemy);
-  const waveAmplitude = 40;
-  const wavePeriod = 1.5;
+  const waveAmplitude = 30;
+  const wavePeriod = 2.2;
 
   // Accumulate wave phase
   enemy.aiTimer += delta;

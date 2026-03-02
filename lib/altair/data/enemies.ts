@@ -69,7 +69,7 @@ export const ENEMIES: readonly EnemyDef[] = [
     tier: 1,
     baseHp: 6,
     baseDamage: 10,
-    baseSpeed: 170,
+    baseSpeed: 130,
     xpDrop: 1,
     threatCost: 1,
     behavior: 'sinusoidal',
@@ -78,8 +78,8 @@ export const ENEMIES: readonly EnemyDef[] = [
     radius: 13,
     description: 'Small dark bat with erratic flight. Moves in sinusoidal wave pattern, harder to hit with narrow projectiles.',
     specialParams: {
-      waveAmplitude: 40,
-      wavePeriod: 1.5,
+      waveAmplitude: 30,
+      wavePeriod: 2.2,
     },
   },
 
