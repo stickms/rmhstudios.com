@@ -11,6 +11,7 @@ import { DreamRiftHUD } from './DreamRiftHUD';
 import { DreamRiftPause } from './DreamRiftPause';
 import { DreamRiftGameOver } from './DreamRiftGameOver';
 import { DreamRiftStageResult } from './DreamRiftStageResult';
+import { DreamRiftLeaderboard } from './DreamRiftLeaderboard';
 
 export function DreamRiftGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -123,6 +124,7 @@ export function DreamRiftGame() {
       )}
       {screen === 'gameOver' && <DreamRiftGameOver onQuit={handleQuitToTitle} />}
       {screen === 'stageResult' && <DreamRiftStageResult onQuit={handleQuitToTitle} />}
+      {screen === 'leaderboard' && <DreamRiftLeaderboard />}
     </div>
   );
 }

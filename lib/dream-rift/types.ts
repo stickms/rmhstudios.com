@@ -1,5 +1,5 @@
 // --- Game States ---
-export type GameScreen = 'title' | 'charSelect' | 'difficultySelect' | 'playing' | 'paused' | 'dialogue' | 'stageResult' | 'gameOver' | 'continue';
+export type GameScreen = 'title' | 'charSelect' | 'difficultySelect' | 'playing' | 'paused' | 'dialogue' | 'stageResult' | 'gameOver' | 'continue' | 'leaderboard';
 export type Difficulty = 'easy' | 'normal' | 'hard' | 'lunatic';
 export type Character = 'rei' | 'yume';
 

@@ -21,10 +21,11 @@ export function DreamRiftStageResult({ onQuit }: { onQuit: () => void }) {
   const stageName = STAGE_NAMES[stage] ?? `Stage ${stage}`;
   const isFinalStage = stage >= 6;
 
+  const setScreen = useDreamRiftStore((s) => s.setScreen);
+
   const handleNext = () => {
     if (isFinalStage) {
-      // Credits / return to title for now
-      onQuit();
+      setScreen('leaderboard');
     } else {
       nextStage();
     }
@@ -92,7 +93,7 @@ export function DreamRiftStageResult({ onQuit }: { onQuit: () => void }) {
             onClick={handleNext}
             className="w-full py-2.5 px-6 text-sm font-bold tracking-wide text-white bg-white/10 border border-white/20 rounded hover:bg-white/20 hover:border-white/40 transition-all"
           >
-            {isFinalStage ? 'Credits' : 'Next Stage'}
+            {isFinalStage ? 'Leaderboard' : 'Next Stage'}
           </button>
           <button
             onClick={onQuit}

@@ -79,6 +79,12 @@ export function DreamRiftGameOver({ onQuit }: { onQuit: () => void }) {
             </button>
           )}
           <button
+            onClick={() => useDreamRiftStore.getState().setScreen('leaderboard')}
+            className="w-full py-2.5 px-6 text-sm font-bold tracking-wide text-violet-400 bg-violet-500/10 border border-violet-500/20 rounded hover:bg-violet-500/20 hover:text-violet-300 transition-all"
+          >
+            Leaderboard
+          </button>
+          <button
             onClick={onQuit}
             className="w-full py-2.5 px-6 text-sm font-bold tracking-wide text-zinc-400 bg-white/5 border border-white/10 rounded hover:bg-white/10 hover:text-zinc-200 transition-all"
           >
