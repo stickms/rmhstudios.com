@@ -7,11 +7,12 @@ import { authClient } from '@/lib/auth-client';
 import { useSession } from '@/components/Providers';
 import {
   Home, Gamepad2, AppWindow, Newspaper, Map, FlaskConical, BookOpen,
-  Palette, ChevronDown, LogOut, PenSquare, User,
+  Palette, ChevronDown, LogOut, PenSquare, User, MessageCircle,
 } from 'lucide-react';
 import { ComposeModal } from './ComposeModal';
 import { Button } from '@/components/ui/button';
 import { useThemeStore, SITE_STYLES } from '@/stores/themeStore';
+import { useUnreadCount } from '@/lib/useUnreadCount';
 
 const navLinks = [
   { href: '/', label: 'Home', icon: Home },
@@ -44,6 +45,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   const [popoverPos, setPopoverPos] = useState({ bottom: 0, left: 0 });
 
   const { data: session, isPending } = useSession();
+  const unreadCount = useUnreadCount(!!session);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -120,6 +122,28 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
           >
             <User className="w-5 h-5 shrink-0" />
             <span className={labelClass}>Profile</span>
+          </Link>
+        )}
+        {/* Messages link (shown when logged in) */}
+        {session && (
+          <Link
+            href="/messages"
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${itemJustifyClass} ${
+              pathname?.startsWith('/messages')
+                ? 'text-site-accent bg-site-accent-dim'
+                : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
+            }`}
+            title="Messages"
+          >
+            <div className="relative shrink-0">
+              <MessageCircle className="w-5 h-5" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-bold px-1 leading-none">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
+            </div>
+            <span className={labelClass}>Messages</span>
           </Link>
         )}
       </nav>

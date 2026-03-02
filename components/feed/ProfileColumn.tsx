@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { MapPin, Link as LinkIcon, Calendar, Loader2, ArrowLeft } from 'lucide-react';
+import { MapPin, Link as LinkIcon, Calendar, Loader2, ArrowLeft, MessageCircle } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { authClient } from '@/lib/auth-client';
 import { RMHarkCard } from './RMHarkCard';
@@ -21,6 +22,7 @@ interface ProfileData {
   location: string | null;
   website: string | null;
   showLikes: boolean;
+  dmPrivacy: string;
   profileSongSpotifyId: string | null;
   profileSongTitle: string | null;
   profileSongArtist: string | null;
@@ -67,6 +69,9 @@ export function ProfileColumn({ userId }: { userId: string }) {
   const scriptLoadedRef = useRef(false);
 
   const { data: session } = authClient.useSession();
+  const router = useRouter();
+  const [messageSending, setMessageSending] = useState(false);
+  const [messageError, setMessageError] = useState<string | null>(null);
 
   // Fetch profile
   useEffect(() => {
@@ -104,13 +109,10 @@ export function ProfileColumn({ userId }: { userId: string }) {
           ctrl.addListener('playback_update', (e: { data: { isPaused: boolean } }) => {
             setIsPlaying(!e.data.isPaused);
           });
-          if (typeof ctrl.setVolume === 'function') ctrl.setVolume(0.05);
-          if (typeof ctrl.play === 'function') ctrl.play();
         },
       );
     };
 
-    // If the API is already loaded on the window, use it directly
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if ((window as any).SpotifyIframeApi) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -136,8 +138,14 @@ export function ProfileColumn({ userId }: { userId: string }) {
   }, [profile?.profileSongSpotifyId]);
 
   const handleTogglePlay = useCallback(() => {
-    controllerRef.current?.togglePlay();
-  }, []);
+    const ctrl = controllerRef.current;
+    if (!ctrl) return;
+    if (isPlaying) {
+      ctrl.pause();
+    } else {
+      ctrl.play();
+    }
+  }, [isPlaying]);
 
   // Fetch RMHarks
   const fetchRMHarks = useCallback(async () => {
@@ -254,6 +262,33 @@ export function ProfileColumn({ userId }: { userId: string }) {
     }
   };
 
+  const handleMessage = async () => {
+    if (!profile || !session || messageSending) return;
+    setMessageSending(true);
+    setMessageError(null);
+
+    try {
+      const res = await fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ recipientId: profile.id }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        setMessageError(data.error || 'Failed to start conversation');
+        return;
+      }
+
+      const data = await res.json();
+      router.push(`/messages/${data.conversationId}`);
+    } catch {
+      setMessageError('Failed to start conversation');
+    } finally {
+      setMessageSending(false);
+    }
+  };
+
   const handleTabChange = (newTab: ProfileTab) => {
     setTab(newTab);
     if (newTab === 'likes' && !likedInitialFetched.current) {
@@ -311,27 +346,37 @@ export function ProfileColumn({ userId }: { userId: string }) {
       {/* Profile header */}
       <div className="px-4 pt-6 pb-4 border-b border-site-border">
         <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-20 h-20 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-2xl ring-4 ring-site-bg shrink-0">
-              {profile.image ? (
-                <img src={profile.image} alt={profile.name || 'User'} className="w-full h-full rounded-full object-cover" />
-              ) : (
-                (profile.name?.[0] || 'U').toUpperCase()
-              )}
-            </div>
-
-            {profile.profileSongSpotifyId && profile.profileSongAlbumArt && (
-              <VinylRecord
-                albumArt={profile.profileSongAlbumArt}
-                title={profile.profileSongTitle ?? 'Unknown'}
-                artist={profile.profileSongArtist ?? 'Unknown'}
-                isPlaying={isPlaying}
-                onToggle={handleTogglePlay}
-              />
+          <div className="w-20 h-20 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-2xl ring-4 ring-site-bg shrink-0">
+            {profile.image ? (
+              <img src={profile.image} alt={profile.name || 'User'} className="w-full h-full rounded-full object-cover" />
+            ) : (
+              (profile.name?.[0] || 'U').toUpperCase()
             )}
           </div>
 
-          <div className="mt-2">
+          {profile.profileSongSpotifyId && profile.profileSongAlbumArt && (
+            <VinylRecord
+              albumArt={profile.profileSongAlbumArt}
+              title={profile.profileSongTitle ?? 'Unknown'}
+              artist={profile.profileSongArtist ?? 'Unknown'}
+              isPlaying={isPlaying}
+              onToggle={handleTogglePlay}
+            />
+          )}
+        </div>
+
+        {messageError && (
+          <p className="text-sm text-site-danger mt-2">{messageError}</p>
+        )}
+
+        <div className="flex items-start justify-between mb-3">
+          <div>
+            <h2 className="font-bold text-xl text-site-text">{profile.name || 'Unknown'}</h2>
+            {profile.username && (
+              <p className="text-sm text-site-text-dim">@{profile.username}</p>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
             {profile.isOwnProfile ? (
               <Button
                 variant="outline"
@@ -342,23 +387,28 @@ export function ProfileColumn({ userId }: { userId: string }) {
                 Edit Profile
               </Button>
             ) : session ? (
-              <Button
-                variant={profile.isFollowing ? 'outline' : 'accent'}
-                size="sm"
-                onClick={handleFollowToggle}
-                className={`rounded-full ${profile.isFollowing ? 'border-site-border text-site-text hover:border-site-danger hover:text-site-danger hover:bg-site-danger/10' : ''}`}
-              >
-                {profile.isFollowing ? 'Following' : 'Follow'}
-              </Button>
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleMessage}
+                  disabled={messageSending}
+                  className="rounded-full border-site-border text-site-text hover:bg-site-surface"
+                  title="Message"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant={profile.isFollowing ? 'outline' : 'accent'}
+                  size="sm"
+                  onClick={handleFollowToggle}
+                  className={`rounded-full ${profile.isFollowing ? 'border-site-border text-site-text hover:border-site-danger hover:text-site-danger hover:bg-site-danger/10' : ''}`}
+                >
+                  {profile.isFollowing ? 'Following' : 'Follow'}
+                </Button>
+              </>
             ) : null}
           </div>
-        </div>
-
-        <div className="mb-3">
-          <h2 className="font-bold text-xl text-site-text">{profile.name || 'Unknown'}</h2>
-          {profile.username && (
-            <p className="text-sm text-site-text-dim">@{profile.username}</p>
-          )}
         </div>
 
         {profile.bio && (
@@ -408,7 +458,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
           </button>
         </div>
 
-        {/* Hidden Spotify embed container (IFrame API injects here) */}
+        {/* Hidden Spotify embed container */}
         {profile.profileSongSpotifyId && (
           <div
             ref={embedContainerRef}
@@ -526,6 +576,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
             location: profile.location,
             website: profile.website,
             showLikes: profile.showLikes,
+            dmPrivacy: profile.dmPrivacy,
             profileSongSpotifyId: profile.profileSongSpotifyId,
             profileSongTitle: profile.profileSongTitle,
             profileSongArtist: profile.profileSongArtist,
@@ -543,6 +594,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
                 location: data.location,
                 website: data.website,
                 showLikes: data.showLikes,
+                dmPrivacy: data.dmPrivacy,
                 profileSongSpotifyId: data.profileSongSpotifyId,
                 profileSongTitle: data.profileSongTitle,
                 profileSongArtist: data.profileSongArtist,

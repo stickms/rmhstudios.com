@@ -3,16 +3,18 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, AppWindow, Menu, Gamepad2, User, PenSquare } from 'lucide-react';
+import { Home, AppWindow, Menu, Gamepad2, User, PenSquare, MessageCircle } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { MobileSidebarDrawer } from './MobileSidebarDrawer';
 import { ComposeModal } from './ComposeModal';
+import { useUnreadCount } from '@/lib/useUnreadCount';
 
 export function MobileNav() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [composeOpen, setComposeOpen] = useState(false);
+  const unreadCount = useUnreadCount(!!session);
 
   const profileHref = session?.user?.id
     ? `/profile/${session.user.id}`
@@ -20,6 +22,7 @@ export function MobileNav() {
 
   const isHome = pathname === '/';
   const isApps = pathname?.startsWith('/apps');
+  const isMessages = pathname?.startsWith('/messages');
   const isGames = pathname?.startsWith('/games');
   const isProfile = pathname?.startsWith('/profile');
 
@@ -48,9 +51,22 @@ export function MobileNav() {
             <Home className="w-6 h-6" />
           </Link>
 
-          <Link href="/apps" className={tabClass(isApps)} aria-label="Apps">
-            <AppWindow className="w-6 h-6" />
-          </Link>
+          {session ? (
+            <Link href="/messages" className={tabClass(isMessages)} aria-label="Messages">
+              <div className="relative">
+                <MessageCircle className="w-6 h-6" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-bold px-1 leading-none">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
+              </div>
+            </Link>
+          ) : (
+            <Link href="/apps" className={tabClass(isApps)} aria-label="Apps">
+              <AppWindow className="w-6 h-6" />
+            </Link>
+          )}
 
           <button
             onClick={() => setDrawerOpen(true)}

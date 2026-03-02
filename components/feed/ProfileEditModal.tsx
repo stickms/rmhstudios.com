@@ -24,6 +24,7 @@ interface ProfileEditModalProps {
     location: string | null;
     website: string | null;
     showLikes: boolean;
+    dmPrivacy: string;
   } & ProfileSongData) => void;
   initial: {
     name: string | null;
@@ -32,6 +33,7 @@ interface ProfileEditModalProps {
     location: string | null;
     website: string | null;
     showLikes: boolean;
+    dmPrivacy: string;
   } & ProfileSongData;
 }
 
@@ -47,6 +49,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
   const [location, setLocation] = useState(initial.location ?? '');
   const [website, setWebsite] = useState(initial.website ?? '');
   const [showLikes, setShowLikes] = useState(initial.showLikes);
+  const [dmPrivacy, setDmPrivacy] = useState(initial.dmPrivacy ?? 'EVERYONE');
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(initial.image);
   const [cropSrc, setCropSrc] = useState<string | null>(null);
@@ -173,6 +176,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
           location: location.trim() || null,
           website: website.trim() || null,
           showLikes,
+          dmPrivacy,
           profileSongSpotifyId: selectedSong?.id ?? null,
           profileSongTitle: selectedSong?.title ?? null,
           profileSongArtist: selectedSong?.artist ?? null,
@@ -328,6 +332,25 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
                   }`}
                 />
               </button>
+            </div>
+
+            {/* DM Privacy */}
+            <div>
+              <label className="block text-xs font-medium text-site-text-dim mb-1.5">Who can message you</label>
+              <select
+                value={dmPrivacy}
+                onChange={(e) => setDmPrivacy(e.target.value)}
+                className="w-full bg-site-surface text-site-text text-sm rounded-xl p-3 border border-site-border outline-none focus:border-site-accent transition-colors appearance-none cursor-pointer"
+              >
+                <option value="EVERYONE">Everyone</option>
+                <option value="FOLLOWERS">People I follow</option>
+                <option value="NONE">Nobody</option>
+              </select>
+              <p className="text-xs text-site-text-dim mt-1">
+                {dmPrivacy === 'EVERYONE' && 'Anyone can send you a direct message.'}
+                {dmPrivacy === 'FOLLOWERS' && 'Only people you follow can message you.'}
+                {dmPrivacy === 'NONE' && 'No one can send you direct messages.'}
+              </p>
             </div>
 
             {/* Profile Song */}

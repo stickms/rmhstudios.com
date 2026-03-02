@@ -42,6 +42,7 @@ export async function PATCH(req: NextRequest) {
       location,
       website,
       showLikes,
+      dmPrivacy,
       profileSongSpotifyId,
       profileSongTitle,
       profileSongArtist,
@@ -68,6 +69,7 @@ export async function PATCH(req: NextRequest) {
         location: location ?? null,
         website: website || null,
         showLikes: showLikes ?? false,
+        ...(dmPrivacy !== undefined ? { dmPrivacy } : {}),
         ...songFields,
       },
       update: {
@@ -76,6 +78,7 @@ export async function PATCH(req: NextRequest) {
         location: location ?? null,
         website: website || null,
         ...(showLikes !== undefined ? { showLikes } : {}),
+        ...(dmPrivacy !== undefined ? { dmPrivacy } : {}),
         ...songFields,
       },
     });
@@ -86,6 +89,7 @@ export async function PATCH(req: NextRequest) {
       location: profile.location,
       website: profile.website,
       showLikes: profile.showLikes,
+      dmPrivacy: profile.dmPrivacy,
       profileSongSpotifyId: profile.profileSongSpotifyId,
       profileSongTitle: profile.profileSongTitle,
       profileSongArtist: profile.profileSongArtist,
