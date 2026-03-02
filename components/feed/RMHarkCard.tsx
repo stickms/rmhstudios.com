@@ -7,6 +7,8 @@ import { useRouter } from 'next/navigation';
 import { Repeat2, MoreHorizontal, Heart, Repeat, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { RMHarkContent } from './RMHarkContent';
+import { PollDisplay } from './PollDisplay';
+import { GifEmbed } from './GifEmbed';
 import { useFeedStore } from '@/stores/feedStore';
 import { authClient } from '@/lib/auth-client';
 import { EngagementListModal } from './EngagementListModal';
@@ -51,7 +53,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
   const router = useRouter();
   const actualId = item.actualId ?? item.id;
   const { data: session } = authClient.useSession();
-  const { removeItem } = useFeedStore();
+  const { removeItem, updateItem } = useFeedStore();
   const isAuthor = session?.user?.id === item.user?.id;
   const [menuOpen, setMenuOpen] = useState(false);
   const [engagementModal, setEngagementModal] = useState<'likes' | 'reposts' | null>(null);
@@ -178,7 +180,21 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
           </div>
 
           {/* Content */}
-          <RMHarkContent text={item.content ?? ''} className="text-site-text text-[15px] mt-1 whitespace-pre-wrap break-words" />
+          {item.content && (
+            <RMHarkContent text={item.content} className="text-site-text text-[15px] mt-1 whitespace-pre-wrap break-words" />
+          )}
+
+          {/* Poll */}
+          {item.poll && (
+            <PollDisplay
+              poll={item.poll}
+              postId={item.actualId ?? item.id}
+              onUpdate={(updatedPoll) => updateItem(item.id, { poll: updatedPoll })}
+            />
+          )}
+
+          {/* GIF */}
+          {item.gifUrl && <GifEmbed url={item.gifUrl} className="mt-3" />}
 
           {/* Quoted original (if repost) */}
           {item.original && (

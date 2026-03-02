@@ -1,29 +1,92 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { Plus, BarChart3, Image, X } from 'lucide-react';
+import { GifEmbed } from './GifEmbed';
 import { authClient } from '@/lib/auth-client';
 import { Button } from '@/components/ui/button';
 import { useFeedStore } from '@/stores/feedStore';
-import { MAX_RMHARK_LENGTH } from '@/lib/rmhark-schema';
+import {
+  MAX_RMHARK_LENGTH,
+  MAX_POLL_QUESTION_LENGTH,
+  MAX_POLL_OPTION_LENGTH,
+  MIN_POLL_OPTIONS,
+  MAX_POLL_OPTIONS,
+} from '@/lib/rmhark-schema';
 import Link from 'next/link';
+
+type Attachment = 'poll' | 'gif' | null;
+
+interface PollDraft {
+  question: string;
+  options: string[];
+  multiSelect: boolean;
+}
+
+function isValidGifUrl(url: string): boolean {
+  try {
+    const host = new URL(url).hostname;
+    return host.endsWith('tenor.com') || host.endsWith('giphy.com');
+  } catch {
+    return false;
+  }
+}
 
 export function ComposeBox() {
   const [content, setContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [attachment, setAttachment] = useState<Attachment>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [poll, setPoll] = useState<PollDraft>({
+    question: '',
+    options: ['', ''],
+    multiSelect: false,
+  });
+  const [gifUrl, setGifUrl] = useState('');
+  const menuRef = useRef<HTMLDivElement>(null);
   const { prependItem } = useFeedStore();
 
   const { data: session } = authClient.useSession();
   const remaining = MAX_RMHARK_LENGTH - content.length;
 
+  // Close menu on outside click
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [menuOpen]);
+
+  const hasPoll = attachment === 'poll' && poll.question.trim() &&
+    poll.options.filter((o) => o.trim()).length >= MIN_POLL_OPTIONS;
+  const hasGif = attachment === 'gif' && gifUrl.trim() && isValidGifUrl(gifUrl.trim());
+  const hasContent = content.trim().length > 0;
+  const canSubmit = (hasContent || hasPoll || hasGif) && remaining >= 0 && !submitting;
+
   const handleSubmit = async () => {
-    if (!content.trim() || submitting) return;
+    if (!canSubmit) return;
 
     setSubmitting(true);
     try {
+      const body: Record<string, unknown> = {};
+      if (content.trim()) body.content = content.trim();
+      if (hasPoll) {
+        body.poll = {
+          question: poll.question.trim(),
+          options: poll.options.filter((o) => o.trim()).map((o) => o.trim()),
+          multiSelect: poll.multiSelect,
+        };
+      }
+      if (hasGif) body.gifUrl = gifUrl.trim();
+
       const res = await fetch('/api/rmharks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: content.trim() }),
+        body: JSON.stringify(body),
       });
 
       if (!res.ok) {
@@ -35,6 +98,9 @@ export function ComposeBox() {
       const item = await res.json();
       prependItem(item);
       setContent('');
+      setAttachment(null);
+      setPoll({ question: '', options: ['', ''], multiSelect: false });
+      setGifUrl('');
     } catch (error) {
       console.error('Post error:', error);
     } finally {
@@ -86,6 +152,116 @@ export function ComposeBox() {
             }}
           />
 
+          {/* Poll creator */}
+          {attachment === 'poll' && (
+            <div className="mt-2 border border-site-border rounded-xl p-3 bg-site-surface/20">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold text-site-text-dim uppercase tracking-wide">Poll</span>
+                <button
+                  onClick={() => {
+                    setAttachment(null);
+                    setPoll({ question: '', options: ['', ''], multiSelect: false });
+                  }}
+                  className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface transition-colors"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              <input
+                type="text"
+                value={poll.question}
+                onChange={(e) => setPoll((p) => ({ ...p, question: e.target.value }))}
+                placeholder="Ask a question..."
+                maxLength={MAX_POLL_QUESTION_LENGTH}
+                className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-lg p-2 border border-site-border outline-none focus:border-site-accent transition-colors mb-2"
+              />
+
+              <div className="space-y-2">
+                {poll.options.map((opt, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={opt}
+                      onChange={(e) => {
+                        const newOptions = [...poll.options];
+                        newOptions[i] = e.target.value;
+                        setPoll((p) => ({ ...p, options: newOptions }));
+                      }}
+                      placeholder={`Option ${i + 1}`}
+                      maxLength={MAX_POLL_OPTION_LENGTH}
+                      className="flex-1 bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-lg p-2 border border-site-border outline-none focus:border-site-accent transition-colors"
+                    />
+                    {poll.options.length > MIN_POLL_OPTIONS && (
+                      <button
+                        onClick={() => {
+                          const newOptions = poll.options.filter((_, j) => j !== i);
+                          setPoll((p) => ({ ...p, options: newOptions }));
+                        }}
+                        className="p-1 rounded-full text-site-text-dim hover:text-site-danger hover:bg-site-danger/10 transition-colors"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {poll.options.length < MAX_POLL_OPTIONS && (
+                <button
+                  onClick={() => setPoll((p) => ({ ...p, options: [...p.options, ''] }))}
+                  className="mt-2 text-xs text-site-accent hover:text-site-accent-hover transition-colors"
+                >
+                  + Add option
+                </button>
+              )}
+
+              <label className="flex items-center gap-2 mt-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={poll.multiSelect}
+                  onChange={(e) => setPoll((p) => ({ ...p, multiSelect: e.target.checked }))}
+                  className="rounded border-site-border text-site-accent focus:ring-site-accent"
+                />
+                <span className="text-xs text-site-text-dim">Allow multiple selections</span>
+              </label>
+            </div>
+          )}
+
+          {/* GIF input */}
+          {attachment === 'gif' && (
+            <div className="mt-2 border border-site-border rounded-xl p-3 bg-site-surface/20">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold text-site-text-dim uppercase tracking-wide">GIF</span>
+                <button
+                  onClick={() => {
+                    setAttachment(null);
+                    setGifUrl('');
+                  }}
+                  className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface transition-colors"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              <input
+                type="url"
+                value={gifUrl}
+                onChange={(e) => setGifUrl(e.target.value)}
+                placeholder="Paste a Tenor or Giphy link..."
+                className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-lg p-2 border border-site-border outline-none focus:border-site-accent transition-colors"
+              />
+
+              {gifUrl.trim() && isValidGifUrl(gifUrl.trim()) && (
+                <GifEmbed url={gifUrl.trim()} className="mt-2" />
+              )}
+
+              {gifUrl.trim() && !isValidGifUrl(gifUrl.trim()) && (
+                <p className="text-xs text-site-danger mt-1">Must be a Tenor or Giphy link</p>
+              )}
+            </div>
+          )}
+
           <div className="flex items-center justify-between mt-2">
             {/* Character counter */}
             <span
@@ -100,14 +276,53 @@ export function ComposeBox() {
               {remaining}
             </span>
 
-            <Button
-              variant="accent"
-              size="sm"
-              disabled={!content.trim() || remaining < 0 || submitting}
-              onClick={handleSubmit}
-            >
-              {submitting ? 'Posting...' : 'Post'}
-            </Button>
+            <div className="flex items-center gap-1.5">
+              {/* Plus button */}
+              <div className="relative" ref={menuRef}>
+                <button
+                  onClick={() => setMenuOpen((v) => !v)}
+                  className="p-1.5 rounded-full text-site-text-dim hover:text-site-accent hover:bg-site-accent/10 transition-colors"
+                >
+                  <Plus className="w-4.5 h-4.5" />
+                </button>
+
+                {menuOpen && (
+                  <div className="absolute bottom-full right-0 mb-1 w-40 bg-site-bg border border-site-border rounded-xl shadow-xl py-1 z-30">
+                    <button
+                      onClick={() => {
+                        setAttachment('poll');
+                        setGifUrl('');
+                        setMenuOpen(false);
+                      }}
+                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
+                    >
+                      <BarChart3 className="w-4 h-4 text-site-text-dim" />
+                      Create Poll
+                    </button>
+                    <button
+                      onClick={() => {
+                        setAttachment('gif');
+                        setPoll({ question: '', options: ['', ''], multiSelect: false });
+                        setMenuOpen(false);
+                      }}
+                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
+                    >
+                      <Image className="w-4 h-4 text-site-text-dim" />
+                      Add GIF
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <Button
+                variant="accent"
+                size="sm"
+                disabled={!canSubmit}
+                onClick={handleSubmit}
+              >
+                {submitting ? 'Posting...' : 'Post'}
+              </Button>
+            </div>
           </div>
         </div>
       </div>

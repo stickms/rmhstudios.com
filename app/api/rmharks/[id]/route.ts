@@ -21,7 +21,7 @@ export async function GET(
       // Not logged in
     }
 
-    const rmhark = await prisma.rMHark.findUnique({
+    const rmhark: any = await prisma.rMHark.findUnique({
       where: { id },
       include: {
         user: { select: userDisplaySelect },
@@ -32,6 +32,19 @@ export async function GET(
               reposts: { where: { userId }, select: { id: true } },
             }
           : {}),
+        poll: {
+          include: {
+            options: {
+              orderBy: { position: "asc" as const },
+              include: {
+                _count: { select: { votes: true } },
+                ...(userId
+                  ? { votes: { where: { userId }, select: { id: true, optionId: true } } }
+                  : {}),
+              },
+            },
+          },
+        },
         original: {
           include: {
             user: { select: userDisplaySelect },
@@ -43,6 +56,28 @@ export async function GET(
 
     if (!rmhark) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    let pollData;
+    if (rmhark.poll) {
+      const totalVotes = rmhark.poll.options.reduce(
+        (sum: number, o: any) => sum + (o._count?.votes ?? 0),
+        0
+      );
+      pollData = {
+        id: rmhark.poll.id,
+        question: rmhark.poll.question,
+        multiSelect: rmhark.poll.multiSelect,
+        totalVotes,
+        options: rmhark.poll.options.map((o: any) => ({
+          id: o.id,
+          text: o.text,
+          voteCount: o._count?.votes ?? 0,
+        })),
+        myVotes: rmhark.poll.options
+          .filter((o: any) => o.votes?.length > 0)
+          .map((o: any) => o.id),
+      };
     }
 
     return NextResponse.json({
@@ -57,6 +92,8 @@ export async function GET(
       viewCount: rmhark._count.views,
       liked: userId ? rmhark.likes.length > 0 : false,
       reposted: userId ? rmhark.reposts.length > 0 : false,
+      poll: pollData,
+      gifUrl: rmhark.gifUrl ?? undefined,
       original: rmhark.original
         ? {
             id: rmhark.original.id,

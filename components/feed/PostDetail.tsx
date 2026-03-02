@@ -12,6 +12,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { FeedItem } from '@/lib/feed-types';
 import { RMHarkContent } from './RMHarkContent';
+import { PollDisplay } from './PollDisplay';
+import { GifEmbed } from './GifEmbed';
 import { EngagementListModal } from './EngagementListModal';
 
 interface PostDetailProps {
@@ -231,7 +233,23 @@ export function PostDetail({ postId }: PostDetailProps) {
         </div>
 
         {/* Content - larger text for detail view */}
-        <RMHarkContent text={post.content ?? ''} className="text-site-text text-[17px] leading-relaxed whitespace-pre-wrap break-words mb-3" />
+        {post.content && (
+          <RMHarkContent text={post.content} className="text-site-text text-[17px] leading-relaxed whitespace-pre-wrap break-words mb-3" />
+        )}
+
+        {/* Poll */}
+        {post.poll && (
+          <div className="mb-3">
+            <PollDisplay
+              poll={post.poll}
+              postId={postId}
+              onUpdate={(updatedPoll) => setPost((prev) => prev ? { ...prev, poll: updatedPoll } : prev)}
+            />
+          </div>
+        )}
+
+        {/* GIF */}
+        {post.gifUrl && <GifEmbed url={post.gifUrl} className="mb-3" />}
 
         {/* Quoted original */}
         {post.original && (

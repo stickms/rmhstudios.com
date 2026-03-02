@@ -9,10 +9,50 @@ import { apps } from "@/lib/apps";
 import { getAllPosts } from "@/lib/blog";
 import { getAllNewsArticles } from "@/lib/news";
 import { getAllArticles } from "@/lib/research";
-import type { FeedItem, FeedFilter } from "@/lib/feed-types";
+import type { FeedItem, FeedPoll, FeedFilter } from "@/lib/feed-types";
 import { userDisplaySelect, resolveUser } from "@/lib/user-display";
 
 export const runtime = "nodejs";
+
+/** Prisma include fragment for poll data on an RMHark */
+function pollInclude(userId: string | null) {
+  return {
+    include: {
+      options: {
+        orderBy: { position: "asc" as const },
+        include: {
+          _count: { select: { votes: true } },
+          ...(userId
+            ? { votes: { where: { userId }, select: { id: true, optionId: true } } }
+            : {}),
+        },
+      },
+    },
+  };
+}
+
+/** Map a Prisma poll result to a FeedPoll */
+function mapPoll(poll: any): FeedPoll | undefined {
+  if (!poll) return undefined;
+  const totalVotes = poll.options.reduce(
+    (sum: number, o: any) => sum + (o._count?.votes ?? 0),
+    0
+  );
+  return {
+    id: poll.id,
+    question: poll.question,
+    multiSelect: poll.multiSelect,
+    totalVotes,
+    options: poll.options.map((o: any) => ({
+      id: o.id,
+      text: o.text,
+      voteCount: o._count?.votes ?? 0,
+    })),
+    myVotes: poll.options
+      .filter((o: any) => o.votes?.length > 0)
+      .map((o: any) => o.id),
+  };
+}
 
 function deduplicateReposts(items: FeedItem[], windowSize = 2): FeedItem[] {
   const result: FeedItem[] = [];
@@ -164,6 +204,7 @@ export async function GET(req: NextRequest) {
         _count: { select: { likes: true, comments: true, reposts: true, views: true } },
         likes: { where: { userId }, select: { id: true } },
         reposts: { where: { userId }, select: { id: true } },
+        poll: pollInclude(userId),
         original: {
           include: {
             user: { select: userDisplaySelect },
@@ -213,7 +254,7 @@ export async function GET(req: NextRequest) {
             }
           : undefined;
 
-      const ownItems: FeedItem[] = rmharks.map((r) => ({
+      const ownItems: FeedItem[] = rmharks.map((r: any) => ({
         id: r.id,
         type: "rmhark" as const,
         createdAt: r.createdAt.toISOString(),
@@ -226,9 +267,11 @@ export async function GET(req: NextRequest) {
         liked: r.likes.length > 0,
         reposted: r.reposts.length > 0,
         original: mapOriginal(r.original),
+        poll: mapPoll(r.poll),
+        gifUrl: r.gifUrl ?? undefined,
       }));
 
-      const repostItems: FeedItem[] = repostRecords.map((rp) => {
+      const repostItems: FeedItem[] = repostRecords.map((rp: any) => {
         const r = rp.rmhark;
         return {
           id: `repost:${rp.id}`,
@@ -245,6 +288,8 @@ export async function GET(req: NextRequest) {
           reposted: r.reposts.length > 0,
           repostedBy: resolveUser(rp.user),
           original: mapOriginal(r.original),
+          poll: mapPoll(r.poll),
+          gifUrl: r.gifUrl ?? undefined,
         };
       });
 
@@ -280,6 +325,7 @@ export async function GET(req: NextRequest) {
             reposts: { where: { userId }, select: { id: true } },
           }
         : {}),
+      poll: pollInclude(userId),
       original: {
         include: {
           user: { select: userDisplaySelect },
@@ -315,7 +361,7 @@ export async function GET(req: NextRequest) {
         }),
       ]);
 
-      const mapOriginal = (o: typeof rmharks[0]["original"]) =>
+      const mapOriginal = (o: any) =>
         o
           ? {
               id: o.id,
@@ -330,7 +376,7 @@ export async function GET(req: NextRequest) {
             }
           : undefined;
 
-      const ownItems: FeedItem[] = rmharks.map((r) => ({
+      const ownItems: FeedItem[] = rmharks.map((r: any) => ({
         id: r.id,
         type: "rmhark" as const,
         createdAt: r.createdAt.toISOString(),
@@ -343,9 +389,11 @@ export async function GET(req: NextRequest) {
         liked: userId ? r.likes.length > 0 : false,
         reposted: userId ? r.reposts.length > 0 : false,
         original: mapOriginal(r.original),
+        poll: mapPoll(r.poll),
+        gifUrl: r.gifUrl ?? undefined,
       }));
 
-      const repostItems: FeedItem[] = repostRecords.map((rp) => {
+      const repostItems: FeedItem[] = repostRecords.map((rp: any) => {
         const r = rp.rmhark;
         return {
           id: `repost:${rp.id}`,
@@ -362,6 +410,8 @@ export async function GET(req: NextRequest) {
           reposted: userId ? r.reposts.length > 0 : false,
           repostedBy: resolveUser(rp.user),
           original: mapOriginal(r.original),
+          poll: mapPoll(r.poll),
+          gifUrl: r.gifUrl ?? undefined,
         };
       });
 
@@ -465,15 +515,64 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const rmhark = await prisma.rMHark.create({
-      data: {
-        content: parsed.data.content.trim(),
-        userId: session.user.id,
-      },
-      include: {
-        user: { select: userDisplaySelect },
-      },
+    const { content, poll, gifUrl } = parsed.data;
+
+    const rmhark = await prisma.$transaction(async (tx) => {
+      const created = await tx.rMHark.create({
+        data: {
+          content: content.trim(),
+          gifUrl: gifUrl ?? null,
+          userId: session.user.id,
+        },
+        include: {
+          user: { select: userDisplaySelect },
+        },
+      });
+
+      if (poll) {
+        await tx.rMHarkPoll.create({
+          data: {
+            rmheetId: created.id,
+            question: poll.question.trim(),
+            multiSelect: poll.multiSelect,
+            options: {
+              create: poll.options.map((text, i) => ({
+                text: text.trim(),
+                position: i,
+              })),
+            },
+          },
+          include: { options: true },
+        });
+      }
+
+      return created;
     });
+
+    // Re-fetch with poll data if poll was created
+    let pollData: FeedItem["poll"] | undefined;
+    if (poll) {
+      const createdPoll = await prisma.rMHarkPoll.findUnique({
+        where: { rmheetId: rmhark.id },
+        include: {
+          options: { orderBy: { position: "asc" } },
+        },
+      });
+      if (createdPoll) {
+        pollData = {
+          id: createdPoll.id,
+          question: createdPoll.question,
+          multiSelect: createdPoll.multiSelect,
+          totalVotes: 0,
+          options: createdPoll.options.map((o) => ({
+            id: o.id,
+            text: o.text,
+            voteCount: 0,
+          })),
+          myVotes: [],
+        };
+      }
+    }
 
     const item: FeedItem = {
       id: rmhark.id,
@@ -487,6 +586,8 @@ export async function POST(req: NextRequest) {
       viewCount: 0,
       liked: false,
       reposted: false,
+      poll: pollData,
+      gifUrl: rmhark.gifUrl ?? undefined,
     };
 
     return NextResponse.json(item, { status: 201 });

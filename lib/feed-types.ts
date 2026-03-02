@@ -13,6 +13,21 @@ export interface FeedItemUser {
   username: string | null;
 }
 
+export interface FeedPollOption {
+  id: string;
+  text: string;
+  voteCount: number;
+}
+
+export interface FeedPoll {
+  id: string;
+  question: string;
+  multiSelect: boolean;
+  totalVotes: number;
+  options: FeedPollOption[];
+  myVotes?: string[]; // option IDs the current user voted for
+}
+
 export interface FeedItem {
   id: string;
   type: FeedItemType;
@@ -30,6 +45,10 @@ export interface FeedItem {
   original?: FeedItem;
   repostedBy?: FeedItemUser;
   actualId?: string;
+
+  // Poll & GIF attachments
+  poll?: FeedPoll;
+  gifUrl?: string;
 
   // Announcement fields (games/apps/news/blog/research)
   title?: string;

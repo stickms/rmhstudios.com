@@ -76,6 +76,7 @@ model User {
   rmharkCommentLikes   RMHarkCommentLike[]
   rmharkCommentReposts RMHarkCommentRepost[]
   rmharkCommentViews   RMHarkCommentView[]
+  rmharkPollVotes      RMHarkPollVote[]
 
   // Profile & Social
   profile              UserProfile?
@@ -908,6 +909,7 @@ model RMHark {
   id        String   @id @default(cuid())
   userId    String
   content   String   @db.Text
+  gifUrl    String?  @db.Text
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -916,6 +918,7 @@ model RMHark {
   comments  RMHarkComment[]
   reposts   RMHarkRepost[]
   views     RMHarkView[]
+  poll      RMHarkPoll?
 
   // Self-relation for reposts (quote-repost displays the original inline)
   originalId String?
@@ -1034,6 +1037,46 @@ model RMHarkView {
   @@unique([rmheetId, ipHash])
   @@index([rmheetId])
   @@map("rmheet_view")
+}
+
+model RMHarkPoll {
+  id          String   @id @default(cuid())
+  rmheetId    String   @unique
+  question    String   @db.VarChar(200)
+  multiSelect Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  rmhark  RMHark             @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
+  options RMHarkPollOption[]
+
+  @@map("rmheet_poll")
+}
+
+model RMHarkPollOption {
+  id       String @id @default(cuid())
+  pollId   String
+  text     String @db.VarChar(80)
+  position Int
+
+  poll  RMHarkPoll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  votes RMHarkPollVote[]
+
+  @@index([pollId])
+  @@map("rmheet_poll_option")
+}
+
+model RMHarkPollVote {
+  id        String   @id @default(cuid())
+  optionId  String
+  userId    String
+  createdAt DateTime @default(now())
+
+  option RMHarkPollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  user   User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([optionId, userId])
+  @@index([optionId])
+  @@map("rmheet_poll_vote")
 }
 
 // ─── User Profile (Social) ──────────────────────────────────────
