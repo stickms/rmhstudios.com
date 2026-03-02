@@ -17,17 +17,29 @@ export default function RmhMusicPage() {
   const [joinCode, setJoinCode] = useState('');
   const [roomName, setRoomName] = useState('');
 
-  // Handle Spotify OAuth success (redirected from server-side callback)
+  // Handle Spotify OAuth callback
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('spotify_connected') === '1') {
-      useRmhMusicStore.getState().setSpotify({ isConnected: true });
-      window.history.replaceState({}, '', '/rmhmusic');
-      router.push('/rmhmusic/player');
-    }
-    if (params.get('spotify_error')) {
-      console.error('Spotify auth error:', params.get('spotify_error'));
-      window.history.replaceState({}, '', '/rmhmusic');
+    const code = params.get('code');
+    const state = params.get('state');
+    if (!code || !state) return;
+
+    const storedState = sessionStorage.getItem('spotify_state');
+    const codeVerifier = sessionStorage.getItem('spotify_code_verifier');
+    if (state === storedState && codeVerifier) {
+      fetch('/api/rmhmusic/spotify/callback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, codeVerifier }),
+      }).then((res) => {
+        if (res.ok) {
+          sessionStorage.removeItem('spotify_state');
+          sessionStorage.removeItem('spotify_code_verifier');
+          window.history.replaceState({}, '', '/rmhmusic');
+          useRmhMusicStore.getState().setSpotify({ isConnected: true });
+          router.push('/rmhmusic/player');
+        }
+      });
     }
   }, []);
 
