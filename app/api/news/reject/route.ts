@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
-import fs from "fs";
-import path from "path";
+import { prisma } from "@/lib/prisma";
 
 function verifyToken(slug: string, token: string): boolean {
   const secret = process.env.NEWS_APPROVAL_SECRET ?? "";
@@ -25,25 +24,21 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Invalid token" }, { status: 403 });
   }
 
-  const stagingPath = path.join(process.cwd(), "content/news/staging", `${slug}.mdx`);
+  const article = await prisma.newsArticle.findUnique({ where: { slug } });
 
-  if (!fs.existsSync(stagingPath)) {
+  if (!article) {
     return NextResponse.json(
-      { error: "Article not found in staging. It may have already been published or expired." },
+      { error: "Article not found. It may have already been published or rejected." },
       { status: 404 }
     );
   }
 
-  try {
-    fs.unlinkSync(stagingPath);
-    console.log(`[reject] Deleted staging file: ${slug}.mdx`);
-  } catch (err) {
-    console.error("[reject] Failed to delete staging file:", err);
-    return NextResponse.json({ error: "Failed to delete file" }, { status: 500 });
-  }
+  await prisma.newsArticle.delete({ where: { slug } });
+
+  console.log(`[reject] Deleted article: ${slug}`);
 
   return new NextResponse(
-    `Article "${slug}" rejected and deleted from staging.`,
+    `Article "${slug}" has been rejected and deleted.`,
     { status: 200, headers: { "Content-Type": "text/plain" } }
   );
 }

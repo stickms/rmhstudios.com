@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
-import fs from "fs";
-import path from "path";
-import { exec } from "child_process";
+import { prisma } from "@/lib/prisma";
 
 function verifyToken(slug: string, token: string): boolean {
   const secret = process.env.NEWS_APPROVAL_SECRET ?? "";
@@ -26,52 +24,31 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Invalid token" }, { status: 403 });
   }
 
-  const cwd = process.cwd();
-  const stagingPath = path.join(cwd, "content/news/staging", `${slug}.mdx`);
-  const publishPath = path.join(cwd, "content/news", `${slug}.mdx`);
+  const article = await prisma.newsArticle.findUnique({ where: { slug } });
 
-  if (!fs.existsSync(stagingPath)) {
+  if (!article) {
     return NextResponse.json(
-      { error: "Article not found in staging. It may have already been published or expired." },
+      { error: "Article not found. It may have already been published or rejected." },
       { status: 404 }
     );
   }
 
-  try {
-    fs.copyFileSync(stagingPath, publishPath);
-    fs.unlinkSync(stagingPath);
-  } catch (err) {
-    console.error("[approve] Failed to move file from staging:", err);
-    return NextResponse.json({ error: "Failed to move file" }, { status: 500 });
+  if (article.status === "PUBLISHED") {
+    return new NextResponse(
+      `Article "${slug}" is already published.`,
+      { status: 200, headers: { "Content-Type": "text/plain" } }
+    );
   }
 
-  console.log(`[approve] Moved ${slug}.mdx from staging to content/news/`);
-
-  // Commit the new article and trigger a redeploy in the background.
-  // deploy.sh does git pull, so we must commit + push first.
-  const gitCommands = [
-    `git -C "${cwd}" add "content/news/${slug}.mdx"`,
-    `git -C "${cwd}" commit -m "auto: publish ${slug} [skip ci]"`,
-    `git -C "${cwd}" push origin main`,
-  ].join(" && ");
-
-  const deployScript = path.join(cwd, "deploy.sh");
-  const deployCmd = fs.existsSync(deployScript)
-    ? `nohup bash "${deployScript}" >> /var/log/news-deploy.log 2>&1 &`
-    : "";
-
-  const fullCmd = deployCmd ? `${gitCommands} && ${deployCmd}` : gitCommands;
-
-  exec(fullCmd, { cwd }, (err) => {
-    if (err) {
-      console.error("[approve] Git/deploy command failed:", err.message);
-    } else {
-      console.log(`[approve] Git committed and deploy triggered for: ${slug}`);
-    }
+  await prisma.newsArticle.update({
+    where: { slug },
+    data: { status: "PUBLISHED" },
   });
 
+  console.log(`[approve] Published article: ${slug}`);
+
   return new NextResponse(
-    `Article "${slug}" approved. The site will rebuild and publish it shortly.`,
+    `Article "${slug}" is now published and live on the site.`,
     { status: 200, headers: { "Content-Type": "text/plain" } }
   );
 }

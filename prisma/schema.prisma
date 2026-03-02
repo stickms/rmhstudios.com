@@ -999,6 +999,38 @@ model UserProfile {
   @@map("user_profile")
 }
 
+// ─── News ─────────────────────────────────────────────────────────
+
+enum NewsStatus {
+  STAGING
+  PUBLISHED
+}
+
+model NewsArticle {
+  id              String     @id @default(cuid())
+  slug            String     @unique
+  title           String
+  date            String
+  description     String     @db.Text
+  content         String     @db.Text
+  category        String
+  tags            String[]
+  featured        Boolean    @default(false)
+  sourceTitle     String
+  sourceUrl       String
+  sourcePublisher String
+  sourceDate      String?
+  image           String?
+  status          NewsStatus @default(PUBLISHED)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  @@index([status, date(sort: Desc)])
+  @@index([category])
+  @@index([slug])
+  @@map("news_article")
+}
+
 // ─── Follow Relation ─────────────────────────────────────────────
 
 model Follow {

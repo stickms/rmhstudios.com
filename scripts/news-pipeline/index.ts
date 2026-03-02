@@ -8,31 +8,24 @@
  */
 
 import "dotenv/config";
-import fs from "fs";
-import path from "path";
+import { prisma } from "@/lib/prisma";
 
-import { pickRandomCategories, ARTICLES_PER_RUN, STAGING_DIR, STAGING_MAX_AGE_HOURS } from "./config";
+import { pickRandomCategories, ARTICLES_PER_RUN, STAGING_MAX_AGE_HOURS } from "./config";
 import { fetchTopStory } from "./fetcher";
 import { scrapeArticle } from "./scraper";
 import { generateArticle } from "./generator";
 import { postToDiscord } from "./discord";
 
-function cleanupStaleStagingFiles(): void {
-  const stagingPath = path.join(process.cwd(), STAGING_DIR);
-  if (!fs.existsSync(stagingPath)) return;
-
-  const maxAgeMs = STAGING_MAX_AGE_HOURS * 60 * 60 * 1000;
-  const files = fs.readdirSync(stagingPath).filter((f) => f.endsWith(".mdx"));
-
-  for (const file of files) {
-    const filePath = path.join(stagingPath, file);
-    const stat = fs.statSync(filePath);
-    const ageMs = Date.now() - stat.mtimeMs;
-
-    if (ageMs > maxAgeMs) {
-      fs.unlinkSync(filePath);
-      console.log(`[pipeline] Deleted stale staging file (${Math.round(ageMs / 3600000)}h old): ${file}`);
-    }
+async function cleanupStaleStagingRecords(): Promise<void> {
+  const cutoff = new Date(Date.now() - STAGING_MAX_AGE_HOURS * 60 * 60 * 1000);
+  const result = await prisma.newsArticle.deleteMany({
+    where: {
+      status: "STAGING",
+      createdAt: { lt: cutoff },
+    },
+  });
+  if (result.count > 0) {
+    console.log(`[pipeline] Deleted ${result.count} stale STAGING record(s) older than ${STAGING_MAX_AGE_HOURS}h`);
   }
 }
 
@@ -46,6 +39,7 @@ async function processCategory(category: string): Promise<void> {
   }
 
   console.log(`[pipeline] Found: "${story.title}" (${story.publisher})`);
+  console.log(`[pipeline] Resolved URL: ${story.link}`);
 
   const scrapedContent = await scrapeArticle(story.link);
   if (scrapedContent) {
@@ -71,12 +65,26 @@ async function processCategory(category: string): Promise<void> {
 
   console.log(`[pipeline] Generated: "${article.title}"`);
 
-  const stagingPath = path.join(process.cwd(), STAGING_DIR);
-  fs.mkdirSync(stagingPath, { recursive: true });
+  // Insert into DB with STAGING status — awaiting Discord approval
+  await prisma.newsArticle.create({
+    data: {
+      slug: article.slug,
+      title: article.title,
+      date: article.date,
+      description: article.description,
+      content: article.content,
+      category: article.category,
+      tags: article.tags,
+      featured: false,
+      sourceTitle: article.sourceTitle,
+      sourceUrl: article.sourceUrl,
+      sourcePublisher: article.sourcePublisher,
+      sourceDate: article.sourceDate,
+      status: "STAGING",
+    },
+  });
 
-  const filePath = path.join(stagingPath, `${article.slug}.mdx`);
-  fs.writeFileSync(filePath, article.mdx, "utf-8");
-  console.log(`[pipeline] Saved staging file: ${article.slug}.mdx`);
+  console.log(`[pipeline] Saved to DB (STAGING): ${article.slug}`);
 
   await postToDiscord({
     slug: article.slug,
@@ -94,7 +102,7 @@ async function main() {
   console.log(`[pipeline] Starting at ${new Date().toISOString()}`);
   console.log(`[pipeline] ══════════════════════════════════════`);
 
-  cleanupStaleStagingFiles();
+  await cleanupStaleStagingRecords();
 
   const categories = pickRandomCategories(ARTICLES_PER_RUN);
   console.log(`[pipeline] Selected categories: ${categories.join(", ")}`);
@@ -106,6 +114,8 @@ async function main() {
       console.error(`[pipeline] Unhandled error for category "${category}":`, err);
     }
   }
+
+  await prisma.$disconnect();
 
   console.log(`\n[pipeline] ══════════════════════════════════════`);
   console.log(`[pipeline] Done at ${new Date().toISOString()}`);

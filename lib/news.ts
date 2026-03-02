@@ -1,85 +1,41 @@
-import fs from "fs";
-import path from "path";
-import matter from "gray-matter";
+import { prisma } from "@/lib/prisma";
+import type { NewsArticle as PrismaNewsArticle } from "@prisma/client";
 
-const newsDirectory = path.join(process.cwd(), "content/news");
+export type NewsArticle = PrismaNewsArticle;
 
-export interface NewsArticle {
-    slug: string;
-    title: string;
-    date: string;
-    description: string;
-    category: string;
-    tags?: string[];
-    featured?: boolean;
-    sourceTitle: string;
-    sourceUrl: string;
-    sourcePublisher: string;
-    sourceDate?: string;
-    image?: string;
-    content: string;
-}
-
-export function getNewsSlugs() {
-    if (!fs.existsSync(newsDirectory)) {
-        return [];
-    }
-    return fs.readdirSync(newsDirectory).filter((f) => f.endsWith(".mdx"));
-}
-
-export function getNewsArticleBySlug(slug: string, fields: string[] = []) {
-    const realSlug = slug.replace(/\.mdx$/, "");
-    const fullPath = path.join(newsDirectory, `${realSlug}.mdx`);
-
-    if (!fs.existsSync(fullPath)) return null;
-
-    const fileContents = fs.readFileSync(fullPath, "utf8");
-    const { data, content } = matter(fileContents);
-
-    type Items = {
-        [key: string]: string | string[] | boolean | undefined;
-    };
-
-    const items: Items = {};
-
-    fields.forEach((field) => {
-        if (field === "slug") {
-            items[field] = realSlug;
-        }
-        if (field === "content") {
-            items[field] = content;
-        }
-        if (typeof data[field] !== "undefined") {
-            items[field] = data[field];
-        }
+export async function getNewsSlugs(): Promise<string[]> {
+    const rows = await prisma.newsArticle.findMany({
+        where: { status: "PUBLISHED" },
+        select: { slug: true },
+        orderBy: { date: "desc" },
     });
-
-    return items;
+    return rows.map((r) => r.slug);
 }
 
-export function getAllNewsArticles(fields: string[] = []) {
-    const slugs = getNewsSlugs();
-    const articles = slugs
-        .map((slug) => getNewsArticleBySlug(slug, fields))
-        .filter(Boolean)
-        .sort((a, b) => {
-            const dateA = (a as Record<string, string>).date ?? "";
-            const dateB = (b as Record<string, string>).date ?? "";
-            return dateA > dateB ? -1 : 1;
-        });
-    return articles as Partial<NewsArticle>[];
+export async function getNewsArticleBySlug(slug: string): Promise<NewsArticle | null> {
+    return prisma.newsArticle.findUnique({ where: { slug } });
 }
 
-export function getFeaturedNewsArticles(fields: string[] = []) {
-    const allFields = [...new Set([...fields, "featured"])];
-    return getAllNewsArticles(allFields).filter((a) => a.featured);
-}
-
-export function getNewsCategories(): string[] {
-    const articles = getAllNewsArticles(["category"]);
-    const categories = new Set<string>();
-    articles.forEach((a) => {
-        if (a.category) categories.add(a.category);
+export async function getAllNewsArticles(): Promise<NewsArticle[]> {
+    return prisma.newsArticle.findMany({
+        where: { status: "PUBLISHED" },
+        orderBy: { date: "desc" },
     });
-    return Array.from(categories).sort();
+}
+
+export async function getFeaturedNewsArticles(): Promise<NewsArticle[]> {
+    return prisma.newsArticle.findMany({
+        where: { status: "PUBLISHED", featured: true },
+        orderBy: { date: "desc" },
+    });
+}
+
+export async function getNewsCategories(): Promise<string[]> {
+    const rows = await prisma.newsArticle.findMany({
+        where: { status: "PUBLISHED" },
+        select: { category: true },
+        distinct: ["category"],
+        orderBy: { category: "asc" },
+    });
+    return rows.map((r) => r.category);
 }

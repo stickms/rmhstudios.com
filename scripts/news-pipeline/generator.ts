@@ -50,9 +50,17 @@ Read the original coverage: [sourceTitle](sourceUrl) — *sourcePublisher*`;
 
 export interface GeneratedArticle {
   slug: string;
-  mdx: string;
   title: string;
+  date: string;
   description: string;
+  category: string;
+  tags: string[];
+  featured: boolean;
+  sourceTitle: string;
+  sourceUrl: string;
+  sourcePublisher: string;
+  sourceDate: string;
+  content: string; // markdown body only — NO frontmatter
 }
 
 function slugify(text: string): string {
@@ -132,8 +140,9 @@ Write your own title (make it compelling, not a copy of the source title) and yo
       .replace(/\n```$/, "")
       .trim();
 
-    // Validate the frontmatter
-    const { data } = matter(mdx);
+    // Split frontmatter from body content
+    const { data, content: bodyContent } = matter(mdx);
+
     if (!data.title || !data.date || !data.description || !data.category) {
       console.error("[generator] Generated article has invalid/missing frontmatter fields");
       return null;
@@ -143,9 +152,17 @@ Write your own title (make it compelling, not a copy of the source title) and yo
 
     return {
       slug,
-      mdx,
       title: data.title as string,
+      date: data.date as string,
       description: data.description as string,
+      category: data.category as string,
+      tags: Array.isArray(data.tags) ? (data.tags as string[]) : [],
+      featured: false,
+      sourceTitle: articleTitle,
+      sourceUrl: articleUrl,
+      sourcePublisher: publisher,
+      sourceDate,
+      content: bodyContent.trim(),
     };
   } catch (err) {
     console.error("[generator] Claude API error:", err);

@@ -11,9 +11,7 @@ export default async function PostPage({
   params: Promise<{ postid: string }>;
 }) {
   const { postid } = await params;
-  const newsArticles = getAllNewsArticles([
-    'title', 'date', 'slug', 'description', 'category', 'sourcePublisher', 'image',
-  ]).slice(0, 5);
+  const newsArticles = (await getAllNewsArticles()).slice(0, 5);
   const researchArticles = getAllArticles().slice(0, 3);
 
   return (

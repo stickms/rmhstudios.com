@@ -10,9 +10,11 @@ export const metadata = {
     'Peer-reviewed research from RMH Studios on AI, neuroscience, and gaming psychology.',
 };
 
-export default function ResearchPage() {
+export const revalidate = 60;
+
+export default async function ResearchPage() {
   const articles = getAllArticles();
-  const { newsArticles } = getSidebarData();
+  const { newsArticles } = await getSidebarData();
 
   return (
     <PageLayout

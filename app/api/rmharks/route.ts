@@ -15,7 +15,7 @@ import { userDisplaySelect, resolveUser } from "@/lib/user-display";
 export const runtime = "nodejs";
 
 /** Build "virtual" announcement feed items from static data sources. */
-function getAnnouncementItems(filter: FeedFilter): FeedItem[] {
+async function getAnnouncementItems(filter: FeedFilter): Promise<FeedItem[]> {
   const items: FeedItem[] = [];
 
   if (filter === "all" || filter === "game") {
@@ -54,9 +54,7 @@ function getAnnouncementItems(filter: FeedFilter): FeedItem[] {
   }
 
   if (filter === "all" || filter === "news") {
-    const newsArticles = getAllNewsArticles([
-      "title", "date", "slug", "description", "category", "sourcePublisher", "image",
-    ]);
+    const newsArticles = await getAllNewsArticles();
     for (const n of newsArticles) {
       items.push({
         id: `news:${n.slug}`,
@@ -65,7 +63,7 @@ function getAnnouncementItems(filter: FeedFilter): FeedItem[] {
         title: n.title,
         description: n.description,
         href: `/news/${n.slug}`,
-        imagePath: n.image,
+        imagePath: n.image ?? undefined,
         category: n.category,
         sourcePublisher: n.sourcePublisher,
       });
@@ -342,7 +340,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Get announcement items
-    const announcements = getAnnouncementItems(filter);
+    const announcements = await getAnnouncementItems(filter);
 
     // Filter announcements by cursor
     let filteredAnnouncements = announcements;

@@ -9,8 +9,10 @@ export const metadata = {
     description: 'Explore our collection of utility apps and tools.',
 };
 
-export default function AppsPage() {
-    const { newsArticles } = getSidebarData();
+export const revalidate = 60;
+
+export default async function AppsPage() {
+    const { newsArticles } = await getSidebarData();
 
     return (
         <PageLayout

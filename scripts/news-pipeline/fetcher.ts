@@ -1,8 +1,6 @@
 import Parser from "rss-parser";
-import fs from "fs";
-import path from "path";
-import matter from "gray-matter";
-import { CATEGORY_QUERIES, buildRssUrl, NEWS_DIR, STAGING_DIR } from "./config";
+import { prisma } from "@/lib/prisma";
+import { CATEGORY_QUERIES, buildRssUrl } from "./config";
 
 const parser = new Parser();
 
@@ -15,31 +13,34 @@ export interface FetchedArticle {
   category: string;
 }
 
-function getExistingSourceUrls(): Set<string> {
-  const urls = new Set<string>();
-  const dirs = [NEWS_DIR, STAGING_DIR].map((d) => path.join(process.cwd(), d));
-
-  for (const dir of dirs) {
-    if (!fs.existsSync(dir)) continue;
-    const files = fs.readdirSync(dir).filter((f) => f.endsWith(".mdx"));
-    for (const file of files) {
-      try {
-        const content = fs.readFileSync(path.join(dir, file), "utf-8");
-        const { data } = matter(content);
-        if (data.sourceUrl) urls.add(data.sourceUrl);
-      } catch {
-        // ignore unreadable files
-      }
-    }
+/**
+ * Follows Google News RSS redirect URLs to resolve the actual source article URL.
+ * Google News item.link values are redirect chains — this resolves to the real URL.
+ */
+async function resolveRealUrl(url: string): Promise<string> {
+  try {
+    const res = await fetch(url, {
+      redirect: "follow",
+      method: "GET",
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; RMHStudios/1.0)" },
+      signal: AbortSignal.timeout(8000),
+    });
+    // res.url is the final URL after all redirects
+    if (!res.url.includes("google.com")) return res.url;
+    return url; // fallback if redirect didn't escape google.com
+  } catch {
+    return url; // fallback on timeout / network error
   }
+}
 
-  return urls;
+async function getExistingSourceUrls(): Promise<Set<string>> {
+  const rows = await prisma.newsArticle.findMany({ select: { sourceUrl: true } });
+  return new Set(rows.map((r) => r.sourceUrl));
 }
 
 function extractPublisher(url: string): string {
   try {
     const hostname = new URL(url).hostname.replace(/^www\./, "");
-    // Return the second-to-last segment (e.g., "theverge" from "theverge.com")
     const parts = hostname.split(".");
     return parts.length >= 2 ? parts[parts.length - 2] : hostname;
   } catch {
@@ -52,7 +53,7 @@ export async function fetchTopStory(category: string): Promise<FetchedArticle | 
   if (!query) return null;
 
   const rssUrl = buildRssUrl(query);
-  const existingUrls = getExistingSourceUrls();
+  const existingUrls = await getExistingSourceUrls();
 
   try {
     const feed = await parser.parseURL(rssUrl);
@@ -60,16 +61,19 @@ export async function fetchTopStory(category: string): Promise<FetchedArticle | 
     for (const item of feed.items.slice(0, 15)) {
       if (!item.title || !item.link) continue;
 
-      // Skip if we've already covered this URL
-      if (existingUrls.has(item.link)) continue;
+      // Resolve the real article URL (Google News uses redirect links)
+      const realLink = await resolveRealUrl(item.link);
+
+      // Skip if we've already covered this URL (check both original and resolved)
+      if (existingUrls.has(item.link) || existingUrls.has(realLink)) continue;
 
       const publisher =
         (item as { source?: { title?: string } }).source?.title ||
-        extractPublisher(item.link);
+        extractPublisher(realLink);
 
       return {
         title: item.title,
-        link: item.link,
+        link: realLink,
         pubDate: item.pubDate || new Date().toISOString(),
         contentSnippet: item.contentSnippet || item.summary || "",
         publisher,

@@ -1,4 +1,4 @@
-import { getNewsArticleBySlug, getNewsSlugs } from '@/lib/news';
+import { getNewsArticleBySlug } from '@/lib/news';
 import { MDXRemote } from 'next-mdx-remote/rsc';
 import Link from 'next/link';
 import { ArrowLeft, Calendar, ExternalLink } from 'lucide-react';
@@ -25,12 +25,7 @@ const animatedComponents = {
     pre: AnimatedPre,
 };
 
-export async function generateStaticParams() {
-    const slugs = getNewsSlugs();
-    return slugs.map((s) => ({
-        slug: s.replace(/\.mdx$/, ''),
-    }));
-}
+export const dynamic = 'force-dynamic';
 
 import type { Metadata } from 'next';
 
@@ -40,21 +35,18 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { slug } = await params;
-    const article = getNewsArticleBySlug(slug, ['title', 'description']);
+    const article = await getNewsArticleBySlug(slug);
     if (!article) return { title: 'Article Not Found | RMH Studios' };
 
     return {
         title: `${article.title} | RMH News`,
-        description: article.description as string,
+        description: article.description,
     };
 }
 
 export default async function NewsArticlePage({ params }: Props) {
     const { slug } = await params;
-    const article = getNewsArticleBySlug(slug, [
-        'title', 'date', 'description', 'content', 'category',
-        'sourceTitle', 'sourceUrl', 'sourcePublisher', 'sourceDate', 'tags',
-    ]);
+    const article = await getNewsArticleBySlug(slug);
 
     if (!article) {
         return (
@@ -69,7 +61,7 @@ export default async function NewsArticlePage({ params }: Props) {
         );
     }
 
-    const categoryColor = getCategoryColor(article.category as string ?? '');
+    const categoryColor = getCategoryColor(article.category ?? '');
 
     return (
         <article className="min-h-screen pt-20 pb-20 px-4 bg-(--site-bg) relative overflow-hidden">
@@ -86,11 +78,11 @@ export default async function NewsArticlePage({ params }: Props) {
                         <span
                             className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider ${categoryColor.bg} ${categoryColor.text} ${categoryColor.border} border`}
                         >
-                            {article.category as string}
+                            {article.category}
                         </span>
                         <div className="flex items-center gap-2 text-(--site-accent) font-mono text-sm">
                             <Calendar className="w-4 h-4" />
-                            {article.date as string}
+                            {article.date}
                         </div>
                         <ShareButton slug={slug} />
                     </div>
@@ -99,11 +91,11 @@ export default async function NewsArticlePage({ params }: Props) {
                         className="text-3xl md:text-5xl font-black text-(--site-text) mb-6 tracking-tight leading-tight animate-in fade-in slide-in-from-bottom-6 duration-700 delay-150 fill-mode-both"
                         style={{ fontFamily: 'var(--site-font-display)' }}
                     >
-                        {article.title as string}
+                        {article.title}
                     </h1>
 
                     <p className="text-xl text-(--site-text-muted) leading-relaxed border-l-4 border-(--site-accent) pl-6 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-300 fill-mode-both">
-                        {article.description as string}
+                        {article.description}
                     </p>
                 </header>
 
@@ -114,14 +106,14 @@ export default async function NewsArticlePage({ params }: Props) {
                             📰 Original Source
                         </p>
                         <p className="text-(--site-text) font-bold text-lg mb-1 leading-snug">
-                            {(article.sourceTitle as string) || (article.title as string)}
+                            {article.sourceTitle || article.title}
                         </p>
                         <p className="text-(--site-text-dim) text-sm mb-3">
-                            {article.sourcePublisher as string}
+                            {article.sourcePublisher}
                             {article.sourceDate && ` · ${article.sourceDate}`}
                         </p>
                         <a
-                            href={article.sourceUrl as string}
+                            href={article.sourceUrl}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-2 text-sm font-bold text-(--site-accent) hover:opacity-80 transition-opacity"
@@ -133,7 +125,7 @@ export default async function NewsArticlePage({ params }: Props) {
 
                 {/* MDX Content */}
                 <div className="prose prose-invert prose-lg max-w-none prose-headings:font-bold prose-headings:text-(--site-text) prose-p:text-(--site-text-muted) prose-a:text-(--site-accent) hover:prose-a:text-(--site-accent-hover) prose-img:rounded-xl prose-img:border prose-img:border-(--site-border) prose-li:text-(--site-text-muted) prose-strong:text-(--site-text) prose-blockquote:border-l-(--site-accent)">
-                    <MDXRemote source={article.content as string} components={animatedComponents} />
+                    <MDXRemote source={article.content} components={animatedComponents} />
                 </div>
 
                 <hr className="my-12 border-(--site-border)" />
