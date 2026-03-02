@@ -6,10 +6,11 @@ import { GameBoard } from './GameBoard';
 import { GameOver } from './GameOver';
 import { MultiplayerGame } from './MultiplayerGame';
 import { MultiplayerProvider } from '../../lib/synapse-storm/MultiplayerProvider';
+import type { ScoreSaveData } from '../../lib/synapse-storm/persistence';
 import './SynapseStorm.css';
 
 interface SynapseStormGameProps {
-    onSaveScore?: (score: number) => void;
+    onSaveScore?: (data: ScoreSaveData) => Promise<void>;
     currentUserId?: string;
 }
 
@@ -17,13 +18,21 @@ type TopLevelView = 'main' | 'multiplayer';
 
 export const SynapseStormGame: React.FC<SynapseStormGameProps> = ({ onSaveScore, currentUserId }) => {
     const [topView, setTopView] = useState<TopLevelView>('main');
+    const [scoreSaved, setScoreSaved] = useState(false);
     const { state, startGame, solvePuzzle, skipMemoryPhase, returnToMenu } = useGameEngine();
 
     useEffect(() => {
         if (state.status === 'gameover' && onSaveScore) {
-            onSaveScore(state.score);
+            setScoreSaved(false);
+            onSaveScore({
+                score: state.score,
+                puzzlesSolved: state.puzzlesSolved,
+                maxCombo: state.maxCombo,
+                peakDifficulty: state.difficulty,
+                totalTime: state.totalTime,
+            }).then(() => setScoreSaved(true));
         }
-    }, [state.status, state.score, onSaveScore]);
+    }, [state.status]); // eslint-disable-line react-hooks/exhaustive-deps
 
     if (topView === 'multiplayer') {
         return (
@@ -48,7 +57,7 @@ export const SynapseStormGame: React.FC<SynapseStormGameProps> = ({ onSaveScore,
                     <GameBoard state={state} onSolve={solvePuzzle} onSkipPhase={skipMemoryPhase} />
                 )}
                 {state.status === 'gameover' && (
-                    <GameOver state={state} onRestart={startGame} onMenu={returnToMenu} currentUserId={currentUserId} />
+                    <GameOver state={state} onRestart={startGame} onMenu={returnToMenu} currentUserId={currentUserId} scoreSaved={scoreSaved} />
                 )}
             </div>
         </div>

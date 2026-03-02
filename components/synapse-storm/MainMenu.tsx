@@ -132,7 +132,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onStart, onMultiplayer, curr
                     </ul>
                 </div>
 
-                <GlobalLeaderboard currentUserId={currentUserId} compact />
+                <GlobalLeaderboard currentUserId={currentUserId} />
             </div>
         </div>
     );

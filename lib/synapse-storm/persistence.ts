@@ -13,14 +13,22 @@ export interface LeaderboardEntry {
     updatedAt: string;
 }
 
-export async function saveSynapseStormScore(score: number) {
+export interface ScoreSaveData {
+    score: number;
+    puzzlesSolved: number;
+    maxCombo: number;
+    peakDifficulty: number;
+    totalTime: number;
+}
+
+export async function saveSynapseStormScore(data: ScoreSaveData) {
     try {
         const response = await fetch('/api/games/synapse-storm/score', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ score }),
+            body: JSON.stringify(data),
         });
 
         if (!response.ok) {
