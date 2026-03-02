@@ -41,8 +41,9 @@ export default function ResultScreen() {
 
     const playerHpPct = Math.round((playerHealth / playerMaxHealth) * 100);
     const opponentHpPct = Math.round((opponentHealth / opponentMaxHealth) * 100);
-    const playerWon = playerHealth > opponentHealth;
-    const isDraw = playerHealth === opponentHealth;
+    // On KO, determine winner by score (the KO'd player didn't score), not health
+    const playerWon = result === 'ko' ? playerWins > opponentWins : playerHealth > opponentHealth;
+    const isDraw = result === 'ko' ? false : playerHealth === opponentHealth;
 
     const playerDisplay = CLASS_DISPLAY[selectedClass];
     const opponentDisplay = CLASS_DISPLAY[opponentClass];
