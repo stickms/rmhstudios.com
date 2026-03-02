@@ -1,9 +1,10 @@
 /**
- * RMHbox — History Display Registrations (Phase 5 Minigames)
+ * RMHbox — History Display Registrations
  *
  * Registers the history display configurations for
  * Rhyme Time, Undercover Agent, Category Crash, Wiki-Race,
- * Minimalist Masterpiece, Emoji Cinema, and Wit-War.
+ * Minimalist Masterpiece, Emoji Cinema, Wit-War,
+ * Sequence Sam, and Human Keyboard.
  *
  * Reference: docs/rmhbox/design-spec/core.md §14A.5
  */

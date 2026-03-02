@@ -29,9 +29,9 @@
 
 ## Overview
 
-RMHbox is a real-time multiplayer party game platform built on Next.js (frontend) and a standalone Socket.io WebSocket server (backend). Players create or join lobbies via room codes, vote on or select minigames, and play together in real time. The platform supports 7 implemented minigames, spectator modes, host controls, match history, leaderboards, and reconnection.
+RMHbox is a real-time multiplayer party game platform built on Next.js (frontend) and a standalone Socket.io WebSocket server (backend). Players create or join lobbies via room codes, vote on or select minigames, and play together in real time. The platform supports 9 implemented minigames, spectator modes, host controls, match history, leaderboards, and reconnection.
 
-The seven currently implemented minigames are:
+The nine currently implemented minigames are:
 - **Rhyme Time** — Speed-based vocabulary rhyming game
 - **Undercover Agent** — Team-based word-association deduction (like Codenames)
 - **Category Crash** — Brainstorming showdown with peer review. Phases: REVEAL → INPUT → PEER_REVIEW → ROUND_RESULTS. Voting is crash/safe; points come only from unique safe answers (no voting bonuses).
@@ -39,6 +39,8 @@ The seven currently implemented minigames are:
 - **Minimalist Masterpiece** — Draw with limited strokes, then art auction. Drawing phase supports auto-save (`SAVE_DRAWING`) and explicit submit (`SUBMIT_DRAWING`). Auto-save preserves drawings for reconnection and spectator live updates without locking. Explicit submit locks the drawing and ends the phase early if all players submit.
 - **Emoji Cinema** — Describe movies with emojis, others guess
 - **Wit-War** — Battle of wits with head-to-head voting
+- **Sequence Sam** — Memory pattern matching on a 3×3 grid with chaos rounds
+- **Human Keyboard** — Cooperative typing where each player controls a subset of keys
 
 ---
 
@@ -792,7 +794,8 @@ Tests are organized in `testing/rmhbox/` by implementation phase:
 - `phase-3/` — Game coordination (voting, state sync, reconnection, spectators)
 - `phase-4/` — Client store, UI components, database, API routes, sound system
 - `phase-5/` — Minigame implementations (Rhyme Time, Undercover Agent, Category Crash, Wiki-Race)
-- `phase-6/` — Minigame implementations (Minimalist Masterpiece, Emoji Cinema)
+- `phase-6/` — Minigame implementations (Minimalist Masterpiece, Emoji Cinema, Wit-War)
+- `phase-7/` — Minigame implementations (Sequence Sam, Human Keyboard)
 
 Each phase has a `setup.ts` file for shared test utilities and mocking. Tests use **Vitest** as the test runner.
 
@@ -862,7 +865,7 @@ Security state masking tests (`security-state-masking.test.ts`) exist in each ph
 ### Constants
 
 - **Centralized** — All tuning constants (timers, scoring, limits) live in `lib/rmhbox/constants.ts`
-- **Per-minigame prefix** — Minigame constants use a 2-letter prefix (e.g., `RT_` for Rhyme Time, `UA_` for Undercover Agent, `CC_` for Category Crash, `WR_` for Wiki-Race, `MM_` for Minimalist Masterpiece, `EC_` for Emoji Cinema, `WW_` for Wit-War)
+- **Per-minigame prefix** — Minigame constants use a 2-letter prefix (e.g., `RT_` for Rhyme Time, `UA_` for Undercover Agent, `CC_` for Category Crash, `WR_` for Wiki-Race, `MM_` for Minimalist Masterpiece, `EC_` for Emoji Cinema, `WW_` for Wit-War, `SS_` for Sequence Sam, `HK_` for Human Keyboard)
 - **Server config** — Server-specific runtime configuration (env vars, ports) lives in `server/rmhbox/config.ts`
 
 ### Adding New Features

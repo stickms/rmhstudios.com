@@ -52,6 +52,8 @@ function getPrivateState(game: SequenceSamGame): {
   isChaosRound: boolean;
   phase: string;
   activePlayers: string[];
+  eliminatedPlayers: string[];
+  maxRounds: number;
   playerStates: Map<string, { strikesRemaining: number; isEliminated: boolean; totalScore: number; hasCompletedSequence: boolean; hasFailed: boolean; currentInputIndex: number }>;
   currentRound: number;
 } {
