@@ -9,7 +9,7 @@ import { apps } from '@/lib/apps';
 
 export function Shell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  
+
   // gather gameRoutes and internal appRoutes
   const gameRoutes = games.map(game => game.href);
   const appRoutes = apps

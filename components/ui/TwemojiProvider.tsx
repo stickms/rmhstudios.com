@@ -57,7 +57,7 @@ export function TwemojiProvider({ children, className, tag: Tag = 'div' }: Twemo
 
   return (
     // @ts-expect-error -- dynamic tag element
-    <Tag ref={ref} className={className}>
+    <Tag ref={ref} className={className || undefined}>
       {children}
     </Tag>
   );

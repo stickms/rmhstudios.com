@@ -5,14 +5,16 @@
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
+import Link from 'next/link';
 import { useStudioStore } from '@/lib/rmhstudio/store';
 
 interface TransportBarProps {
   onSaveClick: () => void;
   onLoadClick: () => void;
+  onNewClick: () => void;
 }
 
-export default function TransportBar({ onSaveClick, onLoadClick }: TransportBarProps) {
+export default function TransportBar({ onSaveClick, onLoadClick, onNewClick }: TransportBarProps) {
   const {
     isPlaying, bpm, swing, currentStep,
     patterns, currentPatternId,
@@ -60,6 +62,20 @@ export default function TransportBar({ onSaveClick, onLoadClick }: TransportBarP
 
   return (
     <div className="rstudio-transport">
+      {/* ── Back to Apps ── */}
+      <Link
+        href="/apps"
+        className="rstudio-transport-btn"
+        title="Back to Apps"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M19 12H5" />
+          <polyline points="12 19 5 12 12 5" />
+        </svg>
+      </Link>
+
+      <div className="rstudio-divider" />
+
       {/* ── Transport Controls ── */}
       <button
         className={`rstudio-transport-btn ${isPlaying ? 'playing' : ''}`}
@@ -230,7 +246,7 @@ export default function TransportBar({ onSaveClick, onLoadClick }: TransportBarP
           <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" />
         </svg>
       </button>
-      <button className="rstudio-transport-btn" onClick={newProject} title="New Project (Ctrl+N)">
+      <button className="rstudio-transport-btn" onClick={onNewClick} title="New Project (Ctrl+N)">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
           <polyline points="14 2 14 8 20 8" />
@@ -254,6 +270,7 @@ export default function TransportBar({ onSaveClick, onLoadClick }: TransportBarP
       >
         Mixer
       </button>
+
     </div>
   );
 }

@@ -13,8 +13,10 @@
  *   - This gives sample-accurate timing without blocking the main thread
  */
 
-import type { Pattern, Channel, DrumSoundType } from '../types';
+import type { Pattern, Channel, WaveLabParams, DriftParams } from '../types';
 import { DrumSynth } from './DrumSynth';
+import { WaveLabSynth } from './WaveLabSynth';
+import { DriftSynth } from './DriftSynth';
 import { Mixer } from './Mixer';
 
 // How far ahead we schedule audio (seconds)
@@ -190,7 +192,7 @@ export class AudioEngine {
     const dt = Math.max(0, (time - this.ctx.currentTime) * 1000);
     setTimeout(() => this.stepCallback?.(s), dt);
 
-    // Schedule drum sounds for each channel
+    // Schedule sounds for each channel
     for (let ch = 0; ch < this.pattern.steps.length; ch++) {
       const row = this.pattern.steps[ch];
       if (!row || step >= row.length) continue;
@@ -200,10 +202,30 @@ export class AudioEngine {
       const channel = this.channels[ch];
       if (!channel) continue;
 
-      // Create a per-trigger DrumSynth routed to the channel's mixer input
       const dest = this.mixer!.getChannelInput(ch);
-      const synth = new DrumSynth(this.ctx, dest);
-      synth.play(channel.soundType, time, stepData.velocity);
+      const instrument = channel.instrument ?? 'drum';
+
+      switch (instrument) {
+        case 'drum': {
+          const synth = new DrumSynth(this.ctx, dest);
+          synth.play(channel.soundType, time, stepData.velocity);
+          break;
+        }
+        case 'wavelab': {
+          if (channel.synthParams) {
+            const synth = new WaveLabSynth(this.ctx, dest);
+            synth.play(time, stepData.velocity, channel.note ?? 60, channel.synthParams as WaveLabParams);
+          }
+          break;
+        }
+        case 'drift': {
+          if (channel.synthParams) {
+            const synth = new DriftSynth(this.ctx, dest);
+            synth.play(time, stepData.velocity, channel.note ?? 60, channel.synthParams as DriftParams);
+          }
+          break;
+        }
+      }
     }
 
     // Metronome click

@@ -14,11 +14,16 @@ import type {
   ActiveView,
   StudioSettings,
   Project,
+  InstrumentType,
+  SynthParams,
 } from './types';
 import {
   createDefaultProject,
   createEmptyPattern,
   DEFAULT_CHANNELS,
+  DEFAULT_CHANNEL_COLORS,
+  createDefaultWaveLabParams,
+  createDefaultDriftParams,
 } from './types';
 import { AudioEngine } from './engine/AudioEngine';
 
@@ -73,6 +78,10 @@ export interface RmhStudioStore {
   setChannelSolo: (index: number, solo: boolean) => void;
   setMasterVolume: (volume: number) => void;
   selectChannel: (index: number) => void;
+  setChannelNote: (index: number, note: number) => void;
+  updateSynthParams: (index: number, params: Partial<SynthParams>) => void;
+  addChannel: (instrument: InstrumentType) => void;
+  removeChannel: (index: number) => void;
 
   // ── UI Actions ─────────────────────────────────────────────────
   setActiveView: (view: ActiveView) => void;
@@ -335,6 +344,79 @@ export const useStudioStore = create<RmhStudioStore>()(
 
       selectChannel(index: number) {
         set({ selectedChannel: index });
+      },
+
+      setChannelNote(index: number, note: number) {
+        set(state => {
+          const channels = state.channels.map((ch, i) =>
+            i === index ? { ...ch, note: Math.max(0, Math.min(127, note)) } : ch,
+          );
+          return { channels };
+        });
+      },
+
+      updateSynthParams(index: number, params: Partial<SynthParams>) {
+        set(state => {
+          const channels = state.channels.map((ch, i) => {
+            if (i !== index || !ch.synthParams) return ch;
+            return { ...ch, synthParams: { ...ch.synthParams, ...params } as SynthParams };
+          });
+          return { channels };
+        });
+      },
+
+      addChannel(instrument: InstrumentType) {
+        set(state => {
+          const idx = state.channels.length;
+          const colorIdx = idx % DEFAULT_CHANNEL_COLORS.length;
+          const newChannel: Channel = instrument === 'drum'
+            ? {
+                id: `ch-${crypto.randomUUID().slice(0, 8)}`,
+                name: `Drum ${idx + 1}`,
+                instrument: 'drum',
+                soundType: 'kick',
+                note: 60,
+                volume: 0.7,
+                pan: 0,
+                mute: false,
+                solo: false,
+                color: DEFAULT_CHANNEL_COLORS[colorIdx],
+              }
+            : {
+                id: `ch-${crypto.randomUUID().slice(0, 8)}`,
+                name: `${instrument === 'wavelab' ? 'WaveLab' : 'Drift'} ${idx + 1}`,
+                instrument,
+                soundType: 'kick',
+                note: 60,
+                volume: 0.6,
+                pan: 0,
+                mute: false,
+                solo: false,
+                color: DEFAULT_CHANNEL_COLORS[colorIdx],
+                synthParams: instrument === 'wavelab' ? createDefaultWaveLabParams() : createDefaultDriftParams(),
+              };
+
+          // Add a step row for the new channel in every pattern
+          const patterns = state.patterns.map(p => ({
+            ...p,
+            steps: [...p.steps, Array.from({ length: p.stepCount }, () => ({ active: false, velocity: 0.8 }))],
+          }));
+
+          return { channels: [...state.channels, newChannel], patterns };
+        });
+      },
+
+      removeChannel(index: number) {
+        set(state => {
+          if (state.channels.length <= 1) return {};
+          const channels = state.channels.filter((_, i) => i !== index);
+          const patterns = state.patterns.map(p => ({
+            ...p,
+            steps: p.steps.filter((_, i) => i !== index),
+          }));
+          const selectedChannel = Math.min(state.selectedChannel, channels.length - 1);
+          return { channels, patterns, selectedChannel };
+        });
       },
 
       // ── UI ─────────────────────────────────────────────────────

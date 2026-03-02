@@ -465,3 +465,257 @@
   font-size: 11px;
   color: var(--rstudio-text-dim);
 }
+
+/* ─── Instrument Badge ─────────────────────────────────────────── */
+
+.rstudio-instrument-badge {
+  font-size: 8px;
+  font-weight: 700;
+  font-family: var(--rstudio-font-mono);
+  padding: 1px 4px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.rstudio-instrument-badge[data-instrument="drum"] {
+  background: var(--rstudio-danger-dim);
+  color: var(--rstudio-danger);
+}
+
+.rstudio-instrument-badge[data-instrument="wavelab"] {
+  background: rgba(155, 122, 216, 0.15);
+  color: var(--rstudio-accent);
+}
+
+.rstudio-instrument-badge[data-instrument="drift"] {
+  background: var(--rstudio-info-dim);
+  color: var(--rstudio-info);
+}
+
+/* ─── Channel Remove Button ────────────────────────────────────── */
+
+.rstudio-channel-remove {
+  font-size: 14px;
+  opacity: 0;
+  transition: opacity 0.1s ease;
+}
+
+.rstudio-channel-item:hover .rstudio-channel-remove {
+  opacity: 1;
+}
+
+.rstudio-channel-remove:hover {
+  color: var(--rstudio-danger) !important;
+}
+
+/* ─── Add Channel ──────────────────────────────────────────────── */
+
+.rstudio-add-channel {
+  padding: 6px 8px;
+  border-top: 1px solid var(--rstudio-border);
+}
+
+.rstudio-add-channel-btn {
+  width: 100%;
+  padding: 6px 0;
+  border-radius: var(--rstudio-radius-sm);
+  border: 1px dashed var(--rstudio-border-bright);
+  background: transparent;
+  color: var(--rstudio-text-dim);
+  font-size: 11px;
+  font-family: var(--rstudio-font-body);
+  transition: all 0.15s ease;
+}
+
+.rstudio-add-channel-btn:hover {
+  border-color: var(--rstudio-accent);
+  color: var(--rstudio-accent);
+  background: var(--rstudio-accent-dim);
+}
+
+.rstudio-add-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rstudio-add-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  border-radius: var(--rstudio-radius-sm);
+  border: none;
+  background: transparent;
+  color: var(--rstudio-text-muted);
+  font-size: 11px;
+  font-family: var(--rstudio-font-body);
+  text-align: left;
+  transition: all 0.1s ease;
+}
+
+.rstudio-add-menu-item:hover {
+  background: var(--rstudio-surface-hover);
+  color: var(--rstudio-text);
+}
+
+.rstudio-add-menu-cancel {
+  padding: 4px 8px;
+  border-radius: var(--rstudio-radius-sm);
+  border: none;
+  background: transparent;
+  color: var(--rstudio-text-dim);
+  font-size: 10px;
+  font-family: var(--rstudio-font-body);
+  text-align: center;
+  margin-top: 2px;
+}
+
+.rstudio-add-menu-cancel:hover {
+  color: var(--rstudio-text-muted);
+}
+
+/* ─── Synth Panel ──────────────────────────────────────────────── */
+
+.rstudio-synth-panel {
+  background: var(--rstudio-surface);
+  border-top: 1px solid var(--rstudio-border);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.rstudio-synth-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--rstudio-border);
+  background: var(--rstudio-bg-subtle);
+}
+
+.rstudio-synth-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.rstudio-synth-badge[data-instrument="wavelab"] {
+  background: rgba(155, 122, 216, 0.15);
+  color: var(--rstudio-accent);
+}
+
+.rstudio-synth-badge[data-instrument="drift"] {
+  background: var(--rstudio-info-dim);
+  color: var(--rstudio-info);
+}
+
+.rstudio-synth-channel-name {
+  font-size: 12px;
+  color: var(--rstudio-text-muted);
+}
+
+.rstudio-synth-body {
+  display: flex;
+  gap: 2px;
+  padding: 8px;
+  overflow-x: auto;
+}
+
+/* ─── Synth Sections ───────────────────────────────────────────── */
+
+.rstudio-synth-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px 10px;
+  background: var(--rstudio-bg);
+  border: 1px solid var(--rstudio-border);
+  border-radius: var(--rstudio-radius-sm);
+  min-width: fit-content;
+}
+
+.rstudio-synth-section-title {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--rstudio-text-dim);
+}
+
+.rstudio-synth-section-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+/* ─── Waveform Picker ──────────────────────────────────────────── */
+
+.rstudio-waveform-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rstudio-waveform-btn {
+  padding: 2px 6px;
+  border: 1px solid var(--rstudio-border);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--rstudio-text-dim);
+  font-size: 8px;
+  font-weight: 600;
+  font-family: var(--rstudio-font-mono);
+  transition: all 0.1s ease;
+  white-space: nowrap;
+}
+
+.rstudio-waveform-btn:hover {
+  border-color: var(--rstudio-text-muted);
+  color: var(--rstudio-text-muted);
+}
+
+.rstudio-waveform-btn.active {
+  background: var(--rstudio-accent-dim);
+  border-color: var(--rstudio-accent);
+  color: var(--rstudio-accent);
+}
+
+/* ─── Note Control ─────────────────────────────────────────────── */
+
+.rstudio-note-control {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.rstudio-note-btn {
+  width: 20px;
+  height: 20px;
+  border-radius: 3px;
+  border: 1px solid var(--rstudio-border);
+  background: transparent;
+  color: var(--rstudio-text-muted);
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.1s ease;
+}
+
+.rstudio-note-btn:hover {
+  background: var(--rstudio-surface-hover);
+  color: var(--rstudio-text);
+  border-color: var(--rstudio-accent);
+}
+
+.rstudio-note-display {
+  font-family: var(--rstudio-font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--rstudio-text);
+  min-width: 36px;
+  text-align: center;
+}

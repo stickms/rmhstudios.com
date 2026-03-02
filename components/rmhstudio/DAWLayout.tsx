@@ -14,6 +14,7 @@ import TransportBar from './TransportBar';
 import ChannelRack from './ChannelRack';
 import StepSequencer from './StepSequencer';
 import MixerView from './MixerView';
+import SynthPanel from './SynthPanel';
 import ProjectDialog from './ProjectDialog';
 
 export default function DAWLayout() {
@@ -25,7 +26,7 @@ export default function DAWLayout() {
   const getProjectData = useStudioStore(s => s.getProjectData);
   const newProject = useStudioStore(s => s.newProject);
 
-  const [dialogMode, setDialogMode] = useState<'save' | 'load' | null>(null);
+  const [dialogMode, setDialogMode] = useState<'save' | 'load' | 'new' | null>(null);
 
   // ── Keyboard Shortcuts ────────────────────────────────────────
   useEffect(() => {
@@ -57,7 +58,7 @@ export default function DAWLayout() {
         case 'n':
           if (e.ctrlKey || e.metaKey) {
             e.preventDefault();
-            newProject();
+            setDialogMode('new');
           }
           break;
         case 'o':
@@ -75,6 +76,7 @@ export default function DAWLayout() {
 
   const handleSaveClick = useCallback(() => setDialogMode('save'), []);
   const handleLoadClick = useCallback(() => setDialogMode('load'), []);
+  const handleNewClick = useCallback(() => setDialogMode('new'), []);
   const handleDialogClose = useCallback(() => setDialogMode(null), []);
 
   return (
@@ -83,26 +85,53 @@ export default function DAWLayout() {
       <TransportBar
         onSaveClick={handleSaveClick}
         onLoadClick={handleLoadClick}
+        onNewClick={handleNewClick}
       />
 
       {/* Content Area */}
-      <div className="flex flex-1 overflow-hidden">
-        {activeView === 'sequencer' && (
-          <>
-            <ChannelRack />
-            <StepSequencer />
-          </>
-        )}
-        {activeView === 'mixer' && (
-          <MixerView />
-        )}
+      <div className="flex flex-col flex-1 overflow-hidden">
+        <div className="flex flex-1 overflow-hidden">
+          {activeView === 'sequencer' && (
+            <>
+              <ChannelRack />
+              <StepSequencer />
+            </>
+          )}
+          {activeView === 'mixer' && (
+            <MixerView />
+          )}
+        </div>
+        <SynthPanel />
       </div>
 
+      {/* New Project Confirmation */}
+      {dialogMode === 'new' && (
+        <div className="rstudio-dialog-overlay" onClick={handleDialogClose}>
+          <div className="rstudio-dialog" onClick={e => e.stopPropagation()} style={{ width: 360 }}>
+            <h2>New Project</h2>
+            <p style={{ fontSize: 13, color: 'var(--rstudio-text-muted)', marginBottom: 16 }}>
+              Are you sure? Any unsaved changes to &quot;{useStudioStore.getState().projectName}&quot; will be lost.
+            </p>
+            <div className="flex gap-2 justify-end">
+              <button className="rstudio-dialog-btn" onClick={handleDialogClose}>
+                Cancel
+              </button>
+              <button
+                className="rstudio-dialog-btn danger"
+                onClick={() => { newProject(); setDialogMode(null); }}
+              >
+                New Project
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Project Dialog */}
-      {dialogMode && (
+      {(dialogMode === 'save' || dialogMode === 'load') && (
         <ProjectDialog
           mode={dialogMode}
-          open={!!dialogMode}
+          open
           onClose={handleDialogClose}
         />
       )}
