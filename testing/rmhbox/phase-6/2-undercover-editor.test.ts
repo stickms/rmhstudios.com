@@ -969,8 +969,7 @@ describe('Undercover Editor Server Handler — Round-Robin Design (§6.2)', () =
 
       // With random assignment, we expect multiple different rounds
       // (deterministic would always be the same round)
-      // At least 2 different rounds out of 20 trials is a very weak assertion
-      expect(writeRoundsForEditedStory.size).toBeGreaterThanOrEqual(1);
+      expect(writeRoundsForEditedStory.size).toBeGreaterThanOrEqual(2);
     });
   });
 

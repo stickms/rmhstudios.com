@@ -1370,12 +1370,14 @@ export class UndercoverEditorGame extends BaseMinigame {
         storyCount: this.state.stories.size,
       },
       actions: this.actionLog,
-      finalResults: this.state.playerIds.map((uid, idx) => ({
-        userId: uid,
-        userName: this.context.players.get(uid)?.userName ?? 'Unknown',
-        score: this.state.playerScores.get(uid) ?? 0,
-        rank: idx + 1,
-      })),
+      finalResults: this.state.playerIds
+        .map((uid) => ({
+          userId: uid,
+          userName: this.context.players.get(uid)?.userName ?? 'Unknown',
+          score: this.state.playerScores.get(uid) ?? 0,
+        }))
+        .sort((a, b) => b.score - a.score)
+        .map((entry, idx) => ({ ...entry, rank: idx + 1 })),
     };
   }
 
