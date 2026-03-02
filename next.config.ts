@@ -149,6 +149,16 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      // ─── Permissive CSP for RMHbrowser (allows iframe content from any source) ───
+      {
+        source: "/rmhbrowser/:path*",
+        headers: [
+          {
+            key: "Content-Security-Policy",
+            value: `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src * data: blob:; font-src 'self' data:; connect-src * wss: ws:; media-src *; frame-src *; frame-ancestors 'none';`,
+          },
+        ],
+      },
     ];
   },
 };
