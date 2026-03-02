@@ -18,6 +18,7 @@ export default function MultiplayerLobby() {
     const [view, setView] = useState<LobbyView>('choice');
     const [joinCode, setJoinCode] = useState('');
     const [error, setError] = useState('');
+    const [copied, setCopied] = useState(false);
     const [matchInfo, setMatchInfo] = useState<{ hostClass: string; guestClass: string } | null>(null);
     const cleanupRef = useRef(false);
 
@@ -89,8 +90,8 @@ export default function MultiplayerLobby() {
     };
 
     const handleJoin = async () => {
-        if (joinCode.length !== 4) {
-            setError('Enter a 4-character room code');
+        if (joinCode.length !== 6) {
+            setError('Enter a 6-character room code');
             return;
         }
 
@@ -198,6 +199,19 @@ export default function MultiplayerLobby() {
                     {roomCode ? (
                         <>
                             <div className="lobby-room-code">{roomCode}</div>
+                            <motion.button
+                                className="neon-button neon-button-controls"
+                                onClick={() => {
+                                    navigator.clipboard.writeText(roomCode);
+                                    setCopied(true);
+                                    setTimeout(() => setCopied(false), 2000);
+                                }}
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                style={{ marginTop: '-4px' }}
+                            >
+                                {copied ? 'COPIED!' : 'COPY CODE'}
+                            </motion.button>
                             <div className="lobby-status">SHARE THIS CODE WITH YOUR OPPONENT</div>
                             <div className="lobby-status">WAITING FOR OPPONENT...</div>
                         </>
@@ -216,7 +230,7 @@ export default function MultiplayerLobby() {
                     <input
                         className="lobby-input"
                         type="text"
-                        maxLength={4}
+                        maxLength={6}
                         placeholder="CODE"
                         value={joinCode}
                         onChange={(e) => setJoinCode(e.target.value.toUpperCase())}

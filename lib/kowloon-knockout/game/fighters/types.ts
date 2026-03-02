@@ -2,7 +2,8 @@
 // Kowloon Knockout — Type Definitions
 // ============================================================
 
-export type FighterClass = 'power' | 'speed' | 'resistance';
+export type FighterClass = 'power' | 'speed' | 'resistance'
+    | 'power_stone_tiger' | 'power_red_phoenix' | 'power_jade_dragon';
 export type PunchType = 'jab' | 'cross' | 'hook' | 'uppercut';
 export type FighterState = 'idle' | 'walking' | 'punching' | 'blocking' | 'hit' | 'stunned' | 'knockedOut';
 export type GamePhase = 'menu' | 'select' | 'lobby' | 'fight' | 'countdown' | 'roundEnd' | 'result';
@@ -34,6 +35,7 @@ export interface ComboDef {
   bonusDamageMultiplier: number; // multiplied on last hit
   bonusStun: number;             // extra stun frames
   displayName: string;           // shown on screen
+  classRestriction?: FighterClass; // if set, only this class can trigger this combo
 }
 
 export interface Fighter {

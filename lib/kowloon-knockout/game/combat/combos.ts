@@ -2,7 +2,7 @@
 // Combo Detection System
 // ============================================================
 
-import { ComboDef, PunchType } from '../fighters/types';
+import { ComboDef, FighterClass, PunchType } from '../fighters/types';
 
 export const COMBO_WINDOW_MS = 800; // max time between punches to count as combo
 
@@ -52,6 +52,36 @@ export const COMBO_DEFS: ComboDef[] = [
         bonusStun: 20,
         displayName: '★ FURY COMBO! ★',
     },
+
+    // ── Dragon Fist Subclass Unique Combos ──────────────────────
+
+    // Stone Tiger — IRON CLAW: slow devastating hook chain
+    {
+        name: 'iron-claw',
+        sequence: ['hook', 'hook', 'uppercut'],
+        bonusDamageMultiplier: 1.4,
+        bonusStun: 16,
+        displayName: '★ IRON CLAW! ★',
+        classRestriction: 'power_stone_tiger',
+    },
+    // Red Phoenix — PHOENIX STRIKE: fast entry into devastating finish
+    {
+        name: 'phoenix-strike',
+        sequence: ['jab', 'cross', 'cross', 'uppercut'],
+        bonusDamageMultiplier: 1.55,
+        bonusStun: 18,
+        displayName: '★ PHOENIX STRIKE! ★',
+        classRestriction: 'power_red_phoenix',
+    },
+    // Jade Dragon — DRAGON RISING: versatile 4-hit chain
+    {
+        name: 'dragon-rising',
+        sequence: ['cross', 'jab', 'hook', 'uppercut'],
+        bonusDamageMultiplier: 1.45,
+        bonusStun: 14,
+        displayName: '★ DRAGON RISING! ★',
+        classRestriction: 'power_jade_dragon',
+    },
 ];
 
 // Sort longest combos first so we match the most specific combo
@@ -60,10 +90,12 @@ const SORTED_COMBOS = [...COMBO_DEFS].sort((a, b) => b.sequence.length - a.seque
 /**
  * Check if the recent punch history ends with a known combo.
  * Returns the combo definition if found, null otherwise.
+ * fighterClass is used to filter class-restricted combos.
  */
 export function detectCombo(
     history: { type: PunchType; time: number }[],
     currentTime: number,
+    fighterClass?: FighterClass,
 ): ComboDef | null {
     // Filter to only recent punches within the combo window
     const recent = history.filter(h => currentTime - h.time <= COMBO_WINDOW_MS * history.length);
@@ -71,6 +103,9 @@ export function detectCombo(
     if (recent.length < 2) return null;
 
     for (const combo of SORTED_COMBOS) {
+        // Skip class-restricted combos that don't belong to this fighter
+        if (combo.classRestriction && combo.classRestriction !== fighterClass) continue;
+
         if (recent.length < combo.sequence.length) continue;
 
         // Check if the last N punches match the combo sequence

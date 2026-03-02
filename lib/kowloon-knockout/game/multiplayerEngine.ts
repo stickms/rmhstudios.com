@@ -312,7 +312,7 @@ function initHostGame(
         remoteInput.uppercutPressed = false;
 
         if (checkHit(player, opponent)) {
-            const combo = detectCombo(player.comboHistory, Date.now());
+            const combo = detectCombo(player.comboHistory, Date.now(), player.className);
             const comboMult = combo ? combo.bonusDamageMultiplier : 1.0;
             const punchType = player.currentPunch?.type;
             const heavyBonus = punchType ? HEAVY_PUNCH_BONUS[punchType] : undefined;
@@ -338,7 +338,7 @@ function initHostGame(
         }
 
         if (checkHit(opponent, player)) {
-            const combo = detectCombo(opponent.comboHistory, Date.now());
+            const combo = detectCombo(opponent.comboHistory, Date.now(), opponent.className);
             const comboMult = combo ? combo.bonusDamageMultiplier : 1.0;
             const oppPunchType = opponent.currentPunch?.type;
             const oppHeavyBonus = oppPunchType ? HEAVY_PUNCH_BONUS[oppPunchType] : undefined;

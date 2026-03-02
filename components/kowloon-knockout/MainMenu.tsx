@@ -24,9 +24,24 @@ export default function MainMenu() {
     return (
         <div className="menu-container">
             <div className="menu-bg">
-                <div className="neon-line neon-line-1" />
-                <div className="neon-line neon-line-2" />
-                <div className="neon-line neon-line-3" />
+                {/* Cityscape silhouette */}
+                <div className="city-skyline" />
+
+                {/* Neon sign decorations */}
+                <div className="neon-sign neon-sign-1">功夫</div>
+                <div className="neon-sign neon-sign-2">格鬥</div>
+                <div className="neon-sign neon-sign-3">武術</div>
+                <div className="neon-sign neon-sign-4">拳王</div>
+
+                {/* Vertical neon strips */}
+                <div className="neon-strip neon-strip-1" />
+                <div className="neon-strip neon-strip-2" />
+                <div className="neon-strip neon-strip-3" />
+                <div className="neon-strip neon-strip-4" />
+
+                {/* Ambient glow */}
+                <div className="menu-glow menu-glow-pink" />
+                <div className="menu-glow menu-glow-blue" />
             </div>
 
             <motion.div

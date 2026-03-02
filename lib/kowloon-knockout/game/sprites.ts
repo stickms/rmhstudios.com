@@ -93,21 +93,31 @@ function getFighterSprite(fighter: Fighter, frame: number): SpriteFrame {
         case 'punching':
             return getPunchingSprite(fighter, skin, hair, shorts, glove, outline, shoe, c, a, _, frame);
         case 'blocking':
-            return getBlockingSprite(skin, hair, shorts, glove, outline, shoe, c, a, _);
+            return getBlockingSprite(fighter, skin, hair, shorts, glove, outline, shoe, c, a, _);
         case 'hit':
         case 'stunned':
-            return getHitSprite(skin, hair, shorts, glove, outline, shoe, c, a, _);
+            return getHitSprite(fighter, skin, hair, shorts, glove, outline, shoe, c, a, _);
         case 'knockedOut':
             return getKnockoutSprite(skin, hair, shorts, glove, outline, shoe, c, a, _);
         default:
-            return getIdleSprite(skin, hair, shorts, glove, outline, shoe, c, a, _, frame);
+            return getIdleSprite(fighter, skin, hair, shorts, glove, outline, shoe, c, a, _, frame);
     }
 }
 
 function getIdleSprite(
+    fighter: Fighter,
     skin: string, hair: string, shorts: string, glove: string,
     outline: string, shoe: string, c: string, a: string, _: null, frame: number
 ): SpriteFrame {
+    // Subclass-specific idle sprites
+    switch (fighter.className) {
+        case 'power_stone_tiger':
+            return getStoneTigerIdleSprite(skin, hair, shorts, glove, outline, shoe, c, a, _, frame);
+        case 'power_red_phoenix':
+            return getRedPhoenixIdleSprite(skin, hair, shorts, glove, outline, shoe, c, a, _, frame);
+        case 'power_jade_dragon':
+            return getJadeDragonIdleSprite(skin, hair, shorts, glove, outline, shoe, c, a, _, frame);
+    }
     // Breathing animation — slight bob on even frames
     const bob = Math.floor(frame / 15) % 2 === 0;
 
@@ -242,9 +252,19 @@ function getPunchingSprite(
 }
 
 function getBlockingSprite(
+    fighter: Fighter,
     skin: string, hair: string, shorts: string, glove: string,
     outline: string, shoe: string, c: string, a: string, _: null
 ): SpriteFrame {
+    // Subclass-specific blocking sprites
+    switch (fighter.className) {
+        case 'power_stone_tiger':
+            return getStoneTigerBlockSprite(skin, hair, shorts, glove, outline, shoe, c, a, _);
+        case 'power_red_phoenix':
+            return getRedPhoenixBlockSprite(skin, hair, shorts, glove, outline, shoe, c, a, _);
+        case 'power_jade_dragon':
+            return getJadeDragonBlockSprite(skin, hair, shorts, glove, outline, shoe, c, a, _);
+    }
     // Gloves up, guard position
     return [
         [_, _, _, _, _, _, _, hair, hair, hair, hair, hair, hair, _, _, _, _, _, _, _],
@@ -276,9 +296,19 @@ function getBlockingSprite(
 }
 
 function getHitSprite(
+    fighter: Fighter,
     skin: string, hair: string, shorts: string, glove: string,
     outline: string, shoe: string, c: string, a: string, _: null
 ): SpriteFrame {
+    // Subclass-specific hit sprites
+    switch (fighter.className) {
+        case 'power_stone_tiger':
+            return getStoneTigerHitSprite(skin, hair, shorts, glove, outline, shoe, c, a, _);
+        case 'power_red_phoenix':
+            return getRedPhoenixHitSprite(skin, hair, shorts, glove, outline, shoe, c, a, _);
+        case 'power_jade_dragon':
+            return getJadeDragonHitSprite(skin, hair, shorts, glove, outline, shoe, c, a, _);
+    }
     // Recoiling — leaning back
     return [
         [_, _, _, _, _, _, _, _, hair, hair, hair, hair, hair, hair, _, _, _, _, _, _],
@@ -340,6 +370,367 @@ function getKnockoutSprite(
         [_, _, skin, skin, skin, skin, skin, skin, c, c, c, c, c, a, shorts, skin, skin, _, _, _],
         [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
         [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
+    ];
+}
+
+// ============================================================
+// STONE TIGER — Stocky wide build, headband, wrapped fists
+// ============================================================
+
+function getStoneTigerIdleSprite(
+    skin: string, hair: string, shorts: string, glove: string,
+    outline: string, shoe: string, c: string, a: string, _: null, frame: number
+): SpriteFrame {
+    const bob = Math.floor(frame / 15) % 2 === 0;
+    const band = a; // headband color
+    const wrap = '#ddccaa'; // hand wraps instead of gloves
+    return [
+        // Headband + head (wider)
+        [_, _, _, _, _, _, band, band, band, band, band, band, band, band, _, _, _, _, _, _, _],
+        [_, _, _, _, _, hair, hair, hair, hair, hair, hair, hair, hair, hair, hair, _, _, _, _, _, _],
+        [_, _, _, _, hair, hair, hair, hair, hair, hair, hair, hair, hair, hair, hair, hair, _, _, _, _, _],
+        [_, _, _, _, outline, skin, skin, skin, skin, skin, skin, skin, skin, skin, skin, outline, _, _, _, _, _],
+        [_, _, _, _, skin, skin, outline, skin, skin, skin, skin, skin, skin, outline, skin, skin, _, _, _, _, _],
+        [_, _, _, _, skin, skin, skin, skin, skin, skin, skin, skin, skin, skin, skin, skin, _, _, _, _, _],
+        [_, _, _, _, skin, skin, skin, skin, outline, outline, skin, skin, skin, skin, skin, skin, _, _, _, _, _],
+        [_, _, _, _, _, skin, skin, skin, skin, skin, skin, skin, skin, skin, skin, _, _, _, _, _, _],
+        // Short thick neck
+        [_, _, _, _, _, _, _, skin, skin, skin, skin, skin, skin, skin, _, _, _, _, _, _, _],
+        // Wide shoulders + massive torso
+        [_, _, _, outline, c, c, c, c, c, c, c, c, c, c, c, c, c, outline, _, _, _],
+        [_, _, outline, c, c, c, c, c, c, c, c, c, c, c, c, c, c, c, outline, _, _],
+        [_, _, outline, c, c, c, c, c, c, c, c, c, c, c, c, c, c, c, outline, _, _],
+        [_, _, outline, c, c, c, c, c, c, c, c, c, c, c, c, c, c, c, outline, _, _],
+        // Thick arms + torso
+        [_, wrap, wrap, skin, skin, c, c, c, c, c, c, c, c, c, c, skin, skin, wrap, wrap, _, _],
+        [_, wrap, wrap, skin, skin, c, c, c, c, c, c, c, c, c, c, skin, skin, wrap, wrap, _, _],
+        [_, wrap, wrap, _, _, c, c, c, c, c, c, c, c, c, c, _, _, wrap, wrap, _, _],
+        [_, _, _, _, _, c, c, c, c, c, c, c, c, c, c, _, _, _, _, _, _],
+        // Belt
+        [_, _, _, _, _, a, a, a, a, a, a, a, a, a, a, _, _, _, _, _, _],
+        // Shorts (wider)
+        [_, _, _, _, shorts, shorts, shorts, shorts, shorts, _, _, shorts, shorts, shorts, shorts, shorts, _, _, _, _, _],
+        [_, _, _, _, shorts, shorts, shorts, shorts, _, _, _, _, shorts, shorts, shorts, shorts, _, _, _, _, _],
+        // Thick legs
+        [_, _, _, _, _, skin, skin, skin, _, _, _, _, skin, skin, skin, _, _, _, _, _, _],
+        [_, _, _, _, _, skin, skin, skin, _, _, _, _, skin, skin, skin, _, _, _, _, _, _],
+        [_, _, _, _, _, skin, skin, skin, _, _, _, _, skin, skin, skin, _, _, _, _, _, _],
+        ...(bob ? [
+            [_, _, _, _, _, skin, skin, skin, _, _, _, _, skin, skin, skin, _, _, _, _, _, _] as (string | null)[],
+        ] : []),
+        // Shoes
+        [_, _, _, _, shoe, shoe, shoe, shoe, shoe, _, _, shoe, shoe, shoe, shoe, shoe, _, _, _, _, _],
+        [_, _, _, _, shoe, shoe, shoe, shoe, shoe, _, _, shoe, shoe, shoe, shoe, shoe, _, _, _, _, _],
+    ];
+}
+
+function getStoneTigerBlockSprite(
+    skin: string, hair: string, shorts: string, glove: string,
+    outline: string, shoe: string, c: string, a: string, _: null
+): SpriteFrame {
+    const band = a;
+    const wrap = '#ddccaa';
+    return [
+        [_, _, _, _, _, _, band, band, band, band, band, band, band, band, _, _, _, _, _, _, _],
+        [_, _, _, _, _, hair, hair, hair, hair, hair, hair, hair, hair, hair, hair, _, _, _, _, _, _],
+        [_, _, _, _, hair, hair, hair, hair, hair, hair, hair, hair, hair, hair, hair, hair, _, _, _, _, _],
+        [_, _, _, _, outline, skin, skin, skin, skin, skin, skin, skin, skin, skin, skin, outline, _, _, _, _, _],
+        [_, _, _, wrap, wrap, skin, outline, skin, skin, skin, skin, skin, skin, outline, skin, wrap, wrap, _, _, _, _],
+        [_, _, _, wrap, wrap, skin, skin, skin, skin, skin, skin, skin, skin, skin, skin, wrap, wrap, _, _, _, _],
+        [_, _, _, wrap, wrap, skin, skin, skin, outline, outline, skin, skin, skin, skin, skin, wrap, wrap, _, _, _, _],
+        [_, _, _, wrap, wrap, skin, skin, skin, skin, skin, skin, skin, skin, skin, skin, wrap, wrap, _, _, _, _],
+        [_, _, _, _, _, _, _, skin, skin, skin, skin, skin, skin, skin, _, _, _, _, _, _, _],
+        [_, _, _, outline, c, c, c, c, c, c, c, c, c, c, c, c, c, outline, _, _, _],
+        [_, _, outline, c, c, c, c, c, c, c, c, c, c, c, c, c, c, c, outline, _, _],
+        [_, _, outline, c, c, c, c, c, c, c, c, c, c, c, c, c, c, c, outline, _, _],
+        [_, _, _, _, skin, skin, c, c, c, c, c, c, c, c, c, c, skin, skin, _, _, _],
+        [_, _, _, _, _, c, c, c, c, c, c, c, c, c, c, c, _, _, _, _, _],
+        [_, _, _, _, _, c, c, c, c, c, c, c, c, c, c, c, _, _, _, _, _],
+        [_, _, _, _, _, c, c, c, c, c, c, c, c, c, c, c, _, _, _, _, _],
+        [_, _, _, _, _, a, a, a, a, a, a, a, a, a, a, _, _, _, _, _, _],
+        [_, _, _, _, shorts, shorts, shorts, shorts, shorts, _, _, shorts, shorts, shorts, shorts, shorts, _, _, _, _, _],
+        [_, _, _, _, shorts, shorts, shorts, shorts, _, _, _, _, shorts, shorts, shorts, shorts, _, _, _, _, _],
+        [_, _, _, _, _, skin, skin, skin, _, _, _, _, skin, skin, skin, _, _, _, _, _, _],
+        [_, _, _, _, _, skin, skin, skin, _, _, _, _, skin, skin, skin, _, _, _, _, _, _],
+        [_, _, _, _, _, skin, skin, skin, _, _, _, _, skin, skin, skin, _, _, _, _, _, _],
+        [_, _, _, _, shoe, shoe, shoe, shoe, shoe, _, _, shoe, shoe, shoe, shoe, shoe, _, _, _, _, _],
+        [_, _, _, _, shoe, shoe, shoe, shoe, shoe, _, _, shoe, shoe, shoe, shoe, shoe, _, _, _, _, _],
+    ];
+}
+
+function getStoneTigerHitSprite(
+    skin: string, hair: string, shorts: string, glove: string,
+    outline: string, shoe: string, c: string, a: string, _: null
+): SpriteFrame {
+    const band = a;
+    const wrap = '#ddccaa';
+    return [
+        [_, _, _, _, _, _, _, band, band, band, band, band, band, band, band, _, _, _, _, _, _],
+        [_, _, _, _, _, _, hair, hair, hair, hair, hair, hair, hair, hair, hair, hair, _, _, _, _, _],
+        [_, _, _, _, _, hair, hair, hair, hair, hair, hair, hair, hair, hair, hair, hair, hair, _, _, _, _],
+        [_, _, _, _, _, outline, skin, skin, skin, skin, skin, skin, skin, skin, skin, skin, outline, _, _, _, _],
+        [_, _, _, _, _, skin, skin, outline, skin, skin, skin, skin, skin, skin, outline, skin, skin, _, _, _, _],
+        [_, _, _, _, _, skin, skin, skin, skin, '#ff4444', skin, skin, '#ff4444', skin, skin, skin, skin, _, _, _, _],
+        [_, _, _, _, _, skin, skin, skin, skin, skin, outline, outline, skin, skin, skin, skin, skin, _, _, _, _],
+        [_, _, _, _, _, _, skin, skin, skin, skin, skin, skin, skin, skin, skin, skin, _, _, _, _, _],
+        [_, _, _, _, _, _, _, _, skin, skin, skin, skin, skin, skin, _, _, _, _, _, _, _],
+        [_, _, _, _, outline, c, c, c, c, c, c, c, c, c, c, c, c, outline, _, _, _],
+        [_, _, _, outline, c, c, c, c, c, c, c, c, c, c, c, c, c, c, outline, _, _],
+        [_, _, _, outline, c, c, c, c, c, c, c, c, c, c, c, c, c, c, outline, _, _],
+        [_, _, wrap, wrap, skin, skin, c, c, c, c, c, c, c, c, c, c, skin, wrap, wrap, _, _],
+        [_, _, wrap, wrap, _, _, c, c, c, c, c, c, c, c, c, c, _, wrap, wrap, _, _],
+        [_, _, _, _, _, c, c, c, c, c, c, c, c, c, c, c, _, _, _, _, _],
+        [_, _, _, _, _, c, c, c, c, c, c, c, c, c, c, c, _, _, _, _, _],
+        [_, _, _, _, _, a, a, a, a, a, a, a, a, a, a, _, _, _, _, _, _],
+        [_, _, _, _, shorts, shorts, shorts, shorts, shorts, _, _, shorts, shorts, shorts, shorts, shorts, _, _, _, _, _],
+        [_, _, _, _, shorts, shorts, shorts, shorts, _, _, _, _, shorts, shorts, shorts, shorts, _, _, _, _, _],
+        [_, _, _, _, _, skin, skin, skin, _, _, _, _, skin, skin, skin, _, _, _, _, _, _],
+        [_, _, _, _, _, skin, skin, skin, _, _, _, _, skin, skin, skin, _, _, _, _, _, _],
+        [_, _, _, _, _, skin, skin, skin, _, _, _, _, skin, skin, skin, _, _, _, _, _, _],
+        [_, _, _, _, shoe, shoe, shoe, shoe, shoe, _, _, shoe, shoe, shoe, shoe, shoe, _, _, _, _, _],
+        [_, _, _, _, shoe, shoe, shoe, shoe, shoe, _, _, shoe, shoe, shoe, shoe, shoe, _, _, _, _, _],
+    ];
+}
+
+// ============================================================
+// RED PHOENIX — Lean tall build, spiked hair, fingerless gloves
+// ============================================================
+
+function getRedPhoenixIdleSprite(
+    skin: string, _hair: string, shorts: string, glove: string,
+    outline: string, shoe: string, c: string, a: string, _: null, frame: number
+): SpriteFrame {
+    const bob = Math.floor(frame / 15) % 2 === 0;
+    const spikeHair = '#331100'; // dark auburn
+    const fglove = a; // fingerless glove color (bright yellow-orange)
+    return [
+        // Spiked hair — taller, pointed
+        [_, _, _, _, _, _, _, _, spikeHair, _, _, spikeHair, _, _, _, _, _, _, _],
+        [_, _, _, _, _, _, _, spikeHair, spikeHair, spikeHair, spikeHair, spikeHair, spikeHair, _, _, _, _, _, _],
+        [_, _, _, _, _, _, spikeHair, spikeHair, spikeHair, spikeHair, spikeHair, spikeHair, spikeHair, spikeHair, _, _, _, _, _],
+        // Face (narrower)
+        [_, _, _, _, _, _, outline, skin, skin, skin, skin, skin, skin, outline, _, _, _, _, _],
+        [_, _, _, _, _, _, skin, skin, outline, skin, skin, outline, skin, skin, _, _, _, _, _],
+        [_, _, _, _, _, _, skin, skin, skin, skin, skin, skin, skin, skin, _, _, _, _, _],
+        [_, _, _, _, _, _, skin, skin, skin, outline, outline, skin, skin, skin, _, _, _, _, _],
+        [_, _, _, _, _, _, _, skin, skin, skin, skin, skin, skin, _, _, _, _, _, _],
+        // Neck (longer/thinner)
+        [_, _, _, _, _, _, _, _, skin, skin, skin, _, _, _, _, _, _, _, _],
+        [_, _, _, _, _, _, _, _, skin, skin, skin, _, _, _, _, _, _, _, _],
+        // Narrow shoulders
+        [_, _, _, _, _, outline, c, c, c, c, c, c, c, c, outline, _, _, _, _],
+        [_, _, _, _, outline, c, c, c, c, c, c, c, c, c, c, outline, _, _, _],
+        // Long thin arms + narrow torso
+        [_, _, _, fglove, fglove, skin, c, c, c, c, c, c, c, skin, fglove, fglove, _, _, _],
+        [_, _, _, fglove, fglove, skin, c, c, c, c, c, c, c, skin, fglove, fglove, _, _, _],
+        [_, _, _, fglove, fglove, _, c, c, c, c, c, c, c, _, fglove, fglove, _, _, _],
+        [_, _, _, _, _, _, c, c, c, c, c, c, c, _, _, _, _, _, _],
+        [_, _, _, _, _, _, c, c, c, c, c, c, c, _, _, _, _, _, _],
+        // Belt
+        [_, _, _, _, _, _, a, a, a, a, a, a, a, _, _, _, _, _, _],
+        // Shorts
+        [_, _, _, _, _, shorts, shorts, shorts, shorts, _, shorts, shorts, shorts, shorts, _, _, _, _, _],
+        [_, _, _, _, _, shorts, shorts, shorts, _, _, _, shorts, shorts, shorts, _, _, _, _, _],
+        // Long legs
+        [_, _, _, _, _, _, skin, skin, _, _, _, skin, skin, _, _, _, _, _, _],
+        [_, _, _, _, _, _, skin, skin, _, _, _, skin, skin, _, _, _, _, _, _],
+        [_, _, _, _, _, _, skin, skin, _, _, _, skin, skin, _, _, _, _, _, _],
+        [_, _, _, _, _, _, skin, skin, _, _, _, skin, skin, _, _, _, _, _, _],
+        ...(bob ? [
+            [_, _, _, _, _, _, skin, skin, _, _, _, skin, skin, _, _, _, _, _, _] as (string | null)[],
+        ] : []),
+        // Shoes
+        [_, _, _, _, _, shoe, shoe, shoe, shoe, _, shoe, shoe, shoe, shoe, _, _, _, _, _],
+        [_, _, _, _, _, shoe, shoe, shoe, shoe, _, shoe, shoe, shoe, shoe, _, _, _, _, _],
+    ];
+}
+
+function getRedPhoenixBlockSprite(
+    skin: string, _hair: string, shorts: string, glove: string,
+    outline: string, shoe: string, c: string, a: string, _: null
+): SpriteFrame {
+    const spikeHair = '#331100';
+    const fglove = a;
+    return [
+        [_, _, _, _, _, _, _, _, spikeHair, _, _, spikeHair, _, _, _, _, _, _, _],
+        [_, _, _, _, _, _, _, spikeHair, spikeHair, spikeHair, spikeHair, spikeHair, spikeHair, _, _, _, _, _, _],
+        [_, _, _, _, _, _, spikeHair, spikeHair, spikeHair, spikeHair, spikeHair, spikeHair, spikeHair, spikeHair, _, _, _, _, _],
+        [_, _, _, _, _, _, outline, skin, skin, skin, skin, skin, skin, outline, _, _, _, _, _],
+        [_, _, _, _, fglove, fglove, skin, outline, skin, skin, outline, skin, skin, fglove, fglove, _, _, _, _],
+        [_, _, _, _, fglove, fglove, skin, skin, skin, skin, skin, skin, skin, fglove, fglove, _, _, _, _],
+        [_, _, _, _, fglove, fglove, skin, skin, outline, outline, skin, skin, skin, fglove, fglove, _, _, _, _],
+        [_, _, _, _, fglove, fglove, _, skin, skin, skin, skin, skin, _, fglove, fglove, _, _, _, _],
+        [_, _, _, _, _, _, _, _, skin, skin, skin, _, _, _, _, _, _, _, _],
+        [_, _, _, _, _, outline, c, c, c, c, c, c, c, c, outline, _, _, _, _],
+        [_, _, _, _, outline, c, c, c, c, c, c, c, c, c, c, outline, _, _, _],
+        [_, _, _, _, _, skin, c, c, c, c, c, c, c, skin, _, _, _, _, _],
+        [_, _, _, _, _, _, c, c, c, c, c, c, c, _, _, _, _, _, _],
+        [_, _, _, _, _, _, c, c, c, c, c, c, c, _, _, _, _, _, _],
+        [_, _, _, _, _, _, a, a, a, a, a, a, a, _, _, _, _, _, _],
+        [_, _, _, _, _, shorts, shorts, shorts, shorts, _, shorts, shorts, shorts, shorts, _, _, _, _, _],
+        [_, _, _, _, _, shorts, shorts, shorts, _, _, _, shorts, shorts, shorts, _, _, _, _, _],
+        [_, _, _, _, _, _, skin, skin, _, _, _, skin, skin, _, _, _, _, _, _],
+        [_, _, _, _, _, _, skin, skin, _, _, _, skin, skin, _, _, _, _, _, _],
+        [_, _, _, _, _, _, skin, skin, _, _, _, skin, skin, _, _, _, _, _, _],
+        [_, _, _, _, _, _, skin, skin, _, _, _, skin, skin, _, _, _, _, _, _],
+        [_, _, _, _, _, shoe, shoe, shoe, shoe, _, shoe, shoe, shoe, shoe, _, _, _, _, _],
+        [_, _, _, _, _, shoe, shoe, shoe, shoe, _, shoe, shoe, shoe, shoe, _, _, _, _, _],
+    ];
+}
+
+function getRedPhoenixHitSprite(
+    skin: string, _hair: string, shorts: string, glove: string,
+    outline: string, shoe: string, c: string, a: string, _: null
+): SpriteFrame {
+    const spikeHair = '#331100';
+    const fglove = a;
+    return [
+        [_, _, _, _, _, _, _, _, _, spikeHair, _, _, spikeHair, _, _, _, _, _, _],
+        [_, _, _, _, _, _, _, _, spikeHair, spikeHair, spikeHair, spikeHair, spikeHair, spikeHair, _, _, _, _, _],
+        [_, _, _, _, _, _, _, spikeHair, spikeHair, spikeHair, spikeHair, spikeHair, spikeHair, spikeHair, spikeHair, _, _, _, _],
+        [_, _, _, _, _, _, _, outline, skin, skin, skin, skin, skin, skin, outline, _, _, _, _],
+        [_, _, _, _, _, _, _, skin, skin, outline, skin, skin, outline, skin, skin, _, _, _, _],
+        [_, _, _, _, _, _, _, skin, skin, '#ff4444', skin, skin, '#ff4444', skin, skin, _, _, _, _],
+        [_, _, _, _, _, _, _, skin, skin, skin, outline, outline, skin, skin, skin, _, _, _, _],
+        [_, _, _, _, _, _, _, _, skin, skin, skin, skin, skin, skin, _, _, _, _, _],
+        [_, _, _, _, _, _, _, _, _, skin, skin, skin, _, _, _, _, _, _, _],
+        [_, _, _, _, _, _, outline, c, c, c, c, c, c, c, outline, _, _, _, _],
+        [_, _, _, _, _, outline, c, c, c, c, c, c, c, c, c, outline, _, _, _],
+        [_, _, _, _, fglove, fglove, skin, c, c, c, c, c, c, skin, fglove, fglove, _, _, _],
+        [_, _, _, _, fglove, fglove, _, c, c, c, c, c, c, _, fglove, fglove, _, _, _],
+        [_, _, _, _, _, _, _, c, c, c, c, c, c, _, _, _, _, _, _],
+        [_, _, _, _, _, _, _, c, c, c, c, c, c, _, _, _, _, _, _],
+        [_, _, _, _, _, _, _, a, a, a, a, a, a, _, _, _, _, _, _],
+        [_, _, _, _, _, _, shorts, shorts, shorts, _, shorts, shorts, shorts, shorts, _, _, _, _, _],
+        [_, _, _, _, _, _, shorts, shorts, _, _, _, shorts, shorts, shorts, _, _, _, _, _],
+        [_, _, _, _, _, _, _, skin, skin, _, _, skin, skin, _, _, _, _, _, _],
+        [_, _, _, _, _, _, _, skin, skin, _, _, skin, skin, _, _, _, _, _, _],
+        [_, _, _, _, _, _, _, skin, skin, _, _, skin, skin, _, _, _, _, _, _],
+        [_, _, _, _, _, _, _, skin, skin, _, _, skin, skin, _, _, _, _, _, _],
+        [_, _, _, _, _, _, shoe, shoe, shoe, _, shoe, shoe, shoe, shoe, _, _, _, _, _],
+        [_, _, _, _, _, _, shoe, shoe, shoe, _, shoe, shoe, shoe, shoe, _, _, _, _, _],
+    ];
+}
+
+// ============================================================
+// JADE DRAGON — Athletic build, vest/gi, forearm wraps
+// ============================================================
+
+function getJadeDragonIdleSprite(
+    skin: string, hair: string, shorts: string, glove: string,
+    outline: string, shoe: string, c: string, a: string, _: null, frame: number
+): SpriteFrame {
+    const bob = Math.floor(frame / 15) % 2 === 0;
+    const vest = a; // gold vest trim
+    const wrap = '#ccbb88'; // forearm wraps
+    return [
+        // Tied-back hair
+        [_, _, _, _, _, _, _, hair, hair, hair, hair, hair, hair, _, _, _, _, _, _, _],
+        [_, _, _, _, _, _, hair, hair, hair, hair, hair, hair, hair, hair, _, _, _, _, _, _],
+        [_, _, _, _, _, hair, hair, hair, hair, hair, hair, hair, hair, hair, hair, _, _, _, _, _],
+        // Face
+        [_, _, _, _, _, outline, skin, skin, skin, skin, skin, skin, skin, skin, outline, _, _, _, _, _],
+        [_, _, _, _, _, skin, skin, outline, skin, skin, skin, skin, outline, skin, skin, _, _, _, _, _],
+        [_, _, _, _, _, skin, skin, skin, skin, skin, skin, skin, skin, skin, skin, _, _, _, _, _],
+        [_, _, _, _, _, skin, skin, skin, skin, outline, outline, skin, skin, skin, skin, _, _, _, _, _],
+        [_, _, _, _, _, _, skin, skin, skin, skin, skin, skin, skin, skin, _, _, _, _, _, _],
+        // Neck
+        [_, _, _, _, _, _, _, _, skin, skin, skin, skin, _, _, _, _, _, _, _, _],
+        // Shoulders with vest/gi overlay
+        [_, _, _, _, outline, vest, c, c, c, c, c, c, c, c, vest, outline, _, _, _, _],
+        [_, _, _, outline, vest, c, c, c, c, c, c, c, c, c, c, vest, outline, _, _, _],
+        [_, _, _, outline, vest, c, c, c, c, c, c, c, c, c, c, vest, outline, _, _, _],
+        // Arms with forearm wraps + gi torso
+        [_, _, wrap, wrap, skin, skin, vest, c, c, c, c, c, c, vest, skin, skin, wrap, wrap, _, _],
+        [_, _, wrap, wrap, skin, skin, vest, c, c, c, c, c, c, vest, skin, skin, wrap, wrap, _, _],
+        [_, _, wrap, wrap, _, _, c, c, c, c, c, c, c, c, _, _, wrap, wrap, _, _],
+        [_, _, _, _, _, _, c, c, c, c, c, c, c, c, _, _, _, _, _, _],
+        // Belt (gold sash)
+        [_, _, _, _, _, _, vest, vest, vest, vest, vest, vest, vest, vest, _, _, _, _, _, _],
+        // Shorts
+        [_, _, _, _, _, shorts, shorts, shorts, shorts, _, _, shorts, shorts, shorts, shorts, _, _, _, _, _],
+        [_, _, _, _, _, shorts, shorts, shorts, shorts, _, _, shorts, shorts, shorts, shorts, _, _, _, _, _],
+        [_, _, _, _, _, shorts, shorts, shorts, _, _, _, _, shorts, shorts, shorts, _, _, _, _, _],
+        // Legs
+        [_, _, _, _, _, _, skin, skin, _, _, _, _, skin, skin, _, _, _, _, _, _],
+        [_, _, _, _, _, _, skin, skin, _, _, _, _, skin, skin, _, _, _, _, _, _],
+        [_, _, _, _, _, _, skin, skin, _, _, _, _, skin, skin, _, _, _, _, _, _],
+        ...(bob ? [
+            [_, _, _, _, _, _, skin, skin, _, _, _, _, skin, skin, _, _, _, _, _, _] as (string | null)[],
+        ] : []),
+        // Shoes
+        [_, _, _, _, _, shoe, shoe, shoe, shoe, _, _, shoe, shoe, shoe, shoe, _, _, _, _, _],
+        [_, _, _, _, _, shoe, shoe, shoe, shoe, _, _, shoe, shoe, shoe, shoe, _, _, _, _, _],
+    ];
+}
+
+function getJadeDragonBlockSprite(
+    skin: string, hair: string, shorts: string, glove: string,
+    outline: string, shoe: string, c: string, a: string, _: null
+): SpriteFrame {
+    const vest = a;
+    const wrap = '#ccbb88';
+    return [
+        [_, _, _, _, _, _, _, hair, hair, hair, hair, hair, hair, _, _, _, _, _, _, _],
+        [_, _, _, _, _, _, hair, hair, hair, hair, hair, hair, hair, hair, _, _, _, _, _, _],
+        [_, _, _, _, _, hair, hair, hair, hair, hair, hair, hair, hair, hair, hair, _, _, _, _, _],
+        [_, _, _, _, _, outline, skin, skin, skin, skin, skin, skin, skin, skin, outline, _, _, _, _, _],
+        [_, _, _, _, wrap, wrap, skin, outline, skin, skin, skin, skin, outline, skin, wrap, wrap, _, _, _, _],
+        [_, _, _, _, wrap, wrap, skin, skin, skin, skin, skin, skin, skin, skin, wrap, wrap, _, _, _, _],
+        [_, _, _, _, wrap, wrap, skin, skin, skin, outline, outline, skin, skin, skin, wrap, wrap, _, _, _, _],
+        [_, _, _, _, wrap, wrap, skin, skin, skin, skin, skin, skin, skin, skin, wrap, wrap, _, _, _, _],
+        [_, _, _, _, _, _, _, _, skin, skin, skin, skin, _, _, _, _, _, _, _, _],
+        [_, _, _, _, outline, vest, c, c, c, c, c, c, c, c, vest, outline, _, _, _, _],
+        [_, _, _, outline, vest, c, c, c, c, c, c, c, c, c, c, vest, outline, _, _, _],
+        [_, _, _, outline, vest, c, c, c, c, c, c, c, c, c, c, vest, outline, _, _, _],
+        [_, _, _, _, skin, skin, vest, c, c, c, c, c, c, vest, skin, skin, _, _, _, _],
+        [_, _, _, _, _, _, c, c, c, c, c, c, c, c, _, _, _, _, _, _],
+        [_, _, _, _, _, _, c, c, c, c, c, c, c, c, _, _, _, _, _, _],
+        [_, _, _, _, _, _, c, c, c, c, c, c, c, c, _, _, _, _, _, _],
+        [_, _, _, _, _, _, vest, vest, vest, vest, vest, vest, vest, vest, _, _, _, _, _, _],
+        [_, _, _, _, _, shorts, shorts, shorts, shorts, _, _, shorts, shorts, shorts, shorts, _, _, _, _, _],
+        [_, _, _, _, _, shorts, shorts, shorts, shorts, _, _, shorts, shorts, shorts, shorts, _, _, _, _, _],
+        [_, _, _, _, _, shorts, shorts, shorts, _, _, _, _, shorts, shorts, shorts, _, _, _, _, _],
+        [_, _, _, _, _, _, skin, skin, _, _, _, _, skin, skin, _, _, _, _, _, _],
+        [_, _, _, _, _, _, skin, skin, _, _, _, _, skin, skin, _, _, _, _, _, _],
+        [_, _, _, _, _, _, skin, skin, _, _, _, _, skin, skin, _, _, _, _, _, _],
+        [_, _, _, _, _, shoe, shoe, shoe, shoe, _, _, shoe, shoe, shoe, shoe, _, _, _, _, _],
+        [_, _, _, _, _, shoe, shoe, shoe, shoe, _, _, shoe, shoe, shoe, shoe, _, _, _, _, _],
+    ];
+}
+
+function getJadeDragonHitSprite(
+    skin: string, hair: string, shorts: string, glove: string,
+    outline: string, shoe: string, c: string, a: string, _: null
+): SpriteFrame {
+    const vest = a;
+    const wrap = '#ccbb88';
+    return [
+        [_, _, _, _, _, _, _, _, hair, hair, hair, hair, hair, hair, _, _, _, _, _, _],
+        [_, _, _, _, _, _, _, hair, hair, hair, hair, hair, hair, hair, hair, _, _, _, _, _],
+        [_, _, _, _, _, _, hair, hair, hair, hair, hair, hair, hair, hair, hair, hair, _, _, _, _],
+        [_, _, _, _, _, _, outline, skin, skin, skin, skin, skin, skin, skin, skin, outline, _, _, _, _],
+        [_, _, _, _, _, _, skin, skin, outline, skin, skin, skin, skin, outline, skin, skin, _, _, _, _],
+        [_, _, _, _, _, _, skin, skin, skin, '#ff4444', skin, skin, '#ff4444', skin, skin, skin, _, _, _, _],
+        [_, _, _, _, _, _, skin, skin, skin, skin, outline, outline, skin, skin, skin, skin, _, _, _, _],
+        [_, _, _, _, _, _, _, skin, skin, skin, skin, skin, skin, skin, skin, _, _, _, _, _],
+        [_, _, _, _, _, _, _, _, _, skin, skin, skin, skin, _, _, _, _, _, _, _],
+        [_, _, _, _, _, outline, vest, c, c, c, c, c, c, c, vest, outline, _, _, _, _],
+        [_, _, _, _, outline, vest, c, c, c, c, c, c, c, c, c, vest, outline, _, _, _],
+        [_, _, _, _, outline, vest, c, c, c, c, c, c, c, c, c, vest, outline, _, _, _],
+        [_, _, _, wrap, wrap, skin, vest, c, c, c, c, c, c, vest, skin, wrap, wrap, _, _, _],
+        [_, _, _, wrap, wrap, _, c, c, c, c, c, c, c, c, _, wrap, wrap, _, _, _],
+        [_, _, _, _, _, _, c, c, c, c, c, c, c, c, _, _, _, _, _, _],
+        [_, _, _, _, _, _, c, c, c, c, c, c, c, c, _, _, _, _, _, _],
+        [_, _, _, _, _, _, vest, vest, vest, vest, vest, vest, vest, vest, _, _, _, _, _, _],
+        [_, _, _, _, _, shorts, shorts, shorts, shorts, _, _, shorts, shorts, shorts, shorts, _, _, _, _, _],
+        [_, _, _, _, _, shorts, shorts, shorts, shorts, _, _, shorts, shorts, shorts, shorts, _, _, _, _, _],
+        [_, _, _, _, _, shorts, shorts, shorts, _, _, _, _, shorts, shorts, shorts, _, _, _, _, _],
+        [_, _, _, _, _, _, skin, skin, _, _, _, _, skin, skin, _, _, _, _, _, _],
+        [_, _, _, _, _, _, skin, skin, _, _, _, _, skin, skin, _, _, _, _, _, _],
+        [_, _, _, _, _, _, skin, skin, _, _, _, _, skin, skin, _, _, _, _, _, _],
+        [_, _, _, _, _, shoe, shoe, shoe, shoe, _, _, shoe, shoe, shoe, shoe, _, _, _, _, _],
+        [_, _, _, _, _, shoe, shoe, shoe, shoe, _, _, shoe, shoe, shoe, shoe, _, _, _, _, _],
     ];
 }
 

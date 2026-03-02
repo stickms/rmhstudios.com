@@ -191,7 +191,7 @@ function update(state: GameState): void {
     // Player hitting opponent
     if (checkHit(player, opponent)) {
         // Check for combo
-        const combo = detectCombo(player.comboHistory, Date.now());
+        const combo = detectCombo(player.comboHistory, Date.now(), player.className);
         const comboMult = combo ? combo.bonusDamageMultiplier : 1.0;
 
         // Heavy punch bonus (hook/uppercut)
@@ -236,7 +236,7 @@ function update(state: GameState): void {
 
     // Opponent hitting player
     if (checkHit(opponent, player)) {
-        const combo = detectCombo(opponent.comboHistory, Date.now());
+        const combo = detectCombo(opponent.comboHistory, Date.now(), opponent.className);
         const comboMult = combo ? combo.bonusDamageMultiplier : 1.0;
 
         // Heavy punch bonus

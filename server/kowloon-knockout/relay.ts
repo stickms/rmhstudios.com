@@ -5,7 +5,8 @@
 // @ts-expect-error -- ws types are not installed; this file is bundled by esbuild, not Next.js
 import { WebSocketServer, WebSocket } from 'ws';
 
-type FighterClass = 'power' | 'speed' | 'resistance';
+type FighterClass = 'power' | 'speed' | 'resistance'
+    | 'power_stone_tiger' | 'power_red_phoenix' | 'power_jade_dragon';
 
 interface Room {
     code: string;

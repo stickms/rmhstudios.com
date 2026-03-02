@@ -1,62 +1,86 @@
 // ============================================================
-// Network Client — Browser WebSocket wrapper
+// Network Client — Socket.io wrapper for Kowloon Knockout
 // ============================================================
 
+import { io, Socket } from 'socket.io-client';
 import type { FighterClass, GameState } from '@/lib/kowloon-knockout/game/fighters/types';
 import type { RemoteInputState, ServerMessage } from './types';
 
+const DEFAULT_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:7001/';
+const SOCKET_PATH = '/socket/';
+
 type MessageHandler = (msg: ServerMessage) => void;
 
-const DEFAULT_URL = process.env.NEXT_PUBLIC_KOWLOON_WS_URL || 'ws://localhost:8080';
-
 class NetworkClient {
-    private ws: WebSocket | null = null;
+    private socket: Socket | null = null;
     private handlers = new Map<string, MessageHandler[]>();
 
     connect(url: string = DEFAULT_URL): Promise<void> {
         return new Promise((resolve, reject) => {
-            this.ws = new WebSocket(url);
+            if (this.socket?.connected) {
+                resolve();
+                return;
+            }
 
-            this.ws.onopen = () => resolve();
-            this.ws.onerror = () => reject(new Error('WebSocket connection failed'));
+            this.socket = io(url, {
+                path: SOCKET_PATH,
+                reconnection: false,
+                timeout: 10000,
+            });
 
-            this.ws.onmessage = (event) => {
-                let msg: ServerMessage;
-                try {
-                    msg = JSON.parse(event.data as string);
-                } catch {
-                    return;
-                }
-                const typeHandlers = this.handlers.get(msg.type);
-                if (typeHandlers) {
-                    for (const handler of typeHandlers) {
-                        handler(msg);
-                    }
-                }
-            };
+            this.socket.on('connect', () => resolve());
+            this.socket.on('connect_error', () => reject(new Error('Socket.io connection failed')));
 
-            this.ws.onclose = () => {
-                const handlers = this.handlers.get('opponent_disconnected');
-                if (handlers) {
-                    for (const handler of handlers) {
-                        handler({ type: 'opponent_disconnected' });
-                    }
-                }
-            };
+            // Wire Socket.io events to internal handler system
+            this.socket.on('kk:room_created', (data) => {
+                this.dispatch({ type: 'room_created', code: data.code });
+            });
+
+            this.socket.on('kk:room_joined', (data) => {
+                this.dispatch({
+                    type: 'room_joined',
+                    hostClass: data.hostClass,
+                    guestClass: data.guestClass,
+                    isHost: data.isHost,
+                });
+            });
+
+            this.socket.on('kk:input', (data) => {
+                this.dispatch({ type: 'input', data });
+            });
+
+            this.socket.on('kk:game_state', (data) => {
+                this.dispatch({ type: 'game_state', data });
+            });
+
+            this.socket.on('kk:opponent_disconnected', () => {
+                this.dispatch({ type: 'opponent_disconnected' });
+            });
+
+            this.socket.on('kk:error', (data) => {
+                this.dispatch({ type: 'error', message: data.message });
+            });
+
+            this.socket.on('disconnect', () => {
+                this.dispatch({ type: 'opponent_disconnected' });
+            });
         });
     }
 
-    disconnect(): void {
-        if (this.ws) {
-            this.send({ type: 'leave' });
-            this.ws.close();
-            this.ws = null;
+    private dispatch(msg: ServerMessage): void {
+        const typeHandlers = this.handlers.get(msg.type);
+        if (typeHandlers) {
+            for (const handler of typeHandlers) {
+                handler(msg);
+            }
         }
     }
 
-    private send(msg: object): void {
-        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-            this.ws.send(JSON.stringify(msg));
+    disconnect(): void {
+        if (this.socket) {
+            this.socket.emit('kk:leave');
+            this.socket.disconnect();
+            this.socket = null;
         }
     }
 
@@ -78,23 +102,23 @@ class NetworkClient {
     }
 
     get connected(): boolean {
-        return this.ws !== null && this.ws.readyState === WebSocket.OPEN;
+        return this.socket !== null && this.socket.connected;
     }
 
     createRoom(fighterClass: FighterClass): void {
-        this.send({ type: 'create_room', fighterClass });
+        this.socket?.emit('kk:create_room', { fighterClass });
     }
 
     joinRoom(code: string, fighterClass: FighterClass): void {
-        this.send({ type: 'join_room', code, fighterClass });
+        this.socket?.emit('kk:join_room', { code, fighterClass });
     }
 
     sendInput(input: RemoteInputState): void {
-        this.send({ type: 'input', data: input });
+        this.socket?.emit('kk:input', input);
     }
 
     sendGameState(state: GameState): void {
-        this.send({ type: 'game_state', data: state });
+        this.socket?.emit('kk:game_state', state);
     }
 }
 

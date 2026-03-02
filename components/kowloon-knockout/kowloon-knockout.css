@@ -165,34 +165,175 @@
   overflow: hidden;
 }
 
-.kowloon-knockout .neon-line {
-  position: absolute;
-  height: 1px;
-  opacity: 0.3;
-}
+/* ── Cyberpunk HK Cityscape Backdrop ──────────────────────────── */
 
-.kowloon-knockout .neon-line-1 {
-  top: 20%;
+.kowloon-knockout .city-skyline {
+  position: absolute;
+  bottom: 0;
   left: 0;
   right: 0;
-  background: linear-gradient(90deg, transparent, var(--neon-pink), transparent);
+  height: 55%;
+  background:
+    /* Foreground buildings */
+    linear-gradient(0deg, #0c0018 0%, transparent 100%),
+    /* Building silhouettes - varied heights */
+    repeating-linear-gradient(90deg,
+      transparent 0px, transparent 8px,
+      #0f0020 8px, #0f0020 22px,
+      transparent 22px, transparent 26px,
+      #0a0018 26px, #0a0018 38px,
+      transparent 38px, transparent 40px,
+      #0d001a 40px, #0d001a 56px,
+      transparent 56px, transparent 62px,
+      #08001a 62px, #08001a 74px,
+      transparent 74px, transparent 80px
+    );
+  mask-image: linear-gradient(0deg, #000 0%, #000 30%, transparent 100%);
+  -webkit-mask-image: linear-gradient(0deg, #000 0%, #000 30%, transparent 100%);
+  opacity: 0.7;
+}
+
+/* Lit windows in buildings */
+.kowloon-knockout .city-skyline::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(1px 1px at 15px 70%, #ffcc0040 0%, transparent 100%),
+    radial-gradient(1px 1px at 30px 85%, #33ccff30 0%, transparent 100%),
+    radial-gradient(1px 1px at 50px 65%, #ff336630 0%, transparent 100%),
+    radial-gradient(1px 1px at 68px 78%, #ffcc0025 0%, transparent 100%),
+    radial-gradient(1px 1px at 12px 90%, #33ff9920 0%, transparent 100%),
+    radial-gradient(1px 1px at 45px 92%, #ff336625 0%, transparent 100%),
+    radial-gradient(1px 1px at 72px 88%, #33ccff20 0%, transparent 100%),
+    radial-gradient(1px 1px at 25px 75%, #cc33ff20 0%, transparent 100%);
+  background-size: 80px 100%;
+  animation: neonPulse 4s ease-in-out infinite;
+}
+
+/* Neon signs — Chinese characters floating in the scene */
+.kowloon-knockout .neon-sign {
+  position: absolute;
+  font-size: 14px;
+  letter-spacing: 4px;
+  writing-mode: vertical-rl;
+  padding: 6px 3px;
+  border: 1px solid;
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.kowloon-knockout .neon-sign-1 {
+  top: 15%;
+  left: 6%;
+  color: var(--neon-pink);
+  border-color: var(--neon-pink);
+  text-shadow: 0 0 8px var(--neon-pink), 0 0 16px var(--neon-pink);
+  box-shadow: 0 0 6px rgba(255, 51, 102, 0.3), inset 0 0 6px rgba(255, 51, 102, 0.1);
   animation: neonPulse 3s ease-in-out infinite;
 }
 
-.kowloon-knockout .neon-line-2 {
-  top: 50%;
-  left: 0;
-  right: 0;
-  background: linear-gradient(90deg, transparent, var(--neon-blue), transparent);
+.kowloon-knockout .neon-sign-2 {
+  top: 22%;
+  right: 8%;
+  color: var(--neon-blue);
+  border-color: var(--neon-blue);
+  text-shadow: 0 0 8px var(--neon-blue), 0 0 16px var(--neon-blue);
+  box-shadow: 0 0 6px rgba(51, 204, 255, 0.3), inset 0 0 6px rgba(51, 204, 255, 0.1);
   animation: neonPulse 4s ease-in-out infinite 1s;
 }
 
-.kowloon-knockout .neon-line-3 {
-  top: 80%;
-  left: 0;
-  right: 0;
-  background: linear-gradient(90deg, transparent, var(--neon-yellow), transparent);
+.kowloon-knockout .neon-sign-3 {
+  top: 35%;
+  left: 12%;
+  color: var(--neon-yellow);
+  border-color: var(--neon-yellow);
+  text-shadow: 0 0 8px var(--neon-yellow), 0 0 16px var(--neon-yellow);
+  box-shadow: 0 0 6px rgba(255, 204, 0, 0.3), inset 0 0 6px rgba(255, 204, 0, 0.1);
   animation: neonPulse 3.5s ease-in-out infinite 0.5s;
+  font-size: 12px;
+}
+
+.kowloon-knockout .neon-sign-4 {
+  top: 30%;
+  right: 15%;
+  color: var(--neon-green);
+  border-color: var(--neon-green);
+  text-shadow: 0 0 8px var(--neon-green), 0 0 16px var(--neon-green);
+  box-shadow: 0 0 6px rgba(51, 255, 153, 0.3), inset 0 0 6px rgba(51, 255, 153, 0.1);
+  animation: neonPulse 5s ease-in-out infinite 2s;
+  font-size: 11px;
+}
+
+/* Vertical neon strips — like HK building edge lighting */
+.kowloon-knockout .neon-strip {
+  position: absolute;
+  width: 2px;
+  pointer-events: none;
+}
+
+.kowloon-knockout .neon-strip-1 {
+  top: 30%;
+  bottom: 10%;
+  left: 20%;
+  background: linear-gradient(180deg, transparent, var(--neon-pink), var(--neon-pink), transparent);
+  opacity: 0.15;
+  animation: neonPulse 3s ease-in-out infinite;
+}
+
+.kowloon-knockout .neon-strip-2 {
+  top: 25%;
+  bottom: 15%;
+  right: 22%;
+  background: linear-gradient(180deg, transparent, var(--neon-blue), var(--neon-blue), transparent);
+  opacity: 0.12;
+  animation: neonPulse 4s ease-in-out infinite 1.5s;
+}
+
+.kowloon-knockout .neon-strip-3 {
+  top: 40%;
+  bottom: 5%;
+  left: 35%;
+  background: linear-gradient(180deg, transparent, var(--neon-yellow), transparent);
+  opacity: 0.1;
+  animation: neonPulse 3.5s ease-in-out infinite 0.8s;
+}
+
+.kowloon-knockout .neon-strip-4 {
+  top: 35%;
+  bottom: 12%;
+  right: 38%;
+  background: linear-gradient(180deg, transparent, var(--neon-purple), transparent);
+  opacity: 0.08;
+  animation: neonPulse 5s ease-in-out infinite 2.5s;
+}
+
+/* Ambient glow spots */
+.kowloon-knockout .menu-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  pointer-events: none;
+}
+
+.kowloon-knockout .menu-glow-pink {
+  width: 200px;
+  height: 200px;
+  bottom: 10%;
+  left: 5%;
+  background: var(--neon-pink);
+  opacity: 0.06;
+  animation: neonPulse 6s ease-in-out infinite;
+}
+
+.kowloon-knockout .menu-glow-blue {
+  width: 180px;
+  height: 180px;
+  bottom: 15%;
+  right: 8%;
+  background: var(--neon-blue);
+  opacity: 0.05;
+  animation: neonPulse 5s ease-in-out infinite 1s;
 }
 
 .kowloon-knockout .menu-content {
@@ -580,6 +721,27 @@
   padding: 4px 12px;
   letter-spacing: 2px;
   font-weight: bold;
+}
+
+.kowloon-knockout .select-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 30px;
+  width: 100%;
+}
+
+.kowloon-knockout .select-title-order {
+  font-size: 18px;
+}
+
+.kowloon-knockout .subclass-badge {
+  font-size: 7px;
+  color: var(--neon-yellow);
+  border: 1px solid var(--neon-yellow);
+  padding: 2px 8px;
+  letter-spacing: 2px;
+  opacity: 0.7;
 }
 
 .kowloon-knockout .select-actions {
