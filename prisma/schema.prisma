@@ -58,6 +58,12 @@ model User {
   rmhtubePlaylists     RmhTubePlaylist[]
   rmhtubeStats         RmhTubeUserStats?
 
+  // ─── RMHMusic ──────────────────────────────────────────────────
+  rmhMusicHostedRooms   RmhMusicRoom[]        @relation("RmhMusicHostedRooms")
+  rmhMusicRoomMembers   RmhMusicRoomMember[]   @relation("RmhMusicRoomMembers")
+  rmhMusicQueueItems    RmhMusicQueueItem[]    @relation("RmhMusicQueueItems")
+  rmhMusicChatMessages  RmhMusicChatMessage[]  @relation("RmhMusicChatMessages")
+
   // Site Feedback
   feedbacks            Feedback[]
 
@@ -1096,4 +1102,73 @@ model Follow {
   @@index([followerId])
   @@index([followingId])
   @@map("follow")
+}
+
+// ─── RMHMusic ────────────────────────────────────────────────────
+
+model RmhMusicRoom {
+  id         String   @id @default(cuid())
+  code       String   @unique
+  name       String   @db.VarChar(64)
+  hostId     String
+  host       User     @relation("RmhMusicHostedRooms", fields: [hostId], references: [id])
+  isPublic   Boolean  @default(true)
+  password   String?
+  maxMembers Int      @default(10)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  members RmhMusicRoomMember[]
+  queue   RmhMusicQueueItem[]
+  chat    RmhMusicChatMessage[]
+
+  @@index([isPublic, createdAt(sort: Desc)])
+  @@map("rmh_music_room")
+}
+
+model RmhMusicRoomMember {
+  id       String    @id @default(cuid())
+  roomId   String
+  room     RmhMusicRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User     @relation("RmhMusicRoomMembers", fields: [userId], references: [id])
+  joinedAt DateTime @default(now())
+  leftAt   DateTime?
+
+  @@unique([roomId, userId])
+  @@map("rmh_music_room_member")
+}
+
+model RmhMusicQueueItem {
+  id          String   @id @default(cuid())
+  roomId      String
+  room        RmhMusicRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  spotifyUri  String
+  title       String   @db.VarChar(256)
+  artist      String   @db.VarChar(256)
+  albumArt    String   @db.VarChar(500)
+  durationMs  Int
+  addedById   String
+  addedBy     User     @relation("RmhMusicQueueItems", fields: [addedById], references: [id])
+  addedByName String   @db.VarChar(50)
+  position    Int
+  playedAt    DateTime?
+  createdAt   DateTime @default(now())
+
+  @@index([roomId, position])
+  @@map("rmh_music_queue_item")
+}
+
+model RmhMusicChatMessage {
+  id        String   @id @default(cuid())
+  roomId    String
+  room      RmhMusicRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation("RmhMusicChatMessages", fields: [userId], references: [id])
+  userName  String   @db.VarChar(50)
+  content   String   @db.VarChar(300)
+  createdAt DateTime @default(now())
+
+  @@index([roomId, createdAt(sort: Desc)])
+  @@map("rmh_music_chat_message")
 }
