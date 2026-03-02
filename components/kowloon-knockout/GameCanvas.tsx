@@ -26,6 +26,8 @@ export default function GameCanvas() {
             roundTime: state.roundTime,
             comboText: state.comboText,
             result: state.result,
+            playerWins: state.playerScore,
+            opponentWins: state.opponentScore,
         });
 
         if (state.phase === 'result') {

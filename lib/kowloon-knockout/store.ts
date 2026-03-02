@@ -57,6 +57,8 @@ interface GameStore {
         roundTime: number;
         comboText: string;
         result: FightResult;
+        playerWins: number;
+        opponentWins: number;
     }) => void;
 
     resetGame: () => void;
