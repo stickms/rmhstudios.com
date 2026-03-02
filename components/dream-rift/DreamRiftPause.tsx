@@ -1,6 +1,7 @@
 'use client';
 
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from '@/lib/dream-rift/constants';
+import { TouhouFrame, TouhouMenuButton, TouhouDivider } from './TouhouFrame';
 
 export function DreamRiftPause({
   onResume,
@@ -13,39 +14,47 @@ export function DreamRiftPause({
 }) {
   return (
     <div
-      className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-black/80"
-      style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT }}
+      className="absolute inset-0 z-40 flex flex-col items-center justify-center"
+      style={{
+        width: CANVAS_WIDTH,
+        height: CANVAS_HEIGHT,
+        background: 'rgba(5,3,20,0.85)',
+        backdropFilter: 'blur(2px)',
+      }}
     >
-      <div className="flex flex-col items-center gap-6">
-        <h2 className="text-2xl font-black tracking-wider text-white">
-          PAUSED
-        </h2>
+      <TouhouFrame className="w-52">
+        <div className="py-4 px-2">
+          <div className="text-center mb-3">
+            <h2
+              className="text-lg tracking-[0.3em] text-amber-300/70"
+              style={{ fontFamily: "'Georgia', serif" }}
+            >
+              PAUSED
+            </h2>
+            <TouhouDivider />
+          </div>
 
-        <div className="flex flex-col items-center gap-2 w-48">
-          <button
-            onClick={onResume}
-            className="w-full py-2.5 px-6 text-sm font-bold tracking-wide text-white bg-white/10 border border-white/20 rounded hover:bg-white/20 hover:border-white/40 transition-all"
-          >
+          <TouhouMenuButton variant="accent" onClick={onResume}>
             Resume
-          </button>
-          <button
-            onClick={onRestart}
-            className="w-full py-2.5 px-6 text-sm font-bold tracking-wide text-zinc-300 bg-white/5 border border-white/10 rounded hover:bg-white/10 hover:text-white transition-all"
-          >
+          </TouhouMenuButton>
+          <TouhouMenuButton onClick={onRestart}>
             Restart
-          </button>
-          <button
-            onClick={onQuit}
-            className="w-full py-2.5 px-6 text-sm font-bold tracking-wide text-zinc-400 bg-white/5 border border-white/10 rounded hover:bg-white/10 hover:text-zinc-200 transition-all"
-          >
+          </TouhouMenuButton>
+          <TouhouMenuButton onClick={onQuit}>
             Quit to Title
-          </button>
-        </div>
+          </TouhouMenuButton>
 
-        <p className="text-[10px] text-zinc-600">
-          Press Esc to resume
-        </p>
-      </div>
+          <div className="mt-3 text-center">
+            <TouhouDivider />
+            <p
+              className="text-[9px] text-zinc-600 tracking-wider"
+              style={{ fontFamily: "'Georgia', serif" }}
+            >
+              Press Esc to resume
+            </p>
+          </div>
+        </div>
+      </TouhouFrame>
     </div>
   );
 }

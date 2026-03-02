@@ -2,6 +2,7 @@
 
 import { useDreamRiftStore } from '@/lib/dream-rift/store';
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from '@/lib/dream-rift/constants';
+import { TouhouFrame, TouhouMenuButton, TouhouDivider } from './TouhouFrame';
 
 export function DreamRiftGameOver({ onQuit }: { onQuit: () => void }) {
   const useContinue = useDreamRiftStore((s) => s.useContinue);
@@ -9,6 +10,7 @@ export function DreamRiftGameOver({ onQuit }: { onQuit: () => void }) {
   const difficulty = useDreamRiftStore((s) => s.difficulty);
   const player = useDreamRiftStore((s) => s.player);
   const totalScore = useDreamRiftStore((s) => s.totalScore);
+  const setScreen = useDreamRiftStore((s) => s.setScreen);
 
   const maxContinues =
     difficulty === 'easy' ? 5 :
@@ -18,80 +20,88 @@ export function DreamRiftGameOver({ onQuit }: { onQuit: () => void }) {
   const remaining = maxContinues - continues;
   const canContinue = remaining > 0;
 
-  const handleContinue = () => {
-    useContinue();
-  };
-
   return (
     <div
-      className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-black/80"
-      style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT }}
+      className="absolute inset-0 z-40 flex flex-col items-center justify-center"
+      style={{
+        width: CANVAS_WIDTH,
+        height: CANVAS_HEIGHT,
+        background: 'radial-gradient(ellipse at center, rgba(40,5,10,0.95) 0%, rgba(8,4,15,0.97) 100%)',
+      }}
     >
-      <div className="flex flex-col items-center gap-6 px-6">
-        {/* Title */}
-        <h2 className="text-3xl font-black tracking-wider text-red-500">
-          GAME OVER
-        </h2>
-
-        {/* Score summary */}
-        <div className="w-64 bg-black/60 border border-zinc-700 rounded-lg p-4 space-y-3">
-          <div className="text-center">
-            <div className="text-[9px] text-zinc-500 uppercase tracking-wider">
-              Final Score
-            </div>
-            <div className="text-xl font-bold text-white tabular-nums">
-              {totalScore.toLocaleString()}
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-2 text-center">
-            <div>
-              <div className="text-[9px] text-zinc-600">Graze</div>
-              <div className="text-xs text-zinc-300 tabular-nums">
-                {player.graze.toLocaleString()}
-              </div>
-            </div>
-            <div>
-              <div className="text-[9px] text-zinc-600">Continues Used</div>
-              <div className="text-xs text-zinc-300 tabular-nums">
-                {continues}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Continue prompt */}
-        {canContinue && (
-          <div className="text-center">
-            <p className="text-xs text-zinc-400">
-              Continues remaining: <span className="text-white font-bold">{remaining}</span>
-            </p>
-          </div>
-        )}
-
-        {/* Buttons */}
-        <div className="flex flex-col items-center gap-2 w-48">
-          {canContinue && (
-            <button
-              onClick={handleContinue}
-              className="w-full py-2.5 px-6 text-sm font-bold tracking-wide text-white bg-white/10 border border-white/20 rounded hover:bg-white/20 hover:border-white/40 transition-all"
+      <TouhouFrame className="w-72">
+        <div className="py-4 px-4">
+          {/* Title */}
+          <div className="text-center mb-3">
+            <h2
+              className="text-2xl tracking-[0.2em]"
+              style={{
+                fontFamily: "'Georgia', serif",
+                color: '#cc3344',
+                textShadow: '0 0 20px rgba(204,51,68,0.4), 0 0 40px rgba(204,51,68,0.1)',
+              }}
             >
-              Continue
-            </button>
+              GAME OVER
+            </h2>
+            <TouhouDivider />
+          </div>
+
+          {/* Score box */}
+          <div className="border border-amber-400/15 bg-white/[0.02] p-3 mb-3">
+            <div className="text-center mb-2">
+              <div className="text-[8px] tracking-[0.2em] text-amber-400/40 uppercase">
+                Final Score
+              </div>
+              <div
+                className="text-lg text-white tabular-nums font-mono mt-0.5"
+                style={{ textShadow: '0 0 8px rgba(255,255,255,0.15)' }}
+              >
+                {totalScore.toLocaleString()}
+              </div>
+            </div>
+
+            <div className="flex justify-between text-[10px] mt-2 pt-2 border-t border-white/5">
+              <div className="text-center flex-1">
+                <div className="text-amber-400/40 text-[8px] tracking-wider uppercase">Graze</div>
+                <div className="text-zinc-400 tabular-nums font-mono mt-0.5">
+                  {player.graze.toLocaleString()}
+                </div>
+              </div>
+              <div className="w-px bg-white/5" />
+              <div className="text-center flex-1">
+                <div className="text-amber-400/40 text-[8px] tracking-wider uppercase">Continues</div>
+                <div className="text-zinc-400 tabular-nums font-mono mt-0.5">{continues}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Continue prompt */}
+          {canContinue && (
+            <div className="text-center mb-2">
+              <p className="text-[10px] text-zinc-500" style={{ fontFamily: "'Georgia', serif" }}>
+                Continues remaining: <span className="text-amber-300">{remaining}</span>
+              </p>
+            </div>
           )}
-          <button
-            onClick={() => useDreamRiftStore.getState().setScreen('leaderboard')}
-            className="w-full py-2.5 px-6 text-sm font-bold tracking-wide text-violet-400 bg-violet-500/10 border border-violet-500/20 rounded hover:bg-violet-500/20 hover:text-violet-300 transition-all"
-          >
-            Leaderboard
-          </button>
-          <button
-            onClick={onQuit}
-            className="w-full py-2.5 px-6 text-sm font-bold tracking-wide text-zinc-400 bg-white/5 border border-white/10 rounded hover:bg-white/10 hover:text-zinc-200 transition-all"
-          >
-            Quit to Title
-          </button>
+
+          <TouhouDivider />
+
+          {/* Buttons */}
+          <div className="mt-1">
+            {canContinue && (
+              <TouhouMenuButton variant="accent" onClick={() => useContinue()}>
+                Continue
+              </TouhouMenuButton>
+            )}
+            <TouhouMenuButton onClick={() => setScreen('leaderboard')}>
+              Leaderboard
+            </TouhouMenuButton>
+            <TouhouMenuButton onClick={onQuit}>
+              Quit to Title
+            </TouhouMenuButton>
+          </div>
         </div>
-      </div>
+      </TouhouFrame>
     </div>
   );
 }

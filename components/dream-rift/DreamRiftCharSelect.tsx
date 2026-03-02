@@ -2,43 +2,50 @@
 
 import { useDreamRiftStore } from '@/lib/dream-rift/store';
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from '@/lib/dream-rift/constants';
+import { TouhouFrame, TouhouDivider } from './TouhouFrame';
 import type { Character } from '@/lib/dream-rift/types';
 
 const CHARACTERS: {
   id: Character;
   name: string;
-  type: string;
+  title: string;
+  kanji: string;
   accent: string;
-  border: string;
-  hoverBorder: string;
+  glowColor: string;
+  borderColor: string;
   melee: string;
   special: string;
   shot: string;
+  speed: string;
   desc: string;
 }[] = [
   {
     id: 'rei',
     name: 'Rei',
-    type: 'Power Type',
-    accent: 'text-red-400',
-    border: 'border-red-500/30',
-    hoverBorder: 'hover:border-red-500/70',
-    melee: 'Sword Slash (wide arc)',
-    special: 'Barrier',
+    title: 'The Crimson Blade',
+    kanji: '零',
+    accent: '#ff4466',
+    glowColor: 'rgba(255,68,102,0.3)',
+    borderColor: 'border-red-500/40',
+    melee: 'Sword Slash — wide arc',
+    special: 'Barrier — absorbs bullets',
     shot: 'Wide Spread',
-    desc: 'High damage, wide melee arc. Slower movement but devastating firepower.',
+    speed: 'Steady',
+    desc: 'Devastating power with a wide melee arc. A direct fighter who carves through danmaku.',
   },
   {
     id: 'yume',
     name: 'Yume',
-    type: 'Speed Type',
-    accent: 'text-blue-400',
-    border: 'border-blue-500/30',
-    hoverBorder: 'hover:border-blue-500/70',
-    melee: 'Fan Strike (precise)',
-    special: 'Phase Shift',
-    shot: 'Homing',
-    desc: 'Fast and agile with homing shots. Narrower melee but quicker cooldowns.',
+    title: 'The Azure Dreamer',
+    kanji: '夢',
+    accent: '#66aaff',
+    glowColor: 'rgba(102,170,255,0.3)',
+    borderColor: 'border-blue-500/40',
+    melee: 'Fan Strike — stuns enemies',
+    special: 'Phase Shift — teleport',
+    shot: 'Homing Needles',
+    speed: 'Swift',
+    desc: 'Speed and precision with homing shots. Slips between bullets like a ghost in the wind.',
   },
 ];
 
@@ -53,61 +60,122 @@ export function DreamRiftCharSelect() {
 
   return (
     <div
-      className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/80"
-      style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT }}
+      className="absolute inset-0 z-30 flex flex-col items-center justify-center"
+      style={{
+        width: CANVAS_WIDTH,
+        height: CANVAS_HEIGHT,
+        background: 'radial-gradient(ellipse at center, #0d0b2a 0%, #08061a 100%)',
+      }}
     >
-      <div className="flex flex-col items-center gap-5 px-4">
-        <h2 className="text-xl font-black tracking-wider text-white">
+      {/* Header */}
+      <div className="text-center mb-4">
+        <h2
+          className="text-lg tracking-[0.25em] text-amber-300/80"
+          style={{ fontFamily: "'Georgia', serif" }}
+        >
           SELECT CHARACTER
         </h2>
-
-        <div className="flex gap-3">
-          {CHARACTERS.map((char) => (
-            <button
-              key={char.id}
-              onClick={() => handleSelect(char.id)}
-              className={`w-[168px] p-3 rounded-lg border bg-black/60 ${char.border} ${char.hoverBorder} hover:bg-white/5 transition-all text-left`}
-            >
-              {/* Character icon placeholder */}
-              <div className={`w-10 h-10 rounded-full border-2 ${char.border} flex items-center justify-center mb-2`}>
-                <span className={`text-lg font-black ${char.accent}`}>
-                  {char.name[0]}
-                </span>
-              </div>
-
-              <div className={`text-sm font-bold ${char.accent}`}>
-                {char.name}
-              </div>
-              <div className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider mb-2">
-                {char.type}
-              </div>
-
-              <div className="space-y-1 text-[10px] text-zinc-400">
-                <div>
-                  <span className="text-zinc-600">Melee:</span> {char.melee}
-                </div>
-                <div>
-                  <span className="text-zinc-600">Special:</span> {char.special}
-                </div>
-                <div>
-                  <span className="text-zinc-600">Shot:</span> {char.shot}
-                </div>
-              </div>
-
-              <p className="mt-2 text-[9px] text-zinc-500 leading-tight">
-                {char.desc}
-              </p>
-            </button>
-          ))}
+        <div className="flex items-center justify-center gap-2 mt-1">
+          <div className="w-12 h-px bg-gradient-to-r from-transparent to-amber-400/40" />
+          <div className="w-1 h-1 rotate-45 bg-amber-400/40" />
+          <div className="w-12 h-px bg-gradient-to-l from-transparent to-amber-400/40" />
         </div>
-
-        <button
-          onClick={() => setScreen('title')}
-          className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors"
-        >
-          Back
-        </button>
       </div>
+
+      {/* Character cards */}
+      <div className="flex gap-3 px-4">
+        {CHARACTERS.map((char) => (
+          <button
+            key={char.id}
+            onClick={() => handleSelect(char.id)}
+            className={`group relative w-[200px] transition-all hover:scale-[1.02]`}
+          >
+            <TouhouFrame>
+              <div className="p-3">
+                {/* Portrait area */}
+                <div
+                  className={`relative w-full h-24 mb-2 border ${char.borderColor} flex items-center justify-center overflow-hidden`}
+                  style={{
+                    background: `radial-gradient(circle at center, ${char.glowColor} 0%, transparent 70%), linear-gradient(180deg, #0a0a1a 0%, #111128 100%)`,
+                  }}
+                >
+                  {/* Kanji watermark */}
+                  <span
+                    className="text-[64px] font-bold opacity-10 select-none"
+                    style={{ color: char.accent, fontFamily: "'Georgia', serif" }}
+                  >
+                    {char.kanji}
+                  </span>
+
+                  {/* Glow on hover */}
+                  <div
+                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                    style={{
+                      background: `radial-gradient(circle at center, ${char.glowColor} 0%, transparent 60%)`,
+                    }}
+                  />
+                </div>
+
+                {/* Name and title */}
+                <div className="text-center mb-2">
+                  <div
+                    className="text-base font-bold tracking-wider"
+                    style={{ color: char.accent, fontFamily: "'Georgia', serif" }}
+                  >
+                    {char.name}
+                  </div>
+                  <div
+                    className="text-[9px] tracking-[0.2em] text-zinc-500 mt-0.5"
+                    style={{ fontFamily: "'Georgia', serif" }}
+                  >
+                    {char.title}
+                  </div>
+                </div>
+
+                <TouhouDivider />
+
+                {/* Stats */}
+                <div className="space-y-1.5 text-[10px] mt-2">
+                  <StatRow label="Shot" value={char.shot} />
+                  <StatRow label="Melee" value={char.melee} />
+                  <StatRow label="Special" value={char.special} />
+                  <StatRow label="Speed" value={char.speed} />
+                </div>
+
+                {/* Description */}
+                <p
+                  className="mt-2 text-[9px] text-zinc-500 leading-relaxed text-center"
+                  style={{ fontFamily: "'Georgia', serif" }}
+                >
+                  {char.desc}
+                </p>
+              </div>
+            </TouhouFrame>
+          </button>
+        ))}
+      </div>
+
+      {/* Back */}
+      <button
+        onClick={() => setScreen('title')}
+        className="mt-4 text-[10px] tracking-[0.2em] text-zinc-600 hover:text-amber-400/60 transition-colors"
+        style={{ fontFamily: "'Georgia', serif" }}
+      >
+        ◂ Back
+      </button>
+    </div>
+  );
+}
+
+function StatRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-baseline gap-1.5">
+      <span className="text-amber-400/50 w-12 text-right shrink-0" style={{ fontFamily: "'Georgia', serif" }}>
+        {label}
+      </span>
+      <span className="text-[9px] text-zinc-400" style={{ fontFamily: "'Georgia', serif" }}>
+        {value}
+      </span>
     </div>
   );
 }

@@ -210,6 +210,8 @@ export class DreamRiftEngine {
       antialias: false,
       resolution: window.devicePixelRatio || 1,
       autoDensity: true,
+      preference: 'webgl',
+      autoStart: false,
     });
     this.app = app;
 
@@ -334,7 +336,7 @@ export class DreamRiftEngine {
     this.unbindInput?.();
     this.unbindInput = null;
     if (this.app) {
-      this.app.destroy(true, { children: true });
+      this.app.destroy(false, { children: true });
       this.app = null;
     }
     this.playfieldContainer = null;
@@ -836,6 +838,9 @@ export class DreamRiftEngine {
     this.renderBullets();
     this.renderItems();
     this.renderPlayer();
+
+    // With autoStart: false, we must drive rendering ourselves
+    this.app?.render();
   }
 
   private renderBullets(): void {

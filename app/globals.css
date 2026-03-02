@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+/* Dream Rift floating particle animation */
+@keyframes dreamrift-float {
+  0%, 100% { transform: translateY(0) translateX(0); opacity: 0.2; }
+  25% { transform: translateY(-20px) translateX(5px); opacity: 0.5; }
+  50% { transform: translateY(-8px) translateX(-3px); opacity: 0.3; }
+  75% { transform: translateY(-25px) translateX(8px); opacity: 0.6; }
+}
+
 :root {
   /* Base colors — mapped to site design system */
   --background: #1a1b1e;

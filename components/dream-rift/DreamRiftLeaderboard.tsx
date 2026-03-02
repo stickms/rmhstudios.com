@@ -4,16 +4,15 @@ import { useState, useEffect, useCallback } from 'react';
 import { useDreamRiftStore } from '@/lib/dream-rift/store';
 import { authClient } from '@/lib/auth-client';
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from '@/lib/dream-rift/constants';
-
-/* ── Types ────────────────────────────────────────────────────────── */
+import { TouhouFrame, TouhouMenuButton, TouhouDivider } from './TouhouFrame';
 
 type LeaderboardDifficulty = 'easy' | 'normal' | 'hard' | 'lunatic';
 
-const DIFFICULTY_LABELS: { key: LeaderboardDifficulty; label: string }[] = [
-  { key: 'easy', label: 'Easy' },
-  { key: 'normal', label: 'Normal' },
-  { key: 'hard', label: 'Hard' },
-  { key: 'lunatic', label: 'Lunatic' },
+const DIFFICULTY_TABS: { key: LeaderboardDifficulty; label: string; color: string }[] = [
+  { key: 'easy', label: 'Easy', color: '#66cc88' },
+  { key: 'normal', label: 'Normal', color: '#6699ff' },
+  { key: 'hard', label: 'Hard', color: '#ff9944' },
+  { key: 'lunatic', label: 'Lunatic', color: '#ff4466' },
 ];
 
 const SCORE_FIELDS: Record<LeaderboardDifficulty, string> = {
@@ -34,8 +33,6 @@ interface LeaderboardEntry {
   spellsCaptured: number;
 }
 
-/* ── Component ────────────────────────────────────────────────────── */
-
 export function DreamRiftLeaderboard() {
   const storeDifficulty = useDreamRiftStore((s) => s.difficulty);
   const totalScore = useDreamRiftStore((s) => s.totalScore);
@@ -47,34 +44,25 @@ export function DreamRiftLeaderboard() {
   const session = authClient.useSession();
   const isAuthenticated = !!session.data?.user;
 
-  const [selectedDifficulty, setSelectedDifficulty] =
-    useState<LeaderboardDifficulty>(storeDifficulty);
+  const [selectedDifficulty, setSelectedDifficulty] = useState<LeaderboardDifficulty>(storeDifficulty);
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  /* Score submission state */
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  /* Determine if the player just finished a game (has a score > 0) */
   const hasFinishedGame = totalScore > 0;
-
-  /* ── Fetch leaderboard ──────────────────────────────────────────── */
 
   const fetchLeaderboard = useCallback(async (difficulty: LeaderboardDifficulty) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(
-        `/api/dream-rift/leaderboard?difficulty=${difficulty}`,
-      );
+      const res = await fetch(`/api/dream-rift/leaderboard?difficulty=${difficulty}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data: LeaderboardEntry[] = await res.json();
       setEntries(data);
-    } catch (e) {
-      console.error('Leaderboard fetch failed:', e);
+    } catch {
       setError('Failed to load leaderboard.');
       setEntries([]);
     } finally {
@@ -86,13 +74,10 @@ export function DreamRiftLeaderboard() {
     fetchLeaderboard(selectedDifficulty);
   }, [selectedDifficulty, fetchLeaderboard]);
 
-  /* ── Submit score ───────────────────────────────────────────────── */
-
   const handleSubmitScore = async () => {
     if (!isAuthenticated || submitted || submitting) return;
     setSubmitting(true);
     setSubmitError(null);
-
     try {
       const res = await fetch('/api/dream-rift/score', {
         method: 'POST',
@@ -107,26 +92,18 @@ export function DreamRiftLeaderboard() {
           spellsCaptured: 0,
         }),
       });
-
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error || `HTTP ${res.status}`);
       }
-
       setSubmitted(true);
-      /* Refresh the leaderboard for the difficulty the game was played on */
-      if (selectedDifficulty === storeDifficulty) {
-        fetchLeaderboard(selectedDifficulty);
-      }
+      if (selectedDifficulty === storeDifficulty) fetchLeaderboard(selectedDifficulty);
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Submit failed';
-      setSubmitError(msg);
+      setSubmitError(e instanceof Error ? e.message : 'Submit failed');
     } finally {
       setSubmitting(false);
     }
   };
-
-  /* ── Helpers ────────────────────────────────────────────────────── */
 
   function getScore(entry: LeaderboardEntry): number {
     const field = SCORE_FIELDS[selectedDifficulty] as keyof LeaderboardEntry;
@@ -135,149 +112,159 @@ export function DreamRiftLeaderboard() {
 
   const currentUsername = session.data?.user?.name;
 
-  /* ── Rank colors ────────────────────────────────────────────────── */
-
-  function rankColor(idx: number): string {
-    if (idx === 0) return 'text-yellow-400';
-    if (idx === 1) return 'text-slate-300';
-    if (idx === 2) return 'text-amber-600';
-    return 'text-zinc-500';
+  function rankDisplay(idx: number): { color: string; symbol: string } {
+    if (idx === 0) return { color: '#d4a44a', symbol: '1st' };
+    if (idx === 1) return { color: '#b0b0b8', symbol: '2nd' };
+    if (idx === 2) return { color: '#b87333', symbol: '3rd' };
+    return { color: '#555', symbol: `${idx + 1}` };
   }
-
-  /* ── Render ─────────────────────────────────────────────────────── */
 
   return (
     <div
-      className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-black/90"
-      style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT }}
+      className="absolute inset-0 z-40 flex flex-col items-center justify-center"
+      style={{
+        width: CANVAS_WIDTH,
+        height: CANVAS_HEIGHT,
+        background: 'radial-gradient(ellipse at center, #0d0b2a 0%, #08061a 100%)',
+      }}
     >
-      <div className="flex flex-col items-center gap-4 w-full max-w-md px-4">
-        {/* Title */}
-        <h2 className="text-2xl font-black tracking-wider text-violet-400">
-          LEADERBOARD
-        </h2>
-
-        {/* Difficulty tabs */}
-        <div className="flex gap-1.5">
-          {DIFFICULTY_LABELS.map(({ key, label }) => (
-            <button
-              key={key}
-              onClick={() => setSelectedDifficulty(key)}
-              className={`px-3 py-1 text-[11px] font-bold tracking-wide rounded-full border transition-all ${
-                selectedDifficulty === key
-                  ? 'bg-violet-600/80 border-violet-400 text-white shadow-[0_0_8px_rgba(139,92,246,0.4)]'
-                  : 'bg-white/5 border-white/10 text-zinc-500 hover:bg-white/10 hover:text-zinc-300'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-
-        {/* Score table */}
-        <div className="w-full bg-black/60 border border-zinc-700/60 rounded-lg overflow-hidden">
+      <TouhouFrame className="w-[340px]">
+        <div className="py-3 px-3">
           {/* Header */}
-          <div className="grid grid-cols-[2.5rem_1fr_5rem] gap-1 px-3 py-1.5 text-[9px] uppercase tracking-wider text-zinc-600 border-b border-zinc-800">
-            <span>Rank</span>
-            <span>Player</span>
-            <span className="text-right">Score</span>
-          </div>
-
-          {/* Body */}
-          <div className="max-h-[220px] overflow-y-auto">
-            {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <span className="text-xs text-zinc-500 animate-pulse">
-                  Loading...
-                </span>
-              </div>
-            ) : error ? (
-              <div className="flex flex-col items-center justify-center py-8 gap-2">
-                <span className="text-xs text-red-400">{error}</span>
-                <button
-                  onClick={() => fetchLeaderboard(selectedDifficulty)}
-                  className="text-[10px] text-indigo-400 hover:text-indigo-300 underline"
-                >
-                  Retry
-                </button>
-              </div>
-            ) : entries.length === 0 ? (
-              <div className="flex items-center justify-center py-8">
-                <span className="text-xs text-zinc-600">
-                  No scores yet. Be the first!
-                </span>
-              </div>
-            ) : (
-              entries.map((entry, idx) => {
-                const isCurrentPlayer =
-                  currentUsername &&
-                  entry.username.toLowerCase() === currentUsername.toLowerCase();
-
-                return (
-                  <div
-                    key={`${entry.username}-${idx}`}
-                    className={`grid grid-cols-[2.5rem_1fr_5rem] gap-1 px-3 py-1.5 text-xs font-mono transition-colors ${
-                      isCurrentPlayer
-                        ? 'bg-violet-500/15 border-l-2 border-violet-400'
-                        : 'hover:bg-white/5 border-l-2 border-transparent'
-                    }`}
-                  >
-                    <span className={`font-bold ${rankColor(idx)}`}>
-                      {idx + 1}
-                    </span>
-                    <span
-                      className={`truncate ${
-                        isCurrentPlayer ? 'text-violet-300 font-bold' : 'text-zinc-300'
-                      }`}
-                    >
-                      {entry.username}
-                    </span>
-                    <span className="text-right text-cyan-400 tabular-nums">
-                      {getScore(entry).toLocaleString()}
-                    </span>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </div>
-
-        {/* Submit score area */}
-        {hasFinishedGame && isAuthenticated && !submitted && (
-          <div className="w-full flex flex-col items-center gap-1.5">
-            <button
-              onClick={handleSubmitScore}
-              disabled={submitting}
-              className="w-48 py-2 px-4 text-sm font-bold tracking-wide text-white bg-indigo-600/70 border border-indigo-400/50 rounded hover:bg-indigo-500/80 hover:border-indigo-300/70 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-[0_0_12px_rgba(99,102,241,0.25)]"
+          <div className="text-center mb-2">
+            <h2
+              className="text-lg tracking-[0.25em] text-amber-300/80"
+              style={{ fontFamily: "'Georgia', serif" }}
             >
-              {submitting ? 'Submitting...' : 'Submit Score'}
-            </button>
-            {submitError && (
-              <span className="text-[10px] text-red-400">{submitError}</span>
-            )}
+              LEADERBOARD
+            </h2>
+            <TouhouDivider />
           </div>
-        )}
 
-        {submitted && (
-          <span className="text-xs text-emerald-400 font-medium">
-            Score submitted!
-          </span>
-        )}
+          {/* Difficulty tabs */}
+          <div className="flex justify-center gap-1 mb-3">
+            {DIFFICULTY_TABS.map(({ key, label, color }) => (
+              <button
+                key={key}
+                onClick={() => setSelectedDifficulty(key)}
+                className="px-2.5 py-0.5 text-[10px] tracking-wider transition-all border"
+                style={{
+                  fontFamily: "'Georgia', serif",
+                  color: selectedDifficulty === key ? color : '#555',
+                  borderColor: selectedDifficulty === key ? `${color}60` : 'transparent',
+                  backgroundColor: selectedDifficulty === key ? `${color}10` : 'transparent',
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
 
-        {hasFinishedGame && !isAuthenticated && (
-          <span className="text-[10px] text-zinc-600">
-            Sign in to submit your score
-          </span>
-        )}
+          {/* Score table */}
+          <div className="border border-amber-400/15 bg-white/[0.01]">
+            {/* Table header */}
+            <div className="grid grid-cols-[2.5rem_1fr_5rem] gap-1 px-2 py-1 text-[8px] tracking-[0.2em] text-amber-400/40 uppercase border-b border-amber-400/10">
+              <span>Rank</span>
+              <span>Player</span>
+              <span className="text-right">Score</span>
+            </div>
 
-        {/* Back button */}
-        <button
-          onClick={() => setScreen('title')}
-          className="w-48 py-2.5 px-6 text-sm font-bold tracking-wide text-zinc-400 bg-white/5 border border-white/10 rounded hover:bg-white/10 hover:text-zinc-200 transition-all"
-        >
-          Back to Title
-        </button>
-      </div>
+            {/* Table body */}
+            <div className="max-h-[180px] overflow-y-auto">
+              {loading ? (
+                <div className="flex items-center justify-center py-6">
+                  <span className="text-[10px] text-zinc-600 animate-pulse" style={{ fontFamily: "'Georgia', serif" }}>
+                    Loading...
+                  </span>
+                </div>
+              ) : error ? (
+                <div className="flex flex-col items-center py-6 gap-1.5">
+                  <span className="text-[10px] text-red-400/70">{error}</span>
+                  <button
+                    onClick={() => fetchLeaderboard(selectedDifficulty)}
+                    className="text-[9px] text-amber-400/40 hover:text-amber-400/70 tracking-wider"
+                    style={{ fontFamily: "'Georgia', serif" }}
+                  >
+                    Retry
+                  </button>
+                </div>
+              ) : entries.length === 0 ? (
+                <div className="flex items-center justify-center py-6">
+                  <span className="text-[10px] text-zinc-600" style={{ fontFamily: "'Georgia', serif" }}>
+                    No scores recorded yet.
+                  </span>
+                </div>
+              ) : (
+                entries.map((entry, idx) => {
+                  const isCurrentPlayer = currentUsername && entry.username.toLowerCase() === currentUsername.toLowerCase();
+                  const rank = rankDisplay(idx);
+                  return (
+                    <div
+                      key={`${entry.username}-${idx}`}
+                      className={`grid grid-cols-[2.5rem_1fr_5rem] gap-1 px-2 py-1 text-[11px] transition-colors ${
+                        isCurrentPlayer ? 'bg-amber-400/[0.06]' : 'hover:bg-white/[0.02]'
+                      }`}
+                      style={{ borderLeft: isCurrentPlayer ? '2px solid #d4a44a60' : '2px solid transparent' }}
+                    >
+                      <span className="font-mono tabular-nums" style={{ color: rank.color }}>
+                        {rank.symbol}
+                      </span>
+                      <span
+                        className="truncate"
+                        style={{
+                          fontFamily: "'Georgia', serif",
+                          color: isCurrentPlayer ? '#d4a44a' : '#999',
+                        }}
+                      >
+                        {entry.username}
+                      </span>
+                      <span className="text-right text-white/80 tabular-nums font-mono">
+                        {getScore(entry).toLocaleString()}
+                      </span>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+          {/* Submit area */}
+          {hasFinishedGame && isAuthenticated && !submitted && (
+            <div className="mt-2 text-center">
+              <button
+                onClick={handleSubmitScore}
+                disabled={submitting}
+                className="px-4 py-1.5 text-[11px] tracking-wider border border-amber-400/30 text-amber-300/80 hover:bg-amber-400/10 hover:text-amber-200 disabled:opacity-40 transition-all"
+                style={{ fontFamily: "'Georgia', serif" }}
+              >
+                {submitting ? 'Submitting...' : 'Submit Score'}
+              </button>
+              {submitError && (
+                <p className="text-[9px] text-red-400/60 mt-1">{submitError}</p>
+              )}
+            </div>
+          )}
+
+          {submitted && (
+            <p className="text-center text-[10px] text-emerald-400/70 mt-2" style={{ fontFamily: "'Georgia', serif" }}>
+              Score recorded.
+            </p>
+          )}
+
+          {hasFinishedGame && !isAuthenticated && (
+            <p className="text-center text-[9px] text-zinc-600 mt-2" style={{ fontFamily: "'Georgia', serif" }}>
+              Sign in to submit your score
+            </p>
+          )}
+
+          <TouhouDivider />
+
+          {/* Back */}
+          <TouhouMenuButton onClick={() => setScreen('title')}>
+            Back to Title
+          </TouhouMenuButton>
+        </div>
+      </TouhouFrame>
     </div>
   );
 }
