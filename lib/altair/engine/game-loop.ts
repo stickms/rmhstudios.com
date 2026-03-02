@@ -244,7 +244,7 @@ function handleCollisions(
 
     // Check collision with enemies
     for (const e of world.enemies) {
-      if (e.intangible) continue;
+      if (e.intangible || e.hp <= 0) continue;
       if (proj.hitEnemyIds.has(e.id)) continue;
 
       const dx = e.x - proj.x;
@@ -273,7 +273,7 @@ function handleCollisions(
             // v1.1: Two-pass AoE diminishing returns
             const aoeTargets: EnemyEntity[] = [];
             for (const ae of world.enemies) {
-              if (ae.id === e.id || ae.intangible) continue;
+              if (ae.id === e.id || ae.intangible || ae.hp <= 0) continue;
               const adx = ae.x - proj.x;
               const ady = ae.y - proj.y;
               if (adx * adx + ady * ady <= proj.aoeRadius * proj.aoeRadius) {
@@ -439,7 +439,7 @@ function handleCollisions(
   // -- Enemy body vs Player --
   if (pl.iFrames <= 0) {
     for (const e of world.enemies) {
-      if (e.intangible) continue;
+      if (e.intangible || e.hp <= 0) continue;
 
       const dx = pl.x - e.x;
       const dy = pl.y - e.y;
@@ -483,7 +483,7 @@ function handleCollisions(
     // Pass 1: Collect all new enemies in range and within arc
     const meleeTargets: EnemyEntity[] = [];
     for (const e of world.enemies) {
-      if (e.intangible) continue;
+      if (e.intangible || e.hp <= 0) continue;
       if (hb.hitEnemyIds.has(e.id)) continue;
 
       const dx = e.x - hb.x;
@@ -557,7 +557,7 @@ function handleCollisions(
       // v1.1: Two-pass AoE diminishing returns for aura ticks
       const auraTargets: EnemyEntity[] = [];
       for (const e of world.enemies) {
-        if (e.intangible) continue;
+        if (e.intangible || e.hp <= 0) continue;
         const dx = e.x - aura.x;
         const dy = e.y - aura.y;
         if (dx * dx + dy * dy <= (aura.radius + e.radius) * (aura.radius + e.radius)) {
@@ -584,7 +584,7 @@ function handleCollisions(
     let nearestEnemy: EnemyEntity | null = null;
     let nearestDist = Infinity;
     for (const e of world.enemies) {
-      if (e.intangible) continue;
+      if (e.intangible || e.hp <= 0) continue;
       const dx = e.x - s.x;
       const dy = e.y - s.y;
       const d = dx * dx + dy * dy;

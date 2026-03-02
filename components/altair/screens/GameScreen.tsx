@@ -190,7 +190,7 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
           if (store.revivalsRemaining > 0) {
             store.revive();
             // Restore world HP to match revive
-            world.player.hp = Math.floor(world.player.maxHp * 0.5);
+            world.player.hp = world.player.maxHp;
           } else {
             store.die();
           }

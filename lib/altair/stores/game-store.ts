@@ -468,7 +468,8 @@ export const useAltairGameStore = create<GameState>((set, get) => ({
 
   revive: () => {
     set((s) => ({
-      hp: Math.floor(s.maxHp * 0.5),
+      phase: 'playing',
+      hp: s.maxHp,
       revivalsRemaining: s.revivalsRemaining - 1,
     }));
   },

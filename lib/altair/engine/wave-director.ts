@@ -339,7 +339,7 @@ export function updateWaveDirector(
   // Cap budget accumulator so it doesn't endlessly grow
   state.budgetAccumulator = Math.min(state.budgetAccumulator, 50);
 
-  // Horde surge spawning (v1.1) -- additive, ignores budget and MAX_ACTIVE_ENEMIES
+  // Horde surge spawning (v1.1) -- additive, respects MAX_ACTIVE_ENEMIES
   while (state.nextSurgeIndex < HORDE_SURGES.length) {
     const surge = HORDE_SURGES[state.nextSurgeIndex];
     if (timeSeconds < surge.time) break;
@@ -347,6 +347,7 @@ export function updateWaveDirector(
     // Spawn all enemies in the surge composition in a ring around the player
     for (const [enemyId, count] of Object.entries(surge.composition)) {
       for (let i = 0; i < count; i++) {
+        if (world.enemies.length >= MAX_ACTIVE_ENEMIES) break;
         const pos = getRandomSpawnPosition(
           world.player.x,
           world.player.y,
@@ -376,6 +377,7 @@ export function spawnEnemyAt(
   y: number,
   hpMultiplier: number = 1,
 ): EnemyEntity | null {
+  if (world.enemies.length >= MAX_ACTIVE_ENEMIES) return null;
   const enemy = spawnEnemy(world, defId, x, y, hpMultiplier);
   if (enemy) {
     world.enemies.push(enemy);
