@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
-import { formatDateKey } from '@/lib/daily-puzzle/seed';
+import { formatDateKey } from '@/lib/lights-out/seed';
 
 export async function POST(req: Request) {
     const ip = getClientIp(req);

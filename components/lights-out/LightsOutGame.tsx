@@ -7,8 +7,8 @@ import {
     getDateSeed,
     formatDateKey,
     createSeededRng,
-} from '@/lib/daily-puzzle/seed';
-import { getDailyShape, getShapeLabel } from '@/lib/daily-puzzle/shapes';
+} from '@/lib/lights-out/seed';
+import { getDailyShape, getShapeLabel } from '@/lib/lights-out/shapes';
 import {
     generatePuzzle,
     toggleCellInGrid,
@@ -16,10 +16,10 @@ import {
     createEmptyGrid,
     solvePuzzle,
     type Grid,
-} from '@/lib/daily-puzzle/lights-out';
-import { loadSave, saveProgress, loadHintsUsed, saveHintsUsed } from '@/lib/daily-puzzle/persistence';
+} from '@/lib/lights-out/lights-out';
+import { loadSave, saveProgress, loadHintsUsed, saveHintsUsed } from '@/lib/lights-out/persistence';
 import { authClient } from '@/lib/auth-client';
-import { Sparkles, RotateCcw, Trophy, Loader2, Undo2, Lightbulb, Flag } from 'lucide-react';
+import { Sparkles, RotateCcw, Trophy, Loader2, Undo2, Lightbulb, Flag, ArrowLeft } from 'lucide-react';
 
 type LeaderboardEntry = {
     rank: number;
@@ -29,7 +29,7 @@ type LeaderboardEntry = {
     displayName: string;
 };
 
-export function DailyPuzzleGame() {
+export function LightsOutGame() {
     const today = new Date();
     const dateKey = formatDateKey(today);
     const seed = getDateSeed(today);
@@ -174,7 +174,7 @@ export function DailyPuzzleGame() {
 
     if (!grid) {
         return (
-            <div className="min-h-[400px] flex items-center justify-center">
+            <div className="min-h-100 flex items-center justify-center">
                 <div className="animate-pulse text-site-text-muted">Loading...</div>
             </div>
         );
@@ -186,6 +186,15 @@ export function DailyPuzzleGame() {
 
     return (
         <div className="max-w-lg mx-auto px-4 py-8">
+            {/* Back to Games */}
+            <Link
+                href="/games"
+                className="inline-flex items-center gap-1.5 text-site-text-muted hover:text-site-text text-sm mb-6 transition-colors"
+            >
+                <ArrowLeft className="w-4 h-4" />
+                Back to Games
+            </Link>
+
             {/* Header */}
             <div className="text-center mb-8">
                 <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-site-text mb-1 flex items-center justify-center gap-2">
