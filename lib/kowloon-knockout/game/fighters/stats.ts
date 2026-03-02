@@ -37,8 +37,8 @@ export const CLASS_STATS: Record<FighterClass, FighterStats> = {
 
     power_stone_tiger: {
         maxHealth: 105,
-        power: 1.3,
-        punchSpeed: 0.7,
+        power: 1.45,
+        punchSpeed: 0.85,
         defense: 1.2,
         moveSpeed: 1.2,
         stamina: 85,
@@ -66,20 +66,20 @@ export const CLASS_STATS: Record<FighterClass, FighterStats> = {
 
 export const CLASS_DISPLAY: Record<FighterClass, { name: string; description: string; color: string; accent: string }> = {
     power: {
-        name: 'DRAGON FIST',
-        description: 'Devastating power but glass jaw. One clean combo can end it all.',
+        name: 'ORDER OF THE DRAGON FIST',
+        description: 'Raw destructive power above all else. Every punch hits like a freight train.',
         color: '#ff3366',
         accent: '#ff6699',
     },
     speed: {
-        name: 'SHADOW STEP',
-        description: 'Lightning fast combos. Death by a thousand cuts.',
+        name: 'ORDER OF THE SHADOW STEP',
+        description: 'Blinding speed and relentless pressure. Strike before they even see you move.',
         color: '#33ccff',
         accent: '#66ddff',
     },
     resistance: {
-        name: 'IRON MOUNTAIN',
-        description: 'An immovable wall. Wears opponents down with patience.',
+        name: 'ORDER OF THE IRON MOUNTAIN',
+        description: 'Unyielding defense and infinite patience. Outlast everything thrown your way.',
         color: '#33ff99',
         accent: '#66ffbb',
     },
