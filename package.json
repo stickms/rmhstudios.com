@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"next dev -p 7005\" \"pnpm run socket-server\" \"pnpm run rmhbox-server\" \"pnpm run rmhtube-server\" \"pnpm run rmhmusic-server\"",
+    "dev": "concurrently \"next dev -p 7005 -H 127.0.0.1\" \"pnpm run socket-server\" \"pnpm run rmhbox-server\" \"pnpm run rmhtube-server\" \"pnpm run rmhmusic-server\"",
     "build": "pnpm exec next build && pnpm exec esbuild server/socket-server/index.ts server/rmhbox/index.ts server/rmhtube/index.ts server/rmhmusic/index.ts --bundle --platform=node --target=node20 --outdir=dist-server --outbase=. --format=cjs --packages=external --tree-shaking=true --tsconfig=tsconfig.server.json",
     "start": "concurrently \"next start -p 7005\" \"node dist-server/server/socket-server/index.js\" \"node dist-server/server/rmhbox/index.js\" \"node dist-server/server/rmhtube/index.js\" \"node dist-server/server/rmhmusic/index.js\"",
     "socket-server": "npx tsx watch --include \"server/socket-server/**/*\" --include \"server/shared/**/*\" server/socket-server/index.ts",
