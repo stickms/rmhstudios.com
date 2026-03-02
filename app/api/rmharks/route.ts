@@ -14,6 +14,19 @@ import { userDisplaySelect, resolveUser } from "@/lib/user-display";
 
 export const runtime = "nodejs";
 
+function deduplicateReposts(items: FeedItem[], windowSize = 2): FeedItem[] {
+  const result: FeedItem[] = [];
+  for (const item of items) {
+    if (item.repostedBy) {
+      const underlyingId = item.actualId ?? item.id;
+      const recentIds = result.slice(-windowSize).map((i) => i.actualId ?? i.id);
+      if (recentIds.includes(underlyingId)) continue;
+    }
+    result.push(item);
+  }
+  return result;
+}
+
 /** Build "virtual" announcement feed items from static data sources. */
 async function getAnnouncementItems(filter: FeedFilter): Promise<FeedItem[]> {
   const items: FeedItem[] = [];
@@ -227,9 +240,11 @@ export async function GET(req: NextRequest) {
         };
       });
 
-      const friendsItems = [...ownItems, ...repostItems]
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-        .slice(0, limit);
+      const friendsItems = deduplicateReposts(
+        [...ownItems, ...repostItems].sort(
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        )
+      ).slice(0, limit);
 
       const nextCursor =
         friendsItems.length === limit
@@ -334,9 +349,11 @@ export async function GET(req: NextRequest) {
         };
       });
 
-      dbItems = [...ownItems, ...repostItems]
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-        .slice(0, limit);
+      dbItems = deduplicateReposts(
+        [...ownItems, ...repostItems].sort(
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        )
+      ).slice(0, limit);
     }
 
     // Get announcement items
