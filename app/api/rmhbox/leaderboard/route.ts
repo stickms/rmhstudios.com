@@ -21,6 +21,7 @@ import { prisma } from '@/lib/prisma';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
+import { resolveUserDisplay } from '@/lib/user-display';
 
 export async function GET(req: NextRequest) {
   // Rate limiting
@@ -72,20 +73,22 @@ export async function GET(req: NextRequest) {
         orderBy,
         skip: offset,
         take: limit,
-        include: { user: { select: { name: true, image: true } } },
+        include: { user: { select: { name: true, image: true, profile: { select: { displayName: true, customImage: true } } } } },
       }),
       prisma.rMHboxProfile.count(),
     ]);
 
-    const entries = profiles.map((p, idx) => ({
+    const entries = profiles.map((p, idx) => {
+      const resolved = p.user ? resolveUserDisplay(p.user) : { name: null, image: null };
+      return {
       rank: offset + idx + 1,
       userId: p.userId,
-      userName: p.user?.name ?? 'Unknown',
-      avatarUrl: p.user?.image ?? null,
+      userName: resolved.name ?? 'Unknown',
+      avatarUrl: resolved.image ?? null,
       value: metric === 'wins' ? p.totalWins : metric === 'games' ? p.totalGamesPlayed : p.totalScore,
       gamesPlayed: p.totalGamesPlayed,
       wins: p.totalWins,
-    }));
+    }});
 
     // Compute requesting user's rank if authenticated
     let userRank: number | null = null;

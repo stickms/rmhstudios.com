@@ -1,17 +1,23 @@
 import { RoadmapSection } from "@/components/roadmap/RoadmapSection";
-import { ParticleField } from "@/components/effects/ParticleField";
+import { PageLayout } from '@/components/feed/PageLayout';
+import { getSidebarData } from '@/lib/sidebar-data';
+import { RoadmapRightSidebar } from './sidebar';
 
 export const metadata = {
   title: "Roadmap | RMH Studios",
   description:
-    "The road ahead: games, community, immersive tech, and film. See how RMH Studios is building a persistent universe across every medium.",
+    "The road ahead: games, community, immersive tech, and film.",
 };
 
 export default function RoadmapPage() {
+  const { newsArticles, researchArticles } = getSidebarData();
+
   return (
-    <main className="min-h-screen bg-background text-white">
-      <ParticleField />
+    <PageLayout
+      title="Roadmap"
+      rightSidebar={<RoadmapRightSidebar newsArticles={newsArticles} researchArticles={researchArticles} />}
+    >
       <RoadmapSection />
-    </main>
+    </PageLayout>
   );
 }

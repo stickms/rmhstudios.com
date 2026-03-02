@@ -1,0 +1,286 @@
+/* ═══════════════════════════════════════════
+   NEURODRIVE — Terminal CRT Styles
+   Scoped to .velum2099-root container
+   ═══════════════════════════════════════════ */
+
+.velum2099-root #terminal-screen {
+    display: flex;
+    flex-direction: column;
+    padding: 40px 60px;
+    font-size: 18px;
+    line-height: 1.6;
+    overflow-y: auto;
+    position: relative;
+}
+
+/* CRT scanline overlay */
+.velum2099-root #terminal-screen::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: repeating-linear-gradient(0deg,
+            rgba(0, 0, 0, 0.06) 0px,
+            rgba(0, 0, 0, 0.06) 1px,
+            transparent 1px,
+            transparent 3px);
+    pointer-events: none;
+    z-index: 100;
+    animation: velum-scanlineShift 8s linear infinite;
+}
+
+/* CRT vignette */
+.velum2099-root #terminal-screen::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(ellipse at center,
+            transparent 60%,
+            rgba(0, 0, 0, 0.3) 100%);
+    pointer-events: none;
+    z-index: 101;
+}
+
+@keyframes velum-scanlineShift {
+    0% {
+        background-position: 0 0;
+    }
+
+    100% {
+        background-position: 0 100px;
+    }
+}
+
+/* Screen flicker */
+@keyframes velum-flicker {
+    0% {
+        opacity: 1;
+    }
+
+    92% {
+        opacity: 1;
+    }
+
+    93% {
+        opacity: 0.8;
+    }
+
+    94% {
+        opacity: 1;
+    }
+
+    96% {
+        opacity: 0.9;
+    }
+
+    97% {
+        opacity: 1;
+    }
+}
+
+.velum2099-root #terminal-screen {
+    animation: velum-flicker 4s infinite;
+}
+
+/* Terminal text glow */
+.velum2099-root .term-line {
+    text-shadow: 0 0 5px #0f0, 0 0 10px rgba(0, 255, 0, 0.3);
+    white-space: pre;
+    min-height: 1.6em;
+}
+
+.velum2099-root .term-line.cyan {
+    color: #0ff;
+    text-shadow: 0 0 5px #0ff, 0 0 10px rgba(0, 255, 255, 0.3);
+}
+
+.velum2099-root .term-line.magenta {
+    color: #f0f;
+    text-shadow: 0 0 5px #f0f, 0 0 10px rgba(255, 0, 255, 0.3);
+}
+
+.velum2099-root .term-line.yellow {
+    color: #ff0;
+    text-shadow: 0 0 5px #ff0, 0 0 10px rgba(255, 255, 0, 0.3);
+}
+
+.velum2099-root .term-line.red {
+    color: #f44;
+    text-shadow: 0 0 5px #f44, 0 0 10px rgba(255, 68, 68, 0.3);
+}
+
+.velum2099-root .term-line.dim {
+    color: #0a0;
+    text-shadow: none;
+}
+
+.velum2099-root .term-line.bright {
+    color: #5f5;
+    text-shadow: 0 0 8px #0f0, 0 0 20px rgba(0, 255, 0, 0.5);
+}
+
+/* Blinking cursor */
+.velum2099-root .cursor {
+    display: inline-block;
+    width: 10px;
+    height: 18px;
+    background: #0f0;
+    animation: velum-blink 0.6s step-end infinite;
+    vertical-align: text-bottom;
+    margin-left: 2px;
+}
+
+@keyframes velum-blink {
+    50% {
+        opacity: 0;
+    }
+}
+
+/* Menu items */
+.velum2099-root .menu-item {
+    cursor: pointer;
+    padding: 4px 0;
+    transition: all 0.1s;
+}
+
+.velum2099-root .menu-item:hover,
+.velum2099-root .menu-item.selected {
+    color: #000;
+    background: #0f0;
+    text-shadow: none;
+    padding-left: 8px;
+}
+
+.velum2099-root .menu-item.selected {
+    background: #0ff;
+    color: #000;
+}
+
+/* ASCII art styling */
+.velum2099-root .ascii-art {
+    color: #f0f;
+    text-shadow: 0 0 10px #f0f, 0 0 20px rgba(255, 0, 255, 0.4);
+    font-size: 14px;
+    line-height: 1.2;
+}
+
+/* Glitch effect for title */
+@keyframes velum-glitch {
+    0% {
+        transform: translate(0);
+    }
+
+    20% {
+        transform: translate(-2px, 2px);
+    }
+
+    40% {
+        transform: translate(-2px, -2px);
+    }
+
+    60% {
+        transform: translate(2px, 2px);
+    }
+
+    80% {
+        transform: translate(2px, -2px);
+    }
+
+    100% {
+        transform: translate(0);
+    }
+}
+
+.velum2099-root .glitch {
+    animation: velum-glitch 0.3s ease infinite;
+    animation-delay: 3s;
+    animation-iteration-count: 3;
+}
+
+/* VHS timestamp overlay */
+.velum2099-root #vhs-timestamp {
+    position: fixed;
+    bottom: 28px;
+    left: 28px;
+    font-family: 'VT323', monospace;
+    font-size: 20px;
+    color: #ffffffcc;
+    text-shadow:
+        1px 0 0 rgba(255, 40, 40, 0.7),
+        -1px 0 0 rgba(40, 40, 255, 0.5),
+        0 0 8px rgba(255, 255, 255, 0.15);
+    letter-spacing: 2px;
+    z-index: 200;
+    pointer-events: none;
+    line-height: 1.5;
+    white-space: pre;
+    animation: velum-vhsFlicker 0.1s infinite;
+}
+
+.velum2099-root #vhs-timestamp .rec-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: #ff2222;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
+    box-shadow: 0 0 6px #ff2222;
+    animation: velum-recBlink 1s step-end infinite;
+}
+
+@keyframes velum-recBlink {
+    50% { opacity: 0; }
+}
+
+@keyframes velum-vhsFlicker {
+    0%   { opacity: 0.96; }
+    50%  { opacity: 1; }
+    100% { opacity: 0.97; }
+}
+
+/* Overlay mode — console over running simulation */
+.velum2099-root #terminal-screen.overlay-mode {
+    background: rgba(0, 0, 0, 0.88);
+}
+
+/* Settings console input line */
+.velum2099-root .term-input-line {
+    display: flex;
+    align-items: center;
+    margin-top: 8px;
+}
+
+.velum2099-root .term-input-line .prompt {
+    color: #0f0;
+    text-shadow: 0 0 5px #0f0;
+    margin-right: 8px;
+    white-space: pre;
+}
+
+.velum2099-root .term-input-line .input-text {
+    color: #fff;
+    text-shadow: 0 0 5px #fff;
+    white-space: pre;
+}
+
+/* Hex HUD corners */
+.velum2099-root #hex-hud {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 150;
+}
+.velum2099-root .hex-corner {
+    position: absolute;
+    width: 200px;
+    height: 200px;
+    opacity: 0.12;
+    pointer-events: none;
+}

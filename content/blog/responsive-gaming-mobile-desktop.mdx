@@ -1,0 +1,134 @@
+---
+title: "Making Games Responsive From Mobile to Ultrawide"
+date: "2025-03-19"
+description: "How RMH Studios adapts game controls, layouts, and experiences across every screen size."
+tags: ["Technology", "Mobile", "UX"]
+---
+
+## One Game, Every Screen
+
+A player opens RMHbox on their iPhone during a lunch break. Another joins the same game on a 34-inch ultrawide monitor at home. A third plays on a budget Android tablet. They're all in the same room, playing the same game, seeing interfaces designed specifically for their device.
+
+This is the promise of browser-based gaming, and it's one of the hardest engineering problems we solve at RMH Studios. Responsive web design for content sites is well-understood — text reflows, images resize, layouts stack. Responsive **game** design is a different beast entirely. Game elements have spatial relationships that matter. Controls must map to fundamentally different input methods. Performance budgets vary by orders of magnitude.
+
+This is how we make it work.
+
+## The Mobile-First Reality
+
+The data is unambiguous: **mobile dominates web traffic**. According to StatCounter's GlobalStats, mobile devices accounted for approximately 59% of worldwide web traffic in 2024, a figure that has grown steadily from under 50% in 2017. In many regions — particularly Asia, Africa, and South America — mobile's share exceeds 70%.
+
+For a browser-based game studio, ignoring mobile means ignoring the majority of potential players. But "supporting" mobile isn't enough — mobile must be a **first-class experience**. Players can tell when a game was designed for desktop and grudgingly adapted for phones. The touch targets are too small. The text is too dense. The controls feel like an afterthought.
+
+At RMH Studios, we design mobile-first. Every game begins its design process on a 375-pixel-wide viewport (the width of an iPhone SE). Desktop layouts are the expansion, not the other way around. This discipline ensures that the core experience is always optimized for the most constrained environment.
+
+## The Three Layers of Responsive Gaming
+
+We think about responsive game design in three layers, each addressing a different aspect of the adaptation challenge:
+
+### Layer 1: Layout Responsiveness
+
+This is the closest to traditional responsive web design. Game UI elements — menus, scoreboards, inventory panels, chat windows — need to reposition and resize based on viewport dimensions.
+
+We use a combination of CSS Grid, Flexbox, and CSS `clamp()` functions to create fluid layouts. Key principles:
+
+- **No fixed pixel sizes** for UI elements. Everything scales relative to viewport dimensions or root font size.
+- **Breakpoint-aware composition.** At narrow viewports, UI elements stack vertically. At wider viewports, they arrange side-by-side. At ultrawide, additional information panels appear.
+- **Safe areas.** Mobile devices with notches, rounded corners, and gesture bars require `env(safe-area-inset-*)` handling to prevent game elements from being obscured.
+
+### Layer 2: Control Responsiveness
+
+This is where game responsiveness diverges from web responsiveness. A button on a website works the same with a mouse click or a finger tap. A game control does not.
+
+**Touch vs. mouse** is the fundamental divide. Mouse input provides:
+
+- Hover states (which touch cannot replicate)
+- Precise positioning (pixel-level accuracy)
+- Right-click context (secondary actions)
+- Scroll wheel (zoom or scroll)
+
+Touch input provides:
+
+- Multi-touch (multiple simultaneous inputs)
+- Gestures (swipe, pinch, rotate)
+- Device motion (accelerometer, gyroscope)
+- Haptic feedback (vibration)
+
+Each RMH game implements **dual control schemes** that are designed independently for each input method, not adapted from one to the other:
+
+In **Neon Driftway**, desktop players steer with arrow keys and drift with spacebar. Mobile players tilt their device to steer and tap to drift. These aren't mappings of the same control — they're different physical interactions designed to feel natural on their respective devices.
+
+In **Laundry Sort**, desktop players click and drag with a mouse. Mobile players use touch-and-fling gestures with velocity calculated from finger movement. The throw physics are tuned differently for each input method because the ergonomics of mouse dragging and finger flicking are fundamentally different.
+
+In **Signal Forge**, desktop players get a card spread visible at all times with hover previews. Mobile players get a scrollable hand with tap-to-preview. The strategic information is identical; the interaction model is completely different.
+
+### Layer 3: Experience Responsiveness
+
+The deepest layer of responsive game design is adapting the **experience itself** to the device's capabilities. This goes beyond layout and controls into the game's visual complexity, information density, and even gameplay parameters.
+
+**Visual scaling:**
+
+- Desktop with dedicated GPU: full particle effects, bloom, shadows, high-resolution assets
+- Mobile flagship: reduced particles, simplified post-processing, medium-resolution assets
+- Mobile budget: minimal effects, no post-processing, low-resolution assets with crisp UI overlays
+
+We detect device capability through a combination of `navigator.hardwareConcurrency`, `navigator.deviceMemory` (where available), and a brief GPU benchmark that runs during the loading screen. Players are silently categorized into performance tiers, and visual complexity adjusts accordingly.
+
+**Information density:**
+
+Ultrawide monitors can display a game plus a real-time leaderboard, a chat panel, and a minimap simultaneously. A phone screen can display the game and maybe a compact score overlay. We don't remove information on smaller screens — we prioritize it. The most critical information is always visible. Secondary information is accessible through swipes, tabs, or expandable panels.
+
+**Gameplay parameters:**
+
+In some cases, we adjust gameplay itself based on the device. In RMH Type (our competitive typing platform), mobile players use a on-screen keyboard and compete in mobile-specific lobbies with adjusted WPM benchmarks. Desktop players with physical keyboards compete in separate lobbies. The competition is fair within each context.
+
+## Aspect Ratio Challenges
+
+Modern screens range from 9:21 (tall phone) to 32:9 (super ultrawide monitor). That's a variation of over 6x in aspect ratio. For a game with spatial gameplay, this variation creates real design challenges:
+
+**Problem: Viewport advantage.** In a competitive game, a player with a wider screen sees more of the game world. This creates an unfair advantage.
+
+**Solution: Normalized game views.** For competitive games, we define a **canonical viewport** — the rectangle of game world that every player sees regardless of screen shape. On wider screens, the extra width shows non-gameplay elements (decorative borders, expanded UI) rather than more game world. On taller screens, the extra height is used similarly.
+
+**Problem: Camera framing.** In Neon Driftway, the camera follows behind the car. On a 16:9 screen, this framing looks cinematic. On a 9:19 phone held vertically, the same camera angle shows mostly road with the car at the bottom.
+
+**Solution: Per-orientation camera systems.** Neon Driftway detects device orientation and adjusts the camera. Landscape mode uses the standard behind-car view. Portrait mode shifts to a higher, more top-down angle that shows more road ahead, compensating for the narrow horizontal viewport.
+
+## Touch Target Standards
+
+Our minimum touch target size is **44x44 CSS pixels**, following Apple's Human Interface Guidelines. For game-critical controls (the elements you tap rapidly during gameplay), we increase this to **56x56 CSS pixels** minimum, with additional hit-area padding that extends the tappable region beyond the visible element.
+
+This sounds like a small detail, but it's one of the most impactful responsive design decisions we make. A button that's easy to tap on a 6.7-inch iPhone Pro Max is difficult on a 5.4-inch iPhone Mini. Touch targets that seem generous on a tablet are frustratingly small on a phone held in one hand.
+
+We test every game on a range of physical devices — not just screen sizes in a simulator, but actual phones held in actual hands. Simulator testing catches layout issues. Physical device testing catches ergonomic issues.
+
+## The Orientation Question
+
+Should mobile games force landscape? Allow both? Follow device orientation?
+
+Our answer: **it depends on the game**.
+
+- **Neon Driftway** and **Slice It!** strongly prefer landscape. The gameplay is inherently horizontal, and portrait mode would compromise the experience. We display a rotation prompt if the device is in portrait.
+- **RMH Type** and **Temple of Joy** work in both orientations. The UI adapts fluidly, and the gameplay is orientation-agnostic.
+- **RMHbox** minigames vary. Some are portrait-optimized (they're played on a phone held in one hand). Some are landscape-optimized. The room system communicates the preferred orientation before each minigame starts.
+
+We never lock orientation at the OS level (using `screen.orientation.lock()`), because this feels invasive. Instead, we recommend orientation through UI cues and design the fallback experience to be functional, if not optimal.
+
+## Progressive Enhancement for Gaming
+
+Traditional web development uses progressive enhancement: start with basic HTML, layer on CSS, then add JavaScript. We apply the same philosophy to games:
+
+**Base layer:** The game is playable with minimal visuals, basic controls, and core gameplay. This works on virtually any modern browser.
+
+**Enhanced layer:** On capable devices, we add visual effects, richer audio, haptic feedback, and expanded UI. These enhance the experience but aren't required for it.
+
+**Premium layer:** On high-end devices, we enable maximum visual quality, 120fps rendering (where supported), spatial audio, and features like gamepad support or ultra-wide layouts.
+
+Each player gets the best experience their device can support, automatically and without configuration. That's the goal.
+
+## The Responsive Future
+
+The device landscape is only getting more diverse. Foldable phones create dynamic aspect ratios that change during gameplay. AR glasses will eventually run web content. Car displays, smart TVs, and refrigerator screens (yes, really) all have web browsers.
+
+We can't predict every future form factor, but we can build systems that adapt to constraints rather than targeting specific devices. Our responsive architecture is built on ratios, not pixels. On capabilities, not device names. On the assumption that the next screen will be one we haven't designed for yet.
+
+Browser games should work everywhere a browser works. That's not a marketing promise — it's an engineering commitment. And it's one we renew with every game we ship.

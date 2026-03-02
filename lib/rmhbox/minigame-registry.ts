@@ -11,11 +11,15 @@
 import type { MinigameDefinition, GameSettingsSchema } from './types';
 import {
   RT_TOTAL_ROUNDS, RT_INPUT_DURATION, RT_MAX_SUBMISSIONS,
-  RT_SPEED_BONUS, RT_MULTI_SYLLABLE_MULT, RT_INVALID_PENALTY,
+  RT_SPEED_BONUS, RT_MULTI_SYLLABLE_BONUS, RT_INVALID_PENALTY,
   UA_ASSASSIN,
   CC_TOTAL_ROUNDS, CC_INPUT_DURATION, CC_CATEGORIES_PER_ROUND,
   CC_PEER_REVIEW_DURATION, CC_CRASH_THRESHOLD_PERCENT,
   WR_NAV_DURATION, WR_EFFICIENCY_BONUS, WR_ONE_AWAY, WR_TOTAL_ROUNDS,
+  MM_DRAWING_DURATION_SECONDS, MM_MAX_STROKES, MM_AUCTION_DURATION_SECONDS,
+  MM_STARTING_CURRENCY, MM_BID_INCREMENT, MM_DEFAULT_ROUNDS,
+  EC_MAX_ROUNDS, EC_ROUND_DURATION_SECONDS, EC_MAX_EMOJIS, EC_MAX_GUESSES_PER_PLAYER,
+  WW_TOTAL_ROUNDS, WW_WRITING_DURATION, WW_VOTING_DURATION,
   SS_MAX_ROUNDS, SS_STARTING_LENGTH, SS_MAX_STRIKES, SS_CHAOS_INTERVAL, SS_ENABLE_CHAOS,
   HK_TYPING_DURATION_SECONDS, HK_RESHUFFLE_INTERVAL_SECONDS, HK_WRONG_KEY_PENALTY_MS,
   HK_ENABLE_RESHUFFLE,
@@ -28,8 +32,8 @@ export const RHYME_TIME_SETTINGS: GameSettingsSchema = [
   { key: 'inputDuration', type: 'integer', label: 'Round Duration (seconds)', description: 'Time players have to submit rhymes each round', default: RT_INPUT_DURATION, min: 20, max: 90, step: 5 },
   { key: 'maxSubmissions', type: 'integer', label: 'Max Submissions', description: 'Maximum number of rhymes a player can submit per round', default: RT_MAX_SUBMISSIONS, min: 10, max: 50, step: 5 },
   { key: 'enableSpeedBonus', type: 'boolean', label: 'Speed Bonus', description: 'Award bonus points for submitting rare rhymes first', default: RT_SPEED_BONUS > 0 },
-  { key: 'enableMultiSyllableBonus', type: 'boolean', label: 'Multi-Syllable Bonus', description: 'Double points for rhymes with more syllables than the root word', default: RT_MULTI_SYLLABLE_MULT > 1 },
-  { key: 'invalidPenalty', type: 'integer', label: 'Invalid Rhyme Penalty', description: 'Points deducted for submitting a non-rhyming word', default: RT_INVALID_PENALTY, min: -5, max: 0, step: 1 },
+  { key: 'enableMultiSyllableBonus', type: 'boolean', label: 'Multi-Syllable Bonus', description: 'Award bonus points for rhymes with more syllables than the root word', default: RT_MULTI_SYLLABLE_BONUS > 0 },
+  { key: 'invalidPenalty', type: 'integer', label: 'Invalid Rhyme Penalty', description: 'Points deducted for submitting a non-rhyming word', default: RT_INVALID_PENALTY, min: -50, max: 0, step: 10 },
 ];
 
 export const UNDERCOVER_AGENT_SETTINGS: GameSettingsSchema = [
@@ -49,6 +53,28 @@ export const WIKI_RACE_SETTINGS: GameSettingsSchema = [
   { key: 'navDuration', type: 'integer', label: 'Race Duration (seconds)', description: 'Total time to navigate from start article to target', default: WR_NAV_DURATION, min: 60, max: 300, step: 15 },
   { key: 'enableEfficiencyBonus', type: 'boolean', label: 'Efficiency Bonus', description: 'Award bonus points for reaching the target in fewer clicks', default: WR_EFFICIENCY_BONUS > 0 },
   { key: 'enableOneAwayPoints', type: 'boolean', label: '"One Away" Points', description: 'Award consolation points to players who were one click from the target', default: WR_ONE_AWAY > 0 },
+];
+
+export const MINIMALIST_MASTERPIECE_SETTINGS: GameSettingsSchema = [
+  { key: 'roundCount', type: 'integer', label: 'Number of Rounds', description: 'Number of drawing/auction rounds to play', default: MM_DEFAULT_ROUNDS, min: 1, max: 5, step: 1 },
+  { key: 'drawingDuration', type: 'integer', label: 'Drawing Duration (seconds)', description: 'Time the artist has to draw a single prompt', default: MM_DRAWING_DURATION_SECONDS, min: 20, max: 90, step: 5 },
+  { key: 'maxStrokes', type: 'integer', label: 'Max Strokes', description: 'Maximum number of brush strokes allowed per drawing', default: MM_MAX_STROKES, min: 5, max: 30, step: 5 },
+  { key: 'auctionDuration', type: 'integer', label: 'Auction Duration (seconds)', description: 'Time for the bidding phase on each artwork', default: MM_AUCTION_DURATION_SECONDS, min: 15, max: 60, step: 5 },
+  { key: 'startingCurrency', type: 'integer', label: 'Starting Currency', description: 'Amount of currency each player starts with', default: MM_STARTING_CURRENCY, min: 200, max: 1000, step: 50 },
+  { key: 'bidIncrement', type: 'integer', label: 'Minimum Bid Increment', description: 'Minimum amount above the current bid', default: MM_BID_INCREMENT, min: 10, max: 100, step: 5 },
+];
+
+export const EMOJI_CINEMA_SETTINGS: GameSettingsSchema = [
+  { key: 'maxRounds', type: 'integer', label: 'Number of Rounds', description: 'Number of emoji-encoding rounds to play', default: EC_MAX_ROUNDS, min: 2, max: 6, step: 1 },
+  { key: 'roundDuration', type: 'integer', label: 'Encoding Duration (seconds)', description: 'Time the encoder has to build their emoji sequence', default: EC_ROUND_DURATION_SECONDS, min: 20, max: 90, step: 5 },
+  { key: 'maxEmojis', type: 'integer', label: 'Max Emojis', description: 'Maximum number of emojis the encoder can use', default: EC_MAX_EMOJIS, min: 3, max: 12, step: 1 },
+  { key: 'maxGuessesPerPlayer', type: 'integer', label: 'Guesses Per Player', description: 'Maximum guesses each player can submit per round', default: EC_MAX_GUESSES_PER_PLAYER, min: 1, max: 5, step: 1 },
+];
+
+export const WIT_WAR_SETTINGS: GameSettingsSchema = [
+  { key: 'totalRounds', type: 'integer', label: 'Number of Rounds', description: 'How many rounds of prompt matchups to play', default: WW_TOTAL_ROUNDS, min: 1, max: 3, step: 1 },
+  { key: 'writingDuration', type: 'integer', label: 'Writing Duration (seconds)', description: 'Time players have to write answers to their prompts', default: WW_WRITING_DURATION, min: 30, max: 120, step: 10 },
+  { key: 'votingDuration', type: 'integer', label: 'Voting Duration (seconds)', description: 'Time to vote on each head-to-head matchup', default: WW_VOTING_DURATION, min: 10, max: 30, step: 5 },
 ];
 
 // ─── Sequence Sam Settings ───────────────────────────────────────
@@ -137,7 +163,23 @@ export const MINIGAME_REGISTRY: Record<string, MinigameDefinition> = {
     tags: ['trivia', 'race'],
     settingsSchema: WIKI_RACE_SETTINGS,
   },
-  // ─── Unimplemented Minigames (commented out until server handlers exist) ───
+  'wit-war': {
+    id: 'wit-war',
+    displayName: 'Wit-War',
+    description: 'Battle of wits! Write funny answers to prompts, then vote head-to-head for the best response.',
+    category: 'word',
+    icon: 'swords',
+    minPlayers: 3,
+    maxPlayers: 16,
+    estimatedDurationSeconds: 240,
+    supportsTeams: false,
+    instructionDurationSeconds: 15,
+    preloadAssets: { images: [], sounds: [], data: [], estimatedSizeBytes: 0 },
+    joinInProgressPolicy: 'spectate_only',
+    tags: ['word', 'creative', 'voting', 'comedy'],
+    settingsSchema: WIT_WAR_SETTINGS,
+  },
+  // ─── Phase 6 Minigames ───────────────────────────────────────────
   // 'fact-or-friction': {
   //   id: 'fact-or-friction',
   //   displayName: 'Fact or Friction',
@@ -168,36 +210,38 @@ export const MINIGAME_REGISTRY: Record<string, MinigameDefinition> = {
   //   joinInProgressPolicy: 'spectate_only',
   //   tags: ['creative', 'deduction'],
   // },
-  // 'minimalist-masterpiece': {
-  //   id: 'minimalist-masterpiece',
-  //   displayName: 'Minimalist Masterpiece',
-  //   description: 'Draw with limited strokes — the audience bids on your art.',
-  //   category: 'creative',
-  //   icon: '🎨',
-  //   minPlayers: 3,
-  //   maxPlayers: 12,
-  //   estimatedDurationSeconds: 150,
-  //   supportsTeams: false,
-  //   instructionDurationSeconds: 15,
-  //   preloadAssets: { images: [], sounds: [], data: [], estimatedSizeBytes: 0 },
-  //   joinInProgressPolicy: 'spectate_only',
-  //   tags: ['creative', 'drawing', 'auction'],
-  // },
-  // 'emoji-cinema': {
-  //   id: 'emoji-cinema',
-  //   displayName: 'Emoji Cinema',
-  //   description: 'Describe movies using only emojis — others guess the title.',
-  //   category: 'word',
-  //   icon: '🎬',
-  //   minPlayers: 3,
-  //   maxPlayers: 12,
-  //   estimatedDurationSeconds: 180,
-  //   supportsTeams: false,
-  //   instructionDurationSeconds: 15,
-  //   preloadAssets: { images: [], sounds: [], data: [], estimatedSizeBytes: 0 },
-  //   joinInProgressPolicy: 'join_next_subround',
-  //   tags: ['word', 'emoji', 'movies'],
-  // },
+  'minimalist-masterpiece': {
+    id: 'minimalist-masterpiece',
+    displayName: 'Minimalist Masterpiece',
+    description: 'Draw with a limited number of strokes, then bid to invest in the art you think is best! The best painters and savviest investors win.',
+    category: 'creative',
+    icon: 'brush',
+    minPlayers: 3,
+    maxPlayers: 12,
+    estimatedDurationSeconds: 148,
+    supportsTeams: false,
+    instructionDurationSeconds: 15,
+    preloadAssets: { images: [], sounds: [], data: [], estimatedSizeBytes: 0 },
+    joinInProgressPolicy: 'spectate_only',
+    tags: ['creative', 'drawing', 'auction', 'competitive'],
+    settingsSchema: MINIMALIST_MASTERPIECE_SETTINGS,
+  },
+  'emoji-cinema': {
+    id: 'emoji-cinema',
+    displayName: 'Emoji Cinema',
+    description: 'Describe movies using only emojis! Race to guess what film the Producer is depicting.',
+    category: 'word',
+    icon: 'clapperboard',
+    minPlayers: 3,
+    maxPlayers: 12,
+    estimatedDurationSeconds: 180,
+    supportsTeams: false,
+    instructionDurationSeconds: 15,
+    preloadAssets: { images: [], sounds: [], data: [], estimatedSizeBytes: 0 },
+    joinInProgressPolicy: 'join_next_subround',
+    tags: ['word', 'creative', 'speed', 'movies', 'guessing'],
+    settingsSchema: EMOJI_CINEMA_SETTINGS,
+  },
   'sequence-sam': {
     id: 'sequence-sam',
     displayName: 'Sequence Sam',

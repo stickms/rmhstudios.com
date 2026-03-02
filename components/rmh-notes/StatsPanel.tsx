@@ -1,40 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-
-interface Stats {
-  totalNotes: number;
-  pinnedCount: number;
-  archivedCount: number;
-  trashedCount: number;
-  remindersTotal: number;
-  remindersCompleted: number;
-  overdueCount: number;
-  weekNotes: number;
-  tagsCount: number;
-  foldersCount: number;
-  streak: number;
-  notesPerDay: Record<string, number>;
-}
+import { useNotesDataStore } from '@/lib/store/useNotesDataStore';
 
 export default function StatsPanel() {
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch('/api/rmh-notes/stats')
-      .then((r) => r.json())
-      .then(setStats)
-      .finally(() => setLoading(false));
-  }, []);
-
-  if (loading) return (
-    <div className="flex-1 flex items-center justify-center" style={{ color: 'var(--notes-text-muted)' }}>
-      Loading statistics...
-    </div>
-  );
-
-  if (!stats) return null;
+  const getStats = useNotesDataStore((s) => s.getStats);
+  const stats = getStats();
 
   // Build last 28 days heatmap
   const days: { date: string; count: number }[] = [];

@@ -1,0 +1,109 @@
+---
+title: "How Laundry Sort Turns Browser Physics Into Pure Fun"
+date: "2025-01-30"
+description: "Building comedic physics gameplay in JavaScript — from custom collision detection to emergent chaos."
+tags: ["Laundry Sort", "Physics", "Design"]
+---
+
+## The Joy of Watching Things Fall Wrong
+
+There's a specific kind of laughter that only physics games produce. It's not the laughter of a well-written joke or a surprising plot twist — it's the laughter of watching something go **exactly wrong** in a way that nobody planned. A sock that bounces off a basket rim and lands on someone's head. A pile of shirts that collapses in slow motion and buries the sorting table. A single rogue towel that somehow achieves escape velocity.
+
+Laundry Sort is built to produce this laughter. It's a physics sorting game where you grab laundry items and toss them into the right baskets — darks, lights, delicates, towels. Simple concept, but the physics engine turns every round into controlled chaos. Items interact with each other, pile up, tumble, and occasionally achieve the comedic absurd.
+
+This post is about how we built that physics engine in JavaScript, why browser physics is harder than it looks, and what games like Human Fall Flat taught us about designing for emergent comedy.
+
+## The Casual Physics Lineage
+
+Laundry Sort belongs to a genre we'd call **casual physics games** — titles where imprecise, funny physics interactions are the core appeal rather than a bug to be fixed.
+
+**Human Fall Flat** (No Brakes Games, 2016) is the genre's flagship. Its deliberately clumsy character physics turn simple puzzles into slapstick comedy. The game has sold over 40 million copies, proving that players actively seek out games where physics creates humor.
+
+**Gang Beasts** (Boneloaf, 2017) pushed this further with competitive multiplayer, where wobbly characters try to throw each other off platforms. The imprecision of the controls is the game — you're fighting the physics as much as your opponents.
+
+**Totally Accurate Battle Simulator** (Landfall Games, 2019) applied the same philosophy to strategy, creating battles where the comedy of ragdoll physics overwhelms any tactical planning.
+
+These games share a design insight: **imperfect physics is more fun than perfect physics**. A perfectly simulated basketball game is impressive but expected. A basketball game where the ball has slightly too much bounce and the players have slightly too little coordination is hilarious.
+
+Laundry Sort applies this insight to a domestic scenario. Laundry is inherently mundane — but laundry with physics is inherently funny.
+
+## The Determinism Challenge
+
+Here's the core technical challenge of physics in JavaScript: **determinism**. In a physics simulation, determinism means that the same inputs always produce the same outputs. If you drop a sock from the same position with the same velocity, it should land in the same place every time.
+
+Traditional physics engines running on native code can achieve determinism relatively easily because they control the floating-point arithmetic. JavaScript's floating-point math follows the IEEE 754 standard, but implementations vary subtly across browsers and platforms. A calculation that produces `0.30000000000000004` in Chrome might produce `0.29999999999999999` in Safari. Over hundreds of physics steps, these differences compound.
+
+For a single-player game like Laundry Sort, strict determinism across browsers isn't critical — the physics just need to be consistent within a single session. But we still had to address floating-point drift within sessions, where accumulated errors could cause physics objects to jitter, interpenetrate, or gain energy from nowhere.
+
+Our solution was a **fixed timestep simulation**. Instead of tying physics updates to the frame rate (which varies between 30fps and 144fps depending on the device), we run the physics at a fixed 60 steps per second. Each step uses the same delta time, eliminating one major source of numerical instability. The renderer interpolates between physics states for smooth visual output at any frame rate.
+
+## Custom Collision Detection
+
+We wrote our collision detection from scratch rather than using an existing physics library. This was a deliberate choice — not because existing libraries are bad (they're excellent), but because we needed precise control over how collisions **feel** rather than how they calculate.
+
+### Broad Phase
+
+The first step in collision detection is figuring out which objects **might** be colliding. Checking every pair of objects against every other pair is O(n²), which becomes expensive with dozens of laundry items on screen.
+
+We use a **spatial hash grid** — the game space is divided into cells, and each object is registered in the cells it overlaps. Collision checks only happen between objects in the same cell. This reduces the number of pair checks dramatically.
+
+### Narrow Phase
+
+Once we have candidate pairs, we perform precise collision tests. Laundry items in our game are represented as collections of simple shapes — circles, rectangles, and convex polygons. We use the **Separating Axis Theorem (SAT)** for polygon-polygon collisions and simple distance checks for circle collisions.
+
+The SAT implementation gives us not just whether a collision occurred, but the **minimum translation vector** — the shortest direction and distance to separate the two objects. This is critical for resolving collisions without objects passing through each other.
+
+### Collision Response
+
+Here's where the fun happens. Realistic collision response would apply conservation of momentum and coefficient of restitution to produce physically accurate bounces. We do this — but with intentional exaggeration.
+
+Laundry items in our game are slightly bouncier than real fabric. Angular momentum is slightly amplified, so items tumble more dramatically. Friction is slightly reduced, so items slide further than they should. These tweaks are subtle individually but collectively they create the **exaggerated physicality** that makes the game funny.
+
+We also implemented what we call **comedy multipliers** — physics modifiers that activate in specific situations:
+
+- When a large pile of items collapses, the items at the bottom get a slight upward impulse, making the collapse more dramatic
+- When an item barely misses a basket, it gets a slight deflection that makes the near-miss more visible
+- When items stack improbably high, their stability decreases gradually, creating tension before the inevitable topple
+
+These aren't realistic. They're designed to maximize comedic timing.
+
+## The Grab-and-Throw System
+
+The core interaction in Laundry Sort is grabbing a laundry item and throwing it into the correct basket. This sounds simple, but getting the feel right took weeks of iteration.
+
+**Grabbing** works by creating a spring constraint between the player's cursor (or finger) and the item's center of mass. The spring's stiffness determines how "attached" the item feels — too stiff and it feels robotic, too loose and it feels laggy. We settled on a stiffness that creates a slight drag, giving items a satisfying weight.
+
+**Throwing** is calculated from the cursor's velocity at the moment of release. We track the last several frames of cursor movement and compute the release velocity as a weighted average, giving more influence to recent frames. This produces throws that match the player's intended direction and force.
+
+The throwing system includes **aim assist** — a subtle correction that nudges items toward the nearest basket if the throw is close to on-target. This isn't visible to the player, but it reduces frustration significantly. Without aim assist, players miss baskets about 40% of the time. With it, they miss about 15% — still enough to create comedy, but not enough to create frustration.
+
+## Emergent Comedy
+
+The best moments in Laundry Sort are ones we didn't design. They emerge from the physics system interacting with itself in unexpected ways:
+
+- A player throws a shirt toward the darks basket. It hits the rim, bounces onto a towel that was already in the lights basket, which destabilizes the towel pile, causing three items to fall out of the basket and onto the floor. The player now has more sorting to do than when they started.
+
+- Two players in versus mode throw items simultaneously. The items collide mid-air and deflect into each other's baskets — wrong baskets — scoring negative points for both.
+
+- A pile of items in a basket reaches critical height. One more item lands on top. The pile holds for a moment — just long enough for the player to think they've gotten away with it — then collapses spectacularly, scattering items across the play area.
+
+None of these moments are scripted. They're **emergent** — they arise from simple rules interacting in complex ways. This is the magic of physics games: you build a system, and the system builds the comedy.
+
+## Performance in the Browser
+
+Running a physics simulation with 30-50 active objects at 60 steps per second in JavaScript is computationally demanding. We use several techniques to keep performance smooth:
+
+- **Object sleeping** — items that haven't moved significantly for several frames are removed from the active simulation until disturbed
+- **Simplified collision shapes** — visual complexity and physics complexity are decoupled. A detailed shirt sprite uses a simple rectangular collision shape
+- **Web Workers** — the physics simulation runs in a separate thread from the renderer, preventing physics calculations from causing frame drops
+- **LOD for physics** — items far from the play area use simplified physics until they're relevant again
+
+On modern smartphones, we maintain 60fps with 40+ active physics objects. On older devices, we reduce the visual fidelity while keeping the physics step rate constant — smooth physics is more important than pretty particles.
+
+## Why Laundry
+
+Why laundry? Because everyone understands laundry. You don't need to explain the rules — darks go with darks, lights go with lights. The cognitive load of understanding the game is zero, which means all of the player's attention goes to the physics and the comedy.
+
+There's also something deeply satisfying about a mundane task made ridiculous. Laundry is boring. Laundry as a physics game is absurd. That contrast — the domestic made chaotic — is the core of Laundry Sort's appeal.
+
+We built a physics engine in JavaScript to simulate the behavior of socks and towels. And somehow, that's one of the most fun things we've ever made. The browser doesn't limit the comedy — it enables it, bringing physics-driven laughter to anyone with a tab to spare.

@@ -1,0 +1,119 @@
+---
+title: "The Vision Behind RMHbox"
+date: "2025-01-06"
+description: "Building a Jackbox-style party game platform in the browser — accessible to anyone with a phone."
+tags: ["RMHbox", "Multiplayer", "Design"]
+---
+
+## Party Games Shouldn't Require a Console
+
+The last time you played a party game with friends, how many steps did it take to start? If it was a console game, someone needed the right hardware, the right controllers, the right game installed, and enough couch space. If it was Jackbox, someone needed to stream the game while everyone else joined on their phones — which works well, but still requires a purchase and a host device.
+
+We built RMHbox because we believe the answer should be simpler: **open a link, join a room, play**.
+
+RMHbox is our party game platform — a collection of 16+ minigames designed for groups, playable entirely in the browser. No downloads, no installs, no host device required. One player creates a room, shares a code, and everyone joins from whatever device they have. Phones, tablets, laptops — it all works.
+
+This is the post where we explain why we built it, what inspired us, and how 16+ minigames coexist in a single browser-based platform.
+
+## The Jackbox Model — And Where It Stops
+
+**Jackbox Games** pioneered the modern party game format. Starting with *You Don't Know Jack* and evolving into the Party Pack series, they solved the controller problem brilliantly: use phones as controllers, display the game on a shared screen. It's a model that has sold millions of copies and created genuine cultural moments — Quiplash answers becoming inside jokes, Drawful drawings becoming group lore.
+
+We have deep respect for what Jackbox built. Their design philosophy — low barrier to entry, humor-driven gameplay, asymmetric information between the shared screen and personal devices — directly influenced RMHbox.
+
+But the Jackbox model has constraints we wanted to eliminate:
+
+- **Purchase required.** Each Party Pack costs $25-30. That's fair value, but it means someone in the group must own it.
+- **Host device required.** One device needs to run the game and display it on a shared screen. This works great in a living room but poorly for remote play without additional streaming setup.
+- **Platform-locked.** Jackbox games run on specific platforms — Steam, consoles, Apple TV. You can't just open a browser and play.
+- **Fixed game packs.** Each Party Pack is a bundle of five games. You get what's in the box — no additions, no community contributions, no evolving library.
+
+RMHbox removes all four constraints. The platform is free to play, runs entirely in browsers, requires no host device (every player sees what they need to see on their own screen), and the game library grows continuously.
+
+## The Decline of Local Multiplayer
+
+There's a broader trend motivating RMHbox: **local multiplayer is disappearing**. The games industry has shifted overwhelmingly toward online multiplayer, single-player experiences, and live-service models. The percentage of major releases supporting local co-op or competitive play has declined steadily over the past decade.
+
+This is understandable from a business perspective — online multiplayer drives engagement metrics and recurring revenue. But it's a cultural loss. Some of the best gaming memories are made in the same room — the trash talk, the shared laughter, the collective gasps. These moments don't translate well to voice chat over a headset.
+
+RMHbox exists to preserve that energy. Even when players are remote, the games are designed for **synchronous social play** — everyone playing at the same time, reacting to each other, creating shared moments. The games are short, loud, and designed to generate conversation.
+
+## 16+ Minigames, One Platform
+
+The technical challenge of RMHbox isn't any individual game — it's hosting 16+ games in a single platform with shared infrastructure. Here's how the architecture works:
+
+### The Room System
+
+Every RMHbox session starts with a **room**. One player creates a room and receives a four-character code. Other players enter that code to join. The room persists across multiple games — you don't need to reconnect between rounds.
+
+Under the hood, rooms are managed through WebSocket connections. When a player joins, their device establishes a persistent connection to the game server. All game state flows through this connection — inputs, game events, scoring, and transitions.
+
+The room system handles:
+
+- **Player management** — joining, leaving, reconnecting after network drops
+- **Game selection** — the room host (or a vote) picks which minigame to play next
+- **Score tracking** — cumulative scores across multiple games in a session
+- **State synchronization** — ensuring all players see consistent game state
+
+### The Minigame Architecture
+
+Each minigame in RMHbox is a **self-contained module** that plugs into the room system. A minigame defines:
+
+- **Input schema** — what controls the game needs (tapping, drawing, typing, tilting)
+- **Game loop** — the core gameplay logic
+- **Rendering** — what each player sees on their device
+- **Scoring** — how points are calculated
+- **Duration** — how long a round lasts
+
+This modular architecture means we can develop and test minigames independently, then plug them into the platform. Adding a new game to RMHbox doesn't require changing the room system, the scoring system, or the session flow. It's a plugin.
+
+### Game Categories
+
+Our 16+ minigames span several categories:
+
+- **Trivia & knowledge** — classic quiz formats with twists
+- **Drawing & creativity** — prompts that reward humor over skill
+- **Speed & reflex** — tap-fast challenges and reaction games
+- **Strategy & deception** — social deduction and bluffing games
+- **Word games** — vocabulary and wordplay challenges
+- **Physics & chaos** — games that use device motion and touch in unexpected ways
+
+The variety is intentional. Different games appeal to different players, and the rotation keeps sessions fresh. A 45-minute RMHbox session might include a trivia game, a drawing game, a speed challenge, and a deception game — each lasting 3-5 minutes.
+
+## Making It Work on Every Device
+
+The hardest design constraint for RMHbox is **device diversity**. In a single room, one player might be on a 27-inch desktop monitor, another on an iPhone SE, and a third on an Android tablet. The games need to work on all of them.
+
+Our approach is **adaptive UI** — not just responsive layouts, but fundamentally different interaction models based on the device:
+
+- **Touch devices** get tap targets, swipe gestures, and device motion controls
+- **Desktop devices** get mouse/keyboard controls with larger visual displays
+- **Small screens** get simplified UI with larger text and fewer simultaneous elements
+- **Large screens** get richer displays with more game information visible
+
+Each minigame's input schema defines how controls map across device types. A drawing game uses touch on phones and mouse on desktops. A speed game uses taps on phones and key presses on desktops. The game logic is identical — only the input layer adapts.
+
+## The Social Layer
+
+Party games live and die on their social dynamics. The gameplay is the vehicle, but the destination is **laughter, competition, and connection**. We've designed several features specifically to amplify the social experience:
+
+- **Reaction system** — players can send quick emoji reactions during games, visible to everyone
+- **Replay moments** — particularly funny or impressive moments are automatically captured and replayed between rounds
+- **Custom prompts** — for creative games, players can submit their own prompts, making the experience personal to the group
+- **Session history** — after a session ends, players get a recap of highlights, scores, and memorable moments
+
+## Why Free-to-Play
+
+RMHbox is free. No purchase, no subscription, no paywall. This is a deliberate choice rooted in our philosophy about party games.
+
+The value of a party game is directly proportional to how many people can play it. A party game that costs money creates a social friction: someone has to pay, someone has to own it, and the group is limited to what the owner has purchased. By making RMHbox free, we remove that friction entirely. Anyone can host. Anyone can join. The only requirement is a browser.
+
+We sustain development through our broader platform — the games and apps across RMH Studios contribute to a ecosystem where the party game platform serves as a community hub and discovery engine for our other titles.
+
+## What's Ahead
+
+We're currently developing our next wave of minigames, with a focus on **asymmetric gameplay** — games where different players have different roles, information, or objectives. We're also building a **custom game creator** that will let players design and share their own minigames within the RMHbox platform.
+
+The vision for RMHbox is simple but ambitious: **become the default answer to "what should we play tonight?"** No setup, no cost, no barriers. Just a link, a room code, and a group of people ready to laugh together.
+
+The party starts in the browser.

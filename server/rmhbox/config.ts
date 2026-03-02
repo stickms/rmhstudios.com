@@ -21,7 +21,7 @@ export const config = {
   // ─── Network ───
   PORT: envInt('RMHBOX_PORT', 7676),
   SOCKET_PATH: envString('RMHBOX_SOCKET_PATH', '/rmhbox-ws/'),
-  CORS_ORIGIN: envString('RMHBOX_CORS_ORIGIN', process.env.SOCKET_CORS_ORIGIN || '*'),
+  CORS_ORIGIN: envString('RMHBOX_CORS_ORIGIN', process.env.SOCKET_CORS_ORIGIN || ''),
 
   // ─── Socket.io Tuning ───
   MAX_HTTP_BUFFER_SIZE: envInt('RMHBOX_MAX_BUFFER', 1_048_576), // 1 MB

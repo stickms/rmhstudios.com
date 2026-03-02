@@ -1,23 +1,18 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, Share2, Star, Users } from 'lucide-react';
-import CollaboratorAvatars from './CollaboratorAvatars';
-import type { CollabUser } from '@/lib/rmh-utils/useCollaboration';
+import { ArrowLeft, Star } from 'lucide-react';
 
 interface Props {
   title: string;
   isFavorite: boolean;
-  connected: boolean;
-  collaborators: CollabUser[];
   onBack: () => void;
   onRename: (title: string) => void;
   onToggleFavorite: () => void;
-  onShare: () => void;
   accentColor: string;
 }
 
-export default function DocumentHeader({ title, isFavorite, connected, collaborators, onBack, onRename, onToggleFavorite, onShare, accentColor }: Props) {
+export default function DocumentHeader({ title, isFavorite, onBack, onRename, onToggleFavorite, accentColor }: Props) {
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState(title);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -65,22 +60,11 @@ export default function DocumentHeader({ title, isFavorite, connected, collabora
 
       <div className="flex-1" />
 
-      <CollaboratorAvatars collaborators={collaborators} connected={connected} />
-
       <button
         onClick={onToggleFavorite}
         className={`p-1.5 rounded-lg transition-colors ${isFavorite ? 'text-yellow-400' : 'text-white/30 hover:text-white/50'}`}
       >
         <Star size={16} fill={isFavorite ? 'currentColor' : 'none'} />
-      </button>
-
-      <button
-        onClick={onShare}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-white transition-colors"
-        style={{ background: accentColor }}
-      >
-        <Share2 size={14} />
-        Share
       </button>
     </div>
   );

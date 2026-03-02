@@ -1,0 +1,138 @@
+---
+title: "The Story Behind RMHTube"
+date: "2025-04-28"
+description: "How a hackathon idea became a full watch party platform — and what we learned about WebSocket sync along the way."
+tags: ["RMHTube", "Technology", "Social"]
+---
+
+## Watching Together, Apart
+
+The idea was simple: watch a video with friends, in sync, from different locations. No countdown coordination. No "okay, press play... now!" Just a shared player that keeps everyone on the same frame, with a chat alongside for reactions.
+
+RMHTube started as a hackathon project in early 2021, when synchronized watching was still a novelty for many people. By the time we launched it as a full platform, the watch party space had exploded — and we'd learned hard lessons about real-time synchronization, user expectations, and the surprising complexity of "just playing a video at the same time."
+
+This is the story of RMHTube: where it came from, what broke along the way, and what we built to fix it.
+
+## The Pandemic Watch Party Boom
+
+The COVID-19 pandemic fundamentally changed how people consumed media together. With in-person gatherings restricted worldwide, the demand for virtual co-watching experiences surged. Several platforms emerged to fill the gap:
+
+**Teleparty** (formerly Netflix Party) launched in 2020 and rapidly grew to over 10 million users by synchronizing Netflix playback across browsers with a chat sidebar. **Disney+ GroupWatch** launched in September 2020, offering native synchronized viewing for up to seven participants. **Amazon Prime Video Watch Party** followed shortly after. **Scener** positioned itself as a virtual movie theater, supporting multiple streaming services.
+
+These platforms validated the concept — people wanted to watch together online — but each had limitations:
+
+- **Platform lock-in.** Most tools only worked with specific streaming services.
+- **Extension dependency.** Many required browser extensions, which limited mobile access.
+- **Limited interaction.** Chat was usually text-only, with no reactions, no shared controls, and no integration with other social features.
+- **Sync fragility.** Users frequently reported playback falling out of sync, particularly during buffering events or when participants had different internet speeds.
+
+We saw an opportunity to build something different: a watch party platform that was **platform-agnostic**, worked natively in the browser (no extension required), and provided richer social interaction than a text chat.
+
+## The Hackathon Origin
+
+RMHTube was born during an internal hackathon — a 48-hour sprint where we prototyped ideas outside our normal game development work. The original concept was modest: a shared video player that kept two browsers in sync.
+
+The first prototype used a simple approach: one participant was the "host" and their playback state (current time, playing/paused) was broadcast to all other participants via WebSocket. Participants received state updates and adjusted their players to match. It worked — mostly. But "mostly" isn't good enough when you're watching a horror movie and one person screams at a jump scare two seconds before everyone else sees it.
+
+The hackathon prototype taught us two things: (1) synchronized watching is technically harder than it sounds, and (2) the social experience around shared watching is as important as the sync itself. We decided to develop it further.
+
+## The Synchronization Problem
+
+Keeping multiple video players in sync across the internet is a distributed systems problem disguised as a media playback feature. Here's why it's hard:
+
+### Network Latency Variability
+
+A WebSocket message from the host to a participant might take 20ms on a good connection or 200ms on a congested one. If the host pauses the video and sends a "pause" command, participants with 200ms latency will see the video continue for 200ms after the host has stopped. Over a viewing session, these small discrepancies accumulate.
+
+### Buffering Asymmetry
+
+Different participants have different internet speeds. When the video reaches an unbuffered segment, some participants buffer and some don't. A naive sync system would either let buffering participants fall behind (breaking sync) or pause everyone when anyone buffers (creating constant interruptions for fast-connection participants).
+
+### Clock Drift
+
+Even synchronized clocks drift over time. Two participants who start watching at the "same" moment will gradually desync as their local clocks diverge. Over a two-hour movie, a few milliseconds of clock drift per second can accumulate into noticeable desync.
+
+### Seek Precision
+
+When a participant seeks to a specific timestamp, the video player doesn't always land exactly on the requested frame. Different browsers, codecs, and video sources have different seek precision. A seek to 01:23:45.000 might land at 01:23:44.800 on one browser and 01:23:45.200 on another.
+
+## Our Sync Architecture
+
+We solved these problems with a multi-layered synchronization system:
+
+### The State Authority Model
+
+Rather than peer-to-peer sync, RMHTube uses a **state authority model**. The server maintains the canonical playback state — the "truth" of where the video is and whether it's playing. All participants sync to the server, not to each other.
+
+The state authority tracks:
+
+- **Current timestamp** — where the video should be right now
+- **Playback rate** — normal speed, or paused (rate = 0)
+- **State version** — an incrementing counter that resolves conflicts
+- **Last update time** — server timestamp of the most recent state change
+
+When any participant performs an action (play, pause, seek), the action is sent to the server. The server updates the canonical state and broadcasts it to all participants. This eliminates the problem of participants syncing to different sources.
+
+### Continuous Drift Correction
+
+Rather than syncing only on user actions, participants perform continuous drift checks. Every 5 seconds, each participant calculates their **drift** — the difference between their local playback position and where the server says they should be (accounting for network latency).
+
+If drift is under 500ms, we do nothing. Small drift is imperceptible and correcting it aggressively would cause visible stuttering. If drift is between 500ms and 2 seconds, we adjust playback rate slightly — playing at 1.05x or 0.95x speed until the participant catches up or slows down. This correction is invisible to the viewer. If drift exceeds 2 seconds, we perform a hard seek to the correct position. This is visible but rare, and it's better than being multiple seconds out of sync.
+
+### Buffering Coordination
+
+When a participant starts buffering, they report it to the server. The server has configurable policies for handling buffering:
+
+- **Wait mode** — everyone pauses until the buffering participant catches up. Good for small groups where everyone wants to stay exactly synced.
+- **Continue mode** — other participants keep watching, and the buffering participant catches up when their buffer refills. Good for large groups where pausing everyone for one person's connection issues is disruptive.
+- **Adaptive mode** — the server uses the wait policy for brief buffers (&lt;3 seconds) and the continue policy for longer ones. This is the default.
+
+### Latency Estimation
+
+Accurate sync requires knowing the network latency between each participant and the server. We estimate latency using a **ping-pong protocol**: the participant sends a timestamped ping, the server responds immediately with a pong, and the participant calculates round-trip time divided by two as the estimated one-way latency.
+
+We maintain a rolling average of the last 10 latency measurements, discarding outliers. This smoothed latency estimate is used to adjust sync calculations — when the server says "the video should be at 01:23:45 right now," the participant adjusts by their estimated latency to account for how long that message took to arrive.
+
+## Beyond Sync: The Social Layer
+
+Synchronization is the foundation, but the social experience is what makes people come back. RMHTube's social features include:
+
+**Live reactions** — emoji reactions that appear as floating overlays on the video, visible to all participants. When someone sends a laugh reaction, everyone sees it pop up on screen. This creates a shared emotional experience that text chat alone can't match.
+
+**Synchronized comments** — timestamped comments that appear at specific moments in the video, similar to Niconico or SoundCloud comments. You can see what previous viewers said at each moment, creating a layered social experience.
+
+**Shared queue** — any participant can add videos to the room's queue. The group watches the queue in order, with voting to skip or reorder. This turns a watch session into a collaborative playlist.
+
+**Room persistence** — rooms can be saved and revisited. Watch history, comments, and reactions persist, so a group can return to a room and see their previous session's social layer.
+
+## The Technical Stack
+
+RMHTube is built within our Next.js monorepo:
+
+- **Frontend** — React components for the video player, chat, reactions, and room management
+- **WebSocket server** — handles real-time communication for sync, chat, and reactions
+- **API routes** — room creation, user authentication, watch history, and queue management
+- **State management** — client-side state for playback control and UI, synced with server state through the WebSocket connection
+
+The video player itself is built on the HTML5 `<video>` element with a custom control layer. We don't use a third-party player library because we need precise control over playback state for synchronization. The custom player handles the quirks of different browsers' `<video>` implementations — particularly around seek precision and buffering event reporting, which vary significantly between Chrome, Safari, and Firefox.
+
+## From Hackathon to Platform
+
+The evolution from hackathon prototype to full platform took about a year of iterative development. Key milestones:
+
+1. **Prototype** — basic two-person sync with text chat
+2. **Multi-user rooms** — supporting groups of 10+ with the state authority model
+3. **Drift correction** — the continuous sync system that eliminated gradual desync
+4. **Social features** — reactions, timestamped comments, shared queue
+5. **Room persistence** — watch history and room memory
+6. **Performance optimization** — reducing WebSocket message frequency, optimizing reaction rendering, handling rooms with 50+ concurrent viewers
+
+Each milestone was driven by user feedback. The drift correction system was built because early users reported "the video keeps getting out of sync after 20 minutes." The reaction system was built because users said "text chat doesn't capture the energy of watching together." Every major feature addresses a real user-reported need.
+
+## What Watching Together Means
+
+RMHTube isn't our most technically complex product, but it might be our most emotionally resonant one. The pandemic showed us that physical distance doesn't have to mean experiential distance. Watching a movie "together" from different cities, different countries, different time zones — laughing at the same moment, gasping at the same reveal — creates genuine shared experience.
+
+We built RMHTube because we believe the web can bring people together, not just through games, but through all shared experiences. A watch party is a small thing. But small things, shared, become meaningful.
+
+The next movie night starts with a link. We'll keep the sync tight.

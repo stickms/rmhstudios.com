@@ -89,12 +89,12 @@ export function NeonDriftwayUI({
   // ── Main Menu ──
   if (uiState === 'menu') {
     return (
-      <div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-auto bg-black/70 backdrop-blur-sm">
-        <div className="text-center space-y-6 max-w-md px-4">
-          <h1 className="text-5xl font-black text-transparent bg-clip-text bg-linear-to-r from-cyan-400 via-white to-red-500 tracking-tighter">
+      <div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-auto bg-black/70 backdrop-blur-sm overflow-y-auto">
+        <div className="text-center space-y-4 sm:space-y-6 max-w-md px-4 py-6">
+          <h1 className="text-3xl sm:text-5xl font-black text-transparent bg-clip-text bg-linear-to-r from-cyan-400 via-white to-red-500 tracking-tighter">
             NEON DRIFTWAY
           </h1>
-          <p className="text-zinc-400 text-sm">Endless highway survival racer. Dodge traffic, survive hazards, chase the leaderboard.</p>
+          <p className="text-zinc-400 text-xs sm:text-sm">Endless highway survival racer. Dodge traffic, survive hazards, chase the leaderboard.</p>
 
           <div className="space-y-3">
             {!session.data ? (
@@ -144,9 +144,9 @@ export function NeonDriftwayUI({
             </div>
           )}
 
-          <div className="text-xs text-zinc-600 space-y-1">
-            <p>W/↑ accelerate · A/D or ←/→ steer · S/↓ brake</p>
-            <p>Shift boost · Esc pause</p>
+          <div className="text-[10px] sm:text-xs text-zinc-600 space-y-1">
+            <p className="hidden sm:block">W/↑ accelerate · A/D or ←/→ steer · S/↓ brake · Shift boost · Esc pause</p>
+            <p className="sm:hidden">Touch controls appear during gameplay</p>
           </div>
         </div>
       </div>
@@ -157,16 +157,16 @@ export function NeonDriftwayUI({
   if (uiState === 'levelSelect') {
     const levelIds: LevelId[] = [1, 2, 3];
     return (
-      <div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-auto bg-black/70 backdrop-blur-sm">
-        <div className="max-w-lg w-full px-4 space-y-4">
+      <div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-auto bg-black/70 backdrop-blur-sm overflow-y-auto">
+        <div className="max-w-lg w-full px-4 space-y-3 sm:space-y-4 py-6">
           <button
             onClick={onGoToMenu}
-            className="flex items-center gap-1 text-zinc-400 hover:text-white text-sm transition-colors"
+            className="flex items-center gap-1 text-zinc-400 hover:text-white text-xs sm:text-sm transition-colors"
           >
-            <ArrowLeft className="w-4 h-4" /> Back
+            <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Back
           </button>
 
-          <h2 className="text-3xl font-black text-white text-center tracking-tight">SELECT LEVEL</h2>
+          <h2 className="text-2xl sm:text-3xl font-black text-white text-center tracking-tight">SELECT LEVEL</h2>
 
           <div className="grid gap-3">
             {levelIds.map(id => {
@@ -204,8 +204,8 @@ export function NeonDriftwayUI({
             })}
           </div>
 
-          <p className="text-xs text-zinc-600 text-center">
-            Survive 2 minutes on a level to unlock the next one
+          <p className="text-[10px] sm:text-xs text-zinc-600 text-center">
+            Drive 1,500m on a level to complete it and unlock the next
           </p>
         </div>
       </div>
@@ -218,9 +218,9 @@ export function NeonDriftwayUI({
     const timeStr = `${Math.floor(timeSec / 60)}:${(timeSec % 60).toString().padStart(2, '0')}`;
 
     return (
-      <div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-auto bg-black/80 backdrop-blur-sm">
-        <div className="max-w-md w-full px-4 space-y-4">
-          <h2 className="text-4xl font-black text-red-500 text-center tracking-tight">CRASHED</h2>
+      <div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-auto bg-black/80 backdrop-blur-sm overflow-y-auto">
+        <div className="max-w-md w-full px-4 space-y-3 sm:space-y-4 py-6">
+          <h2 className="text-3xl sm:text-4xl font-black text-red-500 text-center tracking-tight">CRASHED</h2>
 
           <div className="bg-zinc-900/80 border border-zinc-700 rounded-lg p-5 space-y-3">
             <div className="text-center">
@@ -311,9 +311,9 @@ export function NeonDriftwayUI({
     const timeStr = `${Math.floor(timeSec / 60)}:${(timeSec % 60).toString().padStart(2, '0')}`;
 
     return (
-      <div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-auto bg-black/80 backdrop-blur-sm">
-        <div className="max-w-md w-full px-4 space-y-4">
-          <h2 className="text-4xl font-black text-green-400 text-center tracking-tight">LEVEL COMPLETE!</h2>
+      <div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-auto bg-black/80 backdrop-blur-sm overflow-y-auto">
+        <div className="max-w-md w-full px-4 space-y-3 sm:space-y-4 py-6">
+          <h2 className="text-3xl sm:text-4xl font-black text-green-400 text-center tracking-tight">LEVEL COMPLETE!</h2>
 
           <div className="bg-zinc-900/80 border border-zinc-700 rounded-lg p-5 space-y-3">
             <div className="text-center">

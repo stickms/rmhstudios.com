@@ -26,6 +26,11 @@ import { cleanupRateLimits } from './rate-limit';
 import { disconnectPrisma } from './prisma-client';
 import { logger } from './logger';
 
+if (!config.CORS_ORIGIN) {
+  logger.error({ event: 'fatal_missing_cors', message: 'CORS_ORIGIN must be set (RMHBOX_CORS_ORIGIN or SOCKET_CORS_ORIGIN)' });
+  process.exit(1);
+}
+
 // ─── Health-check HTTP handler ───────────────────────────────────
 
 function requestHandler(req: IncomingMessage, res: ServerResponse): void {
@@ -70,7 +75,10 @@ const leaderboard     = new LeaderboardService();
 const gameCoordinator = new GameCoordinator(io, lobbyManager, stateSyncService, leaderboard);
 const voteManager     = new VoteManager(io, lobbyManager, gameCoordinator);
 const chatHandler     = new ChatHandler(io, lobbyManager);
-const reconnection    = new ReconnectionHandler(io, lobbyManager, stateSyncService);
+const reconnection    = new ReconnectionHandler(
+  io, lobbyManager, stateSyncService,
+  (lobbyId, spectatorUserId) => gameCoordinator.getSpectatorTarget(lobbyId, spectatorUserId),
+);
 
 // ─── Connection handler ─────────────────────────────────────────
 

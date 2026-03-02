@@ -1,9 +1,10 @@
 /**
  * LeaderboardPanel — Fetches and displays leaderboard entries.
  *
- * Shows rank, name, and score columns. Fetches data via socket event.
+ * Shows rank, name, and score columns. Fetches data via HTTP API on mount,
+ * then listens for real-time updates via socket events.
  *
- * Props: none (fetches data itself via socket events)
+ * Props: none (fetches data itself)
  */
 'use client';
 
@@ -17,6 +18,26 @@ export default function LeaderboardPanel() {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Fetch initial data via HTTP API
+  useEffect(() => {
+    async function fetchLeaderboard() {
+      try {
+        const response = await fetch('/api/rmhbox/leaderboard?period=all-time&metric=score&limit=10');
+        if (response.ok) {
+          const data = await response.json();
+          setEntries(data.entries || []);
+        }
+      } catch (err) {
+        console.error('[LeaderboardPanel] Failed to fetch leaderboard:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchLeaderboard();
+  }, []);
+
+  // Listen for real-time updates via WebSocket
   useEffect(() => {
     const socket = getSocket();
     if (!socket) return;
@@ -57,7 +78,31 @@ export default function LeaderboardPanel() {
             {entries.map((entry) => (
               <tr key={entry.userId} className="border-t border-(--rmhbox-border)">
                 <td className="py-1.5 pr-2 font-bold text-(--rmhbox-accent)">{entry.rank}</td>
-                <td className="py-1.5 pr-2 text-(--rmhbox-text)">{entry.userName}</td>
+                <td className="py-1.5 pr-2 text-(--rmhbox-text)">
+                  <div className="flex items-center gap-2">
+                    {entry.avatarUrl ? (
+                      <img
+                        src={entry.avatarUrl}
+                        alt={entry.userName}
+                        className="h-6 w-6 shrink-0 rounded-full object-cover"
+                        loading="lazy"
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          const fallback = target.nextElementSibling as HTMLElement | null;
+                          target.style.display = 'none';
+                          if (fallback) fallback.style.display = '';
+                        }}
+                      />
+                    ) : null}
+                    <div
+                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-(--rmhbox-accent) text-[10px] font-bold text-white"
+                      style={entry.avatarUrl ? { display: 'none' } : undefined}
+                    >
+                      {entry.userName.charAt(0).toUpperCase()}
+                    </div>
+                    <span className="truncate">{entry.userName}</span>
+                  </div>
+                </td>
                 <td className="py-1.5 text-right font-mono text-(--rmhbox-text)">{entry.value}</td>
               </tr>
             ))}

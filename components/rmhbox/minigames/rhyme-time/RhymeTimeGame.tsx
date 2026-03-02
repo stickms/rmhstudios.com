@@ -20,11 +20,11 @@
  */
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getSocket, emit } from '@/lib/rmhbox/socket';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
-import { S2C, C2S } from '@/lib/rmhbox/events';
+import { emitGameInput, useGameSocket, extractTimerTick } from '@/lib/rmhbox/minigame-client';
+import { playSound } from '@/lib/rmhbox/audio';
 import RhymeTimeInput from './RhymeTimeInput';
 import RhymeTimeResults from './RhymeTimeResults';
 import RhymeTimeScoreboard from './RhymeTimeScoreboard';
@@ -33,13 +33,6 @@ import type { WordResult, PlayerBreakdown } from './RhymeTimeResults';
 import type { Standing, AwardEntry } from './RhymeTimeScoreboard';
 
 type Phase = 'ROUND_START' | 'INPUT' | 'SCORING' | 'INTERMISSION' | 'GAME_OVER';
-
-/** Helper: emit a game input action with the correct GameInputSchema shape */
-function emitGameInput(action: string, data: unknown = {}) {
-  const lobbyId = useRMHboxStore.getState().lobby?.lobbyId;
-  if (!lobbyId) return;
-  emit(C2S.GAME_INPUT, { lobbyId, action, data });
-}
 
 interface RhymeTimeGameProps {
   playerId: string;
@@ -60,6 +53,9 @@ export default function RhymeTimeGame({ playerId, playerName: _playerName }: Rhy
   const [playerBreakdowns, setPlayerBreakdowns] = useState<PlayerBreakdown[]>([]);
   const [standings, setStandings] = useState<Standing[]>([]);
   const [awards, setAwards] = useState<AwardEntry[]>([]);
+
+  // Track spectator status
+  const isSpectator = useRMHboxStore((s) => s.lobby?.myRole === 'spectator');
 
   // Lookup map from userId → userName for building breakdowns
   const players = useRMHboxStore((s) => s.lobby?.players);
@@ -83,6 +79,7 @@ export default function RhymeTimeGame({ playerId, playerName: _playerName }: Rhy
           setMySubmissions([]);
           setSubmissionCounts([]);
           // Server will send RT_INPUT_START when the reveal period ends
+          playSound('goFanfare');
           break;
         }
         case 'RT_INPUT_START': {
@@ -109,6 +106,7 @@ export default function RhymeTimeGame({ playerId, playerName: _playerName }: Rhy
                 : undefined,
           };
           setMySubmissions((prev) => [...prev, sub]);
+          playSound(data.isValid ? 'scoreDing' : 'buzzer');
           break;
         }
         case 'RT_SUBMISSION_COUNT': {
@@ -133,6 +131,7 @@ export default function RhymeTimeGame({ playerId, playerName: _playerName }: Rhy
           // Server sends: { type, round, results: RoundResult, scores, duration }
           // RoundResult.playerResults: Record<string, { userId, userName, breakdown: WordBreakdown[], roundScore, validCount, invalidCount }>
           setPhase('SCORING');
+          playSound('victoryFanfare');
           const results = data.results as Record<string, unknown>;
           const playerResults = results?.playerResults as Record<
             string,
@@ -145,7 +144,7 @@ export default function RhymeTimeGame({ playerId, playerName: _playerName }: Rhy
                 invalidReason?: string;
                 rarity: number;
                 basePoints: number;
-                multiSyllableMultiplier: number;
+                multiSyllableBonus: number;
                 speedBonus: number;
                 totalPoints: number;
                 submitterCount: number;
@@ -179,23 +178,19 @@ export default function RhymeTimeGame({ playerId, playerName: _playerName }: Rhy
 
                   words.push({
                     word: wb.word,
-                    submittedBy: pr.userName,
-                    userId: pr.userId,
+                    submitters: [{ userId: pr.userId, userName: pr.userName, speedBonus: wb.speedBonus > 0 }],
                     rarity,
-                    points: wb.totalPoints,
+                    points: wb.basePoints + (wb.multiSyllableBonus ?? 0),
                     multiSyllable: wb.isMultiSyllable,
-                    speedBonus: wb.speedBonus > 0,
                   });
                 } else {
                   // Invalid words: not_in_dictionary or does_not_rhyme
                   words.push({
                     word: wb.word,
-                    submittedBy: pr.userName,
-                    userId: pr.userId,
+                    submitters: [{ userId: pr.userId, userName: pr.userName, speedBonus: false }],
                     rarity: wb.invalidReason === 'not_in_dictionary' ? 'not_in_dict' : 'does_not_rhyme',
                     points: wb.totalPoints,
                     multiSyllable: false,
-                    speedBonus: false,
                   });
                 }
               }
@@ -209,6 +204,7 @@ export default function RhymeTimeGame({ playerId, playerName: _playerName }: Rhy
         case 'RT_INTERMISSION': {
           // Server sends: { type, duration, nextRound, scores: Record<string,number> }
           setPhase('INTERMISSION');
+          playSound('swoosh');
           const scores = data.scores as Record<string, number> | undefined;
           if (scores) {
             const standingsList: Standing[] = Object.entries(scores).map(([uid, sc]) => {
@@ -236,10 +232,11 @@ export default function RhymeTimeGame({ playerId, playerName: _playerName }: Rhy
           break;
         }
         case 'TIMER_TICK': {
-          // Timer now comes from broadcastAction with payload wrapping
-          const pl = data.payload as Record<string, unknown> | undefined;
-          const remaining = (pl?.timeRemaining ?? data.timeRemaining) as number;
-          if (typeof remaining === 'number') setTimeRemaining(remaining);
+          const remaining = extractTimerTick(data);
+          if (remaining !== undefined) {
+            setTimeRemaining(remaining);
+            if (remaining <= 5 && remaining > 0) playSound('countdownBeep');
+          }
           break;
         }
       }
@@ -288,54 +285,49 @@ export default function RhymeTimeGame({ playerId, playerName: _playerName }: Rhy
     [],
   );
 
-  // Subscribe to socket events
-  useEffect(() => {
-    const socket = getSocket();
-    if (!socket) return;
-
-    socket.on(S2C.GAME_ACTION, handleGameAction);
-    socket.on(S2C.GAME_ROUND_RESULTS, handleRoundResults);
-    return () => {
-      socket.off(S2C.GAME_ACTION, handleGameAction);
-      socket.off(S2C.GAME_ROUND_RESULTS, handleRoundResults);
-    };
-  }, [handleGameAction, handleRoundResults]);
-
-  // Hydrate from the Zustand gameState snapshot on mount.
-  // This fixes the race condition where the server broadcasts initial game state
-  // (e.g. RT_ROUND_START) before the lazy-loaded component has mounted.
-  useEffect(() => {
-    const snapshot = useRMHboxStore.getState().gameState;
-    if (!snapshot || !snapshot.phase) return;
-
-    const p = snapshot.phase as string;
-    if (p === 'ROUND_START' || p === 'INPUT' || p === 'SCORING' || p === 'INTERMISSION' || p === 'GAME_OVER') {
-      setPhase(p);
-    }
-    if (snapshot.currentRound) setCurrentRound(snapshot.currentRound as number);
-    if (snapshot.totalRounds) setTotalRounds(snapshot.totalRounds as number);
-    if (snapshot.timeRemaining != null) setTimeRemaining(snapshot.timeRemaining as number);
-    if (snapshot.rootWord) {
-      const rw = snapshot.rootWord;
-      setRootWord(typeof rw === 'string' ? rw : (rw as Record<string, unknown>)?.word as string ?? '');
-    }
-    if (Array.isArray(snapshot.mySubmissions) && snapshot.mySubmissions.length > 0) {
-      setMySubmissions(
-        (snapshot.mySubmissions as Array<Record<string, unknown>>).map((s) => ({
-          word: s.word as string,
-          status: (s.isValid as boolean) ? 'valid' as const : 'invalid' as const,
-          invalidReason: s.invalidReason as string | undefined,
-        })),
-      );
-    }
-  }, []);
-
-  // Submit a word
-  const handleSubmitWord = useCallback(
-    (word: string) => {
-      emitGameInput('SUBMIT_RHYME', { word });
+  /** Handle full state snapshot (reconnection / spectator player switch) */
+  const handleStateSnapshot = useCallback(
+    (data: Record<string, unknown>) => {
+      const p = data.phase as string;
+      if (p === 'ROUND_START' || p === 'INPUT' || p === 'SCORING' || p === 'INTERMISSION' || p === 'GAME_OVER') {
+        setPhase(p);
+      }
+      if (data.currentRound) setCurrentRound(data.currentRound as number);
+      if (data.totalRounds) setTotalRounds(data.totalRounds as number);
+      if (data.timeRemaining != null) setTimeRemaining(data.timeRemaining as number);
+      if (data.rootWord) {
+        const rw = data.rootWord;
+        setRootWord(typeof rw === 'string' ? rw : (rw as Record<string, unknown>)?.word as string ?? '');
+      }
+      if (Array.isArray(data.mySubmissions)) {
+        setMySubmissions(
+          (data.mySubmissions as Array<Record<string, unknown>>).map((s) => ({
+            word: s.word as string,
+            status: (s.isValid as boolean) ? 'valid' as const : 'invalid' as const,
+            invalidReason: s.invalidReason as string | undefined,
+          })),
+        );
+      } else {
+        setMySubmissions([]);
+      }
     },
     [],
+  );
+
+  // Subscribe to socket events and hydrate from store on mount
+  useGameSocket({
+    onGameAction: handleGameAction,
+    onStateSnapshot: handleStateSnapshot,
+    onRoundResults: handleRoundResults,
+  });
+
+  // Submit a word (disabled for spectators)
+  const handleSubmitWord = useCallback(
+    (word: string) => {
+      if (isSpectator) return;
+      emitGameInput('SUBMIT_RHYME', { word });
+    },
+    [isSpectator],
   );
 
   return (
@@ -381,6 +373,7 @@ export default function RhymeTimeGame({ playerId, playerName: _playerName }: Rhy
             totalDuration={totalDuration}
             mySubmissions={mySubmissions}
             submissionCounts={submissionCounts}
+            disabled={isSpectator}
             onSubmit={handleSubmitWord}
           />
         </motion.div>

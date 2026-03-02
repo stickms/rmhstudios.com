@@ -2,20 +2,16 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
-import { useCollaboration } from '@/lib/rmh-utils/useCollaboration';
 import { useDocsStore } from '@/lib/store/useDocsStore';
-import { authClient } from '@/lib/auth-client';
+import { useDocumentStore } from '@/lib/store/useDocumentStore';
 import { createDocsExtensions } from '@/lib/rmh-docs/extensions';
-import { getCollabColor } from '@/lib/rmh-utils/types';
 import DocumentHeader from '@/components/rmh-utils/DocumentHeader';
-import ShareDialog from '@/components/rmh-utils/ShareDialog';
 import DocsToolbar from './DocsToolbar';
 import DocsMenuBar from './DocsMenuBar';
 import DocsSidebar from './DocsSidebar';
 import FindReplacePanel from './FindReplacePanel';
 import { DOCS_ACCENT } from './types';
 import type { DocsDocument } from './types';
-import type { CollaboratorInfo, CollaboratorRole } from '@/lib/rmh-utils/types';
 import TurndownService from 'turndown';
 
 interface Props {
@@ -27,52 +23,41 @@ interface Props {
 
 export default function DocsEditor({ document, onBack, onRename, onToggleFavorite }: Props) {
   const { zoom, sidebarVisible, findReplaceVisible, readingMode, toggleSidebar, toggleFindReplace, toggleReadingMode, setFindReplaceVisible } = useDocsStore();
+  const { getDocument, updateDocument } = useDocumentStore();
 
-  const [sessionToken, setSessionToken] = useState<string>('');
-  const [user, setUser] = useState<{ id: string; name: string | null; image: string | null } | null>(null);
-  const [showShare, setShowShare] = useState(false);
-  const [collaborators, setCollaborators] = useState<CollaboratorInfo[]>(document.collaborators);
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'idle'>('idle');
   const editorContainerRef = useRef<HTMLDivElement>(null);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Get session info
-  useEffect(() => {
-    authClient.getSession().then((res) => {
-      if (res.data?.session) {
-        setUser(res.data.user as { id: string; name: string | null; image: string | null });
-        // Get session token directly from Better Auth response
-        if (res.data.session.token) setSessionToken(res.data.session.token);
-      }
-    });
-  }, []);
-
-  // Collaboration hook
-  const userForCollab = user ?? { id: 'anon', name: 'Anonymous', image: null };
-  const { yDoc, provider, connected, collaborators: collabUsers } = useCollaboration({
-    documentId: document.id,
-    roomPrefix: 'doc',
-    user: userForCollab,
-    sessionToken,
-  });
-
-  // Build collab user color
-  const userIndex = user ? Math.abs(hashCode(user.id)) % 15 : 0;
-  const userColor = getCollabColor(userIndex);
+  // Load initial content from store
+  const storedDoc = getDocument(document.id);
+  const initialContent = storedDoc?.content || '';
 
   const editor = useEditor({
     immediatelyRender: false,
-    extensions: createDocsExtensions({
-      yDoc,
-      provider,
-      userName: user?.name || 'Anonymous',
-      userColor,
-    }),
+    extensions: createDocsExtensions(),
+    content: initialContent ? JSON.parse(initialContent) : undefined,
     editorProps: {
       attributes: { class: 'docs-editor' },
     },
-    // Collaboration handles content syncing via Y.js -- no onUpdate-based autosave needed
-    // The document content is stored in the Y.js doc and synced via WebSocket
-  }, [provider]); // Re-create editor when provider changes
+    onUpdate: ({ editor: ed }) => {
+      // Debounced autosave
+      setSaveStatus('saving');
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = setTimeout(() => {
+        const json = JSON.stringify(ed.getJSON());
+        updateDocument(document.id, { content: json });
+        setSaveStatus('saved');
+      }, 500);
+    },
+  });
+
+  // Cleanup save timer on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, []);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -87,44 +72,9 @@ export default function DocsEditor({ document, onBack, onRename, onToggleFavorit
     return () => window.removeEventListener('keydown', handler);
   }, [findReplaceVisible, toggleFindReplace, toggleSidebar, toggleReadingMode, setFindReplaceVisible]);
 
-  // Load collaborators
-  const loadCollaborators = useCallback(async () => {
-    const res = await fetch(`/api/rmh-utils/documents/${document.id}/collaborators`);
-    if (res.ok) {
-      const data = await res.json();
-      setCollaborators(data.collaborators);
-    }
-  }, [document.id]);
-
-  useEffect(() => {
-    loadCollaborators();
-  }, [loadCollaborators]);
-
-  // Share dialog handlers
-  const handleAddCollaborator = useCallback(async (username: string, role: CollaboratorRole): Promise<boolean> => {
-    const res = await fetch(`/api/rmh-utils/documents/${document.id}/collaborators`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, role }),
-    });
-    if (res.ok) {
-      await loadCollaborators();
-      return true;
-    }
-    return false;
-  }, [document.id, loadCollaborators]);
-
-  const handleRemoveCollaborator = useCallback(async (userId: string) => {
-    await fetch(`/api/rmh-utils/documents/${document.id}/collaborators?userId=${userId}`, {
-      method: 'DELETE',
-    });
-    await loadCollaborators();
-  }, [document.id, loadCollaborators]);
-
   // Export handlers
   const handleExportPDF = useCallback(() => {
     if (!editor) return;
-    // Use the browser's print dialog for PDF export
     const content = editor.getHTML();
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
@@ -205,12 +155,9 @@ ${editor.getHTML()}
       <DocumentHeader
         title={document.title}
         isFavorite={document.isFavorite}
-        connected={connected}
-        collaborators={collabUsers}
         onBack={onBack}
         onRename={onRename}
         onToggleFavorite={onToggleFavorite}
-        onShare={() => setShowShare(true)}
         accentColor={DOCS_ACCENT}
       />
 
@@ -278,56 +225,10 @@ ${editor.getHTML()}
         <span>{charCount} characters</span>
         <span style={{ color: 'var(--docs-border)' }}>|</span>
         <span>{zoom}%</span>
-        {connected && (
-          <>
-            <span style={{ color: 'var(--docs-border)' }}>|</span>
-            <span className="flex items-center gap-1.5">
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-400" />
-              Synced
-            </span>
-          </>
-        )}
-        {!connected && (
-          <>
-            <span style={{ color: 'var(--docs-border)' }}>|</span>
-            <span className="flex items-center gap-1.5">
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-yellow-400" />
-              Connecting...
-            </span>
-          </>
-        )}
-        {collabUsers.length > 0 && (
-          <>
-            <span style={{ color: 'var(--docs-border)' }}>|</span>
-            <span>{collabUsers.length} collaborator{collabUsers.length !== 1 ? 's' : ''} online</span>
-          </>
-        )}
         <span className="ml-auto">
           {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved' : ''}
         </span>
       </div>
-
-      {/* Share Dialog */}
-      <ShareDialog
-        open={showShare}
-        onClose={() => setShowShare(false)}
-        documentId={document.id}
-        collaborators={collaborators}
-        ownerName={document.user.name || 'Owner'}
-        onAdd={handleAddCollaborator}
-        onRemove={handleRemoveCollaborator}
-        accentColor={DOCS_ACCENT}
-      />
     </div>
   );
-}
-
-function hashCode(str: string): number {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash |= 0;
-  }
-  return hash;
 }

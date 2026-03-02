@@ -74,6 +74,7 @@ export default function HostControlModal() {
 
   const otherPlayers = lobby.players.filter((p) => p.userId !== lobby.myUserId);
   const isInGame = lobby.state === 'PLAYING' || lobby.state === 'COUNTDOWN' || lobby.state === 'INSTRUCTIONS' || lobby.state === 'PRELOADING' || lobby.state === 'ROUND_RESULTS';
+  const canPromoteSpectators = lobby.state === 'WAITING' || lobby.state === 'ROUND_RESULTS';
 
   return (
     <>
@@ -154,9 +155,23 @@ export default function HostControlModal() {
                       }}
                     >
                       {/* Avatar */}
+                      {player.avatarUrl ? (
+                        <img
+                          src={player.avatarUrl}
+                          alt={player.userName}
+                          className="h-7 w-7 shrink-0 rounded-full object-cover"
+                          loading="lazy"
+                          onError={(e) => {
+                            const target = e.currentTarget;
+                            const fallback = target.nextElementSibling as HTMLElement | null;
+                            target.style.display = 'none';
+                            if (fallback) fallback.style.display = '';
+                          }}
+                        />
+                      ) : null}
                       <div
                         className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
-                        style={{ backgroundColor: 'var(--rmhbox-accent)' }}
+                        style={player.avatarUrl ? { display: 'none', backgroundColor: 'var(--rmhbox-accent)' } : { backgroundColor: 'var(--rmhbox-accent)' }}
                       >
                         {player.userName.charAt(0).toUpperCase()}
                       </div>
@@ -205,22 +220,38 @@ export default function HostControlModal() {
                         border: '1px solid var(--rmhbox-border)',
                       }}
                     >
+                      {spec.avatarUrl ? (
+                        <img
+                          src={spec.avatarUrl}
+                          alt={spec.userName}
+                          className="h-7 w-7 shrink-0 rounded-full object-cover"
+                          loading="lazy"
+                          onError={(e) => {
+                            const target = e.currentTarget;
+                            const fallback = target.nextElementSibling as HTMLElement | null;
+                            target.style.display = 'none';
+                            if (fallback) fallback.style.display = '';
+                          }}
+                        />
+                      ) : null}
                       <div
                         className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
-                        style={{ backgroundColor: 'var(--rmhbox-text-muted)' }}
+                        style={spec.avatarUrl ? { display: 'none', backgroundColor: 'var(--rmhbox-text-muted)' } : { backgroundColor: 'var(--rmhbox-text-muted)' }}
                       >
                         {spec.userName.charAt(0).toUpperCase()}
                       </div>
                       <span className="flex-1 truncate text-sm text-(--rmhbox-text-muted)">
                         {spec.userName}
                       </span>
-                      <button
-                        onClick={() => handlePromote(spec.userId, spec.userName)}
-                        className="rounded p-1.5 text-(--rmhbox-success) transition-colors hover:bg-(--rmhbox-success-dim)"
-                        title="Promote to player"
-                      >
-                        <UserPlus className="h-3.5 w-3.5" />
-                      </button>
+                      {canPromoteSpectators && (
+                        <button
+                          onClick={() => handlePromote(spec.userId, spec.userName)}
+                          className="rounded p-1.5 text-(--rmhbox-success) transition-colors hover:bg-(--rmhbox-success-dim)"
+                          title="Promote to player"
+                        >
+                          <UserPlus className="h-3.5 w-3.5" />
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>

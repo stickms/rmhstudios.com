@@ -1,0 +1,71 @@
+---
+title: "Going 3D: How Wong Kar-Wai Changed Our Game"
+date: "2026-02-24"
+description: "Rebuilding Void Breaker's renderer from Canvas 2D to Three.js with a perspective camera, neon-lit Hong Kong alleyways, rain, and a Wong Kar-Wai film aesthetic."
+tags: ["Void Breaker", "Technical", "Three.js"]
+---
+
+## A Flat Game in a 3D World
+
+Void Breaker version one was rendered with Canvas 2D. Orthographic camera, looking straight down, flat circles for enemies. It played great — the mechanics were solid, the shard system created tension — but it *looked* like a flash game from 2008. Every time I showed it to someone, I had to say "ignore the graphics, focus on the gameplay." That's a death sentence for a web game. People decide in three seconds whether to stay or bounce.
+
+We needed the visuals to match the ambition of the design.
+
+## Why Wong Kar-Wai?
+
+The aesthetic direction came from an unexpected place. I was rewatching **Fallen Angels** (1995) for probably the fifth time — that opening sequence where the hitman walks through Chungking Mansions, neon leaking through every frame, rain streaking across wide-angle shots, Shirley Kwan singing on the soundtrack. Something clicked.
+
+Arena shooters are always set in "space" or "the void" or some abstract geometric plane. What if ours was set in a *place*? A rain-soaked Hong Kong alley at 3 AM, neon signs buzzing overhead, the ground wet enough to catch their reflections? What if the game felt like a Wong Kar-Wai film — melancholic, beautiful, a little lonely?
+
+It's a weird reference for an arcade shooter. That's exactly why it works.
+
+## The Three.js Migration
+
+Switching from Canvas 2D to Three.js was not incremental. We rewrote the entire renderer from scratch.
+
+The key architectural decision: **keep the game engine unchanged.** The engine operates in 2D coordinates — every entity has an `(x, y)` position on a flat plane. The renderer's job is to map those 2D coordinates into 3D space and make them look incredible. This separation meant we could swap rendering engines without touching a single line of gameplay code.
+
+```typescript
+// Engine stays 2D — simple, fast, deterministic
+player.x += nx * player.speed * dt;
+player.y += ny * player.speed * dt;
+
+// Renderer maps to 3D — all visual complexity lives here
+this.playerGroup.position.set(player.x, 0, player.y);
+this.playerGroup.rotation.y = -player.aimAngle;
+```
+
+The camera switch was the most impactful change. We went from `OrthographicCamera` (flat, no perspective) to `PerspectiveCamera` with a FOV of 50, positioned behind and above the player. The camera follows with smooth lerp, creating that subtle parallax effect as you move — the neon signs on distant walls shift slightly, the rain seems to have depth, the arena feels *large* instead of contained.
+
+## Building the Alley
+
+The arena expanded from a 480-unit circle to a 1600x1000 rectangular space. We lined the edges with tall dark box-geometry "buildings" and mounted neon signs on them — rectangular planes with emissive materials in warm WKW colors: orange, teal, magenta, hot pink.
+
+Each neon sign has a matching `PointLight` that casts a colored pool on the ground below it. The ground itself uses `MeshStandardMaterial` with low roughness and high metalness — just enough to catch the neon light and create that wet-street shimmer that defines the WKW look.
+
+Then we added rain. 500 point particles falling diagonally with slight wind, recycling back to the top when they hit the ground. It's subtle — you barely notice the individual drops — but turn them off and the scene feels dead. Rain is the difference between "dark arena" and "Hong Kong at 3 AM."
+
+## The Film Grain Shader
+
+The final piece was post-processing. Three.js's `EffectComposer` gave us the pipeline: a render pass, then `UnrealBloomPass` for neon glow, then a custom `ShaderPass` for the film look.
+
+The film grain shader does four things:
+
+1. **Animated noise** — subtle grain that shifts every frame, like actual film stock
+2. **Color grading** — warm shadows (slight orange push), cool highlights (teal), creating that split-tone look WKW's cinematographer Christopher Doyle was famous for
+3. **Vignette** — darkening at the edges of the screen, pulling your eye to the center
+4. **Focus intensification** — when bullet-time is active, the grain gets heavier, the vignette gets stronger, everything feels more cinematic
+
+The shader is 15 lines of GLSL. It's one of those cases where a tiny amount of code has an outsized visual impact.
+
+## The Music
+
+Shirley Kwan's 忘记他 (Forget Him) plays in the menu. It fades out when you start playing, fades back in when you die. There's a mute toggle for people who don't want it, but honestly — play the game with the music on at least once. The contrast between her voice and the chaos on screen is something we didn't expect to work as well as it does.
+
+The cover art shows the world we're going for: a man standing in a neon-soaked city, guns drawn, angels falling around him. It's maximalist and cinematic. It's everything an arena shooter usually isn't.
+
+## Was It Worth It?
+
+The 3D overhaul tripled the visual fidelity of the game without changing a single gameplay mechanic. The shard system, the combos, the boss fights — they all play exactly the same. But now they *feel* different. There's weight to the world. When you detonate your shard ring, the explosion lights up the neon signs differently. When you dash, the rain parts around you. When a boss spawns, the neon flickers.
+
+Atmosphere isn't decoration. It's part of the game.

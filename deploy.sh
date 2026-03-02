@@ -6,18 +6,89 @@ REPO_DIR="/home/rmhstudios/rmhstudios.com"
 
 APP_WEB="rmhstudios-web"
 APP_SOCKET="rmhstudios-socket"
-APP_COLLAB="rmhstudios-collab"
 APP_RMHBOX="rmhstudios-rmhbox"
+APP_RMHTUBE="rmhstudios-rmhtube"
 
 PORT_WEB=7005
 PORT_SOCKET=7001
-PORT_COLLAB=7003
 PORT_RMHBOX=7676
+PORT_RMHTUBE=7003
 
 LOCKFILE="/tmp/autodeploy.lock"
+DISCORD_WEBHOOK="https://discord.com/api/webhooks/1477609590005829844/njhHGfYop87DbaGR5o4hCLBnpf3B5ZevYS0BR3kQViEZJktXSjb_SEVtj53WOv0cNxs5"
 
 log() {
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
+}
+
+DEPLOY_MSG_ID=""
+
+get_commit_info() {
+    DEPLOY_SHORT_HASH=$("$GIT_BIN" rev-parse --short HEAD 2>/dev/null || echo "unknown")
+    DEPLOY_COMMIT_MSG=$("$GIT_BIN" log -1 --pretty=%B 2>/dev/null || echo "(no commit message)")
+    # Escape special JSON characters in commit message
+    DEPLOY_COMMIT_MSG=$(echo "$DEPLOY_COMMIT_MSG" | sed 's/\\/\\\\/g; s/"/\\"/g' | tr '\n' ' ')
+}
+
+send_deploy_started() {
+    get_commit_info
+    local payload
+    payload=$(cat <<EOF
+{
+  "embeds": [{
+    "title": "Commit $DEPLOY_SHORT_HASH - deploy started",
+    "description": "$DEPLOY_COMMIT_MSG",
+    "color": 16776960
+  }]
+}
+EOF
+)
+
+    local response
+    response=$(curl -s -H "Content-Type: application/json" -d "$payload" "${DISCORD_WEBHOOK}?wait=true" 2>/dev/null)
+    DEPLOY_MSG_ID=$(echo "$response" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
+
+    if [ -z "$DEPLOY_MSG_ID" ]; then
+        log "WARNING: Failed to send or parse Discord webhook notification."
+    fi
+}
+
+update_deploy_status() {
+    local status="$1"  # "success" or "fail"
+    local reason="$2"  # optional failure reason
+    local color title
+
+    get_commit_info
+
+    if [ "$status" = "success" ]; then
+        color=65280    # green
+        title="Commit $DEPLOY_SHORT_HASH - deploy succeeded"
+    else
+        color=16711680 # red
+        title="Commit $DEPLOY_SHORT_HASH - deploy failed: $reason"
+    fi
+
+    local payload
+    payload=$(cat <<EOF
+{
+  "embeds": [{
+    "title": "$title",
+    "description": "$DEPLOY_COMMIT_MSG",
+    "color": $color
+  }]
+}
+EOF
+)
+
+    if [ -n "$DEPLOY_MSG_ID" ]; then
+        curl -s -X PATCH -H "Content-Type: application/json" \
+            -d "$payload" "${DISCORD_WEBHOOK}/messages/${DEPLOY_MSG_ID}" > /dev/null 2>&1 || \
+            log "WARNING: Failed to edit Discord webhook message."
+    else
+        curl -s -H "Content-Type: application/json" \
+            -d "$payload" "$DISCORD_WEBHOOK" > /dev/null 2>&1 || \
+            log "WARNING: Failed to send Discord webhook notification."
+    fi
 }
 
 export PATH="/home/rmhstudios/.nvm/versions/node/v25.6.1/bin:$PATH"
@@ -27,7 +98,10 @@ PNPM_BIN=$(which pnpm 2>/dev/null) ; PNPM_BIN=${PNPM_BIN:-/home/rmhstudios/.nvm/
 PM2_BIN=$(which pm2 2>/dev/null)   ; PM2_BIN=${PM2_BIN:-/home/rmhstudios/.nvm/versions/node/v25.6.1/bin/pm2}
 NODE_BIN=$(which node 2>/dev/null) ; NODE_BIN=${NODE_BIN:-/home/rmhstudios/.nvm/versions/node/v25.6.1/bin/node}
 
-cleanup() { [ -f "$LOCKFILE" ] && rm -f "$LOCKFILE"; }
+cleanup() {
+    [ -f "$LOCKFILE" ] && rm -f "$LOCKFILE"
+    rm -rf "$REPO_DIR/.next-backup" "$REPO_DIR/dist-server-backup"
+}
 trap cleanup EXIT
 
 check_port() {
@@ -45,12 +119,12 @@ stop_apps() {
     log "Stopping PM2 processes..."
     "$PM2_BIN" stop   "$APP_WEB"    2>/dev/null || true
     "$PM2_BIN" stop   "$APP_SOCKET" 2>/dev/null || true
-    "$PM2_BIN" stop   "$APP_COLLAB" 2>/dev/null || true
     "$PM2_BIN" stop   "$APP_RMHBOX" 2>/dev/null || true
+    "$PM2_BIN" stop   "$APP_RMHTUBE" 2>/dev/null || true
     "$PM2_BIN" delete "$APP_WEB"    2>/dev/null || true
     "$PM2_BIN" delete "$APP_SOCKET" 2>/dev/null || true
-    "$PM2_BIN" delete "$APP_COLLAB" 2>/dev/null || true
     "$PM2_BIN" delete "$APP_RMHBOX" 2>/dev/null || true
+    "$PM2_BIN" delete "$APP_RMHTUBE" 2>/dev/null || true
 }
 
 start_apps() {
@@ -66,14 +140,7 @@ start_apps() {
         --name "$APP_SOCKET" \
         --restart-delay=3000 \
         --max-restarts=5 \
-        -- dist-server/server/socket-server.js
-
-    log "Starting Collab server on port $PORT_COLLAB..."
-    "$PM2_BIN" start "$NODE_BIN" \
-        --name "$APP_COLLAB" \
-        --restart-delay=3000 \
-        --max-restarts=5 \
-        -- dist-server/server/collab-server.js
+        -- dist-server/server/socket-server/index.js
 
     log "Starting RMHbox WebSocket server on port $PORT_RMHBOX..."
     "$PM2_BIN" start "$NODE_BIN" \
@@ -81,6 +148,13 @@ start_apps() {
         --restart-delay=3000 \
         --max-restarts=5 \
         -- dist-server/server/rmhbox/index.js
+
+    log "Starting RmhTube WebSocket server on port $PORT_RMHTUBE..."
+    "$PM2_BIN" start "$NODE_BIN" \
+        --name "$APP_RMHTUBE" \
+        --restart-delay=3000 \
+        --max-restarts=5 \
+        -- dist-server/server/rmhtube/index.js
 
     "$PM2_BIN" save
 }
@@ -101,22 +175,56 @@ if ! "$GIT_BIN" pull "$REMOTE_REPO" "$BRANCH"; then
     exit 1
 fi
 
+send_deploy_started
+
 log "Installing dependencies..."
-"$PNPM_BIN" install --frozen-lockfile --production=false || { log "ERROR: pnpm install failed."; exit 1; }
+"$PNPM_BIN" install --frozen-lockfile --production=false || { log "ERROR: pnpm install failed."; update_deploy_status fail "pnpm install failed"; exit 1; }
 
 log "Syncing database schema..."
 yes | "$PNPM_BIN" run db:push || {
     log "ERROR: Database sync failed."
+    update_deploy_status fail "database sync failed"
     exit 1
 }
 
-log "Building..."
-"$PNPM_BIN" run build || { log "ERROR: Build failed."; exit 1; }
+log "Backing up current build artifacts..."
+[ -d ".next" ]       && cp -a .next .next-backup
+[ -d "dist-server" ] && cp -a dist-server dist-server-backup
 
-[ -d ".next" ] || { log "ERROR: .next missing after build."; exit 1; }
-[ -f "dist-server/server/socket-server.js" ] || { log "ERROR: socket-server.js missing after build."; exit 1; }
-[ -f "dist-server/server/collab-server.js" ] || { log "ERROR: collab-server.js missing after build."; exit 1; }
-[ -f "dist-server/server/rmhbox/index.js" ] || { log "ERROR: rmhbox/index.js missing after build."; exit 1; }
+restore_backup() {
+    log "Restoring previous build artifacts — current servers remain running."
+    if [ -d ".next-backup" ]; then
+        rm -rf .next
+        mv .next-backup .next
+    fi
+    if [ -d "dist-server-backup" ]; then
+        rm -rf dist-server
+        mv dist-server-backup dist-server
+    fi
+}
+
+log "Building..."
+if ! "$PNPM_BIN" run build; then
+    log "ERROR: Build failed."
+    restore_backup
+    update_deploy_status fail "build failed"
+    exit 1
+fi
+
+build_ok=true
+[ -d ".next" ]                                      || { log "ERROR: .next missing after build.";                build_ok=false; }
+[ -f "dist-server/server/socket-server/index.js" ]  || { log "ERROR: socket-server/index.js missing after build."; build_ok=false; }
+[ -f "dist-server/server/rmhbox/index.js" ]          || { log "ERROR: rmhbox/index.js missing after build.";       build_ok=false; }
+[ -f "dist-server/server/rmhtube/index.js" ]         || { log "ERROR: rmhtube/index.js missing after build.";      build_ok=false; }
+
+if [ "$build_ok" != "true" ]; then
+    log "ERROR: Build artifacts incomplete."
+    restore_backup
+    update_deploy_status fail "build artifacts incomplete"
+    exit 1
+fi
+
+rm -rf .next-backup dist-server-backup
 
 log "Build successful. Swapping processes..."
 stop_apps
@@ -125,19 +233,21 @@ start_apps
 ok=0
 check_port "$PORT_WEB"    || ok=1
 check_port "$PORT_SOCKET" || ok=1
-check_port "$PORT_COLLAB" || ok=1
 check_port "$PORT_RMHBOX" || ok=1
+check_port "$PORT_RMHTUBE" || ok=1
 
 if [ $ok -ne 0 ]; then
     log "--- PM2 logs ($APP_WEB) ---"
     "$PM2_BIN" logs "$APP_WEB"    --lines 50 --nostream
     log "--- PM2 logs ($APP_SOCKET) ---"
     "$PM2_BIN" logs "$APP_SOCKET" --lines 50 --nostream
-    log "--- PM2 logs ($APP_COLLAB) ---"
-    "$PM2_BIN" logs "$APP_COLLAB" --lines 50 --nostream
     log "--- PM2 logs ($APP_RMHBOX) ---"
     "$PM2_BIN" logs "$APP_RMHBOX" --lines 50 --nostream
+    log "--- PM2 logs ($APP_RMHTUBE) ---"
+    "$PM2_BIN" logs "$APP_RMHTUBE" --lines 50 --nostream
+    update_deploy_status fail "port health check failed"
     exit 1
 fi
 
-log "=== Deployment complete (web: $PORT_WEB, socket: $PORT_SOCKET, collab: $PORT_COLLAB, rmhbox: $PORT_RMHBOX) ==="
+update_deploy_status success
+log "=== Deployment complete (web: $PORT_WEB, socket: $PORT_SOCKET, rmhbox: $PORT_RMHBOX, rmhtube: $PORT_RMHTUBE) ==="

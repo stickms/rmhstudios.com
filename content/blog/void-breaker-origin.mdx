@@ -1,0 +1,61 @@
+---
+title: "Void Breaker: Building an Arcade Shooter That Doesn't Play It Safe"
+date: "2026-02-20"
+description: "How Void Breaker evolved from a simple arena concept into a neon noir survival shooter with Wong Kar-Wai influences, 3D rendering, and bullet-time."
+tags: ["Void Breaker", "Behind the Scenes"]
+---
+
+## The Problem With Arena Shooters
+
+Every arena shooter feels the same. Move in a circle. Shoot at things. Pick up power-ups. Die. Repeat. The genre peaked somewhere around Geometry Wars and never really pushed past its own conventions. When we started building Void Breaker, the first rule was simple: **don't make another Geometry Wars clone.**
+
+The second rule was harder to articulate. It was more of a feeling — the sense that arcade games had lost their identity somewhere along the way. They'd become so focused on mechanical polish that they forgot games could have *atmosphere*. Could have a mood. Could make you feel something other than the dopamine hit of a high score notification.
+
+## The Shard System: Risk as a Mechanic
+
+The core mechanic of Void Breaker didn't come from other shooters. It came from watching someone play poker.
+
+Think about it: the best moments in poker aren't when you win — they're when you're *deciding whether to go all in*. That tension between holding what you have and risking everything. We wanted to build that into the second-to-second gameplay.
+
+That's the shard system. Every enemy you kill drops void shards that orbit your ship. Each shard increases your score multiplier. At 40 shards, you're running a 5x multiplier — your score is climbing at an absurd rate. But those shards are also your shield, blocking enemy projectiles. And you can detonate them all in a massive Void Burst to clear the screen when things get desperate.
+
+The question is always the same: do you hold, or do you spend?
+
+```typescript
+// The core tension in code — your multiplier IS your defense
+this.shardMultiplier = 1 + player.shards * SHARD_MULT_PER;
+
+// And your defense can become your weapon
+private detonateShield(): void {
+  const blast = DET_BASE_RADIUS + player.shards * DET_RADIUS_PER_SHARD;
+  // Clear everything... but reset your multiplier to 1x
+  player.shards = 0;
+  this.shardMultiplier = 1;
+}
+```
+
+This creates moments that feel genuinely dramatic. You're at 35 shards, multiplier through the roof, score flying — and a boss is closing in with a spread shot. Do you tank it with your shard shield and lose a few? Detonate and survive but crater your multiplier? Or dodge perfectly and keep building?
+
+No other arena shooter asks you that question.
+
+## The Combo System: Rewarding Aggression
+
+Shards reward *survival*. Combos reward *aggression*. We needed both.
+
+The combo system is straightforward: kill enemies in quick succession (within 2 seconds) and your combo multiplier stacks. It caps at 3x, which multiplies on top of your shard multiplier. At maximum everything — 40 shards, high combo — you're running a 15x multiplier. The numbers on screen become absurd. It feels incredible.
+
+But combos decay. Stop killing for two seconds and it resets. So you can't play passively. You can't just circle the arena collecting shards. The game is constantly pushing you forward, into danger, because that's where the points are.
+
+## Boss Fights: Breaking the Wave Pattern
+
+Every 5th wave, the wave counter doesn't increment with normal enemies. Instead, the screen gets a message in Chinese characters — 堕落天使 APPROACHES — and a boss spawns from the edge.
+
+Bosses in Void Breaker aren't damage sponges. They're event creators. The Fallen Seraph fires 5-way spread shots that force you to move. It summons drifter minions that harass you while you're dodging. It's big enough that your shards don't block all its projectiles.
+
+Boss fights are where the shard system shines brightest. Do you keep your multiplier intact through the fight and score huge on the kill? Or do you detonate early to survive a bad pattern?
+
+## What's Next
+
+We shipped the first version of Void Breaker with a flat top-down camera and Canvas 2D rendering. It worked, but it didn't look like the game we saw in our heads. The game we imagined was drenched in rain, lit by neon signs, with a camera that made you feel like you were *in* the alley, not looking down at it from space.
+
+That vision became the 3D overhaul. But that's a story for the next post.

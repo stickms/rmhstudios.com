@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useNotesDataStore } from '@/lib/store/useNotesDataStore';
 import { NoteTag } from './types';
 import { toast } from 'sonner';
 
@@ -14,9 +15,9 @@ interface Props {
 const TAG_COLORS = ['#C17F3A', '#D95B3A', '#3D7A4F', '#5B8FD6', '#8B6FC0', '#E6A817', '#94A3B8'];
 
 export default function TagEditor({ noteTagIds, allTags, onChange, onClose }: Props) {
+  const dataStore = useNotesDataStore();
   const [selected, setSelected] = useState<string[]>(noteTagIds);
   const [newTagName, setNewTagName] = useState('');
-  const [creating, setCreating] = useState(false);
 
   const toggle = (id: string) => {
     const next = selected.includes(id) ? selected.filter((s) => s !== id) : [...selected, id];
@@ -24,23 +25,14 @@ export default function TagEditor({ noteTagIds, allTags, onChange, onClose }: Pr
     onChange(next);
   };
 
-  const createAndAdd = async () => {
+  const createAndAdd = () => {
     if (!newTagName.trim()) return;
-    setCreating(true);
-    const res = await fetch('/api/rmh-notes/tags', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: newTagName.trim(), color: TAG_COLORS[Math.floor(Math.random() * TAG_COLORS.length)] }),
-    });
-    setCreating(false);
-    if (res.ok) {
-      const { tag } = await res.json();
-      const next = [...selected, tag.id];
-      setSelected(next);
-      onChange(next);
-      setNewTagName('');
-      toast.success(`Tag "${tag.name}" created`);
-    }
+    const tag = dataStore.createTag(newTagName.trim(), TAG_COLORS[Math.floor(Math.random() * TAG_COLORS.length)]);
+    const next = [...selected, tag.id];
+    setSelected(next);
+    onChange(next);
+    setNewTagName('');
+    toast.success(`Tag "${tag.name}" created`);
   };
 
   return (
@@ -74,11 +66,10 @@ export default function TagEditor({ noteTagIds, allTags, onChange, onClose }: Pr
         />
         <button
           onClick={createAndAdd}
-          disabled={creating}
           className="text-xs px-2 py-1 rounded"
           style={{ background: 'var(--notes-accent)', color: 'var(--notes-accent-fg)' }}
         >
-          {creating ? '...' : '+ Tag'}
+          + Tag
         </button>
         <button onClick={onClose} className="text-xs" style={{ color: 'var(--notes-text-subtle)' }}>✕</button>
       </div>

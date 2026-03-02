@@ -1,5 +1,7 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  // Skip engine binary — the pg adapter uses the JS-based query engine
+  previewFeatures = ["relationJoins"]
 }
 
 datasource db {
@@ -22,7 +24,9 @@ model User {
   accounts      Account[]
 
   // Game Relations (Progression linked to User)
-  echoesProfile  EchoesPlayer?
+  altairProfile  AltairPlayer?
+  altairCoopProfile AltairCoopProfile?
+  altairMatchPlayers AltairMatchPlayer[]
   laundryProfile LaundryPlayer?
   sliceItProfile Player?
   vegaProfile    VegaPlayer?
@@ -31,7 +35,13 @@ model User {
   neonDriftwayProfile NeonDriftwayPlayer?
   synapseStormProfile SynapseStormPlayer?
   rmhboxProfile  RMHboxProfile?
-  
+  rmhtypeProfiles RmhTypeProfile[]
+  rmhstudyProfile RmhStudyProfile?
+  voidBreakerProfile VoidBreakerPlayer?
+  lightsOutScores LightsOutScore[]
+  versecraftSave  VersecraftSave?
+  versecraftProgress VersecraftProgress?
+
   // Slice-It Library Relations
   uploadedSongs  Song[]        @relation("SongUploader")
   songLikes      SongLike[]
@@ -40,24 +50,27 @@ model User {
   songScores     SongLeaderboard[]
   songPlays      SongPlay[]
 
-  // RMH Code Relations
-  codeProjects   CodeProject[] @relation("CodeProjects")
-  codeFiles      CodeFile[]    @relation("CodeFiles")
-  githubToken    UserGitHubToken?
+  // RmhTube Relations
+  rmhtubeHostedRooms   RmhTubeRoom[]        @relation("RmhTubeHostedRooms")
+  rmhtubeRoomMembers   RmhTubeRoomMember[]
+  rmhtubeQueueItems    RmhTubeQueueItem[]
+  rmhtubePlaylists     RmhTubePlaylist[]
+  rmhtubeStats         RmhTubeUserStats?
 
-  // RMH Notes Relations
-  notes          Note[]
-  noteFolders    NoteFolder[]
-  noteTags       NoteTag[]
-  noteTemplates  NoteTemplate[]
-  noteMoods      NoteMood[]
+  // Site Feedback
+  feedbacks            Feedback[]
 
-  // RMH Job Search Relations
-  jobApplications JobApplication[]
+  // RMHark (Feed) Relations
+  rmharks              RMHark[]
+  rmharkLikes          RMHarkLike[]
+  rmharkComments       RMHarkComment[]
+  rmharkReposts        RMHarkRepost[]
+  rmharkViews          RMHarkView[]
 
-  // RMH Utils (Docs/Sheets/Slides) Relations
-  documents          Document[]
-  docCollaborations  DocumentCollaborator[]
+  // Profile & Social
+  profile              UserProfile?
+  followers            Follow[]    @relation("UserFollowing")
+  following            Follow[]    @relation("UserFollowers")
 
   @@map("user")
 }
@@ -111,22 +124,26 @@ model Verification {
 
 // --- Game Models ---
 
-model EchoesPlayer {
-  id            String   @id @default(uuid())
-  username      String   @unique
-  bestTime      Float    @default(0)
-  totalKills    Int      @default(0)
-  totalXP       Int      @default(0)
-  gamesPlayed   Int      @default(1)
-  updatedAt     DateTime @default(now()) @updatedAt
+model AltairPlayer {
+  id                String   @id @default(uuid())
+  username          String   @unique
+  bestTime          Float    @default(0)
+  totalKills        Int      @default(0)
+  totalXP           Int      @default(0)
+  totalGold         Int      @default(0)
+  totalTimeSurvived Float    @default(0)
+  gamesPlayed       Int      @default(1)
+  updatedAt         DateTime @default(now()) @updatedAt
 
   // Link to Auth User
   userId        String?  @unique
   user          User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([bestTime(sort: Desc)], map: "idx_echoes_best_time")
-  @@index([totalKills(sort: Desc)], map: "idx_echoes_kills")
-  @@index([totalXP(sort: Desc)], map: "idx_echoes_xp")
+  @@index([bestTime(sort: Desc)], map: "idx_altair_best_time")
+  @@index([totalKills(sort: Desc)], map: "idx_altair_kills")
+  @@index([totalXP(sort: Desc)], map: "idx_altair_xp")
+  @@index([totalGold(sort: Desc)], map: "idx_altair_gold")
+  @@index([totalTimeSurvived(sort: Desc)], map: "idx_altair_survival")
 }
 
 model LaundryPlayer {
@@ -141,6 +158,23 @@ model LaundryPlayer {
   user          User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([highScore(sort: Desc)], map: "idx_laundry_high_score")
+}
+
+model LightsOutScore {
+  id        String   @id @default(cuid())
+  userId    String
+  dateKey   String   // YYYY-MM-DD
+  moves     Int      @default(0)
+  hintUsed  Boolean  @default(false)
+  dnf       Boolean  @default(false)
+  createdAt DateTime @default(now()) @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dateKey])
+  @@index([dateKey, moves(sort: Asc)])
+  @@index([dateKey, dnf(sort: Asc)])
+  @@map("lights_out_score")
 }
 
 // Slice It Player Model
@@ -215,6 +249,22 @@ model NeonDriftwayPlayer {
   user          User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([highScore(sort: Desc)], map: "idx_neon_driftway_high_score")
+}
+
+model VoidBreakerPlayer {
+  id            String   @id @default(uuid())
+  username      String   @unique
+  highScore     Int      @default(0)
+  bestWave      Int      @default(0)
+  totalKills    Int      @default(0)
+  bestTimeMs    Int      @default(0)
+  gamesPlayed   Int      @default(1)
+  updatedAt     DateTime @default(now()) @updatedAt
+
+  userId        String?  @unique
+  user          User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([highScore(sort: Desc)], map: "idx_void_breaker_high_score")
 }
 
 // --- Slice-It Music Library Models ---
@@ -419,338 +469,6 @@ model SSPlayerMatch {
   @@index([lobbyId])
   @@map("ss_player_match")
 }
-// --- RMH Code Models ---
-
-model UserGitHubToken {
-  id        String   @id @default(cuid())
-  userId    String   @unique
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  token     String
-  login     String
-  updatedAt DateTime @default(now()) @updatedAt
-}
-
-model CodeProject {
-  id            String     @id @default(cuid())
-  userId        String
-  user          User       @relation("CodeProjects", fields: [userId], references: [id], onDelete: Cascade)
-  name          String
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-  files         CodeFile[]
-
-  // Git tracking
-  gitOwner      String?
-  gitRepo       String?
-  gitBranch     String?    @default("main")
-  gitLastSyncAt DateTime?
-
-  @@index([userId])
-}
-
-model CodeFile {
-  id        String      @id @default(cuid())
-  projectId String
-  project   CodeProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  userId    String
-  user      User        @relation("CodeFiles", fields: [userId], references: [id], onDelete: Cascade)
-  name      String
-  path      String
-  content   String      @db.Text
-  language  String?
-  gitSha    String?
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-
-  @@unique([projectId, path])
-  @@index([projectId])
-  @@index([userId])
-}
-
-// ─── RMH Notes Models ───
-
-model Note {
-  id          String    @id @default(cuid())
-  userId      String
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  title       String    @default("Untitled")
-  content     String    @db.Text @default("{}")
-  color       String?
-  isPinned    Boolean   @default(false)
-  isFavorite  Boolean   @default(false)
-  isArchived  Boolean   @default(false)
-  isDeleted   Boolean   @default(false)
-  deletedAt   DateTime?
-  isLocked    Boolean   @default(false)
-  lockHash    String?
-  folderId    String?
-  folder      NoteFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
-  wordCount   Int       @default(0)
-  charCount   Int       @default(0)
-  sortOrder   Int       @default(0)
-  moodEmoji   String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  tags        NoteTagRelation[]
-  reminders   NoteReminder[]
-  versions    NoteVersion[]
-  shares      NoteShare[]
-
-  @@index([userId])
-  @@index([folderId])
-  @@index([userId, isDeleted])
-  @@index([userId, isArchived])
-  @@index([userId, isPinned])
-  @@map("note")
-}
-
-model NoteFolder {
-  id        String       @id @default(cuid())
-  userId    String
-  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name      String
-  parentId  String?
-  parent    NoteFolder?  @relation("FolderChildren", fields: [parentId], references: [id], onDelete: Cascade)
-  children  NoteFolder[] @relation("FolderChildren")
-  color     String?
-  position  Int          @default(0)
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
-
-  notes     Note[]
-
-  @@index([userId])
-  @@index([parentId])
-  @@map("note_folder")
-}
-
-model NoteTag {
-  id        String            @id @default(cuid())
-  userId    String
-  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name      String
-  color     String?
-  createdAt DateTime          @default(now())
-
-  notes     NoteTagRelation[]
-
-  @@unique([userId, name])
-  @@index([userId])
-  @@map("note_tag")
-}
-
-model NoteTagRelation {
-  noteId    String
-  tagId     String
-  note      Note    @relation(fields: [noteId], references: [id], onDelete: Cascade)
-  tag       NoteTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
-
-  @@id([noteId, tagId])
-  @@map("note_tag_relation")
-}
-
-model NoteReminder {
-  id           String    @id @default(cuid())
-  noteId       String
-  userId       String
-  note         Note      @relation(fields: [noteId], references: [id], onDelete: Cascade)
-  title        String?
-  dueAt        DateTime
-  repeatRule   String?   // "daily" | "weekly" | "monthly" | null
-  isCompleted  Boolean   @default(false)
-  snoozedUntil DateTime?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-
-  @@index([userId])
-  @@index([noteId])
-  @@index([dueAt])
-  @@map("note_reminder")
-}
-
-model NoteVersion {
-  id        String   @id @default(cuid())
-  noteId    String
-  note      Note     @relation(fields: [noteId], references: [id], onDelete: Cascade)
-  content   String   @db.Text
-  title     String
-  createdAt DateTime @default(now())
-
-  @@index([noteId])
-  @@map("note_version")
-}
-
-model NoteShare {
-  id        String    @id @default(cuid())
-  noteId    String
-  note      Note      @relation(fields: [noteId], references: [id], onDelete: Cascade)
-  token     String    @unique @default(cuid())
-  expiresAt DateTime?
-  createdAt DateTime  @default(now())
-
-  @@index([noteId])
-  @@map("note_share")
-}
-
-model NoteTemplate {
-  id        String   @id @default(cuid())
-  userId    String?
-  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name      String
-  content   String   @db.Text
-  isBuiltin Boolean  @default(false)
-  createdAt DateTime @default(now())
-
-  @@index([userId])
-  @@map("note_template")
-}
-
-model NoteMood {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  emoji     String
-  color     String
-  note      String?
-  date      DateTime @default(now()) @db.Date
-
-  @@unique([userId, date])
-  @@index([userId])
-  @@map("note_mood")
-}
-
-// ─── RMH Job Search Models ───
-
-model Job {
-  id          String   @id @default(cuid())
-  title       String
-  company     String
-  description String   @db.Text
-  type        String
-  location    String   @default("Remote")
-  salaryRange String?
-  publishAt   DateTime
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  applications JobApplication[]
-
-  @@index([publishAt])
-  @@index([type])
-  @@map("job")
-}
-
-model JobApplication {
-  id               String    @id @default(cuid())
-  userId           String
-  jobId            String
-  status           String    @default("pending")
-  outcome          String?
-  processAt        DateTime?
-  rejectionMessage String?   @db.Text
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-
-  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  job        Job        @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  assessment Assessment?
-
-  @@unique([userId, jobId])
-  @@index([status])
-  @@index([processAt])
-  @@map("job_application")
-}
-
-model Assessment {
-  id               String    @id @default(cuid())
-  applicationId    String    @unique
-  problemId        String
-  status           String    @default("pending")
-  code             String?   @db.Text
-  language         String?   @default("javascript")
-  startedAt        DateTime?
-  submittedAt      DateTime?
-  evaluationResult String?
-  rejectionMessage String?   @db.Text
-  expiresAt        DateTime
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-
-  application JobApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-
-  @@map("assessment")
-}
-
-// ─── RMH Utils (Docs / Sheets / Slides) ───
-
-enum DocumentType {
-  DOC
-  SHEET
-  SLIDE
-}
-
-enum CollaboratorRole {
-  VIEWER
-  EDITOR
-  OWNER
-}
-
-model Document {
-  id         String       @id @default(cuid())
-  type       DocumentType
-  title      String       @default("Untitled")
-  userId     String
-  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  yjsState   Bytes?
-  metadata   Json?
-
-  isDeleted  Boolean      @default(false)
-  deletedAt  DateTime?
-  isFavorite Boolean      @default(false)
-
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @updatedAt
-
-  collaborators DocumentCollaborator[]
-  versions      DocumentVersion[]
-
-  @@index([userId])
-  @@index([userId, type])
-  @@index([userId, isDeleted])
-  @@map("document")
-}
-
-model DocumentCollaborator {
-  id         String           @id @default(cuid())
-  documentId String
-  document   Document         @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  userId     String
-  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role       CollaboratorRole @default(EDITOR)
-  addedAt    DateTime         @default(now())
-
-  @@unique([documentId, userId])
-  @@index([userId])
-  @@index([documentId])
-  @@map("document_collaborator")
-}
-
-model DocumentVersion {
-  id         String   @id @default(cuid())
-  documentId String
-  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  title      String
-  yjsState   Bytes
-  createdBy  String
-  createdAt  DateTime @default(now())
-
-  @@index([documentId])
-  @@index([documentId, createdAt])
-  @@map("document_version")
-}
-
 // --- RMHbox Models ---
 
 model RMHboxProfile {
@@ -813,3 +531,473 @@ model RMHboxMatchPlayer {
   @@map("rmhbox_match_player")
 }
 
+// ─── RmhTube Models ─────────────────────────────────────────
+
+model RmhTubeRoom {
+  id              String    @id                    // 6-char room code
+  name            String?
+  hostId          String
+  isPublic        Boolean   @default(true)
+  password        String?
+  maxMembers      Int       @default(20)
+  allowMemberQueue Boolean  @default(true)
+  allowMemberSkip  Boolean  @default(true)
+  autoPlay        Boolean   @default(true)
+  scheduledFor    DateTime?
+  description     String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  closedAt        DateTime?
+
+  host     User                  @relation("RmhTubeHostedRooms", fields: [hostId], references: [id])
+  members  RmhTubeRoomMember[]
+  messages RmhTubeChatMessage[]
+  queue    RmhTubeQueueItem[]
+
+  @@index([isPublic, closedAt])
+  @@map("rmhtube_room")
+}
+
+model RmhTubeRoomMember {
+  id       String    @id @default(cuid())
+  roomId   String
+  userId   String
+  joinedAt DateTime  @default(now())
+  leftAt   DateTime?
+
+  room RmhTubeRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user User         @relation(fields: [userId], references: [id])
+
+  @@unique([roomId, userId])
+  @@map("rmhtube_room_member")
+}
+
+model RmhTubeChatMessage {
+  id             String   @id @default(cuid())
+  roomId         String
+  userId         String
+  userName       String
+  content        String
+  replyToId      String?
+  createdAt      DateTime @default(now())
+
+  room    RmhTubeRoom         @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  replyTo RmhTubeChatMessage? @relation("ChatReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies RmhTubeChatMessage[] @relation("ChatReplies")
+
+  @@index([roomId, createdAt])
+  @@map("rmhtube_chat_message")
+}
+
+model RmhTubeQueueItem {
+  id           String    @id @default(cuid())
+  roomId       String
+  url          String
+  mediaType    String
+  title        String
+  duration     Int?
+  thumbnailUrl String?
+  addedById    String
+  addedByName  String
+  position     Int
+  playedAt     DateTime?
+  createdAt    DateTime  @default(now())
+
+  room    RmhTubeRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  addedBy User        @relation(fields: [addedById], references: [id])
+
+  @@index([roomId, position])
+  @@map("rmhtube_queue_item")
+}
+
+model RmhTubePlaylist {
+  id        String   @id @default(cuid())
+  name      String
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User                  @relation(fields: [userId], references: [id])
+  items RmhTubePlaylistItem[]
+
+  @@index([userId])
+  @@map("rmhtube_playlist")
+}
+
+model RmhTubePlaylistItem {
+  id           String  @id @default(cuid())
+  playlistId   String
+  url          String
+  mediaType    String
+  title        String
+  duration     Int?
+  thumbnailUrl String?
+  position     Int
+
+  playlist RmhTubePlaylist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+
+  @@index([playlistId, position])
+  @@map("rmhtube_playlist_item")
+}
+
+model RmhTubeUserStats {
+  userId              String   @id
+  totalWatchTimeMinutes Int    @default(0)
+  videosWatched       Int      @default(0)
+  roomsCreated        Int      @default(0)
+  roomsJoined         Int      @default(0)
+  messagesSent        Int      @default(0)
+  reactionsUsed       Int      @default(0)
+  updatedAt           DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("rmhtube_user_stats")
+}
+
+// ─── RMH Type Models ───────────────────────────────────────
+
+model RmhTypeProfile {
+  id               String   @id @default(cuid())
+  userId           String
+  difficulty       String   @default("medium")
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  totalGamesPlayed Int      @default(0)
+  totalWins        Int      @default(0)
+  bestWpm          Float    @default(0)
+  bestWpmAccuracy  Float    @default(0)
+  avgWpm           Float    @default(0)
+  bestAccuracy     Float    @default(0)
+  avgAccuracy      Float    @default(0)
+  totalCharsTyped  Int      @default(0)
+  totalTimeMs      Int      @default(0)
+  currentStreak    Int      @default(0)
+  bestStreak       Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  matches          RmhTypeMatchPlayer[]
+
+  @@unique([userId, difficulty])
+  @@index([difficulty, bestWpm(sort: Desc)])
+  @@index([totalWins(sort: Desc)])
+  @@map("rmhtype_profile")
+}
+
+model RmhTypeMatch {
+  id            String    @id @default(cuid())
+  roomId        String
+  difficulty    String
+  passageId     String
+  passageLength String
+  rounds        Int
+  startedAt     DateTime  @default(now())
+  endedAt       DateTime?
+  durationMs    Int?
+  winnerUserId  String?
+  playerCount   Int
+  isSolo        Boolean   @default(false)
+  results       Json
+  players       RmhTypeMatchPlayer[]
+
+  @@index([startedAt(sort: Desc)])
+  @@index([winnerUserId])
+  @@map("rmhtype_match")
+}
+
+model RmhTypeMatchPlayer {
+  id        String         @id @default(cuid())
+  matchId   String
+  match     RmhTypeMatch   @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  profileId String
+  profile   RmhTypeProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  userId    String
+  userName  String
+  rank      Int
+  wpm       Float
+  accuracy  Float
+  timeMs    Int
+  score     Int
+  wasWinner Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@unique([matchId, userId])
+  @@index([profileId])
+  @@index([userId])
+  @@index([wpm(sort: Desc)])
+  @@map("rmhtype_match_player")
+}
+
+// ─── RMH Study Models ──────────────────────────────────────
+
+model RmhStudyProfile {
+  id                String    @id @default(cuid())
+  userId            String    @unique
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  totalFocusTimeMs  BigInt    @default(0)
+  sessionsCompleted Int       @default(0)
+  currentStreak     Int       @default(0)
+  longestStreak     Int       @default(0)
+  lastStudyDate     DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  sessions          RmhStudySession[]
+
+  @@index([totalFocusTimeMs(sort: Desc)])
+  @@index([sessionsCompleted(sort: Desc)])
+  @@index([currentStreak(sort: Desc)])
+  @@map("rmhstudy_profile")
+}
+
+model RmhStudySession {
+  id            String          @id @default(cuid())
+  profileId     String
+  profile       RmhStudyProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  userId        String
+  roomId        String?
+  focusTimeMs   Int
+  breakTimeMs   Int
+  sessionsInRun Int
+  startedAt     DateTime        @default(now())
+  endedAt       DateTime?
+
+  @@index([profileId])
+  @@index([userId])
+  @@index([startedAt(sort: Desc)])
+  @@map("rmhstudy_session")
+}
+
+// ─── Versecraft (Poetry VN) ─────────────────────────────────────────
+
+model VersecraftSave {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  saveData  Json
+  updatedAt DateTime @default(now()) @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("versecraft_save")
+}
+
+model VersecraftProgress {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  completedChapters Json     @default("[]")
+  unlockedEndings   Json     @default("[]")
+  completedRoutes   Json     @default("[]")
+  totalPoemsWritten Int      @default(0)
+  totalPlaytime     Int      @default(0)
+  updatedAt         DateTime @default(now()) @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("versecraft_progress")
+}
+
+// ─── Site Feedback ──────────────────────────────────────────────────
+model Feedback {
+  id        String   @id @default(cuid())
+  category  String
+  message   String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt(sort: Desc)])
+  @@map("feedback")
+}
+
+// ─── Altair Multiplayer (Co-op) Models ────────────────────────
+
+model AltairCoopProfile {
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  totalCoopRuns      Int      @default(0)
+  totalCoopWins      Int      @default(0)
+  totalRevivesGiven  Int      @default(0)
+  totalRevivesReceived Int    @default(0)
+  totalCoopKills     Int      @default(0)
+  totalCoopCoins     Int      @default(0)
+  favoriteClassId    String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([totalCoopWins(sort: Desc)])
+  @@index([totalRevivesGiven(sort: Desc)])
+  @@map("altair_coop_profile")
+}
+
+model AltairMatch {
+  id             String    @id @default(cuid())
+  lobbyId        String
+  startedAt      DateTime  @default(now())
+  endedAt        DateTime?
+  durationMs     Int?
+  playerCount    Int
+  doubleTime     Boolean   @default(false)
+  victory        Boolean   @default(false)
+  sharedKills    Int       @default(0)
+  bossesDefeated String[]  @default([])
+  results        Json?
+  players        AltairMatchPlayer[]
+
+  @@index([startedAt(sort: Desc)])
+  @@index([lobbyId])
+  @@map("altair_match")
+}
+
+model AltairMatchPlayer {
+  id              String      @id @default(cuid())
+  matchId         String
+  match           AltairMatch @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userName        String
+  classId         String
+  slot            Int
+  finalLevel      Int         @default(1)
+  kills           Int         @default(0)
+  coinsEarned     Int         @default(0)
+  timeSurvived    Float       @default(0)
+  wasDowned       Boolean     @default(false)
+  wasRevived      Boolean     @default(false)
+  revivesGiven    Int         @default(0)
+  wasAliveAtEnd   Boolean     @default(true)
+  stats           Json        @default("{}")
+  createdAt       DateTime    @default(now())
+
+  @@unique([matchId, userId])
+  @@index([userId])
+  @@index([createdAt(sort: Desc)])
+  @@map("altair_match_player")
+}
+
+// ─── RMHark (Feed) Models ─────────────────────────────────────────
+
+model RMHark {
+  id        String   @id @default(cuid())
+  userId    String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  likes     RMHarkLike[]
+  comments  RMHarkComment[]
+  reposts   RMHarkRepost[]
+  views     RMHarkView[]
+
+  // Self-relation for reposts (quote-repost displays the original inline)
+  originalId String?
+  original   RMHark?  @relation("RMHarkReposts", fields: [originalId], references: [id], onDelete: SetNull)
+  repostedBy RMHark[] @relation("RMHarkReposts")
+
+  @@index([userId])
+  @@index([createdAt(sort: Desc)])
+  @@map("rmheet")
+}
+
+model RMHarkLike {
+  id        String   @id @default(cuid())
+  rmheetId  String
+  userId    String
+  createdAt DateTime @default(now())
+
+  rmhark    RMHark   @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([rmheetId, userId])
+  @@map("rmheet_like")
+}
+
+model RMHarkComment {
+  id        String   @id @default(cuid())
+  rmheetId  String
+  userId    String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  rmhark    RMHark   @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Optional threaded replies
+  parentId  String?
+  parent    RMHarkComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: SetNull)
+  replies   RMHarkComment[] @relation("CommentReplies")
+
+  @@index([rmheetId, createdAt(sort: Desc)])
+  @@map("rmheet_comment")
+}
+
+model RMHarkRepost {
+  id        String   @id @default(cuid())
+  rmheetId  String
+  userId    String
+  createdAt DateTime @default(now())
+
+  rmhark    RMHark   @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([rmheetId, userId])
+  @@map("rmheet_repost")
+}
+
+model RMHarkView {
+  id        String   @id @default(cuid())
+  rmheetId  String
+  userId    String?
+  ipHash    String?
+  createdAt DateTime @default(now())
+
+  rmhark    RMHark   @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([rmheetId, userId])
+  @@unique([rmheetId, ipHash])
+  @@index([rmheetId])
+  @@map("rmheet_view")
+}
+
+// ─── User Profile (Social) ──────────────────────────────────────
+
+model UserProfile {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  displayName         String?  @db.VarChar(50)
+  customImage         String?
+  customImageSizeBytes Int?
+  bio       String?  @db.VarChar(160)
+  location  String?  @db.VarChar(100)
+  website   String?  @db.VarChar(200)
+  showLikes Boolean  @default(false)
+  profileSongSpotifyId  String?  @db.VarChar(50)
+  profileSongTitle      String?  @db.VarChar(200)
+  profileSongArtist     String?  @db.VarChar(200)
+  profileSongPreviewUrl String?  @db.VarChar(500)
+  profileSongAlbumArt   String?  @db.VarChar(500)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("user_profile")
+}
+
+// ─── Follow Relation ─────────────────────────────────────────────
+
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  follower  User @relation("UserFollowers", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("UserFollowing", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+  @@map("follow")
+}

@@ -1,0 +1,6683 @@
+[
+  {
+    "startArticle": {
+      "title": "World_War_II",
+      "url": "https://en.wikipedia.org/wiki/World_War_II",
+      "description": "Global conflict from 1939 to 1945"
+    },
+    "targetArticle": {
+      "title": "Natural_History_Museum,_London",
+      "url": "https://en.wikipedia.org/wiki/Natural_History_Museum,_London",
+      "description": "Museum in South Kensington, London"
+    },
+    "tags": [
+      "generated-smart"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "World_War_II",
+      "A._J._P._Taylor",
+      "London",
+      "Natural_History_Museum,_London"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Chemistry",
+      "url": "https://en.wikipedia.org/wiki/Chemistry",
+      "description": "Scientific study of matter's behavior and properties"
+    },
+    "targetArticle": {
+      "title": "Cartoon",
+      "url": "https://en.wikipedia.org/wiki/Cartoon",
+      "description": "Type of two-dimensional visual art"
+    },
+    "tags": [
+      "generated-smart"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Chemistry",
+      "Ancient_Greek_philosophy",
+      "Raphael",
+      "Cartoon"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Natural_History_Museum,_London",
+      "url": "https://en.wikipedia.org/wiki/Natural_History_Museum,_London",
+      "description": "Museum in South Kensington, London"
+    },
+    "targetArticle": {
+      "title": "Electricity",
+      "url": "https://en.wikipedia.org/wiki/Electricity",
+      "description": "Phenomena related to electric charge"
+    },
+    "tags": [
+      "generated-smart"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Natural_History_Museum,_London",
+      "Albert_Memorial",
+      "Chemistry",
+      "Electricity"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Marine_biology",
+      "url": "https://en.wikipedia.org/wiki/Marine_biology",
+      "description": "Scientific study of ocean life"
+    },
+    "targetArticle": {
+      "title": "Opium_Wars",
+      "url": "https://en.wikipedia.org/wiki/Opium_Wars",
+      "description": "Two 19th-century wars between China and Western powers"
+    },
+    "tags": [
+      "generated-smart"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Marine_biology",
+      "Biotechnology",
+      "China",
+      "Opium_Wars"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Marine_biology",
+      "url": "https://en.wikipedia.org/wiki/Marine_biology",
+      "description": "Scientific study of ocean life"
+    },
+    "targetArticle": {
+      "title": "Parthenon",
+      "url": "https://en.wikipedia.org/wiki/Parthenon",
+      "description": "Temple on the Athenian Acropolis, Greece"
+    },
+    "tags": [
+      "generated-smart"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Marine_biology",
+      "Algae",
+      "Ancient_Greek",
+      "Parthenon"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Plant",
+      "url": "https://en.wikipedia.org/wiki/Plant",
+      "description": "Kingdom of life"
+    },
+    "targetArticle": {
+      "title": "Renaissance_art",
+      "url": "https://en.wikipedia.org/wiki/Renaissance_art",
+      "description": "Visual arts produced during the European Renaissance"
+    },
+    "tags": [
+      "generated-smart"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Plant",
+      "Amber",
+      "Basilicata",
+      "Renaissance_art"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Renaissance_art",
+      "url": "https://en.wikipedia.org/wiki/Renaissance_art",
+      "description": "Visual arts produced during the European Renaissance"
+    },
+    "targetArticle": {
+      "title": "Heart",
+      "url": "https://en.wikipedia.org/wiki/Heart",
+      "description": "Muscular organ that pumps blood through the circulatory system"
+    },
+    "tags": [
+      "generated-smart"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Renaissance_art",
+      "Albrecht_Dürer",
+      "Anatomy",
+      "Heart"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Chemistry",
+      "url": "https://en.wikipedia.org/wiki/Chemistry",
+      "description": "Scientific study of matter's behavior and properties"
+    },
+    "targetArticle": {
+      "title": "Opium_Wars",
+      "url": "https://en.wikipedia.org/wiki/Opium_Wars",
+      "description": "Two 19th-century wars between China and Western powers"
+    },
+    "tags": [
+      "generated-smart"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Chemistry",
+      "Ancient_Egypt",
+      "Opium",
+      "Opium_Wars"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Cell_biology",
+      "url": "https://en.wikipedia.org/wiki/Cell_biology",
+      "description": "Branch of biology that studies cells"
+    },
+    "targetArticle": {
+      "title": "Opium_Wars",
+      "url": "https://en.wikipedia.org/wiki/Opium_Wars",
+      "description": "Two 19th-century wars between China and Western powers"
+    },
+    "tags": [
+      "generated-smart"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Cell_biology",
+      "Cork_(material)",
+      "China",
+      "Opium_Wars"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Animal",
+      "url": "https://en.wikipedia.org/wiki/Animal",
+      "description": "Kingdom of life"
+    },
+    "targetArticle": {
+      "title": "Art_history",
+      "url": "https://en.wikipedia.org/wiki/Art_history",
+      "description": "Academic study"
+    },
+    "tags": [
+      "generated-smart"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Animal",
+      "Albrecht_Dürer",
+      "Erwin_Panofsky",
+      "Art_history"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Marine_biology",
+      "url": "https://en.wikipedia.org/wiki/Marine_biology",
+      "description": "Scientific study of ocean life"
+    },
+    "targetArticle": {
+      "title": "Art_history",
+      "url": "https://en.wikipedia.org/wiki/Art_history",
+      "description": "Academic study"
+    },
+    "tags": [
+      "generated-smart"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Marine_biology",
+      "Aristotle",
+      "Karl_Marx",
+      "Art_history"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Cell_biology",
+      "url": "https://en.wikipedia.org/wiki/Cell_biology",
+      "description": "Branch of biology that studies cells"
+    },
+    "targetArticle": {
+      "title": "Parthenon",
+      "url": "https://en.wikipedia.org/wiki/Parthenon",
+      "description": "Temple on the Athenian Acropolis, Greece"
+    },
+    "tags": [
+      "generated-smart"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Cell_biology",
+      "Algae",
+      "Ancient_Greek",
+      "Parthenon"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Earthquake",
+      "url": "https://en.wikipedia.org/wiki/Earthquake",
+      "description": "Sudden shaking of Earth's surface"
+    },
+    "targetArticle": {
+      "title": "Heart",
+      "url": "https://en.wikipedia.org/wiki/Heart",
+      "description": "Muscular organ that pumps blood through the circulatory system"
+    },
+    "tags": [
+      "generated-smart"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Earthquake",
+      "2011_Tōhoku_earthquake_and_tsunami",
+      "Telemetry",
+      "Heart"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Photosynthesis",
+      "url": "https://en.wikipedia.org/wiki/Photosynthesis",
+      "description": "Process used by plants to convert light into energy"
+    },
+    "targetArticle": {
+      "title": "Amazon_rainforest",
+      "url": "https://en.wikipedia.org/wiki/Amazon_rainforest",
+      "description": "Largest tropical rainforest in the world"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "science",
+      "nature"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Photosynthesis",
+      "Algae",
+      "Iron_fertilization",
+      "Amazon_rainforest"
+    ]
+  },
+  {
+    "startArticle": {
+      "title": "Aqueduct",
+      "url": "https://en.wikipedia.org/wiki/Aqueduct",
+      "description": "Topics referred to by the same term"
+    },
+    "targetArticle": {
+      "title": "Water",
+      "url": "https://en.wikipedia.org/wiki/Water",
+      "description": "Chemical compound of hydrogen and oxygen"
+    },
+    "tags": [
+      "generated"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Aqueduct",
+      "Acequia",
+      "Flume",
+      "Water"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Toothbrush",
+      "url": "https://en.wikipedia.org/wiki/Toothbrush",
+      "description": "Oral hygiene tool"
+    },
+    "targetArticle": {
+      "title": "Quantum_mechanics",
+      "url": "https://en.wikipedia.org/wiki/Quantum_mechanics",
+      "description": "Fundamental theory describing nature at atomic scales"
+    },
+    "tags": [
+      "generated"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Toothbrush",
+      "Bacteria",
+      "Electron",
+      "Quantum_mechanics"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Tape",
+      "url": "https://en.wikipedia.org/wiki/Tape",
+      "description": "Topics referred to by the same term"
+    },
+    "targetArticle": {
+      "title": "Cryptography",
+      "url": "https://en.wikipedia.org/wiki/Cryptography",
+      "description": "Practice and study of secure communication techniques"
+    },
+    "tags": [
+      "generated"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Tape",
+      "Duct_tape",
+      "World_War_II",
+      "Cryptography"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Rubber_band",
+      "url": "https://en.wikipedia.org/wiki/Rubber_band",
+      "description": "Short circular highly elastic rubber loop"
+    },
+    "targetArticle": {
+      "title": "Genetics",
+      "url": "https://en.wikipedia.org/wiki/Genetics",
+      "description": "Science of genes, heredity and variation"
+    },
+    "tags": [
+      "generated"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Rubber_band",
+      "Animal_husbandry",
+      "Agriculture",
+      "Genetics"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Envelope",
+      "url": "https://en.wikipedia.org/wiki/Envelope",
+      "description": "Stationery item used for flat mail"
+    },
+    "targetArticle": {
+      "title": "Anthropology",
+      "url": "https://en.wikipedia.org/wiki/Anthropology",
+      "description": "Scientific study of humans, human behavior, and societies"
+    },
+    "tags": [
+      "generated"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Envelope",
+      "Germany",
+      "Ethnogenesis",
+      "Anthropology"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Folder",
+      "url": "https://en.wikipedia.org/wiki/Folder",
+      "description": "Topics referred to by the same term"
+    },
+    "targetArticle": {
+      "title": "Linguistics",
+      "url": "https://en.wikipedia.org/wiki/Linguistics",
+      "description": "Scientific study of language"
+    },
+    "tags": [
+      "generated"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Folder",
+      "Folding_kayak",
+      "Yupik_peoples",
+      "Linguistics"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Lamp",
+      "url": "https://en.wikipedia.org/wiki/Lamp",
+      "description": "Topics referred to by the same term"
+    },
+    "targetArticle": {
+      "title": "Metaphysics",
+      "url": "https://en.wikipedia.org/wiki/Metaphysics",
+      "description": "Study of fundamental reality"
+    },
+    "tags": [
+      "generated"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Lamp",
+      "Oil_lamp",
+      "Temple",
+      "Metaphysics"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Curtain",
+      "url": "https://en.wikipedia.org/wiki/Curtain",
+      "description": "Cloth or other material used to block out light"
+    },
+    "targetArticle": {
+      "title": "Semiotics",
+      "url": "https://en.wikipedia.org/wiki/Semiotics",
+      "description": "Study of signs"
+    },
+    "tags": [
+      "generated"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Curtain",
+      "Door",
+      "Allegory",
+      "Semiotics"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Lock",
+      "url": "https://en.wikipedia.org/wiki/Lock",
+      "description": "Topics referred to by the same term"
+    },
+    "targetArticle": {
+      "title": "Cryptanalysis",
+      "url": "https://en.wikipedia.org/wiki/Cryptanalysis",
+      "description": "Study of analyzing information systems in order to discover their hidden aspects"
+    },
+    "tags": [
+      "generated"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Lock",
+      "Lock_(water_navigation)",
+      "Milton_Keynes",
+      "Cryptanalysis"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Easel",
+      "url": "https://en.wikipedia.org/wiki/Easel",
+      "description": "Upright frame for holding or displaying"
+    },
+    "targetArticle": {
+      "title": "Woodworking",
+      "url": "https://en.wikipedia.org/wiki/Woodworking",
+      "description": "Process of making objects from wood"
+    },
+    "tags": [
+      "generated"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Easel",
+      "Art_exhibition",
+      "Frame_and_panel",
+      "Woodworking"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Stool",
+      "url": "https://en.wikipedia.org/wiki/Stool",
+      "description": "Topics referred to by the same term"
+    },
+    "targetArticle": {
+      "title": "Industrial_design",
+      "url": "https://en.wikipedia.org/wiki/Industrial_design",
+      "description": "Process of design"
+    },
+    "tags": [
+      "generated"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Stool",
+      "Footstool",
+      "Chair",
+      "Industrial_design"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Hanger",
+      "url": "https://en.wikipedia.org/wiki/Hanger",
+      "description": "Topics referred to by the same term"
+    },
+    "targetArticle": {
+      "title": "Fashion_design",
+      "url": "https://en.wikipedia.org/wiki/Fashion_design",
+      "description": "Art of applying design and aesthetics to clothing and accessories"
+    },
+    "tags": [
+      "generated"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Hanger",
+      "Breast",
+      "Feminism",
+      "Fashion_design"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Mantis_shrimp",
+      "url": "https://en.wikipedia.org/wiki/Mantis_shrimp",
+      "description": "Marine crustacean known for powerful punching appendages"
+    },
+    "targetArticle": {
+      "title": "Boxing",
+      "url": "https://en.wikipedia.org/wiki/Boxing",
+      "description": "Combat sport of fighting with fists"
+    },
+    "tags": [
+      "animals",
+      "sports"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Mantis_shrimp",
+      "Adriatic_Sea",
+      "Ancient_Rome",
+      "Boxing"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Sloth",
+      "url": "https://en.wikipedia.org/wiki/Sloth",
+      "description": "Slow-moving arboreal mammal"
+    },
+    "targetArticle": {
+      "title": "Speed_of_light",
+      "url": "https://en.wikipedia.org/wiki/Speed_of_light",
+      "description": "Ultimate speed limit of the universe: ~299,792 km/s"
+    },
+    "tags": [
+      "animals",
+      "physics"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Sloth",
+      "Arthropod",
+      "Acceleration",
+      "Speed_of_light"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Schrödinger's_cat",
+      "url": "https://en.wikipedia.org/wiki/Schrödinger's_cat",
+      "description": "Thought experiment in quantum mechanics"
+    },
+    "targetArticle": {
+      "title": "Internet_meme",
+      "url": "https://en.wikipedia.org/wiki/Internet_meme",
+      "description": "Piece of media that spreads rapidly online"
+    },
+    "tags": [
+      "science",
+      "culture"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Schrödinger's_cat",
+      "Cat",
+      "Cats_and_the_Internet",
+      "Internet_meme"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "CRISPR",
+      "url": "https://en.wikipedia.org/wiki/CRISPR",
+      "description": "Gene-editing technology for modifying DNA sequences"
+    },
+    "targetArticle": {
+      "title": "Frankenstein",
+      "url": "https://en.wikipedia.org/wiki/Frankenstein",
+      "description": "Mary Shelley's 1818 novel about a scientist's creation"
+    },
+    "tags": [
+      "science",
+      "literature"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "CRISPR",
+      "Evolution",
+      "Erasmus_Darwin",
+      "Frankenstein"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Antimatter",
+      "url": "https://en.wikipedia.org/wiki/Antimatter",
+      "description": "Material composed of antiparticles of ordinary matter"
+    },
+    "targetArticle": {
+      "title": "Star_Trek",
+      "url": "https://en.wikipedia.org/wiki/Star_Trek",
+      "description": "Science fiction franchise created by Gene Roddenberry"
+    },
+    "tags": [
+      "science",
+      "pop culture"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Antimatter",
+      "Angels_&_Demons",
+      "Pocket_Books",
+      "Star_Trek"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Speed_of_light",
+      "url": "https://en.wikipedia.org/wiki/Speed_of_light",
+      "description": "Ultimate speed limit of the universe: ~299,792 km/s"
+    },
+    "targetArticle": {
+      "title": "Eiffel_Tower",
+      "url": "https://en.wikipedia.org/wiki/Eiffel_Tower",
+      "description": "Iron lattice tower on the Champ de Mars in Paris"
+    },
+    "tags": [
+      "science",
+      "landmarks"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Speed_of_light",
+      "Albert_A._Michelson",
+      "United_States_Naval_Observatory",
+      "Eiffel_Tower"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Steam_engine",
+      "url": "https://en.wikipedia.org/wiki/Steam_engine",
+      "description": "Heat engine performing mechanical work using steam"
+    },
+    "targetArticle": {
+      "title": "Tea",
+      "url": "https://en.wikipedia.org/wiki/Tea",
+      "description": "Aromatic beverage prepared by pouring hot water over leaves"
+    },
+    "tags": [
+      "technology",
+      "food"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Steam_engine",
+      "Boiler",
+      "Electric_water_boiler",
+      "Tea"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Excalibur",
+      "url": "https://en.wikipedia.org/wiki/Excalibur",
+      "description": "Legendary sword of King Arthur"
+    },
+    "targetArticle": {
+      "title": "Metallurgy",
+      "url": "https://en.wikipedia.org/wiki/Metallurgy",
+      "description": "Science of extracting and processing metals"
+    },
+    "tags": [
+      "mythology",
+      "science"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Excalibur",
+      "Breton_language",
+      "Brittany",
+      "Metallurgy"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Ouroboros",
+      "url": "https://en.wikipedia.org/wiki/Ouroboros",
+      "description": "Ancient symbol of a serpent eating its own tail"
+    },
+    "targetArticle": {
+      "title": "Infinity",
+      "url": "https://en.wikipedia.org/wiki/Infinity",
+      "description": "Concept of something without any limit"
+    },
+    "tags": [
+      "mythology",
+      "mathematics"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Ouroboros",
+      "Alchemy",
+      "Al-Kindi",
+      "Infinity"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Fencing",
+      "url": "https://en.wikipedia.org/wiki/Fencing",
+      "description": "Combat sport involving sword fighting"
+    },
+    "targetArticle": {
+      "title": "Musketeer",
+      "url": "https://en.wikipedia.org/wiki/Musketeer",
+      "description": "Soldier armed with a musket"
+    },
+    "tags": [
+      "sports",
+      "history"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Fencing",
+      "Aristocracy",
+      "English_Civil_War",
+      "Musketeer"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Haggis",
+      "url": "https://en.wikipedia.org/wiki/Haggis",
+      "description": "Traditional Scottish savory pudding"
+    },
+    "targetArticle": {
+      "title": "International_Space_Station",
+      "url": "https://en.wikipedia.org/wiki/International_Space_Station",
+      "description": "Modular space station in low Earth orbit"
+    },
+    "tags": [
+      "chaos"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Haggis",
+      "Adzuki_bean",
+      "Japan",
+      "International_Space_Station"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Narwhal",
+      "url": "https://en.wikipedia.org/wiki/Narwhal",
+      "description": "Arctic whale with a long spiral tusk"
+    },
+    "targetArticle": {
+      "title": "Bitcoin",
+      "url": "https://en.wikipedia.org/wiki/Bitcoin",
+      "description": "Decentralized digital cryptocurrency"
+    },
+    "tags": [
+      "chaos"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Narwhal",
+      "Gold",
+      "Currency",
+      "Bitcoin"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Capybara",
+      "url": "https://en.wikipedia.org/wiki/Capybara",
+      "description": "World's largest living rodent"
+    },
+    "targetArticle": {
+      "title": "Mona_Lisa",
+      "url": "https://en.wikipedia.org/wiki/Mona_Lisa",
+      "description": "Leonardo da Vinci's famous portrait in the Louvre"
+    },
+    "tags": [
+      "chaos"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Capybara",
+      "Buenos_Aires",
+      "Conceptual_art",
+      "Mona_Lisa"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Fondue",
+      "url": "https://en.wikipedia.org/wiki/Fondue",
+      "description": "Swiss dish of melted cheese served in a communal pot"
+    },
+    "targetArticle": {
+      "title": "Cleopatra",
+      "url": "https://en.wikipedia.org/wiki/Cleopatra",
+      "description": "Last active ruler of the Ptolemaic Kingdom of Egypt"
+    },
+    "tags": [
+      "chaos"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Fondue",
+      "Asterix_in_Switzerland",
+      "Ancient_Rome",
+      "Cleopatra"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Wasabi",
+      "url": "https://en.wikipedia.org/wiki/Wasabi",
+      "description": "Pungent Japanese condiment from the Brassicaceae family"
+    },
+    "targetArticle": {
+      "title": "Nikola_Tesla",
+      "url": "https://en.wikipedia.org/wiki/Nikola_Tesla",
+      "description": "Serbian-American inventor and electrical engineer"
+    },
+    "tags": [
+      "chaos"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Wasabi",
+      "Canada",
+      "Klondike_Gold_Rush",
+      "Nikola_Tesla"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Origami",
+      "url": "https://en.wikipedia.org/wiki/Origami",
+      "description": "Japanese art of paper folding"
+    },
+    "targetArticle": {
+      "title": "Dynamite",
+      "url": "https://en.wikipedia.org/wiki/Dynamite",
+      "description": "Explosive invented by Alfred Nobel"
+    },
+    "tags": [
+      "chaos"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Origami",
+      "Alhambra",
+      "Gunpowder_magazine",
+      "Dynamite"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Carousel",
+      "url": "https://en.wikipedia.org/wiki/Carousel",
+      "description": "Amusement ride with rotating seats or animal figures"
+    },
+    "targetArticle": {
+      "title": "Entropy",
+      "url": "https://en.wikipedia.org/wiki/Entropy",
+      "description": "Measure of disorder in a thermodynamic system"
+    },
+    "tags": [
+      "chaos"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Carousel",
+      "Alfred_Hitchcock",
+      "Cold_War",
+      "Entropy"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Theremin",
+      "url": "https://en.wikipedia.org/wiki/Theremin",
+      "description": "Electronic musical instrument played without physical contact"
+    },
+    "targetArticle": {
+      "title": "Sparta",
+      "url": "https://en.wikipedia.org/wiki/Sparta",
+      "description": "City-state in ancient Greece"
+    },
+    "tags": [
+      "chaos"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Theremin",
+      "Arduino",
+      "Do_it_yourself",
+      "Sparta"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Hourglass",
+      "url": "https://en.wikipedia.org/wiki/Hourglass",
+      "description": "Device measuring time by trickling sand"
+    },
+    "targetArticle": {
+      "title": "CRISPR",
+      "url": "https://en.wikipedia.org/wiki/CRISPR",
+      "description": "Gene-editing technology for modifying DNA sequences"
+    },
+    "tags": [
+      "chaos"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Hourglass",
+      "Autonomous_Region_of_Bougainville",
+      "Theobroma_cacao",
+      "CRISPR"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Volcano",
+      "url": "https://en.wikipedia.org/wiki/Volcano",
+      "description": "Rupture in Earth's crust allowing lava and gases to escape"
+    },
+    "targetArticle": {
+      "title": "Tetris",
+      "url": "https://en.wikipedia.org/wiki/Tetris",
+      "description": "Tile-matching puzzle game originally designed in the USSR"
+    },
+    "tags": [
+      "chaos"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Volcano",
+      "Groundwater",
+      "Adsorption",
+      "Tetris"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Tornado",
+      "url": "https://en.wikipedia.org/wiki/Tornado",
+      "description": "Violently rotating column of air extending from a thunderstorm"
+    },
+    "targetArticle": {
+      "title": "Sewing_machine",
+      "url": "https://en.wikipedia.org/wiki/Sewing_machine",
+      "description": "Machine used to stitch fabric"
+    },
+    "tags": [
+      "chaos"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Tornado",
+      "Anemometer",
+      "Pulse-width_modulation",
+      "Sewing_machine"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Metronome",
+      "url": "https://en.wikipedia.org/wiki/Metronome",
+      "description": "Device producing regular ticks to mark musical tempo"
+    },
+    "targetArticle": {
+      "title": "Antarctica",
+      "url": "https://en.wikipedia.org/wiki/Antarctica",
+      "description": "Earth's southernmost continent, mostly covered by ice"
+    },
+    "tags": [
+      "chaos"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Metronome",
+      "Al-Andalus",
+      "Aristotle",
+      "Antarctica"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Pompeii",
+      "url": "https://en.wikipedia.org/wiki/Pompeii",
+      "description": "Roman city buried by the eruption of Mount Vesuvius in 79 AD"
+    },
+    "targetArticle": {
+      "title": "Magna_Carta",
+      "url": "https://en.wikipedia.org/wiki/Magna_Carta",
+      "description": "1215 charter of rights agreed by King John of England"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Pompeii",
+      "1996_World_Monuments_Watch",
+      "Ireland",
+      "Magna_Carta"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Shadow_play",
+      "url": "https://en.wikipedia.org/wiki/Shadow_play",
+      "description": "Ancient form of storytelling using flat articulated figures"
+    },
+    "targetArticle": {
+      "title": "Sauerkraut",
+      "url": "https://en.wikipedia.org/wiki/Sauerkraut",
+      "description": "German fermented cabbage dish"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Shadow_play",
+      "China",
+      "Chinese_Islamic_cuisine",
+      "Sauerkraut"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Crusades",
+      "url": "https://en.wikipedia.org/wiki/Crusades",
+      "description": "Series of religious wars sanctioned by the Latin Church"
+    },
+    "targetArticle": {
+      "title": "Placebo",
+      "url": "https://en.wikipedia.org/wiki/Placebo",
+      "description": "Inactive treatment given to test the effect of real treatments"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Crusades",
+      "Al-Andalus",
+      "Medication",
+      "Placebo"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Handball",
+      "url": "https://en.wikipedia.org/wiki/Handball",
+      "description": "Team sport with two teams of seven players each"
+    },
+    "targetArticle": {
+      "title": "Higgs_boson",
+      "url": "https://en.wikipedia.org/wiki/Higgs_boson",
+      "description": "Elementary particle giving mass to other particles"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Handball",
+      "Denmark",
+      "CERN",
+      "Higgs_boson"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Harry_Potter",
+      "url": "https://en.wikipedia.org/wiki/Harry_Potter",
+      "description": "Fantasy novel series by J. K. Rowling"
+    },
+    "targetArticle": {
+      "title": "Fondue",
+      "url": "https://en.wikipedia.org/wiki/Fondue",
+      "description": "Swiss dish of melted cheese served in a communal pot"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Harry_Potter",
+      "Afrikaans",
+      "Patagonia",
+      "Fondue"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Coral_reef",
+      "url": "https://en.wikipedia.org/wiki/Coral_reef",
+      "description": "Underwater ecosystem built by colonies of coral polyps"
+    },
+    "targetArticle": {
+      "title": "Transylvania",
+      "url": "https://en.wikipedia.org/wiki/Transylvania",
+      "description": "Historical region in central Romania"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Coral_reef",
+      "Amazon_River",
+      "Scythians",
+      "Transylvania"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Stonehenge",
+      "url": "https://en.wikipedia.org/wiki/Stonehenge",
+      "description": "Prehistoric stone circle monument in Wiltshire, England"
+    },
+    "targetArticle": {
+      "title": "Bioluminescence",
+      "url": "https://en.wikipedia.org/wiki/Bioluminescence",
+      "description": "Production of light by living organisms"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Stonehenge",
+      "Charles_Darwin",
+      "Beetle",
+      "Bioluminescence"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Berlin_Wall",
+      "url": "https://en.wikipedia.org/wiki/Berlin_Wall",
+      "description": "Barrier dividing East and West Berlin (1961-1989)"
+    },
+    "targetArticle": {
+      "title": "Eclipse",
+      "url": "https://en.wikipedia.org/wiki/Eclipse",
+      "description": "Astronomical event where one body obscures another"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Berlin_Wall",
+      "Austria",
+      "Maximilian_I,_Holy_Roman_Emperor",
+      "Eclipse"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Frida_Kahlo",
+      "url": "https://en.wikipedia.org/wiki/Frida_Kahlo",
+      "description": "Mexican painter known for self-portraits and folk art influences"
+    },
+    "targetArticle": {
+      "title": "Centaur",
+      "url": "https://en.wikipedia.org/wiki/Centaur",
+      "description": "Mythological creature with upper body of human, lower body of horse"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Frida_Kahlo",
+      "Découvertes_Gallimard",
+      "Astrological_sign",
+      "Centaur"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Utopia",
+      "url": "https://en.wikipedia.org/wiki/Utopia",
+      "description": "Imagined community with highly desirable qualities"
+    },
+    "targetArticle": {
+      "title": "Tiramisu",
+      "url": "https://en.wikipedia.org/wiki/Tiramisu",
+      "description": "Italian coffee-flavored dessert"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Utopia",
+      "Corfu",
+      "Venice",
+      "Tiramisu"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Pretzel",
+      "url": "https://en.wikipedia.org/wiki/Pretzel",
+      "description": "Baked bread product twisted into a knot shape"
+    },
+    "targetArticle": {
+      "title": "Theory_of_relativity",
+      "url": "https://en.wikipedia.org/wiki/Theory_of_relativity",
+      "description": "Einstein's theories of special and general relativity"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Pretzel",
+      "Austria",
+      "Ernst_Mach",
+      "Theory_of_relativity"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Handball",
+      "url": "https://en.wikipedia.org/wiki/Handball",
+      "description": "Team sport with two teams of seven players each"
+    },
+    "targetArticle": {
+      "title": "Amber",
+      "url": "https://en.wikipedia.org/wiki/Amber",
+      "description": "Fossilized tree resin prized as a gemstone"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Handball",
+      "Aluminium",
+      "Gemstone",
+      "Amber"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Fondue",
+      "url": "https://en.wikipedia.org/wiki/Fondue",
+      "description": "Swiss dish of melted cheese served in a communal pot"
+    },
+    "targetArticle": {
+      "title": "Typewriter",
+      "url": "https://en.wikipedia.org/wiki/Typewriter",
+      "description": "Mechanical device for writing characters on paper"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Fondue",
+      "Betty_Crocker",
+      "Spanish_language",
+      "Typewriter"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Mochi",
+      "url": "https://en.wikipedia.org/wiki/Mochi",
+      "description": "Japanese rice cake made from glutinous rice"
+    },
+    "targetArticle": {
+      "title": "Bioluminescence",
+      "url": "https://en.wikipedia.org/wiki/Bioluminescence",
+      "description": "Production of light by living organisms"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Mochi",
+      "Cholesterol",
+      "Bacteria",
+      "Bioluminescence"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Gymnastics",
+      "url": "https://en.wikipedia.org/wiki/Gymnastics",
+      "description": "Sport requiring strength and flexibility"
+    },
+    "targetArticle": {
+      "title": "Chernobyl",
+      "url": "https://en.wikipedia.org/wiki/Chernobyl",
+      "description": "Site of the 1986 nuclear disaster in Ukraine"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Gymnastics",
+      "Aesthetic_group_gymnastics",
+      "Ukraine",
+      "Chernobyl"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Judo",
+      "url": "https://en.wikipedia.org/wiki/Judo",
+      "description": "Japanese martial art emphasizing throws and grappling"
+    },
+    "targetArticle": {
+      "title": "Electromagnetism",
+      "url": "https://en.wikipedia.org/wiki/Electromagnetism",
+      "description": "Fundamental force governing electric and magnetic fields"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Judo",
+      "2014_Commonwealth_Games",
+      "Edinburgh",
+      "Electromagnetism"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Industrial_Revolution",
+      "url": "https://en.wikipedia.org/wiki/Industrial_Revolution",
+      "description": "Transition to new manufacturing processes in the 18th-19th centuries"
+    },
+    "targetArticle": {
+      "title": "Parrot",
+      "url": "https://en.wikipedia.org/wiki/Parrot",
+      "description": "Colorful tropical bird that can mimic speech"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Industrial_Revolution",
+      "Age_of_Discovery",
+      "Juan_Sebastián_Elcano",
+      "Parrot"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Kaleidoscope",
+      "url": "https://en.wikipedia.org/wiki/Kaleidoscope",
+      "description": "Optical instrument creating symmetrical patterns from reflections"
+    },
+    "targetArticle": {
+      "title": "Sauerkraut",
+      "url": "https://en.wikipedia.org/wiki/Sauerkraut",
+      "description": "German fermented cabbage dish"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Kaleidoscope",
+      "Ancient_Greek",
+      "Netherlands",
+      "Sauerkraut"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Permafrost",
+      "url": "https://en.wikipedia.org/wiki/Permafrost",
+      "description": "Ground remaining frozen for two or more consecutive years"
+    },
+    "targetArticle": {
+      "title": "Werewolf",
+      "url": "https://en.wikipedia.org/wiki/Werewolf",
+      "description": "Mythological human with the ability to shapeshift into a wolf"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Permafrost",
+      "Altai_Mountains",
+      "Wolf",
+      "Werewolf"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Viking_Age",
+      "url": "https://en.wikipedia.org/wiki/Viking_Age",
+      "description": "Period of Norse expansion from the 8th to 11th centuries"
+    },
+    "targetArticle": {
+      "title": "Phoenix_(mythology)",
+      "url": "https://en.wikipedia.org/wiki/Phoenix_(mythology)",
+      "description": "Mythical bird that is reborn from its own ashes"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Viking_Age",
+      "Age_of_Enlightenment",
+      "Natural_philosophy",
+      "Phoenix_(mythology)"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Hippopotamus",
+      "url": "https://en.wikipedia.org/wiki/Hippopotamus",
+      "description": "Large semi-aquatic mammal native to sub-Saharan Africa"
+    },
+    "targetArticle": {
+      "title": "Sextant",
+      "url": "https://en.wikipedia.org/wiki/Sextant",
+      "description": "Navigation instrument for measuring angular distances"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Hippopotamus",
+      "Ancient_Greece",
+      "Islamic_Golden_Age",
+      "Sextant"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Rubber_duck",
+      "url": "https://en.wikipedia.org/wiki/Rubber_duck",
+      "description": "Yellow toy bath duck, a pop culture icon"
+    },
+    "targetArticle": {
+      "title": "Viking_Age",
+      "url": "https://en.wikipedia.org/wiki/Viking_Age",
+      "description": "Period of Norse expansion from the 8th to 11th centuries"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Rubber_duck",
+      "Alaska",
+      "Indo-European_languages",
+      "Viking_Age"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Sistine_Chapel",
+      "url": "https://en.wikipedia.org/wiki/Sistine_Chapel",
+      "description": "Chapel in Vatican City with Michelangelo's ceiling frescoes"
+    },
+    "targetArticle": {
+      "title": "Earthquake",
+      "url": "https://en.wikipedia.org/wiki/Earthquake",
+      "description": "Sudden shaking of Earth's surface"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Sistine_Chapel",
+      "1508",
+      "December_16",
+      "Earthquake"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Tofu",
+      "url": "https://en.wikipedia.org/wiki/Tofu",
+      "description": "Soy-based food of Chinese origin"
+    },
+    "targetArticle": {
+      "title": "Frida_Kahlo",
+      "url": "https://en.wikipedia.org/wiki/Frida_Kahlo",
+      "description": "Mexican painter known for self-portraits and folk art influences"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Tofu",
+      "Agar",
+      "Mexico",
+      "Frida_Kahlo"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Chromosome",
+      "url": "https://en.wikipedia.org/wiki/Chromosome",
+      "description": "Thread-like structure of DNA carrying genetic information"
+    },
+    "targetArticle": {
+      "title": "Tapestry",
+      "url": "https://en.wikipedia.org/wiki/Tapestry",
+      "description": "Form of textile art woven by hand on a loom"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Chromosome",
+      "Dye",
+      "Cochineal",
+      "Tapestry"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Laser",
+      "url": "https://en.wikipedia.org/wiki/Laser",
+      "description": "Device emitting coherent amplified light"
+    },
+    "targetArticle": {
+      "title": "Utopia",
+      "url": "https://en.wikipedia.org/wiki/Utopia",
+      "description": "Imagined community with highly desirable qualities"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Laser",
+      "Albert_Einstein",
+      "Bolsheviks",
+      "Utopia"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Glacier",
+      "url": "https://en.wikipedia.org/wiki/Glacier",
+      "description": "Persistent body of dense ice that slowly moves"
+    },
+    "targetArticle": {
+      "title": "Minotaur",
+      "url": "https://en.wikipedia.org/wiki/Minotaur",
+      "description": "Mythical creature with the head of a bull and body of a man"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Glacier",
+      "Mars",
+      "Greek_mythology",
+      "Minotaur"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Cold_War",
+      "url": "https://en.wikipedia.org/wiki/Cold_War",
+      "description": "Geopolitical tension between the US and USSR (1947-1991)"
+    },
+    "targetArticle": {
+      "title": "Vampire",
+      "url": "https://en.wikipedia.org/wiki/Vampire",
+      "description": "Mythical creature that feeds on blood"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Cold_War",
+      "1973_Chilean_coup_d'état",
+      "Televisión_Nacional_de_Chile",
+      "Vampire"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Enlightenment",
+      "url": "https://en.wikipedia.org/wiki/Enlightenment",
+      "description": "18th-century intellectual movement emphasizing reason"
+    },
+    "targetArticle": {
+      "title": "Fencing",
+      "url": "https://en.wikipedia.org/wiki/Fencing",
+      "description": "Combat sport involving sword fighting"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Enlightenment",
+      "2012_Summer_Paralympics_opening_ceremony",
+      "Jacques_Rogge",
+      "Fencing"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Tiramisu",
+      "url": "https://en.wikipedia.org/wiki/Tiramisu",
+      "description": "Italian coffee-flavored dessert"
+    },
+    "targetArticle": {
+      "title": "Cricket",
+      "url": "https://en.wikipedia.org/wiki/Cricket",
+      "description": "Bat-and-ball game originating in England"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Tiramisu",
+      "Aphrodisiac",
+      "Jamaica",
+      "Cricket"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Samurai",
+      "url": "https://en.wikipedia.org/wiki/Samurai",
+      "description": "Military nobility of medieval and early-modern Japan"
+    },
+    "targetArticle": {
+      "title": "Aspirin",
+      "url": "https://en.wikipedia.org/wiki/Aspirin",
+      "description": "Common pain reliever derived from salicylic acid"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Samurai",
+      "Anime",
+      "Nosebleed",
+      "Aspirin"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Quantum_mechanics",
+      "url": "https://en.wikipedia.org/wiki/Quantum_mechanics",
+      "description": "Fundamental theory describing nature at atomic scales"
+    },
+    "targetArticle": {
+      "title": "Blockchain",
+      "url": "https://en.wikipedia.org/wiki/Blockchain",
+      "description": "Distributed digital ledger technology"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Quantum_mechanics",
+      "Abdus_Salam",
+      "Lahore_University_of_Management_Sciences",
+      "Blockchain"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Santorini",
+      "url": "https://en.wikipedia.org/wiki/Santorini",
+      "description": "Greek island shaped by a volcanic eruption"
+    },
+    "targetArticle": {
+      "title": "Triathlon",
+      "url": "https://en.wikipedia.org/wiki/Triathlon",
+      "description": "Swimming, cycling, and distance running race"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Santorini",
+      "Anatolian_beyliks",
+      "Alanya",
+      "Triathlon"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Badminton",
+      "url": "https://en.wikipedia.org/wiki/Badminton",
+      "description": "Racquet sport"
+    },
+    "targetArticle": {
+      "title": "Cleopatra",
+      "url": "https://en.wikipedia.org/wiki/Cleopatra",
+      "description": "Last active ruler of the Ptolemaic Kingdom of Egypt"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Badminton",
+      "1992_Summer_Olympics",
+      "RTÉ",
+      "Cleopatra"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Nuclear_fusion",
+      "url": "https://en.wikipedia.org/wiki/Nuclear_fusion",
+      "description": "Reaction where atomic nuclei combine to form heavier nuclei"
+    },
+    "targetArticle": {
+      "title": "Flamingo",
+      "url": "https://en.wikipedia.org/wiki/Flamingo",
+      "description": "Tall pink wading bird"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Nuclear_fusion",
+      "Lithium",
+      "Andes",
+      "Flamingo"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Anesthesia",
+      "url": "https://en.wikipedia.org/wiki/Anesthesia",
+      "description": "State of controlled temporary loss of sensation"
+    },
+    "targetArticle": {
+      "title": "Stem_cell",
+      "url": "https://en.wikipedia.org/wiki/Stem_cell",
+      "description": "Undifferentiated cell capable of becoming many cell types"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Anesthesia",
+      "Abdomen",
+      "Liver",
+      "Stem_cell"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Tiramisu",
+      "url": "https://en.wikipedia.org/wiki/Tiramisu",
+      "description": "Italian coffee-flavored dessert"
+    },
+    "targetArticle": {
+      "title": "Earthquake",
+      "url": "https://en.wikipedia.org/wiki/Earthquake",
+      "description": "Sudden shaking of Earth's surface"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Tiramisu",
+      "Cocoa_solids",
+      "California",
+      "Earthquake"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Boomerang",
+      "url": "https://en.wikipedia.org/wiki/Boomerang",
+      "description": "Throwing tool that returns to the thrower"
+    },
+    "targetArticle": {
+      "title": "Unicorn",
+      "url": "https://en.wikipedia.org/wiki/Unicorn",
+      "description": "Legendary creature resembling a horse with a single horn"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Boomerang",
+      "Besançon",
+      "Academy",
+      "Unicorn"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Theremin",
+      "url": "https://en.wikipedia.org/wiki/Theremin",
+      "description": "Electronic musical instrument played without physical contact"
+    },
+    "targetArticle": {
+      "title": "Frida_Kahlo",
+      "url": "https://en.wikipedia.org/wiki/Frida_Kahlo",
+      "description": "Mexican painter known for self-portraits and folk art influences"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Theremin",
+      "Adrian_Utley",
+      "Great_Lives",
+      "Frida_Kahlo"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Hiroshima",
+      "url": "https://en.wikipedia.org/wiki/Hiroshima",
+      "description": "Japanese city targeted by the first atomic bomb in 1945"
+    },
+    "targetArticle": {
+      "title": "Geyser",
+      "url": "https://en.wikipedia.org/wiki/Geyser",
+      "description": "Spring that intermittently ejects hot water and steam"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Hiroshima",
+      "Boeing_B-29_Superfortress",
+      "Operation_Crossroads",
+      "Geyser"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Stalagmite",
+      "url": "https://en.wikipedia.org/wiki/Stalagmite",
+      "description": "Mineral formation rising from a cave floor"
+    },
+    "targetArticle": {
+      "title": "Werewolf",
+      "url": "https://en.wikipedia.org/wiki/Werewolf",
+      "description": "Mythological human with the ability to shapeshift into a wolf"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Stalagmite",
+      "Calcium_carbonate",
+      "Silver",
+      "Werewolf"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Dark_matter",
+      "url": "https://en.wikipedia.org/wiki/Dark_matter",
+      "description": "Hypothetical matter accounting for most of the universe's mass"
+    },
+    "targetArticle": {
+      "title": "Imperialism",
+      "url": "https://en.wikipedia.org/wiki/Imperialism",
+      "description": "Policy of extending a country's power through colonization"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Dark_matter",
+      "Alpha_Magnetic_Spectrometer",
+      "Human_spaceflight",
+      "Imperialism"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Santorini",
+      "url": "https://en.wikipedia.org/wiki/Santorini",
+      "description": "Greek island shaped by a volcanic eruption"
+    },
+    "targetArticle": {
+      "title": "Periscope",
+      "url": "https://en.wikipedia.org/wiki/Periscope",
+      "description": "Optical instrument for observation from a concealed position"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Santorini",
+      "ATR_72",
+      "Anti-submarine_warfare",
+      "Periscope"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Sphinx",
+      "url": "https://en.wikipedia.org/wiki/Sphinx",
+      "description": "Mythical creature with a lion's body and human head"
+    },
+    "targetArticle": {
+      "title": "DNA",
+      "url": "https://en.wikipedia.org/wiki/DNA",
+      "description": "Molecule carrying genetic instructions for life"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Sphinx",
+      "Achaemenid_Empire",
+      "Mesopotamia",
+      "DNA"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Mitochondrion",
+      "url": "https://en.wikipedia.org/wiki/Mitochondrion",
+      "description": "Organelle that generates most of a cell's energy supply"
+    },
+    "targetArticle": {
+      "title": "Transylvania",
+      "url": "https://en.wikipedia.org/wiki/Transylvania",
+      "description": "Historical region in central Romania"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Mitochondrion",
+      "Ammonia",
+      "Gold",
+      "Transylvania"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Monsoon",
+      "url": "https://en.wikipedia.org/wiki/Monsoon",
+      "description": "Seasonal wind patterns accompanied by heavy rainfall"
+    },
+    "targetArticle": {
+      "title": "Vampire",
+      "url": "https://en.wikipedia.org/wiki/Vampire",
+      "description": "Mythical creature that feeds on blood"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Monsoon",
+      "Arizona",
+      "Twilight_(2008_film)",
+      "Vampire"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Penicillin",
+      "url": "https://en.wikipedia.org/wiki/Penicillin",
+      "description": "First widely used antibiotic, discovered by Alexander Fleming"
+    },
+    "targetArticle": {
+      "title": "Blue_whale",
+      "url": "https://en.wikipedia.org/wiki/Blue_whale",
+      "description": "Largest animal to have ever lived"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Penicillin",
+      "Allies_of_World_War_II",
+      "Denmark",
+      "Blue_whale"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Neutron_star",
+      "url": "https://en.wikipedia.org/wiki/Neutron_star",
+      "description": "Collapsed core of a massive star after supernova"
+    },
+    "targetArticle": {
+      "title": "Fencing",
+      "url": "https://en.wikipedia.org/wiki/Fencing",
+      "description": "Combat sport involving sword fighting"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Neutron_star",
+      "Discovery_of_the_neutron",
+      "France",
+      "Fencing"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Unicorn",
+      "url": "https://en.wikipedia.org/wiki/Unicorn",
+      "description": "Legendary creature resembling a horse with a single horn"
+    },
+    "targetArticle": {
+      "title": "Batman",
+      "url": "https://en.wikipedia.org/wiki/Batman",
+      "description": "DC Comics superhero known as the Dark Knight"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Unicorn",
+      "Aurochs",
+      "Epithet",
+      "Batman"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Vampire",
+      "url": "https://en.wikipedia.org/wiki/Vampire",
+      "description": "Mythical creature that feeds on blood"
+    },
+    "targetArticle": {
+      "title": "Mount_Everest",
+      "url": "https://en.wikipedia.org/wiki/Mount_Everest",
+      "description": "Earth's highest mountain above sea level at 8,849 meters"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Vampire",
+      "Albanian_language",
+      "Voiceless_alveolar_fricative",
+      "Mount_Everest"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Meteorite",
+      "url": "https://en.wikipedia.org/wiki/Meteorite",
+      "description": "Solid piece of debris from outer space that reaches Earth"
+    },
+    "targetArticle": {
+      "title": "Iceland",
+      "url": "https://en.wikipedia.org/wiki/Iceland",
+      "description": "Nordic island nation known for geysers and volcanoes"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Meteorite",
+      "Abiogenesis",
+      "Geothermal_energy",
+      "Iceland"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Blood_transfusion",
+      "url": "https://en.wikipedia.org/wiki/Blood_transfusion",
+      "description": "Process of receiving blood products intravenously"
+    },
+    "targetArticle": {
+      "title": "Capybara",
+      "url": "https://en.wikipedia.org/wiki/Capybara",
+      "description": "World's largest living rodent"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Blood_transfusion",
+      "Anemia",
+      "Vitamin_C",
+      "Capybara"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Theremin",
+      "url": "https://en.wikipedia.org/wiki/Theremin",
+      "description": "Electronic musical instrument played without physical contact"
+    },
+    "targetArticle": {
+      "title": "Petrified_wood",
+      "url": "https://en.wikipedia.org/wiki/Petrified_wood",
+      "description": "Fossil formed when plant material is replaced by minerals"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Theremin",
+      "Gdańsk",
+      "Amber",
+      "Petrified_wood"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Sigmund_Freud",
+      "url": "https://en.wikipedia.org/wiki/Sigmund_Freud",
+      "description": "Austrian neurologist and founder of psychoanalysis"
+    },
+    "targetArticle": {
+      "title": "Zeitgeist",
+      "url": "https://en.wikipedia.org/wiki/Zeitgeist",
+      "description": "Philosophical and sociological concept meaning \"spirit of the age\""
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Sigmund_Freud",
+      "Adolf_Hitler",
+      "Euthanasia",
+      "Zeitgeist"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Stalagmite",
+      "url": "https://en.wikipedia.org/wiki/Stalagmite",
+      "description": "Mineral formation rising from a cave floor"
+    },
+    "targetArticle": {
+      "title": "Durian",
+      "url": "https://en.wikipedia.org/wiki/Durian",
+      "description": "Tropical fruit famous for its strong odor"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Stalagmite",
+      "Cave",
+      "Gunung_Mulu_National_Park",
+      "Durian"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Dim_sum",
+      "url": "https://en.wikipedia.org/wiki/Dim_sum",
+      "description": "Cantonese cuisine of small plates served with tea"
+    },
+    "targetArticle": {
+      "title": "Stethoscope",
+      "url": "https://en.wikipedia.org/wiki/Stethoscope",
+      "description": "Medical device for listening to internal body sounds"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Dim_sum",
+      "Beef",
+      "Heart",
+      "Stethoscope"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Komodo_dragon",
+      "url": "https://en.wikipedia.org/wiki/Komodo_dragon",
+      "description": "Largest living species of lizard"
+    },
+    "targetArticle": {
+      "title": "Albert_Einstein",
+      "url": "https://en.wikipedia.org/wiki/Albert_Einstein",
+      "description": "German-born physicist who developed the theory of relativity"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Komodo_dragon",
+      "Adaptation",
+      "David_Hume",
+      "Albert_Einstein"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Rowing_(sport)",
+      "url": "https://en.wikipedia.org/wiki/Rowing_(sport)",
+      "description": "Sport where individuals or teams row boats by oar"
+    },
+    "targetArticle": {
+      "title": "Existentialism",
+      "url": "https://en.wikipedia.org/wiki/Existentialism",
+      "description": "Philosophy focused on individual existence and free will"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Rowing_(sport)",
+      "Aeneid",
+      "Western_canon",
+      "Existentialism"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Hippocratic_Oath",
+      "url": "https://en.wikipedia.org/wiki/Hippocratic_Oath",
+      "description": "Ancient oath of medical ethics"
+    },
+    "targetArticle": {
+      "title": "Napoleon",
+      "url": "https://en.wikipedia.org/wiki/Napoleon",
+      "description": "French military leader and Emperor of the French"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Hippocratic_Oath",
+      "Apollo",
+      "Alexander_the_Great",
+      "Napoleon"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Pottery",
+      "url": "https://en.wikipedia.org/wiki/Pottery",
+      "description": "Art of making objects from clay"
+    },
+    "targetArticle": {
+      "title": "Hippocratic_Oath",
+      "url": "https://en.wikipedia.org/wiki/Hippocratic_Oath",
+      "description": "Ancient oath of medical ethics"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Pottery",
+      "Carbon_monoxide",
+      "Euthanasia",
+      "Hippocratic_Oath"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Rowing_(sport)",
+      "url": "https://en.wikipedia.org/wiki/Rowing_(sport)",
+      "description": "Sport where individuals or teams row boats by oar"
+    },
+    "targetArticle": {
+      "title": "Werewolf",
+      "url": "https://en.wikipedia.org/wiki/Werewolf",
+      "description": "Mythological human with the ability to shapeshift into a wolf"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Rowing_(sport)",
+      "1900_Summer_Olympics",
+      "Silver",
+      "Werewolf"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Taco",
+      "url": "https://en.wikipedia.org/wiki/Taco",
+      "description": "Mexican dish consisting of a filled tortilla"
+    },
+    "targetArticle": {
+      "title": "Supernova",
+      "url": "https://en.wikipedia.org/wiki/Supernova",
+      "description": "Powerful and luminous explosion of a star"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Taco",
+      "Corn_tortilla",
+      "Magnesium",
+      "Supernova"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Bicycle",
+      "url": "https://en.wikipedia.org/wiki/Bicycle",
+      "description": "Human-powered two-wheeled vehicle"
+    },
+    "targetArticle": {
+      "title": "Opera",
+      "url": "https://en.wikipedia.org/wiki/Opera",
+      "description": "Art form combining music, singing, and theatrical performance"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Bicycle",
+      "American_Automobile_Association",
+      "Indianapolis_500",
+      "Opera"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Goulash",
+      "url": "https://en.wikipedia.org/wiki/Goulash",
+      "description": "Hungarian stew of meat and vegetables"
+    },
+    "targetArticle": {
+      "title": "Artificial_intelligence",
+      "url": "https://en.wikipedia.org/wiki/Artificial_intelligence",
+      "description": "Intelligence demonstrated by machines"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Goulash",
+      "Balkans",
+      "Country_code_top-level_domain",
+      "Artificial_intelligence"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Nihilism",
+      "url": "https://en.wikipedia.org/wiki/Nihilism",
+      "description": "Philosophical view that life lacks objective meaning"
+    },
+    "targetArticle": {
+      "title": "Capybara",
+      "url": "https://en.wikipedia.org/wiki/Capybara",
+      "description": "World's largest living rodent"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Nihilism",
+      "Agnosticism",
+      "Charles_Darwin",
+      "Capybara"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Handball",
+      "url": "https://en.wikipedia.org/wiki/Handball",
+      "description": "Team sport with two teams of seven players each"
+    },
+    "targetArticle": {
+      "title": "Radar",
+      "url": "https://en.wikipedia.org/wiki/Radar",
+      "description": "Detection system using radio waves"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Handball",
+      "1936_Summer_Olympics",
+      "Wehrmacht",
+      "Radar"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Stained_glass",
+      "url": "https://en.wikipedia.org/wiki/Stained_glass",
+      "description": "Colored glass arranged to form decorative windows"
+    },
+    "targetArticle": {
+      "title": "Cerberus",
+      "url": "https://en.wikipedia.org/wiki/Cerberus",
+      "description": "Three-headed dog guarding the gates of the Greek Underworld"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Stained_glass",
+      "Ancient_Egypt",
+      "Afterlife",
+      "Cerberus"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Unicorn",
+      "url": "https://en.wikipedia.org/wiki/Unicorn",
+      "description": "Legendary creature resembling a horse with a single horn"
+    },
+    "targetArticle": {
+      "title": "Dark_matter",
+      "url": "https://en.wikipedia.org/wiki/Dark_matter",
+      "description": "Hypothetical matter accounting for most of the universe's mass"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Unicorn",
+      "Aristotle",
+      "Aether_(classical_element)",
+      "Dark_matter"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Jellyfish",
+      "url": "https://en.wikipedia.org/wiki/Jellyfish",
+      "description": "Free-swimming marine animal with a gelatinous bell"
+    },
+    "targetArticle": {
+      "title": "Dead_Sea",
+      "url": "https://en.wikipedia.org/wiki/Dead_Sea",
+      "description": "Hypersaline lake bordered by Jordan and Israel"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Jellyfish",
+      "Acetic_acid",
+      "Water",
+      "Dead_Sea"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Rugby",
+      "url": "https://en.wikipedia.org/wiki/Rugby",
+      "description": "Topics referred to by the same term"
+    },
+    "targetArticle": {
+      "title": "Robot",
+      "url": "https://en.wikipedia.org/wiki/Robot",
+      "description": "Machine capable of carrying out complex actions automatically"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Rugby",
+      "Rugby,_Warwickshire",
+      "Engineering",
+      "Robot"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Galápagos_Islands",
+      "url": "https://en.wikipedia.org/wiki/Galápagos_Islands",
+      "description": "Volcanic archipelago in the Pacific known for unique wildlife"
+    },
+    "targetArticle": {
+      "title": "Hippocratic_Oath",
+      "url": "https://en.wikipedia.org/wiki/Hippocratic_Oath",
+      "description": "Ancient oath of medical ethics"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Galápagos_Islands",
+      "Botany",
+      "Medication",
+      "Hippocratic_Oath"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Sextant",
+      "url": "https://en.wikipedia.org/wiki/Sextant",
+      "description": "Navigation instrument for measuring angular distances"
+    },
+    "targetArticle": {
+      "title": "Periodic_table",
+      "url": "https://en.wikipedia.org/wiki/Periodic_table",
+      "description": "Tabular arrangement of chemical elements"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Sextant",
+      "Aircraft",
+      "Helium",
+      "Periodic_table"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Déjà_vu",
+      "url": "https://en.wikipedia.org/wiki/Déjà_vu",
+      "description": "Psychological sensation"
+    },
+    "targetArticle": {
+      "title": "Avalanche",
+      "url": "https://en.wikipedia.org/wiki/Avalanche",
+      "description": "Rapid flow of snow down a slope"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Déjà_vu",
+      "Scientific_skepticism",
+      "Dowsing",
+      "Avalanche"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Hiroshima",
+      "url": "https://en.wikipedia.org/wiki/Hiroshima",
+      "description": "Japanese city targeted by the first atomic bomb in 1945"
+    },
+    "targetArticle": {
+      "title": "Placebo",
+      "url": "https://en.wikipedia.org/wiki/Placebo",
+      "description": "Inactive treatment given to test the effect of real treatments"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Hiroshima",
+      "Atomic_bombings_of_Hiroshima_and_Nagasaki",
+      "Controlling_for_a_variable",
+      "Placebo"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Archery",
+      "url": "https://en.wikipedia.org/wiki/Archery",
+      "description": "Sport of shooting arrows with a bow"
+    },
+    "targetArticle": {
+      "title": "Godzilla",
+      "url": "https://en.wikipedia.org/wiki/Godzilla",
+      "description": "Giant fictional monster from Japanese cinema"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Archery",
+      "Cupid",
+      "Sea_monster",
+      "Godzilla"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Archery",
+      "url": "https://en.wikipedia.org/wiki/Archery",
+      "description": "Sport of shooting arrows with a bow"
+    },
+    "targetArticle": {
+      "title": "Blood_transfusion",
+      "url": "https://en.wikipedia.org/wiki/Blood_transfusion",
+      "description": "Process of receiving blood products intravenously"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Archery",
+      "Americas",
+      "ABO_blood_group_system",
+      "Blood_transfusion"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Origami",
+      "url": "https://en.wikipedia.org/wiki/Origami",
+      "description": "Japanese art of paper folding"
+    },
+    "targetArticle": {
+      "title": "Crusades",
+      "url": "https://en.wikipedia.org/wiki/Crusades",
+      "description": "Series of religious wars sanctioned by the Latin Church"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Origami",
+      "Airbag",
+      "Europe",
+      "Crusades"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Ikebana",
+      "url": "https://en.wikipedia.org/wiki/Ikebana",
+      "description": "Japanese art of flower arrangement"
+    },
+    "targetArticle": {
+      "title": "Stethoscope",
+      "url": "https://en.wikipedia.org/wiki/Stethoscope",
+      "description": "Medical device for listening to internal body sounds"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Ikebana",
+      "Human",
+      "Heart_rate",
+      "Stethoscope"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Dim_sum",
+      "url": "https://en.wikipedia.org/wiki/Dim_sum",
+      "description": "Cantonese cuisine of small plates served with tea"
+    },
+    "targetArticle": {
+      "title": "Kabuki",
+      "url": "https://en.wikipedia.org/wiki/Kabuki",
+      "description": "Classical form of Japanese theater"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Dim_sum",
+      "1920s",
+      "List_of_years_in_literature",
+      "Kabuki"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Dialysis",
+      "url": "https://en.wikipedia.org/wiki/Dialysis",
+      "description": "Process of removing waste from blood when kidneys fail"
+    },
+    "targetArticle": {
+      "title": "Glacier",
+      "url": "https://en.wikipedia.org/wiki/Glacier",
+      "description": "Persistent body of dense ice that slowly moves"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Dialysis",
+      "Electrodialysis",
+      "Drinking_water",
+      "Glacier"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Michelangelo",
+      "url": "https://en.wikipedia.org/wiki/Michelangelo",
+      "description": "Italian sculptor and painter of the Sistine Chapel ceiling"
+    },
+    "targetArticle": {
+      "title": "3D_printing",
+      "url": "https://en.wikipedia.org/wiki/3D_printing",
+      "description": "Additive manufacturing process building 3D objects layer by layer"
+    },
+    "tags": [
+      "generated-random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Michelangelo",
+      "Charlton_Heston",
+      "Gun_politics_in_the_United_States",
+      "3D_printing"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Doner_kebab",
+      "url": "https://en.wikipedia.org/wiki/Doner_kebab",
+      "description": "Turkish dish of meat cooked on a vertical rotisserie"
+    },
+    "targetArticle": {
+      "title": "Voyager_1",
+      "url": "https://en.wikipedia.org/wiki/Voyager_1",
+      "description": "Farthest human-made object from Earth"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Doner_kebab",
+      "Azerbaijan",
+      "Western_culture",
+      "Voyager_1"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Sitting_Bull",
+      "url": "https://en.wikipedia.org/wiki/Sitting_Bull",
+      "description": "Hunkpapa Lakota leader who resisted US government policies"
+    },
+    "targetArticle": {
+      "title": "Harpy_eagle",
+      "url": "https://en.wikipedia.org/wiki/Harpy_eagle",
+      "description": "Powerful tropical eagle, one of the largest raptors"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Sitting_Bull",
+      "Blackfoot_Confederacy",
+      "Eagle",
+      "Harpy_eagle"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Dead_Sea_Scrolls",
+      "url": "https://en.wikipedia.org/wiki/Dead_Sea_Scrolls",
+      "description": "Ancient Jewish religious manuscripts from Qumran caves"
+    },
+    "targetArticle": {
+      "title": "Abyssal_plain",
+      "url": "https://en.wikipedia.org/wiki/Abyssal_plain",
+      "description": "Flat area on the deep ocean floor"
+    },
+    "tags": [
+      "cross-domain"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Dead_Sea_Scrolls",
+      "Book_of_Enoch",
+      "Earth",
+      "Abyssal_plain"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Empanada",
+      "url": "https://en.wikipedia.org/wiki/Empanada",
+      "description": "Baked or fried pastry filled with meat or cheese"
+    },
+    "targetArticle": {
+      "title": "Hatshepsut",
+      "url": "https://en.wikipedia.org/wiki/Hatshepsut",
+      "description": "One of the most successful pharaohs of ancient Egypt"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Empanada",
+      "Arab_cuisine",
+      "Egypt",
+      "Hatshepsut"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Elysium",
+      "url": "https://en.wikipedia.org/wiki/Elysium",
+      "description": "Blessed afterlife in Greek mythology"
+    },
+    "targetArticle": {
+      "title": "Rosetta_Stone",
+      "url": "https://en.wikipedia.org/wiki/Rosetta_Stone",
+      "description": "Egyptian stele with three versions of a 196 BC decree"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Elysium",
+      "Aaru",
+      "Nile_Delta",
+      "Rosetta_Stone"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Palace_of_Versailles",
+      "url": "https://en.wikipedia.org/wiki/Palace_of_Versailles",
+      "description": "Former royal residence in Versailles, France"
+    },
+    "targetArticle": {
+      "title": "Okapi",
+      "url": "https://en.wikipedia.org/wiki/Okapi",
+      "description": "Giraffid artiodactyl native to the Congo rainforest"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Palace_of_Versailles",
+      "Google_Arts_&_Culture",
+      "American_Museum_of_Natural_History",
+      "Okapi"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Harpy_eagle",
+      "url": "https://en.wikipedia.org/wiki/Harpy_eagle",
+      "description": "Powerful tropical eagle, one of the largest raptors"
+    },
+    "targetArticle": {
+      "title": "Baklava",
+      "url": "https://en.wikipedia.org/wiki/Baklava",
+      "description": "Layered pastry with nuts and honey syrup"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Harpy_eagle",
+      "Ancient_Greek",
+      "English_words_of_Greek_origin",
+      "Baklava"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Hedy_Lamarr",
+      "url": "https://en.wikipedia.org/wiki/Hedy_Lamarr",
+      "description": "Actress and inventor who co-invented frequency-hopping spread spectrum"
+    },
+    "targetArticle": {
+      "title": "Difference_engine",
+      "url": "https://en.wikipedia.org/wiki/Difference_engine",
+      "description": "Automatic mechanical calculator designed by Charles Babbage"
+    },
+    "tags": [
+      "cross-domain"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Hedy_Lamarr",
+      "Player_piano",
+      "Computer",
+      "Difference_engine"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Columbian_exchange",
+      "url": "https://en.wikipedia.org/wiki/Columbian_exchange",
+      "description": "Transfer of plants, animals, and diseases between Old and New Worlds"
+    },
+    "targetArticle": {
+      "title": "Magnetosphere",
+      "url": "https://en.wikipedia.org/wiki/Magnetosphere",
+      "description": "Region of space dominated by a planet's magnetic field"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Columbian_exchange",
+      "Afro-Eurasia",
+      "Earth",
+      "Magnetosphere"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "East_India_Company",
+      "url": "https://en.wikipedia.org/wiki/East_India_Company",
+      "description": "English trading company established in 1600"
+    },
+    "targetArticle": {
+      "title": "Chicxulub_crater",
+      "url": "https://en.wikipedia.org/wiki/Chicxulub_crater",
+      "description": "Impact crater linked to the extinction of the dinosaurs"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "East_India_Company",
+      "Cochineal",
+      "Mexico",
+      "Chicxulub_crater"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Pipe_organ",
+      "url": "https://en.wikipedia.org/wiki/Pipe_organ",
+      "description": "Musical instrument that produces sound by driving air through pipes"
+    },
+    "targetArticle": {
+      "title": "Jacquard_machine",
+      "url": "https://en.wikipedia.org/wiki/Jacquard_machine",
+      "description": "Control device attached to weaving looms"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Pipe_organ",
+      "Ancient_Greece",
+      "Neoclassicism",
+      "Jacquard_machine"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Palace_of_Versailles",
+      "url": "https://en.wikipedia.org/wiki/Palace_of_Versailles",
+      "description": "Former royal residence in Versailles, France"
+    },
+    "targetArticle": {
+      "title": "Astrolabe",
+      "url": "https://en.wikipedia.org/wiki/Astrolabe",
+      "description": "Astronomical instrument"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Palace_of_Versailles",
+      "Alexander_the_Great",
+      "British_Museum",
+      "Astrolabe"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Event_horizon",
+      "url": "https://en.wikipedia.org/wiki/Event_horizon",
+      "description": "Boundary beyond which nothing can escape a black hole"
+    },
+    "targetArticle": {
+      "title": "Colosseum",
+      "url": "https://en.wikipedia.org/wiki/Colosseum",
+      "description": "Ancient Roman amphitheatre in Rome"
+    },
+    "tags": [
+      "cross-domain"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Event_horizon",
+      "Cosmology",
+      "Italy",
+      "Colosseum"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Battle_of_Thermopylae",
+      "url": "https://en.wikipedia.org/wiki/Battle_of_Thermopylae",
+      "description": "480 BC battle between Greeks and Persians"
+    },
+    "targetArticle": {
+      "title": "Tube_worm",
+      "url": "https://en.wikipedia.org/wiki/Tube_worm",
+      "description": "Index of animals with the same common name"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Battle_of_Thermopylae",
+      "Assyria",
+      "Limestone",
+      "Tube_worm"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Scanning_tunneling_microscope",
+      "url": "https://en.wikipedia.org/wiki/Scanning_tunneling_microscope",
+      "description": "Microscope using quantum tunneling to image surfaces"
+    },
+    "targetArticle": {
+      "title": "Angkor_Wat",
+      "url": "https://en.wikipedia.org/wiki/Angkor_Wat",
+      "description": "Temple complex in Cambodia"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Scanning_tunneling_microscope",
+      "Gold",
+      "Thailand",
+      "Angkor_Wat"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Sudoku",
+      "url": "https://en.wikipedia.org/wiki/Sudoku",
+      "description": "Logic-based number-placement puzzle"
+    },
+    "targetArticle": {
+      "title": "Chicxulub_crater",
+      "url": "https://en.wikipedia.org/wiki/Chicxulub_crater",
+      "description": "Impact crater linked to the extinction of the dinosaurs"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Sudoku",
+      "Australian_dollar",
+      "Mexico",
+      "Chicxulub_crater"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Tardigrade",
+      "url": "https://en.wikipedia.org/wiki/Tardigrade",
+      "description": "Microscopic water bear surviving extreme conditions"
+    },
+    "targetArticle": {
+      "title": "Mjölnir",
+      "url": "https://en.wikipedia.org/wiki/Mjölnir",
+      "description": "Hammer of the god Thor in Norse mythology"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Tardigrade",
+      "Fossil",
+      "Dragon",
+      "Mjölnir"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Jigsaw_puzzle",
+      "url": "https://en.wikipedia.org/wiki/Jigsaw_puzzle",
+      "description": "Tiling puzzle requiring assembly of interlocking pieces"
+    },
+    "targetArticle": {
+      "title": "Zheng_He",
+      "url": "https://en.wikipedia.org/wiki/Zheng_He",
+      "description": "Chinese admiral who led massive treasure voyages in the 15th century"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Jigsaw_puzzle",
+      "Art",
+      "Ming_dynasty",
+      "Zheng_He"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Water_organ",
+      "url": "https://en.wikipedia.org/wiki/Water_organ",
+      "description": "Pipe organ using water as power source"
+    },
+    "targetArticle": {
+      "title": "Doppler_effect",
+      "url": "https://en.wikipedia.org/wiki/Doppler_effect",
+      "description": "Change in frequency of a wave relative to an observer"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Water_organ",
+      "Bernoulli's_principle",
+      "Acoustics",
+      "Doppler_effect"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Mars_rover",
+      "url": "https://en.wikipedia.org/wiki/Mars_rover",
+      "description": "Robotic vehicle exploring the surface of Mars"
+    },
+    "targetArticle": {
+      "title": "Gamelan",
+      "url": "https://en.wikipedia.org/wiki/Gamelan",
+      "description": "Traditional Indonesian ensemble music"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Mars_rover",
+      "Plain",
+      "Indonesia",
+      "Gamelan"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Fall_of_Constantinople",
+      "url": "https://en.wikipedia.org/wiki/Fall_of_Constantinople",
+      "description": "1453 Ottoman conquest ending the Byzantine Empire"
+    },
+    "targetArticle": {
+      "title": "Mount_Erebus",
+      "url": "https://en.wikipedia.org/wiki/Mount_Erebus",
+      "description": "Southernmost active volcano on Earth"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Fall_of_Constantinople",
+      "Battlement",
+      "Ireland",
+      "Mount_Erebus"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Extremophile",
+      "url": "https://en.wikipedia.org/wiki/Extremophile",
+      "description": "Organism thriving in extreme environmental conditions"
+    },
+    "targetArticle": {
+      "title": "Doner_kebab",
+      "url": "https://en.wikipedia.org/wiki/Doner_kebab",
+      "description": "Turkish dish of meat cooked on a vertical rotisserie"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Extremophile",
+      "Atacama_Desert",
+      "Germany",
+      "Doner_kebab"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Tower_of_London",
+      "url": "https://en.wikipedia.org/wiki/Tower_of_London",
+      "description": "Historic castle on the north bank of the River Thames"
+    },
+    "targetArticle": {
+      "title": "Nikola_Tesla",
+      "url": "https://en.wikipedia.org/wiki/Nikola_Tesla",
+      "description": "Serbian-American engineer and inventor (1856–1943)"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Tower_of_London",
+      "Adolf_Hitler",
+      "Graz",
+      "Nikola_Tesla"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Gutenberg_Bible",
+      "url": "https://en.wikipedia.org/wiki/Gutenberg_Bible",
+      "description": "First major book printed using movable type in Europe"
+    },
+    "targetArticle": {
+      "title": "Mahjong",
+      "url": "https://en.wikipedia.org/wiki/Mahjong",
+      "description": "Tile-based game of Chinese origin"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Gutenberg_Bible",
+      "Charles_Scribner's_Sons",
+      "American_literature",
+      "Mahjong"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Mandrill",
+      "url": "https://en.wikipedia.org/wiki/Mandrill",
+      "description": "World's largest monkey, known for its colorful face"
+    },
+    "targetArticle": {
+      "title": "Backgammon",
+      "url": "https://en.wikipedia.org/wiki/Backgammon",
+      "description": "One of the oldest known board games"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Mandrill",
+      "Hyena",
+      "Azerbaijan",
+      "Backgammon"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Phytoplankton",
+      "url": "https://en.wikipedia.org/wiki/Phytoplankton",
+      "description": "Microscopic marine algae forming the base of ocean food chains"
+    },
+    "targetArticle": {
+      "title": "Trieste_(bathyscaphe)",
+      "url": "https://en.wikipedia.org/wiki/Trieste_(bathyscaphe)",
+      "description": "Deep-sea scientific submersible"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Phytoplankton",
+      "Bacteria",
+      "Mariana_Trench",
+      "Trieste_(bathyscaphe)"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Phytoplankton",
+      "url": "https://en.wikipedia.org/wiki/Phytoplankton",
+      "description": "Microscopic marine algae forming the base of ocean food chains"
+    },
+    "targetArticle": {
+      "title": "Chaos_theory",
+      "url": "https://en.wikipedia.org/wiki/Chaos_theory",
+      "description": "Mathematical framework for systems sensitive to initial conditions"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Phytoplankton",
+      "Aerosol",
+      "Differential_equation",
+      "Chaos_theory"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Krill",
+      "url": "https://en.wikipedia.org/wiki/Krill",
+      "description": "Small crustaceans forming a key part of marine food webs"
+    },
+    "targetArticle": {
+      "title": "Backgammon",
+      "url": "https://en.wikipedia.org/wiki/Backgammon",
+      "description": "One of the oldest known board games"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Krill",
+      "Bioluminescence",
+      "University_of_Wisconsin–Madison",
+      "Backgammon"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Triangular_trade",
+      "url": "https://en.wikipedia.org/wiki/Triangular_trade",
+      "description": "Historical pattern of trade among three regions"
+    },
+    "targetArticle": {
+      "title": "Richat_Structure",
+      "url": "https://en.wikipedia.org/wiki/Richat_Structure",
+      "description": "Circular geological feature in the Sahara desert"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Triangular_trade",
+      "Azores",
+      "Sahara",
+      "Richat_Structure"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Okapi",
+      "url": "https://en.wikipedia.org/wiki/Okapi",
+      "description": "Giraffid artiodactyl native to the Congo rainforest"
+    },
+    "targetArticle": {
+      "title": "Photic_zone",
+      "url": "https://en.wikipedia.org/wiki/Photic_zone",
+      "description": "Uppermost layer of a sea water column that is exposed to sunlight"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Okapi",
+      "Berlin_Zoo",
+      "Habitat",
+      "Photic_zone"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Mjölnir",
+      "url": "https://en.wikipedia.org/wiki/Mjölnir",
+      "description": "Hammer of the god Thor in Norse mythology"
+    },
+    "targetArticle": {
+      "title": "Solar_wind",
+      "url": "https://en.wikipedia.org/wiki/Solar_wind",
+      "description": "Stream of charged particles released from the Sun"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Mjölnir",
+      "Euhemerism",
+      "Sun",
+      "Solar_wind"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Scanning_tunneling_microscope",
+      "url": "https://en.wikipedia.org/wiki/Scanning_tunneling_microscope",
+      "description": "Microscope using quantum tunneling to image surfaces"
+    },
+    "targetArticle": {
+      "title": "Pipe_organ",
+      "url": "https://en.wikipedia.org/wiki/Pipe_organ",
+      "description": "Musical instrument that produces sound by driving air through pipes"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Scanning_tunneling_microscope",
+      "Atom",
+      "Tin",
+      "Pipe_organ"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Roulette",
+      "url": "https://en.wikipedia.org/wiki/Roulette",
+      "description": "Casino game where a ball lands on a numbered wheel"
+    },
+    "targetArticle": {
+      "title": "I_Ching",
+      "url": "https://en.wikipedia.org/wiki/I_Ching",
+      "description": "Ancient Chinese divination text"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Roulette",
+      "Blaise_Pascal",
+      "Gottfried_Wilhelm_Leibniz",
+      "I_Ching"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Mjölnir",
+      "url": "https://en.wikipedia.org/wiki/Mjölnir",
+      "description": "Hammer of the god Thor in Norse mythology"
+    },
+    "targetArticle": {
+      "title": "Hurdy-gurdy",
+      "url": "https://en.wikipedia.org/wiki/Hurdy-gurdy",
+      "description": "Stringed instrument sounded by a hand-cranked wheel"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Mjölnir",
+      "Folklore_studies",
+      "Danish_folklore",
+      "Hurdy-gurdy"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Mahjong",
+      "url": "https://en.wikipedia.org/wiki/Mahjong",
+      "description": "Tile-based game of Chinese origin"
+    },
+    "targetArticle": {
+      "title": "Dung_beetle",
+      "url": "https://en.wikipedia.org/wiki/Dung_beetle",
+      "description": "Beetle that feeds on and breeds in animal dung"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Mahjong",
+      "Artificial_intelligence",
+      "Karel_Čapek",
+      "Dung_beetle"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Axolotl",
+      "url": "https://en.wikipedia.org/wiki/Axolotl",
+      "description": "Species of salamander"
+    },
+    "targetArticle": {
+      "title": "Antikythera_mechanism",
+      "url": "https://en.wikipedia.org/wiki/Antikythera_mechanism",
+      "description": "Ancient Greek analogue computer for predicting astronomical positions"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Axolotl",
+      "Dwarfism",
+      "Ancient_Greece",
+      "Antikythera_mechanism"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Game_theory",
+      "url": "https://en.wikipedia.org/wiki/Game_theory",
+      "description": "Study of strategic decision-making between rational agents"
+    },
+    "targetArticle": {
+      "title": "Abyssal_plain",
+      "url": "https://en.wikipedia.org/wiki/Abyssal_plain",
+      "description": "Flat area on the deep ocean floor"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Game_theory",
+      "Animal_communication",
+      "Cephalopod",
+      "Abyssal_plain"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Principia_Mathematica",
+      "url": "https://en.wikipedia.org/wiki/Principia_Mathematica",
+      "description": "3-volume treatise on mathematics, 1910–1913"
+    },
+    "targetArticle": {
+      "title": "Spice_trade",
+      "url": "https://en.wikipedia.org/wiki/Spice_trade",
+      "description": "Historical commerce in aromatic plant products"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Principia_Mathematica",
+      "Bertrand_Russell",
+      "Cairo",
+      "Spice_trade"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Kākāpō",
+      "url": "https://en.wikipedia.org/wiki/Kākāpō",
+      "description": "Parrot endemic to New Zealand"
+    },
+    "targetArticle": {
+      "title": "Silk_Road",
+      "url": "https://en.wikipedia.org/wiki/Silk_Road",
+      "description": "Ancient trade route connecting East and West"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Kākāpō",
+      "Ad_libitum",
+      "Lingua_franca",
+      "Silk_Road"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Doppler_effect",
+      "url": "https://en.wikipedia.org/wiki/Doppler_effect",
+      "description": "Change in frequency of a wave relative to an observer"
+    },
+    "targetArticle": {
+      "title": "Holy_Grail",
+      "url": "https://en.wikipedia.org/wiki/Holy_Grail",
+      "description": "Sacred cup sought in Arthurian legend"
+    },
+    "tags": [
+      "cross-domain"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Doppler_effect",
+      "United_Kingdom",
+      "King_Arthur",
+      "Holy_Grail"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Mandrill",
+      "url": "https://en.wikipedia.org/wiki/Mandrill",
+      "description": "World's largest monkey, known for its colorful face"
+    },
+    "targetArticle": {
+      "title": "Terracotta_Army",
+      "url": "https://en.wikipedia.org/wiki/Terracotta_Army",
+      "description": "Collection of terracotta sculptures of Qin Shi Huang's armies"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Mandrill",
+      "Collagen",
+      "Animal_glue",
+      "Terracotta_Army"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Solar_wind",
+      "url": "https://en.wikipedia.org/wiki/Solar_wind",
+      "description": "Stream of charged particles released from the Sun"
+    },
+    "targetArticle": {
+      "title": "Angkor_Wat",
+      "url": "https://en.wikipedia.org/wiki/Angkor_Wat",
+      "description": "Temple complex in Cambodia"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Solar_wind",
+      "Aurora",
+      "Equinox",
+      "Angkor_Wat"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Tyre,_Lebanon",
+      "url": "https://en.wikipedia.org/wiki/Tyre,_Lebanon",
+      "description": "City in Lebanon"
+    },
+    "targetArticle": {
+      "title": "Leafcutter_ant",
+      "url": "https://en.wikipedia.org/wiki/Leafcutter_ant",
+      "description": "Tropical ant species that cultivates fungus gardens"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Tyre,_Lebanon",
+      "Demonym",
+      "Trinidad_and_Tobago",
+      "Leafcutter_ant"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Pho",
+      "url": "https://en.wikipedia.org/wiki/Pho",
+      "description": "Vietnamese soup with broth, rice noodles, herbs, and meat"
+    },
+    "targetArticle": {
+      "title": "Neuschwanstein_Castle",
+      "url": "https://en.wikipedia.org/wiki/Neuschwanstein_Castle",
+      "description": "19th-century palace in Bavaria, Germany"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Pho",
+      "Brisket",
+      "Germany",
+      "Neuschwanstein_Castle"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Hatshepsut",
+      "url": "https://en.wikipedia.org/wiki/Hatshepsut",
+      "description": "One of the most successful pharaohs of ancient Egypt"
+    },
+    "targetArticle": {
+      "title": "Epic_of_Gilgamesh",
+      "url": "https://en.wikipedia.org/wiki/Epic_of_Gilgamesh",
+      "description": "Ancient Mesopotamian poem, one of the earliest literary works"
+    },
+    "tags": [
+      "cross-domain"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Hatshepsut",
+      "Ahmose_I",
+      "British_Museum",
+      "Epic_of_Gilgamesh"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Dyson_sphere",
+      "url": "https://en.wikipedia.org/wiki/Dyson_sphere",
+      "description": "Hypothetical megastructure encompassing a star"
+    },
+    "targetArticle": {
+      "title": "Atlantis",
+      "url": "https://en.wikipedia.org/wiki/Atlantis",
+      "description": "Legendary island civilization first described by Plato"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Dyson_sphere",
+      "Exploratory_engineering",
+      "Pseudoscience",
+      "Atlantis"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Atlantis",
+      "url": "https://en.wikipedia.org/wiki/Atlantis",
+      "description": "Legendary island civilization first described by Plato"
+    },
+    "targetArticle": {
+      "title": "Chaos_theory",
+      "url": "https://en.wikipedia.org/wiki/Chaos_theory",
+      "description": "Mathematical framework for systems sensitive to initial conditions"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Atlantis",
+      "Alexander_von_Humboldt",
+      "Materialism",
+      "Chaos_theory"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Nefertiti",
+      "url": "https://en.wikipedia.org/wiki/Nefertiti",
+      "description": "Egyptian queen known for her iconic bust"
+    },
+    "targetArticle": {
+      "title": "Bifröst",
+      "url": "https://en.wikipedia.org/wiki/Bifröst",
+      "description": "Rainbow bridge between Asgard and Midgard"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Nefertiti",
+      "Polytheism",
+      "Æsir",
+      "Bifröst"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Ozone_layer",
+      "url": "https://en.wikipedia.org/wiki/Ozone_layer",
+      "description": "Region of Earth's stratosphere absorbing UV radiation"
+    },
+    "targetArticle": {
+      "title": "Zealandia",
+      "url": "https://en.wikipedia.org/wiki/Zealandia",
+      "description": "Mostly submerged continental crust area in Oceania"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Ozone_layer",
+      "Earth",
+      "Continent",
+      "Zealandia"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Kathakali",
+      "url": "https://en.wikipedia.org/wiki/Kathakali",
+      "description": "Classical Indian dance-drama from Kerala"
+    },
+    "targetArticle": {
+      "title": "Domesday_Book",
+      "url": "https://en.wikipedia.org/wiki/Domesday_Book",
+      "description": "11th-century survey of landholding in England"
+    },
+    "tags": [
+      "cross-domain"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Kathakali",
+      "Guru",
+      "Sociology",
+      "Domesday_Book"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Hannibal",
+      "url": "https://en.wikipedia.org/wiki/Hannibal",
+      "description": "Carthaginian general who crossed the Alps with elephants"
+    },
+    "targetArticle": {
+      "title": "Sudoku",
+      "url": "https://en.wikipedia.org/wiki/Sudoku",
+      "description": "Logic-based number-placement puzzle"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Hannibal",
+      "Ancient_Rome",
+      "Board_game",
+      "Sudoku"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Uncertainty_principle",
+      "url": "https://en.wikipedia.org/wiki/Uncertainty_principle",
+      "description": "Foundational principle in quantum physics"
+    },
+    "targetArticle": {
+      "title": "Coral_bleaching",
+      "url": "https://en.wikipedia.org/wiki/Coral_bleaching",
+      "description": "Loss of symbiotic algae from coral due to stress"
+    },
+    "tags": [
+      "cross-domain"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Uncertainty_principle",
+      "Interferometry",
+      "Oceanography",
+      "Coral_bleaching"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Radiometric_dating",
+      "url": "https://en.wikipedia.org/wiki/Radiometric_dating",
+      "description": "Method of dating materials using radioactive decay"
+    },
+    "targetArticle": {
+      "title": "Sea_cucumber",
+      "url": "https://en.wikipedia.org/wiki/Sea_cucumber",
+      "description": "Marine animal in the class Holothuroidea"
+    },
+    "tags": [
+      "cross-domain"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Radiometric_dating",
+      "Artifact_(archaeology)",
+      "Animal",
+      "Sea_cucumber"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Pho",
+      "url": "https://en.wikipedia.org/wiki/Pho",
+      "description": "Vietnamese soup with broth, rice noodles, herbs, and meat"
+    },
+    "targetArticle": {
+      "title": "Polymerase_chain_reaction",
+      "url": "https://en.wikipedia.org/wiki/Polymerase_chain_reaction",
+      "description": "Technique to amplify specific DNA segments"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Pho",
+      "Beef",
+      "Bacteria",
+      "Polymerase_chain_reaction"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Coriolis_force",
+      "url": "https://en.wikipedia.org/wiki/Coriolis_force",
+      "description": "Inertial force deflecting moving objects on rotating bodies"
+    },
+    "targetArticle": {
+      "title": "Boolean_algebra",
+      "url": "https://en.wikipedia.org/wiki/Boolean_algebra",
+      "description": "Branch of algebra dealing with true/false values"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Coriolis_force",
+      "Applied_mechanics",
+      "Mathematics",
+      "Boolean_algebra"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Library_of_Alexandria",
+      "url": "https://en.wikipedia.org/wiki/Library_of_Alexandria",
+      "description": "Ancient world's most significant library"
+    },
+    "targetArticle": {
+      "title": "Orrery",
+      "url": "https://en.wikipedia.org/wiki/Orrery",
+      "description": "Mechanical model of the solar system"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Library_of_Alexandria",
+      "Archimedes",
+      "Antikythera_mechanism",
+      "Orrery"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Crossword",
+      "url": "https://en.wikipedia.org/wiki/Crossword",
+      "description": "Word puzzle typically arranged in a grid"
+    },
+    "targetArticle": {
+      "title": "Kimchi",
+      "url": "https://en.wikipedia.org/wiki/Kimchi",
+      "description": "Korean fermented vegetable dish"
+    },
+    "tags": [
+      "cross-domain"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Crossword",
+      "Capitalization",
+      "North_Korea",
+      "Kimchi"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Shambhala",
+      "url": "https://en.wikipedia.org/wiki/Shambhala",
+      "description": "Mythical kingdom in Tibetan Buddhist and Hindu tradition"
+    },
+    "targetArticle": {
+      "title": "Miyamoto_Musashi",
+      "url": "https://en.wikipedia.org/wiki/Miyamoto_Musashi",
+      "description": "Legendary Japanese swordsman and author of The Book of Five Rings"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Shambhala",
+      "Maitreya",
+      "Budai",
+      "Miyamoto_Musashi"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Blue_hole",
+      "url": "https://en.wikipedia.org/wiki/Blue_hole",
+      "description": "Marine cavern or sinkhole, open to the surface, in carbonate bedrock"
+    },
+    "targetArticle": {
+      "title": "Iliad",
+      "url": "https://en.wikipedia.org/wiki/Iliad",
+      "description": "Epic poem attributed to Homer"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Blue_hole",
+      "Bacteria",
+      "Ancient_Greek",
+      "Iliad"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Clavichord",
+      "url": "https://en.wikipedia.org/wiki/Clavichord",
+      "description": "Early keyboard instrument producing a soft, intimate sound"
+    },
+    "targetArticle": {
+      "title": "Kākāpō",
+      "url": "https://en.wikipedia.org/wiki/Kākāpō",
+      "description": "Parrot endemic to New Zealand"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Clavichord",
+      "Metropolitan_Museum_of_Art",
+      "Oceania",
+      "Kākāpō"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Pangolin",
+      "url": "https://en.wikipedia.org/wiki/Pangolin",
+      "description": "Mammals of the order Pholidota"
+    },
+    "targetArticle": {
+      "title": "Zooplankton",
+      "url": "https://en.wikipedia.org/wiki/Zooplankton",
+      "description": "Heterotrophic plankton drifting in water"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Pangolin",
+      "Ant",
+      "Biomass_(ecology)",
+      "Zooplankton"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Moai",
+      "url": "https://en.wikipedia.org/wiki/Moai",
+      "description": "Monolithic statues on Easter Island"
+    },
+    "targetArticle": {
+      "title": "Solar_cell",
+      "url": "https://en.wikipedia.org/wiki/Solar_cell",
+      "description": "Device that converts sunlight directly into electricity"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Moai",
+      "Basalt",
+      "Hubble_Space_Telescope",
+      "Solar_cell"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Solar_wind",
+      "url": "https://en.wikipedia.org/wiki/Solar_wind",
+      "description": "Stream of charged particles released from the Sun"
+    },
+    "targetArticle": {
+      "title": "Fountain_of_Youth",
+      "url": "https://en.wikipedia.org/wiki/Fountain_of_Youth",
+      "description": "Mythical spring granting longevity"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Solar_wind",
+      "Advanced_Composition_Explorer",
+      "Florida",
+      "Fountain_of_Youth"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Alpheidae",
+      "url": "https://en.wikipedia.org/wiki/Alpheidae",
+      "description": "Family of crustacean possessing asymmetrical snapping claws"
+    },
+    "targetArticle": {
+      "title": "Drake_equation",
+      "url": "https://en.wikipedia.org/wiki/Drake_equation",
+      "description": "Estimate of extraterrestrial civilizations"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Alpheidae",
+      "Naked_eye",
+      "Planet",
+      "Drake_equation"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Srinivasa_Ramanujan",
+      "url": "https://en.wikipedia.org/wiki/Srinivasa_Ramanujan",
+      "description": "Indian mathematician who made extraordinary contributions to number theory"
+    },
+    "targetArticle": {
+      "title": "Giant_panda",
+      "url": "https://en.wikipedia.org/wiki/Giant_panda",
+      "description": "Bear native to China, famous for black-and-white coloring"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Srinivasa_Ramanujan",
+      "Amoebiasis",
+      "Feces",
+      "Giant_panda"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Tunguska_event",
+      "url": "https://en.wikipedia.org/wiki/Tunguska_event",
+      "description": "Massive 1908 explosion over Siberia caused by a meteoroid"
+    },
+    "targetArticle": {
+      "title": "Fountain_of_Youth",
+      "url": "https://en.wikipedia.org/wiki/Fountain_of_Youth",
+      "description": "Mythical spring granting longevity"
+    },
+    "tags": [
+      "cross-domain"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Tunguska_event",
+      "Cosmic_dust",
+      "Water",
+      "Fountain_of_Youth"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Bhagavad_Gita",
+      "url": "https://en.wikipedia.org/wiki/Bhagavad_Gita",
+      "description": "Major Hindu scripture"
+    },
+    "targetArticle": {
+      "title": "Forbidden_City",
+      "url": "https://en.wikipedia.org/wiki/Forbidden_City",
+      "description": "Imperial palace complex in the center of Beijing"
+    },
+    "tags": [
+      "cross-domain"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Bhagavad_Gita",
+      "British_Raj",
+      "James_Bruce,_8th_Earl_of_Elgin",
+      "Forbidden_City"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Game_theory",
+      "url": "https://en.wikipedia.org/wiki/Game_theory",
+      "description": "Study of strategic decision-making between rational agents"
+    },
+    "targetArticle": {
+      "title": "Concorde",
+      "url": "https://en.wikipedia.org/wiki/Concorde",
+      "description": "Retired supersonic passenger airliner"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Game_theory",
+      "Applied_mathematics",
+      "James_Lighthill",
+      "Concorde"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Tao_Te_Ching",
+      "url": "https://en.wikipedia.org/wiki/Tao_Te_Ching",
+      "description": "Chinese classic text"
+    },
+    "targetArticle": {
+      "title": "Contract_bridge",
+      "url": "https://en.wikipedia.org/wiki/Contract_bridge",
+      "description": "Card game"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Tao_Te_Ching",
+      "Oxford_University_Press",
+      "Botswana",
+      "Contract_bridge"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Drake_equation",
+      "url": "https://en.wikipedia.org/wiki/Drake_equation",
+      "description": "Estimate of extraterrestrial civilizations"
+    },
+    "targetArticle": {
+      "title": "Holography",
+      "url": "https://en.wikipedia.org/wiki/Holography",
+      "description": "Technique for recording 3D images using laser light"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Drake_equation",
+      "Abiogenesis",
+      "Polymer",
+      "Holography"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Hubble_Space_Telescope",
+      "url": "https://en.wikipedia.org/wiki/Hubble_Space_Telescope",
+      "description": "NASA/ESA space telescope launched in 1990"
+    },
+    "targetArticle": {
+      "title": "Mary_Anning",
+      "url": "https://en.wikipedia.org/wiki/Mary_Anning",
+      "description": "English fossil collector and paleontologist"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Hubble_Space_Telescope",
+      "Citizen_science",
+      "Natural_History_Museum,_London",
+      "Mary_Anning"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Shogi",
+      "url": "https://en.wikipedia.org/wiki/Shogi",
+      "description": "Japanese strategy board game similar to chess"
+    },
+    "targetArticle": {
+      "title": "Sitar",
+      "url": "https://en.wikipedia.org/wiki/Sitar",
+      "description": "Plucked string instrument from the Indian subcontinent"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Shogi",
+      "Iemoto",
+      "Shamisen",
+      "Sitar"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Enigma_machine",
+      "url": "https://en.wikipedia.org/wiki/Enigma_machine",
+      "description": "German cipher machine during World War II"
+    },
+    "targetArticle": {
+      "title": "Mid-Atlantic_Ridge",
+      "url": "https://en.wikipedia.org/wiki/Mid-Atlantic_Ridge",
+      "description": "Divergent tectonic boundary on the floor of the Atlantic Ocean"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Enigma_machine",
+      "Allies_of_World_War_II",
+      "Atlantic_Ocean",
+      "Mid-Atlantic_Ridge"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Chromatography",
+      "url": "https://en.wikipedia.org/wiki/Chromatography",
+      "description": "Technique for separating mixtures into their components"
+    },
+    "targetArticle": {
+      "title": "Phoenicia",
+      "url": "https://en.wikipedia.org/wiki/Phoenicia",
+      "description": "Ancient civilization of seafaring traders in the eastern Mediterranean"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Chromatography",
+      "Ancient_Greek",
+      "Archaic_Greece",
+      "Phoenicia"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Chichen_Itza",
+      "url": "https://en.wikipedia.org/wiki/Chichen_Itza",
+      "description": "Pre-Columbian Maya city in Mexico's Yucatán Peninsula"
+    },
+    "targetArticle": {
+      "title": "Richat_Structure",
+      "url": "https://en.wikipedia.org/wiki/Richat_Structure",
+      "description": "Circular geological feature in the Sahara desert"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Chichen_Itza",
+      "Alice_Dixon_Le_Plongeon",
+      "Atlantis",
+      "Richat_Structure"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "ENIAC",
+      "url": "https://en.wikipedia.org/wiki/ENIAC",
+      "description": "First general-purpose electronic digital computer"
+    },
+    "targetArticle": {
+      "title": "Simulation_hypothesis",
+      "url": "https://en.wikipedia.org/wiki/Simulation_hypothesis",
+      "description": "Proposal that reality could be an artificial simulation"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "ENIAC",
+      "Monte_Carlo_method",
+      "Simulation",
+      "Simulation_hypothesis"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Wind_turbine",
+      "url": "https://en.wikipedia.org/wiki/Wind_turbine",
+      "description": "Device that converts wind energy into electrical power"
+    },
+    "targetArticle": {
+      "title": "Gondwana",
+      "url": "https://en.wikipedia.org/wiki/Gondwana",
+      "description": "Ancient supercontinent that included most of today's Southern Hemisphere"
+    },
+    "tags": [
+      "cross-domain"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Wind_turbine",
+      "Compact_wind_acceleration_turbine",
+      "New_Zealand",
+      "Gondwana"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Markhor",
+      "url": "https://en.wikipedia.org/wiki/Markhor",
+      "description": "National animal of Pakistan, a large wild goat"
+    },
+    "targetArticle": {
+      "title": "I_Ching",
+      "url": "https://en.wikipedia.org/wiki/I_Ching",
+      "description": "Ancient Chinese divination text"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Markhor",
+      "Baltistan",
+      "China",
+      "I_Ching"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Pho",
+      "url": "https://en.wikipedia.org/wiki/Pho",
+      "description": "Vietnamese soup with broth, rice noodles, herbs, and meat"
+    },
+    "targetArticle": {
+      "title": "Zooplankton",
+      "url": "https://en.wikipedia.org/wiki/Zooplankton",
+      "description": "Heterotrophic plankton drifting in water"
+    },
+    "tags": [
+      "cross-domain"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Pho",
+      "Bánh_mì",
+      "Sardine",
+      "Zooplankton"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Fermi_paradox",
+      "url": "https://en.wikipedia.org/wiki/Fermi_paradox",
+      "description": "Apparent contradiction between lack of alien evidence and probability"
+    },
+    "targetArticle": {
+      "title": "Tuatara",
+      "url": "https://en.wikipedia.org/wiki/Tuatara",
+      "description": "Reptile endemic to New Zealand, sole surviving member of its order"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Fermi_paradox",
+      "Aardvark",
+      "Living_fossil",
+      "Tuatara"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Velociraptor",
+      "url": "https://en.wikipedia.org/wiki/Velociraptor",
+      "description": "Small dromaeosaurid dinosaur from the Cretaceous period"
+    },
+    "targetArticle": {
+      "title": "Leafcutter_ant",
+      "url": "https://en.wikipedia.org/wiki/Leafcutter_ant",
+      "description": "Tropical ant species that cultivates fungus gardens"
+    },
+    "tags": [
+      "cross-domain"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Velociraptor",
+      "Bayan_Mandahu_Formation",
+      "Amphisbaenia",
+      "Leafcutter_ant"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Wright_Flyer",
+      "url": "https://en.wikipedia.org/wiki/Wright_Flyer",
+      "description": "First powered aircraft built by the Wright brothers"
+    },
+    "targetArticle": {
+      "title": "Superconductivity",
+      "url": "https://en.wikipedia.org/wiki/Superconductivity",
+      "description": "Zero electrical resistance in certain materials at low temperatures"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Wright_Flyer",
+      "Anemometer",
+      "Tungsten",
+      "Superconductivity"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Code_of_Hammurabi",
+      "url": "https://en.wikipedia.org/wiki/Code_of_Hammurabi",
+      "description": "Babylonian legal text"
+    },
+    "targetArticle": {
+      "title": "Blue_carbon",
+      "url": "https://en.wikipedia.org/wiki/Blue_carbon",
+      "description": "Carbon stored in coastal and marine ecosystems"
+    },
+    "tags": [
+      "cross-domain"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Code_of_Hammurabi",
+      "Basalt",
+      "Carbon_sequestration",
+      "Blue_carbon"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Bifröst",
+      "url": "https://en.wikipedia.org/wiki/Bifröst",
+      "description": "Rainbow bridge between Asgard and Midgard"
+    },
+    "targetArticle": {
+      "title": "Empanada",
+      "url": "https://en.wikipedia.org/wiki/Empanada",
+      "description": "Baked or fried pastry filled with meat or cheese"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Bifröst",
+      "Rainbow",
+      "Colombia",
+      "Empanada"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "On_the_Origin_of_Species",
+      "url": "https://en.wikipedia.org/wiki/On_the_Origin_of_Species",
+      "description": "1859 book on evolution by Charles Darwin"
+    },
+    "targetArticle": {
+      "title": "Slot_machine",
+      "url": "https://en.wikipedia.org/wiki/Slot_machine",
+      "description": "Casino gambling machine"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "On_the_Origin_of_Species",
+      "Christianity",
+      "Tang_dynasty",
+      "Slot_machine"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Fall_of_Constantinople",
+      "url": "https://en.wikipedia.org/wiki/Fall_of_Constantinople",
+      "description": "1453 Ottoman conquest ending the Byzantine Empire"
+    },
+    "targetArticle": {
+      "title": "Sitting_Bull",
+      "url": "https://en.wikipedia.org/wiki/Sitting_Bull",
+      "description": "Hunkpapa Lakota leader who resisted US government policies"
+    },
+    "tags": [
+      "cross-domain"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Fall_of_Constantinople",
+      "Black_Death",
+      "Smallpox",
+      "Sitting_Bull"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Seismometer",
+      "url": "https://en.wikipedia.org/wiki/Seismometer",
+      "description": "Instrument that measures ground motion during earthquakes"
+    },
+    "targetArticle": {
+      "title": "Bibimbap",
+      "url": "https://en.wikipedia.org/wiki/Bibimbap",
+      "description": "Korean mixed rice dish with vegetables and meat"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Seismometer",
+      "Flickr",
+      "Korean_language",
+      "Bibimbap"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Iliad",
+      "url": "https://en.wikipedia.org/wiki/Iliad",
+      "description": "Epic poem attributed to Homer"
+    },
+    "targetArticle": {
+      "title": "Carbon_nanotube",
+      "url": "https://en.wikipedia.org/wiki/Carbon_nanotube",
+      "description": "Cylindrical nanostructure of carbon with extraordinary properties"
+    },
+    "tags": [
+      "cross-domain"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Iliad",
+      "Greek_underworld",
+      "Moon",
+      "Carbon_nanotube"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Cahokia",
+      "url": "https://en.wikipedia.org/wiki/Cahokia",
+      "description": "Pre-Columbian Native American city near modern St. Louis"
+    },
+    "targetArticle": {
+      "title": "Mary_Anning",
+      "url": "https://en.wikipedia.org/wiki/Mary_Anning",
+      "description": "English fossil collector and paleontologist"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Cahokia",
+      "Falcon",
+      "Fossil",
+      "Mary_Anning"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Didgeridoo",
+      "url": "https://en.wikipedia.org/wiki/Didgeridoo",
+      "description": "Aboriginal Australian wind instrument"
+    },
+    "targetArticle": {
+      "title": "Flamenco",
+      "url": "https://en.wikipedia.org/wiki/Flamenco",
+      "description": "Genre of Spanish music and dance"
+    },
+    "tags": [
+      "cross-domain"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Didgeridoo",
+      "Aerophone",
+      "Colombia",
+      "Flamenco"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Doggerland",
+      "url": "https://en.wikipedia.org/wiki/Doggerland",
+      "description": "Former landmass in Northern Europe"
+    },
+    "targetArticle": {
+      "title": "Timbuktu",
+      "url": "https://en.wikipedia.org/wiki/Timbuktu",
+      "description": "Ancient city in Mali, center of Islamic scholarship"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Doggerland",
+      "Archaeology",
+      "Africa",
+      "Timbuktu"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Boudica",
+      "url": "https://en.wikipedia.org/wiki/Boudica",
+      "description": "Queen of the British Iceni tribe (d. 60/61)"
+    },
+    "targetArticle": {
+      "title": "Ratatouille",
+      "url": "https://en.wikipedia.org/wiki/Ratatouille",
+      "description": "French Provençal vegetable stew"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Boudica",
+      "Ancient_Rome",
+      "Eggplant",
+      "Ratatouille"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Lake_Baikal",
+      "url": "https://en.wikipedia.org/wiki/Lake_Baikal",
+      "description": "Oldest and deepest freshwater lake in the world"
+    },
+    "targetArticle": {
+      "title": "Pierogi",
+      "url": "https://en.wikipedia.org/wiki/Pierogi",
+      "description": "Eastern European filled dumplings"
+    },
+    "tags": [
+      "cross-domain"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Lake_Baikal",
+      "Black_Sea",
+      "Pontic_Greeks",
+      "Pierogi"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Holy_Grail",
+      "url": "https://en.wikipedia.org/wiki/Holy_Grail",
+      "description": "Sacred cup sought in Arthurian legend"
+    },
+    "targetArticle": {
+      "title": "Fish_and_chips",
+      "url": "https://en.wikipedia.org/wiki/Fish_and_chips",
+      "description": "English fast food of battered fish and fried potatoes"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Holy_Grail",
+      "A_Glastonbury_Romance",
+      "Wales",
+      "Fish_and_chips"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Tower_of_London",
+      "url": "https://en.wikipedia.org/wiki/Tower_of_London",
+      "description": "Historic castle on the north bank of the River Thames"
+    },
+    "targetArticle": {
+      "title": "Markhor",
+      "url": "https://en.wikipedia.org/wiki/Markhor",
+      "description": "National animal of Pakistan, a large wild goat"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Tower_of_London",
+      "Barbary_lion",
+      "Bronx_Zoo",
+      "Markhor"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Zealandia",
+      "url": "https://en.wikipedia.org/wiki/Zealandia",
+      "description": "Mostly submerged continental crust area in Oceania"
+    },
+    "targetArticle": {
+      "title": "Holy_Grail",
+      "url": "https://en.wikipedia.org/wiki/Holy_Grail",
+      "description": "Sacred cup sought in Arthurian legend"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Zealandia",
+      "Arabian_Peninsula",
+      "İskenderun",
+      "Holy_Grail"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Hurdy-gurdy",
+      "url": "https://en.wikipedia.org/wiki/Hurdy-gurdy",
+      "description": "Stringed instrument sounded by a hand-cranked wheel"
+    },
+    "targetArticle": {
+      "title": "Peking_duck",
+      "url": "https://en.wikipedia.org/wiki/Peking_duck",
+      "description": "Beijing roast duck, a famous Chinese dish"
+    },
+    "tags": [
+      "cross-domain"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Hurdy-gurdy",
+      "France",
+      "Endonym_and_exonym",
+      "Peking_duck"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Pangaea",
+      "url": "https://en.wikipedia.org/wiki/Pangaea",
+      "description": "Supercontinent that existed during the late Paleozoic and early Mesozoic"
+    },
+    "targetArticle": {
+      "title": "Nash_equilibrium",
+      "url": "https://en.wikipedia.org/wiki/Nash_equilibrium",
+      "description": "Solution concept of a non-cooperative game"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Pangaea",
+      "Asia",
+      "Robert_Aumann",
+      "Nash_equilibrium"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Great_Zimbabwe",
+      "url": "https://en.wikipedia.org/wiki/Great_Zimbabwe",
+      "description": "Ruins of an ancient/medieval city in southeast Zimbabwe"
+    },
+    "targetArticle": {
+      "title": "Angkor_Wat",
+      "url": "https://en.wikipedia.org/wiki/Angkor_Wat",
+      "description": "Temple complex in Cambodia"
+    },
+    "tags": [
+      "cross-domain"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Great_Zimbabwe",
+      "Alexandria",
+      "Ancient_monument",
+      "Angkor_Wat"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Injera",
+      "url": "https://en.wikipedia.org/wiki/Injera",
+      "description": "Ethiopian sourdough flatbread made from teff flour"
+    },
+    "targetArticle": {
+      "title": "Neuschwanstein_Castle",
+      "url": "https://en.wikipedia.org/wiki/Neuschwanstein_Castle",
+      "description": "19th-century palace in Bavaria, Germany"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Injera",
+      "Barley",
+      "Germany",
+      "Neuschwanstein_Castle"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Ship_of_Theseus",
+      "url": "https://en.wikipedia.org/wiki/Ship_of_Theseus",
+      "description": "Thought experiment about identity over time"
+    },
+    "targetArticle": {
+      "title": "Pierogi",
+      "url": "https://en.wikipedia.org/wiki/Pierogi",
+      "description": "Eastern European filled dumplings"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Ship_of_Theseus",
+      "Lajos_Kossuth",
+      "Utica,_New_York",
+      "Pierogi"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Spinning_jenny",
+      "url": "https://en.wikipedia.org/wiki/Spinning_jenny",
+      "description": "Multi-spindle spinning frame that launched the Industrial Revolution"
+    },
+    "targetArticle": {
+      "title": "Teotihuacan",
+      "url": "https://en.wikipedia.org/wiki/Teotihuacan",
+      "description": "Ancient Mesoamerican city northeast of modern Mexico City"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Spinning_jenny",
+      "History_of_Manchester",
+      "Language",
+      "Teotihuacan"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Hanseatic_League",
+      "url": "https://en.wikipedia.org/wiki/Hanseatic_League",
+      "description": "Medieval commercial alliance of merchant guilds"
+    },
+    "targetArticle": {
+      "title": "Great_Filter",
+      "url": "https://en.wikipedia.org/wiki/Great_Filter",
+      "description": "Hypothesis of barriers to forming interstellar civilizations"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Hanseatic_League",
+      "Apocalyptic_and_post-apocalyptic_fiction",
+      "Global_catastrophic_risk",
+      "Great_Filter"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Battle_of_Thermopylae",
+      "url": "https://en.wikipedia.org/wiki/Battle_of_Thermopylae",
+      "description": "480 BC battle between Greeks and Persians"
+    },
+    "targetArticle": {
+      "title": "Rosalind_Franklin",
+      "url": "https://en.wikipedia.org/wiki/Rosalind_Franklin",
+      "description": "British chemist whose X-ray work was key to discovering DNA's structure"
+    },
+    "tags": [
+      "cross-domain"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Battle_of_Thermopylae",
+      "Egyptians",
+      "Evolution",
+      "Rosalind_Franklin"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Extremophile",
+      "url": "https://en.wikipedia.org/wiki/Extremophile",
+      "description": "Organism thriving in extreme environmental conditions"
+    },
+    "targetArticle": {
+      "title": "Saladin",
+      "url": "https://en.wikipedia.org/wiki/Saladin",
+      "description": "First sultan of Egypt and Syria, famous for recapturing Jerusalem"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Extremophile",
+      "Arsenic",
+      "Jordan",
+      "Saladin"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "William_Wallace",
+      "url": "https://en.wikipedia.org/wiki/William_Wallace",
+      "description": "Scottish knight who became a symbol of Scottish independence"
+    },
+    "targetArticle": {
+      "title": "Seismometer",
+      "url": "https://en.wikipedia.org/wiki/Seismometer",
+      "description": "Instrument that measures ground motion during earthquakes"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "William_Wallace",
+      "Ayrshire",
+      "Clyde_Muirshiel_Regional_Park",
+      "Seismometer"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Borscht",
+      "url": "https://en.wikipedia.org/wiki/Borscht",
+      "description": "Sour soup common in Eastern Europe"
+    },
+    "targetArticle": {
+      "title": "East_India_Company",
+      "url": "https://en.wikipedia.org/wiki/East_India_Company",
+      "description": "English trading company established in 1600"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Borscht",
+      "Alaska",
+      "Nootka_Sound",
+      "East_India_Company"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Chicxulub_crater",
+      "url": "https://en.wikipedia.org/wiki/Chicxulub_crater",
+      "description": "Impact crater linked to the extinction of the dinosaurs"
+    },
+    "targetArticle": {
+      "title": "Dominoes",
+      "url": "https://en.wikipedia.org/wiki/Dominoes",
+      "description": "Family of games played with rectangular tiles"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Chicxulub_crater",
+      "Houston_Chronicle",
+      "Christmas_Eve",
+      "Dominoes"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Gungnir",
+      "url": "https://en.wikipedia.org/wiki/Gungnir",
+      "description": "Spear of the Norse god Odin"
+    },
+    "targetArticle": {
+      "title": "Overton_window",
+      "url": "https://en.wikipedia.org/wiki/Overton_window",
+      "description": "Range of ideas tolerated in public discourse"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Gungnir",
+      "Richard_Wagner",
+      "Left-wing_politics",
+      "Overton_window"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Mass_spectrometry",
+      "url": "https://en.wikipedia.org/wiki/Mass_spectrometry",
+      "description": "Analytical technique measuring mass-to-charge ratio of ions"
+    },
+    "targetArticle": {
+      "title": "Poker",
+      "url": "https://en.wikipedia.org/wiki/Poker",
+      "description": "Family of card games combining strategy and gambling"
+    },
+    "tags": [
+      "cross-domain"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Mass_spectrometry",
+      "A_priori_and_a_posteriori",
+      "Mathematics",
+      "Poker"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Go_(game)",
+      "url": "https://en.wikipedia.org/wiki/Go_(game)",
+      "description": "Abstract strategy board game for two players"
+    },
+    "targetArticle": {
+      "title": "Peking_duck",
+      "url": "https://en.wikipedia.org/wiki/Peking_duck",
+      "description": "Beijing roast duck, a famous Chinese dish"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Go_(game)",
+      "Chinese_Civil_War",
+      "Beijing",
+      "Peking_duck"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "On_the_Origin_of_Species",
+      "url": "https://en.wikipedia.org/wiki/On_the_Origin_of_Species",
+      "description": "1859 book on evolution by Charles Darwin"
+    },
+    "targetArticle": {
+      "title": "Streisand_effect",
+      "url": "https://en.wikipedia.org/wiki/Streisand_effect",
+      "description": "Increased awareness of something after suppression efforts"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "On_the_Origin_of_Species",
+      "Alfred_Russel_Wallace",
+      "Leicester",
+      "Streisand_effect"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Gungnir",
+      "url": "https://en.wikipedia.org/wiki/Gungnir",
+      "description": "Spear of the Norse god Odin"
+    },
+    "targetArticle": {
+      "title": "Dominoes",
+      "url": "https://en.wikipedia.org/wiki/Dominoes",
+      "description": "Family of games played with rectangular tiles"
+    },
+    "tags": [
+      "cross-domain"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Gungnir",
+      "Sigurd",
+      "Ernest_Reyer",
+      "Dominoes"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Jigsaw_puzzle",
+      "url": "https://en.wikipedia.org/wiki/Jigsaw_puzzle",
+      "description": "Tiling puzzle requiring assembly of interlocking pieces"
+    },
+    "targetArticle": {
+      "title": "Game_theory",
+      "url": "https://en.wikipedia.org/wiki/Game_theory",
+      "description": "Study of strategic decision-making between rational agents"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Jigsaw_puzzle",
+      "Advertising",
+      "Profit_(economics)",
+      "Game_theory"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Cassowary",
+      "url": "https://en.wikipedia.org/wiki/Cassowary",
+      "description": "Large flightless bird native to Australia and New Guinea"
+    },
+    "targetArticle": {
+      "title": "Sitting_Bull",
+      "url": "https://en.wikipedia.org/wiki/Sitting_Bull",
+      "description": "Hunkpapa Lakota leader who resisted US government policies"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Cassowary",
+      "Extinction",
+      "Smallpox",
+      "Sitting_Bull"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Sea_cucumber",
+      "url": "https://en.wikipedia.org/wiki/Sea_cucumber",
+      "description": "Marine animal in the class Holothuroidea"
+    },
+    "targetArticle": {
+      "title": "Samarkand",
+      "url": "https://en.wikipedia.org/wiki/Samarkand",
+      "description": "Ancient Silk Road city in present-day Uzbekistan"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Sea_cucumber",
+      "Americas",
+      "Rio_de_Janeiro",
+      "Samarkand"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Continental_drift",
+      "url": "https://en.wikipedia.org/wiki/Continental_drift",
+      "description": "Hypothesis that continents move across Earth's surface"
+    },
+    "targetArticle": {
+      "title": "Book_of_Kells",
+      "url": "https://en.wikipedia.org/wiki/Book_of_Kells",
+      "description": "Illuminated 9th-century Gospel book"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Continental_drift",
+      "Abraham_Ortelius",
+      "Ireland",
+      "Book_of_Kells"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Shakshouka",
+      "url": "https://en.wikipedia.org/wiki/Shakshouka",
+      "description": "Maghrebi dish of eggs poached in a sauce"
+    },
+    "targetArticle": {
+      "title": "Spice_trade",
+      "url": "https://en.wikipedia.org/wiki/Spice_trade",
+      "description": "Historical commerce in aromatic plant products"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Shakshouka",
+      "Caraway",
+      "Spice",
+      "Spice_trade"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Chichen_Itza",
+      "url": "https://en.wikipedia.org/wiki/Chichen_Itza",
+      "description": "Pre-Columbian Maya city in Mexico's Yucatán Peninsula"
+    },
+    "targetArticle": {
+      "title": "Hanging_Gardens_of_Babylon",
+      "url": "https://en.wikipedia.org/wiki/Hanging_Gardens_of_Babylon",
+      "description": "One of the Seven Wonders of the Ancient World"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Chichen_Itza",
+      "National_Science_Foundation",
+      "Engineering",
+      "Hanging_Gardens_of_Babylon"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Ring_of_Fire",
+      "url": "https://en.wikipedia.org/wiki/Ring_of_Fire",
+      "description": "Zone of frequent earthquakes around the Pacific Ocean"
+    },
+    "targetArticle": {
+      "title": "Yggdrasil",
+      "url": "https://en.wikipedia.org/wiki/Yggdrasil",
+      "description": "Immense sacred tree in Norse cosmology"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Ring_of_Fire",
+      "Bonin_Islands",
+      "Anime",
+      "Yggdrasil"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "William_Wallace",
+      "url": "https://en.wikipedia.org/wiki/William_Wallace",
+      "description": "Scottish knight who became a symbol of Scottish independence"
+    },
+    "targetArticle": {
+      "title": "Overton_window",
+      "url": "https://en.wikipedia.org/wiki/Overton_window",
+      "description": "Range of ideas tolerated in public discourse"
+    },
+    "tags": [
+      "cross-domain"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "William_Wallace",
+      "Glasgow",
+      "Left-wing_politics",
+      "Overton_window"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Trieste_(bathyscaphe)",
+      "url": "https://en.wikipedia.org/wiki/Trieste_(bathyscaphe)",
+      "description": "Deep-sea scientific submersible"
+    },
+    "targetArticle": {
+      "title": "Balalaika",
+      "url": "https://en.wikipedia.org/wiki/Balalaika",
+      "description": "Russian triangular stringed musical instrument"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Trieste_(bathyscaphe)",
+      "Naples",
+      "Mandolin",
+      "Balalaika"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Kākāpō",
+      "url": "https://en.wikipedia.org/wiki/Kākāpō",
+      "description": "Parrot endemic to New Zealand"
+    },
+    "targetArticle": {
+      "title": "Flamenco",
+      "url": "https://en.wikipedia.org/wiki/Flamenco",
+      "description": "Genre of Spanish music and dance"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Kākāpō",
+      "Ancient_Greek",
+      "Elision",
+      "Flamenco"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Constantinople",
+      "url": "https://en.wikipedia.org/wiki/Constantinople",
+      "description": "Capital of the Byzantine Empire, now Istanbul"
+    },
+    "targetArticle": {
+      "title": "Giant_panda",
+      "url": "https://en.wikipedia.org/wiki/Giant_panda",
+      "description": "Bear native to China, famous for black-and-white coloring"
+    },
+    "tags": [
+      "cross-domain"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Constantinople",
+      "Ankara",
+      "Beijing",
+      "Giant_panda"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "On_the_Origin_of_Species",
+      "url": "https://en.wikipedia.org/wiki/On_the_Origin_of_Species",
+      "description": "1859 book on evolution by Charles Darwin"
+    },
+    "targetArticle": {
+      "title": "Aurora",
+      "url": "https://en.wikipedia.org/wiki/Aurora",
+      "description": "Natural light display in high-latitude skies"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "On_the_Origin_of_Species",
+      "Abiogenesis",
+      "Helium",
+      "Aurora"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Borscht",
+      "url": "https://en.wikipedia.org/wiki/Borscht",
+      "description": "Sour soup common in Eastern Europe"
+    },
+    "targetArticle": {
+      "title": "Sun_Tzu",
+      "url": "https://en.wikipedia.org/wiki/Sun_Tzu",
+      "description": "Ancient Chinese military strategist, author of The Art of War"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Borscht",
+      "Anastas_Mikoyan",
+      "Mao_Zedong",
+      "Sun_Tzu"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Holography",
+      "url": "https://en.wikipedia.org/wiki/Holography",
+      "description": "Technique for recording 3D images using laser light"
+    },
+    "targetArticle": {
+      "title": "Trolley_problem",
+      "url": "https://en.wikipedia.org/wiki/Trolley_problem",
+      "description": "Thought experiment in ethics"
+    },
+    "tags": [
+      "cross-domain"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Holography",
+      "Beam_splitter",
+      "Thought_experiment",
+      "Trolley_problem"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Jigsaw_puzzle",
+      "url": "https://en.wikipedia.org/wiki/Jigsaw_puzzle",
+      "description": "Tiling puzzle requiring assembly of interlocking pieces"
+    },
+    "targetArticle": {
+      "title": "Spinning_jenny",
+      "url": "https://en.wikipedia.org/wiki/Spinning_jenny",
+      "description": "Multi-spindle spinning frame that launched the Industrial Revolution"
+    },
+    "tags": [
+      "cross-domain"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Jigsaw_puzzle",
+      "London",
+      "Industrial_Revolution",
+      "Spinning_jenny"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Poutine",
+      "url": "https://en.wikipedia.org/wiki/Poutine",
+      "description": "Canadian dish of fries, cheese curds, and gravy"
+    },
+    "targetArticle": {
+      "title": "Ragnarök",
+      "url": "https://en.wikipedia.org/wiki/Ragnarök",
+      "description": "End times in Norse mythology"
+    },
+    "tags": [
+      "cross-domain"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Poutine",
+      "Nightclub",
+      "Man_in_the_Moon",
+      "Ragnarök"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Cognitive_dissonance",
+      "url": "https://en.wikipedia.org/wiki/Cognitive_dissonance",
+      "description": "Psychological stress from holding contradictory beliefs"
+    },
+    "targetArticle": {
+      "title": "Difference_engine",
+      "url": "https://en.wikipedia.org/wiki/Difference_engine",
+      "description": "Automatic mechanical calculator designed by Charles Babbage"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Cognitive_dissonance",
+      "Overfitting",
+      "Algorithm",
+      "Difference_engine"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Continental_drift",
+      "url": "https://en.wikipedia.org/wiki/Continental_drift",
+      "description": "Hypothesis that continents move across Earth's surface"
+    },
+    "targetArticle": {
+      "title": "Mesa_Verde_National_Park",
+      "url": "https://en.wikipedia.org/wiki/Mesa_Verde_National_Park",
+      "description": "U.S. national park in Colorado"
+    },
+    "tags": [
+      "cross-domain"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Continental_drift",
+      "Alfred_Russel_Wallace",
+      "Alice_Eastwood",
+      "Mesa_Verde_National_Park"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Fish_and_chips",
+      "url": "https://en.wikipedia.org/wiki/Fish_and_chips",
+      "description": "English fast food of battered fish and fried potatoes"
+    },
+    "targetArticle": {
+      "title": "Polymerase_chain_reaction",
+      "url": "https://en.wikipedia.org/wiki/Polymerase_chain_reaction",
+      "description": "Technique to amplify specific DNA segments"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Fish_and_chips",
+      "Barramundi",
+      "Agriculture_in_Israel",
+      "Polymerase_chain_reaction"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Event_horizon",
+      "url": "https://en.wikipedia.org/wiki/Event_horizon",
+      "description": "Boundary beyond which nothing can escape a black hole"
+    },
+    "targetArticle": {
+      "title": "Dead_Sea_Scrolls",
+      "url": "https://en.wikipedia.org/wiki/Dead_Sea_Scrolls",
+      "description": "Ancient Jewish religious manuscripts from Qumran caves"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Event_horizon",
+      "Accretion_disk",
+      "Infrared",
+      "Dead_Sea_Scrolls"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Poker",
+      "url": "https://en.wikipedia.org/wiki/Poker",
+      "description": "Family of card games combining strategy and gambling"
+    },
+    "targetArticle": {
+      "title": "Columbian_exchange",
+      "url": "https://en.wikipedia.org/wiki/Columbian_exchange",
+      "description": "Transfer of plants, animals, and diseases between Old and New Worlds"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Poker",
+      "American_Revolutionary_War",
+      "Atlantic_history",
+      "Columbian_exchange"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Simulation_hypothesis",
+      "url": "https://en.wikipedia.org/wiki/Simulation_hypothesis",
+      "description": "Proposal that reality could be an artificial simulation"
+    },
+    "targetArticle": {
+      "title": "Great_Zimbabwe",
+      "url": "https://en.wikipedia.org/wiki/Great_Zimbabwe",
+      "description": "Ruins of an ancient/medieval city in southeast Zimbabwe"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Simulation_hypothesis",
+      "Ancient_Greek_philosophy",
+      "Astronomy",
+      "Great_Zimbabwe"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Magnetosphere",
+      "url": "https://en.wikipedia.org/wiki/Magnetosphere",
+      "description": "Region of space dominated by a planet's magnetic field"
+    },
+    "targetArticle": {
+      "title": "Library_of_Alexandria",
+      "url": "https://en.wikipedia.org/wiki/Library_of_Alexandria",
+      "description": "Ancient world's most significant library"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Magnetosphere",
+      "Aeronomy",
+      "Meteorology",
+      "Library_of_Alexandria"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Shogi",
+      "url": "https://en.wikipedia.org/wiki/Shogi",
+      "description": "Japanese strategy board game similar to chess"
+    },
+    "targetArticle": {
+      "title": "Sputnik_1",
+      "url": "https://en.wikipedia.org/wiki/Sputnik_1",
+      "description": "First artificial satellite launched into Earth's orbit"
+    },
+    "tags": [
+      "cross-domain"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Shogi",
+      "Chess",
+      "Cold_War",
+      "Sputnik_1"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Apollo_11",
+      "url": "https://en.wikipedia.org/wiki/Apollo_11",
+      "description": "First crewed Moon landing mission"
+    },
+    "targetArticle": {
+      "title": "Ocean_acidification",
+      "url": "https://en.wikipedia.org/wiki/Ocean_acidification",
+      "description": "Ongoing decrease in ocean pH caused by CO2 absorption"
+    },
+    "tags": [
+      "cross-domain"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Apollo_11",
+      "Apollo_command_and_service_module",
+      "Carbon_dioxide",
+      "Ocean_acidification"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Chichen_Itza",
+      "url": "https://en.wikipedia.org/wiki/Chichen_Itza",
+      "description": "Pre-Columbian Maya city in Mexico's Yucatán Peninsula"
+    },
+    "targetArticle": {
+      "title": "Capoeira",
+      "url": "https://en.wikipedia.org/wiki/Capoeira",
+      "description": "Afro-Brazilian martial art combining dance and acrobatics"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Chichen_Itza",
+      "Conquistador",
+      "Bahia",
+      "Capoeira"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Clavichord",
+      "url": "https://en.wikipedia.org/wiki/Clavichord",
+      "description": "Early keyboard instrument producing a soft, intimate sound"
+    },
+    "targetArticle": {
+      "title": "Cognitive_dissonance",
+      "url": "https://en.wikipedia.org/wiki/Cognitive_dissonance",
+      "description": "Psychological stress from holding contradictory beliefs"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Clavichord",
+      "Chamber_music",
+      "Anton_Webern",
+      "Cognitive_dissonance"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Poutine",
+      "url": "https://en.wikipedia.org/wiki/Poutine",
+      "description": "Canadian dish of fries, cheese curds, and gravy"
+    },
+    "targetArticle": {
+      "title": "Flamenco",
+      "url": "https://en.wikipedia.org/wiki/Flamenco",
+      "description": "Genre of Spanish music and dance"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Poutine",
+      "2000_United_States_presidential_election",
+      "New_Mexico",
+      "Flamenco"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Spectroscopy",
+      "url": "https://en.wikipedia.org/wiki/Spectroscopy",
+      "description": "Study of interaction between matter and electromagnetic radiation"
+    },
+    "targetArticle": {
+      "title": "Doggerland",
+      "url": "https://en.wikipedia.org/wiki/Doggerland",
+      "description": "Former landmass in Northern Europe"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Spectroscopy",
+      "Matrix_mechanics",
+      "North_Sea",
+      "Doggerland"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Butterfly_effect",
+      "url": "https://en.wikipedia.org/wiki/Butterfly_effect",
+      "description": "Concept that small changes can have large consequences"
+    },
+    "targetArticle": {
+      "title": "Samarkand",
+      "url": "https://en.wikipedia.org/wiki/Samarkand",
+      "description": "Ancient Silk Road city in present-day Uzbekistan"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Butterfly_effect",
+      "Alan_Turing",
+      "Chess",
+      "Samarkand"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "ENIAC",
+      "url": "https://en.wikipedia.org/wiki/ENIAC",
+      "description": "First general-purpose electronic digital computer"
+    },
+    "targetArticle": {
+      "title": "Hubble_Space_Telescope",
+      "url": "https://en.wikipedia.org/wiki/Hubble_Space_Telescope",
+      "description": "NASA/ESA space telescope launched in 1990"
+    },
+    "tags": [
+      "cross-domain"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "ENIAC",
+      "Antikythera_mechanism",
+      "Astronomy",
+      "Hubble_Space_Telescope"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Jacquard_machine",
+      "url": "https://en.wikipedia.org/wiki/Jacquard_machine",
+      "description": "Control device attached to weaving looms"
+    },
+    "targetArticle": {
+      "title": "Empanada",
+      "url": "https://en.wikipedia.org/wiki/Empanada",
+      "description": "Baked or fried pastry filled with meat or cheese"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Jacquard_machine",
+      "Calabria",
+      "Colombia",
+      "Empanada"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Library_of_Alexandria",
+      "url": "https://en.wikipedia.org/wiki/Library_of_Alexandria",
+      "description": "Ancient world's most significant library"
+    },
+    "targetArticle": {
+      "title": "Coral_bleaching",
+      "url": "https://en.wikipedia.org/wiki/Coral_bleaching",
+      "description": "Loss of symbiotic algae from coral due to stress"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Library_of_Alexandria",
+      "Alexandria",
+      "Red_Sea",
+      "Coral_bleaching"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Geiger_counter",
+      "url": "https://en.wikipedia.org/wiki/Geiger_counter",
+      "description": "Instrument for measuring ionizing radiation"
+    },
+    "targetArticle": {
+      "title": "Go_(game)",
+      "url": "https://en.wikipedia.org/wiki/Go_(game)",
+      "description": "Abstract strategy board game for two players"
+    },
+    "tags": [
+      "cross-domain"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Geiger_counter",
+      "Bluetooth",
+      "Nintendo",
+      "Go_(game)"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Aurora",
+      "url": "https://en.wikipedia.org/wiki/Aurora",
+      "description": "Natural light display in high-latitude skies"
+    },
+    "targetArticle": {
+      "title": "Blue_hole",
+      "url": "https://en.wikipedia.org/wiki/Blue_hole",
+      "description": "Marine cavern or sinkhole, open to the surface, in carbonate bedrock"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Aurora",
+      "67P/Churyumov–Gerasimenko",
+      "Sinkhole",
+      "Blue_hole"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Domesday_Book",
+      "url": "https://en.wikipedia.org/wiki/Domesday_Book",
+      "description": "11th-century survey of landholding in England"
+    },
+    "targetArticle": {
+      "title": "Ozone_layer",
+      "url": "https://en.wikipedia.org/wiki/Ozone_layer",
+      "description": "Region of Earth's stratosphere absorbing UV radiation"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Domesday_Book",
+      "BBC",
+      "Margaret_Thatcher",
+      "Ozone_layer"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Pangaea",
+      "url": "https://en.wikipedia.org/wiki/Pangaea",
+      "description": "Supercontinent that existed during the late Paleozoic and early Mesozoic"
+    },
+    "targetArticle": {
+      "title": "Fuel_cell",
+      "url": "https://en.wikipedia.org/wiki/Fuel_cell",
+      "description": "Electrochemical cell generating electricity from fuel and oxidant"
+    },
+    "tags": [
+      "cross-domain"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Pangaea",
+      "Africa",
+      "Platinum",
+      "Fuel_cell"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Antikythera_mechanism",
+      "url": "https://en.wikipedia.org/wiki/Antikythera_mechanism",
+      "description": "Ancient Greek analogue computer for predicting astronomical positions"
+    },
+    "targetArticle": {
+      "title": "Cassowary",
+      "url": "https://en.wikipedia.org/wiki/Cassowary",
+      "description": "Large flightless bird native to Australia and New Guinea"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Antikythera_mechanism",
+      "Anachronism",
+      "Evolutionary_anachronism",
+      "Cassowary"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Cahokia",
+      "url": "https://en.wikipedia.org/wiki/Cahokia",
+      "description": "Pre-Columbian Native American city near modern St. Louis"
+    },
+    "targetArticle": {
+      "title": "Hatshepsut",
+      "url": "https://en.wikipedia.org/wiki/Hatshepsut",
+      "description": "One of the most successful pharaohs of ancient Egypt"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Cahokia",
+      "Archaeoastronomy",
+      "Karnak",
+      "Hatshepsut"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Cahokia",
+      "url": "https://en.wikipedia.org/wiki/Cahokia",
+      "description": "Pre-Columbian Native American city near modern St. Louis"
+    },
+    "targetArticle": {
+      "title": "Elysium",
+      "url": "https://en.wikipedia.org/wiki/Elysium",
+      "description": "Blessed afterlife in Greek mythology"
+    },
+    "tags": [
+      "cross-domain"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Cahokia",
+      "Archaeoastronomy",
+      "Achilles",
+      "Elysium"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Epic_of_Gilgamesh",
+      "url": "https://en.wikipedia.org/wiki/Epic_of_Gilgamesh",
+      "description": "Ancient Mesopotamian poem, one of the earliest literary works"
+    },
+    "targetArticle": {
+      "title": "Tragedy_of_the_commons",
+      "url": "https://en.wikipedia.org/wiki/Tragedy_of_the_commons",
+      "description": "Overuse of a shared resource"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Epic_of_Gilgamesh",
+      "Mesopotamia",
+      "Property",
+      "Tragedy_of_the_commons"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Enigma_machine",
+      "url": "https://en.wikipedia.org/wiki/Enigma_machine",
+      "description": "German cipher machine during World War II"
+    },
+    "targetArticle": {
+      "title": "Clavichord",
+      "url": "https://en.wikipedia.org/wiki/Clavichord",
+      "description": "Early keyboard instrument producing a soft, intimate sound"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Enigma_machine",
+      "London",
+      "Pipe_organ",
+      "Clavichord"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Phytoplankton",
+      "url": "https://en.wikipedia.org/wiki/Phytoplankton",
+      "description": "Microscopic marine algae forming the base of ocean food chains"
+    },
+    "targetArticle": {
+      "title": "Age_of_Discovery",
+      "url": "https://en.wikipedia.org/wiki/Age_of_Discovery",
+      "description": "Period of European global exploration (15th-17th centuries)"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Phytoplankton",
+      "Aquaculture",
+      "Middle_Ages",
+      "Age_of_Discovery"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Bibimbap",
+      "url": "https://en.wikipedia.org/wiki/Bibimbap",
+      "description": "Korean mixed rice dish with vegetables and meat"
+    },
+    "targetArticle": {
+      "title": "El_Dorado",
+      "url": "https://en.wikipedia.org/wiki/El_Dorado",
+      "description": "Legendary city of gold sought by Spanish conquistadors"
+    },
+    "tags": [
+      "cross-domain"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Bibimbap",
+      "Bowl",
+      "Indigenous_peoples_of_the_Americas",
+      "El_Dorado"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Van_Allen_radiation_belt",
+      "url": "https://en.wikipedia.org/wiki/Van_Allen_radiation_belt",
+      "description": "Zone of charged particles held by Earth's magnetic field"
+    },
+    "targetArticle": {
+      "title": "Mesopelagic_zone",
+      "url": "https://en.wikipedia.org/wiki/Mesopelagic_zone",
+      "description": "Part of the pelagic zone"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Van_Allen_radiation_belt",
+      "Earth",
+      "Abyssal_plain",
+      "Mesopelagic_zone"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Kathakali",
+      "url": "https://en.wikipedia.org/wiki/Kathakali",
+      "description": "Classical Indian dance-drama from Kerala"
+    },
+    "targetArticle": {
+      "title": "Asgard",
+      "url": "https://en.wikipedia.org/wiki/Asgard",
+      "description": "Home of the gods in Nordic mythology"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Kathakali",
+      "Hamsa_(bird)",
+      "Swan",
+      "Asgard"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Carthage",
+      "url": "https://en.wikipedia.org/wiki/Carthage",
+      "description": "Ancient city-state rivaling Rome for Mediterranean dominance"
+    },
+    "targetArticle": {
+      "title": "Geiger_counter",
+      "url": "https://en.wikipedia.org/wiki/Geiger_counter",
+      "description": "Instrument for measuring ionizing radiation"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Carthage",
+      "Alexandria",
+      "Radiocarbon_dating",
+      "Geiger_counter"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "startArticle": {
+      "title": "Excalibur",
+      "url": "https://en.wikipedia.org/wiki/Excalibur",
+      "description": "Legendary sword of King Arthur"
+    },
+    "targetArticle": {
+      "title": "Cliff_Palace",
+      "url": "https://en.wikipedia.org/wiki/Cliff_Palace",
+      "description": "Cliff dwelling in Colorado, United States"
+    },
+    "tags": [
+      "random"
+    ],
+    "minPathLength": 3,
+    "path": [
+      "Excalibur",
+      "Hebrew_language",
+      "United_States",
+      "Cliff_Palace"
+    ],
+    "difficulty": "medium"
+  }
+]

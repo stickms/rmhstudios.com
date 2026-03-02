@@ -58,12 +58,24 @@ export class WikiRaceMinigame extends BaseMinigame {
   private rateLimits: Map<string, RateLimitEntry> = new Map();
   private navigationTimeoutHandle: NodeJS.Timeout | null = null;
 
+  get spectatorMode(): 'competitive-individual' { return 'competitive-individual'; }
+
   constructor(context: MinigameContext) {
     super(context);
     this.articleCache = createArticleCache();
   }
 
   // ─── Lifecycle ───────────────────────────────────────────────
+
+  /**
+   * Send article content to a player and any spectators following them.
+   * This ensures spectators in competitive-individual mode see the same
+   * article content as the player they are watching.
+   */
+  private sendArticleToPlayerAndFollowers(userId: string, data: unknown): void {
+    this.context.sendToPlayer(userId, 'rmhbox:game:action', data);
+    this.context.sendToSpectatorFollowers(userId, 'rmhbox:game:action', data);
+  }
 
   start(): void {
     this.isRunning = true;
@@ -81,7 +93,7 @@ export class WikiRaceMinigame extends BaseMinigame {
     // Phase 1: ARTICLE_REVEAL
     this.state.phase = WikiRacePhase.ARTICLE_REVEAL;
 
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'WR_ARTICLES_REVEALED',
       startArticle: {
         title: this.state.articlePair.startArticle.title,
@@ -136,6 +148,12 @@ export class WikiRaceMinigame extends BaseMinigame {
       totalRounds,
       cumulativeScores,
       usedPairKeys: [pairKey(articlePair)],
+      roundArticlePairs: [{
+        round: 1,
+        startArticle: articlePair.startArticle.title,
+        targetArticle: articlePair.targetArticle.title,
+        difficulty: articlePair.difficulty,
+      }],
     };
   }
 
@@ -154,7 +172,7 @@ export class WikiRaceMinigame extends BaseMinigame {
       duration: this.getSetting('navDuration', WR_NAV_DURATION),
     });
 
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'WR_NAVIGATION_START',
       duration: this.getSetting('navDuration', WR_NAV_DURATION),
       timeRemaining: this.getSetting('navDuration', WR_NAV_DURATION),
@@ -175,9 +193,9 @@ export class WikiRaceMinigame extends BaseMinigame {
       for (const ps of this.state.playerStates.values()) {
         ps.currentArticleLinks = new Set(article.links);
       }
-      // Send article content to each player privately
+      // Send article content to each player and their spectator followers
       for (const userId of this.state.playerStates.keys()) {
-        this.context.sendToPlayer(userId, 'rmhbox:game:action', {
+        this.sendArticleToPlayerAndFollowers(userId, {
           type: 'WR_ARTICLE_CONTENT',
           title: article.title,
           html: article.sanitizedHtml,
@@ -200,6 +218,20 @@ export class WikiRaceMinigame extends BaseMinigame {
 
     // Clear the phase timer
     this.clearPhaseTimer();
+
+    // Log timeout for unfinished players in this round (before state
+    // is reset by startNextRound). This ensures every round's DNF
+    // players are recorded, not just the last round's.
+    for (const [userId, ps] of this.state.playerStates) {
+      if (!ps.hasFinished) {
+        this.logAction('player_timeout', {
+          userId,
+          lastArticle: ps.currentArticleTitle,
+          pathLength: ps.path.length,
+          path: [...ps.path],
+        });
+      }
+    }
 
     this.logAction('game_end', {
       reason: 'time_expired',
@@ -228,6 +260,17 @@ export class WikiRaceMinigame extends BaseMinigame {
       this.state.cumulativeScores.set(userId, prev + ps.score);
     }
 
+    // Log round_end with per-round scores for history reconstruction
+    const roundScores: Record<string, number> = {};
+    for (const [userId, ps] of this.state.playerStates) {
+      roundScores[userId] = ps.score;
+    }
+    this.logAction('round_end', {
+      finishedCount: this.state.finishCounter,
+      totalPlayers: this.state.playerStates.size,
+      scores: roundScores,
+    });
+
     // Build results payload with all player data visible
     const playerResults: Record<string, unknown> = {};
     for (const [userId, ps] of this.state.playerStates) {
@@ -244,7 +287,7 @@ export class WikiRaceMinigame extends BaseMinigame {
 
     const hasMoreRounds = this.state.currentRound < this.state.totalRounds;
 
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'WR_RESULTS',
       playerResults,
       duration: WR_RESULTS,
@@ -275,6 +318,14 @@ export class WikiRaceMinigame extends BaseMinigame {
     this.state.articlePair = newPair;
     this.state.finishCounter = 0;
 
+    // Track the new round's article pair for history reconstruction
+    this.state.roundArticlePairs.push({
+      round: this.state.currentRound,
+      startArticle: newPair.startArticle.title,
+      targetArticle: newPair.targetArticle.title,
+      difficulty: newPair.difficulty,
+    });
+
     // Reset player states for the new round
     for (const [userId, ps] of this.state.playerStates) {
       ps.currentArticleTitle = newPair.startArticle.title;
@@ -304,7 +355,7 @@ export class WikiRaceMinigame extends BaseMinigame {
 
     // Enter ARTICLE_REVEAL for the new round
     this.state.phase = WikiRacePhase.ARTICLE_REVEAL;
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'WR_ARTICLES_REVEALED',
       startArticle: {
         title: newPair.startArticle.title,
@@ -404,7 +455,7 @@ export class WikiRaceMinigame extends BaseMinigame {
     });
 
     // Broadcast progress (title hidden from other players — they see click count only)
-    this.context.broadcastToPlayers('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'WR_PLAYER_PROGRESS',
       userId,
       clickCount: ps.clickCount,
@@ -431,7 +482,7 @@ export class WikiRaceMinigame extends BaseMinigame {
         type: 'WR_NAVIGATE_REJECTED',
         reason: 'This article is unavailable. Try another link.',
       });
-      this.context.broadcastToPlayers('rmhbox:game:action', {
+      this.broadcastGameAction({
         type: 'WR_PLAYER_PROGRESS',
         userId,
         clickCount: currentPs.clickCount,
@@ -449,9 +500,31 @@ export class WikiRaceMinigame extends BaseMinigame {
       const currentPs = this.state.playerStates.get(userId);
       if (!currentPs || currentPs.currentArticleTitle !== targetTitle) return;
       currentPs.currentArticleLinks = new Set(article.links);
-      this.context.sendToPlayer(userId, 'rmhbox:game:action', {
+
+      // Handle redirects: if the fetched article has a different canonical
+      // title (e.g. "Stem_cells" → "Stem_cell"), update path and title.
+      const canonicalTitle = article.title;
+      if (canonicalTitle !== targetTitle) {
+        currentPs.path[currentPs.path.length - 1] = canonicalTitle;
+        currentPs.currentArticleTitle = canonicalTitle;
+
+        // Check if the canonical (redirected) title matches the target article
+        const targetArticleTitle = this.state.articlePair.targetArticle.title;
+        if (canonicalTitle === targetArticleTitle) {
+          this.sendArticleToPlayerAndFollowers(userId, {
+            type: 'WR_ARTICLE_CONTENT',
+            title: canonicalTitle,
+            html: article.sanitizedHtml,
+            linkCount: article.links.size,
+          });
+          this.handlePlayerFinished(userId, currentPs);
+          return;
+        }
+      }
+
+      this.sendArticleToPlayerAndFollowers(userId, {
         type: 'WR_ARTICLE_CONTENT',
-        title: article.title,
+        title: canonicalTitle,
         html: article.sanitizedHtml,
         linkCount: article.links.size,
       });
@@ -511,7 +584,7 @@ export class WikiRaceMinigame extends BaseMinigame {
     });
 
     // Broadcast progress
-    this.context.broadcastToPlayers('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'WR_PLAYER_PROGRESS',
       userId,
       clickCount: ps.clickCount,
@@ -524,7 +597,7 @@ export class WikiRaceMinigame extends BaseMinigame {
       const currentPs = this.state.playerStates.get(userId);
       if (!currentPs || currentPs.currentArticleTitle !== targetTitle) return;
       currentPs.currentArticleLinks = new Set(article.links);
-      this.context.sendToPlayer(userId, 'rmhbox:game:action', {
+      this.sendArticleToPlayerAndFollowers(userId, {
         type: 'WR_ARTICLE_CONTENT',
         title: article.title,
         html: article.sanitizedHtml,
@@ -546,7 +619,7 @@ export class WikiRaceMinigame extends BaseMinigame {
     this.logAction('player_finish', {
       userId,
       pathLength: ps.path.length,
-      timeMs: (ps.finishedAt ?? Date.now()) - this.startedAt,
+      timeMs: (ps.finishedAt ?? Date.now()) - this.navigationStartedAt,
       path: [...ps.path],
       rank: ps.finishRank,
       clickCount: ps.clickCount,
@@ -560,7 +633,7 @@ export class WikiRaceMinigame extends BaseMinigame {
       clickCount: ps.clickCount,
     });
 
-    this.context.broadcastToLobby('rmhbox:game:action', {
+    this.broadcastGameAction({
       type: 'WR_PLAYER_FINISHED',
       userId,
       rank: ps.finishRank,
@@ -574,7 +647,7 @@ export class WikiRaceMinigame extends BaseMinigame {
     const targetTitle = this.state.articlePair.targetArticle.title;
     this.fetchAndSendArticle(targetTitle).then((article) => {
       if (!article) return;
-      this.context.sendToPlayer(userId, 'rmhbox:game:action', {
+      this.sendArticleToPlayerAndFollowers(userId, {
         type: 'WR_ARTICLE_CONTENT',
         title: article.title,
         html: article.sanitizedHtml,
@@ -694,6 +767,17 @@ export class WikiRaceMinigame extends BaseMinigame {
       };
     }
 
+    // Include current article HTML from cache so reconnecting clients
+    // can render immediately without waiting for an async fetch.
+    let currentArticleHtml: string | undefined;
+    if (ps && this.state.phase === WikiRacePhase.NAVIGATION) {
+      const normalizedTitle = ps.currentArticleTitle.replace(/ /g, '_');
+      const cached = this.articleCache.get(normalizedTitle);
+      if (cached) {
+        currentArticleHtml = cached.sanitizedHtml;
+      }
+    }
+
     const base: Record<string, unknown> = {
       phase: this.state.phase,
       startArticle: {
@@ -711,6 +795,7 @@ export class WikiRaceMinigame extends BaseMinigame {
       myState: ps
         ? {
             currentArticleTitle: ps.currentArticleTitle,
+            currentArticleHtml,
             path: ps.path,
             clickCount: ps.clickCount,
             hasFinished: ps.hasFinished,
@@ -783,14 +868,9 @@ export class WikiRaceMinigame extends BaseMinigame {
   }
 
   handlePlayerReconnect(userId: string): void {
-    // Send full state snapshot
-    this.context.sendToPlayer(
-      userId,
-      'rmhbox:game:state_snapshot',
-      this.getStateForPlayer(userId),
-    );
-
     // Re-fetch current article HTML so the player has content to click
+    // and restore server-side currentArticleLinks for anti-cheat validation.
+    // State snapshot delivery is handled centrally by ReconnectionHandler.
     const ps = this.state.playerStates.get(userId);
     if (ps && !ps.hasFinished && this.state.phase === WikiRacePhase.NAVIGATION) {
       this.fetchAndSendArticle(ps.currentArticleTitle).then((article) => {
@@ -798,7 +878,7 @@ export class WikiRaceMinigame extends BaseMinigame {
         const currentPs = this.state.playerStates.get(userId);
         if (!currentPs || currentPs.currentArticleTitle !== ps.currentArticleTitle) return;
         currentPs.currentArticleLinks = new Set(article.links);
-        this.context.sendToPlayer(userId, 'rmhbox:game:action', {
+        this.sendArticleToPlayerAndFollowers(userId, {
           type: 'WR_ARTICLE_CONTENT',
           title: article.title,
           html: article.sanitizedHtml,
@@ -932,14 +1012,13 @@ export class WikiRaceMinigame extends BaseMinigame {
   // ─── Action Log / Game Log ───────────────────────────────────
 
   private actionSeq = 0;
-  private timeoutEventsAdded = false;
 
   private logAction(type: string, payload: Record<string, unknown>): void {
     this.state.actionLog.push({
       seq: ++this.actionSeq,
       type,
       timestamp: Date.now(),
-      payload,
+      payload: { ...payload, round: this.state.currentRound },
     });
   }
 
@@ -949,25 +1028,8 @@ export class WikiRaceMinigame extends BaseMinigame {
       userName: p.userName,
     }));
 
-    // Build player timeout events for those who didn't finish (only on first call)
-    if (!this.timeoutEventsAdded) {
-      this.timeoutEventsAdded = true;
-      for (const [userId, ps] of this.state.playerStates) {
-        if (!ps.hasFinished) {
-          this.state.actionLog.push({
-            seq: ++this.actionSeq,
-            type: 'player_timeout',
-            timestamp: Date.now(),
-            payload: {
-              userId,
-              lastArticle: ps.currentArticleTitle,
-              pathLength: ps.path.length,
-              path: [...ps.path],
-            },
-          });
-        }
-      }
-    }
+    // Timeout events are now logged inline at the end of each round
+    // (in endNavigation), so no need to add them here.
 
     return {
       lobbyId: this.context.lobbyId,
@@ -979,8 +1041,10 @@ export class WikiRaceMinigame extends BaseMinigame {
       players,
       initialState: {
         totalRounds: this.state.totalRounds,
-        currentRound: this.state.currentRound,
         timeLimitSeconds: this.getSetting('navDuration', WR_NAV_DURATION),
+        // Per-round article pairs for history reconstruction
+        rounds: this.state.roundArticlePairs,
+        // Backward-compat: keep flat fields pointing to the last round
         startArticle: this.state.articlePair.startArticle.title,
         targetArticle: this.state.articlePair.targetArticle.title,
         difficulty: this.state.articlePair.difficulty,

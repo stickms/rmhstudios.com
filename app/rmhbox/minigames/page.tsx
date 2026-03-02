@@ -32,7 +32,7 @@ export default function MinigamesPage() {
 
   return (
     <div className="flex h-screen flex-col">
-      <RMHboxHeader context="minigames" backHref="/rmhbox" backLabel="← Home" />
+      <RMHboxHeader context="minigames" backHref="/rmhbox" backLabel="Home" />
 
       <div className="flex-1 overflow-y-auto p-4 md:p-8" style={{ scrollbarGutter: 'stable both-edges' }}>
         <div className="max-w-4xl mx-auto">

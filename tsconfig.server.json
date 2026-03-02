@@ -15,8 +15,10 @@
     },
     "include": [
         "server/socket-server.ts",
-        "server/collab-server.ts",
+        "server/shared/**/*.ts",
+        "server/socket-server/**/*.ts",
         "server/rmhbox/**/*.ts",
+        "server/rmhtube/**/*.ts",
         "lib/rmhbox/**/*.ts"
     ]
 }
