@@ -15,6 +15,7 @@ PORT_RMHBOX=7676
 PORT_RMHTUBE=7003
 
 LOCKFILE="/tmp/autodeploy.lock"
+QUEUE_FILE="/tmp/autodeploy.queue"
 DISCORD_WEBHOOK="https://discord.com/api/webhooks/1477609590005829844/njhHGfYop87DbaGR5o4hCLBnpf3B5ZevYS0BR3kQViEZJktXSjb_SEVtj53WOv0cNxs5"
 
 log() {
@@ -27,9 +28,14 @@ get_commit_info() {
     DEPLOY_SHORT_HASH=$("$GIT_BIN" rev-parse --short HEAD 2>/dev/null || echo "unknown")
     DEPLOY_COMMIT_MSG=$("$GIT_BIN" log -1 --pretty=%B 2>/dev/null || echo "(no commit message)")
     DEPLOY_AUTHOR=$("$GIT_BIN" log -1 --pretty='%an' 2>/dev/null || echo "unknown")
-    # Escape special JSON characters
-    DEPLOY_COMMIT_MSG=$(printf '%s' "$DEPLOY_COMMIT_MSG" | sed 's/\\/\\\\/g; s/"/\\"/g' | tr '\n' ' ')
-    DEPLOY_AUTHOR=$(printf '%s' "$DEPLOY_AUTHOR" | sed 's/\\/\\\\/g; s/"/\\"/g')
+    # Escape special JSON characters and control characters
+    DEPLOY_COMMIT_MSG=$(printf '%s' "$DEPLOY_COMMIT_MSG" | \
+        sed 's/\\/\\\\/g; s/"/\\"/g; s/\t/\\t/g; s/\r/\\r/g' | \
+        tr '\n' ' ' | \
+        tr -d '\000-\011\013-\014\016-\037')
+    DEPLOY_AUTHOR=$(printf '%s' "$DEPLOY_AUTHOR" | \
+        sed 's/\\/\\\\/g; s/"/\\"/g; s/\t/\\t/g; s/\r/\\r/g' | \
+        tr -d '\000-\011\013-\014\016-\037')
 }
 
 send_deploy_started() {
@@ -89,7 +95,6 @@ PM2_BIN=$(which pm2 2>/dev/null)   ; PM2_BIN=${PM2_BIN:-/home/rmhstudios/.nvm/ve
 NODE_BIN=$(which node 2>/dev/null) ; NODE_BIN=${NODE_BIN:-/home/rmhstudios/.nvm/versions/node/v25.6.1/bin/node}
 
 cleanup() {
-    [ -f "$LOCKFILE" ] && rm -f "$LOCKFILE"
     rm -rf "$REPO_DIR/.next-backup" "$REPO_DIR/dist-server-backup"
 }
 trap cleanup EXIT
@@ -98,7 +103,7 @@ check_port() {
     local port=$1 max_retries=30 count=0
     log "Waiting for port $port..."
     while [ $count -lt $max_retries ]; do
-        ss -tuln | grep -q ":$port " && { log "Port $port is up."; return 0; }
+        ss -tuln | grep -qE "[:.]$port\b" && { log "Port $port is up."; return 0; }
         sleep 1; (( count++ ))
     done
     log "ERROR: Port $port did not come up after ${max_retries}s."
@@ -149,13 +154,49 @@ start_apps() {
     "$PM2_BIN" save
 }
 
+restore_backup() {
+    log "Restoring previous build artifacts \u2014 current servers remain running."
+    if [ -d ".next-backup" ]; then
+        rm -rf .next
+        mv .next-backup .next
+    fi
+    if [ -d "dist-server-backup" ]; then
+        rm -rf dist-server
+        mv dist-server-backup dist-server
+    fi
+}
+
 cd "$REPO_DIR" || { echo "FATAL: Cannot cd to $REPO_DIR"; exit 1; }
 
-if [ -f "$LOCKFILE" ]; then
-    log "Deployment already in progress. Skipping."
-    exit 0
+# Acquire deploy lock via flock (fd 200)
+if ! exec 200>>"$LOCKFILE"; then
+    log "FATAL: Cannot open lockfile $LOCKFILE"
+    exit 1
 fi
-touch "$LOCKFILE"
+
+if ! flock -n 200; then
+    # Another deploy is running — signal for redeploy with our PID
+    log "Deploy already in progress. Queuing for redeploy after current deploy finishes."
+    printf '%s\n' "$$" > "${QUEUE_FILE}.$$" && mv -f "${QUEUE_FILE}.$$" "$QUEUE_FILE"
+
+    # Block until the running deploy releases the lock
+    if ! flock 200; then
+        log "FATAL: Failed to acquire deploy lock."
+        rm -f "${QUEUE_FILE}.$$"
+        exit 1
+    fi
+
+    # Check if we're still the most recent queued instance
+    queued_pid=$(cat "$QUEUE_FILE" 2>/dev/null)
+    if [ "$queued_pid" != "$$" ]; then
+        log "Superseded by a newer deploy request. Exiting."
+        exit 0
+    fi
+
+    # We're the latest — clear queue and proceed
+    rm -f "$QUEUE_FILE"
+    log "=== Queued deploy now executing ==="
+fi
 
 log "=== Deploy triggered by webhook ==="
 DEPLOY_START_TIME=$(date +%s)
@@ -183,17 +224,6 @@ log "Backing up current build artifacts..."
 [ -d ".next" ]       && cp -a .next .next-backup
 [ -d "dist-server" ] && cp -a dist-server dist-server-backup
 
-restore_backup() {
-    log "Restoring previous build artifacts — current servers remain running."
-    if [ -d ".next-backup" ]; then
-        rm -rf .next
-        mv .next-backup .next
-    fi
-    if [ -d "dist-server-backup" ]; then
-        rm -rf dist-server
-        mv dist-server-backup dist-server
-    fi
-}
 
 log "Building..."
 if ! "$PNPM_BIN" run build; then
