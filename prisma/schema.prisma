@@ -43,6 +43,7 @@ model User {
   versecraftSave  VersecraftSave?
   versecraftProgress VersecraftProgress?
   forestExplorerSave ForestExplorerSave?
+  dreamRiftProfile DreamRiftPlayer?
 
   // Slice-It Library Relations
   uploadedSongs  Song[]        @relation("SongUploader")
@@ -1451,4 +1452,27 @@ model BuildView {
   @@unique([buildId, userId])
   @@unique([buildId, ipHash])
   @@map("build_view")
+}
+
+// ─── Dream Rift ───────────────────────────────────────────────────
+
+model DreamRiftPlayer {
+  id              String   @id @default(uuid())
+  username        String   @unique
+  highScoreEasy   Int      @default(0)
+  highScoreNormal Int      @default(0)
+  highScoreHard   Int      @default(0)
+  highScoreLunatic Int     @default(0)
+  bestStage       Int      @default(1)
+  character       String   @default("rei")
+  gamesPlayed     Int      @default(1)
+  totalGraze      Int      @default(0)
+  spellsCaptured  Int      @default(0)
+  updatedAt       DateTime @default(now()) @updatedAt
+
+  userId          String?  @unique
+  user            User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([highScoreNormal(sort: Desc)], map: "idx_dream_rift_high_score")
+  @@index([bestStage(sort: Desc)], map: "idx_dream_rift_best_stage")
 }
