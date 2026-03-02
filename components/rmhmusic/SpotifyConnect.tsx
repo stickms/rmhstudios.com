@@ -20,9 +20,7 @@ export default function SpotifyConnect() {
         return;
       }
 
-      sessionStorage.setItem('spotify_code_verifier', data.codeVerifier);
-      sessionStorage.setItem('spotify_state', data.state);
-
+      // Code verifier is stored server-side in an httpOnly cookie
       window.location.href = data.url;
     } catch (err) {
       console.error('Failed to start Spotify auth:', err);
