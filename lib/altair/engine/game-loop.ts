@@ -50,6 +50,8 @@ export interface GameLoopCallbacks {
 
 const PLAYER_RADIUS = 12;
 const MAX_DELTA = 1 / 15; // cap to ~66ms
+const MAX_PARTICLES = 300;
+const MAX_PROJECTILES = 500;
 
 // ---- AABB-Circle collision helper -------------------------------------------
 
@@ -955,6 +957,14 @@ export function createGameLoop(
 
     // 10. Particles
     updateParticles(world.particles, scaledDelta);
+    // Cap particles to prevent performance degradation
+    if (world.particles.length > MAX_PARTICLES) {
+      world.particles.splice(0, world.particles.length - MAX_PARTICLES);
+    }
+    // Cap projectiles
+    if (world.projectiles.length > MAX_PROJECTILES) {
+      world.projectiles.splice(0, world.projectiles.length - MAX_PROJECTILES);
+    }
 
     // 11. Wave director
     const waveEvents = updateWaveDirectorSystem(world, waveState, scaledDelta);

@@ -7,6 +7,8 @@
 
 import { ParticleEntity, GameWorld, createId } from './types';
 
+const MAX_PARTICLES = 300;
+
 // ---- Update -----------------------------------------------------------------
 
 /**
@@ -51,6 +53,7 @@ export function spawnDamageNumber(
   amount: number,
   isCrit: boolean,
 ): void {
+  if (world.particles.length >= MAX_PARTICLES) return;
   const p: ParticleEntity = {
     id: createId(world),
     x: x + (Math.random() - 0.5) * 10,
@@ -77,6 +80,7 @@ export function spawnDeathBurst(
   color: string,
   count: number = 8,
 ): void {
+  if (world.particles.length >= MAX_PARTICLES) return;
   for (let i = 0; i < count; i++) {
     const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.5;
     const speed = 60 + Math.random() * 80;
@@ -103,6 +107,7 @@ export function spawnHitFlash(
   x: number,
   y: number,
 ): void {
+  if (world.particles.length >= MAX_PARTICLES) return;
   const count = 3;
   for (let i = 0; i < count; i++) {
     const angle = Math.random() * Math.PI * 2;
