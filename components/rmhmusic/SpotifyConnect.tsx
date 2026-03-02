@@ -12,12 +12,18 @@ export default function SpotifyConnect() {
     setLoading(true);
     try {
       const res = await fetch('/api/rmhmusic/spotify/authorize', { method: 'POST' });
-      const { url, codeVerifier, state } = await res.json();
+      const data = await res.json();
 
-      sessionStorage.setItem('spotify_code_verifier', codeVerifier);
-      sessionStorage.setItem('spotify_state', state);
+      if (!res.ok || !data.url) {
+        console.error('Spotify authorize failed:', data.error ?? 'No URL returned');
+        setLoading(false);
+        return;
+      }
 
-      window.location.href = url;
+      sessionStorage.setItem('spotify_code_verifier', data.codeVerifier);
+      sessionStorage.setItem('spotify_state', data.state);
+
+      window.location.href = data.url;
     } catch (err) {
       console.error('Failed to start Spotify auth:', err);
       setLoading(false);
