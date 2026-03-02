@@ -16,6 +16,7 @@ PORT_RMHTUBE=7003
 
 LOCKFILE="/tmp/autodeploy.lock"
 QUEUE_FILE="/tmp/autodeploy.queue"
+DEPLOY_LOG="/tmp/autodeploy-$$.log"
 DISCORD_WEBHOOK="https://discord.com/api/webhooks/1477609590005829844/njhHGfYop87DbaGR5o4hCLBnpf3B5ZevYS0BR3kQViEZJktXSjb_SEVtj53WOv0cNxs5"
 
 log() {
@@ -77,13 +78,29 @@ update_deploy_status() {
         "$title" "$DEPLOY_COMMIT_MSG" "$color" "$DEPLOY_AUTHOR")
 
     if [ -n "$DEPLOY_MSG_ID" ]; then
-        curl -s -X PATCH -H "Content-Type: application/json" \
-            -d "$payload" "${DISCORD_WEBHOOK}/messages/${DEPLOY_MSG_ID}" > /dev/null 2>&1 || \
-            log "WARNING: Failed to edit Discord webhook message."
+        if [ -f "$DEPLOY_LOG" ]; then
+            curl -s -X PATCH \
+                -F "payload_json=$payload" \
+                -F "file=@${DEPLOY_LOG};filename=deploy-${DEPLOY_SHORT_HASH}.txt" \
+                "${DISCORD_WEBHOOK}/messages/${DEPLOY_MSG_ID}" > /dev/null 2>&1 || \
+                log "WARNING: Failed to edit Discord webhook message."
+        else
+            curl -s -X PATCH -H "Content-Type: application/json" \
+                -d "$payload" "${DISCORD_WEBHOOK}/messages/${DEPLOY_MSG_ID}" > /dev/null 2>&1 || \
+                log "WARNING: Failed to edit Discord webhook message."
+        fi
     else
-        curl -s -H "Content-Type: application/json" \
-            -d "$payload" "$DISCORD_WEBHOOK" > /dev/null 2>&1 || \
-            log "WARNING: Failed to send Discord webhook notification."
+        if [ -f "$DEPLOY_LOG" ]; then
+            curl -s \
+                -F "payload_json=$payload" \
+                -F "file=@${DEPLOY_LOG};filename=deploy-${DEPLOY_SHORT_HASH}.txt" \
+                "$DISCORD_WEBHOOK" > /dev/null 2>&1 || \
+                log "WARNING: Failed to send Discord webhook notification."
+        else
+            curl -s -H "Content-Type: application/json" \
+                -d "$payload" "$DISCORD_WEBHOOK" > /dev/null 2>&1 || \
+                log "WARNING: Failed to send Discord webhook notification."
+        fi
     fi
 }
 
@@ -96,6 +113,7 @@ NODE_BIN=$(which node 2>/dev/null) ; NODE_BIN=${NODE_BIN:-/home/rmhstudios/.nvm/
 
 cleanup() {
     rm -rf "$REPO_DIR/.next-backup" "$REPO_DIR/dist-server-backup"
+    rm -f "$DEPLOY_LOG"
 }
 trap cleanup EXIT
 
@@ -169,10 +187,11 @@ restore_backup() {
 cd "$REPO_DIR" || { echo "FATAL: Cannot cd to $REPO_DIR"; exit 1; }
 
 # Acquire deploy lock via flock (fd 200)
-if ! exec 200>>"$LOCKFILE"; then
-    log "FATAL: Cannot open lockfile $LOCKFILE"
+if ! touch "$LOCKFILE" 2>/dev/null; then
+    log "FATAL: Cannot create lockfile $LOCKFILE"
     exit 1
 fi
+exec 200>>"$LOCKFILE"
 
 if ! flock -n 200; then
     # Another deploy is running — signal for redeploy with our PID
@@ -200,6 +219,9 @@ fi
 
 log "=== Deploy triggered by webhook ==="
 DEPLOY_START_TIME=$(date +%s)
+
+# Capture all deploy output to log file
+exec > >(tee -a "$DEPLOY_LOG") 2>&1
 
 log "Pulling latest code..."
 if ! "$GIT_BIN" pull "$REMOTE_REPO" "$BRANCH"; then
