@@ -8,7 +8,7 @@
 'use client';
 
 import { useCallback, useState, useRef, useEffect } from 'react';
-import { Play, Pause, SkipForward, Volume2, VolumeX, Volume1, Subtitles, Gauge, PictureInPicture2 } from 'lucide-react';
+import { Play, Pause, SkipForward, Volume2, VolumeX, Volume1, Subtitles, Gauge, PictureInPicture2, Maximize, Minimize } from 'lucide-react';
 import { emit } from '@/lib/rmhtube/socket';
 import { C2S } from '@/lib/rmhtube/events';
 import { useRmhTubeStore } from '@/lib/rmhtube/store';
@@ -36,7 +36,15 @@ export default function HostControls({ isHost, videoState, currentItem, onSkip, 
   const updateSettings = useRmhTubeStore((s) => s.updateSettings);
 
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const speedMenuRef = useRef<HTMLDivElement>(null);
+
+  // Track fullscreen state
+  useEffect(() => {
+    const handleFullscreenChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
 
   // Close speed menu when clicking outside
   useEffect(() => {
@@ -99,6 +107,14 @@ export default function HostControls({ isHost, videoState, currentItem, onSkip, 
   const handlePiP = useCallback(() => {
     onPiP?.();
   }, [onPiP]);
+
+  const handleFullscreenToggle = useCallback(() => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else {
+      document.documentElement.requestFullscreen();
+    }
+  }, []);
 
   if (!currentItem) return null;
 
@@ -212,6 +228,15 @@ export default function HostControls({ isHost, videoState, currentItem, onSkip, 
           <PictureInPicture2 className="h-4 w-4" />
         </button>
       )}
+
+      {/* Fullscreen toggle — always visible */}
+      <button
+        onClick={handleFullscreenToggle}
+        className="shrink-0 rounded-md p-2 transition-colors text-(--rmhtube-text-muted) hover:text-(--rmhtube-text) hover:bg-(--rmhtube-surface-hover)"
+        title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+      >
+        {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+      </button>
 
       {/* Skip — host only */}
       {isHost && (
