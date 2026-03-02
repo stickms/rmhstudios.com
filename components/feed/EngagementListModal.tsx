@@ -15,15 +15,19 @@ interface EngagementListModalProps {
   open: boolean;
   onClose: () => void;
   postId: string;
+  commentId?: string;
   type: 'likes' | 'reposts';
 }
 
-export function EngagementListModal({ open, onClose, postId, type }: EngagementListModalProps) {
+export function EngagementListModal({ open, onClose, postId, commentId, type }: EngagementListModalProps) {
   const [users, setUsers] = useState<EngagementUser[]>([]);
   const [loading, setLoading] = useState(false);
 
   const title = type === 'likes' ? 'Liked by' : 'reRMHark\u2019d by';
-  const endpoint = `/api/rmharks/${postId}/${type === 'likes' ? 'like' : 'repost'}`;
+  const base = commentId
+    ? `/api/rmharks/${postId}/comment/${commentId}`
+    : `/api/rmharks/${postId}`;
+  const endpoint = `${base}/${type === 'likes' ? 'like' : 'repost'}`;
 
   useEffect(() => {
     if (open) document.body.style.overflow = 'hidden';
@@ -47,13 +51,13 @@ export function EngagementListModal({ open, onClose, postId, type }: EngagementL
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      onClick={onClose}
+      onMouseDown={(e) => { e.stopPropagation(); onClose(); }}
     >
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
       <div
         className="relative z-10 w-full max-w-md bg-site-bg border border-site-border rounded-2xl shadow-xl flex flex-col max-h-[80vh]"
-        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-site-border shrink-0">
           <h2 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text">

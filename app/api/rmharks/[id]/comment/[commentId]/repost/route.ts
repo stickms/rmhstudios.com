@@ -3,8 +3,30 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { headers } from "next/headers";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { userDisplaySelect, resolveUser } from "@/lib/user-display";
 
 export const runtime = "nodejs";
+
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string; commentId: string }> }
+) {
+  try {
+    const { commentId } = await params;
+    const reposts = await prisma.rMHarkCommentRepost.findMany({
+      where: { commentId },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+      include: { user: { select: userDisplaySelect } },
+    });
+    return NextResponse.json(
+      reposts.map((r) => ({ ...resolveUser(r.user), repostedAt: r.createdAt }))
+    );
+  } catch (error) {
+    console.error("Fetch comment reposts error:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}
 
 export async function POST(
   req: NextRequest,

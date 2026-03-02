@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { MessageCircle, Repeat2, Heart, Eye, Trash2 } from 'lucide-react';
+import { MessageCircle, Repeat2, Heart, Eye, Trash2, MoreHorizontal, Repeat } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { MAX_COMMENT_LENGTH } from '@/lib/rmhark-schema';
 import { RMHarkContent } from './RMHarkContent';
+import { EngagementListModal } from './EngagementListModal';
 
 export interface Comment {
   id: string;
@@ -71,8 +72,23 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
   const [repostCount, setRepostCount] = useState(comment.repostCount ?? 0);
   const [viewCount, setViewCount] = useState(comment.viewCount ?? 0);
   const viewTracked = useRef(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [engagementModal, setEngagementModal] = useState<'likes' | 'reposts' | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const isAuthor = sessionUser?.id === comment.userId;
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [menuOpen]);
 
   // Track view
   useEffect(() => {
@@ -186,20 +202,57 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
             <span className="text-site-text-dim shrink-0">
               · {timeAgo(comment.createdAt)}
             </span>
+
+            {/* More menu */}
+            <div className="relative ml-auto shrink-0" ref={menuRef}>
+              <button
+                onClick={() => setMenuOpen((v) => !v)}
+                className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface transition-colors"
+              >
+                <MoreHorizontal className="w-3.5 h-3.5" />
+              </button>
+              {menuOpen && (
+                <div className="absolute right-0 top-full mt-1 w-44 bg-site-bg border border-site-border rounded-xl shadow-xl py-1 z-30">
+                  <button
+                    onClick={() => { setMenuOpen(false); setEngagementModal('likes'); }}
+                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
+                  >
+                    <Heart className="w-4 h-4 text-site-text-dim" />
+                    Liked by
+                  </button>
+                  <button
+                    onClick={() => { setMenuOpen(false); setEngagementModal('reposts'); }}
+                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
+                  >
+                    <Repeat className="w-4 h-4 text-site-text-dim" />
+                    reRMHark'd by
+                  </button>
+                  {isAuthor && (
+                    <button
+                      onClick={() => { setMenuOpen(false); handleDelete(); }}
+                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-danger hover:bg-site-danger/10 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      Delete
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Content */}
           <RMHarkContent text={comment.content} className="text-sm text-site-text mt-0.5 whitespace-pre-wrap break-words" />
 
           {/* Actions row */}
-          <div className="flex items-center gap-3 mt-1.5 -ml-1">
+          <div className="flex items-center gap-5 mt-2 -ml-1.5">
             {/* Reply */}
             {sessionUser && (
               <button
                 onClick={() => setReplyOpen((v) => !v)}
-                className="flex items-center gap-1 px-1 py-0.5 rounded-full text-site-text-dim hover:text-site-accent transition-colors group"
+                className="flex items-center gap-1.5 px-1.5 py-1 rounded-full text-site-text-dim hover:text-site-accent hover:bg-site-accent-dim/50 transition-colors group"
               >
-                <MessageCircle className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+                <MessageCircle className="w-4 h-4 group-hover:scale-110 transition-transform" />
               </button>
             )}
 
@@ -209,13 +262,13 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
             }`}>
               <button
                 onClick={toggleRepost}
-                className="p-0.5 rounded-full hover:bg-emerald-400/10 transition-colors group"
+                className="p-1 rounded-full hover:bg-emerald-400/10 transition-colors group"
                 title="reRMHark"
               >
-                <Repeat2 className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+                <Repeat2 className="w-4 h-4 group-hover:scale-110 transition-transform" />
               </button>
               {formatCount(repostCount) && (
-                <span className="text-[11px] pr-0.5">{formatCount(repostCount)}</span>
+                <span className="text-xs pr-0.5">{formatCount(repostCount)}</span>
               )}
             </div>
 
@@ -225,34 +278,24 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
             }`}>
               <button
                 onClick={toggleLike}
-                className="p-0.5 rounded-full hover:bg-rose-400/10 transition-colors group"
+                className="p-1 rounded-full hover:bg-rose-400/10 transition-colors group"
                 title="Like"
               >
-                <Heart className={`w-3.5 h-3.5 group-hover:scale-110 transition-transform ${liked ? 'fill-current' : ''}`} />
+                <Heart className={`w-4 h-4 group-hover:scale-110 transition-transform ${liked ? 'fill-current' : ''}`} />
               </button>
               {formatCount(likeCount) && (
-                <span className="text-[11px] pr-0.5">{formatCount(likeCount)}</span>
+                <span className="text-xs pr-0.5">{formatCount(likeCount)}</span>
               )}
             </div>
 
             {/* Views */}
-            <div className="flex items-center gap-0.5 text-site-text-dim">
-              <Eye className="w-3.5 h-3.5" />
+            <div className="flex items-center gap-1 px-1.5 py-1 text-site-text-dim">
+              <Eye className="w-4 h-4" />
               {formatCount(viewCount) && (
-                <span className="text-[11px]">{formatCount(viewCount)}</span>
+                <span className="text-xs">{formatCount(viewCount)}</span>
               )}
             </div>
 
-            {/* Delete */}
-            {isAuthor && (
-              <button
-                onClick={handleDelete}
-                className="p-0.5 rounded-full text-site-text-dim hover:text-site-danger hover:bg-site-danger/10 transition-colors"
-                title="Delete"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
-            )}
           </div>
 
           {/* Inline reply box */}
@@ -327,6 +370,16 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
           )}
         </div>
       </div>
+
+      {engagementModal && (
+        <EngagementListModal
+          open={engagementModal !== null}
+          onClose={() => setEngagementModal(null)}
+          postId={postId}
+          commentId={comment.id}
+          type={engagementModal}
+        />
+      )}
     </div>
   );
 }

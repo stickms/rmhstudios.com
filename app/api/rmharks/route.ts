@@ -419,7 +419,7 @@ export async function GET(req: NextRequest) {
     // Announcements have static dates that can break cursor-based pagination.
     const lastDbItem = [...paginatedItems]
       .reverse()
-      .find((i) => i.type === "rmhark" || i.type === "repost");
+      .find((i) => i.type === "rmhark");
     const nextCursor =
       paginatedItems.length === limit && lastDbItem
         ? lastDbItem.createdAt

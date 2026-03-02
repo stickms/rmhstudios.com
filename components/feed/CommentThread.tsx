@@ -65,14 +65,14 @@ export function CommentThread({ rmharkId, open, onClose, onCommentAdded }: Comme
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center" onClick={onClose}>
+    <div className="fixed inset-0 z-[200] flex items-center justify-center" onMouseDown={(e) => { e.stopPropagation(); onClose(); }}>
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
 
       {/* Dialog */}
       <div
         className="relative bg-site-bg border border-site-border rounded-2xl shadow-xl w-full max-w-lg mx-4 max-h-[80vh] flex flex-col"
-        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-site-border">

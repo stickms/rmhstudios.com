@@ -51,12 +51,16 @@ export const useFeedStore = create<FeedState>((set, get) => ({
       if (!res.ok) throw new Error("Failed to fetch feed");
 
       const data = await res.json();
-      set((state) => ({
-        items: [...state.items, ...data.items],
-        cursor: data.nextCursor,
-        hasMore: data.hasMore,
-        loading: false,
-      }));
+      set((state) => {
+        const existingIds = new Set(state.items.map((i) => i.id));
+        const newItems = (data.items as FeedItem[]).filter((i) => !existingIds.has(i.id));
+        return {
+          items: [...state.items, ...newItems],
+          cursor: data.nextCursor,
+          hasMore: data.hasMore,
+          loading: false,
+        };
+      });
     } catch (error) {
       console.error("Feed fetch error:", error);
       set({ loading: false });
