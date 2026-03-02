@@ -128,4 +128,20 @@ export const apps: AppInfo[] = [
         imagePath: '/images/games/rmhstudy.png',
         authGate: true,
     },
+    {
+        id: 'athora',
+        title: 'Athora',
+        description: 'A spatial networking platform. Walk around rooms, meet people, and pitch ideas in a 2D world.',
+        longDescription:
+            'Athora is a spatial networking experience where you explore themed rooms as an avatar, bump into other users to start conversations, visit vendor stands, and join open discussion bubbles — all rendered in a top-down pixel-art world powered by PixiJS.',
+        href: '/athora/map',
+        status: 'Alpha',
+        cta: 'Explore the Map',
+        isSteam: false,
+        gradient: 'from-indigo-500 via-violet-500 to-fuchsia-500',
+        iconName: 'Globe',
+        color: 'from-indigo-500/20 to-fuchsia-500/20 hover:border-indigo-500/50',
+        tags: ['Spatial', 'Networking', 'Pixel Art', 'Alpha'],
+        authGate: true,
+    },
 ];
