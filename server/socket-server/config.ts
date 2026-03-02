@@ -57,6 +57,14 @@ export const config = {
     'altair:game:state_snapshot': { max: 1200, windowMs: 60_000 },
     'altair:game:ping':       { max: 30,  windowMs: 60_000 },
     'altair:game:quick_chat': { max: 20,  windowMs: 60_000 },
+    // Athora — Spatial Networking
+    'athora:room:join':            { max: 10,  windowMs: 60_000 },
+    'athora:room:move':            { max: 900, windowMs: 60_000 },
+    'athora:chat:proximity':       { max: 30,  windowMs: 60_000 },
+    'athora:chat:conversation':    { max: 60,  windowMs: 60_000 },
+    'athora:conversation:create':  { max: 5,   windowMs: 60_000 },
+    'athora:stand:visit':          { max: 30,  windowMs: 60_000 },
+    'athora:stand:queue:join':     { max: 10,  windowMs: 60_000 },
   } as Record<string, { max: number; windowMs: number }>,
 
   // ─── Shutdown ───

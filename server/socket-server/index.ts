@@ -24,6 +24,7 @@ import { registerRmhStudyHandlers, handleRmhStudyDisconnect } from './handlers/r
 import { registerAltairHandlers, handleAltairDisconnect } from './handlers/altair';
 import { registerKowloonKnockoutHandlers, handleKowloonKnockoutDisconnect } from './handlers/kowloon-knockout';
 import { registerRmhMusicHandlers, handleRmhMusicDisconnect } from './handlers/rmhmusic';
+import { registerAthoraHandlers, handleAthoraDisconnect } from './handlers/athora';
 
 // ─── Startup validation ─────────────────────────────────────────
 
@@ -144,6 +145,7 @@ io.on('connection', (socket) => {
   registerAltairHandlers(io, socket);
   registerKowloonKnockoutHandlers(io, socket);
   registerRmhMusicHandlers(io, socket);
+  registerAthoraHandlers(io, socket);
 
   // Disconnect cleanup
   socket.on('disconnect', (reason) => {
@@ -157,6 +159,7 @@ io.on('connection', (socket) => {
     handleAltairDisconnect(io, socket);
     handleKowloonKnockoutDisconnect(io, socket);
     handleRmhMusicDisconnect(io, socket);
+    handleAthoraDisconnect(io, socket);
 
     cleanupRateLimits(socket.id);
   });

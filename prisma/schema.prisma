@@ -88,6 +88,22 @@ model User {
   conversationsAsTwo   Conversation[] @relation("ConversationParticipantTwo")
   directMessages       DirectMessage[]
 
+  // ─── Athora (Spatial Networking) ─────────────────────────────
+  avatarConfig              Json?
+  statusMessage             String?             @db.VarChar(140)
+  athoraAvailability        AthoraAvailability  @default(OPEN_TO_CHAT)
+  interestTags              String[]            @default([])
+  passportVisits            Int                 @default(0)
+  athoraOwnedRooms          AthoraRoom[]        @relation("AthoraRoomOwner")
+  athoraRoomMemberships     AthoraRoomMember[]
+  athoraStands              AthoraStand[]
+  athoraConversationMembers AthoraConversationMember[]
+  athoraSentMessages        AthoraMessage[]
+  athoraBusinessCard        AthoraBusinessCard?
+  athoraSentJoinRequests    AthoraConversationJoinRequest[] @relation("AthoraJoinRequester")
+  athoraReceivedConnections AthoraConnection[]  @relation("AthoraConnectionReceiver")
+  athoraSentConnections     AthoraConnection[]  @relation("AthoraConnectionSender")
+
   @@map("user")
 }
 
@@ -1263,4 +1279,427 @@ model DirectMessage {
   @@index([conversationId, createdAt])
   @@index([senderId])
   @@map("direct_message")
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ATHORA — Spatial Networking Platform
+// ═══════════════════════════════════════════════════════════════════
+
+enum AthoraAvailability {
+  OPEN_TO_CHAT
+  BROWSING
+  IN_MEETING
+  PITCHING
+  DO_NOT_DISTURB
+  AFK
+}
+
+// ─── Business Card ────────────────────────────────────────────────
+
+model AthoraBusinessCard {
+  id          String  @id @default(cuid())
+  userId      String  @unique
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  headline    String  @db.VarChar(120)
+  bio         String? @db.VarChar(500)
+  company     String?
+  role        String?
+  websiteUrl  String?
+  linkedinUrl String?
+  twitterUrl  String?
+  githubUrl   String?
+  customLinks Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("athora_business_card")
+}
+
+// ─── Connections (bidirectional networking) ────────────────────────
+
+model AthoraConnection {
+  id         String                  @id @default(cuid())
+  senderId   String
+  receiverId String
+  sender     User                    @relation("AthoraConnectionSender", fields: [senderId], references: [id])
+  receiver   User                    @relation("AthoraConnectionReceiver", fields: [receiverId], references: [id])
+  status     AthoraConnectionStatus  @default(PENDING)
+  metInRoom  String?
+  note       String?                 @db.VarChar(300)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([senderId, receiverId])
+  @@index([receiverId])
+  @@map("athora_connection")
+}
+
+enum AthoraConnectionStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  BLOCKED
+}
+
+// ─── Rooms ────────────────────────────────────────────────────────
+
+model AthoraRoom {
+  id            String           @id @default(cuid())
+  name          String           @db.VarChar(100)
+  description   String?          @db.VarChar(500)
+  slug          String           @unique
+
+  // Geography
+  latitude      Float
+  longitude     Float
+  address       String?
+  city          String?
+  country       String?
+
+  // Config
+  ownerId       String
+  owner         User             @relation("AthoraRoomOwner", fields: [ownerId], references: [id])
+  category      AthoraRoomCategory @default(GENERAL)
+  template      AthoraRoomTemplate @default(OPEN_FLOOR)
+  capacity      Int              @default(50)
+  accessType    AthoraRoomAccess @default(PUBLIC)
+  entryPassword String?
+  mapWidth      Int              @default(1600)
+  mapHeight     Int              @default(1200)
+  tileMapData   Json?
+  backgroundUrl String?
+
+  // State
+  isActive      Boolean          @default(true)
+  isPinned      Boolean          @default(false)
+  pinnedUntil   DateTime?
+  currentCount  Int              @default(0)
+
+  // Relations
+  members       AthoraRoomMember[]
+  stands        AthoraStand[]
+  conversations AthoraConversation[]
+  events        AthoraRoomEvent[]
+  reports       AthoraRoomReport[]
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([latitude, longitude])
+  @@index([category])
+  @@index([city, country])
+  @@index([isActive, currentCount(sort: Desc)])
+  @@map("athora_room")
+}
+
+enum AthoraRoomCategory {
+  GENERAL
+  TECH
+  DESIGN
+  BUSINESS
+  HIRING
+  GAMING
+  MUSIC
+  ART
+  EDUCATION
+  LOCAL
+  SOCIAL
+  CUSTOM
+}
+
+enum AthoraRoomTemplate {
+  OPEN_FLOOR
+  CONFERENCE
+  TRADE_SHOW
+  LOUNGE
+  CLASSROOM
+  CUSTOM
+}
+
+enum AthoraRoomAccess {
+  PUBLIC
+  PRIVATE
+  INVITE_ONLY
+  EVENT_TICKET
+}
+
+// ─── Room Membership (presence tracking) ──────────────────────────
+
+model AthoraRoomMember {
+  id        String             @id @default(cuid())
+  roomId    String
+  userId    String
+  room      AthoraRoom         @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  posX      Float              @default(400)
+  posY      Float              @default(300)
+  facing    AthoraDirection    @default(SOUTH)
+  role      AthoraMemberRole   @default(VISITOR)
+  joinedAt  DateTime           @default(now())
+  lastSeen  DateTime           @default(now())
+
+  @@unique([roomId, userId])
+  @@index([roomId])
+  @@map("athora_room_member")
+}
+
+enum AthoraMemberRole {
+  VISITOR
+  MODERATOR
+  HOST
+}
+
+enum AthoraDirection {
+  NORTH
+  SOUTH
+  EAST
+  WEST
+  NORTHEAST
+  NORTHWEST
+  SOUTHEAST
+  SOUTHWEST
+}
+
+// ─── Conversations (bubble groups within a room) ──────────────────
+
+model AthoraConversation {
+  id          String   @id @default(cuid())
+  roomId      String
+  room        AthoraRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  topic       String?  @db.VarChar(100)
+  isOpen      Boolean  @default(false)
+  maxMembers  Int      @default(8)
+  anchorX     Float
+  anchorY     Float
+
+  members     AthoraConversationMember[]
+  messages    AthoraMessage[]
+  joinRequests AthoraConversationJoinRequest[]
+
+  startedAt   DateTime @default(now())
+  endedAt     DateTime?
+
+  @@index([roomId, endedAt])
+  @@map("athora_conversation")
+}
+
+model AthoraConversationMember {
+  id             String             @id @default(cuid())
+  conversationId String
+  userId         String
+  conversation   AthoraConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt       DateTime @default(now())
+  leftAt         DateTime?
+
+  @@unique([conversationId, userId])
+  @@map("athora_conversation_member")
+}
+
+model AthoraConversationJoinRequest {
+  id             String             @id @default(cuid())
+  conversationId String
+  requesterId    String
+  conversation   AthoraConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  requester      User               @relation("AthoraJoinRequester", fields: [requesterId], references: [id])
+  status         AthoraJoinRequestStatus @default(PENDING)
+  message        String?            @db.VarChar(200)
+  createdAt      DateTime @default(now())
+  respondedAt    DateTime?
+
+  @@unique([conversationId, requesterId])
+  @@map("athora_conversation_join_request")
+}
+
+enum AthoraJoinRequestStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+// ─── Messages ─────────────────────────────────────────────────────
+
+model AthoraMessage {
+  id             String              @id @default(cuid())
+  conversationId String?
+  conversation   AthoraConversation? @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User                @relation(fields: [senderId], references: [id])
+  content        String              @db.VarChar(2000)
+  type           AthoraMessageType   @default(TEXT)
+  metadata       Json?
+  isProximity    Boolean             @default(false)
+  roomId         String?
+  createdAt      DateTime            @default(now())
+
+  @@index([conversationId, createdAt])
+  @@index([roomId, isProximity, createdAt])
+  @@map("athora_message")
+}
+
+enum AthoraMessageType {
+  TEXT
+  IMAGE
+  LINK
+  EMOTE
+  SYSTEM
+}
+
+// ─── Stands ───────────────────────────────────────────────────────
+
+model AthoraStand {
+  id          String    @id @default(cuid())
+  ownerId     String
+  owner       User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  roomId      String
+  room        AthoraRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  posX        Float
+  posY        Float
+  width       Int       @default(200)
+  height      Int       @default(150)
+
+  title       String    @db.VarChar(100)
+  tagline     String?   @db.VarChar(200)
+  description String?   @db.VarChar(2000)
+  category    String?
+  logoUrl     String?
+  websiteUrl  String?
+
+  media       AthoraStandMedia[]
+
+  tier        AthoraStandTier @default(BASIC)
+  style       Json?
+  isActive    Boolean    @default(true)
+
+  leadCaptureEnabled Boolean @default(false)
+  leadCaptureFields  Json?
+  leads              AthoraStandLead[]
+
+  totalViews     Int @default(0)
+  uniqueVisitors Int @default(0)
+
+  queueEnabled   Boolean @default(false)
+  queueEntries   AthoraStandQueueEntry[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([roomId])
+  @@index([ownerId])
+  @@map("athora_stand")
+}
+
+enum AthoraStandTier {
+  BASIC
+  STANDARD
+  PREMIUM
+}
+
+model AthoraStandMedia {
+  id       String              @id @default(cuid())
+  standId  String
+  stand    AthoraStand         @relation(fields: [standId], references: [id], onDelete: Cascade)
+  type     AthoraStandMediaType
+  url      String
+  caption  String?             @db.VarChar(200)
+  sortOrder Int                @default(0)
+
+  @@index([standId])
+  @@map("athora_stand_media")
+}
+
+enum AthoraStandMediaType {
+  IMAGE
+  VIDEO
+  IFRAME
+  PDF
+  LINK
+}
+
+model AthoraStandLead {
+  id          String   @id @default(cuid())
+  standId     String
+  stand       AthoraStand @relation(fields: [standId], references: [id], onDelete: Cascade)
+  data        Json
+  collectedAt DateTime @default(now())
+
+  @@index([standId])
+  @@map("athora_stand_lead")
+}
+
+model AthoraStandQueueEntry {
+  id        String            @id @default(cuid())
+  standId   String
+  stand     AthoraStand       @relation(fields: [standId], references: [id], onDelete: Cascade)
+  userId    String
+  position  Int
+  status    AthoraQueueStatus @default(WAITING)
+  joinedAt  DateTime          @default(now())
+
+  @@index([standId, status])
+  @@map("athora_stand_queue_entry")
+}
+
+enum AthoraQueueStatus {
+  WAITING
+  ACTIVE
+  COMPLETED
+  LEFT
+}
+
+// ─── Room Events (scheduled gatherings) ───────────────────────────
+
+model AthoraRoomEvent {
+  id          String   @id @default(cuid())
+  roomId      String
+  room        AthoraRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  title       String   @db.VarChar(200)
+  description String?  @db.Text
+  imageUrl    String?
+  startsAt    DateTime
+  endsAt      DateTime
+  timezone    String   @default("UTC")
+  isTicketed  Boolean  @default(false)
+  ticketPrice Int?
+  maxAttendees Int?
+  createdAt   DateTime @default(now())
+
+  @@index([roomId, startsAt])
+  @@index([startsAt])
+  @@map("athora_room_event")
+}
+
+// ─── Moderation ───────────────────────────────────────────────────
+
+model AthoraRoomReport {
+  id          String             @id @default(cuid())
+  roomId      String
+  room        AthoraRoom         @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  reporterId  String
+  targetId    String?
+  reason      AthoraReportReason
+  details     String?            @db.VarChar(1000)
+  status      AthoraReportStatus @default(OPEN)
+  resolvedAt  DateTime?
+  createdAt   DateTime @default(now())
+
+  @@index([roomId, status])
+  @@map("athora_room_report")
+}
+
+enum AthoraReportReason {
+  HARASSMENT
+  SPAM
+  INAPPROPRIATE_CONTENT
+  IMPERSONATION
+  SCAM
+  OTHER
+}
+
+enum AthoraReportStatus {
+  OPEN
+  REVIEWING
+  RESOLVED
+  DISMISSED
 }
