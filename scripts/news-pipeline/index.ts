@@ -86,7 +86,7 @@ async function processCategory(category: string): Promise<void> {
 
   console.log(`[pipeline] Saved to DB (STAGING): ${article.slug}`);
 
-  await postToDiscord({
+  const discordMessageId = await postToDiscord({
     slug: article.slug,
     title: article.title,
     description: article.description,
@@ -95,6 +95,13 @@ async function processCategory(category: string): Promise<void> {
     sourceUrl: story.link,
     publisher: story.publisher,
   });
+
+  if (discordMessageId) {
+    await prisma.newsArticle.update({
+      where: { slug: article.slug },
+      data: { discordMessageId },
+    });
+  }
 }
 
 async function main() {

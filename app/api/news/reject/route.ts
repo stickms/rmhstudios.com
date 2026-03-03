@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
+import { updateDiscordMessage } from "@/scripts/news-pipeline/discord";
 
 function verifyToken(slug: string, token: string): boolean {
   const secret = process.env.NEWS_APPROVAL_SECRET ?? "";
@@ -36,6 +37,16 @@ export async function GET(req: NextRequest) {
   await prisma.newsArticle.delete({ where: { slug } });
 
   console.log(`[reject] Deleted article: ${slug}`);
+
+  if (article.discordMessageId) {
+    await updateDiscordMessage({
+      messageId: article.discordMessageId,
+      title: article.title,
+      category: article.category,
+      slug: article.slug,
+      action: "rejected",
+    });
+  }
 
   return new NextResponse(
     `Article "${slug}" has been rejected and deleted.`,

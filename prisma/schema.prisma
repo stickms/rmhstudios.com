@@ -1126,6 +1126,7 @@ model NewsArticle {
   sourcePublisher String
   sourceDate      String?
   image           String?
+  discordMessageId String?
   status          NewsStatus @default(PUBLISHED)
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
