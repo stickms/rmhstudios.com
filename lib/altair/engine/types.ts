@@ -50,6 +50,7 @@ export interface EnemyEntity extends Entity {
   armor: number;
   // for Ghost/Banshee/Shadow
   intangible: boolean;
+  canFly: boolean;
   opacity: number;
   // for pounce/dash
   dashVx: number;
@@ -101,6 +102,8 @@ export interface ProjectileEntity extends Entity {
   returnDamageBonus?: number;
   // v1.2: lifesteal on hit (Crimson Whip)
   lifestealPct?: number;
+  // v1.3.1: source tracking for bestiary "killed by" stats
+  sourceDefId?: string;
 }
 
 export interface PickupEntity extends Entity {

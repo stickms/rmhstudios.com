@@ -853,6 +853,7 @@ model AltairMetaProgress {
   bestTimeSurvived  Float    @default(0)
   bestKills         Int      @default(0)
   bossesDefeated    Json     @default("[]")
+  bestiary          Json     @default("{}")
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 

@@ -85,6 +85,7 @@ export function updateEnemyAI(world: GameWorld, delta: number): EnemySystemEvent
 
     // --- Dispatch to the correct behavior ---
     const defId = enemy.defId;
+    const projCountBefore = events.enemyProjectiles.length;
     switch (defId) {
       case 'shambler':
         updateShambler(enemy, world, delta, events);
@@ -139,6 +140,11 @@ export function updateEnemyAI(world: GameWorld, delta: number): EnemySystemEvent
         updateShambler(enemy, world, delta, events);
         break;
     }
+
+    // Tag any projectiles spawned by this enemy with its defId for bestiary tracking
+    for (let pi = projCountBefore; pi < events.enemyProjectiles.length; pi++) {
+      events.enemyProjectiles[pi].sourceDefId = defId;
+    }
   }
 
   return events;
@@ -186,8 +192,8 @@ function moveTowardPlayer(
   let vx = (dx / dist) * speed;
   let vy = (dy / dist) * speed;
 
-  // Apply obstacle avoidance (skip for intangible enemies)
-  if (_propHash && !enemy.intangible) {
+  // Apply obstacle avoidance (skip for intangible or flying enemies)
+  if (_propHash && !enemy.intangible && !enemy.canFly) {
     const avoided = avoidObstacles(enemy.x, enemy.y, enemy.radius, vx, vy, speed, _propHash);
     vx = avoided.vx;
     vy = avoided.vy;
@@ -225,7 +231,7 @@ function maintainRange(
     vy = (dy / dist) * speed;
   }
 
-  if ((vx !== 0 || vy !== 0) && _propHash && !enemy.intangible) {
+  if ((vx !== 0 || vy !== 0) && _propHash && !enemy.intangible && !enemy.canFly) {
     const avoided = avoidObstacles(enemy.x, enemy.y, enemy.radius, vx, vy, speed, _propHash);
     vx = avoided.vx;
     vy = avoided.vy;
@@ -304,6 +310,7 @@ function spawnEnemyEntity(
     isBoss: false,
     armor: (def.specialParams.armor as number) ?? 0,
     intangible: false,
+    canFly: def.canFly,
     opacity: 1.0,
     dashVx: 0,
     dashVy: 0,

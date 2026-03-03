@@ -35,11 +35,11 @@ import { DestructibleProp, PROP_COLLISION_OFFSET_Y } from './tile-generator';
 // ---- Callbacks --------------------------------------------------------------
 
 export interface GameLoopCallbacks {
-  onPlayerDamage: (amount: number) => void;
+  onPlayerDamage: (amount: number, sourceDefId?: string) => void;
   onPlayerHeal: (amount: number) => void;
   onXPGain: (amount: number) => void;
   onCoinGain: (amount: number) => void;
-  onKill: () => void;
+  onKill: (defId: string) => void;
   onLevelUp: () => void;
   onBossSpawn: (bossId: string) => void;
   onBossKill: (bossId: string) => void;
@@ -397,7 +397,7 @@ function handleCollisions(
               dmg = Math.round(dmg * getBlockDR(world));
               pl.hp -= dmg;
               pl.iFrames = 0.2;
-              callbacks.onPlayerDamage(dmg);
+              callbacks.onPlayerDamage(dmg, proj.sourceDefId);
               onCatalystDamageTaken(catalystStates, world, stats, { damage: dmg });
             }
           }
@@ -442,7 +442,7 @@ function handleCollisions(
         if (dmg > 0) {
           pl.hp -= dmg;
           pl.iFrames = 0.5;
-          callbacks.onPlayerDamage(dmg);
+          callbacks.onPlayerDamage(dmg, proj.sourceDefId);
           onCatalystDamageTaken(catalystStates, world, stats, { damage: dmg });
         }
 
@@ -520,7 +520,7 @@ function handleCollisions(
         if (dmg > 0) {
           pl.hp -= dmg;
           pl.iFrames = 0.8;
-          callbacks.onPlayerDamage(dmg);
+          callbacks.onPlayerDamage(dmg, e.defId);
           onCatalystDamageTaken(catalystStates, world, stats, { damage: dmg });
         }
         break;
@@ -751,7 +751,7 @@ function handleCollisions(
       // Boss entities are managed by the boss system (step 6b), skip here
       if (e.isBoss) continue;
 
-      callbacks.onKill();
+      callbacks.onKill(e.defId);
       spawnDeathBurst(world, e.x, e.y, '#888');
 
       // Spawn pickups
@@ -957,9 +957,9 @@ export function createGameLoop(
       callbacks.onWeaponDisable(enemyEvents.weaponsDisabled.duration);
     }
 
-    // 5b. Enemy vs prop collision (push-back using AABB, skip intangible)
+    // 5b. Enemy vs prop collision (push-back using AABB, skip intangible/flying)
     for (const enemy of world.enemies) {
-      if (enemy.intangible) continue;
+      if (enemy.intangible || enemy.canFly) continue;
       const nearbyProps = propHash.query(enemy.x, enemy.y, enemy.radius + 20);
       for (const propEntity of nearbyProps) {
         const prop = propEntity as unknown as DestructibleProp;
@@ -986,8 +986,11 @@ export function createGameLoop(
       const bossPrevY = bossState.entity.y;
       const bossEvents = updateBoss(world, bossState, scaledDelta);
 
-      // Boss projectiles
+      // Boss projectiles — tag with boss defId for bestiary tracking
       if (bossEvents.bossProjectiles.length > 0) {
+        for (const bp of bossEvents.bossProjectiles) {
+          bp.sourceDefId = bossState.bossId;
+        }
         world.projectiles.push(...bossEvents.bossProjectiles);
       }
 
@@ -1032,7 +1035,7 @@ export function createGameLoop(
 
       // Boss defeated
       if (bossEvents.bossDefeated) {
-        callbacks.onKill();
+        callbacks.onKill(bossEvents.bossDefeated);
         callbacks.onBossKill(bossEvents.bossDefeated);
         world.bossActive = false;
         spawnBossDrops(world, bossState.entity.x, bossState.entity.y, 15, 30);

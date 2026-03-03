@@ -57,7 +57,7 @@ export const CATALYSTS: readonly CatalystDef[] = [
       },
     },
     descriptions: [
-      'After taking damage, gain a damage shield equal to 8% of damage taken for 3s. Minimum shield: 3 HP.',
+      'Evolves Broad Sword. After taking damage, gain a damage shield equal to 8% of damage taken for 3s. Minimum shield: 3 HP.',
       'Shield amount increased to 12%. Shield duration: 4s.',
       'Shield amount: 16%. While shield is active, your next melee attack deals +20% damage. Evolution ready.',
     ],
@@ -85,7 +85,7 @@ export const CATALYSTS: readonly CatalystDef[] = [
       },
     },
     descriptions: [
-      'Every 5th weapon attack releases a homing arcane spark dealing 15 damage to the nearest enemy within 200px.',
+      'Evolves Arcane Bolt. Every 5th weapon attack releases a homing arcane spark dealing 15 damage to the nearest enemy within 200px.',
       'Every 4th attack. Spark damage: 20. Sparks pierce 1 enemy.',
       'Every 3rd attack. Spark damage: 25. Sparks pierce 2 enemies and explode on final target for 30px AoE. Evolution ready.',
     ],
@@ -113,7 +113,7 @@ export const CATALYSTS: readonly CatalystDef[] = [
       },
     },
     descriptions: [
-      'Consecutive hits on the same enemy within 2s build focus stacks (max 5). Each stack: +4% damage to that enemy.',
+      'Evolves Iron Shortbow. Consecutive hits on the same enemy within 2s build focus stacks (max 5). Each stack: +4% damage to that enemy.',
       'Max stacks: 6. Damage per stack: 5%. At max stacks the target is highlighted for all players.',
       'Max stacks: 8. Damage per stack: 6% (48% max). At max stacks, projectiles gain +3 Pierce against this target. Evolution ready.',
     ],
@@ -146,7 +146,7 @@ export const CATALYSTS: readonly CatalystDef[] = [
       },
     },
     descriptions: [
-      'Enemies that die while poisoned leave a toxic corpse for 2s. Nearby enemies take 5 damage and become poisoned (3 dps, 2s).',
+      'Evolves Toxic Flask. Enemies that die while poisoned leave a toxic corpse for 2s. Nearby enemies take 5 damage and become poisoned (3 dps, 2s).',
       'Corpse radius +20px. Poison: 4 dps for 3s. Elite corpses (Tier 4+) are 50% larger.',
       'Corpse poison applies 10% slow for 2s. 3+ nearby poison-deaths merge into a plague zone (150px, 4s, 8 dmg/tick). Evolution ready.',
     ],
@@ -176,7 +176,7 @@ export const CATALYSTS: readonly CatalystDef[] = [
       },
     },
     descriptions: [
-      'After taking damage, your next attack within 2s deals +15% damage. Does not stack from multiple hits.',
+      'Evolves War Axe. After taking damage, your next attack within 2s deals +15% damage. Does not stack from multiple hits.',
       'Damage bonus: +20%. Window: 3s. Buffed attack also has +15% Area.',
       'Damage bonus: +25%. Window: 3s. Buffed attack releases a ground shockwave (100px, 15 damage). 3s internal CD. Evolution ready.',
     ],
@@ -206,7 +206,7 @@ export const CATALYSTS: readonly CatalystDef[] = [
       },
     },
     descriptions: [
-      'Enemies killed within 80px have a 12% chance to become a soul wisp (6s, orbits at 100px, 4 dps). Max 2 wisps.',
+      'Evolves Soul Siphon. Enemies killed within 80px have a 12% chance to become a soul wisp (6s, orbits at 100px, 4 dps). Max 2 wisps.',
       'Proc chance: 16%. Wisp damage: 6 dps. Duration: 8s. Max 3 wisps.',
       'Proc chance: 20%. Wisp damage: 8 dps. Duration: 10s. Max 4 wisps. Wisps heal 1 HP/s each. Evolution ready.',
     ],
@@ -234,7 +234,7 @@ export const CATALYSTS: readonly CatalystDef[] = [
       },
     },
     descriptions: [
-      'Every 20s, a temporal echo replays your last 2s of weapon attacks at your position. Echoed attacks deal 40% damage.',
+      'Evolves Temporal Shard. Every 20s, a temporal echo replays your last 2s of weapon attacks at your position. Echoed attacks deal 40% damage.',
       'Echo interval: 16s. Echo duration: 2.5s. Echo damage: 50%.',
       'Echo interval: 12s. Echo duration: 3s. Echo damage: 60%. Echoed attacks apply 15% slow for 1.5s. Evolution ready.',
     ],
@@ -264,7 +264,7 @@ export const CATALYSTS: readonly CatalystDef[] = [
       },
     },
     descriptions: [
-      'When you drop below 50% HP, release a blood pulse (120px radius, 20 damage). 15s internal cooldown.',
+      'Evolves Crimson Whip. When you drop below 50% HP, release a blood pulse (120px radius, 20 damage). 15s internal cooldown.',
       'Threshold: 60% HP. Pulse: 30 damage, 140px. Cooldown: 12s. Heals 5 HP.',
       'Threshold: 60% HP. Pulse: 40 damage, 160px. Cooldown: 10s. Heals 8 HP and applies 20% slow for 2s. Evolution ready.',
     ],
@@ -293,7 +293,7 @@ export const CATALYSTS: readonly CatalystDef[] = [
       },
     },
     descriptions: [
-      'Standing still for 1.5s creates hallowed ground (60px). Enemies take 3 dps and deal -15% damage inside.',
+      'Evolves Holy Water. Standing still for 1.5s creates hallowed ground (60px). Enemies take 3 dps and deal -15% damage inside.',
       'Activation: 1.0s. Zone: 75px. Damage: 4/tick. Enemy damage: -20%.',
       'Activation: 0.8s. Zone: 90px. Damage: 5/tick. Enemy damage: -25%. You heal 1 HP/s on hallowed ground. Evolution ready.',
     ],
@@ -320,7 +320,7 @@ export const CATALYSTS: readonly CatalystDef[] = [
       },
     },
     descriptions: [
-      'Projectiles that miss have a 30% chance to ricochet toward the nearest enemy within 100px at 60% damage.',
+      'Evolves Throwing Daggers. Projectiles that miss have a 30% chance to ricochet toward the nearest enemy within 100px at 60% damage.',
       'Ricochet chance: 40%. Range: 120px. Damage: 70%.',
       'Ricochet chance: 50%. Range: 150px. Damage: 80%. Ricocheted projectiles gain +1 Pierce. Evolution ready.',
     ],
@@ -350,7 +350,7 @@ export const CATALYSTS: readonly CatalystDef[] = [
       },
     },
     descriptions: [
-      'Damaging an already-wounded enemy has a 6% chance to trigger static discharge (30px AoE, 10 damage).',
+      'Evolves Lightning Ring. Damaging an already-wounded enemy has a 6% chance to trigger static discharge (30px AoE, 10 damage).',
       'Proc chance: 8%. AoE: 40px, 15 damage. Discharge chains to 1 nearby enemy within 60px at 50% damage.',
       'Proc chance: 10%. AoE: 50px, 20 damage. Chains to 2 enemies. Stuns primary target for 0.2s. Evolution ready.',
     ],
@@ -380,7 +380,7 @@ export const CATALYSTS: readonly CatalystDef[] = [
       },
     },
     descriptions: [
-      'Enemies that die within 100px drop a life mote. Collecting a mote heals 3 HP. Motes last 5s. Max 3 on screen.',
+      'Evolves Garlic. Enemies that die within 100px drop a life mote. Collecting a mote heals 3 HP. Motes last 5s. Max 3 on screen.',
       'Heal per mote: 4 HP. Duration: 6s. Max 4 motes. Motes attract from 40px (affected by Pickup Range).',
       'Heal per mote: 5 HP. Duration: 8s. Max 5 motes. Collecting a mote grants +5% Move Speed for 2s. Evolution ready.',
     ],
@@ -408,7 +408,7 @@ export const CATALYSTS: readonly CatalystDef[] = [
       },
     },
     descriptions: [
-      'Every 10s, a detection pulse reveals all enemies within 400px for 3s. Revealed enemies take +5% damage.',
+      'Evolves Runic Orbs. Every 10s, a detection pulse reveals all enemies within 400px for 3s. Revealed enemies take +5% damage.',
       'Pulse interval: 8s. Range: 500px. Reveal: 4s. Damage bonus: +8%.',
       'Pulse interval: 6s. Range: 600px. Reveal: 5s. Damage bonus: +10%. Shadows and invisible enemies are permanently revealed. Evolution ready.',
     ],
@@ -436,7 +436,7 @@ export const CATALYSTS: readonly CatalystDef[] = [
       },
     },
     descriptions: [
-      'Killed enemies have a 15% chance to ignite, burning for 6 dps for 2s. Fire spreads to enemies within 30px on death.',
+      'Evolves Fire Wand. Killed enemies have a 15% chance to ignite, burning for 6 dps for 2s. Fire spreads to enemies within 30px on death.',
       'Ignite chance: 20%. Burn: 8 dps for 2.5s. Spread radius: 40px.',
       'Ignite chance: 25%. Burn: 10 dps for 3s. Spread radius: 50px. Ignited enemies have -10% Armor. Evolution ready.',
     ],

@@ -5,7 +5,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Play, ShoppingBag, Settings, Trophy, Zap, Users, Clock, Crosshair, Sparkles, Coins, RefreshCw, X, ScrollText } from 'lucide-react';
+import { Play, ShoppingBag, Settings, Trophy, Zap, Users, Clock, Crosshair, Sparkles, Coins, RefreshCw, X, ScrollText, Book } from 'lucide-react';
 import PatchnotesModal from './PatchnotesModal';
 import { useAltairMetaStore } from '@/lib/altair/stores/meta-store';
 import { useKeyboardNav } from '@/lib/altair/hooks/use-keyboard-nav';
@@ -15,18 +15,19 @@ interface MenuScreenProps {
   onMultiplayer: () => void;
   onMetaShop: () => void;
   onSettings: () => void;
+  onBestiary: () => void;
 }
 
-export default function MenuScreen({ onPlay, onMultiplayer, onMetaShop, onSettings }: MenuScreenProps) {
+export default function MenuScreen({ onPlay, onMultiplayer, onMetaShop, onSettings, onBestiary }: MenuScreenProps) {
   const coins = useAltairMetaStore((s) => s.coins);
   const doubleTimeUnlocked = useAltairMetaStore((s) => s.doubleTimeUnlocked);
   const totalRuns = useAltairMetaStore((s) => s.totalRunsPlayed);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showPatchnotes, setShowPatchnotes] = useState(false);
 
-  const menuActions = useMemo(() => [onPlay, onMultiplayer, onMetaShop, onSettings, () => setShowLeaderboard(true), () => setShowPatchnotes(true)], [onPlay, onMultiplayer, onMetaShop, onSettings]);
+  const menuActions = useMemo(() => [onPlay, onMultiplayer, onMetaShop, onSettings, () => setShowLeaderboard(true), onBestiary, () => setShowPatchnotes(true)], [onPlay, onMultiplayer, onMetaShop, onSettings, onBestiary]);
   const { focusedIndex } = useKeyboardNav({
-    itemCount: 6,
+    itemCount: 7,
     onSelect: (i) => menuActions[i](),
     orientation: 'vertical',
     enabled: !showLeaderboard && !showPatchnotes,
@@ -102,8 +103,16 @@ export default function MenuScreen({ onPlay, onMultiplayer, onMetaShop, onSettin
         </button>
 
         <button
-          onClick={() => setShowPatchnotes(true)}
+          onClick={onBestiary}
           className={`flex items-center justify-center gap-2 py-3 rounded-lg font-semibold text-(--altair-text) bg-(--altair-surface) border border-(--altair-border) hover:border-(--altair-border-bright) hover:bg-(--altair-surface-hover) transition-all ${focusClass(5)}`}
+        >
+          <Book size={18} />
+          Bestiary
+        </button>
+
+        <button
+          onClick={() => setShowPatchnotes(true)}
+          className={`flex items-center justify-center gap-2 py-3 rounded-lg font-semibold text-(--altair-text) bg-(--altair-surface) border border-(--altair-border) hover:border-(--altair-border-bright) hover:bg-(--altair-surface-hover) transition-all ${focusClass(6)}`}
         >
           <ScrollText size={18} />
           Patch Notes

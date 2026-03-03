@@ -27,6 +27,7 @@ function getPersistedState() {
     bestTimeSurvived: s.bestTimeSurvived,
     bestKills: s.bestKills,
     bossesDefeated: s.bossesDefeated,
+    bestiary: s.bestiary,
   };
 }
 
@@ -55,6 +56,7 @@ interface AltairMetaState {
   bestTimeSurvived: number;
   bestKills: number;
   bossesDefeated: string[];
+  bestiary: Record<string, { encountered: number; killed: number; killedBy: number }>;
   _loadedFromServer: boolean;
 
   addCoins: (amount: number) => void;
@@ -69,6 +71,9 @@ interface AltairMetaState {
   checkUnlocks: () => void;
   getUpgradeLevel: (id: string) => number;
   getMetaStatBonuses: () => Record<string, number>;
+  recordBestiaryEncounter: (defId: string) => void;
+  recordBestiaryKill: (defId: string) => void;
+  recordBestiaryKilledBy: (defId: string) => void;
   loadFromServer: () => Promise<void>;
   saveToServer: () => void;
 }
@@ -85,6 +90,7 @@ export const useAltairMetaStore = create<AltairMetaState>()(
       bestTimeSurvived: 0,
       bestKills: 0,
       bossesDefeated: [],
+      bestiary: {},
       _loadedFromServer: false,
 
       addCoins: (amount) => {
@@ -204,6 +210,30 @@ export const useAltairMetaStore = create<AltairMetaState>()(
         return bonuses;
       },
 
+      recordBestiaryEncounter: (defId) => {
+        set((s) => {
+          const entry = s.bestiary[defId] || { encountered: 0, killed: 0, killedBy: 0 };
+          return { bestiary: { ...s.bestiary, [defId]: { ...entry, encountered: entry.encountered + 1 } } };
+        });
+        scheduleSave();
+      },
+
+      recordBestiaryKill: (defId) => {
+        set((s) => {
+          const entry = s.bestiary[defId] || { encountered: 0, killed: 0, killedBy: 0 };
+          return { bestiary: { ...s.bestiary, [defId]: { ...entry, encountered: Math.max(entry.encountered, 1), killed: entry.killed + 1 } } };
+        });
+        scheduleSave();
+      },
+
+      recordBestiaryKilledBy: (defId) => {
+        set((s) => {
+          const entry = s.bestiary[defId] || { encountered: 0, killed: 0, killedBy: 0 };
+          return { bestiary: { ...s.bestiary, [defId]: { ...entry, encountered: Math.max(entry.encountered, 1), killedBy: entry.killedBy + 1 } } };
+        });
+        scheduleSave();
+      },
+
       loadFromServer: async () => {
         try {
           const res = await fetch('/api/altair/meta');
@@ -234,6 +264,18 @@ export const useAltairMetaStore = create<AltairMetaState>()(
             ...(data.bossesDefeated as string[]),
           ]));
 
+          // Merge bestiary: take max of each stat per enemy
+          const mergedBestiary: Record<string, { encountered: number; killed: number; killedBy: number }> = { ...local.bestiary };
+          const serverBestiary = (data.bestiary || {}) as Record<string, { encountered: number; killed: number; killedBy: number }>;
+          for (const [key, val] of Object.entries(serverBestiary)) {
+            const localEntry = mergedBestiary[key] || { encountered: 0, killed: 0, killedBy: 0 };
+            mergedBestiary[key] = {
+              encountered: Math.max(localEntry.encountered, val.encountered || 0),
+              killed: Math.max(localEntry.killed, val.killed || 0),
+              killedBy: Math.max(localEntry.killedBy, val.killedBy || 0),
+            };
+          }
+
           set({
             coins: Math.max(local.coins, data.coins as number),
             upgrades: mergedUpgrades,
@@ -244,6 +286,7 @@ export const useAltairMetaStore = create<AltairMetaState>()(
             bestTimeSurvived: Math.max(local.bestTimeSurvived, data.bestTimeSurvived as number),
             bestKills: Math.max(local.bestKills, data.bestKills as number),
             bossesDefeated: mergedBosses,
+            bestiary: mergedBestiary,
             _loadedFromServer: true,
           });
 
@@ -268,6 +311,7 @@ export const useAltairMetaStore = create<AltairMetaState>()(
         bestTimeSurvived: s.bestTimeSurvived,
         bestKills: s.bestKills,
         bossesDefeated: s.bossesDefeated,
+        bestiary: s.bestiary,
       }),
     }
   )

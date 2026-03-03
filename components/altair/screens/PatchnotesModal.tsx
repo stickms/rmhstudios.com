@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, ScrollText, Sword, Shield, Skull, TrendingUp, TrendingDown, Sparkles, ShoppingBag, Zap, FlaskConical, Target } from 'lucide-react';
+import { X, ScrollText, Sword, Shield, Skull, TrendingUp, TrendingDown, Sparkles, ShoppingBag, Zap, FlaskConical, Target, Wrench, Book, Eye } from 'lucide-react';
 
 // ── Patch Notes Data ─────────────────────────────────────────
 
@@ -25,6 +25,43 @@ interface PatchVersion {
 }
 
 const PATCH_NOTES: PatchVersion[] = [
+  {
+    version: 'v1.3.1',
+    title: 'Quality of Life',
+    summary: 'Player health bar, bestiary, catalyst descriptions, enemy pathfinding improvements, and more.',
+    categories: [
+      {
+        label: 'UI & QOL',
+        icon: Eye,
+        color: 'var(--altair-info)',
+        entries: [
+          { text: 'Player health bar now displayed under sprite when not at full HP', detail: 'Color-coded green/orange/red — no need to look at the HUD constantly' },
+          { text: 'Catalyst items now show which weapon they evolve in their description', detail: 'e.g. "Evolves Broad Sword. After taking damage..."' },
+          { text: 'New Bestiary page accessible from the main menu', detail: 'Track every enemy and boss you\'ve encountered, killed, and been killed by. Undiscovered creatures show as blackened silhouettes' },
+          { text: 'Patch notes now use infinite scroll instead of tabs', detail: 'All versions visible in one scrollable view, starting with the most recent' },
+        ],
+      },
+      {
+        label: 'Enemy AI & Pathfinding',
+        icon: Skull,
+        color: 'var(--altair-danger)',
+        entries: [
+          { text: 'Ground enemies now properly pathfind around obstacles', detail: 'Uses tangent-based wall-sliding with Minkowski sum AABB inflation for proper clearance' },
+          { text: 'Enemy pathfinding accounts for enemy width/radius', detail: 'Larger enemies like Bone Golem and Death Knight keep proper clearance from obstacles' },
+          { text: 'Flying enemies (Bat, Ghost, Witch, Banshee, Arcane Construct) ignore obstacles', detail: 'Flying enemies pass through props and are not blocked by terrain' },
+        ],
+      },
+      {
+        label: 'Data & Persistence',
+        icon: Book,
+        color: 'var(--altair-success)',
+        entries: [
+          { text: 'Bestiary stats (encountered, killed, killed by) saved to database', detail: 'Progress syncs across devices via server-side persistence' },
+          { text: 'Enemy and boss encounters tracked during gameplay for bestiary' },
+        ],
+      },
+    ],
+  },
   {
     version: 'v1.3',
     title: 'Meta Store & Evolution Rework',
@@ -223,10 +260,7 @@ const PATCH_NOTES: PatchVersion[] = [
 // ── Component ────────────────────────────────────────────────
 
 export default function PatchnotesModal({ onClose }: { onClose: () => void }) {
-  const [selectedVersion, setSelectedVersion] = useState(0);
   const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set());
-
-  const patch = PATCH_NOTES[selectedVersion];
 
   const toggleDetail = (key: string) => {
     setExpandedEntries((prev) => {
@@ -258,82 +292,78 @@ export default function PatchnotesModal({ onClose }: { onClose: () => void }) {
           </button>
         </div>
 
-        {/* Version tabs */}
-        <div className="flex gap-1.5 px-5 pb-3 shrink-0">
-          {PATCH_NOTES.map((v, i) => (
-            <button
-              key={v.version}
-              onClick={() => { setSelectedVersion(i); setExpandedEntries(new Set()); }}
-              className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition-colors ${
-                selectedVersion === i
-                  ? 'bg-(--altair-accent) text-white'
-                  : 'bg-(--altair-bg) text-(--altair-text-muted) hover:bg-(--altair-surface-hover)'
-              }`}
-            >
-              <span className="block font-bold">{v.version}</span>
-              <span className="block text-[10px] opacity-80 mt-0.5 truncate">{v.title}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Version summary */}
-        <div className="px-5 pb-3 shrink-0">
-          <p className="text-xs text-(--altair-text-muted) italic leading-relaxed">{patch.summary}</p>
-        </div>
-
-        {/* Scrollable content */}
+        {/* Scrollable content — all versions in one continuous scroll */}
         <div className="overflow-y-auto px-5 pb-5 min-h-0 flex-1 altair-scrollbar">
-          <div className="space-y-4">
-            {patch.categories.map((cat) => {
-              const Icon = cat.icon;
-              return (
-                <div key={cat.label}>
-                  {/* Category header */}
-                  <div className="flex items-center gap-2 mb-2 sticky top-0 bg-(--altair-surface) py-1 z-10">
-                    <Icon size={14} style={{ color: cat.color }} />
-                    <h3 className="text-sm font-bold text-(--altair-text)" style={{ color: cat.color }}>
-                      {cat.label}
-                    </h3>
-                    <div className="flex-1 h-px bg-(--altair-border)" />
-                  </div>
-
-                  {/* Entries */}
-                  <div className="space-y-1">
-                    {cat.entries.map((entry, j) => {
-                      const key = `${cat.label}-${j}`;
-                      const isExpanded = expandedEntries.has(key);
-                      const hasDetail = !!entry.detail;
-
-                      return (
-                        <div key={key}>
-                          <button
-                            onClick={hasDetail ? () => toggleDetail(key) : undefined}
-                            className={`w-full text-left flex items-start gap-2 px-2.5 py-1.5 rounded-md text-xs leading-relaxed transition-colors ${
-                              hasDetail
-                                ? 'hover:bg-(--altair-bg) cursor-pointer'
-                                : 'cursor-default'
-                            } ${isExpanded ? 'bg-(--altair-bg)' : ''}`}
-                          >
-                            <span className="mt-1 shrink-0 w-1.5 h-1.5 rounded-full" style={{ backgroundColor: cat.color, opacity: 0.6 }} />
-                            <span className="text-(--altair-text) flex-1">
-                              {entry.text}
-                              {hasDetail && !isExpanded && (
-                                <span className="text-(--altair-text-dim) ml-1">...</span>
-                              )}
-                            </span>
-                          </button>
-                          {hasDetail && isExpanded && (
-                            <div className="ml-6 px-2.5 pb-1.5 text-[11px] text-(--altair-text-muted) leading-relaxed">
-                              {entry.detail}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
+          <div className="space-y-6">
+            {PATCH_NOTES.map((patch, vi) => (
+              <div key={patch.version}>
+                {/* Version header */}
+                <div className="flex items-center gap-3 mb-2">
+                  <span className="text-lg font-black text-(--altair-accent) tracking-wider">{patch.version}</span>
+                  <span className="text-sm font-semibold text-(--altair-text)">{patch.title}</span>
                 </div>
-              );
-            })}
+                <p className="text-xs text-(--altair-text-muted) italic leading-relaxed mb-3">{patch.summary}</p>
+
+                {/* Categories */}
+                <div className="space-y-4">
+                  {patch.categories.map((cat) => {
+                    const Icon = cat.icon;
+                    return (
+                      <div key={`${patch.version}-${cat.label}`}>
+                        {/* Category header */}
+                        <div className="flex items-center gap-2 mb-2">
+                          <Icon size={14} style={{ color: cat.color }} />
+                          <h3 className="text-sm font-bold text-(--altair-text)" style={{ color: cat.color }}>
+                            {cat.label}
+                          </h3>
+                          <div className="flex-1 h-px bg-(--altair-border)" />
+                        </div>
+
+                        {/* Entries */}
+                        <div className="space-y-1">
+                          {cat.entries.map((entry, j) => {
+                            const key = `${patch.version}-${cat.label}-${j}`;
+                            const isExpanded = expandedEntries.has(key);
+                            const hasDetail = !!entry.detail;
+
+                            return (
+                              <div key={key}>
+                                <button
+                                  onClick={hasDetail ? () => toggleDetail(key) : undefined}
+                                  className={`w-full text-left flex items-start gap-2 px-2.5 py-1.5 rounded-md text-xs leading-relaxed transition-colors ${
+                                    hasDetail
+                                      ? 'hover:bg-(--altair-bg) cursor-pointer'
+                                      : 'cursor-default'
+                                  } ${isExpanded ? 'bg-(--altair-bg)' : ''}`}
+                                >
+                                  <span className="mt-1 shrink-0 w-1.5 h-1.5 rounded-full" style={{ backgroundColor: cat.color, opacity: 0.6 }} />
+                                  <span className="text-(--altair-text) flex-1">
+                                    {entry.text}
+                                    {hasDetail && !isExpanded && (
+                                      <span className="text-(--altair-text-dim) ml-1">...</span>
+                                    )}
+                                  </span>
+                                </button>
+                                {hasDetail && isExpanded && (
+                                  <div className="ml-6 px-2.5 pb-1.5 text-[11px] text-(--altair-text-muted) leading-relaxed">
+                                    {entry.detail}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Separator between versions */}
+                {vi < PATCH_NOTES.length - 1 && (
+                  <div className="mt-4 border-t border-(--altair-border)" />
+                )}
+              </div>
+            ))}
           </div>
         </div>
       </div>

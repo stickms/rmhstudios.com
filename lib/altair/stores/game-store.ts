@@ -153,7 +153,7 @@ interface GameState {
   takeDamage: (amount: number) => void;
   heal: (amount: number) => void;
   addXP: (amount: number) => void;
-  addKill: () => void;
+  addKill: (defId?: string) => void;
   addCoins: (amount: number, source: keyof CoinBreakdown) => void;
   tick: (delta: number) => void;
   setUpgradeChoices: (choices: UpgradeChoice[]) => void;

@@ -31,6 +31,7 @@ export async function GET(req: Request) {
         bestTimeSurvived: progress.bestTimeSurvived,
         bestKills: progress.bestKills,
         bossesDefeated: progress.bossesDefeated as string[],
+        bestiary: (progress as Record<string, unknown>).bestiary ?? {},
       },
     });
   } catch (e) {
@@ -67,6 +68,7 @@ export async function POST(req: Request) {
       bestTimeSurvived,
       bestKills,
       bossesDefeated,
+      bestiary,
     } = body;
 
     // Basic validation
@@ -93,6 +95,7 @@ export async function POST(req: Request) {
         bestTimeSurvived: bestTimeSurvived ?? 0,
         bestKills: bestKills ?? 0,
         bossesDefeated: bossesDefeated ?? [],
+        bestiary: bestiary ?? {},
       },
       update: {
         coins,
@@ -104,6 +107,7 @@ export async function POST(req: Request) {
         bestTimeSurvived: bestTimeSurvived ?? 0,
         bestKills: bestKills ?? 0,
         bossesDefeated: bossesDefeated ?? [],
+        bestiary: bestiary ?? {},
       },
     });
 

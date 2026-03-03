@@ -112,6 +112,7 @@ function spawnEnemy(
     isBoss: false,
     armor: (def.specialParams.armor as number) || 0,
     intangible: false,
+    canFly: def.canFly,
     opacity: 1,
     dashVx: 0,
     dashVy: 0,

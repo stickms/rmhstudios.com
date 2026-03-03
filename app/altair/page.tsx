@@ -8,16 +8,16 @@
 import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAltairGameStore, GamePhase } from '@/lib/altair/stores/game-store';
+import { useAltairGameStore } from '@/lib/altair/stores/game-store';
 import { useAltairMetaStore } from '@/lib/altair/stores/meta-store';
 import { useAltairSettingsStore } from '@/lib/altair/stores/settings-store';
-import { altairMusic } from '@/lib/altair/audio/music';
 import AltairHeader from '@/components/altair/AltairHeader';
 import MenuScreen from '@/components/altair/screens/MenuScreen';
 import ClassSelectScreen from '@/components/altair/screens/ClassSelectScreen';
 import GameOverScreen from '@/components/altair/screens/GameOverScreen';
 import MetaShopScreen from '@/components/altair/screens/MetaShopScreen';
 import SettingsScreen from '@/components/altair/screens/SettingsScreen';
+import BestiaryScreen from '@/components/altair/screens/BestiaryScreen';
 
 // Dynamic import for the game canvas (no SSR)
 const GameScreen = dynamic(() => import('@/components/altair/screens/GameScreen'), {
@@ -41,6 +41,7 @@ export default function AltairPage() {
 
   const settingsDoubleTime = useAltairSettingsStore((s) => s.doubleTime);
   const [showSettings, setShowSettings] = useState(false);
+  const [showBestiary, setShowBestiary] = useState(false);
 
   const handleClassSelect = useCallback((classId: string) => {
     const meta = useAltairMetaStore.getState();
@@ -58,18 +59,7 @@ export default function AltairPage() {
   // Track whether score has been submitted for this run to prevent duplicates
   const scoreSubmittedRef = useRef(false);
 
-  // Start background music on mount and sync volume with settings
-  useEffect(() => {
-    altairMusic.start();
-    let prev = { m: useAltairSettingsStore.getState().masterVolume, v: useAltairSettingsStore.getState().musicVolume };
-    const unsub = useAltairSettingsStore.subscribe((s) => {
-      if (s.masterVolume !== prev.m || s.musicVolume !== prev.v) {
-        prev = { m: s.masterVolume, v: s.musicVolume };
-        altairMusic.updateVolume();
-      }
-    });
-    return () => { unsub(); altairMusic.stop(); };
-  }, []);
+  // Music is now managed by AltairShell (persists across all /altair/* routes)
 
   // Load meta progress from DB on mount, then check retroactive unlocks
   useEffect(() => {
@@ -151,6 +141,15 @@ export default function AltairPage() {
     }).catch(() => { /* silently ignore leaderboard submission failures */ });
   }, [phase]);
 
+  if (showBestiary) {
+    return (
+      <>
+        <AltairHeader context="menu" title="Bestiary" onBack={() => setShowBestiary(false)} />
+        <BestiaryScreen onBack={() => setShowBestiary(false)} />
+      </>
+    );
+  }
+
   if (showSettings) {
     return (
       <>
@@ -170,6 +169,7 @@ export default function AltairPage() {
             onMultiplayer={() => router.push('/altair/multiplayer')}
             onMetaShop={() => setPhase('meta_shop')}
             onSettings={() => setShowSettings(true)}
+            onBestiary={() => setShowBestiary(true)}
           />
         </>
       );

@@ -191,9 +191,14 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
 
     // Create game loop with callbacks
     const loop = createGameLoop(canvas, world, tileGen, {
-      onPlayerDamage: (_amount) => {
+      onPlayerDamage: (_amount, sourceDefId) => {
         // Engine already reduced world.player.hp; sync to store
         useAltairGameStore.setState({ hp: world.player.hp });
+
+        // Track encounter in bestiary
+        if (sourceDefId) {
+          useAltairMetaStore.getState().recordBestiaryEncounter(sourceDefId);
+        }
 
         // Check death
         if (world.player.hp <= 0) {
@@ -215,6 +220,10 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
             }
             addToast('Revived!', 'success');
           } else {
+            // Record "killed by" in bestiary
+            if (sourceDefId) {
+              useAltairMetaStore.getState().recordBestiaryKilledBy(sourceDefId);
+            }
             store.die();
           }
         }
@@ -250,14 +259,16 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
       onCoinGain: (amount) => {
         useAltairGameStore.getState().addCoins(amount, 'enemyDrops');
       },
-      onKill: () => {
-        useAltairGameStore.getState().addKill();
+      onKill: (defId: string) => {
+        useAltairGameStore.getState().addKill(defId);
+        useAltairMetaStore.getState().recordBestiaryKill(defId);
       },
       onLevelUp: () => {
         // Level-up is handled directly in onXPGain above
       },
       onBossSpawn: (bossId) => {
         useAltairGameStore.getState().setBossActive(true);
+        useAltairMetaStore.getState().recordBestiaryEncounter(bossId);
         const bossDef = BOSSES.find((b) => b.id === bossId);
         addToast(`${bossDef?.title ?? 'BOSS'} APPROACHES!`, 'warning');
       },

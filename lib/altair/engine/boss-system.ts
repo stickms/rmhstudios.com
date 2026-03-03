@@ -159,6 +159,7 @@ export function spawnBoss(world: GameWorld, bossId: string): BossState | null {
     bossPhase: 0,
     armor: def.armor,
     intangible: false,
+    canFly: false,
     opacity: 1.0,
     dashVx: 0,
     dashVy: 0,
