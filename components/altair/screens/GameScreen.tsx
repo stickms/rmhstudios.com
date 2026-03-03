@@ -189,8 +189,20 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
           const store = useAltairGameStore.getState();
           if (store.revivalsRemaining > 0) {
             store.revive();
-            // Restore world HP to match revive
+            // Restore world HP and grant generous post-revival invulnerability
             world.player.hp = world.player.maxHp;
+            world.player.iFrames = 2.0;
+            // Clear nearby enemy projectiles so player doesn't instantly die again
+            for (let i = world.projectiles.length - 1; i >= 0; i--) {
+              const p = world.projectiles[i];
+              if (!p.isEnemy) continue;
+              const dx = p.x - world.player.x;
+              const dy = p.y - world.player.y;
+              if (dx * dx + dy * dy <= 150 * 150) {
+                world.projectiles.splice(i, 1);
+              }
+            }
+            addToast('Revived!', 'success');
           } else {
             store.die();
           }
