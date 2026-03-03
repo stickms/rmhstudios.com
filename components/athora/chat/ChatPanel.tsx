@@ -25,11 +25,9 @@ export function ChatPanel({ socket, roomId }: ChatPanelProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const {
-    proximityMessages,
-    conversationMessages,
-    activeConversationId,
-  } = useAthoraStore();
+  const proximityMessages = useAthoraStore((s) => s.proximityMessages);
+  const conversationMessages = useAthoraStore((s) => s.conversationMessages);
+  const activeConversationId = useAthoraStore((s) => s.activeConversationId);
 
   const currentMessages =
     activeTab === "proximity"

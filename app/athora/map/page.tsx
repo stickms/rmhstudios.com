@@ -4,13 +4,7 @@
  * Entry point for browsing rooms on the world map.
  */
 
-import dynamic from "next/dynamic";
-
-// MapLibre GL requires browser APIs, so we lazy-load with no SSR
-const WorldMap = dynamic(
-  () => import("@/components/athora/map/WorldMap"),
-  { ssr: false }
-);
+import WorldMapLoader from "./WorldMapLoader";
 
 export const metadata = {
   title: "Athora — World Map",
@@ -18,5 +12,5 @@ export const metadata = {
 };
 
 export default function AthoraMapPage() {
-  return <WorldMap />;
+  return <WorldMapLoader />;
 }

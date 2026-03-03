@@ -10,7 +10,7 @@ import * as PIXI from "pixi.js";
 import type { TileMapData, TileMapLayer, TilesetDef } from "@/types/athora";
 
 interface LoadedTileset {
-  texture: PIXI.BaseTexture;
+  texture: PIXI.Texture;
   tileSize: number;
   cols: number;
   rows: number;
@@ -27,19 +27,10 @@ export class TilesetRenderer {
     const cached = this.tilesetCache.get(def.src);
     if (cached) return cached;
 
-    const baseTex = await new Promise<PIXI.BaseTexture>((resolve, reject) => {
-      const tex = PIXI.BaseTexture.from(`/assets/athora/${def.src}`, {
-        scaleMode: PIXI.SCALE_MODES.NEAREST,
-      });
-
-      if (tex.valid) {
-        resolve(tex);
-        return;
-      }
-
-      tex.once("loaded", () => resolve(tex));
-      tex.once("error", () => reject(new Error(`Failed to load tileset: ${def.src}`)));
-    });
+    const baseTex = await PIXI.Assets.load<PIXI.Texture>(
+      `/assets/athora/${def.src}`
+    );
+    baseTex.source.scaleMode = "nearest";
 
     const tileTextures = new Map<number, PIXI.Texture>();
     const totalTiles = def.cols * def.rows;
@@ -53,7 +44,10 @@ export class TilesetRenderer {
         def.tileSize,
         def.tileSize
       );
-      tileTextures.set(i, new PIXI.Texture(baseTex, rect));
+      tileTextures.set(
+        i,
+        new PIXI.Texture({ source: baseTex.source, frame: rect })
+      );
     }
 
     const loaded: LoadedTileset = {

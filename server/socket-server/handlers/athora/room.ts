@@ -135,6 +135,8 @@ export function registerAthoraRoomHandlers(io: Server, socket: Socket): void {
           template: room.template,
           tileMapData: room.tileMapData,
           backgroundUrl: room.backgroundUrl,
+          ownerId: room.ownerId,
+          accessType: room.accessType,
         },
         users,
         stands: room.stands.map((s: any) => ({
@@ -257,6 +259,66 @@ export function registerAthoraRoomHandlers(io: Server, socket: Socket): void {
           data: { athoraAvailability: availability as any },
         })
         .catch(() => {});
+    },
+  );
+
+  // ── ROOM SETTINGS (host only) ──────────────────────────────────
+
+  socket.on(
+    'athora:room:settings',
+    async ({ roomId, accessType, isActive }: { roomId: string; accessType?: string; isActive?: boolean }) => {
+      try {
+        const prisma = getPrismaClient();
+
+        // Verify the user is the room owner
+        const room = await prisma.athoraRoom.findUnique({
+          where: { id: roomId },
+          select: { ownerId: true },
+        });
+
+        if (!room || room.ownerId !== userId) {
+          return socket.emit('athora:error', {
+            code: 'NOT_AUTHORIZED',
+            message: 'Only the room host can change settings',
+          });
+        }
+
+        const data: Record<string, unknown> = {};
+        if (accessType) data.accessType = accessType;
+        if (typeof isActive === 'boolean') data.isActive = isActive;
+
+        await prisma.athoraRoom.update({
+          where: { id: roomId },
+          data: data as any,
+        });
+
+        // Broadcast the settings change to everyone in the room
+        io.to(`athora:room:${roomId}`).emit('athora:room:settings_changed', {
+          roomId,
+          accessType: accessType || undefined,
+          isActive: typeof isActive === 'boolean' ? isActive : undefined,
+        });
+
+        // If room was closed, kick everyone out
+        if (isActive === false) {
+          const roomUsers = getRoomUsers(roomId);
+          for (const [uid] of roomUsers) {
+            if (uid !== userId) {
+              const sockets = await io.in(`athora:room:${roomId}`).fetchSockets();
+              for (const s of sockets) {
+                if (s.data.userId === uid) {
+                  s.emit('athora:room:closed', { roomId, message: 'The host has closed this room.' });
+                }
+              }
+            }
+          }
+        }
+
+        logger.info({ event: 'athora:room:settings_changed', userId, roomId, accessType, isActive });
+      } catch (err) {
+        logger.error({ event: 'athora:room:settings_error', userId, error: String(err) });
+        socket.emit('athora:error', { code: 'SETTINGS_FAILED', message: 'Failed to update room settings' });
+      }
     },
   );
 

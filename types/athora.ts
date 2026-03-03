@@ -93,6 +93,8 @@ export interface RoomConfig {
   template: AthoraRoomTemplate;
   tileMapData: TileMapData | null;
   backgroundUrl: string | null;
+  ownerId: string;
+  accessType: AthoraRoomAccess;
 }
 
 export interface RoomUserPayload extends UserBrief {
@@ -188,6 +190,11 @@ export interface AthoraClientToServerEvents {
     facing: AthoraDirection;
   }) => void;
   "athora:room:status": (data: { availability: AthoraAvailability }) => void;
+  "athora:room:settings": (data: {
+    roomId: string;
+    accessType?: AthoraRoomAccess;
+    isActive?: boolean;
+  }) => void;
 
   // Chat
   "athora:chat:proximity": (data: { roomId: string; content: string }) => void;
@@ -244,6 +251,12 @@ export interface AthoraServerToClientEvents {
     availability: AthoraAvailability;
   }) => void;
   "athora:room:state": (data: RoomStatePayload) => void;
+  "athora:room:settings_changed": (data: {
+    roomId: string;
+    accessType?: AthoraRoomAccess;
+    isActive?: boolean;
+  }) => void;
+  "athora:room:closed": (data: { roomId: string; message: string }) => void;
 
   // Chat
   "athora:chat:proximity_msg": (data: ProximityMsgPayload) => void;
@@ -288,13 +301,17 @@ export interface AthoraServerToClientEvents {
 
 // ─── Map Types ───────────────────────────────────────────────────
 
+export type AthoraRoomAccess = "PUBLIC" | "PRIVATE" | "INVITE_ONLY" | "EVENT_TICKET";
+
 export interface MapRoom {
   id: string;
   name: string;
   slug: string;
+  description: string | null;
   latitude: number;
   longitude: number;
   category: AthoraRoomCategory;
+  accessType: AthoraRoomAccess;
   currentCount: number;
   capacity: number;
   isPinned: boolean;

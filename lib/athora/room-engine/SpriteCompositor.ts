@@ -24,18 +24,23 @@ interface FaceRegion {
   visible: boolean;
 }
 
+// Face size (same for all directions — always a uniform circle).
+// The circle is drawn at FACE_SIZE × FACE_SIZE pixels, centered at
+// per-direction x/y offsets so it sits on the body's shoulders.
+const FACE_SIZE = 46;
+
 // Face region definitions per direction (pixel coords within each 64×96 frame).
-// Bodies use LPC headless bases with 32px transparent padding at top.
-// The profile circle sits in this top pad area, centered above the neck.
+// Bodies use LPC headless bases — the shoulders start around y:40-48.
+// x/y position the top-left of the FACE_SIZE square within each frame.
 const FACE_REGIONS: Record<string, FaceRegion> = {
-  SOUTH: { x: 18, y: 2, w: 28, h: 28, scale: 1.0, visible: true },
-  SOUTHWEST: { x: 14, y: 2, w: 26, h: 28, scale: 0.95, visible: true },
-  WEST: { x: 10, y: 4, w: 24, h: 26, scale: 0.85, visible: true },
-  NORTHWEST: { x: 14, y: 4, w: 24, h: 26, scale: 0.8, visible: true },
-  NORTH: { x: 18, y: 4, w: 28, h: 28, scale: 0.0, visible: false },
-  NORTHEAST: { x: 26, y: 4, w: 24, h: 26, scale: 0.8, visible: true },
-  EAST: { x: 30, y: 4, w: 24, h: 26, scale: 0.85, visible: true },
-  SOUTHEAST: { x: 22, y: 2, w: 26, h: 28, scale: 0.95, visible: true },
+  SOUTH:     { x: 9,  y: 24, w: FACE_SIZE, h: FACE_SIZE, scale: 1.0, visible: true },
+  SOUTHWEST: { x: 7,  y: 24, w: FACE_SIZE, h: FACE_SIZE, scale: 1.0, visible: true },
+  WEST:      { x: 4,  y: 24, w: FACE_SIZE, h: FACE_SIZE, scale: 1.0, visible: true },
+  NORTHWEST: { x: 6,  y: 24, w: FACE_SIZE, h: FACE_SIZE, scale: 1.0, visible: true },
+  NORTH:     { x: 9,  y: 24, w: FACE_SIZE, h: FACE_SIZE, scale: 1.0, visible: true },
+  NORTHEAST: { x: 12, y: 24, w: FACE_SIZE, h: FACE_SIZE, scale: 1.0, visible: true },
+  EAST:      { x: 14, y: 24, w: FACE_SIZE, h: FACE_SIZE, scale: 1.0, visible: true },
+  SOUTHEAST: { x: 11, y: 24, w: FACE_SIZE, h: FACE_SIZE, scale: 1.0, visible: true },
 };
 
 const DIRECTIONS = [
@@ -65,11 +70,16 @@ export async function compositeAvatarSpriteSheet(
     `/assets/athora/avatars/bodies/${config.bodyVariant}.png`
   );
 
-  // 2. Load profile picture
-  const profileImg = await loadImage(config.profileImageUrl);
-
-  // 3. Create circular face texture
-  const faceCanvas = createCircularFace(profileImg, 48);
+  // 2. Load profile picture (skip if no URL)
+  let faceCanvas: HTMLCanvasElement | null = null;
+  if (config.profileImageUrl) {
+    try {
+      const profileImg = await loadImage(config.profileImageUrl);
+      faceCanvas = createCircularFace(profileImg, 64);
+    } catch {
+      // Profile image failed to load — continue without face
+    }
+  }
 
   // 4. Optionally tint the body
   let bodyCanvas: HTMLCanvasElement | HTMLImageElement = bodySheet;
@@ -80,26 +90,28 @@ export async function compositeAvatarSpriteSheet(
   // 5. Draw body sheet
   ctx.drawImage(bodyCanvas, 0, 0);
 
-  // 6. Overlay face onto each frame
-  for (let dirIdx = 0; dirIdx < DIRECTIONS.length; dirIdx++) {
-    const dir = DIRECTIONS[dirIdx];
-    const region = FACE_REGIONS[dir];
+  // 6. Overlay face onto each frame (if profile loaded)
+  if (faceCanvas) {
+    for (let dirIdx = 0; dirIdx < DIRECTIONS.length; dirIdx++) {
+      const dir = DIRECTIONS[dirIdx];
+      const region = FACE_REGIONS[dir];
 
-    if (!region.visible) continue;
+      if (!region.visible) continue;
 
-    for (let frame = 0; frame < FRAMES_PER_DIR; frame++) {
-      const frameX = frame * FRAME_W;
-      const frameY = dirIdx * FRAME_H;
+      for (let frame = 0; frame < FRAMES_PER_DIR; frame++) {
+        const frameX = frame * FRAME_W;
+        const frameY = dirIdx * FRAME_H;
 
-      // Walking frames have slight vertical bob
-      const bobOffset = frame < 4 ? [0, -1, 0, 1][frame] : 0;
+        // Walking frames have slight vertical bob
+        const bobOffset = frame < 4 ? [0, -1, 0, 1][frame] : 0;
 
-      const faceW = region.w * region.scale;
-      const faceH = region.h * region.scale;
-      const faceX = frameX + region.x + (region.w - faceW) / 2;
-      const faceY = frameY + region.y + (region.h - faceH) / 2 + bobOffset;
+        const faceW = region.w * region.scale;
+        const faceH = region.h * region.scale;
+        const faceX = frameX + region.x + (region.w - faceW) / 2;
+        const faceY = frameY + region.y + (region.h - faceH) / 2 + bobOffset;
 
-      ctx.drawImage(faceCanvas, faceX, faceY, faceW, faceH);
+        ctx.drawImage(faceCanvas, faceX, faceY, faceW, faceH);
+      }
     }
   }
 

@@ -7,7 +7,10 @@
  * Required env vars: ANTHROPIC_API_KEY, NEWS_APPROVAL_SECRET, NEWS_DISCORD_WEBHOOK_URL
  */
 
-import "dotenv/config";
+import dotenv from "dotenv";
+import path from "path";
+
+dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 import { prisma } from "@/lib/prisma";
 
 import { pickRandomCategories, ARTICLES_PER_RUN, STAGING_MAX_AGE_HOURS } from "./config";

@@ -7,9 +7,8 @@
 
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef } from "react";
 import { RoomEngine } from "@/lib/athora/room-engine/Engine";
-import { useAthoraStore } from "@/stores/athoraStore";
 import type { Socket } from "socket.io-client";
 import type { CurrentUser } from "@/types/athora";
 
@@ -31,29 +30,60 @@ export function RoomCanvas({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const handleEmptyClick = useCallback((worldX: number, worldY: number) => {
-    // Could open a context menu or start a conversation
-  }, []);
+  // Use refs to avoid re-running the effect when callbacks/objects change
+  const socketRef = useRef(socket);
+  socketRef.current = socket;
+  const currentUserRef = useRef(currentUser);
+  currentUserRef.current = currentUser;
+  const onAvatarClickRef = useRef(onAvatarClick);
+  onAvatarClickRef.current = onAvatarClick;
+  const onStandClickRef = useRef(onStandClick);
+  onStandClickRef.current = onStandClick;
 
   useEffect(() => {
-    if (!canvasRef.current) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-    const engine = new RoomEngine({
-      canvas: canvasRef.current,
-      socket,
-      currentUser,
-      onAvatarClick,
-      onStandClick,
-      onEmptyClick: handleEmptyClick,
+    let destroyed = false;
+    let engine: RoomEngine | null = null;
+
+    // Delay creation by one frame so React Strict Mode's first mount
+    // gets cancelled before any WebGL context is acquired on the canvas.
+    const frame = requestAnimationFrame(() => {
+      if (destroyed) return;
+
+      RoomEngine.create({
+        canvas,
+        socket: socketRef.current,
+        currentUser: currentUserRef.current,
+        onAvatarClick: (userId: string) => onAvatarClickRef.current(userId),
+        onStandClick: (standId: string) => onStandClickRef.current(standId),
+        onEmptyClick: () => {},
+      })
+        .then((e) => {
+          if (destroyed) {
+            e.destroy();
+            return;
+          }
+          engine = e;
+          engineRef.current = e;
+        })
+        .catch((err) => {
+          console.error("RoomEngine init failed:", err);
+        });
     });
 
-    engineRef.current = engine;
-
     return () => {
-      engine.destroy();
-      engineRef.current = null;
+      destroyed = true;
+      cancelAnimationFrame(frame);
+      if (engine) {
+        engine.destroy();
+        engineRef.current = null;
+      }
     };
-  }, [socket, currentUser, onAvatarClick, onStandClick, handleEmptyClick, engineRef]);
+  // Only create the engine once when the component mounts
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Handle window resize
   useEffect(() => {

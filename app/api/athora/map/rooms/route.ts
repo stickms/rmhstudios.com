@@ -24,14 +24,24 @@ export async function GET(req: NextRequest) {
   try {
     // At low zoom, aggregate by city
     if (zoom < 8) {
+      const clusterWhere: Record<string, unknown> = {
+        isActive: true,
+        latitude: { gte: south, lte: north },
+        longitude: { gte: west, lte: east },
+      };
+      if (categories.length > 0) {
+        clusterWhere.category = { in: categories };
+      }
+      if (hideEmpty) {
+        clusterWhere.currentCount = { gt: 0 };
+      }
+      if (minPeople > 0) {
+        clusterWhere.currentCount = { gte: minPeople };
+      }
+
       const clusters = await prisma.athoraRoom.groupBy({
         by: ["city", "country"],
-        where: {
-          isActive: true,
-          latitude: { gte: south, lte: north },
-          longitude: { gte: west, lte: east },
-          ...(hideEmpty && { currentCount: { gt: 0 } }),
-        },
+        where: clusterWhere as any,
         _count: { id: true },
         _sum: { currentCount: true },
         _avg: { latitude: true, longitude: true },
@@ -75,9 +85,11 @@ export async function GET(req: NextRequest) {
         id: true,
         name: true,
         slug: true,
+        description: true,
         latitude: true,
         longitude: true,
         category: true,
+        accessType: true,
         currentCount: true,
         capacity: true,
         isPinned: true,

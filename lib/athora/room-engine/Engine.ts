@@ -1,5 +1,5 @@
 /**
- * Athora — Room Engine (PixiJS)
+ * Athora — Room Engine (PixiJS v8)
  *
  * Main game loop, input handling, camera, and rendering orchestration
  * for the 2.5D isometric room view.
@@ -10,6 +10,13 @@ import { getDepth } from "./IsometricUtils";
 import { CollisionGrid } from "./CollisionGrid";
 import { TilesetRenderer } from "./TilesetRenderer";
 import { generateTemplateTileMap } from "./TemplateTileMaps";
+import {
+  compositeAvatarSpriteSheet,
+  DIRECTIONS,
+  FRAMES_PER_DIR,
+  FRAME_W,
+  FRAME_H,
+} from "./SpriteCompositor";
 import type { Socket } from "socket.io-client";
 import type {
   RoomStatePayload,
@@ -26,17 +33,22 @@ const MOVE_SPEED = 3;
 const PROXIMITY_RADIUS = 150;
 const INTERPOLATION_SPEED = 0.2;
 const EMIT_THROTTLE_MS = 66; // ~15fps
+const WALK_ANIM_SPEED = 0.12; // frames per tick
 
 interface RemoteAvatar {
   container: PIXI.Container;
   nameTag: PIXI.Text;
   statusDot: PIXI.Graphics;
+  sprite: PIXI.Sprite | null;
+  frameTextures: Map<string, PIXI.Texture[]> | null; // direction -> frame textures
   worldX: number;
   worldY: number;
   targetX: number;
   targetY: number;
   facing: string;
   userId: string;
+  animFrame: number;
+  isMoving: boolean;
 }
 
 interface StandDisplay {
@@ -91,40 +103,43 @@ export class RoomEngine {
   private keydownHandler: (e: KeyboardEvent) => void;
   private keyupHandler: (e: KeyboardEvent) => void;
 
-  constructor(config: EngineConfig) {
+  private constructor(config: EngineConfig) {
     this.socket = config.socket;
     this.currentUser = config.currentUser;
     this.config = config;
     this.tilesetRenderer = new TilesetRenderer();
+    this.app = new PIXI.Application();
+    this.worldContainer = new PIXI.Container();
+    this.boundUpdate = this.update.bind(this);
+    this.keydownHandler = (e: KeyboardEvent) =>
+      this.keysDown.add(e.key.toLowerCase());
+    this.keyupHandler = (e: KeyboardEvent) =>
+      this.keysDown.delete(e.key.toLowerCase());
+  }
 
+  static async create(config: EngineConfig): Promise<RoomEngine> {
+    const engine = new RoomEngine(config);
     const parent = config.canvas.parentElement!;
 
-    this.app = new PIXI.Application({
-      view: config.canvas,
-      width: parent.clientWidth,
-      height: parent.clientHeight,
+    await engine.app.init({
+      canvas: config.canvas,
+      resizeTo: parent,
       backgroundColor: 0x1a1a2e,
       antialias: true,
       resolution: window.devicePixelRatio || 1,
       autoDensity: true,
     });
 
-    this.worldContainer = new PIXI.Container();
-    this.worldContainer.sortableChildren = true;
-    this.app.stage.addChild(this.worldContainer);
+    engine.worldContainer.sortableChildren = true;
+    engine.app.stage.addChild(engine.worldContainer);
 
-    this.setupInput(config.canvas);
+    engine.setupInput(config.canvas);
+    engine.app.ticker.add(engine.boundUpdate);
 
-    this.boundUpdate = this.update.bind(this);
-    this.app.ticker.add(this.boundUpdate);
+    window.addEventListener("keydown", engine.keydownHandler);
+    window.addEventListener("keyup", engine.keyupHandler);
 
-    // Keyboard handlers stored for cleanup
-    this.keydownHandler = (e: KeyboardEvent) =>
-      this.keysDown.add(e.key.toLowerCase());
-    this.keyupHandler = (e: KeyboardEvent) =>
-      this.keysDown.delete(e.key.toLowerCase());
-    window.addEventListener("keydown", this.keydownHandler);
-    window.addEventListener("keyup", this.keyupHandler);
+    return engine;
   }
 
   // ── INITIALIZATION ─────────────────────────────────────────────
@@ -158,9 +173,9 @@ export class RoomEngine {
   // ── FLOOR RENDERING ────────────────────────────────────────────
 
   private drawFloor(room: RoomConfig): void {
-    // Try tileset-based rendering first
     const tileMapData: TileMapData | null =
-      room.tileMapData ?? generateTemplateTileMap(room.template, room.mapWidth, room.mapHeight);
+      room.tileMapData ??
+      generateTemplateTileMap(room.template, room.mapWidth, room.mapHeight);
 
     if (tileMapData) {
       this.tilesetRenderer
@@ -169,7 +184,6 @@ export class RoomEngine {
           this.worldContainer.addChildAt(floorContainer, 0);
         })
         .catch(() => {
-          // Tileset failed to load — fall back to procedural grid
           this.drawProceduralFloor(room);
         });
     } else {
@@ -177,7 +191,6 @@ export class RoomEngine {
     }
   }
 
-  /** Fallback checkerboard floor when no tileset is available */
   private drawProceduralFloor(room: RoomConfig): void {
     const floor = new PIXI.Container();
     floor.zIndex = -1000;
@@ -189,11 +202,12 @@ export class RoomEngine {
       for (let col = 0; col < gridCols; col++) {
         const tile = new PIXI.Graphics();
         const color = (row + col) % 2 === 0 ? 0x2a2a4a : 0x252545;
-        tile.beginFill(color);
-        tile.drawRect(col * 64, row * 64, 64, 64);
-        tile.endFill();
-        tile.lineStyle(1, 0x3a3a5a, 0.15);
-        tile.drawRect(col * 64, row * 64, 64, 64);
+        tile
+          .rect(col * 64, row * 64, 64, 64)
+          .fill(color);
+        tile
+          .rect(col * 64, row * 64, 64, 64)
+          .stroke({ width: 1, color: 0x3a3a5a, alpha: 0.15 });
         floor.addChild(tile);
       }
     }
@@ -212,54 +226,28 @@ export class RoomEngine {
     container.cursor =
       userData.id === this.currentUser.id ? "default" : "pointer";
 
+    const isMe = userData.id === this.currentUser.id;
+
     // Shadow
     const shadow = new PIXI.Graphics();
-    shadow.beginFill(0x000000, 0.3);
-    shadow.drawEllipse(0, 20, 16, 6);
-    shadow.endFill();
+    shadow.ellipse(0, 28, 22, 8).fill({ color: 0x000000, alpha: 0.3 });
     container.addChild(shadow);
 
-    // Body (placeholder circle - replaced by sprite compositor when available)
-    const isMe = userData.id === this.currentUser.id;
+    // Placeholder body circle (shown until sprite loads)
     const body = new PIXI.Graphics();
-    body.beginFill(isMe ? 0x818cf8 : 0x6366f1);
-    body.drawCircle(0, 0, 16);
-    body.endFill();
+    body.circle(0, 0, 16).fill(isMe ? 0x818cf8 : 0x6366f1);
+    container.addChild(body);
 
-    // Profile image circle
-    if (userData.image) {
-      try {
-        const texture = PIXI.Texture.from(userData.image);
-        const profileSprite = new PIXI.Sprite(texture);
-        profileSprite.width = 28;
-        profileSprite.height = 28;
-        profileSprite.anchor.set(0.5);
-
-        // Create circular mask
-        const mask = new PIXI.Graphics();
-        mask.beginFill(0xffffff);
-        mask.drawCircle(0, 0, 14);
-        mask.endFill();
-        profileSprite.mask = mask;
-
-        container.addChild(mask);
-        container.addChild(profileSprite);
-      } catch {
-        container.addChild(body);
-      }
-    } else {
-      container.addChild(body);
-
-      // Initial letter
-      const initial = new PIXI.Text(
-        (userData.name?.[0] || "?").toUpperCase(),
-        {
+    if (!userData.image) {
+      const initial = new PIXI.Text({
+        text: (userData.name?.[0] || "?").toUpperCase(),
+        style: {
           fontSize: 14,
           fill: 0xffffff,
           fontWeight: "bold",
           fontFamily: "Inter, Arial, sans-serif",
-        }
-      );
+        },
+      });
       initial.anchor.set(0.5);
       container.addChild(initial);
     }
@@ -267,52 +255,154 @@ export class RoomEngine {
     // Highlight ring for own avatar
     if (isMe) {
       const ring = new PIXI.Graphics();
-      ring.lineStyle(2, 0x818cf8, 0.6);
-      ring.drawCircle(0, 0, 20);
+      ring.circle(0, 0, 20).stroke({ width: 2, color: 0x818cf8, alpha: 0.6 });
       container.addChildAt(ring, 0);
     }
 
     // Name tag
-    const nameTag = new PIXI.Text(userData.name || "Unknown", {
-      fontFamily: "Inter, Arial, sans-serif",
-      fontSize: 10,
-      fill: isMe ? 0x818cf8 : 0xffffff,
-      align: "center",
-      dropShadow: {
-        alpha: 0.8,
-        angle: Math.PI / 4,
-        blur: 2,
-        color: 0x000000,
-        distance: 1,
+    const nameTag = new PIXI.Text({
+      text: userData.name || "Unknown",
+      style: {
+        fontFamily: "Inter, Arial, sans-serif",
+        fontSize: 10,
+        fill: isMe ? 0x818cf8 : 0xffffff,
+        align: "center",
+        dropShadow: {
+          alpha: 0.8,
+          angle: Math.PI / 4,
+          blur: 2,
+          color: 0x000000,
+          distance: 1,
+        },
       },
     });
     nameTag.anchor.set(0.5, 0);
-    nameTag.y = 24;
+    nameTag.y = 32;
     container.addChild(nameTag);
 
     // Status dot
     const statusDot = new PIXI.Graphics();
     const dotColor = AVAILABILITY_COLORS[userData.availability] || 0x6b7280;
-    statusDot.beginFill(dotColor);
-    statusDot.drawCircle(18, -14, 4);
-    statusDot.endFill();
-    statusDot.lineStyle(1.5, 0xffffff);
-    statusDot.drawCircle(18, -14, 4);
+    statusDot.circle(26, -22, 5).fill(dotColor);
+    statusDot
+      .circle(26, -22, 5)
+      .stroke({ width: 1.5, color: 0xffffff });
     container.addChild(statusDot);
 
     this.worldContainer.addChild(container);
 
-    this.avatars.set(userData.id, {
+    const avatar: RemoteAvatar = {
       container,
       nameTag,
       statusDot,
+      sprite: null,
+      frameTextures: null,
       worldX: userData.x,
       worldY: userData.y,
       targetX: userData.x,
       targetY: userData.y,
       facing: userData.facing,
       userId: userData.id,
-    });
+      animFrame: 0,
+      isMoving: false,
+    };
+    this.avatars.set(userData.id, avatar);
+
+    // Load animated sprite asynchronously
+    const avatarConfig = userData.avatarConfig as {
+      bodyVariant?: string;
+      bodyColor?: string;
+      accessoryIds?: string[];
+    } | null;
+
+    compositeAvatarSpriteSheet({
+      profileImageUrl: userData.image || "",
+      bodyVariant: avatarConfig?.bodyVariant || "default",
+      bodyColor: avatarConfig?.bodyColor,
+      accessoryIds: avatarConfig?.accessoryIds,
+    })
+      .then((sheetCanvas) => {
+        // Avatar might have been removed while loading
+        if (!this.avatars.has(userData.id)) return;
+
+        const baseTexture = PIXI.Texture.from(sheetCanvas);
+        const frameTextures = new Map<string, PIXI.Texture[]>();
+
+        for (let dirIdx = 0; dirIdx < DIRECTIONS.length; dirIdx++) {
+          const dir = DIRECTIONS[dirIdx];
+          const frames: PIXI.Texture[] = [];
+          for (let f = 0; f < FRAMES_PER_DIR; f++) {
+            const frame = new PIXI.Texture({
+              source: baseTexture.source,
+              frame: new PIXI.Rectangle(
+                f * FRAME_W,
+                dirIdx * FRAME_H,
+                FRAME_W,
+                FRAME_H
+              ),
+            });
+            frames.push(frame);
+          }
+          frameTextures.set(dir, frames);
+        }
+
+        // Create sprite showing idle south frame
+        const idleFrames = frameTextures.get("SOUTH")!;
+        const sprite = new PIXI.Sprite(idleFrames[4]); // frame 4 = idle
+        sprite.anchor.set(0.5, 0.75); // anchor near feet
+        sprite.scale.set(1.1); // scale to fit world scale, large enough to see
+
+        // Remove placeholder body/initial
+        const toRemove: PIXI.Container[] = [];
+        for (const child of container.children) {
+          if (child instanceof PIXI.Graphics && child !== shadow && child !== statusDot) {
+            // Keep shadow, status dot, and ring (ring is at index 0 for own avatar)
+            if (isMe && container.getChildIndex(child) === 0) continue;
+            toRemove.push(child);
+          }
+          if (child instanceof PIXI.Text && child !== nameTag) {
+            toRemove.push(child);
+          }
+        }
+        for (const child of toRemove) {
+          container.removeChild(child);
+          child.destroy();
+        }
+
+        container.addChildAt(sprite, isMe ? 2 : 1); // after shadow (and ring for own avatar)
+
+        avatar.sprite = sprite;
+        avatar.frameTextures = frameTextures;
+        this.updateSpriteFrame(avatar);
+      })
+      .catch(() => {
+        // Sprite load failed — keep the placeholder circle
+      });
+  }
+
+  private updateSpriteFrame(avatar: RemoteAvatar): void {
+    if (!avatar.sprite || !avatar.frameTextures) return;
+
+    // Map 4-direction facing to 8-direction
+    const dir = avatar.facing;
+    const frames = avatar.frameTextures.get(dir) || avatar.frameTextures.get("SOUTH")!;
+
+    if (avatar.isMoving) {
+      const frameIdx = Math.floor(avatar.animFrame) % 4; // frames 0-3 are walk
+      avatar.sprite.texture = frames[frameIdx];
+    } else {
+      avatar.sprite.texture = frames[4]; // frame 4 = idle
+    }
+  }
+
+  updateAvatarStatus(userId: string, availability: string): void {
+    const avatar = this.avatars.get(userId);
+    if (!avatar) return;
+
+    const color = AVAILABILITY_COLORS[availability] || 0x6b7280;
+    avatar.statusDot.clear();
+    avatar.statusDot.circle(26, -22, 5).fill(color);
+    avatar.statusDot.circle(26, -22, 5).stroke({ width: 1.5, color: 0xffffff });
   }
 
   removeAvatar(userId: string): void {
@@ -335,6 +425,7 @@ export class RoomEngine {
       avatar.targetX = x;
       avatar.targetY = y;
       avatar.facing = facing;
+      this.updateSpriteFrame(avatar);
     }
   }
 
@@ -348,10 +439,11 @@ export class RoomEngine {
     container.interactive = true;
     container.cursor = "pointer";
 
-    // Booth background
-    const booth = new PIXI.Graphics();
     const bgColor = (standData.style as any)?.bgColor
-      ? parseInt(String((standData.style as any).bgColor).replace("#", ""), 16)
+      ? parseInt(
+          String((standData.style as any).bgColor).replace("#", ""),
+          16
+        )
       : 0x1e1b4b;
     const borderColor = (standData.style as any)?.borderColor
       ? parseInt(
@@ -360,47 +452,59 @@ export class RoomEngine {
         )
       : 0x6366f1;
 
-    booth.beginFill(bgColor, 0.85);
-    booth.lineStyle(2, borderColor, 0.8);
-    booth.drawRoundedRect(
-      -standData.width / 2,
-      -standData.height / 2,
-      standData.width,
-      standData.height,
-      8
-    );
-    booth.endFill();
+    const booth = new PIXI.Graphics();
+    booth
+      .roundRect(
+        -standData.width / 2,
+        -standData.height / 2,
+        standData.width,
+        standData.height,
+        8
+      )
+      .fill({ color: bgColor, alpha: 0.85 });
+    booth
+      .roundRect(
+        -standData.width / 2,
+        -standData.height / 2,
+        standData.width,
+        standData.height,
+        8
+      )
+      .stroke({ width: 2, color: borderColor, alpha: 0.8 });
     container.addChild(booth);
 
-    // Title
-    const title = new PIXI.Text(standData.title, {
-      fontSize: 11,
-      fill: 0xffffff,
-      fontFamily: "Inter, Arial, sans-serif",
-      fontWeight: "bold",
-      wordWrap: true,
-      wordWrapWidth: standData.width - 20,
-      align: "center",
+    const title = new PIXI.Text({
+      text: standData.title,
+      style: {
+        fontSize: 11,
+        fill: 0xffffff,
+        fontFamily: "Inter, Arial, sans-serif",
+        fontWeight: "bold",
+        wordWrap: true,
+        wordWrapWidth: standData.width - 20,
+        align: "center",
+      },
     });
     title.anchor.set(0.5);
     title.y = -10;
     container.addChild(title);
 
-    // Tagline
     if (standData.tagline) {
-      const tagline = new PIXI.Text(standData.tagline, {
-        fontSize: 9,
-        fill: 0xd1d5db,
-        wordWrap: true,
-        wordWrapWidth: standData.width - 20,
-        align: "center",
+      const tagline = new PIXI.Text({
+        text: standData.tagline,
+        style: {
+          fontSize: 9,
+          fill: 0xd1d5db,
+          wordWrap: true,
+          wordWrapWidth: standData.width - 20,
+          align: "center",
+        },
       });
       tagline.anchor.set(0.5);
       tagline.y = 6;
       container.addChild(tagline);
     }
 
-    // Block stand area in collision grid
     this.collisionGrid?.blockRect(
       standData.posX - standData.width / 2,
       standData.posY - standData.height / 2,
@@ -431,18 +535,23 @@ export class RoomEngine {
 
     const radius = 40 + convData.members.length * 15;
     const bubble = new PIXI.Graphics();
-    bubble.beginFill(0x7c3aed, 0.08);
-    bubble.lineStyle(2, 0x7c3aed, 0.3);
-    bubble.drawEllipse(0, 0, radius, radius * 0.6);
-    bubble.endFill();
+    bubble
+      .ellipse(0, 0, radius, radius * 0.6)
+      .fill({ color: 0x7c3aed, alpha: 0.08 });
+    bubble
+      .ellipse(0, 0, radius, radius * 0.6)
+      .stroke({ width: 2, color: 0x7c3aed, alpha: 0.3 });
     container.addChild(bubble);
 
     if (convData.topic) {
-      const topicLabel = new PIXI.Text(convData.topic, {
-        fontSize: 10,
-        fill: 0xc4b5fd,
-        fontFamily: "Inter, Arial, sans-serif",
-        fontWeight: "600",
+      const topicLabel = new PIXI.Text({
+        text: convData.topic,
+        style: {
+          fontSize: 10,
+          fill: 0xc4b5fd,
+          fontFamily: "Inter, Arial, sans-serif",
+          fontWeight: "600",
+        },
       });
       topicLabel.anchor.set(0.5);
       topicLabel.y = -radius * 0.6 - 12;
@@ -450,18 +559,24 @@ export class RoomEngine {
     }
 
     if (convData.isOpen) {
-      const joinHint = new PIXI.Text("Open — click to join", {
-        fontSize: 8,
-        fill: 0x86efac,
+      const joinHint = new PIXI.Text({
+        text: "Open \u2014 click to join",
+        style: {
+          fontSize: 8,
+          fill: 0x86efac,
+        },
       });
       joinHint.anchor.set(0.5);
       joinHint.y = -radius * 0.6 - 2;
       container.addChild(joinHint);
     }
 
-    const countLabel = new PIXI.Text(`${convData.members.length} people`, {
-      fontSize: 10,
-      fill: 0xa78bfa,
+    const countLabel = new PIXI.Text({
+      text: `${convData.members.length} people`,
+      style: {
+        fontSize: 10,
+        fill: 0xa78bfa,
+      },
     });
     countLabel.anchor.set(0.5);
     countLabel.y = radius * 0.6 + 4;
@@ -495,7 +610,6 @@ export class RoomEngine {
       const worldX = (screenX - this.camera.x) / this.camera.zoom;
       const worldY = (screenY - this.camera.y) / this.camera.zoom;
 
-      // Check avatar clicks
       for (const [uid, avatar] of this.avatars) {
         if (uid === this.currentUser.id) continue;
         const dx = worldX - avatar.worldX;
@@ -506,7 +620,6 @@ export class RoomEngine {
         }
       }
 
-      // Check stand clicks
       for (const [sid, stand] of this.stands) {
         const dx = worldX - stand.data.posX;
         const dy = worldY - stand.data.posY;
@@ -519,13 +632,11 @@ export class RoomEngine {
         }
       }
 
-      // Click-to-move
       if (!this.collisionGrid.isBlocked(worldX, worldY)) {
         this.moveTarget = { x: worldX, y: worldY };
       }
     });
 
-    // Mouse wheel zoom
     canvas.addEventListener(
       "wheel",
       (e) => {
@@ -547,16 +658,21 @@ export class RoomEngine {
     let dx = 0;
     let dy = 0;
 
-    // Keyboard movement
-    if (this.keysDown.has("w") || this.keysDown.has("arrowup")) dy -= MOVE_SPEED;
-    if (this.keysDown.has("s") || this.keysDown.has("arrowdown"))
-      dy += MOVE_SPEED;
-    if (this.keysDown.has("a") || this.keysDown.has("arrowleft"))
-      dx -= MOVE_SPEED;
-    if (this.keysDown.has("d") || this.keysDown.has("arrowright"))
-      dx += MOVE_SPEED;
+    if (this.keysDown.has("w") || this.keysDown.has("arrowup")) dy -= 1;
+    if (this.keysDown.has("s") || this.keysDown.has("arrowdown")) dy += 1;
+    if (this.keysDown.has("a") || this.keysDown.has("arrowleft")) dx -= 1;
+    if (this.keysDown.has("d") || this.keysDown.has("arrowright")) dx += 1;
 
-    // Click-to-move
+    // Normalize diagonal movement so speed is consistent
+    if (dx !== 0 && dy !== 0) {
+      const len = Math.sqrt(dx * dx + dy * dy);
+      dx = (dx / len) * MOVE_SPEED;
+      dy = (dy / len) * MOVE_SPEED;
+    } else {
+      dx *= MOVE_SPEED;
+      dy *= MOVE_SPEED;
+    }
+
     if (this.moveTarget && dx === 0 && dy === 0) {
       const tdx = this.moveTarget.x - this.myWorldX;
       const tdy = this.moveTarget.y - this.myWorldY;
@@ -579,7 +695,6 @@ export class RoomEngine {
         this.myWorldX = newX;
         this.myWorldY = newY;
 
-        // Update own avatar position
         const myAvatar = this.avatars.get(this.currentUser.id);
         if (myAvatar) {
           myAvatar.container.x = newX;
@@ -587,14 +702,25 @@ export class RoomEngine {
           myAvatar.container.zIndex = getDepth(newX, newY);
           myAvatar.worldX = newX;
           myAvatar.worldY = newY;
+          myAvatar.facing = this.myFacing;
+          myAvatar.isMoving = true;
+          myAvatar.animFrame += WALK_ANIM_SPEED;
+          this.updateSpriteFrame(myAvatar);
         }
 
         this.emitMovement(newX, newY, this.myFacing);
         this.centerCameraOn(newX, newY);
       }
+    } else {
+      // Not moving — set own avatar to idle
+      const myAvatar = this.avatars.get(this.currentUser.id);
+      if (myAvatar && myAvatar.isMoving) {
+        myAvatar.isMoving = false;
+        myAvatar.animFrame = 0;
+        this.updateSpriteFrame(myAvatar);
+      }
     }
 
-    // Interpolate remote avatars
     for (const [uid, avatar] of this.avatars) {
       if (uid === this.currentUser.id) continue;
 
@@ -608,10 +734,16 @@ export class RoomEngine {
         avatar.container.x = avatar.worldX;
         avatar.container.y = avatar.worldY;
         avatar.container.zIndex = getDepth(avatar.worldX, avatar.worldY);
+        avatar.isMoving = true;
+        avatar.animFrame += WALK_ANIM_SPEED;
+        this.updateSpriteFrame(avatar);
+      } else if (avatar.isMoving) {
+        avatar.isMoving = false;
+        avatar.animFrame = 0;
+        this.updateSpriteFrame(avatar);
       }
     }
 
-    // Pulse conversation bubbles
     for (const [, conv] of this.conversations) {
       conv.pulsePhase += 0.02;
       const scale = 1 + Math.sin(conv.pulsePhase) * 0.02;
@@ -633,7 +765,19 @@ export class RoomEngine {
   }
 
   private getFacing(dx: number, dy: number): AthoraDirection {
-    if (Math.abs(dx) > Math.abs(dy)) {
+    const absDx = Math.abs(dx);
+    const absDy = Math.abs(dy);
+
+    // If both axes have significant input, use diagonal directions
+    if (absDx > 0.1 && absDy > 0.1) {
+      if (dy < 0 && dx > 0) return "NORTHEAST";
+      if (dy < 0 && dx < 0) return "NORTHWEST";
+      if (dy > 0 && dx > 0) return "SOUTHEAST";
+      return "SOUTHWEST";
+    }
+
+    // Cardinal directions
+    if (absDx > absDy) {
       return dx > 0 ? "EAST" : "WEST";
     }
     return dy > 0 ? "SOUTH" : "NORTH";
@@ -679,13 +823,14 @@ export class RoomEngine {
   destroy(): void {
     window.removeEventListener("keydown", this.keydownHandler);
     window.removeEventListener("keyup", this.keyupHandler);
-    this.app.ticker.remove(this.boundUpdate);
+    this.app.ticker?.remove(this.boundUpdate);
     this.avatars.forEach((a) => a.container.destroy({ children: true }));
     this.stands.forEach((s) => s.container.destroy({ children: true }));
     this.conversations.forEach((c) =>
       c.container.destroy({ children: true })
     );
     this.tilesetRenderer.destroy();
-    this.app.destroy(true);
+    // Pass false to keep the canvas element alive (React owns it)
+    this.app.destroy(false);
   }
 }
