@@ -5,7 +5,8 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Play, ShoppingBag, Settings, Trophy, Zap, Users, Clock, Crosshair, Sparkles, Coins, RefreshCw, X } from 'lucide-react';
+import { Play, ShoppingBag, Settings, Trophy, Zap, Users, Clock, Crosshair, Sparkles, Coins, RefreshCw, X, ScrollText } from 'lucide-react';
+import PatchnotesModal from './PatchnotesModal';
 import { useAltairMetaStore } from '@/lib/altair/stores/meta-store';
 import { useKeyboardNav } from '@/lib/altair/hooks/use-keyboard-nav';
 
@@ -21,13 +22,14 @@ export default function MenuScreen({ onPlay, onMultiplayer, onMetaShop, onSettin
   const doubleTimeUnlocked = useAltairMetaStore((s) => s.doubleTimeUnlocked);
   const totalRuns = useAltairMetaStore((s) => s.totalRunsPlayed);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [showPatchnotes, setShowPatchnotes] = useState(false);
 
-  const menuActions = useMemo(() => [onPlay, onMultiplayer, onMetaShop, onSettings, () => setShowLeaderboard(true)], [onPlay, onMultiplayer, onMetaShop, onSettings]);
+  const menuActions = useMemo(() => [onPlay, onMultiplayer, onMetaShop, onSettings, () => setShowLeaderboard(true), () => setShowPatchnotes(true)], [onPlay, onMultiplayer, onMetaShop, onSettings]);
   const { focusedIndex } = useKeyboardNav({
-    itemCount: 5,
+    itemCount: 6,
     onSelect: (i) => menuActions[i](),
     orientation: 'vertical',
-    enabled: !showLeaderboard,
+    enabled: !showLeaderboard && !showPatchnotes,
   });
 
   const focusClass = (i: number) =>
@@ -98,6 +100,14 @@ export default function MenuScreen({ onPlay, onMultiplayer, onMetaShop, onSettin
           <Trophy size={18} />
           Leaderboard
         </button>
+
+        <button
+          onClick={() => setShowPatchnotes(true)}
+          className={`flex items-center justify-center gap-2 py-3 rounded-lg font-semibold text-(--altair-text) bg-(--altair-surface) border border-(--altair-border) hover:border-(--altair-border-bright) hover:bg-(--altair-surface-hover) transition-all ${focusClass(5)}`}
+        >
+          <ScrollText size={18} />
+          Patch Notes
+        </button>
       </div>
 
       {/* Stats footer */}
@@ -108,6 +118,11 @@ export default function MenuScreen({ onPlay, onMultiplayer, onMetaShop, onSettin
       {/* Leaderboard panel */}
       {showLeaderboard && (
         <LeaderboardModal onClose={() => setShowLeaderboard(false)} />
+      )}
+
+      {/* Patch notes panel */}
+      {showPatchnotes && (
+        <PatchnotesModal onClose={() => setShowPatchnotes(false)} />
       )}
     </div>
   );

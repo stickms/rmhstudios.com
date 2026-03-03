@@ -602,6 +602,19 @@ export function ProfileColumn({ userId }: { userId: string }) {
                 profileSongAlbumArt: data.profileSongAlbumArt,
               };
             });
+
+            // Sync name/image into the better-auth session so
+            // sidebar + compose box reflect the update immediately
+            const sessionUpdates: { name?: string; image?: string } = {};
+            if (data.displayName !== undefined && data.displayName !== null) {
+              sessionUpdates.name = data.displayName;
+            }
+            if (data.image !== undefined && data.image !== null) {
+              sessionUpdates.image = data.image;
+            }
+            if (Object.keys(sessionUpdates).length > 0) {
+              authClient.updateUser(sessionUpdates);
+            }
           }}
         />
       )}

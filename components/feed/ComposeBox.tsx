@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Plus, BarChart3, Image, X } from 'lucide-react';
 import { GifEmbed } from './GifEmbed';
-import { authClient } from '@/lib/auth-client';
+import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { useFeedStore } from '@/stores/feedStore';
 import {
@@ -46,7 +46,7 @@ export function ComposeBox() {
   const menuRef = useRef<HTMLDivElement>(null);
   const { prependItem } = useFeedStore();
 
-  const { data: session } = authClient.useSession();
+  const { data: session } = useSession();
   const remaining = MAX_RMHARK_LENGTH - content.length;
 
   // Close menu on outside click
