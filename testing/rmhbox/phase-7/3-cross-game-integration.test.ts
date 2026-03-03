@@ -41,12 +41,19 @@ vi.mock('../../../lib/rmhbox/human-keyboard/data-loader', () => {
   };
 });
 
+/** Track active games for cleanup. */
+let activeGames: Array<{ cleanup(): void }> = [];
+
 describe('Cross-Game Integration (§7.5 — SS + HK)', () => {
   beforeEach(() => {
     vi.useFakeTimers();
   });
 
   afterEach(() => {
+    for (const game of activeGames) {
+      try { game.cleanup(); } catch { /* ignore */ }
+    }
+    activeGames = [];
     vi.useRealTimers();
   });
 
@@ -215,6 +222,7 @@ describe('Cross-Game Integration (§7.5 — SS + HK)', () => {
       // Play SS
       const ssCtx = createMockContext();
       const ssGame = new SequenceSamGame(ssCtx.context);
+      activeGames.push(ssGame);
       ssGame.start();
       ssGame.forceEnd('test');
       expect(ssCtx.completedResults.length).toBe(1);
@@ -222,6 +230,7 @@ describe('Cross-Game Integration (§7.5 — SS + HK)', () => {
       // Play HK
       const hkCtx = createMockContext([MOCK_USERS.alice, MOCK_USERS.bob, MOCK_USERS.charlie]);
       const hkGame = new HumanKeyboardGame(hkCtx.context);
+      activeGames.push(hkGame);
       hkGame.start();
       hkGame.forceEnd('test');
       expect(hkCtx.completedResults.length).toBe(1);

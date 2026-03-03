@@ -36,12 +36,19 @@ vi.mock('../../../lib/rmhbox/human-keyboard/data-loader', () => ({
   }),
 }));
 
+/** Track active games for cleanup. */
+let activeGames: Array<{ cleanup(): void }> = [];
+
 describe('Security State Masking (Phase 7)', () => {
   beforeEach(() => {
     vi.useFakeTimers();
   });
 
   afterEach(() => {
+    for (const game of activeGames) {
+      try { game.cleanup(); } catch { /* ignore */ }
+    }
+    activeGames = [];
     vi.useRealTimers();
   });
 
@@ -49,6 +56,7 @@ describe('Security State Masking (Phase 7)', () => {
     it('should not leak sequence in getStateForPlayer during PATTERN_DISPLAY', () => {
       const ctx = createMockContext();
       const game = new SequenceSamGame(ctx.context);
+      activeGames.push(game);
       game.start();
 
       for (const [userId] of ctx.context.players) {
@@ -64,6 +72,7 @@ describe('Security State Masking (Phase 7)', () => {
     it('should not leak sequence in getStateForPlayer during INPUT', () => {
       const ctx = createMockContext();
       const game = new SequenceSamGame(ctx.context);
+      activeGames.push(game);
       game.start();
 
       // Advance to INPUT phase
@@ -79,6 +88,7 @@ describe('Security State Masking (Phase 7)', () => {
     it('should not leak sequence in getStateForSpectator', () => {
       const ctx = createMockContext();
       const game = new SequenceSamGame(ctx.context);
+      activeGames.push(game);
       game.start();
 
       const spectatorState = game.getStateForSpectator() as Record<string, unknown>;
@@ -89,6 +99,7 @@ describe('Security State Masking (Phase 7)', () => {
     it('should not leak other players input indices to a player', () => {
       const ctx = createMockContext();
       const game = new SequenceSamGame(ctx.context);
+      activeGames.push(game);
       game.start();
 
       vi.advanceTimersByTime(10000);
@@ -105,6 +116,7 @@ describe('Security State Masking (Phase 7)', () => {
     it('spectator SHOULD see all players input indices', () => {
       const ctx = createMockContext();
       const game = new SequenceSamGame(ctx.context);
+      activeGames.push(game);
       game.start();
 
       vi.advanceTimersByTime(10000);
@@ -122,6 +134,7 @@ describe('Security State Masking (Phase 7)', () => {
     it('should not leak other players keys to a player', () => {
       const ctx = createMockContext([MOCK_USERS.alice, MOCK_USERS.bob, MOCK_USERS.charlie]);
       const game = new HumanKeyboardGame(ctx.context);
+      activeGames.push(game);
       game.start();
       vi.advanceTimersByTime(5000);
 
@@ -142,6 +155,7 @@ describe('Security State Masking (Phase 7)', () => {
     it('should show spectator all key assignments', () => {
       const ctx = createMockContext([MOCK_USERS.alice, MOCK_USERS.bob, MOCK_USERS.charlie]);
       const game = new HumanKeyboardGame(ctx.context);
+      activeGames.push(game);
       game.start();
       vi.advanceTimersByTime(5000);
 
@@ -164,6 +178,7 @@ describe('Security State Masking (Phase 7)', () => {
     it('should show spectator the next expected letter owner', () => {
       const ctx = createMockContext([MOCK_USERS.alice, MOCK_USERS.bob, MOCK_USERS.charlie]);
       const game = new HumanKeyboardGame(ctx.context);
+      activeGames.push(game);
       game.start();
       vi.advanceTimersByTime(5000);
 
@@ -175,6 +190,7 @@ describe('Security State Masking (Phase 7)', () => {
     it('Player A cannot see Player B hidden data', () => {
       const ctx = createMockContext([MOCK_USERS.alice, MOCK_USERS.bob, MOCK_USERS.charlie]);
       const game = new HumanKeyboardGame(ctx.context);
+      activeGames.push(game);
       game.start();
       vi.advanceTimersByTime(5000);
 

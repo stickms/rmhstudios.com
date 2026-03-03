@@ -33,9 +33,13 @@ import {
 
 // ─── Helpers ─────────────────────────────────────────────────────
 
+/** Track active games for cleanup. */
+let activeGames: SequenceSamGame[] = [];
+
 function createGame(ctxData?: MockContextData) {
   const ctx = ctxData ?? createMockContext();
   const game = new SequenceSamGame(ctx.context);
+  activeGames.push(game);
   return { game, ...ctx };
 }
 
@@ -74,6 +78,10 @@ describe('Sequence Sam Server Handler (§7.1)', () => {
   });
 
   afterEach(() => {
+    for (const game of activeGames) {
+      try { game.cleanup(); } catch { /* ignore */ }
+    }
+    activeGames = [];
     vi.useRealTimers();
   });
 

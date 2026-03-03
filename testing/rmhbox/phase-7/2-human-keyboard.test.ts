@@ -70,6 +70,7 @@ function createGame(ctxData?: MockContextData) {
     MOCK_USERS.charlie,
   ]);
   const game = new HumanKeyboardGame(ctx.context);
+  activeGames.push(game);
   return { game, ...ctx };
 }
 
@@ -109,19 +110,22 @@ function typeFullSentence(game: HumanKeyboardGame, state: ReturnType<typeof getP
     const ch = text[i];
     if (ch === ' ') {
       // Space is auto-advanced synchronously; advance timer for broadcast
-      vi.advanceTimersByTime(HK_SPACE_DELAY_MS + 50);
+      vi.advanceTimersByTime(HK_SPACE_DELAY_MS + 100);
       continue;
     }
     const owner = state.letterToPlayer.get(ch);
     if (owner) {
       game.handleInput(owner, 'HK_PRESS', { key: ch });
     }
-    vi.advanceTimersByTime(50);
+    vi.advanceTimersByTime(250); // 250ms per keystroke to stay within rate limits
   }
   vi.advanceTimersByTime(500); // Buffer for final space handling
 }
 
 // ─── Tests ───────────────────────────────────────────────────────
+
+/** Track active games for cleanup. */
+let activeGames: HumanKeyboardGame[] = [];
 
 describe('Human Keyboard Server Handler (§7.2)', () => {
   beforeEach(() => {
@@ -129,6 +133,12 @@ describe('Human Keyboard Server Handler (§7.2)', () => {
   });
 
   afterEach(() => {
+    // Force-end any active games to clear tracked timers in BaseMinigame
+    for (const game of activeGames) {
+      try { game.cleanup(); } catch { /* ignore */ }
+    }
+    activeGames = [];
+    vi.clearAllTimers();
     vi.useRealTimers();
   });
 
