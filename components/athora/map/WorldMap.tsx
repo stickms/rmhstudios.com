@@ -22,6 +22,7 @@ import MapGL, {
 import "maplibre-gl/dist/maplibre-gl.css";
 import Link from "next/link";
 import { MapFilters } from "./MapFilters";
+import { HeatmapOverlay } from "./HeatmapOverlay";
 import { boundsToQueryParams } from "@/lib/athora/map/geoUtils";
 import type {
   MapRoom,
@@ -295,6 +296,8 @@ export default function WorldMap() {
   const animFrameRef = useRef(0);
   const [animTick, setAnimTick] = useState(0);
 
+  const [showHeatmap, setShowHeatmap] = useState(false);
+
   const [filters, setFilters] = useState<{
     categories: AthoraRoomCategory[];
     minPeople: number;
@@ -524,7 +527,7 @@ export default function WorldMap() {
     const totalPeople = group.rooms.reduce((s, r) => s + r.currentCount, 0);
     const totalCapacity = group.rooms.reduce((s, r) => s + r.capacity, 0);
     const intensity = Math.min(totalPeople / totalCapacity, 1);
-    return 24 + intensity * 16 + Math.min(group.rooms.length - 1, 4) * 4;
+    return Math.max(44, 28 + intensity * 16 + Math.min(group.rooms.length - 1, 4) * 4);
   };
 
   const getAccessButton = (room: MapRoom) => {
@@ -629,6 +632,19 @@ export default function WorldMap() {
         className="absolute top-4 left-4 z-10"
       />
 
+      {/* Heatmap toggle */}
+      <button
+        onClick={() => setShowHeatmap((v) => !v)}
+        className={`absolute top-4 right-14 z-10 px-3 py-1.5 rounded-lg text-xs font-medium
+                    border transition-colors ${
+                      showHeatmap
+                        ? "bg-indigo-600 border-indigo-500 text-white"
+                        : "bg-gray-900/80 backdrop-blur-sm border-gray-700 text-gray-300 hover:text-white"
+                    }`}
+      >
+        Heatmap
+      </button>
+
       {/* Hint */}
       {!newPin && !selectedGroup && !clusterPopup && (
         <div
@@ -657,6 +673,9 @@ export default function WorldMap() {
       >
         <NavigationControl position="bottom-right" />
 
+        {/* Activity heatmap layer */}
+        {showHeatmap && <HeatmapOverlay />}
+
         {/* City-level clusters */}
         {viewType === "clusters" &&
           clusters.map((cluster, i) => (
@@ -671,23 +690,29 @@ export default function WorldMap() {
                   e.stopPropagation();
                   handleClusterClick(cluster);
                 }}
-                className="flex items-center justify-center rounded-full bg-indigo-600/80
+                className="flex flex-col items-center justify-center rounded-full bg-indigo-600/90
                            border-2 border-white/60 shadow-lg cursor-pointer
                            hover:bg-indigo-500 transition-all hover:scale-110"
                 style={{
-                  width: Math.min(24 + cluster.roomCount * 4, 60),
-                  height: Math.min(24 + cluster.roomCount * 4, 60),
+                  width: Math.max(48, Math.min(32 + cluster.roomCount * 5, 72)),
+                  height: Math.max(48, Math.min(32 + cluster.roomCount * 5, 72)),
                 }}
               >
-                <div className="text-center">
-                  <div className="text-white font-bold text-xs">
+                <div className="flex items-center gap-0.5">
+                  <svg className="w-2.5 h-2.5 text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3" />
+                  </svg>
+                  <span className="text-white font-bold text-xs">
                     {cluster.roomCount}
-                  </div>
-                  {cluster.totalPeople > 0 && (
-                    <div className="text-white/70 text-[8px]">
-                      {cluster.totalPeople}
-                    </div>
-                  )}
+                  </span>
+                </div>
+                <div className="flex items-center gap-0.5">
+                  <svg className="w-2.5 h-2.5 text-white/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  <span className="text-white/70 font-medium text-[10px]">
+                    {cluster.totalPeople}
+                  </span>
                 </div>
               </div>
             </Marker>
@@ -717,7 +742,7 @@ export default function WorldMap() {
                     e.stopPropagation();
                     handleMarkerClick(group);
                   }}
-                  className="rounded-full border-2 border-white flex items-center
+                  className="rounded-full border-2 border-white flex flex-col items-center
                              justify-center cursor-pointer transition-transform
                              hover:scale-110"
                   style={{
@@ -728,21 +753,35 @@ export default function WorldMap() {
                   }}
                 >
                   {isSingle ? (
-                    totalPeople > 0 && (
-                      <span
-                        className="text-white font-bold"
-                        style={{ fontSize: size * 0.35 }}
-                      >
-                        {totalPeople}
-                      </span>
-                    )
+                    <>
+                      <div className="flex items-center gap-0.5">
+                        <svg className="w-2.5 h-2.5 text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3" />
+                        </svg>
+                        <span className="text-white font-bold text-[10px]">1</span>
+                      </div>
+                      <div className="flex items-center gap-0.5">
+                        <svg className="w-2.5 h-2.5 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                        <span className="text-white/80 font-medium text-[10px]">{totalPeople}</span>
+                      </div>
+                    </>
                   ) : (
-                    <span
-                      className="text-white font-bold"
-                      style={{ fontSize: size * 0.3 }}
-                    >
-                      {group.rooms.length}
-                    </span>
+                    <>
+                      <div className="flex items-center gap-0.5">
+                        <svg className="w-2.5 h-2.5 text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3" />
+                        </svg>
+                        <span className="text-white font-bold text-[10px]">{group.rooms.length}</span>
+                      </div>
+                      <div className="flex items-center gap-0.5">
+                        <svg className="w-2.5 h-2.5 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                        <span className="text-white/80 font-medium text-[10px]">{totalPeople}</span>
+                      </div>
+                    </>
                   )}
                 </div>
               </Marker>

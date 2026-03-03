@@ -10,11 +10,29 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { headers } from "next/headers";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Check connection status with a specific user
+    const checkUserId = req.nextUrl.searchParams.get("check");
+    if (checkUserId) {
+      const connection = await prisma.athoraConnection.findFirst({
+        where: {
+          OR: [
+            { senderId: session.user.id, receiverId: checkUserId },
+            { senderId: checkUserId, receiverId: session.user.id },
+          ],
+        },
+      });
+      return NextResponse.json({
+        connected: connection?.status === "ACCEPTED",
+        pending: connection?.status === "PENDING",
+        status: connection?.status || null,
+      });
     }
 
     const connections = await prisma.athoraConnection.findMany({

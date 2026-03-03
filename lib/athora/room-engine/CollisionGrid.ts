@@ -34,6 +34,20 @@ export class CollisionGrid {
     }
   }
 
+  /** Mark a rectangular region as unblocked */
+  unblockRect(x: number, y: number, w: number, h: number): void {
+    const startCol = Math.floor(x / this.cellSize);
+    const startRow = Math.floor(y / this.cellSize);
+    const endCol = Math.ceil((x + w) / this.cellSize);
+    const endRow = Math.ceil((y + h) / this.cellSize);
+
+    for (let r = startRow; r < endRow && r < this.rows; r++) {
+      for (let c = startCol; c < endCol && c < this.cols; c++) {
+        if (r >= 0 && c >= 0) this.grid[r][c] = false;
+      }
+    }
+  }
+
   /** Check if a world position is blocked */
   isBlocked(worldX: number, worldY: number): boolean {
     const col = Math.floor(worldX / this.cellSize);

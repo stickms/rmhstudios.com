@@ -95,6 +95,8 @@ export interface RoomConfig {
   backgroundUrl: string | null;
   ownerId: string;
   accessType: AthoraRoomAccess;
+  standPermission: AthoraStandPermission;
+  standAllowedUserIds: string[];
 }
 
 export interface RoomUserPayload extends UserBrief {
@@ -194,6 +196,8 @@ export interface AthoraClientToServerEvents {
     roomId: string;
     accessType?: AthoraRoomAccess;
     isActive?: boolean;
+    standPermission?: AthoraStandPermission;
+    standAllowedUserIds?: string[];
   }) => void;
 
   // Chat
@@ -255,6 +259,8 @@ export interface AthoraServerToClientEvents {
     roomId: string;
     accessType?: AthoraRoomAccess;
     isActive?: boolean;
+    standPermission?: AthoraStandPermission;
+    standAllowedUserIds?: string[];
   }) => void;
   "athora:room:closed": (data: { roomId: string; message: string }) => void;
 
@@ -302,6 +308,8 @@ export interface AthoraServerToClientEvents {
 // ─── Map Types ───────────────────────────────────────────────────
 
 export type AthoraRoomAccess = "PUBLIC" | "PRIVATE" | "INVITE_ONLY" | "EVENT_TICKET";
+
+export type AthoraStandPermission = "EVERYONE" | "SELECT" | "OWNER_ONLY";
 
 export interface MapRoom {
   id: string;

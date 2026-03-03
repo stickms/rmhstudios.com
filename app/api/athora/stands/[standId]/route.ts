@@ -83,10 +83,33 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       if (body[field] !== undefined) data[field] = body[field];
     }
 
-    const updated = await prisma.athoraStand.update({
-      where: { id: standId },
-      data,
-      include: { media: { orderBy: { sortOrder: "asc" } } },
+    // Handle media updates
+    const mediaItems: { url: string; type: string }[] =
+      body.mediaUrls || body.media || [];
+
+    const updated = await prisma.$transaction(async (tx) => {
+      if (mediaItems.length > 0 || body.mediaUrls !== undefined) {
+        // Delete existing media and replace
+        await tx.athoraStandMedia.deleteMany({ where: { standId } });
+        if (mediaItems.length > 0) {
+          await tx.athoraStandMedia.createMany({
+            data: mediaItems
+              .filter((m: { url: string }) => m.url?.trim())
+              .map((m: { url: string; type: string }, i: number) => ({
+                standId,
+                url: m.url,
+                type: (m.type || "IMAGE") as "IMAGE" | "VIDEO" | "IFRAME" | "PDF" | "LINK",
+                sortOrder: i,
+              })),
+          });
+        }
+      }
+
+      return tx.athoraStand.update({
+        where: { id: standId },
+        data,
+        include: { media: { orderBy: { sortOrder: "asc" } } },
+      });
     });
 
     return NextResponse.json(updated);

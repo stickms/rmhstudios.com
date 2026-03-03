@@ -18,6 +18,8 @@ interface RoomCanvasProps {
   engineRef: React.MutableRefObject<RoomEngine | null>;
   onAvatarClick: (userId: string) => void;
   onStandClick: (standId: string) => void;
+  onEmptyClick?: (worldX: number, worldY: number) => void;
+  onMyPositionChange?: (x: number, y: number, facing: string) => void;
 }
 
 export function RoomCanvas({
@@ -26,6 +28,8 @@ export function RoomCanvas({
   engineRef,
   onAvatarClick,
   onStandClick,
+  onEmptyClick,
+  onMyPositionChange,
 }: RoomCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -39,6 +43,10 @@ export function RoomCanvas({
   onAvatarClickRef.current = onAvatarClick;
   const onStandClickRef = useRef(onStandClick);
   onStandClickRef.current = onStandClick;
+  const onEmptyClickRef = useRef(onEmptyClick);
+  onEmptyClickRef.current = onEmptyClick;
+  const onMyPositionChangeRef = useRef(onMyPositionChange);
+  onMyPositionChangeRef.current = onMyPositionChange;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -58,7 +66,8 @@ export function RoomCanvas({
         currentUser: currentUserRef.current,
         onAvatarClick: (userId: string) => onAvatarClickRef.current(userId),
         onStandClick: (standId: string) => onStandClickRef.current(standId),
-        onEmptyClick: () => {},
+        onEmptyClick: (worldX: number, worldY: number) => onEmptyClickRef.current?.(worldX, worldY),
+        onMyPositionChange: (x: number, y: number, facing: string) => onMyPositionChangeRef.current?.(x, y, facing),
       })
         .then((e) => {
           if (destroyed) {

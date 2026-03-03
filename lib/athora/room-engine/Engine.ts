@@ -69,6 +69,7 @@ interface EngineConfig {
   onAvatarClick: (userId: string) => void;
   onStandClick: (standId: string) => void;
   onEmptyClick: (worldX: number, worldY: number) => void;
+  onMyPositionChange?: (x: number, y: number, facing: string) => void;
 }
 
 const AVAILABILITY_COLORS: Record<string, number> = {
@@ -102,6 +103,9 @@ export class RoomEngine {
   private boundUpdate: () => void;
   private keydownHandler: (e: KeyboardEvent) => void;
   private keyupHandler: (e: KeyboardEvent) => void;
+  private _placementMode = false;
+  private placementPreview: PIXI.Graphics | null = null;
+  private mouseMoveHandler: ((e: PointerEvent) => void) | null = null;
 
   private constructor(config: EngineConfig) {
     this.socket = config.socket;
@@ -473,6 +477,47 @@ export class RoomEngine {
       .stroke({ width: 2, color: borderColor, alpha: 0.8 });
     container.addChild(booth);
 
+    // Load and display logo image if available
+    if (standData.logoUrl) {
+      const logoSize = Math.min(standData.width, standData.height) * 0.45;
+      PIXI.Assets.load(standData.logoUrl)
+        .then((texture: PIXI.Texture) => {
+          // Check if stand is still rendered (may have been removed)
+          if (!this.stands.has(standData.id) && !container.parent) return;
+
+          const logoSprite = new PIXI.Sprite(texture);
+          logoSprite.anchor.set(0.5);
+          logoSprite.y = -standData.height * 0.12;
+
+          // Fit the image within a square area
+          const scale = logoSize / Math.max(texture.width, texture.height);
+          logoSprite.width = texture.width * scale;
+          logoSprite.height = texture.height * scale;
+
+          // Round corners with a mask
+          const mask = new PIXI.Graphics();
+          mask.roundRect(
+            -logoSprite.width / 2,
+            -logoSprite.width / 2 + logoSprite.y,
+            logoSprite.width,
+            logoSprite.height,
+            6
+          ).fill({ color: 0xffffff });
+          mask.y = 0;
+          container.addChild(mask);
+          logoSprite.mask = mask;
+
+          container.addChild(logoSprite);
+        })
+        .catch(() => {
+          // Silently fail if logo can't be loaded
+        });
+    }
+
+    // Position text below logo if logo exists, otherwise centered
+    const hasLogo = !!standData.logoUrl;
+    const titleY = hasLogo ? standData.height * 0.25 : -10;
+
     const title = new PIXI.Text({
       text: standData.title,
       style: {
@@ -486,7 +531,7 @@ export class RoomEngine {
       },
     });
     title.anchor.set(0.5);
-    title.y = -10;
+    title.y = titleY;
     container.addChild(title);
 
     if (standData.tagline) {
@@ -501,7 +546,7 @@ export class RoomEngine {
         },
       });
       tagline.anchor.set(0.5);
-      tagline.y = 6;
+      tagline.y = titleY + 16;
       container.addChild(tagline);
     }
 
@@ -521,6 +566,52 @@ export class RoomEngine {
 
     this.worldContainer.addChild(container);
     this.stands.set(standData.id, { container, data: standData });
+  }
+
+  moveStand(standId: string, newX: number, newY: number): void {
+    const stand = this.stands.get(standId);
+    if (!stand) return;
+
+    // Unblock old position
+    this.collisionGrid?.unblockRect(
+      stand.data.posX - stand.data.width / 2,
+      stand.data.posY - stand.data.height / 2,
+      stand.data.width,
+      stand.data.height
+    );
+
+    // Update position
+    stand.data.posX = newX;
+    stand.data.posY = newY;
+    stand.container.x = newX;
+    stand.container.y = newY;
+    stand.container.zIndex = getDepth(newX, newY);
+
+    // Block new position
+    this.collisionGrid?.blockRect(
+      newX - stand.data.width / 2,
+      newY - stand.data.height / 2,
+      stand.data.width,
+      stand.data.height
+    );
+  }
+
+  updateStand(standData: StandPayload): void {
+    const existing = this.stands.get(standData.id);
+    if (existing) {
+      // Remove old stand display
+      this.collisionGrid?.unblockRect(
+        existing.data.posX - existing.data.width / 2,
+        existing.data.posY - existing.data.height / 2,
+        existing.data.width,
+        existing.data.height
+      );
+      this.worldContainer.removeChild(existing.container);
+      existing.container.destroy({ children: true });
+      this.stands.delete(standData.id);
+    }
+    // Re-add with updated data
+    this.addStand(standData);
   }
 
   // ── CONVERSATION BUBBLES ───────────────────────────────────────
@@ -609,6 +700,12 @@ export class RoomEngine {
 
       const worldX = (screenX - this.camera.x) / this.camera.zoom;
       const worldY = (screenY - this.camera.y) / this.camera.zoom;
+
+      // In placement mode, intercept ALL clicks — place the stand only
+      if (this._placementMode) {
+        this.config.onEmptyClick(worldX, worldY);
+        return;
+      }
 
       for (const [uid, avatar] of this.avatars) {
         if (uid === this.currentUser.id) continue;
@@ -762,6 +859,8 @@ export class RoomEngine {
       y,
       facing,
     });
+
+    this.config.onMyPositionChange?.(x, y, facing);
   }
 
   private getFacing(dx: number, dy: number): AthoraDirection {
@@ -818,9 +917,58 @@ export class RoomEngine {
     return { x: this.myWorldX, y: this.myWorldY };
   }
 
+  setPlacementMode(enabled: boolean): void {
+    this._placementMode = enabled;
+
+    if (enabled) {
+      // Create a green outline preview that follows the cursor
+      const preview = new PIXI.Graphics();
+      const w = 200; // default stand width
+      const h = 150; // default stand height
+      preview
+        .roundRect(-w / 2, -h / 2, w, h, 8)
+        .stroke({ width: 2, color: 0x22c55e, alpha: 0.9 });
+      preview
+        .roundRect(-w / 2, -h / 2, w, h, 8)
+        .fill({ color: 0x22c55e, alpha: 0.12 });
+      preview.zIndex = 99999;
+      preview.visible = false;
+      this.worldContainer.addChild(preview);
+      this.placementPreview = preview;
+
+      // Track pointer movement to position the preview
+      const canvas = this.config.canvas;
+      this.mouseMoveHandler = (e: PointerEvent) => {
+        if (!this.placementPreview) return;
+        const rect = canvas.getBoundingClientRect();
+        const screenX = e.clientX - rect.left;
+        const screenY = e.clientY - rect.top;
+        const worldX = (screenX - this.camera.x) / this.camera.zoom;
+        const worldY = (screenY - this.camera.y) / this.camera.zoom;
+        this.placementPreview.x = worldX;
+        this.placementPreview.y = worldY;
+        this.placementPreview.visible = true;
+      };
+      canvas.addEventListener("pointermove", this.mouseMoveHandler);
+    } else {
+      // Remove preview
+      if (this.placementPreview) {
+        this.worldContainer.removeChild(this.placementPreview);
+        this.placementPreview.destroy();
+        this.placementPreview = null;
+      }
+      if (this.mouseMoveHandler) {
+        this.config.canvas.removeEventListener("pointermove", this.mouseMoveHandler);
+        this.mouseMoveHandler = null;
+      }
+    }
+  }
+
   // ── CLEANUP ────────────────────────────────────────────────────
 
   destroy(): void {
+    // Clean up placement mode if active
+    this.setPlacementMode(false);
     window.removeEventListener("keydown", this.keydownHandler);
     window.removeEventListener("keyup", this.keyupHandler);
     this.app.ticker?.remove(this.boundUpdate);

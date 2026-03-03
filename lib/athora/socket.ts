@@ -187,6 +187,8 @@ export function useAthoraRoomSync(
             currentRoom: {
               ...room,
               ...(data.accessType && { accessType: data.accessType }),
+              ...(data.standPermission && { standPermission: data.standPermission }),
+              ...(data.standAllowedUserIds && { standAllowedUserIds: data.standAllowedUserIds }),
             },
           });
         }

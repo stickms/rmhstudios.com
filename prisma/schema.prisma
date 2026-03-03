@@ -1369,6 +1369,10 @@ model AthoraRoom {
   tileMapData   Json?
   backgroundUrl String?
 
+  // Stand creation permissions
+  standPermission      AthoraStandPermission @default(OWNER_ONLY)
+  standAllowedUserIds  String[]              @default([])
+
   // State
   isActive      Boolean          @default(true)
   isPinned      Boolean          @default(false)
@@ -1421,6 +1425,12 @@ enum AthoraRoomAccess {
   PRIVATE
   INVITE_ONLY
   EVENT_TICKET
+}
+
+enum AthoraStandPermission {
+  EVERYONE
+  SELECT
+  OWNER_ONLY
 }
 
 // ─── Room Membership (presence tracking) ──────────────────────────

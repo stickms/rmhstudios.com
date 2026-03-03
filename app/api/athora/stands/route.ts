@@ -55,7 +55,20 @@ export async function POST(req: NextRequest) {
       websiteUrl,
       logoUrl,
       media,
+      mediaUrls,
+      queueEnabled,
+      leadCaptureEnabled,
+      leadCaptureFields,
     } = body;
+
+    // Normalize media from either format (media[] or mediaUrls[])
+    const resolvedMedia = media ?? mediaUrls?.filter((m: { url: string }) => m.url?.trim())?.map(
+      (m: { url: string; type?: string; caption?: string }) => ({
+        type: m.type || "IMAGE",
+        url: m.url,
+        caption: m.caption,
+      })
+    );
 
     if (!roomId || !title) {
       return NextResponse.json(
@@ -87,9 +100,12 @@ export async function POST(req: NextRequest) {
         posY: posY ?? 400,
         websiteUrl,
         logoUrl,
-        media: media?.length
+        queueEnabled: queueEnabled ?? false,
+        leadCaptureEnabled: leadCaptureEnabled ?? false,
+        leadCaptureFields: leadCaptureFields ?? undefined,
+        media: resolvedMedia?.length
           ? {
-              create: media.map(
+              create: resolvedMedia.map(
                 (m: { type: string; url: string; caption?: string }, i: number) => ({
                   type: m.type,
                   url: m.url,

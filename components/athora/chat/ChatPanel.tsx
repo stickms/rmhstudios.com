@@ -6,7 +6,7 @@
 
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useAthoraStore } from "@/stores/athoraStore";
 import { ChatMessage } from "./ChatMessage";
 import type { Socket } from "socket.io-client";
@@ -18,16 +18,69 @@ interface ChatPanelProps {
   roomId: string;
 }
 
+interface TypingUser {
+  userId: string;
+  name: string;
+  expiresAt: number;
+}
+
 export function ChatPanel({ socket, roomId }: ChatPanelProps) {
   const [activeTab, setActiveTab] = useState<ChatTab>("proximity");
   const [message, setMessage] = useState("");
   const [isMinimized, setIsMinimized] = useState(false);
+  const [typingUsers, setTypingUsers] = useState<TypingUser[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout>(undefined);
+  const lastTypingEmitRef = useRef(0);
 
   const proximityMessages = useAthoraStore((s) => s.proximityMessages);
   const conversationMessages = useAthoraStore((s) => s.conversationMessages);
   const activeConversationId = useAthoraStore((s) => s.activeConversationId);
+
+  // Listen for typing events
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleTyping = (data: { userId: string; conversationId?: string }) => {
+      const users = useAthoraStore.getState().users;
+      const user = users.get(data.userId);
+      if (!user) return;
+
+      setTypingUsers((prev) => {
+        const filtered = prev.filter((t) => t.userId !== data.userId);
+        return [...filtered, { userId: data.userId, name: user.name, expiresAt: Date.now() + 3000 }];
+      });
+    };
+
+    socket.on("athora:chat:typing", handleTyping);
+    return () => {
+      socket.off("athora:chat:typing", handleTyping);
+    };
+  }, [socket]);
+
+  // Expire stale typing indicators
+  useEffect(() => {
+    if (typingUsers.length === 0) return;
+    const timer = setInterval(() => {
+      const now = Date.now();
+      setTypingUsers((prev) => prev.filter((t) => t.expiresAt > now));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [typingUsers.length]);
+
+  const emitTyping = useCallback(() => {
+    if (!socket) return;
+    const now = Date.now();
+    if (now - lastTypingEmitRef.current < 2000) return;
+    lastTypingEmitRef.current = now;
+
+    if (activeTab === "proximity") {
+      socket.emit("athora:chat:typing", { roomId });
+    } else if (activeConversationId) {
+      socket.emit("athora:chat:typing", { conversationId: activeConversationId });
+    }
+  }, [socket, activeTab, roomId, activeConversationId]);
 
   const currentMessages =
     activeTab === "proximity"
@@ -159,6 +212,22 @@ export function ChatPanel({ socket, roomId }: ChatPanelProps) {
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Typing indicator */}
+      {typingUsers.length > 0 && (
+        <div className="px-3 py-1 text-[10px] text-gray-400 flex items-center gap-1">
+          <span className="flex gap-0.5">
+            <span className="w-1 h-1 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: "0ms" }} />
+            <span className="w-1 h-1 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: "150ms" }} />
+            <span className="w-1 h-1 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: "300ms" }} />
+          </span>
+          {typingUsers.length === 1
+            ? `${typingUsers[0].name} is typing...`
+            : typingUsers.length === 2
+            ? `${typingUsers[0].name} and ${typingUsers[1].name} are typing...`
+            : `${typingUsers[0].name} and ${typingUsers.length - 1} others are typing...`}
+        </div>
+      )}
+
       {/* Input */}
       <div className="p-2 border-t border-gray-700">
         <div className="flex gap-2">
@@ -166,7 +235,10 @@ export function ChatPanel({ socket, roomId }: ChatPanelProps) {
             ref={inputRef}
             type="text"
             value={message}
-            onChange={(e) => setMessage(e.target.value)}
+            onChange={(e) => {
+              setMessage(e.target.value);
+              if (e.target.value.trim()) emitTyping();
+            }}
             onKeyDown={handleKeyDown}
             placeholder={
               activeTab === "proximity"

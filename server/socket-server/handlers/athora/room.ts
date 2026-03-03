@@ -137,6 +137,8 @@ export function registerAthoraRoomHandlers(io: Server, socket: Socket): void {
           backgroundUrl: room.backgroundUrl,
           ownerId: room.ownerId,
           accessType: room.accessType,
+          standPermission: (room as any).standPermission || 'OWNER_ONLY',
+          standAllowedUserIds: (room as any).standAllowedUserIds || [],
         },
         users,
         stands: room.stands.map((s: any) => ({
@@ -266,7 +268,13 @@ export function registerAthoraRoomHandlers(io: Server, socket: Socket): void {
 
   socket.on(
     'athora:room:settings',
-    async ({ roomId, accessType, isActive }: { roomId: string; accessType?: string; isActive?: boolean }) => {
+    async ({ roomId, accessType, isActive, standPermission, standAllowedUserIds }: {
+      roomId: string;
+      accessType?: string;
+      isActive?: boolean;
+      standPermission?: string;
+      standAllowedUserIds?: string[];
+    }) => {
       try {
         const prisma = getPrismaClient();
 
@@ -286,6 +294,8 @@ export function registerAthoraRoomHandlers(io: Server, socket: Socket): void {
         const data: Record<string, unknown> = {};
         if (accessType) data.accessType = accessType;
         if (typeof isActive === 'boolean') data.isActive = isActive;
+        if (standPermission) data.standPermission = standPermission;
+        if (standAllowedUserIds) data.standAllowedUserIds = standAllowedUserIds;
 
         await prisma.athoraRoom.update({
           where: { id: roomId },
@@ -297,6 +307,8 @@ export function registerAthoraRoomHandlers(io: Server, socket: Socket): void {
           roomId,
           accessType: accessType || undefined,
           isActive: typeof isActive === 'boolean' ? isActive : undefined,
+          standPermission: standPermission || undefined,
+          standAllowedUserIds: standAllowedUserIds || undefined,
         });
 
         // If room was closed, kick everyone out
