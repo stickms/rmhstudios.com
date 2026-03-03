@@ -273,7 +273,7 @@ function buildGraveyardCluster(): StructureTemplate {
     const y = 1 + row * 2; // rows at y=1, y=3 (skip y=5 = fence)
     if (y >= h - 1) break;
     for (let col = 0; col < 4; col++) {
-      props.push({ dx: 2 + col, dy: y, type: 'tombstone' });
+      props.push({ dx: 2 + col, dy: y, type: 'urn' });
     }
   }
 
@@ -525,8 +525,9 @@ export class TileGenerator {
 
       const screen = worldToScreen(camera, prop.x, prop.y);
 
-      // Sprite rendering for original prop types (tombstone, barrel, urn)
-      if (sheet && (prop.type === 'tombstone' || prop.type === 'barrel' || prop.type === 'urn')) {
+      // Sprite rendering for original prop types (barrel, urn)
+      // Note: tombstone frames (0, 3) are empty in props.png — uses vector fallback below
+      if (sheet && (prop.type === 'barrel' || prop.type === 'urn')) {
         const isDamaged = prop.hp < 3;
         const frameIndex = isDamaged
           ? (PROP_DAMAGED_FRAMES[prop.type] ?? PROP_FRAMES[prop.type] ?? 0)
@@ -818,7 +819,7 @@ export class TileGenerator {
     if (!nearSpawn && propRoll < PROP_CHANCE && !this.propsMap.has(key)) {
       const propTypeRoll = (h >> 20) % 20;
       const propType: PropType =
-        propTypeRoll < 9 ? 'tombstone' : propTypeRoll < 18 ? 'barrel' : 'urn';
+        propTypeRoll < 10 ? 'barrel' : 'urn';
 
       const offsetX = ((h >> 12) % 20) - 10;
       const offsetY = ((h >> 14) % 20) - 10;
