@@ -5,11 +5,11 @@
  * the correct sub-component based on the current game phase:
  *   SENTENCE_REVEAL → Animated sentence reveal
  *   TYPING          → Active typing phase with keyboard + progress
- *   RESULTS         → HumanKeyboardResults (stats + MVP)
+ *   RESULTS         → HumanKeyboardResults (stats + scores)
  *
  * Handles server actions:
  *   HK_SENTENCE_REVEAL, HK_KEY_ASSIGNMENT, HK_KEY_CORRECT,
- *   HK_KEY_WRONG, HK_KEY_WRONG_PLAYER, HK_CURSOR_LOCKED,
+ *   HK_KEY_WRONG, HK_KEY_WRONG_PLAYER,
  *   HK_SPACE_AUTO, HK_RESHUFFLE_WARNING, HK_RESHUFFLE,
  *   HK_COMPLETE, HK_RESULTS, TIMER_TICK
  *
@@ -30,7 +30,7 @@ import KeyboardLayout from './KeyboardLayout';
 import ProgressBar from './ProgressBar';
 import ReshuffleWarning from './ReshuffleWarning';
 import HumanKeyboardResults from './HumanKeyboardResults';
-import type { PlayerResult, TeamPerformance } from './HumanKeyboardResults';
+import type { PlayerResult, TeamAggregate } from './HumanKeyboardResults';
 
 type Phase = 'SENTENCE_REVEAL' | 'TYPING' | 'RESULTS';
 
@@ -47,7 +47,6 @@ export default function HumanKeyboardGame({ playerId, playerName: _playerName }:
   const [cursorPosition, setCursorPosition] = useState(0);
   const [myKeys, setMyKeys] = useState<string[]>([]);
   const [progress, setProgress] = useState(0);
-  const [locked, setLocked] = useState(false);
   const [reshuffleCountdown, setReshuffleCountdown] = useState<number | null>(null);
   const [completed, setCompleted] = useState(false);
 
@@ -58,7 +57,7 @@ export default function HumanKeyboardGame({ playerId, playerName: _playerName }:
 
   // Results
   const [playerResults, setPlayerResults] = useState<PlayerResult[]>([]);
-  const [teamPerformance, setTeamPerformance] = useState<TeamPerformance | null>(null);
+  const [teamAggregate, setTeamAggregate] = useState<TeamAggregate | null>(null);
 
   const { startTimer, tickTimer, clearTimer } = useHeaderTimer();
 
@@ -88,7 +87,6 @@ export default function HumanKeyboardGame({ playerId, playerName: _playerName }:
           setMyKeys([]);
           setCorrectCount(0);
           setWrongCount(0);
-          setLocked(false);
           setCompleted(false);
           playSound('goFanfare');
           if (typeof data.duration === 'number') {
@@ -110,7 +108,6 @@ export default function HumanKeyboardGame({ playerId, playerName: _playerName }:
           if (data.userId === playerId) {
             setCorrectCount((c: number) => c + 1);
           }
-          setLocked(false);
           playSound('scoreDing');
           break;
         }
@@ -129,11 +126,6 @@ export default function HumanKeyboardGame({ playerId, playerName: _playerName }:
             setWrongFlash(true);
             setTimeout(() => setWrongFlash(false), 300);
           }
-          break;
-        }
-        case 'HK_CURSOR_LOCKED': {
-          setLocked(true);
-          playSound('buzzer');
           break;
         }
         case 'HK_SPACE_AUTO': {
@@ -167,8 +159,8 @@ export default function HumanKeyboardGame({ playerId, playerName: _playerName }:
           if (Array.isArray(data.playerResults)) {
             setPlayerResults(data.playerResults as PlayerResult[]);
           }
-          if (data.teamPerformance) {
-            setTeamPerformance(data.teamPerformance as TeamPerformance);
+          if (data.teamAggregate) {
+            setTeamAggregate(data.teamAggregate as TeamAggregate);
           }
           playSound('victoryFanfare');
           break;
@@ -215,10 +207,9 @@ export default function HumanKeyboardGame({ playerId, playerName: _playerName }:
   // Handle player key press
   const handleKeyPress = useCallback(
     (key: string) => {
-      if (locked) return;
       emitGameInput('HK_PRESS', { key: key.toLowerCase() });
     },
-    [locked],
+    [],
   );
 
   return (
@@ -297,7 +288,7 @@ export default function HumanKeyboardGame({ playerId, playerName: _playerName }:
         >
           <HumanKeyboardResults
             playerResults={playerResults}
-            teamPerformance={teamPerformance}
+            teamAggregate={teamAggregate}
             completed={completed}
           />
         </motion.div>

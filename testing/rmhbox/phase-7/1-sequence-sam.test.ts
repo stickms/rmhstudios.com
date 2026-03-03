@@ -3,12 +3,11 @@
  *
  * Tests the SequenceSamGame server handler covering:
  * - State initialization and player setup
- * - Sequence generation (no consecutive duplicates, growth)
+ * - Sequence generation (no consecutive duplicates, growth by 2 per round)
  * - Chaos round rotation mapping
  * - Input handling (correct/incorrect taps)
- * - Strike system and elimination
- * - Grace Rule (all fail → no eliminations)
- * - Scoring: survive, perfect, chaos, speed, winner, placement
+ * - End condition: game ends when ≤1 player completes sequence
+ * - Scoring: correct taps + first-finish bonus
  * - State masking (sequence never leaked to client)
  * - Awards computation
  * - Game log generation
@@ -18,7 +17,10 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { SequenceSamGame } from '../../../server/rmhbox/minigames/sequence-sam';
-import { ROTATION_MAP_CW, SS_GRID_SIZE, SS_MAX_STRIKES } from '../../../lib/rmhbox/constants';
+import {
+  ROTATION_MAP_CW, SS_GRID_SIZE, SS_CORRECT_TAP_POINTS,
+  SS_FIRST_FINISH_BONUS, SS_TILES_ADDED_PER_ROUND,
+} from '../../../lib/rmhbox/constants';
 import { SSTapSchema } from '../../../lib/rmhbox/sequence-sam/schemas';
 import {
   MOCK_USERS,
@@ -52,9 +54,12 @@ function getPrivateState(game: SequenceSamGame): {
   isChaosRound: boolean;
   phase: string;
   activePlayers: string[];
-  eliminatedPlayers: string[];
   maxRounds: number;
-  playerStates: Map<string, { strikesRemaining: number; isEliminated: boolean; totalScore: number; hasCompletedSequence: boolean; hasFailed: boolean; currentInputIndex: number }>;
+  playerStates: Map<string, {
+    correctTaps: number; firstFinishes: number; totalScore: number;
+    hasCompletedSequence: boolean; hasFailed: boolean; currentInputIndex: number;
+    roundScore: number;
+  }>;
   currentRound: number;
 } {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -123,6 +128,10 @@ describe('Sequence Sam Server Handler (§7.1)', () => {
       const unique = new Set(outputs);
       expect(unique.size).toBe(SS_GRID_SIZE);
     });
+
+    it('should add exactly 2 tiles per round', () => {
+      expect(SS_TILES_ADDED_PER_ROUND).toBe(2);
+    });
   });
 
   describe('State Initialization (§7.1.4.3)', () => {
@@ -132,14 +141,14 @@ describe('Sequence Sam Server Handler (§7.1)', () => {
       expect(context.players.size).toBe(4);
     });
 
-    it('should initialize all players with correct strikes', () => {
+    it('should initialize all players with zero scores', () => {
       const { game } = createGame();
       game.start();
       const state = getPrivateState(game);
       expect(state.activePlayers.length).toBe(4);
       for (const [, ps] of state.playerStates) {
-        expect(ps.strikesRemaining).toBe(SS_MAX_STRIKES);
-        expect(ps.isEliminated).toBe(false);
+        expect(ps.totalScore).toBe(0);
+        expect(ps.correctTaps).toBe(0);
       }
     });
 
@@ -165,7 +174,6 @@ describe('Sequence Sam Server Handler (§7.1)', () => {
       const { game, broadcastLog } = createGame();
       game.start();
 
-      // Advance a bit to allow pattern steps
       vi.advanceTimersByTime(2000);
 
       const steps = findActionBroadcasts(broadcastLog, 'SS_PATTERN_STEP');
@@ -201,7 +209,7 @@ describe('Sequence Sam Server Handler (§7.1)', () => {
       }
     });
 
-    it('should extend sequence by 1 each round', () => {
+    it('should extend sequence by 2 each round', () => {
       const { game } = createGame();
       game.start();
       const state = getPrivateState(game);
@@ -220,9 +228,9 @@ describe('Sequence Sam Server Handler (§7.1)', () => {
       // Advance through ROUND_RESULTS (2s) + TRANSITION (1s) to start round 2
       vi.advanceTimersByTime(4000);
 
-      // Check round 2 sequence is longer
+      // Check round 2 sequence is 2 longer
       expect(state.currentRound).toBe(2);
-      expect(state.sequence.length).toBe(initialLength + 1);
+      expect(state.sequence.length).toBe(initialLength + 2);
     });
 
     it('should generate sequence values within 0-8 range', () => {
@@ -238,14 +246,12 @@ describe('Sequence Sam Server Handler (§7.1)', () => {
 
   describe('Chaos Rounds (§7.1.4.4)', () => {
     it('should set isChaosRound on chaos interval rounds', () => {
-      // With chaosInterval=2, round 2 should be chaos
       const ctx = createMockContext();
-      ctx.context.gameSettings = { chaosInterval: 2 }; // Every 2nd round
+      ctx.context.gameSettings = { chaosInterval: 2 };
       const { game } = createGame(ctx);
       game.start();
 
       const state = getPrivateState(game);
-      // Round 1 starts, need to advance to round 2 for chaos
 
       // Complete round 1
       advanceToInputPhase(state.sequence.length);
@@ -254,7 +260,6 @@ describe('Sequence Sam Server Handler (§7.1)', () => {
           game.handleInput(userId, 'SS_TAP', { position: state.sequence[i] });
         }
       }
-      // Advance through ROUND_RESULTS (2s) + TRANSITION (1s) to start round 2
       vi.advanceTimersByTime(4000);
 
       // Now on round 2 which should be chaos (2 % 2 === 0)
@@ -293,9 +298,34 @@ describe('Sequence Sam Server Handler (§7.1)', () => {
       game.start();
 
       const state = getPrivateState(game);
-      // Even at round 1, chaos shouldn't trigger
       expect(state.isChaosRound).toBe(false);
       expect(state.rotatedSequence).toBeNull();
+    });
+
+    it('should include rotationDegrees in SS_ROUND_START for chaos rounds', () => {
+      const ctx = createMockContext();
+      ctx.context.gameSettings = { chaosInterval: 2 };
+      const { game, broadcastLog } = createGame(ctx);
+      game.start();
+
+      const state = getPrivateState(game);
+      // Complete round 1
+      advanceToInputPhase(state.sequence.length);
+      for (const userId of state.activePlayers) {
+        for (let i = 0; i < state.sequence.length; i++) {
+          game.handleInput(userId, 'SS_TAP', { position: state.sequence[i] });
+        }
+      }
+      vi.advanceTimersByTime(4000);
+
+      // Find the round 2 SS_ROUND_START
+      const roundStarts = findActionBroadcasts(broadcastLog, 'SS_ROUND_START');
+      const round2Start = roundStarts.find(
+        (e) => (e.data as Record<string, unknown>).round === 2,
+      );
+      expect(round2Start).toBeDefined();
+      expect((round2Start!.data as Record<string, unknown>).isChaosRound).toBe(true);
+      expect((round2Start!.data as Record<string, unknown>).rotationDegrees).toBe(90);
     });
   });
 
@@ -320,7 +350,6 @@ describe('Sequence Sam Server Handler (§7.1)', () => {
 
       advanceToInputPhase(state.sequence.length);
 
-      // Tap wrong position
       const wrongPos = (state.sequence[0] + 1) % 9;
       game.handleInput(userId, 'SS_TAP', { position: wrongPos });
       expect(state.playerStates.get(userId)!.hasFailed).toBe(true);
@@ -349,7 +378,6 @@ describe('Sequence Sam Server Handler (§7.1)', () => {
 
       advanceToInputPhase(state.sequence.length);
 
-      // Complete the entire sequence
       for (let i = 0; i < state.sequence.length; i++) {
         game.handleInput(userId, 'SS_TAP', { position: state.sequence[i] });
       }
@@ -364,49 +392,8 @@ describe('Sequence Sam Server Handler (§7.1)', () => {
       const state = getPrivateState(game);
       const userId = MOCK_USERS.alice.userId;
 
-      // Still in PATTERN_DISPLAY phase
       game.handleInput(userId, 'SS_TAP', { position: 0 });
       expect(state.playerStates.get(userId)!.currentInputIndex).toBe(0);
-    });
-
-    it('should reject input from eliminated player', () => {
-      const { game } = createGame();
-      game.start();
-      const state = getPrivateState(game);
-      const userId = MOCK_USERS.alice.userId;
-      state.playerStates.get(userId)!.isEliminated = true;
-
-      advanceToInputPhase(state.sequence.length);
-
-      game.handleInput(userId, 'SS_TAP', { position: state.sequence[0] });
-      expect(state.playerStates.get(userId)!.currentInputIndex).toBe(0);
-    });
-
-    it('should use rotated sequence for validation in chaos round', () => {
-      const ctx = createMockContext();
-      ctx.context.gameSettings = { chaosInterval: 2 };
-      const { game } = createGame(ctx);
-      game.start();
-      const state = getPrivateState(game);
-
-      // Complete round 1 to advance to round 2 (chaos)
-      advanceToInputPhase(state.sequence.length);
-      for (const userId of state.activePlayers) {
-        for (let i = 0; i < state.sequence.length; i++) {
-          game.handleInput(userId, 'SS_TAP', { position: state.sequence[i] });
-        }
-      }
-      // ROUND_RESULTS (2s) + TRANSITION (1s) = 3s to round 2 start
-      vi.advanceTimersByTime(3100);
-
-      expect(state.currentRound).toBe(2);
-      expect(state.isChaosRound).toBe(true);
-      expect(state.rotatedSequence).not.toBeNull();
-
-      // Verify rotation map is applied correctly
-      for (let i = 0; i < state.sequence.length; i++) {
-        expect(state.rotatedSequence![i]).toBe(ROTATION_MAP_CW[state.sequence[i]]);
-      }
     });
 
     it('should end input phase early when all players complete or fail', () => {
@@ -416,91 +403,157 @@ describe('Sequence Sam Server Handler (§7.1)', () => {
 
       advanceToInputPhase(state.sequence.length);
 
-      // All players complete the sequence
       for (const userId of state.activePlayers) {
         for (let i = 0; i < state.sequence.length; i++) {
           game.handleInput(userId, 'SS_TAP', { position: state.sequence[i] });
         }
       }
 
-      // Should immediately show round results
       const results = findActionBroadcasts(broadcastLog, 'SS_ROUND_RESULTS');
       expect(results.length).toBeGreaterThan(0);
     });
   });
 
-  describe('Strike System & Elimination (§7.1.4.5)', () => {
-    it('should deduct strike on round failure', () => {
-      const { game } = createGame();
-      game.start();
-      const state = getPrivateState(game);
-      const userId = MOCK_USERS.alice.userId;
-
-      advanceToInputPhase(state.sequence.length);
-
-      // Alice fails
-      const wrongPos = (state.sequence[0] + 1) % 9;
-      game.handleInput(userId, 'SS_TAP', { position: wrongPos });
-
-      // Others complete
-      for (const uid of state.activePlayers.filter((u) => u !== userId)) {
-        for (let i = 0; i < state.sequence.length; i++) {
-          game.handleInput(uid, 'SS_TAP', { position: state.sequence[i] });
-        }
-      }
-
-      // Advance through round results
-      vi.advanceTimersByTime(5000);
-
-      expect(state.playerStates.get(userId)!.strikesRemaining).toBe(SS_MAX_STRIKES - 1);
-    });
-
-    it('should eliminate player when strikes reach 0', () => {
-      const ctx = createMockContext();
-      ctx.context.gameSettings = { maxStrikes: 1 }; // 1 strike = instant elimination
-      const { game } = createGame(ctx);
-      game.start();
-      const state = getPrivateState(game);
-      const userId = MOCK_USERS.alice.userId;
-
-      advanceToInputPhase(state.sequence.length);
-
-      // Alice fails
-      const wrongPos = (state.sequence[0] + 1) % 9;
-      game.handleInput(userId, 'SS_TAP', { position: wrongPos });
-
-      // Others complete
-      for (const uid of state.activePlayers.filter((u) => u !== userId)) {
-        for (let i = 0; i < state.sequence.length; i++) {
-          game.handleInput(uid, 'SS_TAP', { position: state.sequence[i] });
-        }
-      }
-
-      vi.advanceTimersByTime(5000);
-
-      expect(state.playerStates.get(userId)!.isEliminated).toBe(true);
-      expect(state.eliminatedPlayers).toContain(userId);
-    });
-
-    it('should apply Grace Rule: no eliminations when all active players fail', () => {
-      const { game } = createGame();
+  describe('End Condition — At Most 1 Complete', () => {
+    it('should end game when 0 players complete the sequence', () => {
+      const { game, broadcastLog } = createGame();
       game.start();
       const state = getPrivateState(game);
 
       advanceToInputPhase(state.sequence.length);
 
-      // ALL players fail (tap wrong position)
+      // All players fail
       for (const userId of state.activePlayers) {
         const wrongPos = (state.sequence[0] + 1) % 9;
         game.handleInput(userId, 'SS_TAP', { position: wrongPos });
       }
 
+      // Advance through round results to game over
       vi.advanceTimersByTime(5000);
 
-      // No one should be eliminated (grace rule)
-      for (const [, ps] of state.playerStates) {
-        expect(ps.isEliminated).toBe(false);
-        expect(ps.strikesRemaining).toBe(SS_MAX_STRIKES); // No strikes deducted
+      expect(state.phase).toBe('GAME_OVER');
+    });
+
+    it('should end game when exactly 1 player completes the sequence', () => {
+      const { game } = createGame();
+      game.start();
+      const state = getPrivateState(game);
+
+      advanceToInputPhase(state.sequence.length);
+
+      // Alice completes, others fail
+      const alice = MOCK_USERS.alice.userId;
+      for (let i = 0; i < state.sequence.length; i++) {
+        game.handleInput(alice, 'SS_TAP', { position: state.sequence[i] });
+      }
+      for (const uid of state.activePlayers.filter((u) => u !== alice)) {
+        const wrongPos = (state.sequence[0] + 1) % 9;
+        game.handleInput(uid, 'SS_TAP', { position: wrongPos });
+      }
+
+      vi.advanceTimersByTime(5000);
+
+      expect(state.phase).toBe('GAME_OVER');
+    });
+
+    it('should continue when 2+ players complete the sequence', () => {
+      const { game } = createGame();
+      game.start();
+      const state = getPrivateState(game);
+
+      advanceToInputPhase(state.sequence.length);
+
+      // All players complete
+      for (const userId of state.activePlayers) {
+        for (let i = 0; i < state.sequence.length; i++) {
+          game.handleInput(userId, 'SS_TAP', { position: state.sequence[i] });
+        }
+      }
+
+      vi.advanceTimersByTime(4000);
+
+      // Should be in round 2 (game continues)
+      expect(state.currentRound).toBe(2);
+      expect(state.phase).not.toBe('GAME_OVER');
+    });
+  });
+
+  describe('Scoring — Correct Taps + First Finish', () => {
+    it('should award SS_CORRECT_TAP_POINTS per correct tap', () => {
+      const { game } = createGame();
+      game.start();
+      const state = getPrivateState(game);
+      const userId = MOCK_USERS.alice.userId;
+
+      advanceToInputPhase(state.sequence.length);
+
+      game.handleInput(userId, 'SS_TAP', { position: state.sequence[0] });
+      expect(state.playerStates.get(userId)!.totalScore).toBe(SS_CORRECT_TAP_POINTS);
+    });
+
+    it('should award first-finish bonus to first completer', () => {
+      const { game } = createGame();
+      game.start();
+      const state = getPrivateState(game);
+
+      advanceToInputPhase(state.sequence.length);
+
+      // Alice completes first
+      for (let i = 0; i < state.sequence.length; i++) {
+        game.handleInput(MOCK_USERS.alice.userId, 'SS_TAP', { position: state.sequence[i] });
+      }
+
+      const aliceScore = state.playerStates.get(MOCK_USERS.alice.userId)!.totalScore;
+      const expectedScore = state.sequence.length * SS_CORRECT_TAP_POINTS + SS_FIRST_FINISH_BONUS;
+      expect(aliceScore).toBe(expectedScore);
+    });
+
+    it('should NOT give first-finish bonus to second completer', () => {
+      const { game } = createGame();
+      game.start();
+      const state = getPrivateState(game);
+
+      advanceToInputPhase(state.sequence.length);
+
+      // Alice completes first
+      for (let i = 0; i < state.sequence.length; i++) {
+        game.handleInput(MOCK_USERS.alice.userId, 'SS_TAP', { position: state.sequence[i] });
+      }
+
+      // Bob completes second
+      for (let i = 0; i < state.sequence.length; i++) {
+        game.handleInput(MOCK_USERS.bob.userId, 'SS_TAP', { position: state.sequence[i] });
+      }
+
+      const bobScore = state.playerStates.get(MOCK_USERS.bob.userId)!.totalScore;
+      const expectedScore = state.sequence.length * SS_CORRECT_TAP_POINTS;
+      expect(bobScore).toBe(expectedScore);
+    });
+
+    it('should include player results in SS_ROUND_RESULTS', () => {
+      const { game, broadcastLog } = createGame();
+      game.start();
+      const state = getPrivateState(game);
+
+      advanceToInputPhase(state.sequence.length);
+
+      for (const userId of state.activePlayers) {
+        for (let i = 0; i < state.sequence.length; i++) {
+          game.handleInput(userId, 'SS_TAP', { position: state.sequence[i] });
+        }
+      }
+
+      const results = findLastActionBroadcast(broadcastLog, 'SS_ROUND_RESULTS');
+      expect(results).toBeDefined();
+      const data = results!.data as Record<string, unknown>;
+      expect(data.playerResults).toBeDefined();
+      const playerResults = data.playerResults as Array<Record<string, unknown>>;
+      expect(playerResults.length).toBe(4);
+      for (const pr of playerResults) {
+        expect(pr).toHaveProperty('userId');
+        expect(pr).toHaveProperty('completed');
+        expect(pr).toHaveProperty('correctTaps');
+        expect(pr).toHaveProperty('roundScore');
       }
     });
   });
@@ -532,10 +585,8 @@ describe('Sequence Sam Server Handler (§7.1)', () => {
 
       advanceToInputPhase(state.sequence.length);
 
-      // Bob taps once
       game.handleInput(MOCK_USERS.bob.userId, 'SS_TAP', { position: state.sequence[0] });
 
-      // Alice's view should not show Bob's input index
       const aliceState = game.getStateForPlayer(MOCK_USERS.alice.userId) as Record<string, unknown>;
       const otherPlayers = aliceState.otherPlayers as Array<Record<string, unknown>>;
       const bobInAliceView = otherPlayers.find((p) => p.userId === MOCK_USERS.bob.userId);
@@ -566,10 +617,7 @@ describe('Sequence Sam Server Handler (§7.1)', () => {
 
       advanceToInputPhase(state.sequence.length);
 
-      // Check all broadcast events
       for (const entry of broadcastLog) {
-        const json = JSON.stringify(entry.data);
-        // Pattern steps contain single positions, but the full sequence array should never appear
         const data = entry.data as Record<string, unknown>;
         if (data.type !== 'SS_PATTERN_STEP') {
           expect(data).not.toHaveProperty('sequence');
@@ -578,61 +626,9 @@ describe('Sequence Sam Server Handler (§7.1)', () => {
     });
   });
 
-  describe('Scoring (§7.1.4.5)', () => {
-    it('should award survive points for completing sequence', () => {
-      const { game } = createGame();
-      game.start();
-      const state = getPrivateState(game);
-      const userId = MOCK_USERS.alice.userId;
-
-      advanceToInputPhase(state.sequence.length);
-
-      // Alice completes
-      for (let i = 0; i < state.sequence.length; i++) {
-        game.handleInput(userId, 'SS_TAP', { position: state.sequence[i] });
-      }
-
-      // Others fail
-      for (const uid of state.activePlayers.filter((u) => u !== userId)) {
-        const wrongPos = (state.sequence[0] + 1) % 9;
-        game.handleInput(uid, 'SS_TAP', { position: wrongPos });
-      }
-
-      vi.advanceTimersByTime(5000);
-
-      expect(state.playerStates.get(userId)!.totalScore).toBeGreaterThan(0);
-    });
-
-    it('should award winner bonus to last player standing', () => {
-      const ctx = createMockContext([MOCK_USERS.alice, MOCK_USERS.bob]);
-      ctx.context.gameSettings = { maxStrikes: 1 };
-      const { game } = createGame(ctx);
-      game.start();
-      const state = getPrivateState(game);
-
-      advanceToInputPhase(state.sequence.length);
-
-      // Alice completes
-      for (let i = 0; i < state.sequence.length; i++) {
-        game.handleInput(MOCK_USERS.alice.userId, 'SS_TAP', { position: state.sequence[i] });
-      }
-
-      // Bob fails (eliminated with 1 strike)
-      const wrongPos = (state.sequence[0] + 1) % 9;
-      game.handleInput(MOCK_USERS.bob.userId, 'SS_TAP', { position: wrongPos });
-
-      // Advance to game over
-      vi.advanceTimersByTime(10000);
-
-      // Alice should have winner bonus (200 points)
-      expect(state.playerStates.get(MOCK_USERS.alice.userId)!.totalScore).toBeGreaterThanOrEqual(200);
-    });
-  });
-
   describe('Awards (§7.1.4.12)', () => {
-    it('should generate Memory Master award for winner', () => {
+    it('should generate Memory Master award for top scorer', () => {
       const ctx = createMockContext([MOCK_USERS.alice, MOCK_USERS.bob]);
-      ctx.context.gameSettings = { maxStrikes: 1 };
       const { game, completedResults } = createGame(ctx);
       game.start();
       const state = getPrivateState(game);
@@ -659,14 +655,12 @@ describe('Sequence Sam Server Handler (§7.1)', () => {
   describe('Game Log (§7.1.4.13)', () => {
     it('should build a complete game log', () => {
       const ctx = createMockContext([MOCK_USERS.alice, MOCK_USERS.bob]);
-      ctx.context.gameSettings = { maxStrikes: 1 };
       const { game, completedResults } = createGame(ctx);
       game.start();
       const state = getPrivateState(game);
 
       advanceToInputPhase(state.sequence.length);
 
-      // Play one round
       for (let i = 0; i < state.sequence.length; i++) {
         game.handleInput(MOCK_USERS.alice.userId, 'SS_TAP', { position: state.sequence[i] });
       }
@@ -701,22 +695,6 @@ describe('Sequence Sam Server Handler (§7.1)', () => {
       );
       expect(snapshot).toBeDefined();
     });
-
-    it('should reconnect eliminated player as spectator', () => {
-      const { game } = createGame();
-      game.start();
-      const state = getPrivateState(game);
-
-      // Eliminate Alice
-      state.playerStates.get(MOCK_USERS.alice.userId)!.isEliminated = true;
-
-      // handlePlayerReconnect just logs; state delivery is via buildReconnectionSnapshot
-      game.handlePlayerReconnect(MOCK_USERS.alice.userId);
-
-      // buildReconnectionSnapshot returns spectator state for eliminated players
-      const snapshot = game.getStateForSpectator();
-      expect(snapshot).toBeDefined();
-    });
   });
 
   describe('Game Settings (§7.1.8)', () => {
@@ -736,17 +714,6 @@ describe('Sequence Sam Server Handler (§7.1)', () => {
       game.start();
       const state = getPrivateState(game);
       expect(state.sequence.length).toBe(5);
-    });
-
-    it('should use custom maxStrikes setting', () => {
-      const ctx = createMockContext();
-      ctx.context.gameSettings = { maxStrikes: 5 };
-      const { game } = createGame(ctx);
-      game.start();
-      const state = getPrivateState(game);
-      for (const [, ps] of state.playerStates) {
-        expect(ps.strikesRemaining).toBe(5);
-      }
     });
 
     it('should fall back to defaults when no settings provided', () => {

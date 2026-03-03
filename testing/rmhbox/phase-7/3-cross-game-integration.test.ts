@@ -144,12 +144,12 @@ describe('Cross-Game Integration (§7.5 — SS + HK)', () => {
   });
 
   describe('Game Settings Schema Completeness (§7.6.1)', () => {
-    it('should have 5 settings for Sequence Sam', () => {
-      expect(SEQUENCE_SAM_SETTINGS.length).toBe(5);
+    it('should have 4 settings for Sequence Sam', () => {
+      expect(SEQUENCE_SAM_SETTINGS.length).toBe(4);
     });
 
-    it('should have 4 settings for Human Keyboard', () => {
-      expect(HUMAN_KEYBOARD_SETTINGS.length).toBe(4);
+    it('should have 3 settings for Human Keyboard', () => {
+      expect(HUMAN_KEYBOARD_SETTINGS.length).toBe(3);
     });
 
     it('should have key, type, label, default for every SS setting', () => {

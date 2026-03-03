@@ -4,6 +4,10 @@
  * Phase enum, interfaces, and type definitions for the Human Keyboard minigame.
  * Human Keyboard is a cooperative typing game where each player controls
  * a subset of the alphabet and they must work together to type a sentence.
+ *
+ * Scoring: each player's score = accuracy × typingSpeed × 100,
+ * where accuracy = correctPresses / totalPresses and
+ * typingSpeed = totalPresses / totalTurnTimeSeconds.
  */
 
 import type { TargetSentence } from '@/lib/rmhbox/human-keyboard/data-loader';
@@ -19,8 +23,10 @@ export interface HKPlayerStats {
   correctPresses: number;
   wrongPresses: number;
   wrongPlayerPresses: number;
-  accuracy: number;
-  totalScore: number;
+  /** Cumulative milliseconds where this player's turn was active. */
+  turnTimeMs: number;
+  /** Timestamp when the player's turn started (null if not their turn). */
+  turnStartedAt: number | null;
   currentKeys: string[];
 }
 
@@ -36,7 +42,8 @@ export interface HumanKeyboardState {
   nextReshuffleAt: number;
   reshuffleCount: number;
   playerStats: Map<string, HKPlayerStats>;
-  lockUntil: number | null;
+  /** userId of the player whose turn it currently is. */
+  currentTurnPlayer: string | null;
   phaseStartedAt: number;
   phaseEndsAt: number;
   startedAt: number;
@@ -49,9 +56,13 @@ export interface HKPlayerResult {
   correctPresses: number;
   wrongPresses: number;
   wrongPlayerPresses: number;
+  /** Accuracy as a percentage (0-100). */
   accuracy: number;
+  /** Average typing speed in letters per second. */
+  typingSpeed: number;
+  /** Effective typing speed = accuracy/100 × typingSpeed. */
+  effectiveSpeed: number;
   score: number;
-  isMVP: boolean;
 }
 
 export interface ActionLogEntry {

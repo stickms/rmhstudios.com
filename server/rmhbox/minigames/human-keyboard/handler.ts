@@ -3,8 +3,11 @@
  *
  * A cooperative typing game where each player controls a subset of the
  * alphabet. The team must work together to type a target sentence.
- * Keys reshuffle periodically, adding chaos. Wrong key presses lock
- * the cursor briefly.
+ * Keys reshuffle periodically, adding chaos.
+ *
+ * Scoring: each player's score = accuracy × typingSpeed × 100,
+ * where accuracy = correct / total presses (as ratio), and
+ * typingSpeed = total presses / total turn time (letters/sec).
  *
  * Phases:
  *   SENTENCE_REVEAL → TYPING → RESULTS
@@ -27,14 +30,9 @@ import {
   HK_RESHUFFLE_INTERVAL_SECONDS,
   HK_RESHUFFLE_WARNING_SECONDS,
   HK_SPACE_DELAY_MS,
-  HK_WRONG_KEY_PENALTY_MS,
   HK_INPUT_RATE_LIMIT,
-  HK_CORRECT_KEY_POINTS,
-  HK_WRONG_KEY_PENALTY_POINTS,
-  HK_PERFECT_ACCURACY_BONUS,
-  HK_COMPLETION_BONUS,
-  HK_TIME_BONUS_PER_SECOND,
-  HK_MVP_BONUS,
+  HK_EFFECTIVE_SPEED_MULTIPLIER,
+  HK_FIRST_FINISH_BONUS,
   HK_ENABLE_RESHUFFLE,
 } from '@/lib/rmhbox/constants';
 import { logger } from '../../logger';
@@ -136,8 +134,8 @@ export class HumanKeyboardGame extends BaseMinigame {
         correctPresses: 0,
         wrongPresses: 0,
         wrongPlayerPresses: 0,
-        accuracy: 100,
-        totalScore: 0,
+        turnTimeMs: 0,
+        turnStartedAt: null,
         currentKeys: keys,
       });
       this.pressTimestamps.set(userId, []);
@@ -155,7 +153,7 @@ export class HumanKeyboardGame extends BaseMinigame {
       nextReshuffleAt: 0,
       reshuffleCount: 0,
       playerStats,
-      lockUntil: null,
+      currentTurnPlayer: null,
       phaseStartedAt: Date.now(),
       phaseEndsAt: Date.now(),
       startedAt: 0,
@@ -202,6 +200,37 @@ export class HumanKeyboardGame extends BaseMinigame {
     return assignments;
   }
 
+  // ─── Turn Tracking ──────────────────────────────────────────
+
+  /**
+   * Updates the current turn player based on the next expected letter.
+   * Accumulates turn time for the outgoing player and starts tracking
+   * for the incoming player.
+   */
+  private updateTurnPlayer(): void {
+    const nextLetter = this.getNextExpectedLetter();
+    const newTurnPlayer = nextLetter ? (this.state.letterToPlayer.get(nextLetter) ?? null) : null;
+    const now = Date.now();
+
+    // Close out the previous turn player's turn time
+    if (this.state.currentTurnPlayer) {
+      const prevStats = this.state.playerStats.get(this.state.currentTurnPlayer);
+      if (prevStats && prevStats.turnStartedAt !== null) {
+        prevStats.turnTimeMs += now - prevStats.turnStartedAt;
+        prevStats.turnStartedAt = null;
+      }
+    }
+
+    // Start tracking the new turn player
+    this.state.currentTurnPlayer = newTurnPlayer;
+    if (newTurnPlayer) {
+      const newStats = this.state.playerStats.get(newTurnPlayer);
+      if (newStats) {
+        newStats.turnStartedAt = now;
+      }
+    }
+  }
+
   // ─── Typing Phase ────────────────────────────────────────────
 
   private startTypingPhase(): void {
@@ -228,8 +257,9 @@ export class HumanKeyboardGame extends BaseMinigame {
     // Schedule end of typing phase
     this.setTimeout(() => this.endTypingPhase(), typingDuration * 1000);
 
-    // Handle leading spaces
+    // Handle leading spaces and set initial turn
     this.checkAndAdvanceSpaces();
+    this.updateTurnPlayer();
 
     logger.info({
       event: 'human_keyboard:typing_phase_start',
@@ -318,6 +348,9 @@ export class HumanKeyboardGame extends BaseMinigame {
       });
     }
 
+    // Update turn tracking after reshuffle (keys may have changed owner)
+    this.updateTurnPlayer();
+
     // Schedule next reshuffle
     this.scheduleReshuffleWarning();
 
@@ -359,6 +392,9 @@ export class HumanKeyboardGame extends BaseMinigame {
     this.state.isComplete = true;
     this.state.completedAt = Date.now();
 
+    // Close out current turn time
+    this.updateTurnPlayer();
+
     this.logAction('progress_milestone', {
       milestone: 100,
       elapsedMs: this.state.completedAt - this.state.startedAt,
@@ -386,6 +422,16 @@ export class HumanKeyboardGame extends BaseMinigame {
 
     this.clearPhaseTimer();
     this.state.phase = 'RESULTS';
+
+    // Close out any lingering turn time
+    if (this.state.currentTurnPlayer) {
+      const stats = this.state.playerStats.get(this.state.currentTurnPlayer);
+      if (stats && stats.turnStartedAt !== null) {
+        stats.turnTimeMs += Date.now() - stats.turnStartedAt;
+        stats.turnStartedAt = null;
+      }
+      this.state.currentTurnPlayer = null;
+    }
 
     this.computeAndBroadcastResults();
   }
@@ -416,12 +462,6 @@ export class HumanKeyboardGame extends BaseMinigame {
       timestamps.push(now);
     }
 
-    // Check cursor lock
-    const wrongKeyLockMs = this.getSetting('wrongKeyLockMs', HK_WRONG_KEY_PENALTY_MS);
-    if (this.state.lockUntil && now < this.state.lockUntil) {
-      return; // Cursor locked
-    }
-
     // Determine expected character
     let expectedIdx = this.state.displayCursorPosition;
     // Skip spaces to find next letter
@@ -431,64 +471,51 @@ export class HumanKeyboardGame extends BaseMinigame {
     if (expectedIdx >= this.state.normalizedText.length) return;
     const expectedChar = this.state.normalizedText[expectedIdx];
 
-    // Determine who owns this key
-    const keyOwner = this.state.letterToPlayer.get(key);
+    // Determine who owns the expected key
+    const expectedOwner = this.state.letterToPlayer.get(expectedChar);
     const stats = this.state.playerStats.get(userId);
     if (!stats) return;
 
-    if (key === expectedChar) {
-      if (keyOwner === userId) {
-        // Correct key by correct player
-        stats.correctPresses++;
-        this.state.cursorPosition++;
-        this.state.displayCursorPosition = expectedIdx + 1;
+    if (key === expectedChar && expectedOwner === userId) {
+      // Correct key by correct player
+      stats.correctPresses++;
+      this.state.cursorPosition++;
+      this.state.displayCursorPosition = expectedIdx + 1;
 
-        const player = this.context.players.get(userId);
-        this.context.broadcastToLobby('rmhbox:game:action', {
-          type: 'HK_KEY_CORRECT',
-          key,
-          userId,
-          userName: player?.userName ?? 'Unknown',
-          cursorPosition: this.state.cursorPosition,
-          displayCursorPosition: this.state.displayCursorPosition,
-        });
+      const player = this.context.players.get(userId);
+      this.context.broadcastToLobby('rmhbox:game:action', {
+        type: 'HK_KEY_CORRECT',
+        key,
+        userId,
+        userName: player?.userName ?? 'Unknown',
+        cursorPosition: this.state.cursorPosition,
+        displayCursorPosition: this.state.displayCursorPosition,
+      });
 
-        // Check progress milestones
-        this.checkProgressMilestone();
+      // Check progress milestones
+      this.checkProgressMilestone();
 
-        // Check for spaces after this character
-        this.checkAndAdvanceSpaces();
-      } else {
-        // Correct key by wrong player
-        stats.wrongPlayerPresses++;
-        this.context.sendToPlayer(userId, 'rmhbox:game:action', {
-          type: 'HK_KEY_WRONG_PLAYER',
-          key,
-          correctOwner: keyOwner ?? 'unknown',
-        });
-      }
+      // Check for spaces after this character
+      this.checkAndAdvanceSpaces();
+
+      // Update turn player (next letter may belong to someone else)
+      this.updateTurnPlayer();
+    } else if (key === expectedChar && expectedOwner !== userId) {
+      // Correct key by wrong player — no cursor lock, just feedback
+      stats.wrongPlayerPresses++;
+      this.context.sendToPlayer(userId, 'rmhbox:game:action', {
+        type: 'HK_KEY_WRONG_PLAYER',
+        key,
+        correctOwner: expectedOwner ?? 'unknown',
+      });
     } else {
-      // Wrong key entirely
+      // Wrong key entirely — tracked but no cursor lock
       stats.wrongPresses++;
       this.context.sendToPlayer(userId, 'rmhbox:game:action', {
         type: 'HK_KEY_WRONG',
         key,
-        penaltyMs: wrongKeyLockMs,
       });
-
-      if (wrongKeyLockMs > 0) {
-        this.state.lockUntil = now + wrongKeyLockMs;
-        this.context.broadcastToLobby('rmhbox:game:action', {
-          type: 'HK_CURSOR_LOCKED',
-          lockDurationMs: wrongKeyLockMs,
-          reason: 'wrong key',
-        });
-      }
     }
-
-    // Update accuracy
-    const totalPresses = stats.correctPresses + stats.wrongPresses;
-    stats.accuracy = totalPresses > 0 ? Math.round((stats.correctPresses / totalPresses) * 100) : 100;
   }
 
   private checkProgressMilestone(): void {
@@ -510,16 +537,21 @@ export class HumanKeyboardGame extends BaseMinigame {
   // ─── Scoring ─────────────────────────────────────────────────
 
   private computeAndBroadcastResults(): void {
-    const typingDuration = this.getSetting('typingDuration', HK_TYPING_DURATION_SECONDS);
-    const results = this.computePlayerResults(typingDuration);
+    const results = this.computePlayerResults();
+
+    // Compute team aggregate
+    const teamAggregate = this.computeTeamAggregate(results.playerResults);
 
     // Log player summaries
     for (const result of results.playerResults) {
       this.logAction('player_summary', {
         userId: result.userId,
-        correctKeys: result.correctPresses,
-        wrongKeys: result.wrongPresses,
+        correctPresses: result.correctPresses,
+        wrongPresses: result.wrongPresses,
         accuracy: result.accuracy,
+        typingSpeed: result.typingSpeed,
+        effectiveSpeed: result.effectiveSpeed,
+        score: result.score,
       });
     }
 
@@ -527,7 +559,6 @@ export class HumanKeyboardGame extends BaseMinigame {
       completed: this.state.isComplete,
       finalProgress: this.state.cursorPosition / this.state.targetSentence.letterCount,
       elapsedMs: (this.state.completedAt ?? Date.now()) - this.state.startedAt,
-      mvpUserId: results.playerResults.find((r) => r.isMVP)?.userId ?? null,
       totalCorrectKeys: results.playerResults.reduce((s, r) => s + r.correctPresses, 0),
       totalWrongKeys: results.playerResults.reduce((s, r) => s + r.wrongPresses, 0),
     });
@@ -536,14 +567,13 @@ export class HumanKeyboardGame extends BaseMinigame {
       event: 'human_keyboard:results',
       lobbyId: this.context.lobbyId,
       completed: this.state.isComplete,
-      teamPerformance: results.teamPerformance,
+      teamAggregate,
     });
 
     this.context.broadcastToLobby('rmhbox:game:action', {
       type: 'HK_RESULTS',
       playerResults: results.playerResults,
-      teamPerformance: results.teamPerformance,
-      timeBonus: results.timeBonus,
+      teamAggregate,
       completed: this.state.isComplete,
     });
 
@@ -551,76 +581,52 @@ export class HumanKeyboardGame extends BaseMinigame {
     this.setTimeout(() => this.endGame(), HK_RESULTS_SECONDS * 1000);
   }
 
-  private computePlayerResults(typingDuration: number): {
-    playerResults: HKPlayerResult[];
-    teamPerformance: string;
-    teamMultiplier: number;
-    timeBonus: number;
-  } {
-    // Determine team performance
-    let teamPerformance: string;
-    let teamMultiplier: number;
-    let timeBonus = 0;
-
-    if (this.state.isComplete && this.state.completedAt && this.state.startedAt) {
-      const elapsedMs = this.state.completedAt - this.state.startedAt;
-      const elapsedSeconds = elapsedMs / 1000;
-      const limitSeconds = typingDuration;
-      const ratio = elapsedSeconds / limitSeconds;
-
-      if (ratio <= 0.5) {
-        teamPerformance = 'Outstanding';
-        teamMultiplier = 1.5;
-      } else if (ratio <= 0.75) {
-        teamPerformance = 'Good';
-        teamMultiplier = 1.0;
-      } else {
-        teamPerformance = 'Good';
-        teamMultiplier = 1.0;
-      }
-
-      timeBonus = HK_TIME_BONUS_PER_SECOND * Math.floor(limitSeconds - elapsedSeconds);
-    } else {
-      teamPerformance = 'Better luck next time';
-      teamMultiplier = 0.5;
-    }
-
-    // Find MVP (most correct presses)
-    let mvpUserId: string | null = null;
-    let maxCorrect = -1;
-    for (const [userId, stats] of this.state.playerStats) {
-      if (stats.correctPresses > maxCorrect) {
-        maxCorrect = stats.correctPresses;
-        mvpUserId = userId;
-      }
-    }
-
+  /**
+   * Computes per-player results using the new scoring model:
+   *   accuracy = correctPresses / totalPresses (as ratio, 0-1)
+   *   typingSpeed = totalPresses / totalTurnTimeSec (letters/sec)
+   *   effectiveSpeed = accuracy × typingSpeed
+   *   score = effectiveSpeed × 100
+   *
+   * First-to-finish bonus (HK_FIRST_FINISH_BONUS) added if sentence completed.
+   */
+  private computePlayerResults(): { playerResults: HKPlayerResult[] } {
     const playerResults: HKPlayerResult[] = [];
+
+    // Find player with highest effective speed for MVP
+    let maxEffectiveSpeed = -1;
+    const effectiveSpeeds: Map<string, number> = new Map();
+
+    for (const [userId, stats] of this.state.playerStats) {
+      const totalPresses = stats.correctPresses + stats.wrongPresses;
+      const accuracy = totalPresses > 0 ? stats.correctPresses / totalPresses : 0;
+      const turnTimeSec = stats.turnTimeMs / 1000;
+      const typingSpeed = turnTimeSec > 0 ? totalPresses / turnTimeSec : 0;
+      const effectiveSpeed = accuracy * typingSpeed;
+
+      effectiveSpeeds.set(userId, effectiveSpeed);
+      if (effectiveSpeed > maxEffectiveSpeed) {
+        maxEffectiveSpeed = effectiveSpeed;
+      }
+    }
 
     for (const [userId, stats] of this.state.playerStats) {
       const player = this.context.players.get(userId);
       const userName = player?.userName ?? 'Unknown';
-      const isMVP = userId === mvpUserId;
 
-      let score = stats.correctPresses * HK_CORRECT_KEY_POINTS
-        + stats.wrongPresses * HK_WRONG_KEY_PENALTY_POINTS;
+      const totalPresses = stats.correctPresses + stats.wrongPresses;
+      const accuracy = totalPresses > 0 ? stats.correctPresses / totalPresses : 0;
+      const turnTimeSec = stats.turnTimeMs / 1000;
+      const typingSpeed = turnTimeSec > 0 ? totalPresses / turnTimeSec : 0;
+      const effectiveSpeed = accuracy * typingSpeed;
 
-      if (stats.accuracy === 100 && stats.correctPresses > 0) {
-        score += HK_PERFECT_ACCURACY_BONUS;
-      }
-
+      // Score = effectiveSpeed × 100, plus completion bonus
+      let score = Math.round(effectiveSpeed * HK_EFFECTIVE_SPEED_MULTIPLIER);
       if (this.state.isComplete) {
-        score += HK_COMPLETION_BONUS;
-        score += timeBonus;
+        score += HK_FIRST_FINISH_BONUS;
       }
-
-      if (isMVP) {
-        score += HK_MVP_BONUS;
-      }
-
-      // Apply team multiplier
-      score = Math.round(score * teamMultiplier);
-      stats.totalScore = score;
+      stats.correctPresses; // just to reference
+      const accuracyPercent = Math.round(accuracy * 100);
 
       playerResults.push({
         userId,
@@ -628,16 +634,61 @@ export class HumanKeyboardGame extends BaseMinigame {
         correctPresses: stats.correctPresses,
         wrongPresses: stats.wrongPresses,
         wrongPlayerPresses: stats.wrongPlayerPresses,
-        accuracy: stats.accuracy,
+        accuracy: accuracyPercent,
+        typingSpeed: Math.round(typingSpeed * 100) / 100, // 2 decimal places
+        effectiveSpeed: Math.round(effectiveSpeed * 100) / 100,
         score,
-        isMVP,
       });
     }
 
     // Sort by score descending
     playerResults.sort((a, b) => b.score - a.score);
 
-    return { playerResults, teamPerformance, teamMultiplier, timeBonus };
+    return { playerResults };
+  }
+
+  /**
+   * Computes team-aggregate accuracy and typing speed.
+   */
+  private computeTeamAggregate(playerResults: HKPlayerResult[]): {
+    teamAccuracy: number;
+    teamTypingSpeed: number;
+    teamEffectiveSpeed: number;
+    completionTimeSec: number | null;
+    sentence: string;
+  } {
+    let totalCorrect = 0;
+    let totalPresses = 0;
+    let totalTurnTimeMs = 0;
+
+    for (const [, stats] of this.state.playerStats) {
+      totalCorrect += stats.correctPresses;
+      totalPresses += stats.correctPresses + stats.wrongPresses;
+      totalTurnTimeMs += stats.turnTimeMs;
+    }
+
+    const teamAccuracy = totalPresses > 0 ? Math.round((totalCorrect / totalPresses) * 100) : 0;
+    const totalTurnTimeSec = totalTurnTimeMs / 1000;
+    const teamTypingSpeed = totalTurnTimeSec > 0
+      ? Math.round((totalPresses / totalTurnTimeSec) * 100) / 100
+      : 0;
+    const teamEffectiveSpeed = totalTurnTimeSec > 0
+      ? Math.round(((totalCorrect / Math.max(totalPresses, 1)) * (totalPresses / totalTurnTimeSec)) * 100) / 100
+      : 0;
+
+    void playerResults; // used for interface compliance
+
+    const completionTimeSec = this.state.isComplete && this.state.completedAt && this.state.startedAt
+      ? Math.round((this.state.completedAt - this.state.startedAt) / 100) / 10
+      : null;
+
+    return {
+      teamAccuracy,
+      teamTypingSpeed,
+      teamEffectiveSpeed,
+      completionTimeSec,
+      sentence: this.state.targetSentence.text,
+    };
   }
 
   private endGame(): void {
@@ -672,12 +723,10 @@ export class HumanKeyboardGame extends BaseMinigame {
         myStats: stats ? {
           correctPresses: stats.correctPresses,
           wrongPresses: stats.wrongPresses,
-          accuracy: stats.accuracy,
         } : null,
         progress: this.state.targetSentence.letterCount > 0
           ? this.state.cursorPosition / this.state.targetSentence.letterCount
           : 0,
-        isLocked: this.state.lockUntil !== null && Date.now() < this.state.lockUntil,
         nextReshuffleIn: this.state.nextReshuffleAt > 0
           ? Math.max(0, Math.ceil((this.state.nextReshuffleAt - Date.now()) / 1000))
           : 0,
@@ -700,12 +749,11 @@ export class HumanKeyboardGame extends BaseMinigame {
       allAssignments[userId] = keys;
     }
 
-    const allStats: Record<string, { correctPresses: number; wrongPresses: number; accuracy: number }> = {};
+    const allStats: Record<string, { correctPresses: number; wrongPresses: number }> = {};
     for (const [userId, stats] of this.state.playerStats) {
       allStats[userId] = {
         correctPresses: stats.correctPresses,
         wrongPresses: stats.wrongPresses,
-        accuracy: stats.accuracy,
       };
     }
 
@@ -728,7 +776,6 @@ export class HumanKeyboardGame extends BaseMinigame {
         ? this.state.cursorPosition / this.state.targetSentence.letterCount
         : 0,
       isComplete: this.state.isComplete,
-      isLocked: this.state.lockUntil !== null && Date.now() < this.state.lockUntil,
     };
   }
 
@@ -784,8 +831,7 @@ export class HumanKeyboardGame extends BaseMinigame {
   // ─── Results & Awards ────────────────────────────────────────
 
   computeResults(): MinigameResults {
-    const typingDuration = this.getSetting('typingDuration', HK_TYPING_DURATION_SECONDS);
-    const results = this.computePlayerResults(typingDuration);
+    const results = this.computePlayerResults();
     const rankings = this.computeRankings(results.playerResults);
     const awards = this.computeAwards(results.playerResults);
     const duration = Date.now() - this.startedAt;
@@ -795,7 +841,6 @@ export class HumanKeyboardGame extends BaseMinigame {
       awards,
       gameSpecificData: {
         completed: this.state.isComplete,
-        teamPerformance: results.teamPerformance,
         gameLog: this.buildGameLog(),
       },
       duration,
@@ -815,18 +860,21 @@ export class HumanKeyboardGame extends BaseMinigame {
   private computeAwards(playerResults: HKPlayerResult[]): Award[] {
     const awards: Award[] = [];
 
-    // MVP Typist — most correct key presses
-    const mvp = playerResults.find((r) => r.isMVP);
-    if (mvp && mvp.correctPresses > 0) {
+    // Speed Typist — highest effective typing speed
+    const fastest = playerResults.reduce(
+      (best, pr) => (pr.effectiveSpeed > (best?.effectiveSpeed ?? 0) ? pr : best),
+      null as HKPlayerResult | null,
+    );
+    if (fastest && fastest.effectiveSpeed > 0) {
       awards.push({
-        userId: mvp.userId,
-        title: 'MVP Typist',
-        description: `${mvp.correctPresses} correct key presses`,
-        icon: 'crown',
+        userId: fastest.userId,
+        title: 'Speed Typist',
+        description: `${fastest.effectiveSpeed.toFixed(2)} effective letters/sec`,
+        icon: 'zap',
       });
     }
 
-    // Perfect Fingers — 100% accuracy
+    // Perfect Fingers — 100% accuracy with at least 1 correct press
     for (const pr of playerResults) {
       if (pr.accuracy === 100 && pr.correctPresses > 0) {
         awards.push({
@@ -839,32 +887,21 @@ export class HumanKeyboardGame extends BaseMinigame {
       }
     }
 
-    // Butterfingers — most wrong key presses
-    const butterfingers = playerResults.reduce((max, pr) =>
-      pr.wrongPresses > (max?.wrongPresses ?? 0) ? pr : max,
-      null as HKPlayerResult | null,
-    );
-    if (butterfingers && butterfingers.wrongPresses > 0) {
-      awards.push({
-        userId: butterfingers.userId,
-        title: 'Butterfingers',
-        description: `${butterfingers.wrongPresses} wrong key presses`,
-        icon: 'x-circle',
-      });
-    }
-
-    // Not My Job — most wrong-player presses
-    const notMyJob = playerResults.reduce((max, pr) =>
-      pr.wrongPlayerPresses > (max?.wrongPlayerPresses ?? 0) ? pr : max,
-      null as HKPlayerResult | null,
-    );
-    if (notMyJob && notMyJob.wrongPlayerPresses > 0) {
-      awards.push({
-        userId: notMyJob.userId,
-        title: 'Not My Job',
-        description: `${notMyJob.wrongPlayerPresses} presses on other players' keys`,
-        icon: 'user-x',
-      });
+    // Butterfingers — lowest accuracy (only if they actually pressed keys)
+    const activePlayers = playerResults.filter((pr) => pr.correctPresses + pr.wrongPresses > 0);
+    if (activePlayers.length > 1) {
+      const butterfingers = activePlayers.reduce(
+        (worst, pr) => (pr.accuracy < (worst?.accuracy ?? 101) ? pr : worst),
+        null as HKPlayerResult | null,
+      );
+      if (butterfingers && butterfingers.accuracy < 100) {
+        awards.push({
+          userId: butterfingers.userId,
+          title: 'Butterfingers',
+          description: `${butterfingers.accuracy}% accuracy`,
+          icon: 'x-circle',
+        });
+      }
     }
 
     // Team Spirit — awarded to ALL players if sentence completed
@@ -915,14 +952,22 @@ export class HumanKeyboardGame extends BaseMinigame {
         gameSettings: this.context.gameSettings,
       },
       actions: this.actionLog,
-      finalResults: Array.from(this.state.playerStats.entries()).map(([userId, stats]) => ({
-        userId,
-        userName: this.context.players.get(userId)?.userName ?? 'Unknown',
-        score: stats.totalScore,
-        correctPresses: stats.correctPresses,
-        wrongPresses: stats.wrongPresses,
-        accuracy: stats.accuracy,
-      })),
+      finalResults: Array.from(this.state.playerStats.entries()).map(([userId, stats]) => {
+        const totalPresses = stats.correctPresses + stats.wrongPresses;
+        const accuracy = totalPresses > 0 ? stats.correctPresses / totalPresses : 0;
+        const turnTimeSec = stats.turnTimeMs / 1000;
+        const typingSpeed = turnTimeSec > 0 ? totalPresses / turnTimeSec : 0;
+        return {
+          userId,
+          userName: this.context.players.get(userId)?.userName ?? 'Unknown',
+          correctPresses: stats.correctPresses,
+          wrongPresses: stats.wrongPresses,
+          accuracy: Math.round(accuracy * 100),
+          typingSpeed: Math.round(typingSpeed * 100) / 100,
+          effectiveSpeed: Math.round(accuracy * typingSpeed * 100) / 100,
+          score: Math.round(accuracy * typingSpeed * HK_EFFECTIVE_SPEED_MULTIPLIER),
+        };
+      }),
     };
   }
 }

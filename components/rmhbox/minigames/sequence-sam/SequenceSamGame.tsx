@@ -6,9 +6,11 @@
  *   ROUND_START      → Round number + chaos announcement
  *   PATTERN_DISPLAY  → GridDisplay (non-interactive, tiles flash)
  *   INPUT            → GridDisplay (interactive, player taps)
- *   ROUND_RESULTS    → Round summary
- *   ELIMINATION      → EliminationBanner
+ *   ROUND_RESULTS    → Round summary with per-player results
  *   GAME_OVER        → SequenceSamResults (final scores + awards)
+ *
+ * Scoring: points per correct tap + first-finish bonus.
+ * Game ends when ≤1 player completes the latest sequence.
  */
 'use client';
 
@@ -18,9 +20,7 @@ import { emitGameInput, useGameSocket, extractTimerTick } from '@/lib/rmhbox/min
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { playSound } from '@/lib/rmhbox/audio';
 import GridDisplay from './GridDisplay';
-import StrikeIndicator from './StrikeIndicator';
 import ChaosOverlay from './ChaosOverlay';
-import EliminationBanner from './EliminationBanner';
 import SequenceSamResults from './SequenceSamResults';
 import type { TileState } from './GridTile';
 import type { Ranking, AwardEntry } from './SequenceSamResults';
@@ -30,14 +30,16 @@ type Phase =
   | 'PATTERN_DISPLAY'
   | 'INPUT'
   | 'ROUND_RESULTS'
-  | 'ELIMINATION'
   | 'GAME_OVER';
 
-interface PlayerStatus {
+/** Per-player round result from SS_ROUND_RESULTS. */
+interface RoundPlayerResult {
   userId: string;
   userName: string;
   completed: boolean;
-  strikes: number;
+  correctTaps: number;
+  roundScore: number;
+  totalScore: number;
 }
 
 interface SequenceSamGameProps {
@@ -53,18 +55,15 @@ export default function SequenceSamGame({ playerId, playerName: _playerName }: S
   const [phase, setPhase] = useState<Phase>('ROUND_START');
   const [currentRound, setCurrentRound] = useState(1);
   const [isChaos, setIsChaos] = useState(false);
+  const [rotationDegrees, setRotationDegrees] = useState(0);
   const [rotated, setRotated] = useState(false);
   const [tiles, setTiles] = useState<TileState[]>(DEFAULT_TILES);
-  const [strikesRemaining, setStrikesRemaining] = useState(3);
-  const [maxStrikes, setMaxStrikes] = useState(3);
-  const [playerStatuses, setPlayerStatuses] = useState<PlayerStatus[]>([]);
   const [progress, setProgress] = useState(0);
   const [patternLength, setPatternLength] = useState(0);
   const [rankings, setRankings] = useState<Ranking[]>([]);
   const [awards, setAwards] = useState<AwardEntry[]>([]);
-  const [eliminationRank, setEliminationRank] = useState(0);
-  const [eliminationScore, setEliminationScore] = useState(0);
   const [timeRemaining, setTimeRemaining] = useState(0);
+  const [roundResults, setRoundResults] = useState<RoundPlayerResult[]>([]);
 
   const players = useRMHboxStore((s) => s.lobby?.players);
 
@@ -77,12 +76,12 @@ export default function SequenceSamGame({ playerId, playerName: _playerName }: S
           setPhase('ROUND_START');
           setCurrentRound(data.round as number);
           setIsChaos((data.isChaosRound as boolean) ?? false);
+          setRotationDegrees((data.rotationDegrees as number) ?? 0);
           setRotated(false);
           setTiles([...DEFAULT_TILES]);
           setProgress(0);
           setPatternLength((data.sequenceLength as number) ?? 0);
-          if (data.maxStrikes != null) setMaxStrikes(data.maxStrikes as number);
-          if (data.strikesRemaining != null) setStrikesRemaining(data.strikesRemaining as number);
+          setRoundResults([]);
           playSound('goFanfare');
           break;
         }
@@ -131,7 +130,6 @@ export default function SequenceSamGame({ playerId, playerName: _playerName }: S
             setProgress((prev) => prev + 1);
             playSound('scoreDing');
           } else {
-            setStrikesRemaining((prev) => Math.max(0, prev - 1));
             playSound('buzzer');
           }
 
@@ -150,16 +148,6 @@ export default function SequenceSamGame({ playerId, playerName: _playerName }: S
 
         case 'SS_PLAYER_COMPLETE': {
           const userId = data.userId as string;
-          setPlayerStatuses((prev) => {
-            const existing = prev.find((p) => p.userId === userId);
-            if (existing) {
-              return prev.map((p) =>
-                p.userId === userId ? { ...p, completed: true } : p,
-              );
-            }
-            const p = players?.find((pl) => pl.userId === userId);
-            return [...prev, { userId, userName: p?.userName ?? userId, completed: true, strikes: 0 }];
-          });
           if (userId === playerId) {
             playSound('chime');
           }
@@ -168,16 +156,6 @@ export default function SequenceSamGame({ playerId, playerName: _playerName }: S
 
         case 'SS_PLAYER_FAILED': {
           const userId = data.userId as string;
-          setPlayerStatuses((prev) => {
-            const existing = prev.find((p) => p.userId === userId);
-            if (existing) {
-              return prev.map((p) =>
-                p.userId === userId ? { ...p, completed: false, strikes: (data.strikes as number) ?? 0 } : p,
-              );
-            }
-            const p = players?.find((pl) => pl.userId === userId);
-            return [...prev, { userId, userName: p?.userName ?? userId, completed: false, strikes: (data.strikes as number) ?? 0 }];
-          });
           if (userId === playerId) {
             playSound('buzzer');
           }
@@ -186,27 +164,11 @@ export default function SequenceSamGame({ playerId, playerName: _playerName }: S
 
         case 'SS_ROUND_RESULTS': {
           setPhase('ROUND_RESULTS');
-          setPlayerStatuses([]);
-          const results = data.playerResults as Record<string, { completed: boolean; strikes: number }> | undefined;
+          const results = data.playerResults as RoundPlayerResult[] | undefined;
           if (results) {
-            const statuses: PlayerStatus[] = Object.entries(results).map(([uid, r]) => {
-              const p = players?.find((pl) => pl.userId === uid);
-              return { userId: uid, userName: p?.userName ?? uid, completed: r.completed, strikes: r.strikes };
-            });
-            setPlayerStatuses(statuses);
+            setRoundResults(results);
           }
           playSound('chime');
-          break;
-        }
-
-        case 'SS_ELIMINATION': {
-          const userId = data.userId as string;
-          if (userId === playerId) {
-            setPhase('ELIMINATION');
-            setEliminationRank((data.rank as number) ?? 0);
-            setEliminationScore((data.score as number) ?? 0);
-            playSound('buzzer');
-          }
           break;
         }
 
@@ -272,14 +234,13 @@ export default function SequenceSamGame({ playerId, playerName: _playerName }: S
         p === 'PATTERN_DISPLAY' ||
         p === 'INPUT' ||
         p === 'ROUND_RESULTS' ||
-        p === 'ELIMINATION' ||
         p === 'GAME_OVER'
       ) {
         setPhase(p);
       }
       if (snapshot.currentRound) setCurrentRound(snapshot.currentRound as number);
       if (snapshot.isChaosRound) setIsChaos(snapshot.isChaosRound as boolean);
-      if (snapshot.myStrikesRemaining != null) setStrikesRemaining(snapshot.myStrikesRemaining as number);
+      if (snapshot.rotationDegrees != null) setRotationDegrees(snapshot.rotationDegrees as number);
       if (snapshot.sequenceLength != null) setPatternLength(snapshot.sequenceLength as number);
     },
     [],
@@ -309,7 +270,7 @@ export default function SequenceSamGame({ playerId, playerName: _playerName }: S
           transition={{ duration: 0.5 }}
           className="flex flex-col items-center justify-center gap-4 text-(--rmhbox-text)"
         >
-          <ChaosOverlay isChaos={isChaos} />
+          <ChaosOverlay isChaos={isChaos} rotationDegrees={rotationDegrees} />
           <p className="text-sm uppercase tracking-wider text-(--rmhbox-text-muted)">
             Round {currentRound}
           </p>
@@ -321,7 +282,6 @@ export default function SequenceSamGame({ playerId, playerName: _playerName }: S
           >
             {isChaos ? 'Chaos Round!' : 'Watch the Pattern!'}
           </motion.h1>
-          <StrikeIndicator strikesRemaining={strikesRemaining} maxStrikes={maxStrikes} />
         </motion.div>
       )}
 
@@ -336,7 +296,11 @@ export default function SequenceSamGame({ playerId, playerName: _playerName }: S
         >
           <div className="flex w-full max-w-md items-center justify-between px-2 text-sm text-(--rmhbox-text-muted)">
             <span>Round {currentRound}</span>
-            <StrikeIndicator strikesRemaining={strikesRemaining} maxStrikes={maxStrikes} />
+            {isChaos && (
+              <span className="rounded-full bg-(--rmhbox-danger)/20 px-3 py-0.5 text-xs font-bold text-(--rmhbox-danger) animate-pulse">
+                🔄 CHAOS — Rotated {rotationDegrees}°
+              </span>
+            )}
             {phase === 'INPUT' && (
               <span className="font-mono">{progress}/{patternLength}</span>
             )}
@@ -373,40 +337,26 @@ export default function SequenceSamGame({ playerId, playerName: _playerName }: S
           <h2 className="text-center text-xl font-bold">Round {currentRound} Results</h2>
           <div className="rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) p-4">
             <ul className="space-y-2">
-              {playerStatuses.map((ps) => (
+              {roundResults.map((pr) => (
                 <li
-                  key={ps.userId}
+                  key={pr.userId}
                   className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm ${
-                    ps.userId === playerId ? 'bg-(--rmhbox-accent)/10 ring-1 ring-(--rmhbox-accent)/30' : ''
+                    pr.userId === playerId ? 'bg-(--rmhbox-accent)/10 ring-1 ring-(--rmhbox-accent)/30' : ''
                   }`}
                 >
-                  <span className="font-semibold">{ps.userName}</span>
-                  <div className="flex items-center gap-2">
-                    <span className={ps.completed ? 'text-(--rmhbox-success)' : 'text-(--rmhbox-danger)'}>
-                      {ps.completed ? '✓ Completed' : '✗ Failed'}
+                  <span className="font-semibold">{pr.userName}</span>
+                  <div className="flex items-center gap-3">
+                    <span className={pr.completed ? 'text-(--rmhbox-success)' : 'text-(--rmhbox-danger)'}>
+                      {pr.completed ? '✓ Completed' : `✗ ${pr.correctTaps} taps`}
                     </span>
-                    {ps.strikes > 0 && (
-                      <span className="text-xs text-(--rmhbox-danger)">
-                        {ps.strikes} strike{ps.strikes !== 1 ? 's' : ''}
-                      </span>
-                    )}
+                    <span className="font-mono text-xs text-(--rmhbox-accent)">
+                      +{pr.roundScore}
+                    </span>
                   </div>
                 </li>
               ))}
             </ul>
           </div>
-        </motion.div>
-      )}
-
-      {phase === 'ELIMINATION' && (
-        <motion.div
-          key="elimination"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.3 }}
-        >
-          <EliminationBanner rank={eliminationRank} score={eliminationScore} />
         </motion.div>
       )}
 

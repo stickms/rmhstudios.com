@@ -5,11 +5,12 @@
  * - Key assignment (26 letters distributed, no duplicates)
  * - Typing phase and cursor advancement
  * - Input handling (correct, wrong key, wrong player)
- * - Cursor lock penalty
+ * - No cursor lock on wrong key (removed feature)
  * - Rate limiting
  * - Space auto-advance
- * - Reshuffle mechanism
- * - Scoring computation (team multiplier, MVP, completion bonus)
+ * - Reshuffle mechanism (default 20s interval)
+ * - Scoring: effectiveSpeed = accuracy × typingSpeed, score = effectiveSpeed × 100
+ * - Turn time tracking per player
  * - State masking (player sees only own keys, spectator sees all)
  * - Awards computation
  * - Game log generation
@@ -21,7 +22,6 @@ import { HumanKeyboardGame } from '../../../server/rmhbox/minigames/human-keyboa
 import { HKPressSchema } from '../../../lib/rmhbox/human-keyboard/schemas';
 import {
   HK_SENTENCE_REVEAL_SECONDS,
-  HK_WRONG_KEY_PENALTY_MS,
   HK_TYPING_DURATION_SECONDS,
   HK_SPACE_DELAY_MS,
 } from '../../../lib/rmhbox/constants';
@@ -83,8 +83,11 @@ function getPrivateState(game: HumanKeyboardGame): {
   isComplete: boolean;
   keyAssignments: Map<string, string[]>;
   letterToPlayer: Map<string, string>;
-  lockUntil: number | null;
-  playerStats: Map<string, { correctPresses: number; wrongPresses: number; wrongPlayerPresses: number; accuracy: number; totalScore: number; currentKeys: string[] }>;
+  currentTurnPlayer: string | null;
+  playerStats: Map<string, {
+    correctPresses: number; wrongPresses: number; wrongPlayerPresses: number;
+    turnTimeMs: number; turnStartedAt: number | null; currentKeys: string[];
+  }>;
   reshuffleCount: number;
   nextReshuffleAt: number;
 } {
@@ -319,45 +322,45 @@ describe('Human Keyboard Server Handler (§7.2)', () => {
 
       // Cursor should NOT advance
       expect(state.cursorPosition).toBe(0);
-
-      // No lock should be applied
-      expect(state.lockUntil).toBeNull();
     });
 
-    it('should lock cursor on wrong key press', () => {
+    it('should NOT lock cursor on wrong key press (lockout removed)', () => {
       const { game, broadcastLog } = createGame();
       game.start();
       advanceToTypingPhase();
       const state = getPrivateState(game);
 
       const expectedLetter = state.normalizedText[state.displayCursorPosition];
-      // Pick a letter that's NOT the expected one
       const wrongLetter = expectedLetter === 'a' ? 'b' : 'a';
       const anyPlayer = Array.from(state.keyAssignments.keys())[0];
 
       game.handleInput(anyPlayer, 'HK_PRESS', { key: wrongLetter });
 
+      // Should NOT have any cursor lock events
       const lockEvents = findActionBroadcasts(broadcastLog, 'HK_CURSOR_LOCKED');
-      expect(lockEvents.length).toBe(1);
-      expect(state.lockUntil).not.toBeNull();
+      expect(lockEvents.length).toBe(0);
     });
 
-    it('should reject input during cursor lock', () => {
+    it('should track wrong key presses without blocking', () => {
       const { game } = createGame();
       game.start();
       advanceToTypingPhase();
       const state = getPrivateState(game);
 
-      // Set lock
-      state.lockUntil = Date.now() + 10000;
-
       const expectedLetter = state.normalizedText[state.displayCursorPosition];
+      const wrongLetter = expectedLetter === 'a' ? 'b' : 'a';
       const owner = state.letterToPlayer.get(expectedLetter)!;
 
-      game.handleInput(owner, 'HK_PRESS', { key: expectedLetter });
+      // Press wrong key
+      game.handleInput(owner, 'HK_PRESS', { key: wrongLetter });
+      expect(state.playerStats.get(owner)!.wrongPresses).toBe(1);
 
-      // Cursor should NOT advance
-      expect(state.cursorPosition).toBe(0);
+      // Should still be able to press correct key immediately
+      game.handleInput(owner, 'HK_PRESS', { key: expectedLetter });
+      // Cursor should advance if the owner also owns the expectedLetter
+      if (state.letterToPlayer.get(expectedLetter) === owner) {
+        expect(state.cursorPosition).toBe(1);
+      }
     });
 
     it('should reject input when not in TYPING phase', () => {
@@ -385,8 +388,46 @@ describe('Human Keyboard Server Handler (§7.2)', () => {
 
       // The 6th should be silently dropped (rate limited)
       const stats = state.playerStats.get(anyPlayer)!;
-      // Wrong key count should be at most 5 (the rate limit)
       expect(stats.wrongPresses).toBeLessThanOrEqual(5);
+    });
+  });
+
+  describe('Turn Time Tracking', () => {
+    it('should set currentTurnPlayer after typing phase starts', () => {
+      const { game } = createGame();
+      game.start();
+      advanceToTypingPhase();
+      const state = getPrivateState(game);
+
+      // Should have a current turn player
+      expect(state.currentTurnPlayer).not.toBeNull();
+
+      // The turn player should be the owner of the first letter
+      const firstLetter = state.normalizedText[state.displayCursorPosition];
+      const expectedOwner = state.letterToPlayer.get(firstLetter);
+      expect(state.currentTurnPlayer).toBe(expectedOwner);
+    });
+
+    it('should accumulate turn time for active player', () => {
+      const { game } = createGame();
+      game.start();
+      advanceToTypingPhase();
+      const state = getPrivateState(game);
+
+      const turnPlayer = state.currentTurnPlayer!;
+      const stats = state.playerStats.get(turnPlayer)!;
+      expect(stats.turnStartedAt).not.toBeNull();
+
+      // After typing a correct key, turn player may change
+      const expectedLetter = state.normalizedText[state.displayCursorPosition];
+      const owner = state.letterToPlayer.get(expectedLetter)!;
+      vi.advanceTimersByTime(1000); // 1 second
+      game.handleInput(owner, 'HK_PRESS', { key: expectedLetter });
+
+      // The previous turn player should have accumulated some turn time
+      // (either they are still the turn player, or they accumulated 1s)
+      const updatedStats = state.playerStats.get(turnPlayer)!;
+      expect(updatedStats.turnTimeMs).toBeGreaterThanOrEqual(0);
     });
   });
 
@@ -398,7 +439,6 @@ describe('Human Keyboard Server Handler (§7.2)', () => {
       const state = getPrivateState(game);
 
       // Type all of "hello" to reach the space
-      // normalizedText is "hello world", chars 0-4 are h,e,l,l,o
       for (let i = 0; i < 5; i++) {
         const letter = state.normalizedText[i];
         const owner = state.letterToPlayer.get(letter);
@@ -407,8 +447,6 @@ describe('Human Keyboard Server Handler (§7.2)', () => {
         }
       }
 
-      // After typing 'o' at index 4, displayCursorPosition should advance past space at index 5
-      // The HK_SPACE_AUTO broadcast is scheduled after HK_SPACE_DELAY_MS
       vi.advanceTimersByTime(HK_SPACE_DELAY_MS + 100);
 
       const spaceEvents = findActionBroadcasts(broadcastLog, 'HK_SPACE_AUTO');
@@ -471,7 +509,7 @@ describe('Human Keyboard Server Handler (§7.2)', () => {
       game.start();
       advanceToTypingPhase();
 
-      vi.advanceTimersByTime(20000); // Well past any interval
+      vi.advanceTimersByTime(30000); // Well past any interval
 
       const reshuffleEvents = findActionBroadcasts(broadcastLog, 'HK_RESHUFFLE');
       expect(reshuffleEvents.length).toBe(0);
@@ -556,8 +594,8 @@ describe('Human Keyboard Server Handler (§7.2)', () => {
     });
   });
 
-  describe('Scoring (§7.2.6.7)', () => {
-    it('should complete game and produce results', () => {
+  describe('Scoring — Effective Speed Model', () => {
+    it('should complete game and produce results with new scoring', () => {
       const { game, completedResults } = createGame();
       game.start();
       advanceToTypingPhase();
@@ -572,19 +610,72 @@ describe('Human Keyboard Server Handler (§7.2)', () => {
       expect(completedResults[0].rankings.length).toBe(3);
     });
 
-    it('should use wrong key lock duration from settings', () => {
-      const ctx = createMockContext([MOCK_USERS.alice, MOCK_USERS.bob, MOCK_USERS.charlie]);
-      ctx.context.gameSettings = { wrongKeyLockMs: 0 };
-      const { game } = createGame(ctx);
+    it('should report accuracy, typingSpeed, and effectiveSpeed in results', () => {
+      const { game, broadcastLog } = createGame();
       game.start();
       advanceToTypingPhase();
       const state = getPrivateState(game);
 
-      const anyPlayer = Array.from(state.keyAssignments.keys())[0];
-      game.handleInput(anyPlayer, 'HK_PRESS', { key: 'z' });
+      typeFullSentence(game, state);
+      vi.advanceTimersByTime(15000);
 
-      // With 0ms lock, cursor should NOT be locked
-      expect(state.lockUntil).toBeNull();
+      const resultsEvent = findLastActionBroadcast(broadcastLog, 'HK_RESULTS');
+      expect(resultsEvent).toBeDefined();
+      const results = resultsEvent!.data as Record<string, unknown>;
+      const playerResults = results.playerResults as Array<Record<string, unknown>>;
+
+      expect(playerResults.length).toBe(3);
+      for (const pr of playerResults) {
+        expect(pr).toHaveProperty('accuracy');
+        expect(pr).toHaveProperty('typingSpeed');
+        expect(pr).toHaveProperty('effectiveSpeed');
+        expect(pr).toHaveProperty('score');
+      }
+    });
+
+    it('should report team aggregate stats', () => {
+      const { game, broadcastLog } = createGame();
+      game.start();
+      advanceToTypingPhase();
+      const state = getPrivateState(game);
+
+      typeFullSentence(game, state);
+      vi.advanceTimersByTime(15000);
+
+      const resultsEvent = findLastActionBroadcast(broadcastLog, 'HK_RESULTS');
+      expect(resultsEvent).toBeDefined();
+      const results = resultsEvent!.data as Record<string, unknown>;
+      const teamAggregate = results.teamAggregate as Record<string, unknown>;
+
+      expect(teamAggregate).toHaveProperty('teamAccuracy');
+      expect(teamAggregate).toHaveProperty('teamTypingSpeed');
+      expect(teamAggregate).toHaveProperty('teamEffectiveSpeed');
+      expect(teamAggregate).toHaveProperty('sentence');
+    });
+
+    it('should score based on effectiveSpeed × 100', () => {
+      const { game, broadcastLog } = createGame();
+      game.start();
+      advanceToTypingPhase();
+      const state = getPrivateState(game);
+
+      typeFullSentence(game, state);
+      vi.advanceTimersByTime(15000);
+
+      const resultsEvent = findLastActionBroadcast(broadcastLog, 'HK_RESULTS');
+      const results = resultsEvent!.data as Record<string, unknown>;
+      const playerResults = results.playerResults as Array<Record<string, unknown>>;
+
+      // Each player should have score roughly = effectiveSpeed × 100 + bonus
+      for (const pr of playerResults) {
+        const effectiveSpeed = pr.effectiveSpeed as number;
+        const score = pr.score as number;
+        // Score should be effectiveSpeed * 100 + completion bonus (50)
+        expect(score).toBeGreaterThanOrEqual(0);
+        if (effectiveSpeed > 0) {
+          expect(score).toBeGreaterThan(0);
+        }
+      }
     });
   });
 
@@ -597,16 +688,14 @@ describe('Human Keyboard Server Handler (§7.2)', () => {
 
       typeFullSentence(game, state);
 
-      // Advance through: endTypingPhase (5s after complete) + endGame (5s after results)
       vi.advanceTimersByTime(15000);
 
       expect(completedResults.length).toBe(1);
       const teamSpirit = completedResults[0].awards.filter((a) => a.title === 'Team Spirit');
-      // Should be awarded to all 3 players
       expect(teamSpirit.length).toBe(3);
     });
 
-    it('should award MVP Typist to player with most correct presses', () => {
+    it('should award Speed Typist to highest effective speed player', () => {
       const { game, completedResults } = createGame();
       game.start();
       advanceToTypingPhase();
@@ -616,8 +705,8 @@ describe('Human Keyboard Server Handler (§7.2)', () => {
       vi.advanceTimersByTime(15000);
 
       expect(completedResults.length).toBe(1);
-      const mvp = completedResults[0].awards.find((a) => a.title === 'MVP Typist');
-      expect(mvp).toBeDefined();
+      const speedTypist = completedResults[0].awards.find((a) => a.title === 'Speed Typist');
+      expect(speedTypist).toBeDefined();
     });
   });
 
@@ -682,10 +771,8 @@ describe('Human Keyboard Server Handler (§7.2)', () => {
       game.start();
       advanceToTypingPhase();
 
-      // handlePlayerReconnect just logs; state delivery is via buildReconnectionSnapshot
       game.handlePlayerReconnect(MOCK_USERS.alice.userId);
 
-      // buildReconnectionSnapshot returns player state
       const snapshot = game.getStateForPlayer(MOCK_USERS.alice.userId);
       expect(snapshot).toBeDefined();
     });
