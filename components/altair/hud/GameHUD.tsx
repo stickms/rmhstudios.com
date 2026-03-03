@@ -8,8 +8,9 @@
 import { useAltairGameStore, xpRequired } from '@/lib/altair/stores/game-store';
 import { WEAPONS, EVOLVED_WEAPONS } from '@/lib/altair/data/weapons';
 import { PASSIVES } from '@/lib/altair/data/passives';
+import { CATALYSTS } from '@/lib/altair/data/catalysts';
 import SpriteIcon from '@/components/altair/hud/SpriteIcon';
-import { WEAPON_ICON_SRC, PASSIVE_ICON_SRC } from '@/lib/altair/engine/sprites/sprite-defs';
+import { WEAPON_ICON_SRC, PASSIVE_ICON_SRC, CATALYST_ICON_SRC } from '@/lib/altair/engine/sprites/sprite-defs';
 import { useState, useCallback, useEffect, useRef, useLayoutEffect } from 'react';
 
 function formatTime(seconds: number): string {
@@ -32,8 +33,15 @@ const PASSIVE_MAP = new Map(
   ] as const),
 );
 
+const CATALYST_MAP = new Map(
+  CATALYSTS.map((c) => [
+    c.id,
+    { name: c.name, color: c.color, iconFrame: c.iconFrame, descriptions: c.descriptions },
+  ] as const),
+);
+
 type TooltipInfo = {
-  kind: 'weapon' | 'passive';
+  kind: 'weapon' | 'passive' | 'catalyst';
   index: number;
   name: string;
   level: number;
@@ -55,6 +63,7 @@ export default function GameHUD() {
   const coins = useAltairGameStore((s) => s.coins);
   const weapons = useAltairGameStore((s) => s.weapons);
   const passives = useAltairGameStore((s) => s.passives);
+  const catalysts = useAltairGameStore((s) => s.catalysts);
 
   const [tooltip, setTooltip] = useState<TooltipInfo>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
@@ -225,48 +234,65 @@ export default function GameHUD() {
         {/* Divider */}
         <div className="w-px h-5 sm:h-6 bg-white/20" />
 
-        {/* Passive slots */}
+        {/* Passive + Catalyst slots (shared 6 slots) */}
         <div className="flex gap-0.5 sm:gap-1">
           {Array.from({ length: 6 }).map((_, i) => {
-            const p = passives[i];
-            const def = p ? PASSIVE_MAP.get(p.passiveId) : null;
-            const color = def?.color ?? '#888';
-            const info = p && def
-              ? { kind: 'passive' as const, index: i, name: def.name, level: p.level, description: def.description }
+            // Passives first, then catalysts fill remaining slots
+            const isPassive = i < passives.length;
+            const isCatalyst = !isPassive && i - passives.length < catalysts.length;
+            const p = isPassive ? passives[i] : null;
+            const c = isCatalyst ? catalysts[i - passives.length] : null;
+
+            const pDef = p ? PASSIVE_MAP.get(p.passiveId) : null;
+            const cDef = c ? CATALYST_MAP.get(c.catalystId) : null;
+            const color = pDef?.color ?? cDef?.color ?? '#888';
+
+            const info = p && pDef
+              ? { kind: 'passive' as const, index: i, name: pDef.name, level: p.level, description: pDef.description }
+              : c && cDef
+              ? { kind: 'catalyst' as const, index: i, name: cDef.name, level: c.level, description: cDef.descriptions[c.level - 1] ?? '' }
               : null;
+
+            const hasItem = p || c;
+            const slotLevel = p?.level ?? c?.level;
+            const iconSrc = p ? PASSIVE_ICON_SRC : CATALYST_ICON_SRC;
+            const iconFrame = pDef?.iconFrame ?? cDef?.iconFrame ?? 0;
+
             return (
               <div
                 key={`p${i}`}
                 className={`relative w-7 h-7 sm:w-9 sm:h-9 rounded-md border flex items-center justify-center overflow-hidden cursor-pointer ${
-                  p
-                    ? 'border-(--altair-rare)'
+                  hasItem
+                    ? c
+                      ? 'border-(--altair-accent)' // catalyst: accent border
+                      : 'border-(--altair-rare)' // passive: rare border
                     : 'border-(--altair-border) bg-black/30'
                 }`}
                 onPointerEnter={(e) => {
                   if (info) showTooltip(info, e.currentTarget);
                 }}
                 onPointerLeave={() => {
-                  setTooltip((prev) => (prev?.kind === 'passive' && prev.index === i ? null : prev));
+                  setTooltip((prev) => ((prev?.kind === 'passive' || prev?.kind === 'catalyst') && prev.index === i ? null : prev));
                 }}
                 onClick={(e) => {
                   if (info) toggleTooltip(info, e.currentTarget);
                 }}
               >
-                {p ? (
+                {hasItem ? (
                   <>
                     <div
                       className="absolute inset-0"
                       style={{ backgroundColor: `${color}20` }}
                     />
                     <SpriteIcon
-                      sheetSrc={PASSIVE_ICON_SRC}
-                      frameIndex={def?.iconFrame ?? 0}
+                      sheetSrc={iconSrc}
+                      frameIndex={iconFrame}
                       size={24}
                     />
                     <span
                       className="absolute bottom-0 right-0 text-[7px] font-bold bg-black/70 px-0.5 leading-tight rounded-tl-sm text-white/90"
                     >
-                      {p.level}
+                      {slotLevel}
                     </span>
                   </>
                 ) : (

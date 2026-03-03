@@ -21,13 +21,14 @@ import { CLASSES } from '../data/classes';
 import { initAllSpriteSheets } from './sprites/sprite-defs';
 
 // System imports
-import { updatePlayer, computeEffectiveStats, updateClassAbilities, createClassAbilityState, ClassAbilityState, tryRaiseDead, processSanguineFeast, getBerserkerBonuses, getKnightSpeedBonus, reportBloodNovaKill } from './player-system';
-import { fireWeapons, updateBoomerangs } from './weapon-system';
-import { tickStatusEffects, processEnemyStatusDamage, getMarkMultiplier } from './status-effects';
+import { updatePlayer, computeEffectiveStats, updateClassAbilities, createClassAbilityState, ClassAbilityState, tryRaiseDead, processSanguineFeast, getBerserkerBonuses, getKnightSpeedBonus, reportBloodNovaKill, tryTransferHuntersMark } from './player-system';
+import { fireWeapons, updateBoomerangs, activateBlock, getBlockDR, getWhipLifesteal } from './weapon-system';
+import { tickStatusEffects, processEnemyStatusDamage, getMarkMultiplier, applySlow, hasEffect } from './status-effects';
 import { updatePickups as updatePickupSystem, spawnEnemyDrops, spawnBossDrops, spawnPropDrops, spawnPickup } from './pickup-system';
 import { updateWaveDirector as updateWaveDirectorSystem, createWaveDirectorState, spawnEnemyAt } from './wave-director';
 import { updateEnemyAI as updateEnemyAISystem, setEnemyPropHash } from './enemy-system';
 import { spawnBoss, updateBoss, snapshotBossHp, enforceBossDpsCap, BossState } from './boss-system';
+import { CatalystRuntimeState, createCatalystRuntimeStates, updateCatalysts, onCatalystHit, onCatalystKill, onCatalystDamageTaken, onCatalystAttack } from './catalyst-system';
 import { SpatialHash } from './spatial-hash';
 import { DestructibleProp, PROP_COLLISION_OFFSET_Y } from './tile-generator';
 
@@ -144,6 +145,7 @@ export function createGameWorld(
       },
     ],
     passives: [],
+    catalysts: [],
     time: 0,
     timeScale: doubleTime ? 2.0 : 1.0,
     nextId: 100,
@@ -184,6 +186,7 @@ function handleCollisions(
   callbacks: GameLoopCallbacks,
   tileGen: TileGenerator,
   propHash: SpatialHash,
+  catalystStates: CatalystRuntimeState[],
 ): number {
   const pl = world.player;
   let totalDamageDealt = 0;
@@ -259,13 +262,55 @@ function handleCollisions(
 
         // Mark damage multiplier
         const markMul = getMarkMultiplier(e.statusEffects, e.isBoss);
-        const effectiveDmg = Math.max(1, proj.damage * markMul - e.armor);
+
+        // v1.2: Crit system (Shortbow)
+        let critMul = 1;
+        if (proj.critChance && proj.critMultiplier) {
+          if (Math.random() < proj.critChance) {
+            critMul = proj.critMultiplier;
+          }
+        }
+
+        const effectiveDmg = Math.max(1, proj.damage * markMul * critMul - e.armor);
         e.hp -= effectiveDmg;
         e.flashTimer = 0.1;
         totalDamageDealt += effectiveDmg;
 
-        // Damage number particle
+        // Damage number particle (show crit with special flag)
         spawnDamageNumber(world, e.x, e.y - e.radius, effectiveDmg, false);
+
+        // v1.2: Slow on hit (Temporal Shard)
+        if (proj.slowOnHitPct && proj.slowOnHitDuration) {
+          applySlow(e.statusEffects, proj.slowOnHitPct, proj.slowOnHitDuration);
+        }
+
+        // v1.2: Lifesteal on hit (Crimson Whip)
+        if (proj.lifestealPct && proj.lifestealPct > 0) {
+          const heal = effectiveDmg * proj.lifestealPct;
+          if (heal > 0) {
+            pl.hp = Math.min(pl.hp + heal, pl.maxHp);
+          }
+        }
+
+        // Catalyst on-hit hooks
+        onCatalystHit(catalystStates, world, stats, { enemyId: e.id, damage: effectiveDmg, weaponId: proj.weaponId || '', x: e.x, y: e.y });
+
+        // v1.2: Splash on kill (Arcane Bolt) — check if this hit killed the enemy
+        if (e.hp <= 0 && proj.splashOnKillRadius && proj.splashOnKillDamagePct) {
+          const splashR = proj.splashOnKillRadius;
+          const splashDmgPct = proj.splashOnKillDamagePct;
+          for (const ae of world.enemies) {
+            if (ae.id === e.id || ae.intangible || ae.hp <= 0) continue;
+            const adx = ae.x - e.x;
+            const ady = ae.y - e.y;
+            if (adx * adx + ady * ady <= splashR * splashR) {
+              const splashDmg = Math.max(1, proj.damage * splashDmgPct - ae.armor);
+              ae.hp -= splashDmg;
+              ae.flashTimer = 0.05;
+              totalDamageDealt += splashDmg;
+            }
+          }
+        }
 
         // Pierce
         proj.pierceLeft--;
@@ -347,10 +392,13 @@ function handleCollisions(
           const poolR = proj.poolRadius || proj.radius;
           if (pdx * pdx + pdy * pdy <= (poolR + pl.radius) * (poolR + pl.radius)) {
             if (pl.iFrames <= 0) {
-              const dmg = proj.poolDamagePerTick || proj.damage;
+              let dmg = proj.poolDamagePerTick || proj.damage;
+              // v1.2: Block damage reduction
+              dmg = Math.round(dmg * getBlockDR(world));
               pl.hp -= dmg;
               pl.iFrames = 0.2;
               callbacks.onPlayerDamage(dmg);
+              onCatalystDamageTaken(catalystStates, world, stats, { damage: dmg });
             }
           }
         }
@@ -381,6 +429,9 @@ function handleCollisions(
       if (distSq <= combinedR * combinedR) {
         let dmg = proj.damage;
 
+        // v1.2: Block damage reduction (Broad Sword)
+        dmg = Math.round(dmg * getBlockDR(world));
+
         // Shield absorbs first
         if (pl.shieldHp > 0) {
           const absorbed = Math.min(pl.shieldHp, dmg);
@@ -392,6 +443,7 @@ function handleCollisions(
           pl.hp -= dmg;
           pl.iFrames = 0.5;
           callbacks.onPlayerDamage(dmg);
+          onCatalystDamageTaken(catalystStates, world, stats, { damage: dmg });
         }
 
         world.projectiles.splice(pi, 1);
@@ -425,6 +477,11 @@ function handleCollisions(
           e.hp -= effectiveDmg;
           e.flashTimer = 0.05;
           totalDamageDealt += effectiveDmg;
+
+          // v1.2: Pool slow effect (Toxic Flask)
+          if (proj.poolSlowPct && proj.poolSlowPct > 0) {
+            applySlow(e.statusEffects, proj.poolSlowPct, proj.poolTickInterval! * 1.5);
+          }
         }
       }
     }
@@ -451,6 +508,9 @@ function handleCollisions(
       if (distSq <= combinedR * combinedR) {
         let dmg = e.damage;
 
+        // v1.2: Block damage reduction (Broad Sword)
+        dmg = Math.round(dmg * getBlockDR(world));
+
         if (pl.shieldHp > 0) {
           const absorbed = Math.min(pl.shieldHp, dmg);
           pl.shieldHp -= absorbed;
@@ -461,6 +521,7 @@ function handleCollisions(
           pl.hp -= dmg;
           pl.iFrames = 0.8;
           callbacks.onPlayerDamage(dmg);
+          onCatalystDamageTaken(catalystStates, world, stats, { damage: dmg });
         }
         break;
       }
@@ -504,16 +565,45 @@ function handleCollisions(
       }
     }
 
+    // v1.2: maxTargets limiting (War Axe)
+    let finalMeleeTargets = meleeTargets;
+    if (hb.maxTargets && meleeTargets.length > hb.maxTargets) {
+      // Prioritize closest enemies
+      finalMeleeTargets = meleeTargets
+        .sort((a, b) => {
+          const da = (a.x - hb.x) ** 2 + (a.y - hb.y) ** 2;
+          const db = (b.x - hb.x) ** 2 + (b.y - hb.y) ** 2;
+          return da - db;
+        })
+        .slice(0, hb.maxTargets);
+    }
+
     // Pass 2: Apply damage with DR factor based on how many new enemies are hit
-    const meleeDrFactor = aoeDiminishingFactor(meleeTargets.length);
-    for (const e of meleeTargets) {
+    const meleeDrFactor = aoeDiminishingFactor(finalMeleeTargets.length);
+    let meleeHitAny = false;
+    for (const e of finalMeleeTargets) {
       hb.hitEnemyIds.add(e.id);
       const markMul = getMarkMultiplier(e.statusEffects, e.isBoss);
       const effectiveDmg = Math.max(1, hb.damage * markMul * meleeDrFactor - e.armor);
       e.hp -= effectiveDmg;
       e.flashTimer = 0.1;
       totalDamageDealt += effectiveDmg;
+      meleeHitAny = true;
       spawnDamageNumber(world, e.x, e.y - e.radius, effectiveDmg, false);
+
+      // v1.2: Whip lifesteal (Crimson Whip / Sanguine Scourge)
+      const whipLS = getWhipLifesteal(hb.weaponId);
+      if (whipLS > 0) {
+        const heal = effectiveDmg * whipLS;
+        if (heal > 0) {
+          pl.hp = Math.min(pl.hp + heal, pl.maxHp);
+        }
+      }
+    }
+
+    // v1.2: Activate block on melee hit (Broad Sword)
+    if (meleeHitAny) {
+      activateBlock(world, hb);
     }
   }
 
@@ -566,13 +656,46 @@ function handleCollisions(
           auraTargets.push(e);
         }
       }
-      const auraDrFactor = aoeDiminishingFactor(auraTargets.length);
-      for (const e of auraTargets) {
-        const effectiveDmg = Math.max(1, aura.damagePerTick * auraDrFactor - e.armor);
+      // v1.2: maxTargets limiting (Garlic)
+      let finalAuraTargets = auraTargets;
+      if (aura.maxTargets && auraTargets.length > aura.maxTargets) {
+        // Prioritize closest enemies
+        finalAuraTargets = auraTargets
+          .sort((a, b) => {
+            const da = (a.x - aura.x) ** 2 + (a.y - aura.y) ** 2;
+            const db = (b.x - aura.x) ** 2 + (b.y - aura.y) ** 2;
+            return da - db;
+          })
+          .slice(0, aura.maxTargets);
+      }
+
+      const auraDrFactor = aoeDiminishingFactor(finalAuraTargets.length);
+      for (const e of finalAuraTargets) {
+        // v1.2: Inner radius damage falloff (Garlic: outer ring does 50% damage)
+        let falloff = 1;
+        if (aura.innerRadius) {
+          const eDist = Math.sqrt((e.x - aura.x) ** 2 + (e.y - aura.y) ** 2);
+          if (eDist > aura.innerRadius) {
+            falloff = 0.5;
+          }
+        }
+
+        const effectiveDmg = Math.max(1, aura.damagePerTick * auraDrFactor * falloff - e.armor);
         e.hp -= effectiveDmg;
         e.flashTimer = 0.05;
         aura.tickHitEnemyIds.add(e.id);
         totalDamageDealt += effectiveDmg;
+
+        // v1.2: Knockback (Garlic)
+        if (aura.knockback && aura.knockback > 0) {
+          const kbDx = e.x - aura.x;
+          const kbDy = e.y - aura.y;
+          const kbDist = Math.sqrt(kbDx * kbDx + kbDy * kbDy);
+          if (kbDist > 0.1) {
+            e.x += (kbDx / kbDist) * aura.knockback;
+            e.y += (kbDy / kbDist) * aura.knockback;
+          }
+        }
       }
     }
   }
@@ -634,6 +757,11 @@ function handleCollisions(
       // Spawn pickups
       spawnEnemyDrops(world, e, stats.luck);
 
+      // v1.2: Hunter's Mark transfer on kill (Ranger)
+      if (world.classId === 'ranger') {
+        tryTransferHuntersMark(world, e);
+      }
+
       // Necromancer raise dead
       if (world.classId === 'necromancer') {
         tryRaiseDead(world, e.x, e.y, stats, 1);
@@ -643,6 +771,9 @@ function handleCollisions(
       if (world.classId === 'hemomancer') {
         reportBloodNovaKill(abilityState);
       }
+
+      // Catalyst on-kill hooks
+      onCatalystKill(catalystStates, world, stats, { enemyId: e.id, x: e.x, y: e.y, wasPoisoned: hasEffect(e.statusEffects, 'poison'), enemyTier: 1 });
 
       world.enemies.splice(i, 1);
     }
@@ -676,10 +807,12 @@ export function createGameLoop(
   let abilityState = createClassAbilityState();
   let waveState = createWaveDirectorState();
   let bossState: BossState | null = null;
+  let catalystStates: CatalystRuntimeState[] = createCatalystRuntimeStates(world.catalysts);
   let effectiveStats: PlayerStats | null = null;
   let lastStatsLevel = 0;
   let lastStatsWeaponCount = 0;
   let lastStatsPassiveCount = 0;
+  let lastStatsCatalystCount = 0;
   const propHash = new SpatialHash(100);
 
   function recomputeStats(): PlayerStats {
@@ -727,6 +860,12 @@ export function createGameLoop(
       !effectiveStats ||
       world.weapons.length !== lastStatsWeaponCount ||
       world.passives.length !== lastStatsPassiveCount;
+
+    // Re-sync catalyst runtime states when catalysts change (e.g. after upgrade screen)
+    if (world.catalysts.length !== lastStatsCatalystCount) {
+      catalystStates = createCatalystRuntimeStates(world.catalysts);
+      lastStatsCatalystCount = world.catalysts.length;
+    }
 
     if (needsRecompute) {
       effectiveStats = recomputeStats();
@@ -786,8 +925,21 @@ export function createGameLoop(
     // 3. Class abilities
     abilityState = updateClassAbilities(world, world.classId, stats, 1, scaledDelta, abilityState);
 
+    // 3b. Catalyst per-frame update
+    updateCatalysts(world, stats, catalystStates, scaledDelta);
+
     // 4. Weapons
+    // Snapshot cooldown timers to detect which weapons fired this frame
+    const prevCooldowns = world.weapons.map(ws => ws.cooldownTimer);
     fireWeapons(world, stats, scaledDelta);
+    // Trigger catalyst on-attack hooks for weapons that just fired
+    for (let wi = 0; wi < world.weapons.length; wi++) {
+      const ws = world.weapons[wi];
+      // A weapon fired if its cooldown was <= 0 before (or decreased past 0) and got reset
+      if (prevCooldowns[wi] <= scaledDelta && ws.cooldownTimer > prevCooldowns[wi]) {
+        onCatalystAttack(catalystStates, world, stats, { weaponId: ws.weaponId });
+      }
+    }
     updateBoomerangs(world, scaledDelta);
 
     // 5. Enemy AI (with obstacle avoidance)
@@ -898,7 +1050,7 @@ export function createGameLoop(
     if (bossState) snapshotBossHp(bossState);
 
     // 7. Collisions + enemy death processing
-    const damageDealt = handleCollisions(world, stats, scaledDelta, abilityState, callbacks, tileGen, propHash);
+    const damageDealt = handleCollisions(world, stats, scaledDelta, abilityState, callbacks, tileGen, propHash, catalystStates);
 
     // 7b. Enforce boss DPS cap after collisions
     if (bossState) enforceBossDpsCap(bossState, scaledDelta);
@@ -1031,6 +1183,7 @@ export function createGameLoop(
       lastTime = performance.now();
       abilityState = createClassAbilityState();
       waveState = createWaveDirectorState();
+      catalystStates = createCatalystRuntimeStates(world.catalysts);
       effectiveStats = null;
       rafId = requestAnimationFrame(tick);
     },

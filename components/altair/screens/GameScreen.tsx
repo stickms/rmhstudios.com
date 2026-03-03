@@ -15,7 +15,7 @@ import { setupInputListeners, setMobileInput } from '@/lib/altair/engine/input';
 import { generateUpgradeChoices, checkEvolution } from '@/lib/altair/engine/level-up-system';
 import { spawnEvolution, spawnLevelUp } from '@/lib/altair/engine/particle-system';
 import { BOSSES } from '@/lib/altair/data/bosses';
-import { WeaponState, PassiveState } from '@/lib/altair/engine/types';
+import { WeaponState, PassiveState, CatalystState } from '@/lib/altair/engine/types';
 import { getAllSpriteEntries } from '@/lib/altair/engine/sprites/sprite-defs';
 import { preloadAllSprites } from '@/lib/altair/engine/sprites/sprite-loader';
 import GameHUD from '@/components/altair/hud/GameHUD';
@@ -103,6 +103,13 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
       level: sp.level,
     }));
     world.passives = newPassives;
+
+    // Rebuild world.catalysts from store
+    const newCatalysts: CatalystState[] = store.catalysts.map((sc) => ({
+      catalystId: sc.catalystId,
+      level: sc.level,
+    }));
+    world.catalysts = newCatalysts;
   }, []);
 
   // Handle reroll from LevelUpScreen
@@ -113,11 +120,15 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
     if (store.rerollsRemaining <= 0) return;
     const meta = useAltairMetaStore.getState();
     const extraChoice = meta.getUpgradeLevel('extra_choice') > 0;
+    const catalystAffinity = meta.getUpgradeLevel('catalyst_affinity');
+    const catalystAffinityPct = catalystAffinity * 15;
     const newChoices = generateUpgradeChoices(
       world.weapons,
       world.passives,
+      world.catalysts,
       store.banishedIds,
       extraChoice,
+      catalystAffinityPct,
     );
     store.reroll(newChoices);
   }, []);
@@ -130,9 +141,9 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
       // Check for weapon evolution
       const world = worldRef.current;
       if (world) {
-        const evolution = checkEvolution(world.weapons, world.passives);
+        const evolution = checkEvolution(world.weapons, world.catalysts);
         if (evolution) {
-          useAltairGameStore.getState().evolveWeapon(evolution.weaponId, evolution.evolvedId);
+          useAltairGameStore.getState().evolveWeapon(evolution.weaponId, evolution.evolvedId, evolution.consumedCatalystId);
           syncStoreToWorld(); // Re-sync after evolution
           spawnEvolution(world, world.player.x, world.player.y);
           addToast('Weapon evolved!', 'success');
@@ -222,11 +233,15 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
           const store = useAltairGameStore.getState();
           const meta = useAltairMetaStore.getState();
           const extraChoice = meta.getUpgradeLevel('extra_choice') > 0;
+          const catalystAffinity = meta.getUpgradeLevel('catalyst_affinity');
+          const catalystAffinityPct = catalystAffinity * 15;
           const choices = generateUpgradeChoices(
             world.weapons,
             world.passives,
+            world.catalysts,
             store.banishedIds,
             extraChoice,
+            catalystAffinityPct,
           );
           store.setUpgradeChoices(choices);
           spawnLevelUp(world, world.player.x, world.player.y);

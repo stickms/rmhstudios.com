@@ -79,11 +79,18 @@ export interface PassiveSlot {
   level: number;
 }
 
+export interface CatalystSlot {
+  catalystId: string;
+  level: number;
+}
+
 export type UpgradeChoice =
   | { type: 'new_weapon'; weaponId: string }
   | { type: 'upgrade_weapon'; weaponId: string; newLevel: number }
   | { type: 'new_passive'; passiveId: string }
   | { type: 'upgrade_passive'; passiveId: string; newLevel: number }
+  | { type: 'new_catalyst'; catalystId: string }
+  | { type: 'upgrade_catalyst'; catalystId: string; newLevel: number }
   | { type: 'gold'; amount: number };
 
 export type GamePhase =
@@ -124,6 +131,7 @@ interface GameState {
   timeSurvived: number; // seconds
   weapons: WeaponSlot[];
   passives: PassiveSlot[];
+  catalysts: CatalystSlot[];
   selectedClassId: string | null;
   effectiveStats: PlayerStats;
   upgradeChoices: UpgradeChoice[];
@@ -154,9 +162,12 @@ interface GameState {
   banish: (index: number) => void;
   addWeapon: (weaponId: string) => void;
   upgradeWeapon: (weaponId: string) => void;
-  evolveWeapon: (weaponId: string, evolvedId: string) => void;
+  evolveWeapon: (weaponId: string, evolvedId: string, consumedCatalystId?: string) => void;
   addPassive: (passiveId: string) => void;
   upgradePassive: (passiveId: string) => void;
+  addCatalyst: (catalystId: string) => void;
+  upgradeCatalyst: (catalystId: string) => void;
+  consumeCatalyst: (catalystId: string) => void;
   setEffectiveStats: (stats: PlayerStats) => void;
   setBossActive: (active: boolean) => void;
   recordBossKill: (bossId: string) => void;
@@ -188,6 +199,7 @@ export const useAltairGameStore = create<GameState>((set, get) => ({
   timeSurvived: 0,
   weapons: [],
   passives: [],
+  catalysts: [],
   selectedClassId: null,
   effectiveStats: { ...GLOBAL_BASE_STATS },
   upgradeChoices: [],
@@ -219,6 +231,7 @@ export const useAltairGameStore = create<GameState>((set, get) => ({
     timeSurvived: 0,
     weapons: [],
     passives: [],
+    catalysts: [],
     selectedClassId: null,
     upgradeChoices: [],
     banishedIds: new Set(),
@@ -249,6 +262,7 @@ export const useAltairGameStore = create<GameState>((set, get) => ({
       timeSurvived: 0,
       weapons: [],
       passives: [],
+      catalysts: [],
       upgradeChoices: [],
       rerollsRemaining: 2 + metaRerolls,
       banishesRemaining: 2 + metaBanishes,
@@ -364,6 +378,12 @@ export const useAltairGameStore = create<GameState>((set, get) => ({
       case 'upgrade_passive':
         get().upgradePassive(choice.passiveId);
         break;
+      case 'new_catalyst':
+        get().addCatalyst(choice.catalystId);
+        break;
+      case 'upgrade_catalyst':
+        get().upgradeCatalyst(choice.catalystId);
+        break;
       case 'gold':
         get().addCoins(choice.amount, 'chestDrops');
         break;
@@ -389,6 +409,8 @@ export const useAltairGameStore = create<GameState>((set, get) => ({
       newBanished.add(choice.weaponId);
     } else if (choice.type === 'new_passive' || choice.type === 'upgrade_passive') {
       newBanished.add(choice.passiveId);
+    } else if (choice.type === 'new_catalyst' || choice.type === 'upgrade_catalyst') {
+      newBanished.add(choice.catalystId);
     }
 
     const newChoices = s.upgradeChoices.filter((_, i) => i !== index);
@@ -417,13 +439,16 @@ export const useAltairGameStore = create<GameState>((set, get) => ({
     }));
   },
 
-  evolveWeapon: (weaponId, evolvedId) => {
+  evolveWeapon: (weaponId, evolvedId, consumedCatalystId) => {
     set((s) => ({
       weapons: s.weapons.map((w) =>
         w.weaponId === weaponId
           ? { weaponId: evolvedId, level: w.level, evolved: true }
           : w
       ),
+      catalysts: consumedCatalystId
+        ? s.catalysts.filter((c) => c.catalystId !== consumedCatalystId)
+        : s.catalysts,
     }));
   },
 
@@ -442,6 +467,31 @@ export const useAltairGameStore = create<GameState>((set, get) => ({
           ? { ...p, level: p.level + 1 }
           : p
       ),
+    }));
+  },
+
+  addCatalyst: (catalystId) => {
+    set((s) => {
+      // Catalysts and passives share 6 slots
+      if (s.passives.length + s.catalysts.length >= 6) return s;
+      if (s.catalysts.some((c) => c.catalystId === catalystId)) return s;
+      return { catalysts: [...s.catalysts, { catalystId, level: 1 }] };
+    });
+  },
+
+  upgradeCatalyst: (catalystId) => {
+    set((s) => ({
+      catalysts: s.catalysts.map((c) =>
+        c.catalystId === catalystId && c.level < 3
+          ? { ...c, level: c.level + 1 }
+          : c
+      ),
+    }));
+  },
+
+  consumeCatalyst: (catalystId) => {
+    set((s) => ({
+      catalysts: s.catalysts.filter((c) => c.catalystId !== catalystId),
     }));
   },
 

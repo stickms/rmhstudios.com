@@ -43,9 +43,10 @@ import {
   getBerserkerBonuses,
   getKnightSpeedBonus,
   reportBloodNovaKill,
+  tryTransferHuntersMark,
 } from '../player-system';
-import { fireWeapons, updateBoomerangs } from '../weapon-system';
-import { getMarkMultiplier } from '../status-effects';
+import { fireWeapons, updateBoomerangs, activateBlock, getBlockDR, getWhipLifesteal } from '../weapon-system';
+import { getMarkMultiplier, applySlow } from '../status-effects';
 import { updatePickups as updatePickupSystem, spawnEnemyDrops, spawnBossDrops } from '../pickup-system';
 import {
   updateWaveDirector as updateWaveDirectorSystem,
@@ -143,6 +144,7 @@ export function createMultiplayerGameWorld(
       },
     ],
     passives: [],
+    catalysts: [],
     abilityState: {},
     inputState: createInputState(),
     camera: createCamera(canvasWidth, canvasHeight),
@@ -175,6 +177,7 @@ export function createMultiplayerGameWorld(
     inputState: hostPlayer.inputState,
     weapons: hostPlayer.weapons,
     passives: hostPlayer.passives,
+    catalysts: hostPlayer.catalysts,
     time: 0,
     timeScale: doubleTime ? 2.0 : 1.0,
     nextId: 100,
@@ -246,6 +249,7 @@ export function addPlayerToWorld(
       },
     ],
     passives: [],
+    catalysts: [],
     abilityState: {},
     inputState: createInputState(),
     camera: createCamera(canvasWidth, canvasHeight),
@@ -723,11 +727,49 @@ function handleMultiplayerCollisions(
         proj.hitEnemyIds.add(e.id);
 
         const markMul = getMarkMultiplier(e.statusEffects, e.isBoss);
-        const effectiveDmg = Math.max(1, proj.damage * markMul - e.armor);
+
+        // v1.2: Crit system (Shortbow)
+        let critMul = 1;
+        if (proj.critChance && proj.critMultiplier) {
+          if (Math.random() < proj.critChance) {
+            critMul = proj.critMultiplier;
+          }
+        }
+
+        const effectiveDmg = Math.max(1, proj.damage * markMul * critMul - e.armor);
         e.hp -= effectiveDmg;
         e.flashTimer = 0.1;
 
         spawnDamageNumber(world, e.x, e.y - e.radius, effectiveDmg, false);
+
+        // v1.2: Slow on hit (Temporal Shard)
+        if (proj.slowOnHitPct && proj.slowOnHitDuration) {
+          applySlow(e.statusEffects, proj.slowOnHitPct, proj.slowOnHitDuration);
+        }
+
+        // v1.2: Lifesteal on hit (Crimson Whip)
+        if (proj.lifestealPct && proj.lifestealPct > 0) {
+          const heal = effectiveDmg * proj.lifestealPct;
+          if (heal > 0) {
+            world.player.hp = Math.min(world.player.hp + heal, world.player.maxHp);
+          }
+        }
+
+        // v1.2: Splash on kill (Arcane Bolt)
+        if (e.hp <= 0 && proj.splashOnKillRadius && proj.splashOnKillDamagePct) {
+          const splashR = proj.splashOnKillRadius;
+          const splashDmgPct = proj.splashOnKillDamagePct;
+          for (const ae of world.enemies) {
+            if (ae.id === e.id || ae.intangible || ae.hp <= 0) continue;
+            const adx = ae.x - e.x;
+            const ady = ae.y - e.y;
+            if (adx * adx + ady * ady <= splashR * splashR) {
+              const splashDmg = Math.max(1, proj.damage * splashDmgPct - ae.armor);
+              ae.hp -= splashDmg;
+              ae.flashTimer = 0.05;
+            }
+          }
+        }
 
         proj.pierceLeft--;
         if (proj.pierceLeft <= 0) {
@@ -767,7 +809,9 @@ function handleMultiplayerCollisions(
             const pdx = pl.x - proj.x;
             const pdy = pl.y - proj.y;
             if (pdx * pdx + pdy * pdy <= (poolR + pl.radius) * (poolR + pl.radius)) {
-              const dmg = proj.poolDamagePerTick || proj.damage;
+              let dmg = proj.poolDamagePerTick || proj.damage;
+              // v1.2: Block damage reduction
+              dmg = Math.round(dmg * getBlockDR(world));
               pl.hp -= dmg;
               pl.iFrames = 0.2;
               callbacks.onPlayerDamage(pl.playerId, dmg);
@@ -802,6 +846,9 @@ function handleMultiplayerCollisions(
 
       if (distSq <= combinedR * combinedR) {
         let dmg = proj.damage;
+
+        // v1.2: Block damage reduction (Broad Sword)
+        dmg = Math.round(dmg * getBlockDR(world));
 
         if (pl.shieldHp > 0) {
           const absorbed = Math.min(pl.shieldHp, dmg);
@@ -838,6 +885,11 @@ function handleMultiplayerCollisions(
             const effectiveDmg = Math.max(1, dmg - e.armor);
             e.hp -= effectiveDmg;
             e.flashTimer = 0.05;
+
+            // v1.2: Pool slow effect (Toxic Flask)
+            if (proj.poolSlowPct && proj.poolSlowPct > 0) {
+              applySlow(e.statusEffects, proj.poolSlowPct, proj.poolTickInterval! * 1.5);
+            }
           }
         }
       }
@@ -867,6 +919,9 @@ function handleMultiplayerCollisions(
       if (distSq <= combinedR * combinedR) {
         let dmg = e.damage;
 
+        // v1.2: Block damage reduction (Broad Sword)
+        dmg = Math.round(dmg * getBlockDR(world));
+
         if (pl.shieldHp > 0) {
           const absorbed = Math.min(pl.shieldHp, dmg);
           pl.shieldHp -= absorbed;
@@ -893,6 +948,8 @@ function handleMultiplayerCollisions(
       continue;
     }
 
+    // Pass 1: Collect enemies in arc
+    const meleeTargets: import('../types').EnemyEntity[] = [];
     for (const e of world.enemies) {
       if (e.intangible) continue;
       if (hb.hitEnemyIds.has(e.id)) continue;
@@ -908,14 +965,47 @@ function handleMultiplayerCollisions(
         while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
 
         if (Math.abs(angleDiff) <= hb.arc / 2) {
-          hb.hitEnemyIds.add(e.id);
-          const markMul = getMarkMultiplier(e.statusEffects, e.isBoss);
-          const effectiveDmg = Math.max(1, hb.damage * markMul - e.armor);
-          e.hp -= effectiveDmg;
-          e.flashTimer = 0.1;
-          spawnDamageNumber(world, e.x, e.y - e.radius, effectiveDmg, false);
+          meleeTargets.push(e);
         }
       }
+    }
+
+    // v1.2: maxTargets limiting (War Axe)
+    let finalMeleeTargets = meleeTargets;
+    if (hb.maxTargets && meleeTargets.length > hb.maxTargets) {
+      finalMeleeTargets = meleeTargets
+        .sort((a, b) => {
+          const da = (a.x - hb.x) ** 2 + (a.y - hb.y) ** 2;
+          const db = (b.x - hb.x) ** 2 + (b.y - hb.y) ** 2;
+          return da - db;
+        })
+        .slice(0, hb.maxTargets);
+    }
+
+    // Pass 2: Apply damage
+    let meleeHitAny = false;
+    for (const e of finalMeleeTargets) {
+      hb.hitEnemyIds.add(e.id);
+      const markMul = getMarkMultiplier(e.statusEffects, e.isBoss);
+      const effectiveDmg = Math.max(1, hb.damage * markMul - e.armor);
+      e.hp -= effectiveDmg;
+      e.flashTimer = 0.1;
+      meleeHitAny = true;
+      spawnDamageNumber(world, e.x, e.y - e.radius, effectiveDmg, false);
+
+      // v1.2: Whip lifesteal (Crimson Whip / Sanguine Scourge)
+      const whipLS = getWhipLifesteal(hb.weaponId);
+      if (whipLS > 0) {
+        const heal = effectiveDmg * whipLS;
+        if (heal > 0) {
+          world.player.hp = Math.min(world.player.hp + heal, world.player.maxHp);
+        }
+      }
+    }
+
+    // v1.2: Activate block on melee hit (Broad Sword)
+    if (meleeHitAny) {
+      activateBlock(world, hb);
     }
   }
 
@@ -927,15 +1017,52 @@ function handleMultiplayerCollisions(
       aura.timer += aura.tickInterval;
       aura.tickHitEnemyIds.clear();
 
+      const auraTargets: import('../types').EnemyEntity[] = [];
       for (const e of world.enemies) {
         if (e.intangible) continue;
         const dx = e.x - aura.x;
         const dy = e.y - aura.y;
         if (dx * dx + dy * dy <= (aura.radius + e.radius) * (aura.radius + e.radius)) {
-          const effectiveDmg = Math.max(1, aura.damagePerTick - e.armor);
-          e.hp -= effectiveDmg;
-          e.flashTimer = 0.05;
-          aura.tickHitEnemyIds.add(e.id);
+          auraTargets.push(e);
+        }
+      }
+
+      // v1.2: maxTargets limiting (Garlic)
+      let finalAuraTargets = auraTargets;
+      if (aura.maxTargets && auraTargets.length > aura.maxTargets) {
+        finalAuraTargets = auraTargets
+          .sort((a, b) => {
+            const da = (a.x - aura.x) ** 2 + (a.y - aura.y) ** 2;
+            const db = (b.x - aura.x) ** 2 + (b.y - aura.y) ** 2;
+            return da - db;
+          })
+          .slice(0, aura.maxTargets);
+      }
+
+      for (const e of finalAuraTargets) {
+        // v1.2: Inner radius damage falloff (Garlic: outer ring does 50% damage)
+        let falloff = 1;
+        if (aura.innerRadius) {
+          const eDist = Math.sqrt((e.x - aura.x) ** 2 + (e.y - aura.y) ** 2);
+          if (eDist > aura.innerRadius) {
+            falloff = 0.5;
+          }
+        }
+
+        const effectiveDmg = Math.max(1, aura.damagePerTick * falloff - e.armor);
+        e.hp -= effectiveDmg;
+        e.flashTimer = 0.05;
+        aura.tickHitEnemyIds.add(e.id);
+
+        // v1.2: Knockback (Garlic)
+        if (aura.knockback && aura.knockback > 0) {
+          const kbDx = e.x - aura.x;
+          const kbDy = e.y - aura.y;
+          const kbDist = Math.sqrt(kbDx * kbDx + kbDy * kbDy);
+          if (kbDist > 0.1) {
+            e.x += (kbDx / kbDist) * aura.knockback;
+            e.y += (kbDy / kbDist) * aura.knockback;
+          }
         }
       }
     }
@@ -1005,6 +1132,14 @@ function handleMultiplayerCollisions(
         ? (playerStates.get(nearest.p.playerId)?.effectiveStats?.luck ?? 1)
         : 1;
       spawnEnemyDrops(world, e, luck);
+
+      // v1.2: Hunter's Mark transfer on kill (Ranger)
+      for (const player of alivePlayers) {
+        if (player.classId === 'ranger') {
+          tryTransferHuntersMark(world, e);
+          break;
+        }
+      }
 
       // Necromancer raise dead for any necromancer player
       for (const player of alivePlayers) {

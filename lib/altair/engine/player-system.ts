@@ -135,7 +135,12 @@ export function updatePlayer(
   const { dx, dy } = getMovementVector(world.inputState);
 
   // ---- Movement ----
-  const speed = stats.moveSpeed * delta;
+  // v1.2: Apply windup slow if active (War Axe windup = 60% move speed)
+  let moveSpeedMul = 1.0;
+  if (player.windupSlowTimer !== undefined && player.windupSlowTimer > 0) {
+    moveSpeedMul = 0.6;
+  }
+  const speed = stats.moveSpeed * moveSpeedMul * delta;
 
   // Normalize diagonal movement (getMovementVector already normalizes, but be safe)
   let mx = dx;
@@ -236,6 +241,8 @@ export function computeEffectiveStats(
     if (cb.cdr !== undefined) s.cdr = cb.cdr;
     if (cb.revival !== undefined) s.revival = cb.revival;
     if (cb.growth !== undefined) s.growth = cb.growth;
+    // v1.2: Pierce class stat (Ranger gets +1)
+    if (cb.pierce !== undefined) s.pierce = cb.pierce;
   }
 
   // Step 3: Accumulate passive item bonuses
@@ -255,6 +262,7 @@ export function computeEffectiveStats(
   let pctCdr = 0;
   let pctMaxHp = 0;
   let pctLuck = 0;
+  let pctAttackSpeed = 0;
   let pctGrowth = 0;
 
   for (const ps of passives) {
@@ -313,6 +321,9 @@ export function computeEffectiveStats(
         case 'luckPercent':
           pctLuck += total;
           break;
+        case 'attackSpeedPercent':
+          pctAttackSpeed += total;
+          break;
         case 'growthPercent':
           pctGrowth += total;
           break;
@@ -337,6 +348,7 @@ export function computeEffectiveStats(
   s.cdr *= 1 - pctCdr / 100; // CDR reduces cooldowns, so subtract
   s.maxHp *= 1 + pctMaxHp / 100;
   s.luck *= 1 + pctLuck / 100;
+  s.attackSpeed *= 1 + pctAttackSpeed / 100;
   s.growth *= 1 + pctGrowth / 100;
 
   // v1.1: Growth diminishing returns above 1.5×
@@ -397,6 +409,9 @@ export function computeEffectiveStats(
         break;
       case 'luckPercent':
         s.luck *= 1 + value / 100;
+        break;
+      case 'attackSpeedPercent':
+        s.attackSpeed *= 1 + value / 100;
         break;
       case 'growthPercent':
         s.growth *= 1 + value / 100;
@@ -677,7 +692,8 @@ function handleRanger(
 ): void {
   const player = world.player;
 
-  // ---- Evasion Roll (Innate, CD 20s x cdr) ----
+  // ---- Evasion Roll (Innate, CD 16s x cdr) ----
+  // v1.2: CD 16s (was 20s), dash 170px (was 150px), leaves damage trail
   if (state.ability1Timer <= 0) {
     // Check if any enemy is within 60px
     let closestEnemy: EnemyEntity | null = null;
@@ -698,11 +714,9 @@ function handleRanger(
       let dashDy: number;
 
       if (mov.dx !== 0 || mov.dy !== 0) {
-        // Dash in movement direction
         dashDx = mov.dx;
         dashDy = mov.dy;
       } else {
-        // Dash away from nearest enemy
         const awayX = player.x - closestEnemy.x;
         const awayY = player.y - closestEnemy.y;
         const awayLen = Math.sqrt(awayX * awayX + awayY * awayY);
@@ -710,26 +724,53 @@ function handleRanger(
           dashDx = awayX / awayLen;
           dashDy = awayY / awayLen;
         } else {
-          // Fallback: dash right
           dashDx = 1;
           dashDy = 0;
         }
       }
 
-      // Move player instantly 150px
-      player.x += dashDx * 150;
-      player.y += dashDy * 150;
+      const dashDist = 170; // v1.2: 170px (was 150px)
+      const startX = player.x;
+      const startY = player.y;
+
+      // Move player instantly
+      player.x += dashDx * dashDist;
+      player.y += dashDy * dashDist;
 
       // Grant iFrames
       player.iFrames = 0.5;
+
+      // v1.2: Leave a damage trail (100px long, 20px wide, 1s duration, 8 damage)
+      const trailPool: ProjectileEntity = {
+        id: createId(world),
+        x: (startX + player.x) / 2,
+        y: (startY + player.y) / 2,
+        radius: 20,
+        vx: 0,
+        vy: 0,
+        damage: 0,
+        pierceLeft: 9999,
+        hitEnemyIds: new Set(),
+        lifetime: 1.0,
+        isEnemy: false,
+        weaponId: 'evasion_roll_trail',
+        color: '#22C55E',
+        isPool: true,
+        poolDamagePerTick: 8 * stats.might,
+        poolTickInterval: 0.25,
+        poolTimer: 0,
+        poolRadius: 50, // elongated pool approximation (half of 100px trail)
+      };
+      world.projectiles.push(trailPool);
 
       state.ability1Timer = classDef.ability1.cooldown * stats.cdr;
     }
   }
 
-  // ---- Hunter's Mark (Level 10, CD 35s x cdr) ----
+  // ---- Hunter's Mark (Level 10, CD 30s x cdr) ----
+  // v1.2: CD 30s (was 35s), +30% damage (+15% bosses), 8s duration
+  // Mark transfers to nearest enemy on kill (up to 2 times)
   if (level >= 10 && state.ability2Timer <= 0) {
-    // Find enemy with highest HP currently on screen
     const cam = world.camera;
     const halfW = cam.width / 2;
     const halfH = cam.height / 2;
@@ -738,7 +779,6 @@ function handleRanger(
     let bestHp = -1;
 
     for (const enemy of world.enemies) {
-      // Check if on screen
       const screenX = enemy.x - cam.x;
       const screenY = enemy.y - cam.y;
       if (
@@ -753,11 +793,54 @@ function handleRanger(
     }
 
     if (bestEnemy) {
-      applyMark(bestEnemy.statusEffects, 0.4, 8);
+      // v1.2: +30% damage for non-bosses, +15% for bosses
+      const magnitude = bestEnemy.isBoss ? 0.15 : 0.30;
+      applyMark(bestEnemy.statusEffects, magnitude, 8); // v1.2: 8s duration
       state.ability2Timer = classDef.ability2.cooldown * stats.cdr;
     }
     // If no enemy found, don't start cooldown -- try again next frame
   }
+}
+
+/**
+ * v1.2: Transfer Hunter's Mark to nearest enemy when marked enemy dies.
+ * Called by the kill system. Returns true if mark was transferred.
+ * Can transfer up to 2 times per cast (tracked via remaining duration + sourceId).
+ */
+export function tryTransferHuntersMark(
+  world: GameWorld,
+  deadEnemy: EnemyEntity,
+): boolean {
+  const markEffect = deadEnemy.statusEffects.find((e) => e.type === 'mark');
+  if (!markEffect || markEffect.duration <= 0) return false;
+
+  // Track transfer count via sourceId (initial cast = 0, increments on transfer)
+  const transferCount = markEffect.sourceId ?? 0;
+  if (transferCount >= 2) return false; // Max 2 transfers
+
+  // Find nearest living enemy
+  let nearest: EnemyEntity | null = null;
+  let nearestDist = Infinity;
+  for (const enemy of world.enemies) {
+    if (enemy.id === deadEnemy.id) continue;
+    if (enemy.hp <= 0) continue;
+    const d = dist(deadEnemy.x, deadEnemy.y, enemy.x, enemy.y);
+    if (d < nearestDist) {
+      nearestDist = d;
+      nearest = enemy;
+    }
+  }
+
+  if (nearest && nearestDist < 400) { // Transfer range limit
+    const magnitude = nearest.isBoss ? 0.15 : 0.30;
+    applyMark(nearest.statusEffects, magnitude, markEffect.duration);
+    // Set sourceId to track transfer count
+    const newMark = nearest.statusEffects.find((e) => e.type === 'mark');
+    if (newMark) newMark.sourceId = transferCount + 1;
+    return true;
+  }
+
+  return false;
 }
 
 // =============================================================================
@@ -933,9 +1016,9 @@ function handleBerserker(
       // Leap to position
       player.x = bestX;
       player.y = bestY;
-      player.iFrames = 0.6;
+      player.iFrames = 0.4; // v1.2: 0.4s (was 0.6s)
       state.savageSlamActive = true;
-      state.savageSlamTimer = 0.6;
+      state.savageSlamTimer = 0.4; // v1.2: match iFrames
 
       const damage = 120 * stats.might;
       const innerRadius = 60 * stats.area;
@@ -971,6 +1054,7 @@ function handleBerserker(
 
 /**
  * Get Berserker's Blood Rage bonus stats.
+ * v1.2: Formula stays 0.6 × (1 - hp/maxHp). Attack Speed bonus removed.
  * Returns { bonusMight, bonusAttackSpeed } to be applied on top of effective stats.
  */
 export function getBerserkerBonuses(
@@ -978,8 +1062,8 @@ export function getBerserkerBonuses(
   maxHp: number,
 ): { bonusMight: number; bonusAttackSpeed: number } {
   const hpRatio = maxHp > 0 ? hp / maxHp : 1;
-  const bonusMight = 0.8 * (1 - hpRatio);
-  const bonusAttackSpeed = hpRatio < 0.3 ? 0.2 : 0;
+  const bonusMight = 0.6 * (1 - hpRatio); // v1.2: 0.6 (was 0.8)
+  const bonusAttackSpeed = 0; // v1.2: removed (was +0.2 below 30% HP)
   return { bonusMight, bonusAttackSpeed };
 }
 

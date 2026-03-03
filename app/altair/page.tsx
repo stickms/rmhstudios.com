@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation';
 import { useAltairGameStore, GamePhase } from '@/lib/altair/stores/game-store';
 import { useAltairMetaStore } from '@/lib/altair/stores/meta-store';
 import { useAltairSettingsStore } from '@/lib/altair/stores/settings-store';
+import { altairMusic } from '@/lib/altair/audio/music';
 import AltairHeader from '@/components/altair/AltairHeader';
 import MenuScreen from '@/components/altair/screens/MenuScreen';
 import ClassSelectScreen from '@/components/altair/screens/ClassSelectScreen';
@@ -56,6 +57,19 @@ export default function AltairPage() {
 
   // Track whether score has been submitted for this run to prevent duplicates
   const scoreSubmittedRef = useRef(false);
+
+  // Start background music on mount and sync volume with settings
+  useEffect(() => {
+    altairMusic.start();
+    let prev = { m: useAltairSettingsStore.getState().masterVolume, v: useAltairSettingsStore.getState().musicVolume };
+    const unsub = useAltairSettingsStore.subscribe((s) => {
+      if (s.masterVolume !== prev.m || s.musicVolume !== prev.v) {
+        prev = { m: s.masterVolume, v: s.musicVolume };
+        altairMusic.updateVolume();
+      }
+    });
+    return () => { unsub(); altairMusic.stop(); };
+  }, []);
 
   // Load meta progress from DB on mount, then check retroactive unlocks
   useEffect(() => {

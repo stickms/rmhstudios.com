@@ -1,12 +1,38 @@
 /**
  * MetaShopScreen — Persistent upgrade shop using coins.
+ * v1.3: 20 upgrades organized by category (Offense, Defense, Utility, Special).
  */
 'use client';
 
 import { useAltairMetaStore } from '@/lib/altair/stores/meta-store';
-import { META_UPGRADES } from '@/lib/altair/data/meta-upgrades';
+import { META_UPGRADES, MetaUpgradeDef } from '@/lib/altair/data/meta-upgrades';
 import { useAltairToastStore } from '@/lib/altair/stores/toast-store';
-import { Coins, Lock, Check } from 'lucide-react';
+import { Coins, Check } from 'lucide-react';
+
+const UPGRADE_CATEGORIES: Record<string, string> = {
+  meta_max_hp: 'Offense',
+  meta_hp_regen: 'Offense',
+  meta_might: 'Offense',
+  meta_haste: 'Offense',
+  meta_piercing: 'Offense',
+  meta_move_speed: 'Defense',
+  meta_armor: 'Defense',
+  meta_tenacity: 'Defense',
+  meta_endurance: 'Defense',
+  meta_pickup_range: 'Utility',
+  meta_growth: 'Utility',
+  meta_luck: 'Utility',
+  meta_greed: 'Utility',
+  meta_reroll: 'Utility',
+  meta_banish: 'Utility',
+  meta_scavenger: 'Utility',
+  meta_catalyst_affinity: 'Utility',
+  meta_revival: 'Special',
+  meta_extra_choice: 'Special',
+  meta_arsenal: 'Special',
+};
+
+const CATEGORY_ORDER = ['Offense', 'Defense', 'Utility', 'Special'];
 
 interface MetaShopScreenProps {
   onBack: () => void;
@@ -38,60 +64,71 @@ export default function MetaShopScreen({ onBack }: MetaShopScreenProps) {
         </div>
       </div>
 
-      {/* Upgrade grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-        {META_UPGRADES.map((def) => {
-          const currentLevel = upgrades[def.id] || 0;
-          const isMaxed = currentLevel >= def.maxLevel;
-          const nextCost = isMaxed ? 0 : def.costs[currentLevel];
-          const canAfford = coins >= nextCost;
+      {/* Upgrade grid by category */}
+      {CATEGORY_ORDER.map((category) => {
+        const categoryUpgrades = META_UPGRADES.filter(
+          (def) => (UPGRADE_CATEGORIES[def.id] ?? 'Utility') === category,
+        );
+        if (categoryUpgrades.length === 0) return null;
+        return (
+          <div key={category} className="mb-6">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-(--altair-text-dim) mb-3">{category}</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {categoryUpgrades.map((def) => {
+                const currentLevel = upgrades[def.id] || 0;
+                const isMaxed = currentLevel >= def.maxLevel;
+                const nextCost = isMaxed ? 0 : def.costs[currentLevel];
+                const canAfford = coins >= nextCost;
 
-          return (
-            <div
-              key={def.id}
-              className={`p-4 rounded-xl border transition-colors ${
-                isMaxed
-                  ? 'border-(--altair-success)/30 bg-(--altair-success-dim)'
-                  : 'border-(--altair-border) bg-(--altair-surface) hover:bg-(--altair-surface-hover)'
-              }`}
-            >
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <h3 className="font-semibold text-sm text-(--altair-text)">{def.name}</h3>
-                  <p className="text-xs text-(--altair-text-muted) mt-0.5">{def.description}</p>
-                </div>
-                {isMaxed && <Check size={16} className="text-(--altair-success) shrink-0" />}
-              </div>
-
-              {/* Level dots */}
-              <div className="flex gap-1 mb-3">
-                {Array.from({ length: def.maxLevel }).map((_, i) => (
+                return (
                   <div
-                    key={i}
-                    className={`h-1.5 flex-1 rounded-full ${
-                      i < currentLevel ? 'bg-(--altair-accent)' : 'bg-(--altair-border)'
+                    key={def.id}
+                    className={`p-4 rounded-xl border transition-colors ${
+                      isMaxed
+                        ? 'border-(--altair-success)/30 bg-(--altair-success-dim)'
+                        : 'border-(--altair-border) bg-(--altair-surface) hover:bg-(--altair-surface-hover)'
                     }`}
-                  />
-                ))}
-              </div>
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <h3 className="font-semibold text-sm text-(--altair-text)">{def.name}</h3>
+                        <p className="text-xs text-(--altair-text-muted) mt-0.5">{def.description}</p>
+                      </div>
+                      {isMaxed && <Check size={16} className="text-(--altair-success) shrink-0" />}
+                    </div>
 
-              {!isMaxed && (
-                <button
-                  onClick={() => handlePurchase(def.id, def.name)}
-                  disabled={!canAfford}
-                  className={`w-full py-2 rounded-lg text-sm font-semibold transition-colors ${
-                    canAfford
-                      ? 'bg-(--altair-accent) hover:bg-(--altair-accent-hover) text-white'
-                      : 'bg-(--altair-surface-active) text-(--altair-text-dim) cursor-not-allowed'
-                  }`}
-                >
-                  {nextCost} coins
-                </button>
-              )}
+                    {/* Level dots */}
+                    <div className="flex gap-1 mb-3">
+                      {Array.from({ length: def.maxLevel }).map((_, i) => (
+                        <div
+                          key={i}
+                          className={`h-1.5 flex-1 rounded-full ${
+                            i < currentLevel ? 'bg-(--altair-accent)' : 'bg-(--altair-border)'
+                          }`}
+                        />
+                      ))}
+                    </div>
+
+                    {!isMaxed && (
+                      <button
+                        onClick={() => handlePurchase(def.id, def.name)}
+                        disabled={!canAfford}
+                        className={`w-full py-2 rounded-lg text-sm font-semibold transition-colors ${
+                          canAfford
+                            ? 'bg-(--altair-accent) hover:bg-(--altair-accent-hover) text-white'
+                            : 'bg-(--altair-surface-active) text-(--altair-text-dim) cursor-not-allowed'
+                        }`}
+                      >
+                        {nextCost} coins
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-          );
-        })}
-      </div>
+          </div>
+        );
+      })}
 
       {/* Back button */}
       <button
