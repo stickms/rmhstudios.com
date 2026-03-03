@@ -56,10 +56,9 @@ function SentenceWithEdits({
     editByWordIndex.set(edit.wordIndex, edit);
   }
 
-  // Split current sentence text into words to reconstruct with inline edits.
-  // The current text already contains the editor's replacements. We rebuild
-  // the display by replacing each edited word position with original→new markup.
-  const words = sentence.text.split(/\s+/);
+  // Split sentence text into words the same way the server does: split on
+  // whitespace and filter empty strings to ensure wordIndex alignment.
+  const words = sentence.text.split(/\s+/).filter((w) => w.length > 0);
 
   return (
     <span>
