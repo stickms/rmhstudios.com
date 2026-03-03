@@ -625,7 +625,6 @@ export class HumanKeyboardGame extends BaseMinigame {
       if (this.state.isComplete) {
         score += HK_FIRST_FINISH_BONUS;
       }
-      stats.correctPresses; // just to reference
       const accuracyPercent = Math.round(accuracy * 100);
 
       playerResults.push({
@@ -675,8 +674,6 @@ export class HumanKeyboardGame extends BaseMinigame {
     const teamEffectiveSpeed = totalTurnTimeSec > 0
       ? Math.round(((totalCorrect / Math.max(totalPresses, 1)) * (totalPresses / totalTurnTimeSec)) * 100) / 100
       : 0;
-
-    void playerResults; // used for interface compliance
 
     const completionTimeSec = this.state.isComplete && this.state.completedAt && this.state.startedAt
       ? Math.round((this.state.completedAt - this.state.startedAt) / 100) / 10

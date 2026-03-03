@@ -39,8 +39,8 @@ The nine currently implemented minigames are:
 - **Minimalist Masterpiece** — Draw with limited strokes, then art auction. Drawing phase supports auto-save (`SAVE_DRAWING`) and explicit submit (`SUBMIT_DRAWING`). Auto-save preserves drawings for reconnection and spectator live updates without locking. Explicit submit locks the drawing and ends the phase early if all players submit.
 - **Emoji Cinema** — Describe movies with emojis, others guess
 - **Wit-War** — Battle of wits with head-to-head voting
-- **Sequence Sam** — Memory pattern matching on a 3×3 grid with chaos rounds
-- **Human Keyboard** — Cooperative typing where each player controls a subset of keys
+- **Sequence Sam** — Memory pattern matching on a 3×3 grid with chaos rounds. Adds 2 tiles per round; game ends when ≤1 player fully completes the latest sequence. Scoring is based on total correct taps plus a small first-to-finish bonus per round.
+- **Human Keyboard** — Cooperative typing where each player controls a subset of keys. Default reshuffle interval is 20s (non-blocking). No incorrect-key lockout; instead tracks per-player accuracy (correct/total keystrokes, %) and typing speed (keystrokes/turn-time, letters/sec). Score = accuracy × typingSpeed × 100. Reports individual and team aggregate stats.
 
 ---
 

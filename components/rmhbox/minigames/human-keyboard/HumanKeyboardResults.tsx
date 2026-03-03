@@ -57,7 +57,7 @@ export default function HumanKeyboardResults({
             </div>
             <div className="flex flex-col items-center">
               <span className="text-2xl font-extrabold text-(--rmhbox-accent)">{teamAggregate.teamTypingSpeed}</span>
-              <span className="text-xs text-(--rmhbox-text-muted)">Team Speed (l/s)</span>
+              <span className="text-xs text-(--rmhbox-text-muted)">Team Speed (letters/sec)</span>
             </div>
             <div className="flex flex-col items-center">
               <span className="text-2xl font-extrabold text-(--rmhbox-accent)">{teamAggregate.teamEffectiveSpeed}</span>
@@ -102,7 +102,7 @@ export default function HumanKeyboardResults({
                   </span>
                 </td>
                 <td className="px-3 py-2 text-right font-mono text-(--rmhbox-text-muted)">
-                  {p.typingSpeed} l/s
+                  {p.typingSpeed} letters/sec
                 </td>
                 <td className="px-3 py-2 text-right font-mono font-bold text-(--rmhbox-accent)">
                   {p.score}
