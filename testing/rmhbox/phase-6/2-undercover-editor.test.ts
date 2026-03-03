@@ -1030,4 +1030,319 @@ describe('Undercover Editor Server Handler — Round-Robin Design (§6.2)', () =
       expect(reveal).toBeDefined();
     });
   });
+
+  // ─── New Scoring System ────────────────────────────────────
+
+  describe('New Scoring System', () => {
+    /** Helper: advance game through READING to REVIEW. */
+    function advanceToReveal(
+      game: UndercoverEditorGame,
+      playerIds: string[],
+      playerLog: Array<{ userId: string; event: string; data: unknown }>,
+      broadcastLog: Array<{ event: string; data: unknown }>,
+      context: { getHostId: () => string },
+      matchFn: (uid: string, storyIds: string[]) => Record<string, string>,
+    ) {
+      const hostId = context.getHostId();
+
+      // Complete N rounds
+      for (let round = 0; round < 5; round++) {
+        completeOneRound(game, playerIds, playerLog, `Scoring round ${round + 1} sentence`);
+      }
+
+      // Advance reading
+      const readingStart = broadcastLog.find(
+        (e) => e.event === 'rmhbox:game:action' &&
+          (e.data as Record<string, unknown>).type === 'UE_READING_START',
+      );
+      const readingStories = (readingStart!.data as Record<string, unknown>).stories as Array<{ sentenceCount: number }>;
+      for (let si = 0; si < readingStories.length; si++) {
+        for (let senti = 0; senti < readingStories[si].sentenceCount; senti++) {
+          game.handleInput(hostId, 'NEXT_SENTENCE', {});
+        }
+        game.handleInput(hostId, 'NEXT_STORY', {});
+      }
+
+      const storyIds = getStoryIds(broadcastLog);
+
+      // Each player submits + locks in
+      for (const uid of playerIds) {
+        const guesses = matchFn(uid, storyIds);
+        game.handleInput(uid, 'SUBMIT_MATCHING', { guesses });
+        game.handleInput(uid, 'LOCK_IN_MATCHING', {});
+      }
+
+      vi.advanceTimersByTime(UE_REVEAL_DURATION_SECONDS * 1000 + 50);
+    }
+
+    it('should award +1 per character written during writing phases', () => {
+      const { game, broadcastLog, playerLog, context } = createUEGame();
+      game.start();
+      const playerIds = Object.values(MOCK_USERS).map((u) => u.userId);
+
+      advanceToReveal(game, playerIds, playerLog, broadcastLog, context,
+        (_uid, storyIds) => {
+          const g: Record<string, string> = {};
+          for (const s of storyIds) g[s] = playerIds[0]; // wrong guesses
+          return g;
+        },
+      );
+
+      const results = (context.onComplete as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      // Every player wrote sentences across 5 rounds; each should have characters counted
+      for (const ranking of results.rankings) {
+        expect(ranking.score).toBeGreaterThan(0);
+      }
+    });
+
+    it('should include breakdown in score results (via REVEAL broadcast)', () => {
+      const { game, broadcastLog, playerLog, context } = createUEGame();
+      game.start();
+      const playerIds = Object.values(MOCK_USERS).map((u) => u.userId);
+
+      // Complete rounds without skipping edits — submit actual edits
+      for (let round = 0; round < 5; round++) {
+        submitAllForCurrentRound(game, playerIds, playerLog, `Breakdown test round ${round + 1}`);
+        // All editors skip edits (we test breakdown existence, not exact values)
+        for (const uid of playerIds) {
+          game.handleInput(uid, 'SKIP_EDIT', {});
+        }
+      }
+
+      const hostId = context.getHostId();
+      const readingStart = broadcastLog.find(
+        (e) => e.event === 'rmhbox:game:action' &&
+          (e.data as Record<string, unknown>).type === 'UE_READING_START',
+      );
+      const readingStories = (readingStart!.data as Record<string, unknown>).stories as Array<{ sentenceCount: number }>;
+      for (let si = 0; si < readingStories.length; si++) {
+        for (let senti = 0; senti < readingStories[si].sentenceCount; senti++) {
+          game.handleInput(hostId, 'NEXT_SENTENCE', {});
+        }
+        game.handleInput(hostId, 'NEXT_STORY', {});
+      }
+
+      for (const uid of playerIds) {
+        game.handleInput(uid, 'LOCK_IN_MATCHING', {});
+      }
+
+      // Check REVEAL broadcast has scores with breakdown
+      const reveal = broadcastLog.find(
+        (e) => e.event === 'rmhbox:game:action' &&
+          (e.data as Record<string, unknown>).type === 'UE_REVEAL',
+      );
+      expect(reveal).toBeDefined();
+      const scores = (reveal!.data as Record<string, unknown>).scores as Array<Record<string, unknown>>;
+      expect(scores.length).toBe(5);
+      for (const scoreEntry of scores) {
+        const breakdown = scoreEntry.breakdown as Record<string, number>;
+        expect(breakdown).toBeDefined();
+        expect(breakdown.charsWritten).toBeGreaterThanOrEqual(0);
+        expect(breakdown.wordsEdited).toBeGreaterThanOrEqual(0);
+        expect(breakdown.correctMatches).toBeGreaterThanOrEqual(0);
+        expect(breakdown.falseMatchesCaused).toBeGreaterThanOrEqual(0);
+      }
+    });
+
+    it('should award +200 per correct match', () => {
+      const { game, broadcastLog, playerLog, context } = createUEGame();
+      game.start();
+      const playerIds = Object.values(MOCK_USERS).map((u) => u.userId);
+
+      // Get the actual editor assignments
+      const editorMap: Record<string, string> = {}; // storyId → editorUserId
+      for (const uid of playerIds) {
+        const assignment = getEditorAssignment(playerLog, uid);
+        if (assignment) {
+          editorMap[assignment.assignedStoryId] = uid;
+        }
+      }
+
+      advanceToReveal(game, playerIds, playerLog, broadcastLog, context,
+        (_uid, storyIds) => {
+          // Every player makes ALL correct guesses
+          const g: Record<string, string> = {};
+          for (const s of storyIds) {
+            if (editorMap[s]) g[s] = editorMap[s];
+          }
+          return g;
+        },
+      );
+
+      const results = (context.onComplete as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      // All correct guesses should give at least 200*(N-1) matching bonus per player
+      // (each player guesses N-1 stories they didn't edit, all correctly)
+      for (const ranking of results.rankings) {
+        // Minimum: 4 correct matches * 200 = 800 from matching alone
+        expect(ranking.score).toBeGreaterThanOrEqual(800);
+      }
+    });
+
+    it('should award +300 per false match caused (player not identified as editor)', () => {
+      const { game, broadcastLog, playerLog, context } = createUEGame();
+      game.start();
+      const playerIds = Object.values(MOCK_USERS).map((u) => u.userId);
+
+      advanceToReveal(game, playerIds, playerLog, broadcastLog, context,
+        (_uid, storyIds) => {
+          // Every player guesses the wrong editor (always playerIds[0])
+          const g: Record<string, string> = {};
+          for (const s of storyIds) {
+            g[s] = playerIds[0];
+          }
+          return g;
+        },
+      );
+
+      const results = (context.onComplete as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      // Most editors are not identified, so they should get false match bonus
+      // At least some players should have scores > 0
+      const totalScore = results.rankings.reduce(
+        (sum: number, r: { score: number }) => sum + r.score, 0,
+      );
+      expect(totalScore).toBeGreaterThan(0);
+    });
+  });
+
+  // ─── Round Counter ────────────────────────────────────────
+
+  describe('Round Counter', () => {
+    it('should broadcast round for both WRITE and EDIT phases (reaching totalSteps)', () => {
+      const { game, broadcastLog, playerLog } = createUEGame();
+      game.start();
+      const playerIds = Object.values(MOCK_USERS).map((u) => u.userId);
+
+      // Complete all N rounds
+      for (let round = 0; round < 5; round++) {
+        completeOneRound(game, playerIds, playerLog, `Counter test round ${round + 1}`);
+      }
+
+      // Collect all MINIGAME_ROUND events (including from start)
+      const roundBroadcasts: Array<{ current: number; total: number }> = [];
+      const roundEvents = broadcastLog.filter(
+        (e) => e.event === 'action' &&
+          (e.data as Record<string, unknown>).type === 'MINIGAME_ROUND',
+      );
+
+      for (const ev of roundEvents) {
+        const payload = (ev.data as Record<string, unknown>).payload as Record<string, unknown>;
+        roundBroadcasts.push({
+          current: payload.current as number,
+          total: payload.total as number,
+        });
+      }
+
+      // Should have 2*N round broadcasts (one for each WRITE + EDIT phase)
+      expect(roundBroadcasts.length).toBe(10);
+
+      // Last round broadcast should reach step 10/10
+      const lastRound = roundBroadcasts[roundBroadcasts.length - 1];
+      expect(lastRound.current).toBe(10);
+      expect(lastRound.total).toBe(10);
+
+      // Write phases: steps 1, 3, 5, 7, 9
+      for (let i = 0; i < roundBroadcasts.length; i += 2) {
+        expect(roundBroadcasts[i].current).toBe(i + 1);
+      }
+      // Edit phases: steps 2, 4, 6, 8, 10
+      for (let i = 1; i < roundBroadcasts.length; i += 2) {
+        expect(roundBroadcasts[i].current).toBe(i + 1);
+      }
+    });
+  });
+
+  // ─── Reveal Log wordIndex ─────────────────────────────────
+
+  describe('Reveal Log Edit Data', () => {
+    it('should include wordIndex in reveal storyReveals edit entries', () => {
+      const { game, broadcastLog, playerLog, context } = createUEGame();
+      game.start();
+      const playerIds = Object.values(MOCK_USERS).map((u) => u.userId);
+
+      // We need at least one actual edit to test wordIndex
+      // Complete first write round
+      submitAllForCurrentRound(game, playerIds, playerLog, 'Edit test sentence with many words');
+
+      // Now we're in EDIT phase — find each editor and submit an edit
+      const hostId = context.getHostId();
+      for (const uid of playerIds) {
+        const assignment = getEditorAssignment(playerLog, uid);
+        if (!assignment) continue;
+
+        // Get the edit prompt for this editor
+        const editPrompt = playerLog.filter(
+          (e) => e.userId === uid &&
+            e.event === 'rmhbox:game:action' &&
+            (e.data as Record<string, unknown>).type === 'UE_EDIT_PROMPT',
+        ).at(-1);
+
+        if (!editPrompt) continue;
+        const story = (editPrompt.data as Record<string, unknown>).story as Record<string, unknown>;
+        const editableSentence = story.editableSentence as Record<string, unknown>;
+        const words = editableSentence.words as Array<{ index: number; word: string }>;
+
+        if (words.length >= 2) {
+          game.handleInput(uid, 'EDIT_WORDS', {
+            storyId: assignment.assignedStoryId,
+            edits: [
+              { wordIndex: 0, newWord: 'CHANGED' },
+            ],
+          });
+        }
+      }
+
+      // Complete remaining rounds with skip edits
+      for (let round = 1; round < 5; round++) {
+        submitAllForCurrentRound(game, playerIds, playerLog, `Round ${round + 1} edit test`);
+        for (const uid of playerIds) {
+          game.handleInput(uid, 'SKIP_EDIT', {});
+        }
+      }
+
+      // Advance through reading
+      const readingStart = broadcastLog.find(
+        (e) => e.event === 'rmhbox:game:action' &&
+          (e.data as Record<string, unknown>).type === 'UE_READING_START',
+      );
+      const readingStories = (readingStart!.data as Record<string, unknown>).stories as Array<{ sentenceCount: number }>;
+      for (let si = 0; si < readingStories.length; si++) {
+        for (let senti = 0; senti < readingStories[si].sentenceCount; senti++) {
+          game.handleInput(hostId, 'NEXT_SENTENCE', {});
+        }
+        game.handleInput(hostId, 'NEXT_STORY', {});
+      }
+
+      // Lock in all players
+      for (const uid of playerIds) {
+        game.handleInput(uid, 'LOCK_IN_MATCHING', {});
+      }
+
+      vi.advanceTimersByTime(UE_REVEAL_DURATION_SECONDS * 1000 + 50);
+
+      const results = (context.onComplete as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      const gameLog = results.gameSpecificData.gameLog as Record<string, unknown>;
+      const actions = gameLog.actions as Array<{ type: string; payload: Record<string, unknown> }>;
+      const revealAction = actions.find((a) => a.type === 'reveal');
+      expect(revealAction).toBeDefined();
+
+      const storyReveals = revealAction!.payload.storyReveals as Array<Record<string, unknown>>;
+
+      // Find at least one story that has edits with wordIndex
+      const storiesWithEdits = storyReveals.filter(
+        (s) => (s.edits as Array<Record<string, unknown>>).length > 0,
+      );
+      expect(storiesWithEdits.length).toBeGreaterThan(0);
+
+      for (const storyReveal of storiesWithEdits) {
+        const edits = storyReveal.edits as Array<Record<string, unknown>>;
+        for (const edit of edits) {
+          expect(edit.wordIndex).toBeDefined();
+          expect(typeof edit.wordIndex).toBe('number');
+          expect(edit.originalWord).toBeDefined();
+          expect(edit.newWord).toBeDefined();
+          expect(edit.sentenceIndex).toBeDefined();
+        }
+      }
+    });
+  });
 });

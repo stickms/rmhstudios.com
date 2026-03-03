@@ -237,8 +237,11 @@ export const UE_MAX_SENTENCE_LENGTH = 200;
 export const UE_MAX_EDIT_WORD_LENGTH = 30;
 /** Number of words the editor must change in the most recent sentence per edit round. */
 export const UE_REQUIRED_EDITS_PER_ROUND = 2;
-export const UE_WRITER_MAJOR_WIN = 400;
-export const UE_WRITER_LOSS = 50;
-export const UE_EDITOR_MAJOR_WIN = 600;
-export const UE_EDITOR_LOSS = 50;
-export const UE_CORRECT_VOTE_BONUS = 100;
+/** +200 per correct match of another editor to their story during REVIEW */
+export const UE_CORRECT_MATCH_BONUS = 200;
+/** +300 per other player that did NOT correctly match your edited story to you */
+export const UE_FALSE_MATCH_CAUSED_BONUS = 300;
+/** +1 per character written during WRITE phases */
+export const UE_CHAR_WRITTEN_BONUS = 1;
+/** +50 per word edited during EDIT phases */
+export const UE_WORD_EDITED_BONUS = 50;

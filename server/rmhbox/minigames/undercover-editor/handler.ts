@@ -43,11 +43,10 @@ import {
   UE_WRITE_TIMEOUT_SECONDS,
   UE_EDIT_TIMEOUT_SECONDS,
   UE_REVEAL_DURATION_SECONDS,
-  UE_CORRECT_VOTE_BONUS,
-  UE_EDITOR_MAJOR_WIN,
-  UE_EDITOR_LOSS,
-  UE_WRITER_MAJOR_WIN,
-  UE_WRITER_LOSS,
+  UE_CORRECT_MATCH_BONUS,
+  UE_FALSE_MATCH_CAUSED_BONUS,
+  UE_CHAR_WRITTEN_BONUS,
+  UE_WORD_EDITED_BONUS,
 } from '@/lib/rmhbox/constants';
 import { logger } from '../../logger';
 import type {
@@ -91,6 +90,8 @@ export class UndercoverEditorGame extends BaseMinigame {
   private state!: UndercoverEditorState;
   private startedAt: number = 0;
   private actionLog: GameLogAction[] = [];
+  /** Per-player score breakdown, populated during computeScoring(). */
+  private scoreBreakdowns: Map<string, Record<string, number>> = new Map();
   /** Handle for the current phase-transition timeout; cancelled on early transitions. */
   private phaseTransitionHandle: NodeJS.Timeout | null = null;
 
@@ -350,6 +351,9 @@ export class UndercoverEditorGame extends BaseMinigame {
     this.state.phaseStartedAt = now;
     this.state.phaseEndsAt = now + editTimeout * 1000;
 
+    // Broadcast the round counter so the footer shows the correct step (e.g. 8/8)
+    this.broadcastRound(this.state.currentStep, this.state.totalSteps);
+
     // Reset edit completion tracking (keyed by editorUserId)
     this.state.roundEditsDone = new Map();
     for (const editorId of this.state.editorAssignments.keys()) {
@@ -559,6 +563,7 @@ export class UndercoverEditorGame extends BaseMinigame {
         editCount: s.edits.length,
         edits: s.edits.map((e) => ({
           sentenceIndex: e.sentenceIndex,
+          wordIndex: e.wordIndex,
           originalWord: e.originalWord,
           newWord: e.newWord,
         })),
@@ -1049,59 +1054,75 @@ export class UndercoverEditorGame extends BaseMinigame {
 
   // ─── Scoring ────────────────────────────────────────────────────────
 
+  /**
+   * New scoring system:
+   *   +200 per correct match of a story to another editor during matching
+   *   +300 per false match caused (each other player that didn't match your edited story to you)
+   *   +1 per character written during writing phases
+   *   +50 per word edited during editing phases
+   */
   private computeScoring(): void {
     for (const uid of this.state.playerIds) {
-      let score = 0;
+      const breakdown: Record<string, number> = {};
 
-      // Correct match: +UE_CORRECT_VOTE_BONUS per correct guess
+      // ── Correct Match Bonus: +UE_CORRECT_MATCH_BONUS per correct guess ──
+      let correctMatches = 0;
       const guesses = this.state.matchGuesses.get(uid);
       if (guesses) {
         for (const [storyId, guessedEditorId] of guesses) {
           const story = this.state.stories.get(storyId);
           if (story && guessedEditorId === story.editorUserId) {
-            score += UE_CORRECT_VOTE_BONUS;
+            correctMatches++;
           }
         }
       }
+      breakdown.correctMatches = correctMatches * UE_CORRECT_MATCH_BONUS;
 
-      // Editor bonus/penalty: sneaky editor wins big, caught editor gets consolation
+      // ── False Match Caused Bonus: +UE_FALSE_MATCH_CAUSED_BONUS per player that didn't ID you ──
       const editedStoryId = this.state.editorAssignments.get(uid);
+      let falseMatchesCaused = 0;
       if (editedStoryId) {
-        const wasCaught = this.wasEditorCaught(editedStoryId);
-        score += wasCaught ? UE_EDITOR_LOSS : UE_EDITOR_MAJOR_WIN;
-      }
-
-      // Writer bonus/penalty: if the editor of YOUR story was sneaky, you benefit
-      const ownedStory = this.state.stories.get(uid);
-      if (ownedStory) {
-        const wasCaught = this.wasEditorCaught(uid);
-        score += wasCaught ? UE_WRITER_LOSS : UE_WRITER_MAJOR_WIN;
-      }
-
-      this.state.playerScores.set(uid, (this.state.playerScores.get(uid) ?? 0) + score);
-    }
-  }
-
-  /** Check if the majority of guessers correctly identified the editor for a story. */
-  private wasEditorCaught(storyId: string): boolean {
-    const story = this.state.stories.get(storyId);
-    if (!story) return false;
-
-    let correctGuesses = 0;
-    let totalGuessers = 0;
-    for (const [guesserId, guessMap] of this.state.matchGuesses) {
-      // Skip the editor themselves (they can't vote on their own edited story)
-      if (guesserId === story.editorUserId) continue;
-      const guess = guessMap.get(storyId);
-      if (guess) {
-        totalGuessers++;
-        if (guess === story.editorUserId) {
-          correctGuesses++;
+        for (const [guesserId, guessMap] of this.state.matchGuesses) {
+          if (guesserId === uid) continue; // skip self
+          const guess = guessMap.get(editedStoryId);
+          // Player either didn't guess for this story or guessed wrong
+          if (!guess || guess !== uid) {
+            falseMatchesCaused++;
+          }
         }
       }
-    }
+      breakdown.falseMatchesCaused = falseMatchesCaused * UE_FALSE_MATCH_CAUSED_BONUS;
 
-    return totalGuessers > 0 && correctGuesses > totalGuessers / 2;
+      // ── Character Written Bonus: +UE_CHAR_WRITTEN_BONUS per char ──
+      let totalChars = 0;
+      for (const story of this.state.stories.values()) {
+        for (const sentence of story.sentences) {
+          if (sentence.authorUserId === uid) {
+            totalChars += sentence.originalText.length;
+          }
+        }
+      }
+      breakdown.charsWritten = totalChars * UE_CHAR_WRITTEN_BONUS;
+
+      // ── Word Edited Bonus: +UE_WORD_EDITED_BONUS per word edit ──
+      let totalWordsEdited = 0;
+      if (editedStoryId) {
+        const story = this.state.stories.get(editedStoryId);
+        if (story) {
+          totalWordsEdited = story.edits.length;
+        }
+      }
+      breakdown.wordsEdited = totalWordsEdited * UE_WORD_EDITED_BONUS;
+
+      const score = breakdown.correctMatches
+        + breakdown.falseMatchesCaused
+        + breakdown.charsWritten
+        + breakdown.wordsEdited;
+
+      this.state.playerScores.set(uid, (this.state.playerScores.get(uid) ?? 0) + score);
+      // Store breakdown for the score results
+      this.scoreBreakdowns.set(uid, breakdown);
+    }
   }
 
   // ─── State Views ──────────────────────────────────────────────────────
@@ -1482,6 +1503,7 @@ export class UndercoverEditorGame extends BaseMinigame {
           return {
             storyId: story.storyId,
             sentenceIndex: e.sentenceIndex,
+            wordIndex: e.wordIndex,
             sentenceAuthor: sentence?.authorName ?? 'Unknown',
             originalWord: e.originalWord,
             newWord: e.newWord,
@@ -1505,7 +1527,7 @@ export class UndercoverEditorGame extends BaseMinigame {
         userId: uid,
         userName: player?.userName ?? 'Unknown',
         score: this.state.playerScores.get(uid) ?? 0,
-        breakdown: {},
+        breakdown: this.scoreBreakdowns.get(uid) ?? {},
       };
     });
   }

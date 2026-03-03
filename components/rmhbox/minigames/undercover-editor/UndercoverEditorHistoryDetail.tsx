@@ -1,8 +1,9 @@
 /**
  * UndercoverEditorHistoryDetail — History display for Undercover Editor games.
  *
- * Renders per-story views with highlighted edits, editor reveal,
- * and final scores. Stories are numbered, not player-named.
+ * Renders per-story views with in-situ edit highlighting: edited words are
+ * shown inline with strikethrough original and colored replacement.
+ * Stories are numbered, not player-named.
  *
  * Reference: docs/rmhbox/design-spec/minigames-2.md §2
  */
@@ -12,6 +13,7 @@ import type { HistoryDetailProps } from '@/lib/rmhbox/history-display-registry';
 
 interface EditEntry {
   sentenceIndex: number;
+  wordIndex: number;
   originalWord: string;
   newWord: string;
 }
@@ -30,6 +32,60 @@ interface StoryReveal {
   editorName: string;
   edits: EditEntry[];
   sentences: SentenceEntry[];
+}
+
+/**
+ * Renders a sentence with edits shown in-situ: each edited word is displayed
+ * as [strikethrough-original → new-word] inline within the sentence text.
+ */
+function SentenceWithEdits({
+  sentence,
+  edits,
+}: {
+  sentence: SentenceEntry;
+  edits: EditEntry[];
+}) {
+  // If no edits apply to this sentence, render the text normally
+  if (edits.length === 0) {
+    return <span>{sentence.text}</span>;
+  }
+
+  // Build a map of wordIndex → edit for quick lookup
+  const editByWordIndex = new Map<number, EditEntry>();
+  for (const edit of edits) {
+    editByWordIndex.set(edit.wordIndex, edit);
+  }
+
+  // Split current sentence text into words to reconstruct with inline edits.
+  // The current text already contains the editor's replacements. We rebuild
+  // the display by replacing each edited word position with original→new markup.
+  const words = sentence.text.split(/\s+/);
+
+  return (
+    <span>
+      {words.map((word, wi) => {
+        const edit = editByWordIndex.get(wi);
+        if (edit) {
+          return (
+            <span key={wi}>
+              {wi > 0 && ' '}
+              <span className="inline-flex items-center gap-0.5 rounded bg-(--rmhbox-rare-dim) px-1 py-0.5 text-[inherit]">
+                <span className="line-through text-(--rmhbox-danger)">{edit.originalWord}</span>
+                <span className="text-(--rmhbox-text-muted) text-[0.75em]">→</span>
+                <span className="text-(--rmhbox-success) font-medium">{edit.newWord}</span>
+              </span>
+            </span>
+          );
+        }
+        return (
+          <span key={wi}>
+            {wi > 0 && ' '}
+            {word}
+          </span>
+        );
+      })}
+    </span>
+  );
 }
 
 export default function UndercoverEditorHistoryDetail({
@@ -73,7 +129,7 @@ export default function UndercoverEditorHistoryDetail({
             📖 Story {idx + 1}
           </h4>
 
-          {/* Sentences */}
+          {/* Sentences with in-situ edit highlighting */}
           <div className="space-y-2 mb-3">
             {reveal.sentences.map((s, i) => {
               const isMe = s.authorUserId === currentUserId;
@@ -83,26 +139,15 @@ export default function UndercoverEditorHistoryDetail({
               return (
                 <div key={i} className="rounded-lg bg-(--rmhbox-surface) p-3">
                   <p className="text-sm leading-relaxed text-(--rmhbox-text)">
-                    {s.text}
+                    <SentenceWithEdits sentence={s} edits={sentenceEdits} />
                   </p>
-                  {sentenceEdits.length > 0 && (
-                    <div className="mt-1.5 flex flex-wrap gap-2">
-                      {sentenceEdits.map((edit, ei) => (
-                        <span
-                          key={ei}
-                          className="inline-flex items-center gap-1 rounded-full bg-(--rmhbox-rare-dim) px-2 py-0.5 text-[10px]"
-                        >
-                          <span className="line-through text-(--rmhbox-danger)">{edit.originalWord}</span>
-                          <span className="text-(--rmhbox-text-muted)">→</span>
-                          <span className="text-(--rmhbox-success) font-medium">{edit.newWord}</span>
-                        </span>
-                      ))}
-                    </div>
-                  )}
                   <p className={`mt-1 text-[10px] ${
                     isMe ? 'text-(--rmhbox-accent) font-semibold' : 'text-(--rmhbox-text-muted)'
                   }`}>
                     — {authorLabel} · Round {s.roundNumber}
+                    {sentenceEdits.length > 0 && (
+                      <span className="text-(--rmhbox-rare)"> · {sentenceEdits.length} edit{sentenceEdits.length > 1 ? 's' : ''}</span>
+                    )}
                   </p>
                 </div>
               );

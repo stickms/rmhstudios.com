@@ -172,6 +172,8 @@ export interface EditableStory {
 export interface WordEditView {
   storyId: string;
   sentenceIndex: number;
+  /** Index of the word within the sentence's words array. */
+  wordIndex: number;
   sentenceAuthor: string;
   originalWord: string;
   newWord: string;
