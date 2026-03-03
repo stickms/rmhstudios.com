@@ -57,6 +57,11 @@ export default function AltairPage() {
   // Track whether score has been submitted for this run to prevent duplicates
   const scoreSubmittedRef = useRef(false);
 
+  // Load meta progress from DB on mount, then check retroactive unlocks
+  useEffect(() => {
+    useAltairMetaStore.getState().loadFromServer();
+  }, []);
+
   // Retroactive unlock check — runs on mount and when entering class select
   // so players who already met conditions (e.g. after condition changes) get their unlocks
   useEffect(() => {

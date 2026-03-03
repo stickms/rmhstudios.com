@@ -25,6 +25,7 @@ model User {
 
   // Game Relations (Progression linked to User)
   altairProfile  AltairPlayer?
+  altairMetaProgress AltairMetaProgress?
   altairCoopProfile AltairCoopProfile?
   altairMatchPlayers AltairMatchPlayer[]
   laundryProfile LaundryPlayer?
@@ -835,6 +836,27 @@ model Feedback {
   @@index([userId])
   @@index([createdAt(sort: Desc)])
   @@map("feedback")
+}
+
+// ─── Altair Meta Progression (persisted to DB) ────────────────────────
+
+model AltairMetaProgress {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  coins             Int      @default(0)
+  upgrades          Json     @default("{}")
+  unlockedClasses   Json     @default("[\"knight\",\"arcanist\",\"ranger\"]")
+  doubleTimeUnlocked Boolean @default(false)
+  classFirstClears  Json     @default("[]")
+  totalRunsPlayed   Int      @default(0)
+  bestTimeSurvived  Float    @default(0)
+  bestKills         Int      @default(0)
+  bossesDefeated    Json     @default("[]")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("altair_meta_progress")
 }
 
 // ─── Altair Multiplayer (Co-op) Models ────────────────────────
