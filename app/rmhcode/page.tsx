@@ -24,8 +24,8 @@ export default function RmhCodePage() {
   const features = [
     {
       icon: Zap,
-      title: 'AI-Powered Coding',
-      description: 'Build projects with Claude Code, the most capable AI coding assistant.',
+      title: 'Multi-Provider AI Coding',
+      description: 'Choose between Claude, OpenAI Codex, or Google Gemini as your coding backend.',
     },
     {
       icon: Boxes,
@@ -91,7 +91,7 @@ export default function RmhCodePage() {
 
             {/* Subtitle */}
             <p className="text-lg text-site-text-muted max-w-xl mx-auto mb-8">
-              AI-powered coding assistant with RMH integrations. Build projects with Claude and publish to the User Builds showcase.
+              AI-powered coding assistant with RMH integrations. Build projects with Claude, Codex, or Gemini and publish to the User Builds showcase.
             </p>
 
             {/* Beta Badge */}
@@ -244,6 +244,22 @@ export default function RmhCodePage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-site-border">
+                <tr>
+                  <td className="py-3 px-4 font-mono text-violet-400">rmhcode</td>
+                  <td className="py-3 px-4 text-site-text-muted">Launch with banner (Claude by default)</td>
+                </tr>
+                <tr>
+                  <td className="py-3 px-4 font-mono text-violet-400">rmhcode --provider codex</td>
+                  <td className="py-3 px-4 text-site-text-muted">Use OpenAI Codex as the backend</td>
+                </tr>
+                <tr>
+                  <td className="py-3 px-4 font-mono text-violet-400">rmhcode --provider gemini</td>
+                  <td className="py-3 px-4 text-site-text-muted">Use Google Gemini as the backend</td>
+                </tr>
+                <tr>
+                  <td className="py-3 px-4 font-mono text-violet-400">rmhcode --init</td>
+                  <td className="py-3 px-4 text-site-text-muted">Generate a CLAUDE.md for your project</td>
+                </tr>
                 <tr>
                   <td className="py-3 px-4 font-mono text-violet-400">rmhcode login</td>
                   <td className="py-3 px-4 text-site-text-muted">Authenticate with your RMH account</td>
