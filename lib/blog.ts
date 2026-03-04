@@ -1,8 +1,4 @@
-import fs from "fs";
-import path from "path";
-import matter from "gray-matter";
-
-const postsDirectory = path.join(process.cwd(), "content/blog");
+import { prisma } from "./prisma";
 
 export interface Post {
   slug: string;
@@ -14,47 +10,61 @@ export interface Post {
   content: string;
 }
 
-export function getPostSlugs() {
-  if (!fs.existsSync(postsDirectory)) {
-    return [];
-  }
-  return fs.readdirSync(postsDirectory);
+export async function getPostSlugs() {
+  const posts = await prisma.blogPost.findMany({ select: { slug: true } });
+  return posts.map(p => p.slug);
 }
 
-export function getPostBySlug(slug: string, fields: string[] = []) {
-  const realSlug = slug.replace(/\.mdx$/, "");
-  const fullPath = path.join(postsDirectory, `${realSlug}.mdx`);
-  const fileContents = fs.readFileSync(fullPath, "utf8");
-  const { data, content } = matter(fileContents);
+export async function getPostBySlug(slug: string, fields: string[] = []) {
+  const post = await prisma.blogPost.findUnique({ where: { slug } });
+  
+  if (!post) {
+    throw new Error(`Post not found: ${slug}`);
+  }
 
   type Items = {
-    [key: string]: string;
+    [key: string]: string | string[] | undefined | null;
   };
 
   const items: Items = {};
 
-  // Ensure only the minimal needed data is exposed
   fields.forEach((field) => {
     if (field === "slug") {
-      items[field] = realSlug;
-    }
-    if (field === "content") {
-      items[field] = content;
-    }
-
-    if (typeof data[field] !== "undefined") {
-      items[field] = data[field];
+      items[field] = post.slug;
+    } else if (field === "content") {
+      items[field] = post.content;
+    } else if (field === "title") {
+      items[field] = post.title;
+    } else if (field === "date") {
+      items[field] = post.date;
+    } else if (field === "description") {
+      items[field] = post.description;
+    } else if (field === "image") {
+      items[field] = post.image;
+    } else if (field === "tags") {
+      items[field] = post.tags;
     }
   });
 
   return items;
 }
 
-export function getAllPosts(fields: string[] = []) {
-  const slugs = getPostSlugs();
-  const posts = slugs
-    .map((slug) => getPostBySlug(slug, fields))
-    // sort posts by date in descending order
-    .sort((post1, post2) => (post1.date > post2.date ? -1 : 1));
-  return posts;
+export async function getAllPosts(fields: string[] = []) {
+  const isAllEmpty = fields.length === 0;
+
+  // if fields is empty, just fetch everything
+  const posts = await prisma.blogPost.findMany({
+    orderBy: { date: 'desc' },
+    select: isAllEmpty ? undefined : {
+      slug: fields.includes("slug"),
+      title: fields.includes("title"),
+      date: fields.includes("date"),
+      description: fields.includes("description"),
+      image: fields.includes("image"),
+      tags: fields.includes("tags"),
+      content: fields.includes("content")
+    }
+  });
+
+  return posts as unknown as Record<string, any>[];
 }

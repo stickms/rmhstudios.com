@@ -24,8 +24,11 @@ const animatedComponents = {
   pre: AnimatedPre,
 };
 
+export const dynamicParams = true;
+export const revalidate = 3600; // Revalidate every hour
+
 export async function generateStaticParams() {
-  const posts = getPostSlugs();
+  const posts = await getPostSlugs();
   return posts.map((post) => ({
     slug: post.replace(/\.mdx$/, ""),
   }));
@@ -39,17 +42,17 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const post = getPostBySlug(slug, ["title", "description"]);
+  const post = await getPostBySlug(slug, ["title", "description"]);
 
   return {
     title: `${post.title} | RMH Studios Devlog`,
-    description: post.description,
+    description: post.description as string,
   };
 }
 
 export default async function BlogPost({ params }: Props) {
   const { slug } = await params;
-  const post = getPostBySlug(slug, ["title", "date", "description", "content"]);
+  const post = await getPostBySlug(slug, ["title", "date", "description", "content"]);
 
   return (
     <article className="min-h-screen pt-20 pb-20 px-4 bg-site-bg relative overflow-hidden">
@@ -75,7 +78,7 @@ export default async function BlogPost({ params }: Props) {
             </header>
 
             <div className="prose prose-invert prose-lg max-w-none prose-headings:font-bold prose-headings:text-site-text prose-p:text-site-text-muted prose-a:text-site-accent hover:prose-a:text-site-accent-hover prose-img:rounded-xl prose-img:border prose-img:border-site-border">
-                <MDXRemote source={post.content} components={animatedComponents} />
+                <MDXRemote source={post.content as string} components={animatedComponents} />
             </div>
 
             <hr className="my-12 border-site-border" />

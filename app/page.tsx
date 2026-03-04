@@ -6,7 +6,7 @@ export const revalidate = 60;
 
 export default async function Home() {
   const newsArticles = (await getAllNewsArticles()).slice(0, 5);
-  const researchArticles = getAllArticles().slice(0, 3);
+  const researchArticles = (await getAllArticles()).slice(0, 3);
 
   return (
     <FeedLayout

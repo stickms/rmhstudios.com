@@ -124,7 +124,7 @@ async function getAnnouncementItems(filter: FeedFilter): Promise<FeedItem[]> {
   }
 
   if (filter === "all" || filter === "blog") {
-    const posts = getAllPosts(["title", "date", "slug", "description", "image", "tags"]);
+    const posts = await getAllPosts(["title", "date", "slug", "description", "image", "tags"]);
     for (const p of posts) {
       items.push({
         id: `blog:${p.slug}`,

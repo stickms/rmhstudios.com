@@ -147,6 +147,26 @@ model Verification {
   @@map("verification")
 }
 
+// --- Blog Models ---
+
+model BlogPost {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  date        String
+  description String
+  image       String?
+  tags        String[]
+  content     String
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([date(sort: Desc)])
+  @@map("blog_post")
+}
+
+
 // --- Game Models ---
 
 model AltairPlayer {
