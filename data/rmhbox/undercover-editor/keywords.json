@@ -1,0 +1,502 @@
+[
+  {
+    "word": "shadow",
+    "category": "Nature",
+    "difficulty": "easy"
+  },
+  {
+    "word": "bridge",
+    "category": "Place",
+    "difficulty": "easy"
+  },
+  {
+    "word": "light",
+    "category": "Nature",
+    "difficulty": "easy"
+  },
+  {
+    "word": "door",
+    "category": "Object",
+    "difficulty": "easy"
+  },
+  {
+    "word": "road",
+    "category": "Place",
+    "difficulty": "easy"
+  },
+  {
+    "word": "stone",
+    "category": "Object",
+    "difficulty": "easy"
+  },
+  {
+    "word": "water",
+    "category": "Nature",
+    "difficulty": "easy"
+  },
+  {
+    "word": "hand",
+    "category": "Body",
+    "difficulty": "easy"
+  },
+  {
+    "word": "fire",
+    "category": "Nature",
+    "difficulty": "easy"
+  },
+  {
+    "word": "night",
+    "category": "Nature",
+    "difficulty": "easy"
+  },
+  {
+    "word": "voice",
+    "category": "Body",
+    "difficulty": "easy"
+  },
+  {
+    "word": "cold",
+    "category": "Emotion",
+    "difficulty": "easy"
+  },
+  {
+    "word": "window",
+    "category": "Object",
+    "difficulty": "easy"
+  },
+  {
+    "word": "field",
+    "category": "Place",
+    "difficulty": "easy"
+  },
+  {
+    "word": "heart",
+    "category": "Body",
+    "difficulty": "easy"
+  },
+  {
+    "word": "morning",
+    "category": "Nature",
+    "difficulty": "easy"
+  },
+  {
+    "word": "table",
+    "category": "Object",
+    "difficulty": "easy"
+  },
+  {
+    "word": "street",
+    "category": "Place",
+    "difficulty": "easy"
+  },
+  {
+    "word": "dark",
+    "category": "Nature",
+    "difficulty": "easy"
+  },
+  {
+    "word": "wall",
+    "category": "Object",
+    "difficulty": "easy"
+  },
+  {
+    "word": "ground",
+    "category": "Nature",
+    "difficulty": "easy"
+  },
+  {
+    "word": "rain",
+    "category": "Nature",
+    "difficulty": "easy"
+  },
+  {
+    "word": "tree",
+    "category": "Nature",
+    "difficulty": "easy"
+  },
+  {
+    "word": "smile",
+    "category": "Emotion",
+    "difficulty": "easy"
+  },
+  {
+    "word": "room",
+    "category": "Place",
+    "difficulty": "easy"
+  },
+  {
+    "word": "step",
+    "category": "Body",
+    "difficulty": "easy"
+  },
+  {
+    "word": "corner",
+    "category": "Place",
+    "difficulty": "easy"
+  },
+  {
+    "word": "word",
+    "category": "Abstract",
+    "difficulty": "easy"
+  },
+  {
+    "word": "glass",
+    "category": "Object",
+    "difficulty": "easy"
+  },
+  {
+    "word": "sky",
+    "category": "Nature",
+    "difficulty": "easy"
+  },
+  {
+    "word": "edge",
+    "category": "Abstract",
+    "difficulty": "easy"
+  },
+  {
+    "word": "path",
+    "category": "Place",
+    "difficulty": "easy"
+  },
+  {
+    "word": "sound",
+    "category": "Abstract",
+    "difficulty": "easy"
+  },
+  {
+    "word": "dust",
+    "category": "Nature",
+    "difficulty": "easy"
+  },
+  {
+    "word": "crown",
+    "category": "Object",
+    "difficulty": "medium"
+  },
+  {
+    "word": "mirror",
+    "category": "Object",
+    "difficulty": "medium"
+  },
+  {
+    "word": "flame",
+    "category": "Nature",
+    "difficulty": "medium"
+  },
+  {
+    "word": "ancient",
+    "category": "Abstract",
+    "difficulty": "medium"
+  },
+  {
+    "word": "silver",
+    "category": "Object",
+    "difficulty": "medium"
+  },
+  {
+    "word": "storm",
+    "category": "Nature",
+    "difficulty": "medium"
+  },
+  {
+    "word": "temple",
+    "category": "Place",
+    "difficulty": "medium"
+  },
+  {
+    "word": "grief",
+    "category": "Emotion",
+    "difficulty": "medium"
+  },
+  {
+    "word": "blade",
+    "category": "Object",
+    "difficulty": "medium"
+  },
+  {
+    "word": "hollow",
+    "category": "Abstract",
+    "difficulty": "medium"
+  },
+  {
+    "word": "lantern",
+    "category": "Object",
+    "difficulty": "medium"
+  },
+  {
+    "word": "tide",
+    "category": "Nature",
+    "difficulty": "medium"
+  },
+  {
+    "word": "scarlet",
+    "category": "Abstract",
+    "difficulty": "medium"
+  },
+  {
+    "word": "whisper",
+    "category": "Body",
+    "difficulty": "medium"
+  },
+  {
+    "word": "iron",
+    "category": "Object",
+    "difficulty": "medium"
+  },
+  {
+    "word": "tower",
+    "category": "Place",
+    "difficulty": "medium"
+  },
+  {
+    "word": "dread",
+    "category": "Emotion",
+    "difficulty": "medium"
+  },
+  {
+    "word": "garden",
+    "category": "Place",
+    "difficulty": "medium"
+  },
+  {
+    "word": "bitter",
+    "category": "Emotion",
+    "difficulty": "medium"
+  },
+  {
+    "word": "feather",
+    "category": "Nature",
+    "difficulty": "medium"
+  },
+  {
+    "word": "throne",
+    "category": "Object",
+    "difficulty": "medium"
+  },
+  {
+    "word": "ruin",
+    "category": "Place",
+    "difficulty": "medium"
+  },
+  {
+    "word": "ember",
+    "category": "Nature",
+    "difficulty": "medium"
+  },
+  {
+    "word": "veil",
+    "category": "Object",
+    "difficulty": "medium"
+  },
+  {
+    "word": "tremor",
+    "category": "Body",
+    "difficulty": "medium"
+  },
+  {
+    "word": "crest",
+    "category": "Nature",
+    "difficulty": "medium"
+  },
+  {
+    "word": "sorrow",
+    "category": "Emotion",
+    "difficulty": "medium"
+  },
+  {
+    "word": "forge",
+    "category": "Place",
+    "difficulty": "medium"
+  },
+  {
+    "word": "dusk",
+    "category": "Nature",
+    "difficulty": "medium"
+  },
+  {
+    "word": "fable",
+    "category": "Abstract",
+    "difficulty": "medium"
+  },
+  {
+    "word": "thorn",
+    "category": "Nature",
+    "difficulty": "medium"
+  },
+  {
+    "word": "crystal",
+    "category": "Object",
+    "difficulty": "hard"
+  },
+  {
+    "word": "phantom",
+    "category": "Abstract",
+    "difficulty": "hard"
+  },
+  {
+    "word": "labyrinth",
+    "category": "Place",
+    "difficulty": "hard"
+  },
+  {
+    "word": "obsidian",
+    "category": "Object",
+    "difficulty": "hard"
+  },
+  {
+    "word": "eclipse",
+    "category": "Nature",
+    "difficulty": "hard"
+  },
+  {
+    "word": "sovereign",
+    "category": "Abstract",
+    "difficulty": "hard"
+  },
+  {
+    "word": "chalice",
+    "category": "Object",
+    "difficulty": "hard"
+  },
+  {
+    "word": "tempest",
+    "category": "Nature",
+    "difficulty": "hard"
+  },
+  {
+    "word": "reverie",
+    "category": "Emotion",
+    "difficulty": "hard"
+  },
+  {
+    "word": "citadel",
+    "category": "Place",
+    "difficulty": "hard"
+  },
+  {
+    "word": "serpent",
+    "category": "Nature",
+    "difficulty": "hard"
+  },
+  {
+    "word": "alchemy",
+    "category": "Abstract",
+    "difficulty": "hard"
+  },
+  {
+    "word": "wraith",
+    "category": "Abstract",
+    "difficulty": "hard"
+  },
+  {
+    "word": "monolith",
+    "category": "Object",
+    "difficulty": "hard"
+  },
+  {
+    "word": "cascade",
+    "category": "Nature",
+    "difficulty": "hard"
+  },
+  {
+    "word": "ethereal",
+    "category": "Abstract",
+    "difficulty": "hard"
+  },
+  {
+    "word": "paragon",
+    "category": "Abstract",
+    "difficulty": "hard"
+  },
+  {
+    "word": "basilisk",
+    "category": "Nature",
+    "difficulty": "hard"
+  },
+  {
+    "word": "obelisk",
+    "category": "Object",
+    "difficulty": "hard"
+  },
+  {
+    "word": "quartz",
+    "category": "Object",
+    "difficulty": "hard"
+  },
+  {
+    "word": "catalyst",
+    "category": "Abstract",
+    "difficulty": "hard"
+  },
+  {
+    "word": "specter",
+    "category": "Abstract",
+    "difficulty": "hard"
+  },
+  {
+    "word": "crucible",
+    "category": "Object",
+    "difficulty": "hard"
+  },
+  {
+    "word": "enigma",
+    "category": "Abstract",
+    "difficulty": "hard"
+  },
+  {
+    "word": "catacombs",
+    "category": "Place",
+    "difficulty": "hard"
+  },
+  {
+    "word": "solstice",
+    "category": "Nature",
+    "difficulty": "hard"
+  },
+  {
+    "word": "phantasm",
+    "category": "Abstract",
+    "difficulty": "hard"
+  },
+  {
+    "word": "pinnacle",
+    "category": "Place",
+    "difficulty": "hard"
+  },
+  {
+    "word": "lament",
+    "category": "Emotion",
+    "difficulty": "hard"
+  },
+  {
+    "word": "talisman",
+    "category": "Object",
+    "difficulty": "hard"
+  },
+  {
+    "word": "vestige",
+    "category": "Abstract",
+    "difficulty": "hard"
+  },
+  {
+    "word": "vermillion",
+    "category": "Abstract",
+    "difficulty": "hard"
+  },
+  {
+    "word": "abyss",
+    "category": "Place",
+    "difficulty": "hard"
+  },
+  {
+    "word": "sentinel",
+    "category": "Abstract",
+    "difficulty": "hard"
+  },
+  {
+    "word": "elixir",
+    "category": "Object",
+    "difficulty": "hard"
+  }
+]

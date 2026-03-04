@@ -28,7 +28,7 @@
 
 ### 6.1.1 Install NPM Packages
 
-- [ ] No additional NPM packages required for Fact or Friction
+- [x] No additional NPM packages required for Fact or Friction
   - The question pool is a static JSON file; the Point Pot is a server-side timer.
   **Verification:** Confirm no new dependencies needed beyond those installed in Phase 1.
 
@@ -36,34 +36,33 @@
 
 ### 6.1.2 Add Constants to `lib/rmhbox/constants.ts`
 
-- [ ] Add `FOF_TOTAL_QUESTIONS = 8` — number of questions per game
-- [ ] Add `FOF_QUESTION_REVEAL_SECONDS = 2` — duration of the question reveal animation
-- [ ] Add `FOF_ANSWER_DURATION_SECONDS = 15` — seconds for the answer phase per question
-- [ ] Add `FOF_ANSWER_REVEAL_SECONDS = 4` — duration of the answer reveal phase
-- [ ] Add `FOF_PAUSE_SECONDS = 1` — brief pause between questions
-- [ ] Add `FOF_POT_START_VALUE = 1000` — starting value of the Point Pot
-- [ ] Add `FOF_POT_TICK_VALUE = 50` — amount the pot decreases per tick
-- [ ] Add `FOF_POT_TICK_INTERVAL_MS = 500` — interval between pot ticks (2 ticks/second)
-- [ ] Add `FOF_POT_MIN_VALUE = 100` — minimum pot value (floor)
-- [ ] Add `FOF_EASY_MULTIPLIER = 0.8` — difficulty multiplier for easy questions
-- [ ] Add `FOF_MEDIUM_MULTIPLIER = 1.0` — difficulty multiplier for medium questions
-- [ ] Add `FOF_HARD_MULTIPLIER = 1.5` — difficulty multiplier for hard questions
-- [ ] Add `FOF_SCORE_FLOOR = -500` — minimum total score a player can have
-- [ ] Add `FOF_QUESTION_DISTRIBUTION = { easy: 3, medium: 3, hard: 2 }` — question difficulty distribution per game
-- [ ] **Verification:** Import all `FOF_*` constants in a test file; confirm no undefined values and correct types. Verify `FOF_QUESTION_DISTRIBUTION` sums to `FOF_TOTAL_QUESTIONS` (3+3+2=8).
+- [x] Add `FF_TOTAL_QUESTIONS = 8` — number of questions per game
+- [x] Add `FF_QUESTION_REVEAL_SECONDS = 2` — duration of the question reveal animation
+- [x] Add `FF_ANSWER_DURATION_SECONDS = 15` — seconds for the answer phase per question
+- [x] Add `FF_ANSWER_REVEAL_SECONDS = 4` — duration of the answer reveal phase
+- [x] Add `FF_PAUSE_SECONDS = 1` — brief pause between questions
+- [x] Add `FF_POT_START_VALUE = 1000` — starting value of the Point Pot
+- [x] Add `FF_POT_TICK_VALUE = 50` — amount the pot decreases per tick
+- [x] Add `FF_POT_TICK_INTERVAL_MS = 500` — interval between pot ticks (2 ticks/second)
+- [x] Add `FF_POT_MIN_VALUE = 100` — minimum pot value (floor)
+- [x] Add `FF_EASY_MULTIPLIER = 0.8` — difficulty multiplier for easy questions
+- [x] Add `FF_MEDIUM_MULTIPLIER = 1.0` — difficulty multiplier for medium questions
+- [x] Add `FF_HARD_MULTIPLIER = 1.5` — difficulty multiplier for hard questions
+- [x] Add `FF_SCORE_FLOOR = -500` — minimum total score a player can have
+- [x] Add `FF_QUESTION_DISTRIBUTION = { easy: 3, medium: 3, hard: 2 }` — question difficulty distribution per game
+- [x] **Verification:** Import all `FF_*` constants in a test file; confirm no undefined values and correct types. Verify `FF_QUESTION_DISTRIBUTION` sums to `FF_TOTAL_QUESTIONS` (3+3+2=8).
 
 ---
 
 ### 6.1.3 Create Static Data Files
 
-- [ ] Create directory `public/data/rmhbox/fact-or-friction/`
+- [x] Create directory `data/rmhbox/fact-or-friction/`
   **Verification:** Directory exists on disk.
 
-- [ ] Create `public/data/rmhbox/fact-or-friction/questions.json` — curated trivia question pool
+- [x] Create `data/rmhbox/fact-or-friction/questions.json` — curated trivia question pool
   - Each entry follows the `TriviaQuestion` interface:
     ```ts
     {
-      id: string;
       question: string;
       options: string[];           // exactly 4 options (A, B, C, D)
       correctIndex: number;        // 0–3
@@ -85,9 +84,9 @@
 
 ### 6.1.4 Define Zod Validation Schemas
 
-- [ ] Create `lib/rmhbox/fact-or-friction/schemas.ts`
+- [x] Create `lib/rmhbox/fact-or-friction/schemas.ts`
 
-- [ ] Define `SubmitAnswerSchema`:
+- [x] Define `SubmitAnswerSchema`:
   ```ts
   const SubmitAnswerSchema = z.object({
     selectedIndex: z.number().int().min(0).max(3),
@@ -95,13 +94,13 @@
   ```
   **Verification:** Valid: `{ selectedIndex: 0 }`, `{ selectedIndex: 3 }`. Invalid: `{ selectedIndex: -1 }`, `{ selectedIndex: 4 }`, `{ selectedIndex: 1.5 }`.
 
-- [ ] Define `PassQuestionSchema`:
+- [x] Define `PassQuestionSchema`:
   ```ts
   const PassQuestionSchema = z.object({});
   ```
   **Verification:** Valid: `{}`. Extra fields stripped by Zod.
 
-- [ ] Define `TriviaQuestionSchema` for data validation at server startup:
+- [x] Define `TriviaQuestionSchema` for data validation at server startup:
   ```ts
   const TriviaQuestionSchema = z.object({
     id: z.string().min(1),
@@ -119,12 +118,12 @@
 
 ### 6.1.5 Create Data Loader
 
-- [ ] Create `lib/rmhbox/fact-or-friction/question-loader.ts`
+- [x] Create `lib/rmhbox/fact-or-friction/question-loader.ts`
   - [ ] Export `loadQuestions(): TriviaQuestion[]` — reads and parses `questions.json` once at server init
   - [ ] Validate each question against `TriviaQuestionSchema` during load; skip invalid entries with a warning log
   - [ ] Cache in module-level variable (singleton pattern)
   - [ ] Export `selectQuestionsForGame(pool: TriviaQuestion[], usedIds: Set<string>): TriviaQuestion[]`
-    - Select questions according to `FOF_QUESTION_DISTRIBUTION` (3 easy, 3 medium, 2 hard)
+    - Select questions according to `FF_QUESTION_DISTRIBUTION` (3 easy, 3 medium, 2 hard)
     - Exclude questions with IDs in `usedIds` (prevents repeats within a lobby session)
     - Avoid consecutive questions from the same category when possible
     - Shuffle within each difficulty bucket before selection
@@ -135,17 +134,17 @@
 
 ### 6.1.6 Implement Server Handler
 
-- [ ] Create `server/rmhbox/minigames/fact-or-friction.ts`
+- [x] Create `server/rmhbox/minigames/fact-or-friction.ts`
 
 #### 6.1.6.1 Type Definitions
 
-- [ ] Define `FOFPhase` enum:
+- [x] Define `FFPhase` enum:
   ```ts
-  type FOFPhase = 'QUESTION_REVEAL' | 'ANSWER' | 'ANSWER_REVEAL' | 'PAUSE';
+  type FFPhase = 'QUESTION_REVEAL' | 'ANSWER' | 'ANSWER_REVEAL' | 'PAUSE';
   ```
   **Verification:** Type has exactly 4 values matching spec.
 
-- [ ] Define `PlayerAnswer` type:
+- [x] Define `PlayerAnswer` type:
   ```ts
   type PlayerAnswer = {
     userId: string;
@@ -157,7 +156,7 @@
   };
   ```
 
-- [ ] Define `QuestionResult` type:
+- [x] Define `QuestionResult` type:
   ```ts
   type QuestionResult = {
     questionIndex: number;
@@ -170,13 +169,13 @@
   };
   ```
 
-- [ ] Define `FactOrFrictionState` type:
+- [x] Define `FactOrFrictionState` type:
   ```ts
   type FactOrFrictionState = {
     questions: TriviaQuestion[];
     currentQuestionIndex: number;
     totalQuestions: number;
-    phase: FOFPhase;
+    phase: FFPhase;
     potValue: number;
     potStartedAt: number;
     playerAnswers: Map<string, PlayerAnswer>;
@@ -190,30 +189,30 @@
 
 #### 6.1.6.2 Class: `FactOrFrictionGame extends BaseMinigame`
 
-- [ ] Constructor: call `super(context)`; load question pool via question loader
+- [x] Constructor: call `super(context)`; load question pool via question loader
   **Verification:** Instantiate class; confirm no errors and question pool is loaded.
 
 #### 6.1.6.3 State Initialization (`start()`)
 
-- [ ] Retrieve `usedQuestionIds` from the lobby's session context (prevents repeats across games in same lobby)
-- [ ] Call `selectQuestionsForGame()` with the pool and exclusion set
-- [ ] Initialize `playerScores` map with 0 for each player in `context.players`
-- [ ] Initialize empty `playerAnswers` map
-- [ ] Set `currentQuestionIndex = -1` (will be incremented to 0 on first call)
-- [ ] Set `totalQuestions = FOF_TOTAL_QUESTIONS`
-- [ ] Set `questionHistory = []`
-- [ ] Call `startNextQuestion()`
+- [x] Retrieve `usedQuestionIds` from the lobby's session context (prevents repeats across games in same lobby)
+- [x] Call `selectQuestionsForGame()` with the pool and exclusion set
+- [x] Initialize `playerScores` map with 0 for each player in `context.players`
+- [x] Initialize empty `playerAnswers` map
+- [x] Set `currentQuestionIndex = -1` (will be incremented to 0 on first call)
+- [x] Set `totalQuestions = FF_TOTAL_QUESTIONS`
+- [x] Set `questionHistory = []`
+- [x] Call `startNextQuestion()`
   **Verification:** Unit test: init with 4 players; confirm 8 questions selected with correct distribution, all scores = 0, no answers recorded.
 
 #### 6.1.6.4 Question Lifecycle
 
-- [ ] `startNextQuestion()`:
+- [x] `startNextQuestion()`:
   - Increment `currentQuestionIndex`
   - If `currentQuestionIndex >= totalQuestions`, call `endGame()`; return
   - Set `phase = 'QUESTION_REVEAL'`
   - Get current question from `questions[currentQuestionIndex]`
   - Clear `playerAnswers` map
-  - Emit `rmhbox:game:action` with type `FOF_QUESTION` to all lobby members:
+  - Emit `rmhbox:game:action` with type `FF_QUESTION` to all lobby members:
     ```ts
     {
       questionIndex: currentQuestionIndex,
@@ -221,89 +220,89 @@
       options: currentQuestion.options,
       category: currentQuestion.category,
       difficulty: currentQuestion.difficulty,
-      potStartValue: FOF_POT_START_VALUE,
-      answerDurationSeconds: FOF_ANSWER_DURATION_SECONDS,
+      potStartValue: FF_POT_START_VALUE,
+      answerDurationSeconds: FF_ANSWER_DURATION_SECONDS,
     }
     ```
   - **Do NOT include `correctIndex` in this payload**
-  - Schedule `startAnswerPhase()` after `FOF_QUESTION_REVEAL_SECONDS` (2s)
+  - Schedule `startAnswerPhase()` after `FF_QUESTION_REVEAL_SECONDS` (2s)
   **Verification:** Unit test: call `startNextQuestion()` → event emitted without `correctIndex`. Timer scheduled for 2s. Phase is `QUESTION_REVEAL`.
 
-- [ ] `startAnswerPhase()`:
+- [x] `startAnswerPhase()`:
   - Set `phase = 'ANSWER'`
-  - Set `potValue = FOF_POT_START_VALUE` (1000)
+  - Set `potValue = FF_POT_START_VALUE` (1000)
   - Set `potStartedAt = Date.now()`
   - Set `phaseStartedAt = Date.now()`
-  - Set `phaseEndsAt = phaseStartedAt + FOF_ANSWER_DURATION_SECONDS * 1000`
-  - Start pot tick interval: every `FOF_POT_TICK_INTERVAL_MS` (500ms):
-    - `potValue = Math.max(potValue - FOF_POT_TICK_VALUE, FOF_POT_MIN_VALUE)`
-    - Emit `rmhbox:game:action` with type `FOF_POT_TICK` to all: `{ potValue }`
+  - Set `phaseEndsAt = phaseStartedAt + FF_ANSWER_DURATION_SECONDS * 1000`
+  - Start pot tick interval: every `FF_POT_TICK_INTERVAL_MS` (500ms):
+    - `potValue = Math.max(potValue - FF_POT_TICK_VALUE, FF_POT_MIN_VALUE)`
+    - Emit `rmhbox:game:action` with type `FF_POT_TICK` to all: `{ potValue }`
   - Start timer tick interval: every 1000ms, emit `TIMER_TICK` with `{ timeRemaining }`
-  - Schedule `endAnswerPhase()` after `FOF_ANSWER_DURATION_SECONDS` (15s)
+  - Schedule `endAnswerPhase()` after `FF_ANSWER_DURATION_SECONDS` (15s)
   **Verification:** Unit test: after 1s → pot = 950 (2 ticks at 500ms). After 9s → pot = 100 (min). After 14s → pot still 100. Timer ticks emit decreasing values.
 
-- [ ] `endAnswerPhase()`:
+- [x] `endAnswerPhase()`:
   - Stop pot tick interval
   - Stop timer tick interval
   - For any player who hasn't submitted an answer, treat as pass (scoreChange = 0)
   - Call `computeQuestionResult()`
   - Set `phase = 'ANSWER_REVEAL'`
-  - Emit `rmhbox:game:action` with type `FOF_ANSWER_REVEAL` to all:
+  - Emit `rmhbox:game:action` with type `FF_ANSWER_REVEAL` to all:
     ```ts
     {
       correctIndex: currentQuestion.correctIndex,
       correctAnswer: currentQuestion.options[currentQuestion.correctIndex],
-      playerResults: Array<FOFPlayerQuestionResult>,
+      playerResults: Array<FFPlayerQuestionResult>,
     }
     ```
-  - Emit `rmhbox:game:action` with type `FOF_SCORE_UPDATE` to all:
+  - Emit `rmhbox:game:action` with type `FF_SCORE_UPDATE` to all:
     ```ts
     {
       scores: Array<{ userId, userName, totalScore, scoreChange }>,
     }
     ```
-  - Schedule `startPause()` after `FOF_ANSWER_REVEAL_SECONDS` (4s)
+  - Schedule `startPause()` after `FF_ANSWER_REVEAL_SECONDS` (4s)
   **Verification:** Unit test: correctIndex now revealed. Player results include isCorrect, scoreChange, potValueAtSubmission. Scores updated correctly.
 
-- [ ] `startPause()`:
+- [x] `startPause()`:
   - Set `phase = 'PAUSE'`
   - Check for pending join-in-progress players; add them to `playerScores` with 0
-  - Schedule `startNextQuestion()` after `FOF_PAUSE_SECONDS` (1s)
+  - Schedule `startNextQuestion()` after `FF_PAUSE_SECONDS` (1s)
   **Verification:** JIP players added during pause. Next question starts after 1s.
 
 #### 6.1.6.5 Input Handling — `SUBMIT_ANSWER`
 
-- [ ] Validate phase is `'ANSWER'`; reject if not
-- [ ] Parse input through `SubmitAnswerSchema`; reject on validation failure
-- [ ] Check player hasn't already answered this question (check `playerAnswers` map); reject if duplicate
-- [ ] Record answer:
+- [x] Validate phase is `'ANSWER'`; reject if not
+- [x] Parse input through `SubmitAnswerSchema`; reject on validation failure
+- [x] Check player hasn't already answered this question (check `playerAnswers` map); reject if duplicate
+- [x] Record answer:
   - Get current `potValue` from server state (NOT from client)
-  - Compute effective pot: `floor(potValue × difficultyMultiplier)` where multiplier is `FOF_EASY_MULTIPLIER`, `FOF_MEDIUM_MULTIPLIER`, or `FOF_HARD_MULTIPLIER` based on question difficulty
+  - Compute effective pot: `floor(potValue × difficultyMultiplier)` where multiplier is `FF_EASY_MULTIPLIER`, `FF_MEDIUM_MULTIPLIER`, or `FF_HARD_MULTIPLIER` based on question difficulty
   - Determine `isCorrect = (selectedIndex === currentQuestion.correctIndex)`
   - Compute `scoreChange`:
     - If correct: `+effectivePot`
     - If incorrect: `-effectivePot`
-  - Apply score floor: `newTotal = Math.max(currentScore + scoreChange, FOF_SCORE_FLOOR)`; adjust `scoreChange` if floor was hit
+  - Apply score floor: `newTotal = Math.max(currentScore + scoreChange, FF_SCORE_FLOOR)`; adjust `scoreChange` if floor was hit
   - Store `PlayerAnswer` in `playerAnswers` map
   - Update `playerScores`
-- [ ] Emit `FOF_ANSWER_LOCKED` to answering player ONLY: `{ potValueAtLock: effectivePot }`
-- [ ] Emit `FOF_PLAYER_ANSWERED` to ALL lobby members: `{ userId, userName }` (NOT what they answered)
-- [ ] If ALL players have answered (or passed), immediately call `endAnswerPhase()` (skip remaining timer)
+- [x] Emit `FF_ANSWER_LOCKED` to answering player ONLY: `{ potValueAtLock: effectivePot }`
+- [x] Emit `FF_PLAYER_ANSWERED` to ALL lobby members: `{ userId, userName }` (NOT what they answered)
+- [x] If ALL players have answered (or passed), immediately call `endAnswerPhase()` (skip remaining timer)
   **Verification:** Unit test: Player answers correctly at pot=800, medium difficulty → scoreChange = +800. Player answers incorrectly at pot=600, hard difficulty → scoreChange = -(600×1.5) = -900; if score would drop below -500, clamped. Duplicate submission rejected. After all players answer, phase ends early.
 
 #### 6.1.6.6 Input Handling — `PASS_QUESTION`
 
-- [ ] Validate phase is `'ANSWER'`; reject if not
-- [ ] Parse input through `PassQuestionSchema`
-- [ ] Check player hasn't already answered; reject if duplicate
-- [ ] Record pass: `PlayerAnswer` with `selectedIndex = null`, `scoreChange = 0`
-- [ ] Emit `FOF_PLAYER_ANSWERED` to ALL lobby members: `{ userId, userName }`
-- [ ] If ALL players have answered/passed, immediately call `endAnswerPhase()`
+- [x] Validate phase is `'ANSWER'`; reject if not
+- [x] Parse input through `PassQuestionSchema`
+- [x] Check player hasn't already answered; reject if duplicate
+- [x] Record pass: `PlayerAnswer` with `selectedIndex = null`, `scoreChange = 0`
+- [x] Emit `FF_PLAYER_ANSWERED` to ALL lobby members: `{ userId, userName }`
+- [x] If ALL players have answered/passed, immediately call `endAnswerPhase()`
   **Verification:** Unit test: pass recorded with scoreChange = 0. Player count check triggers early phase end.
 
 #### 6.1.6.7 Scoring Computation (`computeQuestionResult()`)
 
-- [ ] Build `QuestionResult` object:
+- [x] Build `QuestionResult` object:
   - Count `correctCount`, `incorrectCount`, `passCount` across all `playerAnswers`
   - Determine `fastestCorrectUserId`: the player with the earliest `submittedAt` timestamp who answered correctly; `null` if no one answered correctly
   - Store in `questionHistory` array
@@ -311,7 +310,7 @@
 
 #### 6.1.6.8 `getStateForPlayer(userId)`
 
-- [ ] Return object:
+- [x] Return object:
   ```ts
   {
     currentQuestionIndex: number;
@@ -320,7 +319,7 @@
     options: string[];
     category: string;
     difficulty: string;
-    phase: FOFPhase;
+    phase: FFPhase;
     potValue: number;
     timeRemaining: number;
     myAnswer: { selectedIndex: number; potValueAtLock: number } | null;
@@ -330,63 +329,63 @@
     questionHistory: QuestionResult[];  // only past revealed questions
   }
   ```
-- [ ] During `ANSWER` phase: `correctIndex` is NOT included in the returned state
-- [ ] During `ANSWER_REVEAL` phase: include full results with `correctIndex`
-- [ ] `questionHistory` only includes questions where the reveal has already occurred
-- [ ] Other players' individual answers are masked during `ANSWER` phase (only `hasAnswered` boolean)
+- [x] During `ANSWER` phase: `correctIndex` is NOT included in the returned state
+- [x] During `ANSWER_REVEAL` phase: include full results with `correctIndex`
+- [x] `questionHistory` only includes questions where the reveal has already occurred
+- [x] Other players' individual answers are masked during `ANSWER` phase (only `hasAnswered` boolean)
   **Verification:** Unit test: during ANSWER → no `correctIndex`, myAnswer shows lock info. During ANSWER_REVEAL → correctIndex visible, all player results visible. Other players' selectedIndex hidden during ANSWER.
 
 #### 6.1.6.9 `getStateForSpectator()`
 
-- [ ] Same as player view (spectators have no privileged information during answer phase since correct answers are hidden from everyone)
-- [ ] During `ANSWER_REVEAL`: same as player view with full results
+- [x] Same as player view (spectators have no privileged information during answer phase since correct answers are hidden from everyone)
+- [x] During `ANSWER_REVEAL`: same as player view with full results
   **Verification:** Spectator state matches player state structure.
 
 #### 6.1.6.10 Join-in-Progress Handling
 
-- [ ] Policy: `join_next_subround`
-- [ ] Check for pending players during `startPause()` transition (between `ANSWER_REVEAL` and next `QUESTION_REVEAL`)
-- [ ] Initialize new player in `playerScores` with 0
-- [ ] New player can interact starting from the next `ANSWER` phase
-- [ ] Send full state via `getStateForPlayer()` on join
+- [x] Policy: `join_next_subround`
+- [x] Check for pending players during `startPause()` transition (between `ANSWER_REVEAL` and next `QUESTION_REVEAL`)
+- [x] Initialize new player in `playerScores` with 0
+- [x] New player can interact starting from the next `ANSWER` phase
+- [x] Send full state via `getStateForPlayer()` on join
   **Verification:** Unit test: player joins during question 3 → participates from question 4 onward with score 0.
 
 #### 6.1.6.11 Reconnection Handling (`handlePlayerReconnect(userId)`)
 
-- [ ] Send full state including current question, pot value, their locked answer (if any), and score history
-- [ ] If `ANSWER` phase still active and player hasn't answered, they can still answer
-- [ ] If they missed an entire question (disconnected during it), they score 0 for that question (treated as pass)
-- [ ] Send current `TIMER_TICK` with accurate `timeRemaining`
+- [x] Send full state including current question, pot value, their locked answer (if any), and score history
+- [x] If `ANSWER` phase still active and player hasn't answered, they can still answer
+- [x] If they missed an entire question (disconnected during it), they score 0 for that question (treated as pass)
+- [x] Send current `TIMER_TICK` with accurate `timeRemaining`
   **Verification:** Unit test: disconnect during ANSWER with no answer, reconnect → can still answer. Disconnect for entire question → scored as pass (0).
 
 #### 6.1.6.12 Disconnect Handling (`handlePlayerDisconnect(userId)`)
 
-- [ ] Player's existing answer (if any) is preserved
-- [ ] If phase is `ANSWER` and player hasn't answered, they will be treated as timeout/pass at phase end
-- [ ] No special behavior — unanswered questions score 0
+- [x] Player's existing answer (if any) is preserved
+- [x] If phase is `ANSWER` and player hasn't answered, they will be treated as timeout/pass at phase end
+- [x] No special behavior — unanswered questions score 0
   **Verification:** Unit test: player disconnects mid-ANSWER without answering → scored as pass at phase end.
 
 #### 6.1.6.13 `computeResults()` and Awards
 
-- [ ] Compute final rankings by cumulative `playerScores` (descending)
-- [ ] Compute awards:
+- [x] Compute final rankings by cumulative `playerScores` (descending)
+- [x] Compute awards:
   - [ ] **Pot Sniper** — answered correctly at the highest pot value (fastest correct answer) across all questions; icon: `crosshair`
   - [ ] **Friction Burn** — lost the most points from incorrect answers (largest total negative scoreChange); icon: `flame`
   - [ ] **Cool Head** — passed the most questions (risk-averse play); icon: `snowflake`
   - [ ] **Perfect Score** — answered every question correctly (0 incorrect, 0 passes); icon: `check-circle`
   - [ ] **Comeback Kid** — had the biggest single-question positive score swing from negative territory (was at negative score, then answered correctly for the largest positive delta); icon: `trending-up`
-- [ ] Return `MinigameResults` with rankings, awards, and `gameSpecificData` containing `questionHistory`
+- [x] Return `MinigameResults` with rankings, awards, and `gameSpecificData` containing `questionHistory`
   **Verification:** Unit test: construct scoring scenarios triggering each award → all 5 awards assigned correctly to different players.
 
 #### 6.1.6.14 `buildGameLog()`
 
-- [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
-- [ ] Build `GameLog` conforming to core.md §13.3, including `gameSettings` per §12A.11
+- [x] Maintain an `actionLog: GameLogAction[]` array on the game instance
+- [x] Build `GameLog` conforming to core.md §13.3, including `gameSettings` per §12A.11
 
 **`initialState` (from minigames-2.md §1.15):**
 
 ```typescript
-interface FOFInitialState {
+interface FFInitialState {
   totalQuestions: number;
   potStartValue: number;
   potDecayRate: number;
@@ -405,15 +404,15 @@ interface FOFInitialState {
 | `player_pass` | `{ userId: string; elapsedMs: number }` | Player passes or timer expires |
 | `question_result` | `{ correctIndex: number; correctCount: number; incorrectCount: number; passCount: number; fastestUserId: string \| null }` | Answer reveal phase |
 
-- [ ] In `computeResults()`, build `GameLog` with `initialState`, full action log, and `finalResults`
-- [ ] Return `GameLog` from `buildGameLog()`
+- [x] In `computeResults()`, build `GameLog` with `initialState`, full action log, and `finalResults`
+- [x] Return `GameLog` from `buildGameLog()`
   **Verification:** Unit test: 8-question game, verify log has 8 `question_start` and 8 `question_result` actions, `player_answer` and `player_pass` actions present, `initialState` has all required fields, `finalResults` matches player rankings.
 
 ---
 
 ### 6.1.7 Register Game in Minigame Registry
 
-- [ ] Add entry to `lib/rmhbox/minigame-registry.ts`:
+- [x] Add entry to `lib/rmhbox/minigame-registry.ts`:
   ```ts
   {
     id: "fact-or-friction",
@@ -433,14 +432,14 @@ interface FOFInitialState {
   ```
   **Verification:** Call registry lookup for `"fact-or-friction"`; confirm all metadata fields correct and handler instantiates with valid context.
 
-- [ ] Register server handler in `MINIGAME_SERVER_REGISTRY` (in `server/rmhbox/game-coordinator.ts`):
+- [x] Register server handler in `MINIGAME_SERVER_REGISTRY` (in `server/rmhbox/game-coordinator.ts`):
   ```ts
   import { FactOrFrictionGame } from './minigames/fact-or-friction';
   MINIGAME_SERVER_REGISTRY.set('fact-or-friction', FactOrFrictionGame);
   ```
   **Verification:** `MINIGAME_SERVER_REGISTRY.get('fact-or-friction')` returns the `FactOrFrictionGame` class. `GameCoordinator` can instantiate it with a valid `MinigameContext`.
 
-- [ ] Add lazy-load entry in `components/rmhbox/MinigameRenderer.tsx`:
+- [x] Add lazy-load entry in `components/rmhbox/MinigameRenderer.tsx`:
   ```tsx
   'fact-or-friction': lazy(() => import('./minigames/fact-or-friction/FactOrFrictionGame')),
   ```
@@ -452,21 +451,21 @@ interface FOFInitialState {
 
 #### 6.1.8.1 `components/rmhbox/minigames/fact-or-friction/FactOrFrictionGame.tsx`
 
-- [ ] Phase router component — renders appropriate sub-component based on `phase`
-- [ ] Subscribe to all `FOF_*` and `TIMER_TICK` WebSocket events via `useRMHboxStore`
-- [ ] Maintain local state:
+- [x] Phase router component — renders appropriate sub-component based on `phase`
+- [x] Subscribe to all `FF_*` and `TIMER_TICK` WebSocket events via `useRMHboxStore`
+- [x] Maintain local state:
   - `currentQuestionIndex`, `totalQuestions`, `question`, `options`, `category`, `difficulty`
   - `phase`, `potValue`, `timeRemaining`
   - `myAnswer`, `myHasPassed`, `playersAnswered[]`
   - `scores[]`, `questionHistory[]`
-- [ ] Handle `FOF_QUESTION` → update question data, reset answer state, transition to reveal animation
-- [ ] Handle `FOF_POT_TICK` → update `potValue` with smooth interpolation between ticks for animation
-- [ ] Handle `FOF_ANSWER_LOCKED` → update `myAnswer` with locked pot value, show lock confirmation
-- [ ] Handle `FOF_PLAYER_ANSWERED` → update `playersAnswered` array
-- [ ] Handle `FOF_ANSWER_REVEAL` → show correct answer, highlight results
-- [ ] Handle `FOF_SCORE_UPDATE` → animate score changes
-- [ ] Handle `TIMER_TICK` → update `timeRemaining` display
-- [ ] Conditional rendering:
+- [x] Handle `FF_QUESTION` → update question data, reset answer state, transition to reveal animation
+- [x] Handle `FF_POT_TICK` → update `potValue` with smooth interpolation between ticks for animation
+- [x] Handle `FF_ANSWER_LOCKED` → update `myAnswer` with locked pot value, show lock confirmation
+- [x] Handle `FF_PLAYER_ANSWERED` → update `playersAnswered` array
+- [x] Handle `FF_ANSWER_REVEAL` → show correct answer, highlight results
+- [x] Handle `FF_SCORE_UPDATE` → animate score changes
+- [x] Handle `TIMER_TICK` → update `timeRemaining` display
+- [x] Conditional rendering:
   - `QUESTION_REVEAL` → `<QuestionCard />` with entrance animation
   - `ANSWER` → `<QuestionCard />` + `<PointPotDisplay />` + `<OptionButton />`s
   - `ANSWER_REVEAL` → `<AnswerReveal />`
@@ -475,78 +474,78 @@ interface FOFInitialState {
 
 #### 6.1.8.2 `components/rmhbox/minigames/fact-or-friction/PointPotDisplay.tsx`
 
-- [ ] Display current pot value with animated number transition (counting down effect)
-- [ ] Visual fire/drain effect that intensifies as pot decreases
-- [ ] Pulsing animation when pot is near minimum
-- [ ] Color gradient: green (high) → yellow (mid) → red (low/min)
-- [ ] Accept `potValue` and `maxValue` as props
-- [ ] Use Framer Motion for smooth value transitions
+- [x] Display current pot value with animated number transition (counting down effect)
+- [x] Visual fire/drain effect that intensifies as pot decreases
+- [x] Pulsing animation when pot is near minimum
+- [x] Color gradient: green (high) → yellow (mid) → red (low/min)
+- [x] Accept `potValue` and `maxValue` as props
+- [x] Use Framer Motion for smooth value transitions
   **Verification:** Render with various pot values; confirm animation plays smoothly. At potValue=100 (min), pulsing red effect visible.
 
 #### 6.1.8.3 `components/rmhbox/minigames/fact-or-friction/QuestionCard.tsx`
 
-- [ ] Display question text prominently
-- [ ] Show category badge and difficulty indicator (star rating or colored label)
-- [ ] Question number display: "Q3/8"
-- [ ] Entrance animation (fade + slide up) on new question
-- [ ] Responsive text sizing for mobile
+- [x] Display question text prominently
+- [x] Show category badge and difficulty indicator (star rating or colored label)
+- [x] Question number display: "Q3/8"
+- [x] Entrance animation (fade + slide up) on new question
+- [x] Responsive text sizing for mobile
   **Verification:** Renders with mock question data. Category badge shows correct category. Difficulty indicator matches difficulty level.
 
 #### 6.1.8.4 `components/rmhbox/minigames/fact-or-friction/OptionButton.tsx`
 
-- [ ] Reusable A/B/C/D option button with label prefix
-- [ ] States: `default` (tappable), `selected` (locked in, green border), `correct` (green fill, during reveal), `incorrect` (red fill, during reveal), `disabled` (after locking or during reveal)
-- [ ] Emit `rmhbox:game:input` with `{ action: "SUBMIT_ANSWER", data: { selectedIndex } }` on tap
-- [ ] Once locked, show "Locked in at X points" indicator
-- [ ] During `ANSWER_REVEAL`: highlight correct answer green, incorrect player answer red
-- [ ] Touch-friendly sizing (min 48px tap target on mobile)
+- [x] Reusable A/B/C/D option button with label prefix
+- [x] States: `default` (tappable), `selected` (locked in, green border), `correct` (green fill, during reveal), `incorrect` (red fill, during reveal), `disabled` (after locking or during reveal)
+- [x] Emit `rmhbox:game:input` with `{ action: "SUBMIT_ANSWER", data: { selectedIndex } }` on tap
+- [x] Once locked, show "Locked in at X points" indicator
+- [x] During `ANSWER_REVEAL`: highlight correct answer green, incorrect player answer red
+- [x] Touch-friendly sizing (min 48px tap target on mobile)
   **Verification:** Tap option → emits correct event. After lock → shows locked state. During reveal → correct/incorrect colors applied.
 
 #### 6.1.8.5 `components/rmhbox/minigames/fact-or-friction/AnswerReveal.tsx`
 
-- [ ] Show correct answer highlighted prominently
-- [ ] Display all players' results: who answered what, correct/incorrect indicator, pot value at submission, score change (+/- animation)
-- [ ] Score change animations: green "+800" floating up for correct, red "-600" for incorrect
-- [ ] Player who answered fastest (if correct) gets a "First!" badge
-- [ ] Pass/timeout indicators for players who didn't answer
+- [x] Show correct answer highlighted prominently
+- [x] Display all players' results: who answered what, correct/incorrect indicator, pot value at submission, score change (+/- animation)
+- [x] Score change animations: green "+800" floating up for correct, red "-600" for incorrect
+- [x] Player who answered fastest (if correct) gets a "First!" badge
+- [x] Pass/timeout indicators for players who didn't answer
   **Verification:** Renders with 4-player mock data. Correct/incorrect indicators match. Score animations play. First badge shows for fastest correct player.
 
 #### 6.1.8.6 `components/rmhbox/minigames/fact-or-friction/ScoreRibbon.tsx`
 
-- [ ] Persistent bottom bar showing player's running score
-- [ ] Animated score change on update (delta appears briefly, e.g., "+800" or "-300")
-- [ ] Players answered count: "4/6 answered"
-- [ ] Pass button with tap handler (emits `PASS_QUESTION` action)
-- [ ] Timer display
+- [x] Persistent bottom bar showing player's running score
+- [x] Animated score change on update (delta appears briefly, e.g., "+800" or "-300")
+- [x] Players answered count: "4/6 answered"
+- [x] Pass button with tap handler (emits `PASS_QUESTION` action)
+- [x] Timer display
   **Verification:** Score updates animate correctly. Pass button emits correct event. Player count updates in real-time.
 
 #### 6.1.8.7 Sound Effect Integration
 
-- [ ] Import `playSound` from `@/lib/rmhbox/audio`
-- [ ] Trigger sounds in `FactOrFrictionGame.tsx` event handlers:
-  - [ ] `FOF_QUESTION` → `playSound('swoosh')`
-  - [ ] `FOF_ANSWER_LOCKED` → `playSound('click')`
-  - [ ] `FOF_ANSWER_REVEAL` (player correct) → `playSound('scoreDing')`
-  - [ ] `FOF_ANSWER_REVEAL` (player wrong) → `playSound('buzzer')`
-  - [ ] `FOF_SCORE_UPDATE` → `playSound('scoreDing')`
+- [x] Import `playSound` from `@/lib/rmhbox/audio`
+- [x] Trigger sounds in `FactOrFrictionGame.tsx` event handlers:
+  - [ ] `FF_QUESTION` → `playSound('swoosh')`
+  - [ ] `FF_ANSWER_LOCKED` → `playSound('click')`
+  - [ ] `FF_ANSWER_REVEAL` (player correct) → `playSound('scoreDing')`
+  - [ ] `FF_ANSWER_REVEAL` (player wrong) → `playSound('buzzer')`
+  - [ ] `FF_SCORE_UPDATE` → `playSound('scoreDing')`
   - [ ] `TIMER_TICK` with `timeRemaining <= 5` → `playSound('countdownBeep')`
   **Verification:** All sounds fire at correct moments. Volume respects user settings.
 
 #### 6.1.8.8 Zustand Store Integration
 
-- [ ] Read game state via `useRMHboxStore()`:
-  - [ ] `gameState.lastAction` for reacting to `FOF_*` events
+- [x] Read game state via `useRMHboxStore()`:
+  - [ ] `gameState.lastAction` for reacting to `FF_*` events
   - [ ] `lobby.currentGame.timeRemaining` for countdown
   - [ ] `lobby.currentGame.publicState` for question, pot value, and player answer status
   - [ ] `lobby.currentGame.privateState` for own locked answer and pot-at-lock value
-- [ ] Detect spectator mode: render read-only QuestionCard without clickable options
+- [x] Detect spectator mode: render read-only QuestionCard without clickable options
   **Verification:** Component re-renders on store updates. Spectator sees question and pot but cannot answer.
 
 ---
 
 ### 6.1.9 Integration Testing
 
-- [ ] End-to-end test: 4 players join lobby → start Fact or Friction → play through 8 questions
+- [x] End-to-end test: 4 players join lobby → start Fact or Friction → play through 8 questions
   - [ ] Verify 8 questions with correct difficulty distribution (3 easy, 3 medium, 2 hard)
   - [ ] Verify pot starts at 1000 and drains to 100 over 9 seconds
   - [ ] Verify correct answer awards `+effectivePot`, incorrect deducts `-effectivePot`
@@ -556,29 +555,29 @@ interface FOFInitialState {
   - [ ] Verify all players answering triggers early phase end
   **Verification:** All assertions pass. Scores match manual calculation.
 
-- [ ] Pot timing test:
+- [x] Pot timing test:
   - [ ] Player answers at t=0s → pot = 1000 × multiplier
   - [ ] Player answers at t=4.5s → pot should be 1000 - (9 ticks × 50) = 550, × multiplier
   - [ ] Player answers at t=10s → pot should be 100 (at minimum), × multiplier
   **Verification:** Score changes match expected pot values at each timestamp.
 
-- [ ] Information masking test:
+- [x] Information masking test:
   - [ ] During ANSWER: other players' `selectedIndex` NOT in WebSocket traffic; only `hasAnswered` boolean
   - [ ] During ANSWER: `correctIndex` NOT in any event payload
   - [ ] During ANSWER_REVEAL: `correctIndex` and all player results visible
   **Verification:** Network inspector confirms masking during ANSWER and reveal during ANSWER_REVEAL.
 
-- [ ] Join-in-progress test: Player joins during question 4 → participates from question 5 with score 0
+- [x] Join-in-progress test: Player joins during question 4 → participates from question 5 with score 0
   **Verification:** JIP player added during PAUSE, starts interacting at next ANSWER phase.
 
-- [ ] Reconnection test: Player disconnects mid-ANSWER (before answering), reconnects → receives current question, pot value, timer, can still answer
+- [x] Reconnection test: Player disconnects mid-ANSWER (before answering), reconnects → receives current question, pot value, timer, can still answer
   **Verification:** Reconnected player can answer and score is computed correctly.
 
-- [ ] Rate limiting test: Rapid-fire `SUBMIT_ANSWER` events
+- [x] Rate limiting test: Rapid-fire `SUBMIT_ANSWER` events
   **Verification:** Only first valid submission accepted; duplicates silently ignored.
 
-- [ ] Anti-cheat test: Confirm `correctIndex` is never sent until `ANSWER_REVEAL` phase
-  - [ ] Inspect all `FOF_QUESTION`, `FOF_POT_TICK`, `FOF_ANSWER_LOCKED`, `FOF_PLAYER_ANSWERED` events — no `correctIndex`
+- [x] Anti-cheat test: Confirm `correctIndex` is never sent until `ANSWER_REVEAL` phase
+  - [ ] Inspect all `FF_QUESTION`, `FF_POT_TICK`, `FF_ANSWER_LOCKED`, `FF_PLAYER_ANSWERED` events — no `correctIndex`
   - [ ] Inspect `getStateForPlayer()` during `ANSWER` — no `correctIndex`
   **Verification:** Zero correctIndex leakage before reveal.
 
@@ -588,13 +587,13 @@ Integrate host-configurable settings using the §12A system established in Phase
 
 #### Registry Entry
 
-- [ ] Export `FACT_OR_FRICTION_SETTINGS: GameSettingsSchema` in `lib/rmhbox/minigame-registry.ts` with 5 entries:
+- [x] Export `FACT_OR_FRICTION_SETTINGS: GameSettingsSchema` in `lib/rmhbox/minigame-registry.ts` with 5 entries:
   - `totalQuestions` (integer, default `8`, min 4, max 12, step 1)
   - `answerDuration` (integer, default `20`, min 10, max 45, step 5)
   - `potStartValue` (integer, default `100`, min 50, max 200, step 25)
   - `enableScoreFloor` (boolean, default `true`)
   - `difficulty` (select, default `'mixed'`, options: `['easy','medium','hard','mixed']`)
-- [ ] Attach `settingsSchema: FACT_OR_FRICTION_SETTINGS` to the `fact-or-friction` `MinigameDefinition`.
+- [x] Attach `settingsSchema: FACT_OR_FRICTION_SETTINGS` to the `fact-or-friction` `MinigameDefinition`.
   **Verification:** Registry lookup returns definition with `settingsSchema` containing 5 entries.
 
 #### Handler `getSetting()` Integration
@@ -603,14 +602,14 @@ Replace hardcoded constants with `this.getSetting()` calls in the Fact or Fricti
 
 | Constant | Setting Key | Replacement |
 |---|---|---|
-| `FOF_TOTAL_QUESTIONS` | `totalQuestions` | `this.getSetting('totalQuestions', FOF_TOTAL_QUESTIONS)` |
-| `FOF_ANSWER_DURATION` | `answerDuration` | `this.getSetting('answerDuration', FOF_ANSWER_DURATION)` |
-| `FOF_POT_START_VALUE` | `potStartValue` | `this.getSetting('potStartValue', FOF_POT_START_VALUE)` |
-| `FOF_SCORE_FLOOR` | `enableScoreFloor` | `this.getSetting('enableScoreFloor', FOF_SCORE_FLOOR)` |
-| `FOF_DIFFICULTY` | `difficulty` | `this.getSetting('difficulty', FOF_DIFFICULTY)` |
+| `FF_TOTAL_QUESTIONS` | `totalQuestions` | `this.getSetting('totalQuestions', FF_TOTAL_QUESTIONS)` |
+| `FF_ANSWER_DURATION` | `answerDuration` | `this.getSetting('answerDuration', FF_ANSWER_DURATION)` |
+| `FF_POT_START_VALUE` | `potStartValue` | `this.getSetting('potStartValue', FF_POT_START_VALUE)` |
+| `FF_SCORE_FLOOR` | `enableScoreFloor` | `this.getSetting('enableScoreFloor', FF_SCORE_FLOOR)` |
+| `FF_DIFFICULTY` | `difficulty` | `this.getSetting('difficulty', FF_DIFFICULTY)` |
 
-- [ ] **Boolean setting logic:** When `enableScoreFloor` is `false`, allow player scores to go negative (remove `Math.max(0, ...)` guard or make it conditional).
-- [ ] **Select setting logic:** `difficulty` filters the question pool by tag. When `'mixed'`, all difficulties are included.
+- [x] **Boolean setting logic:** When `enableScoreFloor` is `false`, allow player scores to go negative (remove `Math.max(0, ...)` guard or make it conditional).
+- [x] **Select setting logic:** `difficulty` filters the question pool by tag. When `'mixed'`, all difficulties are included.
   **Verification:** Each constant usage replaced. Handler respects custom settings passed via `MinigameContext.gameSettings`.
 
 ### 6.1.11 History Display Configuration
@@ -650,24 +649,29 @@ registerHistoryDisplay({
 
 #### 6.1.11.3 Tests
 
-- [ ] Verify `getHistoryDisplay('fact-or-friction')` returns a valid config
-- [ ] Verify searchable fields extract question text and categories from a mock game log
-- [ ] Verify filterable fields include difficulty (select) and correctCount (range)
-- [ ] Verify `getSummary()` returns a meaningful string for a mock game log
-- [ ] Verify `DetailComponent` renders without errors when given a valid game log
+- [x] Verify `getHistoryDisplay('fact-or-friction')` returns a valid config
+- [x] Verify searchable fields extract question text and categories from a mock game log
+- [x] Verify filterable fields include difficulty (select) and correctCount (range)
+- [x] Verify `getSummary()` returns a meaningful string for a mock game log
+- [x] Verify `DetailComponent` renders without errors when given a valid game log
 
 ---
 
 ## 6.2 Undercover Editor
 
 **Game ID:** `undercover-editor` | **Category:** `social-deduction` | **Icon:** `pencil`
-**Players:** 4–10 | **Duration:** ~variable (turn-based, 2 rotations)
+**Players:** 4–10 | **Duration:** ~variable (parallel writing, 2 rounds)
+
+> **Parallel Design:** All players write sentences for ALL stories simultaneously.
+> Each player is secretly assigned as the undercover editor of one story.
+> After writing rounds, players review all stories and try to match each
+> story with its undercover editor in an infinite-time review phase.
 
 ---
 
 ### 6.2.1 Install NPM Packages
 
-- [ ] No additional NPM packages required for Undercover Editor
+- [x] No additional NPM packages required for Undercover Editor
   - `fuse.js` (already in core spec) is used for keyword proximity matching.
   **Verification:** Confirm `fuse.js` is listed in `package.json` dependencies.
 
@@ -675,43 +679,42 @@ registerHistoryDisplay({
 
 ### 6.2.2 Add Constants to `lib/rmhbox/constants.ts`
 
-- [ ] Add `UE_MIN_PLAYERS = 4` — minimum players required
-- [ ] Add `UE_MAX_PLAYERS = 10` — maximum players allowed
-- [ ] Add `UE_ROTATIONS = 2` — each player writes twice
-- [ ] Add `UE_WRITE_TIMEOUT_SECONDS = 45` — seconds for writing a sentence
-- [ ] Add `UE_EDIT_TIMEOUT_SECONDS = 30` — seconds for the Editor's secret edit
-- [ ] Add `UE_REVIEW_DURATION_SECONDS = 20` — duration of the review phase
-- [ ] Add `UE_ACCUSATION_DURATION_SECONDS = 30` — duration of the accusation/voting phase
-- [ ] Add `UE_REVEAL_DURATION_SECONDS = 10` — duration of the reveal phase
-- [ ] Add `UE_DISCONNECT_TURN_WAIT_SECONDS = 15` — wait before auto-completing a disconnected player's turn
-- [ ] Add `UE_MIN_SENTENCE_LENGTH = 10` — minimum sentence character length
-- [ ] Add `UE_MAX_SENTENCE_LENGTH = 200` — maximum sentence character length
-- [ ] Add `UE_MAX_EDIT_WORD_LENGTH = 30` — maximum replacement word character length
-- [ ] Add `UE_WRITER_MAJOR_WIN = 400` — Writers correctly ID Editor AND keyword NOT in story
-- [ ] Add `UE_WRITER_MINOR_WIN = 250` — Writers correctly ID Editor BUT keyword IS in story
-- [ ] Add `UE_WRITER_LOSS = 50` — Writers vote wrong AND keyword IS in story
-- [ ] Add `UE_WRITER_MINOR_LOSS = 100` — Writers vote wrong AND keyword NOT in story
-- [ ] Add `UE_EDITOR_MAJOR_WIN = 600` — Editor not caught AND keyword IS in story
-- [ ] Add `UE_EDITOR_MINOR_WIN = 300` — Editor not caught AND keyword NOT in story
-- [ ] Add `UE_EDITOR_PARTIAL = 200` — Editor caught BUT keyword IS in story
-- [ ] Add `UE_EDITOR_LOSS = 50` — Editor caught AND keyword NOT in story
-- [ ] Add `UE_CORRECT_VOTE_BONUS = 100` — extra points for Writers who voted correctly
-- [ ] Add `UE_KEYWORD_PROXIMITY_BONUS = 50` — bonus for Editor if near-match to keyword in story
-- [ ] Add `UE_KEYWORD_FUZZY_THRESHOLD = 0.7` — fuse.js threshold for proximity bonus
-- [ ] **Verification:** Import all `UE_*` constants in a test file; confirm no undefined values and correct types.
+- [x] Add `UE_MIN_PLAYERS = 4` — minimum players required
+- [x] Add `UE_MAX_PLAYERS = 10` — maximum players allowed
+- [x] Add `UE_ROTATIONS = 2` — each player writes twice
+- [x] Add `UE_WRITE_TIMEOUT_SECONDS = 45` — seconds for writing a sentence
+- [x] Add `UE_EDIT_TIMEOUT_SECONDS = 30` — seconds for the Editor's secret edit
+- [x] Add `UE_REVIEW_DURATION_SECONDS = 20` — duration of the review phase
+- [x] Add `UE_ACCUSATION_DURATION_SECONDS = 30` — duration of the accusation/voting phase
+- [x] Add `UE_REVEAL_DURATION_SECONDS = 10` — duration of the reveal phase
+- [x] Add `UE_DISCONNECT_TURN_WAIT_SECONDS = 15` — wait before auto-completing a disconnected player's turn
+- [x] Add `UE_MIN_SENTENCE_LENGTH = 10` — minimum sentence character length
+- [x] Add `UE_MAX_SENTENCE_LENGTH = 200` — maximum sentence character length
+- [x] Add `UE_MAX_EDIT_WORD_LENGTH = 30` — maximum replacement word character length
+- [x] Add `UE_WRITER_MAJOR_WIN = 400` — Writers correctly ID Editor AND keyword NOT in story
+- [x] Add `UE_WRITER_MINOR_WIN = 250` — Writers correctly ID Editor BUT keyword IS in story
+- [x] Add `UE_WRITER_LOSS = 50` — Writers vote wrong AND keyword IS in story
+- [x] Add `UE_WRITER_MINOR_LOSS = 100` — Writers vote wrong AND keyword NOT in story
+- [x] Add `UE_EDITOR_MAJOR_WIN = 600` — Editor not caught AND keyword IS in story
+- [x] Add `UE_EDITOR_MINOR_WIN = 300` — Editor not caught AND keyword NOT in story
+- [x] Add `UE_EDITOR_PARTIAL = 200` — Editor caught BUT keyword IS in story
+- [x] Add `UE_EDITOR_LOSS = 50` — Editor caught AND keyword NOT in story
+- [x] Add `UE_CORRECT_VOTE_BONUS = 100` — extra points for Writers who voted correctly
+- [x] Add `UE_KEYWORD_PROXIMITY_BONUS = 50` — bonus for Editor if near-match to keyword in story
+- [x] Add `UE_KEYWORD_FUZZY_THRESHOLD = 0.7` — fuse.js threshold for proximity bonus
+- [x] **Verification:** Import all `UE_*` constants in a test file; confirm no undefined values and correct types.
 
 ---
 
 ### 6.2.3 Create Static Data Files
 
-- [ ] Create directory `public/data/rmhbox/undercover-editor/`
+- [x] Create directory `data/rmhbox/undercover-editor/`
   **Verification:** Directory exists on disk.
 
-- [ ] Create `public/data/rmhbox/undercover-editor/prompts.json` — curated story prompts
+- [x] Create `data/rmhbox/undercover-editor/prompts.json` — curated story prompts
   - Each entry follows:
     ```ts
     {
-      id: string;
       text: string;             // e.g., "A detective arrives at an abandoned mansion on a stormy night."
       genre: string;            // e.g., "Mystery", "Sci-Fi", "Comedy"
       mood: string;             // e.g., "tense", "lighthearted", "dramatic"
@@ -722,11 +725,10 @@ registerHistoryDisplay({
   - [ ] No duplicate prompts
   **Verification:** Parse JSON; validate every entry against schema; confirm ≥50 entries; confirm ≥6 unique genres.
 
-- [ ] Create `public/data/rmhbox/undercover-editor/keywords.json` — curated keyword pool
+- [x] Create `data/rmhbox/undercover-editor/keywords.json` — curated keyword pool
   - Each entry follows:
     ```ts
     {
-      id: string;
       word: string;              // the secret keyword, e.g., "shadow"
       category: string;          // e.g., "Nature", "Emotion", "Object"
       difficulty: "easy" | "medium" | "hard";
@@ -742,9 +744,9 @@ registerHistoryDisplay({
 
 ### 6.2.4 Define Zod Validation Schemas
 
-- [ ] Create `lib/rmhbox/undercover-editor/schemas.ts`
+- [x] Create `lib/rmhbox/undercover-editor/schemas.ts`
 
-- [ ] Define `WriteSentenceSchema`:
+- [x] Define `WriteSentenceSchema`:
   ```ts
   const WriteSentenceSchema = z.object({
     text: z.string().min(UE_MIN_SENTENCE_LENGTH).max(UE_MAX_SENTENCE_LENGTH),
@@ -752,7 +754,7 @@ registerHistoryDisplay({
   ```
   **Verification:** Valid: `{ text: "The fog rolled in across the harbor." }`. Invalid: `{ text: "Short." }` (below 10 chars).
 
-- [ ] Define `EditWordSchema`:
+- [x] Define `EditWordSchema`:
   ```ts
   const EditWordSchema = z.object({
     sentenceIndex: z.number().int().min(0),
@@ -762,13 +764,13 @@ registerHistoryDisplay({
   ```
   **Verification:** Valid: `{ sentenceIndex: 0, wordIndex: 3, newWord: "shadow" }`. Invalid: `{ newWord: "two words" }` (contains space).
 
-- [ ] Define `SkipEditSchema`:
+- [x] Define `SkipEditSchema`:
   ```ts
   const SkipEditSchema = z.object({});
   ```
   **Verification:** Valid: `{}`.
 
-- [ ] Define `CastAccusationSchema`:
+- [x] Define `CastAccusationSchema`:
   ```ts
   const CastAccusationSchema = z.object({
     targetUserId: z.string().min(1),
@@ -780,7 +782,7 @@ registerHistoryDisplay({
 
 ### 6.2.5 Create Data Loader
 
-- [ ] Create `lib/rmhbox/undercover-editor/data-loader.ts`
+- [x] Create `lib/rmhbox/undercover-editor/data-loader.ts`
   - [ ] Export `loadPrompts(): StoryPrompt[]` — reads and parses `prompts.json`, caches as singleton
   - [ ] Export `loadKeywords(): Keyword[]` — reads and parses `keywords.json`, caches as singleton
   - [ ] Export `selectPromptForGame(pool: StoryPrompt[], usedIds: Set<string>): StoryPrompt` — picks a random prompt not in `usedIds`
@@ -791,17 +793,17 @@ registerHistoryDisplay({
 
 ### 6.2.6 Implement Server Handler
 
-- [ ] Create `server/rmhbox/minigames/undercover-editor.ts`
+- [x] Create `server/rmhbox/minigames/undercover-editor.ts`
 
 #### 6.2.6.1 Type Definitions
 
-- [ ] Define `UEPhase` type:
+- [x] Define `UEPhase` type:
   ```ts
   type UEPhase = 'SETUP' | 'WRITE' | 'EDIT' | 'REVIEW' | 'ACCUSATION' | 'REVEAL';
   ```
   **Verification:** Type has exactly 6 values matching spec.
 
-- [ ] Define `StorySentence` type:
+- [x] Define `StorySentence` type:
   ```ts
   type StorySentence = {
     authorUserId: string;
@@ -813,7 +815,7 @@ registerHistoryDisplay({
   };
   ```
 
-- [ ] Define `WordEdit` type:
+- [x] Define `WordEdit` type:
   ```ts
   type WordEdit = {
     sentenceIndex: number;
@@ -824,7 +826,7 @@ registerHistoryDisplay({
   };
   ```
 
-- [ ] Define `UndercoverEditorState` type:
+- [x] Define `UndercoverEditorState` type:
   ```ts
   type UndercoverEditorState = {
     storyPrompt: string;
@@ -850,28 +852,28 @@ registerHistoryDisplay({
 
 #### 6.2.6.2 Class: `UndercoverEditorGame extends BaseMinigame`
 
-- [ ] Constructor: call `super(context)`; load prompts and keywords via data loader
+- [x] Constructor: call `super(context)`; load prompts and keywords via data loader
   **Verification:** Instantiate class; confirm no errors and data pools are loaded.
 
 #### 6.2.6.3 State Initialization (`start()`)
 
-- [ ] Select story prompt via `selectPromptForGame()`
-- [ ] Select keyword via `selectKeywordForGame()`
-- [ ] Randomly assign one player as the Editor; all others are Writers
-- [ ] Compute `turnOrder`: shuffle player order; `totalTurns = players.length × UE_ROTATIONS`
-- [ ] Initialize `sentences = []`, `edits = []`, `editedWordPositions = new Set()`
-- [ ] Initialize `votes = new Map()`, `playerScores` with 0 for all players
-- [ ] Set `currentTurnIndex = -1`
-- [ ] Emit `UE_GAME_START` to all: `{ storyPrompt, turnOrder: PlayerTurnInfo[], totalTurns }`
-- [ ] Emit `UE_ROLE_ASSIGNED` to each player individually:
+- [x] Select story prompt via `selectPromptForGame()`
+- [x] Select keyword via `selectKeywordForGame()`
+- [x] Randomly assign one player as the Editor; all others are Writers
+- [x] Compute `turnOrder`: shuffle player order; `totalTurns = players.length × UE_ROTATIONS`
+- [x] Initialize `sentences = []`, `edits = []`, `editedWordPositions = new Set()`
+- [x] Initialize `votes = new Map()`, `playerScores` with 0 for all players
+- [x] Set `currentTurnIndex = -1`
+- [x] Emit `UE_GAME_START` to all: `{ storyPrompt, turnOrder: PlayerTurnInfo[], totalTurns }`
+- [x] Emit `UE_ROLE_ASSIGNED` to each player individually:
   - Writers: `{ role: 'writer' }` — NO keyword
   - Editor: `{ role: 'editor', keyword }` — INCLUDES keyword
-- [ ] Call `startNextTurn()`
+- [x] Call `startNextTurn()`
   **Verification:** Unit test with 5 players: confirm 1 Editor, 4 Writers. Editor receives keyword. Writers do NOT receive keyword. Turn count = 10 (5 × 2). Story prompt selected.
 
 #### 6.2.6.4 Turn Lifecycle
 
-- [ ] `startNextTurn()`:
+- [x] `startNextTurn()`:
   - Increment `currentTurnIndex`
   - If `currentTurnIndex >= totalTurns`, call `startReviewPhase()`; return
   - Determine active player from `turnOrder[currentTurnIndex % turnOrder.length]`
@@ -882,12 +884,12 @@ registerHistoryDisplay({
   - If active player is disconnected, start shorter wait (`UE_DISCONNECT_TURN_WAIT_SECONDS`); if still disconnected, auto-complete with `"..."` sentence
   **Verification:** Unit test: call `startNextTurn()` → correct player activated. Timer starts. After timeout → auto-submit `"..."`.
 
-- [ ] `handleWriteTimeout()`:
+- [x] `handleWriteTimeout()`:
   - If player has not submitted a sentence, auto-submit `"..."` as their sentence
   - Proceed to Editor edit phase (or next turn if active player IS the Editor)
   **Verification:** Timeout fires → `"..."` sentence added. Phase transitions correctly.
 
-- [ ] `afterSentenceSubmitted()`:
+- [x] `afterSentenceSubmitted()`:
   - Tokenize sentence into `words[]` array (split by whitespace)
   - Create `StorySentence` and add to `sentences`
   - Emit `UE_SENTENCE_ADDED` to all: `{ turnNumber, authorName, sentence: text, fullStory: StorySentenceView[] }`
@@ -899,7 +901,7 @@ registerHistoryDisplay({
     - Transition to edit phase for the Editor
   **Verification:** Sentence added and broadcast. Story view updated. Edit phase triggered for Editor.
 
-- [ ] `startEditPhase()`:
+- [x] `startEditPhase()`:
   - Set `phase = 'EDIT'`
   - Build `EditableStory` for the Editor:
     - Include all sentences with word-level tokens
@@ -913,12 +915,12 @@ registerHistoryDisplay({
   - **Non-Editor players see nothing during this phase** — they simply see a "The story is being reviewed..." message or similar waiting indicator (no events reveal the edit phase to Writers)
   **Verification:** Unit test: Edit prompt sent to Editor only. Writers receive NO edit-related events. Editable words correctly exclude already-edited positions and current sentence.
 
-- [ ] `handleEditTimeout()`:
+- [x] `handleEditTimeout()`:
   - If Editor has not edited or skipped, auto-skip
   - Proceed to next turn
   **Verification:** Timeout fires → auto-skip. Next turn starts.
 
-- [ ] `afterEditApplied(edit: WordEdit)`:
+- [x] `afterEditApplied(edit: WordEdit)`:
   - Update the target sentence's `words` array with the new word
   - Reconstruct `text` from updated `words`
   - Add edit to `edits[]` array
@@ -929,36 +931,36 @@ registerHistoryDisplay({
 
 #### 6.2.6.5 Input Handling — `WRITE_SENTENCE`
 
-- [ ] Validate phase is `'WRITE'`; reject if not
-- [ ] Validate sender is the active turn player; reject if not their turn
-- [ ] Parse input through `WriteSentenceSchema`; reject on validation failure
-- [ ] Sanitize sentence content (strip any HTML/script tags via `sanitizeString()`)
-- [ ] Call `afterSentenceSubmitted()`
+- [x] Validate phase is `'WRITE'`; reject if not
+- [x] Validate sender is the active turn player; reject if not their turn
+- [x] Parse input through `WriteSentenceSchema`; reject on validation failure
+- [x] Sanitize sentence content (strip any HTML/script tags via `sanitizeString()`)
+- [x] Call `afterSentenceSubmitted()`
   **Verification:** Unit test: correct player submits valid sentence → accepted. Wrong player submits → rejected. Too-short sentence → rejected.
 
 #### 6.2.6.6 Input Handling — `EDIT_WORD`
 
-- [ ] Validate phase is `'EDIT'`; reject if not
-- [ ] Validate sender is the Editor; reject if not
-- [ ] Parse input through `EditWordSchema`; reject on validation failure
-- [ ] Validate `sentenceIndex` is within range of `sentences`
-- [ ] Validate `wordIndex` is within range of target sentence's `words` array
-- [ ] Validate position is editable (not already edited, not current sentence if Editor wrote it)
-- [ ] Sanitize `newWord` via `sanitizeString()`
-- [ ] Create `WordEdit` object and call `afterEditApplied()`
+- [x] Validate phase is `'EDIT'`; reject if not
+- [x] Validate sender is the Editor; reject if not
+- [x] Parse input through `EditWordSchema`; reject on validation failure
+- [x] Validate `sentenceIndex` is within range of `sentences`
+- [x] Validate `wordIndex` is within range of target sentence's `words` array
+- [x] Validate position is editable (not already edited, not current sentence if Editor wrote it)
+- [x] Sanitize `newWord` via `sanitizeString()`
+- [x] Create `WordEdit` object and call `afterEditApplied()`
   **Verification:** Unit test: Editor edits a valid word → accepted, story updated. Editor tries to edit already-edited word → rejected. Editor tries to edit their own sentence's word → rejected. Non-Editor tries to edit → rejected.
 
 #### 6.2.6.7 Input Handling — `SKIP_EDIT`
 
-- [ ] Validate phase is `'EDIT'` and sender is the Editor
-- [ ] Parse through `SkipEditSchema`
-- [ ] No edit applied; emit `UE_STORY_UPDATED` with unchanged story (to maintain the illusion that something happened — or simply proceed)
-- [ ] Call `startNextTurn()`
+- [x] Validate phase is `'EDIT'` and sender is the Editor
+- [x] Parse through `SkipEditSchema`
+- [x] No edit applied; emit `UE_STORY_UPDATED` with unchanged story (to maintain the illusion that something happened — or simply proceed)
+- [x] Call `startNextTurn()`
   **Verification:** Unit test: Editor skips → no edit recorded, next turn starts.
 
 #### 6.2.6.8 Review Phase
 
-- [ ] `startReviewPhase()`:
+- [x] `startReviewPhase()`:
   - Set `phase = 'REVIEW'`
   - Emit `UE_REVIEW_START` to all: `{ fullStory: StorySentenceView[], reviewDurationSeconds: UE_REVIEW_DURATION_SECONDS }`
   - Start `TIMER_TICK` interval
@@ -967,7 +969,7 @@ registerHistoryDisplay({
 
 #### 6.2.6.9 Accusation Phase
 
-- [ ] `startAccusationPhase()`:
+- [x] `startAccusationPhase()`:
   - Set `phase = 'ACCUSATION'`
   - Build player list (excluding self for each voter)
   - Emit `UE_ACCUSATION_START` to all: `{ players: Array<{ userId, userName }>, accusationDurationSeconds: UE_ACCUSATION_DURATION_SECONDS }`
@@ -977,17 +979,17 @@ registerHistoryDisplay({
 
 #### 6.2.6.10 Input Handling — `CAST_ACCUSATION`
 
-- [ ] Validate phase is `'ACCUSATION'`; reject if not
-- [ ] Parse through `CastAccusationSchema`
-- [ ] Validate `targetUserId` is a real player in the game
-- [ ] Validate sender is NOT voting for themselves (Editor can vote for anyone except themselves)
-- [ ] Update `votes` map (overwrites previous vote — players can change their vote)
-- [ ] Emit `UE_VOTE_CAST` to all: `{ voterId, hasVoted: true }` — NOT who they voted for
+- [x] Validate phase is `'ACCUSATION'`; reject if not
+- [x] Parse through `CastAccusationSchema`
+- [x] Validate `targetUserId` is a real player in the game
+- [x] Validate sender is NOT voting for themselves (Editor can vote for anyone except themselves)
+- [x] Update `votes` map (overwrites previous vote — players can change their vote)
+- [x] Emit `UE_VOTE_CAST` to all: `{ voterId, hasVoted: true }` — NOT who they voted for
   **Verification:** Unit test: valid vote recorded. Self-vote rejected. Vote change updates map. Other players only see that someone voted, not whom.
 
 #### 6.2.6.11 Reveal Phase
 
-- [ ] `endAccusationPhase()`:
+- [x] `endAccusationPhase()`:
   - Set `phase = 'REVEAL'`
   - Tally votes: find the player with the plurality of votes
   - Handle tie: if no plurality, Editor wins by default (no one accused)
@@ -1019,7 +1021,7 @@ registerHistoryDisplay({
 
 #### 6.2.6.12 `getStateForPlayer(userId)`
 
-- [ ] If Writer:
+- [x] If Writer:
   ```ts
   {
     storyPrompt: string;
@@ -1036,7 +1038,7 @@ registerHistoryDisplay({
     votedPlayers: string[];          // userIds who have voted (not who for)
   }
   ```
-- [ ] If Editor:
+- [x] If Editor:
   ```ts
   {
     // All Writer fields PLUS:
@@ -1046,14 +1048,14 @@ registerHistoryDisplay({
     editableStory?: EditableStory;   // only during EDIT phase
   }
   ```
-- [ ] **CRITICAL MASKING:** Writer NEVER receives `keyword`, `editorUserId`, `myEdits`, or `editableStory`
-- [ ] During WRITE/EDIT phases: only active player's turn info is relevant
-- [ ] During ACCUSATION: `votedPlayers` shows who has voted but NOT their targets
+- [x] **CRITICAL MASKING:** Writer NEVER receives `keyword`, `editorUserId`, `myEdits`, or `editableStory`
+- [x] During WRITE/EDIT phases: only active player's turn info is relevant
+- [x] During ACCUSATION: `votedPlayers` shows who has voted but NOT their targets
   **Verification:** Unit test: getState for Writer → no keyword, no editorUserId. getState for Editor → keyword present. During ACCUSATION → votes masked.
 
 #### 6.2.6.13 `getStateForSpectator()`
 
-- [ ] Omniscient view:
+- [x] Omniscient view:
   - Sees who the Editor is
   - Sees the keyword
   - Sees all edits as they happen (highlighted in story)
@@ -1062,48 +1064,48 @@ registerHistoryDisplay({
 
 #### 6.2.6.14 Join-in-Progress Handling
 
-- [ ] Policy: `spectate_only`
-- [ ] Roles and turn order are fixed at game start; adding mid-game would disrupt the social deduction
-- [ ] JIP players receive spectator state
+- [x] Policy: `spectate_only`
+- [x] Roles and turn order are fixed at game start; adding mid-game would disrupt the social deduction
+- [x] JIP players receive spectator state
   **Verification:** JIP during turn 5 → spectator only, receives omniscient state.
 
 #### 6.2.6.15 Reconnection Handling (`handlePlayerReconnect(userId)`)
 
-- [ ] Send full state via `getStateForPlayer(userId)` (role-aware)
-- [ ] If it was their turn and the WRITE/EDIT phase is still active, they can still submit
-- [ ] If their turn was auto-completed (timeout → "..." sentence), they cannot redo it
-- [ ] Editor receives keyword and edit history on reconnect
+- [x] Send full state via `getStateForPlayer(userId)` (role-aware)
+- [x] If it was their turn and the WRITE/EDIT phase is still active, they can still submit
+- [x] If their turn was auto-completed (timeout → "..." sentence), they cannot redo it
+- [x] Editor receives keyword and edit history on reconnect
   **Verification:** Unit test: Editor disconnects and reconnects during WRITE phase → receives keyword, edit history, can still write. Writer reconnects → no keyword in state.
 
 #### 6.2.6.16 Disconnect Handling (`handlePlayerDisconnect(userId)`)
 
-- [ ] If disconnected player's turn arrives during grace period:
+- [x] If disconnected player's turn arrives during grace period:
   - Wait `UE_DISCONNECT_TURN_WAIT_SECONDS` (15s, shorter than write timeout)
   - If still disconnected, auto-complete turn with `"..."` sentence
   - If they were the Editor, auto-skip edit phase
-- [ ] If the Editor fully disconnects (beyond grace period):
+- [x] If the Editor fully disconnects (beyond grace period):
   - Game continues — Editor won't make more edits
   - If keyword isn't in story at end, Writers win by default
   - Game is NOT terminated (Writers can still play out deduction)
-- [ ] If total active players drop below `UE_MIN_PLAYERS` (4), force-end the game
+- [x] If total active players drop below `UE_MIN_PLAYERS` (4), force-end the game
   **Verification:** Unit test: disconnected player's turn → auto "..." after 15s. Editor disconnects fully → game continues, no more edits. Below min players → force end.
 
 #### 6.2.6.17 `computeResults()` and Awards
 
-- [ ] Compute final rankings by `playerScores` (descending)
-- [ ] Compute awards:
+- [x] Compute final rankings by `playerScores` (descending)
+- [x] Compute awards:
   - [ ] **Master of Disguise** — Editor who wasn't caught AND got the keyword in; icon: `mask`
   - [ ] **Eagle Eye** — Writer who correctly voted for the Editor; icon: `eye`
   - [ ] **Shakespeare** — Player who wrote the longest sentence (by word count); icon: `quill`
   - [ ] **Smooth Operator** — Editor who made the most edits without getting caught; icon: `wand-2`
   - [ ] **Red Herring** — Writer who received the most accusation votes (falsely accused); icon: `fish`
-- [ ] Return `MinigameResults` with rankings, awards, and `gameSpecificData` containing `edits`, `votes`, `winner`, `keyword`
+- [x] Return `MinigameResults` with rankings, awards, and `gameSpecificData` containing `edits`, `votes`, `winner`, `keyword`
   **Verification:** Unit test: construct scenarios for each award → all 5 awards assigned correctly.
 
 #### 6.2.6.18 `buildGameLog()`
 
-- [ ] Maintain an `actionLog: GameLogAction[]` array on the game instance
-- [ ] Build `GameLog` conforming to core.md §13.3, including `gameSettings` per §12A.11
+- [x] Maintain an `actionLog: GameLogAction[]` array on the game instance
+- [x] Build `GameLog` conforming to core.md §13.3, including `gameSettings` per §12A.11
 
 **`initialState` (from minigames-2.md §2.15):**
 
@@ -1132,15 +1134,15 @@ interface UEInitialState {
 | `vote_result` | `{ votes: Record<string, string[]>; editorCaught: boolean }` | Voting concludes (`votes` key = suspected userId, value = array of voter userIds) |
 | `final_reveal` | `{ editorUserId: string; keyword: string; allSwaps: Array<{ sentenceIndex: number; originalWord: string; replacementWord: string }> }` | Post-game reveal |
 
-- [ ] In `computeResults()`, build `GameLog` with `initialState`, full action log, and `finalResults`
-- [ ] Return `GameLog` from `buildGameLog()`
+- [x] In `computeResults()`, build `GameLog` with `initialState`, full action log, and `finalResults`
+- [x] Return `GameLog` from `buildGameLog()`
   **Verification:** Unit test: 6-player game, 12 turns, verify log contains all action types, `initialState` has keyword and editor identity, `finalResults` matches player rankings.
 
 ---
 
 ### 6.2.7 Register Game in Minigame Registry
 
-- [ ] Add entry to `lib/rmhbox/minigame-registry.ts`:
+- [x] Add entry to `lib/rmhbox/minigame-registry.ts`:
   ```ts
   {
     id: "undercover-editor",
@@ -1160,14 +1162,14 @@ interface UEInitialState {
   ```
   **Verification:** Registry lookup for `"undercover-editor"` returns correct metadata and handler instantiates.
 
-- [ ] Register server handler in `MINIGAME_SERVER_REGISTRY` (in `server/rmhbox/game-coordinator.ts`):
+- [x] Register server handler in `MINIGAME_SERVER_REGISTRY` (in `server/rmhbox/game-coordinator.ts`):
   ```ts
   import { UndercoverEditorGame } from './minigames/undercover-editor';
   MINIGAME_SERVER_REGISTRY.set('undercover-editor', UndercoverEditorGame);
   ```
   **Verification:** `MINIGAME_SERVER_REGISTRY.get('undercover-editor')` returns the `UndercoverEditorGame` class. `GameCoordinator` can instantiate it with a valid `MinigameContext`.
 
-- [ ] Add lazy-load entry in `components/rmhbox/MinigameRenderer.tsx`:
+- [x] Add lazy-load entry in `components/rmhbox/MinigameRenderer.tsx`:
   ```tsx
   'undercover-editor': lazy(() => import('./minigames/undercover-editor/UndercoverEditorGame')),
   ```
@@ -1179,20 +1181,20 @@ interface UEInitialState {
 
 #### 6.2.8.1 `components/rmhbox/minigames/undercover-editor/UndercoverEditorGame.tsx`
 
-- [ ] Phase router component — renders sub-component based on `phase`
-- [ ] Subscribe to all `UE_*` and `TIMER_TICK` WebSocket events
-- [ ] Maintain local state: role, keyword (Editor only), story, turn info, votes, timer
-- [ ] Handle `UE_GAME_START` → store turn order, total turns
-- [ ] Handle `UE_ROLE_ASSIGNED` → store role; if Editor, store keyword
-- [ ] Handle `UE_TURN_START` → update active player, reset turn state
-- [ ] Handle `UE_SENTENCE_ADDED` → update story display
-- [ ] Handle `UE_EDIT_PROMPT` → (Editor only) transition to edit interface
-- [ ] Handle `UE_STORY_UPDATED` → refresh story display (seamless, no indication of edit)
-- [ ] Handle `UE_REVIEW_START` → transition to review display
-- [ ] Handle `UE_ACCUSATION_START` → transition to voting interface
-- [ ] Handle `UE_VOTE_CAST` → update voted indicator
-- [ ] Handle `UE_REVEAL` → transition to reveal screen
-- [ ] Conditional rendering by phase:
+- [x] Phase router component — renders sub-component based on `phase`
+- [x] Subscribe to all `UE_*` and `TIMER_TICK` WebSocket events
+- [x] Maintain local state: role, keyword (Editor only), story, turn info, votes, timer
+- [x] Handle `UE_GAME_START` → store turn order, total turns
+- [x] Handle `UE_ROLE_ASSIGNED` → store role; if Editor, store keyword
+- [x] Handle `UE_TURN_START` → update active player, reset turn state
+- [x] Handle `UE_SENTENCE_ADDED` → update story display
+- [x] Handle `UE_EDIT_PROMPT` → (Editor only) transition to edit interface
+- [x] Handle `UE_STORY_UPDATED` → refresh story display (seamless, no indication of edit)
+- [x] Handle `UE_REVIEW_START` → transition to review display
+- [x] Handle `UE_ACCUSATION_START` → transition to voting interface
+- [x] Handle `UE_VOTE_CAST` → update voted indicator
+- [x] Handle `UE_REVEAL` → transition to reveal screen
+- [x] Conditional rendering by phase:
   - `WRITE` (my turn) → `<WriteInput />`
   - `WRITE` (not my turn) → `<StoryDisplay />` with waiting indicator
   - `EDIT` (I am Editor) → `<StoryEditor />`
@@ -1204,79 +1206,79 @@ interface UEInitialState {
 
 #### 6.2.8.2 `components/rmhbox/minigames/undercover-editor/StoryDisplay.tsx`
 
-- [ ] Read-only story viewer showing all sentences with author attribution
-- [ ] Each sentence is a distinct block with author name
-- [ ] Scrollable; newest sentence highlighted briefly on addition
-- [ ] During REVEAL: edited words highlighted in a distinct color with tooltip showing original → replacement
-- [ ] Responsive text sizing
+- [x] Read-only story viewer showing all sentences with author attribution
+- [x] Each sentence is a distinct block with author name
+- [x] Scrollable; newest sentence highlighted briefly on addition
+- [x] During REVEAL: edited words highlighted in a distinct color with tooltip showing original → replacement
+- [x] Responsive text sizing
   **Verification:** Renders mock story. New sentence animates in. During reveal, edits highlighted correctly.
 
 #### 6.2.8.3 `components/rmhbox/minigames/undercover-editor/WriteInput.tsx`
 
-- [ ] Text input area for composing a sentence (10–200 chars)
-- [ ] Character counter showing remaining characters
-- [ ] Submit button (disabled until min length met)
-- [ ] Timer display
-- [ ] Story context above the input (previous sentences for reference)
-- [ ] Placeholder text with writing tips
+- [x] Text input area for composing a sentence (10–200 chars)
+- [x] Character counter showing remaining characters
+- [x] Submit button (disabled until min length met)
+- [x] Timer display
+- [x] Story context above the input (previous sentences for reference)
+- [x] Placeholder text with writing tips
   **Verification:** Input validates length. Submit emits `WRITE_SENTENCE` action. Disabled when below min length.
 
 #### 6.2.8.4 `components/rmhbox/minigames/undercover-editor/StoryEditor.tsx`
 
-- [ ] Editor's secret word-editing interface — shown ONLY to the Editor during EDIT phase
-- [ ] Display story with each word as a tappable token
-- [ ] Editable words are visually distinct (subtle underline or selectable styling)
-- [ ] Non-editable words (already edited / own sentence) are grayed out
-- [ ] Tapping an editable word opens an inline replacement input
-- [ ] Replacement input: single word, max 30 chars, no spaces
-- [ ] Confirm/cancel buttons for the replacement
-- [ ] Skip button to skip editing this turn
-- [ ] Timer display
-- [ ] Show the keyword prominently as a reminder
+- [x] Editor's secret word-editing interface — shown ONLY to the Editor during EDIT phase
+- [x] Display story with each word as a tappable token
+- [x] Editable words are visually distinct (subtle underline or selectable styling)
+- [x] Non-editable words (already edited / own sentence) are grayed out
+- [x] Tapping an editable word opens an inline replacement input
+- [x] Replacement input: single word, max 30 chars, no spaces
+- [x] Confirm/cancel buttons for the replacement
+- [x] Skip button to skip editing this turn
+- [x] Timer display
+- [x] Show the keyword prominently as a reminder
   **Verification:** Only editable words are tappable. Replacement validates single word. Skip emits `SKIP_EDIT`. Edit emits `EDIT_WORD`.
 
 #### 6.2.8.5 `components/rmhbox/minigames/undercover-editor/AccusationPanel.tsx`
 
-- [ ] Grid/list of all players (except self) with avatars
-- [ ] Tap to vote; selected player has highlighted border
-- [ ] Can change vote (tap another player) until timer expires
-- [ ] "Voted" indicator shown next to players who have voted (not who for)
-- [ ] Timer display
-- [ ] Submit vote emits `CAST_ACCUSATION` action on each selection
+- [x] Grid/list of all players (except self) with avatars
+- [x] Tap to vote; selected player has highlighted border
+- [x] Can change vote (tap another player) until timer expires
+- [x] "Voted" indicator shown next to players who have voted (not who for)
+- [x] Timer display
+- [x] Submit vote emits `CAST_ACCUSATION` action on each selection
   **Verification:** Tap player → vote event emitted. Self not in list. Vote indicator updates on `UE_VOTE_CAST` events.
 
 #### 6.2.8.6 `components/rmhbox/minigames/undercover-editor/RevealScreen.tsx`
 
-- [ ] Dramatic Editor reveal: "The Editor was... [name]!"
-- [ ] Keyword reveal: "The keyword was... [word]"
-- [ ] Story display with all edited words highlighted:
+- [x] Dramatic Editor reveal: "The Editor was... [name]!"
+- [x] Keyword reveal: "The keyword was... [word]"
+- [x] Story display with all edited words highlighted:
   - Show original word struck through and new word in accent color
-- [ ] Vote tally visualization: who voted for whom
-- [ ] Winner announcement: "Writers Win!" or "Editor Wins!"
-- [ ] Score breakdown per player
-- [ ] Framer Motion entrance animations for each reveal step (staggered)
+- [x] Vote tally visualization: who voted for whom
+- [x] Winner announcement: "Writers Win!" or "Editor Wins!"
+- [x] Score breakdown per player
+- [x] Framer Motion entrance animations for each reveal step (staggered)
   **Verification:** All reveal info displays correctly. Edits highlighted. Votes shown. Scores match server data.
 
 #### 6.2.8.7 `components/rmhbox/minigames/undercover-editor/RoleBadge.tsx`
 
-- [ ] Small persistent indicator in screen corner showing the player's role
-- [ ] Writer: "🔎 Writer" in muted styling
-- [ ] Editor: "✏️ Editor | Keyword: [word]" in accent styling (but subtle — don't reveal to screen-lookers too easily)
-- [ ] Position: top-right corner, small font
+- [x] Small persistent indicator in screen corner showing the player's role
+- [x] Writer: "🔎 Writer" in muted styling
+- [x] Editor: "✏️ Editor | Keyword: [word]" in accent styling (but subtle — don't reveal to screen-lookers too easily)
+- [x] Position: top-right corner, small font
   **Verification:** Correct role displayed. Editor badge includes keyword.
 
 #### 6.2.8.8 `components/rmhbox/minigames/undercover-editor/TurnIndicator.tsx`
 
-- [ ] Shows whose turn it is with their avatar/name
-- [ ] "Your turn!" highlight when it's the player's own turn
-- [ ] Turn progress: "Turn 4/12"
-- [ ] Animated transition between turns
+- [x] Shows whose turn it is with their avatar/name
+- [x] "Your turn!" highlight when it's the player's own turn
+- [x] Turn progress: "Turn 4/12"
+- [x] Animated transition between turns
   **Verification:** Correct player shown per turn. Highlight on own turn. Progress counter accurate.
 
 #### 6.2.8.9 Sound Effect Integration
 
-- [ ] Import `playSound` from `@/lib/rmhbox/audio`
-- [ ] Trigger sounds in `UndercoverEditorGame.tsx` event handlers:
+- [x] Import `playSound` from `@/lib/rmhbox/audio`
+- [x] Trigger sounds in `UndercoverEditorGame.tsx` event handlers:
   - [ ] `UE_GAME_START` → `playSound('swoosh')`
   - [ ] `UE_TURN_START` → `playSound('chime')`
   - [ ] `UE_SENTENCE_ADDED` → `playSound('click')`
@@ -1289,19 +1291,19 @@ interface UEInitialState {
 
 #### 6.2.8.10 Zustand Store Integration
 
-- [ ] Read game state via `useRMHboxStore()`:
+- [x] Read game state via `useRMHboxStore()`:
   - [ ] `gameState.lastAction` for reacting to `UE_*` events
   - [ ] `lobby.currentGame.timeRemaining` for countdown
   - [ ] `lobby.currentGame.publicState` for story
   - [ ] `lobby.currentGame.privateState` for role
-- [ ] Detect spectator mode: render omniscient view showing Editor identity and keyword
+- [x] Detect spectator mode: render omniscient view showing Editor identity and keyword
   **Verification:** Component re-renders on store updates. Spectator sees Editor identity, keyword, and all edits.
 
 ---
 
 ### 6.2.9 Integration Testing
 
-- [ ] End-to-end test: 5 players → start Undercover Editor → play through 10 turns (2 rotations)
+- [x] End-to-end test: 5 players → start Undercover Editor → play through 10 turns (2 rotations)
   - [ ] Verify 1 Editor, 4 Writers assigned
   - [ ] Verify Editor receives keyword; Writers do NOT
   - [ ] Verify each player writes on their turn and story updates broadcast to all
@@ -1310,14 +1312,14 @@ interface UEInitialState {
   - [ ] Verify review, accusation, and reveal phases execute in sequence
   **Verification:** All assertions pass. Role assignment correct. Information masking verified.
 
-- [ ] Information masking test:
+- [x] Information masking test:
   - [ ] Inspect WebSocket traffic for Writer players: NO `keyword`, `editorUserId`, `editableStory`, or `edits` before REVEAL
   - [ ] Inspect `getStateForPlayer()` for Writer during all phases: no secret data
   - [ ] Inspect `getStateForPlayer()` for Editor: keyword and edits present
   - [ ] Inspect `getStateForSpectator()`: omniscient (keyword, editor, edits, votes all visible)
   **Verification:** Zero secret data leakage to Writers before REVEAL.
 
-- [ ] Win condition test: Simulate all 4 scenarios:
+- [x] Win condition test: Simulate all 4 scenarios:
   - [ ] Scenario 1: Correct accusation + keyword NOT in story → Writers major win (400 each)
   - [ ] Scenario 2: Correct accusation + keyword IS in story → Writers minor win (250 each)
   - [ ] Scenario 3: Wrong accusation + keyword IS in story → Editor major win (600)
@@ -1325,16 +1327,16 @@ interface UEInitialState {
   - [ ] Vote tie scenario → Editor wins by default
   **Verification:** Scores match spec for each scenario.
 
-- [ ] Keyword proximity test: Story has `"shade"` when keyword is `"shadow"` → fuse.js detects proximity → Editor gets +50 bonus
+- [x] Keyword proximity test: Story has `"shade"` when keyword is `"shadow"` → fuse.js detects proximity → Editor gets +50 bonus
   **Verification:** Proximity bonus applied. Exact match vs fuzzy match differentiated correctly.
 
-- [ ] Disconnect test: Player disconnects on their turn → auto-`"..."` after 15s. Editor disconnects → game continues, no more edits.
+- [x] Disconnect test: Player disconnects on their turn → auto-`"..."` after 15s. Editor disconnects → game continues, no more edits.
   **Verification:** Auto-completion works. Game completes without Editor.
 
-- [ ] Reconnection test: Editor disconnects and reconnects during WRITE → keyword and edit history restored
+- [x] Reconnection test: Editor disconnects and reconnects during WRITE → keyword and edit history restored
   **Verification:** Full state restored on reconnect.
 
-- [ ] Vote change test: Player votes for A, then changes to B → only final vote counted
+- [x] Vote change test: Player votes for A, then changes to B → only final vote counted
   **Verification:** Final vote is B in tally.
 
 ### 6.2.10 Game Settings Integration (§12A)
@@ -1343,12 +1345,12 @@ Integrate host-configurable settings using the §12A system.
 
 #### Registry Entry
 
-- [ ] Export `UNDERCOVER_EDITOR_SETTINGS: GameSettingsSchema` in `lib/rmhbox/minigame-registry.ts` with 4 entries:
+- [x] Export `UNDERCOVER_EDITOR_SETTINGS: GameSettingsSchema` in `lib/rmhbox/minigame-registry.ts` with 4 entries:
   - `rotations` (integer, default `2`, min 1, max 3, step 1)
   - `writeTimeout` (integer, default `90`, min 45, max 180, step 15)
   - `editTimeout` (integer, default `60`, min 30, max 120, step 10)
   - `accusationDuration` (integer, default `45`, min 20, max 90, step 5)
-- [ ] Attach `settingsSchema: UNDERCOVER_EDITOR_SETTINGS` to the `undercover-editor` `MinigameDefinition`.
+- [x] Attach `settingsSchema: UNDERCOVER_EDITOR_SETTINGS` to the `undercover-editor` `MinigameDefinition`.
   **Verification:** Registry lookup returns definition with `settingsSchema` containing 4 entries.
 
 #### Handler `getSetting()` Integration
@@ -1385,11 +1387,11 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 
 #### 6.2.11.3 Tests
 
-- [ ] Verify `getHistoryDisplay('undercover-editor')` returns a valid config
-- [ ] Verify searchable fields extract sentences and keyword from a mock game log
-- [ ] Verify filterable fields include role (select), editorCaught (boolean), keywordInStory (boolean)
-- [ ] Verify `getSummary()` returns a meaningful string for a mock game log
-- [ ] Verify `DetailComponent` renders without errors when given a valid game log
+- [x] Verify `getHistoryDisplay('undercover-editor')` returns a valid config
+- [x] Verify searchable fields extract sentences and keyword from a mock game log
+- [x] Verify filterable fields include role (select), editorCaught (boolean), keywordInStory (boolean)
+- [x] Verify `getSummary()` returns a meaningful string for a mock game log
+- [x] Verify `DetailComponent` renders without errors when given a valid game log
 
 ---
 
@@ -2802,7 +2804,7 @@ Add registration in `lib/rmhbox/history-display-registrations.ts` with:
 
 - [ ] Spectate each of the 4 Phase 6 games
 - [ ] Verify omniscient data in spectator state:
-  - FOF: same as player (no privileged info)
+  - FF: same as player (no privileged info)
   - UE: keyword, editor identity, edits, all votes
   - MM: all drawings live, all individual bids, identity mapping
   - EC: movie title, all guess text
@@ -2873,7 +2875,7 @@ All tests go in `testing/rmhbox/phase-6/game-settings.test.ts` (or integrated in
 
 ### 6.6.1 Schema Completeness Tests
 
-- [ ] Each of the 4 exported settings arrays has the expected number of entries (FOF: 5, UE: 4, MM: 5, EC: 4).
+- [ ] Each of the 4 exported settings arrays has the expected number of entries (FF: 5, UE: 4, MM: 5, EC: 4).
 - [ ] Every setting has `key`, `type`, `label`, `default` defined.
 - [ ] Integer/float settings have `min`, `max`, `step` defined.
 - [ ] Select settings have a non-empty `options` array.
@@ -2883,7 +2885,7 @@ All tests go in `testing/rmhbox/phase-6/game-settings.test.ts` (or integrated in
 
 | Test Case | Description |
 |---|---|
-| `default totalQuestions` | With no custom settings, handler uses `FOF_TOTAL_QUESTIONS` (8) |
+| `default totalQuestions` | With no custom settings, handler uses `FF_TOTAL_QUESTIONS` (8) |
 | `custom totalQuestions = 12` | Handler plays 12 question rounds |
 | `custom answerDuration = 30` | Timer broadcasts use 30s instead of default 20s |
 | `custom potStartValue = 150` | Starting pot is 150 per question |
@@ -2925,6 +2927,6 @@ All tests go in `testing/rmhbox/phase-6/game-settings.test.ts` (or integrated in
 
 ### 6.6.6 getSetting() Fallback Tests
 
-- [ ] Calling `getSetting('totalQuestions', FOF_TOTAL_QUESTIONS)` with empty `gameSettings` returns the fallback.
-- [ ] Calling `getSetting('totalQuestions', FOF_TOTAL_QUESTIONS)` with `gameSettings: { totalQuestions: 10 }` returns `10`.
+- [ ] Calling `getSetting('totalQuestions', FF_TOTAL_QUESTIONS)` with empty `gameSettings` returns the fallback.
+- [ ] Calling `getSetting('totalQuestions', FF_TOTAL_QUESTIONS)` with `gameSettings: { totalQuestions: 10 }` returns `10`.
 - [ ] Calling `getSetting('unknownKey', 42)` returns `42`.

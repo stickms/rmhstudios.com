@@ -45,6 +45,11 @@ export default function GameShell({
   const minigameRound = useRMHboxStore((s) => s.minigameRound);
   const timerInfo = useRMHboxStore((s) => s.timerInfo);
   const lobby = useRMHboxStore((s) => s.lobby);
+  const liveMinigameScore = useRMHboxStore((s) => s.liveMinigameScore);
+
+  /** Show live in-game score when set (e.g. Fact or Friction pot scoring),
+   *  otherwise fall back to the lobby-level cumulative score prop. */
+  const displayScore = liveMinigameScore ?? score;
 
   const isHost = !!(lobby && lobby.hostUserId === lobby.myUserId);
   const showNextButton = isHost && timerInfo?.showSkip;
@@ -72,7 +77,7 @@ export default function GameShell({
       {/* Footer */}
       <footer className="relative flex shrink-0 items-center border-t border-(--rmhbox-border) px-4 py-1.5 text-sm">
         <span className="font-mono font-semibold">
-          Score: <span className="text-(--rmhbox-accent)">{score}</span>
+          Score: <span className="text-(--rmhbox-accent)">{displayScore}</span>
         </span>
         {/* Center — round counter or host "Next" button for infinite phases */}
         <div className="absolute inset-0 flex items-center justify-center">
