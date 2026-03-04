@@ -30,7 +30,7 @@ export const revalidate = 3600; // Revalidate every hour
 export async function generateStaticParams() {
   const posts = await getPostSlugs();
   return posts.map((post) => ({
-    slug: post.replace(/\.mdx$/, ""),
+    slug: post,
   }));
 }
 
