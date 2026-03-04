@@ -96,7 +96,7 @@ function onCreateRoom(socket: Socket, payload: any): void {
         code,
         hostSocketId: socket.id,
         guestSocketId: null,
-        hostClass: payload?.fighterClass || 'power',
+        hostClass: payload?.fighterClass || 'stone_tiger',
         guestClass: null,
         hostReady: false,
         guestReady: false,
@@ -123,7 +123,7 @@ function onJoinRoom(socket: Socket, payload: any): void {
     }
 
     room.guestSocketId = socket.id;
-    room.guestClass = payload?.fighterClass || 'power';
+    room.guestClass = payload?.fighterClass || 'stone_tiger';
     socketToRoom.set(socket.id, code);
 
     // Notify both players
@@ -174,7 +174,7 @@ function onFighterReady(socket: Socket, payload: any): void {
     const room = rooms.get(roomCode);
     if (!room || !room.guestSocketId) return;
 
-    const fighterClass = payload?.fighterClass || 'power';
+    const fighterClass = payload?.fighterClass || 'stone_tiger';
 
     if (room.hostSocketId === socket.id) {
         room.pendingHostClass = fighterClass;

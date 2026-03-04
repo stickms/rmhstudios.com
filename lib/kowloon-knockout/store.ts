@@ -68,8 +68,8 @@ export const useGameStore = create<GameStore>((set) => ({
     phase: 'menu',
     setPhase: (phase) => set({ phase }),
 
-    selectedClass: 'speed',
-    opponentClass: 'power',
+    selectedClass: 'jade_dragon',
+    opponentClass: 'stone_tiger',
     setSelectedClass: (selectedClass) => set({ selectedClass }),
     setOpponentClass: (opponentClass) => set({ opponentClass }),
 

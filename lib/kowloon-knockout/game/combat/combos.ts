@@ -7,6 +7,8 @@ import { ComboDef, FighterClass, PunchType } from '../fighters/types';
 export const COMBO_WINDOW_MS = 800; // max time between punches to count as combo
 
 export const COMBO_DEFS: ComboDef[] = [
+    // ── Universal Combos ──────────────────────────────────────
+
     // 2-hit combos
     {
         name: 'one-two',
@@ -53,7 +55,7 @@ export const COMBO_DEFS: ComboDef[] = [
         displayName: '★ FURY COMBO! ★',
     },
 
-    // ── Dragon Fist Subclass Unique Combos ──────────────────────
+    // ── Fighter-Specific Combos ───────────────────────────────
 
     // Stone Tiger — IRON CLAW: slow devastating hook chain
     {
@@ -62,7 +64,7 @@ export const COMBO_DEFS: ComboDef[] = [
         bonusDamageMultiplier: 1.75,
         bonusStun: 16,
         displayName: '★ IRON CLAW! ★',
-        classRestriction: 'power_stone_tiger',
+        classRestriction: 'stone_tiger',
     },
     // Red Phoenix — PHOENIX STRIKE: fast entry into devastating finish
     {
@@ -71,7 +73,7 @@ export const COMBO_DEFS: ComboDef[] = [
         bonusDamageMultiplier: 2.00,
         bonusStun: 18,
         displayName: '★ PHOENIX STRIKE! ★',
-        classRestriction: 'power_red_phoenix',
+        classRestriction: 'red_phoenix',
     },
     // Jade Dragon — DRAGON RISING: versatile 4-hit chain
     {
@@ -80,7 +82,61 @@ export const COMBO_DEFS: ComboDef[] = [
         bonusDamageMultiplier: 1.80,
         bonusStun: 14,
         displayName: '★ DRAGON RISING! ★',
-        classRestriction: 'power_jade_dragon',
+        classRestriction: 'jade_dragon',
+    },
+    // Silver Viper — FANG FLURRY: fast 4-hit jab-focused chain
+    {
+        name: 'fang-flurry',
+        sequence: ['jab', 'jab', 'cross', 'hook'],
+        bonusDamageMultiplier: 1.85,
+        bonusStun: 12,
+        displayName: '★ FANG FLURRY! ★',
+        classRestriction: 'silver_viper',
+    },
+    // Night Crane — CRANE COUNTER: punishing double-cross into uppercut
+    {
+        name: 'crane-counter',
+        sequence: ['cross', 'cross', 'uppercut'],
+        bonusDamageMultiplier: 1.90,
+        bonusStun: 16,
+        displayName: '★ CRANE COUNTER! ★',
+        classRestriction: 'night_crane',
+    },
+    // Ghost Monkey — MONKEY MADNESS: unconventional hook opener
+    {
+        name: 'monkey-madness',
+        sequence: ['hook', 'jab', 'uppercut'],
+        bonusDamageMultiplier: 1.70,
+        bonusStun: 14,
+        displayName: '★ MONKEY MADNESS! ★',
+        classRestriction: 'ghost_monkey',
+    },
+    // Black Tortoise — SHELL CRUSHER: grinding 4-hit pressure
+    {
+        name: 'shell-crusher',
+        sequence: ['jab', 'cross', 'hook', 'hook'],
+        bonusDamageMultiplier: 1.65,
+        bonusStun: 10,
+        displayName: '★ SHELL CRUSHER! ★',
+        classRestriction: 'black_tortoise',
+    },
+    // Iron Bull — BULL RUSH: devastating close-range finisher
+    {
+        name: 'bull-rush',
+        sequence: ['hook', 'uppercut', 'uppercut'],
+        bonusDamageMultiplier: 1.95,
+        bonusStun: 20,
+        displayName: '★ BULL RUSH! ★',
+        classRestriction: 'iron_bull',
+    },
+    // Smoke Leopard — SMOKE SCREEN: safe triple-jab into cross
+    {
+        name: 'smoke-screen',
+        sequence: ['jab', 'jab', 'jab', 'cross'],
+        bonusDamageMultiplier: 1.55,
+        bonusStun: 8,
+        displayName: '★ SMOKE SCREEN! ★',
+        classRestriction: 'smoke_leopard',
     },
 ];
 

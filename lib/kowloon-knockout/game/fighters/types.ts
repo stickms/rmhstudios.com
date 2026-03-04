@@ -2,8 +2,10 @@
 // Kowloon Knockout — Type Definitions
 // ============================================================
 
-export type FighterClass = 'power' | 'speed' | 'resistance'
-    | 'power_stone_tiger' | 'power_red_phoenix' | 'power_jade_dragon';
+export type FighterClass =
+    | 'stone_tiger' | 'red_phoenix' | 'jade_dragon'
+    | 'silver_viper' | 'night_crane' | 'ghost_monkey'
+    | 'black_tortoise' | 'iron_bull' | 'smoke_leopard';
 export type PunchType = 'jab' | 'cross' | 'hook' | 'uppercut';
 export type FighterState = 'idle' | 'walking' | 'punching' | 'blocking' | 'hit' | 'stunned' | 'knockedOut';
 export type GamePhase = 'menu' | 'select' | 'lobby' | 'fight' | 'countdown' | 'roundEnd' | 'result';
