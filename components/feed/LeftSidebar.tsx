@@ -7,7 +7,7 @@ import { authClient } from '@/lib/auth-client';
 import { useSession } from '@/components/Providers';
 import {
   Home, Gamepad2, AppWindow, Newspaper, Map, FlaskConical, BookOpen,
-  Palette, ChevronDown, LogOut, PenSquare, User, MessageCircle,
+  Palette, ChevronDown, LogOut, PenSquare, User, MessageCircle, Boxes,
 } from 'lucide-react';
 import { ComposeModal } from './ComposeModal';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,7 @@ const navLinks = [
   { href: '/', label: 'Home', icon: Home },
   { href: '/games', label: 'Games', icon: Gamepad2 },
   { href: '/apps', label: 'Apps', icon: AppWindow },
+  { href: '/user-builds', label: 'Builds', icon: Boxes },
   { href: '/news', label: 'News', icon: Newspaper },
   { href: '/research', label: 'Research', icon: FlaskConical },
   { href: '/blog', label: 'Blog', icon: BookOpen },
