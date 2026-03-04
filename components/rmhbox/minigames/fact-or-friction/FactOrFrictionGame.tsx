@@ -101,8 +101,9 @@ export default function FactOrFrictionGame({ playerId, playerName: _playerName }
             totalQuestions: data.totalQuestions as number,
           };
           setQuestionData(q);
-          setPotValue(data.potStartValue as number ?? 1000);
-          setPotMaxValue(data.potStartValue as number ?? 1000);
+          // Use server-communicated availablePoints (pot × difficulty multiplier)
+          setPotValue(data.availablePoints as number ?? data.potStartValue as number ?? 1000);
+          setPotMaxValue(data.maxAvailablePoints as number ?? data.potStartValue as number ?? 1000);
           setMyAnswer(null);
           setLockedPotValue(null);
           setPlayersAnswered(0);
@@ -120,11 +121,19 @@ export default function FactOrFrictionGame({ playerId, playerName: _playerName }
           if (typeof data.duration === 'number') {
             setTimeRemaining(data.duration as number);
           }
+          // Update available points from server
+          if (typeof data.availablePoints === 'number') {
+            setPotValue(data.availablePoints as number);
+          }
+          if (typeof data.maxAvailablePoints === 'number') {
+            setPotMaxValue(data.maxAvailablePoints as number);
+          }
           break;
         }
         case 'FF_POT_TICK': {
-          const newPot = data.potValue as number;
-          if (typeof newPot === 'number') setPotValue(newPot);
+          // Use server-communicated availablePoints (pot × difficulty multiplier)
+          const newAvailable = data.availablePoints as number;
+          if (typeof newAvailable === 'number') setPotValue(newAvailable);
           break;
         }
         case 'FF_ANSWER_LOCKED': {
@@ -244,7 +253,9 @@ export default function FactOrFrictionGame({ playerId, playerName: _playerName }
     if (p === 'QUESTION_REVEAL' || p === 'ANSWER' || p === 'ANSWER_REVEAL' || p === 'PAUSE' || p === 'GAME_OVER') {
       setPhase(p);
     }
-    if (snapshot.potValue != null) setPotValue(snapshot.potValue as number);
+    if (snapshot.availablePoints != null) setPotValue(snapshot.availablePoints as number);
+    else if (snapshot.potValue != null) setPotValue(snapshot.potValue as number);
+    if (snapshot.maxAvailablePoints != null) setPotMaxValue(snapshot.maxAvailablePoints as number);
     if (snapshot.timeRemaining != null) setTimeRemaining(snapshot.timeRemaining as number);
 
     // Server sends question as nested object with {id, question, options, category, difficulty, source}

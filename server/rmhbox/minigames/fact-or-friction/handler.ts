@@ -82,6 +82,25 @@ export class FactOrFrictionGame extends BaseMinigame {
     return 'shared-privileged';
   }
 
+  // ─── Available Points ─────────────────────────────────────────
+
+  /** Compute the effective points available for the current question (pot × difficulty multiplier). */
+  private getAvailablePoints(): number {
+    const question = this.state.questions[this.state.currentQuestionIndex];
+    if (!question) return this.state.potValue;
+    const multiplier = DIFFICULTY_MULTIPLIERS[question.difficulty] ?? FF_MEDIUM_MULTIPLIER;
+    return Math.floor(this.state.potValue * multiplier);
+  }
+
+  /** Compute the max available points for the current question (potStartValue × difficulty multiplier). */
+  private getMaxAvailablePoints(): number {
+    const question = this.state.questions[this.state.currentQuestionIndex];
+    const potStart = this.getSetting('potStartValue', FF_POT_START_VALUE);
+    if (!question) return potStart;
+    const multiplier = DIFFICULTY_MULTIPLIERS[question.difficulty] ?? FF_MEDIUM_MULTIPLIER;
+    return Math.floor(potStart * multiplier);
+  }
+
   // ─── Phase Transition Scheduling ──────────────────────────────
 
   /**
@@ -190,6 +209,8 @@ export class FactOrFrictionGame extends BaseMinigame {
         source: question.source,
       },
       potStartValue: this.state.potValue,
+      availablePoints: this.getAvailablePoints(),
+      maxAvailablePoints: this.getMaxAvailablePoints(),
       duration: FF_QUESTION_REVEAL_SECONDS,
     });
 
@@ -220,6 +241,8 @@ export class FactOrFrictionGame extends BaseMinigame {
       type: 'FF_ANSWER_PHASE',
       duration: answerDuration,
       potValue: this.state.potValue,
+      availablePoints: this.getAvailablePoints(),
+      maxAvailablePoints: this.getMaxAvailablePoints(),
     });
 
     this.startPhaseTimer(answerDuration);
@@ -234,6 +257,7 @@ export class FactOrFrictionGame extends BaseMinigame {
       this.broadcastGameAction({
         type: 'FF_POT_TICK',
         potValue: this.state.potValue,
+        availablePoints: this.getAvailablePoints(),
       });
     }, FF_POT_TICK_INTERVAL_MS);
 
@@ -632,6 +656,8 @@ export class FactOrFrictionGame extends BaseMinigame {
       currentQuestionIndex: this.state.currentQuestionIndex,
       totalQuestions: this.state.totalQuestions,
       potValue: this.state.potValue,
+      availablePoints: this.getAvailablePoints(),
+      maxAvailablePoints: this.getMaxAvailablePoints(),
       scores,
       phaseStartedAt: this.state.phaseStartedAt,
       phaseEndsAt: this.state.phaseEndsAt,
@@ -686,6 +712,8 @@ export class FactOrFrictionGame extends BaseMinigame {
       currentQuestionIndex: this.state.currentQuestionIndex,
       totalQuestions: this.state.totalQuestions,
       potValue: this.state.potValue,
+      availablePoints: this.getAvailablePoints(),
+      maxAvailablePoints: this.getMaxAvailablePoints(),
       scores,
       phaseStartedAt: this.state.phaseStartedAt,
       phaseEndsAt: this.state.phaseEndsAt,

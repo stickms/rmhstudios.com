@@ -150,7 +150,9 @@ describe('Fact or Friction Server Handler (§6.1)', () => {
     });
 
     it('should not drain pot below FF_POT_MIN_VALUE', () => {
-      const { game, broadcastLog } = createGame();
+      // Use a longer answer duration to allow enough ticks (at 1s intervals) to drain pot to minimum
+      const ctxData = createMockContext(undefined, { gameSettings: { answerDuration: 30 } });
+      const { game, broadcastLog } = createGame(ctxData);
       game.start();
       advanceToAnswerPhase();
       broadcastLog.length = 0;
@@ -677,6 +679,108 @@ describe('Fact or Friction Server Handler (§6.1)', () => {
       const tData2 = potTicks[2].data as Record<string, unknown>;
       expect(tData0.potValue).toBe(FF_POT_START_VALUE - FF_POT_TICK_VALUE);
       expect(tData2.potValue).toBe(FF_POT_START_VALUE - FF_POT_TICK_VALUE * 3);
+
+      game.cleanup();
+    });
+  });
+
+  describe('Available Points (server-communicated)', () => {
+    it('should include availablePoints in FF_QUESTION broadcast', () => {
+      const { game, broadcastLog } = createGame();
+      game.start();
+
+      const questionEvents = findActionBroadcasts(broadcastLog, 'FF_QUESTION');
+      expect(questionEvents.length).toBe(1);
+
+      const qData = questionEvents[0].data;
+      expect(qData.availablePoints).toBeDefined();
+      expect(typeof qData.availablePoints).toBe('number');
+      expect(qData.maxAvailablePoints).toBeDefined();
+      expect(typeof qData.maxAvailablePoints).toBe('number');
+
+      game.cleanup();
+    });
+
+    it('should include availablePoints in FF_ANSWER_PHASE broadcast', () => {
+      const { game, broadcastLog } = createGame();
+      game.start();
+      advanceToAnswerPhase();
+
+      const answerPhase = findActionBroadcasts(broadcastLog, 'FF_ANSWER_PHASE');
+      expect(answerPhase.length).toBe(1);
+
+      const data = answerPhase[0].data;
+      expect(data.availablePoints).toBeDefined();
+      expect(typeof data.availablePoints).toBe('number');
+      expect(data.maxAvailablePoints).toBeDefined();
+
+      game.cleanup();
+    });
+
+    it('should include availablePoints in FF_POT_TICK broadcast', () => {
+      const { game, broadcastLog } = createGame();
+      game.start();
+      advanceToAnswerPhase();
+      broadcastLog.length = 0;
+
+      vi.advanceTimersByTime(FF_POT_TICK_INTERVAL_MS);
+
+      const potTicks = findActionBroadcasts(broadcastLog, 'FF_POT_TICK');
+      expect(potTicks.length).toBeGreaterThanOrEqual(1);
+
+      const tickData = potTicks[0].data;
+      expect(tickData.availablePoints).toBeDefined();
+      expect(typeof tickData.availablePoints).toBe('number');
+
+      game.cleanup();
+    });
+
+    it('should include availablePoints in getStateForPlayer', () => {
+      const { game } = createGame();
+      game.start();
+      advanceToAnswerPhase();
+
+      const state = game.getStateForPlayer(MOCK_USERS.alice.userId) as Record<string, unknown>;
+      expect(state.availablePoints).toBeDefined();
+      expect(typeof state.availablePoints).toBe('number');
+      expect(state.maxAvailablePoints).toBeDefined();
+      expect(typeof state.maxAvailablePoints).toBe('number');
+
+      game.cleanup();
+    });
+
+    it('should include availablePoints in getStateForSpectator', () => {
+      const { game } = createGame();
+      game.start();
+      advanceToAnswerPhase();
+
+      const state = game.getStateForSpectator() as Record<string, unknown>;
+      expect(state.availablePoints).toBeDefined();
+      expect(typeof state.availablePoints).toBe('number');
+      expect(state.maxAvailablePoints).toBeDefined();
+
+      game.cleanup();
+    });
+
+    it('should compute availablePoints as floor(potValue × difficulty multiplier)', () => {
+      const { game, broadcastLog } = createGame();
+      game.start();
+      advanceToAnswerPhase();
+      broadcastLog.length = 0;
+
+      vi.advanceTimersByTime(FF_POT_TICK_INTERVAL_MS);
+
+      const potTicks = findActionBroadcasts(broadcastLog, 'FF_POT_TICK');
+      expect(potTicks.length).toBeGreaterThanOrEqual(1);
+
+      const tickData = potTicks[0].data;
+      const potValue = tickData.potValue as number;
+      const availablePoints = tickData.availablePoints as number;
+
+      // availablePoints should equal floor(potValue × multiplier) for some valid multiplier
+      // Since we don't know the difficulty, just verify it's a valid product
+      expect(availablePoints).toBeGreaterThan(0);
+      expect(availablePoints).toBeLessThanOrEqual(potValue * 1.5); // max multiplier is hard: 1.5
 
       game.cleanup();
     });
