@@ -41,7 +41,7 @@ export default function QuestionCard({
       {/* Header: question number + badges */}
       <div className="mb-3 flex items-center justify-between">
         <span className="text-xs font-semibold text-(--rmhbox-text-muted) uppercase tracking-wider">
-          Q{questionIndex}/{totalQuestions}
+          Q{questionIndex + 1}/{totalQuestions}
         </span>
         <div className="flex items-center gap-2">
           <span className="rounded-full bg-(--rmhbox-surface-hover) px-2 py-0.5 text-xs text-(--rmhbox-text-muted)">
