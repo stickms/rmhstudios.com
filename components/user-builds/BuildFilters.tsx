@@ -45,9 +45,9 @@ export function BuildFilters({
   const selectedSortData = SORT_OPTIONS.find((s) => s.value === selectedSort);
 
   return (
-    <div className="flex flex-col sm:flex-row gap-4 mb-6">
+    <div className="flex flex-col gap-3 mb-6">
       {/* Search */}
-      <div className="relative flex-1">
+      <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-site-text-dim" />
         <input
           type="text"
@@ -66,6 +66,7 @@ export function BuildFilters({
         )}
       </div>
 
+      <div className="flex gap-3">
       {/* Category Filter */}
       <div className="relative">
         <button
@@ -150,6 +151,7 @@ export function BuildFilters({
             </div>
           </>
         )}
+      </div>
       </div>
     </div>
   );
