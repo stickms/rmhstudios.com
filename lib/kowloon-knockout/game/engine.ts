@@ -8,7 +8,7 @@ import {
 } from './fighters/types';
 import {
     createFighter, startPunch, applyHit, updateFighter,
-    moveFighter, setBlocking, checkHit, resetFighter,
+    moveFighter, setBlocking, checkHit, resetFighter, recordPunchConnected,
 } from './fighters/fighter';
 import { PUNCH_DEFS, getStaleMoveMultiplier } from './combat/punches';
 import { detectCombo, getComboHitScale, getHitIndexInCombo } from './combat/combos';
@@ -190,6 +190,7 @@ function update(state: GameState): void {
     // === Hit Detection ===
     // Player hitting opponent
     if (checkHit(player, opponent)) {
+        recordPunchConnected(player);
         const now = Date.now();
         const combo = detectCombo(player.comboHistory, now, player.className);
         const comboMult = combo ? combo.bonusDamageMultiplier : 1.0;
@@ -236,6 +237,7 @@ function update(state: GameState): void {
 
     // Opponent hitting player
     if (checkHit(opponent, player)) {
+        recordPunchConnected(opponent);
         const now = Date.now();
         const combo = detectCombo(opponent.comboHistory, now, opponent.className);
         const comboMult = combo ? combo.bonusDamageMultiplier : 1.0;

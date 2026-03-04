@@ -8,7 +8,7 @@ import {
 } from './fighters/types';
 import {
     createFighter, startPunch, applyHit, updateFighter,
-    moveFighter, setBlocking, checkHit, resetFighter,
+    moveFighter, setBlocking, checkHit, resetFighter, recordPunchConnected,
 } from './fighters/fighter';
 import { getStaleMoveMultiplier } from './combat/punches';
 import { detectCombo, getComboHitScale, getHitIndexInCombo } from './combat/combos';
@@ -321,6 +321,7 @@ function initHostGame(
         remoteInput.uppercutPressed = false;
 
         if (checkHit(player, opponent)) {
+            recordPunchConnected(player);
             const now = Date.now();
             const combo = detectCombo(player.comboHistory, now, player.className);
             const comboMult = combo ? combo.bonusDamageMultiplier : 1.0;
@@ -346,6 +347,7 @@ function initHostGame(
         }
 
         if (checkHit(opponent, player)) {
+            recordPunchConnected(opponent);
             const now = Date.now();
             const combo = detectCombo(opponent.comboHistory, now, opponent.className);
             const comboMult = combo ? combo.bonusDamageMultiplier : 1.0;

@@ -580,7 +580,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 30px;
+  gap: 16px;
   padding: 20px;
 }
 
@@ -591,83 +591,104 @@
   letter-spacing: 4px;
 }
 
-.kowloon-knockout .fighters-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+/* Fighter Carousel */
+.kowloon-knockout .fighter-carousel {
+  display: flex;
+  align-items: center;
   gap: 16px;
-  max-width: 900px;
   width: 100%;
+  max-width: 700px;
 }
 
-.kowloon-knockout .fighter-card {
-  width: auto;
-  padding: 24px;
-  border: 1px solid #333;
-  background: rgba(10, 0, 21, 0.8);
+.kowloon-knockout .carousel-arrow {
+  background: none;
+  border: 1px solid #555;
+  color: var(--neon-yellow);
+  font-size: 24px;
+  padding: 12px 8px;
   cursor: pointer;
-  transition: all 0.3s ease;
-  position: relative;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.kowloon-knockout .carousel-arrow:hover {
+  border-color: var(--neon-yellow);
+  box-shadow: 0 0 10px rgba(255, 204, 0, 0.3);
+}
+
+.kowloon-knockout .carousel-arrow:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.kowloon-knockout .carousel-center {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
+  min-width: 0;
 }
 
-.kowloon-knockout .fighter-card:hover {
-  border-color: var(--fighter-color);
-  box-shadow: 0 0 20px color-mix(in srgb, var(--fighter-color) 30%, transparent);
+/* Roster strip — horizontal row of small fighter thumbnails */
+.kowloon-knockout .roster-strip {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 4px 0;
+  max-width: 100%;
+  scrollbar-width: none;
 }
 
-.kowloon-knockout .fighter-card-selected {
-  border-color: var(--fighter-color);
-  box-shadow: 0 0 30px color-mix(in srgb, var(--fighter-color) 40%, transparent),
-    inset 0 0 30px color-mix(in srgb, var(--fighter-color) 10%, transparent);
+.kowloon-knockout .roster-strip::-webkit-scrollbar {
+  display: none;
 }
 
-.kowloon-knockout .fighter-preview {
-  width: 100px;
-  height: 120px;
+.kowloon-knockout .roster-slot {
+  width: 48px;
+  height: 48px;
+  border: 2px solid #333;
+  background: rgba(0, 0, 0, 0.6);
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  overflow: hidden;
+}
+
+.kowloon-knockout .roster-slot-selected {
+  border-width: 2px;
+}
+
+/* Selected fighter detail panel */
+.kowloon-knockout .fighter-detail {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  background: rgba(10, 0, 21, 0.8);
   border: 1px solid #333;
+  padding: 20px 28px;
+  width: 100%;
+}
+
+.kowloon-knockout .fighter-detail-sprite {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   background: rgba(0, 0, 0, 0.5);
-  position: relative;
-  overflow: hidden;
+  border: 1px solid #222;
+  padding: 8px;
 }
 
-.kowloon-knockout .fighter-silhouette {
-  width: 40px;
-  height: 70px;
-  position: relative;
-  opacity: 0.8;
+.kowloon-knockout .fighter-detail-info {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  align-items: center;
-}
-
-.kowloon-knockout .silhouette-head {
-  width: 18px;
-  height: 18px;
-  background: inherit;
-  border-radius: 50%;
-  margin-bottom: 2px;
-}
-
-.kowloon-knockout .silhouette-body {
-  width: 24px;
-  height: 30px;
-  background: inherit;
-  border-radius: 3px;
-}
-
-.kowloon-knockout .silhouette-arms {
-  width: 36px;
-  height: 6px;
-  background: inherit;
-  border-radius: 3px;
-  position: absolute;
-  top: 24px;
+  gap: 8px;
+  min-width: 0;
 }
 
 .kowloon-knockout .fighter-name {
@@ -728,7 +749,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 30px;
+  gap: 16px;
   width: 100%;
 }
 

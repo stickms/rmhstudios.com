@@ -55,6 +55,7 @@ export interface Fighter {
   hitCooldown: number;
   blockHeld: boolean;
   comboHistory: { type: PunchType; time: number }[];
+  punchConnected: boolean; // whether current punch connected (hit or blocked)
   knockoutTimer: number;
   displayName: string;
   spriteColor: string;       // main body color

@@ -37,6 +37,7 @@ export function createFighter(
         hitCooldown: 0,
         blockHeld: false,
         comboHistory: [],
+        punchConnected: false,
         knockoutTimer: 0,
         displayName,
         spriteColor: display.color,
@@ -58,16 +59,22 @@ export function startPunch(fighter: Fighter, punchType: PunchType): boolean {
     fighter.currentPunch = punch;
     fighter.punchFrame = 0;
     fighter.stamina -= punch.staminaCost;
-
-    // Add to combo history
-    fighter.comboHistory.push({ type: punchType, time: Date.now() });
-
-    // Keep only last 6 punches in history
-    if (fighter.comboHistory.length > 6) {
-        fighter.comboHistory = fighter.comboHistory.slice(-6);
-    }
+    fighter.punchConnected = false;
 
     return true;
+}
+
+/**
+ * Record that the attacker's punch connected (hit or blocked).
+ * Adds the punch to combo history for combo detection.
+ */
+export function recordPunchConnected(attacker: Fighter): void {
+    if (!attacker.currentPunch || attacker.punchConnected) return;
+    attacker.punchConnected = true;
+    attacker.comboHistory.push({ type: attacker.currentPunch.type, time: Date.now() });
+    if (attacker.comboHistory.length > 6) {
+        attacker.comboHistory = attacker.comboHistory.slice(-6);
+    }
 }
 
 /**
@@ -149,10 +156,15 @@ export function updateFighter(fighter: Fighter): void {
             const punchDuration = calculatePunchSpeed(fighter.currentPunch, fighter.stats.punchSpeed, fighter.stats.moveSpeed);
             fighter.punchFrame++;
             if (fighter.punchFrame >= punchDuration) {
+                // Punch finished — if it never connected, it was a whiff → break combo
+                if (!fighter.punchConnected) {
+                    fighter.comboHistory = [];
+                }
                 fighter.state = 'idle';
                 fighter.currentPunch = null;
                 fighter.punchFrame = 0;
                 fighter.stateFrame = 0;
+                fighter.punchConnected = false;
             }
             break;
         }
@@ -252,5 +264,6 @@ export function resetFighter(fighter: Fighter, x: number): void {
     fighter.hitCooldown = 0;
     fighter.blockHeld = false;
     fighter.comboHistory = [];
+    fighter.punchConnected = false;
     fighter.knockoutTimer = 0;
 }
