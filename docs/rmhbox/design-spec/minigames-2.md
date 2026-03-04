@@ -1,7 +1,7 @@
 # RMHbox — Minigame Design Specifications (Part 2)
 
-> **Version:** 1.0  
-> **Last Updated:** 2026-02-22  
+> **Version:** 2.0  
+> **Last Updated:** 2026-02-27  
 > **Status:** Draft  
 > **Games Covered:** Fact or Friction, Undercover Editor, Minimalist Masterpiece, Emoji Cinema  
 > **Parent Document:** [design-spec-core.md](./design-spec-core.md)
@@ -13,7 +13,7 @@
 1. [Fact or Friction](#1-fact-or-friction)
    - [1.15 MinigameRenderer & Client-Server Wiring](#115-minigamerenderer--client-server-wiring)
 2. [Undercover Editor](#2-undercover-editor)
-   - [2.15 MinigameRenderer & Client-Server Wiring](#215-minigamerenderer--client-server-wiring)
+   - [2.17 MinigameRenderer & Client-Server Wiring](#217-minigamerenderer--client-server-wiring)
 3. [Minimalist Masterpiece](#3-minimalist-masterpiece)
    - [3.14 MinigameRenderer & Client-Server Wiring](#314-minigamerenderer--client-server-wiring)
 4. [Emoji Cinema](#4-emoji-cinema)
@@ -46,7 +46,7 @@ High-stakes trivia where answering wrong costs you. A question appears with a **
 
 #### 1.3.1 Round Structure
 
-The game consists of **8 questions** (configurable: `FOF_TOTAL_QUESTIONS`). Each question is an independent sub-round.
+The game consists of **8 questions** (configurable: `FF_TOTAL_QUESTIONS`). Each question is an independent sub-round.
 
 | Phase | Duration | Description |
 |---|---|---|
@@ -82,9 +82,9 @@ Question selection per game:
 
 The Point Pot is a **server-authoritative** counter that ticks down:
 
-1. Starts at `FOF_POT_START` (default: **1000**).
-2. Decreases by `FOF_POT_TICK` (default: **50**) every `FOF_POT_TICK_INTERVAL` (default: **500ms**, i.e., 2 ticks/second).
-3. Minimum pot value: `FOF_POT_MIN` (default: **100**). The pot never drops below this.
+1. Starts at `FF_POT_START_VALUE` (default: **1000**).
+2. Decreases by `FF_POT_TICK_VALUE` (default: **50**) every `FF_POT_TICK_INTERVAL_MS` (default: **500ms**, i.e., 2 ticks/second).
+3. Minimum pot value: `FF_POT_MIN_VALUE` (default: **100**). The pot never drops below this.
 4. When a player submits an answer, the server records the pot value **at the moment of server receipt** (not client-side clock).
 
 **Time to min pot:** (1000 − 100) / 50 = 18 ticks = 9 seconds. So the pot drains from 1000→100 over 9 seconds, then stays at 100 for the remaining 6 seconds.
@@ -108,13 +108,13 @@ After answering, the player's UI shows a "Locked in at X points" indicator but d
 | Pass | 0 |
 | Timeout | 0 |
 
-**Difficulty bonus:** Hard questions multiply the pot value by `FOF_HARD_MULTIPLIER` (default: **1.5**). Medium questions use `FOF_MEDIUM_MULTIPLIER` (default: **1.0**, no change). Easy questions use `FOF_EASY_MULTIPLIER` (default: **0.8**).
+**Difficulty bonus:** Hard questions multiply the pot value by `FF_HARD_MULTIPLIER` (default: **1.5**). Medium questions use `FF_MEDIUM_MULTIPLIER` (default: **1.0**, no change). Easy questions use `FF_EASY_MULTIPLIER` (default: **0.8**).
 
 The effective pot value = `floor(basePotValue × difficultyMultiplier)`.
 
 #### 1.3.6 Score Floor
 
-A player's total score cannot drop below `FOF_SCORE_FLOOR` (default: **-500**). This prevents a death spiral where a player is so far behind they can't recover and just stops engaging.
+A player's total score cannot drop below `FF_SCORE_FLOOR` (default: **-500**). This prevents a death spiral where a player is so far behind they can't recover and just stops engaging.
 
 ### 1.4 Server-Side State Schema
 
@@ -123,7 +123,7 @@ interface FactOrFrictionState {
   questions: TriviaQuestion[];                    // all questions for this game (pre-selected)
   currentQuestionIndex: number;                   // 0-indexed
   totalQuestions: number;
-  phase: FOFPhase;
+  phase: FFPhase;
   
   // Point Pot (current question)
   potValue: number;                               // current pot value
@@ -143,7 +143,7 @@ interface FactOrFrictionState {
   phaseEndsAt: number;
 }
 
-type FOFPhase = 'QUESTION_REVEAL' | 'ANSWER' | 'ANSWER_REVEAL' | 'PAUSE';
+type FFPhase = 'QUESTION_REVEAL' | 'ANSWER' | 'ANSWER_REVEAL' | 'PAUSE';
 
 interface PlayerAnswer {
   userId: string;
@@ -186,20 +186,20 @@ const SubmitAnswerSchema = z.object({
 
 | Action Type | Payload | Sent To | Description |
 |---|---|---|---|
-| `FOF_QUESTION` | `{ questionIndex: number, question: string, options: string[], category: string, difficulty: string, potStartValue: number, answerDurationSeconds: number }` | All (lobby) | New question revealed |
-| `FOF_POT_TICK` | `{ potValue: number }` | All (lobby) | Pot value update (every 500ms) |
-| `FOF_ANSWER_LOCKED` | `{ potValueAtLock: number }` | Answering player only | Confirm answer locked at this pot value |
-| `FOF_PLAYER_ANSWERED` | `{ userId: string, userName: string }` | All (lobby) | Notification that a player has answered (not WHAT they answered) |
-| `FOF_ANSWER_REVEAL` | `{ correctIndex: number, correctAnswer: string, playerResults: FOFPlayerQuestionResult[] }` | All (lobby) | Correct answer + everyone's results |
-| `FOF_SCORE_UPDATE` | `{ scores: Array<{ userId: string, userName: string, totalScore: number, scoreChange: number }> }` | All (lobby) | Updated leaderboard after each question |
+| `FF_QUESTION` | `{ questionIndex: number, question: string, options: string[], category: string, difficulty: string, potStartValue: number, answerDurationSeconds: number }` | All (lobby) | New question revealed |
+| `FF_POT_TICK` | `{ potValue: number }` | All (lobby) | Pot value update (every 500ms) |
+| `FF_ANSWER_LOCKED` | `{ potValueAtLock: number }` | Answering player only | Confirm answer locked at this pot value |
+| `FF_PLAYER_ANSWERED` | `{ userId: string, userName: string }` | All (lobby) | Notification that a player has answered (not WHAT they answered) |
+| `FF_ANSWER_REVEAL` | `{ correctIndex: number, correctAnswer: string, playerResults: FFPlayerQuestionResult[] }` | All (lobby) | Correct answer + everyone's results |
+| `FF_SCORE_UPDATE` | `{ scores: Array<{ userId: string, userName: string, totalScore: number, scoreChange: number }> }` | All (lobby) | Updated leaderboard after each question |
 | `TIMER_START` | `{ totalDuration: number, timeRemaining: number }` | All (lobby) | Emitted at the start of each timed phase (ANSWER) via `broadcastAction` |
 | `TIMER_TICK` | `{ timeRemaining: number }` | All (lobby) | Standard timer (every 1s during all timed phases) via `broadcastAction` |
 | `MINIGAME_ROUND` | `{ current: number, total: number }` | All (lobby) | Sub-round counter update (e.g. "Question 3/8") via `broadcastAction` |
 
-**`FOFPlayerQuestionResult`:**
+**`FFPlayerQuestionResult`:**
 
 ```typescript
-interface FOFPlayerQuestionResult {
+interface FFPlayerQuestionResult {
   userId: string;
   userName: string;
   selectedIndex: number | null;   // null = pass
@@ -225,14 +225,14 @@ interface FOFPlayerQuestionResult {
 **`getStateForPlayer(userId)` during ANSWER phase:**
 
 ```typescript
-interface FOFPlayerState {
+interface FFPlayerState {
   currentQuestionIndex: number;
   totalQuestions: number;
   question: string;
   options: string[];
   category: string;
   difficulty: string;
-  phase: FOFPhase;
+  phase: FFPhase;
   potValue: number;
   timeRemaining: number;
   
@@ -250,6 +250,8 @@ interface FOFPlayerState {
   questionHistory: QuestionResult[];
 }
 ```
+
+**spectatorMode:** `'shared-privileged'`
 
 **`getStateForSpectator()` returns:**  
 Same as player view. Since correct answers are hidden until reveal for everyone, spectators have no privileged information during the answer phase.
@@ -331,24 +333,24 @@ components/rmhbox/minigames/fact-or-friction/
 ### 1.12 Constants
 
 ```typescript
-export const FOF_TOTAL_QUESTIONS = 8;
-export const FOF_QUESTION_REVEAL = 2;
-export const FOF_ANSWER_DURATION = 15;
-export const FOF_ANSWER_REVEAL = 4;
-export const FOF_PAUSE = 1;
+export const FF_TOTAL_QUESTIONS = 8;
+export const FF_QUESTION_REVEAL_SECONDS = 2;
+export const FF_ANSWER_DURATION_SECONDS = 15;
+export const FF_ANSWER_REVEAL_SECONDS = 4;
+export const FF_PAUSE_SECONDS = 1;
 
-export const FOF_POT_START = 1000;
-export const FOF_POT_TICK = 50;
-export const FOF_POT_TICK_INTERVAL = 500;
-export const FOF_POT_MIN = 100;
+export const FF_POT_START_VALUE = 1000;
+export const FF_POT_TICK_VALUE = 50;
+export const FF_POT_TICK_INTERVAL_MS = 500;
+export const FF_POT_MIN_VALUE = 100;
 
-export const FOF_EASY_MULTIPLIER = 0.8;
-export const FOF_MEDIUM_MULTIPLIER = 1.0;
-export const FOF_HARD_MULTIPLIER = 1.5;
+export const FF_EASY_MULTIPLIER = 0.8;
+export const FF_MEDIUM_MULTIPLIER = 1.0;
+export const FF_HARD_MULTIPLIER = 1.5;
 
-export const FOF_SCORE_FLOOR = -500;
+export const FF_SCORE_FLOOR = -500;
 
-export const FOF_QUESTION_DISTRIBUTION = { easy: 3, medium: 3, hard: 2 };
+export const FF_QUESTION_DISTRIBUTION = { easy: 3, medium: 3, hard: 2 };
 ```
 
 ### 1.13 Game Settings Schema (§12A)
@@ -368,16 +370,16 @@ Handlers read values via `this.getSetting(key, CONSTANT_DEFAULT)`.
 
 | Setting Key | Constant Override | Usage |
 |---|---|---|
-| `totalQuestions` | `FOF_TOTAL_QUESTIONS` | `this.getSetting('totalQuestions', FOF_TOTAL_QUESTIONS)` |
-| `answerDuration` | `FOF_ANSWER_DURATION` | `this.getSetting('answerDuration', FOF_ANSWER_DURATION)` |
-| `potStartValue` | `FOF_POT_START_VALUE` | `this.getSetting('potStartValue', FOF_POT_START_VALUE)` |
-| `enableScoreFloor` | `FOF_SCORE_FLOOR` | If `false`, scores can go negative |
-| `difficulty` | `FOF_DIFFICULTY` | Filters question set by difficulty tag |
+| `totalQuestions` | `FF_TOTAL_QUESTIONS` | `this.getSetting('totalQuestions', FF_TOTAL_QUESTIONS)` |
+| `answerDuration` | `FF_ANSWER_DURATION_SECONDS` | `this.getSetting('answerDuration', FF_ANSWER_DURATION_SECONDS)` |
+| `potStartValue` | `FF_POT_START_VALUE` | `this.getSetting('potStartValue', FF_POT_START_VALUE)` |
+| `enableScoreFloor` | `FF_SCORE_FLOOR` | If `false`, scores can go negative |
+| `difficulty` | `FF_DIFFICULTY` | Filters question set by difficulty tag |
 
 ### 1.14 Anti-Cheat Notes
 
 - The correct answer index is NEVER sent to clients until the `ANSWER_REVEAL` phase.
-- The pot value is server-authoritative. The client displays the value from the latest `FOF_POT_TICK` action and interpolates visually between ticks, but the score is always computed using the server's pot value at receipt time.
+- The pot value is server-authoritative. The client displays the value from the latest `FF_POT_TICK` action and interpolates visually between ticks, but the score is always computed using the server's pot value at receipt time.
 - Answer submission time is server-stamped, not client-stamped.
 - Each player can only submit one answer per question. Duplicate submissions are silently ignored.
 
@@ -390,7 +392,7 @@ Per-question results are compact and self-explanatory — full action replay isn
 #### `initialState`
 
 ```typescript
-interface FOFInitialState {
+interface FFInitialState {
   totalQuestions: number;
   potStartValue: number;
   potDecayRate: number;
@@ -481,12 +483,12 @@ The client store listens for server-pushed actions and updates local state accor
 ```ts
 useEffect(() => {
   const handlers: Record<string, (payload: unknown) => void> = {
-    FOF_QUESTION:      (p) => dispatch({ type: 'FOF_QUESTION', payload: p }),
-    FOF_POT_TICK:      (p) => dispatch({ type: 'FOF_POT_TICK', payload: p }),
-    FOF_ANSWER_LOCKED: (p) => dispatch({ type: 'FOF_ANSWER_LOCKED', payload: p }),
-    FOF_PLAYER_ANSWERED: (p) => dispatch({ type: 'FOF_PLAYER_ANSWERED', payload: p }),
-    FOF_ANSWER_REVEAL: (p) => dispatch({ type: 'FOF_ANSWER_REVEAL', payload: p }),
-    FOF_SCORE_UPDATE:  (p) => dispatch({ type: 'FOF_SCORE_UPDATE', payload: p }),
+    FF_QUESTION:      (p) => dispatch({ type: 'FF_QUESTION', payload: p }),
+    FF_POT_TICK:      (p) => dispatch({ type: 'FF_POT_TICK', payload: p }),
+    FF_ANSWER_LOCKED: (p) => dispatch({ type: 'FF_ANSWER_LOCKED', payload: p }),
+    FF_PLAYER_ANSWERED: (p) => dispatch({ type: 'FF_PLAYER_ANSWERED', payload: p }),
+    FF_ANSWER_REVEAL: (p) => dispatch({ type: 'FF_ANSWER_REVEAL', payload: p }),
+    FF_SCORE_UPDATE:  (p) => dispatch({ type: 'FF_SCORE_UPDATE', payload: p }),
     TIMER_TICK:        (p) => dispatch({ type: 'TIMER_TICK', payload: p }),
   };
   Object.entries(handlers).forEach(([ev, fn]) => socket.on(ev, fn));
@@ -516,6 +518,8 @@ import { FactOrFrictionGame } from './minigames/fact-or-friction/FactOrFrictionG
 MINIGAME_SERVER_REGISTRY.set('fact-or-friction', FactOrFrictionGame);
 ```
 
+> **Note:** All server broadcasts use `this.broadcastGameAction()` (the `BaseMinigame` wrapper), not raw `context.broadcastToLobby`.
+
 #### Sound Effect Integration
 
 | Event | Sound | Notes |
@@ -534,6 +538,7 @@ Spectators see all player answer states (who has answered, but not which option 
 
 ---
 
+
 ## 2. Undercover Editor
 
 ### 2.1 Overview
@@ -546,128 +551,109 @@ Spectators see all player answer states (who has answered, but not which option 
 | **Icon** | `pencil-line` (Lucide) |
 | **Min Players** | 4 |
 | **Max Players** | 10 |
-| **Estimated Duration** | 240 seconds |
-| **Supports Teams** | No (1 hidden role vs. group) |
+| **Estimated Duration** | ~variable (parallel writing, N rounds) |
+| **Supports Teams** | No |
 | **Join-in-Progress** | `spectate_only` |
 | **Tags** | `['creative', 'social-deduction', 'writing', 'strategy']` |
 
 ### 2.2 Game Concept
 
-Collaborative storytelling with a hidden saboteur. Players take turns adding one sentence to a shared story. One player is secretly the **Editor** — they can subtly change one word in any previously written sentence on their turn. The Editor wins if the story ends up containing a secret **Keyword** without the other players catching them. The other players (**Writers**) win if they correctly identify the Editor via a vote.
+All players write sentences for ALL stories simultaneously each round. Each player is secretly assigned as the "undercover editor" of exactly one other player's story (cyclic assignment). After writing rounds, editors secretly edit their assigned story. Players then review all completed stories and try to match each story with its undercover editor.
 
 ### 2.3 Detailed Mechanics
 
 #### 2.3.1 Setup
 
-1. **Role Assignment:** One player is randomly chosen as the **Editor**. All other players are **Writers**. Only the Editor knows their role.
-2. **Keyword Assignment:** The server selects a secret **Keyword** from a themed word pool. The keyword is sent **only** to the Editor's socket. The keyword is a common English word that could plausibly appear in many stories (e.g., "bridge," "shadow," "crown," "river").
-3. **Story Prompt:** A short story prompt is shown to all players to set the theme (e.g., "A detective arrives at an abandoned mansion on a stormy night.").
-4. **Turn Order:** Players are placed in a randomized turn order. The Editor is placed randomly within this order (no first or last position to avoid suspicion — position is random but not slot 1 or N).
+1. **Story Creation:** One story is created per player (N stories in parallel). Each story has a unique prompt and keyword.
+2. **Editor Assignment:** Cyclic assignment — player *i* edits player *(i+1 mod N)*'s story. Each player is the editor of exactly one story and the owner of exactly one story.
+3. **Keyword Assignment:** Each story's keyword is sent only to the assigned editor's socket. Keywords are common English words that could plausibly appear in many stories.
+4. **Story Prompts:** Each story receives a short prompt to set the theme (e.g., "A detective arrives at an abandoned mansion on a stormy night.").
 
-#### 2.3.2 Turn Structure
+#### 2.3.2 Phase Structure
 
-Each player takes turns in order. Each turn:
-
-1. **Write Phase** (active player):
-   - The active player writes one sentence (min 10 chars, max 200 chars) to append to the story.
-   - Time limit: `UE_WRITE_TIMEOUT` (default: **45 seconds**). If exceeded, the server auto-submits "..." (an ellipsis sentence indicating a timeout).
-
-2. **Edit Phase** (Editor only, on Editor's turn):
-   - After writing their sentence, the Editor gets an additional **secret action**: they may edit one word in any previous sentence.
-   - The edit UI shows the full story with each word as a clickable token. Selecting a word reveals an input field to replace it.
-   - The edit is applied silently — no other player is notified that an edit occurred.
-   - The Editor can choose NOT to edit on a given turn (risky if the keyword isn't being steered toward).
-   - Time limit for editing: `UE_EDIT_TIMEOUT` (default: **30 seconds**). 
-   - **Constraints:**
-     - Only one word can be changed per turn.
-     - The replacement word must be a single word (no spaces).
-     - Maximum 30 characters.
-     - Cannot edit a word they already edited in a previous turn.
-     - Cannot edit their own sentence from the current turn.
-
-3. **Story Update Broadcast:**
-   - After the write (and optional edit), the server broadcasts the updated story to all players.
-   - **Critical:** The story is broadcast as a whole. Players see the current version of the story but are NOT told which words changed. The edit is seamlessly integrated.
-   - A diff-aware reader might notice a change, which adds to the social deduction element.
-
-#### 2.3.3 Game Flow
-
-The game proceeds for `UE_TOTAL_TURNS` (default: **2 full rotations** through the player order, so for 6 players, 12 turns total). After all turns:
-
-1. **Review Phase** (20 seconds):
-   - The complete story is displayed.
-   - Players re-read it, looking for suspicious word choices or subtle shifts.
-
-2. **Accusation Phase** (30 seconds):
-   - Each Writer casts a vote for who they think the Editor is.
-   - The Editor also votes (to blend in — they can vote for anyone except themselves).
-   - Players can change their vote until the timer expires.
-
-3. **Reveal Phase** (10 seconds):
-   - The Editor is revealed.
-   - The story is displayed with all edited words highlighted in a different color, showing the original → replacement.
-   - The keyword is revealed.
-
-#### 2.3.4 Win Conditions
-
-| Scenario | Winner | Scoring |
+| Phase | Duration | Description |
 |---|---|---|
-| Writers correctly identify the Editor (plurality vote) AND the keyword is NOT in the final story | Writers win (major victory) | Writers: `UE_WRITER_MAJOR_WIN` (default: **400** each). Editor: `UE_EDITOR_LOSS` (default: **50**). |
-| Writers correctly identify the Editor BUT the keyword IS in the story | Writers win (minor victory — Editor partially succeeded) | Writers: `UE_WRITER_MINOR_WIN` (default: **250** each). Editor: `UE_EDITOR_PARTIAL` (default: **200**). |
-| Writers vote for the wrong person AND the keyword IS in the story | Editor wins (major victory) | Editor: `UE_EDITOR_MAJOR_WIN` (default: **600**). Writers: `UE_WRITER_LOSS` (default: **50** each). |
-| Writers vote for the wrong person AND the keyword is NOT in the story | Editor wins (minor victory — wasn't caught but also failed objective) | Editor: `UE_EDITOR_MINOR_WIN` (default: **300**). Writers: `UE_WRITER_MINOR_LOSS` (default: **100** each). |
-| Vote is a tie (no plurality) | No one is accused; Editor wins by default | Same as "wrong person" scenario. |
+| SETUP | instant | Assign roles, create N stories (one per player) |
+| WRITE | 45s (configurable) | ALL players write a sentence for each story simultaneously |
+| EDIT | 30s (configurable) | ALL editors secretly edit their assigned story simultaneously |
+| *(repeat WRITE → EDIT for N rounds)* | | |
+| REVIEW | infinite | Players match stories to their editors (host or all-locked-in advances) |
+| REVEAL | 10s | Editor assignments, keywords, edits revealed; scores shown |
 
-#### 2.3.5 Keyword Proximity Bonus
+#### 2.3.3 Write Phase
 
-The Editor gets a proximity bonus if the keyword isn't in the final story but a word that is **semantically close** appears:
-- Server uses `fuse.js` with a threshold of 0.7 to check if any word in the story fuzzy-matches the keyword.
-- If a close match exists: `UE_KEYWORD_PROXIMITY_BONUS` (default: **50**) added to Editor's score.
+- All players write a sentence for **each** story simultaneously.
+- Sentence constraints: min 10 chars, max 200 chars.
+- Players can unsubmit and re-edit within the write timer.
+- Write phase ends early **only** when ALL players have submitted for ALL stories.
+- If the timer expires without input, the server auto-submits `"..."` (an ellipsis sentence indicating a timeout).
+
+#### 2.3.4 Edit Phase
+
+- Each editor edits their ONE assigned story (one word swap per round).
+- The edit UI shows the story with each word as a clickable token. Selecting a word reveals an input field to replace it.
+- The edit is applied silently — no other player is notified that an edit occurred.
+- The editor can choose to skip editing (`SKIP_EDIT`).
+- **Constraints:**
+  - Only one word can be changed per round.
+  - The replacement word must be a single word (no spaces), maximum 30 characters.
+  - Cannot edit a word already edited in a previous round.
+
+#### 2.3.5 Review Phase
+
+- Infinite time — the host advances or all players lock in.
+- Players use dropdowns to match each story to its suspected editor.
+- Players can save and update their guesses, then "Lock In."
+- Host advance or all-locked-in triggers REVEAL.
+
+#### 2.3.6 Reveal Phase
+
+- Editor assignments are revealed.
+- Keywords are revealed.
+- All edits are highlighted (original → replacement).
+- Scores are calculated and displayed.
 
 ### 2.4 Server-Side State Schema
 
 ```typescript
 interface UndercoverEditorState {
-  storyPrompt: string;
-  keyword: string;                              // secret — only sent to Editor
-  editorUserId: string;                         // secret — only known server-side
-  turnOrder: string[];                          // userIds in play order
-  currentTurnIndex: number;
-  totalTurns: number;
+  playerIds: string[];
+  totalRounds: number;
+  currentRound: number;
   phase: UEPhase;
-  
-  // Story
-  sentences: StorySentence[];
-  
-  // Editor's edits (tracked for reveal)
-  edits: WordEdit[];
-  editedWordPositions: Set<string>;             // "sentenceIndex:wordIndex" — prevents re-editing
-  
-  // Vote
-  votes: Map<string, string>;                   // voterId → accusedUserId
-  
-  // Results
-  keywordInStory: boolean;
-  editorWasCaught: boolean;
-  winner: 'editor' | 'writers';
-  
-  // Scores
+  stories: Map<string, ParallelStory>;
+  editorAssignments: Map<string, string>;     // editorId → storyId
+  roundSubmissions: Map<string, Map<string, string>>;  // storyId → userId → text
+  roundEditsDone: Map<string, boolean>;       // storyId → done?
+  matchGuesses: Map<string, Map<string, string>>;  // guesserId → (storyId → editorId)
+  matchLockedIn: Set<string>;
   playerScores: Map<string, number>;
-  
-  // Timer
   phaseStartedAt: number;
   phaseEndsAt: number;
 }
 
-type UEPhase = 'SETUP' | 'WRITE' | 'EDIT' | 'REVIEW' | 'ACCUSATION' | 'REVEAL';
+type UEPhase = 'SETUP' | 'WRITE' | 'EDIT' | 'REVIEW' | 'REVEAL';
+
+interface ParallelStory {
+  storyId: string;           // same as ownerUserId
+  prompt: string;
+  ownerUserId: string;
+  ownerName: string;
+  keyword: string;
+  editorUserId: string;
+  sentences: StorySentence[];
+  edits: WordEdit[];
+  editedWordPositions: Set<string>;
+  keywordInStory: boolean;
+}
 
 interface StorySentence {
   authorUserId: string;
   authorName: string;
-  text: string;                                 // current version (may have been edited)
-  originalText: string;                         // original as submitted
+  text: string;
+  originalText: string;
   turnNumber: number;
-  words: string[];                              // tokenized for editing
+  words: string[];
 }
 
 interface WordEdit {
@@ -683,28 +669,36 @@ interface WordEdit {
 
 #### Client → Server
 
-| Action | Payload | Who Can Send | Description |
-|---|---|---|---|
-| `WRITE_SENTENCE` | `{ text: string }` | Active turn player | Submit a sentence |
-| `EDIT_WORD` | `{ sentenceIndex: number, wordIndex: number, newWord: string }` | Editor (on their turn) | Secretly edit a word |
-| `SKIP_EDIT` | `{}` | Editor (on their turn) | Choose not to edit this turn |
-| `CAST_ACCUSATION` | `{ targetUserId: string }` | All players (during Accusation) | Vote for the suspected Editor |
+| Action | Payload | Description |
+|---|---|---|
+| `WRITE_SENTENCE` | `{ storyId: string, text: string }` | Submit a sentence for a specific story |
+| `UNSUBMIT_SENTENCE` | `{ storyId: string }` | Retract a submitted sentence |
+| `EDIT_WORD` | `{ storyId: string, sentenceIndex: number, wordIndex: number, newWord: string }` | Secretly edit a word in assigned story |
+| `SKIP_EDIT` | `{}` | Choose not to edit this round |
+| `SUBMIT_MATCHING` | `{ guesses: Record<string, string> }` | Save story-to-editor matching guesses |
+| `LOCK_IN_MATCHING` | `{}` | Lock in matching guesses |
 
 **Zod schemas:**
 
 ```typescript
 const WriteSentenceSchema = z.object({
+  storyId: z.string().min(1),
   text: z.string().min(10).max(200),
 });
 
+const UnsubmitSentenceSchema = z.object({
+  storyId: z.string().min(1),
+});
+
 const EditWordSchema = z.object({
+  storyId: z.string().min(1),
   sentenceIndex: z.number().int().min(0),
   wordIndex: z.number().int().min(0),
   newWord: z.string().min(1).max(30).regex(/^\S+$/),
 });
 
-const CastAccusationSchema = z.object({
-  targetUserId: z.string().min(1),
+const SubmitMatchingSchema = z.object({
+  guesses: z.record(z.string(), z.string()),
 });
 ```
 
@@ -712,38 +706,77 @@ const CastAccusationSchema = z.object({
 
 | Action Type | Payload | Sent To | Description |
 |---|---|---|---|
-| `UE_GAME_START` | `{ storyPrompt: string, turnOrder: PlayerTurnInfo[], totalTurns: number }` | All (lobby) | Game begins |
-| `UE_ROLE_ASSIGNED` | `{ role: 'editor' \| 'writer', keyword?: string }` | Each player individually | Role assignment (keyword only for Editor) |
-| `UE_TURN_START` | `{ turnNumber: number, activeUserId: string, activeUserName: string, writeDurationSeconds: number }` | All (lobby) | A player's turn begins |
-| `UE_SENTENCE_ADDED` | `{ turnNumber: number, authorName: string, sentence: string, fullStory: StorySentenceView[] }` | All (lobby) | New sentence added to story |
-| `UE_EDIT_PROMPT` | `{ story: EditableStory, editDurationSeconds: number }` | Editor only | Prompt Editor to make their secret edit |
-| `UE_STORY_UPDATED` | `{ fullStory: StorySentenceView[] }` | All (lobby) | Story updated (after edit, silently) |
-| `UE_REVIEW_START` | `{ fullStory: StorySentenceView[], reviewDurationSeconds: number }` | All (lobby) | Review phase begins |
-| `UE_ACCUSATION_START` | `{ players: Array<{ userId: string, userName: string }>, accusationDurationSeconds: number }` | All (lobby) | Voting phase begins |
-| `UE_VOTE_CAST` | `{ voterId: string, hasVoted: boolean }` | All (lobby) | Someone voted (not who for) |
-| `UE_REVEAL` | `{ editorUserId: string, editorName: string, keyword: string, keywordInStory: boolean, editorCaught: boolean, edits: WordEditView[], votes: VoteResult[], winner: string, scores: ScoreResult[] }` | All (lobby) | Full reveal |
-| `TIMER_START` | `{ totalDuration: number, timeRemaining: number }` | All (lobby) | Emitted at the start of each timed phase (WRITE, EDIT, REVIEW, ACCUSATION) via `broadcastAction` |
+| `UE_GAME_START` | `{ stories: StoryInfo[], players: PlayerInfo[], totalRounds: number }` | All (lobby) | Stories list, players, totalRounds |
+| `UE_ROLE_ASSIGNED` | `{ role: 'editor' \| 'writer', assignedStoryId?: string, keyword?: string, storyOwnerName?: string }` | Individual | Role, assignedStoryId, keyword, storyOwnerName (editor fields only for editors) |
+| `UE_WRITE_START` | `{ round: number, totalRounds: number, writeDurationSeconds: number }` | All (lobby) | Write phase begins |
+| `UE_SENTENCE_CONFIRMED` | `{ storyId: string, text: string }` | Submitting player | Confirms sentence submission |
+| `UE_SENTENCE_UNSUBMITTED` | `{ storyId: string }` | Submitting player | Confirms sentence retraction |
+| `UE_SUBMISSION_PROGRESS` | `{ progress: Record<string, number>, totalPlayers: number }` | All (lobby) | Per-story submission counts |
+| `UE_EDIT_START` | `{ round: number, editDurationSeconds: number }` | All (lobby) | Edit phase begins |
+| `UE_EDIT_PROMPT` | `{ story: EditableStory, editDurationSeconds: number }` | Editor only | Prompt editor to make their secret edit |
+| `UE_EDIT_CONFIRMED` | `{ storyId: string, story?: EditableStory, skipped?: boolean }` | Editor | Confirms edit or skip |
+| `UE_STORIES_UPDATED` | `{ stories: StoryView[] }` | All (lobby) | All story views after edits |
+| `UE_REVIEW_START` | `{ stories: StoryView[], players: PlayerInfo[] }` | All (lobby) | Review phase begins |
+| `UE_MATCHING_SAVED` | `{ guesses: Record<string, string> }` | Submitting player | Confirms guesses saved |
+| `UE_PLAYER_LOCKED_IN` | `{ userId: string, userName: string, lockedInCount: number, totalPlayers: number }` | All (lobby) | A player locked in their guesses |
+| `UE_REVEAL` | `{ storyReveals: StoryReveal[], matchResults: MatchResult[], scores: ScoreResult[] }` | All (lobby) | Full reveal |
+| `UE_ERROR` | `{ message: string }` | Individual | Error message |
+| `TIMER_START` | `{ totalDuration: number, timeRemaining: number }` | All (lobby) | Emitted at the start of each timed phase (WRITE, EDIT) via `broadcastAction` |
 | `TIMER_TICK` | `{ timeRemaining: number }` | All (lobby) | Standard timer (every 1s during all timed phases) via `broadcastAction` |
+| `MINIGAME_ROUND` | `{ current: number, total: number }` | All (lobby) | Round counter update (e.g. "Round 1/2") via `broadcastAction` |
 
 **Supporting types:**
 
 ```typescript
+interface StoryInfo {
+  storyId: string;
+  prompt: string;
+  ownerUserId: string;
+  ownerName: string;
+}
+
+interface PlayerInfo {
+  userId: string;
+  userName: string;
+}
+
+interface StoryView {
+  storyId: string;
+  ownerName: string;
+  prompt: string;
+  sentences: StorySentenceView[];
+}
+
 interface StorySentenceView {
   authorName: string;
   text: string;
-  turnNumber: number;
+  roundNumber: number;
 }
 
 interface EditableStory {
+  storyId: string;
+  ownerName: string;
   sentences: Array<{
     authorName: string;
     words: Array<{
       word: string;
       index: number;
       sentenceIndex: number;
-      isEditable: boolean;          // false if already edited or is current sentence
+      isEditable: boolean;          // false if already edited
     }>;
   }>;
+}
+
+interface StoryReveal {
+  storyId: string;
+  ownerUserId: string;
+  ownerName: string;
+  editorUserId: string;
+  editorName: string;
+  keyword: string;
+  keywordInStory: boolean;
+  sentences: StorySentenceView[];
+  edits: WordEditView[];
 }
 
 interface WordEditView {
@@ -751,181 +784,147 @@ interface WordEditView {
   sentenceAuthor: string;
   originalWord: string;
   newWord: string;
-  editedOnTurn: number;
+  editedOnRound: number;
 }
 
-interface VoteResult {
-  voterId: string;
-  voterName: string;
-  accusedUserId: string;
-  accusedName: string;
+interface MatchResult {
+  guesserId: string;
+  guesserName: string;
+  storyId: string;
+  guessedEditorId: string;
+  actualEditorId: string;
+  isCorrect: boolean;
 }
 
 interface ScoreResult {
   userId: string;
   userName: string;
-  role: 'editor' | 'writer';
   score: number;
   breakdown: Record<string, number>;
-}
-
-interface PlayerTurnInfo {
-  userId: string;
-  userName: string;
-  turnNumbers: number[];       // which turns this player has (e.g., [1, 7] for a 6-player 2-rotation game)
 }
 ```
 
 ### 2.6 Information Masking
 
-**This game has the most critical masking requirements of all minigames.**
+**This game has critical masking requirements due to the parallel editor assignments.**
 
 | Data | Writer View | Editor View | Spectator View |
 |---|---|---|---|
-| Story prompt | Visible | Visible | Visible |
-| Role assignment | "You are a Writer" | "You are the Editor. Your keyword is: ____" | See roles of all players |
-| Keyword | **HIDDEN** (never revealed until game end) | **VISIBLE** (private) | **VISIBLE** |
-| Who the Editor is | **HIDDEN** until reveal | Known (self) | **VISIBLE** |
-| Story text (current) | Visible | Visible | Visible |
-| Whether an edit occurred this turn | **HIDDEN** | Known (self) | **VISIBLE** (spectators see edits happen) |
-| What was edited | **HIDDEN** until reveal | Known (self) | **VISIBLE** (real-time edit tracking) |
-| Edit history (all edits) | **HIDDEN** until reveal | Known (own edits) | **VISIBLE** |
-| Other players' votes | **HIDDEN** (only whether they voted) | **HIDDEN** (only whether they voted) | **VISIBLE** |
+| Keyword | **HIDDEN** until REVEAL | **VISIBLE** (own assigned story only) | **VISIBLE** (all) |
+| Editor assignments | **HIDDEN** until REVEAL | Known (self only) | **VISIBLE** (all) |
+| Edit history | **HIDDEN** until REVEAL | Own edits only | **VISIBLE** (all) |
+| Other players' submissions | **HIDDEN** | **HIDDEN** | **HIDDEN** |
+| Match guesses | Own only | Own only | **HIDDEN** |
 
-**`getStateForPlayer(userId)` for a Writer:**
+**spectatorMode:** `'shared-privileged'`
+
+**`getStateForPlayer(userId)` during WRITE phase:**
 
 ```typescript
-interface UEWriterState {
-  storyPrompt: string;
-  myRole: 'writer';
-  turnOrder: PlayerTurnInfo[];
-  currentTurnIndex: number;
-  totalTurns: number;
+interface UEPlayerWriteState {
   phase: UEPhase;
-  story: StorySentenceView[];
-  isMyTurn: boolean;
+  currentRound: number;
+  totalRounds: number;
+  stories: StoryView[];
   timeRemaining: number;
-  // During ACCUSATION:
-  myVote: string | null;
-  votedPlayers: string[];   // userIds who have voted (not who for)
+  mySubmissions: Record<string, string>;   // storyId → submitted text (or absent)
+  submissionProgress: Record<string, number>;
 }
 ```
 
-**`getStateForPlayer(userId)` for the Editor:**
+**`getStateForPlayer(userId)` for an Editor during EDIT phase:**
 
 ```typescript
-interface UEEditorState extends UEWriterState {
-  myRole: 'editor';
-  keyword: string;
+interface UEEditorEditState extends UEPlayerWriteState {
+  editableStory: EditableStory;
   myEdits: WordEdit[];
-  // During EDIT phase (on their turn):
-  editableStory?: EditableStory;
+  keyword: string;
 }
 ```
 
-The server determines which interface to return based on `userId === editorUserId`.
-
-**`getStateForSpectator()` returns:**  
-Omniscient view: knows who the Editor is, sees the keyword, sees edits as they happen (highlighted), and sees all votes. This creates an exciting viewing experience for the "couch audience."
+**`getStateForSpectator()` returns:**
+Omniscient view: sees all editor assignments, keywords, edits as they happen, and submission progress. This creates an exciting viewing experience for the audience.
 
 ### 2.7 Join-in-Progress Logic
 
 **Policy:** `spectate_only`
 
-Roles, turn order, and the story structure are established at game start. Adding a player mid-game would disrupt the turn order and potentially reveal the Editor through behavioral discontinuity.
+Roles, story assignments, and the parallel writing structure are established at game start. Adding a player mid-game would disrupt the editor assignment cycle and story balance.
 
 ### 2.8 Reconnection Behavior
 
 On reconnect:
-1. Player receives their role, the current story, what turn it is, and phase.
-2. Editor receives the keyword and their edit history.
-3. If it was the reconnected player's turn and the WRITE/EDIT phase is still active, they can still submit.
-4. If their turn was auto-completed (timeout → "..." sentence), they cannot redo it.
+1. Player receives their role, current stories, what round it is, and phase.
+2. Editors receive the keyword and their edit history.
+3. If the WRITE or EDIT phase is still active, they can still submit.
+4. If their turn was auto-completed (timeout), they cannot redo it.
 
 ### 2.9 Player Disconnect Mid-Game
 
-- If the disconnected player's turn comes up during the grace period:
-  - After `UE_DISCONNECT_WAIT` (default: **15 seconds**, shorter than the write timeout), their turn is auto-completed with a "..." sentence.
-  - If they were the Editor, their edit phase is auto-skipped.
-- If the Editor fully disconnects (grace period expires):
-  - The game continues. The Editor is essentially AFK — they won't make any more edits. At the end, if the keyword isn't in the story, Writers win by default.
-  - The game is NOT terminated, since the Writers can still play out the deduction.
+- **During EDIT:** Auto-completes the editor's edit (marked as done).
+- **During WRITE:** Unanswered defaults to `"..."` at phase end.
+- **During REVIEW:** Player's guesses treated as empty.
+- If the Editor fully disconnects (grace period expires): the game continues. The editor's edit phases are auto-skipped.
 - Minimum players: If players drop below `minPlayers` (4), the game force-ends.
 
 ### 2.10 Awards
 
 | Award | Condition | Icon |
 |---|---|---|
-| Master of Disguise | Editor who wasn't caught AND got the keyword in | `mask` |
-| Eagle Eye | Writer who correctly voted for the Editor | `eye` |
-| Shakespeare | Player who wrote the longest sentence (by word count) | `quill` |
-| Smooth Operator | Editor who made the most edits without getting caught | `wand-2` |
-| Red Herring | Writer who received the most accusation votes (falsely accused) | `fish` |
+| Best Detective 🔍 | Most correct editor identifications | `search` |
+| Sneakiest Editor 🥷 | Fooled the most players | `mask` |
 
-### 2.11 NPM Package Suggestions
-
-| Package | Purpose | Notes |
-|---|---|---|
-| `fuse.js` | Fuzzy keyword matching for proximity bonus | Already in core spec. Used to check if story contains near-matches to the keyword. |
-
-No additional packages. The keyword pool and story prompts are static JSON files.
-
-### 2.12 Client Component Structure
+### 2.11 Client Component Structure
 
 ```
 components/rmhbox/minigames/undercover-editor/
   UndercoverEditorGame.tsx     # Main game component, phase router
-  StoryEditor.tsx              # Editor's secret word-editing UI (word tokens)
-  StoryDisplay.tsx             # Read-only story viewer with sentence attribution
-  WriteInput.tsx               # Sentence composition input
-  AccusationPanel.tsx          # Vote for suspected Editor
-  RevealScreen.tsx             # Dramatic reveal with edit highlighting
-  RoleBadge.tsx                # Private role indicator (corner of screen)
-  TurnIndicator.tsx            # Whose turn it is with avatar
+  StoryDisplay.tsx             # Read-only story text
+  WriteInput.tsx               # Sentence composition (10-200 chars)
+  StoryEditor.tsx              # Word tokens for editor
+  MatchingPanel.tsx            # Review phase — story-to-editor matching
+  RevealScreen.tsx             # Available but inline reveal used for parallel
+  RoleBadge.tsx                # Editor keyword badge
+  TurnIndicator.tsx            # Available for future use
 ```
 
-**Mobile UI layout (WRITE phase, non-active player):**
+**Mobile UI layout (WRITE phase):**
 
 ```
 ┌──────────────────────────────┐
-│ Undercover Editor   Turn 4/12│
+│ Undercover Editor  Round 1/2 │
 ├──────────────────────────────┤
-│  ✏️ Alice is writing...      │  ← Turn indicator
+│  ✏️ Writing for all stories  │
 │        ⏱ 0:32                │
 ├──────────────────────────────┤
 │                              │
-│  "A detective arrives at an  │
-│   abandoned mansion on a     │
-│   stormy night."             │
+│  📖 Story: Alice's Tale      │
+│  Prompt: "A detective..."    │
 │                              │
 │  > "He found the door ajar   │
 │    and stepped inside."      │
-│    — Bob (Turn 1)            │
+│    — Bob (Round 1)           │
 │                              │
-│  > "The floorboards creaked  │
-│    beneath his heavy boots." │
-│    — You (Turn 2)            │
-│                              │
-│  > "A shadow moved across    │
-│    the hallway."             │
-│    — Charlie (Turn 3)        │
+│  ┌───────────────────────┐   │
+│  │ Write your sentence...│   │
+│  └───────────────────────┘   │
+│  [Submit]  [Unsubmit]        │
 │                              │
 ├──────────────────────────────┤
+│  Stories: 2/4 done           │
 │ 🔎 You are a Writer          │
 │ Score: 0                     │
 └──────────────────────────────┘
 ```
 
-### 2.13 Constants
+### 2.12 Constants
 
 ```typescript
 export const UE_MIN_PLAYERS = 4;
 export const UE_MAX_PLAYERS = 10;
-export const UE_ROTATIONS = 2;                    // each player writes twice
-export const UE_WRITE_TIMEOUT = 45;
-export const UE_EDIT_TIMEOUT = 30;
-export const UE_REVIEW_DURATION = 20;
-export const UE_ACCUSATION_DURATION = 30;
+export const UE_ROTATIONS = 2;                    // number of write-edit rounds
+export const UE_WRITE_TIMEOUT_SECONDS = 45;
+export const UE_EDIT_TIMEOUT_SECONDS = 30;
 export const UE_REVEAL_DURATION = 10;
 export const UE_DISCONNECT_WAIT = 15;
 
@@ -933,56 +932,63 @@ export const UE_MIN_SENTENCE_LENGTH = 10;
 export const UE_MAX_SENTENCE_LENGTH = 200;
 export const UE_MAX_EDIT_WORD_LENGTH = 30;
 
-export const UE_WRITER_MAJOR_WIN = 400;
-export const UE_WRITER_MINOR_WIN = 250;
-export const UE_WRITER_LOSS = 50;
-export const UE_WRITER_MINOR_LOSS = 100;
-export const UE_EDITOR_MAJOR_WIN = 600;
-export const UE_EDITOR_MINOR_WIN = 300;
-export const UE_EDITOR_PARTIAL = 200;
-export const UE_EDITOR_LOSS = 50;
-export const UE_KEYWORD_PROXIMITY_BONUS = 50;
-export const UE_CORRECT_VOTE_BONUS = 100;        // extra for writers who voted correctly
-export const UE_KEYWORD_FUZZY_THRESHOLD = 0.7;
+export const UE_CORRECT_VOTE_BONUS = 100;        // each correct editor match
+export const UE_KEYWORD_PROXIMITY_BONUS = 50;     // editor whose keyword appears in story
+export const UE_EDITOR_MAJOR_WIN = 600;           // editor not caught
+export const UE_EDITOR_LOSS = 50;                 // editor caught
+export const UE_WRITER_MAJOR_WIN = 400;           // story owner whose editor fooled people
+export const UE_WRITER_LOSS = 50;                 // story owner whose editor was easily caught
 ```
 
-### 2.14 Game Settings Schema (§12A)
+### 2.13 Game Settings Schema (§12A)
 
 Host-configurable settings for Undercover Editor. Defined in `MinigameDefinition.settingsSchema`.
 Handlers read values via `this.getSetting(key, CONSTANT_DEFAULT)`.
 
 | Key | Type | Label | Description | Default | Constraints |
 |---|---|---|---|---|---|
-| `rotations` | `integer` | Rotations | Number of write-edit cycles before accusation | `2` | min: 1, max: 3, step: 1 |
-| `writeTimeout` | `integer` | Write Duration (seconds) | Time to write the initial passage | `90` | min: 45, max: 180, step: 15 |
-| `editTimeout` | `integer` | Edit Duration (seconds) | Time to edit another player's passage | `60` | min: 30, max: 120, step: 10 |
-| `accusationDuration` | `integer` | Accusation Duration (seconds) | Time to vote on who the undercover editor was | `45` | min: 20, max: 90, step: 5 |
+| `rotations` | `integer` | Rotations | Number of write-edit rounds | `2` | min: 1, max: 3, step: 1 |
+| `writeTimeout` | `integer` | Write Duration (seconds) | Time to write sentences each round | `45` | min: 30, max: 90, step: 5 |
+| `editTimeout` | `integer` | Edit Duration (seconds) | Time to edit assigned story each round | `30` | min: 15, max: 60, step: 5 |
+
+> **Note:** The old `accusationDuration` setting is removed since the REVIEW phase is infinite (host or all-locked-in advances).
 
 **Constant Mapping:**
 
 | Setting Key | Constant Override | Usage |
 |---|---|---|
 | `rotations` | `UE_ROTATIONS` | `this.getSetting('rotations', UE_ROTATIONS)` |
-| `writeTimeout` | `UE_WRITE_TIMEOUT` | `this.getSetting('writeTimeout', UE_WRITE_TIMEOUT)` |
-| `editTimeout` | `UE_EDIT_TIMEOUT` | `this.getSetting('editTimeout', UE_EDIT_TIMEOUT)` |
-| `accusationDuration` | `UE_ACCUSATION_DURATION` | `this.getSetting('accusationDuration', UE_ACCUSATION_DURATION)` |
+| `writeTimeout` | `UE_WRITE_TIMEOUT_SECONDS` | `this.getSetting('writeTimeout', UE_WRITE_TIMEOUT_SECONDS)` |
+| `editTimeout` | `UE_EDIT_TIMEOUT_SECONDS` | `this.getSetting('editTimeout', UE_EDIT_TIMEOUT_SECONDS)` |
+
+### 2.14 Scoring
+
+Scoring is based on matching accuracy during the REVIEW phase:
+
+| Condition | Constant | Points |
+|---|---|---|
+| Each correct editor match | `UE_CORRECT_VOTE_BONUS` | 100 |
+| Editor whose keyword appears in story | `UE_KEYWORD_PROXIMITY_BONUS` | 50 |
+| Editor not caught (majority didn't guess correctly) | `UE_EDITOR_MAJOR_WIN` | 600 |
+| Editor caught | `UE_EDITOR_LOSS` | 50 |
+| Story owner whose editor was sneaky (fooled people) | `UE_WRITER_MAJOR_WIN` | 400 |
+| Story owner whose editor was easily caught | `UE_WRITER_LOSS` | 50 |
 
 ### 2.15 Game History
 
 **Game History Level:** Full Action Log
 
-Undercover Editor is one of the most replay-worthy games — watching the story evolve sentence by sentence and spotting where the Editor's subtle word swaps were hidden is endlessly entertaining. The full action log preserves every edit, vote, and reveal.
+Undercover Editor is one of the most replay-worthy games — watching the stories evolve and spotting where each editor's subtle word swaps were hidden is endlessly entertaining. The full action log preserves every submission, edit, and matching result.
 
 #### `initialState`
 
 ```typescript
 interface UEInitialState {
-  storyTitle: string;
-  originalStory: string[];          // original sentences
-  keyword: string;
-  editorUserId: string;
-  writerUserIds: string[];
-  turnsPerRound: number;
+  stories: Array<{ storyId: string, prompt: string, ownerUserId: string }>;
+  editorAssignments: Record<string, string>;   // editorId → storyId
+  keywords: Record<string, string>;            // storyId → keyword
+  playerIds: string[];
+  totalRounds: number;
 }
 ```
 
@@ -990,18 +996,18 @@ interface UEInitialState {
 
 | Action Type | Payload | Recorded When |
 |---|---|---|
-| `TURN_START` | `{ turnNumber, activeUserId, sentenceIndex }` | Writer/Editor turn begins |
-| `WORD_ADDED` | `{ userId, sentenceIndex, word }` | Writer adds a word |
-| `EDITOR_SWAP` | `{ sentenceIndex, originalWord, replacementWord, position }` | Editor makes a substitution |
-| `EDITOR_SKIP` | `{ sentenceIndex }` | Editor passes on editing |
-| `STORY_SNAPSHOT` | `{ sentences: string[] }` | End of each round — full story state |
-| `ACCUSATION_VOTE` | `{ voterId, suspectedUserId }` | Writer casts accusation vote |
-| `VOTE_RESULT` | `{ votes: Record<string, string[]>, editorCaught: boolean }` | Voting concludes (`votes`: suspectedUserId → voterIds) |
-| `FINAL_REVEAL` | `{ editorUserId, keyword, allSwaps: EditorSwap[] }` | Post-game reveal |
+| `ROUND_START` | `{ round, totalRounds }` | Write phase begins |
+| `SENTENCE_WRITTEN` | `{ userId, storyId, text }` | Player submits sentence |
+| `EDITOR_SWAP` | `{ storyId, sentenceIndex, originalWord, replacementWord, round }` | Editor makes a substitution |
+| `EDITOR_SKIP` | `{ storyId, round }` | Editor passes on editing |
+| `STORIES_SNAPSHOT` | `{ stories: StoryView[] }` | End of each round — full story state |
+| `MATCHING_SUBMITTED` | `{ userId, guesses: Record<string, string> }` | Player submits matching guesses |
+| `MATCHING_LOCKED` | `{ userId }` | Player locks in |
+| `FINAL_REVEAL` | `{ storyReveals: StoryReveal[], matchResults: MatchResult[], scores: ScoreResult[] }` | Post-game reveal |
 
 #### Replay Value
 
-Step through the story's evolution turn by turn. See every word the Editor swapped, whether anyone noticed, and how close the accusation votes were. The `EDITOR_SWAP` entries are especially fun — compare original vs. replacement and judge how sneaky each edit was.
+Step through the stories' evolution round by round. See every word each editor swapped, how the matching guesses compared to reality, and which editors were sneakiest. The `EDITOR_SWAP` entries are especially fun — compare original vs. replacement and judge how subtle each edit was.
 
 > **Note:** The `GameLog` also includes `gameSettings: GameSettingValues` at the top level (per core.md §12A.11), capturing the exact game settings used for this match.
 
@@ -1010,34 +1016,34 @@ Step through the story's evolution turn by turn. See every word the Editor swapp
 **Detail Component:** `UndercoverEditorHistoryDetail`
 
 Renders the expanded game log as a story review:
-- Full story text with editor's word swaps highlighted
-- Sentence-by-sentence timeline showing who wrote what
-- Editor reveal with vote breakdown
-- Keyword reveal and whether it made it into the story
-- Win condition summary
+- All stories with editor word swaps highlighted
+- Round-by-round timeline showing who wrote what
+- Editor assignment reveal with matching results
+- Keyword reveal and whether each keyword appeared in its story
+- Score breakdown per player
 
 **Searchable Fields:**
 
 | Field Key | Label | Extraction |
 |---|---|---|
 | `sentences` | Story Sentences | All sentences from `sentence_written` actions |
-| `keyword` | Keyword | The secret keyword from `game_end` reveal |
+| `keywords` | Keywords | The secret keywords from `final_reveal` |
 
 **Filterable Fields:**
 
 | Field Key | Label | Type | Details |
 |---|---|---|---|
 | `role` | Your Role | select | `editor`, `writer` |
-| `editorCaught` | Editor Caught | boolean | Whether the editor was identified |
-| `keywordInStory` | Keyword in Story | boolean | Whether keyword made it into the story |
+| `correctGuesses` | Correct Matches | range | Number of correct editor identifications |
 
 **Summary Extractor:**
 
 ```typescript
 getSummary: (log) => {
-  const endAction = log.actions.find(a => a.type === 'game_end');
-  const caught = endAction?.payload.editorCaught ? 'caught' : 'escaped';
-  return `Editor ${caught} — Keyword: "${endAction?.payload.keyword ?? '?'}"`;
+  const endAction = log.actions.find(a => a.type === 'final_reveal');
+  const correct = endAction?.payload.matchResults?.filter((r: any) => r.isCorrect).length ?? 0;
+  const total = endAction?.payload.matchResults?.length ?? 0;
+  return `${correct}/${total} editors identified — Parallel writing mystery`;
 }
 ```
 
@@ -1045,10 +1051,10 @@ getSummary: (log) => {
 
 ```
 UndercoverEditorHistoryDetail.tsx
-├── StoryView (full story with highlighted edits)
-├── SentenceTimeline (who wrote each sentence)
-├── VoteResults (editor identification votes)
-├── KeywordReveal (keyword + whether it appeared)
+├── StoryView (per story with highlighted edits)
+├── RoundTimeline (who wrote each sentence per round)
+├── MatchingResults (editor identification accuracy)
+├── KeywordReveal (keywords + whether they appeared)
 └── Final scores summary
 ```
 
@@ -1072,17 +1078,22 @@ The client store listens for server-pushed actions and updates local state accor
 ```ts
 useEffect(() => {
   const handlers: Record<string, (payload: unknown) => void> = {
-    UE_GAME_START:       (p) => dispatch({ type: 'UE_GAME_START', payload: p }),
-    UE_ROLE_ASSIGNED:    (p) => dispatch({ type: 'UE_ROLE_ASSIGNED', payload: p }),
-    UE_TURN_START:       (p) => dispatch({ type: 'UE_TURN_START', payload: p }),
-    UE_SENTENCE_ADDED:   (p) => dispatch({ type: 'UE_SENTENCE_ADDED', payload: p }),
-    UE_EDIT_PROMPT:      (p) => dispatch({ type: 'UE_EDIT_PROMPT', payload: p }),
-    UE_STORY_UPDATED:    (p) => dispatch({ type: 'UE_STORY_UPDATED', payload: p }),
-    UE_REVIEW_START:     (p) => dispatch({ type: 'UE_REVIEW_START', payload: p }),
-    UE_ACCUSATION_START: (p) => dispatch({ type: 'UE_ACCUSATION_START', payload: p }),
-    UE_VOTE_CAST:        (p) => dispatch({ type: 'UE_VOTE_CAST', payload: p }),
-    UE_REVEAL:           (p) => dispatch({ type: 'UE_REVEAL', payload: p }),
-    TIMER_TICK:          (p) => dispatch({ type: 'TIMER_TICK', payload: p }),
+    UE_GAME_START:           (p) => dispatch({ type: 'UE_GAME_START', payload: p }),
+    UE_ROLE_ASSIGNED:        (p) => dispatch({ type: 'UE_ROLE_ASSIGNED', payload: p }),
+    UE_WRITE_START:          (p) => dispatch({ type: 'UE_WRITE_START', payload: p }),
+    UE_SENTENCE_CONFIRMED:   (p) => dispatch({ type: 'UE_SENTENCE_CONFIRMED', payload: p }),
+    UE_SENTENCE_UNSUBMITTED: (p) => dispatch({ type: 'UE_SENTENCE_UNSUBMITTED', payload: p }),
+    UE_SUBMISSION_PROGRESS:  (p) => dispatch({ type: 'UE_SUBMISSION_PROGRESS', payload: p }),
+    UE_EDIT_START:           (p) => dispatch({ type: 'UE_EDIT_START', payload: p }),
+    UE_EDIT_PROMPT:          (p) => dispatch({ type: 'UE_EDIT_PROMPT', payload: p }),
+    UE_EDIT_CONFIRMED:       (p) => dispatch({ type: 'UE_EDIT_CONFIRMED', payload: p }),
+    UE_STORIES_UPDATED:      (p) => dispatch({ type: 'UE_STORIES_UPDATED', payload: p }),
+    UE_REVIEW_START:         (p) => dispatch({ type: 'UE_REVIEW_START', payload: p }),
+    UE_MATCHING_SAVED:       (p) => dispatch({ type: 'UE_MATCHING_SAVED', payload: p }),
+    UE_PLAYER_LOCKED_IN:     (p) => dispatch({ type: 'UE_PLAYER_LOCKED_IN', payload: p }),
+    UE_REVEAL:               (p) => dispatch({ type: 'UE_REVEAL', payload: p }),
+    UE_ERROR:                (p) => dispatch({ type: 'UE_ERROR', payload: p }),
+    TIMER_TICK:              (p) => dispatch({ type: 'TIMER_TICK', payload: p }),
   };
   Object.entries(handlers).forEach(([ev, fn]) => socket.on(ev, fn));
   return () => { Object.keys(handlers).forEach((ev) => socket.off(ev)); };
@@ -1091,20 +1102,26 @@ useEffect(() => {
 
 #### Client-Side Input Dispatch
 
-Players write sentences, the Editor edits words or skips, and everyone casts accusations:
+Players write sentences, editors edit words or skip, and everyone submits matching guesses:
 
 ```ts
-// Writer adds a sentence
-socket.emit('WRITE_SENTENCE', { text });
+// Writer submits a sentence for a story
+socket.emit('WRITE_SENTENCE', { storyId, text });
+
+// Writer retracts a submitted sentence
+socket.emit('UNSUBMIT_SENTENCE', { storyId });
 
 // Editor swaps a word (Editor only)
-socket.emit('EDIT_WORD', { sentenceIndex, wordIndex, newWord });
+socket.emit('EDIT_WORD', { storyId, sentenceIndex, wordIndex, newWord });
 
 // Editor skips editing (Editor only)
 socket.emit('SKIP_EDIT', {});
 
-// Cast an accusation vote
-socket.emit('CAST_ACCUSATION', { targetUserId });
+// Save matching guesses
+socket.emit('SUBMIT_MATCHING', { guesses });
+
+// Lock in matching guesses
+socket.emit('LOCK_IN_MATCHING', {});
 ```
 
 #### Server-Side Handler Registration
@@ -1117,24 +1134,29 @@ import { UndercoverEditorGame } from './minigames/undercover-editor/UndercoverEd
 MINIGAME_SERVER_REGISTRY.set('undercover-editor', UndercoverEditorGame);
 ```
 
+> **Note:** All server broadcasts use `this.broadcastGameAction()` (the `BaseMinigame` wrapper), not raw `context.broadcastToLobby`.
+
 #### Sound Effect Integration
 
 | Event | Sound | Notes |
 |---|---|---|
-| Game start / role assigned | `swoosh` | Intro transition |
-| Turn start | `chime` | Signals a new turn |
-| Sentence added | `click` | Confirms submission |
-| Edit prompt (Editor only) | `swoosh` | Editor's turn to edit |
-| Review start | `swoosh` | Story review phase begins |
-| Accusation start | `swoosh` | Voting phase begins |
-| Vote cast | `click` | Confirms the player's vote |
-| Reveal | `victoryFanfare` | Editor identity and edits unveiled |
+| Game start | `swoosh` | Intro transition |
+| Role assigned | `chime` | Role reveal |
+| Write start | `chime` | Writing phase begins |
+| Sentence confirmed | `click` | Confirms submission |
+| Edit prompt | `chime` | Editor's turn to edit |
+| Edit confirmed | `click` | Confirms edit or skip |
+| Review start | `swoosh` | Review phase begins |
+| Player locked in | `click` | Confirms lock-in |
+| Reveal | `victoryFanfare` | Editor identities and edits unveiled |
+| Countdown (≤3s) | `countdownBeep` | Final seconds of timed phases |
 
 #### Spectator Rendering
 
-Spectators have an omniscient view — they see the Editor's identity, the keyword, and all edits as they happen. The component checks `privateState.isSpectator` and shows a `RoleBadge` with full info.
+Spectators have an omniscient view — they see all editor assignments, keywords, edits as they happen, and submission progress. The component checks `privateState.isSpectator` and shows full info with `RoleBadge` indicators.
 
 ---
+
 
 ## 3. Minimalist Masterpiece
 

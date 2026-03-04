@@ -18,6 +18,8 @@ import WikiRaceHistoryDetail from '@/components/rmhbox/minigames/wiki-race/WikiR
 import MinimalistMasterpieceHistoryDetail from '@/components/rmhbox/minigames/minimalist-masterpiece/MinimalistMasterpieceHistoryDetail';
 import EmojiCinemaHistoryDetail from '@/components/rmhbox/minigames/emoji-cinema/EmojiCinemaHistoryDetail';
 import WitWarHistoryDetail from '@/components/rmhbox/minigames/wit-war/WitWarHistoryDetail';
+import FactOrFrictionHistoryDetail from '@/components/rmhbox/minigames/fact-or-friction/FactOrFrictionHistoryDetail';
+import UndercoverEditorHistoryDetail from '@/components/rmhbox/minigames/undercover-editor/UndercoverEditorHistoryDetail';
 
 // ─── Rhyme Time ──────────────────────────────────────────────────
 
@@ -343,5 +345,91 @@ registerHistoryDisplay({
     const matchups = log.actions.filter((a) => a.type === 'matchup_resolved');
     const witWhams = matchups.filter((a) => a.payload.isWitWham);
     return `${matchups.length} matchups — ${witWhams.length} Wit-Wham${witWhams.length !== 1 ? 's' : ''}`;
+  },
+});
+
+// ─── Fact or Friction ────────────────────────────────────────────
+
+registerHistoryDisplay({
+  minigameId: 'fact-or-friction',
+  DetailComponent: FactOrFrictionHistoryDetail,
+  searchableFields: [
+    {
+      key: 'questions',
+      label: 'Questions',
+      extract: (log: GameLog) =>
+        log.actions
+          .filter((a) => a.type === 'question_start')
+          .map((a) => (a.payload as Record<string, unknown>).questionText as string)
+          .filter(Boolean),
+    },
+    {
+      key: 'categories',
+      label: 'Categories',
+      extract: (log: GameLog) =>
+        log.actions
+          .filter((a) => a.type === 'question_start')
+          .map((a) => (a.payload as Record<string, unknown>).category as string)
+          .filter(Boolean),
+    },
+  ],
+  filterableFields: [
+    {
+      key: 'difficulty',
+      label: 'Difficulty',
+      type: 'select',
+      options: () => ['easy', 'medium', 'hard'],
+    },
+    { key: 'correctCount', label: 'Questions Correct', type: 'range', valuePath: 'correctCount' },
+  ],
+  getSummary: (log: GameLog) => {
+    const questions = log.actions.filter((a) => a.type === 'question_start');
+    return `${questions.length} questions — Trivia challenge`;
+  },
+});
+
+// ─── Undercover Editor ───────────────────────────────────────────
+
+registerHistoryDisplay({
+  minigameId: 'undercover-editor',
+  DetailComponent: UndercoverEditorHistoryDetail,
+  searchableFields: [
+    {
+      key: 'sentences',
+      label: 'Story Sentences',
+      extract: (log: GameLog) =>
+        log.actions
+          .filter((a) => a.type === 'sentence_submitted')
+          .map((a) => (a.payload as Record<string, unknown>).text as string)
+          .filter(Boolean),
+    },
+    {
+      key: 'editors',
+      label: 'Editors',
+      extract: (log: GameLog) => {
+        const reveal = log.actions.find((a) => a.type === 'reveal');
+        if (!reveal) return [];
+        const payload = reveal.payload as Record<string, unknown>;
+        const reveals = payload.storyReveals as Array<Record<string, unknown>> | undefined;
+        return reveals?.map((r) => r.editorName as string).filter(Boolean) ?? [];
+      },
+    },
+  ],
+  filterableFields: [
+    {
+      key: 'role',
+      label: 'Your Role',
+      type: 'select',
+      options: () => ['editor', 'writer'],
+    },
+    { key: 'editorCaught', label: 'Editor Caught', type: 'boolean' },
+  ],
+  getSummary: (log: GameLog) => {
+    const reveal = log.actions.find((a) => a.type === 'reveal');
+    if (!reveal) return 'Undercover Editor game';
+    const payload = reveal.payload as Record<string, unknown>;
+    const reveals = payload.storyReveals as Array<Record<string, unknown>> | undefined;
+    const count = reveals?.length ?? 0;
+    return `${count} parallel stories — Social deduction`;
   },
 });

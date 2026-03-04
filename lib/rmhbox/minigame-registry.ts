@@ -20,6 +20,8 @@ import {
   MM_STARTING_CURRENCY, MM_BID_INCREMENT, MM_DEFAULT_ROUNDS,
   EC_MAX_ROUNDS, EC_ROUND_DURATION_SECONDS, EC_MAX_EMOJIS, EC_MAX_GUESSES_PER_PLAYER,
   WW_TOTAL_ROUNDS, WW_WRITING_DURATION, WW_VOTING_DURATION,
+  FF_TOTAL_QUESTIONS, FF_ANSWER_DURATION_SECONDS, FF_POT_START_VALUE,
+  UE_WRITE_TIMEOUT_SECONDS, UE_EDIT_TIMEOUT_SECONDS,
 } from './constants';
 
 // ─── Per-Minigame Settings Schemas ───────────────────────────────
@@ -72,6 +74,19 @@ export const WIT_WAR_SETTINGS: GameSettingsSchema = [
   { key: 'totalRounds', type: 'integer', label: 'Number of Rounds', description: 'How many rounds of prompt matchups to play', default: WW_TOTAL_ROUNDS, min: 1, max: 3, step: 1 },
   { key: 'writingDuration', type: 'integer', label: 'Writing Duration (seconds)', description: 'Time players have to write answers to their prompts', default: WW_WRITING_DURATION, min: 30, max: 120, step: 10 },
   { key: 'votingDuration', type: 'integer', label: 'Voting Duration (seconds)', description: 'Time to vote on each head-to-head matchup', default: WW_VOTING_DURATION, min: 10, max: 30, step: 5 },
+];
+
+export const FACT_OR_FRICTION_SETTINGS: GameSettingsSchema = [
+  { key: 'totalQuestions', type: 'integer', label: 'Number of Questions', description: 'How many trivia questions to play', default: FF_TOTAL_QUESTIONS, min: 4, max: 12, step: 1 },
+  { key: 'answerDuration', type: 'integer', label: 'Answer Duration (seconds)', description: 'Time players have to lock in their answer each round', default: FF_ANSWER_DURATION_SECONDS, min: 10, max: 45, step: 5 },
+  { key: 'potStartValue', type: 'integer', label: 'Starting Pot Value', description: 'Points in the pot at the start of each question', default: FF_POT_START_VALUE, min: 500, max: 2000, step: 100 },
+  { key: 'enableScoreFloor', type: 'boolean', label: 'Score Floor', description: 'Prevent players from going below -500 points', default: true },
+  { key: 'difficulty', type: 'select', label: 'Difficulty', description: 'Difficulty of the trivia questions', default: 'mixed', options: ['easy', 'medium', 'hard', 'mixed'] },
+];
+
+export const UNDERCOVER_EDITOR_SETTINGS: GameSettingsSchema = [
+  { key: 'writeTimeout', type: 'integer', label: 'Write Duration (seconds)', description: 'Time to write a sentence each round', default: UE_WRITE_TIMEOUT_SECONDS, min: 30, max: 90, step: 5 },
+  { key: 'editTimeout', type: 'integer', label: 'Edit Duration (seconds)', description: 'Time for the Editor to make their 2-word edit', default: UE_EDIT_TIMEOUT_SECONDS, min: 15, max: 60, step: 5 },
 ];
 
 // ─── Registry ────────────────────────────────────────────────────
@@ -157,37 +172,38 @@ export const MINIGAME_REGISTRY: Record<string, MinigameDefinition> = {
     tags: ['word', 'creative', 'voting', 'comedy'],
     settingsSchema: WIT_WAR_SETTINGS,
   },
-  // ─── Phase 6 Minigames ───────────────────────────────────────────
-  // 'fact-or-friction': {
-  //   id: 'fact-or-friction',
-  //   displayName: 'Fact or Friction',
-  //   description: 'Distinguish real facts from convincing fakes.',
-  //   category: 'trivia',
-  //   icon: '🤔',
-  //   minPlayers: 2,
-  //   maxPlayers: 16,
-  //   estimatedDurationSeconds: 120,
-  //   supportsTeams: false,
-  //   instructionDurationSeconds: 15,
-  //   preloadAssets: { images: [], sounds: [], data: [], estimatedSizeBytes: 0 },
-  //   joinInProgressPolicy: 'join_next_subround',
-  //   tags: ['trivia', 'bluffing'],
-  // },
-  // 'undercover-editor': {
-  //   id: 'undercover-editor',
-  //   displayName: 'Undercover Editor',
-  //   description: 'Collaboratively write a story — but one editor is sabotaging it.',
-  //   category: 'creative',
-  //   icon: '✏️',
-  //   minPlayers: 4,
-  //   maxPlayers: 10,
-  //   estimatedDurationSeconds: 240,
-  //   supportsTeams: false,
-  //   instructionDurationSeconds: 20,
-  //   preloadAssets: { images: [], sounds: [], data: [], estimatedSizeBytes: 0 },
-  //   joinInProgressPolicy: 'spectate_only',
-  //   tags: ['creative', 'deduction'],
-  // },
+  'fact-or-friction': {
+    id: 'fact-or-friction',
+    displayName: 'Fact or Friction',
+    description: 'High-stakes trivia where wrong answers cost you! Race to answer for maximum points, but one mistake deducts from your score.',
+    category: 'trivia',
+    icon: 'flame',
+    minPlayers: 2,
+    maxPlayers: 16,
+    estimatedDurationSeconds: 176,
+    supportsTeams: false,
+    instructionDurationSeconds: 15,
+    preloadAssets: { images: [], sounds: [], data: [], estimatedSizeBytes: 0 },
+    joinInProgressPolicy: 'join_next_subround',
+    tags: ['trivia', 'risk', 'speed', 'knowledge'],
+    settingsSchema: FACT_OR_FRICTION_SETTINGS,
+  },
+  'undercover-editor': {
+    id: 'undercover-editor',
+    displayName: 'Undercover Editor',
+    description: 'Write stories together — but each story has a secret editor making subtle changes. Can you figure out who edited which story?',
+    category: 'creative',
+    icon: 'pencil',
+    minPlayers: 4,
+    maxPlayers: 10,
+    estimatedDurationSeconds: 300,
+    supportsTeams: false,
+    instructionDurationSeconds: 20,
+    preloadAssets: { images: [], sounds: [], data: [], estimatedSizeBytes: 0 },
+    joinInProgressPolicy: 'spectate_only',
+    tags: ['social-deduction', 'writing', 'creative', 'deception'],
+    settingsSchema: UNDERCOVER_EDITOR_SETTINGS,
+  },
   'minimalist-masterpiece': {
     id: 'minimalist-masterpiece',
     displayName: 'Minimalist Masterpiece',

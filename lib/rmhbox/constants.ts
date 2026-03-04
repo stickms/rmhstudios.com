@@ -206,3 +206,42 @@ export const WW_MAX_ANSWER_LENGTH = 200;
 export const WW_MAX_MATCHUP_POINTS = 1000;
 export const WW_WITWHAM_BONUS = 500;
 export const WW_SAFETY_QUIP = '(no answer submitted)';
+
+// ─── Fact or Friction (FF) ──────────────────────────────────────
+
+export const FF_TOTAL_QUESTIONS = 8;
+export const FF_QUESTION_REVEAL_SECONDS = 2;
+export const FF_ANSWER_DURATION_SECONDS = 15;
+export const FF_ANSWER_REVEAL_SECONDS = 4;
+export const FF_PAUSE_SECONDS = 1;
+export const FF_POT_START_VALUE = 1000;
+export const FF_POT_TICK_VALUE = 50;
+export const FF_POT_TICK_INTERVAL_MS = 500;
+export const FF_POT_MIN_VALUE = 100;
+export const FF_EASY_MULTIPLIER = 0.8;
+export const FF_MEDIUM_MULTIPLIER = 1.0;
+export const FF_HARD_MULTIPLIER = 1.5;
+export const FF_SCORE_FLOOR = -500;
+export const FF_QUESTION_DISTRIBUTION = { easy: 3, medium: 3, hard: 2 };
+
+// ─── Undercover Editor (UE) ─────────────────────────────────────
+
+export const UE_MIN_PLAYERS = 4;
+export const UE_MAX_PLAYERS = 10;
+export const UE_WRITE_TIMEOUT_SECONDS = 45;
+export const UE_EDIT_TIMEOUT_SECONDS = 30;
+export const UE_REVEAL_DURATION_SECONDS = 10;
+export const UE_DISCONNECT_TURN_WAIT_SECONDS = 15;
+export const UE_MIN_SENTENCE_LENGTH = 10;
+export const UE_MAX_SENTENCE_LENGTH = 200;
+export const UE_MAX_EDIT_WORD_LENGTH = 30;
+/** Number of words the editor must change in the most recent sentence per edit round. */
+export const UE_REQUIRED_EDITS_PER_ROUND = 2;
+/** +200 per correct match of another editor to their story during REVIEW */
+export const UE_CORRECT_MATCH_BONUS = 200;
+/** +300 per other player that did NOT correctly match your edited story to you */
+export const UE_FALSE_MATCH_CAUSED_BONUS = 300;
+/** +1 per character written during WRITE phases */
+export const UE_CHAR_WRITTEN_BONUS = 1;
+/** +50 per word edited during EDIT phases */
+export const UE_WORD_EDITED_BONUS = 50;

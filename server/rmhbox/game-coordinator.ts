@@ -51,6 +51,8 @@ import { WikiRaceMinigame } from './minigames/wiki-race';
 import { MinimalistMasterpieceGame } from './minigames/minimalist-masterpiece';
 import { EmojiCinemaGame } from './minigames/emoji-cinema';
 import { WitWarMinigame } from './minigames/wit-war';
+import { FactOrFrictionGame } from './minigames/fact-or-friction';
+import { UndercoverEditorGame } from './minigames/undercover-editor';
 
 // ─── Minigame Server Registry ────────────────────────────────────
 
@@ -69,6 +71,8 @@ export const MINIGAME_SERVER_REGISTRY = new Map<
   ['minimalist-masterpiece', MinimalistMasterpieceGame],
   ['emoji-cinema', EmojiCinemaGame],
   ['wit-war', WitWarMinigame],
+  ['fact-or-friction', FactOrFrictionGame],
+  ['undercover-editor', UndercoverEditorGame],
 ]);
 
 // ─── Per-lobby lifecycle tracking ────────────────────────────────

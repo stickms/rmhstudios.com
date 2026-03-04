@@ -96,6 +96,10 @@ export interface RMHboxStore {
   gameSettingsState: GameSettingsState | null;
   /** Info about which player a spectator is currently following (competitive-individual games) */
   spectatorTarget: SpectatorTargetInfo | null;
+  /** Live minigame score displayed in the GameShell footer during gameplay.
+   *  Set by minigames that track scores in real-time (e.g. Fact or Friction).
+   *  When non-null, GameShell displays this instead of the lobby cumulative score. */
+  liveMinigameScore: number | null;
 
   // Actions
   setConnectionStatus: (status: RMHboxStore['connectionStatus']) => void;
@@ -107,6 +111,7 @@ export interface RMHboxStore {
   setGameSettingsState: (state: GameSettingsState | null) => void;
   updateGameSettingsValues: (values: GameSettingValues) => void;
   setSpectatorTarget: (target: SpectatorTargetInfo | null) => void;
+  setLiveMinigameScore: (score: number | null) => void;
   updateSettings: (partial: Partial<RMHboxUserSettings>) => void;
   leaveLobby: () => void;
   reset: () => void;
@@ -126,6 +131,7 @@ export const useRMHboxStore = create<RMHboxStore>()(
       minigameRound: null,
       gameSettingsState: null,
       spectatorTarget: null,
+      liveMinigameScore: null,
 
       setConnectionStatus: (status) => set({ connectionStatus: status }),
 
@@ -200,6 +206,8 @@ export const useRMHboxStore = create<RMHboxStore>()(
 
       setSpectatorTarget: (target) => set({ spectatorTarget: target }),
 
+      setLiveMinigameScore: (score) => set({ liveMinigameScore: score }),
+
       updateSettings: (partial) => {
         set((state) => ({
           settings: { ...state.settings, ...partial },
@@ -214,6 +222,7 @@ export const useRMHboxStore = create<RMHboxStore>()(
         minigameRound: null,
         gameSettingsState: null,
         spectatorTarget: null,
+        liveMinigameScore: null,
       }),
 
       reset: () => set({
@@ -225,6 +234,7 @@ export const useRMHboxStore = create<RMHboxStore>()(
         minigameRound: null,
         gameSettingsState: null,
         spectatorTarget: null,
+        liveMinigameScore: null,
       }),
     }),
     {
@@ -370,7 +380,7 @@ export function applyLobbyAction(
       // When returning to WAITING, clear game state but preserve selectedGame
       // (server auto-reselects the last played game via GAME_PICKED or full sync)
       if (newState === 'WAITING') {
-        useRMHboxStore.setState({ timerInfo: null, minigameRound: null, gameSettingsState: null });
+        useRMHboxStore.setState({ timerInfo: null, minigameRound: null, gameSettingsState: null, liveMinigameScore: null });
         return {
           ...lobby,
           state: newState,
