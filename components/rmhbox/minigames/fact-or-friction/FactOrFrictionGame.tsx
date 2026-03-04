@@ -62,8 +62,14 @@ export default function FactOrFrictionGame({ playerId, playerName: _playerName }
 
   const [phase, setPhase] = useState<Phase>('QUESTION_REVEAL');
   const [questionData, setQuestionData] = useState<QuestionData | null>(null);
-  const [potValue, setPotValue] = useState(1000);
-  const [potMaxValue, setPotMaxValue] = useState(1000);
+  const [potValue, setPotValue] = useState(() => {
+    const snap = useRMHboxStore.getState().gameState;
+    return (snap?.potValue as number) ?? 0;
+  });
+  const [potMaxValue, setPotMaxValue] = useState(() => {
+    const snap = useRMHboxStore.getState().gameState;
+    return (snap?.potValue as number) ?? 0;
+  });
   const [timeRemaining, setTimeRemaining] = useState(15);
   const [myAnswer, setMyAnswer] = useState<number | null>(null);
   const [lockedPotValue, setLockedPotValue] = useState<number | null>(null);
@@ -250,7 +256,10 @@ export default function FactOrFrictionGame({ playerId, playerName: _playerName }
     if (p === 'QUESTION_REVEAL' || p === 'ANSWER' || p === 'ANSWER_REVEAL' || p === 'PAUSE' || p === 'GAME_OVER') {
       setPhase(p);
     }
-    if (snapshot.potValue != null) setPotValue(snapshot.potValue as number);
+    if (snapshot.potValue != null) {
+      setPotValue(snapshot.potValue as number);
+      setPotMaxValue(snapshot.potValue as number);
+    }
     if (snapshot.timeRemaining != null) setTimeRemaining(snapshot.timeRemaining as number);
 
     // Server sends question as nested object with {id, question, options, category, difficulty, source}
