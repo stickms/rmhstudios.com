@@ -9,6 +9,7 @@
 
 import { motion } from 'framer-motion';
 import { Check, X, Clock, SkipForward, Zap } from 'lucide-react';
+import { FF_SPEED_BONUS } from '@/lib/rmhbox/constants';
 
 export interface PlayerResult {
   userId: string;
@@ -21,7 +22,7 @@ export interface PlayerResult {
   timedOut: boolean;
   /** Raw pot value at the time the player submitted. */
   potValueAtSubmission?: number;
-  /** Breakdown: base score (pot × multiplier, signed). */
+  /** Breakdown: effective pot value (pot × multiplier), always non-negative. */
   basePoints?: number;
   /** Difficulty multiplier applied (e.g. 0.8, 1.0, 1.5). */
   difficultyMultiplier?: number;
@@ -128,7 +129,7 @@ export default function AnswerReveal({
                   {/* First badge */}
                   {pr.isFirst && (
                     <span className="flex items-center gap-0.5 rounded-full bg-yellow-500/20 px-1.5 py-0.5 text-[10px] font-bold text-yellow-400">
-                      <Zap className="h-3 w-3" /> First! +{pr.speedBonus ?? 100}
+                      <Zap className="h-3 w-3" /> First! +{pr.speedBonus ?? FF_SPEED_BONUS}
                     </span>
                   )}
 
@@ -163,7 +164,7 @@ export default function AnswerReveal({
               {hasBreakdown && pr.scoreChange !== 0 && (
                 <div className="flex items-center justify-between pl-6 text-[11px] text-(--rmhbox-text-muted)">
                   <span className="tabular-nums">
-                    {pr.potValueAtSubmission != null ? pr.potValueAtSubmission : Math.abs(pr.basePoints!)}
+                    {pr.potValueAtSubmission ?? pr.basePoints}
                     {' × '}
                     {pr.difficultyMultiplier}x
                     {pr.speedBonus != null && pr.speedBonus > 0 && (

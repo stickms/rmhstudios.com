@@ -509,6 +509,7 @@ describe('Fact or Friction Server Handler (§6.1)', () => {
         scoreChange: number;
         speedBonus: number;
         basePoints: number;
+        selectedIndex: number | null;
       }>;
 
       const correctPlayers = playerResults.filter((r) => r.isCorrect);

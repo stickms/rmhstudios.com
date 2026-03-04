@@ -317,11 +317,9 @@ export class FactOrFrictionGame extends BaseMinigame {
     const playerResults: FFPlayerQuestionResult[] = [];
     for (const [userId, answer] of this.state.playerAnswers) {
       const player = this.context.players.get(userId);
-      const basePoints = answer.isCorrect
+      const basePoints = answer.selectedIndex !== null
         ? Math.floor(answer.potValueAtSubmission * difficultyMultiplier)
-        : answer.selectedIndex !== null
-          ? -Math.floor(answer.potValueAtSubmission * difficultyMultiplier)
-          : 0;
+        : 0;
       playerResults.push({
         userId,
         userName: player?.userName ?? 'Unknown',

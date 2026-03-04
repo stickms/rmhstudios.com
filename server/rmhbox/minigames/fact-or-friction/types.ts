@@ -57,7 +57,7 @@ export interface FFPlayerQuestionResult {
   isCorrect: boolean;
   potValueAtSubmission: number;
   scoreChange: number;
-  /** Breakdown: raw pot value × difficulty multiplier (before speed bonus). */
+  /** Breakdown: effective pot value (pot × difficulty multiplier), always non-negative. */
   basePoints: number;
   /** Difficulty multiplier applied to this question. */
   difficultyMultiplier: number;
