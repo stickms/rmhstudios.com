@@ -41,8 +41,8 @@ export function BuildCard({ build, onLike }: BuildCardProps) {
   };
 
   return (
-    <Link href={`/user-builds/${build.slug}`}>
-      <div className="group rounded-xl border border-site-border bg-site-surface hover:border-violet-500/50 transition-all overflow-hidden">
+    <Link href={`/user-builds/${build.slug}`} className="block h-full">
+      <div className="group rounded-xl border border-site-border bg-site-surface hover:border-violet-500/50 transition-all overflow-hidden flex flex-col h-full">
         {/* Thumbnail */}
         {build.thumbnailUrl ? (
           <div className="aspect-video w-full overflow-hidden bg-site-bg">
@@ -61,7 +61,7 @@ export function BuildCard({ build, onLike }: BuildCardProps) {
         )}
 
         {/* Content */}
-        <div className="p-4">
+        <div className="p-4 flex flex-col flex-1">
           {/* Category & Featured */}
           <div className="flex items-center gap-2 mb-2">
             {build.category && (
@@ -94,7 +94,7 @@ export function BuildCard({ build, onLike }: BuildCardProps) {
           )}
 
           {/* Author & Meta */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mt-auto">
             <div className="flex items-center gap-2 min-w-0">
               {build.user.image ? (
                 <img

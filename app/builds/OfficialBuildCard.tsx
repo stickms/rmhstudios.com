@@ -11,8 +11,8 @@ interface OfficialBuildCardProps {
 
 export function OfficialBuildCard({ build }: OfficialBuildCardProps) {
     return (
-        <Link href={build.href}>
-            <div className="group rounded-xl border border-site-border bg-site-surface hover:border-site-accent/50 transition-all overflow-hidden">
+        <Link href={build.href} className="block h-full">
+            <div className="group rounded-xl border border-site-border bg-site-surface hover:border-site-accent/50 transition-all overflow-hidden flex flex-col h-full">
                 {/* Thumbnail */}
                 {build.imagePath ? (
                     <div className="aspect-video w-full overflow-hidden bg-site-bg relative">
@@ -33,7 +33,7 @@ export function OfficialBuildCard({ build }: OfficialBuildCardProps) {
                 )}
 
                 {/* Content */}
-                <div className="p-4">
+                <div className="p-4 flex flex-col flex-1">
                     {/* Tags & Status */}
                     <div className="flex items-center gap-2 mb-2 flex-wrap">
                         <span className="px-2 py-0.5 rounded-full text-xs bg-site-accent-dim text-site-accent">
@@ -60,7 +60,7 @@ export function OfficialBuildCard({ build }: OfficialBuildCardProps) {
                     </p>
 
                     {/* Footer */}
-                    <div className="flex items-center justify-between pt-3 border-t border-site-border">
+                    <div className="flex items-center justify-between pt-3 border-t border-site-border mt-auto">
                         <span className="text-xs text-site-text-dim font-mono uppercase">
                             RMH Studios
                         </span>
