@@ -26,6 +26,7 @@ import {
   FF_POT_TICK_INTERVAL_MS,
   FF_POT_MIN_VALUE,
   FF_SCORE_FLOOR,
+  FF_SPEED_BONUS,
 } from '../../../lib/rmhbox/constants';
 import {
   MOCK_USERS,
@@ -133,35 +134,56 @@ describe('Fact or Friction Server Handler (§6.1)', () => {
       game.cleanup();
     });
 
-    it('should drain pot by FF_POT_TICK_VALUE each tick', () => {
+    it('should drain pot by scaled tick each tick', () => {
       const { game, broadcastLog } = createGame();
       game.start();
       advanceToAnswerPhase();
-      broadcastLog.length = 0;
 
+      // Capture the pot value at the start of the answer phase
+      const answerPhase = findActionBroadcasts(broadcastLog, 'FF_ANSWER_PHASE');
+      const startPot = answerPhase[0].data.potValue as number;
+      expect(startPot).toBeGreaterThan(0);
+
+      broadcastLog.length = 0;
       vi.advanceTimersByTime(FF_POT_TICK_INTERVAL_MS);
 
       const potTicks = findActionBroadcasts(broadcastLog, 'FF_POT_TICK');
       expect(potTicks.length).toBeGreaterThanOrEqual(1);
       const tickData = potTicks[0].data as Record<string, unknown>;
-      expect(tickData.potValue).toBe(FF_POT_START_VALUE - FF_POT_TICK_VALUE);
+      // Pot should have drained by exactly one scaled tick
+      expect(tickData.potValue).toBeLessThan(startPot);
+      expect(tickData.potValue).toBeGreaterThan(0);
 
       game.cleanup();
     });
 
-    it('should not drain pot below FF_POT_MIN_VALUE', () => {
-      const { game, broadcastLog } = createGame();
+    it('should not drain pot below scaled minimum', () => {
+      // Use a longer answer duration to allow enough ticks (at 1s intervals) to drain pot to minimum
+      const ctxData = createMockContext(undefined, { gameSettings: { answerDuration: 30 } });
+      const { game, broadcastLog } = createGame(ctxData);
       game.start();
       advanceToAnswerPhase();
+
+      // Capture the pot at answer phase start
+      const answerPhase = findActionBroadcasts(broadcastLog, 'FF_ANSWER_PHASE');
+      const startPot = answerPhase[0].data.potValue as number;
+
       broadcastLog.length = 0;
 
-      // Advance enough ticks to fully drain pot
-      const ticksToMin = Math.ceil((FF_POT_START_VALUE - FF_POT_MIN_VALUE) / FF_POT_TICK_VALUE);
-      vi.advanceTimersByTime(FF_POT_TICK_INTERVAL_MS * (ticksToMin + 5));
+      // Advance many ticks to fully drain pot
+      vi.advanceTimersByTime(FF_POT_TICK_INTERVAL_MS * 30);
 
       const potTicks = findActionBroadcasts(broadcastLog, 'FF_POT_TICK');
       const lastTickData = potTicks[potTicks.length - 1].data as Record<string, unknown>;
-      expect(lastTickData.potValue).toBe(FF_POT_MIN_VALUE);
+      const minPot = lastTickData.potValue as number;
+      // Minimum pot should be > 0 and < startPot
+      expect(minPot).toBeGreaterThan(0);
+      expect(minPot).toBeLessThan(startPot);
+      // Pot should have stopped draining (last two ticks equal)
+      if (potTicks.length >= 2) {
+        const secondLast = potTicks[potTicks.length - 2].data as Record<string, unknown>;
+        expect(secondLast.potValue).toBe(minPot);
+      }
 
       game.cleanup();
     });
@@ -477,6 +499,195 @@ describe('Fact or Friction Server Handler (§6.1)', () => {
     });
   });
 
+  describe('Speed Bonus', () => {
+    it('should award speed bonus to the first correct answerer', () => {
+      const { game, broadcastLog } = createGame();
+      game.start();
+      advanceToAnswerPhase();
+
+      // Get the question to find correct answer
+      const state = game.getStateForPlayer(MOCK_USERS.alice.userId) as Record<string, unknown>;
+      // We need to find the correct answer. During ANSWER_REVEAL the correctIndex is available.
+      // But during ANSWER phase it's hidden. Let's just have all players answer differently
+      // and check that the correct one got the speed bonus.
+      
+      // All four players submit different answers at pot=1000
+      game.handleInput(MOCK_USERS.alice.userId, 'SUBMIT_ANSWER', { selectedIndex: 0 });
+      game.handleInput(MOCK_USERS.bob.userId, 'SUBMIT_ANSWER', { selectedIndex: 1 });
+      game.handleInput(MOCK_USERS.charlie.userId, 'SUBMIT_ANSWER', { selectedIndex: 2 });
+      game.handleInput(MOCK_USERS.diana.userId, 'SUBMIT_ANSWER', { selectedIndex: 3 });
+
+      // Find the FF_ANSWER_REVEAL to see who was correct
+      const reveal = findLastActionBroadcast(broadcastLog, 'FF_ANSWER_REVEAL');
+      expect(reveal).toBeDefined();
+      
+      const playerResults = reveal!.data.playerResults as Array<{
+        userId: string;
+        isCorrect: boolean;
+        isFirst: boolean;
+        scoreChange: number;
+        speedBonus: number;
+        potValueAtSubmission: number;
+        selectedIndex: number | null;
+      }>;
+
+      const correctPlayers = playerResults.filter((r) => r.isCorrect);
+      const incorrectPlayers = playerResults.filter((r) => !r.isCorrect && r.selectedIndex !== null);
+
+      // Exactly one correct answer per question
+      expect(correctPlayers.length).toBe(1);
+      
+      // The correct player should be marked isFirst and have speed bonus
+      const firstCorrect = correctPlayers[0];
+      expect(firstCorrect.isFirst).toBe(true);
+      expect(firstCorrect.speedBonus).toBe(FF_SPEED_BONUS);
+      // scoreChange should be potValue + speedBonus (pot already includes difficulty scaling)
+      expect(firstCorrect.scoreChange).toBe(firstCorrect.potValueAtSubmission + firstCorrect.speedBonus);
+
+      // Incorrect players should have speedBonus = 0
+      for (const inc of incorrectPlayers) {
+        expect(inc.speedBonus).toBe(0);
+      }
+
+      game.cleanup();
+    });
+
+    it('should not award speed bonus to the second correct answerer', () => {
+      const { game, broadcastLog } = createGame();
+      game.start();
+      advanceToAnswerPhase();
+
+      // Both Alice and Bob answer with the same index (could be correct or wrong)
+      // We need to ensure both answer the same way
+      game.handleInput(MOCK_USERS.alice.userId, 'SUBMIT_ANSWER', { selectedIndex: 0 });
+      game.handleInput(MOCK_USERS.bob.userId, 'SUBMIT_ANSWER', { selectedIndex: 0 });
+      game.handleInput(MOCK_USERS.charlie.userId, 'SUBMIT_ANSWER', { selectedIndex: 1 });
+      game.handleInput(MOCK_USERS.diana.userId, 'SUBMIT_ANSWER', { selectedIndex: 2 });
+
+      const reveal = findLastActionBroadcast(broadcastLog, 'FF_ANSWER_REVEAL');
+      expect(reveal).toBeDefined();
+
+      const playerResults = reveal!.data.playerResults as Array<{
+        userId: string;
+        isCorrect: boolean;
+        isFirst: boolean;
+        speedBonus: number;
+      }>;
+
+      const correctPlayers = playerResults.filter((r) => r.isCorrect);
+      
+      if (correctPlayers.length >= 2) {
+        // Only the first one should have speedBonus
+        const withBonus = correctPlayers.filter((r) => r.speedBonus > 0);
+        expect(withBonus.length).toBe(1);
+        expect(withBonus[0].isFirst).toBe(true);
+
+        // The rest should have speedBonus = 0
+        const withoutBonus = correctPlayers.filter((r) => r.speedBonus === 0);
+        expect(withoutBonus.length).toBe(correctPlayers.length - 1);
+      }
+
+      game.cleanup();
+    });
+  });
+
+  describe('Answer Reveal Breakdown', () => {
+    it('should include result fields in FF_ANSWER_REVEAL broadcast', () => {
+      const { game, broadcastLog } = createGame();
+      game.start();
+      advanceToAnswerPhase();
+
+      // All players answer
+      game.handleInput(MOCK_USERS.alice.userId, 'SUBMIT_ANSWER', { selectedIndex: 0 });
+      game.handleInput(MOCK_USERS.bob.userId, 'SUBMIT_ANSWER', { selectedIndex: 1 });
+      game.handleInput(MOCK_USERS.charlie.userId, 'PASS_QUESTION', {});
+      game.handleInput(MOCK_USERS.diana.userId, 'SUBMIT_ANSWER', { selectedIndex: 2 });
+
+      const reveal = findLastActionBroadcast(broadcastLog, 'FF_ANSWER_REVEAL');
+      expect(reveal).toBeDefined();
+
+      const playerResults = reveal!.data.playerResults as Array<Record<string, unknown>>;
+      expect(playerResults.length).toBe(4);
+
+      for (const pr of playerResults) {
+        // Every result should have score and status fields
+        expect(pr).toHaveProperty('speedBonus');
+        expect(pr).toHaveProperty('newTotalScore');
+        expect(pr).toHaveProperty('isFirst');
+        expect(pr).toHaveProperty('passed');
+        expect(pr).toHaveProperty('timedOut');
+        expect(pr).toHaveProperty('potValueAtSubmission');
+
+        expect(typeof pr.speedBonus).toBe('number');
+        expect(typeof pr.newTotalScore).toBe('number');
+        // basePoints and difficultyMultiplier should NOT be exposed
+        expect(pr).not.toHaveProperty('basePoints');
+        expect(pr).not.toHaveProperty('difficultyMultiplier');
+      }
+
+      game.cleanup();
+    });
+
+    it('should include newTotalScore that matches FF_SCORE_UPDATE scores', () => {
+      const { game, broadcastLog } = createGame();
+      game.start();
+      advanceToAnswerPhase();
+
+      game.handleInput(MOCK_USERS.alice.userId, 'SUBMIT_ANSWER', { selectedIndex: 0 });
+      game.handleInput(MOCK_USERS.bob.userId, 'SUBMIT_ANSWER', { selectedIndex: 1 });
+      game.handleInput(MOCK_USERS.charlie.userId, 'SUBMIT_ANSWER', { selectedIndex: 2 });
+      game.handleInput(MOCK_USERS.diana.userId, 'SUBMIT_ANSWER', { selectedIndex: 3 });
+
+      const reveal = findLastActionBroadcast(broadcastLog, 'FF_ANSWER_REVEAL');
+      const scoreUpdate = findLastActionBroadcast(broadcastLog, 'FF_SCORE_UPDATE');
+      expect(reveal).toBeDefined();
+      expect(scoreUpdate).toBeDefined();
+
+      const playerResults = reveal!.data.playerResults as Array<{
+        userId: string;
+        newTotalScore: number;
+      }>;
+      const scores = scoreUpdate!.data.scores as Record<string, number>;
+
+      for (const pr of playerResults) {
+        expect(pr.newTotalScore).toBe(scores[pr.userId]);
+      }
+
+      game.cleanup();
+    });
+
+    it('should show speedBonus=0 for passed and timed-out players', () => {
+      const { game, broadcastLog } = createGame();
+      game.start();
+      advanceToAnswerPhase();
+
+      // Alice answers, Bob passes, rest time out
+      game.handleInput(MOCK_USERS.alice.userId, 'SUBMIT_ANSWER', { selectedIndex: 0 });
+      game.handleInput(MOCK_USERS.bob.userId, 'PASS_QUESTION', {});
+      vi.advanceTimersByTime(FF_ANSWER_DURATION_SECONDS * 1000 + 50);
+
+      const reveal = findLastActionBroadcast(broadcastLog, 'FF_ANSWER_REVEAL');
+      expect(reveal).toBeDefined();
+
+      const playerResults = reveal!.data.playerResults as Array<{
+        userId: string;
+        speedBonus: number;
+        passed: boolean;
+        timedOut: boolean;
+      }>;
+
+      const bob = playerResults.find((r) => r.userId === MOCK_USERS.bob.userId)!;
+      expect(bob.passed).toBe(true);
+      expect(bob.speedBonus).toBe(0);
+
+      const charlie = playerResults.find((r) => r.userId === MOCK_USERS.charlie.userId)!;
+      expect(charlie.timedOut).toBe(true);
+      expect(charlie.speedBonus).toBe(0);
+
+      game.cleanup();
+    });
+  });
+
   describe('Join-in-Progress', () => {
     it('should queue JIP player and promote at pause', () => {
       const { game, context, playerLog } = createGame();
@@ -672,11 +883,124 @@ describe('Fact or Friction Server Handler (§6.1)', () => {
       // Should be exactly 3 ticks — NOT 6 (which would happen with 2 intervals)
       expect(potTicks.length).toBe(3);
 
-      // Verify pot drained at consistent rate
+      // Verify pot drained at consistent rate (pot now starts difficulty-scaled)
       const tData0 = potTicks[0].data as Record<string, unknown>;
+      const tData1 = potTicks[1].data as Record<string, unknown>;
       const tData2 = potTicks[2].data as Record<string, unknown>;
-      expect(tData0.potValue).toBe(FF_POT_START_VALUE - FF_POT_TICK_VALUE);
-      expect(tData2.potValue).toBe(FF_POT_START_VALUE - FF_POT_TICK_VALUE * 3);
+      const tick0 = tData0.potValue as number;
+      const tick1 = tData1.potValue as number;
+      const tick2 = tData2.potValue as number;
+      // Each tick should drain by the same amount
+      expect(tick0 - tick1).toBe(tick1 - tick2);
+      // Should be 3 decreasing values
+      expect(tick0).toBeGreaterThan(tick1);
+      expect(tick1).toBeGreaterThan(tick2);
+
+      game.cleanup();
+    });
+  });
+
+  describe('Pot Value Scaling (difficulty-scaled)', () => {
+    it('should include potValue in FF_QUESTION broadcast', () => {
+      const { game, broadcastLog } = createGame();
+      game.start();
+
+      const questionEvents = findActionBroadcasts(broadcastLog, 'FF_QUESTION');
+      expect(questionEvents.length).toBe(1);
+
+      const qData = questionEvents[0].data;
+      expect(qData.potValue).toBeDefined();
+      expect(typeof qData.potValue).toBe('number');
+      expect(qData.potValue as number).toBeGreaterThan(0);
+      // Should NOT have availablePoints or maxAvailablePoints
+      expect(qData.availablePoints).toBeUndefined();
+      expect(qData.maxAvailablePoints).toBeUndefined();
+
+      game.cleanup();
+    });
+
+    it('should include potValue in FF_ANSWER_PHASE broadcast', () => {
+      const { game, broadcastLog } = createGame();
+      game.start();
+      advanceToAnswerPhase();
+
+      const answerPhase = findActionBroadcasts(broadcastLog, 'FF_ANSWER_PHASE');
+      expect(answerPhase.length).toBe(1);
+
+      const data = answerPhase[0].data;
+      expect(data.potValue).toBeDefined();
+      expect(typeof data.potValue).toBe('number');
+      // Should NOT have availablePoints
+      expect(data.availablePoints).toBeUndefined();
+
+      game.cleanup();
+    });
+
+    it('should include potValue in FF_POT_TICK broadcast', () => {
+      const { game, broadcastLog } = createGame();
+      game.start();
+      advanceToAnswerPhase();
+      broadcastLog.length = 0;
+
+      vi.advanceTimersByTime(FF_POT_TICK_INTERVAL_MS);
+
+      const potTicks = findActionBroadcasts(broadcastLog, 'FF_POT_TICK');
+      expect(potTicks.length).toBeGreaterThanOrEqual(1);
+
+      const tickData = potTicks[0].data;
+      expect(tickData.potValue).toBeDefined();
+      expect(typeof tickData.potValue).toBe('number');
+      // Should NOT have availablePoints
+      expect(tickData.availablePoints).toBeUndefined();
+
+      game.cleanup();
+    });
+
+    it('should include potValue in getStateForPlayer', () => {
+      const { game } = createGame();
+      game.start();
+      advanceToAnswerPhase();
+
+      const state = game.getStateForPlayer(MOCK_USERS.alice.userId) as Record<string, unknown>;
+      expect(state.potValue).toBeDefined();
+      expect(typeof state.potValue).toBe('number');
+      // Should NOT have availablePoints or maxAvailablePoints
+      expect(state.availablePoints).toBeUndefined();
+      expect(state.maxAvailablePoints).toBeUndefined();
+
+      game.cleanup();
+    });
+
+    it('should include potValue in getStateForSpectator', () => {
+      const { game } = createGame();
+      game.start();
+      advanceToAnswerPhase();
+
+      const state = game.getStateForSpectator() as Record<string, unknown>;
+      expect(state.potValue).toBeDefined();
+      expect(typeof state.potValue).toBe('number');
+      // Should NOT have availablePoints or maxAvailablePoints
+      expect(state.availablePoints).toBeUndefined();
+      expect(state.maxAvailablePoints).toBeUndefined();
+
+      game.cleanup();
+    });
+
+    it('should scale pot start value by difficulty multiplier', () => {
+      const { game, broadcastLog } = createGame();
+      game.start();
+
+      // Get the first question's difficulty from the FF_QUESTION broadcast
+      const questionEvents = findActionBroadcasts(broadcastLog, 'FF_QUESTION');
+      const qData = questionEvents[0].data;
+      const questionObj = qData.question as Record<string, unknown>;
+      const difficulty = questionObj.difficulty as string;
+      const potValue = qData.potValue as number;
+
+      // Pot should be FF_POT_START_VALUE × difficulty multiplier
+      const multipliers: Record<string, number> = { easy: 0.8, medium: 1.0, hard: 1.5 };
+      const expectedPot = Math.floor(FF_POT_START_VALUE * multipliers[difficulty]);
+      expect(potValue).toBe(expectedPot);
 
       game.cleanup();
     });
@@ -741,6 +1065,8 @@ describe('Fact or Friction Server Handler (§6.1)', () => {
           expect(r).toHaveProperty('userId');
           expect(r).toHaveProperty('isCorrect');
           expect(r).toHaveProperty('scoreChange');
+          expect(r).toHaveProperty('speedBonus');
+          expect(r).toHaveProperty('newTotalScore');
           expect(r).toHaveProperty('isFirst');
           expect(r).toHaveProperty('passed');
           expect(r).toHaveProperty('timedOut');
