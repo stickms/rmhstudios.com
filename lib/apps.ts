@@ -142,7 +142,7 @@ export const apps: AppInfo[] = [
         iconName: 'Terminal',
         color: 'from-violet-500/20 to-fuchsia-600/20 hover:border-violet-500/50',
         tags: ['AI', 'CLI', 'Developer Tools', 'Beta'],
-        imagePath: '/images/apps/rmhcode.png',
+        imagePath: '/images/games/rmhcode.png',
         authGate: true,
     },
 ];

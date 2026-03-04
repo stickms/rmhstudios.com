@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { Boxes, Plus } from 'lucide-react';
+import { Boxes, Plus, ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { useSession } from '@/components/Providers';
 import { BuildGrid, BuildFilters, BuildSidebar } from '@/components/user-builds';
 import type { BuildCategory, BuildSortOption } from '@/lib/user-builds-types';
@@ -42,6 +43,20 @@ export default function UserBuildsPage() {
   return (
     <div className="min-h-screen bg-site-bg pt-20 pb-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Back Button */}
+        <div className="mb-6">
+          <Link href="/">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-zinc-500 hover:text-white flex items-center gap-1.5 bg-black/50 backdrop-blur-sm border border-zinc-800 text-xs sm:text-sm"
+            >
+              <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">RMH Studios</span>
+            </Button>
+          </Link>
+        </div>
+
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>

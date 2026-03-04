@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Terminal, Copy, Check, Key, ExternalLink, Boxes, Zap, Shield, GitBranch } from 'lucide-react';
+import { Terminal, Copy, Check, Key, ExternalLink, Boxes, Zap, Shield, GitBranch, ArrowLeft } from 'lucide-react';
+import Image from 'next/image';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import TokenGenerator from './components/TokenGenerator';
@@ -44,7 +45,21 @@ export default function RmhCodePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-site-bg">
+    <div className="min-h-screen bg-site-bg relative">
+      {/* Back Button */}
+      <div className="absolute top-4 left-4 z-50">
+        <Link href="/apps">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-zinc-500 hover:text-white flex items-center gap-1.5 bg-black/50 backdrop-blur-sm border border-zinc-800 text-xs sm:text-sm"
+          >
+            <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span className="hidden sm:inline">Back to Apps</span>
+          </Button>
+        </Link>
+      </div>
+
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-fuchsia-600/10" />
@@ -56,10 +71,16 @@ export default function RmhCodePage() {
             animate={{ opacity: 1, y: 0 }}
             className="text-center"
           >
-            {/* Icon */}
-            <div className="flex justify-center mb-6">
-              <div className="p-4 rounded-2xl bg-gradient-to-br from-violet-500/20 to-fuchsia-600/20 border border-violet-500/30">
-                <Terminal className="w-12 h-12 text-violet-400" />
+            {/* Hero Image */}
+            <div className="flex justify-center mb-8">
+              <div className="relative w-64 h-80 md:w-80 md:h-[28rem] rounded-2xl overflow-hidden border border-violet-500/30 shadow-2xl shadow-violet-500/20">
+                <Image
+                  src="/images/games/rmhcode.png"
+                  alt="rmhcode"
+                  fill
+                  className="object-cover"
+                  priority
+                />
               </div>
             </div>
 
