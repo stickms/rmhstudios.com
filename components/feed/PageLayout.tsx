@@ -1,11 +1,9 @@
 'use client';
 
-import { useEffect } from 'react';
-import { usePathname } from 'next/navigation';
-import { motion } from 'framer-motion';
 import { LeftSidebar } from './LeftSidebar';
 import { MobileNav } from './MobileNav';
-import { DEFAULT_WIDTH, WIDE_WIDTH, getLastCenterWidth, setLastCenterWidth } from '@/lib/layout-width';
+import { AnimatedMain } from './AnimatedMain';
+import { DEFAULT_WIDTH, WIDE_WIDTH } from '@/lib/layout-width';
 
 interface PageLayoutProps {
   title: string;
@@ -26,14 +24,6 @@ export function PageLayout({
   headerRight,
   wide,
 }: PageLayoutProps) {
-  const pathname = usePathname();
-  const targetWidth = wide ? WIDE_WIDTH : DEFAULT_WIDTH;
-  const initialWidth = getLastCenterWidth();
-
-  useEffect(() => {
-    setLastCenterWidth(targetWidth);
-  }, [targetWidth]);
-
   return (
     <div className="min-h-screen bg-site-bg flex justify-center overflow-hidden">
       {/* Left Sidebar - hidden on mobile, icon-only on md, full on lg+ */}
@@ -44,12 +34,9 @@ export function PageLayout({
       </div>
 
       {/* Center Column – width animates between pages */}
-      <motion.main
-        key={pathname}
+      <AnimatedMain
         className="w-full min-w-0 border-r border-site-border pb-16 md:pb-0"
-        initial={{ maxWidth: initialWidth }}
-        animate={{ maxWidth: targetWidth }}
-        transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
+        targetWidth={wide ? WIDE_WIDTH : DEFAULT_WIDTH}
       >
         <div className="flex flex-col">
           {/* Sticky Header */}
@@ -68,7 +55,7 @@ export function PageLayout({
           {/* Page Content */}
           {children}
         </div>
-      </motion.main>
+      </AnimatedMain>
 
       {/* Right Sidebar - hidden below lg */}
       {rightSidebar && (
