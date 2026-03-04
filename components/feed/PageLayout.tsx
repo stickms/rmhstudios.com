@@ -1,15 +1,11 @@
 'use client';
 
 import { useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { LeftSidebar } from './LeftSidebar';
 import { MobileNav } from './MobileNav';
-
-const DEFAULT_WIDTH = 648;
-const WIDE_WIDTH = 800;
-
-/** Tracks the previous center-column width so navigations animate smoothly. */
-let lastCenterWidth = DEFAULT_WIDTH;
+import { DEFAULT_WIDTH, WIDE_WIDTH, getLastCenterWidth, setLastCenterWidth } from '@/lib/layout-width';
 
 interface PageLayoutProps {
   title: string;
@@ -30,11 +26,12 @@ export function PageLayout({
   headerRight,
   wide,
 }: PageLayoutProps) {
+  const pathname = usePathname();
   const targetWidth = wide ? WIDE_WIDTH : DEFAULT_WIDTH;
-  const initialWidth = lastCenterWidth;
+  const initialWidth = getLastCenterWidth();
 
   useEffect(() => {
-    lastCenterWidth = targetWidth;
+    setLastCenterWidth(targetWidth);
   }, [targetWidth]);
 
   return (
@@ -48,6 +45,7 @@ export function PageLayout({
 
       {/* Center Column – width animates between pages */}
       <motion.main
+        key={pathname}
         className="w-full min-w-0 border-r border-site-border pb-16 md:pb-0"
         initial={{ maxWidth: initialWidth }}
         animate={{ maxWidth: targetWidth }}

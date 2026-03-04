@@ -78,7 +78,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   }));
 
   return (
-    <div className={`flex flex-col h-full ${paddingClass}`}>
+    <div className={`flex flex-col gap-1 h-full ${paddingClass}`}>
       {/* Logo */}
       <Link href="/" className={`mb-6 flex items-center ${logoAlignClass}`}>
         <span className={`font-(family-name:--site-font-display) font-bold text-xl text-site-text ${logoFullClass}`}>

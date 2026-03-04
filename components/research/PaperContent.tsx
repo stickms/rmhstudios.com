@@ -3,6 +3,35 @@
 import dynamic from 'next/dynamic';
 import type { ResearchArticle } from '@/lib/research';
 
+/* ── Volume 1 ────────────────────────────────────────────────────── */
+const QuantumNashPaper = dynamic(() =>
+  import('./papers/quantum-nash').then((m) => m.QuantumNashPaper)
+);
+const NeuromorphicNPCPaper = dynamic(() =>
+  import('./papers/neuromorphic-npc').then((m) => m.NeuromorphicNPCPaper)
+);
+const EmergentNarrativePaper = dynamic(() =>
+  import('./papers/emergent-narrative').then((m) => m.EmergentNarrativePaper)
+);
+
+/* ── Volume 2 ────────────────────────────────────────────────────── */
+const CoevolutionaryEcosystemsPaper = dynamic(() =>
+  import('./papers/coevolutionary-ecosystems').then(
+    (m) => m.CoevolutionaryEcosystemsPaper
+  )
+);
+const EntropyLevelGenerationPaper = dynamic(() =>
+  import('./papers/entropy-level-generation').then(
+    (m) => m.EntropyLevelGenerationPaper
+  )
+);
+const RiemannianMatchmakingPaper = dynamic(() =>
+  import('./papers/riemannian-matchmaking').then(
+    (m) => m.RiemannianMatchmakingPaper
+  )
+);
+
+/* ── Volume 3 ────────────────────────────────────────────────────── */
 const FlowStatesPaper = dynamic(() =>
   import('./papers/flow-states').then((m) => m.FlowStatesPaper)
 );
@@ -12,6 +41,8 @@ const RLRoguelikePaper = dynamic(() =>
 const AdaptiveDifficultyPaper = dynamic(() =>
   import('./papers/adaptive-difficulty').then((m) => m.AdaptiveDifficultyPaper)
 );
+
+/* ── Volume 4 ────────────────────────────────────────────────────── */
 const ErgodicMarkovPaper = dynamic(() =>
   import('./papers/ergodic-markov').then((m) => m.ErgodicMarkovPaper)
 );
@@ -23,9 +54,19 @@ const StatMechMARLPaper = dynamic(() =>
 );
 
 const paperComponents: Record<string, React.ComponentType> = {
+  /* Vol 1 */
+  'quantum-nash-equilibrium': QuantumNashPaper,
+  'neuromorphic-npc-cognition': NeuromorphicNPCPaper,
+  'emergent-narrative-llm': EmergentNarrativePaper,
+  /* Vol 2 */
+  'coevolutionary-agent-ecosystems': CoevolutionaryEcosystemsPaper,
+  'entropy-optimal-level-generation': EntropyLevelGenerationPaper,
+  'riemannian-skill-matchmaking': RiemannianMatchmakingPaper,
+  /* Vol 3 */
   'neural-correlates-flow-states': FlowStatesPaper,
   'reinforcement-learning-roguelike': RLRoguelikePaper,
   'adaptive-difficulty-player-retention': AdaptiveDifficultyPaper,
+  /* Vol 4 */
   'ergodic-markov-level-design': ErgodicMarkovPaper,
   'persistent-homology-gan-assets': PersistentHomologyPaper,
   'statistical-mechanics-multiagent-rl': StatMechMARLPaper,

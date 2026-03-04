@@ -11,6 +11,8 @@ type GifInfo = {
   needsResolve: boolean;
 };
 
+const IMAGE_EXT_REGEX = /\.(gif|png|jpe?g|webp|avif)(\?[^\s]*)?$/i;
+
 function parseGifUrl(url: string): GifInfo | null {
   try {
     const parsed = new URL(url);
@@ -42,6 +44,11 @@ function parseGifUrl(url: string): GifInfo | null {
     // Tenor share URL → needs oEmbed resolution
     if (host === 'tenor.com' && parsed.pathname.startsWith('/view/')) {
       return { originalUrl: url, directUrl: null, needsResolve: true };
+    }
+
+    // Direct image URL from any domain
+    if (IMAGE_EXT_REGEX.test(parsed.pathname)) {
+      return { originalUrl: url, directUrl: url, needsResolve: false };
     }
 
     return null;
@@ -131,7 +138,7 @@ export function GifEmbed({ url, className = '' }: GifEmbedProps) {
       return (
         <div className={`rounded-xl overflow-hidden border border-site-border p-4 flex items-center justify-center gap-2 ${className}`}>
           <ImageOff className="h-4 w-4 text-site-text-dim" />
-          <span className="text-xs text-site-text-dim">Failed to load GIF</span>
+          <span className="text-xs text-site-text-dim">Failed to load image</span>
         </div>
       );
     }
@@ -147,7 +154,7 @@ export function GifEmbed({ url, className = '' }: GifEmbedProps) {
     >
       <img
         src={src}
-        alt="GIF"
+        alt="Embedded image"
         loading="lazy"
         onError={() => setError(true)}
         className="w-full max-h-72 object-contain"

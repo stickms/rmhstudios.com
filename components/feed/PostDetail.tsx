@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
-import { ArrowLeft, Loader2, MoreHorizontal, Heart, Repeat, Trash2 } from 'lucide-react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import { ArrowLeft, Loader2, MoreHorizontal, Heart, Repeat, Trash2, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { authClient } from '@/lib/auth-client';
 import { RMHarkActions } from './RMHarkActions';
@@ -11,10 +11,12 @@ import { MAX_COMMENT_LENGTH } from '@/lib/rmhark-schema';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { FeedItem } from '@/lib/feed-types';
-import { RMHarkContent } from './RMHarkContent';
+import { RMHarkContent, extractFirstUrl } from './RMHarkContent';
 import { PollDisplay } from './PollDisplay';
 import { GifEmbed } from './GifEmbed';
+import { LinkPreview } from './LinkPreview';
 import { EngagementListModal } from './EngagementListModal';
+import { ShareModal } from './ShareModal';
 
 interface PostDetailProps {
   postId: string;
@@ -33,7 +35,13 @@ export function PostDetail({ postId }: PostDetailProps) {
   const remaining = MAX_COMMENT_LENGTH - commentContent.length;
   const [menuOpen, setMenuOpen] = useState(false);
   const [engagementModal, setEngagementModal] = useState<'likes' | 'reposts' | null>(null);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  const linkPreviewUrl = useMemo(() => {
+    if (!post || post.poll || post.gifUrl || !post.content) return null;
+    return extractFirstUrl(post.content);
+  }, [post]);
 
   const isAuthor = session?.user?.id === post?.user?.id;
 
@@ -48,6 +56,18 @@ export function PostDetail({ postId }: PostDetailProps) {
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, [menuOpen]);
+
+  const handleShare = () => {
+    setMenuOpen(false);
+    const shareUrl = `${window.location.origin}/${post?.user?.id}/post/${postId}`;
+    const userName = post?.user?.name || post?.user?.username || 'someone';
+    const shareText = `Check out what ${userName} RMHark'd on RMH Studios!`;
+    if (navigator.share) {
+      navigator.share({ title: 'RMH', text: shareText, url: shareUrl }).catch(() => {});
+    } else {
+      setShareModalOpen(true);
+    }
+  };
 
   const handleDelete = async () => {
     setMenuOpen(false);
@@ -198,6 +218,13 @@ export function PostDetail({ postId }: PostDetailProps) {
                 <Repeat className="w-4 h-4 text-site-text-dim" />
                 reRMHark'd by
               </button>
+              <button
+                onClick={handleShare}
+                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
+              >
+                <Share2 className="w-5 h-5 text-site-text-dim" />
+                Share
+              </button>
               {isAuthor && (
                 <button
                   onClick={handleDelete}
@@ -248,8 +275,11 @@ export function PostDetail({ postId }: PostDetailProps) {
           </div>
         )}
 
-        {/* GIF */}
+        {/* Image / GIF */}
         {post.gifUrl && <GifEmbed url={post.gifUrl} className="mb-3" />}
+
+        {/* Link preview — only when no poll, gif, or image */}
+        {linkPreviewUrl && <LinkPreview url={linkPreviewUrl} className="mb-3" />}
 
         {/* Quoted original */}
         {post.original && (
@@ -381,6 +411,13 @@ export function PostDetail({ postId }: PostDetailProps) {
           type={engagementModal}
         />
       )}
+
+      <ShareModal
+        open={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+        url={typeof window !== 'undefined' ? `${window.location.origin}/${post?.user?.id}/post/${postId}` : ''}
+        text={`Check out what ${post?.user?.name || post?.user?.username || 'someone'} RMHark'd on RMH Studios!`}
+      />
     </div>
   );
 }

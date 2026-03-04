@@ -1,9 +1,65 @@
+import type { Metadata } from 'next';
 import { LeftSidebar } from '@/components/feed/LeftSidebar';
 import { RightSidebar } from '@/components/feed/RightSidebar';
 import { ProfileColumn } from '@/components/feed/ProfileColumn';
 import { MobileNav } from '@/components/feed/MobileNav';
 import { getAllNewsArticles } from '@/lib/news';
 import { getAllArticles } from '@/lib/research';
+import { prisma } from '@/lib/prisma';
+import { resolveUserDisplay } from '@/lib/user-display';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+
+  const user = await prisma.user.findUnique({
+    where: { id },
+    select: {
+      name: true,
+      username: true,
+      image: true,
+      profile: {
+        select: {
+          displayName: true,
+          customImage: true,
+          bio: true,
+        },
+      },
+    },
+  });
+
+  if (!user) {
+    return { title: 'User Not Found | RMH' };
+  }
+
+  const resolved = resolveUserDisplay(user);
+  const name = resolved.name || 'Unknown';
+  const title = user.username ? `${name} (@${user.username}) | RMH` : `${name} | RMH`;
+  const description = user.profile?.bio || `${name}'s profile on RMH`;
+  const baseUrl = 'https://rmhstudios.com';
+
+  return {
+    title,
+    description,
+    openGraph: {
+      type: 'profile',
+      title,
+      description,
+      siteName: 'RMH',
+      url: `${baseUrl}/profile/${id}`,
+      ...(resolved.image ? { images: [resolved.image] } : {}),
+    },
+    twitter: {
+      card: 'summary',
+      title,
+      description,
+      ...(resolved.image ? { images: [resolved.image] } : {}),
+    },
+  };
+}
 
 export default async function ProfilePage({
   params,

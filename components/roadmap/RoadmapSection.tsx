@@ -312,6 +312,110 @@ const roadmap: YearSection[] = [
       },
     ],
   },
+  {
+    year: "Years 31\u201335",
+    tagline: "Synthesis",
+    milestones: [
+      {
+        title: "Reality composer",
+        body: "A creation suite where players sculpt physics, chemistry, and biology from scratch. Design a universe with different fundamental forces and watch civilizations emerge.",
+      },
+      {
+        title: "Emotional resonance engine",
+        body: "Biometric and neural feedback loops that adapt music, lighting, narrative pacing, and world state to a player\u2019s emotional landscape in real time.",
+      },
+      {
+        title: "Living architecture",
+        body: "Partner with urban designers to deploy RMH engine tech in real cities\u2014buildings, parks, and public spaces that respond to inhabitants like game worlds respond to players.",
+      },
+      {
+        title: "Collective memory vaults",
+        body: "Permanent archives of every player story, community event, and emergent moment. A living history of millions of shared experiences, searchable and revisitable.",
+      },
+      {
+        title: "Deep-space relay network",
+        body: "Purpose-built infrastructure for entertainment beyond Earth orbit. Asynchronous multiplayer and narrative handoffs across light-minutes of delay.",
+      },
+    ],
+  },
+  {
+    year: "Years 36\u201340",
+    tagline: "Civilization engine",
+    milestones: [
+      {
+        title: "Simulated societies",
+        body: "Full-fidelity civilization simulations used by researchers, educators, and governments. Model policy, culture, and climate inside RMH worlds before deploying in reality.",
+      },
+      {
+        title: "Universal translator",
+        body: "Real-time language synthesis that goes beyond translation\u2014capturing idiom, humor, and cultural nuance so every player communicates as a native speaker in any tongue.",
+      },
+      {
+        title: "Biological interfaces",
+        body: "Non-invasive bioelectric peripherals that let players interact through gesture, gaze, breath, and micro-expression. Controllers become optional.",
+      },
+      {
+        title: "Time-layered worlds",
+        body: "Worlds where past, present, and future coexist. Walk through a city and peel back centuries of history or fast-forward to see the consequences of today\u2019s choices.",
+      },
+      {
+        title: "RMH Endowment",
+        body: "A perpetual endowment funding independent creators worldwide. Grants, residencies, and studio access for artists who would never otherwise get a chance.",
+      },
+    ],
+  },
+  {
+    year: "Years 41\u201345",
+    tagline: "Post-boundary",
+    milestones: [
+      {
+        title: "Sentient ecosystems",
+        body: "Game worlds with genuinely emergent intelligence\u2014flora, fauna, weather, and geology that learn, adapt, and surprise even their creators.",
+      },
+      {
+        title: "Dream synthesis",
+        body: "Capture and remix dream imagery into playable experiences. Personal subconscious landscapes become shareable worlds.",
+      },
+      {
+        title: "Cross-species play",
+        body: "Interfaces designed for non-human participants. Enrichment games for animals, collaborative puzzles between humans and AI entities, interspecies creative expression.",
+      },
+      {
+        title: "Quantum narrative",
+        body: "Stories that exist in superposition\u2014every branching path is real until observed. Players collapse possibilities through attention and intention.",
+      },
+      {
+        title: "Heritage worlds",
+        body: "Partner with indigenous communities, historians, and cultural stewards to preserve endangered languages, traditions, and oral histories as living, playable worlds.",
+      },
+    ],
+  },
+  {
+    year: "Years 46\u201350",
+    tagline: "Eternal",
+    milestones: [
+      {
+        title: "Substrate independence",
+        body: "RMH experiences that run on any computational medium\u2014silicon, photonic, biological, quantum. The worlds persist regardless of what hardware the future invents.",
+      },
+      {
+        title: "Empathy engines",
+        body: "Step into another consciousness. Experience a day as someone from a different culture, century, or species\u2014not as a character, but through their perceptual reality.",
+      },
+      {
+        title: "Cosmic playground",
+        body: "Entertainment infrastructure spanning the inner solar system. Shared experiences connecting Earth, lunar bases, orbital stations, and Martian settlements into one living community.",
+      },
+      {
+        title: "Open-source everything",
+        body: "Release the complete RMH technology stack\u2014engine, tools, AI systems, network infrastructure\u2014as humanity\u2019s commons. The studio\u2019s greatest creation is what others build next.",
+      },
+      {
+        title: "The promise",
+        body: "Fifty years in, still the same fire: build worlds worth living in. The tools changed, the scale changed, the species playing changed\u2014but the reason never did. Someone, somewhere, feels less alone.",
+      },
+    ],
+  },
 ];
 
 function MilestoneCard({

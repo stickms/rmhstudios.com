@@ -2,16 +2,18 @@
 
 import type { FeedItem } from '@/lib/feed-types';
 import { RMHarkActions } from './RMHarkActions';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Repeat2, MoreHorizontal, Heart, Repeat, Trash2 } from 'lucide-react';
+import { Repeat2, MoreHorizontal, Heart, Repeat, Trash2, Share2 } from 'lucide-react';
 import Link from 'next/link';
-import { RMHarkContent } from './RMHarkContent';
+import { RMHarkContent, extractFirstUrl } from './RMHarkContent';
 import { PollDisplay } from './PollDisplay';
 import { GifEmbed } from './GifEmbed';
+import { LinkPreview } from './LinkPreview';
 import { useFeedStore } from '@/stores/feedStore';
 import { authClient } from '@/lib/auth-client';
 import { EngagementListModal } from './EngagementListModal';
+import { ShareModal } from './ShareModal';
 
 interface RMHarkCardProps {
   item: FeedItem;
@@ -57,7 +59,13 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
   const isAuthor = session?.user?.id === item.user?.id;
   const [menuOpen, setMenuOpen] = useState(false);
   const [engagementModal, setEngagementModal] = useState<'likes' | 'reposts' | null>(null);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  const linkPreviewUrl = useMemo(() => {
+    if (item.poll || item.gifUrl || !item.content) return null;
+    return extractFirstUrl(item.content);
+  }, [item.poll, item.gifUrl, item.content]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -70,6 +78,18 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, [menuOpen]);
+
+  const handleShare = () => {
+    setMenuOpen(false);
+    const shareUrl = `${window.location.origin}/${item.user?.id}/post/${actualId}`;
+    const userName = item.user?.name || item.user?.username || 'someone';
+    const shareText = `Check out what ${userName} RMHark'd on RMH Studios!`;
+    if (navigator.share) {
+      navigator.share({ title: 'RMH', text: shareText, url: shareUrl }).catch(() => {});
+    } else {
+      setShareModalOpen(true);
+    }
+  };
 
   const handleDelete = async () => {
     setMenuOpen(false);
@@ -125,6 +145,13 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
             >
               <Repeat className="w-4 h-4 text-site-text-dim" />
               reRMHark'd by
+            </button>
+            <button
+              onClick={handleShare}
+              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
+            >
+              <Share2 className="w-4 h-4 text-site-text-dim" />
+              Share
             </button>
             {isAuthor && (
               <button
@@ -193,8 +220,11 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
             />
           )}
 
-          {/* GIF */}
+          {/* Image / GIF */}
           {item.gifUrl && <GifEmbed url={item.gifUrl} className="mt-3" />}
+
+          {/* Link preview — only when no poll, gif, or image */}
+          {linkPreviewUrl && <LinkPreview url={linkPreviewUrl} className="mt-3" />}
 
           {/* Quoted original (if repost) */}
           {item.original && (
@@ -234,6 +264,13 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
           type={engagementModal}
         />
       )}
+
+      <ShareModal
+        open={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+        url={typeof window !== 'undefined' ? `${window.location.origin}/${item.user?.id}/post/${actualId}` : ''}
+        text={`Check out what ${item.user?.name || item.user?.username || 'someone'} RMHark'd on RMH Studios!`}
+      />
     </div>
   );
 }

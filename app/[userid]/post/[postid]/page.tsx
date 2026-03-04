@@ -1,9 +1,73 @@
+import type { Metadata } from 'next';
 import { LeftSidebar } from '@/components/feed/LeftSidebar';
 import { RightSidebar } from '@/components/feed/RightSidebar';
 import { PostDetail } from '@/components/feed/PostDetail';
 import { MobileNav } from '@/components/feed/MobileNav';
 import { getAllNewsArticles } from '@/lib/news';
 import { getAllArticles } from '@/lib/research';
+import { prisma } from '@/lib/prisma';
+import { userDisplaySelect, resolveUser } from '@/lib/user-display';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ userid: string; postid: string }>;
+}): Promise<Metadata> {
+  const { postid } = await params;
+
+  const rmhark = await prisma.rMHark.findUnique({
+    where: { id: postid },
+    select: {
+      content: true,
+      gifUrl: true,
+      user: { select: userDisplaySelect },
+      poll: { select: { question: true } },
+    },
+  });
+
+  if (!rmhark) {
+    return { title: 'Post Not Found | RMH' };
+  }
+
+  const user = resolveUser(rmhark.user as any);
+  const userName = user.name || 'Someone';
+
+  let description: string;
+  if (rmhark.content) {
+    description = rmhark.content;
+  } else if (rmhark.poll) {
+    description = `Poll: ${rmhark.poll.question}`;
+  } else if (rmhark.gifUrl) {
+    description = 'Shared a GIF';
+  } else {
+    description = 'Post on RMH';
+  }
+
+  const title = rmhark.content
+    ? `${userName} on RMH: "${rmhark.content.length > 80 ? rmhark.content.slice(0, 80) + '...' : rmhark.content}"`
+    : `${userName} on RMH`;
+
+  const baseUrl = 'https://rmhstudios.com';
+
+  return {
+    title,
+    description,
+    openGraph: {
+      type: 'article',
+      title,
+      description,
+      siteName: 'RMH',
+      url: `${baseUrl}/${user.id}/post/${postid}`,
+      ...(user.image ? { images: [user.image] } : {}),
+    },
+    twitter: {
+      card: 'summary',
+      title,
+      description,
+      ...(user.image ? { images: [user.image] } : {}),
+    },
+  };
+}
 
 export default async function PostPage({
   params,

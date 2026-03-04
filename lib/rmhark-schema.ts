@@ -7,23 +7,24 @@ export const MAX_POLL_OPTION_LENGTH = 80;
 export const MIN_POLL_OPTIONS = 2;
 export const MAX_POLL_OPTIONS = 4;
 
+const IMAGE_EXT_REGEX = /\.(gif|png|jpe?g|webp|avif)(\?[^\s]*)?$/i;
+
 const gifUrlSchema = z
   .string()
   .url("Must be a valid URL")
   .refine(
     (url) => {
       try {
-        const host = new URL(url).hostname;
-        return (
-          host.endsWith("tenor.com") ||
-          host.endsWith("giphy.com") ||
-          host.endsWith("giphy.gif")
-        );
+        const parsed = new URL(url);
+        const host = parsed.hostname;
+        if (host.endsWith("tenor.com") || host.endsWith("giphy.com")) return true;
+        if (IMAGE_EXT_REGEX.test(parsed.pathname)) return true;
+        return false;
       } catch {
         return false;
       }
     },
-    { message: "Must be a Tenor or Giphy link" }
+    { message: "Must be a Tenor/Giphy link or a direct image URL" }
   );
 
 const pollSchema = z.object({
@@ -55,7 +56,7 @@ export const createRMHarkSchema = z
   })
   .refine(
     (data) => data.content.trim().length > 0 || data.poll || data.gifUrl,
-    { message: "Post must have text, a poll, or a GIF" }
+    { message: "Post must have text, a poll, or an image/GIF" }
   );
 
 export const createCommentSchema = z.object({

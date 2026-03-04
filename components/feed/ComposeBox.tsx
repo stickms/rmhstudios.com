@@ -23,10 +23,14 @@ interface PollDraft {
   multiSelect: boolean;
 }
 
-function isValidGifUrl(url: string): boolean {
+const IMAGE_EXT_REGEX = /\.(gif|png|jpe?g|webp|avif)(\?[^\s]*)?$/i;
+
+function isValidMediaUrl(url: string): boolean {
   try {
-    const host = new URL(url).hostname;
-    return host.endsWith('tenor.com') || host.endsWith('giphy.com');
+    const parsed = new URL(url);
+    if (parsed.hostname.endsWith('tenor.com') || parsed.hostname.endsWith('giphy.com')) return true;
+    if (IMAGE_EXT_REGEX.test(parsed.pathname)) return true;
+    return false;
   } catch {
     return false;
   }
@@ -63,7 +67,7 @@ export function ComposeBox() {
 
   const hasPoll = attachment === 'poll' && poll.question.trim() &&
     poll.options.filter((o) => o.trim()).length >= MIN_POLL_OPTIONS;
-  const hasGif = attachment === 'gif' && gifUrl.trim() && isValidGifUrl(gifUrl.trim());
+  const hasGif = attachment === 'gif' && gifUrl.trim() && isValidMediaUrl(gifUrl.trim());
   const hasContent = content.trim().length > 0;
   const canSubmit = (hasContent || hasPoll || hasGif) && remaining >= 0 && !submitting;
 
@@ -232,7 +236,7 @@ export function ComposeBox() {
           {attachment === 'gif' && (
             <div className="mt-2 border border-site-border rounded-xl p-3 bg-site-surface/20">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-site-text-dim uppercase tracking-wide">GIF</span>
+                <span className="text-xs font-semibold text-site-text-dim uppercase tracking-wide">Image</span>
                 <button
                   onClick={() => {
                     setAttachment(null);
@@ -248,16 +252,16 @@ export function ComposeBox() {
                 type="url"
                 value={gifUrl}
                 onChange={(e) => setGifUrl(e.target.value)}
-                placeholder="Paste a Tenor or Giphy link..."
+                placeholder="Paste an image URL or Tenor/Giphy link..."
                 className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-lg p-2 border border-site-border outline-none focus:border-site-accent transition-colors"
               />
 
-              {gifUrl.trim() && isValidGifUrl(gifUrl.trim()) && (
+              {gifUrl.trim() && isValidMediaUrl(gifUrl.trim()) && (
                 <GifEmbed url={gifUrl.trim()} className="mt-2" />
               )}
 
-              {gifUrl.trim() && !isValidGifUrl(gifUrl.trim()) && (
-                <p className="text-xs text-site-danger mt-1">Must be a Tenor or Giphy link</p>
+              {gifUrl.trim() && !isValidMediaUrl(gifUrl.trim()) && (
+                <p className="text-xs text-site-danger mt-1">Must be a direct image URL or Tenor/Giphy link</p>
               )}
             </div>
           )}
@@ -308,7 +312,7 @@ export function ComposeBox() {
                       className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
                     >
                       <Image className="w-4 h-4 text-site-text-dim" />
-                      Add GIF
+                      Add Image
                     </button>
                   </div>
                 )}
