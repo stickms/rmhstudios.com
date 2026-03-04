@@ -7,6 +7,9 @@ export const SIDEBAR_WIDTH = 192;
 export const CANVAS_WIDTH = PLAYFIELD_WIDTH + SIDEBAR_WIDTH;
 export const CANVAS_HEIGHT = PLAYFIELD_HEIGHT;
 
+/** CSS scale factor applied to the game container for display size. */
+export const DISPLAY_SCALE = 1.5;
+
 // --- Game Loop ---
 export const TARGET_FPS = 60;
 export const FRAME_TIME = 1000 / TARGET_FPS;

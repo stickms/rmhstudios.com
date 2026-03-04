@@ -6,7 +6,8 @@
  * changes to the Zustand store.
  */
 
-import { Application, Graphics, Container } from 'pixi.js';
+import { Application, Graphics, Container, Sprite, Texture } from 'pixi.js';
+import { generatePlayerTextures, type PlayerTextures } from './sprites';
 import type {
   Bullet,
   Item,
@@ -52,6 +53,8 @@ import { InputManager } from './input';
 import { ObjectPool } from './pool';
 import { circleCircle } from './collision';
 import { spawnRadial, spawnAimed, applyDifficultyToPattern } from './patterns';
+import { StageManager } from './stage-manager';
+import { STAGES } from './data/stages';
 
 // ---------------------------------------------------------------------------
 // Internal helper types
@@ -102,6 +105,33 @@ interface PoolItem {
   autoCollect: boolean;
 }
 
+/** Live enemy entity stored in the pool. */
+interface PoolEnemy {
+  active: boolean;
+  x: number;
+  y: number;
+  hp: number;
+  maxHp: number;
+  color: number;
+  radius: number;
+  /** Movement path waypoints. */
+  path: { x: number; y: number }[];
+  /** Current waypoint index being moved toward. */
+  pathIndex: number;
+  /** Speed along path (pixels per frame). */
+  pathSpeed: number;
+  /** Bullet patterns this enemy fires. */
+  patterns: BulletPatternDef[];
+  /** Timer per pattern for firing intervals. */
+  patternTimers: number[];
+  /** Total frames this enemy has been alive. */
+  age: number;
+  /** Item drops on death. */
+  dropTable: { type: Item['type']; chance: number; count: number }[];
+  /** Is this a boss entity? */
+  isBoss: boolean;
+}
+
 // ---------------------------------------------------------------------------
 // Constants local to the engine
 // ---------------------------------------------------------------------------
@@ -113,8 +143,25 @@ const PLAYER_BULLET_COLOR = 0xffffff;
 const ENEMY_BULLET_DEFAULT_RADIUS = 4;
 const ITEM_FALL_SPEED = 1.5;
 const ITEM_ATTRACT_SPEED = 6;
+const ENEMY_POOL_SIZE_INTERNAL = 64;
+const ENEMY_PATH_SPEED = 1.2;
+const ENEMY_DEFAULT_RADIUS = 12;
+const PLAYER_BULLET_DAMAGE = 10;
 const SIDEBAR_BG_COLOR = 0x1a1a2e;
 const PLAYFIELD_BG_COLOR = 0x0a0a14;
+
+// Character sprite image paths (external images override code-generated sprites)
+const CHARACTER_SPRITE_PATHS: Partial<Record<Character, string>> = {
+  rei: '/dream-rift/sprites/rei.png',
+};
+
+// Stage background image paths (indexed by stage number, 1-based)
+const STAGE_BACKGROUND_PATHS: Record<number, string> = {
+  1: '/dream-rift/backgrounds/stage1.jpg',
+};
+
+// Target display size for character sprites (pixels on screen)
+const PLAYER_SPRITE_SIZE = 48;
 
 // Bullet color palette by sprite name fallback
 const BULLET_COLOR_MAP: Record<string, number> = {
@@ -126,6 +173,25 @@ const BULLET_COLOR_MAP: Record<string, number> = {
   'bullet-white': 0xffffff,
   'bullet-orange': 0xff8833,
   'bullet-cyan': 0x33ffff,
+};
+
+const ENEMY_COLOR_MAP: Record<string, number> = {
+  fairy_basic: 0x88aaff,
+  fairy_radial: 0xff8888,
+  fairy_spiral: 0xaa88ff,
+  fairy_wall: 0xffff66,
+  ink_spirit: 0x9966cc,
+  page_phantom: 0xccccff,
+  gear_drone: 0xff8833,
+  spring_sentinel: 0xffcc33,
+  mirror_wisp: 0x33ffff,
+  reflection_shard: 0xeeeeff,
+  flame_dancer: 0xff4400,
+  carnival_puppet: 0xffaa33,
+  void_weaver: 0xaa33ff,
+  rift_fragment: 0x33ffcc,
+  aurora_spark: 0x66ddff,
+  boss: 0xff3366,
 };
 
 const ITEM_COLOR_MAP: Record<Item['type'], number> = {
@@ -150,6 +216,7 @@ interface StoreApi {
     screen: string;
     character: Character;
     difficulty: Difficulty;
+    stage: number;
   };
   setState(partial: Record<string, unknown>): void;
 }
@@ -167,6 +234,20 @@ export class DreamRiftEngine {
   private playerGfx: Graphics | null = null;
   private itemGfx: Graphics | null = null;
   private hitboxGfx: Graphics | null = null;
+  private playerSprite: Sprite | null = null;
+  private playerTextures: PlayerTextures | null = null;
+  private enemyGfx: Graphics | null = null;
+  private bgSprite1: Sprite | null = null;
+  private bgSprite2: Sprite | null = null;
+  private bgScrollY = 0;
+  private bgScrollSpeed = 0.5;
+  private bgHeight = 0;
+  private animFrame = 0;
+  private animTimer = 0;
+
+  // -- Enemies & stage --
+  private enemies!: ObjectPool<PoolEnemy>;
+  private stageManager: StageManager | null = null;
 
   // -- Game state --
   private player: EnginePlayer = this.createDefaultPlayer('rei');
@@ -208,17 +289,22 @@ export class DreamRiftEngine {
       height: CANVAS_HEIGHT,
       backgroundColor: PLAYFIELD_BG_COLOR,
       antialias: false,
-      resolution: window.devicePixelRatio || 1,
-      autoDensity: true,
+      resolution: 1,
+      autoDensity: false,
       preference: 'webgl',
       autoStart: false,
     });
     this.app = app;
 
     // --- Containers ---
-    // Playfield (left side)
+    // Playfield (left side) — clipped to playfield bounds
     const playfield = new Container();
     playfield.label = 'playfield';
+    const playfieldMask = new Graphics();
+    playfieldMask.rect(0, 0, PLAYFIELD_WIDTH, PLAYFIELD_HEIGHT);
+    playfieldMask.fill(0xffffff);
+    playfield.addChild(playfieldMask);
+    playfield.mask = playfieldMask;
     app.stage.addChild(playfield);
     this.playfieldContainer = playfield;
 
@@ -235,7 +321,30 @@ export class DreamRiftEngine {
     sidebarBg.fill(SIDEBAR_BG_COLOR);
     sidebar.addChild(sidebarBg);
 
+    // Background sprites (two copies for seamless vertical scroll)
+    const bg1 = new Sprite();
+    bg1.label = 'bg1';
+    bg1.visible = false;
+    playfield.addChild(bg1);
+    this.bgSprite1 = bg1;
+
+    const bg2 = new Sprite();
+    bg2.label = 'bg2';
+    bg2.visible = false;
+    playfield.addChild(bg2);
+    this.bgSprite2 = bg2;
+
+    // Dark overlay to keep gameplay elements readable over the background
+    const bgOverlay = new Graphics();
+    bgOverlay.rect(0, 0, PLAYFIELD_WIDTH, PLAYFIELD_HEIGHT);
+    bgOverlay.fill({ color: 0x000000, alpha: 0.3 });
+    playfield.addChild(bgOverlay);
+
     // Graphics layers (back to front)
+    this.enemyGfx = new Graphics();
+    this.enemyGfx.label = 'enemies';
+    playfield.addChild(this.enemyGfx);
+
     this.bulletGfx = new Graphics();
     this.bulletGfx.label = 'bullets';
     playfield.addChild(this.bulletGfx);
@@ -251,6 +360,14 @@ export class DreamRiftEngine {
     this.hitboxGfx = new Graphics();
     this.hitboxGfx.label = 'hitbox';
     playfield.addChild(this.hitboxGfx);
+
+    // --- Player sprite (added between player graphics and hitbox) ---
+    const sprite = new Sprite();
+    sprite.label = 'playerSprite';
+    sprite.anchor.set(0.5, 0.5);
+    sprite.visible = false;
+    playfield.addChildAt(sprite, playfield.children.indexOf(this.hitboxGfx));
+    this.playerSprite = sprite;
 
     // --- Pools ---
     this.playerBullets = new ObjectPool<PoolBullet>(BULLET_POOL_SIZE, () => ({
@@ -288,6 +405,24 @@ export class DreamRiftEngine {
       autoCollect: false,
     }));
 
+    this.enemies = new ObjectPool<PoolEnemy>(ENEMY_POOL_SIZE_INTERNAL, () => ({
+      active: false,
+      x: 0,
+      y: 0,
+      hp: 30,
+      maxHp: 30,
+      color: 0x88aaff,
+      radius: ENEMY_DEFAULT_RADIUS,
+      path: [],
+      pathIndex: 0,
+      pathSpeed: ENEMY_PATH_SPEED,
+      patterns: [],
+      patternTimers: [],
+      age: 0,
+      dropTable: [],
+      isBoss: false,
+    }));
+
     // --- Input ---
     this.unbindInput = this.input.bind(window);
 
@@ -311,11 +446,39 @@ export class DreamRiftEngine {
     this.difficulty = difficulty;
     this.frameCount = 0;
     this.accumulator = 0;
+    this.animFrame = 0;
+    this.animTimer = 0;
+
+    // Generate sprite textures for the selected character (code-generated fallback)
+    this.playerTextures = generatePlayerTextures(character);
+    if (this.playerSprite && this.playerTextures) {
+      this.playerSprite.texture = this.playerTextures.idle[0];
+      this.playerSprite.visible = true;
+    }
+
+    // Load external sprite image if one exists for this character
+    this.loadCharacterSprite(character);
+
+    // Load stage background
+    const stageNum = state?.stage ?? 1;
+    this.loadStageBackground(stageNum);
+
     this.lastTime = performance.now();
 
     this.playerBullets.releaseAll();
     this.enemyBullets.releaseAll();
     this.items.releaseAll();
+    this.enemies.releaseAll();
+
+    // Initialise stage manager for the current stage
+    const stageDef = STAGES[stageNum];
+    if (stageDef) {
+      this.stageManager = new StageManager(stageDef);
+      this.stageManager.setStore({
+        nextStage: () => this.store?.setState({ screen: 'stageResult' }),
+      });
+      this.stageManager.startPhase('intro');
+    }
 
     this.running = true;
     this.rafId = requestAnimationFrame(this.loop);
@@ -345,6 +508,12 @@ export class DreamRiftEngine {
     this.playerGfx = null;
     this.itemGfx = null;
     this.hitboxGfx = null;
+    this.playerSprite = null;
+    this.playerTextures = null;
+    this.bgSprite1 = null;
+    this.bgSprite2 = null;
+    this.stageManager = null;
+    this.enemyGfx = null;
   }
 
   // --------------------------------------------------------------------------
@@ -409,6 +578,38 @@ export class DreamRiftEngine {
   }
 
   /**
+   * Spawn a live enemy entity. Called by the StageManager when a wave
+   * enemy's delay timer fires.
+   */
+  spawnEnemyEntity(def: {
+    type: string;
+    x: number;
+    y: number;
+    hp: number;
+    patterns: BulletPatternDef[];
+    path: { x: number; y: number }[];
+    dropTable: { type: Item['type']; chance: number; count: number }[];
+  }): void {
+    const e = this.enemies.acquire();
+    if (!e) return; // pool exhausted
+
+    e.x = def.path.length > 0 ? def.path[0].x : def.x;
+    e.y = def.path.length > 0 ? def.path[0].y : def.y;
+    e.hp = def.hp;
+    e.maxHp = def.hp;
+    e.color = ENEMY_COLOR_MAP[def.type] ?? 0x88aaff;
+    e.radius = ENEMY_DEFAULT_RADIUS;
+    e.path = def.path;
+    e.pathIndex = def.path.length > 0 ? 1 : 0;
+    e.pathSpeed = ENEMY_PATH_SPEED;
+    e.patterns = def.patterns;
+    e.patternTimers = def.patterns.map(() => 0);
+    e.age = 0;
+    e.dropTable = def.dropTable;
+    e.isBoss = false;
+  }
+
+  /**
    * Attach an external Zustand-like store so the engine can push state
    * updates. This is optional — the engine runs without it.
    */
@@ -417,11 +618,100 @@ export class DreamRiftEngine {
   }
 
   // --------------------------------------------------------------------------
+  // Character sprite loading
+  // --------------------------------------------------------------------------
+
+  /**
+   * Load an external sprite image for the given character. When loaded, it
+   * overrides the code-generated pixel art textures for all movement states.
+   */
+  private loadCharacterSprite(character: Character): void {
+    const spritePath = CHARACTER_SPRITE_PATHS[character];
+    if (!spritePath) return;
+
+    // Load via an HTMLImageElement for maximum compatibility
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      if (!this.playerSprite || !this.playerTextures) return;
+
+      const texture = Texture.from(img);
+
+      // Scale the sprite to the target display size, preserving aspect ratio
+      const scale = PLAYER_SPRITE_SIZE / Math.max(img.width, img.height);
+      const scaledW = img.width * scale;
+      const scaledH = img.height * scale;
+
+      // Override all texture slots with the loaded image
+      this.playerTextures!.idle = [texture, texture, texture, texture];
+      this.playerTextures!.left = texture;
+      this.playerTextures!.right = texture;
+      this.playerTextures!.width = scaledW;
+      this.playerTextures!.height = scaledH;
+
+      // Apply to the current sprite
+      this.playerSprite!.texture = texture;
+      this.playerSprite!.width = scaledW;
+      this.playerSprite!.height = scaledH;
+    };
+    img.src = spritePath;
+  }
+
+  // --------------------------------------------------------------------------
+  // Background
+  // --------------------------------------------------------------------------
+
+  /**
+   * Load a background image for the given stage. Uses two stacked sprites
+   * for seamless vertical scrolling. Falls back to no background if the
+   * stage has no image configured.
+   */
+  private loadStageBackground(stageNum: number): void {
+    this.bgScrollY = 0;
+
+    const bgPath = STAGE_BACKGROUND_PATHS[stageNum];
+    if (!bgPath) {
+      if (this.bgSprite1) this.bgSprite1.visible = false;
+      if (this.bgSprite2) this.bgSprite2.visible = false;
+      return;
+    }
+
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      if (!this.bgSprite1 || !this.bgSprite2) return;
+
+      const texture = Texture.from(img);
+
+      // Scale texture to fill playfield width, preserving aspect ratio
+      const scale = PLAYFIELD_WIDTH / img.width;
+      const scaledHeight = img.height * scale;
+
+      this.bgSprite1.texture = texture;
+      this.bgSprite1.width = PLAYFIELD_WIDTH;
+      this.bgSprite1.height = scaledHeight;
+      this.bgSprite1.visible = true;
+
+      this.bgSprite2.texture = texture;
+      this.bgSprite2.width = PLAYFIELD_WIDTH;
+      this.bgSprite2.height = scaledHeight;
+      this.bgSprite2.visible = true;
+
+      this.bgHeight = scaledHeight;
+
+      // Position: sprite2 sits directly above sprite1
+      this.bgSprite1.y = 0;
+      this.bgSprite2.y = -scaledHeight;
+    };
+    img.src = bgPath;
+  }
+
+  // --------------------------------------------------------------------------
   // Main loop
   // --------------------------------------------------------------------------
 
   private loop = (now: number): void => {
-    if (!this.running) return;
+    if (!this.running || !this.app) return;
 
     const delta = now - this.lastTime;
     this.lastTime = now;
@@ -449,8 +739,11 @@ export class DreamRiftEngine {
     this.updatePlayerBullets();
     this.updateEnemyBullets();
     this.updateItems();
+    this.stageManager?.update(this);
+    this.updateEnemies();
     this.checkCollisions();
     this.tickCooldowns();
+    this.updateBackground();
 
     this.input.update();
     this.frameCount++;
@@ -700,6 +993,52 @@ export class DreamRiftEngine {
   }
 
   // --------------------------------------------------------------------------
+  // Enemy update
+  // --------------------------------------------------------------------------
+
+  private updateEnemies(): void {
+    this.enemies.forEachActive((e) => {
+      e.age++;
+
+      // --- Path movement ---
+      if (e.path.length > 0 && e.pathIndex < e.path.length) {
+        const target = e.path[e.pathIndex];
+        const dx = target.x - e.x;
+        const dy = target.y - e.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist < e.pathSpeed) {
+          e.x = target.x;
+          e.y = target.y;
+          e.pathIndex++;
+        } else {
+          e.x += (dx / dist) * e.pathSpeed;
+          e.y += (dy / dist) * e.pathSpeed;
+        }
+      }
+
+      // --- Pattern firing ---
+      for (let i = 0; i < e.patterns.length; i++) {
+        e.patternTimers[i]++;
+        const pattern = e.patterns[i];
+        if (e.patternTimers[i] >= pattern.interval) {
+          e.patternTimers[i] = 0;
+          this.spawnEnemyPattern(e.x, e.y, pattern, this.player.x, this.player.y);
+        }
+      }
+
+      // --- Off-screen cull ---
+      if (
+        e.y > PLAYFIELD_HEIGHT + 48 ||
+        e.x < -48 ||
+        e.x > PLAYFIELD_WIDTH + 48
+      ) {
+        this.enemies.release(e);
+      }
+    });
+  }
+
+  // --------------------------------------------------------------------------
   // Collision detection
   // --------------------------------------------------------------------------
 
@@ -726,6 +1065,33 @@ export class DreamRiftEngine {
         }
       }
     });
+
+    // --- Player bullets vs enemies ---
+    this.playerBullets.forEachActive((b) => {
+      this.enemies.forEachActive((e) => {
+        if (!b.active) return; // already consumed by a prior enemy hit
+        if (circleCircle(b.x, b.y, b.radius, e.x, e.y, e.radius)) {
+          this.playerBullets.release(b);
+          e.hp -= PLAYER_BULLET_DAMAGE;
+          if (e.hp <= 0) {
+            this.onEnemyDeath(e);
+            this.enemies.release(e);
+          }
+        }
+      });
+    });
+
+    // --- Player bullets vs boss ---
+    const boss = this.stageManager?.getActiveBoss();
+    if (boss) {
+      const bossRadius = 24;
+      this.playerBullets.forEachActive((b) => {
+        if (circleCircle(b.x, b.y, b.radius, boss.position.x, boss.position.y, bossRadius)) {
+          this.playerBullets.release(b);
+          this.stageManager?.damageBoss(PLAYER_BULLET_DAMAGE);
+        }
+      });
+    }
 
     // --- Items vs player ---
     this.items.forEachActive((item) => {
@@ -788,6 +1154,34 @@ export class DreamRiftEngine {
   }
 
   // --------------------------------------------------------------------------
+  // Enemy death
+  // --------------------------------------------------------------------------
+
+  private onEnemyDeath(e: PoolEnemy): void {
+    // Score for killing an enemy
+    this.player.score += 1000;
+    if (this.player.score > this.player.hiScore) {
+      this.player.hiScore = this.player.score;
+    }
+
+    // Spawn item drops from drop table
+    for (const drop of e.dropTable) {
+      if (Math.random() > drop.chance) continue;
+      for (let i = 0; i < drop.count; i++) {
+        const item = this.items.acquire();
+        if (!item) break;
+        item.x = e.x + (Math.random() - 0.5) * 24;
+        item.y = e.y + (Math.random() - 0.5) * 16;
+        item.vx = (Math.random() - 0.5) * 1.5;
+        item.vy = -1.5 - Math.random();
+        item.type = drop.type;
+        item.value = 1;
+        item.autoCollect = false;
+      }
+    }
+  }
+
+  // --------------------------------------------------------------------------
   // Item collection
   // --------------------------------------------------------------------------
 
@@ -830,17 +1224,41 @@ export class DreamRiftEngine {
     if (p.shootTimer > 0) p.shootTimer--;
   }
 
+  /** Scroll the background downward, wrapping seamlessly. */
+  private updateBackground(): void {
+    if (!this.bgSprite1 || !this.bgSprite2 || !this.bgSprite1.visible) return;
+    if (this.bgHeight <= 0) return;
+
+    this.bgScrollY += this.bgScrollSpeed;
+
+    // Wrap when the scroll exceeds the image height
+    if (this.bgScrollY >= this.bgHeight) {
+      this.bgScrollY -= this.bgHeight;
+    }
+
+    this.bgSprite1.y = this.bgScrollY;
+    this.bgSprite2.y = this.bgScrollY - this.bgHeight;
+  }
+
   // --------------------------------------------------------------------------
   // Rendering
   // --------------------------------------------------------------------------
 
   private render(): void {
+    if (!this.app) return;
+
+    this.renderEnemies();
     this.renderBullets();
     this.renderItems();
     this.renderPlayer();
 
     // With autoStart: false, we must drive rendering ourselves
-    this.app?.render();
+    try {
+      this.app.render();
+    } catch {
+      // WebGL context lost (e.g. React strict mode remount) — stop gracefully
+      this.stop();
+    }
   }
 
   private renderBullets(): void {
@@ -873,36 +1291,124 @@ export class DreamRiftEngine {
     });
   }
 
-  private renderPlayer(): void {
-    const pgfx = this.playerGfx;
-    const hgfx = this.hitboxGfx;
-    if (!pgfx || !hgfx) return;
+  private renderEnemies(): void {
+    const gfx = this.enemyGfx;
+    if (!gfx) return;
+    gfx.clear();
 
-    pgfx.clear();
+    // Regular enemies
+    this.enemies.forEachActive((e) => {
+      // Body
+      gfx.circle(e.x, e.y, e.radius);
+      gfx.fill(e.color);
+      // Outline
+      gfx.circle(e.x, e.y, e.radius);
+      gfx.stroke({ color: 0xffffff, width: 1, alpha: 0.4 });
+
+      // HP bar (only show if damaged)
+      if (e.hp < e.maxHp) {
+        const barW = e.radius * 2;
+        const barH = 3;
+        const hpRatio = Math.max(0, e.hp / e.maxHp);
+        gfx.rect(e.x - barW / 2, e.y - e.radius - 6, barW, barH);
+        gfx.fill({ color: 0x333333, alpha: 0.7 });
+        gfx.rect(e.x - barW / 2, e.y - e.radius - 6, barW * hpRatio, barH);
+        gfx.fill(0x44ff44);
+      }
+    });
+
+    // Boss entity
+    const boss = this.stageManager?.getActiveBoss();
+    if (boss) {
+      const bx = boss.position.x;
+      const by = boss.position.y;
+      const bossRadius = 24;
+
+      // Boss body
+      gfx.circle(bx, by, bossRadius);
+      gfx.fill(ENEMY_COLOR_MAP.boss);
+      gfx.circle(bx, by, bossRadius);
+      gfx.stroke({ color: 0xffffff, width: 2, alpha: 0.6 });
+      // Inner glow
+      gfx.circle(bx, by, bossRadius - 4);
+      gfx.fill({ color: 0xffffff, alpha: 0.15 });
+
+      // Boss HP bar at top of playfield
+      const hpRatio = this.stageManager?.getBossHpRatio() ?? 0;
+      const barW = 200;
+      const barH = 4;
+      const barX = PLAYFIELD_WIDTH / 2 - barW / 2;
+      const barY = 16;
+      gfx.rect(barX, barY, barW, barH);
+      gfx.fill({ color: 0x333333, alpha: 0.7 });
+      gfx.rect(barX, barY, barW * hpRatio, barH);
+      gfx.fill(0xff3366);
+    }
+  }
+
+  private renderPlayer(): void {
+    const hgfx = this.hitboxGfx;
+    const sprite = this.playerSprite;
+    const textures = this.playerTextures;
+    if (!hgfx) return;
+
     hgfx.clear();
 
     const p = this.player;
+    const input = this.input.getState();
 
-    // Blink during invulnerability
-    if (p.invulnFrames > 0 && this.frameCount % 4 < 2) {
-      // skip rendering every other 2 frames when invuln
-    } else {
-      // Main body — triangle placeholder
-      const color = p.character === 'rei' ? 0xff4466 : 0x66aaff;
-      pgfx.poly([
-        { x: p.x, y: p.y - 12 },
-        { x: p.x - 8, y: p.y + 8 },
-        { x: p.x + 8, y: p.y + 8 },
-      ]);
-      pgfx.fill(color);
+    // --- Sprite animation ---
+    if (sprite && textures) {
+      // Advance idle animation timer (~8 frames per animation frame)
+      this.animTimer++;
+      if (this.animTimer >= 8) {
+        this.animTimer = 0;
+        this.animFrame = (this.animFrame + 1) % textures.idle.length;
+      }
+
+      // Pick frame based on movement — slight tilt when strafing
+      if (input.left && !input.right) {
+        sprite.texture = textures.left;
+        sprite.rotation = -0.1;
+      } else if (input.right && !input.left) {
+        sprite.texture = textures.right;
+        sprite.rotation = 0.1;
+      } else {
+        sprite.texture = textures.idle[this.animFrame];
+        sprite.rotation = 0;
+      }
+
+      // Ensure sprite stays at the correct display size
+      sprite.width = textures.width;
+      sprite.height = textures.height;
+
+      sprite.x = p.x;
+      sprite.y = p.y;
+
+      // Blink during invulnerability
+      sprite.visible = !(p.invulnFrames > 0 && this.frameCount % 4 < 2);
     }
 
     // Hitbox indicator (visible when focused)
     if (p.focused) {
+      // Outer glow ring — rotates slowly
+      const angle = this.frameCount * 0.03;
+      hgfx.circle(p.x, p.y, p.hitboxRadius + 6);
+      hgfx.fill({ color: 0xffffff, alpha: 0.15 });
       hgfx.circle(p.x, p.y, p.hitboxRadius + 4);
-      hgfx.fill({ color: 0xffffff, alpha: 0.6 });
+      hgfx.fill({ color: 0xffffff, alpha: 0.3 });
+      // Inner hitbox dot
       hgfx.circle(p.x, p.y, p.hitboxRadius);
       hgfx.fill(0xff0000);
+      // Rotating cross-hair lines
+      for (let i = 0; i < 4; i++) {
+        const a = angle + (i * Math.PI) / 2;
+        const inner = p.hitboxRadius + 6;
+        const outer = p.hitboxRadius + 10;
+        hgfx.moveTo(p.x + Math.cos(a) * inner, p.y + Math.sin(a) * inner);
+        hgfx.lineTo(p.x + Math.cos(a) * outer, p.y + Math.sin(a) * outer);
+        hgfx.stroke({ color: 0xffffff, width: 1, alpha: 0.5 });
+      }
     }
 
     // Melee cooldown indicator — small arc

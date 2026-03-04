@@ -310,6 +310,7 @@ export const STAGE_1: StageDef = {
   theme: 'meadow',
   bgm: 'bgm-stage1',
   bossBgm: 'bgm-boss1',
+  background: '/dream-rift/backgrounds/stage1.jpg',
   waves1,
   midBoss,
   waves2,

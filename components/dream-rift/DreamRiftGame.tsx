@@ -3,7 +3,7 @@
 import { useRef, useEffect, useCallback } from 'react';
 import { useDreamRiftStore } from '@/lib/dream-rift/store';
 import { DreamRiftEngine } from '@/lib/dream-rift/engine';
-import { CANVAS_WIDTH, CANVAS_HEIGHT } from '@/lib/dream-rift/constants';
+import { CANVAS_WIDTH, CANVAS_HEIGHT, DISPLAY_SCALE } from '@/lib/dream-rift/constants';
 import { DreamRiftTitle } from './DreamRiftTitle';
 import { DreamRiftCharSelect } from './DreamRiftCharSelect';
 import { DreamRiftDifficultySelect } from './DreamRiftDifficultySelect';
@@ -16,6 +16,7 @@ import { DreamRiftLeaderboard } from './DreamRiftLeaderboard';
 export function DreamRiftGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<DreamRiftEngine | null>(null);
+  const initReady = useRef(false);
 
   const screen = useDreamRiftStore((s) => s.screen);
   const setScreen = useDreamRiftStore((s) => s.setScreen);
@@ -28,6 +29,7 @@ export function DreamRiftGame() {
 
     const engine = new DreamRiftEngine();
     engineRef.current = engine;
+    initReady.current = false;
 
     let mounted = true;
     engine.init(canvas).then(() => {
@@ -35,10 +37,16 @@ export function DreamRiftGame() {
         engine.destroy();
         return;
       }
+      initReady.current = true;
+      // If the screen is already 'playing' by the time init finishes, start now
+      if (useDreamRiftStore.getState().screen === 'playing') {
+        engine.start();
+      }
     });
 
     return () => {
       mounted = false;
+      initReady.current = false;
       engine.destroy();
       engineRef.current = null;
     };
@@ -47,7 +55,7 @@ export function DreamRiftGame() {
   // Start/stop engine when screen transitions to/from playing
   useEffect(() => {
     const engine = engineRef.current;
-    if (!engine) return;
+    if (!engine || !initReady.current) return;
 
     if (screen === 'playing') {
       engine.start();
@@ -97,9 +105,23 @@ export function DreamRiftGame() {
 
   return (
     <div
-      className="relative bg-black flex items-center justify-center"
-      style={{ touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none' }}
+      className="relative bg-black mx-auto"
+      style={{
+        touchAction: 'none',
+        userSelect: 'none',
+        WebkitUserSelect: 'none',
+        width: `${CANVAS_WIDTH * DISPLAY_SCALE}px`,
+        height: `${CANVAS_HEIGHT * DISPLAY_SCALE}px`,
+      }}
     >
+      <div
+        className="relative origin-top-left"
+        style={{
+          width: `${CANVAS_WIDTH}px`,
+          height: `${CANVAS_HEIGHT}px`,
+          transform: `scale(${DISPLAY_SCALE})`,
+        }}
+      >
       <canvas
         ref={canvasRef}
         className="block"
@@ -125,6 +147,7 @@ export function DreamRiftGame() {
       {screen === 'gameOver' && <DreamRiftGameOver onQuit={handleQuitToTitle} />}
       {screen === 'stageResult' && <DreamRiftStageResult onQuit={handleQuitToTitle} />}
       {screen === 'leaderboard' && <DreamRiftLeaderboard />}
+      </div>
     </div>
   );
 }

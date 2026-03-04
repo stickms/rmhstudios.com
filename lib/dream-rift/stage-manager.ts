@@ -11,7 +11,7 @@
  * boss HP crosses phase thresholds.
  */
 
-import type { StageDef, Boss, WaveDef, BulletPatternDef } from './types';
+import type { StageDef, Boss, WaveDef, BulletPatternDef, EnemySpawnDef } from './types';
 import type { DreamRiftEngine } from './engine';
 import { PLAYFIELD_WIDTH } from './constants';
 
@@ -113,6 +113,14 @@ export class StageManager {
     const card = this.activeBoss.spellCards[this.activeBoss.currentSpellIndex];
     if (!card) return -1;
     return Math.max(0, card.timeLimit - this.bossState.spellTimer);
+  }
+
+  /** Return the fraction of HP remaining for the current spell card (0–1). */
+  getBossHpRatio(): number {
+    if (!this.bossState || !this.activeBoss) return 0;
+    const card = this.activeBoss.spellCards[this.activeBoss.currentSpellIndex];
+    if (!card || card.hp <= 0) return 0;
+    return Math.max(0, 1 - this.bossState.phaseDamageDealt / card.hp);
   }
 
   /**
@@ -302,21 +310,19 @@ export class StageManager {
   }
 
   /**
-   * Spawn an enemy by firing its patterns through the engine.
-   * In a full implementation this would create a live Enemy entity that
-   * follows its path. For now we fire the initial patterns from the spawn
-   * position (the first path waypoint or the spawn x/y).
+   * Spawn a live enemy entity via the engine. The entity follows its path
+   * waypoints and fires patterns at their configured intervals.
    */
-  private spawnEnemy(
-    engine: DreamRiftEngine,
-    def: { x: number; y: number; patterns: BulletPatternDef[]; path: { x: number; y: number }[] },
-  ): void {
-    const spawnX = def.path.length > 0 ? def.path[0].x : def.x;
-    const spawnY = def.path.length > 0 ? def.path[0].y : def.y;
-
-    for (const pattern of def.patterns) {
-      engine.spawnEnemyPattern(spawnX, spawnY, pattern);
-    }
+  private spawnEnemy(engine: DreamRiftEngine, def: EnemySpawnDef): void {
+    engine.spawnEnemyEntity({
+      type: def.type,
+      x: def.x,
+      y: def.y,
+      hp: def.hp,
+      patterns: def.patterns,
+      path: def.path,
+      dropTable: def.dropTable,
+    });
   }
 
   private advanceFromWaves(): void {

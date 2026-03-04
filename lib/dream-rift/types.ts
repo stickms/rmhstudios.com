@@ -123,6 +123,8 @@ export interface StageDef {
   theme: string;
   bgm: string;
   bossBgm: string;
+  /** Path to background image (relative to /public). */
+  background?: string;
   waves1: WaveDef[];
   midBoss: Boss;
   waves2: WaveDef[];

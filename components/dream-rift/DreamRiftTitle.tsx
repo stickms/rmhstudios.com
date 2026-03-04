@@ -1,11 +1,32 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useDreamRiftStore } from '@/lib/dream-rift/store';
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from '@/lib/dream-rift/constants';
 import { TouhouFrame, TouhouMenuButton, TouhouDivider } from './TouhouFrame';
 
+/** Pre-computed particle data to avoid Math.random() during render (hydration mismatch). */
+function generateParticles() {
+  return Array.from({ length: 20 }, (_, i) => ({
+    w: 1 + Math.random() * 2,
+    h: 1 + Math.random() * 2,
+    x: Math.random() * 100,
+    y: Math.random() * 100,
+    color: i % 3 === 0 ? '#d4a44a' : i % 3 === 1 ? '#8b5cf6' : '#e2d0ff',
+    opacity: 0.2 + Math.random() * 0.4,
+    duration: 6 + Math.random() * 8,
+    delay: Math.random() * 6,
+  }));
+}
+
 export function DreamRiftTitle() {
   const setScreen = useDreamRiftStore((s) => s.setScreen);
+  const [particles, setParticles] = useState<ReturnType<typeof generateParticles> | null>(null);
+
+  // Generate particles client-side only to avoid hydration mismatch
+  useEffect(() => {
+    setParticles(generateParticles());
+  }, []);
 
   return (
     <div
@@ -15,25 +36,27 @@ export function DreamRiftTitle() {
       {/* Atmospheric background */}
       <div className="absolute inset-0 bg-gradient-to-b from-[#0a0818] via-[#0d0b2a] to-[#08061a]" />
 
-      {/* Floating particles */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {Array.from({ length: 20 }).map((_, i) => (
-          <div
-            key={i}
-            className="absolute rounded-full"
-            style={{
-              width: `${1 + Math.random() * 2}px`,
-              height: `${1 + Math.random() * 2}px`,
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              backgroundColor: i % 3 === 0 ? '#d4a44a' : i % 3 === 1 ? '#8b5cf6' : '#e2d0ff',
-              opacity: 0.2 + Math.random() * 0.4,
-              animation: `dreamrift-float ${6 + Math.random() * 8}s ease-in-out infinite`,
-              animationDelay: `${Math.random() * 6}s`,
-            }}
-          />
-        ))}
-      </div>
+      {/* Floating particles (client-only to avoid hydration mismatch) */}
+      {particles && (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {particles.map((p, i) => (
+            <div
+              key={i}
+              className="absolute rounded-full"
+              style={{
+                width: `${p.w}px`,
+                height: `${p.h}px`,
+                left: `${p.x}%`,
+                top: `${p.y}%`,
+                backgroundColor: p.color,
+                opacity: p.opacity,
+                animation: `dreamrift-float ${p.duration}s ease-in-out infinite`,
+                animationDelay: `${p.delay}s`,
+              }}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Radial glow behind title */}
       <div
