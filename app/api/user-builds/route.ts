@@ -55,13 +55,19 @@ export async function GET(req: NextRequest) {
     const sort = searchParams.get('sort') || 'recent';
     const userId = searchParams.get('userId');
 
-    // Get current user session (optional, for liked status)
+    // Get current user — session OR CLI token
     let currentUserId: string | null = null;
     try {
       const session = await auth.api.getSession({ headers: await headers() });
       currentUserId = session?.user?.id ?? null;
     } catch {
-      // Not logged in
+      // Not logged in via session
+    }
+
+    // Fall back to CLI token auth
+    if (!currentUserId) {
+      const cliUser = await getAuthenticatedUser(req, null);
+      if (cliUser) currentUserId = cliUser.id;
     }
 
     // Build where clause

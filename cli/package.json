@@ -1,0 +1,20 @@
+{
+  "name": "rmhcode",
+  "version": "0.1.0",
+  "description": "AI-powered coding assistant with RMH integrations",
+  "type": "module",
+  "bin": {
+    "rmhcode": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "@types/node": "^20.0.0"
+  }
+}

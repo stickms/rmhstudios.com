@@ -57,3 +57,7 @@ package-lock.json
 
 # Auto-generated news staging drafts (awaiting Discord approval)
 content/news/staging/*.mdx
+
+# CLI build artifacts
+cli/dist/
+cli/node_modules/
