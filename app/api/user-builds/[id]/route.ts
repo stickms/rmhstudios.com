@@ -3,6 +3,8 @@
  * GET /api/user-builds/[id] - Get a build by ID or slug
  * PATCH /api/user-builds/[id] - Update a build
  * DELETE /api/user-builds/[id] - Delete a build
+ *
+ * Supports both session auth and CLI token auth via X-RMHCode-Token header
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -12,6 +14,7 @@ import { prisma } from '@/lib/prisma';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { updateBuildSchema } from '@/lib/user-builds-schema';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
+import { getAuthenticatedUser } from '@/lib/rmhcode-auth';
 
 export const runtime = 'nodejs';
 
@@ -125,9 +128,20 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params;
 
-    // Check auth
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session) {
+    // Check auth - support both session and CLI token
+    let userId: string | null = null;
+
+    const session = await auth.api.getSession({ headers: await headers() }).catch(() => null);
+    if (session) {
+      userId = session.user.id;
+    } else {
+      const user = await getAuthenticatedUser(req, null);
+      if (user) {
+        userId = user.id;
+      }
+    }
+
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -152,7 +166,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
     }
 
     // Check ownership
-    if (build.userId !== session.user.id) {
+    if (build.userId !== userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
@@ -244,9 +258,20 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params;
 
-    // Check auth
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session) {
+    // Check auth - support both session and CLI token
+    let userId: string | null = null;
+
+    const session = await auth.api.getSession({ headers: await headers() }).catch(() => null);
+    if (session) {
+      userId = session.user.id;
+    } else {
+      const user = await getAuthenticatedUser(req, null);
+      if (user) {
+        userId = user.id;
+      }
+    }
+
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -257,7 +282,7 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
     }
 
     // Check ownership
-    if (build.userId !== session.user.id) {
+    if (build.userId !== userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
