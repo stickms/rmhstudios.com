@@ -40,9 +40,6 @@ export function OfficialBuildCard({ build }: OfficialBuildCardProps) {
                 <div className="p-4 flex flex-col flex-1">
                     {/* Tags & Status */}
                     <div className="flex items-center gap-2 mb-2 flex-wrap">
-                        <span className="px-2 py-0.5 rounded-full text-xs bg-site-accent-dim text-site-accent">
-                            {build.status}
-                        </span>
                         {(Array.isArray(build.technologies) ? build.technologies as string[] : []).slice(0, 3).map((tag) => (
                             <span
                                 key={tag}

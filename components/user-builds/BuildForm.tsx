@@ -50,7 +50,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
       .catch(console.error);
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent, publish = false) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
@@ -67,7 +67,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
         technologies,
         tags,
         visibility,
-        ...(isEditing ? { status: publish ? 'PUBLISHED' : build?.status } : { publish }),
+        status: 'PUBLISHED',
       };
 
       const res = await fetch(
@@ -127,7 +127,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
   };
 
   return (
-    <form onSubmit={(e) => handleSubmit(e, false)} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
         <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/30 flex items-center gap-3 text-red-400">
           <AlertCircle className="w-5 h-5 shrink-0" />
@@ -345,17 +345,13 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
 
       {/* Actions */}
       <div className="flex gap-4 pt-4 border-t border-site-border">
-        <Button type="submit" variant="secondary" disabled={loading}>
-          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save as Draft'}
-        </Button>
         <Button
-          type="button"
-          onClick={(e) => handleSubmit(e, true)}
+          type="submit"
           variant="accent"
-          className="bg-violet-600 hover:bg-violet-500"
+          className="bg-violet-600 hover:bg-violet-500 w-full md:w-auto px-8"
           disabled={loading}
         >
-          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : isEditing ? 'Update & Publish' : 'Publish'}
+          {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : isEditing ? 'Update Build' : 'Save Build'}
         </Button>
       </div>
     </form>

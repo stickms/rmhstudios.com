@@ -57,39 +57,7 @@ function ManageContent() {
     }
   };
 
-  const handlePublish = async (build: Build) => {
-    try {
-      const res = await fetch(`/api/user-builds/${build.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'PUBLISHED' }),
-      });
 
-      if (res.ok) {
-        const updated = await res.json();
-        setBuilds((prev) => prev.map((b) => (b.id === build.id ? { ...b, ...updated } : b)));
-      }
-    } catch (error) {
-      console.error('Error publishing build:', error);
-    }
-  };
-
-  const handleArchive = async (build: Build) => {
-    try {
-      const res = await fetch(`/api/user-builds/${build.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'ARCHIVED' }),
-      });
-
-      if (res.ok) {
-        const updated = await res.json();
-        setBuilds((prev) => prev.map((b) => (b.id === build.id ? { ...b, ...updated } : b)));
-      }
-    } catch (error) {
-      console.error('Error archiving build:', error);
-    }
-  };
 
   if (isPending) {
     return (
@@ -189,14 +157,14 @@ function ManageContent() {
                   <div className="flex items-center gap-3 mt-1 text-xs text-site-text-dim">
                     <span
                       className={`px-2 py-0.5 rounded ${
-                        build.status === 'PUBLISHED'
+                        build.visibility === 'PUBLIC'
                           ? 'bg-green-500/20 text-green-400'
-                          : build.status === 'DRAFT'
+                          : build.visibility === 'UNLISTED'
                           ? 'bg-yellow-500/20 text-yellow-400'
                           : 'bg-gray-500/20 text-gray-400'
                       }`}
                     >
-                      {build.status}
+                      {build.visibility}
                     </span>
                     <span>{build.likeCount} likes</span>
                     <span>{build.viewCount} views</span>
@@ -215,26 +183,7 @@ function ManageContent() {
                       <Edit className="w-4 h-4" />
                     </Button>
                   </Link>
-                  {build.status === 'DRAFT' && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handlePublish(build)}
-                      className="text-green-400 hover:text-green-300"
-                    >
-                      Publish
-                    </Button>
-                  )}
-                  {build.status === 'PUBLISHED' && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleArchive(build)}
-                      title="Archive"
-                    >
-                      <EyeOff className="w-4 h-4" />
-                    </Button>
-                  )}
+
                   <Button
                     variant="ghost"
                     size="icon"

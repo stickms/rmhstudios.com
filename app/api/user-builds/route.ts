@@ -70,13 +70,13 @@ export async function GET(req: NextRequest) {
       if (cliUser) currentUserId = cliUser.id;
     }
 
-    // Build where clause
     const where: Record<string, unknown> = {
       status: 'PUBLISHED',
-      visibility: 'PUBLIC',
+      visibility: { in: ['PUBLIC', 'UNLISTED'] }, // ensure we don't accidentally leak PRIVATE here unless it's their own
+      isCurated: false,
     };
 
-    // If fetching user's own builds, show all statuses
+    // If fetching user's own builds, show all statuses and visibilities, but still hide curated if needed
     if (userId && userId === currentUserId) {
       delete where.status;
       delete where.visibility;
