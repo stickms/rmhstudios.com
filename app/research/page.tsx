@@ -19,6 +19,7 @@ export default async function ResearchPage() {
   return (
     <PageLayout
       title="Research"
+      wide
       rightSidebar={<ResearchRightSidebar newsArticles={newsArticles} />}
     >
       <div className="px-4 py-4 space-y-4">

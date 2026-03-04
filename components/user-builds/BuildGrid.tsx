@@ -151,7 +151,7 @@ export function BuildGrid({
 
   return (
     <div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         {builds.map((build) => (
           <BuildCard key={build.id} build={build} onLike={handleLike} />
         ))}

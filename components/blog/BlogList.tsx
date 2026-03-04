@@ -245,7 +245,7 @@ export function BlogList({ initialPosts, filtersOpen = false }: BlogListProps) {
       )}
 
       {/* Grid */}
-      <div ref={gridRef} className="grid grid-cols-1 sm:grid-cols-2 gap-4 scroll-mt-8">
+      <div ref={gridRef} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 scroll-mt-8">
         <AnimatePresence mode="popLayout">
           {paginatedPosts.map((post) => (
             <motion.div
