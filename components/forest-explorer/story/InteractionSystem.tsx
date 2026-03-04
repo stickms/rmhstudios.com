@@ -27,6 +27,9 @@ export function InteractionSystem() {
     // Throttle to avoid hammering every frame
     const frameCount = useRef(0);
 
+    // Reusable flat direction vector for flashlight cone checks
+    const flatDir = useMemo(() => new THREE.Vector3(), []);
+
     useFrame(() => {
         frameCount.current++;
         if (frameCount.current % 3 !== 0) return; // Check every 3rd frame
@@ -35,8 +38,12 @@ export function InteractionSystem() {
         const px = camera.position.x;
         const pz = camera.position.z;
 
+        // Flatten camera direction to XZ plane so vertical tilt doesn't break reveal
+        flatDir.set(dir.x, 0, dir.z).normalize();
+
         const revealedIds: string[] = [];
         let closest: { id: string; dist: number } | null = null;
+        let closestPortal: { id: string; dist: number } | null = null;
 
         for (const inter of interactables) {
             // Skip portals until their gate puzzle is solved
@@ -46,7 +53,6 @@ export function InteractionSystem() {
                 if (gatePuzzle && !storyFlags[gatePuzzle]) continue;
             }
 
-            // Skip already-solved puzzle stones (still interactable for re-read but with different state)
             const isPuzzleSolved = inter.puzzleId && puzzleStates[inter.puzzleId]?.status === 'solved';
 
             const dx = inter.position[0] - px;
@@ -57,8 +63,8 @@ export function InteractionSystem() {
             if (inter.revealMethod === 'flashlight_only' && !isPuzzleSolved) {
                 if (flashlightOn && dist < 40) {
                     const toObj = new THREE.Vector3(dx, 0, dz).normalize();
-                    const angle = dir.angleTo(toObj);
-                    if (angle < 0.35) { // ~20 degrees
+                    const angle = flatDir.angleTo(toObj);
+                    if (angle < 0.4) { // ~23 degrees — matches visual spotlight cone
                         revealedIds.push(inter.id);
                     }
                 }
@@ -67,16 +73,23 @@ export function InteractionSystem() {
                 revealedIds.push(inter.id);
             }
 
-            // Proximity check for interaction
-            if (dist < inter.interactionRadius && revealedIds.includes(inter.id)) {
-                if (!closest || dist < closest.dist) {
-                    closest = { id: inter.id, dist };
+            // Proximity check — skip solved puzzles, track portals separately for priority
+            if (dist < inter.interactionRadius && revealedIds.includes(inter.id) && !isPuzzleSolved) {
+                if (inter.type === 'portal') {
+                    if (!closestPortal || dist < closestPortal.dist) {
+                        closestPortal = { id: inter.id, dist };
+                    }
+                } else {
+                    if (!closest || dist < closest.dist) {
+                        closest = { id: inter.id, dist };
+                    }
                 }
             }
         }
 
         setFlashlightRevealed(revealedIds);
-        setNearbyInteractable(closest?.id ?? null);
+        // Portals always take priority when in range
+        setNearbyInteractable((closestPortal ?? closest)?.id ?? null);
     });
 
     return null;

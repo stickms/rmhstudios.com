@@ -105,6 +105,19 @@ export interface LandmarkPlacement {
     scale?: number;
 }
 
+export interface TreeGenParams {
+    landmarkRadius: number;
+    minRThreshold: number;
+    minRInner: number;
+    minROuter: number;
+    radiusMultiplier: number;
+    giantThreshold: number;
+    giantScaleBase: number;
+    giantScaleRange: number;
+    normalScaleBase: number;
+    normalScaleRange: number;
+}
+
 export interface ActMapConfig {
     id: ActId;
     name: string;
@@ -113,6 +126,7 @@ export interface ActMapConfig {
     treeCount: number;
     rockCount: number;
     mushroomCount: number;
+    treeGenParams: TreeGenParams;
     atmosphere: AtmosphereConfig;
     corridors: CorridorSegment[];
     landmarks: LandmarkPlacement[];

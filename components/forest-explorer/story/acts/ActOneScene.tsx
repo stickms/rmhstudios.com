@@ -19,6 +19,7 @@ import { GatewayArch } from '../landmarks/GatewayArch';
 import { CrystalCluster } from '../landmarks/CrystalCluster';
 import { useStoryStore } from '@/lib/forest-explorer/store';
 import { actMaps } from '@/lib/forest-explorer/actMaps';
+import { CONSTELLATION_PATTERNS } from '../puzzles/ConstellationPuzzle';
 
 export function ActOneScene() {
     const groupRef = useRef<THREE.Group>(null);
@@ -32,16 +33,17 @@ export function ActOneScene() {
             return x - Math.floor(x);
         };
 
+        const p = config.treeGenParams;
         const landmarkPositions = config.landmarks.map(l => ({
-            x: l.position[0], z: l.position[2], r: 8,
+            x: l.position[0], z: l.position[2], r: p.landmarkRadius,
         }));
 
         const trees: TreeData[] = [];
         for (let i = 0; i < config.treeCount; i++) {
             const s = i * 7.331;
             const angle = rng(s) * Math.PI * 2;
-            const minR = i < 30 ? 8 : 15;
-            const radius = minR + rng(s + 1) * (config.mapRadius * 0.7);
+            const minR = i < p.minRThreshold ? p.minRInner : p.minROuter;
+            const radius = minR + rng(s + 1) * (config.mapRadius * p.radiusMultiplier);
             const x = Math.cos(angle) * radius;
             const z = Math.sin(angle) * radius;
 
@@ -52,10 +54,10 @@ export function ActOneScene() {
             });
             if (nearLandmark) continue;
 
-            const giant = rng(s + 4) < 0.22;
+            const giant = rng(s + 4) < p.giantThreshold;
             const scale = giant
-                ? 1.8 + rng(s + 2) * 0.75
-                : 0.45 + rng(s + 2) * 0.90;
+                ? p.giantScaleBase + rng(s + 2) * p.giantScaleRange
+                : p.normalScaleBase + rng(s + 2) * p.normalScaleRange;
 
             trees.push({ x, z, scale, variety: Math.floor(rng(s + 3) * 3) });
         }
@@ -136,6 +138,62 @@ export function ActOneScene() {
                     />
                 </mesh>
                 <pointLight color="#44ffaa" intensity={0.4} distance={4} decay={2} />
+            </group>
+
+            {/* Constellation hint tree — carved star pattern on trunk */}
+            <group position={[25, 0, -50]}>
+                {/* Large ancient trunk */}
+                <mesh position={[0, 4, 0]} castShadow>
+                    <cylinderGeometry args={[0.8, 1.2, 8, 8]} />
+                    <meshLambertMaterial color="#2a1f15" />
+                </mesh>
+                {/* Canopy */}
+                <mesh position={[0, 9, 0]}>
+                    <sphereGeometry args={[3.5, 8, 8]} />
+                    <meshLambertMaterial color="#1a3a1a" />
+                </mesh>
+                {/* Carved constellation on trunk face */}
+                <group position={[0.85, 4, 0]} rotation={[0, Math.PI / 2, 0]}>
+                    {/* Star dots */}
+                    {CONSTELLATION_PATTERNS.tree_of_life.stars.map((star, i) => (
+                        <mesh
+                            key={`cs-${i}`}
+                            position={[(star.x - 200) * 0.008, (200 - star.y) * 0.008, 0]}
+                        >
+                            <sphereGeometry args={[0.035, 6, 6]} />
+                            <meshStandardMaterial
+                                color="#44ddff"
+                                emissive={new THREE.Color('#44ddff')}
+                                emissiveIntensity={0.9}
+                            />
+                        </mesh>
+                    ))}
+                    {/* Edge lines as thin cylinders */}
+                    {CONSTELLATION_PATTERNS.tree_of_life.edges.map(([a, b], i) => {
+                        const sa = CONSTELLATION_PATTERNS.tree_of_life.stars[a];
+                        const sb = CONSTELLATION_PATTERNS.tree_of_life.stars[b];
+                        const ax = (sa.x - 200) * 0.008, ay = (200 - sa.y) * 0.008;
+                        const bx = (sb.x - 200) * 0.008, by = (200 - sb.y) * 0.008;
+                        const mx = (ax + bx) / 2, my = (ay + by) / 2;
+                        const len = Math.sqrt((bx - ax) ** 2 + (by - ay) ** 2);
+                        const angle = Math.atan2(by - ay, bx - ax);
+                        return (
+                            <mesh
+                                key={`ce-${i}`}
+                                position={[mx, my, 0]}
+                                rotation={[0, 0, angle]}
+                            >
+                                <boxGeometry args={[len, 0.015, 0.015]} />
+                                <meshStandardMaterial
+                                    color="#44ddff"
+                                    emissive={new THREE.Color('#44ddff')}
+                                    emissiveIntensity={0.6}
+                                />
+                            </mesh>
+                        );
+                    })}
+                </group>
+                <pointLight color="#44ddff" intensity={0.3} distance={6} decay={2} position={[1, 4, 0]} />
             </group>
 
             {/* Landmarks */}

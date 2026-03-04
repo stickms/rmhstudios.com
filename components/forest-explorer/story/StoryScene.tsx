@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { PointerLockControls } from '@react-three/drei';
 import { useStoryStore } from '@/lib/forest-explorer/store';
 import { InteractionSystem } from './InteractionSystem';
@@ -25,23 +25,12 @@ export function StoryScene({
     // Any overlay that should free the mouse
     const overlayActive = showPuzzleOverlay || journalOpen;
 
-    // Track previous overlay state for auto-relock
-    const prevOverlay = useRef(false);
-
     // Exit pointer lock whenever an overlay opens
+    // (Re-lock is handled by the overlay close handlers directly, within the user gesture)
     useEffect(() => {
         if (overlayActive && document.pointerLockElement) {
             document.exitPointerLock();
         }
-        // Auto-relock when overlay closes (was previously open)
-        if (prevOverlay.current && !overlayActive) {
-            const timer = setTimeout(() => {
-                document.querySelector('canvas')?.requestPointerLock();
-            }, 100);
-            prevOverlay.current = overlayActive;
-            return () => clearTimeout(timer);
-        }
-        prevOverlay.current = overlayActive;
     }, [overlayActive]);
 
     // Tick playtime every frame

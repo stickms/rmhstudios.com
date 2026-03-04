@@ -38,6 +38,8 @@ export function JournalOverlay() {
             if (e.code === 'Escape' || e.code === 'Tab') {
                 e.preventDefault();
                 toggleJournal();
+                // Re-engage pointer lock while keydown gesture is still active
+                document.querySelector('canvas')?.requestPointerLock();
             }
         };
         window.addEventListener('keydown', fn);

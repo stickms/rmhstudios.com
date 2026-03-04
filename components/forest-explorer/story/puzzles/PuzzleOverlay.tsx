@@ -29,6 +29,8 @@ export function PuzzleOverlay() {
             if (e.code === 'Escape') {
                 e.preventDefault();
                 closePuzzle();
+                // Re-engage pointer lock while keydown gesture is still active
+                document.querySelector('canvas')?.requestPointerLock();
             }
         };
         window.addEventListener('keydown', fn);

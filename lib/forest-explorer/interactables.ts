@@ -77,6 +77,16 @@ export const interactables: InteractableDefinition[] = [
         journalEntryId: 'act1_star_map',
     },
     {
+        id: 'act1_constellation_hint',
+        act: 'act1',
+        type: 'journal_item',
+        label: 'Star Carving',
+        position: [25, 0.5, -50],
+        revealMethod: 'flashlight_only',
+        interactionRadius: 4,
+        journalEntryId: 'act1_star_map',
+    },
+    {
         id: 'act1_journal_shadow_legend',
         act: 'act1',
         type: 'journal_item',

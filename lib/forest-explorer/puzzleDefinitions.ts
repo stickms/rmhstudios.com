@@ -33,7 +33,7 @@ export const puzzleDefinitions: PuzzleDefinition[] = [
         config: {
             starCount: 18,
             correctEdges: 7,
-            decoyStars: 6,
+            decoyStars: 10,
             pattern: 'tree_of_life',
         },
         worldEvent: 'act1_stars_aligned',
@@ -185,7 +185,7 @@ export const puzzleDefinitions: PuzzleDefinition[] = [
         config: {
             starCount: 24,
             correctEdges: 10,
-            decoyStars: 8,
+            decoyStars: 13,
             pattern: 'phoenix_rising',
             timedFade: true,
         },

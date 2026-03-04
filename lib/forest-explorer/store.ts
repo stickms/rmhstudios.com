@@ -60,6 +60,7 @@ interface StoryState {
     setFlashlight: (on: boolean) => void;
     advanceToAct: (act: ActId) => void;
     setStoryFlag: (flag: string, value: boolean) => void;
+    incrementTreeSeedOffset: () => void;
     saveProgress: () => void;
     loadProgress: () => Promise<boolean>;
     tickPlaytime: (delta: number) => void;
@@ -210,16 +211,10 @@ export const useStoryStore = create<StoryState>((set, get) => ({
             ? { ...state.storyFlags, [puzzle.worldEvent]: true }
             : state.storyFlags;
 
-        // Increment shift counter for Act 2 tree shift events
-        const treesShiftCount = puzzle.worldEvent === 'trees_calm_briefly'
-            ? state.treesShiftCount + 1
-            : state.treesShiftCount;
-
         set({
             puzzleStates,
             actProgress: actProg,
             storyFlags,
-            treesShiftCount,
             showPuzzleOverlay: false,
             activePuzzleId: null,
             actPhase: 'exploring',
@@ -339,6 +334,10 @@ export const useStoryStore = create<StoryState>((set, get) => ({
 
     setStoryFlag: (flag, value) => {
         set((s) => ({ storyFlags: { ...s.storyFlags, [flag]: value } }));
+    },
+
+    incrementTreeSeedOffset: () => {
+        set((s) => ({ treesShiftCount: s.treesShiftCount + 1 }));
     },
 
     saveProgress: () => {

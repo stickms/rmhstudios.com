@@ -7,33 +7,30 @@ import { useStoryStore } from '@/lib/forest-explorer/store';
 import { getInteractableById } from '@/lib/forest-explorer/interactables';
 import { getActMap } from '@/lib/forest-explorer/actMaps';
 import { GROUND_Y, GRAVITY, JUMP_VEL } from '../shared/constants';
-import type { CorridorSegment } from '@/lib/forest-explorer/types';
+import type { ActMapConfig } from '@/lib/forest-explorer/types';
 
 // ─── Tree collider generation (mirrors act scene RNG) ──────────────────────
 
-function buildTreeColliders(
-    treeSeed: number,
-    treeCount: number,
-    mapRadius: number,
-    landmarks: Array<{ position: [number, number, number] }>,
-    corridors: CorridorSegment[],
-) {
+function buildTreeColliders(config: ActMapConfig, seedOffset: number = 0) {
+    const p = config.treeGenParams;
+    const actualSeed = config.treeSeed + seedOffset * 97;
+
     const rng = (n: number) => {
-        const x = Math.sin(n + treeSeed) * 43758.5453;
+        const x = Math.sin(n + actualSeed) * 43758.5453;
         return x - Math.floor(x);
     };
 
-    const landmarkZones = landmarks.map(l => ({
-        x: l.position[0], z: l.position[2], r: 8,
+    const landmarkZones = config.landmarks.map(l => ({
+        x: l.position[0], z: l.position[2], r: p.landmarkRadius,
     }));
 
     const colliders: Array<{ x: number; z: number; r: number }> = [];
 
-    for (let i = 0; i < treeCount; i++) {
+    for (let i = 0; i < config.treeCount; i++) {
         const s = i * 7.331;
         const angle = rng(s) * Math.PI * 2;
-        const minR = i < 30 ? 8 : 15;
-        const radius = minR + rng(s + 1) * (mapRadius * 0.7);
+        const minR = i < p.minRThreshold ? p.minRInner : p.minROuter;
+        const radius = minR + rng(s + 1) * (config.mapRadius * p.radiusMultiplier);
         const x = Math.cos(angle) * radius;
         const z = Math.sin(angle) * radius;
 
@@ -45,15 +42,15 @@ function buildTreeColliders(
         if (nearLandmark) continue;
 
         // Reject trees inside corridors (same as ActTwoScene/ActThreeScene)
-        const inCorridor = corridors.some(c => {
+        const inCorridor = config.corridors.some(c => {
             return distToSegment(x, z, c.start[0], c.start[1], c.end[0], c.end[1]) < c.width / 2;
         });
         if (inCorridor) continue;
 
-        const giant = rng(s + 4) < 0.22;
+        const giant = rng(s + 4) < p.giantThreshold;
         const scale = giant
-            ? 1.8 + rng(s + 2) * 0.75
-            : 0.45 + rng(s + 2) * 0.90;
+            ? p.giantScaleBase + rng(s + 2) * p.giantScaleRange
+            : p.normalScaleBase + rng(s + 2) * p.normalScaleRange;
 
         colliders.push({ x, z, r: 0.28 * scale + 0.45 });
     }
@@ -97,20 +94,17 @@ export function StoryPlayer() {
     const showPuzzleOverlay = useStoryStore(s => s.showPuzzleOverlay);
     const journalOpen = useStoryStore(s => s.journalOpen);
     const playerPosition = useStoryStore(s => s.playerPosition);
+    const treesShiftCount = useStoryStore(s => s.treesShiftCount);
 
     // Derive map config from current act
     const actConfig = useMemo(() => getActMap(currentAct), [currentAct]);
 
     // Build tree colliders once per act (deterministic, mirrors act scene generation)
+    // For Act 2, seedOffset = treesShiftCount to match the shifting mechanic
+    const seedOffset = currentAct === 'act2' ? treesShiftCount : 0;
     const treeColliders = useMemo(() =>
-        buildTreeColliders(
-            actConfig.treeSeed,
-            actConfig.treeCount,
-            actConfig.mapRadius,
-            actConfig.landmarks,
-            actConfig.corridors,
-        ),
-        [actConfig],
+        buildTreeColliders(actConfig, seedOffset),
+        [actConfig, seedOffset],
     );
 
     // Spawn at checkpoint position

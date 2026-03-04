@@ -32,10 +32,10 @@ export function ActTwoScene() {
     const groupRef = useRef<THREE.Group>(null);
     const flashlightOn = useStoryStore(s => s.flashlightOn);
     const storyFlags = useStoryStore(s => s.storyFlags);
+    const treesShiftCount = useStoryStore(s => s.treesShiftCount);
+    const incrementTreeSeedOffset = useStoryStore(s => s.incrementTreeSeedOffset);
     const config = actMaps.act2;
 
-    // Track seed offset for the shifting mechanic
-    const [seedOffset, setSeedOffset] = useState(0);
     // CSS overlay darkness for shift transition
     const [shifting, setShifting] = useState(false);
 
@@ -43,10 +43,9 @@ export function ActTwoScene() {
     useEffect(() => {
         if (storyFlags.trees_calm_briefly) {
             setShifting(true);
-            // After 1.5s darkness, swap tree positions
+            // After 1.5s darkness, swap tree positions (updates store so colliders sync)
             const shiftTimer = setTimeout(() => {
-                setSeedOffset(prev => prev + 1);
-                // Clear the flag
+                incrementTreeSeedOffset();
                 useStoryStore.getState().setStoryFlag('trees_calm_briefly', false);
             }, 1500);
             // After 3s total, clear the darkness
@@ -58,18 +57,19 @@ export function ActTwoScene() {
                 clearTimeout(clearTimer);
             };
         }
-    }, [storyFlags.trees_calm_briefly]);
+    }, [storyFlags.trees_calm_briefly, incrementTreeSeedOffset]);
 
     // Procedural trees with shifting seed
     const { treeMeshes, rocks, mushrooms } = useMemo(() => {
-        const actualSeed = config.treeSeed + seedOffset * 97;
+        const actualSeed = config.treeSeed + treesShiftCount * 97;
         const rng = (n: number) => {
             const x = Math.sin(n + actualSeed) * 43758.5453;
             return x - Math.floor(x);
         };
 
+        const p = config.treeGenParams;
         const landmarkPositions = config.landmarks.map(l => ({
-            x: l.position[0], z: l.position[2], r: 10,
+            x: l.position[0], z: l.position[2], r: p.landmarkRadius,
         }));
 
         // Also keep corridor interiors clear
@@ -79,8 +79,8 @@ export function ActTwoScene() {
         for (let i = 0; i < config.treeCount; i++) {
             const s = i * 7.331;
             const angle = rng(s) * Math.PI * 2;
-            const minR = i < 30 ? 6 : 12;
-            const radius = minR + rng(s + 1) * (config.mapRadius * 0.65);
+            const minR = i < p.minRThreshold ? p.minRInner : p.minROuter;
+            const radius = minR + rng(s + 1) * (config.mapRadius * p.radiusMultiplier);
             const x = Math.cos(angle) * radius;
             const z = Math.sin(angle) * radius;
 
@@ -105,10 +105,10 @@ export function ActTwoScene() {
             });
             if (inCorridor) continue;
 
-            const giant = rng(s + 4) < 0.18;
+            const giant = rng(s + 4) < p.giantThreshold;
             const scale = giant
-                ? 1.6 + rng(s + 2) * 0.7
-                : 0.4 + rng(s + 2) * 0.85;
+                ? p.giantScaleBase + rng(s + 2) * p.giantScaleRange
+                : p.normalScaleBase + rng(s + 2) * p.normalScaleRange;
 
             trees.push({ x, z, scale, variety: Math.floor(rng(s + 3) * 3) });
         }
@@ -130,7 +130,7 @@ export function ActTwoScene() {
         }
 
         return { treeMeshes: buildTreeInstancedMeshes(trees), rocks: rockData, mushrooms: mushroomData };
-    }, [config, seedOffset]);
+    }, [config, treesShiftCount]);
 
     useEffect(() => {
         const group = groupRef.current;

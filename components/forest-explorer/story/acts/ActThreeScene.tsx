@@ -49,8 +49,9 @@ export function ActThreeScene() {
             return x - Math.floor(x);
         };
 
+        const p = config.treeGenParams;
         const landmarkPositions = config.landmarks.map(l => ({
-            x: l.position[0], z: l.position[2], r: 10,
+            x: l.position[0], z: l.position[2], r: p.landmarkRadius,
         }));
 
         const corridors = config.corridors;
@@ -60,8 +61,8 @@ export function ActThreeScene() {
         for (let i = 0; i < config.treeCount; i++) {
             const s = i * 7.331;
             const angle = rng(s) * Math.PI * 2;
-            const minR = i < 25 ? 8 : 18;
-            const radius = minR + rng(s + 1) * (config.mapRadius * 0.6);
+            const minR = i < p.minRThreshold ? p.minRInner : p.minROuter;
+            const radius = minR + rng(s + 1) * (config.mapRadius * p.radiusMultiplier);
             const x = Math.cos(angle) * radius;
             const z = Math.sin(angle) * radius;
 
@@ -88,10 +89,10 @@ export function ActThreeScene() {
                 corrupted.push([x, z]);
             }
 
-            const giant = rng(s + 4) < 0.15;
+            const giant = rng(s + 4) < p.giantThreshold;
             const scale = giant
-                ? 2.0 + rng(s + 2) * 0.8
-                : 0.5 + rng(s + 2) * 1.0;
+                ? p.giantScaleBase + rng(s + 2) * p.giantScaleRange
+                : p.normalScaleBase + rng(s + 2) * p.normalScaleRange;
 
             trees.push({ x, z, scale, variety: Math.floor(rng(s + 3) * 3) });
         }
