@@ -42,8 +42,7 @@ export const createBuildSchema = z.object({
     )
     .max(MAX_TAGS, `Maximum ${MAX_TAGS} tags allowed`)
     .default([]),
-  visibility: z.enum(['PUBLIC', 'UNLISTED', 'PRIVATE']).default('PUBLIC'),
-  publish: z.boolean().default(false),
+  visibility: z.enum(['PUBLIC', 'UNLISTED', 'PRIVATE']).default('UNLISTED'),
 });
 
 export const updateBuildSchema = createBuildSchema.partial().extend({

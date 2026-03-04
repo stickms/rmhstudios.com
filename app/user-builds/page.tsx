@@ -1,15 +1,18 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useSession } from '@/components/Providers';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { BuildGrid, BuildFilters, BuildSidebar } from '@/components/user-builds';
 import type { BuildCategory, BuildSortOption } from '@/lib/user-builds-types';
 
 export default function UserBuildsPage() {
+  const { data: session } = useSession();
   const [categories, setCategories] = useState<BuildCategory[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>();
   const [selectedSort, setSelectedSort] = useState<BuildSortOption>('recent');
   const [searchQuery, setSearchQuery] = useState('');
+  const [myBuilds, setMyBuilds] = useState(false);
   const [key, setKey] = useState(0);
 
   // Fetch categories
@@ -36,6 +39,11 @@ export default function UserBuildsPage() {
     setKey((k) => k + 1);
   }, []);
 
+  const handleMyBuildsChange = useCallback((isMyBuilds: boolean) => {
+    setMyBuilds(isMyBuilds);
+    setKey((k) => k + 1);
+  }, []);
+
   return (
     <PageLayout
       title="User Builds"
@@ -48,9 +56,11 @@ export default function UserBuildsPage() {
           selectedCategory={selectedCategory}
           selectedSort={selectedSort}
           searchQuery={searchQuery}
+          myBuilds={myBuilds}
           onCategoryChange={handleCategoryChange}
           onSortChange={handleSortChange}
           onSearchChange={handleSearchChange}
+          onMyBuildsChange={handleMyBuildsChange}
         />
 
         <BuildGrid
@@ -58,6 +68,7 @@ export default function UserBuildsPage() {
           category={selectedCategory}
           search={searchQuery || undefined}
           sort={selectedSort}
+          userId={myBuilds ? session?.user?.id : undefined}
         />
       </div>
     </PageLayout>

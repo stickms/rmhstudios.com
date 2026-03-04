@@ -8,6 +8,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { headers } from 'next/headers';
+import { randomBytes } from 'crypto';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
@@ -18,11 +19,14 @@ import { getAuthenticatedUser } from '@/lib/rmhcode-auth';
 export const runtime = 'nodejs';
 
 function generateSlug(title: string): string {
-  return title
+  const base = title
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '')
-    .slice(0, 80);
+    .slice(0, 70);
+  
+  const suffix = randomBytes(4).toString('hex');
+  return `${base}-${suffix}`;
 }
 
 async function ensureUniqueSlug(baseSlug: string, excludeId?: string): Promise<string> {
@@ -238,7 +242,6 @@ export async function POST(req: NextRequest) {
       technologies,
       tags,
       visibility,
-      publish,
     } = parsed.data;
 
     // Generate unique slug
@@ -260,8 +263,8 @@ export async function POST(req: NextRequest) {
           categoryId: categoryId || null,
           technologies: technologies || [],
           visibility,
-          status: publish ? 'PUBLISHED' : 'DRAFT',
-          publishedAt: publish ? new Date() : null,
+          status: 'PUBLISHED',
+          publishedAt: new Date(),
         },
         include: {
           user: { select: userDisplaySelect },

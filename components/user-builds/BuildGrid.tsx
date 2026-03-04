@@ -161,7 +161,7 @@ export function BuildGrid({
       <div ref={loadMoreRef} className="py-8 flex justify-center">
         {loadingMore && <Loader2 className="w-6 h-6 text-violet-400 animate-spin" />}
         {!hasMore && builds.length > 0 && (
-          <p className="text-sm text-site-text-dim">No more builds</p>
+          <div className="h-px" />
         )}
       </div>
     </div>

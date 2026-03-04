@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, ChevronDown, X } from 'lucide-react';
+import { Search, ChevronDown, X, User } from 'lucide-react';
+import { useSession } from '@/components/Providers';
 import type { BuildCategory, BuildSortOption } from '@/lib/user-builds-types';
 
 interface BuildFiltersProps {
@@ -9,9 +10,11 @@ interface BuildFiltersProps {
   selectedCategory?: string;
   selectedSort: BuildSortOption;
   searchQuery?: string;
+  myBuilds?: boolean;
   onCategoryChange: (category: string | undefined) => void;
   onSortChange: (sort: BuildSortOption) => void;
   onSearchChange: (query: string) => void;
+  onMyBuildsChange: (myBuilds: boolean) => void;
 }
 
 const SORT_OPTIONS: { value: BuildSortOption; label: string }[] = [
@@ -25,10 +28,13 @@ export function BuildFilters({
   selectedCategory,
   selectedSort,
   searchQuery = '',
+  myBuilds = false,
   onCategoryChange,
   onSortChange,
   onSearchChange,
+  onMyBuildsChange,
 }: BuildFiltersProps) {
+  const { data: session } = useSession();
   const [search, setSearch] = useState(searchQuery);
   const [showCategories, setShowCategories] = useState(false);
   const [showSort, setShowSort] = useState(false);
@@ -66,7 +72,7 @@ export function BuildFilters({
         )}
       </div>
 
-      <div className="flex gap-3">
+      <div className="flex flex-wrap gap-3 items-center">
       {/* Category Filter */}
       <div className="relative">
         <button
@@ -152,6 +158,21 @@ export function BuildFilters({
           </>
         )}
       </div>
+
+      {/* My Builds Toggle */}
+      {session?.user && (
+        <label className="flex items-center gap-2 cursor-pointer ml-auto px-4 py-2 rounded-lg bg-site-surface border border-site-border text-sm text-site-text hover:border-violet-500/50 transition-colors">
+          <input
+            type="checkbox"
+            checked={myBuilds}
+            onChange={(e) => onMyBuildsChange(e.target.checked)}
+            className="w-4 h-4 rounded border-site-border text-violet-500 bg-site-bg focus:ring-violet-500/50"
+          />
+          <User className="w-4 h-4 text-violet-400" />
+          <span>My Builds</span>
+        </label>
+      )}
+
       </div>
     </div>
   );
