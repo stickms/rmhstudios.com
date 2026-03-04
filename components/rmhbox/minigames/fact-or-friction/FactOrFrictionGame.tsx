@@ -62,8 +62,14 @@ export default function FactOrFrictionGame({ playerId, playerName: _playerName }
 
   const [phase, setPhase] = useState<Phase>('QUESTION_REVEAL');
   const [questionData, setQuestionData] = useState<QuestionData | null>(null);
-  const [potValue, setPotValue] = useState(1000);
-  const [potMaxValue, setPotMaxValue] = useState(1000);
+  const [potValue, setPotValue] = useState(() => {
+    const snap = useRMHboxStore.getState().gameState;
+    return (snap?.potValue as number) ?? 0;
+  });
+  const [potMaxValue, setPotMaxValue] = useState(() => {
+    const snap = useRMHboxStore.getState().gameState;
+    return (snap?.potValue as number) ?? 0;
+  });
   const [timeRemaining, setTimeRemaining] = useState(15);
   const [myAnswer, setMyAnswer] = useState<number | null>(null);
   const [lockedPotValue, setLockedPotValue] = useState<number | null>(null);
@@ -101,8 +107,9 @@ export default function FactOrFrictionGame({ playerId, playerName: _playerName }
             totalQuestions: data.totalQuestions as number,
           };
           setQuestionData(q);
-          setPotValue(data.potStartValue as number ?? 1000);
-          setPotMaxValue(data.potStartValue as number ?? 1000);
+          // Pot value already includes difficulty scaling from the server
+          setPotValue(data.potValue as number ?? 1000);
+          setPotMaxValue(data.potValue as number ?? 1000);
           setMyAnswer(null);
           setLockedPotValue(null);
           setPlayersAnswered(0);
@@ -120,9 +127,14 @@ export default function FactOrFrictionGame({ playerId, playerName: _playerName }
           if (typeof data.duration === 'number') {
             setTimeRemaining(data.duration as number);
           }
+          // Update pot value from server (already difficulty-scaled)
+          if (typeof data.potValue === 'number') {
+            setPotValue(data.potValue as number);
+          }
           break;
         }
         case 'FF_POT_TICK': {
+          // Pot value already includes difficulty scaling
           const newPot = data.potValue as number;
           if (typeof newPot === 'number') setPotValue(newPot);
           break;
@@ -244,7 +256,10 @@ export default function FactOrFrictionGame({ playerId, playerName: _playerName }
     if (p === 'QUESTION_REVEAL' || p === 'ANSWER' || p === 'ANSWER_REVEAL' || p === 'PAUSE' || p === 'GAME_OVER') {
       setPhase(p);
     }
-    if (snapshot.potValue != null) setPotValue(snapshot.potValue as number);
+    if (snapshot.potValue != null) {
+      setPotValue(snapshot.potValue as number);
+      setPotMaxValue(snapshot.potValue as number);
+    }
     if (snapshot.timeRemaining != null) setTimeRemaining(snapshot.timeRemaining as number);
 
     // Server sends question as nested object with {id, question, options, category, difficulty, source}
