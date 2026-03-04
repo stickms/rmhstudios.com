@@ -42,7 +42,6 @@ import type { StoryPrompt } from '@/lib/rmhbox/undercover-editor/schemas';
 import {
   UE_WRITE_TIMEOUT_SECONDS,
   UE_EDIT_TIMEOUT_SECONDS,
-  UE_REVEAL_DURATION_SECONDS,
   UE_CORRECT_MATCH_BONUS,
   UE_FALSE_MATCH_CAUSED_BONUS,
   UE_CHAR_WRITTEN_BONUS,
@@ -530,7 +529,7 @@ export class UndercoverEditorGame extends BaseMinigame {
     this.state.phase = 'REVEAL';
     const now = Date.now();
     this.state.phaseStartedAt = now;
-    this.state.phaseEndsAt = now + UE_REVEAL_DURATION_SECONDS * 1000;
+    this.state.phaseEndsAt = 0; // infinite — host-driven
 
     // Score the game
     this.computeScoring();
@@ -558,6 +557,7 @@ export class UndercoverEditorGame extends BaseMinigame {
       storyReveals: storyReveals.map((s) => ({
         storyId: s.storyId,
         ownerName: s.ownerName,
+        prompt: s.prompt,
         editorUserId: s.editorUserId,
         editorName: s.editorName,
         editCount: s.edits.length,
@@ -589,8 +589,8 @@ export class UndercoverEditorGame extends BaseMinigame {
       scores,
     });
 
-    this.startPhaseTimer(UE_REVEAL_DURATION_SECONDS);
-    this.schedulePhaseTransition(() => this.endGame(), UE_REVEAL_DURATION_SECONDS * 1000);
+    // Infinite-time phase with host "Next" button to end the game
+    this.startInfinitePhaseTimer(true);
   }
 
   // ─── End Game ─────────────────────────────────────────────────────
@@ -1354,6 +1354,14 @@ export class UndercoverEditorGame extends BaseMinigame {
         reason,
       });
       this.startReviewPhase();
+    } else if (this.state.phase === 'REVEAL') {
+      // Host forcing REVEAL to end — finish the game
+      logger.info({
+        event: 'undercover_editor:force_end_reveal',
+        lobbyId: this.context.lobbyId,
+        reason,
+      });
+      this.endGame();
     } else {
       // REVIEW auto-advances when all locked in; no host skip
       this.cleanup();
@@ -1496,6 +1504,7 @@ export class UndercoverEditorGame extends BaseMinigame {
       reveals.push({
         storyId: story.storyId,
         ownerName: story.ownerName,
+        prompt: story.prompt,
         editorUserId: story.editorUserId,
         editorName: editorPlayer?.userName ?? 'Unknown',
         edits: story.edits.map((e): WordEditView => {

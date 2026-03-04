@@ -184,6 +184,8 @@ export interface WordEditView {
 export interface StoryRevealInfo {
   storyId: string;
   ownerName: string;
+  /** The story prompt text (displayed as the first line in reveal). */
+  prompt: string;
   editorUserId: string;
   editorName: string;
   edits: WordEditView[];

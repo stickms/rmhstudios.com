@@ -19,7 +19,6 @@ import {
 } from './setup';
 import {
   UE_WRITE_TIMEOUT_SECONDS,
-  UE_REVEAL_DURATION_SECONDS,
 } from '../../../lib/rmhbox/constants';
 
 // ─── Helpers ─────────────────────────────────────────────────────
@@ -781,14 +780,57 @@ describe('Undercover Editor Server Handler — Round-Robin Design (§6.2)', () =
         game.handleInput(uid, 'LOCK_IN_MATCHING', {});
       }
 
-      // Advance through reveal
-      vi.advanceTimersByTime(UE_REVEAL_DURATION_SECONDS * 1000 + 50);
+      // Host ends reveal phase
+      game.forceEnd('host');
 
       expect(context.onComplete).toHaveBeenCalledTimes(1);
       const results = (context.onComplete as ReturnType<typeof vi.fn>).mock.calls[0][0];
       expect(results.rankings).toBeDefined();
       expect(results.rankings.length).toBe(5);
       expect(results.awards).toBeDefined();
+    });
+
+    it('should have infinite-time REVEAL phase that requires host forceEnd', () => {
+      const { game, broadcastLog, playerLog, context } = createUEGame();
+      game.start();
+
+      const playerIds = Object.values(MOCK_USERS).map((u) => u.userId);
+      const hostId = context.getHostId();
+
+      for (let round = 0; round < 5; round++) {
+        completeOneRound(game, playerIds, playerLog, `Reveal test round ${round + 1}`);
+      }
+
+      const readingStart = broadcastLog.find(
+        (e) => e.event === 'rmhbox:game:action' &&
+          (e.data as Record<string, unknown>).type === 'UE_READING_START',
+      );
+      const readingStories = (readingStart!.data as Record<string, unknown>).stories as Array<{ sentenceCount: number }>;
+      for (let si = 0; si < readingStories.length; si++) {
+        for (let senti = 0; senti < readingStories[si].sentenceCount; senti++) {
+          game.handleInput(hostId, 'NEXT_SENTENCE', {});
+        }
+        game.handleInput(hostId, 'NEXT_STORY', {});
+      }
+
+      for (const uid of playerIds) {
+        game.handleInput(uid, 'LOCK_IN_MATCHING', {});
+      }
+
+      // REVEAL phase should be entered but NOT auto-end
+      const revealBroadcast = broadcastLog.find(
+        (e) => e.event === 'rmhbox:game:action' &&
+          (e.data as Record<string, unknown>).type === 'UE_REVEAL',
+      );
+      expect(revealBroadcast).toBeDefined();
+
+      // Advancing time should NOT trigger game end (infinite phase)
+      vi.advanceTimersByTime(60_000);
+      expect(context.onComplete).not.toHaveBeenCalled();
+
+      // Only forceEnd ends the game
+      game.forceEnd('host');
+      expect(context.onComplete).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -824,7 +866,7 @@ describe('Undercover Editor Server Handler — Round-Robin Design (§6.2)', () =
         game.handleInput(uid, 'LOCK_IN_MATCHING', {});
       }
 
-      vi.advanceTimersByTime(UE_REVEAL_DURATION_SECONDS * 1000 + 50);
+      game.forceEnd('host');
 
       expect(context.onComplete).toHaveBeenCalledTimes(1);
       const results = (context.onComplete as ReturnType<typeof vi.fn>).mock.calls[0][0];
@@ -862,7 +904,7 @@ describe('Undercover Editor Server Handler — Round-Robin Design (§6.2)', () =
         game.handleInput(uid, 'LOCK_IN_MATCHING', {});
       }
 
-      vi.advanceTimersByTime(UE_REVEAL_DURATION_SECONDS * 1000 + 50);
+      game.forceEnd('host');
 
       const results = (context.onComplete as ReturnType<typeof vi.fn>).mock.calls[0][0];
       const gameLog = results.gameSpecificData.gameLog as Record<string, unknown>;
@@ -918,7 +960,8 @@ describe('Undercover Editor Server Handler — Round-Robin Design (§6.2)', () =
         game.handleInput(uid, 'LOCK_IN_MATCHING', {});
       }
 
-      vi.advanceTimersByTime(UE_REVEAL_DURATION_SECONDS * 1000 + 50);
+      vi.advanceTimersByTime(0); // flush any pending microtasks
+      game.forceEnd('host');
 
       const results = (context.onComplete as ReturnType<typeof vi.fn>).mock.calls[0][0];
       const gameLog = results.gameSpecificData.gameLog as Record<string, unknown>;
@@ -1072,7 +1115,8 @@ describe('Undercover Editor Server Handler — Round-Robin Design (§6.2)', () =
         game.handleInput(uid, 'LOCK_IN_MATCHING', {});
       }
 
-      vi.advanceTimersByTime(UE_REVEAL_DURATION_SECONDS * 1000 + 50);
+      // Host ends infinite-time reveal phase
+      game.forceEnd('host');
     }
 
     it('should award +1 per character written during writing phases', () => {
@@ -1317,7 +1361,8 @@ describe('Undercover Editor Server Handler — Round-Robin Design (§6.2)', () =
         game.handleInput(uid, 'LOCK_IN_MATCHING', {});
       }
 
-      vi.advanceTimersByTime(UE_REVEAL_DURATION_SECONDS * 1000 + 50);
+      // Host ends infinite-time reveal phase
+      game.forceEnd('host');
 
       const results = (context.onComplete as ReturnType<typeof vi.fn>).mock.calls[0][0];
       const gameLog = results.gameSpecificData.gameLog as Record<string, unknown>;

@@ -53,6 +53,7 @@ interface PlayerEntry {
 interface WordEditView {
   storyId: string;
   sentenceIndex: number;
+  wordIndex: number;
   sentenceAuthor: string;
   originalWord: string;
   newWord: string;
@@ -62,6 +63,7 @@ interface WordEditView {
 interface StoryRevealInfo {
   storyId: string;
   ownerName: string;
+  prompt: string;
   editorUserId: string;
   editorName: string;
   edits: WordEditView[];
@@ -718,7 +720,7 @@ export default function UndercoverEditorGame({
           </motion.div>
         )}
 
-        {/* REVEAL — dramatic reveal of editor assignments */}
+        {/* REVEAL — full stories with in-situ edits, matching panel card style */}
         {phase === 'REVEAL' && storyReveals.length > 0 && (
           <motion.div
             key="reveal"
@@ -726,79 +728,127 @@ export default function UndercoverEditorGame({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="w-full"
+            className="mx-auto flex w-full max-w-2xl flex-col items-center gap-6 text-(--rmhbox-text)"
           >
-            <div className="flex flex-col items-center gap-6">
-              <h2 className="text-xl font-bold text-(--rmhbox-text)">
-                The Truth Revealed
-              </h2>
-
-              {/* Show each story's editor */}
-              <div className="flex flex-col gap-4 w-full max-w-lg">
-                {storyReveals.map((reveal, revealIdx) => {
-                  const myGuess = matchResults[playerId]?.find((r) => r.storyId === reveal.storyId);
-                  return (
-                    <motion.div
-                      key={reveal.storyId}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.5 }}
-                      className="rounded-xl bg-(--rmhbox-surface) border border-(--rmhbox-border) p-4"
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="font-semibold text-(--rmhbox-text)">
-                          Story {revealIdx + 1}
-                        </p>
-                        {myGuess && (
-                          <span className={`text-xs px-2 py-0.5 rounded-full ${
-                            myGuess.correct
-                              ? 'bg-(--rmhbox-success-dim) text-(--rmhbox-success)'
-                              : 'bg-(--rmhbox-danger-dim) text-(--rmhbox-danger)'
-                          }`}>
-                            {myGuess.correct ? '✓ Correct' : '✗ Wrong'}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-sm text-(--rmhbox-text-muted) mb-1">
-                        Editor: <span className="font-bold text-(--rmhbox-accent)">{reveal.editorName}</span>
-                      </p>
-                      {reveal.edits.length > 0 && (
-                        <div className="mt-2 text-xs text-(--rmhbox-text-muted)">
-                          <p className="font-medium mb-1">Edits made:</p>
-                          {reveal.edits.map((edit, i) => (
-                            <p key={i}>
-                              <span className="line-through text-(--rmhbox-danger)">{edit.originalWord}</span>
-                              {' → '}
-                              <span className="text-(--rmhbox-success)">{edit.newWord}</span>
-                            </p>
-                          ))}
-                        </div>
-                      )}
-                    </motion.div>
-                  );
-                })}
-              </div>
-
-              {/* Score summary */}
-              {scores.length > 0 && (
-                <div className="w-full max-w-sm">
-                  <h3 className="text-sm font-bold text-(--rmhbox-text) mb-2 text-center">Scores</h3>
-                  <div className="flex flex-col gap-1">
-                    {[...scores].sort((a, b) => b.score - a.score).map((s) => (
-                      <div
-                        key={s.userId}
-                        className="flex items-center justify-between rounded-lg bg-(--rmhbox-surface) px-3 py-1.5 text-sm"
-                      >
-                        <span className={`${s.userId === playerId ? 'font-bold text-(--rmhbox-accent)' : 'text-(--rmhbox-text)'}`}>
-                          {s.userName}
-                        </span>
-                        <span className="font-mono text-(--rmhbox-text-muted)">{s.score}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+            <div className="flex flex-col items-center gap-1">
+              <h2 className="text-lg font-bold">The Truth Revealed</h2>
+              <p className="text-xs text-(--rmhbox-text-muted)">
+                Full stories with edits highlighted
+              </p>
             </div>
+
+            {/* Story reveal cards — matching panel style */}
+            <div className="flex w-full flex-col gap-4">
+              {storyReveals.map((reveal, revealIdx) => {
+                const myGuess = matchResults[playerId]?.find((r) => r.storyId === reveal.storyId);
+                const sortedSentences = [...reveal.sentences].sort(
+                  (a, b) => a.roundNumber - b.roundNumber,
+                );
+
+                return (
+                  <motion.div
+                    key={reveal.storyId}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: revealIdx * 0.08, duration: 0.35 }}
+                    className="flex flex-col gap-3 rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) p-4"
+                  >
+                    {/* Story header with match result badge */}
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-semibold">Story {revealIdx + 1}</span>
+                      {myGuess && (
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${
+                          myGuess.correct
+                            ? 'bg-(--rmhbox-success-dim) text-(--rmhbox-success)'
+                            : 'bg-(--rmhbox-danger-dim) text-(--rmhbox-danger)'
+                        }`}>
+                          {myGuess.correct ? '✓ Correct' : '✗ Wrong'}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Editor reveal */}
+                    <p className="text-sm text-(--rmhbox-text-muted)">
+                      Edited by:{' '}
+                      <span className="font-bold text-(--rmhbox-accent)">{reveal.editorName}</span>
+                    </p>
+
+                    {/* Full story with in-situ edit highlighting */}
+                    <div className="flex flex-col gap-1 rounded-lg bg-(--rmhbox-surface)/60 p-3 text-sm leading-relaxed">
+                      {/* Prompt as first sentence */}
+                      <span className="text-(--rmhbox-text)">
+                        <span className="opacity-50 text-xs">(prompt)</span> {reveal.prompt}
+                      </span>
+
+                      {/* Sentences with edits shown inline */}
+                      {sortedSentences.map((sentence, sIdx) => {
+                        const sentenceEdits = reveal.edits.filter(
+                          (e) => e.sentenceIndex === sIdx,
+                        );
+
+                        if (sentenceEdits.length === 0) {
+                          return <span key={sIdx}>{sentence.text} </span>;
+                        }
+
+                        // Build edit map by word index for in-situ display
+                        const editByWordIndex = new Map<number, WordEditView>();
+                        for (const edit of sentenceEdits) {
+                          editByWordIndex.set(edit.wordIndex, edit);
+                        }
+
+                        const words = sentence.text.split(/\s+/).filter((w) => w.length > 0);
+
+                        return (
+                          <span key={sIdx}>
+                            {words.map((word, wi) => {
+                              const edit = editByWordIndex.get(wi);
+                              if (edit) {
+                                return (
+                                  <span key={wi}>
+                                    {wi > 0 && ' '}
+                                    <span className="inline-flex items-center gap-0.5 rounded bg-(--rmhbox-rare-dim) px-1 py-0.5 text-[inherit]">
+                                      <span className="line-through text-(--rmhbox-danger)">{edit.originalWord}</span>
+                                      <span className="text-(--rmhbox-text-muted) text-[0.75em]">→</span>
+                                      <span className="text-(--rmhbox-success) font-medium">{edit.newWord}</span>
+                                    </span>
+                                  </span>
+                                );
+                              }
+                              return (
+                                <span key={wi}>
+                                  {wi > 0 && ' '}
+                                  {word}
+                                </span>
+                              );
+                            })}{' '}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+
+            {/* Score summary */}
+            {scores.length > 0 && (
+              <div className="w-full max-w-sm">
+                <h3 className="text-sm font-bold text-(--rmhbox-text) mb-2 text-center">Scores</h3>
+                <div className="flex flex-col gap-1">
+                  {[...scores].sort((a, b) => b.score - a.score).map((s) => (
+                    <div
+                      key={s.userId}
+                      className="flex items-center justify-between rounded-lg bg-(--rmhbox-surface) px-3 py-1.5 text-sm"
+                    >
+                      <span className={`${s.userId === playerId ? 'font-bold text-(--rmhbox-accent)' : 'text-(--rmhbox-text)'}`}>
+                        {s.userName}
+                      </span>
+                      <span className="font-mono text-(--rmhbox-text-muted)">{s.score}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </motion.div>
         )}
 
