@@ -54,6 +54,7 @@ const PLAYER_RADIUS = 12;
 const MAX_DELTA = 1 / 15; // cap to ~66ms
 const MAX_PARTICLES = 300;
 const MAX_PROJECTILES = 500;
+const CORPSE_DURATION = 1.5; // seconds to display grayed-out corpse
 
 // ---- AABB-Circle collision helper -------------------------------------------
 
@@ -205,7 +206,7 @@ function handleCollisions(
     if (proj.homing) {
       let closest: { dist: number; e: EnemyEntity } | null = null;
       for (const e of world.enemies) {
-        if (e.intangible) continue;
+        if (e.intangible || e.isDead || e.hp <= 0) continue;
         const dx = e.x - proj.x;
         const dy = e.y - proj.y;
         const d = dx * dx + dy * dy;
@@ -464,7 +465,7 @@ function handleCollisions(
         // v1.1: Two-pass AoE diminishing returns for pool ticks
         const poolTargets: EnemyEntity[] = [];
         for (const e of world.enemies) {
-          if (e.intangible) continue;
+          if (e.intangible || e.isDead || e.hp <= 0) continue;
           const dx = e.x - proj.x;
           const dy = e.y - proj.y;
           if (dx * dx + dy * dy <= (poolR + e.radius) * (poolR + e.radius)) {
@@ -745,12 +746,14 @@ function handleCollisions(
     }
   }
 
-  // -- Remove dead enemies + spawn drops --
-  for (let i = world.enemies.length - 1; i >= 0; i--) {
-    const e = world.enemies[i];
-    if (e.hp <= 0) {
+  // -- Process newly dead enemies (mark as corpse, spawn drops) --
+  for (const e of world.enemies) {
+    if (e.hp <= 0 && !e.isDead) {
       // Boss entities are managed by the boss system (step 6b), skip here
       if (e.isBoss) continue;
+
+      e.isDead = true;
+      e.corpseTimer = CORPSE_DURATION;
 
       callbacks.onKill(e.defId);
       spawnDeathBurst(world, e.x, e.y, '#888');
@@ -775,8 +778,17 @@ function handleCollisions(
 
       // Catalyst on-kill hooks
       onCatalystKill(catalystStates, world, stats, { enemyId: e.id, x: e.x, y: e.y, wasPoisoned: hasEffect(e.statusEffects, 'poison'), enemyTier: 1 });
+    }
+  }
 
-      world.enemies.splice(i, 1);
+  // -- Tick corpse timers and remove expired corpses --
+  for (let i = world.enemies.length - 1; i >= 0; i--) {
+    const e = world.enemies[i];
+    if (e.isDead) {
+      e.corpseTimer -= delta;
+      if (e.corpseTimer <= 0) {
+        world.enemies.splice(i, 1);
+      }
     }
   }
 
@@ -801,6 +813,8 @@ export function createGameLoop(
   let running = false;
   let rafId: number = 0;
   let lastTime: number = 0;
+  let accumulator: number = 0;
+  const FIXED_DT = 1 / 60; // 60 Hz physics
 
   const ctx = canvas.getContext('2d')!;
 
@@ -844,19 +858,13 @@ export function createGameLoop(
     if (!running) return;
     rafId = requestAnimationFrame(tick);
 
-    // Delta in seconds, capped
-    let delta = (now - lastTime) / 1000;
-    if (delta > MAX_DELTA) delta = MAX_DELTA;
-    if (delta <= 0) delta = 1 / 60;
+    // Frame delta in seconds, capped to prevent spiral of death
+    let frameDelta = (now - lastTime) / 1000;
+    if (frameDelta > MAX_DELTA) frameDelta = MAX_DELTA;
+    if (frameDelta <= 0) frameDelta = 1 / 60;
     lastTime = now;
 
-    // Apply time scale
-    const scaledDelta = delta * world.timeScale;
-
-    // Advance game clock
-    world.time += scaledDelta;
-
-    // Recompute stats when inventory changes or periodically
+    // Recompute stats when inventory changes (once per frame, not per step)
     const needsRecompute =
       !effectiveStats ||
       world.weapons.length !== lastStatsWeaponCount ||
@@ -881,299 +889,287 @@ export function createGameLoop(
       }
     }
 
-    // Berserker stats change with HP
-    if (world.classId === 'berserker') {
-      effectiveStats = recomputeStats();
-    }
-
-    const stats = effectiveStats!;
-
-    // --- Systems (in order) ---
-
-    // 1. Weapon disable timer
-    if (world.weaponsDisabled) {
-      world.weaponsDisabledTimer -= scaledDelta;
-      if (world.weaponsDisabledTimer <= 0) {
-        world.weaponsDisabled = false;
-        world.weaponsDisabledTimer = 0;
+    // ---- Fixed-timestep simulation loop ----
+    // All physics/game logic runs at a consistent 60 Hz regardless of display
+    // frame rate. This ensures identical movement speed at 30, 60, or 144 FPS.
+    accumulator += frameDelta;
+    while (accumulator >= FIXED_DT) {
+      // Berserker stats change with HP (recompute each step since combat changes HP)
+      if (world.classId === 'berserker') {
+        effectiveStats = recomputeStats();
       }
-    }
+      const stats = effectiveStats!;
+      const scaledDt = FIXED_DT * world.timeScale;
 
-    // 1b. Build prop spatial hash for collision queries
-    propHash.clear();
-    const activeProps = tileGen.getProps();
-    for (const prop of activeProps) {
-      // Props satisfy Entity interface (id, x, y, radius)
-      propHash.insert(prop as unknown as import('./types').Entity);
-    }
+      // Advance game clock
+      world.time += scaledDt;
 
-    // 2. Player movement
-    updatePlayer(world, world.classId, stats, scaledDelta);
+      // --- Systems (in order) ---
 
-    // 2b. Player vs prop collision (push-out using AABB)
-    {
-      const nearbyProps = propHash.query(world.player.x, world.player.y, world.player.radius + 20);
-      for (const propEntity of nearbyProps) {
-        const prop = propEntity as unknown as DestructibleProp;
-        const push = circleVsPropAABB(world.player.x, world.player.y, world.player.radius, prop);
-        if (push) {
-          world.player.x += push.pushX;
-          world.player.y += push.pushY;
+      // 1. Weapon disable timer
+      if (world.weaponsDisabled) {
+        world.weaponsDisabledTimer -= scaledDt;
+        if (world.weaponsDisabledTimer <= 0) {
+          world.weaponsDisabled = false;
+          world.weaponsDisabledTimer = 0;
         }
       }
-    }
 
-    // 3. Class abilities
-    abilityState = updateClassAbilities(world, world.classId, stats, 1, scaledDelta, abilityState);
-
-    // 3b. Catalyst per-frame update
-    updateCatalysts(world, stats, catalystStates, scaledDelta);
-
-    // 4. Weapons
-    // Snapshot cooldown timers to detect which weapons fired this frame
-    const prevCooldowns = world.weapons.map(ws => ws.cooldownTimer);
-    fireWeapons(world, stats, scaledDelta);
-    // Trigger catalyst on-attack hooks for weapons that just fired
-    for (let wi = 0; wi < world.weapons.length; wi++) {
-      const ws = world.weapons[wi];
-      // A weapon fired if its cooldown was <= 0 before (or decreased past 0) and got reset
-      if (prevCooldowns[wi] <= scaledDelta && ws.cooldownTimer > prevCooldowns[wi]) {
-        onCatalystAttack(catalystStates, world, stats, { weaponId: ws.weaponId });
-      }
-    }
-    updateBoomerangs(world, scaledDelta);
-
-    // 5. Enemy AI (with obstacle avoidance)
-    setEnemyPropHash(propHash);
-    const enemyEvents = updateEnemyAISystem(world, scaledDelta);
-    if (enemyEvents.enemyProjectiles.length > 0) {
-      world.projectiles.push(...enemyEvents.enemyProjectiles);
-    }
-    if (enemyEvents.splitSpawns.length > 0) {
-      world.enemies.push(...enemyEvents.splitSpawns);
-      callbacks.onEnemySpawns(enemyEvents.splitSpawns.map((e) => e.defId));
-    }
-    if (enemyEvents.weaponsDisabled) {
-      world.weaponsDisabled = true;
-      world.weaponsDisabledTimer = enemyEvents.weaponsDisabled.duration;
-      callbacks.onWeaponDisable(enemyEvents.weaponsDisabled.duration);
-    }
-
-    // 5b. Enemy vs prop collision (push-back using AABB, skip intangible/flying)
-    for (const enemy of world.enemies) {
-      if (enemy.intangible || enemy.canFly) continue;
-      const nearbyProps = propHash.query(enemy.x, enemy.y, enemy.radius + 20);
-      for (const propEntity of nearbyProps) {
-        const prop = propEntity as unknown as DestructibleProp;
-        const push = circleVsPropAABB(enemy.x, enemy.y, enemy.radius, prop);
-        if (push) {
-          enemy.x += push.pushX;
-          enemy.y += push.pushY;
-        }
-      }
-    }
-
-    // 6. Boss warning timer
-    if (world.bossWarning) {
-      world.bossWarning.timer -= scaledDelta;
-      if (world.bossWarning.timer <= 0) {
-        world.bossWarning = null;
-      }
-    }
-
-    // 6b. Boss update
-    if (bossState) {
-      // Track boss position for animation direction
-      const bossPrevX = bossState.entity.x;
-      const bossPrevY = bossState.entity.y;
-      const bossEvents = updateBoss(world, bossState, scaledDelta);
-
-      // Boss projectiles — tag with boss defId for bestiary tracking
-      if (bossEvents.bossProjectiles.length > 0) {
-        for (const bp of bossEvents.bossProjectiles) {
-          bp.sourceDefId = bossState.bossId;
-        }
-        world.projectiles.push(...bossEvents.bossProjectiles);
+      // 1b. Build prop spatial hash for collision queries
+      propHash.clear();
+      const activeProps = tileGen.getProps();
+      for (const prop of activeProps) {
+        propHash.insert(prop as unknown as import('./types').Entity);
       }
 
-      // Boss spawns minions
-      if (bossEvents.bossSpawnEnemies.length > 0) {
-        const minionIds: string[] = [];
-        for (const spawn of bossEvents.bossSpawnEnemies) {
-          if (spawnEnemyAt(world, spawn.defId, spawn.x, spawn.y, spawn.hpMul)) {
-            minionIds.push(spawn.defId);
+      // 2. Player movement
+      updatePlayer(world, world.classId, stats, scaledDt);
+
+      // 2b. Player vs prop collision (push-out using AABB)
+      {
+        const nearbyProps = propHash.query(world.player.x, world.player.y, world.player.radius + 20);
+        for (const propEntity of nearbyProps) {
+          const prop = propEntity as unknown as DestructibleProp;
+          const push = circleVsPropAABB(world.player.x, world.player.y, world.player.radius, prop);
+          if (push) {
+            world.player.x += push.pushX;
+            world.player.y += push.pushY;
           }
         }
-        if (minionIds.length > 0) callbacks.onEnemySpawns(minionIds);
       }
 
-      // Screen shake
-      if (bossEvents.screenShake) {
-        world.camera.shakeIntensity = bossEvents.screenShake;
-        world.camera.shakeDuration = 0.3;
-      }
+      // 3. Class abilities
+      abilityState = updateClassAbilities(world, world.classId, stats, 1, scaledDt, abilityState);
 
-      // Boss disables weapons
-      if (bossEvents.weaponsDisabled) {
+      // 3b. Catalyst per-frame update
+      updateCatalysts(world, stats, catalystStates, scaledDt);
+
+      // 4. Weapons
+      const prevCooldowns = world.weapons.map(ws => ws.cooldownTimer);
+      fireWeapons(world, stats, scaledDt);
+      for (let wi = 0; wi < world.weapons.length; wi++) {
+        const ws = world.weapons[wi];
+        if (prevCooldowns[wi] <= scaledDt && ws.cooldownTimer > prevCooldowns[wi]) {
+          onCatalystAttack(catalystStates, world, stats, { weaponId: ws.weaponId });
+        }
+      }
+      updateBoomerangs(world, scaledDt);
+
+      // 5. Enemy AI (with obstacle avoidance)
+      setEnemyPropHash(propHash);
+      const enemyEvents = updateEnemyAISystem(world, scaledDt);
+      if (enemyEvents.enemyProjectiles.length > 0 && world.projectiles.length < MAX_PROJECTILES) {
+        world.projectiles.push(...enemyEvents.enemyProjectiles);
+      }
+      if (enemyEvents.splitSpawns.length > 0) {
+        world.enemies.push(...enemyEvents.splitSpawns);
+        callbacks.onEnemySpawns(enemyEvents.splitSpawns.map((e) => e.defId));
+      }
+      if (enemyEvents.weaponsDisabled) {
         world.weaponsDisabled = true;
-        world.weaponsDisabledTimer = bossEvents.weaponsDisabled;
-        callbacks.onWeaponDisable(bossEvents.weaponsDisabled);
+        world.weaponsDisabledTimer = enemyEvents.weaponsDisabled.duration;
+        callbacks.onWeaponDisable(enemyEvents.weaponsDisabled.duration);
       }
 
-      // Player pull (Terminus consume)
-      if (bossEvents.playerPull) {
-        world.player.x += bossEvents.playerPull.forceX * scaledDelta;
-        world.player.y += bossEvents.playerPull.forceY * scaledDelta;
-      }
-
-      // Phase change
-      if (bossEvents.bossPhaseChanged) {
-        bossState.entity.bossPhase = bossEvents.bossPhaseChanged.phase;
-      }
-
-      // Compute boss movement velocity for animation
-      if (scaledDelta > 0) {
-        const bossVx = (bossState.entity.x - bossPrevX) / scaledDelta;
-        const bossVy = (bossState.entity.y - bossPrevY) / scaledDelta;
-        if (Math.abs(bossVx) > 0.1 || Math.abs(bossVy) > 0.1) {
-          bossState.entity.lastMoveVx = bossVx;
-          bossState.entity.lastMoveVy = bossVy;
-        }
-      }
-
-      // Boss defeated
-      if (bossEvents.bossDefeated) {
-        callbacks.onKill(bossEvents.bossDefeated);
-        callbacks.onBossKill(bossEvents.bossDefeated);
-        world.bossActive = false;
-        spawnBossDrops(world, bossState.entity.x, bossState.entity.y, 15, 30);
-        // Remove the boss entity from enemies
-        const bossIdx = world.enemies.indexOf(bossState.entity);
-        if (bossIdx >= 0) {
-          spawnDeathBurst(world, bossState.entity.x, bossState.entity.y, '#ff4444');
-          world.enemies.splice(bossIdx, 1);
-        }
-        bossState = null;
-      }
-    }
-
-    // 6c. Snapshot boss HP before collisions (for DPS cap enforcement)
-    if (bossState) snapshotBossHp(bossState);
-
-    // 7. Collisions + enemy death processing
-    const damageDealt = handleCollisions(world, stats, scaledDelta, abilityState, callbacks, tileGen, propHash, catalystStates);
-
-    // 7b. Enforce boss DPS cap after collisions
-    if (bossState) enforceBossDpsCap(bossState, scaledDelta);
-
-    // 8. Hemomancer lifesteal
-    if (world.classId === 'hemomancer' && damageDealt > 0) {
-      processSanguineFeast(abilityState, damageDealt, world.player.hp, world.player.maxHp);
-    }
-    // Apply accumulated lifesteal (capped at 8 HP/s)
-    if (abilityState.lifestealAccum && abilityState.lifestealAccum > 0) {
-      const maxHealPerFrame = 8 * scaledDelta;
-      const heal = Math.min(abilityState.lifestealAccum, maxHealPerFrame);
-      world.player.hp = Math.min(world.player.maxHp, world.player.hp + heal);
-      abilityState.lifestealAccum -= heal;
-    }
-    // Apply blood nova kill healing
-    if (abilityState.bloodNovaKillHealAccum && abilityState.bloodNovaKillHealAccum > 0) {
-      world.player.hp = Math.min(world.player.maxHp, world.player.hp + abilityState.bloodNovaKillHealAccum);
-      abilityState.bloodNovaKillHealAccum = 0;
-    }
-
-    // 9. Pickups
-    const pickupEvents = updatePickupSystem(world, stats, scaledDelta);
-    if (pickupEvents.xpGained > 0) callbacks.onXPGain(pickupEvents.xpGained);
-    if (pickupEvents.coinsGained > 0) callbacks.onCoinGain(pickupEvents.coinsGained);
-    if (pickupEvents.healed > 0) callbacks.onPlayerHeal(pickupEvents.healed);
-
-    // 9b. Urn collection (urns are walkover pickups, not collidable obstacles)
-    {
-      const urns = tileGen.getUrns();
-      const plR = world.player.radius;
-      for (const urn of urns) {
-        const dx = world.player.x - urn.x;
-        const dy = world.player.y - (urn.y + PROP_COLLISION_OFFSET_Y);
-        const distSq = dx * dx + dy * dy;
-        const collectR = plR + 12; // generous pickup radius
-        if (distSq <= collectR * collectR) {
-          urn.destroyed = true;
-          // Grant XP + chance of health
-          spawnPropDrops(world, urn.x, urn.y);
-          // 25% chance to also spawn food
-          if (Math.random() < 0.25) {
-            world.pickups.push({
-              id: createId(world),
-              x: urn.x + (Math.random() - 0.5) * 10,
-              y: urn.y + (Math.random() - 0.5) * 10,
-              radius: 7,
-              type: 'food',
-              value: 0,
-              magnetized: true, // auto-collect since player is right there
-            });
+      // 5b. Enemy vs prop collision (push-back using AABB, skip intangible/flying/dead)
+      for (const enemy of world.enemies) {
+        if (enemy.intangible || enemy.canFly || enemy.isDead) continue;
+        const nearbyProps = propHash.query(enemy.x, enemy.y, enemy.radius + 20);
+        for (const propEntity of nearbyProps) {
+          const prop = propEntity as unknown as DestructibleProp;
+          const push = circleVsPropAABB(enemy.x, enemy.y, enemy.radius, prop);
+          if (push) {
+            enemy.x += push.pushX;
+            enemy.y += push.pushY;
           }
         }
       }
-    }
 
-    // 10. Particles
-    updateParticles(world.particles, scaledDelta);
-    // Cap particles to prevent performance degradation
-    if (world.particles.length > MAX_PARTICLES) {
-      world.particles.splice(0, world.particles.length - MAX_PARTICLES);
-    }
-    // Cap projectiles
-    if (world.projectiles.length > MAX_PROJECTILES) {
-      world.projectiles.splice(0, world.projectiles.length - MAX_PROJECTILES);
-    }
-
-    // 11. Wave director
-    const waveEvents = updateWaveDirectorSystem(world, waveState, scaledDelta);
-    if (waveEvents.bossSpawn) {
-      callbacks.onBossSpawn(waveEvents.bossSpawn);
-      world.bossActive = true;
-      world.bossWarning = { bossId: waveEvents.bossSpawn, timer: 3 };
-
-      // Actually spawn the boss entity
-      const newBossState = spawnBoss(world, waveEvents.bossSpawn);
-      if (newBossState) {
-        bossState = newBossState;
-        world.enemies.push(newBossState.entity);
-      }
-    }
-    if (waveEvents.spawned.length > 0) {
-      callbacks.onEnemySpawns(waveEvents.spawned);
-    }
-    if (waveEvents.victory) {
-      callbacks.onVictory();
-    }
-
-    // 12. Sprite animations
-    updatePlayerAnimation(world, scaledDelta);
-    for (const enemy of world.enemies) {
-      updateEnemyAnimation(enemy, scaledDelta);
-    }
-    for (const summon of world.summons) {
-      // Find nearest enemy direction for summon facing
-      let svx = 0, svy = 0;
-      let nearestDist = Infinity;
-      for (const e of world.enemies) {
-        const dx = e.x - summon.x;
-        const dy = e.y - summon.y;
-        const d = dx * dx + dy * dy;
-        if (d < nearestDist) {
-          nearestDist = d;
-          svx = dx;
-          svy = dy;
+      // 6. Boss warning timer
+      if (world.bossWarning) {
+        world.bossWarning.timer -= scaledDt;
+        if (world.bossWarning.timer <= 0) {
+          world.bossWarning = null;
         }
       }
-      updateSummonAnimation(summon, svx, svy, scaledDelta);
+
+      // 6b. Boss update
+      if (bossState) {
+        const bossPrevX = bossState.entity.x;
+        const bossPrevY = bossState.entity.y;
+        const bossEvents = updateBoss(world, bossState, scaledDt);
+
+        if (bossEvents.bossProjectiles.length > 0 && world.projectiles.length < MAX_PROJECTILES) {
+          for (const bp of bossEvents.bossProjectiles) {
+            bp.sourceDefId = bossState.bossId;
+          }
+          world.projectiles.push(...bossEvents.bossProjectiles);
+        }
+
+        if (bossEvents.bossSpawnEnemies.length > 0) {
+          const minionIds: string[] = [];
+          for (const spawn of bossEvents.bossSpawnEnemies) {
+            if (spawnEnemyAt(world, spawn.defId, spawn.x, spawn.y, spawn.hpMul)) {
+              minionIds.push(spawn.defId);
+            }
+          }
+          if (minionIds.length > 0) callbacks.onEnemySpawns(minionIds);
+        }
+
+        if (bossEvents.screenShake) {
+          world.camera.shakeIntensity = bossEvents.screenShake;
+          world.camera.shakeDuration = 0.3;
+        }
+
+        if (bossEvents.weaponsDisabled) {
+          world.weaponsDisabled = true;
+          world.weaponsDisabledTimer = bossEvents.weaponsDisabled;
+          callbacks.onWeaponDisable(bossEvents.weaponsDisabled);
+        }
+
+        if (bossEvents.playerPull) {
+          world.player.x += bossEvents.playerPull.forceX * scaledDt;
+          world.player.y += bossEvents.playerPull.forceY * scaledDt;
+        }
+
+        if (bossEvents.bossPhaseChanged) {
+          bossState.entity.bossPhase = bossEvents.bossPhaseChanged.phase;
+        }
+
+        if (scaledDt > 0) {
+          const bossVx = (bossState.entity.x - bossPrevX) / scaledDt;
+          const bossVy = (bossState.entity.y - bossPrevY) / scaledDt;
+          if (Math.abs(bossVx) > 0.1 || Math.abs(bossVy) > 0.1) {
+            bossState.entity.lastMoveVx = bossVx;
+            bossState.entity.lastMoveVy = bossVy;
+          }
+        }
+
+        if (bossEvents.bossDefeated) {
+          callbacks.onKill(bossEvents.bossDefeated);
+          callbacks.onBossKill(bossEvents.bossDefeated);
+          world.bossActive = false;
+          spawnBossDrops(world, bossState.entity.x, bossState.entity.y, 15, 30);
+          spawnDeathBurst(world, bossState.entity.x, bossState.entity.y, '#ff4444');
+          bossState.entity.isDead = true;
+          bossState.entity.corpseTimer = CORPSE_DURATION * 2;
+          bossState = null;
+        }
+      }
+
+      // 6c. Snapshot boss HP before collisions (for DPS cap enforcement)
+      if (bossState) snapshotBossHp(bossState);
+
+      // 7. Collisions + enemy death processing
+      const damageDealt = handleCollisions(world, stats, scaledDt, abilityState, callbacks, tileGen, propHash, catalystStates);
+
+      // 7b. Enforce boss DPS cap after collisions
+      if (bossState) enforceBossDpsCap(bossState, scaledDt);
+
+      // 8. Hemomancer lifesteal
+      if (world.classId === 'hemomancer' && damageDealt > 0) {
+        processSanguineFeast(abilityState, damageDealt, world.player.hp, world.player.maxHp);
+      }
+      if (abilityState.lifestealAccum && abilityState.lifestealAccum > 0) {
+        const maxHealPerStep = 8 * scaledDt;
+        const heal = Math.min(abilityState.lifestealAccum, maxHealPerStep);
+        world.player.hp = Math.min(world.player.maxHp, world.player.hp + heal);
+        abilityState.lifestealAccum -= heal;
+      }
+      if (abilityState.bloodNovaKillHealAccum && abilityState.bloodNovaKillHealAccum > 0) {
+        world.player.hp = Math.min(world.player.maxHp, world.player.hp + abilityState.bloodNovaKillHealAccum);
+        abilityState.bloodNovaKillHealAccum = 0;
+      }
+
+      // 9. Pickups
+      const pickupEvents = updatePickupSystem(world, stats, scaledDt);
+      if (pickupEvents.xpGained > 0) callbacks.onXPGain(pickupEvents.xpGained);
+      if (pickupEvents.coinsGained > 0) callbacks.onCoinGain(pickupEvents.coinsGained);
+      if (pickupEvents.healed > 0) callbacks.onPlayerHeal(pickupEvents.healed);
+
+      // 9b. Urn collection
+      {
+        const urns = tileGen.getUrns();
+        const plR = world.player.radius;
+        for (const urn of urns) {
+          const dx = world.player.x - urn.x;
+          const dy = world.player.y - (urn.y + PROP_COLLISION_OFFSET_Y);
+          const distSq = dx * dx + dy * dy;
+          const collectR = plR + 12;
+          if (distSq <= collectR * collectR) {
+            urn.destroyed = true;
+            spawnPropDrops(world, urn.x, urn.y);
+            if (Math.random() < 0.25) {
+              world.pickups.push({
+                id: createId(world),
+                x: urn.x + (Math.random() - 0.5) * 10,
+                y: urn.y + (Math.random() - 0.5) * 10,
+                radius: 7,
+                type: 'food',
+                value: 0,
+                magnetized: true,
+              });
+            }
+          }
+        }
+      }
+
+      // 10. Particles
+      updateParticles(world.particles, scaledDt);
+      if (world.particles.length > MAX_PARTICLES) {
+        world.particles.splice(0, world.particles.length - MAX_PARTICLES);
+      }
+
+      // 11. Wave director
+      const waveEvents = updateWaveDirectorSystem(world, waveState, scaledDt);
+      if (waveEvents.bossSpawn) {
+        callbacks.onBossSpawn(waveEvents.bossSpawn);
+        world.bossActive = true;
+        world.bossWarning = { bossId: waveEvents.bossSpawn, timer: 3 };
+
+        const newBossState = spawnBoss(world, waveEvents.bossSpawn);
+        if (newBossState) {
+          bossState = newBossState;
+          world.enemies.push(newBossState.entity);
+        }
+      }
+      if (waveEvents.spawned.length > 0) {
+        callbacks.onEnemySpawns(waveEvents.spawned);
+      }
+      if (waveEvents.victory) {
+        callbacks.onVictory();
+      }
+
+      // 12. Sprite animations
+      updatePlayerAnimation(world, scaledDt);
+      for (const enemy of world.enemies) {
+        if (enemy.isDead) continue;
+        updateEnemyAnimation(enemy, scaledDt);
+      }
+      for (const summon of world.summons) {
+        let svx = 0, svy = 0;
+        let nearestDist = Infinity;
+        for (const e of world.enemies) {
+          if (e.isDead) continue;
+          const dx = e.x - summon.x;
+          const dy = e.y - summon.y;
+          const d = dx * dx + dy * dy;
+          if (d < nearestDist) {
+            nearestDist = d;
+            svx = dx;
+            svy = dy;
+          }
+        }
+        updateSummonAnimation(summon, svx, svy, scaledDt);
+      }
+
+      accumulator -= FIXED_DT;
     }
 
-    // 13. Camera
-    updateCamera(world.camera, world.player, delta);
+    // ---- Per-frame updates (outside fixed timestep) ----
+
+    // 13. Camera follows at frame rate for smooth visual tracking
+    updateCamera(world.camera, world.player, frameDelta);
     tileGen.update(world.camera);
 
     // 13b. Spawn structure pickups queued by tile generator
@@ -1195,6 +1191,7 @@ export function createGameLoop(
       if (running) return;
       running = true;
       lastTime = performance.now();
+      accumulator = 0;
       abilityState = createClassAbilityState();
       waveState = createWaveDirectorState();
       catalystStates = createCatalystRuntimeStates(world.catalysts);

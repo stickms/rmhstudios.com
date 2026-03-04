@@ -165,6 +165,8 @@ export function spawnBoss(world: GameWorld, bossId: string): BossState | null {
     dashVy: 0,
     lastMoveVx: 0,
     lastMoveVy: 0,
+    isDead: false,
+    corpseTimer: 0,
   };
 
   // Initialize attack timers to half their cooldowns (first attack comes sooner)

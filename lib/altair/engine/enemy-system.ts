@@ -316,6 +316,8 @@ function spawnEnemyEntity(
     dashVy: 0,
     lastMoveVx: 0,
     lastMoveVy: 0,
+    isDead: false,
+    corpseTimer: 0,
   };
 }
 

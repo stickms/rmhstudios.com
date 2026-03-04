@@ -17,6 +17,13 @@ import {
 } from '../data/waves';
 import { getHPScale, getDamageScale, getSpeedScale, getXPScale } from '../data/scaling';
 
+/** Count living (non-corpse) enemies for spawn cap checks. */
+function aliveEnemyCount(world: GameWorld): number {
+  let count = 0;
+  for (const e of world.enemies) if (!e.isDead) count++;
+  return count;
+}
+
 // ---- Types ------------------------------------------------------------------
 
 export interface WaveDirectorState {
@@ -121,6 +128,8 @@ function spawnEnemy(
     dashVy: 0,
     lastMoveVx: 0,
     lastMoveVy: 0,
+    isDead: false,
+    corpseTimer: 0,
   };
 
   // Set initial AI state based on behavior
@@ -175,17 +184,26 @@ function spawnEnemy(
 
 // ---- Despawn ----------------------------------------------------------------
 
-/** Despawn farthest Tier 1 enemies to make room for higher tiers. */
+/** Despawn only off-screen Tier 1 enemies when well over cap.
+ *  Never removes enemies visible to the player. */
 function despawnExcess(world: GameWorld): void {
-  if (world.enemies.length <= MAX_ACTIVE_ENEMIES) return;
+  // Allow a soft overflow — only cull when significantly over cap
+  const softCap = MAX_ACTIVE_ENEMIES + 50;
+  const alive = aliveEnemyCount(world);
+  if (alive <= softCap) return;
 
-  // Find Tier 1 enemies (shambler, bat) and sort by distance to player
+  // Only consider off-screen Tier 1 enemies (shambler, bat)
+  const screenHalfW = 480; // conservative half-width estimate
+  const screenHalfH = 320;
   const tier1Indices: { index: number; distSq: number }[] = [];
   for (let i = 0; i < world.enemies.length; i++) {
     const e = world.enemies[i];
+    if (e.isDead) continue; // corpses are cleaned up by corpseTimer
     if (e.defId === 'shambler' || e.defId === 'bat') {
       const dx = e.x - world.player.x;
       const dy = e.y - world.player.y;
+      // Skip if on-screen (visible to the player)
+      if (Math.abs(dx) < screenHalfW && Math.abs(dy) < screenHalfH) continue;
       tier1Indices.push({ index: i, distSq: dx * dx + dy * dy });
     }
   }
@@ -193,8 +211,8 @@ function despawnExcess(world: GameWorld): void {
   // Sort farthest first
   tier1Indices.sort((a, b) => b.distSq - a.distSq);
 
-  // Remove until under cap
-  const toRemove = world.enemies.length - MAX_ACTIVE_ENEMIES;
+  // Remove until back to MAX_ACTIVE_ENEMIES
+  const toRemove = alive - MAX_ACTIVE_ENEMIES;
   const removeIndices = new Set<number>();
   for (let i = 0; i < Math.min(toRemove, tier1Indices.length); i++) {
     removeIndices.add(tier1Indices[i].index);
@@ -265,7 +283,7 @@ export function updateWaveDirector(
       state.surgeTimer = 10; // Surge every 10 seconds
       // Spawn a burst of 30 Tier 1 + 3-5 high tier enemies
       for (let i = 0; i < 30; i++) {
-        if (world.enemies.length >= MAX_ACTIVE_ENEMIES) break;
+        if (aliveEnemyCount(world) >= MAX_ACTIVE_ENEMIES) break;
         const pos = getRandomSpawnPosition(world.player.x, world.player.y, 400, 700);
         const type = Math.random() < 0.5 ? 'shambler' : 'bat';
         const enemy = spawnEnemy(world, type, pos.x, pos.y, 1, events.spawned);
@@ -274,7 +292,7 @@ export function updateWaveDirector(
       const highTierTypes = ['vampire_noble', 'arcane_construct', 'death_knight', 'bone_golem', 'witch'];
       const highTierCount = 3 + Math.floor(Math.random() * 3);
       for (let i = 0; i < highTierCount; i++) {
-        if (world.enemies.length >= MAX_ACTIVE_ENEMIES) break;
+        if (aliveEnemyCount(world) >= MAX_ACTIVE_ENEMIES) break;
         const pos = getRandomSpawnPosition(world.player.x, world.player.y, 400, 700);
         const type = highTierTypes[Math.floor(Math.random() * highTierTypes.length)];
         const enemy = spawnEnemy(world, type, pos.x, pos.y, 1, events.spawned);
@@ -284,7 +302,7 @@ export function updateWaveDirector(
   }
 
   // Spend budget on spawning enemies
-  while (state.budgetAccumulator >= 1 && world.enemies.length < MAX_ACTIVE_ENEMIES) {
+  while (state.budgetAccumulator >= 1 && aliveEnemyCount(world) < MAX_ACTIVE_ENEMIES) {
     // Pick a random enemy from the current composition
     const composition = currentWave.enemyComposition;
     const enemyId = composition[Math.floor(Math.random() * composition.length)];
@@ -307,7 +325,7 @@ export function updateWaveDirector(
         const packMax = def?.specialParams.packSizeMax || 12;
         const packSize = packMin + Math.floor(Math.random() * (packMax - packMin + 1));
         for (let j = 0; j < packSize; j++) {
-          if (world.enemies.length >= MAX_ACTIVE_ENEMIES) break;
+          if (aliveEnemyCount(world) >= MAX_ACTIVE_ENEMIES) break;
           const offset = { x: (Math.random() - 0.5) * 60, y: (Math.random() - 0.5) * 60 };
           const rat = spawnEnemy(world, 'swarm_rat', pos.x + offset.x, pos.y + offset.y, 1, events.spawned);
           if (rat) world.enemies.push(rat);
@@ -330,7 +348,7 @@ export function updateWaveDirector(
       const packMax = def?.specialParams.packSizeMax || 12;
       const packSize = packMin + Math.floor(Math.random() * (packMax - packMin + 1));
       for (let j = 0; j < packSize; j++) {
-        if (world.enemies.length >= MAX_ACTIVE_ENEMIES) break;
+        if (aliveEnemyCount(world) >= MAX_ACTIVE_ENEMIES) break;
         const offset = { x: (Math.random() - 0.5) * 60, y: (Math.random() - 0.5) * 60 };
         const rat = spawnEnemy(world, 'swarm_rat', pos.x + offset.x, pos.y + offset.y, 1, events.spawned);
         if (rat) world.enemies.push(rat);
@@ -352,7 +370,7 @@ export function updateWaveDirector(
     // Spawn all enemies in the surge composition in a ring around the player
     for (const [enemyId, count] of Object.entries(surge.composition)) {
       for (let i = 0; i < count; i++) {
-        if (world.enemies.length >= MAX_ACTIVE_ENEMIES) break;
+        if (aliveEnemyCount(world) >= MAX_ACTIVE_ENEMIES) break;
         const pos = getRandomSpawnPosition(
           world.player.x,
           world.player.y,
@@ -382,7 +400,7 @@ export function spawnEnemyAt(
   y: number,
   hpMultiplier: number = 1,
 ): EnemyEntity | null {
-  if (world.enemies.length >= MAX_ACTIVE_ENEMIES) return null;
+  if (aliveEnemyCount(world) >= MAX_ACTIVE_ENEMIES) return null;
   const enemy = spawnEnemy(world, defId, x, y, hpMultiplier);
   if (enemy) {
     world.enemies.push(enemy);

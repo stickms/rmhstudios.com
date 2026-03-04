@@ -60,6 +60,9 @@ export interface EnemyEntity extends Entity {
   lastMoveVy: number;
   // Sprite animation state
   animState?: AnimationState;
+  // Corpse system — dead enemies remain visible briefly as grayed-out sprites
+  isDead: boolean;
+  corpseTimer: number; // seconds remaining as visible corpse
 }
 
 export interface ProjectileEntity extends Entity {

@@ -7,6 +7,10 @@
 //
 // Sprite-first: draws pixel-art sprites when loaded, otherwise falls back to
 // the original vector primitives.
+//
+// PERF: ctx.save/restore is only used when a transform or composite change is
+// needed (flipX, globalAlpha, composite ops). Normal sprite draws are bare
+// drawImage calls. imageSmoothingEnabled is set once at frame start.
 // =============================================================================
 
 import {
@@ -42,7 +46,7 @@ import {
   SUMMON_SCALE,
   getProjectileScale,
 } from './sprites/sprite-defs';
-import { drawSprite, drawAnimatedSprite } from './sprites/sprite-renderer';
+import { drawSprite, drawAnimatedSprite, drawSpriteFlash, drawSpriteCorpse } from './sprites/sprite-renderer';
 import {
   pickDirectionalAnim,
   createAnimState,
@@ -84,7 +88,7 @@ export function renderFrame(
 ): void {
   const { camera } = world;
 
-  // Ensure pixel art stays crisp on any DPR/resolution
+  // Set once per frame — all sprite helpers rely on this being set here
   ctx.imageSmoothingEnabled = false;
 
   // Clear
@@ -180,7 +184,7 @@ function renderPickups(
       if (!isVisible(camera, p.x, p.y, 20)) continue;
       const s = worldToScreen(camera, p.x, p.y);
 
-      // For non-XP pickups, try sprite rendering
+      // For non-XP pickups, try sprite rendering (no save/restore needed)
       if (!isXP && pickupSheet) {
         const frameIndex = PICKUP_FRAMES[p.type];
         if (frameIndex !== undefined) {
@@ -189,7 +193,7 @@ function renderPickups(
         }
       }
 
-      // Vector rendering
+      // Vector rendering (needs save/restore for translate)
       ctx.save();
       ctx.translate(s.x, s.y);
 
@@ -313,11 +317,13 @@ function renderAuras(
   auras: AuraEffect[],
   camera: Camera,
 ): void {
+  if (auras.length === 0) return;
+
+  ctx.save();
   for (const a of auras) {
     if (!isVisible(camera, a.x, a.y, a.radius)) continue;
     const s = worldToScreen(camera, a.x, a.y);
 
-    ctx.save();
     ctx.globalAlpha = 0.15;
     ctx.fillStyle = '#8844ff';
     ctx.beginPath();
@@ -328,8 +334,8 @@ function renderAuras(
     ctx.strokeStyle = '#aa66ff';
     ctx.lineWidth = 2;
     ctx.stroke();
-    ctx.restore();
   }
+  ctx.restore();
 }
 
 // ---- Melee hitboxes ---------------------------------------------------------
@@ -420,15 +426,45 @@ function renderEnemies(
     if (!isVisible(camera, e.x, e.y, e.radius + 20)) continue;
     const s = worldToScreen(camera, e.x, e.y);
 
-    ctx.save();
+    // Dead enemies render as grayed-out corpses (drawn before live enemies would
+    // be ideal, but the visual order is fine since corpses fade out quickly)
+    if (e.isDead) {
+      const isBoss = e.isBoss && e.bossId;
+      const sprites = isBoss ? getBossSprites(e.bossId!) : getEnemySprites(e.defId);
+      const scale = isBoss ? getBossScale(e.radius) : getEnemyScale(e.radius);
 
-    // Intangible enemies are translucent
-    if (e.intangible) {
-      ctx.globalAlpha = e.opacity;
+      // Fade out over the corpse duration (full opacity at start → 0 at end)
+      const alpha = Math.min(1, e.corpseTimer * 1.5); // fade to 0 over last ~0.67s
+
+      if (sprites && e.animState) {
+        const flipEnemy = e.animState.animation === sprites.walkSide && e.lastMoveVx < 0;
+        const frameIndex = getCurrentFrameIndex(e.animState);
+        drawSpriteCorpse(ctx, e.animState.animation.sheet, frameIndex, s.x, s.y, scale, alpha, flipEnemy);
+      } else {
+        // Vector fallback: draw a gray circle with fading alpha
+        ctx.save();
+        ctx.globalAlpha = alpha * 0.5;
+        ctx.fillStyle = '#666666';
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, e.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+      continue;
     }
 
-    // Flash white when hit
     const isFlashing = e.flashTimer > 0;
+    const needsAlpha = e.intangible;
+    const hasStatusTint = e.statusEffects.length > 0;
+    const hasBars = e.hp < e.maxHp || e.armor > 0;
+    const needsSave = needsAlpha || isFlashing || hasStatusTint || hasBars || (e.isBoss && !getEnemySprites(e.defId));
+
+    if (needsSave) ctx.save();
+
+    // Intangible enemies are translucent
+    if (needsAlpha) {
+      ctx.globalAlpha = e.opacity;
+    }
 
     // Try sprite rendering
     const isBoss = e.isBoss && e.bossId;
@@ -437,24 +473,14 @@ function renderEnemies(
 
     if (sprites && e.animState) {
       const flipEnemy = e.animState.animation === sprites.walkSide && e.lastMoveVx < 0;
+      const frameIndex = getCurrentFrameIndex(e.animState);
+
       if (isFlashing) {
-        // Flash: draw with increased brightness
-        ctx.globalAlpha = (e.intangible ? e.opacity : 1) * 0.6;
-        drawAnimatedSprite(ctx, e.animState, s.x, s.y, scale, flipEnemy);
-        // White overlay
-        ctx.globalCompositeOperation = 'source-atop';
-        ctx.fillStyle = '#ffffff';
-        const spriteSize = (isBoss ? 32 : 16) * scale;
-        ctx.fillRect(
-          Math.round(s.x - spriteSize / 2),
-          Math.round(s.y - spriteSize / 2),
-          spriteSize,
-          spriteSize,
-        );
-        ctx.globalCompositeOperation = 'source-over';
-        ctx.globalAlpha = e.intangible ? e.opacity : 1;
+        // Use offscreen flash canvas for white overlay (no composite on main ctx)
+        drawSpriteFlash(ctx, e.animState.animation.sheet, frameIndex, s.x, s.y, scale, flipEnemy);
+      } else {
+        drawSprite(ctx, e.animState.animation.sheet, frameIndex, s.x, s.y, scale, flipEnemy);
       }
-      drawAnimatedSprite(ctx, e.animState, s.x, s.y, scale, flipEnemy);
     } else {
       // Vector fallback
       const baseColor = isFlashing ? '#ffffff' : getEnemyColor(e);
@@ -498,13 +524,15 @@ function renderEnemies(
     }
 
     // Status effect tint overlays
-    for (const se of e.statusEffects) {
-      const tint = STATUS_TINT[se.type];
-      if (tint) {
-        ctx.fillStyle = tint;
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, e.radius + 1, 0, Math.PI * 2);
-        ctx.fill();
+    if (hasStatusTint) {
+      for (const se of e.statusEffects) {
+        const tint = STATUS_TINT[se.type];
+        if (tint) {
+          ctx.fillStyle = tint;
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, e.radius + 1, 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
     }
 
@@ -539,7 +567,7 @@ function renderEnemies(
       ctx.stroke();
     }
 
-    ctx.restore();
+    if (needsSave) ctx.restore();
   }
 }
 
@@ -606,38 +634,33 @@ function renderProjectiles(
     if (!isVisible(camera, p.x, p.y, p.radius + 5)) continue;
     const s = worldToScreen(camera, p.x, p.y);
 
-    ctx.save();
-
     if (projSheet) {
-      // Sprite projectile with glow
-      if (p.isEnemy) {
-        ctx.shadowColor = '#ff0000';
-        ctx.shadowBlur = 4;
-      } else {
-        ctx.shadowColor = p.color || '#ffcc00';
-        ctx.shadowBlur = 3;
-      }
-      const frameIndex = p.isEnemy ? 1 : 0; // frame 0 = player, 1 = enemy
+      // Glow circle behind the sprite (cheap replacement for shadowBlur)
+      const glowColor = p.isEnemy ? 'rgba(255,50,50,0.25)' : (p.color ? p.color + '40' : 'rgba(255,204,0,0.25)');
+      const glowR = p.radius + 3;
+      ctx.fillStyle = glowColor;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, glowR, 0, Math.PI * 2);
+      ctx.fill();
+
+      const frameIndex = p.isEnemy ? 1 : 0;
       const scale = getProjectileScale(p.radius);
       drawSprite(ctx, projSheet, frameIndex, s.x, s.y, scale, false);
     } else {
-      // Vector fallback
-      if (p.isEnemy) {
-        ctx.fillStyle = '#cc3333';
-        ctx.shadowColor = '#ff0000';
-        ctx.shadowBlur = 4;
-      } else {
-        ctx.fillStyle = p.color || '#ffcc00';
-        ctx.shadowColor = p.color || '#ffcc00';
-        ctx.shadowBlur = 3;
-      }
-
+      // Vector fallback (no shadowBlur)
+      ctx.fillStyle = p.isEnemy ? '#cc3333' : (p.color || '#ffcc00');
       ctx.beginPath();
       ctx.arc(s.x, s.y, Math.max(p.radius, 2), 0, Math.PI * 2);
       ctx.fill();
-    }
 
-    ctx.restore();
+      // Simple glow ring
+      const glowColor = p.isEnemy ? 'rgba(255,50,50,0.3)' : (p.color ? p.color + '4D' : 'rgba(255,204,0,0.3)');
+      ctx.strokeStyle = glowColor;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, p.radius + 2, 0, Math.PI * 2);
+      ctx.stroke();
+    }
   }
 }
 
@@ -791,11 +814,9 @@ function renderSummons(
     if (!isVisible(camera, sm.x, sm.y, sm.radius + 10)) continue;
     const screen = worldToScreen(camera, sm.x, sm.y);
 
-    ctx.save();
-
     if (summonSpriteSet && sm.animState) {
-      const flipX = sm.animState.animation === summonSpriteSet.walkSide && false;
-      drawAnimatedSprite(ctx, sm.animState, screen.x, screen.y, SUMMON_SCALE, flipX);
+      // Sprite path — no save/restore needed (no flip, no alpha)
+      drawAnimatedSprite(ctx, sm.animState, screen.x, screen.y, SUMMON_SCALE, false);
     } else {
       // Vector fallback
       ctx.fillStyle = '#bbccaa';
@@ -823,8 +844,6 @@ function renderSummons(
       ctx.fillStyle = '#88cc88';
       ctx.fillRect(barX, barY, barW * hpFrac, barH);
     }
-
-    ctx.restore();
   }
 }
 
@@ -835,13 +854,14 @@ function renderParticles(
   particles: ParticleEntity[],
   camera: Camera,
 ): void {
+  // Batch text particles and shape particles separately to minimize font changes
   for (const p of particles) {
     if (!isVisible(camera, p.x, p.y, 50)) continue;
     const s = worldToScreen(camera, p.x, p.y);
 
-    ctx.save();
-
     const alpha = Math.max(0, Math.min(1, p.life / p.maxLife));
+
+    ctx.save();
     ctx.globalAlpha = alpha;
 
     if (p.text) {
