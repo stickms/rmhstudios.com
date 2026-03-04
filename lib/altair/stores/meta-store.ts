@@ -2,10 +2,9 @@
  * Meta-progression store for Altair — persisted to localStorage + synced to DB.
  * Manages persistent coins, purchased upgrades, unlocked classes, and achievements.
  *
- * On page load, loadFromServer() merges DB state with localStorage (DB wins for
- * coins / upgrades / unlocks so progress isn't lost across devices).
- * After every mutation that changes persistent data, saveToServer() fires
- * (debounced) to push the latest state to the API.
+ * On page load, loadFromServer() replaces local state with DB state (server wins).
+ * Purchases save immediately and rollback on failure. Other mutations use a
+ * debounced save (1 s) as a best-effort sync.
  */
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
@@ -31,16 +30,31 @@ function getPersistedState() {
   };
 }
 
+function doSave(): Promise<boolean> {
+  return fetch('/api/altair/meta', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(getPersistedState()),
+  }).then((res) => res.ok).catch(() => false);
+}
+
 function scheduleSave() {
   if (saveTimer) clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
     saveTimer = null;
-    fetch('/api/altair/meta', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(getPersistedState()),
-    }).catch(() => { /* silently ignore — localStorage is the fallback */ });
+    doSave();
   }, 1000);
+}
+
+/** Save immediately and revert state on failure. */
+function saveNowOrRollback(prevState: Partial<AltairMetaState>) {
+  if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
+  doSave().then((ok) => {
+    if (!ok) {
+      // Revert to previous state on save failure
+      useAltairMetaStore.setState(prevState);
+    }
+  });
 }
 
 // ---- Store ------------------------------------------------------------------
@@ -113,11 +127,12 @@ export const useAltairMetaStore = create<AltairMetaState>()(
         if (!def || currentLevel >= def.maxLevel) return false;
         const cost = def.costs[currentLevel];
         if (s.coins < cost) return false;
+        const prev = { coins: s.coins, upgrades: { ...s.upgrades } };
         set({
           coins: s.coins - cost,
           upgrades: { ...s.upgrades, [id]: currentLevel + 1 },
         });
-        scheduleSave();
+        saveNowOrRollback(prev);
         return true;
       },
 
@@ -125,11 +140,12 @@ export const useAltairMetaStore = create<AltairMetaState>()(
         const s = get();
         if (s.unlockedClasses.includes(classId)) return false;
         if (s.coins < cost) return false;
+        const prev = { coins: s.coins, unlockedClasses: [...s.unlockedClasses] };
         set({
           coins: s.coins - cost,
           unlockedClasses: [...s.unlockedClasses, classId],
         });
-        scheduleSave();
+        saveNowOrRollback(prev);
         return true;
       },
 
@@ -241,57 +257,20 @@ export const useAltairMetaStore = create<AltairMetaState>()(
           const { data } = await res.json();
           if (!data) return; // no server data yet — first time
 
-          const local = get();
-
-          // Merge: take the max/superset so no progress is lost
-          const mergedUpgrades: Record<string, number> = { ...local.upgrades };
-          for (const [key, val] of Object.entries(data.upgrades as Record<string, number>)) {
-            mergedUpgrades[key] = Math.max(mergedUpgrades[key] || 0, val);
-          }
-
-          const mergedClasses = Array.from(new Set([
-            ...local.unlockedClasses,
-            ...(data.unlockedClasses as string[]),
-          ]));
-
-          const mergedFirstClears = Array.from(new Set([
-            ...local.classFirstClears,
-            ...(data.classFirstClears as string[]),
-          ]));
-
-          const mergedBosses = Array.from(new Set([
-            ...local.bossesDefeated,
-            ...(data.bossesDefeated as string[]),
-          ]));
-
-          // Merge bestiary: take max of each stat per enemy
-          const mergedBestiary: Record<string, { encountered: number; killed: number; killedBy: number }> = { ...local.bestiary };
-          const serverBestiary = (data.bestiary || {}) as Record<string, { encountered: number; killed: number; killedBy: number }>;
-          for (const [key, val] of Object.entries(serverBestiary)) {
-            const localEntry = mergedBestiary[key] || { encountered: 0, killed: 0, killedBy: 0 };
-            mergedBestiary[key] = {
-              encountered: Math.max(localEntry.encountered, val.encountered || 0),
-              killed: Math.max(localEntry.killed, val.killed || 0),
-              killedBy: Math.max(localEntry.killedBy, val.killedBy || 0),
-            };
-          }
-
+          // Server wins — override local state entirely
           set({
-            coins: Math.max(local.coins, data.coins as number),
-            upgrades: mergedUpgrades,
-            unlockedClasses: mergedClasses,
-            doubleTimeUnlocked: local.doubleTimeUnlocked || (data.doubleTimeUnlocked as boolean),
-            classFirstClears: mergedFirstClears,
-            totalRunsPlayed: Math.max(local.totalRunsPlayed, data.totalRunsPlayed as number),
-            bestTimeSurvived: Math.max(local.bestTimeSurvived, data.bestTimeSurvived as number),
-            bestKills: Math.max(local.bestKills, data.bestKills as number),
-            bossesDefeated: mergedBosses,
-            bestiary: mergedBestiary,
+            coins: data.coins as number,
+            upgrades: (data.upgrades ?? {}) as Record<string, number>,
+            unlockedClasses: (data.unlockedClasses ?? ['knight', 'arcanist', 'ranger']) as string[],
+            doubleTimeUnlocked: data.doubleTimeUnlocked as boolean,
+            classFirstClears: (data.classFirstClears ?? []) as string[],
+            totalRunsPlayed: data.totalRunsPlayed as number,
+            bestTimeSurvived: data.bestTimeSurvived as number,
+            bestKills: data.bestKills as number,
+            bossesDefeated: (data.bossesDefeated ?? []) as string[],
+            bestiary: (data.bestiary ?? {}) as Record<string, { encountered: number; killed: number; killedBy: number }>,
             _loadedFromServer: true,
           });
-
-          // Push merged state back to server so both sides agree
-          scheduleSave();
         } catch {
           // Offline or error — localStorage is the fallback
         }

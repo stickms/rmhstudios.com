@@ -10,11 +10,17 @@
 
 import { useEffect } from 'react';
 import { useAltairSettingsStore } from '@/lib/altair/stores/settings-store';
+import { useAltairMetaStore } from '@/lib/altair/stores/meta-store';
 import { altairMusic } from '@/lib/altair/audio/music';
 import ToastContainer from '@/components/altair/ToastContainer';
 
 export default function AltairShell({ children }: { children: React.ReactNode }) {
   const theme = useAltairSettingsStore((s) => s.theme) ?? 'dark';
+
+  // Load meta progression from DB on mount so it's ready before any game screen.
+  useEffect(() => {
+    useAltairMetaStore.getState().loadFromServer();
+  }, []);
 
   // Start background music on mount and sync volume with settings.
   // Lives here (not in page.tsx) so music persists across all /altair/* routes.

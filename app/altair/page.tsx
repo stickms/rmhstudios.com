@@ -61,10 +61,7 @@ export default function AltairPage() {
 
   // Music is now managed by AltairShell (persists across all /altair/* routes)
 
-  // Load meta progress from DB on mount, then check retroactive unlocks
-  useEffect(() => {
-    useAltairMetaStore.getState().loadFromServer();
-  }, []);
+  // Meta progress is loaded from DB in AltairShell (shared across all /altair routes)
 
   // Retroactive unlock check — runs on mount and when entering class select
   // so players who already met conditions (e.g. after condition changes) get their unlocks
