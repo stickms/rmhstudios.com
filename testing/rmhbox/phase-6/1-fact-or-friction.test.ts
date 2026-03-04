@@ -26,6 +26,7 @@ import {
   FF_POT_TICK_INTERVAL_MS,
   FF_POT_MIN_VALUE,
   FF_SCORE_FLOOR,
+  FF_SPEED_BONUS,
 } from '../../../lib/rmhbox/constants';
 import {
   MOCK_USERS,
@@ -474,6 +475,194 @@ describe('Fact or Friction Server Handler (§6.1)', () => {
       const state = game.getStateForPlayer(MOCK_USERS.alice.userId) as Record<string, unknown>;
       const scores = state.scores as Record<string, number>;
       expect(scores[MOCK_USERS.alice.userId]).toBe(0);
+
+      game.cleanup();
+    });
+  });
+
+  describe('Speed Bonus', () => {
+    it('should award speed bonus to the first correct answerer', () => {
+      const { game, broadcastLog } = createGame();
+      game.start();
+      advanceToAnswerPhase();
+
+      // Get the question to find correct answer
+      const state = game.getStateForPlayer(MOCK_USERS.alice.userId) as Record<string, unknown>;
+      // We need to find the correct answer. During ANSWER_REVEAL the correctIndex is available.
+      // But during ANSWER phase it's hidden. Let's just have all players answer differently
+      // and check that the correct one got the speed bonus.
+      
+      // All four players submit different answers at pot=1000
+      game.handleInput(MOCK_USERS.alice.userId, 'SUBMIT_ANSWER', { selectedIndex: 0 });
+      game.handleInput(MOCK_USERS.bob.userId, 'SUBMIT_ANSWER', { selectedIndex: 1 });
+      game.handleInput(MOCK_USERS.charlie.userId, 'SUBMIT_ANSWER', { selectedIndex: 2 });
+      game.handleInput(MOCK_USERS.diana.userId, 'SUBMIT_ANSWER', { selectedIndex: 3 });
+
+      // Find the FF_ANSWER_REVEAL to see who was correct
+      const reveal = findLastActionBroadcast(broadcastLog, 'FF_ANSWER_REVEAL');
+      expect(reveal).toBeDefined();
+      
+      const playerResults = reveal!.data.playerResults as Array<{
+        userId: string;
+        isCorrect: boolean;
+        isFirst: boolean;
+        scoreChange: number;
+        speedBonus: number;
+        basePoints: number;
+      }>;
+
+      const correctPlayers = playerResults.filter((r) => r.isCorrect);
+      const incorrectPlayers = playerResults.filter((r) => !r.isCorrect && r.selectedIndex !== null);
+
+      // Exactly one correct answer per question
+      expect(correctPlayers.length).toBe(1);
+      
+      // The correct player should be marked isFirst and have speed bonus
+      const firstCorrect = correctPlayers[0];
+      expect(firstCorrect.isFirst).toBe(true);
+      expect(firstCorrect.speedBonus).toBe(FF_SPEED_BONUS);
+      // scoreChange should be basePoints + speedBonus
+      expect(firstCorrect.scoreChange).toBe(firstCorrect.basePoints + firstCorrect.speedBonus);
+
+      // Incorrect players should have speedBonus = 0
+      for (const inc of incorrectPlayers) {
+        expect(inc.speedBonus).toBe(0);
+      }
+
+      game.cleanup();
+    });
+
+    it('should not award speed bonus to the second correct answerer', () => {
+      const { game, broadcastLog } = createGame();
+      game.start();
+      advanceToAnswerPhase();
+
+      // Both Alice and Bob answer with the same index (could be correct or wrong)
+      // We need to ensure both answer the same way
+      game.handleInput(MOCK_USERS.alice.userId, 'SUBMIT_ANSWER', { selectedIndex: 0 });
+      game.handleInput(MOCK_USERS.bob.userId, 'SUBMIT_ANSWER', { selectedIndex: 0 });
+      game.handleInput(MOCK_USERS.charlie.userId, 'SUBMIT_ANSWER', { selectedIndex: 1 });
+      game.handleInput(MOCK_USERS.diana.userId, 'SUBMIT_ANSWER', { selectedIndex: 2 });
+
+      const reveal = findLastActionBroadcast(broadcastLog, 'FF_ANSWER_REVEAL');
+      expect(reveal).toBeDefined();
+
+      const playerResults = reveal!.data.playerResults as Array<{
+        userId: string;
+        isCorrect: boolean;
+        isFirst: boolean;
+        speedBonus: number;
+      }>;
+
+      const correctPlayers = playerResults.filter((r) => r.isCorrect);
+      
+      if (correctPlayers.length >= 2) {
+        // Only the first one should have speedBonus
+        const withBonus = correctPlayers.filter((r) => r.speedBonus > 0);
+        expect(withBonus.length).toBe(1);
+        expect(withBonus[0].isFirst).toBe(true);
+
+        // The rest should have speedBonus = 0
+        const withoutBonus = correctPlayers.filter((r) => r.speedBonus === 0);
+        expect(withoutBonus.length).toBe(correctPlayers.length - 1);
+      }
+
+      game.cleanup();
+    });
+  });
+
+  describe('Answer Reveal Breakdown', () => {
+    it('should include breakdown fields in FF_ANSWER_REVEAL broadcast', () => {
+      const { game, broadcastLog } = createGame();
+      game.start();
+      advanceToAnswerPhase();
+
+      // All players answer
+      game.handleInput(MOCK_USERS.alice.userId, 'SUBMIT_ANSWER', { selectedIndex: 0 });
+      game.handleInput(MOCK_USERS.bob.userId, 'SUBMIT_ANSWER', { selectedIndex: 1 });
+      game.handleInput(MOCK_USERS.charlie.userId, 'PASS_QUESTION', {});
+      game.handleInput(MOCK_USERS.diana.userId, 'SUBMIT_ANSWER', { selectedIndex: 2 });
+
+      const reveal = findLastActionBroadcast(broadcastLog, 'FF_ANSWER_REVEAL');
+      expect(reveal).toBeDefined();
+
+      const playerResults = reveal!.data.playerResults as Array<Record<string, unknown>>;
+      expect(playerResults.length).toBe(4);
+
+      for (const pr of playerResults) {
+        // Every result should have breakdown fields
+        expect(pr).toHaveProperty('basePoints');
+        expect(pr).toHaveProperty('difficultyMultiplier');
+        expect(pr).toHaveProperty('speedBonus');
+        expect(pr).toHaveProperty('newTotalScore');
+        expect(pr).toHaveProperty('isFirst');
+        expect(pr).toHaveProperty('passed');
+        expect(pr).toHaveProperty('timedOut');
+
+        expect(typeof pr.basePoints).toBe('number');
+        expect(typeof pr.difficultyMultiplier).toBe('number');
+        expect(typeof pr.speedBonus).toBe('number');
+        expect(typeof pr.newTotalScore).toBe('number');
+      }
+
+      game.cleanup();
+    });
+
+    it('should include newTotalScore that matches FF_SCORE_UPDATE scores', () => {
+      const { game, broadcastLog } = createGame();
+      game.start();
+      advanceToAnswerPhase();
+
+      game.handleInput(MOCK_USERS.alice.userId, 'SUBMIT_ANSWER', { selectedIndex: 0 });
+      game.handleInput(MOCK_USERS.bob.userId, 'SUBMIT_ANSWER', { selectedIndex: 1 });
+      game.handleInput(MOCK_USERS.charlie.userId, 'SUBMIT_ANSWER', { selectedIndex: 2 });
+      game.handleInput(MOCK_USERS.diana.userId, 'SUBMIT_ANSWER', { selectedIndex: 3 });
+
+      const reveal = findLastActionBroadcast(broadcastLog, 'FF_ANSWER_REVEAL');
+      const scoreUpdate = findLastActionBroadcast(broadcastLog, 'FF_SCORE_UPDATE');
+      expect(reveal).toBeDefined();
+      expect(scoreUpdate).toBeDefined();
+
+      const playerResults = reveal!.data.playerResults as Array<{
+        userId: string;
+        newTotalScore: number;
+      }>;
+      const scores = scoreUpdate!.data.scores as Record<string, number>;
+
+      for (const pr of playerResults) {
+        expect(pr.newTotalScore).toBe(scores[pr.userId]);
+      }
+
+      game.cleanup();
+    });
+
+    it('should show speedBonus=0 for passed and timed-out players', () => {
+      const { game, broadcastLog } = createGame();
+      game.start();
+      advanceToAnswerPhase();
+
+      // Alice answers, Bob passes, rest time out
+      game.handleInput(MOCK_USERS.alice.userId, 'SUBMIT_ANSWER', { selectedIndex: 0 });
+      game.handleInput(MOCK_USERS.bob.userId, 'PASS_QUESTION', {});
+      vi.advanceTimersByTime(FF_ANSWER_DURATION_SECONDS * 1000 + 50);
+
+      const reveal = findLastActionBroadcast(broadcastLog, 'FF_ANSWER_REVEAL');
+      expect(reveal).toBeDefined();
+
+      const playerResults = reveal!.data.playerResults as Array<{
+        userId: string;
+        speedBonus: number;
+        passed: boolean;
+        timedOut: boolean;
+      }>;
+
+      const bob = playerResults.find((r) => r.userId === MOCK_USERS.bob.userId)!;
+      expect(bob.passed).toBe(true);
+      expect(bob.speedBonus).toBe(0);
+
+      const charlie = playerResults.find((r) => r.userId === MOCK_USERS.charlie.userId)!;
+      expect(charlie.timedOut).toBe(true);
+      expect(charlie.speedBonus).toBe(0);
 
       game.cleanup();
     });

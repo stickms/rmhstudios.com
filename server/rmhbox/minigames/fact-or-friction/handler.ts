@@ -36,6 +36,7 @@ import {
   FF_MEDIUM_MULTIPLIER,
   FF_HARD_MULTIPLIER,
   FF_SCORE_FLOOR,
+  FF_SPEED_BONUS,
 } from '@/lib/rmhbox/constants';
 import { logger } from '../../logger';
 import type {
@@ -290,6 +291,7 @@ export class FactOrFrictionGame extends BaseMinigame {
           submittedAt: Date.now(),
           isCorrect: false,
           scoreChange: 0,
+          speedBonus: 0,
           timedOut: true,
         };
         this.state.playerAnswers.set(userId, passAnswer);
@@ -311,9 +313,15 @@ export class FactOrFrictionGame extends BaseMinigame {
     this.state.phaseEndsAt = now + FF_ANSWER_REVEAL_SECONDS * 1000;
 
     // Build player results with correctIndex included
+    const difficultyMultiplier = DIFFICULTY_MULTIPLIERS[question.difficulty] ?? FF_MEDIUM_MULTIPLIER;
     const playerResults: FFPlayerQuestionResult[] = [];
     for (const [userId, answer] of this.state.playerAnswers) {
       const player = this.context.players.get(userId);
+      const basePoints = answer.isCorrect
+        ? Math.floor(answer.potValueAtSubmission * difficultyMultiplier)
+        : answer.selectedIndex !== null
+          ? -Math.floor(answer.potValueAtSubmission * difficultyMultiplier)
+          : 0;
       playerResults.push({
         userId,
         userName: player?.userName ?? 'Unknown',
@@ -322,6 +330,13 @@ export class FactOrFrictionGame extends BaseMinigame {
         isCorrect: answer.isCorrect,
         potValueAtSubmission: answer.potValueAtSubmission,
         scoreChange: answer.scoreChange,
+        basePoints,
+        difficultyMultiplier,
+        speedBonus: answer.speedBonus,
+        newTotalScore: this.state.playerScores.get(userId) ?? 0,
+        isFirst: answer.userId === questionResult.fastestCorrectUserId,
+        passed: answer.selectedIndex === null && !answer.timedOut,
+        timedOut: answer.timedOut,
       });
     }
 
@@ -469,8 +484,17 @@ export class FactOrFrictionGame extends BaseMinigame {
     const difficultyMultiplier = DIFFICULTY_MULTIPLIERS[question.difficulty] ?? FF_MEDIUM_MULTIPLIER;
     const effectivePot = Math.floor(this.state.potValue * difficultyMultiplier);
 
+    // Speed bonus: first correct answer for this question gets +FF_SPEED_BONUS
+    let speedBonus = 0;
+    if (isCorrect) {
+      const hasExistingCorrectAnswer = Array.from(this.state.playerAnswers.values()).some((a) => a.isCorrect);
+      if (!hasExistingCorrectAnswer) {
+        speedBonus = FF_SPEED_BONUS;
+      }
+    }
+
     const currentScore = this.state.playerScores.get(userId) ?? 0;
-    let scoreChange = isCorrect ? effectivePot : -effectivePot;
+    let scoreChange = isCorrect ? effectivePot + speedBonus : -effectivePot;
 
     // Apply score floor
     const enableScoreFloor = this.getSetting('enableScoreFloor', true);
@@ -490,6 +514,7 @@ export class FactOrFrictionGame extends BaseMinigame {
       submittedAt: Date.now(),
       isCorrect,
       scoreChange,
+      speedBonus,
       timedOut: false,
     };
     this.state.playerAnswers.set(userId, answer);
@@ -501,6 +526,7 @@ export class FactOrFrictionGame extends BaseMinigame {
       isCorrect,
       potValue: this.state.potValue,
       effectivePot,
+      speedBonus,
       scoreChange,
     });
 
@@ -570,6 +596,7 @@ export class FactOrFrictionGame extends BaseMinigame {
       submittedAt: Date.now(),
       isCorrect: false,
       scoreChange: 0,
+      speedBonus: 0,
       timedOut: false,
     };
     this.state.playerAnswers.set(userId, passAnswer);

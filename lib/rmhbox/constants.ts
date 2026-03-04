@@ -222,6 +222,7 @@ export const FF_EASY_MULTIPLIER = 0.8;
 export const FF_MEDIUM_MULTIPLIER = 1.0;
 export const FF_HARD_MULTIPLIER = 1.5;
 export const FF_SCORE_FLOOR = -500;
+export const FF_SPEED_BONUS = 100;
 export const FF_QUESTION_DISTRIBUTION = { easy: 3, medium: 3, hard: 2 };
 
 // ─── Undercover Editor (UE) ─────────────────────────────────────
