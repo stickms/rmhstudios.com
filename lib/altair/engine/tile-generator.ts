@@ -11,6 +11,8 @@ import { Camera } from './types';
 import { worldToScreen } from './camera';
 import { getTileSheet, getPropSheet, getStructurePropSheet, TILE_FRAMES, ALL_TILE_FRAMES, PROP_FRAMES, PROP_DAMAGED_FRAMES, STRUCTURE_PROP_FRAMES, STRUCTURE_PROP_DAMAGED_FRAMES, PROP_SCALE } from './sprites/sprite-defs';
 import { drawTileSprite, drawSprite } from './sprites/sprite-renderer';
+import type { WebGLRenderer } from './renderer';
+import type { SpriteBatch } from './webgl/webgl-sprite-batch';
 
 // ---- Types ------------------------------------------------------------------
 
@@ -483,7 +485,8 @@ export class TileGenerator {
   // Rendering
   // --------------------------------------------------------------------------
 
-  renderTiles(ctx: CanvasRenderingContext2D, camera: Camera): void {
+  renderTiles(renderer: WebGLRenderer, camera: Camera): void {
+    const { spriteBatch, shapeBatch } = renderer;
     const tiles = this.getVisibleTiles(camera);
     const sheet = getTileSheet();
 
@@ -496,21 +499,26 @@ export class TileGenerator {
         const frames = TILE_FRAMES[tile.type];
         if (frames) {
           const tileIndex = frames[tile.variant] ?? frames[0];
-          drawTileSprite(ctx, sheet, tileIndex, screen.x, screen.y, this.tileSize);
+          drawTileSprite(spriteBatch, sheet, tileIndex, screen.x, screen.y, this.tileSize);
           continue;
         }
       }
 
+      // Vector fallback — colored rectangles
+      spriteBatch.flush();
       const colors = TILE_COLORS[tile.type];
-      ctx.fillStyle = colors[tile.variant];
-      ctx.fillRect(screen.x, screen.y, this.tileSize, this.tileSize);
-      ctx.strokeStyle = 'rgba(0, 0, 0, 0.15)';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(screen.x, screen.y, this.tileSize, this.tileSize);
+      shapeBatch.drawRect(screen.x, screen.y, this.tileSize, this.tileSize, colors[tile.variant]);
+      // Outline
+      shapeBatch.drawRect(screen.x, screen.y, this.tileSize, 1, 'rgba(0,0,0,0.15)');
+      shapeBatch.drawRect(screen.x, screen.y, 1, this.tileSize, 'rgba(0,0,0,0.15)');
+      shapeBatch.drawRect(screen.x + this.tileSize - 1, screen.y, 1, this.tileSize, 'rgba(0,0,0,0.15)');
+      shapeBatch.drawRect(screen.x, screen.y + this.tileSize - 1, this.tileSize, 1, 'rgba(0,0,0,0.15)');
+      shapeBatch.flush();
     }
   }
 
-  renderProps(ctx: CanvasRenderingContext2D, camera: Camera): void {
+  renderProps(renderer: WebGLRenderer, camera: Camera): void {
+    const { spriteBatch, shapeBatch, overlayCtx } = renderer;
     const halfW = camera.width / 2 + 64;
     const halfH = camera.height / 2 + 64;
     const sheet = getPropSheet();
@@ -526,13 +534,12 @@ export class TileGenerator {
       const screen = worldToScreen(camera, prop.x, prop.y);
 
       // Sprite rendering for original prop types (barrel, urn)
-      // Note: tombstone frames (0, 3) are empty in props.png — uses vector fallback below
       if (sheet && (prop.type === 'barrel' || prop.type === 'urn')) {
         const isDamaged = prop.hp < 3;
         const frameIndex = isDamaged
           ? (PROP_DAMAGED_FRAMES[prop.type] ?? PROP_FRAMES[prop.type] ?? 0)
           : (PROP_FRAMES[prop.type] ?? 0);
-        drawSprite(ctx, sheet, frameIndex, screen.x, screen.y - 8, PROP_SCALE, false);
+        drawSprite(spriteBatch, sheet, frameIndex, screen.x, screen.y - 8, PROP_SCALE, false);
         continue;
       }
 
@@ -543,15 +550,14 @@ export class TileGenerator {
         const frameIndex = isDamaged
           ? (STRUCTURE_PROP_DAMAGED_FRAMES[prop.type] ?? STRUCTURE_PROP_FRAMES[prop.type])
           : STRUCTURE_PROP_FRAMES[prop.type];
-        drawSprite(ctx, structSheet, frameIndex, screen.x, screen.y - 8, PROP_SCALE, false);
+        drawSprite(spriteBatch, structSheet, frameIndex, screen.x, screen.y - 8, PROP_SCALE, false);
         continue;
       }
 
-      // Vector rendering fallback (apply same -8 offset as sprites for consistency)
-      ctx.save();
-      ctx.translate(screen.x, screen.y - 8);
-      this.drawPropVector(ctx, prop);
-      ctx.restore();
+      // Vector rendering fallback
+      spriteBatch.flush();
+      this.drawPropVector(shapeBatch, overlayCtx, prop, screen.x, screen.y - 8);
+      shapeBatch.flush();
     }
   }
 
@@ -559,223 +565,99 @@ export class TileGenerator {
   // Private: Vector drawing for each prop type
   // --------------------------------------------------------------------------
 
-  private drawPropVector(ctx: CanvasRenderingContext2D, prop: DestructibleProp): void {
+  private drawPropVector(shapes: import('./webgl/webgl-shapes').ShapeBatch, _overlayCtx: CanvasRenderingContext2D, prop: DestructibleProp, cx: number, cy: number): void {
     const color = PROP_COLORS[prop.type];
     const maxHp = PROP_DEFAULT_HP[prop.type];
 
     switch (prop.type) {
       case 'tombstone': {
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.moveTo(-8, 0);
-        ctx.lineTo(-8, -20);
-        ctx.arc(0, -20, 8, Math.PI, 0);
-        ctx.lineTo(8, 0);
-        ctx.closePath();
-        ctx.fill();
-        ctx.strokeStyle = '#555566';
-        ctx.lineWidth = 1;
-        ctx.stroke();
-        // Cross
-        ctx.strokeStyle = '#888899';
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(0, -18); ctx.lineTo(0, -8);
-        ctx.moveTo(-4, -14); ctx.lineTo(4, -14);
-        ctx.stroke();
+        // Simplified tombstone: rectangle + top arc approximated by circle
+        shapes.drawRect(cx - 8, cy - 20, 16, 20, color);
+        shapes.drawCircle(cx, cy - 20, 8, color);
         break;
       }
       case 'barrel': {
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.ellipse(0, -6, 10, 12, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = '#4a3518';
-        ctx.lineWidth = 1;
-        ctx.stroke();
-        ctx.strokeStyle = '#8b7355';
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(-10, -10); ctx.lineTo(10, -10);
-        ctx.moveTo(-10, -2); ctx.lineTo(10, -2);
-        ctx.stroke();
+        // Barrel: oval approximated by circle
+        shapes.drawCircle(cx, cy - 6, 11, color);
+        // Band stripes
+        shapes.drawRect(cx - 10, cy - 10, 20, 2, '#8b7355');
+        shapes.drawRect(cx - 10, cy - 2, 20, 2, '#8b7355');
         break;
       }
       case 'urn': {
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.moveTo(-5, 0);
-        ctx.quadraticCurveTo(-8, -8, -4, -14);
-        ctx.lineTo(4, -14);
-        ctx.quadraticCurveTo(8, -8, 5, 0);
-        ctx.closePath();
-        ctx.fill();
-        ctx.strokeStyle = '#6b5535';
-        ctx.lineWidth = 1;
-        ctx.stroke();
+        // Urn: simple rect approximation
+        shapes.drawRect(cx - 5, cy - 14, 10, 14, color);
+        shapes.drawRect(cx - 3, cy - 16, 6, 2, color);
         break;
       }
       case 'fence_h': {
         // Horizontal plank fence
-        ctx.fillStyle = color;
-        ctx.fillRect(-26, -12, 52, 4);  // top rail
-        ctx.fillRect(-26, -4, 52, 4);   // bottom rail
+        shapes.drawRect(cx - 26, cy - 12, 52, 4, color);  // top rail
+        shapes.drawRect(cx - 26, cy - 4, 52, 4, color);   // bottom rail
         // Posts
-        ctx.fillStyle = '#6b5535';
-        ctx.fillRect(-24, -16, 4, 18);
-        ctx.fillRect(20, -16, 4, 18);
-        ctx.strokeStyle = '#5a4a2a';
-        ctx.lineWidth = 0.5;
-        ctx.strokeRect(-26, -12, 52, 4);
-        ctx.strokeRect(-26, -4, 52, 4);
+        shapes.drawRect(cx - 24, cy - 16, 4, 18, '#6b5535');
+        shapes.drawRect(cx + 20, cy - 16, 4, 18, '#6b5535');
         break;
       }
       case 'fence_v': {
         // Vertical plank fence
-        ctx.fillStyle = color;
-        ctx.fillRect(-4, -26, 4, 52);   // left rail
-        ctx.fillRect(4, -26, 4, 52);    // right rail
-        ctx.fillStyle = '#6b5535';
-        ctx.fillRect(-6, -24, 16, 4);
-        ctx.fillRect(-6, 20, 16, 4);
-        ctx.strokeStyle = '#5a4a2a';
-        ctx.lineWidth = 0.5;
-        ctx.strokeRect(-4, -26, 4, 52);
-        ctx.strokeRect(4, -26, 4, 52);
+        shapes.drawRect(cx - 4, cy - 26, 4, 52, color);   // left rail
+        shapes.drawRect(cx + 4, cy - 26, 4, 52, color);   // right rail
+        shapes.drawRect(cx - 6, cy - 24, 16, 4, '#6b5535');
+        shapes.drawRect(cx - 6, cy + 20, 16, 4, '#6b5535');
         break;
       }
       case 'fence_post': {
-        // Thick wooden post
-        ctx.fillStyle = '#6b5535';
-        ctx.fillRect(-6, -18, 12, 20);
-        ctx.fillStyle = '#5a4a2a';
-        ctx.fillRect(-7, -19, 14, 4); // cap
-        ctx.strokeStyle = '#4a3a1a';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(-6, -18, 12, 20);
+        shapes.drawRect(cx - 6, cy - 18, 12, 20, '#6b5535');
+        shapes.drawRect(cx - 7, cy - 19, 14, 4, '#5a4a2a'); // cap
         break;
       }
       case 'wall': {
         // Horizontal stone wall
-        ctx.fillStyle = color;
-        ctx.fillRect(-26, -14, 52, 20);
-        // Stone lines
-        ctx.strokeStyle = '#444';
-        ctx.lineWidth = 0.8;
-        ctx.beginPath();
-        ctx.moveTo(-26, -6); ctx.lineTo(26, -6);
-        ctx.moveTo(-10, -14); ctx.lineTo(-10, -6);
-        ctx.moveTo(10, -14); ctx.lineTo(10, -6);
-        ctx.moveTo(-18, -6); ctx.lineTo(-18, 6);
-        ctx.moveTo(4, -6); ctx.lineTo(4, 6);
-        ctx.moveTo(18, -6); ctx.lineTo(18, 6);
-        ctx.stroke();
-        ctx.strokeStyle = '#3a3a3a';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(-26, -14, 52, 20);
+        shapes.drawRect(cx - 26, cy - 14, 52, 20, color);
+        // Stone line accents
+        shapes.drawRect(cx - 26, cy - 6, 52, 1, '#444444');
         break;
       }
       case 'wall_v': {
         // Vertical stone wall
-        ctx.fillStyle = color;
-        ctx.fillRect(-10, -26, 20, 52);
-        ctx.strokeStyle = '#444';
-        ctx.lineWidth = 0.8;
-        ctx.beginPath();
-        ctx.moveTo(-2, -26); ctx.lineTo(-2, 26);
-        ctx.moveTo(-10, -10); ctx.lineTo(-2, -10);
-        ctx.moveTo(-10, 10); ctx.lineTo(-2, 10);
-        ctx.moveTo(-2, -18); ctx.lineTo(10, -18);
-        ctx.moveTo(-2, 0); ctx.lineTo(10, 0);
-        ctx.moveTo(-2, 18); ctx.lineTo(10, 18);
-        ctx.stroke();
-        ctx.strokeStyle = '#3a3a3a';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(-10, -26, 20, 52);
+        shapes.drawRect(cx - 10, cy - 26, 20, 52, color);
+        shapes.drawRect(cx - 2, cy - 26, 1, 52, '#444444');
         break;
       }
       case 'hedge': {
-        // Dense bush/hedge
-        ctx.fillStyle = '#1e4a1e';
-        ctx.beginPath();
-        ctx.ellipse(0, -6, 24, 22, 0, 0, Math.PI * 2);
-        ctx.fill();
-        // Lighter foliage blobs
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.arc(-8, -10, 10, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.beginPath();
-        ctx.arc(6, -8, 12, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.beginPath();
-        ctx.arc(-2, -16, 8, 0, Math.PI * 2);
-        ctx.fill();
-        // Outline
-        ctx.strokeStyle = '#1a3a1a';
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.ellipse(0, -6, 24, 22, 0, 0, Math.PI * 2);
-        ctx.stroke();
+        // Dense bush/hedge — overlapping circles
+        shapes.drawCircle(cx, cy - 6, 22, '#1e4a1e');
+        shapes.drawCircle(cx - 8, cy - 10, 10, color);
+        shapes.drawCircle(cx + 6, cy - 8, 12, color);
+        shapes.drawCircle(cx - 2, cy - 16, 8, color);
         break;
       }
       case 'crate': {
         // Wooden crate
-        ctx.fillStyle = color;
-        ctx.fillRect(-11, -16, 22, 18);
-        // Cross bracing
-        ctx.strokeStyle = '#5a4a20';
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(-11, -16); ctx.lineTo(11, 2);
-        ctx.moveTo(11, -16); ctx.lineTo(-11, 2);
-        ctx.stroke();
-        // Border
-        ctx.strokeStyle = '#4a3a15';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(-11, -16, 22, 18);
+        shapes.drawRect(cx - 11, cy - 16, 22, 18, color);
         // Top edge highlight
-        ctx.fillStyle = '#8b7340';
-        ctx.fillRect(-11, -16, 22, 3);
+        shapes.drawRect(cx - 11, cy - 16, 22, 3, '#8b7340');
         break;
       }
       case 'well': {
         // Stone well
-        ctx.fillStyle = '#6a6a7a';
-        ctx.beginPath();
-        ctx.ellipse(0, -4, 14, 10, 0, 0, Math.PI * 2);
-        ctx.fill();
-        // Dark inner hole
-        ctx.fillStyle = '#1a1a2a';
-        ctx.beginPath();
-        ctx.ellipse(0, -6, 8, 6, 0, 0, Math.PI * 2);
-        ctx.fill();
-        // Stone ring
-        ctx.strokeStyle = '#555566';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.ellipse(0, -4, 14, 10, 0, 0, Math.PI * 2);
-        ctx.stroke();
+        shapes.drawCircle(cx, cy - 4, 14, '#6a6a7a');
+        shapes.drawCircle(cx, cy - 6, 8, '#1a1a2a'); // inner hole
+        shapes.drawRing(cx, cy - 4, 14, 2, '#555566');
         // Roof posts
-        ctx.fillStyle = '#6b5535';
-        ctx.fillRect(-12, -22, 3, 20);
-        ctx.fillRect(9, -22, 3, 20);
-        // Roof beam
-        ctx.fillRect(-13, -24, 26, 3);
+        shapes.drawRect(cx - 12, cy - 22, 3, 20, '#6b5535');
+        shapes.drawRect(cx + 9, cy - 22, 3, 20, '#6b5535');
+        shapes.drawRect(cx - 13, cy - 24, 26, 3, '#6b5535');
         break;
       }
     }
 
-    // Damage cracks (universal for destructible props)
+    // Damage cracks (simplified to colored rect overlay)
     if (prop.hp < maxHp && prop.hp > 0) {
       const alpha = 0.3 + 0.3 * (1 - prop.hp / maxHp);
-      ctx.strokeStyle = `rgba(255,100,100,${alpha})`;
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(-3, -5);
-      ctx.lineTo(2, -12);
-      ctx.lineTo(-1, -18);
-      ctx.stroke();
+      shapes.drawRect(cx - 3, cy - 12, 2, 7, `rgba(255,100,100,${alpha})`);
+      shapes.drawRect(cx - 1, cy - 18, 2, 6, `rgba(255,100,100,${alpha})`);
     }
   }
 

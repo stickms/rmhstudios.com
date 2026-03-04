@@ -27,7 +27,11 @@ import {
   spawnLevelUp,
   spawnEvolution,
 } from '../particle-system';
-import { renderFrame } from '../renderer';
+import { renderFrame, type WebGLRenderer } from '../renderer';
+import { initWebGL } from '../webgl/webgl-context';
+import { SpriteBatch } from '../webgl/webgl-sprite-batch';
+import { ShapeBatch } from '../webgl/webgl-shapes';
+import { setGLContext } from '../webgl/webgl-textures';
 import { PlayerStats } from '../../stores/game-store';
 import { CLASSES } from '../../data/classes';
 
@@ -324,7 +328,27 @@ export function createMultiplayerGameLoop(
   let rafId: number = 0;
   let lastTime: number = 0;
 
-  const ctx = canvas.getContext('2d')!;
+  // ---- WebGL setup ----
+  const gl = initWebGL(canvas);
+  setGLContext(gl);
+
+  const spriteBatch = new SpriteBatch(gl);
+  const shapeBatch = new ShapeBatch(gl);
+
+  // Create transparent overlay canvas for text/HUD
+  const overlayCanvas = document.createElement('canvas');
+  overlayCanvas.width = canvas.width;
+  overlayCanvas.height = canvas.height;
+  overlayCanvas.style.position = 'absolute';
+  overlayCanvas.style.top = '0';
+  overlayCanvas.style.left = '0';
+  overlayCanvas.style.width = '100%';
+  overlayCanvas.style.height = '100%';
+  overlayCanvas.style.pointerEvents = 'none';
+  canvas.parentElement?.appendChild(overlayCanvas);
+  const overlayCtx = overlayCanvas.getContext('2d')!;
+
+  const renderer: WebGLRenderer = { gl, spriteBatch, shapeBatch, overlayCtx };
   const localPlayer = world.players.get(localPlayerId)!;
 
   // Per-player state tracking
@@ -612,7 +636,7 @@ export function createMultiplayerGameLoop(
     tileGen.update(localPlayer.camera);
 
     // 15. Render
-    renderFrame(ctx, world, tileGen);
+    renderFrame(renderer, world, tileGen);
 
     // 16. Check TPK
     const alive = getAlivePlayers(world);
@@ -643,6 +667,7 @@ export function createMultiplayerGameLoop(
         cancelAnimationFrame(rafId);
         rafId = 0;
       }
+      overlayCanvas.parentElement?.removeChild(overlayCanvas);
     },
     getWorld() {
       return world;

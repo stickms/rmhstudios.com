@@ -5,6 +5,8 @@
 // init and reused for the entire session.
 // =============================================================================
 
+import { getGLContext, createTextureFromImage } from '../webgl/webgl-textures';
+
 export interface SpriteSheet {
   image: HTMLImageElement;
   frameWidth: number;
@@ -12,6 +14,8 @@ export interface SpriteSheet {
   cols: number;
   rows: number;
   loaded: boolean;
+  /** GPU texture handle — created automatically when GL context is available. */
+  glTexture: WebGLTexture | null;
 }
 
 const cache = new Map<string, SpriteSheet>();
@@ -36,12 +40,18 @@ export function loadSpriteSheet(
     cols: 1,
     rows: 1,
     loaded: false,
+    glTexture: null,
   };
 
   image.onload = () => {
     sheet.cols = Math.floor(image.naturalWidth / frameWidth) || 1;
     sheet.rows = Math.floor(image.naturalHeight / frameHeight) || 1;
     sheet.loaded = true;
+    // Auto-create WebGL texture if GL context is ready
+    const gl = getGLContext();
+    if (gl) {
+      sheet.glTexture = createTextureFromImage(gl, image);
+    }
   };
   image.onerror = () => {
     // Mark as loaded with a 0x0 so the game can fall back to vector rendering
@@ -87,6 +97,7 @@ export function preloadAllSprites(
         cols: 1,
         rows: 1,
         loaded: false,
+        glTexture: null,
       };
 
       const settle = () => {
@@ -99,6 +110,10 @@ export function preloadAllSprites(
         sheet.cols = Math.floor(image.naturalWidth / entry.frameWidth) || 1;
         sheet.rows = Math.floor(image.naturalHeight / entry.frameHeight) || 1;
         sheet.loaded = true;
+        const gl = getGLContext();
+        if (gl) {
+          sheet.glTexture = createTextureFromImage(gl, image);
+        }
         settle();
       };
       image.onerror = settle; // allow game to continue with vector fallback

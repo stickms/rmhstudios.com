@@ -15,10 +15,14 @@ import { createCamera, updateCamera } from './camera';
 import { createInputState } from './input';
 import { TileGenerator } from './tile-generator';
 import { updateParticles, spawnDamageNumber, spawnDeathBurst, spawnXPCollect, spawnLevelUp, spawnEvolution } from './particle-system';
-import { renderFrame, updatePlayerAnimation, updateEnemyAnimation, updateSummonAnimation } from './renderer';
+import { renderFrame, updatePlayerAnimation, updateEnemyAnimation, updateSummonAnimation, type WebGLRenderer } from './renderer';
 import { PlayerStats } from '../stores/game-store';
 import { CLASSES } from '../data/classes';
 import { initAllSpriteSheets } from './sprites/sprite-defs';
+import { initWebGL } from './webgl/webgl-context';
+import { SpriteBatch } from './webgl/webgl-sprite-batch';
+import { ShapeBatch } from './webgl/webgl-shapes';
+import { setGLContext } from './webgl/webgl-textures';
 
 // System imports
 import { updatePlayer, computeEffectiveStats, updateClassAbilities, createClassAbilityState, ClassAbilityState, tryRaiseDead, processSanguineFeast, getBerserkerBonuses, getKnightSpeedBonus, reportBloodNovaKill, tryTransferHuntersMark } from './player-system';
@@ -753,7 +757,8 @@ function handleCollisions(
       if (e.isBoss) continue;
 
       e.isDead = true;
-      e.corpseTimer = CORPSE_DURATION;
+      // Enemies with no active effects fade out instantly (quick flash)
+      e.corpseTimer = e.statusEffects.length > 0 ? CORPSE_DURATION : 0.15;
 
       callbacks.onKill(e.defId);
       spawnDeathBurst(world, e.x, e.y, '#888');
@@ -816,7 +821,27 @@ export function createGameLoop(
   let accumulator: number = 0;
   const FIXED_DT = 1 / 60; // 60 Hz physics
 
-  const ctx = canvas.getContext('2d')!;
+  // ---- WebGL setup ----
+  const gl = initWebGL(canvas);
+  setGLContext(gl);
+
+  const spriteBatch = new SpriteBatch(gl);
+  const shapeBatch = new ShapeBatch(gl);
+
+  // Create transparent overlay canvas for text/HUD
+  const overlayCanvas = document.createElement('canvas');
+  overlayCanvas.width = canvas.width;
+  overlayCanvas.height = canvas.height;
+  overlayCanvas.style.position = 'absolute';
+  overlayCanvas.style.top = '0';
+  overlayCanvas.style.left = '0';
+  overlayCanvas.style.width = '100%';
+  overlayCanvas.style.height = '100%';
+  overlayCanvas.style.pointerEvents = 'none';
+  canvas.parentElement?.appendChild(overlayCanvas);
+  const overlayCtx = overlayCanvas.getContext('2d')!;
+
+  const renderer: WebGLRenderer = { gl, spriteBatch, shapeBatch, overlayCtx };
 
   // Per-run state
   let abilityState = createClassAbilityState();
@@ -1178,7 +1203,7 @@ export function createGameLoop(
     }
 
     // 14. Render
-    renderFrame(ctx, world, tileGen);
+    renderFrame(renderer, world, tileGen);
 
     // 15. Check death
     if (world.player.hp <= 0) {
@@ -1204,6 +1229,8 @@ export function createGameLoop(
         cancelAnimationFrame(rafId);
         rafId = 0;
       }
+      // Clean up overlay canvas
+      overlayCanvas.parentElement?.removeChild(overlayCanvas);
     },
     getWorld() {
       return world;

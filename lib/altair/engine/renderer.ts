@@ -1,16 +1,14 @@
 // =============================================================================
-// ALTAIR ENGINE -- Renderer
+// ALTAIR ENGINE -- Renderer (WebGL)
 // =============================================================================
-// Full canvas 2D rendering system. Draws every layer of the game world each
-// frame: tiles, pickups, auras, melee hitboxes, enemies, projectiles, player,
-// summons, particles, pools, and boss warning arrows.
+// Full WebGL rendering system. Uses SpriteBatch for textured quads, ShapeBatch
+// for colored geometry, and a Canvas 2D overlay for text and minimap.
 //
-// Sprite-first: draws pixel-art sprites when loaded, otherwise falls back to
-// the original vector primitives.
-//
-// PERF: ctx.save/restore is only used when a transform or composite change is
-// needed (flipX, globalAlpha, composite ops). Normal sprite draws are bare
-// drawImage calls. imageSmoothingEnabled is set once at frame start.
+// How it works:
+// 1. WebGL clears and draws all world-space layers via batches
+// 2. Sprite batch flushes automatically on texture changes
+// 3. Shape batch handles all vector fallback geometry
+// 4. 2D overlay canvas handles text, minimap, and complex HUD
 // =============================================================================
 
 import {
@@ -52,9 +50,22 @@ import {
   createAnimState,
   updateAnimation,
   getCurrentFrameIndex,
+  getFrameRect,
   type AnimationState,
   type EntitySpriteSet,
 } from './sprites/sprite-animator';
+
+import type { SpriteBatch } from './webgl/webgl-sprite-batch';
+import type { ShapeBatch } from './webgl/webgl-shapes';
+
+// ---- WebGL Renderer facade --------------------------------------------------
+
+export interface WebGLRenderer {
+  gl: WebGLRenderingContext;
+  spriteBatch: SpriteBatch;
+  shapeBatch: ShapeBatch;
+  overlayCtx: CanvasRenderingContext2D;
+}
 
 // ---- Enemy lookup cache (built once) ----------------------------------------
 
@@ -79,82 +90,97 @@ const STATUS_TINT: Record<StatusEffect['type'], string> = {
 // ---- Main entry point -------------------------------------------------------
 
 /**
- * Render a complete frame to the canvas.
+ * Render a complete frame using WebGL.
  */
 export function renderFrame(
-  ctx: CanvasRenderingContext2D,
+  renderer: WebGLRenderer,
   world: GameWorld,
   tileGen: TileGenerator,
 ): void {
+  const { gl, spriteBatch, shapeBatch, overlayCtx } = renderer;
   const { camera } = world;
 
-  // Set once per frame — all sprite helpers rely on this being set here
-  ctx.imageSmoothingEnabled = false;
+  // Clear WebGL canvas
+  gl.viewport(0, 0, camera.width, camera.height);
+  gl.clearColor(0.067, 0.067, 0.067, 1); // #111111
+  gl.clear(gl.COLOR_BUFFER_BIT);
 
-  // Clear
-  ctx.clearRect(0, 0, camera.width, camera.height);
-  ctx.fillStyle = '#111111';
-  ctx.fillRect(0, 0, camera.width, camera.height);
+  // Clear overlay canvas
+  overlayCtx.clearRect(0, 0, camera.width, camera.height);
+
+  // Begin batches
+  spriteBatch.begin(camera.width, camera.height);
+  shapeBatch.begin(camera.width, camera.height);
 
   // --- World-space layers (camera-relative) ---
 
   // 1. Tiles & props
-  tileGen.renderTiles(ctx, camera);
-  tileGen.renderProps(ctx, camera);
+  tileGen.renderTiles(renderer, camera);
+  tileGen.renderProps(renderer, camera);
+
+  // Need to flush sprites before shapes for correct draw order
+  spriteBatch.flush();
 
   // 2. Auras (below entities)
-  renderAuras(ctx, world.auras, camera);
+  renderAuras(shapeBatch, world.auras, camera);
+  shapeBatch.flush();
 
   // 3. Pool effects (lingering projectiles)
-  renderPools(ctx, world.projectiles, camera);
+  renderPools(shapeBatch, world.projectiles, camera);
+  shapeBatch.flush();
 
   // 4. Pickups
-  renderPickups(ctx, world.pickups, camera);
+  renderPickups(renderer, world.pickups, camera);
 
   // 5. Melee hitboxes
-  renderMeleeHitboxes(ctx, world.meleeHitboxes, camera);
+  spriteBatch.flush();
+  renderMeleeHitboxes(shapeBatch, world.meleeHitboxes, camera);
+  shapeBatch.flush();
 
   // 6. Summons
-  renderSummons(ctx, world.summons, camera);
+  renderSummons(renderer, world.summons, camera);
 
   // 7. Enemies
-  renderEnemies(ctx, world.enemies, camera);
+  renderEnemies(renderer, world.enemies, camera);
 
   // 8. Projectiles
-  renderProjectiles(ctx, world.projectiles, camera);
+  renderProjectiles(renderer, world.projectiles, camera);
 
   // 9. Player
-  renderPlayer(ctx, world, camera);
+  renderPlayer(renderer, world, camera);
 
   // 10. Particles (on top of everything)
-  renderParticles(ctx, world.particles, camera);
+  spriteBatch.flush();
+  renderParticles(renderer, world.particles, camera);
 
-  // --- Screen-space overlays ---
+  // Flush all remaining batched geometry
+  spriteBatch.end();
+  shapeBatch.end();
+
+  // --- Screen-space overlays (2D canvas) ---
 
   // 11. Boss warning arrows
   if (world.bossWarning) {
-    renderBossWarning(ctx, world, camera);
+    renderBossWarning(overlayCtx, world, camera);
   }
 
   // 12. Minimap (shown while Tab is held)
   if (world.inputState.keys.has('tab')) {
-    renderMinimap(ctx, world, camera);
+    renderMinimap(overlayCtx, world, camera);
   }
 }
 
 // ---- Pickups ----------------------------------------------------------------
 
-/** Get XP orb color based on accumulated value (combined orbs look different). */
 function getXPOrbColor(value: number): string {
-  if (value >= 50) return '#ff4444'; // red — massive combined
-  if (value >= 25) return '#ff8800'; // orange — large
-  if (value >= 10) return '#ffcc00'; // yellow — combined medium
-  if (value >= 5) return '#44cc44';  // green — medium
-  if (value >= 3) return '#66bbff';  // bright blue — combined small
-  return '#4488ff';                  // blue — single small
+  if (value >= 50) return '#ff4444';
+  if (value >= 25) return '#ff8800';
+  if (value >= 10) return '#ffcc00';
+  if (value >= 5) return '#44cc44';
+  if (value >= 3) return '#66bbff';
+  return '#4488ff';
 }
 
-/** Get XP orb render size based on accumulated value. */
 function getXPOrbSize(value: number): number {
   if (value >= 50) return 11;
   if (value >= 25) return 10;
@@ -168,180 +194,107 @@ function isXPPickup(p: PickupEntity): boolean {
 }
 
 function renderPickups(
-  ctx: CanvasRenderingContext2D,
+  renderer: WebGLRenderer,
   pickups: PickupEntity[],
   camera: Camera,
 ): void {
+  const { spriteBatch, shapeBatch } = renderer;
   const pickupSheet = getPickupSheet();
 
-  // Two-pass: XP orbs first (below), then non-XP pickups on top
   for (let pass = 0; pass < 2; pass++) {
     for (const p of pickups) {
       const isXP = isXPPickup(p);
-      if (pass === 0 && !isXP) continue;  // first pass: XP only
-      if (pass === 1 && isXP) continue;   // second pass: non-XP only
+      if (pass === 0 && !isXP) continue;
+      if (pass === 1 && isXP) continue;
 
       if (!isVisible(camera, p.x, p.y, 20)) continue;
       const s = worldToScreen(camera, p.x, p.y);
 
-      // For non-XP pickups, try sprite rendering (no save/restore needed)
+      // Sprite rendering for non-XP pickups
       if (!isXP && pickupSheet) {
         const frameIndex = PICKUP_FRAMES[p.type];
         if (frameIndex !== undefined) {
-          drawSprite(ctx, pickupSheet, frameIndex, s.x, s.y, PICKUP_SCALE, false);
+          drawSprite(spriteBatch, pickupSheet, frameIndex, s.x, s.y, PICKUP_SCALE, false);
           continue;
         }
       }
 
-      // Vector rendering (needs save/restore for translate)
-      ctx.save();
-      ctx.translate(s.x, s.y);
-
       if (isXP) {
-        // XP orbs: color and size based on accumulated value
         const color = getXPOrbColor(p.value);
         const size = getXPOrbSize(p.value);
-        drawDiamond(ctx, size, color);
-
-        // Subtle glow for combined orbs (value > base)
+        spriteBatch.flush();
+        shapeBatch.drawDiamond(s.x, s.y, size, color);
         if (p.value >= 5) {
-          ctx.globalAlpha = 0.2;
-          drawDiamond(ctx, size + 2, color);
-          ctx.globalAlpha = 1;
+          shapeBatch.drawDiamond(s.x, s.y, size + 2, color, 0.2);
         }
+        shapeBatch.flush();
       } else {
+        // Vector fallback for non-XP pickups
+        spriteBatch.flush();
         switch (p.type) {
           case 'coin':
-            ctx.fillStyle = '#ffd700';
-            ctx.beginPath();
-            ctx.arc(0, 0, 5, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.strokeStyle = '#b8960f';
-            ctx.lineWidth = 1;
-            ctx.stroke();
+            shapeBatch.drawCircle(s.x, s.y, 5, '#ffd700');
+            shapeBatch.drawRing(s.x, s.y, 5, 1, '#b8960f');
             break;
           case 'food':
-            ctx.fillStyle = '#ff3333';
-            ctx.fillRect(-2, -6, 4, 12);
-            ctx.fillRect(-6, -2, 12, 4);
+            shapeBatch.drawRect(s.x - 2, s.y - 6, 4, 12, '#ff3333');
+            shapeBatch.drawRect(s.x - 6, s.y - 2, 12, 4, '#ff3333');
             break;
           case 'magnet':
-            drawDiamond(ctx, 6, '#ff6600');
+            shapeBatch.drawDiamond(s.x, s.y, 6, '#ff6600');
             break;
           case 'vacuum':
-            drawDiamond(ctx, 7, '#cc00ff');
+            shapeBatch.drawDiamond(s.x, s.y, 7, '#cc00ff');
             break;
           case 'rosary':
-            drawDiamond(ctx, 7, '#ffffff');
+            shapeBatch.drawDiamond(s.x, s.y, 7, '#ffffff');
             break;
           case 'chest':
-            ctx.fillStyle = '#c8a23c';
-            ctx.fillRect(-8, -6, 16, 12);
-            ctx.strokeStyle = '#8b6914';
-            ctx.lineWidth = 1.5;
-            ctx.strokeRect(-8, -6, 16, 12);
-            ctx.fillStyle = '#8b6914';
-            ctx.fillRect(-2, -2, 4, 4);
+            shapeBatch.drawRect(s.x - 8, s.y - 6, 16, 12, '#c8a23c');
+            shapeBatch.drawRect(s.x - 2, s.y - 2, 4, 4, '#8b6914');
             break;
           case 'clock':
-            ctx.fillStyle = '#66ccff';
-            ctx.beginPath();
-            ctx.arc(0, 0, 6, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.strokeStyle = '#3399cc';
-            ctx.lineWidth = 1.5;
-            ctx.stroke();
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(-1, -4, 2, 8);
-            ctx.fillRect(-3, -1, 6, 2);
+            shapeBatch.drawCircle(s.x, s.y, 6, '#66ccff');
+            shapeBatch.drawRing(s.x, s.y, 6, 1.5, '#3399cc');
             break;
           case 'shield_orb':
-            ctx.fillStyle = '#66aaff';
-            ctx.beginPath();
-            ctx.arc(0, 0, 6, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.strokeStyle = '#88ccff';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-            ctx.fillStyle = 'rgba(255,255,255,0.4)';
-            ctx.beginPath();
-            ctx.arc(-1, -2, 2, 0, Math.PI * 2);
-            ctx.fill();
+            shapeBatch.drawCircle(s.x, s.y, 6, '#66aaff');
+            shapeBatch.drawRing(s.x, s.y, 6, 2, '#88ccff');
+            shapeBatch.drawCircle(s.x - 1, s.y - 2, 2, 'rgba(255,255,255,0.4)');
             break;
           case 'bomb':
-            ctx.fillStyle = '#333333';
-            ctx.beginPath();
-            ctx.arc(0, 1, 6, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.strokeStyle = '#ff4444';
-            ctx.lineWidth = 1.5;
-            ctx.stroke();
-            ctx.strokeStyle = '#ff6600';
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(2, -5);
-            ctx.lineTo(4, -8);
-            ctx.stroke();
-            ctx.fillStyle = '#ffaa00';
-            ctx.beginPath();
-            ctx.arc(4, -8, 2, 0, Math.PI * 2);
-            ctx.fill();
+            shapeBatch.drawCircle(s.x, s.y + 1, 6, '#333333');
+            shapeBatch.drawRing(s.x, s.y + 1, 6, 1.5, '#ff4444');
+            shapeBatch.drawCircle(s.x + 4, s.y - 8, 2, '#ffaa00');
             break;
         }
+        shapeBatch.flush();
       }
-
-      ctx.restore();
     }
   }
-}
-
-function drawDiamond(
-  ctx: CanvasRenderingContext2D,
-  size: number,
-  color: string,
-): void {
-  ctx.fillStyle = color;
-  ctx.beginPath();
-  ctx.moveTo(0, -size);
-  ctx.lineTo(size * 0.7, 0);
-  ctx.lineTo(0, size);
-  ctx.lineTo(-size * 0.7, 0);
-  ctx.closePath();
-  ctx.fill();
 }
 
 // ---- Auras ------------------------------------------------------------------
 
 function renderAuras(
-  ctx: CanvasRenderingContext2D,
+  shapeBatch: ShapeBatch,
   auras: AuraEffect[],
   camera: Camera,
 ): void {
   if (auras.length === 0) return;
 
-  ctx.save();
   for (const a of auras) {
     if (!isVisible(camera, a.x, a.y, a.radius)) continue;
     const s = worldToScreen(camera, a.x, a.y);
-
-    ctx.globalAlpha = 0.15;
-    ctx.fillStyle = '#8844ff';
-    ctx.beginPath();
-    ctx.arc(s.x, s.y, a.radius, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.globalAlpha = 0.3;
-    ctx.strokeStyle = '#aa66ff';
-    ctx.lineWidth = 2;
-    ctx.stroke();
+    shapeBatch.drawCircle(s.x, s.y, a.radius, '#8844ff', 0.15);
+    shapeBatch.drawRing(s.x, s.y, a.radius, 2, '#aa66ff', 0.3);
   }
-  ctx.restore();
 }
 
 // ---- Melee hitboxes ---------------------------------------------------------
 
 function renderMeleeHitboxes(
-  ctx: CanvasRenderingContext2D,
+  shapeBatch: ShapeBatch,
   hitboxes: MeleeHitbox[],
   camera: Camera,
 ): void {
@@ -349,28 +302,15 @@ function renderMeleeHitboxes(
     if (!isVisible(camera, h.x, h.y, h.radius)) continue;
     const s = worldToScreen(camera, h.x, h.y);
 
-    const progress = 1 - h.lifetime / (h.maxLifetime || 0.2); // 0 → 1
-    const fadeOut = Math.max(0, 1 - progress * 1.5); // fades in last third
-
-    ctx.save();
+    const progress = 1 - h.lifetime / (h.maxLifetime || 0.2);
+    const fadeOut = Math.max(0, 1 - progress * 1.5);
 
     if (h.arc >= Math.PI * 1.9) {
       // Full 360° cleave: expanding ring
       const ringRadius = h.radius * (0.3 + 0.7 * progress);
       const ringWidth = h.radius * 0.15 * fadeOut;
-
-      ctx.globalAlpha = 0.4 * fadeOut;
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = ringWidth;
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, ringRadius, 0, Math.PI * 2);
-      ctx.stroke();
-
-      ctx.globalAlpha = 0.15 * fadeOut;
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, ringRadius, 0, Math.PI * 2);
-      ctx.fill();
+      shapeBatch.drawRing(s.x, s.y, ringRadius, ringWidth, '#ffffff', 0.4 * fadeOut);
+      shapeBatch.drawCircle(s.x, s.y, ringRadius, '#ffffff', 0.15 * fadeOut);
     } else {
       // Directional slash: animated arc sweep
       const sweepProgress = Math.min(1, progress * 2);
@@ -382,89 +322,55 @@ function renderMeleeHitboxes(
       const trailWidth = (outerR - innerR) * fadeOut;
 
       // Main slash arc
-      ctx.globalAlpha = 0.6 * fadeOut;
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = trailWidth;
-      ctx.lineCap = 'round';
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, (innerR + outerR) / 2, startAngle, startAngle + sweepArc);
-      ctx.stroke();
-
-      // Glow behind the slash
-      ctx.globalAlpha = 0.2 * fadeOut;
-      ctx.lineWidth = trailWidth * 2;
-      ctx.strokeStyle = '#aaccff';
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, (innerR + outerR) / 2, startAngle, startAngle + sweepArc);
-      ctx.stroke();
+      shapeBatch.drawArc(s.x, s.y, (innerR + outerR) / 2 - trailWidth / 2, (innerR + outerR) / 2 + trailWidth / 2, startAngle, startAngle + sweepArc, '#ffffff', 0.6 * fadeOut);
+      // Glow behind
+      shapeBatch.drawArc(s.x, s.y, (innerR + outerR) / 2 - trailWidth, (innerR + outerR) / 2 + trailWidth, startAngle, startAngle + sweepArc, '#aaccff', 0.2 * fadeOut);
 
       // Leading edge spark
       if (sweepProgress < 0.9) {
         const edgeAngle = startAngle + sweepArc;
         const edgeX = s.x + Math.cos(edgeAngle) * outerR;
         const edgeY = s.y + Math.sin(edgeAngle) * outerR;
-        ctx.globalAlpha = 0.8 * fadeOut;
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath();
-        ctx.arc(edgeX, edgeY, 3, 0, Math.PI * 2);
-        ctx.fill();
+        shapeBatch.drawCircle(edgeX, edgeY, 3, '#ffffff', 0.8 * fadeOut);
       }
     }
-
-    ctx.restore();
   }
 }
 
 // ---- Enemies ----------------------------------------------------------------
 
 function renderEnemies(
-  ctx: CanvasRenderingContext2D,
+  renderer: WebGLRenderer,
   enemies: EnemyEntity[],
   camera: Camera,
 ): void {
+  const { spriteBatch, shapeBatch, overlayCtx } = renderer;
+
   for (const e of enemies) {
     if (!isVisible(camera, e.x, e.y, e.radius + 20)) continue;
     const s = worldToScreen(camera, e.x, e.y);
 
-    // Dead enemies render as grayed-out corpses (drawn before live enemies would
-    // be ideal, but the visual order is fine since corpses fade out quickly)
     if (e.isDead) {
       const isBoss = e.isBoss && e.bossId;
       const sprites = isBoss ? getBossSprites(e.bossId!) : getEnemySprites(e.defId);
       const scale = isBoss ? getBossScale(e.radius) : getEnemyScale(e.radius);
-
-      // Fade out over the corpse duration (full opacity at start → 0 at end)
-      const alpha = Math.min(1, e.corpseTimer * 1.5); // fade to 0 over last ~0.67s
+      const alpha = Math.min(1, e.corpseTimer * 1.5);
 
       if (sprites && e.animState) {
         const flipEnemy = e.animState.animation === sprites.walkSide && e.lastMoveVx < 0;
         const frameIndex = getCurrentFrameIndex(e.animState);
-        drawSpriteCorpse(ctx, e.animState.animation.sheet, frameIndex, s.x, s.y, scale, alpha, flipEnemy);
+        drawSpriteCorpse(spriteBatch, e.animState.animation.sheet, frameIndex, s.x, s.y, scale, alpha, flipEnemy);
       } else {
-        // Vector fallback: draw a gray circle with fading alpha
-        ctx.save();
-        ctx.globalAlpha = alpha * 0.5;
-        ctx.fillStyle = '#666666';
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, e.radius, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
+        spriteBatch.flush();
+        shapeBatch.drawCircle(s.x, s.y, e.radius, '#666666', alpha * 0.5);
+        shapeBatch.flush();
       }
       continue;
     }
 
+    // Intangible enemies: use alpha < 1 in tint
+    const entityAlpha = e.intangible ? e.opacity : 1;
     const isFlashing = e.flashTimer > 0;
-    const needsAlpha = e.intangible;
-    const hasStatusTint = e.statusEffects.length > 0;
-    const hasBars = e.hp < e.maxHp || e.armor > 0;
-    const needsSave = needsAlpha || isFlashing || hasStatusTint || hasBars || (e.isBoss && !getEnemySprites(e.defId));
-
-    if (needsSave) ctx.save();
-
-    // Intangible enemies are translucent
-    if (needsAlpha) {
-      ctx.globalAlpha = e.opacity;
-    }
 
     // Try sprite rendering
     const isBoss = e.isBoss && e.bossId;
@@ -476,98 +382,104 @@ function renderEnemies(
       const frameIndex = getCurrentFrameIndex(e.animState);
 
       if (isFlashing) {
-        // Use offscreen flash canvas for white overlay (no composite on main ctx)
-        drawSpriteFlash(ctx, e.animState.animation.sheet, frameIndex, s.x, s.y, scale, flipEnemy);
+        drawSpriteFlash(spriteBatch, e.animState.animation.sheet, frameIndex, s.x, s.y, scale, flipEnemy);
       } else {
-        drawSprite(ctx, e.animState.animation.sheet, frameIndex, s.x, s.y, scale, flipEnemy);
+        // Draw with entityAlpha for intangible enemies
+        if (entityAlpha < 1) {
+          const tex = e.animState.animation.sheet.glTexture;
+          if (tex) {
+            const { sx, sy, sw, sh } = getFrameRect(e.animState.animation.sheet, frameIndex);
+            const dw = sw * scale;
+            const dh = sh * scale;
+            const dx = Math.round(s.x - dw / 2);
+            const dy = Math.round(s.y - dh / 2);
+            const img = e.animState.animation.sheet.image;
+            spriteBatch.drawQuad(
+              tex,
+              sx, sy, sw, sh,
+              img.naturalWidth, img.naturalHeight,
+              dx, dy, dw, dh,
+              1, 1, 1, entityAlpha,
+              flipEnemy,
+            );
+          }
+        } else {
+          drawSprite(spriteBatch, e.animState.animation.sheet, frameIndex, s.x, s.y, scale, flipEnemy);
+        }
       }
     } else {
       // Vector fallback
+      spriteBatch.flush();
       const baseColor = isFlashing ? '#ffffff' : getEnemyColor(e);
       const shape = getEnemyShape(e);
-      ctx.fillStyle = baseColor;
 
       switch (shape) {
         case 'circle':
-          ctx.beginPath();
-          ctx.arc(s.x, s.y, e.radius, 0, Math.PI * 2);
-          ctx.fill();
+          shapeBatch.drawCircle(s.x, s.y, e.radius, baseColor, entityAlpha);
           break;
         case 'square':
-          ctx.fillRect(
-            s.x - e.radius,
-            s.y - e.radius,
-            e.radius * 2,
-            e.radius * 2,
-          );
+          shapeBatch.drawRect(s.x - e.radius, s.y - e.radius, e.radius * 2, e.radius * 2, baseColor, entityAlpha);
           break;
         case 'triangle':
-          drawPolygon(ctx, s.x, s.y, e.radius, 3);
+          shapeBatch.drawPolygon(s.x, s.y, e.radius, 3, -Math.PI / 2, baseColor, entityAlpha);
           break;
         case 'diamond':
-          drawPolygon(ctx, s.x, s.y, e.radius, 4, Math.PI / 4);
+          shapeBatch.drawPolygon(s.x, s.y, e.radius, 4, Math.PI / 4, baseColor, entityAlpha);
           break;
         case 'pentagon':
-          drawPolygon(ctx, s.x, s.y, e.radius, 5);
+          shapeBatch.drawPolygon(s.x, s.y, e.radius, 5, -Math.PI / 2, baseColor, entityAlpha);
           break;
         case 'hexagon':
-          drawPolygon(ctx, s.x, s.y, e.radius, 6);
+          shapeBatch.drawPolygon(s.x, s.y, e.radius, 6, -Math.PI / 2, baseColor, entityAlpha);
           break;
         case 'star':
-          drawStar(ctx, s.x, s.y, e.radius);
+          shapeBatch.drawStar(s.x, s.y, e.radius, baseColor, entityAlpha);
           break;
         default:
-          ctx.beginPath();
-          ctx.arc(s.x, s.y, e.radius, 0, Math.PI * 2);
-          ctx.fill();
+          shapeBatch.drawCircle(s.x, s.y, e.radius, baseColor, entityAlpha);
       }
+
+      // Boss ring (vector fallback only)
+      if (e.isBoss) {
+        shapeBatch.drawRing(s.x, s.y, e.radius + 4, 2, '#ff0000', entityAlpha);
+      }
+      shapeBatch.flush();
     }
 
     // Status effect tint overlays
-    if (hasStatusTint) {
+    if (e.statusEffects.length > 0) {
+      spriteBatch.flush();
       for (const se of e.statusEffects) {
         const tint = STATUS_TINT[se.type];
         if (tint) {
-          ctx.fillStyle = tint;
-          ctx.beginPath();
-          ctx.arc(s.x, s.y, e.radius + 1, 0, Math.PI * 2);
-          ctx.fill();
+          shapeBatch.drawCircle(s.x, s.y, e.radius + 1, tint);
         }
       }
+      shapeBatch.flush();
     }
 
-    // HP bar (only if damaged)
+    // HP bar (only if damaged) — use shape batch for the bars
     if (e.hp < e.maxHp) {
+      spriteBatch.flush();
       const barW = e.radius * 2.5;
       const barH = 3;
       const barX = s.x - barW / 2;
       const barY = s.y - e.radius - 8;
       const hpFrac = Math.max(0, e.hp / e.maxHp);
 
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-      ctx.fillRect(barX, barY, barW, barH);
-      ctx.fillStyle = hpFrac > 0.5 ? '#44ff44' : hpFrac > 0.25 ? '#ffaa00' : '#ff3333';
-      ctx.fillRect(barX, barY, barW * hpFrac, barH);
+      shapeBatch.drawRect(barX, barY, barW, barH, 'rgba(0,0,0,0.6)');
+      const hpColor = hpFrac > 0.5 ? '#44ff44' : hpFrac > 0.25 ? '#ffaa00' : '#ff3333';
+      shapeBatch.drawRect(barX, barY, barW * hpFrac, barH, hpColor);
+      shapeBatch.flush();
     }
 
-    // Armor indicator
+    // Armor indicator — 2D overlay text
     if (e.armor > 0) {
-      ctx.fillStyle = '#aaaacc';
-      ctx.font = '10px monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText(`[${e.armor}]`, s.x, s.y + e.radius + 12);
+      overlayCtx.fillStyle = '#aaaacc';
+      overlayCtx.font = '10px monospace';
+      overlayCtx.textAlign = 'center';
+      overlayCtx.fillText(`[${e.armor}]`, s.x, s.y + e.radius + 12);
     }
-
-    // Boss indicator (ring) — only when using vector fallback
-    if (e.isBoss && !sprites) {
-      ctx.strokeStyle = '#ff0000';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, e.radius + 4, 0, Math.PI * 2);
-      ctx.stroke();
-    }
-
-    if (needsSave) ctx.restore();
   }
 }
 
@@ -579,54 +491,14 @@ function getEnemyShape(e: EnemyEntity): string {
   return ENEMY_SHAPE_MAP.get(e.defId) || (e.isBoss ? 'star' : 'circle');
 }
 
-function drawPolygon(
-  ctx: CanvasRenderingContext2D,
-  cx: number,
-  cy: number,
-  r: number,
-  sides: number,
-  startAngle: number = -Math.PI / 2,
-): void {
-  ctx.beginPath();
-  for (let i = 0; i < sides; i++) {
-    const angle = startAngle + (Math.PI * 2 * i) / sides;
-    const px = cx + Math.cos(angle) * r;
-    const py = cy + Math.sin(angle) * r;
-    if (i === 0) ctx.moveTo(px, py);
-    else ctx.lineTo(px, py);
-  }
-  ctx.closePath();
-  ctx.fill();
-}
-
-function drawStar(
-  ctx: CanvasRenderingContext2D,
-  cx: number,
-  cy: number,
-  r: number,
-): void {
-  const points = 5;
-  const innerR = r * 0.5;
-  ctx.beginPath();
-  for (let i = 0; i < points * 2; i++) {
-    const angle = -Math.PI / 2 + (Math.PI * i) / points;
-    const rad = i % 2 === 0 ? r : innerR;
-    const px = cx + Math.cos(angle) * rad;
-    const py = cy + Math.sin(angle) * rad;
-    if (i === 0) ctx.moveTo(px, py);
-    else ctx.lineTo(px, py);
-  }
-  ctx.closePath();
-  ctx.fill();
-}
-
 // ---- Projectiles ------------------------------------------------------------
 
 function renderProjectiles(
-  ctx: CanvasRenderingContext2D,
+  renderer: WebGLRenderer,
   projectiles: ProjectileEntity[],
   camera: Camera,
 ): void {
+  const { spriteBatch, shapeBatch } = renderer;
   const projSheet = getProjectileSheet();
 
   for (const p of projectiles) {
@@ -635,31 +507,24 @@ function renderProjectiles(
     const s = worldToScreen(camera, p.x, p.y);
 
     if (projSheet) {
-      // Glow circle behind the sprite (cheap replacement for shadowBlur)
+      // Glow circle behind the sprite
+      spriteBatch.flush();
       const glowColor = p.isEnemy ? 'rgba(255,50,50,0.25)' : (p.color ? p.color + '40' : 'rgba(255,204,0,0.25)');
       const glowR = p.radius + 3;
-      ctx.fillStyle = glowColor;
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, glowR, 0, Math.PI * 2);
-      ctx.fill();
+      shapeBatch.drawCircle(s.x, s.y, glowR, glowColor);
+      shapeBatch.flush();
 
       const frameIndex = p.isEnemy ? 1 : 0;
       const scale = getProjectileScale(p.radius);
-      drawSprite(ctx, projSheet, frameIndex, s.x, s.y, scale, false);
+      drawSprite(spriteBatch, projSheet, frameIndex, s.x, s.y, scale, false);
     } else {
-      // Vector fallback (no shadowBlur)
-      ctx.fillStyle = p.isEnemy ? '#cc3333' : (p.color || '#ffcc00');
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, Math.max(p.radius, 2), 0, Math.PI * 2);
-      ctx.fill();
-
-      // Simple glow ring
+      // Vector fallback
+      spriteBatch.flush();
+      const color = p.isEnemy ? '#cc3333' : (p.color || '#ffcc00');
+      shapeBatch.drawCircle(s.x, s.y, Math.max(p.radius, 2), color);
       const glowColor = p.isEnemy ? 'rgba(255,50,50,0.3)' : (p.color ? p.color + '4D' : 'rgba(255,204,0,0.3)');
-      ctx.strokeStyle = glowColor;
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, p.radius + 2, 0, Math.PI * 2);
-      ctx.stroke();
+      shapeBatch.drawRing(s.x, s.y, p.radius + 2, 2, glowColor);
+      shapeBatch.flush();
     }
   }
 }
@@ -667,7 +532,7 @@ function renderProjectiles(
 // ---- Pools ------------------------------------------------------------------
 
 function renderPools(
-  ctx: CanvasRenderingContext2D,
+  shapeBatch: ShapeBatch,
   projectiles: ProjectileEntity[],
   camera: Camera,
 ): void {
@@ -677,85 +542,76 @@ function renderPools(
     if (!isVisible(camera, p.x, p.y, radius)) continue;
     const s = worldToScreen(camera, p.x, p.y);
     const color = p.color || '#44ff44';
-
-    ctx.save();
-
-    // Pulsing animation based on pool timer
     const pulse = 0.97 + 0.03 * Math.sin((p.poolTimer ?? 0) * 3);
+    const r = radius * pulse;
 
-    // Radial gradient fill for depth
-    const grad = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, radius * pulse);
-    grad.addColorStop(0, color + 'AA');   // 67% center opacity
-    grad.addColorStop(0.5, color + '66'); // 40% mid
-    grad.addColorStop(1, color + '22');   // 13% edge
+    // Approximate radial gradient with concentric circles
+    shapeBatch.drawCircle(s.x, s.y, r, color, 0.13);
+    shapeBatch.drawCircle(s.x, s.y, r * 0.5, color, 0.27);
+    shapeBatch.drawCircle(s.x, s.y, r * 0.2, color, 0.4);
 
-    ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.arc(s.x, s.y, radius * pulse, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Concentric ring for visibility
-    ctx.globalAlpha = 0.5;
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(s.x, s.y, radius * pulse, 0, Math.PI * 2);
-    ctx.stroke();
-
+    // Concentric ring
+    shapeBatch.drawRing(s.x, s.y, r, 2, color, 0.5);
     // Inner ring
-    ctx.globalAlpha = 0.3;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.arc(s.x, s.y, radius * 0.5 * pulse, 0, Math.PI * 2);
-    ctx.stroke();
-
-    ctx.restore();
+    shapeBatch.drawRing(s.x, s.y, r * 0.5, 1, color, 0.3);
   }
 }
 
 // ---- Player -----------------------------------------------------------------
 
 function renderPlayer(
-  ctx: CanvasRenderingContext2D,
+  renderer: WebGLRenderer,
   world: GameWorld,
   camera: Camera,
 ): void {
+  const { spriteBatch, shapeBatch } = renderer;
   const pl = world.player;
   const s = worldToScreen(camera, pl.x, pl.y);
 
-  ctx.save();
-
-  // Invincibility flash
+  // Invincibility flash — modulate alpha
+  let playerAlpha = 1;
   if (pl.iFrames > 0) {
-    ctx.globalAlpha = 0.5 + 0.3 * Math.sin(pl.iFrames * 20);
+    playerAlpha = 0.5 + 0.3 * Math.sin(pl.iFrames * 20);
   }
 
-  // Shield aura (always draw — works with sprites too)
+  // Shield aura
   if (pl.shieldHp > 0) {
-    ctx.strokeStyle = 'rgba(100, 180, 255, 0.5)';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(s.x, s.y, pl.radius + 6, 0, Math.PI * 2);
-    ctx.stroke();
+    spriteBatch.flush();
+    shapeBatch.drawRing(s.x, s.y, pl.radius + 6, 2, 'rgba(100,180,255,0.5)');
+    shapeBatch.flush();
   }
 
   // Try sprite rendering
   const sprites = getPlayerSprites(world.classId);
   if (sprites && pl.animState) {
     const flipX = pl.animState.animation === sprites.walkSide && pl.facingX < 0;
-    drawAnimatedSprite(ctx, pl.animState, s.x, s.y, PLAYER_SCALE, flipX);
+    if (playerAlpha < 1) {
+      // Draw with custom alpha
+      const frameIndex = getCurrentFrameIndex(pl.animState);
+      const tex = pl.animState.animation.sheet.glTexture;
+      if (tex) {
+        const { sx, sy, sw, sh } = getFrameRect(pl.animState.animation.sheet, frameIndex);
+        const dw = sw * PLAYER_SCALE;
+        const dh = sh * PLAYER_SCALE;
+        const dx = Math.round(s.x - dw / 2);
+        const dy = Math.round(s.y - dh / 2);
+        const img = pl.animState.animation.sheet.image;
+        spriteBatch.drawQuad(
+          tex, sx, sy, sw, sh,
+          img.naturalWidth, img.naturalHeight,
+          dx, dy, dw, dh,
+          1, 1, 1, playerAlpha,
+          flipX,
+        );
+      }
+    } else {
+      drawAnimatedSprite(spriteBatch, pl.animState, s.x, s.y, PLAYER_SCALE, flipX);
+    }
   } else {
     // Vector fallback
-    ctx.fillStyle = '#44aaff';
-    ctx.beginPath();
-    ctx.arc(s.x, s.y, pl.radius, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Inner highlight
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-    ctx.beginPath();
-    ctx.arc(s.x - 2, s.y - 2, pl.radius * 0.5, 0, Math.PI * 2);
-    ctx.fill();
+    spriteBatch.flush();
+    shapeBatch.drawCircle(s.x, s.y, pl.radius, '#44aaff', playerAlpha);
+    shapeBatch.drawCircle(s.x - 2, s.y - 2, pl.radius * 0.5, 'rgba(255,255,255,0.2)', playerAlpha);
 
     // Directional indicator
     const facingAngle = Math.atan2(pl.facingY, pl.facingX);
@@ -765,49 +621,39 @@ function renderPlayer(
     const baseOffset = Math.PI * 0.85;
     const baseR = pl.radius * 0.5;
 
-    ctx.fillStyle = '#88ccff';
-    ctx.beginPath();
-    ctx.moveTo(tipX, tipY);
-    ctx.lineTo(
-      s.x + Math.cos(facingAngle + baseOffset) * baseR,
-      s.y + Math.sin(facingAngle + baseOffset) * baseR,
+    // Triangle indicator — use 3 vertices
+    shapeBatch.drawPolygon(
+      (tipX + s.x + Math.cos(facingAngle + baseOffset) * baseR + s.x + Math.cos(facingAngle - baseOffset) * baseR) / 3,
+      (tipY + s.y + Math.sin(facingAngle + baseOffset) * baseR + s.y + Math.sin(facingAngle - baseOffset) * baseR) / 3,
+      pl.radius * 0.5, 3, facingAngle - Math.PI / 2,
+      '#88ccff', playerAlpha,
     );
-    ctx.lineTo(
-      s.x + Math.cos(facingAngle - baseOffset) * baseR,
-      s.y + Math.sin(facingAngle - baseOffset) * baseR,
-    );
-    ctx.closePath();
-    ctx.fill();
+    shapeBatch.flush();
   }
 
-  // Health bar under player (only when not at full HP)
+  // Health bar under player
   if (pl.hp < pl.maxHp) {
+    spriteBatch.flush();
     const barWidth = 28;
     const barHeight = 3;
     const barY = s.y + pl.radius + 6;
     const hpPercent = Math.max(0, pl.hp / pl.maxHp);
 
-    // Background
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-    ctx.fillRect(s.x - barWidth / 2, barY, barWidth, barHeight);
-
-    // HP fill — green > orange > red
-    const color =
-      hpPercent > 0.5 ? '#44ff44' : hpPercent > 0.25 ? '#ffaa00' : '#ff3333';
-    ctx.fillStyle = color;
-    ctx.fillRect(s.x - barWidth / 2, barY, barWidth * hpPercent, barHeight);
+    shapeBatch.drawRect(s.x - barWidth / 2, barY, barWidth, barHeight, 'rgba(0,0,0,0.6)');
+    const color = hpPercent > 0.5 ? '#44ff44' : hpPercent > 0.25 ? '#ffaa00' : '#ff3333';
+    shapeBatch.drawRect(s.x - barWidth / 2, barY, barWidth * hpPercent, barHeight, color);
+    shapeBatch.flush();
   }
-
-  ctx.restore();
 }
 
 // ---- Summons ----------------------------------------------------------------
 
 function renderSummons(
-  ctx: CanvasRenderingContext2D,
+  renderer: WebGLRenderer,
   summons: SummonEntity[],
   camera: Camera,
 ): void {
+  const { spriteBatch, shapeBatch } = renderer;
   const summonSpriteSet = getSummonSprites();
 
   for (const sm of summons) {
@@ -815,34 +661,26 @@ function renderSummons(
     const screen = worldToScreen(camera, sm.x, sm.y);
 
     if (summonSpriteSet && sm.animState) {
-      // Sprite path — no save/restore needed (no flip, no alpha)
-      drawAnimatedSprite(ctx, sm.animState, screen.x, screen.y, SUMMON_SCALE, false);
+      drawAnimatedSprite(spriteBatch, sm.animState, screen.x, screen.y, SUMMON_SCALE, false);
     } else {
-      // Vector fallback
-      ctx.fillStyle = '#bbccaa';
-      ctx.beginPath();
-      ctx.moveTo(screen.x, screen.y - sm.radius);
-      ctx.lineTo(screen.x - sm.radius * 0.8, screen.y + sm.radius * 0.6);
-      ctx.lineTo(screen.x + sm.radius * 0.8, screen.y + sm.radius * 0.6);
-      ctx.closePath();
-      ctx.fill();
-
-      ctx.strokeStyle = '#889977';
-      ctx.lineWidth = 1;
-      ctx.stroke();
+      // Vector fallback — triangle shape
+      spriteBatch.flush();
+      shapeBatch.drawPolygon(screen.x, screen.y, sm.radius, 3, -Math.PI / 2, '#bbccaa');
+      shapeBatch.drawRing(screen.x, screen.y, sm.radius, 1, '#889977');
+      shapeBatch.flush();
     }
 
     // HP bar if damaged
     if (sm.hp < sm.maxHp) {
+      spriteBatch.flush();
       const barW = sm.radius * 2;
       const barH = 2;
       const barX = screen.x - barW / 2;
       const barY = screen.y - sm.radius - 6;
       const hpFrac = Math.max(0, sm.hp / sm.maxHp);
-      ctx.fillStyle = 'rgba(0,0,0,0.5)';
-      ctx.fillRect(barX, barY, barW, barH);
-      ctx.fillStyle = '#88cc88';
-      ctx.fillRect(barX, barY, barW * hpFrac, barH);
+      shapeBatch.drawRect(barX, barY, barW, barH, 'rgba(0,0,0,0.5)');
+      shapeBatch.drawRect(barX, barY, barW * hpFrac, barH, '#88cc88');
+      shapeBatch.flush();
     }
   }
 }
@@ -850,42 +688,38 @@ function renderSummons(
 // ---- Particles --------------------------------------------------------------
 
 function renderParticles(
-  ctx: CanvasRenderingContext2D,
+  renderer: WebGLRenderer,
   particles: ParticleEntity[],
   camera: Camera,
 ): void {
-  // Batch text particles and shape particles separately to minimize font changes
+  const { shapeBatch, overlayCtx } = renderer;
+
   for (const p of particles) {
     if (!isVisible(camera, p.x, p.y, 50)) continue;
     const s = worldToScreen(camera, p.x, p.y);
-
     const alpha = Math.max(0, Math.min(1, p.life / p.maxLife));
 
-    ctx.save();
-    ctx.globalAlpha = alpha;
-
     if (p.text) {
+      // Text particles go on the 2D overlay
       const size = p.fontSize || 14;
-      ctx.font = `bold ${size}px monospace`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
-      ctx.lineWidth = 3;
-      ctx.strokeText(p.text, s.x, s.y);
-      ctx.fillStyle = p.color;
-      ctx.fillText(p.text, s.x, s.y);
+      overlayCtx.save();
+      overlayCtx.globalAlpha = alpha;
+      overlayCtx.font = `bold ${size}px monospace`;
+      overlayCtx.textAlign = 'center';
+      overlayCtx.textBaseline = 'middle';
+      overlayCtx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
+      overlayCtx.lineWidth = 3;
+      overlayCtx.strokeText(p.text, s.x, s.y);
+      overlayCtx.fillStyle = p.color;
+      overlayCtx.fillText(p.text, s.x, s.y);
+      overlayCtx.restore();
     } else {
-      ctx.fillStyle = p.color;
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, p.radius * alpha, 0, Math.PI * 2);
-      ctx.fill();
+      shapeBatch.drawCircle(s.x, s.y, p.radius * alpha, p.color, alpha);
     }
-
-    ctx.restore();
   }
 }
 
-// ---- Boss warning arrows ----------------------------------------------------
+// ---- Boss warning arrows (2D overlay) ---------------------------------------
 
 function renderBossWarning(
   ctx: CanvasRenderingContext2D,
@@ -948,10 +782,10 @@ function renderBossWarning(
   }
 }
 
-// ---- Minimap ----------------------------------------------------------------
+// ---- Minimap (2D overlay) ---------------------------------------------------
 
 const MINIMAP_SIZE = 200;
-const MINIMAP_RANGE = 2000; // world units visible on minimap
+const MINIMAP_RANGE = 2000;
 
 function renderMinimap(
   ctx: CanvasRenderingContext2D,
@@ -1043,7 +877,6 @@ export function updatePlayerAnimation(world: GameWorld, dt: number): void {
   const isMoving = Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1;
   const { animation, flipX } = pickDirectionalAnim(sprites, pl.facingX, pl.facingY, isMoving);
 
-  // Switch animation if direction changed
   if (!pl.animState || pl.animState.animation !== animation) {
     pl.animState = createAnimState(animation);
   }
@@ -1059,7 +892,6 @@ export function updateEnemyAnimation(enemy: EnemyEntity, dt: number): void {
   const sprites = isBoss ? getBossSprites(enemy.bossId!) : getEnemySprites(enemy.defId);
   if (!sprites) return;
 
-  // Use tracked movement velocity for correct facing direction
   const vx = enemy.lastMoveVx;
   const vy = enemy.lastMoveVy;
   const isMoving = (Math.abs(vx) > 0.1 || Math.abs(vy) > 0.1) && enemy.aiState !== 'idle';

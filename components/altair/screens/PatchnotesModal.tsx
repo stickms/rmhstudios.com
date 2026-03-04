@@ -26,6 +26,76 @@ interface PatchVersion {
 
 const PATCH_NOTES: PatchVersion[] = [
   {
+    version: 'v1.3.3',
+    title: 'WebGL Renderer & Visual Polish',
+    summary: 'Complete rendering backend rewrite from Canvas 2D to WebGL for faster sprite rendering, plus visual polish.',
+    categories: [
+      {
+        label: 'Performance',
+        icon: Zap,
+        color: 'var(--altair-warning)',
+        entries: [
+          { text: 'Rendering engine rewritten from Canvas 2D to WebGL', detail: 'All sprites now rendered via GPU-batched textured quads — up to 8192 sprites per draw call instead of individual drawImage() calls' },
+          { text: 'Flash and corpse effects now use GPU tint modulation', detail: 'Eliminates offscreen canvas compositing — hit feedback and death fades are now essentially free' },
+          { text: 'Vector fallback shapes rendered via WebGL shape batch', detail: 'HP bars, aura circles, pool effects, melee arcs, and all fallback geometry batched into single draw calls' },
+          { text: 'Text and minimap rendered on a transparent 2D overlay canvas', detail: 'Damage numbers, armor text, boss warnings, and minimap use a lightweight Canvas 2D layer composited on top' },
+        ],
+      },
+      {
+        label: 'Visual Polish',
+        icon: Sparkles,
+        color: 'var(--altair-success)',
+        entries: [
+          { text: 'Enemies without active effects now fade out instantly on death', detail: 'Corpses with lingering status effects (poison, slow, etc.) still display the full fade-out animation' },
+        ],
+      },
+    ],
+  },
+  {
+    version: 'v1.3.2',
+    title: 'Persistence & Balance Fixes',
+    summary: 'Server-authoritative meta state, bestiary tracking fixes, catalyst evolution rework, tighter prop hitboxes, and safer entity caps.',
+    categories: [
+      {
+        label: 'Meta Progression & Persistence',
+        icon: Book,
+        color: 'var(--altair-info)',
+        entries: [
+          { text: 'Server-authoritative meta state', detail: 'loadFromServer() now fully replaces local state with DB data instead of merging — the server is the single source of truth' },
+          { text: 'Meta state loads on shell mount', detail: 'DB sync now happens in AltairShell, so meta progression is available as soon as any /altair route loads' },
+          { text: 'Immediate save on purchases', detail: 'Meta shop purchases save to the DB immediately instead of using the 1-second debounce. Failed saves roll back the purchase' },
+        ],
+      },
+      {
+        label: 'Bestiary',
+        icon: Eye,
+        color: 'var(--altair-accent)',
+        entries: [
+          { text: 'Encounters now tracked on spawn, not on hit', detail: 'Previously encounters were recorded on damage, leading to killed > encountered for most enemies' },
+          { text: 'Batch encounter recording to avoid per-enemy state thrashing' },
+        ],
+      },
+      {
+        label: 'Balance',
+        icon: TrendingDown,
+        color: 'var(--altair-danger)',
+        entries: [
+          { text: 'Catalysts no longer consumed on evolution', detail: 'When a weapon evolves, the matching catalyst remains in inventory. Evolution is a power spike but doesn\'t free up a slot' },
+        ],
+      },
+      {
+        label: 'Collision & Entity Caps',
+        icon: Wrench,
+        color: 'var(--altair-text-muted)',
+        entries: [
+          { text: 'Tighter prop hitboxes across all prop types', detail: 'Tombstone, barrel, urn, fences, walls, crate, and well collision dimensions increased to match sprite visuals' },
+          { text: 'No more on-screen enemy despawns', detail: 'Despawn system only removes off-screen Tier 1 enemies when significantly over the soft cap' },
+          { text: 'No more on-screen projectile removal', detail: 'Projectile hard-cap splice removed — existing in-flight projectiles are never deleted, new ones are simply not spawned at cap' },
+        ],
+      },
+    ],
+  },
+  {
     version: 'v1.3.1',
     title: 'Quality of Life',
     summary: 'Player health bar, bestiary, catalyst descriptions, enemy pathfinding improvements, and more.',
