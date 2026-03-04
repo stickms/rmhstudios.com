@@ -39,20 +39,20 @@ export interface DestructibleProp {
   destroyed: boolean;
 }
 
-/** Per-prop-type collision dimensions (at 2x render scale). Slightly smaller
- *  than visual size for forgiving gameplay feel. */
+/** Per-prop-type collision dimensions (at 2x render scale). Sized to closely
+ *  match sprite visuals so the player cannot walk into them. */
 const PROP_HITBOX: Record<PropType, { halfW: number; halfH: number }> = {
-  tombstone:  { halfW: 5,  halfH: 10 },
-  barrel:     { halfW: 9,  halfH: 9 },
-  urn:        { halfW: 5,  halfH: 7 },
-  fence_h:    { halfW: 24, halfH: 4 },
-  fence_v:    { halfW: 4,  halfH: 24 },
-  fence_post: { halfW: 6,  halfH: 6 },
-  wall:       { halfW: 24, halfH: 10 },
-  wall_v:     { halfW: 10, halfH: 24 },
+  tombstone:  { halfW: 8,  halfH: 12 },
+  barrel:     { halfW: 12, halfH: 12 },
+  urn:        { halfW: 7,  halfH: 8 },
+  fence_h:    { halfW: 24, halfH: 6 },
+  fence_v:    { halfW: 6,  halfH: 24 },
+  fence_post: { halfW: 8,  halfH: 8 },
+  wall:       { halfW: 24, halfH: 14 },
+  wall_v:     { halfW: 14, halfH: 24 },
   hedge:      { halfW: 20, halfH: 20 },
-  crate:      { halfW: 10, halfH: 10 },
-  well:       { halfW: 12, halfH: 12 },
+  crate:      { halfW: 13, halfH: 13 },
+  well:       { halfW: 14, halfH: 14 },
 };
 
 /** Default HP per prop type. */

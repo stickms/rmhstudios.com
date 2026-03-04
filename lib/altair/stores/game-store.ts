@@ -439,16 +439,13 @@ export const useAltairGameStore = create<GameState>((set, get) => ({
     }));
   },
 
-  evolveWeapon: (weaponId, evolvedId, consumedCatalystId) => {
+  evolveWeapon: (weaponId, evolvedId, _consumedCatalystId) => {
     set((s) => ({
       weapons: s.weapons.map((w) =>
         w.weaponId === weaponId
           ? { weaponId: evolvedId, level: w.level, evolved: true }
           : w
       ),
-      catalysts: consumedCatalystId
-        ? s.catalysts.filter((c) => c.catalystId !== consumedCatalystId)
-        : s.catalysts,
     }));
   },
 

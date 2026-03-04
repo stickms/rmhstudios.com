@@ -86,6 +86,7 @@ interface AltairMetaState {
   getUpgradeLevel: (id: string) => number;
   getMetaStatBonuses: () => Record<string, number>;
   recordBestiaryEncounter: (defId: string) => void;
+  recordBestiaryEncounterBatch: (defIds: string[]) => void;
   recordBestiaryKill: (defId: string) => void;
   recordBestiaryKilledBy: (defId: string) => void;
   loadFromServer: () => Promise<void>;
@@ -230,6 +231,19 @@ export const useAltairMetaStore = create<AltairMetaState>()(
         set((s) => {
           const entry = s.bestiary[defId] || { encountered: 0, killed: 0, killedBy: 0 };
           return { bestiary: { ...s.bestiary, [defId]: { ...entry, encountered: entry.encountered + 1 } } };
+        });
+        scheduleSave();
+      },
+
+      recordBestiaryEncounterBatch: (defIds) => {
+        if (defIds.length === 0) return;
+        set((s) => {
+          const next = { ...s.bestiary };
+          for (const defId of defIds) {
+            const entry = next[defId] || { encountered: 0, killed: 0, killedBy: 0 };
+            next[defId] = { ...entry, encountered: entry.encountered + 1 };
+          }
+          return { bestiary: next };
         });
         scheduleSave();
       },

@@ -31,6 +31,8 @@ export interface WaveDirectorEvents {
   bossSpawn?: string;
   calmBeforeStorm?: boolean;
   victory?: boolean;
+  /** defIds of all enemies spawned this tick (for bestiary tracking). */
+  spawned: string[];
 }
 
 // ---- Factory ----------------------------------------------------------------
@@ -72,6 +74,7 @@ function spawnEnemy(
   x: number,
   y: number,
   hpMultiplier: number,
+  spawnedOut?: string[],
 ): EnemyEntity | null {
   const def = ENEMY_BY_ID.get(defId);
   if (!def) return null;
@@ -166,6 +169,7 @@ function spawnEnemy(
     enemy.aiParams.phylacteryHp = def.specialParams.phylacteryHp || 30;
   }
 
+  if (spawnedOut) spawnedOut.push(defId);
   return enemy;
 }
 
@@ -208,7 +212,7 @@ export function updateWaveDirector(
   state: WaveDirectorState,
   delta: number,
 ): WaveDirectorEvents {
-  const events: WaveDirectorEvents = {};
+  const events: WaveDirectorEvents = { spawned: [] };
   const timeSeconds = world.time;
   const timeMinutes = timeSeconds / 60;
 
@@ -264,7 +268,7 @@ export function updateWaveDirector(
         if (world.enemies.length >= MAX_ACTIVE_ENEMIES) break;
         const pos = getRandomSpawnPosition(world.player.x, world.player.y, 400, 700);
         const type = Math.random() < 0.5 ? 'shambler' : 'bat';
-        const enemy = spawnEnemy(world, type, pos.x, pos.y, 1);
+        const enemy = spawnEnemy(world, type, pos.x, pos.y, 1, events.spawned);
         if (enemy) world.enemies.push(enemy);
       }
       const highTierTypes = ['vampire_noble', 'arcane_construct', 'death_knight', 'bone_golem', 'witch'];
@@ -273,7 +277,7 @@ export function updateWaveDirector(
         if (world.enemies.length >= MAX_ACTIVE_ENEMIES) break;
         const pos = getRandomSpawnPosition(world.player.x, world.player.y, 400, 700);
         const type = highTierTypes[Math.floor(Math.random() * highTierTypes.length)];
-        const enemy = spawnEnemy(world, type, pos.x, pos.y, 1);
+        const enemy = spawnEnemy(world, type, pos.x, pos.y, 1, events.spawned);
         if (enemy) world.enemies.push(enemy);
       }
     }
@@ -305,11 +309,11 @@ export function updateWaveDirector(
         for (let j = 0; j < packSize; j++) {
           if (world.enemies.length >= MAX_ACTIVE_ENEMIES) break;
           const offset = { x: (Math.random() - 0.5) * 60, y: (Math.random() - 0.5) * 60 };
-          const rat = spawnEnemy(world, 'swarm_rat', pos.x + offset.x, pos.y + offset.y, 1);
+          const rat = spawnEnemy(world, 'swarm_rat', pos.x + offset.x, pos.y + offset.y, 1, events.spawned);
           if (rat) world.enemies.push(rat);
         }
       } else {
-        const enemy = spawnEnemy(world, cheapId, pos.x, pos.y, 1);
+        const enemy = spawnEnemy(world, cheapId, pos.x, pos.y, 1, events.spawned);
         if (enemy) world.enemies.push(enemy);
       }
       continue;
@@ -328,11 +332,11 @@ export function updateWaveDirector(
       for (let j = 0; j < packSize; j++) {
         if (world.enemies.length >= MAX_ACTIVE_ENEMIES) break;
         const offset = { x: (Math.random() - 0.5) * 60, y: (Math.random() - 0.5) * 60 };
-        const rat = spawnEnemy(world, 'swarm_rat', pos.x + offset.x, pos.y + offset.y, 1);
+        const rat = spawnEnemy(world, 'swarm_rat', pos.x + offset.x, pos.y + offset.y, 1, events.spawned);
         if (rat) world.enemies.push(rat);
       }
     } else {
-      const enemy = spawnEnemy(world, enemyId, pos.x, pos.y, 1);
+      const enemy = spawnEnemy(world, enemyId, pos.x, pos.y, 1, events.spawned);
       if (enemy) world.enemies.push(enemy);
     }
   }
@@ -355,7 +359,7 @@ export function updateWaveDirector(
           HORDE_SURGE_MIN_RADIUS,
           HORDE_SURGE_MAX_RADIUS,
         );
-        const enemy = spawnEnemy(world, enemyId, pos.x, pos.y, 1);
+        const enemy = spawnEnemy(world, enemyId, pos.x, pos.y, 1, events.spawned);
         if (enemy) world.enemies.push(enemy);
       }
     }

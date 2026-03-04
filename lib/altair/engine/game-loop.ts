@@ -40,6 +40,7 @@ export interface GameLoopCallbacks {
   onXPGain: (amount: number) => void;
   onCoinGain: (amount: number) => void;
   onKill: (defId: string) => void;
+  onEnemySpawns: (defIds: string[]) => void;
   onLevelUp: () => void;
   onBossSpawn: (bossId: string) => void;
   onBossKill: (bossId: string) => void;
@@ -950,6 +951,7 @@ export function createGameLoop(
     }
     if (enemyEvents.splitSpawns.length > 0) {
       world.enemies.push(...enemyEvents.splitSpawns);
+      callbacks.onEnemySpawns(enemyEvents.splitSpawns.map((e) => e.defId));
     }
     if (enemyEvents.weaponsDisabled) {
       world.weaponsDisabled = true;
@@ -995,8 +997,14 @@ export function createGameLoop(
       }
 
       // Boss spawns minions
-      for (const spawn of bossEvents.bossSpawnEnemies) {
-        spawnEnemyAt(world, spawn.defId, spawn.x, spawn.y, spawn.hpMul);
+      if (bossEvents.bossSpawnEnemies.length > 0) {
+        const minionIds: string[] = [];
+        for (const spawn of bossEvents.bossSpawnEnemies) {
+          if (spawnEnemyAt(world, spawn.defId, spawn.x, spawn.y, spawn.hpMul)) {
+            minionIds.push(spawn.defId);
+          }
+        }
+        if (minionIds.length > 0) callbacks.onEnemySpawns(minionIds);
       }
 
       // Screen shake
@@ -1134,6 +1142,9 @@ export function createGameLoop(
         bossState = newBossState;
         world.enemies.push(newBossState.entity);
       }
+    }
+    if (waveEvents.spawned.length > 0) {
+      callbacks.onEnemySpawns(waveEvents.spawned);
     }
     if (waveEvents.victory) {
       callbacks.onVictory();
