@@ -180,7 +180,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const { tags, status, ...updateData } = parsed.data;
+    const { tags, status, publish, ...updateData } = parsed.data;
 
     // Prepare update data
     const data: Record<string, unknown> = { ...updateData };
