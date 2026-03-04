@@ -28,6 +28,16 @@ export class SyncEngine {
     private roomManager: RoomManager,
   ) {}
 
+  /** Check if user is host or moderator in their room */
+  private isHostOrMod(userId: string): { room: import('./types').RmhTubeRoom; allowed: boolean } | null {
+    const room = this.roomManager.getRoomForUser(userId);
+    if (!room) return null;
+    if (room.hostUserId === userId) return { room, allowed: true };
+    const member = room.members.get(userId);
+    if (member?.role === 'moderator') return { room, allowed: true };
+    return { room, allowed: false };
+  }
+
   handleConnection(socket: Socket): void {
     socket.on(
       C2S.SYNC_HOST_STATE,
@@ -73,21 +83,23 @@ export class SyncEngine {
 
   private onPlay(socket: Socket): void {
     const userId = socket.data.userId as string;
-    const room = this.roomManager.getRoomForUser(userId);
-    if (!room || room.hostUserId !== userId) return;
+    const result = this.isHostOrMod(userId);
+    if (!result?.allowed) return;
+    const { room } = result;
 
     room.videoState.playing = true;
     room.videoState.updatedAt = Date.now();
     room.lastActivityAt = Date.now();
 
-    // Broadcast immediately to all non-host members
+    // Broadcast immediately to all other members
     socket.to(room.id).emit(S2C.SYNC_PLAY);
   }
 
   private onPause(socket: Socket): void {
     const userId = socket.data.userId as string;
-    const room = this.roomManager.getRoomForUser(userId);
-    if (!room || room.hostUserId !== userId) return;
+    const result = this.isHostOrMod(userId);
+    if (!result?.allowed) return;
+    const { room } = result;
 
     room.videoState.playing = false;
     room.videoState.updatedAt = Date.now();
@@ -98,8 +110,9 @@ export class SyncEngine {
 
   private onSeek(socket: Socket, payload: { time: number }): void {
     const userId = socket.data.userId as string;
-    const room = this.roomManager.getRoomForUser(userId);
-    if (!room || room.hostUserId !== userId) return;
+    const result = this.isHostOrMod(userId);
+    if (!result?.allowed) return;
+    const { room } = result;
 
     room.videoState.currentTime = payload.time;
     room.videoState.updatedAt = Date.now();
@@ -110,8 +123,9 @@ export class SyncEngine {
 
   private onSetSpeed(socket: Socket, payload: { speed: number }): void {
     const userId = socket.data.userId as string;
-    const room = this.roomManager.getRoomForUser(userId);
-    if (!room || room.hostUserId !== userId) return;
+    const result = this.isHostOrMod(userId);
+    if (!result?.allowed) return;
+    const { room } = result;
 
     room.videoState.playbackRate = payload.speed;
     room.videoState.updatedAt = Date.now();

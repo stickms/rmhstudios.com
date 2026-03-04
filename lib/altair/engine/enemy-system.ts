@@ -85,6 +85,7 @@ export function updateEnemyAI(world: GameWorld, delta: number): EnemySystemEvent
 
     // --- Dispatch to the correct behavior ---
     const defId = enemy.defId;
+    const projCountBefore = events.enemyProjectiles.length;
     switch (defId) {
       case 'shambler':
         updateShambler(enemy, world, delta, events);
@@ -139,6 +140,11 @@ export function updateEnemyAI(world: GameWorld, delta: number): EnemySystemEvent
         updateShambler(enemy, world, delta, events);
         break;
     }
+
+    // Tag any projectiles spawned by this enemy with its defId for bestiary tracking
+    for (let pi = projCountBefore; pi < events.enemyProjectiles.length; pi++) {
+      events.enemyProjectiles[pi].sourceDefId = defId;
+    }
   }
 
   return events;
@@ -186,8 +192,8 @@ function moveTowardPlayer(
   let vx = (dx / dist) * speed;
   let vy = (dy / dist) * speed;
 
-  // Apply obstacle avoidance (skip for intangible enemies)
-  if (_propHash && !enemy.intangible) {
+  // Apply obstacle avoidance (skip for intangible or flying enemies)
+  if (_propHash && !enemy.intangible && !enemy.canFly) {
     const avoided = avoidObstacles(enemy.x, enemy.y, enemy.radius, vx, vy, speed, _propHash);
     vx = avoided.vx;
     vy = avoided.vy;
@@ -225,7 +231,7 @@ function maintainRange(
     vy = (dy / dist) * speed;
   }
 
-  if ((vx !== 0 || vy !== 0) && _propHash && !enemy.intangible) {
+  if ((vx !== 0 || vy !== 0) && _propHash && !enemy.intangible && !enemy.canFly) {
     const avoided = avoidObstacles(enemy.x, enemy.y, enemy.radius, vx, vy, speed, _propHash);
     vx = avoided.vx;
     vy = avoided.vy;
@@ -304,6 +310,7 @@ function spawnEnemyEntity(
     isBoss: false,
     armor: (def.specialParams.armor as number) ?? 0,
     intangible: false,
+    canFly: def.canFly,
     opacity: 1.0,
     dashVx: 0,
     dashVy: 0,
@@ -337,8 +344,8 @@ function updateBat(
   _events: EnemySystemEvents,
 ): void {
   const speed = getEffectiveSpeed(enemy);
-  const waveAmplitude = 40;
-  const wavePeriod = 1.5;
+  const waveAmplitude = 30;
+  const wavePeriod = 2.2;
 
   // Accumulate wave phase
   enemy.aiTimer += delta;
@@ -754,6 +761,7 @@ function updateBoneGolem(
     }
     case 'slam': {
       // Spawn shockwave projectile as expanding pool-like AoE
+      // Use a smaller collision radius than visual AoE for fairer gameplay
       events.enemyProjectiles.push(
         spawnEnemyProjectile(
           world,
@@ -762,7 +770,7 @@ function updateBoneGolem(
           0,
           0,
           slamDamage,
-          slamRadius,
+          40,
           0.3, // brief lifetime for shockwave
           999,
           '#F5F5DC',
@@ -957,7 +965,7 @@ function updateVampireNoble(
               0,
               0,
               comboDamage,
-              30,
+              15,
               0.1, // very brief
               1,
               '#8B0000',
@@ -991,7 +999,7 @@ function updateArcaneConstruct(
   const preferredRange = 300;
   const laserCooldown = 4;
   const laserTelegraph = 1.0;
-  const laserWidth = 20;
+  const laserWidth = 12;
   const laserDuration = 0.5;
   const laserDamage = 25;
 
@@ -1171,7 +1179,7 @@ function updateDeathKnight(
   const meleeDamage = 35;
   const meleeArcDeg = 140;
   const shockwaveCooldown = 6;
-  const shockwaveWidth = 30;
+  const shockwaveWidth = 14;
   const shockwaveRange = 300;
   const shockwaveDamage = 20;
 
@@ -1238,11 +1246,11 @@ function updateDeathKnight(
           0,
           0,
           meleeDamage,
-          meleeRange * 0.6,
+          20,
           0.15,
           1,
           '#4B0082',
-          { aoeRadius: meleeRange },
+          { aoeRadius: 50 },
         ),
       );
 

@@ -1,4 +1,4 @@
-import type { ChapterData, WordSelectPuzzleData } from '../types';
+import type { ChapterData, WordSelectPuzzleData, Scene } from '../types';
 
 export const CHAPTER_1: ChapterData = {
   id: 'ch01',
@@ -277,7 +277,7 @@ export const CH01_PUZZLE: WordSelectPuzzleData = {
 };
 
 /** Post-puzzle dialogue (Scene 5) */
-export const CH01_POST_PUZZLE_SCENES = [
+export const CH01_POST_PUZZLE_SCENES: Scene[] = [
   {
     id: 'ch01_s05',
     background: 'club_room',

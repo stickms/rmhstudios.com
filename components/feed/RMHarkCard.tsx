@@ -2,10 +2,16 @@
 
 import type { FeedItem } from '@/lib/feed-types';
 import { RMHarkActions } from './RMHarkActions';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Repeat2 } from 'lucide-react';
+import { Repeat2, MoreHorizontal, Heart, Repeat, Trash2 } from 'lucide-react';
 import Link from 'next/link';
+import { RMHarkContent } from './RMHarkContent';
+import { PollDisplay } from './PollDisplay';
+import { GifEmbed } from './GifEmbed';
+import { useFeedStore } from '@/stores/feedStore';
+import { authClient } from '@/lib/auth-client';
+import { EngagementListModal } from './EngagementListModal';
 
 interface RMHarkCardProps {
   item: FeedItem;
@@ -46,6 +52,35 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
   const viewTracked = useRef(false);
   const router = useRouter();
   const actualId = item.actualId ?? item.id;
+  const { data: session } = authClient.useSession();
+  const { removeItem, updateItem } = useFeedStore();
+  const isAuthor = session?.user?.id === item.user?.id;
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [engagementModal, setEngagementModal] = useState<'likes' | 'reposts' | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [menuOpen]);
+
+  const handleDelete = async () => {
+    setMenuOpen(false);
+    if (!confirm('Delete this RMHark?')) return;
+    removeItem(item.id);
+    try {
+      await fetch(`/api/rmharks/${actualId}`, { method: 'DELETE' });
+    } catch {
+      // Item already removed from UI
+    }
+  };
 
   // Track view when card becomes visible
   useEffect(() => {
@@ -64,9 +99,46 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
 
   return (
     <div
-      className="px-4 py-3 border-b border-site-border hover:bg-site-surface/30 transition-colors cursor-pointer"
+      className="relative px-4 py-3 border-b border-site-border hover:bg-site-surface/30 transition-colors cursor-pointer"
       onClick={handleCardClick}
     >
+      {/* More menu — top right of card */}
+      <div className="absolute top-3 right-3 z-10" ref={menuRef}>
+        <button
+          onClick={() => setMenuOpen((v) => !v)}
+          className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface transition-colors"
+        >
+          <MoreHorizontal className="w-4 h-4" />
+        </button>
+        {menuOpen && (
+          <div className="absolute right-0 top-full mt-1 w-44 bg-site-bg border border-site-border rounded-xl shadow-xl py-1 z-30">
+            <button
+              onClick={() => { setMenuOpen(false); setEngagementModal('likes'); }}
+              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
+            >
+              <Heart className="w-4 h-4 text-site-text-dim" />
+              Liked by
+            </button>
+            <button
+              onClick={() => { setMenuOpen(false); setEngagementModal('reposts'); }}
+              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
+            >
+              <Repeat className="w-4 h-4 text-site-text-dim" />
+              reRMHark'd by
+            </button>
+            {isAuthor && (
+              <button
+                onClick={handleDelete}
+                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-danger hover:bg-site-danger/10 transition-colors"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
       {/* reRMHark'd label */}
       {item.repostedBy && (
         <div className="flex items-center gap-1.5 text-xs text-site-text-dim mb-2 ml-12">
@@ -85,7 +157,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
 
         <div className="flex-1 min-w-0">
           {/* Header */}
-          <div className="flex items-center gap-1.5 text-sm">
+          <div className="flex items-center gap-1.5 text-sm pr-6">
             {item.user ? (
               <Link href={`/profile/${item.user.id}`} className="flex items-center gap-1.5 min-w-0 hover:underline">
                 <span className="font-bold text-site-text truncate">
@@ -108,9 +180,21 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
           </div>
 
           {/* Content */}
-          <p className="text-site-text text-[15px] mt-1 whitespace-pre-wrap break-words">
-            {item.content}
-          </p>
+          {item.content && (
+            <RMHarkContent text={item.content} className="text-site-text text-[15px] mt-1 whitespace-pre-wrap break-words" />
+          )}
+
+          {/* Poll */}
+          {item.poll && (
+            <PollDisplay
+              poll={item.poll}
+              postId={item.actualId ?? item.id}
+              onUpdate={(updatedPoll) => updateItem(item.id, { poll: updatedPoll })}
+            />
+          )}
+
+          {/* GIF */}
+          {item.gifUrl && <GifEmbed url={item.gifUrl} className="mt-3" />}
 
           {/* Quoted original (if repost) */}
           {item.original && (
@@ -133,9 +217,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
                   </span>
                 )}
               </div>
-              <p className="text-site-text text-sm whitespace-pre-wrap break-words">
-                {item.original.content}
-              </p>
+              <RMHarkContent text={item.original.content ?? ''} className="text-site-text text-sm whitespace-pre-wrap break-words" />
             </div>
           )}
 
@@ -143,6 +225,15 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
           <RMHarkActions item={item} />
         </div>
       </div>
+
+      {engagementModal && (
+        <EngagementListModal
+          open={engagementModal !== null}
+          onClose={() => setEngagementModal(null)}
+          postId={actualId}
+          type={engagementModal}
+        />
+      )}
     </div>
   );
 }

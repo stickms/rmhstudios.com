@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
-import { formatDateKey } from '@/lib/daily-puzzle/seed';
+import { formatDateKey } from '@/lib/lights-out/seed';
 import { resolveUserDisplay } from '@/lib/user-display';
 
 export async function GET(req: Request) {

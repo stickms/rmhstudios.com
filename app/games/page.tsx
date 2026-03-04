@@ -9,8 +9,10 @@ export const metadata = {
     description: 'Explore our collection of indie games.',
 };
 
-export default function GamesPage() {
-    const { newsArticles } = getSidebarData();
+export const revalidate = 60;
+
+export default async function GamesPage() {
+    const { newsArticles } = await getSidebarData();
 
     return (
         <PageLayout

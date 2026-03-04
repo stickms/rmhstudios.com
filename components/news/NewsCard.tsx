@@ -34,21 +34,13 @@ export function NewsCard({ article, index }: NewsCardProps) {
             >
                 <Link href={`/news/${article.slug}`} className="absolute inset-0 z-0" />
 
-                {/* Header bar with category + source */}
-                <div className="flex items-center justify-between px-5 pt-5 pb-0 relative z-10 pointer-events-none">
+                {/* Category */}
+                <div className="px-5 pt-5 pb-0 relative z-10 pointer-events-none">
                     <span
                         className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider ${categoryColor.bg} ${categoryColor.text} ${categoryColor.border} border`}
                     >
                         {article.category}
                     </span>
-                    {article.sourcePublisher && article.sourceUrl && (
-                        <span className="pointer-events-auto">
-                            <NewsSourceBadge
-                                publisher={article.sourcePublisher}
-                                url={article.sourceUrl}
-                            />
-                        </span>
-                    )}
                 </div>
 
                 {/* Content */}
@@ -65,6 +57,16 @@ export function NewsCard({ article, index }: NewsCardProps) {
                     <p className="text-(--site-text-muted) text-sm line-clamp-3 mb-4 leading-relaxed flex-1">
                         {article.description}
                     </p>
+
+                    {/* Source */}
+                    {article.sourcePublisher && article.sourceUrl && (
+                        <div className="mb-4 pointer-events-auto">
+                            <NewsSourceBadge
+                                publisher={article.sourcePublisher}
+                                url={article.sourceUrl}
+                            />
+                        </div>
+                    )}
 
                     {/* Tags */}
                     {article.tags && article.tags.length > 0 && (

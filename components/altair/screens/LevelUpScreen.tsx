@@ -7,12 +7,13 @@
 import { useAltairGameStore, UpgradeChoice } from '@/lib/altair/stores/game-store';
 import { WEAPONS, EVOLVED_WEAPONS } from '@/lib/altair/data/weapons';
 import { PASSIVES } from '@/lib/altair/data/passives';
+import { CATALYSTS } from '@/lib/altair/data/catalysts';
 import { RotateCcw, X, Coins } from 'lucide-react';
 import SpriteIcon from '@/components/altair/hud/SpriteIcon';
-import { WEAPON_ICON_SRC, PASSIVE_ICON_SRC } from '@/lib/altair/engine/sprites/sprite-defs';
+import { WEAPON_ICON_SRC, PASSIVE_ICON_SRC, CATALYST_ICON_SRC } from '@/lib/altair/engine/sprites/sprite-defs';
 import { useKeyboardNav } from '@/lib/altair/hooks/use-keyboard-nav';
 
-function getChoiceInfo(choice: UpgradeChoice): { name: string; description: string; levelText: string; color: string; isGold: boolean; iconFrame: number; iconType: 'weapon' | 'passive' | 'gold' } {
+function getChoiceInfo(choice: UpgradeChoice): { name: string; description: string; levelText: string; color: string; isGold: boolean; iconFrame: number; iconType: 'weapon' | 'passive' | 'catalyst' | 'gold' } {
   switch (choice.type) {
     case 'new_weapon': {
       const w = WEAPONS.find((w) => w.id === choice.weaponId);
@@ -60,6 +61,30 @@ function getChoiceInfo(choice: UpgradeChoice): { name: string; description: stri
         isGold: false,
         iconFrame: p?.iconFrame ?? 0,
         iconType: 'passive',
+      };
+    }
+    case 'new_catalyst': {
+      const c = CATALYSTS.find((c) => c.id === choice.catalystId);
+      return {
+        name: c?.name ?? choice.catalystId,
+        description: c?.descriptions[0] ?? '',
+        levelText: 'NEW',
+        color: c?.color ?? '#c084fc',
+        isGold: false,
+        iconFrame: c?.iconFrame ?? 0,
+        iconType: 'catalyst',
+      };
+    }
+    case 'upgrade_catalyst': {
+      const c = CATALYSTS.find((c) => c.id === choice.catalystId);
+      return {
+        name: c?.name ?? choice.catalystId,
+        description: c?.descriptions[choice.newLevel - 1] ?? '',
+        levelText: `Lv.${choice.newLevel - 1} → ${choice.newLevel}`,
+        color: c?.color ?? '#c084fc',
+        isGold: false,
+        iconFrame: c?.iconFrame ?? 0,
+        iconType: 'catalyst',
       };
     }
     case 'gold':
@@ -137,7 +162,7 @@ export default function LevelUpScreen({ onReroll }: LevelUpScreenProps) {
                       <Coins size={20} style={{ color: info.color }} />
                     ) : (
                       <SpriteIcon
-                        sheetSrc={info.iconType === 'weapon' ? WEAPON_ICON_SRC : PASSIVE_ICON_SRC}
+                        sheetSrc={info.iconType === 'weapon' ? WEAPON_ICON_SRC : info.iconType === 'catalyst' ? CATALYST_ICON_SRC : PASSIVE_ICON_SRC}
                         frameIndex={info.iconFrame}
                         size={28}
                       />

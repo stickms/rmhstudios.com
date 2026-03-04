@@ -27,6 +27,9 @@ interface AltairSettingsState {
   doubleTime: boolean;
   screenShake: boolean;
   joystickSide: 'left' | 'right';
+  masterVolume: number; // 0–1
+  musicVolume: number;  // 0–1
+  sfxVolume: number;    // 0–1
 
   setTheme: (theme: 'dark' | 'light') => void;
   toggleTheme: () => void;
@@ -35,6 +38,9 @@ interface AltairSettingsState {
   setDoubleTime: (enabled: boolean) => void;
   setScreenShake: (enabled: boolean) => void;
   setJoystickSide: (side: 'left' | 'right') => void;
+  setMasterVolume: (v: number) => void;
+  setMusicVolume: (v: number) => void;
+  setSfxVolume: (v: number) => void;
 }
 
 export const useAltairSettingsStore = create<AltairSettingsState>()(
@@ -45,6 +51,9 @@ export const useAltairSettingsStore = create<AltairSettingsState>()(
       doubleTime: false,
       screenShake: true,
       joystickSide: 'left',
+      masterVolume: 0.7,
+      musicVolume: 0.5,
+      sfxVolume: 0.7,
 
       setTheme: (theme) => set({ theme }),
       toggleTheme: () => set((s) => ({ theme: s.theme === 'dark' ? 'light' : 'dark' })),
@@ -54,6 +63,9 @@ export const useAltairSettingsStore = create<AltairSettingsState>()(
       setDoubleTime: (enabled) => set({ doubleTime: enabled }),
       setScreenShake: (enabled) => set({ screenShake: enabled }),
       setJoystickSide: (side) => set({ joystickSide: side }),
+      setMasterVolume: (v) => set({ masterVolume: v }),
+      setMusicVolume: (v) => set({ musicVolume: v }),
+      setSfxVolume: (v) => set({ sfxVolume: v }),
     }),
     {
       name: 'altair-settings',
@@ -63,6 +75,9 @@ export const useAltairSettingsStore = create<AltairSettingsState>()(
         doubleTime: s.doubleTime,
         screenShake: s.screenShake,
         joystickSide: s.joystickSide,
+        masterVolume: s.masterVolume,
+        musicVolume: s.musicVolume,
+        sfxVolume: s.sfxVolume,
       }),
     }
   )

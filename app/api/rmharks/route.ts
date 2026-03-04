@@ -9,13 +9,66 @@ import { apps } from "@/lib/apps";
 import { getAllPosts } from "@/lib/blog";
 import { getAllNewsArticles } from "@/lib/news";
 import { getAllArticles } from "@/lib/research";
-import type { FeedItem, FeedFilter } from "@/lib/feed-types";
+import type { FeedItem, FeedPoll, FeedFilter } from "@/lib/feed-types";
 import { userDisplaySelect, resolveUser } from "@/lib/user-display";
 
 export const runtime = "nodejs";
 
+/** Prisma include fragment for poll data on an RMHark */
+function pollInclude(userId: string | null) {
+  return {
+    include: {
+      options: {
+        orderBy: { position: "asc" as const },
+        include: {
+          _count: { select: { votes: true } },
+          ...(userId
+            ? { votes: { where: { userId }, select: { id: true, optionId: true } } }
+            : {}),
+        },
+      },
+    },
+  };
+}
+
+/** Map a Prisma poll result to a FeedPoll */
+function mapPoll(poll: any): FeedPoll | undefined {
+  if (!poll) return undefined;
+  const totalVotes = poll.options.reduce(
+    (sum: number, o: any) => sum + (o._count?.votes ?? 0),
+    0
+  );
+  return {
+    id: poll.id,
+    question: poll.question,
+    multiSelect: poll.multiSelect,
+    totalVotes,
+    options: poll.options.map((o: any) => ({
+      id: o.id,
+      text: o.text,
+      voteCount: o._count?.votes ?? 0,
+    })),
+    myVotes: poll.options
+      .filter((o: any) => o.votes?.length > 0)
+      .map((o: any) => o.id),
+  };
+}
+
+function deduplicateReposts(items: FeedItem[], windowSize = 2): FeedItem[] {
+  const result: FeedItem[] = [];
+  for (const item of items) {
+    if (item.repostedBy) {
+      const underlyingId = item.actualId ?? item.id;
+      const recentIds = result.slice(-windowSize).map((i) => i.actualId ?? i.id);
+      if (recentIds.includes(underlyingId)) continue;
+    }
+    result.push(item);
+  }
+  return result;
+}
+
 /** Build "virtual" announcement feed items from static data sources. */
-function getAnnouncementItems(filter: FeedFilter): FeedItem[] {
+async function getAnnouncementItems(filter: FeedFilter): Promise<FeedItem[]> {
   const items: FeedItem[] = [];
 
   if (filter === "all" || filter === "game") {
@@ -54,9 +107,7 @@ function getAnnouncementItems(filter: FeedFilter): FeedItem[] {
   }
 
   if (filter === "all" || filter === "news") {
-    const newsArticles = getAllNewsArticles([
-      "title", "date", "slug", "description", "category", "sourcePublisher", "image",
-    ]);
+    const newsArticles = await getAllNewsArticles();
     for (const n of newsArticles) {
       items.push({
         id: `news:${n.slug}`,
@@ -65,7 +116,7 @@ function getAnnouncementItems(filter: FeedFilter): FeedItem[] {
         title: n.title,
         description: n.description,
         href: `/news/${n.slug}`,
-        imagePath: n.image,
+        imagePath: n.image ?? undefined,
         category: n.category,
         sourcePublisher: n.sourcePublisher,
       });
@@ -115,6 +166,7 @@ export async function GET(req: NextRequest) {
     const cursor = searchParams.get("cursor");
     const limit = Math.min(parseInt(searchParams.get("limit") || "20"), 50);
     const filter = (searchParams.get("filter") || "all") as FeedFilter;
+    const search = searchParams.get("search");
 
     // Get current user session (optional, for liked/reposted status)
     let userId: string | null = null;
@@ -124,6 +176,11 @@ export async function GET(req: NextRequest) {
     } catch {
       // Not logged in, that's fine
     }
+
+    // Build content search filter
+    const contentWhere = search
+      ? { content: { contains: search, mode: "insensitive" as const } }
+      : {};
 
     // Handle "friends" filter: only posts from followed users
     if (filter === "friends") {
@@ -147,6 +204,7 @@ export async function GET(req: NextRequest) {
         _count: { select: { likes: true, comments: true, reposts: true, views: true } },
         likes: { where: { userId }, select: { id: true } },
         reposts: { where: { userId }, select: { id: true } },
+        poll: pollInclude(userId),
         original: {
           include: {
             user: { select: userDisplaySelect },
@@ -159,6 +217,7 @@ export async function GET(req: NextRequest) {
         prisma.rMHark.findMany({
           where: {
             userId: { in: followingIds },
+            ...contentWhere,
             ...(cursorDate ? { createdAt: { lt: cursorDate } } : {}),
           },
           orderBy: { createdAt: "desc" },
@@ -169,6 +228,7 @@ export async function GET(req: NextRequest) {
           where: {
             userId: { in: followingIds },
             ...(cursorDate ? { createdAt: { lt: cursorDate } } : {}),
+            ...(search ? { rmhark: contentWhere } : {}),
           },
           orderBy: { createdAt: "desc" },
           take: limit,
@@ -194,7 +254,7 @@ export async function GET(req: NextRequest) {
             }
           : undefined;
 
-      const ownItems: FeedItem[] = rmharks.map((r) => ({
+      const ownItems: FeedItem[] = rmharks.map((r: any) => ({
         id: r.id,
         type: "rmhark" as const,
         createdAt: r.createdAt.toISOString(),
@@ -207,9 +267,11 @@ export async function GET(req: NextRequest) {
         liked: r.likes.length > 0,
         reposted: r.reposts.length > 0,
         original: mapOriginal(r.original),
+        poll: mapPoll(r.poll),
+        gifUrl: r.gifUrl ?? undefined,
       }));
 
-      const repostItems: FeedItem[] = repostRecords.map((rp) => {
+      const repostItems: FeedItem[] = repostRecords.map((rp: any) => {
         const r = rp.rmhark;
         return {
           id: `repost:${rp.id}`,
@@ -226,12 +288,16 @@ export async function GET(req: NextRequest) {
           reposted: r.reposts.length > 0,
           repostedBy: resolveUser(rp.user),
           original: mapOriginal(r.original),
+          poll: mapPoll(r.poll),
+          gifUrl: r.gifUrl ?? undefined,
         };
       });
 
-      const friendsItems = [...ownItems, ...repostItems]
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-        .slice(0, limit);
+      const friendsItems = deduplicateReposts(
+        [...ownItems, ...repostItems].sort(
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        )
+      ).slice(0, limit);
 
       const nextCursor =
         friendsItems.length === limit
@@ -246,7 +312,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Fetch RMHarks from DB
-    const shouldFetchRmheets = filter === "all" || filter === "rmhark";
+    const shouldFetchRmheets = filter === "all" || filter === "rmhark" || !!search;
     let dbItems: FeedItem[] = [];
     const cursorDate = cursor ? new Date(cursor) : undefined;
 
@@ -259,6 +325,7 @@ export async function GET(req: NextRequest) {
             reposts: { where: { userId }, select: { id: true } },
           }
         : {}),
+      poll: pollInclude(userId),
       original: {
         include: {
           user: { select: userDisplaySelect },
@@ -268,15 +335,23 @@ export async function GET(req: NextRequest) {
     } as const;
 
     if (shouldFetchRmheets) {
+      const rmharkWhere = {
+        ...contentWhere,
+        ...(cursorDate ? { createdAt: { lt: cursorDate } } : {}),
+      };
+
       const [rmharks, repostRecords] = await Promise.all([
         prisma.rMHark.findMany({
-          where: cursorDate ? { createdAt: { lt: cursorDate } } : undefined,
+          where: Object.keys(rmharkWhere).length ? rmharkWhere : undefined,
           orderBy: { createdAt: "desc" },
           take: limit,
           include: rmharkInclude,
         }),
         prisma.rMHarkRepost.findMany({
-          where: cursorDate ? { createdAt: { lt: cursorDate } } : undefined,
+          where: {
+            ...(cursorDate ? { createdAt: { lt: cursorDate } } : {}),
+            ...(search ? { rmhark: contentWhere } : {}),
+          } as Record<string, unknown>,
           orderBy: { createdAt: "desc" },
           take: limit,
           include: {
@@ -286,7 +361,7 @@ export async function GET(req: NextRequest) {
         }),
       ]);
 
-      const mapOriginal = (o: typeof rmharks[0]["original"]) =>
+      const mapOriginal = (o: any) =>
         o
           ? {
               id: o.id,
@@ -301,7 +376,7 @@ export async function GET(req: NextRequest) {
             }
           : undefined;
 
-      const ownItems: FeedItem[] = rmharks.map((r) => ({
+      const ownItems: FeedItem[] = rmharks.map((r: any) => ({
         id: r.id,
         type: "rmhark" as const,
         createdAt: r.createdAt.toISOString(),
@@ -314,9 +389,11 @@ export async function GET(req: NextRequest) {
         liked: userId ? r.likes.length > 0 : false,
         reposted: userId ? r.reposts.length > 0 : false,
         original: mapOriginal(r.original),
+        poll: mapPoll(r.poll),
+        gifUrl: r.gifUrl ?? undefined,
       }));
 
-      const repostItems: FeedItem[] = repostRecords.map((rp) => {
+      const repostItems: FeedItem[] = repostRecords.map((rp: any) => {
         const r = rp.rmhark;
         return {
           id: `repost:${rp.id}`,
@@ -333,16 +410,20 @@ export async function GET(req: NextRequest) {
           reposted: userId ? r.reposts.length > 0 : false,
           repostedBy: resolveUser(rp.user),
           original: mapOriginal(r.original),
+          poll: mapPoll(r.poll),
+          gifUrl: r.gifUrl ?? undefined,
         };
       });
 
-      dbItems = [...ownItems, ...repostItems]
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-        .slice(0, limit);
+      dbItems = deduplicateReposts(
+        [...ownItems, ...repostItems].sort(
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        )
+      ).slice(0, limit);
     }
 
-    // Get announcement items
-    const announcements = getAnnouncementItems(filter);
+    // Get announcement items (skip when searching — only RMHarks have content)
+    const announcements = search ? [] : await getAnnouncementItems(filter);
 
     // Filter announcements by cursor
     let filteredAnnouncements = announcements;
@@ -384,9 +465,14 @@ export async function GET(req: NextRequest) {
       paginatedItems = allItems.slice(0, limit);
     }
 
+    // Compute cursor from the last real DB item (RMHark), not announcements.
+    // Announcements have static dates that can break cursor-based pagination.
+    const lastDbItem = [...paginatedItems]
+      .reverse()
+      .find((i) => i.type === "rmhark");
     const nextCursor =
-      paginatedItems.length === limit
-        ? paginatedItems[paginatedItems.length - 1].createdAt
+      paginatedItems.length === limit && lastDbItem
+        ? lastDbItem.createdAt
         : null;
 
     return NextResponse.json({
@@ -429,15 +515,64 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const rmhark = await prisma.rMHark.create({
-      data: {
-        content: parsed.data.content.trim(),
-        userId: session.user.id,
-      },
-      include: {
-        user: { select: userDisplaySelect },
-      },
+    const { content, poll, gifUrl } = parsed.data;
+
+    const rmhark = await prisma.$transaction(async (tx) => {
+      const created = await tx.rMHark.create({
+        data: {
+          content: content.trim(),
+          gifUrl: gifUrl ?? null,
+          userId: session.user.id,
+        },
+        include: {
+          user: { select: userDisplaySelect },
+        },
+      });
+
+      if (poll) {
+        await tx.rMHarkPoll.create({
+          data: {
+            rmheetId: created.id,
+            question: poll.question.trim(),
+            multiSelect: poll.multiSelect,
+            options: {
+              create: poll.options.map((text, i) => ({
+                text: text.trim(),
+                position: i,
+              })),
+            },
+          },
+          include: { options: true },
+        });
+      }
+
+      return created;
     });
+
+    // Re-fetch with poll data if poll was created
+    let pollData: FeedItem["poll"] | undefined;
+    if (poll) {
+      const createdPoll = await prisma.rMHarkPoll.findUnique({
+        where: { rmheetId: rmhark.id },
+        include: {
+          options: { orderBy: { position: "asc" } },
+        },
+      });
+      if (createdPoll) {
+        pollData = {
+          id: createdPoll.id,
+          question: createdPoll.question,
+          multiSelect: createdPoll.multiSelect,
+          totalVotes: 0,
+          options: createdPoll.options.map((o) => ({
+            id: o.id,
+            text: o.text,
+            voteCount: 0,
+          })),
+          myVotes: [],
+        };
+      }
+    }
 
     const item: FeedItem = {
       id: rmhark.id,
@@ -451,6 +586,8 @@ export async function POST(req: NextRequest) {
       viewCount: 0,
       liked: false,
       reposted: false,
+      poll: pollData,
+      gifUrl: rmhark.gifUrl ?? undefined,
     };
 
     return NextResponse.json(item, { status: 201 });

@@ -39,19 +39,20 @@ export interface DestructibleProp {
   destroyed: boolean;
 }
 
-/** Per-prop-type collision dimensions (at 2x render scale). */
+/** Per-prop-type collision dimensions (at 2x render scale). Slightly smaller
+ *  than visual size for forgiving gameplay feel. */
 const PROP_HITBOX: Record<PropType, { halfW: number; halfH: number }> = {
-  tombstone:  { halfW: 7,  halfH: 13 },
-  barrel:     { halfW: 11, halfH: 11 },
-  urn:        { halfW: 7,  halfH: 9 },
-  fence_h:    { halfW: 28, halfH: 6 },
-  fence_v:    { halfW: 6,  halfH: 28 },
-  fence_post: { halfW: 8,  halfH: 8 },
-  wall:       { halfW: 28, halfH: 12 },
-  wall_v:     { halfW: 12, halfH: 28 },
-  hedge:      { halfW: 26, halfH: 26 },
-  crate:      { halfW: 12, halfH: 12 },
-  well:       { halfW: 14, halfH: 14 },
+  tombstone:  { halfW: 5,  halfH: 10 },
+  barrel:     { halfW: 9,  halfH: 9 },
+  urn:        { halfW: 5,  halfH: 7 },
+  fence_h:    { halfW: 24, halfH: 4 },
+  fence_v:    { halfW: 4,  halfH: 24 },
+  fence_post: { halfW: 6,  halfH: 6 },
+  wall:       { halfW: 24, halfH: 10 },
+  wall_v:     { halfW: 10, halfH: 24 },
+  hedge:      { halfW: 20, halfH: 20 },
+  crate:      { halfW: 10, halfH: 10 },
+  well:       { halfW: 12, halfH: 12 },
 };
 
 /** Default HP per prop type. */
@@ -272,7 +273,7 @@ function buildGraveyardCluster(): StructureTemplate {
     const y = 1 + row * 2; // rows at y=1, y=3 (skip y=5 = fence)
     if (y >= h - 1) break;
     for (let col = 0; col < 4; col++) {
-      props.push({ dx: 2 + col, dy: y, type: 'tombstone' });
+      props.push({ dx: 2 + col, dy: y, type: 'urn' });
     }
   }
 
@@ -524,8 +525,9 @@ export class TileGenerator {
 
       const screen = worldToScreen(camera, prop.x, prop.y);
 
-      // Sprite rendering for original prop types (tombstone, barrel, urn)
-      if (sheet && (prop.type === 'tombstone' || prop.type === 'barrel' || prop.type === 'urn')) {
+      // Sprite rendering for original prop types (barrel, urn)
+      // Note: tombstone frames (0, 3) are empty in props.png — uses vector fallback below
+      if (sheet && (prop.type === 'barrel' || prop.type === 'urn')) {
         const isDamaged = prop.hp < 3;
         const frameIndex = isDamaged
           ? (PROP_DAMAGED_FRAMES[prop.type] ?? PROP_FRAMES[prop.type] ?? 0)
@@ -545,9 +547,9 @@ export class TileGenerator {
         continue;
       }
 
-      // Vector rendering fallback
+      // Vector rendering fallback (apply same -8 offset as sprites for consistency)
       ctx.save();
-      ctx.translate(screen.x, screen.y);
+      ctx.translate(screen.x, screen.y - 8);
       this.drawPropVector(ctx, prop);
       ctx.restore();
     }
@@ -817,7 +819,7 @@ export class TileGenerator {
     if (!nearSpawn && propRoll < PROP_CHANCE && !this.propsMap.has(key)) {
       const propTypeRoll = (h >> 20) % 20;
       const propType: PropType =
-        propTypeRoll < 9 ? 'tombstone' : propTypeRoll < 18 ? 'barrel' : 'urn';
+        propTypeRoll < 10 ? 'barrel' : 'urn';
 
       const offsetX = ((h >> 12) % 20) - 10;
       const offsetY = ((h >> 14) % 20) - 10;

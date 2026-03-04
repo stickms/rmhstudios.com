@@ -8,10 +8,12 @@ interface GlobalLeaderboardProps {
     currentScore?: number;
     compact?: boolean;
     autoRefresh?: boolean;
+    /** Change this value to trigger an immediate re-fetch (e.g. after score save completes). */
+    refreshKey?: number;
 }
 
 export const GlobalLeaderboard: React.FC<GlobalLeaderboardProps> = ({
-    currentUserId, currentScore, compact = false, autoRefresh = false,
+    currentUserId, currentScore, compact = false, autoRefresh = false, refreshKey = 0,
 }) => {
     const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
     const [loading, setLoading] = useState(true);
@@ -38,7 +40,7 @@ export const GlobalLeaderboard: React.FC<GlobalLeaderboardProps> = ({
             cancelled = true;
             if (interval) clearInterval(interval);
         };
-    }, [compact, autoRefresh]);
+    }, [compact, autoRefresh, refreshKey]);
 
     const myRank = currentUserId
         ? entries.findIndex(e => e.userId === currentUserId) + 1

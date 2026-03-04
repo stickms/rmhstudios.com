@@ -1,10 +1,9 @@
 // =============================================================================
-// ALTAIR ENGINE -- Obstacle Avoidance (Steering-Based)
+// ALTAIR ENGINE -- Obstacle Avoidance (Tangent Steering + Repulsion)
 // =============================================================================
-// Potential-field repulsion for enemies to steer around destructible props.
-// Uses spatial hash queries to find nearby obstacles and blends repulsion
-// forces with the desired velocity to produce smooth avoidance.
-// Uses AABB prop hitboxes for accurate distance calculation.
+// Combines repulsion to prevent overlap with tangent-based wall sliding to
+// properly navigate around obstacles. Uses the enemy's radius to inflate
+// AABBs (Minkowski sum) so wider enemies keep proper clearance.
 // =============================================================================
 
 import { DestructibleProp, PROP_COLLISION_OFFSET_Y } from './tile-generator';
@@ -12,11 +11,13 @@ import { SpatialHash } from './spatial-hash';
 
 const LOOK_AHEAD = 60; // px ahead to scan for obstacles
 const REPULSION_STRENGTH = 80000; // inverse-square repulsion constant
-const MIN_DISTANCE = 8; // clamp minimum distance to avoid division explosion
+const MIN_DISTANCE = 4; // clamp minimum distance to avoid division explosion
+const TANGENT_THRESHOLD = 0.7; // if repulsion opposes desired dir this strongly, add tangent
 
 /**
  * Apply obstacle avoidance to a desired velocity vector.
- * Returns the adjusted (vx, vy) that steers around nearby props.
+ * Uses inflated AABBs (by enemy radius) for proper clearance, repulsion to
+ * prevent overlap, and tangent steering to slide along walls.
  */
 export function avoidObstacles(
   x: number,
@@ -36,15 +37,23 @@ export function avoidObstacles(
 
   let repX = 0;
   let repY = 0;
+  // Track the most blocking obstacle for tangent steering
+  let closestBlockDist = Infinity;
+  let blockNx = 0;
+  let blockNy = 0;
 
   for (const entity of nearby) {
     const prop = entity as unknown as DestructibleProp;
     const boxCx = prop.x;
     const boxCy = prop.y + PROP_COLLISION_OFFSET_Y;
 
-    // Closest point on AABB to enemy center
-    const closestX = Math.max(boxCx - prop.halfW, Math.min(x, boxCx + prop.halfW));
-    const closestY = Math.max(boxCy - prop.halfH, Math.min(y, boxCy + prop.halfH));
+    // Inflate AABB by enemy radius (Minkowski sum) so wider enemies keep clearance
+    const expandedHalfW = prop.halfW + radius;
+    const expandedHalfH = prop.halfH + radius;
+
+    // Closest point on expanded AABB to enemy center
+    const closestX = Math.max(boxCx - expandedHalfW, Math.min(x, boxCx + expandedHalfW));
+    const closestY = Math.max(boxCy - expandedHalfH, Math.min(y, boxCy + expandedHalfH));
 
     const dx = x - closestX;
     const dy = y - closestY;
@@ -60,17 +69,60 @@ export function avoidObstacles(
     // Repulsion force inversely proportional to distance squared
     const force = REPULSION_STRENGTH / (dist * dist);
 
-    // Repulsion direction: away from closest point on AABB
+    // Repulsion direction: away from closest point on expanded AABB
     const nx = dx / dist;
     const ny = dy / dist;
 
     repX += nx * force;
     repY += ny * force;
+
+    // Track the closest blocking obstacle for tangent computation
+    if (dist < closestBlockDist) {
+      closestBlockDist = dist;
+      blockNx = nx;
+      blockNy = ny;
+    }
   }
 
   // Blend repulsion with desired velocity
   let outVx = desiredVx + repX;
   let outVy = desiredVy + repY;
+
+  // Check if repulsion is fighting the desired direction (enemy stuck against wall)
+  // If so, add tangent steering to slide along the wall
+  const repMag = Math.sqrt(repX * repX + repY * repY);
+  if (repMag > 0.1 && closestBlockDist < LOOK_AHEAD) {
+    // Normalize desired direction
+    const dMag = Math.sqrt(desiredVx * desiredVx + desiredVy * desiredVy);
+    if (dMag > 0.1) {
+      const dNx = desiredVx / dMag;
+      const dNy = desiredVy / dMag;
+
+      // How opposed is the repulsion to the desired direction?
+      // dot = -1 means perfectly opposed (wall directly ahead)
+      const opposeDot = -(dNx * blockNx + dNy * blockNy);
+
+      if (opposeDot > TANGENT_THRESHOLD) {
+        // Compute two tangent directions (perpendicular to wall normal)
+        const tanAx = -blockNy;
+        const tanAy = blockNx;
+        const tanBx = blockNy;
+        const tanBy = -blockNx;
+
+        // Pick the tangent that aligns better with desired direction
+        const dotA = tanAx * desiredVx + tanAy * desiredVy;
+        const dotB = tanBx * desiredVx + tanBy * desiredVy;
+
+        const tanX = dotA >= dotB ? tanAx : tanBx;
+        const tanY = dotA >= dotB ? tanAy : tanBy;
+
+        // Blend tangent into output: stronger when more opposed and closer
+        const tangentStrength = opposeDot * speed * 1.5;
+        outVx += tanX * tangentStrength;
+        outVy += tanY * tangentStrength;
+      }
+    }
+  }
 
   // Re-normalize to preserve original speed
   const outSpeed = Math.sqrt(outVx * outVx + outVy * outVy);

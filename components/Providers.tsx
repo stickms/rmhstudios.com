@@ -1,17 +1,67 @@
 "use client";
 
-import { ReactNode, useEffect } from "react";
+import { ReactNode, createContext, useContext, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { Toaster } from "sonner";
+import { authClient } from "@/lib/auth-client";
 import { useThemeStore, SITE_STYLES, SiteStyle } from "@/stores/themeStore";
 import { games } from "@/lib/games";
 import { apps } from "@/lib/apps";
+
+/* ------------------------------------------------------------------ */
+/*  Session context – single useSession() call shared across the app  */
+/* ------------------------------------------------------------------ */
+type SessionCtxValue = ReturnType<typeof authClient.useSession>;
+
+const SessionCtx = createContext<SessionCtxValue | null>(null);
+
+/** Use this instead of authClient.useSession() in navigation/shell components. */
+export function useSession() {
+  const ctx = useContext(SessionCtx);
+  if (!ctx) return { data: null as null, isPending: true };
+  return { data: ctx.data, isPending: ctx.isPending };
+}
 
 interface ProvidersProps {
   children: ReactNode;
 }
 
 const STYLE_CLASSES = SITE_STYLES.map((s) => `style-${s.id}`);
+
+/** Background colors for each theme — used to update theme-color meta + body bg
+ *  synchronously instead of waiting for CSS to resolve via getComputedStyle. */
+const THEME_BG: Record<SiteStyle, string> = {
+  default: "#1a1b1e",
+  light: "#f5f5f7",
+  gamer: "#0a0a0a",
+  anime: "#fff5f9",
+  musical: "#0c0e1a",
+  hyperpop: "#120018",
+  "comic-book": "#fffde0",
+  cinema: "#0a0a08",
+  "gen-z": "#1a1820",
+  boomer: "#f5f0e8",
+  aries: "#1a0a0a",
+  taurus: "#141a10",
+  gemini: "#0e0e22",
+  cancer: "#0c1018",
+  leo: "#140e1e",
+  virgo: "#f4f6f2",
+  libra: "#f8f0f6",
+  scorpio: "#0e0608",
+  sagittarius: "#100c1e",
+  capricorn: "#141416",
+  aquarius: "#060e18",
+  pisces: "#0c1018",
+  spring: "#f2f8f0",
+  summer: "#fff8f0",
+  autumn: "#1a1410",
+  winter: "#0a0e14",
+  elementary: "#fffef4",
+  "middle-school": "#181e24",
+  "high-school": "#121418",
+  university: "#f5f0e8",
+};
 
 /** Routes where the site-wide theme must NOT be applied (apps/games own their styling). */
 const THEME_EXCLUDED_ROUTES = [
@@ -20,12 +70,19 @@ const THEME_EXCLUDED_ROUTES = [
 ].filter((href) => href.startsWith("/"));
 
 export function Providers({ children }: ProvidersProps) {
+  const session = authClient.useSession();
   const style = useThemeStore((s) => s.style);
   const pathname = usePathname();
+  const isFirstRun = useRef(true);
 
   const isAppRoute = THEME_EXCLUDED_ROUTES.some((route) =>
     pathname?.startsWith(route)
   );
+
+  // Toggle app-route class so CSS can disable scrollbar-gutter on game/app pages
+  useEffect(() => {
+    document.documentElement.classList.toggle("app-route", isAppRoute);
+  }, [isAppRoute]);
 
   // Hydrate style from localStorage on mount
   useEffect(() => {
@@ -37,6 +94,17 @@ export function Providers({ children }: ProvidersProps) {
 
   // Sync style class to <html> and persist
   useEffect(() => {
+    // On the very first render the Zustand store still holds "default"
+    // because localStorage hasn't hydrated yet. The inline ThemeScript
+    // already applied the correct class, background colour, and meta tag
+    // — touching ANYTHING here would flash the wrong colour and Safari
+    // (iOS 26+) derives its bar tint from the body background-color on
+    // the first paint, so a single wrong frame is enough to break it.
+    if (isFirstRun.current) {
+      isFirstRun.current = false;
+      return;
+    }
+
     const html = document.documentElement;
     // Remove all style classes
     html.classList.remove(...STYLE_CLASSES);
@@ -46,28 +114,24 @@ export function Providers({ children }: ProvidersProps) {
     }
     localStorage.setItem("rmh-style", style);
 
-    // Force mobile browsers to immediately repaint the background.
-    // Some mobile browsers don't repaint body/html background when CSS
-    // custom properties change via class toggling on an ancestor element.
-    requestAnimationFrame(() => {
-      const bg = getComputedStyle(html).getPropertyValue("--site-bg").trim();
-      html.style.backgroundColor = bg;
-      document.body.style.backgroundColor = bg;
-      // Update mobile browser chrome color
-      let meta = document.querySelector<HTMLMetaElement>(
-        'meta[name="theme-color"]'
-      );
-      if (!meta) {
-        meta = document.createElement("meta");
-        meta.name = "theme-color";
-        document.head.appendChild(meta);
-      }
+    const bg = THEME_BG[style] ?? THEME_BG.default;
+    html.style.backgroundColor = bg;
+    document.body.style.backgroundColor = bg;
+
+    // Also update theme-color meta for older Safari / other browsers.
+    const metas = document.querySelectorAll('meta[name="theme-color"]');
+    if (metas.length > 0) {
+      metas.forEach((m) => m.setAttribute("content", bg));
+    } else {
+      const meta = document.createElement("meta");
+      meta.name = "theme-color";
       meta.content = bg;
-    });
+      document.head.appendChild(meta);
+    }
   }, [style, isAppRoute]);
 
   return (
-    <>
+    <SessionCtx.Provider value={session}>
       {children}
       <Toaster
         theme="dark"
@@ -80,6 +144,6 @@ export function Providers({ children }: ProvidersProps) {
           },
         }}
       />
-    </>
+    </SessionCtx.Provider>
   );
 }

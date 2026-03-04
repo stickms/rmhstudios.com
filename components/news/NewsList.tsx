@@ -210,7 +210,7 @@ export function NewsList({ initialArticles, featuredArticles, filtersOpen = fals
             )}
 
             {/* Grid */}
-            <div ref={gridRef} className="grid grid-cols-1 sm:grid-cols-2 gap-4 scroll-mt-8">
+            <div ref={gridRef} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 scroll-mt-8">
                 <AnimatePresence mode="popLayout">
                     {paginatedArticles.map((article, i) => (
                         <motion.div key={article.slug} layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.25 }}>

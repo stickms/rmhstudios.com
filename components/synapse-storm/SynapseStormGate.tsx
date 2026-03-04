@@ -1,22 +1,18 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { authClient } from '@/lib/auth-client';
-import { loadSynapseStormSave, saveSynapseStormScore } from '@/lib/synapse-storm/persistence';
+import { loadSynapseStormSave, saveSynapseStormScore, type ScoreSaveData } from '@/lib/synapse-storm/persistence';
 import { SynapseStormGame } from './SynapseStormGame';
 import { Loader2 } from 'lucide-react';
 
 export function SynapseStormGate() {
     const session = authClient.useSession();
     const [loading, setLoading] = useState(true);
-    const [highScore, setHighScore] = useState(0);
 
     useEffect(() => {
         async function init() {
             if (session.data) {
-                const save = await loadSynapseStormSave();
-                if (save && save.highScore) {
-                    setHighScore(save.highScore);
-                }
+                await loadSynapseStormSave();
             }
             setLoading(false);
         }
@@ -25,12 +21,9 @@ export function SynapseStormGate() {
         }
     }, [session.data, session.isPending]);
 
-    const handleSaveScore = async (score: number) => {
+    const handleSaveScore = async (data: ScoreSaveData) => {
         if (!session.data) return;
-        if (score > highScore) {
-            setHighScore(score);
-            await saveSynapseStormScore(score);
-        }
+        await saveSynapseStormScore(data);
     };
 
     if (session.isPending || loading) {

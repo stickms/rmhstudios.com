@@ -1,7 +1,15 @@
 'use client';
 
+import { useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { LeftSidebar } from './LeftSidebar';
 import { MobileNav } from './MobileNav';
+
+const DEFAULT_WIDTH = 648;
+const WIDE_WIDTH = 800;
+
+/** Tracks the previous center-column width so navigations animate smoothly. */
+let lastCenterWidth = DEFAULT_WIDTH;
 
 interface PageLayoutProps {
   title: string;
@@ -10,6 +18,8 @@ interface PageLayoutProps {
   headerExtra?: React.ReactNode;
   /** Element rendered right-aligned in the sticky header row (e.g. filter button) */
   headerRight?: React.ReactNode;
+  /** Use a wider center column (800 px) – useful for grid-heavy pages like Builds. */
+  wide?: boolean;
 }
 
 export function PageLayout({
@@ -18,7 +28,15 @@ export function PageLayout({
   rightSidebar,
   headerExtra,
   headerRight,
+  wide,
 }: PageLayoutProps) {
+  const targetWidth = wide ? WIDE_WIDTH : DEFAULT_WIDTH;
+  const initialWidth = lastCenterWidth;
+
+  useEffect(() => {
+    lastCenterWidth = targetWidth;
+  }, [targetWidth]);
+
   return (
     <div className="min-h-screen bg-site-bg flex justify-center overflow-hidden">
       {/* Left Sidebar - hidden on mobile, icon-only on md, full on lg+ */}
@@ -28,8 +46,13 @@ export function PageLayout({
         </aside>
       </div>
 
-      {/* Center Column */}
-      <main className="w-full max-w-162 min-w-0 border-r border-site-border pb-16 md:pb-0">
+      {/* Center Column – width animates between pages */}
+      <motion.main
+        className="w-full min-w-0 border-r border-site-border pb-16 md:pb-0"
+        initial={{ maxWidth: initialWidth }}
+        animate={{ maxWidth: targetWidth }}
+        transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
+      >
         <div className="flex flex-col">
           {/* Sticky Header */}
           <div className="sticky top-0 z-10 h-15 bg-site-bg/85 backdrop-blur-md border-b border-site-border">
@@ -47,7 +70,7 @@ export function PageLayout({
           {/* Page Content */}
           {children}
         </div>
-      </main>
+      </motion.main>
 
       {/* Right Sidebar - hidden below lg */}
       {rightSidebar && (

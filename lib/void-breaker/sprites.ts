@@ -6,6 +6,8 @@
 export interface SpriteConfig {
     /** URL path to the sprite image (relative to /public) */
     url: string;
+    /** URL for the left-facing variant (used with rotationMode: 'directional') */
+    leftUrl?: string;
     /** Frame width for sprite sheets (optional) */
     frameWidth?: number;
     /** Frame height for sprite sheets (optional) */
@@ -20,8 +22,14 @@ export interface SpriteConfig {
     anchorY: number;
     /** Scale multiplier */
     scale: number;
-    /** How sprite rotation is determined */
-    rotationMode: 'velocity' | 'aim' | 'none';
+    /**
+     * How sprite rotation is determined:
+     * - 'velocity': rotates toward movement direction
+     * - 'aim': full 360° rotation following aim angle
+     * - 'directional': flips left/right based on aim side, tilts vertically only
+     * - 'none': no rotation
+     */
+    rotationMode: 'velocity' | 'aim' | 'directional' | 'none';
     /** Optional glow color for neon effect */
     glowColor?: string;
     /** Whether to draw a shadow under the sprite */
@@ -34,10 +42,11 @@ export interface SpriteConfig {
 
 export const PLAYER_SPRITE: SpriteConfig = {
     url: '/sprites/void-breaker/player/void-runner.png',
+    leftUrl: '/sprites/void-breaker/player/void-runner-left.png',
     anchorX: 0.5,
     anchorY: 0.5,
     scale: 2.2,
-    rotationMode: 'aim',
+    rotationMode: 'directional',
     glowColor: '#44ddff',
     shadow: true,
 };
@@ -161,9 +170,10 @@ export function getSpriteConfig(entityType: string, isBoss: boolean, wave?: numb
 /** Get all sprite URLs for preloading */
 export function getAllSpriteUrls(): string[] {
     const urls = new Set<string>();
-    urls.add(PLAYER_SPRITE.url);
-    urls.add(HEART_PICKUP_SPRITE.url);
-    for (const s of Object.values(ENEMY_SPRITES)) urls.add(s.url);
-    for (const s of Object.values(BOSS_SPRITES)) urls.add(s.url);
+    const addConfig = (s: SpriteConfig) => { urls.add(s.url); if (s.leftUrl) urls.add(s.leftUrl); };
+    addConfig(PLAYER_SPRITE);
+    addConfig(HEART_PICKUP_SPRITE);
+    for (const s of Object.values(ENEMY_SPRITES)) addConfig(s);
+    for (const s of Object.values(BOSS_SPRITES)) addConfig(s);
     return Array.from(urls);
 }

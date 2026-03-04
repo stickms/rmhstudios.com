@@ -31,6 +31,7 @@ export function NewsPageContent({ articles, featured, rightSidebar }: NewsPageCo
     return (
         <PageLayout
             title="News"
+            wide
             rightSidebar={rightSidebar}
             headerRight={
                 <button

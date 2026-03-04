@@ -35,14 +35,14 @@ export default function RmhTubeLanding() {
 
     async function connect() {
       try {
-        const socket = await connectToRmhTube();
-
-        // If already in a room, redirect immediately
+        // If we still have room state (e.g. user pressed browser back), leave the room first
         const existingRoom = useRmhTubeStore.getState().room;
-        if (existingRoom && mounted) {
-          router.push(`/rmhtube/${existingRoom.roomId}`);
-          return;
+        if (existingRoom) {
+          emit(C2S.ROOM_LEAVE, {});
+          useRmhTubeStore.getState().leaveRoom();
         }
+
+        const socket = await connectToRmhTube();
 
         // Listen for room created event
         socket.on(S2C.ROOM_CREATED, (data: { roomId: string }) => {

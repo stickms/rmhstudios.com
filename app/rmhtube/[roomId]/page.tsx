@@ -135,23 +135,26 @@ export default function RmhTubeRoomPage({ params }: { params: Promise<{ roomId: 
       }
 
       const store = useRmhTubeStore.getState();
-      const isHost = store.room?.myUserId === store.room?.hostUserId;
+      const myRole = store.room?.members.find((m) => m.userId === store.room?.myUserId)?.role;
+      const canControl = myRole === 'host' || myRole === 'moderator';
 
       switch (e.code) {
         case SHORTCUTS.TOGGLE_PLAY:
           e.preventDefault();
-          if (isHost) emit(store.room?.videoState.playing ? C2S.SYNC_PAUSE : C2S.SYNC_PLAY, {});
+          if (canControl) {
+            emit(store.room?.videoState.playing ? C2S.SYNC_PAUSE : C2S.SYNC_PLAY, {});
+          }
           break;
         case SHORTCUTS.SEEK_BACK:
           e.preventDefault();
-          if (isHost) {
+          if (canControl) {
             const time = Math.max(0, (store.room?.videoState.currentTime ?? 0) - 10);
             emit(C2S.SYNC_SEEK, { time });
           }
           break;
         case SHORTCUTS.SEEK_FORWARD:
           e.preventDefault();
-          if (isHost) {
+          if (canControl) {
             const time = (store.room?.videoState.currentTime ?? 0) + 10;
             emit(C2S.SYNC_SEEK, { time });
           }
@@ -168,11 +171,7 @@ export default function RmhTubeRoomPage({ params }: { params: Promise<{ roomId: 
           store.updateSettings({ muted: !store.settings.muted });
           break;
         case SHORTCUTS.TOGGLE_FULLSCREEN:
-          if (document.fullscreenElement) {
-            document.exitFullscreen();
-          } else {
-            document.documentElement.requestFullscreen();
-          }
+          videoPlayerRef.current?.toggleFullscreen();
           break;
         case SHORTCUTS.TOGGLE_THEATER:
           store.updateSettings({ theaterMode: !store.settings.theaterMode });
@@ -181,7 +180,7 @@ export default function RmhTubeRoomPage({ params }: { params: Promise<{ roomId: 
           store.updateSettings({ captionsEnabled: !store.settings.captionsEnabled });
           break;
         case SHORTCUTS.SKIP_NEXT:
-          if (isHost) emit(C2S.QUEUE_SKIP, {});
+          if (canControl) emit(C2S.QUEUE_SKIP, {});
           break;
         case SHORTCUTS.TOGGLE_PIP:
           videoPlayerRef.current?.togglePiP();
@@ -235,6 +234,10 @@ export default function RmhTubeRoomPage({ params }: { params: Promise<{ roomId: 
 
   const handlePiP = useCallback(() => {
     videoPlayerRef.current?.togglePiP();
+  }, []);
+
+  const handleFullscreen = useCallback(() => {
+    videoPlayerRef.current?.toggleFullscreen();
   }, []);
 
   // Density class
@@ -307,16 +310,18 @@ export default function RmhTubeRoomPage({ params }: { params: Promise<{ roomId: 
             <div className={`flex flex-col min-h-0 overflow-hidden ${!theaterMode ? 'border-r border-(--rmhtube-border)' : ''}`}>
               {/* Video player */}
               <div className={`shrink-0 p-4 pb-2 *:max-h-full rmhtube-video-container ${theaterMode ? 'max-h-[85%]' : 'max-h-[70%]'}`}>
-                <VideoPlayer ref={videoPlayerRef} url={currentUrl} isHost={isHost} onEnded={handleVideoEnded} />
+                <VideoPlayer ref={videoPlayerRef} url={currentUrl} isHost={isHost} isHostOrMod={isHostOrMod} onEnded={handleVideoEnded} />
               </div>
 
-              {/* Host controls / Now playing bar */}
+              {/* Controls / Now playing bar */}
               <div className="shrink-0">
                 <HostControls
                   isHost={isHost}
+                  isHostOrMod={isHostOrMod}
                   videoState={room.videoState}
                   currentItem={room.currentItem}
                   onPiP={handlePiP}
+                  onFullscreen={handleFullscreen}
                 />
               </div>
 
@@ -373,15 +378,17 @@ export default function RmhTubeRoomPage({ params }: { params: Promise<{ roomId: 
           /* Mobile layout */
           <div className="flex flex-col h-full min-h-0">
             <div className="shrink-0 p-3 pb-0">
-              <VideoPlayer ref={videoPlayerRef} url={currentUrl} isHost={isHost} onEnded={handleVideoEnded} />
+              <VideoPlayer ref={videoPlayerRef} url={currentUrl} isHost={isHost} isHostOrMod={isHostOrMod} onEnded={handleVideoEnded} />
             </div>
 
             <div className="shrink-0">
               <HostControls
                 isHost={isHost}
+                isHostOrMod={isHostOrMod}
                 videoState={room.videoState}
                 currentItem={room.currentItem}
                 onPiP={handlePiP}
+                onFullscreen={handleFullscreen}
               />
             </div>
 

@@ -757,6 +757,24 @@ function renderPlayer(
     ctx.fill();
   }
 
+  // Health bar under player (only when not at full HP)
+  if (pl.hp < pl.maxHp) {
+    const barWidth = 28;
+    const barHeight = 3;
+    const barY = s.y + pl.radius + 6;
+    const hpPercent = Math.max(0, pl.hp / pl.maxHp);
+
+    // Background
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+    ctx.fillRect(s.x - barWidth / 2, barY, barWidth, barHeight);
+
+    // HP fill — green > orange > red
+    const color =
+      hpPercent > 0.5 ? '#44ff44' : hpPercent > 0.25 ? '#ffaa00' : '#ff3333';
+    ctx.fillStyle = color;
+    ctx.fillRect(s.x - barWidth / 2, barY, barWidth * hpPercent, barHeight);
+  }
+
   ctx.restore();
 }
 

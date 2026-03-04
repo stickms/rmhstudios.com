@@ -1,6 +1,6 @@
 'use client';
 
-import { MessageCircle, Repeat2, Heart, Eye, Trash2 } from 'lucide-react';
+import { MessageCircle, Repeat2, Heart, Eye } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useFeedStore } from '@/stores/feedStore';
 import { authClient } from '@/lib/auth-client';
@@ -9,7 +9,6 @@ import type { FeedItem } from '@/lib/feed-types';
 interface RMHarkActionsProps {
   item: FeedItem;
   onUpdate?: (id: string, updates: Partial<FeedItem>) => void;
-  onRemove?: (id: string) => void;
 }
 
 function formatCount(n: number | undefined): string {
@@ -19,16 +18,13 @@ function formatCount(n: number | undefined): string {
   return String(n);
 }
 
-export function RMHarkActions({ item, onUpdate, onRemove }: RMHarkActionsProps) {
+export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
   const router = useRouter();
-  const { updateItem: storeUpdate, removeItem: storeRemove } = useFeedStore();
+  const { updateItem: storeUpdate } = useFeedStore();
   const { data: session } = authClient.useSession();
 
   const updateItem = onUpdate ?? storeUpdate;
-  const removeItem = onRemove ?? storeRemove;
-
   const actualId = item.actualId ?? item.id;
-  const isAuthor = session?.user?.id === item.user?.id;
 
   const handleCommentClick = () => {
     router.push(`/${item.user?.id}/post/${actualId}`);
@@ -70,16 +66,6 @@ export function RMHarkActions({ item, onUpdate, onRemove }: RMHarkActionsProps) 
     }
   };
 
-  const handleDelete = async () => {
-    if (!confirm('Delete this RMHark?')) return;
-    removeItem(item.id);
-    try {
-      await fetch(`/api/rmharks/${actualId}`, { method: 'DELETE' });
-    } catch {
-      // Item already removed from UI
-    }
-  };
-
   return (
     <div className="flex items-center justify-between mt-3 -ml-2 max-w-md">
       {/* Comment */}
@@ -99,6 +85,7 @@ export function RMHarkActions({ item, onUpdate, onRemove }: RMHarkActionsProps) 
             ? 'text-emerald-400'
             : 'text-site-text-dim hover:text-emerald-400 hover:bg-emerald-400/10'
         }`}
+        title="reRMHark"
       >
         <Repeat2 className="w-4 h-4 group-hover:scale-110 transition-transform" />
         <span className="text-xs">{formatCount(item.repostCount)}</span>
@@ -112,6 +99,7 @@ export function RMHarkActions({ item, onUpdate, onRemove }: RMHarkActionsProps) 
             ? 'text-rose-400'
             : 'text-site-text-dim hover:text-rose-400 hover:bg-rose-400/10'
         }`}
+        title="Like"
       >
         <Heart className={`w-4 h-4 group-hover:scale-110 transition-transform ${item.liked ? 'fill-current' : ''}`} />
         <span className="text-xs">{formatCount(item.likeCount)}</span>
@@ -122,17 +110,6 @@ export function RMHarkActions({ item, onUpdate, onRemove }: RMHarkActionsProps) 
         <Eye className="w-4 h-4" />
         <span className="text-xs">{formatCount(item.viewCount)}</span>
       </div>
-
-      {/* Delete (author only) */}
-      {isAuthor && (
-        <button
-          onClick={handleDelete}
-          className="flex items-center px-2 py-1 rounded-full text-site-text-dim hover:text-site-danger hover:bg-site-danger/10 transition-colors"
-          title="Delete"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
-      )}
     </div>
   );
 }

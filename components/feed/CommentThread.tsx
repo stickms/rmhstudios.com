@@ -5,15 +5,8 @@ import { X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { authClient } from '@/lib/auth-client';
 import { CommentItem } from './CommentItem';
+import type { Comment } from './CommentItem';
 import { MAX_COMMENT_LENGTH } from '@/lib/rmhark-schema';
-
-interface Comment {
-  id: string;
-  content: string;
-  createdAt: string;
-  user: { id: string; name: string; image: string | null; username: string | null };
-  replies?: Comment[];
-}
 
 interface CommentThreadProps {
   rmharkId: string;
@@ -72,14 +65,14 @@ export function CommentThread({ rmharkId, open, onClose, onCommentAdded }: Comme
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center" onClick={onClose}>
+    <div className="fixed inset-0 z-[200] flex items-center justify-center" onMouseDown={(e) => { e.stopPropagation(); onClose(); }}>
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
 
       {/* Dialog */}
       <div
         className="relative bg-site-bg border border-site-border rounded-2xl shadow-xl w-full max-w-lg mx-4 max-h-[80vh] flex flex-col"
-        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-site-border">

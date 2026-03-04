@@ -149,6 +149,10 @@ let passiveIconSheet: SpriteSheet | null = null;
 const PASSIVE_ICON_SHEET_FILE = `${BASE}/icons/passive-icons.png`;
 export const PASSIVE_ICON_SRC = PASSIVE_ICON_SHEET_FILE;
 
+let catalystIconSheet: SpriteSheet | null = null;
+const CATALYST_ICON_SHEET_FILE = `${BASE}/icons/catalyst-icons.png`;
+export const CATALYST_ICON_SRC = CATALYST_ICON_SHEET_FILE;
+
 // =============================================================================
 // INIT + PRELOAD
 // =============================================================================
@@ -182,6 +186,7 @@ export function initAllSpriteSheets(): void {
   // Item icons (16x16)
   weaponIconSheet = loadSpriteSheet(WEAPON_ICON_SHEET_FILE, FRAME_SIZE, FRAME_SIZE);
   passiveIconSheet = loadSpriteSheet(PASSIVE_ICON_SHEET_FILE, FRAME_SIZE, FRAME_SIZE);
+  catalystIconSheet = loadSpriteSheet(CATALYST_ICON_SHEET_FILE, FRAME_SIZE, FRAME_SIZE);
 }
 
 /** Get the list of all sprite file entries for preloading with progress. */
@@ -204,6 +209,7 @@ export function getAllSpriteEntries(): { src: string; frameWidth: number; frameH
   entries.push({ src: PROJECTILE_SHEET_FILE, frameWidth: 8, frameHeight: 8 });
   entries.push({ src: WEAPON_ICON_SHEET_FILE, frameWidth: FRAME_SIZE, frameHeight: FRAME_SIZE });
   entries.push({ src: PASSIVE_ICON_SHEET_FILE, frameWidth: FRAME_SIZE, frameHeight: FRAME_SIZE });
+  entries.push({ src: CATALYST_ICON_SHEET_FILE, frameWidth: FRAME_SIZE, frameHeight: FRAME_SIZE });
 
   return entries;
 }

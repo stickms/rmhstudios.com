@@ -8,9 +8,10 @@ interface GameOverProps {
     onRestart: () => void;
     onMenu: () => void;
     currentUserId?: string;
+    scoreSaved?: boolean;
 }
 
-export const GameOver: React.FC<GameOverProps> = ({ state, onRestart, onMenu, currentUserId }) => {
+export const GameOver: React.FC<GameOverProps> = ({ state, onRestart, onMenu, currentUserId, scoreSaved }) => {
     const accuracy = state.puzzlesSolved > 0
         ? Math.round((state.puzzlesSolved / (state.puzzlesSolved + state.puzzlesMissed)) * 100)
         : 0;
@@ -60,6 +61,7 @@ export const GameOver: React.FC<GameOverProps> = ({ state, onRestart, onMenu, cu
                     currentUserId={currentUserId}
                     currentScore={state.score}
                     autoRefresh
+                    refreshKey={scoreSaved ? 1 : 0}
                 />
 
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', marginTop: '1rem' }}>

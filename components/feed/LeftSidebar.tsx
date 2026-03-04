@@ -4,18 +4,21 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
 import { authClient } from '@/lib/auth-client';
+import { useSession } from '@/components/Providers';
 import {
   Home, Gamepad2, AppWindow, Newspaper, Map, FlaskConical, BookOpen,
-  Palette, ChevronDown, LogOut, PenSquare, User,
+  Palette, ChevronDown, LogOut, PenSquare, User, MessageCircle, Boxes,
 } from 'lucide-react';
 import { ComposeModal } from './ComposeModal';
 import { Button } from '@/components/ui/button';
 import { useThemeStore, SITE_STYLES } from '@/stores/themeStore';
+import { useUnreadCount } from '@/lib/useUnreadCount';
 
 const navLinks = [
   { href: '/', label: 'Home', icon: Home },
   { href: '/games', label: 'Games', icon: Gamepad2 },
   { href: '/apps', label: 'Apps', icon: AppWindow },
+  { href: '/user-builds', label: 'Builds', icon: Boxes },
   { href: '/news', label: 'News', icon: Newspaper },
   { href: '/research', label: 'Research', icon: FlaskConical },
   { href: '/blog', label: 'Blog', icon: BookOpen },
@@ -32,6 +35,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   const paddingClass = expanded ? 'p-4' : 'p-3 lg:p-4';
   const logoAlignClass = expanded ? 'justify-start' : 'justify-center lg:justify-start';
   const iconMrClass = expanded ? 'mr-2' : 'lg:mr-2';
+  const itemJustifyClass = expanded ? '' : 'md:justify-center lg:justify-start';
   const pathname = usePathname();
   const router = useRouter();
   const [showStyleMenu, setShowStyleMenu] = useState(false);
@@ -39,8 +43,10 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   const [mounted, setMounted] = useState(false);
   const { style, setStyle } = useThemeStore();
   const styleMenuRef = useRef<HTMLDivElement>(null);
+  const [popoverPos, setPopoverPos] = useState({ bottom: 0, left: 0 });
 
-  const { data: session, isPending } = authClient.useSession();
+  const { data: session, isPending } = useSession();
+  const unreadCount = useUnreadCount(!!session);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -92,7 +98,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
             <Link
               key={link.href}
               href={link.href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${itemJustifyClass} ${
                 isActive
                   ? 'text-site-accent bg-site-accent-dim'
                   : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
@@ -105,10 +111,10 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
           );
         })}
         {/* Dynamic Profile link (shown when logged in) */}
-        {mounted && session && (
+        {session && (
           <Link
             href={`/profile/${session.user.id}`}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${itemJustifyClass} ${
               pathname?.startsWith('/profile')
                 ? 'text-site-accent bg-site-accent-dim'
                 : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
@@ -119,13 +125,44 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
             <span className={labelClass}>Profile</span>
           </Link>
         )}
+        {/* Messages link (shown when logged in) */}
+        {session && (
+          <Link
+            href="/messages"
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${itemJustifyClass} ${
+              pathname?.startsWith('/messages')
+                ? 'text-site-accent bg-site-accent-dim'
+                : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
+            }`}
+            title="Messages"
+          >
+            <div className="relative shrink-0">
+              <MessageCircle className="w-5 h-5" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-bold px-1 leading-none">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
+            </div>
+            <span className={labelClass}>Messages</span>
+          </Link>
+        )}
       </nav>
 
       {/* Style Picker */}
       <div className="relative mt-auto" ref={styleMenuRef}>
         <button
-          onClick={() => setShowStyleMenu(!showStyleMenu)}
-          className="flex items-center gap-2 w-full px-3 py-2.5 rounded-xl text-sm text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors"
+          onClick={() => {
+            if (!showStyleMenu && styleMenuRef.current) {
+              const rect = styleMenuRef.current.getBoundingClientRect();
+              setPopoverPos({
+                bottom: window.innerHeight - rect.top + 8,
+                left: rect.left,
+              });
+            }
+            setShowStyleMenu(!showStyleMenu);
+          }}
+          className={`flex items-center gap-2 w-full px-3 py-2.5 rounded-xl text-sm text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors ${itemJustifyClass}`}
           title="Change site style"
         >
           <Palette className="w-5 h-5 shrink-0" />
@@ -139,7 +176,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
         </button>
 
         {showStyleMenu && (
-          <div className="absolute bottom-full left-0 mb-2 w-52 bg-site-surface border border-site-border rounded-xl shadow-lg py-1 max-h-[60vh] overflow-y-auto z-50">
+          <div className="fixed w-52 bg-site-surface border border-site-border rounded-xl shadow-lg py-1 max-h-[60vh] overflow-y-auto z-50" style={{ bottom: `${popoverPos.bottom}px`, left: `${popoverPos.left}px` }}>
             {groups.map((group) => (
               <div key={group.label}>
                 <div className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-site-text-dim">
@@ -170,13 +207,13 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
 
       {/* Auth Section */}
       <div className="mt-3 border-t border-site-border pt-3">
-        {(!mounted || isPending) ? (
+        {isPending ? (
           <div className="h-10 bg-site-surface rounded-xl animate-pulse" />
         ) : session ? (
           <div className="flex flex-col gap-2">
             <Link
               href={`/profile/${session.user.id}`}
-              className="flex items-center gap-2 px-2 hover:bg-site-surface rounded-xl transition-colors py-1"
+              className={`flex items-center gap-2 px-2 hover:bg-site-surface rounded-xl transition-colors py-1 ${itemJustifyClass}`}
             >
               <div className="w-8 h-8 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-xs ring-2 ring-site-bg shrink-0">
                 {session.user.image ? (
@@ -191,7 +228,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
             </Link>
             <button
               onClick={handleSignOut}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-site-text-muted hover:text-site-danger hover:bg-site-surface transition-colors"
+              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-site-text-muted hover:text-site-danger hover:bg-site-surface transition-colors ${itemJustifyClass}`}
               title="Sign Out"
             >
               <LogOut className="w-4 h-4 shrink-0" />
@@ -209,7 +246,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
       </div>
 
       {/* Post CTA */}
-      {mounted && session && (
+      {session && (
         <>
           <Button
             variant="accent"

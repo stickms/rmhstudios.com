@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
 import { authClient } from '@/lib/auth-client';
+import { useSession } from '@/components/Providers';
 import { Menu, X, User, LogOut, ChevronDown, Palette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useThemeStore, SITE_STYLES, SiteStyle } from '@/stores/themeStore';
@@ -20,7 +21,7 @@ export function Navbar() {
   const mobileStyleRef = useRef<HTMLDivElement>(null);
   const mobilePaletteBtnRef = useRef<HTMLButtonElement>(null);
 
-  const { data: session, isPending } = authClient.useSession();
+  const { data: session, isPending } = useSession();
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -43,6 +44,7 @@ export function Navbar() {
     { href: '/', label: 'Home' },
     { href: '/games', label: 'Games' },
     { href: '/apps', label: 'Apps' },
+    { href: '/user-builds', label: 'Builds' },
     { href: '/news', label: 'News' },
     { href: '/research', label: 'Research' },
     { href: '/blog', label: 'Blog' },
@@ -70,7 +72,7 @@ export function Navbar() {
   }));
 
   return (
-    <nav data-slot="navbar" className="fixed top-0 left-0 right-0 z-1000 bg-site-bg/85 backdrop-blur-md border-b border-site-border">
+    <nav data-slot="navbar" className="fixed top-0 left-0 right-0 z-1000 bg-site-bg/85 backdrop-blur-md border-b border-site-border pt-safe">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
 
@@ -143,7 +145,7 @@ export function Navbar() {
             </div>
 
             {/* Auth */}
-            {(!mounted || isPending) ? (
+            {isPending ? (
               <div className="h-8 w-20 bg-site-surface rounded-lg animate-pulse" />
             ) : session ? (
               <div className="relative">
@@ -254,7 +256,7 @@ export function Navbar() {
 
           {/* Mobile Auth */}
           <div className="pt-4 pb-4 border-t border-site-border">
-            {(!mounted || isPending) ? (
+            {isPending ? (
               <div className="px-4"><div className="h-10 w-full bg-site-surface rounded-lg animate-pulse" /></div>
             ) : session ? (
               <div className="px-4 space-y-3">

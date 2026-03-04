@@ -24,6 +24,11 @@ export interface PlayerEntity extends Entity {
   positionHistory: { x: number; y: number; hp: number; time: number }[];
   // Sprite animation state
   animState?: AnimationState;
+  // v1.2: Broad Sword block — damage reduction active timer + magnitude
+  blockTimer?: number;
+  blockDR?: number;
+  // v1.2: War Axe windup — move speed multiplier during windup
+  windupSlowTimer?: number;
 }
 
 export interface EnemyEntity extends Entity {
@@ -45,6 +50,7 @@ export interface EnemyEntity extends Entity {
   armor: number;
   // for Ghost/Banshee/Shadow
   intangible: boolean;
+  canFly: boolean;
   opacity: number;
   // for pounce/dash
   dashVx: number;
@@ -81,6 +87,23 @@ export interface ProjectileEntity extends Entity {
   poolTickInterval?: number;
   poolTimer?: number;
   poolRadius?: number;
+  // v1.2: pool slow effect (enemies in pool are slowed by this %)
+  poolSlowPct?: number;
+  // v1.2: crit system (Shortbow)
+  critChance?: number;
+  critMultiplier?: number;
+  // v1.2: splash on kill (Arcane Bolt)
+  splashOnKillRadius?: number;
+  splashOnKillDamagePct?: number;
+  // v1.2: slow on hit (Temporal Shard)
+  slowOnHitPct?: number;
+  slowOnHitDuration?: number;
+  // v1.2: return damage bonus (boomerang)
+  returnDamageBonus?: number;
+  // v1.2: lifesteal on hit (Crimson Whip)
+  lifestealPct?: number;
+  // v1.3.1: source tracking for bestiary "killed by" stats
+  sourceDefId?: string;
 }
 
 export interface PickupEntity extends Entity {
@@ -141,6 +164,11 @@ export interface MeleeHitbox {
   maxLifetime: number; // initial lifetime for animation progress
   hitEnemyIds: Set<number>;
   weaponId: string;
+  // v1.2: max targets per swing (War Axe)
+  maxTargets?: number;
+  // v1.2: block DR on hit (Broad Sword)
+  blockDR?: number;
+  blockDuration?: number;
 }
 
 export interface AuraEffect {
@@ -153,6 +181,10 @@ export interface AuraEffect {
   weaponId: string;
   hitEnemyIds: Set<number>;
   tickHitEnemyIds: Set<number>; // reset each tick
+  // v1.2: Garlic balance
+  maxTargets?: number;
+  knockback?: number;
+  innerRadius?: number; // full damage zone; outer ring does 50% damage
 }
 
 export interface SummonEntity extends Entity {
@@ -195,10 +227,19 @@ export interface WeaponState {
   activeTimer?: number;
   // for orbital weapons like Runic Orbs
   orbitAngle?: number;
+  // v1.2: War Axe windup timer (counts down during windup, fires when 0)
+  windupTimer?: number;
+  // v1.2: Broad Sword block timer (active after melee hit)
+  blockTimer?: number;
 }
 
 export interface PassiveState {
   passiveId: string;
+  level: number;
+}
+
+export interface CatalystState {
+  catalystId: string;
   level: number;
 }
 
@@ -217,6 +258,7 @@ export interface GameWorld {
   inputState: InputState;
   weapons: WeaponState[];
   passives: PassiveState[];
+  catalysts: CatalystState[];
   time: number; // total elapsed seconds
   timeScale: number; // 1.0 normal, 2.0 double time
   nextId: number;
@@ -251,6 +293,7 @@ export interface MultiplayerPlayerEntity extends PlayerEntity {
   isDead: boolean; // permanently dead this run
   weapons: WeaponState[];
   passives: PassiveState[];
+  catalysts: CatalystState[];
   abilityState: Record<string, number>; // class ability cooldowns/state
   inputState: InputState;
   camera: Camera;

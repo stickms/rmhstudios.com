@@ -54,13 +54,9 @@ function computeMetaAnswerAndOptions(variant: MetaPuzzleData['variant'], state: 
         return shuffleArr(result);
     };
     const now = Date.now();
-    let answer: number;
-    let options: number[];
+    let answer: number = 0;
+    let options: number[] = [];
     switch (variant) {
-        case 'gameTime':
-            answer = Math.floor((now - state.startTime) / 1000);
-            options = ensureUnique([answer + 15, Math.max(0, answer - 10), answer + 30], answer, 4, () => Math.max(0, answer + Math.floor((Math.random() - 0.5) * 60)));
-            break;
         case 'lives':
             answer = Math.max(0, state.missThreshold - state.puzzlesMissed);
             options = ensureUnique([answer + 1, Math.max(0, answer - 1), answer + 2, answer + 3], answer, 4, () => Math.max(0, answer + Math.floor(Math.random() * 5) + 1));
@@ -81,10 +77,6 @@ function computeMetaAnswerAndOptions(variant: MetaPuzzleData['variant'], state: 
         case 'maxCombo':
             answer = state.maxCombo;
             options = ensureUnique([answer + 1, Math.max(0, answer - 1), answer + 3, answer + 5], answer, 4, () => Math.max(0, answer + Math.floor(Math.random() * 10) + 2));
-            break;
-        case 'activeCount':
-            answer = state.activePuzzles.filter((p) => !p.solved && !p.expired).length;
-            options = ensureUnique([answer + 1, Math.max(0, answer - 1), answer + 2, answer + 3], answer, 4, () => Math.max(0, answer + Math.floor(Math.random() * 5) + 1));
             break;
         case 'realTimeHour': {
             const hour12 = (new Date().getHours() % 12) || 12;
@@ -240,11 +232,24 @@ const LanguageRenderer: React.FC<{
     onAnswer: (correct: boolean) => void;
 }> = ({ data, onAnswer }) => {
     const [input, setInput] = useState('');
+    const submittedRef = useRef(false);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        if (submittedRef.current) return;
+        submittedRef.current = true;
         onAnswer(input.toLowerCase().trim() === data.answer.toLowerCase().trim());
         setInput('');
+    };
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value;
+        setInput(val);
+        // Auto-submit for single-letter spelling puzzles
+        if (data.variant === 'spelling' && val.length === 1 && !submittedRef.current) {
+            submittedRef.current = true;
+            onAnswer(val.toLowerCase().trim() === data.answer.toLowerCase().trim());
+        }
     };
 
     if (data.options) {
@@ -269,10 +274,11 @@ const LanguageRenderer: React.FC<{
                 <input
                     type="text"
                     value={input}
-                    onChange={(e) => setInput(e.target.value)}
+                    onChange={handleChange}
                     placeholder={data.variant === 'spelling' ? 'Letter...' : 'Type here...'}
                     className="puzzle-text-input"
                     maxLength={data.variant === 'spelling' ? 1 : 20}
+                    autoFocus={data.variant === 'spelling'}
                 />
                 <button type="submit" className="submit-btn">
                     ✓
@@ -874,7 +880,8 @@ export const PuzzleCard: React.FC<PuzzleCardProps> = ({ puzzle, gameState, onSol
     const [isDragging, setIsDragging] = useState(false);
 
     const dragRef = useRef({
-        startX: 0, startY: 0, lastX: 0, lastY: 0, vx: 0, vy: 0, timestamp: 0, ptrId: -1
+        startX: 0, startY: 0, lastX: 0, lastY: 0, vx: 0, vy: 0, timestamp: 0, ptrId: -1,
+        velocityHistory: [] as { vx: number; vy: number }[],
     });
     const rafRef = useRef<number | null>(null);
     const cardRef = useRef<HTMLDivElement>(null);
@@ -918,7 +925,8 @@ export const PuzzleCard: React.FC<PuzzleCardProps> = ({ puzzle, gameState, onSol
             vx: 0,
             vy: 0,
             timestamp: performance.now(),
-            ptrId: e.pointerId
+            ptrId: e.pointerId,
+            velocityHistory: [],
         };
     };
 
@@ -934,8 +942,13 @@ export const PuzzleCard: React.FC<PuzzleCardProps> = ({ puzzle, gameState, onSol
         const dx = e.clientX - dragRef.current.lastX;
         const dy = e.clientY - dragRef.current.lastY;
 
-        dragRef.current.vx = dx / dt;
-        dragRef.current.vy = dy / dt;
+        const sampleVx = dx / dt;
+        const sampleVy = dy / dt;
+        dragRef.current.vx = sampleVx;
+        dragRef.current.vy = sampleVy;
+        // Keep a sliding window of the last 5 velocity samples for reliable fling detection
+        dragRef.current.velocityHistory.push({ vx: sampleVx, vy: sampleVy });
+        if (dragRef.current.velocityHistory.length > 5) dragRef.current.velocityHistory.shift();
         dragRef.current.lastX = e.clientX;
         dragRef.current.lastY = e.clientY;
         dragRef.current.timestamp = now;
@@ -965,9 +978,16 @@ export const PuzzleCard: React.FC<PuzzleCardProps> = ({ puzzle, gameState, onSol
         setIsDragging(false);
         (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
 
-        let { vx, vy } = dragRef.current;
-        vx *= 16;
-        vy *= 16;
+        // Use averaged velocity from sliding window for more reliable fling detection
+        const history = dragRef.current.velocityHistory;
+        let vx: number, vy: number;
+        if (history.length > 0) {
+            vx = history.reduce((sum, s) => sum + s.vx, 0) / history.length * 16;
+            vy = history.reduce((sum, s) => sum + s.vy, 0) / history.length * 16;
+        } else {
+            vx = dragRef.current.vx * 16;
+            vy = dragRef.current.vy * 16;
+        }
 
         // Fling puzzle: resolve based on fling direction
         if (puzzle.data.type === 'minigame' && puzzle.data.variant === 'fling_direction' && puzzle.data.targetDirection) {

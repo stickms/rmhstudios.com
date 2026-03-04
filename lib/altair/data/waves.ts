@@ -313,7 +313,7 @@ export const WAVE_TIMELINE: readonly WaveEvent[] = [
 ] as const;
 
 /** Maximum number of active enemies on screen at once */
-export const MAX_ACTIVE_ENEMIES = 450;
+export const MAX_ACTIVE_ENEMIES = 200;
 
 /**
  * Horde Surge configuration (v1.1).

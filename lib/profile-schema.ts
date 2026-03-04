@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+export const dmPrivacyValues = ["EVERYONE", "FOLLOWERS", "NONE"] as const;
+
 export const updateProfileSchema = z.object({
   displayName: z
     .string()
@@ -26,6 +28,7 @@ export const updateProfileSchema = z.object({
     .nullable()
     .or(z.literal("")),
   showLikes: z.boolean().optional(),
+  dmPrivacy: z.enum(["EVERYONE", "FOLLOWERS", "NONE"]).optional(),
   profileSongSpotifyId: z.string().max(50).optional().nullable(),
   profileSongTitle: z.string().max(200).optional().nullable(),
   profileSongArtist: z.string().max(200).optional().nullable(),

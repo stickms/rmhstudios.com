@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { SlidersHorizontal } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { SlidersHorizontal, Search, X } from 'lucide-react';
 import { FeedTabs } from './FeedTabs';
 import { ComposeBox } from './ComposeBox';
 import { FeedList } from './FeedList';
@@ -12,12 +12,35 @@ import Link from 'next/link';
 export function FeedColumn() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [mode, setMode] = useState<'feed' | 'friends'>('feed');
-  const { setFilter } = useFeedStore();
+  const { setFilter, search, setSearch } = useFeedStore();
   const { data: session } = authClient.useSession();
+  const [searchInput, setSearchInput] = useState(search ?? '');
+  const searchRef = useRef<HTMLInputElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const handleSearchChange = (value: string) => {
+    setSearchInput(value);
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setSearch(value.trim() || null);
+    }, 300);
+  };
+
+  const clearSearch = () => {
+    setSearchInput('');
+    setSearch(null);
+    searchRef.current?.focus();
+  };
+
+  // Sync local input when store search changes (e.g. hashtag click)
+  useEffect(() => {
+    setSearchInput(search ?? '');
+  }, [search]);
 
   const handleModeChange = (newMode: 'feed' | 'friends') => {
     setMode(newMode);
     setFiltersOpen(false);
+    setSearchInput('');
     if (newMode === 'friends') {
       setFilter('friends');
     } else {
@@ -75,10 +98,36 @@ export function FeedColumn() {
           </button>
         </div>
         {filtersOpen && <FeedTabs />}
+
+        {/* Search bar */}
+        <div className="px-4 py-2 border-t border-site-border">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-site-text-dim" />
+            <input
+              ref={searchRef}
+              type="text"
+              value={searchInput}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              placeholder="Search RMHarks..."
+              className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-full pl-9 pr-9 py-2 border border-site-border outline-none focus:border-site-accent transition-colors"
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') clearSearch();
+              }}
+            />
+            {searchInput && (
+              <button
+                onClick={clearSearch}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-site-text-dim hover:text-site-text transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Compose */}
-      <ComposeBox />
+      {!search && <ComposeBox />}
 
       {/* Feed */}
       {mode === 'friends' && !session ? (

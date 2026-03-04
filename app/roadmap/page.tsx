@@ -9,8 +9,10 @@ export const metadata = {
     "The road ahead: games, community, immersive tech, and film.",
 };
 
-export default function RoadmapPage() {
-  const { newsArticles, researchArticles } = getSidebarData();
+export const revalidate = 60;
+
+export default async function RoadmapPage() {
+  const { newsArticles, researchArticles } = await getSidebarData();
 
   return (
     <PageLayout

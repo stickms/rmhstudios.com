@@ -15,6 +15,8 @@ PORT_RMHBOX=7676
 PORT_RMHTUBE=7003
 
 LOCKFILE="/tmp/autodeploy.lock"
+QUEUE_FILE="/tmp/autodeploy.queue"
+DEPLOY_LOG="/tmp/autodeploy-$$.log"
 DISCORD_WEBHOOK="https://discord.com/api/webhooks/1477609590005829844/njhHGfYop87DbaGR5o4hCLBnpf3B5ZevYS0BR3kQViEZJktXSjb_SEVtj53WOv0cNxs5"
 
 log() {
@@ -26,27 +28,26 @@ DEPLOY_MSG_ID=""
 get_commit_info() {
     DEPLOY_SHORT_HASH=$("$GIT_BIN" rev-parse --short HEAD 2>/dev/null || echo "unknown")
     DEPLOY_COMMIT_MSG=$("$GIT_BIN" log -1 --pretty=%B 2>/dev/null || echo "(no commit message)")
-    # Escape special JSON characters in commit message
-    DEPLOY_COMMIT_MSG=$(echo "$DEPLOY_COMMIT_MSG" | sed 's/\\/\\\\/g; s/"/\\"/g' | tr '\n' ' ')
+    DEPLOY_AUTHOR=$("$GIT_BIN" log -1 --pretty='%an' 2>/dev/null || echo "unknown")
+    # Escape special JSON characters and control characters
+    DEPLOY_COMMIT_MSG=$(printf '%s' "$DEPLOY_COMMIT_MSG" | \
+        sed 's/\\/\\\\/g; s/"/\\"/g; s/\t/\\t/g; s/\r/\\r/g' | \
+        tr '\n' ' ' | \
+        tr -d '\000-\011\013-\014\016-\037')
+    DEPLOY_AUTHOR=$(printf '%s' "$DEPLOY_AUTHOR" | \
+        sed 's/\\/\\\\/g; s/"/\\"/g; s/\t/\\t/g; s/\r/\\r/g' | \
+        tr -d '\000-\011\013-\014\016-\037')
 }
 
 send_deploy_started() {
     get_commit_info
     local payload
-    payload=$(cat <<EOF
-{
-  "embeds": [{
-    "title": "Commit $DEPLOY_SHORT_HASH - deploy started",
-    "description": "$DEPLOY_COMMIT_MSG",
-    "color": 16776960
-  }]
-}
-EOF
-)
+    payload=$(printf '{"embeds":[{"title":"%s","description":"%s","color":%d,"footer":{"text":"%s"}}]}' \
+        "Commit $DEPLOY_SHORT_HASH - deploy started" "$DEPLOY_COMMIT_MSG" 16776960 "$DEPLOY_AUTHOR")
 
     local response
     response=$(curl -s -H "Content-Type: application/json" -d "$payload" "${DISCORD_WEBHOOK}?wait=true" 2>/dev/null)
-    DEPLOY_MSG_ID=$(echo "$response" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
+    DEPLOY_MSG_ID=$(printf '%s' "$response" | grep -o '"id": *"[^"]*"' | head -1 | cut -d'"' -f4)
 
     if [ -z "$DEPLOY_MSG_ID" ]; then
         log "WARNING: Failed to send or parse Discord webhook notification."
@@ -61,33 +62,45 @@ update_deploy_status() {
     get_commit_info
 
     if [ "$status" = "success" ]; then
+        local elapsed mins secs
+        elapsed=$(( $(date +%s) - DEPLOY_START_TIME ))
+        mins=$(( elapsed / 60 ))
+        secs=$(( elapsed % 60 ))
         color=65280    # green
-        title="Commit $DEPLOY_SHORT_HASH - deploy succeeded"
+        title=$(printf 'Commit %s - deploy succeeded in %02d:%02d' "$DEPLOY_SHORT_HASH" "$mins" "$secs")
     else
         color=16711680 # red
         title="Commit $DEPLOY_SHORT_HASH - deploy failed: $reason"
     fi
 
     local payload
-    payload=$(cat <<EOF
-{
-  "embeds": [{
-    "title": "$title",
-    "description": "$DEPLOY_COMMIT_MSG",
-    "color": $color
-  }]
-}
-EOF
-)
+    payload=$(printf '{"embeds":[{"title":"%s","description":"%s","color":%d,"footer":{"text":"%s"}}]}' \
+        "$title" "$DEPLOY_COMMIT_MSG" "$color" "$DEPLOY_AUTHOR")
 
     if [ -n "$DEPLOY_MSG_ID" ]; then
-        curl -s -X PATCH -H "Content-Type: application/json" \
-            -d "$payload" "${DISCORD_WEBHOOK}/messages/${DEPLOY_MSG_ID}" > /dev/null 2>&1 || \
-            log "WARNING: Failed to edit Discord webhook message."
+        if [ -f "$DEPLOY_LOG" ]; then
+            curl -s -X PATCH \
+                -F "payload_json=$payload" \
+                -F "file=@${DEPLOY_LOG};filename=deploy-${DEPLOY_SHORT_HASH}.txt" \
+                "${DISCORD_WEBHOOK}/messages/${DEPLOY_MSG_ID}" > /dev/null 2>&1 || \
+                log "WARNING: Failed to edit Discord webhook message."
+        else
+            curl -s -X PATCH -H "Content-Type: application/json" \
+                -d "$payload" "${DISCORD_WEBHOOK}/messages/${DEPLOY_MSG_ID}" > /dev/null 2>&1 || \
+                log "WARNING: Failed to edit Discord webhook message."
+        fi
     else
-        curl -s -H "Content-Type: application/json" \
-            -d "$payload" "$DISCORD_WEBHOOK" > /dev/null 2>&1 || \
-            log "WARNING: Failed to send Discord webhook notification."
+        if [ -f "$DEPLOY_LOG" ]; then
+            curl -s \
+                -F "payload_json=$payload" \
+                -F "file=@${DEPLOY_LOG};filename=deploy-${DEPLOY_SHORT_HASH}.txt" \
+                "$DISCORD_WEBHOOK" > /dev/null 2>&1 || \
+                log "WARNING: Failed to send Discord webhook notification."
+        else
+            curl -s -H "Content-Type: application/json" \
+                -d "$payload" "$DISCORD_WEBHOOK" > /dev/null 2>&1 || \
+                log "WARNING: Failed to send Discord webhook notification."
+        fi
     fi
 }
 
@@ -99,8 +112,8 @@ PM2_BIN=$(which pm2 2>/dev/null)   ; PM2_BIN=${PM2_BIN:-/home/rmhstudios/.nvm/ve
 NODE_BIN=$(which node 2>/dev/null) ; NODE_BIN=${NODE_BIN:-/home/rmhstudios/.nvm/versions/node/v25.6.1/bin/node}
 
 cleanup() {
-    [ -f "$LOCKFILE" ] && rm -f "$LOCKFILE"
     rm -rf "$REPO_DIR/.next-backup" "$REPO_DIR/dist-server-backup"
+    rm -f "$DEPLOY_LOG"
 }
 trap cleanup EXIT
 
@@ -108,7 +121,7 @@ check_port() {
     local port=$1 max_retries=30 count=0
     log "Waiting for port $port..."
     while [ $count -lt $max_retries ]; do
-        ss -tuln | grep -q ":$port " && { log "Port $port is up."; return 0; }
+        ss -tuln | grep -qE "[:.]$port\b" && { log "Port $port is up."; return 0; }
         sleep 1; (( count++ ))
     done
     log "ERROR: Port $port did not come up after ${max_retries}s."
@@ -159,19 +172,61 @@ start_apps() {
     "$PM2_BIN" save
 }
 
+restore_backup() {
+    log "Restoring previous build artifacts \u2014 current servers remain running."
+    if [ -d ".next-backup" ]; then
+        rm -rf .next
+        mv .next-backup .next
+    fi
+    if [ -d "dist-server-backup" ]; then
+        rm -rf dist-server
+        mv dist-server-backup dist-server
+    fi
+}
+
 cd "$REPO_DIR" || { echo "FATAL: Cannot cd to $REPO_DIR"; exit 1; }
 
-if [ -f "$LOCKFILE" ]; then
-    log "Deployment already in progress. Skipping."
-    exit 0
+# Acquire deploy lock via flock (fd 200)
+if ! touch "$LOCKFILE" 2>/dev/null; then
+    log "FATAL: Cannot create lockfile $LOCKFILE"
+    exit 1
 fi
-touch "$LOCKFILE"
+exec 200>>"$LOCKFILE"
+
+if ! flock -n 200; then
+    # Another deploy is running — signal for redeploy with our PID
+    log "Deploy already in progress. Queuing for redeploy after current deploy finishes."
+    printf '%s\n' "$$" > "${QUEUE_FILE}.$$" && mv -f "${QUEUE_FILE}.$$" "$QUEUE_FILE"
+
+    # Block until the running deploy releases the lock
+    if ! flock 200; then
+        log "FATAL: Failed to acquire deploy lock."
+        rm -f "${QUEUE_FILE}.$$"
+        exit 1
+    fi
+
+    # Check if we're still the most recent queued instance
+    queued_pid=$(cat "$QUEUE_FILE" 2>/dev/null)
+    if [ "$queued_pid" != "$$" ]; then
+        log "Superseded by a newer deploy request. Exiting."
+        exit 0
+    fi
+
+    # We're the latest — clear queue and proceed
+    rm -f "$QUEUE_FILE"
+    log "=== Queued deploy now executing ==="
+fi
 
 log "=== Deploy triggered by webhook ==="
+DEPLOY_START_TIME=$(date +%s)
+
+# Capture all deploy output to log file
+exec > >(tee -a "$DEPLOY_LOG") 2>&1
 
 log "Pulling latest code..."
 if ! "$GIT_BIN" pull "$REMOTE_REPO" "$BRANCH"; then
     log "ERROR: git pull failed."
+    update_deploy_status fail "git pull failed"
     exit 1
 fi
 
@@ -191,17 +246,6 @@ log "Backing up current build artifacts..."
 [ -d ".next" ]       && cp -a .next .next-backup
 [ -d "dist-server" ] && cp -a dist-server dist-server-backup
 
-restore_backup() {
-    log "Restoring previous build artifacts — current servers remain running."
-    if [ -d ".next-backup" ]; then
-        rm -rf .next
-        mv .next-backup .next
-    fi
-    if [ -d "dist-server-backup" ]; then
-        rm -rf dist-server
-        mv dist-server-backup dist-server
-    fi
-}
 
 log "Building..."
 if ! "$PNPM_BIN" run build; then

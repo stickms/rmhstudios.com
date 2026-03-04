@@ -15,7 +15,7 @@ import { setupInputListeners, setMobileInput } from '@/lib/altair/engine/input';
 import { generateUpgradeChoices, checkEvolution } from '@/lib/altair/engine/level-up-system';
 import { spawnEvolution, spawnLevelUp } from '@/lib/altair/engine/particle-system';
 import { BOSSES } from '@/lib/altair/data/bosses';
-import { WeaponState, PassiveState } from '@/lib/altair/engine/types';
+import { WeaponState, PassiveState, CatalystState } from '@/lib/altair/engine/types';
 import { getAllSpriteEntries } from '@/lib/altair/engine/sprites/sprite-defs';
 import { preloadAllSprites } from '@/lib/altair/engine/sprites/sprite-loader';
 import GameHUD from '@/components/altair/hud/GameHUD';
@@ -103,6 +103,13 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
       level: sp.level,
     }));
     world.passives = newPassives;
+
+    // Rebuild world.catalysts from store
+    const newCatalysts: CatalystState[] = store.catalysts.map((sc) => ({
+      catalystId: sc.catalystId,
+      level: sc.level,
+    }));
+    world.catalysts = newCatalysts;
   }, []);
 
   // Handle reroll from LevelUpScreen
@@ -113,11 +120,15 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
     if (store.rerollsRemaining <= 0) return;
     const meta = useAltairMetaStore.getState();
     const extraChoice = meta.getUpgradeLevel('extra_choice') > 0;
+    const catalystAffinity = meta.getUpgradeLevel('catalyst_affinity');
+    const catalystAffinityPct = catalystAffinity * 15;
     const newChoices = generateUpgradeChoices(
       world.weapons,
       world.passives,
+      world.catalysts,
       store.banishedIds,
       extraChoice,
+      catalystAffinityPct,
     );
     store.reroll(newChoices);
   }, []);
@@ -130,9 +141,9 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
       // Check for weapon evolution
       const world = worldRef.current;
       if (world) {
-        const evolution = checkEvolution(world.weapons, world.passives);
+        const evolution = checkEvolution(world.weapons, world.catalysts);
         if (evolution) {
-          useAltairGameStore.getState().evolveWeapon(evolution.weaponId, evolution.evolvedId);
+          useAltairGameStore.getState().evolveWeapon(evolution.weaponId, evolution.evolvedId, evolution.consumedCatalystId);
           syncStoreToWorld(); // Re-sync after evolution
           spawnEvolution(world, world.player.x, world.player.y);
           addToast('Weapon evolved!', 'success');
@@ -180,18 +191,39 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
 
     // Create game loop with callbacks
     const loop = createGameLoop(canvas, world, tileGen, {
-      onPlayerDamage: (_amount) => {
+      onPlayerDamage: (_amount, sourceDefId) => {
         // Engine already reduced world.player.hp; sync to store
         useAltairGameStore.setState({ hp: world.player.hp });
+
+        // Track encounter in bestiary
+        if (sourceDefId) {
+          useAltairMetaStore.getState().recordBestiaryEncounter(sourceDefId);
+        }
 
         // Check death
         if (world.player.hp <= 0) {
           const store = useAltairGameStore.getState();
           if (store.revivalsRemaining > 0) {
             store.revive();
-            // Restore world HP to match revive
-            world.player.hp = Math.floor(world.player.maxHp * 0.5);
+            // Restore world HP and grant generous post-revival invulnerability
+            world.player.hp = world.player.maxHp;
+            world.player.iFrames = 2.0;
+            // Clear nearby enemy projectiles so player doesn't instantly die again
+            for (let i = world.projectiles.length - 1; i >= 0; i--) {
+              const p = world.projectiles[i];
+              if (!p.isEnemy) continue;
+              const dx = p.x - world.player.x;
+              const dy = p.y - world.player.y;
+              if (dx * dx + dy * dy <= 150 * 150) {
+                world.projectiles.splice(i, 1);
+              }
+            }
+            addToast('Revived!', 'success');
           } else {
+            // Record "killed by" in bestiary
+            if (sourceDefId) {
+              useAltairMetaStore.getState().recordBestiaryKilledBy(sourceDefId);
+            }
             store.die();
           }
         }
@@ -210,11 +242,15 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
           const store = useAltairGameStore.getState();
           const meta = useAltairMetaStore.getState();
           const extraChoice = meta.getUpgradeLevel('extra_choice') > 0;
+          const catalystAffinity = meta.getUpgradeLevel('catalyst_affinity');
+          const catalystAffinityPct = catalystAffinity * 15;
           const choices = generateUpgradeChoices(
             world.weapons,
             world.passives,
+            world.catalysts,
             store.banishedIds,
             extraChoice,
+            catalystAffinityPct,
           );
           store.setUpgradeChoices(choices);
           spawnLevelUp(world, world.player.x, world.player.y);
@@ -223,14 +259,16 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
       onCoinGain: (amount) => {
         useAltairGameStore.getState().addCoins(amount, 'enemyDrops');
       },
-      onKill: () => {
-        useAltairGameStore.getState().addKill();
+      onKill: (defId: string) => {
+        useAltairGameStore.getState().addKill(defId);
+        useAltairMetaStore.getState().recordBestiaryKill(defId);
       },
       onLevelUp: () => {
         // Level-up is handled directly in onXPGain above
       },
       onBossSpawn: (bossId) => {
         useAltairGameStore.getState().setBossActive(true);
+        useAltairMetaStore.getState().recordBestiaryEncounter(bossId);
         const bossDef = BOSSES.find((b) => b.id === bossId);
         addToast(`${bossDef?.title ?? 'BOSS'} APPROACHES!`, 'warning');
       },

@@ -3,8 +3,30 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { headers } from "next/headers";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { userDisplaySelect, resolveUser } from "@/lib/user-display";
 
 export const runtime = "nodejs";
+
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const likes = await prisma.rMHarkLike.findMany({
+      where: { rmheetId: id },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+      include: { user: { select: userDisplaySelect } },
+    });
+    return NextResponse.json(
+      likes.map((l) => ({ ...resolveUser(l.user), likedAt: l.createdAt }))
+    );
+  } catch (error) {
+    console.error("Fetch likes error:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}
 
 export async function POST(
   req: NextRequest,

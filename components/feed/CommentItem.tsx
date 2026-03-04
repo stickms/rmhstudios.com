@@ -1,19 +1,29 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { MessageCircle, Repeat2, Heart, Eye, Trash2, MoreHorizontal, Repeat } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { MAX_COMMENT_LENGTH } from '@/lib/rmhark-schema';
+import { RMHarkContent } from './RMHarkContent';
+import { EngagementListModal } from './EngagementListModal';
 
-interface Comment {
+export interface Comment {
   id: string;
   content: string;
   createdAt: string;
+  userId: string;
   user: { id: string; name: string; image: string | null; username: string | null };
+  likeCount?: number;
+  repostCount?: number;
+  viewCount?: number;
+  liked?: boolean;
+  reposted?: boolean;
   replies?: Comment[];
 }
 
 interface SessionUser {
+  id?: string;
   name?: string | null;
   image?: string | null;
 }
@@ -35,18 +45,107 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(months / 12)}y`;
 }
 
+function formatCount(n: number | undefined): string {
+  if (!n) return '';
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+  return String(n);
+}
+
 interface CommentItemProps {
   comment: Comment;
   postId: string;
   sessionUser?: SessionUser | null;
   onReplyAdded?: (parentId: string, reply: Comment) => void;
+  onCommentRemoved?: (commentId: string) => void;
 }
 
-export function CommentItem({ comment, postId, sessionUser, onReplyAdded }: CommentItemProps) {
+export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onCommentRemoved }: CommentItemProps) {
   const [replyOpen, setReplyOpen] = useState(false);
   const [replyContent, setReplyContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const remaining = MAX_COMMENT_LENGTH - replyContent.length;
+
+  const [liked, setLiked] = useState(comment.liked ?? false);
+  const [likeCount, setLikeCount] = useState(comment.likeCount ?? 0);
+  const [reposted, setReposted] = useState(comment.reposted ?? false);
+  const [repostCount, setRepostCount] = useState(comment.repostCount ?? 0);
+  const [viewCount, setViewCount] = useState(comment.viewCount ?? 0);
+  const viewTracked = useRef(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [engagementModal, setEngagementModal] = useState<'likes' | 'reposts' | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const isAuthor = sessionUser?.id === comment.userId;
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [menuOpen]);
+
+  // Track view
+  useEffect(() => {
+    if (viewTracked.current) return;
+    viewTracked.current = true;
+    fetch(`/api/rmharks/${postId}/comment/${comment.id}/view`, { method: 'POST' })
+      .then(() => setViewCount((v) => v + 1))
+      .catch(() => {});
+  }, [postId, comment.id]);
+
+  const toggleLike = async () => {
+    if (!sessionUser) return;
+    const wasLiked = liked;
+    setLiked(!wasLiked);
+    setLikeCount((c) => c + (wasLiked ? -1 : 1));
+
+    try {
+      const res = await fetch(`/api/rmharks/${postId}/comment/${comment.id}/like`, { method: 'POST' });
+      if (!res.ok) {
+        setLiked(wasLiked);
+        setLikeCount(comment.likeCount ?? 0);
+      }
+    } catch {
+      setLiked(wasLiked);
+      setLikeCount(comment.likeCount ?? 0);
+    }
+  };
+
+  const toggleRepost = async () => {
+    if (!sessionUser) return;
+    const wasReposted = reposted;
+    setReposted(!wasReposted);
+    setRepostCount((c) => c + (wasReposted ? -1 : 1));
+
+    try {
+      const res = await fetch(`/api/rmharks/${postId}/comment/${comment.id}/repost`, { method: 'POST' });
+      if (!res.ok) {
+        setReposted(wasReposted);
+        setRepostCount(comment.repostCount ?? 0);
+      }
+    } catch {
+      setReposted(wasReposted);
+      setRepostCount(comment.repostCount ?? 0);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirm('Delete this reply?')) return;
+    try {
+      const res = await fetch(`/api/rmharks/${postId}/comment/${comment.id}`, { method: 'DELETE' });
+      if (res.ok) {
+        onCommentRemoved?.(comment.id);
+      }
+    } catch (error) {
+      console.error('Delete comment error:', error);
+    }
+  };
 
   const handleSubmitReply = async () => {
     if (!replyContent.trim() || submitting) return;
@@ -103,22 +202,101 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded }: Comm
             <span className="text-site-text-dim shrink-0">
               · {timeAgo(comment.createdAt)}
             </span>
+
+            {/* More menu */}
+            <div className="relative ml-auto shrink-0" ref={menuRef}>
+              <button
+                onClick={() => setMenuOpen((v) => !v)}
+                className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface transition-colors"
+              >
+                <MoreHorizontal className="w-3.5 h-3.5" />
+              </button>
+              {menuOpen && (
+                <div className="absolute right-0 top-full mt-1 w-44 bg-site-bg border border-site-border rounded-xl shadow-xl py-1 z-30">
+                  <button
+                    onClick={() => { setMenuOpen(false); setEngagementModal('likes'); }}
+                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
+                  >
+                    <Heart className="w-4 h-4 text-site-text-dim" />
+                    Liked by
+                  </button>
+                  <button
+                    onClick={() => { setMenuOpen(false); setEngagementModal('reposts'); }}
+                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
+                  >
+                    <Repeat className="w-4 h-4 text-site-text-dim" />
+                    reRMHark'd by
+                  </button>
+                  {isAuthor && (
+                    <button
+                      onClick={() => { setMenuOpen(false); handleDelete(); }}
+                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-danger hover:bg-site-danger/10 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      Delete
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Content */}
-          <p className="text-sm text-site-text mt-0.5 whitespace-pre-wrap break-words">
-            {comment.content}
-          </p>
+          <RMHarkContent text={comment.content} className="text-sm text-site-text mt-0.5 whitespace-pre-wrap break-words" />
 
-          {/* Reply button */}
-          {sessionUser && (
-            <button
-              onClick={() => setReplyOpen((v) => !v)}
-              className="mt-1 text-xs text-site-text-dim hover:text-site-accent transition-colors"
-            >
-              Reply
-            </button>
-          )}
+          {/* Actions row */}
+          <div className="flex items-center gap-5 mt-2 -ml-1.5">
+            {/* Reply */}
+            {sessionUser && (
+              <button
+                onClick={() => setReplyOpen((v) => !v)}
+                className="flex items-center gap-1.5 px-1.5 py-1 rounded-full text-site-text-dim hover:text-site-accent hover:bg-site-accent-dim/50 transition-colors group"
+              >
+                <MessageCircle className="w-4 h-4 group-hover:scale-110 transition-transform" />
+              </button>
+            )}
+
+            {/* reRMHark */}
+            <div className={`flex items-center rounded-full transition-colors ${
+              reposted ? 'text-emerald-400' : 'text-site-text-dim'
+            }`}>
+              <button
+                onClick={toggleRepost}
+                className="p-1 rounded-full hover:bg-emerald-400/10 transition-colors group"
+                title="reRMHark"
+              >
+                <Repeat2 className="w-4 h-4 group-hover:scale-110 transition-transform" />
+              </button>
+              {formatCount(repostCount) && (
+                <span className="text-xs pr-0.5">{formatCount(repostCount)}</span>
+              )}
+            </div>
+
+            {/* Like */}
+            <div className={`flex items-center rounded-full transition-colors ${
+              liked ? 'text-rose-400' : 'text-site-text-dim'
+            }`}>
+              <button
+                onClick={toggleLike}
+                className="p-1 rounded-full hover:bg-rose-400/10 transition-colors group"
+                title="Like"
+              >
+                <Heart className={`w-4 h-4 group-hover:scale-110 transition-transform ${liked ? 'fill-current' : ''}`} />
+              </button>
+              {formatCount(likeCount) && (
+                <span className="text-xs pr-0.5">{formatCount(likeCount)}</span>
+              )}
+            </div>
+
+            {/* Views */}
+            <div className="flex items-center gap-1 px-1.5 py-1 text-site-text-dim">
+              <Eye className="w-4 h-4" />
+              {formatCount(viewCount) && (
+                <span className="text-xs">{formatCount(viewCount)}</span>
+              )}
+            </div>
+
+          </div>
 
           {/* Inline reply box */}
           {replyOpen && sessionUser && (
@@ -185,12 +363,23 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded }: Comm
                   postId={postId}
                   sessionUser={sessionUser}
                   onReplyAdded={onReplyAdded}
+                  onCommentRemoved={onCommentRemoved}
                 />
               ))}
             </div>
           )}
         </div>
       </div>
+
+      {engagementModal && (
+        <EngagementListModal
+          open={engagementModal !== null}
+          onClose={() => setEngagementModal(null)}
+          postId={postId}
+          commentId={comment.id}
+          type={engagementModal}
+        />
+      )}
     </div>
   );
 }

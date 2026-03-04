@@ -4,9 +4,10 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { Sun, Moon, RotateCcw, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Sun, Moon, RotateCcw, ArrowLeft, ArrowRight, Volume2 } from 'lucide-react';
 import { useAltairSettingsStore, Keybinds } from '@/lib/altair/stores/settings-store';
 import { useAltairMetaStore } from '@/lib/altair/stores/meta-store';
+import { altairMusic } from '@/lib/altair/audio/music';
 
 interface SettingsScreenProps {
   onBack: () => void;
@@ -24,7 +25,7 @@ function keyLabel(code: string): string {
 }
 
 export default function SettingsScreen({ onBack }: SettingsScreenProps) {
-  const { theme, keybinds, screenShake, doubleTime, joystickSide, setTheme, setKeybind, resetKeybinds, setScreenShake, setDoubleTime, setJoystickSide } = useAltairSettingsStore();
+  const { theme, keybinds, screenShake, doubleTime, joystickSide, masterVolume, musicVolume, sfxVolume, setTheme, setKeybind, resetKeybinds, setScreenShake, setDoubleTime, setJoystickSide, setMasterVolume, setMusicVolume, setSfxVolume } = useAltairSettingsStore();
   const doubleTimeUnlocked = useAltairMetaStore((s) => s.doubleTimeUnlocked);
   const [rebinding, setRebinding] = useState<keyof Keybinds | null>(null);
   const [isMobile, setIsMobile] = useState(false);
@@ -80,6 +81,33 @@ export default function SettingsScreen({ onBack }: SettingsScreenProps) {
           >
             <Sun size={16} /> Light
           </button>
+        </div>
+      </section>
+
+      {/* Audio */}
+      <section className="mb-6">
+        <h3 className="text-sm font-semibold text-(--altair-text-muted) uppercase tracking-wider mb-3 flex items-center gap-1.5">
+          <Volume2 size={14} /> Audio
+        </h3>
+        <div className="flex flex-col gap-3">
+          {([
+            { label: 'Master', value: masterVolume, setter: (v: number) => { setMasterVolume(v); altairMusic.updateVolume(); } },
+            { label: 'Music', value: musicVolume, setter: (v: number) => { setMusicVolume(v); altairMusic.updateVolume(); } },
+            { label: 'SFX', value: sfxVolume, setter: setSfxVolume },
+          ] as const).map(({ label, value, setter }) => (
+            <div key={label} className="flex items-center gap-3 py-2.5 px-4 rounded-lg bg-(--altair-surface) border border-(--altair-border)">
+              <span className="text-sm text-(--altair-text) w-14 shrink-0">{label}</span>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                value={Math.round(value * 100)}
+                onChange={(e) => setter(Number(e.target.value) / 100)}
+                className="flex-1 h-1.5 accent-(--altair-accent) cursor-pointer"
+              />
+              <span className="text-xs text-(--altair-text-muted) w-8 text-right font-mono">{Math.round(value * 100)}%</span>
+            </div>
+          ))}
         </div>
       </section>
 

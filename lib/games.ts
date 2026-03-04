@@ -63,12 +63,12 @@ export const games: GameInfo[] = [
         authGate: true,
     },
     {
-        id: 'daily-puzzle',
+        id: 'lights-out',
         title: 'Lights Out',
         description: 'A new logic puzzle every day. Turn off all the lights—one tap at a time.',
         longDescription:
             'Classic Lights Out: tap a cell to toggle it and its neighbors. Solve in as few moves as possible. A fresh puzzle appears each day. No account needed.',
-        href: '/daily-puzzle',
+        href: '/lights-out',
         status: 'Playable',
         cta: 'Play',
         isSteam: false,
@@ -201,9 +201,9 @@ export const games: GameInfo[] = [
     {
         id: 'forest-explorer',
         title: 'Forest Explorer',
-        description: 'Wander a peaceful 3D ancient forest. Towering pines, glowing fireflies, golden light.',
+        description: 'Wander a peaceful 3D ancient forest, or play the 3-act narrative story mode with puzzles and lore.',
         longDescription:
-            'A tranquil first-person 3D experience. Roam freely through a dense ancient forest filled with towering conifers, glowing fireflies, low-lying mist, and dappled golden-hour sunlight. No objectives—just explore and breathe.',
+            'A first-person 3D forest experience with two modes. Free Explore lets you roam through a dense ancient forest with towering conifers, glowing fireflies, and dappled sunlight. Story Mode is a 3-act narrative adventure featuring logic puzzles, environmental storytelling, and a discoverable journal system.',
         href: '/forest-explorer',
         status: 'Playable',
         cta: 'Explore',
@@ -231,6 +231,23 @@ export const games: GameInfo[] = [
         tags: ['Arcade', 'Shooter', '3D', 'Survival'],
         imagePath: '/images/games/voidbreaker.png',
         authGate: true,
+    },
+    {
+        id: 'kowloon-knockout',
+        title: 'Kowloon Knockout',
+        description: 'A 2D retro pixel-art boxing game set in 90s Hong Kong with combos, counter-strikes, and multiplayer.',
+        longDescription:
+            'Step into the neon-lit streets of Kowloon, 1997. Choose from three fighter classes — Power, Speed, or Resistance — master devastating combos, and battle AI opponents or challenge a friend in real-time versus mode over WebSocket.',
+        href: '/kowloon-knockout',
+        status: 'Playable',
+        cta: 'Fight Now',
+        isSteam: false,
+        gradient: 'from-pink-500 to-purple-600',
+        iconName: 'Swords',
+        color: 'from-pink-500/20 to-purple-600/20 hover:border-pink-500/50',
+        tags: ['Fighting', 'Multiplayer', 'Retro'],
+        imagePath: '/images/games/Kowloon-Knockout.png',
+        authGate: false,
     },
 ];
 

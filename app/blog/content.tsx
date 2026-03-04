@@ -17,6 +17,7 @@ export function BlogPageContent({ posts, rightSidebar }: BlogPageContentProps) {
     return (
         <PageLayout
             title="The Archive"
+            wide
             rightSidebar={rightSidebar}
             headerRight={
                 <button

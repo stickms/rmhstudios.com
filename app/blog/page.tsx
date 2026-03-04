@@ -8,9 +8,11 @@ export const metadata = {
   description: "Behind the scenes of our game development journey.",
 };
 
-export default function BlogIndexPage() {
+export const revalidate = 60;
+
+export default async function BlogIndexPage() {
   const posts = getAllPosts(["title", "date", "slug", "description", "image", "tags"]);
-  const { newsArticles, researchArticles } = getSidebarData();
+  const { newsArticles, researchArticles } = await getSidebarData();
 
   const allTags = Array.from(
     new Set(posts.flatMap(p => p.tags ?? []))

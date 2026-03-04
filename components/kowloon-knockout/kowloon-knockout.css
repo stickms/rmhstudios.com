@@ -1,0 +1,954 @@
+/* ============================================================
+   Kowloon Knockout — Scoped Styles
+   90s Hong Kong Neon Aesthetic
+   All styles scoped under .kowloon-knockout to prevent global leakage
+   ============================================================ */
+
+.kowloon-knockout {
+  --neon-pink: #ff3366;
+  --neon-blue: #33ccff;
+  --neon-yellow: #ffcc00;
+  --neon-green: #33ff99;
+  --neon-orange: #ff6633;
+  --neon-purple: #cc33ff;
+  --bg-dark: #0a0015;
+  --bg-darker: #050010;
+  --text-primary: #e0e0e0;
+  --text-dim: #888;
+
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg-darker);
+  color: var(--text-primary);
+}
+
+/* ============================================================
+   Neon Animations
+   ============================================================ */
+
+@keyframes neonPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+@keyframes neonFlicker {
+  0% {
+    opacity: 1;
+  }
+  5% {
+    opacity: 0.3;
+  }
+  10% {
+    opacity: 1;
+  }
+  15% {
+    opacity: 0.5;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes scanline {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100vh);
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes glowPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 5px var(--neon-pink), 0 0 10px var(--neon-pink);
+  }
+  50% {
+    box-shadow: 0 0 15px var(--neon-pink), 0 0 30px var(--neon-pink), 0 0 45px var(--neon-pink);
+  }
+}
+
+@keyframes lobby-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+/* ============================================================
+   Main App Container
+   ============================================================ */
+
+.kowloon-knockout .app-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at center, #1a0030 0%, #0a0015 50%, #050010 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+/* CRT scanline overlay */
+.kowloon-knockout .app-container::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.03) 2px,
+      rgba(0, 0, 0, 0.03) 4px);
+  pointer-events: none;
+  z-index: 1000;
+}
+
+/* ============================================================
+   Main Menu
+   ============================================================ */
+
+.kowloon-knockout .menu-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.kowloon-knockout .menu-bg {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+/* ── Cyberpunk HK Cityscape Backdrop ──────────────────────────── */
+
+.kowloon-knockout .city-skyline {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 55%;
+  background:
+    /* Foreground buildings */
+    linear-gradient(0deg, #0c0018 0%, transparent 100%),
+    /* Building silhouettes - varied heights */
+    repeating-linear-gradient(90deg,
+      transparent 0px, transparent 8px,
+      #0f0020 8px, #0f0020 22px,
+      transparent 22px, transparent 26px,
+      #0a0018 26px, #0a0018 38px,
+      transparent 38px, transparent 40px,
+      #0d001a 40px, #0d001a 56px,
+      transparent 56px, transparent 62px,
+      #08001a 62px, #08001a 74px,
+      transparent 74px, transparent 80px
+    );
+  mask-image: linear-gradient(0deg, #000 0%, #000 30%, transparent 100%);
+  -webkit-mask-image: linear-gradient(0deg, #000 0%, #000 30%, transparent 100%);
+  opacity: 0.7;
+}
+
+/* Lit windows in buildings */
+.kowloon-knockout .city-skyline::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(1px 1px at 15px 70%, #ffcc0040 0%, transparent 100%),
+    radial-gradient(1px 1px at 30px 85%, #33ccff30 0%, transparent 100%),
+    radial-gradient(1px 1px at 50px 65%, #ff336630 0%, transparent 100%),
+    radial-gradient(1px 1px at 68px 78%, #ffcc0025 0%, transparent 100%),
+    radial-gradient(1px 1px at 12px 90%, #33ff9920 0%, transparent 100%),
+    radial-gradient(1px 1px at 45px 92%, #ff336625 0%, transparent 100%),
+    radial-gradient(1px 1px at 72px 88%, #33ccff20 0%, transparent 100%),
+    radial-gradient(1px 1px at 25px 75%, #cc33ff20 0%, transparent 100%);
+  background-size: 80px 100%;
+  animation: neonPulse 4s ease-in-out infinite;
+}
+
+/* Neon signs — Chinese characters floating in the scene */
+.kowloon-knockout .neon-sign {
+  position: absolute;
+  font-size: 14px;
+  letter-spacing: 4px;
+  writing-mode: vertical-rl;
+  padding: 6px 3px;
+  border: 1px solid;
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.kowloon-knockout .neon-sign-1 {
+  top: 15%;
+  left: 6%;
+  color: var(--neon-pink);
+  border-color: var(--neon-pink);
+  text-shadow: 0 0 8px var(--neon-pink), 0 0 16px var(--neon-pink);
+  box-shadow: 0 0 6px rgba(255, 51, 102, 0.3), inset 0 0 6px rgba(255, 51, 102, 0.1);
+  animation: neonPulse 3s ease-in-out infinite;
+}
+
+.kowloon-knockout .neon-sign-2 {
+  top: 22%;
+  right: 8%;
+  color: var(--neon-blue);
+  border-color: var(--neon-blue);
+  text-shadow: 0 0 8px var(--neon-blue), 0 0 16px var(--neon-blue);
+  box-shadow: 0 0 6px rgba(51, 204, 255, 0.3), inset 0 0 6px rgba(51, 204, 255, 0.1);
+  animation: neonPulse 4s ease-in-out infinite 1s;
+}
+
+.kowloon-knockout .neon-sign-3 {
+  top: 35%;
+  left: 12%;
+  color: var(--neon-yellow);
+  border-color: var(--neon-yellow);
+  text-shadow: 0 0 8px var(--neon-yellow), 0 0 16px var(--neon-yellow);
+  box-shadow: 0 0 6px rgba(255, 204, 0, 0.3), inset 0 0 6px rgba(255, 204, 0, 0.1);
+  animation: neonPulse 3.5s ease-in-out infinite 0.5s;
+  font-size: 12px;
+}
+
+.kowloon-knockout .neon-sign-4 {
+  top: 30%;
+  right: 15%;
+  color: var(--neon-green);
+  border-color: var(--neon-green);
+  text-shadow: 0 0 8px var(--neon-green), 0 0 16px var(--neon-green);
+  box-shadow: 0 0 6px rgba(51, 255, 153, 0.3), inset 0 0 6px rgba(51, 255, 153, 0.1);
+  animation: neonPulse 5s ease-in-out infinite 2s;
+  font-size: 11px;
+}
+
+/* Vertical neon strips — like HK building edge lighting */
+.kowloon-knockout .neon-strip {
+  position: absolute;
+  width: 2px;
+  pointer-events: none;
+}
+
+.kowloon-knockout .neon-strip-1 {
+  top: 30%;
+  bottom: 10%;
+  left: 20%;
+  background: linear-gradient(180deg, transparent, var(--neon-pink), var(--neon-pink), transparent);
+  opacity: 0.15;
+  animation: neonPulse 3s ease-in-out infinite;
+}
+
+.kowloon-knockout .neon-strip-2 {
+  top: 25%;
+  bottom: 15%;
+  right: 22%;
+  background: linear-gradient(180deg, transparent, var(--neon-blue), var(--neon-blue), transparent);
+  opacity: 0.12;
+  animation: neonPulse 4s ease-in-out infinite 1.5s;
+}
+
+.kowloon-knockout .neon-strip-3 {
+  top: 40%;
+  bottom: 5%;
+  left: 35%;
+  background: linear-gradient(180deg, transparent, var(--neon-yellow), transparent);
+  opacity: 0.1;
+  animation: neonPulse 3.5s ease-in-out infinite 0.8s;
+}
+
+.kowloon-knockout .neon-strip-4 {
+  top: 35%;
+  bottom: 12%;
+  right: 38%;
+  background: linear-gradient(180deg, transparent, var(--neon-purple), transparent);
+  opacity: 0.08;
+  animation: neonPulse 5s ease-in-out infinite 2.5s;
+}
+
+/* Ambient glow spots */
+.kowloon-knockout .menu-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  pointer-events: none;
+}
+
+.kowloon-knockout .menu-glow-pink {
+  width: 200px;
+  height: 200px;
+  bottom: 10%;
+  left: 5%;
+  background: var(--neon-pink);
+  opacity: 0.06;
+  animation: neonPulse 6s ease-in-out infinite;
+}
+
+.kowloon-knockout .menu-glow-blue {
+  width: 180px;
+  height: 180px;
+  bottom: 15%;
+  right: 8%;
+  background: var(--neon-blue);
+  opacity: 0.05;
+  animation: neonPulse 5s ease-in-out infinite 1s;
+}
+
+.kowloon-knockout .menu-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 40px;
+  z-index: 10;
+}
+
+.kowloon-knockout .title-container {
+  text-align: center;
+  animation: neonPulse 4s ease-in-out infinite;
+}
+
+.kowloon-knockout .title-container.neon-flicker {
+  animation: neonFlicker 0.15s ease-in-out;
+}
+
+.kowloon-knockout .game-title {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.kowloon-knockout .title-kowloon {
+  font-size: 48px;
+  color: var(--neon-pink);
+  text-shadow:
+    0 0 10px var(--neon-pink),
+    0 0 20px var(--neon-pink),
+    0 0 40px var(--neon-pink),
+    0 0 80px var(--neon-pink);
+  letter-spacing: 8px;
+}
+
+.kowloon-knockout .title-knockout {
+  font-size: 36px;
+  color: var(--neon-yellow);
+  text-shadow:
+    0 0 10px var(--neon-yellow),
+    0 0 20px var(--neon-yellow),
+    0 0 40px var(--neon-yellow);
+  letter-spacing: 12px;
+}
+
+.kowloon-knockout .title-subtitle {
+  font-size: 16px;
+  color: var(--neon-blue);
+  text-shadow: 0 0 10px var(--neon-blue);
+  margin-top: 8px;
+  letter-spacing: 6px;
+}
+
+.kowloon-knockout .title-tagline {
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-top: 12px;
+  letter-spacing: 4px;
+}
+
+.kowloon-knockout .menu-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+}
+
+.kowloon-knockout .menu-footer {
+  position: absolute;
+  bottom: 30px;
+  font-size: 10px;
+  color: var(--text-dim);
+  animation: blink 1.5s ease-in-out infinite;
+  letter-spacing: 3px;
+}
+
+/* ============================================================
+   Neon Buttons
+   ============================================================ */
+
+.kowloon-knockout .neon-button {
+  font-family: inherit;
+  font-size: 14px;
+  padding: 14px 40px;
+  border: 2px solid;
+  background: transparent;
+  cursor: pointer;
+  letter-spacing: 3px;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.kowloon-knockout .neon-button-fight {
+  color: var(--neon-pink);
+  border-color: var(--neon-pink);
+  text-shadow: 0 0 8px var(--neon-pink);
+  box-shadow: 0 0 10px rgba(255, 51, 102, 0.3), inset 0 0 10px rgba(255, 51, 102, 0.1);
+}
+
+.kowloon-knockout .neon-button-fight:hover {
+  background: rgba(255, 51, 102, 0.15);
+  box-shadow: 0 0 20px rgba(255, 51, 102, 0.5), inset 0 0 20px rgba(255, 51, 102, 0.2);
+}
+
+.kowloon-knockout .neon-button-versus {
+  color: var(--neon-purple);
+  border-color: var(--neon-purple);
+  text-shadow: 0 0 8px var(--neon-purple);
+  box-shadow: 0 0 10px rgba(204, 51, 255, 0.3), inset 0 0 10px rgba(204, 51, 255, 0.1);
+}
+
+.kowloon-knockout .neon-button-versus:hover {
+  background: rgba(204, 51, 255, 0.15);
+  box-shadow: 0 0 20px rgba(204, 51, 255, 0.5), inset 0 0 20px rgba(204, 51, 255, 0.2);
+}
+
+.kowloon-knockout .neon-button-controls {
+  color: var(--neon-blue);
+  border-color: var(--neon-blue);
+  text-shadow: 0 0 8px var(--neon-blue);
+  box-shadow: 0 0 10px rgba(51, 204, 255, 0.3), inset 0 0 10px rgba(51, 204, 255, 0.1);
+  font-size: 11px;
+}
+
+.kowloon-knockout .neon-button-controls:hover {
+  background: rgba(51, 204, 255, 0.15);
+}
+
+.kowloon-knockout .neon-button-back {
+  color: var(--text-dim);
+  border-color: var(--text-dim);
+  font-size: 11px;
+  padding: 10px 24px;
+}
+
+.kowloon-knockout .neon-button-back:hover {
+  color: var(--text-primary);
+  border-color: var(--text-primary);
+}
+
+.kowloon-knockout .neon-button-close {
+  color: var(--neon-yellow);
+  border-color: var(--neon-yellow);
+  font-size: 10px;
+  padding: 8px 20px;
+  margin-top: 16px;
+}
+
+.kowloon-knockout .fight-button-large {
+  font-size: 18px;
+  padding: 16px 50px;
+  animation: glowPulse 2s ease-in-out infinite;
+}
+
+/* ============================================================
+   Controls Modal
+   ============================================================ */
+
+.kowloon-knockout .controls-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(10, 0, 21, 0.95);
+  border: 1px solid var(--neon-blue);
+  box-shadow: 0 0 30px rgba(51, 204, 255, 0.3);
+  padding: 30px;
+  z-index: 100;
+  max-width: 700px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.kowloon-knockout .controls-title {
+  text-align: center;
+  font-size: 18px;
+  color: var(--neon-yellow);
+  text-shadow: 0 0 10px var(--neon-yellow);
+  margin-bottom: 24px;
+}
+
+.kowloon-knockout .controls-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.kowloon-knockout .combos-section {
+  grid-column: span 2;
+}
+
+.kowloon-knockout .controls-section h3 {
+  font-size: 10px;
+  color: var(--neon-pink);
+  text-shadow: 0 0 6px var(--neon-pink);
+  margin-bottom: 12px;
+  letter-spacing: 2px;
+}
+
+.kowloon-knockout .control-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+  font-size: 9px;
+}
+
+.kowloon-knockout .control-row kbd {
+  display: inline-block;
+  padding: 4px 8px;
+  border: 1px solid var(--neon-blue);
+  color: var(--neon-blue);
+  font-family: inherit;
+  font-size: 9px;
+  min-width: 28px;
+  text-align: center;
+}
+
+.kowloon-knockout .control-row span {
+  color: var(--text-primary);
+}
+
+.kowloon-knockout .control-row small {
+  color: var(--text-dim);
+  font-size: 7px;
+}
+
+.kowloon-knockout .combo-keys {
+  color: var(--neon-yellow) !important;
+  font-size: 8px;
+  min-width: 100px;
+}
+
+/* ============================================================
+   Character Select
+   ============================================================ */
+
+.kowloon-knockout .select-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 30px;
+  padding: 20px;
+}
+
+.kowloon-knockout .select-title {
+  font-size: 22px;
+  color: var(--neon-yellow);
+  text-shadow: 0 0 15px var(--neon-yellow);
+  letter-spacing: 4px;
+}
+
+.kowloon-knockout .fighters-row {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.kowloon-knockout .fighter-card {
+  width: 280px;
+  padding: 24px;
+  border: 1px solid #333;
+  background: rgba(10, 0, 21, 0.8);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.kowloon-knockout .fighter-card:hover {
+  border-color: var(--fighter-color);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--fighter-color) 30%, transparent);
+}
+
+.kowloon-knockout .fighter-card-selected {
+  border-color: var(--fighter-color);
+  box-shadow: 0 0 30px color-mix(in srgb, var(--fighter-color) 40%, transparent),
+    inset 0 0 30px color-mix(in srgb, var(--fighter-color) 10%, transparent);
+}
+
+.kowloon-knockout .fighter-preview {
+  width: 100px;
+  height: 120px;
+  border: 1px solid #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  position: relative;
+  overflow: hidden;
+}
+
+.kowloon-knockout .fighter-silhouette {
+  width: 40px;
+  height: 70px;
+  position: relative;
+  opacity: 0.8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.kowloon-knockout .silhouette-head {
+  width: 18px;
+  height: 18px;
+  background: inherit;
+  border-radius: 50%;
+  margin-bottom: 2px;
+}
+
+.kowloon-knockout .silhouette-body {
+  width: 24px;
+  height: 30px;
+  background: inherit;
+  border-radius: 3px;
+}
+
+.kowloon-knockout .silhouette-arms {
+  width: 36px;
+  height: 6px;
+  background: inherit;
+  border-radius: 3px;
+  position: absolute;
+  top: 24px;
+}
+
+.kowloon-knockout .fighter-name {
+  font-size: 14px;
+  letter-spacing: 2px;
+}
+
+.kowloon-knockout .fighter-desc {
+  font-size: 8px;
+  color: var(--text-dim);
+  text-align: center;
+  line-height: 1.6;
+  max-width: 220px;
+}
+
+.kowloon-knockout .stat-bars {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.kowloon-knockout .stat-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kowloon-knockout .stat-label {
+  font-size: 7px;
+  color: var(--text-dim);
+  width: 50px;
+  text-align: right;
+  letter-spacing: 1px;
+}
+
+.kowloon-knockout .stat-track {
+  flex: 1;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.kowloon-knockout .stat-fill {
+  height: 100%;
+  transition: width 0.6s ease;
+}
+
+.kowloon-knockout .selected-indicator {
+  font-size: 8px;
+  color: #000;
+  padding: 4px 12px;
+  letter-spacing: 2px;
+  font-weight: bold;
+}
+
+.kowloon-knockout .select-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 30px;
+  width: 100%;
+}
+
+.kowloon-knockout .select-title-order {
+  font-size: 18px;
+}
+
+.kowloon-knockout .subclass-badge {
+  font-size: 7px;
+  color: var(--neon-yellow);
+  border: 1px solid var(--neon-yellow);
+  padding: 2px 8px;
+  letter-spacing: 2px;
+  opacity: 0.7;
+}
+
+.kowloon-knockout .select-actions {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+/* ============================================================
+   Game Canvas
+   ============================================================ */
+
+.kowloon-knockout .game-canvas-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.kowloon-knockout .game-canvas {
+  border: 2px solid var(--neon-pink);
+  box-shadow:
+    0 0 10px rgba(255, 51, 102, 0.3),
+    inset 0 0 10px rgba(255, 51, 102, 0.1);
+}
+
+.kowloon-knockout .controls-hint {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.kowloon-knockout .control-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.kowloon-knockout .control-key {
+  font-size: 8px;
+  padding: 3px 6px;
+  border: 1px solid var(--neon-blue);
+  color: var(--neon-blue);
+  font-family: inherit;
+}
+
+.kowloon-knockout .control-label {
+  font-size: 7px;
+  color: var(--text-dim);
+}
+
+/* ============================================================
+   Result Screen
+   ============================================================ */
+
+.kowloon-knockout .result-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.kowloon-knockout .result-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  z-index: 10;
+}
+
+.kowloon-knockout .ko-flash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.kowloon-knockout .result-title {
+  font-size: 36px;
+  letter-spacing: 6px;
+}
+
+.kowloon-knockout .result-sub {
+  font-size: 14px;
+  letter-spacing: 4px;
+  margin-top: -16px;
+}
+
+.kowloon-knockout .result-stats {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  margin: 16px 0;
+}
+
+.kowloon-knockout .result-fighter {
+  text-align: center;
+}
+
+.kowloon-knockout .result-fighter-name {
+  font-size: 12px;
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+}
+
+.kowloon-knockout .result-hp {
+  font-size: 18px;
+}
+
+.kowloon-knockout .result-vs {
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.kowloon-knockout .result-actions {
+  display: flex;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+/* ============================================================
+   Multiplayer Lobby
+   ============================================================ */
+
+.kowloon-knockout .lobby-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+}
+
+.kowloon-knockout .lobby-title {
+  font-size: 24px;
+  letter-spacing: 4px;
+  color: var(--neon-purple);
+  text-shadow: 0 0 10px var(--neon-purple), 0 0 20px var(--neon-purple);
+}
+
+.kowloon-knockout .lobby-buttons {
+  display: flex;
+  gap: 16px;
+}
+
+.kowloon-knockout .lobby-room-code {
+  font-size: 48px;
+  letter-spacing: 12px;
+  color: var(--neon-yellow);
+  text-shadow: 0 0 10px var(--neon-yellow), 0 0 20px var(--neon-yellow), 0 0 40px var(--neon-yellow);
+  font-family: inherit;
+}
+
+.kowloon-knockout .lobby-status {
+  font-size: 12px;
+  color: var(--text-dim);
+  letter-spacing: 2px;
+  animation: lobby-pulse 1.5s ease-in-out infinite;
+}
+
+.kowloon-knockout .lobby-input {
+  font-size: 24px;
+  letter-spacing: 8px;
+  text-align: center;
+  width: 180px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.6);
+  border: 2px solid var(--neon-purple);
+  color: var(--neon-yellow);
+  font-family: inherit;
+  text-transform: uppercase;
+  outline: none;
+}
+
+.kowloon-knockout .lobby-input:focus {
+  box-shadow: 0 0 15px rgba(204, 51, 255, 0.5), inset 0 0 10px rgba(204, 51, 255, 0.1);
+}
+
+.kowloon-knockout .lobby-input::placeholder {
+  color: var(--text-dim);
+  letter-spacing: 4px;
+  font-size: 14px;
+}
+
+.kowloon-knockout .lobby-error {
+  font-size: 11px;
+  color: var(--neon-pink);
+  text-shadow: 0 0 6px var(--neon-pink);
+}
+
+.kowloon-knockout .lobby-match-info {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  font-size: 14px;
+  letter-spacing: 2px;
+}
+
+.kowloon-knockout .lobby-match-vs {
+  color: var(--text-dim);
+  font-size: 10px;
+}
+
+.kowloon-knockout .lobby-match-player {
+  text-transform: uppercase;
+}

@@ -1,23 +1,20 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { ArrowLeft, Loader2, MoreHorizontal, Heart, Repeat, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { authClient } from '@/lib/auth-client';
 import { RMHarkActions } from './RMHarkActions';
 import { CommentItem } from './CommentItem';
+import type { Comment } from './CommentItem';
 import { MAX_COMMENT_LENGTH } from '@/lib/rmhark-schema';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { FeedItem } from '@/lib/feed-types';
-
-interface Comment {
-  id: string;
-  content: string;
-  createdAt: string;
-  user: { id: string; name: string; image: string | null; username: string | null };
-  replies?: Comment[];
-}
+import { RMHarkContent } from './RMHarkContent';
+import { PollDisplay } from './PollDisplay';
+import { GifEmbed } from './GifEmbed';
+import { EngagementListModal } from './EngagementListModal';
 
 interface PostDetailProps {
   postId: string;
@@ -34,6 +31,34 @@ export function PostDetail({ postId }: PostDetailProps) {
   const [submitting, setSubmitting] = useState(false);
   const { data: session } = authClient.useSession();
   const remaining = MAX_COMMENT_LENGTH - commentContent.length;
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [engagementModal, setEngagementModal] = useState<'likes' | 'reposts' | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const isAuthor = session?.user?.id === post?.user?.id;
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [menuOpen]);
+
+  const handleDelete = async () => {
+    setMenuOpen(false);
+    if (!confirm('Delete this RMHark?')) return;
+    try {
+      await fetch(`/api/rmharks/${postId}`, { method: 'DELETE' });
+      router.push('/');
+    } catch {
+      // ignore
+    }
+  };
 
   // Fetch post
   useEffect(() => {
@@ -95,6 +120,15 @@ export function PostDetail({ postId }: PostDetailProps) {
     setPost((prev) => prev ? { ...prev, commentCount: (prev.commentCount ?? 0) + 1 } : prev);
   }, []);
 
+  const handleCommentRemoved = useCallback((commentId: string) => {
+    const removeDeep = (comments: Comment[]): Comment[] =>
+      comments
+        .filter((c) => c.id !== commentId)
+        .map((c) => c.replies?.length ? { ...c, replies: removeDeep(c.replies) } : c);
+    setComments((prev) => removeDeep(prev));
+    setPost((prev) => prev ? { ...prev, commentCount: Math.max(0, (prev.commentCount ?? 0) - 1) } : prev);
+  }, []);
+
   const formatFullDate = (dateStr: string) => {
     const d = new Date(dateStr);
     return d.toLocaleDateString('en-US', {
@@ -139,9 +173,46 @@ export function PostDetail({ postId }: PostDetailProps) {
       </div>
 
       {/* Post content (expanded) */}
-      <div className="px-4 pt-4 pb-3 border-b border-site-border">
+      <div className="relative px-4 pt-4 pb-3 border-b border-site-border">
+        {/* More menu — top right */}
+        <div className="absolute top-4 right-4 z-10" ref={menuRef}>
+          <button
+            onClick={() => setMenuOpen((v) => !v)}
+            className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface transition-colors"
+          >
+            <MoreHorizontal className="w-5 h-5" />
+          </button>
+          {menuOpen && (
+            <div className="absolute right-0 top-full mt-1 w-44 bg-site-bg border border-site-border rounded-xl shadow-xl py-1 z-30">
+              <button
+                onClick={() => { setMenuOpen(false); setEngagementModal('likes'); }}
+                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
+              >
+                <Heart className="w-4 h-4 text-site-text-dim" />
+                Liked by
+              </button>
+              <button
+                onClick={() => { setMenuOpen(false); setEngagementModal('reposts'); }}
+                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
+              >
+                <Repeat className="w-4 h-4 text-site-text-dim" />
+                reRMHark'd by
+              </button>
+              {isAuthor && (
+                <button
+                  onClick={handleDelete}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-danger hover:bg-site-danger/10 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
         {/* User header */}
-        <div className="flex items-center gap-3 mb-3">
+        <div className="flex items-center gap-3 mb-3 pr-8">
           <Link href={`/profile/${post.user?.id}`}>
             <div className="w-12 h-12 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-sm shrink-0">
               {post.user?.image ? (
@@ -162,9 +233,23 @@ export function PostDetail({ postId }: PostDetailProps) {
         </div>
 
         {/* Content - larger text for detail view */}
-        <p className="text-site-text text-[17px] leading-relaxed whitespace-pre-wrap break-words mb-3">
-          {post.content}
-        </p>
+        {post.content && (
+          <RMHarkContent text={post.content} className="text-site-text text-[17px] leading-relaxed whitespace-pre-wrap break-words mb-3" />
+        )}
+
+        {/* Poll */}
+        {post.poll && (
+          <div className="mb-3">
+            <PollDisplay
+              poll={post.poll}
+              postId={postId}
+              onUpdate={(updatedPoll) => setPost((prev) => prev ? { ...prev, poll: updatedPoll } : prev)}
+            />
+          </div>
+        )}
+
+        {/* GIF */}
+        {post.gifUrl && <GifEmbed url={post.gifUrl} className="mb-3" />}
 
         {/* Quoted original */}
         {post.original && (
@@ -181,7 +266,7 @@ export function PostDetail({ postId }: PostDetailProps) {
                 <span className="font-bold text-site-text truncate">Unknown</span>
               )}
             </div>
-            <p className="text-site-text text-sm whitespace-pre-wrap break-words">{post.original.content}</p>
+            <RMHarkContent text={post.original.content ?? ''} className="text-site-text text-sm whitespace-pre-wrap break-words" />
           </div>
         )}
 
@@ -209,7 +294,6 @@ export function PostDetail({ postId }: PostDetailProps) {
           <RMHarkActions
             item={post}
             onUpdate={(_, updates) => setPost((prev) => prev ? { ...prev, ...updates } : prev)}
-            onRemove={() => router.push('/')}
           />
         </div>
       </div>
@@ -282,11 +366,21 @@ export function PostDetail({ postId }: PostDetailProps) {
                 postId={postId}
                 sessionUser={session?.user}
                 onReplyAdded={handleReplyAdded}
+                onCommentRemoved={handleCommentRemoved}
               />
             ))}
           </div>
         )}
       </div>
+
+      {engagementModal && (
+        <EngagementListModal
+          open={engagementModal !== null}
+          onClose={() => setEngagementModal(null)}
+          postId={postId}
+          type={engagementModal}
+        />
+      )}
     </div>
   );
 }

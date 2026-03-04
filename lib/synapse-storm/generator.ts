@@ -109,7 +109,6 @@ function generateMathPuzzle(difficulty: number): PuzzleDefinition {
         instruction = `Which is larger?`;
         answer = val1 > val2 ? expr1 : expr2;
         options = [expr1, expr2];
-        if (Math.random() > 0.5) options.reverse();
     } else if (ptype === 'nearest') {
         const target = rand(30, 99);
         expression = `${target}`;
@@ -215,7 +214,8 @@ function generatePatternPuzzle(difficulty: number): PuzzleDefinition {
     const baseShape = pick(SHAPE_TYPES);
     const baseColor = pick(SHAPE_COLORS);
     const seqLen = 5;
-    const missingIndex = rand(0, seqLen - 1);
+    // Restrict missing index to inner positions (1-3) so the pattern is always clear
+    const missingIndex = rand(1, seqLen - 2);
 
     switch (ptype) {
         case 'alternating': {
@@ -264,7 +264,8 @@ function generatePatternPuzzle(difficulty: number): PuzzleDefinition {
             const otherInPattern = isAnswerShape1 ? altShape2 : altShape1;
             const wrongShape = pick(SHAPE_TYPES.filter(s => s !== altShape1.shape && s !== altShape2.shape));
             const wrongColor = pick(SHAPE_COLORS.filter(c => c !== altShape1.color && c !== altShape2.color));
-            opt = Math.random() > 0.33 ? otherInPattern : { shape: wrongShape, color: wrongColor, size: 30 };
+            // Include the other pattern shape as one distractor, rest are clearly wrong
+            opt = options.length === 1 ? otherInPattern : { shape: wrongShape, color: wrongColor, size: 30 };
         } else if (ptype === 'growing') {
             const sizes = [15, 27, 39, 51, 63, 75, 87];
             opt = { shape: baseShape, color: baseColor, size: pick(sizes.filter(s => s !== answer.size)) };
@@ -312,6 +313,30 @@ const WORDS_POOL = Object.values(WORDS_BY_LENGTH).flat();
 // For typing/anagram/reverse/spelling: 4-6 chars for doable input speed
 const TYPING_WORDS_POOL = [...WORDS_BY_LENGTH[4]!, ...WORDS_BY_LENGTH[5]!, ...WORDS_BY_LENGTH[6]!];
 
+/** Check if a spelling blank at `idx` in `word` is ambiguous (another pool word matches the pattern). */
+function isSpellingAmbiguous(word: string, idx: number): boolean {
+    const prefix = word.substring(0, idx);
+    const suffix = word.substring(idx + 1);
+    return TYPING_WORDS_POOL.some(w =>
+        w !== word && w.length === word.length && w.startsWith(prefix) && w.endsWith(suffix)
+    );
+}
+
+/** Build a set of words that share sorted-letter signatures with other words in the pool (anagram collisions). */
+const ANAGRAM_COLLISIONS: Set<string> = (() => {
+    const groups = new Map<string, string[]>();
+    for (const w of TYPING_WORDS_POOL) {
+        const key = w.split('').sort().join('');
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key)!.push(w);
+    }
+    const collisions = new Set<string>();
+    for (const group of groups.values()) {
+        if (group.length > 1) group.forEach(w => collisions.add(w));
+    }
+    return collisions;
+})();
+
 function scrambleWord(word: string): string {
     if (word.length <= 3) return word;
     // Only scramble inner letters to make it readable (Typoglycemia)
@@ -345,14 +370,26 @@ function generateLanguagePuzzle(difficulty: number): PuzzleDefinition {
             answer = word;
             instruction = `Type this word:`;
             break;
-        case 'anagram':
-            prompt = scrambleWord(word).toUpperCase();
-            answer = word;
+        case 'anagram': {
+            // If the word has anagram collisions in the pool, pick a different word
+            let anagramWord = word;
+            if (ANAGRAM_COLLISIONS.has(anagramWord)) {
+                const safe = TYPING_WORDS_POOL.filter(w => !ANAGRAM_COLLISIONS.has(w));
+                if (safe.length > 0) anagramWord = pick(safe);
+            }
+            prompt = scrambleWord(anagramWord).toUpperCase();
+            answer = anagramWord;
             instruction = `Unscramble:`;
             break;
+        }
         case 'spelling': {
-            const idx = rand(1, word.length - 2);
-            prompt = word.substring(0, idx) + '_' + word.substring(idx + 1);
+            // Find a non-ambiguous blank position (no other pool word matches the pattern)
+            let idx = rand(1, word.length - 2);
+            for (let attempt = 0; attempt < 10; attempt++) {
+                if (!isSpellingAmbiguous(word, idx)) break;
+                idx = rand(1, word.length - 2);
+            }
+            prompt = (word.substring(0, idx) + '_' + word.substring(idx + 1)).toUpperCase();
             answer = word[idx];
             instruction = `Missing letter:`;
             break;
@@ -881,25 +918,15 @@ function generateMinigamePuzzle(difficulty: number): PuzzleDefinition {
 
 // ---- META PUZZLES (game-state awareness, singleplayer only) ----
 function generateMetaPuzzle(difficulty: number, state: GameState): PuzzleDefinition {
-    const variants: MetaPuzzleData['variant'][] = ['gameTime', 'lives', 'intensity', 'combo', 'maxCombo', 'activeCount', 'realTimeHour', 'score'];
+    const variants: MetaPuzzleData['variant'][] = ['lives', 'intensity', 'combo', 'maxCombo', 'realTimeHour', 'score'];
     const variant = pick(variants);
 
     const now = Date.now();
-    let answer: number;
-    let instruction: string;
-    let options: number[];
+    let answer: number = 0;
+    let instruction: string = '';
+    let options: number[] = [];
 
     switch (variant) {
-        case 'gameTime':
-            answer = Math.floor((now - state.startTime) / 1000);
-            instruction = 'How many seconds have you been playing?';
-            options = ensureUniqueOptions(
-                [answer + rand(5, 15), Math.max(0, answer - rand(5, 15)), answer + rand(20, 40)],
-                answer,
-                4,
-                () => Math.max(0, answer + rand(-20, 60))
-            );
-            break;
         case 'lives':
             answer = Math.max(0, state.missThreshold - state.puzzlesMissed);
             instruction = 'How many lives do you have left?';
@@ -949,16 +976,6 @@ function generateMetaPuzzle(difficulty: number, state: GameState): PuzzleDefinit
                 answer,
                 4,
                 () => Math.max(0, answer + rand(-2, 4) * delta)
-            );
-            break;
-        case 'activeCount':
-            answer = state.activePuzzles.filter((p) => !p.solved && !p.expired).length;
-            instruction = 'How many puzzles are on screen right now? (including this card)';
-            options = ensureUniqueOptions(
-                [answer + 1, Math.max(0, answer - 1), answer + 2, answer + 3],
-                answer,
-                4,
-                () => Math.max(0, answer + rand(1, 5))
             );
             break;
         case 'realTimeHour': {
