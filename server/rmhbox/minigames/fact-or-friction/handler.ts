@@ -87,8 +87,9 @@ export class FactOrFrictionGame extends BaseMinigame {
   /** Compute the effective points available for the current question (pot × difficulty multiplier). */
   private getAvailablePoints(): number {
     const question = this.state.questions[this.state.currentQuestionIndex];
-    if (!question) return this.state.potValue;
-    const multiplier = DIFFICULTY_MULTIPLIERS[question.difficulty] ?? FF_MEDIUM_MULTIPLIER;
+    const multiplier = question
+      ? (DIFFICULTY_MULTIPLIERS[question.difficulty] ?? FF_MEDIUM_MULTIPLIER)
+      : FF_MEDIUM_MULTIPLIER;
     return Math.floor(this.state.potValue * multiplier);
   }
 
@@ -96,8 +97,9 @@ export class FactOrFrictionGame extends BaseMinigame {
   private getMaxAvailablePoints(): number {
     const question = this.state.questions[this.state.currentQuestionIndex];
     const potStart = this.getSetting('potStartValue', FF_POT_START_VALUE);
-    if (!question) return potStart;
-    const multiplier = DIFFICULTY_MULTIPLIERS[question.difficulty] ?? FF_MEDIUM_MULTIPLIER;
+    const multiplier = question
+      ? (DIFFICULTY_MULTIPLIERS[question.difficulty] ?? FF_MEDIUM_MULTIPLIER)
+      : FF_MEDIUM_MULTIPLIER;
     return Math.floor(potStart * multiplier);
   }
 
