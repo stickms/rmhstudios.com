@@ -39,8 +39,12 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   const router = useRouter();
   const [showStyleMenu, setShowStyleMenu] = useState(false);
   const [composeOpen, setComposeOpen] = useState(false);
-  const [mounted, setMounted] = useState(() => typeof window !== 'undefined');
+  const [mounted, setMounted] = useState(false);
   const { style, setStyle } = useThemeStore();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const styleMenuRef = useRef<HTMLDivElement>(null);
   const [popoverPos, setPopoverPos] = useState({ bottom: 0, left: 0 });
 
@@ -161,15 +165,24 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
           }}
           className={`flex items-center gap-2 w-full px-3 py-2.5 rounded-xl text-sm text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors ${itemJustifyClass}`}
           title="Change site style"
+          suppressHydrationWarning
         >
           <Palette className="w-5 h-5 shrink-0" />
-          {mounted && (
-            <span className={labelFlexClass}>
-              <span className="text-xs">{currentStyle.icon}</span>
-              <span>{currentStyle.label}</span>
-              <ChevronDown className={`w-3 h-3 ml-auto transition-transform ${showStyleMenu ? 'rotate-180' : ''}`} />
-            </span>
-          )}
+          <span className={labelFlexClass} suppressHydrationWarning>
+            {mounted ? (
+              <>
+                <span className="text-xs">{currentStyle.icon}</span>
+                <span>{currentStyle.label}</span>
+              </>
+            ) : (
+              // Empty fallback that has the same DOM structure to prevent hydration mismatch
+              <>
+                <span className="text-xs"></span>
+                <span>Theme</span>
+              </>
+            )}
+            <ChevronDown className={`w-3 h-3 ml-auto transition-transform ${showStyleMenu ? 'rotate-180' : ''}`} />
+          </span>
         </button>
 
         {showStyleMenu && (
