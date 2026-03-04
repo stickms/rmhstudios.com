@@ -7,7 +7,7 @@ import { authClient } from '@/lib/auth-client';
 import { useSession } from '@/components/Providers';
 import {
   Home, Package, Hammer, Newspaper, Map, FlaskConical, BookOpen,
-  Palette, ChevronDown, LogOut, PenSquare, User, MessageCircle,
+  Palette, ChevronDown, LogOut, PenSquare, User, MessageCircle, ShieldCheck
 } from 'lucide-react';
 import { ComposeModal } from './ComposeModal';
 import { Button } from '@/components/ui/button';
@@ -146,6 +146,21 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
               )}
             </div>
             <span className={labelClass}>Messages</span>
+          </Link>
+        )}
+        {/* Admin Link (shown when user is admin) */}
+        {session && (session.user as any).isAdmin && (
+          <Link
+            href="/admin"
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${itemJustifyClass} ${
+              pathname?.startsWith('/admin')
+                ? 'text-site-accent bg-site-accent-dim'
+                : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
+            }`}
+            title="Admin Dashboard"
+          >
+            <ShieldCheck className="w-5 h-5 shrink-0" />
+            <span className={labelClass}>Admin</span>
           </Link>
         )}
       </nav>

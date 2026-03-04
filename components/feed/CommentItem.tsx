@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { MessageCircle, Repeat2, Heart, Eye, Trash2, MoreHorizontal, Repeat } from 'lucide-react';
+import { MessageCircle, Repeat2, Heart, Eye, Trash2, MoreHorizontal, Repeat, BadgeCheck, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { MAX_COMMENT_LENGTH } from '@/lib/rmhark-schema';
 import { RMHarkContent } from './RMHarkContent';
@@ -13,13 +13,15 @@ export interface Comment {
   content: string;
   createdAt: string;
   userId: string;
-  user: { id: string; name: string; image: string | null; username: string | null };
+  user: { id: string; name: string; image: string | null; username: string | null; isVerified?: boolean; isAdmin?: boolean };
   likeCount?: number;
   repostCount?: number;
   viewCount?: number;
   liked?: boolean;
   reposted?: boolean;
   replies?: Comment[];
+  deletedAt?: string | null;
+  deletedByAdmin?: boolean;
 }
 
 interface SessionUser {
@@ -193,6 +195,14 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
               <span className="font-bold text-site-text truncate">
                 {comment.user.name || 'Unknown'}
               </span>
+              {comment.user.isVerified && (
+                <BadgeCheck className="w-4 h-4 text-emerald-500 shrink-0" />
+              )}
+              {comment.user.isAdmin && (
+                <span title="Admin" className="inline-flex items-center shrink-0">
+                  <ShieldCheck className="w-4 h-4 text-site-accent" />
+                </span>
+              )}
               {comment.user.username && (
                 <span className="text-site-text-dim truncate">
                   @{comment.user.username}
@@ -204,99 +214,102 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
             </span>
 
             {/* More menu */}
-            <div className="relative ml-auto shrink-0" ref={menuRef}>
-              <button
-                onClick={() => setMenuOpen((v) => !v)}
-                className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface transition-colors"
-              >
-                <MoreHorizontal className="w-3.5 h-3.5" />
-              </button>
-              {menuOpen && (
-                <div className="absolute right-0 top-full mt-1 w-44 bg-site-bg border border-site-border rounded-xl shadow-xl py-1 z-30">
-                  <button
-                    onClick={() => { setMenuOpen(false); setEngagementModal('likes'); }}
-                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
-                  >
-                    <Heart className="w-4 h-4 text-site-text-dim" />
-                    Liked by
-                  </button>
-                  <button
-                    onClick={() => { setMenuOpen(false); setEngagementModal('reposts'); }}
-                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
-                  >
-                    <Repeat className="w-4 h-4 text-site-text-dim" />
-                    reRMHark'd by
-                  </button>
-                  {isAuthor && (
+            {!comment.deletedAt && (
+              <div className="relative ml-auto shrink-0" ref={menuRef}>
+                <button
+                  onClick={() => setMenuOpen((v) => !v)}
+                  className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface transition-colors"
+                >
+                  <MoreHorizontal className="w-3.5 h-3.5" />
+                </button>
+                {menuOpen && (
+                  <div className="absolute right-0 top-full mt-1 w-44 bg-site-bg border border-site-border rounded-xl shadow-xl py-1 z-30">
                     <button
-                      onClick={() => { setMenuOpen(false); handleDelete(); }}
-                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-danger hover:bg-site-danger/10 transition-colors"
+                      onClick={() => { setMenuOpen(false); setEngagementModal('likes'); }}
+                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
                     >
-                      <Trash2 className="w-4 h-4" />
-                      Delete
+                      <Heart className="w-4 h-4 text-site-text-dim" />
+                      Liked by
                     </button>
-                  )}
-                </div>
-              )}
-            </div>
+                    <button
+                      onClick={() => { setMenuOpen(false); setEngagementModal('reposts'); }}
+                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
+                    >
+                      <Repeat className="w-4 h-4 text-site-text-dim" />
+                      reRMHark'd by
+                    </button>
+                    {isAuthor && (
+                      <button
+                        onClick={() => { setMenuOpen(false); handleDelete(); }}
+                        className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-danger hover:bg-site-danger/10 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Delete
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Content */}
           <RMHarkContent text={comment.content} className="text-sm text-site-text mt-0.5 whitespace-pre-wrap break-words" />
 
           {/* Actions row */}
-          <div className="flex items-center gap-5 mt-2 -ml-1.5">
-            {/* Reply */}
-            {sessionUser && (
-              <button
-                onClick={() => setReplyOpen((v) => !v)}
-                className="flex items-center gap-1.5 px-1.5 py-1 rounded-full text-site-text-dim hover:text-site-accent hover:bg-site-accent-dim/50 transition-colors group"
-              >
-                <MessageCircle className="w-4 h-4 group-hover:scale-110 transition-transform" />
-              </button>
-            )}
-
-            {/* reRMHark */}
-            <div className={`flex items-center rounded-full transition-colors ${
-              reposted ? 'text-emerald-400' : 'text-site-text-dim'
-            }`}>
-              <button
-                onClick={toggleRepost}
-                className="p-1 rounded-full hover:bg-emerald-400/10 transition-colors group"
-                title="reRMHark"
-              >
-                <Repeat2 className="w-4 h-4 group-hover:scale-110 transition-transform" />
-              </button>
-              {formatCount(repostCount) && (
-                <span className="text-xs pr-0.5">{formatCount(repostCount)}</span>
+          {!comment.deletedAt && (
+            <div className="flex items-center gap-5 mt-2 -ml-1.5">
+              {/* Reply */}
+              {sessionUser && (
+                <button
+                  onClick={() => setReplyOpen((v) => !v)}
+                  className="flex items-center gap-1.5 px-1.5 py-1 rounded-full text-site-text-dim hover:text-site-accent hover:bg-site-accent-dim/50 transition-colors group"
+                >
+                  <MessageCircle className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                </button>
               )}
-            </div>
 
-            {/* Like */}
-            <div className={`flex items-center rounded-full transition-colors ${
-              liked ? 'text-rose-400' : 'text-site-text-dim'
-            }`}>
-              <button
-                onClick={toggleLike}
-                className="p-1 rounded-full hover:bg-rose-400/10 transition-colors group"
-                title="Like"
-              >
-                <Heart className={`w-4 h-4 group-hover:scale-110 transition-transform ${liked ? 'fill-current' : ''}`} />
-              </button>
-              {formatCount(likeCount) && (
-                <span className="text-xs pr-0.5">{formatCount(likeCount)}</span>
-              )}
-            </div>
+              {/* reRMHark */}
+              <div className={`flex items-center rounded-full transition-colors ${
+                reposted ? 'text-emerald-400' : 'text-site-text-dim'
+              }`}>
+                <button
+                  onClick={toggleRepost}
+                  className="p-1 rounded-full hover:bg-emerald-400/10 transition-colors group"
+                  title="reRMHark"
+                >
+                  <Repeat2 className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                </button>
+                {formatCount(repostCount) && (
+                  <span className="text-xs pr-0.5">{formatCount(repostCount)}</span>
+                )}
+              </div>
 
-            {/* Views */}
-            <div className="flex items-center gap-1 px-1.5 py-1 text-site-text-dim">
-              <Eye className="w-4 h-4" />
-              {formatCount(viewCount) && (
-                <span className="text-xs">{formatCount(viewCount)}</span>
-              )}
-            </div>
+              {/* Like */}
+              <div className={`flex items-center rounded-full transition-colors ${
+                liked ? 'text-rose-400' : 'text-site-text-dim'
+              }`}>
+                <button
+                  onClick={toggleLike}
+                  className="p-1 rounded-full hover:bg-rose-400/10 transition-colors group"
+                  title="Like"
+                >
+                  <Heart className={`w-4 h-4 group-hover:scale-110 transition-transform ${liked ? 'fill-current' : ''}`} />
+                </button>
+                {formatCount(likeCount) && (
+                  <span className="text-xs pr-0.5">{formatCount(likeCount)}</span>
+                )}
+              </div>
 
-          </div>
+              {/* Views */}
+              <div className="flex items-center gap-1 px-1.5 py-1 text-site-text-dim">
+                <Eye className="w-4 h-4" />
+                {formatCount(viewCount) && (
+                  <span className="text-xs">{formatCount(viewCount)}</span>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Inline reply box */}
           {replyOpen && sessionUser && (

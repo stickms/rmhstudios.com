@@ -51,11 +51,12 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params;
 
-    // Get current user session (optional)
     let currentUserId: string | null = null;
+    let isAdmin = false;
     try {
       const session = await auth.api.getSession({ headers: await headers() });
       currentUserId = session?.user?.id ?? null;
+      isAdmin = !!(session?.user as any)?.isAdmin;
     } catch {
       // Not logged in
     }
@@ -67,7 +68,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     }
 
     // Check visibility
-    const isOwner = currentUserId === build.userId;
+    const isOwner = currentUserId === build.userId || isAdmin;
     if (!isOwner) {
       if (build.visibility === 'PRIVATE') {
         return NextResponse.json({ error: 'Build not found' }, { status: 404 });
@@ -166,7 +167,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
     }
 
     // Check ownership
-    if (build.userId !== userId) {
+    if (build.userId !== userId && !(session?.user as any)?.isAdmin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
@@ -282,7 +283,7 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
     }
 
     // Check ownership
-    if (build.userId !== userId) {
+    if (build.userId !== userId && !(session?.user as any)?.isAdmin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 

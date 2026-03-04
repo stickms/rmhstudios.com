@@ -2,11 +2,13 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Search, X } from 'lucide-react';
-import type { GameInfo } from '@/lib/games';
 import { OfficialBuildCard } from './OfficialBuildCard';
+import type { UserBuild, BuildCategory } from '@prisma/client';
+
+type FullBuild = UserBuild & { category?: BuildCategory | null };
 
 interface OfficialBuildGridProps {
-    builds: GameInfo[];
+    builds: FullBuild[];
 }
 
 export function OfficialBuildGrid({ builds }: OfficialBuildGridProps) {
@@ -25,10 +27,12 @@ export function OfficialBuildGrid({ builds }: OfficialBuildGridProps) {
         if (!debouncedSearch) return builds;
         const q = debouncedSearch.toLowerCase();
         return builds.filter(
-            (b) =>
-                b.title.toLowerCase().includes(q) ||
+            (b) => {
+                const tags = Array.isArray(b.technologies) ? b.technologies as string[] : [];
+                return b.title.toLowerCase().includes(q) ||
                 b.description.toLowerCase().includes(q) ||
-                b.tags.some((t) => t.toLowerCase().includes(q))
+                tags.some((t) => t.toLowerCase().includes(q))
+            }
         );
     }, [builds, debouncedSearch]);
 

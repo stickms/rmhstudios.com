@@ -9,6 +9,8 @@ export const userDisplaySelect = {
   name: true,
   image: true,
   username: true,
+  isVerified: true,
+  isAdmin: true,
   profile: {
     select: {
       displayName: true,
@@ -20,6 +22,8 @@ export const userDisplaySelect = {
 type UserWithProfile = {
   name: string | null;
   image: string | null;
+  isVerified?: boolean;
+  isAdmin?: boolean;
   profile?: { displayName?: string | null; customImage?: string | null } | null;
 };
 
@@ -35,12 +39,14 @@ type UserWithProfileAndId = UserWithProfile & {
   username: string | null;
 };
 
-/** Returns { id, name, image, username } with custom fields resolved. */
+/** Returns { id, name, image, username, isVerified, isAdmin } with custom fields resolved. */
 export function resolveUser(user: UserWithProfileAndId) {
   return {
     id: user.id,
     name: user.profile?.displayName ?? user.name,
     image: user.profile?.customImage ?? user.image,
     username: user.username,
+    isVerified: user.isVerified ?? false,
+    isAdmin: user.isAdmin ?? false,
   };
 }

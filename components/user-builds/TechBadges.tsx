@@ -66,8 +66,24 @@ function getTechColor(tech: string): string {
 }
 
 export function TechBadges({ technologies, size = 'md', limit }: TechBadgesProps) {
-  const displayTechs = limit ? technologies.slice(0, limit) : technologies;
-  const remaining = limit && technologies.length > limit ? technologies.length - limit : 0;
+  let parsedTechs: string[] = [];
+  if (Array.isArray(technologies)) {
+    parsedTechs = technologies;
+  } else if (typeof technologies === 'string') {
+    try {
+      const parsed = JSON.parse(technologies);
+      if (Array.isArray(parsed)) {
+        parsedTechs = parsed;
+      } else {
+        parsedTechs = [technologies];
+      }
+    } catch {
+      parsedTechs = [technologies];
+    }
+  }
+
+  const displayTechs = limit ? parsedTechs.slice(0, limit) : parsedTechs;
+  const remaining = limit && parsedTechs.length > limit ? parsedTechs.length - limit : 0;
 
   const sizeClasses = size === 'sm' ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-0.5 text-xs';
 

@@ -10,9 +10,11 @@ interface ImageCropModalProps {
   imageSrc: string;
   onCropDone: (croppedBlob: Blob) => void;
   onCancel: () => void;
+  aspect?: number;
+  cropShape?: 'rect' | 'round';
 }
 
-export function ImageCropModal({ imageSrc, onCropDone, onCancel }: ImageCropModalProps) {
+export function ImageCropModal({ imageSrc, onCropDone, onCancel, aspect = 1, cropShape = 'round' }: ImageCropModalProps) {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [minZoom, setMinZoom] = useState(1);
@@ -84,8 +86,8 @@ export function ImageCropModal({ imageSrc, onCropDone, onCancel }: ImageCropModa
             minZoom={minZoom}
             maxZoom={3}
             rotation={rotation}
-            aspect={1}
-            cropShape="round"
+            aspect={aspect}
+            cropShape={cropShape}
             showGrid={false}
             onCropChange={setCrop}
             onZoomChange={setZoom}

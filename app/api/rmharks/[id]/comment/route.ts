@@ -47,21 +47,30 @@ export async function GET(
       },
     });
 
-    const resolveComment = (c: typeof comments[number] | typeof comments[number]["replies"][number]) => ({
-      id: c.id,
-      content: c.content,
-      createdAt: c.createdAt,
-      updatedAt: c.updatedAt,
-      rmheetId: c.rmheetId,
-      parentId: c.parentId,
-      userId: c.userId,
-      user: resolveUser(c.user),
-      likeCount: c._count.likes,
-      repostCount: c._count.reposts,
-      viewCount: c._count.views,
-      liked: userId ? ("likes" in c ? (c.likes as { id: string }[]).length > 0 : false) : false,
-      reposted: userId ? ("reposts" in c ? (c.reposts as { id: string }[]).length > 0 : false) : false,
-    });
+    const resolveComment = (c: typeof comments[number] | typeof comments[number]["replies"][number]) => {
+      const isDeleted = !!c.deletedAt;
+      const deletedMessage = c.deletedByAdmin 
+        ? "[This reply was deleted by an admin]" 
+        : "[This reply was deleted by the user]";
+        
+      return {
+        id: c.id,
+        content: isDeleted ? deletedMessage : c.content,
+        createdAt: c.createdAt,
+        updatedAt: c.updatedAt,
+        rmheetId: c.rmheetId,
+        parentId: c.parentId,
+        userId: c.userId,
+        user: resolveUser(c.user),
+        likeCount: c._count.likes,
+        repostCount: c._count.reposts,
+        viewCount: c._count.views,
+        liked: userId ? ("likes" in c ? (c.likes as { id: string }[]).length > 0 : false) : false,
+        reposted: userId ? ("reposts" in c ? (c.reposts as { id: string }[]).length > 0 : false) : false,
+        deletedAt: c.deletedAt?.toISOString() || null,
+        deletedByAdmin: c.deletedByAdmin,
+      };
+    };
 
     const resolved = comments.map((c) => ({
       ...resolveComment(c),
@@ -129,6 +138,8 @@ export async function POST(
       liked: false,
       reposted: false,
       replies: [],
+      deletedAt: null,
+      deletedByAdmin: false,
     }, { status: 201 });
   } catch (error) {
     console.error("Post comment error:", error);

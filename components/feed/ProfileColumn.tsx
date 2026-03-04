@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { MapPin, Link as LinkIcon, Calendar, Loader2, ArrowLeft, MessageCircle } from 'lucide-react';
+import { MapPin, Link as LinkIcon, Calendar, Loader2, ArrowLeft, MessageCircle, BadgeCheck, ShieldCheck } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { authClient } from '@/lib/auth-client';
@@ -17,6 +17,8 @@ interface ProfileData {
   name: string | null;
   username: string | null;
   image: string | null;
+  isVerified: boolean;
+  isAdmin: boolean;
   createdAt: string;
   bio: string | null;
   location: string | null;
@@ -335,9 +337,17 @@ export function ProfileColumn({ userId }: { userId: string }) {
             <ArrowLeft className="w-5 h-5 text-site-text" />
           </Link>
           <div>
-            <h1 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text">
-              {profile.name || profile.username || 'User'}
-            </h1>
+            <div className="flex items-center gap-1">
+              <h1 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text truncate">
+                {profile.name || profile.username || 'User'}
+              </h1>
+              {profile.isVerified && <BadgeCheck className="w-4 h-4 text-emerald-500 shrink-0" />}
+              {profile.isAdmin && (
+                <span title="Admin" className="inline-flex items-center shrink-0">
+                  <ShieldCheck className="w-4 h-4 text-site-accent" />
+                </span>
+              )}
+            </div>
             <p className="text-xs text-site-text-dim">{profile.rmharkCount} RMHarks</p>
           </div>
         </div>
@@ -371,7 +381,15 @@ export function ProfileColumn({ userId }: { userId: string }) {
 
         <div className="flex items-start justify-between mb-3">
           <div>
-            <h2 className="font-bold text-xl text-site-text">{profile.name || 'Unknown'}</h2>
+            <div className="flex items-center gap-1.5 align-middle">
+              <h2 className="font-bold text-xl text-site-text truncate">{profile.name || 'Unknown'}</h2>
+              {profile.isVerified && <BadgeCheck className="w-5 h-5 text-emerald-500 shrink-0" />}
+              {profile.isAdmin && (
+                <span title="Admin" className="inline-flex items-center shrink-0">
+                  <ShieldCheck className="w-5 h-5 text-site-accent" />
+                </span>
+              )}
+            </div>
             {profile.username && (
               <p className="text-sm text-site-text-dim">@{profile.username}</p>
             )}

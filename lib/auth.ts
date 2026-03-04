@@ -29,8 +29,18 @@ export const auth = betterAuth({
         additionalFields: {
             username: {
                 type: "string",
-                required: false, // Optional if we allow email-only login too, or true if mandatory
-                input: true // Allow input in signUp
+                required: false,
+                input: true
+            },
+            isAdmin: {
+                type: "boolean",
+                required: false,
+                defaultValue: false
+            },
+            isVerified: {
+                type: "boolean",
+                required: false,
+                defaultValue: false
             }
         }
     }

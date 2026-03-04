@@ -32,7 +32,7 @@ export function BuildDetail({ build: initialBuild }: BuildDetailProps) {
   const [build, setBuild] = useState(initialBuild);
   const [liking, setLiking] = useState(false);
 
-  const isOwner = session?.user?.id === build.user.id;
+  const isOwner = session?.user?.id === build.user.id || !!(session?.user as any)?.isAdmin;
 
   // Track view on mount
   useEffect(() => {

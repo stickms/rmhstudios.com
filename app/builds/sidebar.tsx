@@ -2,18 +2,19 @@
 
 import Link from 'next/link';
 import { Gamepad2, AppWindow, Newspaper, Star } from 'lucide-react';
-import type { GameInfo } from '@/lib/games';
-import type { AppInfo } from '@/lib/apps';
 import type { NewsArticle } from '@/lib/news';
+import type { UserBuild, BuildCategory } from '@prisma/client';
+
+type FullBuild = UserBuild & { category?: BuildCategory | null };
 
 interface BuildsRightSidebarProps {
-    games: GameInfo[];
-    apps: AppInfo[];
+    games: FullBuild[];
+    apps: FullBuild[];
     newsArticles: Partial<NewsArticle>[];
 }
 
 export function BuildsRightSidebar({ games, apps, newsArticles }: BuildsRightSidebarProps) {
-    const featuredGames = games.filter(g => g.status === 'Playable').slice(0, 4);
+    const featuredGames = games.filter(g => g.featured).slice(0, 4);
 
     return (
         <div className="p-4 space-y-6">
@@ -27,11 +28,11 @@ export function BuildsRightSidebar({ games, apps, newsArticles }: BuildsRightSid
                     {featuredGames.map((game) => (
                         <Link
                             key={game.id}
-                            href={game.href}
+                            href={game.demoUrl || game.repoUrl || `/builds/${game.slug}`}
                             className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-site-surface-hover transition-colors group"
                         >
-                            <div className={`w-8 h-8 rounded-lg bg-linear-to-br ${game.gradient} flex items-center justify-center shrink-0`}>
-                                <Gamepad2 className="w-4 h-4 text-white" />
+                            <div className="w-8 h-8 rounded-lg bg-linear-to-br from-site-surface to-site-surface-hover flex items-center justify-center shrink-0">
+                                <Gamepad2 className="w-4 h-4 text-site-text-dim" />
                             </div>
                             <div className="min-w-0">
                                 <p className="text-sm font-medium text-site-text group-hover:text-site-accent transition-colors truncate">
@@ -54,11 +55,11 @@ export function BuildsRightSidebar({ games, apps, newsArticles }: BuildsRightSid
                     {apps.map((app) => (
                         <Link
                             key={app.id}
-                            href={app.href}
+                            href={app.demoUrl || app.repoUrl || `/builds/${app.slug}`}
                             className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-site-surface-hover transition-colors group"
                         >
-                            <div className={`w-8 h-8 rounded-lg bg-linear-to-br ${app.gradient} flex items-center justify-center shrink-0`}>
-                                <AppWindow className="w-4 h-4 text-white" />
+                            <div className="w-8 h-8 rounded-lg bg-linear-to-br from-site-surface to-site-surface-hover flex items-center justify-center shrink-0">
+                                <AppWindow className="w-4 h-4 text-site-text-dim" />
                             </div>
                             <div className="min-w-0">
                                 <p className="text-sm font-medium text-site-text group-hover:text-site-accent transition-colors truncate">
@@ -78,7 +79,7 @@ export function BuildsRightSidebar({ games, apps, newsArticles }: BuildsRightSid
                     Categories
                 </h2>
                 <div className="flex flex-wrap gap-2">
-                    {Array.from(new Set([...games, ...apps].flatMap(g => g.tags))).slice(0, 15).map(tag => (
+                    {Array.from(new Set([...games, ...apps].flatMap(g => Array.isArray(g.technologies) ? g.technologies as string[] : []))).slice(0, 15).map(tag => (
                         <span key={tag} className="text-xs px-2.5 py-1 rounded-full bg-site-bg border border-site-border text-site-text-muted">
                             {tag}
                         </span>

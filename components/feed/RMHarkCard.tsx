@@ -4,7 +4,7 @@ import type { FeedItem } from '@/lib/feed-types';
 import { RMHarkActions } from './RMHarkActions';
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Repeat2, MoreHorizontal, Heart, Repeat, Trash2, Share2 } from 'lucide-react';
+import { Repeat2, MoreHorizontal, Heart, Repeat, Trash2, Share2, BadgeCheck, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 import { RMHarkContent, extractFirstUrl } from './RMHarkContent';
 import { PollDisplay } from './PollDisplay';
@@ -123,48 +123,50 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
       onClick={handleCardClick}
     >
       {/* More menu — top right of card */}
-      <div className="absolute top-3 right-3 z-10" ref={menuRef}>
-        <button
-          onClick={() => setMenuOpen((v) => !v)}
-          className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface transition-colors"
-        >
-          <MoreHorizontal className="w-4 h-4" />
-        </button>
-        {menuOpen && (
-          <div className="absolute right-0 top-full mt-1 w-44 bg-site-bg border border-site-border rounded-xl shadow-xl py-1 z-30">
-            <button
-              onClick={() => { setMenuOpen(false); setEngagementModal('likes'); }}
-              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
-            >
-              <Heart className="w-4 h-4 text-site-text-dim" />
-              Liked by
-            </button>
-            <button
-              onClick={() => { setMenuOpen(false); setEngagementModal('reposts'); }}
-              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
-            >
-              <Repeat className="w-4 h-4 text-site-text-dim" />
-              reRMHark'd by
-            </button>
-            <button
-              onClick={handleShare}
-              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
-            >
-              <Share2 className="w-4 h-4 text-site-text-dim" />
-              Share
-            </button>
-            {isAuthor && (
+      {!item.deletedAt && (
+        <div className="absolute top-3 right-3 z-10" ref={menuRef}>
+          <button
+            onClick={(e) => { e.stopPropagation(); setMenuOpen((v) => !v); }}
+            className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface transition-colors"
+          >
+            <MoreHorizontal className="w-4 h-4" />
+          </button>
+          {menuOpen && (
+            <div className="absolute right-0 top-full mt-1 w-44 bg-site-bg border border-site-border rounded-xl shadow-xl py-1 z-30" onClick={(e) => e.stopPropagation()}>
               <button
-                onClick={handleDelete}
-                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-danger hover:bg-site-danger/10 transition-colors"
+                onClick={() => { setMenuOpen(false); setEngagementModal('likes'); }}
+                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
               >
-                <Trash2 className="w-4 h-4" />
-                Delete
+                <Heart className="w-4 h-4 text-site-text-dim" />
+                Liked by
               </button>
-            )}
-          </div>
-        )}
-      </div>
+              <button
+                onClick={() => { setMenuOpen(false); setEngagementModal('reposts'); }}
+                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
+              >
+                <Repeat className="w-4 h-4 text-site-text-dim" />
+                reRMHark'd by
+              </button>
+              <button
+                onClick={handleShare}
+                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
+              >
+                <Share2 className="w-4 h-4 text-site-text-dim" />
+                Share
+              </button>
+              {isAuthor && (
+                <button
+                  onClick={handleDelete}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-danger hover:bg-site-danger/10 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* reRMHark'd label */}
       {item.repostedBy && (
@@ -187,15 +189,23 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
           <div className="flex items-center gap-1.5 text-sm pr-6">
             {item.user ? (
               <Link href={`/profile/${item.user.id}`} className="flex items-center gap-1.5 min-w-0 hover:underline">
-                <span className="font-bold text-site-text truncate">
-                  {item.user.name || 'Unknown'}
+              <span className="font-bold text-site-text truncate">
+                {item.user.name || 'Unknown'}
+              </span>
+              {item.user.isVerified && (
+                <BadgeCheck className="w-4 h-4 text-emerald-500 shrink-0" />
+              )}
+              {item.user.isAdmin && (
+                <span title="Admin" className="inline-flex items-center shrink-0">
+                  <ShieldCheck className="w-4 h-4 text-site-accent" />
                 </span>
-                {item.user.username && (
-                  <span className="text-site-text-dim truncate">
-                    @{item.user.username}
-                  </span>
-                )}
-              </Link>
+              )}
+              {item.user.username && (
+                <span className="text-site-text-dim truncate">
+                  @{item.user.username}
+                </span>
+              )}
+            </Link>
             ) : (
               <span className="font-bold text-site-text truncate">
                 Unknown
@@ -235,6 +245,14 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
                     <span className="font-bold text-site-text truncate">
                       {item.original.user.name || 'Unknown'}
                     </span>
+                    {item.original.user.isVerified && (
+                      <BadgeCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                    )}
+                    {item.original.user.isAdmin && (
+                      <span title="Admin" className="inline-flex items-center shrink-0">
+                        <ShieldCheck className="w-3.5 h-3.5 text-site-accent" />
+                      </span>
+                    )}
                     {item.original.user.username && (
                       <span className="text-site-text-dim truncate">
                         @{item.original.user.username}
@@ -252,7 +270,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
           )}
 
           {/* Actions */}
-          <RMHarkActions item={item} />
+          {!item.deletedAt && <RMHarkActions item={item} />}
         </div>
       </div>
 

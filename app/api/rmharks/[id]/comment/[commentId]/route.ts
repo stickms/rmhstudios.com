@@ -26,11 +26,18 @@ export async function DELETE(
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    if (comment.userId !== session.user.id) {
+    const isAdmin = !!(session.user as any).isAdmin;
+    if (comment.userId !== session.user.id && !isAdmin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    await prisma.rMHarkComment.delete({ where: { id: commentId } });
+    await prisma.rMHarkComment.update({
+      where: { id: commentId },
+      data: {
+        deletedAt: new Date(),
+        deletedByAdmin: isAdmin && comment.userId !== session.user.id,
+      },
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

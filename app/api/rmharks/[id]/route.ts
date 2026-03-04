@@ -59,7 +59,7 @@ export async function GET(
     }
 
     let pollData;
-    if (rmhark.poll) {
+    if (rmhark.poll && !rmhark.deletedAt) {
       const totalVotes = rmhark.poll.options.reduce(
         (sum: number, o: any) => sum + (o._count?.votes ?? 0),
         0
@@ -80,11 +80,16 @@ export async function GET(
       };
     }
 
+    const isDeleted = !!rmhark.deletedAt;
+    const deletedMessage = rmhark.deletedByAdmin 
+      ? "[This RMHark was deleted by an admin]" 
+      : "[This RMHark was deleted by the user]";
+
     return NextResponse.json({
       id: rmhark.id,
       type: "rmhark",
       createdAt: rmhark.createdAt.toISOString(),
-      content: rmhark.content,
+      content: isDeleted ? deletedMessage : rmhark.content,
       user: resolveUser(rmhark.user),
       likeCount: rmhark._count.likes,
       commentCount: rmhark._count.comments,
@@ -92,8 +97,10 @@ export async function GET(
       viewCount: rmhark._count.views,
       liked: userId ? rmhark.likes.length > 0 : false,
       reposted: userId ? rmhark.reposts.length > 0 : false,
-      poll: pollData,
-      gifUrl: rmhark.gifUrl ?? undefined,
+      poll: isDeleted ? undefined : pollData,
+      gifUrl: isDeleted ? undefined : (rmhark.gifUrl ?? undefined),
+      deletedAt: rmhark.deletedAt?.toISOString() || null,
+      deletedByAdmin: rmhark.deletedByAdmin,
       original: rmhark.original
         ? {
             id: rmhark.original.id,
@@ -135,11 +142,18 @@ export async function DELETE(
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    if (rmhark.userId !== session.user.id) {
+    const isAdmin = !!(session.user as any).isAdmin;
+    if (rmhark.userId !== session.user.id && !isAdmin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    await prisma.rMHark.delete({ where: { id } });
+    await prisma.rMHark.update({
+      where: { id },
+      data: {
+        deletedAt: new Date(),
+        deletedByAdmin: isAdmin && rmhark.userId !== session.user.id,
+      },
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

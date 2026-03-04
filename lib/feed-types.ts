@@ -8,9 +8,11 @@ export type FeedItemType =
 
 export interface FeedItemUser {
   id: string;
-  name: string | null;
-  image: string | null;
-  username: string | null;
+  name?: string | null;
+  username?: string | null;
+  image?: string | null;
+  isVerified?: boolean;
+  isAdmin?: boolean;
 }
 
 export interface FeedPollOption {
@@ -45,6 +47,10 @@ export interface FeedItem {
   original?: FeedItem;
   repostedBy?: FeedItemUser;
   actualId?: string;
+
+  // Soft deletions
+  deletedAt?: string | null;
+  deletedByAdmin?: boolean;
 
   // Poll & GIF attachments
   poll?: FeedPoll;

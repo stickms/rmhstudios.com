@@ -4,8 +4,6 @@ import { prisma } from "@/lib/prisma";
 import { headers } from "next/headers";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { createRMHarkSchema } from "@/lib/rmhark-schema";
-import { games } from "@/lib/games";
-import { apps } from "@/lib/apps";
 import { getAllPosts } from "@/lib/blog";
 import { getAllNewsArticles } from "@/lib/news";
 import { getAllArticles } from "@/lib/research";
@@ -71,37 +69,32 @@ function deduplicateReposts(items: FeedItem[], windowSize = 2): FeedItem[] {
 async function getAnnouncementItems(filter: FeedFilter): Promise<FeedItem[]> {
   const items: FeedItem[] = [];
 
-  if (filter === "all" || filter === "game") {
-    for (const g of games) {
-      items.push({
-        id: `game:${g.id}`,
-        type: "game_announcement",
-        createdAt: "2025-01-01T00:00:00.000Z",
-        title: g.title,
-        description: g.description,
-        href: g.href,
-        imagePath: g.imagePath,
-        tags: g.tags,
-        gradient: g.gradient,
-        iconName: g.iconName,
-      });
-    }
-  }
+  if (filter === "all" || filter === "app" || filter === "game") {
+    const curatedBuilds = await prisma.userBuild.findMany({
+      where: {
+        isCurated: true,
+        status: "PUBLISHED",
+        visibility: { not: "PRIVATE" }
+      },
+      include: { category: true }
+    });
 
-  if (filter === "all" || filter === "app") {
-    for (const a of apps) {
-      if (a.hidden) continue;
+    for (const b of curatedBuilds) {
+      if ((filter !== "all" && filter !== "game") && b.category?.slug === "games") continue;
+      if ((filter !== "all" && filter !== "app") && b.category?.slug === "apps") continue;
+      
       items.push({
-        id: `app:${a.id}`,
-        type: "app_announcement",
+        id: `build:${b.id}`,
+        type: b.category?.slug === "games" ? "game_announcement" : "app_announcement",
         createdAt: "2025-01-01T00:00:00.000Z",
-        title: a.title,
-        description: a.description,
-        href: a.href,
-        imagePath: a.imagePath,
-        tags: a.tags,
-        gradient: a.gradient,
-        iconName: a.iconName,
+        title: b.title,
+        description: b.description,
+        href: b.demoUrl || b.repoUrl || `/builds/${b.slug}`,
+        imagePath: b.thumbnailUrl ?? undefined,
+        tags: Array.isArray(b.technologies) ? b.technologies as string[] : [],
+        // Gradient and iconName can stay as defaults or be derived from the DB later
+        gradient: 'from-site-surface to-site-surface-hover',
+        iconName: b.category?.slug === "games" ? "gamepad-2" : "app-window",
       });
     }
   }
@@ -239,46 +232,64 @@ export async function GET(req: NextRequest) {
         }),
       ]);
 
-      const mapOriginal = (o: typeof rmharks[0]["original"]) =>
-        o
-          ? {
-              id: o.id,
-              type: "rmhark" as const,
-              createdAt: o.createdAt.toISOString(),
-              content: o.content,
-              user: resolveUser(o.user),
-              likeCount: o._count.likes,
-              commentCount: o._count.comments,
-              repostCount: o._count.reposts,
-              viewCount: o._count.views,
-            }
-          : undefined;
+      const mapOriginal = (o: any) => {
+        if (!o) return undefined;
+        const isDeleted = !!o.deletedAt;
+        const deletedMessage = o.deletedByAdmin 
+          ? "[This RMHark was deleted by an admin]" 
+          : "[This RMHark was deleted by the user]";
+        return {
+          id: o.id,
+          type: "rmhark" as const,
+          createdAt: o.createdAt.toISOString(),
+          content: isDeleted ? deletedMessage : o.content,
+          user: resolveUser(o.user),
+          likeCount: o._count.likes,
+          commentCount: o._count.comments,
+          repostCount: o._count.reposts,
+          viewCount: o._count.views,
+          deletedAt: o.deletedAt?.toISOString() || null,
+          deletedByAdmin: o.deletedByAdmin,
+        };
+      };
 
-      const ownItems: FeedItem[] = rmharks.map((r: any) => ({
-        id: r.id,
-        type: "rmhark" as const,
-        createdAt: r.createdAt.toISOString(),
-        content: r.content,
-        user: resolveUser(r.user),
-        likeCount: r._count.likes,
-        commentCount: r._count.comments,
-        repostCount: r._count.reposts,
-        viewCount: r._count.views,
-        liked: r.likes.length > 0,
-        reposted: r.reposts.length > 0,
-        original: mapOriginal(r.original),
-        poll: mapPoll(r.poll),
-        gifUrl: r.gifUrl ?? undefined,
-      }));
+      const ownItems: FeedItem[] = rmharks.map((r: any) => {
+        const isDeleted = !!r.deletedAt;
+        const deletedMessage = r.deletedByAdmin 
+          ? "[This RMHark was deleted by an admin]" 
+          : "[This RMHark was deleted by the user]";
+        return {
+          id: r.id,
+          type: "rmhark" as const,
+          createdAt: r.createdAt.toISOString(),
+          content: isDeleted ? deletedMessage : r.content,
+          user: resolveUser(r.user),
+          likeCount: r._count.likes,
+          commentCount: r._count.comments,
+          repostCount: r._count.reposts,
+          viewCount: r._count.views,
+          liked: r.likes.length > 0,
+          reposted: r.reposts.length > 0,
+          original: mapOriginal(r.original),
+          poll: isDeleted ? undefined : mapPoll(r.poll),
+          gifUrl: isDeleted ? undefined : (r.gifUrl ?? undefined),
+          deletedAt: r.deletedAt?.toISOString() || null,
+          deletedByAdmin: r.deletedByAdmin,
+        };
+      });
 
       const repostItems: FeedItem[] = repostRecords.map((rp: any) => {
         const r = rp.rmhark;
+        const isDeleted = !!r.deletedAt;
+        const deletedMessage = r.deletedByAdmin 
+          ? "[This RMHark was deleted by an admin]" 
+          : "[This RMHark was deleted by the user]";
         return {
           id: `repost:${rp.id}`,
           type: "rmhark" as const,
           createdAt: rp.createdAt.toISOString(),
           actualId: r.id,
-          content: r.content,
+          content: isDeleted ? deletedMessage : r.content,
           user: resolveUser(r.user),
           likeCount: r._count.likes,
           commentCount: r._count.comments,
@@ -288,8 +299,10 @@ export async function GET(req: NextRequest) {
           reposted: r.reposts.length > 0,
           repostedBy: resolveUser(rp.user),
           original: mapOriginal(r.original),
-          poll: mapPoll(r.poll),
-          gifUrl: r.gifUrl ?? undefined,
+          poll: isDeleted ? undefined : mapPoll(r.poll),
+          gifUrl: isDeleted ? undefined : (r.gifUrl ?? undefined),
+          deletedAt: r.deletedAt?.toISOString() || null,
+          deletedByAdmin: r.deletedByAdmin,
         };
       });
 
@@ -361,46 +374,64 @@ export async function GET(req: NextRequest) {
         }),
       ]);
 
-      const mapOriginal = (o: any) =>
-        o
-          ? {
-              id: o.id,
-              type: "rmhark" as const,
-              createdAt: o.createdAt.toISOString(),
-              content: o.content,
-              user: resolveUser(o.user),
-              likeCount: o._count.likes,
-              commentCount: o._count.comments,
-              repostCount: o._count.reposts,
-              viewCount: o._count.views,
-            }
-          : undefined;
+      const mapOriginal = (o: any) => {
+        if (!o) return undefined;
+        const isDeleted = !!o.deletedAt;
+        const deletedMessage = o.deletedByAdmin 
+          ? "[This RMHark was deleted by an admin]" 
+          : "[This RMHark was deleted by the user]";
+        return {
+          id: o.id,
+          type: "rmhark" as const,
+          createdAt: o.createdAt.toISOString(),
+          content: isDeleted ? deletedMessage : o.content,
+          user: resolveUser(o.user),
+          likeCount: o._count.likes,
+          commentCount: o._count.comments,
+          repostCount: o._count.reposts,
+          viewCount: o._count.views,
+          deletedAt: o.deletedAt?.toISOString() || null,
+          deletedByAdmin: o.deletedByAdmin,
+        };
+      };
 
-      const ownItems: FeedItem[] = rmharks.map((r: any) => ({
-        id: r.id,
-        type: "rmhark" as const,
-        createdAt: r.createdAt.toISOString(),
-        content: r.content,
-        user: resolveUser(r.user),
-        likeCount: r._count.likes,
-        commentCount: r._count.comments,
-        repostCount: r._count.reposts,
-        viewCount: r._count.views,
-        liked: userId ? r.likes.length > 0 : false,
-        reposted: userId ? r.reposts.length > 0 : false,
-        original: mapOriginal(r.original),
-        poll: mapPoll(r.poll),
-        gifUrl: r.gifUrl ?? undefined,
-      }));
+      const ownItems: FeedItem[] = rmharks.map((r: any) => {
+        const isDeleted = !!r.deletedAt;
+        const deletedMessage = r.deletedByAdmin 
+          ? "[This RMHark was deleted by an admin]" 
+          : "[This RMHark was deleted by the user]";
+        return {
+          id: r.id,
+          type: "rmhark" as const,
+          createdAt: r.createdAt.toISOString(),
+          content: isDeleted ? deletedMessage : r.content,
+          user: resolveUser(r.user),
+          likeCount: r._count.likes,
+          commentCount: r._count.comments,
+          repostCount: r._count.reposts,
+          viewCount: r._count.views,
+          liked: userId ? r.likes.length > 0 : false,
+          reposted: userId ? r.reposts.length > 0 : false,
+          original: mapOriginal(r.original),
+          poll: isDeleted ? undefined : mapPoll(r.poll),
+          gifUrl: isDeleted ? undefined : (r.gifUrl ?? undefined),
+          deletedAt: r.deletedAt?.toISOString() || null,
+          deletedByAdmin: r.deletedByAdmin,
+        };
+      });
 
       const repostItems: FeedItem[] = repostRecords.map((rp: any) => {
         const r = rp.rmhark;
+        const isDeleted = !!r.deletedAt;
+        const deletedMessage = r.deletedByAdmin 
+          ? "[This RMHark was deleted by an admin]" 
+          : "[This RMHark was deleted by the user]";
         return {
           id: `repost:${rp.id}`,
           type: "rmhark" as const,
           createdAt: rp.createdAt.toISOString(),
           actualId: r.id,
-          content: r.content,
+          content: isDeleted ? deletedMessage : r.content,
           user: resolveUser(r.user),
           likeCount: r._count.likes,
           commentCount: r._count.comments,
@@ -410,8 +441,10 @@ export async function GET(req: NextRequest) {
           reposted: userId ? r.reposts.length > 0 : false,
           repostedBy: resolveUser(rp.user),
           original: mapOriginal(r.original),
-          poll: mapPoll(r.poll),
-          gifUrl: r.gifUrl ?? undefined,
+          poll: isDeleted ? undefined : mapPoll(r.poll),
+          gifUrl: isDeleted ? undefined : (r.gifUrl ?? undefined),
+          deletedAt: r.deletedAt?.toISOString() || null,
+          deletedByAdmin: r.deletedByAdmin,
         };
       });
 

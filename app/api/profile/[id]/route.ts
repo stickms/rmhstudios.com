@@ -29,6 +29,8 @@ export async function GET(
         name: true,
         username: true,
         image: true,
+        isVerified: true,
+        isAdmin: true,
         createdAt: true,
         profile: {
           select: {
@@ -75,6 +77,8 @@ export async function GET(
       name: resolved.name,
       username: user.username,
       image: resolved.image,
+      isVerified: user.isVerified,
+      isAdmin: user.isAdmin,
       createdAt: user.createdAt.toISOString(),
       bio: user.profile?.bio ?? null,
       location: user.profile?.location ?? null,

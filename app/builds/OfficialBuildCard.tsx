@@ -3,21 +3,25 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { ExternalLink } from 'lucide-react';
-import type { GameInfo } from '@/lib/games';
+import type { UserBuild, BuildCategory } from '@prisma/client';
 
 interface OfficialBuildCardProps {
-    build: GameInfo;
+    build: UserBuild & { category?: BuildCategory | null };
 }
 
 export function OfficialBuildCard({ build }: OfficialBuildCardProps) {
+    const cta = build.category?.slug === 'games' ? 'Play Now' : 'Open App';
+    const gradient = 'from-site-surface to-site-surface-hover'; // Fallback gradient if no crop data
+    const url = build.demoUrl || build.repoUrl || `/builds/${build.slug}`;
+
     return (
-        <Link href={build.href} className="block h-full">
+        <Link href={url} className="block h-full">
             <div className="group rounded-xl border border-site-border bg-site-surface hover:border-site-accent/50 transition-all overflow-hidden flex flex-col h-full">
                 {/* Thumbnail */}
-                {build.imagePath ? (
+                {build.thumbnailUrl ? (
                     <div className="aspect-video w-full overflow-hidden bg-site-bg relative">
                         <Image
-                            src={build.imagePath}
+                            src={build.thumbnailUrl}
                             alt={build.title}
                             fill
                             className="object-cover object-top group-hover:scale-105 transition-transform duration-300"
@@ -25,8 +29,8 @@ export function OfficialBuildCard({ build }: OfficialBuildCardProps) {
                         />
                     </div>
                 ) : (
-                    <div className={`aspect-video w-full bg-gradient-to-br ${build.gradient} flex items-center justify-center`}>
-                        <span className="text-4xl font-bold text-white/80">
+                    <div className={`aspect-video w-full bg-gradient-to-br ${gradient} flex items-center justify-center`}>
+                        <span className="text-4xl font-bold text-site-text/80">
                             {build.title}
                         </span>
                     </div>
@@ -39,7 +43,7 @@ export function OfficialBuildCard({ build }: OfficialBuildCardProps) {
                         <span className="px-2 py-0.5 rounded-full text-xs bg-site-accent-dim text-site-accent">
                             {build.status}
                         </span>
-                        {build.tags.slice(0, 3).map((tag) => (
+                        {(Array.isArray(build.technologies) ? build.technologies as string[] : []).slice(0, 3).map((tag) => (
                             <span
                                 key={tag}
                                 className="px-2 py-0.5 rounded-full text-xs bg-site-bg border border-site-border text-site-text-dim"
@@ -69,7 +73,7 @@ export function OfficialBuildCard({ build }: OfficialBuildCardProps) {
                             className="flex items-center gap-1 text-xs text-site-accent font-semibold hover:text-site-accent-hover transition-colors"
                         >
                             <ExternalLink className="w-3.5 h-3.5" />
-                            {build.cta}
+                            {cta}
                         </span>
                     </div>
                 </div>
