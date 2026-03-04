@@ -211,7 +211,7 @@ export const WW_SAFETY_QUIP = '(no answer submitted)';
 
 export const FF_TOTAL_QUESTIONS = 8;
 export const FF_QUESTION_REVEAL_SECONDS = 2;
-export const FF_ANSWER_DURATION_SECONDS = 15;
+export const FF_ANSWER_DURATION_SECONDS = 20;
 export const FF_ANSWER_REVEAL_SECONDS = 4;
 export const FF_PAUSE_SECONDS = 1;
 export const FF_POT_START_VALUE = 1000;
