@@ -10,7 +10,7 @@ export default function KowloonKnockoutPage() {
             style={{ touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none' }}
         >
             <div className="absolute top-3 left-3 z-50">
-                <Link href="/games">
+                <Link href="/builds">
                     <Button
                         variant="ghost"
                         size="sm"

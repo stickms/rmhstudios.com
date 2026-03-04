@@ -8,7 +8,7 @@ export default function LaundryPage() {
     <main className="fixed inset-0 bg-black flex flex-col overflow-hidden">
       {/* Back button */}
       <div className="absolute top-3 left-3 z-50">
-        <Link href="/games">
+        <Link href="/builds">
           <Button
             variant="ghost"
             size="sm"

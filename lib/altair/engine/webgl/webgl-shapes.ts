@@ -18,6 +18,7 @@ const FLOATS_PER_VERTEX = 6; // x, y, r, g, b, a
 // ---- Shaders ----------------------------------------------------------------
 
 const VERT_SRC = `
+  precision highp float;
   attribute vec2 aPos;
   attribute vec4 aColor;
   uniform mat4 uProj;

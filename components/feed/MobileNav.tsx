@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, AppWindow, Menu, Gamepad2, User, PenSquare, MessageCircle } from 'lucide-react';
+import { Home, Package, Menu, Hammer, User, PenSquare, MessageCircle } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { MobileSidebarDrawer } from './MobileSidebarDrawer';
 import { ComposeModal } from './ComposeModal';
@@ -21,9 +21,9 @@ export function MobileNav() {
     : '/login';
 
   const isHome = pathname === '/';
-  const isApps = pathname?.startsWith('/apps');
+  const isBuilds = pathname?.startsWith('/builds');
   const isMessages = pathname?.startsWith('/messages');
-  const isGames = pathname?.startsWith('/games');
+  const isUserBuilds = pathname?.startsWith('/user-builds');
   const isProfile = pathname?.startsWith('/profile');
 
   const tabClass = (active: boolean) =>
@@ -51,6 +51,18 @@ export function MobileNav() {
             <Home className="w-6 h-6" />
           </Link>
 
+          <Link href="/builds" className={tabClass(isBuilds)} aria-label="Official Builds">
+            <Package className="w-6 h-6" />
+          </Link>
+
+          <button
+            onClick={() => setDrawerOpen(true)}
+            className={tabClass(drawerOpen)}
+            aria-label="Menu"
+          >
+            <Menu className="w-6 h-6" />
+          </button>
+
           {session ? (
             <Link href="/messages" className={tabClass(isMessages)} aria-label="Messages">
               <div className="relative">
@@ -63,22 +75,10 @@ export function MobileNav() {
               </div>
             </Link>
           ) : (
-            <Link href="/apps" className={tabClass(isApps)} aria-label="Apps">
-              <AppWindow className="w-6 h-6" />
+            <Link href="/user-builds" className={tabClass(isUserBuilds)} aria-label="User Builds">
+              <Hammer className="w-6 h-6" />
             </Link>
           )}
-
-          <button
-            onClick={() => setDrawerOpen(true)}
-            className={tabClass(drawerOpen)}
-            aria-label="Menu"
-          >
-            <Menu className="w-6 h-6" />
-          </button>
-
-          <Link href="/games" className={tabClass(isGames)} aria-label="Games">
-            <Gamepad2 className="w-6 h-6" />
-          </Link>
 
           <Link href={profileHref} className={tabClass(isProfile)} aria-label="Profile">
             <User className="w-6 h-6" />

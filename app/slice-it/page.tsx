@@ -11,14 +11,14 @@ export default function SliceItPage() {
       <main className="fixed inset-0 slice-theme overflow-hidden flex flex-col bg-slice-bg transition-colors duration-300">
         {/* Header */}
         <div className="p-3 shrink-0 flex items-center gap-3 shadow-sm z-10 bg-slice-bg border-b border-slice-shadow-dark/30 transition-colors duration-300">
-          <Link href="/games">
+          <Link href="/builds">
             <Button
               variant="ghost"
               size="sm"
               className="text-slice-text-muted hover:text-slice-text hover:bg-slice-shadow-dark/20 transition-all rounded-lg text-xs"
             >
               <ArrowLeft className="w-3 h-3 mr-1" />
-              <span className="hidden sm:inline font-bold">Back to Games</span>
+              <span className="hidden sm:inline font-bold">Back to Builds</span>
             </Button>
           </Link>
           <span className="text-xs font-black text-slice-text-light uppercase tracking-widest hidden sm:inline">|</span>

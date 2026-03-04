@@ -141,7 +141,7 @@ export function TempleOfJoyGame({ initialSaveData }: { initialSaveData?: SaveDat
     e.preventDefault();
     saveToServer(useTempleStore.getState())
       .catch(() => { /* best-effort */ })
-      .finally(() => { window.location.href = '/games'; });
+      .finally(() => { window.location.href = '/builds'; });
   }, []);
 
   // ── beforeunload: confirm exit + auto-save ────────────────────────────────
@@ -177,12 +177,12 @@ export function TempleOfJoyGame({ initialSaveData }: { initialSaveData?: SaveDat
         }}
       >
         <a
-          href="/games"
+          href="/builds"
           onClick={handleBackToGames}
           className="w-24 text-sm opacity-70 hover:opacity-100 transition-opacity shrink-0"
           style={{ color: theme === 'dark' ? '#d4a847' : '#8b6914' }}
         >
-          ← Games
+          ← Builds
         </a>
         <h1
           className="flex-1 text-center text-xl font-bold tracking-wide"

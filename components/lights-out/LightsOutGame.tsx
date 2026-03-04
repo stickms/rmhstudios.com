@@ -186,13 +186,13 @@ export function LightsOutGame() {
 
     return (
         <div className="max-w-lg mx-auto px-4 py-8">
-            {/* Back to Games */}
+            {/* Back to Builds */}
             <Link
-                href="/games"
+                href="/builds"
                 className="inline-flex items-center gap-1.5 text-site-text-muted hover:text-site-text text-sm mb-6 transition-colors"
             >
                 <ArrowLeft className="w-4 h-4" />
-                Back to Games
+                Back to Builds
             </Link>
 
             {/* Header */}

@@ -42,7 +42,7 @@ export default function UserBuildsPage() {
       wide
       rightSidebar={<BuildSidebar className="p-4" />}
     >
-      <div className="px-4 pt-4">
+      <div className="px-4 pt-4 pb-12">
         <BuildFilters
           categories={categories}
           selectedCategory={selectedCategory}

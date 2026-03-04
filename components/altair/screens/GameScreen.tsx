@@ -172,6 +172,13 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
+    const handleContextLost = (e: Event) => {
+      e.preventDefault();
+      useAltairGameStore.setState({ phase: 'paused' });
+      addToast('WebGL context lost! Please reload the page.', 'error');
+    };
+    canvas.addEventListener('webglcontextlost', handleContextLost);
+
     // Create game world (handles class stats and starting weapon internally)
     const world = createGameWorld(canvas.width, canvas.height, selectedClassId, doubleTime);
     worldRef.current = world;
@@ -292,6 +299,7 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
       loop.stop();
       cleanupInput();
       window.removeEventListener('resize', resizeCanvas);
+      canvas.removeEventListener('webglcontextlost', handleContextLost);
     };
   }, [selectedClassId, spritesReady]); // eslint-disable-line react-hooks/exhaustive-deps
 

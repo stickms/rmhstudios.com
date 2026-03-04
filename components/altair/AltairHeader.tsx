@@ -2,7 +2,7 @@
  * AltairHeader — Shared header across all Altair screens.
  *
  * Adapts its content based on the current context:
- * - Menu: "← Games" back link, "ALTAIR" title, theme toggle
+ * - Menu: "← Builds" back link, "ALTAIR" title, theme toggle
  * - Game: game timer, "ALTAIR" title, settings gear
  * - Meta shop: "← Back" link, "Meta Shop" title, coin balance
  */
@@ -59,12 +59,12 @@ export default function AltairHeader({
         {hasBack && (
           isMenu && !onBack ? (
             <Link
-              href="/games"
+              href="/builds"
               className="text-sm font-medium text-(--altair-text-muted) hover:text-(--altair-accent) transition-colors"
             >
               <span className="flex items-center gap-1">
                 <ArrowLeft size={16} />
-                Games
+                Builds
               </span>
             </Link>
           ) : (

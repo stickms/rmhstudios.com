@@ -122,7 +122,7 @@ export default function RMHboxLanding() {
   return (
     <div className="flex h-screen flex-col">
       {/* Shared header — fixed at top */}
-      <RMHboxHeader backLabel='Games' backHref='/games' />
+      <RMHboxHeader backLabel='Builds' backHref='/builds' />
 
       {/* Scrollable content below header */}
       <div className="flex-1 overflow-y-auto p-4 md:p-8" style={{ scrollbarGutter: 'stable both-edges' }}>

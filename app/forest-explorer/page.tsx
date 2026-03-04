@@ -6,7 +6,7 @@ export default function ForestExplorerPage() {
     return (
         <main className="fixed inset-0 bg-gradient-to-b from-[#0a1a0e] via-[#0d200f] to-[#071208] flex flex-col overflow-hidden">
             <div className="absolute top-3 left-3 z-50">
-                <Link href="/games">
+                <Link href="/builds">
                     <Button
                         variant="ghost"
                         size="sm"

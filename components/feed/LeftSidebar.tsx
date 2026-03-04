@@ -6,8 +6,8 @@ import { useState, useEffect, useRef } from 'react';
 import { authClient } from '@/lib/auth-client';
 import { useSession } from '@/components/Providers';
 import {
-  Home, Gamepad2, AppWindow, Newspaper, Map, FlaskConical, BookOpen,
-  Palette, ChevronDown, LogOut, PenSquare, User, MessageCircle, Boxes,
+  Home, Package, Hammer, Newspaper, Map, FlaskConical, BookOpen,
+  Palette, ChevronDown, LogOut, PenSquare, User, MessageCircle,
 } from 'lucide-react';
 import { ComposeModal } from './ComposeModal';
 import { Button } from '@/components/ui/button';
@@ -16,9 +16,8 @@ import { useUnreadCount } from '@/lib/useUnreadCount';
 
 const navLinks = [
   { href: '/', label: 'Home', icon: Home },
-  { href: '/games', label: 'Games', icon: Gamepad2 },
-  { href: '/apps', label: 'Apps', icon: AppWindow },
-  { href: '/user-builds', label: 'Builds', icon: Boxes },
+  { href: '/builds', label: 'Official Builds', icon: Package },
+  { href: '/user-builds', label: 'User Builds', icon: Hammer },
   { href: '/news', label: 'News', icon: Newspaper },
   { href: '/research', label: 'Research', icon: FlaskConical },
   { href: '/blog', label: 'Blog', icon: BookOpen },
@@ -40,15 +39,13 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   const router = useRouter();
   const [showStyleMenu, setShowStyleMenu] = useState(false);
   const [composeOpen, setComposeOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const [mounted, setMounted] = useState(() => typeof window !== 'undefined');
   const { style, setStyle } = useThemeStore();
   const styleMenuRef = useRef<HTMLDivElement>(null);
   const [popoverPos, setPopoverPos] = useState({ bottom: 0, left: 0 });
 
   const { data: session, isPending } = useSession();
   const unreadCount = useUnreadCount(!!session);
-
-  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {

@@ -137,9 +137,9 @@ export function VersecraftGame({ isLoggedIn }: { isLoggedIn: boolean }) {
         fontFamily: 'var(--font-nunito, var(--font-inter, sans-serif))',
       }}
     >
-      {/* Back to games button */}
+      {/* Back to builds button */}
       <Link
-        href="/games"
+        href="/builds"
         className="absolute top-4 left-4 z-50 flex items-center gap-1.5 px-3 py-1.5 rounded text-xs transition-all hover:brightness-125"
         style={{
           backgroundColor: 'rgba(26, 21, 32, 0.8)',
@@ -149,7 +149,7 @@ export function VersecraftGame({ isLoggedIn }: { isLoggedIn: boolean }) {
         }}
       >
         <span style={{ color: '#c4a35a' }}>&larr;</span>
-        Back to Games
+        Back to Builds
       </Link>
       {renderScreen()}
     </div>

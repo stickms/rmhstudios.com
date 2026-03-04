@@ -42,9 +42,8 @@ export function Navbar() {
 
   const links = [
     { href: '/', label: 'Home' },
-    { href: '/games', label: 'Games' },
-    { href: '/apps', label: 'Apps' },
-    { href: '/user-builds', label: 'Builds' },
+    { href: '/builds', label: 'Official Builds' },
+    { href: '/user-builds', label: 'User Builds' },
     { href: '/news', label: 'News' },
     { href: '/research', label: 'Research' },
     { href: '/blog', label: 'Blog' },

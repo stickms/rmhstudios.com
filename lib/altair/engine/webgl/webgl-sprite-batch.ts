@@ -21,6 +21,7 @@ const FLOATS_PER_QUAD = FLOATS_PER_VERTEX * VERTICES_PER_QUAD;
 // ---- Shaders ----------------------------------------------------------------
 
 const VERT_SRC = `
+  precision highp float;
   attribute vec2 aPos;
   attribute vec2 aUV;
   attribute vec4 aColor;

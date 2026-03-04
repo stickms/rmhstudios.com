@@ -48,14 +48,14 @@ export default function RmhCodePage() {
     <div className="min-h-screen bg-site-bg relative">
       {/* Back Button */}
       <div className="absolute top-4 left-4 z-50">
-        <Link href="/apps">
+        <Link href="/builds">
           <Button
             variant="ghost"
             size="sm"
             className="text-zinc-500 hover:text-white flex items-center gap-1.5 bg-black/50 backdrop-blur-sm border border-zinc-800 text-xs sm:text-sm"
           >
             <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" />
-            <span className="hidden sm:inline">Back to Apps</span>
+            <span className="hidden sm:inline">Back to Builds</span>
           </Button>
         </Link>
       </div>

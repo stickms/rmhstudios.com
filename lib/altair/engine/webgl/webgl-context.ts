@@ -15,10 +15,12 @@ export function initWebGL(canvas: HTMLCanvasElement): WebGLRenderingContext {
     premultipliedAlpha: true,
     antialias: false,
     preserveDrawingBuffer: false,
-    powerPreference: 'high-performance',
+    powerPreference: 'default',
   };
 
-  const gl = canvas.getContext('webgl2', opts) || canvas.getContext('webgl', opts);
+  const gl = canvas.getContext('webgl2', opts) || 
+             canvas.getContext('webgl', opts) || 
+             (canvas.getContext('experimental-webgl', opts) as WebGLRenderingContext);
   if (!gl) {
     throw new Error('WebGL not supported');
   }
