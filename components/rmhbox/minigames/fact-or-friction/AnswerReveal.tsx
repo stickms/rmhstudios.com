@@ -20,12 +20,6 @@ export interface PlayerResult {
   isFirst: boolean;
   passed: boolean;
   timedOut: boolean;
-  /** Raw pot value at the time the player submitted. */
-  potValueAtSubmission?: number;
-  /** Breakdown: effective pot value (pot × multiplier), always non-negative. */
-  basePoints?: number;
-  /** Difficulty multiplier applied (e.g. 0.8, 1.0, 1.5). */
-  difficultyMultiplier?: number;
   /** Speed bonus awarded (+100 for first correct, 0 otherwise). */
   speedBonus?: number;
   /** Player's new total score after this question. */
@@ -96,7 +90,6 @@ export default function AnswerReveal({
         <h4 className="text-xs font-semibold uppercase text-(--rmhbox-text-muted)">Results</h4>
         {sorted.map((pr, i) => {
           const isMe = pr.userId === myPlayerId;
-          const hasBreakdown = pr.basePoints != null && pr.difficultyMultiplier != null;
           return (
             <motion.div
               key={pr.userId}
@@ -160,26 +153,8 @@ export default function AnswerReveal({
                 </motion.span>
               </div>
 
-              {/* Score breakdown + new total */}
-              {hasBreakdown && pr.scoreChange !== 0 && (
-                <div className="flex items-center justify-between pl-6 text-[11px] text-(--rmhbox-text-muted)">
-                  <span className="tabular-nums">
-                    {pr.potValueAtSubmission ?? pr.basePoints}
-                    {' × '}
-                    {pr.difficultyMultiplier}x
-                    {pr.speedBonus != null && pr.speedBonus > 0 && (
-                      <> + {pr.speedBonus} bonus</>
-                    )}
-                  </span>
-                  {pr.newTotalScore != null && (
-                    <span className="tabular-nums font-medium">
-                      Total: {pr.newTotalScore}
-                    </span>
-                  )}
-                </div>
-              )}
-              {/* Show total for pass/timeout (0 change) if newTotalScore available */}
-              {hasBreakdown && pr.scoreChange === 0 && pr.newTotalScore != null && (
+              {/* New total score */}
+              {pr.newTotalScore != null && (
                 <div className="flex items-center justify-end pl-6 text-[11px] text-(--rmhbox-text-muted)">
                   <span className="tabular-nums font-medium">
                     Total: {pr.newTotalScore}

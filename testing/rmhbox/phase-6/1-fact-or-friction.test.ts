@@ -134,37 +134,56 @@ describe('Fact or Friction Server Handler (§6.1)', () => {
       game.cleanup();
     });
 
-    it('should drain pot by FF_POT_TICK_VALUE each tick', () => {
+    it('should drain pot by scaled tick each tick', () => {
       const { game, broadcastLog } = createGame();
       game.start();
       advanceToAnswerPhase();
-      broadcastLog.length = 0;
 
+      // Capture the pot value at the start of the answer phase
+      const answerPhase = findActionBroadcasts(broadcastLog, 'FF_ANSWER_PHASE');
+      const startPot = answerPhase[0].data.potValue as number;
+      expect(startPot).toBeGreaterThan(0);
+
+      broadcastLog.length = 0;
       vi.advanceTimersByTime(FF_POT_TICK_INTERVAL_MS);
 
       const potTicks = findActionBroadcasts(broadcastLog, 'FF_POT_TICK');
       expect(potTicks.length).toBeGreaterThanOrEqual(1);
       const tickData = potTicks[0].data as Record<string, unknown>;
-      expect(tickData.potValue).toBe(FF_POT_START_VALUE - FF_POT_TICK_VALUE);
+      // Pot should have drained by exactly one scaled tick
+      expect(tickData.potValue).toBeLessThan(startPot);
+      expect(tickData.potValue).toBeGreaterThan(0);
 
       game.cleanup();
     });
 
-    it('should not drain pot below FF_POT_MIN_VALUE', () => {
+    it('should not drain pot below scaled minimum', () => {
       // Use a longer answer duration to allow enough ticks (at 1s intervals) to drain pot to minimum
       const ctxData = createMockContext(undefined, { gameSettings: { answerDuration: 30 } });
       const { game, broadcastLog } = createGame(ctxData);
       game.start();
       advanceToAnswerPhase();
+
+      // Capture the pot at answer phase start
+      const answerPhase = findActionBroadcasts(broadcastLog, 'FF_ANSWER_PHASE');
+      const startPot = answerPhase[0].data.potValue as number;
+
       broadcastLog.length = 0;
 
-      // Advance enough ticks to fully drain pot
-      const ticksToMin = Math.ceil((FF_POT_START_VALUE - FF_POT_MIN_VALUE) / FF_POT_TICK_VALUE);
-      vi.advanceTimersByTime(FF_POT_TICK_INTERVAL_MS * (ticksToMin + 5));
+      // Advance many ticks to fully drain pot
+      vi.advanceTimersByTime(FF_POT_TICK_INTERVAL_MS * 30);
 
       const potTicks = findActionBroadcasts(broadcastLog, 'FF_POT_TICK');
       const lastTickData = potTicks[potTicks.length - 1].data as Record<string, unknown>;
-      expect(lastTickData.potValue).toBe(FF_POT_MIN_VALUE);
+      const minPot = lastTickData.potValue as number;
+      // Minimum pot should be > 0 and < startPot
+      expect(minPot).toBeGreaterThan(0);
+      expect(minPot).toBeLessThan(startPot);
+      // Pot should have stopped draining (last two ticks equal)
+      if (potTicks.length >= 2) {
+        const secondLast = potTicks[potTicks.length - 2].data as Record<string, unknown>;
+        expect(secondLast.potValue).toBe(minPot);
+      }
 
       game.cleanup();
     });
@@ -508,7 +527,7 @@ describe('Fact or Friction Server Handler (§6.1)', () => {
         isFirst: boolean;
         scoreChange: number;
         speedBonus: number;
-        basePoints: number;
+        potValueAtSubmission: number;
         selectedIndex: number | null;
       }>;
 
@@ -522,8 +541,8 @@ describe('Fact or Friction Server Handler (§6.1)', () => {
       const firstCorrect = correctPlayers[0];
       expect(firstCorrect.isFirst).toBe(true);
       expect(firstCorrect.speedBonus).toBe(FF_SPEED_BONUS);
-      // scoreChange should be basePoints + speedBonus
-      expect(firstCorrect.scoreChange).toBe(firstCorrect.basePoints + firstCorrect.speedBonus);
+      // scoreChange should be potValue + speedBonus (pot already includes difficulty scaling)
+      expect(firstCorrect.scoreChange).toBe(firstCorrect.potValueAtSubmission + firstCorrect.speedBonus);
 
       // Incorrect players should have speedBonus = 0
       for (const inc of incorrectPlayers) {
@@ -573,7 +592,7 @@ describe('Fact or Friction Server Handler (§6.1)', () => {
   });
 
   describe('Answer Reveal Breakdown', () => {
-    it('should include breakdown fields in FF_ANSWER_REVEAL broadcast', () => {
+    it('should include result fields in FF_ANSWER_REVEAL broadcast', () => {
       const { game, broadcastLog } = createGame();
       game.start();
       advanceToAnswerPhase();
@@ -591,19 +610,19 @@ describe('Fact or Friction Server Handler (§6.1)', () => {
       expect(playerResults.length).toBe(4);
 
       for (const pr of playerResults) {
-        // Every result should have breakdown fields
-        expect(pr).toHaveProperty('basePoints');
-        expect(pr).toHaveProperty('difficultyMultiplier');
+        // Every result should have score and status fields
         expect(pr).toHaveProperty('speedBonus');
         expect(pr).toHaveProperty('newTotalScore');
         expect(pr).toHaveProperty('isFirst');
         expect(pr).toHaveProperty('passed');
         expect(pr).toHaveProperty('timedOut');
+        expect(pr).toHaveProperty('potValueAtSubmission');
 
-        expect(typeof pr.basePoints).toBe('number');
-        expect(typeof pr.difficultyMultiplier).toBe('number');
         expect(typeof pr.speedBonus).toBe('number');
         expect(typeof pr.newTotalScore).toBe('number');
+        // basePoints and difficultyMultiplier should NOT be exposed
+        expect(pr).not.toHaveProperty('basePoints');
+        expect(pr).not.toHaveProperty('difficultyMultiplier');
       }
 
       game.cleanup();
@@ -864,18 +883,25 @@ describe('Fact or Friction Server Handler (§6.1)', () => {
       // Should be exactly 3 ticks — NOT 6 (which would happen with 2 intervals)
       expect(potTicks.length).toBe(3);
 
-      // Verify pot drained at consistent rate
+      // Verify pot drained at consistent rate (pot now starts difficulty-scaled)
       const tData0 = potTicks[0].data as Record<string, unknown>;
+      const tData1 = potTicks[1].data as Record<string, unknown>;
       const tData2 = potTicks[2].data as Record<string, unknown>;
-      expect(tData0.potValue).toBe(FF_POT_START_VALUE - FF_POT_TICK_VALUE);
-      expect(tData2.potValue).toBe(FF_POT_START_VALUE - FF_POT_TICK_VALUE * 3);
+      const tick0 = tData0.potValue as number;
+      const tick1 = tData1.potValue as number;
+      const tick2 = tData2.potValue as number;
+      // Each tick should drain by the same amount
+      expect(tick0 - tick1).toBe(tick1 - tick2);
+      // Should be 3 decreasing values
+      expect(tick0).toBeGreaterThan(tick1);
+      expect(tick1).toBeGreaterThan(tick2);
 
       game.cleanup();
     });
   });
 
-  describe('Available Points (server-communicated)', () => {
-    it('should include availablePoints in FF_QUESTION broadcast', () => {
+  describe('Pot Value Scaling (difficulty-scaled)', () => {
+    it('should include potValue in FF_QUESTION broadcast', () => {
       const { game, broadcastLog } = createGame();
       game.start();
 
@@ -883,15 +909,17 @@ describe('Fact or Friction Server Handler (§6.1)', () => {
       expect(questionEvents.length).toBe(1);
 
       const qData = questionEvents[0].data;
-      expect(qData.availablePoints).toBeDefined();
-      expect(typeof qData.availablePoints).toBe('number');
-      expect(qData.maxAvailablePoints).toBeDefined();
-      expect(typeof qData.maxAvailablePoints).toBe('number');
+      expect(qData.potValue).toBeDefined();
+      expect(typeof qData.potValue).toBe('number');
+      expect(qData.potValue as number).toBeGreaterThan(0);
+      // Should NOT have availablePoints or maxAvailablePoints
+      expect(qData.availablePoints).toBeUndefined();
+      expect(qData.maxAvailablePoints).toBeUndefined();
 
       game.cleanup();
     });
 
-    it('should include availablePoints in FF_ANSWER_PHASE broadcast', () => {
+    it('should include potValue in FF_ANSWER_PHASE broadcast', () => {
       const { game, broadcastLog } = createGame();
       game.start();
       advanceToAnswerPhase();
@@ -900,14 +928,15 @@ describe('Fact or Friction Server Handler (§6.1)', () => {
       expect(answerPhase.length).toBe(1);
 
       const data = answerPhase[0].data;
-      expect(data.availablePoints).toBeDefined();
-      expect(typeof data.availablePoints).toBe('number');
-      expect(data.maxAvailablePoints).toBeDefined();
+      expect(data.potValue).toBeDefined();
+      expect(typeof data.potValue).toBe('number');
+      // Should NOT have availablePoints
+      expect(data.availablePoints).toBeUndefined();
 
       game.cleanup();
     });
 
-    it('should include availablePoints in FF_POT_TICK broadcast', () => {
+    it('should include potValue in FF_POT_TICK broadcast', () => {
       const { game, broadcastLog } = createGame();
       game.start();
       advanceToAnswerPhase();
@@ -919,58 +948,59 @@ describe('Fact or Friction Server Handler (§6.1)', () => {
       expect(potTicks.length).toBeGreaterThanOrEqual(1);
 
       const tickData = potTicks[0].data;
-      expect(tickData.availablePoints).toBeDefined();
-      expect(typeof tickData.availablePoints).toBe('number');
+      expect(tickData.potValue).toBeDefined();
+      expect(typeof tickData.potValue).toBe('number');
+      // Should NOT have availablePoints
+      expect(tickData.availablePoints).toBeUndefined();
 
       game.cleanup();
     });
 
-    it('should include availablePoints in getStateForPlayer', () => {
+    it('should include potValue in getStateForPlayer', () => {
       const { game } = createGame();
       game.start();
       advanceToAnswerPhase();
 
       const state = game.getStateForPlayer(MOCK_USERS.alice.userId) as Record<string, unknown>;
-      expect(state.availablePoints).toBeDefined();
-      expect(typeof state.availablePoints).toBe('number');
-      expect(state.maxAvailablePoints).toBeDefined();
-      expect(typeof state.maxAvailablePoints).toBe('number');
+      expect(state.potValue).toBeDefined();
+      expect(typeof state.potValue).toBe('number');
+      // Should NOT have availablePoints or maxAvailablePoints
+      expect(state.availablePoints).toBeUndefined();
+      expect(state.maxAvailablePoints).toBeUndefined();
 
       game.cleanup();
     });
 
-    it('should include availablePoints in getStateForSpectator', () => {
+    it('should include potValue in getStateForSpectator', () => {
       const { game } = createGame();
       game.start();
       advanceToAnswerPhase();
 
       const state = game.getStateForSpectator() as Record<string, unknown>;
-      expect(state.availablePoints).toBeDefined();
-      expect(typeof state.availablePoints).toBe('number');
-      expect(state.maxAvailablePoints).toBeDefined();
+      expect(state.potValue).toBeDefined();
+      expect(typeof state.potValue).toBe('number');
+      // Should NOT have availablePoints or maxAvailablePoints
+      expect(state.availablePoints).toBeUndefined();
+      expect(state.maxAvailablePoints).toBeUndefined();
 
       game.cleanup();
     });
 
-    it('should compute availablePoints as floor(potValue × difficulty multiplier)', () => {
+    it('should scale pot start value by difficulty multiplier', () => {
       const { game, broadcastLog } = createGame();
       game.start();
-      advanceToAnswerPhase();
-      broadcastLog.length = 0;
 
-      vi.advanceTimersByTime(FF_POT_TICK_INTERVAL_MS);
+      // Get the first question's difficulty from the FF_QUESTION broadcast
+      const questionEvents = findActionBroadcasts(broadcastLog, 'FF_QUESTION');
+      const qData = questionEvents[0].data;
+      const questionObj = qData.question as Record<string, unknown>;
+      const difficulty = questionObj.difficulty as string;
+      const potValue = qData.potValue as number;
 
-      const potTicks = findActionBroadcasts(broadcastLog, 'FF_POT_TICK');
-      expect(potTicks.length).toBeGreaterThanOrEqual(1);
-
-      const tickData = potTicks[0].data;
-      const potValue = tickData.potValue as number;
-      const availablePoints = tickData.availablePoints as number;
-
-      // availablePoints should equal floor(potValue × multiplier) for some valid multiplier
-      // Since we don't know the difficulty, just verify it's a valid product
-      expect(availablePoints).toBeGreaterThan(0);
-      expect(availablePoints).toBeLessThanOrEqual(potValue * 1.5); // max multiplier is hard: 1.5
+      // Pot should be FF_POT_START_VALUE × difficulty multiplier
+      const multipliers: Record<string, number> = { easy: 0.8, medium: 1.0, hard: 1.5 };
+      const expectedPot = Math.floor(FF_POT_START_VALUE * multipliers[difficulty]);
+      expect(potValue).toBe(expectedPot);
 
       game.cleanup();
     });
@@ -1035,6 +1065,8 @@ describe('Fact or Friction Server Handler (§6.1)', () => {
           expect(r).toHaveProperty('userId');
           expect(r).toHaveProperty('isCorrect');
           expect(r).toHaveProperty('scoreChange');
+          expect(r).toHaveProperty('speedBonus');
+          expect(r).toHaveProperty('newTotalScore');
           expect(r).toHaveProperty('isFirst');
           expect(r).toHaveProperty('passed');
           expect(r).toHaveProperty('timedOut');

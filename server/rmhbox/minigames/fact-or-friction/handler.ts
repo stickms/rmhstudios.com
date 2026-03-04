@@ -83,25 +83,20 @@ export class FactOrFrictionGame extends BaseMinigame {
     return 'shared-privileged';
   }
 
-  // ─── Available Points ─────────────────────────────────────────
+  // ─── Scaled Pot ────────────────────────────────────────────────
 
-  /** Compute the effective points available for the current question (pot × difficulty multiplier). */
-  private getAvailablePoints(): number {
+  /** Get the difficulty multiplier for the current question. */
+  private getDifficultyMultiplier(): number {
     const question = this.state.questions[this.state.currentQuestionIndex];
-    const multiplier = question
+    return question
       ? (DIFFICULTY_MULTIPLIERS[question.difficulty] ?? FF_MEDIUM_MULTIPLIER)
       : FF_MEDIUM_MULTIPLIER;
-    return Math.floor(this.state.potValue * multiplier);
   }
 
-  /** Compute the max available points for the current question (potStartValue × difficulty multiplier). */
-  private getMaxAvailablePoints(): number {
-    const question = this.state.questions[this.state.currentQuestionIndex];
+  /** Compute the scaled pot start value for the current question (potStartValue × difficulty multiplier). */
+  private getScaledPotStart(): number {
     const potStart = this.getSetting('potStartValue', FF_POT_START_VALUE);
-    const multiplier = question
-      ? (DIFFICULTY_MULTIPLIERS[question.difficulty] ?? FF_MEDIUM_MULTIPLIER)
-      : FF_MEDIUM_MULTIPLIER;
-    return Math.floor(potStart * multiplier);
+    return Math.floor(potStart * this.getDifficultyMultiplier());
   }
 
   // ─── Phase Transition Scheduling ──────────────────────────────
@@ -165,7 +160,6 @@ export class FactOrFrictionGame extends BaseMinigame {
 
     this.state.currentQuestionIndex++;
     this.state.playerAnswers = new Map();
-    this.state.potValue = this.getSetting('potStartValue', FF_POT_START_VALUE);
     this.state.potStartedAt = 0;
 
     const question = this.state.questions[this.state.currentQuestionIndex];
@@ -173,6 +167,10 @@ export class FactOrFrictionGame extends BaseMinigame {
       this.endGame();
       return;
     }
+
+    // Pot starts pre-scaled by difficulty multiplier so the player sees
+    // the actual available points directly (no hidden multiplier).
+    this.state.potValue = this.getScaledPotStart();
 
     this.state.phase = 'QUESTION_REVEAL';
     const now = Date.now();
@@ -197,9 +195,8 @@ export class FactOrFrictionGame extends BaseMinigame {
       difficulty: question.difficulty,
     });
 
-    // Broadcast question WITHOUT correctIndex; include potStartValue so
-    // the client can set the pot display max (may differ from default if
-    // the host configured a custom setting).
+    // Broadcast question WITHOUT correctIndex; potValue already includes
+    // the difficulty scaling so the client can display it directly.
     this.broadcastGameAction({
       type: 'FF_QUESTION',
       questionIndex: this.state.currentQuestionIndex,
@@ -211,9 +208,7 @@ export class FactOrFrictionGame extends BaseMinigame {
         difficulty: question.difficulty,
         source: question.source,
       },
-      potStartValue: this.state.potValue,
-      availablePoints: this.getAvailablePoints(),
-      maxAvailablePoints: this.getMaxAvailablePoints(),
+      potValue: this.state.potValue,
       duration: FF_QUESTION_REVEAL_SECONDS,
     });
 
@@ -244,23 +239,22 @@ export class FactOrFrictionGame extends BaseMinigame {
       type: 'FF_ANSWER_PHASE',
       duration: answerDuration,
       potValue: this.state.potValue,
-      availablePoints: this.getAvailablePoints(),
-      maxAvailablePoints: this.getMaxAvailablePoints(),
     });
 
     this.startPhaseTimer(answerDuration);
 
-    // Pot drain interval — use broadcastGameAction for consistency
+    // Pot drain interval — drain rate scales with difficulty multiplier
+    const scaledTick = Math.floor(FF_POT_TICK_VALUE * this.getDifficultyMultiplier());
+    const scaledMin = Math.floor(FF_POT_MIN_VALUE * this.getDifficultyMultiplier());
     this.potInterval = this.setInterval(() => {
       if (this.state.phase !== 'ANSWER') return;
       this.state.potValue = Math.max(
-        this.state.potValue - FF_POT_TICK_VALUE,
-        FF_POT_MIN_VALUE,
+        this.state.potValue - scaledTick,
+        scaledMin,
       );
       this.broadcastGameAction({
         type: 'FF_POT_TICK',
         potValue: this.state.potValue,
-        availablePoints: this.getAvailablePoints(),
       });
     }, FF_POT_TICK_INTERVAL_MS);
 
@@ -312,14 +306,11 @@ export class FactOrFrictionGame extends BaseMinigame {
     this.state.phaseStartedAt = now;
     this.state.phaseEndsAt = now + FF_ANSWER_REVEAL_SECONDS * 1000;
 
-    // Build player results with correctIndex included
-    const difficultyMultiplier = DIFFICULTY_MULTIPLIERS[question.difficulty] ?? FF_MEDIUM_MULTIPLIER;
+    // Build player results — potValue already includes difficulty scaling,
+    // so we send it directly. No separate basePoints/difficultyMultiplier.
     const playerResults: FFPlayerQuestionResult[] = [];
     for (const [userId, answer] of this.state.playerAnswers) {
       const player = this.context.players.get(userId);
-      const basePoints = answer.selectedIndex !== null
-        ? Math.floor(answer.potValueAtSubmission * difficultyMultiplier)
-        : 0;
       playerResults.push({
         userId,
         userName: player?.userName ?? 'Unknown',
@@ -328,8 +319,6 @@ export class FactOrFrictionGame extends BaseMinigame {
         isCorrect: answer.isCorrect,
         potValueAtSubmission: answer.potValueAtSubmission,
         scoreChange: answer.scoreChange,
-        basePoints,
-        difficultyMultiplier,
         speedBonus: answer.speedBonus,
         newTotalScore: this.state.playerScores.get(userId) ?? 0,
         isFirst: answer.userId === questionResult.fastestCorrectUserId,
@@ -338,7 +327,8 @@ export class FactOrFrictionGame extends BaseMinigame {
       });
     }
 
-    // Log answer_reveal with per-player results for history display
+    // Log answer_reveal with the same playerResults so history and
+    // broadcast are guaranteed consistent — no discrepancies.
     this.logAction('answer_reveal', {
       questionIndex: this.state.currentQuestionIndex,
       correctIndex: question.correctIndex,
@@ -346,14 +336,16 @@ export class FactOrFrictionGame extends BaseMinigame {
       incorrectCount: questionResult.incorrectCount,
       passCount: questionResult.passCount,
       fastestCorrectUserId: questionResult.fastestCorrectUserId,
-      playerResults: Array.from(this.state.playerAnswers.values()).map((answer) => ({
-        userId: answer.userId,
-        selectedIndex: answer.selectedIndex,
-        isCorrect: answer.isCorrect,
-        scoreChange: answer.scoreChange,
-        isFirst: answer.userId === questionResult.fastestCorrectUserId,
-        passed: answer.selectedIndex === null && !answer.timedOut,
-        timedOut: answer.timedOut,
+      playerResults: playerResults.map((pr) => ({
+        userId: pr.userId,
+        selectedIndex: pr.selectedIndex,
+        isCorrect: pr.isCorrect,
+        scoreChange: pr.scoreChange,
+        speedBonus: pr.speedBonus,
+        newTotalScore: pr.newTotalScore,
+        isFirst: pr.isFirst,
+        passed: pr.passed,
+        timedOut: pr.timedOut,
       })),
     });
 
@@ -479,8 +471,8 @@ export class FactOrFrictionGame extends BaseMinigame {
     const question = this.state.questions[this.state.currentQuestionIndex];
     const isCorrect = selectedIndex === question.correctIndex;
 
-    const difficultyMultiplier = DIFFICULTY_MULTIPLIERS[question.difficulty] ?? FF_MEDIUM_MULTIPLIER;
-    const effectivePot = Math.floor(this.state.potValue * difficultyMultiplier);
+    // Pot value already includes difficulty scaling — use directly.
+    const potValue = this.state.potValue;
 
     // Speed bonus: first correct answer for this question gets +FF_SPEED_BONUS
     let speedBonus = 0;
@@ -492,7 +484,7 @@ export class FactOrFrictionGame extends BaseMinigame {
     }
 
     const currentScore = this.state.playerScores.get(userId) ?? 0;
-    let scoreChange = isCorrect ? effectivePot + speedBonus : -effectivePot;
+    let scoreChange = isCorrect ? potValue + speedBonus : -potValue;
 
     // Apply score floor
     const enableScoreFloor = this.getSetting('enableScoreFloor', true);
@@ -508,7 +500,7 @@ export class FactOrFrictionGame extends BaseMinigame {
     const answer: PlayerAnswer = {
       userId,
       selectedIndex,
-      potValueAtSubmission: this.state.potValue,
+      potValueAtSubmission: potValue,
       submittedAt: Date.now(),
       isCorrect,
       scoreChange,
@@ -522,8 +514,7 @@ export class FactOrFrictionGame extends BaseMinigame {
       userId,
       selectedIndex,
       isCorrect,
-      potValue: this.state.potValue,
-      effectivePot,
+      potValue,
       speedBonus,
       scoreChange,
     });
@@ -683,8 +674,6 @@ export class FactOrFrictionGame extends BaseMinigame {
       currentQuestionIndex: this.state.currentQuestionIndex,
       totalQuestions: this.state.totalQuestions,
       potValue: this.state.potValue,
-      availablePoints: this.getAvailablePoints(),
-      maxAvailablePoints: this.getMaxAvailablePoints(),
       scores,
       phaseStartedAt: this.state.phaseStartedAt,
       phaseEndsAt: this.state.phaseEndsAt,
@@ -739,8 +728,6 @@ export class FactOrFrictionGame extends BaseMinigame {
       currentQuestionIndex: this.state.currentQuestionIndex,
       totalQuestions: this.state.totalQuestions,
       potValue: this.state.potValue,
-      availablePoints: this.getAvailablePoints(),
-      maxAvailablePoints: this.getMaxAvailablePoints(),
       scores,
       phaseStartedAt: this.state.phaseStartedAt,
       phaseEndsAt: this.state.phaseEndsAt,
