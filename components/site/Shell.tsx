@@ -43,9 +43,11 @@ export function Shell({ children }: { children: React.ReactNode }) {
         <>
           {/* Desktop/tablet: center sidebar + middle + optional right sidebar as one horizontal group */}
           <div className="hidden md:flex min-w-0 w-full justify-center">
-            <aside className="md:w-16 xl:w-64 shrink-0 self-start sticky top-0 h-screen border-r border-site-border bg-site-bg overflow-y-auto z-30 flex flex-col">
-              <LeftSidebar />
-            </aside>
+            <div className="md:w-16 xl:w-64 shrink-0 relative">
+              <aside className="fixed top-0 md:w-16 xl:w-64 h-screen border-r border-site-border bg-site-bg overflow-y-auto z-30 flex flex-col">
+                <LeftSidebar />
+              </aside>
+            </div>
             {children}
           </div>
 
