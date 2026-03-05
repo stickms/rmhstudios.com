@@ -3,7 +3,7 @@
 import { authClient } from "@/lib/auth-client";
 import { useState, useRef, Suspense, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { FaDiscord, FaGoogle } from "react-icons/fa";
+import { FaDiscord, FaGoogle, FaGithub } from "react-icons/fa";
 import { MdEmail, MdLock, MdPerson, MdCameraAlt } from "react-icons/md";
 import { ImageCropModal } from "@/components/feed/ImageCropModal";
 
@@ -94,6 +94,14 @@ function LoginForm() {
         setLoading(true);
         await authClient.signIn.social({
             provider: "google",
+            callbackURL,
+        });
+    };
+
+    const handleGitHubSignIn = async () => {
+        setLoading(true);
+        await authClient.signIn.social({
+            provider: "github",
             callbackURL,
         });
     };
@@ -205,6 +213,21 @@ function LoginForm() {
                             <>
                                 <FaGoogle className="text-xl" />
                                 <span>Continue with Google</span>
+                            </>
+                        )}
+                    </button>
+
+                    <button
+                        onClick={handleGitHubSignIn}
+                        disabled={loading}
+                        className="w-full flex items-center justify-center gap-3 bg-[#24292e] hover:bg-[#1a1e22] text-white py-3 rounded-xl font-bold transition-all disabled:opacity-50 hover:scale-[1.02] active:scale-[0.98]"
+                    >
+                        {loading ? (
+                            <span className="animate-pulse">Connecting...</span>
+                        ) : (
+                            <>
+                                <FaGithub className="text-xl" />
+                                <span>Continue with GitHub</span>
                             </>
                         )}
                     </button>
