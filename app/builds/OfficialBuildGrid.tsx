@@ -44,7 +44,6 @@ export function OfficialBuildGrid({ builds, initialLikedIds = [] }: OfficialBuil
     const [search, setSearch] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const [sort, setSort] = useState<SortOption>('default');
-    const [selectedTag, setSelectedTag] = useState<string | null>(null);
     const [likedIds, setLikedIds] = useState<Set<string>>(new Set(initialLikedIds));
     const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
     const [viewCounts, setViewCounts] = useState<Record<string, number>>({});
@@ -54,25 +53,6 @@ export function OfficialBuildGrid({ builds, initialLikedIds = [] }: OfficialBuil
         const timer = setTimeout(() => setDebouncedSearch(search), 200);
         return () => clearTimeout(timer);
     }, [search]);
-
-    // Collect all unique tags from builds
-    const allTags = useMemo(() => {
-        const tagSet = new Set<string>();
-        builds.forEach(b => {
-            const techs = Array.isArray(b.technologies) ? b.technologies as string[] : [];
-            techs.forEach(t => tagSet.add(t));
-        });
-        return Array.from(tagSet).sort();
-    }, [builds]);
-
-    // Collect all unique categories
-    const allCategories = useMemo(() => {
-        const cats = new Map<string, string>();
-        builds.forEach(b => {
-            if (b.category) cats.set(b.category.slug, b.category.name);
-        });
-        return Array.from(cats.entries()); // [slug, name]
-    }, [builds]);
 
     const filtered = useMemo(() => {
         let result = builds;
@@ -85,14 +65,6 @@ export function OfficialBuildGrid({ builds, initialLikedIds = [] }: OfficialBuil
                 return b.title.toLowerCase().includes(q) ||
                     b.description.toLowerCase().includes(q) ||
                     tags.some(t => t.toLowerCase().includes(q));
-            });
-        }
-
-        // Filter by tag
-        if (selectedTag) {
-            result = result.filter(b => {
-                const tags = Array.isArray(b.technologies) ? b.technologies as string[] : [];
-                return tags.some(t => t.toLowerCase() === selectedTag.toLowerCase());
             });
         }
 
@@ -112,7 +84,7 @@ export function OfficialBuildGrid({ builds, initialLikedIds = [] }: OfficialBuil
         }
 
         return result;
-    }, [builds, debouncedSearch, selectedTag, sort, likeCounts, viewCounts]);
+    }, [builds, debouncedSearch, sort, likeCounts, viewCounts]);
 
     const handleLike = async (id: string) => {
         const wasLiked = likedIds.has(id);
@@ -162,26 +134,19 @@ export function OfficialBuildGrid({ builds, initialLikedIds = [] }: OfficialBuil
         fetch(`/api/user-builds/${id}/view`, { method: 'POST' }).catch(() => {});
     };
 
-    const [tagOpen, setTagOpen] = useState(false);
     const [sortOpen, setSortOpen] = useState(false);
-    const tagRef = useRef<HTMLDivElement>(null);
     const sortRef = useRef<HTMLDivElement>(null);
 
     // Close dropdowns on outside click
     useEffect(() => {
         const handler = (e: MouseEvent) => {
-            if (tagRef.current && !tagRef.current.contains(e.target as Node)) setTagOpen(false);
             if (sortRef.current && !sortRef.current.contains(e.target as Node)) setSortOpen(false);
         };
         document.addEventListener('mousedown', handler);
         return () => document.removeEventListener('mousedown', handler);
     }, []);
 
-    const hasFilters = !!debouncedSearch || !!selectedTag || sort !== 'default';
-
-    const selectedTagLabel = selectedTag
-        ? allCategories.find(([slug]) => slug === selectedTag)?.[1] || selectedTag
-        : 'All Tags';
+    const hasFilters = !!debouncedSearch || sort !== 'default';
 
     const selectedSortLabel = SORT_OPTIONS.find(o => o.value === sort)?.label || 'Curated Order';
 
@@ -209,74 +174,10 @@ export function OfficialBuildGrid({ builds, initialLikedIds = [] }: OfficialBuil
                     )}
                 </div>
 
-                {/* Tag Filter Dropdown */}
-                {(allCategories.length > 0 || allTags.length > 0) && (
-                    <div className="relative" ref={tagRef}>
-                        <button
-                            onClick={() => { setTagOpen(!tagOpen); setSortOpen(false); }}
-                            className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-colors cursor-pointer whitespace-nowrap ${
-                                selectedTag
-                                    ? 'bg-site-accent/10 border-site-accent/30 text-site-accent'
-                                    : 'bg-site-surface border-site-border text-site-text hover:border-site-accent/50'
-                            }`}
-                        >
-                            <Filter className="w-3.5 h-3.5" />
-                            {selectedTagLabel}
-                            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${tagOpen ? 'rotate-180' : ''}`} />
-                        </button>
-                        {tagOpen && (
-                            <div className="absolute z-40 top-full right-0 mt-1.5 w-56 bg-site-surface border border-site-border rounded-xl shadow-lg overflow-hidden">
-                                <div className="max-h-72 overflow-y-auto py-1">
-                                    <button
-                                        onClick={() => { setSelectedTag(null); setTagOpen(false); }}
-                                        className={`w-full px-3 py-2 text-left text-sm transition-colors ${
-                                            !selectedTag ? 'bg-site-accent/10 text-site-accent' : 'text-site-text hover:bg-site-surface-hover'
-                                        }`}
-                                    >
-                                        All Tags
-                                    </button>
-                                    {allCategories.length > 0 && (
-                                        <>
-                                            <div className="px-3 py-1.5 text-xs font-semibold text-site-text-dim uppercase tracking-wider">Categories</div>
-                                            {allCategories.map(([slug, name]) => (
-                                                <button
-                                                    key={slug}
-                                                    onClick={() => { setSelectedTag(slug); setTagOpen(false); }}
-                                                    className={`w-full px-3 py-2 text-left text-sm transition-colors ${
-                                                        selectedTag === slug ? 'bg-site-accent/10 text-site-accent' : 'text-site-text hover:bg-site-surface-hover'
-                                                    }`}
-                                                >
-                                                    {name}
-                                                </button>
-                                            ))}
-                                        </>
-                                    )}
-                                    {allTags.length > 0 && (
-                                        <>
-                                            <div className="px-3 py-1.5 text-xs font-semibold text-site-text-dim uppercase tracking-wider">Technologies</div>
-                                            {allTags.map(tag => (
-                                                <button
-                                                    key={tag}
-                                                    onClick={() => { setSelectedTag(tag); setTagOpen(false); }}
-                                                    className={`w-full px-3 py-2 text-left text-sm transition-colors ${
-                                                        selectedTag === tag ? 'bg-site-accent/10 text-site-accent' : 'text-site-text hover:bg-site-surface-hover'
-                                                    }`}
-                                                >
-                                                    {tag}
-                                                </button>
-                                            ))}
-                                        </>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                )}
-
                 {/* Sort Dropdown */}
                 <div className="relative" ref={sortRef}>
                     <button
-                        onClick={() => { setSortOpen(!sortOpen); setTagOpen(false); }}
+                        onClick={() => { setSortOpen(!sortOpen); }}
                         className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-colors cursor-pointer whitespace-nowrap ${
                             sort !== 'default'
                                 ? 'bg-site-accent/10 border-site-accent/30 text-site-accent'
@@ -311,7 +212,7 @@ export function OfficialBuildGrid({ builds, initialLikedIds = [] }: OfficialBuil
                     <p className="text-site-text-muted">No builds found</p>
                     {hasFilters && (
                         <button
-                            onClick={() => { setSearch(''); setSelectedTag(null); setSort('default'); }}
+                            onClick={() => { setSearch(''); setSort('default'); }}
                             className="text-sm text-site-accent hover:text-site-accent-hover mt-2 transition-colors"
                         >
                             Clear filters

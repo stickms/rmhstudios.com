@@ -48,8 +48,14 @@ export function OfficialBuildCard({ build, onLike, onView }: OfficialBuildCardPr
         // Don't navigate if clicking an interactive child (button, link)
         const target = e.target as HTMLElement;
         if (target.closest('a, button')) return;
-        onView?.(build.id);
-        router.push(cardUrl);
+        
+        const isInternal = cardUrl.startsWith('/');
+        if (!isInternal) {
+            onView?.(build.id);
+            window.open(cardUrl, '_blank');
+        } else {
+            router.push(cardUrl);
+        }
     };
 
     return (
@@ -131,7 +137,9 @@ export function OfficialBuildCard({ build, onLike, onView }: OfficialBuildCardPr
 
                             <Link
                                 href={detailUrl}
-                                onClick={(e) => e.stopPropagation()}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                }}
                                 className="flex items-center justify-center gap-1 text-xs text-site-accent font-semibold w-full py-1.5 rounded-md border border-transparent hover:border-site-accent/30 hover:bg-site-accent/10 transition-all"
                             >
                                 Read More

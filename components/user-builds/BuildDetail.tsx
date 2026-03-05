@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { Heart, Eye, Github, ExternalLink, Calendar, ArrowLeft, Edit, Loader2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
@@ -35,8 +35,12 @@ export function BuildDetail({ build: initialBuild, backHref = '/user-builds' }: 
 
   const isOwner = session?.user?.id === build.user.id || !!(session?.user as any)?.isAdmin;
 
+  const viewTrackedRef = useRef(false);
+
   // Track view on mount
   useEffect(() => {
+    if (viewTrackedRef.current) return;
+    viewTrackedRef.current = true;
     fetch(`/api/user-builds/${build.id}/view`, { method: 'POST' }).catch(() => {});
   }, [build.id]);
 

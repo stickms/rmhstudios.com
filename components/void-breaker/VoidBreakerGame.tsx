@@ -180,8 +180,20 @@ export function VoidBreakerGame() {
         inputRef.current.mouseY = aim.y;
       }
     };
+    const onContextMenu = (e: MouseEvent) => {
+      e.preventDefault();
+      const inp = inputRef.current;
+      inp.up = false;
+      inp.down = false;
+      inp.left = false;
+      inp.right = false;
+    };
     canvas.addEventListener('mousemove', onMove);
-    return () => canvas.removeEventListener('mousemove', onMove);
+    canvas.addEventListener('contextmenu', onContextMenu);
+    return () => {
+      canvas.removeEventListener('mousemove', onMove);
+      canvas.removeEventListener('contextmenu', onContextMenu);
+    };
   }, []);
 
   // Auto-aim on mobile

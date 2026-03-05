@@ -1,10 +1,5 @@
-import { headers } from 'next/headers';
-import { auth } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
-import { PageLayout } from '@/components/feed/PageLayout';
-import { getSidebarData } from '@/lib/sidebar-data';
-import { BuildsRightSidebar } from './sidebar';
 import { CategoryPicker } from './CategoryPicker';
+import { prisma } from '@/lib/prisma';
 
 export const metadata = {
     title: 'Curated Builds | RMH Studios',
@@ -14,16 +9,6 @@ export const metadata = {
 export const revalidate = 60;
 
 export default async function BuildsPage() {
-    const { newsArticles } = await getSidebarData();
-
-    let currentUserId: string | null = null;
-    try {
-        const session = await auth.api.getSession({ headers: await headers() });
-        currentUserId = session?.user?.id ?? null;
-    } catch {
-        // Not logged in
-    }
-
     const curatedBuilds = await prisma.userBuild.findMany({
         where: {
             isCurated: true,
@@ -31,7 +16,6 @@ export default async function BuildsPage() {
         },
         orderBy: { position: 'asc' },
         include: {
-            user: true,
             category: true,
         },
     });
@@ -41,17 +25,11 @@ export default async function BuildsPage() {
     const apps = visibleBuilds.filter(b => b.category?.slug === 'apps');
 
     return (
-        <PageLayout
-            title="Curated Builds"
-            wide
-            rightSidebar={<BuildsRightSidebar games={games} apps={apps} newsArticles={newsArticles} />}
-        >
-            <div className="px-4 pt-4 pb-12">
-                <p className="text-site-text-muted text-sm mb-8">
-                    Our full collection of games, apps, and digital experiences — all built by the RMH team.
-                </p>
-                <CategoryPicker entertainmentCount={games.length} appCount={apps.length} />
-            </div>
-        </PageLayout>
+        <div className="px-4 pt-4 pb-12">
+            <p className="text-site-text-muted text-sm mb-8">
+                Our full collection of games, apps, and digital experiences — all built by the RMH team.
+            </p>
+            <CategoryPicker entertainmentCount={games.length} appCount={apps.length} />
+        </div>
     );
 }
