@@ -26,11 +26,13 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
   const updateItem = onUpdate ?? storeUpdate;
   const actualId = item.actualId ?? item.id;
 
-  const handleCommentClick = () => {
+  const handleCommentClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
     router.push(`/@${item.user?.handle || item.user?.id}/post/${actualId}`);
   };
 
-  const toggleLike = async () => {
+  const toggleLike = async (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (!session) return;
     const wasLiked = item.liked;
     updateItem(item.id, {
@@ -48,7 +50,8 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
     }
   };
 
-  const toggleRepost = async () => {
+  const toggleRepost = async (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (!session) return;
     const wasReposted = item.reposted;
     updateItem(item.id, {

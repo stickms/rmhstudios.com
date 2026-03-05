@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { headers } from "next/headers";
 import { userDisplaySelect, resolveUser } from "@/lib/user-display";
+import { feedEventBus } from "@/lib/feed-sse";
 
 export const runtime = "nodejs";
 
@@ -147,12 +148,28 @@ export async function DELETE(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    const deletedByAdmin = isAdmin && rmhark.userId !== session.user.id;
+    const deletedAt = new Date();
+
     await prisma.rMHark.update({
       where: { id },
-      data: {
-        deletedAt: new Date(),
-        deletedByAdmin: isAdmin && rmhark.userId !== session.user.id,
+      data: { deletedAt, deletedByAdmin },
+    });
+
+    // Broadcast deletion via SSE
+    const deletedMessage = deletedByAdmin
+      ? "[This RMHark was deleted by an admin]"
+      : "[This RMHark was deleted by the user]";
+    feedEventBus.publish({
+      type: "rmhark.deleted",
+      rmharkId: id,
+      payload: {
+        id,
+        deletedAt: deletedAt.toISOString(),
+        deletedByAdmin,
+        content: deletedMessage,
       },
+      timestamp: deletedAt.toISOString(),
     });
 
     return NextResponse.json({ success: true });

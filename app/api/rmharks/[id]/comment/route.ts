@@ -5,6 +5,7 @@ import { headers } from "next/headers";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { createCommentSchema } from "@/lib/rmhark-schema";
 import { userDisplaySelect, resolveUser } from "@/lib/user-display";
+import { feedEventBus } from "@/lib/feed-sse";
 
 export const runtime = "nodejs";
 
@@ -127,6 +128,15 @@ export async function POST(
       include: {
         user: { select: userDisplaySelect },
       },
+    });
+
+    // Broadcast comment count update via SSE
+    const commentCount = await prisma.rMHarkComment.count({ where: { rmheetId: id } });
+    feedEventBus.publish({
+      type: "rmhark.commented",
+      rmharkId: id,
+      payload: { id, commentCount },
+      timestamp: new Date().toISOString(),
     });
 
     return NextResponse.json({

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { headers } from "next/headers";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { userDisplaySelect, resolveUser } from "@/lib/user-display";
+import { feedEventBus } from "@/lib/feed-sse";
 
 export const runtime = "nodejs";
 
@@ -60,9 +61,27 @@ export async function POST(
 
     if (existingLike) {
       await prisma.rMHarkLike.delete({ where: { id: existingLike.id } });
+
+      const count = await prisma.rMHarkLike.count({ where: { rmheetId: id } });
+      feedEventBus.publish({
+        type: "rmhark.unliked",
+        rmharkId: id,
+        payload: { id, likeCount: count },
+        timestamp: new Date().toISOString(),
+      });
+
       return NextResponse.json({ success: true, liked: false });
     } else {
       await prisma.rMHarkLike.create({ data: { rmheetId: id, userId } });
+
+      const count = await prisma.rMHarkLike.count({ where: { rmheetId: id } });
+      feedEventBus.publish({
+        type: "rmhark.liked",
+        rmharkId: id,
+        payload: { id, likeCount: count },
+        timestamp: new Date().toISOString(),
+      });
+
       return NextResponse.json({ success: true, liked: true });
     }
   } catch (error) {

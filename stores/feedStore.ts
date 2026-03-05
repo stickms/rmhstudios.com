@@ -68,7 +68,11 @@ export const useFeedStore = create<FeedState>((set, get) => ({
   },
 
   prependItem: (item) => {
-    set((state) => ({ items: [item, ...state.items] }));
+    set((state) => {
+      // Skip if item already exists (prevents SSE + local double-add)
+      if (state.items.some((i) => i.id === item.id)) return state;
+      return { items: [item, ...state.items] };
+    });
   },
 
   updateItem: (id, updates) => {

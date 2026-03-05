@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { headers } from "next/headers";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { userDisplaySelect, resolveUser } from "@/lib/user-display";
+import { feedEventBus } from "@/lib/feed-sse";
 
 export const runtime = "nodejs";
 
@@ -60,9 +61,27 @@ export async function POST(
 
     if (existingRepost) {
       await prisma.rMHarkRepost.delete({ where: { id: existingRepost.id } });
+
+      const count = await prisma.rMHarkRepost.count({ where: { rmheetId: id } });
+      feedEventBus.publish({
+        type: "rmhark.unreposted",
+        rmharkId: id,
+        payload: { id, repostCount: count },
+        timestamp: new Date().toISOString(),
+      });
+
       return NextResponse.json({ success: true, reposted: false });
     } else {
       await prisma.rMHarkRepost.create({ data: { rmheetId: id, userId } });
+
+      const count = await prisma.rMHarkRepost.count({ where: { rmheetId: id } });
+      feedEventBus.publish({
+        type: "rmhark.reposted",
+        rmharkId: id,
+        payload: { id, repostCount: count },
+        timestamp: new Date().toISOString(),
+      });
+
       return NextResponse.json({ success: true, reposted: true });
     }
   } catch (error) {

@@ -6,6 +6,7 @@ import { FeedTabs } from './FeedTabs';
 import { ComposeBox } from './ComposeBox';
 import { FeedList } from './FeedList';
 import { useFeedStore } from '@/stores/feedStore';
+import { useFeedSSE } from '@/hooks/useFeedSSE';
 import { authClient } from '@/lib/auth-client';
 import Link from 'next/link';
 
@@ -17,6 +18,9 @@ export function FeedColumn() {
   const [searchInput, setSearchInput] = useState(search ?? '');
   const searchRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  // Connect to real-time feed SSE stream
+  useFeedSSE();
 
   const handleSearchChange = (value: string) => {
     setSearchInput(value);

@@ -9,6 +9,7 @@ import { getAllNewsArticles } from "@/lib/news";
 import { getAllArticles } from "@/lib/research";
 import type { FeedItem, FeedPoll, FeedFilter } from "@/lib/feed-types";
 import { userDisplaySelect, resolveUser } from "@/lib/user-display";
+import { feedEventBus } from "@/lib/feed-sse";
 
 export const runtime = "nodejs";
 
@@ -621,6 +622,14 @@ export async function POST(req: NextRequest) {
       poll: pollData,
       gifUrl: rmhark.gifUrl ?? undefined,
     };
+
+    // Broadcast to all SSE clients
+    feedEventBus.publish({
+      type: "rmhark.created",
+      rmharkId: item.id,
+      payload: item,
+      timestamp: item.createdAt,
+    });
 
     return NextResponse.json(item, { status: 201 });
   } catch (error) {
