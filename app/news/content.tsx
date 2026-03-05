@@ -9,7 +9,7 @@ import type { NewsArticle } from '@/lib/news';
 interface NewsPageContentProps {
     articles: Partial<NewsArticle>[];
     featured: Partial<NewsArticle>[];
-    rightSidebar: React.ReactNode;
+    rightSidebar?: React.ReactNode;
 }
 
 export function NewsPageContent({ articles, featured, rightSidebar }: NewsPageContentProps) {

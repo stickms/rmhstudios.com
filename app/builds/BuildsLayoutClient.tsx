@@ -11,7 +11,7 @@ export function BuildsLayoutClient({
   rightSidebar,
 }: {
   children: ReactNode;
-  rightSidebar: ReactNode;
+  rightSidebar?: ReactNode;
 }) {
   const pathname = usePathname();
 

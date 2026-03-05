@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, ChevronDown, X, User, SlidersHorizontal } from 'lucide-react';
+import Link from 'next/link';
+import { Search, ChevronDown, X, User, Plus } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import type { BuildCategory, BuildSortOption } from '@/lib/user-builds-types';
 
@@ -36,19 +37,18 @@ export function BuildFilters({
 }: BuildFiltersProps) {
   const { data: session } = useSession();
   const [search, setSearch] = useState(searchQuery);
-  const [filtersOpen, setFiltersOpen] = useState(false);
   const [showCategories, setShowCategories] = useState(false);
   const [showSort, setShowSort] = useState(false);
-
-  const hasActiveFilters = !!selectedCategory || selectedSort !== 'recent' || myBuilds;
 
   // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
-      onSearchChange(search);
+      if (search !== searchQuery) {
+        onSearchChange(search);
+      }
     }, 300);
     return () => clearTimeout(timer);
-  }, [search, onSearchChange]);
+  }, [search, searchQuery, onSearchChange]);
 
   const selectedCategoryData = categories.find((c) => c.id === selectedCategory);
   const selectedSortData = SORT_OPTIONS.find((s) => s.value === selectedSort);
@@ -75,23 +75,18 @@ export function BuildFilters({
             </button>
           )}
         </div>
-        <button
-          onClick={() => setFiltersOpen(!filtersOpen)}
-          className={`shrink-0 p-2 rounded-lg border transition-colors ${
-            filtersOpen || hasActiveFilters
-              ? 'text-violet-400 bg-violet-500/10 border-violet-500/40'
-              : 'text-site-text-muted bg-site-surface border-site-border hover:text-site-text hover:border-violet-500/50'
-          }`}
-          title="Toggle filters"
+        <Link
+          href="/user-builds/submit"
+          className="flex items-center gap-1.5 shrink-0 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium transition-colors"
         >
-          <SlidersHorizontal className="w-5 h-5" />
-        </button>
+          <Plus className="w-4 h-4" />
+          <span className="hidden sm:inline">Submit</span>
+        </Link>
       </div>
 
-      {/* Filter controls (collapsible) */}
-      {filtersOpen && (
-        <div className="flex flex-wrap gap-3 items-center">
-          {/* Category Filter */}
+      {/* Filter controls */}
+      <div className="flex flex-wrap gap-3 items-center">
+        {/* Category Filter */}
           <div className="relative">
             <button
               onClick={() => setShowCategories(!showCategories)}
@@ -179,19 +174,19 @@ export function BuildFilters({
 
           {/* My Builds Toggle */}
           {session?.user && (
-            <label className="flex items-center gap-2 cursor-pointer ml-auto px-4 py-2 rounded-lg bg-site-surface border border-site-border text-sm text-site-text hover:border-violet-500/50 transition-colors">
-              <input
-                type="checkbox"
-                checked={myBuilds}
-                onChange={(e) => onMyBuildsChange(e.target.checked)}
-                className="w-4 h-4 rounded border-site-border text-violet-500 bg-site-bg focus:ring-violet-500/50"
-              />
-              <User className="w-4 h-4 text-violet-400" />
+            <button
+              onClick={() => onMyBuildsChange(!myBuilds)}
+              className={`flex items-center gap-2 ml-auto px-4 py-2 rounded-lg border text-sm transition-colors ${
+                myBuilds
+                  ? 'bg-violet-500/10 border-violet-500/40 text-violet-400'
+                  : 'bg-site-surface border-site-border text-site-text hover:border-violet-500/50'
+              }`}
+            >
+              <User className="w-4 h-4" />
               <span>My Builds</span>
-            </label>
+            </button>
           )}
         </div>
-      )}
     </div>
   );
 }

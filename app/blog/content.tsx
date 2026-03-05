@@ -8,7 +8,7 @@ import type { Post } from '@/lib/blog';
 
 interface BlogPageContentProps {
     posts: Partial<Post>[];
-    rightSidebar: React.ReactNode;
+    rightSidebar?: React.ReactNode;
 }
 
 export function BlogPageContent({ posts, rightSidebar }: BlogPageContentProps) {

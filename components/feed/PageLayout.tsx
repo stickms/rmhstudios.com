@@ -59,11 +59,13 @@ export function PageLayout({
         </div>
       </AnimatedMain>
 
-      {/* Right Sidebar - hidden below lg */}
-      {rightSidebar && (
+      {/* Right Sidebar or Spacer - hidden below lg */}
+      {rightSidebar ? (
         <aside className="hidden lg:block w-80 shrink-0 self-start">
           {rightSidebar}
         </aside>
+      ) : (
+        <div className={`hidden lg:block ${wide ? 'w-[168px]' : 'w-80'} shrink-0`} />
       )}
     </>
   );

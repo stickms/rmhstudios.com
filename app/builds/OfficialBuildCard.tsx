@@ -4,6 +4,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Heart, MessageCircle, Eye, ArrowRight } from 'lucide-react';
+import * as Popover from '@radix-ui/react-popover';
+import { useState, useRef } from 'react';
 export interface OfficialBuild {
     id: string;
     slug: string;
@@ -47,8 +49,8 @@ export function OfficialBuildCard({ build, onLike, onView }: OfficialBuildCardPr
     const handleCardClick = (e: React.MouseEvent) => {
         // Don't navigate if clicking an interactive child (button, link)
         const target = e.target as HTMLElement;
-        if (target.closest('a, button')) return;
-        
+        if (target.closest('button, a')) return;
+
         const isInternal = cardUrl.startsWith('/');
         if (!isInternal) {
             onView?.(build.id);
@@ -58,9 +60,26 @@ export function OfficialBuildCard({ build, onLike, onView }: OfficialBuildCardPr
         }
     };
 
+    const [isHovered, setIsHovered] = useState(false);
+
+    const handleMouseEnter = () => {
+        setIsHovered(true);
+    };
+
+    const handleMouseLeave = () => {
+        setIsHovered(false);
+    };
+
     return (
-        <div className="block h-full cursor-pointer" onClick={handleCardClick}>
-            <div className="group relative rounded-xl border border-site-border bg-site-surface hover:border-site-accent/50 transition-all overflow-hidden h-full min-h-[340px]">
+        <Popover.Root open={isHovered}>
+            <Popover.Trigger asChild>
+                <div 
+                    className="block h-full cursor-pointer" 
+                    onClick={handleCardClick}
+                    onMouseEnter={handleMouseEnter}
+                    onMouseLeave={handleMouseLeave}
+                >
+                    <div className="group relative rounded-xl border border-site-border bg-site-surface hover:border-site-accent/50 transition-all overflow-hidden h-full min-h-[340px]">
                 {/* Thumbnail */}
                 {build.thumbnailUrl ? (
                     <div className="absolute inset-0 w-full h-full overflow-hidden bg-site-bg">
@@ -71,7 +90,7 @@ export function OfficialBuildCard({ build, onLike, onView }: OfficialBuildCardPr
                             className="object-cover group-hover:scale-105 transition-transform duration-300"
                             sizes="(max-width: 768px) 100vw, 50vw"
                         />
-                        <div className="absolute inset-0 bg-linear-to-t from-black/65 via-black/30 to-black/10" />
+                        <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/40 to-black/10 transition-opacity duration-300 group-hover:from-black/90 group-hover:via-black/60" />
                     </div>
                 ) : (
                     <div className={`absolute inset-0 w-full h-full bg-linear-to-br ${gradient} flex items-center justify-center`}>
@@ -81,74 +100,71 @@ export function OfficialBuildCard({ build, onLike, onView }: OfficialBuildCardPr
                     </div>
                 )}
 
-                <div className="absolute left-3 right-3 bottom-3 z-10">
-                    <h3 className="font-semibold text-white line-clamp-1 drop-shadow-sm">
+                <div className="absolute left-0 right-0 bottom-0 z-10 p-4 pt-12 flex flex-col justify-end bg-gradient-to-t from-black/80 via-black/40 to-transparent">
+                    <h3 className="font-semibold text-white line-clamp-1 drop-shadow-sm mb-1 group-hover:-translate-y-1 transition-transform duration-300">
                         {build.title}
                     </h3>
-                </div>
+                    
+                    {/* Expandable Section on Hover */}
+                    <div className="grid grid-rows-[0fr] group-hover:grid-rows-[1fr] transition-[grid-template-rows] duration-300 ease-out">
+                        <div className="overflow-hidden">
+                            <div className="pt-2 flex flex-col gap-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100">
+                                <div className="flex items-center justify-between text-xs text-white/80">
+                                    <button
+                                        onClick={handleLike}
+                                        className={`flex items-center gap-1.5 transition-colors ${
+                                            build.liked ? 'text-red-400' : 'hover:text-red-400'
+                                        }`}
+                                    >
+                                        <Heart className={`w-4 h-4 ${build.liked ? 'fill-current' : ''}`} />
+                                        <span>{formatCount(build.likeCount)}</span>
+                                    </button>
+                                    <button 
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            router.push(detailUrl);
+                                        }}
+                                        className="flex items-center gap-1.5 hover:text-blue-400 transition-colors"
+                                    >
+                                        <MessageCircle className="w-4 h-4" />
+                                        <span>{formatCount(build.commentCount)}</span>
+                                    </button>
+                                    <span className="flex items-center gap-1.5">
+                                        <Eye className="w-4 h-4" />
+                                        <span>{formatCount(build.viewCount)}</span>
+                                    </span>
+                                </div>
 
-                {/* Hover Pop-up */}
-                <div className="pointer-events-none absolute inset-0 z-20 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 group-focus-within:opacity-100 group-focus-within:translate-y-0 transition-all duration-200">
-                    <div className="absolute inset-2 rounded-xl border border-site-accent/30 bg-site-surface/95 backdrop-blur-sm p-4 flex flex-col">
-                        <h3 className="font-semibold text-site-text line-clamp-1 mb-1">
-                            {build.title}
-                        </h3>
-
-                        <p className="text-sm text-site-text-muted line-clamp-4 mb-3">
-                            {build.description}
-                        </p>
-
-                        <div className="flex items-center gap-2 mb-4 flex-wrap">
-                            {build.category && (
-                                <span className="px-2 py-0.5 rounded-full text-xs bg-site-accent-dim text-site-accent">
-                                    {build.category.name}
-                                </span>
-                            )}
-                            {build.technologies.slice(0, 3).map((tag) => (
-                                <span
-                                    key={tag}
-                                    className="px-2 py-0.5 rounded-full text-xs bg-site-bg border border-site-border text-site-text-dim"
+                                <Link
+                                    href={detailUrl}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                    }}
+                                    className="flex items-center justify-center gap-1.5 text-xs text-blue-400 border border-blue-400/50 bg-transparent font-semibold w-full py-2 rounded-lg hover:bg-blue-400 hover:text-white hover:border-transparent transition-all"
                                 >
-                                    {tag}
-                                </span>
-                            ))}
-                        </div>
-
-                        <div className="pt-3 border-t border-site-border mt-auto space-y-2 pointer-events-auto">
-                            <div className="flex items-center justify-between text-xs text-site-text-dim">
-                                <button
-                                    onClick={handleLike}
-                                    className={`flex items-center gap-1 transition-colors ${
-                                        build.liked ? 'text-red-400' : 'hover:text-red-400'
-                                    }`}
-                                >
-                                    <Heart className={`w-3.5 h-3.5 ${build.liked ? 'fill-current' : ''}`} />
-                                    {formatCount(build.likeCount)}
-                                </button>
-                                <span className="flex items-center gap-1">
-                                    <MessageCircle className="w-3.5 h-3.5" />
-                                    {formatCount(build.commentCount)}
-                                </span>
-                                <span className="flex items-center gap-1">
-                                    <Eye className="w-3.5 h-3.5" />
-                                    {formatCount(build.viewCount)}
-                                </span>
+                                    Read More
+                                    <ArrowRight className="w-3.5 h-3.5" />
+                                </Link>
                             </div>
-
-                            <Link
-                                href={detailUrl}
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                }}
-                                className="flex items-center justify-center gap-1 text-xs text-site-accent font-semibold w-full py-1.5 rounded-md border border-transparent hover:border-site-accent/30 hover:bg-site-accent/10 transition-all"
-                            >
-                                Read More
-                                <ArrowRight className="w-3.5 h-3.5" />
-                            </Link>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+                </div>
+            </Popover.Trigger>
+            <Popover.Portal>
+                <Popover.Content
+                    side="bottom"
+                    align="center"
+                    sideOffset={12}
+                    collisionPadding={16}
+                    avoidCollisions={true}
+                    className="z-50 pointer-events-none max-w-[320px] rounded-xl border border-site-border bg-site-surface/95 backdrop-blur-md p-4 shadow-xl focus:outline-none radix-popover-animate"
+                >
+                    <h4 className="font-semibold text-site-text mb-2 leading-tight">{build.title}</h4>
+                    <p className="text-sm text-site-text-muted leading-relaxed">{build.description}</p>
+                </Popover.Content>
+            </Popover.Portal>
+        </Popover.Root>
     );
 }
