@@ -27,6 +27,17 @@ export const auth = betterAuth({
             clientSecret: process.env.GITHUB_CLIENT_SECRET!,
             overrideUserInfoOnSignIn: true,
         },
+        spotify: {
+            clientId: process.env.SPOTIFY_CLIENT_ID!,
+            clientSecret: process.env.SPOTIFY_CLIENT_SECRET!,
+            scope: [
+                "streaming",
+                "user-read-playback-state",
+                "user-modify-playback-state",
+                "user-read-currently-playing",
+            ],
+            disableSignUp: true,
+        },
     },
     emailAndPassword: {
         enabled: true,

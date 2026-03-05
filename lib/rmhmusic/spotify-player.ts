@@ -43,7 +43,7 @@ async function fetchAccessToken(): Promise<string | null> {
 }
 
 async function refreshAndGetToken(): Promise<string | null> {
-  await fetch('/api/rmhmusic/spotify/refresh', { method: 'POST' });
+  // Token endpoint auto-refreshes via BetterAuth, so just re-fetch
   return fetchAccessToken();
 }
 

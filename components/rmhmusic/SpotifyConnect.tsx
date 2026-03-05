@@ -1,37 +1,36 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Music } from 'lucide-react';
 import { useRmhMusicStore } from '@/lib/rmhmusic/store';
+import { authClient } from '@/lib/auth-client';
 
 export default function SpotifyConnect() {
   const { spotify } = useRmhMusicStore();
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    authClient.listAccounts().then(({ data }) => {
+      const hasSpotify = data?.some((a) => a.providerId === 'spotify');
+      useRmhMusicStore.getState().setSpotify({ isConnected: !!hasSpotify });
+    });
+  }, []);
+
   async function handleConnect() {
     setLoading(true);
     try {
-      const res = await fetch('/api/rmhmusic/spotify/authorize', { method: 'POST' });
-      const data = await res.json();
-
-      if (!res.ok || !data.url) {
-        console.error('Spotify authorize failed:', data.error ?? 'No URL returned');
-        setLoading(false);
-        return;
-      }
-
-      sessionStorage.setItem('spotify_code_verifier', data.codeVerifier);
-      sessionStorage.setItem('spotify_state', data.state);
-
-      window.location.href = data.url;
+      await authClient.linkSocial({
+        provider: 'spotify',
+        callbackURL: '/rmhmusic/player',
+      });
     } catch (err) {
-      console.error('Failed to start Spotify auth:', err);
+      console.error('Failed to link Spotify:', err);
       setLoading(false);
     }
   }
 
   async function handleDisconnect() {
-    await fetch('/api/rmhmusic/spotify/disconnect', { method: 'DELETE' });
+    await authClient.unlinkAccount({ providerId: 'spotify' });
     useRmhMusicStore.getState().setSpotify({ isConnected: false, deviceId: null, isPremium: false });
   }
 

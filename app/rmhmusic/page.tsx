@@ -17,32 +17,6 @@ export default function RmhMusicPage() {
   const [joinCode, setJoinCode] = useState('');
   const [roomName, setRoomName] = useState('');
 
-  // Handle Spotify OAuth callback
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get('code');
-    const state = params.get('state');
-    if (!code || !state) return;
-
-    const storedState = sessionStorage.getItem('spotify_state');
-    const codeVerifier = sessionStorage.getItem('spotify_code_verifier');
-    if (state === storedState && codeVerifier) {
-      fetch('/api/rmhmusic/spotify/callback', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, codeVerifier }),
-      }).then((res) => {
-        if (res.ok) {
-          sessionStorage.removeItem('spotify_state');
-          sessionStorage.removeItem('spotify_code_verifier');
-          window.history.replaceState({}, '', '/rmhmusic');
-          useRmhMusicStore.getState().setSpotify({ isConnected: true });
-          router.push('/rmhmusic/player');
-        }
-      });
-    }
-  }, []);
-
   // Connect socket on mount
   useEffect(() => {
     connectToRmhMusic().catch(() => {});
