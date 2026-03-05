@@ -43,6 +43,7 @@ export interface TrackInfo {
   artist: string;
   albumArt: string;
   durationMs: number;
+  previewUrl: string | null;
 }
 
 // ─── Client-Side State ───────────────────────────────────────────
@@ -77,6 +78,7 @@ export interface ClientQueueItem {
   artist: string;
   albumArt: string;
   durationMs: number;
+  previewUrl: string | null;
   addedBy: string;
   addedByName: string;
   addedAt: number;

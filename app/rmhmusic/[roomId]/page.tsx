@@ -3,7 +3,7 @@
 import { useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useRmhMusicStore } from '@/lib/rmhmusic/store';
-import { useSpotifyPlayer } from '@/lib/rmhmusic/spotify-player';
+import { usePreviewPlayer } from '@/lib/rmhmusic/spotify-player';
 import { connectToRmhMusic, emit } from '@/lib/rmhmusic/socket';
 import { C2S } from '@/lib/rmhmusic/events';
 import Visualizer from '@/components/rmhmusic/Visualizer';
@@ -15,8 +15,8 @@ export default function RoomPage() {
   const params = useParams();
   const router = useRouter();
   const roomId = params.roomId as string;
-  const { room, spotify } = useRmhMusicStore();
-  const { isReady, play, pause, resume, seek } = useSpotifyPlayer();
+  const { room } = useRmhMusicStore();
+  const { play, pause, resume, seek } = usePreviewPlayer();
 
   // Connect and join room
   useEffect(() => {
@@ -37,18 +37,29 @@ export default function RoomPage() {
     };
   }, [roomId]);
 
-  const handlePlay = useCallback(async (uri: string, track: any) => {
-    await play(uri);
+  const handlePlay = useCallback(async (track: any) => {
+    if (!track.previewUrl) return;
+
+    play(track.previewUrl, {
+      spotifyUri: track.uri ?? track.spotifyUri,
+      title: track.title,
+      artist: track.artist,
+      albumArt: track.albumArt ?? '',
+      durationMs: track.durationMs,
+      previewUrl: track.previewUrl,
+    });
+
     if (room && room.hostUserId === room.myUserId) {
       emit(C2S.MUSIC_PLAY, {
-        trackUri: uri,
+        trackUri: track.uri ?? track.spotifyUri,
         positionMs: 0,
         track: {
-          spotifyUri: uri,
+          spotifyUri: track.uri ?? track.spotifyUri,
           title: track.title,
           artist: track.artist,
           albumArt: track.albumArt ?? '',
           durationMs: track.durationMs,
+          previewUrl: track.previewUrl,
         },
       });
     }
@@ -56,11 +67,12 @@ export default function RoomPage() {
 
   // Sync playback for non-host
   useEffect(() => {
-    if (!room || room.hostUserId === room.myUserId || !isReady) return;
+    if (!room || room.hostUserId === room.myUserId) return;
 
     const unsub = useRmhMusicStore.subscribe((state, prevState) => {
-      if (state.playback.trackUri !== prevState.playback.trackUri && state.playback.trackUri) {
-        play(state.playback.trackUri, state.playback.positionMs);
+      const track = state.currentTrack;
+      if (state.playback.trackUri !== prevState.playback.trackUri && state.playback.trackUri && track?.previewUrl) {
+        play(track.previewUrl, track);
       } else if (state.playback.isPlaying !== prevState.playback.isPlaying) {
         if (state.playback.isPlaying) resume();
         else pause();
@@ -69,7 +81,7 @@ export default function RoomPage() {
       }
     });
     return unsub;
-  }, [room?.roomId, room?.hostUserId, room?.myUserId, isReady, play, pause, resume, seek]);
+  }, [room?.roomId, room?.hostUserId, room?.myUserId, play, pause, resume, seek]);
 
   return (
     <div className="relative min-h-screen" style={{ background: 'var(--site-bg)' }}>

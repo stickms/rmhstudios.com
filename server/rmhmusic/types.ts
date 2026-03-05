@@ -35,6 +35,7 @@ export interface ServerQueueItem {
   artist: string;
   albumArt: string;
   durationMs: number;
+  previewUrl: string | null;
   addedById: string;
   addedByName: string;
   position: number;

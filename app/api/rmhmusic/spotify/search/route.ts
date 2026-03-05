@@ -1,10 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
-import { headers } from 'next/headers';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
-import { getSpotifyToken } from '@/lib/rmhmusic/spotify-auth';
 
 export const runtime = 'nodejs';
+
+let cachedToken: { token: string; expiresAt: number } | null = null;
+
+async function getClientCredentialsToken(): Promise<string> {
+  if (cachedToken && Date.now() < cachedToken.expiresAt) {
+    return cachedToken.token;
+  }
+
+  const clientId = process.env.SPOTIFY_CLIENT_ID;
+  const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
+  if (!clientId || !clientSecret) {
+    throw new Error('Spotify credentials not configured');
+  }
+
+  const res = await fetch('https://accounts.spotify.com/api/token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      Authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`,
+    },
+    body: 'grant_type=client_credentials',
+  });
+
+  if (!res.ok) {
+    throw new Error('Failed to get Spotify token');
+  }
+
+  const data = await res.json();
+  cachedToken = {
+    token: data.access_token,
+    expiresAt: Date.now() + (data.expires_in - 60) * 1000,
+  };
+  return cachedToken.token;
+}
 
 function mapTracks(data: any) {
   return (data.tracks?.items ?? []).map((t: any) => ({
@@ -15,15 +46,11 @@ function mapTracks(data: any) {
     albumArt: t.album.images?.[0]?.url ?? null,
     durationMs: t.duration_ms,
     album: t.album.name,
+    previewUrl: t.preview_url ?? null,
   }));
 }
 
 export async function GET(req: NextRequest) {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   const ip = getClientIp(req);
   const { allowed, retryAfter } = rateLimit(ip, {
     limit: 30,
@@ -41,25 +68,27 @@ export async function GET(req: NextRequest) {
   const type = req.nextUrl.searchParams.get('type') || 'track';
   if (!q) return NextResponse.json({ results: [] });
 
-  const accessToken = await getSpotifyToken();
-  if (!accessToken) {
-    return NextResponse.json({ error: 'Spotify not connected' }, { status: 401 });
+  try {
+    const accessToken = await getClientCredentialsToken();
+
+    const searchUrl = new URL('https://api.spotify.com/v1/search');
+    searchUrl.searchParams.set('q', q);
+    searchUrl.searchParams.set('type', type);
+    searchUrl.searchParams.set('limit', '20');
+    searchUrl.searchParams.set('market', 'US');
+
+    const res = await fetch(searchUrl.toString(), {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    if (!res.ok) {
+      return NextResponse.json({ error: 'Search failed' }, { status: 502 });
+    }
+
+    const data = await res.json();
+    return NextResponse.json({ tracks: mapTracks(data) });
+  } catch (error) {
+    console.error('Spotify search error:', error instanceof Error ? error.message : error);
+    return NextResponse.json({ error: 'Search failed' }, { status: 500 });
   }
-
-  const searchUrl = new URL('https://api.spotify.com/v1/search');
-  searchUrl.searchParams.set('q', q);
-  searchUrl.searchParams.set('type', type);
-  searchUrl.searchParams.set('limit', '20');
-  searchUrl.searchParams.set('market', 'US');
-
-  const res = await fetch(searchUrl.toString(), {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-
-  if (!res.ok) {
-    return NextResponse.json({ error: 'Search failed' }, { status: 502 });
-  }
-
-  const data = await res.json();
-  return NextResponse.json({ tracks: mapTracks(data) });
 }

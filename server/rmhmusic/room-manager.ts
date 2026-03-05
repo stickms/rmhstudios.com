@@ -322,6 +322,7 @@ export class RoomManager {
         artist: q.artist,
         albumArt: q.albumArt,
         durationMs: q.durationMs,
+        previewUrl: q.previewUrl ?? null,
         addedBy: q.addedById,
         addedByName: q.addedByName,
         addedAt: q.addedAt,

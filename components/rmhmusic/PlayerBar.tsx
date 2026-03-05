@@ -1,13 +1,15 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Play, Pause, SkipForward, Volume2, VolumeX, Search, Users, Music } from 'lucide-react';
 import { useRmhMusicStore } from '@/lib/rmhmusic/store';
+import { usePreviewPlayer } from '@/lib/rmhmusic/spotify-player';
 import { formatDuration } from '@/lib/rmhmusic/utils';
 
 export default function PlayerBar() {
-  const { currentTrack, playback, spotify, settings, isSearchOpen, isChatOpen, setSearchOpen, setChatOpen, updateSettings } = useRmhMusicStore();
+  const { currentTrack, playback, settings, isSearchOpen, isChatOpen, setSearchOpen, setChatOpen, updateSettings } = useRmhMusicStore();
+  const { pause, resume, setVolume } = usePreviewPlayer();
   const [progress, setProgress] = useState(0);
   const progressInterval = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -25,6 +27,21 @@ export default function PlayerBar() {
   }, [playback.isPlaying, playback.positionMs, playback.updatedAt, currentTrack?.durationMs]);
 
   const progressPercent = currentTrack ? (progress / currentTrack.durationMs) * 100 : 0;
+
+  function handlePlayPause() {
+    if (!currentTrack) return;
+    if (playback.isPlaying) pause();
+    else resume();
+  }
+
+  function handleVolumeChange(vol: number) {
+    setVolume(vol);
+    updateSettings({ volume: vol, muted: false });
+  }
+
+  function handleMuteToggle() {
+    updateSettings({ muted: !settings.muted });
+  }
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50">
@@ -55,7 +72,7 @@ export default function PlayerBar() {
               {currentTrack?.title ?? 'No track playing'}
             </p>
             <p className="text-xs truncate" style={{ color: 'var(--site-text-muted)' }}>
-              {currentTrack?.artist ?? 'Connect Spotify to start'}
+              {currentTrack?.artist ?? 'Search for a song to start'}
             </p>
           </div>
         </div>
@@ -63,16 +80,17 @@ export default function PlayerBar() {
         {/* Controls */}
         <div className="flex items-center gap-2">
           <button
+            onClick={handlePlayPause}
             className="p-2 rounded-full transition-colors hover:opacity-80"
             style={{ color: 'var(--site-text)' }}
-            disabled={!spotify.isConnected}
+            disabled={!currentTrack}
           >
             {playback.isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
           </button>
           <button
             className="p-2 rounded-full transition-colors hover:opacity-80"
             style={{ color: 'var(--site-text-muted)' }}
-            disabled={!spotify.isConnected}
+            disabled={!currentTrack}
           >
             <SkipForward className="w-4 h-4" />
           </button>
@@ -87,7 +105,7 @@ export default function PlayerBar() {
         <div className="hidden md:flex items-center gap-2">
           <button
             className="p-1"
-            onClick={() => updateSettings({ muted: !settings.muted })}
+            onClick={handleMuteToggle}
             style={{ color: 'var(--site-text-muted)' }}
           >
             {settings.muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
@@ -98,7 +116,7 @@ export default function PlayerBar() {
             max="1"
             step="0.01"
             value={settings.muted ? 0 : settings.volume}
-            onChange={(e) => updateSettings({ volume: parseFloat(e.target.value), muted: false })}
+            onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
             className="w-20 accent-purple-500"
           />
         </div>

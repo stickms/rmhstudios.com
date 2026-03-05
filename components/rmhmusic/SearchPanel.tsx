@@ -9,7 +9,7 @@ import { C2S } from '@/lib/rmhmusic/events';
 import TrackCard from './TrackCard';
 
 interface SearchPanelProps {
-  onPlay: (uri: string, track: any) => void;
+  onPlay: (track: any) => void;
 }
 
 export default function SearchPanel({ onPlay }: SearchPanelProps) {
@@ -54,6 +54,7 @@ export default function SearchPanel({ onPlay }: SearchPanelProps) {
       artist: track.artist,
       albumArt: track.albumArt ?? '',
       durationMs: track.durationMs,
+      previewUrl: track.previewUrl ?? null,
     });
   }
 
@@ -106,7 +107,7 @@ export default function SearchPanel({ onPlay }: SearchPanelProps) {
                     albumArt={track.albumArt}
                     durationMs={track.durationMs}
                     album={track.album}
-                    onPlay={() => onPlay(track.uri, track)}
+                    onPlay={() => onPlay(track)}
                     onAddToQueue={room ? () => handleAddToQueue(track) : undefined}
                   />
                 ))}
@@ -127,7 +128,7 @@ export default function SearchPanel({ onPlay }: SearchPanelProps) {
                         artist={item.artist}
                         albumArt={item.albumArt}
                         durationMs={item.durationMs}
-                        onPlay={() => onPlay(item.spotifyUri, item)}
+                        onPlay={() => onPlay(item)}
                       />
                     ))}
                   </>

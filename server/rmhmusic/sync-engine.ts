@@ -89,6 +89,7 @@ export class SyncEngine {
       artist: next.artist,
       albumArt: next.albumArt,
       durationMs: next.durationMs,
+      previewUrl: next.previewUrl ?? null,
     };
 
     room.currentTrack = track;

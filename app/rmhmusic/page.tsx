@@ -7,13 +7,12 @@ import { Music, Plus, ArrowRight, Headphones } from 'lucide-react';
 import { useRmhMusicStore } from '@/lib/rmhmusic/store';
 import { connectToRmhMusic, emit } from '@/lib/rmhmusic/socket';
 import { C2S, S2C } from '@/lib/rmhmusic/events';
-import SpotifyConnect from '@/components/rmhmusic/SpotifyConnect';
 import RoomBrowser from '@/components/rmhmusic/RoomBrowser';
 import Visualizer from '@/components/rmhmusic/Visualizer';
 
 export default function RmhMusicPage() {
   const router = useRouter();
-  const { spotify, connectionStatus } = useRmhMusicStore();
+  const { connectionStatus } = useRmhMusicStore();
   const [joinCode, setJoinCode] = useState('');
   const [roomName, setRoomName] = useState('');
 
@@ -24,7 +23,6 @@ export default function RmhMusicPage() {
 
   // Listen for room creation
   useEffect(() => {
-    const store = useRmhMusicStore.getState();
     const unsub = useRmhMusicStore.subscribe((state) => {
       if (state.room) {
         router.push(`/rmhmusic/${state.room.roomId}`);
@@ -62,27 +60,24 @@ export default function RmhMusicPage() {
             RMH Music
           </h1>
           <p className="text-lg" style={{ color: 'var(--site-text-muted)' }}>
-            Listen to Spotify with friends. Vibe together.
+            Listen to Spotify previews with friends. Vibe together.
           </p>
         </motion.div>
 
-        {/* Connect Spotify */}
+        {/* Open Player */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
           className="flex justify-center mb-8"
         >
-          <SpotifyConnect />
-          {spotify.isConnected && (
-            <button
-              onClick={() => router.push('/rmhmusic/player')}
-              className="ml-3 flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all hover:scale-105"
-              style={{ background: 'var(--site-accent)', color: '#fff' }}
-            >
-              <Music className="w-4 h-4" /> Open Player
-            </button>
-          )}
+          <button
+            onClick={() => router.push('/rmhmusic/player')}
+            className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all hover:scale-105"
+            style={{ background: 'var(--site-accent)', color: '#fff' }}
+          >
+            <Music className="w-4 h-4" /> Open Player
+          </button>
         </motion.div>
 
         {/* Create / Join Room */}

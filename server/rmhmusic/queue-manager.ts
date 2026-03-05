@@ -38,6 +38,7 @@ export class QueueManager {
       artist: payload.artist,
       albumArt: payload.albumArt,
       durationMs: payload.durationMs,
+      previewUrl: payload.previewUrl ?? null,
       addedById: userId ?? 'unknown',
       addedByName: member?.userName ?? 'Unknown',
       position: room.queue.length,
