@@ -12,6 +12,7 @@ import { GifEmbed } from './GifEmbed';
 import { LinkPreview } from './LinkPreview';
 import { useFeedStore } from '@/stores/feedStore';
 import { authClient } from '@/lib/auth-client';
+import { useResolvedUser } from '@/components/Providers';
 import { EngagementListModal } from './EngagementListModal';
 import { ShareModal } from './ShareModal';
 
@@ -65,8 +66,18 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
   const router = useRouter();
   const actualId = item.actualId ?? item.id;
   const { data: session } = authClient.useSession();
+  const { resolved: resolvedUser } = useResolvedUser();
   const { removeItem, updateItem } = useFeedStore();
   const isAuthor = session?.user?.id === item.user?.id;
+
+  // Override avatar/name for the current user's posts with resolved profile data
+  const displayUser = useMemo(() => {
+    if (!item.user) return item.user;
+    if (isAuthor && resolvedUser) {
+      return { ...item.user, image: resolvedUser.image, name: resolvedUser.name ?? item.user.name };
+    }
+    return item.user;
+  }, [item.user, isAuthor, resolvedUser]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [engagementModal, setEngagementModal] = useState<'likes' | 'reposts' | null>(null);
   const [shareModalOpen, setShareModalOpen] = useState(false);
@@ -197,7 +208,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
       )}
 
       <div className="flex gap-3">
-        <UserAvatar user={item.user} />
+        <UserAvatar user={displayUser} />
 
         <div className="flex-1 min-w-0">
           {/* Header */}
@@ -205,7 +216,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
             {item.user ? (
               <Link href={userProfileHref(item.user)} className="flex items-center gap-1.5 min-w-0 hover:underline">
               <span className="font-bold text-site-text truncate">
-                {item.user.name || 'Unknown'}
+                {displayUser?.name || 'Unknown'}
               </span>
               {item.user.isVerified && (
                 <BadgeCheck className="w-4 h-4 text-emerald-500 shrink-0" />

@@ -132,6 +132,7 @@ export async function GET(
       ...(isOwnProfile
         ? {
             handleCooldownMs: handleCooldownRemaining(user.handleChangedAt),
+            hasCustomAvatar: !!user.profile?.customImage,
           }
         : {}),
     });

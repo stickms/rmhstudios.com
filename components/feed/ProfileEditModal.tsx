@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Camera, X, Check, Loader2 } from 'lucide-react';
+import { Camera, X, Check, Loader2, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ImageCropModal } from './ImageCropModal';
 import { SpotifySongSearch, type SpotifyTrack } from './SpotifySongSearch';
+import { useResolvedUser } from '@/components/Providers';
 
 interface ProfileSongData {
   profileSongSpotifyId: string | null;
@@ -32,6 +33,7 @@ interface ProfileEditModalProps {
     handleCooldownMs: number;
     name: string | null;
     image: string | null;
+    hasCustomAvatar?: boolean;
     bio: string | null;
     location: string | null;
     website: string | null;
@@ -54,6 +56,7 @@ function formatCooldown(ms: number): string {
 }
 
 export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEditModalProps) {
+  const { refresh: refreshResolvedUser } = useResolvedUser();
   const [handle, setHandle] = useState(initial.handle ?? '');
   const [handleStatus, setHandleStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid'>('idle');
   const [displayName, setDisplayName] = useState(initial.name ?? '');
@@ -66,6 +69,10 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
   const [avatarPreview, setAvatarPreview] = useState<string | null>(initial.image);
   const [cropSrc, setCropSrc] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [resettingAvatar, setResettingAvatar] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [hasCustomAvatar, setHasCustomAvatar] = useState(initial.hasCustomAvatar ?? false);
+  const [avatarWasReset, setAvatarWasReset] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const handleCheckTimeout = useRef<NodeJS.Timeout | null>(null);
@@ -170,6 +177,48 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
     setCropSrc(null);
   };
 
+  const handleResetAvatar = async () => {
+    setResettingAvatar(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/profile/avatar', { method: 'DELETE' });
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error || 'Failed to reset avatar');
+        return;
+      }
+      const data = await res.json();
+      // Clear local avatar state, show fallback (OAuth image or default)
+      setAvatarFile(null);
+      if (avatarPreview && avatarPreview.startsWith('blob:')) URL.revokeObjectURL(avatarPreview);
+      setAvatarPreview(data.image);
+      setHasCustomAvatar(false);
+      setAvatarWasReset(true);
+      // Update sidebar/navbar immediately
+      refreshResolvedUser();
+      // Notify parent so profile page updates the displayed image
+      onSaved({
+        image: data.image,
+        displayName: displayName.trim() || initial.name,
+        bio: bio.trim() || null,
+        location: location.trim() || null,
+        website: website.trim() || null,
+        showLikes,
+        dmPrivacy,
+        profileSongSpotifyId: selectedSong?.id ?? null,
+        profileSongTitle: selectedSong?.title ?? null,
+        profileSongArtist: selectedSong?.artist ?? null,
+        profileSongPreviewUrl: selectedSong?.previewUrl ?? null,
+        profileSongAlbumArt: selectedSong?.albumArt ?? null,
+      });
+    } catch {
+      setError('Failed to reset avatar');
+    } finally {
+      setResettingAvatar(false);
+      setShowResetConfirm(false);
+    }
+  };
+
   const handleSave = async () => {
     if (submitting) return;
 
@@ -241,7 +290,11 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
       const data = await res.json();
       onSaved({
         ...data,
-        ...(newImageUrl !== undefined ? { image: newImageUrl } : {}),
+        ...(newImageUrl !== undefined
+          ? { image: newImageUrl }
+          : avatarWasReset
+            ? { image: avatarPreview }
+            : {}),
       });
       onClose();
     } catch {
@@ -299,6 +352,17 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
                 onChange={handleAvatarSelect}
               />
               <p className="text-xs text-site-text-dim">Click to change avatar (max {MAX_AVATAR_MB} MB)</p>
+              {(hasCustomAvatar || avatarFile) && (
+                <button
+                  type="button"
+                  onClick={() => setShowResetConfirm(true)}
+                  className="flex items-center gap-1 text-xs text-site-text-dim hover:text-site-danger transition-colors"
+                  title="Reset to default avatar"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  Reset avatar
+                </button>
+              )}
             </div>
 
             {/* Handle */}
@@ -478,6 +542,37 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
           onCropDone={handleCropDone}
           onCancel={handleCropCancel}
         />
+      )}
+
+      {/* Reset avatar confirmation */}
+      {showResetConfirm && (
+        <div className="fixed inset-0 z-300 flex items-center justify-center" onClick={() => setShowResetConfirm(false)}>
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+          <div
+            className="relative bg-site-bg border border-site-border rounded-2xl shadow-xl w-full max-w-sm mx-4 p-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="font-bold text-site-text mb-2">Reset avatar?</h3>
+            <p className="text-sm text-site-text-muted mb-4">
+              This will remove your custom avatar and revert to your default profile picture. This action cannot be undone.
+            </p>
+            {error && <p className="text-sm text-site-danger mb-3">{error}</p>}
+            <div className="flex items-center justify-end gap-2">
+              <Button variant="ghost" size="sm" onClick={() => setShowResetConfirm(false)} disabled={resettingAvatar}>
+                Cancel
+              </Button>
+              <Button
+                variant="accent"
+                size="sm"
+                disabled={resettingAvatar}
+                onClick={handleResetAvatar}
+                className="bg-site-danger hover:bg-site-danger/80 text-white"
+              >
+                {resettingAvatar ? 'Resetting...' : 'Reset Avatar'}
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

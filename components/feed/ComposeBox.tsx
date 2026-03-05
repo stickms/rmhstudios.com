@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Plus, BarChart3, Image, X } from 'lucide-react';
 import { GifEmbed } from './GifEmbed';
-import { useSession } from '@/components/Providers';
+import { useSession, useResolvedUser } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { useFeedStore } from '@/stores/feedStore';
 import {
@@ -51,6 +51,7 @@ export function ComposeBox() {
   const { prependItem } = useFeedStore();
 
   const { data: session } = useSession();
+  const { resolved: resolvedUser } = useResolvedUser();
   const remaining = MAX_RMHARK_LENGTH - content.length;
 
   // Close menu on outside click
@@ -128,14 +129,14 @@ export function ComposeBox() {
       <div className="flex gap-3">
         {/* Avatar */}
         <div className="w-10 h-10 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-sm ring-2 ring-site-bg shrink-0">
-          {session.user.image ? (
+          {(resolvedUser?.image || session.user.image) ? (
             <img
-              src={session.user.image}
-              alt={session.user.name || 'User'}
+              src={resolvedUser?.image || session.user.image!}
+              alt={resolvedUser?.name || session.user.name || 'User'}
               className="w-full h-full rounded-full object-cover"
             />
           ) : (
-            (session.user.name?.[0] || 'U').toUpperCase()
+            ((resolvedUser?.name || session.user.name)?.[0] || 'U').toUpperCase()
           )}
         </div>
 

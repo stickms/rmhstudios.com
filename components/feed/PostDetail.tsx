@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { ArrowLeft, Loader2, MoreHorizontal, Heart, Repeat, Trash2, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { authClient } from '@/lib/auth-client';
+import { useResolvedUser } from '@/components/Providers';
 import { RMHarkActions } from './RMHarkActions';
 import { CommentItem } from './CommentItem';
 import type { Comment } from './CommentItem';
@@ -32,6 +33,7 @@ export function PostDetail({ postId }: PostDetailProps) {
   const [commentContent, setCommentContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const { data: session } = authClient.useSession();
+  const { resolved: resolvedUser } = useResolvedUser();
   const remaining = MAX_COMMENT_LENGTH - commentContent.length;
   const [menuOpen, setMenuOpen] = useState(false);
   const [engagementModal, setEngagementModal] = useState<'likes' | 'reposts' | null>(null);
@@ -334,10 +336,10 @@ export function PostDetail({ postId }: PostDetailProps) {
           <div className="flex gap-3">
             {/* User avatar */}
             <div className="w-9 h-9 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-xs shrink-0">
-              {session.user?.image ? (
-                <img src={session.user.image} alt={session.user.name || 'You'} className="w-full h-full rounded-full object-cover" />
+              {(resolvedUser?.image || session.user?.image) ? (
+                <img src={resolvedUser?.image || session.user!.image!} alt={resolvedUser?.name || session.user?.name || 'You'} className="w-full h-full rounded-full object-cover" />
               ) : (
-                (session.user?.name?.[0] || 'U').toUpperCase()
+                ((resolvedUser?.name || session.user?.name)?.[0] || 'U').toUpperCase()
               )}
             </div>
             <div className="flex-1 min-w-0">
@@ -394,7 +396,7 @@ export function PostDetail({ postId }: PostDetailProps) {
                 key={comment.id}
                 comment={comment}
                 postId={postId}
-                sessionUser={session?.user}
+                sessionUser={session?.user ? { ...session.user, image: resolvedUser?.image || session.user.image, name: resolvedUser?.name || session.user.name } : undefined}
                 onReplyAdded={handleReplyAdded}
                 onCommentRemoved={handleCommentRemoved}
               />

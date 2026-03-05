@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { X, Plus, BarChart3, Image } from 'lucide-react';
 import { GifEmbed } from './GifEmbed';
 import { authClient } from '@/lib/auth-client';
+import { useResolvedUser } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { useFeedStore } from '@/stores/feedStore';
 import {
@@ -54,6 +55,7 @@ export function ComposeModal({ open, onClose }: ComposeModalProps) {
   const menuRef = useRef<HTMLDivElement>(null);
   const { prependItem } = useFeedStore();
   const { data: session } = authClient.useSession();
+  const { resolved: resolvedUser } = useResolvedUser();
 
   const remaining = MAX_RMHARK_LENGTH - content.length;
 
@@ -191,14 +193,14 @@ export function ComposeModal({ open, onClose }: ComposeModalProps) {
           <div className="flex gap-3">
             {/* Avatar */}
             <div className="w-10 h-10 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-sm ring-2 ring-site-bg shrink-0">
-              {session.user.image ? (
+              {(resolvedUser?.image || session.user.image) ? (
                 <img
-                  src={session.user.image}
-                  alt={session.user.name || 'User'}
+                  src={resolvedUser?.image || session.user.image!}
+                  alt={resolvedUser?.name || session.user.name || 'User'}
                   className="w-full h-full rounded-full object-cover"
                 />
               ) : (
-                (session.user.name?.[0] || 'U').toUpperCase()
+                ((resolvedUser?.name || session.user.name)?.[0] || 'U').toUpperCase()
               )}
             </div>
 

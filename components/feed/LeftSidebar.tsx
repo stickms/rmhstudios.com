@@ -4,10 +4,10 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
 import { authClient } from '@/lib/auth-client';
-import { useSession } from '@/components/Providers';
+import { useSession, useResolvedUser } from '@/components/Providers';
 import {
   Home, Package, Hammer, Newspaper, Map, FlaskConical, BookOpen,
-  Palette, ChevronDown, LogOut, PenSquare, User, MessageCircle, ShieldCheck
+  Palette, ChevronDown, LogOut, PenSquare, User, MessageCircle, ShieldCheck, MoreHorizontal
 } from 'lucide-react';
 import { ComposeModal } from './ComposeModal';
 import { Button } from '@/components/ui/button';
@@ -31,13 +31,14 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   const labelFlexClass = expanded ? 'flex items-center gap-1.5' : 'hidden lg:flex items-center gap-1.5';
   const logoFullClass = expanded ? '' : 'hidden lg:block';
   const logoShortClass = expanded ? 'hidden' : 'lg:hidden';
-  const paddingClass = expanded ? 'p-4' : 'p-3 lg:p-4';
+  const paddingClass = expanded ? 'p-4 pb-8' : 'p-3 lg:p-4';
   const logoAlignClass = expanded ? 'justify-start' : 'justify-center lg:justify-start';
   const iconMrClass = expanded ? 'mr-2' : 'lg:mr-2';
   const itemJustifyClass = expanded ? '' : 'md:justify-center lg:justify-start';
   const pathname = usePathname();
   const router = useRouter();
   const [showStyleMenu, setShowStyleMenu] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const [composeOpen, setComposeOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const { style, setStyle } = useThemeStore();
@@ -46,9 +47,13 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
     setMounted(true);
   }, []);
   const styleMenuRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+  const userMenuBtnRef = useRef<HTMLButtonElement>(null);
   const [popoverPos, setPopoverPos] = useState({ bottom: 0, left: 0 });
+  const [userMenuPos, setUserMenuPos] = useState({ bottom: 0, right: 0 });
 
   const { data: session, isPending } = useSession();
+  const { resolved: resolvedUser } = useResolvedUser();
   const unreadCount = useUnreadCount(!!session);
 
   useEffect(() => {
@@ -59,6 +64,15 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
     if (showStyleMenu) document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, [showStyleMenu]);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (userMenuRef.current?.contains(e.target as Node)) return;
+      setShowUserMenu(false);
+    }
+    if (showUserMenu) document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [showUserMenu]);
 
   const handleSignOut = async () => {
     await authClient.signOut({
@@ -235,30 +249,56 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
         {isPending ? (
           <div className="h-10 bg-site-surface rounded-xl animate-pulse" />
         ) : session ? (
-          <div className="flex flex-col gap-2">
+          <div className="relative flex items-center gap-2" ref={userMenuRef}>
             <Link
               href={`/@${(session.user as any).handle || session.user.id}`}
-              className={`flex items-center gap-2 px-2 hover:bg-site-surface rounded-xl transition-colors py-1 ${itemJustifyClass}`}
+              className={`flex items-center gap-2 px-2 hover:bg-site-surface rounded-xl transition-colors py-1 flex-1 min-w-0 ${itemJustifyClass}`}
             >
               <div className="w-8 h-8 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-xs ring-2 ring-site-bg shrink-0">
-                {session.user.image ? (
-                  <img src={session.user.image} alt={session.user.name || 'User'} className="w-full h-full rounded-full object-cover" />
+                {(resolvedUser?.image || session.user.image) ? (
+                  <img src={resolvedUser?.image || session.user.image!} alt={resolvedUser?.name || session.user.name || 'User'} className="w-full h-full rounded-full object-cover" />
                 ) : (
-                  (session.user.name?.[0] || 'U').toUpperCase()
+                  ((resolvedUser?.name || session.user.name)?.[0] || 'U').toUpperCase()
                 )}
               </div>
               <span className={`${labelClass} text-sm text-site-text truncate max-w-30`}>
-                {session.user.name}
+                {resolvedUser?.name || session.user.name}
               </span>
             </Link>
             <button
-              onClick={handleSignOut}
-              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-site-text-muted hover:text-site-danger hover:bg-site-surface transition-colors ${itemJustifyClass}`}
-              title="Sign Out"
+              ref={userMenuBtnRef}
+              onClick={() => {
+                if (!showUserMenu && userMenuBtnRef.current) {
+                  const rect = userMenuBtnRef.current.getBoundingClientRect();
+                  setUserMenuPos({
+                    bottom: window.innerHeight - rect.top + 8,
+                    right: window.innerWidth - rect.right,
+                  });
+                }
+                setShowUserMenu(!showUserMenu);
+              }}
+              className={`p-1.5 rounded-lg text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors shrink-0 ${expanded ? '' : 'hidden lg:block'}`}
+              title="More options"
             >
-              <LogOut className="w-4 h-4 shrink-0" />
-              <span className={labelClass}>Sign Out</span>
+              <MoreHorizontal className="w-4 h-4" />
             </button>
+            {showUserMenu && (
+              <div
+                className="fixed w-40 bg-site-surface border border-site-border rounded-xl shadow-lg py-1 z-50"
+                style={{ bottom: `${userMenuPos.bottom}px`, right: `${userMenuPos.right}px` }}
+              >
+                <button
+                  onClick={() => {
+                    setShowUserMenu(false);
+                    handleSignOut();
+                  }}
+                  className="w-full text-left px-3 py-2 text-sm flex items-center gap-2 text-site-text-muted hover:text-site-danger hover:bg-site-surface-hover transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            )}
           </div>
         ) : (
           <Link href="/login">

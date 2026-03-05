@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, createContext, useContext, useEffect, useRef } from "react";
+import { ReactNode, createContext, useContext, useEffect, useRef, useState, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import { Toaster } from "sonner";
 import { authClient } from "@/lib/auth-client";
@@ -20,6 +20,33 @@ export function useSession() {
   const ctx = useContext(SessionCtx);
   if (!ctx) return { data: null as null, isPending: true };
   return { data: ctx.data, isPending: ctx.isPending };
+}
+
+/* ------------------------------------------------------------------ */
+/*  Resolved user display – fetches custom image/name from profile    */
+/* ------------------------------------------------------------------ */
+interface ResolvedUserDisplay {
+  name: string | null;
+  image: string | null;
+  handle: string | null;
+}
+
+interface ResolvedUserCtxValue {
+  resolved: ResolvedUserDisplay | null;
+  refresh: () => void;
+}
+
+const ResolvedUserCtx = createContext<ResolvedUserCtxValue>({
+  resolved: null,
+  refresh: () => {},
+});
+
+/**
+ * Returns the current user's resolved display data (custom image/name with
+ * fallback to OAuth data). Call `refresh()` after profile updates.
+ */
+export function useResolvedUser() {
+  return useContext(ResolvedUserCtx);
 }
 
 interface ProvidersProps {
@@ -74,6 +101,24 @@ export function Providers({ children }: ProvidersProps) {
   const style = useThemeStore((s) => s.style);
   const pathname = usePathname();
   const isFirstRun = useRef(true);
+
+  // Resolved user display data (custom image/name)
+  const [resolvedUser, setResolvedUser] = useState<ResolvedUserDisplay | null>(null);
+  const fetchResolvedUser = useCallback(() => {
+    fetch("/api/profile/me")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => { if (data) setResolvedUser(data); })
+      .catch(() => {});
+  }, []);
+
+  const userId = session.data?.user?.id;
+  useEffect(() => {
+    if (userId) {
+      fetchResolvedUser();
+    } else {
+      setResolvedUser(null);
+    }
+  }, [userId, fetchResolvedUser]);
 
   const isAppRoute = THEME_EXCLUDED_ROUTES.some((route) =>
     pathname?.startsWith(route)
@@ -132,7 +177,9 @@ export function Providers({ children }: ProvidersProps) {
 
   return (
     <SessionCtx.Provider value={session}>
+      <ResolvedUserCtx.Provider value={{ resolved: resolvedUser, refresh: fetchResolvedUser }}>
       {children}
+      </ResolvedUserCtx.Provider>
       <Toaster
         theme="dark"
         position="bottom-left"

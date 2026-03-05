@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
 import { authClient } from '@/lib/auth-client';
-import { useSession } from '@/components/Providers';
+import { useSession, useResolvedUser } from '@/components/Providers';
 import { Menu, X, User, LogOut, ChevronDown, Palette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useThemeStore, SITE_STYLES, SiteStyle } from '@/stores/themeStore';
@@ -22,6 +22,7 @@ export function Navbar() {
   const mobilePaletteBtnRef = useRef<HTMLButtonElement>(null);
 
   const { data: session, isPending } = useSession();
+  const { resolved: resolvedUser } = useResolvedUser();
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -153,13 +154,13 @@ export function Navbar() {
                   className="flex items-center gap-2 text-sm text-site-text-muted hover:text-site-text transition-colors focus:outline-none"
                 >
                   <div className="w-8 h-8 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-xs ring-2 ring-site-bg">
-                    {session.user.image ? (
-                      <img src={session.user.image} alt={session.user.name || 'User'} className="w-full h-full rounded-full object-cover" />
+                    {(resolvedUser?.image || session.user.image) ? (
+                      <img src={resolvedUser?.image || session.user.image!} alt={resolvedUser?.name || session.user.name || 'User'} className="w-full h-full rounded-full object-cover" />
                     ) : (
-                      (session.user.name?.[0] || 'U').toUpperCase()
+                      ((resolvedUser?.name || session.user.name)?.[0] || 'U').toUpperCase()
                     )}
                   </div>
-                  <span className="max-w-[100px] truncate">{session.user.name}</span>
+                  <span className="max-w-[100px] truncate">{resolvedUser?.name || session.user.name}</span>
                   <ChevronDown className={`w-4 h-4 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
                 </button>
 
@@ -261,14 +262,14 @@ export function Navbar() {
               <div className="px-4 space-y-3">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold ring-2 ring-site-bg">
-                    {session.user.image ? (
-                      <img src={session.user.image} alt={session.user.name || 'User'} className="w-full h-full rounded-full object-cover" />
+                    {(resolvedUser?.image || session.user.image) ? (
+                      <img src={resolvedUser?.image || session.user.image!} alt={resolvedUser?.name || session.user.name || 'User'} className="w-full h-full rounded-full object-cover" />
                     ) : (
-                      (session.user.name?.[0] || 'U').toUpperCase()
+                      ((resolvedUser?.name || session.user.name)?.[0] || 'U').toUpperCase()
                     )}
                   </div>
                   <div>
-                    <div className="text-base font-medium leading-none text-site-text">{session.user.name}</div>
+                    <div className="text-base font-medium leading-none text-site-text">{resolvedUser?.name || session.user.name}</div>
                     <div className="text-sm font-medium leading-none text-site-text-dim mt-1">{session.user.email}</div>
                   </div>
                 </div>

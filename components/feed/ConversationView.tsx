@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { Loader2, ArrowLeft, Send } from 'lucide-react';
 import Link from 'next/link';
-import { useSession } from '@/components/Providers';
+import { useSession, useResolvedUser } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 
 interface Message {
@@ -39,6 +39,7 @@ export function ConversationView({ conversationId }: { conversationId: string })
   const initialFetched = useRef(false);
 
   const { data: session } = useSession();
+  const { resolved: resolvedUser } = useResolvedUser();
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -376,7 +377,7 @@ export function ConversationView({ conversationId }: { conversationId: string })
               const isLastInGroup = !nextMsg || nextMsg.senderId !== msg.senderId || shouldShowDateSeparator(nextMsg, msg);
 
               const avatarUser = isSelf
-                ? { image: session.user.image, name: session.user.name }
+                ? { image: resolvedUser?.image || session.user.image, name: resolvedUser?.name || session.user.name }
                 : { image: otherUser?.image, name: otherUser?.name };
 
               // Build per-corner rounding for grouped bubbles

@@ -124,3 +124,63 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+
+export async function DELETE() {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const profile = await prisma.userProfile.findUnique({
+      where: { userId: session.user.id },
+      select: { customImage: true },
+    });
+
+    if (!profile?.customImage) {
+      return NextResponse.json({ image: null });
+    }
+
+    // Delete file from disk
+    if (profile.customImage.startsWith("/api/profile/avatar/")) {
+      const filename = profile.customImage.replace("/api/profile/avatar/", "");
+      const avatarDir = path.join(process.cwd(), "db", "avatars");
+      const filePath = resolvePathUnder(avatarDir, filename);
+      if (filePath) {
+        try {
+          await unlink(filePath);
+        } catch {
+          // File may already be gone
+        }
+      }
+    }
+
+    // Clear custom image in DB
+    await prisma.userProfile.update({
+      where: { userId: session.user.id },
+      data: { customImage: null, customImageSizeBytes: null },
+    });
+
+    // If User.image was corrupted by old code (overwritten with custom avatar URL),
+    // clear it so it doesn't 404
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { image: true },
+    });
+    if (user?.image?.startsWith("/api/profile/avatar/")) {
+      await prisma.user.update({
+        where: { id: session.user.id },
+        data: { image: null },
+      });
+      return NextResponse.json({ image: "/images/social/default_avatar.png" });
+    }
+
+    return NextResponse.json({ image: user?.image || "/images/social/default_avatar.png" });
+  } catch (error) {
+    console.error("Avatar reset error:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
+  }
+}

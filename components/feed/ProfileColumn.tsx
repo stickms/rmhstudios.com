@@ -5,6 +5,7 @@ import { MapPin, Link as LinkIcon, Calendar, Loader2, ArrowLeft, MessageCircle, 
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { authClient } from '@/lib/auth-client';
+import { useResolvedUser } from '@/components/Providers';
 import { RMHarkCard } from './RMHarkCard';
 import { ProfileEditModal } from './ProfileEditModal';
 import { SocialListModal } from './SocialListModal';
@@ -37,6 +38,7 @@ interface ProfileData {
   isFollowing: boolean;
   isOwnProfile: boolean;
   handleCooldownMs?: number;
+  hasCustomAvatar?: boolean;
 }
 
 type ProfileTab = 'rmharks' | 'likes';
@@ -48,6 +50,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
   const [showEdit, setShowEdit] = useState(false);
   const [tab, setTab] = useState<ProfileTab>('rmharks');
   const [socialModal, setSocialModal] = useState<'followers' | 'following' | null>(null);
+  const { refresh: refreshResolvedUser } = useResolvedUser();
 
   // RMHark list state
   const [items, setItems] = useState<FeedItem[]>([]);
@@ -594,6 +597,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
             handleCooldownMs: profile.handleCooldownMs ?? 0,
             name: profile.name,
             image: profile.image,
+            hasCustomAvatar: profile.hasCustomAvatar,
             bio: profile.bio,
             location: profile.location,
             website: profile.website,
@@ -611,7 +615,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
               return {
                 ...prev,
                 ...(data.displayName !== undefined ? { name: data.displayName } : {}),
-                ...(data.image !== undefined ? { image: data.image } : {}),
+                ...(data.image !== undefined ? { image: data.image, hasCustomAvatar: !!data.image?.startsWith('/api/profile/avatar/') } : {}),
                 ...(data.handle !== undefined ? { handle: data.handle } : {}),
                 bio: data.bio,
                 location: data.location,
@@ -626,18 +630,12 @@ export function ProfileColumn({ userId }: { userId: string }) {
               };
             });
 
-            // Sync name/image into the better-auth session so
-            // sidebar + compose box reflect the update immediately
-            const sessionUpdates: { name?: string; image?: string } = {};
+            // Sync display name into the better-auth session
+            // (avatar is handled by useResolvedUser via UserProfile.customImage)
             if (data.displayName !== undefined && data.displayName !== null) {
-              sessionUpdates.name = data.displayName;
+              authClient.updateUser({ name: data.displayName });
             }
-            if (data.image !== undefined && data.image !== null) {
-              sessionUpdates.image = data.image;
-            }
-            if (Object.keys(sessionUpdates).length > 0) {
-              authClient.updateUser(sessionUpdates);
-            }
+            refreshResolvedUser();
           }}
         />
       )}
