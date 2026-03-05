@@ -16,6 +16,7 @@ export async function getSpotifyToken(): Promise<string | null> {
       body: { providerId: 'spotify' },
       headers: reqHeaders,
     });
+    console.log('[spotify-auth] scopes:', result?.scopes, 'hasToken:', !!result?.accessToken);
     return result?.accessToken ?? null;
   } catch (err) {
     console.error('[spotify-auth] getAccessToken failed:', err);
