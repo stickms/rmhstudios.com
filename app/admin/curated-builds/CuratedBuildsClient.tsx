@@ -28,7 +28,6 @@ interface Build {
     title: string;
     slug: string;
     thumbnailUrl: string | null;
-    status: string;
     visibility: string;
     position: number;
     featured: boolean;

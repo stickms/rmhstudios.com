@@ -73,7 +73,6 @@ async function getAnnouncementItems(filter: FeedFilter): Promise<FeedItem[]> {
     const curatedBuilds = await prisma.userBuild.findMany({
       where: {
         isCurated: true,
-        status: "PUBLISHED",
         visibility: { not: "PRIVATE" }
       },
       include: { category: true }
