@@ -1,8 +1,8 @@
 services:
   db:
     image: postgres:15-alpine
-    container_name: rmh-postgres-local
-    restart: always
+    container_name: rmhstudios
+    restart: unless-stopped
     environment:
       POSTGRES_USER: rmhuser
       POSTGRES_PASSWORD: rmhpassword
