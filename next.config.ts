@@ -81,9 +81,6 @@ const nextConfig: NextConfig = {
     "@wasm-audio-decoders/common",
     "@wasm-audio-decoders/ogg-vorbis",
     "@eshaz/web-worker",
-    "socket.io-client",
-    "engine.io-client",
-    "motion-dom",
   ],
 
   async headers() {

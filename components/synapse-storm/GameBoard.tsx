@@ -11,14 +11,8 @@ interface GameBoardProps {
 }
 
 export const GameBoard: React.FC<GameBoardProps> = ({ state, onSolve, onSkipPhase }) => {
-    const boardClass = [
-        'game-board',
-        state.isSaturated ? 'saturated' : '',
-        state.burstActive ? 'burst-mode' : '',
-    ].filter(Boolean).join(' ');
-
     return (
-        <div className={boardClass}>
+        <div className={`game-board ${state.isSaturated ? 'saturated' : ''}`}>
             <HUD state={state} />
 
             <div className="playfield">
@@ -43,7 +37,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ state, onSolve, onSkipPhas
 
                 {state.combo >= 10 && (
                     <div className="combo-overlay">
-                        <span className="combo-text">{state.combo}× COMBO!</span>
+                        <span className="combo-text">{state.combo} COMBO!</span>
                     </div>
                 )}
             </div>

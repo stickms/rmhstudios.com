@@ -8,10 +8,7 @@ export type PuzzleCategory =
     | 'minigame'
     | 'fling'
     | 'powerup'
-    | 'meta'
-    | 'emoji'
-    | 'trivia'
-    | 'roman';
+    | 'meta';
 
 export interface PuzzleDefinition {
     id: string;
@@ -27,13 +24,25 @@ export interface PuzzleDefinition {
 export interface MetaPuzzleData {
     type: 'meta';
     variant: 'gameTime' | 'lives' | 'intensity' | 'combo' | 'maxCombo' | 'activeCount' | 'realTimeHour' | 'score';
-    answer?: number;
+    answer?: number;   // baked in for singleplayer; computed at render for multiplayer
     options?: number[];
 }
 
+// Union type for all puzzle data
+export type PuzzleData =
+    | MathPuzzleData
+    | PatternPuzzleData
+    | LanguagePuzzleData
+    | SpatialPuzzleData
+    | MemoryPuzzleData
+    | ReactionPuzzleData
+    | MinigamePuzzleData
+    | PowerUpPuzzleData
+    | MetaPuzzleData;
+
 export interface MathPuzzleData {
     type: 'math';
-    variant: 'arithmetic' | 'algebra' | 'geometry' | 'compare' | 'nearest' | 'operator' | 'percent' | 'sequence' | 'digit_sum' | 'modulo' | 'power' | 'prime_check';
+    variant: 'arithmetic' | 'algebra' | 'geometry' | 'compare' | 'nearest' | 'operator' | 'percent' | 'sequence' | 'digit_sum';
     expression: string;
     answer: number | string;
     options?: (number | string)[];
@@ -41,20 +50,16 @@ export interface MathPuzzleData {
 
 export interface PatternPuzzleData {
     type: 'pattern';
-    variant: 'alternating' | 'growing' | 'rotating' | 'color_cycle' | 'fibonacci' | 'double_step';
+    variant: 'alternating' | 'growing' | 'rotating' | 'color_cycle';
     sequence: ShapeInfo[];
     answer: ShapeInfo;
     options: ShapeInfo[];
     missingIndex: number;
-    // For numeric sequence variants, store the numeric context
-    numericSequence?: number[];
-    numericAnswer?: number;
-    numericOptions?: number[];
 }
 
 export interface LanguagePuzzleData {
     type: 'language';
-    variant: 'typing' | 'anagram' | 'spelling' | 'vowels' | 'reverse' | 'category' | 'affix' | 'consonants' | 'length' | 'palindrome' | 'first_letter' | 'rhyme';
+    variant: 'typing' | 'anagram' | 'spelling' | 'vowels' | 'reverse' | 'category' | 'affix' | 'consonants' | 'length' | 'palindrome';
     prompt: string;
     answer: string;
     options?: string[];
@@ -65,7 +70,7 @@ export interface SpatialPuzzleData {
     variant: 'count' | 'match' | 'odd' | 'color' | 'size' | 'rotation' | 'pair';
     shapes: ShapeInfo[];
     answer: number | string;
-    answerIndices?: number[];
+    answerIndices?: number[]; // for 'pair': multiple valid clicks
     options?: (number | string)[];
 }
 
@@ -81,7 +86,7 @@ export interface MemoryPuzzleData {
     variant: 'numbers' | 'colors' | 'shapes';
     sequence: (string | number)[];
     showDuration: number; // ms
-    inputDuration: number; // ms
+    inputDuration: number; // ms - for the second phase
 }
 
 export interface ReactionPuzzleData {
@@ -96,8 +101,11 @@ export type FlingDirection = 'left' | 'right' | 'top' | 'bottom' | 'top-left' | 
 export interface MinigamePuzzleData {
     type: 'minigame';
     variant: 'click_when_go' | 'whack' | 'pick_biggest' | 'pick_odd' | 'double_tap' | 'dont_click' | 'countdown' | 'tap_fast' | 'fling_direction';
+    /** For pick_biggest/pick_odd: shapes to display */
     shapes?: ShapeInfo[];
+    /** Index of correct answer (for pick_biggest, pick_odd) */
     answerIndex?: number;
+    /** For fling_direction: which side/corner to fling toward */
     targetDirection?: FlingDirection;
 }
 
@@ -108,45 +116,6 @@ export interface PowerUpPuzzleData {
     targetValue: number;
     effectDescription: string;
 }
-
-export interface EmojiPuzzleData {
-    type: 'emoji';
-    variant: 'odd_one_out' | 'count' | 'match' | 'sequence';
-    prompt: string;
-    answer: string;
-    options: string[];
-}
-
-export interface TriviaPuzzleData {
-    type: 'trivia';
-    question: string;
-    answer: string;
-    options: string[];
-}
-
-export interface RomanPuzzleData {
-    type: 'roman';
-    variant: 'to_decimal' | 'to_roman';
-    roman: string;
-    decimal: number;
-    answer: string;
-    options: string[];
-}
-
-// Union type for all puzzle data
-export type PuzzleData =
-    | MathPuzzleData
-    | PatternPuzzleData
-    | LanguagePuzzleData
-    | SpatialPuzzleData
-    | MemoryPuzzleData
-    | ReactionPuzzleData
-    | MinigamePuzzleData
-    | PowerUpPuzzleData
-    | MetaPuzzleData
-    | EmojiPuzzleData
-    | TriviaPuzzleData
-    | RomanPuzzleData;
 
 export interface ActivePuzzle extends PuzzleDefinition {
     spawnTime: number;
@@ -183,10 +152,10 @@ export interface GameState {
 }
 
 export interface DifficultyConfig {
-    spawnInterval: number;
-    minTimeLimit: number;
-    maxActiveCategories: number;
-    multiStepChance: number;
+    spawnInterval: number; // ms between spawns
+    minTimeLimit: number; // minimum seconds for puzzle timer
+    maxActiveCategories: number; // how many categories are in pool
+    multiStepChance: number; // 0-1 chance of harder puzzles
 }
 
 export const CATEGORY_COLORS: Record<PuzzleCategory, string> = {
@@ -200,9 +169,6 @@ export const CATEGORY_COLORS: Record<PuzzleCategory, string> = {
     fling: '#ff4081',
     powerup: '#ffd740',
     meta: '#9c27b0',
-    emoji: '#ffeb3b',
-    trivia: '#e040fb',
-    roman: '#ffc107',
 };
 
 export const SHAPE_COLOR_NAMES: Record<string, string> = {
@@ -225,23 +191,4 @@ export const CATEGORY_LABELS: Record<PuzzleCategory, string> = {
     fling: '👉 Fling',
     powerup: '⭐ Power-Up',
     meta: '🎯 Meta',
-    emoji: '😀 Emoji',
-    trivia: '🧩 Trivia',
-    roman: '🏛️ Roman',
-};
-
-export const CATEGORY_ICONS: Record<PuzzleCategory, string> = {
-    math: '🧮',
-    pattern: '🔄',
-    language: '📝',
-    spatial: '🔲',
-    memory: '🧠',
-    reaction: '⚡',
-    minigame: '🎮',
-    fling: '👉',
-    powerup: '⭐',
-    meta: '🎯',
-    emoji: '😀',
-    trivia: '🧩',
-    roman: '🏛️',
 };
