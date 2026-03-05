@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import { prisma } from '@/lib/prisma';
+import { handleSchema } from '@/lib/handle';
 
 export async function GET(req: NextRequest) {
     try {
@@ -13,7 +14,7 @@ export async function GET(req: NextRequest) {
 
         const { searchParams } = new URL(req.url);
         const search = searchParams.get('q');
-        
+
         const cursor = searchParams.get('cursor');
         const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100);
 
@@ -21,6 +22,7 @@ export async function GET(req: NextRequest) {
             OR: [
                 { name: { contains: search, mode: 'insensitive' as const } },
                 { username: { contains: search, mode: 'insensitive' as const } },
+                { handle: { contains: search, mode: 'insensitive' as const } },
                 { email: { contains: search, mode: 'insensitive' as const } }
             ]
         } : {};
@@ -46,6 +48,7 @@ export async function GET(req: NextRequest) {
                 id: true,
                 name: true,
                 username: true,
+                handle: true,
                 email: true,
                 image: true,
                 isAdmin: true,
@@ -84,12 +87,12 @@ export async function PATCH(req: NextRequest) {
         }
 
         const body = await req.json();
-        const { userId, isVerified, isAdmin } = body;
+        const { userId, isVerified, isAdmin, handle } = body;
 
         if (!userId) {
             return new NextResponse('Missing userId', { status: 400 });
         }
-        
+
         // Prevent editing oneself to remove admin
         if (userId === session.user.id && isAdmin === false) {
              return new NextResponse('Cannot remove admin privileges from yourself', { status: 400 });
@@ -99,6 +102,40 @@ export async function PATCH(req: NextRequest) {
         if (typeof isVerified === 'boolean') updateData.isVerified = isVerified;
         if (typeof isAdmin === 'boolean') updateData.isAdmin = isAdmin;
 
+        // Admin handle change (no cooldown, but must be valid and unique)
+        if (typeof handle === 'string') {
+            // Prevent admins from changing other admins' handles
+            const targetUser = await prisma.user.findUnique({
+                where: { id: userId },
+                select: { isAdmin: true },
+            });
+            if (targetUser?.isAdmin && userId !== session.user.id) {
+                return new NextResponse('Cannot change another admin\'s handle', { status: 403 });
+            }
+
+            const validation = handleSchema.safeParse(handle);
+            if (!validation.success) {
+                return NextResponse.json(
+                    { error: validation.error.issues[0]?.message ?? 'Invalid handle' },
+                    { status: 400 }
+                );
+            }
+
+            const existing = await prisma.user.findUnique({
+                where: { handle },
+                select: { id: true },
+            });
+            if (existing && existing.id !== userId) {
+                return NextResponse.json(
+                    { error: 'This handle is already taken' },
+                    { status: 409 }
+                );
+            }
+
+            updateData.handle = handle;
+            updateData.handleChangedAt = new Date();
+        }
+
         const updatedUser = await prisma.user.update({
             where: { id: userId },
             data: updateData,
@@ -106,6 +143,7 @@ export async function PATCH(req: NextRequest) {
                 id: true,
                 name: true,
                 username: true,
+                handle: true,
                 isVerified: true,
                 isAdmin: true
             }

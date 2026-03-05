@@ -9,6 +9,19 @@ const PROTECTED_GAME_ROUTES = games
 export function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
+    // Rewrite /@handle URLs to internal routes
+    if (pathname.startsWith('/@')) {
+        const withoutAt = pathname.slice(2); // "handle" or "handle/post/xxx"
+
+        if (withoutAt.includes('/post/')) {
+            // /@handle/post/xxx → /handle/post/xxx (matches [userid]/post/[postid])
+            return NextResponse.rewrite(new URL(`/${withoutAt}`, request.url));
+        }
+
+        // /@handle → /profile/handle (matches profile/[id])
+        return NextResponse.rewrite(new URL(`/profile/${withoutAt}`, request.url));
+    }
+
     const isProtected = PROTECTED_GAME_ROUTES.some(
         (route) => pathname === route || pathname.startsWith(route + '/')
     );

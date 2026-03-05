@@ -283,17 +283,20 @@ function LockOverlay({ cls }: { cls: ClassDef }) {
                   <Coins size={12} />
                   {cls.unlockCost} coins
                 </span>
-                <button
+                <div
+                  role="button"
+                  tabIndex={0}
                   onClick={handlePurchase}
-                  disabled={!canPurchase}
-                  className={`w-full mt-1 py-1.5 rounded-lg text-[11px] font-semibold transition-colors ${
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handlePurchase(e as unknown as React.MouseEvent); } }}
+                  aria-disabled={!canPurchase}
+                  className={`w-full mt-1 py-1.5 rounded-lg text-[11px] font-semibold transition-colors text-center ${
                     canPurchase
-                      ? 'bg-(--altair-accent) hover:bg-(--altair-accent-hover) text-white'
-                      : 'bg-(--altair-surface-active) text-(--altair-text-dim) cursor-not-allowed'
+                      ? 'bg-(--altair-accent) hover:bg-(--altair-accent-hover) text-white cursor-pointer'
+                      : 'bg-(--altair-surface-active) text-(--altair-text-dim) cursor-not-allowed pointer-events-none'
                   }`}
                 >
                   {canPurchase ? 'Purchase' : 'Not enough coins'}
-                </button>
+                </div>
               </>
             )}
           </div>

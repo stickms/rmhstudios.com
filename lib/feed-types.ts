@@ -10,6 +10,7 @@ export interface FeedItemUser {
   id: string;
   name?: string | null;
   username?: string | null;
+  handle?: string | null;
   image?: string | null;
   isVerified?: boolean;
   isAdmin?: boolean;

@@ -29,7 +29,9 @@ export async function POST(
       );
     }
 
-    const { id: followingId } = await params;
+    const { id: idOrHandle } = await params;
+    const resolvedUser = await prisma.user.findUnique({ where: { handle: idOrHandle }, select: { id: true } });
+    const followingId = resolvedUser?.id ?? idOrHandle;
     const followerId = session.user.id;
 
     if (followingId === followerId) {

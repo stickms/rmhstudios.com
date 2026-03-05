@@ -315,7 +315,7 @@ export function ConversationView({ conversationId }: { conversationId: string })
           </Link>
           {otherUser && (
             <Link
-              href={`/profile/${otherUser.id}`}
+              href={`/@${(otherUser as any).handle || otherUser.id}`}
               className="flex items-center gap-2 hover:opacity-80 transition-opacity"
             >
               <div className="w-8 h-8 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-xs ring-2 ring-site-bg shrink-0">

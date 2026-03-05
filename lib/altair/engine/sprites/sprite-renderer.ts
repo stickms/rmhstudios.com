@@ -13,16 +13,20 @@ import type { SpriteSheet } from './sprite-loader';
 import type { AnimationState } from './sprite-animator';
 import { getCurrentFrameIndex, getFrameRect } from './sprite-animator';
 import type { SpriteBatch } from '../webgl/webgl-sprite-batch';
-import { getGLContext, createTextureFromImage } from '../webgl/webgl-textures';
+import { getGLContext, getContextGeneration, createTextureFromImage } from '../webgl/webgl-textures';
 
 /**
- * Ensure a sprite sheet has a GL texture. Lazily creates it if missing.
+ * Ensure a sprite sheet has a GL texture for the current context.
+ * Recreates the texture if the GL context has changed since it was created.
  */
 function ensureTexture(sheet: SpriteSheet): WebGLTexture | null {
-  if (sheet.glTexture) return sheet.glTexture;
+  const gen = getContextGeneration();
+  if (sheet.glTexture && sheet.glTextureGeneration === gen) return sheet.glTexture;
+  // Texture is missing or from a stale context — (re)create it
   const gl = getGLContext();
   if (!gl || !sheet.loaded) return null;
   sheet.glTexture = createTextureFromImage(gl, sheet.image);
+  sheet.glTextureGeneration = gen;
   return sheet.glTexture;
 }
 

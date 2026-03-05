@@ -15,7 +15,7 @@ interface SidebarUser {
 function UserRow({ user }: { user: SidebarUser }) {
   return (
     <Link
-      href={`/profile/${user.id}`}
+      href={`/@${(user as any).handle || user.id}`}
       className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-site-surface-hover transition-colors group"
     >
       <div className="w-8 h-8 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-xs shrink-0">

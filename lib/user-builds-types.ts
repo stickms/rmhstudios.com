@@ -7,6 +7,7 @@ export interface BuildUser {
   name: string | null;
   image: string | null;
   username: string | null;
+  handle?: string | null;
 }
 
 export interface BuildCategory {

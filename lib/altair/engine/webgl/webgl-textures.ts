@@ -8,12 +8,17 @@
 const textureCache = new Map<string, WebGLTexture>();
 
 let activeGL: WebGLRenderingContext | null = null;
+let contextGeneration = 0;
 
 /**
  * Store the GL context for deferred texture creation.
+ * Bumps the context generation so stale textures are detected,
+ * and clears the texture cache (old textures are invalid on a new context).
  */
 export function setGLContext(gl: WebGLRenderingContext): void {
   activeGL = gl;
+  contextGeneration++;
+  textureCache.clear();
 }
 
 /**
@@ -21,6 +26,14 @@ export function setGLContext(gl: WebGLRenderingContext): void {
  */
 export function getGLContext(): WebGLRenderingContext | null {
   return activeGL;
+}
+
+/**
+ * Get the current context generation counter.
+ * Used to detect stale textures from a previous GL context.
+ */
+export function getContextGeneration(): number {
+  return contextGeneration;
 }
 
 /**

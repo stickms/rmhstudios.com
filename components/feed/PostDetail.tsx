@@ -59,8 +59,8 @@ export function PostDetail({ postId }: PostDetailProps) {
 
   const handleShare = () => {
     setMenuOpen(false);
-    const shareUrl = `${window.location.origin}/${post?.user?.id}/post/${postId}`;
-    const userName = post?.user?.name || post?.user?.username || 'someone';
+    const shareUrl = `${window.location.origin}/@${post?.user?.handle || post?.user?.id}/post/${postId}`;
+    const userName = post?.user?.name || post?.user?.handle || 'someone';
     const shareText = `Check out what ${userName} RMHark'd on RMH Studios!`;
     if (navigator.share) {
       navigator.share({ title: 'RMH', text: shareText, url: shareUrl }).catch(() => {});
@@ -240,7 +240,7 @@ export function PostDetail({ postId }: PostDetailProps) {
 
         {/* User header */}
         <div className="flex items-center gap-3 mb-3 pr-8">
-          <Link href={`/profile/${post.user?.id}`}>
+          <Link href={`/@${post.user?.handle || post.user?.id}`}>
             <div className="w-12 h-12 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-sm shrink-0">
               {post.user?.image ? (
                 <img src={post.user.image} alt={post.user.name || 'User'} className="w-full h-full rounded-full object-cover" />
@@ -250,11 +250,11 @@ export function PostDetail({ postId }: PostDetailProps) {
             </div>
           </Link>
           <div>
-            <Link href={`/profile/${post.user?.id}`} className="hover:underline">
+            <Link href={`/@${post.user?.handle || post.user?.id}`} className="hover:underline">
               <span className="font-bold text-site-text">{post.user?.name || 'Unknown'}</span>
             </Link>
-            {post.user?.username && (
-              <p className="text-sm text-site-text-dim">@{post.user.username}</p>
+            {post.user?.handle && (
+              <p className="text-sm text-site-text-dim">@{post.user.handle}</p>
             )}
           </div>
         </div>
@@ -286,10 +286,10 @@ export function PostDetail({ postId }: PostDetailProps) {
           <div className="mb-3 border border-site-border rounded-xl p-3 bg-site-surface/30">
             <div className="flex items-center gap-1.5 text-sm mb-1">
               {post.original.user ? (
-                <Link href={`/profile/${post.original.user.id}`} className="flex items-center gap-1.5 min-w-0 hover:underline">
+                <Link href={`/@${post.original.user.handle || post.original.user.id}`} className="flex items-center gap-1.5 min-w-0 hover:underline">
                   <span className="font-bold text-site-text truncate">{post.original.user.name || 'Unknown'}</span>
-                  {post.original.user.username && (
-                    <span className="text-site-text-dim truncate">@{post.original.user.username}</span>
+                  {post.original.user.handle && (
+                    <span className="text-site-text-dim truncate">@{post.original.user.handle}</span>
                   )}
                 </Link>
               ) : (
@@ -415,8 +415,8 @@ export function PostDetail({ postId }: PostDetailProps) {
       <ShareModal
         open={shareModalOpen}
         onClose={() => setShareModalOpen(false)}
-        url={typeof window !== 'undefined' ? `${window.location.origin}/${post?.user?.id}/post/${postId}` : ''}
-        text={`Check out what ${post?.user?.name || post?.user?.username || 'someone'} RMHark'd on RMH Studios!`}
+        url={typeof window !== 'undefined' ? `${window.location.origin}/@${post?.user?.handle || post?.user?.id}/post/${postId}` : ''}
+        text={`Check out what ${post?.user?.name || post?.user?.handle || 'someone'} RMHark'd on RMH Studios!`}
       />
     </div>
   );

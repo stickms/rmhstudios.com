@@ -1,6 +1,6 @@
 'use client';
 
-import type { FeedItem } from '@/lib/feed-types';
+import type { FeedItem, FeedItemUser } from '@/lib/feed-types';
 import { RMHarkActions } from './RMHarkActions';
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
@@ -17,6 +17,16 @@ import { ShareModal } from './ShareModal';
 
 interface RMHarkCardProps {
   item: FeedItem;
+}
+
+function userProfileHref(user: FeedItemUser | undefined | null): string {
+  if (!user) return '/';
+  return `/@${user.handle || user.id}`;
+}
+
+function postHref(user: FeedItemUser | undefined | null, postId: string): string {
+  if (!user) return '/';
+  return `/@${user.handle || user.id}/post/${postId}`;
 }
 
 function timeAgo(dateStr: string): string {
@@ -47,7 +57,7 @@ function UserAvatar({ user }: { user: FeedItem['user'] }) {
       )}
     </div>
   );
-  return <Link href={`/profile/${user.id}`}>{avatar}</Link>;
+  return <Link href={userProfileHref(user)}>{avatar}</Link>;
 }
 
 export function RMHarkCard({ item }: RMHarkCardProps) {
@@ -79,10 +89,11 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [menuOpen]);
 
+  const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}${postHref(item.user, actualId)}` : '';
+
   const handleShare = () => {
     setMenuOpen(false);
-    const shareUrl = `${window.location.origin}/${item.user?.id}/post/${actualId}`;
-    const userName = item.user?.name || item.user?.username || 'someone';
+    const userName = item.user?.name || item.user?.handle || 'someone';
     const shareText = `Check out what ${userName} RMHark'd on RMH Studios!`;
     if (navigator.share) {
       navigator.share({ title: 'RMH', text: shareText, url: shareUrl }).catch(() => {});
@@ -114,7 +125,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
     if (target.closest('a') || target.closest('button') || target.closest('[role="button"]')) {
       return;
     }
-    router.push(`/${item.user?.id}/post/${actualId}`);
+    router.push(postHref(item.user, actualId));
   };
 
   return (
@@ -173,10 +184,10 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
         <div className="flex items-center gap-1.5 text-xs text-site-text-dim mb-2 ml-12">
           <Repeat2 className="w-3.5 h-3.5" />
           <Link
-            href={`/profile/${item.repostedBy.id}`}
+            href={userProfileHref(item.repostedBy)}
             className="hover:underline"
           >
-            {item.repostedBy.name || item.repostedBy.username || 'Someone'} reRMHark&apos;d
+            {item.repostedBy.name || item.repostedBy.handle || 'Someone'} reRMHark&apos;d
           </Link>
         </div>
       )}
@@ -188,7 +199,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
           {/* Header */}
           <div className="flex items-center gap-1.5 text-sm pr-6">
             {item.user ? (
-              <Link href={`/profile/${item.user.id}`} className="flex items-center gap-1.5 min-w-0 hover:underline">
+              <Link href={userProfileHref(item.user)} className="flex items-center gap-1.5 min-w-0 hover:underline">
               <span className="font-bold text-site-text truncate">
                 {item.user.name || 'Unknown'}
               </span>
@@ -200,9 +211,9 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
                   <ShieldCheck className="w-4 h-4 text-site-accent" />
                 </span>
               )}
-              {item.user.username && (
+              {item.user.handle && (
                 <span className="text-site-text-dim truncate">
-                  @{item.user.username}
+                  @{item.user.handle}
                 </span>
               )}
             </Link>
@@ -241,7 +252,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
             <div className="mt-3 border border-site-border rounded-xl p-3 bg-site-surface/30">
               <div className="flex items-center gap-1.5 text-sm mb-1">
                 {item.original.user ? (
-                  <Link href={`/profile/${item.original.user.id}`} className="flex items-center gap-1.5 min-w-0 hover:underline">
+                  <Link href={userProfileHref(item.original.user)} className="flex items-center gap-1.5 min-w-0 hover:underline">
                     <span className="font-bold text-site-text truncate">
                       {item.original.user.name || 'Unknown'}
                     </span>
@@ -253,9 +264,9 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
                         <ShieldCheck className="w-3.5 h-3.5 text-site-accent" />
                       </span>
                     )}
-                    {item.original.user.username && (
+                    {item.original.user.handle && (
                       <span className="text-site-text-dim truncate">
-                        @{item.original.user.username}
+                        @{item.original.user.handle}
                       </span>
                     )}
                   </Link>
@@ -286,8 +297,8 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
       <ShareModal
         open={shareModalOpen}
         onClose={() => setShareModalOpen(false)}
-        url={typeof window !== 'undefined' ? `${window.location.origin}/${item.user?.id}/post/${actualId}` : ''}
-        text={`Check out what ${item.user?.name || item.user?.username || 'someone'} RMHark'd on RMH Studios!`}
+        url={shareUrl}
+        text={`Check out what ${item.user?.name || item.user?.handle || 'someone'} RMHark'd on RMH Studios!`}
       />
     </div>
   );

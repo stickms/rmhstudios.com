@@ -105,7 +105,7 @@ export function BuildDetail({ build: initialBuild }: BuildDetailProps) {
 
         {/* Author & Date */}
         <div className="flex items-center gap-4 mb-4">
-          <Link href={`/profile/${build.user.id}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+          <Link href={`/@${build.user.handle || build.user.id}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
             {build.user.image ? (
               <img src={build.user.image} alt={build.user.name || 'User'} className="w-10 h-10 rounded-full" />
             ) : (

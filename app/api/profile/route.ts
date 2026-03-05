@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { headers } from "next/headers";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { updateProfileSchema } from "@/lib/profile-schema";
+import { handleSchema, canChangeHandle } from "@/lib/handle";
 
 export const runtime = "nodejs";
 
@@ -37,6 +38,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     const {
+      handle,
       displayName,
       bio,
       location,
@@ -49,6 +51,56 @@ export async function PATCH(req: NextRequest) {
       profileSongPreviewUrl,
       profileSongAlbumArt,
     } = parsed.data;
+
+    // Handle change logic
+    let newHandle: string | undefined;
+    if (handle !== undefined) {
+      const handleValidation = handleSchema.safeParse(handle);
+      if (!handleValidation.success) {
+        return NextResponse.json(
+          { error: handleValidation.error.issues[0]?.message ?? "Invalid handle" },
+          { status: 400 }
+        );
+      }
+
+      // Check if handle actually changed
+      const currentUser = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { handle: true, handleChangedAt: true, isAdmin: true },
+      });
+
+      if (handle !== currentUser?.handle) {
+        // Check cooldown
+        if (!canChangeHandle(currentUser?.handleChangedAt ?? null, currentUser?.isAdmin ?? false)) {
+          return NextResponse.json(
+            { error: "You can only change your handle once every two weeks" },
+            { status: 429 }
+          );
+        }
+
+        // Check uniqueness
+        const existing = await prisma.user.findUnique({
+          where: { handle },
+          select: { id: true },
+        });
+        if (existing && existing.id !== session.user.id) {
+          return NextResponse.json(
+            { error: "This handle is already taken" },
+            { status: 409 }
+          );
+        }
+
+        newHandle = handle;
+      }
+    }
+
+    // Update handle on user model if changed
+    if (newHandle) {
+      await prisma.user.update({
+        where: { id: session.user.id },
+        data: { handle: newHandle, handleChangedAt: new Date() },
+      });
+    }
 
     const songFields = profileSongSpotifyId !== undefined
       ? {
@@ -84,6 +136,7 @@ export async function PATCH(req: NextRequest) {
     });
 
     return NextResponse.json({
+      ...(newHandle ? { handle: newHandle } : {}),
       displayName: profile.displayName,
       bio: profile.bio,
       location: profile.location,

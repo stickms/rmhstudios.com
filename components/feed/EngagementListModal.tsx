@@ -8,6 +8,7 @@ interface EngagementUser {
   id: string;
   name: string | null;
   username: string | null;
+  handle: string | null;
   image: string | null;
 }
 
@@ -83,7 +84,7 @@ export function EngagementListModal({ open, onClose, postId, commentId, type }: 
           {users.map((user) => (
             <Link
               key={user.id}
-              href={`/profile/${user.username || user.id}`}
+              href={`/@${user.handle || user.id}`}
               onClick={onClose}
               className="flex items-center gap-3 px-5 py-3 hover:bg-site-surface/50 transition-colors border-b border-site-border/50"
             >
@@ -102,8 +103,8 @@ export function EngagementListModal({ open, onClose, postId, commentId, type }: 
                 <p className="font-bold text-site-text text-sm truncate">
                   {user.name || user.username || 'Unknown'}
                 </p>
-                {user.username && (
-                  <p className="text-xs text-site-text-dim truncate">@{user.username}</p>
+                {user.handle && (
+                  <p className="text-xs text-site-text-dim truncate">@{user.handle}</p>
                 )}
               </div>
             </Link>

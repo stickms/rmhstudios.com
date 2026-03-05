@@ -83,7 +83,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: userId } = await params;
+    const { id: idOrHandle } = await params;
+    const resolvedUser = await prisma.user.findUnique({ where: { handle: idOrHandle }, select: { id: true } });
+    const userId = resolvedUser?.id ?? idOrHandle;
     const { searchParams } = new URL(req.url);
     const cursor = searchParams.get("cursor");
     const limit = Math.min(parseInt(searchParams.get("limit") || "20"), 50);

@@ -16,7 +16,7 @@ import { useUnreadCount } from '@/lib/useUnreadCount';
 
 const navLinks = [
   { href: '/', label: 'Home', icon: Home },
-  { href: '/builds', label: 'Official Builds', icon: Package },
+  { href: '/builds', label: 'Curated Builds', icon: Package },
   { href: '/user-builds', label: 'User Builds', icon: Hammer },
   { href: '/news', label: 'News', icon: Newspaper },
   { href: '/research', label: 'Research', icon: FlaskConical },
@@ -114,9 +114,9 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
         {/* Dynamic Profile link (shown when logged in) */}
         {session && (
           <Link
-            href={`/profile/${session.user.id}`}
+            href={`/@${(session.user as any).handle || session.user.id}`}
             className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${itemJustifyClass} ${
-              pathname?.startsWith('/profile')
+              pathname?.startsWith('/profile') || pathname?.startsWith('/@')
                 ? 'text-site-accent bg-site-accent-dim'
                 : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
             }`}
@@ -237,7 +237,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
         ) : session ? (
           <div className="flex flex-col gap-2">
             <Link
-              href={`/profile/${session.user.id}`}
+              href={`/@${(session.user as any).handle || session.user.id}`}
               className={`flex items-center gap-2 px-2 hover:bg-site-surface rounded-xl transition-colors py-1 ${itemJustifyClass}`}
             >
               <div className="w-8 h-8 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-xs ring-2 ring-site-bg shrink-0">

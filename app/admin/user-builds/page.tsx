@@ -15,7 +15,7 @@ interface Build {
     status: string;
     visibility: string;
     publishedAt: string | null;
-    user: { name: string; username: string };
+    user: { name: string; username: string; handle?: string | null };
     category?: { name: string } | null;
 }
 
@@ -168,8 +168,8 @@ export default function AdminUserBuildsPage() {
                                             )}
                                         </div>
                                         <div className="flex items-center gap-2 text-sm text-site-text-dim truncate">
-                                            <Link href={`/profile/${build.user.username}`} className="hover:text-site-text transition-colors">
-                                                @{build.user.username}
+                                            <Link href={`/@${build.user.handle || build.user.username}`} className="hover:text-site-text transition-colors">
+                                                @{build.user.handle || build.user.username}
                                             </Link>
                                             <span>•</span>
                                             <span>{build.category?.name || 'Uncategorized'}</span>

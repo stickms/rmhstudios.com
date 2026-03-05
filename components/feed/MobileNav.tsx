@@ -17,7 +17,7 @@ export function MobileNav() {
   const unreadCount = useUnreadCount(!!session);
 
   const profileHref = session?.user?.id
-    ? `/profile/${session.user.id}`
+    ? `/@${(session.user as any).handle || session.user.id}`
     : '/login';
 
   const isHome = pathname === '/';

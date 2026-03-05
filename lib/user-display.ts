@@ -9,6 +9,7 @@ export const userDisplaySelect = {
   name: true,
   image: true,
   username: true,
+  handle: true,
   isVerified: true,
   isAdmin: true,
   profile: {
@@ -37,15 +38,17 @@ export function resolveUserDisplay(user: UserWithProfile) {
 type UserWithProfileAndId = UserWithProfile & {
   id: string;
   username: string | null;
+  handle?: string | null;
 };
 
-/** Returns { id, name, image, username, isVerified, isAdmin } with custom fields resolved. */
+/** Returns { id, name, image, username, handle, isVerified, isAdmin } with custom fields resolved. */
 export function resolveUser(user: UserWithProfileAndId) {
   return {
     id: user.id,
     name: user.profile?.displayName ?? user.name,
     image: user.profile?.customImage ?? user.image,
     username: user.username,
+    handle: user.handle ?? null,
     isVerified: user.isVerified ?? false,
     isAdmin: user.isAdmin ?? false,
   };

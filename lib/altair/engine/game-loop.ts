@@ -19,10 +19,11 @@ import { renderFrame, updatePlayerAnimation, updateEnemyAnimation, updateSummonA
 import { PlayerStats } from '../stores/game-store';
 import { CLASSES } from '../data/classes';
 import { initAllSpriteSheets } from './sprites/sprite-defs';
+import { clearSpriteCache } from './sprites/sprite-loader';
 import { initWebGL } from './webgl/webgl-context';
 import { SpriteBatch } from './webgl/webgl-sprite-batch';
 import { ShapeBatch } from './webgl/webgl-shapes';
-import { setGLContext } from './webgl/webgl-textures';
+import { setGLContext, clearTextureCache } from './webgl/webgl-textures';
 
 // System imports
 import { updatePlayer, computeEffectiveStats, updateClassAbilities, createClassAbilityState, ClassAbilityState, tryRaiseDead, processSanguineFeast, getBerserkerBonuses, getKnightSpeedBonus, reportBloodNovaKill, tryTransferHuntersMark } from './player-system';
@@ -1231,6 +1232,9 @@ export function createGameLoop(
       }
       // Clean up overlay canvas
       overlayCanvas.parentElement?.removeChild(overlayCanvas);
+      // Clear sprite and texture caches to avoid context lost issues on restart
+      clearSpriteCache();
+      clearTextureCache();
     },
     getWorld() {
       return world;

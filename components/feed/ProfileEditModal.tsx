@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { Camera, X } from 'lucide-react';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { Camera, X, Check, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ImageCropModal } from './ImageCropModal';
 import { SpotifySongSearch, type SpotifyTrack } from './SpotifySongSearch';
@@ -19,6 +19,7 @@ interface ProfileEditModalProps {
   onClose: () => void;
   onSaved: (data: {
     displayName?: string | null;
+    handle?: string | null;
     image?: string | null;
     bio: string | null;
     location: string | null;
@@ -27,6 +28,8 @@ interface ProfileEditModalProps {
     dmPrivacy: string;
   } & ProfileSongData) => void;
   initial: {
+    handle: string | null;
+    handleCooldownMs: number;
     name: string | null;
     image: string | null;
     bio: string | null;
@@ -42,8 +45,17 @@ const MAX_BIO = 160;
 const MAX_LOCATION = 100;
 const MAX_WEBSITE = 200;
 const MAX_AVATAR_MB = 5;
+const MAX_HANDLE = 20;
+
+function formatCooldown(ms: number): string {
+  const days = Math.ceil(ms / (1000 * 60 * 60 * 24));
+  if (days <= 1) return 'less than a day';
+  return `${days} days`;
+}
 
 export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEditModalProps) {
+  const [handle, setHandle] = useState(initial.handle ?? '');
+  const [handleStatus, setHandleStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid'>('idle');
   const [displayName, setDisplayName] = useState(initial.name ?? '');
   const [bio, setBio] = useState(initial.bio ?? '');
   const [location, setLocation] = useState(initial.location ?? '');
@@ -56,6 +68,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const handleCheckTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const [selectedSong, setSelectedSong] = useState<SpotifyTrack | null>(
     initial.profileSongSpotifyId
@@ -71,6 +84,42 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
 
   const bioRemaining = MAX_BIO - bio.length;
   const nameRemaining = MAX_NAME - displayName.length;
+  const handleChanged = handle !== (initial.handle ?? '');
+  const handleOnCooldown = initial.handleCooldownMs > 0;
+
+  // Handle availability check with debounce
+  const checkHandle = useCallback(async (value: string) => {
+    if (!value || value === initial.handle) {
+      setHandleStatus('idle');
+      return;
+    }
+
+    if (value.length < 3 || !/^[a-z][a-z0-9_]*$/.test(value)) {
+      setHandleStatus('invalid');
+      return;
+    }
+
+    setHandleStatus('checking');
+    try {
+      const res = await fetch(`/api/handle/check?handle=${encodeURIComponent(value)}`);
+      const data = await res.json();
+      if (data.available) {
+        setHandleStatus('available');
+      } else {
+        setHandleStatus(data.reason ? 'invalid' : 'taken');
+      }
+    } catch {
+      setHandleStatus('idle');
+    }
+  }, [initial.handle]);
+
+  const handleHandleChange = (value: string) => {
+    const sanitized = value.toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, MAX_HANDLE);
+    setHandle(sanitized);
+
+    if (handleCheckTimeout.current) clearTimeout(handleCheckTimeout.current);
+    handleCheckTimeout.current = setTimeout(() => checkHandle(sanitized), 400);
+  };
 
   // Prevent body scroll
   useEffect(() => {
@@ -101,25 +150,15 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
     }
 
     setError(null);
-    // Open crop modal with the selected image
     const objectUrl = URL.createObjectURL(file);
     setCropSrc(objectUrl);
-
-    // Reset input so selecting the same file again triggers onChange
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleCropDone = (croppedBlob: Blob) => {
-    // Clean up the source image URL
-    if (cropSrc && cropSrc.startsWith('blob:')) {
-      URL.revokeObjectURL(cropSrc);
-    }
+    if (cropSrc && cropSrc.startsWith('blob:')) URL.revokeObjectURL(cropSrc);
     setCropSrc(null);
-
-    // Revoke old preview
-    if (avatarPreview && avatarPreview.startsWith('blob:')) {
-      URL.revokeObjectURL(avatarPreview);
-    }
+    if (avatarPreview && avatarPreview.startsWith('blob:')) URL.revokeObjectURL(avatarPreview);
 
     const croppedFile = new File([croppedBlob], 'avatar.png', { type: 'image/png' });
     setAvatarFile(croppedFile);
@@ -127,9 +166,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
   };
 
   const handleCropCancel = () => {
-    if (cropSrc && cropSrc.startsWith('blob:')) {
-      URL.revokeObjectURL(cropSrc);
-    }
+    if (cropSrc && cropSrc.startsWith('blob:')) URL.revokeObjectURL(cropSrc);
     setCropSrc(null);
   };
 
@@ -142,13 +179,22 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
       return;
     }
 
+    if (handleChanged && handleStatus === 'taken') {
+      setError('Handle is already taken');
+      return;
+    }
+
+    if (handleChanged && handleStatus === 'invalid') {
+      setError('Handle must start with a letter and contain only lowercase letters, numbers, and underscores (min 3 chars)');
+      return;
+    }
+
     setSubmitting(true);
     setError(null);
 
     try {
       let newImageUrl: string | undefined;
 
-      // Step 1: Upload avatar if changed
       if (avatarFile) {
         const formData = new FormData();
         formData.append('avatar', avatarFile);
@@ -166,11 +212,11 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
         newImageUrl = avatarData.image;
       }
 
-      // Step 2: Save text fields + song
       const res = await fetch('/api/profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          ...(handleChanged ? { handle: handle.trim() } : {}),
           displayName: trimmedName,
           bio: bio.trim() || null,
           location: location.trim() || null,
@@ -253,6 +299,55 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
                 onChange={handleAvatarSelect}
               />
               <p className="text-xs text-site-text-dim">Click to change avatar (max {MAX_AVATAR_MB} MB)</p>
+            </div>
+
+            {/* Handle */}
+            <div>
+              <label className="block text-xs font-medium text-site-text-dim mb-1.5">Handle</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-site-text-dim text-sm">@</span>
+                <input
+                  type="text"
+                  value={handle}
+                  onChange={(e) => handleHandleChange(e.target.value)}
+                  placeholder="your_handle"
+                  maxLength={MAX_HANDLE}
+                  disabled={handleOnCooldown}
+                  className={`w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-xl p-3 pl-7 border outline-none transition-colors ${
+                    handleOnCooldown
+                      ? 'border-site-border opacity-60 cursor-not-allowed'
+                      : handleStatus === 'available'
+                      ? 'border-emerald-500'
+                      : handleStatus === 'taken' || handleStatus === 'invalid'
+                      ? 'border-red-400'
+                      : 'border-site-border focus:border-site-accent'
+                  }`}
+                />
+                {handleChanged && handleStatus === 'checking' && (
+                  <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-site-text-dim animate-spin" />
+                )}
+                {handleChanged && handleStatus === 'available' && (
+                  <Check className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500" />
+                )}
+                {handleChanged && handleStatus === 'taken' && (
+                  <X className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-red-400" />
+                )}
+              </div>
+              <div className="mt-1">
+                {handleOnCooldown ? (
+                  <p className="text-xs text-site-text-dim">
+                    You can change your handle again in {formatCooldown(initial.handleCooldownMs)}
+                  </p>
+                ) : handleChanged && handleStatus === 'available' ? (
+                  <p className="text-xs text-emerald-500">Handle is available</p>
+                ) : handleChanged && handleStatus === 'taken' ? (
+                  <p className="text-xs text-red-400">Handle is already taken</p>
+                ) : handleChanged && handleStatus === 'invalid' ? (
+                  <p className="text-xs text-red-400">Must start with a letter, 3-20 chars, lowercase letters/numbers/underscores only</p>
+                ) : (
+                  <p className="text-xs text-site-text-dim">Your unique handle for @mentions and profile URL</p>
+                )}
+              </div>
             </div>
 
             {/* Display Name */}

@@ -58,7 +58,7 @@ export async function generateMetadata({
       title,
       description,
       siteName: 'RMH',
-      url: `${baseUrl}/${user.id}/post/${postid}`,
+      url: `${baseUrl}/@${user.handle || user.id}/post/${postid}`,
       ...(user.image ? { images: [user.image] } : {}),
     },
     twitter: {

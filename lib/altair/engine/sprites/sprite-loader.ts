@@ -5,7 +5,7 @@
 // init and reused for the entire session.
 // =============================================================================
 
-import { getGLContext, createTextureFromImage } from '../webgl/webgl-textures';
+import { getGLContext, getContextGeneration, createTextureFromImage } from '../webgl/webgl-textures';
 
 export interface SpriteSheet {
   image: HTMLImageElement;
@@ -16,6 +16,8 @@ export interface SpriteSheet {
   loaded: boolean;
   /** GPU texture handle — created automatically when GL context is available. */
   glTexture: WebGLTexture | null;
+  /** Context generation when glTexture was created. Used to detect stale textures. */
+  glTextureGeneration: number;
 }
 
 const cache = new Map<string, SpriteSheet>();
@@ -41,6 +43,7 @@ export function loadSpriteSheet(
     rows: 1,
     loaded: false,
     glTexture: null,
+    glTextureGeneration: 0,
   };
 
   image.onload = () => {
@@ -51,6 +54,7 @@ export function loadSpriteSheet(
     const gl = getGLContext();
     if (gl) {
       sheet.glTexture = createTextureFromImage(gl, image);
+      sheet.glTextureGeneration = getContextGeneration();
     }
   };
   image.onerror = () => {
@@ -98,6 +102,7 @@ export function preloadAllSprites(
         rows: 1,
         loaded: false,
         glTexture: null,
+        glTextureGeneration: 0,
       };
 
       const settle = () => {
@@ -113,6 +118,7 @@ export function preloadAllSprites(
         const gl = getGLContext();
         if (gl) {
           sheet.glTexture = createTextureFromImage(gl, image);
+          sheet.glTextureGeneration = getContextGeneration();
         }
         settle();
       };

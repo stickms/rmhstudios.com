@@ -16,6 +16,7 @@ interface ProfileData {
   id: string;
   name: string | null;
   username: string | null;
+  handle: string | null;
   image: string | null;
   isVerified: boolean;
   isAdmin: boolean;
@@ -35,6 +36,7 @@ interface ProfileData {
   rmharkCount: number;
   isFollowing: boolean;
   isOwnProfile: boolean;
+  handleCooldownMs?: number;
 }
 
 type ProfileTab = 'rmharks' | 'likes';
@@ -390,8 +392,8 @@ export function ProfileColumn({ userId }: { userId: string }) {
                 </span>
               )}
             </div>
-            {profile.username && (
-              <p className="text-sm text-site-text-dim">@{profile.username}</p>
+            {profile.handle && (
+              <p className="text-sm text-site-text-dim">@{profile.handle}</p>
             )}
           </div>
           <div className="flex items-center gap-2">
@@ -533,7 +535,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
               <p className="text-sm text-site-text-muted">
                 {profile.isOwnProfile
                   ? "You haven't posted any RMHarks yet."
-                  : `@${profile.username} hasn't posted any RMHarks yet.`}
+                  : `@${profile.handle} hasn't posted any RMHarks yet.`}
               </p>
             </div>
           )}
@@ -567,7 +569,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
               <p className="text-sm text-site-text-muted">
                 {profile.isOwnProfile
                   ? "You haven't liked any posts yet."
-                  : `@${profile.username} hasn't liked any posts yet.`}
+                  : `@${profile.handle} hasn't liked any posts yet.`}
               </p>
             </div>
           )}
@@ -588,6 +590,8 @@ export function ProfileColumn({ userId }: { userId: string }) {
           open={showEdit}
           onClose={() => setShowEdit(false)}
           initial={{
+            handle: profile.handle,
+            handleCooldownMs: profile.handleCooldownMs ?? 0,
             name: profile.name,
             image: profile.image,
             bio: profile.bio,
@@ -608,6 +612,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
                 ...prev,
                 ...(data.displayName !== undefined ? { name: data.displayName } : {}),
                 ...(data.image !== undefined ? { image: data.image } : {}),
+                ...(data.handle !== undefined ? { handle: data.handle } : {}),
                 bio: data.bio,
                 location: data.location,
                 website: data.website,

@@ -1,8 +1,18 @@
 import { z } from "zod";
+import { HANDLE_REGEX } from "@/lib/handle";
 
 export const dmPrivacyValues = ["EVERYONE", "FOLLOWERS", "NONE"] as const;
 
 export const updateProfileSchema = z.object({
+  handle: z
+    .string()
+    .min(3, "Handle must be at least 3 characters")
+    .max(20, "Handle must be at most 20 characters")
+    .regex(
+      HANDLE_REGEX,
+      "Handle must start with a letter and contain only lowercase letters, numbers, and underscores"
+    )
+    .optional(),
   displayName: z
     .string()
     .trim()

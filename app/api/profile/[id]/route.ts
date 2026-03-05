@@ -3,8 +3,44 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { headers } from "next/headers";
 import { resolveUserDisplay } from "@/lib/user-display";
+import { handleCooldownRemaining } from "@/lib/handle";
 
 export const runtime = "nodejs";
+
+const profileSelect = {
+  id: true,
+  name: true,
+  username: true,
+  handle: true,
+  handleChangedAt: true,
+  image: true,
+  isVerified: true,
+  isAdmin: true,
+  createdAt: true,
+  profile: {
+    select: {
+      displayName: true,
+      customImage: true,
+      bio: true,
+      location: true,
+      website: true,
+      showLikes: true,
+      dmPrivacy: true,
+      profileSongSpotifyId: true,
+      profileSongTitle: true,
+      profileSongArtist: true,
+      profileSongPreviewUrl: true,
+      profileSongAlbumArt: true,
+    },
+  },
+  _count: {
+    select: {
+      followers: true,
+      following: true,
+      rmharks: true,
+    },
+  },
+} as const;
 
 export async function GET(
   req: NextRequest,
@@ -15,46 +51,20 @@ export async function GET(
 
     // Get viewer session (optional)
     let viewerId: string | null = null;
+    let viewerIsAdmin = false;
     try {
       const session = await auth.api.getSession({ headers: await headers() });
       viewerId = session?.user?.id ?? null;
+      viewerIsAdmin = (session?.user as any)?.isAdmin ?? false;
     } catch {
       // Not logged in
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id },
+    // Try to find by handle first, then by ID
+    let user = await prisma.user.findUnique({
+      where: { handle: id },
       select: {
-        id: true,
-        name: true,
-        username: true,
-        image: true,
-        isVerified: true,
-        isAdmin: true,
-        createdAt: true,
-        profile: {
-          select: {
-            displayName: true,
-            customImage: true,
-            bio: true,
-            location: true,
-            website: true,
-            showLikes: true,
-            dmPrivacy: true,
-            profileSongSpotifyId: true,
-            profileSongTitle: true,
-            profileSongArtist: true,
-            profileSongPreviewUrl: true,
-            profileSongAlbumArt: true,
-          },
-        },
-        _count: {
-          select: {
-            followers: true,
-            following: true,
-            rmharks: true,
-          },
-        },
+        ...profileSelect,
         ...(viewerId
           ? {
               followers: {
@@ -67,15 +77,34 @@ export async function GET(
     });
 
     if (!user) {
+      user = await prisma.user.findUnique({
+        where: { id },
+        select: {
+          ...profileSelect,
+          ...(viewerId
+            ? {
+                followers: {
+                  where: { followerId: viewerId },
+                  select: { id: true },
+                },
+              }
+            : {}),
+        },
+      });
+    }
+
+    if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     const resolved = resolveUserDisplay(user);
+    const isOwnProfile = viewerId === user.id;
 
     return NextResponse.json({
       id: user.id,
       name: resolved.name,
       username: user.username,
+      handle: user.handle,
       image: resolved.image,
       isVerified: user.isVerified,
       isAdmin: user.isAdmin,
@@ -98,7 +127,13 @@ export async function GET(
           ? ((user as Record<string, unknown>).followers as unknown[]).length > 0
           : false
         : false,
-      isOwnProfile: viewerId === user.id,
+      isOwnProfile,
+      // Handle change cooldown info (only for own profile)
+      ...(isOwnProfile
+        ? {
+            handleCooldownMs: handleCooldownRemaining(user.handleChangedAt),
+          }
+        : {}),
     });
   } catch (error) {
     console.error("Profile fetch error:", error);

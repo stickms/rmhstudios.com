@@ -27,7 +27,7 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
   const actualId = item.actualId ?? item.id;
 
   const handleCommentClick = () => {
-    router.push(`/${item.user?.id}/post/${actualId}`);
+    router.push(`/@${item.user?.handle || item.user?.id}/post/${actualId}`);
   };
 
   const toggleLike = async () => {

@@ -13,7 +13,7 @@ export interface Comment {
   content: string;
   createdAt: string;
   userId: string;
-  user: { id: string; name: string; image: string | null; username: string | null; isVerified?: boolean; isAdmin?: boolean };
+  user: { id: string; name: string; image: string | null; username: string | null; handle?: string | null; isVerified?: boolean; isAdmin?: boolean };
   likeCount?: number;
   repostCount?: number;
   viewCount?: number;
@@ -178,7 +178,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
     <div className="py-3">
       <div className="flex gap-2.5">
         {/* Avatar */}
-        <Link href={`/profile/${comment.user.id}`} className="shrink-0">
+        <Link href={`/@${comment.user.handle || comment.user.id}`} className="shrink-0">
           <div className="w-8 h-8 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-xs">
             {comment.user.image ? (
               <img src={comment.user.image} alt={comment.user.name || 'User'} className="w-full h-full rounded-full object-cover" />
@@ -191,7 +191,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
         <div className="flex-1 min-w-0">
           {/* Header */}
           <div className="flex items-center gap-1.5 text-sm">
-            <Link href={`/profile/${comment.user.id}`} className="flex items-center gap-1.5 min-w-0 hover:underline">
+            <Link href={`/@${comment.user.handle || comment.user.id}`} className="flex items-center gap-1.5 min-w-0 hover:underline">
               <span className="font-bold text-site-text truncate">
                 {comment.user.name || 'Unknown'}
               </span>
@@ -203,9 +203,9 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
                   <ShieldCheck className="w-4 h-4 text-site-accent" />
                 </span>
               )}
-              {comment.user.username && (
+              {comment.user.handle && (
                 <span className="text-site-text-dim truncate">
-                  @{comment.user.username}
+                  @{comment.user.handle}
                 </span>
               )}
             </Link>
@@ -326,7 +326,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
                   autoFocus
                   value={replyContent}
                   onChange={(e) => setReplyContent(e.target.value)}
-                  placeholder={`Reply to @${comment.user.name || 'Unknown'}...`}
+                  placeholder={`Reply to @${comment.user.handle || comment.user.name || 'Unknown'}...`}
                   rows={2}
                   maxLength={MAX_COMMENT_LENGTH}
                   className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-xs rounded-lg p-2 border border-site-border resize-none outline-none focus:border-site-accent transition-colors"

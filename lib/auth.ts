@@ -1,6 +1,7 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "@/lib/prisma";
+import { generateHandle } from "@/lib/handle";
 
 export const auth = betterAuth({
     database: prismaAdapter(prisma, {
@@ -32,6 +33,10 @@ export const auth = betterAuth({
                 required: false,
                 input: true
             },
+            handle: {
+                type: "string",
+                required: false,
+            },
             isAdmin: {
                 type: "boolean",
                 required: false,
@@ -43,5 +48,21 @@ export const auth = betterAuth({
                 defaultValue: false
             }
         }
-    }
+    },
+    databaseHooks: {
+        user: {
+            create: {
+                after: async (user) => {
+                    // Auto-assign a handle to new users if they don't have one
+                    if (!user.handle) {
+                        const handle = await generateHandle((user as any).username || user.name);
+                        await prisma.user.update({
+                            where: { id: user.id },
+                            data: { handle },
+                        });
+                    }
+                },
+            },
+        },
+    },
 });

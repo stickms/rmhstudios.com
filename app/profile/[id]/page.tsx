@@ -16,11 +16,13 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { id } = await params;
 
-  const user = await prisma.user.findUnique({
-    where: { id },
+  // Resolve by handle first, then by ID
+  let user = await prisma.user.findUnique({
+    where: { handle: id },
     select: {
       name: true,
       username: true,
+      handle: true,
       image: true,
       profile: {
         select: {
@@ -31,6 +33,24 @@ export async function generateMetadata({
       },
     },
   });
+  if (!user) {
+    user = await prisma.user.findUnique({
+      where: { id },
+      select: {
+        name: true,
+        username: true,
+        handle: true,
+        image: true,
+        profile: {
+          select: {
+            displayName: true,
+            customImage: true,
+            bio: true,
+          },
+        },
+      },
+    });
+  }
 
   if (!user) {
     return { title: 'User Not Found | RMH' };
@@ -38,7 +58,8 @@ export async function generateMetadata({
 
   const resolved = resolveUserDisplay(user);
   const name = resolved.name || 'Unknown';
-  const title = user.username ? `${name} (@${user.username}) | RMH` : `${name} | RMH`;
+  const handle = user.handle || user.username;
+  const title = handle ? `${name} (@${handle}) | RMH` : `${name} | RMH`;
   const description = user.profile?.bio || `${name}'s profile on RMH`;
   const baseUrl = 'https://rmhstudios.com';
 
@@ -50,7 +71,7 @@ export async function generateMetadata({
       title,
       description,
       siteName: 'RMH',
-      url: `${baseUrl}/profile/${id}`,
+      url: `${baseUrl}/@${handle || id}`,
       ...(resolved.image ? { images: [resolved.image] } : {}),
     },
     twitter: {
