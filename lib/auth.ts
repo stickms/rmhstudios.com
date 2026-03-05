@@ -39,6 +39,11 @@ export const auth = betterAuth({
             disableSignUp: true,
         },
     },
+    account: {
+        accountLinking: {
+            trustedProviders: ["spotify"],
+        },
+    },
     emailAndPassword: {
         enabled: true,
     },
