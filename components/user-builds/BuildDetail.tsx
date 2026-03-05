@@ -11,6 +11,7 @@ import { BuildComments } from './BuildComments';
 
 interface BuildDetailProps {
   build: Build;
+  backHref?: string;
 }
 
 function formatDate(dateStr: string): string {
@@ -27,7 +28,7 @@ function formatCount(count: number): string {
   return String(count);
 }
 
-export function BuildDetail({ build: initialBuild }: BuildDetailProps) {
+export function BuildDetail({ build: initialBuild, backHref = '/user-builds' }: BuildDetailProps) {
   const { data: session } = authClient.useSession();
   const [build, setBuild] = useState(initialBuild);
   const [liking, setLiking] = useState(false);
@@ -72,7 +73,7 @@ export function BuildDetail({ build: initialBuild }: BuildDetailProps) {
     <div className="max-w-4xl mx-auto">
       {/* Back link */}
       <Link
-        href="/user-builds"
+        href={backHref}
         className="inline-flex items-center gap-2 text-sm text-site-text-muted hover:text-site-text mb-6 transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />

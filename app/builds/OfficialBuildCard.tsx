@@ -2,11 +2,27 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { ExternalLink, Heart, MessageCircle, Eye } from 'lucide-react';
-import type { UserBuild, BuildCategory } from '@prisma/client';
+import { Heart, MessageCircle, Eye, ArrowRight } from 'lucide-react';
+export interface OfficialBuild {
+    id: string;
+    slug: string;
+    title: string;
+    description: string;
+    thumbnailUrl: string | null;
+    demoUrl: string | null;
+    repoUrl: string | null;
+    technologies: string[];
+    likeCount: number;
+    commentCount: number;
+    viewCount: number;
+    liked: boolean;
+    category?: { slug: string; name: string } | null;
+}
 
 interface OfficialBuildCardProps {
-    build: UserBuild & { category?: BuildCategory | null };
+    build: OfficialBuild;
+    onLike?: (id: string) => void;
+    onView?: (id: string) => void;
 }
 
 function formatCount(count: number): string {
@@ -15,13 +31,23 @@ function formatCount(count: number): string {
     return String(count);
 }
 
-export function OfficialBuildCard({ build }: OfficialBuildCardProps) {
-    const cta = build.category?.slug === 'games' ? 'Play Now' : 'Open App';
-    const gradient = 'from-site-surface to-site-surface-hover'; // Fallback gradient if no crop data
-    const url = build.demoUrl || build.repoUrl || `/builds/${build.slug}`;
+export function OfficialBuildCard({ build, onLike, onView }: OfficialBuildCardProps) {
+    const gradient = 'from-site-surface to-site-surface-hover';
+    const cardUrl = build.demoUrl || build.repoUrl || `/builds/${build.slug}`;
+    const detailUrl = `/builds/${build.slug}`;
+
+    const handleLike = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onLike?.(build.id);
+    };
+
+    const handleCardClick = () => {
+        onView?.(build.id);
+    };
 
     return (
-        <Link href={url} className="block h-full">
+        <Link href={cardUrl} className="block h-full" onClick={handleCardClick}>
             <div className="group rounded-xl border border-site-border bg-site-surface hover:border-site-accent/50 transition-all overflow-hidden flex flex-col h-full">
                 {/* Thumbnail */}
                 {build.thumbnailUrl ? (
@@ -35,7 +61,7 @@ export function OfficialBuildCard({ build }: OfficialBuildCardProps) {
                         />
                     </div>
                 ) : (
-                    <div className={`aspect-video w-full bg-gradient-to-br ${gradient} flex items-center justify-center`}>
+                    <div className={`aspect-video w-full bg-linear-to-br ${gradient} flex items-center justify-center`}>
                         <span className="text-4xl font-bold text-site-text/80">
                             {build.title}
                         </span>
@@ -43,7 +69,7 @@ export function OfficialBuildCard({ build }: OfficialBuildCardProps) {
                 )}
 
                 {/* Content */}
-                <div className="p-4 flex flex-col flex-1">
+                <div className="px-4 pt-4 pb-2 flex flex-col flex-1">
                     {/* Title */}
                     <h3 className="font-semibold text-site-text group-hover:text-site-accent transition-colors line-clamp-1 mb-1">
                         {build.title}
@@ -61,7 +87,7 @@ export function OfficialBuildCard({ build }: OfficialBuildCardProps) {
                                 {build.category.name}
                             </span>
                         )}
-                        {(Array.isArray(build.technologies) ? build.technologies as string[] : []).slice(0, 3).map((tag) => (
+                        {build.technologies.slice(0, 3).map((tag) => (
                             <span
                                 key={tag}
                                 className="px-2 py-0.5 rounded-full text-xs bg-site-bg border border-site-border text-site-text-dim"
@@ -72,12 +98,17 @@ export function OfficialBuildCard({ build }: OfficialBuildCardProps) {
                     </div>
 
                     {/* Footer */}
-                    <div className="flex items-center justify-between pt-3 border-t border-site-border mt-auto">
-                        <div className="flex items-center gap-3 text-xs text-site-text-dim">
-                            <span className="flex items-center gap-1 hover:text-red-400 transition-colors">
-                                <Heart className={`w-3.5 h-3.5`} />
+                    <div className="pt-3 border-t border-site-border mt-auto space-y-2">
+                        <div className="flex items-center justify-between text-xs text-site-text-dim">
+                            <button
+                                onClick={handleLike}
+                                className={`flex items-center gap-1 transition-colors ${
+                                    build.liked ? 'text-red-400' : 'hover:text-red-400'
+                                }`}
+                            >
+                                <Heart className={`w-3.5 h-3.5 ${build.liked ? 'fill-current' : ''}`} />
                                 {formatCount(build.likeCount)}
-                            </span>
+                            </button>
                             <span className="flex items-center gap-1">
                                 <MessageCircle className="w-3.5 h-3.5" />
                                 {formatCount(build.commentCount)}
@@ -88,12 +119,14 @@ export function OfficialBuildCard({ build }: OfficialBuildCardProps) {
                             </span>
                         </div>
 
-                        <span
-                            className="flex items-center gap-1 text-xs text-site-accent font-semibold hover:text-site-accent-hover transition-colors"
+                        <Link
+                            href={detailUrl}
+                            onClick={(e) => e.stopPropagation()}
+                            className="flex items-center justify-center gap-1 text-xs text-site-accent font-semibold w-full py-1.5 rounded-md border border-transparent hover:border-site-accent/30 hover:bg-site-accent/10 transition-all"
                         >
-                            <ExternalLink className="w-3.5 h-3.5" />
-                            {cta}
-                        </span>
+                            Read More
+                            <ArrowRight className="w-3.5 h-3.5" />
+                        </Link>
                     </div>
                 </div>
             </div>

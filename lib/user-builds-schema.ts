@@ -49,6 +49,14 @@ export const updateBuildSchema = createBuildSchema.partial().extend({
   status: z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']).optional(),
 });
 
+// Admin-only fields that can be set via PATCH by admins
+export const adminUpdateBuildSchema = updateBuildSchema.extend({
+  isCurated: z.boolean().optional(),
+  featured: z.boolean().optional(),
+  userId: z.string().optional(),
+  position: z.number().int().min(0).optional(),
+});
+
 export const createCommentSchema = z.object({
   content: z
     .string()

@@ -145,7 +145,7 @@ export function BuildCard({ build, onLike }: BuildCardProps) {
           </div>
 
           {/* Engagement Stats */}
-          <div className="flex items-center gap-4 mt-3 pt-3 border-t border-site-border text-xs text-site-text-dim">
+          <div className="flex items-center justify-between mt-3 pt-3 border-t border-site-border text-xs text-site-text-dim">
             <button
               onClick={handleLike}
               className={`flex items-center gap-1 transition-colors ${

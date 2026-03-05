@@ -12,7 +12,7 @@ import { headers } from 'next/headers';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
-import { updateBuildSchema } from '@/lib/user-builds-schema';
+import { updateBuildSchema, adminUpdateBuildSchema } from '@/lib/user-builds-schema';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { getAuthenticatedUser } from '@/lib/rmhcode-auth';
 
@@ -99,6 +99,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       status: build.status,
       visibility: build.visibility,
       featured: build.featured,
+      isCurated: build.isCurated,
       technologies: build.technologies,
       likeCount: build.likeCount,
       commentCount: build.commentCount,
@@ -171,9 +172,11 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    // Parse and validate
+    // Parse and validate - use admin schema if admin
+    const isAdmin = !!(session?.user as any)?.isAdmin;
     const body = await req.json();
-    const parsed = updateBuildSchema.safeParse(body);
+    const schema = isAdmin ? adminUpdateBuildSchema : updateBuildSchema;
+    const parsed = schema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
         { error: parsed.error.issues[0]?.message ?? 'Invalid input' },
@@ -183,6 +186,15 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
     const { tags, status, ...updateData } = parsed.data;
     // Prepare update data
     const data: Record<string, unknown> = { ...updateData };
+
+    // Handle admin-only fields
+    if (isAdmin) {
+      const adminData = parsed.data as any;
+      if (adminData.isCurated !== undefined) data.isCurated = adminData.isCurated;
+      if (adminData.featured !== undefined) data.featured = adminData.featured;
+      if (adminData.userId !== undefined) data.userId = adminData.userId;
+      if (adminData.position !== undefined) data.position = adminData.position;
+    }
 
     // Handle status change to PUBLISHED
     if (status === 'PUBLISHED' && build.status !== 'PUBLISHED') {

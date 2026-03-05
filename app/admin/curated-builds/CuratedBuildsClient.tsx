@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { 
-  DndContext, 
+import {
+  DndContext,
   closestCenter,
   KeyboardSensor,
   PointerSensor,
@@ -21,15 +21,17 @@ import {
   useSortable
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Edit, GripVertical, Ban } from 'lucide-react';
+import { Edit, GripVertical, Ban, Star, StarOff } from 'lucide-react';
 
 interface Build {
     id: string;
     title: string;
+    slug: string;
     thumbnailUrl: string | null;
     status: string;
     visibility: string;
     position: number;
+    featured: boolean;
     user: { name: string | null; username: string | null };
     category?: { name: string } | null;
 }
@@ -38,7 +40,7 @@ interface CuratedBuildsClientProps {
     initialBuilds: Build[];
 }
 
-function SortableBuildItem({ build }: { build: Build }) {
+function SortableBuildItem({ build, onUncurate, onToggleFeatured }: { build: Build; onUncurate: (id: string) => void; onToggleFeatured: (id: string) => void }) {
     const {
         attributes,
         listeners,
@@ -55,26 +57,26 @@ function SortableBuildItem({ build }: { build: Build }) {
     };
 
     return (
-        <div 
-            ref={setNodeRef} 
-            style={style} 
+        <div
+            ref={setNodeRef}
+            style={style}
             className={`p-4 flex items-center gap-4 transition-colors group bg-site-surface ${isDragging ? 'shadow-lg border border-site-accent/50 rounded-xl relative' : ''}`}
         >
-            <div 
-                {...attributes} 
-                {...listeners} 
+            <div
+                {...attributes}
+                {...listeners}
                 className="text-site-text-dim/50 cursor-grab hover:text-site-text-dim active:cursor-grabbing p-1 -ml-1"
             >
                 <GripVertical className="w-5 h-5" />
             </div>
-            
+
             <div className="flex-1 flex items-center gap-4 min-w-0">
                 <div className="w-12 h-12 rounded-lg bg-site-bg overflow-hidden flex-shrink-0 relative border border-site-border">
                     {build.thumbnailUrl ? (
-                        <Image 
-                            src={build.thumbnailUrl} 
-                            alt={build.title} 
-                            fill 
+                        <Image
+                            src={build.thumbnailUrl}
+                            alt={build.title}
+                            fill
                             className="object-cover"
                         />
                     ) : (
@@ -89,6 +91,11 @@ function SortableBuildItem({ build }: { build: Build }) {
                         <span className="text-xs bg-site-accent-dim text-site-accent px-2 py-0.5 rounded-full whitespace-nowrap">
                             Position {build.position}
                         </span>
+                        {build.featured && (
+                            <span className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full whitespace-nowrap">
+                                Featured
+                            </span>
+                        )}
                     </div>
                     <p className="text-sm text-site-text-dim truncate mt-0.5">
                         by @{build.user.username || 'unknown'} • {build.status} • {build.visibility}
@@ -102,19 +109,28 @@ function SortableBuildItem({ build }: { build: Build }) {
                 </span>
             </div>
 
-            <div className="w-24 flex-shrink-0 flex justify-end gap-2 text-right">
-                <Link 
+            <div className="w-32 flex-shrink-0 flex justify-end gap-1 text-right">
+                <button
+                    onClick={() => onToggleFeatured(build.id)}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    className={`p-2 transition-colors rounded-lg relative z-20 ${build.featured ? 'text-yellow-400 hover:text-yellow-300' : 'text-site-text-muted hover:text-yellow-400'} hover:bg-site-surface`}
+                    title={build.featured ? 'Remove Featured' : 'Mark Featured'}
+                >
+                    {build.featured ? <Star className="w-4 h-4 fill-current" /> : <StarOff className="w-4 h-4" />}
+                </button>
+                <Link
                     href={`/admin/curated-builds/${build.id}/edit`}
                     className="p-2 text-site-text-muted hover:text-site-accent hover:bg-site-surface transition-colors rounded-lg relative z-20"
                     title="Edit Build"
-                    onPointerDown={(e) => e.stopPropagation()} // Prevent drag when clicking link
+                    onPointerDown={(e) => e.stopPropagation()}
                 >
                     <Edit className="w-4 h-4" />
                 </Link>
-                <button 
+                <button
+                    onClick={() => onUncurate(build.id)}
+                    onPointerDown={(e) => e.stopPropagation()}
                     className="p-2 text-site-text-muted hover:text-red-400 hover:bg-site-surface transition-colors rounded-lg relative z-20"
                     title="Remove Curation"
-                    onPointerDown={(e) => e.stopPropagation()} // Prevent drag when clicking button
                 >
                     <Ban className="w-4 h-4" />
                 </button>
@@ -131,7 +147,7 @@ export function CuratedBuildsClient({ initialBuilds }: CuratedBuildsClientProps)
     const sensors = useSensors(
         useSensor(PointerSensor, {
             activationConstraint: {
-                distance: 5, // Start dragging after moving 5px
+                distance: 5,
             },
         }),
         useSensor(KeyboardSensor, {
@@ -146,14 +162,12 @@ export function CuratedBuildsClient({ initialBuilds }: CuratedBuildsClientProps)
             setBuilds((items) => {
                 const oldIndex = items.findIndex(item => item.id === active.id);
                 const newIndex = items.findIndex(item => item.id === over.id);
-                
-                // Move the item locally
+
                 const newItems = arrayMove(items, oldIndex, newIndex);
-                
-                // Keep the positions synced array order
+
                 const updatedItems = newItems.map((item, index) => ({
                     ...item,
-                    position: index, // Start at 0 or 1, using index
+                    position: index,
                 }));
 
                 saveNewOrder(updatedItems);
@@ -166,7 +180,7 @@ export function CuratedBuildsClient({ initialBuilds }: CuratedBuildsClientProps)
         setIsSaving(true);
         try {
             const updates = newBuilds.map(b => ({ id: b.id, position: b.position }));
-            
+
             const response = await fetch('/api/admin/curated-builds/reorder', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -181,9 +195,50 @@ export function CuratedBuildsClient({ initialBuilds }: CuratedBuildsClientProps)
         } catch (error) {
             console.error(error);
             alert('Failed to save the new order.');
-            // Revert on error?
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const handleUncurate = async (id: string) => {
+        if (!confirm('Remove this build from curated? It will still exist as a regular build.')) return;
+
+        setIsSaving(true);
+        try {
+            const res = await fetch(`/api/user-builds/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ isCurated: false }),
+            });
+            if (!res.ok) throw new Error('Failed to uncurate');
+            setBuilds(prev => prev.filter(b => b.id !== id));
+            router.refresh();
+        } catch (error) {
+            console.error(error);
+            alert('Failed to remove curation.');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleToggleFeatured = async (id: string) => {
+        const build = builds.find(b => b.id === id);
+        if (!build) return;
+
+        setBuilds(prev => prev.map(b => b.id === id ? { ...b, featured: !b.featured } : b));
+
+        try {
+            const res = await fetch(`/api/user-builds/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ featured: !build.featured }),
+            });
+            if (!res.ok) throw new Error('Failed to toggle featured');
+            router.refresh();
+        } catch (error) {
+            console.error(error);
+            setBuilds(prev => prev.map(b => b.id === id ? { ...b, featured: build.featured } : b));
+            alert('Failed to toggle featured status.');
         }
     };
 
@@ -199,26 +254,31 @@ export function CuratedBuildsClient({ initialBuilds }: CuratedBuildsClientProps)
                     <div className="w-8 flex items-center justify-center">#</div>
                     <div>Build</div>
                     <div className="w-32">Category</div>
-                    <div className="w-24 text-right">Actions</div>
+                    <div className="w-32 text-right">Actions</div>
                 </div>
             </div>
 
             <div className="divide-y divide-site-border flex flex-col">
-                <DndContext 
+                <DndContext
                     sensors={sensors}
                     collisionDetection={closestCenter}
                     onDragEnd={handleDragEnd}
                 >
-                    <SortableContext 
+                    <SortableContext
                         items={builds.map(b => b.id)}
                         strategy={verticalListSortingStrategy}
                     >
                         {builds.map((build) => (
-                            <SortableBuildItem key={build.id} build={build} />
+                            <SortableBuildItem
+                                key={build.id}
+                                build={build}
+                                onUncurate={handleUncurate}
+                                onToggleFeatured={handleToggleFeatured}
+                            />
                         ))}
                     </SortableContext>
                 </DndContext>
-                
+
                 {builds.length === 0 && (
                     <div className="p-8 text-center text-site-text-muted">
                         No curated builds found. You can curate community builds from the User Builds moderation page.

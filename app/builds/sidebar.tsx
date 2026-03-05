@@ -28,7 +28,7 @@ export function BuildsRightSidebar({ games, apps, newsArticles }: BuildsRightSid
                     {featuredGames.map((game) => (
                         <Link
                             key={game.id}
-                            href={game.demoUrl || game.repoUrl || `/builds/${game.slug}`}
+                            href={`/builds/${game.slug}`}
                             className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-site-surface-hover transition-colors group"
                         >
                             <div className="w-8 h-8 rounded-lg bg-linear-to-br from-site-surface to-site-surface-hover flex items-center justify-center shrink-0">
@@ -55,7 +55,7 @@ export function BuildsRightSidebar({ games, apps, newsArticles }: BuildsRightSid
                     {apps.map((app) => (
                         <Link
                             key={app.id}
-                            href={app.demoUrl || app.repoUrl || `/builds/${app.slug}`}
+                            href={`/builds/${app.slug}`}
                             className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-site-surface-hover transition-colors group"
                         >
                             <div className="w-8 h-8 rounded-lg bg-linear-to-br from-site-surface to-site-surface-hover flex items-center justify-center shrink-0">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, use } from 'react';
+import { useState, useEffect, useRef, useCallback, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Loader2, Camera, AlertCircle, Save } from 'lucide-react';
 import Link from 'next/link';
@@ -24,6 +24,12 @@ export default function CuratedBuildEditPage({ params }: { params: Promise<{ id:
     const [description, setDescription] = useState('');
     const [tags, setTags] = useState<string>('');
     const [thumbnailUrl, setThumbnailUrl] = useState('');
+    const [isCurated, setIsCurated] = useState(false);
+    const [ownerId, setOwnerId] = useState('');
+    const [ownerSearch, setOwnerSearch] = useState('');
+    const [ownerResults, setOwnerResults] = useState<{ id: string; name: string | null; username: string | null }[]>([]);
+    const [ownerDisplay, setOwnerDisplay] = useState('');
+    const [searchingOwner, setSearchingOwner] = useState(false);
 
     // Image Upload State
     const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -51,6 +57,9 @@ export default function CuratedBuildEditPage({ params }: { params: Promise<{ id:
                 setTags(data.tags?.join(', ') || '');
                 setThumbnailUrl(data.thumbnailUrl || '');
                 setAvatarPreview(data.thumbnailUrl || null);
+                setIsCurated(data.isCurated ?? false);
+                setOwnerId(data.user?.id || '');
+                setOwnerDisplay(data.user?.name || data.user?.username || 'Unknown');
                 setLoading(false);
             })
             .catch(err => {
@@ -69,6 +78,29 @@ export default function CuratedBuildEditPage({ params }: { params: Promise<{ id:
             }
         };
     }, [avatarPreview, cropSrc]);
+
+    // Owner search with debounce
+    useEffect(() => {
+        if (!ownerSearch || ownerSearch.length < 2) {
+            setOwnerResults([]);
+            return;
+        }
+        const timer = setTimeout(async () => {
+            setSearchingOwner(true);
+            try {
+                const res = await fetch(`/api/admin/users?q=${encodeURIComponent(ownerSearch)}&limit=5`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setOwnerResults(data.items || []);
+                }
+            } catch {
+                // ignore
+            } finally {
+                setSearchingOwner(false);
+            }
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [ownerSearch]);
 
     const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -153,6 +185,8 @@ export default function CuratedBuildEditPage({ params }: { params: Promise<{ id:
                     description: description.trim(),
                     thumbnailUrl: finalImageUrl,
                     tags: parsedTags,
+                    isCurated,
+                    ...(ownerId && ownerId !== build.user?.id ? { userId: ownerId } : {}),
                 }),
             });
 
@@ -184,7 +218,7 @@ export default function CuratedBuildEditPage({ params }: { params: Promise<{ id:
                 <div className="max-w-3xl mx-auto p-4 md:p-8">
                     <div className="p-8 rounded-xl border border-site-border bg-site-surface text-center">
                         <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-                        <h2 className="text-xl font-semibold text-site-text mb-2 text-red-500">Error</h2>
+                        <h2 className="text-xl font-semibold text-red-500 mb-2">Error</h2>
                         <p className="text-site-text-muted mb-6">{error || 'Build not found'}</p>
                         <Link href="/admin/curated-builds">
                             <Button variant="secondary">Back to Curated Builds</Button>
@@ -275,6 +309,57 @@ export default function CuratedBuildEditPage({ params }: { params: Promise<{ id:
                             placeholder="Multiplayer, Party, Minigames"
                             className="w-full px-4 py-2 rounded-lg bg-site-bg border border-site-border text-site-text outline-none focus:border-site-accent/50 transition-colors"
                         />
+                    </div>
+
+                    {/* Owner */}
+                    <div>
+                        <label className="block text-sm font-medium text-site-text mb-2">Owner</label>
+                        <div className="flex items-center gap-3 mb-2">
+                            <span className="text-sm text-site-text-muted">
+                                Current: <span className="text-site-text font-medium">{ownerDisplay}</span>
+                            </span>
+                        </div>
+                        <div className="relative">
+                            <input
+                                type="text"
+                                value={ownerSearch}
+                                onChange={(e) => setOwnerSearch(e.target.value)}
+                                placeholder="Search users by name, username, or email..."
+                                className="w-full px-4 py-2 rounded-lg bg-site-bg border border-site-border text-site-text outline-none focus:border-site-accent/50 transition-colors text-sm"
+                            />
+                            {ownerResults.length > 0 && (
+                                <div className="absolute z-30 top-full left-0 right-0 mt-1 bg-site-surface border border-site-border rounded-lg shadow-lg overflow-hidden">
+                                    {ownerResults.map(u => (
+                                        <button
+                                            key={u.id}
+                                            type="button"
+                                            onClick={() => {
+                                                setOwnerId(u.id);
+                                                setOwnerDisplay(u.name || u.username || 'Unknown');
+                                                setOwnerSearch('');
+                                                setOwnerResults([]);
+                                            }}
+                                            className="w-full px-4 py-2 text-left text-sm hover:bg-site-surface-hover transition-colors flex items-center gap-2"
+                                        >
+                                            <span className="text-site-text font-medium">{u.name || 'Unnamed'}</span>
+                                            {u.username && <span className="text-site-text-dim">@{u.username}</span>}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Curated Toggle */}
+                    <div className="flex items-center gap-3">
+                        <button
+                            type="button"
+                            onClick={() => setIsCurated(!isCurated)}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isCurated ? 'bg-site-accent' : 'bg-site-border'}`}
+                        >
+                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isCurated ? 'translate-x-6' : 'translate-x-1'}`} />
+                        </button>
+                        <label className="text-sm font-medium text-site-text">Curated Build</label>
                     </div>
 
                     {error && (
