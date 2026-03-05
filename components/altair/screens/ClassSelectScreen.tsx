@@ -184,12 +184,14 @@ export default function ClassSelectScreen({ onSelect, onBack }: ClassSelectScree
       <div className="mt-auto flex gap-3">
         <button
           onClick={onBack}
+          data-altair-sfx="menu_back"
           className="flex-1 py-3 rounded-xl font-semibold text-(--altair-text-muted) bg-(--altair-surface) border border-(--altair-border) hover:bg-(--altair-surface-hover) transition-colors"
         >
           Back
         </button>
         <button
           onClick={() => selectedId && onSelect(selectedId)}
+          data-altair-sfx="ui_confirm"
           disabled={!selectedId}
           className={`flex-2 py-3 rounded-xl font-bold text-white transition-colors ${
             selectedId

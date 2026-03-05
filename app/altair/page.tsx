@@ -43,6 +43,46 @@ export default function AltairPage() {
   const [showSettings, setShowSettings] = useState(false);
   const [showBestiary, setShowBestiary] = useState(false);
 
+  // Track whether run-end side effects have been applied for the current run.
+  const runFinalizedRef = useRef(false);
+  // Track whether score has been submitted for this run to prevent duplicates.
+  const scoreSubmittedRef = useRef(false);
+
+  const computeFinalCoins = useCallback(() => {
+    const gameState = useAltairGameStore.getState();
+    const meta = useAltairMetaStore.getState();
+    const greedLevel = meta.getUpgradeLevel('greed');
+    const greedMultiplier = 1 + greedLevel * 0.1;
+    const dtMultiplier = gameState.doubleTime ? 1.5 : 1;
+    return Math.floor(gameState.coins * greedMultiplier * dtMultiplier);
+  }, []);
+
+  const submitScore = useCallback((keepalive = false) => {
+    if (scoreSubmittedRef.current) return;
+
+    const gameState = useAltairGameStore.getState();
+    const payload = {
+      timeSurvived: gameState.timeSurvived,
+      kills: gameState.kills,
+      totalXP: gameState.xp,
+      gold: computeFinalCoins(),
+    };
+
+    scoreSubmittedRef.current = true;
+
+    if (keepalive && typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
+      const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+      if (navigator.sendBeacon('/api/altair/score', blob)) return;
+    }
+
+    void fetch('/api/altair/score', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      keepalive,
+    }).catch(() => { /* silently ignore leaderboard submission failures */ });
+  }, [computeFinalCoins]);
+
   const handleClassSelect = useCallback((classId: string) => {
     const meta = useAltairMetaStore.getState();
     const bonuses = meta.getMetaStatBonuses();
@@ -53,11 +93,9 @@ export default function AltairPage() {
 
     startRun(classId, settingsDoubleTime && meta.doubleTimeUnlocked, bonuses, rerolls, banishes, revival, extraChoice);
     meta.incrementRuns();
+    runFinalizedRef.current = false;
     scoreSubmittedRef.current = false;
   }, [startRun, settingsDoubleTime]);
-
-  // Track whether score has been submitted for this run to prevent duplicates
-  const scoreSubmittedRef = useRef(false);
 
   // Music is now managed by AltairShell (persists across all /altair/* routes)
 
@@ -69,14 +107,14 @@ export default function AltairPage() {
     useAltairMetaStore.getState().checkUnlocks();
   }, [phase]);
 
-  const handleGameEnd = useCallback(() => {
+  const handleGameEnd = useCallback((keepalive = false) => {
+    if (runFinalizedRef.current) return;
+
     const gameState = useAltairGameStore.getState();
     const meta = useAltairMetaStore.getState();
 
-    const greedLevel = meta.getUpgradeLevel('greed');
-    const greedMultiplier = 1 + greedLevel * 0.1;
-    const dtMultiplier = gameState.doubleTime ? 1.5 : 1;
-    const finalCoins = Math.floor(gameState.coins * greedMultiplier * dtMultiplier);
+    runFinalizedRef.current = true;
+    const finalCoins = computeFinalCoins();
 
     if (gameState.phase === 'victory' && gameState.selectedClassId) {
       const bonus = meta.recordFirstClear(gameState.selectedClassId);
@@ -95,54 +133,56 @@ export default function AltairPage() {
     meta.checkUnlocks();
 
     meta.addCoins(finalCoins);
-
-    // Submit score to leaderboard API (fire-and-forget)
-    if (!scoreSubmittedRef.current) {
-      scoreSubmittedRef.current = true;
-      fetch('/api/altair/score', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          timeSurvived: gameState.timeSurvived,
-          kills: gameState.kills,
-          totalXP: gameState.xp,
-          gold: finalCoins,
-        }),
-      }).catch(() => { /* silently ignore leaderboard submission failures */ });
-    }
-  }, []);
+    submitScore(keepalive);
+    meta.saveToServerNow(keepalive);
+  }, [computeFinalCoins, submitScore]);
 
   // Submit score immediately when game ends (death or victory)
   useEffect(() => {
     if (phase !== 'dead' && phase !== 'victory') return;
-    if (scoreSubmittedRef.current) return;
+    submitScore();
+  }, [phase, submitScore]);
 
-    const gameState = useAltairGameStore.getState();
-    const meta = useAltairMetaStore.getState();
+  // If the tab closes, page unloads, or user navigates away mid-run, finalize as if Exit was pressed.
+  useEffect(() => {
+    const finalizeIfRunActive = (keepalive: boolean) => {
+      const currentPhase = useAltairGameStore.getState().phase;
+      if (currentPhase === 'playing' || currentPhase === 'paused' || currentPhase === 'upgrading') {
+        handleGameEnd(keepalive);
+      }
+    };
 
-    const greedLevel = meta.getUpgradeLevel('greed');
-    const greedMultiplier = 1 + greedLevel * 0.1;
-    const dtMultiplier = gameState.doubleTime ? 1.5 : 1;
-    const finalCoins = Math.floor(gameState.coins * greedMultiplier * dtMultiplier);
+    const onBeforeUnload = () => finalizeIfRunActive(true);
+    const onPageHide = () => finalizeIfRunActive(true);
 
-    scoreSubmittedRef.current = true;
-    fetch('/api/altair/score', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        timeSurvived: gameState.timeSurvived,
-        kills: gameState.kills,
-        totalXP: gameState.xp,
-        gold: finalCoins,
-      }),
-    }).catch(() => { /* silently ignore leaderboard submission failures */ });
-  }, [phase]);
+    window.addEventListener('beforeunload', onBeforeUnload);
+    window.addEventListener('pagehide', onPageHide);
+
+    return () => {
+      // Covers SPA navigation away from /altair as well.
+      finalizeIfRunActive(false);
+      // Ensure returning to /altair always lands on the main menu.
+      useAltairGameStore.getState().goToMenu();
+      window.removeEventListener('beforeunload', onBeforeUnload);
+      window.removeEventListener('pagehide', onPageHide);
+    };
+  }, [handleGameEnd]);
 
   if (showBestiary) {
     return (
       <>
-        <AltairHeader context="menu" title="Bestiary" onBack={() => setShowBestiary(false)} />
-        <BestiaryScreen onBack={() => setShowBestiary(false)} />
+        <AltairHeader
+          context="menu"
+          title="Bestiary"
+          onBack={() => {
+            setShowBestiary(false);
+          }}
+        />
+        <BestiaryScreen
+          onBack={() => {
+            setShowBestiary(false);
+          }}
+        />
       </>
     );
   }
@@ -150,8 +190,18 @@ export default function AltairPage() {
   if (showSettings) {
     return (
       <>
-        <AltairHeader context="settings" title="Settings" onBack={() => setShowSettings(false)} />
-        <SettingsScreen onBack={() => setShowSettings(false)} />
+        <AltairHeader
+          context="settings"
+          title="Settings"
+          onBack={() => {
+            setShowSettings(false);
+          }}
+        />
+        <SettingsScreen
+          onBack={() => {
+            setShowSettings(false);
+          }}
+        />
       </>
     );
   }
@@ -165,8 +215,12 @@ export default function AltairPage() {
             onPlay={goToClassSelect}
             onMultiplayer={() => router.push('/altair/multiplayer')}
             onMetaShop={() => setPhase('meta_shop')}
-            onSettings={() => setShowSettings(true)}
-            onBestiary={() => setShowBestiary(true)}
+            onSettings={() => {
+              setShowSettings(true);
+            }}
+            onBestiary={() => {
+              setShowBestiary(true);
+            }}
           />
         </>
       );
@@ -188,7 +242,9 @@ export default function AltairPage() {
             handleGameEnd();
             goToMenu();
           }}
-          onSettings={() => setShowSettings(true)}
+          onSettings={() => {
+            setShowSettings(true);
+          }}
         />
       );
 

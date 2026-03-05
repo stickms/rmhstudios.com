@@ -70,6 +70,7 @@ export default function AltairHeader({
           ) : (
             <button
               onClick={handleBack}
+              data-altair-sfx="menu_back"
               className="text-sm font-medium text-(--altair-text-muted) hover:text-(--altair-accent) transition-colors"
             >
               <span className="flex items-center gap-1">
@@ -119,6 +120,7 @@ export default function AltairHeader({
         )}
         <button
           onClick={toggleTheme}
+          data-altair-sfx="menu_toggle"
           className="w-8 h-8 rounded-full flex items-center justify-center text-(--altair-text-muted) hover:text-(--altair-accent) hover:bg-(--altair-surface-hover) transition-colors"
           title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
         >

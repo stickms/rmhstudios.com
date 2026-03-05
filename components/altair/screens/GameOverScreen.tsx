@@ -4,9 +4,10 @@
  */
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { useAltairGameStore } from '@/lib/altair/stores/game-store';
 import { useAltairMetaStore } from '@/lib/altair/stores/meta-store';
+import { altairSfx } from '@/lib/altair/audio/sfx';
 import { Trophy, Skull, Coins, Clock, Crosshair, Layers } from 'lucide-react';
 import { useKeyboardNav } from '@/lib/altair/hooks/use-keyboard-nav';
 
@@ -45,6 +46,10 @@ export default function GameOverScreen({ onPlayAgain, onMetaShop, onMenu }: Game
   const greedLevel = useAltairMetaStore((s) => s.getUpgradeLevel('greed'));
 
   const isVictory = phase === 'victory';
+
+  useEffect(() => {
+    altairSfx.play(isVictory ? 'victory' : 'defeat');
+  }, [isVictory]);
 
   // Calculate final coins with multipliers
   const greedMultiplier = 1 + greedLevel * 0.1;
@@ -173,18 +178,21 @@ export default function GameOverScreen({ onPlayAgain, onMetaShop, onMenu }: Game
         <div className="flex flex-col gap-2">
           <button
             onClick={onPlayAgain}
+            data-altair-sfx="ui_confirm"
             className={`py-3 rounded-xl font-bold text-white bg-(--altair-accent) hover:bg-(--altair-accent-hover) transition-all ${focusClass(0)}`}
           >
             Play Again
           </button>
           <button
             onClick={onMetaShop}
+            data-altair-sfx="menu_open"
             className={`py-2.5 rounded-xl font-semibold text-(--altair-text) bg-(--altair-surface-hover) border border-(--altair-border) hover:bg-(--altair-surface-active) transition-all ${focusClass(1)}`}
           >
             Meta Shop
           </button>
           <button
             onClick={onMenu}
+            data-altair-sfx="menu_back"
             className={`py-2 rounded-xl font-medium text-(--altair-text-muted) hover:text-(--altair-text) transition-all text-sm ${focusClass(2)}`}
           >
             Main Menu

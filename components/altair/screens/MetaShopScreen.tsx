@@ -133,6 +133,7 @@ export default function MetaShopScreen({ onBack }: MetaShopScreenProps) {
       {/* Back button */}
       <button
         onClick={onBack}
+        data-altair-sfx="menu_back"
         className="mt-auto py-3 rounded-xl font-semibold text-(--altair-text) bg-(--altair-surface) border border-(--altair-border) hover:bg-(--altair-surface-hover) transition-colors"
       >
         Back

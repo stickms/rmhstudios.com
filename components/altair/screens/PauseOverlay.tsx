@@ -40,12 +40,14 @@ export default function PauseOverlay({ onResume, onSettings, onQuit }: PauseOver
           </button>
           <button
             onClick={onSettings}
+            data-altair-sfx="menu_open"
             className={`py-3 bg-(--altair-surface-hover) hover:bg-(--altair-surface) border border-(--altair-border) text-(--altair-text) font-bold rounded-lg tracking-widest uppercase transition-all ${focusClass(1)}`}
           >
             Settings
           </button>
           <button
             onClick={onQuit}
+            data-altair-sfx="menu_back"
             className={`py-3 bg-(--altair-surface-hover) hover:bg-(--altair-surface) border border-(--altair-border) text-(--altair-text-muted) hover:text-(--altair-text) font-bold rounded-lg tracking-widest uppercase transition-all text-sm ${focusClass(2)}`}
           >
             Quit to Menu

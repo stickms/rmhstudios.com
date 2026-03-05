@@ -14,6 +14,7 @@ import { createGameWorld, createGameLoop, createTileGenerator } from '@/lib/alta
 import { setupInputListeners, setMobileInput } from '@/lib/altair/engine/input';
 import { generateUpgradeChoices, checkEvolution } from '@/lib/altair/engine/level-up-system';
 import { spawnEvolution, spawnLevelUp } from '@/lib/altair/engine/particle-system';
+import { altairSfx } from '@/lib/altair/audio/sfx';
 import { BOSSES } from '@/lib/altair/data/bosses';
 import { WeaponState, PassiveState, CatalystState } from '@/lib/altair/engine/types';
 import { getAllSpriteEntries } from '@/lib/altair/engine/sprites/sprite-defs';
@@ -31,6 +32,7 @@ interface GameScreenProps {
 }
 
 export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
+  const rootRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const loopRef = useRef<ReturnType<typeof createGameLoop> | null>(null);
   const worldRef = useRef<ReturnType<typeof createGameWorld> | null>(null);
@@ -60,6 +62,7 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
 
   // Track previous phase for sync triggers
   const prevPhaseRef = useRef(phase);
+  const prevPausePhaseRef = useRef(phase);
 
   // Detect mobile
   useEffect(() => {
@@ -131,11 +134,13 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
       catalystAffinityPct,
     );
     store.reroll(newChoices);
+    altairSfx.play('upgrade_reroll');
   }, []);
 
   // When returning from upgrading to playing, sync store → world + check evolution
   useEffect(() => {
     if (phase === 'playing' && prevPhaseRef.current === 'upgrading') {
+      altairSfx.play('upgrade_pick');
       syncStoreToWorld();
 
       // Check for weapon evolution
@@ -156,12 +161,28 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
   // Initialize game world and loop (waits for sprites to preload)
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !selectedClassId || !spritesReady) return;
+    const root = rootRef.current;
+    if (!canvas || !root || !selectedClassId || !spritesReady) return;
 
     // Resize canvas to fill screen (handles orientation changes on mobile)
     const resizeCanvas = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      const rect = root.getBoundingClientRect();
+      const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 1;
+      const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 1;
+      const rectWidth = rect.width > 0 ? rect.width : viewportWidth;
+      const rectHeight = rect.height > 0 ? rect.height : viewportHeight;
+      const isCoarsePointer = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+      const minVisibleWorldSpan = 64 * 24; // 12 tiles in each direction from center
+
+      const targetWidth = isCoarsePointer
+        ? Math.max(rectWidth, minVisibleWorldSpan)
+        : rectWidth;
+      const targetHeight = isCoarsePointer
+        ? Math.max(rectHeight, minVisibleWorldSpan)
+        : rectHeight;
+
+      canvas.width = Math.max(1, Math.round(targetWidth));
+      canvas.height = Math.max(1, Math.round(targetHeight));
       // Update world camera if it exists
       const w = worldRef.current;
       if (w) {
@@ -170,6 +191,10 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
       }
     };
     resizeCanvas();
+    const resizeObserver = typeof ResizeObserver !== 'undefined'
+      ? new ResizeObserver(resizeCanvas)
+      : null;
+    resizeObserver?.observe(root);
     window.addEventListener('resize', resizeCanvas);
 
     const handleContextLost = (e: Event) => {
@@ -199,6 +224,7 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
     // Create game loop with callbacks
     const loop = createGameLoop(canvas, world, tileGen, {
       onPlayerDamage: (_amount, sourceDefId) => {
+        altairSfx.play('player_hit');
         // Engine already reduced world.player.hp; sync to store
         useAltairGameStore.setState({ hp: world.player.hp });
 
@@ -221,6 +247,7 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
               }
             }
             addToast('Revived!', 'success');
+            altairSfx.play('revive');
           } else {
             // Record "killed by" in bestiary
             if (sourceDefId) {
@@ -231,15 +258,18 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
         }
       },
       onPlayerHeal: (_amount) => {
+        altairSfx.play('player_heal');
         // Sync HP from engine to store
         useAltairGameStore.setState({ hp: world.player.hp });
       },
       onXPGain: (amount) => {
+        altairSfx.play('pickup_xp', Math.min(1.5, 0.7 + amount / 20));
         const prevLevel = useAltairGameStore.getState().level;
         useAltairGameStore.getState().addXP(amount);
         const newLevel = useAltairGameStore.getState().level;
 
         if (newLevel > prevLevel) {
+          altairSfx.play('level_up');
           // Trigger level-up: generate choices and show picker
           const store = useAltairGameStore.getState();
           const meta = useAltairMetaStore.getState();
@@ -259,9 +289,11 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
         }
       },
       onCoinGain: (amount) => {
+        altairSfx.play('pickup_coin', Math.min(1.5, 0.7 + amount / 8));
         useAltairGameStore.getState().addCoins(amount, 'enemyDrops');
       },
       onKill: (defId: string) => {
+        altairSfx.play('enemy_kill');
         useAltairGameStore.getState().addKill(defId);
         useAltairMetaStore.getState().recordBestiaryKill(defId);
       },
@@ -272,11 +304,13 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
         // Level-up is handled directly in onXPGain above
       },
       onBossSpawn: (bossId) => {
+        altairSfx.play('boss_spawn');
         useAltairGameStore.getState().setBossActive(true);
         const bossDef = BOSSES.find((b) => b.id === bossId);
         addToast(`${bossDef?.title ?? 'BOSS'} APPROACHES!`, 'warning');
       },
       onBossKill: (bossId) => {
+        altairSfx.play('boss_kill');
         useAltairGameStore.getState().setBossActive(false);
         useAltairGameStore.getState().recordBossKill(bossId);
         setBossInfo(null);
@@ -288,6 +322,7 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
         useAltairGameStore.getState().victory();
       },
       onWeaponDisable: (duration) => {
+        altairSfx.play('weapon_disabled');
         addToast(`Weapons disabled for ${duration.toFixed(1)}s!`, 'error');
       },
     });
@@ -296,8 +331,9 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
     loop.start();
 
     return () => {
-      loop.stop();
+      loop.destroy();
       cleanupInput();
+      resizeObserver?.disconnect();
       window.removeEventListener('resize', resizeCanvas);
       canvas.removeEventListener('webglcontextlost', handleContextLost);
     };
@@ -308,10 +344,18 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
     const loop = loopRef.current;
     if (!loop) return;
 
+    const prevPhase = prevPausePhaseRef.current;
+    if (phase === 'paused' && prevPhase === 'playing') {
+      altairSfx.play('pause');
+    } else if (phase === 'playing' && prevPhase === 'paused') {
+      altairSfx.play('resume');
+    }
+    prevPausePhaseRef.current = phase;
+
     if (phase === 'playing') {
-      loop.start();
+      loop.resume();
     } else {
-      loop.stop();
+      loop.pause();
     }
   }, [phase]);
 
@@ -389,7 +433,10 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black overflow-hidden">
+    <div
+      ref={rootRef}
+      className="fixed inset-0 bg-black overflow-hidden"
+    >
       <canvas
         ref={canvasRef}
         className="block w-full h-full"

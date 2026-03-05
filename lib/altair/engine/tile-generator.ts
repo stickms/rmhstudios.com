@@ -59,7 +59,7 @@ const PROP_HITBOX: Record<PropType, { halfW: number; halfH: number }> = {
 
 /** Default HP per prop type. */
 const PROP_DEFAULT_HP: Record<PropType, number> = {
-  tombstone: 3, barrel: 3, urn: 3,
+  tombstone: 2, barrel: 2, urn: 2,
   fence_h: 5, fence_v: 5, fence_post: 8,
   wall: 12, wall_v: 12,
   hedge: 3, crate: 4, well: 999,
@@ -110,6 +110,8 @@ const TILE_SIZE = 64;
 const GENERATION_MARGIN = 3;
 const CLEANUP_MARGIN = 8;
 const PROP_CHANCE = 0.04;
+const STRUCTURE_PROP_STEP = 48; // tighter spacing so wall/fence segments form contiguous barriers
+const STRUCTURE_ZONE_JITTER = 18; // deterministic per-zone world offset (breaks strict grid alignment)
 
 // ---- Structure Generation ---------------------------------------------------
 
@@ -452,17 +454,18 @@ export class TileGenerator {
     return this.props.filter((p) => !p.destroyed && p.type !== 'urn');
   }
 
-  /** Get all non-destroyed urn props (non-collidable walkover pickups). */
-  getUrns(): DestructibleProp[] {
-    return this.props.filter((p) => !p.destroyed && p.type === 'urn');
+  /** Get all non-destroyed props that can be targeted by damage (includes urns). */
+  getDamageableProps(): DestructibleProp[] {
+    return this.props.filter((p) => !p.destroyed);
   }
 
   /** Damage a prop by id. Returns true if the prop was destroyed. */
-  damageProp(propId: number, damage: number): boolean {
+  damageProp(propId: number, _damage: number): boolean {
     for (const prop of this.props) {
       if (prop.id === propId && !prop.destroyed) {
         if (prop.type === 'well') return false; // indestructible
-        prop.hp -= damage;
+        // Props always lose exactly 1 HP per hit regardless of incoming damage.
+        prop.hp -= 1;
         if (prop.hp <= 0) {
           prop.destroyed = true;
           return true;
@@ -489,6 +492,7 @@ export class TileGenerator {
     const { spriteBatch, shapeBatch } = renderer;
     const tiles = this.getVisibleTiles(camera);
     const sheet = getTileSheet();
+    let drawingShapes = false;
 
     for (const tile of tiles) {
       const worldX = tile.x * this.tileSize;
@@ -498,6 +502,10 @@ export class TileGenerator {
       if (sheet) {
         const frames = TILE_FRAMES[tile.type];
         if (frames) {
+          if (drawingShapes) {
+            shapeBatch.flush();
+            drawingShapes = false;
+          }
           const tileIndex = frames[tile.variant] ?? frames[0];
           drawTileSprite(spriteBatch, sheet, tileIndex, screen.x, screen.y, this.tileSize);
           continue;
@@ -505,7 +513,10 @@ export class TileGenerator {
       }
 
       // Vector fallback — colored rectangles
-      spriteBatch.flush();
+      if (!drawingShapes) {
+        spriteBatch.flush();
+        drawingShapes = true;
+      }
       const colors = TILE_COLORS[tile.type];
       shapeBatch.drawRect(screen.x, screen.y, this.tileSize, this.tileSize, colors[tile.variant]);
       // Outline
@@ -513,6 +524,9 @@ export class TileGenerator {
       shapeBatch.drawRect(screen.x, screen.y, 1, this.tileSize, 'rgba(0,0,0,0.15)');
       shapeBatch.drawRect(screen.x + this.tileSize - 1, screen.y, 1, this.tileSize, 'rgba(0,0,0,0.15)');
       shapeBatch.drawRect(screen.x, screen.y + this.tileSize - 1, this.tileSize, 1, 'rgba(0,0,0,0.15)');
+    }
+
+    if (drawingShapes) {
       shapeBatch.flush();
     }
   }
@@ -523,6 +537,7 @@ export class TileGenerator {
     const halfH = camera.height / 2 + 64;
     const sheet = getPropSheet();
     const structSheet = getStructurePropSheet();
+    let drawingShapes = false;
 
     for (const prop of this.props) {
       if (prop.destroyed) continue;
@@ -535,7 +550,12 @@ export class TileGenerator {
 
       // Sprite rendering for original prop types (barrel, urn)
       if (sheet && (prop.type === 'barrel' || prop.type === 'urn')) {
-        const isDamaged = prop.hp < 3;
+        if (drawingShapes) {
+          shapeBatch.flush();
+          drawingShapes = false;
+        }
+        const maxHp = PROP_DEFAULT_HP[prop.type];
+        const isDamaged = prop.hp < maxHp;
         const frameIndex = isDamaged
           ? (PROP_DAMAGED_FRAMES[prop.type] ?? PROP_FRAMES[prop.type] ?? 0)
           : (PROP_FRAMES[prop.type] ?? 0);
@@ -545,6 +565,10 @@ export class TileGenerator {
 
       // Sprite rendering for structure prop types
       if (structSheet && STRUCTURE_PROP_FRAMES[prop.type] !== undefined) {
+        if (drawingShapes) {
+          shapeBatch.flush();
+          drawingShapes = false;
+        }
         const maxHp = PROP_DEFAULT_HP[prop.type];
         const isDamaged = prop.hp < maxHp * 0.6;
         const frameIndex = isDamaged
@@ -555,8 +579,14 @@ export class TileGenerator {
       }
 
       // Vector rendering fallback
-      spriteBatch.flush();
+      if (!drawingShapes) {
+        spriteBatch.flush();
+        drawingShapes = true;
+      }
       this.drawPropVector(shapeBatch, overlayCtx, prop, screen.x, screen.y - 8);
+    }
+
+    if (drawingShapes) {
       shapeBatch.flush();
     }
   }
@@ -742,6 +772,13 @@ export class TileGenerator {
     const offsetY = Math.floor((STRUCTURE_ZONE_SIZE - template.height) / 2);
     const baseTX = zx * STRUCTURE_ZONE_SIZE + offsetX;
     const baseTY = zy * STRUCTURE_ZONE_SIZE + offsetY;
+    const baseWorldX = baseTX * this.tileSize + this.tileSize / 2;
+    const baseWorldY = baseTY * this.tileSize + this.tileSize / 2;
+    const jitterSpan = STRUCTURE_ZONE_JITTER * 2 + 1;
+    const jitterX = ((zh >>> 8) % jitterSpan) - STRUCTURE_ZONE_JITTER;
+    const jitterY = ((zh >>> 14) % jitterSpan) - STRUCTURE_ZONE_JITTER;
+    const originX = baseWorldX + jitterX;
+    const originY = baseWorldY + jitterY;
 
     // Mark structure tiles (suppress random props)
     for (let dy = 0; dy < template.height; dy++) {
@@ -752,13 +789,11 @@ export class TileGenerator {
 
     // Place structure props
     for (const placement of template.props) {
-      const tx = baseTX + placement.dx;
-      const ty = baseTY + placement.dy;
       const hitbox = PROP_HITBOX[placement.type];
       const prop: DestructibleProp = {
         id: this.nextPropId++,
-        x: tx * this.tileSize + this.tileSize / 2,
-        y: ty * this.tileSize + this.tileSize / 2,
+        x: originX + placement.dx * STRUCTURE_PROP_STEP,
+        y: originY + placement.dy * STRUCTURE_PROP_STEP,
         halfW: hitbox.halfW,
         halfH: hitbox.halfH,
         radius: Math.max(hitbox.halfW, hitbox.halfH),
@@ -771,11 +806,9 @@ export class TileGenerator {
 
     // Queue pickup spawns
     for (const pickup of template.pickups) {
-      const tx = baseTX + pickup.dx;
-      const ty = baseTY + pickup.dy;
       this.pendingPickups.push({
-        x: tx * this.tileSize + this.tileSize / 2,
-        y: ty * this.tileSize + this.tileSize / 2,
+        x: originX + pickup.dx * STRUCTURE_PROP_STEP,
+        y: originY + pickup.dy * STRUCTURE_PROP_STEP,
         type: pickup.type,
         value: pickup.value,
       });

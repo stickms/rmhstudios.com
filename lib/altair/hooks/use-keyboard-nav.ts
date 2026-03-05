@@ -4,6 +4,7 @@
  * Number keys 1-9 for direct selection (optional).
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { altairSfx } from '../audio/sfx';
 
 interface UseKeyboardNavOptions {
   /** Total number of navigable items */
@@ -108,6 +109,7 @@ export function useKeyboardNav({
       // Confirm with Space or Enter
       if (key === ' ' || key === 'Enter') {
         e.preventDefault();
+        altairSfx.play('ui_click');
         onSelectRef.current(focusRef.current);
         return;
       }
@@ -118,6 +120,7 @@ export function useKeyboardNav({
         if (num >= 1 && num <= Math.min(itemCount, 9)) {
           e.preventDefault();
           setFocusedIndex(num - 1);
+          altairSfx.play('ui_click');
           onSelectRef.current(num - 1);
         }
       }

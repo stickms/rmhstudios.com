@@ -8,6 +8,7 @@ import { Sun, Moon, RotateCcw, ArrowLeft, ArrowRight, Volume2 } from 'lucide-rea
 import { useAltairSettingsStore, Keybinds } from '@/lib/altair/stores/settings-store';
 import { useAltairMetaStore } from '@/lib/altair/stores/meta-store';
 import { altairMusic } from '@/lib/altair/audio/music';
+import { altairSfx } from '@/lib/altair/audio/sfx';
 
 interface SettingsScreenProps {
   onBack: () => void;
@@ -52,6 +53,20 @@ export default function SettingsScreen({ onBack }: SettingsScreenProps) {
     { key: 'right', label: 'Move Right' },
     { key: 'pause', label: 'Pause' },
   ];
+
+  const handleVolumeInput = useCallback((setter: (v: number) => void, raw: string) => {
+    const value = Number(raw);
+    if (!Number.isFinite(value)) return;
+    const normalized = Math.max(0, Math.min(1, value / 100));
+    setter(normalized);
+
+    // Mobile browsers often require explicit user interaction to unlock audio.
+    if (!altairMusic.isPlaying()) {
+      altairMusic.start();
+    }
+    altairMusic.updateVolume();
+    altairSfx.updateVolume();
+  }, []);
 
   return (
     <div className="altair-parchment flex flex-col min-h-[calc(100vh-56px)] px-4 py-8 max-w-lg mx-auto">
@@ -102,8 +117,10 @@ export default function SettingsScreen({ onBack }: SettingsScreenProps) {
                 min={0}
                 max={100}
                 value={Math.round(value * 100)}
-                onChange={(e) => setter(Number(e.target.value) / 100)}
+                onInput={(e) => handleVolumeInput(setter, e.currentTarget.value)}
+                onChange={(e) => handleVolumeInput(setter, e.currentTarget.value)}
                 className="flex-1 h-1.5 accent-(--altair-accent) cursor-pointer"
+                style={{ touchAction: 'none' }}
               />
               <span className="text-xs text-(--altair-text-muted) w-8 text-right font-mono">{Math.round(value * 100)}%</span>
             </div>
@@ -117,6 +134,7 @@ export default function SettingsScreen({ onBack }: SettingsScreenProps) {
           <h3 className="text-sm font-semibold text-(--altair-text-muted) uppercase tracking-wider">Keybinds</h3>
           <button
             onClick={resetKeybinds}
+            data-altair-sfx="menu_toggle"
             className="text-xs text-(--altair-text-dim) hover:text-(--altair-accent) transition-colors flex items-center gap-1"
           >
             <RotateCcw size={12} /> Reset
@@ -211,6 +229,7 @@ export default function SettingsScreen({ onBack }: SettingsScreenProps) {
       {/* Back button */}
       <button
         onClick={onBack}
+        data-altair-sfx="menu_back"
         className="mt-auto py-3 rounded-xl font-semibold text-(--altair-text) bg-(--altair-surface) border border-(--altair-border) hover:bg-(--altair-surface-hover) transition-colors"
       >
         Back
