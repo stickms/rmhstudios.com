@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { AnimatedMain } from './AnimatedMain';
-import { DEFAULT_WIDTH, WIDE_WIDTH } from '@/lib/layout-width';
+import { DEFAULT_WIDTH, WIDE_NO_RIGHT_SIDEBAR_WIDTH, WIDE_WIDTH } from '@/lib/layout-width';
 
 interface PageLayoutProps {
   title: string;
@@ -26,12 +26,17 @@ export function PageLayout({
   wide,
   backHref,
 }: PageLayoutProps) {
+  const hasRightSidebar = Boolean(rightSidebar);
+  const targetWidth = wide
+    ? (hasRightSidebar ? WIDE_WIDTH : WIDE_NO_RIGHT_SIDEBAR_WIDTH)
+    : DEFAULT_WIDTH;
+
   return (
     <>
       {/* Center Column – width animates between pages */}
       <AnimatedMain
         className="w-full min-w-0 border-r border-site-border pb-16 md:pb-0"
-        targetWidth={wide ? WIDE_WIDTH : DEFAULT_WIDTH}
+        targetWidth={targetWidth}
       >
         <div className="flex flex-col">
           {/* Sticky Header */}
@@ -60,14 +65,16 @@ export function PageLayout({
       </AnimatedMain>
 
       {/* Right Sidebar or Spacer - hidden below lg */}
-      {rightSidebar ? (
+      {hasRightSidebar ? (
         <aside className="hidden lg:block w-80 shrink-0 self-start">
           {rightSidebar}
         </aside>
+      ) : !wide ? (
+        <div className="hidden lg:block w-80 shrink-0" />
       ) : (
-        <div className={`hidden lg:block ${wide ? 'w-[168px]' : 'w-80'} shrink-0`} />
+        // Keep the same trailing gutter feel as the right sidebar layout.
+        <div className="hidden lg:block w-4 shrink-0" />
       )}
     </>
   );
 }
-

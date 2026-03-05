@@ -2,8 +2,7 @@ import type { Metadata } from 'next';
 import { RightSidebar } from '@/components/feed/RightSidebar';
 import { ProfileColumn } from '@/components/feed/ProfileColumn';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
-import { getAllNewsArticles } from '@/lib/news';
-import { getAllArticles } from '@/lib/research';
+import { getSidebarData } from '@/lib/sidebar-data';
 import { prisma } from '@/lib/prisma';
 import { resolveUserDisplay } from '@/lib/user-display';
 
@@ -87,8 +86,14 @@ export default async function ProfilePage({
   params: Promise<{ id: string }>;
 }) {
   const { id: userId } = await params;
-  const newsArticles = (await getAllNewsArticles()).slice(0, 5);
-  const researchArticles = getAllArticles().slice(0, 3);
+  const {
+    curatedBuilds,
+    userBuilds,
+    recommendedUsers,
+    blogPosts,
+    newsArticles,
+    researchArticles,
+  } = await getSidebarData();
 
   return (
     <>
@@ -100,6 +105,10 @@ export default async function ProfilePage({
       {/* Right Sidebar */}
       <aside className="hidden lg:block w-80 shrink-0 self-start">
         <RightSidebar
+          curatedBuilds={curatedBuilds}
+          userBuilds={userBuilds}
+          recommendedUsers={recommendedUsers}
+          blogPosts={blogPosts}
           newsArticles={newsArticles}
           researchArticles={researchArticles}
         />
@@ -107,4 +116,3 @@ export default async function ProfilePage({
     </>
   );
 }
-

@@ -2,8 +2,7 @@ import type { Metadata } from 'next';
 import { RightSidebar } from '@/components/feed/RightSidebar';
 import { PostDetail } from '@/components/feed/PostDetail';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
-import { getAllNewsArticles } from '@/lib/news';
-import { getAllArticles } from '@/lib/research';
+import { getSidebarData } from '@/lib/sidebar-data';
 import { prisma } from '@/lib/prisma';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 
@@ -74,8 +73,14 @@ export default async function PostPage({
   params: Promise<{ postid: string }>;
 }) {
   const { postid } = await params;
-  const newsArticles = (await getAllNewsArticles()).slice(0, 5);
-  const researchArticles = getAllArticles().slice(0, 3);
+  const {
+    curatedBuilds,
+    userBuilds,
+    recommendedUsers,
+    blogPosts,
+    newsArticles,
+    researchArticles,
+  } = await getSidebarData();
 
   return (
     <>
@@ -87,6 +92,10 @@ export default async function PostPage({
       {/* Right Sidebar */}
       <aside className="hidden lg:block w-80 shrink-0 self-start">
         <RightSidebar
+          curatedBuilds={curatedBuilds}
+          userBuilds={userBuilds}
+          recommendedUsers={recommendedUsers}
+          blogPosts={blogPosts}
           newsArticles={newsArticles}
           researchArticles={researchArticles}
         />
@@ -94,4 +103,3 @@ export default async function PostPage({
     </>
   );
 }
-
