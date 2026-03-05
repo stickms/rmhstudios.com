@@ -25,7 +25,14 @@ export default function BossHealthBar({
   const hpPercent = Math.max(0, (hp / maxHp) * 100);
 
   return (
-    <div className="absolute top-14 inset-x-0 z-40 pointer-events-none px-4">
+    <div
+      className="absolute inset-x-0 z-40 pointer-events-none px-4"
+      style={{
+        top: 'calc(env(safe-area-inset-top, 0px) + 64px)',
+        paddingLeft: 'calc(env(safe-area-inset-left, 0px) + 16px)',
+        paddingRight: 'calc(env(safe-area-inset-right, 0px) + 16px)',
+      }}
+    >
       <div className="max-w-xl mx-auto">
         <div className="flex items-center justify-between mb-1">
           <div>

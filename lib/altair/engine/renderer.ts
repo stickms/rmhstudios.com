@@ -87,6 +87,38 @@ const STATUS_TINT: Record<StatusEffect['type'], string> = {
   intangible: 'rgba(200,200,255,0.2)',
 };
 
+const LOCAL_PLAYER_SCREEN_SMOOTHING = 0.35;
+const LOCAL_PLAYER_SNAP_DISTANCE = 96;
+const localPlayerScreenState = new WeakMap<object, { x: number; y: number }>();
+
+function getSmoothedLocalPlayerScreenPosition(
+  player: object,
+  targetX: number,
+  targetY: number,
+): { x: number; y: number } {
+  let state = localPlayerScreenState.get(player);
+  if (!state) {
+    state = { x: targetX, y: targetY };
+    localPlayerScreenState.set(player, state);
+    return state;
+  }
+
+  const dx = targetX - state.x;
+  const dy = targetY - state.y;
+  const distSq = dx * dx + dy * dy;
+
+  // Snap immediately if the player was teleported or repositioned sharply.
+  if (distSq >= LOCAL_PLAYER_SNAP_DISTANCE * LOCAL_PLAYER_SNAP_DISTANCE) {
+    state.x = targetX;
+    state.y = targetY;
+    return state;
+  }
+
+  state.x += dx * LOCAL_PLAYER_SCREEN_SMOOTHING;
+  state.y += dy * LOCAL_PLAYER_SCREEN_SMOOTHING;
+  return state;
+}
+
 // ---- Main entry point -------------------------------------------------------
 
 /**
@@ -566,7 +598,8 @@ function renderPlayer(
 ): void {
   const { spriteBatch, shapeBatch } = renderer;
   const pl = world.player;
-  const s = worldToScreen(camera, pl.x, pl.y);
+  const target = worldToScreen(camera, pl.x, pl.y);
+  const s = getSmoothedLocalPlayerScreenPosition(pl, target.x, target.y);
 
   // Invincibility flash — modulate alpha
   let playerAlpha = 1;

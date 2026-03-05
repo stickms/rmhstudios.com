@@ -53,6 +53,19 @@ export default function SettingsScreen({ onBack }: SettingsScreenProps) {
     { key: 'pause', label: 'Pause' },
   ];
 
+  const handleVolumeInput = useCallback((setter: (v: number) => void, raw: string) => {
+    const value = Number(raw);
+    if (!Number.isFinite(value)) return;
+    const normalized = Math.max(0, Math.min(1, value / 100));
+    setter(normalized);
+
+    // Mobile browsers often require explicit user interaction to unlock audio.
+    if (!altairMusic.isPlaying()) {
+      altairMusic.start();
+    }
+    altairMusic.updateVolume();
+  }, []);
+
   return (
     <div className="altair-parchment flex flex-col min-h-[calc(100vh-56px)] px-4 py-8 max-w-lg mx-auto">
       <h2 className="text-2xl font-bold text-(--altair-text) mb-6">Settings</h2>
@@ -102,8 +115,10 @@ export default function SettingsScreen({ onBack }: SettingsScreenProps) {
                 min={0}
                 max={100}
                 value={Math.round(value * 100)}
-                onChange={(e) => setter(Number(e.target.value) / 100)}
+                onInput={(e) => handleVolumeInput(setter, e.currentTarget.value)}
+                onChange={(e) => handleVolumeInput(setter, e.currentTarget.value)}
                 className="flex-1 h-1.5 accent-(--altair-accent) cursor-pointer"
+                style={{ touchAction: 'none' }}
               />
               <span className="text-xs text-(--altair-text-muted) w-8 text-right font-mono">{Math.round(value * 100)}%</span>
             </div>

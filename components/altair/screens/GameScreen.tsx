@@ -31,6 +31,7 @@ interface GameScreenProps {
 }
 
 export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
+  const rootRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const loopRef = useRef<ReturnType<typeof createGameLoop> | null>(null);
   const worldRef = useRef<ReturnType<typeof createGameWorld> | null>(null);
@@ -156,12 +157,24 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
   // Initialize game world and loop (waits for sprites to preload)
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !selectedClassId || !spritesReady) return;
+    const root = rootRef.current;
+    if (!canvas || !root || !selectedClassId || !spritesReady) return;
 
     // Resize canvas to fill screen (handles orientation changes on mobile)
     const resizeCanvas = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      const rect = root.getBoundingClientRect();
+      const isCoarsePointer = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+      const minVisibleWorldSpan = 64 * 24; // 12 tiles in each direction from center
+
+      const targetWidth = isCoarsePointer
+        ? Math.max(rect.width, minVisibleWorldSpan)
+        : rect.width;
+      const targetHeight = isCoarsePointer
+        ? Math.max(rect.height, minVisibleWorldSpan)
+        : rect.height;
+
+      canvas.width = Math.max(1, Math.round(targetWidth));
+      canvas.height = Math.max(1, Math.round(targetHeight));
       // Update world camera if it exists
       const w = worldRef.current;
       if (w) {
@@ -389,7 +402,11 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black overflow-hidden">
+    <div
+      ref={rootRef}
+      className="fixed top-0 left-0 bg-black overflow-hidden"
+      style={{ width: '100vw', height: '100lvh' }}
+    >
       <canvas
         ref={canvasRef}
         className="block w-full h-full"

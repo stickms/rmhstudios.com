@@ -127,7 +127,14 @@ export default function GameHUD() {
   return (
     <div className="absolute inset-0 z-30 pointer-events-none">
       {/* Top bar */}
-      <div className="flex items-center gap-3 px-3 py-2 bg-black/40 backdrop-blur-sm pointer-events-auto">
+      <div
+        className="flex items-center gap-3 px-3 py-2 bg-black/40 backdrop-blur-sm pointer-events-auto"
+        style={{
+          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 8px)',
+          paddingLeft: 'calc(env(safe-area-inset-left, 0px) + 12px)',
+          paddingRight: 'calc(env(safe-area-inset-right, 0px) + 12px)',
+        }}
+      >
         {/* HP Bar */}
         <div className="flex-1 max-w-[200px]">
           <div className="flex items-center justify-between text-[10px] font-mono text-white/70 mb-0.5">
@@ -176,6 +183,10 @@ export default function GameHUD() {
       <div
         ref={barRef}
         className="relative flex items-center justify-center gap-2 sm:gap-4 px-2 sm:px-3 py-1.5 bg-black/30 pointer-events-auto"
+        style={{
+          paddingLeft: 'calc(env(safe-area-inset-left, 0px) + 8px)',
+          paddingRight: 'calc(env(safe-area-inset-right, 0px) + 8px)',
+        }}
       >
         {/* Weapon slots */}
         <div className="flex gap-0.5 sm:gap-1">

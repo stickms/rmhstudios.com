@@ -38,6 +38,25 @@ function doSave(): Promise<boolean> {
   }).then((res) => res.ok).catch(() => false);
 }
 
+function doSaveKeepalive(): void {
+  const payload = JSON.stringify(getPersistedState());
+
+  // Prefer sendBeacon during unload/navigation where regular fetch can be dropped.
+  if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
+    const blob = new Blob([payload], { type: 'application/json' });
+    if (navigator.sendBeacon('/api/altair/meta', blob)) return;
+  }
+
+  void fetch('/api/altair/meta', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: payload,
+    keepalive: true,
+  }).catch(() => {
+    // Best-effort only
+  });
+}
+
 function scheduleSave() {
   if (saveTimer) clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
@@ -91,6 +110,7 @@ interface AltairMetaState {
   recordBestiaryKilledBy: (defId: string) => void;
   loadFromServer: () => Promise<void>;
   saveToServer: () => void;
+  saveToServerNow: (keepalive?: boolean) => void;
 }
 
 export const useAltairMetaStore = create<AltairMetaState>()(
@@ -291,6 +311,19 @@ export const useAltairMetaStore = create<AltairMetaState>()(
       },
 
       saveToServer: () => scheduleSave(),
+      saveToServerNow: (keepalive = false) => {
+        if (saveTimer) {
+          clearTimeout(saveTimer);
+          saveTimer = null;
+        }
+
+        if (keepalive) {
+          doSaveKeepalive();
+          return;
+        }
+
+        void doSave();
+      },
     }),
     {
       name: 'altair-meta',

@@ -60,7 +60,14 @@ export default function MobileDPad({ onChange, side = 'left' }: MobileDPadProps)
   }, []);
 
   return (
-    <div className={`absolute bottom-8 z-40 pointer-events-auto ${side === 'left' ? 'left-8' : 'right-8'}`}>
+    <div
+      className="absolute z-40 pointer-events-auto"
+      style={{
+        bottom: 'calc(env(safe-area-inset-bottom, 0px) + 32px)',
+        left: side === 'left' ? 'calc(env(safe-area-inset-left, 0px) + 32px)' : undefined,
+        right: side === 'right' ? 'calc(env(safe-area-inset-right, 0px) + 32px)' : undefined,
+      }}
+    >
       <div
         ref={padRef}
         className="w-32 h-32 rounded-full border-2 border-white/20 bg-black/30 backdrop-blur-sm flex items-center justify-center touch-none"
