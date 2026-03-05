@@ -45,10 +45,12 @@ export default async function BuildPage({ params }: PageProps) {
     notFound();
   }
 
+  const backHref = build.category?.slug ? `/builds/${build.category.slug}` : '/builds';
+
   return (
     <div className="min-h-screen bg-site-bg pt-20 pb-12">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <BuildDetail build={build} backHref="/builds" />
+        <BuildDetail build={build} backHref={backHref} />
       </div>
     </div>
   );
