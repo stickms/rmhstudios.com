@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { SlidersHorizontal, Search, X } from 'lucide-react';
+import { SlidersHorizontal, Search, X, BadgeCheck, ShieldCheck } from 'lucide-react';
 import { FeedTabs } from './FeedTabs';
 import { ComposeBox } from './ComposeBox';
 import { FeedList } from './FeedList';
@@ -10,14 +10,26 @@ import { useFeedSSE } from '@/hooks/useFeedSSE';
 import { authClient } from '@/lib/auth-client';
 import Link from 'next/link';
 
+interface SearchUser {
+  id: string;
+  name: string | null;
+  image: string | null;
+  username: string | null;
+  handle: string | null;
+  isVerified: boolean;
+  isAdmin: boolean;
+}
+
 export function FeedColumn() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [mode, setMode] = useState<'feed' | 'friends'>('feed');
   const { setFilter, search, setSearch } = useFeedStore();
   const { data: session } = authClient.useSession();
   const [searchInput, setSearchInput] = useState(search ?? '');
+  const [userResults, setUserResults] = useState<SearchUser[]>([]);
   const searchRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const userDebounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   // Connect to real-time feed SSE stream
   useFeedSSE();
@@ -28,11 +40,25 @@ export function FeedColumn() {
     debounceRef.current = setTimeout(() => {
       setSearch(value.trim() || null);
     }, 300);
+
+    clearTimeout(userDebounceRef.current);
+    const trimmed = value.trim();
+    if (!trimmed) {
+      setUserResults([]);
+      return;
+    }
+    userDebounceRef.current = setTimeout(() => {
+      fetch(`/api/users/search?q=${encodeURIComponent(trimmed)}`)
+        .then((res) => res.json())
+        .then((data) => setUserResults(data.users ?? []))
+        .catch(() => setUserResults([]));
+    }, 300);
   };
 
   const clearSearch = () => {
     setSearchInput('');
     setSearch(null);
+    setUserResults([]);
     searchRef.current?.focus();
   };
 
@@ -112,7 +138,7 @@ export function FeedColumn() {
               type="text"
               value={searchInput}
               onChange={(e) => handleSearchChange(e.target.value)}
-              placeholder="Search RMHarks..."
+              placeholder="Search..."
               className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-full pl-9 pr-9 py-2 border border-site-border outline-none focus:border-site-accent transition-colors"
               onKeyDown={(e) => {
                 if (e.key === 'Escape') clearSearch();
@@ -129,6 +155,40 @@ export function FeedColumn() {
           </div>
         </div>
       </div>
+
+      {/* User search results */}
+      {userResults.length > 0 && (
+        <div className="border-b border-site-border">
+          <div className="px-4 py-2">
+            <p className="text-xs font-semibold text-site-text-dim uppercase tracking-wide mb-1">People</p>
+          </div>
+          {userResults.map((user) => (
+            <Link
+              key={user.id}
+              href={`/@${user.handle || user.id}`}
+              className="flex items-center gap-3 px-4 py-2.5 hover:bg-site-surface transition-colors"
+            >
+              <div className="w-8 h-8 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-xs shrink-0">
+                {user.image ? (
+                  <img src={user.image} alt={user.name || 'User'} className="w-full h-full rounded-full object-cover" />
+                ) : (
+                  (user.name?.[0] || 'U').toUpperCase()
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1">
+                  <span className="font-semibold text-sm text-site-text truncate">{user.name || 'Unknown'}</span>
+                  {user.isVerified && <BadgeCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />}
+                  {user.isAdmin && <ShieldCheck className="w-3.5 h-3.5 text-site-accent shrink-0" />}
+                </div>
+                {user.handle && (
+                  <span className="text-xs text-site-text-dim">@{user.handle}</span>
+                )}
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
 
       {/* Compose */}
       {!search && <ComposeBox />}
