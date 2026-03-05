@@ -3,6 +3,8 @@
 import { usePathname } from 'next/navigation';
 import { games } from '@/lib/games';
 import { apps } from '@/lib/apps';
+import { LeftSidebar } from '@/components/feed/LeftSidebar';
+import { MobileNav } from '@/components/feed/MobileNav';
 
 
 export function Shell({ children }: { children: React.ReactNode }) {
@@ -15,7 +17,6 @@ export function Shell({ children }: { children: React.ReactNode }) {
     .filter(href => href.startsWith('/'));
 
   const isExcludedPage = [...gameRoutes, ...appRoutes, '/secret'].some(route => pathname?.startsWith(route));
-  const isHomepage = pathname === '/';
 
   if (isExcludedPage) {
     return (
@@ -25,17 +26,22 @@ export function Shell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Homepage, profile pages, post detail pages, and section pages use their own layout (no Navbar/Footer)
-  const isPostDetailPage = /^\/[^/]+\/post\/[^/]+$/.test(pathname ?? '');
-  const sectionPages = ['/builds', '/news', '/blog', '/research', '/roadmap', '/user-builds'];
-  const isSectionPage = sectionPages.some(p => pathname === p);
-  if (isHomepage || pathname?.startsWith('/profile') || isPostDetailPage || isSectionPage) {
-    return <>{children}</>;
-  }
-
+  // All other pages get the persistent sidebar shell
   return (
-    <main className="min-h-screen">
+    <div className="min-h-screen bg-site-bg flex justify-center overflow-hidden">
+      {/* Left Sidebar - hidden on mobile, icon-only on md, full on lg+ */}
+      <div className="hidden md:block md:w-16 lg:w-64 shrink-0 relative">
+        <aside className="fixed top-0 bottom-0 w-16 lg:w-64 border-r border-site-border bg-site-bg overflow-y-auto z-30 flex flex-col">
+          <LeftSidebar />
+        </aside>
+      </div>
+
+      {/* Page content renders as direct flex siblings (AnimatedMain + right sidebar) */}
       {children}
-    </main>
+
+      {/* Mobile bottom nav */}
+      <MobileNav />
+    </div>
   );
 }
+

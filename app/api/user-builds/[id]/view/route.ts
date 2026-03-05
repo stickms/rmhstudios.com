@@ -34,21 +34,34 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     // Find build
     const build = await prisma.userBuild.findUnique({
       where: { id },
-      select: { id: true, visibility: true, userId: true },
+      select: { id: true, visibility: true, userId: true, isCurated: true },
     });
 
     if (!build) {
       return NextResponse.json({ error: 'Build not found' }, { status: 404 });
     }
 
-    // Don't count views from the owner
-    if (userId === build.userId) {
-      return NextResponse.json({ success: true, viewCount: -1 });
-    }
-
     // Check if build is accessible
     if (build.visibility === 'PRIVATE') {
       return NextResponse.json({ error: 'Build not found' }, { status: 404 });
+    }
+
+    // For curated builds, increment every time without creating a BuildView record
+    if (build.isCurated) {
+      const updatedBuild = await prisma.userBuild.update({
+        where: { id },
+        data: { viewCount: { increment: 1 } },
+        select: { viewCount: true },
+      });
+      return NextResponse.json({
+        success: true,
+        viewCount: updatedBuild.viewCount,
+      });
+    }
+
+    // Don't count views from the owner (for non-curated builds)
+    if (userId === build.userId) {
+      return NextResponse.json({ success: true, viewCount: -1 });
     }
 
     // Get IP hash for anonymous users

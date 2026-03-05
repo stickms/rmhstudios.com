@@ -1,6 +1,3 @@
-import { PageLayout } from '@/components/feed/PageLayout';
-import { getSidebarData } from '@/lib/sidebar-data';
-import { BuildsRightSidebar } from '../sidebar';
 import { OfficialBuildGrid } from '../OfficialBuildGrid';
 import { getCuratedBuildsByCategory } from '../data';
 
@@ -12,23 +9,14 @@ export const metadata = {
 export const revalidate = 60;
 
 export default async function GamesPage() {
-    const [{ visibleBuilds, likedIds }, { newsArticles }] = await Promise.all([
-        getCuratedBuildsByCategory('games'),
-        getSidebarData(),
-    ]);
+    const { visibleBuilds, likedIds } = await getCuratedBuildsByCategory('games');
 
     return (
-        <PageLayout
-            title="Entertainment"
-            wide
-            rightSidebar={<BuildsRightSidebar games={visibleBuilds} apps={[]} newsArticles={newsArticles} />}
-        >
-            <div className="px-4 pt-4 pb-12">
-                <p className="text-site-text-muted text-sm mb-4">
-                    Browser games, interactive experiences, and narrative adventures to explore.
-                </p>
-                <OfficialBuildGrid builds={visibleBuilds} initialLikedIds={likedIds} />
-            </div>
-        </PageLayout>
+        <div className="px-4 pt-4 pb-12">
+            <p className="text-site-text-muted text-sm mb-4">
+                Browser games, interactive experiences, and narrative adventures to explore.
+            </p>
+            <OfficialBuildGrid builds={visibleBuilds} initialLikedIds={likedIds} />
+        </div>
     );
 }
