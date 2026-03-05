@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { Heart, MessageCircle, Eye, ArrowRight } from 'lucide-react';
 export interface OfficialBuild {
     id: string;
@@ -32,6 +33,7 @@ function formatCount(count: number): string {
 }
 
 export function OfficialBuildCard({ build, onLike, onView }: OfficialBuildCardProps) {
+    const router = useRouter();
     const gradient = 'from-site-surface to-site-surface-hover';
     const cardUrl = build.demoUrl || build.repoUrl || `/builds/${build.slug}`;
     const detailUrl = `/builds/${build.slug}`;
@@ -42,12 +44,16 @@ export function OfficialBuildCard({ build, onLike, onView }: OfficialBuildCardPr
         onLike?.(build.id);
     };
 
-    const handleCardClick = () => {
+    const handleCardClick = (e: React.MouseEvent) => {
+        // Don't navigate if clicking an interactive child (button, link)
+        const target = e.target as HTMLElement;
+        if (target.closest('a, button')) return;
         onView?.(build.id);
+        router.push(cardUrl);
     };
 
     return (
-        <Link href={cardUrl} className="block h-full" onClick={handleCardClick}>
+        <div className="block h-full cursor-pointer" onClick={handleCardClick}>
             <div className="group rounded-xl border border-site-border bg-site-surface hover:border-site-accent/50 transition-all overflow-hidden flex flex-col h-full">
                 {/* Thumbnail */}
                 {build.thumbnailUrl ? (
@@ -56,7 +62,7 @@ export function OfficialBuildCard({ build, onLike, onView }: OfficialBuildCardPr
                             src={build.thumbnailUrl}
                             alt={build.title}
                             fill
-                            className="object-cover object-top group-hover:scale-105 transition-transform duration-300"
+                            className="object-cover group-hover:scale-105 transition-transform duration-300"
                             sizes="(max-width: 768px) 100vw, 50vw"
                         />
                     </div>
@@ -130,6 +136,6 @@ export function OfficialBuildCard({ build, onLike, onView }: OfficialBuildCardPr
                     </div>
                 </div>
             </div>
-        </Link>
+        </div>
     );
 }

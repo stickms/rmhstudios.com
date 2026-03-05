@@ -40,7 +40,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     // Find build
     const build = await prisma.userBuild.findUnique({
       where: { id },
-      select: { id: true, status: true, visibility: true },
+      select: { id: true, visibility: true },
     });
 
     if (!build) {
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     }
 
     // Check if build is accessible
-    if (build.status !== 'PUBLISHED' && build.visibility === 'PRIVATE') {
+    if (build.visibility === 'PRIVATE') {
       return NextResponse.json({ error: 'Build not found' }, { status: 404 });
     }
 

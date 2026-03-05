@@ -67,7 +67,6 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
         technologies,
         tags,
         visibility,
-        status: 'PUBLISHED',
       };
 
       const res = await fetch(

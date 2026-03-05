@@ -38,7 +38,7 @@ export function BuildsRightSidebar({ games, apps, newsArticles }: BuildsRightSid
                                 <p className="text-sm font-medium text-site-text group-hover:text-site-accent transition-colors truncate">
                                     {game.title}
                                 </p>
-                                <p className="text-xs text-site-text-dim">{game.status}</p>
+                                <p className="text-xs text-site-text-dim">{game.visibility}</p>
                             </div>
                         </Link>
                     ))}
@@ -65,7 +65,7 @@ export function BuildsRightSidebar({ games, apps, newsArticles }: BuildsRightSid
                                 <p className="text-sm font-medium text-site-text group-hover:text-site-accent transition-colors truncate">
                                     {app.title}
                                 </p>
-                                <p className="text-xs text-site-text-dim">{app.status}</p>
+                                <p className="text-xs text-site-text-dim">{app.visibility}</p>
                             </div>
                         </Link>
                     ))}

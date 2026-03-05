@@ -94,9 +94,9 @@ export function BuildDetail({ build: initialBuild, backHref = '/user-builds' }: 
               Featured
             </span>
           )}
-          {build.status !== 'PUBLISHED' && (
+          {build.visibility !== 'PUBLIC' && (
             <span className="px-2 py-0.5 rounded-full text-xs bg-gray-500/20 text-gray-400">
-              {build.status}
+              {build.visibility}
             </span>
           )}
         </div>

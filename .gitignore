@@ -47,8 +47,7 @@ next-env.d.ts
 .claude
 
 /lib/generated/prisma
-db/music/
-db/avatars/
+db/**/*
 dist-server/
 .venv/
 package-lock.json

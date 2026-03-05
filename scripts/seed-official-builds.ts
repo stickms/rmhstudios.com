@@ -60,7 +60,6 @@ async function main() {
       readme: build.longDescription,
       demoUrl: build.href,
       thumbnailUrl: build.imagePath || null,
-      status: 'PUBLISHED' as const,
       visibility: ('hidden' in build && build.hidden ? 'UNLISTED' : 'PUBLIC') as 'PUBLIC' | 'UNLISTED',
       isCurated: true,
       userId: systemUser.id,

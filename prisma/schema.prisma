@@ -1348,14 +1348,6 @@ model RmhCodeToken {
 
 // ─── User Builds ────────────────────────────────────────────────────
 
-enum BuildStatus {
-  DRAFT
-  PENDING_REVIEW
-  PUBLISHED
-  REJECTED
-  ARCHIVED
-}
-
 enum BuildVisibility {
   PUBLIC
   UNLISTED
@@ -1372,7 +1364,6 @@ model UserBuild {
   repoUrl      String?         @db.VarChar(500)
   demoUrl      String?         @db.VarChar(500)
   thumbnailUrl String?         @db.VarChar(500)
-  status       BuildStatus     @default(DRAFT)
   visibility   BuildVisibility @default(PUBLIC)
   featured     Boolean         @default(false)
   isCurated    Boolean         @default(false) // Added for "Official Build" status
@@ -1395,7 +1386,7 @@ model UserBuild {
   views      BuildView[]
 
   @@index([userId])
-  @@index([status, visibility, publishedAt(sort: Desc)])
+  @@index([visibility, publishedAt(sort: Desc)])
   @@index([slug])
   @@map("user_build")
 }

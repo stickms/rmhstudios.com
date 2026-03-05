@@ -16,7 +16,6 @@ export interface BuildItem {
   slug: string;
   title: string;
   description: string;
-  status: string;
   visibility: string;
   technologies: string[];
   likeCount: number;

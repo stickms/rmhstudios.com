@@ -227,6 +227,9 @@ function createImage(url: string): Promise<HTMLImageElement> {
     const image = new Image();
     image.addEventListener('load', () => resolve(image));
     image.addEventListener('error', (error) => reject(error));
+    if (!url.startsWith('blob:')) {
+      image.crossOrigin = 'anonymous';
+    }
     image.src = url;
   });
 }

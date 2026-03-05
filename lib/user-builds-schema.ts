@@ -12,6 +12,10 @@ export const MAX_TAG_LENGTH = 30;
 export const MIN_TAG_LENGTH = 3;
 
 const urlSchema = z.string().url().max(500).optional().or(z.literal(''));
+const imageUrlSchema = z.string().max(500).refine(
+  (val) => val === '' || val.startsWith('/') || val.startsWith('http://') || val.startsWith('https://'),
+  { message: 'Invalid URL' }
+).optional().or(z.literal(''));
 
 export const createBuildSchema = z.object({
   title: z
@@ -28,7 +32,7 @@ export const createBuildSchema = z.object({
     .optional(),
   repoUrl: urlSchema,
   demoUrl: urlSchema,
-  thumbnailUrl: urlSchema,
+  thumbnailUrl: imageUrlSchema,
   categoryId: z.string().optional(),
   technologies: z
     .array(z.string().max(50))
@@ -45,9 +49,18 @@ export const createBuildSchema = z.object({
   visibility: z.enum(['PUBLIC', 'UNLISTED', 'PRIVATE']).default('UNLISTED'),
 });
 
-export const updateBuildSchema = createBuildSchema.partial().extend({
-  status: z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']).optional(),
-});
+export const updateBuildSchema = createBuildSchema
+  .omit({ technologies: true, tags: true, visibility: true })
+  .partial()
+  .extend({
+    technologies: z.array(z.string().max(50)).max(20).optional(),
+    tags: z.array(
+      z.string()
+        .min(MIN_TAG_LENGTH, `Tag must be at least ${MIN_TAG_LENGTH} characters`)
+        .max(MAX_TAG_LENGTH, `Tag must be at most ${MAX_TAG_LENGTH} characters`)
+    ).max(MAX_TAGS, `Maximum ${MAX_TAGS} tags allowed`).optional(),
+    visibility: z.enum(['PUBLIC', 'UNLISTED', 'PRIVATE']).optional(),
+  });
 
 // Admin-only fields that can be set via PATCH by admins
 export const adminUpdateBuildSchema = updateBuildSchema.extend({

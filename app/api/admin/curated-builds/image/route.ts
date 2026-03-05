@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { writeFile, mkdir } from "fs/promises";
+import { writeFile, mkdir, unlink } from "fs/promises";
 import path from "path";
 import { headers } from "next/headers";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
-import { validateImageBuffer } from "@/lib/slice-it/upload-validation";
+import { validateImageBuffer, resolvePathUnder } from "@/lib/slice-it/upload-validation";
 
 export const runtime = "nodejs";
 
@@ -61,6 +61,19 @@ export async function POST(req: NextRequest) {
     await mkdir(buildsDir, { recursive: true });
     const filePath = path.join(buildsDir, fileName);
     await writeFile(filePath, buffer);
+
+    // Delete old image file if provided
+    const oldImageUrl = formData.get("oldImageUrl") as string | null;
+    if (oldImageUrl) {
+      const prefix = "/api/admin/curated-builds/image/";
+      if (oldImageUrl.startsWith(prefix)) {
+        const oldFilename = oldImageUrl.slice(prefix.length);
+        const oldPath = resolvePathUnder(buildsDir, oldFilename);
+        if (oldPath) {
+          try { await unlink(oldPath); } catch { /* already gone */ }
+        }
+      }
+    }
 
     const imageUrl = `/api/admin/curated-builds/image/${fileName}`;
 

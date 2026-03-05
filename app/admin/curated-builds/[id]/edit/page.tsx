@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, use } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Loader2, Camera, AlertCircle, Save } from 'lucide-react';
+import { ArrowLeft, Loader2, Camera, AlertCircle, Save, Crop } from 'lucide-react';
 import Link from 'next/link';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Button } from '@/components/ui/button';
@@ -25,6 +25,7 @@ export default function CuratedBuildEditPage({ params }: { params: Promise<{ id:
     const [tags, setTags] = useState<string>('');
     const [thumbnailUrl, setThumbnailUrl] = useState('');
     const [isCurated, setIsCurated] = useState(false);
+    const [visibility, setVisibility] = useState<'PUBLIC' | 'UNLISTED' | 'PRIVATE'>('UNLISTED');
     const [ownerId, setOwnerId] = useState('');
     const [ownerSearch, setOwnerSearch] = useState('');
     const [ownerResults, setOwnerResults] = useState<{ id: string; name: string | null; username: string | null }[]>([]);
@@ -58,6 +59,7 @@ export default function CuratedBuildEditPage({ params }: { params: Promise<{ id:
                 setThumbnailUrl(data.thumbnailUrl || '');
                 setAvatarPreview(data.thumbnailUrl || null);
                 setIsCurated(data.isCurated ?? false);
+                setVisibility(data.visibility || 'UNLISTED');
                 setOwnerId(data.user?.id || '');
                 setOwnerDisplay(data.user?.name || data.user?.username || 'Unknown');
                 setLoading(false);
@@ -160,6 +162,9 @@ export default function CuratedBuildEditPage({ params }: { params: Promise<{ id:
             if (avatarFile) {
                 const formData = new FormData();
                 formData.append('image', avatarFile);
+                if (thumbnailUrl) {
+                    formData.append('oldImageUrl', thumbnailUrl);
+                }
                 const uploadRes = await fetch('/api/admin/curated-builds/image', {
                     method: 'POST',
                     body: formData,
@@ -186,6 +191,7 @@ export default function CuratedBuildEditPage({ params }: { params: Promise<{ id:
                     thumbnailUrl: finalImageUrl,
                     tags: parsedTags,
                     isCurated,
+                    visibility,
                     ...(ownerId && ownerId !== build.user?.id ? { userId: ownerId } : {}),
                 }),
             });
@@ -247,25 +253,59 @@ export default function CuratedBuildEditPage({ params }: { params: Promise<{ id:
                     <div>
                          <label className="block text-sm font-medium text-site-text mb-2">Hero Image</label>
                          <div className="flex flex-col items-start gap-3">
-                            <button
-                                type="button"
-                                onClick={() => fileInputRef.current?.click()}
-                                className="relative group w-64 aspect-video rounded-xl bg-site-bg flex items-center justify-center border border-site-border overflow-hidden cursor-pointer hover:border-site-accent transition-colors"
-                            >
-                                {avatarPreview ? (
-                                    <img src={avatarPreview} alt="Thumbnail preview" className="w-full h-full object-cover" />
-                                ) : (
-                                    <div className="flex flex-col items-center text-site-text-dim">
-                                        <Camera className="w-8 h-8 mb-2 opacity-50" />
-                                        <span className="text-sm">Click to upload image</span>
+                            {/* Card-accurate preview */}
+                            <div className="w-full max-w-sm rounded-xl border border-site-border bg-site-surface overflow-hidden">
+                                <button
+                                    type="button"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="relative group aspect-video w-full bg-site-bg flex items-center justify-center overflow-hidden cursor-pointer"
+                                >
+                                    {avatarPreview ? (
+                                        <img src={avatarPreview} alt="Thumbnail preview" className="w-full h-full object-cover" />
+                                    ) : (
+                                        <div className="flex flex-col items-center text-site-text-dim">
+                                            <Camera className="w-8 h-8 mb-2 opacity-50" />
+                                            <span className="text-sm">Click to upload image</span>
+                                        </div>
+                                    )}
+                                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <span className="text-sm font-medium text-white flex items-center gap-2">
+                                            <Camera className="w-4 h-4" /> Upload New Image
+                                        </span>
+                                    </div>
+                                </button>
+                                {avatarPreview && (
+                                    <div className="px-3 py-2 border-t border-site-border">
+                                        <p className="text-xs text-site-text-dim font-medium truncate">{title || 'Build Title'}</p>
                                     </div>
                                 )}
-                                <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <span className="text-sm font-medium text-white flex items-center gap-2">
-                                        <Camera className="w-4 h-4" /> Update Image
-                                    </span>
-                                </div>
-                            </button>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                {avatarPreview && (
+                                    <button
+                                        type="button"
+                                        onClick={async () => {
+                                            try {
+                                                // For external URLs, proxy through our server to avoid CORS
+                                                const isLocal = avatarPreview!.startsWith('/') || avatarPreview!.startsWith('blob:');
+                                                const fetchUrl = isLocal
+                                                    ? avatarPreview!
+                                                    : `/api/admin/curated-builds/image/proxy?url=${encodeURIComponent(avatarPreview!)}`;
+                                                const res = await fetch(fetchUrl);
+                                                if (!res.ok) throw new Error();
+                                                const blob = await res.blob();
+                                                setCropSrc(URL.createObjectURL(blob));
+                                            } catch {
+                                                setError('Failed to load image for cropping');
+                                            }
+                                        }}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border border-site-border text-site-text-muted hover:text-site-text hover:border-site-accent/50 transition-colors"
+                                    >
+                                        <Crop className="w-4 h-4" />
+                                        Re-crop
+                                    </button>
+                                )}
+                            </div>
                             <input
                                 ref={fileInputRef}
                                 type="file"
@@ -348,6 +388,20 @@ export default function CuratedBuildEditPage({ params }: { params: Promise<{ id:
                                 </div>
                             )}
                         </div>
+                    </div>
+
+                    {/* Visibility */}
+                    <div>
+                        <label className="block text-sm font-medium text-site-text mb-2">Visibility</label>
+                        <select
+                            value={visibility}
+                            onChange={(e) => setVisibility(e.target.value as any)}
+                            className="w-full px-4 py-2 rounded-lg bg-site-bg border border-site-border text-site-text outline-none focus:border-site-accent/50 transition-colors"
+                        >
+                            <option value="PUBLIC">Public</option>
+                            <option value="UNLISTED">Unlisted</option>
+                            <option value="PRIVATE">Private</option>
+                        </select>
                     </div>
 
                     {/* Curated Toggle */}

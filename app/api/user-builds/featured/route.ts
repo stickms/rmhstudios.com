@@ -27,7 +27,6 @@ export async function GET(req: NextRequest) {
 
     const builds = await prisma.userBuild.findMany({
       where: {
-        status: 'PUBLISHED',
         visibility: 'PUBLIC',
         featured: true,
       },

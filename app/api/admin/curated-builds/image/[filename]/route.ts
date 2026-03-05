@@ -36,6 +36,7 @@ export async function GET(
 
     headers.set("Content-Type", contentType);
     headers.set("Cache-Control", "public, max-age=31536000, immutable");
+    headers.set("Access-Control-Allow-Origin", "*");
 
     return new NextResponse(buffer as unknown as BodyInit, {
       status: 200,

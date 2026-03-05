@@ -98,7 +98,7 @@ function SortableBuildItem({ build, onUncurate, onToggleFeatured }: { build: Bui
                         )}
                     </div>
                     <p className="text-sm text-site-text-dim truncate mt-0.5">
-                        by @{build.user.username || 'unknown'} • {build.status} • {build.visibility}
+                        by @{build.user.username || 'unknown'} • {build.visibility}
                     </p>
                 </div>
             </div>

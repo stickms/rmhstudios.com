@@ -19,7 +19,7 @@ export async function GET() {
         description: true,
         iconName: true,
         color: true,
-        _count: { select: { builds: { where: { status: 'PUBLISHED', visibility: 'PUBLIC' } } } },
+        _count: { select: { builds: { where: { visibility: 'PUBLIC' } } } },
       },
     });
 

@@ -29,7 +29,6 @@ export default async function BuildsPage() {
     const curatedBuilds = await prisma.userBuild.findMany({
         where: {
             isCurated: true,
-            status: 'PUBLISHED',
             visibility: { not: 'PRIVATE' },
         },
         orderBy: { position: 'asc' },

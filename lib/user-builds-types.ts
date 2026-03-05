@@ -37,7 +37,6 @@ export interface Build {
   thumbnailUrl?: string | null;
   repoUrl?: string | null;
   demoUrl?: string | null;
-  status: 'DRAFT' | 'PENDING_REVIEW' | 'PUBLISHED' | 'REJECTED' | 'ARCHIVED';
   visibility: 'PUBLIC' | 'UNLISTED' | 'PRIVATE';
   featured: boolean;
   technologies: string[];

@@ -159,9 +159,9 @@ export default function AdminUserBuildsPage() {
                                                 {build.title}
                                             </Link>
                                             <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
-                                                build.status === 'PUBLISHED' ? 'bg-green-500/10 text-green-400' : 'bg-site-bg text-site-text-dim'
+                                                build.visibility === 'PUBLIC' ? 'bg-green-500/10 text-green-400' : build.visibility === 'UNLISTED' ? 'bg-yellow-500/10 text-yellow-400' : 'bg-site-bg text-site-text-dim'
                                             }`}>
-                                                {build.status}
+                                                {build.visibility}
                                             </span>
                                             {build.visibility === 'PRIVATE' && (
                                                 <Lock className="w-3.5 h-3.5 text-site-text-dim ml-1" />

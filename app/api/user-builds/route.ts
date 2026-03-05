@@ -75,14 +75,12 @@ export async function GET(req: NextRequest) {
     }
 
     const where: Record<string, unknown> = {
-      status: 'PUBLISHED',
-      visibility: { in: ['PUBLIC', 'UNLISTED'] }, // ensure we don't accidentally leak PRIVATE here unless it's their own
+      visibility: { in: ['PUBLIC', 'UNLISTED'] },
       isCurated: false,
     };
 
-    // If fetching user's own builds, show all statuses and visibilities, but still hide curated if needed
+    // If fetching user's own builds, show all visibilities, but still hide curated if needed
     if (userId && userId === currentUserId) {
-      delete where.status;
       delete where.visibility;
       where.userId = userId;
     } else if (userId) {
@@ -161,7 +159,6 @@ export async function GET(req: NextRequest) {
       thumbnailUrl: build.thumbnailUrl,
       repoUrl: build.repoUrl,
       demoUrl: build.demoUrl,
-      status: build.status,
       visibility: build.visibility,
       featured: build.featured,
       technologies: build.technologies,
@@ -263,7 +260,6 @@ export async function POST(req: NextRequest) {
           categoryId: categoryId || null,
           technologies: technologies || [],
           visibility,
-          status: 'PUBLISHED',
           publishedAt: new Date(),
         },
         include: {
@@ -300,7 +296,6 @@ export async function POST(req: NextRequest) {
         thumbnailUrl: build.thumbnailUrl,
         repoUrl: build.repoUrl,
         demoUrl: build.demoUrl,
-        status: build.status,
         visibility: build.visibility,
         technologies: build.technologies,
         createdAt: build.createdAt.toISOString(),

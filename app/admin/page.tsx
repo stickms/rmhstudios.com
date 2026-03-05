@@ -50,7 +50,7 @@ export default async function AdminDashboardPage() {
                     >
                         <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">All User Builds</h2>
                         <p className="text-site-text-muted text-sm mt-2">
-                            Moderate and search through all submitted builds from the community. Edit metadata and change visibilities or statuses.
+                            Moderate and search through all submitted builds from the community. Edit metadata and change visibilities.
                         </p>
                     </Link>
 

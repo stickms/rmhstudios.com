@@ -73,9 +73,6 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       if (build.visibility === 'PRIVATE') {
         return NextResponse.json({ error: 'Build not found' }, { status: 404 });
       }
-      if (build.status !== 'PUBLISHED' && build.visibility !== 'UNLISTED') {
-        return NextResponse.json({ error: 'Build not found' }, { status: 404 });
-      }
     }
 
     // Check if user liked this build
@@ -96,7 +93,6 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       thumbnailUrl: build.thumbnailUrl,
       repoUrl: build.repoUrl,
       demoUrl: build.demoUrl,
-      status: build.status,
       visibility: build.visibility,
       featured: build.featured,
       isCurated: build.isCurated,
@@ -183,7 +179,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
         { status: 400 }
       );
     }
-    const { tags, status, ...updateData } = parsed.data;
+    const { tags, ...updateData } = parsed.data;
     // Prepare update data
     const data: Record<string, unknown> = { ...updateData };
 
@@ -194,14 +190,6 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
       if (adminData.featured !== undefined) data.featured = adminData.featured;
       if (adminData.userId !== undefined) data.userId = adminData.userId;
       if (adminData.position !== undefined) data.position = adminData.position;
-    }
-
-    // Handle status change to PUBLISHED
-    if (status === 'PUBLISHED' && build.status !== 'PUBLISHED') {
-      data.status = 'PUBLISHED';
-      data.publishedAt = new Date();
-    } else if (status) {
-      data.status = status;
     }
 
     // Clean up empty URLs
@@ -250,7 +238,6 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
       thumbnailUrl: updated.thumbnailUrl,
       repoUrl: updated.repoUrl,
       demoUrl: updated.demoUrl,
-      status: updated.status,
       visibility: updated.visibility,
       technologies: updated.technologies,
       createdAt: updated.createdAt.toISOString(),

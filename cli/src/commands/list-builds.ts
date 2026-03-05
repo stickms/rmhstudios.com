@@ -8,12 +8,12 @@ interface ListResponse {
   hasMore: boolean;
 }
 
-function statusColor(status: string): string {
-  switch (status) {
-    case 'PUBLISHED': return color.green(status);
-    case 'DRAFT': return color.yellow(status);
-    case 'ARCHIVED': return color.dim(status);
-    default: return status;
+function visibilityColor(vis: string): string {
+  switch (vis) {
+    case 'PUBLIC': return color.green(vis);
+    case 'UNLISTED': return color.yellow(vis);
+    case 'PRIVATE': return color.dim(vis);
+    default: return vis;
   }
 }
 
@@ -44,20 +44,19 @@ export async function listBuilds(): Promise<void> {
     console.log('');
     console.log(
       color.bold(
-        `  ${padEnd('TITLE', 30)} ${padEnd('STATUS', 12)} ${padEnd('VISIBILITY', 12)} ${padEnd('LIKES', 6)} ${padEnd('VIEWS', 6)} DATE`
+        `  ${padEnd('TITLE', 30)} ${padEnd('VISIBILITY', 12)} ${padEnd('LIKES', 6)} ${padEnd('VIEWS', 6)} DATE`
       )
     );
-    console.log(color.dim(`  ${'─'.repeat(90)}`));
+    console.log(color.dim(`  ${'─'.repeat(78)}`));
 
     for (const build of data.items) {
       const title = padEnd(build.title.slice(0, 28), 30);
-      const status = padEnd(statusColor(build.status), 12 + 9);
-      const vis = padEnd(build.visibility, 12);
+      const vis = padEnd(visibilityColor(build.visibility), 12 + 9);
       const likes = padEnd(String(build.likeCount), 6);
       const views = padEnd(String(build.viewCount), 6);
       const date = formatDate(build.publishedAt || build.createdAt);
 
-      console.log(`  ${title} ${status} ${vis} ${likes} ${views} ${date}`);
+      console.log(`  ${title} ${vis} ${likes} ${views} ${date}`);
     }
 
     if (data.hasMore) {
