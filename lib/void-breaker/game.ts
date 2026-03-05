@@ -594,13 +594,39 @@ export class VoidBreakerEngine {
     this.waveEnemiesStartCount = count;
   }
 
-  private randomEdgePosition(): { x: number; y: number } {
-    const edge = Math.floor(Math.random() * 4);
-    switch (edge) {
-      case 0: return { x: Math.random() * ARENA_W, y: 0 };
-      case 1: return { x: ARENA_W, y: Math.random() * ARENA_H };
-      case 2: return { x: Math.random() * ARENA_W, y: ARENA_H };
-      default: return { x: 0, y: Math.random() * ARENA_H };
+  private safeEdgeSpawnPosition(radius: number): { x: number; y: number } {
+    // Perimeter buildings are ~38 units thick on all edges, so spawn just inside them
+    const inset = 55;
+    const margin = radius + 15;
+    const innerW = ARENA_W - inset * 2;
+    const innerH = ARENA_H - inset * 2;
+
+    for (let attempt = 0; attempt < 15; attempt++) {
+      const edge = Math.floor(Math.random() * 4);
+      let pos: { x: number; y: number };
+      switch (edge) {
+        case 0: pos = { x: inset + Math.random() * innerW, y: inset }; break;         // top
+        case 1: pos = { x: ARENA_W - inset, y: inset + Math.random() * innerH }; break; // right
+        case 2: pos = { x: inset + Math.random() * innerW, y: ARENA_H - inset }; break; // bottom
+        default: pos = { x: inset, y: inset + Math.random() * innerH }; break;          // left
+      }
+      let blocked = false;
+      for (const o of this.obstacles) {
+        if (!o.active) continue;
+        if (circleAABBOverlaps(pos.x, pos.y, margin, o.x, o.y, o.w, o.h)) {
+          blocked = true;
+          break;
+        }
+      }
+      if (!blocked) return pos;
+    }
+    // Fallback: center of a random edge (past perimeter buildings)
+    const fallbackEdge = Math.floor(Math.random() * 4);
+    switch (fallbackEdge) {
+      case 0: return { x: ARENA_W / 2, y: inset };
+      case 1: return { x: ARENA_W - inset, y: ARENA_H / 2 };
+      case 2: return { x: ARENA_W / 2, y: ARENA_H - inset };
+      default: return { x: inset, y: ARENA_H / 2 };
     }
   }
 
@@ -609,7 +635,7 @@ export class VoidBreakerEngine {
     if (!slot) return;
     const tier = Math.floor(this.wave / BOSS_WAVE_INTERVAL);
     const pattern = getBossPatternForTier(tier);
-    const pos = this.randomEdgePosition();
+    const pos = this.safeEdgeSpawnPosition(BOSS_RADIUS);
 
     slot.active = true;
     slot.id = this.nextId++;
@@ -653,7 +679,7 @@ export class VoidBreakerEngine {
     const slot = this.enemies.find(e => !e.active);
     if (!slot) return;
     const cfg = ENEMY_CONFIGS[type];
-    const pos = this.randomEdgePosition();
+    const pos = this.safeEdgeSpawnPosition(cfg.radius);
     const sm = this.waveSpeedMult();
 
     // Apply difficulty scaling
