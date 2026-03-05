@@ -16,6 +16,8 @@ export async function getPostSlugs() {
 }
 
 export async function getPostBySlug(slug: string, fields: string[] = []) {
+  if (!slug) throw new Error("Slug cannot be empty");
+  
   const post = await prisma.blogPost.findUnique({ where: { slug } });
   
   if (!post) {

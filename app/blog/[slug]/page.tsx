@@ -24,15 +24,7 @@ const animatedComponents = {
   pre: AnimatedPre,
 };
 
-export const dynamicParams = true;
-export const revalidate = 3600; // Revalidate every hour
-
-export async function generateStaticParams() {
-  const posts = await getPostSlugs();
-  return posts.map((post) => ({
-    slug: post,
-  }));
-}
+export const dynamic = 'force-dynamic';
 
 import type { Metadata } from "next";
 

@@ -8,7 +8,7 @@ export const metadata = {
   description: "Behind the scenes of our game development journey.",
 };
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 export default async function BlogIndexPage() {
   const posts = await getAllPosts(["title", "date", "slug", "description", "image", "tags"]);

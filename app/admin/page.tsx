@@ -46,11 +46,21 @@ export default async function AdminDashboardPage() {
                     </Link>
                     <Link
                         href="/admin/user-builds"
-                        className="block p-6 rounded-xl border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors group md:col-span-2"
+                        className="block p-6 rounded-xl border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors group"
                     >
                         <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">All User Builds</h2>
                         <p className="text-site-text-muted text-sm mt-2">
                             Moderate and search through all submitted builds from the community. Edit metadata and change visibilities or statuses.
+                        </p>
+                    </Link>
+
+                    <Link
+                        href="/admin/blog"
+                        className="block p-6 rounded-xl border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors group md:col-span-2"
+                    >
+                        <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">Manage Blog Posts</h2>
+                        <p className="text-site-text-muted text-sm mt-2">
+                            Write new developer logs, or edit and delete existing blog posts.
                         </p>
                     </Link>
                 </div>
