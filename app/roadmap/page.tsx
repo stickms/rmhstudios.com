@@ -12,13 +12,10 @@ export const metadata = {
 export const revalidate = 60;
 
 export default async function RoadmapPage() {
-  const { newsArticles, researchArticles } = await getSidebarData();
-
   return (
     <PageLayout
       title="Roadmap"
       wide
-      rightSidebar={<RoadmapRightSidebar newsArticles={newsArticles} researchArticles={researchArticles} />}
     >
       <RoadmapSection />
     </PageLayout>

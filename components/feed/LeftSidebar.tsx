@@ -26,15 +26,15 @@ const navLinks = [
 
 export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   // When expanded=true (e.g. in mobile drawer), always show labels.
-  // Otherwise, labels are hidden below lg breakpoint.
-  const labelClass = expanded ? '' : 'hidden lg:block';
-  const labelFlexClass = expanded ? 'flex items-center gap-1.5' : 'hidden lg:flex items-center gap-1.5';
-  const logoFullClass = expanded ? '' : 'hidden lg:block';
-  const logoShortClass = expanded ? 'hidden' : 'lg:hidden';
-  const paddingClass = expanded ? 'p-4 pb-8' : 'p-3 lg:p-4';
-  const logoAlignClass = expanded ? 'justify-start' : 'justify-center lg:justify-start';
-  const iconMrClass = expanded ? 'mr-2' : 'lg:mr-2';
-  const itemJustifyClass = expanded ? '' : 'md:justify-center lg:justify-start';
+  // Otherwise, labels are hidden below xl breakpoint.
+  const labelClass = expanded ? '' : 'hidden xl:block';
+  const labelFlexClass = expanded ? 'flex items-center gap-1.5' : 'hidden xl:flex items-center gap-1.5';
+  const logoFullClass = expanded ? '' : 'hidden xl:block';
+  const logoShortClass = expanded ? 'hidden' : 'xl:hidden';
+  const paddingClass = expanded ? 'p-4 pb-8' : 'p-3 xl:p-4';
+  const logoAlignClass = expanded ? 'justify-start' : 'justify-center xl:justify-start';
+  const iconMrClass = expanded ? 'mr-2' : 'xl:mr-2';
+  const itemJustifyClass = expanded ? '' : 'md:justify-center xl:justify-start';
   const pathname = usePathname();
   const router = useRouter();
   const [showStyleMenu, setShowStyleMenu] = useState(false);
@@ -277,7 +277,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
                 }
                 setShowUserMenu(!showUserMenu);
               }}
-              className={`p-1.5 rounded-lg text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors shrink-0 ${expanded ? '' : 'hidden lg:block'}`}
+              className={`p-1.5 rounded-lg text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors shrink-0 ${expanded ? '' : 'hidden xl:block'}`}
               title="More options"
             >
               <MoreHorizontal className="w-4 h-4" />

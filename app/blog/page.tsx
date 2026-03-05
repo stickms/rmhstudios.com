@@ -1,6 +1,4 @@
 import { getAllPosts } from "@/lib/blog";
-import { getSidebarData } from '@/lib/sidebar-data';
-import { BlogRightSidebar } from './sidebar';
 import { BlogPageContent } from './content';
 
 export const metadata = {
@@ -12,7 +10,6 @@ export const dynamic = 'force-dynamic';
 
 export default async function BlogIndexPage() {
   const posts = await getAllPosts(["title", "date", "slug", "description", "image", "tags"]);
-  const { newsArticles, researchArticles } = await getSidebarData();
 
   const allTags = Array.from(
     new Set(posts.flatMap(p => p.tags ?? []))
@@ -21,7 +18,6 @@ export default async function BlogIndexPage() {
   return (
     <BlogPageContent
       posts={posts}
-      rightSidebar={<BlogRightSidebar newsArticles={newsArticles} researchArticles={researchArticles} tags={allTags} />}
     />
   );
 }

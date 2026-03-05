@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Terminal, ArrowRight } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { PageLayout } from '@/components/feed/PageLayout';
-import { BuildGrid, BuildFilters, BuildSidebar } from '@/components/user-builds';
+import { BuildGrid, BuildFilters } from '@/components/user-builds';
 import type { BuildCategory, BuildSortOption } from '@/lib/user-builds-types';
 
 export default function UserBuildsPage() {
@@ -50,7 +50,6 @@ export default function UserBuildsPage() {
     <PageLayout
       title="User Builds"
       wide
-      rightSidebar={<BuildSidebar className="p-4" />}
     >
       <div className="px-4 pt-4 pb-12">
         <Link

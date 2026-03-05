@@ -16,14 +16,12 @@ export function AnimatedMain({ children, className, targetWidth = DEFAULT_WIDTH 
   }, [targetWidth]);
 
   return (
-    <motion.main
+    <main
       className={className}
-      initial={{ maxWidth: getLastCenterWidth() }}
-      animate={{ maxWidth: targetWidth }}
-      transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
+      style={{ maxWidth: targetWidth }}
     >
       {children}
-    </motion.main>
+    </main>
   );
 }
 
