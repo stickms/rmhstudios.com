@@ -2742,3 +2742,9 @@ img.emoji {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+/* News carousel progress fill */
+@keyframes progress-fill {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}

@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import useEmblaCarousel from 'embla-carousel-react';
-import { motion, useInView } from 'framer-motion';
+import { useInView } from 'framer-motion';
 import { ArrowRight, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getCategoryColor } from '@/lib/news-categories';
 import { NewsSourceBadge } from './NewsSourceBadge';
@@ -15,6 +15,8 @@ const EMBLA_OPTIONS = {
     slidesToScroll: 1,
 };
 
+const AUTO_ADVANCE_MS = 6000;
+
 interface NewsHeroProps {
     articles: Partial<NewsArticle>[];
 }
@@ -25,6 +27,9 @@ export function NewsHero({ articles }: NewsHeroProps) {
     const [scrollSnaps, setScrollSnaps] = useState<number[]>([]);
     const containerRef = useRef(null);
     const isInView = useInView(containerRef, { once: true, amount: 0.3 });
+    const [isPaused, setIsPaused] = useState(false);
+    const [progress, setProgress] = useState(0);
+    const progressRef = useRef({ elapsed: 0, lastTick: 0 });
 
     const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
     const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
@@ -33,7 +38,11 @@ export function NewsHero({ articles }: NewsHeroProps) {
     useEffect(() => {
         if (!emblaApi) return;
         setScrollSnaps(emblaApi.scrollSnapList());
-        const onSelect = () => setSelectedIndex(emblaApi.selectedScrollSnap());
+        const onSelect = () => {
+            setSelectedIndex(emblaApi.selectedScrollSnap());
+            progressRef.current.elapsed = 0;
+            setProgress(0);
+        };
         onSelect();
         emblaApi.on('select', onSelect);
         emblaApi.on('reInit', () => {
@@ -42,23 +51,36 @@ export function NewsHero({ articles }: NewsHeroProps) {
         });
     }, [emblaApi]);
 
-    // Auto-advance
+    // Single rAF loop drives both progress bar and auto-advance
     useEffect(() => {
-        if (!emblaApi || !isInView) return;
-        const timer = setInterval(() => emblaApi.scrollNext(), 6000);
-        return () => clearInterval(timer);
-    }, [emblaApi, isInView]);
+        if (!emblaApi || !isInView || isPaused) return;
+        const p = progressRef.current;
+        p.lastTick = performance.now();
+        let rafId: number;
+        const tick = (now: number) => {
+            p.elapsed += now - p.lastTick;
+            p.lastTick = now;
+            if (p.elapsed >= AUTO_ADVANCE_MS) {
+                emblaApi.scrollNext();
+            } else {
+                setProgress(p.elapsed / AUTO_ADVANCE_MS);
+                rafId = requestAnimationFrame(tick);
+            }
+        };
+        rafId = requestAnimationFrame(tick);
+        return () => cancelAnimationFrame(rafId);
+    }, [emblaApi, isInView, isPaused, selectedIndex]);
 
     if (articles.length === 0) return null;
 
     return (
-        <div ref={containerRef} className="relative mb-12">
-            <div className="overflow-hidden rounded-2xl" ref={emblaRef}>
+        <div ref={containerRef} className="relative mb-12" onMouseEnter={() => setIsPaused(true)} onMouseLeave={() => setIsPaused(false)}>
+            <div className="overflow-hidden rounded-2xl -mx-3" ref={emblaRef}>
                 <div className="flex">
                     {articles.map((article, index) => {
                         const categoryColor = getCategoryColor(article.category ?? '');
                         return (
-                            <div key={article.slug} className="flex-[0_0_100%] min-w-0">
+                            <div key={article.slug} className="flex-[0_0_100%] min-w-0 px-3">
                                 <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-(--site-surface) via-(--site-bg-subtle) to-(--site-surface) border border-(--site-border) p-8 md:p-12 min-h-[320px] flex flex-col justify-end">
                                     {/* Decorative gradient overlay */}
                                     <div className="absolute inset-0 bg-gradient-to-t from-(--site-bg)/80 via-transparent to-transparent" />
@@ -120,12 +142,22 @@ export function NewsHero({ articles }: NewsHeroProps) {
                                 <button
                                     key={index}
                                     onClick={() => scrollTo(index)}
-                                    className={`h-1.5 rounded-full transition-all duration-300 ${index === selectedIndex
-                                            ? 'w-8 bg-(--site-accent)'
+                                    className={`relative h-1.5 rounded-full overflow-hidden transition-all duration-300 ${index === selectedIndex
+                                            ? 'w-8 bg-(--site-accent)/30'
                                             : 'w-1.5 bg-(--site-border) hover:bg-(--site-text-dim)'
                                         }`}
                                     aria-label={`Go to featured article ${index + 1}`}
-                                />
+                                >
+                                    {index === selectedIndex && (
+                                        <span
+                                            className="absolute inset-0 rounded-full bg-(--site-accent)"
+                                            style={{
+                                                transform: `scaleX(${progress})`,
+                                                transformOrigin: 'left',
+                                            }}
+                                        />
+                                    )}
+                                </button>
                             ))}
                         </div>
 
