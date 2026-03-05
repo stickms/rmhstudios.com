@@ -26,11 +26,9 @@ export function CategoryPicker({ entertainmentCount, appCount }: CategoryPickerP
                         <AppWindow className="w-10 h-10 text-cyan-400" />
                     </div>
                     <div className="flex items-center gap-2 mb-2">
-                        <Zap className="w-4 h-4 text-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                         <h2 className="text-2xl font-bold text-site-text group-hover:text-cyan-400 transition-colors">
                             Apps & Tools
                         </h2>
-                        <Zap className="w-4 h-4 text-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
                     <p className="text-sm text-site-text-muted mb-5 max-w-[280px]">
                         Productivity apps, creative tools, and digital utilities built for the community.
@@ -61,11 +59,9 @@ export function CategoryPicker({ entertainmentCount, appCount }: CategoryPickerP
                         <Gamepad2 className="w-10 h-10 text-purple-400" />
                     </div>
                     <div className="flex items-center gap-2 mb-2">
-                        <Sparkles className="w-4 h-4 text-purple-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                         <h2 className="text-2xl font-bold text-site-text group-hover:text-purple-400 transition-colors">
                             Entertainment
                         </h2>
-                        <Sparkles className="w-4 h-4 text-purple-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
                     <p className="text-sm text-site-text-muted mb-5 max-w-[280px]">
                         Browser games, interactive experiences, and narrative adventures to explore.

@@ -2748,3 +2748,19 @@ img.emoji {
   from { transform: scaleX(0); }
   to { transform: scaleX(1); }
 }
+
+/* Radix Popover Animations */
+@keyframes radix-popover-content-show {
+  from { opacity: 0; transform: translateY(-4px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes radix-popover-content-hide {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(-4px) scale(0.96); }
+}
+.radix-popover-animate[data-state="open"] {
+  animation: radix-popover-content-show 150ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.radix-popover-animate[data-state="closed"] {
+  animation: radix-popover-content-hide 150ms cubic-bezier(0.16, 1, 0.3, 1);
+}
