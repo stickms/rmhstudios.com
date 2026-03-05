@@ -55,16 +55,16 @@ export default function UserBuildsPage() {
       <div className="px-4 pt-4 pb-12">
         <Link
           href="/rmhcode"
-          className="mb-4 flex items-center justify-between rounded-lg border border-site-border bg-site-surface px-4 py-3 transition-colors hover:border-violet-500/40 hover:bg-violet-500/5"
+          className="mb-5 flex items-center justify-between rounded-xl border border-violet-500/30 bg-gradient-to-r from-violet-500/10 to-site-surface px-5 py-4 transition-colors hover:border-violet-500/50 hover:from-violet-500/15"
         >
           <div className="flex items-center gap-3">
-            <Terminal className="h-5 w-5 text-violet-400" />
-            <span className="text-sm text-site-text-secondary">
+            <Terminal className="h-6 w-6 text-violet-400" />
+            <span className="text-base text-site-text-secondary">
               Build and publish projects with AI using <span className="font-semibold text-site-text">rmhcode</span>
             </span>
           </div>
-          <span className="flex items-center gap-1 text-xs font-medium text-violet-400">
-            Get Started <ArrowRight className="h-3.5 w-3.5" />
+          <span className="flex items-center gap-1.5 text-sm font-medium text-violet-400">
+            Get Started <ArrowRight className="h-4 w-4" />
           </span>
         </Link>
 
