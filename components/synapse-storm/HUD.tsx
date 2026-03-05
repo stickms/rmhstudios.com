@@ -8,60 +8,80 @@ interface HUDProps {
 
 export const HUD: React.FC<HUDProps> = ({ state }) => {
     const intensity = (state.difficulty - 1) / 9;
+    const comboClass = state.combo >= 10 ? 'mega' : state.combo >= 3 ? 'active' : '';
+    const { burstActive, activeEffect } = state;
 
     return (
         <div className="hud">
-            <div className="hud-section hud-score">
+            {/* Score */}
+            <div className="hud-seg hud-score">
                 <span className="hud-label">Score</span>
-                <span className="hud-value score-value">{state.score.toLocaleString()}</span>
+                <span className="hud-value">{state.score.toLocaleString()}</span>
             </div>
 
-            <div className="hud-section hud-combo">
+            {/* Combo */}
+            <div className="hud-seg">
                 <span className="hud-label">Combo</span>
-                <span className={`hud-value combo-value ${state.combo >= 5 ? 'combo-active' : ''}`}>
-                    {state.combo >= 3 ? `x${state.combo}` : '—'}
+                <span className={`hud-combo-val ${comboClass}`}>
+                    {state.combo >= 3 ? `×${state.combo}` : '—'}
                 </span>
             </div>
 
-            <div className="hud-section hud-difficulty">
-                <span className="hud-label">Intensity</span>
-                <div className="difficulty-bar">
-                    <div
-                        className="difficulty-fill"
-                        style={{ width: `${intensity * 100}%` }}
-                    />
-                </div>
-                <span className="difficulty-level">Lv. {Math.floor(state.difficulty)}</span>
-            </div>
-
-            <div className="hud-section hud-lives">
+            {/* Lives / Integrity */}
+            <div className="hud-seg">
                 <span className="hud-label">Integrity</span>
-                <div className="lives-display">
+                <div className="hud-lives">
                     {Array.from({ length: state.missThreshold }).map((_, i) => (
-                        <span
+                        <div
                             key={i}
                             className={`life-pip ${i < state.missThreshold - state.puzzlesMissed ? 'alive' : 'dead'}`}
-                        >
-                            ●
-                        </span>
+                        />
                     ))}
                 </div>
             </div>
 
-            <div className="hud-section hud-timer">
-                <span className="hud-label">Time Survived</span>
+            {/* Intensity */}
+            <div className="hud-seg">
+                <span className="hud-label">Intensity</span>
+                <div className="hud-intensity-wrap">
+                    <div className="hud-intensity-bar">
+                        <div
+                            className="hud-intensity-fill"
+                            style={{ width: `${Math.min(intensity * 100, 100)}%` }}
+                        />
+                    </div>
+                    <span className="hud-intensity-lv">Lv.{Math.floor(state.difficulty)}</span>
+                </div>
+            </div>
+
+            {/* Time */}
+            <div className="hud-seg">
+                <span className="hud-label">Survived</span>
                 <span className="hud-value">{Math.floor(state.totalTime)}s</span>
             </div>
 
-            <div className="hud-section hud-stat">
+            {/* Solved */}
+            <div className="hud-seg">
                 <span className="hud-label">Solved</span>
                 <span className="hud-value">{state.puzzlesSolved}</span>
             </div>
 
-            {state.combo === 0 && state.maxCombo >= 3 && (
-                <div className="hud-section hud-best-streak">
-                    <span className="hud-label">Best Streak</span>
-                    <span className="hud-value best-streak-value">x{state.maxCombo}</span>
+            {/* Spacer */}
+            <div style={{ flex: 1 }} />
+
+            {/* Active effect badges */}
+            {burstActive && (
+                <div className="hud-seg" style={{ borderLeft: '1px solid var(--border)', borderRight: 'none' }}>
+                    <span className="hud-effect-badge burst">⚡ BURST</span>
+                </div>
+            )}
+            {activeEffect && !burstActive && (
+                <div className="hud-seg" style={{ borderLeft: '1px solid var(--border)', borderRight: 'none' }}>
+                    <span className="hud-effect-badge">
+                        {activeEffect.type === 'timeDilation' ? '⏱ SLOW TIME' :
+                         activeEffect.type === 'purge' ? '🌀 PURGE' :
+                         '❤ 2ND CHANCE'}
+                    </span>
                 </div>
             )}
         </div>

@@ -11,24 +11,30 @@ interface GameOverProps {
     scoreSaved?: boolean;
 }
 
+function getGrade(score: number): { grade: string; cls: string; label: string } {
+    if (score >= 25000) return { grade: 'S', cls: 'grade-S', label: 'Neural Apex — Flawless Efficiency' };
+    if (score >= 12000) return { grade: 'A', cls: 'grade-A', label: 'High Efficiency — Remarkable Performance' };
+    if (score >= 5000)  return { grade: 'B', cls: 'grade-B', label: 'Stable Link — Solid Performance' };
+    return { grade: 'C', cls: 'grade-C', label: 'Link Degraded — Keep Training' };
+}
+
 export const GameOver: React.FC<GameOverProps> = ({ state, onRestart, onMenu, currentUserId, scoreSaved }) => {
-    const accuracy = state.puzzlesSolved > 0
+    const accuracy = state.puzzlesSolved + state.puzzlesMissed > 0
         ? Math.round((state.puzzlesSolved / (state.puzzlesSolved + state.puzzlesMissed)) * 100)
         : 0;
 
-    const rank = state.score > 20000 ? 'S+' : (state.score > 10000 ? 'A' : (state.score > 5000 ? 'B' : 'C'));
+    const { grade, cls, label } = getGrade(state.score);
 
     return (
         <div className="game-over">
-            <div className="menu-bg-effect" style={{ opacity: 0.3 }} />
+            <div className="menu-bg-effect" style={{ opacity: 0.35 }} />
 
             <div className="go-content">
-                <h2 className="hud-label" style={{ fontSize: '1.2rem', color: 'var(--accent-red)' }}>
-                    NEURAL COLLAPSE
-                </h2>
+                <span className="go-title">NEURAL COLLAPSE</span>
 
+                <div className={`go-grade ${cls}`}>{grade}</div>
                 <div className="go-final-score">{state.score.toLocaleString()}</div>
-                <p className="menu-tagline">Final Neural Efficiency Rating: <span style={{ color: 'var(--accent-cyan)', fontWeight: 800 }}>{rank}</span></p>
+                <p className="go-rating">{label}</p>
 
                 <div className="go-stats-grid">
                     <div className="go-stat">
@@ -36,24 +42,24 @@ export const GameOver: React.FC<GameOverProps> = ({ state, onRestart, onMenu, cu
                         <div className="hud-value">{state.puzzlesSolved}</div>
                     </div>
                     <div className="go-stat">
-                        <span className="hud-label">Max Combo</span>
-                        <div className="hud-value">{state.maxCombo}</div>
+                        <span className="hud-label">Missed</span>
+                        <div className="hud-value">{state.puzzlesMissed}</div>
                     </div>
                     <div className="go-stat">
                         <span className="hud-label">Accuracy</span>
                         <div className="hud-value">{accuracy}%</div>
                     </div>
                     <div className="go-stat">
+                        <span className="hud-label">Max Combo</span>
+                        <div className="hud-value">×{state.maxCombo}</div>
+                    </div>
+                    <div className="go-stat">
                         <span className="hud-label">Survival</span>
                         <div className="hud-value">{Math.floor(state.totalTime)}s</div>
                     </div>
                     <div className="go-stat">
-                        <span className="hud-label">Peak Intensity</span>
+                        <span className="hud-label">Peak Level</span>
                         <div className="hud-value">{state.difficulty.toFixed(1)}</div>
-                    </div>
-                    <div className="go-stat">
-                        <span className="hud-label">New Best?</span>
-                        <div className="hud-value" style={{ color: 'var(--accent-gold)' }}>--</div>
                     </div>
                 </div>
 
@@ -64,11 +70,11 @@ export const GameOver: React.FC<GameOverProps> = ({ state, onRestart, onMenu, cu
                     refreshKey={scoreSaved ? 1 : 0}
                 />
 
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', marginTop: '1rem' }}>
+                <div className="go-buttons">
                     <button className="go-button go-restart" onClick={onRestart}>
                         REBOOT NEURAL LINK
                     </button>
-                    <button className="go-button" style={{ background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }} onClick={onMenu}>
+                    <button className="go-button go-menu" onClick={onMenu}>
                         RETURN TO HUB
                     </button>
                 </div>

@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { Zap, Brain, Activity, Target, Layers, Timer, Settings2 } from 'lucide-react';
+import { Zap, Brain, Activity, Target, Layers, Timer, Settings2, Smile, HelpCircle, Landmark } from 'lucide-react';
 import { GlobalLeaderboard } from './GlobalLeaderboard';
 import { getSettings, setMusicVolume, setSfxVolume } from '@/lib/synapse-storm/settings';
 import { soundManager } from '@/lib/synapse-storm/sounds';
@@ -13,12 +13,15 @@ interface MainMenuProps {
 }
 
 const FEATURES = [
-    { icon: <Zap size={14} />, label: 'Reaction' },
-    { icon: <Brain size={14} />, label: 'Memory' },
-    { icon: <Layers size={14} />, label: 'Patterns' },
-    { icon: <Target size={14} />, label: 'Spatial' },
-    { icon: <Activity size={14} />, label: 'Math' },
-    { icon: <Timer size={14} />, label: 'Fast-paced' },
+    { icon: <Activity size={13} />, label: 'Math' },
+    { icon: <Brain size={13} />, label: 'Memory' },
+    { icon: <Layers size={13} />, label: 'Pattern' },
+    { icon: <Target size={13} />, label: 'Spatial' },
+    { icon: <Zap size={13} />, label: 'Reaction' },
+    { icon: <Smile size={13} />, label: 'Emoji' },
+    { icon: <HelpCircle size={13} />, label: 'Trivia' },
+    { icon: <Landmark size={13} />, label: 'Roman' },
+    { icon: <Timer size={13} />, label: 'Fast-paced' },
 ];
 
 export const MainMenu: React.FC<MainMenuProps> = ({ onStart, onMultiplayer, currentUserId }) => {
@@ -59,7 +62,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onStart, onMultiplayer, curr
 
                 <p className="menu-tagline">
                     Juggle a storm of micro-challenges. Stay sharp.
-                    See how long your mind can keep up before the load becomes too great.
+                    How long can your mind keep up?
                 </p>
 
                 <div className="menu-features">
@@ -123,16 +126,16 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onStart, onMultiplayer, curr
                 </div>
 
                 <div className="menu-instructions">
-                    <h3>Transmission Protocol:</h3>
+                    <h3>How to Play:</h3>
                     <ul>
-                        <li>Solve cards before they expire to maintain system stability.</li>
-                        <li>Maintain combos to exponentially increase your score.</li>
-                        <li>Integrity failure occurs after 5 data casualties (Misses).</li>
-                        <li>Difficulty scales dynamically with your neural efficiency.</li>
+                        <li>Solve cards before they expire to maintain system integrity.</li>
+                        <li>Build combos to multiply your score exponentially.</li>
+                        <li>5 missed cards = Neural Collapse. Don&apos;t let the backlog overwhelm you.</li>
+                        <li>Difficulty escalates dynamically with your neural efficiency.</li>
                     </ul>
                 </div>
 
-                <GlobalLeaderboard currentUserId={currentUserId} />
+                <GlobalLeaderboard currentUserId={currentUserId} compact />
             </div>
         </div>
     );

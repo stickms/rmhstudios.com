@@ -15,6 +15,9 @@ import type {
     FlingDirection,
     PowerUpPuzzleData,
     MetaPuzzleData,
+    EmojiPuzzleData,
+    TriviaPuzzleData,
+    RomanPuzzleData,
 } from './types';
 import { SHAPE_COLOR_NAMES } from './types';
 
@@ -130,7 +133,7 @@ const WORDS_BY_LENGTH: Record<number, string[]> = {
 const WORDS_POOL = Object.values(WORDS_BY_LENGTH).flat();
 const TYPING_WORDS_POOL = [...WORDS_BY_LENGTH[4]!, ...WORDS_BY_LENGTH[5]!, ...WORDS_BY_LENGTH[6]!];
 
-const CATEGORIES_ORDER: PuzzleCategory[] = ['math', 'pattern', 'language', 'spatial', 'reaction', 'memory', 'minigame', 'fling', 'meta'];
+const CATEGORIES_ORDER: PuzzleCategory[] = ['math', 'pattern', 'language', 'roman', 'spatial', 'reaction', 'trivia', 'memory', 'emoji', 'minigame', 'fling', 'meta'];
 
 function scrambleWordSeeded(word: string, rng: SeededRNG): string {
     if (word.length <= 3) return word;
@@ -393,15 +396,22 @@ function genLanguageDeterministic(rng: SeededRNG, difficulty: number): PuzzleDef
         }
         case 'affix': {
             const affixes = [
-                { w: 'HYPER', p: 'HYP', s: 'ER' }, { w: 'SUPER', p: 'SUP', s: 'ER' },
-                { w: 'REACT', p: 'RE', s: 'ACT' }, { w: 'BRAIN', p: 'BR', s: 'AIN' },
-                { w: 'UNLOCK', p: 'UN', s: 'LOCK' }, { w: 'REPLAY', p: 'RE', s: 'PLAY' },
-                { w: 'DISARM', p: 'DIS', s: 'ARM' }, { w: 'PRETEND', p: 'PRE', s: 'TEND' },
+                { p: 'PIX', s: 'EL', d: ['OR', 'UM', 'AT'] },
+                { p: 'FUN', s: 'GI', d: ['EL', 'OR', 'UM'] },
+                { p: 'CUB', s: 'IC', d: ['EL', 'OR', 'UM'] },
+                { p: 'HAV', s: 'OC', d: ['EL', 'UM', 'AT'] },
+                { p: 'COM', s: 'IC', d: ['EL', 'UM', 'OT'] },
+                { p: 'TUL', s: 'IP', d: ['OR', 'UM', 'AT'] },
+                { p: 'VOC', s: 'AL', d: ['OR', 'UM', 'IC'] },
+                { p: 'VIV', s: 'ID', d: ['OR', 'EL', 'UM'] },
+                { p: 'MIM', s: 'IC', d: ['OR', 'EL', 'UM'] },
+                { p: 'VIG', s: 'OR', d: ['EL', 'UM', 'AT'] },
+                { p: 'DEC', s: 'OY', d: ['EL', 'UM', 'AT'] },
+                { p: 'BAN', s: 'JO', d: ['EL', 'UM', 'IT'] },
             ];
             const a = rng.pick(affixes);
-            const distractors = ['OR', 'IS', 'ED', 'LY', 'IN', 'ON', 'EN'];
-            prompt = `${a.p}__`; answer = a.s; instruction = 'Complete the word:';
-            options = rng.shuffle([a.s, ...distractors.filter(d => d !== a.s).slice(0, 3)]); break;
+            prompt = `${a.p}${'_'.repeat(a.s.length)}`; answer = a.s; instruction = 'Complete the word:';
+            options = rng.shuffle([a.s, ...a.d]); break;
         }
         case 'consonants': {
             prompt = word.toUpperCase();
@@ -651,7 +661,7 @@ function genMinigameDeterministic(rng: SeededRNG, difficulty: number): PuzzleDef
             instruction = 'Wait... then tap GO!';
             break;
         case 'whack':
-            instruction = 'Whack it!';
+            instruction = 'Whack the mole 3×!';
             break;
         case 'pick_biggest':
             instruction = 'Tap the biggest!';
@@ -748,6 +758,144 @@ function genPowerupDeterministic(rng: SeededRNG, difficulty: number): PuzzleDefi
     return { id: '', category: 'powerup', instruction, difficulty, timeLimit: Math.max(5, 10 - difficulty * 0.3), basePoints: 50, isPriority: true, data };
 }
 
+// ─── Deterministic Emoji puzzles ───
+const DET_EMOJI_GROUPS: { category: string; emojis: string[] }[] = [
+    { category: 'Fruit', emojis: ['🍎', '🍊', '🍋', '🍇', '🍓', '🍌', '🍑', '🍒'] },
+    { category: 'Animal', emojis: ['🐶', '🐱', '🐻', '🐼', '🐸', '🐵', '🐰', '🦊'] },
+    { category: 'Weather', emojis: ['☀️', '🌧️', '⛈️', '🌈', '❄️', '🌪️', '⭐', '🌙'] },
+    { category: 'Sport', emojis: ['⚽', '🏀', '🎾', '🏈', '⚾', '🎱', '🏐', '🏓'] },
+    { category: 'Food', emojis: ['🍕', '🍔', '🌮', '🍣', '🍩', '🎂', '🍦', '🧁'] },
+    { category: 'Face', emojis: ['😀', '😂', '😍', '😎', '🤔', '😱', '🥳', '😴'] },
+];
+
+function genEmojiDeterministic(rng: SeededRNG, difficulty: number): PuzzleDefinition {
+    const variants: EmojiPuzzleData['variant'][] = ['odd_one_out', 'count', 'match'];
+    if (difficulty >= 3) variants.push('sequence');
+    const variant = rng.pick(variants);
+
+    let prompt = '', answer = '', instruction = '';
+    let options: string[] = [];
+
+    if (variant === 'odd_one_out') {
+        const group = rng.pick(DET_EMOJI_GROUPS);
+        const mainEmoji = rng.pick(group.emojis);
+        const otherGroup = rng.pick(DET_EMOJI_GROUPS.filter(g => g.category !== group.category));
+        const oddEmoji = rng.pick(otherGroup.emojis);
+        const count = rng.nextInt(3, 5);
+        const arr = Array(count).fill(mainEmoji);
+        arr.splice(rng.nextInt(0, count), 0, oddEmoji);
+        prompt = arr.join(' ');
+        instruction = 'Which doesn\'t belong?';
+        answer = oddEmoji;
+        const distractors = [mainEmoji, rng.pick(otherGroup.emojis.filter(e => e !== oddEmoji)), rng.pick(DET_EMOJI_GROUPS[rng.nextInt(0, DET_EMOJI_GROUPS.length - 1)].emojis)].filter(o => o !== answer);
+        options = rng.shuffle([answer, ...distractors.slice(0, 3)]);
+        if (options.length < 4) options = rng.shuffle([answer, mainEmoji, rng.pick(otherGroup.emojis), rng.pick(group.emojis.filter(e => e !== mainEmoji))]);
+    } else if (variant === 'count') {
+        const group = rng.pick(DET_EMOJI_GROUPS);
+        const targetEmoji = rng.pick(group.emojis);
+        const otherEmoji = rng.pick(group.emojis.filter(e => e !== targetEmoji));
+        const targetCount = rng.nextInt(2, 5 + Math.floor(difficulty / 2));
+        const otherCount = rng.nextInt(1, 4);
+        const arr = [...Array(targetCount).fill(targetEmoji), ...Array(otherCount).fill(otherEmoji)];
+        prompt = rng.shuffle(arr).join(' ');
+        instruction = `How many ${targetEmoji}?`;
+        answer = String(targetCount);
+        options = rng.shuffle([answer, String(targetCount - 1), String(targetCount + 1), String(otherCount)].filter((v, i, a) => a.indexOf(v) === i)).slice(0, 4);
+        if (options.length < 4) options.push(String(targetCount + 2));
+    } else if (variant === 'match') {
+        const group = rng.pick(DET_EMOJI_GROUPS);
+        const emoji = rng.pick(group.emojis);
+        prompt = emoji;
+        instruction = 'What category?';
+        answer = group.category;
+        options = rng.shuffle([answer, ...rng.shuffle(DET_EMOJI_GROUPS.filter(g => g.category !== group.category).map(g => g.category)).slice(0, 3)]);
+    } else {
+        const group = rng.pick(DET_EMOJI_GROUPS);
+        const e1 = rng.pick(group.emojis);
+        const e2 = rng.pick(group.emojis.filter(e => e !== e1));
+        prompt = [e1, e2, e1, e2, e1].join(' ') + ' ❓';
+        instruction = 'What comes next?';
+        answer = e2;
+        options = rng.shuffle([answer, e1, rng.pick(group.emojis.filter(e => e !== e1 && e !== e2)), rng.pick(DET_EMOJI_GROUPS[rng.nextInt(0, DET_EMOJI_GROUPS.length - 1)].emojis)]);
+    }
+
+    return {
+        id: '', category: 'emoji', instruction, difficulty,
+        timeLimit: Math.max(4, 10 - difficulty * 0.4), basePoints: 100 + difficulty * 16,
+        data: { type: 'emoji', variant, prompt, answer, options } as EmojiPuzzleData,
+    };
+}
+
+// ─── Deterministic Trivia puzzles ───
+const DET_TRIVIA_POOL: { q: string; a: string; wrong: string[] }[] = [
+    { q: 'How many legs does a spider have?', a: '8', wrong: ['6', '10', '4'] },
+    { q: 'What planet is closest to the Sun?', a: 'Mercury', wrong: ['Venus', 'Mars', 'Earth'] },
+    { q: 'How many continents are there?', a: '7', wrong: ['5', '6', '8'] },
+    { q: 'What is the largest ocean?', a: 'Pacific', wrong: ['Atlantic', 'Indian', 'Arctic'] },
+    { q: 'Which animal is the tallest?', a: 'Giraffe', wrong: ['Elephant', 'Horse', 'Ostrich'] },
+    { q: 'How many days in a leap year?', a: '366', wrong: ['365', '364', '367'] },
+    { q: 'What gas do plants breathe in?', a: 'CO2', wrong: ['Oxygen', 'Nitrogen', 'Helium'] },
+    { q: 'How many sides does a hexagon have?', a: '6', wrong: ['5', '7', '8'] },
+    { q: 'Which planet has rings?', a: 'Saturn', wrong: ['Jupiter', 'Mars', 'Neptune'] },
+    { q: 'How many letters in the English alphabet?', a: '26', wrong: ['24', '28', '25'] },
+    { q: 'What is the fastest land animal?', a: 'Cheetah', wrong: ['Lion', 'Horse', 'Gazelle'] },
+    { q: 'How many colors in a rainbow?', a: '7', wrong: ['5', '6', '8'] },
+    { q: 'Which metal is attracted to magnets?', a: 'Iron', wrong: ['Gold', 'Silver', 'Copper'] },
+    { q: 'Where is the Eiffel Tower?', a: 'Paris', wrong: ['London', 'Rome', 'Berlin'] },
+    { q: 'What do bees make?', a: 'Honey', wrong: ['Wax', 'Silk', 'Milk'] },
+    { q: 'How many wings does a butterfly have?', a: '4', wrong: ['2', '6', '8'] },
+    { q: 'Which organ pumps blood?', a: 'Heart', wrong: ['Lungs', 'Brain', 'Liver'] },
+    { q: 'What is the chemical symbol for water?', a: 'H2O', wrong: ['CO2', 'NaCl', 'O2'] },
+    { q: 'Which planet is the Red Planet?', a: 'Mars', wrong: ['Venus', 'Jupiter', 'Mercury'] },
+    { q: 'How many players on a soccer team?', a: '11', wrong: ['9', '10', '12'] },
+];
+
+function genTriviaDeterministic(rng: SeededRNG, difficulty: number): PuzzleDefinition {
+    const item = rng.pick(DET_TRIVIA_POOL);
+    const options = rng.shuffle([item.a, ...item.wrong]);
+    return {
+        id: '', category: 'trivia', instruction: item.q, difficulty,
+        timeLimit: Math.max(5, 12 - difficulty * 0.5), basePoints: 100 + difficulty * 15,
+        data: { type: 'trivia', question: item.q, answer: item.a, options } as TriviaPuzzleData,
+    };
+}
+
+// ─── Deterministic Roman puzzles ───
+const DET_ROMAN_VALS: [number, string][] = [
+    [100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'],
+    [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I'],
+];
+function toRomanDet(n: number): string {
+    let result = '';
+    for (const [value, numeral] of DET_ROMAN_VALS) {
+        while (n >= value) { result += numeral; n -= value; }
+    }
+    return result;
+}
+
+function genRomanDeterministic(rng: SeededRNG, difficulty: number): PuzzleDefinition {
+    const maxVal = difficulty < 3 ? 15 : difficulty < 5 ? 30 : difficulty < 7 ? 50 : 100;
+    const decimal = rng.nextInt(1, maxVal);
+    const roman = toRomanDet(decimal);
+    const toDecimalV = rng.next() > 0.45;
+    let answer = '', instruction = '';
+    let options: string[] = [];
+    if (toDecimalV) {
+        answer = decimal.toString(); instruction = 'Roman → Arabic:';
+        const gw = () => rng.nextInt(1, maxVal).toString();
+        options = ensureUniqueOptionsRng(rng, [gw(), gw(), gw()], answer, 4, gw);
+    } else {
+        answer = roman; instruction = 'Arabic → Roman:';
+        const gw = () => toRomanDet(rng.nextInt(1, maxVal));
+        options = ensureUniqueOptionsRng(rng, [gw(), gw(), gw()], answer, 4, gw);
+    }
+    return {
+        id: '', category: 'roman', instruction, difficulty,
+        timeLimit: Math.max(4, 11 - difficulty * 0.5), basePoints: 115 + difficulty * 18,
+        data: { type: 'roman', variant: toDecimalV ? 'to_decimal' : 'to_roman', roman, decimal, answer, options } as RomanPuzzleData,
+    };
+}
+
 const deterministicGenerators: Record<PuzzleCategory, (rng: SeededRNG, d: number) => PuzzleDefinition> = {
     math: genMathDeterministic,
     pattern: genPatternDeterministic,
@@ -759,6 +907,9 @@ const deterministicGenerators: Record<PuzzleCategory, (rng: SeededRNG, d: number
     fling: genFlingDeterministic,
     meta: genMetaDeterministic,
     powerup: genPowerupDeterministic,
+    emoji: genEmojiDeterministic,
+    trivia: genTriviaDeterministic,
+    roman: genRomanDeterministic,
 };
 
 /**
@@ -815,7 +966,7 @@ export function getDifficultyAtTime(elapsedSeconds: number, puzzlesSolvedEstimat
 const GRID_COLS = 5;
 const GRID_ROWS = 4;
 
-export function deterministicPosition(matchSeed: number, spawnIndex: number): { x: number; y: number } {
+export function deterministicPosition(_matchSeed: number, spawnIndex: number): { x: number; y: number } {
     const cellIndex = spawnIndex % (GRID_COLS * GRID_ROWS);
     const col = cellIndex % GRID_COLS;
     const row = Math.floor(cellIndex / GRID_COLS);
