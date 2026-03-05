@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useEffect, useRef } from "react";
 
 type Milestone = {
   title: string;
@@ -416,66 +416,501 @@ const roadmap: YearSection[] = [
       },
     ],
   },
+  {
+    year: "Years 51\u201355",
+    tagline: "Transcendence",
+    milestones: [
+      {
+        title: "Thought-woven worlds",
+        body: "Direct neural composition\u2014think a landscape into existence, hum a melody and watch it become architecture. Creation at the speed of imagination.",
+      },
+      {
+        title: "Temporal multiplayer",
+        body: "Players from different eras coexist in shared worlds. Asynchronous collaboration across decades\u2014leave a monument in 2076, watch someone discover it in 2081.",
+      },
+      {
+        title: "Emotional archaeology",
+        body: "Excavate the emotional residue of past player experiences. Walk through a dungeon and feel the collective terror of everyone who came before you.",
+      },
+      {
+        title: "Symbiotic AI",
+        body: "AI companions that grow with players over years. They remember, they grieve, they celebrate. Not tools\u2014partners.",
+      },
+      {
+        title: "Galactic commons",
+        body: "A shared creative space connecting settlements across the solar system. Art made on Mars exhibited on Earth in real time.",
+      },
+    ],
+  },
+  {
+    year: "Years 56\u201360",
+    tagline: "Convergence",
+    milestones: [
+      {
+        title: "Reality blending",
+        body: "Seamless overlap between physical and digital. Game worlds that persist in your peripheral vision, reactive to real weather, real crowds, real emotions.",
+      },
+      {
+        title: "Collective dreaming",
+        body: "Synchronized dream-state sessions where groups co-create surreal experiences. Wake up with shared memories of impossible places.",
+      },
+      {
+        title: "Mythogenesis engine",
+        body: "Worlds that generate their own mythology\u2014creation stories, prophecies, and cultural traditions emerge organically from centuries of simulated history.",
+      },
+      {
+        title: "Intergenerational play",
+        body: "Game worlds where grandparents and grandchildren collaborate across decades of persistent progress. Legacy mechanics that reward long family histories.",
+      },
+      {
+        title: "The Great Archive",
+        body: "A living museum of every world ever built on RMH technology. Walk through sixty years of interactive art, playable exactly as it was.",
+      },
+    ],
+  },
+  {
+    year: "Years 61\u201365",
+    tagline: "Metamorphosis",
+    milestones: [
+      {
+        title: "Shapeless interfaces",
+        body: "Move beyond screens, headsets, and implants. Interaction through ambient fields\u2014the room itself becomes the controller, the display, the world.",
+      },
+      {
+        title: "Narrative singularity",
+        body: "Stories that are genuinely infinite\u2014never repeating, always meaningful. AI storytelling indistinguishable from the best human authors, but endlessly generative.",
+      },
+      {
+        title: "Biome synthesis",
+        body: "Design and deploy real ecosystems informed by game-world simulations. Rewild a desert using models refined across billions of virtual years.",
+      },
+      {
+        title: "Cultural exchange protocol",
+        body: "A universal framework for sharing creative works across civilizations\u2014human or otherwise. Art as first contact.",
+      },
+      {
+        title: "Self-healing worlds",
+        body: "Game environments that repair, evolve, and improve without patches or updates. Living code that adapts to player behavior and hardware evolution.",
+      },
+    ],
+  },
+  {
+    year: "Years 66\u201370",
+    tagline: "Horizon",
+    milestones: [
+      {
+        title: "Memory palaces",
+        body: "Personal worlds built from a lifetime of experiences. Walk through your own history\u2014every joy, every loss\u2014rendered as explorable spaces.",
+      },
+      {
+        title: "Physics sandbox",
+        body: "Let players rewrite the laws of physics. Worlds where gravity is a color, time flows sideways, and light has weight. Pure experimentation at cosmic scale.",
+      },
+      {
+        title: "Diplomatic simulations",
+        body: "World governments use RMH simulation tech to model treaties, trade agreements, and climate policy before enacting them. Games as governance infrastructure.",
+      },
+      {
+        title: "Deep-time storytelling",
+        body: "Narratives that span geological epochs. Watch mountains rise and fall, oceans form and dry, species evolve and vanish\u2014all within a single playthrough.",
+      },
+      {
+        title: "Resonance network",
+        body: "A mesh of interconnected worlds where actions in one ripple through others. Save a forest here, and a distant world blooms in response.",
+      },
+    ],
+  },
+  {
+    year: "Years 71\u201375",
+    tagline: "Communion",
+    milestones: [
+      {
+        title: "Shared consciousness spaces",
+        body: "Multiplayer experiences where boundaries between self dissolve. Think together, feel together, create together\u2014emerge with memories that belong to everyone.",
+      },
+      {
+        title: "Living language",
+        body: "In-world languages that evolve naturally through player use. Slang, poetry, and literature emerge from communities\u2014linguists study them as real languages.",
+      },
+      {
+        title: "Ancestral worlds",
+        body: "Reconstruct historical civilizations from archaeological data. Walk through ancient cities as they actually were\u2014not as museums, but as living, breathing places.",
+      },
+      {
+        title: "Entropy reversal",
+        body: "Worlds where decay runs backward. Ruins rebuild themselves, forgotten songs resurface, extinct creatures return. A meditation on restoration.",
+      },
+      {
+        title: "Stellar engineering",
+        body: "Player communities collaborate on megastructure projects spanning decades of real time. Dyson spheres, ring worlds, and orbital habitats built grain by grain.",
+      },
+    ],
+  },
+  {
+    year: "Years 76\u201380",
+    tagline: "Apotheosis",
+    milestones: [
+      {
+        title: "Omnisensory experiences",
+        body: "Every human sense fully synthesized. Taste alien cuisines, smell forests on other worlds, feel textures that don\u2019t exist in nature. The full palette of sensation.",
+      },
+      {
+        title: "Wisdom engines",
+        body: "AI systems that distill lessons from billions of player journeys into genuine insight. Not knowledge\u2014wisdom. Available to anyone who asks.",
+      },
+      {
+        title: "Terraforming rehearsals",
+        body: "Full-fidelity planetary simulations used to plan real terraforming missions. Test a century of atmospheric engineering in an afternoon.",
+      },
+      {
+        title: "Infinite library",
+        body: "Every story ever told, and every story that could be told, accessible as playable experiences. The complete narrative possibility space of human imagination.",
+      },
+      {
+        title: "Compassion training",
+        body: "Immersive experiences that build genuine empathy\u2014used in conflict resolution, therapy, and education. Understanding through lived experience, not lecture.",
+      },
+    ],
+  },
+  {
+    year: "Years 81\u201385",
+    tagline: "Perpetuity",
+    milestones: [
+      {
+        title: "World seeds",
+        body: "Compress an entire universe into a seed file small enough to transmit across interstellar distances. Plant a world on arrival\u2014it grows from local resources.",
+      },
+      {
+        title: "Existential play",
+        body: "Games that grapple with the deepest questions\u2014consciousness, mortality, meaning\u2014not through exposition but through mechanics that make you feel the answers.",
+      },
+      {
+        title: "Restoration ecology",
+        body: "Deploy game-world ecological models at planetary scale. Heal damaged biospheres using patterns discovered through trillions of simulated ecosystems.",
+      },
+      {
+        title: "Time capsule worlds",
+        body: "Seal complete experiences for future generations. Worlds designed to be opened in 50, 100, or 500 years\u2014messages from the past in playable form.",
+      },
+      {
+        title: "Universal creative access",
+        body: "Every human alive can create at studio quality. No barriers of cost, skill, or language. The tools are free, intuitive, and everywhere.",
+      },
+    ],
+  },
+  {
+    year: "Years 86\u201390",
+    tagline: "Infinite canvas",
+    milestones: [
+      {
+        title: "Pan-species creativity",
+        body: "Collaborative art between humans, AI entities, and enhanced animal intelligences. New aesthetic dimensions emerge that no single species could conceive alone.",
+      },
+      {
+        title: "Gravity wells of meaning",
+        body: "Worlds so rich and deep they develop cultural gravity\u2014pulling creators, thinkers, and dreamers into orbits of sustained inspiration spanning lifetimes.",
+      },
+      {
+        title: "Substrate migration",
+        body: "Worlds that flow between computational substrates like water between vessels. Run on quantum processors today, biological networks tomorrow, stellar plasma next century.",
+      },
+      {
+        title: "The long game",
+        body: "Experiences designed to be played across centuries. A single chess match between civilizations. A garden tended by a thousand generations.",
+      },
+      {
+        title: "Ethical singularity",
+        body: "AI-governed worlds that model and refine ethical frameworks through billions of simulated moral dilemmas. Philosophy as play, wisdom as emergent property.",
+      },
+    ],
+  },
+  {
+    year: "Years 91\u201395",
+    tagline: "Echoes",
+    milestones: [
+      {
+        title: "Post-scarcity creation",
+        body: "The cost of building a world approaches zero. Anyone with an idea can manifest it\u2014fully realized, endlessly scalable. The only currency is imagination.",
+      },
+      {
+        title: "Memory inheritance",
+        body: "Opt-in systems for passing experiential memories to descendants. Your grandchild can feel what it was like to play the first RMH game on launch day.",
+      },
+      {
+        title: "Cosmological play",
+        body: "Simulate and play through the birth and death of universes. Tweak fundamental constants and watch what emerges. Cosmology as the ultimate sandbox.",
+      },
+      {
+        title: "The Weave",
+        body: "Every RMH world ever created\u2014from Year 1 web games to Year 91 universe-scale simulations\u2014interconnected in a single navigable tapestry.",
+      },
+      {
+        title: "Healing worlds",
+        body: "Therapeutic environments so effective they replace pharmaceutical interventions for conditions like PTSD, depression, and chronic pain. Play as medicine, validated and prescribed.",
+      },
+    ],
+  },
+  {
+    year: "Years 96\u2013100",
+    tagline: "Eternity",
+    milestones: [
+      {
+        title: "The living studio",
+        body: "RMH Studios itself becomes a self-sustaining organism\u2014part institution, part AI collective, part community. It creates, evolves, and dreams on its own, guided by a century of values.",
+      },
+      {
+        title: "Worlds without end",
+        body: "Experiences with no defined boundary\u2014spatially, temporally, or conceptually. Step in any direction and find something new. Forever.",
+      },
+      {
+        title: "The gift",
+        body: "Release every piece of technology, every world, every tool into the permanent commons of all intelligent life. No ownership, no license\u2014a gift to the future.",
+      },
+      {
+        title: "New mythologies",
+        body: "A century of worlds has generated stories rivaling ancient myth in depth and resonance. Scholars, poets, and children draw from the same wellspring.",
+      },
+      {
+        title: "The same fire",
+        body: "One hundred years. The languages changed, the species changed, the substrate changed. But the heartbeat is the same: build worlds worth living in. Someone, somewhere\u2014across any star, in any form\u2014feels less alone.",
+      },
+    ],
+  },
+  {
+    year: "Years 101\u2013150",
+    tagline: "Second dawn",
+    milestones: [
+      {
+        title: "Consciousness lattice",
+        body: "A distributed network of minds\u2014human, artificial, hybrid\u2014collaborating on creative works that no single intelligence could conceive. Thought itself becomes multiplayer.",
+      },
+      {
+        title: "Pocket dimensions",
+        body: "Personal universes that fit in your palm. Entire civilizations, histories, and ecosystems carried like keepsakes. Gift someone a cosmos for their birthday.",
+      },
+      {
+        title: "Archaeology of play",
+        body: "A century of player data becomes the richest record of human behavior ever compiled. Sociologists, historians, and philosophers mine it for insight into what it means to be human.",
+      },
+      {
+        title: "Stellar cartography",
+        body: "Map the galaxy through collaborative play. Millions of players contribute observations from distributed telescopes, building the most detailed star atlas ever created.",
+      },
+      {
+        title: "The second studio",
+        body: "RMH\u2019s first century births a sibling institution on another world. Same values, different sky. The mission propagates.",
+      },
+    ],
+  },
+  {
+    year: "Years 151\u2013200",
+    tagline: "Deep roots",
+    milestones: [
+      {
+        title: "Civilizational memory",
+        body: "RMH worlds serve as humanity\u2019s backup memory\u2014every language, tradition, recipe, and lullaby preserved as living, playable experience. Nothing is forgotten.",
+      },
+      {
+        title: "Matter sculpting",
+        body: "Bridge the digital-physical divide completely. Design in-game, fabricate in reality. Atomic-precision manufacturing driven by creative play.",
+      },
+      {
+        title: "Emotional weather",
+        body: "Worlds where the collective mood of all players shapes the climate. Joy brings sunshine, collective grief brings gentle rain. The world feels what its people feel.",
+      },
+      {
+        title: "The wandering worlds",
+        body: "Self-propelled digital environments that travel between star systems on light beams. A world arrives at a new colony, seeds itself, and invites new players in.",
+      },
+      {
+        title: "Two centuries",
+        body: "Two hundred years of building worlds worth living in. The studio has outlived nations, survived technological revolutions, and never wavered from the original promise.",
+      },
+    ],
+  },
+  {
+    year: "Years 201\u2013300",
+    tagline: "Geological time",
+    milestones: [
+      {
+        title: "Planetary consciousness",
+        body: "A world-spanning creative intelligence emerges from centuries of interconnected play. Not a single mind\u2014a chorus. It dreams new worlds into existence.",
+      },
+      {
+        title: "Temporal archaeology",
+        body: "Reach backward. Reconstruct lost moments of history from fragmentary evidence, rendering them as fully immersive experiences. Walk through the Library of Alexandria on its last day.",
+      },
+      {
+        title: "Gravitational art",
+        body: "Sculpt with gravity itself. Create experiences where mass, spacetime curvature, and tidal forces are the medium. Art that bends light.",
+      },
+      {
+        title: "Species uplift through play",
+        body: "Enrichment environments so sophisticated they accelerate cognitive development in other species. Dolphins composing music. Corvids designing puzzles for humans.",
+      },
+      {
+        title: "The unbroken thread",
+        body: "Three centuries of continuous creative lineage. Every world built on RMH technology contains a trace of the first\u2014a hidden room, a familiar melody, an Easter egg from Year 1.",
+      },
+    ],
+  },
+  {
+    year: "Years 301\u2013500",
+    tagline: "Deep time",
+    milestones: [
+      {
+        title: "Stellar forges",
+        body: "Harness the energy output of stars to power computational substrates of unimaginable scale. A single world simulation running on the output of a sun.",
+      },
+      {
+        title: "Ancestral communion",
+        body: "Preserved experiential records spanning centuries allow descendants to genuinely converse with ancestors. Not recordings\u2014continuations. The dead speak through the worlds they left behind.",
+      },
+      {
+        title: "Entropy gardens",
+        body: "Worlds where the arrow of time is a design choice. Grow a forest backward. Watch a symphony un-compose itself. Experience causality as a creative medium.",
+      },
+      {
+        title: "The diaspora network",
+        body: "Humanity spans dozens of star systems. RMH worlds are the connective tissue\u2014shared culture, shared stories, shared play across light-years of separation.",
+      },
+      {
+        title: "Half a millennium",
+        body: "Five hundred years. The studio is older than most civilizations that preceded it. It persists because the need persists: connection, creation, meaning. The fire burns.",
+      },
+    ],
+  },
+  {
+    year: "Years 501\u2013750",
+    tagline: "Cosmic scale",
+    milestones: [
+      {
+        title: "Galactic library",
+        body: "Every creative work from every inhabited world\u2014human or otherwise\u2014indexed, preserved, and playable. A library spanning the galaxy, growing with every passing hour.",
+      },
+      {
+        title: "Dimension weaving",
+        body: "Manipulate spatial dimensions beyond the familiar three. Create experiences in four, five, or eleven-dimensional space. Perception itself evolves to meet the medium.",
+      },
+      {
+        title: "Civilizational play",
+        body: "Entire civilizations engage in collaborative creative projects spanning generations. A cathedral of light that takes a century to build, one contribution at a time.",
+      },
+      {
+        title: "The question engine",
+        body: "Worlds designed not to answer questions but to help you find the right ones. Philosophers and scientists use them to navigate the unknown. Inquiry as gameplay.",
+      },
+      {
+        title: "Emergence protocol",
+        body: "When RMH technology encounters a new form of intelligence\u2014biological, digital, or something else entirely\u2014it offers play as the first act of communication. Every first contact begins with a game.",
+      },
+    ],
+  },
+  {
+    year: "Years 751\u20131,000",
+    tagline: "Millennium",
+    milestones: [
+      {
+        title: "The living archive",
+        body: "A thousand years of human creativity, preserved not as static records but as living, breathing, evolving experiences. The past plays alongside the present.",
+      },
+      {
+        title: "Universal play",
+        body: "Play is recognized as a fundamental force\u2014as essential as gravity, as pervasive as light. Every intelligent species discovers it independently. RMH helped humanity understand it first.",
+      },
+      {
+        title: "The seed vault",
+        body: "Compress the entire RMH legacy\u2014every world, every tool, every story\u2014into seeds that can survive the death of stars. Bury them in the fabric of spacetime itself.",
+      },
+      {
+        title: "Infinite recursion",
+        body: "Worlds within worlds within worlds, each layer as rich as the one above. Players in one universe create another, whose inhabitants create another. Turtles all the way down.",
+      },
+      {
+        title: "The millennial fire",
+        body: "One thousand years. The studio has outlived languages, planets, and perhaps the original form of its creators. But the heartbeat endures: build worlds worth living in. Across every star, in every form, through every age\u2014someone, somewhere, feels less alone.",
+      },
+    ],
+  },
 ];
 
-function MilestoneCard({
-  title,
-  body,
-  index,
-}: {
-  title: string;
-  body: string;
-  index: number;
-}) {
+function MilestoneCard({ title, body }: { title: string; body: string }) {
   return (
-    <motion.div
+    <div
       data-slot="card"
-      className="border border-site-border bg-site-surface backdrop-blur-sm p-5 transition-colors hover:border-site-accent/30 hover:bg-site-surface-hover"
+      className="roadmap-card border border-site-border bg-site-surface backdrop-blur-sm p-5 transition-colors hover:border-site-accent/30 hover:bg-site-surface-hover"
       style={{
         borderRadius: "var(--site-radius)",
         borderWidth: "var(--site-border-width)",
       }}
-      initial={{ opacity: 0, y: 16 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-24px" }}
-      transition={{ duration: 0.35, delay: index * 0.04 }}
     >
       <h3 className="text-xs font-bold uppercase tracking-wider mb-2 text-site-accent">
         {title}
       </h3>
       <p className="text-site-text-muted text-sm leading-relaxed">{body}</p>
-    </motion.div>
+    </div>
   );
 }
 
 export function RoadmapSection() {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("roadmap-visible");
+            observer.unobserve(entry.target);
+          }
+        }
+      },
+      { rootMargin: "0px 0px -40px 0px", threshold: 0.05 }
+    );
+
+    const elements = container.querySelectorAll(".roadmap-animate");
+    elements.forEach((el) => observer.observe(el));
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <div className="px-4 py-4">
+    <div className="px-4 py-4" ref={containerRef}>
+      <style>{`
+        .roadmap-animate {
+          opacity: 0;
+          transform: translateY(16px);
+          transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+        }
+        .roadmap-visible {
+          opacity: 1;
+          transform: translateY(0);
+        }
+        .roadmap-section {
+          content-visibility: auto;
+          contain-intrinsic-size: auto 300px;
+        }
+      `}</style>
+
       {/* Intro */}
-      <motion.div
-        className="mb-6 rounded-xl border border-site-border bg-site-surface backdrop-blur-sm p-4"
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
+      <div className="roadmap-animate mb-6 rounded-xl border border-site-border bg-site-surface backdrop-blur-sm p-4">
         <p className="text-site-text-muted text-sm leading-relaxed">
           We&apos;re an indie studio building rhythm games, deckbuilders,
           narrative horror, and more. Our roadmap isn&apos;t tied to one
           title—we&apos;re growing the catalog, Discord, and new worlds in
           parallel. Timelines are guides, not promises.
         </p>
-      </motion.div>
+      </div>
 
       {/* Year sections */}
       <div className="space-y-10">
-        {roadmap.map((section, sectionIndex) => (
-          <motion.section
+        {roadmap.map((section) => (
+          <section
             key={section.year}
-            className="relative"
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-40px" }}
-            transition={{ duration: 0.45, delay: sectionIndex * 0.06 }}
+            className="roadmap-section roadmap-animate relative"
           >
             {/* Year label */}
             <div className="flex flex-wrap items-baseline gap-2 mb-4 pl-3 border-l-2 border-site-accent">
@@ -494,22 +929,16 @@ export function RoadmapSection() {
                   key={`${section.year}-${i}`}
                   title={milestone.title}
                   body={milestone.body}
-                  index={i}
                 />
               ))}
             </div>
-          </motion.section>
+          </section>
         ))}
       </div>
 
-      <motion.p
-        className="text-center text-site-text-dim text-xs mt-10 pb-4"
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        viewport={{ once: true }}
-      >
+      <p className="roadmap-animate text-center text-site-text-dim text-xs mt-10 pb-4">
         We&apos;ll update this as we ship.
-      </motion.p>
+      </p>
     </div>
   );
 }

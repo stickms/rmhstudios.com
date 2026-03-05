@@ -17,6 +17,7 @@ export default async function RoadmapPage() {
   return (
     <PageLayout
       title="Roadmap"
+      wide
       rightSidebar={<RoadmapRightSidebar newsArticles={newsArticles} researchArticles={researchArticles} />}
     >
       <RoadmapSection />
