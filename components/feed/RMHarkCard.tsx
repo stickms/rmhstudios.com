@@ -125,6 +125,10 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
     if (target.closest('a') || target.closest('button') || target.closest('[role="button"]')) {
       return;
     }
+    const selection = window.getSelection();
+    if (selection && selection.toString().length > 0) {
+      return;
+    }
     router.push(postHref(item.user, actualId));
   };
 
