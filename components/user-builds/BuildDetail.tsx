@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Heart, Eye, Github, ExternalLink, Calendar, ArrowLeft, Edit, Loader2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Heart, Eye, Github, ExternalLink, Calendar, ArrowLeft, Edit, Trash2, Loader2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { authClient } from '@/lib/auth-client';
 import type { Build } from '@/lib/user-builds-types';
@@ -29,11 +30,29 @@ function formatCount(count: number): string {
 }
 
 export function BuildDetail({ build: initialBuild, backHref = '/user-builds' }: BuildDetailProps) {
+  const router = useRouter();
   const { data: session } = authClient.useSession();
   const [build, setBuild] = useState(initialBuild);
   const [liking, setLiking] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const isOwner = session?.user?.id === build.user.id || !!(session?.user as any)?.isAdmin;
+
+  const handleDelete = async () => {
+    if (!confirm(`Delete "${build.title}"? This cannot be undone.`)) return;
+
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/user-builds/${build.id}`, { method: 'DELETE' });
+      if (res.ok) {
+        router.push('/user-builds');
+      }
+    } catch (error) {
+      console.error('Error deleting build:', error);
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   // Track view on mount
   useEffect(() => {
@@ -130,13 +149,23 @@ export function BuildDetail({ build: initialBuild, backHref = '/user-builds' }: 
           </span>
 
           {isOwner && (
-            <Link
-              href={`/user-builds/manage?edit=${build.id}`}
-              className="ml-auto flex items-center gap-2 px-3 py-1.5 rounded-lg bg-site-surface border border-site-border text-sm text-site-text-muted hover:text-site-text hover:border-violet-500/50 transition-colors"
-            >
-              <Edit className="w-4 h-4" />
-              Edit
-            </Link>
+            <div className="ml-auto flex items-center gap-2">
+              <Link
+                href={`/user-builds/submit?edit=${build.id}`}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-site-surface border border-site-border text-sm text-site-text-muted hover:text-site-text hover:border-violet-500/50 transition-colors"
+              >
+                <Edit className="w-4 h-4" />
+                Edit
+              </Link>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-site-surface border border-site-border text-sm text-red-400 hover:text-red-300 hover:border-red-500/50 transition-colors disabled:opacity-50"
+              >
+                {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                Delete
+              </button>
+            </div>
           )}
         </div>
 
