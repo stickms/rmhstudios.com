@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
+import { Terminal, ArrowRight } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { BuildGrid, BuildFilters, BuildSidebar } from '@/components/user-builds';
@@ -51,6 +53,21 @@ export default function UserBuildsPage() {
       rightSidebar={<BuildSidebar className="p-4" />}
     >
       <div className="px-4 pt-4 pb-12">
+        <Link
+          href="/rmhcode"
+          className="mb-4 flex items-center justify-between rounded-lg border border-site-border bg-site-surface px-4 py-3 transition-colors hover:border-violet-500/40 hover:bg-violet-500/5"
+        >
+          <div className="flex items-center gap-3">
+            <Terminal className="h-5 w-5 text-violet-400" />
+            <span className="text-sm text-site-text-secondary">
+              Build and publish projects with AI using <span className="font-semibold text-site-text">rmhcode</span>
+            </span>
+          </div>
+          <span className="flex items-center gap-1 text-xs font-medium text-violet-400">
+            Get Started <ArrowRight className="h-3.5 w-3.5" />
+          </span>
+        </Link>
+
         <BuildFilters
           categories={categories}
           selectedCategory={selectedCategory}
