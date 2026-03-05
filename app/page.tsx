@@ -1,15 +1,24 @@
 import { FeedLayout } from "@/components/feed/FeedLayout";
-import { getAllNewsArticles } from "@/lib/news";
-import { getAllArticles } from "@/lib/research";
+import { getSidebarData } from "@/lib/sidebar-data";
 
 export const revalidate = 60;
 
 export default async function Home() {
-  const newsArticles = (await getAllNewsArticles()).slice(0, 5);
-  const researchArticles = (await getAllArticles()).slice(0, 3);
+  const {
+    curatedBuilds,
+    userBuilds,
+    recommendedUsers,
+    blogPosts,
+    newsArticles,
+    researchArticles,
+  } = await getSidebarData();
 
   return (
     <FeedLayout
+      curatedBuilds={curatedBuilds}
+      userBuilds={userBuilds}
+      recommendedUsers={recommendedUsers}
+      blogPosts={blogPosts}
       newsArticles={newsArticles}
       researchArticles={researchArticles}
     />

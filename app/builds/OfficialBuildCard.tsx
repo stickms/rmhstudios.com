@@ -74,12 +74,12 @@ export function OfficialBuildCard({ build, onLike, onView }: OfficialBuildCardPr
         <Popover.Root open={isHovered}>
             <Popover.Trigger asChild>
                 <div 
-                    className="block h-full cursor-pointer" 
+                    className="block w-full cursor-pointer aspect-[2/3]" 
                     onClick={handleCardClick}
                     onMouseEnter={handleMouseEnter}
                     onMouseLeave={handleMouseLeave}
                 >
-                    <div className="group relative rounded-xl border border-site-border bg-site-surface hover:border-site-accent/50 transition-all overflow-hidden h-full min-h-[340px]">
+                    <div className="group relative rounded-xl border border-site-border bg-site-surface hover:border-site-accent/50 transition-all overflow-hidden h-full">
                 {/* Thumbnail */}
                 {build.thumbnailUrl ? (
                     <div className="absolute inset-0 w-full h-full overflow-hidden bg-site-bg">
@@ -88,7 +88,7 @@ export function OfficialBuildCard({ build, onLike, onView }: OfficialBuildCardPr
                             alt={build.title}
                             fill
                             className="object-cover group-hover:scale-105 transition-transform duration-300"
-                            sizes="(max-width: 768px) 100vw, 50vw"
+                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
                         />
                         <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/40 to-black/10 transition-opacity duration-300 group-hover:from-black/90 group-hover:via-black/60" />
                     </div>

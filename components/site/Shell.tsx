@@ -33,24 +33,31 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const isBuildsSlug = pathname?.startsWith('/builds/') && !['/builds/games', '/builds/apps'].includes(pathname);
   const hideLeftSidebar = isUserBuildsSlug || isBuildsSlug;
 
-  // All other pages get the persistent sidebar shell
   return (
-    <div className="min-h-screen bg-site-bg flex justify-center overflow-hidden">
-      {/* Left Sidebar - hidden on mobile, icon-only on md, full on xl+ */}
-      {!hideLeftSidebar && (
-        <div className="hidden md:block md:w-16 xl:w-64 shrink-0 relative">
-          <aside className="fixed top-0 bottom-0 w-16 xl:w-64 border-r border-site-border bg-site-bg overflow-y-auto z-30 flex flex-col">
-            <LeftSidebar />
-          </aside>
+    <div className="min-h-screen bg-site-bg flex overflow-hidden">
+      {hideLeftSidebar ? (
+        <div className="flex min-w-0 w-full justify-center">
+          {children}
         </div>
-      )}
+      ) : (
+        <>
+          {/* Desktop/tablet: center sidebar + middle + optional right sidebar as one horizontal group */}
+          <div className="hidden md:flex min-w-0 w-full justify-center">
+            <aside className="md:w-16 xl:w-64 shrink-0 self-start sticky top-0 h-screen border-r border-site-border bg-site-bg overflow-y-auto z-30 flex flex-col">
+              <LeftSidebar />
+            </aside>
+            {children}
+          </div>
 
-      {/* Page content renders as direct flex siblings (AnimatedMain + right sidebar) */}
-      {children}
+          {/* Mobile: sidebar hidden, keep content centered */}
+          <div className="flex md:hidden min-w-0 w-full justify-center">
+            {children}
+          </div>
+        </>
+      )}
 
       {/* Mobile bottom nav */}
       <MobileNav />
     </div>
   );
 }
-

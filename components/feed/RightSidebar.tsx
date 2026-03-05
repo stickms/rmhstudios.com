@@ -1,23 +1,208 @@
 'use client';
 
 import Link from 'next/link';
-import { Newspaper, FlaskConical, TrendingUp, Gamepad2, AppWindow } from 'lucide-react';
-import { games } from '@/lib/games';
-import { apps } from '@/lib/apps';
+import {
+  Newspaper,
+  FlaskConical,
+  Hammer,
+  Package,
+  UserPlus,
+  BookOpen,
+  Eye,
+  Heart,
+  MessageCircle,
+} from 'lucide-react';
 import type { NewsArticle } from '@/lib/news';
 import type { ResearchArticle } from '@/lib/research';
 
+interface SidebarBuild {
+  id: string;
+  slug: string;
+  title: string;
+  thumbnailUrl: string | null;
+  likeCount: number;
+  commentCount: number;
+  viewCount: number;
+  creator?: {
+    id: string;
+    handle: string | null;
+    username: string | null;
+    name: string | null;
+    image: string | null;
+  };
+}
+
+interface SidebarUser {
+  id: string;
+  handle: string | null;
+  username: string | null;
+  name: string | null;
+  image: string | null;
+  followerCount: number;
+}
+
+interface SidebarPost {
+  slug: string;
+  title: string;
+  date: string;
+}
+
 interface RightSidebarProps {
+  curatedBuilds: SidebarBuild[];
+  userBuilds: SidebarBuild[];
+  recommendedUsers: SidebarUser[];
+  blogPosts: SidebarPost[];
   newsArticles: Partial<NewsArticle>[];
   researchArticles: ResearchArticle[];
 }
 
-export function RightSidebar({ newsArticles, researchArticles }: RightSidebarProps) {
-  const visibleApps = apps.filter((a) => !a.hidden);
-
+export function RightSidebar({
+  curatedBuilds,
+  userBuilds,
+  recommendedUsers,
+  blogPosts,
+  newsArticles,
+  researchArticles,
+}: RightSidebarProps) {
   return (
     <div className="p-4 space-y-6">
-      {/* What's Happening - News */}
+      {/* Curated Builds */}
+      <section className="bg-site-surface rounded-2xl p-4 border border-site-border">
+        <h2 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text flex items-center gap-2 mb-3">
+          <Package className="w-5 h-5 text-site-accent" />
+          Curated Builds
+        </h2>
+        <div className="space-y-2.5">
+          {curatedBuilds.map((build) => (
+            <Link
+              key={build.id}
+              href={`/builds/${build.slug}`}
+              className="-mx-2 px-2 flex items-center gap-2.5 rounded-lg py-1.5 hover:bg-site-surface-hover transition-colors group"
+            >
+              <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-site-bg shrink-0 border border-site-border">
+                {build.thumbnailUrl ? (
+                  <img src={build.thumbnailUrl} alt={build.title} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full bg-linear-to-br from-site-accent/30 to-site-surface" />
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-site-text group-hover:text-site-accent transition-colors truncate">
+                  {build.title}
+                </p>
+                <div className="flex items-center gap-2 text-[11px] text-site-text-dim">
+                  <span className="inline-flex items-center gap-1"><Heart className="w-3 h-3" />{build.likeCount}</span>
+                  <span className="inline-flex items-center gap-1"><MessageCircle className="w-3 h-3" />{build.commentCount}</span>
+                  <span className="inline-flex items-center gap-1"><Eye className="w-3 h-3" />{build.viewCount}</span>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+        <Link href="/builds" className="block text-sm text-site-accent hover:text-site-accent-hover mt-3 transition-colors">
+          Show more
+        </Link>
+      </section>
+
+      {/* User Builds */}
+      <section className="bg-site-surface rounded-2xl p-4 border border-site-border">
+        <h2 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text flex items-center gap-2 mb-3">
+          <Hammer className="w-5 h-5 text-site-accent" />
+          User Builds
+        </h2>
+        <div className="space-y-2.5">
+          {userBuilds.map((build) => (
+            <Link
+              key={build.id}
+              href={`/builds/${build.slug}`}
+              className="-mx-2 px-2 flex items-center gap-2.5 rounded-lg py-1.5 hover:bg-site-surface-hover transition-colors group"
+            >
+              <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-site-bg shrink-0 border border-site-border">
+                {build.thumbnailUrl ? (
+                  <img src={build.thumbnailUrl} alt={build.title} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full bg-linear-to-br from-site-accent/30 to-site-surface" />
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-site-text group-hover:text-site-accent transition-colors line-clamp-2">
+                  {build.title}
+                </p>
+                {build.creator && (
+                  <p className="text-xs text-site-text-dim truncate mt-0.5">
+                    by {build.creator.name || build.creator.username || 'Unknown'}
+                  </p>
+                )}
+                <div className="flex items-center gap-2 text-[11px] text-site-text-dim mt-0.5">
+                  <span className="inline-flex items-center gap-1"><Heart className="w-3 h-3" />{build.likeCount}</span>
+                  <span className="inline-flex items-center gap-1"><MessageCircle className="w-3 h-3" />{build.commentCount}</span>
+                  <span className="inline-flex items-center gap-1"><Eye className="w-3 h-3" />{build.viewCount}</span>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+        <Link href="/user-builds" className="block text-sm text-site-accent hover:text-site-accent-hover mt-3 transition-colors">
+          Show more
+        </Link>
+      </section>
+
+      {/* Recommended Users */}
+      <section className="bg-site-surface rounded-2xl p-4 border border-site-border">
+        <h2 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text flex items-center gap-2 mb-3">
+          <UserPlus className="w-5 h-5 text-site-accent" />
+          Recommended Users
+        </h2>
+        <div className="space-y-2.5">
+          {recommendedUsers.map((user) => {
+            const profileHref = user.handle ? `/@${user.handle}` : `/profile/${user.id}`;
+            const initials = (user.name || user.username || 'U').charAt(0).toUpperCase();
+            return (
+              <div key={user.id} className="-mx-2 px-2 flex items-center gap-2.5 rounded-lg py-1.5 hover:bg-site-surface-hover transition-colors">
+                <Link href={profileHref} className="flex items-center gap-2.5 min-w-0 flex-1">
+                  <div className="w-9 h-9 rounded-full bg-site-accent/20 overflow-hidden flex items-center justify-center text-site-text text-xs font-semibold shrink-0">
+                    {user.image ? (
+                      <img src={user.image} alt={user.name || user.username || 'User'} className="w-full h-full object-cover" />
+                    ) : initials}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-site-text truncate">{user.name || user.username || 'User'}</p>
+                    <p className="text-xs text-site-text-dim">
+                      {user.followerCount} followers
+                    </p>
+                  </div>
+                </Link>
+                <Link href={profileHref} className="text-xs font-semibold text-site-accent hover:text-site-accent-hover transition-colors">
+                  Follow
+                </Link>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Blog */}
+      <section className="bg-site-surface rounded-2xl p-4 border border-site-border">
+        <h2 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text flex items-center gap-2 mb-3">
+          <BookOpen className="w-5 h-5 text-site-accent" />
+          Blog
+        </h2>
+        <div className="space-y-3">
+          {blogPosts.map((post) => (
+            <Link key={post.slug} href={`/blog/${post.slug}`} className="block group">
+              <p className="text-xs text-site-text-dim">{post.date}</p>
+              <p className="text-sm font-medium text-site-text group-hover:text-site-accent transition-colors line-clamp-2">
+                {post.title}
+              </p>
+            </Link>
+          ))}
+        </div>
+        <Link href="/blog" className="block text-sm text-site-accent hover:text-site-accent-hover mt-3 transition-colors">
+          Show more
+        </Link>
+      </section>
+
+      {/* News */}
       <section className="bg-site-surface rounded-2xl p-4 border border-site-border">
         <h2 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text flex items-center gap-2 mb-3">
           <Newspaper className="w-5 h-5 text-site-accent" />
@@ -50,7 +235,7 @@ export function RightSidebar({ newsArticles, researchArticles }: RightSidebarPro
         </Link>
       </section>
 
-      {/* From the Lab - Research */}
+      {/* Research */}
       <section className="bg-site-surface rounded-2xl p-4 border border-site-border">
         <h2 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text flex items-center gap-2 mb-3">
           <FlaskConical className="w-5 h-5 text-site-accent" />
@@ -76,50 +261,6 @@ export function RightSidebar({ newsArticles, researchArticles }: RightSidebarPro
         >
           Show more
         </Link>
-      </section>
-
-      {/* Trending on RMH */}
-      <section className="bg-site-surface rounded-2xl p-4 border border-site-border">
-        <h2 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text flex items-center gap-2 mb-3">
-          <TrendingUp className="w-5 h-5 text-site-accent" />
-          Trending on RMH
-        </h2>
-        <div className="space-y-2">
-          {games.slice(0, 4).map((game) => (
-            <Link
-              key={game.id}
-              href={game.href}
-              className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-site-surface-hover transition-colors group"
-            >
-              <div className={`w-8 h-8 rounded-lg bg-linear-to-br ${game.gradient} flex items-center justify-center shrink-0`}>
-                <Gamepad2 className="w-4 h-4 text-white" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-site-text group-hover:text-site-accent transition-colors truncate">
-                  {game.title}
-                </p>
-                <p className="text-xs text-site-text-dim">{game.status}</p>
-              </div>
-            </Link>
-          ))}
-          {visibleApps.slice(0, 2).map((app) => (
-            <Link
-              key={app.id}
-              href={app.href}
-              className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-site-surface-hover transition-colors group"
-            >
-              <div className={`w-8 h-8 rounded-lg bg-linear-to-br ${app.gradient} flex items-center justify-center shrink-0`}>
-                <AppWindow className="w-4 h-4 text-white" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-site-text group-hover:text-site-accent transition-colors truncate">
-                  {app.title}
-                </p>
-                <p className="text-xs text-site-text-dim">{app.status}</p>
-              </div>
-            </Link>
-          ))}
-        </div>
       </section>
 
       {/* Footer */}
