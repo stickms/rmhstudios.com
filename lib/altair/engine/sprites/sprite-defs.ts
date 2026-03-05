@@ -314,19 +314,19 @@ export const ALL_TILE_FRAMES: number[] = [0, 1, 2, 4, 5, 6, 7, 8, 9];
 // PROP FRAME MAPPING
 // =============================================================================
 // The props.png layout:
-//   0 = tombstone   1 = barrel   2 = urn
-//   3 = tombstone damaged  4 = barrel damaged  5 = urn damaged
+//   0 = barrel   1 = urn   2 = tombstone
+//   3 = barrel damaged  4 = urn damaged  5 = tombstone damaged
 
 export const PROP_FRAMES: Record<string, number> = {
-  tombstone: 0,
-  barrel: 1,
-  urn: 2,
+  barrel: 0,
+  urn: 1,
+  tombstone: 2,
 };
 
 export const PROP_DAMAGED_FRAMES: Record<string, number> = {
-  tombstone: 3,
-  barrel: 4,
-  urn: 5,
+  barrel: 3,
+  urn: 4,
+  tombstone: 5,
 };
 
 // ---- Structure prop frames (structures.png) ----

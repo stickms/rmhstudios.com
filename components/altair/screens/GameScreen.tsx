@@ -163,15 +163,19 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
     // Resize canvas to fill screen (handles orientation changes on mobile)
     const resizeCanvas = () => {
       const rect = root.getBoundingClientRect();
+      const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 1;
+      const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 1;
+      const rectWidth = rect.width > 0 ? rect.width : viewportWidth;
+      const rectHeight = rect.height > 0 ? rect.height : viewportHeight;
       const isCoarsePointer = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
       const minVisibleWorldSpan = 64 * 24; // 12 tiles in each direction from center
 
       const targetWidth = isCoarsePointer
-        ? Math.max(rect.width, minVisibleWorldSpan)
-        : rect.width;
+        ? Math.max(rectWidth, minVisibleWorldSpan)
+        : rectWidth;
       const targetHeight = isCoarsePointer
-        ? Math.max(rect.height, minVisibleWorldSpan)
-        : rect.height;
+        ? Math.max(rectHeight, minVisibleWorldSpan)
+        : rectHeight;
 
       canvas.width = Math.max(1, Math.round(targetWidth));
       canvas.height = Math.max(1, Math.round(targetHeight));
@@ -183,6 +187,10 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
       }
     };
     resizeCanvas();
+    const resizeObserver = typeof ResizeObserver !== 'undefined'
+      ? new ResizeObserver(resizeCanvas)
+      : null;
+    resizeObserver?.observe(root);
     window.addEventListener('resize', resizeCanvas);
 
     const handleContextLost = (e: Event) => {
@@ -309,8 +317,9 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
     loop.start();
 
     return () => {
-      loop.stop();
+      loop.destroy();
       cleanupInput();
+      resizeObserver?.disconnect();
       window.removeEventListener('resize', resizeCanvas);
       canvas.removeEventListener('webglcontextlost', handleContextLost);
     };
@@ -322,9 +331,9 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
     if (!loop) return;
 
     if (phase === 'playing') {
-      loop.start();
+      loop.resume();
     } else {
-      loop.stop();
+      loop.pause();
     }
   }, [phase]);
 
@@ -404,8 +413,7 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
   return (
     <div
       ref={rootRef}
-      className="fixed top-0 left-0 bg-black overflow-hidden"
-      style={{ width: '100vw', height: '100lvh' }}
+      className="fixed inset-0 bg-black overflow-hidden"
     >
       <canvas
         ref={canvasRef}

@@ -9,7 +9,6 @@ import {
   GameWorld,
   EnemyEntity,
   PickupEntity,
-  createId,
 } from './types';
 import { createCamera, updateCamera } from './camera';
 import { createInputState } from './input';
@@ -19,11 +18,10 @@ import { renderFrame, updatePlayerAnimation, updateEnemyAnimation, updateSummonA
 import { PlayerStats } from '../stores/game-store';
 import { CLASSES } from '../data/classes';
 import { initAllSpriteSheets } from './sprites/sprite-defs';
-import { clearSpriteCache } from './sprites/sprite-loader';
 import { initWebGL } from './webgl/webgl-context';
 import { SpriteBatch } from './webgl/webgl-sprite-batch';
 import { ShapeBatch } from './webgl/webgl-shapes';
-import { setGLContext, clearTextureCache } from './webgl/webgl-textures';
+import { setGLContext } from './webgl/webgl-textures';
 
 // System imports
 import { updatePlayer, computeEffectiveStats, updateClassAbilities, createClassAbilityState, ClassAbilityState, tryRaiseDead, processSanguineFeast, getBerserkerBonuses, getKnightSpeedBonus, reportBloodNovaKill, tryTransferHuntersMark } from './player-system';
@@ -193,6 +191,7 @@ function handleCollisions(
   callbacks: GameLoopCallbacks,
   tileGen: TileGenerator,
   propHash: SpatialHash,
+  damageablePropHash: SpatialHash,
   catalystStates: CatalystRuntimeState[],
 ): number {
   const pl = world.player;
@@ -355,7 +354,7 @@ function handleCollisions(
     if (proj.isEnemy || proj.isPool) continue;
 
     // Query nearby props
-    const nearbyProps = propHash.query(proj.x, proj.y, proj.radius + 20);
+    const nearbyProps = damageablePropHash.query(proj.x, proj.y, proj.radius + 20);
     for (const propEntity of nearbyProps) {
       // Use negative IDs to avoid collision with enemy hit tracking
       const propHitId = -propEntity.id;
@@ -617,7 +616,7 @@ function handleCollisions(
   // -- Melee hitboxes vs Props (arc-AABB) --
   for (const hb of world.meleeHitboxes) {
     if (hb.lifetime <= 0) continue;
-    const nearbyProps = propHash.query(hb.x, hb.y, hb.radius + 20);
+    const nearbyProps = damageablePropHash.query(hb.x, hb.y, hb.radius + 20);
     for (const propEntity of nearbyProps) {
       const propHitId = -propEntity.id;
       if (hb.hitEnemyIds.has(propHitId)) continue;
@@ -813,10 +812,14 @@ export function createGameLoop(
   callbacks: GameLoopCallbacks,
 ): {
   start: () => void;
+  pause: () => void;
+  resume: () => void;
   stop: () => void;
+  destroy: () => void;
   getWorld: () => GameWorld;
 } {
   let running = false;
+  let paused = false;
   let rafId: number = 0;
   let lastTime: number = 0;
   let accumulator: number = 0;
@@ -855,6 +858,7 @@ export function createGameLoop(
   let lastStatsPassiveCount = 0;
   let lastStatsCatalystCount = 0;
   const propHash = new SpatialHash(100);
+  const damageablePropHash = new SpatialHash(100);
 
   function recomputeStats(): PlayerStats {
     const stats = computeEffectiveStats(
@@ -889,6 +893,19 @@ export function createGameLoop(
     if (frameDelta > MAX_DELTA) frameDelta = MAX_DELTA;
     if (frameDelta <= 0) frameDelta = 1 / 60;
     lastTime = now;
+
+    // Keep overlay resolution aligned with the render canvas.
+    if (overlayCanvas.width !== canvas.width || overlayCanvas.height !== canvas.height) {
+      overlayCanvas.width = canvas.width;
+      overlayCanvas.height = canvas.height;
+    }
+
+    // While paused, keep rendering the current frame but skip simulation.
+    if (paused) {
+      accumulator = 0;
+      renderFrame(renderer, world, tileGen);
+      return;
+    }
 
     // Recompute stats when inventory changes (once per frame, not per step)
     const needsRecompute =
@@ -943,9 +960,14 @@ export function createGameLoop(
 
       // 1b. Build prop spatial hash for collision queries
       propHash.clear();
+      damageablePropHash.clear();
       const activeProps = tileGen.getProps();
       for (const prop of activeProps) {
         propHash.insert(prop as unknown as import('./types').Entity);
+      }
+      const damageableProps = tileGen.getDamageableProps();
+      for (const prop of damageableProps) {
+        damageablePropHash.insert(prop as unknown as import('./types').Entity);
       }
 
       // 2. Player movement
@@ -1087,7 +1109,17 @@ export function createGameLoop(
       if (bossState) snapshotBossHp(bossState);
 
       // 7. Collisions + enemy death processing
-      const damageDealt = handleCollisions(world, stats, scaledDt, abilityState, callbacks, tileGen, propHash, catalystStates);
+      const damageDealt = handleCollisions(
+        world,
+        stats,
+        scaledDt,
+        abilityState,
+        callbacks,
+        tileGen,
+        propHash,
+        damageablePropHash,
+        catalystStates,
+      );
 
       // 7b. Enforce boss DPS cap after collisions
       if (bossState) enforceBossDpsCap(bossState, scaledDt);
@@ -1112,33 +1144,6 @@ export function createGameLoop(
       if (pickupEvents.xpGained > 0) callbacks.onXPGain(pickupEvents.xpGained);
       if (pickupEvents.coinsGained > 0) callbacks.onCoinGain(pickupEvents.coinsGained);
       if (pickupEvents.healed > 0) callbacks.onPlayerHeal(pickupEvents.healed);
-
-      // 9b. Urn collection
-      {
-        const urns = tileGen.getUrns();
-        const plR = world.player.radius;
-        for (const urn of urns) {
-          const dx = world.player.x - urn.x;
-          const dy = world.player.y - (urn.y + PROP_COLLISION_OFFSET_Y);
-          const distSq = dx * dx + dy * dy;
-          const collectR = plR + 12;
-          if (distSq <= collectR * collectR) {
-            urn.destroyed = true;
-            spawnPropDrops(world, urn.x, urn.y);
-            if (Math.random() < 0.25) {
-              world.pickups.push({
-                id: createId(world),
-                x: urn.x + (Math.random() - 0.5) * 10,
-                y: urn.y + (Math.random() - 0.5) * 10,
-                radius: 7,
-                type: 'food',
-                value: 0,
-                magnetized: true,
-              });
-            }
-          }
-        }
-      }
 
       // 10. Particles
       updateParticles(world.particles, scaledDt);
@@ -1216,6 +1221,7 @@ export function createGameLoop(
     start() {
       if (running) return;
       running = true;
+      paused = false;
       lastTime = performance.now();
       accumulator = 0;
       abilityState = createClassAbilityState();
@@ -1224,17 +1230,30 @@ export function createGameLoop(
       effectiveStats = null;
       rafId = requestAnimationFrame(tick);
     },
+    pause() {
+      paused = true;
+    },
+    resume() {
+      paused = false;
+      lastTime = performance.now();
+      accumulator = 0;
+    },
     stop() {
       running = false;
       if (rafId) {
         cancelAnimationFrame(rafId);
         rafId = 0;
       }
+    },
+    destroy() {
+      running = false;
+      paused = false;
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+        rafId = 0;
+      }
       // Clean up overlay canvas
       overlayCanvas.parentElement?.removeChild(overlayCanvas);
-      // Clear sprite and texture caches to avoid context lost issues on restart
-      clearSpriteCache();
-      clearTextureCache();
     },
     getWorld() {
       return world;

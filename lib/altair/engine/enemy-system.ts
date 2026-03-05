@@ -23,9 +23,9 @@ import {
   applyCurse,
   applyEmpower,
 } from './status-effects';
-import { distToNearestPlayer, moveTowardNearestPlayer, maintainRangeFromNearestPlayer } from './multiplayer/player-helpers';
+import { distToNearestPlayer } from './multiplayer/player-helpers';
 import { SpatialHash } from './spatial-hash';
-import { avoidObstacles } from './obstacle-avoidance';
+import { beginEnemyNavigationFrame, computePathVelocity } from './enemy-navigation';
 
 // -----------------------------------------------------------------------------
 // Events returned each frame for the game loop to process
@@ -61,6 +61,8 @@ export function updateEnemyAI(world: GameWorld, delta: number): EnemySystemEvent
     enemyProjectiles: [],
     splitSpawns: [],
   };
+
+  beginEnemyNavigationFrame(world.enemies);
 
   for (let i = world.enemies.length - 1; i >= 0; i--) {
     const enemy = world.enemies[i];
@@ -184,19 +186,17 @@ function moveTowardPlayer(
   delta: number,
   speed: number,
 ): void {
-  if ((world as MultiplayerGameWorld).isMultiplayer && (world as MultiplayerGameWorld).players) {
-    moveTowardNearestPlayer(enemy, world as MultiplayerGameWorld, delta, speed);
-    return;
-  }
   const { dx, dy, dist } = distToPlayer(enemy, world);
+  const targetX = enemy.x + dx;
+  const targetY = enemy.y + dy;
   let vx = (dx / dist) * speed;
   let vy = (dy / dist) * speed;
 
-  // Apply obstacle avoidance (skip for intangible or flying enemies)
+  // BBox-aware local pathfinding around props (skip for intangible/flying).
   if (_propHash && !enemy.intangible && !enemy.canFly) {
-    const avoided = avoidObstacles(enemy.x, enemy.y, enemy.radius, vx, vy, speed, _propHash);
-    vx = avoided.vx;
-    vy = avoided.vy;
+    const nav = computePathVelocity(enemy, targetX, targetY, speed, delta, _propHash);
+    vx = nav.vx;
+    vy = nav.vy;
   }
 
   enemy.x += vx * delta;
@@ -213,28 +213,34 @@ function maintainRange(
   preferredRange: number,
   speed: number,
 ): void {
-  if ((world as MultiplayerGameWorld).isMultiplayer && (world as MultiplayerGameWorld).players) {
-    maintainRangeFromNearestPlayer(enemy, world as MultiplayerGameWorld, delta, preferredRange, speed);
-    return;
-  }
   const { dx, dy, dist } = distToPlayer(enemy, world);
   const margin = 20;
   let vx = 0;
   let vy = 0;
+  let targetX = enemy.x;
+  let targetY = enemy.y;
+  let shouldMove = false;
+
   if (dist < preferredRange - margin) {
     // Too close, move away
-    vx = -(dx / dist) * speed;
-    vy = -(dy / dist) * speed;
+    targetX = enemy.x - (dx / dist) * preferredRange;
+    targetY = enemy.y - (dy / dist) * preferredRange;
+    vx = (targetX - enemy.x) / preferredRange * speed;
+    vy = (targetY - enemy.y) / preferredRange * speed;
+    shouldMove = true;
   } else if (dist > preferredRange + margin) {
     // Too far, move closer
+    targetX = enemy.x + dx;
+    targetY = enemy.y + dy;
     vx = (dx / dist) * speed;
     vy = (dy / dist) * speed;
+    shouldMove = true;
   }
 
-  if ((vx !== 0 || vy !== 0) && _propHash && !enemy.intangible && !enemy.canFly) {
-    const avoided = avoidObstacles(enemy.x, enemy.y, enemy.radius, vx, vy, speed, _propHash);
-    vx = avoided.vx;
-    vy = avoided.vy;
+  if (shouldMove && _propHash && !enemy.intangible && !enemy.canFly) {
+    const nav = computePathVelocity(enemy, targetX, targetY, speed, delta, _propHash);
+    vx = nav.vx;
+    vy = nav.vy;
   }
 
   enemy.x += vx * delta;

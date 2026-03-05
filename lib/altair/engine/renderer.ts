@@ -233,6 +233,8 @@ function renderPickups(
   const { spriteBatch, shapeBatch } = renderer;
   const pickupSheet = getPickupSheet();
 
+  let drawingShapes = false;
+
   for (let pass = 0; pass < 2; pass++) {
     for (const p of pickups) {
       const isXP = isXPPickup(p);
@@ -246,6 +248,10 @@ function renderPickups(
       if (!isXP && pickupSheet) {
         const frameIndex = PICKUP_FRAMES[p.type];
         if (frameIndex !== undefined) {
+          if (drawingShapes) {
+            shapeBatch.flush();
+            drawingShapes = false;
+          }
           drawSprite(spriteBatch, pickupSheet, frameIndex, s.x, s.y, PICKUP_SCALE, false);
           continue;
         }
@@ -254,15 +260,20 @@ function renderPickups(
       if (isXP) {
         const color = getXPOrbColor(p.value);
         const size = getXPOrbSize(p.value);
-        spriteBatch.flush();
+        if (!drawingShapes) {
+          spriteBatch.flush();
+          drawingShapes = true;
+        }
         shapeBatch.drawDiamond(s.x, s.y, size, color);
         if (p.value >= 5) {
           shapeBatch.drawDiamond(s.x, s.y, size + 2, color, 0.2);
         }
-        shapeBatch.flush();
       } else {
         // Vector fallback for non-XP pickups
-        spriteBatch.flush();
+        if (!drawingShapes) {
+          spriteBatch.flush();
+          drawingShapes = true;
+        }
         switch (p.type) {
           case 'coin':
             shapeBatch.drawCircle(s.x, s.y, 5, '#ffd700');
@@ -300,8 +311,12 @@ function renderPickups(
             shapeBatch.drawCircle(s.x + 4, s.y - 8, 2, '#ffaa00');
             break;
         }
-        shapeBatch.flush();
       }
+    }
+
+    if (drawingShapes) {
+      shapeBatch.flush();
+      drawingShapes = false;
     }
   }
 }
@@ -377,7 +392,9 @@ function renderEnemies(
   camera: Camera,
 ): void {
   const { spriteBatch, shapeBatch, overlayCtx } = renderer;
+  let drawingShapes = false;
 
+  // Pass 1: body/corpse rendering
   for (const e of enemies) {
     if (!isVisible(camera, e.x, e.y, e.radius + 20)) continue;
     const s = worldToScreen(camera, e.x, e.y);
@@ -389,13 +406,19 @@ function renderEnemies(
       const alpha = Math.min(1, e.corpseTimer * 1.5);
 
       if (sprites && e.animState) {
+        if (drawingShapes) {
+          shapeBatch.flush();
+          drawingShapes = false;
+        }
         const flipEnemy = e.animState.animation === sprites.walkSide && e.lastMoveVx < 0;
         const frameIndex = getCurrentFrameIndex(e.animState);
         drawSpriteCorpse(spriteBatch, e.animState.animation.sheet, frameIndex, s.x, s.y, scale, alpha, flipEnemy);
       } else {
-        spriteBatch.flush();
+        if (!drawingShapes) {
+          spriteBatch.flush();
+          drawingShapes = true;
+        }
         shapeBatch.drawCircle(s.x, s.y, e.radius, '#666666', alpha * 0.5);
-        shapeBatch.flush();
       }
       continue;
     }
@@ -410,6 +433,10 @@ function renderEnemies(
     const scale = isBoss ? getBossScale(e.radius) : getEnemyScale(e.radius);
 
     if (sprites && e.animState) {
+      if (drawingShapes) {
+        shapeBatch.flush();
+        drawingShapes = false;
+      }
       const flipEnemy = e.animState.animation === sprites.walkSide && e.lastMoveVx < 0;
       const frameIndex = getCurrentFrameIndex(e.animState);
 
@@ -441,7 +468,10 @@ function renderEnemies(
       }
     } else {
       // Vector fallback
-      spriteBatch.flush();
+      if (!drawingShapes) {
+        spriteBatch.flush();
+        drawingShapes = true;
+      }
       const baseColor = isFlashing ? '#ffffff' : getEnemyColor(e);
       const shape = getEnemyShape(e);
 
@@ -475,34 +505,6 @@ function renderEnemies(
       if (e.isBoss) {
         shapeBatch.drawRing(s.x, s.y, e.radius + 4, 2, '#ff0000', entityAlpha);
       }
-      shapeBatch.flush();
-    }
-
-    // Status effect tint overlays
-    if (e.statusEffects.length > 0) {
-      spriteBatch.flush();
-      for (const se of e.statusEffects) {
-        const tint = STATUS_TINT[se.type];
-        if (tint) {
-          shapeBatch.drawCircle(s.x, s.y, e.radius + 1, tint);
-        }
-      }
-      shapeBatch.flush();
-    }
-
-    // HP bar (only if damaged) — use shape batch for the bars
-    if (e.hp < e.maxHp) {
-      spriteBatch.flush();
-      const barW = e.radius * 2.5;
-      const barH = 3;
-      const barX = s.x - barW / 2;
-      const barY = s.y - e.radius - 8;
-      const hpFrac = Math.max(0, e.hp / e.maxHp);
-
-      shapeBatch.drawRect(barX, barY, barW, barH, 'rgba(0,0,0,0.6)');
-      const hpColor = hpFrac > 0.5 ? '#44ff44' : hpFrac > 0.25 ? '#ffaa00' : '#ff3333';
-      shapeBatch.drawRect(barX, barY, barW * hpFrac, barH, hpColor);
-      shapeBatch.flush();
     }
 
     // Armor indicator — 2D overlay text
@@ -512,6 +514,50 @@ function renderEnemies(
       overlayCtx.textAlign = 'center';
       overlayCtx.fillText(`[${e.armor}]`, s.x, s.y + e.radius + 12);
     }
+  }
+
+  if (drawingShapes) {
+    shapeBatch.flush();
+  }
+
+  // Pass 2: status tints + HP bars (all batched in shape pass)
+  let hasOverlayShapes = false;
+  for (const e of enemies) {
+    if (e.isDead) continue;
+    if (!isVisible(camera, e.x, e.y, e.radius + 20)) continue;
+    if (e.statusEffects.length === 0 && e.hp >= e.maxHp) continue;
+
+    if (!hasOverlayShapes) {
+      spriteBatch.flush();
+      hasOverlayShapes = true;
+    }
+
+    const s = worldToScreen(camera, e.x, e.y);
+
+    if (e.statusEffects.length > 0) {
+      for (const se of e.statusEffects) {
+        const tint = STATUS_TINT[se.type];
+        if (tint) {
+          shapeBatch.drawCircle(s.x, s.y, e.radius + 1, tint);
+        }
+      }
+    }
+
+    if (e.hp < e.maxHp) {
+      const barW = e.radius * 2.5;
+      const barH = 3;
+      const barX = s.x - barW / 2;
+      const barY = s.y - e.radius - 8;
+      const hpFrac = Math.max(0, e.hp / e.maxHp);
+
+      shapeBatch.drawRect(barX, barY, barW, barH, 'rgba(0,0,0,0.6)');
+      const hpColor = hpFrac > 0.5 ? '#44ff44' : hpFrac > 0.25 ? '#ffaa00' : '#ff3333';
+      shapeBatch.drawRect(barX, barY, barW * hpFrac, barH, hpColor);
+    }
+  }
+
+  if (hasOverlayShapes) {
+    shapeBatch.flush();
   }
 }
 
@@ -533,31 +579,59 @@ function renderProjectiles(
   const { spriteBatch, shapeBatch } = renderer;
   const projSheet = getProjectileSheet();
 
+  if (projSheet) {
+    // Pass 1: draw glow behind all projectiles in one shape batch.
+    let drewGlow = false;
+    for (const p of projectiles) {
+      if (p.isPool) continue;
+      if (!isVisible(camera, p.x, p.y, p.radius + 5)) continue;
+      const s = worldToScreen(camera, p.x, p.y);
+
+      if (!drewGlow) {
+        spriteBatch.flush();
+        drewGlow = true;
+      }
+
+      const glowColor = p.isEnemy
+        ? 'rgba(255,50,50,0.25)'
+        : (p.color ? p.color + '40' : 'rgba(255,204,0,0.25)');
+      shapeBatch.drawCircle(s.x, s.y, p.radius + 3, glowColor);
+    }
+    if (drewGlow) {
+      shapeBatch.flush();
+    }
+
+    // Pass 2: draw all projectile sprites.
+    for (const p of projectiles) {
+      if (p.isPool) continue;
+      if (!isVisible(camera, p.x, p.y, p.radius + 5)) continue;
+      const s = worldToScreen(camera, p.x, p.y);
+      const frameIndex = p.isEnemy ? 1 : 0;
+      const scale = getProjectileScale(p.radius);
+      drawSprite(spriteBatch, projSheet, frameIndex, s.x, s.y, scale, false);
+    }
+    return;
+  }
+
+  // Vector fallback path (no projectile sheet loaded).
+  let drewVector = false;
   for (const p of projectiles) {
     if (p.isPool) continue;
     if (!isVisible(camera, p.x, p.y, p.radius + 5)) continue;
     const s = worldToScreen(camera, p.x, p.y);
 
-    if (projSheet) {
-      // Glow circle behind the sprite
+    if (!drewVector) {
       spriteBatch.flush();
-      const glowColor = p.isEnemy ? 'rgba(255,50,50,0.25)' : (p.color ? p.color + '40' : 'rgba(255,204,0,0.25)');
-      const glowR = p.radius + 3;
-      shapeBatch.drawCircle(s.x, s.y, glowR, glowColor);
-      shapeBatch.flush();
-
-      const frameIndex = p.isEnemy ? 1 : 0;
-      const scale = getProjectileScale(p.radius);
-      drawSprite(spriteBatch, projSheet, frameIndex, s.x, s.y, scale, false);
-    } else {
-      // Vector fallback
-      spriteBatch.flush();
-      const color = p.isEnemy ? '#cc3333' : (p.color || '#ffcc00');
-      shapeBatch.drawCircle(s.x, s.y, Math.max(p.radius, 2), color);
-      const glowColor = p.isEnemy ? 'rgba(255,50,50,0.3)' : (p.color ? p.color + '4D' : 'rgba(255,204,0,0.3)');
-      shapeBatch.drawRing(s.x, s.y, p.radius + 2, 2, glowColor);
-      shapeBatch.flush();
+      drewVector = true;
     }
+
+    const color = p.isEnemy ? '#cc3333' : (p.color || '#ffcc00');
+    shapeBatch.drawCircle(s.x, s.y, Math.max(p.radius, 2), color);
+    const glowColor = p.isEnemy ? 'rgba(255,50,50,0.3)' : (p.color ? p.color + '4D' : 'rgba(255,204,0,0.3)');
+    shapeBatch.drawRing(s.x, s.y, p.radius + 2, 2, glowColor);
+  }
+  if (drewVector) {
+    shapeBatch.flush();
   }
 }
 
@@ -688,33 +762,56 @@ function renderSummons(
 ): void {
   const { spriteBatch, shapeBatch } = renderer;
   const summonSpriteSet = getSummonSprites();
+  let drawingShapes = false;
 
+  // Pass 1: summon bodies
   for (const sm of summons) {
     if (!isVisible(camera, sm.x, sm.y, sm.radius + 10)) continue;
     const screen = worldToScreen(camera, sm.x, sm.y);
 
     if (summonSpriteSet && sm.animState) {
+      if (drawingShapes) {
+        shapeBatch.flush();
+        drawingShapes = false;
+      }
       drawAnimatedSprite(spriteBatch, sm.animState, screen.x, screen.y, SUMMON_SCALE, false);
     } else {
       // Vector fallback — triangle shape
-      spriteBatch.flush();
+      if (!drawingShapes) {
+        spriteBatch.flush();
+        drawingShapes = true;
+      }
       shapeBatch.drawPolygon(screen.x, screen.y, sm.radius, 3, -Math.PI / 2, '#bbccaa');
       shapeBatch.drawRing(screen.x, screen.y, sm.radius, 1, '#889977');
-      shapeBatch.flush();
+    }
+  }
+
+  if (drawingShapes) {
+    shapeBatch.flush();
+  }
+
+  // Pass 2: summon HP bars
+  let drewBars = false;
+  for (const sm of summons) {
+    if (sm.hp >= sm.maxHp) continue;
+    if (!isVisible(camera, sm.x, sm.y, sm.radius + 10)) continue;
+    const screen = worldToScreen(camera, sm.x, sm.y);
+
+    if (!drewBars) {
+      spriteBatch.flush();
+      drewBars = true;
     }
 
-    // HP bar if damaged
-    if (sm.hp < sm.maxHp) {
-      spriteBatch.flush();
-      const barW = sm.radius * 2;
-      const barH = 2;
-      const barX = screen.x - barW / 2;
-      const barY = screen.y - sm.radius - 6;
-      const hpFrac = Math.max(0, sm.hp / sm.maxHp);
-      shapeBatch.drawRect(barX, barY, barW, barH, 'rgba(0,0,0,0.5)');
-      shapeBatch.drawRect(barX, barY, barW * hpFrac, barH, '#88cc88');
-      shapeBatch.flush();
-    }
+    const barW = sm.radius * 2;
+    const barH = 2;
+    const barX = screen.x - barW / 2;
+    const barY = screen.y - sm.radius - 6;
+    const hpFrac = Math.max(0, sm.hp / sm.maxHp);
+    shapeBatch.drawRect(barX, barY, barW, barH, 'rgba(0,0,0,0.5)');
+    shapeBatch.drawRect(barX, barY, barW * hpFrac, barH, '#88cc88');
+  }
+  if (drewBars) {
+    shapeBatch.flush();
   }
 }
 

@@ -15,7 +15,8 @@ export function initWebGL(canvas: HTMLCanvasElement): WebGLRenderingContext {
     premultipliedAlpha: true,
     antialias: false,
     preserveDrawingBuffer: false,
-    powerPreference: 'default',
+    desynchronized: true,
+    powerPreference: 'high-performance',
   };
 
   const gl = canvas.getContext('webgl2', opts) || 
