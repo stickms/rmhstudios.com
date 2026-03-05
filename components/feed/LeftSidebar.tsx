@@ -94,7 +94,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
       <nav className="flex flex-col gap-1 flex-1">
         {navLinks.map((link) => {
           const Icon = link.icon;
-          const isActive = pathname === link.href;
+          const isActive = pathname === link.href || (link.href !== '/' && pathname?.startsWith(link.href + '/'));
           return (
             <Link
               key={link.href}

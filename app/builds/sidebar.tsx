@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Gamepad2, AppWindow, Newspaper, Star } from 'lucide-react';
+import { Gamepad2, AppWindow, Newspaper, Star, ArrowLeft } from 'lucide-react';
 import type { NewsArticle } from '@/lib/news';
 import type { UserBuild, BuildCategory } from '@prisma/client';
 
@@ -18,6 +18,15 @@ export function BuildsRightSidebar({ games, apps, newsArticles }: BuildsRightSid
 
     return (
         <div className="p-4 space-y-6">
+            {/* Back to Categories */}
+            <Link
+                href="/builds"
+                className="flex items-center gap-1.5 text-sm text-site-accent hover:text-site-accent-hover transition-colors"
+            >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                All Categories
+            </Link>
+
             {/* Featured Games */}
             <section className="bg-site-surface rounded-2xl p-4 border border-site-border">
                 <h2 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text flex items-center gap-2 mb-3">
