@@ -215,14 +215,12 @@ export class VoidBreakerRenderer {
     ctx.lineWidth = 1;
     ctx.stroke();
 
-    // ── 8. Pre-pass: obstacle ground shadows ─────────────────────────────────
+    // ── 8. Pre-pass: obstacle ground shadows (flat offset) ────────────────────
     for (const o of game.obstacles) {
-      if (!o.active || !o.extrudeHeight) continue;
-      const base = toScreen(o.x + o.w / 2, o.y + o.h);
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.18)';
-      ctx.beginPath();
-      ctx.ellipse(base.x, base.y + 6, o.w * scale * 0.55, 10, 0, 0, Math.PI * 2);
-      ctx.fill();
+      if (!o.active) continue;
+      const stl = toScreen(o.x, o.y);
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+      ctx.fillRect(stl.x + 3, stl.y + 3, o.w * scale, o.h * scale);
     }
 
     // ── 8b. Enemy detection glow pre-pass (always visible through buildings) ──
@@ -256,73 +254,69 @@ export class VoidBreakerRenderer {
         sortY: o.y + o.h,
         draw: () => {
           const otl = toScreen(o.x, o.y);
-          const obase = toScreen(o.x, o.y + o.h);
           const orw = o.w * scale;
           const orh = o.h * scale;
-          const extH = (o.extrudeHeight ?? 0) * scale;
           switch (o.type) {
             case 'building': case 'barrier': {
-              if (extH > 0) {
-                // Left-edge darkening (fake perspective side face) — from roof top to facade bottom
-                ctx.fillStyle = '#0b0b14';
-                ctx.fillRect(otl.x - 3, otl.y, 3, orh + extH);
-                // Facade fill — extends DOWNWARD from south (front) edge of footprint
-                ctx.fillStyle = '#111118';
-                ctx.fillRect(obase.x, obase.y, orw, extH);
-                // Facade window lights
-                const wColsF = Math.max(1, Math.floor(orw / 9));
-                const wRowsF = Math.max(1, Math.floor(extH / 11));
-                for (let wr = 0; wr < wRowsF; wr++) {
-                  for (let wc = 0; wc < wColsF; wc++) {
-                    const wSeed = seed(o.id * 100 + wr * 20 + wc + 500);
-                    if (wSeed > 0.45) {
-                      const wColors = [
-                        `rgba(0,245,255,${0.35 + wSeed * 0.2})`,
-                        `rgba(255,200,80,${0.3 + wSeed * 0.15})`,
-                        `rgba(255,140,30,${0.35 + wSeed * 0.15})`,
-                        `rgba(255,0,204,${0.2 + wSeed * 0.15})`,
-                      ];
-                      ctx.fillStyle = wColors[Math.floor(wSeed * 4)];
-                      ctx.fillRect(obase.x + wc * 9 + 2, obase.y + wr * 11 + 3, 4, 5);
-                    }
+              // Orthographic building — roof + south-facing wall for height
+              const extH = (o.extrudeHeight ?? 0) * scale;
+              const facadeH = Math.max(extH * 0.35, 8);
+
+              // South-facing wall (facade) — drawn below the footprint
+              ctx.fillStyle = '#0d0d16';
+              ctx.fillRect(otl.x, otl.y + orh, orw, facadeH);
+              // Facade window lights
+              const fCols = Math.max(1, Math.floor(orw / 9));
+              const fRows = Math.max(1, Math.floor(facadeH / 11));
+              for (let wr = 0; wr < fRows; wr++) {
+                for (let wc = 0; wc < fCols; wc++) {
+                  const wSeed = seed(o.id * 100 + wr * 20 + wc + 500);
+                  if (wSeed > 0.45) {
+                    const wColors = [
+                      `rgba(0,245,255,${0.3 + wSeed * 0.2})`,
+                      `rgba(255,200,80,${0.25 + wSeed * 0.15})`,
+                      `rgba(255,0,204,${0.2 + wSeed * 0.15})`,
+                    ];
+                    ctx.fillStyle = wColors[Math.floor(wSeed * 3)];
+                    ctx.fillRect(otl.x + wc * 9 + 2, otl.y + orh + wr * 11 + 3, 4, 5);
                   }
                 }
-                // Facade border + neon strip at bottom of facade
-                ctx.strokeStyle = mapBorder + '44';
-                ctx.lineWidth = 1;
-                ctx.strokeRect(obase.x, obase.y, orw, extH);
-                ctx.fillStyle = mapBorder + '33';
-                ctx.fillRect(obase.x, obase.y + extH - 2, orw, 2);
-                // Roof (footprint seen from above)
-                ctx.fillStyle = '#1a1a26';
-                ctx.fillRect(otl.x, otl.y, orw, orh);
-                const wCols = Math.max(1, Math.floor(orw / 8));
-                const wRows = Math.max(1, Math.floor(orh / 10));
-                for (let wr = 0; wr < wRows; wr++) {
-                  for (let wc = 0; wc < wCols; wc++) {
-                    const wSeed = seed(o.id * 100 + wr * 20 + wc);
-                    if (wSeed > 0.5) {
-                      const rColors = ['rgba(0,245,255,0.2)', 'rgba(255,200,80,0.16)', 'rgba(255,0,204,0.12)'];
-                      ctx.fillStyle = rColors[Math.floor(wSeed * 3)];
-                      ctx.fillRect(otl.x + wc * 8 + 2, otl.y + wr * 10 + 3, 3, 4);
-                    }
-                  }
-                }
-                ctx.fillStyle = mapBorder + '55';
-                ctx.fillRect(otl.x, otl.y, orw, 2);
-                ctx.strokeStyle = mapBorder + '33';
-                ctx.lineWidth = 0.5;
-                ctx.strokeRect(otl.x, otl.y, orw, orh);
-              } else {
-                // Flat fallback
-                ctx.fillStyle = 'rgba(0,0,0,0.3)';
-                ctx.fillRect(otl.x + 3, otl.y + 3, orw, orh);
-                ctx.fillStyle = '#111118';
-                ctx.fillRect(otl.x, otl.y, orw, orh);
-                ctx.strokeStyle = mapBorder + '55';
-                ctx.lineWidth = 1;
-                ctx.strokeRect(otl.x, otl.y, orw, orh);
               }
+              // Facade bottom neon strip
+              ctx.fillStyle = mapBorder + '33';
+              ctx.fillRect(otl.x, otl.y + orh + facadeH - 2, orw, 2);
+              // Facade border
+              ctx.strokeStyle = mapBorder + '33';
+              ctx.lineWidth = 0.5;
+              ctx.strokeRect(otl.x, otl.y + orh, orw, facadeH);
+
+              // Left-edge darkening for depth
+              ctx.fillStyle = '#08080f';
+              ctx.fillRect(otl.x - 2, otl.y, 2, orh + facadeH);
+
+              // Roof (top face)
+              ctx.fillStyle = '#1a1a26';
+              ctx.fillRect(otl.x, otl.y, orw, orh);
+              // Roof window lights
+              const wCols = Math.max(1, Math.floor(orw / 8));
+              const wRows = Math.max(1, Math.floor(orh / 10));
+              for (let wr = 0; wr < wRows; wr++) {
+                for (let wc = 0; wc < wCols; wc++) {
+                  const wSeed = seed(o.id * 100 + wr * 20 + wc);
+                  if (wSeed > 0.5) {
+                    const rColors = ['rgba(0,245,255,0.18)', 'rgba(255,200,80,0.14)', 'rgba(255,0,204,0.1)'];
+                    ctx.fillStyle = rColors[Math.floor(wSeed * 3)];
+                    ctx.fillRect(otl.x + wc * 8 + 2, otl.y + wr * 10 + 3, 3, 4);
+                  }
+                }
+              }
+              // Roof top-edge highlight
+              ctx.fillStyle = mapBorder + '55';
+              ctx.fillRect(otl.x, otl.y, orw, 2);
+              // Roof border
+              ctx.strokeStyle = mapBorder + '44';
+              ctx.lineWidth = 1;
+              ctx.strokeRect(otl.x, otl.y, orw, orh);
               break;
             }
             case 'debris': {
@@ -338,23 +332,18 @@ export class VoidBreakerRenderer {
               break;
             }
             case 'tree': {
+              // Top-down canopy circle at footprint center
               const hp_frac = o.hp / o.maxHp;
-              const treeBase = obase;
-              const trunkW = 4 * scale;
-              const trunkH = extH * 0.35;
-              const canopyR = (orw * 0.8 + extH * 0.18) * Math.max(0.4, hp_frac);
-              // Trunk
-              ctx.fillStyle = `rgba(40, 22, 8, ${0.6 + hp_frac * 0.4})`;
-              ctx.fillRect(treeBase.x - trunkW / 2, treeBase.y - trunkH, trunkW, trunkH);
-              // Canopy
-              const canopyCY = treeBase.y - trunkH - canopyR * 0.5;
-              const treeGr = ctx.createRadialGradient(treeBase.x, canopyCY, 0, treeBase.x, canopyCY, canopyR);
+              const cx = otl.x + orw / 2;
+              const cy = otl.y + orh / 2;
+              const canopyR = Math.max(orw, orh) * 0.55 * Math.max(0.4, hp_frac);
+              const treeGr = ctx.createRadialGradient(cx, cy, 0, cx, cy, canopyR);
               treeGr.addColorStop(0, `rgba(20, 80, 20, ${0.9 * hp_frac})`);
               treeGr.addColorStop(0.6, `rgba(10, 50, 10, ${0.7 * hp_frac})`);
               treeGr.addColorStop(1, 'rgba(0, 30, 0, 0)');
               ctx.fillStyle = treeGr;
               ctx.beginPath();
-              ctx.arc(treeBase.x, canopyCY, canopyR, 0, Math.PI * 2);
+              ctx.arc(cx, cy, canopyR, 0, Math.PI * 2);
               ctx.fill();
               ctx.strokeStyle = `rgba(0, 200, 60, ${hp_frac * 0.35})`;
               ctx.lineWidth = 1;
@@ -387,33 +376,23 @@ export class VoidBreakerRenderer {
               break;
             }
             case 'billboard': {
+              // Flat billboard panel at footprint
               const bGlow = o.glowColor ?? NEON_CYAN;
               const bPulse = 0.7 + Math.sin(t * 2 + o.id * 1.3) * 0.3;
-              const poleW = Math.max(3, orw * 0.06);
-              const panelH = extH > 0 ? extH * 0.45 : orh;
-              const poleH = extH > 0 ? extH * 0.55 : 0;
-              const panelTop = obase.y - extH;
-              const poleCX = obase.x + orw / 2;
-              // Pole
-              if (poleH > 0) {
-                ctx.fillStyle = '#2a2a3a';
-                ctx.fillRect(poleCX - poleW / 2, obase.y - poleH, poleW, poleH);
-              }
-              // Panel
               ctx.fillStyle = '#0a0a18';
-              ctx.fillRect(obase.x, panelTop, orw, panelH);
+              ctx.fillRect(otl.x, otl.y, orw, orh);
               ctx.strokeStyle = bGlow;
               ctx.lineWidth = 1.5;
-              ctx.strokeRect(obase.x, panelTop, orw, panelH);
+              ctx.strokeRect(otl.x, otl.y, orw, orh);
               const adIndex = o.id % AD_TEXTS.length;
-              ctx.font = `bold ${Math.ceil(Math.min(panelH * 0.55, 10 * scale))}px monospace`;
+              ctx.font = `bold ${Math.ceil(Math.min(orh * 0.55, 10 * scale))}px monospace`;
               ctx.fillStyle = bGlow + Math.floor(bPulse * 200 + 55).toString(16).padStart(2, '0');
               ctx.textAlign = 'center';
-              ctx.fillText(AD_TEXTS[adIndex], poleCX, panelTop + panelH * 0.72);
+              ctx.fillText(AD_TEXTS[adIndex], otl.x + orw / 2, otl.y + orh * 0.65);
               ctx.textAlign = 'left';
               if (Math.sin(t * 7 + o.id * 3.7) > 0.92) {
                 ctx.fillStyle = bGlow + '22';
-                ctx.fillRect(obase.x, panelTop, orw, panelH);
+                ctx.fillRect(otl.x, otl.y, orw, orh);
               }
               break;
             }
