@@ -7,13 +7,18 @@ import { headers } from 'next/headers';
  */
 export async function getSpotifyToken(): Promise<string | null> {
   try {
-    const reqHeaders = await headers();
+    const reqHeaders = new Headers(await headers());
+    // Server-side calls to POST endpoints need an Origin header for CSRF validation
+    if (!reqHeaders.has('origin')) {
+      reqHeaders.set('origin', process.env.BETTER_AUTH_URL || 'http://localhost:7005');
+    }
     const result = await auth.api.getAccessToken({
       body: { providerId: 'spotify' },
       headers: reqHeaders,
     });
     return result?.accessToken ?? null;
-  } catch {
+  } catch (err) {
+    console.error('[spotify-auth] getAccessToken failed:', err);
     return null;
   }
 }
