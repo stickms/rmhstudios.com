@@ -25,7 +25,26 @@ export default function MenuScreen({ onPlay, onMultiplayer, onMetaShop, onSettin
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showPatchnotes, setShowPatchnotes] = useState(false);
 
-  const menuActions = useMemo(() => [onPlay, onMultiplayer, onMetaShop, onSettings, () => setShowLeaderboard(true), onBestiary, () => setShowPatchnotes(true)], [onPlay, onMultiplayer, onMetaShop, onSettings, onBestiary]);
+  const handleToggleLeaderboard = useCallback(() => {
+    setShowLeaderboard((prev) => !prev);
+  }, []);
+
+  const handleOpenPatchnotes = useCallback(() => {
+    setShowPatchnotes(true);
+  }, []);
+
+  const handleCloseLeaderboard = useCallback(() => {
+    setShowLeaderboard(false);
+  }, []);
+
+  const handleClosePatchnotes = useCallback(() => {
+    setShowPatchnotes(false);
+  }, []);
+
+  const menuActions = useMemo(
+    () => [onPlay, onMultiplayer, onMetaShop, onSettings, handleToggleLeaderboard, onBestiary, handleOpenPatchnotes],
+    [onPlay, onMultiplayer, onMetaShop, onSettings, handleToggleLeaderboard, onBestiary, handleOpenPatchnotes],
+  );
   const { focusedIndex } = useKeyboardNav({
     itemCount: 7,
     onSelect: (i) => menuActions[i](),
@@ -95,7 +114,7 @@ export default function MenuScreen({ onPlay, onMultiplayer, onMetaShop, onSettin
         </button>
 
         <button
-          onClick={() => setShowLeaderboard(!showLeaderboard)}
+          onClick={handleToggleLeaderboard}
           className={`flex items-center justify-center gap-2 py-3 rounded-lg font-semibold text-(--altair-text) bg-(--altair-surface) border border-(--altair-border) hover:border-(--altair-border-bright) hover:bg-(--altair-surface-hover) transition-all ${focusClass(4)}`}
         >
           <Trophy size={18} />
@@ -111,7 +130,7 @@ export default function MenuScreen({ onPlay, onMultiplayer, onMetaShop, onSettin
         </button>
 
         <button
-          onClick={() => setShowPatchnotes(true)}
+          onClick={handleOpenPatchnotes}
           className={`flex items-center justify-center gap-2 py-3 rounded-lg font-semibold text-(--altair-text) bg-(--altair-surface) border border-(--altair-border) hover:border-(--altair-border-bright) hover:bg-(--altair-surface-hover) transition-all ${focusClass(6)}`}
         >
           <ScrollText size={18} />
@@ -126,12 +145,12 @@ export default function MenuScreen({ onPlay, onMultiplayer, onMetaShop, onSettin
 
       {/* Leaderboard panel */}
       {showLeaderboard && (
-        <LeaderboardModal onClose={() => setShowLeaderboard(false)} />
+        <LeaderboardModal onClose={handleCloseLeaderboard} />
       )}
 
       {/* Patch notes panel */}
       {showPatchnotes && (
-        <PatchnotesModal onClose={() => setShowPatchnotes(false)} />
+        <PatchnotesModal onClose={handleClosePatchnotes} />
       )}
     </div>
   );

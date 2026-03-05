@@ -171,8 +171,18 @@ export default function AltairPage() {
   if (showBestiary) {
     return (
       <>
-        <AltairHeader context="menu" title="Bestiary" onBack={() => setShowBestiary(false)} />
-        <BestiaryScreen onBack={() => setShowBestiary(false)} />
+        <AltairHeader
+          context="menu"
+          title="Bestiary"
+          onBack={() => {
+            setShowBestiary(false);
+          }}
+        />
+        <BestiaryScreen
+          onBack={() => {
+            setShowBestiary(false);
+          }}
+        />
       </>
     );
   }
@@ -180,8 +190,18 @@ export default function AltairPage() {
   if (showSettings) {
     return (
       <>
-        <AltairHeader context="settings" title="Settings" onBack={() => setShowSettings(false)} />
-        <SettingsScreen onBack={() => setShowSettings(false)} />
+        <AltairHeader
+          context="settings"
+          title="Settings"
+          onBack={() => {
+            setShowSettings(false);
+          }}
+        />
+        <SettingsScreen
+          onBack={() => {
+            setShowSettings(false);
+          }}
+        />
       </>
     );
   }
@@ -195,8 +215,12 @@ export default function AltairPage() {
             onPlay={goToClassSelect}
             onMultiplayer={() => router.push('/altair/multiplayer')}
             onMetaShop={() => setPhase('meta_shop')}
-            onSettings={() => setShowSettings(true)}
-            onBestiary={() => setShowBestiary(true)}
+            onSettings={() => {
+              setShowSettings(true);
+            }}
+            onBestiary={() => {
+              setShowBestiary(true);
+            }}
           />
         </>
       );
@@ -218,7 +242,9 @@ export default function AltairPage() {
             handleGameEnd();
             goToMenu();
           }}
-          onSettings={() => setShowSettings(true)}
+          onSettings={() => {
+            setShowSettings(true);
+          }}
         />
       );
 
