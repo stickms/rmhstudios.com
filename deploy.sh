@@ -258,9 +258,10 @@ if [ $ok -ne 0 ]; then
     exit 1
 fi
 
-# ── Step 6: Prune old images ────────────────────────────────────────────────
-log "Pruning dangling Docker images..."
+# ── Step 6: Prune old images & build cache ──────────────────────────────────
+log "Pruning dangling Docker images and stale build cache..."
 "$DOCKER_BIN" image prune -f > /dev/null 2>&1 || true
+"$DOCKER_BIN" builder prune --keep-storage 2g -f > /dev/null 2>&1 || true
 
 # ── Done ─────────────────────────────────────────────────────────────────────
 update_deploy_status success

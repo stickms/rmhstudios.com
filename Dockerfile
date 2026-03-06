@@ -28,7 +28,7 @@ COPY prisma.config.ts ./
 # postinstall runs `prisma generate` automatically.
 # BuildKit cache mount keeps the pnpm store between builds so only
 # new/changed packages need downloading.
-RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
+RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store,sharing=locked \
     pnpm install --frozen-lockfile
 
 # ── Stage 2: Build application ───────────────────────────────────────────────
@@ -65,7 +65,7 @@ ENV NEXT_PUBLIC_RMHBOX_SOCKET_URL=${NEXT_PUBLIC_RMHBOX_SOCKET_URL}
 ENV NEXT_PUBLIC_RMHTUBE_SOCKET_URL=${NEXT_PUBLIC_RMHTUBE_SOCKET_URL}
 
 # Cache .next/cache between builds for incremental compilation
-RUN --mount=type=cache,id=nextjs-cache,target=/app/.next/cache \
+RUN --mount=type=cache,id=nextjs-cache,target=/app/.next/cache,sharing=locked \
     pnpm run build
 
 # Verify build artifacts exist
