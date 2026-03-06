@@ -2,6 +2,9 @@ import type { NextConfig } from "next";
 import { resolve } from "path";
 
 const nextConfig: NextConfig = {
+  // ─── Standalone output for Docker containerization ───
+  output: "standalone",
+
   // ─── Fix Turbopack root to this project (avoids home-dir lockfile conflict) ───
   turbopack: {
     root: resolve(__dirname),
@@ -79,13 +82,6 @@ const nextConfig: NextConfig = {
     "@wasm-audio-decoders/ogg-vorbis",
     "@eshaz/web-worker",
   ],
-
-  async rewrites() {
-    return [
-      { source: '/@:handle/post/:postid', destination: '/:handle/post/:postid' },
-      { source: '/@:handle', destination: '/profile/:handle' },
-    ];
-  },
 
   async headers() {
     return [

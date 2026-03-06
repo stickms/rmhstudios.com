@@ -1,16 +1,130 @@
-services:
-  db:
-    image: postgres:15-alpine
-    container_name: rmhstudios
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: rmhuser
-      POSTGRES_PASSWORD: rmhpassword
-      POSTGRES_DB: rmhdb
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+# ─────────────────────────────────────────────────────────────────────────────
+# rmhstudios.com — Docker Compose
+#
+# Used for BOTH production and staging via --project-name and --env-file:
+#
+#   Production:  docker compose -p rmhstudios-prod  --env-file .env.production  up -d
+#   Staging:     docker compose -p rmhstudios-staging --env-file .env.staging   up -d
+#
+# Port assignments are set in the respective .env files:
+#   Production:  7005 / 7001 / 7676 / 7003
+#   Staging:     8005 / 8001 / 8676 / 8003
+#
+# A single image (rmhstudios-app) is built once by the `web` service and
+# shared by all other services — no redundant rebuilds.
+# ─────────────────────────────────────────────────────────────────────────────
 
-volumes:
-  postgres_data:
+x-common: &common
+  image: ${COMPOSE_PROJECT_NAME:-rmhstudios}-app:latest
+  restart: unless-stopped
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+services:
+  # ─── Next.js Web App ────────────────────────────────────────────────────────
+  web:
+    <<: *common
+    build:
+      context: .
+      dockerfile: Dockerfile
+      extra_hosts:
+        - "host.docker.internal:host-gateway"
+      args:
+        DATABASE_URL: ${DATABASE_URL}
+        BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+        BETTER_AUTH_URL: ${BETTER_AUTH_URL}
+        NEXT_PUBLIC_BETTER_AUTH_URL: ${NEXT_PUBLIC_BETTER_AUTH_URL}
+        NEXT_PUBLIC_SOCKET_URL: ${NEXT_PUBLIC_SOCKET_URL}
+        NEXT_PUBLIC_RMHBOX_SOCKET_URL: ${NEXT_PUBLIC_RMHBOX_SOCKET_URL}
+        NEXT_PUBLIC_RMHTUBE_SOCKET_URL: ${NEXT_PUBLIC_RMHTUBE_SOCKET_URL}
+    container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-web
+    ports:
+      - "127.0.0.1:${PORT_WEB:-7005}:${PORT_WEB:-7005}"
+    env_file: ${ENV_FILE:-.env.production}
+    environment:
+      - PORT=${PORT_WEB:-7005}
+      - HOSTNAME=0.0.0.0
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT_WEB:-7005}/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    depends_on:
+      socket:
+        condition: service_started
+      rmhbox:
+        condition: service_started
+      rmhtube:
+        condition: service_started
+
+  # ─── Socket.IO Server (games, real-time apps) ──────────────────────────────
+  socket:
+    <<: *common
+    container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-socket
+    ports:
+      - "127.0.0.1:${PORT_SOCKET:-7001}:${PORT_SOCKET:-7001}"
+    env_file: ${ENV_FILE:-.env.production}
+    environment:
+      - PORT=${PORT_SOCKET:-7001}
+    command: ["node", "dist-server/server/socket-server/index.js"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT_SOCKET:-7001}/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  # ─── RMHbox WebSocket Server ────────────────────────────────────────────────
+  rmhbox:
+    <<: *common
+    container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-rmhbox
+    ports:
+      - "127.0.0.1:${PORT_RMHBOX:-7676}:${PORT_RMHBOX:-7676}"
+    env_file: ${ENV_FILE:-.env.production}
+    environment:
+      - PORT=${PORT_RMHBOX:-7676}
+    command: ["node", "dist-server/server/rmhbox/index.js"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT_RMHBOX:-7676}/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  # ─── RmhTube WebSocket Server ──────────────────────────────────────────────
+  rmhtube:
+    <<: *common
+    container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-rmhtube
+    ports:
+      - "127.0.0.1:${PORT_RMHTUBE:-7003}:${PORT_RMHTUBE:-7003}"
+    env_file: ${ENV_FILE:-.env.production}
+    environment:
+      - PORT=${PORT_RMHTUBE:-7003}
+    command: ["node", "dist-server/server/rmhtube/index.js"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT_RMHTUBE:-7003}/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  # ─── News Pipeline (production only — use `--profile news` to include) ─────
+  news-pipeline:
+    <<: *common
+    container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-news-pipeline
+    profiles: ["news"]
+    env_file: ${ENV_FILE:-.env.production}
+    command: >
+      sh -c 'while true; do
+        echo "[$(date -Iseconds)] News pipeline: starting run";
+        node --import tsx scripts/news-pipeline/index.ts || echo "[$(date -Iseconds)] News pipeline: failed";
+        echo "[$(date -Iseconds)] News pipeline: sleeping 8 hours";
+        sleep 28800;
+      done'
+    restart: unless-stopped

@@ -1,26 +1,57 @@
 #!/bin/bash
+# ─────────────────────────────────────────────────────────────────────────────
+# rmhstudios.com — Docker-based deploy script
+#
+# Usage:
+#   ./deploy.sh production   — deploy main branch to production containers
+#   ./deploy.sh staging      — deploy staging branch to staging containers
+# ─────────────────────────────────────────────────────────────────────────────
+
+set -euo pipefail
+
+# ── Determine environment ────────────────────────────────────────────────────
+ENVIRONMENT="${1:-production}"
+
+case "$ENVIRONMENT" in
+    production)
+        BRANCH="main"
+        ENV_FILE=".env.production"
+        PROJECT_NAME="rmhstudios-prod"
+        PORT_WEB=7005
+        PORT_SOCKET=7001
+        PORT_RMHBOX=7676
+        PORT_RMHTUBE=7003
+        COMPOSE_PROFILES=""
+        ;;
+    staging)
+        BRANCH="staging"
+        ENV_FILE=".env.staging"
+        PROJECT_NAME="rmhstudios-staging"
+        PORT_WEB=8005
+        PORT_SOCKET=8001
+        PORT_RMHBOX=8676
+        PORT_RMHTUBE=8003
+        COMPOSE_PROFILES=""
+        ;;
+    *)
+        echo "FATAL: Unknown environment '$ENVIRONMENT'. Use 'production' or 'staging'."
+        exit 1
+        ;;
+esac
 
 REMOTE_REPO="origin"
-BRANCH="main"
 REPO_DIR="/home/rmhstudios/rmhstudios.com"
 
-APP_WEB="rmhstudios-web"
-APP_SOCKET="rmhstudios-socket"
-APP_RMHBOX="rmhstudios-rmhbox"
-APP_RMHTUBE="rmhstudios-rmhtube"
-
-PORT_WEB=7005
-PORT_SOCKET=7001
-PORT_RMHBOX=7676
-PORT_RMHTUBE=7003
-
-LOCKFILE="/tmp/autodeploy.lock"
-QUEUE_FILE="/tmp/autodeploy.queue"
-DEPLOY_LOG="/tmp/autodeploy-$$.log"
+LOCKFILE="/tmp/autodeploy-${ENVIRONMENT}.lock"
+QUEUE_FILE="/tmp/autodeploy-${ENVIRONMENT}.queue"
+DEPLOY_LOG="/tmp/autodeploy-${ENVIRONMENT}-$$.log"
 DISCORD_WEBHOOK="https://discord.com/api/webhooks/1477609590005829844/njhHGfYop87DbaGR5o4hCLBnpf3B5ZevYS0BR3kQViEZJktXSjb_SEVtj53WOv0cNxs5"
 
+DOCKER_BIN=$(which docker 2>/dev/null || echo "/usr/bin/docker")
+GIT_BIN=$(which git 2>/dev/null || echo "/usr/bin/git")
+
 log() {
-  echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [$ENVIRONMENT] $1"
 }
 
 DEPLOY_MSG_ID=""
@@ -41,9 +72,11 @@ get_commit_info() {
 
 send_deploy_started() {
     get_commit_info
+    local env_label
+    env_label=$(echo "$ENVIRONMENT" | tr '[:lower:]' '[:upper:]')
     local payload
     payload=$(printf '{"embeds":[{"title":"%s","description":"%s","color":%d,"footer":{"text":"%s"}}]}' \
-        "Commit $DEPLOY_SHORT_HASH - deploy started" "$DEPLOY_COMMIT_MSG" 16776960 "$DEPLOY_AUTHOR")
+        "[$env_label] Commit $DEPLOY_SHORT_HASH - deploy started" "$DEPLOY_COMMIT_MSG" 16776960 "$DEPLOY_AUTHOR")
 
     local response
     response=$(curl -s -H "Content-Type: application/json" -d "$payload" "${DISCORD_WEBHOOK}?wait=true" 2>/dev/null)
@@ -57,9 +90,10 @@ send_deploy_started() {
 update_deploy_status() {
     local status="$1"  # "success" or "fail"
     local reason="$2"  # optional failure reason
-    local color title
+    local color title env_label
 
     get_commit_info
+    env_label=$(echo "$ENVIRONMENT" | tr '[:lower:]' '[:upper:]')
 
     if [ "$status" = "success" ]; then
         local elapsed mins secs
@@ -67,10 +101,10 @@ update_deploy_status() {
         mins=$(( elapsed / 60 ))
         secs=$(( elapsed % 60 ))
         color=65280    # green
-        title=$(printf 'Commit %s - deploy succeeded in %02d:%02d' "$DEPLOY_SHORT_HASH" "$mins" "$secs")
+        title=$(printf '[%s] Commit %s - deploy succeeded in %02d:%02d' "$env_label" "$DEPLOY_SHORT_HASH" "$mins" "$secs")
     else
         color=16711680 # red
-        title="Commit $DEPLOY_SHORT_HASH - deploy failed: $reason"
+        title="[$env_label] Commit $DEPLOY_SHORT_HASH - deploy failed: $reason"
     fi
 
     local payload
@@ -81,7 +115,7 @@ update_deploy_status() {
         if [ -f "$DEPLOY_LOG" ]; then
             curl -s -X PATCH \
                 -F "payload_json=$payload" \
-                -F "file=@${DEPLOY_LOG};filename=deploy-${DEPLOY_SHORT_HASH}.txt" \
+                -F "file=@${DEPLOY_LOG};filename=deploy-${ENVIRONMENT}-${DEPLOY_SHORT_HASH}.txt" \
                 "${DISCORD_WEBHOOK}/messages/${DEPLOY_MSG_ID}" > /dev/null 2>&1 || \
                 log "WARNING: Failed to edit Discord webhook message."
         else
@@ -93,7 +127,7 @@ update_deploy_status() {
         if [ -f "$DEPLOY_LOG" ]; then
             curl -s \
                 -F "payload_json=$payload" \
-                -F "file=@${DEPLOY_LOG};filename=deploy-${DEPLOY_SHORT_HASH}.txt" \
+                -F "file=@${DEPLOY_LOG};filename=deploy-${ENVIRONMENT}-${DEPLOY_SHORT_HASH}.txt" \
                 "$DISCORD_WEBHOOK" > /dev/null 2>&1 || \
                 log "WARNING: Failed to send Discord webhook notification."
         else
@@ -104,15 +138,12 @@ update_deploy_status() {
     fi
 }
 
-export PATH="/home/rmhstudios/.nvm/versions/node/v25.6.1/bin:$PATH"
-
-GIT_BIN=$(which git 2>/dev/null)   ; GIT_BIN=${GIT_BIN:-/usr/bin/git}
-PNPM_BIN=$(which pnpm 2>/dev/null) ; PNPM_BIN=${PNPM_BIN:-/home/rmhstudios/.nvm/versions/node/v25.6.1/bin/pnpm}
-PM2_BIN=$(which pm2 2>/dev/null)   ; PM2_BIN=${PM2_BIN:-/home/rmhstudios/.nvm/versions/node/v25.6.1/bin/pm2}
-NODE_BIN=$(which node 2>/dev/null) ; NODE_BIN=${NODE_BIN:-/home/rmhstudios/.nvm/versions/node/v25.6.1/bin/node}
+# ── Helper: docker compose with project config ──────────────────────────────
+dc() {
+    "$DOCKER_BIN" compose -p "$PROJECT_NAME" --env-file "$ENV_FILE" "$@"
+}
 
 cleanup() {
-    rm -rf "$REPO_DIR/.next-backup" "$REPO_DIR/dist-server-backup"
     rm -f "$DEPLOY_LOG"
 }
 trap cleanup EXIT
@@ -128,65 +159,11 @@ check_port() {
     return 1
 }
 
-stop_apps() {
-    log "Stopping PM2 processes..."
-    "$PM2_BIN" stop   "$APP_WEB"    2>/dev/null || true
-    "$PM2_BIN" stop   "$APP_SOCKET" 2>/dev/null || true
-    "$PM2_BIN" stop   "$APP_RMHBOX" 2>/dev/null || true
-    "$PM2_BIN" stop   "$APP_RMHTUBE" 2>/dev/null || true
-    "$PM2_BIN" delete "$APP_WEB"    2>/dev/null || true
-    "$PM2_BIN" delete "$APP_SOCKET" 2>/dev/null || true
-    "$PM2_BIN" delete "$APP_RMHBOX" 2>/dev/null || true
-    "$PM2_BIN" delete "$APP_RMHTUBE" 2>/dev/null || true
-}
-
-start_apps() {
-    log "Starting Next.js on port $PORT_WEB..."
-    "$PM2_BIN" start "$NODE_BIN" \
-        --name "$APP_WEB" \
-        --restart-delay=3000 \
-        --max-restarts=5 \
-        -- node_modules/next/dist/bin/next start -p "$PORT_WEB"
-
-    log "Starting Socket.IO server on port $PORT_SOCKET..."
-    "$PM2_BIN" start "$NODE_BIN" \
-        --name "$APP_SOCKET" \
-        --restart-delay=3000 \
-        --max-restarts=5 \
-        -- dist-server/server/socket-server/index.js
-
-    log "Starting RMHbox WebSocket server on port $PORT_RMHBOX..."
-    "$PM2_BIN" start "$NODE_BIN" \
-        --name "$APP_RMHBOX" \
-        --restart-delay=3000 \
-        --max-restarts=5 \
-        -- dist-server/server/rmhbox/index.js
-
-    log "Starting RmhTube WebSocket server on port $PORT_RMHTUBE..."
-    "$PM2_BIN" start "$NODE_BIN" \
-        --name "$APP_RMHTUBE" \
-        --restart-delay=3000 \
-        --max-restarts=5 \
-        -- dist-server/server/rmhtube/index.js
-
-    "$PM2_BIN" save
-}
-
-restore_backup() {
-    log "Restoring previous build artifacts \u2014 current servers remain running."
-    if [ -d ".next-backup" ]; then
-        rm -rf .next
-        mv .next-backup .next
-    fi
-    if [ -d "dist-server-backup" ]; then
-        rm -rf dist-server
-        mv dist-server-backup dist-server
-    fi
-}
+# ── Main deploy ─────────────────────────────────────────────────────────────
 
 cd "$REPO_DIR" || { echo "FATAL: Cannot cd to $REPO_DIR"; exit 1; }
 
-# Acquire deploy lock via flock (fd 200)
+# Acquire deploy lock via flock (fd 200) — per-environment lock
 if ! touch "$LOCKFILE" 2>/dev/null; then
     log "FATAL: Cannot create lockfile $LOCKFILE"
     exit 1
@@ -217,63 +194,57 @@ if ! flock -n 200; then
     log "=== Queued deploy now executing ==="
 fi
 
-log "=== Deploy triggered by webhook ==="
+log "=== Deploy triggered ($ENVIRONMENT, branch=$BRANCH) ==="
 DEPLOY_START_TIME=$(date +%s)
 
 # Capture all deploy output to log file
 exec > >(tee -a "$DEPLOY_LOG") 2>&1
 
-log "Pulling latest code..."
-if ! "$GIT_BIN" pull "$REMOTE_REPO" "$BRANCH"; then
-    log "ERROR: git pull failed."
-    update_deploy_status fail "git pull failed"
-    exit 1
-fi
-
-send_deploy_started
-
-log "Installing dependencies..."
-"$PNPM_BIN" install --frozen-lockfile --production=false || { log "ERROR: pnpm install failed."; update_deploy_status fail "pnpm install failed"; exit 1; }
-
-log "Syncing database schema..."
-yes | "$PNPM_BIN" run db:push || {
-    log "ERROR: Database sync failed."
-    update_deploy_status fail "database sync failed"
+# ── Step 1: Pull latest code ────────────────────────────────────────────────
+log "Fetching latest code..."
+"$GIT_BIN" fetch "$REMOTE_REPO" "$BRANCH" || {
+    log "ERROR: git fetch failed."
+    update_deploy_status fail "git fetch failed"
     exit 1
 }
 
-log "Backing up current build artifacts..."
-[ -d ".next" ]       && cp -a .next .next-backup
-[ -d "dist-server" ] && cp -a dist-server dist-server-backup
+log "Checking out $BRANCH..."
+"$GIT_BIN" checkout "$BRANCH" 2>/dev/null || "$GIT_BIN" checkout -b "$BRANCH" "$REMOTE_REPO/$BRANCH"
+"$GIT_BIN" reset --hard "$REMOTE_REPO/$BRANCH" || {
+    log "ERROR: git reset failed."
+    update_deploy_status fail "git reset failed"
+    exit 1
+}
 
+send_deploy_started
 
-log "Building..."
-if ! "$PNPM_BIN" run build; then
-    log "ERROR: Build failed."
-    restore_backup
-    update_deploy_status fail "build failed"
+# ── Step 2: Build Docker image ──────────────────────────────────────────────
+# Only the `web` service carries the build config. It produces a single image
+# (e.g. rmhstudios-prod-app:latest) that ALL services share.
+log "Building Docker image (single shared image)..."
+if ! dc build web; then
+    log "ERROR: Docker build failed."
+    update_deploy_status fail "docker build failed"
     exit 1
 fi
 
-build_ok=true
-[ -d ".next" ]                                      || { log "ERROR: .next missing after build.";                build_ok=false; }
-[ -f "dist-server/server/socket-server/index.js" ]  || { log "ERROR: socket-server/index.js missing after build."; build_ok=false; }
-[ -f "dist-server/server/rmhbox/index.js" ]          || { log "ERROR: rmhbox/index.js missing after build.";       build_ok=false; }
-[ -f "dist-server/server/rmhtube/index.js" ]         || { log "ERROR: rmhtube/index.js missing after build.";      build_ok=false; }
-
-if [ "$build_ok" != "true" ]; then
-    log "ERROR: Build artifacts incomplete."
-    restore_backup
-    update_deploy_status fail "build artifacts incomplete"
+# ── Step 3: Sync database schema ────────────────────────────────────────────
+log "Syncing database schema..."
+if ! dc run --rm --no-deps web sh -c 'npx prisma db push --accept-data-loss'; then
+    log "ERROR: Database schema sync failed."
+    update_deploy_status fail "database sync failed"
     exit 1
 fi
 
-rm -rf .next-backup dist-server-backup
+# ── Step 4: Bring up containers ─────────────────────────────────────────────
+log "Starting containers..."
+if ! dc up -d --remove-orphans; then
+    log "ERROR: docker compose up failed."
+    update_deploy_status fail "docker compose up failed"
+    exit 1
+fi
 
-log "Build successful. Swapping processes..."
-stop_apps
-start_apps
-
+# ── Step 5: Health checks ───────────────────────────────────────────────────
 ok=0
 check_port "$PORT_WEB"    || ok=1
 check_port "$PORT_SOCKET" || ok=1
@@ -281,17 +252,16 @@ check_port "$PORT_RMHBOX" || ok=1
 check_port "$PORT_RMHTUBE" || ok=1
 
 if [ $ok -ne 0 ]; then
-    log "--- PM2 logs ($APP_WEB) ---"
-    "$PM2_BIN" logs "$APP_WEB"    --lines 50 --nostream
-    log "--- PM2 logs ($APP_SOCKET) ---"
-    "$PM2_BIN" logs "$APP_SOCKET" --lines 50 --nostream
-    log "--- PM2 logs ($APP_RMHBOX) ---"
-    "$PM2_BIN" logs "$APP_RMHBOX" --lines 50 --nostream
-    log "--- PM2 logs ($APP_RMHTUBE) ---"
-    "$PM2_BIN" logs "$APP_RMHTUBE" --lines 50 --nostream
+    log "--- Container logs ---"
+    dc logs --tail=50 2>&1 || true
     update_deploy_status fail "port health check failed"
     exit 1
 fi
 
+# ── Step 6: Prune old images ────────────────────────────────────────────────
+log "Pruning dangling Docker images..."
+"$DOCKER_BIN" image prune -f > /dev/null 2>&1 || true
+
+# ── Done ─────────────────────────────────────────────────────────────────────
 update_deploy_status success
-log "=== Deployment complete (web: $PORT_WEB, socket: $PORT_SOCKET, rmhbox: $PORT_RMHBOX, rmhtube: $PORT_RMHTUBE) ==="
+log "=== Deployment complete ($ENVIRONMENT: web=$PORT_WEB, socket=$PORT_SOCKET, rmhbox=$PORT_RMHBOX, rmhtube=$PORT_RMHTUBE) ==="
