@@ -131,35 +131,6 @@ export function CoinShop({ coins, setCoins, hasProfilePet, setHasProfilePet }: P
           </Button>
         </div>
       )}
-
-      {/* Debug: +50 coins (temporary) */}
-      <div className="bg-site-surface border border-dashed border-yellow-500/30 rounded-xl p-4">
-        <h3 className="font-bold text-site-text mb-2">Debug: Add Coins</h3>
-        <Button
-          onClick={async () => {
-            try {
-              const res = await fetch('/api/coins/claim', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ amount: 50 }),
-              });
-              const data = await res.json();
-              if (res.ok) {
-                setCoins(data.newBalance);
-                toast.success('+50 coins added!');
-              } else {
-                toast.error(data.error || 'Failed');
-              }
-            } catch {
-              toast.error('Network error');
-            }
-          }}
-          variant="outline"
-          className="w-full rounded-lg border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10"
-        >
-          +50 Coins (Test)
-        </Button>
-      </div>
     </div>
   );
 }
