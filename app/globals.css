@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/* Profile Pet sprite animations */
+@keyframes dog-walk-frames {
+  from { background-position: 0 0; }
+  to { background-position: -128px 0; }
+}
+
 /* Dream Rift floating particle animation */
 @keyframes dreamrift-float {
   0%, 100% { transform: translateY(0) translateX(0); opacity: 0.2; }

@@ -27,6 +27,7 @@ interface ProfileEditModalProps {
     website: string | null;
     showLikes: boolean;
     dmPrivacy: string;
+    showProfilePet?: boolean;
   } & ProfileSongData) => void;
   initial: {
     handle: string | null;
@@ -39,6 +40,8 @@ interface ProfileEditModalProps {
     website: string | null;
     showLikes: boolean;
     dmPrivacy: string;
+    hasProfilePet: boolean;
+    showProfilePet: boolean;
   } & ProfileSongData;
 }
 
@@ -64,6 +67,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
   const [location, setLocation] = useState(initial.location ?? '');
   const [website, setWebsite] = useState(initial.website ?? '');
   const [showLikes, setShowLikes] = useState(initial.showLikes);
+  const [showProfilePet, setShowProfilePet] = useState(initial.showProfilePet);
   const [dmPrivacy, setDmPrivacy] = useState(initial.dmPrivacy ?? 'EVERYONE');
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(initial.image);
@@ -205,6 +209,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
         website: website.trim() || null,
         showLikes,
         dmPrivacy,
+        showProfilePet,
         profileSongSpotifyId: selectedSong?.id ?? null,
         profileSongTitle: selectedSong?.title ?? null,
         profileSongArtist: selectedSong?.artist ?? null,
@@ -272,6 +277,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
           website: website.trim() || null,
           showLikes,
           dmPrivacy,
+          showProfilePet,
           profileSongSpotifyId: selectedSong?.id ?? null,
           profileSongTitle: selectedSong?.title ?? null,
           profileSongArtist: selectedSong?.artist ?? null,
@@ -492,6 +498,29 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
                 />
               </button>
             </div>
+
+            {/* Profile Pet toggle */}
+            {initial.hasProfilePet && (
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-site-text">Profile Pet</p>
+                  <p className="text-xs text-site-text-dim mt-0.5">Show your 8-bit dog on your profile</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowProfilePet(!showProfilePet)}
+                  className={`relative w-10 h-5 rounded-full transition-colors ${
+                    showProfilePet ? 'bg-site-accent' : 'bg-site-surface border border-site-border'
+                  }`}
+                >
+                  <span
+                    className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${
+                      showProfilePet ? 'translate-x-5' : ''
+                    }`}
+                  />
+                </button>
+              </div>
+            )}
 
             {/* DM Privacy */}
             <div>

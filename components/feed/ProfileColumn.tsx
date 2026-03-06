@@ -12,6 +12,8 @@ import { SocialListModal } from './SocialListModal';
 import { VinylRecord } from './VinylRecord';
 import Link from 'next/link';
 import type { FeedItem } from '@/lib/feed-types';
+import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
+import { ProfilePet } from '@/components/rmhcoins/ProfilePet';
 
 interface ProfileData {
   id: string;
@@ -39,6 +41,9 @@ interface ProfileData {
   isOwnProfile: boolean;
   handleCooldownMs?: number;
   hasCustomAvatar?: boolean;
+  coins: number;
+  hasProfilePet: boolean;
+  showProfilePet: boolean;
 }
 
 type ProfileTab = 'rmharks' | 'likes';
@@ -86,7 +91,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
     setNotFound(false);
     fetch(`/api/profile/${encodeURIComponent(userId)}`)
       .then(async (res) => {
-        if (res.status === 404) {
+        if (!res.ok) {
           setNotFound(true);
           return;
         }
@@ -369,6 +374,13 @@ export function ProfileColumn({ userId }: { userId: string }) {
             )}
           </div>
 
+          {/* Profile Pet banner between avatar and vinyl */}
+          {profile.hasProfilePet && profile.showProfilePet && (
+            <div className="flex-1 mx-3 self-stretch">
+              <ProfilePet />
+            </div>
+          )}
+
           {profile.profileSongSpotifyId && profile.profileSongAlbumArt && (
             <VinylRecord
               albumArt={profile.profileSongAlbumArt}
@@ -394,6 +406,15 @@ export function ProfileColumn({ userId }: { userId: string }) {
                   <ShieldCheck className="w-5 h-5 text-site-accent" />
                 </span>
               )}
+              {/* RMH Coins */}
+              <Link
+                href="/rmhcoins"
+                className="inline-flex items-center gap-0.5 shrink-0 hover:opacity-80 transition-opacity"
+                title={`${profile.coins} RMH Coins`}
+              >
+                <CoinIcon className="w-4 h-4" />
+                <span className="text-sm font-bold text-yellow-500">{profile.coins}</span>
+              </Link>
             </div>
             {profile.handle && (
               <p className="text-sm text-site-text-dim">@{profile.handle}</p>
@@ -603,6 +624,8 @@ export function ProfileColumn({ userId }: { userId: string }) {
             website: profile.website,
             showLikes: profile.showLikes,
             dmPrivacy: profile.dmPrivacy,
+            hasProfilePet: profile.hasProfilePet,
+            showProfilePet: profile.showProfilePet,
             profileSongSpotifyId: profile.profileSongSpotifyId,
             profileSongTitle: profile.profileSongTitle,
             profileSongArtist: profile.profileSongArtist,
@@ -617,6 +640,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
                 ...(data.displayName !== undefined ? { name: data.displayName } : {}),
                 ...(data.image !== undefined ? { image: data.image, hasCustomAvatar: !!data.image?.startsWith('/api/profile/avatar/') } : {}),
                 ...(data.handle !== undefined ? { handle: data.handle } : {}),
+                ...(data.showProfilePet !== undefined ? { showProfilePet: data.showProfilePet } : {}),
                 bio: data.bio,
                 location: data.location,
                 website: data.website,

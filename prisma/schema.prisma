@@ -1159,6 +1159,12 @@ model UserProfile {
   profileSongArtist     String?   @db.VarChar(200)
   profileSongPreviewUrl String?   @db.VarChar(500)
   profileSongAlbumArt   String?   @db.VarChar(500)
+
+  // RMH Coins
+  coins                 Int       @default(10)
+  hasProfilePet         Boolean   @default(false)
+  showProfilePet        Boolean   @default(true)
+
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 

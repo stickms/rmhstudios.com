@@ -50,6 +50,7 @@ export async function PATCH(req: NextRequest) {
       profileSongArtist,
       profileSongPreviewUrl,
       profileSongAlbumArt,
+      showProfilePet,
     } = parsed.data;
 
     // Handle change logic
@@ -122,6 +123,7 @@ export async function PATCH(req: NextRequest) {
         website: website || null,
         showLikes: showLikes ?? false,
         ...(dmPrivacy !== undefined ? { dmPrivacy } : {}),
+        ...(showProfilePet !== undefined ? { showProfilePet } : {}),
         ...songFields,
       },
       update: {
@@ -131,6 +133,7 @@ export async function PATCH(req: NextRequest) {
         website: website || null,
         ...(showLikes !== undefined ? { showLikes } : {}),
         ...(dmPrivacy !== undefined ? { dmPrivacy } : {}),
+        ...(showProfilePet !== undefined ? { showProfilePet } : {}),
         ...songFields,
       },
     });
@@ -148,6 +151,8 @@ export async function PATCH(req: NextRequest) {
       profileSongArtist: profile.profileSongArtist,
       profileSongPreviewUrl: profile.profileSongPreviewUrl,
       profileSongAlbumArt: profile.profileSongAlbumArt,
+      hasProfilePet: profile.hasProfilePet,
+      showProfilePet: profile.showProfilePet,
     });
   } catch (error) {
     console.error("Profile update error:", error);

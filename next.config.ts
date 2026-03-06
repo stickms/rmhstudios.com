@@ -80,6 +80,13 @@ const nextConfig: NextConfig = {
     "@eshaz/web-worker",
   ],
 
+  async rewrites() {
+    return [
+      { source: '/@:handle/post/:postid', destination: '/:handle/post/:postid' },
+      { source: '/@:handle', destination: '/profile/:handle' },
+    ];
+  },
+
   async headers() {
     return [
       // ─── Immutable cache for static assets (JS, CSS, fonts, images) ───
