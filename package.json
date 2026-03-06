@@ -127,7 +127,7 @@
     "@types/sanitize-html": "^2.16.0",
     "@types/three": "^0.183.1",
     "@types/turndown": "^5.0.6",
-    "@vitejs/plugin-react": "^5.1.4",
+    "@vitejs/plugin-react-swc": "^4.2.3",
     "concurrently": "^9.2.1",
     "dotenv": "^17.3.1",
     "esbuild": "^0.27.3",
@@ -140,5 +140,8 @@
     "vite": "^7.3.1",
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.0.18"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["@swc/core"]
   }
 }

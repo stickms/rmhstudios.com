@@ -1,7 +1,7 @@
 import { createLogger, defineConfig } from "vite";
 import tsConfigPaths from "vite-tsconfig-paths";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
-import react from "@vitejs/plugin-react";
+import react from "@vitejs/plugin-react-swc";
 import { nitro } from "nitro/vite";
 
 const logger = createLogger();
