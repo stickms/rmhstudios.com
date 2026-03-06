@@ -89,7 +89,7 @@ send_deploy_started() {
 
 update_deploy_status() {
     local status="$1"  # "success" or "fail"
-    local reason="$2"  # optional failure reason
+    local reason="${2:-}"  # optional failure reason
     local color title env_label
 
     get_commit_info

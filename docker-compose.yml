@@ -71,7 +71,7 @@ services:
       - "127.0.0.1:${PORT_SOCKET:-7001}:${PORT_SOCKET:-7001}"
     env_file: ${ENV_FILE:-.env.production}
     environment:
-      - PORT=${PORT_SOCKET:-7001}
+      - SOCKET_PORT=${PORT_SOCKET:-7001}
     command: ["node", "dist-server/server/socket-server/index.js"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:${PORT_SOCKET:-7001}/"]
@@ -88,7 +88,7 @@ services:
       - "127.0.0.1:${PORT_RMHBOX:-7676}:${PORT_RMHBOX:-7676}"
     env_file: ${ENV_FILE:-.env.production}
     environment:
-      - PORT=${PORT_RMHBOX:-7676}
+      - RMHBOX_PORT=${PORT_RMHBOX:-7676}
     command: ["node", "dist-server/server/rmhbox/index.js"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:${PORT_RMHBOX:-7676}/"]
@@ -105,7 +105,7 @@ services:
       - "127.0.0.1:${PORT_RMHTUBE:-7003}:${PORT_RMHTUBE:-7003}"
     env_file: ${ENV_FILE:-.env.production}
     environment:
-      - PORT=${PORT_RMHTUBE:-7003}
+      - RMHTUBE_PORT=${PORT_RMHTUBE:-7003}
     command: ["node", "dist-server/server/rmhtube/index.js"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:${PORT_RMHTUBE:-7003}/"]
