@@ -29,17 +29,6 @@ export async function POST(req: Request) {
 
     const userId = session.user.id;
 
-    // Optional amount param (default 10, used by +50 test button)
-    let amount = 10;
-    try {
-      const body = await req.json();
-      if (typeof body.amount === "number" && body.amount > 0) {
-        amount = Math.floor(body.amount);
-      }
-    } catch {
-      // No body or invalid JSON — use default 10
-    }
-
     const result = await prisma.$transaction(async (tx) => {
       const profile = await tx.userProfile.upsert({
         where: { userId },
@@ -48,14 +37,13 @@ export async function POST(req: Request) {
         select: { coins: true },
       });
 
-      // Only enforce balance check for the default free-claim (10 coins)
-      if (amount === 10 && profile.coins >= 10) {
+      if (profile.coins >= 10) {
         throw new Error("COINS_TOO_HIGH");
       }
 
       return tx.userProfile.update({
         where: { userId },
-        data: { coins: { increment: amount } },
+        data: { coins: { increment: 10 } },
         select: { coins: true },
       });
     });
