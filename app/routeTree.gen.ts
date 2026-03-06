@@ -79,6 +79,7 @@ import { Route as ApiMessagesRouteImport } from './routes/api/messages'
 import { Route as ApiFeedbackRouteImport } from './routes/api/feedback'
 import { Route as AltairMultiplayerRouteImport } from './routes/altair/multiplayer'
 import { Route as SiteRoadmapRouteImport } from './routes/_site/roadmap'
+import { Route as SiteRmhcoinsRouteImport } from './routes/_site/rmhcoins'
 import { Route as SiteBuildsRouteRouteImport } from './routes/_site/builds/route'
 import { Route as SiteAdminRouteRouteImport } from './routes/_site/admin/route'
 import { Route as SecretWeatherIndexRouteImport } from './routes/secret/weather/index'
@@ -89,6 +90,7 @@ import { Route as SecretJobsIndexRouteImport } from './routes/secret/jobs/index'
 import { Route as SecretDocsIndexRouteImport } from './routes/secret/docs/index'
 import { Route as SecretCursedLogicIndexRouteImport } from './routes/secret/cursed-logic/index'
 import { Route as RmhboxMinigamesIndexRouteImport } from './routes/rmhbox/minigames/index'
+import { Route as ApiCoinsIndexRouteImport } from './routes/api/coins/index'
 import { Route as AltairMultiplayerIndexRouteImport } from './routes/altair/multiplayer/index'
 import { Route as SiteUserBuildsIndexRouteImport } from './routes/_site/user-builds/index'
 import { Route as SiteRmhcodeIndexRouteImport } from './routes/_site/rmhcode/index'
@@ -146,6 +148,9 @@ import { Route as ApiForestExplorerSaveRouteImport } from './routes/api/forest-e
 import { Route as ApiFeedStreamRouteImport } from './routes/api/feed/stream'
 import { Route as ApiDreamRiftScoreRouteImport } from './routes/api/dream-rift/score'
 import { Route as ApiDreamRiftLeaderboardRouteImport } from './routes/api/dream-rift/leaderboard'
+import { Route as ApiCoinsPurchaseRouteImport } from './routes/api/coins/purchase'
+import { Route as ApiCoinsClaimRouteImport } from './routes/api/coins/claim'
+import { Route as ApiCoinsBetRouteImport } from './routes/api/coins/bet'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiAltairScoreRouteImport } from './routes/api/altair/score'
 import { Route as ApiAltairMetaRouteImport } from './routes/api/altair/meta'
@@ -564,6 +569,11 @@ const SiteRoadmapRoute = SiteRoadmapRouteImport.update({
   path: '/roadmap',
   getParentRoute: () => SiteRoute,
 } as any)
+const SiteRmhcoinsRoute = SiteRmhcoinsRouteImport.update({
+  id: '/rmhcoins',
+  path: '/rmhcoins',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteBuildsRouteRoute = SiteBuildsRouteRouteImport.update({
   id: '/builds',
   path: '/builds',
@@ -613,6 +623,11 @@ const RmhboxMinigamesIndexRoute = RmhboxMinigamesIndexRouteImport.update({
   id: '/minigames/',
   path: '/minigames/',
   getParentRoute: () => RmhboxRoute,
+} as any)
+const ApiCoinsIndexRoute = ApiCoinsIndexRouteImport.update({
+  id: '/api/coins/',
+  path: '/api/coins/',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AltairMultiplayerIndexRoute = AltairMultiplayerIndexRouteImport.update({
   id: '/',
@@ -902,6 +917,21 @@ const ApiDreamRiftScoreRoute = ApiDreamRiftScoreRouteImport.update({
 const ApiDreamRiftLeaderboardRoute = ApiDreamRiftLeaderboardRouteImport.update({
   id: '/api/dream-rift/leaderboard',
   path: '/api/dream-rift/leaderboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCoinsPurchaseRoute = ApiCoinsPurchaseRouteImport.update({
+  id: '/api/coins/purchase',
+  path: '/api/coins/purchase',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCoinsClaimRoute = ApiCoinsClaimRouteImport.update({
+  id: '/api/coins/claim',
+  path: '/api/coins/claim',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCoinsBetRoute = ApiCoinsBetRouteImport.update({
+  id: '/api/coins/bet',
+  path: '/api/coins/bet',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
@@ -1291,6 +1321,7 @@ export interface FileRoutesByFullPath {
   '/void-breaker': typeof VoidBreakerRoute
   '/admin': typeof SiteAdminRouteRouteWithChildren
   '/builds': typeof SiteBuildsRouteRouteWithChildren
+  '/rmhcoins': typeof SiteRmhcoinsRoute
   '/roadmap': typeof SiteRoadmapRoute
   '/altair/multiplayer': typeof AltairMultiplayerRouteWithChildren
   '/api/feedback': typeof ApiFeedbackRoute
@@ -1358,6 +1389,9 @@ export interface FileRoutesByFullPath {
   '/api/altair/meta': typeof ApiAltairMetaRoute
   '/api/altair/score': typeof ApiAltairScoreRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/coins/bet': typeof ApiCoinsBetRoute
+  '/api/coins/claim': typeof ApiCoinsClaimRoute
+  '/api/coins/purchase': typeof ApiCoinsPurchaseRoute
   '/api/dream-rift/leaderboard': typeof ApiDreamRiftLeaderboardRoute
   '/api/dream-rift/score': typeof ApiDreamRiftScoreRoute
   '/api/feed/stream': typeof ApiFeedStreamRoute
@@ -1415,6 +1449,7 @@ export interface FileRoutesByFullPath {
   '/rmhcode/': typeof SiteRmhcodeIndexRoute
   '/user-builds/': typeof SiteUserBuildsIndexRoute
   '/altair/multiplayer/': typeof AltairMultiplayerIndexRoute
+  '/api/coins/': typeof ApiCoinsIndexRoute
   '/rmhbox/minigames/': typeof RmhboxMinigamesIndexRoute
   '/secret/cursed-logic/': typeof SecretCursedLogicIndexRoute
   '/secret/docs/': typeof SecretDocsIndexRoute
@@ -1482,6 +1517,7 @@ export interface FileRoutesByTo {
   '/synapse-storm': typeof SynapseStormRoute
   '/velum2099': typeof Velum2099Route
   '/void-breaker': typeof VoidBreakerRoute
+  '/rmhcoins': typeof SiteRmhcoinsRoute
   '/roadmap': typeof SiteRoadmapRoute
   '/api/feedback': typeof ApiFeedbackRoute
   '/api/messages': typeof ApiMessagesRouteWithChildren
@@ -1540,6 +1576,9 @@ export interface FileRoutesByTo {
   '/api/altair/meta': typeof ApiAltairMetaRoute
   '/api/altair/score': typeof ApiAltairScoreRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/coins/bet': typeof ApiCoinsBetRoute
+  '/api/coins/claim': typeof ApiCoinsClaimRoute
+  '/api/coins/purchase': typeof ApiCoinsPurchaseRoute
   '/api/dream-rift/leaderboard': typeof ApiDreamRiftLeaderboardRoute
   '/api/dream-rift/score': typeof ApiDreamRiftScoreRoute
   '/api/feed/stream': typeof ApiFeedStreamRoute
@@ -1597,6 +1636,7 @@ export interface FileRoutesByTo {
   '/rmhcode': typeof SiteRmhcodeIndexRoute
   '/user-builds': typeof SiteUserBuildsIndexRoute
   '/altair/multiplayer': typeof AltairMultiplayerIndexRoute
+  '/api/coins': typeof ApiCoinsIndexRoute
   '/rmhbox/minigames': typeof RmhboxMinigamesIndexRoute
   '/secret/cursed-logic': typeof SecretCursedLogicIndexRoute
   '/secret/docs': typeof SecretDocsIndexRoute
@@ -1680,6 +1720,7 @@ export interface FileRoutesById {
   '/void-breaker': typeof VoidBreakerRoute
   '/_site/admin': typeof SiteAdminRouteRouteWithChildren
   '/_site/builds': typeof SiteBuildsRouteRouteWithChildren
+  '/_site/rmhcoins': typeof SiteRmhcoinsRoute
   '/_site/roadmap': typeof SiteRoadmapRoute
   '/altair/multiplayer': typeof AltairMultiplayerRouteWithChildren
   '/api/feedback': typeof ApiFeedbackRoute
@@ -1748,6 +1789,9 @@ export interface FileRoutesById {
   '/api/altair/meta': typeof ApiAltairMetaRoute
   '/api/altair/score': typeof ApiAltairScoreRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/coins/bet': typeof ApiCoinsBetRoute
+  '/api/coins/claim': typeof ApiCoinsClaimRoute
+  '/api/coins/purchase': typeof ApiCoinsPurchaseRoute
   '/api/dream-rift/leaderboard': typeof ApiDreamRiftLeaderboardRoute
   '/api/dream-rift/score': typeof ApiDreamRiftScoreRoute
   '/api/feed/stream': typeof ApiFeedStreamRoute
@@ -1805,6 +1849,7 @@ export interface FileRoutesById {
   '/_site/rmhcode/': typeof SiteRmhcodeIndexRoute
   '/_site/user-builds/': typeof SiteUserBuildsIndexRoute
   '/altair/multiplayer/': typeof AltairMultiplayerIndexRoute
+  '/api/coins/': typeof ApiCoinsIndexRoute
   '/rmhbox/minigames/': typeof RmhboxMinigamesIndexRoute
   '/secret/cursed-logic/': typeof SecretCursedLogicIndexRoute
   '/secret/docs/': typeof SecretDocsIndexRoute
@@ -1889,6 +1934,7 @@ export interface FileRouteTypes {
     | '/void-breaker'
     | '/admin'
     | '/builds'
+    | '/rmhcoins'
     | '/roadmap'
     | '/altair/multiplayer'
     | '/api/feedback'
@@ -1956,6 +2002,9 @@ export interface FileRouteTypes {
     | '/api/altair/meta'
     | '/api/altair/score'
     | '/api/auth/$'
+    | '/api/coins/bet'
+    | '/api/coins/claim'
+    | '/api/coins/purchase'
     | '/api/dream-rift/leaderboard'
     | '/api/dream-rift/score'
     | '/api/feed/stream'
@@ -2013,6 +2062,7 @@ export interface FileRouteTypes {
     | '/rmhcode/'
     | '/user-builds/'
     | '/altair/multiplayer/'
+    | '/api/coins/'
     | '/rmhbox/minigames/'
     | '/secret/cursed-logic/'
     | '/secret/docs/'
@@ -2080,6 +2130,7 @@ export interface FileRouteTypes {
     | '/synapse-storm'
     | '/velum2099'
     | '/void-breaker'
+    | '/rmhcoins'
     | '/roadmap'
     | '/api/feedback'
     | '/api/messages'
@@ -2138,6 +2189,9 @@ export interface FileRouteTypes {
     | '/api/altair/meta'
     | '/api/altair/score'
     | '/api/auth/$'
+    | '/api/coins/bet'
+    | '/api/coins/claim'
+    | '/api/coins/purchase'
     | '/api/dream-rift/leaderboard'
     | '/api/dream-rift/score'
     | '/api/feed/stream'
@@ -2195,6 +2249,7 @@ export interface FileRouteTypes {
     | '/rmhcode'
     | '/user-builds'
     | '/altair/multiplayer'
+    | '/api/coins'
     | '/rmhbox/minigames'
     | '/secret/cursed-logic'
     | '/secret/docs'
@@ -2277,6 +2332,7 @@ export interface FileRouteTypes {
     | '/void-breaker'
     | '/_site/admin'
     | '/_site/builds'
+    | '/_site/rmhcoins'
     | '/_site/roadmap'
     | '/altair/multiplayer'
     | '/api/feedback'
@@ -2345,6 +2401,9 @@ export interface FileRouteTypes {
     | '/api/altair/meta'
     | '/api/altair/score'
     | '/api/auth/$'
+    | '/api/coins/bet'
+    | '/api/coins/claim'
+    | '/api/coins/purchase'
     | '/api/dream-rift/leaderboard'
     | '/api/dream-rift/score'
     | '/api/feed/stream'
@@ -2402,6 +2461,7 @@ export interface FileRouteTypes {
     | '/_site/rmhcode/'
     | '/_site/user-builds/'
     | '/altair/multiplayer/'
+    | '/api/coins/'
     | '/rmhbox/minigames/'
     | '/secret/cursed-logic/'
     | '/secret/docs/'
@@ -2503,6 +2563,9 @@ export interface RootRouteChildren {
   ApiAltairMetaRoute: typeof ApiAltairMetaRoute
   ApiAltairScoreRoute: typeof ApiAltairScoreRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiCoinsBetRoute: typeof ApiCoinsBetRoute
+  ApiCoinsClaimRoute: typeof ApiCoinsClaimRoute
+  ApiCoinsPurchaseRoute: typeof ApiCoinsPurchaseRoute
   ApiDreamRiftLeaderboardRoute: typeof ApiDreamRiftLeaderboardRoute
   ApiDreamRiftScoreRoute: typeof ApiDreamRiftScoreRoute
   ApiFeedStreamRoute: typeof ApiFeedStreamRoute
@@ -2537,6 +2600,7 @@ export interface RootRouteChildren {
   ApiVersecraftSaveRoute: typeof ApiVersecraftSaveRoute
   ApiVoidBreakerLeaderboardRoute: typeof ApiVoidBreakerLeaderboardRoute
   ApiVoidBreakerScoreRoute: typeof ApiVoidBreakerScoreRoute
+  ApiCoinsIndexRoute: typeof ApiCoinsIndexRoute
   ApiAdminCuratedBuildsImageRoute: typeof ApiAdminCuratedBuildsImageRouteWithChildren
   ApiAdminCuratedBuildsReorderRoute: typeof ApiAdminCuratedBuildsReorderRoute
   ApiGamesSynapseStormLeaderboardRoute: typeof ApiGamesSynapseStormLeaderboardRoute
@@ -3042,6 +3106,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteRoadmapRouteImport
       parentRoute: typeof SiteRoute
     }
+    '/_site/rmhcoins': {
+      id: '/_site/rmhcoins'
+      path: '/rmhcoins'
+      fullPath: '/rmhcoins'
+      preLoaderRoute: typeof SiteRmhcoinsRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/builds': {
       id: '/_site/builds'
       path: '/builds'
@@ -3111,6 +3182,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/rmhbox/minigames/'
       preLoaderRoute: typeof RmhboxMinigamesIndexRouteImport
       parentRoute: typeof RmhboxRoute
+    }
+    '/api/coins/': {
+      id: '/api/coins/'
+      path: '/api/coins'
+      fullPath: '/api/coins/'
+      preLoaderRoute: typeof ApiCoinsIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/altair/multiplayer/': {
       id: '/altair/multiplayer/'
@@ -3509,6 +3587,27 @@ declare module '@tanstack/react-router' {
       path: '/api/dream-rift/leaderboard'
       fullPath: '/api/dream-rift/leaderboard'
       preLoaderRoute: typeof ApiDreamRiftLeaderboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/coins/purchase': {
+      id: '/api/coins/purchase'
+      path: '/api/coins/purchase'
+      fullPath: '/api/coins/purchase'
+      preLoaderRoute: typeof ApiCoinsPurchaseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/coins/claim': {
+      id: '/api/coins/claim'
+      path: '/api/coins/claim'
+      fullPath: '/api/coins/claim'
+      preLoaderRoute: typeof ApiCoinsClaimRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/coins/bet': {
+      id: '/api/coins/bet'
+      path: '/api/coins/bet'
+      fullPath: '/api/coins/bet'
+      preLoaderRoute: typeof ApiCoinsBetRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/auth/$': {
@@ -4058,6 +4157,7 @@ const SiteBuildsRouteRouteWithChildren = SiteBuildsRouteRoute._addFileChildren(
 interface SiteRouteChildren {
   SiteAdminRouteRoute: typeof SiteAdminRouteRouteWithChildren
   SiteBuildsRouteRoute: typeof SiteBuildsRouteRouteWithChildren
+  SiteRmhcoinsRoute: typeof SiteRmhcoinsRoute
   SiteRoadmapRoute: typeof SiteRoadmapRoute
   SiteIndexRoute: typeof SiteIndexRoute
   SiteMessagesConversationIdRoute: typeof SiteMessagesConversationIdRoute
@@ -4079,6 +4179,7 @@ interface SiteRouteChildren {
 const SiteRouteChildren: SiteRouteChildren = {
   SiteAdminRouteRoute: SiteAdminRouteRouteWithChildren,
   SiteBuildsRouteRoute: SiteBuildsRouteRouteWithChildren,
+  SiteRmhcoinsRoute: SiteRmhcoinsRoute,
   SiteRoadmapRoute: SiteRoadmapRoute,
   SiteIndexRoute: SiteIndexRoute,
   SiteMessagesConversationIdRoute: SiteMessagesConversationIdRoute,
@@ -4658,6 +4759,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAltairMetaRoute: ApiAltairMetaRoute,
   ApiAltairScoreRoute: ApiAltairScoreRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiCoinsBetRoute: ApiCoinsBetRoute,
+  ApiCoinsClaimRoute: ApiCoinsClaimRoute,
+  ApiCoinsPurchaseRoute: ApiCoinsPurchaseRoute,
   ApiDreamRiftLeaderboardRoute: ApiDreamRiftLeaderboardRoute,
   ApiDreamRiftScoreRoute: ApiDreamRiftScoreRoute,
   ApiFeedStreamRoute: ApiFeedStreamRoute,
@@ -4692,6 +4796,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiVersecraftSaveRoute: ApiVersecraftSaveRoute,
   ApiVoidBreakerLeaderboardRoute: ApiVoidBreakerLeaderboardRoute,
   ApiVoidBreakerScoreRoute: ApiVoidBreakerScoreRoute,
+  ApiCoinsIndexRoute: ApiCoinsIndexRoute,
   ApiAdminCuratedBuildsImageRoute: ApiAdminCuratedBuildsImageRouteWithChildren,
   ApiAdminCuratedBuildsReorderRoute: ApiAdminCuratedBuildsReorderRoute,
   ApiGamesSynapseStormLeaderboardRoute: ApiGamesSynapseStormLeaderboardRoute,

@@ -56,6 +56,7 @@ export const updateProfileSchema = z.object({
     .optional()
     .nullable()
     .or(z.literal("")),
+  showProfilePet: z.boolean().optional(),
 });
 
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;

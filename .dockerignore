@@ -1,0 +1,51 @@
+# ─── Dependencies & build artifacts ──────────────────────────────────
+node_modules
+.output
+.vinxi
+.tanstack
+dist-server
+.pnpm-store
+
+# ─── Version control ────────────────────────────────────────────────
+.git
+.gitignore
+
+# ─── Environment files (injected at runtime, not baked into image) ──
+.env
+.env.*
+!.env.example
+
+# ─── Security ───────────────────────────────────────────────────────
+*.pem
+
+# ─── Dev / editor files ─────────────────────────────────────────────
+.DS_Store
+.vscode
+.claude
+.venv
+coverage
+
+# ─── Docker files (no recursion) ────────────────────────────────────
+Dockerfile
+Dockerfile.*
+docker-compose*.yml
+.dockerignore
+
+# ─── CLI sub-package ────────────────────────────────────────────────
+cli/dist
+cli/node_modules
+
+# ─── DB artifacts ───────────────────────────────────────────────────
+db/avatars
+db/builds
+db/music
+
+# ─── Documentation ──────────────────────────────────────────────────
+docs
+*.md
+!README.md
+
+# ─── Testing ────────────────────────────────────────────────────────
+testing
+specs
+vitest.config.ts

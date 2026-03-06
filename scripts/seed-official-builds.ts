@@ -65,7 +65,7 @@ async function main() {
       userId: systemUser.id,
       position: build.position,
       categoryId: build.type === 'game' ? gamesCategory.id : appsCategory.id,
-      technologies: JSON.stringify(build.tags),
+      technologies: build.tags,
       publishedAt: new Date(),
     };
 
