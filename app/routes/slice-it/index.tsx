@@ -3,7 +3,7 @@ import { Suspense } from 'react'
 import { GameCanvas } from '@/components/game/GameCanvas'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
-import { DarkModeWrapper } from '@/app/slice-it/DarkModeWrapper'
+import { DarkModeWrapper } from '@/components/slice-it/DarkModeWrapper'
 
 function SliceItPage() {
   return (

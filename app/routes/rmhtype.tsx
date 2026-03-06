@@ -7,7 +7,7 @@ import { createServerFn } from '@tanstack/react-start';
 import { auth } from '@/lib/auth';
 import { getRequest } from '@tanstack/react-start/server';
 import RmhTypeShell from '@/components/rmhtype/RmhTypeShell';
-import '@/app/rmhtype/rmhtype.css';
+import '@/components/rmhtype/rmhtype.css';
 
 const checkAuth = createServerFn({ method: 'GET' }).handler(async () => {
   const request = getRequest();

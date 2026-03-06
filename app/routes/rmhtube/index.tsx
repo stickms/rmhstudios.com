@@ -3,7 +3,7 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
-import RmhTubePage from '@/app/rmhtube/page';
+import RmhTubePage from '@/components/rmhtube/RmhTubeLanding';
 
 export const Route = createFileRoute('/rmhtube/')({
   component: RmhTubePage,

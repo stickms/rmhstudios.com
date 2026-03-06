@@ -3,7 +3,7 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
-import RmhMusicPlayerPage from '@/app/rmhmusic/player/page';
+import RmhMusicPlayerPage from '@/components/rmhmusic/RmhMusicPlayerPage';
 
 export const Route = createFileRoute('/rmhmusic/player')({
   component: RmhMusicPlayerPage,

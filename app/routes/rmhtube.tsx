@@ -10,7 +10,7 @@ import { createServerFn } from '@tanstack/react-start';
 import { auth } from '@/lib/auth';
 import { getRequest } from '@tanstack/react-start/server';
 import RmhTubeShell from '@/components/rmhtube/RmhTubeShell';
-import '@/app/rmhtube/rmhtube.css';
+import '@/components/rmhtube/rmhtube.css';
 
 const checkAuth = createServerFn({ method: 'GET' }).handler(async () => {
   const request = getRequest();

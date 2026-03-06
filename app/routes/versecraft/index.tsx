@@ -8,7 +8,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
 import { getRequest } from '@tanstack/react-start/server'
 import { auth } from '@/lib/auth'
-import { VersecraftClient } from '@/app/versecraft/client'
+import { VersecraftClient } from '@/components/versecraft/VersecraftClient'
 
 const checkLoginStatus = createServerFn({ method: 'GET' }).handler(async () => {
   try {

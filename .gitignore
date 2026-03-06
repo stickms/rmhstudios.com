@@ -20,6 +20,7 @@
 # tanstack start / vinxi
 .vinxi/
 .output/
+.tanstack/
 
 # production
 /build
@@ -28,6 +29,7 @@
 # misc
 .DS_Store
 *.pem
+.vscode
 
 # debug
 npm-debug.log*

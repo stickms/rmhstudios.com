@@ -63,7 +63,7 @@ export const useFeedStore = create<FeedState>((set, get) => ({
       });
     } catch (error) {
       console.error("Feed fetch error:", error);
-      set({ loading: false });
+      set({ loading: false, hasMore: false });
     }
   },
 

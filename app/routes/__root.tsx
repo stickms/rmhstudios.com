@@ -7,7 +7,6 @@ import {
 } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { Providers } from "@/components/Providers";
-import { Shell } from "@/components/site/Shell";
 import { TwemojiProvider } from "@/components/ui/TwemojiProvider";
 import appCss from "@/app/globals.css?url";
 
@@ -64,9 +63,7 @@ function RootComponent() {
   return (
     <Providers>
       <TwemojiProvider tag="div">
-        <Shell>
-          <Outlet />
-        </Shell>
+        <Outlet />
       </TwemojiProvider>
     </Providers>
   );
