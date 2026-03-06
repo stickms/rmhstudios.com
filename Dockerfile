@@ -110,6 +110,11 @@ COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
 # ─── Content (news MDX files etc.) ──────────────────────────────────────────
 COPY --from=builder --chown=nextjs:nodejs /app/content ./content
 
+# ─── Prisma schema + config (needed for `prisma db push` during deploy) ─────
+COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
+COPY --from=builder --chown=nextjs:nodejs /app/prisma.config.ts ./prisma.config.ts
+COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
+
 USER nextjs
 
 EXPOSE 7005 7001 7676 7003
