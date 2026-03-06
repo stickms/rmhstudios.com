@@ -1,0 +1,33 @@
+/**
+ * Altair Layout — Auth Gate + Theme Shell
+ *
+ * Wraps all /altair routes with authentication and the Altair theme system.
+ * Unauthenticated users are redirected to /login with a callback URL.
+ */
+
+import { createFileRoute, Outlet, redirect } from '@tanstack/react-router'
+import { createServerFn } from '@tanstack/react-start'
+import { getWebRequest } from '@tanstack/react-start/server'
+import { auth } from '@/lib/auth'
+import AltairShell from '@/components/altair/AltairShell'
+import '@/app/altair/altair.css'
+
+const checkAuth = createServerFn({ method: 'GET' }).handler(async () => {
+  const request = getWebRequest()
+  const session = await auth.api.getSession({ headers: request.headers })
+  if (!session?.user) throw redirect({ to: '/login', search: { callbackURL: '/altair' } })
+  return { user: session.user }
+})
+
+function AltairLayout() {
+  return (
+    <AltairShell>
+      <Outlet />
+    </AltairShell>
+  )
+}
+
+export const Route = createFileRoute('/altair')({
+  beforeLoad: () => checkAuth(),
+  component: AltairLayout,
+})

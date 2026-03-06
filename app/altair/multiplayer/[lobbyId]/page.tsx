@@ -8,9 +8,8 @@
 
 'use client';
 
-import { useEffect, useState, useCallback, use } from 'react';
+import { useEffect, useState, useCallback, use, lazy, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
-import dynamic from 'next/dynamic';
 import { connectToAltair, emit } from '@/lib/altair/multiplayer/socket';
 import { useAltairMultiplayerStore } from '@/lib/altair/multiplayer/store';
 import { C2S, S2C } from '@/lib/altair/multiplayer/events';
@@ -20,25 +19,14 @@ import ClassSelectLobby from '@/components/altair/multiplayer/ClassSelectLobby';
 import LobbyWaiting from '@/components/altair/multiplayer/LobbyWaiting';
 import type { GameResultsData } from '@/lib/altair/multiplayer/types';
 
-// Dynamic import for the multiplayer game screen (no SSR)
-const MultiplayerGameScreen = dynamic(
+// Lazy import for the multiplayer game screen
+const MultiplayerGameScreen = lazy(
   () => import('@/components/altair/multiplayer/MultiplayerGameScreen'),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="fixed inset-0 bg-(--altair-bg) flex items-center justify-center">
-        <div className="text-(--altair-accent) font-mono tracking-widest animate-pulse text-sm">
-          LOADING GAME...
-        </div>
-      </div>
-    ),
-  },
 );
 
-// Dynamic import for results screen
-const MultiplayerResultsScreen = dynamic(
+// Lazy import for results screen
+const MultiplayerResultsScreen = lazy(
   () => import('@/components/altair/multiplayer/MultiplayerResultsScreen'),
-  { ssr: false },
 );
 
 export default function AltairLobbyPage({ params }: { params: Promise<{ lobbyId: string }> }) {
@@ -157,20 +145,32 @@ export default function AltairLobbyPage({ params }: { params: Promise<{ lobbyId:
 
   // Game in progress
   if (lobby.state === 'PLAYING' || gameStarted) {
-    return <MultiplayerGameScreen lobbyId={lobbyId} />;
+    return (
+      <Suspense fallback={
+        <div className="fixed inset-0 bg-(--altair-bg) flex items-center justify-center">
+          <div className="text-(--altair-accent) font-mono tracking-widest animate-pulse text-sm">
+            LOADING GAME...
+          </div>
+        </div>
+      }>
+        <MultiplayerGameScreen lobbyId={lobbyId} />
+      </Suspense>
+    );
   }
 
   // Results
   if (lobby.state === 'RESULTS' && results) {
     return (
-      <MultiplayerResultsScreen
-        results={results}
-        onPlayAgain={() => {
-          // Host restarts, others stay in lobby
-          useAltairMultiplayerStore.getState().setResults(null as unknown as GameResultsData);
-        }}
-        onLeave={handleLeave}
-      />
+      <Suspense fallback={null}>
+        <MultiplayerResultsScreen
+          results={results}
+          onPlayAgain={() => {
+            // Host restarts, others stay in lobby
+            useAltairMultiplayerStore.getState().setResults(null as unknown as GameResultsData);
+          }}
+          onLeave={handleLeave}
+        />
+      </Suspense>
     );
   }
 

@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useCallback, useRef } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useGameStore } from '@/lib/versecraft/store';
 import { loadGame } from '@/lib/versecraft/persistence';
 import { MainMenu } from './MainMenu';
@@ -30,8 +29,8 @@ export function VersecraftGame({ isLoggedIn }: { isLoggedIn: boolean }) {
   const setScreen = useGameStore(s => s.setScreen);
   const triggerAutoSave = useGameStore(s => s.triggerAutoSave);
 
-  const searchParams = useSearchParams();
-  const router = useRouter();
+  const searchParams = useSearch({ strict: false }) as Record<string, string | undefined>;
+  const navigate = useNavigate();
   const initializedRef = useRef(false);
 
   // Set logged-in state on mount
@@ -44,7 +43,7 @@ export function VersecraftGame({ isLoggedIn }: { isLoggedIn: boolean }) {
     if (initializedRef.current) return;
     initializedRef.current = true;
 
-    const urlScreen = searchParams.get('s') as GameScreen | null;
+    const urlScreen = (searchParams.s ?? null) as GameScreen | null;
     if (urlScreen && RESTORABLE_SCREENS.has(urlScreen) && urlScreen !== 'menu') {
       // Only restore if there's a save to load
       const hasSave = !!loadGame(0);
@@ -68,11 +67,11 @@ export function VersecraftGame({ isLoggedIn }: { isLoggedIn: boolean }) {
     const params = new URLSearchParams(window.location.search);
     const currentUrlScreen = params.get('s');
     if (screen !== 'menu' && currentUrlScreen !== screen) {
-      router.replace(`/versecraft?s=${screen}`, { scroll: false });
+      navigate({ to: `/versecraft?s=${screen}`, replace: true });
     } else if (screen === 'menu' && currentUrlScreen) {
-      router.replace('/versecraft', { scroll: false });
+      navigate({ to: '/versecraft', replace: true });
     }
-  }, [screen, router]);
+  }, [screen, navigate]);
 
   // Track playtime every second
   useEffect(() => {
@@ -139,7 +138,7 @@ export function VersecraftGame({ isLoggedIn }: { isLoggedIn: boolean }) {
     >
       {/* Back to builds button */}
       <Link
-        href="/builds"
+        to="/builds"
         className="absolute top-4 left-4 z-50 flex items-center gap-1.5 px-3 py-1.5 rounded text-xs transition-all hover:brightness-125"
         style={{
           backgroundColor: 'rgba(26, 21, 32, 0.8)',

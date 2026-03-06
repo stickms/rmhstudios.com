@@ -1,11 +1,9 @@
 'use client';
 
-import dynamic from 'next/dynamic';
-import { Suspense } from 'react';
+import { lazy, Suspense } from 'react';
 
-const VersecraftGame = dynamic(
+const VersecraftGame = lazy(
   () => import('@/components/versecraft/VersecraftGame').then(m => ({ default: m.VersecraftGame })),
-  { ssr: false }
 );
 
 export function VersecraftClient({ isLoggedIn }: { isLoggedIn: boolean }) {

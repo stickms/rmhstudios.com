@@ -1,0 +1,36 @@
+import { createAPIFileRoute } from "@tanstack/react-start/api";
+import { readFile } from "fs/promises";
+import path from "path";
+import { resolvePathUnder } from "@/lib/slice-it/upload-validation";
+
+export const APIRoute = createAPIFileRoute("/api/profile/avatar/$filename")({
+  GET: async ({ request, params }) => {
+  try {
+    const { filename } = params;
+    const safeName = path.basename(filename);
+    const avatarDir = path.join(process.cwd(), "db", "avatars");
+    const filePath = resolvePathUnder(avatarDir, safeName);
+    if (!filePath) {
+      return new Response("Not Found", { status: 404 });
+    }
+
+    const buffer = await readFile(filePath);
+
+    const ext = path.extname(safeName).toLowerCase();
+    let contentType = "application/octet-stream";
+    if (ext === ".png") contentType = "image/png";
+    if (ext === ".jpg" || ext === ".jpeg") contentType = "image/jpeg";
+    if (ext === ".webp") contentType = "image/webp";
+    if (ext === ".gif") contentType = "image/gif";
+
+    return new Response(buffer, {
+      headers: {
+        "Content-Type": contentType,
+        "Cache-Control": "public, max-age=31536000, immutable",
+      },
+    });
+  } catch {
+    return new Response("Not Found", { status: 404 });
+  }
+},
+});

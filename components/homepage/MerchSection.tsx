@@ -5,8 +5,7 @@ import { SurfaceCard } from "@/components/ui/SurfaceCard";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
-import Image from "next/image";
-import Link from "next/link";
+import { Link } from "@tanstack/react-router";
 
 const merchItems = [
   {
@@ -52,11 +51,10 @@ export function MerchSection() {
                 <div className="aspect-square bg-site-bg rounded-xl mb-4 relative overflow-hidden group">
                   {/* Image Container */}
                   <div className="w-full h-full relative z-10 transition-transform duration-500 group-hover:scale-105">
-                    <Image
+                    <img
                       src={item.image}
                       alt={item.title}
-                      fill
-                      className="object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-500"
+                      className="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-500"
                     />
                   </div>
 
@@ -87,7 +85,7 @@ export function MerchSection() {
           viewport={{ once: true }}
           className="flex justify-center"
         >
-          <Link href="#">
+          <Link to="#">
             <Button variant="accent-outline">Visit Full Store</Button>
           </Link>
         </motion.div>

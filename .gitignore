@@ -13,9 +13,13 @@
 # testing
 /coverage
 
-# next.js
+# next.js (legacy)
 /.next/
 /out/
+
+# tanstack start / vinxi
+.vinxi/
+.output/
 
 # production
 /build

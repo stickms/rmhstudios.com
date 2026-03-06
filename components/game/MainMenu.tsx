@@ -13,7 +13,7 @@ import { BeatDetector } from '@/lib/audio/BeatDetector'; // New Import
 import { MultiplayerFactory } from '@/lib/game/MultiplayerFactory';
 import { BeatMap } from '@/lib/game/types';
 import { authClient } from "@/lib/auth-client";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import { SongLibrary } from '@/components/game/SongLibrary';
 import { CalibrationScreen } from '@/components/game/CalibrationScreen';
 import { MultiplayerLobby } from '@/components/game/MultiplayerLobby';
@@ -93,8 +93,8 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
     const setIsDarkMode = useGameStore(state => state.setIsDarkMode);
     const engine = propEngine;
     const session = authClient.useSession();
-    const router = useRouter();
-    const searchParams = useSearchParams();
+    const navigate = useNavigate();
+    const search = useSearch({ strict: false }) as Record<string, string | undefined>;
     // Remove local state
     // const [volume, setVolume] = React.useState(100); 
     const [isLoading, setIsLoading] = React.useState(false);
@@ -168,10 +168,10 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
 
     // Auto-open multiplayer lobby when joining via invite link
     React.useEffect(() => {
-        if (searchParams.get('lobby')) {
+        if (search.lobby) {
             setShowMultiplayer(true);
         }
-    }, [searchParams]);
+    }, [search]);
     
     // Apply volume on mount
     React.useEffect(() => {
@@ -492,7 +492,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                              <div className="space-y-6">
                                 <Button
                                     className="w-full py-6 sm:py-12 text-xl sm:text-3xl font-black tracking-widest bg-blue-500 hover:bg-blue-400 text-white shadow-[15px_15px_30px_rgba(59,130,246,0.4),-15px_-15px_30px_var(--slice-shadow-light)] rounded-[2.5rem] transition-all transform hover:scale-[1.03] active:scale-95 uppercase"
-                                    onClick={() => router.push('/login')}
+                                    onClick={() => navigate({ to: '/login' })}
                                 >
                                     Log In
                                 </Button>

@@ -1,13 +1,12 @@
 'use client';
 
-import { useState, useCallback } from 'react';
-import dynamic from 'next/dynamic';
+import { useState, useCallback, lazy, Suspense } from 'react';
 import { useDocumentStore } from '@/lib/store/useDocumentStore';
 import type { StoredDocument } from '@/lib/store/useDocumentStore';
 import type { DocumentInfo } from '@/lib/rmh-utils/types';
 import SheetsHome from './SheetsHome';
 
-const SheetsEditor = dynamic(() => import('./SheetsEditor'), { ssr: false });
+const SheetsEditor = lazy(() => import('./SheetsEditor'));
 
 const ACCENT = '#10b981';
 
@@ -65,12 +64,14 @@ export default function SheetsApp() {
   if (currentDoc) {
     return (
       <div className="sheets-theme h-screen flex flex-col" style={{ background: 'var(--sheets-bg)', color: 'var(--sheets-text)' }}>
-        <SheetsEditor
-          document={currentDoc}
-          onBack={handleBack}
-          onRename={(title) => handleRename(currentDoc.id, title)}
-          onToggleFavorite={() => handleFavorite(currentDoc.id, !currentDoc.isFavorite)}
-        />
+        <Suspense fallback={null}>
+          <SheetsEditor
+            document={currentDoc}
+            onBack={handleBack}
+            onRename={(title) => handleRename(currentDoc.id, title)}
+            onToggleFavorite={() => handleFavorite(currentDoc.id, !currentDoc.isFavorite)}
+          />
+        </Suspense>
       </div>
     );
   }

@@ -1,24 +1,13 @@
 "use client";
 
-import Link from "next/link";
+import React, { Suspense } from "react";
+import { Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
-import dynamic from "next/dynamic";
 
-const HouseAlwaysWinsGame = dynamic(
-  () =>
-    import("./game/HouseAlwaysWinsGame").then((m) => ({
-      default: m.HouseAlwaysWinsGame,
-    })),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex items-center justify-center w-full h-full">
-        <div className="text-neutral-600 text-sm font-mono tracking-widest animate-pulse">
-          LOADING...
-        </div>
-      </div>
-    ),
-  }
+const HouseAlwaysWinsGame = React.lazy(() =>
+  import("./game/HouseAlwaysWinsGame").then((m) => ({
+    default: m.HouseAlwaysWinsGame,
+  }))
 );
 
 interface GameShellProps {
@@ -31,7 +20,7 @@ export function GameShell({ userName }: GameShellProps) {
       {/* Top bar */}
       <div className="shrink-0 flex items-center justify-between px-4 py-2 border-b border-neutral-800/50 z-20">
         <Link
-          href="/secret"
+          to="/secret"
           className="flex items-center gap-2 text-neutral-500 hover:text-neutral-300 transition-colors text-sm"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -52,7 +41,17 @@ export function GameShell({ userName }: GameShellProps) {
 
       {/* Game area */}
       <div className="flex-1 min-h-0 flex items-center justify-center bg-black">
-        <HouseAlwaysWinsGame />
+        <Suspense
+          fallback={
+            <div className="flex items-center justify-center w-full h-full">
+              <div className="text-neutral-600 text-sm font-mono tracking-widest animate-pulse">
+                LOADING...
+              </div>
+            </div>
+          }
+        >
+          <HouseAlwaysWinsGame />
+        </Suspense>
       </div>
     </div>
   );

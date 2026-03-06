@@ -112,7 +112,7 @@ PM2_BIN=$(which pm2 2>/dev/null)   ; PM2_BIN=${PM2_BIN:-/home/rmhstudios/.nvm/ve
 NODE_BIN=$(which node 2>/dev/null) ; NODE_BIN=${NODE_BIN:-/home/rmhstudios/.nvm/versions/node/v25.6.1/bin/node}
 
 cleanup() {
-    rm -rf "$REPO_DIR/.next-backup" "$REPO_DIR/dist-server-backup"
+    rm -rf "$REPO_DIR/.output-backup" "$REPO_DIR/dist-server-backup"
     rm -f "$DEPLOY_LOG"
 }
 trap cleanup EXIT
@@ -141,12 +141,13 @@ stop_apps() {
 }
 
 start_apps() {
-    log "Starting Next.js on port $PORT_WEB..."
+    log "Starting Nitro server on port $PORT_WEB..."
     "$PM2_BIN" start "$NODE_BIN" \
         --name "$APP_WEB" \
         --restart-delay=3000 \
         --max-restarts=5 \
-        -- node_modules/next/dist/bin/next start -p "$PORT_WEB"
+        --env PORT="$PORT_WEB" \
+        -- .output/server/index.mjs
 
     log "Starting Socket.IO server on port $PORT_SOCKET..."
     "$PM2_BIN" start "$NODE_BIN" \
@@ -173,10 +174,10 @@ start_apps() {
 }
 
 restore_backup() {
-    log "Restoring previous build artifacts \u2014 current servers remain running."
-    if [ -d ".next-backup" ]; then
-        rm -rf .next
-        mv .next-backup .next
+    log "Restoring previous build artifacts — current servers remain running."
+    if [ -d ".output-backup" ]; then
+        rm -rf .output
+        mv .output-backup .output
     fi
     if [ -d "dist-server-backup" ]; then
         rm -rf dist-server
@@ -243,7 +244,7 @@ yes | "$PNPM_BIN" run db:push || {
 }
 
 log "Backing up current build artifacts..."
-[ -d ".next" ]       && cp -a .next .next-backup
+[ -d ".output" ]     && cp -a .output .output-backup
 [ -d "dist-server" ] && cp -a dist-server dist-server-backup
 
 
@@ -256,7 +257,7 @@ if ! "$PNPM_BIN" run build; then
 fi
 
 build_ok=true
-[ -d ".next" ]                                      || { log "ERROR: .next missing after build.";                build_ok=false; }
+[ -f ".output/server/index.mjs" ]                    || { log "ERROR: .output/server/index.mjs missing after build."; build_ok=false; }
 [ -f "dist-server/server/socket-server/index.js" ]  || { log "ERROR: socket-server/index.js missing after build."; build_ok=false; }
 [ -f "dist-server/server/rmhbox/index.js" ]          || { log "ERROR: rmhbox/index.js missing after build.";       build_ok=false; }
 [ -f "dist-server/server/rmhtube/index.js" ]         || { log "ERROR: rmhtube/index.js missing after build.";      build_ok=false; }
@@ -268,7 +269,7 @@ if [ "$build_ok" != "true" ]; then
     exit 1
 fi
 
-rm -rf .next-backup dist-server-backup
+rm -rf .output-backup dist-server-backup
 
 log "Build successful. Swapping processes..."
 stop_apps

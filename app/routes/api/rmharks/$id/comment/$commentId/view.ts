@@ -1,0 +1,43 @@
+import { createAPIFileRoute } from "@tanstack/react-start/api";
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import crypto from "crypto";
+
+export const APIRoute = createAPIFileRoute("/api/rmharks/$id/comment/$commentId/view")({
+  POST: async ({ request, params }) => {
+  try {
+    const { commentId } = params;
+
+    let userId: string | null = null;
+    try {
+      const session = await auth.api.getSession({ headers: request.headers });
+      userId = session?.user?.id ?? null;
+    } catch {
+      // Not logged in
+    }
+
+    const forwarded = request.headers.get("x-forwarded-for");
+    const ip = forwarded?.split(",")[0]?.trim() || "unknown";
+    const ipHash = crypto.createHash("sha256").update(ip).digest("hex").slice(0, 16);
+
+    if (userId) {
+      await prisma.rMHarkCommentView.upsert({
+        where: { commentId_userId: { commentId, userId } },
+        create: { commentId, userId, ipHash },
+        update: {},
+      });
+    } else {
+      await prisma.rMHarkCommentView.upsert({
+        where: { commentId_ipHash: { commentId, ipHash } },
+        create: { commentId, ipHash },
+        update: {},
+      });
+    }
+
+    return Response.json({ success: true });
+  } catch (error) {
+    console.error("Comment view error:", error);
+    return Response.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+},
+});

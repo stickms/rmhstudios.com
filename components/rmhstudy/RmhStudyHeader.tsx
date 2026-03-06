@@ -3,7 +3,7 @@
  */
 'use client';
 
-import Link from 'next/link';
+import { Link } from '@tanstack/react-router';
 import { ArrowLeft, Circle } from 'lucide-react';
 import { useRmhStudyStore } from '@/lib/rmhstudy/store';
 
@@ -38,7 +38,7 @@ export default function RmhStudyHeader({
       <div className="flex items-center gap-2 z-10">
         {backHref ? (
           <Link
-            href={backHref}
+            to={backHref}
             onClick={onBack}
             className="flex items-center gap-1.5 text-sm font-medium transition-colors text-(--rmhstudy-text-muted) hover:text-(--rmhstudy-text)"
           >

@@ -1,7 +1,7 @@
 'use client';
 
 import { CheckCircle2, XCircle, Clock, FileCode2, AlertTriangle } from 'lucide-react';
-import Link from 'next/link';
+import { Link } from '@tanstack/react-router';
 
 interface Application {
     id: string;
@@ -60,7 +60,7 @@ function ApplicationCard({ application: app }: { application: Application }) {
             <div className="flex items-start justify-between gap-3 mb-3">
                 <div>
                     <Link
-                        href={`/secret/jobs/${app.job.id}`}
+                        to={`/secret/jobs/${app.job.id}`}
                         className="font-semibold hover:text-(--jobs-accent) transition-colors"
                     >
                         {app.job.title}
@@ -115,7 +115,7 @@ function ApplicationCard({ application: app }: { application: Application }) {
             {/* OA action button */}
             {app.assessment && !app.assessment.submittedAt && app.status === 'oa_invited' && (
                 <Link
-                    href={`/secret/jobs/assessment/${app.assessment.id}`}
+                    to={`/secret/jobs/assessment/${app.assessment.id}`}
                     className="jobs-btn-primary inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm"
                     style={{ borderRadius: 'var(--jobs-radius-sm)' }}
                 >

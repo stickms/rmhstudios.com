@@ -6,7 +6,7 @@ interface PageProps {
 }
 
 async function getBuild(slug: string) {
-  const baseUrl = process.env.NEXT_PUBLIC_BETTER_AUTH_URL || 'http://localhost:3000';
+  const baseUrl = import.meta.env.VITE_BETTER_AUTH_URL || 'http://localhost:3000';
   const res = await fetch(`${baseUrl}/api/user-builds/${slug}`, {
     cache: 'no-store',
   });

@@ -28,7 +28,7 @@ import {
 } from "@/lib/feedback-schema";
 import { authClient } from "@/lib/auth-client";
 import { toast } from "sonner";
-import Link from "next/link";
+import { Link } from "@tanstack/react-router";
 
 type FieldErrors = Partial<Record<string, string>>;
 
@@ -338,7 +338,7 @@ export function FeedbackModal() {
               <LogIn className="h-4 w-4 text-site-text-dim" />
               <span className="text-sm text-site-text-muted">
                 <Link
-                  href="/login"
+                  to="/login"
                   className="text-site-accent hover:underline font-medium"
                 >
                   Sign in

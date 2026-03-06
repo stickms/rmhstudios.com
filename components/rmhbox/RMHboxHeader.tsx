@@ -19,8 +19,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { ArrowLeft, Circle, Infinity, Pause, Play } from 'lucide-react';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { emit } from '@/lib/rmhbox/socket';
@@ -143,7 +142,7 @@ export default function RMHboxHeader({
   const updateSettings = useRMHboxStore((s) => s.updateSettings);
   const timerInfo = useRMHboxStore((s) => s.timerInfo);
   const lobby = useRMHboxStore((s) => s.lobby);
-  const router = useRouter();
+  const navigate = useNavigate();
 
   const handleToggleTheme = useCallback(() => {
     updateSettings({ theme: theme === 'dark' ? 'light' : 'dark' });
@@ -175,7 +174,7 @@ export default function RMHboxHeader({
       <div className="flex items-center gap-2 z-10">
         {hasBackLink && (
           <Link
-            href={backHref ?? '/rmhbox'}
+            to={backHref ?? '/rmhbox'}
             className="text-sm font-medium text-(--rmhbox-text-muted) hover:text-(--rmhbox-accent) transition-colors text-nowrap"
             // when in a lobby, the back link becomes a "Leave" action that also disconnects from the lobby
             onClick={(e) => {
@@ -184,7 +183,7 @@ export default function RMHboxHeader({
                 if (!lobby) return;
                 emit(C2S.LOBBY_LEAVE, { lobbyId: lobby.lobbyId });
                 useRMHboxStore.getState().leaveLobby();
-                router.push('/rmhbox');
+                navigate({ to: '/rmhbox' });
               }
             }}
           >

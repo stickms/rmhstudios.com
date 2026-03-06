@@ -1,20 +1,16 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, lazy, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import dynamic from 'next/dynamic';
 import { MDXRemote } from 'next-mdx-remote';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 
-// Load Monaco editor dynamically to avoid SSR "window is not defined" or initialization errors
-const Editor = dynamic(() => import('@/components/admin/DynamicMonacoEditor'), {
-  ssr: false,
-  loading: () => <div className="flex-1 flex items-center justify-center bg-site-surface border border-site-border rounded-md text-site-text-muted">Loading Editor...</div>,
-});
+// Load Monaco editor lazily to avoid SSR "window is not defined" or initialization errors
+const Editor = lazy(() => import('@/components/admin/DynamicMonacoEditor'));
 import { serialize } from 'next-mdx-remote/serialize';
 import {
   AnimatedH1, AnimatedH2, AnimatedH3, AnimatedP,
@@ -186,18 +182,20 @@ export function MDXEditor({ initialData, isEdit = false }: { initialData?: any, 
                         <div className="flex-1 flex flex-col min-h-0 h-full">
                             <Label className="mb-2">Content <span className="text-red-500">*</span></Label>
                             <div className="flex-1 border border-site-border rounded-md overflow-hidden relative min-h-0">
-                              <Editor
-                                height="100%"
-                                defaultLanguage="markdown"
-                                theme="vs-dark"
-                                value={content}
-                                onChange={handleEditorChange}
-                                options={{
-                                  wordWrap: 'on',
-                                  minimap: { enabled: false },
-                                  scrollBeyondLastLine: false,
-                                }}
-                              />
+                              <Suspense fallback={<div className="flex-1 flex items-center justify-center bg-site-surface border border-site-border rounded-md text-site-text-muted">Loading Editor...</div>}>
+                                <Editor
+                                  height="100%"
+                                  defaultLanguage="markdown"
+                                  theme="vs-dark"
+                                  value={content}
+                                  onChange={handleEditorChange}
+                                  options={{
+                                    wordWrap: 'on',
+                                    minimap: { enabled: false },
+                                    scrollBeyondLastLine: false,
+                                  }}
+                                />
+                              </Suspense>
                             </div>
                         </div>
                     </div>

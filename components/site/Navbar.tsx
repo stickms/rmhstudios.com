@@ -1,7 +1,6 @@
 'use client';
 
-import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { Link, useLocation, useNavigate } from '@tanstack/react-router';
 import { useState, useEffect, useRef } from 'react';
 import { authClient } from '@/lib/auth-client';
 import { useSession, useResolvedUser } from '@/components/Providers';
@@ -10,8 +9,8 @@ import { Button } from '@/components/ui/button';
 import { useThemeStore, SITE_STYLES, SiteStyle } from '@/stores/themeStore';
 
 export function Navbar() {
-  const pathname = usePathname();
-  const router = useRouter();
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showStyleMenu, setShowStyleMenu] = useState(false);
@@ -55,8 +54,8 @@ export function Navbar() {
     await authClient.signOut({
       fetchOptions: {
         onSuccess: () => {
-          router.push('/');
-          router.refresh();
+          navigate({ to: '/' });
+          window.location.reload();
         }
       }
     });
@@ -77,7 +76,7 @@ export function Navbar() {
         <div className="flex items-center justify-between h-16">
 
           {/* Logo */}
-          <Link href="/" className="shrink-0">
+          <Link to="/" className="shrink-0">
             <span className="font-(family-name:--site-font-display) font-bold text-xl text-site-text">
               RMH<span className="text-site-accent">STUDIOS</span>
             </span>
@@ -89,7 +88,7 @@ export function Navbar() {
               {links.map((link) => (
                 <Link
                   key={link.href}
-                  href={link.href}
+                  to={link.href}
                   className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${pathname === link.href
                     ? 'text-site-accent bg-site-accent-dim'
                     : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
@@ -181,7 +180,7 @@ export function Navbar() {
                 )}
               </div>
             ) : (
-              <Link href="/login">
+              <Link to="/login">
                 <Button variant="accent" size="sm">
                   Sign In
                 </Button>
@@ -242,7 +241,7 @@ export function Navbar() {
             {links.map((link) => (
               <Link
                 key={link.href}
-                href={link.href}
+                to={link.href}
                 onClick={() => setIsOpen(false)}
                 className={`block px-3 py-2 rounded-lg text-base font-medium ${pathname === link.href
                   ? 'text-site-accent bg-site-accent-dim'
@@ -286,7 +285,7 @@ export function Navbar() {
               </div>
             ) : (
               <div className="px-4">
-                <Link href="/login" onClick={() => setIsOpen(false)}>
+                <Link to="/login" onClick={() => setIsOpen(false)}>
                   <Button variant="accent" className="w-full">
                     Sign In
                   </Button>

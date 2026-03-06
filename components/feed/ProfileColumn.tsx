@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { MapPin, Link as LinkIcon, Calendar, Loader2, ArrowLeft, MessageCircle, BadgeCheck, ShieldCheck } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import { authClient } from '@/lib/auth-client';
 import { useResolvedUser } from '@/components/Providers';
@@ -10,7 +10,7 @@ import { RMHarkCard } from './RMHarkCard';
 import { ProfileEditModal } from './ProfileEditModal';
 import { SocialListModal } from './SocialListModal';
 import { VinylRecord } from './VinylRecord';
-import Link from 'next/link';
+import { Link } from '@tanstack/react-router';
 import type { FeedItem } from '@/lib/feed-types';
 
 interface ProfileData {
@@ -76,7 +76,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
   const scriptLoadedRef = useRef(false);
 
   const { data: session } = authClient.useSession();
-  const router = useRouter();
+  const navigate = useNavigate();
   const [messageSending, setMessageSending] = useState(false);
   const [messageError, setMessageError] = useState<string | null>(null);
 
@@ -288,7 +288,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
       }
 
       const data = await res.json();
-      router.push(`/messages/${data.conversationId}`);
+      navigate({ to: `/messages/${data.conversationId}` });
     } catch {
       setMessageError('Failed to start conversation');
     } finally {
@@ -324,7 +324,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
         <p className="text-sm text-site-text-muted mb-4">
           This user doesn&apos;t exist.
         </p>
-        <Link href="/">
+        <Link to="/">
           <Button variant="accent" size="sm">Go Home</Button>
         </Link>
       </div>
@@ -338,7 +338,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
       {/* Header bar */}
       <div className="sticky top-0 z-10 bg-site-bg/85 backdrop-blur-md border-b border-site-border">
         <div className="flex items-center gap-3 px-4 py-3">
-          <Link href="/" className="p-1.5 -ml-1.5 rounded-lg hover:bg-site-surface transition-colors">
+          <Link to="/" className="p-1.5 -ml-1.5 rounded-lg hover:bg-site-surface transition-colors">
             <ArrowLeft className="w-5 h-5 text-site-text" />
           </Link>
           <div>

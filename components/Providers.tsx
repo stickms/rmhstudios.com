@@ -1,7 +1,5 @@
-"use client";
-
 import { ReactNode, createContext, useContext, useEffect, useRef, useState, useCallback } from "react";
-import { usePathname } from "next/navigation";
+import { useLocation } from "@tanstack/react-router";
 import { Toaster } from "sonner";
 import { authClient } from "@/lib/auth-client";
 import { useThemeStore, SITE_STYLES, SiteStyle } from "@/stores/themeStore";
@@ -99,7 +97,7 @@ const THEME_EXCLUDED_ROUTES = [
 export function Providers({ children }: ProvidersProps) {
   const session = authClient.useSession();
   const style = useThemeStore((s) => s.style);
-  const pathname = usePathname();
+  const { pathname } = useLocation();
   const isFirstRun = useRef(true);
 
   // Resolved user display data (custom image/name)

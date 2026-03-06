@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import { Link } from '@tanstack/react-router';
 import { MapPin, Building2, Calendar, Clock, Banknote } from 'lucide-react';
 
 interface JobCardProps {
@@ -20,7 +20,7 @@ export function JobCard({ id, title, company, description, location, salaryRange
     const formattedDate = publishDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
     return (
-        <Link href={`/secret/jobs/${id}`} className="block">
+        <Link to={`/secret/jobs/${id}`} className="block">
             <div className="job-card rounded-lg p-5 group" style={{ borderRadius: 'var(--jobs-radius)' }}>
                 <div className="flex items-start justify-between gap-3 mb-3">
                     <div className="min-w-0 flex-1">

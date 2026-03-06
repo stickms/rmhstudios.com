@@ -9,8 +9,7 @@ import { RMHarkActions } from './RMHarkActions';
 import { CommentItem } from './CommentItem';
 import type { Comment } from './CommentItem';
 import { MAX_COMMENT_LENGTH } from '@/lib/rmhark-schema';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { Link, useNavigate } from '@tanstack/react-router';
 import type { FeedItem } from '@/lib/feed-types';
 import { RMHarkContent, extractFirstUrl } from './RMHarkContent';
 import { PollDisplay } from './PollDisplay';
@@ -24,7 +23,7 @@ interface PostDetailProps {
 }
 
 export function PostDetail({ postId }: PostDetailProps) {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [post, setPost] = useState<FeedItem | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -76,7 +75,7 @@ export function PostDetail({ postId }: PostDetailProps) {
     if (!confirm('Delete this RMHark?')) return;
     try {
       await fetch(`/api/rmharks/${postId}`, { method: 'DELETE' });
-      router.push('/');
+      navigate({ to: '/' });
     } catch {
       // ignore
     }
@@ -172,7 +171,7 @@ export function PostDetail({ postId }: PostDetailProps) {
       <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
         <p className="text-lg font-medium text-site-text mb-1">Post not found</p>
         <p className="text-sm text-site-text-muted mb-4">This post doesn&apos;t exist or was deleted.</p>
-        <Link href="/"><Button variant="accent" size="sm">Go Home</Button></Link>
+        <Link to="/"><Button variant="accent" size="sm">Go Home</Button></Link>
       </div>
     );
   }
@@ -183,7 +182,7 @@ export function PostDetail({ postId }: PostDetailProps) {
       <div className="sticky top-0 z-10 bg-site-bg/85 backdrop-blur-md border-b border-site-border">
         <div className="flex items-center gap-3 px-4 py-3">
           <button
-            onClick={() => router.back()}
+            onClick={() => window.history.back()}
             className="p-1.5 -ml-1.5 rounded-lg hover:bg-site-surface transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-site-text" />
@@ -242,7 +241,7 @@ export function PostDetail({ postId }: PostDetailProps) {
 
         {/* User header */}
         <div className="flex items-center gap-3 mb-3 pr-8">
-          <Link href={`/@${post.user?.handle || post.user?.id}`}>
+          <Link to={`/@${post.user?.handle || post.user?.id}`}>
             <div className="w-12 h-12 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-sm shrink-0">
               {post.user?.image ? (
                 <img src={post.user.image} alt={post.user.name || 'User'} className="w-full h-full rounded-full object-cover" />
@@ -252,7 +251,7 @@ export function PostDetail({ postId }: PostDetailProps) {
             </div>
           </Link>
           <div>
-            <Link href={`/@${post.user?.handle || post.user?.id}`} className="hover:underline">
+            <Link to={`/@${post.user?.handle || post.user?.id}`} className="hover:underline">
               <span className="font-bold text-site-text">{post.user?.name || 'Unknown'}</span>
             </Link>
             {post.user?.handle && (
@@ -288,7 +287,7 @@ export function PostDetail({ postId }: PostDetailProps) {
           <div className="mb-3 border border-site-border rounded-xl p-3 bg-site-surface/30">
             <div className="flex items-center gap-1.5 text-sm mb-1">
               {post.original.user ? (
-                <Link href={`/@${post.original.user.handle || post.original.user.id}`} className="flex items-center gap-1.5 min-w-0 hover:underline">
+                <Link to={`/@${post.original.user.handle || post.original.user.id}`} className="flex items-center gap-1.5 min-w-0 hover:underline">
                   <span className="font-bold text-site-text truncate">{post.original.user.name || 'Unknown'}</span>
                   {post.original.user.handle && (
                     <span className="text-site-text-dim truncate">@{post.original.user.handle}</span>

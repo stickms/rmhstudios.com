@@ -1,0 +1,44 @@
+import { createAPIFileRoute } from "@tanstack/react-start/api";
+import { auth } from "@/lib/auth";
+/**
+ * Proxies an external image URL so the client can load it as a blob
+ * for re-cropping without CORS issues.
+ */
+
+export const APIRoute = createAPIFileRoute("/api/admin/curated-builds/image/proxy")({
+  GET: async ({ request }) => {
+  try {
+    const session = await auth.api.getSession({ headers: request.headers });
+    if (!session || !(session.user as any).isAdmin) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const url = new URL(request.url).searchParams.get("url");
+    if (!url) {
+      return Response.json({ error: "Missing url parameter" }, { status: 400 });
+    }
+
+    const res = await fetch(url);
+    if (!res.ok) {
+      return Response.json({ error: "Failed to fetch image" }, { status: 502 });
+    }
+
+    const contentType = res.headers.get("content-type") || "application/octet-stream";
+    if (!contentType.startsWith("image/")) {
+      return Response.json({ error: "Not an image" }, { status: 400 });
+    }
+
+    const buffer = await res.arrayBuffer();
+
+    return new Response(buffer, {
+      status: 200,
+      headers: {
+        "Content-Type": contentType,
+        "Cache-Control": "no-store",
+      },
+    });
+  } catch {
+    return Response.json({ error: "Failed to proxy image" }, { status: 500 });
+  }
+},
+});

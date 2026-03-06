@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import { Link } from '@tanstack/react-router';
 import {
   Brain,
   Cpu,
@@ -48,7 +48,7 @@ export function ResearchCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: index * 0.15 }}
     >
-      <Link href={`/research/${article.slug}`} className="group block h-full">
+      <Link to={`/research/${article.slug}`} className="group block h-full">
         <div
           className="h-full rounded-xl border overflow-hidden transition-all duration-300 bg-(--site-surface) border-(--site-border) hover:border-(--site-accent)/50 hover:shadow-lg"
         >

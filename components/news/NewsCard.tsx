@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import { Link } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import { Calendar, ArrowRight } from 'lucide-react';
 import { getCategoryColor } from '@/lib/news-categories';
@@ -32,7 +32,7 @@ export function NewsCard({ article, index }: NewsCardProps) {
                     transitionDuration: 'var(--site-transition-speed)',
                 }}
             >
-                <Link href={`/news/${article.slug}`} className="absolute inset-0 z-0" />
+                <Link to={`/news/${article.slug}`} className="absolute inset-0 z-0" />
 
                 {/* Category */}
                 <div className="px-5 pt-5 pb-0 relative z-10 pointer-events-none">

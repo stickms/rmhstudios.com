@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MultiplayerFactory } from '@/lib/game/MultiplayerFactory'; // Named import
 import { useGameStore, Difficulty } from '@/lib/store/useGameStore';
 import { authClient } from "@/lib/auth-client";
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { toast } from 'sonner';
 import { Copy, Share2, Check, Zap, Bomb, Shuffle, EyeOff, Skull, Info, ChevronDown, ChevronUp, Settings, RotateCw, Target, Minus, Sun, Moon } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
@@ -72,8 +72,8 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
         };
     });
     
-    const searchParams = useSearchParams();
-    const router = useRouter();
+    const searchParams = useSearch({ strict: false }) as Record<string, string | undefined>;
+    const navigate = useNavigate();
     const mp = MultiplayerFactory.getInstance();
 
     // Keep refs to the latest callbacks so the socket listener effect is stable
@@ -96,10 +96,10 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
         // Clear multiplayer state in the store
         useGameStore.getState().setIsMultiplayer(false);
         // Strip the ?lobby= param from the URL without a full navigation
-        if (searchParams.get('lobby')) {
+        if (searchParams.lobby) {
             const url = new URL(window.location.href);
             url.searchParams.delete('lobby');
-            router.replace(url.pathname + (url.search || ''));
+            navigate({ to: url.pathname + (url.search || ''), replace: true });
         }
         onBack();
     };
@@ -160,7 +160,7 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
 
     // Auto-join from URL
     React.useEffect(() => {
-        const lobbyParam = searchParams.get('lobby');
+        const lobbyParam = searchParams.lobby ?? null;
         if (lobbyParam && session && !lobbyData) {
             console.log("Auto-joining lobby from URL:", lobbyParam);
             mp.joinLobby(lobbyParam.toUpperCase(), session.user.name || 'Unknown', session.user.id);

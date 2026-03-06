@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { Link } from '@tanstack/react-router';
 import { Users, Hammer, ShieldCheck } from 'lucide-react';
 
 export function AdminRightSidebar() {
@@ -12,7 +12,7 @@ export function AdminRightSidebar() {
         </h2>
         <div className="space-y-2">
           <Link
-            href="/admin/users"
+            to="/admin/users"
             className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-site-surface-hover transition-colors group"
           >
             <div className={`w-8 h-8 rounded-lg bg-linear-to-br from-blue-500 to-indigo-600 flex items-center justify-center shrink-0`}>
@@ -26,7 +26,7 @@ export function AdminRightSidebar() {
             </div>
           </Link>
           <Link
-            href="/admin/curated-builds"
+            to="/admin/curated-builds"
             className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-site-surface-hover transition-colors group"
           >
             <div className={`w-8 h-8 rounded-lg bg-linear-to-br from-amber-500 to-red-500 flex items-center justify-center shrink-0`}>
@@ -40,7 +40,7 @@ export function AdminRightSidebar() {
             </div>
           </Link>
           <Link
-            href="/admin/user-builds"
+            to="/admin/user-builds"
             className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-site-surface-hover transition-colors group"
           >
             <div className={`w-8 h-8 rounded-lg bg-linear-to-br from-green-400 to-emerald-600 flex items-center justify-center shrink-0`}>
@@ -60,7 +60,7 @@ export function AdminRightSidebar() {
       <div className="text-xs text-site-text-dim px-2 space-y-1">
         <p>RMH | Admin Dashboard</p>
         <div className="flex flex-wrap gap-x-2 gap-y-0.5">
-          <Link href="/" className="hover:text-site-text transition-colors">Return Home</Link>
+          <Link to="/" className="hover:text-site-text transition-colors">Return Home</Link>
         </div>
       </div>
     </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
+import { Link } from '@tanstack/react-router';
 import { MessageCircle, Repeat2, Heart, Eye, Trash2, MoreHorizontal, Repeat, BadgeCheck, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { MAX_COMMENT_LENGTH } from '@/lib/rmhark-schema';
@@ -178,7 +178,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
     <div className="py-3">
       <div className="flex gap-2.5">
         {/* Avatar */}
-        <Link href={`/@${comment.user.handle || comment.user.id}`} className="shrink-0">
+        <Link to={`/@${comment.user.handle || comment.user.id}`} className="shrink-0">
           <div className="w-8 h-8 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-xs">
             {comment.user.image ? (
               <img src={comment.user.image} alt={comment.user.name || 'User'} className="w-full h-full rounded-full object-cover" />
@@ -191,7 +191,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
         <div className="flex-1 min-w-0">
           {/* Header */}
           <div className="flex items-center gap-1.5 text-sm">
-            <Link href={`/@${comment.user.handle || comment.user.id}`} className="flex items-center gap-1.5 min-w-0 hover:underline">
+            <Link to={`/@${comment.user.handle || comment.user.id}`} className="flex items-center gap-1.5 min-w-0 hover:underline">
               <span className="font-bold text-site-text truncate">
                 {comment.user.name || 'Unknown'}
               </span>

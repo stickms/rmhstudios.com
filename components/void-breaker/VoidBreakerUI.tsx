@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Play, RotateCcw, Trophy, Volume2, VolumeX, BookOpen, ArrowLeft, Settings } from 'lucide-react';
 import { authClient } from '@/lib/auth-client';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from '@tanstack/react-router';
 import type { RunStats } from '@/lib/void-breaker/types';
 
 type LBEntry = { username: string; highScore: number };
@@ -31,7 +31,7 @@ export function VoidBreakerUI({
   const [showLore, setShowLore] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const session = authClient.useSession();
-  const router = useRouter();
+  const navigate = useNavigate();
 
   const fetchLb = useCallback(async () => {
     try {
@@ -287,7 +287,7 @@ export function VoidBreakerUI({
             )}
 
             {!session.data ? (
-              <Button onClick={() => router.push('/login')}
+              <Button onClick={() => navigate({ to: '/login' })}
                 className="w-full bg-[#0a0a18] hover:bg-[#14141f] text-[#00f5ff] font-bold py-3 border border-[#00f5ff]/30">
                 Sign In to Play
               </Button>
@@ -371,7 +371,7 @@ export function VoidBreakerUI({
           </div>
 
           {!session.data ? (
-            <Button onClick={() => router.push('/login')}
+            <Button onClick={() => navigate({ to: '/login' })}
               className="w-full bg-[#1a1a24] hover:bg-[#252530] text-[#d4af37] font-bold border border-[#c9a227]/40">
               Sign In to Submit
             </Button>

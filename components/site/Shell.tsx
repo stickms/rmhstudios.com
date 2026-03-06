@@ -1,6 +1,4 @@
-'use client';
-
-import { usePathname } from 'next/navigation';
+import { useLocation } from '@tanstack/react-router';
 import { games } from '@/lib/games';
 import { apps } from '@/lib/apps';
 import { LeftSidebar } from '@/components/feed/LeftSidebar';
@@ -8,7 +6,7 @@ import { MobileNav } from '@/components/feed/MobileNav';
 
 
 export function Shell({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
+  const { pathname } = useLocation();
   
   // gather gameRoutes and internal appRoutes
   const gameRoutes = games.map(game => game.href);

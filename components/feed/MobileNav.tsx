@@ -1,8 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { Link, useLocation } from '@tanstack/react-router';
 import { Home, Package, Menu, Hammer, User, PenSquare, MessageCircle } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { MobileSidebarDrawer } from './MobileSidebarDrawer';
@@ -10,7 +9,7 @@ import { ComposeModal } from './ComposeModal';
 import { useUnreadCount } from '@/lib/useUnreadCount';
 
 export function MobileNav() {
-  const pathname = usePathname();
+  const { pathname } = useLocation();
   const { data: session } = useSession();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [composeOpen, setComposeOpen] = useState(false);
@@ -47,11 +46,11 @@ export function MobileNav() {
       {/* Bottom navigation bar */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-site-bg/95 backdrop-blur-md border-t border-site-border">
         <div className="flex items-center justify-around h-12">
-          <Link href="/" className={tabClass(isHome)} aria-label="Home">
+          <Link to="/" className={tabClass(isHome)} aria-label="Home">
             <Home className="w-6 h-6" />
           </Link>
 
-          <Link href="/builds" className={tabClass(isBuilds)} aria-label="Official Builds">
+          <Link to="/builds" className={tabClass(isBuilds)} aria-label="Official Builds">
             <Package className="w-6 h-6" />
           </Link>
 
@@ -64,7 +63,7 @@ export function MobileNav() {
           </button>
 
           {session ? (
-            <Link href="/messages" className={tabClass(isMessages)} aria-label="Messages">
+            <Link to="/messages" className={tabClass(isMessages)} aria-label="Messages">
               <div className="relative">
                 <MessageCircle className="w-6 h-6" />
                 {unreadCount > 0 && (
@@ -75,12 +74,12 @@ export function MobileNav() {
               </div>
             </Link>
           ) : (
-            <Link href="/user-builds" className={tabClass(isUserBuilds)} aria-label="User Builds">
+            <Link to="/user-builds" className={tabClass(isUserBuilds)} aria-label="User Builds">
               <Hammer className="w-6 h-6" />
             </Link>
           )}
 
-          <Link href={profileHref} className={tabClass(isProfile)} aria-label="Profile">
+          <Link to={profileHref} className={tabClass(isProfile)} aria-label="Profile">
             <User className="w-6 h-6" />
           </Link>
         </div>

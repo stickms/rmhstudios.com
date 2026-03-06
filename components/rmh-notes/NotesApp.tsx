@@ -1,9 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, lazy, Suspense } from 'react';
 import { useNotesStore } from '@/lib/store/useNotesStore';
 import { useNotesDataStore } from '@/lib/store/useNotesDataStore';
-import dynamic from 'next/dynamic';
 import { Note } from './types';
 import { toast } from 'sonner';
 
@@ -11,13 +10,13 @@ import { toast } from 'sonner';
 import NotesSidebar from './NotesSidebar';
 import NotesList from './NotesList';
 
-// Heavy / conditional components: dynamically imported to keep initial bundle small
-const NoteEditor = dynamic(() => import('./NoteEditor'), { ssr: false });
-const SearchPanel = dynamic(() => import('./SearchPanel'), { ssr: false });
-const QuickCaptureModal = dynamic(() => import('./QuickCaptureModal'), { ssr: false });
-const StatsPanel = dynamic(() => import('./StatsPanel'), { ssr: false });
-const CalendarPanel = dynamic(() => import('./CalendarPanel'), { ssr: false });
-const MoodPanel = dynamic(() => import('./MoodPanel'), { ssr: false });
+// Heavy / conditional components: lazily imported to keep initial bundle small
+const NoteEditor = lazy(() => import('./NoteEditor'));
+const SearchPanel = lazy(() => import('./SearchPanel'));
+const QuickCaptureModal = lazy(() => import('./QuickCaptureModal'));
+const StatsPanel = lazy(() => import('./StatsPanel'));
+const CalendarPanel = lazy(() => import('./CalendarPanel'));
+const MoodPanel = lazy(() => import('./MoodPanel'));
 
 export default function NotesApp() {
   const { isDarkMode, selectedView, selectedNoteId, sidebarOpen, searchOpen, quickCaptureOpen, toggleSearch, toggleQuickCapture, selectNote } = useNotesStore();
@@ -155,44 +154,50 @@ export default function NotesApp() {
 
       {/* Editor / Special Views */}
       <div className="flex-1 flex flex-col min-w-0" style={{ borderLeft: '1px solid var(--notes-border)' }}>
-        {selectedView === 'stats' ? (
-          <StatsPanel />
-        ) : selectedView === 'calendar' || selectedView === 'reminders' || selectedView === 'overdue' ? (
-          <CalendarPanel onSelectNote={(id) => { selectNote(id); useNotesStore.getState().setView('all'); }} />
-        ) : selectedView === 'mood' ? (
-          <MoodPanel />
-        ) : selectedNote ? (
-          <NoteEditor
-            note={selectedNote}
-            onUpdate={updateNote}
-            onDelete={deleteNote}
-            onRefresh={refreshAll}
-            tags={tags}
-            folders={folders}
-          />
-        ) : (
-          <EmptyEditorState onCreateNote={createNote} />
-        )}
+        <Suspense fallback={null}>
+          {selectedView === 'stats' ? (
+            <StatsPanel />
+          ) : selectedView === 'calendar' || selectedView === 'reminders' || selectedView === 'overdue' ? (
+            <CalendarPanel onSelectNote={(id) => { selectNote(id); useNotesStore.getState().setView('all'); }} />
+          ) : selectedView === 'mood' ? (
+            <MoodPanel />
+          ) : selectedNote ? (
+            <NoteEditor
+              note={selectedNote}
+              onUpdate={updateNote}
+              onDelete={deleteNote}
+              onRefresh={refreshAll}
+              tags={tags}
+              folders={folders}
+            />
+          ) : (
+            <EmptyEditorState onCreateNote={createNote} />
+          )}
+        </Suspense>
       </div>
 
       {/* Overlays */}
       {searchOpen && (
-        <SearchPanel
-          onSelect={(id) => { selectNote(id); toggleSearch(); }}
-          onClose={toggleSearch}
-          tags={tags}
-          folders={folders}
-        />
+        <Suspense fallback={null}>
+          <SearchPanel
+            onSelect={(id) => { selectNote(id); toggleSearch(); }}
+            onClose={toggleSearch}
+            tags={tags}
+            folders={folders}
+          />
+        </Suspense>
       )}
       {quickCaptureOpen && (
-        <QuickCaptureModal
-          onSave={async (title, content) => {
-            dataStore.createNote({ title, content });
-            toast.success('Note captured!');
-            toggleQuickCapture();
-          }}
-          onClose={toggleQuickCapture}
-        />
+        <Suspense fallback={null}>
+          <QuickCaptureModal
+            onSave={async (title, content) => {
+              dataStore.createNote({ title, content });
+              toast.success('Note captured!');
+              toggleQuickCapture();
+            }}
+            onClose={toggleQuickCapture}
+          />
+        </Suspense>
       )}
     </div>
   );

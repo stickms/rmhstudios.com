@@ -9,7 +9,6 @@ import { Search, Upload, Play, Pause, Heart } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { authClient } from '@/lib/auth-client';
 import { NeumorphicModal } from './NeumorphicModal';
-import { useRouter } from 'next/navigation';
 import { useGameStore } from '@/lib/store/useGameStore';
 import { GameEngine } from '@/lib/game/GameEngine';
 import * as metadata from 'music-metadata-browser';
@@ -91,8 +90,6 @@ export function SongLibrary({ onSelect, onHighlight, selectedSongId, onStopPrevi
     };
     
     const session = authClient.useSession();
-    const router = useRouter();
-
     // Keep ref in sync with state for use in callbacks/cleanup
     useEffect(() => {
         previewAudioRef.current = previewAudio;

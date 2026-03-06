@@ -10,7 +10,7 @@ function getWebhookUrl(): string | null {
 }
 
 function getSiteUrl(): string {
-  return (process.env.NEXT_PUBLIC_BETTER_AUTH_URL ?? "http://localhost:7005").replace(/\/$/, "");
+  return (process.env.VITE_BETTER_AUTH_URL ?? "http://localhost:7005").replace(/\/$/, "");
 }
 
 /** Discord embed color constants */

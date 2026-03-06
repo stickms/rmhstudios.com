@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { X, Loader2 } from 'lucide-react';
-import Link from 'next/link';
+import { Link } from '@tanstack/react-router';
 
 interface EngagementUser {
   id: string;
@@ -84,7 +84,7 @@ export function EngagementListModal({ open, onClose, postId, commentId, type }: 
           {users.map((user) => (
             <Link
               key={user.id}
-              href={`/@${user.handle || user.id}`}
+              to={`/@${user.handle || user.id}`}
               onClick={onClose}
               className="flex items-center gap-3 px-5 py-3 hover:bg-site-surface/50 transition-colors border-b border-site-border/50"
             >

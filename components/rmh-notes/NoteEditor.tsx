@@ -27,18 +27,18 @@ import { useNotesDataStore } from '@/lib/store/useNotesDataStore';
 import { toast } from 'sonner';
 
 // Lazy-loaded panels
-import dynamic from 'next/dynamic';
-const ReminderModal = dynamic(() => import('./ReminderModal'), { ssr: false });
-const LockModal = dynamic(() => import('./LockModal'), { ssr: false });
-const ShareModal = dynamic(() => import('./ShareModal'), { ssr: false });
-const ExportModal = dynamic(() => import('./ExportModal'), { ssr: false });
-const VersionHistoryPanel = dynamic(() => import('./VersionHistoryPanel'), { ssr: false });
-const TemplateSelector = dynamic(() => import('./TemplateSelector'), { ssr: false });
-const TweetFormatter = dynamic(() => import('./TweetFormatter'), { ssr: false });
-const ColorPickerDropdown = dynamic(() => import('./ColorPickerDropdown'), { ssr: false });
-const TagEditor = dynamic(() => import('./TagEditor'), { ssr: false });
-const FolderSelector = dynamic(() => import('./FolderSelector'), { ssr: false });
-const MarkdownEditor = dynamic(() => import('./MarkdownEditor'), { ssr: false });
+import { lazy, Suspense } from 'react';
+const ReminderModal = lazy(() => import('./ReminderModal'));
+const LockModal = lazy(() => import('./LockModal'));
+const ShareModal = lazy(() => import('./ShareModal'));
+const ExportModal = lazy(() => import('./ExportModal'));
+const VersionHistoryPanel = lazy(() => import('./VersionHistoryPanel'));
+const TemplateSelector = lazy(() => import('./TemplateSelector'));
+const TweetFormatter = lazy(() => import('./TweetFormatter'));
+const ColorPickerDropdown = lazy(() => import('./ColorPickerDropdown'));
+const TagEditor = lazy(() => import('./TagEditor'));
+const FolderSelector = lazy(() => import('./FolderSelector'));
+const MarkdownEditor = lazy(() => import('./MarkdownEditor'));
 
 const lowlight = createLowlight(common);
 
@@ -249,13 +249,15 @@ export default function NoteEditor({ note, onUpdate, onDelete, onRefresh, tags, 
             Unlock Note
           </button>
           {showLock && (
-            <LockModal
-              note={note}
-              mode="unlock"
-              onSuccess={() => { setUnlocked(true); setShowLock(false); }}
-              onClose={() => setShowLock(false)}
-              onNoteUpdate={onUpdate}
-            />
+            <Suspense fallback={null}>
+              <LockModal
+                note={note}
+                mode="unlock"
+                onSuccess={() => { setUnlocked(true); setShowLock(false); }}
+                onClose={() => setShowLock(false)}
+                onNoteUpdate={onUpdate}
+              />
+            </Suspense>
           )}
         </div>
       </div>
@@ -300,13 +302,19 @@ export default function NoteEditor({ note, onUpdate, onDelete, onRefresh, tags, 
 
       {/* Dropdowns */}
       {showColorPicker && (
-        <ColorPickerDropdown currentColor={note.color} onChange={handleColorChange} onClose={() => setShowColorPicker(false)} />
+        <Suspense fallback={null}>
+          <ColorPickerDropdown currentColor={note.color} onChange={handleColorChange} onClose={() => setShowColorPicker(false)} />
+        </Suspense>
       )}
       {showTagEditor && (
-        <TagEditor noteTagIds={note.tags.map((t) => t.tagId)} allTags={tags} onChange={handleTagsChange} onClose={() => setShowTagEditor(false)} />
+        <Suspense fallback={null}>
+          <TagEditor noteTagIds={note.tags.map((t) => t.tagId)} allTags={tags} onChange={handleTagsChange} onClose={() => setShowTagEditor(false)} />
+        </Suspense>
       )}
       {showFolderSelector && (
-        <FolderSelector currentFolderId={note.folderId} folders={folders} onChange={handleFolderChange} onClose={() => setShowFolderSelector(false)} />
+        <Suspense fallback={null}>
+          <FolderSelector currentFolderId={note.folderId} folders={folders} onChange={handleFolderChange} onClose={() => setShowFolderSelector(false)} />
+        </Suspense>
       )}
 
       {/* Toolbar (when not reading mode) */}
@@ -317,13 +325,15 @@ export default function NoteEditor({ note, onUpdate, onDelete, onRefresh, tags, 
       {/* Editor area */}
       <div className={`flex-1 overflow-y-auto${readingMode ? ' notes-reading' : ''}`} style={{ padding: readingMode ? '0' : '0 1.5rem' }}>
         {markdownMode ? (
-          <MarkdownEditor
-            content={note.content}
-            onSave={async (content) => {
-              const updated = dataStore.updateNote(note.id, { content });
-              if (updated) { onUpdate(updated); setSavedAt(new Date()); }
-            }}
-          />
+          <Suspense fallback={null}>
+            <MarkdownEditor
+              content={note.content}
+              onSave={async (content) => {
+                const updated = dataStore.updateNote(note.id, { content });
+                if (updated) { onUpdate(updated); setSavedAt(new Date()); }
+              }}
+            />
+          </Suspense>
         ) : (
           <div className={`notes-editor${readingMode ? ' notes-reading' : ''}`} style={{ paddingTop: '1.5rem', paddingBottom: '2rem' }}>
             <EditorContent editor={editor} />
@@ -346,32 +356,38 @@ export default function NoteEditor({ note, onUpdate, onDelete, onRefresh, tags, 
       </div>
 
       {/* Modals */}
-      {showReminder && <ReminderModal note={note} onClose={() => setShowReminder(false)} onSaved={onRefresh} />}
+      {showReminder && <Suspense fallback={null}><ReminderModal note={note} onClose={() => setShowReminder(false)} onSaved={onRefresh} /></Suspense>}
       {showLock && (
-        <LockModal
-          note={note}
-          mode={note.isLocked ? 'manage' : 'set'}
-          onSuccess={() => { setShowLock(false); onRefresh(); }}
-          onClose={() => setShowLock(false)}
-          onNoteUpdate={onUpdate}
-        />
+        <Suspense fallback={null}>
+          <LockModal
+            note={note}
+            mode={note.isLocked ? 'manage' : 'set'}
+            onSuccess={() => { setShowLock(false); onRefresh(); }}
+            onClose={() => setShowLock(false)}
+            onNoteUpdate={onUpdate}
+          />
+        </Suspense>
       )}
-      {showShare && <ShareModal note={note} onClose={() => setShowShare(false)} />}
-      {showExport && <ExportModal note={note} onClose={() => setShowExport(false)} editorHtml={editor?.getHTML() ?? ''} />}
+      {showShare && <Suspense fallback={null}><ShareModal note={note} onClose={() => setShowShare(false)} /></Suspense>}
+      {showExport && <Suspense fallback={null}><ExportModal note={note} onClose={() => setShowExport(false)} editorHtml={editor?.getHTML() ?? ''} /></Suspense>}
       {showVersions && (
-        <VersionHistoryPanel noteId={note.id} onRestore={handleVersionRestore} onClose={() => setShowVersions(false)} />
+        <Suspense fallback={null}>
+          <VersionHistoryPanel noteId={note.id} onRestore={handleVersionRestore} onClose={() => setShowVersions(false)} />
+        </Suspense>
       )}
       {showTemplates && (
-        <TemplateSelector
-          onSelect={(content) => {
-            editor?.commands.setContent(JSON.parse(content), { emitUpdate: false });
-            setShowTemplates(false);
-            scheduleSave();
-          }}
-          onClose={() => setShowTemplates(false)}
-        />
+        <Suspense fallback={null}>
+          <TemplateSelector
+            onSelect={(content) => {
+              editor?.commands.setContent(JSON.parse(content), { emitUpdate: false });
+              setShowTemplates(false);
+              scheduleSave();
+            }}
+            onClose={() => setShowTemplates(false)}
+          />
+        </Suspense>
       )}
-      {showTweet && <TweetFormatter content={editor?.getText() ?? ''} title={note.title} onClose={() => setShowTweet(false)} />}
+      {showTweet && <Suspense fallback={null}><TweetFormatter content={editor?.getText() ?? ''} title={note.title} onClose={() => setShowTweet(false)} /></Suspense>}
     </div>
   );
 }

@@ -5,8 +5,7 @@
  */
 'use client';
 
-import dynamic from 'next/dynamic';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, lazy, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAltairGameStore } from '@/lib/altair/stores/game-store';
 import { useAltairMetaStore } from '@/lib/altair/stores/meta-store';
@@ -19,17 +18,8 @@ import MetaShopScreen from '@/components/altair/screens/MetaShopScreen';
 import SettingsScreen from '@/components/altair/screens/SettingsScreen';
 import BestiaryScreen from '@/components/altair/screens/BestiaryScreen';
 
-// Dynamic import for the game canvas (no SSR)
-const GameScreen = dynamic(() => import('@/components/altair/screens/GameScreen'), {
-  ssr: false,
-  loading: () => (
-    <div className="fixed inset-0 bg-(--altair-bg) flex items-center justify-center">
-      <div className="text-(--altair-accent) font-mono tracking-widest animate-pulse text-sm">
-        INITIALIZING...
-      </div>
-    </div>
-  ),
-});
+// Lazy import for the game canvas
+const GameScreen = lazy(() => import('@/components/altair/screens/GameScreen'));
 
 export default function AltairPage() {
   const router = useRouter();
@@ -237,15 +227,23 @@ export default function AltairPage() {
     case 'paused':
     case 'upgrading':
       return (
-        <GameScreen
-          onQuit={() => {
-            handleGameEnd();
-            goToMenu();
-          }}
-          onSettings={() => {
-            setShowSettings(true);
-          }}
-        />
+        <Suspense fallback={
+          <div className="fixed inset-0 bg-(--altair-bg) flex items-center justify-center">
+            <div className="text-(--altair-accent) font-mono tracking-widest animate-pulse text-sm">
+              INITIALIZING...
+            </div>
+          </div>
+        }>
+          <GameScreen
+            onQuit={() => {
+              handleGameEnd();
+              goToMenu();
+            }}
+            onSettings={() => {
+              setShowSettings(true);
+            }}
+          />
+        </Suspense>
       );
 
     case 'dead':

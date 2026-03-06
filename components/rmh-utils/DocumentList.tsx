@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { FileText, Sheet, Presentation, Plus, Star, Trash2, Search, LayoutGrid, List, MoreHorizontal, Clock, ArrowLeft } from 'lucide-react';
-import Link from 'next/link';
+import { Link } from '@tanstack/react-router';
 import { useDocumentStore } from '@/lib/store/useDocumentStore';
 import type { DocumentInfo, DocumentType } from '@/lib/rmh-utils/types';
 
@@ -74,7 +74,7 @@ export default function DocumentList({ documents, docType, onOpen, onCreate, onD
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
         <div className="flex items-center gap-3">
-          <Link href="/secret" className="text-white/40 hover:text-white/70 transition-colors p-1">
+          <Link to="/secret" className="text-white/40 hover:text-white/70 transition-colors p-1">
             <ArrowLeft size={18} />
           </Link>
           <h1 className="text-xl font-bold text-white">My {label}s</h1>

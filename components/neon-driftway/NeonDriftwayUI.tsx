@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Play, ArrowLeft, RotateCcw, Trophy, Lock, Users } from 'lucide-react';
 import { authClient } from '@/lib/auth-client';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from '@tanstack/react-router';
 import { LEVELS } from '@/lib/neon-driftway/constants';
 import type { LevelId, RunStats } from '@/lib/neon-driftway/types';
 
@@ -41,7 +41,7 @@ export function NeonDriftwayUI({
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [scoreSubmitted, setScoreSubmitted] = useState(false);
   const session = authClient.useSession();
-  const router = useRouter();
+  const navigate = useNavigate();
 
   const fetchLeaderboard = useCallback(async () => {
     try {
@@ -99,7 +99,7 @@ export function NeonDriftwayUI({
           <div className="space-y-3">
             {!session.data ? (
               <Button
-                onClick={() => router.push('/login')}
+                onClick={() => navigate({ to: '/login' })}
                 className="w-full bg-zinc-800 hover:bg-zinc-700 text-white font-bold py-3"
               >
                 Sign In to Play
@@ -256,7 +256,7 @@ export function NeonDriftwayUI({
 
           {!session.data ? (
             <Button
-              onClick={() => router.push('/login')}
+              onClick={() => navigate({ to: '/login' })}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold"
             >
               Sign In to Submit Score
