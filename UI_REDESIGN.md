@@ -1,5 +1,6 @@
 # RMH Studios — UI Redesign
 
+
 ## Vision
 
 Transform the main website from a heavy cyberpunk/hyperpop aesthetic to a **clean, minimalistic, modern** design inspired by the rmhbox and rmhtube design systems. The result should feel like a refined game studio — confident, polished, and fast.
