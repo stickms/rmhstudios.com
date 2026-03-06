@@ -7,7 +7,7 @@
 #   ./deploy.sh staging      — deploy staging branch to staging containers
 #
 # Cache strategy:
-#   - BuildKit cache mounts (pnpm store, Vite cache) persist across
+#   - BuildKit cache mounts (pnpm store, Vinxi/TanStack cache) persist across
 #     builds and are shared between prod/staging.
 #   - Parallel Dockerfile stages: server-builder (env-agnostic, fully cached
 #     between envs) and vite-builder (env-specific, incrementally cached).
@@ -323,7 +323,7 @@ step_done
 # ── Step 6: Prune stale images (preserve build cache) ───────────────────────
 # Only remove dangling images (untagged layers from previous builds).
 # Do NOT prune the builder cache — it contains the pnpm store mount and
-# Vite incremental cache that make subsequent builds fast.
+# Vinxi/TanStack incremental cache that make subsequent builds fast.
 log "Pruning dangling images..."
 "$DOCKER_BIN" image prune -f > /dev/null 2>&1 || true
 

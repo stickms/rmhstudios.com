@@ -16,7 +16,7 @@
 #
 # Cache strategy:
 #   - pnpm store mount  → avoids re-downloading packages between builds
-#   - Vite/Nitro cache mount → incremental builds (shared across envs)
+#   - Vinxi/TanStack cache mounts → incremental builds (shared across envs)
 #   - server-builder is env-agnostic → 100% cache hit between prod/staging
 #   - node_modules copied from deps (not builder) → stable layer even when
 #     source changes, since deps only rebuilds on lockfile changes
@@ -87,12 +87,18 @@ ENV DATABASE_URL=${DATABASE_URL} \
     NEXT_PUBLIC_RMHBOX_SOCKET_URL=${NEXT_PUBLIC_RMHBOX_SOCKET_URL} \
     NEXT_PUBLIC_RMHTUBE_SOCKET_URL=${NEXT_PUBLIC_RMHTUBE_SOCKET_URL}
 
-# .output is Nitro's build output directory. Cache mount shared across
-# all builds (prod + staging) for faster incremental rebuilds.
-RUN --mount=type=cache,id=vite-cache,target=/app/node_modules/.vite,sharing=locked \
-    pnpm exec vite build
+# Cache mounts for incremental rebuilds (shared across prod + staging):
+#   - .vinxi / .tanstack: TanStack Start build cache (route manifests, etc.)
+#   - .output: Nitro server bundle output (reused across incremental builds)
+# NODE_OPTIONS prevents OOM on large bundles (three.js, monaco, tiptap, etc.)
+# .output is produced by Nitro inside the cache mount, then copied to
+# /app/build-output so it persists after the RUN layer for COPY --from.
+RUN --mount=type=cache,id=vinxi-cache,target=/app/.vinxi,sharing=locked \
+    --mount=type=cache,id=tanstack-cache,target=/app/.tanstack,sharing=locked \
+    NODE_OPTIONS='--max-old-space-size=8192' pnpm exec vite build \
+    && cp -a .output /app/build-output
 
-RUN test -d .output && test -f .output/server/index.mjs
+RUN test -d /app/build-output && test -f /app/build-output/server/index.mjs
 
 # ── Stage 5: Production runner ───────────────────────────────────────────────
 FROM node:24-alpine AS runner
@@ -115,7 +121,7 @@ COPY --from=deps --chown=nextjs:nodejs /app/node_modules ./node_modules
 
 # ─── Nitro server output ────────────────────────────────────────────────────
 # .output/ contains the Nitro server bundle, static assets, and public files.
-COPY --from=vite-builder --chown=nextjs:nodejs /app/.output ./.output
+COPY --from=vite-builder --chown=nextjs:nodejs /app/build-output ./.output
 
 # ─── Custom server bundles (from env-agnostic stage) ────────────────────────
 COPY --from=server-builder --chown=nextjs:nodejs /app/dist-server ./dist-server
