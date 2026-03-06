@@ -217,8 +217,11 @@ fi
 log "=== Deploy triggered ($ENVIRONMENT, branch=$BRANCH) ==="
 DEPLOY_START_TIME=$(date +%s)
 
-# Capture all deploy output to log file
-exec > >(tee -a "$DEPLOY_LOG") 2>&1
+# Capture all deploy output to log file.
+# IMPORTANT: close fd 200 (flock) inside the process substitution so the tee
+# subprocess does not inherit the deploy lock. Without this, a self-restart
+# via exec leaves the orphaned tee holding the flock, deadlocking the new process.
+exec > >(exec 200>&-; tee -a "$DEPLOY_LOG") 2>&1
 
 # ── Step 1: Pull latest code ────────────────────────────────────────────────
 step_start "Fetching latest code..."
@@ -248,6 +251,9 @@ step_done
 POST_PULL_HASH=$(sha256sum "$DEPLOY_SCRIPT_PATH" | awk '{print $1}')
 if [ "$PRE_PULL_HASH" != "$POST_PULL_HASH" ] && [ -z "${DEPLOY_SELF_RESTARTED:-}" ]; then
     log "deploy.sh was updated during pull — restarting with the new version."
+    # Release the deploy lock before re-exec so the new process can acquire it.
+    # (The tee fd 200 fix above handles normal runs, but this is belt-and-suspenders.)
+    exec 200>&-
     export DEPLOY_SELF_RESTARTED=1
     exec bash "$DEPLOY_SCRIPT_PATH" "$ENVIRONMENT"
 fi
