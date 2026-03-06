@@ -7,10 +7,10 @@
 #   ./deploy.sh staging      — deploy staging branch to staging containers
 #
 # Cache strategy:
-#   - BuildKit cache mounts (pnpm store, Next.js .next/cache) persist across
+#   - BuildKit cache mounts (pnpm store, Vinxi/TanStack cache) persist across
 #     builds and are shared between prod/staging.
 #   - Parallel Dockerfile stages: server-builder (env-agnostic, fully cached
-#     between envs) and next-builder (env-specific, incrementally cached).
+#     between envs) and vite-builder (env-specific, incrementally cached).
 #   - node_modules layer in runner sourced from deps stage (lockfile-keyed),
 #     not from the env-specific builder, so it survives source/env changes.
 #   - Images are tagged with git SHA for instant rollback.
@@ -260,7 +260,7 @@ send_deploy_started
 # ── Step 2: Build Docker image ──────────────────────────────────────────────
 # The Dockerfile uses parallel BuildKit stages:
 #   - server-builder (esbuild, env-agnostic → fully cached between envs)
-#   - next-builder   (next build, env-specific → incrementally cached)
+#   - vite-builder   (vite build, env-specific → incrementally cached)
 # node_modules layer in runner comes from deps stage (lockfile-keyed),
 # not from the builder, so it caches independently of source/env changes.
 step_start "Building Docker image..."
@@ -323,7 +323,7 @@ step_done
 # ── Step 6: Prune stale images (preserve build cache) ───────────────────────
 # Only remove dangling images (untagged layers from previous builds).
 # Do NOT prune the builder cache — it contains the pnpm store mount and
-# Next.js incremental cache that make subsequent builds fast.
+# Vinxi/TanStack incremental cache that make subsequent builds fast.
 log "Pruning dangling images..."
 "$DOCKER_BIN" image prune -f > /dev/null 2>&1 || true
 

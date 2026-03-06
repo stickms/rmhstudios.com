@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import { Link } from '@tanstack/react-router';
 import type { FeedItem } from '@/lib/feed-types';
 import { ArrowRight, Gamepad2, AppWindow, Newspaper, BookOpen, FlaskConical } from 'lucide-react';
 
@@ -52,7 +52,7 @@ export function AnnouncementCard({ item, variant }: AnnouncementCardProps) {
         <div className="flex-1 min-w-0">
           {/* Title */}
           {item.href ? (
-            <Link href={item.href} className="group">
+            <Link to={item.href} className="group">
               <h3 className="font-bold text-site-text group-hover:text-site-accent transition-colors text-[15px]">
                 {item.title}
               </h3>

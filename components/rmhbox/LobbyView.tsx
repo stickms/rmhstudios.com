@@ -14,7 +14,7 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from '@tanstack/react-router';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { emit } from '@/lib/rmhbox/socket';
 import { C2S } from '@/lib/rmhbox/events';
@@ -29,7 +29,7 @@ import GameSettingsModal from './GameSettingsModal';
 export default function LobbyView() {
   const lobby = useRMHboxStore((s) => s.lobby);
   const gameSettingsState = useRMHboxStore((s) => s.gameSettingsState);
-  const router = useRouter();
+  const navigate = useNavigate();
   const [showViewSettings, setShowViewSettings] = useState(false);
 
   const handleToggleReady = useCallback(() => {
@@ -41,8 +41,8 @@ export default function LobbyView() {
     if (!lobby) return;
     emit(C2S.LOBBY_LEAVE, { lobbyId: lobby.lobbyId });
     useRMHboxStore.getState().leaveLobby();
-    router.push('/rmhbox');
-  }, [lobby, router]);
+    navigate({ to: '/rmhbox' });
+  }, [lobby, navigate]);
 
   const handleSendChat = useCallback((content: string) => {
     if (!lobby) return;

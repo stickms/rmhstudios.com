@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import Link from "next/link";
+import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
 
@@ -53,7 +53,7 @@ export function HeroSection() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6, duration: 0.5 }}
           >
-            <Link href="#projects">
+            <Link to="#projects">
               <Button variant="accent" size="lg" className="rounded-xl text-base px-8">
                 Explore Our Games
               </Button>

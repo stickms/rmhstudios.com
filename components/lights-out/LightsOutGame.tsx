@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import Link from 'next/link';
+import { Link } from '@tanstack/react-router';
 import {
     getDateSeed,
     formatDateKey,
@@ -188,7 +188,7 @@ export function LightsOutGame() {
         <div className="max-w-lg mx-auto px-4 py-8">
             {/* Back to Builds */}
             <Link
-                href="/builds"
+                to="/builds"
                 className="inline-flex items-center gap-1.5 text-site-text-muted hover:text-site-text text-sm mb-6 transition-colors"
             >
                 <ArrowLeft className="w-4 h-4" />
@@ -367,7 +367,7 @@ export function LightsOutGame() {
                         )}
                         {!session.data && (
                             <p className="text-site-text-dim text-xs mt-2">
-                                <Link href="/login" className="text-site-accent hover:underline">
+                                <Link to="/login" className="text-site-accent hover:underline">
                                     Sign in
                                 </Link>{' '}
                                 to submit your score to the daily leaderboard.

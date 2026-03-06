@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import { Link } from '@tanstack/react-router';
 import { Heart, MessageCircle, Eye, ExternalLink, Github } from 'lucide-react';
 import type { Build } from '@/lib/user-builds-types';
 import { TechBadges } from './TechBadges';
@@ -41,7 +41,7 @@ export function BuildCard({ build, onLike }: BuildCardProps) {
   };
 
   return (
-    <Link href={`/user-builds/${build.slug}`} className="block h-full">
+    <Link to={`/user-builds/${build.slug}`} className="block h-full">
       <div className="group rounded-xl border border-site-border bg-site-surface hover:border-violet-500/50 transition-all overflow-hidden flex flex-col h-full">
         {/* Thumbnail */}
         {build.thumbnailUrl ? (

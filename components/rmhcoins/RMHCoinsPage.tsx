@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from '@tanstack/react-router';
 import { Loader2 } from 'lucide-react';
 import { authClient } from '@/lib/auth-client';
 import { CoinIcon } from './CoinIcon';
@@ -12,7 +12,7 @@ type Tab = 'play' | 'shop';
 
 export function RMHCoinsPage() {
   const { data: session, isPending } = authClient.useSession();
-  const router = useRouter();
+  const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>('play');
   const [coins, setCoins] = useState(0);
   const [hasProfilePet, setHasProfilePet] = useState(false);
@@ -21,9 +21,9 @@ export function RMHCoinsPage() {
   // Redirect if not authenticated
   useEffect(() => {
     if (!isPending && !session?.user) {
-      router.push('/login?callbackURL=/rmhcoins');
+      navigate({ to: '/login', search: { callbackURL: '/rmhcoins' } });
     }
-  }, [isPending, session, router]);
+  }, [isPending, session, navigate]);
 
   // Fetch coin balance
   useEffect(() => {

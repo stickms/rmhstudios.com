@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { Link } from '@tanstack/react-router';
 import { Search, ChevronDown, X, User, Plus } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import type { BuildCategory, BuildSortOption } from '@/lib/user-builds-types';
@@ -76,7 +76,7 @@ export function BuildFilters({
           )}
         </div>
         <Link
-          href="/user-builds/submit"
+          to="/user-builds/submit"
           className="flex items-center gap-1.5 shrink-0 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium transition-colors"
         >
           <Plus className="w-4 h-4" />

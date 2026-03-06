@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '@/lib/versecraft/store';
-import Image from 'next/image';
 import { CHARACTERS, getCharacterFirstName } from '@/lib/versecraft/characters';
 import { getChapterEntry } from '@/lib/versecraft/chapters/registry';
 import { getWordPool } from '@/lib/versecraft/words';
@@ -130,13 +129,11 @@ function CharacterSprite({ characterId, expression, position, isSpeaking, sprite
     >
       {spritePath ? (
         <div className="relative w-50 h-100 md:w-65 md:h-130">
-          <Image
+          <img
             src={spritePath}
             alt={characterId}
-            fill
-            className="object-contain object-bottom"
-            sizes="260px"
-            priority
+            className="absolute inset-0 w-full h-full object-contain object-bottom"
+            loading="eager"
           />
           {/* Character color glow under sprite */}
           <div
@@ -302,13 +299,11 @@ export function DialogueScreen() {
         className="absolute inset-0 z-0 transition-all duration-1000"
         style={{ backgroundColor: bg.fallback, filter: timeFilter }}
       >
-        <Image
+        <img
           src={bgImage}
           alt=""
-          fill
-          className="object-cover"
-          sizes="100vw"
-          priority
+          className="absolute inset-0 w-full h-full object-cover"
+          loading="eager"
         />
       </div>
 

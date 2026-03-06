@@ -1,8 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import dynamic from 'next/dynamic';
-const MonacoEditor = dynamic(() => import('@monaco-editor/react'), { ssr: false });
+import { useEffect, useRef, useState, lazy, Suspense } from 'react';
+const MonacoEditor = lazy(() => import('@monaco-editor/react'));
 
 // TipTap JSON → Markdown (best-effort)
 function tiptapToMarkdown(jsonStr: string): string {
@@ -111,24 +110,26 @@ export default function MarkdownEditor({ content, onSave }: Props) {
 
   return (
     <div className="flex-1 h-full" style={{ minHeight: 400 }}>
-      <MonacoEditor
-        height="100%"
-        language="markdown"
-        value={mdValue}
-        onChange={handleChange}
-        theme={isDark ? 'vs-dark' : 'vs'}
-        options={{
-          wordWrap: 'on',
-          minimap: { enabled: false },
-          lineNumbers: 'off',
-          folding: true,
-          renderLineHighlight: 'none',
-          scrollBeyondLastLine: false,
-          fontSize: 14,
-          fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-          padding: { top: 24, bottom: 24 },
-        }}
-      />
+      <Suspense fallback={null}>
+        <MonacoEditor
+          height="100%"
+          language="markdown"
+          value={mdValue}
+          onChange={handleChange}
+          theme={isDark ? 'vs-dark' : 'vs'}
+          options={{
+            wordWrap: 'on',
+            minimap: { enabled: false },
+            lineNumbers: 'off',
+            folding: true,
+            renderLineHighlight: 'none',
+            scrollBeyondLastLine: false,
+            fontSize: 14,
+            fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+            padding: { top: 24, bottom: 24 },
+          }}
+        />
+      </Suspense>
     </div>
   );
 }

@@ -9,8 +9,7 @@
  */
 'use client';
 
-import { useRef, useEffect, useCallback, useState, useImperativeHandle, forwardRef } from 'react';
-import dynamic from 'next/dynamic';
+import { useRef, useEffect, useCallback, useState, useImperativeHandle, forwardRef, lazy, Suspense } from 'react';
 import type ReactPlayerType from 'react-player';
 import { useRmhTubeStore } from '@/lib/rmhtube/store';
 import { emit } from '@/lib/rmhtube/socket';
@@ -19,7 +18,7 @@ import { HOST_STATE_INTERVAL_MS, SYNC_TOLERANCE_S } from '@/lib/rmhtube/constant
 import { detectMediaType } from '@/lib/rmhtube/utils';
 import { toast } from '@/lib/rmhtube/toast-store';
 
-const ReactPlayer = dynamic(() => import('react-player'), { ssr: false });
+const ReactPlayer = lazy(() => import('react-player'));
 
 interface VideoPlayerProps {
   url: string | null;
@@ -357,31 +356,33 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
 
   return (
     <div ref={containerRef} className="relative w-full aspect-video rounded-xl overflow-hidden bg-black">
-      <ReactPlayer
-        ref={playerRef}
-        url={url}
-        playing={videoState?.playing ?? false}
-        playbackRate={videoState?.playbackRate ?? 1}
-        controls
-        volume={playerVolume}
-        muted={playerMuted}
-        width="100%"
-        height="100%"
-        onPlay={handlePlay}
-        onPause={handlePause}
-        onSeek={handleSeek}
-        onReady={handleReady}
-        onEnded={handleEnded}
-        config={{
-          youtube: {
-            playerVars: {
-              modestbranding: 1,
-              rel: 0,
-              cc_load_policy: captionsEnabled ? 1 : 0,
+      <Suspense fallback={null}>
+        <ReactPlayer
+          ref={playerRef}
+          url={url}
+          playing={videoState?.playing ?? false}
+          playbackRate={videoState?.playbackRate ?? 1}
+          controls
+          volume={playerVolume}
+          muted={playerMuted}
+          width="100%"
+          height="100%"
+          onPlay={handlePlay}
+          onPause={handlePause}
+          onSeek={handleSeek}
+          onReady={handleReady}
+          onEnded={handleEnded}
+          config={{
+            youtube: {
+              playerVars: {
+                modestbranding: 1,
+                rel: 0,
+                cc_load_policy: captionsEnabled ? 1 : 0,
+              },
             },
-          },
-        }}
-      />
+          }}
+        />
+      </Suspense>
     </div>
   );
 });

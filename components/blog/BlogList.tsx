@@ -2,8 +2,7 @@
 
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { Search, Calendar, Filter, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, X } from "lucide-react";
 import { ShareButton } from "@/components/blog/ShareButton";
 import { Post } from "@/lib/blog";
@@ -25,21 +24,25 @@ interface BlogListProps {
 }
 
 export function BlogList({ initialPosts, filtersOpen = false }: BlogListProps) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const navigate = useNavigate();
+  const search = useSearch({ strict: false }) as Record<string, string | undefined>;
 
-  const [searchInput, setSearchInput] = useState(searchParams.get("q") || "");
+  const [searchInput, setSearchInput] = useState(search.q || "");
   const debouncedSearch = useDebounce(searchInput, 250);
-  const [selectedTag, setSelectedTag] = useState<string | null>(searchParams.get("tag") || null);
+  const [selectedTag, setSelectedTag] = useState<string | null>(search.tag || null);
   const [sortMode, setSortMode] = useState<"newest" | "oldest" | "az" | "za">(
-    (searchParams.get("sort") as "newest" | "oldest" | "az" | "za") || "newest"
+    (search.sort as "newest" | "oldest" | "az" | "za") || "newest"
   );
-  const [currentPage, setCurrentPage] = useState(Number(searchParams.get("page")) || 1);
+  const [currentPage, setCurrentPage] = useState(Number(search.page) || 1);
   const [showAllTags, setShowAllTags] = useState(false);
   const gridRef = useRef<HTMLDivElement>(null);
 
   const updateURL = useCallback((params: Record<string, string | null>) => {
-    const url = new URLSearchParams(searchParams.toString());
+    const url = new URLSearchParams();
+    // Carry over existing search params
+    Object.entries(search).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) url.set(key, String(value));
+    });
     Object.entries(params).forEach(([key, value]) => {
       if (value && value !== "" && !(key === "page" && value === "1") && !(key === "sort" && value === "newest")) {
         url.set(key, value);
@@ -48,8 +51,8 @@ export function BlogList({ initialPosts, filtersOpen = false }: BlogListProps) {
       }
     });
     const qs = url.toString();
-    router.replace(`/blog${qs ? `?${qs}` : ""}`, { scroll: false });
-  }, [router, searchParams]);
+    navigate({ to: `/blog${qs ? `?${qs}` : ""}`, replace: true });
+  }, [navigate, search]);
 
   const allTags = useMemo(() => {
     const tagCounts = new Map<string, number>();
@@ -257,7 +260,7 @@ export function BlogList({ initialPosts, filtersOpen = false }: BlogListProps) {
               transition={{ duration: 0.3 }}
             >
                <div data-slot="card" className="bg-site-surface border border-site-border overflow-hidden hover:border-site-accent/50 transition-colors h-full flex flex-col group relative" style={{ borderRadius: "var(--site-radius)", borderWidth: "var(--site-border-width)", transitionDuration: "var(--site-transition-speed)" }}>
-                  <Link href={`/blog/${post.slug}`} className="absolute inset-0 z-0" />
+                  <Link to={`/blog/${post.slug}`} className="absolute inset-0 z-0" />
 
                   {/* Share Button */}
                   <ShareButton slug={post.slug!} className="absolute top-3 right-3 z-10" />

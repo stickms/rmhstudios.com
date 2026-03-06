@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from '@tanstack/react-router';
 import { Loader2, Plus, X, Upload, AlertCircle } from 'lucide-react';
 import type { Build, BuildCategory } from '@/lib/user-builds-types';
 import { Button } from '@/components/ui/button';
@@ -19,7 +19,7 @@ const COMMON_TECHNOLOGIES = [
 ];
 
 export function BuildForm({ build, onSuccess }: BuildFormProps) {
-  const router = useRouter();
+  const navigate = useNavigate();
   const isEditing = !!build;
 
   const [loading, setLoading] = useState(false);
@@ -88,7 +88,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
       if (onSuccess) {
         onSuccess(savedBuild);
       } else {
-        router.push(`/user-builds/${savedBuild.slug}`);
+        navigate({ to: `/user-builds/${savedBuild.slug}` });
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to save build');

@@ -43,7 +43,7 @@ export async function connectToAltair(): Promise<Socket> {
     throw new Error('Not authenticated');
   }
 
-  const serverUrl = process.env.NEXT_PUBLIC_SOCKET_URL;
+  const serverUrl = import.meta.env.VITE_SOCKET_URL;
 
   socket = io(serverUrl, {
     path: '/socket/',

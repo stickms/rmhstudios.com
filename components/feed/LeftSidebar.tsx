@@ -1,7 +1,6 @@
 'use client';
 
-import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { Link, useLocation, useNavigate } from '@tanstack/react-router';
 import { useState, useEffect, useRef } from 'react';
 import { authClient } from '@/lib/auth-client';
 import { useSession, useResolvedUser } from '@/components/Providers';
@@ -35,8 +34,8 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   const logoAlignClass = expanded ? 'justify-start' : 'justify-center xl:justify-start';
   const iconMrClass = expanded ? 'mr-2' : 'xl:mr-2';
   const itemJustifyClass = expanded ? '' : 'md:justify-center xl:justify-start';
-  const pathname = usePathname();
-  const router = useRouter();
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
   const [showStyleMenu, setShowStyleMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [composeOpen, setComposeOpen] = useState(false);
@@ -78,8 +77,8 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
     await authClient.signOut({
       fetchOptions: {
         onSuccess: () => {
-          router.push('/');
-          router.refresh();
+          navigate({ to: '/' });
+          window.location.reload();
         },
       },
     });
@@ -95,7 +94,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   return (
     <div className={`flex flex-col gap-1 h-full ${paddingClass}`}>
       {/* Logo */}
-      <Link href="/" className={`mb-6 flex items-center ${logoAlignClass}`}>
+      <Link to="/" className={`mb-6 flex items-center ${logoAlignClass}`}>
         <span className={`font-(family-name:--site-font-display) font-bold text-xl text-site-text ${logoFullClass}`}>
           RMH<span className="text-site-accent">Studios</span>
         </span>
@@ -112,7 +111,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
           return (
             <Link
               key={link.href}
-              href={link.href}
+              to={link.href}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${itemJustifyClass} ${
                 isActive
                   ? 'text-site-accent bg-site-accent-dim'
@@ -301,7 +300,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
             )}
           </div>
         ) : (
-          <Link href="/login">
+          <Link to="/login">
             <Button variant="accent" size="sm" className="w-full">
               <User className={`w-4 h-4 ${iconMrClass}`} />
               <span className={labelClass}>Sign In</span>

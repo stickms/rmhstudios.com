@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { X, Loader2 } from 'lucide-react';
-import Link from 'next/link';
+import { Link } from '@tanstack/react-router';
 import { authClient } from '@/lib/auth-client';
 
 interface SocialUser {
@@ -188,7 +188,7 @@ export function SocialListModal({ open, onClose, userId, type }: SocialListModal
               className="flex items-center gap-3 px-5 py-3 hover:bg-site-surface/50 transition-colors border-b border-site-border/50"
             >
               <Link
-                href={`/@${user.handle || user.id}`}
+                to={`/@${user.handle || user.id}`}
                 onClick={onClose}
                 className="flex items-center gap-3 flex-1 min-w-0"
               >

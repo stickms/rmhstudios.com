@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useState, useRef } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
+import { Link } from '@tanstack/react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GameInfo } from '@/lib/games';
 import { cn } from '@/lib/utils';
@@ -67,7 +66,7 @@ export function GameCard({ game }: GameCardProps) {
             onMouseEnter={handleMouseEnter}
             onMouseLeave={() => setIsHovered(false)}
         >
-            <Link href={game.href}>
+            <Link to={game.href}>
                 <motion.div
                     ref={cardRef}
                     data-slot="card"
@@ -81,12 +80,11 @@ export function GameCard({ game }: GameCardProps) {
                     transition={{ type: "spring", stiffness: 300, damping: 20 }}
                 >
                     {game.imagePath ? (
-                        <Image
+                        <img
                             src={game.imagePath}
                             alt={game.title}
-                            fill
-                            className="object-cover transition-transform duration-500 group-hover:scale-105"
-                            sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw"
+                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            loading="lazy"
                         />
                     ) : (
                         <div className={cn("w-full h-full flex items-center justify-center bg-linear-to-br", game.gradient)}>

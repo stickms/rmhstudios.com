@@ -8,7 +8,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import { authClient } from '@/lib/auth-client';
 import { HowToPlayContent } from './HowToPlayContent';
@@ -22,7 +22,7 @@ interface Props {
 
 export function LandingScreen({ onStartGame, hasSavedRun, onLoadSavedRun }: Props) {
   const session = authClient.useSession();
-  const router = useRouter();
+  const navigate = useNavigate();
   const [showHowToPlay, setShowHowToPlay] = useState(false);
 
   // If how-to-play is open, render it fullscreen and return (don't render landing screen)
@@ -44,7 +44,7 @@ export function LandingScreen({ onStartGame, hasSavedRun, onLoadSavedRun }: Prop
           <div className="flex flex-col items-center gap-4">
             <p className="text-red-400 font-mono text-sm uppercase tracking-widest">Authentication Required</p>
             <Button
-              onClick={() => router.push('/login')}
+              onClick={() => navigate({ to: '/login' })}
               className="w-full bg-white text-black hover:bg-zinc-200 font-bold py-3 rounded-lg"
             >
               Sign In to Play

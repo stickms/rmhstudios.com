@@ -1,20 +1,12 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { Clock, Play, Send, ChevronDown, Check } from 'lucide-react';
-import dynamic from 'next/dynamic';
-import Link from 'next/link';
+import { Link } from '@tanstack/react-router';
 import { FakeTestResults } from './FakeTestResults';
 import { useJobsDataStore } from '@/lib/store/useJobsDataStore';
 
-const MonacoEditor = dynamic(() => import('@monaco-editor/react').then((m) => m.default), {
-    ssr: false,
-    loading: () => (
-        <div className="flex items-center justify-center h-full" style={{ color: 'var(--jobs-text-muted)' }}>
-            Loading editor...
-        </div>
-    ),
-});
+const MonacoEditor = lazy(() => import('@monaco-editor/react').then((m) => ({ default: m.default })));
 
 interface OAEditorProps {
     problem: {
@@ -189,14 +181,14 @@ export function OAEditor({
                     </p>
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                         <Link
-                            href="/secret/jobs"
+                            to="/secret/jobs"
                             className="jobs-btn-primary px-6 py-2.5 rounded-lg text-sm inline-block"
                             style={{ borderRadius: 'var(--jobs-radius)' }}
                         >
                             Return to RMH Jobs Portal
                         </Link>
                         <Link
-                            href="/secret/jobs/applications"
+                            to="/secret/jobs/applications"
                             className="jobs-btn-secondary px-6 py-2.5 rounded-lg text-sm inline-block"
                             style={{ borderRadius: 'var(--jobs-radius)' }}
                         >
@@ -362,22 +354,28 @@ export function OAEditor({
 
                     {/* Monaco Editor */}
                     <div className="flex-1 min-h-0">
-                        <MonacoEditor
-                            height="100%"
-                            language={MONACO_LANG_MAP[language] ?? 'javascript'}
-                            value={code}
-                            onChange={(v) => setCode(v ?? '')}
-                            theme="vs-dark"
-                            options={{
-                                fontSize: 13,
-                                minimap: { enabled: false },
-                                lineNumbers: 'on',
-                                scrollBeyondLastLine: false,
-                                wordWrap: 'on',
-                                readOnly: isSubmitted,
-                                padding: { top: 12 },
-                            }}
-                        />
+                        <Suspense fallback={
+                            <div className="flex items-center justify-center h-full" style={{ color: 'var(--jobs-text-muted)' }}>
+                                Loading editor...
+                            </div>
+                        }>
+                            <MonacoEditor
+                                height="100%"
+                                language={MONACO_LANG_MAP[language] ?? 'javascript'}
+                                value={code}
+                                onChange={(v) => setCode(v ?? '')}
+                                theme="vs-dark"
+                                options={{
+                                    fontSize: 13,
+                                    minimap: { enabled: false },
+                                    lineNumbers: 'on',
+                                    scrollBeyondLastLine: false,
+                                    wordWrap: 'on',
+                                    readOnly: isSubmitted,
+                                    padding: { top: 12 },
+                                }}
+                            />
+                        </Suspense>
                     </div>
 
                     {/* Test results panel (only for Run, not Submit) */}

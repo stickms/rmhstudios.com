@@ -4,11 +4,8 @@ import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { useRouter } from 'next/navigation';
-
 export function DeleteBlogButton({ slug, title }: { slug: string, title: string }) {
     const [isDeleting, setIsDeleting] = useState(false);
-    const router = useRouter();
 
     const handleDelete = async () => {
         if (!confirm(`Are you sure you want to delete "${title}"? This cannot be undone.`)) {
@@ -28,7 +25,7 @@ export function DeleteBlogButton({ slug, title }: { slug: string, title: string 
             }
 
             toast.success(`Deleted blog post: ${slug}.`);
-            router.refresh();
+            window.location.reload();
         } catch (error: any) {
              toast.error(error.message || 'An error occurred');
         } finally {

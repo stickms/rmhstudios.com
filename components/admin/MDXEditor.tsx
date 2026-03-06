@@ -1,21 +1,14 @@
-'use client';
-
-import { useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useCallback, lazy, Suspense } from 'react';
+import { useRouter } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import dynamic from 'next/dynamic';
-import { MDXRemote } from 'next-mdx-remote';
+import ReactMarkdown from 'react-markdown';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 
-// Load Monaco editor dynamically to avoid SSR "window is not defined" or initialization errors
-const Editor = dynamic(() => import('@/components/admin/DynamicMonacoEditor'), {
-  ssr: false,
-  loading: () => <div className="flex-1 flex items-center justify-center bg-site-surface border border-site-border rounded-md text-site-text-muted">Loading Editor...</div>,
-});
-import { serialize } from 'next-mdx-remote/serialize';
+// Load Monaco editor lazily to avoid SSR "window is not defined" or initialization errors
+const Editor = lazy(() => import('@/components/admin/DynamicMonacoEditor'));
 import {
   AnimatedH1, AnimatedH2, AnimatedH3, AnimatedP,
   AnimatedUl, AnimatedOl, AnimatedLi,
@@ -38,7 +31,7 @@ const animatedComponents = {
 };
 
 export function MDXEditor({ initialData, isEdit = false }: { initialData?: any, isEdit?: boolean }) {
-  const router = useRouter();
+  const navigate = useRouter().navigate;
   
   const [formData, setFormData] = useState({
     title: initialData?.title || '',
@@ -50,7 +43,7 @@ export function MDXEditor({ initialData, isEdit = false }: { initialData?: any, 
   });
   const [content, setContent] = useState(initialData?.content || '');
   
-  const [previewContent, setPreviewContent] = useState<any>(null);
+  const [previewContent, setPreviewContent] = useState<string | null>(null);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -63,13 +56,7 @@ export function MDXEditor({ initialData, isEdit = false }: { initialData?: any, 
   };
 
   const generatePreview = useCallback(async () => {
-    try {
-      const serialized = await serialize(content);
-      setPreviewContent(serialized);
-    } catch (error) {
-      console.error("MDX serialization error:", error);
-      toast.error("Failed to generate preview. Check MDX syntax.");
-    }
+    setPreviewContent(content);
   }, [content]);
 
   const togglePreview = async () => {
@@ -111,7 +98,7 @@ export function MDXEditor({ initialData, isEdit = false }: { initialData?: any, 
         { duration: 8000 }
       );
       
-      router.push('/admin');
+      navigate({ to: '/admin' });
     } catch (error: any) {
       toast.error(error.message || 'An error occurred');
     } finally {
@@ -123,7 +110,7 @@ export function MDXEditor({ initialData, isEdit = false }: { initialData?: any, 
     <div className="h-screen w-screen flex flex-col bg-site-bg overflow-hidden fixed inset-0 z-50">
         <div className="h-16 border-b border-site-border flex items-center justify-between px-4 lg:px-6 shrink-0 bg-site-surface w-full shadow-sm">
             <div className="flex items-center gap-4">
-                <Button variant="ghost" size="sm" onClick={() => router.push('/admin/blog')} className="text-site-text-dim hover:text-site-text hidden md:flex">
+                <Button variant="ghost" size="sm" onClick={() => navigate({ to: '/admin/blog' })} className="text-site-text-dim hover:text-site-text hidden md:flex">
                     Back to Admin
                 </Button>
                 <div className="h-4 w-px bg-site-border hidden md:block"></div>
@@ -186,18 +173,20 @@ export function MDXEditor({ initialData, isEdit = false }: { initialData?: any, 
                         <div className="flex-1 flex flex-col min-h-0 h-full">
                             <Label className="mb-2">Content <span className="text-red-500">*</span></Label>
                             <div className="flex-1 border border-site-border rounded-md overflow-hidden relative min-h-0">
-                              <Editor
-                                height="100%"
-                                defaultLanguage="markdown"
-                                theme="vs-dark"
-                                value={content}
-                                onChange={handleEditorChange}
-                                options={{
-                                  wordWrap: 'on',
-                                  minimap: { enabled: false },
-                                  scrollBeyondLastLine: false,
-                                }}
-                              />
+                              <Suspense fallback={<div className="flex-1 flex items-center justify-center bg-site-surface border border-site-border rounded-md text-site-text-muted">Loading Editor...</div>}>
+                                <Editor
+                                  height="100%"
+                                  defaultLanguage="markdown"
+                                  theme="vs-dark"
+                                  value={content}
+                                  onChange={handleEditorChange}
+                                  options={{
+                                    wordWrap: 'on',
+                                    minimap: { enabled: false },
+                                    scrollBeyondLastLine: false,
+                                  }}
+                                />
+                              </Suspense>
                             </div>
                         </div>
                     </div>
@@ -216,7 +205,7 @@ export function MDXEditor({ initialData, isEdit = false }: { initialData?: any, 
                          <>
                            <h1 className="text-4xl lg:text-5xl font-black mb-4 tracking-tight leading-tight">{formData.title || 'Untitled Post'}</h1>
                            {formData.description && <p className="text-xl border-l-4 border-site-accent pl-6 mb-8 text-site-text-muted">{formData.description}</p>}
-                           <MDXRemote {...previewContent} components={animatedComponents} />
+                           <ReactMarkdown components={animatedComponents}>{previewContent}</ReactMarkdown>
                          </>
                       ) : (
                          <div className="text-center text-site-text-dim mt-32 flex flex-col items-center gap-4">

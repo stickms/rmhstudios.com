@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import { Link } from '@tanstack/react-router';
 import { MessageCircle, UserPlus } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 
@@ -15,7 +15,7 @@ interface SidebarUser {
 function UserRow({ user }: { user: SidebarUser }) {
   return (
     <Link
-      href={`/@${(user as any).handle || user.id}`}
+      to={`/@${(user as any).handle || user.id}`}
       className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-site-surface-hover transition-colors group"
     >
       <div className="w-8 h-8 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-xs shrink-0">
@@ -103,9 +103,9 @@ export function MessagesRightSidebar() {
       <div className="text-xs text-site-text-dim px-2 space-y-1">
         <p>RMH | The Everything Platform</p>
         <div className="flex flex-wrap gap-x-2 gap-y-0.5">
-          <Link href="/blog" className="hover:text-site-text transition-colors">Blog</Link>
-          <Link href="/roadmap" className="hover:text-site-text transition-colors">Roadmap</Link>
-          <Link href="/research" className="hover:text-site-text transition-colors">Research</Link>
+          <Link to="/blog" className="hover:text-site-text transition-colors">Blog</Link>
+          <Link to="/roadmap" className="hover:text-site-text transition-colors">Roadmap</Link>
+          <Link to="/research" className="hover:text-site-text transition-colors">Research</Link>
         </div>
       </div>
     </div>

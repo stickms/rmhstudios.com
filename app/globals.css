@@ -6,6 +6,29 @@
   to { background-position: -128px 0; }
 }
 
+/* ── Font family variables (loaded via Google Fonts CSS link) ── */
+:root {
+  --font-nunito: "Nunito", sans-serif;
+  --font-inter: "Inter", sans-serif;
+  --font-jetbrains-mono: "JetBrains Mono", monospace;
+  --font-playfair: "Playfair Display", serif;
+  --font-bangers: "Bangers", cursive;
+  --font-bebas-neue: "Bebas Neue", sans-serif;
+  --font-orbitron: "Orbitron", sans-serif;
+  --font-cinzel: "Cinzel", serif;
+  --font-pacifico: "Pacifico", cursive;
+  --font-space-grotesk: "Space Grotesk", sans-serif;
+  --font-permanent-marker: "Permanent Marker", cursive;
+  --font-caveat: "Caveat", cursive;
+  --font-dancing-script: "Dancing Script", cursive;
+  --font-patrick-hand: "Patrick Hand", cursive;
+}
+
+/* Tailwind utility for the default body font */
+@utility font-nunito {
+  font-family: var(--font-nunito);
+}
+
 /* Dream Rift floating particle animation */
 @keyframes dreamrift-float {
   0%, 100% { transform: translateY(0) translateX(0); opacity: 0.2; }

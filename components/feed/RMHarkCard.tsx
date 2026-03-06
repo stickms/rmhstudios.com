@@ -3,9 +3,9 @@
 import type { FeedItem, FeedItemUser } from '@/lib/feed-types';
 import { RMHarkActions } from './RMHarkActions';
 import { useEffect, useRef, useState, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from '@tanstack/react-router';
 import { Repeat2, MoreHorizontal, Heart, Repeat, Trash2, Share2, BadgeCheck, ShieldCheck } from 'lucide-react';
-import Link from 'next/link';
+import { Link } from '@tanstack/react-router';
 import { RMHarkContent, extractFirstUrl } from './RMHarkContent';
 import { PollDisplay } from './PollDisplay';
 import { GifEmbed } from './GifEmbed';
@@ -58,12 +58,12 @@ function UserAvatar({ user }: { user: FeedItem['user'] }) {
       )}
     </div>
   );
-  return <Link href={userProfileHref(user)}>{avatar}</Link>;
+  return <Link to={userProfileHref(user)}>{avatar}</Link>;
 }
 
 export function RMHarkCard({ item }: RMHarkCardProps) {
   const viewTracked = useRef(false);
-  const router = useRouter();
+  const navigate = useNavigate();
   const actualId = item.actualId ?? item.id;
   const { data: session } = authClient.useSession();
   const { resolved: resolvedUser } = useResolvedUser();
@@ -140,7 +140,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
     if (selection && selection.toString().length > 0) {
       return;
     }
-    router.push(postHref(item.user, actualId));
+    navigate({ to: postHref(item.user, actualId) });
   };
 
   return (
@@ -214,7 +214,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
           {/* Header */}
           <div className="flex items-center gap-1.5 text-sm pr-6">
             {item.user ? (
-              <Link href={userProfileHref(item.user)} className="flex items-center gap-1.5 min-w-0 hover:underline">
+              <Link to={userProfileHref(item.user)} className="flex items-center gap-1.5 min-w-0 hover:underline">
               <span className="font-bold text-site-text truncate">
                 {displayUser?.name || 'Unknown'}
               </span>
@@ -267,7 +267,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
             <div className="mt-3 border border-site-border rounded-xl p-3 bg-site-surface/30">
               <div className="flex items-center gap-1.5 text-sm mb-1">
                 {item.original.user ? (
-                  <Link href={userProfileHref(item.original.user)} className="flex items-center gap-1.5 min-w-0 hover:underline">
+                  <Link to={userProfileHref(item.original.user)} className="flex items-center gap-1.5 min-w-0 hover:underline">
                     <span className="font-bold text-site-text truncate">
                       {item.original.user.name || 'Unknown'}
                     </span>

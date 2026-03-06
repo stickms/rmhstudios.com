@@ -1,7 +1,7 @@
 'use client';
 
 import { MessageCircle, Repeat2, Heart, Eye } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from '@tanstack/react-router';
 import { useFeedStore } from '@/stores/feedStore';
 import { authClient } from '@/lib/auth-client';
 import type { FeedItem } from '@/lib/feed-types';
@@ -19,7 +19,7 @@ function formatCount(n: number | undefined): string {
 }
 
 export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
-  const router = useRouter();
+  const navigate = useNavigate();
   const { updateItem: storeUpdate } = useFeedStore();
   const { data: session } = authClient.useSession();
 
@@ -28,7 +28,7 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
 
   const handleCommentClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    router.push(`/@${item.user?.handle || item.user?.id}/post/${actualId}`);
+    navigate({ to: `/@${item.user?.handle || item.user?.id}/post/${actualId}` });
   };
 
   const toggleLike = async (e: React.MouseEvent) => {

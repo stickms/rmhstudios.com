@@ -9,7 +9,7 @@
 'use client';
 
 import { useCallback } from 'react';
-import Link from 'next/link';
+import { Link } from '@tanstack/react-router';
 import { ArrowLeft, Sun, Moon, Settings, Circle } from 'lucide-react';
 import { useAltairSettingsStore } from '@/lib/altair/stores/settings-store';
 import { useAltairGameStore } from '@/lib/altair/stores/game-store';
@@ -59,7 +59,7 @@ export default function AltairHeader({
         {hasBack && (
           isMenu && !onBack ? (
             <Link
-              href="/builds"
+              to="/builds"
               className="text-sm font-medium text-(--altair-text-muted) hover:text-(--altair-accent) transition-colors"
             >
               <span className="flex items-center gap-1">

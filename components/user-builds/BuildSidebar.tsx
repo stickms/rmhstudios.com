@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { Link } from '@tanstack/react-router';
 import { Star, TrendingUp, Clock, Loader2 } from 'lucide-react';
 import type { Build } from '@/lib/user-builds-types';
 
@@ -11,7 +11,7 @@ interface BuildSidebarProps {
 
 function BuildMiniCard({ build }: { build: Build }) {
   return (
-    <Link href={`/user-builds/${build.slug}`}>
+    <Link to={`/user-builds/${build.slug}`}>
       <div className="flex gap-3 p-3 rounded-lg hover:bg-site-surface-hover transition-colors">
         {build.thumbnailUrl ? (
           <img
@@ -116,7 +116,7 @@ export function BuildSidebar({ className = '' }: BuildSidebarProps) {
           Built something cool with rmhcode? Share it with the community!
         </p>
         <Link
-          href="/user-builds/submit"
+          to="/user-builds/submit"
           className="block w-full py-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium text-center transition-colors"
         >
           Submit a Build

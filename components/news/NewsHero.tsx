@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import Link from 'next/link';
+import { Link } from '@tanstack/react-router';
 import useEmblaCarousel from 'embla-carousel-react';
 import { useInView } from 'framer-motion';
 import { ArrowRight, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -111,7 +111,7 @@ export function NewsHero({ articles }: NewsHeroProps) {
                                         </p>
 
                                         <Link
-                                            href={`/news/${article.slug}`}
+                                            to={`/news/${article.slug}`}
                                             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-(--site-accent) text-white text-sm font-bold hover:opacity-90 transition-opacity"
                                         >
                                             Read Our Take <ArrowRight className="w-4 h-4" />

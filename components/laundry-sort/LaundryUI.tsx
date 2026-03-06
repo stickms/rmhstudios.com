@@ -4,7 +4,7 @@ import { useRef, ChangeEvent, useEffect, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Play, RotateCcw } from 'lucide-react';
 import { authClient } from "@/lib/auth-client";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "@tanstack/react-router";
 
 type LeaderboardEntry = {
   username: string;
@@ -35,7 +35,7 @@ export function LaundryUI({
   const [scoreSubmitted, setScoreSubmitted] = useState(false);
 
   const session = authClient.useSession();
-  const router = useRouter();
+  const navigate = useNavigate();
 
   const fetchLeaderboard = useCallback(async () => {
     setLeaderboardLoading(true);
@@ -136,7 +136,7 @@ export function LaundryUI({
                     <div className="mb-4">
                       <p className="text-xs text-red-300 mb-2">Sign in to save your score!</p>
                       <Button
-                        onClick={() => router.push('/login')}
+                        onClick={() => navigate({ to: '/login' })}
                         className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold"
                       >
                         Sign In to Submit
@@ -164,7 +164,7 @@ export function LaundryUI({
               {!gameOver && (
                 !session.data ? (
                   <Button
-                    onClick={() => router.push('/login')}
+                    onClick={() => navigate({ to: '/login' })}
                     className="bg-zinc-800 hover:bg-zinc-700 text-white font-bold px-8 py-3 rounded-lg flex items-center gap-2 text-lg mx-auto"
                   >
                     Sign In to Play

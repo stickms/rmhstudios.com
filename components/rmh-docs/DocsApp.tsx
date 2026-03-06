@@ -1,16 +1,15 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, lazy, Suspense } from 'react';
 import { useDocsStore } from '@/lib/store/useDocsStore';
 import { useDocumentStore } from '@/lib/store/useDocumentStore';
 import type { StoredDocument } from '@/lib/store/useDocumentStore';
-import dynamic from 'next/dynamic';
 import type { DocsDocument } from './types';
 import { DOCS_ACCENT } from './types';
 
 import DocsHome from './DocsHome';
 
-const DocsEditor = dynamic(() => import('./DocsEditor'), { ssr: false });
+const DocsEditor = lazy(() => import('./DocsEditor'));
 
 // Adapt StoredDocument to DocsDocument shape
 function toDocsDocument(doc: StoredDocument): DocsDocument {
@@ -83,12 +82,14 @@ export default function DocsApp() {
       style={{ background: 'var(--docs-bg)', color: 'var(--docs-text)', fontFamily: 'var(--docs-font)' }}
     >
       {currentDoc ? (
-        <DocsEditor
-          document={currentDoc}
-          onBack={handleBack}
-          onRename={(title) => handleRename(currentDoc.id, title)}
-          onToggleFavorite={() => handleFavorite(currentDoc.id, !currentDoc.isFavorite)}
-        />
+        <Suspense fallback={null}>
+          <DocsEditor
+            document={currentDoc}
+            onBack={handleBack}
+            onRename={(title) => handleRename(currentDoc.id, title)}
+            onToggleFavorite={() => handleFavorite(currentDoc.id, !currentDoc.isFavorite)}
+          />
+        </Suspense>
       ) : (
         <DocsHome
           documents={documents}
