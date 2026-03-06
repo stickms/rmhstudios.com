@@ -222,6 +222,11 @@ exec > >(tee -a "$DEPLOY_LOG") 2>&1
 
 # ── Step 1: Pull latest code ────────────────────────────────────────────────
 step_start "Fetching latest code..."
+
+# Snapshot deploy.sh hash before pulling so we can detect self-updates.
+DEPLOY_SCRIPT_PATH="${REPO_DIR}/deploy.sh"
+PRE_PULL_HASH=$(sha256sum "$DEPLOY_SCRIPT_PATH" | awk '{print $1}')
+
 "$GIT_BIN" fetch "$REMOTE_REPO" "$BRANCH" || {
     log "ERROR: git fetch failed."
     update_deploy_status fail "git fetch failed"
@@ -235,6 +240,17 @@ step_start "Fetching latest code..."
     exit 1
 }
 step_done
+
+# ── Self-restart if deploy.sh was updated ────────────────────────────────────
+# Compare the hash of deploy.sh after the pull. If it changed, exec the new
+# version so the rest of the deploy runs with the updated logic. The env var
+# DEPLOY_SELF_RESTARTED prevents infinite re-exec loops.
+POST_PULL_HASH=$(sha256sum "$DEPLOY_SCRIPT_PATH" | awk '{print $1}')
+if [ "$PRE_PULL_HASH" != "$POST_PULL_HASH" ] && [ -z "${DEPLOY_SELF_RESTARTED:-}" ]; then
+    log "deploy.sh was updated during pull — restarting with the new version."
+    export DEPLOY_SELF_RESTARTED=1
+    exec bash "$DEPLOY_SCRIPT_PATH" "$ENVIRONMENT"
+fi
 
 IMAGE_NAME="${PROJECT_NAME}-app"
 GIT_SHA=$("$GIT_BIN" rev-parse --short HEAD 2>/dev/null || echo "unknown")
